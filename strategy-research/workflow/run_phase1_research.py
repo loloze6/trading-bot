@@ -89,12 +89,12 @@ CAMPAIGN_STATE_PATH = ROOT / "campaign_record" / "campaign_state.yaml"
 
 # E-054 Layer 2 (2026-09-11): off-by-default gate, same convention as
 # WORKFLOW_ARTIFACT_VALIDATION above. OFF (unset, the default): the
-# backtest_specification -> signal_prescreen route is byte-identical to every
-# run before this ticket -- required by CLAUDE.fork.md's bit-identity
+# backtest_specification -> protocol_execution route is byte-identical to
+# every run before this ticket -- required by CLAUDE.fork.md's bit-identity
 # discipline (new features ship off by default with default behavior proven
 # unchanged). ON: backtest_specification routes through the new
 # "data_availability_gate" tool stage first (see its STAGE_CONFIGS entry and
-# run_tool_worker branch below) before signal_prescreen ever runs.
+# run_tool_worker branch below) before protocol_execution ever runs.
 _E054_GATE_ENABLED = os.environ.get("E054_DATA_AVAILABILITY_GATE", "") == "1"
 
 
@@ -145,14 +145,12 @@ STAGE_CONFIGS = {
         #     ARTIFACTS / "validation_protocol.yaml",
         #     ARTIFACTS / "validation_decision.yaml",
         # ],
+        # E-039 S4 (2026-09-12): "refinement_planner" retired as a separate
+        # stage -- this same call now also produces refinement_notes.yaml
+        # (an additive, conditional deliverable) when its own verdict is
+        # "refine", instead of handing off to a second LLM stage to do that.
         "default_next": "dynamic_routing", # Validation decides the next step
         "skill": "quant-validation",
-    },
-    "refinement_planner": {
-        "handoff": "validation_to_refinement.yaml",
-        # "required_outputs": [ARTIFACTS / "refinement_notes.yaml"],
-        "default_next": "innovation_expansion", # Route back to innovation after planning
-        "skill": "refinement-planner",
     },
     "backtest_specification": {
         "handoff": "validation_to_backtest_specification.yaml",
@@ -167,11 +165,6 @@ STAGE_CONFIGS = {
     # to pre-E-054 runs).
     "data_availability_gate": {
         "handoff": "backtest_spec_to_data_availability_gate.yaml",
-        "default_next": "dynamic_routing",
-    },
-    # Improvement 08+09: prescreen stage (tool, no LLM)
-    "signal_prescreen": {
-        "handoff": "backtest_spec_to_signal_prescreen.yaml",
         "default_next": "dynamic_routing",
     },
     "protocol_execution": {
@@ -751,7 +744,6 @@ _SKILL_MAP = {
     "hypothesis_generation": "hypothesis-design",
     "innovation_expansion": "innovation-expansion",
     "validation": "quant-validation",
-    "refinement_planner": "refinement-planner",
     "backtest_specification": "backtest-engineering",
     "verdict_interpreter": "verdict-interpreter",
     "campaign_review": "campaign-review",
@@ -1096,8 +1088,13 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
         stage_outputs = {
             "hypothesis_generation": ["hypothesis_card.yaml"],
             "innovation_expansion": ["expanded_hypothesis_card.yaml", "innovation_notes.yaml"],
-            "validation": ["validation_protocol.yaml", "validation_decision.yaml"],
-            "refinement_planner": ["refinement_notes.yaml"]
+            # E-039 S4 (2026-09-12): third entry is conditional -- present
+            # only when this call's own verdict is "refine" (refinement_planner
+            # retired as a separate stage; this same response now produces its
+            # plan directly). A 2-block approve/reject response is unaffected:
+            # the block-matching loop below only consumes as many names as
+            # blocks actually exist.
+            "validation": ["validation_protocol.yaml", "validation_decision.yaml", "refinement_notes.yaml"],
         }
         
         expected_files = stage_outputs.get(stage_name, [f"{stage_name}_output.yaml"])
@@ -1130,11 +1127,11 @@ async def run_tool_worker(stage_name: str, run_id: str):
 
     if stage_name == "data_availability_gate":
         # E-054 Layer 2: real per-window/per-feed data-touch check, BEFORE the
-        # (much more expensive) prescreen/protocol_execution stages ever run.
-        # Uses the SAME shared resolver signal_prescreen/protocol_execution
-        # use below, so it checks the literal protocol that will execute —
-        # never a hypothesis-level declared timeframe (E-054 Phase 1
-        # characterization's Q3 finding: those can silently diverge).
+        # (much more expensive) protocol_execution stage ever runs. Uses the
+        # SAME shared resolver protocol_execution uses below, so it checks
+        # the literal protocol that will execute — never a hypothesis-level
+        # declared timeframe (E-054 Phase 1 characterization's Q3 finding:
+        # those can silently diverge).
         config_path = ARTIFACTS / "candidate_strategy_config.json"
         protocol_path = _resolve_protocol_path(RUN_DIR, run_id)
 
@@ -1164,62 +1161,11 @@ async def run_tool_worker(stage_name: str, run_id: str):
         gate_result = load_yaml(ARTIFACTS / "data_availability_gate.yaml") or {}
         print(f"✅ E-054 Layer 2 outcome: {gate_result.get('outcome', 'unknown').upper()}")
 
-    elif stage_name == "signal_prescreen":
-        # Improvement 08+09: signal prescreen — cheap IC + cost gate before full backtest.
-        config_path = ARTIFACTS / "candidate_strategy_config.json"
-
-        # K3/§9 Q4: consolidated resolver, replaces the previously-duplicated
-        # inline protocol-selection logic (also present in protocol_execution below).
-        protocol_path = _resolve_protocol_path(RUN_DIR, run_id)
-
-        # F4d wiring: enforce the pre-registered significance methodology BEFORE
-        # the subprocess reads the config, so the pin actually governs the run
-        # rather than merely being audited against it afterwards.
-        _ensure_significance_methodology_pinned(
-            config_path, _load_machine_constraints(RUN_DIR) or {}, run_id)
-
-        out_dir = RUN_DIR / "prescreen"
-        cmd = [
-            str(TBOT_PYTHON), str(ROOT / "tools" / "prescreen_signal.py"),
-            str(config_path), str(protocol_path),
-            "--run-id", run_id,
-            "--out-dir", str(out_dir),
-        ]
-        print("🔬 Running signal prescreen (Improvement 08+09)...")
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        print(result.stdout)
-        if result.returncode != 0:
-            raise RuntimeError(f"prescreen_signal.py failed:\n{result.stderr}")
-
-        prescreen_path = out_dir / "prescreen_result.yaml"
-        if not prescreen_path.exists():
-            raise FileNotFoundError("prescreen_result.yaml not found after prescreen run")
-
-        # Copy to artifacts so verdict_interpreter can read it
-        import shutil as _ps_shutil
-        _ps_shutil.copy(prescreen_path, ARTIFACTS / "prescreen_result.yaml")
-
-        ps = load_yaml(ARTIFACTS / "prescreen_result.yaml")
-        route = ps.get("route", "unknown")
-        print(f"✅ Prescreen complete. Route: {route} | "
-              f"IC={ps.get('ic_spearman_pooled')} | "
-              f"cost_pass={ps.get('cost_check', {}).get('pass')}")
-
-        # A6.2: record prescreen as a trial in campaign_state (even kills count as trials)
-        # statistic_valid = "neither" for kills (no backtest Sharpe available)
-        # H2 fix (2026-08-16, issue #28 / E-025): upsert on (trial_id, "prescreen").
-        # A re-entered signal_prescreen -- a crash-retry restarting run_loop with a
-        # stale pending_stage='signal_prescreen' -- REPLACES the prior prescreen row
-        # with the fresh outcome. The former trial_id-only skip-guard swallowed the
-        # re-entry whole, leaving the STALE first outcome in the ledger (a lost update,
-        # not a suppressed duplicate). Upsert keeps one row per slot, so it neither
-        # widens N nor trips deflate_sharpe.check_no_duplicate_trial_ids.
-        _record_prescreen_trial(run_id, ps, config_path, upsert=True)
-
     elif stage_name == "protocol_execution":
         config_path     = ARTIFACTS / "candidate_strategy_config.json"
-        # K3/§9 Q4: consolidated resolver, replaces the previously-duplicated
-        # inline protocol-selection logic (also present in signal_prescreen above).
+        # K3/§9 Q4: consolidated resolver (also used by the E-054 data-
+        # availability gate above, and formerly by the removed
+        # signal_prescreen stage, E-039 step 5).
         protocol_path = _resolve_protocol_path(RUN_DIR, run_id)
         validation_path = ARTIFACTS / "validation_protocol.yaml"
 
@@ -1386,7 +1332,6 @@ _B7_MANDATORY_INPUT_PATHS = (
 )
 _B7_MANDATORY_INPUT_STAGES = {
     "validation",
-    "refinement_planner",
     "backtest_specification",
     "verdict_interpreter",
     "campaign_review",
@@ -2254,7 +2199,7 @@ def _route_post_variant_selection(run_dir: Path, run_id: str) -> str | None:
 
 
 async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | None = None):
-    tool_stages = {"protocol_execution", "signal_prescreen", "data_availability_gate"}
+    tool_stages = {"protocol_execution", "data_availability_gate"}
     if stage_name in tool_stages:
         await run_tool_worker(stage_name, run_id)
         return
@@ -2306,69 +2251,18 @@ def determine_post_refinement_route(path: Path):
     
     return "innovation_expansion" # Otherwise, loop back for another try
 
-def _create_a86_validation_bypass_handoffs(run_id: str, run_dir: Path):
-    """
-    A8.6 Fix 2: create minimal handoffs for the power-gate bypass path.
-    Used when A8.6 blocks at the validation gate (before backtest_specification runs).
-    Creates signal_prescreen and verdict_interpreter handoffs with only the artifacts
-    that actually exist (prescreen_result.yaml, hypothesis_card.yaml).
-    """
-    handoffs = run_dir / "handoffs"
-    handoffs.mkdir(exist_ok=True)
-
-    # Overwrite signal_prescreen handoff with a minimal version that has no missing inputs
-    sp_path = handoffs / "backtest_spec_to_signal_prescreen.yaml"
-    save_yaml(sp_path, {
-        "handoff_version": 1, "run_id": run_id,
-        "from_stage": "validation", "to_stage": "signal_prescreen",
-        "assigned_engine": "tool",
-        "objective": (
-            "A8.6 power gate triggered at validation — prescreen_result.yaml already written. "
-            "No prescreen tool runs; prescreen stage is a pass-through."
-        ),
-        "required_inputs": [
-            {"path": "artifacts/prescreen_result.yaml",
-             "reason": "A8.6 power gate output — written at validation stage"},
-        ],
-        "deliverables": [],
-    })
-
-    # Create verdict_interpreter handoff for the A8.6 path
-    vi_path = handoffs / "protocol_to_verdict_interpreter.yaml"
-    if not vi_path.exists():
-        save_yaml(vi_path, {
-            "handoff_version": 1, "run_id": run_id,
-            "from_stage": "signal_prescreen", "to_stage": "verdict_interpreter",
-            "assigned_engine": "claude",
-            "objective": (
-                "Interpret A8.6 power gate result. Hypothesis was blocked before component build. "
-                "Produce verdict_interpretation.yaml with parked disposition and data requirement."
-            ),
-            "required_inputs": [
-                {"path": "artifacts/prescreen_result.yaml",
-                 "reason": "A8.6 power check result — no IC computed; power metrics are the evidence"},
-                {"path": "artifacts/hypothesis_card.yaml",
-                 "reason": "hypothesis parameters for reactivation_condition"},
-            ],
-            "deliverables": ["verdict_interpretation.yaml"],
-            "constraints": [
-                (
-                    "A8.6 POWER GATE: This hypothesis was blocked before prescreen. "
-                    "Use verdict_label: insufficient_power_a_priori. "
-                    "disposition: parked. do_not_add_to_failed_families: true. "
-                    "reactivation_trigger: the data_requirement from prescreen_result.yaml.a86_power_check. "
-                    "trial_count: 0 (no IC computed, no trial spent). "
-                    "sharpe: null, n_trades: 0, statistic_valid: neither."
-                ),
-            ],
-        })
-
-
 def determine_post_validation_route(path: Path):
     """Once validation is complete, read the decision from validation_decision artifact and route accordingly:
     - If "approve": proceed to Phase 2 development of backtest
-    - If "refine": route to refinement planner (unless max refinements reached, then reject)
+    - If "refine": read the SAME call's refinement_notes.yaml and route per
+      determine_post_refinement_route (unless max refinements reached, then reject)
     - If "reject": mark as completed and rejected
+
+    E-039 S4 (2026-09-12): "refinement_planner" retired as a separate stage --
+    a "refine" verdict used to hand off to it as a second LLM call; now the
+    validation call itself produces refinement_notes.yaml in the same
+    response (an additive, conditional deliverable), and this function reads
+    it directly instead of a later stage doing so.
     """
     decision_path = path / "artifacts" / "validation_decision.yaml"
     decision = load_yaml(decision_path)
@@ -2405,34 +2299,27 @@ def determine_post_validation_route(path: Path):
                 print(f"   - {c}")
         update_state(path=path, flags={"validation_approved": True})
 
-        # A8.6 Fix 2: deterministic power stop before component build
-        _a86 = _run_a86_power_check(path / "artifacts")
-        if _a86["verdict"] == "insufficient_power_a_priori":
-            run_id = path.name
-            print(f"\n⚡ A8.6: Power gate blocked at validation — no component will be built.")
-            print(f"   min_detectable_ic={_a86['min_detectable_ic']:.4f} > "
-                  f"plausible_ic_upper={_a86['plausible_ic_upper']}")
-            print(f"   expected_n_eff={_a86['expected_n_eff']:.1f} "
-                  f"(active_n={_a86['expected_active_n']:.0f}, "
-                  f"n_eff_symbols={_a86.get('n_eff_symbols', 'n/a')}, rho={_a86.get('rho_bar')})")
-            print(f"   Data requirement: {_a86.get('data_requirement')}")
-            save_yaml(path / "artifacts" / "prescreen_result.yaml", {
-                "run_id": run_id,
-                "route": "insufficient_power_a_priori",
-                "a86_power_check": _a86,
-                "stage_blocked_at": "validation",
-                "note": "A8.6 power gate: no component built, no trial spent.",
-            })
-            _create_a86_validation_bypass_handoffs(run_id, path)
-            return "signal_prescreen"
-
+        # A8.6 (a-priori power pre-flight) removed 2026-09-11, E-039: the
+        # epic's whole premise is "always backtest" -- a hypothesis is no
+        # longer killed on an estimated activation rate before a real
+        # backtest ever runs. Replaced by E-054's data-availability gate
+        # (a real structural/data check, not a statistical-power guess) and
+        # CUL-264's post-backtest route (a REAL measured go/no-go once the
+        # backtest has actually produced numbers). This is a DECLARED
+        # behavior change, not bit-identity-preserving: hypotheses that
+        # would previously have been blocked here now proceed to
+        # backtest_specification unconditionally.
         return "backtest_specification"
     
     elif status == "refine":
         if refinements_used >= max_refinements:
             print(f"🛑 Refinement limit reached ({max_refinements}). Rejecting hypothesis.")
             return "completed_rejected"
-        return "refinement_planner"
+        # Increment the refinement counter (previously done by the dispatch
+        # loop's own "refinement_planner" branch, now folded in here since
+        # that stage no longer exists separately).
+        update_state(path=path, counters={"refinements_used": refinements_used + 1})
+        return determine_post_refinement_route(path)
     
     elif status == "reject":
         return "completed_rejected"
@@ -2441,11 +2328,10 @@ def determine_post_validation_route(path: Path):
         raise ValueError(f"Unknown validation status: {status}")
 
 def _create_remaining_handoffs(run_id: str, run_dir: Path):
-    """Write data_availability_gate, signal_prescreen, protocol_execution, and
+    """Write data_availability_gate, protocol_execution, and
     verdict_interpreter handoffs."""
     handoffs = run_dir / "handoffs"
     dag_path = handoffs / "backtest_spec_to_data_availability_gate.yaml"
-    sp_path = handoffs / "backtest_spec_to_signal_prescreen.yaml"
     pe_path = handoffs / "backtest_spec_to_protocol_execution.yaml"
     vi_path = handoffs / "protocol_to_verdict_interpreter.yaml"
 
@@ -2471,34 +2357,6 @@ def _create_remaining_handoffs(run_id: str, run_dir: Path):
             "deliverables": ["data_availability_gate.yaml"],
         })
 
-    # Improvement 08+09: signal_prescreen handoff
-    if not sp_path.exists():
-        save_yaml(sp_path, {
-            "handoff_version": 1, "run_id": run_id,
-            "from_stage": "backtest_specification", "to_stage": "signal_prescreen",
-            "assigned_engine": "tool",
-            "objective": (
-                "Run signal prescreen — cheap IC + cost gate before full walk-forward. "
-                "Compute pooled IC, block-adjusted significance, turnover proxy, and "
-                "cost_check from config/cost_model.yaml. Route: proceed_to_backtest "
-                "(both IC and cost pass) or kill/refine (skip backtest)."
-            ),
-            "required_inputs": [
-                {"path": "artifacts/candidate_strategy_config.json",
-                 "reason": "strategy config to prescreen"},
-                {"path": "../../config/cost_model.yaml",
-                 "reason": "Layer 2 cost hurdle parameters"},
-                {"path": "../../config/campaign_data_policy.yaml",
-                 "reason": "holdout range guard — prescreen must not read holdout data"},
-            ],
-            "deliverables": ["prescreen_result.yaml"],
-            "constraints": [
-                "A8.1: no standalone IC pass — cost_check is always required.",
-                "A2.3: ic_by_regime is suspended; report ungated IC only.",
-                "A6.2: prescreen kills must be recorded as trials in campaign_state.",
-                "Holdout data must not be used in prescreen windows.",
-            ],
-        })
 
     if not pe_path.exists():
         save_yaml(pe_path, {
@@ -2537,6 +2395,14 @@ def _create_remaining_handoffs(run_id: str, run_dir: Path):
             "optional_inputs": [
                 {"path": "../../campaign_state.yaml",
                  "reason": "cross-run altitude history; drives circuit-breaker altitude decisions"},
+                {"path": "../../engineering/roadmap/E-018/artifacts/near_miss_scoreboard.yaml",
+                 "reason": "E-018 (2026-09-13): ranked table of past near-miss root causes -- "
+                           "informs root_cause/proposed_brief/findings_carryover only, never "
+                           "hypothesis_verdict/lineage_routing (see verdict-interpreter/SKILL.md's "
+                           "Near-miss scoreboard section). Given unconditionally, with no guard "
+                           "tied to whether THIS run has a registered pass_rule -- optional only "
+                           "in the ordinary missing-file sense every other optional_input here has "
+                           "(e.g. the file not yet regenerated), same as campaign_state.yaml above."},
             ],
             "deliverables": ["verdict_interpretation.yaml"],
             "constraints": [
@@ -2666,6 +2532,72 @@ def _inject_regime_context_into_handoff(handoff_path: Path, regime_report: dict,
 
     save_yaml(handoff_path, handoff)
     print(f"✅ Regime context injected into verdict_interpreter handoff: {conf_summary}")
+
+
+def _inject_post_backtest_route_into_handoff(handoff_path: Path, protocol_result: dict | None,
+                                              run_id: str):
+    """
+    E-039 step 3 / CUL-264 (2026-09-11): surface the real, measured
+    post-backtest go/no-go route as CONTEXT for verdict_interpreter --
+    NEVER a gate on whether it runs. Jeremy's explicit decision (CUL-264,
+    2026-09-11): every backtest still gets an LLM pass; a mechanical
+    kill/refine route is informational, exactly like forecast_return_corr
+    or cost_drag_pct, never a bypass. Mirrors
+    _inject_regime_context_into_handoff's exact pattern (summary field +
+    a constraint telling the model how to use it).
+
+    No-ops cleanly when absent: a prescreen-kill run that never reached a
+    real backtest has no protocol_result.yaml at all, and post_backtest_route
+    only exists once build_core has actually run on real trade/window data
+    (CUL-264/272, trading-bot/reporting/run_artifact.py::build_core) --
+    prefers the REAL-cost route (post_backtest_route_real, CUL-272) over the
+    estimated one when both are present, since real numbers supersede an
+    estimate once they exist.
+    """
+    if not handoff_path.exists() or not protocol_result:
+        return
+
+    results = protocol_result.get("results") or []
+    routes = []
+    for r in results:
+        core = r.get("core") or {}
+        route = core.get("post_backtest_route_real") or core.get("post_backtest_route")
+        if not route:
+            continue
+        routes.append({
+            "window": r.get("window_label") or r.get("label"),
+            "symbol": r.get("symbol"),
+            "route": route,
+            "rationale": (core.get("post_backtest_route_real_rationale")
+                          or core.get("post_backtest_route_rationale")),
+        })
+    if not routes:
+        return
+
+    handoff = load_yaml(handoff_path) or {}
+    handoff["post_backtest_routes"] = routes
+
+    constraints = handoff.setdefault("constraints", [])
+    note = (
+        "E-039/CUL-264 POST-BACKTEST ROUTE — INFORMATIONAL ONLY, NEVER A GATE: "
+        "post_backtest_routes above is a REAL, measured go/no-go computed from "
+        "this run's actual backtest (real trades where available, CUL-272; "
+        "otherwise a real correlation/cost estimate, CUL-264) — not a guess "
+        "and not the removed A8.6 pre-flight. Treat it as supporting evidence "
+        "alongside every other diagnostic, exactly like forecast_return_corr "
+        "or cost_drag_pct. Do NOT auto-adopt a kill_*/refine_* label as your "
+        "verdict without independently examining the evidence, and do NOT "
+        "skip your own analysis because a route says kill or refine. A route "
+        "of inconclusive_insufficient_data means the sample was too small to "
+        "trust the route's own math — treat it as informationless, not as a "
+        "kill signal itself."
+    )
+    if note not in constraints:
+        constraints.append(note)
+
+    save_yaml(handoff_path, handoff)
+    print(f"✅ Post-backtest route context injected into verdict_interpreter handoff: "
+          f"{[r['route'] for r in routes]}")
 
 
 _BLANK_BRIEF_PLACEHOLDER = "# TODO: Paste your research brief configuration here."
@@ -2908,10 +2840,11 @@ def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: d
     print(f"✅ [F4d] Generated protocol from pre-registered machine_constraints: {out_path}"
           f" ({len(windows)} windows, {start} -> {end})")
 
-    # run_type MUST be "forced_diagnostic" — both signal_prescreen's and
-    # protocol_execution's protocol-resolution logic only consult run_context's
-    # `protocol` key under that exact run_type; otherwise they silently fall back
-    # to campaign_state.last_escalation.protocol_path (STALE campaign-wide state
+    # run_type MUST be "forced_diagnostic" — protocol_execution's (and the
+    # E-054 data-availability gate's) shared protocol-resolution logic only
+    # consults run_context's `protocol` key under that exact run_type;
+    # otherwise it silently falls back to campaign_state.last_escalation.
+    # protocol_path (STALE campaign-wide state
     # from a previous, unrelated run's escalation — this is exactly what happened
     # to run_050's first attempt: it picked up run_047's leftover
     # escalation_tf_15m.json because this run_type key was missing).
@@ -3037,56 +2970,6 @@ def _require_pre_registered_promotion(proto_constraint: dict, run_id: str) -> di
         )
     return promotion
 
-
-def _ensure_significance_methodology_pinned(config_path: Path, constraints: dict, run_id: str) -> bool:
-    """Carry machine_constraints.significance_methodology into
-    candidate_strategy_config.json, which is the ONLY place prescreen_signal.py
-    looks for it. Returns True if the config was written.
-
-    WHY (2026-08-28, run_060): the brief pinned
-    significance_methodology=episode_blocked_a851a, but prescreen_signal.py
-    reads that flag from the candidate config
-    (`config_raw.get("significance_methodology")`), and nothing carried the
-    value from pre_registration.yaml to that config. The
-    backtest_specification agent simply had not written the field, so the
-    a851a branch never ran, the default block-Fisher path ran instead, and the
-    F4d conformance gate correctly halted the campaign for testing something
-    other than what was pre-registered.
-
-    That gate is the AUDIT. This is the WIRING. Without it the pin is a
-    statement no code acts on, and every run has to be repaired by hand after
-    the gate catches it -- the recurring pattern where this system writes a
-    correct declarative artifact and then leaves it unenforced.
-
-    A config that already names a DIFFERENT methodology is a genuine conflict
-    between two deliberate statements, so it raises rather than being
-    overwritten.
-    """
-    pinned = constraints.get("significance_methodology")
-    if not pinned:
-        return False
-    if not config_path.exists():
-        raise FileNotFoundError(
-            f"[F4d] {run_id}: machine_constraints pins "
-            f"significance_methodology={pinned!r} but {config_path.name} does not exist "
-            f"-- cannot enforce the pin on a config that was never written."
-        )
-    cfg = json.loads(config_path.read_text(encoding="utf-8"))
-    existing = cfg.get("significance_methodology")
-    if existing == pinned:
-        return False  # already conforms -- idempotent across re-entry
-    if existing:
-        raise RuntimeError(
-            f"[F4d] {run_id}: {config_path.name} declares "
-            f"significance_methodology={existing!r} but pre_registration.yaml pins "
-            f"{pinned!r} -- two deliberate, conflicting statements. Refusing to "
-            f"silently overwrite either; reconcile the brief and the config."
-        )
-    cfg["significance_methodology"] = pinned
-    config_path.write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8")
-    print(f"📌 [F4d] Propagated pinned significance_methodology={pinned!r} into "
-          f"{config_path.name} (was absent -- the prescreen reads it only from there)")
-    return True
 
 
 def _compute_protocol_content_hash(path: Path) -> str:
@@ -3217,8 +3100,9 @@ def _ensure_protocol_ref_pinned(run_dir: Path, run_id: str, constraints: dict) -
 def _resolve_protocol_path(run_dir: Path, run_id: str) -> Path:
     """
     K3 (B3+B10, §9 Q4): the ONE shared protocol-selection resolver, replacing the
-    two previously-duplicated copies inside run_tool_worker's signal_prescreen/
-    protocol_execution branches. Four branch classes: replication_diagnostic;
+    two previously-duplicated copies inside run_tool_worker's protocol_execution
+    branch and the removed signal_prescreen branch (E-039 step 5). Four branch
+    classes: replication_diagnostic;
     protocol-GENERATED forced_diagnostic; protocol_ref-PINNED (its own
     distinguishable run_type, A3); and the claim-checked last_escalation fallback
     (B10, §4) -- which now HARD-FAILS instead of silently reusing stale
@@ -3296,41 +3180,68 @@ def _path_basename_any_os(path_str: str) -> str:
     return str(path_str).replace("\\", "/").rsplit("/", 1)[-1]
 
 
-def _check_prescreen_conformance(prescreen_result: dict, constraints: dict, protocol_obj: dict) -> list:
+def _check_protocol_execution_conformance(protocol_result: dict, constraints: dict, protocol_obj: dict) -> list:
     """
-    Compares a completed prescreen's ACTUALS against what was pre-registered in
-    machine_constraints. Returns a list of violation strings (empty = conforms).
+    Compares a completed protocol_execution's ACTUALS against what was
+    pre-registered in machine_constraints. Returns a list of violation
+    strings (empty = conforms).
+
+    RELOCATED 2026-09-12 (E-039 step 5) from the removed signal_prescreen
+    stage's own _check_prescreen_conformance -- the underlying risk this
+    guards against does not disappear once prescreen is removed:
+    protocol_execution resolves its own protocol via the same
+    _resolve_protocol_path() machinery prescreen used, and A4's/Q1's
+    REGISTRATION-time guards still cannot catch a runtime override that
+    changes AFTER that resolution already happened (a stale run_context.yaml,
+    or a hand-edited pre_registration.yaml mid-run -- the real F4d/run_047
+    incident this check exists because of). Same mechanism, new source data:
+    `protocol_result.get("protocol_file")` (run_protocol.py's own CLI-arg
+    record, the direct analog of prescreen_result.yaml's "protocol_version")
+    and `protocol_result.get("episode_blocked_significance_by_symbol")`
+    (CUL-265, exposed 2026-09-12 specifically so this check has something
+    real to read -- previously computed only transiently for the
+    prescreen/backtest cross-check, never persisted).
     """
     violations = []
 
     expected_sig = constraints.get("significance_methodology")
     if expected_sig == "episode_blocked_a851a":
-        # F4d fix (caught before shipping, via test-writing): significance_methodology_used
-        # names the SPECIFIC outcome (episode_block_bootstrap / episode_bootstrap_insufficient_n
-        # / block_24_dense_fallback — episode_significance.VALID_METHODS), not the family
-        # name. A literal-equality check would have wrongly flagged the legitimate
-        # density-fallback and insufficient-episode outcomes (both correct per A8.5.1a's
-        # own spec rules 3/4) as violations. The real thing to detect is "the
-        # significance_methodology config flag was absent/ignored and the OLD default
-        # (block_24_fisher_z, prescreen_signal.py's own default label) ran instead."
+        # Per-symbol now (CUL-265): protocol_execution computes A8.5.1a
+        # significance separately per symbol, unlike prescreen's single
+        # pooled-across-everything value. A violation on ANY symbol is a
+        # real conformance failure -- silently passing because ONE symbol
+        # happened to conform would hide the others.
         _tools_path = str(Path(__file__).parent.parent / "tools")
         if _tools_path not in sys.path:
             sys.path.insert(0, _tools_path)
         import episode_significance as _es
-        actual_sig = prescreen_result.get("significance_methodology_used")
-        if not _es.is_a851a_method(actual_sig):
+        by_symbol = protocol_result.get("episode_blocked_significance_by_symbol") or {}
+        if not by_symbol:
             violations.append(
-                f"significance_methodology_used={actual_sig!r} is not an A8.5.1a outcome "
-                f"({sorted(_es.VALID_METHODS)} or block_<n>_dense_fallback) — pre-registered "
-                f"machine_constraints.significance_methodology=episode_blocked_a851a was not honored"
+                "pre-registered machine_constraints.significance_methodology="
+                "episode_blocked_a851a, but protocol_result carries no "
+                "episode_blocked_significance_by_symbol at all -- the A8.5.1a "
+                "path was not computed for this run"
             )
+        for symbol, actual_sig in by_symbol.items():
+            if not _es.is_a851a_method(actual_sig):
+                violations.append(
+                    f"{symbol}: episode_blocked_significance_method={actual_sig!r} is not "
+                    f"an A8.5.1a outcome ({sorted(_es.VALID_METHODS)} or "
+                    f"block_<n>_dense_fallback) -- pre-registered "
+                    f"machine_constraints.significance_methodology=episode_blocked_a851a "
+                    f"was not honored"
+                )
     elif expected_sig:
-        actual_sig = prescreen_result.get("significance_methodology_used")
-        if actual_sig != expected_sig:
-            violations.append(
-                f"significance_methodology_used={actual_sig!r} != pre-registered "
-                f"machine_constraints.significance_methodology={expected_sig!r}"
-            )
+        # No per-run analog exists yet for a non-A8.5.1a named methodology
+        # constraint on the backtest side -- flag as unconfirmable rather
+        # than silently passing or inventing a comparison.
+        violations.append(
+            f"pre-registered machine_constraints.significance_methodology="
+            f"{expected_sig!r}, but protocol_execution has no equivalent "
+            f"recorded field to confirm it against (only episode_blocked_a851a "
+            f"is currently checkable here)"
+        )
 
     proto_constraint = constraints.get("protocol")
     if proto_constraint:
@@ -3362,54 +3273,43 @@ def _check_prescreen_conformance(prescreen_result: dict, constraints: dict, prot
 
     # K3 rider (2026-07-15, operator ruling on Phase B deviation 1): protocol_ref
     # post-hoc conformance -- A4's runtime guard and Q1's materialization lint are
-    # both REGISTRATION-time checks; neither catches an executed prescreen that
+    # both REGISTRATION-time checks; neither catches an executed run that
     # silently ran against a DIFFERENT file than the one pinned (e.g. a stale
     # run_context.yaml override, or a hand-edited pre_registration.yaml that
-    # changed protocol_ref after signal_prescreen already ran once). tools/
-    # prescreen_signal.py's own prescreen_result.yaml records the executed
-    # protocol's identity under the (confusingly named, pre-existing, unrelated
-    # to K3) "protocol_version" field -- protocol.get("_version", protocol_path):
-    # no real protocol JSON in this repo carries a literal "_version" key. Two
-    # files (baseline_v2.json, ts_trend_daily_v1.json) DO carry a "protocol_version"
-    # key, but this is a PRE-EXISTING, hand-set label that predates K3 entirely
-    # (git history: commits 410512a/d9fc4e7, both before K3) -- a coincidental
-    # collision with K3's own §5 stamp FIELD NAME, not K3's own data: stamp_protocol.py
-    # always writes protocol_version PAIRED with protocol_content_hash, and neither
-    # of these two files carries that hash (audit finding, 2026-07-15, corrected
-    # from this comment's own earlier, wrong provenance claim). Either way -- hand
-    # label or K3 stamp -- neither is the underscored "_version" key
-    # prescreen_signal.py's own `.get("_version", ...)` looks for, so this field
-    # is, in practice, always the raw CLI protocol_path argument (an absolute or
-    # ROOT-relative path string) -- confirmed by reading tools/prescreen_signal.py
-    # and every protocols/*.json file, not assumed. Compared here by BARE FILENAME
-    # (matching A1's own bare-filename convention for run_context.yaml's "protocol"
-    # key), never by full path, since the two are constructed differently (CLI arg
-    # vs. ROOT-relative ref). Basename extraction goes through
-    # _path_basename_any_os, not Path(...).name (E037-11/CUL-186, fixed
-    # 2026-09-03): a path recorded on Windows ("protocols\\x.json", the real
-    # shape run_060 recorded) mis-parses as one long name on POSIX, producing a
-    # spurious violation the first time an artifact crosses machines.
+    # changed protocol_ref after protocol_execution already ran once).
+    # run_protocol.py's own protocol_result.yaml/protocol_summary.json records
+    # the executed protocol's identity under "protocol_file" -- the raw CLI
+    # protocol_path argument (an absolute or ROOT-relative path string),
+    # confirmed by reading tools/run_protocol.py directly. Compared here by
+    # BARE FILENAME (matching A1's own bare-filename convention for
+    # run_context.yaml's "protocol" key), never by full path, since the two
+    # are constructed differently (CLI arg vs. ROOT-relative ref). Basename
+    # extraction goes through _path_basename_any_os, not Path(...).name
+    # (E037-11/CUL-186, fixed 2026-09-03): a path recorded on Windows
+    # ("protocols\\x.json", the real shape run_060 recorded) mis-parses as
+    # one long name on POSIX, producing a spurious violation the first time
+    # an artifact crosses machines.
     protocol_ref = constraints.get("protocol_ref")
     if protocol_ref:
-        executed_identity = prescreen_result.get("protocol_version")
+        executed_identity = protocol_result.get("protocol_file")
         pinned_name = _path_basename_any_os(protocol_ref)
         if executed_identity:
             executed_name = _path_basename_any_os(executed_identity)
             if executed_name != pinned_name:
                 violations.append(
-                    f"prescreen executed protocol {executed_name!r} != pre-registered "
+                    f"protocol_execution ran protocol {executed_name!r} != pre-registered "
                     f"machine_constraints.protocol_ref bare filename {pinned_name!r} "
-                    f"(prescreen_result.protocol_version={executed_identity!r})"
+                    f"(protocol_result.protocol_file={executed_identity!r})"
                 )
 
         # Optional, stronger guarantee (§5): if the brief also pinned a content
         # hash, recompute it over the ACTUAL executed protocol_obj (already
-        # loaded by determine_post_prescreen_route's own call site) and compare.
-        # Duplicates _compute_protocol_content_hash's small formula rather than
-        # calling it directly -- that function takes a Path and re-reads the
-        # file from disk; protocol_obj here is already the parsed executed
+        # loaded by this function's own call site) and compare. Duplicates
+        # _compute_protocol_content_hash's small formula rather than calling
+        # it directly -- that function takes a Path and re-reads the file
+        # from disk; protocol_obj here is already the parsed executed
         # content, and this function's authorized write set is
-        # _check_prescreen_conformance only (K3 rider scope).
+        # _check_protocol_execution_conformance only (K3 rider scope).
         expected_hash = constraints.get("protocol_ref_content_hash")
         if expected_hash and protocol_obj:
             _stripped = {k: v for k, v in protocol_obj.items()
@@ -3418,7 +3318,7 @@ def _check_prescreen_conformance(prescreen_result: dict, constraints: dict, prot
             actual_hash = "sha256:" + hashlib.sha256(_canonical.encode("utf-8")).hexdigest()
             if actual_hash != expected_hash:
                 violations.append(
-                    f"prescreen executed protocol's content hash {actual_hash!r} != "
+                    f"protocol_execution's executed protocol content hash {actual_hash!r} != "
                     f"pre-registered machine_constraints.protocol_ref_content_hash "
                     f"{expected_hash!r} -- the executed file's CONTENT differs from "
                     f"what was pre-registered"
@@ -3621,7 +3521,15 @@ def _mark_trial_invalidated(run_id: str, reason: str):
     """F8b-pattern: flag a previously-recorded trial as invalidated_artifact — it
     contacted real data but tested the wrong thing (conformance violation), so it
     must be excluded from promotion/deflate-sharpe accounting like run_044's
-    bug-artifact precedent, not silently deleted."""
+    bug-artifact precedent, not silently deleted.
+
+    RESTORED 2026-09-12 (E-039 step 5): briefly deleted during the
+    signal_prescreen removal on the mistaken assumption its only caller was
+    the (now relocated) prescreen conformance gate -- run_campaign.py's own
+    `_apply_trial_accounting` (E-030 S2a quarantine handling) calls this
+    directly for `component_execution_error` halts, entirely independent of
+    prescreen. Caught by running the real test suite, not by re-reading the
+    diff."""
     state = load_campaign_state()
     marked = False
     for t in state.get("trial_sharpes", []):
@@ -4155,92 +4063,6 @@ def _compute_forecast_hash(config_path: Path) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
-_A_PRIORI_NO_CONFIG_ROUTES = frozenset({"insufficient_power_a_priori"})
-
-
-def _forecast_hash_for_prescreen(route: str, config_path: Path, run_id: str):
-    """forecast_hash for a prescreen trial row, tolerating the ONE route that
-    legitimately has no strategy config.
-
-    BUG FIXED 2026-08-27, found by run_060 -- the first real campaign launch in
-    39 days, which halted the whole campaign immediately after producing a
-    correct verdict.
-
-    `_compute_forecast_hash` fails loud on a missing config, and its docstring
-    justifies that: "by the time either trial-recording function calls this, the
-    same config file has already been read by the prescreen/backtest subprocess
-    this trial's result came from". **That premise is false for
-    `insufficient_power_a_priori`.** The A8.6 gate blocks at `validation`, which
-    is BEFORE `backtest_specification` runs, so no
-    candidate_strategy_config.json is ever written -- the gate's own
-    prescreen_result.yaml says `stage_blocked_at: validation` and "no component
-    built, no trial spent". The guard therefore treated a designed,
-    correctly-functioning path as a structural anomaly and raised
-    `unhandled_exception`, halting the campaign on a run that had just done its
-    job.
-
-    The fail-loud default is KEPT for every other route: a missing config on a
-    path that really did run a prescreen or backtest subprocess still raises,
-    because there it genuinely does mean the artifacts directory is broken. Only
-    the a-priori-power route -- where absence is guaranteed by construction, not
-    symptomatic -- returns None, and the row records that explicitly rather than
-    silently omitting the field.
-    """
-    if route in _A_PRIORI_NO_CONFIG_ROUTES and not config_path.exists():
-        print(f"   forecast_hash: null for {run_id} -- route '{route}' blocks at "
-              f"validation, before any strategy config is built (by design).")
-        return None
-    return _compute_forecast_hash(config_path)
-
-
-def _record_prescreen_trial(run_id: str, ps: dict, config_path: Path, *, upsert: bool = False):
-    """
-    A6.2: record a prescreen run as a trial in campaign_state.trial_sharpes.
-    Prescreen kills count as trials (statistic_valid='neither', sharpe=null, n_trades=0).
-    Prescreen passes that advance to backtest will have their full Sharpe recorded
-    after protocol_execution completes.
-
-    H2 fix (2026-08-16, issue #28 / E-025): the normal run_tool_worker call site
-    (:1069) passes upsert=True. On a re-entered signal_prescreen -- a crash-retry that
-    restarts run_loop with a stale pending_stage='signal_prescreen' -- the prior row
-    for this (trial_id, 'prescreen') slot is REPLACED with the fresh outcome instead of
-    being swallowed by a trial_id-only skip-guard that left the STALE first outcome in
-    the ledger. A run_id is one trial slot: a genuine new trial is a new run_NNN with
-    its own trial_id and records on its own key; a same-run_id re-prescreen is a retry
-    (idempotent same-config no-op) or a manual config edit -- neither is a new
-    independent trial, so upsert (not append) is correct and never widens N. Keys on
-    (trial_id, 'prescreen'), so it keeps one row and never trips Jeremy's read-side
-    check_no_duplicate_trial_ids. The a86 call sites (:4935/:4955) keep upsert=False
-    (default) -- their idempotency is H3 territory, a separate ticket.
-    """
-    state = load_campaign_state()
-    trials = state.setdefault("trial_sharpes", [])
-    route  = ps.get("route", "unknown")
-    trial_entry = {
-        "trial_id":        run_id,
-        "source":          "prescreen",
-        "route":           route,
-        "sharpe":          None,
-        "expectancy_bps":  None,
-        "n_trades":        0,
-        "statistic_valid": "neither",  # no backtest ran
-        "ic_pooled":       ps.get("ic_spearman_pooled"),
-        "cost_pass":       ps.get("cost_check", {}).get("pass"),
-        "forecast_hash":   _forecast_hash_for_prescreen(route, config_path, run_id),
-    }
-    if upsert:
-        for i, t in enumerate(trials):
-            if t.get("trial_id") == run_id and t.get("source") == "prescreen":
-                trials[i] = trial_entry
-                _save_campaign_state(state)
-                print(f"⚙️  A6.2/H2: prescreen trial for {run_id} updated in place "
-                      f"(route={route}, statistic_valid=neither)")
-                return
-    trials.append(trial_entry)
-    _save_campaign_state(state)
-    print(f"⚙️  A6.2: prescreen trial recorded in campaign_state.trial_sharpes "
-          f"(route={route}, statistic_valid=neither)")
-
 
 def _record_backtest_trial(run_id: str, summary: dict, config_path: Path):
     """
@@ -4662,422 +4484,6 @@ def _write_kb_findings_entry(path: Path, run_id: str, interp: dict):
     save_yaml(_KB_PATH, kb)
 
 
-# ---------------------------------------------------------------------------
-# A8.6: A-priori power pre-flight (inline of power_check.py logic)
-# ---------------------------------------------------------------------------
-
-def _load_rho_bar() -> float:
-    """Load measured ρ̄ from campaign_config.yaml. Falls back to 0.82 if unavailable."""
-    cfg_path = ROOT / "config" / "campaign_config.yaml"
-    try:
-        cfg = load_yaml(cfg_path) or {}
-        return float(cfg.get("symbol_correlation", {}).get("btc_eth_return_correlation_1h", 0.82))
-    except Exception:
-        return 0.82
-
-
-# ---------------------------------------------------------------------------
-# Soft patch (b) — P1a shakedown, 2026-07-04: LLM-vs-machine power discrepancy log.
-#
-# hypothesis_card.schema.json's power_parameters block only requires the INPUTS
-# (activation_rate, plausible_ic_upper, n_bars, n_symbols, is_market_wide) — it has no
-# fields for a derived n_eff/min_detectable_ic/verdict. In practice the LLM writes its
-# own self-computed conclusion anyway, free-form, usually embedded in prose
-# (a_priori_calculation / power_notes). Fixture: run_044 (2026-07-04) declared
-# is_market_wide=false (correctly — funding rate is per-symbol, not a shared index) but
-# then applied a rho-based discount anyway in its own prose
-# ("n_eff_symbols ≈ sqrt(2) / (1 + 0.82) ≈ 1.1") — contradicting its own flag AND using
-# a formula that isn't even n/(1+(n-1)*rho) (the real one). Its self-reported
-# n_eff≈100.4 came in materially lower than the machine's actual n_eff=182.5 at the same
-# inputs. This was never caught because the run crashed one stage earlier (YAML parse
-# error) before _run_a86_power_check ever ran on it. This log exists so a human can spot
-# this class of self-contradiction even when the run never reaches the point that would
-# have machine-verified it.
-# ---------------------------------------------------------------------------
-
-_POWER_DISCREPANCY_LOG_PATH = ROOT / "power_check_discrepancy_log.yaml"
-
-
-def _extract_llm_reported_power(card: dict) -> dict:
-    """
-    Best-effort extraction of the LLM's OWN self-computed power numbers from
-    hypothesis_card.yaml. Returns only whatever it can find — missing keys are absent,
-    not zero or None-filled, so callers can distinguish "not reported" from "reported
-    as zero."
-    """
-    params = card.get("power_parameters", {}) or {}
-    out = {}
-
-    if isinstance(params.get("n_symbols_effective"), (int, float)):
-        out["n_symbols_effective"] = float(params["n_symbols_effective"])
-
-    prose = " ".join(
-        str(params.get(k, "")) for k in ("a_priori_calculation", "power_notes", "power_note")
-    )
-
-    _NUM = r"(\d+\.\d+|\d+)"
-    m = re.search(r"expected_n_eff\s*=?\s*[^=]*?=\s*" + _NUM, prose)
-    if not m:
-        m = re.search(r"\bn_eff\s*[≈=]\s*" + _NUM, prose)
-    if m:
-        out["expected_n_eff"] = float(m.group(1))
-
-    m = re.search(r"min_detectable_ic\s*=?\s*[^=]*?[≈=]\s*" + _NUM, prose)
-    if m:
-        out["min_detectable_ic"] = float(m.group(1))
-
-    for key in ("verdict", "power_verdict"):
-        if key in params and isinstance(params[key], str):
-            out["power_verdict"] = params[key]
-            break
-
-    return out
-
-
-def _log_power_check_discrepancy(run_id: str, hyp_id: str, machine: dict, llm_reported: dict,
-                                  discrepancies: list):
-    """Append one entry to the running discrepancy log. Never raises — this is an
-    observability aid, not a gate; a logging bug must not block the pipeline."""
-    try:
-        existing = load_yaml(_POWER_DISCREPANCY_LOG_PATH) if _POWER_DISCREPANCY_LOG_PATH.exists() else None
-        log = existing or {"entries": []}
-        log.setdefault("entries", []).append({
-            "run_id": run_id,
-            "hypothesis_id": hyp_id,
-            "logged_at": datetime.now(timezone.utc).isoformat(),
-            "machine_computed": machine,
-            "llm_reported": llm_reported,
-            "discrepancies": discrepancies,
-        })
-        save_yaml(_POWER_DISCREPANCY_LOG_PATH, log)
-        print(f"⚠️  A8.6 discrepancy log: {len(discrepancies)} field(s) diverged for "
-              f"{hyp_id} ({run_id}) — see {_POWER_DISCREPANCY_LOG_PATH.name}")
-    except Exception as e:
-        print(f"⚠️  Could not write power_check_discrepancy_log.yaml: {e}")
-
-
-def _compare_llm_vs_machine_power(run_id: str, hyp_id: str, machine: dict, card: dict,
-                                   rel_tol: float = 0.20):
-    """Compare the machine-computed A8.6 result against whatever the LLM self-reported.
-    Logs (does not gate) any field that diverges by more than rel_tol (relative) or any
-    outright contradiction (is_market_wide=false but a correlation discount applied)."""
-    llm_reported = _extract_llm_reported_power(card)
-    if not llm_reported:
-        return  # LLM reported nothing derived — nothing to compare
-
-    discrepancies = []
-
-    params = card.get("power_parameters", {}) or {}
-    is_market_wide = bool(params.get("is_market_wide", False))
-    if not is_market_wide and llm_reported.get("n_symbols_effective") not in (None,) \
-            and abs(llm_reported["n_symbols_effective"] - float(params.get("n_symbols", 2))) > 1e-6:
-        discrepancies.append(
-            f"is_market_wide=false but n_symbols_effective={llm_reported['n_symbols_effective']} "
-            f"!= n_symbols={params.get('n_symbols', 2)} — a correlation discount was applied "
-            f"despite the signal being declared per-symbol, not a shared index. Per "
-            f"_run_a86_power_check, no discount should apply here."
-        )
-
-    for field in ("expected_n_eff", "min_detectable_ic"):
-        llm_val = llm_reported.get(field)
-        machine_val = machine.get(field)
-        if llm_val is None or machine_val is None:
-            continue
-        denom = max(abs(machine_val), 1e-9)
-        if abs(llm_val - machine_val) / denom > rel_tol:
-            discrepancies.append(
-                f"{field}: LLM self-reported {llm_val} vs machine-computed {machine_val} "
-                f"(>{rel_tol:.0%} relative difference)"
-            )
-
-    if llm_reported.get("power_verdict") and machine.get("verdict"):
-        llm_says_adequate = "adequate" in llm_reported["power_verdict"].lower() or \
-            "sufficient" in llm_reported["power_verdict"].lower()
-        machine_says_adequate = machine["verdict"] == "power_adequate"
-        if llm_says_adequate != machine_says_adequate:
-            discrepancies.append(
-                f"power_verdict: LLM said '{llm_reported['power_verdict']}' "
-                f"(adequate={llm_says_adequate}) vs machine verdict='{machine['verdict']}' "
-                f"(adequate={machine_says_adequate})"
-            )
-
-    if discrepancies:
-        _log_power_check_discrepancy(run_id, hyp_id, machine, llm_reported, discrepancies)
-
-
-# 2026-08-27: the table is gone. A8.6's block_size is BARS PER DAY, which is
-# arithmetic on the timeframe, not a fact to be remembered -- see
-# tools/timeframe.py for the full history. The previous
-# `{"1h": 24, "1d": 1}` + silent `.get(tf, 24)` fallback gave every other
-# timeframe the 1h value: for 4h that made n_eff 4x too small and killed
-# run_060 with an artifact verdict. The 2026-07-07 fix had already hit this
-# once for 1d and repaired it by ADDING a table entry, which guaranteed the
-# recurrence. Deriving it means a timeframe nobody has tried yet is correct on
-# first use, and all three former mirrors now share one implementation.
-def _a86_block_size(timeframe) -> int:
-    """A8.6 autocorrelation block size = bars per day, DERIVED.
-
-    Imported from tools/timeframe.py so this, tools/power_check.py and
-    tools/prescreen_signal.py cannot drift apart -- previously they were held
-    in sync only by comments saying "both must be updated together", which is a
-    convention, not a mechanism, and they had already drifted."""
-    _tools = str(Path(__file__).parent.parent / "tools")
-    if _tools not in sys.path:
-        sys.path.insert(0, _tools)
-    from timeframe import bars_per_day
-    return bars_per_day(timeframe)
-
-
-def _run_a86_power_check(artifacts: Path) -> dict:
-    """
-    A8.6: compute expected statistical power from hypothesis_card.yaml power_parameters.
-    Returns result dict with 'verdict' key: power_adequate | insufficient_power_a_priori | skip.
-    Mirrors power_check.py logic identically — both must be updated together.
-
-    Correlation correction (A8.6 amendment): n_eff_symbols = n / (1 + (n-1)*rho_bar).
-    sqrt(n) heuristic is NOT used; it materially overstates power for correlated symbols.
-    """
-    import math as _math
-    card_path = artifacts / "hypothesis_card.yaml"
-    if not card_path.exists():
-        return {"verdict": "skip", "reason": "hypothesis_card.yaml not found"}
-
-    card = load_yaml(card_path) or {}
-    params = card.get("power_parameters", {})
-    if not params:
-        return {"verdict": "skip", "reason": "no power_parameters block"}
-
-    activation_rate = params.get("activation_rate")
-    plausible_ic_upper = params.get("plausible_ic_upper")
-    if activation_rate is None or plausible_ic_upper is None:
-        return {"verdict": "skip", "reason": "power_parameters incomplete (activation_rate or plausible_ic_upper is null)"}
-
-    n_bars = params.get("n_bars", 17520)
-    n_symbols = params.get("n_symbols", 2)
-    is_market_wide = params.get("is_market_wide", False)
-    # 2026-07-07: block_size must match the run's actual timeframe — this was
-    # hardcoded to 24 (1h bars/day) with no dispatch at all, silently treating
-    # a daily-bar hypothesis's power_parameters.n_bars as if they were hourly
-    # (n_eff off by a full 24x). Read timeframe from research_brief.yaml (the
-    # standard schema field every run already carries); default "1h" preserves
-    # every prior run's exact behavior when the field is absent.
-    brief_path = artifacts / "research_brief.yaml"
-    timeframe = (load_yaml(brief_path) or {}).get("timeframe", "1h") if brief_path.exists() else "1h"
-    block_size = _a86_block_size(timeframe)
-
-    if is_market_wide:
-        rho = _load_rho_bar()
-        n_sym_eff = n_symbols / (1.0 + (n_symbols - 1) * rho)
-    else:
-        rho = 0.0
-        n_sym_eff = float(n_symbols)
-
-    active_n = activation_rate * n_bars * n_sym_eff
-    n_eff = active_n / block_size
-    mde = 1.0 / _math.sqrt(max(n_eff - 3.0, 1.0))
-
-    verdict = "insufficient_power_a_priori" if mde > plausible_ic_upper else "power_adequate"
-    result = {
-        "verdict": verdict,
-        "expected_active_n": round(active_n, 1),
-        "expected_n_eff": round(n_eff, 2),
-        "min_detectable_ic": round(mde, 4),
-        "plausible_ic_upper": plausible_ic_upper,
-        "n_eff_symbols": round(n_sym_eff, 3),
-        "rho_bar": round(rho, 4) if is_market_wide else None,
-        "is_market_wide": is_market_wide,
-        "data_requirement": params.get("data_requirement") if verdict == "insufficient_power_a_priori" else None,
-    }
-
-    # Soft patch (b): log (never gate on) any LLM-vs-machine power discrepancy.
-    _compare_llm_vs_machine_power(
-        run_id=artifacts.parent.name, hyp_id=card.get("hypothesis_id", "unknown"),
-        machine=result, card=card,
-    )
-
-    return result
-
-
-def _create_protocol_result_from_prescreen(path: Path, ps: dict):
-    """
-    When a prescreen kills (route=kill_* or refine_*), create a minimal
-    protocol_result.yaml from prescreen evidence so verdict_interpreter
-    can run its standard artifact-based flow.
-
-    The stub carries IC and estimated cost_drag as the primary diagnostics.
-    The verdict_interpreter skill reads prescreen_result.yaml (injected as
-    optional input) for full prescreen context.
-    """
-    pr_path = path / "artifacts" / "protocol_result.yaml"
-    if pr_path.exists():
-        return  # don't overwrite an existing real result
-
-    ic_pooled   = ps.get("ic_spearman_pooled")
-    cost_pass   = ps.get("cost_check", {}).get("pass", False)
-    ratio       = ps.get("cost_check", {}).get("edge_to_cost_ratio")
-    route       = ps.get("route", "unknown")
-
-    # Estimate cost_drag_pct from edge_to_cost_ratio:
-    # if ratio = 0.5, edge covers 50% of cost → cost_drag ≈ 200% (cost > gross edge).
-    # If ratio = 0, edge = 0 → cost_drag is undefined; use sentinel 999%.
-    if ratio is not None and ratio > 0:
-        estimated_cost_drag = round(100.0 / ratio, 1)
-    elif ratio is not None and ratio == 0:
-        estimated_cost_drag = 999.0
-    else:
-        estimated_cost_drag = None
-
-    stub = {
-        "source":           "prescreen_stub",
-        "prescreen_route":  route,
-        "hypothesis_verdict": {
-            "verdict": "kill" if route.startswith("kill_") else "refine",
-            "criteria_results": [],
-            "verdict_reason": f"Prescreen gate: {ps.get('route_rationale', '')}",
-            "diagnostics": {
-                "median_forecast_return_corr":    ic_pooled,
-                "median_cost_drag_pct":           estimated_cost_drag,
-                "median_gross_pnl":               None,
-                "median_avg_trade_duration_bars": None,
-                "uninformative_regimes":          [],
-                "win_rate_vs_sharpe":             "N/A (prescreen kill — no backtest)",
-                "below_floor_pct":                100.0,  # no trades
-                "per_trade_expectancy_bps":       None,
-                "zero_trade_slot_pct":            100.0,
-            },
-        },
-        "per_symbol_summary": {},
-        "results":           [],
-        "prescreen_kill_reason": ps.get("prescreen_kill_reason"),
-    }
-    save_yaml(pr_path, stub)
-    print(f"⚙️  Created protocol_result.yaml stub from prescreen evidence "
-          f"(route={route}, IC={ic_pooled})")
-
-
-def determine_post_prescreen_route(path: Path) -> str:
-    """
-    Route after signal_prescreen based on prescreen_result.yaml.
-
-    A8.1: proceed_to_backtest requires both ic_significance AND cost_check.pass.
-    Kill/refine routes skip the full backtest and go directly to verdict_interpreter
-    (with a stub protocol_result.yaml created from prescreen evidence).
-    """
-    ps_path = path / "artifacts" / "prescreen_result.yaml"
-    if not ps_path.exists():
-        print("⚠️  prescreen_result.yaml missing — skipping prescreen gate, continuing to backtest.")
-        return "protocol_execution"
-
-    ps    = load_yaml(ps_path)
-
-    # F4d (2026-07-05, run_047): pre-registration conformance gate. A prescreen
-    # that silently used the wrong protocol range or dropped a MANDATORY
-    # significance methodology tested something other than what was
-    # pre-registered — that is an engineering failure, not a scientific result,
-    # regardless of what route the tool itself computed. Must never reach
-    # verdict_interpreter (no KB write, no verdict) — same principle as F5c's
-    # no_signal_artifact.
-    constraints = _load_machine_constraints(path)
-    if constraints:
-        protocol_obj = {}
-        protocol_path_str = ps.get("protocol_version")
-        if protocol_path_str:
-            candidate = Path(protocol_path_str)
-            if not candidate.is_absolute():
-                candidate = ROOT / candidate
-            if candidate.exists():
-                with open(candidate, encoding="utf-8") as f:
-                    protocol_obj = json.load(f)
-        violations = _check_prescreen_conformance(ps, constraints, protocol_obj)
-        if violations:
-            print("\n🛑 [F4d] PRE-REGISTRATION CONFORMANCE VIOLATION — this prescreen did "
-                  "NOT test what was pre-registered:")
-            for v in violations:
-                print(f"   - {v}")
-            run_id = path.name
-            _mark_trial_invalidated(run_id, "; ".join(violations))
-            update_state(path=path, status="paused_for_human",
-                         flags={"conformance_violation": True},
-                         conformance_violations=violations)
-            return "human_pause"
-
-    route = ps.get("route", "proceed_to_backtest")
-
-    if route == "proceed_to_backtest":
-        print(f"✅ Prescreen PASSED — advancing to protocol_execution.")
-        return "protocol_execution"
-
-    # F5c (2026-07-04): no_signal_artifact is an engineering failure (component never
-    # emitted, or errored on every bar), NOT a scientific result. It must never reach
-    # verdict_interpreter or get a KB write — that would treat a bug as a research
-    # finding (see run_044, 2026-07-04, killed on this basis before F5 existed).
-    # Pause for a human to fix the component/config; no trial is spent, no
-    # findings_carryover is produced, no proposed_brief pivots the hypothesis away.
-    if route == "no_signal_artifact":
-        print(f"\n⏸️  ENGINEERING PAUSE (F5c): prescreen route=no_signal_artifact. "
-              f"{ps.get('route_rationale', '')}")
-        print(f"   component_error_count={ps.get('component_error_count', 0)} — "
-              f"see component_error_sample in {ps_path.name}.")
-        print("   This is NOT a kill/refine/pivot verdict. Fix the underlying component "
-              "or config, then re-run signal_prescreen fresh (do not resume into "
-              "verdict_interpreter — there is nothing for it to interpret).")
-        update_state(path=path, status="paused_for_human",
-                     flags={"no_signal_artifact_flagged": True})
-        return "human_pause"
-
-    # All other routes (kill_* or refine_*) skip the full backtest
-    print(f"🔬 Prescreen gate triggered: {route}. "
-          f"Creating stub protocol_result and routing to verdict_interpreter.")
-    _create_protocol_result_from_prescreen(path, ps)
-    return "verdict_interpreter"
-
-
-def _inject_prescreen_context_into_verdict_handoff(handoff_path: Path, ps: dict):
-    """
-    When a prescreen kill routes directly to verdict_interpreter (no backtest ran),
-    inject prescreen_result.yaml as a required input and add a constraint note
-    so the skill knows to interpret prescreen evidence instead of backtest evidence.
-    """
-    if not handoff_path.exists():
-        return
-
-    handoff = load_yaml(handoff_path) or {}
-
-    # Add prescreen_result as required input (backtest was skipped)
-    req = handoff.setdefault("required_inputs", [])
-    paths_present = {x.get("path") for x in req}
-    if "artifacts/prescreen_result.yaml" not in paths_present:
-        req.append({
-            "path":   "artifacts/prescreen_result.yaml",
-            "reason": "Prescreen killed this run — protocol_result.yaml is a stub. "
-                      "Use prescreen_result.yaml as the primary evidence source.",
-        })
-
-    # Note for the skill
-    constraints = handoff.setdefault("constraints", [])
-    ps_note = (
-        f"PRESCREEN KILL: This run was terminated by signal_prescreen "
-        f"(route={ps.get('route')}, IC={ps.get('ic_spearman_pooled')}, "
-        f"cost_pass={ps.get('cost_check', {}).get('pass')}). "
-        f"protocol_result.yaml is a prescreen stub, NOT a full backtest result. "
-        f"Base your verdict on prescreen_result.yaml evidence. "
-        f"Apply the appropriate Diagnostic Rule from the prescreen route: "
-        f"kill_no_ic → Rule 2 (weak signal); refine_inverted_ic → Rule 3 (signal inversion); "
-        f"refine_cost_hurdle → Rule 1 (cost drag, raise threshold_filter); "
-        f"kill_cost_hurdle → Rule 1 (cost drag, structural — kill); "
-        f"insufficient_power_a_priori → A8.6 power gate: no IC computed, disposition=parked, "
-        f"do_not_add_to_failed_families=true, verdict_label=insufficient_power_a_priori."
-    )
-    if ps_note not in constraints:
-        constraints.append(ps_note)
-
-    handoff["prescreen_route"] = ps.get("route")
-    handoff["prescreen_ic"]    = ps.get("ic_spearman_pooled")
-    save_yaml(handoff_path, handoff)
-    print(f"✅ Prescreen context injected into verdict_interpreter handoff "
-          f"(route={ps.get('route')})")
-
-
 def _auto_generate_findings_carryover(path: Path, interp: dict, lineage_routing: str = None):
     """
     Constructs findings_carryover.yaml from verdict_interpretation.yaml when the LLM
@@ -5163,10 +4569,19 @@ def _auto_generate_findings_carryover(path: Path, interp: dict, lineage_routing:
     print("⚙️ Auto-generated findings_carryover.yaml from verdict artifacts.")
 
 
-def _verify_verdict_outputs(run_dir: Path) -> list:
+def _verify_verdict_outputs(run_dir: Path, mechanical_lineage_routing: str | None = None) -> list:
     """
     Check that verdict_interpreter produced the right artifacts for its declared status.
-    Always reads verdict_interpretation.yaml fresh — never uses caller-modified status.
+    Always reads verdict_interpretation.yaml fresh — never uses caller-modified status,
+    EXCEPT for `mechanical_lineage_routing` (E-018, 2026-09-13): when a run's
+    pass_rule_evaluation.yaml is binding, the ACTUAL route is that file's
+    lineage_routing, not whatever verdict_interpreter itself restated (the two
+    can now genuinely disagree -- see _resolve_verdict_fields). Checking the
+    artifact's own, possibly-disagreeing field here would verify the WRONG
+    shape (e.g. checking for pivot's required files when the real route is
+    refine), so callers pass the mechanically-resolved value explicitly in
+    that case. None (the default) preserves the original discipline exactly:
+    derive from the artifact itself, for every run without a binding pass rule.
     Returns a list of violation strings. Empty list = all checks pass.
     """
     violations = []
@@ -5179,7 +4594,7 @@ def _verify_verdict_outputs(run_dir: Path) -> list:
     # the artifact's own lineage_routing field, falling back to the legacy
     # status field for a not-yet-migrated artifact.
     legacy_status = (interp.get("status") or interp.get("protocol_verdict") or "").strip().lower()
-    status = interp.get("lineage_routing")
+    status = mechanical_lineage_routing or interp.get("lineage_routing")
     if not status:
         mapped = _LEGACY_STATUS_TO_VERDICT_ROUTING.get(legacy_status)
         status = mapped[1] if mapped else legacy_status
@@ -5887,25 +5302,64 @@ _LEGACY_STATUS_TO_VERDICT_ROUTING = {
     "escalate": ("kill", "escalate"),
 }
 
+# E-018 (2026-09-13): inverse of the map above, keyed by the (hypothesis_verdict,
+# lineage_routing) pair -- every pair in _LEGACY_STATUS_TO_VERDICT_ROUTING is
+# distinct, so this is a clean one-to-one lookup. Used to translate a BINDING
+# pass_rule_evaluation.yaml's mechanical (hv, lr) pair into the legacy single-enum
+# "status" the circuit breaker itself operates on, so the breaker's family-history
+# governance applies consistently whether the pair came from the mechanical
+# evaluator or (pre-K2) the stage's own restated status.
+_VERDICT_ROUTING_TO_LEGACY_STATUS = {v: k for k, v in _LEGACY_STATUS_TO_VERDICT_ROUTING.items()}
 
-def _resolve_verdict_fields(interp: dict, original_status: str, breaker_status: str) -> tuple:
+
+def _resolve_verdict_fields(interp: dict, original_status: str, breaker_status: str,
+                             pre_eval: dict | None = None) -> tuple:
     """
     A8 (K2 kernel): resolves the (hypothesis_verdict, lineage_routing) pair a
     caller should route on, for one verdict_interpretation.yaml.
 
-    Prefers the artifact's OWN hypothesis_verdict/lineage_routing fields (the
-    new A8 schema) when present. Falls back to deriving both from the legacy
-    single-enum `status` field for a not-yet-migrated (pre-K2) artifact.
+    E-018 (2026-09-13): when `pre_eval` (pass_rule_evaluation.yaml) carries a
+    BINDING verdict (result PASS/FAIL, not a `discretion: stage` branch), its
+    own hypothesis_verdict/lineage_routing are used DIRECTLY as the route --
+    routing no longer depends on the stage's own restated copy being correct.
+    This is what makes it safe to also give verdict_interpreter the near-miss
+    scoreboard as an input: for any run with a registered, binding pass rule,
+    the stage no longer holds the pen on the actual promote/kill decision, only
+    on the qualitative fields (root_cause, findings_carryover, proposed_brief).
+    `_check_pass_rule_evaluation_conformance` (below) still compares the
+    stage's own restated pair against this one, but only to LOG a mismatch as
+    an LLM-comprehension signal -- it no longer blocks routing (see caller).
+
+    Falls back to the artifact's OWN hypothesis_verdict/lineage_routing fields
+    (the A8 schema) when `pre_eval` is absent or not binding, and further falls
+    back to deriving both from the legacy single-enum `status` field for a
+    not-yet-migrated (pre-K2) artifact -- both fallback paths unchanged from
+    before this function took `pre_eval`.
 
     `original_status` / `breaker_status` are the status string BEFORE and
-    AFTER _apply_circuit_breaker ran (callers already compute both). If the
-    breaker fired (they differ), its forced value overrides `lineage_routing`
-    ONLY -- the breaker's job is "route differently" (e.g. force pivot after
-    repeated same-dimension refines), never "re-decide whether the mechanism
-    itself is dead". An artifact-declared `hypothesis_verdict` survives a
-    breaker override; only `lineage_routing` is replaced.
+    AFTER _apply_circuit_breaker ran (callers already compute both, deriving
+    them from `pre_eval` when binding -- see determine_post_verdict_route). If
+    the breaker fired (they differ), its forced value overrides
+    `lineage_routing` ONLY -- the breaker's job is "route differently" (e.g.
+    force pivot after repeated same-dimension refines), never "re-decide
+    whether the mechanism itself is dead". A declared `hypothesis_verdict`
+    (mechanical or artifact-own) survives a breaker override; only
+    `lineage_routing` is replaced.
     """
     breaker_fired = breaker_status != original_status
+
+    if pre_eval and pre_eval.get("result") in ("PASS", "FAIL") and pre_eval.get("discretion") != "stage":
+        mech_hv = pre_eval.get("hypothesis_verdict")
+        mech_lr = pre_eval.get("lineage_routing")
+        if mech_hv is not None or mech_lr is not None:
+            if breaker_fired:
+                mapped = _LEGACY_STATUS_TO_VERDICT_ROUTING.get(breaker_status)
+                if mapped is None:
+                    raise ValueError(f"Unknown circuit-breaker-forced status: '{breaker_status}'")
+                mapped_hv, mapped_lr = mapped
+                return (mech_hv or mapped_hv), mapped_lr
+            return mech_hv, mech_lr
+
     hv = interp.get("hypothesis_verdict")
     lr = interp.get("lineage_routing")
 
@@ -6032,13 +5486,28 @@ def determine_post_verdict_route(path: Path, run_id: str):
     status = (interp.get("status") or interp.get("protocol_verdict") or "").strip().lower()
     campaign = load_campaign_state()
 
+    # E-018 (2026-09-13): when pass_rule_evaluation.yaml carries a BINDING verdict,
+    # its mechanical (hypothesis_verdict, lineage_routing) pair -- not the stage's
+    # own restated `status` -- is what actually drives routing (see
+    # _resolve_verdict_fields). The circuit breaker's family-history governance
+    # must see that SAME mechanical status as its input, not the LLM's copy, so
+    # translate it here via the inverse map before the breaker runs.
+    pre_eval_path = path / "artifacts" / "pass_rule_evaluation.yaml"
+    pre_eval = load_yaml(pre_eval_path) if pre_eval_path.exists() else {}
+    pre_eval_binding = bool(pre_eval) and pre_eval.get("result") in ("PASS", "FAIL") \
+        and pre_eval.get("discretion") != "stage"
+    if pre_eval_binding:
+        _mech_pair = (pre_eval.get("hypothesis_verdict"), pre_eval.get("lineage_routing"))
+        _mech_status = _VERDICT_ROUTING_TO_LEGACY_STATUS.get(_mech_pair)
+        if _mech_status is not None:
+            status = _mech_status
+
     # F6 (2026-07-04): an engineering-failure diagnosis can NEVER be overridden into a
     # scientific verdict by the circuit breaker (or by anything else). Checked before
-    # any breaker logic runs, using the LLM's own root_cause — not prescreen's
-    # no_signal_artifact (F5c intercepts that earlier, at signal_prescreen, before
-    # verdict_interpreter ever runs). This covers the case where verdict_interpreter
-    # itself independently reaches an engineering diagnosis (e.g. after a full
-    # backtest, not just a prescreen kill).
+    # any breaker logic runs, using the LLM's own root_cause -- covers the case
+    # where verdict_interpreter itself reaches an engineering diagnosis after a
+    # full backtest (the signal_prescreen stage this once also guarded against
+    # is removed, E-039 step 5).
     root_cause = interp.get("root_cause") or {}
     if root_cause.get("mechanism_failure") == "component_execution_error":
         print("\n⚠️  F6: root_cause.mechanism_failure = component_execution_error — "
@@ -6099,22 +5568,43 @@ def determine_post_verdict_route(path: Path, run_id: str):
               "fee_reduction_assessment.registered_as.")
     # --- end mechanism_failure routing ---
 
-    # A8 (K2 kernel): resolve the two-field pair (preferring the artifact's own
+    # A8 (K2 kernel): resolve the two-field pair (preferring a BINDING
+    # pass_rule_evaluation.yaml's mechanical pair, then the artifact's own
     # hypothesis_verdict/lineage_routing; legacy-status fallback + circuit-breaker
     # interaction documented in _resolve_verdict_fields).
-    hypothesis_verdict, lineage_routing = _resolve_verdict_fields(interp, original_status, status)
+    hypothesis_verdict, lineage_routing = _resolve_verdict_fields(
+        interp, original_status, status, pre_eval=pre_eval if pre_eval_binding else None
+    )
 
-    # C7: the stage's own verdict must not silently disagree with a BINDING
-    # machine-authored pass_rule_evaluation.yaml verdict.
-    _prc_violations = _check_pass_rule_evaluation_conformance(path, hypothesis_verdict, lineage_routing)
+    # E-018 (2026-09-13): C7 downgraded from BLOCKING to INFORMATIONAL, and now
+    # compares the STAGE'S OWN restated hypothesis_verdict/lineage_routing
+    # (interp's own fields) against pass_rule_evaluation.yaml -- NOT the
+    # already-resolved `hypothesis_verdict`/`lineage_routing` above, which when
+    # pre_eval was binding now simply ARE the mechanical pair (comparing them
+    # to themselves would find nothing). Called UNCONDITIONALLY, even when the
+    # stage declared no hypothesis_verdict at all (`_own_hv is None`) --
+    # _check_pass_rule_evaluation_conformance's own early-returns already
+    # handle "pre_eval not binding" safely, and a binding pre_eval can only
+    # arise from a K2-era (2026-07-13+) pre_registration.yaml, which is
+    # exactly the era where verdict_interpreter's SKILL.md instructs the LLM
+    # to declare these fields via B4 copy-through -- so an unexpected `None`
+    # here on a binding run is itself the most useful signal this check can
+    # produce (the LLM ignored the copy-through instruction entirely), not a
+    # case to silently skip. A mismatch can no longer mean "routing might be
+    # wrong" (routing already used the mechanical pair directly) -- it only
+    # means the stage's own restated copy was wrong or absent, an
+    # LLM-comprehension signal worth recording, not a reason to halt the
+    # pipeline.
+    _own_hv, _own_lr = interp.get("hypothesis_verdict"), interp.get("lineage_routing")
+    _prc_violations = _check_pass_rule_evaluation_conformance(path, _own_hv, _own_lr)
     if _prc_violations:
-        print("\n🛑 [C7] STAGE OUTPUT DISAGREES WITH pass_rule_evaluation.yaml:")
+        print("\n⚠️  [C7] Stage's own restated verdict disagreed with the binding "
+              "pass_rule_evaluation.yaml (informational only -- routing already used "
+              "the mechanical verdict directly):")
         for v in _prc_violations:
             print(f"   - {v}")
-        update_state(path=path, status="paused_for_human",
-                     flags={"pass_rule_evaluation_disagreement": True},
+        update_state(path=path, flags={"pass_rule_evaluation_disagreement": True},
                      pass_rule_evaluation_violations=_prc_violations)
-        return "human_pause"
 
     # Short-circuit ordering UNCHANGED from pre-K2 behavior: promote and a
     # terminal kill (lineage_routing == "terminate") bypass carryover
@@ -6129,8 +5619,13 @@ def determine_post_verdict_route(path: Path, run_id: str):
     # A5.1-5.3: update campaign KB with this run's verdict
     _write_kb_findings_entry(path, run_id, interp)
 
-    # Verify verdict outputs before scaffolding the next run (not applied to terminal routes)
-    violations = _verify_verdict_outputs(path)
+    # Verify verdict outputs before scaffolding the next run (not applied to terminal routes).
+    # E-018: pass the MECHANICALLY-resolved lineage_routing when pre_eval was
+    # binding, so this checks the artifacts the actual route requires rather
+    # than whatever the stage's own (possibly-disagreeing) restatement says.
+    violations = _verify_verdict_outputs(
+        path, mechanical_lineage_routing=lineage_routing if pre_eval_binding else None
+    )
     if violations:
         print(f"\n⚠️ VERDICT VERIFICATION FAILED ({len(violations)} issue(s)):")
         for v in violations:
@@ -6209,6 +5704,18 @@ def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
         status = interp.get("status", "refine").strip().lower()
         campaign = load_campaign_state()
 
+        # E-018 (2026-09-13): same binding-pre_eval status override as
+        # determine_post_verdict_route (R1 -- one shared rule, not a divergent copy).
+        pre_eval_path = path / "artifacts" / "pass_rule_evaluation.yaml"
+        pre_eval = load_yaml(pre_eval_path) if pre_eval_path.exists() else {}
+        pre_eval_binding = bool(pre_eval) and pre_eval.get("result") in ("PASS", "FAIL") \
+            and pre_eval.get("discretion") != "stage"
+        if pre_eval_binding:
+            _mech_pair = (pre_eval.get("hypothesis_verdict"), pre_eval.get("lineage_routing"))
+            _mech_status = _VERDICT_ROUTING_TO_LEGACY_STATUS.get(_mech_pair)
+            if _mech_status is not None:
+                status = _mech_status
+
         # F6 (2026-07-04): same engineering-failure immunity as determine_post_verdict_route.
         root_cause = interp.get("root_cause") or {}
         if root_cause.get("mechanism_failure") == "component_execution_error":
@@ -6235,19 +5742,26 @@ def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
         # here and in the appended design-note section, not silently merged.
         original_status = status
         status = _apply_circuit_breaker(status, interp, campaign)
-        hypothesis_verdict, lineage_routing = _resolve_verdict_fields(interp, original_status, status)
+        hypothesis_verdict, lineage_routing = _resolve_verdict_fields(
+            interp, original_status, status, pre_eval=pre_eval if pre_eval_binding else None
+        )
 
-        # C7: same disagreement check as determine_post_verdict_route (R1 --
-        # one shared conformance rule, not a divergent second copy).
-        _prc_violations = _check_pass_rule_evaluation_conformance(path, hypothesis_verdict, lineage_routing)
+        # C7: same informational (non-blocking) disagreement check as
+        # determine_post_verdict_route (R1 -- one shared conformance rule, not a
+        # divergent second copy) -- compares the STAGE'S OWN restated pair,
+        # not the already-resolved one, called unconditionally. See E-018
+        # (2026-09-13) note there for why an unexpected `None` hv/lr is itself
+        # a signal worth checking, not a case to skip.
+        _own_hv, _own_lr = interp.get("hypothesis_verdict"), interp.get("lineage_routing")
+        _prc_violations = _check_pass_rule_evaluation_conformance(path, _own_hv, _own_lr)
         if _prc_violations:
-            print("\n🛑 [C7] STAGE OUTPUT DISAGREES WITH pass_rule_evaluation.yaml:")
+            print("\n⚠️  [C7] Stage's own restated verdict disagreed with the binding "
+                  "pass_rule_evaluation.yaml (informational only -- routing already used "
+                  "the mechanical verdict directly):")
             for v in _prc_violations:
                 print(f"   - {v}")
-            update_state(path=path, status="paused_for_human",
-                         flags={"pass_rule_evaluation_disagreement": True},
+            update_state(path=path, flags={"pass_rule_evaluation_disagreement": True},
                          pass_rule_evaluation_violations=_prc_violations)
-            return "human_pause"
 
         return _dispatch_verdict_route(path, run_id, interp, campaign, hypothesis_verdict, lineage_routing)
 
@@ -6307,8 +5821,12 @@ def determine_post_spec_route(path: Path):
     decision = load_yaml(path / "artifacts" / "decision.yaml")
     status = decision.get("status", "").strip().lower()
     if status == "spec_ready":
-        # Improvement 08+09: route via signal_prescreen before full backtest
-        return "signal_prescreen"
+        # E-039 step 5 (2026-09-12): signal_prescreen removed -- "always
+        # backtest" (E-039's own premise). A spec-ready hypothesis now goes
+        # straight to protocol_execution; the E-054 data-availability gate
+        # (routed to separately, when enabled) still runs first if that flag
+        # is on -- see the backtest_specification branch in run_loop.
+        return "protocol_execution"
     if status == "component_gap":
         update_state(path=path, status="paused_for_human")
         print("\n⏸️ COMPONENT GAP: hypothesis needs an engine piece that does not exist. "
@@ -6476,44 +5994,6 @@ def run_loop(run_id: str):
                     except Exception:
                         pass  # invalid YAML — re-run the agent
 
-            # A8.6: a-priori power pre-flight — runs before the prescreen tool is invoked.
-            # Also handles the validation-gate bypass case (prescreen_result.yaml already written).
-            if current_stage == "signal_prescreen" and not _skip_agent:
-                _ps_existing = ARTIFACTS / "prescreen_result.yaml"
-                if _ps_existing.exists():
-                    _ps_data = load_yaml(_ps_existing) or {}
-                    if _ps_data.get("route") == "insufficient_power_a_priori":
-                        print("⏭️  A8.6: prescreen_result.yaml already written (validation-gate bypass) — skipping prescreen tool.")
-                        _skip_agent = True
-                        # A6.2: run_tool_worker is skipped in this path; record trial here (idempotent guard)
-                        _cs_check = load_campaign_state()
-                        if not any(t.get("trial_id") == run_id and t.get("source") == "prescreen"
-                                   for t in _cs_check.get("trial_sharpes", [])):
-                            _record_prescreen_trial(run_id, _ps_data, ARTIFACTS / "candidate_strategy_config.json")
-                if not _skip_agent:
-                    _a86 = _run_a86_power_check(ARTIFACTS)
-                    if _a86["verdict"] == "insufficient_power_a_priori":
-                        print(f"\n⚡ A8.6: Insufficient a-priori power — skipping prescreen tool.")
-                        print(f"   min_detectable_ic={_a86['min_detectable_ic']:.4f} > "
-                              f"plausible_ic_upper={_a86['plausible_ic_upper']}")
-                        print(f"   expected_n_eff={_a86['expected_n_eff']:.1f} "
-                              f"(active_n={_a86['expected_active_n']:.0f}, "
-                              f"n_eff_symbols={_a86.get('n_eff_symbols','n/a')}, rho={_a86.get('rho_bar')})")
-                        print(f"   Data requirement: {_a86.get('data_requirement')}")
-                        _a86_ps_data = {
-                            "run_id": run_id,
-                            "route": "insufficient_power_a_priori",
-                            "a86_power_check": _a86,
-                            "note": "A8.6 pre-flight: power insufficient before any prescreen IC computed.",
-                        }
-                        save_yaml(ARTIFACTS / "prescreen_result.yaml", _a86_ps_data)
-                        _skip_agent = True
-                        # A6.2: run_tool_worker is skipped in this path; record trial here (idempotent guard)
-                        _cs_check = load_campaign_state()
-                        if not any(t.get("trial_id") == run_id and t.get("source") == "prescreen"
-                                   for t in _cs_check.get("trial_sharpes", [])):
-                            _record_prescreen_trial(run_id, _a86_ps_data, ARTIFACTS / "candidate_strategy_config.json")
-
             if current_stage == "verdict_interpreter":
                 _vi_path = RUN_DIR / "artifacts" / "verdict_interpretation.yaml"
                 if _vi_path.exists():
@@ -6541,6 +6021,15 @@ def run_loop(run_id: str):
                             )
                     _vi_handoff = RUN_DIR / "handoffs" / "protocol_to_verdict_interpreter.yaml"
                     _inject_regime_context_into_handoff(_vi_handoff, _regime_rpt, _regime_aud, run_id)
+
+                    # E-039 step 3 (2026-09-11): surface the real post-backtest
+                    # route as context, never a gate -- see the function's own
+                    # docstring. No-ops when protocol_result.yaml is absent
+                    # (a prescreen-kill run that never reached a real backtest).
+                    _protocol_result_path = RUN_DIR / "artifacts" / "protocol_result.yaml"
+                    _protocol_result = (load_yaml(_protocol_result_path)
+                                        if _protocol_result_path.exists() else None)
+                    _inject_post_backtest_route_into_handoff(_vi_handoff, _protocol_result, run_id)
 
             # Invoke the Agent (F4b: one bounded YAML-repair retry on failure)
             expected_outputs = [RUN_DIR / "artifacts" / x for x in handoff_data.get("deliverables", [])]
@@ -6573,6 +6062,13 @@ def run_loop(run_id: str):
             
             if current_stage == "validation":
                 next_stage = determine_post_validation_route(RUN_DIR) # Used to trigger state of refinement until (Artifact State is validated OR max refinement reached OR rejected)
+                # E-039 S4: a "refine" verdict can now itself resolve to
+                # "human_pause" (determine_post_refinement_route, folded in
+                # above) -- same break-and-stop as every other human-in-the-
+                # loop pause below, since "refinement_planner" no longer
+                # exists as its own stage to catch this.
+                if next_stage == "human_pause":
+                    break # Break the while loop to stop the script cleanly
 
             elif current_stage == "innovation_expansion":
                 # E-032 S2c: anti-adjacency gate + retry/escalate policy, off by
@@ -6583,20 +6079,9 @@ def run_loop(run_id: str):
                 if next_stage == "human_pause":
                     break # Break the while loop to stop the script cleanly, same as every other human-in-the-loop stop below
 
-            elif current_stage == "refinement_planner":
-                # Increment the refinement counter
-                current_count = state.get("counters", {}).get("refinements_used", 0)
-                update_state(path=RUN_DIR, counters={"refinements_used": current_count + 1})
-
-                # Ask the new function where to go next
-                next_stage = determine_post_refinement_route(RUN_DIR) #Checks if refinement requires a human pause or loops back to innovation.
-
-                if next_stage == "human_pause":
-                    break # Break the while loop to stop the script cleanly
-
             elif current_stage == "backtest_specification":
                 next_stage = determine_post_spec_route(RUN_DIR)
-                if next_stage in ("signal_prescreen", "protocol_execution"):
+                if next_stage == "protocol_execution":
                     # E-034 S2: record which expanded_variants menu entry was
                     # chosen (and persist the discards), off by default (see
                     # _record_variant_selection's own docstring). Runs only on
@@ -6643,14 +6128,14 @@ def run_loop(run_id: str):
                         update_state(path=RUN_DIR, status="failed_validation")
                         next_stage = "failed_validation"
                     else:
-                        print("✅ config schema-valid; advancing to signal_prescreen")
-                        # Create handoff files for prescreen + remaining pipeline stages
+                        print("✅ config schema-valid; advancing to protocol_execution")
+                        # Create handoff files for the remaining pipeline stages
                         _create_remaining_handoffs(run_id, RUN_DIR)
                         # E-054 Layer 2 (off by default -- see _E054_GATE_ENABLED):
                         # route through the data-availability gate FIRST. OFF
                         # leaves next_stage exactly what determine_post_spec_route
-                        # returned above (signal_prescreen/protocol_execution),
-                        # byte-identical to every pre-E-054 run.
+                        # returned above (protocol_execution), byte-identical to
+                        # every pre-E-054 run.
                         if _E054_GATE_ENABLED:
                             next_stage = "data_availability_gate"
                 elif next_stage == "human_pause":
@@ -6663,8 +6148,8 @@ def run_loop(run_id: str):
                 gate = load_yaml(ARTIFACTS / "data_availability_gate.yaml") or {}
                 gate_outcome = gate.get("outcome", "decline")
                 if gate_outcome == "validate":
-                    print("✅ E-054 Layer 2: VALIDATE — advancing to signal_prescreen.")
-                    next_stage = "signal_prescreen"
+                    print("✅ E-054 Layer 2: VALIDATE — advancing to protocol_execution.")
+                    next_stage = "protocol_execution"
                 elif gate_outcome == "refine":
                     # Mirrors this orchestrator's own documented HITL design
                     # ("Path C: Data Block" in the module docstring) -- a
@@ -6683,33 +6168,43 @@ def run_loop(run_id: str):
                     break
                 else:  # decline
                     print(f"🛑 E-054 Layer 2: DECLINE — required data does not exist. "
-                          f"Rejecting hypothesis without spending prescreen/protocol_execution.")
+                          f"Rejecting hypothesis without spending a real backtest.")
                     for reason in gate.get("reasons", [])[:10]:
                         print(f"   - {reason}")
                     next_stage = "completed_rejected"
 
-            elif current_stage == "signal_prescreen":
-                # Improvement 08+09: route based on prescreen_result.yaml
-                next_stage = determine_post_prescreen_route(RUN_DIR)
-                if next_stage == "verdict_interpreter":
-                    # Prescreen kill — inject prescreen context into verdict handoff
-                    ps = load_yaml(ARTIFACTS / "prescreen_result.yaml") or {}
-                    _vi_handoff = RUN_DIR / "handoffs" / "protocol_to_verdict_interpreter.yaml"
-                    _inject_prescreen_context_into_verdict_handoff(_vi_handoff, ps)
-                    # Also inject regime context if available (Improvement 02)
-                    _regime_rpt = _ensure_regime_detector_report(run_id, RUN_DIR)
-                    _regime_aud_path = RUN_DIR / "artifacts" / "regime_audit_decision.yaml"
-                    _regime_aud = load_yaml(_regime_aud_path) if _regime_aud_path.exists() else None
-                    if _regime_aud:
-                        _fw_violations = _validate_retune_firewall(_regime_aud)
-                        if _fw_violations:
-                            raise RuntimeError(
-                                "RETUNE FIREWALL VIOLATION — regime_audit_decision.yaml "
-                                "references forbidden strategy metrics:\n"
-                                + "\n".join(f"  - {v}" for v in _fw_violations)
-                            )
-                    if _regime_rpt:
-                        _inject_regime_context_into_handoff(_vi_handoff, _regime_rpt, _regime_aud, run_id)
+            elif current_stage == "protocol_execution":
+                # E-039 step 5 (2026-09-12): pre-registration conformance gate,
+                # relocated from the removed signal_prescreen stage's own
+                # F4d check (see _check_protocol_execution_conformance's
+                # docstring for why this risk doesn't disappear along with
+                # prescreen). default_next ("verdict_interpreter") is left
+                # untouched on conformance -- this branch only ever PAUSES on
+                # a real violation, never advances early.
+                _pr_path = ARTIFACTS / "protocol_result.yaml"
+                _constraints = _load_machine_constraints(RUN_DIR)
+                if _constraints and _pr_path.exists():
+                    _pr = load_yaml(_pr_path) or {}
+                    _protocol_obj = {}
+                    _protocol_path_str = _pr.get("protocol_file")
+                    if _protocol_path_str:
+                        _candidate = Path(_protocol_path_str)
+                        if not _candidate.is_absolute():
+                            _candidate = ROOT / _candidate
+                        if _candidate.exists():
+                            with open(_candidate, encoding="utf-8") as f:
+                                _protocol_obj = json.load(f)
+                    _violations = _check_protocol_execution_conformance(_pr, _constraints, _protocol_obj)
+                    if _violations:
+                        print("\n🛑 [F4d] PRE-REGISTRATION CONFORMANCE VIOLATION — protocol_execution did "
+                              "NOT test what was pre-registered:")
+                        for v in _violations:
+                            print(f"   - {v}")
+                        _mark_trial_invalidated(run_id, "; ".join(_violations))
+                        update_state(path=RUN_DIR, status="paused_for_human",
+                                     flags={"conformance_violation": True},
+                                     conformance_violations=_violations)
+                        next_stage = "human_pause"
 
             elif current_stage == "verdict_interpreter":
                 _interp = load_yaml(ARTIFACTS / "verdict_interpretation.yaml")

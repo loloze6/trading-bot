@@ -32,7 +32,7 @@ For each entry in `per_symbol_per_timeframe`, note `confidence` (high / medium /
 Regardless of detector confidence, check whether pooled ungated evidence already establishes `signal_bad_everywhere`:
 
 Read `protocol_result.yaml` (if present) and evaluate ALL of the following:
-- `hypothesis_verdict.diagnostics.median_forecast_return_corr` < 0.03 (near-zero IC across all bars, no regime partition)
+- median of `results[*].core.forecast_return_corr_all_bars` across windows < 0.03 (near-zero IC across all bars, no regime partition). NOT `diagnostics.median_forecast_return_corr` — that field is the GATED, active-bars-only IC (2026-09-12 correction: it was being misread here as the all-bars figure).
 - `hypothesis_verdict.diagnostics.median_cost_drag_pct` > 150% OR per_trade_expectancy_bps mean ≤ 0 (no gross edge before costs)
 - The negative verdict holds even without any regime attribution
 
@@ -92,9 +92,9 @@ When the conditions above are met, the preferred first detector candidate is a *
 
 Any future detector, whatever the family, MUST pass `validate_regime_detector.py` (including A2.2 class-conditional sensitivity) and this regime-auditor stage before its labels may condition any metric. The 02 machinery does not need to be rebuilt per detector — it is already detector-agnostic.
 
-### prescreen_result.ic_by_regime is suspended
+### Per-regime IC is suspended
 
-Until a trustworthy detector (confidence: high, confirmed by regime-auditor) is in place, `prescreen_result.ic_by_regime` MUST NOT be used or cited. Use only ungated IC from the diagnostics block.
+Until a trustworthy detector (confidence: high, confirmed by regime-auditor) is in place, no per-regime-conditioned IC breakdown may be used or cited. Use only `forecast_return_corr_all_bars` (ungated, see below).
 
 ### IC measurement scope for A2.1 ungated escape — CRITICAL
 
@@ -102,9 +102,7 @@ The A2.1 ungated-escape criterion requires IC computed over **all bars with no r
 
 `median_forecast_return_corr` from the diagnostics block reflects IC **on gated bars only** (bars where the strategy actually traded, which occur only inside the active regime). For a strategy gated to TRENDING (~1% of bars), IC=0.2145 on those 1% bars does NOT imply all-bars IC is high — in fact, a signal that only fires on 1% of bars necessarily has near-zero all-bars IC by construction.
 
-**Rule**: before deciding `ungated_escape_eligible`, verify the IC's measurement scope:
-- If IC was measured on all bars (ungated protocol run): admissible.
-- If IC was measured on gated bars only (standard gated protocol): NOT admissible for or against the escape. Mark `ungated_escape_eligible: indeterminate` and state in `ungated_escape_rationale` that an ungated protocol run is required to resolve it.
+**Rule**: use `results[*].core.forecast_return_corr_all_bars` (median across windows) for this criterion — computed automatically on every run since 2026-09-12, no separate ungated protocol run needed any more. If it is absent (an older archived run, pre-dating this field), mark `ungated_escape_eligible: indeterminate` and state in `ungated_escape_rationale` that the run predates all-bars IC measurement.
 
 ---
 

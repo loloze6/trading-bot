@@ -42,11 +42,21 @@ from collections import defaultdict
 import sys
 import os
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-if _HERE not in sys.path:
-    sys.path.insert(0, _HERE)
+_HERE = os.path.dirname(os.path.abspath(__file__))               # strategy-research/tools/
+_REPO = os.path.dirname(os.path.dirname(_HERE))                    # repo root
+_TBOT = os.path.join(_REPO, "trading-bot")                         # trading-bot/
+for _p in (_HERE, _TBOT):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
-import prescreen_signal  # noqa: E402  (reuse _spearman / _block_adjusted_significance)
+# Repointed 2026-09-12 (E-039 step 5): sourced from
+# trading-bot/performance/signal_statistics.py, not prescreen_signal.py
+# (being removed) -- same functions, verbatim ports, lockstep-tested there.
+from performance.signal_statistics import (  # noqa: E402
+    spearman_correlation as _spearman,
+    contiguous_segments as _contiguous_segments,
+    pooled_block_adjusted_significance as _block_adjusted_significance,
+)
 
 # F4d (2026-07-05): single source of truth for "did this prescreen actually go
 # through the A8.5.1a dispatcher" — used by the orchestrator's pre-registration
@@ -117,7 +127,7 @@ def identify_episodes(records: list, gap_bars: int = _DEFAULT_GAP_BARS, era_of=N
     if expected_step is not None:
         seg_of = [0] * len(records)
         for sid, (s, e) in enumerate(
-                prescreen_signal._contiguous_segments(records, expected_step)):
+                _contiguous_segments(records, expected_step)):
             for i in range(s, e):
                 seg_of[i] = sid
 
@@ -156,7 +166,7 @@ def _pooled_ic(records: list, indices: list):
         return None
     fs = [records[i]["forecast"] for i in indices]
     rs = [records[i]["next_return_bps"] for i in indices]
-    return prescreen_signal._spearman(fs, rs)
+    return _spearman(fs, rs)
 
 
 # ---------------------------------------------------------------------------
@@ -267,7 +277,7 @@ def compute_a851a_significance(
     if density_pct >= density_fallback_pct:
         ic_active = _pooled_ic(records, active_idx_all)
         ic_values_for_sig = [ic_active] if ic_active is not None else []
-        sig = prescreen_signal._block_adjusted_significance(ic_values_for_sig, n_active, block_size)
+        sig = _block_adjusted_significance(ic_values_for_sig, n_active, block_size)
         return {
             "method": f"block_{block_size}_dense_fallback",
             "pooled_ic": sig["pooled_ic"],

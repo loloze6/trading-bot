@@ -1,19 +1,30 @@
 ---
 name: quant-validation
-description: Acts as devil's advocate for a trading hypothesis by defining falsification criteria, identifying bias risks, listing failure modes, and deciding whether the idea should proceed.
+description: Acts as devil's advocate for a trading hypothesis by defining falsification criteria, identifying bias risks, listing failure modes, and deciding whether the idea should proceed -- and, when it decides refine, produces the refinement plan itself in the same pass.
 ---
 
 # Quant Validation
 
 ## Mission
-Pressure-test the hypothesis before implementation.
+Pressure-test the hypothesis before implementation. If your own verdict is
+`refine`, also turn your own blocking_issues into a concrete refinement plan
+in this same response — **E-039 S4 (2026-09-12): `refinement_planner` retired
+as a separate pipeline stage** that used to receive your decision as a
+second, later LLM call and do only this. Nothing else changes about that
+job; it now happens here instead of one stage later.
 
 ## Required inputs
 - `expanded_hypothesis_card.yaml`
+- `innovation_notes.yaml` (only needed if your verdict is `refine` — context for the plan)
+- `pre_registration.yaml` (if present — carries the pre-registered `sample_split_design.holdout_range`, A6.1; see below)
+- `DATA_AVAILABILITY.md` (`strategy-research/docs/DATA_AVAILABILITY.md` — read only if a
+  refine blocker is about data/timeframe availability; short by design to fit this skill's
+  minimal-context rule)
 
 ## Required outputs
 - `validation_protocol.yaml`
 - `validation_decision.yaml`
+- `refinement_notes.yaml` — **only when `validation_decision.yaml.status == "refine"`; omit entirely otherwise.**
 
 ## Output requirements
 `validation_protocol.yaml` must include:
@@ -34,6 +45,24 @@ Pressure-test the hypothesis before implementation.
 - blocking_issues
 - conditions (list of strings, only when status is conditional_approve)
 
+`refinement_notes.yaml` (only when `status == "refine"`) must include:
+- hypothesis_id
+- stage
+- blocker_responses — one entry per `blocking_issues` item above, each with:
+  - issue
+  - action
+  - status
+- decision — must include `implementation_allowed` (bool). Set `false` only
+  when a blocker requires a physical data audit before anything can proceed
+  (routes the run to a human pause instead of looping back to
+  `innovation_expansion`).
+
+Keep this plan scoped to refinement, not redesign: address every
+`blocking_issues` entry explicitly, distinguish data-audit tasks from
+strategy changes, and pre-commit any threshold/execution assumption your own
+`validation_decision.yaml` flagged. Do not write code and do not silently
+skip an unresolved blocker.
+
 YAML formatting rule — applies to ALL string values in both artifacts:
 - Any string value containing a colon (:) MUST use block scalar syntax (| or >) or be
   quoted with single or double quotes.
@@ -46,29 +75,34 @@ YAML formatting rule — applies to ALL string values in both artifacts:
 - Define null expectation.
 - List at least 5 failure modes.
 - Identify leakage, look-ahead, and overfitting risks.
-- Define sample split logic — **including holdout range declaration (A6.1, see below)**.
+- Define sample split logic (walk-forward windows) — **the holdout range itself is pre-registered before this stage runs (A6.1, see below); do not re-derive it.**
 - Return approve, conditional_approve, refine, or reject. Use conditional_approve when the hypothesis is sound but one specific, resolvable condition must be honored in the config — include a conditions list in the output.
+- If your own status is `refine`, also produce `refinement_notes.yaml` in this same response (see the output-requirements section above) — do not stop at `validation_decision.yaml` and wait for a later stage; there isn't one.
 - Check whether the idea can be tested through a minimal change to the existing bot architecture.
 - **Complete the `cost_feasibility` block** (Improvement 09 Layer 1 — see section below).
 
-## IMPROVEMENT 06 — Holdout Range Declaration (required in every validation_protocol.yaml)
+## IMPROVEMENT 06 — Walk-forward design (holdout range is pre-registered, not this stage's job)
 
-Before finalizing `validation_protocol.yaml`, read `../../config/campaign_data_policy.yaml`
-and record the campaign holdout range in `sample_split_design`. The holdout is single-use and
-must be declared at validation time — not discovered at promotion.
+**E-039 S4 (2026-09-12): the holdout range itself is now declared once, at brief
+registration** (`pre_registration.yaml`'s own `sample_split_design.holdout_range`/
+`holdout_note`, written before this stage ever runs) — not re-derived here. Read
+it from `pre_registration.yaml` if you need to cite it (e.g. to confirm your
+planned walk-forward windows don't encroach on it); do not read
+`campaign_data_policy.yaml` directly or restate the value as your own output.
+
+This stage's own job is the walk-forward DESIGN around that frozen boundary —
+how the pre-backtest windows are laid out:
 
 ```yaml
 sample_split_design:
   walk_forward_range: "<from walk_forward_extension in campaign_data_policy.yaml>"
-  holdout_range: "<from holdout_range in campaign_data_policy.yaml — FROZEN, do not use in any backtest>"
-  holdout_note: "Single-use per A6.1. Evaluated only at holdout_evaluation stage after deflated Sharpe gate passes."
   windows: <integer — number of walk-forward windows planned>
   window_size_bars: <integer>
   step_size_bars: <integer>
 ```
 
-**Hard rule:** `validation_protocol.yaml.sample_split_design` must contain `holdout_range`.
-Any protocol that omits this field is missing a required output and will fail the deliverable check.
+**Hard rule:** none of the planned windows may overlap `pre_registration.yaml`'s
+pre-registered `holdout_range` — that boundary is frozen, not yours to move.
 
 ## Permitted decision criteria
 decision_rules in validation_protocol.yaml MUST use only these measurable criteria.
@@ -151,6 +185,7 @@ Note: `config/cost_model.yaml` is the single source of truth for cost numbers. D
 - Do not emit decision criteria using metrics outside the Permitted list above.
 - **Do not approve or conditionally approve when `cost_feasibility.plausibility = implausible`.**
 - Do not hardcode fee or spread numbers — always read from `config/cost_model.yaml`.
+- On a `refine` verdict: do not redesign the strategy in `refinement_notes.yaml` — plan the fix, don't build it. Do not skip an unresolved `blocking_issues` entry. Do not approve the hypothesis in the same breath as producing a refinement plan — they are mutually exclusive outcomes.
 
 ## Embedded stance
 Assume the hypothesis is wrong until enough evidence is specified.

@@ -608,11 +608,30 @@ class BacktestEngine:
                 "gaps_detected": len(bot.gap_events),
                 "events": bot.gap_events,
             }
+        # E-039 step 5 follow-up (2026-09-12): surface F5b's own component-error
+        # counters (AdvancedStrategy.component_error_count/component_error_samples,
+        # 2026-07-04 -- a swallowed exception during a component's update() is
+        # counted and sampled at the source, distinct from a component that is
+        # merely not ready yet) into metrics.json. These counters have always been
+        # computed on every backtest; the only code that ever read them was
+        # prescreen_signal.py's own F5c check (removed with the rest of that stage,
+        # E-039 step 5 Phase 3) -- nothing on the backtest side surfaced them since.
+        # Not a new detector: the engine already distinguishes "never ready" from
+        # "component threw" at the source (StrategyOutput.regime in
+        # strategy_base.py::generate_signals); this only wires an existing count
+        # through to the artifact so it isn't silently discarded again.
+        component_errors_metrics = None
+        if self.strategy is not None:
+            component_errors_metrics = {
+                "count":   self.strategy.component_error_count,
+                "samples": self.strategy.component_error_samples,
+            }
         write_metrics_json(
             run_dir, core_metrics, per_regime, forecast_bins, dynamic, regime_validity,
             bar_equity=bar_equity_metrics,
             risk_controls=risk_controls_metrics,
             data_quality=data_quality_metrics,
+            component_errors=component_errors_metrics,
         )
 
         # Write bars CSV and forecast distribution

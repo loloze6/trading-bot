@@ -2,10 +2,17 @@
 CUL-262 (E-039 parity): build_core's new, additive block-adjusted significance
 must (a) leave every pre-existing field byte-identical when the new
 `candle_interval_seconds` argument isn't supplied, and (b) agree with
-prescreen's own `_block_adjusted_significance`/`_gap_aware_block_count`
-(`strategy-research/tools/prescreen_signal.py`) on the same underlying series
--- proving the port is algorithmically faithful, not just "a number that
-sounds plausible."
+`performance.signal_statistics`'s own `block_adjusted_pvalue`/
+`gap_aware_active_block_count` -- the same functions build_core itself calls
+-- on the same underlying series, proving the wiring passes through the exact
+population build_core measured `corr` on, not just "a number that sounds
+plausible."
+
+(Originally a lockstep comparison against prescreen_signal.py's own
+`_block_adjusted_significance`/`_gap_aware_block_count`, which
+`signal_statistics.py`'s pair are a verbatim port of; repointed 2026-09-12,
+E-039 step 5, once prescreen_signal.py was removed -- build_core has never
+called prescreen_signal.py, only the test's comparison target changed.)
 """
 import sys
 from pathlib import Path
@@ -16,12 +23,8 @@ TRADING_BOT_ROOT = Path(__file__).parent.parent
 if str(TRADING_BOT_ROOT) not in sys.path:
     sys.path.insert(0, str(TRADING_BOT_ROOT))
 
-TOOLS_PATH = TRADING_BOT_ROOT.parent / "strategy-research" / "tools"
-if str(TOOLS_PATH) not in sys.path:
-    sys.path.insert(0, str(TOOLS_PATH))
-
 from reporting.run_artifact import build_core
-import prescreen_signal as ps
+from performance.signal_statistics import gap_aware_active_block_count, block_adjusted_pvalue
 
 
 def _bars(forecasts, closes, freq="h", start="2020-01-01"):
@@ -58,12 +61,12 @@ def test_default_call_signature_byte_identical_to_before():
 
 
 def test_block_adjusted_pvalue_matches_prescreen_no_gaps():
-    """No-gap case: build_core's new field must equal what prescreen's own
-    _block_adjusted_significance/_gap_aware_block_count compute on the exact
-    same active/timestamp shape."""
+    """No-gap case: build_core's new field must equal what
+    block_adjusted_pvalue/gap_aware_active_block_count compute standalone on
+    the exact same active/timestamp shape build_core itself derives."""
     forecasts, closes = _varying_series(n=80)
     bars = _bars(forecasts, closes, freq="h")
-    candle_interval_seconds = 3600  # 1h -> block_size 24, same as prescreen's _BLOCK_SIZE_1H
+    candle_interval_seconds = 3600  # 1h -> block_size 24
 
     core = build_core({}, [], bars, candle_interval_seconds=candle_interval_seconds)
     corr = core["forecast_return_corr"]
@@ -75,7 +78,6 @@ def test_block_adjusted_pvalue_matches_prescreen_no_gaps():
     df["forward_return"] = df["close"].shift(-1) / df["close"] - 1
     df = df.dropna()
     df = df[df["forecast"] != 0]
-    n_active = len(df)
 
     block_size = 24
     # Match build_core's own population: the last row's forward_return is
@@ -86,24 +88,24 @@ def test_block_adjusted_pvalue_matches_prescreen_no_gaps():
         for f, ts in zip(bars["forecast"].iloc[:-1], bars["timestamp"].iloc[:-1])
     ]
     expected_step = pd.Timedelta(seconds=candle_interval_seconds)
-    placeable = ps._gap_aware_block_count(records, block_size, expected_step)
+    placeable = gap_aware_active_block_count(records, block_size, expected_step)
 
-    prescreen_result = ps._block_adjusted_significance(
-        [corr], n_active, block_size=block_size, placeable_blocks=placeable
+    expected_p, expected_n_eff = block_adjusted_pvalue(
+        corr, len(df), block_size=block_size, placeable_blocks=placeable
     )
 
-    assert core["forecast_return_corr_n_eff"] == prescreen_result["n_eff"]
-    assert core["forecast_return_corr_pvalue_block_adjusted"] == prescreen_result["p_value"], (
-        f"build_core's ported p-value {core['forecast_return_corr_pvalue_block_adjusted']} "
-        f"must match prescreen's own {prescreen_result['p_value']} on identical input"
+    assert core["forecast_return_corr_n_eff"] == expected_n_eff
+    assert core["forecast_return_corr_pvalue_block_adjusted"] == expected_p, (
+        f"build_core's p-value {core['forecast_return_corr_pvalue_block_adjusted']} "
+        f"must match a standalone block_adjusted_pvalue call {expected_p} on identical input"
     )
 
 
 def test_block_adjusted_pvalue_gap_aware_with_a_real_gap():
     """With a real data gap inserted, the gap-aware n_eff must be STRICTLY
-    LOWER than the naive (gap-ignorant) count would give, and must still
-    match prescreen's own gap-aware count exactly -- proving the port carries
-    the #50(B) gap-awareness fix, not just the pre-gap arithmetic."""
+    LOWER than the naive (gap-ignorant) count would give -- proving
+    gap_aware_active_block_count carries the #50(B) gap-awareness fix, not
+    just the pre-gap arithmetic."""
     n = 100
     forecasts = [((-1) ** i) * (5 + i % 5) for i in range(n)]
     closes = [100 + sum(forecasts[:i + 1]) * 0.01 for i in range(n)]
@@ -132,8 +134,8 @@ def test_block_adjusted_pvalue_gap_aware_with_a_real_gap():
         for f, t in zip(bars["forecast"].iloc[:-1], bars["timestamp"].iloc[:-1])
     ]
     expected_step = pd.Timedelta(seconds=candle_interval_seconds)
-    gap_aware_count   = ps._gap_aware_block_count(records, block_size, expected_step)
-    naive_count       = ps._gap_aware_block_count(records, block_size, None)
+    gap_aware_count   = gap_aware_active_block_count(records, block_size, expected_step)
+    naive_count       = gap_aware_active_block_count(records, block_size, None)
 
     assert gap_aware_count < naive_count, (
         "a real 40h gap must reduce the placeable block count relative to "

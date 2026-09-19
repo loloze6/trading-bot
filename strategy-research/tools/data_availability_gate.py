@@ -71,6 +71,7 @@ import contextlib
 import datetime
 import json
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Optional
@@ -109,6 +110,35 @@ _TIMEFRAME_SECONDS = {
     "1h": 3600, "2h": 7200, "4h": 14400, "6h": 21600, "8h": 28800,
     "12h": 43200, "1d": 86400, "3d": 259200, "1w": 604800, "1M": 2592000,
 }
+_TIMEFRAME_UNIT_SECONDS = {"m": 60, "h": 3600, "d": 86400, "w": 604800}
+_TIMEFRAME_PATTERN = re.compile(r"^(\d+)(m|h|d|w)$")
+
+
+def _timeframe_to_seconds(timeframe: str) -> Optional[int]:
+    """
+    Parse ANY '<N><unit>' timeframe string to seconds, not just the fixed set
+    of standard/ccxt-native tokens in `_TIMEFRAME_SECONDS`. Bug found
+    2026-09-11 (Jeremy's spot-check, 'Binance BTC 7m'): the aggregation
+    fallback added earlier this session was correct in principle (420s
+    divides evenly into 1m's 60s, so a 7m request should be reachable by
+    aggregating 1m data) but never got a chance to evaluate it, because
+    looking `timeframe` up in the fixed dict returned None for any string
+    that isn't one of the ~15 enumerated tokens -- silently treating "not a
+    named venue timeframe" as "not a real interval at all". CandleBuilder's
+    real aggregation mechanism has no such restriction: DataManager just
+    buckets rows into `interval_seconds`-sized windows (see its
+    fetch_interval_seconds docstring) -- the number never has to correspond
+    to a venue-native/"standard" token. '1M' (calendar month) is
+    deliberately excluded from the regex fallback -- months have variable
+    length in seconds, so it is ONLY ever resolved via the fixed table.
+    """
+    if timeframe in _TIMEFRAME_SECONDS:
+        return _TIMEFRAME_SECONDS[timeframe]
+    match = _TIMEFRAME_PATTERN.match(timeframe)
+    if not match:
+        return None
+    n, unit = match.groups()
+    return int(n) * _TIMEFRAME_UNIT_SECONDS[unit]
 
 # Feed name -> "how it's checked". 'reserved' feeds decline unconditionally
 # here (E-054 scope: a policy gate, not a data-availability fact -- see
@@ -143,6 +173,25 @@ def load_layer1(path: Optional[str] = None) -> dict:
         return yaml.safe_load(f) or {}
 
 
+def _finer_interval_covers(requested_seconds: Optional[int], available_seconds: set) -> bool:
+    """
+    True if some interval strictly finer than `requested_seconds` is in
+    `available_seconds` and divides it evenly -- i.e. the requested (coarser)
+    timeframe is reachable by aggregating an already-available finer one
+    (CandleBuilder/DataManager's real, wired mechanism: CUL-250's
+    `fetch_interval_seconds` opt-in fetches at the finer resolution and
+    aggregates up during replay). This is a CAPABILITY question only (could
+    it possibly work) -- whether the opt-in is actually set for a given run,
+    and whether the finer data is actually present, is Layer 2's real check.
+    """
+    if not requested_seconds:
+        return False
+    return any(
+        s < requested_seconds and requested_seconds % s == 0
+        for s in available_seconds
+    )
+
+
 def layer1_price_precheck(layer1: dict, exchange: str, symbol: str, timeframe: str,
                            window_start: datetime.datetime, window_end: datetime.datetime,
                            now: Optional[datetime.datetime] = None) -> tuple[bool, str]:
@@ -153,6 +202,23 @@ def layer1_price_precheck(layer1: dict, exchange: str, symbol: str, timeframe: s
     defaultType="spot" regardless of protocol/venue framing (confirmed by
     reading ccxt_fetcher.py and venue_data_capability.yaml's own binance.spot
     entry) -- this is not a parameter this check needs to accept.
+
+    A venue can offer the SAME data through more than one MECHANISM with
+    different limits (venue_data_capability.yaml's own header names this
+    explicitly -- Kraken spot's live_rest_api vs. downloadable_archive is
+    its own worked example). Fixed 2026-09-11 (Jeremy's review: Layer 1 was
+    only ever consulting live_rest_api and hard-declining a window the
+    moment THAT ONE mechanism couldn't reach it, even though the YAML had
+    already documented a second mechanism -- the Kraken bulk-archive
+    ingestion already performed for the 19-pair universe, local_data/
+    kraken_*.csv, some of which reach back to 2013 -- that could. This check
+    now asks "does ANY declared mechanism cover this timeframe" before
+    declining, plus a venue-agnostic aggregation fallback (see
+    `_finer_interval_covers`) for a coarser timeframe derivable from an
+    already-available finer one. Whether the data is ACTUALLY there right
+    now (vs. just structurally reachable) is still Layer 2's question,
+    never this file's -- local_data/*.csv coverage is mutable, environment-
+    dependent state, not a durable capability fact this audit should encode.
 
     Returns (ok, reason). ok=False means "decline this window without
     touching real data" -- a structural impossibility Layer 2 doesn't need
@@ -168,37 +234,97 @@ def layer1_price_precheck(layer1: dict, exchange: str, symbol: str, timeframe: s
         )
 
     timeframes = venue_block.get("timeframes") or {}
+    interval_seconds = _timeframe_to_seconds(timeframe)
 
     if exchange == "kraken":
-        live_rest = timeframes.get("live_rest_api") or {}
-        interval_minutes = _TIMEFRAME_SECONDS.get(timeframe, 0) // 60
-        available_minutes = live_rest.get("intervals_minutes") or []
-        if interval_minutes not in available_minutes:
+        symbols_block = venue_block.get("symbols") or {}
+
+        # Fix 2026-09-11 (Jeremy's catch: 'SHIBUSD 2010-01-15' passed
+        # unconditionally): the archive-mechanism rescue above has no
+        # per-symbol or per-date bound of its own -- these two checks are
+        # both venue-wide facts (never "what we've fetched"), independent of
+        # which mechanism/timeframe is being evaluated, so they run first.
+        confirmed_universe = set(symbols_block.get("confirmed_universe") or [])
+        if confirmed_universe and symbol not in confirmed_universe:
             return False, (
-                f"timeframe={timeframe!r} not in kraken spot's live_rest_api "
-                f"intervals_minutes={available_minutes} (Layer 1 audit)."
+                f"{symbol!r} is not in kraken spot's Layer 1 confirmed_universe "
+                f"({sorted(confirmed_universe)}) -- unconfirmed symbols decline "
+                f"by default (silence never resolves to available), same policy "
+                f"as binance.spot's earliest_ohlcv_utc gate."
             )
-        if (live_rest.get("history_depth") or "") == "capped_720_most_recent_candles":
-            now = now or datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
-            interval_seconds = _TIMEFRAME_SECONDS.get(timeframe)
-            if interval_seconds:
-                cutoff = now - datetime.timedelta(seconds=720 * interval_seconds)
-                if window_start < cutoff:
-                    return False, (
-                        f"window start {window_start} is older than Kraken spot's "
-                        f"live REST 720-candle cap at {timeframe} resolution "
-                        f"(cutoff ~{cutoff}) -- structurally unreachable via this "
-                        f"codebase's live fetch path (Layer 1 audit, "
-                        f"load_bearing_finding)."
-                    )
-        return True, "ok"
+
+        earliest_possible = symbols_block.get("earliest_possible_utc")
+        if earliest_possible:
+            earliest_possible_dt = pd.Timestamp(earliest_possible).to_pydatetime().replace(tzinfo=None)
+            if window_end < earliest_possible_dt:
+                return False, (
+                    f"window end {window_end} is entirely before kraken's own "
+                    f"public launch ({earliest_possible_dt}) -- impossible on "
+                    f"this venue for ANY symbol or mechanism, not just gappy in "
+                    f"our cache."
+                )
+
+        live_rest = timeframes.get("live_rest_api") or {}
+        archive = timeframes.get("downloadable_archive") or {}
+        interval_minutes = (interval_seconds or 0) // 60
+
+        live_minutes = set(live_rest.get("intervals_minutes") or [])
+        archive_minutes = set(archive.get("intervals_minutes") or [])
+        all_minutes = live_minutes | archive_minutes
+
+        if interval_minutes in all_minutes:
+            # Directly covered by at least one declared mechanism. The
+            # live-REST 720-candle recency cap only bites when live_rest_api
+            # is the ONLY mechanism able to serve this interval -- if
+            # downloadable_archive also lists it, a one-time archive
+            # ingestion may already cover an old window regardless of that
+            # cap (Layer 2's real fetch/cache check resolves whether it
+            # actually does for THIS symbol).
+            covered_only_by_live_rest = (
+                interval_minutes in live_minutes and interval_minutes not in archive_minutes
+            )
+            if covered_only_by_live_rest:
+                # CUL-<TBD> fix (2026-09-11): read the cap as a NUMBER
+                # (history_depth_candles) rather than pattern-matching a
+                # descriptive string -- see git history for the earlier
+                # string-match version this replaced.
+                history_depth_candles = live_rest.get("history_depth_candles")
+                if history_depth_candles and interval_seconds:
+                    now = now or datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+                    cutoff = now - datetime.timedelta(seconds=history_depth_candles * interval_seconds)
+                    if window_start < cutoff:
+                        return False, (
+                            f"window start {window_start} is older than {exchange} "
+                            f"spot's live REST {history_depth_candles}-candle cap at "
+                            f"{timeframe} resolution (cutoff ~{cutoff}), and no other "
+                            f"declared mechanism (e.g. downloadable_archive) lists "
+                            f"this interval -- structurally unreachable via this "
+                            f"codebase (Layer 1 audit, load_bearing_finding)."
+                        )
+            return True, "ok"
+
+        # Not directly covered by any mechanism at this exact interval --
+        # check the aggregation fallback before declining.
+        if _finer_interval_covers(interval_seconds, {m * 60 for m in all_minutes}):
+            return True, (
+                "ok (not directly listed, but reachable via aggregation from a "
+                "finer available interval -- Layer 2 confirms)"
+            )
+        return False, (
+            f"timeframe={timeframe!r} not in any declared kraken spot mechanism's "
+            f"intervals_minutes (live_rest_api={sorted(live_minutes)}, "
+            f"downloadable_archive={sorted(archive_minutes)}), and no finer "
+            f"available interval evenly divides it (Layer 1 audit)."
+        )
 
     # binance and any other venue modeled with a flat timeframes.available list.
     available = timeframes.get("available") or []
-    if timeframe not in available:
+    available_seconds = {_TIMEFRAME_SECONDS[tf] for tf in available if tf in _TIMEFRAME_SECONDS}
+    if timeframe not in available and not _finer_interval_covers(interval_seconds, available_seconds):
         return False, (
             f"timeframe={timeframe!r} not in {exchange}.spot's Layer 1 "
-            f"timeframes.available={available}."
+            f"timeframes.available={available}, and no finer available interval "
+            f"evenly divides it."
         )
     earliest = ((venue_block.get("symbols") or {}).get("earliest_ohlcv_utc") or {})
     earliest_str = earliest.get(symbol)
@@ -364,7 +490,14 @@ def check_price_window(symbol: str, exchange: str, timeframe: str,
     engine would; pass an explicit int (or None) to override for a test or a
     campaign that pins its own value.
     """
-    interval_seconds = _TIMEFRAME_SECONDS[timeframe]
+    interval_seconds = _timeframe_to_seconds(timeframe)
+    if interval_seconds is None:
+        raise ValueError(
+            f"timeframe={timeframe!r} is not a parseable interval (expected a "
+            f"standard token or '<N><m|h|d|w>') -- Layer 1 should have declined "
+            f"this before Layer 2 was ever called; a caller invoking this "
+            f"function directly with a bad timeframe is a real bug, fail loud."
+        )
     start_dt = pd.Timestamp(window_start).to_pydatetime()
     end_dt = pd.Timestamp(window_end).to_pydatetime()
 
@@ -525,16 +658,20 @@ def evaluate_variant(config: dict, protocol: dict, gap_tolerance: float = _DEFAU
         part).
       - validate iff every window and every aux feed fully validates.
 
-    Known scope boundary: the Layer 1 structural precheck below evaluates the
-    DECLARED protocol `timeframe` against venue capability. When the CUL-250
-    `trading.fetch_interval_seconds` opt-in is set (see
-    `_read_ambient_fetch_interval_seconds`), `check_price_window` correctly
-    checks the actual FINER fetched resolution for gap%, but Layer 1's
-    venue-capability check is not re-pointed at that finer resolution -- a
-    rare, off-by-default combination (an operator must both set the ambient
-    override AND run a timeframe the venue doesn't support natively). Flagged
-    rather than silently assumed correct; not implemented given how narrow
-    the combination is.
+    Known scope boundary (narrowed 2026-09-11 by the mechanism-aware +
+    aggregation-fallback fix in `layer1_price_precheck`, but not fully
+    closed): Layer 1 now recognizes that a coarser DECLARED protocol
+    `timeframe` may be reachable by aggregating an already-available finer
+    one (see `_finer_interval_covers`), so it no longer false-declines that
+    case outright. What remains unautomated: Layer 2's real fetch still only
+    honors the CUL-250 `fetch_interval_seconds` opt-in when an operator has
+    actually set it in `trading.json`/passed it explicitly -- there is no
+    auto-selection of "the correct finer resolution for this protocol" per
+    variant. So a Layer-1-permitted, aggregation-only-reachable window can
+    still legitimately DECLINE at Layer 2 if nobody opted in for that run;
+    that is the correct, honest outcome (structurally possible in principle
+    is not the same as configured to happen), not a bug to silently paper
+    over here.
     """
     layer1 = layer1 if layer1 is not None else load_layer1()
     exchange = resolve_exchange(protocol, exchange_override)

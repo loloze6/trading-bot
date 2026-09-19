@@ -33,37 +33,31 @@ Generate, expand, validate, backtest, analyze, and decide on strategy hypotheses
 here — this list is a pointer, kept short deliberately so it cannot drift out
 of step again.
 
-The pipeline is 13 numbered stages:
+The pipeline is 12 numbered stages:
 
 `research_brief` → `hypothesis_generation` → `innovation_expansion` →
-`validation_gate` → `refinement_planner` → `backtest_specification` →
-`signal_prescreen` → `protocol_execution` → `regime_detector_validation` →
+`validation_gate` → `backtest_specification` →
+`data_availability_gate` → `protocol_execution` → `regime_detector_validation` →
 `regime_auditor` → `verdict_interpreter` → `campaign_review` →
 `holdout_evaluation`
 
 Two caveats the guide explains in full:
 
 - The engine's own registry, `STAGE_CONFIGS`
-  (`workflow/run_phase1_research.py::STAGE_CONFIGS`), holds **11** entries
-  (was 10 before E-054 Layer 2, 2026-09-11, added `data_availability_gate` —
-  a real tool stage per that epic's Decision A, sitting between
-  `backtest_specification` and `signal_prescreen`, routed to only when
+  (`workflow/run_phase1_research.py::STAGE_CONFIGS`), holds **9** entries.
+  `data_availability_gate` (E-054 Layer 2) sits between
+  `backtest_specification` and `protocol_execution`, routed to only when
   `E054_DATA_AVAILABILITY_GATE=1`; off by default, so it does not appear in
-  a default run's stage list even though it is registered). `research_brief`
-  is a human input; `regime_detector_validation` is a helper function; and
-  `regime_auditor` is not dispatched by the orchestrator at all.
+  a default run's stage list even though it is registered. There is no
+  pre-backtest signal-prescreen stage — every run always executes a full
+  backtest. `research_brief` is a human input; `regime_detector_validation`
+  is a helper function; `regime_auditor` is not dispatched by the
+  orchestrator at all; and there is no separate `refinement_planner` stage
+  (E-039 S4, 2026-09-12) — a "refine" verdict from `validation_gate` produces
+  its own refinement plan in the same call and loops back to
+  `innovation_expansion` directly.
 - Stage 4 is `validation_gate` in the docs and **`validation`** in the code —
   the latter is the key you would grep for.
-
-> **Superseded names.** This file previously listed five stages that do not
-> exist in the pipeline: `screening_backtest`, `walk_forward_validation`,
-> `final_holdout_test`, `robustness_analysis` and `research_decision`. Recorded
-> rather than deleted because they document an intended design — and
-> `workflow_artifacts/schemas/robustness_report.schema.json` still exists,
-> though nothing produces it. The nearest real equivalents are
-> `signal_prescreen`, `protocol_execution`, `holdout_evaluation`, and
-> `verdict_interpreter` / `campaign_review`. See E-037
-> [E037-09](engineering/roadmap/E-037/FINDINGS.md#e037-09).
 
 ## Context policy
 - Default to minimal context.

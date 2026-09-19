@@ -121,14 +121,6 @@ def test_record_backtest_trial_not_suppressed_by_existing_prescreen_row(campaign
     assert sources == ["backtest", "prescreen"]
 
 
-def test_record_prescreen_trial_writes_forecast_hash(campaign_env):
-    state_path, config_path = campaign_env
-    rpr._record_prescreen_trial("run_903", {"route": "kill_no_ic"}, config_path)
-    state = yaml.safe_load(state_path.read_text(encoding="utf-8"))
-    (row,) = state["trial_sharpes"]
-    assert row["forecast_hash"] == rpr._compute_forecast_hash(config_path)
-
-
 # ---------------------------------------------------------------------------
 # deflate_sharpe.check_no_duplicate_trial_ids
 # ---------------------------------------------------------------------------

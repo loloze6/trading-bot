@@ -63,9 +63,8 @@ def test_family_status_fixture_previously_crashed_now_routes(tmp_path, monkeypat
     route as a normal 'approve' would (family_status=approve)."""
     run_dir = _make_run(tmp_path, REAL_RUN_053_FAMILY_DECISION)
 
-    # A8.6 power check and downstream state writes aren't the point of this test —
-    # stub them out so we isolate the status-parsing fix.
-    monkeypatch.setattr(rpr, "_run_a86_power_check", lambda artifacts_dir: {"verdict": "power_adequate"})
+    # Downstream state writes aren't the point of this test — stub them out
+    # so we isolate the status-parsing fix.
     monkeypatch.setattr(rpr, "update_state", lambda **kwargs: None)
 
     # Must not raise.
@@ -74,7 +73,6 @@ def test_family_status_fixture_previously_crashed_now_routes(tmp_path, monkeypat
 
 
 def test_conditional_approve_aggregates_per_variant_conditions(tmp_path, monkeypatch):
-    monkeypatch.setattr(rpr, "_run_a86_power_check", lambda artifacts_dir: {"verdict": "power_adequate"})
     monkeypatch.setattr(rpr, "update_state", lambda **kwargs: None)
 
     decision_text = """
@@ -97,7 +95,6 @@ variant_decisions:
 
 
 def test_neither_status_nor_family_status_fails_loudly(tmp_path, monkeypatch):
-    monkeypatch.setattr(rpr, "_run_a86_power_check", lambda artifacts_dir: {"verdict": "power_adequate"})
     monkeypatch.setattr(rpr, "update_state", lambda **kwargs: None)
 
     run_dir = _make_run(tmp_path, "hypothesis_id: H-TEST\nrationale: no status field at all\n")
@@ -107,7 +104,6 @@ def test_neither_status_nor_family_status_fails_loudly(tmp_path, monkeypatch):
 
 def test_normal_single_hypothesis_status_still_works_unchanged(tmp_path, monkeypatch):
     """Non-regression: the standard, schema-conformant shape must be unaffected."""
-    monkeypatch.setattr(rpr, "_run_a86_power_check", lambda artifacts_dir: {"verdict": "power_adequate"})
     monkeypatch.setattr(rpr, "update_state", lambda **kwargs: None)
 
     run_dir = _make_run(tmp_path, 'hypothesis_id: "H-TEST"\nstatus: "approve"\nrationale: "fine"\nblocking_issues: []\n')

@@ -1,11 +1,21 @@
 """
 F4d (2026-07-05): run_047 pre-registered "use the 2019-2025 backward-extension
 range" and "MANDATORY A8.5.1a" in prose only. Nothing mechanically enforced it:
-signal_prescreen silently defaulted to protocols/baseline_v1.json (the existing
-2024-only protocol) and backtest_specification's LLM stage silently dropped
-significance_methodology despite an explicit skill-file instruction. The run
-completed end-to-end and wrote a KB finding for H-041-A, but never actually
-tested the pre-registered hypothesis.
+the (since-removed) signal_prescreen stage silently defaulted to
+protocols/baseline_v1.json (the existing 2024-only protocol) and
+backtest_specification's LLM stage silently dropped significance_methodology
+despite an explicit skill-file instruction. The run completed end-to-end and
+wrote a KB finding for H-041-A, but never actually tested the pre-registered
+hypothesis.
+
+RELOCATED 2026-09-12 (E-039 step 5): the conformance check now fires after
+protocol_execution (_check_protocol_execution_conformance), not the removed
+signal_prescreen stage's own _check_prescreen_conformance -- same logic,
+"protocol_file" replaces "protocol_version" as the executed-identity field,
+and the significance-methodology check now reads a per-symbol
+episode_blocked_significance_by_symbol dict (CUL-265) instead of a single
+flat significance_methodology_used string, since protocol_execution computes
+it per symbol.
 
 Fixture: run_047's REAL actual prescreen_result.yaml fields and the REAL
 baseline_v1.json protocol it silently fell back to (frozen — per this project's
@@ -36,10 +46,14 @@ RUN_047_MACHINE_CONSTRAINTS = {
     },
 }
 
-# The REAL prescreen_result.yaml run_047 actually produced.
-RUN_047_REAL_PRESCREEN_RESULT = {
-    "protocol_version": "protocols\\baseline_v1.json",
-    "significance_methodology_used": "block_24_fisher_z",
+# The REAL protocol_result run_047 actually produced (protocol_file replaces
+# the removed stage's "protocol_version"; episode_blocked_significance_by_symbol
+# replaces the removed stage's flat "significance_methodology_used").
+RUN_047_REAL_PROTOCOL_RESULT = {
+    "protocol_file": "protocols\\baseline_v1.json",
+    "episode_blocked_significance_by_symbol": {
+        "BTCUSDT": "block_24_fisher_z", "ETHUSDT": "block_24_fisher_z",
+    },
     "route": "kill_no_ic",
 }
 
@@ -64,19 +78,21 @@ def test_generate_monthly_windows_covers_full_range_without_overshoot():
 
 
 def test_conformance_gate_catches_the_real_run_047_protocol_mismatch():
-    violations = rpr._check_prescreen_conformance(
-        RUN_047_REAL_PRESCREEN_RESULT, RUN_047_MACHINE_CONSTRAINTS, BASELINE_V1_PROTOCOL,
+    violations = rpr._check_protocol_execution_conformance(
+        RUN_047_REAL_PROTOCOL_RESULT, RUN_047_MACHINE_CONSTRAINTS, BASELINE_V1_PROTOCOL,
     )
     assert len(violations) >= 2  # both the range AND the methodology were wrong
     joined = " ".join(violations)
-    assert "significance_methodology_used" in joined
+    assert "episode_blocked_significance_method" in joined
     assert "2024-01" in joined or "start" in joined  # protocol started too late
 
 
 def test_conformance_gate_passes_when_everything_matches():
     conforming_result = {
-        "protocol_version": "protocols/run_047_generated.json",
-        "significance_methodology_used": "episode_block_bootstrap",
+        "protocol_file": "protocols/run_047_generated.json",
+        "episode_blocked_significance_by_symbol": {
+            "BTCUSDT": "episode_block_bootstrap", "ETHUSDT": "episode_block_bootstrap",
+        },
         "route": "kill_no_ic",
     }
     conforming_protocol = {
@@ -84,7 +100,7 @@ def test_conformance_gate_passes_when_everything_matches():
         "timeframe": "1h",
         "windows": rpr._generate_monthly_windows("2019-09-10", "2025-12-31"),
     }
-    violations = rpr._check_prescreen_conformance(
+    violations = rpr._check_protocol_execution_conformance(
         conforming_result, RUN_047_MACHINE_CONSTRAINTS, conforming_protocol,
     )
     assert violations == []
@@ -98,25 +114,51 @@ def test_conformance_gate_accepts_every_legitimate_a851a_outcome(legitimate_outc
     against the family name "episode_blocked_a851a" would have wrongly flagged the
     legitimate density-fallback (A8.5.1a rule 4) and insufficient-episode (rule 3)
     outcomes as conformance violations, even though both are correct, spec'd
-    behavior. The gate must accept ANY member of episode_significance.VALID_METHODS."""
-    result = {"protocol_version": "protocols/run_test_generated.json",
-              "significance_methodology_used": legitimate_outcome}
+    behavior. The gate must accept ANY member of episode_significance.VALID_METHODS,
+    for every symbol."""
+    result = {"protocol_file": "protocols/run_test_generated.json",
+              "episode_blocked_significance_by_symbol": {
+                  "BTCUSDT": legitimate_outcome, "ETHUSDT": legitimate_outcome}}
     protocol = {"symbols": ["BTCUSDT", "ETHUSDT"], "timeframe": "1h",
                 "windows": rpr._generate_monthly_windows("2019-09-10", "2025-12-31")}
-    violations = rpr._check_prescreen_conformance(result, RUN_047_MACHINE_CONSTRAINTS, protocol)
+    violations = rpr._check_protocol_execution_conformance(result, RUN_047_MACHINE_CONSTRAINTS, protocol)
     assert violations == []
 
 
 def test_conformance_gate_flags_the_old_default_path_as_a_real_violation():
-    """block_24_fisher_z (prescreen_signal.py's own default label) means the
-    significance_methodology flag was absent/ignored entirely — this is exactly
-    run_047's real failure and MUST be flagged."""
-    result = {"protocol_version": "protocols/run_test_generated.json",
-              "significance_methodology_used": "block_24_fisher_z"}
+    """block_24_fisher_z (the removed prescreen stage's own default label) means
+    the significance_methodology flag was absent/ignored entirely — this is
+    exactly run_047's real failure and MUST be flagged, per-symbol."""
+    result = {"protocol_file": "protocols/run_test_generated.json",
+              "episode_blocked_significance_by_symbol": {
+                  "BTCUSDT": "block_24_fisher_z", "ETHUSDT": "block_24_fisher_z"}}
     protocol = {"symbols": ["BTCUSDT", "ETHUSDT"], "timeframe": "1h",
                 "windows": rpr._generate_monthly_windows("2019-09-10", "2025-12-31")}
-    violations = rpr._check_prescreen_conformance(result, RUN_047_MACHINE_CONSTRAINTS, protocol)
-    assert any("significance_methodology_used" in v for v in violations)
+    violations = rpr._check_protocol_execution_conformance(result, RUN_047_MACHINE_CONSTRAINTS, protocol)
+    assert any("episode_blocked_significance_method" in v for v in violations)
+
+
+def test_conformance_gate_flags_a_single_bad_symbol_even_if_the_other_conforms():
+    """Per-symbol (CUL-265): one symbol conforming must not mask a violation on
+    the other -- a violation on ANY symbol is a real conformance failure."""
+    result = {"protocol_file": "protocols/run_test_generated.json",
+              "episode_blocked_significance_by_symbol": {
+                  "BTCUSDT": "episode_block_bootstrap", "ETHUSDT": "block_24_fisher_z"}}
+    protocol = {"symbols": ["BTCUSDT", "ETHUSDT"], "timeframe": "1h",
+                "windows": rpr._generate_monthly_windows("2019-09-10", "2025-12-31")}
+    violations = rpr._check_protocol_execution_conformance(result, RUN_047_MACHINE_CONSTRAINTS, protocol)
+    assert any("ETHUSDT" in v and "episode_blocked_significance_method" in v for v in violations)
+
+
+def test_conformance_gate_missing_by_symbol_field_entirely_is_a_violation():
+    """A run whose protocol_result carries no episode_blocked_significance_by_symbol
+    at all (e.g. the field was never computed) must be flagged, not silently
+    treated as conforming."""
+    result = {"protocol_file": "protocols/run_test_generated.json"}
+    protocol = {"symbols": ["BTCUSDT", "ETHUSDT"], "timeframe": "1h",
+                "windows": rpr._generate_monthly_windows("2019-09-10", "2025-12-31")}
+    violations = rpr._check_protocol_execution_conformance(result, RUN_047_MACHINE_CONSTRAINTS, protocol)
+    assert any("episode_blocked_significance_by_symbol" in v for v in violations)
 
 
 def test_path_basename_any_os_handles_both_separators_regardless_of_host():
@@ -129,31 +171,33 @@ def test_path_basename_any_os_handles_both_separators_regardless_of_host():
 
 
 def test_conformance_gate_protocol_ref_matches_across_a_windows_written_path():
-    """E037-11/CUL-186: prescreen_result.protocol_version was recorded on Windows
+    """E037-11/CUL-186: protocol_result.protocol_file was recorded on Windows
     ("protocols\\baseline_v1.json", the exact shape run_060 recorded) and is now
     being checked against machine_constraints.protocol_ref on ANY host, including
     POSIX -- pathlib.Path(...).name would mis-parse the Windows path as one long
     name on POSIX and raise a spurious violation. This exercises the protocol_ref
-    branch of _check_prescreen_conformance at all (it had zero coverage before
-    this ticket)."""
-    result = {"protocol_version": "protocols\\baseline_v1.json",
-              "significance_methodology_used": "episode_block_bootstrap"}
+    branch of _check_protocol_execution_conformance at all (it had zero coverage
+    before this ticket)."""
+    result = {"protocol_file": "protocols\\baseline_v1.json",
+              "episode_blocked_significance_by_symbol": {
+                  "BTCUSDT": "episode_block_bootstrap", "ETHUSDT": "episode_block_bootstrap"}}
     constraints = {**RUN_047_MACHINE_CONSTRAINTS, "protocol_ref": "protocols/baseline_v1.json"}
     protocol = {"symbols": ["BTCUSDT", "ETHUSDT"], "timeframe": "1h",
                 "windows": rpr._generate_monthly_windows("2019-09-10", "2025-12-31")}
-    violations = rpr._check_prescreen_conformance(result, constraints, protocol)
+    violations = rpr._check_protocol_execution_conformance(result, constraints, protocol)
     assert not any("protocol_ref" in v for v in violations)
 
 
 def test_conformance_gate_protocol_ref_still_catches_a_real_mismatch():
     """The fix must not make the check toothless: a genuinely different executed
     protocol is still flagged, cross-platform path spelling aside."""
-    result = {"protocol_version": "protocols\\some_other_protocol.json",
-              "significance_methodology_used": "episode_block_bootstrap"}
+    result = {"protocol_file": "protocols\\some_other_protocol.json",
+              "episode_blocked_significance_by_symbol": {
+                  "BTCUSDT": "episode_block_bootstrap", "ETHUSDT": "episode_block_bootstrap"}}
     constraints = {**RUN_047_MACHINE_CONSTRAINTS, "protocol_ref": "protocols/baseline_v1.json"}
     protocol = {"symbols": ["BTCUSDT", "ETHUSDT"], "timeframe": "1h",
                 "windows": rpr._generate_monthly_windows("2019-09-10", "2025-12-31")}
-    violations = rpr._check_prescreen_conformance(result, constraints, protocol)
+    violations = rpr._check_protocol_execution_conformance(result, constraints, protocol)
     assert any("protocol_ref" in v for v in violations)
 
 
@@ -199,8 +243,8 @@ def test_ensure_protocol_from_constraints_generates_and_is_idempotent(tmp_path, 
     assert run_ctx_path.exists()
     run_ctx = yaml.safe_load(run_ctx_path.read_text(encoding="utf-8"))
     assert run_ctx["protocol"] == path.name
-    # run_type MUST be forced_diagnostic — caught live in run_050: without this key,
-    # signal_prescreen's protocol-resolution silently falls back to
+    # run_type MUST be forced_diagnostic — caught live in run_050: without this
+    # key, protocol_execution's protocol-resolution silently falls back to
     # campaign_state.last_escalation.protocol_path (stale campaign-wide state from
     # a previous, unrelated run) instead of consulting run_context's `protocol` key.
     assert run_ctx["run_type"] == "forced_diagnostic"

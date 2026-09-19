@@ -297,7 +297,6 @@ def _sandbox_by_default(request, tmp_path, monkeypatch):
     monkeypatch.setattr(_rpr, "ROOT", sandbox)
     monkeypatch.setattr(_rpr, "CAMPAIGN_STATE_PATH", sandbox / "campaign_state.yaml")
     monkeypatch.setattr(_rpr, "_KB_PATH", sandbox / "campaign_knowledge_base.yaml")
-    monkeypatch.setattr(_rpr, "_POWER_DISCREPANCY_LOG_PATH", sandbox / "power_check_discrepancy_log.yaml")
     monkeypatch.setattr(_rpr, "_DATA_POLICY_PATH", sandbox / "config" / "campaign_data_policy.yaml")
 
     monkeypatch.setattr(_setup_run, "ROOT", sandbox)

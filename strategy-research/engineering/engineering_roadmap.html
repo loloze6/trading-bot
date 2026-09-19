@@ -1,0 +1,1015 @@
+<title>Engineering Roadmap</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#f4f5f7; --surface:#ffffff; --surface-2:#eceef2; --surface-3:#e2e5eb;
+    --text:#1b2430; --text-muted:#5b6472; --border:#d8dce2; --border-strong:#c3c9d2;
+    --accent:#2a6f6f; --accent-soft:#e4efee;
+    --obj3:#9a6410; --obj3-soft:#f4e9d6;
+    --support:#5b4d8a; --support-soft:#eae7f4;
+    --st-backlog:#7d8695; --st-backlog-soft:#e7e9ed;
+    --st-progress:#1f7a52; --st-progress-soft:#dcf0e6;
+    --st-planned:#2f6fa8; --st-planned-soft:#dfeaf5;
+    --new-border:#2a6f6f;
+    --shadow: 0 1px 2px rgba(20,26,35,.04), 0 8px 20px -12px rgba(20,26,35,.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#12161c; --surface:#181e26; --surface-2:#1f2630; --surface-3:#262e3a;
+      --text:#e8eaef; --text-muted:#9aa4b2; --border:#2b3340; --border-strong:#38424f;
+      --accent:#5fb3ac; --accent-soft:#1b2f2d;
+      --obj3:#d9a95a; --obj3-soft:#332a18;
+      --support:#a89bd6; --support-soft:#2a2440;
+      --st-backlog:#93a0b3; --st-backlog-soft:#252c37;
+      --st-progress:#5cd6a0; --st-progress-soft:#153327;
+      --st-planned:#7cb3e6; --st-planned-soft:#152838;
+      --new-border:#5fb3ac;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 28px -14px rgba(0,0,0,.55);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#12161c; --surface:#181e26; --surface-2:#1f2630; --surface-3:#262e3a;
+    --text:#e8eaef; --text-muted:#9aa4b2; --border:#2b3340; --border-strong:#38424f;
+    --accent:#5fb3ac; --accent-soft:#1b2f2d;
+    --obj3:#d9a95a; --obj3-soft:#332a18;
+    --support:#a89bd6; --support-soft:#2a2440;
+    --st-backlog:#93a0b3; --st-backlog-soft:#252c37;
+    --st-progress:#5cd6a0; --st-progress-soft:#153327;
+    --st-planned:#7cb3e6; --st-planned-soft:#152838;
+    --new-border:#5fb3ac;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 28px -14px rgba(0,0,0,.55);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:"IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    padding:32px 20px 64px; line-height:1.5;
+  }
+  .wrap{max-width:1080px; margin:0 auto;}
+
+  .mono{font-family:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;}
+
+  header.page{margin-bottom:40px;}
+  header.page .eyebrow{
+    font-family:"IBM Plex Mono"; font-size:.72rem; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--accent); margin:0 0 10px;
+  }
+  header.page h1{
+    font-size:clamp(1.9rem, 3.2vw, 2.6rem); margin:0 0 12px; font-weight:700;
+    text-wrap:balance; letter-spacing:-.01em;
+  }
+  header.page p{margin:0; color:var(--text-muted); max-width:62ch; font-size:1rem;}
+
+  .legend{
+    display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:22px;
+    font-size:.8rem; color:var(--text-muted);
+  }
+  .legend span{display:inline-flex; align-items:center; gap:6px;}
+  .legend i{width:9px; height:9px; border-radius:2px; display:inline-block;}
+
+  section.group{margin-bottom:46px;}
+  .group-head{
+    display:flex; align-items:baseline; gap:12px; margin-bottom:18px;
+    padding-bottom:10px; border-bottom:1px solid var(--border);
+  }
+  .group-head h2{
+    font-size:1.3rem; margin:0; font-weight:600; letter-spacing:-.005em;
+  }
+  .group-head .tally{
+    font-family:"IBM Plex Mono"; font-size:.78rem; color:var(--text-muted);
+    background:var(--surface-2); border:1px solid var(--border); border-radius:20px;
+    padding:2px 10px; white-space:nowrap;
+  }
+
+  .lane{margin-bottom:28px;}
+  .lane-title{
+    display:flex; align-items:center; gap:10px; margin:0 0 12px;
+    font-size:.98rem; font-weight:600;
+  }
+  .lane-title .dot{width:10px; height:10px; border-radius:50%; flex:none;}
+  .lane-title small{
+    font-weight:400; color:var(--text-muted); font-size:.85rem;
+  }
+
+  .cards{display:flex; flex-direction:column; gap:10px;}
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:14px 16px; box-shadow:var(--shadow);
+    display:grid; grid-template-columns:auto auto 1fr auto; gap:4px 14px; align-items:start;
+  }
+  .card .order{
+    font-family:"IBM Plex Mono"; font-weight:600; font-size:.85rem;
+    color:var(--text-muted); grid-row:1/3; align-self:center;
+    width:26px; height:26px; border-radius:50%; border:1px solid var(--border-strong);
+    display:flex; align-items:center; justify-content:center; flex:none;
+  }
+  .card .id{
+    font-family:"IBM Plex Mono"; font-size:.78rem; font-weight:600;
+    color:var(--accent); align-self:center; white-space:nowrap;
+  }
+  .card.obj3 .id{color:var(--obj3);}
+  .card.support .id{color:var(--support);}
+  .card .name{
+    font-weight:600; font-size:.98rem; grid-column:2/4; grid-row:1;
+  }
+  .card .desc{
+    grid-column:2/4; grid-row:2; color:var(--text-muted); font-size:.88rem; margin:0;
+  }
+  .card .tag{
+    grid-row:1/3; align-self:center; justify-self:end; white-space:nowrap;
+    font-family:"IBM Plex Mono"; font-size:.68rem; letter-spacing:.03em; text-transform:uppercase;
+    padding:3px 9px; border-radius:20px; font-weight:600;
+  }
+  .card.new{border-style:dashed; border-color:var(--new-border);}
+  .tag.new{color:var(--accent); background:var(--accent-soft);}
+  .tag.st-backlog{color:var(--st-backlog); background:var(--st-backlog-soft);}
+  .tag.st-progress{color:var(--st-progress); background:var(--st-progress-soft);}
+  .tag.st-planned{color:var(--st-planned); background:var(--st-planned-soft);}
+  .tag.decision{color:var(--support); background:var(--support-soft);}
+  .tag.resolved{color:var(--st-progress); background:var(--st-progress-soft);}
+  .card.decision{border-style:dashed; border-color:var(--support);}
+  .card.decision .id{color:var(--support);}
+
+  .subcat{margin-bottom:26px;}
+  .subcat:last-child{margin-bottom:0;}
+  .subcat-head{margin:0 0 10px;}
+  .subcat-head h3{
+    font-size:.92rem; font-weight:600; margin:0 0 2px; letter-spacing:-.005em;
+  }
+  .subcat-head p{
+    margin:0; font-size:.8rem; color:var(--text-muted);
+  }
+
+  .backlog-grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));
+    gap:10px;
+  }
+  .bcard{
+    background:var(--surface-2); border:1px solid var(--border); border-radius:8px;
+    padding:11px 13px;
+  }
+  .bcard .row1{
+    display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:5px;
+  }
+  .bcard .id{font-family:"IBM Plex Mono"; font-size:.74rem; font-weight:600; color:var(--text-muted);}
+  .bcard .tag{
+    font-family:"IBM Plex Mono"; font-size:.64rem; letter-spacing:.03em; text-transform:uppercase;
+    padding:2px 7px; border-radius:20px; font-weight:600; white-space:nowrap;
+  }
+  .bcard .name{font-weight:600; font-size:.88rem; margin-bottom:4px; text-wrap:balance;}
+  .bcard .desc{font-size:.82rem; color:var(--text-muted); margin:0;}
+
+  .source{margin-bottom:46px;}
+  .source-intro{
+    font-size:.85rem; color:var(--text-muted); margin:0 0 16px; max-width:62ch;
+  }
+  .quote{
+    background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--accent);
+    border-radius:0 10px 10px 0; padding:18px 20px; box-shadow:var(--shadow);
+    margin-bottom:16px;
+  }
+  .quote:last-child{margin-bottom:0;}
+  .quote .quote-label{
+    font-family:"IBM Plex Mono"; font-size:.68rem; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--accent); margin:0 0 10px; font-weight:600;
+  }
+  .quote p{
+    margin:0 0 10px; font-size:.92rem; line-height:1.6; white-space:pre-wrap;
+  }
+  .quote p:last-child{margin-bottom:0;}
+  .quote ul{margin:0 0 10px; padding-left:1.2em; font-size:.92rem; line-height:1.6;}
+  .quote ul:last-child{margin-bottom:0;}
+  .quote li{margin-bottom:4px;}
+
+  .scope-note{
+    background:var(--surface-2); border:1px solid var(--border); border-radius:10px;
+    padding:16px 20px; margin-top:16px;
+  }
+  .scope-note .quote-label{
+    font-family:"IBM Plex Mono"; font-size:.68rem; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--text-muted); margin:0 0 8px; font-weight:600;
+  }
+  .scope-note p{margin:0 0 8px; font-size:.85rem; line-height:1.6; color:var(--text-muted);}
+  .scope-note p:last-child{margin-bottom:0;}
+  .scope-note strong{color:var(--text);}
+
+  .walkthrough-intro{
+    font-size:.9rem; color:var(--text-muted); max-width:68ch; margin:0 0 24px; line-height:1.6;
+  }
+  .step{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:20px 22px; box-shadow:var(--shadow); margin-bottom:14px;
+  }
+  .step-head{display:flex; align-items:baseline; gap:12px; margin-bottom:12px;}
+  .step-num{
+    font-family:"IBM Plex Mono"; font-size:.72rem; font-weight:600; color:var(--accent);
+    background:var(--accent-soft); border-radius:20px; padding:3px 10px; white-space:nowrap;
+  }
+  .step-head h3{font-size:1.05rem; margin:0; font-weight:600; letter-spacing:-.005em; text-wrap:balance;}
+  .step dl{margin:0 0 12px; display:grid; grid-template-columns:110px 1fr; gap:6px 14px;}
+  .step dt{
+    font-family:"IBM Plex Mono"; font-size:.68rem; letter-spacing:.05em; text-transform:uppercase;
+    color:var(--text-muted); padding-top:2px;
+  }
+  .step dd{margin:0; font-size:.88rem; line-height:1.55;}
+  .step-epic{
+    font-size:.8rem; color:var(--text-muted); padding-top:10px; border-top:1px solid var(--border);
+  }
+  .step-epic strong{
+    font-family:"IBM Plex Mono"; font-weight:600; color:var(--accent); font-size:.78rem;
+  }
+  .gaps{
+    background:var(--accent-soft); border:1px solid var(--border); border-radius:12px;
+    padding:22px 24px; margin-top:22px;
+  }
+  .gaps h3{margin:0 0 14px; font-size:1.05rem;}
+  .gaps ol{margin:0; padding-left:1.3em;}
+  .gaps li{font-size:.9rem; line-height:1.6; margin-bottom:14px;}
+  .gaps li:last-child{margin-bottom:0;}
+  .gaps li strong.epic-tag{
+    display:inline-block; margin-top:4px; font-family:"IBM Plex Mono"; font-weight:600;
+    font-size:.78rem; color:var(--accent);
+  }
+
+  @media (max-width:560px){
+    .step dl{grid-template-columns:1fr;}
+    .step dt{padding-top:8px;}
+  }
+
+  footer{
+    margin-top:48px; padding-top:18px; border-top:1px solid var(--border);
+    font-size:.78rem; color:var(--text-muted);
+  }
+
+  @media (max-width:560px){
+    .card{grid-template-columns:auto 1fr; }
+    .card .order{grid-row:1/4;}
+    .card .name{grid-column:2; grid-row:1;}
+    .card .desc{grid-column:2; grid-row:2;}
+    .card .tag{grid-column:2; grid-row:3; justify-self:start; margin-top:2px;}
+    .card .id{grid-column:2; grid-row:1;}
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="page">
+    <p class="eyebrow">Strategy-research pipeline · working roadmap · v27</p>
+    <h1>Engineering Roadmap</h1>
+    <p>Every open epic that isn't finished yet, split into two groups: the ones queued in the current plan (in build order), and everything else still holding in the backlog. Closed/completed epics are left off this board entirely.</p>
+    <div class="legend">
+      <span><i style="background:var(--obj3)"></i>Objective 3 — prove it's really profitable</span>
+      <span><i style="background:var(--accent)"></i>Objectives 1 &amp; 2 — prove ideas, learn from results</span>
+      <span><i style="background:var(--support)"></i>Feeds the plan / decided</span>
+      <span><i style="background:var(--st-backlog)"></i>Backlog</span>
+      <span><i style="background:var(--st-progress)"></i>In progress</span>
+      <span><i style="background:var(--st-planned)"></i>Planned</span>
+    </div>
+  </header>
+
+  <section class="source">
+    <div class="scope-note">
+      <p class="quote-label">Revision note — v27, 2026-09-20</p>
+      <p>Rebuilt in three passes: a code-verified review of v24 (2026-09-16, every "today" claim checked against the real files — record in <code>roadmap_review_2026-09-18.md</code>), the operator's answers that turned the review into a target design (v25), and the operator's two rounds of remarks on v25's concept and walkthrough (this version). The <strong>target workflow itself changed</strong>, not just the wording — see "The target design" below. <strong>v27</strong> (2026-09-19/20) is four small corrections found while the operator tried to review the delivery plan built from v26 — not a new round of design, just fixes: composition is a genuinely new epic, not a reuse of E-044; E-048 is no longer a gate on the first composition run; the old verdict_interpreter stage is deleted rather than kept as a narrator; a validated block is usable on any coin, not only the ones it was tested on. Two standing rules apply to this board: (1) <strong>run budget</strong> — every epic in the ordered plan states how many real hypothesis runs ship with it; the loop has been idle since July while the tooling grew, and nothing here can be verified until ideas actually run. (2) <strong>Old runs are legacy</strong> — the 60 runs on disk were graded under the old "profitable alone" rule; their verdicts are kept as history and still count as attempts for the deflated-Sharpe math, but they must not block re-testing an idea under the new criteria.</p>
+    </div>
+
+    <p class="source-intro">Everything below is derived from these three blocks, verbatim, so the plan can always be checked against the actual brief rather than a paraphrase of it. The first two are the original brief; the third is what the operator added while reviewing this board.</p>
+
+    <div class="quote">
+      <p class="quote-label">The three objectives</p>
+      <p>The ultimate goal is to find a profitable strategy. For that the research workflow is built to iteratively run backtest in order to prove ideas. The core thinking is that profitable strategies would come from an accumulation of proven ideas.</p>
+      <p>So a workflow iteration would be built around, taking an idea, building a strategy that would "test this idea" and see if idea is correct (objective 1)</p>
+      <p>But at the same time, i want this workflow to observe backtest output to see if we can find more ideas to come closer from a profitable strategy. For that it would take an overall set of metrics and launch llm analyzis on the set of metrics to find interesting patterns to deep dive or use in our profitability objectives (objective 2).</p>
+      <p>While the run should also at the end follow a test to see if the profitability is reached (thus the protocol, the promotion gate, etc..) - obejctive 3.</p>
+    </div>
+
+    <div class="quote">
+      <p class="quote-label">The pre/post-backtest vision</p>
+      <p>In my mind i have:</p>
+      <p>A prebacktest not so far from what we have currently local with:</p>
+      <ul>
+        <li>a research brief that would bring a general topic to research OR a pre-made hypothesis / variant from another run</li>
+        <li>an hypothesis generation that would transform the research brief general topic into a testable hypothesis with acceptance factors. Or forward the hypothesis / variant as is if received as input</li>
+        <li>a variant generation stage that would create different variation of the testable hypothesis with the objective to create backtesting setup testing the same hypothesis. These variants generated would be designed in a sense that, tested in parrallel, they would allow to ensure that the verdict is linked to idea and do not depend on backtesting setup chosen.</li>
+        <li>Then we also have control ensure data variant need is available</li>
+        <li>And control on the variant itself (and hypothesis ?) to ensure that we are not testing a variant / hypothesis that has already been tested in the past.</li>
+        <li>Finally a loop allowing to design mechanical strategy config / setup the backtests and test each and every variants during backtest in a single run (but different backtest launch)</li>
+      </ul>
+      <p>A post backtest design with three routes answering three questions:</p>
+      <ul>
+        <li>1/ is the idea (hypothesis) approved based on its acceptance criteria (here maybe mechanical if feasible), or LLM for now</li>
+        <li>2/ Are the metrics generated giving some interesting patterns / ideas to be tested that would bring us closer from having a profitable strategy ? This root would be supported by multiple agents LLM analyst, each having their own respective area of focus (regime, signal, cost)</li>
+        <li>3/ is any of the variant reaching the profitability goal that we would define globally and that would allow us to unlock the holdout backtesting stage.</li>
+      </ul>
+      <p>These three branches should regroup for a last stage receiving inputs from each of the branch. This step should enrich the "memory" artifacts of the campaign (the history of all past and next runs) based on idea test results (branch 1), confirmed observation and patterns of specialist agents (branch 2). New brief can be created for patterns that would need to be tested (identified by branch 2). It should also record the score board that would be around profitability.</p>
+      <p>Then a next step taking the decision of "what's next" based on the campaign memory artifacts and profitability results</p>
+      <p>If profitability target are reached, a stop should be triggered and a manual review should happen.</p>
+    </div>
+
+    <div class="quote">
+      <p class="quote-label">Added while reviewing this board, 2026-09-17/18 — operator's own words, condensed</p>
+      <ul>
+        <li>"The concept to validated building blocks is exactly what i want!" — "A validated block should importantly 'hold an information' in a sense."</li>
+        <li>"Profitability pass rules should be written once overall across the runs. While ideas pass rule should be in my opinion defined based on the hypothesis tested." — "the 'profitability' success threshold should be put overall across the runs. They could even be put manually and stored one for a time. Agree it should consider profitability but also risk, eg with sharp ratio, average portfolio benefit per day, max drawdown."</li>
+        <li>"the idea test acceptance criteria are not necessarily profitability related, they could indeed be correlation related, or other." — "we could have an idea to be tested around identification of regime. But succesfully identifying a regime would not be proven by profitability acceptance criteria, but other type of metrics."</li>
+        <li>"the goal of variants is to have enough results to ensure that the idea test results are independent from the backtesting setup." — "variants are different setup of a strategy that would all test the same idea. We have a second level of variation that is done through the protocol with mechanical testing window." — "For me the protocol should only make the tested window vary."</li>
+        <li>"Step 4 should really be on the exact same backtest setup (full variant). If one of setup element, being from strategy, parameters, currency, etc.. is switched then it does not seem a repeat."</li>
+        <li>"For me only an LLM with a design guide on how strategy config is to be designed can build this one." — on composition: "A building block can go from a component to a sub strategy to a regime to its regime rule. It is definetely not on a comparable scale. It needs an LLM, as per 1b is an llm."</li>
+        <li>"when branch 3 succesfully pass we stop and operator regroup on results to see next steps." — "I am wondering if this verdict notion is not outdated with the target workflow design."</li>
+        <li>"previous runs were following a totally different design of workflow. Thus questioning the importance we should allocate to observing previous runs results."</li>
+        <li>On picking the next idea: "wondering if it should not be a llm score based on predefined scale in agent instructions. Score on 'confidence on idea being real' and 'putting us closer to a profitable strategy finding'."</li>
+        <li>On human pauses: "we should design what operator needs to do next until the automation part / new backtest is relaunched." — "This runbook should also include which artifact to update after manual action."</li>
+      </ul>
+    </div>
+
+    <div class="scope-note">
+      <p class="quote-label">Scope note — what "Objective 1" means on this board, corrected 2026-09-16</p>
+      <p>"Objective 1/2/3" is an informal split of the paragraph above, not a Linear-tracked entity. Earlier versions of this board called Objective 1 "solid." <strong>Measured against the runs on disk, that was too strong:</strong> the mechanical pass/fail path (a binding <code>pass_rule_evaluation.yaml</code>) has fired on exactly 1 of 60 runs; only 3 of the 10 runs that carry a pre-registration file have a structured pass rule at all; every other run's verdict was still the LLM's own judgment. The holdout gate has never been reached by any run. So the judgment layer is <em>written</em>, not <em>proven</em>. The backtest engine's own realism gaps are tracked separately below: lot-size rounding (<strong>E-052</strong>), sub-daily funding accrual (<strong>E-053</strong>), forecast calibration (<strong>E-047</strong>), ensemble standardization (<strong>E-048</strong> — considered and released back to backlog 2026-09-19, see the target-design card F correction below).</p>
+    </div>
+  </section>
+
+  <section class="group">
+    <div class="group-head">
+      <h2>The target design</h2>
+      <span class="tally">agreed 2026-09-17/18 · the shared picture every card below builds toward</span>
+    </div>
+    <p style="font-size:.85rem;color:var(--text-muted);margin:0 0 18px;max-width:78ch;">The brief's first sentence is the whole point: <em>profitable strategies come from an accumulation of proven ideas</em>. v24 had no step where anything accumulated. This board is organised around that missing piece. In plain words:</p>
+
+    <div class="cards">
+      <div class="card decision">
+        <div class="order mono">A</div>
+        <div class="id">building blocks</div>
+        <div class="name">One idea = one candidate building block. The goal of a run is to validate a block, not to find a profitable strategy on its own.</div>
+        <p class="desc"><strong>There are two kinds of block.</strong> A <em>forecast block</em> is a component, or a sub-strategy of weighted components, that produces a signal. A <em>regime block</em> is a detector rule that produces a label: it carries an idea about the market's overall state, and it changes how forecast blocks are combined (which sub-strategy is active under which regime). A regime block cannot be measured alone — only in combination — which is why it is validated as a composition variant (card F). A validated block is stored in a <strong>registry</strong> as its piece of bot config (the component entry with its parameters and weight and its regime assignment, or the detector rule), plus the criteria it passed, the variants it passed them on, and its measured numbers. A block must <strong>hold information</strong>: its forecast carries predictive power that the blocks already validated do not (measured as the residual information coefficient after regressing on the current composite forecast). Old runs' verdicts are legacy and do not populate the registry.</p>
+        <span class="tag resolved">decided</span>
+      </div>
+      <div class="card decision">
+        <div class="order mono">B</div>
+        <div class="id">two kinds of pass bar</div>
+        <div class="name">Idea criteria are per hypothesis, from a menu, in scale-free units. Profitability bars are campaign-wide, written once by hand.</div>
+        <p class="desc">An idea's own pass criteria are chosen at hypothesis time (Step 1a) from an anchored menu of criterion types — information coefficient, correlation, sign consistency across eras, edge-to-cost ratio, regime-conditional effect, residual information — with anchored thresholds, the same way the plausible-IC table already anchors one number today. <strong>Every criterion is written in scale-free units</strong>, so it does not depend on which coin or which parameter value a variant uses: the type and the threshold are fixed once at 1a and applied identically to all variants; the only per-variant element is the measured sample against the declared floor. A criterion that cannot be written scale-free is refused at registration — a per-variant threshold would let a variant pick its own easy exam, and unanimity (card C) would mean nothing. Idea criteria are usually <strong>not</strong> about profit. The profit bars (Sharpe, max drawdown, average daily return, trade floor, deflated Sharpe) live in <strong>one manually written campaign file</strong>, which also declares the campaign's target instrument set; they apply to every backtest the same way and are hypothesis-blind.</p>
+        <span class="tag resolved">decided</span>
+      </div>
+      <div class="card decision">
+        <div class="order mono">C</div>
+        <div class="id">the grid</div>
+        <div class="name">Branch 1 is a grid: criteria × variants, every cell mechanical, unanimity across variants. No LLM verdict, no averaging across variants, no re-thresholding per variant.</div>
+        <p class="desc">Windows inside one variant are repeated samples of the same setup, so they are aggregated — and each criterion type says how (median over windows, fraction of windows positive, same sign in every era, or pooled over all bars with the effective sample size). Variants are <em>different</em> setups, so they are never averaged: each must pass on its own, and the idea is validated only if every criterion holds on every variant. Every criterion carries a minimum sample floor; a variant under the floor gives an <strong>inconclusive</strong> cell, and the idea is inconclusive, not refuted. The default is one symbol per variant; a symbol reducer is declared only for cross-sectional ideas whose variant is a whole universe.</p>
+        <span class="tag resolved">decided</span>
+      </div>
+      <div class="card decision">
+        <div class="order mono">D</div>
+        <div class="id">three variants</div>
+        <div class="name">Three variants per idea, cap four: the base design, one design variation, one asset variation on a coin from a different category.</div>
+        <p class="desc">Variants exist for one reason: to show the result does not depend on the backtesting setup chosen. Three covers the two ways a result can be setup-dependent. This retires the 2026-09-15 "no cap" note and folds E-026's asset-generalisability rule into the variant set. Every tested variant counts as one attempt for the deflated-Sharpe math; a variant dropped before data (data missing, component missing) is not an attempt.</p>
+        <span class="tag resolved">decided</span>
+      </div>
+      <div class="card decision">
+        <div class="order mono">E</div>
+        <div class="id">protocol = windows only</div>
+        <div class="name">The protocol owns exactly one axis: the walk-forward test windows. Nothing else. Symbol, universe and timeframe are design fields; costs are a criterion.</div>
+        <p class="desc">Keeps separation of concerns clean: the protocol never chooses what to test, only when. <strong>Cost survival is a criterion, not a protocol axis:</strong> this bot's costs do not feed back into its decisions, so "survives 2× costs" is computable from one run's trade records (gross edge per trade against cost per trade) without any re-run. The cost figure is whatever the trade records carry: exchange fees, funding when the product is a perpetual, and slippage per E-010 (done). Sub-daily funding accrual is still open (E-053, backlog). v24's walkthrough claimed a cost-stress axis already existed; it never did.</p>
+        <span class="tag resolved">decided</span>
+      </div>
+      <div class="card decision">
+        <div class="order mono">F</div>
+        <div class="id">composition runs</div>
+        <div class="name">Combining blocks is its own run, triggered in code whenever the registry changes, assembled by the LLM at Step 1b under the design guide, checked mechanically.</div>
+        <p class="desc">A composition run is an ordinary run whose idea is "the registry's blocks combine into a profitable strategy." <strong>Trigger:</strong> a rule in the decide-next step (Step 10): if the registry changed since the last composition run, the composition run is next — no LLM judgment. <strong>Generation:</strong> Step 10 writes a composition brief listing every eligible block from the registry and the three weighting schemes; Step 1a passes it through (its criteria are the profit bars); <strong>Step 1b's LLM assembles the config</strong> — this is real design work, not a merge, because a block can be a component, a sub-strategy, or a regime with its rule, and those do not combine on one scale; Step 5a then checks mechanically that every listed block is present in the config and that the weighting scheme was applied. <strong>Variants:</strong> the three weighting schemes (equal, volatility-scaled, IC-weighted). <strong>Instrument set:</strong> the campaign's target set from the profit-bars file. <strong>Cross-coin eligibility, decided 2026-09-19:</strong> a validated block is eligible for a composite on any instrument, not only the coins it was tested on — the composite's own result against the profit bars is the real check, not an upfront restriction. <strong>Scale, decided 2026-09-19:</strong> combining forecasts assumes they are on a comparable scale; rather than gating composition behind a separate epic, the design guide (Step 1b) is told to apply the transform pipeline's existing standardization op when assembling a composite. This is expected to already be sufficient. If a specialist reader (Step 7) finds otherwise from a real composite's results, that becomes an ordinary proposal in the queue — possibly reviving E-048 as a real build later, never a precondition now. Composition runs count their own trials. <strong>Regime ideas are tested the same way:</strong> variant A = the blocks ungated, variant B = the same blocks gated by the detector; the criterion is "B beats A on the bars while the label passes its health checks." The standing "no regime-gated hypotheses" rule is lifted for this.</p>
+        <span class="tag resolved">decided</span>
+      </div>
+      <div class="card decision">
+        <div class="order mono">G</div>
+        <div class="id">no more verdict routing</div>
+        <div class="name">Refine / pivot / escalate / kill is retired. A run ends with an idea status — validated, refuted, inconclusive — and "what runs next" is a separate step.</div>
+        <p class="desc">The old verdicts were built for one lineage running alone: a failure automatically created the next run of the same idea. In the target design a refinement of a failed idea is just another candidate, proposed by a branch-2 reader, competing in the queue with everything else. The circuit breakers that stopped endless refines become queue policies. "Inconclusive" is reserved for data gaps and engineering failures and never counts as an attempt. The immediate child-run split that today launches extra hypotheses from one brief is retired with this (see card M).</p>
+        <span class="tag resolved">decided</span>
+      </div>
+      <div class="card decision">
+        <div class="order mono">H</div>
+        <div class="id">judge → learn → record → decide → park</div>
+        <div class="name">Branches 1, 2 and 3 run in parallel on the same results. Then memory is written, then one step decides what runs next, then the rest are parked.</div>
+        <p class="desc">Memory is written <em>before</em> the decision so the decision is reproducible from what is on disk. Branch 3 (profit bars) is a check that runs on every backtest, variant or composite alike; when it passes, the loop <strong>stops</strong> and the operator regroups (card L). The holdout unlock stays a manual act after that stop.</p>
+        <span class="tag resolved">decided</span>
+      </div>
+      <div class="card decision">
+        <div class="order mono">I</div>
+        <div class="id">how the next idea is picked</div>
+        <div class="name">Hybrid: mechanical gates, then three anchored LLM scores, then a trivial rank.</div>
+        <p class="desc">Gates are yes/no and in code: novelty (repeat checker, card K), feasibility (data gate, component exists), and the mandatory "registry changed → composition next" rule. Then the LLM scores each candidate on anchored 0–3 rubrics defined in a skill file — <strong>confidence the idea is real</strong> (3 = effect seen with effective sample above the floor and consistent across slices; 0 = story only), <strong>distance to a profitable strategy</strong> (3 = fills a missing block type with low correlation to the registry; 0 = neighbour of something already validated), and <strong>mechanism plausibility</strong> (who is on the other side of the trade, why it is not arbitraged away). Each score must cite its numbers; model id and rubric version are recorded. Ranking is then code: confidence, then distance, ties to the cheapest. Two readers proposing the same block collapse into one proposal with two sources. These scores pick what to test next; they never touch promotion. The operator can add a brief by hand at any time — a brief written from outside reading is a normal Step 0 entry; E-035 automates that later.</p>
+        <span class="tag resolved">decided</span>
+      </div>
+      <div class="card decision">
+        <div class="order mono">J</div>
+        <div class="id">component gap: park, don't stop</div>
+        <div class="name">If a design needs a component the bot does not have, it is caught when the config is checked (Step 5a), the idea is parked with a written request, and the loop moves on.</div>
+        <p class="desc">There is no build backlog and none will be built. The gapped variant is "not tested" (not an attempt); a component request is appended to one file the operator reads (surfaced in the campaign summary); the other variants still run; if fewer than three remain the idea is parked as "waiting for component" in the queue, with the request attached, and becomes runnable again once the component exists. The loop stops only if nothing else is runnable. What the operator does then is a runbook row (card L).</p>
+        <span class="tag resolved">decided</span>
+      </div>
+      <div class="card decision">
+        <div class="order mono">K</div>
+        <div class="id">the config is the vocabulary</div>
+        <div class="name">Step 1b writes the real bot config directly, under a design guide, plus a manifest and a short rationale. Variants are patches on it. Repeat = exact match. No translator layer.</div>
+        <p class="desc">Decided 2026-09-18 after weighing a separate "structured design document" against writing the config itself: a design that is already config-shaped plus a translator is a layer with a cost and no benefit. So: <strong>1b's output is the actual strategy config file</strong> the bot runs, written by an LLM following a design guide (how a strategy config is to be designed: regimes, sub-strategies, weighted components, transforms, allocation), plus a <strong>manifest</strong> naming which entries in that config are the block under test and which are scaffolding, plus a prose rationale for humans. The config is the binding artifact. <strong>A variant (E-057) is a named patch</strong> on that config — one field changed. <strong>Step 5a needs no LLM:</strong> the existing config validator runs, a check confirms every component class exists in the bot, the manifest is checked against the config, and the three patched configs are assembled. <strong>A repeat (Step 4) is an exact match</strong> on the config hash plus instrument, timeframe and window set — anything else is a neighbour, attached as information, never refused. What is given up: a human-readable design layer separate from the config; the rationale field covers that cheaply. E-056's S1 measures what scaffolding an LLM adds beyond the hypothesis today, so the guide can constrain it.</p>
+        <span class="tag resolved">decided</span>
+      </div>
+      <div class="card decision">
+        <div class="order mono">L</div>
+        <div class="id">operator cases and the runbook</div>
+        <div class="name">Every case where a human must act gets a runbook row: what to read, what to decide, which artifact to update, which command resumes the loop.</div>
+        <p class="desc">Three groups. <strong>Loop stops, operator acts:</strong> profit bars reached (review the composite; decide whether to spend the single-use holdout; run it by hand; record the outcome in the holdout result and the data-policy file; resume into Step 10 or promote); nothing runnable in the queue (write a new brief, or build a requested component, then resume); campaign review says stop. <strong>Idea parked, loop continues:</strong> component missing (card J); data missing for a variant (Step 3); an idea inconclusive twice for data reasons. <strong>Engineering halt, operator fixes and resumes:</strong> crash, conformance violation, invalid artifact — E-030 already covers these and the runbook already has a row per pause reason; the new rows follow the same format. Restart after any stop is the existing resume command: it clears the stop flag and re-enters Step 10. Documentation and the two new "parked" queue states are a named deliverable of plan item 11.</p>
+        <span class="tag resolved">decided</span>
+      </div>
+      <div class="card decision">
+        <div class="order mono">M</div>
+        <div class="id">briefs with several hypotheses</div>
+        <div class="name">Step 1a may produce several hypotheses from one brief; one runs now, the others go to the queue with the brief as their source; the brief stays open until 1a says it is exhausted.</div>
+        <p class="desc">Today, several hypothesis cards from one brief become immediate child runs. In the target design they become queue candidates, scored like everything else. A brief carries a status, <em>open</em> or <em>exhausted</em>, set when Step 1a says it cannot honestly produce more from it. Before declaring the queue empty, Step 10 re-reads open briefs and asks 1a for more. Small evolution — a queue entry shape and one rule — but a real one: <strong>tracked in Linear</strong> as a sub-issue of E-031 (plan item 12), not left implicit.</p>
+        <span class="tag resolved">decided</span>
+      </div>
+      <div class="card decision">
+        <div class="order mono">N</div>
+        <div class="id">one entry point</div>
+        <div class="name">Every candidate enters at Step 1a, whatever its source. A candidate that already carries a config and criteria passes through with a completeness check only.</div>
+        <p class="desc">A reader's proposal from Step 7 is recorded at Step 9, ranked at Step 10, parked at Step 11, and when picked it enters at Step 1a like a fresh brief. Because it already carries a structured design and criteria, 1a and 1b only verify completeness — they never redo the work. Same for a composition brief (card F) and for a parked idea whose missing component now exists. This pass-through rule is part of E-056's scope. The former validation stage between Step 2 and Step 5 is <strong>deleted</strong>, not folded anywhere: its historical catches were design mistakes to fix in the design guide, and it was controlling a problem that should not exist.</p>
+        <span class="tag resolved">decided</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="group">
+    <div class="group-head">
+      <h2>The plan, in order</h2>
+      <span class="tally">15 items · 7 not yet created · 0 decisions open</span>
+    </div>
+    <p style="font-size:.85rem;color:var(--text-muted);margin:0 0 18px;max-width:74ch;">Priority of effort, not a strict dependency queue: the config-as-vocabulary work (items 4–5) is foundational because the grid, the repeat checker, the registry and the readers all depend on it. Three items are unblocked today and can run in parallel with anything above them: <strong>CUL-267</strong> (item 1), the <strong>cost-survival criterion</strong> (item 3) and <strong>E-046a</strong>'s report layer (item 8, reads what already exists). Each item states its run budget.</p>
+
+    <div class="lane">
+      <p class="lane-title"><span class="dot" style="background:var(--obj3)"></span>Objective 3 — make sure a "pass" really means profitable</p>
+      <div class="cards">
+        <div class="card obj3">
+          <div class="order mono">1</div>
+          <div class="id">CUL-267</div>
+          <div class="name">Pass/fail checker: refuse silently-unmatched criteria instead of skipping them</div>
+          <p class="desc">The checker that decides pass/fail sometimes can't tell which number a rule is even talking about — today it records "can't check this" and moves on. Make it refuse at registration time instead. Now a <strong>prerequisite of the grid</strong> (item 7): a grid cell that cannot be measured must be impossible to register, not quietly empty; the same refusal covers a criterion that is not scale-free (card B). One correction to the ticket text: the code that actually decides today is <code>tools/verdict_criteria_evaluator.py</code>; the keyword matcher in <code>run_protocol.py</code> the ticket names is informational only since July. The fix goes where the decision is. Ships now. Run budget: 0 (pure guard).</p>
+          <span class="tag st-backlog">backlog</span>
+        </div>
+        <div class="card obj3 new">
+          <div class="order mono">2</div>
+          <div class="id">new ticket</div>
+          <div class="name">One campaign-wide profitability-bars file, written once by hand</div>
+          <p class="desc">Card B made concrete. A single config file holding the profit bars every backtest is checked against — Sharpe, max drawdown, average daily return, trade floor, deflated-Sharpe threshold — <strong>and the campaign's target instrument set</strong> (which composition runs trade). Read by branch 3 (Step 8) and by the holdout gate (Step 12). Replaces the per-protocol <code>promotion</code> blocks and the "generic promotion, ratified by" machinery that guards them today (legacy once nothing reads per-protocol bars). Also owns the <strong>"stop and tell the operator"</strong> behaviour when the bars clear, and that case's runbook row (card L) — v24 had that as a separate "announce it loudly" ticket; it is the same change. Run budget: 0.</p>
+          <span class="tag new">not yet created</span>
+        </div>
+        <div class="card obj3 new">
+          <div class="order mono">3</div>
+          <div class="id">new ticket</div>
+          <div class="name">Cost-survival criterion computed from the trade records</div>
+          <p class="desc">Card E. Costs are the main reason ideas failed in this project's history. This is <strong>not</strong> a protocol axis and needs no re-run: from one backtest's trade records, gross edge per trade against cost per trade gives "survives 1.5× / 2× costs" directly. Add it to the criterion menu (item 7) as a standard entry with anchored thresholds, reading fees + funding + slippage (E-010, done) as the trade records carry them. Note for the record: sub-daily funding accrual is still open (E-053, backlog), so a perpetual held across a settlement is under-costed until it lands. Run budget: 1 legacy run re-read through the criterion, result compared with its recorded cost drag.</p>
+          <span class="tag new">not yet created</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="lane">
+      <p class="lane-title"><span class="dot" style="background:var(--accent)"></span>Objectives 1 &amp; 2 — describe ideas precisely, grade them mechanically, learn from every result</p>
+      <div class="cards">
+        <div class="card">
+          <div class="order mono">4</div>
+          <div class="id">E-056</div>
+          <div class="name">Step 1b writes the bot config directly, under a design guide, with a manifest</div>
+          <p class="desc">Re-scoped 2026-09-18 per card K (prior title: "author the structured, bot-config-aligned hypothesis design"). Hypothesis generation splits into <strong>1a</strong> (brief → hypothesis + its scale-free pass criteria, chosen from the anchored menu owned by item 7; <strong>and the pass-through rule of card N</strong> for candidates that already carry a config and criteria) and <strong>1b</strong> (hypothesis → the actual strategy config file, written by the LLM under a <strong>design guide</strong> that says how a strategy config is to be designed — regimes, sub-strategies, weighted components, transforms, allocation, instrument set as one symbol or a named universe, a regime's assignment allowed to be "none" — plus a manifest naming the block under test, plus a prose rationale). <strong>S1 (characterize-and-stop)</strong> measures, on the 39 runs that have both a hypothesis card and a config, what the config step invents beyond what the card says — that is what the design guide must constrain — and lists the criterion types found in the real corpus so the menu is built from real cases. Corrections carried from the 2026-09-16 review: the pass rule today is copied from the human brief at run creation, or from the previous run's LLM-written proposed brief — never authored at Step 1, so this epic changes who holds the pen and must say so. Run budget: S2 ships with 1 real idea authored end-to-end (config + manifest + criteria) and run.</p>
+          <span class="tag st-backlog">backlog</span>
+        </div>
+        <div class="card">
+          <div class="order mono">5</div>
+          <div class="id">E-057</div>
+          <div class="name">State each variant as a named patch on the base config</div>
+          <p class="desc">Re-scoped per card K: a variant is one named field change on E-056's config — never a second, independent re-description. Card D fixes the set: base + one design patch + one asset patch on a different coin category (cap four). Today's loose variant descriptions (category, diversity axis) don't map onto config fields, which is why the config-building step has to guess — measured on the corpus, the variant-selection code already has to try five different key names just to find a variant's symbol. Run budget: same run as E-056's.</p>
+          <span class="tag st-backlog">backlog</span>
+        </div>
+        <div class="card new">
+          <div class="order mono">6</div>
+          <div class="id">E-033.1 → issue to create</div>
+          <div class="name">Test all three variants, each one counted</div>
+          <p class="desc">Promoted from "feeds the plan" to a numbered item because Steps 2, 3, 5 and 6 all presuppose it and it had no slot, no Linear issue and no owner. D1 is re-decided as card D (three variants, cap four; retires the 2026-09-15 "no cap" note and the 2026-09-01 "parameter X, default 2" wording — both superseded). D2 unchanged: a tested variant is an attempt; a dropped one is not. Build it as an extension of the protocol's own execution loop (variant becomes another axis that loop iterates over), not a second loop beside it; read E-049's findings first. Owns the per-variant trial recording change (today one trial row per run) and the per-variant data check (was E-054.1, see item 14). Run budget: 1 real idea, three variants, three trial rows.</p>
+          <span class="tag new">not yet created</span>
+        </div>
+        <div class="card">
+          <div class="order mono">7</div>
+          <div class="id">E-046b</div>
+          <div class="name">The grid, and the criterion menu it grades against</div>
+          <p class="desc">Cards B and C made concrete, and <strong>CUL-298 is merged in here</strong> (the family-level verdict is the grid's aggregation rule, not a separate step). <strong>This epic owns the criterion menu</strong> — the list of criterion types, their reducers, their anchored thresholds by signal class, the scale-free rule, and the sample floors — which Step 1a (E-056) picks from; nobody owned it before. Scope: (1) a criterion syntax of the form <em>metric · reducer · comparison · value</em>, where a reducer is one of a small fixed set (median, mean, min, max, fraction of windows above a value, same sign per era) applied to any per-window metric — today a criterion can address only 4 hard-coded per-variant fields while 14 metrics exist per window; (2) the pooled family computed from raw bars and trades (IC with effective sample size, expectancy t-stat, edge-to-cost ratio for item 3, residual IC against the composite for item 9, "gated beats ungated" for regime blocks); (3) a sample floor on every criterion, giving "inconclusive"; (4) unanimity across variants; (5) a symbol reducer declared only for multi-symbol variants. Depends on CUL-267. Its existing S1 milestone ("characterize the field-path criterion syntax") is still the first step. Run budget: re-grade 3 legacy runs through the grid and compare with their recorded verdicts (calibration only, history unchanged).</p>
+          <span class="tag st-planned">planned</span>
+        </div>
+        <div class="card">
+          <div class="order mono">8</div>
+          <div class="id">E-046a</div>
+          <div class="name">Give each backtest a focused report, one per specialist reader</div>
+          <p class="desc">Branch 2. <strong>Reports are code; readers are LLM agents.</strong> Five report categories (profitability, trade efficiency, forecast power, regime power, component attribution), each as "category × slice" (overall / per window / per regime / per symbol), and one specialist reader per category that can only suggest, never decide. Readers receive the <strong>raw per-window table</strong> and the slices — the grid consumes reduced values, the readers consume the rows, both from one table computed once. Readers emit <strong>structured proposals</strong> (a config patch or a new block sketch in the design-guide vocabulary) carrying the three anchored scores of card I, so Step 10 can rank them in code. <strong>The old regime auditor is gone as a judgment stage</strong> (1 of 61 runs ever produced its decision file): its "does using the label beat ignoring it" check becomes the regime-block criterion in the menu (item 7); its hindsight-lag comparison (with its lookahead trap written in) and its health numbers become metrics in the regime-power report; its retune firewall becomes a reader rule — never propose a detector change citing profit numbers. The forecast-power reader must self-flag "magnitude calibration unverified" until E-047/E-048 land. The report layer is unblocked now; the readers wait for E-056's vocabulary. Run budget: 2 real runs read by all five readers.</p>
+          <span class="tag st-backlog">backlog</span>
+        </div>
+        <div class="card new">
+          <div class="order mono">9</div>
+          <div class="id">new epic</div>
+          <div class="name">Block registry and composition runs</div>
+          <p class="desc">Cards A and F. The missing accumulation step. Scope: (1) the registry of validated blocks, both kinds (forecast blocks as component or sub-strategy config fragments with their regime assignment; regime blocks as detector rules), with criteria passed, variants passed on, measured numbers, and forecast correlation to the current composite; (2) the <strong>residual-information criterion</strong> in the menu, so a new block must add information the registry lacks; (3) the composition run: Step 10 writes the composition brief from the registry, Step 1a passes it through with the profit bars as criteria, <strong>Step 1b's LLM assembles the config under the design guide</strong> (a block can be a component, a sub-strategy, or a regime with its rule — not a merge), Step 5a checks every listed block is present and the weighting scheme applied; variants = the three weighting schemes; trials counted; (4) the code rule "registry changed → composition is the next run"; (5) regime ideas as composition variants (gated vs ungated), including lifting the standing no-regime-gating rule in the hypothesis-design skill. <strong>Cross-coin eligibility (decided 2026-09-19):</strong> any validated block is eligible for a composite on any instrument, regardless of which coin(s) it was tested on — the composite's own grading against the profit bars is what would catch a bad generalisation, not an upfront filter. <strong>No E-048 gate (decided 2026-09-19):</strong> composition does not wait on a separate standardisation epic; the design guide applies the existing transform-pipeline standardisation when assembling a composite, and a specialist reader's finding from a real result — not a pre-built epic — is what would promote E-048 back out of backlog if it turns out to be needed. <strong>Not E-044:</strong> this is a genuinely new epic, not a re-scope — E-044 ("run several proven strategies at once," a live-portfolio idea) is a different concept and is left untouched in the backlog. Run budget: the first composition run as soon as the registry holds two blocks.</p>
+          <span class="tag new">not yet created</span>
+        </div>
+        <div class="card new">
+          <div class="order mono">10</div>
+          <div class="id">new epic</div>
+          <div class="name">Regroup and record — one explicit stage that writes memory before anything is decided</div>
+          <p class="desc">Card H. After branches 1, 2 and 3 have run: write the idea status and the grid into campaign memory, update the block registry, append the trial rows, record the readers' proposals, and update the near-miss scoreboard — then stop. It decides nothing. Today these are separate habits: a knowledge-base entry per run, an auto-generated carry-over file, one trial row per run, and a scoreboard that is a hand-run script the loop never calls (its own module says "NOT yet wired"; wiring it is this epic's job). The scoreboard keeps E-018's doctrine — it inspires, only the gates decide — and since its static firewall test was removed, that doctrine is enforced by review, which this epic must preserve by hand. Also updates the campaign-review skill to read the new memory fields; that stage is prompted from a file naming specific fields, so a richer memory does not reach it for free. Run budget: 0 (record-keeping), verified on the runs items 6–8 produce.</p>
+          <span class="tag new">not yet created</span>
+        </div>
+        <div class="card new">
+          <div class="order mono">11</div>
+          <div class="id">new epic</div>
+          <div class="name">Retire verdict routing; one "decide what's next" step; the operator runbook</div>
+          <p class="desc">Cards G, L and M. Removes refine / pivot / escalate / kill and the automatic scaffolding of a child run (today the refine and pivot routes create the next run immediately and the campaign runner follows that child, so the queue is never consulted while a lineage is alive), and the immediate child-run split for multi-hypothesis briefs. Replaces them with: idea status (validated / refuted / inconclusive) written by the grid, and a decide-next step that reads memory and the queue and applies card I's gates, scores and rank, plus the two code rules "registry changed → composition next" and "queue empty → ask open briefs for more before stopping." The mechanical routing table built for E-018 keeps its pass/fail half and loses its routing half. Campaign review survives as the strategic sub-question only (change the research question, or stop the campaign), triggered as today. <strong>Named deliverables:</strong> the runbook rows of card L (what to read, what to decide, which artifact to update, which command resumes) for every case; the two new parked queue states ("waiting for component", "waiting for data") and the component-request file of card J; a per-idea cost estimate by protocol class for the tie-break. Run budget: 2 consecutive real runs where the second was chosen by this step, with the decision record on disk.</p>
+          <span class="tag new">not yet created</span>
+        </div>
+        <div class="card">
+          <div class="order mono">12</div>
+          <div class="id">E-031</div>
+          <div class="name">The queue: let more than one good idea wait its turn, and pick from it</div>
+          <p class="desc">S1 and S2 are done; S3 (the return edge itself) is not. Re-scoped to be the storage half of item 11: candidates from the readers, from campaign review, from a brief's extra hypotheses (card M — <strong>a Linear sub-issue to create under this project</strong>: brief-sourced entries and the open/exhausted brief status), and refinements of failed ideas all land here in the design-guide vocabulary, and the decide-next step picks from here. The separate "one shared queue for every idea source" item from v24 is merged in — one queue, one repeat-check, one ranking, whatever the source. Facts corrected from v24: the registration function has been called twice by hand in the system's life (2026-07-18 and 2026-08-27), not once; "no cap on how many can wait" stands, but the per-candidate scoring is card I's hybrid, not "one specialist re-scores each candidate." Must still earn its off-by-default, proven-before-trusted bar. Run budget: the two runs of item 11.</p>
+          <span class="tag st-progress">in progress</span>
+        </div>
+        <div class="card">
+          <div class="order mono">13</div>
+          <div class="id">E-036</div>
+          <div class="name">Repeat check = exact match on the full backtest setup</div>
+          <p class="desc">Shrunk per card K. The built fingerprint was rejected on design (2026-09-02) for treating a strategy as a flat bag of parts. Once Step 1b writes the config itself, the question disappears: <strong>a repeat is an exact match</strong> on the config hash plus instrument, timeframe and window set; if any element of the setup differs — strategy, parameter, coin — it is not a repeat but a neighbour, attached to the candidate as information, never refused. Two additions: (i) <strong>legacy tagging</strong> — pre-redesign knowledge-base verdicts must never cause a refusal, since "failed" then meant "not profitable alone"; (ii) both gate flags stay off until this ships. Run budget: replay the checker over the corpus and publish the refuse/admit counts before and after.</p>
+          <span class="tag st-backlog">backlog</span>
+        </div>
+        <div class="card new">
+          <div class="order mono">14</div>
+          <div class="id">new ticket (E-054 follow-up)</div>
+          <div class="name">Switch the data-availability check on, register its flag, run it once per variant</div>
+          <p class="desc">E-054 is marked complete, but the gate is off by default behind an environment variable that the campaign runner never sets, and that variable is absent from the feature-flag register, which claims to cover every off-by-default flag and is test-enforced only for config-key flags. So the "control that data is available" the brief asks for exists and never runs in a real campaign. This ticket: turn it on by default (or convert it to a registered config flag), loop it once per variant (absorbs E-054.1), and make its "data missing" outcome park the variant rather than pause the loop (card J's pattern; runbook row in item 11). Run budget: 1 real run with the gate on.</p>
+          <span class="tag new">not yet created</span>
+        </div>
+        <div class="card">
+          <div class="order mono">15</div>
+          <div class="id">E-035</div>
+          <div class="name">Pull in outside ideas automatically, and open a feed-acquisition lane</div>
+          <p class="desc">Moved up from last place. <strong>The manual path exists today:</strong> the operator writes a brief from outside reading and it enters at Step 0 like any brief. This epic automates that later. The idea generator is closed-book (it only sees the brief, the feed list and the indicator library) and the data wishlist has one entry. Block diversity — the thing the registry needs — depends on data the loop cannot see today: order book and trades from the recorder era, cross-venue, on-chain. This epic's S1 (characterize the outward-dispatch path) stands; its S3 (wire the near-miss scoreboard as an internal source) is now served through item 10. Added scope: a standing <strong>feed-acquisition lane</strong> so a reader's "this needs a feed we lack" proposal has somewhere to go besides a wishlist file nobody reads. Run budget: 1 externally-sourced idea reaching a grid verdict.</p>
+          <span class="tag st-backlog">backlog</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="lane">
+      <p class="lane-title"><span class="dot" style="background:var(--support)"></span>Feeds the plan, or settled by it <small>&nbsp;(not steps themselves)</small></p>
+      <div class="cards">
+        <div class="card support">
+          <div class="order mono">·</div>
+          <div class="id">E-029</div>
+          <div class="name">Record WHY a trade closed, not just what happened</div>
+          <p class="desc">Enriches the trade-efficiency report once it exists — NOT a blocker for it. E-046's own investigation confirmed today's trade-level data is enough to ship a real report with no new artifact.</p>
+          <span class="tag st-backlog">backlog</span>
+        </div>
+        <div class="card support">
+          <div class="order mono">·</div>
+          <div class="id">CUL-298</div>
+          <div class="name">MERGED into item 7: "do the variants actually agree with each other?"</div>
+          <p class="desc">v24 gave this its own plan slot and its own walkthrough step. It is the grid's aggregation rule (unanimity across variants), not a separate check, so it lives inside E-046b. The Linear issue stays as the record and should be moved under that project.</p>
+          <span class="tag resolved">merged</span>
+        </div>
+        <div class="card support">
+          <div class="order mono">·</div>
+          <div class="id">E-040</div>
+          <div class="name">SUPERSEDED: "merge the regime auditor into detector validation"</div>
+          <p class="desc">The auditor was documented as a stage and never dispatched; 1 of 61 runs ever produced its decision file. Its checks survive as measurements, not as a judgment stage: one becomes the regime-block criterion in the menu (item 7), the others become regime-power report metrics (item 8); the retune firewall becomes a reader rule. Regime <em>ideas</em> are tested as composition variants (item 9). The epic as scoped is closed.</p>
+          <span class="tag resolved">superseded</span>
+        </div>
+        <div class="card support">
+          <div class="order mono">·</div>
+          <div class="id">—</div>
+          <div class="name">DELETED: the validation stage ("pressure-test the design")</div>
+          <p class="desc">A real LLM stage between variant generation and config-building that v24's walkthrough never mentioned: approve / refine (budget two) / reject, plus authoring decision rules, a data-split design read by nothing, and a cost-feasibility note. Deleted outright (operator, 2026-09-18): its historical catches were design mistakes to fix in the design guide, not controls to keep; it was checking a problem that should not exist; and it added complexity. Nothing is parked. Criterion authoring is Step 1a; windows are the protocol; feasibility is Step 5a.</p>
+          <span class="tag resolved">deleted</span>
+        </div>
+        <div class="card support">
+          <div class="order mono">·</div>
+          <div class="id">—</div>
+          <div class="name">MOVED into E-056: "pass an already-formed idea through without redoing it"</div>
+          <p class="desc">v24 called it "small, likely a skill-instruction fix." It was neither: every refine child restarted at hypothesis generation, and a skill instruction cannot skip a stage. Lineage re-entry disappears with item 11, but the rule is still needed — a reader's proposal, a composition brief or an un-parked idea all enter at Step 1a already carrying a config and criteria (card N). It is now E-056's pass-through rule.</p>
+          <span class="tag resolved">moved</span>
+        </div>
+        <div class="card support">
+          <div class="order mono">·</div>
+          <div class="id">—</div>
+          <div class="name">REMOVED: "what does propose-a-fix mean for a group of variants" (was E-033.4)</div>
+          <p class="desc">There is no "auto-fix this idea" mechanism and there doesn't need to be one — a refuted idea is recorded, and whatever runs next is chosen at the decide-next step (item 11). Unchanged from v24, kept as the record.</p>
+          <span class="tag resolved">removed</span>
+        </div>
+        <div class="card support">
+          <div class="order mono">·</div>
+          <div class="id">—</div>
+          <div class="name">SETTLED: "how many versions is too many?"</div>
+          <p class="desc">Card D: three, cap four. E-039's measured cost still matters (median ~3m45s per clean 22-backtest local-cache protocol; 12–16× that, with a 50% failure rate, for long-lookback protocols) — with three variants and a multi-year window set, one idea is a few hundred backtests. That cost feeds the decide-next tie-break (cheapest wins ties); the per-idea cost estimate by protocol class is a deliverable of item 11.</p>
+          <span class="tag resolved">decided</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="group">
+    <div class="group-head">
+      <h2>Backlog — not in this plan for now</h2>
+      <span class="tally">20 entries · 8 categories</span>
+    </div>
+
+    <div class="subcat">
+      <div class="subcat-head">
+        <h3>Engineering process improvements</h3>
+        <p>How new features themselves get built — the loop's own tooling and workflow, not the research it produces.</p>
+      </div>
+      <div class="backlog-grid">
+        <div class="bcard"><div class="row1"><span class="id mono">E-020</span><span class="tag st-backlog">backlog</span></div>
+          <div class="name">Make the codebase cheaper for an AI to read</div>
+          <p class="desc">Per-change context cost, before making any single edit.</p></div>
+
+        <div class="bcard"><div class="row1"><span class="id mono">E-006</span><span class="tag st-progress">in progress</span></div>
+          <div class="name">Stop storing a Windows Python environment in the repo</div>
+          <p class="desc">A committed venv that shouldn't be tracked at all.</p></div>
+
+        <div class="bcard"><div class="row1"><span class="id mono">E-005</span><span class="tag st-backlog">backlog</span></div>
+          <div class="name">Confirm the codebase runs on Mac and Linux too</div>
+          <p class="desc">Not just Windows, where it was originally built.</p></div>
+      </div>
+    </div>
+
+    <div class="subcat">
+      <div class="subcat-head">
+        <h3>How pass/fail rules &amp; test scope get built</h3>
+        <p>Same underlying question as CUL-267 and the grid in the plan above, from the protocol-construction side.</p>
+      </div>
+      <div class="backlog-grid">
+        <div class="bcard"><div class="row1"><span class="id mono">E-049</span><span class="tag st-backlog">backlog</span></div>
+          <div class="name">Clean up how test date-ranges and pass rules get built</div>
+          <p class="desc">Smaller than first thought, and re-read against the code 2026-09-16: the declared-intent field (<code>sample_split_design</code>) is written by nothing and read by nothing — dead weight, and it disappears with the deleted validation stage. The hand-copied protocol variant files (a 15-minute version, a SOL and an AVAX 4h version) are the output of the <em>escalate</em> route, which picks the next coin or timeframe itself — so they go away with verdict-routing retirement (plan item 11). What's left here: migrate the remaining legacy files onto the generated-from-constraints mechanism, and document the ratification-gate crash path until plan item 2 retires it.</p></div>
+      </div>
+    </div>
+
+    <div class="subcat">
+      <div class="subcat-head">
+        <h3>Collaboration — joint runs &amp; shared location</h3>
+        <p>Two people running campaigns on shared infrastructure without stepping on each other.</p>
+      </div>
+      <div class="backlog-grid">
+        <div class="bcard"><div class="row1"><span class="id mono">E-051</span><span class="tag st-backlog">backlog</span></div>
+          <div class="name">Let two people run campaigns at once, safely</div>
+          <p class="desc">Beyond today's one-at-a-time lock, if it ever becomes a bottleneck.</p></div>
+
+        <div class="bcard"><div class="row1"><span class="id mono">E-050</span><span class="tag st-backlog">backlog</span></div>
+          <div class="name">Track whose AI usage costs belong to whom</div>
+          <p class="desc">On the shared research server, once more than one person launches runs.</p></div>
+
+        <div class="bcard"><div class="row1"><span class="id mono">E-025</span><span class="tag st-planned">planned</span></div>
+          <div class="name">Safely combine attempt counts when two people run campaigns</div>
+          <p class="desc">So the trial ledger stays honest when two people run campaigns. Note: card D makes attempts per variant, and plan item 9 adds composition runs as attempts — the merge protocol must count both.</p></div>
+
+        <div class="bcard"><div class="row1"><span class="id mono">—</span><span class="tag st-backlog">backlog · parked</span></div>
+          <div class="name">Run our own test/AI server instead of relying on GitHub's (parked)</div>
+          <p class="desc">Self-hosted runner plus an agent layer.</p></div>
+
+        <div class="bcard"><div class="row1"><span class="id mono">E-007</span><span class="tag st-progress">in progress</span></div>
+          <div class="name">Move the always-on recorder to its permanent home</div>
+          <p class="desc">Storage and host migration to the shared server. Its captured order-book and trade data is the first candidate for the feed-acquisition lane (plan item 15).</p></div>
+      </div>
+    </div>
+
+    <div class="subcat">
+      <div class="subcat-head">
+        <h3>Backtest realism — costs &amp; fills</h3>
+        <p>Closing the gap between what a backtest assumes and what a real exchange actually does. Slippage (E-010) is done; the cost-survival criterion (plan item 3) reads whatever the trade records carry.</p>
+      </div>
+      <div class="backlog-grid">
+        <div class="bcard"><div class="row1"><span class="id mono">E-053</span><span class="tag st-backlog">backlog</span></div>
+          <div class="name">Apply funding costs more than once a day (down to hourly or finer)</div>
+          <p class="desc">For positions held on futures-like contracts across a settlement. Until it lands, a perpetual held across a settlement is under-costed in the cost-survival criterion — noted there.</p></div>
+
+        <div class="bcard"><div class="row1"><span class="id mono">E-052</span><span class="tag st-backlog">backlog</span></div>
+          <div class="name">Round trade sizes to real exchange limits</div>
+          <p class="desc">Backtests currently ignore minimum order-size rules.</p></div>
+      </div>
+    </div>
+
+    <div class="subcat">
+      <div class="subcat-head">
+        <h3>Signal &amp; forecast quality</h3>
+        <p>Making sure the bot's own predictions are well-calibrated. E-048 was considered as a plan prerequisite for composition (2026-09-18) and released back here (2026-09-19): the design guide applies the existing transform pipeline's standardisation when assembling a composite, so a separate epic is only needed if a specialist reader's real finding says today's transforms aren't enough.</p>
+      </div>
+      <div class="backlog-grid">
+        <div class="bcard"><div class="row1"><span class="id mono">E-048</span><span class="tag st-backlog">backlog</span></div>
+          <div class="name">Make combined signal strength scale consistently</div>
+          <p class="desc">Across an ensemble of components, not just its average direction. Not a gate on composition (item 9) — promoted back to a real build only if a specialist reader finds the existing transform pipeline insufficient on a real composite result.</p></div>
+
+        <div class="bcard"><div class="row1"><span class="id mono">E-047</span><span class="tag st-backlog">backlog</span></div>
+          <div class="name">New metrics: check a bigger signal means a bigger real price move</div>
+          <p class="desc">Forecast calibration — does magnitude scale correctly?</p></div>
+      </div>
+    </div>
+
+    <div class="subcat">
+      <div class="subcat-head">
+        <h3>Data &amp; research infrastructure</h3>
+        <p>The raw data and feature pipelines the research itself runs on.</p>
+      </div>
+      <div class="backlog-grid">
+        <div class="bcard"><div class="row1"><span class="id mono">E-008</span><span class="tag st-progress">in progress</span></div>
+          <div class="name">Convert Kraken's tick data into the bot's bar format (holdout-sealed)</div>
+          <p class="desc">Build-and-test only — the real archive this would run against is inside the sealed holdout, so running it against real data waits on a separate, deliberate decision to spend that seal.</p></div>
+
+        <div class="bcard"><div class="row1"><span class="id mono">E-019</span><span class="tag st-backlog">backlog</span></div>
+          <div class="name">One table of every signal, per coin/day, checked for future-peeking</div>
+          <p class="desc">"Future-peeking" = using tomorrow's data (lookahead) by accident.</p></div>
+      </div>
+    </div>
+
+    <div class="subcat">
+      <div class="subcat-head">
+        <h3>Better failure diagnosis</h3>
+        <p>Richer, more honest records of WHY something failed, not just that it did.</p>
+      </div>
+      <div class="backlog-grid">
+        <div class="bcard"><div class="row1"><span class="id mono">E-027</span><span class="tag st-backlog">backlog</span></div>
+          <div class="name">Tell apart three reasons a forecast hits exactly zero, not one label</div>
+          <p class="desc">No strategy for this regime, a component not warmed up, or a genuine "go flat" call — today all three get labeled the same way, hiding 92% of exits under one vague label. Scope also includes tagging forecasts/exits caused by a large or middle-tier data gap as a fourth distinct cause.</p></div>
+
+        <div class="bcard"><div class="row1"><span class="id mono">—</span><span class="tag resolved">removed</span></div>
+          <div class="name">REMOVED: "stop treating 'no opinion yet' as 'sell everything'" (was E-028)</div>
+          <p class="desc">Pure config, not an engine-behavior policy decision. Folded into E-056's design guide — a regime's strategy assignment can explicitly be "none," a deliberate declared choice, not a silent gap.</p></div>
+
+        <div class="bcard"><div class="row1"><span class="id mono">E-017</span><span class="tag st-backlog">backlog</span></div>
+          <div class="name">Standardize how failed-experiment write-ups get done</div>
+          <p class="desc">One autopsy format, instead of one write-up per finding.</p></div>
+      </div>
+    </div>
+
+    <div class="subcat">
+      <div class="subcat-head">
+        <h3>Going live</h3>
+        <p>The path to trading with real money, safely.</p>
+      </div>
+      <div class="backlog-grid">
+        <div class="bcard"><div class="row1"><span class="id mono">E-024</span><span class="tag st-backlog">backlog</span></div>
+          <div class="name">Build the live-trading kill-switch (max-drawdown + daily loss limit)</div>
+          <p class="desc">Before any real money trades.</p></div>
+
+        <div class="bcard"><div class="row1"><span class="id mono">E-023</span><span class="tag st-backlog">backlog</span></div>
+          <div class="name">Turn on real trading, targeting Kraken</div>
+          <p class="desc">Only after the safety backstop above exists.</p></div>
+      </div>
+    </div>
+
+    <div class="subcat">
+      <div class="subcat-head">
+        <h3>Moved out of the backlog</h3>
+        <p>For anyone looking for them: <strong>E-040</strong> is superseded (see "feeds the plan"); <strong>E-035</strong> is plan item 15; the "announce it loudly when profitable" ticket is part of plan item 2; <strong>E-010</strong> (slippage) is done and referenced from item 3. <strong>E-044</strong> (run several strategies at once) is left here, untouched — the block-registry/composition epic (item 9) is a genuinely different, new epic, not a re-scope of it (corrected 2026-09-19). <strong>E-048</strong> stays here too, not gating item 9 (corrected 2026-09-19, see the Signal &amp; forecast quality note above).</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="group">
+    <div class="group-head">
+      <h2>How the pipeline works, step by step</h2>
+      <span class="tally">14 steps + 3 notes · plain-language walkthrough · now / what changes / target</span>
+    </div>
+    <p class="walkthrough-intro">Imagine you're teaching a trading robot to get smarter over time. It doesn't just trade — first, it has to figure out what actually works, by testing ideas one at a time, like a scientist running experiments. Here's every step of that experiment-running process, in order: what it's for, how it works today (checked against the code on 2026-09-16), what changes, and what the target looks like — each one tagged with the epic that owns it. The one-line version of the target: <strong>write the idea as a real config → test it three ways → grade it with a grid → learn from it → write it down → decide what's next → park the rest → combine what was proven.</strong></p>
+
+    <div class="step">
+      <div class="step-head"><span class="step-num mono">Step 0</span><h3>Where does an idea come from?</h3></div>
+      <dl>
+        <dt>Objective</dt><dd>Give the system a starting point: either "go explore this general area," or a specific, already-shaped idea handed to it. A brief may contain several ideas worth testing.</dd>
+        <dt>Today</dt><dd>A person writes the starting topic. After a run, the system's "refine" or "pivot" verdict writes the next brief itself and creates the next run immediately, without anything choosing between candidates. If hypothesis generation produces several cards from one brief, each becomes a child run immediately.</dd>
+        <dt>What changes</dt><dd>Ideas arrive from more sources — the specialist readers (Step 7), campaign review, the operator writing a brief from outside reading (a normal entry today; E-035 automates it later) — and every one of them goes through the same queue and the same decide-next step (Steps 10–11). No source creates a run directly any more. A brief with several ideas puts one in the run and the rest in the queue, and stays <em>open</em> until Step 1a says it is exhausted (card M).</dd>
+        <dt>Target</dt><dd>One doorway, many sources, one rule for who goes first, and no idea in a brief is ever forgotten.</dd>
+      </dl>
+      <p class="step-epic"><strong>Epic:</strong> No dedicated epic. Fed by E-032 (done), E-035 (plan item 15) and the readers of E-046a (item 8); governed by items 11–12 (brief status: a sub-issue of E-031).</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-num mono">Step 1a</span><h3>Turning the idea into a testable hypothesis, with its own pass criteria</h3></div>
+      <dl>
+        <dt>Objective</dt><dd>Take an idea — from a brief, from a reader's proposal, from a composition brief, from an un-parked candidate: <strong>this is the single entry point for every candidate</strong> (card N) — and turn it into a precise claim that can be proven right or wrong, plus the rule for "right," written down before any test runs. The rule is usually not about profit: it is about the mechanism — a real signal, that survives costs, that carries information the proven blocks do not already have (card B). If the candidate already carries a config and criteria, this step only checks completeness and passes it through.</dd>
+        <dt>Today</dt><dd>An AI writes the hypothesis from scratch every time, including for a refine child that already had one. The pass rule does <em>not</em> come from this step: it is copied from the human brief when the run is created, or from the previous run's AI-written proposed brief. Only 3 of the 10 runs that have a pre-registration file carry a structured rule; the rest are prose that the checker cannot address.</dd>
+        <dt>What changes</dt><dd>This step chooses the criteria from the anchored menu (owned by item 7): criterion types with anchored thresholds, <strong>all in scale-free units</strong>, so they apply unchanged to every variant whatever its coin or parameters — pick from a table, don't free-hand — and the idea's author cannot write itself an easy exam. Profit bars are never chosen here (they are campaign-wide, Step 8). Already-formed candidates pass through.</dd>
+        <dt>Target</dt><dd>Every hypothesis arrives with criteria a machine can check, chosen from a fixed vocabulary, identical across its variants.</dd>
+      </dl>
+      <p class="step-epic"><strong>Epic:</strong> E-056 (item 4), part 1a, including the pass-through rule. CUL-267 (item 1) guarantees an unmatchable or non-scale-free criterion is refused here rather than skipped later. The menu itself: E-046b (item 7).</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-num mono">Step 1b</span><h3>Writing the real bot config, under the design guide</h3></div>
+      <dl>
+        <dt>Objective</dt><dd>Produce the actual strategy config the bot will run — which regime it applies in, which component or sub-strategy, with which parameters and weight, on which symbol or universe, at which timeframe — written by an LLM that follows a <strong>design guide</strong> on how a strategy config is to be designed, plus a <strong>manifest</strong> naming which entries are the block under test and which are scaffolding, plus a short rationale for humans (card K). For a composition brief, this is where the registry's blocks are assembled into one strategy — a real design task, since a block can be a component, a sub-strategy, or a regime with its rule (card F).</dd>
+        <dt>Today</dt><dd>The design is described in loose labels (a category, a "diversity axis"). The real config is invented later by the config-building step, invisibly, worst of all when refining a failed idea, where it does not even receive the exact setup that ran last time.</dd>
+        <dt>What changes</dt><dd>The config is written here, once, and becomes the binding artifact. There is no separate design document and no translator. A regime's strategy assignment can explicitly be "none." The instrument set is a field: one symbol by default, a named universe for cross-sectional ideas.</dd>
+        <dt>Target</dt><dd>What runs is exactly what this step wrote, and the manifest says which part of it is the idea.</dd>
+      </dl>
+      <p class="step-epic"><strong>Epic:</strong> E-056 (item 4), part 1b and the design guide.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-num mono">Step 2</span><h3>Making three versions of the same idea, as patches on the config</h3></div>
+      <dl>
+        <dt>Objective</dt><dd>Test the idea three ways so that if it works, it is the idea that is good, not one lucky setup: the base config, one design patch (a parameter neighbour or a different component form), one asset patch (a coin from a different category) (card D). Each version is one named field change on Step 1b's config. The same three criteria from Step 1a apply to all three, unchanged.</dd>
+        <dt>Today</dt><dd>Several versions get proposed; exactly one is tested; the rest are recorded as "not pursued" and thrown away. Versions are described by category labels, not as a precise change.</dd>
+        <dt>What changes</dt><dd>All three are tested. Each is a patch. Each tested one counts as an attempt for the deflated-Sharpe math. This step only generates; it does not check for repeats (that is Step 4).</dd>
+        <dt>Target</dt><dd>Three configs that differ from each other in exactly the one way each was meant to.</dd>
+      </dl>
+      <p class="step-epic"><strong>Epic:</strong> E-057 (item 5) for the patch; E-033.1 (item 6) for testing all three.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-num mono">Step 3</span><h3>Checking the data exists, once per version</h3></div>
+      <dl>
+        <dt>Objective</dt><dd>Before a slow test, a quick check: do we even have the price history each version needs?</dd>
+        <dt>Today</dt><dd>Built and tested (E-054), but switched off by default behind an environment variable the campaign runner never sets, and missing from the feature-flag register. In a real campaign it does not run. When it does run and data is only partly there, it pauses the whole loop for a human.</dd>
+        <dt>What changes</dt><dd>Switched on by default, registered, and run once per version. A version whose data is missing is "not tested" and does not count as an attempt; if fewer than three versions remain the idea is parked as "waiting for data" and the loop moves on (card J's pattern; runbook row in card L).</dd>
+        <dt>Target</dt><dd>No backtest ever starts on data that is not there, and a data gap never stops the whole loop.</dd>
+      </dl>
+      <p class="step-epic"><strong>Epic:</strong> plan item 14 (E-054 follow-up, absorbs E-054.1).</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-num mono">Step 4</span><h3>Checking we haven't already run this exact setup, once per version</h3></div>
+      <dl>
+        <dt>Objective</dt><dd>Don't spend a real experiment on a setup that already ran. <strong>A repeat means the exact same full setup</strong>: same config, same instrument, same timeframe, same window set. If any element differs — strategy, a parameter, the coin — it is not a repeat; it is a neighbour, and the neighbour's result is attached as information. This is the only place that check happens.</dd>
+        <dt>Today</dt><dd>The gate exists in code and is switched off. Its first "same thing" test was rejected on design because it treated a strategy as a flat bag of parts.</dd>
+        <dt>What changes</dt><dd>Because Step 1b writes the config itself, the check is a hash comparison. Old verdicts are tagged legacy and never cause a refusal: "failed" under the old rules meant "not profitable alone," which says nothing about whether the block holds information.</dd>
+        <dt>Target</dt><dd>Exact repeats are refused; everything else runs, better informed.</dd>
+      </dl>
+      <p class="step-epic"><strong>Epic:</strong> E-036 (item 13), shrunk to exact match.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-num mono">Step 5a</span><h3>Checking and assembling the configs — no LLM</h3></div>
+      <dl>
+        <dt>Objective</dt><dd>Take Step 1b's config and Step 2's patches and make three runnable configs. Validate each with the existing config validator, confirm every component class exists in the bot, confirm the manifest matches the config (for a composition run: every listed block is present and the weighting scheme applied), and refuse loudly on anything else. If a component is missing, catch it here (card J).</dd>
+        <dt>Today</dt><dd>An AI writes the config and fills every unstated detail itself. The schema validator then checks the result. A "component gap" path exists but relies on the AI noticing, and it pauses the run for a human.</dd>
+        <dt>What changes</dt><dd>No design happens here any more; it all happened in 1b. This step is validation and patch application, in code. A missing component marks the version "not tested," writes a component request to the operator's file, and the other versions still run (fewer than three left → the idea is parked "waiting for component"; the loop moves on).</dd>
+        <dt>Target</dt><dd>The config that runs is exactly the one written in 1b plus one named patch, or the run refuses.</dd>
+      </dl>
+      <p class="step-epic"><strong>Epic:</strong> E-056/E-057 (items 4–5); parked states and the request file in item 11.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-num mono">Step 5b</span><h3>Running the protocol: the test windows</h3></div>
+      <dl>
+        <dt>Objective</dt><dd>Run each version across many time windows (walk-forward). <strong>The protocol owns only this one axis</strong>; it never chooses what to test and never varies anything but the windows (card E). Costs are not re-run: they are read off the trade records by a criterion (Step 6).</dd>
+        <dt>Today</dt><dd>Monthly windows only, generated from the run's pre-registered constraints; 14 metrics recorded per window. The escalate route can pick a new coin or timeframe on its own — that goes away with Step 10.</dd>
+        <dt>What changes</dt><dd>Loop over the three versions inside the same protocol run. Nothing else.</dd>
+        <dt>Target</dt><dd>One run = three versions × all windows, all recorded per window in one table.</dd>
+      </dl>
+      <p class="step-epic"><strong>Epic:</strong> E-033.1 (item 6) for the version loop.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-num mono">Step 6</span><h3>Grading the idea: the grid <small style="font-weight:400;color:var(--text-muted);">(branch 1)</small></h3></div>
+      <dl>
+        <dt>Objective</dt><dd>Decide, from the numbers alone, whether the idea passed the criteria it declared in Step 1a — on every version, not on one lucky one (card C). Cost survival is one of those criteria, computed from the trade records (fees, funding, slippage as recorded), not from a re-run.</dd>
+        <dt>Today</dt><dd>A mechanical checker exists and is meant to be binding, but it has produced a binding verdict on 1 run out of 60; everywhere else the AI's own judgment decided. A criterion can only name 4 hard-coded per-version numbers. Nothing checks whether the versions agree.</dd>
+        <dt>What changes</dt><dd>Rows are criteria, columns are versions, each cell is measured: the windows inside a version are reduced the way the criterion says (median, fraction positive, same sign per era, or pooled), and every criterion has a sample floor. Thresholds are never adjusted per version. The idea is <strong>validated</strong> only if every cell passes, <strong>refuted</strong> if any cell fails with enough data, <strong>inconclusive</strong> if any cell is under its floor. The AI explains; it never overrules.</dd>
+        <dt>Target</dt><dd>A verdict nobody can argue with after the fact, because the rule was written before the run and applied by code.</dd>
+      </dl>
+      <p class="step-epic"><strong>Epic:</strong> E-046b (item 7, CUL-298 merged in, owns the menu); CUL-267 (item 1) as its prerequisite; cost-survival criterion (item 3).</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-num mono">Step 7</span><h3>Learning from the results: mechanical reports, specialist readers <small style="font-weight:400;color:var(--text-muted);">(branch 2, runs alongside Step 6)</small></h3></div>
+      <dl>
+        <dt>Objective</dt><dd>Separately from pass/fail: <strong>code</strong> computes five focused reports from the raw per-window table (profitability, trade efficiency, forecast power, regime power, component attribution, each sliced overall / per window / per regime / per symbol), and <strong>one LLM reader per report</strong> proposes new ideas, win or lose. Readers can only suggest, never decide.</dd>
+        <dt>Today</dt><dd>One generalist AI does grading, explaining and suggesting all at once. A "how close did other attempts get" scoreboard exists but the loop never calls it. A regime auditor is documented as a stage and never dispatched.</dd>
+        <dt>What changes</dt><dd>Reports are code; readers are agents. Each proposal is written as a config patch or a block sketch in the design-guide vocabulary and carries three anchored scores (card I) so Step 10 can rank it in code. The regime auditor's judgment role is gone: its "label beats ignoring it" check is now a criterion for regime blocks (Step 6), its lag and health numbers are metrics in the regime-power report, and its firewall is a reader rule.</dd>
+        <dt>Target</dt><dd>A failed experiment still produces a good next idea, and that idea arrives ready to be ranked.</dd>
+      </dl>
+      <p class="step-epic"><strong>Epic:</strong> E-046a (item 8). Calibration caveats trace to E-047 and E-048 (both backlog — E-048 is no longer a plan item, see the composition note).</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-num mono">Step 8</span><h3>Checking the profit bars <small style="font-weight:400;color:var(--text-muted);">(branch 3, runs alongside Steps 6 and 7)</small></h3></div>
+      <dl>
+        <dt>Objective</dt><dd>Check every backtest that ran — a version, or a composition — against the campaign-wide profit bars, which are the same for every idea and written once by hand (card B). If they clear, <strong>stop the loop and tell the operator</strong>.</dd>
+        <dt>Today</dt><dd>A promotion audit with a deflated-Sharpe check and a holdout route exist in code, but no run has ever reached them; profit thresholds live per protocol file with a ratification guard around them; you would only learn the bar cleared by checking a file.</dd>
+        <dt>What changes</dt><dd>One profit-bars file; the check runs on every backtest; a pass stops the loop loudly for a manual regroup, with a runbook row saying what to read, what to decide, what to update. The holdout unlock is not part of this step.</dd>
+        <dt>Target</dt><dd>The moment something clears the real bar, a human knows, and nothing automatic happens next.</dd>
+      </dl>
+      <p class="step-epic"><strong>Epic:</strong> profit-bars ticket (item 2).</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-num mono">Step 9</span><h3>Regroup and record</h3></div>
+      <dl>
+        <dt>Objective</dt><dd>Write everything down before anything is decided: the idea's status and grid, the block registry (a validated block enters here, as its config fragment), the attempt rows, the readers' proposals, and the scoreboard (card H).</dd>
+        <dt>Today</dt><dd>Four separate habits: a knowledge-base entry per run, an auto-generated carry-over note, one attempt row per run, and a scoreboard script nobody calls.</dd>
+        <dt>What changes</dt><dd>One explicit stage that records and stops. It decides nothing.</dd>
+        <dt>Target</dt><dd>Everything Step 10 needs is on disk, so its decision can be replayed and audited.</dd>
+      </dl>
+      <p class="step-epic"><strong>Epic:</strong> regroup epic (item 10); block registry (item 9).</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-num mono">Step 10</span><h3>Deciding what runs next</h3></div>
+      <dl>
+        <dt>Objective</dt><dd>One place, one rule: read memory and the queue, apply the gates, the scores and the rank of card I, and pick the next run. Two code rules come first: if the block registry changed since the last composition run, the composition run is next and this step writes its brief from the registry (card F); if the queue is empty, ask any <em>open</em> brief for more hypotheses before stopping (card M).</dd>
+        <dt>Today</dt><dd>Three different things decide: the run's own verdict creates a child run immediately (refine/pivot/escalate), campaign review fires every six runs or after two family failures, and the queue is never consulted while a lineage is alive.</dd>
+        <dt>What changes</dt><dd>Verdict routing is retired. Campaign review keeps only the strategic question (change the research question, or stop). Every candidate — a reader's proposal, a refinement, a brief's extra hypothesis, an outside idea, an un-parked idea — competes here on the same scores. After any stop, the resume command re-enters here.</dd>
+        <dt>Target</dt><dd>The next run is always the best-ranked candidate, and the reason is recorded.</dd>
+      </dl>
+      <p class="step-epic"><strong>Epic:</strong> verdict-retirement epic (item 11); E-031 (item 12).</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-num mono">Step 11</span><h3>Parking the rest</h3></div>
+      <dl>
+        <dt>Objective</dt><dd>Everything Step 10 did not pick waits in one queue, in the design-guide vocabulary, with its scores, until it is picked or refused. Ideas waiting for a component or for data wait here too, with their request attached.</dd>
+        <dt>Today</dt><dd>The only way to add a new line of inquiry is a hand-run command, used twice in the system's history. When the last lineage ends, the loop stops and stays stopped.</dd>
+        <dt>What changes</dt><dd>One queue for every source; no cap on how many wait; a candidate is re-scored when memory changes; two new parked states with their runbook rows.</dd>
+        <dt>Target</dt><dd>Good ideas never vanish because another one ran first, or because a component was missing that day.</dd>
+      </dl>
+      <p class="step-epic"><strong>Epic:</strong> E-031 (item 12); parked states in item 11.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-num mono">Step 12</span><h3>The final exam, after a manual stop</h3></div>
+      <dl>
+        <dt>Objective</dt><dd>When Step 8 has stopped the loop and the operator agrees, spend the single-use holdout on the composition that cleared the bars. Looking is spending: it happens once, by hand, on purpose. Afterwards the operator records the outcome (holdout result, data-policy consumption marker) and either promotes or resumes the loop into Step 10 to keep adding blocks.</dd>
+        <dt>Today</dt><dd>Single-use enforcement, the deflated-Sharpe gate and the "is this even tradable" check exist in code and have never been exercised by a real run. The holdout backtest itself must be run by a person.</dd>
+        <dt>What changes</dt><dd>Nothing mechanical. It reads the profit-bars file instead of per-protocol thresholds, and it is reached only through Step 8's stop plus a human decision, with a runbook row for the whole procedure.</dd>
+        <dt>Target</dt><dd>Same safety, now actually reachable, and the way back into the loop is written down.</dd>
+      </dl>
+      <p class="step-epic"><strong>Epic:</strong> No epic; profit-bars ticket (item 2) changes what it reads; runbook row in item 11.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-num mono">Note</span><h3>Composition runs — where proven ideas accumulate</h3></div>
+      <dl>
+        <dt>What it is</dt><dd>A run whose "idea" is "the registry's validated blocks combine into a profitable strategy." <strong>Who triggers it:</strong> Step 10, by a code rule, whenever the registry changed since the last composition run. <strong>How it is generated:</strong> Step 10 writes a composition brief listing every eligible block (forecast blocks with their regime assignments, regime blocks with their rules) and the three weighting schemes; Step 1a passes it through with the profit bars as criteria; <strong>Step 1b's LLM assembles the config under the design guide</strong> — a design task, not a merge, because blocks live at different levels (component, sub-strategy, regime rule) and are not on one scale; Step 5a checks every listed block is present and the scheme applied. Its three versions are the weighting schemes. It goes through Steps 3–11 like any other run and counts its own attempts. It trades the campaign's target instrument set from the profit-bars file.</dd>
+        <dt>Today</dt><dd>Does not exist. Every run tests one idea alone and nothing ever combines two proven ones.</dd>
+        <dt>Decided 2026-09-19</dt><dd>A block is eligible for a composite on any instrument, not only the coins it was tested on — the composite's own grading against the profit bars is the real check. Combining forecasts assumes a comparable scale; the design guide applies the existing transform pipeline's standardisation when assembling a composite rather than waiting on a separate epic (E-048) — that epic is only revived if a specialist reader's real finding says the existing transforms are not enough.</dd>
+      </dl>
+      <p class="step-epic"><strong>Epic:</strong> block registry and composition (item 9). E-048 stays in the backlog unless a reader's finding promotes it.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-num mono">Note</span><h3>Regime ideas — a second kind of building block, tested as composition versions</h3></div>
+      <dl>
+        <dt>What it is</dt><dd>A regime block carries an idea about the market's overall state. It has no value alone; it has value only when some forecast blocks behave differently by regime. So a regime idea is a composition run with two versions: the blocks ungated, and the same blocks gated by the detector. The criterion: the gated version beats the ungated one on the bars, and the label passes its health checks (persistence, flip rate, sensitivity to a small parameter nudge, and the hindsight-lag comparison — whose hindsight labeller must never reach a signal). A validated regime block enters the registry like any other block, as its detector rule.</dd>
+        <dt>Today</dt><dd>A standing rule forbids regime-gated hypotheses because the detector was judged unusable on BTC/ETH 1h; a regime auditor is documented and never runs.</dd>
+        <dt>How the loop finds them</dt><dd>The regime reader (Step 7) sees per-regime slices of a block's results — say, a strong effect in high-volatility bars and none elsewhere — and proposes the gated version. That is as far as the loop's cleverness goes, and it is enough.</dd>
+      </dl>
+      <p class="step-epic"><strong>Epic:</strong> item 9 (composition) and item 8 (regime reader, absorbing E-040's measurements).</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-num mono">Note</span><h3>When a human must act — the runbook</h3></div>
+      <dl>
+        <dt>Loop stops</dt><dd><strong>Profit bars reached:</strong> read the composition's grid and reports; decide whether to spend the holdout; if yes, run it by hand, write the holdout result and mark the holdout consumed in the data-policy file; then promote, or resume into Step 10 to keep adding blocks. <strong>Nothing runnable:</strong> read the queue summary (parked ideas and their requests); write a new brief, or build a requested component and un-park its idea; resume. <strong>Campaign review says stop:</strong> read its rationale; decide; resume or close the campaign.</dd>
+        <dt>Idea parked, loop continues</dt><dd><strong>Component missing:</strong> the request file names the component and the idea; build it when convenient; un-park. <strong>Data missing:</strong> the request names the feed and window; fetch or route to the feed lane; un-park. <strong>Inconclusive twice for data reasons:</strong> same as data missing, flagged for attention.</dd>
+        <dt>Engineering halt</dt><dd>Crash, conformance violation, invalid artifact: fix at the site named in the halt record, write the resolution artifact, resume — as E-030 already documents, one row per reason.</dd>
+        <dt>Each row states</dt><dd>What to read, what to decide, which artifact to update, and the command that resumes the loop into Step 10.</dd>
+      </dl>
+      <p class="step-epic"><strong>Epic:</strong> item 11 (rows, parked states, request file); item 2 (the profit-bars row); item 14 (the data row).</p>
+    </div>
+
+    <div class="gaps">
+      <h3>Record of what the reviews found and how it was settled</h3>
+      <ol>
+        <li><strong>2026-09-16, code-verified review of v24</strong> (full text in <code>roadmap_review_2026-09-18.md</code>). Nine claims did not survive the code: the walkthrough omitted the validation stage; "criteria are authored at Step 1" was false (they are copied from the brief or from the previous run's proposed brief); Step 5's cost-stress and era-stability claim was false (time axis only); "Objective 1 is solid" rested on 1 binding verdict in 60 runs and a holdout gate never reached; "the resolver never chooses symbol/timeframe" was false on the escalate route; Step 3's data gate never runs in a campaign and its flag is unregistered; the registration function was called twice, not once; "skip re-deriving" was not small; three mechanisms decided "what's next" with no reconciliation.
+          <strong class="epic-tag">Settled: v25/v26 text</strong>
+        </li>
+        <li><strong>2026-09-17/18, target-design decisions with the operator</strong>, recorded as cards A–N. The structural ones: the plan had no step where proven ideas accumulate (now items 9–10), the verdict machinery presupposed single lineages (now item 11), and the design should be the config itself, not a document plus a translator (card K).
+          <strong class="epic-tag">Settled: cards A–N, items 9–12</strong>
+        </li>
+        <li><strong>2026-09-18, operator's remarks on v25</strong> (17 points, all applied): criteria must be scale-free; costs are a criterion from trade records, not a protocol axis (E-010 done, E-053 open); regime rules are a second kind of block; component gaps park rather than stop; operator cases need runbook rows naming the artifact to update; briefs with several hypotheses (tracked as an E-031 sub-issue); the entry point for ideas from previous runs is Step 1a; the validation stage is deleted, not folded; a repeat is the exact same full setup; the config is written by an LLM at 1b and only checked at 5a; the auditor's checks survive as measurements, not as a stage; restart after a stop is the resume into Step 10; composition is triggered by a code rule and assembled by the LLM at 1b.
+          <strong class="epic-tag">Settled: v26 text</strong>
+        </li>
+        <li>"Do the variants agree with each other?" — v24 called it the single most important gap and gave it a slot and a step. It is the grid's aggregation rule.
+          <strong class="epic-tag">Settled: merged into E-046b (item 7)</strong>
+        </li>
+        <li>"How many versions is too many?" — 2026-09-01 said a parameter with default 2; 2026-09-15 said no cap; both are retired.
+          <strong class="epic-tag">Settled: card D — three, cap four</strong>
+        </li>
+        <li>The protocol/variant insight of 2026-09-15 stands in its useful half: protocol axes are idea-blind and campaign-governed, the design axis is idea-specific. Narrowed further on 2026-09-18: the protocol owns exactly one axis, the windows; even cost is a criterion, not an axis. Its 2026-09-16 correction was itself half wrong — timeframe and symbol <em>are</em> design fields, but the resolver was not innocent: the escalate route chose them on its own. That route is retired with item 11.
+          <strong class="epic-tag">Settled: card E; E-049 note updated</strong>
+        </li>
+        <li>2026-09-19, delivery plan written (<code>delivery_plan_v26.md</code>) and reviewed against every card. While reviewing it, the operator caught four places the plan had guessed rather than reflecting an agreed decision, and corrected them: (1) composition should not reuse E-044 (a different, live-portfolio concept) — it is its own new epic; (2) the first composition run should not wait on a separate E-048 epic — the design guide applies the transform pipeline's existing standardisation, and E-048 is only revived if a specialist reader's real finding says that is not enough; (3) the old <code>verdict_interpreter</code> stage is deleted, not kept as a narrator — the five specialist readers are the whole explanation layer; (4) a validated block is usable in a composite for any coin, not only the ones it was tested on — the composite's own grading against the profit bars is the real check.
+          <strong class="epic-tag">Settled: card F and item 9 corrected, v27</strong>
+        </li>
+        <li>Nothing open on the concept or the walkthrough. Next: apply the delivery plan's Linear table (once the connector is re-authorised) and start the first read-only dispatches.
+          <strong class="epic-tag">Next pass</strong>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <footer>Board v27 — Linear snapshot 2026-09-15, "today" claims verified against the code 2026-09-16, target design agreed with the operator 2026-09-18 (two review rounds), four corrections from the delivery-plan review 2026-09-20. Completed and canceled epics are excluded from this board entirely — this shows only what's still open.</footer>
+
+</div>

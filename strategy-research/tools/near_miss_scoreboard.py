@@ -6,14 +6,31 @@ Part 1, is to be raw material for the IDEA-GENERATION stage: "failed a
 criterion but ground for an idea" is real information this project
 under-uses. It is NOT a ranking used, or usable, for promotion.
 
-FIREWALL (non-negotiable, see the epic and Part 1 verbatim): "The scoreboard
-inspires; only the gates decide." Promotion must have NO read access to this
-module or its output. See tests/test_near_miss_scoreboard_firewall.py, which
-statically enforces that no promotion-path module (workflow/run_campaign.py,
-workflow/run_phase1_research.py, tools/deflate_sharpe.py, or anything else
-under workflow/ or tools/ besides this file and its test) imports this module
-or references its output filenames, and that no skill's required-inputs list
-mentions it. The output artifact is deliberately written under
+FIREWALL (doctrine, see the epic and Part 1 verbatim): "The scoreboard
+inspires; only the gates decide." Promotion must have no *decision-making*
+read on this module or its output -- i.e. no code that computes
+hypothesis_verdict/lineage_routing/promote-kill may consult it. This was
+previously enforced by a static test (tests/test_near_miss_scoreboard_firewall.py,
+removed 2026-09-13, E-018 S2 -- the operator's own call, judged
+overengineered for what it was protecting once verdict-interpreter became an
+explicit, reviewed exception; see below). There is now no mechanical check
+for this doctrine -- it relies on the routing functions in
+workflow/run_phase1_research.py (`_resolve_verdict_fields`,
+`determine_post_verdict_route`, `_apply_circuit_breaker`, `_dispatch_verdict_route`)
+genuinely never importing or reading this module/its output, verified by
+inspection rather than by a standing test.
+
+E-018 S2 (2026-09-13): verdict-interpreter/SKILL.md is a reviewed, EXPLICIT
+exception to the doctrine above, and workflow/run_phase1_research.py's
+verdict_interpreter handoff-construction code (where its optional_inputs are
+built) now references this module's output path directly, to actually hand
+the file to the LLM. Made safe by a companion change the same session:
+routing (`determine_post_verdict_route`) now reads a BINDING
+`pass_rule_evaluation.yaml` directly, so verdict_interpreter's own restated
+verdict no longer drives promote/kill on any run that has one; the scoreboard
+informs only its qualitative writeup (root_cause, proposed_brief,
+findings_carryover), never hypothesis_verdict/lineage_routing. The output
+artifact is deliberately written under
 `engineering/roadmap/E-018/artifacts/`, NOT under `runs/*/artifacts/` or
 `campaign_record/` -- neither of which is glob-safe against decision-path
 code (run_campaign.py globs `runs/*/artifacts/*` in places, and

@@ -114,7 +114,9 @@ strategy-research/config/campaign_data_policy.yaml	17
 # fixture dates verbatim in its own explanation -- one more mention).
 # 4 -> 5 on 2026-09-02 (the E-039/S1_FINDINGS.md entry quotes the holdout_range value
 # verbatim -- one more mention).
-strategy-research/config/holdout_gate_exemptions.txt	5
+# 5 -> 6 on 2026-09-13 (the docs/USER_GUIDE.md entry above quotes the holdout_range
+# value verbatim in its own explanation -- one more mention).
+strategy-research/config/holdout_gate_exemptions.txt	6
 strategy-research/engineering/improvements/done/design_and_docs/STEP_05_FINDINGS.md	1
 strategy-research/engineering/improvements/done/design_and_docs/K4_routing_registration_design_20260712.md	4
 strategy-research/engineering/improvements/done/design_and_docs/p1b_fetch_manifest.md	6
@@ -247,6 +249,17 @@ strategy-research/tests/test_improvement06_acceptance.py	6
 strategy-research/tools/holdout_date_gate.sh	10
 strategy-research/tools/hooks/pre-commit	1
 strategy-research/tools/measure_funding_carry.py	1
+# strategy-research/docs/USER_GUIDE.md (2026-09-13, sample_split_design field-table
+# entry added this session). ONE line: the pre_registration.yaml field table's example
+# row for `sample_split_design` quotes campaign_data_policy.yaml's own literal
+# holdout_range value ([2026-01-01, 2026-06-30]) as a worked example of what the field
+# looks like -- category (b), policy/docs citing the boundary to explain it, same basis
+# as campaign_data_policy.yaml's own entry above. Not market data.
+# Verified before registering:
+#   sh strategy-research/tools/holdout_date_gate.sh --report-residual \
+#       | grep "docs/USER_GUIDE"
+#   -> strategy-research/docs/USER_GUIDE.md	1
+strategy-research/docs/USER_GUIDE.md	1
 strategy-research/tools/panel_backtester.py	1
 strategy-research/workflow/run_phase1_research.py	1
 strategy-research/engineering/sessions/lessons.md	4
