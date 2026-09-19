@@ -7,10 +7,11 @@
   "end_date": "2024-01-11",
   "expected": {
     "trade_count": 2,
-    "net_pnl": 1.904077,
+    "net_pnl": 1.504327,
     "net_pnl_tolerance": 0.000001,
-    "sharpe": 15.665,
+    "sharpe": 13.747,
     "sharpe_tolerance": 0.001
   },
-  "note": "warmup_prefetch defaults to False and must never change engine.load_data's fetch range or introduce a warmup_cutoff_timestamp when omitted. Fails if: the default value of warmup_prefetch changes, load_data's default start_date handling changes, or _process_symbol_candle_completion's cutoff check fires when it shouldn't."
+  "note": "warmup_prefetch defaults to False and must never change engine.load_data's fetch range or introduce a warmup_cutoff_timestamp when omitted. Fails if: the default value of warmup_prefetch changes, load_data's default start_date handling changes, or _process_symbol_candle_completion's cutoff check fires when it shouldn't.",
+  "e010_s3_rebaseline_2026-09-10": "DECLARED DEFAULT-BEHAVIOR CHANGE (CLAUDE.fork.md rule #4), not a regression -- see tests/fixtures/reference_run.json's own e010_s3_rebaseline_2026-09-10 note. Real per-symbol slippage (BTCUSDT=1bps) became the default; net_pnl/sharpe move -- 1.904077/15.665 -> 1.504327/13.747 -- from the fill-price adjustment on this window's 2 trades. trade_count is UNCHANGED at 2. Measured by re-running this exact fixture's backtest against the post-S3 code on 2026-09-10. Shared by tests/test_commission_rate_param.py and tests/test_warmup_prefetch_bit_identical.py."
 }
