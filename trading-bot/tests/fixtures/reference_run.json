@@ -7,12 +7,13 @@
   "config": "strategy_config.json",
   "expected": {
     "trade_count": 24,
-    "net_pnl": -231.758912,
+    "net_pnl": -238.279247,
     "net_pnl_tolerance": 0.01,
-    "sharpe": -5.646,
+    "sharpe": -5.812,
     "sharpe_tolerance": 0.005
   },
   "note": "Established after Step 3 parity gate (config-driven engine iso-functional with legacy). Survives: allocation fix, config_path fix. Fails if: PnL computation changes, matching logic changes, engine wiring changes.",
+  "e010_s3_rebaseline_2026-09-10": "DECLARED DEFAULT-BEHAVIOR CHANGE (CLAUDE.fork.md rule #4), not a regression. E-010 S3 shipped real, nonzero, per-symbol slippage as the default cost model (config/cost_model.json: binance/margin BTCUSDT=1bps, previously 0bps flat) and folded the effective cost model into run provenance (config_sha256), closing a CUL-55-class gap (see core/backtester.py::_end_of_backtest's cost_model fold). Both changes shift this fixture: config_sha256 8-char prefix moves 5ccbec42 -> 9f3b09c1 (cost_model is now part of what's hashed), and net_pnl/sharpe move -231.758912/-5.646 -> -238.279247/-5.812 (BTCUSDT's 1bps fill-price adjustment on every trade). trade_count is UNCHANGED at 24 -- slippage moves fill price, not signal timing. data_sha256 (5a75366c...) is UNCHANGED -- no data changed. Measured by re-running this exact fixture's backtest against the post-S3 code on 2026-09-10; full config_sha256 = 9f3b09c19c140746f24de89da8258d16a9350f45ccaddecbde2be08025bcf903.",
   "coverage_gap": {
     "class": "F7 -- regime-classification ordering in AdvancedStrategy.is_ready()",
     "verified": "2026-08-20",

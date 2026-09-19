@@ -112,8 +112,14 @@ def nondefault_backtest_result(reference):
     )
     filters[0]["params"]["min_abs"] = 5.0
 
+    # E-010 S3 (2026-09-10): the manifest's config_sha256 always includes the
+    # cost_model provenance fold (unconditional -- see
+    # core/backtester.py::_end_of_backtest and _cost_model_provenance_fold
+    # above), so the expected hash here must include it too, or this will
+    # mismatch the manifest by construction regardless of the mutation above.
+    provenanced = {**mutated, "cost_model": _cost_model_provenance_fold()}
     expected_sha = hashlib.sha256(
-        json.dumps(mutated, sort_keys=True, separators=(",", ":")).encode()
+        json.dumps(provenanced, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -149,11 +155,30 @@ def nondefault_backtest_result(reference):
         yield metrics
 
 
+def _cost_model_provenance_fold(exchange="binance", market_type="margin"):
+    """Replicate BacktestEngine._end_of_backtest's cost_model provenance fold
+    (E-010 S3, 2026-09-10) so a test computing an expected config_sha256 from
+    a raw config dict matches what the manifest actually records -- since that
+    fold is unconditional (see core/backtester.py), any test hashing a bare
+    config dict without it would fail by construction now."""
+    from config.cost_model import resolve_cost_model
+
+    fee_bps, slippage_table = resolve_cost_model(exchange, market_type)
+    return {
+        "exchange": exchange,
+        "market_type": market_type,
+        "fee_bps": fee_bps,
+        "slippage_bps": slippage_table,
+    }
+
+
 def test_nondefault_config_sha_recorded(nondefault_backtest_result, reference):
     """The manifest's config_sha256 must match the MUTATED config's canonical
-    hash, and must differ from the default config's hash. The second check
-    guards against a canonically-no-op mutation silently passing this test for
-    the wrong reason (e.g. if min_abs already were 5.0 in the default).
+    hash (WITH the cost_model provenance fold applied, same as every run --
+    see _cost_model_provenance_fold above), and must differ from the default
+    config's hash. The second check guards against a canonically-no-op
+    mutation silently passing this test for the wrong reason (e.g. if min_abs
+    already were 5.0 in the default).
     """
     default_config_path = PROJECT_ROOT / reference["config"]
     with open(default_config_path) as f:
@@ -236,10 +261,13 @@ def test_sharpe(backtest_result, reference):
 def test_config_actually_loaded(backtest_result, reference):
     """
     Manifest integrity check: the config_sha256 recorded in manifest.json must equal
-    the canonical hash of the config file at the path this fixture launched with.
-    Catches canonicalization drift or in-memory mutation of the config dict between
-    load and write_manifest() (reporting/run_artifact.py:58-73) — i.e. the manifest
-    lying about what config produced this run.
+    the canonical hash of the config file at the path this fixture launched with
+    (WITH the cost_model provenance fold applied -- see
+    _cost_model_provenance_fold above; that fold is unconditional as of E-010 S3,
+    2026-09-10, so it is part of "the config that produced this run" now, not an
+    optional extra). Catches canonicalization drift or in-memory mutation of the
+    config dict between load and write_manifest() (reporting/run_artifact.py:58-73)
+    — i.e. the manifest lying about what config produced this run.
 
     Does NOT catch config_path wiring falling back to the hardcoded default
     (core/backtester.py:261-265): this fixture always launches with the DEFAULT
@@ -251,7 +279,9 @@ def test_config_actually_loaded(backtest_result, reference):
     config_path = PROJECT_ROOT / reference["config"]
     with open(config_path) as f:
         import json as _json
-        config_content = _json.dumps(_json.load(f), sort_keys=True, separators=(",", ":"))
+        config_dict = _json.load(f)
+    provenanced = {**config_dict, "cost_model": _cost_model_provenance_fold()}
+    config_content = _json.dumps(provenanced, sort_keys=True, separators=(",", ":"))
     # sort_keys/separators here must stay in lockstep with write_manifest's own
     # canonicalization (reporting/run_artifact.py:68) — they agree by construction
     # today; nothing enforces the coupling if either changes independently.
