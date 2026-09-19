@@ -647,22 +647,133 @@ deserves an expensive walk-forward backtest.
 
 **Terms used in this block**
 
+**Read this walkthrough first if these terms are new — it builds each idea on
+the last, with one running example. The table further down is a lookup
+reference once you know the shape of the ideas, not a first introduction.**
+Written 2026-09-04 after a real "I don't get this" pass — if a sentence below
+still assumes something unexplained, that's the doc's fault, flag it.
+
+<details>
+<summary><strong>Plain-language walkthrough — start here</strong></summary>
+
+**1. What a forecast is supposed to mean.** The strategy outputs a number from
+−20 to +20 every bar, called the forecast. It directly sets position size —
+`allocation = forecast ÷ 10` — so a forecast of +10 means "go long, at roughly
+full/leveraged size," and +2 means "go long, small." The intent (this repo's
+own design) is that the forecast is a **confidence-weighted expected move**:
+bigger number = more confident and/or bigger expected price move, in that
+direction. That's a reasonable mental model, but keep reading — the tests
+below check something narrower than that full model.
+
+**2. Correlation — does the forecast relate to what actually happens?**
+Every bar has two numbers: the forecast, and what the price actually did next.
+A **correlation** is a single number, −1 to +1, describing whether those two
+columns move together. +1 = perfectly together, 0 = no relationship at all,
+−1 = perfectly opposite. This codebase calls it **IC** ("information
+coefficient" — trading jargon, means nothing more than "the correlation
+number"). **Important limit:** a plain correlation only asks "does bigger
+generally go with bigger, across many bars" — it does NOT verify that the
+forecast's *exact scaling* is correct (see the box below on Spearman vs
+Pearson). It's necessary evidence the forecast means something; it's not proof
+the forecast is *calibrated*.
+
+> **Two flavors, used in different places, and they check slightly different things:**
+> - **Spearman** (used in prescreen) only cares about *order* — "if I sort
+>   bars by forecast, does that also roughly sort them by outcome?" It is
+>   blind to magnitude: a forecast of 1→1%, 2→1.1%, 100→1.2% would score a
+>   *perfect* Spearman correlation, even though the scaling is nonsense.
+> - **Pearson** (used in trading-bot's `build_core`, `forecast_return_corr`)
+>   cares about a straight-line fit, closer to "does the magnitude roughly
+>   track too" — but it's still an average over every bar, not a check that
+>   any *specific* bar's forecast was well-calibrated.
+
+**3. Is the correlation real, or did we get lucky? (p-value / significance.)**
+A correlation of 0.05 could be a real, if weak, edge — or coincidence. A
+**p-value** answers: "if there were truly *no* relationship at all, how likely
+is a correlation this big by pure chance, given how much data we have?" Low
+(this repo's bar: under 10%) → probably real. High → can't rule out luck.
+
+**4. Counting your evidence honestly (n_eff, "block-adjusted").** The p-value
+formula needs to know how much *independent* evidence you have. Naively
+counting every bar as one independent fact is wrong for markets — an hour's
+price isn't a fresh coin-flip from the hour before, prices drift together.
+Counting raw bars this way overstates your evidence and makes a p-value look
+more confident than it should. The fix: group bars into day-sized chunks
+("blocks") and count *chunks*, not bars — `n_eff = active_bars ÷ block_size`.
+**Worked example:** 240 active bars, block size 24 → naive count says "240
+observations," honest count says `n_eff = 10`. A correlation that looked
+convincing against 240 often looks weak, or not significant at all, against
+10. **This never changes the correlation number itself** — only how much you're
+allowed to trust it. "Gap-aware" block counting additionally refuses to count
+a block that would have to straddle a real hole in the data (a missing hour) —
+that block isn't one real contiguous day, so it doesn't earn a vote.
+
+**5. When the normal test breaks (the bootstrap fallback).** The p-value math
+above needs the forecast to actually *vary* in strength. Some signals only
+ever fire at one exact strength (always +10 or 0, nothing between) — for
+those, the formula is undefined. The fallback: instead of trusting a formula,
+generate many **fake, shuffled** copies of the real data, measure the
+correlation on each fake copy, and compare the real correlation to that pile of
+fakes. If the real one stands out from almost all the fakes, that's evidence
+of a real effect. To keep the fakes realistic (markets aren't shuffled bars,
+adjacent hours move together), whole **contiguous chunks** are shuffled, not
+individual bars — that's the "block" in "block bootstrap." (The bug fixed by
+CUL-270 was exactly here: for a real-data stretch shorter than one chunk,
+there was only one possible chunk to draw — the whole stretch itself — so
+every "fake" turned out identical, and the test falsely called noise "highly
+significant.")
+
+**6. Episodes (A8.5.1a) — for signals that fire in bursts.** If a signal stays
+"on" for 5 bars in a row, that's one opinion that lasted 5 bars, not 5
+independent opinions — counting all 5 separately double-counts the same call.
+An **episode** is one such burst, treated as a single event. This test counts
+episodes, checks whether each one's direction matched what actually happened,
+and asks if the hit rate beats chance — the same "is this real or luck"
+question as step 3, just counted in bursts instead of bars.
+
+**7. Sigma and cost — is the edge even worth trading?** `sigma_bar_bps`: the
+typical size of a price move per bar (up OR down — a volatility measure, not
+a directional one), in **bps** (basis points: 1 bps = 0.01%, so **100 bps =
+1%**). "Sigma ≈ 58 bps" means "a typical hour, this moves about ±0.58%."
+**Cost hurdle:** even a real, statistically significant correlation is
+worthless if the money it implies per trade is smaller than what it costs to
+trade (exchange fees). `edge_to_cost_ratio = estimated_edge ÷ round_trip_cost`,
+required to clear a safety margin (2× by default) before being called worth
+pursuing.
+
+**8. Route — the one-word verdict.** Combines "is there a real signal"
+(steps 2–6) and "does it clear costs" (step 7) into one label: `kill_no_ic`
+(no signal), `refine_inverted_ic` (real signal, backwards), `kill_cost_hurdle`
+/ `refine_cost_hurdle` (real signal, not worth the fees), or a pass. On
+trading-bot (CUL-264) this label is currently informational only — nothing
+acts on it automatically yet.
+
+</details>
+
+The table below is the same terms as a quick-lookup reference — read the
+walkthrough above first if any of these still feel unexplained.
+this stage uses (CUL-262, CUL-264, CUL-266; see Stage 8's own notes). Rather
+than a second table drifting out of sync, both stages point here.
+
 | Term | In plain words |
 |---|---|
-| **IC** (information coefficient) | How well the forecast ranked what actually happened next. `+1` perfect, `0` useless, `-1` perfectly backwards. Measured with Spearman rank correlation. |
+| **IC** (information coefficient) | How well the forecast ranked what actually happened next. `+1` perfect, `0` useless, `-1` perfectly backwards. Measured with Spearman rank correlation. On the trading-bot side (`build_core`) this is `forecast_return_corr`, computed with Pearson correlation instead — same idea, different correlation flavor, because trading-bot has real (not rank-transformed) returns to work with. |
 | **active bar** | A bar where the signal actually said something (forecast non-zero/changing). A selective signal is silent most of the time. |
 | **bps** (basis point) | One hundredth of a percent. Costs and edges are quoted in bps per trade. |
-| **effective sample** (`n_eff`) | How many genuinely *independent* observations there are. Adjacent hours move together, so 8928 bars are worth far fewer independent facts — dividing by a block size is how that is accounted for. |
+| **effective sample** (`n_eff`) | How many genuinely *independent* observations there are. Adjacent hours move together, so 8928 bars are worth far fewer independent facts — dividing by a block size is how that is accounted for. Formula: `n_eff = active_bars ÷ block_size` (a block is one day's worth of bars for the strategy's timeframe), then `z = IC × √(n_eff − 3)` converts that into a p-value. **Gap-aware**: a block that would have to straddle a real hole in the data isn't a real contiguous unit and doesn't count toward `n_eff`. Ported onto trading-bot's own `forecast_return_corr` by CUL-262 (`performance/signal_statistics.py::gap_aware_active_block_count`/`block_adjusted_pvalue`), as an additive field alongside the older, less rigorous p-value. |
 | **episode** | A burst of consecutive active bars treated as **one** event rather than many, for signals that fire in clusters. |
+| **sigma_bar_bps** | The typical size of a price move per bar (a volatility measurement), in bps. Used to convert an IC into an estimated money edge: `estimated edge per trade ≈ |IC| × sigma_bar_bps × √(holding period in bars)`. Ported onto trading-bot's own bars by CUL-264 (`sigma_bar_bps_from_returns`), measured over ALL bars (not just active ones — sigma describes the market, not the signal). Falls back to a loud, flagged placeholder (`sigma_bar_bps_is_placeholder: true`) rather than a silent guess when fewer than 5 bars are available. |
+| **cost hurdle / cost check** | Is the estimated edge per trade bigger than what it actually costs to trade (round-trip fees, from `cost_model.yaml`)? `edge_to_cost_ratio = estimated_edge ÷ round_trip_cost_bps`, required to clear a safety margin (`safety_factor`, default 2×) before a signal is called worth pursuing — a real, statistically significant IC still fails here if the edge is too small to survive fees. Ported onto trading-bot by CUL-264 (`cost_check`). |
+| **route** (`determine_route`) | The single label combining "is there a real signal" (IC + significance) and "does the edge clear costs" into one verdict: `kill_no_ic` (no signal), `refine_inverted_ic` (signal is real but backwards), `kill_cost_hurdle`/`refine_cost_hurdle` (signal real, not worth the fees), or a pass (`proceed_to_backtest` in prescreen; `proceed_to_interpretation` on trading-bot's post-backtest port, CUL-264 — since the backtest has already run by then). **On trading-bot as of CUL-264, this is informational only** — nothing reads it to skip or gate anything yet; that wiring is a separate, not-yet-made decision. |
 | **A8.6** | Rule: check up front that the sample is even big enough to detect the effect. If not, do not spend the trial. |
 | **A8.3** | Rule: score a selective signal on the bars where it spoke. An IC over all bars is swamped by the silent ones and collapses toward zero by construction. |
 | **A8.1** | Rule: a good IC alone is never a pass — the cost gate must clear too. A signal with IC 0.2145 still lost 26 bps per trade. |
-| **A8.5.1a** | Rule: for signals that fire in bursts, count events, not bars. |
+| **A8.5.1a** | Rule: for signals that fire in bursts, count events, not bars. Ported (imported directly, not re-implemented) onto the pooled, cross-window summary in `protocol_execution` by CUL-265 — see Stage 8. |
 | **A2.1** | "Detector-confidence deadlock escape" — the rule letting a hypothesis be judged without a trusted regime detector. Requires all-bars IC. |
 | **A2.3** | "Post-`unusable` policy" — with no trustworthy detector, regime-conditioned numbers are not evidence. Rule 5 says the escape test must use all-bars IC. |
 | **A6.2** | Rule: deflated Sharpe needs the spread of results across trials, so every evaluation counts as a trial — kills included. |
 | **F5c** | Rule: "the code broke" must never be recorded as "the idea failed". |
-| **#50** | Issue: a forecast/return pair straddling a hole in the data cache is not a real observation. |
+| **#50** | Issue: a forecast/return pair straddling a hole in the data cache is not a real observation. Also fixed on trading-bot's own primary correlation path by CUL-266 — see Stage 8. |
 
 Full text of every amendment code:
 [`AMENDMENTS_01-06.md`](../engineering/improvements/done/design_and_docs/AMENDMENTS_01-06.md).
@@ -898,6 +1009,52 @@ evaluation then raised (`::run_tool_worker`). That third window previously left 
 trial row while the data had already been spent, so N was under-counted.
 Recording is wrapped so its own failure only logs; the original error is
 re-raised unchanged.
+
+**4. `metrics.json` → `protocol_summary.json`: one dict per window, hand-assembled, not generic.**
+Trading-bot writes one `metrics.json` per individual backtest window (a
+hypothesis is normally walk-forward tested across many windows). `run_protocol.py`
+reads every window's `metrics.json` and copies specific keys into a per-window
+`result_entry` dict, which becomes one row of `protocol_summary.json`'s
+`"results"` list:
+
+```python
+result_entry = {
+    "core":            core,                     # metrics.json's own "core" block, copied wholesale
+    "per_regime":      m.get("per_regime", {}),
+    "regime_validity": m.get("regime_validity", {}),
+    "data_quality":    m.get("data_quality"),     # CUL-263 — see below
+}
+```
+
+**This copy list is NOT generic** — a field that exists in `metrics.json` but
+isn't named here is silently absent from `protocol_summary.json`, and therefore
+never reaches `verdict_interpreter`, even though it was computed correctly.
+This bit twice in one night (2026-09-04):
+
+- Fields nested *inside* `metrics.json`'s `"core"` block (e.g. CUL-262's
+  `forecast_return_corr_pvalue_block_adjusted`/`forecast_return_corr_n_eff`,
+  CUL-264's `sigma_bar_bps`/`post_backtest_route`) ride along automatically,
+  since `"core"` is copied whole.
+- `"data_quality"` (CUL-261's gap-detection block) is a **top-level sibling**
+  of `"core"` in `metrics.json`, not nested inside it — it was being computed,
+  written, and then silently dropped here, never reaching `verdict_interpreter`.
+  Fixed by CUL-263 (`fix/cul-263-trade-diagnostics-flow`), adding the one line
+  above. `None` when a window ran without `gap_detection` on, present as a key
+  either way.
+
+**Separately, at the cross-window pooling step** (`_build_extended_summary`,
+same file), one further statistic is computed that cannot live in a single
+window's `metrics.json` at all: A8.5.1a episode-blocked significance (CUL-265)
+needs bars from *every* window for a symbol at once, so it is computed here —
+imported directly from `episode_significance.py` (both files live in
+`strategy-research`, so no port was needed, unlike CUL-262's Fisher-z) — and
+written as `episode_blocked_significance_a851a`, alongside (never replacing)
+`median_forecast_return_corr`.
+
+**Anyone adding a new `metrics.json` field that needs to reach
+`verdict_interpreter` must add it to `result_entry` explicitly, in this same
+step.** See the shared glossary in Stage 7 (`sigma_bar_bps`, `n_eff`, cost
+hurdle, route) for what these specific fields mean.
 
 <details>
 <summary><strong>Notes, history and traps</strong> — measured counts, past incidents, and the reasons behind each guard. Open when you need the evidence; skip when you need the flow.</summary>
