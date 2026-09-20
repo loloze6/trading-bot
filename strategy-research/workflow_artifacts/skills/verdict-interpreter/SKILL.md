@@ -11,8 +11,8 @@ Translate structured backtest findings into a concrete next action:
 a refined brief that fixes the identified failure, or a final decision to kill or promote.
 
 ## Required inputs
-- `protocol_result.yaml`       (backtest findings + hypothesis_verdict criteria_results + diagnostics;
-                                OR a prescreen stub — see PRESCREEN KILL section below)
+- `protocol_result.yaml`       (backtest findings + hypothesis_verdict criteria_results + diagnostics —
+                                every run always executes a full backtest, E-039)
 - `pass_rule_evaluation.yaml`  (K2, 2026-07-13 — REQUIRED. Machine-authored verdict from the
                                 pre-registered, structured pass rule in pre_registration.yaml —
                                 see "MACHINE-AUTHORED VERDICT" section below. When its `result` is
@@ -27,8 +27,23 @@ a refined brief that fixes the identified failure, or a final decision to kill o
 - `research_brief.yaml`        (original research question and constraints)
 - `campaign_state.yaml`        (cross-run altitude history; what has been tried and at which altitude)
 - `trade_diagnostics.json`     (Step 03 — optional; present when trades occurred. Read summary block.)
-- `prescreen_result.yaml`      (Improvement 08+09 — present when a prescreen gate was applied.
-                                REQUIRED as primary evidence when protocol_result.yaml is a stub.)
+- `post_backtest_routes`       (E-039/CUL-264, 2026-09-11 — optional, injected directly into this
+                                stage's own handoff, not a separate file. Present only when a real
+                                backtest ran and produced measured trade/window data. See the
+                                dedicated section below — read it, it is evidence, NOT a decision.)
+- `config/coin_universe.yaml`  (E-026, 2026-09-12 — for the asset stability gate below: which
+                                category each tested symbol belongs to)
+- `innovation_notes.yaml`      (if available in context — its `asset_diversity_audit` may carry
+                                a single-asset opt-out relevant to the asset stability gate below)
+- `near_miss_scoreboard.yaml`  (E-018, 2026-09-13 — ranked table of past runs' near-miss root
+                                causes and how close each came to its own pass_rule. Given
+                                UNCONDITIONALLY, with no guard tied to whether THIS run has a
+                                registered pass_rule — a run without one needs you to produce a
+                                genuinely non-mechanical verdict, which needs full context, not
+                                just near-miss history withheld. See "Near-miss scoreboard" section
+                                below: it informs `root_cause`/`proposed_brief`/
+                                `findings_carryover` only, never `hypothesis_verdict`/
+                                `lineage_routing`.)
 
 ## MACHINE-AUTHORED VERDICT (K2, 2026-07-13)
 
@@ -40,12 +55,19 @@ not re-decide `hypothesis_verdict`/`lineage_routing` independently when it alrea
 
 - `result: PASS` or `FAIL` — copy `hypothesis_verdict` and `lineage_routing` from it
   VERBATIM into `verdict_interpretation.yaml` (B4 copy-through discipline — do not
-  paraphrase, do not re-derive). If your own diagnostic reading (Rules 1-6 below)
-  disagrees with its verdict, do NOT silently overwrite it either direction — write
-  your disagreement into `altitude_justification` and set a `human_pause` per the
-  standing disagreement rule (see RUNBOOK.md's pause table); a stage output that
-  contradicts `pass_rule_evaluation.yaml` without flagging it is a conformance
-  violation, not a judgment call.
+  paraphrase, do not re-derive). **E-018 (2026-09-13):** this copy-through is no
+  longer the only thing standing between an incorrect restatement and a misrouted
+  pipeline — `determine_post_verdict_route` now reads `pass_rule_evaluation.yaml`'s
+  own `hypothesis_verdict`/`lineage_routing` DIRECTLY whenever it is binding, so
+  routing itself no longer depends on your copy being right. The copy is still
+  required and still checked (a mismatch is recorded as an informational
+  `pass_rule_evaluation_disagreement` flag on `pipeline_state.yaml`), but a
+  disagreement no longer halts the pipeline with `human_pause` the way it used to.
+  If your own diagnostic reading (Rules 1-6 below) disagrees with the machine
+  verdict, say so plainly in `altitude_justification` — do not silently overwrite it
+  either direction — but still produce `proposed_brief.yaml`/`findings_carryover.yaml`
+  for whichever route the mechanical verdict actually took; the campaign needs your
+  qualitative writeup regardless of whether you'd have called it the same way.
 - `result: legacy_not_evaluable` or `SPEC_ERROR`, or absent `hypothesis_verdict`/
   `lineage_routing` with `discretion: stage` set — no binding verdict exists for this
   run (a legacy pre_registration.yaml, or a pre-registered branch that explicitly opted
@@ -58,6 +80,55 @@ not re-decide `hypothesis_verdict`/`lineage_routing` independently when it alrea
 Rule 6 and the other five diagnostic rules below are UNCHANGED by K2 — they still drive
 `root_cause`/`altitude_justification`'s qualitative content on every run; only the
 PASS/FAIL/routing decision itself moves to the machine when a structured pass rule exists.
+
+## Near-miss scoreboard (E-018, 2026-09-13) — informs the WRITE-UP, never the verdict
+
+`near_miss_scoreboard.yaml` is a ranked table of past runs' near-miss root causes —
+how close each one came to passing its OWN pass_rule, and why it fell short. It is
+given to you unconditionally, with no guard on whether THIS run has a registered
+pass_rule (see the Required inputs note above for the reasoning).
+
+Use it only for the qualitative fields this skill already owns:
+- `root_cause` / `config_to_failure_map`: if a past near-miss shares this run's
+  failure shape, say so and cite it — a repeated near-miss pattern across runs is
+  itself diagnostic (e.g. "this is the third run to fail criterion (a) by <10%,
+  suggesting the threshold itself, not the signal, is the problem").
+- `proposed_brief.yaml` / `findings_carryover.yaml`: before proposing the next
+  variant (refine/pivot), check whether the scoreboard already shows a near-miss in
+  the direction you're about to propose — do not silently re-propose a change that
+  has already been tried and nearly (but not quite) worked the same way; say so.
+
+Do NOT let it touch `hypothesis_verdict` or `lineage_routing`. Those come from
+`pass_rule_evaluation.yaml` directly when it is binding (MACHINE-AUTHORED VERDICT
+above), or from Rules 1-6 below when it is not — in neither case does "how close
+other runs got" lower or raise the bar for THIS run's own pass/fail. Seeing the
+scoreboard must never turn a fixed pass_rule into a relative leaderboard.
+
+## Post-backtest route (E-039/CUL-264, 2026-09-11) — evidence, NOT a second decision authority
+
+If this run's handoff carries `post_backtest_routes`, it is a REAL, measured
+go/no-go computed mechanically from this run's actual backtest (real trades
+where available, CUL-272; otherwise a real correlation/cost estimate,
+CUL-264) — never a guess, and never the removed A8.6 pre-flight (that gate
+estimated an activation rate before any backtest ran at all; this is
+computed *after*, from real numbers).
+
+**This is explicitly NOT like `pass_rule_evaluation.yaml` above.** It does
+not bind your `hypothesis_verdict`/`lineage_routing` the way a `PASS`/`FAIL`
+machine verdict does. Treat each window's `route` exactly like any other
+diagnostic (`forecast_return_corr`, `cost_drag_pct`) — supporting evidence
+you weigh alongside everything else, never a label you copy through
+verbatim or a check you can skip your own analysis because of:
+
+- A `kill_no_ic`/`kill_cost_hurdle`/`refine_*` route is a real, computed
+  signal worth taking seriously — but still requires your own root-cause
+  reasoning (Rules 1-6 below), same as any other bad diagnostic number.
+- `inconclusive_insufficient_data` means the sample was too small to trust
+  the route's own math (too few effective observations or trades) — treat
+  this as **informationless**, not as a soft kill signal. Do not let a small
+  sample masquerade as a negative result.
+- If several windows disagree (one `kill_no_ic`, another clean), that
+  disagreement is itself evidence — say so, do not silently average it away.
 
 ## Required outputs
 - `verdict_interpretation.yaml`   (structured findings summary — always required)
@@ -218,7 +289,7 @@ root_cause:
 | Trade attribution `primary_weakness = entry` or `exit` | `entry_exit_execution_gap` | Execution problem; do not discard signal. |
 | Trade attribution `primary_weakness = signal_direction` | `already_priced_in` | Signal itself is wrong. |
 | Indicator does not suit this asset's flow dynamics | `indicator_incompatible_with_asset_flow` | Applies when an indicator designed for equities (e.g., MACD) shows consistent misalignment with crypto perpetual behavior; note in campaign_knowledge_base. |
-| Diagnostics show `active_n_bars=0` combined with a nonzero `component_error_count`/`component_error_sample` (protocol_result.yaml, if a full backtest ran despite errors), OR any other clear engine/config-level fault (not a signal-quality or sample-size question) | `component_execution_error` | F6 (2026-07-04). This is an engineering failure, not a research finding — do NOT map it to `already_priced_in`, `insufficient_sample_inconclusive`, or any other signal-quality/power category. `status` should still be set descriptively (e.g. `refine`), but see the prescribed action below: the orchestrator's circuit breaker treats this mechanism_failure as an absolute stop regardless of `status` — it will never be silently upgraded into pivot/escalate/kill. NOTE: `no_signal_artifact` at the prescreen stage (F5c) is intercepted by the orchestrator BEFORE verdict_interpreter ever runs — you should not normally need this value for a prescreen kill. It exists for the rarer case where a FULL backtest ran (prescreen passed) but diagnostics still show a component/engine fault. |
+| Diagnostics show `active_n_bars=0` combined with a nonzero `component_error_count`/`component_error_sample` (protocol_result.yaml, if a full backtest ran despite errors), OR any other clear engine/config-level fault (not a signal-quality or sample-size question) | `component_execution_error` | F6 (2026-07-04). This is an engineering failure, not a research finding — do NOT map it to `already_priced_in`, `insufficient_sample_inconclusive`, or any other signal-quality/power category. `status` should still be set descriptively (e.g. `refine`), but see the prescribed action below: the orchestrator's circuit breaker treats this mechanism_failure as an absolute stop regardless of `status` — it will never be silently upgraded into pivot/escalate/kill. |
 
 ### mechanism_failure → prescribed action
 
@@ -593,125 +664,57 @@ If `below_floor_pct > 0.50` (more than half the windows are sparse):
 - If `per_trade_expectancy_bps` is unavailable in the diagnostics block: note the gap
   and fall back to win_rate + cost_drag as the primary evidence.
 
-## A2.3 — IC measurement scope and suspended metrics
+## Asset stability gate (mandatory before promote) — E-026, 2026-09-12
+
+**A strategy that only works on one instrument, or on several instruments
+that all move together, has not been shown to have a real edge — it has been
+shown to fit one series of numbers.** This is the same logic already applied
+to era stability (sign-consistent across 2018-20/2021-22/2023-25) — applied
+across ASSETS instead of across TIME. It exists because it was measured to
+matter: a strategy tested across a WIDER, correlated coin set got WORSE, not
+better, as coins were added (Dorian's H003, `engineering/roadmap/E-026/EPIC.md`) —
+exactly the false-confidence pattern this gate exists to catch before a
+`promote` recommendation, not after.
+
+Before recommending `hypothesis_verdict: promote`:
+1. Check `per_symbol_summary` (or the per-window `results[]` entries) for how
+   many DISTINCT symbols this protocol actually covered, and whether they span
+   more than one `config/coin_universe.yaml` category (cross-reference
+   `innovation_notes.yaml`'s `asset_diversity_audit` from earlier in this
+   hypothesis's own lineage, if available in context).
+2. If only one symbol, or symbols from only one category, were tested: this
+   is the SAME shape as A3.4's sparse-trader case — not enough evidence to
+   trust generalization, not a confirmed kill either. Do not recommend
+   `promote`. Recommend `refine` instead, with `altitude_justification`
+   stating plainly that asset-stability evidence is missing (cite the
+   `asset_diversity_audit` opt-out if one exists and genuinely applies here —
+   otherwise this is exactly the gap Improvement 06/02 upstream were supposed
+   to have closed, and is worth saying so).
+3. If 2+ categories were tested: the sign (and rough magnitude) of the core
+   profitability metric must hold independently on each — not just in a
+   pooled average across all of them. A pooled positive result built from one
+   strongly-positive symbol and one negative symbol is not asset-stable; say
+   so explicitly rather than letting the average look clean.
+
+**This does not override K2's machine-authored verdict above.** If
+`pass_rule_evaluation.yaml` already carries a binding `PASS`/`FAIL`, routing
+uses that file's own `hypothesis_verdict`/`lineage_routing` directly (E-018,
+2026-09-13 — see MACHINE-AUTHORED VERDICT above); your own `promote`
+recommendation in that case cannot itself change the route. If your
+asset-stability reading disagrees with the binding verdict, still write the
+disagreement into `altitude_justification` — it is recorded as an
+informational flag, not a `human_pause`, exactly as any other stage/machine
+disagreement now is.
+
+## A2.3 — IC measurement scope
 
 ### IC scope for ungated escape (A2.1)
 
 `median_forecast_return_corr` in the diagnostics block is IC computed **on gated bars only** — the bars where the strategy actually placed trades, which occur exclusively inside the active regime. For a strategy gated to TRENDING (~1% of bars), IC=0.2145 on those bars does NOT represent all-bars IC.
 
-**A8.3 — two ICs are now reported by prescreen:**
+**`ungated_escape_eligible` is set directly by the regime-auditor skill's own judgment** (see `workflow_artifacts/skills/regime-auditor/SKILL.md`'s A2.1 rules) — there is no automatic re-resolution step downstream that recomputes it from a measured all-bars IC (E-039 step 5: the mechanism that used to do this, `signal_prescreen`'s own `_resolve_ungated_escape`, was removed with the rest of that stage, and nothing replaced it — see `engineering/roadmap/E-037/FINDINGS.md`'s E037-07 entry). Treat `ungated_escape_eligible` as the regime-auditor's stated conclusion, not as a field you can independently re-derive from IC: cite its own `ungated_escape_rationale` when applying the A2.1 escape.
 
-`prescreen_result.ic_active_bars`: IC computed on bars where |forecast| > threshold (active/gated bars). This is what the **IC gate** evaluates. For a regime-gated config, this equals gated-bar IC. High ic_active_bars means the signal has directional content when it fires.
-
-`prescreen_result.ic_all_bars`: IC computed over ALL bars (forecast=0 on inactive bars). This is the **ungated, all-bars IC** — the only figure admissible for A2.1 ungated-escape assessment per A2.3 rule 5.
-
-When the handoff indicates `ungated_escape_eligible` was resolved by prescreen:
-- The resolution uses `ic_all_bars` (recorded in `prescreen_ic_all_bars` in `regime_audit_decision.yaml`).
-- `ic_active_bars` is explicitly NOT admissible for A2.1: a signal with active-bar IC > 0 still has no evidence of ungated edge; "signal_bad_everywhere" requires the ALL-bars IC to be near zero.
-- If `ungated_escape_eligible` was set to True by the prescreen: `ic_all_bars` was near zero with tight CI — cite it when applying the A2.1 escape.
-- If set to False: `ic_all_bars` was not near zero, OR could not be computed — do not apply the escape.
-
-If the prescreen has not been run and no ungated run exists, treat `ungated_escape_eligible` as indeterminate and note that in `altitude_justification`.
-
-### prescreen_result.ic_by_regime is suspended (A2.3)
-
-Until a trustworthy detector (confidence: high from regime-auditor) is in place, do NOT use or reference `prescreen_result.ic_by_regime` in any verdict decision. Use only `ic_all_bars` (ungated) for A2.1 and `ic_active_bars` for the IC gate description.
-
-## IMPROVEMENT 08+09 — Prescreen Kill Verdicts
-
-When the handoff contains `prescreen_route` (set by the orchestrator when signal_prescreen
-killed this run before a full backtest), the protocol_result.yaml is a **prescreen stub**,
-NOT a full backtest result. Act accordingly:
-
-### F5c — no_signal_artifact never reaches this skill
-
-`prescreen_route: no_signal_artifact` (active_n_bars=0, or a pervasive component-error
-rate — see `component_error_count`/`component_error_sample` in `prescreen_result.yaml`)
-is intercepted by the orchestrator BEFORE this stage (`determine_post_prescreen_route`
-returns `human_pause` directly, no `protocol_result.yaml` stub is created). You should
-never see this route in a normal invocation. If you somehow receive a handoff with
-`prescreen_route: no_signal_artifact` anyway (e.g. a manual/direct invocation bypassing
-the orchestrator), do NOT interpret it as `kill_no_ic` or any other scientific verdict —
-this is an engineering failure (a component never emitted a signal, or errored on every
-bar), not evidence about the hypothesis. Do not write `verdict_interpretation.yaml` at
-all; state plainly that this run requires human engineering triage, not interpretation.
-
-### Detecting a prescreen kill
-
-Check for `protocol_result.yaml.source == "prescreen_stub"` OR the handoff field
-`prescreen_route` being set. If either is true:
-
-1. **Read `prescreen_result.yaml` as the primary evidence source** (not protocol_result.yaml).
-2. The diagnostics in the stub's `hypothesis_verdict.diagnostics` are derived from prescreen
-   metrics (IC and estimated cost_drag). Use them only for context — cite `prescreen_result.yaml`
-   values directly in your verdict.
-3. No trade-level data exists (`trade_diagnostics.json` will be absent or empty).
-4. Gate B-CUMULATIVE and Gate B-PER-WINDOW do NOT apply (no trades ran).
-
-### Mapping prescreen_route to verdict
-
-Apply the FIRST matching rule:
-
-| `prescreen_route` | Diagnostic Rule | `status` | Action |
-|---|---|---|---|
-| `kill_no_ic` | Rule 2 (weak signal) | `pivot` | IC was not significant at all-bars ungated level. Signal has no directional content on this venue/timeframe. Produce `findings_carryover.yaml` + `proposed_brief.yaml` for a structurally different signal. |
-| `refine_inverted_ic` | Rule 3 (signal inversion) | `refine` | Pooled IC was significantly negative. Reverse signal polarity. Produce `proposed_brief.yaml` with polarity flip as the single change. |
-| `refine_cost_hurdle` | Rule 1 (cost drag) | `refine` | IC was positive+significant but gross edge < 2× cost. Fix: raise `threshold_filter` min_abs (fewer, higher-conviction trades → longer avg holding → better edge/cost ratio). |
-| `kill_cost_hurdle` | Rule 1 (cost drag, structural) | `pivot` | IC marginal AND cost fails. No implementation fix expected. Treat as structural barrier — pivot to a different signal class. |
-
-### Output requirements for prescreen kills
-
-`verdict_interpretation.yaml` for a prescreen kill must include:
-- `altitude_justification`: cite `prescreen_result.yaml` values (e.g. `"Rule 2: ic_spearman_pooled=0.0021, p=0.82 > 0.10 — no informational content at all-bars ungated level. Prescreen killed before walk-forward."`)
-- `primary_failure_mode`: one of `"no_informational_content_prescreen"` | `"signal_inversion_prescreen"` | `"cost_drag_prescreen"`
-- `config_to_failure_map`: note which config elements (signal components, threshold_filter) drove the prescreen result
-- `trade_attribution`: omit or set to `null` (no trades)
-- `prescreen_evidence`: include the key prescreen metrics (A8.3 fields):
-  ```yaml
-  prescreen_evidence:
-    ic_active_bars: <from prescreen_result.ic_active_bars — the IC gate value>
-    ic_all_bars: <from prescreen_result.ic_all_bars — admissible for A2.1 ungated escape>
-    forecast_sparsity_pct: <from prescreen_result.forecast_sparsity_pct>
-    active_n_bars: <from prescreen_result.active_n_bars>
-    p_value: <from prescreen_result.ic_significance.p_value>
-    edge_to_cost_ratio: <from prescreen_result.cost_check.edge_to_cost_ratio>
-    route: <prescreen_result.route>
-  ```
-
-A2.3 note: `prescreen_result.ic_by_regime` is suspended — do NOT reference it.
-
-### Forbidden for prescreen kills
-
-- Do NOT claim the signal "works" based on gated IC (e.g. `forecast_return_corr=0.2145` from
-  a regime-gated run is NOT all-bars IC — see A2.3 IC scope rule above).
-- Do NOT apply the A3.4 sparse-trader Sharpe gate (it requires actual trades).
-- Do NOT promote based on prescreen evidence alone — promotion always requires a full backtest.
-
----
-
-## IMPROVEMENT 09 — Post-backtest cost_drag gap rule
-
-When `cost_drag` (Rule 1) fires AFTER a full backtest — i.e., the prescreen passed but
-the realized cost_drag_pct is high — this means the upstream cost estimate was wrong.
-The `cost_feasibility` block in `validation_protocol.yaml` (Layer 1) or the prescreen
-`cost_check` (Layer 2) underestimated actual costs.
-
-**Required action:** populate `supporting_evidence` in `verdict_interpretation.yaml` with
-the estimate-vs-realized gap:
-
-```yaml
-supporting_evidence:
-  cost_drag_gap:
-    layer1_assumed_round_trip_bps: <from validation_protocol.cost_feasibility.assumed_round_trip_cost_bps>
-    layer2_estimated_gross_edge_bps: <from prescreen_result.cost_check.estimated_gross_edge_bps_per_trade>
-    realized_cost_drag_pct: <from protocol_result.hypothesis_verdict.diagnostics.median_cost_drag_pct>
-    gap_explanation: "<brief note on what drove the divergence: e.g. shorter-than-expected holds, or regime activation rate lower than assumed>"
-```
-
-Repeated large gaps (estimate vs realized) across runs signal that `config/cost_model.yaml`
-needs recalibration. Flag this in `findings_carryover.yaml` if the gap is > 2× the estimate.
-
----
+If no regime-auditor run exists for this symbol/timeframe, treat `ungated_escape_eligible` as indeterminate and note that in `altitude_justification`.
 
 ## IMPROVEMENT 10 — Fee-reduction autopsy (E-016)
 
@@ -755,6 +758,9 @@ When `root_cause.mechanism_failure == "signal_real_but_subscale_vs_costs"` (Rule
 ---
 
 ## Context rule
-Read only the five input artifacts plus the handoff `regime_detector_confidence` field.
-When `prescreen_result.yaml` is present (prescreen kill), read it as the primary evidence source.
-Minimal context.
+Read only the Required inputs listed above, plus the handoff
+`regime_detector_confidence` field. Minimal context. (Corrected 2026-09-13,
+bug hunt: this said "the five input artifacts" — stale since at least K2
+[2026-07-13], and further out of date after E-026/E-018 each added more
+required inputs without updating this line. Naming an exact count here has
+repeatedly drifted from the list above; stop restating it.)

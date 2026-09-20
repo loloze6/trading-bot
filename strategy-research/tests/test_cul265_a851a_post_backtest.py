@@ -87,12 +87,14 @@ def test_a851a_matches_direct_call_on_the_same_pooled_records(tmp_path):
 
 def test_active_flag_uses_prescreens_own_threshold(tmp_path):
     """Episode identification is defined entirely in terms of "active", so the
-    pooled records' active flag must mean the same thing prescreen means by it
-    -- not a locally invented threshold."""
-    import prescreen_signal as ps
+    pooled records' active flag must mean the same shared threshold
+    _assemble_pooled_symbol_records itself imports -- not a locally invented
+    one (E-039 step 5: relocated from prescreen_signal.py to
+    performance.signal_statistics.ACTIVE_THRESHOLD, same value)."""
+    from performance.signal_statistics import ACTIVE_THRESHOLD
     runs_root = tmp_path / "results"
-    below = ps._ACTIVE_THRESHOLD / 2      # must read inactive
-    above = ps._ACTIVE_THRESHOLD * 10     # must read active
+    below = ACTIVE_THRESHOLD / 2      # must read inactive
+    above = ACTIVE_THRESHOLD * 10     # must read active
     _write_bars(runs_root / "run_a", forecasts=[above, below, above, below],
                 closes=[100.0, 101.0, 102.0, 103.0])
 

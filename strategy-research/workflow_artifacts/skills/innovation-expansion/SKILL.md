@@ -12,6 +12,7 @@ Expand the hypothesis space before strict validation — while keeping only unga
 - `research_brief.yaml`
 - `hypothesis_card.yaml`
 - `config/available_feeds.yaml`  (A1.2: constrain evidence_type choices)
+- `config/coin_universe.yaml`  (Improvement 06: asset-generalizability check, see below)
 
 ## Required outputs
 - `expanded_hypothesis_card.yaml`
@@ -116,6 +117,56 @@ Before adding a variant, check the base hypothesis indicator's `known_regime_aff
 
 ---
 
+## IMPROVEMENT 06 — Asset generalizability (E-026, 2026-09-12)
+
+**Testing one idea on several PARAMETER variants (RSI(14), RSI(21), RSI(7)...)
+proves nothing about whether the idea is real — it only proves it isn't
+sensitive to that one knob. The check that actually distinguishes "a real
+market effect" from "curve-fit to one coin's specific history" is whether the
+SAME mechanism, unchanged, also holds on a DIFFERENT coin.** This is the same
+logic this project already applies across TIME (era stability — sign-
+consistent across 2018-20/2021-22/2023-25); this rule applies it across
+ASSETS instead.
+
+**Rule:** for every hypothesis whose mechanism is not explicitly asset-
+specific (see the opt-out below), `innovation_notes.yaml` must name at least
+2 OTHER symbols the mechanism should also be tested against, chosen from
+`config/coin_universe.yaml` categories DIFFERENT from the base hypothesis's
+own instrument's category — not just any other coin. Two coins in the same
+category (e.g. BTCUSDT and ETHUSDT, both `store_of_value`) move together too
+much to count as independent evidence; that was measured directly, not
+assumed (Dorian's H003: as a correlated 19-coin universe grew, an edge got
+WEAKER, not stronger — see `engineering/roadmap/E-026/EPIC.md`). Prefer
+symbols from categories whose `strategy_affinity` still plausibly matches the
+mechanism (`verdict_interpreter`'s SKILL.md already does exactly this lookup
+for escalation targets — same file, same logic, reused here).
+
+**Opt-out (real, not a loophole to lean on):** if the mechanism is
+genuinely tied to one instrument's specific structure (e.g. a hypothesis
+about a named token's own tokenomics, unlock schedule, or a venue-specific
+quirk), state that explicitly in `innovation_notes.yaml`'s `key_insight` with
+the specific reason — do not silently skip this section. A hypothesis that
+COULD generalize but wasn't checked is the failure mode this rule exists to
+close; a hypothesis that genuinely cannot generalize is not a violation.
+
+`innovation_notes.yaml` must include:
+```yaml
+asset_diversity_audit:
+  base_instrument_category: "<this hypothesis's own coin_universe.yaml category>"
+  candidate_symbols: [<>=2 symbols, >=1 category different from the base>]
+  categories_spanned: [<list, including the base>]
+  opt_out: null  # or the specific single-asset justification, per the rule above
+```
+
+This does not require `backtest_specification` to actually run all of them
+in this same pass — see that skill's own Improvement for where the symbol
+set is actually fixed and the pass_rule requirement that checks it
+independently per symbol. This stage's job is only to name the candidates and
+the reasoning, so they are not invented after the fact once a result looks
+promising.
+
+---
+
 ## IMPROVEMENT 05 — Exclusion-Digest-Aware Expansion: Redirect the Lineage, Don't Just Vary It (E-032 S2b)
 
 ### Optional, off by default
@@ -176,6 +227,10 @@ proactive stage proposes on its own, before the gate ever has to say no.
   hypothesis's family saturation before expanding; route any variant that would
   repeat a digest triple to `variants_not_pursued` instead of `expanded_variants`.
   (Improvement 05)
+- **Improvement 06: name >=2 asset-generalizability candidate symbols from a
+  DIFFERENT `coin_universe.yaml` category than the base instrument (or state
+  the specific single-asset opt-out reason).** Write the `asset_diversity_audit`
+  section in `innovation_notes.yaml`.
 
 ## Forbidden
 - Do not skip interpretability.
@@ -190,6 +245,10 @@ proactive stage proposes on its own, before the gate ever has to say no.
   in context. (Improvement 05)
 - Do not treat digest absence as evidence the search space is fresh — it may simply
   mean `orchestrator.exclusion_digest_input.enabled` is off. (Improvement 05)
+- Do not silently omit `asset_diversity_audit` from `innovation_notes.yaml`. An
+  empty or missing section is indistinguishable from "forgot to check" — if the
+  mechanism is genuinely single-asset, say so explicitly with the reason.
+  (Improvement 06)
 
 ## Context rule
-Use `research_brief.yaml`, `hypothesis_card.yaml`, `config/available_feeds.yaml`, `config/indicator_library.yaml`, and, when present, `campaign_record/exclusion_digest.yaml`. Do not read other files unless explicitly required.
+Use `research_brief.yaml`, `hypothesis_card.yaml`, `config/available_feeds.yaml`, `config/indicator_library.yaml`, `config/coin_universe.yaml`, and, when present, `campaign_record/exclusion_digest.yaml`. Do not read other files unless explicitly required.

@@ -87,11 +87,10 @@ import pandas as pd
 import yaml
 
 # ---------------------------------------------------------------------------
-# Shared statistics imports (W14 R2/R3) — same sys.path pattern
-# prescreen_signal.py itself uses to reach trading-bot/performance/, plus this
-# file's own directory so its sibling module `prescreen_signal` is importable
-# regardless of how the caller set up sys.path (mirrors
-# tests/test_whale_footprint_evaluation.py's own TOOLS_PATH insertion).
+# Shared statistics imports (W14 R2/R3, repointed 2026-09-12 -- E-039 step 5).
+# Both functions now live in trading-bot/performance/signal_statistics.py,
+# the single shared home for this class of function -- prescreen_signal.py
+# is being removed (E-039), these are no longer sourced from it.
 # ---------------------------------------------------------------------------
 _HERE = Path(__file__).resolve().parent          # strategy-research/tools/
 _REPO = _HERE.parent.parent                       # repo root
@@ -102,10 +101,12 @@ for _p in (str(_HERE), str(_TBOT)):
         sys.path.insert(0, _p)
 
 from performance.signal_statistics import spearman_correlation as _spearman  # noqa: E402
-from prescreen_signal import (  # noqa: E402
-    _BLOCK_SIZE_1H,
-    _block_adjusted_significance,
+from performance.signal_statistics import (  # noqa: E402
+    pooled_block_adjusted_significance as _block_adjusted_significance,
 )
+from timeframe import bars_per_day  # noqa: E402  (sibling module in tools/)
+
+_BLOCK_SIZE_1H = bars_per_day("1h")  # was prescreen_signal._BLOCK_SIZE_1H (=24), now derived
 
 MIN_BARS_FOR_PER_PAIR_SIGN = 30  # prereg verdict.sign_consistency: pairs below this are not meaningfully signed
 

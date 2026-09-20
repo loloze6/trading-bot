@@ -1,6 +1,7 @@
 """
-Gap-awareness tests for prescreen_signal._stationary_block_bootstrap_ic_significance
-(CUL-20 / GH#63, the #50 family). Pre-registered in
+Gap-awareness tests for performance.signal_statistics.stationary_block_bootstrap_ic_significance
+(CUL-20 / GH#63, the #50 family; relocated from prescreen_signal.py, E-039 step
+5, 2026-09-12). Pre-registered in
 docs/analysis-reports/PRESCREEN_GAP_BOOTSTRAP_POLICY.md.
 
 The stationary block bootstrap must draw each block from within a single
@@ -17,11 +18,15 @@ from pathlib import Path
 
 import pandas as pd
 
+TRADING_BOT_ROOT = Path(__file__).parent.parent.parent / "trading-bot"
+if str(TRADING_BOT_ROOT) not in sys.path:
+    sys.path.insert(0, str(TRADING_BOT_ROOT))
 TOOLS_PATH = Path(__file__).parent.parent / "tools"
 if str(TOOLS_PATH) not in sys.path:
     sys.path.insert(0, str(TOOLS_PATH))
 
-import prescreen_signal as ps
+from performance import signal_statistics as pss
+from performance.signal_statistics import spearman_correlation, stationary_block_bootstrap_ic_significance
 
 _STEP = pd.Timedelta(1, unit="h")
 _BASE = pd.Timestamp("2020-01-01 00:00:00")
@@ -49,7 +54,7 @@ def _ref_positional_bootstrap(records_by_symbol, block_size, n_resamples, seed):
         symbol_arrays[sym] = (f, ret)
         obs_f.extend(f)
         obs_r.extend(ret)
-    observed_ic = ps._spearman(obs_f, obs_r)
+    observed_ic = spearman_correlation(obs_f, obs_r)
     base = {"method": "block_bootstrap_all_bars_v1", "block_size": block_size, "n_resamples": n_resamples}
     if observed_ic is None:
         return {**base, "pooled_ic": None, "p_value": 1.0, "significant": False, "n_bootstrap_valid": 0}
@@ -68,7 +73,7 @@ def _ref_positional_bootstrap(records_by_symbol, block_size, n_resamples, seed):
                     idx = (start + k) % n
                     rf.append(f[idx])
                     rr.append(ret[idx])
-        ic = ps._spearman(rf, rr)
+        ic = spearman_correlation(rf, rr)
         if ic is not None:
             boot.append(ic)
     if not boot:
@@ -86,23 +91,23 @@ def _ref_positional_bootstrap(records_by_symbol, block_size, n_resamples, seed):
         **base,
         "pooled_ic": round(observed_ic, 6),
         "p_value": round(p, 4),
-        "significant": bool(p < ps._SIG_THRESHOLD),
+        "significant": bool(p < pss._SIG_THRESHOLD),
         "n_bootstrap_valid": len(boot),
     }
 
 
 def _capture_blocks(monkeypatch, records_by_symbol, expected_step_by_symbol, block_size=_B, n_resamples=_R):
-    """Run the bootstrap with _spearman spied so we recover the exact sampled
-    return-markers per resample; returns the list of per-resample marker lists
-    (excluding the first, which is the observed-IC call)."""
+    """Run the bootstrap with spearman_correlation spied so we recover the exact
+    sampled return-markers per resample; returns the list of per-resample marker
+    lists (excluding the first, which is the observed-IC call)."""
     captured = []
 
     def _spy(f_arg, r_arg):
         captured.append(list(r_arg))
         return 0.5  # fixed non-None IC so every resample is valid
 
-    monkeypatch.setattr(ps, "_spearman", _spy)
-    ps._stationary_block_bootstrap_ic_significance(
+    monkeypatch.setattr(pss, "spearman_correlation", _spy)
+    pss.stationary_block_bootstrap_ic_significance(
         records_by_symbol,
         block_size=block_size,
         n_resamples=n_resamples,
@@ -127,7 +132,7 @@ def test_bootstrap_no_expected_step_is_byte_identical():
     rt = [10.0, -5.0, 3.0, 8.0, -2.0, 6.0, -4.0, 1.0, 7.0]
     rbs = {"SYNTH": _recs(fc, rt, hole_after=4)}
 
-    got = ps._stationary_block_bootstrap_ic_significance(
+    got = stationary_block_bootstrap_ic_significance(
         rbs, block_size=_B, n_resamples=_R, seed=_SEED
     )  # expected_step defaults None
     assert got == _ref_positional_bootstrap(rbs, _B, _R, _SEED)
@@ -140,10 +145,10 @@ def test_bootstrap_gapfree_unchanged():
     rt = [10.0, -5.0, 3.0, 8.0, -2.0, 6.0, -4.0, 1.0]
     rbs = {"SYNTH": _recs(fc, rt)}  # contiguous, no hole
 
-    with_step = ps._stationary_block_bootstrap_ic_significance(
+    with_step = stationary_block_bootstrap_ic_significance(
         rbs, block_size=_B, n_resamples=_R, seed=_SEED, expected_step_by_symbol={"SYNTH": _STEP}
     )
-    without = ps._stationary_block_bootstrap_ic_significance(rbs, block_size=_B, n_resamples=_R, seed=_SEED)
+    without = stationary_block_bootstrap_ic_significance(rbs, block_size=_B, n_resamples=_R, seed=_SEED)
     assert with_step == without == _ref_positional_bootstrap(rbs, _B, _R, _SEED)
 
 
@@ -198,10 +203,10 @@ def test_bootstrap_no_circular_wrap_across_series_end(monkeypatch):
 def test_pooled_ic_bootstrap_fallback_timestampless_records():
     """run_protocol._pooled_ic_with_bootstrap_fallback builds records with NO
     'timestamp' key and calls the bootstrap with one arg. That must still run
-    (expected_step defaults None -> _contiguous_segments never reads a
+    (expected_step defaults None -> contiguous_segments never reads a
     timestamp) and return a well-formed result."""
     records = [{"forecast": float(i % 3 - 1), "next_return_bps": float(i - 5)} for i in range(12)]
-    result = ps._stationary_block_bootstrap_ic_significance(
+    result = stationary_block_bootstrap_ic_significance(
         {"kraken_ZECUSD": records}, block_size=_B, n_resamples=_R, seed=_SEED
     )
     assert result["method"] == "block_bootstrap_all_bars_v1"
@@ -209,7 +214,7 @@ def test_pooled_ic_bootstrap_fallback_timestampless_records():
 
 
 # ---------------------------------------------------------------------------
-# End-to-end wiring: run_prescreen must pass the step map into the bootstrap
+# End-to-end wiring: run_protocol must pass the step map into the bootstrap
 # ---------------------------------------------------------------------------
 
 
@@ -217,8 +222,10 @@ def test_bootstrap_wiring_passes_expected_step():
     """PR #65 isolation lesson: guard the production call site. A silent revert
     to the one-arg call would turn gap-awareness off in production while the
     unit tests above (which pass expected_step directly) stay green."""
-    src = inspect.getsource(ps.run_prescreen)
-    assert "_stationary_block_bootstrap_ic_significance(" in src
+    import run_protocol as rp
+
+    src = inspect.getsource(rp._pooled_ic_with_bootstrap_fallback)
+    assert "stationary_block_bootstrap_ic_significance(" in src
     assert "expected_step_by_symbol=expected_step_by_symbol" in src
 
 
@@ -228,7 +235,7 @@ def test_bootstrap_end_to_end_via_run_protocol_fallback(tmp_path):
     end on the degenerate (all-windows-None correlation) path. The records it
     builds carry NO timestamp and it calls with one arg -> None default -> the
     bootstrap must run and return the block_bootstrap method (no KeyError from
-    _contiguous_segments)."""
+    contiguous_segments)."""
     import csv
 
     import run_protocol as rp
@@ -255,7 +262,7 @@ def test_bootstrap_none_byte_identical_short_series():
     fc = [1.0, 2.0]  # n = 2 = _B - 1 (< block_size)
     rt = [10.0, -5.0]
     rbs = {"SYNTH": _recs(fc, rt)}  # gap-free
-    got = ps._stationary_block_bootstrap_ic_significance(rbs, block_size=_B, n_resamples=_R, seed=_SEED)
+    got = stationary_block_bootstrap_ic_significance(rbs, block_size=_B, n_resamples=_R, seed=_SEED)
     assert got == _ref_positional_bootstrap(rbs, _B, _R, _SEED)
 
 

@@ -155,6 +155,7 @@ def write_metrics_json(
     bar_equity: Optional[dict] = None,
     risk_controls: Optional[dict] = None,
     data_quality: Optional[dict] = None,
+    component_errors: Optional[dict] = None,
 ) -> None:
     payload = {
         "core": {
@@ -177,6 +178,8 @@ def write_metrics_json(
     # above. Interim home pending E-046's categorized post-backtest reports.
     if data_quality is not None:
         payload["data_quality"] = data_quality
+    if component_errors is not None:
+        payload["component_errors"] = component_errors
     (run_dir / "metrics.json").write_text(json.dumps(payload, indent=2, default=str))
 
 
@@ -354,6 +357,52 @@ def build_core(
                 forecast_return_corr_pvalue_block_adjusted = pv
                 forecast_return_corr_n_eff                 = neff
 
+        # E-039 step 5 follow-up (2026-09-12): forecast_return_corr above is
+        # measured on ACTIVE bars only (forecast != 0) -- the "gated" IC
+        # docs/USER_GUIDE.md and verdict-interpreter's SKILL.md both warn is
+        # NOT admissible for the A2.1 ungated-escape criterion, which needs IC
+        # over ALL bars, no activity filter. That "ic_all_bars" quantity used
+        # to exist only inside the now-removed signal_prescreen stage's own
+        # _resolve_ungated_escape (E-039 step 5 Phase 3) -- relocated here
+        # rather than left dropped, since df_all (all bars, already
+        # gap-filtered, pre-active-filter) is already computed a few lines
+        # above for sigma and needs no separate loading.
+        #
+        # For an always-active strategy (forecast != 0 on every bar) df_all
+        # == df, so this is expected to equal forecast_return_corr exactly --
+        # the two only diverge for a regime-gated config, which is precisely
+        # the case this field exists to inform.
+        forecast_return_corr_all_bars = None
+        forecast_return_corr_all_bars_pvalue_block_adjusted = None
+        forecast_return_corr_all_bars_n_eff = None
+        if len(df_all) >= 5:
+            x_all = df_all["forecast"].values.astype(float)
+            y_all = df_all["forward_return"].values.astype(float)
+            corr_all = pearson_correlation(x_all, y_all)
+            forecast_return_corr_all_bars = round(corr_all, 6) if corr_all is not None else None
+
+            if corr_all is not None and candle_interval_seconds:
+                block_size = max(86400 // candle_interval_seconds, 1)
+                placeable_blocks_all = None
+                if "timestamp" in bars_df.columns:
+                    expected_step = pd.Timedelta(seconds=candle_interval_seconds)
+                    # Every bar counts here, not just active ones -- reuses
+                    # gap_aware_active_block_count by marking every record
+                    # active=True, so it degrades to a plain gap-respecting
+                    # block count over ALL bars rather than a reimplementation.
+                    records_all = [
+                        {"active": True, "timestamp": ts}
+                        for ts in bars_df["timestamp"].iloc[:-1]
+                    ]
+                    placeable_blocks_all = gap_aware_active_block_count(
+                        records_all, block_size, expected_step
+                    )
+                pv_all, neff_all = block_adjusted_pvalue(
+                    corr_all, len(x_all), block_size, placeable_blocks=placeable_blocks_all
+                )
+                forecast_return_corr_all_bars_pvalue_block_adjusted = pv_all
+                forecast_return_corr_all_bars_n_eff                 = neff_all
+
     # Avg trade duration in bars (derived from trade timestamps + bar interval)
     avg_trade_duration_bars = None
     if n > 0 and bars_df is not None and "timestamp" in bars_df.columns and len(bars_df) >= 2:
@@ -496,6 +545,13 @@ def build_core(
         "forecast_return_corr_pvalue": forecast_return_corr_pvalue,
         "forecast_return_corr_pvalue_block_adjusted": forecast_return_corr_pvalue_block_adjusted,
         "forecast_return_corr_n_eff":  forecast_return_corr_n_eff,
+        # E-039 step 5 follow-up: the ungated, ALL-bars counterpart -- the
+        # only figure admissible for the A2.1 ungated-escape criterion (see
+        # the computation above for why). None on the same terms as the
+        # active-bar fields: not measured yet, never a fabricated 0.0.
+        "forecast_return_corr_all_bars": forecast_return_corr_all_bars,
+        "forecast_return_corr_all_bars_pvalue_block_adjusted": forecast_return_corr_all_bars_pvalue_block_adjusted,
+        "forecast_return_corr_all_bars_n_eff": forecast_return_corr_all_bars_n_eff,
         # CUL-266: how much of the reachable sample the #50(A) gap filter
         # removed. A correlation computed over a heavily-decimated sample is a
         # different claim from one over a clean one, so the count travels with

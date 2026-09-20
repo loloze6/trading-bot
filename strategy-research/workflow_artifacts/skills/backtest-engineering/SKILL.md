@@ -11,6 +11,7 @@ Translate the approved hypothesis into one valid strategy config (emitted inside
 
 ## Required inputs
 - `expanded_hypothesis_card.yaml`
+- `innovation_notes.yaml`  (Improvement 02: `asset_diversity_audit` candidate symbols)
 - `validation_protocol.yaml`
 - `STRATEGY_CONFIG_REFERENCE.md`  (trading-bot config reference: the authoritative list of every available
   component, transform op, regime, and parameter)
@@ -44,9 +45,10 @@ The embedded `config` must:
 - If `research_brief.yaml` contains a `significance_methodology` field (e.g. P1b's
   A8.5.1a mandate for backward-extension reactivation runs), copy it VERBATIM as a
   top-level key in `config` (e.g. `"significance_methodology": "episode_blocked_a851a"`).
-  This is read directly by `tools/prescreen_signal.py` at the `signal_prescreen` stage
-  to select the significance method — omitting it silently falls back to the default
-  block_24_fisher_z method, which would violate the brief's binding requirement.
+  This is read by `protocol_execution`'s own conformance check
+  (`_check_protocol_execution_conformance`, E-039 step 5) against
+  `episode_blocked_significance_by_symbol` — omitting it means the pre-registered
+  requirement cannot be confirmed, which would violate the brief's binding requirement.
 
 `decision.yaml`:
 - stage: "backtest_specification"
@@ -89,6 +91,30 @@ YAML formatting rule — applies to ALL string values in both artifacts:
 - List items (- items) that contain colons MUST be quoted: `- "key: value"` not `- key: value`
 - This rule applies even inside nested mappings and multi-line values.
 - Violation causes a YAML parse error that halts the pipeline.
+
+## IMPROVEMENT 02 — Asset generalizability carries through from innovation_expansion (E-026, 2026-09-12)
+
+`innovation_notes.yaml`'s `asset_diversity_audit` (Improvement 06 of that
+stage) names the candidate symbols this hypothesis should also be tested
+against, from a DIFFERENT `config/coin_universe.yaml` category than the base
+instrument — unless it carries an explicit single-asset opt-out. Whatever
+protocol/symbol set this run ends up targeting (pinned, generated, or
+inherited — see the four branches in `_resolve_protocol_path`) should include
+those candidates alongside the base instrument, not the base instrument
+alone, UNLESS:
+- `run_context.yaml` marks this a `replication_diagnostic` (Replication guard
+  above already forbids any deviation from `source_run` there — this rule
+  never overrides that), or
+- `asset_diversity_audit.opt_out` is non-null (a genuinely single-asset
+  mechanism), or
+- `machine_constraints.protocol_ref` pins a specific pre-existing protocol
+  (a pinned protocol's own symbol set is what it is — do not silently expand
+  a protocol someone else already fixed).
+
+If none of those apply and the resolved protocol still only covers the base
+instrument's own category, say so plainly in `decision.yaml`'s `rationale`
+rather than silently proceeding — this is the same "don't skip it quietly"
+discipline Improvement 06 applies one stage earlier.
 
 ## Required prerequisite reading
 Read workflow_artifacts/skills/quant-fundamentals/SKILL.md before proposing any config change justified
@@ -225,4 +251,5 @@ If `run_context.yaml` is present and contains `run_type: replication_diagnostic`
   always "yes, achievable via a config parameter."
 
 ## Context rule
-Read only the two hypothesis artifacts and the config reference. Minimal context.
+Read only the hypothesis artifacts (including `innovation_notes.yaml` for
+Improvement 02) and the config reference. Minimal context.

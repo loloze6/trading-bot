@@ -1207,8 +1207,10 @@ def _pooled_ic_with_bootstrap_fallback(rows: list, runs_root) -> tuple:
     if runs_root is None:
         return None, None
 
-    sys.path.insert(0, _HERE)
-    import prescreen_signal as _ps
+    # Repointed 2026-09-12 (E-039 step 5): sourced from
+    # trading-bot/performance/signal_statistics.py, not prescreen_signal.py
+    # (being removed) -- _TBOT already on sys.path at module load, above.
+    from performance.signal_statistics import stationary_block_bootstrap_ic_significance
 
     records, expected_step, all_have_timestamp = _assemble_pooled_symbol_records(rows, runs_root)
     if not records:
@@ -1219,7 +1221,7 @@ def _pooled_ic_with_bootstrap_fallback(rows: list, runs_root) -> tuple:
         {symbol: expected_step}
         if (all_have_timestamp and expected_step is not None) else None
     )
-    boot = _ps._stationary_block_bootstrap_ic_significance(
+    boot = stationary_block_bootstrap_ic_significance(
         {symbol: records}, expected_step_by_symbol=expected_step_by_symbol,
     )
     return boot.get('pooled_ic'), boot['method']
@@ -1249,8 +1251,10 @@ def _assemble_pooled_symbol_records(rows: list, runs_root) -> tuple:
     timestamp, so the pre-existing bootstrap path is unaffected by their presence.
     """
     import pandas as pd
-    sys.path.insert(0, _HERE)
-    import prescreen_signal as _ps
+    # Repointed 2026-09-12 (E-039 step 5): sourced from
+    # trading-bot/performance/signal_statistics.py, not prescreen_signal.py
+    # (being removed) -- _TBOT already on sys.path at module load, above.
+    from performance.signal_statistics import ACTIVE_THRESHOLD
 
     symbol = rows[0]['symbol'] if rows else None
     records = []
@@ -1280,13 +1284,42 @@ def _assemble_pooled_symbol_records(rows: list, runs_root) -> tuple:
             rec = {
                 'forecast': float(forecasts[i]),
                 'next_return_bps': (closes[i + 1] - closes[i]) / closes[i] * 10000.0,
-                'active': abs(float(forecasts[i])) > _ps._ACTIVE_THRESHOLD,
+                'active': abs(float(forecasts[i])) > ACTIVE_THRESHOLD,
                 'symbol': symbol,
             }
             if has_ts:
                 rec['timestamp'] = timestamps[i]
             records.append(rec)
     return records, expected_step, all_have_timestamp
+
+
+def _load_campaign_data_policy() -> dict:
+    """Local copy (E-039 step 5, 2026-09-12): prescreen_signal.py's own
+    identically-named function is being removed along with that file. This
+    is a small, strategy-research-specific config reader (not general
+    statistics), so it lives here directly rather than in
+    trading-bot/performance/signal_statistics.py."""
+    import yaml
+    p = Path(_SR) / "config" / "campaign_data_policy.yaml"
+    if not p.exists():
+        return {}
+    with open(p, encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
+
+
+def _era_id_for_timestamp(ts, eras: list) -> str:
+    """Local copy (E-039 step 5, 2026-09-12) of prescreen_signal.py's own
+    _era_id_for_timestamp -- A8.5.1a: map a bar timestamp to its era_id per
+    campaign_data_policy.yaml's `eras` list. Returns 'era_unmapped' if the
+    timestamp falls outside every declared era (should not happen for
+    in-policy data, but must not crash)."""
+    import pandas as pd
+    d = pd.Timestamp(ts).strftime("%Y-%m-%d")
+    for era in eras:
+        lo, hi = era["range"]
+        if lo <= d <= hi:
+            return era["era_id"]
+    return "era_unmapped"
 
 
 def _a851a_episode_significance(rows: list, runs_root, timeframe: str) -> dict | None:
@@ -1333,14 +1366,13 @@ def _a851a_episode_significance(rows: list, runs_root, timeframe: str) -> dict |
     sys.path.insert(0, _HERE)
     import pandas as pd
     import episode_significance as _es
-    import prescreen_signal as _ps
     from timeframe import bars_per_day, timeframe_seconds
 
     records, _expected_step, all_have_timestamp = _assemble_pooled_symbol_records(rows, runs_root)
     if not records:
         return None
 
-    policy = _ps._load_campaign_data_policy()
+    policy = _load_campaign_data_policy()
     eras = policy.get('eras', [])
     es_cfg = policy.get('episode_significance', {})
 
@@ -1352,7 +1384,7 @@ def _a851a_episode_significance(rows: list, runs_root, timeframe: str) -> dict |
     if eras and all_have_timestamp:
         def era_of(i, _records=records, _eras=eras):
             return (_records[i]['symbol'],
-                    _ps._era_id_for_timestamp(_records[i]['timestamp'], _eras))
+                    _era_id_for_timestamp(_records[i]['timestamp'], _eras))
 
     # Scalar bar step for gap-aware episode splitting (GH#66), mirroring
     # prescreen's own derivation from the timeframe rather than from the data --
@@ -2039,6 +2071,12 @@ def main():
                 # an internal aggregation structure, not the byte-identity-sensitive
                 # artifact metrics.json is.
                 "data_quality":    m.get("data_quality"),
+                # E-039 step 5 follow-up (2026-09-12): same sibling-of-"core" shape
+                # as data_quality above -- metrics.json's component_errors block
+                # (F5b's error count/samples, now wired through by
+                # core/backtester.py) would otherwise be silently dropped here the
+                # same way data_quality was before CUL-263.
+                "component_errors": m.get("component_errors"),
             }
             results.append(result_entry)
 
@@ -2179,6 +2217,16 @@ def main():
         "hypothesis_verdict":     hypothesis_verdict,
         "trade_diagnostics_summary": trade_diagnostics_summary if all_trade_records else None,
         "prescreen_backtest_cross_check": cross_check,
+        # E-039 step 5 (2026-09-12): CUL-265's per-symbol A8.5.1a methodology
+        # label was computed (extended_for_cross_check, above) and used
+        # transiently for the cross-check, but never actually persisted --
+        # exposing it here so the relocated pre-registration conformance
+        # check (which replaces the removed signal_prescreen stage's own
+        # significance_methodology_used check) has something real to read.
+        "episode_blocked_significance_by_symbol": {
+            s: v.get("episode_blocked_significance_method")
+            for s, v in extended_for_cross_check.items()
+        } if extended_for_cross_check else None,
     }
     (out_dir / "protocol_summary.json").write_text(
         json.dumps(summary, indent=2, default=str), encoding="utf-8"

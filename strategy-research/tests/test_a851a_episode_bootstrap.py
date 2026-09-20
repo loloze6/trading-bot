@@ -15,9 +15,12 @@ import yaml
 
 TOOLS_PATH = Path(__file__).parent.parent / "tools"
 sys.path.insert(0, str(TOOLS_PATH))
+TRADING_BOT_ROOT = Path(__file__).parent.parent.parent / "trading-bot"
+if str(TRADING_BOT_ROOT) not in sys.path:
+    sys.path.insert(0, str(TRADING_BOT_ROOT))
 
 import episode_significance as es  # noqa: E402
-import prescreen_signal  # noqa: E402
+from performance.signal_statistics import pooled_block_adjusted_significance  # noqa: E402
 
 
 def _make_clustered_records(
@@ -133,10 +136,10 @@ def test_fixture_b_naive_block_is_overconfident_vs_episode_method():
     episode_ci_width = episode_result["ci_high"] - episode_result["ci_low"]
 
     # Naive method: existing 24-bar Fisher-z significance, fed the single pooled
-    # active-bar IC (exactly what prescreen_signal.py does today).
+    # active-bar IC (exactly what the pre-E-039 prescreen stage used to do).
     active_idx = [i for i, r in enumerate(records) if r["active"]]
     pooled_ic = es._pooled_ic(records, active_idx)
-    naive_sig = prescreen_signal._block_adjusted_significance([pooled_ic], n_active, block_size=24)
+    naive_sig = pooled_block_adjusted_significance([pooled_ic], n_active, block_size=24)
 
     # Reconstruct the naive method's implied CI from its z-statistic (Fisher z: CI
     # half-width = 1.645 / sqrt(dof) for a 90% CI, matching the p<0.10 convention

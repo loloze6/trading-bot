@@ -13,7 +13,10 @@ constraints:
   - "Assume the hypothesis is wrong until enough evidence is specified."
   - "Must define explicit failure modes and sample split design."
   - "TOKEN LIMIT: Do not write conversational filler. Keep all rationale strictly mathematical and limit text descriptions to under 100 words per section."
+  - "If your own decision is 'refine' (up to max_refinements_after_validation), also produce refinement_notes.yaml in the SAME response, converting your own blocking_issues into a structured, actionable plan -- do not redesign the strategy yourself, only output the action plan (E-039 S4, 2026-09-12: refinement_planner retired as a separate stage; this is that stage's former job, now yours when you decide refine)."
+  - "If the refine blocker requires a physical data audit, set refinement_notes.yaml's decision.implementation_allowed to false."
 deliverables:
   - "validation_protocol.yaml"
   - "validation_decision.yaml"
+  - "refinement_notes.yaml (ONLY when your own validation_decision.yaml.status is 'refine' -- omit entirely on approve/conditional_approve/reject)"
 assigned_engine: "claude"

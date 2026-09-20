@@ -440,6 +440,10 @@ def test_refinement_brief_materializes_checksum_identical_and_pre_registration(c
     assert pre_reg["gate_definition"] == _MINIMAL_REFINEMENT_BRIEF["gate_definition"]
     assert pre_reg["pass_rule"] == _MINIMAL_REFINEMENT_BRIEF["evaluation"]["pass_rule"]
     assert pre_reg["user_brief_checksum"] == f"sha256:{source_checksum}"
+    # E-039 S4 (2026-09-12): A6.1 holdout-range declaration now registered here,
+    # not re-derived mid-pipeline by the validation stage's own skill.
+    assert pre_reg["sample_split_design"]["holdout_range"] == list(camp.orch._load_holdout_range())
+    assert "A6.1" in pre_reg["sample_split_design"]["holdout_note"]
 
     # R1: no stage-skip -- child starts at the existing default.
     child_state = yaml.safe_load((runs_dir / "run_601" / "pipeline_state.yaml").read_text(encoding="utf-8"))

@@ -1,0 +1,133 @@
+# E-041 S2: the register. Every off-by-default feature flag in this project,
+# with an owner and a switch-on criterion -- or, if not yet switched on, the
+# specific epic it's blocked on. Mechanically checked against the real code
+# by tests/test_feature_flag_register.py: a flag that exists in code with no
+# entry here, or an entry whose config_key/state no longer matches reality,
+# fails the suite. This file must never drift -- it is generated-against,
+# never hand-trusted (E-041's own Risks section: "must be generated or tested
+# against the code, never hand-maintained").
+#
+# Two kinds of flag live here, in `kind`:
+#   orchestrator_config -- an `orchestrator.<name>.enabled` key in
+#     config/campaign_config.yaml, read at runtime by a matching
+#     run_phase1_research._<name>_enabled() / run_campaign._<name>_enabled().
+#   engine_param -- a keyword parameter on the trading-bot engine itself
+#     (default False in trading-bot/core/launcher.py / core/trading_bot.py),
+#     switched on not by flipping that engine default but by the one caller
+#     that matters (strategy-research/tools/run_protocol.py) explicitly
+#     passing True -- the engine's own bit-identity discipline stays intact.
+#
+# `state` is "on" or "off_incomplete". "off_incomplete" always names the
+# specific epic it is waiting on via `blocked_on` -- E-041's own finding was
+# that "off, no reason given" was never a legitimate state for a finished,
+# tested feature.
+
+flags:
+  - name: exclusion_digest_input
+    kind: orchestrator_config
+    config_key: orchestrator.exclusion_digest_input.enabled
+    reader: run_phase1_research._exclusion_digest_input_enabled
+    owner: Jeremy
+    state: "on"
+    criterion: >
+      Switched on 2026-09-02. Finished, tested (E-032 S2a); the digest file
+      already existed on disk, so it fires immediately with no unmet
+      condition.
+
+  - name: stale_input_path_fix
+    kind: orchestrator_config
+    config_key: orchestrator.stale_input_path_fix.enabled
+    reader: run_phase1_research._stale_input_path_fix_enabled
+    owner: Jeremy
+    state: "on"
+    criterion: >
+      Switched on 2026-09-02. Both target files
+      (campaign_knowledge_base.yaml, feed_wishlist.yaml) verified present on
+      disk before flipping.
+
+  - name: variant_selection_record
+    kind: orchestrator_config
+    config_key: orchestrator.variant_selection_record.enabled
+    reader: run_phase1_research._variant_selection_record_enabled
+    owner: Jeremy
+    state: "on"
+    criterion: >
+      Switched on 2026-09-02 (E-034 S2). Compliance checked before flipping
+      -- the one real run since the SKILL.md requirement landed already
+      complies. Tied to E-033 D1's variant-count work, but Jeremy's call is
+      that this does not block turning it on now.
+
+  - name: schedulability_block
+    kind: orchestrator_config
+    config_key: orchestrator.schedulability_block.enabled
+    reader: run_campaign._schedulability_block_enabled
+    owner: Jeremy
+    state: "on"
+    criterion: >
+      Switched on 2026-09-02 (E-031 S2). Purely additive -- no consumer
+      reads the file it writes yet (E-031 S3, the refill-vs-escalate
+      decision, is unbuilt), so it cannot change any run's outcome.
+
+  - name: anti_adjacency_retry
+    kind: orchestrator_config
+    config_key: orchestrator.anti_adjacency_retry.enabled
+    reader: run_phase1_research._anti_adjacency_retry_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: E-036
+    criterion: >
+      E-032 S2c's own fix (composition-fingerprint adjacency) shipped and is
+      verified working as designed, but Jeremy REJECTED the underlying
+      design on review (2026-09-02): a flat (regime, component, params,
+      weight) fingerprint doesn't convincingly answer "are these two
+      strategies the same idea," given the real strategy structure (a
+      regime detector mapping to per-regime, weighted sub-strategy
+      compositions). Unpark trigger: E-036 restarted with a reconsidered
+      design, not merely re-reviewed.
+
+  - name: variant_anti_adjacency_gate
+    kind: orchestrator_config
+    config_key: orchestrator.variant_anti_adjacency_gate.enabled
+    reader: run_phase1_research._variant_anti_adjacency_gate_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: E-036
+    criterion: >
+      Same rejected design as anti_adjacency_retry above -- both are call
+      sites of the same tools/anti_adjacency_gate.py mechanism and the same
+      rejected fingerprint.
+
+  - name: bar_equity
+    kind: engine_param
+    engine_default_files:
+      - trading-bot/core/launcher.py
+      - trading-bot/core/backtester.py
+    caller: >
+      strategy-research/tools/run_protocol.py -- both call sites pass
+      bar_equity=True explicitly.
+    owner: Jeremy
+    state: "on"
+    criterion: >
+      Switched on 2026-09-02. Proven since 2026-07-31 (bit-identity test
+      plus a real reference run's bar-level vs trade-exit Sharpe/maxDD
+      comparison); no criterion was ever unmet. The engine's own default
+      parameter stays False (bit-identity discipline) -- turned on by the
+      research pipeline's one caller that matters explicitly passing True,
+      never by changing the engine's own default.
+
+  - name: model_funding
+    kind: engine_param
+    engine_default_files:
+      - trading-bot/core/launcher.py
+      - trading-bot/core/trading_bot.py
+    caller: >
+      strategy-research/tools/run_protocol.py -- never passes
+      model_funding=True.
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: E-014
+    criterion: >
+      Not a caution -- a real gap. Raises below daily bars, so it is not a
+      finished feature yet. "A partially working feature (funding) is a
+      delayed bomb until a bug is found" (Jeremy, 2026-09-01). Unblocking
+      belongs to E-014.

@@ -29,146 +29,24 @@ sys.path.insert(0, str(WORKFLOW_PATH))
 sys.path.insert(0, str(TOOLS_PATH))
 
 import run_phase1_research as rpr  # noqa: E402
-import prescreen_signal  # noqa: E402
+
+# prescreen_signal.py's own block_size dispatch (formerly tested here) is
+# removed along with that module (E-039 step 5, 2026-09-12) -- the underlying
+# "1h"->24 / "1d"->1 values it mirrored are the single shared derivation
+# tools/timeframe.py::bars_per_day() already provides, tested exhaustively in
+# test_timeframe_block_size.py.
 
 
 # ---------------------------------------------------------------------------
-# prescreen_signal.py block_size dispatch
+# _run_a86_power_check / _a86_block_size -- REMOVED 2026-09-11 (E-039: A8.6
+# dropped entirely, "always backtest" instead of an a-priori power pre-flight
+# kill). The four tests that lived here (bit-identical-at-1h against the real
+# run_050 fixture, missing-research-brief default, 1d block-size dispatch,
+# derived-not-enumerated block size) tested functions that no longer exist in
+# run_phase1_research.py. block_size derivation for prescreen_signal.py
+# (tested above, test_block_size_1h_unchanged etc.) is untouched by this --
+# only A8.6's OWN mirror of that derivation was removed.
 # ---------------------------------------------------------------------------
-
-def test_block_size_1h_unchanged():
-    """Bit-identical: "1h" must still resolve to 24, exactly as before this change."""
-    assert prescreen_signal._BLOCK_SIZE_1H == 24
-
-
-def test_block_size_1d_correct():
-    assert prescreen_signal._BLOCK_SIZE_1D == 1
-
-
-def _resolve_block_size(timeframe: str) -> int:
-    """Mirrors the exact dispatch added in run_prescreen()'s body — kept as a
-    small local helper so this test doesn't need to invoke the full prescreen
-    pipeline just to exercise a 3-line if/elif/else."""
-    if timeframe == "1h":
-        return prescreen_signal._BLOCK_SIZE_1H
-    elif timeframe == "1d":
-        return prescreen_signal._BLOCK_SIZE_1D
-    else:
-        return max(prescreen_signal._BLOCK_SIZE_1H // 4, 6)
-
-
-def test_block_size_dispatch_1h():
-    assert _resolve_block_size("1h") == 24
-
-
-def test_block_size_dispatch_1d():
-    assert _resolve_block_size("1d") == 1
-
-
-def test_block_size_dispatch_other_timeframes_unchanged():
-    """4h/15m etc. must still get the pre-existing generic fallback (6) —
-    this project's only intent was to ADD a "1d" case, not touch this."""
-    assert _resolve_block_size("4h") == 6
-    assert _resolve_block_size("15m") == 6
-
-
-# ---------------------------------------------------------------------------
-# _run_a86_power_check — bit-identical at 1h (real fixture: run_050)
-# ---------------------------------------------------------------------------
-
-# Frozen REAL power_parameters from runs/run_050/artifacts/hypothesis_card.yaml
-# (H-041-A reactivation, 2026-07-05/06) — timeframe="1h" per that run's real
-# research_brief.yaml. This run genuinely passed the A8.6 gate at block_size=24
-# before this session's timeframe-dispatch fix existed; the fix must reproduce
-# the EXACT same numbers for a "1h" (or absent-timeframe) run.
-RUN_050_POWER_PARAMETERS = {
-    "activation_rate": 0.03,
-    "plausible_ic_upper": 0.20,
-    "n_bars": 55000,
-    "n_symbols": 2,
-    "is_market_wide": False,
-}
-# Hand-computed from the pre-existing (unchanged-at-1h) formula:
-#   active_n = 0.03 * 55000 * 2 = 3300
-#   n_eff = 3300 / 24 = 137.5
-#   mde = 1/sqrt(137.5-3) = 1/sqrt(134.5) = 0.086228...
-RUN_050_EXPECTED_ACTIVE_N = 3300.0
-RUN_050_EXPECTED_N_EFF = 137.5
-RUN_050_EXPECTED_MDE = pytest.approx(0.08623, abs=1e-4)
-
-
-def _write_hypothesis_card_and_brief(artifacts: Path, power_parameters: dict, timeframe: str | None):
-    artifacts.mkdir(parents=True, exist_ok=True)
-    rpr.save_yaml(artifacts / "hypothesis_card.yaml", {
-        "hypothesis_id": "TEST", "power_parameters": power_parameters,
-    })
-    if timeframe is not None:
-        rpr.save_yaml(artifacts / "research_brief.yaml", {"timeframe": timeframe})
-
-
-def test_a86_power_check_bit_identical_at_1h_real_run_050_fixture(tmp_path):
-    artifacts = tmp_path / "artifacts"
-    _write_hypothesis_card_and_brief(artifacts, RUN_050_POWER_PARAMETERS, timeframe="1h")
-
-    result = rpr._run_a86_power_check(artifacts)
-
-    assert result["expected_active_n"] == RUN_050_EXPECTED_ACTIVE_N
-    assert result["expected_n_eff"] == RUN_050_EXPECTED_N_EFF
-    assert result["min_detectable_ic"] == RUN_050_EXPECTED_MDE
-    assert result["verdict"] == "power_adequate"  # matches run_050's real, historical outcome
-
-
-def test_a86_power_check_missing_research_brief_defaults_to_1h_unchanged(tmp_path):
-    """Runs authored before this fix have no timeframe field expectation at all —
-    must default to '1h' behavior exactly (block_size=24), not error or change."""
-    artifacts = tmp_path / "artifacts"
-    artifacts.mkdir(parents=True)
-    rpr.save_yaml(artifacts / "hypothesis_card.yaml", {
-        "hypothesis_id": "TEST", "power_parameters": RUN_050_POWER_PARAMETERS,
-    })
-    # No research_brief.yaml at all.
-    result = rpr._run_a86_power_check(artifacts)
-    assert result["expected_n_eff"] == RUN_050_EXPECTED_N_EFF
-
-
-def test_a86_power_check_1d_uses_block_size_1(tmp_path):
-    """Same power_parameters, but timeframe=1d -> block_size=1, not 24.
-    n_eff = active_n / 1 = 3300 (24x larger than the 1h case), proving the
-    dispatch actually took effect rather than silently falling through."""
-    artifacts = tmp_path / "artifacts"
-    _write_hypothesis_card_and_brief(artifacts, RUN_050_POWER_PARAMETERS, timeframe="1d")
-
-    result = rpr._run_a86_power_check(artifacts)
-
-    assert result["expected_active_n"] == RUN_050_EXPECTED_ACTIVE_N  # unaffected by block_size
-    assert result["expected_n_eff"] == 3300.0
-    assert result["expected_n_eff"] == RUN_050_EXPECTED_N_EFF * 24
-
-
-def test_a86_block_size_is_derived_not_enumerated():
-    """REPLACED 2026-08-27. This test used to read:
-
-        assert rpr._A86_BLOCK_SIZE_BY_TIMEFRAME == {"1h": 24, "1d": 1}
-
-    It did not merely fail to catch the bug -- it PINNED it. The table's
-    two-entry shape was the defect (every other timeframe silently inherited
-    the 1h value of 24, killing run_060 with an artifact verdict), and this
-    assertion made adding a third entry a test failure. A test that locks in
-    the shape of a defect is worse than no test.
-
-    Its replacement asserts the property that actually matters: the block size
-    is DERIVED, so a timeframe nobody has run before is correct on first use
-    and there is no table to forget to update. 1h and 1d still resolve to their
-    known-correct values -- that is the anchor proving the derivation computes
-    the same quantity."""
-    assert not hasattr(rpr, "_A86_BLOCK_SIZE_BY_TIMEFRAME"), (
-        "the enumerated table is back; it is the bug's own mechanism"
-    )
-    assert rpr._a86_block_size("1h") == 24
-    assert rpr._a86_block_size("1d") == 1
-    # Never run before, correct anyway -- the whole point of the change.
-    assert rpr._a86_block_size("4h") == 6
-    assert rpr._a86_block_size("30m") == 48
 
 
 # ---------------------------------------------------------------------------

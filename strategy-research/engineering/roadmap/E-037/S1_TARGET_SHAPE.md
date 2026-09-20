@@ -242,7 +242,7 @@ existing text. Disagreements are in §5.
 
 #### Stage 7 — `signal_prescreen`
 **Engine:** Python tool (`tools/prescreen_signal.py`), launched as a
-subprocess by the orchestrator (`workflow/run_phase1_research.py:1074`
+subprocess by the orchestrator (run_phase1_research.py line 1074
 `run_tool_worker`). No LLM call, no token cost.
 **Runs:** after `backtest_specification` emits `spec_ready`. The orchestrator
 runs an A8.6 power pre-flight *around* the tool first — see logic step 0.
@@ -288,10 +288,10 @@ Full text of every amendment code:
 | What | Where it comes from | Required? |
 |---|---|---|
 | `artifacts/candidate_strategy_config.json` | stage 6 `backtest_specification` | yes |
-| protocol JSON (`symbols`, `windows`, `timeframe`) | `_resolve_protocol_path()` — `run_phase1_research.py:1086` | yes |
+| protocol JSON (`symbols`, `windows`, `timeframe`) | `_resolve_protocol_path()` — run_phase1_research.py line 1086 | yes |
 | `config/cost_model.yaml` | round-trip cost in bps per symbol, plus `safety_factor` (default 2.0) | yes |
-| `trading-bot/local_data/{SYMBOL}_{tf}.csv` | price cache; a coarser timeframe is derived from a finer one (`_resolve_ohlcv_source`, `prescreen_signal.py:306`) | yes |
-| aux feeds — funding rate, fear & greed | `prescreen_signal.py:151` / `:171` | only if the config declares them |
+| `trading-bot/local_data/{SYMBOL}_{tf}.csv` | price cache; a coarser timeframe is derived from a finer one (`_resolve_ohlcv_source`, prescreen_signal.py line 306) | yes |
+| aux feeds — funding rate, fear & greed | prescreen_signal.py line 151 / `:171` | only if the config declares them |
 | `config/campaign_data_policy.yaml` | era boundaries and episode settings | only on the A8.5.1a path |
 | `runs/{run_id}/artifacts/regime_audit_decision.yaml` | stage 10 | only if present — see the side effect below |
 | `campaign_state.yaml` | read by the orchestrator wrapper, not the tool | yes |
@@ -300,8 +300,8 @@ Full text of every amendment code:
 
 | What | Written where | Read by |
 |---|---|---|
-| `prescreen_result.yaml` | `runs/{run_id}/prescreen/`, copied to `artifacts/` (`run_phase1_research.py:1113`) | `verdict_interpreter`, orchestrator routing |
-| *(side effect)* `regime_audit_decision.yaml` — `ungated_escape_eligible` rewritten in place | `runs/{run_id}/artifacts/` | **stage 10's file, edited by stage 7** (`prescreen_signal.py:1582` → `:1092`) |
+| `prescreen_result.yaml` | `runs/{run_id}/prescreen/`, copied to `artifacts/` (run_phase1_research.py line 1113) | `verdict_interpreter`, orchestrator routing |
+| *(side effect)* `regime_audit_decision.yaml` — `ungated_escape_eligible` rewritten in place | `runs/{run_id}/artifacts/` | **stage 10's file, edited by stage 7** (prescreen_signal.py line 1582 → `:1092`) |
 | *(side effect, orchestrator not tool)* one row in `campaign_state.trial_sharpes` | campaign root | `deflate_sharpe.py`, campaign accounting |
 
 **Features / logic in place**
@@ -312,7 +312,7 @@ Each step: **title — one-line summary.** Details follow.
 If the sample is too small to detect the effect even if it were real, the tool
 is never launched. The orchestrator writes `prescreen_result.yaml` itself with
 `route: insufficient_power_a_priori` and records the trial
-(`run_phase1_research.py:6217`, `:6232`, `:6235`). The same check runs earlier
+(run_phase1_research.py line 6217, `:6232`, `:6235`). The same check runs earlier
 at the validation gate (`:2287`); if it already wrote the file, the
 orchestrator skips the tool (`:6207`). **None of this is in
 `prescreen_signal.py`** — see [E037-01](FINDINGS.md#e037-01).
@@ -320,7 +320,7 @@ orchestrator skips the tool (`:6207`). **None of this is in
 **1. Setup — load the config and protocol, and fix the block size.**
 `block_size = bars_per_day(timeframe)` comes from `tools/timeframe.py`, the
 same source the A8.6 gate uses. No fallback: an unparseable timeframe raises
-(`prescreen_signal.py:1215`).
+(prescreen_signal.py line 1215).
 
 **2. Extract the forecast — replay the real strategy over the full range.**
 Per symbol, load prices from the earliest window start to the latest window
@@ -403,7 +403,7 @@ this "A9.1", which appears to be the wrong code — see [E037-13](FINDINGS.md#e0
 **13. Write the artifact.** `prescreen_result.yaml` (`:1585`).
 
 **14. A6.2 trial recording — the orchestrator logs the trial after the tool returns.**
-`_record_prescreen_trial` (`run_phase1_research.py:4039`, called at `:1130`).
+`_record_prescreen_trial` (run_phase1_research.py line 4039, called at `:1130`).
 Kills count as trials; `statistic_valid = "neither"` when there is no backtest
 Sharpe. Upsert on `(trial_id, "prescreen")` since 2026-08-16 (issue #28 /
 E-025), so a crash-retry replaces the stale row instead of being swallowed.
@@ -425,7 +425,7 @@ E-025), so a crash-retry replaces the stale row instead of being swallowed.
 
 - Signal layer only — no portfolio simulation, no backtest engine.
 - **Two thresholds, one documented.** `_SIG_THRESHOLD = 0.10` is the main IC
-  gate (`prescreen_signal.py:87`); a separate `p > 0.05` inside the cost
+  gate (prescreen_signal.py line 87); a separate `p > 0.05` inside the cost
   branch decides `kill_cost_hurdle` vs `refine_cost_hurdle`.
 - **`gap_skipped_pct` is not the cache's contamination rate.** It counts pairs
   actually reached after warmup; gaps inside the warmup are never reached, so
@@ -440,10 +440,10 @@ E-025), so a crash-retry replaces the stale row instead of being swallowed.
 
 **Owned by which code**
 
-`tools/prescreen_signal.py:1185` (`run_prescreen`) · `:982` (`_determine_route`)
+prescreen_signal.py line 1185 (`run_prescreen`) · `:982` (`_determine_route`)
 · `:643` (`_block_adjusted_significance`) · `:730` (stationary block bootstrap)
 · `:897` (`_cost_check`) · `:1092` (`_resolve_ungated_escape`) ·
-`workflow/run_phase1_research.py:1074` (`run_tool_worker`) · `:6217` and `:2287`
+run_phase1_research.py line 1074 (`run_tool_worker`) · `:6217` and `:2287`
 (A8.6) · `:4039` (`_record_prescreen_trial`)
 
 ### 3.2 Artifact `prescreen_result.yaml`
@@ -457,18 +457,18 @@ E-025), so a crash-retry replaces the stale row instead of being swallowed.
 > signal being counted twice in the deflated-Sharpe denominator.
 
 **Created by:**
-- `signal_prescreen` tool — `tools/prescreen_signal.py:1585` (normal path)
-- orchestrator — `workflow/run_phase1_research.py:6232`, when the A8.6
+- `signal_prescreen` tool — prescreen_signal.py line 1585 (normal path)
+- orchestrator — run_phase1_research.py line 6232, when the A8.6
   pre-flight blocks before stage 7 and the tool never runs
-- orchestrator — `workflow/run_phase1_research.py:2297`, when A8.6 blocks
+- orchestrator — run_phase1_research.py line 2297, when A8.6 blocks
   earlier still, at the validation gate
 
 **Updated by:** *(none — write-once per run; the orchestrator copies it from
 `runs/{run_id}/prescreen/` to `runs/{run_id}/artifacts/` unchanged,
-`run_phase1_research.py:1113`)*
+run_phase1_research.py line 1113)*
 **Read by:** `verdict_interpreter`, orchestrator routing
 (`determine_post_prescreen_route`), `_record_prescreen_trial`,
-`_check_prescreen_conformance` (`run_phase1_research.py:3146`)
+`_check_prescreen_conformance` (run_phase1_research.py line 3146)
 **Written to:** `runs/{run_id}/prescreen/prescreen_result.yaml`, copied to
 `runs/{run_id}/artifacts/prescreen_result.yaml`
 **Schema:** `workflow_artifacts/schemas/prescreen_result.schema.json` —
@@ -517,7 +517,7 @@ itself informative and is not padded with an invented value.
 
 - ⚠️ **Three shapes, not one.** Besides the full result, the A8.6 power gate
   writes a stub — and the *two* gate sites write **different** stubs:
-  - **validation-gate path** (`run_phase1_research.py:2297`) — 5 keys:
+  - **validation-gate path** (run_phase1_research.py line 2297) — 5 keys:
     `run_id`, `route`, `a86_power_check`, **`stage_blocked_at: validation`**,
     `note: "A8.6 power gate: no component built, no trial spent."`
   - **pre-flight path in `run_loop`** (`:6226`) — 4 keys, the same minus

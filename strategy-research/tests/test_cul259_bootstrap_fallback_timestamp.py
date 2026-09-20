@@ -62,15 +62,15 @@ def test_expected_step_is_derived_and_passed_through_when_timestamp_present(tmp_
     ]
 
     captured = {}
-    import prescreen_signal as ps
+    from performance import signal_statistics as pss
 
-    real_bootstrap = ps._stationary_block_bootstrap_ic_significance
+    real_bootstrap = pss.stationary_block_bootstrap_ic_significance
 
     def _spy(*args, **kwargs):
         captured["expected_step_by_symbol"] = kwargs.get("expected_step_by_symbol")
         return real_bootstrap(*args, **kwargs)
 
-    monkeypatch.setattr(ps, "_stationary_block_bootstrap_ic_significance", _spy)
+    monkeypatch.setattr(pss, "stationary_block_bootstrap_ic_significance", _spy)
 
     rp._pooled_ic_with_bootstrap_fallback(rows, str(tmp_path))
 
@@ -101,15 +101,15 @@ def test_missing_timestamp_on_any_window_falls_back_to_none_not_a_crash(tmp_path
         {"window": "w2", "run_id": "r2", "symbol": "SYM", "core": {"forecast_return_corr": None}},
     ]
 
-    import prescreen_signal as ps
+    from performance import signal_statistics as pss
     captured = {}
-    real_bootstrap = ps._stationary_block_bootstrap_ic_significance
+    real_bootstrap = pss.stationary_block_bootstrap_ic_significance
 
     def _spy(*args, **kwargs):
         captured["expected_step_by_symbol"] = kwargs.get("expected_step_by_symbol")
         return real_bootstrap(*args, **kwargs)
 
-    monkeypatch.setattr(ps, "_stationary_block_bootstrap_ic_significance", _spy)
+    monkeypatch.setattr(pss, "stationary_block_bootstrap_ic_significance", _spy)
 
     _pooled_ic, method = rp._pooled_ic_with_bootstrap_fallback(rows, str(tmp_path))
 
