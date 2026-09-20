@@ -1447,6 +1447,91 @@ def _grid_evaluation_enabled() -> bool:
     return bool(grid_cfg.get("enabled", False))
 
 
+# delivery_plan_v26.md 0.2 (item 2) -- config/profitability_bars.yaml and the
+# branch-3 stop. Off-by-default flag, same shape as _grid_evaluation_enabled()
+# above. See config/campaign_config.yaml's orchestrator.profit_bars_file.enabled
+# comment for the full rationale.
+def _profit_bars_file_enabled() -> bool:
+    """False (no behavior change) when the key, the section, or the file is
+    absent -- same silence-is-never-a-green-light rule as
+    _grid_evaluation_enabled() above. While false, _dispatch_verdict_route's
+    promote branch is untouched: _write_promotion_audit runs and the branch
+    unconditionally returns "holdout_evaluation", exactly as before this
+    feature existed -- artifacts/profit_bars_evaluation.yaml is never written
+    and config/profitability_bars.yaml is never read."""
+    path = ROOT / "config" / "campaign_config.yaml"
+    if not path.exists():
+        return False
+    with open(path, encoding="utf-8") as f:
+        cfg = yaml.safe_load(f) or {}
+    pbf_cfg = ((cfg.get("orchestrator") or {}).get("profit_bars_file") or {})
+    return bool(pbf_cfg.get("enabled", False))
+
+
+# Required fields and their expected types for config/profitability_bars.yaml.
+# Kept as a module-level constant so the schema is visible in one place and the
+# loader below (and its tests) can iterate it instead of repeating field names.
+_PROFITABILITY_BARS_SCHEMA = {
+    "sharpe_min":                 (int, float),
+    "max_drawdown_pct_max":       (int, float),
+    "avg_daily_return_min":       (int, float),
+    "trade_count_min":            (int,),
+    "deflated_sharpe_threshold":  (int, float),
+    "target_instrument_set":      (list,),
+    "ratified_by":                (str, type(None)),
+    "ratified_at":                (str, type(None)),
+}
+
+
+class ProfitabilityBarsSchemaError(ValueError):
+    """Raised by _load_profitability_bars on any missing or wrong-typed field --
+    deliberately loud (a silently-defaulted threshold would make branch-3 pass/fail
+    verdicts meaningless without anyone knowing the config was malformed)."""
+
+
+def _load_profitability_bars(path: Path | None = None) -> dict:
+    """Load and schema-validate config/profitability_bars.yaml. Raises
+    ProfitabilityBarsSchemaError loudly on any missing field, wrong type, or an
+    unparseable/empty file -- never silently defaults a threshold. `path` is
+    overridable for tests; defaults to ROOT / "config" / "profitability_bars.yaml"."""
+    bars_path = path if path is not None else (ROOT / "config" / "profitability_bars.yaml")
+    if not bars_path.exists():
+        raise ProfitabilityBarsSchemaError(f"{bars_path} does not exist.")
+    with open(bars_path, encoding="utf-8") as f:
+        doc = yaml.safe_load(f)
+    if not isinstance(doc, dict):
+        raise ProfitabilityBarsSchemaError(
+            f"{bars_path} did not parse to a mapping (got {type(doc).__name__})."
+        )
+
+    missing = [k for k in _PROFITABILITY_BARS_SCHEMA if k not in doc]
+    if missing:
+        raise ProfitabilityBarsSchemaError(
+            f"{bars_path} is missing required field(s): {sorted(missing)}."
+        )
+
+    wrong_type = []
+    for key, expected_types in _PROFITABILITY_BARS_SCHEMA.items():
+        value = doc[key]
+        # bool is a subclass of int in Python -- explicitly reject it for the
+        # numeric fields so `sharpe_min: true` doesn't silently pass as 1.
+        if isinstance(value, bool) and bool not in expected_types:
+            wrong_type.append(f"{key} (got bool {value!r}, expected {expected_types})")
+        elif not isinstance(value, expected_types):
+            wrong_type.append(f"{key} (got {type(value).__name__}, expected {expected_types})")
+    if wrong_type:
+        raise ProfitabilityBarsSchemaError(
+            f"{bars_path} has wrong-typed field(s): {'; '.join(wrong_type)}."
+        )
+
+    if not doc["target_instrument_set"]:
+        raise ProfitabilityBarsSchemaError(
+            f"{bars_path}'s target_instrument_set is empty -- must list at least one symbol."
+        )
+
+    return doc
+
+
 # E-046b S2 routing (delivery_plan_v26.md slice 2, "until slice 6c"):
 # validated -> promote, refuted -> kill/terminate, inconclusive -> human_pause
 # (reason: inconclusive_grid). (result, hypothesis_verdict, lineage_routing).
@@ -5170,6 +5255,113 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
           f"n_trials={n_trials}, passes={status_str})")
 
 
+def _evaluate_profit_bars(run_dir: Path, run_id: str) -> dict:
+    """delivery_plan_v26.md 0.2 (item 2) -- the branch-3 stop. Sibling to
+    _write_promotion_audit, called right after it (same run_dir) so this function
+    can read promotion_audit.yaml's own just-written numbers rather than
+    re-deriving them. Evaluates every bar in config/profitability_bars.yaml against
+    the real numbers already present in promotion_audit.yaml / protocol_result.yaml
+    for this run -- NOT against protocol_result.yaml's raw candidate numbers
+    directly for the Sharpe/DSR bars (promotion_audit.yaml is the one place those
+    are already reconciled: dedup, invalidated-trial exclusion, the sparse-vs-DSR
+    branch). Writes artifacts/profit_bars_evaluation.yaml and returns the same dict.
+
+    Each bar reads NOT_EVALUABLE, not a silent PASS or a crash, when its
+    underlying metric genuinely is not present anywhere in this run's artifacts
+    (see per-bar comments below -- avg_daily_return_min always does, today,
+    since nothing in this pipeline computes a mean daily return).
+
+    Aggregation choice for the two per-symbol_summary-sourced bars
+    (max_drawdown_pct_max, trade_count_min): per_symbol_summary carries one
+    value per symbol, not a single campaign-wide number, and profitability_bars.yaml
+    declares one threshold. Deliberately conservative in the fail-loud direction:
+    max_drawdown_pct_max compares against the WORST (highest) per-symbol drawdown,
+    trade_count_min compares against the WORST (lowest) per-symbol trade count --
+    a bar that would fail on any one traded symbol reads FAIL, not PASS-on-average.
+    """
+    bars = _load_profitability_bars()
+
+    audit_path = run_dir / "artifacts" / "promotion_audit.yaml"
+    audit = load_yaml(audit_path) if audit_path.exists() else {}
+    pr_path = run_dir / "artifacts" / "protocol_result.yaml"
+    pr = load_yaml(pr_path) if pr_path.exists() else {}
+    pss = pr.get("per_symbol_summary") or {}
+
+    results = []
+
+    def _bar(name: str, threshold, actual, comparator: str, note: str = ""):
+        if actual is None:
+            outcome = "NOT_EVALUABLE"
+        elif comparator == ">=":
+            outcome = "PASS" if actual >= threshold else "FAIL"
+        elif comparator == "<=":
+            outcome = "PASS" if actual <= threshold else "FAIL"
+        else:
+            raise ValueError(f"_evaluate_profit_bars: unknown comparator {comparator!r}")
+        entry = {"name": name, "threshold": threshold, "actual": actual, "result": outcome}
+        if note:
+            entry["note"] = note
+        results.append(entry)
+
+    _bar(
+        "sharpe_min", bars["sharpe_min"], audit.get("raw_median_sharpe"), ">=",
+        note="promotion_audit.yaml.raw_median_sharpe",
+    )
+
+    _bar(
+        "deflated_sharpe_threshold", bars["deflated_sharpe_threshold"],
+        audit.get("deflated_sharpe_ratio"), ">=",
+        note="promotion_audit.yaml.deflated_sharpe_ratio (None on the sparse-trading or "
+             "insufficient-trials path, where no DSR is computed at all)",
+    )
+
+    symbol_drawdowns = [v.get("max_abs_drawdown_pct") for v in pss.values()
+                         if v.get("max_abs_drawdown_pct") is not None]
+    worst_drawdown = max(symbol_drawdowns) if symbol_drawdowns else None
+    _bar(
+        "max_drawdown_pct_max", bars["max_drawdown_pct_max"], worst_drawdown, "<=",
+        note="protocol_result.yaml.per_symbol_summary[*].max_abs_drawdown_pct, worst symbol",
+    )
+
+    symbol_trade_counts = [v.get("min_trade_count") for v in pss.values()
+                            if v.get("min_trade_count") is not None]
+    worst_trade_count = min(symbol_trade_counts) if symbol_trade_counts else None
+    _bar(
+        "trade_count_min", bars["trade_count_min"], worst_trade_count, ">=",
+        note="protocol_result.yaml.per_symbol_summary[*].min_trade_count, worst symbol",
+    )
+
+    # Not computed anywhere in this pipeline today: protocol_result.yaml has no
+    # mean-daily-return field, and trading-bot's bar_equity metrics.json block
+    # (itself off-by-default, reporting/run_artifact.py::build_bar_equity) has no
+    # mean-return field either -- only maxDD/Sharpe/Sortino/exposure/turnover.
+    # Reads NOT_EVALUABLE honestly rather than silently passing or inventing a
+    # proxy computation this dispatch was not asked to build.
+    _bar(
+        "avg_daily_return_min", bars["avg_daily_return_min"], None, ">=",
+        note="no source: protocol_result.yaml and metrics.json's bar_equity block "
+             "(off-by-default) neither one carries a mean-daily-return figure",
+    )
+
+    outcomes = {r["result"] for r in results}
+    overall = "PASS" if outcomes == {"PASS"} else "FAIL"
+    reasons = [
+        f"{r['name']}: {r['result']} (threshold={r['threshold']!r}, actual={r['actual']!r})"
+        for r in results if r["result"] != "PASS"
+    ]
+
+    evaluation = {
+        "run_id": run_id,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "bars": results,
+        "result": overall,
+        "reasons": reasons,
+    }
+    save_yaml(run_dir / "artifacts" / "profit_bars_evaluation.yaml", evaluation)
+    print(f"⚙️  0.2: profit_bars_evaluation.yaml written (result={overall})")
+    return evaluation
+
+
 def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
     """
     Improvement 06: single-use holdout gate. Steps are listed in EXECUTION order;
@@ -5573,6 +5765,31 @@ def _dispatch_verdict_route(path: Path, run_id: str, interp: dict, campaign: dic
         update_state(path=path, flags={"walk_forward_passed": True})
         print("\n🎯 PROVISIONAL PROMOTE: walk-forward passed. Writing promotion_audit and routing to holdout_evaluation.")
         _write_promotion_audit(path, run_id)
+
+        # delivery_plan_v26.md 0.2 (item 2) -- the branch-3 stop. ADDITIVE and
+        # isolated in its own try/except, same posture as the E-046b grid-evaluation
+        # block above (code-review fix 2026-09-20): a bug here must never turn an
+        # already-successful _write_promotion_audit call into a misclassified
+        # failure -- promotion_audit.yaml is already on disk by this point either
+        # way, so on any exception this falls back to the pre-existing unconditional
+        # "holdout_evaluation" route rather than raising.
+        if _profit_bars_file_enabled():
+            try:
+                profit_bars_result = _evaluate_profit_bars(path, run_id)
+                if profit_bars_result.get("result") == "PASS":
+                    print("\n🛑 PROFIT BARS REACHED: every bar in config/profitability_bars.yaml "
+                          "passed. Pausing for human regroup before the single-use holdout gate "
+                          "(branch-3 stop, delivery_plan_v26.md 0.2).")
+                    update_state(path=path, status="paused_for_human",
+                                 flags={"profit_bars_reached": True})
+                    return "human_pause"
+            except Exception as _profit_bars_err:
+                print(f"⚠️  [0.2] profit-bars evaluation raised "
+                      f"{type(_profit_bars_err).__name__}: {_profit_bars_err} -- "
+                      "promotion_audit.yaml is already written; routing to "
+                      "holdout_evaluation as if the flag were off. Not re-raised: a "
+                      "profit-bars bug must never block or misclassify a real promote.")
+
         return "holdout_evaluation"
 
     if lineage_routing == "pivot":
