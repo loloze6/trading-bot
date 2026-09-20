@@ -191,6 +191,19 @@
               }
             }
           }
+        },
+        "edge_to_cost_ratio": {
+          "type": ["number", "null"],
+          "description": "CUL-300: mean gross (pre-commission) edge per trade in bps (from realized_return) divided by mean round-trip cost per trade in bps (cost_paid, A3.2). Null when mean cost is exactly 0 (guarded, not inf/nan). Addressable input for a future, separately-owned pass/fail criterion -- this field does not itself decide promote/kill. UNDER-COMPLETE for perpetuals held across a funding settlement until E-053 (sub-daily funding accrual) lands -- see cost_basis."
+        },
+        "cost_basis": {
+          "type": "object",
+          "description": "CUL-300: which cost components are actually itemized in the trade records this run measured, determined by inspection rather than assumed.",
+          "properties": {
+            "fees": { "type": "boolean" },
+            "funding": { "type": "boolean" },
+            "slippage": { "type": "boolean" }
+          }
         }
       }
     }
