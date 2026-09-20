@@ -1,0 +1,65 @@
+# DRAFT -- NOT RATIFIED. Item 2 (delivery_plan_v26.md 0.2 / engineering_roadmap.html
+# "One campaign-wide profitability-bars file, written once by hand").
+#
+# The values below are PLACEHOLDER / EXAMPLE numbers only, invented to exercise the
+# loader and the branch-3 stop wiring built in this slice. They are NOT an operator
+# sign-off and must NOT be read as production thresholds -- `ratified_by`/`ratified_at`
+# are null below for exactly that reason, and the loader (run_phase1_research.py::
+# _load_profitability_bars) does not check ratification status itself (that is a
+# human-review question, not a schema question); a human must replace these numbers
+# and fill in ratified_by/ratified_at before this file's PASS/FAIL verdicts should be
+# trusted for anything beyond wiring tests.
+#
+# Read by (once orchestrator.profit_bars_file.enabled is true):
+#   - branch 3 / Step 8 (run_phase1_research._evaluate_profit_bars, called from the
+#     promote branch of _dispatch_verdict_route): every backtest that reaches a
+#     provisional "promote" walk-forward verdict is checked against every bar here.
+#   - the holdout gate (Step 12, _route_holdout_evaluation) -- not yet wired to read
+#     this file in this slice; still reads promotion_audit.yaml's own hardcoded
+#     DSR_THRESHOLD=0.95. That repointing is out of scope for item 2 as dispatched
+#     (0.2's own text says only _route_holdout_evaluation step 1 "make it read the
+#     file's threshold" -- left for a follow-up since it changes a currently-live
+#     gate's behavior and deserves its own flag/verification, not bundled silently
+#     into the branch-3 stop).
+#
+# Schema (validated loudly by _load_profitability_bars -- missing or wrong-typed
+# fields raise, never silently default):
+#   sharpe_min                 float  -- floor on promotion_audit.yaml's raw_median_sharpe
+#   max_drawdown_pct_max       float  -- ceiling (positive percent) on the worst
+#                                        per-symbol max_abs_drawdown_pct in
+#                                        protocol_result.yaml's per_symbol_summary
+#   avg_daily_return_min       float  -- floor on mean daily return. NOT currently
+#                                        computed or stored anywhere in this pipeline's
+#                                        artifacts (protocol_result.yaml has no such
+#                                        field; trading-bot's bar_equity metrics.json
+#                                        block, itself off-by-default, has no mean-
+#                                        return field either) -- this bar always reads
+#                                        NOT_EVALUABLE today. See _evaluate_profit_bars.
+#   trade_count_min             int   -- floor on the worst per-symbol min_trade_count
+#                                        in protocol_result.yaml's per_symbol_summary
+#   deflated_sharpe_threshold  float  -- floor on promotion_audit.yaml's own
+#                                        deflated_sharpe_ratio (a SEPARATE number from
+#                                        promotion_audit.yaml's internal, hardcoded
+#                                        DSR_THRESHOLD=0.95 gate that already decides
+#                                        passes_deflated_threshold -- this bar re-checks
+#                                        the same measured DSR against the operator's
+#                                        own campaign-wide number, which may differ)
+#   target_instrument_set     list[str] -- which symbols this campaign trades; not
+#                                        itself a PASS/FAIL bar in this slice (no bar
+#                                        checks per_symbol_summary membership against
+#                                        it) -- metadata for composition runs and the
+#                                        holdout gate per the roadmap card, consumed by
+#                                        neither in this slice
+#   ratified_by                str|null
+#   ratified_at                str|null (ISO date)
+
+sharpe_min: 0.5
+max_drawdown_pct_max: 25.0
+avg_daily_return_min: 0.0005
+trade_count_min: 30
+deflated_sharpe_threshold: 0.95
+target_instrument_set:
+  - BTCUSDT
+  - ETHUSDT
+ratified_by: null
+ratified_at: null

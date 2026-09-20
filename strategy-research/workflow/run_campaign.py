@@ -921,6 +921,18 @@ def _classify_human_pause(run_dir: Path, state: dict) -> str:
     # must-escalate, not an auto-recoverable engineering failure.
     if flags.get("variant_anti_adjacency_gate_refused"):
         return "variant_anti_adjacency_gate_refused"
+    # delivery_plan_v26.md 0.2 (item 2) -- the branch-3 stop
+    # (orchestrator.profit_bars_file.enabled, off by default). Must outrank the
+    # promotion_audit block below for the exact same reason research_only_unverified
+    # does (see that flag's own comment at the top of this function):
+    # run_phase1_research._dispatch_verdict_route writes promotion_audit.yaml BEFORE
+    # setting this flag, on the SAME promote branch, so by the time this flag is set
+    # promotion_audit.yaml already exists and holdout_result.yaml does not -- without
+    # this check ranking first, every profit_bars_reached pause would misclassify as
+    # `provisional_promote_awaiting_holdout`, whose RUNBOOK row tells the operator to
+    # run the holdout backtest, exactly the act this stop exists to gate before.
+    if flags.get("profit_bars_reached"):
+        return "profit_bars_reached"
 
     artifacts = run_dir / "artifacts"
     audit_path = artifacts / "promotion_audit.yaml"
@@ -1136,6 +1148,14 @@ _PAUSE_FLAG_TO_REASON = (
     # (test_every_known_sticky_flag_branch_has_a_pause_flag_to_reason_entry)
     # specifically to catch a future omission of exactly this kind.
     ("variant_anti_adjacency_gate_refused", "variant_anti_adjacency_gate_refused"),
+    # Profit-bars branch-3 stop (orchestrator.profit_bars_file.enabled). Mirrors
+    # _classify_human_pause's branch for this flag -- see that flag's comment
+    # there for why it must rank above the promotion_audit block. CODE-REVIEW
+    # FIX (2026-09-21): this entry was originally omitted, the exact drift
+    # test_every_known_sticky_flag_branch_has_a_pause_flag_to_reason_entry
+    # exists to catch -- the test's own known_sticky_flags tuple was also
+    # missing this flag, so it did not catch itself; both fixed together.
+    ("profit_bars_reached", "profit_bars_reached"),
     # _hard_pause_reason reads this one BEFORE _classify_human_pause is ever called
     # (while status == "failed"); it is must-escalate in its own right, so its
     # presence alongside anything else is unambiguously a reason not to quarantine.

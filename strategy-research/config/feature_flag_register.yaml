@@ -122,6 +122,34 @@ flags:
       promote/kill/human_pause mapping is written into the artifact but not
       yet read by any _resolve_verdict_fields call site (slice 6c's scope).
 
+  - name: profit_bars_file
+    kind: orchestrator_config
+    config_key: orchestrator.profit_bars_file.enabled
+    reader: run_phase1_research._profit_bars_file_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "item 2 (profit-bars ticket, delivery_plan_v26.md 0.2 / engineering_roadmap.html)"
+    criterion: >
+      Landed 2026-09-20 (delivery_plan_v26.md 0.2 item 2, the branch-3 stop).
+      Off by default: the mechanics (the loader/schema-validated
+      config/profitability_bars.yaml, _evaluate_profit_bars(), the
+      artifacts/profit_bars_evaluation.yaml writer, the
+      profit_bars_reached pause classification in
+      run_campaign._classify_human_pause) are built and tested
+      (tests/test_profit_bars_stop.py). Two things block turning it on: (1)
+      config/profitability_bars.yaml ships as an unratified DRAFT
+      (ratified_by/ratified_at both null) -- the shipped threshold values are
+      placeholders invented to exercise the loader, not an operator's real
+      sign-off, so a PASS verdict against them today would not mean what the
+      branch-3 stop is supposed to mean; (2) avg_daily_return_min always
+      reads NOT_EVALUABLE (nothing in this pipeline's artifacts -- neither
+      protocol_result.yaml nor trading-bot's off-by-default bar_equity
+      metrics.json block -- computes a mean daily return), so the overall
+      result can never currently be PASS with real inputs regardless of (1).
+      No epic number exists yet for this ticket (engineering_roadmap.html
+      lists it as "new ticket" as of 2026-09-19); blocked_on names the item
+      directly rather than inventing an E-XXX identifier.
+
   - name: data_availability_gate
     kind: orchestrator_config
     config_key: orchestrator.data_availability_gate.enabled

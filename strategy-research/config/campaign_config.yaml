@@ -384,6 +384,45 @@ orchestrator:
       # slice 3+ (the variant registry and config-authoring machinery that
       # produce real multi-variant, menu-shaped pre_registration.yaml
       # pass_rules) before this is genuinely usable end-to-end.
+  profit_bars_file:
+    enabled: false
+      # delivery_plan_v26.md 0.2 (item 2, "config/profitability_bars.yaml and
+      # the branch-3 stop" -- engineering_roadmap.html's "One campaign-wide
+      # profitability-bars file, written once by hand"). OFF BY DEFAULT and
+      # read at runtime by run_phase1_research._profit_bars_file_enabled() --
+      # same shape as orchestrator.grid_evaluation.enabled directly above.
+      #
+      # While false, _dispatch_verdict_route's promote branch is completely
+      # untouched: _write_promotion_audit runs and the branch unconditionally
+      # returns "holdout_evaluation", byte-identical to before this feature
+      # existed -- config/profitability_bars.yaml is never read and
+      # artifacts/profit_bars_evaluation.yaml is never written. Proven by
+      # tests/test_profit_bars_stop.py's flag-off byte-identity test.
+      #
+      # While true: after _write_promotion_audit succeeds, ALSO evaluates
+      # every bar in config/profitability_bars.yaml
+      # (run_phase1_research._evaluate_profit_bars) against promotion_audit.yaml
+      # / protocol_result.yaml's real numbers for this run, writing
+      # artifacts/profit_bars_evaluation.yaml. If every bar passes, sets
+      # pipeline_state.flags.profit_bars_reached=true and status=paused_for_human,
+      # returning "human_pause" INSTEAD OF "holdout_evaluation" --
+      # run_campaign._classify_human_pause reads that flag (ranked above the
+      # existing provisional_promote_awaiting_holdout check, for the same
+      # reason research_only_unverified is) and reports
+      # profit_bars_reached, with a RUNBOOK §3 row.
+      #
+      # config/profitability_bars.yaml ships as an unratified DRAFT
+      # (ratified_by/ratified_at both null, placeholder threshold values) --
+      # turning this flag on today produces real PASS/FAIL/NOT_EVALUABLE
+      # verdicts against those placeholder numbers, not against an operator-
+      # reviewed bar. avg_daily_return_min in particular always reads
+      # NOT_EVALUABLE (nothing in this pipeline's artifacts computes a mean
+      # daily return today), which means the overall result can never
+      # currently be PASS with real inputs -- an honest consequence of "every
+      # bar must pass," not a bug. Held off_incomplete (see
+      # config/feature_flag_register.yaml) until the operator ratifies real
+      # thresholds and a daily-return figure exists somewhere in the pipeline
+      # for that one bar to read.
   data_availability_gate:
     enabled: true
       # delivery_plan_v26.md s:0.4 item 14 (2026-09-20). THE ONE FLAG IN
