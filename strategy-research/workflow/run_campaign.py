@@ -349,6 +349,17 @@ def _materialize_run(run_id: str, brief: dict):
         for _w in _warnings:
             print(f"⚠️  [B11 lint] {run_id}: {_w}")
 
+        # CUL-267: registration-time structural lint -- moves a class of
+        # _evaluate_one_criterion SPEC_ERROR (unmatchable metric, invalid
+        # comparator, missing null_handling) from evaluation time to here.
+        _struct_violations = vce.lint_pass_rule_structure(pre_registration.get("pass_rule"))
+        if _struct_violations:
+            raise ValueError(
+                f"{run_id}: pre_registration.yaml pass_rule failed the CUL-267 criterion "
+                f"structure lint -- refusing to materialize:\n"
+                + "\n".join(f"  - {v}" for v in _struct_violations)
+            )
+
         # K3 (B3, §9 Q1): protocol_ref selection lint, same materialization
         # gate as B11's total-mapping lint above -- a rejected brief never
         # reaches pre_registration.yaml at all.
@@ -505,6 +516,17 @@ def _materialize_refinement_run(child_id: str, brief: dict, brief_path: Path):
         )
     for _w in _warnings:
         print(f"⚠️  [B11 lint] {child_id}: {_w}")
+
+    # CUL-267: registration-time structural lint -- moves a class of
+    # _evaluate_one_criterion SPEC_ERROR (unmatchable metric, invalid
+    # comparator, missing null_handling) from evaluation time to here.
+    _struct_violations = vce.lint_pass_rule_structure(pre_registration.get("pass_rule"))
+    if _struct_violations:
+        raise ValueError(
+            f"{child_id}: refinement brief's pass_rule failed the CUL-267 criterion "
+            f"structure lint -- refusing to materialize:\n"
+            + "\n".join(f"  - {v}" for v in _struct_violations)
+        )
 
     if machine_constraints:
         # K3 (B3, §9 Q1): same protocol-selection lint as _materialize_run.
