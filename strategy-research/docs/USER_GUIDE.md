@@ -182,10 +182,10 @@ block answers *"what does it do and why"*.
                              │
    [Claude]  6  backtest_specification
                │ spec_ready
-   [Tool]   14  data_availability_gate         (E-054 Layer 2, OFF BY DEFAULT —
-               ├── validate ──────────────────► 8            env E054_DATA_AVAILABILITY_GATE=1)
-               ├── refine ──► human_pause
-               └── decline ─► completed_rejected
+   [Tool]   14  data_availability_gate         (E-054 Layer 2, ON BY DEFAULT since
+               ├── validate ──────────────────► 8            2026-09-20 — config
+               ├── refine ──► human_pause                    orchestrator.data_
+               └── decline ─► completed_rejected              availability_gate.enabled)
                │
    [Tool]    8  protocol_execution             (always runs a full backtest —
                │                                there is no pre-backtest signal gate)
@@ -609,7 +609,7 @@ that the SKILL may need a new status case rather than guessing
 
 | `decision.status` | Next |
 |---|---|
-| `spec_ready` | stage 14 `data_availability_gate` if `E054_DATA_AVAILABILITY_GATE=1`, else stage 8 `protocol_execution` directly (default — see stage 14's own block) |
+| `spec_ready` | stage 14 `data_availability_gate` by default (`orchestrator.data_availability_gate.enabled`, default true — see stage 14's own block), else stage 8 `protocol_execution` directly if explicitly disabled in config |
 | `component_gap` | `human_pause` — extend the engine, then resume |
 | anything else | `human_pause` |
 
@@ -620,11 +620,14 @@ that the SKILL may need a new status case rather than guessing
 subprocess by the orchestrator (`workflow/run_phase1_research.py::run_tool_worker`).
 No LLM call, no token cost.
 **Runs:** after `backtest_specification` emits `spec_ready` and the config
-passes schema validation — **only when** the environment variable
-`E054_DATA_AVAILABILITY_GATE=1` is set. Unset (the default): this stage is
-never reached, and `spec_ready` routes straight to stage 8
-`protocol_execution`
-(`run_phase1_research.py::_E054_GATE_ENABLED`).
+passes schema validation — **by default** (delivery_plan_v26.md s:0.4 item
+14, 2026-09-20: the one flag in this codebase that ships on). Gated by
+`orchestrator.data_availability_gate.enabled` in `config/campaign_config.yaml`,
+default `true` on a missing key/section/file
+(`run_phase1_research.py::_data_availability_gate_enabled`). Only when
+explicitly set to `false` is this stage skipped, with `spec_ready` routing
+straight to stage 8 `protocol_execution` instead — byte-identical to the
+gate's original 2026-09-11 off-by-default (env-var) behavior.
 
 **Objective.** A hard, mechanical, data-only check: for the symbols,
 timeframe, windows, and declared aux feeds this variant needs, can the data
@@ -1177,7 +1180,7 @@ its `implementation_allowed` flag is checked immediately, in the same step:
 
 | Config status | Next stage |
 |---|---|
-| `spec_ready` | → `data_availability_gate` if `E054_DATA_AVAILABILITY_GATE=1`, else → protocol_execution directly |
+| `spec_ready` | → `data_availability_gate` by default (`orchestrator.data_availability_gate.enabled`, default true), else → protocol_execution directly if explicitly disabled |
 | `component_gap` | → human pause (a new bot component must be built) |
 | **anything else** | → human pause, **deliberately fail-closed**. `KNOWN_STATUSES` holds only the two above; an unrecognised value is not guessed at. A real run produced `validation_incomplete` and took this branch — see [E037-23](../engineering/roadmap/E-037/FINDINGS.md#e037-23). |
 
