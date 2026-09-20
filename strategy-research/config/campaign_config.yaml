@@ -384,6 +384,37 @@ orchestrator:
       # slice 3+ (the variant registry and config-authoring machinery that
       # produce real multi-variant, menu-shaped pre_registration.yaml
       # pass_rules) before this is genuinely usable end-to-end.
+  data_availability_gate:
+    enabled: true
+      # delivery_plan_v26.md s:0.4 item 14 (2026-09-20). THE ONE FLAG IN
+      # THIS FILE THAT DEFAULTS ON: read at runtime by
+      # run_phase1_research._data_availability_gate_enabled() -- same
+      # config-loading shape as every other orchestrator.<name>.enabled
+      # flag above (a ninth explicit exception to this file's "declared
+      # parity only" rule, counting halt_policy.quarantine_enabled), but
+      # with the default INVERTED -- absent key, absent section, or absent
+      # file all read True, not False. Why: E-054 Layer 2 is complete and
+      # tested (shipped 2026-09-11, originally behind the
+      # E054_DATA_AVAILABILITY_GATE env var, replaced by this key), and the
+      # operator's own brief requires this control to run for every
+      # hypothesis by default -- a missing config file must not silently
+      # skip a data-availability check before a full walk-forward backtest
+      # is spent on a variant that can never be assembled.
+      #
+      # While true (today, and by default): backtest_specification's
+      # success branch routes through the new "data_availability_gate" tool
+      # stage BEFORE protocol_execution -- see run_loop's
+      # backtest_specification branch and
+      # STAGE_CONFIGS["data_availability_gate"]. validate ->
+      # protocol_execution; refine -> paused_for_human (Path C in the
+      # module docstring; "variant not tested" instead of a loop pause is
+      # deferred to a later slice that does not exist yet); decline ->
+      # completed_rejected, no backtest spent.
+      #
+      # While explicitly false: the backtest_specification ->
+      # protocol_execution route is byte-identical to every run before
+      # E-054 landed and to the old env-var-unset default -- proven by
+      # tests/test_e054_stage_wiring.py's explicit-off byte-identity test.
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------

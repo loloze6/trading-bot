@@ -46,9 +46,14 @@ Two caveats the guide explains in full:
 - The engine's own registry, `STAGE_CONFIGS`
   (`workflow/run_phase1_research.py::STAGE_CONFIGS`), holds **9** entries.
   `data_availability_gate` (E-054 Layer 2) sits between
-  `backtest_specification` and `protocol_execution`, routed to only when
-  `E054_DATA_AVAILABILITY_GATE=1`; off by default, so it does not appear in
-  a default run's stage list even though it is registered. There is no
+  `backtest_specification` and `protocol_execution`. **CORRECTED
+  2026-09-20** (delivery_plan_v26.md s:0.4 item 14): it is now ON BY
+  DEFAULT, gated by `orchestrator.data_availability_gate.enabled` in
+  `config/campaign_config.yaml` (default `true` — the one flag in this
+  project that defaults on; see `feature_flag_register.yaml`), not the old
+  `E054_DATA_AVAILABILITY_GATE` env var, which this change removed. So it
+  now DOES appear in a default run's stage list. Only an explicit
+  `enabled: false` reproduces the old skip-it behavior. There is no
   pre-backtest signal-prescreen stage — every run always executes a full
   backtest. `research_brief` is a human input; `regime_detector_validation`
   is a helper function; `regime_auditor` is not dispatched by the

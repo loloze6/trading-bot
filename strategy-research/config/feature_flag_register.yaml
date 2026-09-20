@@ -122,6 +122,31 @@ flags:
       promote/kill/human_pause mapping is written into the artifact but not
       yet read by any _resolve_verdict_fields call site (slice 6c's scope).
 
+  - name: data_availability_gate
+    kind: orchestrator_config
+    config_key: orchestrator.data_availability_gate.enabled
+    reader: run_phase1_research._data_availability_gate_enabled
+    owner: Jeremy
+    state: "on"
+    criterion: >
+      Switched on BY DEFAULT 2026-09-20 (delivery_plan_v26.md s:0.4 item 14)
+      -- the ONE flag in this register whose default is true, not false.
+      E-054 Layer 2 (the data-availability gate itself) is complete and
+      tested (shipped 2026-09-11); it originally shipped off-by-default
+      behind an env var (E054_DATA_AVAILABILITY_GATE) with no process ever
+      deciding when to turn it on -- exactly the E-041 anti-pattern this
+      register exists to prevent. The operator's own brief requires this
+      control to run for every hypothesis, not opt-in, so the switch-on
+      criterion here is inverted from every other entry: the unmet
+      condition was "prove someone will actually turn it on," not "prove it
+      is safe to turn on." Explicit `enabled: false` in
+      config/campaign_config.yaml still disables it and reproduces the old
+      env-var-unset behavior byte-identically (tests/test_e054_stage_
+      wiring.py's explicit-off case). The "refine -> variant not tested"
+      behavior change (replacing today's loop pause) is deferred to a later
+      slice that does not exist yet; until then a "refine" outcome still
+      pauses for a human exactly as before.
+
   - name: bar_equity
     kind: engine_param
     engine_default_files:

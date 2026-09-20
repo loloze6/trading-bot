@@ -87,15 +87,15 @@ except Exception:  # helper unimportable -> validation is a no-op, never break t
 ROOT = Path(".")
 CAMPAIGN_STATE_PATH = ROOT / "campaign_record" / "campaign_state.yaml"
 
-# E-054 Layer 2 (2026-09-11): off-by-default gate, same convention as
-# WORKFLOW_ARTIFACT_VALIDATION above. OFF (unset, the default): the
-# backtest_specification -> protocol_execution route is byte-identical to
-# every run before this ticket -- required by CLAUDE.fork.md's bit-identity
-# discipline (new features ship off by default with default behavior proven
-# unchanged). ON: backtest_specification routes through the new
-# "data_availability_gate" tool stage first (see its STAGE_CONFIGS entry and
-# run_tool_worker branch below) before protocol_execution ever runs.
-_E054_GATE_ENABLED = os.environ.get("E054_DATA_AVAILABILITY_GATE", "") == "1"
+# E-054 Layer 2 (2026-09-11): data-availability gate. Originally shipped
+# off-by-default via an env var. delivery_plan_v26.md s:0.4 item 14
+# (2026-09-20) flipped this to ON by default -- see
+# _data_availability_gate_enabled() below for the flag itself and why it is
+# the one exception to this file's usual off-by-default convention.
+# backtest_specification routes through the new "data_availability_gate"
+# tool stage first (see its STAGE_CONFIGS entry and run_tool_worker branch
+# below) before protocol_execution ever runs, unless explicitly disabled in
+# config/campaign_config.yaml.
 
 
 def _resolve_tbot_python() -> Path:
@@ -158,11 +158,11 @@ STAGE_CONFIGS = {
         "skill": "backtest-engineering",
     },
     # E-054 Layer 2 (2026-09-11): pre-backtest data-availability gate (tool,
-    # no LLM). Off by default -- see _E054_GATE_ENABLED below; the entry
-    # exists in the registry unconditionally (Decision A: a real pipeline
-    # stage, not an inline check) but is only ROUTED to when the env flag is
-    # set (bit-identity discipline: default behavior must stay byte-identical
-    # to pre-E-054 runs).
+    # no LLM). ON by default -- see _data_availability_gate_enabled() below;
+    # the entry exists in the registry unconditionally (Decision A: a real
+    # pipeline stage, not an inline check) and is ROUTED to unless explicitly
+    # disabled in config/campaign_config.yaml (delivery_plan_v26.md s:0.4
+    # item 14, 2026-09-20).
     "data_availability_gate": {
         "handoff": "backtest_spec_to_data_availability_gate.yaml",
         "default_next": "dynamic_routing",
@@ -1447,6 +1447,35 @@ def _grid_evaluation_enabled() -> bool:
     return bool(grid_cfg.get("enabled", False))
 
 
+# E-054 Layer 2 "on by default" (delivery_plan_v26.md s:0.4 item 14,
+# 2026-09-20). Replaces the old _E054_GATE_ENABLED env var
+# (E054_DATA_AVAILABILITY_GATE=1). Same config-loading shape as
+# _grid_evaluation_enabled() above -- but the DEFAULT is inverted.
+def _data_availability_gate_enabled() -> bool:
+    """True (gate runs) when the key, the section, or the config file itself
+    is missing -- the ONE flag in this module that defaults ON instead of
+    off. Every other flag here (_grid_evaluation_enabled,
+    _exclusion_digest_input_enabled, _stale_input_path_fix_enabled, ...)
+    follows "silence is never a green light" and defaults False on a
+    missing key/section/file. This flag is the deliberate exception: E-054
+    Layer 2 is complete and tested (shipped 2026-09-11), and the operator's
+    own brief (delivery_plan_v26.md s:0.4 item 14) requires this control to
+    run for every hypothesis by default, not opt-in. An explicit
+    `orchestrator.data_availability_gate.enabled: false` in
+    config/campaign_config.yaml still disables it and reproduces, byte for
+    byte, the behavior of the old unset E054_DATA_AVAILABILITY_GATE env var
+    (backtest_specification -> protocol_execution, data_availability_gate
+    stage never routed to) -- see
+    tests/test_e054_stage_wiring.py's explicit-off case."""
+    path = ROOT / "config" / "campaign_config.yaml"
+    if not path.exists():
+        return True
+    with open(path, encoding="utf-8") as f:
+        cfg = yaml.safe_load(f) or {}
+    dag_cfg = ((cfg.get("orchestrator") or {}).get("data_availability_gate") or {})
+    return bool(dag_cfg.get("enabled", True))
+
+
 # E-046b S2 routing (delivery_plan_v26.md slice 2, "until slice 6c"):
 # validated -> promote, refuted -> kill/terminate, inconclusive -> human_pause
 # (reason: inconclusive_grid). (result, hypothesis_verdict, lineage_routing).
@@ -2442,9 +2471,10 @@ def _create_remaining_handoffs(run_id: str, run_dir: Path):
     vi_path = handoffs / "protocol_to_verdict_interpreter.yaml"
 
     # E-054 Layer 2: data_availability_gate handoff. Written unconditionally
-    # (harmless when _E054_GATE_ENABLED is off — nothing ever routes to this
-    # stage in that case) so enabling the flag later needs no separate
-    # backfill step for runs already past backtest_specification.
+    # (harmless when _data_availability_gate_enabled() is False — nothing
+    # ever routes to this stage in that case) so toggling the flag either
+    # way needs no separate backfill step for runs already past
+    # backtest_specification.
     if not dag_path.exists():
         save_yaml(dag_path, {
             "handoff_version": 1, "run_id": run_id,
@@ -6237,20 +6267,23 @@ def run_loop(run_id: str):
                         print("✅ config schema-valid; advancing to protocol_execution")
                         # Create handoff files for the remaining pipeline stages
                         _create_remaining_handoffs(run_id, RUN_DIR)
-                        # E-054 Layer 2 (off by default -- see _E054_GATE_ENABLED):
-                        # route through the data-availability gate FIRST. OFF
-                        # leaves next_stage exactly what determine_post_spec_route
-                        # returned above (protocol_execution), byte-identical to
-                        # every pre-E-054 run.
-                        if _E054_GATE_ENABLED:
+                        # E-054 Layer 2 (on by default -- see
+                        # _data_availability_gate_enabled()): route through
+                        # the data-availability gate FIRST. Explicit
+                        # config-off leaves next_stage exactly what
+                        # determine_post_spec_route returned above
+                        # (protocol_execution), byte-identical to every
+                        # pre-E-054 run and to the old unset-env-var default.
+                        if _data_availability_gate_enabled():
                             next_stage = "data_availability_gate"
                 elif next_stage == "human_pause":
                     break
 
             elif current_stage == "data_availability_gate":
                 # E-054 Layer 2: route on validate/refine/decline. This branch
-                # only runs when _E054_GATE_ENABLED routed here in the first
-                # place -- see the backtest_specification branch above.
+                # only runs when _data_availability_gate_enabled() routed
+                # here in the first place -- see the backtest_specification
+                # branch above.
                 gate = load_yaml(ARTIFACTS / "data_availability_gate.yaml") or {}
                 gate_outcome = gate.get("outcome", "decline")
                 if gate_outcome == "validate":
