@@ -9,7 +9,7 @@ changing a word.
 
 ---
 
-## 0. Three lessons this template encodes, and why
+## 0. Five lessons this template encodes, and why
 
 1. **A worktree-isolated agent is based on `origin/master`, not your local `master`.**
    If you have unpushed local commits — a merge, a docs commit, anything — no
@@ -35,7 +35,26 @@ changing a word.
    never told to commit because "read-only, no code changes" was interpreted (reasonably,
    but wrongly) to mean "don't touch git" too. **§2 now requires a commit as part of the
    deliverable**, not merely a file on disk.
-4. **A build agent's own naming choices are not self-checked against the rest of the
+4. **A rate-limited dispatch can leave real, uncommitted work behind — secure it before
+   anything else, then resume rather than restart.** Happened twice in one night
+   (2026-09-20/21, the profit-bars and E-054-gate dispatches): the session hit an
+   account-wide rate limit mid-task, and the agent's worktree had real, unstaged file
+   changes sitting only in the working tree — nothing an ordinary `git log` on the branch
+   would show, and exactly what a worktree prune or a careless `git checkout` would
+   destroy with no recovery. The fix, in order, every time a dispatch notification reports
+   `status: failed` with a rate-limit reason: (1) `git status --short` in that worktree
+   FIRST, before anything else — if it's clean, nothing was lost, the agent died before
+   writing anything. (2) If it's dirty, commit everything immediately with a message that
+   says plainly it's an unverified WIP snapshot, not a reviewed deliverable — do not skip
+   this step to "wait and see if it resumes cleanly." (3) Push that WIP branch to origin
+   as a backup (no PR) — a local-only worktree is one bad `rm -rf` or disk event away from
+   losing both the branch and the only copy of the commit. (4) Once the rate limit's own
+   stated reset time has passed, resume the SAME agent via `SendMessage` to its agent ID
+   rather than dispatching a fresh one — a fresh dispatch re-derives all the same context
+   the original agent already paid for and re-walks investigation it already did; resuming
+   preserves that and just asks it to check `git log`/`git status`, pick up from the WIP
+   commit, finish, and replace the WIP commit with a real one before its final report.
+5. **A build agent's own naming choices are not self-checked against the rest of the
    codebase.** CUL-267 and CUL-300 (2026-09-20) both shipped with a real bug the builder's
    own tests couldn't catch because the tests only exercise the new code in isolation: CUL-300
    named two new fields (`edge_to_cost_ratio`, `cost_basis`) that collided with existing,
