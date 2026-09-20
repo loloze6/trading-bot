@@ -35,6 +35,19 @@ changing a word.
    never told to commit because "read-only, no code changes" was interpreted (reasonably,
    but wrongly) to mean "don't touch git" too. **§2 now requires a commit as part of the
    deliverable**, not merely a file on disk.
+4. **A build agent's own naming choices are not self-checked against the rest of the
+   codebase.** CUL-267 and CUL-300 (2026-09-20) both shipped with a real bug the builder's
+   own tests couldn't catch because the tests only exercise the new code in isolation: CUL-300
+   named two new fields (`edge_to_cost_ratio`, `cost_basis`) that collided with existing,
+   differently-computed fields elsewhere in the codebase, and CUL-267 exempted a whole
+   criterion class from a check the evaluator actually applies to it. Both were only caught by
+   a separate adversarial code-review pass the dispatcher ran manually, afterward, against
+   each finished branch. This codebase has a *documented history* of exactly the naming-
+   collision bug class (the bare `"ic"` keyword collision in `run_protocol.py`, 2026-07-09) —
+   it is common enough here to check for by default, not opportunistically. **§3 now makes a
+   self-adversarial-review step mandatory inside the build dispatch itself**, before the agent
+   reports back, so the dispatcher's follow-up review is confirmation rather than first
+   discovery.
 
 ---
 
@@ -181,6 +194,17 @@ N+2. Try to run the new test file with pytest if available in this worktree; if 
    strategy-research/config/requirements-mac.txt / trading-bot/requirements.txt) then run.
    Report EXACT pass/fail counts, never an impression ("looks good", "should pass" are not
    acceptable substitutes for a number).
+N+3. **Self-adversarial review, before committing — mandatory, not optional.** For every new
+   field name, function name, or key you introduced: `grep -rn "<exact_name>"` across the
+   WHOLE repo (both trading-bot/ and strategy-research/), not just the file you edited. If it
+   already exists anywhere else with a different meaning or computation, that is a collision —
+   rename yours, don't assume the two can coexist. This codebase has a documented precedent
+   for exactly this bug (the bare `"ic"` keyword collision in `run_protocol.py`, 2026-07-09) —
+   treat it as a known failure mode to check for, not a hypothetical. Separately, re-read your
+   own new logic once adversarially: what input makes this silently wrong rather than loudly
+   wrong (a guard that's too broad, a check exempting a case the evaluator doesn't actually
+   exempt, a mismatched N between two related aggregates)? State in your final report what you
+   checked and what you found, even if the answer is "no collisions, no gaps found."
 
 When done: `git add` only the files you actually changed, commit locally with a clear
 message ending in the same Co-Authored-By line used in this session's recent commits
