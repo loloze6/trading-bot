@@ -276,6 +276,96 @@ def _evaluate_one_criterion(criterion: dict, protocol_result: dict) -> dict:
             "value": value, "threshold": threshold}
 
 
+def lint_pass_rule_structure(pass_rule) -> list[str]:
+    """CUL-267: registration-time structural lint over a pass_rule's
+    `criteria` list, moving a class of `_evaluate_one_criterion` SPEC_ERROR
+    from EVALUATION time (discovered only after a real backtest already ran)
+    to REGISTRATION time (a bad criterion is refused when the brief is
+    written).
+
+    What this CANNOT check: whether `criterion["metric"]` actually resolves
+    via `_lookup_metric_value` -- that set is DATA-dependent (per_symbol_summary's
+    keys when `symbol` is given; trade_diagnostics_summary's / hypothesis_verdict.
+    diagnostics's keys when pooled), only knowable once a real protocol_result.yaml
+    exists. A registration-time lint has no protocol_result.yaml yet.
+
+    What this DOES check -- the structural half of the same failure modes
+    `_evaluate_one_criterion` guards against:
+      - `metric` is a non-empty string (an empty/absent metric can never
+        resolve, regardless of data);
+      - `comparator` is one of `_VALID_COMPARATORS`;
+      - unless `per_symbol_threshold` is set, `null_handling` is
+        `"fails_threshold"` -- the only value `_evaluate_one_criterion`
+        recognizes to avoid SPEC_ERROR when the metric resolves to None
+        (see its non-per-symbol branch). `per_symbol_threshold` criteria are
+        exempted here because a null result there is per-symbol and
+        data-dependent (some symbols may simply never resolve null); the
+        existing B11 total-mapping lint already requires a null_handling
+        value be PRESENT for that shape.
+
+    Mirrors `_lint_pass_rule_total_mapping`'s own legacy-shape tolerance: a
+    `pass_rule` that is `None` or a plain string is the pre-K2 legacy schema
+    and is NOT linted here -- it resolves to `legacy_not_evaluable` at
+    evaluation time (R3), unchanged by this ticket.
+
+    Returns a list of violation strings; empty means the criteria are
+    structurally clean and no criterion in this pass_rule can hit the three
+    SPEC_ERROR causes this lint targets."""
+    violations: list[str] = []
+    if pass_rule is None or isinstance(pass_rule, str):
+        return violations  # legacy shape -- nothing to lint (same as B11's own lint)
+    if not isinstance(pass_rule, dict):
+        violations.append(f"pass_rule is neither a string nor a dict (got {type(pass_rule).__name__})")
+        return violations
+
+    criteria = pass_rule.get("criteria") or []
+    for idx, criterion in enumerate(criteria):
+        if not isinstance(criterion, dict):
+            violations.append(f"criteria[{idx}] is not a mapping (got {type(criterion).__name__})")
+            continue
+        cid = criterion.get("id") or f"criteria[{idx}]"
+
+        metric = criterion.get("metric")
+        if not (isinstance(metric, str) and metric.strip()):
+            violations.append(
+                f"criterion {cid!r}: metric is missing or empty ({metric!r}) -- "
+                f"_evaluate_one_criterion would return SPEC_ERROR for this at evaluation "
+                f"time; refusing at registration instead"
+            )
+
+        comparator = criterion.get("comparator")
+        if comparator not in _VALID_COMPARATORS:
+            violations.append(
+                f"criterion {cid!r}: comparator={comparator!r} is not one of "
+                f"{_VALID_COMPARATORS} -- _evaluate_one_criterion would return SPEC_ERROR "
+                f"for this at evaluation time; refusing at registration instead"
+            )
+
+        # CODE-REVIEW FIX (2026-09-20): this used to skip the null_handling check
+        # entirely whenever per_symbol_threshold was set. That was wrong --
+        # _evaluate_one_criterion's per_symbol_threshold branch reads the SAME
+        # criterion-level null_handling field and applies the SAME
+        # `== "fails_threshold"` check per symbol (see that function: the
+        # per-symbol loop's null branch is byte-identical in condition to the
+        # pooled branch below it). A per-symbol criterion with a missing or
+        # wrong null_handling still reaches SPEC_ERROR the moment any one
+        # symbol's metric resolves null -- exactly the post-backtest discovery
+        # this lint exists to move to registration time. The check now applies
+        # unconditionally, per-symbol or pooled, matching the evaluator exactly.
+        null_handling = criterion.get("null_handling")
+        if null_handling != "fails_threshold":
+            violations.append(
+                f"criterion {cid!r}: null_handling={null_handling!r} is not "
+                f"'fails_threshold' (the only value _evaluate_one_criterion "
+                f"recognizes to avoid SPEC_ERROR when this metric resolves null, "
+                f"for both per-symbol and pooled criteria) -- "
+                f"refusing at registration instead of deferring to a SPEC_ERROR "
+                f"discovered after a real backtest runs"
+            )
+
+    return violations
+
+
 # ---------------------------------------------------------------------------
 # VERDICT PRECONDITIONS -- C7-EXT (2026-07-22)
 #
