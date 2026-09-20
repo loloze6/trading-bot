@@ -1,0 +1,108 @@
+# E-046b S2 (the grid, engineering_roadmap.html card C). An anchor table of
+# scale-free idea criteria, same "pick from this table, don't free-hand"
+# discipline as hypothesis-design/SKILL.md's §A8.6 plausible_ic_upper table.
+#
+# Consumed by tools/verdict_criteria_evaluator.py::evaluate_grid() via its
+# `menu` parameter. A pre_registration.yaml pass_rule criterion may name only
+# `id` (+ optional field overrides) and have the rest backfilled from here,
+# or be fully self-contained (in which case this file is not consulted for
+# that criterion at all).
+#
+# Record shape (S1_FINDINGS.md §3):
+#   {id, metric, source: window|pooled, reducer: median|mean|min|max|
+#    fraction_above|sign_consistent_by_era, reducer_arg, comparator,
+#    threshold, floor: {min_windows|min_trades|min_n_eff}, scale_free: true,
+#    symbol_reducer: null|per_symbol_all|pooled}
+#
+# Do NOT add median_sharpe / max_abs_drawdown_pct / zero_trade_slot_pct here.
+# S1_FINDINGS.md explicitly marks all three not reusable under card B's
+# scale-free requirement (raw, non-IC-relative thresholds). They remain
+# valid only as campaign-wide profit-bar checks (card B's "one manually
+# written campaign file"), a separate, not-yet-built file.
+
+criteria:
+  - id: realized_edge_to_cost_ratio
+    # CORRECTION (2026-09-20): the dispatch that seeded this file, and
+    # S1_FINDINGS.md's own corpus survey, both use the pre-CUL-300 spelling
+    # `edge_to_cost_ratio`. The real field, grep-confirmed against
+    # tools/run_protocol.py:1170 on current master (CUL-300 renamed it to
+    # avoid a real collision elsewhere in the codebase), is
+    # `realized_edge_to_cost_ratio`, living in `trade_diagnostics_summary`:
+    # mean gross-edge-bps / mean cost-bps, computed only over trades that
+    # have a measured `cost_paid` (numerator and denominator share the same
+    # filtered record set as of the 2026-09-20 CODE-REVIEW FIX in
+    # run_protocol.py -- see that file's own comment above the field).
+    metric: realized_edge_to_cost_ratio
+    source: pooled
+    comparator: ">"
+    threshold: 0.3
+    scale_free: true
+    symbol_reducer: null
+    floor:
+      min_windows: 5
+      min_trades: 15
+    basis: >
+      Dispatch-specified anchor (0.3). CLAUDE.fork.md's own cost-survival bar
+      ("still positive at 1.5x/2x modeled costs") wants a multiple-of-cost
+      margin, not a raw-bps figure -- 0.3x is deliberately a low, idea-level
+      admissibility bar (is there ANY edge over the measured cost basis at
+      all), not the campaign-wide profit bar (card B's separate file).
+      Revisit once real realized_edge_to_cost_ratio values exist to anchor
+      against: measured 2026-09-20, every current protocol_result.yaml in
+      the corpus (run_054, run_059) predates the CUL-300 field and resolves
+      this metric to None.
+    # UNDER-COMPLETE for perpetuals held across a funding settlement
+    # (run_protocol.py's own comment on this field): funding cash flows are
+    # not modeled anywhere in the engine's trade records until E-053 lands.
+
+  - id: sign_consistent_by_era
+    # Card C names this reducer type directly: "same sign in every era".
+    # `metric` defaults to net_return_pct (whole-window P&L sign, the most
+    # direct "did this window make money" read). Override `metric`
+    # per-hypothesis when a different window-level `core` field is the more
+    # meaningful sign to check (e.g. forecast_return_corr for a
+    # signal-quality-specific consistency check rather than a P&L-level
+    # one) -- this entry is an anchor default, not the only valid choice.
+    metric: net_return_pct
+    source: window
+    reducer: sign_consistent_by_era
+    # comparator/threshold are unused by this reducer -- it resolves its own
+    # PASS/FAIL directly (every represented era's median sign agrees and is
+    # nonzero). Deliberately left absent rather than a misleading
+    # placeholder value that would suggest they are read.
+    scale_free: true
+    symbol_reducer: null
+    floor:
+      min_windows: 5
+      min_trades: 15
+    basis: >
+      Uses campaign_data_policy.yaml's existing 6-era list
+      (era_2018_pre_funding .. era_2026_h2_forward_recorded) via
+      evaluate_grid's own _era_id_for_timestamp, keyed off each window's
+      'YYYY-MM' label (S1_FINDINGS.md §3's reducer pseudocode). Scale-free by
+      construction: only the SIGN of each era's median is compared, never a
+      magnitude, so it does not depend on which coin or parameter value a
+      variant uses (card B's scale-free requirement).
+
+  # --- Not yet wired -- placeholders only (dispatch item 5) ---
+  #
+  # Neither name resolves to any field anywhere in the run_059 corpus
+  # (grep-checked against tools/run_protocol.py's protocol_result.yaml
+  # construction: no `residual_ic` or `gated_beats_ungated` key exists in
+  # core / per_symbol_summary / trade_diagnostics_summary /
+  # hypothesis_verdict.diagnostics). S1_FINDINGS.md §7 item 3 names both as
+  # S2 menu seeds, but a real resolution path for either depends on
+  # composition work (slice 7) this slice does not build. Left commented out
+  # deliberately -- an active, un-resolvable `source`/`reducer` entry here
+  # would let a pass_rule accidentally reference it and either SPEC_ERROR
+  # confusingly at evaluation time or (worse) silently resolve to something
+  # wrong. A commented block cannot be matched by `id` at all.
+  #
+  # - id: residual_ic
+  #   metric: <not yet resolvable -- depends on slice 7 composition work>
+  #   source: <TBD>
+  #   scale_free: true
+  # - id: gated_beats_ungated
+  #   metric: <not yet resolvable -- depends on slice 7 composition work>
+  #   source: <TBD>
+  #   scale_free: true

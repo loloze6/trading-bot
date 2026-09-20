@@ -353,6 +353,37 @@ orchestrator:
       # records on every call, never accumulated -- same posture as
       # loop_health.yaml, safe to delete. See engineering/roadmap/E-031/
       # EPIC.md's S2 Log entry and artifacts/s1_refill_sources.md Task 2.
+  grid_evaluation:
+    enabled: false
+      # E-046b S2 (the grid, engineering_roadmap.html card C). OFF BY
+      # DEFAULT and read at runtime by
+      # run_phase1_research._grid_evaluation_enabled() -- same shape as the
+      # orchestrator.<name>.enabled flags above (an eighth explicit
+      # exception to this file's "declared parity only" rule, counting
+      # halt_policy.quarantine_enabled).
+      #
+      # While false, protocol_execution's existing
+      # verdict_criteria_evaluator.evaluate_pass_rule_criteria() call and its
+      # pass_rule_evaluation.yaml write are completely untouched, and
+      # artifacts/grid_evaluation.yaml / artifacts/idea_status.yaml are never
+      # written -- byte-identical to before this feature existed. Proven by
+      # tests/test_grid_evaluation.py's flag-off byte-identity test.
+      #
+      # While true AND the run's pre_registration.yaml pass_rule is
+      # menu-shaped (criteria carry source/reducer fields,
+      # config/criterion_menu.yaml v1): ALSO calls
+      # verdict_criteria_evaluator.evaluate_grid() and writes
+      # artifacts/grid_evaluation.yaml + artifacts/idea_status.yaml,
+      # mechanically grading criteria x variants per card C. Routing
+      # (validated -> promote, refuted -> kill/terminate, inconclusive ->
+      # human_pause) is written into idea_status.yaml in the same shape
+      # pass_rule_evaluation.yaml uses when binding, but is NOT yet wired
+      # into any _resolve_verdict_fields call site -- that repointing is
+      # slice 6c's scope (S1_FINDINGS.md §6), so no existing routing
+      # behavior changes yet even when this flag is on. Blocked on E-046b
+      # slice 3+ (the variant registry and config-authoring machinery that
+      # produce real multi-variant, menu-shaped pre_registration.yaml
+      # pass_rules) before this is genuinely usable end-to-end.
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------

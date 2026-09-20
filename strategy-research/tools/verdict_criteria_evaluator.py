@@ -36,6 +36,7 @@ OPEN and recorded as such in the ledger.
 """
 from __future__ import annotations
 
+import statistics
 import sys
 from pathlib import Path
 
@@ -1013,3 +1014,514 @@ def _resolve_pass_rule(protocol_result: dict, pre_registration: dict) -> dict:
             )
 
     return result
+
+
+# ---------------------------------------------------------------------------
+# E-046b S2 -- the grid (engineering_roadmap.html card C). evaluate_grid()
+# lives BESIDE evaluate_pass_rule_criteria() above -- it never replaces it.
+# A legacy (non-menu-shaped) pass_rule keeps going through that function
+# exactly as before; this is new, additive machinery for a differently
+# shaped pass_rule.criteria list (entries carrying `source`/`reducer`
+# fields). See strategy-research/engineering/roadmap/E-046b/S1_FINDINGS.md
+# for the full characterization this implements, including the
+# operator-confirmed FAIL-dominates-INCONCLUSIVE tie-break and the
+# independently-verified `_era_id_for_timestamp` None-comparison bug this
+# module's own era resolver proactively guards against.
+# ---------------------------------------------------------------------------
+
+_VALID_GRID_SOURCES = ("window", "pooled")
+_VALID_GRID_REDUCERS = ("median", "mean", "min", "max", "fraction_above", "sign_consistent_by_era")
+
+
+def _era_id_for_timestamp(ts, eras: list) -> str:
+    """Grid's own copy -- deliberately NOT importing run_protocol.py (that
+    module launches subprocesses and carries import-time weight this
+    evaluator otherwise avoids).
+
+    PROACTIVE FIX (not yet hit in the corpus) of the bug
+    S1_FINDINGS.md documents in run_protocol.py's identically-named
+    function: `campaign_data_policy.yaml`'s last era
+    (era_2026_h2_forward_recorded) has an open-ended upper bound,
+    `range: [2026-07-26, null]`. The original `lo <= d <= hi` raises
+    TypeError the moment a timestamp reaches that far without matching an
+    earlier era (`str <= None` is unorderable in Python 3). Here, `hi is
+    None` is treated as +inf -- any date >= lo matches -- and `hi` is never
+    compared to `d` directly when it is None."""
+    import pandas as pd
+    d = pd.Timestamp(ts).strftime("%Y-%m-%d")
+    for era in eras:
+        lo, hi = era["range"]
+        if hi is None:
+            if lo <= d:
+                return era["era_id"]
+            continue
+        if lo <= d <= hi:
+            return era["era_id"]
+    return "era_unmapped"
+
+
+def _load_campaign_data_policy_eras() -> list:
+    """Local copy of run_protocol.py::_load_campaign_data_policy, scoped to
+    just the `eras` list this module needs -- same "small,
+    strategy-research-specific config reader, not general statistics"
+    rationale that function's own docstring gives for not centralizing it."""
+    import yaml as _yaml
+    path = Path(__file__).resolve().parent.parent / "config" / "campaign_data_policy.yaml"
+    if not path.exists():
+        return []
+    with open(path, encoding="utf-8") as f:
+        doc = _yaml.safe_load(f) or {}
+    return doc.get("eras") or []
+
+
+def _window_label_to_timestamp(window_label):
+    """protocol_result.yaml's results[*]['window'] is a 'YYYY-MM' label
+    (confirmed directly against run_054's and run_059's real artifacts, not
+    assumed) -- not a full timestamp. Anchors on the first day of that
+    month. Returns None (never raises) for a label this doesn't recognize,
+    so a caller can skip that window rather than crash on an unexpected
+    window-naming convention."""
+    import pandas as pd
+    if not window_label:
+        return None
+    text = str(window_label).strip()
+    try:
+        if len(text) == 7 and text[4] == "-":  # 'YYYY-MM'
+            return pd.Timestamp(text + "-01")
+        return pd.Timestamp(text)
+    except (ValueError, TypeError):
+        return None
+
+
+def _numeric_values(values):
+    return [v for v in values if isinstance(v, (int, float)) and not isinstance(v, bool)]
+
+
+def _reduce_median(values, _arg=None):
+    vals = _numeric_values(values)
+    return statistics.median(vals) if vals else None
+
+
+def _reduce_mean(values, _arg=None):
+    vals = _numeric_values(values)
+    return statistics.mean(vals) if vals else None
+
+
+def _reduce_min(values, _arg=None):
+    vals = _numeric_values(values)
+    return min(vals) if vals else None
+
+
+def _reduce_max(values, _arg=None):
+    vals = _numeric_values(values)
+    return max(vals) if vals else None
+
+
+def _reduce_fraction_above(values, arg):
+    vals = _numeric_values(values)
+    if not vals:
+        return None
+    if arg is None:
+        raise ValueError("reducer=fraction_above requires a numeric reducer_arg (the "
+                          "threshold values are counted above) -- none was given")
+    return sum(1 for v in vals if v > arg) / len(vals)
+
+
+_SCALAR_REDUCERS = {
+    "median": _reduce_median,
+    "mean": _reduce_mean,
+    "min": _reduce_min,
+    "max": _reduce_max,
+    "fraction_above": _reduce_fraction_above,
+}
+
+
+def _reduce_sign_consistent_by_era(value_window_pairs, eras: list):
+    """S1_FINDINGS.md §3 pseudocode: group (value, window) pairs by era via
+    the window's own timestamp, take each era's median sign, and PASS iff
+    every REPRESENTED era's sign agrees and is nonzero (a zero median is
+    ambiguous, never a pass).
+
+    Returns (passed: bool | None, detail: dict). `passed is None` means "not
+    computable" (no window resolved both a numeric value and a recognizable
+    era) -- the caller must treat that as INCONCLUSIVE, never as a silent
+    pass or fail."""
+    from collections import defaultdict
+    by_era = defaultdict(list)
+    for value, window_label in value_window_pairs:
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            continue
+        ts = _window_label_to_timestamp(window_label)
+        if ts is None:
+            continue
+        era_id = _era_id_for_timestamp(ts, eras)
+        # CODE-REVIEW FIX (2026-09-20): a window whose timestamp falls in a real
+        # gap between two defined eras (e.g. campaign_data_policy.yaml's own
+        # 2026-07-01..2026-07-25 gap) resolves to the literal "era_unmapped" --
+        # that is missing era coverage, not a genuine additional era to compare
+        # signs against. Treating it as its own bucket let an inter-era data
+        # gap spuriously flip a PASS to a FAIL via manufactured sign
+        # disagreement. Excluded from the agreement check entirely; if every
+        # window is unmapped, by_era ends up empty and falls through to the
+        # existing "not computable" (None) return below.
+        if era_id == "era_unmapped":
+            continue
+        by_era[era_id].append(value)
+
+    if not by_era:
+        return None, {"era_medians": {}, "era_signs": {},
+                       "reason": "no window resolved both a numeric value and a recognizable era"}
+
+    era_medians = {eid: statistics.median(vals) for eid, vals in by_era.items()}
+    era_signs = {eid: (1 if med > 0 else (-1 if med < 0 else 0)) for eid, med in era_medians.items()}
+    detail = {"era_medians": era_medians, "era_signs": era_signs}
+
+    signs = set(era_signs.values())
+    if 0 in signs:
+        return False, {**detail, "reason": "at least one represented era's median is exactly "
+                                            "zero -- ambiguous, not a passing sign"}
+    if len(signs) > 1:
+        return False, {**detail, "reason": f"represented eras disagree in sign: {era_signs}"}
+    return True, detail
+
+
+def _check_floor(n_windows: int, n_trades: int, floor: dict | None):
+    """Gates the reducer's/lookup's OWN input count before any comparator
+    runs (S1_FINDINGS.md §3). Returns (ok: bool, reason: str | None).
+
+    `min_n_eff` deliberately RAISES rather than being silently treated as
+    satisfied or as zero -- S1_FINDINGS.md's 'Not determined' section found
+    no field anywhere in the addressable protocol_result.yaml corpus
+    (core / per_symbol_summary / trade_diagnostics_summary /
+    hypothesis_verdict.diagnostics) that resolves an effective-sample-size
+    statistic. A criterion that declares this floor cannot be honestly
+    evaluated yet."""
+    floor = floor or {}
+    if floor.get("min_n_eff") is not None:
+        raise NotImplementedError(
+            f"floor.min_n_eff={floor['min_n_eff']!r} is not computable in this slice -- no "
+            f"field named n_eff (or an equivalent effective-sample-size statistic) exists "
+            f"anywhere in the addressable protocol_result.yaml corpus (S1_FINDINGS.md's 'Not "
+            f"determined' section). Refusing to silently treat this floor as satisfied or as "
+            f"zero -- remove min_n_eff from this criterion's floor, or wire a real n_eff "
+            f"source before using it."
+        )
+    min_windows = floor.get("min_windows")
+    if min_windows is not None and n_windows < min_windows:
+        return False, f"n_windows={n_windows} < floor.min_windows={min_windows}"
+    min_trades = floor.get("min_trades")
+    if min_trades is not None and n_trades < min_trades:
+        return False, f"n_trades={n_trades} < floor.min_trades={min_trades}"
+    return True, None
+
+
+def _window_core_triples(protocol_result: dict, metric: str, symbol: str | None):
+    """[(core[metric], window_label, core['trade_count'])] over
+    protocol_result['results'], optionally filtered to one symbol. This is
+    the NEW capability _lookup_metric_value doesn't have -- it never reads
+    per-window `core` at all (S1_FINDINGS.md §1)."""
+    out = []
+    for entry in protocol_result.get("results") or []:
+        if not isinstance(entry, dict):
+            continue
+        if symbol is not None and entry.get("symbol") != symbol:
+            continue
+        core = entry.get("core") or {}
+        out.append((core.get(metric), entry.get("window"), core.get("trade_count")))
+    return out
+
+
+def _evaluate_grid_cell_for_symbol(criterion: dict, protocol_result: dict, eras: list,
+                                    symbol: str | None) -> dict:
+    """One (criterion, variant[, symbol]) cell -- the mechanical core, no
+    symbol_reducer branching (that lives one level up in
+    _evaluate_grid_cell)."""
+    cid = criterion.get("id")
+    metric = criterion.get("metric")
+    source = criterion.get("source")
+    comparator = criterion.get("comparator")
+    threshold = criterion.get("threshold")
+    floor = criterion.get("floor")
+
+    if not metric:
+        return {"result": "SPEC_ERROR", "reason": f"criterion {cid!r} has no metric"}
+    if source not in _VALID_GRID_SOURCES:
+        return {"result": "SPEC_ERROR",
+                "reason": f"criterion {cid!r}: source={source!r} not one of {_VALID_GRID_SOURCES}"}
+
+    if source == "window":
+        reducer = criterion.get("reducer")
+        if reducer not in _VALID_GRID_REDUCERS:
+            return {"result": "SPEC_ERROR",
+                    "reason": f"criterion {cid!r}: reducer={reducer!r} not one of {_VALID_GRID_REDUCERS}"}
+        triples = _window_core_triples(protocol_result, metric, symbol)
+        non_none = [(v, w, tc) for v, w, tc in triples if isinstance(v, (int, float)) and not isinstance(v, bool)]
+        n_windows = len(non_none)
+        n_trades = sum((tc or 0) for _, _, tc in non_none)
+        floor_ok, floor_reason = _check_floor(n_windows, n_trades, floor)
+        if not floor_ok:
+            return {"result": "INCONCLUSIVE", "n_windows": n_windows, "n_trades": n_trades,
+                    "reason": floor_reason}
+
+        if reducer == "sign_consistent_by_era":
+            passed, detail = _reduce_sign_consistent_by_era([(v, w) for v, w, _ in non_none], eras)
+            if passed is None:
+                return {"result": "INCONCLUSIVE", "n_windows": n_windows, "n_trades": n_trades,
+                        "reason": detail.get("reason"), "detail": detail}
+            return {"result": "PASS" if passed else "FAIL", "n_windows": n_windows,
+                    "n_trades": n_trades, "detail": detail}
+
+        try:
+            value = _SCALAR_REDUCERS[reducer]([v for v, _, _ in non_none], criterion.get("reducer_arg"))
+        except ValueError as exc:
+            return {"result": "SPEC_ERROR", "reason": str(exc)}
+        if value is None:
+            return {"result": "INCONCLUSIVE", "n_windows": n_windows, "n_trades": n_trades,
+                    "reason": f"{reducer}({metric}) resolved to None over {n_windows} window(s)"}
+        if comparator not in _VALID_COMPARATORS:
+            return {"result": "SPEC_ERROR",
+                    "reason": f"criterion {cid!r}: comparator={comparator!r} not one of {_VALID_COMPARATORS}"}
+        met = _apply_comparator(comparator, value, threshold)
+        return {"result": "PASS" if met else "FAIL", "value": value, "threshold": threshold,
+                "n_windows": n_windows, "n_trades": n_trades}
+
+    # source == "pooled": reuses the existing three-source lookup
+    # (per_symbol_summary / trade_diagnostics_summary /
+    # hypothesis_verdict.diagnostics) -- the value is already aggregated, no
+    # reducer applies. Floor counts ALL windows backing that aggregate (every
+    # window in scope, not filtered to a non-None metric -- the pre-
+    # aggregation in run_protocol.py owns its own internal filtering, e.g.
+    # realized_edge_to_cost_ratio only pools records with a measured
+    # cost_paid).
+    value = _lookup_metric_value(protocol_result, criterion, symbol)
+    entries = [e for e in (protocol_result.get("results") or [])
+               if isinstance(e, dict) and (symbol is None or e.get("symbol") == symbol)]
+    n_windows = len(entries)
+    n_trades = sum(((e.get("core") or {}).get("trade_count") or 0) for e in entries)
+    floor_ok, floor_reason = _check_floor(n_windows, n_trades, floor)
+    if not floor_ok:
+        return {"result": "INCONCLUSIVE", "n_windows": n_windows, "n_trades": n_trades,
+                "reason": floor_reason}
+    if value is None:
+        return {"result": "INCONCLUSIVE", "n_windows": n_windows, "n_trades": n_trades,
+                "reason": f"pooled metric {metric!r} resolved to None in this protocol_result "
+                          f"(e.g. a pre-CUL-300 artifact for realized_edge_to_cost_ratio)"}
+    if comparator not in _VALID_COMPARATORS:
+        return {"result": "SPEC_ERROR",
+                "reason": f"criterion {cid!r}: comparator={comparator!r} not one of {_VALID_COMPARATORS}"}
+    met = _apply_comparator(comparator, value, threshold)
+    return {"result": "PASS" if met else "FAIL", "value": value, "threshold": threshold,
+            "n_windows": n_windows, "n_trades": n_trades}
+
+
+def _dominant_cell_result(results: list) -> str:
+    """SPEC_ERROR > FAIL > INCONCLUSIVE > PASS. Used to roll multiple
+    per-symbol cells (symbol_reducer=per_symbol_all) up into one cell result
+    -- the same dominance ordering evaluate_grid uses at the idea level
+    below, reused rather than re-implemented (a SPEC_ERROR is a criterion
+    that could not even be evaluated, more serious than a measured FAIL;
+    never silently folded into 'FAIL')."""
+    if not results:
+        raise ValueError("_dominant_cell_result called with an empty list")
+    if "SPEC_ERROR" in results:
+        return "SPEC_ERROR"
+    if "FAIL" in results:
+        return "FAIL"
+    if "INCONCLUSIVE" in results:
+        return "INCONCLUSIVE"
+    return "PASS"
+
+
+def _evaluate_grid_cell(criterion: dict, protocol_result: dict, eras: list) -> dict:
+    """One (criterion, variant) cell, handling `symbol_reducer`.
+
+    `null` (default) and `pooled` are both evaluated with no symbol filter.
+    Card C's own text: "The default is one symbol per variant" -- assuming a
+    variant whose protocol_result already contains exactly one symbol's
+    windows. Measured directly against the real corpus (run_054, run_059):
+    EVERY current protocol_result.yaml backtests BOTH BTCUSDT and ETHUSDT
+    inside one run (S1_FINDINGS.md's per_symbol_summary keys). S2 does not
+    build a symbol-partitioned variant registry (that is later scope), so on
+    today's real data `symbol_reducer: null` pools naively across whatever
+    symbols are present -- identical to `pooled`. Documented here, not
+    silently guessed."""
+    symbol_reducer = criterion.get("symbol_reducer")
+    if symbol_reducer not in (None, "per_symbol_all", "pooled"):
+        return {"result": "SPEC_ERROR",
+                "reason": f"criterion {criterion.get('id')!r}: symbol_reducer={symbol_reducer!r} "
+                          f"not one of null/per_symbol_all/pooled"}
+
+    if symbol_reducer == "per_symbol_all":
+        symbols = sorted({
+            e.get("symbol") for e in (protocol_result.get("results") or [])
+            if isinstance(e, dict) and e.get("symbol")
+        })
+        if not symbols:
+            return {"result": "INCONCLUSIVE",
+                    "reason": "symbol_reducer=per_symbol_all but no window in this "
+                              "protocol_result carries a symbol field"}
+        per_symbol = {sym: _evaluate_grid_cell_for_symbol(criterion, protocol_result, eras, sym)
+                      for sym in symbols}
+        return {"result": _dominant_cell_result([c["result"] for c in per_symbol.values()]),
+                "per_symbol": per_symbol}
+
+    return _evaluate_grid_cell_for_symbol(criterion, protocol_result, eras, symbol=None)
+
+
+def _menu_entries_by_id(menu) -> dict:
+    if menu is None:
+        return {}
+    if isinstance(menu, dict):
+        entries = menu.get("criteria") or []
+    elif isinstance(menu, list):
+        entries = menu
+    else:
+        raise TypeError(f"menu must be a dict ({{'criteria': [...]}}) or a list, got {type(menu).__name__}")
+    return {e["id"]: e for e in entries if isinstance(e, dict) and e.get("id")}
+
+
+def _is_menu_shaped_pass_rule(pass_rule) -> bool:
+    """True iff `pass_rule` is dict-shaped AND at least one criterion entry
+    carries a `source` or `reducer` field -- this slice's detection rule for
+    'grid-shaped', distinct from K2's legacy metric/comparator/threshold/
+    per_symbol_threshold shape. Checks for the NEW fields' PRESENCE, not the
+    old ones' absence, so a criterion could in principle carry both during a
+    transition without breaking detection."""
+    if not isinstance(pass_rule, dict):
+        return False
+    criteria = pass_rule.get("criteria")
+    if not isinstance(criteria, list) or not criteria:
+        return False
+    return any(isinstance(c, dict) and ("source" in c or "reducer" in c) for c in criteria)
+
+
+def _resolve_grid_criteria(pre_registration: dict, menu) -> list:
+    """Merges each pass_rule.criteria entry against its matching `menu` entry
+    (by `id`) -- criterion-supplied fields win, `menu` backfills anything the
+    criterion doesn't specify. A fully self-contained criterion needs no
+    menu entry at all (same anchor-table pattern as hypothesis-design/
+    SKILL.md §A8.6's plausible_ic_upper: pick from the table, override with a
+    stated reason, or skip it if the criterion is already complete)."""
+    pass_rule = _find_pass_rule(pre_registration or {})
+    if not _is_menu_shaped_pass_rule(pass_rule):
+        return []
+    menu_by_id = _menu_entries_by_id(menu)
+    resolved = []
+    for raw in pass_rule["criteria"]:
+        if not isinstance(raw, dict):
+            continue
+        cid = raw.get("id")
+        base = dict(menu_by_id.get(cid) or {})
+        merged = {**base, **{k: v for k, v in raw.items() if v is not None}}
+        if not merged.get("id"):
+            merged["id"] = cid
+        resolved.append(merged)
+    return resolved
+
+
+def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
+                   research_brief: dict | None, menu) -> dict:
+    """
+    E-046b S2: the grid (engineering_roadmap.html card C) -- criteria x
+    variants, every cell mechanical, unanimity across variants. No LLM
+    verdict, no averaging across variants, no re-thresholding per variant.
+
+    `protocol_results_by_variant`: {variant_id: protocol_result_dict} -- one
+    column per variant. A single-entry dict is a valid 1-column grid: a
+    variant registry does not exist yet (S1_FINDINGS.md §7 / delivery_plan_v26.md
+    slice 2's own framing: "buildable before variants exist -- a grid with
+    one column is still a grid, and the same code later takes three").
+
+    `pre_registration`: must resolve a pass_rule whose criteria carry
+    `source`/`reducer` fields (menu-shaped, see `_is_menu_shaped_pass_rule`)
+    -- either fully self-contained or naming only `id` (+ overrides) to be
+    merged against `menu`. A non-menu-shaped (or absent) pass_rule resolves
+    zero criteria here and RAISES (see below) -- callers must route a legacy
+    pass_rule through `evaluate_pass_rule_criteria` instead, never here.
+
+    `research_brief`: accepted for signature parity with
+    `evaluate_pass_rule_criteria` and for a future criterion type that needs
+    brief context -- none of the v1 menu entries (`config/criterion_menu.yaml`)
+    do, so it is currently unused. Kept as an explicit parameter rather than
+    silently dropped, so a later criterion type does not force a signature
+    change.
+
+    `menu`: `config/criterion_menu.yaml`'s loaded document (a dict with a
+    `criteria` list, or a bare list) -- used only to backfill criterion
+    fields not already given directly in `pre_registration`.
+
+    Returns {"result": "GRID_EVALUATED" | "SPEC_ERROR", "criteria": [id, ...],
+    "variants": [variant_id, ...], "grid": {criterion_id: {variant_id:
+    cell_dict}}, "idea_status": "validated"|"refuted"|"inconclusive"|None,
+    "reason": str}.
+
+    Idea-level status (card C, OPERATOR-CONFIRMED tie-break,
+    S1_FINDINGS.md's appended 2026-09-20 decision): ANY cell that genuinely
+    FAILs with sufficient data -> REFUTED, regardless of other cells being
+    INCONCLUSIVE. Else ANY INCONCLUSIVE cell (with no FAIL present) ->
+    INCONCLUSIVE. Else -> VALIDATED. A cell that could not even be evaluated
+    (SPEC_ERROR) short-circuits the whole grid to a top-level SPEC_ERROR
+    result with `idea_status: None` BEFORE the unanimity rollup runs -- a
+    malformed criterion cannot honestly produce any idea status, mirroring
+    `_resolve_pass_rule`'s own SPEC_ERROR precedent above.
+    """
+    if not isinstance(protocol_results_by_variant, dict) or not protocol_results_by_variant:
+        raise ValueError("protocol_results_by_variant must be a non-empty {variant_id: "
+                          "protocol_result} dict -- evaluate_grid always needs at least one column")
+
+    criteria_defs = _resolve_grid_criteria(pre_registration, menu)
+    if not criteria_defs:
+        raise ValueError(
+            "pre_registration's pass_rule resolved zero menu-shaped criteria (none of its "
+            "criteria carry `source`/`reducer` fields, directly or via `menu`) -- evaluate_grid "
+            "is for menu-shaped pass rules only; route a legacy pass_rule through "
+            "evaluate_pass_rule_criteria instead"
+        )
+
+    eras = _load_campaign_data_policy_eras()
+    variant_ids = list(protocol_results_by_variant.keys())
+
+    grid: dict = {}
+    spec_errors = []
+    for crit in criteria_defs:
+        cid = crit.get("id")
+        if not cid:
+            raise ValueError(f"a resolved grid criterion has no id: {crit!r}")
+        row = {}
+        for variant_id in variant_ids:
+            cell = _evaluate_grid_cell(crit, protocol_results_by_variant[variant_id], eras)
+            row[variant_id] = cell
+            if cell["result"] == "SPEC_ERROR":
+                spec_errors.append({"criterion_id": cid, "variant_id": variant_id,
+                                     "reason": cell.get("reason")})
+        grid[cid] = row
+
+    if spec_errors:
+        return {
+            "result": "SPEC_ERROR",
+            "criteria": [c.get("id") for c in criteria_defs],
+            "variants": variant_ids,
+            "grid": grid,
+            "idea_status": None,
+            "reason": f"{len(spec_errors)} cell(s) could not be evaluated: {spec_errors}",
+        }
+
+    all_cell_results = [cell["result"] for row in grid.values() for cell in row.values()]
+    if any(r == "FAIL" for r in all_cell_results):
+        idea_status = "refuted"
+        reason = "at least one criterion FAILed with sufficient data on at least one variant"
+    elif any(r == "INCONCLUSIVE" for r in all_cell_results):
+        idea_status = "inconclusive"
+        reason = "no criterion FAILed, but at least one cell lacked sufficient data to judge"
+    else:
+        idea_status = "validated"
+        reason = "every criterion PASSed on every variant"
+
+    return {
+        "result": "GRID_EVALUATED",
+        "criteria": [c.get("id") for c in criteria_defs],
+        "variants": variant_ids,
+        "grid": grid,
+        "idea_status": idea_status,
+        "reason": reason,
+    }

@@ -718,6 +718,7 @@ record what happened.
 |---|---|---|
 | `protocol_summary.json` → `protocol_result.yaml` | run dir → `artifacts/` | verdict_interpreter |
 | `pass_rule_evaluation.yaml` | `artifacts/` | **verdict_interpreter — REQUIRED input, and the decision authority** |
+| `grid_evaluation.yaml`, `idea_status.yaml` | `artifacts/` | **optional, E-046b S2 (2026-09-20) — only written when `orchestrator.grid_evaluation.enabled` is true (off by default) AND `pre_registration.yaml`'s pass_rule is menu-shaped (criteria carry `source`/`reducer` fields, `config/criterion_menu.yaml`). Additive: `evaluate_pass_rule_criteria`'s own call and `pass_rule_evaluation.yaml`'s write are unaffected either way. `idea_status.yaml` carries `validated`/`refuted`/`inconclusive` plus a `pass_rule_evaluation.yaml`-shaped `result`/`hypothesis_verdict`/`lineage_routing` triple, but is NOT yet read by any routing call site — see `verdict_criteria_evaluator.py::evaluate_grid`'s own docstring.** |
 | `trade_diagnostics.json` | `artifacts/` | verdict_interpreter |
 | a row in `campaign_state.trial_sharpes` | campaign root | DSR accounting |
 
@@ -966,7 +967,12 @@ backtest produced measured trade/window data; see item 7 below.
 `config/coin_universe.yaml` and `innovation_notes.yaml`, if available, feed
 the asset-stability gate (E-026, 2026-09-12 — see item 8). `near_miss_scoreboard.yaml`
 (E-018, 2026-09-13 — see item 9) is given as an optional input, whether or not
-this run has a registered `pass_rule`.
+this run has a registered `pass_rule`. `grid_evaluation.yaml`/`idea_status.yaml`
+(E-046b S2, 2026-09-20 — see stage 8's own output table) are optional inputs,
+present only when `orchestrator.grid_evaluation.enabled` is on and this run's
+pass_rule is menu-shaped; not yet wired to override this stage's own
+verdict — see `verdict_criteria_evaluator.py::evaluate_grid`'s docstring for
+why `idea_status.yaml`'s routing isn't binding yet.
 
 **Stage output:** `verdict_interpretation.yaml`; possibly `proposed_brief.yaml`,
 `escalation_request.yaml`, `findings_carryover.yaml`, `promotion_audit.yaml`.
