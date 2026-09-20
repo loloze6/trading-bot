@@ -341,16 +341,27 @@ def lint_pass_rule_structure(pass_rule) -> list[str]:
                 f"for this at evaluation time; refusing at registration instead"
             )
 
-        if not criterion.get("per_symbol_threshold"):
-            null_handling = criterion.get("null_handling")
-            if null_handling != "fails_threshold":
-                violations.append(
-                    f"criterion {cid!r}: null_handling={null_handling!r} is not "
-                    f"'fails_threshold' (the only value _evaluate_one_criterion "
-                    f"recognizes to avoid SPEC_ERROR when this metric resolves null) -- "
-                    f"refusing at registration instead of deferring to a SPEC_ERROR "
-                    f"discovered after a real backtest runs"
-                )
+        # CODE-REVIEW FIX (2026-09-20): this used to skip the null_handling check
+        # entirely whenever per_symbol_threshold was set. That was wrong --
+        # _evaluate_one_criterion's per_symbol_threshold branch reads the SAME
+        # criterion-level null_handling field and applies the SAME
+        # `== "fails_threshold"` check per symbol (see that function: the
+        # per-symbol loop's null branch is byte-identical in condition to the
+        # pooled branch below it). A per-symbol criterion with a missing or
+        # wrong null_handling still reaches SPEC_ERROR the moment any one
+        # symbol's metric resolves null -- exactly the post-backtest discovery
+        # this lint exists to move to registration time. The check now applies
+        # unconditionally, per-symbol or pooled, matching the evaluator exactly.
+        null_handling = criterion.get("null_handling")
+        if null_handling != "fails_threshold":
+            violations.append(
+                f"criterion {cid!r}: null_handling={null_handling!r} is not "
+                f"'fails_threshold' (the only value _evaluate_one_criterion "
+                f"recognizes to avoid SPEC_ERROR when this metric resolves null, "
+                f"for both per-symbol and pooled criteria) -- "
+                f"refusing at registration instead of deferring to a SPEC_ERROR "
+                f"discovered after a real backtest runs"
+            )
 
     return violations
 

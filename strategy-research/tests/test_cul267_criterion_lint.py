@@ -95,17 +95,41 @@ def test_missing_null_handling_refused_when_not_per_symbol():
     assert any("null_handling" in v for v in violations_wrong)
 
 
-def test_per_symbol_threshold_criterion_exempt_from_null_handling_check():
-    """A per_symbol_threshold criterion is exempted from this lint's
-    null_handling check (data-dependent per symbol; the existing B11
-    total-mapping lint already requires null_handling be PRESENT for this
-    shape) -- a clean per-symbol criterion with null_handling set should not
-    be flagged."""
+def test_clean_per_symbol_threshold_criterion_not_flagged():
+    """A per_symbol_threshold criterion with a VALID null_handling
+    ("fails_threshold") is not flagged -- the happy path."""
     criterion = _valid_criterion(per_symbol_threshold={"BTCUSDT": 0.8, "ETHUSDT": 0.8})
     del criterion["threshold"]
     pass_rule = _valid_pass_rule([criterion])
     violations = vce.lint_pass_rule_structure(pass_rule)
     assert violations == []
+
+
+def test_missing_null_handling_refused_even_when_per_symbol():
+    """CODE-REVIEW REGRESSION (2026-09-20): the lint used to skip the
+    null_handling check entirely for any per_symbol_threshold criterion.
+    That was wrong -- _evaluate_one_criterion's per_symbol_threshold branch
+    reads the SAME criterion-level null_handling field and applies the SAME
+    `== "fails_threshold"` check per symbol, so a per-symbol criterion with
+    missing/wrong null_handling still hits SPEC_ERROR at evaluation time
+    the instant any one symbol's metric resolves null -- exactly the
+    post-backtest discovery this whole ticket exists to move to
+    registration. Must be refused here too, not exempted."""
+    criterion = _valid_criterion(per_symbol_threshold={"BTCUSDT": 0.8, "ETHUSDT": 0.8})
+    del criterion["threshold"]
+    del criterion["null_handling"]
+    pass_rule = _valid_pass_rule([criterion])
+    violations = vce.lint_pass_rule_structure(pass_rule)
+    assert violations, "missing null_handling on a per-symbol criterion should be refused"
+    assert any("null_handling" in v for v in violations)
+
+    criterion_wrong = _valid_criterion(per_symbol_threshold={"BTCUSDT": 0.8, "ETHUSDT": 0.8},
+                                        null_handling="ignore")
+    del criterion_wrong["threshold"]
+    pass_rule_wrong = _valid_pass_rule([criterion_wrong])
+    violations_wrong = vce.lint_pass_rule_structure(pass_rule_wrong)
+    assert violations_wrong, "wrong null_handling on a per-symbol criterion should be refused"
+    assert any("null_handling" in v for v in violations_wrong)
 
 
 def test_legacy_shapes_not_linted():
