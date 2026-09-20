@@ -2,9 +2,9 @@
 CUL-300 (cost-survival criterion field) regression tests.
 
 Covers `_aggregate_trade_diagnostics`'s two new, purely-additive fields:
-  edge_to_cost_ratio -- mean gross (pre-commission) edge per trade in bps
+  realized_edge_to_cost_ratio -- mean gross (pre-commission) edge per trade in bps
     divided by mean round-trip cost per trade in bps.
-  cost_basis         -- which cost components (fees/funding/slippage) are
+  cost_components_measured         -- which cost components (fees/funding/slippage) are
     actually present in the trade records a run measured, determined by
     inspection rather than assumed.
 
@@ -79,7 +79,7 @@ def _fake_results(n_slots, n_zero=0):
 
 
 # ---------------------------------------------------------------------------
-# (a) edge_to_cost_ratio computes correctly on a known input
+# (a) realized_edge_to_cost_ratio computes correctly on a known input
 # ---------------------------------------------------------------------------
 
 def test_edge_to_cost_ratio_known_input():
@@ -87,7 +87,7 @@ def test_edge_to_cost_ratio_known_input():
     3 trades, realized_return (gross, %) = [1.0, 2.0, 3.0] -> bps = [100, 200, 300]
     -> mean gross edge = 200 bps.
     cost_paid (bps) = [10, 10, 10] -> mean cost = 10 bps.
-    edge_to_cost_ratio = 200 / 10 = 20.0.
+    realized_edge_to_cost_ratio = 200 / 10 = 20.0.
     """
     records = [
         _make_record("t1", realized_return=1.0, cost_paid=10.0),
@@ -97,7 +97,7 @@ def test_edge_to_cost_ratio_known_input():
     results = _fake_results(n_slots=3)
     summary = rp._aggregate_trade_diagnostics(records, results, None)
 
-    assert summary["edge_to_cost_ratio"] == 20.0
+    assert summary["realized_edge_to_cost_ratio"] == 20.0
 
 
 # ---------------------------------------------------------------------------
@@ -112,7 +112,7 @@ def test_edge_to_cost_ratio_zero_cost_returns_none():
     results = _fake_results(n_slots=2)
     summary = rp._aggregate_trade_diagnostics(records, results, None)
 
-    ratio = summary["edge_to_cost_ratio"]
+    ratio = summary["realized_edge_to_cost_ratio"]
     assert ratio is None
     # Explicitly rule out the failure modes this guard exists to prevent.
     assert ratio != float("inf")
@@ -121,12 +121,12 @@ def test_edge_to_cost_ratio_zero_cost_returns_none():
 
 
 # ---------------------------------------------------------------------------
-# (c) cost_basis reflects what's actually present in the fixture, not a
+# (c) cost_components_measured reflects what's actually present in the fixture, not a
 #     hardcoded true -- and structurally-absent components read False, not
 #     a guess.
 # ---------------------------------------------------------------------------
 
-def test_cost_basis_reflects_actual_fixture_fields():
+def test_cost_components_measured_reflects_actual_fixture_fields():
     records = [
         _make_record("t1", realized_return=1.0, cost_paid=10.0),
         _make_record("t2", realized_return=2.0, cost_paid=10.0),
@@ -134,18 +134,18 @@ def test_cost_basis_reflects_actual_fixture_fields():
     results = _fake_results(n_slots=2)
     summary = rp._aggregate_trade_diagnostics(records, results, None)
 
-    cost_basis = summary["cost_basis"]
+    cost_components_measured = summary["cost_components_measured"]
     # cost_paid IS present on every record in this fixture -> fees True.
-    assert cost_basis["fees"] is True
+    assert cost_components_measured["fees"] is True
     # No "funding" or "slippage" field exists anywhere in the record schema
     # (see _compute_cost_basis's docstring) -- must not be hardcoded True.
-    assert cost_basis["funding"] is False
-    assert cost_basis["slippage"] is False
+    assert cost_components_measured["funding"] is False
+    assert cost_components_measured["slippage"] is False
 
 
-def test_cost_basis_fees_false_when_cost_paid_missing_from_every_record():
+def test_cost_components_measured_fees_false_when_cost_paid_missing_from_every_record():
     """If a caller's records genuinely carry no cost_paid at all (e.g. a
-    malformed upstream write), cost_basis must say so honestly rather than
+    malformed upstream write), cost_components_measured must say so honestly rather than
     assuming fees were charged."""
     records = [
         {**_make_record("t1", realized_return=1.0, cost_paid=10.0)},
@@ -156,10 +156,32 @@ def test_cost_basis_fees_false_when_cost_paid_missing_from_every_record():
     results = _fake_results(n_slots=2)
     summary = rp._aggregate_trade_diagnostics(records, results, None)
 
-    assert summary["cost_basis"]["fees"] is False
-    # edge_to_cost_ratio must also degrade to null, not crash / inf / nan,
+    assert summary["cost_components_measured"]["fees"] is False
+    # realized_edge_to_cost_ratio must also degrade to null, not crash / inf / nan,
     # when there is no cost data to divide by.
-    assert summary["edge_to_cost_ratio"] is None
+    assert summary["realized_edge_to_cost_ratio"] is None
+
+
+def test_partial_cost_paid_coverage_is_not_reported_as_fully_measured():
+    """CODE-REVIEW REGRESSION (2026-09-20): with cost_paid present on SOME
+    records and missing on others, the field used to report fees=True (any()
+    found at least one) while the ratio's denominator silently dropped to a
+    smaller N than the numerator -- a hidden mean-of-all vs mean-of-a-subset
+    mismatch with no signal in the payload that it happened. Both must now
+    come from the exact same filtered record set, and partial coverage must
+    not be reported as full coverage."""
+    records = [
+        _make_record("t1", realized_return=1.0, cost_paid=10.0),
+        _make_record("t2", realized_return=3.0, cost_paid=None),
+    ]
+    results = _fake_results(n_slots=2)
+    summary = rp._aggregate_trade_diagnostics(records, results, None)
+
+    # Partial coverage (1 of 2 records) must NOT read as fully measured.
+    assert summary["cost_components_measured"]["fees"] is False
+    # The ratio, when computed, must come from ONLY the covered record (t1),
+    # not average t1's cost against both t1+t2's gross edge.
+    assert summary["realized_edge_to_cost_ratio"] == 100.0 / 10.0
 
 
 # ---------------------------------------------------------------------------
@@ -215,7 +237,7 @@ def test_old_keys_byte_identical_and_new_keys_purely_additive():
     summary = rp._aggregate_trade_diagnostics(copy.deepcopy(records), results, None)
 
     assert _OLD_KEYS.issubset(summary.keys())
-    assert set(summary.keys()) - _OLD_KEYS == {"edge_to_cost_ratio", "cost_basis"}
+    assert set(summary.keys()) - _OLD_KEYS == {"realized_edge_to_cost_ratio", "cost_components_measured"}
 
     # Call again with a fresh deep copy of the same input -- must reproduce
     # every OLD key's value exactly (determinism / no hidden state).
