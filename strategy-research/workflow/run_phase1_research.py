@@ -1256,6 +1256,28 @@ async def run_tool_worker(stage_name: str, run_id: str):
                   + (f" verdict={_pass_rule_eval.get('hypothesis_verdict')}/"
                      f"{_pass_rule_eval.get('lineage_routing')}"
                      if _pre_reg_result in ("PASS", "FAIL") else ""))
+
+            # E-046b S2 (the grid, engineering_roadmap.html card C). ADDITIVE:
+            # fires only when the flag is on AND pre_registration's pass_rule is
+            # menu-shaped (criteria carry source/reducer fields) -- everything
+            # above (evaluate_pass_rule_criteria's call, pass_rule_evaluation.yaml's
+            # own write) is completely untouched either way. A single-variant
+            # (this run's own) 1-column grid, per S1_FINDINGS.md §7 / delivery_plan_v26.md
+            # slice 2: "a grid with one column is still a grid."
+            if _grid_evaluation_enabled():
+                _pass_rule_for_grid = _vce._find_pass_rule(_pre_reg_for_eval or {})
+                if _vce._is_menu_shaped_pass_rule(_pass_rule_for_grid):
+                    _menu_path = ROOT / "config" / "criterion_menu.yaml"
+                    _menu = load_yaml(_menu_path) if _menu_path.exists() else {}
+                    _grid_result = _vce.evaluate_grid(
+                        {run_id: summary}, _pre_reg_for_eval or {}, _brief_for_eval, _menu)
+                    _grid_result["evaluated_at"] = datetime.now(timezone.utc).isoformat()
+                    save_yaml(ARTIFACTS / "grid_evaluation.yaml", _grid_result)
+                    _idea_status_artifact = _build_idea_status_artifact(_grid_result, run_id)
+                    save_yaml(ARTIFACTS / "idea_status.yaml", _idea_status_artifact)
+                    print(f"✅ [E-046b] grid_evaluation.yaml written: result="
+                          f"{_grid_result.get('result')} idea_status="
+                          f"{_grid_result.get('idea_status')}")
         except Exception as _win_err:
             try:
                 _record_failed_backtest_trial(
@@ -1380,6 +1402,68 @@ def _apply_b7_mandatory_inputs(stage_name: str, handoff: dict, run_dir: Path) ->
 # see run_campaign._quarantine_enabled()).
 _EXCLUSION_DIGEST_INPUT_STAGES = {"hypothesis_generation", "innovation_expansion"}
 _EXCLUSION_DIGEST_RELATIVE_PATH = "../../campaign_record/exclusion_digest.yaml"
+
+
+# E-046b S2 (the grid, engineering_roadmap.html card C). Off-by-default flag,
+# same shape as _exclusion_digest_input_enabled() below. See
+# config/campaign_config.yaml's orchestrator.grid_evaluation.enabled comment
+# for the full rationale.
+def _grid_evaluation_enabled() -> bool:
+    """False (no behavior change) when the key, the section, or the file is
+    absent -- same silence-is-never-a-green-light rule as
+    _exclusion_digest_input_enabled() below. While false, the
+    protocol_execution branch's existing evaluate_pass_rule_criteria() call
+    and its pass_rule_evaluation.yaml write are completely untouched, and
+    artifacts/grid_evaluation.yaml / artifacts/idea_status.yaml are never
+    written."""
+    path = ROOT / "config" / "campaign_config.yaml"
+    if not path.exists():
+        return False
+    with open(path, encoding="utf-8") as f:
+        cfg = yaml.safe_load(f) or {}
+    grid_cfg = ((cfg.get("orchestrator") or {}).get("grid_evaluation") or {})
+    return bool(grid_cfg.get("enabled", False))
+
+
+# E-046b S2 routing (delivery_plan_v26.md slice 2, "until slice 6c"):
+# validated -> promote, refuted -> kill/terminate, inconclusive -> human_pause
+# (reason: inconclusive_grid). (result, hypothesis_verdict, lineage_routing).
+_GRID_IDEA_STATUS_ROUTING = {
+    "validated":    ("PASS", "promote", None),
+    "refuted":      ("FAIL", "kill", "terminate"),
+    "inconclusive": ("INCONCLUSIVE", "human_pause", "inconclusive_grid"),
+}
+
+
+def _build_idea_status_artifact(grid_result: dict, run_id: str) -> dict:
+    """Written in the SAME shape pass_rule_evaluation.yaml uses when it
+    carries a binding verdict (result / hypothesis_verdict / lineage_routing)
+    so a LATER slice can pass this artifact as _resolve_verdict_fields()'s
+    own `pre_eval` argument exactly like pass_rule_evaluation.yaml already
+    is -- that function only binds when result is 'PASS' or 'FAIL', so only
+    validated/refuted are mechanically binding through it; inconclusive
+    deliberately does NOT bind (a human decides, not a formula), which is
+    why its own `result` here is 'INCONCLUSIVE', not 'PASS'/'FAIL'.
+
+    THIS SLICE DOES NOT WIRE THIS ARTIFACT INTO ANY _resolve_verdict_fields
+    CALL SITE -- no existing routing behavior changes when this function
+    runs. That repointing is slice 6c's own scope (S1_FINDINGS.md §6)."""
+    idea_status = grid_result.get("idea_status")
+    routing = _GRID_IDEA_STATUS_ROUTING.get(idea_status)
+    if routing is None:
+        raise ValueError(f"grid_result idea_status={idea_status!r} is not one of "
+                          f"{sorted(_GRID_IDEA_STATUS_ROUTING)} -- evaluate_grid's own contract "
+                          f"was violated")
+    result, hypothesis_verdict, lineage_routing = routing
+    return {
+        "run_id": run_id,
+        "idea_status": idea_status,
+        "result": result,
+        "hypothesis_verdict": hypothesis_verdict,
+        "lineage_routing": lineage_routing,
+        "grid_evaluation_ref": f"runs/{run_id}/artifacts/grid_evaluation.yaml",
+        "reason": grid_result.get("reason"),
+    }
 
 
 def _exclusion_digest_input_enabled() -> bool:

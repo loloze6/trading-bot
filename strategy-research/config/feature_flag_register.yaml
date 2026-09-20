@@ -97,6 +97,31 @@ flags:
       sites of the same tools/anti_adjacency_gate.py mechanism and the same
       rejected fingerprint.
 
+  - name: grid_evaluation
+    kind: orchestrator_config
+    config_key: orchestrator.grid_evaluation.enabled
+    reader: run_phase1_research._grid_evaluation_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: E-046b
+    criterion: >
+      Landed 2026-09-20 (E-046b S2, the grid -- engineering_roadmap.html
+      card C). Off by default: the mechanics (evaluate_grid(),
+      config/criterion_menu.yaml v1, the artifacts/grid_evaluation.yaml +
+      idea_status.yaml writer) are built and tested
+      (tests/test_grid_evaluation.py), but a real multi-variant,
+      menu-shaped pre_registration.yaml pass_rule doesn't exist yet -- that
+      needs the variant registry and config-authoring machinery from
+      E-046b's later slices (3+). Turning this on today would be additive
+      and inert on every current run (no pre_registration.yaml in the
+      corpus is menu-shaped, so evaluate_grid is never actually reached),
+      so switching it on has no unmet correctness criterion blocking it,
+      only a "nothing would use it yet" one -- held off_incomplete rather
+      than on until a real menu-shaped run exists to prove it end-to-end.
+      Also unwired: idea_status.yaml's validated/refuted/inconclusive ->
+      promote/kill/human_pause mapping is written into the artifact but not
+      yet read by any _resolve_verdict_fields call site (slice 6c's scope).
+
   - name: bar_equity
     kind: engine_param
     engine_default_files:

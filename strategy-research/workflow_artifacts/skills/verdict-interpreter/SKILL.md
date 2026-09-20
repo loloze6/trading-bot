@@ -44,6 +44,19 @@ a refined brief that fixes the identified failure, or a final decision to kill o
                                 below: it informs `root_cause`/`proposed_brief`/
                                 `findings_carryover` only, never `hypothesis_verdict`/
                                 `lineage_routing`.)
+- `grid_evaluation.yaml`,
+  `idea_status.yaml`           (E-046b S2, 2026-09-20 — REQUIRED when present. Only written when
+                                `orchestrator.grid_evaluation.enabled` is on (off by default) AND
+                                this run's pre_registration.yaml pass_rule is menu-shaped (criteria
+                                carry source/reducer fields, config/criterion_menu.yaml). When
+                                present, `idea_status.yaml` carries `validated`/`refuted`/
+                                `inconclusive` plus a pass_rule_evaluation.yaml-shaped
+                                `result`/`hypothesis_verdict`/`lineage_routing` triple for the
+                                SAME run. It is NOT yet wired as a second MACHINE-AUTHORED VERDICT
+                                authority the way `pass_rule_evaluation.yaml` is below — treat it as
+                                additional evidence for `root_cause`/`altitude_justification`, same
+                                posture as `post_backtest_routes`, until a later slice repoints
+                                routing through it directly.)
 
 ## MACHINE-AUTHORED VERDICT (K2, 2026-07-13)
 
