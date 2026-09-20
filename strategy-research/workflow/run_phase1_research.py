@@ -1473,7 +1473,25 @@ def _data_availability_gate_enabled() -> bool:
     with open(path, encoding="utf-8") as f:
         cfg = yaml.safe_load(f) or {}
     dag_cfg = ((cfg.get("orchestrator") or {}).get("data_availability_gate") or {})
-    return bool(dag_cfg.get("enabled", True))
+    value = dag_cfg.get("enabled", True)
+    # CODE-REVIEW FIX (2026-09-21): bool(value) silently mis-coerces two real
+    # config-authoring mistakes -- a quoted "false" string (bool("false") is
+    # True, so the gate stays ON when the author believed they'd disabled
+    # it) and an explicit `enabled:` / `enabled: null` (bool(None) is False,
+    # silently disabling this file's ONE inverted-default, deliberately-ON
+    # flag instead of the "missing key" case the docstring above actually
+    # promises True for). Because this is that one exception, a coercion
+    # mistake here is uniquely dangerous in a direction the sibling
+    # off-by-default flags (e.g. _grid_evaluation_enabled) don't share.
+    # Fail loud on anything that isn't a real YAML bool rather than guess.
+    if not isinstance(value, bool):
+        raise ValueError(
+            f"orchestrator.data_availability_gate.enabled={value!r} is not a real "
+            f"boolean (got {type(value).__name__}) -- write an unquoted `true` or "
+            f"`false` in config/campaign_config.yaml, not a quoted string or null. "
+            f"Refusing to guess on the one flag in this file that defaults ON."
+        )
+    return value
 
 
 # E-046b S2 routing (delivery_plan_v26.md slice 2, "until slice 6c"):
@@ -6264,7 +6282,6 @@ def run_loop(run_id: str):
                         update_state(path=RUN_DIR, status="failed_validation")
                         next_stage = "failed_validation"
                     else:
-                        print("✅ config schema-valid; advancing to protocol_execution")
                         # Create handoff files for the remaining pipeline stages
                         _create_remaining_handoffs(run_id, RUN_DIR)
                         # E-054 Layer 2 (on by default -- see
@@ -6276,6 +6293,14 @@ def run_loop(run_id: str):
                         # pre-E-054 run and to the old unset-env-var default.
                         if _data_availability_gate_enabled():
                             next_stage = "data_availability_gate"
+                        # CODE-REVIEW FIX (2026-09-21): this message used to
+                        # print unconditionally, before the gate-routing check
+                        # above existed, and named protocol_execution as the
+                        # advance target even on the now-common path where
+                        # next_stage was just set to data_availability_gate
+                        # instead -- misleading anyone reading the log/console
+                        # to understand what actually runs next.
+                        print(f"✅ config schema-valid; advancing to {next_stage}")
                 elif next_stage == "human_pause":
                     break
 
