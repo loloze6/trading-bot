@@ -954,6 +954,49 @@ def _aggregate_fee_reduction_diagnostics(all_records: list, all_window_diagnosti
     }
 
 
+def _compute_cost_basis(all_records: list) -> dict:
+    """
+    CUL-300 (cost-survival criterion field): honestly report which cost
+    components are actually itemized in the per-trade diagnostic records
+    this run measured, by inspecting the records themselves rather than
+    assuming a fixed answer.
+
+    - "fees": True when cost_paid (A3.2, set by every record built in
+      _compute_trade_records_for_window from _cost_paid_bps -- either
+      config/cost_model.yaml's fee_rate_bps or the trade's own
+      total_commission_percent) is present and non-null. This is the ONLY
+      cost source realized_edge_to_cost_ratio's denominator uses.
+    - "slippage": the engine (trading-bot/execution/execution_handler.py::
+      MockExecutionHandler, S3 2026-09-10) applies flat-bps slippage
+      directly to the FILL PRICE at execution time, on by default -- so
+      slippage cost is economically baked into entry_price/exit_price/
+      realized_return, but it is NOT broken out as its own field anywhere
+      in CompletedTrade.to_dict() (trading-bot/performance/metrics.py) or
+      in this file's per-trade diagnostic record. Structurally absent from
+      every record we can see -> False. This is a determinable fact (the
+      field genuinely does not exist here), not a guess -- but it does mean
+      realized_edge_to_cost_ratio's cost denominator (fees only) UNDERSTATES true
+      round-trip cost whenever slippage_bps > 0.
+    - "funding": perpetual funding settlements are not modeled anywhere in
+      the engine's trade records at all (no funding field exists in
+      CompletedTrade.to_dict() or here) -- always False. See the E-053 note
+      next to realized_edge_to_cost_ratio below.
+    """
+    # CODE-REVIEW FIX (2026-09-20): was any() -- true the moment ONE record had
+    # cost_paid, even if most didn't, silently claiming full fee coverage on a
+    # partial sample. all() requires EVERY record to carry it before claiming
+    # "fees" is reliably measured, matching the numerator/denominator fix
+    # below (both now share the exact same filtered record set).
+    has_cost_paid = bool(all_records) and all(
+        r.get("cost_paid") is not None for r in all_records
+    )
+    return {
+        "fees": has_cost_paid,
+        "funding": False,   # not modeled by the engine at all -- see E-053 note near realized_edge_to_cost_ratio
+        "slippage": False,  # baked into fill price upstream, not itemized as its own trade-record field (see docstring above)
+    }
+
+
 def _aggregate_trade_diagnostics(
     all_records: list, results: list, all_window_fee_diagnostics: list | None = None,
 ) -> dict:
@@ -1042,6 +1085,42 @@ def _aggregate_trade_diagnostics(
         idx = max(0, int(len(lst) * p / 100) - 1)
         return lst[idx]
 
+    # CUL-300 (cost-survival criterion field): realized_edge_to_cost_ratio + cost_components_measured.
+    # Purely additive -- computed from data _aggregate_trade_diagnostics
+    # already has, no new data source, no re-run.
+    #
+    # Numerator is GROSS (pre-commission) edge, from realized_return -- the
+    # position-level gross return already computed above (see that field's
+    # own comment: "Gross position-level return"). Deliberately NOT
+    # per_trade_expectancy_bps.mean: that figure is net_portfolio_return_pct,
+    # already net-of-commission (see per_trade_expectancy_bps's own
+    # docstring) -- dividing an already-net figure by cost again would
+    # double-count the fee deduction and understate how many multiples of
+    # cost the raw edge actually represents, which is what a cost-survival
+    # ratio (c.f. CLAUDE.fork.md's "still positive at 1.5x/2x modeled
+    # costs" bar) needs to measure. cost_paid (denominator, A3.2) is also
+    # a position-level round-trip figure, so numerator and denominator
+    # share the same basis.
+    # CODE-REVIEW FIX (2026-09-20): the numerator used to span every record
+    # while the denominator silently dropped any record missing cost_paid --
+    # a real N-mismatch (mean-of-all vs mean-of-a-subset) with no signal in
+    # the payload that it happened. Both now come from the exact same
+    # filtered set, so the ratio is always a like-for-like comparison over
+    # the trades that actually have a measured cost.
+    _records_with_cost = [r for r in all_records if r.get("cost_paid") is not None]
+    gross_edge_bps_values = [r["realized_return"] * 100 for r in _records_with_cost]
+    cost_bps_values = [r["cost_paid"] for r in _records_with_cost]
+    mean_gross_edge_bps = statistics.mean(gross_edge_bps_values) if gross_edge_bps_values else None
+    mean_cost_bps = statistics.mean(cost_bps_values) if cost_bps_values else None
+    # Zero cost -> null, not inf/nan (matches this file's existing
+    # zero-denominator convention, e.g. pnl_concentration/loss_conc above).
+    realized_edge_to_cost_ratio = (
+        round(mean_gross_edge_bps / mean_cost_bps, 4)
+        if mean_gross_edge_bps is not None and mean_cost_bps not in (None, 0)
+        else None
+    )
+    cost_components_measured = _compute_cost_basis(all_records)
+
     return {
         "mae_mfe_ratio_median":    round(statistics.median(mae_mfe_ratios), 4) if mae_mfe_ratios else None,
         "entry_efficiency_median": round(statistics.median(entry_effs),     4) if entry_effs     else None,
@@ -1078,6 +1157,18 @@ def _aggregate_trade_diagnostics(
             _aggregate_fee_reduction_diagnostics(all_records, all_window_fee_diagnostics)
             if all_window_fee_diagnostics is not None else None
         ),
+        # CUL-300: cost-survival criterion field, an addressable input for a
+        # future (not-yet-built, separate project's) pass/fail rule -- this
+        # function only computes and exposes the figure, it makes no
+        # promote/kill decision itself.
+        #
+        # UNDER-COMPLETE for perpetuals held across a funding settlement:
+        # funding cash flows are not modeled anywhere in the engine's trade
+        # records (see cost_components_measured["funding"] above) until E-053 (sub-daily
+        # funding accrual) lands -- so for perp strategies this ratio is
+        # missing a real cost/benefit source, not just an approximation.
+        "realized_edge_to_cost_ratio": realized_edge_to_cost_ratio,
+        "cost_components_measured": cost_components_measured,
     }
 
 
