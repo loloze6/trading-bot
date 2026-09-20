@@ -6533,6 +6533,19 @@ def run_loop(run_id: str):
                 _interp = load_yaml(ARTIFACTS / "verdict_interpretation.yaml")
                 _auto_generate_findings_carryover(RUN_DIR, _interp)
                 next_stage = determine_post_verdict_route(RUN_DIR, run_id)
+                # CODE-REVIEW FIX (2026-09-21): the profit-bars stop
+                # (determine_post_verdict_route -> _dispatch_verdict_route's
+                # promote branch) can now return "human_pause" here, something
+                # this branch never produced before. Every OTHER stage that can
+                # return "human_pause" (backtest_specification, data_availability_
+                # gate, holdout_evaluation) already breaks immediately so step 6
+                # below never overwrites the just-set paused_for_human status
+                # back to "active" -- this branch was missing that guard, which
+                # would have silently un-paused a genuinely halted run and left
+                # resume_pipeline's status check refusing to resume it.
+                if next_stage == "human_pause":
+                    update_state(path=RUN_DIR, status="paused_for_human")
+                    break
 
             elif current_stage == "campaign_review":
                 next_stage = determine_post_campaign_review_route(RUN_DIR, run_id)

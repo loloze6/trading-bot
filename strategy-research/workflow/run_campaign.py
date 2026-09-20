@@ -1148,6 +1148,14 @@ _PAUSE_FLAG_TO_REASON = (
     # (test_every_known_sticky_flag_branch_has_a_pause_flag_to_reason_entry)
     # specifically to catch a future omission of exactly this kind.
     ("variant_anti_adjacency_gate_refused", "variant_anti_adjacency_gate_refused"),
+    # Profit-bars branch-3 stop (orchestrator.profit_bars_file.enabled). Mirrors
+    # _classify_human_pause's branch for this flag -- see that flag's comment
+    # there for why it must rank above the promotion_audit block. CODE-REVIEW
+    # FIX (2026-09-21): this entry was originally omitted, the exact drift
+    # test_every_known_sticky_flag_branch_has_a_pause_flag_to_reason_entry
+    # exists to catch -- the test's own known_sticky_flags tuple was also
+    # missing this flag, so it did not catch itself; both fixed together.
+    ("profit_bars_reached", "profit_bars_reached"),
     # _hard_pause_reason reads this one BEFORE _classify_human_pause is ever called
     # (while status == "failed"); it is must-escalate in its own right, so its
     # presence alongside anything else is unambiguously a reason not to quarantine.

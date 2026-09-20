@@ -432,3 +432,48 @@ def test_classify_human_pause_profit_bars_reached_outranks_promotion_audit_block
         yaml.safe_dump({"hypothesis_id": "run_test"}, f)
     state = {"flags": {"profit_bars_reached": True}}
     assert rc._classify_human_pause(run_dir, state) == "profit_bars_reached"
+
+
+# ---------------------------------------------------------------------------
+# run_loop's own dispatch: the verdict_interpreter branch must not silently
+# un-pause a run the profit-bars stop just paused (CODE-REVIEW REGRESSION,
+# 2026-09-21).
+# ---------------------------------------------------------------------------
+
+def test_run_loop_verdict_interpreter_human_pause_is_not_overwritten(tmp_path, monkeypatch):
+    """CODE-REVIEW REGRESSION: unlike every sibling branch that can return
+    "human_pause" (backtest_specification, data_availability_gate,
+    holdout_evaluation), the verdict_interpreter branch had no
+    `if next_stage == "human_pause": break` guard -- step 6's unconditional
+    update_state(status="active", ...) ran immediately after and silently
+    un-paused a run the profit-bars stop (or any future human_pause route
+    through this branch) had just paused. resume_pipeline's own hard check
+    (`if status != "paused_for_human": ... return`) would then refuse to
+    resume a genuinely halted run. Isolates the run_loop dispatch bug itself
+    by monkeypatching determine_post_verdict_route directly -- does not need
+    the full profit-bars machinery wired to prove this."""
+    root = rpr.ROOT
+    run_id = "run_950"
+    run_dir = root / "runs" / run_id
+    (run_dir / "artifacts").mkdir(parents=True)
+    (run_dir / "handoffs").mkdir(parents=True)
+    with open(run_dir / "artifacts" / "verdict_interpretation.yaml", "w", encoding="utf-8") as f:
+        yaml.safe_dump({"hypothesis_id": run_id}, f)
+    with open(run_dir / "handoffs" / "protocol_to_verdict_interpreter.yaml", "w", encoding="utf-8") as f:
+        yaml.safe_dump({"required_inputs": [], "deliverables": []}, f)
+    with open(run_dir / "pipeline_state.yaml", "w", encoding="utf-8") as f:
+        yaml.safe_dump({
+            "run_id": run_id, "status": "active", "pending_stage": "verdict_interpreter",
+            "completed_stages": [], "flags": {}, "audit_log": {},
+            "counters": {"refinements_used": 0, "reruns_used": 0},
+        }, f, sort_keys=False)
+
+    monkeypatch.setattr(rpr, "determine_post_verdict_route", lambda path, rid: "human_pause")
+    monkeypatch.setattr(rpr, "_auto_generate_findings_carryover", lambda path, interp, lineage_routing=None: None)
+
+    rpr.run_loop(run_id)
+
+    final = yaml.safe_load((run_dir / "pipeline_state.yaml").read_text(encoding="utf-8"))
+    assert final["status"] == "paused_for_human", (
+        f"run_loop's verdict_interpreter branch overwrote a human_pause back to "
+        f"{final['status']!r} -- the missing break regression")
