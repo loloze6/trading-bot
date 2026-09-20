@@ -94,6 +94,22 @@ strategy-research/engineering/roadmap/EPICS.md	1
 strategy-research/engineering/roadmap/E-039/S1_FINDINGS.md	1
 # -----------------------------------------------------------------------------------
 
+# strategy-research/engineering/roadmap/E-046b/S1_FINDINGS.md (2026-09-20)
+#   ONE line, quotes campaign_data_policy.yaml's own eras list -- specifically
+#   era_2026_h2_forward_recorded's declared range: [2026-07-26, null] -- as evidence for
+#   a code bug report (_era_id_for_timestamp crashes on a None upper bound). Prose
+#   discussing a config value and a Python TypeError, not market data; the line itself
+#   states directly that no backtest window in the corpus reaches this date and the
+#   holdout is frozen at 2026-06-30, terminal on touch.
+#
+#   Verified before registering:
+#     sh strategy-research/tools/holdout_date_gate.sh --report-residual \
+#         | grep E-046b/S1_FINDINGS
+#     -> 1 line
+#   NO MARKET DATA FROM THE SEALED WINDOW.
+strategy-research/engineering/roadmap/E-046b/S1_FINDINGS.md	1
+# -----------------------------------------------------------------------------------
+
 .gitignore	4
 strategy-research/engineering/sessions/HANDOFF_20260724.md	1
 strategy-research/engineering/improvements/done/IMPROVEMENTS_DONE_20260712.md	13
@@ -116,7 +132,9 @@ strategy-research/config/campaign_data_policy.yaml	17
 # verbatim -- one more mention).
 # 5 -> 6 on 2026-09-13 (the docs/USER_GUIDE.md entry above quotes the holdout_range
 # value verbatim in its own explanation -- one more mention).
-strategy-research/config/holdout_gate_exemptions.txt	6
+# 6 -> 7 on 2026-09-20 (the E-046b/S1_FINDINGS.md entry above quotes the holdout_range
+# value verbatim in its own explanation -- one more mention).
+strategy-research/config/holdout_gate_exemptions.txt	7
 strategy-research/engineering/improvements/done/design_and_docs/STEP_05_FINDINGS.md	1
 strategy-research/engineering/improvements/done/design_and_docs/K4_routing_registration_design_20260712.md	4
 strategy-research/engineering/improvements/done/design_and_docs/p1b_fetch_manifest.md	6
