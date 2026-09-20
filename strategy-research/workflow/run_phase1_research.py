@@ -1264,20 +1264,42 @@ async def run_tool_worker(stage_name: str, run_id: str):
             # own write) is completely untouched either way. A single-variant
             # (this run's own) 1-column grid, per S1_FINDINGS.md §7 / delivery_plan_v26.md
             # slice 2: "a grid with one column is still a grid."
+            #
+            # CODE-REVIEW FIX (2026-09-20): this block used to sit inside the SAME
+            # try/except as pass_rule_evaluation.yaml's write, above. A backtest
+            # that completed successfully (pass_rule_evaluation.yaml already on
+            # disk) would get misrecorded as a FAILED trial by the outer handler's
+            # _record_failed_backtest_trial call if grid evaluation itself raised
+            # -- e.g. a menu criterion declaring floor.min_n_eff (deliberately
+            # NotImplementedError, see _check_floor) or an idea_status the routing
+            # table doesn't recognize. Grid evaluation is a purely additive,
+            # informational artifact; a bug in it is not evidence the backtest
+            # failed, and must never overwrite an already-successful trial's
+            # ledger entry. Isolated in its own try/except that logs loudly and
+            # re-raises NOTHING, so a grid bug can never turn a real success into
+            # a recorded failure.
             if _grid_evaluation_enabled():
-                _pass_rule_for_grid = _vce._find_pass_rule(_pre_reg_for_eval or {})
-                if _vce._is_menu_shaped_pass_rule(_pass_rule_for_grid):
-                    _menu_path = ROOT / "config" / "criterion_menu.yaml"
-                    _menu = load_yaml(_menu_path) if _menu_path.exists() else {}
-                    _grid_result = _vce.evaluate_grid(
-                        {run_id: summary}, _pre_reg_for_eval or {}, _brief_for_eval, _menu)
-                    _grid_result["evaluated_at"] = datetime.now(timezone.utc).isoformat()
-                    save_yaml(ARTIFACTS / "grid_evaluation.yaml", _grid_result)
-                    _idea_status_artifact = _build_idea_status_artifact(_grid_result, run_id)
-                    save_yaml(ARTIFACTS / "idea_status.yaml", _idea_status_artifact)
-                    print(f"✅ [E-046b] grid_evaluation.yaml written: result="
-                          f"{_grid_result.get('result')} idea_status="
-                          f"{_grid_result.get('idea_status')}")
+                try:
+                    _pass_rule_for_grid = _vce._find_pass_rule(_pre_reg_for_eval or {})
+                    if _vce._is_menu_shaped_pass_rule(_pass_rule_for_grid):
+                        _menu_path = ROOT / "config" / "criterion_menu.yaml"
+                        _menu = load_yaml(_menu_path) if _menu_path.exists() else {}
+                        _grid_result = _vce.evaluate_grid(
+                            {run_id: summary}, _pre_reg_for_eval or {}, _brief_for_eval, _menu)
+                        _grid_result["evaluated_at"] = datetime.now(timezone.utc).isoformat()
+                        save_yaml(ARTIFACTS / "grid_evaluation.yaml", _grid_result)
+                        _idea_status_artifact = _build_idea_status_artifact(_grid_result, run_id)
+                        save_yaml(ARTIFACTS / "idea_status.yaml", _idea_status_artifact)
+                        print(f"✅ [E-046b] grid_evaluation.yaml written: result="
+                              f"{_grid_result.get('result')} idea_status="
+                              f"{_grid_result.get('idea_status')}")
+                except Exception as _grid_err:
+                    print(f"⚠️  [E-046b] grid evaluation raised "
+                          f"{type(_grid_err).__name__}: {_grid_err} -- the backtest itself "
+                          "already succeeded and pass_rule_evaluation.yaml is already written; "
+                          "grid_evaluation.yaml/idea_status.yaml are simply not written this "
+                          "run. Not re-raised: a grid bug must never misrecord a successful "
+                          "trial as failed.")
         except Exception as _win_err:
             try:
                 _record_failed_backtest_trial(

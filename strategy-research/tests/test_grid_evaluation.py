@@ -300,6 +300,43 @@ def test_era_id_for_timestamp_open_ended_era_lower_bound_excludes_earlier_dates(
     assert eid == "era_unmapped"
 
 
+def test_sign_consistent_by_era_gap_window_excluded_not_compared():
+    """CODE-REVIEW REGRESSION (2026-09-20): a window landing in a genuine gap
+    between two defined eras (campaign_data_policy.yaml's own
+    2026-07-01..2026-07-25 gap, between the holdout's end and
+    era_2026_h2_forward_recorded's start) used to resolve to the literal
+    "era_unmapped" and get treated as its own bucket in the sign-agreement
+    check -- missing era coverage is not a genuine second era to disagree
+    with. All real windows here sit in the SAME defined era
+    (era_2019_2023_full_feed) and agree in sign; a gap window of the
+    OPPOSITE sign must not flip this to FAIL."""
+    windows = [_window("BTCUSDT", "2020-01", net_return_pct=1.0),
+               _window("BTCUSDT", "2020-02", net_return_pct=2.0),
+               _window("BTCUSDT", "2026-07-10", net_return_pct=-100.0)]  # gap, excluded
+    protocol_result = _protocol_result(windows)
+    criterion = {"id": "sce", "metric": "net_return_pct", "source": "window",
+                 "reducer": "sign_consistent_by_era", "floor": {"min_windows": 1}}
+    pre_reg = _menu_shaped_pre_reg([criterion])
+    result = vce.evaluate_grid({"v1": protocol_result}, pre_reg, {}, {})
+    cell = result["grid"]["sce"]["v1"]
+    assert cell["result"] == "PASS"
+    assert "era_unmapped" not in cell["detail"]["era_signs"]
+
+
+def test_sign_consistent_by_era_all_windows_unmapped_is_inconclusive():
+    """If EVERY window falls in an era gap, by_era ends up empty after
+    exclusion -- falls through to the existing 'not computable' (None)
+    return, which the grid maps to INCONCLUSIVE, never a silent PASS/FAIL."""
+    windows = [_window("BTCUSDT", "2026-07-05", net_return_pct=1.0),
+               _window("BTCUSDT", "2026-07-15", net_return_pct=1.0)]
+    protocol_result = _protocol_result(windows)
+    criterion = {"id": "sce", "metric": "net_return_pct", "source": "window",
+                 "reducer": "sign_consistent_by_era", "floor": {"min_windows": 1}}
+    pre_reg = _menu_shaped_pre_reg([criterion])
+    result = vce.evaluate_grid({"v1": protocol_result}, pre_reg, {}, {})
+    assert result["grid"]["sce"]["v1"]["result"] == "INCONCLUSIVE"
+
+
 def test_sign_consistent_by_era_reducer_survives_open_ended_era_in_real_policy_shape():
     """End-to-end: a window dated past campaign_data_policy.yaml's real
     open-ended era must not crash the reducer -- proves evaluate_grid's own

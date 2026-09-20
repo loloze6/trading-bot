@@ -1154,7 +1154,19 @@ def _reduce_sign_consistent_by_era(value_window_pairs, eras: list):
         ts = _window_label_to_timestamp(window_label)
         if ts is None:
             continue
-        by_era[_era_id_for_timestamp(ts, eras)].append(value)
+        era_id = _era_id_for_timestamp(ts, eras)
+        # CODE-REVIEW FIX (2026-09-20): a window whose timestamp falls in a real
+        # gap between two defined eras (e.g. campaign_data_policy.yaml's own
+        # 2026-07-01..2026-07-25 gap) resolves to the literal "era_unmapped" --
+        # that is missing era coverage, not a genuine additional era to compare
+        # signs against. Treating it as its own bucket let an inter-era data
+        # gap spuriously flip a PASS to a FAIL via manufactured sign
+        # disagreement. Excluded from the agreement check entirely; if every
+        # window is unmapped, by_era ends up empty and falls through to the
+        # existing "not computable" (None) return below.
+        if era_id == "era_unmapped":
+            continue
+        by_era[era_id].append(value)
 
     if not by_era:
         return None, {"era_medians": {}, "era_signs": {},
