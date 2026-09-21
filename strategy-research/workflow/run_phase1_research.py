@@ -1174,6 +1174,277 @@ async def run_tool_worker(stage_name: str, run_id: str):
         gate_result = load_yaml(ARTIFACTS / "data_availability_gate.yaml") or {}
         print(f"✅ E-054 Layer 2 outcome: {gate_result.get('outcome', 'unknown').upper()}")
 
+    elif stage_name == "protocol_execution" and _variant_loop_enabled():
+        # E-033.1 Slice 4a (delivery_plan_v26.md Slice 4, sub-slice 1 of 2:
+        # "loop restructure + trial accounting"). Runs tools/run_protocol.py
+        # once per VALIDATED variant in artifacts/variants/index.yaml (S1_
+        # FINDINGS.md §3a), instead of the flag-off branch's single
+        # candidate_strategy_config.json below -- using the SAME resolved
+        # protocol path for every variant (§7: confirmed variant-
+        # independent). Each variant gets its own trial_id
+        # (f"{run_id}:{variant_id}", Decision A) and its own
+        # protocol_result.yaml under artifacts/variants/<variant_id>/.
+        #
+        # Decision B (this slice's dispatch, 2026-09-22): the singular
+        # artifacts/protocol_result.yaml is ALSO still written, as an exact
+        # copy of the 'base' variant's own result -- several existing
+        # readers (run_loop's OWN protocol_execution conformance branch,
+        # build_reports.py, verdict-interpreter/SKILL.md) still expect that
+        # singular file to exist. This is an explicit, temporary bridge, not
+        # a permanent per-variant design -- 4b (data gate + conformance +
+        # grid/promotion wiring) revisits it once those consumers get real
+        # per-variant treatment.
+        #
+        # Deliberately NOT built here (S1_FINDINGS.md's own 4a/4b split,
+        # this slice's own scope limit): the per-variant data-availability-
+        # gate loop, the conformance-check per-variant restructure (run_loop's
+        # OWN separate elif branch, not this one), and _write_promotion_
+        # audit's relationship to per-variant results. Also not per-variant
+        # here (out of this slice's stated build list): pass_rule_evaluation.yaml
+        # (C7) and category reports stay computed once, from the base
+        # variant's summary only, exactly mirroring the flag-off branch's
+        # shape -- only the grid (S1_FINDINGS.md §5/item 8) genuinely needs
+        # every variant's result, since cross-variant comparison is its
+        # entire purpose.
+        index = load_yaml(ARTIFACTS / "variants" / "index.yaml") or {}
+        variants_idx = index.get("variants", {})
+        validated = {vid: v for vid, v in variants_idx.items() if v.get("status") == "validated"}
+        if not validated:
+            # Self-adversarial review item: the routing function
+            # (_route_post_config_direct_backtest_specification) already
+            # refuses to reach this stage with zero validated variants, but
+            # this branch must never silently trust that and iterate over
+            # nothing (a race/staleness case, e.g. index.yaml edited by hand
+            # between routing and this stage running) -- raise loudly
+            # instead of a silent no-op empty loop.
+            raise RuntimeError(
+                f"run_tool_worker(protocol_execution): no validated variants found in "
+                f"{ARTIFACTS / 'variants' / 'index.yaml'} for {run_id} -- refusing to "
+                "run an empty backtest loop."
+            )
+
+        protocol_path = _resolve_protocol_path(RUN_DIR, run_id)
+        validation_path = ARTIFACTS / "validation_protocol.yaml"
+        base_variant_id = "base" if "base" in validated else sorted(validated)[0]
+
+        per_variant_summaries: dict = {}
+        base_summary = None
+
+        for variant_id in sorted(validated):
+            vinfo = validated[variant_id]
+            trial_id = f"{run_id}:{variant_id}"
+            # CODE-REVIEW FIX (2026-09-22): every other failure mode in this
+            # loop (non-zero exit, missing summary, parse error, trial-write
+            # failure) is wrapped and recorded via _record_failed_backtest_trial
+            # before continuing -- this dict access was not, so a validated
+            # index.yaml entry missing 'config_path' (e.g. a race/staleness
+            # edit between routing and this stage running) raised an
+            # uncaught KeyError with ZERO trial-ledger accounting for that
+            # variant's attempted look, breaking the same H4-core invariant
+            # this branch otherwise enforces everywhere else.
+            _config_path_val = vinfo.get("config_path")
+            if not _config_path_val:
+                try:
+                    _record_failed_backtest_trial(
+                        run_id, RUN_DIR / "artifacts" / "variants" / variant_id,
+                        f"variant '{variant_id}' is 'validated' in index.yaml but has no "
+                        "'config_path' -- refusing to guess a path", trial_id=trial_id)
+                except Exception as _rec_err:
+                    print(f"⚠️  H4: could not record failed-backtest trial for {trial_id}: {_rec_err}")
+                print(f"⚠️  protocol_execution: variant '{variant_id}' has no config_path in "
+                      "index.yaml; continuing with remaining variants.")
+                continue
+            variant_config_path = RUN_DIR / _config_path_val
+            variant_artifacts_dir = ARTIFACTS / "variants" / variant_id
+            variant_artifacts_dir.mkdir(parents=True, exist_ok=True)
+            variant_run_dir = RUN_DIR / "variants" / variant_id
+            variant_run_dir.mkdir(parents=True, exist_ok=True)
+
+            cmd = [
+                str(TBOT_PYTHON), str(ROOT / "tools" / "run_protocol.py"),
+                str(variant_config_path), str(protocol_path),
+                "--validation-protocol", str(validation_path),
+                "--out-dir", str(variant_run_dir),
+            ]
+            print(f"--- protocol_execution: variant '{variant_id}' ---")
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            print(result.stdout)
+            if result.returncode != 0:
+                # Self-adversarial review item: variant 2 of 3 failing must
+                # not stop variant 3 from running, and must not disturb
+                # variant 1's already-recorded trial -- continue the loop,
+                # same H4-core "record the spent look" pattern as the
+                # flag-off branch below, just per-variant.
+                try:
+                    _record_failed_backtest_trial(
+                        run_id, variant_config_path,
+                        f"run_protocol.py non-zero exit ({result.returncode}) for variant "
+                        f"'{variant_id}'", trial_id=trial_id)
+                except Exception as _rec_err:
+                    print(f"⚠️  H4: could not record failed-backtest trial for {trial_id}: {_rec_err}")
+                print(f"⚠️  protocol_execution: variant '{variant_id}' failed (run_protocol.py "
+                      f"exit {result.returncode}); continuing with remaining variants.")
+                continue
+
+            summary_path = variant_run_dir / "protocol_summary.json"
+            if not summary_path.exists():
+                try:
+                    _record_failed_backtest_trial(
+                        run_id, variant_config_path,
+                        f"protocol_summary.json missing after protocol run for variant "
+                        f"'{variant_id}'", trial_id=trial_id)
+                except Exception as _rec_err:
+                    print(f"⚠️  H4: could not record failed-backtest trial for {trial_id}: {_rec_err}")
+                print(f"⚠️  protocol_execution: variant '{variant_id}' produced no "
+                      "protocol_summary.json; continuing with remaining variants.")
+                continue
+
+            try:
+                with open(summary_path, encoding="utf-8") as f:
+                    summary = json.load(f)
+                save_yaml(variant_artifacts_dir / "protocol_result.yaml", summary)
+                if variant_id == base_variant_id:
+                    # Decision B bridge -- singular file mirrors the base variant exactly.
+                    save_yaml(ARTIFACTS / "protocol_result.yaml", summary)
+                    base_summary = summary
+            except Exception as _win_err:
+                try:
+                    _record_failed_backtest_trial(
+                        run_id, variant_config_path,
+                        f"post-success window raised {type(_win_err).__name__} for variant "
+                        f"'{variant_id}' (protocol_summary.json parse)", trial_id=trial_id)
+                except Exception as _rec_err:
+                    print(f"⚠️  H4: could not record failed-backtest trial for {trial_id}: {_rec_err}")
+                print(f"⚠️  protocol_execution: variant '{variant_id}' failed parsing its "
+                      f"summary ({type(_win_err).__name__}); continuing with remaining variants.")
+                continue
+
+            try:
+                _record_backtest_trial(run_id, summary, variant_config_path, trial_id=trial_id)
+            except Exception as _write_err:
+                try:
+                    _record_failed_backtest_trial(
+                        run_id, variant_config_path,
+                        f"backtest completed but the trial write raised "
+                        f"{type(_write_err).__name__} for variant '{variant_id}'",
+                        trial_id=trial_id)
+                except Exception as _rec_err:
+                    print(f"⚠️  G1: backtest completed but the ledger is unwritable for "
+                          f"{trial_id} -- both the trial write ({type(_write_err).__name__}) "
+                          f"and its recovery row ({type(_rec_err).__name__}) failed.")
+                print(f"⚠️  protocol_execution: variant '{variant_id}' backtest completed but "
+                      "its trial row could not be written; continuing with remaining variants.")
+                continue
+
+            per_variant_summaries[variant_id] = summary
+            top_verdict = summary.get("verdict", "unknown")
+            print(f"✅ Variant '{variant_id}' protocol complete. Verdict: {top_verdict}")
+
+        if not per_variant_summaries:
+            raise RuntimeError(
+                f"run_tool_worker(protocol_execution): all {len(validated)} validated "
+                f"variant(s) failed for {run_id} -- no variant produced a successful "
+                "backtest trial. See per-variant artifacts/variants/<variant_id>/ for detail."
+            )
+
+        # C7 pass-rule evaluation + E-046a category reports: computed ONCE,
+        # from the base variant's summary only (or the first succeeded
+        # variant if base itself failed) -- mirrors the flag-off branch's
+        # single-result shape exactly, written to the same singular
+        # artifacts/ paths. Not per-variant here; see this branch's own
+        # header comment.
+        _rep_summary = base_summary if base_summary is not None else next(iter(per_variant_summaries.values()))
+        if base_summary is None:
+            # CODE-REVIEW FIX (2026-09-22): Decision B's bridge file
+            # (artifacts/protocol_result.yaml, singular) was previously only
+            # written inside the per-variant loop's own base-success branch
+            # -- if base failed while a sibling variant succeeded, the
+            # bridge file was never written at all, breaking every existing
+            # singular-file reader this decision exists to keep working
+            # (run_loop's conformance branch, build_reports.py, verdict-
+            # interpreter/SKILL.md). Write it here from the same
+            # already-computed representative summary the C7 step below
+            # uses, so the bridge file always exists whenever ANY variant
+            # succeeded, not only when base specifically did.
+            save_yaml(ARTIFACTS / "protocol_result.yaml", _rep_summary)
+        _tools_path = str(Path(__file__).parent.parent / "tools")
+        if _tools_path not in sys.path:
+            sys.path.insert(0, _tools_path)
+        import verdict_criteria_evaluator as _vce
+        _pre_reg_path = ARTIFACTS / "pre_registration.yaml"
+        _pre_reg_for_eval = load_yaml(_pre_reg_path) if _pre_reg_path.exists() else {}
+        _brief_path = ARTIFACTS / "research_brief.yaml"
+        _brief_for_eval = (load_yaml(_brief_path) if _brief_path.exists() else {}) or {}
+        # CODE-REVIEW FIX (2026-09-22): this block used to run completely
+        # unguarded, unlike the grid/reports blocks right below it in this
+        # same branch. By this point every succeeded variant's trial has
+        # ALREADY been recorded (inside the per-variant loop above) -- a
+        # crash here previously left N clean trial rows with
+        # pass_rule_evaluation.yaml (a REQUIRED input for verdict_interpreter)
+        # permanently missing and no signal that anything went wrong. Same
+        # isolation pattern as the grid/reports blocks: log loudly, never
+        # re-raise, never touch the already-recorded trials -- a bug in this
+        # write is not evidence the backtest(s) failed.
+        try:
+            _pass_rule_eval = _vce.evaluate_pass_rule_criteria(
+                _rep_summary, _pre_reg_for_eval or {}, _brief_for_eval)
+            _pass_rule_eval["evaluated_at"] = datetime.now(timezone.utc).isoformat()
+            _pass_rule_eval["evaluator_version"] = 2
+            save_yaml(ARTIFACTS / "pass_rule_evaluation.yaml", _pass_rule_eval)
+            _pre_reg_result = _pass_rule_eval.get("result")
+            print(f"✅ [C7] pass_rule_evaluation.yaml written (base variant): result={_pre_reg_result}")
+        except Exception as _c7_err:
+            print(f"⚠️  [C7] pass_rule_evaluation.yaml raised {type(_c7_err).__name__}: "
+                  f"{_c7_err} -- at least one variant's backtest already succeeded and is "
+                  "already recorded as a trial; pass_rule_evaluation.yaml is simply not "
+                  "written this run. Not re-raised: a C7 bug must never misrecord an "
+                  "already-successful trial as failed, but note this artifact is a "
+                  "REQUIRED input for verdict_interpreter -- this run cannot proceed "
+                  "past that stage until it exists.")
+
+        # E-046b S2 (the grid). Dispatch step 5 / S1_FINDINGS.md §5 & §8: the
+        # grid now receives a real N-column {variant_id: protocol_result}
+        # dict built from every variant that actually succeeded, instead of
+        # the flag-off branch's single-entry {run_id: summary}. Same gating
+        # (menu-shaped pass_rule, _grid_evaluation_enabled()) and the same
+        # never-turn-a-success-into-a-failure isolation as the flag-off
+        # branch below.
+        if _grid_evaluation_enabled():
+            try:
+                _pass_rule_for_grid = _vce._find_pass_rule(_pre_reg_for_eval or {})
+                if _vce._is_menu_shaped_pass_rule(_pass_rule_for_grid):
+                    _menu_path = ROOT / "config" / "criterion_menu.yaml"
+                    _menu = load_yaml(_menu_path) if _menu_path.exists() else {}
+                    _grid_result = _vce.evaluate_grid(
+                        per_variant_summaries, _pre_reg_for_eval or {}, _brief_for_eval, _menu)
+                    _grid_result["evaluated_at"] = datetime.now(timezone.utc).isoformat()
+                    save_yaml(ARTIFACTS / "grid_evaluation.yaml", _grid_result)
+                    _idea_status_artifact = _build_idea_status_artifact(_grid_result, run_id)
+                    save_yaml(ARTIFACTS / "idea_status.yaml", _idea_status_artifact)
+                    print(f"✅ [E-046b] grid_evaluation.yaml written across "
+                          f"{sorted(per_variant_summaries)}: result={_grid_result.get('result')} "
+                          f"idea_status={_grid_result.get('idea_status')}")
+            except Exception as _grid_err:
+                print(f"⚠️  [E-046b] grid evaluation raised {type(_grid_err).__name__}: "
+                      f"{_grid_err} -- at least one variant's backtest already succeeded; "
+                      "grid_evaluation.yaml/idea_status.yaml are simply not written this run.")
+
+        if _category_reports_enabled():
+            try:
+                _br_tools_path = str(Path(__file__).parent.parent / "tools")
+                if _br_tools_path not in sys.path:
+                    sys.path.insert(0, _br_tools_path)
+                import build_reports as _br
+                _reports = _br.build_reports(RUN_DIR, write=True)
+                print(f"✅ [E-046a] artifacts/reports/*.yaml written: {sorted(_reports.keys())}")
+            except Exception as _reports_err:
+                print(f"⚠️  [E-046a] category report build raised {type(_reports_err).__name__}: "
+                      f"{_reports_err} -- at least one variant's backtest already succeeded; "
+                      "artifacts/reports/*.yaml are simply not written this run.")
+
+        print(f"✅ protocol_execution (variant loop): {len(per_variant_summaries)}/"
+              f"{len(validated)} variant(s) succeeded: {sorted(per_variant_summaries)}")
+
     elif stage_name == "protocol_execution":
         config_path     = ARTIFACTS / "candidate_strategy_config.json"
         # K3/§9 Q4: consolidated resolver (also used by the E-054 data-
@@ -2020,6 +2291,53 @@ def _config_direct_authoring_enabled() -> bool:
             f"orchestrator.config_direct_authoring.enabled={value!r} is not a real "
             f"boolean (got {type(value).__name__}) -- write an unquoted `true` or "
             f"`false` in config/campaign_config.yaml, not a quoted string or null."
+        )
+    return value
+
+
+def _variant_loop_enabled() -> bool:
+    """E-033.1 Slice 4a (delivery_plan_v26.md Slice 4, sub-slice 1 of 2: "loop
+    restructure + trial accounting"). False (no behavior change) when the
+    key, the section, or the config file is absent -- same silence-is-never-
+    a-green-light rule as _config_direct_authoring_enabled() above (this is
+    NOT the one inverted-default flag in this file -- that is
+    _data_availability_gate_enabled() alone; see its own docstring for why
+    it's the deliberate exception).
+
+    Structurally requires config_direct_authoring to be on too:
+    artifacts/variants/index.yaml (the file run_tool_worker's protocol_execution
+    per-variant loop reads under this flag) is ONLY EVER written by
+    config-direct authoring's own tool-only backtest_specification branch
+    (E-056 Slice 3b) -- with that flag off, the file structurally cannot
+    exist. Raises loudly (not a silent no-op) if variant_loop.enabled=true
+    is set while config_direct_authoring.enabled is false or absent --
+    S1_FINDINGS.md §9 flagged this exact hard-dependency as a real invalid-
+    config state, not a redundant flag."""
+    path = ROOT / "config" / "campaign_config.yaml"
+    if not path.exists():
+        return False
+    with open(path, encoding="utf-8") as f:
+        cfg = yaml.safe_load(f) or {}
+    vl_cfg = ((cfg.get("orchestrator") or {}).get("variant_loop") or {})
+    value = vl_cfg.get("enabled", False)
+    # Same "fail loud on anything that isn't a real bool" rule
+    # _config_direct_authoring_enabled() above already established for this
+    # module -- a quoted "false" string must never silently read truthy.
+    if not isinstance(value, bool):
+        raise ValueError(
+            f"orchestrator.variant_loop.enabled={value!r} is not a real "
+            f"boolean (got {type(value).__name__}) -- write an unquoted `true` or "
+            f"`false` in config/campaign_config.yaml, not a quoted string or null."
+        )
+    if value and not _config_direct_authoring_enabled():
+        raise ValueError(
+            "orchestrator.variant_loop.enabled=true requires "
+            "orchestrator.config_direct_authoring.enabled=true as well -- "
+            "artifacts/variants/index.yaml (which the variant loop reads) is only "
+            "ever written by config-direct authoring's own tool-only "
+            "backtest_specification branch (E-056 Slice 3b); with config-direct "
+            "authoring off, that file structurally cannot exist. Enable both "
+            "flags together, not variant_loop alone."
         )
     return value
 
@@ -4075,7 +4393,7 @@ def _check_kb_reactivation_conformance(next_research_question: dict, kb: dict) -
     return violations
 
 
-def _mark_trial_invalidated(run_id: str, reason: str):
+def _mark_trial_invalidated(trial_id: str, reason: str):
     """F8b-pattern: flag a previously-recorded trial as invalidated_artifact — it
     contacted real data but tested the wrong thing (conformance violation), so it
     must be excluded from promotion/deflate-sharpe accounting like run_044's
@@ -4087,11 +4405,24 @@ def _mark_trial_invalidated(run_id: str, reason: str):
     `_apply_trial_accounting` (E-030 S2a quarantine handling) calls this
     directly for `component_execution_error` halts, entirely independent of
     prescreen. Caught by running the real test suite, not by re-reading the
-    diff."""
+    diff.
+
+    RENAMED param 2026-09-22 (E-033.1 Slice 4a, Decision A): was `run_id`,
+    now `trial_id` -- purely a rename, the comparison and every call shape
+    is unchanged. Under the compound `f"{run_id}:{variant_id}"` trial_id
+    shape (see _record_backtest_trial), a conformance violation on ONE
+    variant's protocol run must invalidate ONLY that variant's trial row,
+    never the whole run's variant family -- so this function now takes the
+    exact trial_id to invalidate rather than deriving one from a bare
+    run_id. today's one real call site (run_loop's protocol_execution
+    conformance branch) still passes a bare run_id-shaped value, which is
+    correct and unaffected as-is: it is not yet a per-variant loop, so
+    run_id IS the trial_id there (4b will update that call site to pass a
+    compound trial_id once conformance becomes a per-variant loop)."""
     state = load_campaign_state()
     marked = False
     for t in state.get("trial_sharpes", []):
-        if t.get("trial_id") == run_id and not t.get("invalidated_artifact"):
+        if t.get("trial_id") == trial_id and not t.get("invalidated_artifact"):
             t["invalidated_artifact"] = True
             t["invalidation_reason"] = reason
             marked = True
@@ -4622,7 +4953,7 @@ def _compute_forecast_hash(config_path: Path) -> str:
 
 
 
-def _record_backtest_trial(run_id: str, summary: dict, config_path: Path):
+def _record_backtest_trial(run_id: str, summary: dict, config_path: Path, trial_id: str | None = None):
     """
     A6.2: record a completed full-backtest as a trial in campaign_state.trial_sharpes.
     Appends {trial_id, source, sharpe, expectancy_bps, n_trades, statistic_valid}.
@@ -4637,12 +4968,20 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path):
     "backtest"-source row for the same trial_id, which is the actual re-entry case
     (protocol_execution re-run via resume/retry) -- measured live in the committed
     ledger before this fix: run_054 and run_059 were each recorded 3x.
+
+    `trial_id` param added 2026-09-22 (E-033.1 Slice 4a): optional, defaults to
+    None -- when omitted (every call site outside the new per-variant loop),
+    behavior is byte-identical to before, since the effective trial_id falls
+    back to the bare `run_id`. The new per-variant protocol_execution loop
+    (run_tool_worker, under orchestrator.variant_loop.enabled) passes
+    `trial_id=f"{run_id}:{variant_id}"` explicitly, per Decision A.
     """
+    effective_trial_id = trial_id if trial_id is not None else run_id
     state  = load_campaign_state()
     trials = state.setdefault("trial_sharpes", [])
 
-    if any(t.get("trial_id") == run_id and t.get("source") == "backtest" for t in trials):
-        print(f"⏭️  A6.2/H3: backtest trial for {run_id} already recorded — skipping duplicate.")
+    if any(t.get("trial_id") == effective_trial_id and t.get("source") == "backtest" for t in trials):
+        print(f"⏭️  A6.2/H3: backtest trial for {effective_trial_id} already recorded — skipping duplicate.")
         return
 
     hv    = summary.get("hypothesis_verdict") or {}
@@ -4691,7 +5030,7 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path):
         statistic_valid = "neither"
 
     trial_entry = {
-        "trial_id":        run_id,
+        "trial_id":        effective_trial_id,
         "source":          "backtest",
         "sharpe":          median_sharpe,
         "expectancy_bps":  expectancy,
@@ -4716,8 +5055,17 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path):
           f"n_trades={n_trades}, statistic_valid={statistic_valid})")
 
 
-def _record_failed_backtest_trial(run_id: str, config_path: Path, reason: str):
+def _record_failed_backtest_trial(run_id: str, config_path: Path, reason: str, trial_id: str | None = None):
     """
+    `trial_id` param added 2026-09-22 (E-033.1 Slice 4a): optional, defaults
+    to None -- when omitted (every call site outside the new per-variant
+    loop), behavior is byte-identical to before, since the effective
+    trial_id falls back to the bare `run_id`. The new per-variant
+    protocol_execution loop (run_tool_worker, under
+    orchestrator.variant_loop.enabled) passes
+    `trial_id=f"{run_id}:{variant_id}"` explicitly, per Decision A -- same
+    shape as _record_backtest_trial's own new parameter above.
+
     H4-core (E-025, 2026-08-16, issue #28): record a data-touching backtest that
     RAISED before _record_backtest_trial could run, so the spent look still moves the
     deflated-Sharpe count. Without this, a backtest that crashed on a non-zero exit
@@ -4752,6 +5100,7 @@ def _record_failed_backtest_trial(run_id: str, config_path: Path, reason: str):
     trial count only deflates a candidate Sharpe further), so the conservative choice is
     the honest one.
     """
+    effective_trial_id = trial_id if trial_id is not None else run_id
     try:
         forecast_hash = _compute_forecast_hash(config_path)
     except Exception:
@@ -4763,12 +5112,12 @@ def _record_failed_backtest_trial(run_id: str, config_path: Path, reason: str):
     state  = load_campaign_state()
     trials = state.setdefault("trial_sharpes", [])
 
-    if any(t.get("trial_id") == run_id and t.get("source") == "backtest_failed" for t in trials):
-        print(f"⏭️  H4: failed-backtest trial for {run_id} already recorded — skipping duplicate.")
+    if any(t.get("trial_id") == effective_trial_id and t.get("source") == "backtest_failed" for t in trials):
+        print(f"⏭️  H4: failed-backtest trial for {effective_trial_id} already recorded — skipping duplicate.")
         return
 
     trials.append({
-        "trial_id":        run_id,
+        "trial_id":        effective_trial_id,
         "source":          "backtest_failed",
         "sharpe":          None,
         "expectancy_bps":  None,
@@ -6686,15 +7035,31 @@ def _route_post_config_direct_backtest_specification(run_dir: Path) -> str:
     here."""
     index = load_yaml(run_dir / "artifacts" / "variants" / "index.yaml") or {}
     variants = index.get("variants", {})
-    base = variants.get("base")
-    if base is None or base.get("status") != "validated":
-        update_state(path=run_dir, status="paused_for_human")
-        print(
-            "\n⏸️ CONFIG-DIRECT AUTHORING: the 'base' variant is missing or failed "
-            "validation. See artifacts/variants/index.yaml and "
-            "campaign_record/component_requests.yaml."
-        )
-        return "human_pause"
+    if _variant_loop_enabled():
+        # E-033.1 Slice 4a: config-direct authoring produces N pursued
+        # variants per run, not one selected variant -- widen the "is there
+        # anything to test" check from "is base validated" to "is at least
+        # one variant validated". No per-variant GATING decision here (that's
+        # 4b's job, S1_FINDINGS.md §8) -- this only decides whether to
+        # proceed at all.
+        if not any(v.get("status") == "validated" for v in variants.values()):
+            update_state(path=run_dir, status="paused_for_human")
+            print(
+                "\n⏸️ CONFIG-DIRECT AUTHORING: no variant passed validation. See "
+                "artifacts/variants/index.yaml and "
+                "campaign_record/component_requests.yaml."
+            )
+            return "human_pause"
+    else:
+        base = variants.get("base")
+        if base is None or base.get("status") != "validated":
+            update_state(path=run_dir, status="paused_for_human")
+            print(
+                "\n⏸️ CONFIG-DIRECT AUTHORING: the 'base' variant is missing or failed "
+                "validation. See artifacts/variants/index.yaml and "
+                "campaign_record/component_requests.yaml."
+            )
+            return "human_pause"
     if _data_availability_gate_enabled():
         return "data_availability_gate"
     return "protocol_execution"

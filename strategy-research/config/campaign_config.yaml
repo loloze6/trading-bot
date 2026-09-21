@@ -519,6 +519,40 @@ orchestrator:
       # tested this slice, but not yet proven end-to-end against a real LLM
       # authoring pass (no Gemini/Claude API budget was available to run one
       # in this slice's own environment -- see this slice's final report).
+  variant_loop:
+    enabled: false
+      # E-033.1 Slice 4a (delivery_plan_v26.md Slice 4, sub-slice 1 of 2:
+      # "loop restructure + trial accounting"). OFF BY DEFAULT and read at
+      # runtime by run_phase1_research._variant_loop_enabled() -- same shape
+      # as orchestrator.config_direct_authoring.enabled above. HARD
+      # DEPENDENCY: raises (does not silently no-op) if this is true while
+      # config_direct_authoring.enabled is false/absent -- see
+      # _variant_loop_enabled's own docstring for why (index.yaml
+      # structurally cannot exist without config-direct authoring).
+      #
+      # While false, run_tool_worker's protocol_execution branch and
+      # _route_post_config_direct_backtest_specification are byte-identical
+      # to every run before this slice: single candidate_strategy_config.json,
+      # single protocol_result.yaml, single-entry {run_id: summary} grid
+      # dict, unchanged trial_id shape (bare run_id) -- proven by
+      # tests/test_e033_slice4a_variant_loop.py's flag-off identity tests.
+      #
+      # While true: protocol_execution runs tools/run_protocol.py once per
+      # VALIDATED variant in artifacts/variants/index.yaml (not just the
+      # single base config), writes each variant's own
+      # artifacts/variants/<variant_id>/protocol_result.yaml, records one
+      # trial per variant (trial_id=f"{run_id}:{variant_id}"), and builds a
+      # real N-column {variant_id: protocol_result} dict for evaluate_grid.
+      # The singular artifacts/protocol_result.yaml is ALSO still written,
+      # as an exact copy of the 'base' variant's own result -- a deliberate,
+      # temporary bridge for existing singular-file readers (see this
+      # slice's own dispatch, Decision B).
+      #
+      # Deliberately NOT built by this sub-slice (E-033.1 Slice 4b's scope
+      # instead): the per-variant data-availability-gate loop, the
+      # per-variant conformance-check restructure (a separate call site in
+      # run_loop, not run_tool_worker), and _write_promotion_audit's
+      # relationship to per-variant results.
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------
