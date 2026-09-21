@@ -17,6 +17,10 @@ Expand the hypothesis space before strict validation — while keeping only unga
 ## Required outputs
 - `expanded_hypothesis_card.yaml`
 - `innovation_notes.yaml`
+- `variant_patches.yaml` — config-direct-authoring flow only, signaled by `artifacts/backtest_spec.yaml` being
+  present in your context (written by the `strategy_config_authoring` stage, which now runs BEFORE this one in
+  that flow — see IMPROVEMENT 07 below). Absent from your context → skip; produce exactly the two outputs above,
+  unchanged.
 
 ## Output requirements
 The expanded artifact must include:
@@ -211,6 +215,73 @@ proactive stage proposes on its own, before the gate ever has to say no.
 
 ---
 
+## IMPROVEMENT 07 — `variant_patches.yaml` (config-direct-authoring flow only, E-056 Slice 3b)
+
+**Signaled by `artifacts/backtest_spec.yaml` being present in your context** (same file-presence convention as
+IMPROVEMENT 05's exclusion-digest section above — you cannot read the `orchestrator.config_direct_authoring`
+flag directly). That file is `strategy_config_authoring`'s own output: in this flow it runs BEFORE this stage,
+not after, and already authored ONE base strategy config implementing `hypothesis_card.yaml` (see that skill's
+own SKILL.md — it is adapted from what `backtest-engineering` used to do at this position in the flag-off flow).
+**If `artifacts/backtest_spec.yaml` is absent from your context, this section does not apply** — produce
+`expanded_variants` in `expanded_hypothesis_card.yaml` exactly as this skill has always worked, and skip this
+section entirely.
+
+When present: Step 2 changes from producing prose `expanded_variants` to producing `artifacts/variant_patches.yaml`
+— structured, machine-appliable diffs against the base config, not free-text descriptions. This is a genuinely
+different output shape, not a reformatting of the same content: today (flag off) this stage has never produced
+any structured patch output.
+
+### Shape
+
+```yaml
+base_config_ref: artifacts/backtest_spec.yaml   # where the base config this patches against lives
+variants:
+  - variant_id: base
+    patch: []
+    rationale: "The base config as strategy_config_authoring produced it, unmodified — always include this
+      entry verbatim so the base itself is one of the pursued variants, not just a patch target."
+  - variant_id: <design_variant_name>
+    patch:
+      - path: "/strategies/regimes/unknown/components/0/params/period"
+        value: 21
+    rationale: "<what this patch changes and why — the design-axis variant>"
+  - variant_id: <asset_variant_name>
+    patch:
+      - path: "/regime_detector/components/0/params/period"
+        value: 21
+    rationale: "<the asset-generalizability variant — IMPROVEMENT 06 below still applies: pick the symbol from a
+      DIFFERENT coin_universe.yaml category than the base>"
+```
+
+Each `patch` entry is `{path, value}`, `path` a JSON Pointer (RFC 6901) string starting with `/`, e.g.
+`/strategies/regimes/unknown/components/0/params/period`. **The patch's target path's PARENT must already exist
+in the base config** — `backtest_specification`'s tool-only branch (which applies these patches) raises loudly
+on a patch targeting a path whose parent doesn't exist; it does not silently create a new nested chain or
+silently no-op. Only the FINAL segment of a path may be new (adding a key that doesn't exist yet under an
+existing parent). Reference the base config's actual shape (STRATEGY_DESIGN_GUIDE.md) before writing a path —
+an invented path segment fails at `backtest_specification` time, not here.
+
+**Always include the `base` variant (empty patch) in `variants`** — it is what lets the base config itself
+still get tested, not merely serve as a patch target. Add a "design patch" variant (a variant along the
+signal's own design axis — a parameter, a transform, a component swap) and an "asset patch" variant (the
+IMPROVEMENT 06 asset-generalizability candidate, expressed as a patch changing whatever config path encodes the
+traded symbol/instrument for this hypothesis) per the "base + a design patch + an asset patch" shape this slice
+targets — more are permitted if genuinely justified (same "quality over volume" discipline IMPROVEMENT 04's
+diversity test already applies), but do not pad the list with cosmetic parameter-only variants that would fail
+IMPROVEMENT 04's diversity test if they were expressed as prose.
+
+### Relationship to `expanded_hypothesis_card.yaml` and `innovation_notes.yaml`
+
+Still produce both — `variant_patches.yaml` does not replace them. `expanded_hypothesis_card.yaml`'s other
+fields (`regime_specific_variants`, `alternative_data_candidates`, `reverse_hypothesis`, `behavioral_features`)
+and `innovation_notes.yaml`'s `diversity_audit`/`asset_diversity_audit` sections are unaffected by this
+section — populate them exactly as IMPROVEMENT 04/05/06 above describe, using the same variants you are about
+to express as patches. `expanded_variants` itself may be omitted or left thin when `variant_patches.yaml` is
+present (the patches ARE the variant menu in this flow) — do not duplicate the same variants in both prose and
+patch form.
+
+---
+
 ## Checklist
 - Add novelty without destroying testability.
 - Suggest alternative data only if the feed is in `available_feeds.yaml.available`.
@@ -231,6 +302,10 @@ proactive stage proposes on its own, before the gate ever has to say no.
   DIFFERENT `coin_universe.yaml` category than the base instrument (or state
   the specific single-asset opt-out reason).** Write the `asset_diversity_audit`
   section in `innovation_notes.yaml`.
+- **Improvement 07 (config-direct-authoring flow only, signaled by `artifacts/backtest_spec.yaml`
+  presence): write `variant_patches.yaml` with a `base` (empty-patch) entry, a design-axis
+  variant, and an asset variant at minimum; every `patch[].path` must be a valid JSON Pointer
+  whose parent already exists in the base config.**
 
 ## Forbidden
 - Do not skip interpretability.
@@ -249,6 +324,11 @@ proactive stage proposes on its own, before the gate ever has to say no.
   empty or missing section is indistinguishable from "forgot to check" — if the
   mechanism is genuinely single-asset, say so explicitly with the reason.
   (Improvement 06)
+- **Improvement 07: do not write a `patch[].path` whose parent segment does not already exist
+  in the base config — this raises at `backtest_specification` time rather than silently
+  creating a new nested structure or no-opping. Do not omit the `base` (empty-patch) variant.
+  Do not duplicate the same variants in both `expanded_variants` prose and `variant_patches.yaml`
+  when the latter is produced.**
 
 ## Context rule
-Use `research_brief.yaml`, `hypothesis_card.yaml`, `config/available_feeds.yaml`, `config/indicator_library.yaml`, `config/coin_universe.yaml`, and, when present, `campaign_record/exclusion_digest.yaml`. Do not read other files unless explicitly required.
+Use `research_brief.yaml`, `hypothesis_card.yaml`, `config/available_feeds.yaml`, `config/indicator_library.yaml`, `config/coin_universe.yaml`, and, when present, `campaign_record/exclusion_digest.yaml` and `artifacts/backtest_spec.yaml` (Improvement 07, config-direct-authoring flow only). Do not read other files unless explicitly required.

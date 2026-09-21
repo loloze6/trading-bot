@@ -14,6 +14,7 @@ Not sure this is the doc you need? See [`DOC_INDEX.md`](DOC_INDEX.md) first.
   - [2.2.x Stage detail blocks](#22x-stage-detail-blocks)
     - [The input — `research_brief`](#the-input--research_brief)
     - [Stage 2 — `hypothesis_generation`](#stage-2--hypothesis_generation)
+    - [Stage 15 — `strategy_config_authoring`](#stage-15--strategy_config_authoring)
     - [Stage 3 — `innovation_expansion`](#stage-3--innovation_expansion)
     - [Stage 4 — `validation_gate`](#stage-4--validation_gate)
     - [Stage 6 — `backtest_specification`](#stage-6--backtest_specification)
@@ -226,6 +227,25 @@ execution order, the diagram position does.
 > [stage 9](#stage-9--regime_detector_validation) — it is a fact about the
 > campaign's present state, not a step in the flow.
 
+**Config-direct-authoring variant (E-056 Slice 3b, off by default —
+`orchestrator.config_direct_authoring.enabled`).** The diagram above is the
+default-flag-off shape. When the flag is on, the graph is reshaped, not just
+extended: a new `[Claude]` stage, `strategy_config_authoring`, is inserted
+between `hypothesis_generation` (2) and `innovation_expansion` (3) — it
+authors the single BASE strategy config directly from the hypothesis, before
+any variants exist (adapted from `backtest_specification`'s own old job,
+relocated earlier). `innovation_expansion` then produces
+`variant_patches.yaml` (patches against that base config) instead of a prose
+variant menu. `validation_gate` (4) becomes unreached — not deleted, its
+stage-registry entry and routing code stay intact for flag-off runs, they are
+simply never routed to. `backtest_specification` (6) becomes a `[Tool]`
+stage: it applies each patch, validates the result
+(`trading-bot/tools/validate_config.py`, including VIOLATION V12), and writes
+one `strategy_config.json` per variant — the flow then rejoins the diagram
+above at `data_availability_gate`/`protocol_execution`, run against the
+`base` variant. See `strategy-config-authoring`/`innovation-expansion`
+SKILL.md for the full mechanics.
+
 ---
 
 ### 2.2 Stage Objectives
@@ -239,9 +259,10 @@ one place to read when the answer matters.
 |---|---|---|---|
 | — | [**research_brief**](#the-input--research_brief) | *input, not a step* | State the question this run exists to answer, and the limits it must respect. |
 | 2 | [**hypothesis_generation**](#stage-2--hypothesis_generation) | Claude | Turn the research question into one concrete, testable claim. |
-| 3 | [**innovation_expansion**](#stage-3--innovation_expansion) | Claude | Produce variants that differ in kind, so a [kill](#g-kill) blames the idea rather than one setting. |
+| 15 | [**strategy_config_authoring**](#stage-15--strategy_config_authoring) | Claude | Off by default (E-056 Slice 3b, `orchestrator.config_direct_authoring.enabled`). Config-direct-authoring flow only — sits between 2 and 3. Authors the single BASE strategy config directly from the hypothesis, before any variants exist (`strategy-config-authoring/SKILL.md`, adapted from stage 6's old job). |
+| 3 | [**innovation_expansion**](#stage-3--innovation_expansion) | Claude | Produce variants that differ in kind, so a [kill](#g-kill) blames the idea rather than one setting. Config-direct-authoring flow: produces `variant_patches.yaml` (patches against stage 15's base config) instead of a prose variant menu. |
 | 4 | [**validation_gate**](#stage-4--validation_gate) | Claude | Try to kill the hypothesis on paper, before any code is written for it. If it decides `refine`, the same call also decides whether the blockers can be fixed inside the current engine, and how. |
-| 6 | [**backtest_specification**](#stage-6--backtest_specification) | Claude | Compile the validated idea into a config the engine can actually execute. |
+| 6 | [**backtest_specification**](#stage-6--backtest_specification) | Claude | Compile the validated idea into a config the engine can actually execute. Config-direct-authoring flow: becomes a Python tool stage instead — applies stage 3's `variant_patches.yaml` to stage 15's base config, validates each variant, writes one config per variant. |
 | 14 | [**data_availability_gate**](#stage-14--data_availability_gate) | Python tool | Off by default (E-054). Check, per window and per declared aux feed, whether the data this variant needs can actually be assembled — before spending an expensive backtest on it. |
 | 8 | [**protocol_execution**](#stage-8--protocol_execution) | Python tool | Trade the strategy across every walk-forward window and record what happened. |
 | 9 | [**regime_detector_validation**](#stage-9--regime_detector_validation) | Python tool | Establish whether the regime detector is trustworthy enough to condition any metric. |
@@ -421,6 +442,61 @@ being written against imaginary data.
 **4. If the model returns several hypotheses instead of one, they are split
 rather than rejected.**
 (`run_phase1_research.py::_handle_hypothesis_generation_multi_card_split`)
+
+---
+
+#### Stage 15 — `strategy_config_authoring`
+**Engine:** Claude (skill `strategy-config-authoring`)
+**Runs:** off by default (`orchestrator.config_direct_authoring.enabled`,
+`config/campaign_config.yaml`). When on, immediately after stage 2, before
+stage 3. `default_next: innovation_expansion`.
+
+**Objective.** Author the single BASE `strategy_config` directly from the
+hypothesis — no variant menu exists yet at this point in this flow. Adapted
+from `backtest-engineering`'s old job (stage 6), relocated from
+post-validation/post-expansion to pre-expansion.
+
+**Design rationale.**
+- **Config-direct authoring reverses the old order.** Instead of expanding
+  variants first and compiling one of them into a config last (stage 6's old
+  position), this flow compiles the base config FIRST, so stage 3
+  (`innovation_expansion`) can express every variant as a patch against a
+  real, already-valid config rather than free-text.
+- **No `selected_variant_id`.** Stage 6's old `IMPROVEMENT 01` (pick one menu
+  entry, name it) does not apply here — there is nothing to pick from yet.
+  **The skill is instructed** to omit that field entirely in this flow.
+- **`validation_gate` (stage 4) becomes unreached, not deleted**, when this
+  flag is on — its registry entry and routing code stay intact for flag-off
+  runs; nothing routes to it under config-direct authoring (see stage 3's
+  own block and stage 6's routing note below).
+
+**Stage input**
+
+| What | Where it comes from | Required? |
+|---|---|---|
+| `hypothesis_card.yaml` | stage 2 | yes |
+| `STRATEGY_DESIGN_GUIDE.md` | `strategy-research/docs/` | yes |
+| `DATA_AVAILABILITY.md` | `strategy-research/docs/` | optional, forced-read on a new timeframe/symbol/venue |
+| `WORKFLOW_CAPABILITIES.md` | `strategy-research/docs/` | optional |
+
+**Stage output**
+
+| What | Written where | Read by |
+|---|---|---|
+| `backtest_spec.yaml` | `runs/{run_id}/artifacts/` | innovation_expansion (as the base config to patch), the tool-only stage 6, verdict_interpreter |
+| `decision.yaml` | `runs/{run_id}/artifacts/` | `determine_post_strategy_config_authoring_route` |
+
+**Features / logic in place**
+
+**1. Same `decision.yaml` contract as stage 6's old LLM path.**
+`status: spec_ready` routes to `innovation_expansion`; `status: component_gap`
+pauses for a human (`determine_post_strategy_config_authoring_route`,
+`run_phase1_research.py`) — the same shape `determine_post_spec_route` uses
+for stage 6, just a different success target.
+**2. Same "Ungated hypotheses" and "Forbidden" rules as `backtest-engineering`.**
+Carried over intact from that skill (E-056 Slice 3b's own pre-registered
+success signal for this rewrite was a byte-diff against the retired content
+confirming no rule was silently dropped).
 
 ---
 

@@ -163,6 +163,48 @@
         }
       },
       "additionalProperties": false
+    },
+    "criteria": {
+      "type": "array",
+      "description": "E-056 Slice 3b IMPROVEMENT 07 (config-direct-authoring flow only): pre-registered pass/fail criteria picked from config/criterion_menu.yaml's live entries. Absent entirely, not empty, when that flow is not in use.",
+      "items": { "type": "object" }
+    },
+    "cost_feasibility": {
+      "type": "object",
+      "description": "E-056 Slice 3b IMPROVEMENT 07 (config-direct-authoring flow only): relocated from quant-validation/SKILL.md's own Improvement 09. Same shape as validation_protocol.schema.json's cost_feasibility block.",
+      "properties": {
+        "assumed_round_trip_cost_bps": { "type": "number" },
+        "expected_holding_bars": {
+          "type": "object",
+          "properties": {
+            "min": { "type": "integer" },
+            "max": { "type": "integer" }
+          }
+        },
+        "expected_trades_per_window": { "type": ["integer", "number"] },
+        "required_gross_edge_bps_per_trade": { "type": "number" },
+        "plausibility": {
+          "type": "string",
+          "enum": ["plausible", "marginal", "implausible"]
+        },
+        "plausibility_rationale": { "type": "string" }
+      }
+    },
+    "pass_through": {
+      "type": "boolean",
+      "description": "E-056 Slice 3b IMPROVEMENT 08 (config-direct-authoring flow only): true when this card's config/manifest/criteria/source were supplied upstream, already fully authored, and simply copied through rather than derived."
+    },
+    "config": {
+      "type": "object",
+      "description": "E-056 Slice 3b IMPROVEMENT 08 (pass_through candidates only): the fully-authored strategy config, copied verbatim from research_brief.yaml/an attached candidate block. CODE-REVIEW FIX (2026-09-21): added -- hypothesis-design/SKILL.md's IMPROVEMENT 08 instructs copying this field through, but additionalProperties:false would have rejected any card that did."
+    },
+    "manifest": {
+      "type": "object",
+      "description": "E-056 Slice 3b IMPROVEMENT 08 (pass_through candidates only): the block manifest, copied verbatim alongside config. Same fix as config above."
+    },
+    "source": {
+      "type": "string",
+      "description": "E-056 Slice 3b IMPROVEMENT 08 (pass_through candidates only): names where the pass-through config/manifest/criteria originated (a human operator, or a prior campaign artifact). Same fix as config above."
     }
   },
   "additionalProperties": false

@@ -150,7 +150,8 @@ truth is `STAGE_CONFIGS` + `workflow_artifacts/templates/handoffs/` + the
 ### "How does stage X decide?"
 Each is an LLM persona in `skills/{name}/SKILL.md`:
 - **`hypothesis-design`** — turns a research brief into one concrete, falsifiable hypothesis.
-- **`innovation-expansion`** — multiplies a hypothesis into 3–6 testable variants.
+- **`strategy-config-authoring`** — E-056 Slice 3b, off by default (`orchestrator.config_direct_authoring.enabled`). Config-direct-authoring flow only: authors the base `strategy_config` directly from the hypothesis, before variant expansion.
+- **`innovation-expansion`** — multiplies a hypothesis into 3–6 testable variants. Config-direct-authoring flow: also produces `variant_patches.yaml`.
 - **`quant-validation`** — pre-backtest falsifiability/bias/failure-mode pressure test.
 - **`refinement-planner`** — converts validation blockers into concrete fixes.
 - **`backtest-engineering`** — translates a validated hypothesis into `strategy_config` JSON.
