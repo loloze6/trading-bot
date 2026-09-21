@@ -193,6 +193,18 @@
     "pass_through": {
       "type": "boolean",
       "description": "E-056 Slice 3b IMPROVEMENT 08 (config-direct-authoring flow only): true when this card's config/manifest/criteria/source were supplied upstream, already fully authored, and simply copied through rather than derived."
+    },
+    "config": {
+      "type": "object",
+      "description": "E-056 Slice 3b IMPROVEMENT 08 (pass_through candidates only): the fully-authored strategy config, copied verbatim from research_brief.yaml/an attached candidate block. CODE-REVIEW FIX (2026-09-21): added -- hypothesis-design/SKILL.md's IMPROVEMENT 08 instructs copying this field through, but additionalProperties:false would have rejected any card that did."
+    },
+    "manifest": {
+      "type": "object",
+      "description": "E-056 Slice 3b IMPROVEMENT 08 (pass_through candidates only): the block manifest, copied verbatim alongside config. Same fix as config above."
+    },
+    "source": {
+      "type": "string",
+      "description": "E-056 Slice 3b IMPROVEMENT 08 (pass_through candidates only): names where the pass-through config/manifest/criteria originated (a human operator, or a prior campaign artifact). Same fix as config above."
     }
   },
   "additionalProperties": false

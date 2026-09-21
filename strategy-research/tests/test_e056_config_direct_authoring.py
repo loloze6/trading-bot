@@ -649,3 +649,81 @@ def test_ungated_hypotheses_and_forbidden_sections_carried_over_byte_identical()
             "A rule was silently dropped or changed in the 'Ungated hypotheses' or "
             f"'Forbidden' section between the retired and new skill:\n{diff}"
         )
+
+
+# ---------------------------------------------------------------------------
+# CODE-REVIEW REGRESSIONS (2026-09-21)
+# ---------------------------------------------------------------------------
+
+def test_config_direct_authoring_enabled_raises_on_non_bool_value():
+    """A quoted "false" string reads truthy under bool() -- the same trap
+    _data_availability_gate_enabled() was already patched to fail loudly on
+    in this same file. This flag is off_incomplete/unproven against a real
+    LLM pass; a misconfiguration that reads as truthy would silently
+    activate the whole reshaped pipeline."""
+    config_dir = rpr.ROOT / "config"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    with open(config_dir / "campaign_config.yaml", "w", encoding="utf-8") as f:
+        yaml.safe_dump({"orchestrator": {"config_direct_authoring": {"enabled": "false"}}}, f)
+
+    with pytest.raises(ValueError, match="not a real"):
+        rpr._config_direct_authoring_enabled()
+
+
+def test_config_direct_authoring_enabled_raises_on_null_value():
+    config_dir = rpr.ROOT / "config"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    with open(config_dir / "campaign_config.yaml", "w", encoding="utf-8") as f:
+        f.write("orchestrator:\n  config_direct_authoring:\n    enabled:\n")
+
+    with pytest.raises(ValueError, match="not a real"):
+        rpr._config_direct_authoring_enabled()
+
+
+def test_patch_application_non_dict_entry_raises_patch_error_not_typeerror():
+    """A malformed patch entry that isn't a mapping at all (e.g. `patch: [21]`
+    instead of `patch: [{path: ..., value: 21}]`) used to reach
+    `"value" not in (op or {})`, which for a truthy non-dict like an int
+    raises a bare TypeError instead of PatchApplicationError -- uncaught by
+    run_tool_worker's per-variant handler, crashing the whole tool stage for
+    every variant instead of marking just this one not_tested."""
+    with pytest.raises(rpr.PatchApplicationError, match="expected a mapping"):
+        rpr._apply_json_pointer_patch(_BASE_CONFIG, [21])
+    with pytest.raises(rpr.PatchApplicationError, match="expected a mapping"):
+        rpr._apply_json_pointer_patch(_BASE_CONFIG, ["not-a-dict"])
+    with pytest.raises(rpr.PatchApplicationError, match="expected a mapping"):
+        rpr._apply_json_pointer_patch(_BASE_CONFIG, [None])
+
+
+def test_run_tool_worker_backtest_specification_unsafe_variant_id_raises(monkeypatch):
+    """variant_id is LLM-authored and gets used as a bare filesystem path
+    segment (variants_dir / variant_id). A path-separator or '..' in it
+    (an authoring slip, or worse) must be refused before it's ever used to
+    construct a write path, not silently followed outside artifacts/variants/."""
+    run_dir = _minimal_run(rpr.ROOT, "run_823")
+    _write_backtest_spec_and_patches(run_dir, [
+        {"variant_id": "../../escape", "patch": [], "rationale": "malicious or malformed"},
+    ])
+
+    def _fake_subprocess_run(cmd, *args, **kwargs):
+        class _Ok:
+            returncode = 0
+            stdout = ""
+            stderr = ""
+        return _Ok()
+
+    monkeypatch.setattr(rpr.subprocess, "run", _fake_subprocess_run)
+    with pytest.raises(RuntimeError, match="not a safe bare identifier"):
+        asyncio.run(rpr.run_tool_worker("backtest_specification", "run_823"))
+
+
+def test_b7_mandatory_input_stages_includes_strategy_config_authoring():
+    """Under config-direct-authoring, strategy_config_authoring -- not
+    backtest_specification -- is the LLM stage that compiles the hypothesis
+    into a binding config. B7 exists specifically to prevent a compiling
+    stage from deciding without pre_registration.yaml; omitting the new
+    stage here would silently reopen that exact gap."""
+    assert "strategy_config_authoring" in rpr._B7_MANDATORY_INPUT_STAGES
+    # backtest_specification must remain too -- flag-off it is still the
+    # LLM-authoring stage exactly as before.
+    assert "backtest_specification" in rpr._B7_MANDATORY_INPUT_STAGES

@@ -1455,6 +1455,22 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     "run_tool_worker(backtest_specification): a variant_patches.yaml entry is "
                     f"missing 'variant_id' (entry: {variant!r})"
                 )
+            # CODE-REVIEW FIX (2026-09-21): variant_id is LLM-authored
+            # (innovation-expansion's output) and gets used below as a bare
+            # filesystem path segment (variants_dir / variant_id). Without a
+            # shape check, a path-separator or ".." in variant_id (an
+            # authoring slip, e.g. "design/v2", or worse) would let
+            # variant_dir resolve outside artifacts/variants/ entirely --
+            # pathlib's `/` operator also treats an absolute right-hand
+            # operand specially, replacing the base path altogether. Refuse
+            # anything that isn't a safe bare identifier before it's ever
+            # used to construct a write path.
+            if not re.fullmatch(r"[A-Za-z0-9_-]+", variant_id):
+                raise RuntimeError(
+                    f"run_tool_worker(backtest_specification): variant_id {variant_id!r} is "
+                    "not a safe bare identifier (letters, digits, '_', '-' only) -- refusing "
+                    "to use it as a filesystem path segment."
+                )
 
             try:
                 variant_config = _apply_json_pointer_patch(base_config, variant.get("patch") or [])
@@ -1542,6 +1558,17 @@ _B7_MANDATORY_INPUT_STAGES = {
     "backtest_specification",
     "verdict_interpreter",
     "campaign_review",
+    # CODE-REVIEW FIX (2026-09-21, E-056 Slice 3b): under
+    # orchestrator.config_direct_authoring.enabled, strategy_config_authoring
+    # -- not backtest_specification -- is the LLM stage that compiles the
+    # hypothesis into a binding strategy config. B7 exists specifically
+    # because a compiling-type stage deciding without ever reading
+    # pre_registration.yaml caused real incidents (see this constant's own
+    # comment block above); omitting the new stage here would silently
+    # reopen exactly that gap for the config-direct-authoring flow.
+    # backtest_specification stays in this set too, since flag-off it is
+    # still the LLM-authoring stage exactly as before.
+    "strategy_config_authoring",
 }
 _B7_DEFERENCE_SENTENCE = (
     "B7: pre-registered artifacts (pre_registration.yaml / "
@@ -1979,7 +2006,22 @@ def _config_direct_authoring_enabled() -> bool:
     with open(path, encoding="utf-8") as f:
         cfg = yaml.safe_load(f) or {}
     cda_cfg = ((cfg.get("orchestrator") or {}).get("config_direct_authoring") or {})
-    return bool(cda_cfg.get("enabled", False))
+    value = cda_cfg.get("enabled", False)
+    # CODE-REVIEW FIX (2026-09-21): bool(value) silently mis-coerces a quoted
+    # "false" string (bool("false") is True) -- the exact trap
+    # _data_availability_gate_enabled() in this same file was already
+    # patched to fail loudly on instead of guessing. This flag is
+    # off_incomplete and unproven against a real LLM pass; a config-authoring
+    # slip that reads as truthy would silently activate the whole reshaped
+    # pipeline (new stage routing, tool-only backtest_specification, the
+    # validation stage skip). Fail loud on anything that isn't a real bool.
+    if not isinstance(value, bool):
+        raise ValueError(
+            f"orchestrator.config_direct_authoring.enabled={value!r} is not a real "
+            f"boolean (got {type(value).__name__}) -- write an unquoted `true` or "
+            f"`false` in config/campaign_config.yaml, not a quoted string or null."
+        )
+    return value
 
 
 def _apply_config_direct_authoring_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
@@ -6529,8 +6571,22 @@ def _apply_json_pointer_patch(base_config: dict, patch: list) -> dict:
     import copy as _copy
     result = _copy.deepcopy(base_config)
     for i, op in enumerate(patch):
-        path = op.get("path") if isinstance(op, dict) else None
-        if "value" not in (op or {}):
+        # CODE-REVIEW FIX (2026-09-21): a malformed patch entry that isn't a
+        # dict at all (an LLM authoring slip, e.g. `patch: [21]` instead of
+        # `patch: [{path: ..., value: 21}]`) used to reach `"value" not in
+        # (op or {})` -- for a truthy non-dict like an int, `(op or {})`
+        # evaluates to the int itself, and `"value" not in 5` raises a bare
+        # TypeError instead of PatchApplicationError, which run_tool_worker's
+        # call site doesn't catch -- crashing the WHOLE tool stage for every
+        # variant instead of marking just this one variant not_tested, the
+        # graceful-degradation behavior every other failure mode here has.
+        if not isinstance(op, dict):
+            raise PatchApplicationError(
+                f"patch[{i}]: expected a mapping with 'path'/'value' keys, got "
+                f"{type(op).__name__} ({op!r})"
+            )
+        path = op.get("path")
+        if "value" not in op:
             raise PatchApplicationError(f"patch[{i}] ({path}): missing required 'value' key")
         segments = _split_json_pointer(path)
         parent = result

@@ -839,9 +839,16 @@ def test_apply_b7_mandatory_inputs_noop_for_non_mandatory_stage():
 
 
 def test_apply_b7_mandatory_inputs_covers_every_downstream_llm_stage():
+    """CODE-REVIEW FIX (2026-09-21, E-056 Slice 3b): this test's own stage
+    tuple did not include strategy_config_authoring when that stage was
+    added to _B7_MANDATORY_INPUT_STAGES, so it would not have caught the
+    omission if that addition had been forgotten -- the exact drift class
+    already seen once this session (_PAUSE_FLAG_TO_REASON's own hardcoded
+    tuple missing a newly-added flag)."""
     root = rpr.ROOT
     for stage in ("validation", "backtest_specification",
-                  "verdict_interpreter", "campaign_review"):
+                  "verdict_interpreter", "campaign_review",
+                  "strategy_config_authoring"):
         run_dir = _minimal_run(root, f"run_614_{stage}")
         (run_dir / "artifacts" / "pre_registration.yaml").write_text("pass_rule: {}\n", encoding="utf-8")
         (run_dir / "artifacts" / "user_brief_verbatim.yaml").write_text("strategy_domain: x\n", encoding="utf-8")
