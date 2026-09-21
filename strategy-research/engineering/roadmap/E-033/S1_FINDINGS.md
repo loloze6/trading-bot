@@ -408,6 +408,53 @@ deserve their own scrutiny rather than riding along with the core loop change.
 
 ---
 
+## Decision (operator, 2026-09-22) — resolves two "Not determined" items above
+
+**On `_mark_trial_invalidated` semantics (item 1 above):** confirmed. A conformance violation
+invalidates only the specific variant's trial row, exactly as built in Slice 4a
+(`_mark_trial_invalidated(trial_id, reason)`, comparison on the compound `trial_id`, not a
+whole-run `run_id` match). The operator's own framing generalizes this beyond just
+invalidation: **every control the target workflow defines — the data-availability gate,
+conformance checking, anything else gated per-backtest — must run independently per variant,
+not once for the whole run.** This is now the explicit design principle for Slice 4b's
+per-variant data-availability-gate loop (build-list item 3/4): each variant gets its own gate
+call, its own `refine`/`decline` outcome, its own `not_tested` marking — never a single
+shared gate result applied to all three.
+
+**On the singular `artifacts/protocol_result.yaml` question (items 2 and 3 above): resolved,
+and the resolution is NOT "keep a singular bridge file forever."** Slice 4a's own singular-file
+write (Decision B in its own dispatch) is confirmed as an explicitly temporary bridge, not the
+target design. The real target: genuinely multiple backtest results survive per run, one per
+variant, and each of the three post-backtest consumer branches is responsible for its own
+N-way fan-out instead of assuming one file:
+
+- **Branch 1 — the grid (`evaluate_grid`, Slice 2).** Already correct as built — S1 §5
+  confirmed `evaluate_grid` accepts an N-column `{variant_id: protocol_result}` dict by design,
+  and Slice 4a's own grid call site already passes exactly that. No further change needed here.
+- **Branch 2 — the specialist reader skills (Slice 5b, not yet built).** Must receive ALL
+  variants' backtest results, not a single representative one. This changes Slice 5a/5b's own
+  scope from what was assumed during Slice 4a's build (category reports computed once from the
+  base variant's summary only, per that build's own stated judgment call) — category reports
+  and/or the readers that consume them need to become variant-aware before 5b is genuinely
+  built. Flagged explicitly for whoever characterizes Slice 5b: do not carry forward the
+  base-only assumption Slice 4a made for expedience.
+- **Branch 3 — the profitability-bars stop (`_write_promotion_audit` / CUL-299, already
+  merged).** Must check ALL variants and pass if ANY ONE clears every bar — an existential
+  quantifier across variants, not a check against a single aggregate or base-only result. This
+  is the concrete answer to item 2 above (`_write_promotion_audit`'s relationship to
+  per-variant results): it needs to iterate every variant's `protocol_result.yaml` and each
+  bar independently, with the overall profit-bars verdict PASS iff at least one variant's
+  result clears every bar. This is Slice 4b's own build-list item 9, now with a real design to
+  build to instead of an open question.
+
+**Practical effect on Slice 4a's own temporary bridge file:** it stays as built for now (it is
+still needed by consumers that haven't been updated yet — `run_loop`'s conformance branch,
+until 4b restructures it; `verdict-interpreter/SKILL.md`), but should be understood as
+scaffolding to be retired once branches 2 and 3 above are rebuilt to consume the real
+per-variant fan-out directly, not extended or relied upon further.
+
+---
+
 ## Paste-ready Linear comment
 
 **E-033.1 S1 (Slice 4: three variants through the protocol) — characterization complete
