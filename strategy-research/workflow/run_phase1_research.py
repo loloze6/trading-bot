@@ -1232,8 +1232,29 @@ async def run_tool_worker(stage_name: str, run_id: str):
 
         for variant_id in sorted(validated):
             vinfo = validated[variant_id]
-            variant_config_path = RUN_DIR / vinfo["config_path"]
             trial_id = f"{run_id}:{variant_id}"
+            # CODE-REVIEW FIX (2026-09-22): every other failure mode in this
+            # loop (non-zero exit, missing summary, parse error, trial-write
+            # failure) is wrapped and recorded via _record_failed_backtest_trial
+            # before continuing -- this dict access was not, so a validated
+            # index.yaml entry missing 'config_path' (e.g. a race/staleness
+            # edit between routing and this stage running) raised an
+            # uncaught KeyError with ZERO trial-ledger accounting for that
+            # variant's attempted look, breaking the same H4-core invariant
+            # this branch otherwise enforces everywhere else.
+            _config_path_val = vinfo.get("config_path")
+            if not _config_path_val:
+                try:
+                    _record_failed_backtest_trial(
+                        run_id, RUN_DIR / "artifacts" / "variants" / variant_id,
+                        f"variant '{variant_id}' is 'validated' in index.yaml but has no "
+                        "'config_path' -- refusing to guess a path", trial_id=trial_id)
+                except Exception as _rec_err:
+                    print(f"⚠️  H4: could not record failed-backtest trial for {trial_id}: {_rec_err}")
+                print(f"⚠️  protocol_execution: variant '{variant_id}' has no config_path in "
+                      "index.yaml; continuing with remaining variants.")
+                continue
+            variant_config_path = RUN_DIR / _config_path_val
             variant_artifacts_dir = ARTIFACTS / "variants" / variant_id
             variant_artifacts_dir.mkdir(parents=True, exist_ok=True)
             variant_run_dir = RUN_DIR / "variants" / variant_id
@@ -1333,6 +1354,19 @@ async def run_tool_worker(stage_name: str, run_id: str):
         # artifacts/ paths. Not per-variant here; see this branch's own
         # header comment.
         _rep_summary = base_summary if base_summary is not None else next(iter(per_variant_summaries.values()))
+        if base_summary is None:
+            # CODE-REVIEW FIX (2026-09-22): Decision B's bridge file
+            # (artifacts/protocol_result.yaml, singular) was previously only
+            # written inside the per-variant loop's own base-success branch
+            # -- if base failed while a sibling variant succeeded, the
+            # bridge file was never written at all, breaking every existing
+            # singular-file reader this decision exists to keep working
+            # (run_loop's conformance branch, build_reports.py, verdict-
+            # interpreter/SKILL.md). Write it here from the same
+            # already-computed representative summary the C7 step below
+            # uses, so the bridge file always exists whenever ANY variant
+            # succeeded, not only when base specifically did.
+            save_yaml(ARTIFACTS / "protocol_result.yaml", _rep_summary)
         _tools_path = str(Path(__file__).parent.parent / "tools")
         if _tools_path not in sys.path:
             sys.path.insert(0, _tools_path)
@@ -1341,13 +1375,32 @@ async def run_tool_worker(stage_name: str, run_id: str):
         _pre_reg_for_eval = load_yaml(_pre_reg_path) if _pre_reg_path.exists() else {}
         _brief_path = ARTIFACTS / "research_brief.yaml"
         _brief_for_eval = (load_yaml(_brief_path) if _brief_path.exists() else {}) or {}
-        _pass_rule_eval = _vce.evaluate_pass_rule_criteria(
-            _rep_summary, _pre_reg_for_eval or {}, _brief_for_eval)
-        _pass_rule_eval["evaluated_at"] = datetime.now(timezone.utc).isoformat()
-        _pass_rule_eval["evaluator_version"] = 2
-        save_yaml(ARTIFACTS / "pass_rule_evaluation.yaml", _pass_rule_eval)
-        _pre_reg_result = _pass_rule_eval.get("result")
-        print(f"✅ [C7] pass_rule_evaluation.yaml written (base variant): result={_pre_reg_result}")
+        # CODE-REVIEW FIX (2026-09-22): this block used to run completely
+        # unguarded, unlike the grid/reports blocks right below it in this
+        # same branch. By this point every succeeded variant's trial has
+        # ALREADY been recorded (inside the per-variant loop above) -- a
+        # crash here previously left N clean trial rows with
+        # pass_rule_evaluation.yaml (a REQUIRED input for verdict_interpreter)
+        # permanently missing and no signal that anything went wrong. Same
+        # isolation pattern as the grid/reports blocks: log loudly, never
+        # re-raise, never touch the already-recorded trials -- a bug in this
+        # write is not evidence the backtest(s) failed.
+        try:
+            _pass_rule_eval = _vce.evaluate_pass_rule_criteria(
+                _rep_summary, _pre_reg_for_eval or {}, _brief_for_eval)
+            _pass_rule_eval["evaluated_at"] = datetime.now(timezone.utc).isoformat()
+            _pass_rule_eval["evaluator_version"] = 2
+            save_yaml(ARTIFACTS / "pass_rule_evaluation.yaml", _pass_rule_eval)
+            _pre_reg_result = _pass_rule_eval.get("result")
+            print(f"✅ [C7] pass_rule_evaluation.yaml written (base variant): result={_pre_reg_result}")
+        except Exception as _c7_err:
+            print(f"⚠️  [C7] pass_rule_evaluation.yaml raised {type(_c7_err).__name__}: "
+                  f"{_c7_err} -- at least one variant's backtest already succeeded and is "
+                  "already recorded as a trial; pass_rule_evaluation.yaml is simply not "
+                  "written this run. Not re-raised: a C7 bug must never misrecord an "
+                  "already-successful trial as failed, but note this artifact is a "
+                  "REQUIRED input for verdict_interpreter -- this run cannot proceed "
+                  "past that stage until it exists.")
 
         # E-046b S2 (the grid). Dispatch step 5 / S1_FINDINGS.md §5 & §8: the
         # grid now receives a real N-column {variant_id: protocol_result}

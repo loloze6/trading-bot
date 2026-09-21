@@ -546,3 +546,173 @@ def test_mark_trial_invalidated_bare_run_id_still_works_for_non_variant_trials()
 
     state = rpr.load_campaign_state()
     assert state["trial_sharpes"][0].get("invalidated_artifact") is True
+
+
+# ---------------------------------------------------------------------------
+# CODE-REVIEW REGRESSIONS (2026-09-22)
+# ---------------------------------------------------------------------------
+
+def test_bridge_file_written_when_base_fails_but_a_sibling_succeeds(monkeypatch):
+    """CODE-REVIEW REGRESSION: Decision B's singular artifacts/protocol_result.yaml
+    bridge file used to be written ONLY inside the per-variant loop's own
+    base-success branch. If base's protocol run failed while a sibling
+    variant succeeded, the bridge file was never written at all -- breaking
+    every existing singular-file reader (run_loop's conformance branch,
+    build_reports.py, verdict-interpreter/SKILL.md) that Decision B exists
+    to keep working."""
+    _set_flag(rpr.ROOT, {
+        "config_direct_authoring": {"enabled": True},
+        "variant_loop": {"enabled": True},
+    })
+    root = rpr.ROOT
+    _write_protocol(root, "bridge_fail.json")
+    run_dir = _minimal_run(root, "run_950")
+    (run_dir / "artifacts" / "validation_protocol.yaml").write_text("{}", encoding="utf-8")
+    rpr._ensure_protocol_ref_pinned(run_dir, "run_950", {"protocol_ref": "protocols/bridge_fail.json"})
+    _write_three_variant_index(run_dir)
+
+    def _fake_subprocess_run(cmd, *args, **kwargs):
+        config_path = cmd[2]
+        variant_id = Path(config_path).parent.name
+        if variant_id == "base":
+            class _Fail:
+                returncode = 1
+                stdout = ""
+                stderr = "base config rejected"
+            return _Fail()
+        out_dir = Path(cmd[cmd.index("--out-dir") + 1])
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "protocol_summary.json").write_text(
+            rpr.json.dumps(_summary_for(variant_id)), encoding="utf-8")
+
+        class _Ok:
+            returncode = 0
+            stdout = ""
+            stderr = ""
+        return _Ok()
+
+    monkeypatch.setattr(rpr.subprocess, "run", _fake_subprocess_run)
+    asyncio.run(rpr.run_tool_worker("protocol_execution", "run_950"))
+
+    bridge_path = run_dir / "artifacts" / "protocol_result.yaml"
+    assert bridge_path.exists(), (
+        "the singular protocol_result.yaml bridge file must exist whenever ANY "
+        "variant succeeded, even when base specifically failed"
+    )
+    bridge = rpr.load_yaml(bridge_path)
+    assert bridge["config_sha256"] in ("sha-design_v2", "sha-asset_v2")
+
+    state = rpr.load_campaign_state()
+    trial_ids = {t["trial_id"] for t in state.get("trial_sharpes", [])}
+    assert "run_950:design_v2" in trial_ids
+    assert "run_950:asset_v2" in trial_ids
+
+
+def test_c7_failure_does_not_crash_the_stage_or_misrecord_already_successful_trials(monkeypatch):
+    """CODE-REVIEW REGRESSION: the C7 pass-rule evaluation block used to run
+    completely unguarded -- unlike the grid/reports blocks right below it in
+    the same branch. A crash there used to propagate uncaught out of
+    run_tool_worker even though every succeeded variant's trial was already
+    recorded, leaving clean trial rows with a permanently-missing required
+    artifact and no error signal beyond the crash itself. Must now log
+    loudly, never re-raise, and never touch the already-recorded trials."""
+    _set_flag(rpr.ROOT, {
+        "config_direct_authoring": {"enabled": True},
+        "variant_loop": {"enabled": True},
+    })
+    root = rpr.ROOT
+    _write_protocol(root, "c7_crash.json")
+    run_dir = _minimal_run(root, "run_951")
+    (run_dir / "artifacts" / "validation_protocol.yaml").write_text("{}", encoding="utf-8")
+    rpr._ensure_protocol_ref_pinned(run_dir, "run_951", {"protocol_ref": "protocols/c7_crash.json"})
+    _write_three_variant_index(run_dir)
+
+    def _fake_subprocess_run(cmd, *args, **kwargs):
+        config_path = cmd[2]
+        variant_id = Path(config_path).parent.name
+        out_dir = Path(cmd[cmd.index("--out-dir") + 1])
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "protocol_summary.json").write_text(
+            rpr.json.dumps(_summary_for(variant_id)), encoding="utf-8")
+
+        class _Ok:
+            returncode = 0
+            stdout = ""
+            stderr = ""
+        return _Ok()
+
+    monkeypatch.setattr(rpr.subprocess, "run", _fake_subprocess_run)
+
+    import verdict_criteria_evaluator as _vce
+    def _raise(*args, **kwargs):
+        raise RuntimeError("simulated C7 crash")
+    monkeypatch.setattr(_vce, "evaluate_pass_rule_criteria", _raise)
+
+    asyncio.run(rpr.run_tool_worker("protocol_execution", "run_951"))
+
+    assert not (run_dir / "artifacts" / "pass_rule_evaluation.yaml").exists(), (
+        "C7 genuinely failed -- the file must not exist, but the stage must not crash either"
+    )
+    state = rpr.load_campaign_state()
+    trial_ids = {t["trial_id"] for t in state.get("trial_sharpes", [])
+                 if t.get("source") == "backtest"}
+    assert {"run_951:base", "run_951:design_v2", "run_951:asset_v2"} <= trial_ids, (
+        "all 3 already-succeeded variant trials must remain recorded as successful, "
+        "unaffected by the downstream C7 crash"
+    )
+
+
+def test_variant_missing_config_path_recorded_as_failed_trial_not_uncaught_keyerror(monkeypatch):
+    """CODE-REVIEW REGRESSION: a validated index.yaml entry missing
+    'config_path' (e.g. a corrupted/hand-edited index between routing and
+    this stage running) used to raise an uncaught KeyError with ZERO
+    trial-ledger accounting -- the one failure mode in this loop that
+    wasn't wrapped like every other one."""
+    _set_flag(rpr.ROOT, {
+        "config_direct_authoring": {"enabled": True},
+        "variant_loop": {"enabled": True},
+    })
+    root = rpr.ROOT
+    _write_protocol(root, "missing_config_path.json")
+    run_dir = _minimal_run(root, "run_952")
+    (run_dir / "artifacts" / "validation_protocol.yaml").write_text("{}", encoding="utf-8")
+    rpr._ensure_protocol_ref_pinned(run_dir, "run_952", {"protocol_ref": "protocols/missing_config_path.json"})
+
+    variants_dir = run_dir / "artifacts" / "variants"
+    (variants_dir / "base").mkdir(parents=True, exist_ok=True)
+    (variants_dir / "base" / "strategy_config.json").write_text(rpr.json.dumps({"variant": "base"}), encoding="utf-8")
+    rpr.save_yaml(variants_dir / "index.yaml", {"variants": {
+        "base": {"status": "validated", "config_path": "artifacts/variants/base/strategy_config.json"},
+        "corrupted": {"status": "validated"},
+    }})
+
+    calls = []
+
+    def _fake_subprocess_run(cmd, *args, **kwargs):
+        calls.append(cmd)
+        out_dir = Path(cmd[cmd.index("--out-dir") + 1])
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "protocol_summary.json").write_text(
+            rpr.json.dumps(_summary_for("base")), encoding="utf-8")
+        class _Ok:
+            returncode = 0
+            stdout = ""
+            stderr = ""
+        return _Ok()
+
+    monkeypatch.setattr(rpr.subprocess, "run", _fake_subprocess_run)
+
+    asyncio.run(rpr.run_tool_worker("protocol_execution", "run_952"))
+
+    assert len(calls) == 1, "only 'base' should reach subprocess.run -- 'corrupted' has no config_path"
+
+    state = rpr.load_campaign_state()
+    failed = {t["trial_id"]: t for t in state.get("trial_sharpes", [])
+              if t.get("source") == "backtest_failed"}
+    assert "run_952:corrupted" in failed, (
+        "the missing-config_path variant must be recorded as a failed trial, "
+        "not silently dropped with an uncaught KeyError"
+    )
+    successful = {t["trial_id"] for t in state.get("trial_sharpes", [])
+                  if t.get("source") == "backtest"}
+    assert "run_952:base" in successful
