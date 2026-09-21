@@ -197,6 +197,31 @@ flags:
       slice that does not exist yet; until then a "refine" outcome still
       pauses for a human exactly as before.
 
+  - name: config_direct_authoring
+    kind: orchestrator_config
+    config_key: orchestrator.config_direct_authoring.enabled
+    reader: run_phase1_research._config_direct_authoring_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "E-056 slice 4 (end-to-end validation with a real LLM authoring pass -- no API budget in slice 3b's own environment)"
+    criterion: >
+      Landed 2026-09-21 (E-056 Slice 3b, delivery_plan_v26.md "skills +
+      orchestrator + patches"). Off by default: the mechanics (the new
+      strategy_config_authoring stage/skill, innovation-expansion's
+      variant_patches.yaml output, the JSON-pointer patch applier, the
+      conditional tool_stages membership, the new run_tool_worker branch) are
+      built and unit tested (tests/test_e056_config_direct_authoring.py),
+      flag-off byte-identity proven the same way every prior story in this
+      chain required. Held off_incomplete because the one real-LLM-pass
+      run budget this slice's own dispatch asked for (1a -> strategy_config_
+      authoring -> innovation_expansion's patches -> backtest_specification
+      -> protocol_execution on the base variant) could not be attempted --
+      no Gemini/Claude API key or network access was available in this
+      slice's build environment. Unlike grid_evaluation/category_reports
+      above (held back for "nothing would consume it yet"), this is an
+      unmet PROOF criterion, not an unmet consumer criterion -- the code
+      path has never been exercised end-to-end against a real model.
+
   - name: bar_equity
     kind: engine_param
     engine_default_files:

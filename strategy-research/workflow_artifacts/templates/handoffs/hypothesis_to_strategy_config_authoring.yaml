@@ -1,0 +1,43 @@
+handoff_version: 1
+run_id: "template"
+from_stage: hypothesis_generation
+to_stage: strategy_config_authoring
+assigned_engine: claude
+objective: >
+  E-056 Slice 3b (config-direct authoring). Produce ONE base strategy config (inside
+  backtest_spec.yaml) implementing the approved hypothesis, BEFORE variant expansion --
+  or declare a component_gap if the engine lacks a required piece. This stage only runs
+  when orchestrator.config_direct_authoring.enabled is true; it replaces
+  backtest-engineering's OLD position (post-validation, post-expansion) with an earlier
+  one (pre-expansion, right after hypothesis_generation).
+primary_input_artifact: artifacts/hypothesis_card.yaml
+required_inputs:
+  - path: artifacts/hypothesis_card.yaml
+    reason: the approved base hypothesis to implement -- no variant menu exists yet in this flow
+  - path: ../../docs/STRATEGY_DESIGN_GUIDE.md
+    reason: authoritative list of available components, transforms, regimes, parameters for this flow
+optional_inputs:
+  - path: ../../docs/DATA_AVAILABILITY.md
+    reason: forced-read whenever timeframe/symbol/venue differs from a prior config in this campaign
+  - path: ../../docs/WORKFLOW_CAPABILITIES.md
+    reason: confirms which signal variants are achievable via config vs require new code
+  - path: artifacts/findings_carryover.yaml
+    reason: if present, parameter_bracket midpoint is mandatory for the bracketed dimension
+  - path: artifacts/run_context.yaml
+    reason: if present with run_type=replication_diagnostic, output must exactly match source_run
+constraints:
+  - Use only components/transforms/regimes in STRATEGY_DESIGN_GUIDE.md.
+  - History-based transform ops precede scalar ops.
+  - Do not emit a selected_variant_id -- no variant menu exists at this point in this flow.
+  - Do not attempt to author a block_manifest.yaml or an instrument-set config field -- both are
+    proposed, not built (STRATEGY_DESIGN_GUIDE.md sections 7a/7c).
+deliverables:
+  - backtest_spec.yaml
+  - decision.yaml
+stop_conditions:
+  - A required component/transform/regime is missing -> decision.status = component_gap.
+notes_for_orchestrator:
+  - Routing reads decision.yaml.status (spec_ready | component_gap), same contract as the
+    flag-off backtest_specification stage's own decision.yaml -- see
+    determine_post_strategy_config_authoring_route(). spec_ready advances to
+    innovation_expansion (not protocol_execution -- that is the flag-off stage's own target).

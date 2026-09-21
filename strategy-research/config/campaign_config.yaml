@@ -481,6 +481,44 @@ orchestrator:
       # protocol_execution route is byte-identical to every run before
       # E-054 landed and to the old env-var-unset default -- proven by
       # tests/test_e054_stage_wiring.py's explicit-off byte-identity test.
+  config_direct_authoring:
+    enabled: false
+      # E-056 Slice 3b (delivery_plan_v26.md, "skills + orchestrator +
+      # patches"). OFF BY DEFAULT and read at runtime by
+      # run_phase1_research._config_direct_authoring_enabled() -- same shape
+      # as orchestrator.grid_evaluation.enabled above (a tenth explicit
+      # exception to this file's "declared parity only" rule, counting
+      # halt_policy.quarantine_enabled).
+      #
+      # While false, STAGE_CONFIGS["strategy_config_authoring"] is registered
+      # (unconditionally, same convention as data_availability_gate's own
+      # addition) but never routed to: hypothesis_generation's default_next
+      # stays "innovation_expansion", async_invoke_agent's tool_stages set
+      # stays exactly {"protocol_execution", "data_availability_gate"}, and
+      # every _apply_config_direct_authoring_context call is a no-op (the
+      # handoff dict is never mutated) -- byte-identical to before this
+      # feature existed. Proven by tests/test_e056_config_direct_authoring.py's
+      # flag-off byte-identity tests.
+      #
+      # While true: hypothesis_generation routes to the new
+      # strategy_config_authoring stage instead of straight to
+      # innovation_expansion; that stage authors ONE base strategy config
+      # (backtest_spec.yaml/decision.yaml, same contract backtest-engineering
+      # used at its OLD position). innovation_expansion then produces
+      # variant_patches.yaml (patches against that base config) instead of
+      # prose expanded_variants; the validation stage becomes naturally
+      # unreached (its registry entry and routing code stay intact, unused);
+      # backtest_specification joins the tool_stages set and applies each
+      # patch, validates it (validate_config.py, including VIOLATION V12),
+      # and writes one strategy_config.json per variant plus a 'base' variant
+      # copy at candidate_strategy_config.json, which the EXISTING
+      # data_availability_gate/protocol_execution tool branches then run
+      # against unmodified.
+      #
+      # Held off_incomplete (see feature_flag_register.yaml): built and unit
+      # tested this slice, but not yet proven end-to-end against a real LLM
+      # authoring pass (no Gemini/Claude API budget was available to run one
+      # in this slice's own environment -- see this slice's final report).
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------

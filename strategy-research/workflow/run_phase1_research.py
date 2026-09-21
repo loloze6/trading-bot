@@ -130,6 +130,18 @@ STAGE_CONFIGS = {
         "default_next": "innovation_expansion",
         "skill": "hypothesis-design",
     },
+    # E-056 Slice 3b (config-direct authoring, orchestrator.config_direct_authoring.enabled):
+    # registered UNCONDITIONALLY (same pattern as data_availability_gate's own addition --
+    # strategy-research/CLAUDE.md's stage-count note documents this convention) but only
+    # ROUTED to when the flag is on -- see run_loop's hypothesis_generation override. Sits
+    # between hypothesis_generation and innovation_expansion in this flow: it authors the BASE
+    # config innovation_expansion then patches into variants, reversing backtest-engineering's
+    # old post-expansion position.
+    "strategy_config_authoring": {
+        "handoff": "hypothesis_to_strategy_config_authoring.yaml",
+        "default_next": "innovation_expansion",
+        "skill": "strategy-config-authoring",
+    },
     "innovation_expansion": {
         "handoff": "hypothesis_to_innovation_expansion.yaml",
         # "required_outputs": [
@@ -742,6 +754,7 @@ def estimate_tokens(text: str) -> int:
 # run_claude_worker) so _build_stage_prompt can share it without duplication.
 _SKILL_MAP = {
     "hypothesis_generation": "hypothesis-design",
+    "strategy_config_authoring": "strategy-config-authoring",  # E-056 Slice 3b, config-direct-authoring flow only
     "innovation_expansion": "innovation-expansion",
     "validation": "quant-validation",
     "backtest_specification": "backtest-engineering",
@@ -1381,6 +1394,131 @@ async def run_tool_worker(stage_name: str, run_id: str):
             print(f"✅ Diagnostics verified: corr={diagnostics['median_forecast_return_corr']:.3f}, "
                   f"cost_drag={diagnostics['median_cost_drag_pct']:.1f}%, "
                   f"gross_pnl={diagnostics['median_gross_pnl']:.2f}")
+
+    elif stage_name == "backtest_specification":
+        # E-056 Slice 3b (config-direct authoring, orchestrator.config_direct_authoring.enabled):
+        # tool-only replacement for the LLM-authored backtest_specification stage. By the time
+        # this branch runs, strategy_config_authoring (1b, now BEFORE innovation_expansion in this
+        # flow) already wrote the BASE config into artifacts/backtest_spec.yaml, and
+        # innovation_expansion (Step 2, rewritten this slice) already wrote
+        # artifacts/variant_patches.yaml -- base + design patch + asset patch, each
+        # {variant_id, patch: [{path, value}], rationale}. This branch applies each variant's
+        # patch to the base config, validates the result (validate_config.py, which includes V12
+        # component-existence automatically), checks the optional manifest's declared paths
+        # resolve (gracefully skipped when no manifest exists -- the manifest contract,
+        # STRATEGY_DESIGN_GUIDE.md §7c, is not built yet), and writes one strategy_config.json
+        # per variant, plus a 'base' variant copy at candidate_strategy_config.json so the
+        # EXISTING data_availability_gate/protocol_execution tool branches above (both
+        # unmodified) can run against it exactly as they always have.
+        base_spec_path = ARTIFACTS / "backtest_spec.yaml"
+        base_spec = load_yaml(base_spec_path) if base_spec_path.exists() else None
+        if not base_spec or base_spec.get("status") != "spec_ready" or not base_spec.get("config"):
+            raise RuntimeError(
+                "run_tool_worker(backtest_specification): artifacts/backtest_spec.yaml is "
+                "missing, not spec_ready, or has no 'config' -- strategy_config_authoring must "
+                "complete successfully (status: spec_ready) before this tool stage can run."
+            )
+        base_config = base_spec["config"]
+
+        patches_path = ARTIFACTS / "variant_patches.yaml"
+        patches_doc = load_yaml(patches_path) if patches_path.exists() else None
+        if not patches_doc or not patches_doc.get("variants"):
+            raise RuntimeError(
+                "run_tool_worker(backtest_specification): artifacts/variant_patches.yaml is "
+                "missing or has no 'variants' -- innovation_expansion must write it before this "
+                "tool stage can run."
+            )
+
+        manifest_path = ARTIFACTS / "block_manifest.yaml"
+        manifest = load_yaml(manifest_path) if manifest_path.exists() else None
+
+        variants_dir = ARTIFACTS / "variants"
+        variants_dir.mkdir(parents=True, exist_ok=True)
+        index = {}
+        component_requests = []
+
+        for variant in patches_doc["variants"]:
+            variant_id = variant.get("variant_id") if isinstance(variant, dict) else None
+            if variant_id in index:
+                # CODE-REVIEW FIX (self-adversarial pass, E-056 Slice 3b): a duplicate
+                # variant_id would otherwise silently overwrite the first entry's result
+                # in `index` below -- the exact "silently wrong rather than loudly wrong"
+                # failure mode this slice's own dispatch asked to be checked for.
+                raise RuntimeError(
+                    f"run_tool_worker(backtest_specification): duplicate variant_id "
+                    f"'{variant_id}' in artifacts/variant_patches.yaml -- each variant_id "
+                    "must be unique, the second entry would silently overwrite the first's "
+                    "recorded result."
+                )
+            if not variant_id:
+                raise RuntimeError(
+                    "run_tool_worker(backtest_specification): a variant_patches.yaml entry is "
+                    f"missing 'variant_id' (entry: {variant!r})"
+                )
+
+            try:
+                variant_config = _apply_json_pointer_patch(base_config, variant.get("patch") or [])
+            except PatchApplicationError as e:
+                reason = f"patch application failed: {e}"
+                index[variant_id] = {"status": "not_tested", "reason": reason}
+                component_requests.append({"variant_id": variant_id, "reason": reason})
+                print(f"⚠️  [E-056 Slice3b] variant '{variant_id}' NOT TESTED: {reason}")
+                continue
+
+            missing_paths = _check_manifest_paths(variant_config, manifest) if manifest else []
+            if missing_paths:
+                reason = f"manifest paths unresolved: {missing_paths}"
+                index[variant_id] = {"status": "not_tested", "reason": reason}
+                component_requests.append({"variant_id": variant_id, "reason": reason})
+                print(f"⚠️  [E-056 Slice3b] variant '{variant_id}' NOT TESTED: {reason}")
+                continue
+
+            variant_dir = variants_dir / variant_id
+            variant_dir.mkdir(parents=True, exist_ok=True)
+            variant_config_path = variant_dir / "strategy_config.json"
+            with open(variant_config_path, "w", encoding="utf-8") as f:
+                json.dump(variant_config, f, indent=2)
+
+            validator = Path("..") / "trading-bot" / "tools" / "validate_config.py"
+            result = subprocess.run(
+                [str(TBOT_PYTHON), str(validator), str(variant_config_path)],
+                capture_output=True, text=True,
+            )
+            if result.returncode != 0:
+                report = (result.stdout + result.stderr).strip()
+                (variant_dir / "spec_validation_report.txt").write_text(report, encoding="utf-8")
+                reason = "validate_config.py violations"
+                index[variant_id] = {
+                    "status": "not_tested", "reason": reason,
+                    "config_path": str(variant_config_path.relative_to(RUN_DIR)),
+                    "report": report,
+                }
+                component_requests.append({"variant_id": variant_id, "reason": reason, "report": report})
+                print(f"⚠️  [E-056 Slice3b] variant '{variant_id}' NOT TESTED: {reason}")
+                continue
+
+            index[variant_id] = {
+                "status": "validated",
+                "config_path": str(variant_config_path.relative_to(RUN_DIR)),
+            }
+            if variant_id == "base":
+                with open(ARTIFACTS / "candidate_strategy_config.json", "w", encoding="utf-8") as f:
+                    json.dump(variant_config, f, indent=2)
+
+        save_yaml(variants_dir / "index.yaml", {"variants": index})
+        if component_requests:
+            requests_path = ROOT / "campaign_record" / "component_requests.yaml"
+            requests_path.parent.mkdir(parents=True, exist_ok=True)
+            existing = (load_yaml(requests_path) or {}) if requests_path.exists() else {}
+            existing_requests = existing.get("requests", [])
+            for req in component_requests:
+                existing_requests.append({"run_id": run_id, "stage": "backtest_specification", **req})
+            save_yaml(requests_path, {"requests": existing_requests})
+
+        validated_count = sum(1 for v in index.values() if v["status"] == "validated")
+        print(f"✅ [E-056 Slice3b] backtest_specification (config-direct authoring): "
+              f"{validated_count}/{len(index)} variants validated")
+
     else:
         raise ValueError(f"No tool implementation for stage: {stage_name}")
 
@@ -1804,6 +1942,93 @@ def _apply_stale_input_path_fix(stage_name: str, handoff: dict) -> None:
         corrected = fixes.get(req.get("path"))
         if corrected:
             req["path"] = corrected
+
+
+# ---------------------------------------------------------------------------
+# E-056 Slice 3b (config-direct authoring). OFF BY DEFAULT, same shape as
+# every other orchestrator.<name>.enabled flag above (silence is never a
+# green light). When on:
+#   - hypothesis_generation routes to the new strategy_config_authoring stage
+#     instead of straight to innovation_expansion (see run_loop).
+#   - hypothesis_generation and innovation_expansion each receive one new
+#     file-presence signal in required_inputs (see _apply_config_direct_
+#     authoring_context below) -- the LLM cannot read this config flag
+#     directly, so its effect on a skill's own behavior is always signaled
+#     by which files are present in context, the same convention
+#     _apply_exclusion_digest_input/_apply_stale_input_path_fix already use.
+#   - innovation_expansion's ADMIT routing target becomes backtest_specification
+#     instead of validation (validation becomes naturally unreached, not
+#     deleted -- see run_loop's innovation_expansion branch).
+#   - backtest_specification joins async_invoke_agent's tool_stages set,
+#     becoming a deterministic run_tool_worker branch instead of an LLM call.
+# ---------------------------------------------------------------------------
+
+_CONFIG_DIRECT_AUTHORING_CONTEXT_STAGES = {"hypothesis_generation", "innovation_expansion"}
+
+
+def _config_direct_authoring_enabled() -> bool:
+    """False (no behavior change) when the key, the section, or the config
+    file is absent -- same silence-is-never-a-green-light rule as
+    _exclusion_digest_input_enabled()/_stale_input_path_fix_enabled() above
+    (this is NOT the one inverted-default flag in this file -- that is
+    _data_availability_gate_enabled() alone; see its own docstring for why
+    it's the deliberate exception)."""
+    path = ROOT / "config" / "campaign_config.yaml"
+    if not path.exists():
+        return False
+    with open(path, encoding="utf-8") as f:
+        cfg = yaml.safe_load(f) or {}
+    cda_cfg = ((cfg.get("orchestrator") or {}).get("config_direct_authoring") or {})
+    return bool(cda_cfg.get("enabled", False))
+
+
+def _apply_config_direct_authoring_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
+    """Union the config-direct-authoring flow's file-presence signals into
+    required_inputs for the two stages whose SKILL.md prose branches on
+    them (hypothesis-design IMPROVEMENT 07/08, innovation-expansion
+    IMPROVEMENT 07) -- config/criterion_menu.yaml + config/cost_model.yaml
+    for hypothesis_generation, artifacts/backtest_spec.yaml (strategy_config_
+    authoring's own output, written before innovation_expansion runs in this
+    flow) for innovation_expansion. Required, not optional: unlike the
+    exclusion digest (raw material a stage may or may not find), these files
+    are the entire point of the flow's own new skill sections when the flag
+    is on -- a stage silently proceeding without them would defeat IMPROVEMENT
+    07/08 rather than degrade gracefully.
+
+    Flag OFF (the default): no-op -- the handoff dict is never mutated, so
+    _build_stage_prompt's assembled prompt is byte-identical to before this
+    function existed, same acceptance bar as every other _apply_* helper in
+    this module."""
+    if stage_name not in _CONFIG_DIRECT_AUTHORING_CONTEXT_STAGES:
+        return
+    if not _config_direct_authoring_enabled():
+        return
+    required = handoff.setdefault("required_inputs", [])
+    existing_paths = {req["path"] for req in required}
+
+    def _add(path: str, reason: str) -> None:
+        if path in existing_paths:
+            return
+        required.append({"path": path, "reason": reason})
+        existing_paths.add(path)
+
+    if stage_name == "hypothesis_generation":
+        _add(
+            "../../config/criterion_menu.yaml",
+            "E-056 Slice 3b IMPROVEMENT 07: pre-register pass/fail criteria here, at 1a, "
+            "picked from this menu's live entries only.",
+        )
+        _add(
+            "../../config/cost_model.yaml",
+            "E-056 Slice 3b IMPROVEMENT 07: populate cost_feasibility from round_trip_cost_bps "
+            "here (relocated from quant-validation, which this flow does not invoke).",
+        )
+    elif stage_name == "innovation_expansion":
+        _add(
+            "artifacts/backtest_spec.yaml",
+            "E-056 Slice 3b IMPROVEMENT 07: strategy_config_authoring's base config -- "
+            "variant_patches.yaml's patches are diffs against this file's 'config' field.",
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -2482,6 +2707,11 @@ def _route_post_variant_selection(run_dir: Path, run_id: str) -> str | None:
 
 async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | None = None):
     tool_stages = {"protocol_execution", "data_availability_gate"}
+    # E-056 Slice 3b: backtest_specification joins the tool stages ONLY when
+    # config-direct authoring is on -- flag off, it still routes through the
+    # engine=="claude" LLM path below exactly as before this slice existed.
+    if _config_direct_authoring_enabled():
+        tool_stages = tool_stages | {"backtest_specification"}
     if stage_name in tool_stages:
         await run_tool_worker(stage_name, run_id)
         return
@@ -2505,6 +2735,9 @@ async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | 
 
     # E-032 S2c: carry the previous gate-refusal reason into a retry, off by default (see helper docstring above).
     _apply_anti_adjacency_retry_context(stage_name, handoff, RUN_DIR)
+
+    # E-056 Slice 3b: criterion-menu/cost-model/base-config file-presence signals, off by default (see helper docstring above).
+    _apply_config_direct_authoring_context(stage_name, handoff, RUN_DIR)
 
     # Select engine from handoff file, default to Claude if not specified
     engine = handoff.get("assigned_engine", "claude")
@@ -6231,6 +6464,186 @@ def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
     raise ValueError(f"Unknown campaign_review recommendation: {rec}")
 
 
+def determine_post_strategy_config_authoring_route(path: Path):
+    """Routing for the new strategy_config_authoring stage (E-056 Slice 3b,
+    config-direct authoring). Mirrors determine_post_spec_route's shape
+    exactly -- same decision.yaml contract (status spec_ready|component_gap)
+    -- but the success target is innovation_expansion, not protocol_execution:
+    strategy_config_authoring runs BEFORE innovation_expansion in this flow
+    (it authors the BASE config that innovation_expansion patches into
+    variants), where backtest-engineering used to run AFTER it and pick one
+    variant from an already-expanded menu."""
+    KNOWN_STATUSES = {"spec_ready", "component_gap"}
+    decision = load_yaml(path / "artifacts" / "decision.yaml")
+    status = decision.get("status", "").strip().lower()
+    if status == "spec_ready":
+        return "innovation_expansion"
+    if status == "component_gap":
+        update_state(path=path, status="paused_for_human")
+        print("\n⏸️ COMPONENT GAP: hypothesis needs an engine piece that does not exist. "
+              "See artifacts/decision.yaml; extend the engine per STRATEGY_EXTENDING.md, then resume.")
+        return "human_pause"
+    if status not in KNOWN_STATUSES:
+        update_state(path=path, status="paused_for_human")
+        print(f"\n⏸️ UNEXPECTED STATUS '{status}' from strategy_config_authoring — "
+              f"SKILL.md may need a new status case, or this run had bad inputs. "
+              f"Rationale: {decision.get('rationale', '<none>')}")
+        return "human_pause"
+
+
+class PatchApplicationError(Exception):
+    """Raised by _apply_json_pointer_patch on any patch that cannot be
+    applied cleanly -- never silently no-opped, per this project's own
+    'fail loud, not flattering' rule."""
+
+
+def _split_json_pointer(path: str) -> list:
+    """RFC 6901 tokenization: '/' splits, '~1' -> '/' and '~0' -> '~' unescaped
+    per segment. Raises PatchApplicationError on anything that isn't a
+    non-empty string starting with '/'."""
+    if not path or not isinstance(path, str) or not path.startswith("/"):
+        raise PatchApplicationError(
+            f"'{path!r}' is not a valid JSON Pointer -- must be a non-empty string starting with '/'"
+        )
+    segments = [seg.replace("~1", "/").replace("~0", "~") for seg in path.split("/")[1:]]
+    if not segments:
+        raise PatchApplicationError(f"'{path}' has no segments after the leading '/'")
+    return segments
+
+
+def _apply_json_pointer_patch(base_config: dict, patch: list) -> dict:
+    """Apply a list of {path, value} JSON-Pointer (RFC 6901) set-operations to
+    a DEEP COPY of base_config (base_config itself is never mutated -- every
+    variant patches from the same pristine base), returning the patched copy.
+
+    Semantics (E-056 Slice 3b, deliberately chosen -- see this slice's own
+    final report for the adversarial-review question this answers): a patch
+    entry SETS the value at 'path'. The path's PARENT container must already
+    exist in the config -- a patch targeting a path whose parent doesn't
+    exist RAISES PatchApplicationError; it never silently creates a new
+    nested chain of dicts and never silently no-ops. Only the FINAL segment
+    of a path may be new (adding a key that doesn't exist yet under an
+    EXISTING parent dict, or appending to a list via the RFC 6901 '-' token).
+    A list segment must be a base-10 integer index in range, or (for the
+    final segment only) the literal '-'; anything else raises."""
+    import copy as _copy
+    result = _copy.deepcopy(base_config)
+    for i, op in enumerate(patch):
+        path = op.get("path") if isinstance(op, dict) else None
+        if "value" not in (op or {}):
+            raise PatchApplicationError(f"patch[{i}] ({path}): missing required 'value' key")
+        segments = _split_json_pointer(path)
+        parent = result
+        for seg in segments[:-1]:
+            if isinstance(parent, dict):
+                if seg not in parent:
+                    raise PatchApplicationError(
+                        f"patch[{i}] ({path}): parent segment '{seg}' does not exist in the base "
+                        "config -- a patch may only set a NEW leaf key under an EXISTING parent, "
+                        "never create a new nested chain."
+                    )
+                parent = parent[seg]
+            elif isinstance(parent, list):
+                try:
+                    idx = int(seg)
+                except ValueError:
+                    raise PatchApplicationError(f"patch[{i}] ({path}): '{seg}' is not a valid list index")
+                if not (0 <= idx < len(parent)):
+                    raise PatchApplicationError(
+                        f"patch[{i}] ({path}): list index {idx} out of range (len={len(parent)})"
+                    )
+                parent = parent[idx]
+            else:
+                raise PatchApplicationError(
+                    f"patch[{i}] ({path}): cannot descend into a {type(parent).__name__} at segment '{seg}'"
+                )
+        leaf = segments[-1]
+        if isinstance(parent, dict):
+            parent[leaf] = op["value"]
+        elif isinstance(parent, list):
+            if leaf == "-":
+                parent.append(op["value"])
+            else:
+                try:
+                    idx = int(leaf)
+                except ValueError:
+                    raise PatchApplicationError(f"patch[{i}] ({path}): '{leaf}' is not a valid list index or '-'")
+                if not (0 <= idx < len(parent)):
+                    raise PatchApplicationError(
+                        f"patch[{i}] ({path}): list index {idx} out of range (len={len(parent)})"
+                    )
+                parent[idx] = op["value"]
+        else:
+            raise PatchApplicationError(f"patch[{i}] ({path}): cannot set a key on a {type(parent).__name__}")
+    return result
+
+
+def _json_pointer_exists(config, path: str) -> bool:
+    """True iff the RFC 6901 pointer 'path' resolves inside config. Never
+    raises -- an invalid pointer simply does not exist."""
+    try:
+        segments = _split_json_pointer(path)
+    except PatchApplicationError:
+        return False
+    node = config
+    for seg in segments:
+        if isinstance(node, dict):
+            if seg not in node:
+                return False
+            node = node[seg]
+        elif isinstance(node, list):
+            try:
+                idx = int(seg)
+            except ValueError:
+                return False
+            if not (0 <= idx < len(node)):
+                return False
+            node = node[idx]
+        else:
+            return False
+    return True
+
+
+def _check_manifest_paths(variant_config: dict, manifest: dict) -> list:
+    """Returns the manifest-declared config_paths (STRATEGY_DESIGN_GUIDE.md
+    §7c's block.config_paths) that do NOT resolve in variant_config.
+    Gracefully returns [] when the manifest has no block.config_paths list at
+    all -- the manifest contract is proposed, not built (§7c), so most runs
+    will carry no manifest, or an empty one, and that alone is not a
+    failure."""
+    config_paths = ((manifest or {}).get("block") or {}).get("config_paths") or []
+    return [p for p in config_paths if not _json_pointer_exists(variant_config, p)]
+
+
+def _route_post_config_direct_backtest_specification(run_dir: Path) -> str:
+    """Routing for the config-direct-authoring flow's tool-only
+    backtest_specification stage. By the time run_loop reaches this branch,
+    run_tool_worker's own "backtest_specification" branch (below) has already
+    applied variant_patches.yaml's patches to strategy_config_authoring's
+    base config, validated each variant, and written
+    artifacts/variants/index.yaml. Mirrors determine_post_spec_route's shape
+    (spec_ready -> data_availability_gate/protocol_execution, component_gap
+    -> human_pause) but reads the per-variant index instead of a single
+    decision.yaml, since config-direct authoring produces N pursued variants
+    per run, not one selected variant -- see S2_FINDINGS.md §7 on why
+    _record_variant_selection's single-selected-variant model does not apply
+    here."""
+    index = load_yaml(run_dir / "artifacts" / "variants" / "index.yaml") or {}
+    variants = index.get("variants", {})
+    base = variants.get("base")
+    if base is None or base.get("status") != "validated":
+        update_state(path=run_dir, status="paused_for_human")
+        print(
+            "\n⏸️ CONFIG-DIRECT AUTHORING: the 'base' variant is missing or failed "
+            "validation. See artifacts/variants/index.yaml and "
+            "campaign_record/component_requests.yaml."
+        )
+        return "human_pause"
+    if _data_availability_gate_enabled():
+        return "data_availability_gate"
+    return "protocol_execution"
+
+
 def determine_post_spec_route(path: Path):
     KNOWN_STATUSES = {"spec_ready", "component_gap"}
     decision = load_yaml(path / "artifacts" / "decision.yaml")
@@ -6474,7 +6887,15 @@ def run_loop(run_id: str):
 
             # 5. Handle Dynamic Routing & Counters
             next_stage = config["default_next"]
-            
+
+            # E-056 Slice 3b: config-direct authoring inserts strategy_config_authoring
+            # between hypothesis_generation and innovation_expansion. Flag off: next_stage
+            # stays config["default_next"] ('innovation_expansion'), untouched. A separate
+            # `if`, not folded into the elif chain below, since current_stage can never be
+            # both "hypothesis_generation" and "validation"/etc. at once.
+            if current_stage == "hypothesis_generation" and _config_direct_authoring_enabled():
+                next_stage = "strategy_config_authoring"
+
             if current_stage == "validation":
                 next_stage = determine_post_validation_route(RUN_DIR) # Used to trigger state of refinement until (Artifact State is validated OR max refinement reached OR rejected)
                 # E-039 S4: a "refine" verdict can now itself resolve to
@@ -6485,6 +6906,14 @@ def run_loop(run_id: str):
                 if next_stage == "human_pause":
                     break # Break the while loop to stop the script cleanly
 
+            elif current_stage == "strategy_config_authoring":
+                # E-056 Slice 3b: only reached when config_direct_authoring is on --
+                # nothing routes here otherwise (see the override above and
+                # STAGE_CONFIGS's own registration comment).
+                next_stage = determine_post_strategy_config_authoring_route(RUN_DIR)
+                if next_stage == "human_pause":
+                    break
+
             elif current_stage == "innovation_expansion":
                 # E-032 S2c: anti-adjacency gate + retry/escalate policy, off by
                 # default (see _route_post_innovation_expansion's own docstring).
@@ -6493,6 +6922,24 @@ def run_loop(run_id: str):
                 next_stage = _route_post_innovation_expansion(RUN_DIR, run_id, state)
                 if next_stage == "human_pause":
                     break # Break the while loop to stop the script cleanly, same as every other human-in-the-loop stop below
+                # E-056 Slice 3b: under config-direct authoring, the validation stage
+                # becomes naturally unreached (not deleted) -- redirect its ADMIT
+                # target straight to the tool-only backtest_specification stage instead.
+                # Only overrides the specific 'validation' outcome; any other
+                # _route_post_innovation_expansion result (human_pause, a retry back to
+                # hypothesis_generation) is untouched.
+                if next_stage == "validation" and _config_direct_authoring_enabled():
+                    next_stage = "backtest_specification"
+
+            elif current_stage == "backtest_specification" and _config_direct_authoring_enabled():
+                # E-056 Slice 3b: tool-only path. run_tool_worker's own
+                # "backtest_specification" branch (via async_invoke_agent's tool_stages,
+                # see above) already applied variant_patches.yaml's patches, validated
+                # each variant, and wrote artifacts/variants/index.yaml -- this only
+                # decides where to route next.
+                next_stage = _route_post_config_direct_backtest_specification(RUN_DIR)
+                if next_stage == "human_pause":
+                    break
 
             elif current_stage == "backtest_specification":
                 next_stage = determine_post_spec_route(RUN_DIR)

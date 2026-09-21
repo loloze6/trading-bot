@@ -28,6 +28,14 @@ The artifact must include, IN THIS ORDER:
 8. assumptions
 9. expected_failure_modes
 
+Config-direct-authoring flow only (signaled by `config/criterion_menu.yaml` being present
+in your context — see IMPROVEMENT 07/08 below, you cannot read the orchestrator flag
+directly) additionally requires, when not a pass-through candidate (IMPROVEMENT 08):
+`criteria` (from `config/criterion_menu.yaml`) and `cost_feasibility` (relocated from
+`quant-validation/SKILL.md`, see IMPROVEMENT 07). These are absent entirely — not merely
+empty — when that file is absent from your context; this skill produces exactly the
+9-field card above in that case, unchanged.
+
 ---
 
 ## IMPROVEMENT 01 — Edge-Source Declaration (A1.1–A1.3)
@@ -302,6 +310,93 @@ literature figure, not "seems reasonable."
 
 ---
 
+## IMPROVEMENT 07 — Criteria & Cost Feasibility (config-direct-authoring flow only, E-056 Slice 3b)
+
+**Optional, signaled by input presence — same convention as IMPROVEMENT 05's exclusion-digest section above.**
+`config/criterion_menu.yaml` and `config/cost_model.yaml` are unioned into your required inputs ONLY when
+`orchestrator.config_direct_authoring.enabled` is true (see `run_phase1_research._apply_config_direct_authoring_
+context`). You cannot read that config flag directly — check for these two files in your provided context
+instead. **If `config/criterion_menu.yaml` is absent from your context, this section (and IMPROVEMENT 08 below)
+does not apply — proceed exactly as this skill has always worked, do not populate `criteria` or
+`cost_feasibility` on `hypothesis_card.yaml`.** If it IS present, populate both fields as described below.
+
+### Criteria (pre-registered from `config/criterion_menu.yaml`)
+
+The config-direct-authoring flow pre-registers pass/fail criteria HERE, at 1a, instead of deriving them later in
+a separate validation pass. `config/criterion_menu.yaml` is the anchor table — same "pick from this table, don't
+free-hand" discipline as the `plausible_ic_upper` table above (A8.6). As of this slice it has exactly two LIVE
+entries: `realized_edge_to_cost_ratio` (pooled, `>` 0.3, scale-free) and `sign_consistent_by_era` (window,
+sign-consistency-by-era reducer). Two more (`residual_ic`, `gated_beats_ungated`) are commented out, blocked on
+later composition work — do not reference them; a criterion naming an unresolvable id fails at evaluation time,
+not gracefully.
+
+```yaml
+criteria:
+  - id: realized_edge_to_cost_ratio   # or sign_consistent_by_era, or both
+    # field overrides only if the menu's own default doesn't fit this hypothesis
+    # (e.g. sign_consistent_by_era's metric override — see the menu file's own comment)
+```
+
+Pick from the menu by `id`; do not invent a `metric`/`source`/`reducer`/`comparator`/`threshold` combination
+that isn't in the menu. If neither live entry meaningfully evaluates this hypothesis's claim, say so explicitly
+in `rationale` rather than forcing a criterion that doesn't fit — an honestly-scoped hypothesis with a thin
+criteria list is better than a criterion picked to look complete.
+
+### Cost feasibility (relocated from `quant-validation/SKILL.md` Improvement 09)
+
+**Correction to the delivery plan's own framing (S2_FINDINGS.md §2):** only THIS check — cost-feasibility,
+`quant-validation/SKILL.md`'s Improvement 09 — needed relocating here. The "daily-feed timing" check the plan
+also named was never in `quant-validation`; it has lived in THIS skill (A1.3 Spirit check, above) all along. Do
+not duplicate it here a second time looking for a section that was never moved.
+
+Populate from `config/cost_model.yaml` (round_trip_cost_bps per symbol) — identical content and rubric to
+`quant-validation/SKILL.md`'s Improvement 09, reproduced here verbatim since that skill's own copy is retired
+for config-direct-authoring runs (quant-validation itself is not invoked at all in this flow — see this
+project's own delivery-plan note that the `validation` stage becomes unreached, not deleted, when the flag is
+on):
+
+```yaml
+cost_feasibility:
+  assumed_round_trip_cost_bps: <from cost_model.yaml for primary symbol, e.g. 17.0 for BTCUSDT>
+  expected_holding_bars:
+    min: <minimum holding period from signal class and timeframe>
+    max: <maximum holding period from signal class and timeframe>
+  expected_trades_per_window: <implied count given holding period and any regime gating>
+  required_gross_edge_bps_per_trade: <= 2 × assumed_round_trip_cost_bps>
+  plausibility: <plausible | marginal | implausible>
+  plausibility_rationale: "<must cite the signal class and timeframe>"
+```
+
+**Hard rule (unchanged from quant-validation's own):** `plausibility: implausible` → do not add this hypothesis
+to the run queue. Route it to `feed_wishlist.yaml` (if a data gap is the fix) or drop it from the queue with the
+reason stated in `rationale` (if no architectural fix is viable). Do not hardcode fee/spread numbers — always
+read from `config/cost_model.yaml`.
+
+**What this relocation does NOT replace:** `quant-validation/SKILL.md`'s other content — `bias_risks`,
+enumerated `failure_modes` (beyond this card's own `expected_failure_modes` field, required regardless of the
+flag), and `sample_split_design` (walk-forward window layout) — is NOT relocated anywhere by this slice. Under
+`orchestrator.config_direct_authoring.enabled`, the `validation` stage is unreached (see the orchestrator's own
+flag documentation) and nothing else in this flow performs that adversarial pressure-test. This is a real,
+inherited scope boundary from this slice's own dispatch (relocate ONLY cost-feasibility), not an oversight —
+flagged here so a future slice looking to close the gap has a named starting point, not a silent one.
+
+## IMPROVEMENT 08 — Pass-through candidates (config-direct-authoring flow only, E-056 Slice 3b)
+
+**Same file-presence signal as IMPROVEMENT 07 above (`config/criterion_menu.yaml` in your context) — skip this
+section entirely if that file is absent.** If `research_brief.yaml` (or an
+attached `candidate` block within it) already carries a fully-formed `config`, `manifest`, `criteria`, and
+`source` — i.e. the hypothesis, its base config, and its pass criteria were already authored upstream of this
+pipeline (by a human operator, or by a prior campaign artifact being re-run) — do NOT re-derive `edge_source`,
+`signal_concept`, or `criteria` from scratch. Copy the supplied fields through into `hypothesis_card.yaml`
+verbatim, set `pass_through: true` at the card's top level, and state in `rationale` that this card is a
+pass-through, naming the source. `strategy_config_authoring` (the next stage in this flow) reads this same flag
+and, when true, copies the supplied `config` through as its own `backtest_spec.yaml` output rather than
+re-authoring one — see that skill's own required-inputs note. A candidate missing ANY of the four fields
+(`config`, `manifest`, `criteria`, `source`) is NOT a pass-through candidate — author it normally through
+IMPROVEMENT 01/04/07 above; a partial pass-through is a silent gap-filling trap, not a shortcut.
+
+---
+
 ## Checklist
 - Read `config/available_feeds.yaml` before touching `evidence_type`.
 - Read `config/indicator_library.yaml` before finalizing `signal_concept`. (Improvement 04)
@@ -319,6 +414,9 @@ literature figure, not "seems reasonable."
 - State the idea in a way that can be tested without unavailable data.
 - Include at least 3 failure modes.
 - Prefer hypotheses that can be integrated as a minimal change in the current strategy architecture.
+- **Config-direct-authoring flow only:** pick `criteria` from `config/criterion_menu.yaml`'s live entries only
+  (IMPROVEMENT 07); populate `cost_feasibility` from `config/cost_model.yaml` (IMPROVEMENT 07); check for a
+  pass-through candidate (IMPROVEMENT 08) before authoring from scratch.
 
 ## Forbidden
 - Do not write `signal_concept` before `edge_source` is complete.
@@ -336,6 +434,10 @@ literature figure, not "seems reasonable."
   in context. (Improvement 05)
 - Do not treat digest absence as evidence of a fresh search space — it may simply mean
   `orchestrator.exclusion_digest_input.enabled` is off. (Improvement 05)
+- **Config-direct-authoring flow only:** do not invent a criterion id, metric, source, or reducer outside
+  `config/criterion_menu.yaml`'s live entries (Improvement 07). Do not hardcode cost numbers — read
+  `config/cost_model.yaml` (Improvement 07). Do not re-derive `edge_source`/`signal_concept`/`criteria` for a
+  candidate that already qualifies as a pass-through (Improvement 08) — copy it through instead.
 
 ## Context rule
-Read `research_brief.yaml`, `config/available_feeds.yaml`, `feed_wishlist.yaml`, `config/indicator_library.yaml`, and, when present, `campaign_record/exclusion_digest.yaml` and `campaign_record/campaign_knowledge_base.yaml`. Do not read other files unless the handoff explicitly requires them.
+Read `research_brief.yaml`, `config/available_feeds.yaml`, `feed_wishlist.yaml`, `config/indicator_library.yaml`, and, when present, `campaign_record/exclusion_digest.yaml` and `campaign_record/campaign_knowledge_base.yaml`. Config-direct-authoring flow only: also read `config/criterion_menu.yaml` and `config/cost_model.yaml` (Improvement 07). Do not read other files unless the handoff explicitly requires them.

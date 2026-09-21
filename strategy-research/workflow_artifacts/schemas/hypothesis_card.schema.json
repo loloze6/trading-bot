@@ -163,6 +163,36 @@
         }
       },
       "additionalProperties": false
+    },
+    "criteria": {
+      "type": "array",
+      "description": "E-056 Slice 3b IMPROVEMENT 07 (config-direct-authoring flow only): pre-registered pass/fail criteria picked from config/criterion_menu.yaml's live entries. Absent entirely, not empty, when that flow is not in use.",
+      "items": { "type": "object" }
+    },
+    "cost_feasibility": {
+      "type": "object",
+      "description": "E-056 Slice 3b IMPROVEMENT 07 (config-direct-authoring flow only): relocated from quant-validation/SKILL.md's own Improvement 09. Same shape as validation_protocol.schema.json's cost_feasibility block.",
+      "properties": {
+        "assumed_round_trip_cost_bps": { "type": "number" },
+        "expected_holding_bars": {
+          "type": "object",
+          "properties": {
+            "min": { "type": "integer" },
+            "max": { "type": "integer" }
+          }
+        },
+        "expected_trades_per_window": { "type": ["integer", "number"] },
+        "required_gross_edge_bps_per_trade": { "type": "number" },
+        "plausibility": {
+          "type": "string",
+          "enum": ["plausible", "marginal", "implausible"]
+        },
+        "plausibility_rationale": { "type": "string" }
+      }
+    },
+    "pass_through": {
+      "type": "boolean",
+      "description": "E-056 Slice 3b IMPROVEMENT 08 (config-direct-authoring flow only): true when this card's config/manifest/criteria/source were supplied upstream, already fully authored, and simply copied through rather than derived."
     }
   },
   "additionalProperties": false
