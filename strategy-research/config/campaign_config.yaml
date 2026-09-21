@@ -423,6 +423,33 @@ orchestrator:
       # config/feature_flag_register.yaml) until the operator ratifies real
       # thresholds and a daily-return figure exists somewhere in the pipeline
       # for that one bar to read.
+  category_reports:
+    enabled: false
+      # E-046a Slice 5a (delivery_plan_v26.md, "Slice 5 -- Reports and
+      # readers"). OFF BY DEFAULT and read at runtime by
+      # run_phase1_research._category_reports_enabled() -- same shape as
+      # orchestrator.grid_evaluation.enabled directly above.
+      #
+      # While false, the protocol_execution branch's existing behavior
+      # (pass_rule_evaluation.yaml write, the grid-evaluation block directly
+      # above) is completely untouched, and tools/build_reports.py is never
+      # imported or called -- artifacts/reports/{profitability,
+      # trade_efficiency,forecast_power,regime_power,component_attribution}.yaml
+      # are never written. Proven by
+      # tests/test_e046a_category_reports.py's flag-off byte-identity test.
+      #
+      # While true: after the grid-evaluation block, ALSO calls
+      # tools/build_reports.py::build_reports(RUN_DIR, write=True), which
+      # re-projects protocol_result.yaml / trade_diagnostics.json /
+      # each window's bars.csv / the campaign-level
+      # regime_detector_report.yaml into the five files above -- one
+      # category x slice (overall/per_window/per_regime/per_symbol) each.
+      # Zero new computation except regime_power's hindsight-lag comparison
+      # (E-040's decided regime-power checks, items b+c only per this
+      # slice's scope -- see build_reports.py's own module docstring).
+      # Held off_incomplete (see config/feature_flag_register.yaml): these
+      # reports have no consumer yet -- Slice 5b (the five specialist
+      # readers) is the first thing that reads artifacts/reports/*.yaml.
   data_availability_gate:
     enabled: true
       # delivery_plan_v26.md s:0.4 item 14 (2026-09-20). THE ONE FLAG IN

@@ -122,6 +122,28 @@ flags:
       promote/kill/human_pause mapping is written into the artifact but not
       yet read by any _resolve_verdict_fields call site (slice 6c's scope).
 
+  - name: category_reports
+    kind: orchestrator_config
+    config_key: orchestrator.category_reports.enabled
+    reader: run_phase1_research._category_reports_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "E-046a slice 5b (specialist readers -- the first real consumer of artifacts/reports/*.yaml)"
+    criterion: >
+      Landed 2026-09-21 (E-046a S5a, delivery_plan_v26.md "Slice 5 -- Reports
+      and readers"). Off by default: tools/build_reports.py is built and
+      tested (tests/test_e046a_category_reports.py) -- it re-projects
+      protocol_result.yaml / trade_diagnostics.json / each window's bars.csv
+      / the campaign-level regime_detector_report.yaml into the five
+      artifacts/reports/*.yaml files, additive and inert on every current
+      run (no existing artifact changes shape or content either way).
+      Turning this on today would be additive and harmless, but the reports
+      it writes have no reader yet -- slice 5b's five specialist skills are
+      the first thing that consumes artifacts/reports/*.yaml -- so this is
+      held off_incomplete for "nothing would use it yet," the same reasoning
+      grid_evaluation above was held back for, not an unmet correctness
+      criterion.
+
   - name: profit_bars_file
     kind: orchestrator_config
     config_key: orchestrator.profit_bars_file.enabled
