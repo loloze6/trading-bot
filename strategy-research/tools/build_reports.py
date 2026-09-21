@@ -388,15 +388,30 @@ def _hindsight_labels(closes: list[float], horizon: int) -> list[str | None]:
 
 def _transition_indices(labels: list) -> list[int]:
     """Bar indices where label[i] != label[i-1]. Skips None (hindsight label
-    not yet computable) and '' (the observed trailing-partial-bar data quirk:
+    not yet computable), '' (the observed trailing-partial-bar data quirk:
     every window's bars.csv in the real corpus, e.g. run_059/run_054, writes
     an empty `regime` value on its final row -- the not-yet-classified
-    boundary bar, not a real regime change) on either side of a comparison,
-    so neither is mistaken for a genuine transition."""
+    boundary bar, not a real regime change), and 'unknown' (MarketRegime.UNKNOWN
+    -- the detector's own not-yet-classified/gate-closed label, emitted both
+    during warmup and on every gate-fail bar in threshold_rules/score_product
+    mode, per trading-bot/strategies/regime_engine.py) on either side of a
+    comparison, so none of the three is mistaken for a genuine regime
+    detection.
+
+    CODE-REVIEW FIX (2026-09-21): 'unknown' was not excluded originally --
+    the bar where a window's detector first finishes warmup (label flips
+    from 'unknown' to a real regime) was counted as a live transition,
+    contaminating _compute_hindsight_lag's lag statistic with a 'time to
+    finish warmup' figure indistinguishable from a genuine regime-change
+    lag. Excluding 'unknown' here means a transition INTO or OUT OF a real
+    regime (from/to unknown) is not counted either -- this is deliberate:
+    the gate opening/closing is a different event from the regime the gate
+    then reveals, and this metric measures lag on regime CHANGES, not on
+    gate state changes."""
     idx = []
     prev = None
     for i, label in enumerate(labels):
-        if label in (None, ""):
+        if label in (None, "", "unknown"):
             continue
         if prev is not None and label != prev:
             idx.append(i)
@@ -432,8 +447,9 @@ def _compute_hindsight_lag(bars: list[dict]) -> dict:
             "median_lag_bars": None,
             "reason": (
                 "detector emitted zero live regime transitions in this window "
-                "(excluding the trailing blank-regime row -- see "
-                "_transition_indices' docstring) -- a constant single-label "
+                "(excluding the trailing blank-regime row and 'unknown' "
+                "warmup/gate-closed bars -- see _transition_indices' "
+                "docstring) -- a constant single-label "
                 "window. Consistent with E-040 S1_FINDINGS.md / "
                 "regime_detector_report.yaml's measured persistence spanning "
                 "entire evaluated ranges for this detector."
@@ -605,7 +621,16 @@ def build_component_attribution_report(sources: dict) -> dict:
 
     if all_records:
         per_window = _group_by(all_records, lambda rec: rec["window"])
-        per_regime = _group_by(all_records, lambda rec: rec["regime"])
+        # CODE-REVIEW FIX (2026-09-21): every window's bars.csv ends with one
+        # trailing boundary row whose `regime` value is the empty string (the
+        # not-yet-classified final bar -- same data quirk _transition_indices
+        # above documents and excludes). Grouping on the raw `regime` field
+        # unfiltered put that row's component records under an undocumented
+        # "" key here, unlike regime_power's handling of the same quirk.
+        # Excluded from per_regime specifically; per_window/per_symbol are
+        # unaffected since they don't key on regime.
+        _regime_records = [rec for rec in all_records if rec["regime"] != ""]
+        per_regime = _group_by(_regime_records, lambda rec: rec["regime"])
         per_symbol = _group_by(all_records, lambda rec: rec["symbol"])
     else:
         reason = "no component records extracted (see overall slice's reason)."

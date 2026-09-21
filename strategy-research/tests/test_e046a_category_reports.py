@@ -347,3 +347,133 @@ def test_build_reports_write_true_creates_all_five_files(tmp_path):
             doc = yaml.safe_load(f)
         assert doc["category"] == category
         assert doc["source_run_id"] == "run_synthetic_write"
+
+
+# ---------------------------------------------------------------------------
+# CODE-REVIEW REGRESSION (2026-09-21): _compute_hindsight_lag's actual lag
+# arithmetic (the lags.append/statistics.median path) had ZERO test coverage
+# -- every window in the run_059 fixture happens to have 0 live transitions,
+# so only the "reason" short-circuit branch was ever exercised. This test
+# hand-constructs a fixture with exactly one live transition and one
+# hindsight transition at a known offset, so the lag value is verified
+# against a manually-traced expectation, not just "did it run."
+# ---------------------------------------------------------------------------
+
+def test_hindsight_lag_arithmetic_on_a_hand_traced_fixture():
+    # closes: horizon=5 (br._HINDSIGHT_HORIZON_BARS). Traced by hand:
+    #   i=0: closes[5]=10  vs closes[0]=10 -> flat
+    #   i=1: closes[6]=20  vs closes[1]=10 -> up
+    #   i=2..6: closes[i+5] > closes[i] -> up (same label as i=1, no new transition)
+    #   i=7..11: None (not enough future data, horizon=5, n=12)
+    # -> hindsight_labels = ['flat','up','up','up','up','up','up',None,None,None,None,None]
+    # -> hindsight_transitions = [1] (flat->up at index 1; no further changes)
+    closes = [10, 10, 10, 10, 10, 10, 20, 30, 40, 50, 60, 70]
+    # live regime: one clean transition at index 3 (trending -> mean_reversion)
+    regimes = ["trending"] * 3 + ["mean_reversion"] * 9
+    bars = [{"close": c, "regime": r} for c, r in zip(closes, regimes)]
+
+    result = br._compute_hindsight_lag(bars)
+
+    assert result["live_transition_count"] == 1
+    assert result["hindsight_transition_count"] == 1
+    # live transition at index 3, nearest hindsight transition at index 1 ->
+    # lag = 3 - 1 = 2 (live changed 2 bars AFTER the hindsight-optimal point).
+    assert result["lags_bars"] == [2]
+    assert result["median_lag_bars"] == 2
+    assert result["reason"] is None
+
+
+def test_hindsight_lag_arithmetic_no_match_within_window_reports_reason():
+    # Same live transition (index 2), but the hindsight transition lands far
+    # enough away (beyond _HINDSIGHT_MATCH_WINDOW_BARS=20) that no candidate
+    # exists. Traced by hand: closes flat (10.0) for indices 0-29, then
+    # increasing for indices 30-39. horizon=5, so label[i] first differs
+    # (flat->up) at i=25 (closes[30]=11.0 > closes[25]=10.0) and stays 'up'
+    # for all i>=25 (n-horizon=35, so labels defined for i=0..34) -- exactly
+    # one hindsight transition, at index 25. |25 - 2| = 23 > 20 -> no match.
+    n = 40
+    closes = [10.0] * 30 + [10.0 + i for i in range(1, 11)]
+    regimes = ["trending"] * 2 + ["mean_reversion"] * (n - 2)
+    bars = [{"close": c, "regime": r} for c, r in zip(closes, regimes)]
+
+    result = br._compute_hindsight_lag(bars)
+
+    assert result["live_transition_count"] == 1
+    assert result["hindsight_transition_count"] == 1
+    assert result["lags_bars"] == []
+    assert result["median_lag_bars"] is None
+    assert result["reason"] is not None
+    assert "none had a hindsight-label transition within" in result["reason"]
+
+
+# ---------------------------------------------------------------------------
+# CODE-REVIEW REGRESSION (2026-09-21): 'unknown' (MarketRegime.UNKNOWN,
+# emitted during warmup and on every gate-fail bar) must not be treated as
+# a genuine live transition -- a warmup-completion flip from 'unknown' to a
+# real regime is not a regime CHANGE, and counting it contaminates the lag
+# statistic with a "time to finish warmup" figure.
+# ---------------------------------------------------------------------------
+
+def test_unknown_to_real_regime_is_not_counted_as_a_live_transition():
+    closes = [10.0] * 8 + [20.0, 30.0, 40.0, 50.0]
+    regimes = ["unknown"] * 6 + ["trending"] * 6  # warmup-completion flip at index 6
+    bars = [{"close": c, "regime": r} for c, r in zip(closes, regimes)]
+
+    result = br._compute_hindsight_lag(bars)
+
+    assert result["live_transition_count"] == 0, (
+        "unknown -> real regime must not count as a live transition"
+    )
+
+
+def test_transition_indices_skips_unknown_bars_but_still_detects_a_real_change_across_a_gap():
+    # unknown -> trending -> unknown -> mean_reversion: 'unknown' bars are
+    # skipped entirely (never inspected, never become `prev`), so the
+    # algorithm compares the two REAL labels on either side of the gap
+    # (trending at i=1, mean_reversion at i=3) directly -- a genuine regime
+    # change is still detected even though the gate closed in between. This
+    # is deliberate: an intervening gate-closed period should not HIDE a
+    # real regime change, only a pure warmup-completion or gate-close event
+    # (below) should be excluded.
+    labels = ["unknown", "trending", "unknown", "mean_reversion"]
+    assert br._transition_indices(labels) == [3]
+
+
+def test_transition_indices_pure_warmup_completion_is_not_a_transition():
+    # No real regime precedes the first real label -- nothing to transition
+    # FROM, so warmup completion alone must never fire.
+    labels = ["unknown", "unknown", "trending", "trending"]
+    assert br._transition_indices(labels) == []
+
+
+def test_transition_indices_gate_reopening_to_the_same_regime_is_not_a_transition():
+    # Gate closes (unknown) then reopens to the SAME regime as before --
+    # the real label never actually changed, so no transition either.
+    labels = ["trending", "unknown", "trending"]
+    assert br._transition_indices(labels) == []
+
+
+# ---------------------------------------------------------------------------
+# CODE-REVIEW REGRESSION (2026-09-21): build_component_attribution_report's
+# per_regime grouping must exclude the trailing blank-regime ('') row the
+# same way regime_power's _transition_indices already does for the same
+# real data quirk (every window's bars.csv ends with one not-yet-classified
+# boundary row).
+# ---------------------------------------------------------------------------
+
+def test_component_attribution_per_regime_excludes_blank_trailing_row():
+    bars = [
+        {"regime": "trending", "debug_info.components.rsi.forecast": "1.0"},
+        {"regime": "trending", "debug_info.components.rsi.forecast": "2.0"},
+        {"regime": "", "debug_info.components.rsi.forecast": "3.0"},  # trailing boundary bar
+    ]
+    sources = {
+        "protocol_result": {"results": [{"symbol": "BTCUSDT", "window": "2020-01"}]},
+        "bars_by_window": {("BTCUSDT", "2020-01"): bars},
+    }
+    report = br.build_component_attribution_report(sources)
+    per_regime = report["slices"]["per_regime"]
+    assert "" not in per_regime, (
+        f"blank-regime trailing row must not appear as a per_regime key: {sorted(per_regime)}"
+    )
+    assert "trending" in per_regime
