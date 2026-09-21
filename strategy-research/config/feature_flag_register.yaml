@@ -222,6 +222,38 @@ flags:
       unmet PROOF criterion, not an unmet consumer criterion -- the code
       path has never been exercised end-to-end against a real model.
 
+  - name: variant_loop
+    kind: orchestrator_config
+    config_key: orchestrator.variant_loop.enabled
+    reader: run_phase1_research._variant_loop_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "E-033.1 slice 4b (data-availability-gate per-variant loop, conformance-check per-variant restructure, _write_promotion_audit's relationship to per-variant results -- none of which this sub-slice builds)"
+    criterion: >
+      Landed 2026-09-22 (E-033.1 Slice 4a, delivery_plan_v26.md Slice 4,
+      sub-slice 1 of 2: "loop restructure + trial accounting"). Off by
+      default, and hard-dependent on config_direct_authoring also being on
+      (raises loudly, not a silent no-op, if set true while
+      config_direct_authoring is false/absent -- see
+      _variant_loop_enabled's own docstring). While false, run_tool_worker's
+      protocol_execution branch and _route_post_config_direct_backtest_
+      specification are byte-identical to before this slice -- proven by
+      tests/test_e033_slice4a_variant_loop.py's flag-off identity tests.
+      While true: protocol_execution runs tools/run_protocol.py once per
+      VALIDATED variant in artifacts/variants/index.yaml (not just the
+      single base config), records one trial per variant
+      (trial_id=f"{run_id}:{variant_id}"), and builds a real N-column
+      {variant_id: protocol_result} dict for evaluate_grid. Held
+      off_incomplete because this sub-slice deliberately does NOT build the
+      per-variant data-availability gate, the per-variant conformance-check
+      restructure (a separate call site in run_loop, not this one), or
+      _write_promotion_audit's per-variant relationship -- those are E-033.1
+      Slice 4b, per this slice's own S1_FINDINGS.md split recommendation.
+      Real end-to-end proof also blocked on the same missing-venv/LLM-budget
+      constraint Slice 4a's own dispatch flagged (test suite exercises this
+      via mocked subprocess, following test_e056_config_direct_authoring.py's
+      precedent -- no resolvable trading-bot venv in this build environment).
+
   - name: bar_equity
     kind: engine_param
     engine_default_files:
