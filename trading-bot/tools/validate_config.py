@@ -8,7 +8,7 @@ _ROOT = os.path.dirname(_HERE)
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from strategies.registry import TRANSFORM_OPS_REGISTRY, transform_min_periods
+from strategies.registry import TRANSFORM_OPS_REGISTRY, transform_min_periods, _load_class
 
 _VALID_REGIMES = {"trending", "mean_reversion", "chop", "unknown"}
 _HISTORY_OPS = {"identity", "percentile", "negate_percentile", "zscore", "ratio_to_mean", "ema"}
@@ -288,6 +288,43 @@ def validate(config: dict) -> List[str]:
                 f"VIOLATION V11 strategies.min_allocation_change: must be a non-negative "
                 f"number, got {mac!r}"
             )
+
+    # V12: every declared component's 'class' dotted path must resolve to a real,
+    # importable class in strategies.strategy_components (or wherever it actually
+    # points). Today (pre-V12), an invented/typo'd class name is never caught here
+    # -- it only fails much later, at engine startup, via
+    # strategies.registry._load_class raising ValueError -- after a full backtest
+    # has already been launched and its data fetched. Reuses _load_class itself
+    # (rather than re-implementing the resolution) so V12 fails on EXACTLY the
+    # same set of configs the engine would refuse to start on, no more, no less.
+    #
+    # Only the two locations that actually declare a 'class' key are checked:
+    # regime_detector.components[] (shared by rules/vetoes/score-mode regimes,
+    # which reference these by 'id', not by their own 'class') and
+    # strategies.regimes.*.components[] (the per-regime forecast ensemble).
+    # score-mode/score_product-mode regime_detector.regimes.*.components[] entries
+    # have no 'class' of their own -- see STRATEGY_CONFIG_REFERENCE.md sec 1 -- so
+    # there is nothing to check there.
+    def _check_component_class(loc: str, comp: dict) -> None:
+        class_path = comp.get("class")
+        if not class_path:
+            violations.append(
+                f"VIOLATION V12 {loc}: missing required 'class' key"
+            )
+            return
+        try:
+            _load_class(class_path)
+        except ValueError as e:
+            violations.append(f"VIOLATION V12 {loc}.class: {e}")
+
+    for i, comp in enumerate(rd.get("components", [])):
+        _check_component_class(f"regime_detector.components[{i}]", comp)
+
+    for rname, rcfg in config["strategies"].get("regimes", {}).items():
+        if rcfg is None:
+            continue
+        for j, comp in enumerate(rcfg.get("components", [])):
+            _check_component_class(f"strategies.regimes.{rname}.components[{j}]", comp)
 
     return violations
 
