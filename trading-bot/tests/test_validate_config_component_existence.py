@@ -196,3 +196,37 @@ def test_v9_and_v12_both_fire_independently_on_a_doubly_broken_config():
     violations = validate(config)
     assert any("VIOLATION V9" in v for v in violations), violations
     assert any("VIOLATION V12" in v for v in violations), violations
+
+
+# ---------------------------------------------------------------------------
+# CODE-REVIEW REGRESSION (2026-09-21): a dotless class_path (no module
+# prefix) used to produce an uninformative message that never named the bad
+# class -- strategies.registry._load_class's own
+# `class_path.rsplit(".", 1)` unpacking raises a bare ValueError
+# ("not enough values to unpack") for a dotless string, which V12's original
+# `except ValueError as e: ... f"{e}"` propagated verbatim, silently
+# omitting class_path entirely from the violation.
+# ---------------------------------------------------------------------------
+
+def test_dotless_class_path_names_the_bad_value_not_a_bare_unpacking_error():
+    dotless = "TotallyMadeUpComponentWithNoModulePrefix"
+    config = _minimal_config(
+        regime_detector={
+            "mode": "threshold_rules", "components": [], "rules": [],
+        },
+        regimes={"trending": None, "mean_reversion": None, "chop": None,
+                 "unknown": {"components": [
+                     {**_real_component("bad"), "class": dotless},
+                 ]}},
+    )
+    violations = validate(config)
+    v12 = [v for v in violations if "VIOLATION V12" in v]
+    assert len(v12) == 1, violations
+    assert dotless in v12[0], (
+        f"dotless class_path must be named explicitly in the violation, "
+        f"not just the raw unpacking error: {v12[0]!r}"
+    )
+    assert "not enough values to unpack" not in v12[0].split(":")[0], (
+        "the class_path must appear before/alongside the raw error, not be "
+        f"replaced by it: {v12[0]!r}"
+    )

@@ -315,7 +315,15 @@ def validate(config: dict) -> List[str]:
         try:
             _load_class(class_path)
         except ValueError as e:
-            violations.append(f"VIOLATION V12 {loc}.class: {e}")
+            # CODE-REVIEW FIX (2026-09-21): a dotless class_path (e.g.
+            # "RSIPullbackComponent" with no module prefix) makes
+            # _load_class's own `class_path.rsplit(".", 1)` unpacking raise
+            # a bare ValueError ("not enough values to unpack") that never
+            # names class_path at all -- confirmed by direct execution.
+            # Always include class_path explicitly here so the violation is
+            # actionable regardless of which failure mode inside
+            # _load_class produced `e`.
+            violations.append(f"VIOLATION V12 {loc}.class: cannot load {class_path!r}: {e}")
 
     for i, comp in enumerate(rd.get("components", [])):
         _check_component_class(f"regime_detector.components[{i}]", comp)

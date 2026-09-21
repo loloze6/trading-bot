@@ -103,7 +103,7 @@ With ER=0.5, VR=2.0 → product = 0.5 × 1.0 = 0.5 (≥ 0.4: fires). With ER=0.6
 `any_of` = OR of condition-sets; each set = AND of conditions on RAW (untransformed) latest component values.
 Comparison ops: `gte`, `gt`, `lte`, `lt`, `between` (`low`/`high`, inclusive).
 
-**Comparator-vocabulary divergence (see §7c for the full callout):**
+**Comparator-vocabulary divergence (see §7d for the full callout):**
 `regime_detector.rules`/`vetoes` use `gte`/`gt`/`lte`/`lt`/`between` — a
 DIFFERENT vocabulary from `strategy-research/tools/verdict_criteria_evaluator.py`'s
 `_VALID_COMPARATORS` (`>=`, `>`, `<=`, `<`, `==`), used for campaign
@@ -311,16 +311,26 @@ Reads as: store vol-normalized pullback scores (500 deep) → current / mean(|hi
 6. Re-run backtest; diff `results/regime_debug.csv` and per-bar forecasts against the previous run before trusting performance numbers.
 7. Pick the regime mode and gate pattern the hypothesis actually needs; default
    `threshold_rules`, one active regime is fine for a first test. If the
-   hypothesis has no regime condition at all, use the ungated pattern in §7d
-   rather than inventing a dummy always-true rule (see §7d for why the latter
+   hypothesis has no regime condition at all, use the ungated pattern in §7e
+   rather than inventing a dummy always-true rule (see §7e for why the latter
    fails validation).
-8. `default_regime` must be `"unknown"` in `threshold_rules`/`score_product`
-   mode whenever `regime_detector.rules` is non-empty — a real gate exists,
-   and pointing `default_regime` at `trending`/`mean_reversion`/`chop` in that
-   case bypasses it (every bar that fails every rule still gets traded).
-   `validate_config.py` VIOLATION V9 enforces this for all three names, not
-   just `trending`. This restriction does NOT apply to the fully-ungated
-   pattern (§7d) — there is no gate there to bypass.
+8. `default_regime` must be `"unknown"` in `threshold_rules` mode whenever
+   `regime_detector.rules` is non-empty — a real gate exists there, and
+   pointing `default_regime` at `trending`/`mean_reversion`/`chop` in that
+   case bypasses it (every bar that fails every rule still gets classified
+   as that regime and traded). `validate_config.py` VIOLATION V9 enforces
+   this for all three names, not just `trending`. **CODE-REVIEW CORRECTION
+   (2026-09-21):** in `score_product` mode, `default_regime` has NO
+   behavioral effect at all — `_classify_score_product`
+   (`regime_engine.py:205-224`) never reads it; a gate-fail there is
+   hardcoded to `MarketRegime.UNKNOWN` regardless of the configured value.
+   V9 currently applies the same restriction to `score_product` mode
+   anyway (a pre-existing over-strictness in `validate_config.py`, not
+   introduced by this slice and out of scope to change here) — so V9 may
+   reject a `score_product` config for a bypass that cannot actually occur
+   in that mode. Do not read V9 passing/failing as evidence about
+   `score_product`'s real gate behavior. This restriction does NOT apply to
+   the fully-ungated pattern (§7e) — there is no gate there to bypass.
 9. Do not invent component classes, transform ops, or regime names absent from
    this guide's catalog (§4) — `validate_config.py` VIOLATION V12 (§7b) now
    catches an invented `class` value mechanically, but do not rely on the
@@ -330,11 +340,32 @@ Reads as: store vol-normalized pullback scores (500 deep) → current / mean(|hi
 ## 7. Design-guide-only content (new for E-056 Slice 3a)
 
 Everything above this line is the carried-over reference (§0 provenance
-note). Everything below is new: two proposed, unbuilt schema additions (§7a,
-§7b is NOT a proposal — it is built and live, see below) and one vocabulary
-callout, plus authoring guidance folded from
-`backtest-engineering/SKILL.md`'s Checklist/Forbidden sections (§7d, §6.7-9
-above).
+note). Everything below is new: §7a and §7c are proposed, unbuilt schema
+additions; §7b is NOT a proposal — it is built and live (validate_config.py
+VIOLATION V12, shipped in this same slice); §7d is a vocabulary callout;
+§7e is authoring guidance folded from `backtest-engineering/SKILL.md`'s
+Checklist/Forbidden sections (§6.7-9 above).
+
+### CODE-REVIEW FIX (2026-09-21)
+
+This section's numbering was reshuffled after an adversarial review caught
+two real defects in the original draft: (1) this guide's own §6 item 8
+claimed `default_regime` creates a gate-bypass risk in `score_product` mode
+identical to `threshold_rules` mode — false. `_classify_score_product`
+(`trading-bot/strategies/regime_engine.py:205-224`) never reads
+`self._default_regime` at all; its gate-fail path is hardcoded to
+`MarketRegime.UNKNOWN` regardless of the configured value, confirmed by
+grep showing `_default_regime` is read only at `regime_engine.py:70` (the
+assignment) and `:153` (inside `_classify_threshold_rules`, a different
+method). `validate_config.py`'s pre-existing V9 check (unmodified by this
+slice) DOES apply the same restriction to `score_product` mode regardless —
+that is a separate, pre-existing over-strictness in production code this
+slice did not introduce and is out of scope to fix here; flagged as a
+follow-up, not silently corrected mid-docs-change. (2) three cross-references
+in the original draft pointed readers to "§7b" for V12 documentation while
+§7b's actual heading was the unrelated manifest-contract proposal — a real
+section that documented V12 never existed. Fixed by inserting §7b below as
+V12's own section and renumbering everything after it.
 
 ### §7a. Instrument-set / symbol / timeframe field — PROPOSED, NOT BUILT
 
@@ -351,7 +382,7 @@ reference documentation, and this guide's own characterization session
 
 **Open question, deliberately not resolved here:** whether this field would
 live as a new top-level sibling of `regime_detector`/`strategies`/`aux_feeds`,
-or entirely inside the manifest contract in §7b instead. This depends on
+or entirely inside the manifest contract in §7c instead. This depends on
 composition work (Slice 7) that is not built yet. Do not invent a resolution
 to this question when authoring configs — it is unresolved by design, not by
 omission.
@@ -359,7 +390,30 @@ omission.
 **Not enforced by `validate_config.py`.** No V-check reads or requires this
 field, because it does not exist yet.
 
-### §7b. The manifest contract (`block_manifest.yaml`) — PROPOSED, NOT BUILT
+### §7b. Component-class existence check (`validate_config.py` VIOLATION V12) — BUILT, LIVE
+
+Unlike §7a and §7c, this is not a proposal — it shipped in this same slice
+(E-056 Slice 3a). Every `class` value in `regime_detector.components[]` and
+`strategies.regimes.*.components[]` is now checked, at `validate_config.py`
+time, against `strategies.strategy_components` via
+`strategies.registry._load_class` (the exact function the live engine calls
+at startup — V12 reuses it rather than re-implementing dotted-path
+resolution, so V12 fails on exactly the set of configs the engine would
+already refuse to start on, no more, no less).
+
+**Before this check:** an invented or typo'd `class` value passed
+`validate_config.py` silently and only failed much later, at engine startup
+— after a full backtest had already been launched and its data fetched.
+**After this check:** the same mistake is caught at validation time, before
+any backtest runs.
+
+Verified against the full real corpus (every `candidate_strategy_config.json`
+under `strategy-research/runs/run_*/`): zero currently-passing real configs
+newly fail under V12 — this check only adds a new failure mode for configs
+that were already broken and would have failed at startup regardless. Shipped
+unconditionally, no flag, on exactly that empirical basis.
+
+### §7c. The manifest contract (`block_manifest.yaml`) — PROPOSED, NOT BUILT
 
 Has zero precedent anywhere in the current reference file, `validate_config.py`,
 or any skill file today — this is new content, not a reorganization of
@@ -381,7 +435,7 @@ without a second LLM pass re-deriving the same information. **Nothing reads
 or writes this file today.** Do not author one expecting any code to consume
 it.
 
-### §7c. Comparator-vocabulary divergence
+### §7d. Comparator-vocabulary divergence
 
 `regime_detector.rules`/`vetoes` (§1/§2 above) use the comparator vocabulary
 `gte`/`gt`/`lte`/`lt`/`between`. A separate, unrelated vocabulary exists in
@@ -399,7 +453,7 @@ session and by E-056/E-046b S1 (`S2_FINDINGS.md` §6 item 3,
 `S1_FINDINGS.md` line 243, `verdict_criteria_evaluator.py:52`). Check which
 config surface you are authoring for before picking a comparator string.
 
-### §7d. Ungated hypotheses — the canonical no-regime pattern
+### §7e. Ungated hypotheses — the canonical no-regime pattern
 
 Folded from `backtest-engineering/SKILL.md`'s "Ungated hypotheses" section
 (current authoring guidance, unchanged by this guide — see that skill file
