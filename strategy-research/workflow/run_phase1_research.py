@@ -1300,6 +1300,31 @@ async def run_tool_worker(stage_name: str, run_id: str):
                           "grid_evaluation.yaml/idea_status.yaml are simply not written this "
                           "run. Not re-raised: a grid bug must never misrecord a successful "
                           "trial as failed.")
+
+            # E-046a Slice 5a (delivery_plan_v26.md, "Slice 5 -- Reports and
+            # readers"). ADDITIVE, called AFTER the grid block above, same
+            # isolation pattern: category reports are a pure re-projection of
+            # artifacts that already exist once the backtest above succeeded
+            # (protocol_result.yaml/summary, trade_diagnostics.json,
+            # bars.csv, and the campaign-level regime_detector_report.yaml),
+            # so a bug in report-building must never turn an already-
+            # successful trial into a recorded failure -- its own try/except,
+            # logs loudly, never re-raises.
+            if _category_reports_enabled():
+                try:
+                    _br_tools_path = str(Path(__file__).parent.parent / "tools")
+                    if _br_tools_path not in sys.path:
+                        sys.path.insert(0, _br_tools_path)
+                    import build_reports as _br
+                    _reports = _br.build_reports(RUN_DIR, write=True)
+                    print(f"✅ [E-046a] artifacts/reports/*.yaml written: "
+                          f"{sorted(_reports.keys())}")
+                except Exception as _reports_err:
+                    print(f"⚠️  [E-046a] category report build raised "
+                          f"{type(_reports_err).__name__}: {_reports_err} -- the "
+                          "backtest itself already succeeded; artifacts/reports/*.yaml "
+                          "are simply not written this run. Not re-raised, same "
+                          "reasoning as the grid-evaluation block above.")
         except Exception as _win_err:
             try:
                 _record_failed_backtest_trial(
@@ -1445,6 +1470,25 @@ def _grid_evaluation_enabled() -> bool:
         cfg = yaml.safe_load(f) or {}
     grid_cfg = ((cfg.get("orchestrator") or {}).get("grid_evaluation") or {})
     return bool(grid_cfg.get("enabled", False))
+
+
+# E-046a Slice 5a (delivery_plan_v26.md, "Slice 5 -- Reports and readers").
+# Off-by-default flag, same shape as _grid_evaluation_enabled() above. See
+# config/campaign_config.yaml's orchestrator.category_reports.enabled
+# comment for the full rationale.
+def _category_reports_enabled() -> bool:
+    """False (no behavior change) when the key, the section, or the file is
+    absent -- same silence-is-never-a-green-light rule as
+    _grid_evaluation_enabled() above. While false, nothing under
+    artifacts/reports/ is ever written and every other artifact the
+    protocol_execution branch produces is untouched."""
+    path = ROOT / "config" / "campaign_config.yaml"
+    if not path.exists():
+        return False
+    with open(path, encoding="utf-8") as f:
+        cfg = yaml.safe_load(f) or {}
+    cr_cfg = ((cfg.get("orchestrator") or {}).get("category_reports") or {})
+    return bool(cr_cfg.get("enabled", False))
 
 
 # delivery_plan_v26.md 0.2 (item 2) -- config/profitability_bars.yaml and the

@@ -1,0 +1,679 @@
+"""
+tools/build_reports.py -- E-046a Slice 5a: category reports
+(delivery_plan_v26.md, "Slice 5 -- Reports and readers", bullet 5a).
+
+WHAT THIS WRITES
+----------------
+Given one run directory (e.g. strategy-research/runs/run_059), writes five
+files under <run_dir>/artifacts/reports/:
+
+    profitability.yaml
+    trade_efficiency.yaml
+    forecast_power.yaml
+    regime_power.yaml
+    component_attribution.yaml
+
+Each file has the shape:
+
+    category: <name>
+    source_run_id: <run_dir.name>
+    generated_at: <UTC ISO timestamp of this build>
+    slices:
+      overall:     <dict, or {"unavailable": true, "reason": "..."}>
+      per_window:  <list, or {"unavailable": true, "reason": "..."}>
+      per_regime:  <dict keyed by regime label, or unavailable>
+      per_symbol:  <dict keyed by symbol, or unavailable>
+
+A slice is NEVER a fabricated aggregate when its source data doesn't support
+that cut -- it is written as the explicit `{"unavailable": true, "reason":
+"..."}` shape above, with a real, specific reason. This is deliberate: 5b's
+readers must be able to tell "this cut genuinely has nothing" apart from "the
+builder forgot this cut."
+
+SOURCES, AND THE ONE EXCEPTION TO "ZERO NEW COMPUTATION"
+----------------------------------------------------------
+Every value in every report is a direct re-projection (copy, or regrouping-
+by-existing-key with no arithmetic) of a field that already exists in one of:
+
+  - <run_dir>/artifacts/protocol_result.yaml
+  - <run_dir>/trade_diagnostics.json           (top-level trades list; NOT
+    under artifacts/ -- confirmed against the real run_054/057/059 corpus)
+  - <run_dir>/results/<window_run_id>/bars.csv  (one per protocol_result.yaml
+    results[] entry, keyed by that entry's own `run_id` field)
+  - strategy-research/regime_detector_report.yaml (CAMPAIGN-LEVEL, not a
+    per-run artifact -- written by tools/validate_regime_detector.py at the
+    strategy-research root; may not correspond to the exact config of the
+    run being reported on here, which is why _detector_health() below
+    carries the source file's own config_source field through verbatim so a
+    reader can judge that for itself)
+
+...with exactly ONE exception, scoped by delivery_plan_v26.md's own Slice 5a
+text: the regime_power report's `hindsight_lag` values (see
+_compute_hindsight_lag below), inherited from E-040's decided regime-power
+checks. E-040 (EPICS.md) actually names three checks -- (a) does using the
+regime label beat ignoring it, (b) a hindsight-lag comparison that measures
+LAG, not correctness, and (c) detector health numbers -- but delivery_plan_
+v26.md's Slice 5a bullet narrows THIS slice's inherited scope to only (b) and
+(c). (a) is intentionally NOT computed anywhere in this file; regime_power's
+`overall` slice says so explicitly rather than silently omitting it.
+
+THE LOOKAHEAD TRAP, AND WHY THIS IS SAFE
+------------------------------------------
+_hindsight_labels() deliberately looks at FUTURE bars relative to bar i (that
+is the entire point of a hindsight label: "what did price actually do
+next"). E-040's own decided-checks note names this as a known trap: "the
+hindsight labeller must never reach a signal." The guard here is structural,
+not a flag: this module is a standalone, run-after-the-fact reporting tool.
+Nothing in strategies/, execution/, or risk/ imports it, calls it, or reads
+its output; its only caller in the live pipeline is the protocol_execution
+branch of workflow/run_phase1_research.py, AFTER a run's backtest has
+already completed and AFTER trade_diagnostics.json/protocol_result.yaml are
+already final. The hindsight label is written only into
+artifacts/reports/regime_power.yaml and never read back into anything that
+makes a trading decision.
+
+CLI
+---
+    python build_reports.py <run_dir> [--no-write]
+
+`<run_dir>` is a path to a run directory, e.g. strategy-research/runs/run_059
+(relative to your current working directory, or absolute). `--no-write`
+builds the five report dicts in memory and prints a summary without touching
+disk (used by tests).
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import os
+import statistics
+import tempfile
+from collections import defaultdict
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Callable
+
+import yaml
+
+REPORT_CATEGORIES = [
+    "profitability",
+    "trade_efficiency",
+    "forecast_power",
+    "regime_power",
+    "component_attribution",
+]
+
+# [NEW COMPUTATION -- see module docstring] tuning constants for the
+# hindsight-lag comparison. Forward horizon used to label the hindsight-
+# optimal direction at each bar, and the maximum bar-distance within which a
+# live regime transition may be matched to a hindsight-label transition.
+_HINDSIGHT_HORIZON_BARS = 5
+_HINDSIGHT_MATCH_WINDOW_BARS = 20
+
+_COMPONENT_COLUMN_PREFIX = "debug_info.components."
+
+
+# ---------------------------------------------------------------------------
+# Small shared helpers
+# ---------------------------------------------------------------------------
+
+def _unavailable(reason: str) -> dict:
+    """The explicit empty/null shape a slice takes when its source data
+    genuinely doesn't support that cut. Never used to hide a bug -- every
+    call site names the specific missing source."""
+    return {"unavailable": True, "reason": reason}
+
+
+def _wrap(category: str, overall: Any, per_window: Any, per_regime: Any, per_symbol: Any) -> dict:
+    return {
+        "category": category,
+        "slices": {
+            "overall": overall,
+            "per_window": per_window,
+            "per_regime": per_regime,
+            "per_symbol": per_symbol,
+        },
+    }
+
+
+def _group_by(items: list[dict], key_fn: Callable[[dict], Any]) -> dict[Any, list[dict]]:
+    """Pure regrouping by an already-existing field -- no arithmetic, so this
+    does not count as new computation. Used for every per_window/per_regime/
+    per_symbol slice built off a flat list of source records (trades,
+    component-attribution rows)."""
+    grouped: dict[Any, list[dict]] = defaultdict(list)
+    for item in items:
+        grouped[key_fn(item)].append(item)
+    return dict(grouped)
+
+
+def _write_yaml_atomic(path: Path, data: Any) -> None:
+    """Same temp-file-then-os.replace pattern as
+    workflow/run_phase1_research.py::save_yaml, so a crash mid-write can
+    never leave a partially-written report on disk."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent))
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            yaml.safe_dump(data, f, sort_keys=False, allow_unicode=True)
+        os.replace(tmp_name, path)
+    except BaseException:
+        try:
+            os.unlink(tmp_name)
+        except OSError:
+            pass
+        raise
+
+
+def _load_yaml(path: Path):
+    if not path.exists():
+        return None
+    with open(path, encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+def _load_json(path: Path):
+    if not path.exists():
+        return None
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _load_bars_csv(path: Path) -> list[dict] | None:
+    if not path.exists():
+        return None
+    with open(path, newline="", encoding="utf-8") as f:
+        return list(csv.DictReader(f))
+
+
+# ---------------------------------------------------------------------------
+# Source loading
+# ---------------------------------------------------------------------------
+
+def load_run_sources(run_dir: Path) -> dict:
+    """Load every source artifact this tool re-projects, from one run
+    directory. Missing files are represented as None/{}/[] -- every builder
+    function below must handle that explicitly (see each function's
+    _unavailable(...) branches) rather than assume presence."""
+    run_dir = Path(run_dir)
+    artifacts = run_dir / "artifacts"
+    protocol_result = _load_yaml(artifacts / "protocol_result.yaml") or {}
+    trade_diagnostics = _load_json(run_dir / "trade_diagnostics.json")
+    # regime_detector_report.yaml is CAMPAIGN-LEVEL (strategy-research root),
+    # not per-run -- run_dir is .../strategy-research/runs/<run_id>, so its
+    # parent.parent is strategy-research/.
+    sr_root = run_dir.parent.parent
+    regime_detector_report = _load_yaml(sr_root / "regime_detector_report.yaml")
+
+    bars_by_window: dict[tuple, list[dict] | None] = {}
+    for entry in protocol_result.get("results") or []:
+        window_run_id = entry.get("run_id")
+        if not window_run_id:
+            continue
+        bars_path = run_dir / "results" / window_run_id / "bars.csv"
+        bars_by_window[(entry.get("symbol"), entry.get("window"))] = _load_bars_csv(bars_path)
+
+    return {
+        "run_dir": run_dir,
+        "protocol_result": protocol_result,
+        "trade_diagnostics": trade_diagnostics,
+        "regime_detector_report": regime_detector_report,
+        "bars_by_window": bars_by_window,
+    }
+
+
+# ---------------------------------------------------------------------------
+# profitability.yaml
+# ---------------------------------------------------------------------------
+
+def build_profitability_report(sources: dict) -> dict:
+    pr = sources["protocol_result"]
+    results = pr.get("results") or []
+    hv = pr.get("hypothesis_verdict") or {}
+    diagnostics = hv.get("diagnostics")
+
+    if diagnostics:
+        overall = {
+            "source": "protocol_result.yaml:hypothesis_verdict.diagnostics "
+                       "(pre-computed aggregate, re-projected verbatim)",
+            "diagnostics": diagnostics,
+            "verdict": hv.get("verdict"),
+            "verdict_reason": hv.get("verdict_reason"),
+        }
+    else:
+        overall = _unavailable(
+            "protocol_result.yaml has no hypothesis_verdict.diagnostics block for this run.")
+
+    if not results:
+        no_results_reason = "protocol_result.yaml has no results entries for this run."
+        return _wrap("profitability", overall, _unavailable(no_results_reason),
+                      _unavailable(no_results_reason), _unavailable(no_results_reason))
+
+    per_window = [
+        {"symbol": r.get("symbol"), "window": r.get("window"), "run_id": r.get("run_id"),
+         "core": r.get("core")}
+        for r in results
+    ]
+
+    per_regime: dict[str, list[dict]] = defaultdict(list)
+    for r in results:
+        for regime, block in (r.get("per_regime") or {}).items():
+            per_regime[regime].append({"symbol": r.get("symbol"), "window": r.get("window"), **block})
+    per_regime_out = dict(per_regime) if per_regime else _unavailable(
+        "no result entry in protocol_result.yaml carried a per_regime block.")
+
+    per_symbol: dict[str, list[dict]] = defaultdict(list)
+    for r in results:
+        per_symbol[r.get("symbol")].append(
+            {"window": r.get("window"), "run_id": r.get("run_id"), **(r.get("core") or {})})
+    per_symbol_out = dict(per_symbol)
+
+    return _wrap("profitability", overall, per_window, per_regime_out, per_symbol_out)
+
+
+# ---------------------------------------------------------------------------
+# trade_efficiency.yaml
+# ---------------------------------------------------------------------------
+
+def build_trade_efficiency_report(sources: dict) -> dict:
+    pr = sources["protocol_result"]
+    summary = pr.get("trade_diagnostics_summary")
+    if summary:
+        overall = {
+            "source": "protocol_result.yaml:trade_diagnostics_summary "
+                       "(pre-computed aggregate, re-projected verbatim)",
+            **summary,
+        }
+    else:
+        overall = _unavailable("protocol_result.yaml has no trade_diagnostics_summary block.")
+
+    td = sources["trade_diagnostics"]
+    trades = (td or {}).get("trades") if td else None
+    if trades:
+        per_window = _group_by(trades, lambda t: t.get("window"))
+        per_symbol = _group_by(trades, lambda t: t.get("symbol"))
+        per_regime = _group_by(trades, lambda t: t.get("regime_at_entry"))
+    else:
+        reason = (
+            "no trade_diagnostics.json found alongside this run (or it has an "
+            "empty trades list); only the pre-aggregated trade_diagnostics_summary "
+            "in protocol_result.yaml is available -- see the overall slice."
+        )
+        per_window = _unavailable(reason)
+        per_symbol = _unavailable(reason)
+        per_regime = _unavailable(reason)
+
+    return _wrap("trade_efficiency", overall, per_window, per_regime, per_symbol)
+
+
+# ---------------------------------------------------------------------------
+# forecast_power.yaml
+# ---------------------------------------------------------------------------
+
+def build_forecast_power_report(sources: dict) -> dict:
+    pr = sources["protocol_result"]
+    results = pr.get("results") or []
+    hv_diag = (pr.get("hypothesis_verdict") or {}).get("diagnostics") or {}
+    cross_check = pr.get("prescreen_backtest_cross_check")
+
+    overall: dict = {}
+    if "median_forecast_return_corr" in hv_diag:
+        overall["median_forecast_return_corr"] = hv_diag["median_forecast_return_corr"]
+        overall["median_forecast_return_corr_source"] = \
+            "protocol_result.yaml:hypothesis_verdict.diagnostics.median_forecast_return_corr"
+    if cross_check is not None:
+        overall["prescreen_backtest_cross_check"] = cross_check
+    overall_out = overall if overall else _unavailable(
+        "protocol_result.yaml has neither hypothesis_verdict.diagnostics."
+        "median_forecast_return_corr nor a prescreen_backtest_cross_check block.")
+
+    if not results:
+        reason = "protocol_result.yaml has no results entries for this run."
+        return _wrap("forecast_power", overall_out, _unavailable(reason),
+                      _unavailable(reason), _unavailable(reason))
+
+    per_window = []
+    for r in results:
+        core = r.get("core") or {}
+        per_window.append({
+            "symbol": r.get("symbol"), "window": r.get("window"), "run_id": r.get("run_id"),
+            "forecast_return_corr": core.get("forecast_return_corr"),
+            "forecast_return_corr_pvalue": core.get("forecast_return_corr_pvalue"),
+        })
+
+    per_regime: dict[str, list[dict]] = defaultdict(list)
+    for r in results:
+        for regime, block in (r.get("regime_validity") or {}).items():
+            per_regime[regime].append({"symbol": r.get("symbol"), "window": r.get("window"), **block})
+    per_regime_out = dict(per_regime) if per_regime else _unavailable(
+        "no result entry in protocol_result.yaml carried a regime_validity block.")
+
+    per_symbol: dict[str, list[dict]] = defaultdict(list)
+    for entry in per_window:
+        per_symbol[entry["symbol"]].append({
+            "window": entry["window"],
+            "forecast_return_corr": entry["forecast_return_corr"],
+            "forecast_return_corr_pvalue": entry["forecast_return_corr_pvalue"],
+        })
+    per_symbol_out = dict(per_symbol)
+
+    return _wrap("forecast_power", overall_out, per_window, per_regime_out, per_symbol_out)
+
+
+# ---------------------------------------------------------------------------
+# regime_power.yaml -- health (pure re-projection) + hindsight-lag (NEW COMPUTATION)
+# ---------------------------------------------------------------------------
+
+def _hindsight_labels(closes: list[float], horizon: int) -> list[str | None]:
+    """[NEW COMPUTATION -- see module docstring's "ONE exception"]. For each
+    bar i, label 'up'/'down'/'flat' by the sign of the close price `horizon`
+    bars in the future relative to bar i. The last `horizon` bars of any
+    series get label None (not enough future data to compute).
+
+    This deliberately looks ahead -- see module docstring's "THE LOOKAHEAD
+    TRAP" section for why writing this only into a report is safe."""
+    n = len(closes)
+    labels: list[str | None] = [None] * n
+    for i in range(n - horizon):
+        now, future = closes[i], closes[i + horizon]
+        if future > now:
+            labels[i] = "up"
+        elif future < now:
+            labels[i] = "down"
+        else:
+            labels[i] = "flat"
+    return labels
+
+
+def _transition_indices(labels: list) -> list[int]:
+    """Bar indices where label[i] != label[i-1]. Skips None (hindsight label
+    not yet computable) and '' (the observed trailing-partial-bar data quirk:
+    every window's bars.csv in the real corpus, e.g. run_059/run_054, writes
+    an empty `regime` value on its final row -- the not-yet-classified
+    boundary bar, not a real regime change) on either side of a comparison,
+    so neither is mistaken for a genuine transition."""
+    idx = []
+    prev = None
+    for i, label in enumerate(labels):
+        if label in (None, ""):
+            continue
+        if prev is not None and label != prev:
+            idx.append(i)
+        prev = label
+    return idx
+
+
+def _compute_hindsight_lag(bars: list[dict]) -> dict:
+    """[NEW COMPUTATION]. Returns the lag, in bars, between each live regime
+    transition and the nearest hindsight-label transition within
+    _HINDSIGHT_MATCH_WINDOW_BARS. A positive lag means the live label changed
+    AFTER the hindsight-optimal direction did (expected for a causal
+    detector); this measures LAG, not correctness -- it says nothing about
+    whether the live label was the right one, only how quickly it moved
+    relative to what hindsight says price actually did next."""
+    if not bars:
+        return _unavailable("no bars.csv rows for this window.")
+    try:
+        closes = [float(row["close"]) for row in bars]
+    except (KeyError, ValueError) as exc:
+        return _unavailable(f"bars.csv missing/non-numeric close column ({exc}).")
+
+    live_labels = [row.get("regime") for row in bars]
+    live_transitions = _transition_indices(live_labels)
+    hindsight_labels = _hindsight_labels(closes, _HINDSIGHT_HORIZON_BARS)
+    hindsight_transitions = _transition_indices(hindsight_labels)
+
+    if not live_transitions:
+        return {
+            "live_transition_count": 0,
+            "hindsight_transition_count": len(hindsight_transitions),
+            "lags_bars": [],
+            "median_lag_bars": None,
+            "reason": (
+                "detector emitted zero live regime transitions in this window "
+                "(excluding the trailing blank-regime row -- see "
+                "_transition_indices' docstring) -- a constant single-label "
+                "window. Consistent with E-040 S1_FINDINGS.md / "
+                "regime_detector_report.yaml's measured persistence spanning "
+                "entire evaluated ranges for this detector."
+            ),
+        }
+
+    lags = []
+    for live_idx in live_transitions:
+        candidates = [h for h in hindsight_transitions
+                      if abs(h - live_idx) <= _HINDSIGHT_MATCH_WINDOW_BARS]
+        if candidates:
+            nearest = min(candidates, key=lambda h: abs(h - live_idx))
+            lags.append(live_idx - nearest)
+
+    return {
+        "live_transition_count": len(live_transitions),
+        "hindsight_transition_count": len(hindsight_transitions),
+        "lags_bars": lags,
+        "median_lag_bars": statistics.median(lags) if lags else None,
+        "reason": None if lags else (
+            f"{len(live_transitions)} live transition(s) found but none had a "
+            f"hindsight-label transition within {_HINDSIGHT_MATCH_WINDOW_BARS} bars."
+        ),
+    }
+
+
+def _detector_health(sources: dict) -> dict:
+    rdr = sources["regime_detector_report"]
+    if not rdr:
+        return _unavailable(
+            "strategy-research/regime_detector_report.yaml does not exist in this "
+            "checkout -- it is a single campaign-level file written by "
+            "tools/validate_regime_detector.py, not a per-run artifact."
+        )
+    return {
+        "source": "strategy-research/regime_detector_report.yaml (campaign-level, "
+                   "re-projected verbatim -- NOT necessarily generated from this "
+                   "run's own config; see config_source below)",
+        "detector_version": rdr.get("detector_version"),
+        "evaluated_at": rdr.get("evaluated_at"),
+        "data_range": rdr.get("data_range"),
+        "config_source": rdr.get("config_source"),
+        "per_symbol_per_timeframe": rdr.get("per_symbol_per_timeframe"),
+    }
+
+
+def build_regime_power_report(sources: dict) -> dict:
+    pr = sources["protocol_result"]
+    results = pr.get("results") or []
+    bars_by_window = sources["bars_by_window"]
+
+    overall = {
+        "detector_health": _detector_health(sources),
+        "note": (
+            "E-040's decided regime-power checks (EPICS.md) rank three items: "
+            "(a) does using the regime label beat ignoring it, (b) a "
+            "hindsight-lag comparison measuring LAG not correctness, (c) "
+            "detector health numbers. delivery_plan_v26.md's Slice 5a text "
+            "names only (b) and (c) as this slice's inherited scope -- (a) is "
+            "intentionally NOT computed or claimed anywhere in this report."
+        ),
+    }
+
+    if not results:
+        reason = "protocol_result.yaml has no results entries for this run."
+        return _wrap("regime_power", overall, _unavailable(reason),
+                      _unavailable(reason), _unavailable(reason))
+
+    per_window = []
+    for r in results:
+        key = (r.get("symbol"), r.get("window"))
+        bars = bars_by_window.get(key)
+        if bars is None:
+            hindsight_lag = _unavailable(
+                f"no bars.csv found for {key[0]} {key[1]} "
+                f"(results/{r.get('run_id')}/bars.csv missing).")
+        else:
+            hindsight_lag = _compute_hindsight_lag(bars)
+        per_window.append({
+            "symbol": r.get("symbol"), "window": r.get("window"), "run_id": r.get("run_id"),
+            "per_regime": r.get("per_regime"),
+            "regime_validity": r.get("regime_validity"),
+            "hindsight_lag": hindsight_lag,
+        })
+
+    per_regime: dict[str, list[dict]] = defaultdict(list)
+    for r in results:
+        for regime, block in (r.get("per_regime") or {}).items():
+            per_regime[regime].append({
+                "symbol": r.get("symbol"), "window": r.get("window"),
+                "per_regime": block,
+                "regime_validity": (r.get("regime_validity") or {}).get(regime),
+            })
+    per_regime_out = dict(per_regime) if per_regime else _unavailable(
+        "no result entry in protocol_result.yaml carried a per_regime block.")
+
+    per_symbol: dict[str, list[dict]] = defaultdict(list)
+    for entry in per_window:
+        per_symbol[entry["symbol"]].append(entry)
+    per_symbol_out = dict(per_symbol)
+
+    return _wrap("regime_power", overall, per_window, per_regime_out, per_symbol_out)
+
+
+# ---------------------------------------------------------------------------
+# component_attribution.yaml
+# ---------------------------------------------------------------------------
+
+def _parse_component_columns(fieldnames: list[str]) -> dict[str, dict[str, str]]:
+    """Map component_name -> {metric_name: column_name} for every
+    debug_info.components.<name>.<metric> column in a bars.csv header."""
+    components: dict[str, dict[str, str]] = defaultdict(dict)
+    for col in fieldnames:
+        if not col.startswith(_COMPONENT_COLUMN_PREFIX):
+            continue
+        rest = col[len(_COMPONENT_COLUMN_PREFIX):]
+        if "." not in rest:
+            continue
+        name, metric = rest.split(".", 1)
+        components[name][metric] = col
+    return dict(components)
+
+
+def _component_records(bars: list[dict], symbol: str, window: str) -> list[dict]:
+    if not bars:
+        return []
+    components = _parse_component_columns(list(bars[0].keys()))
+    records = []
+    for row in bars:
+        for name, metric_cols in components.items():
+            records.append({
+                "symbol": symbol,
+                "window": window,
+                "timestamp": row.get("timestamp"),
+                "regime": row.get("regime"),
+                "component": name,
+                **{metric: row.get(col) for metric, col in metric_cols.items()},
+            })
+    return records
+
+
+def build_component_attribution_report(sources: dict) -> dict:
+    pr = sources["protocol_result"]
+    results = pr.get("results") or []
+    bars_by_window = sources["bars_by_window"]
+
+    all_records: list[dict] = []
+    discovered: set[str] = set()
+    for r in results:
+        key = (r.get("symbol"), r.get("window"))
+        bars = bars_by_window.get(key)
+        if not bars:
+            continue
+        recs = _component_records(bars, r.get("symbol"), r.get("window"))
+        all_records.extend(recs)
+        discovered.update(rec["component"] for rec in recs)
+
+    if discovered:
+        overall = {
+            "components_discovered": sorted(discovered),
+            "note": "inventory only (component names parsed from bars.csv "
+                    "debug_info.components.* column headers) -- zero aggregation "
+                    "performed here; see per_window for the raw per-bar values.",
+        }
+    else:
+        overall = _unavailable(
+            "no debug_info.components.*.* columns found in any window's bars.csv "
+            "for this run.")
+
+    if all_records:
+        per_window = _group_by(all_records, lambda rec: rec["window"])
+        per_regime = _group_by(all_records, lambda rec: rec["regime"])
+        per_symbol = _group_by(all_records, lambda rec: rec["symbol"])
+    else:
+        reason = "no component records extracted (see overall slice's reason)."
+        per_window = _unavailable(reason)
+        per_regime = _unavailable(reason)
+        per_symbol = _unavailable(reason)
+
+    return _wrap("component_attribution", overall, per_window, per_regime, per_symbol)
+
+
+# ---------------------------------------------------------------------------
+# Orchestration
+# ---------------------------------------------------------------------------
+
+BUILDERS: dict[str, Callable[[dict], dict]] = {
+    "profitability": build_profitability_report,
+    "trade_efficiency": build_trade_efficiency_report,
+    "forecast_power": build_forecast_power_report,
+    "regime_power": build_regime_power_report,
+    "component_attribution": build_component_attribution_report,
+}
+
+
+def build_reports(run_dir: Path | str, write: bool = True) -> dict[str, dict]:
+    """Build all five category reports for one run directory. When `write`
+    is True (the default, and what workflow/run_phase1_research.py's
+    protocol_execution branch uses), writes each to
+    <run_dir>/artifacts/reports/<category>.yaml via the same atomic
+    temp-file-then-replace pattern as save_yaml. Returns the built dicts
+    either way, so tests can inspect content without touching disk
+    (write=False)."""
+    run_dir = Path(run_dir)
+    sources = load_run_sources(run_dir)
+    generated_at = datetime.now(timezone.utc).isoformat()
+    source_run_id = run_dir.name
+
+    reports = {}
+    for name, builder in BUILDERS.items():
+        report = builder(sources)
+        report["source_run_id"] = source_run_id
+        report["generated_at"] = generated_at
+        reports[name] = report
+
+    if write:
+        out_dir = run_dir / "artifacts" / "reports"
+        for name, report in reports.items():
+            _write_yaml_atomic(out_dir / f"{name}.yaml", report)
+
+    return reports
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__,
+                                      formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("run_dir", help="Path to a run directory, e.g. strategy-research/runs/run_059")
+    parser.add_argument("--no-write", action="store_true",
+                         help="Build reports in memory only; do not write artifacts/reports/*.yaml.")
+    args = parser.parse_args()
+
+    reports = build_reports(Path(args.run_dir), write=not args.no_write)
+    for name in REPORT_CATEGORIES:
+        report = reports[name]
+        slice_summary = {
+            slice_name: ("unavailable" if isinstance(v, dict) and v.get("unavailable") else "populated")
+            for slice_name, v in report["slices"].items()
+        }
+        print(f"{name}: {slice_summary}")
+
+
+if __name__ == "__main__":
+    main()
