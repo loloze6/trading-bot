@@ -459,3 +459,34 @@ def test_valid_example_proposal_has_no_routing_fields(category):
     for f in _ROUTING_FIELDS:
         assert f not in example
     assert "status" not in example
+
+
+@pytest.mark.parametrize("category", CATEGORIES)
+def test_schema_rejects_a_proposal_that_smuggles_in_routing_fields(category):
+    """CODE-REVIEW REGRESSION: the shipped schema had no additionalProperties: false
+    anywhere, so an otherwise-valid proposal carrying hypothesis_verdict/lineage_routing/
+    status alongside it validated cleanly -- silently defeating the one mechanical
+    backstop this slice has for the routing-authority boundary (schemas here are
+    documentation-only, never loaded by code, per strategy-research/CLAUDE.md -- this
+    JSON Schema plus this test suite IS the enforcement). The prior test above only
+    checked the hand-built fixtures never contain these fields; it never exercised
+    whether the SCHEMA ITSELF would reject them if a real reader emitted one. This test
+    does exactly that: takes a genuinely schema-valid example and adds the forbidden
+    fields, and asserts validation now fails."""
+    smuggled = copy.deepcopy(_VALID_EXAMPLES[category])
+    smuggled["hypothesis_verdict"] = "promote"
+    smuggled["lineage_routing"] = "next_stage"
+    smuggled["status"] = "approved"
+    with pytest.raises(jsonschema.ValidationError):
+        _validate(smuggled)
+
+
+def test_schema_rejects_any_undeclared_top_level_field():
+    """Same gap, generalized: additionalProperties: false must reject ANY field the
+    schema doesn't declare, not just the three routing fields this slice specifically
+    cares about -- otherwise a future field added elsewhere in this project's YAML
+    conventions could slip through unnoticed too."""
+    smuggled = copy.deepcopy(_VALID_EXAMPLES["profitability"])
+    smuggled["totally_undeclared_field"] = "should never validate"
+    with pytest.raises(jsonschema.ValidationError):
+        _validate(smuggled)

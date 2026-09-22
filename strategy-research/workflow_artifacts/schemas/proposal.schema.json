@@ -5,6 +5,7 @@
   "description": "A single evidence-grounded proposal from one of the 5 specialist readers (profitability, trade_efficiency, forecast_power, regime_power, component_attribution). A reader proposes evidence plus a patch/new_block sketch -- it does NOT decide hypothesis_verdict/lineage_routing/status. That routing authority stays with the not-yet-built mechanical verdict-synthesis step (5b-ii; operator decision recorded in E-046a/S1_FINDINGS.md's 'Decision' section, 2026-09-22: verdict synthesis across the 5 readers' proposals is mechanical, not an LLM stage).",
   "type": "object",
   "required": ["proposal_id", "kind", "evidence", "scores", "model_id", "rubric_version"],
+  "additionalProperties": false,
   "properties": {
     "proposal_id": {
       "type": "string",
@@ -25,6 +26,7 @@
       "type": "object",
       "description": "Required when kind=new_block; must be absent when kind=patch. A block_manifest.yaml-shaped sketch (STRATEGY_DESIGN_GUIDE.md §7c, itself PROPOSED-NOT-BUILT -- nothing reads block_manifest.yaml today; this field exists so a human/5b-ii reviewer has a concrete sketch, not so any code can consume it).",
       "required": ["kind", "config_paths", "rationale"],
+      "additionalProperties": false,
       "properties": {
         "kind": {
           "enum": ["forecast", "regime"],
@@ -51,6 +53,7 @@
       "type": "object",
       "description": "0-3 anchored scores -- see each reader SKILL.md's own 'Scoring (0-3 anchors)' table. Do not free-hand; pick from the anchor table by what the report's own fields show.",
       "required": ["confidence_real", "distance_to_profitable", "mechanism_plausibility"],
+      "additionalProperties": false,
       "properties": {
         "confidence_real": {
           "type": "integer",
