@@ -205,6 +205,51 @@ def test_data_availability_gate_flag_off_single_call_unchanged(monkeypatch):
     assert not (rpr.ROOT / "campaign_record" / "data_requests.yaml").exists()
 
 
+def test_data_availability_gate_variant_loop_unknown_outcome_fails_closed(monkeypatch):
+    """CODE-REVIEW REGRESSION: only 'refine'/'decline' outcomes marked a
+    variant not_tested -- an 'unknown' (or any other malformed/missing)
+    outcome silently fell through and left the variant 'validated',
+    proceeding to a real backtest despite the gate never actually
+    validating the data. Must fail CLOSED on anything that isn't the
+    literal string 'validate', matching the sibling flag-off routing
+    branch's own fail-closed default."""
+    _set_flag(rpr.ROOT, {"config_direct_authoring": {"enabled": True}, "variant_loop": {"enabled": True}})
+    root = rpr.ROOT
+    run_dir = _setup_variant_loop_run(root, "run_976", "unknown_outcome.json")
+    _write_three_variant_index(run_dir)
+
+    def _fake_subprocess_run(cmd, *args, **kwargs):
+        config_path = cmd[2]
+        variant_id = Path(config_path).parent.name
+        out_dir = Path(cmd[cmd.index("--out-dir") + 1])
+        if variant_id == "design_v2":
+            # Malformed/missing outcome -- gate ran (exit 0) but its own
+            # output is degenerate.
+            out_dir.mkdir(parents=True, exist_ok=True)
+            rpr.save_yaml(out_dir / "data_availability_gate.yaml", {"reasons": []})
+        else:
+            _dag_ok("validate")(out_dir)
+
+        class _Result:
+            returncode = 0
+            stdout = ""
+            stderr = ""
+        return _Result()
+
+    monkeypatch.setattr(rpr.subprocess, "run", _fake_subprocess_run)
+    asyncio.run(rpr.run_tool_worker("data_availability_gate", "run_976"))
+
+    index = rpr.load_yaml(run_dir / "artifacts" / "variants" / "index.yaml")
+    variants = index["variants"]
+    assert variants["design_v2"]["status"] == "not_tested", (
+        "a missing/unknown gate outcome must fail closed (not_tested), "
+        f"got {variants['design_v2']!r}"
+    )
+    assert "unknown" in variants["design_v2"]["reason"]
+    assert variants["base"]["status"] == "validated"
+    assert variants["asset_v2"]["status"] == "validated"
+
+
 def test_data_availability_gate_variant_loop_zero_validated_raises(monkeypatch):
     _set_flag(rpr.ROOT, {"config_direct_authoring": {"enabled": True}, "variant_loop": {"enabled": True}})
     run_dir = _minimal_run(rpr.ROOT, "run_972")
@@ -575,3 +620,30 @@ def test_write_promotion_audit_variant_loop_falls_back_to_singular_when_no_per_v
     audit = rpr.load_yaml(run_dir / "artifacts" / "promotion_audit.yaml")
     assert set(audit["per_variant"].keys()) == {"base"}
     assert audit["passes_deflated_threshold"] is True
+
+
+def test_write_promotion_audit_picks_strongest_passing_variant_not_alphabetically_first():
+    """CODE-REVIEW REGRESSION: when multiple variants pass, the promoted
+    variant used to be picked by alphabetically-first variant_id rather
+    than strongest evidence -- 'asset_v2' with a MUCH stronger t-stat would
+    lose to 'base' purely by name ordering. Now ranked by evidence
+    strength (DSR, or t_stat for the sparse/expectancy pathway)."""
+    _set_flag(rpr.ROOT, {"config_direct_authoring": {"enabled": True}, "variant_loop": {"enabled": True}})
+    run_dir = rpr.ROOT / "runs" / "run_995"
+    (run_dir / "artifacts").mkdir(parents=True, exist_ok=True)
+    rpr.save_yaml(run_dir / "artifacts" / "verdict_interpretation.yaml", {"hypothesis_id": "run_995"})
+    variants_dir = run_dir / "artifacts" / "variants"
+    # Alphabetically FIRST but WEAKER evidence (t=5.0).
+    rpr.save_yaml(variants_dir / "base" / "protocol_result.yaml", _sparse_pr(0.5, 10.0, 2.0))
+    # Alphabetically LAST but STRONGER evidence (t=10.0) -- must win.
+    rpr.save_yaml(variants_dir / "design_v2_stronger" / "protocol_result.yaml", _sparse_pr(0.6, 20.0, 2.0))
+    _empty_campaign()
+
+    rpr._write_promotion_audit(run_dir, "run_995")
+
+    audit = rpr.load_yaml(run_dir / "artifacts" / "promotion_audit.yaml")
+    assert audit["passes_deflated_threshold"] is True
+    assert audit["promoted_variant"] == "design_v2_stronger", (
+        f"expected the stronger-evidence variant to win, got {audit['promoted_variant']!r}"
+    )
+    assert audit["raw_median_sharpe"] == 0.6

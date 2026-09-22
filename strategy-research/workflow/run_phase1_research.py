@@ -1220,15 +1220,30 @@ async def run_tool_worker(stage_name: str, run_id: str):
                       "remaining variants.")
                 continue
 
-            import shutil as _dag_shutil
             variant_artifacts_dir = ARTIFACTS / "variants" / variant_id
             variant_artifacts_dir.mkdir(parents=True, exist_ok=True)
-            _dag_shutil.copy(gate_path, variant_artifacts_dir / "data_availability_gate.yaml")
+            # CODE-REVIEW FIX (2026-09-22): shutil is already imported at
+            # module scope -- no need for a redundant local import repeated
+            # once per validated variant per run.
+            shutil.copy(gate_path, variant_artifacts_dir / "data_availability_gate.yaml")
             gate_result = load_yaml(variant_artifacts_dir / "data_availability_gate.yaml") or {}
             outcome = gate_result.get("outcome", "unknown")
             print(f"✅ data_availability_gate: variant '{variant_id}' outcome: {outcome.upper()}")
 
-            if outcome in ("refine", "decline"):
+            if outcome == "validate":
+                pass  # variants_idx[variant_id] left untouched (stays
+                      # "validated") -- this variant proceeds to protocol_execution.
+            else:
+                # CODE-REVIEW FIX (2026-09-22): previously only "refine" and
+                # "decline" were handled here, so an "unknown" (or any other
+                # malformed/missing) outcome silently fell through and left
+                # the variant as "validated" -- proceeding to a real
+                # backtest despite the gate never actually validating the
+                # data. This is the opposite of the sibling flag-off routing
+                # branch (`gate.get("outcome", "decline")` -- fails CLOSED
+                # on a missing key) and of this codebase's own "fail loud,
+                # not flattering" rule. Any outcome that isn't the literal
+                # string "validate" now marks the variant not_tested.
                 reasons = gate_result.get("reasons", [])
                 reason = f"data_availability_gate outcome={outcome}: " + "; ".join(reasons[:10])
                 variants_idx[variant_id] = {**vinfo, "status": "not_tested", "reason": reason}
@@ -1236,9 +1251,6 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     "variant_id": variant_id, "outcome": outcome,
                     "reason": reason, "reasons": reasons,
                 })
-            # outcome == "validate": variants_idx[variant_id] is left
-            # untouched (stays "validated") -- this variant proceeds to
-            # protocol_execution.
 
         save_yaml(index_path, {"variants": variants_idx})
         if data_requests:
@@ -6146,7 +6158,31 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
         indeterminate = sorted(vid for vid, f in per_variant.items() if f["passes_deflated_threshold"] is None)
         if passing:
             passes_deflated = True
-            rep_vid = passing[0]
+            # CODE-REVIEW FIX (2026-09-22): previously picked the
+            # alphabetically-first passing variant_id, so a weaker passing
+            # candidate (e.g. DSR barely over threshold) could be reported
+            # as `promoted_variant` over a stronger one (e.g. DSR well
+            # above threshold) purely by name ordering. Rank by the
+            # variant's own deflated_sharpe_ratio, highest first; a
+            # variant lacking that key (the sparse/expectancy-only path)
+            # sorts last rather than crashing, since it has no comparable
+            # DSR figure to rank on. Ties (including all-missing) fall back
+            # to alphabetical for determinism.
+            def _evidence_strength(vid: str) -> float:
+                f = per_variant[vid]
+                dsr = f.get("deflated_sharpe_ratio")
+                if dsr is not None:
+                    return dsr
+                # Sparse/expectancy-valid candidates never have a DSR figure
+                # -- fall back to the expectancy t-stat as the comparable
+                # "how far past the promotion bar" evidence strength for
+                # that pathway.
+                t_stat = (f.get("expectancy_promotion") or {}).get("t_stat")
+                return t_stat if t_stat is not None else float("-inf")
+            rep_vid = max(
+                passing,
+                key=lambda vid: (_evidence_strength(vid), -passing.index(vid)),
+            )
         elif indeterminate:
             passes_deflated = None
             rep_vid = indeterminate[0]

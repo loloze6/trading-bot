@@ -491,7 +491,7 @@ orch.update_state(
            'component_execution_error_flagged': False, 'kb_reactivation_violation': False,
            'pass_rule_evaluation_disagreement': False, 'stale_escalation_unclaimed': False,
            'anti_adjacency_gate_exhausted': False, 'variant_anti_adjacency_gate_refused': False,
-           'profit_bars_reached': False},
+           'variant_gate_insufficient': False, 'profit_bars_reached': False},
 )
 "
 ```
