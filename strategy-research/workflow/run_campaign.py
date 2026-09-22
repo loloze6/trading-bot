@@ -921,6 +921,21 @@ def _classify_human_pause(run_dir: Path, state: dict) -> str:
     # must-escalate, not an auto-recoverable engineering failure.
     if flags.get("variant_anti_adjacency_gate_refused"):
         return "variant_anti_adjacency_gate_refused"
+    # E-033.1 Slice 4b (2026-09-22): set by run_phase1_research's
+    # data_availability_gate elif-branch in run_loop when, after the
+    # per-variant data-availability gate has run, fewer than 3 variants
+    # remain "validated" in artifacts/variants/index.yaml. Deliberately a
+    # DISTINCT flag from idea_status (S1_FINDINGS.md §8's "idea_status
+    # collision" -- that field already means something different: the
+    # criteria-grid's own validated/refuted/inconclusive rollup, written by
+    # _build_idea_status_artifact AFTER backtests complete). This is a
+    # precondition failure that happens BEFORE protocol_execution/the grid
+    # ever run, so -- unlike profit_bars_reached below -- it can never
+    # co-occur with promotion_audit.yaml and does not need to outrank the
+    # promotion_audit block; placed here purely to mirror the other
+    # early-pipeline sticky-flag branches immediately above it.
+    if flags.get("variant_gate_insufficient"):
+        return "variant_gate_insufficient"
     # delivery_plan_v26.md 0.2 (item 2) -- the branch-3 stop
     # (orchestrator.profit_bars_file.enabled, off by default). Must outrank the
     # promotion_audit block below for the exact same reason research_only_unverified
@@ -1148,6 +1163,10 @@ _PAUSE_FLAG_TO_REASON = (
     # (test_every_known_sticky_flag_branch_has_a_pause_flag_to_reason_entry)
     # specifically to catch a future omission of exactly this kind.
     ("variant_anti_adjacency_gate_refused", "variant_anti_adjacency_gate_refused"),
+    # E-033.1 Slice 4b. Mirrors _classify_human_pause's branch for this flag,
+    # which sits immediately after variant_anti_adjacency_gate_refused in
+    # that function's own order -- see this flag's comment there.
+    ("variant_gate_insufficient", "variant_gate_insufficient"),
     # Profit-bars branch-3 stop (orchestrator.profit_bars_file.enabled). Mirrors
     # _classify_human_pause's branch for this flag -- see that flag's comment
     # there for why it must rank above the promotion_audit block. CODE-REVIEW

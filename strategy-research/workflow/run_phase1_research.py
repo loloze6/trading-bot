@@ -1138,7 +1138,129 @@ async def run_tool_worker(stage_name: str, run_id: str):
     ARTIFACTS = RUN_DIR / "artifacts"
     TBOT_PYTHON = _resolve_tbot_python()
 
-    if stage_name == "data_availability_gate":
+    if stage_name == "data_availability_gate" and _variant_loop_enabled():
+        # E-033.1 Slice 4b (delivery_plan_v26.md Slice 4, sub-slice 2 of 2:
+        # "data gate + conformance + grid/promotion wiring"). Per the
+        # operator's 2026-09-22 decision (S1_FINDINGS.md "Decision" section):
+        # every workflow control runs independently PER VARIANT -- each
+        # validated variant in artifacts/variants/index.yaml gets its OWN
+        # data_availability_gate.py call, its OWN refine/decline outcome,
+        # its OWN not_tested marking -- never one shared gate result applied
+        # to all three. Mirrors Slice 4a's own protocol_execution per-variant
+        # loop (continue-on-error, per-variant output dirs under
+        # RUN_DIR/variants/<variant_id>/): a crash or a decline on ONE
+        # variant must not stop the others from being gated.
+        index_path = ARTIFACTS / "variants" / "index.yaml"
+        index_doc = load_yaml(index_path) or {}
+        variants_idx = index_doc.get("variants", {})
+        validated = {vid: v for vid, v in variants_idx.items() if v.get("status") == "validated"}
+        if not validated:
+            # Same defensive rationale as protocol_execution's own per-variant
+            # loop (S1_FINDINGS.md §3a code-review note): routing already
+            # refuses to reach this stage with zero validated variants, but
+            # this branch must never silently trust that -- raise loudly
+            # instead of iterating over nothing. Checked BEFORE resolving the
+            # protocol path (mirrors protocol_execution's own ordering) so a
+            # zero-variant race/staleness case fails on ITS OWN message, not
+            # on an unrelated protocol-resolution error.
+            raise RuntimeError(
+                f"run_tool_worker(data_availability_gate): no validated variants found in "
+                f"{index_path} for {run_id} -- refusing to run an empty gate loop."
+            )
+
+        protocol_path = _resolve_protocol_path(RUN_DIR, run_id)
+        data_requests: list = []
+        for variant_id in sorted(validated):
+            vinfo = validated[variant_id]
+            _config_path_val = vinfo.get("config_path")
+            if not _config_path_val:
+                reason = (f"variant '{variant_id}' is 'validated' in index.yaml but has no "
+                          "'config_path' -- refusing to guess a path")
+                variants_idx[variant_id] = {**vinfo, "status": "not_tested", "reason": reason}
+                data_requests.append({"variant_id": variant_id, "outcome": "error", "reason": reason})
+                print(f"⚠️  data_availability_gate: variant '{variant_id}' has no config_path "
+                      "in index.yaml; continuing with remaining variants.")
+                continue
+
+            variant_config_path = RUN_DIR / _config_path_val
+            variant_out_dir = RUN_DIR / "variants" / variant_id / "data_availability"
+            cmd = [
+                str(TBOT_PYTHON), str(ROOT / "tools" / "data_availability_gate.py"),
+                str(variant_config_path), str(protocol_path),
+                "--run-id", run_id,
+                "--out-dir", str(variant_out_dir),
+            ]
+            print(f"🗂️  data_availability_gate: variant '{variant_id}'...")
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            print(result.stdout)
+            # Exit codes (data_availability_gate.py's own convention):
+            # 0=validate, 2=decline, 3=refine. A non-{0,2,3} code is a
+            # genuine crash of the tool itself -- unlike the flag-off
+            # single-gate branch below (which still raises loud, since a
+            # tool crash there has no sibling variant to fall back to), a
+            # per-variant crash here is recorded as this variant's own
+            # not_tested outcome and the loop continues, same isolation
+            # principle as protocol_execution's own per-variant loop.
+            if result.returncode not in (0, 2, 3):
+                reason = f"data_availability_gate.py crashed (exit {result.returncode}): {result.stderr}"
+                variants_idx[variant_id] = {**vinfo, "status": "not_tested", "reason": reason}
+                data_requests.append({"variant_id": variant_id, "outcome": "error", "reason": reason})
+                print(f"⚠️  data_availability_gate: variant '{variant_id}' tool crashed "
+                      f"(exit {result.returncode}); marking not_tested, continuing with "
+                      "remaining variants.")
+                continue
+
+            gate_path = variant_out_dir / "data_availability_gate.yaml"
+            if not gate_path.exists():
+                reason = f"data_availability_gate.yaml not found after gate run for variant '{variant_id}'"
+                variants_idx[variant_id] = {**vinfo, "status": "not_tested", "reason": reason}
+                data_requests.append({"variant_id": variant_id, "outcome": "error", "reason": reason})
+                print(f"⚠️  data_availability_gate: variant '{variant_id}' produced no "
+                      "data_availability_gate.yaml; marking not_tested, continuing with "
+                      "remaining variants.")
+                continue
+
+            import shutil as _dag_shutil
+            variant_artifacts_dir = ARTIFACTS / "variants" / variant_id
+            variant_artifacts_dir.mkdir(parents=True, exist_ok=True)
+            _dag_shutil.copy(gate_path, variant_artifacts_dir / "data_availability_gate.yaml")
+            gate_result = load_yaml(variant_artifacts_dir / "data_availability_gate.yaml") or {}
+            outcome = gate_result.get("outcome", "unknown")
+            print(f"✅ data_availability_gate: variant '{variant_id}' outcome: {outcome.upper()}")
+
+            if outcome in ("refine", "decline"):
+                reasons = gate_result.get("reasons", [])
+                reason = f"data_availability_gate outcome={outcome}: " + "; ".join(reasons[:10])
+                variants_idx[variant_id] = {**vinfo, "status": "not_tested", "reason": reason}
+                data_requests.append({
+                    "variant_id": variant_id, "outcome": outcome,
+                    "reason": reason, "reasons": reasons,
+                })
+            # outcome == "validate": variants_idx[variant_id] is left
+            # untouched (stays "validated") -- this variant proceeds to
+            # protocol_execution.
+
+        save_yaml(index_path, {"variants": variants_idx})
+        if data_requests:
+            # campaign_record/data_requests.yaml -- new file, no existing
+            # precedent (S1_FINDINGS.md §8); shape mirrors the sibling
+            # campaign_record/component_requests.yaml written by Slice 3b's
+            # own backtest_specification branch above (:1797-1803): a flat,
+            # append-only "requests" list, each row stamped with run_id and
+            # stage so multiple runs/stages can share one file.
+            requests_path = ROOT / "campaign_record" / "data_requests.yaml"
+            requests_path.parent.mkdir(parents=True, exist_ok=True)
+            existing = (load_yaml(requests_path) or {}) if requests_path.exists() else {}
+            existing_requests = existing.get("requests", [])
+            for req in data_requests:
+                existing_requests.append({"run_id": run_id, "stage": "data_availability_gate", **req})
+            save_yaml(requests_path, {"requests": existing_requests})
+
+        remaining = sum(1 for v in variants_idx.values() if v.get("status") == "validated")
+        print(f"✅ data_availability_gate (variant loop): {remaining}/{len(validated)} "
+              f"variant(s) remain validated after gating")
+
+    elif stage_name == "data_availability_gate":
         # E-054 Layer 2: real per-window/per-feed data-touch check, BEFORE the
         # (much more expensive) protocol_execution stage ever runs. Uses the
         # SAME shared resolver protocol_execution uses below, so it checks
@@ -4414,11 +4536,15 @@ def _mark_trial_invalidated(trial_id: str, reason: str):
     variant's protocol run must invalidate ONLY that variant's trial row,
     never the whole run's variant family -- so this function now takes the
     exact trial_id to invalidate rather than deriving one from a bare
-    run_id. today's one real call site (run_loop's protocol_execution
-    conformance branch) still passes a bare run_id-shaped value, which is
-    correct and unaffected as-is: it is not yet a per-variant loop, so
-    run_id IS the trial_id there (4b will update that call site to pass a
-    compound trial_id once conformance becomes a per-variant loop)."""
+    run_id.
+
+    UPDATED 2026-09-22 (Slice 4b): run_loop now has TWO call sites for this
+    function -- the flag-off `protocol_execution` elif-branch still passes a
+    bare run_id (correct and unaffected: it is not a per-variant loop, so
+    run_id IS the trial_id there), and the new `protocol_execution and
+    _variant_loop_enabled()` elif-branch passes the compound
+    `f"{run_id}:{variant_id}"` per variant, finishing what this docstring
+    previously described as still owed to 4b."""
     state = load_campaign_state()
     marked = False
     for t in state.get("trial_sharpes", []):
@@ -5693,6 +5819,27 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
     A6.2: Write promotion_audit.yaml before holdout_evaluation.
     Compute Deflated Sharpe over statistic_valid='sharpe' trials from campaign_state.
     For sparse-trading candidates (statistic_valid='expectancy'), record expectancy t-stat.
+
+    RESTRUCTURED 2026-09-22 (E-033.1 Slice 4b, build item 9 / S1_FINDINGS.md §6.5,
+    per the operator's 2026-09-22 "Decision" section, Branch 3): under
+    orchestrator.variant_loop.enabled, this function now evaluates EVERY
+    variant's own protocol_result.yaml (RUN_DIR/artifacts/variants/<variant_id>/
+    protocol_result.yaml, written per-variant by Slice 4a's protocol_execution
+    loop) independently, instead of the singular bridge-file
+    artifacts/protocol_result.yaml alone -- an existential quantifier across
+    variants: the overall promotion result PASSES if AT LEAST ONE variant's
+    own DSR/expectancy verdict passes. The per-candidate math itself
+    (_dsr_candidate below) is verbatim the original single-result computation,
+    extracted unchanged so the campaign-wide trial-ledger statistics
+    (deduped_trials/sharpe_values/n_dsr_total/n_trials/excluded/total_tested --
+    these are the SAME across every variant, since the multiple-testing
+    correction's distribution is estimated from the whole campaign's trial
+    ledger, not per-variant) are computed exactly once regardless of which
+    protocol_result(s) they're evaluated against. Flag-off path below is
+    untouched code, reached unconditionally when
+    orchestrator.variant_loop.enabled is off/absent -- byte-identical
+    promotion_audit.yaml to every pre-4b run (save_yaml uses sort_keys=False,
+    so the dict's insertion order was preserved exactly, not just its keys).
     """
     import math as _math
     from statistics import NormalDist as _NDist
@@ -5709,32 +5856,9 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
     EULER_GAMMA = 0.5772156649
     DSR_THRESHOLD = 0.95
 
-    # --- Load verdict interpretation for hypothesis_id and candidate SR ---
+    # --- Load verdict interpretation for hypothesis_id ---
     interp      = load_yaml(run_dir / "artifacts" / "verdict_interpretation.yaml") or {}
     hyp_id      = interp.get("hypothesis_id", run_id)
-    pr_path     = run_dir / "artifacts" / "protocol_result.yaml"
-    pr          = load_yaml(pr_path) if pr_path.exists() else {}
-    pss         = pr.get("per_symbol_summary") or {}
-    hv_diag     = (pr.get("hypothesis_verdict") or {}).get("diagnostics") or {}
-
-    sharpes_raw   = [v.get("median_sharpe") for v in pss.values() if v.get("median_sharpe") is not None]
-    raw_median_sr = round(statistics.median(sharpes_raw), 4) if sharpes_raw else None
-    below_floor   = hv_diag.get("below_floor_pct", 0.0) or 0.0
-    is_sparse     = below_floor > 50.0
-    # CUL-193: per_trade_expectancy_bps is a {mean, se, t_stat, n} dict on the
-    # real trade-diagnostics path (run_protocol.py's A3.4 summary, injected into
-    # protocol_result.yaml's hypothesis_verdict.diagnostics verbatim) -- the SE
-    # this function needs was already being computed and stored upstream; this
-    # site was simply reading the whole dict as if it were the bare mean. The
-    # stub path (prescreen-kill, :4866) still writes a bare None here, so both
-    # shapes must be handled.
-    _exp_block = hv_diag.get("per_trade_expectancy_bps")
-    if isinstance(_exp_block, dict):
-        expectancy_bps = _exp_block.get("mean")
-        expectancy_se  = _exp_block.get("se")
-    else:
-        expectancy_bps = _exp_block if isinstance(_exp_block, (int, float)) else None
-        expectancy_se  = None
 
     # --- Load and filter trial_sharpes from campaign_state ---
     campaign   = load_campaign_state()
@@ -5821,153 +5945,286 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
             f"from. This indicates deduped_trials and sharpe_values have diverged."
         )
 
-    # --- Deflated Sharpe computation ---
-    dsr_result: dict = {}
-    passes_deflated = None
-    # promotion_threshold_raw is E_max_SR (raw Sharpe space); None outside the
-    # happy path, matching deflate_sharpe.compute_promotion_audit exactly. The
-    # Sharpe branch below reassigns this to the computed e_max_sr.
-    e_max_sr = None
+    # --- Deflated Sharpe computation, per candidate protocol_result -------
+    # EXTRACTED 2026-09-22 (Slice 4b) from what was previously this
+    # function's own inline body, verbatim -- only the candidate's own
+    # per_symbol_summary/hypothesis_verdict.diagnostics (pss/hv_diag/
+    # raw_median_sr/is_sparse/expectancy_bps/expectancy_se) are now read from
+    # a `pr` PARAMETER instead of a single module-level load, so the exact
+    # same math can run once per variant (flag-on) or once for the singular
+    # bridge file (flag-off) without duplicating the formula. Every shared
+    # campaign-wide quantity it closes over (deduped_trials/sharpe_values/
+    # n_dsr_total/n_trials/excluded/total_tested/EULER_GAMMA/DSR_THRESHOLD/
+    # _phi/_phi_inv) is unchanged and computed exactly once above, regardless
+    # of how many candidates are evaluated against it.
+    def _dsr_candidate(pr: dict):
+        """Returns (raw_median_sr, is_sparse, passes_deflated, e_max_sr,
+        dsr_result) for ONE protocol_result dict -- the same 5 quantities
+        this function's pre-4b body computed for the singular candidate."""
+        pss     = pr.get("per_symbol_summary") or {}
+        hv_diag = (pr.get("hypothesis_verdict") or {}).get("diagnostics") or {}
 
-    if is_sparse:
-        # Sparse path: expectancy t-stat. CUL-193: mirrors
-        # tools/deflate_sharpe.py::compute_promotion_audit's sparse branch
-        # exactly -- same formula, same t > 2.0 practical threshold (not the
-        # strict Bonferroni value, which is reported in the note only), same
-        # None-not-False indeterminate convention (CUL-163: a candidate whose
-        # t-stat cannot be computed was never actually evaluated, so it must
-        # not collapse to a terminal FAIL). Lockstep is required by CUL-193's
-        # own acceptance criteria -- both implementations must agree on the
-        # sparse verdict for the same inputs.
-        n_trades = sum(t.get("n_trades", 0) for t in deduped_trials if t.get("statistic_valid") == "expectancy")
-        t_stat = None
-        if expectancy_bps is not None and expectancy_se is not None and expectancy_se > 0:
-            t_stat = expectancy_bps / expectancy_se
-        passes_deflated = None if t_stat is None else (t_stat > 2.0)
-        _strict_bonferroni_t = (
-            f"{_phi_inv(1.0 - 0.05 / max(total_tested, 1)):.2f}" if total_tested >= 1 else "N/A"
-        )
-        dsr_result = {
-            "deflated_sharpe_ratio":   None,
-            "expected_max_sharpe":     None,
-            "trial_sharpe_variance":   None,
-            "correction_method":       "expectancy_t_stat_bonferroni",
-            "expectancy_promotion": {
-                "t_stat":          round(t_stat, 4) if t_stat is not None else None,
-                "passes":          passes_deflated,
-                "bonferroni_note": (
-                    f"Strict Bonferroni threshold with N={total_tested} trials would be "
-                    f"t > {_strict_bonferroni_t}. Using conservative t > 2.0 as practical threshold."
-                ),
-            },
-        }
-    elif n_dsr_total < 2:
-        dsr_result = {
-            "deflated_sharpe_ratio": None,
-            "expected_max_sharpe":   None,
-            "trial_sharpe_variance": None,
-            "correction_method":     "bailey_lopezdeprado_2014",
-            "dsr_error":             f"Insufficient trials: need >= 2, got {n_dsr_total}",
-        }
-        passes_deflated = False
-    elif n_trials < 2:
-        # H1: N (n_dsr_total) can be >= 2 while too few of those trials produced a real
-        # Sharpe value to estimate the distribution's variance -- a large N does not
-        # fix an unmeasurable variance. Distinct error from the n_dsr_total<2 case above.
-        dsr_result = {
-            "deflated_sharpe_ratio": None,
-            "expected_max_sharpe":   None,
-            "trial_sharpe_variance": None,
-            "correction_method":     "bailey_lopezdeprado_2014",
-            "dsr_error":             (
-                f"N={n_dsr_total} trials recorded (multiple-testing count is honest), "
-                f"but only {n_trials} produced a real Sharpe value -- need >= 2 real "
-                f"Sharpe values to estimate the trial distribution's variance. A large "
-                f"N does not fix an unmeasurable variance."
-            ),
-        }
-        passes_deflated = False
-    else:
-        mu_sr    = statistics.mean(sharpe_values)
-        # #56: POPULATION variance (n denominator), matching
-        # deflate_sharpe.py's reasoned choice. This site used
-        # statistics.stdev -- the SAMPLE form, n-1 denominator, with no
-        # rationale attached -- so the two lockstep paths returned different
-        # sigma_sr, hence different E_max_SR and different DSR, for identical
-        # trial Sharpes. The pipeline always reported the LARGER sigma, by
-        # sqrt(n/(n-1)): ~5.4% at n=10, ~1% at n=50.
-        # The population form is the intended one: it estimates the SHAPE of
-        # the Sharpe-generating process from the values actually observed,
-        # independent of how many total attempts N counts.
-        # Second drift of this class after correction_method (#40/#43), third
-        # counting the dedup predicate (#57).
-        var_sr   = sum((v - mu_sr) ** 2 for v in sharpe_values) / len(sharpe_values)
-        sigma_sr = math.sqrt(var_sr)
+        sharpes_raw   = [v.get("median_sharpe") for v in pss.values() if v.get("median_sharpe") is not None]
+        raw_median_sr = round(statistics.median(sharpes_raw), 4) if sharpes_raw else None
+        below_floor   = hv_diag.get("below_floor_pct", 0.0) or 0.0
+        is_sparse     = below_floor > 50.0
+        # CUL-193: per_trade_expectancy_bps is a {mean, se, t_stat, n} dict on the
+        # real trade-diagnostics path (run_protocol.py's A3.4 summary, injected into
+        # protocol_result.yaml's hypothesis_verdict.diagnostics verbatim) -- the SE
+        # this function needs was already being computed and stored upstream; this
+        # site was simply reading the whole dict as if it were the bare mean. The
+        # stub path (prescreen-kill, :4866) still writes a bare None here, so both
+        # shapes must be handled.
+        _exp_block = hv_diag.get("per_trade_expectancy_bps")
+        if isinstance(_exp_block, dict):
+            expectancy_bps = _exp_block.get("mean")
+            expectancy_se  = _exp_block.get("se")
+        else:
+            expectancy_bps = _exp_block if isinstance(_exp_block, (int, float)) else None
+            expectancy_se  = None
 
-        if sigma_sr < 1e-10:
+        dsr_result: dict = {}
+        passes_deflated = None
+        # promotion_threshold_raw is E_max_SR (raw Sharpe space); None outside the
+        # happy path, matching deflate_sharpe.compute_promotion_audit exactly. The
+        # Sharpe branch below reassigns this to the computed e_max_sr.
+        e_max_sr = None
+
+        if is_sparse:
+            # Sparse path: expectancy t-stat. CUL-193: mirrors
+            # tools/deflate_sharpe.py::compute_promotion_audit's sparse branch
+            # exactly -- same formula, same t > 2.0 practical threshold (not the
+            # strict Bonferroni value, which is reported in the note only), same
+            # None-not-False indeterminate convention (CUL-163: a candidate whose
+            # t-stat cannot be computed was never actually evaluated, so it must
+            # not collapse to a terminal FAIL). Lockstep is required by CUL-193's
+            # own acceptance criteria -- both implementations must agree on the
+            # sparse verdict for the same inputs.
+            n_trades = sum(t.get("n_trades", 0) for t in deduped_trials if t.get("statistic_valid") == "expectancy")
+            t_stat = None
+            if expectancy_bps is not None and expectancy_se is not None and expectancy_se > 0:
+                t_stat = expectancy_bps / expectancy_se
+            passes_deflated = None if t_stat is None else (t_stat > 2.0)
+            _strict_bonferroni_t = (
+                f"{_phi_inv(1.0 - 0.05 / max(total_tested, 1)):.2f}" if total_tested >= 1 else "N/A"
+            )
+            dsr_result = {
+                "deflated_sharpe_ratio":   None,
+                "expected_max_sharpe":     None,
+                "trial_sharpe_variance":   None,
+                "correction_method":       "expectancy_t_stat_bonferroni",
+                "expectancy_promotion": {
+                    "t_stat":          round(t_stat, 4) if t_stat is not None else None,
+                    "passes":          passes_deflated,
+                    "bonferroni_note": (
+                        f"Strict Bonferroni threshold with N={total_tested} trials would be "
+                        f"t > {_strict_bonferroni_t}. Using conservative t > 2.0 as practical threshold."
+                    ),
+                },
+            }
+        elif n_dsr_total < 2:
             dsr_result = {
                 "deflated_sharpe_ratio": None,
                 "expected_max_sharpe":   None,
-                "trial_sharpe_variance": round(var_sr, 6),
+                "trial_sharpe_variance": None,
                 "correction_method":     "bailey_lopezdeprado_2014",
-                "dsr_error":             "Zero trial Sharpe variance — all trials identical; DSR undefined.",
+                "dsr_error":             f"Insufficient trials: need >= 2, got {n_dsr_total}",
+            }
+            passes_deflated = False
+        elif n_trials < 2:
+            # H1: N (n_dsr_total) can be >= 2 while too few of those trials produced a real
+            # Sharpe value to estimate the distribution's variance -- a large N does not
+            # fix an unmeasurable variance. Distinct error from the n_dsr_total<2 case above.
+            dsr_result = {
+                "deflated_sharpe_ratio": None,
+                "expected_max_sharpe":   None,
+                "trial_sharpe_variance": None,
+                "correction_method":     "bailey_lopezdeprado_2014",
+                "dsr_error":             (
+                    f"N={n_dsr_total} trials recorded (multiple-testing count is honest), "
+                    f"but only {n_trials} produced a real Sharpe value -- need >= 2 real "
+                    f"Sharpe values to estimate the trial distribution's variance. A large "
+                    f"N does not fix an unmeasurable variance."
+                ),
             }
             passes_deflated = False
         else:
-            # H1: N is the honest multiple-testing total (n_dsr_total), NOT n_trials
-            # (the real-Sharpe-value sample size) -- mu_sr/sigma_sr above already used
-            # n_trials correctly (statistics.mean/stdev sample size), this is only the
-            # expected-max-Sharpe benchmark's exponent.
-            N = n_dsr_total
-            z1 = _phi_inv(1.0 - 1.0 / N)
-            z2 = _phi_inv(1.0 - 1.0 / (_math.e * N))
-            z_exp_max = (1.0 - EULER_GAMMA) * z1 + EULER_GAMMA * z2
-            e_max_sr  = mu_sr + sigma_sr * z_exp_max
+            mu_sr    = statistics.mean(sharpe_values)
+            # #56: POPULATION variance (n denominator), matching
+            # deflate_sharpe.py's reasoned choice. This site used
+            # statistics.stdev -- the SAMPLE form, n-1 denominator, with no
+            # rationale attached -- so the two lockstep paths returned different
+            # sigma_sr, hence different E_max_SR and different DSR, for identical
+            # trial Sharpes. The pipeline always reported the LARGER sigma, by
+            # sqrt(n/(n-1)): ~5.4% at n=10, ~1% at n=50.
+            # The population form is the intended one: it estimates the SHAPE of
+            # the Sharpe-generating process from the values actually observed,
+            # independent of how many total attempts N counts.
+            # Second drift of this class after correction_method (#40/#43), third
+            # counting the dedup predicate (#57).
+            var_sr   = sum((v - mu_sr) ** 2 for v in sharpe_values) / len(sharpe_values)
+            sigma_sr = math.sqrt(var_sr)
 
-            candidate = raw_median_sr if raw_median_sr is not None else 0.0
-            z = (candidate - e_max_sr) / sigma_sr
-            dsr = _phi(z)
+            if sigma_sr < 1e-10:
+                dsr_result = {
+                    "deflated_sharpe_ratio": None,
+                    "expected_max_sharpe":   None,
+                    "trial_sharpe_variance": round(var_sr, 6),
+                    "correction_method":     "bailey_lopezdeprado_2014",
+                    "dsr_error":             "Zero trial Sharpe variance — all trials identical; DSR undefined.",
+                }
+                passes_deflated = False
+            else:
+                # H1: N is the honest multiple-testing total (n_dsr_total), NOT n_trials
+                # (the real-Sharpe-value sample size) -- mu_sr/sigma_sr above already used
+                # n_trials correctly (statistics.mean/stdev sample size), this is only the
+                # expected-max-Sharpe benchmark's exponent.
+                N = n_dsr_total
+                z1 = _phi_inv(1.0 - 1.0 / N)
+                z2 = _phi_inv(1.0 - 1.0 / (_math.e * N))
+                z_exp_max = (1.0 - EULER_GAMMA) * z1 + EULER_GAMMA * z2
+                e_max_sr  = mu_sr + sigma_sr * z_exp_max
 
-            passes_deflated = dsr > DSR_THRESHOLD
-            dsr_result = {
-                "deflated_sharpe_ratio": round(dsr, 4),
-                "expected_max_sharpe":   round(e_max_sr, 4),
-                "trial_sharpe_variance": round(var_sr, 6),
-                "correction_method":     "bailey_lopezdeprado_2014",
+                candidate = raw_median_sr if raw_median_sr is not None else 0.0
+                z = (candidate - e_max_sr) / sigma_sr
+                dsr = _phi(z)
+
+                passes_deflated = dsr > DSR_THRESHOLD
+                dsr_result = {
+                    "deflated_sharpe_ratio": round(dsr, 4),
+                    "expected_max_sharpe":   round(e_max_sr, 4),
+                    "trial_sharpe_variance": round(var_sr, 6),
+                    "correction_method":     "bailey_lopezdeprado_2014",
+                }
+
+        return raw_median_sr, is_sparse, passes_deflated, e_max_sr, dsr_result
+
+    if _variant_loop_enabled():
+        # Slice 4b (E-033.1), per the operator's 2026-09-22 Decision section
+        # (Branch 3): every variant's own protocol_result.yaml is evaluated
+        # independently; the overall promotion result PASSES if AT LEAST ONE
+        # variant clears the DSR/expectancy bar -- an existential quantifier,
+        # not a single/base-only result. Deliberately NOT touching
+        # _evaluate_profit_bars (a separate function, out of this slice's
+        # stated build list) -- it still reads THIS function's top-level
+        # fields, which remain present and now represent the winning (or,
+        # absent a winner, the most-informative) variant.
+        variants_dir = run_dir / "artifacts" / "variants"
+        variant_results: dict = {}
+        if variants_dir.exists():
+            for vdir in sorted(p for p in variants_dir.iterdir() if p.is_dir()):
+                vpr_path = vdir / "protocol_result.yaml"
+                if vpr_path.exists():
+                    variant_results[vdir.name] = load_yaml(vpr_path) or {}
+        if not variant_results:
+            # No per-variant protocol_result.yaml exists at all (e.g. every
+            # variant's backtest failed before writing one -- protocol_execution
+            # itself already raises if NO variant succeeded, S1_FINDINGS.md
+            # §3a, so this is a defensive fallback, not the expected path).
+            # Fall back to the singular bridge file so this function still
+            # produces an audit rather than an empty per_variant block.
+            _pr_path = run_dir / "artifacts" / "protocol_result.yaml"
+            variant_results = {"base": load_yaml(_pr_path) if _pr_path.exists() else {}}
+
+        per_variant: dict = {}
+        for vid, pr in sorted(variant_results.items()):
+            v_raw_median_sr, v_is_sparse, v_passes, v_e_max_sr, v_dsr_result = _dsr_candidate(pr)
+            per_variant[vid] = {
+                "raw_median_sharpe":         v_raw_median_sr,
+                "is_sparse_trading":         v_is_sparse,
+                "passes_deflated_threshold": v_passes,
+                "promotion_threshold_raw":   v_e_max_sr,
+                **v_dsr_result,
             }
 
-    audit = {
-        "hypothesis_id":              hyp_id,
-        "generated_at":               datetime.now(timezone.utc).isoformat(),
-        "raw_median_sharpe":          raw_median_sr,
-        # COUNT-DIV fix (2026-08-17): promotion_audit.schema.json declares
-        # total_hypotheses_tested as "Total deduplicated trial records in
-        # campaign_state.trial_sharpes at audit time (N in BLP 2014)" -- i.e.
-        # n_dsr_total, matching deflate_sharpe.py's own total_hypotheses_tested
-        # exactly. This field previously held len(campaign["runs"]) -- an
-        # unrelated data structure (the campaign's run-id list, not
-        # trial_sharpes), an outright schema violation, not just a naming
-        # ambiguity. n_dsr_total is what the DSR math above actually uses
-        # (:4270) but was never exposed in the output before this fix.
-        "total_hypotheses_tested":    n_dsr_total,
-        # The displaced metric keeps its own honest name rather than being
-        # dropped -- a legitimate, different count (this campaign's total run
-        # attempts, not the trial-ledger's deduplicated DSR-N).
-        "total_campaign_runs":        len(campaign.get("runs", [])),
-        "total_variants_tested":      total_tested,
-        "n_trials_used":              n_trials,
-        "is_sparse_trading":          is_sparse,
-        "passes_deflated_threshold":  passes_deflated,
-        "promotion_threshold_raw":    e_max_sr,
-        "promotion_threshold_deflated": DSR_THRESHOLD,
-        "excluded_trial_counts":      excluded,
-        **dsr_result,
-    }
+        # Existential OR: True beats None (indeterminate) beats False. A
+        # variant reading None (e.g. a sparse candidate whose expectancy SE
+        # could not be computed) must never be conflated with a hard False --
+        # only report an overall False when EVERY variant's own passes value
+        # is False.
+        passing = sorted(vid for vid, f in per_variant.items() if f["passes_deflated_threshold"] is True)
+        indeterminate = sorted(vid for vid, f in per_variant.items() if f["passes_deflated_threshold"] is None)
+        if passing:
+            passes_deflated = True
+            rep_vid = passing[0]
+        elif indeterminate:
+            passes_deflated = None
+            rep_vid = indeterminate[0]
+        else:
+            passes_deflated = False
+            rep_vid = sorted(per_variant)[0]
+        rep = per_variant[rep_vid]
+
+        audit = {
+            "hypothesis_id":                hyp_id,
+            "generated_at":                 datetime.now(timezone.utc).isoformat(),
+            "raw_median_sharpe":             rep["raw_median_sharpe"],
+            "total_hypotheses_tested":       n_dsr_total,
+            "total_campaign_runs":           len(campaign.get("runs", [])),
+            "total_variants_tested":         total_tested,
+            "n_trials_used":                 n_trials,
+            "is_sparse_trading":             rep["is_sparse_trading"],
+            "passes_deflated_threshold":     passes_deflated,
+            "promoted_variant":              rep_vid if passes_deflated else None,
+            "promotion_threshold_raw":       rep["promotion_threshold_raw"],
+            "promotion_threshold_deflated":  DSR_THRESHOLD,
+            "excluded_trial_counts":         excluded,
+            "deflated_sharpe_ratio":         rep.get("deflated_sharpe_ratio"),
+            "expected_max_sharpe":           rep.get("expected_max_sharpe"),
+            "trial_sharpe_variance":         rep.get("trial_sharpe_variance"),
+            "correction_method":             rep.get("correction_method"),
+            **({"dsr_error": rep["dsr_error"]} if "dsr_error" in rep else {}),
+            **({"expectancy_promotion": rep["expectancy_promotion"]} if "expectancy_promotion" in rep else {}),
+            # per_variant: {variant_id: {raw_median_sharpe, is_sparse_trading,
+            # passes_deflated_threshold, promotion_threshold_raw,
+            # deflated_sharpe_ratio, expected_max_sharpe, trial_sharpe_variance,
+            # correction_method, dsr_error?, expectancy_promotion?}} -- the new
+            # design surface this build item introduces (S1_FINDINGS.md §6.5
+            # had no precedent to follow).
+            "per_variant": per_variant,
+        }
+    else:
+        # Flag-off: byte-identical to pre-4b -- exactly one candidate, the
+        # singular bridge-file protocol_result.yaml, exactly as before Slice
+        # 4/4b existed. Same dict key insertion order as the pre-4b body
+        # (save_yaml writes with sort_keys=False).
+        pr_path = run_dir / "artifacts" / "protocol_result.yaml"
+        pr = load_yaml(pr_path) if pr_path.exists() else {}
+        raw_median_sr, is_sparse, passes_deflated, e_max_sr, dsr_result = _dsr_candidate(pr)
+
+        audit = {
+            "hypothesis_id":              hyp_id,
+            "generated_at":               datetime.now(timezone.utc).isoformat(),
+            "raw_median_sharpe":          raw_median_sr,
+            # COUNT-DIV fix (2026-08-17): promotion_audit.schema.json declares
+            # total_hypotheses_tested as "Total deduplicated trial records in
+            # campaign_state.trial_sharpes at audit time (N in BLP 2014)" -- i.e.
+            # n_dsr_total, matching deflate_sharpe.py's own total_hypotheses_tested
+            # exactly. This field previously held len(campaign["runs"]) -- an
+            # unrelated data structure (the campaign's run-id list, not
+            # trial_sharpes), an outright schema violation, not just a naming
+            # ambiguity. n_dsr_total is what the DSR math above actually uses
+            # (:4270) but was never exposed in the output before this fix.
+            "total_hypotheses_tested":    n_dsr_total,
+            # The displaced metric keeps its own honest name rather than being
+            # dropped -- a legitimate, different count (this campaign's total run
+            # attempts, not the trial-ledger's deduplicated DSR-N).
+            "total_campaign_runs":        len(campaign.get("runs", [])),
+            "total_variants_tested":      total_tested,
+            "n_trials_used":              n_trials,
+            "is_sparse_trading":          is_sparse,
+            "passes_deflated_threshold":  passes_deflated,
+            "promotion_threshold_raw":    e_max_sr,
+            "promotion_threshold_deflated": DSR_THRESHOLD,
+            "excluded_trial_counts":      excluded,
+            **dsr_result,
+        }
 
     audit_path = run_dir / "artifacts" / "promotion_audit.yaml"
     save_yaml(audit_path, audit)
-    status_str = "PASS" if passes_deflated else ("INDETERMINATE" if passes_deflated is None else "FAIL")
-    print(f"⚙️  A6.2: promotion_audit.yaml written (DSR={dsr_result.get('deflated_sharpe_ratio')}, "
+    _final_passes = audit["passes_deflated_threshold"]
+    status_str = "PASS" if _final_passes else ("INDETERMINATE" if _final_passes is None else "FAIL")
+    print(f"⚙️  A6.2: promotion_audit.yaml written (DSR={audit.get('deflated_sharpe_ratio')}, "
           f"n_trials={n_trials}, passes={status_str})")
 
 
@@ -7433,6 +7690,42 @@ def run_loop(run_id: str):
                 elif next_stage == "human_pause":
                     break
 
+            elif current_stage == "data_availability_gate" and _variant_loop_enabled():
+                # E-033.1 Slice 4b: route on how many variants remain
+                # "validated" in artifacts/variants/index.yaml AFTER
+                # run_tool_worker's per-variant data_availability_gate loop
+                # has already marked any refine/decline variant not_tested
+                # (that loop's own campaign_record/data_requests.yaml has the
+                # per-variant detail). Per the operator's 2026-09-22 decision
+                # (S1_FINDINGS.md "Decision" section) and the S1 §8
+                # idea_status-collision note: fewer than 3 remaining variants
+                # is a PRECONDITION failure that happens before the grid ever
+                # runs -- it must NOT write to idea_status (that field
+                # already means something different: the criteria-grid's own
+                # validated/refuted/inconclusive rollup, written by
+                # _build_idea_status_artifact AFTER backtests complete, a
+                # later and unrelated stage). Uses a distinct flag,
+                # pipeline_state.flags.variant_gate_insufficient, with its
+                # own _classify_human_pause/_PAUSE_FLAG_TO_REASON entries in
+                # run_campaign.py.
+                index = load_yaml(ARTIFACTS / "variants" / "index.yaml") or {}
+                variants_idx = index.get("variants", {})
+                remaining = [vid for vid, v in variants_idx.items() if v.get("status") == "validated"]
+                if len(remaining) < 3:
+                    print(f"⏸️  PIPELINE PAUSED: only {len(remaining)}/{len(variants_idx)} "
+                          "variant(s) remain validated after the per-variant "
+                          "data-availability gate (need >= 3). See "
+                          "artifacts/variants/index.yaml and "
+                          "campaign_record/data_requests.yaml.")
+                    update_state(path=RUN_DIR, status="paused_for_human",
+                                 flags={"variant_gate_insufficient": True})
+                    next_stage = "human_pause"
+                    break
+                print(f"✅ data_availability_gate (variant loop): {len(remaining)}/"
+                      f"{len(variants_idx)} variant(s) remain validated — advancing to "
+                      "protocol_execution.")
+                next_stage = "protocol_execution"
+
             elif current_stage == "data_availability_gate":
                 # E-054 Layer 2: route on validate/refine/decline. This branch
                 # only runs when _data_availability_gate_enabled() routed
@@ -7465,6 +7758,60 @@ def run_loop(run_id: str):
                     for reason in gate.get("reasons", [])[:10]:
                         print(f"   - {reason}")
                     next_stage = "completed_rejected"
+
+            elif current_stage == "protocol_execution" and _variant_loop_enabled():
+                # E-033.1 Slice 4b (S1_FINDINGS.md §3b): the per-variant
+                # conformance loop -- a SEPARATE restructure from Slice 4a's
+                # own protocol_execution backtest loop (run_tool_worker, a
+                # different function/branch entirely; this one is run_loop's
+                # own elif branch, one level up). Reads each variant's OWN
+                # artifacts/variants/<variant_id>/protocol_result.yaml
+                # (written by Slice 4a's loop), calls the UNCHANGED, pure
+                # _check_protocol_execution_conformance once per variant, and
+                # on a violation invalidates ONLY that variant's own trial
+                # row via its compound trial_id (f"{run_id}:{variant_id}",
+                # Slice 4a's Decision A) -- per the operator's per-variant-
+                # control decision, a violation on one variant must not
+                # affect sibling variants' trial rows.
+                # _mark_trial_invalidated's own signature was already
+                # renamed run_id->trial_id in Slice 4a (Decision A) precisely
+                # for this call site, which 4a's own final report flagged as
+                # intentionally left unmigrated (still passing a bare
+                # run_id) for 4b to finish -- this is that finish.
+                _constraints = _load_machine_constraints(RUN_DIR)
+                _all_violations: dict = {}
+                if _constraints:
+                    _variants_dir = ARTIFACTS / "variants"
+                    if _variants_dir.exists():
+                        for _vdir in sorted(p for p in _variants_dir.iterdir() if p.is_dir()):
+                            _vpr_path = _vdir / "protocol_result.yaml"
+                            if not _vpr_path.exists():
+                                continue
+                            _variant_id = _vdir.name
+                            _pr = load_yaml(_vpr_path) or {}
+                            _protocol_obj = {}
+                            _protocol_path_str = _pr.get("protocol_file")
+                            if _protocol_path_str:
+                                _candidate = Path(_protocol_path_str)
+                                if not _candidate.is_absolute():
+                                    _candidate = ROOT / _candidate
+                                if _candidate.exists():
+                                    with open(_candidate, encoding="utf-8") as f:
+                                        _protocol_obj = json.load(f)
+                            _violations = _check_protocol_execution_conformance(_pr, _constraints, _protocol_obj)
+                            if _violations:
+                                _trial_id = f"{run_id}:{_variant_id}"
+                                print(f"\n🛑 [F4d] PRE-REGISTRATION CONFORMANCE VIOLATION — variant "
+                                      f"'{_variant_id}' did NOT test what was pre-registered:")
+                                for v in _violations:
+                                    print(f"   - {v}")
+                                _mark_trial_invalidated(_trial_id, "; ".join(_violations))
+                                _all_violations[_variant_id] = _violations
+                if _all_violations:
+                    update_state(path=RUN_DIR, status="paused_for_human",
+                                 flags={"conformance_violation": True},
+                                 conformance_violations=_all_violations)
+                    next_stage = "human_pause"
 
             elif current_stage == "protocol_execution":
                 # E-039 step 5 (2026-09-12): pre-registration conformance gate,
