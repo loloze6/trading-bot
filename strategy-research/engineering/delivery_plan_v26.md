@@ -529,3 +529,23 @@ E-060 (A, F), E-058 (H), E-059 (G, I, L, M), E-057 (D), E-036 (K).
 Each dispatch brief is written from the slice text above plus the rules in §0. The first
 one is ready: the E-056 S1 brief from the 2026-09-17 reply, with the four amendments listed
 under slice 1.1.
+
+## 6. Commit history cross-reference
+
+Most commits landed after slice 2 name their own slice directly in the subject line
+(`git log --grep "Slice"` finds them). A handful of early commits — from before that
+convention was consistently applied — don't, and are listed here so `git log` plus this
+table gives the full picture without needing to cross-reference Linear. Every commit below
+is on `master`; PR numbers are `loloze6/trading-bot#<n>`.
+
+| Commit(s) | Slice / item | What it is | PR |
+|---|---|---|---|
+| `5e10c615` | 1.1 + 1.2 (E-056 S1 + E-046b S1) | Preserved both epics' S1 characterization findings — bundled in the same commit as an unrelated roadmap slippage-claim correction and routine session-log updates; the findings themselves are `engineering/roadmap/E-056/S1_FINDINGS.md` and `engineering/roadmap/E-046b/S1_FINDINGS.md` | (direct to master, pre-PR-workflow) |
+| `b531d00d`, `6d34461b` | 0.1 (CUL-267) | Registration-time pass-rule lint, built then code-reviewed/fixed | #174 |
+| `76e29906`, `16681f5f` | 0.3 (CUL-300) | Cost-survival criterion field, built then code-reviewed/fixed | #175 |
+| `4913d92e`, `f25992f9` | 0.2 (profitability bars) | The branch-3 stop, built then code-reviewed/fixed | #180 |
+| `3787c2a8`, `1811ea9b` | 0.4 (E-054 gate) | Data-availability gate switched on by default, built then code-reviewed/fixed | #179 |
+| `7ca4c89f` | 5a (E-046a) | Code-review fix for the category-reports build — its sibling build commit `196985ee` names "S5a" directly, this follow-up fix commit doesn't repeat it | #183 |
+
+Everything from slice 2 (`38269fe9`) onward names its slice in the subject line directly;
+this table exists only to close the gap for what came before.
