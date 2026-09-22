@@ -469,14 +469,35 @@ should not be treated as an S2 acceptance criterion here — it requires a sessi
 with real API budget, exactly as Slice 3b's own text already establishes as
 acceptable practice for this codebase.
 
+## Decision (operator, 2026-09-22) — resolves this section's own biggest open item
+
+**Verdict synthesis across the 5 readers' proposals is mechanical, not an LLM stage.**
+Once `artifacts/proposals/<category>.yaml` × 5 exist, whatever combines them into
+`hypothesis_verdict`/`lineage_routing`/`findings_carryover.yaml`/etc. must be a plain,
+deterministic function — not a new LLM call reading 5 proposals and writing one verdict.
+This matches this project's own established direction: the criteria grid (Slice 2)
+already replaced LLM verdict-writing with mechanical logic for the same reason (E-039's
+"scientific integrity" framing — a verdict decided by a human-readable but LLM-authored
+narrative is one prompt-drift away from being unfalsifiable). The exact rule (highest-
+confidence proposal wins? unanimity required across readers? some other aggregation?) is
+NOT designed here — that is 5b-ii's own scoping work, to be done once 5b-i's readers
+exist and their real proposal shapes are known, not invented in the abstract now.
+
+**Practical effect on this file's own §8 (S2 build-list) and the 5b-i/5b-ii split
+recommended above:** unchanged. 5b-i (the 5 reader skills, additive, wired to nothing)
+remains buildable immediately, independent of this decision. 5b-ii (orchestrator loop +
+verdict synthesis + the 16-caller re-point) can now be scoped with a real target
+("write the mechanical synthesis function") instead of an open question, but is still
+correctly deferred until 5b-i's real proposal output exists to design the synthesis
+rule against.
+
 ## Not determined
 
-- **Who synthesizes `hypothesis_verdict`/`lineage_routing`/`findings_carryover.yaml`/
+- ~~Who synthesizes `hypothesis_verdict`/`lineage_routing`/`findings_carryover.yaml`/
   `proposed_brief.yaml`/`research_decision.yaml` once 5 independent
-  `proposals/<category>.yaml` files exist instead of one `verdict_interpretation.yaml`.**
-  The delivery plan's text does not name an owner. This blocks scoping §8's
-  5b-ii build list precisely — flagged as an operator design decision, not
-  something resolved by this characterization pass.
+  `proposals/<category>.yaml` files exist instead of one `verdict_interpretation.yaml`.~~
+  **Resolved above: a mechanical function, not an LLM stage.** The exact rule remains
+  undesigned and is 5b-ii's own scoping work.
 - **The 0-3 anchor text for `confidence_real`/`distance_to_profitable`/
   `mechanism_plausibility`** (§7) — not defined anywhere in the repo today.
 - **Whether `tools/lint_verdict_provenance.py`, `tools/record_schema.py`, and
