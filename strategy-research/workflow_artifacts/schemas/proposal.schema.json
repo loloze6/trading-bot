@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "E-046a Slice 5b-i (readers + reports consumption). Documentation/test-validation only -- no code loads this file at runtime (see strategy-research/CLAUDE.md's 'Schemas are declared but not enforced' note). Shape grounded in S1_FINDINGS.md §7's proposed schema, itself grounded against STRATEGY_DESIGN_GUIDE.md's 'Component variant patterns' section (kind:patch vocabulary) and §7c's block_manifest.yaml contract (kind:new_block vocabulary -- §7c is itself PROPOSED, NOT BUILT; a reader proposing kind:new_block is proposing IN that vocabulary, not building the manifest contract). One entry in the list written by a workflow_artifacts/skills/readers/<category>-reader/SKILL.md skill to artifacts/proposals/<category>.yaml.",
+  "title": "proposals/<category>.yaml entry",
+  "description": "A single evidence-grounded proposal from one of the 5 specialist readers (profitability, trade_efficiency, forecast_power, regime_power, component_attribution). A reader proposes evidence plus a patch/new_block sketch -- it does NOT decide hypothesis_verdict/lineage_routing/status. That routing authority stays with the not-yet-built mechanical verdict-synthesis step (5b-ii; operator decision recorded in E-046a/S1_FINDINGS.md's 'Decision' section, 2026-09-22: verdict synthesis across the 5 readers' proposals is mechanical, not an LLM stage).",
+  "type": "object",
+  "required": ["proposal_id", "kind", "evidence", "scores", "model_id", "rubric_version"],
+  "additionalProperties": false,
+  "properties": {
+    "proposal_id": {
+      "type": "string",
+      "pattern": "^[a-z_]+-.+-[0-9]+$",
+      "description": "<category>-<run_id>-<n>, e.g. profitability-run_059-1 (S1_FINDINGS.md §7)."
+    },
+    "kind": {
+      "enum": ["patch", "new_block"],
+      "description": "patch: a Component variant pattern (STRATEGY_DESIGN_GUIDE.md 'Component variant patterns') against an existing component. new_block: a block_manifest.yaml-shaped sketch (STRATEGY_DESIGN_GUIDE.md §7c) for a not-yet-existing component/regime block."
+    },
+    "patch": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Required, non-empty, when kind=patch; must be absent when kind=new_block. A before/after component-spec diff in STRATEGY_DESIGN_GUIDE.md's 'Component variant patterns' vocabulary (e.g. a scaling_factor sign flip, an atr_multiplier/threshold_filter adjustment) -- not a raw unstructured diff.",
+      "items": { "type": "object" }
+    },
+    "block": {
+      "type": "object",
+      "description": "Required when kind=new_block; must be absent when kind=patch. A block_manifest.yaml-shaped sketch (STRATEGY_DESIGN_GUIDE.md §7c, itself PROPOSED-NOT-BUILT -- nothing reads block_manifest.yaml today; this field exists so a human/5b-ii reviewer has a concrete sketch, not so any code can consume it).",
+      "required": ["kind", "config_paths", "rationale"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": ["forecast", "regime"],
+          "description": "block_manifest.yaml's OWN kind field (forecast|regime) -- distinct from this proposal's top-level kind (patch|new_block). Do not conflate the two vocabularies."
+        },
+        "config_paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "scaffolding": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "rationale": { "type": "string" }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Each item must be traceable to a specific field in THIS category's own artifacts/reports/<category>.yaml (build_reports.py's real output shape) -- e.g. 'slices.per_window[2].core.cost_drag_pct=91.4'. A reader must never cite another category's report, verdict_interpretation.yaml, or verdict-interpreter's retired prose -- each reader's own SKILL.md Forbidden section enforces this at authoring time; this field's non-empty requirement is the mechanical backstop.",
+      "items": { "type": "string" }
+    },
+    "scores": {
+      "type": "object",
+      "description": "0-3 anchored scores -- see each reader SKILL.md's own 'Scoring (0-3 anchors)' table. Do not free-hand; pick from the anchor table by what the report's own fields show.",
+      "required": ["confidence_real", "distance_to_profitable", "mechanism_plausibility"],
+      "additionalProperties": false,
+      "properties": {
+        "confidence_real": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3,
+          "description": "Is this evidence real and corroborated across multiple report slices, or thin/noisy/single-cell?"
+        },
+        "distance_to_profitable": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3,
+          "description": "How close is the cited metric to a genuinely passing/profitable state if this proposal were realized?"
+        },
+        "mechanism_plausibility": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3,
+          "description": "Does the evidence support a real causal story tied to a specific config element, or a single-cell curve-fit coincidence?"
+        }
+      }
+    },
+    "model_id": {
+      "type": "string",
+      "description": "Identifier of the model that authored this proposal (e.g. a Claude model string)."
+    },
+    "rubric_version": {
+      "type": "string",
+      "description": "Version tag of the scoring rubric used, e.g. 'profitability-reader-v1'. Bump per-reader when a Scoring table changes."
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "patch" } }, "required": ["kind"] },
+      "then": { "required": ["patch"], "not": { "required": ["block"] } }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "new_block" } }, "required": ["kind"] },
+      "then": { "required": ["block"], "not": { "required": ["patch"] } }
+    }
+  ]
+}
