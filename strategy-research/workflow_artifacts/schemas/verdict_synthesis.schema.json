@@ -1,0 +1,216 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "E-046a Slice 5b-ii-A. Output of workflow/run_phase1_research.py::_synthesize_verdict, intended to be written (by 5b-ii-B, not yet built) to runs/<id>/artifacts/verdict_synthesis.yaml. A NEW artifact, deliberately not the legacy verdict_interpretation.yaml path/shape (operator decision, S1_FINDINGS_5B_II.md 'Decision (operator, 2026-09-23)' item 1). Documentation/test-validation only at this slice: nothing reads this file yet. Because the stem is verdict_synthesis, save_yaml/load_yaml's CUL-11 opt-in validation (tools/workflow_artifact_validation.py) will pick this schema up automatically once 5b-ii-B writes the file through save_yaml. additionalProperties:false at every object level, following proposal.schema.json.",
+  "title": "verdict_synthesis.yaml",
+  "description": "Mechanical (non-LLM) post-backtest route decision for ONE hypothesis run, replacing verdict_interpreter's LLM judgment. Exactly one of four decision sources applies, in precedence order: safety_pause (component_execution_error / regime_misattribution, checked directly against protocol_result.yaml / regime_detector_report.yaml before anything else), verdict_blocked (pass_rule_evaluation.yaml result=VERDICT_BLOCKED -- the evaluator forbids issuing any verdict), binding_pass_rule (pass_rule_evaluation.yaml binding, verdict carried through verbatim), scored_proposals (non-binding: the S_max rule over artifacts/proposals/<category>.yaml).",
+  "type": "object",
+  "required": [
+    "schema_version", "hypothesis_id", "hypothesis_family", "decided_by", "pause",
+    "hypothesis_verdict", "lineage_routing", "pass_rule", "scoring",
+    "proposed_change_dimension", "criteria_summary", "diagnostic_snapshot", "rationale"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "hypothesis_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Copied from artifacts/hypothesis_card.yaml's hypothesis_id."
+    },
+    "hypothesis_family": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Supplied by the caller (no upstream artifact carries a family label today -- hypothesis_card.schema.json has no family field; the legacy value was LLM-authored inside verdict_interpretation.yaml). Used by the circuit breaker's per-family scoping."
+    },
+    "decided_by": {
+      "enum": ["safety_pause", "verdict_blocked", "binding_pass_rule", "scored_proposals"]
+    },
+    "pause": {
+      "description": "Non-null iff decided_by is safety_pause or verdict_blocked: the orchestrator must route to human_pause and set pipeline_flag.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["reason", "pipeline_flag", "evidence"],
+          "additionalProperties": false,
+          "properties": {
+            "reason": {
+              "enum": ["component_execution_error", "regime_misattribution", "verdict_blocked"]
+            },
+            "pipeline_flag": {
+              "enum": [
+                "component_execution_error_flagged",
+                "regime_misattribution_flagged",
+                "verdict_blocked_flagged"
+              ]
+            },
+            "evidence": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      ]
+    },
+    "hypothesis_verdict": { "enum": ["promote", "refine", "kill", null] },
+    "lineage_routing": { "enum": ["terminate", "refine", "pivot", "escalate", null] },
+    "pass_rule": {
+      "type": "object",
+      "required": ["present", "result", "discretion", "binding", "statement_branch_matched", "branches_failed"],
+      "additionalProperties": false,
+      "properties": {
+        "present": { "type": "boolean", "description": "Whether artifacts/pass_rule_evaluation.yaml exists." },
+        "result": {
+          "enum": ["PASS", "FAIL", "SPEC_ERROR", "legacy_not_evaluable", "VERDICT_BLOCKED", null]
+        },
+        "discretion": { "enum": ["stage", null] },
+        "binding": { "type": "boolean" },
+        "statement_branch_matched": { "type": ["string", "null"] },
+        "branches_failed": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "scoring": {
+      "description": "Null only on the pause paths (proposals are never read there). Present on binding_pass_rule too: proposals do not decide the route there, but the winner still supplies proposed_change_dimension for a binding refine.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": [
+            "refine_min_s_max", "s_max", "low_confidence", "proposal_counts",
+            "winner", "tied_proposal_ids"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "refine_min_s_max": { "type": "integer", "minimum": 0, "maximum": 9 },
+            "s_max": { "type": ["integer", "null"], "minimum": 0, "maximum": 9 },
+            "low_confidence": { "type": "boolean" },
+            "proposal_counts": {
+              "type": "object",
+              "required": ["profitability", "trade_efficiency", "forecast_power", "regime_power", "component_attribution"],
+              "additionalProperties": false,
+              "properties": {
+                "profitability": { "type": "integer", "minimum": 0 },
+                "trade_efficiency": { "type": "integer", "minimum": 0 },
+                "forecast_power": { "type": "integer", "minimum": 0 },
+                "regime_power": { "type": "integer", "minimum": 0 },
+                "component_attribution": { "type": "integer", "minimum": 0 }
+              }
+            },
+            "winner": {
+              "oneOf": [
+                { "type": "null" },
+                {
+                  "type": "object",
+                  "required": ["category", "proposal_id", "kind", "scores", "score_total", "change_dimension"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "category": {
+                      "enum": ["profitability", "trade_efficiency", "forecast_power", "regime_power", "component_attribution"]
+                    },
+                    "proposal_id": { "type": "string", "minLength": 1 },
+                    "kind": { "enum": ["patch", "new_block"] },
+                    "scores": {
+                      "type": "object",
+                      "required": ["confidence_real", "distance_to_profitable", "mechanism_plausibility"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "confidence_real": { "type": "integer", "minimum": 0, "maximum": 3 },
+                        "distance_to_profitable": { "type": "integer", "minimum": 0, "maximum": 3 },
+                        "mechanism_plausibility": { "type": "integer", "minimum": 0, "maximum": 3 }
+                      }
+                    },
+                    "score_total": { "type": "integer", "minimum": 0, "maximum": 9 },
+                    "change_dimension": { "type": "string", "minLength": 1 }
+                  }
+                }
+              ]
+            },
+            "tied_proposal_ids": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Every proposal_id scoring exactly s_max, in category order then file order; the first is the winner."
+            }
+          }
+        }
+      ]
+    },
+    "proposed_change_dimension": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "description": "Non-null iff lineage_routing == refine and a winner exists: the winner's change_dimension. Same role as the legacy field (circuit breaker repeat detection)."
+    },
+    "criteria_summary": {
+      "type": "array",
+      "description": "From pass_rule_evaluation.yaml's criteria_results (id -> criterion). Empty when absent.",
+      "items": {
+        "type": "object",
+        "required": ["criterion", "result"],
+        "additionalProperties": false,
+        "properties": {
+          "criterion": { "type": "string", "minLength": 1 },
+          "result": { "enum": ["PASS", "FAIL", "SPEC_ERROR", "INCONCLUSIVE"] }
+        }
+      }
+    },
+    "diagnostic_snapshot": {
+      "type": "object",
+      "description": "Same shape as findings_carryover.yaml's diagnostic_snapshot, but read mechanically from protocol_result.yaml's hypothesis_verdict.diagnostics medians instead of regex-scraped from LLM prose.",
+      "required": ["forecast_return_corr", "cost_drag_pct", "gross_pnl"],
+      "additionalProperties": false,
+      "properties": {
+        "forecast_return_corr": { "type": ["number", "null"] },
+        "cost_drag_pct": { "type": ["number", "null"] },
+        "gross_pnl": { "type": ["number", "null"] }
+      }
+    },
+    "rationale": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Deterministic one-line explanation. Its first sentence names the decision source; numbers use corr=/cost_drag_pct=/gross_pnl= tokens so _auto_generate_findings_carryover's existing regexes parse it unchanged."
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "decided_by": { "enum": ["safety_pause", "verdict_blocked"] } }, "required": ["decided_by"] },
+      "then": {
+        "properties": {
+          "pause": { "type": "object" },
+          "hypothesis_verdict": { "const": null },
+          "lineage_routing": { "const": null },
+          "scoring": { "const": null },
+          "proposed_change_dimension": { "const": null }
+        }
+      },
+      "else": {
+        "properties": {
+          "pause": { "const": null },
+          "scoring": { "type": "object" }
+        },
+        "anyOf": [
+          { "properties": { "hypothesis_verdict": { "const": "kill" }, "lineage_routing": { "const": "terminate" } } },
+          { "properties": { "hypothesis_verdict": { "const": "kill" }, "lineage_routing": { "const": "pivot" } } },
+          { "properties": { "hypothesis_verdict": { "const": "kill" }, "lineage_routing": { "const": "escalate" } } },
+          { "properties": { "hypothesis_verdict": { "const": "refine" }, "lineage_routing": { "const": "refine" } } },
+          { "properties": { "hypothesis_verdict": { "const": "promote" }, "lineage_routing": { "const": null } } }
+        ]
+      }
+    },
+    {
+      "if": { "properties": { "decided_by": { "const": "safety_pause" } }, "required": ["decided_by"] },
+      "then": { "properties": { "pause": { "properties": { "reason": { "enum": ["component_execution_error", "regime_misattribution"] } } } } }
+    },
+    {
+      "if": { "properties": { "decided_by": { "const": "verdict_blocked" } }, "required": ["decided_by"] },
+      "then": { "properties": { "pause": { "properties": { "reason": { "const": "verdict_blocked" } } } } }
+    },
+    {
+      "if": { "properties": { "decided_by": { "const": "binding_pass_rule" } }, "required": ["decided_by"] },
+      "then": { "properties": { "pass_rule": { "properties": { "binding": { "const": true } } } } }
+    },
+    {
+      "if": { "properties": { "decided_by": { "const": "scored_proposals" } }, "required": ["decided_by"] },
+      "then": { "properties": { "pass_rule": { "properties": { "binding": { "const": false } } } } }
+    }
+  ]
+}
