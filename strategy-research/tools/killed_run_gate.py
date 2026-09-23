@@ -269,6 +269,10 @@ def _pipeline_N(tmp: Path, trials: list[dict]) -> int:
     (run_dir / "artifacts").mkdir(parents=True, exist_ok=True)
     (run_dir / "artifacts" / "verdict_interpretation.yaml").write_text(
         yaml.safe_dump({"hypothesis_id": "K"}), encoding="utf-8")
+    # Same id in hypothesis_card.yaml: under orchestrator.specialist_readers.enabled
+    # _write_promotion_audit reads the idea's id from there (E-046a 5b-ii-B).
+    (run_dir / "artifacts" / "hypothesis_card.yaml").write_text(
+        yaml.safe_dump({"hypothesis_id": "K"}), encoding="utf-8")
     (run_dir / "artifacts" / "protocol_result.yaml").write_text(
         yaml.safe_dump({}), encoding="utf-8")
     with contextlib.redirect_stdout(io.StringIO()):

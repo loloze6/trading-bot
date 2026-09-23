@@ -880,6 +880,31 @@ def _build_stage_prompt(stage_name: str, handoff: dict, path: Path,
     return full_prompt
 
 
+# The model every Claude stage runs on (run_claude_worker and, E-046a 5b-ii-B,
+# run_reader_worker) -- one constant so the two paths cannot drift.
+_CLAUDE_WORKER_MODEL = "claude-haiku-4-5"
+
+
+def _usage_token_record(usage: dict) -> dict:
+    """The audit_log `tokens` block for one SDK `usage` dict: raw counts, total,
+    and the F4c weighted units the budget breaker sums. Shared by
+    run_claude_worker and run_reader_worker (E-046a 5b-ii-B)."""
+    usage = usage or {}
+    input_tokens = usage.get("input_tokens", 0)
+    output_tokens = usage.get("output_tokens", 0)
+    cache_read = usage.get("cache_read_input_tokens", 0)
+    cache_creation = usage.get("cache_creation_input_tokens", 0)
+    return {
+        "input": input_tokens,
+        "output": output_tokens,
+        "cache_read": cache_read,
+        "cache_creation": cache_creation,
+        "total": input_tokens + output_tokens + cache_read + cache_creation,
+        "weighted": round(_weighted_token_units(
+            input_tokens, output_tokens, cache_read, cache_creation), 1),
+    }
+
+
 async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_context: str | None = None):
 
     print(f"\n🧠 [AGENT INVOKED] Waking up specialist for: {stage_name}"
@@ -902,7 +927,7 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
     # and strictly enforce our handoff file constraints.
     async for message in query(
         prompt=full_prompt,
-        options=ClaudeAgentOptions(model= "claude-haiku-4-5",allowed_tools=[])
+        options=ClaudeAgentOptions(model=_CLAUDE_WORKER_MODEL, allowed_tools=[])
     ):
         # Accumulate text content from assistant messages
         if isinstance(message, AssistantMessage):
@@ -918,11 +943,6 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
     # --- OPTIONAL METRICS POST-FLIGHT CALCULATION ---
     execution_time = round(time.time() - start_time, 2)
 
-    input_tokens = exact_usage.get("input_tokens", 0)
-    output_tokens = exact_usage.get("output_tokens", 0)
-    cache_read = exact_usage.get("cache_read_input_tokens", 0)
-    cache_creation = exact_usage.get("cache_creation_input_tokens", 0)
-    total_tokens = input_tokens + output_tokens + cache_read + cache_creation
     # F4c (2026-07-05, run_047 budget investigation): the SDK's `usage` on the
     # final ResultMessage is CUMULATIVE FOR THE SESSION (see claude_agent_sdk
     # types.py: "Cumulative API usage for the session"), i.e. across every
@@ -931,9 +951,12 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
     # internal turns will show a much larger token count than its final
     # deliverable's file size would suggest; num_turns is what makes that
     # attributable at a glance instead of looking like unexplained bloat.
-    weighted_units = round(_weighted_token_units(
-        input_tokens, output_tokens, cache_read, cache_creation
-    ), 1)
+    # (E-046a 5b-ii-B: extracted into _usage_token_record, shared with
+    # run_reader_worker so both paths weight tokens identically.)
+    _tok = _usage_token_record(exact_usage)
+    input_tokens, output_tokens = _tok["input"], _tok["output"]
+    cache_read, cache_creation = _tok["cache_read"], _tok["cache_creation"]
+    total_tokens, weighted_units = _tok["total"], _tok["weighted"]
 
     print(f"⏱️ Finished in {execution_time}s")
     print(f"💰 Cost Estimate: ${total_cost:.4f} | Tokens: {total_tokens:,} (Cache Read: {cache_read:,}) "
@@ -1158,6 +1181,15 @@ async def run_tool_worker(stage_name: str, run_id: str):
     RUN_DIR = ROOT / "runs" / run_id
     ARTIFACTS = RUN_DIR / "artifacts"
     TBOT_PYTHON = _resolve_tbot_python()
+
+    # E-046a Slice 5b-ii-B (code-review fix 1): under specialist_readers every
+    # grid/report/proposal artifact must come from THIS protocol_execution
+    # attempt. A re-run (the RUNBOOK's recovery path) would otherwise route on
+    # the previous attempt's idea_status.yaml and skip readers whose stale
+    # proposals already exist. Flag off: nothing is deleted.
+    _sr_on = stage_name == "protocol_execution" and _specialist_readers_enabled()
+    if _sr_on:
+        _clear_specialist_readers_artifacts(RUN_DIR)
 
     if stage_name == "data_availability_gate" and _variant_loop_enabled():
         # E-033.1 Slice 4b (delivery_plan_v26.md Slice 4, sub-slice 2 of 2:
@@ -1564,6 +1596,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
         # (menu-shaped pass_rule, _grid_evaluation_enabled()) and the same
         # never-turn-a-success-into-a-failure isolation as the flag-off
         # branch below.
+        _sr_errors: list = []  # E-046a 5b-ii-B: grid/report failures, fatal only under specialist_readers
         if _grid_evaluation_enabled():
             try:
                 _pass_rule_for_grid = _vce._find_pass_rule(_pre_reg_for_eval or {})
@@ -1579,13 +1612,19 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     print(f"✅ [E-046b] grid_evaluation.yaml written across "
                           f"{sorted(per_variant_summaries)}: result={_grid_result.get('result')} "
                           f"idea_status={_grid_result.get('idea_status')}")
+                elif _sr_on:
+                    _sr_errors.append("pre_registration.yaml's pass_rule is not menu-shaped -- no grid")
             except Exception as _grid_err:
                 print(f"⚠️  [E-046b] grid evaluation raised {type(_grid_err).__name__}: "
                       f"{_grid_err} -- at least one variant's backtest already succeeded; "
                       "grid_evaluation.yaml/idea_status.yaml are simply not written this run.")
+                if _sr_on:
+                    _sr_errors.append(f"grid evaluation raised {type(_grid_err).__name__}: {_grid_err}")
 
         if _category_reports_enabled():
             try:
+                if _sr_on:
+                    _refresh_regime_detector_report_for_readers(run_id, RUN_DIR)
                 _br_tools_path = str(Path(__file__).parent.parent / "tools")
                 if _br_tools_path not in sys.path:
                     sys.path.insert(0, _br_tools_path)
@@ -1596,9 +1635,15 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 print(f"⚠️  [E-046a] category report build raised {type(_reports_err).__name__}: "
                       f"{_reports_err} -- at least one variant's backtest already succeeded; "
                       "artifacts/reports/*.yaml are simply not written this run.")
+                if _sr_on:
+                    _sr_errors.append(f"category reports raised {type(_reports_err).__name__}: "
+                                      f"{_reports_err}")
 
         print(f"✅ protocol_execution (variant loop): {len(per_variant_summaries)}/"
               f"{len(validated)} variant(s) succeeded: {sorted(per_variant_summaries)}")
+        # Raised only now, after every variant's trial row is already recorded, so
+        # a grid/report failure never misrecords a successful backtest as failed.
+        _raise_specialist_readers_prereq_errors(_sr_errors)
 
     elif stage_name == "protocol_execution":
         config_path     = ARTIFACTS / "candidate_strategy_config.json"
@@ -1650,6 +1695,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
         # Record the spent look, then RE-RAISE the original error unchanged: this is an
         # accounting add, not an exception swallow -- the loud halt that escalates to a
         # human must survive. Recording is itself wrapped so its own failure only logs.
+        _sr_errors: list = []  # E-046a 5b-ii-B: grid/report failures, fatal only under specialist_readers
         try:
             with open(summary_path, encoding="utf-8") as f:
                 summary = json.load(f)
@@ -1732,6 +1778,9 @@ async def run_tool_worker(stage_name: str, run_id: str):
                         print(f"✅ [E-046b] grid_evaluation.yaml written: result="
                               f"{_grid_result.get('result')} idea_status="
                               f"{_grid_result.get('idea_status')}")
+                    elif _sr_on:
+                        _sr_errors.append("pre_registration.yaml's pass_rule is not menu-shaped "
+                                          "-- no grid")
                 except Exception as _grid_err:
                     print(f"⚠️  [E-046b] grid evaluation raised "
                           f"{type(_grid_err).__name__}: {_grid_err} -- the backtest itself "
@@ -1739,6 +1788,9 @@ async def run_tool_worker(stage_name: str, run_id: str):
                           "grid_evaluation.yaml/idea_status.yaml are simply not written this "
                           "run. Not re-raised: a grid bug must never misrecord a successful "
                           "trial as failed.")
+                    if _sr_on:
+                        _sr_errors.append(f"grid evaluation raised {type(_grid_err).__name__}: "
+                                          f"{_grid_err}")
 
             # E-046a Slice 5a (delivery_plan_v26.md, "Slice 5 -- Reports and
             # readers"). ADDITIVE, called AFTER the grid block above, same
@@ -1751,6 +1803,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
             # logs loudly, never re-raises.
             if _category_reports_enabled():
                 try:
+                    if _sr_on:
+                        _refresh_regime_detector_report_for_readers(run_id, RUN_DIR)
                     _br_tools_path = str(Path(__file__).parent.parent / "tools")
                     if _br_tools_path not in sys.path:
                         sys.path.insert(0, _br_tools_path)
@@ -1764,6 +1818,9 @@ async def run_tool_worker(stage_name: str, run_id: str):
                           "backtest itself already succeeded; artifacts/reports/*.yaml "
                           "are simply not written this run. Not re-raised, same "
                           "reasoning as the grid-evaluation block above.")
+                    if _sr_on:
+                        _sr_errors.append(f"category reports raised "
+                                          f"{type(_reports_err).__name__}: {_reports_err}")
         except Exception as _win_err:
             try:
                 _record_failed_backtest_trial(
@@ -1805,6 +1862,11 @@ async def run_tool_worker(stage_name: str, run_id: str):
                       f"both the trial write ({type(_write_err).__name__}) and its recovery row "
                       f"({type(_rec_err).__name__}) failed; re-raising the original.")
             raise
+
+        # E-046a 5b-ii-B: raised only after the trial row above is recorded, so a
+        # grid/report failure under specialist_readers fails the stage without
+        # misrecording a successful backtest as failed. Flag off: _sr_errors is empty.
+        _raise_specialist_readers_prereq_errors(_sr_errors)
 
         # Verify Phase A diagnostics are present
         result_data = load_yaml(ARTIFACTS / "protocol_result.yaml")
@@ -2561,8 +2623,76 @@ def _specialist_readers_enabled() -> bool:
 
 
 _SPECIALIST_READERS_HANDOFF = "protocol_to_specialist_readers.yaml"
-_READER_MODEL = "claude-haiku-4-5"  # same model run_claude_worker uses for every stage
 _READER_OUTPUT_BLOCK_RE = re.compile(r"```ya?ml[^\n]*\n(.*?)```", re.DOTALL)
+
+# Artifacts that must come from the CURRENT protocol_execution attempt under
+# specialist_readers (code-review fix 1). Cleared at protocol_execution entry.
+_SPECIALIST_READERS_RUN_SCOPED_FILES = ("idea_status.yaml", "grid_evaluation.yaml")
+_SPECIALIST_READERS_RUN_SCOPED_DIRS = ("reports", "proposals")
+
+
+def _clear_specialist_readers_artifacts(run_dir: Path) -> None:
+    """Delete idea_status.yaml, grid_evaluation.yaml, reports/ and proposals/
+    (plus stale reader debug dumps) so a protocol_execution re-run can never
+    route on, or skip readers because of, a previous attempt's output. Called
+    only under the flag, at protocol_execution entry."""
+    arts = run_dir / "artifacts"
+    removed = []
+    for name in _SPECIALIST_READERS_RUN_SCOPED_FILES:
+        if (arts / name).exists():
+            (arts / name).unlink()
+            removed.append(name)
+    for name in _SPECIALIST_READERS_RUN_SCOPED_DIRS:
+        if (arts / name).exists():
+            shutil.rmtree(arts / name)
+            removed.append(f"{name}/")
+    for dbg in arts.glob("debug_specialist_readers_*_raw_output.txt") if arts.exists() else []:
+        dbg.unlink()
+        removed.append(dbg.name)
+    if removed:
+        print(f"🧹 [E-046a] protocol_execution re-run: cleared previous attempt's {removed}")
+
+
+def _raise_specialist_readers_prereq_errors(errors: list) -> None:
+    """Under specialist_readers the grid and the reports are prerequisites, not
+    optional extras: a failure in either fails protocol_execution (after its
+    trial rows are recorded) instead of being logged and swallowed."""
+    if errors:
+        raise RuntimeError(
+            "orchestrator.specialist_readers.enabled requires the grid and the category "
+            "reports, and protocol_execution could not produce them: " + "; ".join(errors))
+
+
+def _refresh_regime_detector_report_for_readers(run_id: str, run_dir: Path) -> None:
+    """_ensure_regime_detector_report used to run only from the
+    verdict_interpreter branch, which is unreached under the flag. Run it
+    before build_reports so regime_power.yaml is built from a fresh detector
+    report; if one cannot be produced, fail rather than build from a stale or
+    missing one."""
+    if _ensure_regime_detector_report(run_id, run_dir) is None:
+        raise RuntimeError("regime_detector_report.yaml could not be produced or refreshed "
+                           "(see the message above) -- refusing to build regime_power.yaml "
+                           "from a stale or missing detector report")
+
+
+def _check_specialist_readers_preflight(run_dir: Path) -> None:
+    """Before any spend under the flag: pre_registration.yaml must carry a
+    menu-shaped pass_rule, or the grid is never evaluated and the run would
+    only fail after a full backtest and a trial row."""
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import verdict_criteria_evaluator as _vce
+    path = run_dir / "artifacts" / "pre_registration.yaml"
+    if not path.exists():
+        raise FileNotFoundError(
+            f"{path} is missing -- orchestrator.specialist_readers.enabled routes only from "
+            f"the grid, which needs a pre-registered, menu-shaped pass_rule.")
+    if not _vce._is_menu_shaped_pass_rule(_vce._find_pass_rule(load_yaml(path) or {})):
+        raise ValueError(
+            f"{path}: pass_rule is not menu-shaped (no criterion carries source/reducer) -- "
+            f"the grid cannot evaluate it, so under orchestrator.specialist_readers.enabled "
+            f"this run could only fail after its backtest. Refusing before any spend.")
 
 
 def _reader_categories() -> list:
@@ -2725,11 +2855,13 @@ def _reader_handoff(category: str, run_id: str, stage_attempt) -> dict:
 
 async def _invoke_reader_llm(prompt: str) -> tuple:
     """One reader's LLM call. Returns (text, meta). Split out so tests can
-    replace the model without touching prompt building, parsing or writing."""
+    replace the model without touching prompt building, parsing or writing.
+    Same model constant as run_claude_worker (_CLAUDE_WORKER_MODEL)."""
     agent_output = ""
     usage, total_cost, num_turns = {}, 0.0, None
     async for message in query(prompt=prompt,
-                               options=ClaudeAgentOptions(model=_READER_MODEL, allowed_tools=[])):
+                               options=ClaudeAgentOptions(model=_CLAUDE_WORKER_MODEL,
+                                                          allowed_tools=[])):
         if isinstance(message, AssistantMessage):
             for block in message.content:
                 if isinstance(block, TextBlock):
@@ -2741,58 +2873,111 @@ async def _invoke_reader_llm(prompt: str) -> tuple:
     return agent_output, {"usage": usage, "cost_usd": total_cost, "num_turns": num_turns}
 
 
+class _ReaderBudgetExceeded(RuntimeError):
+    """Raised inside the reader loop when the run's weighted token budget is
+    already spent. run_loop turns it into the same terminal
+    rejected_budget_exceeded outcome as its own loop-top budget check."""
+
+
+def _check_reader_budget(run_dir: Path, category: str) -> None:
+    state = load_yaml(run_dir / "pipeline_state.yaml") or {}
+    used, _ = _compute_weighted_budget_usage(state.get("audit_log", {}))
+    budget = _load_token_budget()
+    if used > budget:
+        raise _ReaderBudgetExceeded(
+            f"Weighted token budget exceeded before the {category} reader "
+            f"({used:,.0f} > {budget:,.0f}).")
+
+
+def _validate_reader_output(text: str, category: str, run_dir: Path):
+    """Parse one reader response and validate it for its category in a scratch
+    directory. Returns (body, None) when valid, (None, error message) when not.
+    Never touches artifacts/proposals/."""
+    blocks = _READER_OUTPUT_BLOCK_RE.findall(text or "")
+    if len(blocks) != 1:
+        return None, (f"{category} reader returned {len(blocks)} fenced YAML block(s); "
+                      f"exactly one is required.")
+    body = blocks[0].strip() + "\n"
+    rp = _reader_proposals_module()
+    scratch = Path(tempfile.mkdtemp(prefix=f".reader_{category}_", dir=str(run_dir / "artifacts")))
+    try:
+        (scratch / f"{category}.yaml").write_text(body, encoding="utf-8")
+        rp.load_proposals(scratch, [category])
+    except rp.ProposalError as exc:
+        return None, str(exc).replace(str(scratch), "proposals")
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+    return body, None
+
+
 def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0) -> Path:
     """Run ONE reader skill and write its output to the explicit path
     artifacts/proposals/<category>.yaml (S1_FINDINGS_5B_II.md §2 option (a):
     this function owns the path; any filename the model writes in its fenced
-    block is ignored). Exactly one fenced YAML block is required -- zero or
-    several raise, after the raw output is saved for debugging. Validation of
-    the written file is the caller's job (reader_proposals.load_proposals)."""
+    block is ignored). The output is validated for this category
+    (reader_proposals) BEFORE it reaches the final path, via a temp file and
+    os.replace, so a bad output can never sit at the final path and block a
+    resume. An invalid output gets exactly one retry with the validation
+    error appended to the prompt (same bound as _invoke_agent_with_yaml_retry);
+    if that also fails, the raw output is saved as
+    debug_specialist_readers_<category>_raw_output.txt and this raises."""
     handoff = _reader_handoff(category, run_id, stage_attempt)
-    prompt = _build_stage_prompt("specialist_readers", handoff, run_dir,
-                                 skill_file_name=_reader_skill_dir(category))
-    print(f"\n🧠 [READER INVOKED] {category} ({_reader_skill_dir(category)})")
-    start = time.time()
-    text, meta = asyncio.run(_invoke_reader_llm(prompt))
-    usage = meta.get("usage") or {}
-    tok = {k: usage.get(src, 0) for k, src in (("input", "input_tokens"), ("output", "output_tokens"),
-                                               ("cache_read", "cache_read_input_tokens"),
-                                               ("cache_creation", "cache_creation_input_tokens"))}
-    tok["total"] = sum(tok.values())
-    tok["weighted"] = round(_weighted_token_units(tok["input"], tok["output"],
-                                                  tok["cache_read"], tok["cache_creation"]), 1)
-    update_state(path=run_dir, audit_log={f"specialist_readers_{category}_attempt_{stage_attempt}": {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "engine": "claude-agent-sdk",
-        "execution_time_seconds": round(time.time() - start, 2),
-        "cost_usd": meta.get("cost_usd", 0.0),
-        "num_turns": meta.get("num_turns"),
-        "tokens": tok,
-    }})
-
-    blocks = _READER_OUTPUT_BLOCK_RE.findall(text or "")
-    if len(blocks) != 1:
-        debug_path = run_dir / "artifacts" / f"debug_specialist_readers_{category}_raw_output.txt"
-        debug_path.parent.mkdir(parents=True, exist_ok=True)
-        debug_path.write_text(text or "", encoding="utf-8")
-        raise RuntimeError(f"{category} reader returned {len(blocks)} fenced YAML block(s); exactly "
-                           f"one is required. Raw output saved to {debug_path}.")
+    base_prompt = _build_stage_prompt("specialist_readers", handoff, run_dir,
+                                      skill_file_name=_reader_skill_dir(category))
+    prompt = base_prompt
     dest = run_dir / "artifacts" / "proposals" / f"{category}.yaml"
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(blocks[0].strip() + "\n", encoding="utf-8")
-    print(f"✅ [READER COMPLETE] {category} -> {dest.relative_to(run_dir).as_posix()}")
-    return dest
+    for attempt in range(2):
+        if attempt:
+            _check_reader_budget(run_dir, category)
+        print(f"\n🧠 [READER INVOKED] {category} ({_reader_skill_dir(category)})"
+              + (" (validation retry)" if attempt else ""))
+        start = time.time()
+        text, meta = asyncio.run(_invoke_reader_llm(prompt))
+        key = f"specialist_readers_{category}_attempt_{stage_attempt}" + (f"_retry{attempt}" if attempt else "")
+        update_state(path=run_dir, audit_log={key: {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "engine": "claude-agent-sdk",
+            "execution_time_seconds": round(time.time() - start, 2),
+            "cost_usd": meta.get("cost_usd", 0.0),
+            "num_turns": meta.get("num_turns"),
+            "tokens": _usage_token_record(meta.get("usage") or {}),
+        }})
+        body, error = _validate_reader_output(text, category, run_dir)
+        if error is None:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            fd, tmp_name = tempfile.mkstemp(prefix=f".{category}.", suffix=".tmp", dir=str(dest.parent))
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    f.write(body)
+                os.replace(tmp_name, dest)
+            except BaseException:
+                with contextlib.suppress(OSError):
+                    os.unlink(tmp_name)
+                raise
+            print(f"✅ [READER COMPLETE] {category} -> {dest.relative_to(run_dir).as_posix()}")
+            return dest
+        if attempt == 0:
+            print(f"⚠️  {category} reader output invalid -- retrying once with the error: {error}")
+            prompt = base_prompt + (
+                "\n\n    YOUR PREVIOUS OUTPUT FAILED VALIDATION:\n    " + error +
+                "\n\n    Fix exactly this and output ONE fenced ```yaml block holding a YAML "
+                "list of proposals (`[]` for none).\n")
+    debug_path = run_dir / "artifacts" / f"debug_specialist_readers_{category}_raw_output.txt"
+    debug_path.write_text(text or "", encoding="utf-8")
+    raise _reader_proposals_module().ProposalError(
+        f"{category} reader output invalid after one retry: {error} "
+        f"Raw output saved to {debug_path}.")
 
 
 def _run_specialist_readers(run_id: str, run_dir: Path, stage_attempt=0) -> dict:
     """The per-category loop (S1_FINDINGS_5B_II.md §3 shape (a)). Sequential:
     the orchestrator has no fan-out. A category whose proposals file already
-    exists (a resumed run) is re-validated, not re-run; a malformed one raises
-    rather than being silently regenerated. The retune firewall runs before
-    the regime_power reader (§4). Every write is validated with
-    reader_proposals.load_proposals across all five categories, so a bad
-    reader output stops the run at once. Returns the validated proposals --
-    for the log only; nothing downstream in this module routes on them."""
+    exists is re-validated, not re-run -- safe because protocol_execution
+    clears artifacts/proposals/ on every attempt under this flag, so an
+    existing file can only come from this same attempt's earlier, validated
+    reader call. The budget is checked before every reader (five calls share
+    one stage). Returns the validated proposals -- for the log only; nothing
+    in this module routes on them."""
     categories = _reader_categories()
     rp = _reader_proposals_module()
     proposals_dir = run_dir / "artifacts" / "proposals"
@@ -2802,25 +2987,7 @@ def _run_specialist_readers(run_id: str, run_dir: Path, stage_attempt=0) -> dict
             rp.load_proposals(proposals_dir, categories)
             print(f"⏭️  proposals/{category}.yaml already present and valid -- reader not re-run.")
             continue
-        if category == "regime_power":
-            # A2.2 retune firewall, relocated from the verdict_interpreter branch.
-            _aud_path = run_dir / "artifacts" / "regime_audit_decision.yaml"
-            if _aud_path.exists():
-                _fw_violations = _validate_retune_firewall(load_yaml(_aud_path) or {})
-                if _fw_violations:
-                    raise RuntimeError(
-                        "RETUNE FIREWALL VIOLATION — regime_audit_decision.yaml "
-                        "references forbidden strategy metrics:\n"
-                        + "\n".join(f"  - {v}" for v in _fw_violations)
-                    )
-        # Five LLM calls share one stage, so the loop-top budget check alone
-        # would only ever see this stage's spend after the fact.
-        _state = load_yaml(run_dir / "pipeline_state.yaml") or {}
-        _used, _ = _compute_weighted_budget_usage(_state.get("audit_log", {}))
-        _budget = _load_token_budget()
-        if _used > _budget:
-            raise RuntimeError(f"Weighted token budget exceeded before the {category} reader "
-                               f"({_used:,.0f} > {_budget:,.0f}).")
+        _check_reader_budget(run_dir, category)
         run_reader_worker(category, run_id, run_dir, stage_attempt)
         rp.load_proposals(proposals_dir, categories)
     missing = [c for c in categories if not (proposals_dir / f"{c}.yaml").exists()]
@@ -2829,12 +2996,28 @@ def _run_specialist_readers(run_id: str, run_dir: Path, stage_attempt=0) -> dict
     return rp.load_proposals(proposals_dir, categories)
 
 
+def _check_retune_firewall(run_dir: Path) -> None:
+    """A2.2 retune firewall, relocated from the verdict_interpreter branch to
+    specialist_readers stage entry (before any reader call, and on every
+    resume)."""
+    aud_path = run_dir / "artifacts" / "regime_audit_decision.yaml"
+    if not aud_path.exists():
+        return
+    violations = _validate_retune_firewall(load_yaml(aud_path) or {})
+    if violations:
+        raise RuntimeError(
+            "RETUNE FIREWALL VIOLATION — regime_audit_decision.yaml "
+            "references forbidden strategy metrics:\n"
+            + "\n".join(f"  - {v}" for v in violations)
+        )
+
+
 def _run_specialist_readers_stage(run_id: str, run_dir: Path, stage_attempt=0) -> None:
     """Stage body. Engineering errors first: when protocol_result.yaml reports
     component errors the readers are not run at all (the grid they read is
     meaningless and determine_post_specialist_readers_route pauses). Then
-    idea_status.yaml is validated BEFORE any reader spends a call, so a
-    missing grid result fails at once rather than after five LLM calls."""
+    idea_status.yaml and the retune firewall are checked BEFORE any reader
+    spends a call."""
     if not _specialist_readers_enabled():
         raise RuntimeError("specialist_readers reached with orchestrator.specialist_readers.enabled "
                            "off -- reset pending_stage to verdict_interpreter or enable the flag.")
@@ -2843,6 +3026,7 @@ def _run_specialist_readers_stage(run_id: str, run_dir: Path, stage_attempt=0) -
               "run (the grid is meaningless); the route pauses for a human.")
         return
     _load_idea_status(run_dir, run_id)
+    _check_retune_firewall(run_dir)
     _run_specialist_readers(run_id, run_dir, stage_attempt)
 
 
@@ -5427,11 +5611,21 @@ def _route_kill(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
     inferred from a single hypothesis's kill verdict.
     """
     print("\n🛑 KILL: hypothesis dead (mechanism falsified / no edge / question answered negatively).")
-    # legacy routing (v26 card G) -- retired in slice 6c: under
-    # orchestrator.specialist_readers.enabled `interp` is {} (no LLM narrative),
-    # so the hypothesis_family written to altitude_history below is "" -- the
-    # retired family concept is deliberately not fed.
     diag = _extract_diagnostics(path)
+    if _specialist_readers_enabled():
+        # E-046a 5b-ii-B (code-review fix 8): under the flag the kill feeds none of
+        # the retired machinery (v26 card G, slice 6c) -- no altitude_history row
+        # (family-keyed), no failed_families, no continuation_* writes. Only the
+        # run list and the diagnostics log are kept; trial accounting is untouched
+        # (it lives in protocol_execution, not here).
+        state = load_campaign_state()
+        state.setdefault("runs", [])
+        if run_id not in state["runs"]:
+            state["runs"].append(run_id)
+        state.setdefault("diagnostics_log", []).append({"run": run_id, **diag})
+        _save_campaign_state(state)
+        return "completed_rejected"
+    # legacy routing (v26 card G) -- retired in slice 6c.
     update_campaign_state_after_run(run_id, "hypothesis", "",
                                      interp.get("hypothesis_family", ""), "kill", diag)
     # K4 symmetry: record the (null) continuation explicitly, same site A1's
@@ -7882,10 +8076,21 @@ def run_loop(run_id: str):
         _ensure_protocol_from_constraints(RUN_DIR, run_id, _machine_constraints)
         _ensure_protocol_ref_pinned(RUN_DIR, run_id, _machine_constraints)
 
-    # E-046a Slice 5b-ii-B: resolve the specialist_readers flag once, up front, so
-    # a flag set on without its grid_evaluation/category_reports dependencies
-    # fails at the start of the run, before any stage spends anything.
-    _specialist_readers_enabled()
+    # E-046a Slice 5b-ii-B: resolve the specialist_readers flag ONCE per run_loop,
+    # up front, inside a try (code-review fix 9): a flag set on without its
+    # grid_evaluation/category_reports dependencies, or a non-menu-shaped
+    # pass_rule under the flag (fix 6), stops the run with status=failed before
+    # any stage spends anything, instead of escaping run_loop.
+    _TERMINAL_AT_START = ("completed", "rejected", "human_pause", "failed_validation")
+    _pending_at_start = state.get("pending_stage") or ""
+    try:
+        _sr_flag = _specialist_readers_enabled()
+        if _sr_flag and _pending_at_start and not _pending_at_start.startswith(_TERMINAL_AT_START):
+            _check_specialist_readers_preflight(RUN_DIR)
+    except Exception as e:
+        print(f"❌ specialist_readers pre-flight failed: {e}")
+        update_state(path=RUN_DIR, status="failed", last_error=str(e))
+        return
 
     while True:
         current_stage = state.get("pending_stage")
@@ -7949,7 +8154,7 @@ def run_loop(run_id: str):
             # E-046a Slice 5b-ii-B: under the flag verdict_interpreter is never
             # invoked. A run already routed there before the flag was switched on
             # stops here instead of spending the LLM call.
-            if current_stage == "verdict_interpreter" and _specialist_readers_enabled():
+            if current_stage == "verdict_interpreter" and _sr_flag:
                 raise RuntimeError(
                     "verdict_interpreter is unreached under "
                     "orchestrator.specialist_readers.enabled -- this run was routed here "
@@ -8074,7 +8279,7 @@ def run_loop(run_id: str):
             # becomes unreached, not deleted (same pattern as validation under
             # config-direct authoring). The protocol_execution branches below can
             # still override this with human_pause on a conformance violation.
-            if current_stage == "protocol_execution" and _specialist_readers_enabled():
+            if current_stage == "protocol_execution" and _sr_flag:
                 next_stage = "specialist_readers"
 
             if current_stage == "validation":
@@ -8399,6 +8604,13 @@ def run_loop(run_id: str):
             
             # Reload state for the next while loop iteration
             state = load_yaml(STATE_FILE)
+
+        except _ReaderBudgetExceeded as e:
+            # E-046a 5b-ii-B (code-review fix 7): same terminal outcome as the
+            # loop-top weighted-budget check above, not a generic failure.
+            print(f"🛑 RUN TERMINATED: {e}")
+            update_state(path=RUN_DIR, status="rejected_budget_exceeded")
+            break
 
         except Exception as e:
             print(f"❌ Error in stage {current_stage}: {e}")

@@ -1507,7 +1507,11 @@ def _extract_run_numbers(run_dir: Path) -> dict:
     # verdict_interpretation.yaml is written; the grid's idea_status is the
     # run's decision, so the log line shows that instead. Flag off: untouched.
     is_path = artifacts / "idea_status.yaml"
-    if orch._specialist_readers_enabled() and is_path.exists():
+    try:
+        _sr_on = orch._specialist_readers_enabled()
+    except ValueError:
+        _sr_on = False  # best-effort log line: a misconfigured flag fails run_loop, not this
+    if _sr_on and is_path.exists():
         d = orch.load_yaml(is_path) or {}
         if d.get("idea_status"):
             out["idea_status"] = d["idea_status"]

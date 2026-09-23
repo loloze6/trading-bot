@@ -80,6 +80,7 @@ def _seed_run(run_id=RUN_ID, idea_status="refuted", errors_count=None, pending="
     rpr.save_yaml(arts / "protocol_result.yaml", _protocol_result(errors_count))
     rpr.save_yaml(arts / "grid_evaluation.yaml", {"result": "X", "marker": "GRID_MARKER"})
     rpr.save_yaml(arts / "hypothesis_card.yaml", {"hypothesis_id": "H-TEST-1"})
+    _write_menu_pre_registration(run_dir)
     if idea_status is not None:
         rpr.save_yaml(arts / "idea_status.yaml",
                       rpr._build_idea_status_artifact({"idea_status": idea_status, "reason": "r"}, run_id))
@@ -87,6 +88,13 @@ def _seed_run(run_id=RUN_ID, idea_status="refuted", errors_count=None, pending="
         for c in REPORT_CATEGORIES:
             rpr.save_yaml(arts / "reports" / f"{c}.yaml", {"category": c, "marker": f"REPORT_{c.upper()}"})
     return run_dir
+
+
+MENU_PASS_RULE = {"criteria": [{"id": "c1", "source": "core.sharpe", "reducer": "median"}]}
+
+
+def _write_menu_pre_registration(run_dir: Path) -> None:
+    rpr.save_yaml(run_dir / "artifacts" / "pre_registration.yaml", {"pass_rule": MENU_PASS_RULE})
 
 
 def _proposal(cat: str, run_id: str = RUN_ID, n: int = 1, score: int = 2) -> dict:
@@ -150,10 +158,11 @@ def test_run_loop_fails_at_start_when_dependency_off(monkeypatch):
     run_dir = _seed_run(pending="protocol_execution")
     invoked = []
     monkeypatch.setattr(rpr, "_invoke_agent_with_yaml_retry", lambda *a, **k: invoked.append(a[0]))
-    with pytest.raises(ValueError, match="grid_evaluation"):
-        rpr.run_loop(RUN_ID)
+    rpr.run_loop(RUN_ID)  # code-review fix 9: sets status=failed, does not escape
+    state = rpr.load_yaml(run_dir / "pipeline_state.yaml")
     assert invoked == []
-    assert rpr.load_yaml(run_dir / "pipeline_state.yaml")["pending_stage"] == "protocol_execution"
+    assert state["pending_stage"] == "protocol_execution"
+    assert state["status"] == "failed" and "grid_evaluation" in state["last_error"]
 
 
 # ---------------------------------------------------------------------------
@@ -202,6 +211,7 @@ def test_flag_off_protocol_execution_routes_to_verdict_interpreter(monkeypatch, 
 def test_flag_on_protocol_execution_routes_to_specialist_readers(monkeypatch):
     _set_orchestrator(ALL_ON)
     run_dir = _minimal_run_at(rpr.ROOT, RUN_ID, "protocol_execution")
+    _write_menu_pre_registration(run_dir)
     rpr.save_yaml(run_dir / "handoffs" / "backtest_spec_to_protocol_execution.yaml",
                   {"required_inputs": [], "deliverables": []})
     rpr.save_yaml(run_dir / "artifacts" / "protocol_result.yaml", _protocol_result())
@@ -266,7 +276,7 @@ def test_loop_dispatches_five_readers_to_five_skills_and_five_paths(monkeypatch)
     assert {f"specialist_readers_{c}_attempt_0" for c in REPORT_CATEGORIES} <= set(audit)
 
 
-def test_retune_firewall_runs_before_regime_power_reader(monkeypatch):
+def test_retune_firewall_runs_at_stage_entry_before_any_reader(monkeypatch):
     _set_orchestrator(ALL_ON)
     monkeypatch.chdir(SR_ROOT)
     run_dir = _seed_run()
@@ -274,11 +284,16 @@ def test_retune_firewall_runs_before_regime_power_reader(monkeypatch):
                   {"recommended_action": "retune until sharpe improves"})
     calls = []
     monkeypatch.setattr(rpr, "_invoke_reader_llm", _fake_llm(calls=calls))
+    # code-review fix 5: checked at stage entry, before ANY reader call ...
     with pytest.raises(RuntimeError, match="RETUNE FIREWALL"):
-        rpr._run_specialist_readers(RUN_ID, run_dir)
-    ran = [c for c, _ in calls]
-    assert "regime_power" not in ran
-    assert ran == list(REPORT_CATEGORIES[:REPORT_CATEGORIES.index("regime_power")])
+        rpr._run_specialist_readers_stage(RUN_ID, run_dir)
+    assert calls == []
+    # ... and again on a resume where some proposals already exist
+    (run_dir / "artifacts" / "proposals").mkdir(parents=True)
+    (run_dir / "artifacts" / "proposals" / "profitability.yaml").write_text("[]", encoding="utf-8")
+    with pytest.raises(RuntimeError, match="RETUNE FIREWALL"):
+        rpr._run_specialist_readers_stage(RUN_ID, run_dir)
+    assert calls == []
 
 
 def test_resume_revalidates_existing_files_without_rerunning(monkeypatch):
@@ -304,10 +319,43 @@ def test_malformed_proposal_fails_loud(monkeypatch):
     run_dir = _seed_run()
     bad = _proposal("profitability")
     bad["scores"]["confidence_real"] = 5
+    calls = []
     monkeypatch.setattr(rpr, "_invoke_reader_llm", _fake_llm(
-        {"profitability": "```yaml\n" + yaml.safe_dump([bad]) + "```"}))
+        {"profitability": "```yaml\n" + yaml.safe_dump([bad]) + "```"}, calls))
     with pytest.raises(reader_proposals.ProposalError, match="confidence_real"):
         rpr._run_specialist_readers(RUN_ID, run_dir)
+    # one bounded retry, with the validation error in the second prompt
+    assert [c for c, _ in calls] == ["profitability", "profitability"]
+    assert "FAILED VALIDATION" in calls[1][1] and "confidence_real" in calls[1][1]
+    # code-review fix 3: the bad output never reaches the final path
+    assert not (run_dir / "artifacts" / "proposals" / "profitability.yaml").exists()
+    assert (run_dir / "artifacts" / "debug_specialist_readers_profitability_raw_output.txt").exists()
+
+
+def test_bad_output_does_not_block_resume_and_retry_can_succeed(monkeypatch):
+    """code-review fix 3: after a failed reader, a resume re-runs it (nothing
+    stuck at the final path); a first invalid then valid answer succeeds."""
+    _set_orchestrator(ALL_ON)
+    monkeypatch.chdir(SR_ROOT)
+    run_dir = _seed_run()
+    bad = _proposal("profitability")
+    bad["scores"]["confidence_real"] = 5
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _fake_llm(
+        {"profitability": "```yaml\n" + yaml.safe_dump([bad]) + "```"}))
+    with pytest.raises(reader_proposals.ProposalError):
+        rpr._run_specialist_readers(RUN_ID, run_dir)
+    answers = iter(["```yaml\n" + yaml.safe_dump([bad]) + "```", "```yaml\n[]\n```"])
+    calls = []
+    good = _fake_llm(calls=calls)
+
+    async def _flaky(prompt):
+        if "reader_category: profitability\n" in prompt:
+            return next(answers), {"usage": {}, "cost_usd": 0.0, "num_turns": 1}
+        return await good(prompt)
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _flaky)
+    result = rpr._run_specialist_readers(RUN_ID, run_dir)
+    assert result["profitability"] == []
+    assert len(calls) == 4
 
 
 def test_reader_that_routes_fails_loud(monkeypatch):
@@ -328,9 +376,11 @@ def test_zero_or_several_blocks_fail_loud(monkeypatch, text):
     _set_orchestrator(ALL_ON)
     monkeypatch.chdir(SR_ROOT)
     run_dir = _seed_run()
-    monkeypatch.setattr(rpr, "_invoke_reader_llm", _fake_llm({"profitability": text}))
-    with pytest.raises(RuntimeError, match="exactly one is required"):
+    calls = []
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _fake_llm({"profitability": text}, calls))
+    with pytest.raises(reader_proposals.ProposalError, match="exactly one is required"):
         rpr._run_specialist_readers(RUN_ID, run_dir)
+    assert len(calls) == 2
     assert (run_dir / "artifacts" / "debug_specialist_readers_profitability_raw_output.txt").exists()
     assert not (run_dir / "artifacts" / "proposals" / "profitability.yaml").exists()
 
@@ -386,7 +436,8 @@ def test_refuted_routes_to_kill_terminate(monkeypatch):
     assert rpr.determine_post_specialist_readers_route(run_dir, RUN_ID) == "completed_rejected"
     assert dispatched == [({}, "kill", "terminate")]
     assert breaker == []
-    assert rpr.load_yaml(run_dir / "pipeline_state.yaml")["continuation_child"] is None
+    # code-review fix 8: no continuation_* bookkeeping under the flag
+    assert "continuation_child" not in rpr.load_yaml(run_dir / "pipeline_state.yaml")
 
 
 def test_inconclusive_pauses_with_inconclusive_grid():

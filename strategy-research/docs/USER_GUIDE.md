@@ -1166,19 +1166,33 @@ malformed file stops the run.
 
 **Features / logic in place**
 
-1. **Explicit output path.** `run_reader_worker` writes each reader's single
-   fenced YAML block to `proposals/<category>.yaml` itself;
-   `run_claude_worker`'s shared filename regex is not used or changed.
-2. **Retune firewall** (`_validate_retune_firewall`) runs before the
-   `regime_power` reader, exactly as it ran before stage 11.
-3. **Route from the grid only** (`::determine_post_specialist_readers_route`):
+1. **Explicit output path, validated before it lands.** `run_reader_worker`
+   validates each reader's single fenced YAML block for its category, then
+   moves it into `proposals/<category>.yaml` (temp file + `os.replace`);
+   `run_claude_worker`'s shared filename regex is not used or changed. An
+   invalid output gets one retry with the error in the prompt; a second
+   failure is saved as `debug_specialist_readers_<category>_raw_output.txt`
+   (never at the final path) and stops the run.
+2. **Retune firewall** (`_validate_retune_firewall`) runs at stage entry,
+   before any reader call (and on every resume).
+3. **Everything comes from this attempt.** Under the flag `protocol_execution`
+   deletes `idea_status.yaml`, `grid_evaluation.yaml`, `reports/` and
+   `proposals/` on entry, refreshes `regime_detector_report.yaml` before the
+   reports are built, and fails (after its trial rows are recorded) if the
+   grid or the reports cannot be produced. `run_loop` also refuses to start
+   a flag-on run whose `pre_registration.yaml` pass_rule is not menu-shaped.
+   A token budget exceeded between readers ends the run as
+   `rejected_budget_exceeded`, like the loop-top check.
+4. **Route from the grid only** (`::determine_post_specialist_readers_route`):
    any `results[*].component_errors.count > 0` in `protocol_result.yaml` →
    human pause `component_execution_error` (readers are not run); then
    `idea_status.yaml`: `validated` → promote (holdout path, unchanged),
    `refuted` → kill/terminate, `inconclusive` → human pause
    `inconclusive_grid`. Missing or malformed `idea_status.yaml` fails the run.
-   No refine/pivot/escalate and no circuit breaker under this flag.
-4. **Stage 11 is unreached, not deleted.** Its registry entry and code stay
+   No refine/pivot/escalate and no circuit breaker under this flag; a kill
+   records the run and its diagnostics only (no `altitude_history`, family
+   or `continuation_*` bookkeeping).
+5. **Stage 11 is unreached, not deleted.** Its registry entry and code stay
    for flag-off runs; `verdict_interpretation.yaml` is never written under the
    flag. Its readers are listed in
    `engineering/roadmap/E-046a/S2_5B_II_B_CALLERS.md`.

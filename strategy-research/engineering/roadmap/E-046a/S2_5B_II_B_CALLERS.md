@@ -25,7 +25,9 @@ could not check (`lint_verdict_provenance.py`, `record_schema.py`,
 has **0** hits (its required inputs do not list the file). Comment-only or
 non-reader hits, excluded as before: `anti_adjacency_gate.py:221` (comment),
 `killed_run_gate.py:270` (writes a synthetic file in a test fixture),
-`run_campaign.py:892`/`:1381` (comments). Line numbers below are this branch's.
+`run_campaign.py:892`/`:1381` (comments). Line numbers below are as of commit
+`1079c96b` (the code-review follow-up commit shifts them; function names are the
+stable reference).
 
 ## Table
 
@@ -55,7 +57,11 @@ non-reader hits, excluded as before: `anti_adjacency_gate.py:221` (comment),
 | Caller | Class | Decision |
 |---|---|---|
 | `_dispatch_verdict_route` (`:7166`) | b | Called with the grid's pair and `interp = {}`. The promote branch never reads `interp`; terminate hands it to `_route_kill`. |
-| `_route_kill` (`:5415`) | c | Reads `interp.get("hypothesis_family", "")` for `altitude_history`; gets `""`. `hypothesis_family` is retired (card G / slice 6c) and deliberately not fed. Comment added. |
+| `_route_kill` (`:5415`) | c | Code-review fix (follow-up commit): under the flag it returns before any retired bookkeeping -- no `altitude_history` (family-keyed), no `failed_families`, no `continuation_*` writes; it keeps `campaign_state.runs` and `diagnostics_log`. Flag off: unchanged. |
+
+`tools/killed_run_gate.py`'s fixture (not a production caller) now also writes a
+`hypothesis_card.yaml` with the same `hypothesis_id`, so its pipeline-N proof
+holds with the flag on (`_idea_hypothesis_id` keeps failing loud).
 
 ## Narrative fields not re-created
 
