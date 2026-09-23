@@ -201,6 +201,17 @@ STAGE_CONFIGS = {
         "handoff": "protocol_to_specialist_readers.yaml",
         "default_next": "dynamic_routing",
     },
+    # E-058 S2a (orchestrator.regroup_record.enabled, off by default; requires
+    # specialist_readers): registered UNCONDITIONALLY, same convention as
+    # specialist_readers above, but only ROUTED to when the flag is on -- then it sits
+    # between specialist_readers and determine_post_specialist_readers_route ("memory
+    # before decision", roadmap card H). A tool stage, no LLM and no "skill" key: it
+    # writes one entry per run to campaign_record/campaign_memory.yaml
+    # (tools/campaign_memory.py) and writes no trial rows -- see _run_regroup_record_stage.
+    "regroup_record": {
+        "handoff": "specialist_readers_to_regroup_record.yaml",
+        "default_next": "dynamic_routing",
+    },
     "campaign_review": {
         "handoff": "campaign_review.yaml",
         "default_next": "dynamic_routing",
@@ -3073,6 +3084,121 @@ def determine_post_specialist_readers_route(path: Path, run_id: str) -> str:
           f"{hypothesis_verdict}/{lineage_routing}")
     return _dispatch_verdict_route(path, run_id, {}, load_campaign_state(),
                                    hypothesis_verdict, lineage_routing)
+
+
+# ---------------------------------------------------------------------------
+# E-058 S2a -- the regroup_record stage and the campaign memory
+# (delivery_plan_v26.md slice 6a, first half; engineering/roadmap/E-058/
+# S1_FINDINGS.md §2-§3 and its operator decision). OFF BY DEFAULT. When on:
+#   specialist_readers -> regroup_record -> determine_post_specialist_readers_route
+# (unchanged route, only later in time: "memory before decision", card H).
+# regroup_record writes ONE entry per run to campaign_record/campaign_memory.yaml
+# (replaced on re-run) through tools/campaign_memory.py. It decides nothing:
+# the entry's idea_status is copied from the grid's idea_status.yaml, reader
+# proposals are only referenced (ids + count, never scores), and it writes NO
+# trial rows (protocol_execution already recorded them; the memory only reads
+# their ids). No refine/pivot/escalate, circuit breaker, hypothesis_family,
+# altitude or continuation field is read or written (retired in slice 6c).
+# The block registry, the grid-based KB writer and the scoreboard are S2b.
+# ---------------------------------------------------------------------------
+
+_REGROUP_RECORD_HANDOFF = "specialist_readers_to_regroup_record.yaml"
+
+
+def _regroup_record_enabled() -> bool:
+    """False when the key, the section or the config file is absent. A
+    non-bool value raises. Requires orchestrator.specialist_readers.enabled
+    (itself requiring grid_evaluation + category_reports): raises, loudly, if
+    this flag is on without it -- without the readers flag the stage is never
+    routed to and there is no idea_status route to record before."""
+    path = ROOT / "config" / "campaign_config.yaml"
+    if not path.exists():
+        return False
+    with open(path, encoding="utf-8") as f:
+        cfg = yaml.safe_load(f) or {}
+    rr_cfg = ((cfg.get("orchestrator") or {}).get("regroup_record") or {})
+    value = rr_cfg.get("enabled", False)
+    if not isinstance(value, bool):
+        raise ValueError(
+            f"orchestrator.regroup_record.enabled={value!r} is not a real boolean "
+            f"(got {type(value).__name__}) -- write an unquoted `true` or `false` in "
+            f"config/campaign_config.yaml, not a quoted string or null."
+        )
+    if value and not _specialist_readers_enabled():
+        raise ValueError(
+            "orchestrator.regroup_record.enabled=true requires "
+            "orchestrator.specialist_readers.enabled=true as well -- regroup_record runs "
+            "only after the specialist_readers stage and records the grid's idea_status "
+            "before its route. Enable both (with grid_evaluation and category_reports)."
+        )
+    return value
+
+
+def _campaign_memory_path() -> Path:
+    """Resolved from ROOT at call time, so the test sandbox's ROOT covers it."""
+    return ROOT / "campaign_record" / "campaign_memory.yaml"
+
+
+def _campaign_memory_module():
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import campaign_memory as _cm
+    return _cm
+
+
+def _ensure_regroup_record_handoff(run_id: str, run_dir: Path) -> Path:
+    """Stage-level handoff, written lazily at stage entry (flag-off runs never
+    get this file), like _ensure_specialist_readers_handoff."""
+    handoff_path = run_dir / "handoffs" / _REGROUP_RECORD_HANDOFF
+    if not handoff_path.exists():
+        save_yaml(handoff_path, {
+            "handoff_version": 1, "run_id": run_id,
+            "from_stage": "specialist_readers", "to_stage": "regroup_record",
+            "assigned_engine": "tool",
+            "objective": (
+                "E-058: record this run in campaign_record/campaign_memory.yaml (one "
+                "entry per run_id, replaced on re-run) before the grid's route is taken. "
+                "Decides nothing; writes no trial rows."
+            ),
+            "required_inputs": [
+                {"path": "artifacts/protocol_result.yaml", "reason": "component-error check"},
+                {"path": "artifacts/idea_status.yaml", "reason": "the grid's idea status"},
+                {"path": "artifacts/grid_evaluation.yaml", "reason": "the grid's cells"},
+                {"path": "artifacts/hypothesis_card.yaml", "reason": "the idea's hypothesis_id"},
+            ],
+            "deliverables": [],
+        })
+    return handoff_path
+
+
+def _run_regroup_record_stage(run_id: str, run_dir: Path) -> dict:
+    """Stage body. Component errors first (an engineering fault: the entry
+    carries engineering_fault and no idea_status or grid numbers). Otherwise
+    idea_status.yaml is validated exactly as the route validates it, before
+    anything is written. campaign_state.trial_sharpes is only READ (for the
+    trial-id cross-link). Returns the entry written."""
+    if not _regroup_record_enabled():
+        raise RuntimeError("regroup_record reached with orchestrator.regroup_record.enabled off "
+                           "-- reset pending_stage to specialist_readers or enable the flag.")
+    errors = _protocol_component_errors(run_dir)
+    if not errors:
+        _load_idea_status(run_dir, run_id)
+    cm = _campaign_memory_module()
+    entry = cm.build_memory_entry(
+        run_dir, run_id,
+        component_errors=errors,
+        trial_sharpes=(load_campaign_state() or {}).get("trial_sharpes") or [],
+        categories=_reader_categories(),
+        forecast_hash_fn=_compute_forecast_hash,
+        protocol_root=ROOT,
+    )
+    memory_path = _campaign_memory_path()
+    cm.upsert_memory(memory_path, entry)
+    print(f"📒 [E-058] campaign memory: {run_id} recorded "
+          f"(idea_status={entry['idea_status']}, engineering_fault={entry['engineering_fault']}) "
+          f"-> {memory_path}")
+    return entry
 
 
 def _apply_config_direct_authoring_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
@@ -8091,6 +8217,14 @@ def run_loop(run_id: str):
         print(f"❌ specialist_readers pre-flight failed: {e}")
         update_state(path=RUN_DIR, status="failed", last_error=str(e))
         return
+    # E-058 S2a: the regroup_record flag, resolved ONCE the same way (its
+    # dependency on specialist_readers fails the run here, before any spend).
+    try:
+        _rr_flag = _regroup_record_enabled()
+    except Exception as e:
+        print(f"❌ regroup_record pre-flight failed: {e}")
+        update_state(path=RUN_DIR, status="failed", last_error=str(e))
+        return
 
     while True:
         current_stage = state.get("pending_stage")
@@ -8122,6 +8256,17 @@ def run_loop(run_id: str):
             # E-046a Slice 5b-ii-B: created lazily at stage entry, so flag-off
             # runs never get this file.
             _ensure_specialist_readers_handoff(run_id, RUN_DIR)
+        elif current_stage == "regroup_record":
+            # E-058 S2a: a run routed here while the flag was on, resumed with it
+            # off, stops loudly instead of skipping the record or guessing a route.
+            if not _rr_flag:
+                _msg = ("regroup_record is unreached with orchestrator.regroup_record.enabled "
+                        "off -- this run was routed here while the flag was on. Reset "
+                        "pending_stage to specialist_readers (or switch the flag on) and resume.")
+                print(f"❌ {_msg}")
+                update_state(path=RUN_DIR, status="failed", last_error=_msg)
+                break
+            _ensure_regroup_record_handoff(run_id, RUN_DIR)
 
 
 
@@ -8239,6 +8384,9 @@ def run_loop(run_id: str):
                 # run_reader_worker (explicit output path), never through
                 # _invoke_agent_with_yaml_retry/_SKILL_MAP.
                 _run_specialist_readers_stage(run_id, RUN_DIR, _this_stage_attempt)
+            elif current_stage == "regroup_record":
+                # E-058 S2a: tool stage, no LLM call, no _SKILL_MAP entry.
+                _run_regroup_record_stage(run_id, RUN_DIR)
             elif not _skip_agent:
                 if current_stage == "hypothesis_generation":
                     try:
@@ -8573,9 +8721,21 @@ def run_loop(run_id: str):
                     break
 
             elif current_stage == "specialist_readers":
-                # E-046a Slice 5b-ii-B: the route comes from the grid only
-                # (component-error check, then idea_status.yaml). The readers'
-                # proposals play no part in it.
+                if _rr_flag:
+                    # E-058 S2a: record before deciding -- the same route runs
+                    # after regroup_record instead of here.
+                    next_stage = "regroup_record"
+                else:
+                    # E-046a Slice 5b-ii-B: the route comes from the grid only
+                    # (component-error check, then idea_status.yaml). The readers'
+                    # proposals play no part in it.
+                    next_stage = determine_post_specialist_readers_route(RUN_DIR, run_id)
+                    if next_stage == "human_pause":
+                        update_state(path=RUN_DIR, status="paused_for_human")
+                        break
+
+            elif current_stage == "regroup_record":
+                # E-058 S2a: the unchanged grid route, after the memory is written.
                 next_stage = determine_post_specialist_readers_route(RUN_DIR, run_id)
                 if next_stage == "human_pause":
                     update_state(path=RUN_DIR, status="paused_for_human")

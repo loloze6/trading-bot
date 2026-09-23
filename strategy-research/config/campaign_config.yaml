@@ -590,6 +590,30 @@ orchestrator:
       # Held off_incomplete (see feature_flag_register.yaml): the orchestration
       # is unit tested with a mocked LLM; no reader has yet run against a real
       # model (no API budget in this slice's environment).
+  regroup_record:
+    enabled: false
+      # E-058 S2a (delivery_plan_v26.md slice 6a, first half;
+      # engineering/roadmap/E-058/S1_FINDINGS.md). OFF BY DEFAULT and read at
+      # runtime by run_phase1_research._regroup_record_enabled() -- same shape
+      # as orchestrator.specialist_readers.enabled above. HARD DEPENDENCY:
+      # raises (does not silently no-op) if this is true while
+      # specialist_readers.enabled is false/absent. run_loop resolves the flag
+      # once at start, so the misconfiguration fails there.
+      #
+      # While false, STAGE_CONFIGS["regroup_record"] is registered
+      # (unconditionally) but never routed to: specialist_readers still routes
+      # straight through determine_post_specialist_readers_route, and no
+      # campaign_record/campaign_memory.yaml is written -- proven by
+      # tests/test_e058_s2a_regroup_record.py's flag-off tests.
+      #
+      # While true: specialist_readers -> regroup_record -> the same grid route.
+      # regroup_record (a tool stage, no LLM) writes one entry per run to
+      # campaign_record/campaign_memory.yaml (tools/campaign_memory.py), keyed
+      # by run_id and replaced on re-run: idea_status copied from the grid,
+      # the grid's cells, per-variant status, trial ids (read only -- it writes
+      # NO trial rows), proposal references (never scores), and
+      # engineering_fault for a component-error run. Old runs are not
+      # backfilled. Block registry, KB writer and scoreboard are E-058 S2b.
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------

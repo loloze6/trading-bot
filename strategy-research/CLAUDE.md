@@ -44,12 +44,16 @@ The pipeline is 12 numbered stages:
 Two caveats the guide explains in full:
 
 - The engine's own registry, `STAGE_CONFIGS`
-  (`workflow/run_phase1_research.py::STAGE_CONFIGS`), holds **11** entries as
-  of E-046a Slice 5b-ii-B (2026-09-23): the 11th, `specialist_readers`, is
-  registered unconditionally but routed to only when
+  (`workflow/run_phase1_research.py::STAGE_CONFIGS`), holds **12** entries as
+  of E-058 S2a (2026-09-23). The 11th, `specialist_readers` (E-046a Slice
+  5b-ii-B), is registered unconditionally but routed to only when
   `orchestrator.specialist_readers.enabled` is on (off by default), replacing
   `verdict_interpreter` after `protocol_execution` (see `docs/USER_GUIDE.md`
-  stage 16). `data_availability_gate` (E-054 Layer 2)
+  stage 16). The 12th, `regroup_record`, is registered the same way and routed
+  to only when `orchestrator.regroup_record.enabled` is on (off by default;
+  requires `specialist_readers`): it sits between `specialist_readers` and its
+  route and writes `campaign_record/campaign_memory.yaml` (`docs/USER_GUIDE.md`
+  stage 17). `data_availability_gate` (E-054 Layer 2)
   sits between `backtest_specification` and `protocol_execution`.
   **CORRECTED 2026-09-20** (delivery_plan_v26.md s:0.4 item 14): it is now ON
   BY DEFAULT, gated by `orchestrator.data_availability_gate.enabled` in

@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "E-058 S2a (delivery_plan_v26.md slice 6a; engineering/roadmap/E-058/S1_FINDINGS.md §3). Documentation/test-validation only: tools/campaign_memory.py writes the file directly (not through save_yaml), and tests/test_e058_s2a_regroup_record.py validates real stage output against this schema. Entries are closed (additionalProperties: false) so a retired field (hypothesis_family, altitude, lineage_routing, continuation_*) cannot creep in.",
+  "title": "campaign_record/campaign_memory.yaml",
+  "description": "Per-run campaign memory written by the regroup_record stage (orchestrator.regroup_record.enabled). One entry per run_id, replaced on re-run. Runs before the stage are not listed (legacy history: campaign_knowledge_base.yaml).",
+  "type": "object",
+  "required": ["schema_version", "legacy_note", "runs"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "legacy_note": { "type": "string", "minLength": 1 },
+    "runs": { "type": "object", "additionalProperties": { "$ref": "#/$defs/entry" } }
+  },
+  "$defs": {
+    "nullable_string": { "type": ["string", "null"] },
+    "cell": {
+      "type": "object",
+      "required": ["result"],
+      "additionalProperties": false,
+      "properties": {
+        "result": { "enum": ["PASS", "FAIL", "INCONCLUSIVE"] },
+        "value": {}, "threshold": {}, "n_windows": {}, "n_trades": {}, "reason": {},
+        "per_symbol": { "type": "object" }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "required": ["run_id", "hypothesis_id", "legacy", "recorded_at", "idea_status",
+                   "idea_status_reason", "idea_status_ref", "engineering_fault",
+                   "engineering_fault_detail", "grid", "variants", "trial_ids", "protocol_ref",
+                   "timeframe", "proposals", "registry", "profit_bars", "profit_bars_reason",
+                   "kb_entry_id"],
+      "additionalProperties": false,
+      "properties": {
+        "run_id": { "type": "string", "minLength": 1 },
+        "hypothesis_id": { "type": "string", "minLength": 1 },
+        "legacy": { "const": false },
+        "recorded_at": { "type": "string" },
+        "idea_status": { "enum": ["validated", "refuted", "inconclusive", null],
+                         "description": "Copied from idea_status.yaml (the grid). null only with an engineering_fault." },
+        "idea_status_reason": { "$ref": "#/$defs/nullable_string" },
+        "idea_status_ref": { "$ref": "#/$defs/nullable_string" },
+        "engineering_fault": { "enum": [null, "component_execution_error"] },
+        "engineering_fault_detail": { "type": "array", "items": { "type": "string" }, "maxItems": 10 },
+        "grid": {
+          "type": ["object", "null"],
+          "required": ["ref", "criteria", "variants", "cells", "counts"],
+          "additionalProperties": false,
+          "properties": {
+            "ref": { "type": "string" },
+            "criteria": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+            "variants": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+            "cells": { "type": "object",
+                       "additionalProperties": { "type": "object", "additionalProperties": { "$ref": "#/$defs/cell" } } },
+            "counts": {
+              "type": "object", "additionalProperties": false,
+              "required": ["PASS", "FAIL", "INCONCLUSIVE"],
+              "properties": { "PASS": { "type": "integer" }, "FAIL": { "type": "integer" },
+                              "INCONCLUSIVE": { "type": "integer" } }
+            }
+          }
+        },
+        "variants": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["status", "reason", "config_ref", "forecast_hash", "symbols", "n_windows", "trial_id"],
+            "additionalProperties": false,
+            "properties": {
+              "status": { "enum": ["tested", "failed", "not_tested"] },
+              "reason": { "$ref": "#/$defs/nullable_string" },
+              "config_ref": { "$ref": "#/$defs/nullable_string" },
+              "forecast_hash": { "$ref": "#/$defs/nullable_string",
+                               "description": "Same canonical-JSON sha256 as the trial row's forecast_hash (_compute_forecast_hash) -- NOT the trading-bot run artifact's config hash (reporting/run_artifact.py), which uses compact separators." },
+              "symbols": { "type": "array", "items": { "type": "string" } },
+              "n_windows": { "type": "integer", "minimum": 0 },
+              "trial_id": { "$ref": "#/$defs/nullable_string",
+                            "description": "Read-only cross-link to campaign_state.trial_sharpes." }
+            }
+          }
+        },
+        "trial_ids": { "type": "array", "items": { "type": "string" } },
+        "protocol_ref": { "$ref": "#/$defs/nullable_string" },
+        "timeframe": { "$ref": "#/$defs/nullable_string" },
+        "proposals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["category", "ref", "proposal_ids", "count"],
+            "additionalProperties": false,
+            "properties": {
+              "category": { "type": "string" },
+              "ref": { "$ref": "#/$defs/nullable_string" },
+              "proposal_ids": { "type": "array", "items": { "type": "string" } },
+              "count": { "type": "integer", "minimum": 0 }
+            }
+          },
+          "description": "References only -- scores are never copied (they rank candidates in slice 6b)."
+        },
+        "registry": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["skipped"],
+          "properties": { "skipped": { "enum": ["not_built", "not_validated", "engineering_fault"] } },
+          "description": "S2a: always skipped; the block registry (block_ids) is E-058 S2b."
+        },
+        "profit_bars": { "type": "null" },
+        "profit_bars_reason": { "const": "not evaluated before regroup" },
+        "kb_entry_id": { "type": "null", "description": "The grid-based KB writer is E-058 S2b." }
+      }
+    }
+  }
+}

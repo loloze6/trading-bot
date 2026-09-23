@@ -24,6 +24,7 @@ Not sure this is the doc you need? See [`DOC_INDEX.md`](DOC_INDEX.md) first.
     - [Not a stage — `regime_auditor` (a human procedure)](#not-a-stage--regime_auditor-a-human-procedure)
     - [Stage 11 — `verdict_interpreter`](#stage-11--verdict_interpreter)
     - [Stage 16 — `specialist_readers`](#stage-16--specialist_readers)
+    - [Stage 17 — `regroup_record`](#stage-17--regroup_record)
     - [Stage 12 — `campaign_review`](#stage-12--campaign_review)
     - [Stage 13 — `holdout_evaluation`](#stage-13--holdout_evaluation)
   - [2.3 Decision Tree & Routing](#23-decision-tree--routing)
@@ -270,6 +271,7 @@ one place to read when the answer matters.
 | — | [**regime_auditor**](#not-a-stage--regime_auditor-a-human-procedure) | ⚠️ Human, not dispatched | Judge the detector without letting profitability leak into the decision. **Not dispatched by the orchestrator** — see the block. |
 | 11 | [**verdict_interpreter**](#stage-11--verdict_interpreter) | Claude | Decide what the result means, what to do next, and at what size of change. |
 | 16 | [**specialist_readers**](#stage-16--specialist_readers) | Claude (×5 reader skills) | Off by default (E-046a Slice 5b-ii-B, `orchestrator.specialist_readers.enabled`). Replaces stage 11 when on: five readers each propose evidence-grounded changes from one category report; the route comes from the grid (`idea_status.yaml`), never from the readers. |
+| 17 | [**regroup_record**](#stage-17--regroup_record) | Python tool | Off by default (E-058 S2a, `orchestrator.regroup_record.enabled`; requires stage 16's flag). Sits between 16 and its route: records the run in `campaign_record/campaign_memory.yaml` before the grid's route is taken. Decides nothing, writes no trial rows. |
 | 12 | [**campaign_review**](#stage-12--campaign_review) | Claude | Ask whether the campaign's whole line of attack is still worth pursuing. |
 | 13 | [**holdout_evaluation**](#stage-13--holdout_evaluation) | Python tool + human | Spend the one-shot holdout, and only after everything cheaper has passed. |
 
@@ -1196,6 +1198,76 @@ malformed file stops the run.
    for flag-off runs; `verdict_interpretation.yaml` is never written under the
    flag. Its readers are listed in
    `engineering/roadmap/E-046a/S2_5B_II_B_CALLERS.md`.
+6. **With stage 17 on**, the route in item 4 runs after `regroup_record`
+   instead of here (same function, same result).
+
+---
+
+#### Stage 17 — `regroup_record`
+**Engine:** Python tool (`workflow/run_phase1_research.py::_run_regroup_record_stage`,
+writer `tools/campaign_memory.py`). No LLM call.
+**Runs:** after `specialist_readers`, only when `orchestrator.regroup_record.enabled`
+is on (off by default; requires `orchestrator.specialist_readers.enabled`, or the
+run fails at start). `default_next: dynamic_routing`.
+
+**Objective.** Write down what this run found, in one place that later steps
+can read, before the grid's route is taken ("memory before decision", roadmap
+card H; delivery_plan_v26.md slice 6a).
+
+**Design rationale.** Under stage 16's flag, `campaign_state.runs` misses
+promoted and paused runs, and the legacy KB writer is never reached. The
+memory is the complete per-run list. It only records: the idea's status is
+copied from the grid, and reader proposals are referenced, never scored.
+
+**Stage input:** `artifacts/idea_status.yaml`, `artifacts/grid_evaluation.yaml`,
+`artifacts/hypothesis_card.yaml`, `artifacts/protocol_result.yaml` (plus
+`artifacts/variants/index.yaml` and each variant's `protocol_result.yaml`
+under the variant loop, `artifacts/proposals/*.yaml`, and
+`campaign_state.trial_sharpes`, read only).
+
+**Stage output:** one entry in `campaign_record/campaign_memory.yaml`, keyed
+by `run_id`. File shape: `schema_version: 1`, `legacy_note`, `runs: {<run_id>:
+<entry>}`. Entry fields:
+
+```yaml
+run_id, hypothesis_id, legacy: false, recorded_at
+idea_status            # validated|refuted|inconclusive, from idea_status.yaml; null on an engineering fault
+idea_status_reason, idea_status_ref
+engineering_fault      # null | component_execution_error
+engineering_fault_detail   # up to 10 component-error lines
+grid: {ref, criteria, variants, cells: {<criterion>: {<variant>: {result, value, threshold, n_windows, n_trades}}},
+       counts: {PASS, FAIL, INCONCLUSIVE}}   # null on an engineering fault
+variants: {<id>: {status: tested|failed|not_tested, reason, config_ref, forecast_hash,
+                  symbols, n_windows, trial_id}}
+trial_ids              # this run's backtest / backtest_failed rows in trial_sharpes (read only)
+protocol_ref           # protocol_result.yaml's protocol_file
+timeframe              # hypothesis_card.yaml
+proposals: [{category, ref, proposal_ids, count}]   # never scores
+registry: {skipped: not_built|not_validated|engineering_fault}   # block registry is E-058 S2b
+profit_bars: null, profit_bars_reason: "not evaluated before regroup"
+kb_entry_id: null      # grid-based KB writer is E-058 S2b
+```
+
+**Features / logic in place**
+
+1. **Replaced on re-run.** A second pass for the same `run_id` replaces its
+   entry; other entries are kept. Written atomically (temp file +
+   `os.replace`). A malformed existing file stops the run and is not
+   overwritten.
+2. **Engineering faults are recorded, not judged.** If `protocol_result.yaml`
+   (or a variant's copy) has component errors, the entry carries
+   `engineering_fault: component_execution_error` with no idea status and no
+   grid numbers; the route then pauses as in stage 16.
+3. **No trial rows.** `protocol_execution` already wrote them; this stage only
+   lists their ids. Tested: the trial ledger is byte-identical before and after.
+4. **No backfill.** Runs before this stage are not listed; the file's
+   `legacy_note` points to `campaign_knowledge_base.yaml` for them.
+5. **No retired fields.** No `hypothesis_family`, altitude, lineage routing or
+   continuation field; the writer refuses an entry that carries one.
+6. **Pause leaves `pending_stage: regroup_record`.** An inconclusive grid or a
+   component error pauses from this stage's route; resuming re-runs the record
+   (replacing the entry) and the route. A run left at `regroup_record` while the
+   flag is off fails loudly.
 
 ---
 
@@ -2301,6 +2373,7 @@ market_type are not `tradable: true` — **or are undeclared**
 | `feed_wishlist.yaml` | Feeds needed but not yet available (liquidation_data); argument for each. `trigger_condition.predicate` is mechanically evaluated (see `detector_wishlist.yaml` row below — same mechanism, same file format). |
 | `config/detector_wishlist.yaml` | Detector families to build when an ungated edge exists. Each candidate's `trigger_condition.predicate` is a structured, machine-checkable expression evaluated by `workflow/run_campaign.py::evaluate_wishlist_predicate()` — no longer human-reviewed prose. `status`/`last_evaluated_at`/`last_evaluated_against`/`kb_state_hash`/`evaluation_note` are written ONLY by `evaluate_and_persist_wishlist_predicate()` (single authority — never hand-edit); a persisted `status` is only trustworthy if its `kb_state_hash` matches a fresh `sha256` of `campaign_knowledge_base.yaml`'s current bytes. See `RUNBOOK.md` section 3 and `docs/CONCEALMENT_INSTRUCTION_DOCTRINE.md`. |
 | `campaign_knowledge_base.yaml` | Durable findings store — see the file itself for the current count; this table doesn't track a point-in-time number. |
+| `campaign_record/campaign_memory.yaml` | Per-run memory (E-058 S2a), written only by stage 17 `regroup_record` when `orchestrator.regroup_record.enabled` is on (off by default). One entry per `run_id`; fields in the stage 17 block. No old runs; those live in `campaign_knowledge_base.yaml`. |
 
 ---
 
