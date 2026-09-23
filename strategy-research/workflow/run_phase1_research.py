@@ -2612,7 +2612,14 @@ def _family_to_inherit(parent_run_dir: Path) -> str | None:
     if not _family_at_creation_enabled():
         return None
     card_path = parent_run_dir / "artifacts" / "hypothesis_card.yaml"
+    # A parent that is itself a refine child carries the lineage's family on
+    # its inheritance marker even when its own card is missing (it failed
+    # before hypothesis_generation finished) or predates the flag -- never
+    # drop the lineage label in that case.
+    parent_marker = _inherited_family_of(parent_run_dir)
     if not card_path.exists():
+        if parent_marker is not None:
+            return parent_marker
         print(f"⚠️  [E-046a family] {parent_run_dir.name}: no parent hypothesis_card.yaml -- the "
               f"refine child will set its family at its own hypothesis_generation.")
         return None
@@ -2621,6 +2628,8 @@ def _family_to_inherit(parent_run_dir: Path) -> str | None:
         raise ValueError(f"[E-046a family] {card_path}: not a mapping -- refusing to guess the "
                          f"family a refine child should inherit.")
     if "family" not in card:
+        if parent_marker is not None:
+            return parent_marker
         print(f"⚠️  [E-046a family] {parent_run_dir.name}: parent hypothesis_card.yaml carries no "
               f"`family` (legacy card) -- the refine child will set its family at its own "
               f"hypothesis_generation instead of inheriting one.")
@@ -2701,7 +2710,18 @@ def _enforce_hypothesis_family(run_dir: Path) -> None:
     if not _family_at_creation_enabled():
         return
     card_path = run_dir / "artifacts" / "hypothesis_card.yaml"
-    card = load_yaml(card_path) if card_path.exists() else None
+    # Plain safe_load, NOT load_yaml: load_yaml schema-validates on read (so
+    # under WORKFLOW_ARTIFACT_VALIDATION=raise a wrong `family` would raise
+    # before it can be overwritten) and LLM-repairs / keeps only the first
+    # document (so an overwrite would persist a silently mutated card).
+    # Unparseable or multi-document YAML fails loud here instead.
+    card = None
+    if card_path.exists():
+        try:
+            card = yaml.safe_load(card_path.read_text(encoding="utf-8"))
+        except yaml.YAMLError as exc:
+            raise ValueError(f"[E-046a family] {card_path}: not parseable as a single YAML "
+                             f"document ({exc}) -- cannot check its `family` field.") from exc
     if not isinstance(card, dict):
         raise ValueError(f"[E-046a family] {card_path}: missing or not a mapping -- cannot "
                          f"check its `family` field.")
@@ -7280,10 +7300,12 @@ def _synthesis_safety_checks(protocol_result: dict,
     return ({"reason": "regime_misattribution",
              "pipeline_flag": "regime_misattribution_flagged",
              "evidence": evidence},
-            f"regime_misattribution: re-run once regime_detector_report.yaml reports "
-            f"confidence=high for every tested symbol ({', '.join(tested_symbols) or 'none recorded'}), "
-            f"so uninformative regime(s) [{', '.join(r for r, _ in rule4_regimes)}] can be "
-            f"attributed to the strategy rather than the detector")
+            f"regime_misattribution: re-run once either (a) regime_detector_report.yaml exists "
+            f"and reports confidence=high for every tested symbol "
+            f"({', '.join(tested_symbols) or 'none recorded -- protocol_result.yaml results must name their symbol first'}), "
+            f"or (b) each uninformative regime [{', '.join(r for r, _ in rule4_regimes)}] has a "
+            f"measured median n_bars below {_SYNTHESIS_RULE4_MIN_MEDIAN_N_BARS} (a sample issue, "
+            f"not a regime finding)")
 
 
 def _synthesis_change_dimension(proposal: dict, where: str) -> str:

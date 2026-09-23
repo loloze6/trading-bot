@@ -509,14 +509,22 @@ def test_refinement_brief_child_flag_off_writes_no_marker(campaign_root, flag):
     assert rpr._INHERITED_FAMILY_STATE_KEY not in _state(campaign_root["runs_dir"] / "run_601")
 
 
-def test_refinement_brief_corrupt_parent_family_builds_no_child(campaign_root):
+def test_refinement_brief_corrupt_parent_family_pauses_and_builds_no_child(campaign_root):
+    """CODE-REVIEW REGRESSION: the raise used to escape process_once, leaving
+    the entry selectable so every restart crash-looped on it. It now pauses
+    the entry (same shape as the conflict pause) and records halt history."""
     _set_flag(True)
     _refinement_brief_setup(campaign_root, family="")
     with pytest.MonkeyPatch.context() as mp:
         mp.setattr(camp.orch, "run_loop", lambda run_id: None)
-        with pytest.raises(ValueError):
-            camp.process_once()
+        assert camp.process_once() is False
     assert not (campaign_root["runs_dir"] / "run_601").exists()
+    entry = _read(campaign_root["queue_path"])["queue"][0]
+    assert entry["status"] == "paused:refinement_brief_parent_family_invalid"
+    history = _state(campaign_root["runs_dir"] / "run_600").get("halt_history") or []
+    assert history and history[-1]["reason"] == "refinement_brief_parent_family_invalid"
+    # and the pause is documented for the operator
+    assert "refinement_brief_parent_family_invalid" in (SR_ROOT / "docs" / "RUNBOOK.md").read_text(encoding="utf-8")
 
 
 def _split_setup(campaign_root, families, marker=None):
@@ -660,10 +668,12 @@ def test_safety_pause_regime_misattribution(tmp_path):
     assert out["primary_failure_mode"].startswith(
         "regime_misattribution: RULE 4: uninformative regime 'trending' (median n_bars=50")
     assert out["primary_failure_mode"].endswith("(+3 more)")  # ranging + 2 low-confidence lines
+    # CODE-REVIEW REGRESSION: the trigger names BOTH conditions that clear the
+    # pause (detector confirmed high, or a sample-size reclassification).
     assert out["reactivation_trigger"] == (
-        "regime_misattribution: re-run once regime_detector_report.yaml reports confidence=high for "
-        "every tested symbol (BTCUSDT, ETHUSDT), so uninformative regime(s) [trending, ranging] can be "
-        "attributed to the strategy rather than the detector")
+        "regime_misattribution: re-run once either (a) regime_detector_report.yaml exists and reports "
+        "confidence=high for every tested symbol (BTCUSDT, ETHUSDT), or (b) each uninformative regime "
+        "[trending, ranging] has a measured median n_bars below 20 (a sample issue, not a regime finding)")
     assert _bucket(out["primary_failure_mode"]) == ["regime"]
 
 
@@ -913,3 +923,55 @@ def test_schema_rejects_malformed_family(tmp_path):
     for bad in ("Keltner", "keltner__x", "x" * 49, ""):
         out["hypothesis_family"] = bad
         assert list(VALIDATOR.iter_errors(out)), bad
+
+
+
+# ---------------------------------------------------------------------------
+# CODE-REVIEW REGRESSIONS (2026-09-23 review of bbd91643)
+# ---------------------------------------------------------------------------
+
+def test_route_refine_parent_without_card_falls_back_to_its_own_marker(campaign_root):
+    """A parent that is itself a refine child but failed before its own
+    hypothesis_generation has no card -- its marker still carries the
+    lineage's family, which must not be dropped."""
+    _set_flag(True)
+    parent = _refine_parent(campaign_root, family=FAM)
+    (parent / "artifacts" / "hypothesis_card.yaml").unlink()
+    rpr.update_state(path=parent, **{rpr._INHERITED_FAMILY_STATE_KEY: FAM})
+    assert rpr._route_refine(parent, "run_100", dict(_LLM_INTERP), {}) == "completed_refined"
+    assert _state(campaign_root["runs_dir"] / "run_101")[rpr._INHERITED_FAMILY_STATE_KEY] == FAM
+
+
+def test_route_refine_legacy_parent_card_falls_back_to_its_own_marker(campaign_root):
+    _set_flag(True)
+    parent = _refine_parent(campaign_root)  # card without `family`
+    rpr.update_state(path=parent, **{rpr._INHERITED_FAMILY_STATE_KEY: FAM})
+    rpr._route_refine(parent, "run_100", dict(_LLM_INTERP), {})
+    assert _state(campaign_root["runs_dir"] / "run_101")[rpr._INHERITED_FAMILY_STATE_KEY] == FAM
+
+
+def test_refine_child_overwrite_works_under_raise_mode_validation(tmp_path, monkeypatch):
+    """load_yaml schema-validates on read; under raise mode a wrong family
+    used to raise before the documented overwrite could happen."""
+    monkeypatch.setenv("WORKFLOW_ARTIFACT_VALIDATION", "raise")
+    _set_flag(True)
+    run = tmp_path / "run_x"
+    card = _card(run, family="Keltner-Breakout")
+    # Isolate the READ: this minimal card fails other schema rules, which
+    # raise mode would (correctly) enforce on write -- not what is tested here.
+    monkeypatch.setattr(rpr, "save_yaml",
+                        lambda p, d: Path(p).write_text(yaml.safe_dump(d), encoding="utf-8"))
+    (run / "pipeline_state.yaml").write_text(
+        yaml.safe_dump({rpr._INHERITED_FAMILY_STATE_KEY: FAM}), encoding="utf-8")
+    rpr._enforce_hypothesis_family(run)
+    assert _read(card)["family"] == FAM
+
+
+def test_enforce_rejects_a_multi_document_card_instead_of_silently_dropping_one(tmp_path):
+    _set_flag(True)
+    run = tmp_path / "run_y"
+    path = _card(run, family=FAM)
+    second_doc = "\n".join(["---", "hypothesis_id: H-TEST-2", ""])
+    path.write_text(path.read_text(encoding="utf-8") + second_doc, encoding="utf-8")
+    with pytest.raises(ValueError, match="single YAML document"):
+        rpr._enforce_hypothesis_family(run)

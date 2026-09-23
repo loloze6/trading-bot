@@ -2175,7 +2175,27 @@ def process_once() -> bool:
         # _route_refine's child. Read BEFORE setup_run (a corrupted parent label
         # raises with no child built); None and no state write while
         # orchestrator.family_at_creation.enabled is off or for a legacy card.
-        inherited_family = orch._family_to_inherit(ROOT / "runs" / parent_run_id)
+        try:
+            inherited_family = orch._family_to_inherit(ROOT / "runs" / parent_run_id)
+        except ValueError as exc:
+            # Pause the entry (same shape as the conflict branch above) rather
+            # than letting the raise escape process_once: an uncaught raise
+            # leaves the entry selectable, so every restart would crash again.
+            reason = "refinement_brief_parent_family_invalid"
+            detail = (f"cannot scaffold the operator refinement brief "
+                      f"{entry['refinement_brief_path']!r}: {exc}")
+            entry["status"] = f"paused:{reason}"
+            _save_queue(queue)
+            _regenerate_summary(queue)
+            parent_run_dir = ROOT / "runs" / parent_run_id
+            parent_state = orch.load_yaml(parent_run_dir / "pipeline_state.yaml") or {}
+            _append_halt_history(parent_run_dir, parent_state, reason, detail)
+            _log(f"HALT — {reason}: {detail}. Campaign stopped on {entry['id']} / {parent_run_id}. "
+                 f"See RUNBOOK.md 'Resume after a pause'.")
+            _write_loop_health()
+            if schedulability_enabled:
+                _write_schedulability()
+            return False
         child_id = _next_new_run_id()
         setup_run(child_id)
         _materialize_refinement_run(child_id, brief, brief_path)
