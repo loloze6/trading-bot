@@ -80,6 +80,9 @@ are produced under the flag. No caller reached under the flag needs them.
    `holdout_evaluation`'s human pause, so nothing irreversible happens
    automatically. Confirm this is acceptable for the interim, or add a
    pre-registered asset-breadth criterion to the menu.
+   **Answered (operator, 2026-09-23): not necessarily.** No ≥2-category
+   requirement before promotion; the grid decides. An idea may still
+   pre-register an asset-breadth criterion if its own hypothesis calls for it.
 2. **KB entries for killed ideas.** Neither flag-off (kill/terminate short-circuits)
    nor flag-on writes a KB entry for a killed idea. Slice 6a's `regroup_record`
    is where the new memory writer lands; no change here.
