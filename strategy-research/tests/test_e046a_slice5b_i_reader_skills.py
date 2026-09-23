@@ -490,3 +490,23 @@ def test_schema_rejects_any_undeclared_top_level_field():
     smuggled["totally_undeclared_field"] = "should never validate"
     with pytest.raises(jsonschema.ValidationError):
         _validate(smuggled)
+
+
+def test_schema_requires_patch_items_to_name_their_field():
+    """5b-ii-A REVIEW REGRESSION: patch items were bare {type: object}, so a
+    reader could write {component, param, ...} and pass the schema while the
+    mechanical verdict synthesis (which derives the change dimension from
+    `field`) rejected it. The contract and the consumer now agree."""
+    bad = copy.deepcopy(_VALID_EXAMPLES["profitability"])
+    assert bad["kind"] == "patch"
+    bad["patch"] = [{"component": "keltner", "param": "atr_multiplier", "before": 2.0, "after": 2.5}]
+    with pytest.raises(jsonschema.ValidationError):
+        _validate(bad)
+
+
+def test_schema_requires_a_non_empty_config_paths_for_new_block():
+    new_block = next(e for e in _VALID_EXAMPLES.values() if e["kind"] == "new_block")
+    bad = copy.deepcopy(new_block)
+    bad["block"]["config_paths"] = []
+    with pytest.raises(jsonschema.ValidationError):
+        _validate(bad)

@@ -77,6 +77,12 @@ here (tuning an existing component's `weight`/`scaling_factor`/threshold per
 when the evidence shows an existing component's regime-conditional behavior that NO current
 component captures well (see Rule CA-2 below).
 
+**Patch item shape (required, `proposal.schema.json`):** every item of a `patch` list is
+exactly `{component_id, field, before, after}` -- `field` is the dotted path of the changed
+parameter inside that component (e.g. `transforms[2].params.min_abs`). The mechanical verdict
+synthesis derives the change dimension from `field`, so a patch item without it stops the
+pipeline. A `new_block`'s `block.config_paths` must list at least one path.
+
 ### `evidence` format rule
 ```yaml
 # GOOD
