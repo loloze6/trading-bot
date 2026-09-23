@@ -657,3 +657,22 @@ The three items flagged above as operator calls are resolved:
    live.
 
 Build order: 5b-ii-A (synthesis function + tests) first; 5b-ii-B after.
+
+## Decision (operator, 2026-09-23, second round -- for 5b-ii-B)
+
+Raised by the 5b-ii-A build (PR #196, CUL-313):
+
+4. **`hypothesis_family` source -- set once at idea creation, inherited on refine.**
+   The hypothesis-generation stage writes a `family` field into
+   `hypothesis_card.yaml`; every refine child inherits it unchanged. Not derived
+   mechanically from components (rejected as brittle for multi-component ideas).
+   Rationale: the circuit breaker counts refines/failures per family by exact
+   string, so a label re-invented each run (the legacy behaviour) silently
+   defeats it.
+5. **Legacy fields with no new-schema home -- rebuild the useful ones
+   mechanically, drop the rest.** `primary_failure_mode` and
+   `reactivation_trigger` are rebuilt deterministically from reader output
+   (e.g. failure mode = winning proposal's category + its lead evidence line);
+   `config_to_failure_map`, `power_disposition`, `trade_attribution`,
+   `prescreen_*` are dropped (`trade_attribution` has no reader at all). No LLM
+   step is reintroduced for narrative fields.
