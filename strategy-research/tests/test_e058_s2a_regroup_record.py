@@ -130,15 +130,21 @@ def _seed(run_id=RUN_ID, idea_status="refuted", errors_count=None, variant_loop=
 
 
 def _seed_trials(run_id: str, variant_loop: bool) -> None:
-    rows = [{"trial_id": run_id, "source": "prescreen", "sharpe": 0.1}]
+    # forecast_hash values are deliberately NOT the hash of any file on disk: the
+    # memory must copy them from the ledger, never recompute them.
+    rows = [{"trial_id": run_id, "source": "prescreen", "sharpe": 0.1, "forecast_hash": "fh-prescreen"}]
     if variant_loop:
-        rows += [{"trial_id": f"{run_id}:base", "source": "backtest", "sharpe": 0.3},
-                 {"trial_id": f"{run_id}:design", "source": "backtest", "sharpe": 0.3},
-                 {"trial_id": f"{run_id}:broken", "source": "backtest_failed", "sharpe": None}]
+        rows += [{"trial_id": f"{run_id}:base", "source": "backtest", "sharpe": 0.3,
+                  "forecast_hash": "fh-base"},
+                 {"trial_id": f"{run_id}:design", "source": "backtest", "sharpe": 0.3,
+                  "forecast_hash": "fh-design"},
+                 {"trial_id": f"{run_id}:broken", "source": "backtest_failed", "sharpe": None,
+                  "forecast_hash": "fh-broken"}]
     else:
-        rows += [{"trial_id": run_id, "source": "backtest", "sharpe": 0.2}]
-    rows += [{"trial_id": "run_001", "source": "backtest", "sharpe": 0.9},
-             {"trial_id": f"{run_id}0", "source": "backtest", "sharpe": 0.9}]  # prefix trap
+        rows += [{"trial_id": run_id, "source": "backtest", "sharpe": 0.2, "forecast_hash": "fh-run"}]
+    rows += [{"trial_id": "run_001", "source": "backtest", "sharpe": 0.9, "forecast_hash": "x"},
+             {"trial_id": f"{run_id}0", "source": "backtest", "sharpe": 0.9,
+              "forecast_hash": "x"}]  # prefix trap
     rpr.save_yaml(rpr.CAMPAIGN_STATE_PATH, {"campaign_id": "t", "runs": [], "trial_sharpes": rows})
 
 
@@ -256,10 +262,10 @@ def test_flag_on_same_route_after_regroup_record(monkeypatch, idea_status):
     seen = []
     real_route = rpr.determine_post_specialist_readers_route
 
-    def _spy(path, run_id):
+    def _spy(path, run_id, **kw):
         # memory is written BEFORE the route is taken
         seen.append(run_id in (_memory()["runs"] if _memory_path().exists() else {}))
-        return real_route(path, run_id)
+        return real_route(path, run_id, **kw)
     run_dir, on = _loop_from_specialist_readers(monkeypatch, ALL_ON, idea_status, spy=_spy)
     assert seen == [True]
     assert _routing_view(on) == _routing_view(off)
@@ -312,12 +318,73 @@ def test_pending_regroup_record_with_flag_off_fails_loud(monkeypatch):
     assert not _memory_path().exists()
 
 
-def test_stage_body_refuses_with_flag_off():
-    _set_orchestrator(READERS_ON)
-    run_dir = _seed()
-    with pytest.raises(RuntimeError, match="regroup_record.enabled off"):
-        rpr._run_regroup_record_stage(RUN_ID, run_dir)
+def test_regroup_record_survives_the_loop_top_budget_check(monkeypatch):
+    """Review fix 1: with the budget already spent by the readers, flag-off
+    takes the route in the readers' own iteration; flag-on must not lose the
+    memory entry and the route to the loop-top budget check."""
+    _set_orchestrator(ALL_ON)
+    run_dir = _seed(idea_status="refuted", pending="regroup_record")
+    monkeypatch.setattr(rpr, "_load_token_budget", lambda: 1)
+    monkeypatch.setattr(rpr, "_compute_weighted_budget_usage", lambda log: (10**9, []))
+    rpr.run_loop(RUN_ID)
+    state = rpr.load_yaml(run_dir / "pipeline_state.yaml")
+    assert RUN_ID in _memory()["runs"]
+    assert state["completed_stages"][-1] == "regroup_record"
+    assert state["pending_stage"] == "completed_rejected"
+    assert state["status"] == "rejected"
+
+
+def test_budget_check_unchanged_for_other_stages(monkeypatch):
+    _set_orchestrator(ALL_ON)
+    run_dir = _seed(idea_status="refuted", pending="specialist_readers")
+    monkeypatch.setattr(rpr, "_load_token_budget", lambda: 1)
+    monkeypatch.setattr(rpr, "_compute_weighted_budget_usage", lambda log: (10**9, []))
+    rpr.run_loop(RUN_ID)
+    state = rpr.load_yaml(run_dir / "pipeline_state.yaml")
+    assert state["status"] == "rejected_budget_exceeded"
+    assert state["pending_stage"] == "specialist_readers"
     assert not _memory_path().exists()
+
+
+def test_preflight_skips_a_terminal_run():
+    """Review fix 8: a finished run is not marked failed by a misconfigured flag."""
+    _set_orchestrator({"grid_evaluation": {"enabled": True}, "category_reports": {"enabled": True},
+                       "specialist_readers": {"enabled": True}, "regroup_record": {"enabled": "yes"}})
+    run_dir = _seed(pending="completed_rejected")
+    state = rpr.load_yaml(run_dir / "pipeline_state.yaml")
+    state["status"] = "rejected"
+    rpr.save_yaml(run_dir / "pipeline_state.yaml", state)
+    rpr.run_loop(RUN_ID)
+    state = rpr.load_yaml(run_dir / "pipeline_state.yaml")
+    assert state["status"] == "rejected" and not state.get("last_error")
+    assert state["pending_stage"] == "completed_rejected"
+
+
+@pytest.mark.parametrize("errors_count", [None, 1])
+def test_checks_computed_once_and_flag_resolved_once(monkeypatch, errors_count):
+    """Review fix 9: no second flag check in the stage body; component errors and
+    idea_status computed once per regroup_record iteration and handed to the route."""
+    _set_orchestrator(ALL_ON)
+    run_dir = _seed(idea_status="refuted", errors_count=errors_count)
+    counts = {"flag": 0, "errors": 0, "idea": 0}
+
+    def _count(name, key):
+        real = getattr(rpr, name)
+
+        def _wrapped(*a, **k):
+            counts[key] += 1
+            return real(*a, **k)
+        monkeypatch.setattr(rpr, name, _wrapped)
+    _count("_regroup_record_enabled", "flag")
+    _count("_protocol_component_errors", "errors")
+    _count("_load_idea_status", "idea")
+    rpr.run_loop(RUN_ID)
+    state = rpr.load_yaml(run_dir / "pipeline_state.yaml")
+    if errors_count:
+        assert state["status"] == "paused_for_human"
+    else:
+        assert state["completed_stages"][-1] == "regroup_record"
+    assert counts == {"flag": 1, "errors": 1, "idea": 0 if errors_count else 1}
 
 
 # ---------------------------------------------------------------------------
@@ -349,7 +416,7 @@ def test_entry_flag_off_column_shape(idea_status):
     assert e["variants"] == {RUN_ID: {
         "status": "tested", "reason": None,
         "config_ref": f"runs/{RUN_ID}/artifacts/candidate_strategy_config.json",
-        "forecast_hash": rpr._compute_forecast_hash(run_dir / "artifacts" / "candidate_strategy_config.json"),
+        "forecast_hash": "fh-run",  # copied from the ledger row, not recomputed
         "symbols": ["BTCUSDT"], "n_windows": 2, "trial_id": RUN_ID}}
     assert e["trial_ids"] == [RUN_ID]  # backtest rows only; not the prescreen row, not run_9800
     assert e["protocol_ref"] == "protocols/p.json"
@@ -370,8 +437,11 @@ def test_entry_variant_loop_shape():
     v = e["variants"]
     assert set(v) == {"asset", "base", "broken", "design"}
     assert v["base"]["status"] == "tested" and v["base"]["trial_id"] == f"{RUN_ID}:base"
-    assert v["design"]["symbols"] == ["BTCUSDT", "ETHUSDT"] and v["design"]["n_windows"] == 4
+    assert v["base"]["forecast_hash"] == "fh-base" and v["design"]["forecast_hash"] == "fh-design"
+    # review fix 3: 4 result rows (2 symbols x 2 windows) are 2 windows, not 4
+    assert v["design"]["symbols"] == ["BTCUSDT", "ETHUSDT"] and v["design"]["n_windows"] == 2
     assert v["broken"]["status"] == "failed" and v["broken"]["trial_id"] == f"{RUN_ID}:broken"
+    assert v["broken"]["forecast_hash"] == "fh-broken"
     assert v["asset"] == {"status": "not_tested", "reason": "patch application failed: /x",
                           "config_ref": None, "forecast_hash": None, "symbols": [], "n_windows": 0,
                           "trial_id": None}
@@ -379,13 +449,12 @@ def test_entry_variant_loop_shape():
     assert e["trial_ids"] == [f"{RUN_ID}:base", f"{RUN_ID}:design", f"{RUN_ID}:broken"]
 
 
-@pytest.mark.parametrize("errors_count", [None, 1])
-def test_config_direct_without_variant_loop_uses_the_single_column(errors_count):
+def test_config_direct_without_variant_loop_uses_the_single_column():
     """config_direct_authoring writes artifacts/variants/index.yaml, but with the
     variant loop off only the base config is backtested and the grid's one column
     is named after run_id -- the index must not be mistaken for loop columns."""
     _set_orchestrator(ALL_ON)
-    run_dir = _seed(idea_status="validated", errors_count=errors_count)
+    run_dir = _seed(idea_status="validated")
     rpr.save_yaml(run_dir / "artifacts" / "variants" / "index.yaml", {"variants": {
         "base": {"status": "validated", "config_path": "artifacts/variants/base/strategy_config.json"},
         "design": {"status": "validated", "config_path": "artifacts/variants/design/strategy_config.json"}}})
@@ -402,15 +471,42 @@ def test_component_error_run_recorded_as_engineering_fault(variant_loop):
     run_dir = _seed(idea_status="validated", errors_count=2, variant_loop=variant_loop)
     rpr._run_regroup_record_stage(RUN_ID, run_dir)
     e = _memory()["runs"][RUN_ID]
+    # review fix 6: the minimal fault-only form, nothing else
+    assert set(e) == {"run_id", "hypothesis_id", "legacy", "recorded_at", "engineering_fault",
+                      "engineering_fault_detail"}
+    assert e["run_id"] == RUN_ID and e["hypothesis_id"] == "H-MEM-1" and e["legacy"] is False
     assert e["engineering_fault"] == "component_execution_error"
     assert e["engineering_fault_detail"] and "component_errors.count=2" in e["engineering_fault_detail"][0]
-    # the grid is meaningless: its "validated" is not recorded, nor are its numbers
-    assert e["idea_status"] is None and e["idea_status_ref"] is None and e["grid"] is None
-    assert e["registry"] == {"skipped": "engineering_fault"} and e["kb_entry_id"] is None
-    assert e["trial_ids"]  # the spent looks are still cross-linked
-    if variant_loop:
-        assert {k: x["status"] for k, x in e["variants"].items()} == {
-            "asset": "not_tested", "base": "tested", "broken": "failed", "design": "tested"}
+
+
+def test_fault_entry_parses_no_grid_variant_or_proposal_artifact():
+    """Review fix 6: broken grid / index / proposals / hypothesis card on a faulted
+    run still record the fault (hypothesis_id null) and never parse those files."""
+    _set_orchestrator(ALL_ON)
+    run_dir = _seed(idea_status="validated", errors_count=1, variant_loop=True)
+    arts = run_dir / "artifacts"
+    for rel in ("grid_evaluation.yaml", "idea_status.yaml", "variants/index.yaml",
+                f"proposals/{REPORT_CATEGORIES[0]}.yaml", "hypothesis_card.yaml"):
+        (arts / rel).write_text("{broken: [\n", encoding="utf-8")
+    checks = rpr._run_regroup_record_stage(RUN_ID, run_dir)
+    e = _memory()["runs"][RUN_ID]
+    assert e["hypothesis_id"] is None and e["engineering_fault"] == "component_execution_error"
+    assert checks["entry"] == e and checks["idea"] is None and checks["component_errors"]
+
+
+def test_fault_entry_write_failure_still_pauses(monkeypatch):
+    """Review fix 6: a memory write that fails on a faulted run is logged, and the
+    component_execution_error pause still fires (no unhandled exception)."""
+    _set_orchestrator(ALL_ON)
+    run_dir = _seed(idea_status="validated", errors_count=1)
+    _memory_path().parent.mkdir(parents=True, exist_ok=True)
+    _memory_path().write_text("runs: [unclosed\n", encoding="utf-8")  # malformed memory file
+    rpr.run_loop(RUN_ID)
+    state = rpr.load_yaml(run_dir / "pipeline_state.yaml")
+    assert state["status"] == "paused_for_human"
+    assert state["flags"] == {"component_execution_error_flagged": True}
+    assert camp._classify_human_pause(run_dir, state) == "component_execution_error"
+    assert _memory_path().read_text(encoding="utf-8") == "runs: [unclosed\n"
 
 
 def test_component_error_run_pauses_after_recording(monkeypatch):
@@ -521,13 +617,16 @@ def test_trial_ledger_byte_identical_across_the_stage(variant_loop, errors_count
     assert rpr.CAMPAIGN_STATE_PATH.read_bytes() == before
 
 
-def test_absent_ledger_is_not_created():
+def test_absent_ledger_fails_loud_and_is_not_created():
+    """A tested run with no ledger at all breaks the ledger invariant: fail
+    loud, and never create (write) the ledger."""
     _set_orchestrator(ALL_ON)
     run_dir = _seed()
     rpr.CAMPAIGN_STATE_PATH.unlink()
-    rpr._run_regroup_record_stage(RUN_ID, run_dir)
+    with pytest.raises(cm.CampaignMemoryError, match="no 'backtest' row"):
+        rpr._run_regroup_record_stage(RUN_ID, run_dir)
     assert not rpr.CAMPAIGN_STATE_PATH.exists()
-    assert _memory()["runs"][RUN_ID]["trial_ids"] == []
+    assert not _memory_path().exists()
 
 
 # ---------------------------------------------------------------------------
@@ -565,7 +664,7 @@ def test_proposal_scores_change_nothing_but_the_reference(idea_status):
         run_id = f"run_97{i}"
         run_dir = _seed(run_id=run_id, idea_status=idea_status, proposals=n, score=score)
         reader_proposals.load_proposals(run_dir / "artifacts" / "proposals", REPORT_CATEGORIES)
-        entries.append(rpr._run_regroup_record_stage(run_id, run_dir))
+        entries.append(rpr._run_regroup_record_stage(run_id, run_dir)["entry"])
     decided = [{k: e[k] for k in ("idea_status", "registry", "engineering_fault")} for e in entries]
     assert decided == [decided[0]] * 3
     assert decided[0]["idea_status"] == idea_status
@@ -634,7 +733,152 @@ def test_written_file_matches_schema():
     doc = _memory()
     assert len(doc["runs"]) == 4
     jsonschema.validate(doc, schema)
+    assert "idea_status" not in doc["runs"]["run_963"]  # the fault-only form
     bad = json.loads(json.dumps(doc))
     bad["runs"]["run_960"]["hypothesis_family"] = "x"
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(bad, schema)
+    bad = json.loads(json.dumps(doc))
+    bad["runs"]["run_963"]["grid"] = None  # a fault entry may not grow full-entry fields
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(bad, schema)
+
+
+def test_schema_is_applied_on_write(monkeypatch):
+    """Review fix 10: the schema's $comment says validate_workflow_artifact applies
+    it at write time -- prove it (raise mode blocks a schema-violating document)."""
+    pytest.importorskip("jsonschema")
+    monkeypatch.setenv("WORKFLOW_ARTIFACT_VALIDATION", "raise")
+    bad = {"run_id": "run_1", "hypothesis_id": "H", "legacy": True, "recorded_at": "t",
+           "engineering_fault": "component_execution_error", "engineering_fault_detail": ["x"]}
+    with pytest.raises(Exception, match="legacy|False|const"):
+        cm.upsert_memory(_memory_path(), bad)
+    assert not _memory_path().exists()
+    good = dict(bad, legacy=False)
+    cm.upsert_memory(_memory_path(), good)
+    assert _memory()["runs"]["run_1"] == good
+
+
+def test_non_string_timeframe_fails_loud():
+    """Review fix 10: the writer type-checks timeframe like the schema does."""
+    _set_orchestrator(ALL_ON)
+    run_dir = _seed()
+    rpr.save_yaml(run_dir / "artifacts" / "hypothesis_card.yaml", {"hypothesis_id": "H-MEM-1", "timeframe": 60})
+    with pytest.raises(cm.CampaignMemoryError, match="timeframe"):
+        rpr._run_regroup_record_stage(RUN_ID, run_dir)
+    assert not _memory_path().exists()
+
+
+# ---------------------------------------------------------------------------
+# 10. Code-review fixes: ledger invariant, unknown variant states, lock, outcomes
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("variant_loop,missing", [(False, None), (True, "base")])
+def test_tested_variant_without_trial_row_fails_loud(variant_loop, missing):
+    """Review fix 4: a tested variant must have its 'backtest' ledger row."""
+    _set_orchestrator(ALL_ON)
+    run_dir = _seed(idea_status="refuted", variant_loop=variant_loop)
+    tid = RUN_ID if missing is None else f"{RUN_ID}:{missing}"
+    state = rpr.load_yaml(rpr.CAMPAIGN_STATE_PATH)
+    state["trial_sharpes"] = [r for r in state["trial_sharpes"]
+                              if not (r["trial_id"] == tid and r["source"] == "backtest")]
+    rpr.save_yaml(rpr.CAMPAIGN_STATE_PATH, state)
+    with pytest.raises(cm.CampaignMemoryError, match="no 'backtest' row"):
+        rpr._run_regroup_record_stage(RUN_ID, run_dir)
+    assert not _memory_path().exists()
+
+
+def test_tested_variant_row_without_forecast_hash_fails_loud():
+    _set_orchestrator(ALL_ON)
+    run_dir = _seed(idea_status="refuted")
+    state = rpr.load_yaml(rpr.CAMPAIGN_STATE_PATH)
+    for r in state["trial_sharpes"]:
+        if r["trial_id"] == RUN_ID and r["source"] == "backtest":
+            r["forecast_hash"] = None
+    rpr.save_yaml(rpr.CAMPAIGN_STATE_PATH, state)
+    with pytest.raises(cm.CampaignMemoryError, match="forecast_hash"):
+        rpr._run_regroup_record_stage(RUN_ID, run_dir)
+
+
+@pytest.mark.parametrize("variant,entry,match", [
+    ("asset", {"status": "declined"}, "status='declined'"),
+    ("asset", "not_tested", "not a mapping"),
+    ("asset", {"status": "not_tested", "surprise": 1}, "unknown key"),
+    ("asset", {"status": "validated"}, "no config_path"),
+    ("base", {"status": "not_tested", "reason": "x",
+              "config_path": "artifacts/variants/base/strategy_config.json"}, "grid column 'base'"),
+])
+def test_unknown_variant_state_fails_loud(variant, entry, match):
+    """Review fix 5: no silent defaults for an index status or entry shape."""
+    _set_orchestrator(ALL_ON)
+    run_dir = _seed(idea_status="refuted", variant_loop=True)
+    index_path = run_dir / "artifacts" / "variants" / "index.yaml"
+    index = rpr.load_yaml(index_path)
+    index["variants"][variant] = entry
+    rpr.save_yaml(index_path, index)
+    with pytest.raises(cm.CampaignMemoryError, match=match):
+        rpr._run_regroup_record_stage(RUN_ID, run_dir)
+
+
+def test_two_interleaved_writers_lose_nothing(monkeypatch):
+    """Review fix 7: writer B starts its read-modify-write while A is between its
+    read and its write. With the lock, B waits and both entries survive."""
+    import threading
+    a_read, b_read = threading.Event(), threading.Event()
+    real_load = cm.load_memory
+
+    def _load(path):
+        doc = real_load(path)
+        if threading.current_thread().name == "A":
+            a_read.set()
+            b_read.wait(timeout=1.0)  # without a lock, B reads the same stale doc here
+        else:
+            b_read.set()
+        return doc
+    monkeypatch.setattr(cm, "load_memory", _load)
+    errors = []
+
+    def _writer(run_id):
+        try:
+            cm.upsert_memory(_memory_path(), {"run_id": run_id, "hypothesis_id": None, "legacy": False,
+                                              "recorded_at": "t", "engineering_fault":
+                                              "component_execution_error",
+                                              "engineering_fault_detail": ["x"]})
+        except Exception as exc:  # pragma: no cover - surfaced below
+            errors.append(exc)
+    a = threading.Thread(target=_writer, args=("run_a",), name="A")
+    b = threading.Thread(target=_writer, args=("run_b",), name="B")
+    a.start()
+    assert a_read.wait(timeout=5)
+    b.start()
+    a.join(10)
+    b.join(10)
+    assert errors == []
+    assert set(_memory()["runs"]) == {"run_a", "run_b"}
+    assert not (_memory_path().parent / cm.MEMORY_LOCK_FILENAME).exists()
+
+
+def test_lock_held_past_the_wait_fails_loud(monkeypatch):
+    import campaign_lock
+    monkeypatch.setattr(cm, "MEMORY_LOCK_WAIT_SECONDS", 0.2)
+    lock = _memory_path().parent / cm.MEMORY_LOCK_FILENAME
+    campaign_lock.acquire(lock)  # held by this (live) process
+    try:
+        with pytest.raises(cm.CampaignMemoryError, match="still held"):
+            cm.upsert_memory(_memory_path(), {"run_id": "run_1", "hypothesis_id": None, "legacy": False,
+                                              "recorded_at": "t",
+                                              "engineering_fault": "component_execution_error",
+                                              "engineering_fault_detail": ["x"]})
+    finally:
+        campaign_lock.release(lock)
+    assert not _memory_path().exists()
+
+
+def test_every_stage_name_is_a_non_verdict_outcome():
+    """Review fix 2: a queue entry's outcome can be its run's pending stage; every
+    STAGE_CONFIGS key must be admissible as a non-verdict outcome."""
+    import verdict_criteria_evaluator as vce
+    missing = sorted(set(rpr.STAGE_CONFIGS) - vce._NON_VERDICT_OUTCOMES)
+    assert missing == []
+    assert not vce.outcome_is_verdict_bearing("regroup_record")
+    assert not vce.outcome_is_verdict_bearing("specialist_readers")

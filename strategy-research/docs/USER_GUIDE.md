@@ -1227,39 +1227,53 @@ under the variant loop, `artifacts/proposals/*.yaml`, and
 
 **Stage output:** one entry in `campaign_record/campaign_memory.yaml`, keyed
 by `run_id`. File shape: `schema_version: 1`, `legacy_note`, `runs: {<run_id>:
-<entry>}`. Entry fields:
+<entry>}` (`workflow_artifacts/schemas/campaign_memory.schema.json`, applied at
+write time by `validate_workflow_artifact`: warn by default, blocking under
+`WORKFLOW_ARTIFACT_VALIDATION=raise`). Full entry fields:
 
 ```yaml
 run_id, hypothesis_id, legacy: false, recorded_at
-idea_status            # validated|refuted|inconclusive, from idea_status.yaml; null on an engineering fault
+idea_status            # validated|refuted|inconclusive, from idea_status.yaml
 idea_status_reason, idea_status_ref
-engineering_fault      # null | component_execution_error
-engineering_fault_detail   # up to 10 component-error lines
+engineering_fault: null, engineering_fault_detail: []
 grid: {ref, criteria, variants, cells: {<criterion>: {<variant>: {result, value, threshold, n_windows, n_trades}}},
-       counts: {PASS, FAIL, INCONCLUSIVE}}   # null on an engineering fault
-variants: {<id>: {status: tested|failed|not_tested, reason, config_ref, forecast_hash,
-                  symbols, n_windows, trial_id}}
+       counts: {PASS, FAIL, INCONCLUSIVE}}
+variants: {<id>: {status: tested|failed|not_tested, reason, config_ref,
+                  forecast_hash,   # copied from the variant's trial_sharpes row; null when not_tested
+                  symbols, n_windows,   # n_windows = distinct windows, not symbol x window rows
+                  trial_id}}
 trial_ids              # this run's backtest / backtest_failed rows in trial_sharpes (read only)
 protocol_ref           # protocol_result.yaml's protocol_file
-timeframe              # hypothesis_card.yaml
+timeframe              # hypothesis_card.yaml (string or null; anything else raises)
 proposals: [{category, ref, proposal_ids, count}]   # never scores
-registry: {skipped: not_built|not_validated|engineering_fault}   # block registry is E-058 S2b
+registry: {skipped: not_built|not_validated}   # block registry is E-058 S2b
 profit_bars: null, profit_bars_reason: "not evaluated before regroup"
 kb_entry_id: null      # grid-based KB writer is E-058 S2b
 ```
 
+A run with component errors gets the fault-only form instead:
+`{run_id, hypothesis_id (null if hypothesis_card.yaml is unreadable), legacy:
+false, recorded_at, engineering_fault: component_execution_error,
+engineering_fault_detail}`.
+
 **Features / logic in place**
 
 1. **Replaced on re-run.** A second pass for the same `run_id` replaces its
-   entry; other entries are kept. Written atomically (temp file +
-   `os.replace`). A malformed existing file stops the run and is not
-   overwritten.
+   entry; other entries are kept. The read-modify-write runs under an
+   exclusive lock file (`campaign_record/.campaign_memory.lock`, the E-011
+   `tools/campaign_lock.py` primitive) with a bounded 30 s wait, and is written
+   atomically (temp file + `os.replace`). A malformed existing file, or a lock
+   still held after the wait, stops the run; the file is not overwritten.
 2. **Engineering faults are recorded, not judged.** If `protocol_result.yaml`
-   (or a variant's copy) has component errors, the entry carries
-   `engineering_fault: component_execution_error` with no idea status and no
-   grid numbers; the route then pauses as in stage 16.
-3. **No trial rows.** `protocol_execution` already wrote them; this stage only
-   lists their ids. Tested: the trial ledger is byte-identical before and after.
+   (or a variant's copy) has component errors, only the fault-only entry is
+   written; the run's grid, variants and proposals are not parsed. If even
+   that write fails, the failure is logged loudly and the route still pauses
+   as `component_execution_error` (stage 16).
+3. **No trial rows, and the ledger must be complete.** `protocol_execution`
+   already wrote them; this stage only reads them. A tested variant without its
+   `backtest` row (or with no `forecast_hash` on it) stops the run. Any
+   `index.yaml` status or entry key outside the known set also stops the run.
+   Tested: the trial ledger is byte-identical before and after.
 4. **No backfill.** Runs before this stage are not listed; the file's
    `legacy_note` points to `campaign_knowledge_base.yaml` for them.
 5. **No retired fields.** No `hypothesis_family`, altitude, lineage routing or
@@ -1268,6 +1282,9 @@ kb_entry_id: null      # grid-based KB writer is E-058 S2b
    component error pauses from this stage's route; resuming re-runs the record
    (replacing the entry) and the route. A run left at `regroup_record` while the
    flag is off fails loudly.
+7. **Not stopped by the loop-top token budget check.** It is a zero-cost tool
+   stage that carries the route flag-off runs take in the readers' own
+   iteration; the next stage is budget-checked as usual.
 
 ---
 

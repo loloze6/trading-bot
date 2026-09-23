@@ -3041,7 +3041,9 @@ def _run_specialist_readers_stage(run_id: str, run_dir: Path, stage_attempt=0) -
     _run_specialist_readers(run_id, run_dir, stage_attempt)
 
 
-def determine_post_specialist_readers_route(path: Path, run_id: str) -> str:
+def determine_post_specialist_readers_route(path: Path, run_id: str, *,
+                                           component_errors: list | None = None,
+                                           idea: dict | None = None) -> str:
     """The interim route under orchestrator.specialist_readers.enabled
     (delivery_plan_v26.md slice 2: "until slice 6c"). Reads ONLY
     protocol_result.yaml and idea_status.yaml -- never proposals/*.yaml and
@@ -3055,11 +3057,15 @@ def determine_post_specialist_readers_route(path: Path, run_id: str) -> str:
     No circuit breaker, no refine/pivot/escalate, no hypothesis_family: the
     `interp` handed on is empty because there is no LLM narrative under this
     flag, and neither function reads it on the promote / kill+terminate paths
-    except _route_kill's legacy altitude_history family field, left empty."""
+    except _route_kill's legacy altitude_history family field, left empty.
+
+    `component_errors` / `idea` (E-058 S2a): passed by run_loop when the
+    regroup_record stage already computed them this iteration; None (every
+    other caller, and the flag-off path) computes them here as before."""
     if not _specialist_readers_enabled():
         raise RuntimeError("determine_post_specialist_readers_route called with "
                            "orchestrator.specialist_readers.enabled off")
-    errors = _protocol_component_errors(path)
+    errors = component_errors if component_errors is not None else _protocol_component_errors(path)
     if errors:
         print("\n⚠️  component_execution_error: a strategy component raised during the "
               "backtest -- an engineering fault, not a research finding. The grid is "
@@ -3070,7 +3076,8 @@ def determine_post_specialist_readers_route(path: Path, run_id: str) -> str:
                      flags={"component_execution_error_flagged": True})
         return "human_pause"
 
-    idea = _load_idea_status(path, run_id)
+    if idea is None:
+        idea = _load_idea_status(path, run_id)
     status = idea["idea_status"]
     if status == "inconclusive":
         print(f"\n⏸️  inconclusive_grid: the grid could not decide this idea "
@@ -3173,32 +3180,45 @@ def _ensure_regroup_record_handoff(run_id: str, run_dir: Path) -> Path:
 
 
 def _run_regroup_record_stage(run_id: str, run_dir: Path) -> dict:
-    """Stage body. Component errors first (an engineering fault: the entry
-    carries engineering_fault and no idea_status or grid numbers). Otherwise
-    idea_status.yaml is validated exactly as the route validates it, before
-    anything is written. campaign_state.trial_sharpes is only READ (for the
-    trial-id cross-link). Returns the entry written."""
-    if not _regroup_record_enabled():
-        raise RuntimeError("regroup_record reached with orchestrator.regroup_record.enabled off "
-                           "-- reset pending_stage to specialist_readers or enable the flag.")
+    """Stage body. Reached only from run_loop, which already refuses this
+    stage when the flag is off (no second flag check here).
+
+    Component errors and idea_status.yaml are computed ONCE here and returned
+    ({"entry", "component_errors", "idea"}) so run_loop hands them to
+    determine_post_specialist_readers_route instead of recomputing them.
+
+    Component-error run: a minimal fault-only entry (build_fault_entry), which
+    parses none of the run's grid / variant / proposal artifacts. If even that
+    cannot be recorded, the failure is logged loudly and swallowed: the
+    component_execution_error pause that follows must still fire.
+    Otherwise: idea_status.yaml validated exactly as the route validates it,
+    then the full entry. campaign_state.trial_sharpes is only READ."""
     errors = _protocol_component_errors(run_dir)
-    if not errors:
-        _load_idea_status(run_dir, run_id)
+    idea = None if errors else _load_idea_status(run_dir, run_id)
     cm = _campaign_memory_module()
-    entry = cm.build_memory_entry(
-        run_dir, run_id,
-        component_errors=errors,
-        trial_sharpes=(load_campaign_state() or {}).get("trial_sharpes") or [],
-        categories=_reader_categories(),
-        forecast_hash_fn=_compute_forecast_hash,
-        protocol_root=ROOT,
-    )
     memory_path = _campaign_memory_path()
-    cm.upsert_memory(memory_path, entry)
-    print(f"📒 [E-058] campaign memory: {run_id} recorded "
-          f"(idea_status={entry['idea_status']}, engineering_fault={entry['engineering_fault']}) "
-          f"-> {memory_path}")
-    return entry
+    if errors:
+        try:
+            entry = cm.build_fault_entry(run_dir, run_id, errors)
+            cm.upsert_memory(memory_path, entry)
+            print(f"📒 [E-058] campaign memory: {run_id} recorded as engineering_fault="
+                  f"{entry['engineering_fault']} -> {memory_path}")
+        except Exception as e:
+            entry = None
+            print(f"❌ [E-058] campaign memory: could NOT record {run_id}'s component_execution_error "
+                  f"({type(e).__name__}: {e}). The run still pauses for the component errors; "
+                  f"fix the memory file and resume to record it.")
+    else:
+        entry = cm.build_memory_entry(
+            run_dir, run_id,
+            trial_sharpes=(load_campaign_state() or {}).get("trial_sharpes") or [],
+            categories=_reader_categories(),
+            protocol_root=ROOT,
+        )
+        cm.upsert_memory(memory_path, entry)
+        print(f"📒 [E-058] campaign memory: {run_id} recorded "
+              f"(idea_status={entry['idea_status']}) -> {memory_path}")
+    return {"entry": entry, "component_errors": errors, "idea": idea}
 
 
 def _apply_config_direct_authoring_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
@@ -8219,8 +8239,13 @@ def run_loop(run_id: str):
         return
     # E-058 S2a: the regroup_record flag, resolved ONCE the same way (its
     # dependency on specialist_readers fails the run here, before any spend).
+    # A run already at a terminal stage is skipped, like the specialist_readers
+    # pre-flight: it will not reach any stage, so a misconfiguration must not
+    # overwrite its finished status with "failed".
+    _rr_flag = False
     try:
-        _rr_flag = _regroup_record_enabled()
+        if _pending_at_start and not _pending_at_start.startswith(_TERMINAL_AT_START):
+            _rr_flag = _regroup_record_enabled()
     except Exception as e:
         print(f"❌ regroup_record pre-flight failed: {e}")
         update_state(path=RUN_DIR, status="failed", last_error=str(e))
@@ -8238,7 +8263,12 @@ def run_loop(run_id: str):
         budget = _load_token_budget()
         total_weighted_used, stage_breakdown = _compute_weighted_budget_usage(state.get("audit_log", {}))
 
-        if total_weighted_used > budget:
+        # E-058 S2a: regroup_record is exempt. It is a zero-cost tool stage
+        # carrying the grid route that flag-off runs take in the SAME iteration
+        # as specialist_readers (after this check); stopping it here would leave
+        # a run with no memory entry and no route. The next stage is checked as
+        # usual. Every other stage: unchanged.
+        if total_weighted_used > budget and current_stage != "regroup_record":
             print(f"🛑 RUN TERMINATED: Weighted token budget exceeded "
                   f"({total_weighted_used:,.0f} > {budget:,.0f}).")
             print("   Per-stage weighted breakdown:")
@@ -8385,8 +8415,9 @@ def run_loop(run_id: str):
                 # _invoke_agent_with_yaml_retry/_SKILL_MAP.
                 _run_specialist_readers_stage(run_id, RUN_DIR, _this_stage_attempt)
             elif current_stage == "regroup_record":
-                # E-058 S2a: tool stage, no LLM call, no _SKILL_MAP entry.
-                _run_regroup_record_stage(run_id, RUN_DIR)
+                # E-058 S2a: tool stage, no LLM call, no _SKILL_MAP entry. Its
+                # component-error / idea_status checks are reused by the route below.
+                _rr_checks = _run_regroup_record_stage(run_id, RUN_DIR)
             elif not _skip_agent:
                 if current_stage == "hypothesis_generation":
                     try:
@@ -8735,8 +8766,11 @@ def run_loop(run_id: str):
                         break
 
             elif current_stage == "regroup_record":
-                # E-058 S2a: the unchanged grid route, after the memory is written.
-                next_stage = determine_post_specialist_readers_route(RUN_DIR, run_id)
+                # E-058 S2a: the unchanged grid route, after the memory is written,
+                # on the checks the stage already made this iteration.
+                next_stage = determine_post_specialist_readers_route(
+                    RUN_DIR, run_id, component_errors=_rr_checks["component_errors"],
+                    idea=_rr_checks["idea"])
                 if next_stage == "human_pause":
                     update_state(path=RUN_DIR, status="paused_for_human")
                     break

@@ -119,6 +119,11 @@ _NON_VERDICT_OUTCOMES = frozenset({
     "backtest_specification", "signal_prescreen", "protocol_execution",
     "verdict_interpreter", "refinement_planner", "holdout_evaluation",
     "campaign_review",
+    # Every current STAGE_CONFIGS key belongs here (a paused/failed run's queue
+    # outcome can be its pending stage). Pinned by
+    # tests/test_e058_s2a_regroup_record.py so a new stage cannot be missed again.
+    "strategy_config_authoring", "data_availability_gate", "specialist_readers",
+    "regroup_record",
     "completed_reframed", "completed_escalated", "completed_refined",
     "done", "ready", "pending", "superseded", "not_launched",
     # E-030 S2a. Registered here DELIBERATELY, as the same kind of act the

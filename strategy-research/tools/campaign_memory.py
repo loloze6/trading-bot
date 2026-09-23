@@ -8,6 +8,11 @@ Written ONLY by the orchestrator's `regroup_record` tool stage
 by `run_id` and REPLACED on a re-run. Old runs are never backfilled: the
 legacy record is campaign_knowledge_base.yaml.
 
+Two entry forms:
+  * full (build_memory_entry) -- a run without component errors;
+  * fault-only (build_fault_entry) -- a run with component errors: only the
+    fact of the fault, nothing parsed from its grid, variants or proposals.
+
 What this module deliberately does NOT do:
   * decide anything. An entry's `idea_status` is copied from the grid's
     idea_status.yaml; nothing here computes or overrides a status.
@@ -17,10 +22,11 @@ What this module deliberately does NOT do:
     later decide-next step (slice 6b), and a copy here would invite a second
     reader to route on them.
   * write trial rows. campaign_state.trial_sharpes is written by
-    protocol_execution; the ids here are a read-only cross-link.
+    protocol_execution; trial ids and forecast hashes are copied from it
+    (read only).
   * carry retired machinery (slice 6c): no hypothesis_family, altitude,
     lineage routing, continuation or verdict-routing field. build_memory_entry
-    refuses to return an entry that contains one (RETIRED_FIELDS).
+    and upsert_memory refuse an entry that contains one (RETIRED_FIELDS).
   * the block registry, the KB mirror and the scoreboard (E-058 S2b). Their
     fields are present with an explicit "not built" / null value.
 
@@ -29,12 +35,17 @@ every path is passed in by the caller, so tests' ROOT sandbox covers it.
 """
 from __future__ import annotations
 
+import contextlib
 import os
 import tempfile
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
+
+import campaign_lock  # tools/ sibling: the E-011 O_EXCL lock file (pid/age staleness)
+from workflow_artifact_validation import validate_workflow_artifact
 
 SCHEMA_VERSION = 1
 
@@ -61,6 +72,14 @@ _CELL_KEYS = ("result", "value", "threshold", "n_windows", "n_trades", "reason")
 _CELL_RESULTS = ("PASS", "FAIL", "INCONCLUSIVE")
 _TRIAL_SOURCES = ("backtest", "backtest_failed")
 _IDEA_STATUSES = ("validated", "refuted", "inconclusive")
+# artifacts/variants/index.yaml: the only statuses and keys its writers produce
+# (run_tool_worker's backtest_specification and per-variant data gate).
+_INDEX_STATUSES = ("validated", "not_tested")
+_INDEX_KEYS = frozenset({"status", "reason", "config_path", "report"})
+
+MEMORY_LOCK_FILENAME = ".campaign_memory.lock"
+MEMORY_LOCK_WAIT_SECONDS = 30.0
+_MEMORY_LOCK_POLL_SECONDS = 0.05
 
 
 class CampaignMemoryError(ValueError):
@@ -129,16 +148,27 @@ def _grid_block(run_id: str, grid_doc: dict, path: Path) -> dict:
             "variants": list(variants), "cells": cells, "counts": counts}
 
 
-def _protocol_shape(pr: dict | None) -> dict:
+def _protocol_shape(pr, where: str) -> dict:
+    """Symbols and DISTINCT windows. protocol_result.results has one row per
+    (symbol, window), so len(results) would count 30 for 15 windows x 2
+    symbols (run_054)."""
     results = (pr or {}).get("results") or []
     if not isinstance(results, list):
-        raise CampaignMemoryError("protocol_result.results is not a list")
-    symbols = sorted({r.get("symbol") for r in results if isinstance(r, dict) and r.get("symbol")})
-    return {"symbols": symbols, "n_windows": len(results)}
+        raise CampaignMemoryError(f"{where}: results is not a list")
+    symbols, windows = set(), set()
+    for i, r in enumerate(results):
+        window = r.get("window") if isinstance(r, dict) else None
+        if not isinstance(window, str) or not window:
+            raise CampaignMemoryError(f"{where}: results[{i}] has no window label ({window!r})")
+        windows.add(window)
+        if r.get("symbol"):
+            symbols.add(r["symbol"])
+    return {"symbols": sorted(symbols), "n_windows": len(windows)}
 
 
-def _trial_ids_by_key(run_id: str, trial_sharpes) -> dict:
-    """{trial_id: [sources]} for this run's backtest rows. Read-only."""
+def _trial_rows(run_id: str, trial_sharpes) -> dict:
+    """{trial_id: {source: row}} for this run's backtest / backtest_failed
+    rows. Read-only: nothing here writes the ledger."""
     if trial_sharpes is None:
         trial_sharpes = []
     if not isinstance(trial_sharpes, list):
@@ -149,19 +179,50 @@ def _trial_ids_by_key(run_id: str, trial_sharpes) -> dict:
             continue
         tid = row.get("trial_id")
         if isinstance(tid, str) and (tid == run_id or tid.startswith(f"{run_id}:")):
-            out.setdefault(tid, []).append(row["source"])
+            out.setdefault(tid, {})[row["source"]] = row
     return out
 
 
-def _variants_block(run_dir: Path, run_id: str, grid_variants: list, trials: dict,
-                    forecast_hash_fn) -> dict:
+def _tested_trial(trials: dict, tid: str, vid: str) -> tuple:
+    """A tested variant spent a look, so its "backtest" row MUST exist (the
+    ledger invariant); its forecast_hash is copied from that row, never
+    recomputed from a config file that may have changed since."""
+    row = (trials.get(tid) or {}).get("backtest")
+    if row is None:
+        raise CampaignMemoryError(
+            f"variant {vid!r} was tested but campaign_state.trial_sharpes has no 'backtest' "
+            f"row for trial_id {tid!r} -- the trial ledger is missing a spent look")
+    fh = row.get("forecast_hash")
+    if not isinstance(fh, str) or not fh:
+        raise CampaignMemoryError(f"trial row {tid!r} (backtest) has no forecast_hash ({fh!r})")
+    return tid, fh
+
+
+def _check_index_entry(vid, info, index_path: Path) -> None:
+    if not isinstance(info, dict):
+        raise CampaignMemoryError(f"{index_path}: variants.{vid} is not a mapping ({info!r})")
+    extra = sorted(set(info) - _INDEX_KEYS)
+    if extra:
+        raise CampaignMemoryError(f"{index_path}: variants.{vid} has unknown key(s) {extra}")
+    if info.get("status") not in _INDEX_STATUSES:
+        raise CampaignMemoryError(f"{index_path}: variants.{vid}.status={info.get('status')!r} "
+                                  f"is not one of {_INDEX_STATUSES}")
+    for key in ("config_path", "reason"):
+        if info.get(key) is not None and not isinstance(info[key], str):
+            raise CampaignMemoryError(f"{index_path}: variants.{vid}.{key} is not a string")
+    if info["status"] == "validated" and not info.get("config_path"):
+        raise CampaignMemoryError(f"{index_path}: variants.{vid} is validated but has no config_path")
+
+
+def _variants_block(run_dir: Path, run_id: str, grid_variants: list, trials: dict) -> dict:
     """Two grid-column shapes, told apart by the grid's own columns:
       * variant loop (columns are index.yaml variant ids): every index entry
-        -- tested (a grid column), failed (validated but no column: its
-        backtest failed), or not_tested (index status).
+        -- tested (a grid column; must be `validated` in the index), failed
+        (validated, no column: its backtest failed), or not_tested.
       * single column named after run_id (variant loop off -- including
         config-direct authoring, which writes index.yaml but backtests only
-        the base config): from artifacts/protocol_result.yaml."""
+        the base config): from artifacts/protocol_result.yaml.
+    Any index status or entry shape outside the known set raises."""
     arts = run_dir / "artifacts"
     index_path = arts / "variants" / "index.yaml"
     out = {}
@@ -170,30 +231,43 @@ def _variants_block(run_dir: Path, run_id: str, grid_variants: list, trials: dic
         index = _load_mapping(index_path, "variant index").get("variants")
         if not isinstance(index, dict):
             raise CampaignMemoryError(f"{index_path}: variants is not a mapping")
+        for vid, info in index.items():
+            _check_index_entry(vid, info, index_path)
     if index is not None and not (grid_variants == [run_id] and run_id not in index):
         unknown = [v for v in grid_variants if v not in index]
         if unknown:
             raise CampaignMemoryError(f"{index_path}: grid variant(s) {unknown} not in the index")
         for vid in sorted(index):
-            info = index[vid] if isinstance(index[vid], dict) else {}
+            info = index[vid]
+            tid = f"{run_id}:{vid}"
             if vid in grid_variants:
+                if info["status"] != "validated":
+                    raise CampaignMemoryError(
+                        f"{index_path}: grid column {vid!r} has index status {info['status']!r} "
+                        f"-- only a validated variant can have been backtested")
                 status, reason = "tested", None
-            elif info.get("status") == "validated":
+                trial_id, fh = _tested_trial(trials, tid, vid)
+                vpr_path = arts / "variants" / vid / "protocol_result.yaml"
+                shape = _protocol_shape(_load_mapping(vpr_path, f"variant {vid}'s backtest result"),
+                                        str(vpr_path))
+            elif info["status"] == "validated":
                 status, reason = "failed", "validated but produced no grid column (backtest failed)"
+                failed_row = (trials.get(tid) or {}).get("backtest_failed")
+                trial_id = tid if failed_row is not None else None
+                fh = failed_row.get("forecast_hash") if failed_row is not None else None
+                shape = {"symbols": [], "n_windows": 0}
             else:
-                status, reason = "not_tested", info.get("reason") or info.get("status")
+                status, reason = "not_tested", info.get("reason")
+                trial_id, fh = None, None
+                shape = {"symbols": [], "n_windows": 0}
             cfg_rel = info.get("config_path")
             cfg_rel = Path(cfg_rel).as_posix() if cfg_rel else None
-            vpr_path = arts / "variants" / vid / "protocol_result.yaml"
-            shape = _protocol_shape(_load_strict(vpr_path)) if (status == "tested" and vpr_path.exists()) \
-                else {"symbols": [], "n_windows": 0}
-            tid = f"{run_id}:{vid}"
             out[vid] = {
                 "status": status, "reason": reason,
                 "config_ref": _ref(run_id, cfg_rel) if cfg_rel else None,
-                "forecast_hash": forecast_hash_fn(run_dir / cfg_rel) if cfg_rel else None,
+                "forecast_hash": fh,
                 "symbols": shape["symbols"], "n_windows": shape["n_windows"],
-                "trial_id": tid if tid in trials else None,
+                "trial_id": trial_id,
             }
         return out
     if grid_variants != [run_id]:
@@ -201,14 +275,15 @@ def _variants_block(run_dir: Path, run_id: str, grid_variants: list, trials: dic
             f"{run_dir}: no artifacts/variants/index.yaml, so the grid must have the single "
             f"column {run_id!r}; got {grid_variants}")
     pr_path = arts / "protocol_result.yaml"
-    shape = _protocol_shape(_load_mapping(pr_path, "protocol_execution output"))
+    shape = _protocol_shape(_load_mapping(pr_path, "protocol_execution output"), str(pr_path))
+    trial_id, fh = _tested_trial(trials, run_id, run_id)
     cfg = arts / "candidate_strategy_config.json"
     out[run_id] = {
         "status": "tested", "reason": None,
         "config_ref": _ref(run_id, "artifacts/candidate_strategy_config.json") if cfg.exists() else None,
-        "forecast_hash": forecast_hash_fn(cfg) if cfg.exists() else None,
+        "forecast_hash": fh,
         "symbols": shape["symbols"], "n_windows": shape["n_windows"],
-        "trial_id": run_id if run_id in trials else None,
+        "trial_id": trial_id,
     }
     return out
 
@@ -240,15 +315,43 @@ def _find_retired(obj, path="") -> list:
     return found
 
 
-def build_memory_entry(run_dir: Path, run_id: str, *, component_errors: list,
-                       trial_sharpes, categories, forecast_hash_fn,
+def _now(recorded_at):
+    return recorded_at or datetime.now(timezone.utc).isoformat()
+
+
+def build_fault_entry(run_dir: Path, run_id: str, component_errors: list,
+                      recorded_at: str | None = None) -> dict:
+    """The minimal, fault-only entry for a run with component errors. Its grid,
+    variant results and proposals are meaningless (or absent), so none of
+    them is parsed: only the fact of the fault. hypothesis_id is recorded when
+    hypothesis_card.yaml is readable, else null -- this entry must be
+    buildable on a broken run, because the component_execution_error pause
+    that follows it must still fire."""
+    if not component_errors:
+        raise CampaignMemoryError("build_fault_entry called without component errors")
+    hyp_id = None
+    with contextlib.suppress(Exception):
+        card = yaml.safe_load((Path(run_dir) / "artifacts" / "hypothesis_card.yaml")
+                              .read_text(encoding="utf-8"))
+        value = card.get("hypothesis_id") if isinstance(card, dict) else None
+        if isinstance(value, str) and value.strip():
+            hyp_id = value
+    return {
+        "run_id": run_id,
+        "hypothesis_id": hyp_id,
+        "legacy": False,
+        "recorded_at": _now(recorded_at),
+        "engineering_fault": ENGINEERING_FAULT_COMPONENT_ERROR,
+        "engineering_fault_detail": [str(e) for e in component_errors[:10]],
+    }
+
+
+def build_memory_entry(run_dir: Path, run_id: str, *, trial_sharpes, categories,
                        protocol_root: Path | None = None, recorded_at: str | None = None) -> dict:
-    """One run's memory entry, from artifacts that exist under the flag.
-    Pure apart from reads: `component_errors` (the orchestrator's
-    _protocol_component_errors), `trial_sharpes` (campaign_state, read only),
-    `categories` (the reader categories) and `forecast_hash_fn` (a path -> hash
-    callable: the orchestrator's _compute_forecast_hash, so a variant's
-    `forecast_hash` equals its trial row's) are passed in. Raises CampaignMemoryError on any malformed or
+    """One run's full memory entry (a run WITHOUT component errors -- see
+    build_fault_entry for those), from artifacts that exist under the flag.
+    `trial_sharpes` (campaign_state, read only) and `categories` (the reader
+    categories) are passed in. Raises CampaignMemoryError on any malformed or
     inconsistent input."""
     run_dir = Path(run_dir)
     arts = run_dir / "artifacts"
@@ -257,88 +360,55 @@ def build_memory_entry(run_dir: Path, run_id: str, *, component_errors: list,
     if not isinstance(hyp_id, str) or not hyp_id.strip():
         raise CampaignMemoryError(f"{arts / 'hypothesis_card.yaml'} has no hypothesis_id")
     timeframe = card.get("timeframe")
+    if timeframe is not None and not isinstance(timeframe, str):
+        raise CampaignMemoryError(f"{arts / 'hypothesis_card.yaml'}: timeframe={timeframe!r} is not "
+                                  f"a string (campaign_memory.schema.json: string or null)")
 
-    fault = ENGINEERING_FAULT_COMPONENT_ERROR if component_errors else None
-    trials = _trial_ids_by_key(run_id, trial_sharpes)
+    trials = _trial_rows(run_id, trial_sharpes)
 
-    pr = _load_strict(arts / "protocol_result.yaml") if (arts / "protocol_result.yaml").exists() else {}
-    protocol_file = (pr or {}).get("protocol_file")
+    pr = _load_mapping(arts / "protocol_result.yaml", "protocol_execution output")
+    protocol_file = pr.get("protocol_file")
     protocol_ref = None
     if protocol_file:
         p = Path(protocol_file)
         if protocol_root is not None:
-            try:
+            with contextlib.suppress(ValueError, OSError):
                 p = p.resolve().relative_to(Path(protocol_root).resolve())
-            except (ValueError, OSError):
-                pass
         protocol_ref = p.as_posix()
 
-    if fault:
-        # The grid is meaningless on a run with component errors: no status and
-        # no grid numbers are recorded, only the fact of the fault and the
-        # trials it spent.
-        idea_status = None
-        idea_status_reason = "not recorded: component_execution_error (the grid is meaningless on this run)"
-        idea_status_ref = None
-        grid = None
-        grid_variants = None
-    else:
-        is_path = arts / "idea_status.yaml"
-        idea = _load_mapping(is_path, "the grid's idea status")
-        idea_status = idea.get("idea_status")
-        if idea_status not in _IDEA_STATUSES:
-            raise CampaignMemoryError(f"{is_path}: idea_status={idea_status!r} not one of {_IDEA_STATUSES}")
-        if idea.get("run_id") != run_id:
-            raise CampaignMemoryError(f"{is_path}: run_id={idea.get('run_id')!r} is not {run_id!r}")
-        idea_status_reason = idea.get("reason")
-        idea_status_ref = _ref(run_id, "artifacts/idea_status.yaml")
-        grid_path = arts / "grid_evaluation.yaml"
-        grid_doc = _load_mapping(grid_path, "the grid")
-        if grid_doc.get("idea_status") != idea_status:
-            raise CampaignMemoryError(f"{grid_path}: idea_status={grid_doc.get('idea_status')!r} "
-                                      f"disagrees with idea_status.yaml ({idea_status!r})")
-        grid = _grid_block(run_id, grid_doc, grid_path)
-        grid_variants = grid["variants"]
-
-    if grid_variants is None:
-        # engineering fault: only the grid's column NAMES (which variants ran)
-        # are used, never its cells; without a grid, what actually ran on disk.
-        grid_path = arts / "grid_evaluation.yaml"
-        cols = _load_mapping(grid_path, "the grid").get("variants") if grid_path.exists() else None
-        if isinstance(cols, list) and cols:
-            grid_variants = list(cols)
-        else:
-            index_path = arts / "variants" / "index.yaml"
-            idx = (_load_mapping(index_path, "variant index").get("variants") or {}) \
-                if index_path.exists() else {}
-            grid_variants = [v for v in sorted(idx)
-                             if (arts / "variants" / v / "protocol_result.yaml").exists()] or [run_id]
-    variants = _variants_block(run_dir, run_id, grid_variants, trials, forecast_hash_fn)
-
-    if fault:
-        registry = {"skipped": "engineering_fault"}
-    elif idea_status != "validated":
-        registry = {"skipped": "not_validated"}
-    else:
-        registry = {"skipped": "not_built"}  # the block registry is E-058 S2b
+    is_path = arts / "idea_status.yaml"
+    idea = _load_mapping(is_path, "the grid's idea status")
+    idea_status = idea.get("idea_status")
+    if idea_status not in _IDEA_STATUSES:
+        raise CampaignMemoryError(f"{is_path}: idea_status={idea_status!r} not one of {_IDEA_STATUSES}")
+    if idea.get("run_id") != run_id:
+        raise CampaignMemoryError(f"{is_path}: run_id={idea.get('run_id')!r} is not {run_id!r}")
+    grid_path = arts / "grid_evaluation.yaml"
+    grid_doc = _load_mapping(grid_path, "the grid")
+    if grid_doc.get("idea_status") != idea_status:
+        raise CampaignMemoryError(f"{grid_path}: idea_status={grid_doc.get('idea_status')!r} "
+                                  f"disagrees with idea_status.yaml ({idea_status!r})")
+    grid = _grid_block(run_id, grid_doc, grid_path)
+    variants = _variants_block(run_dir, run_id, grid["variants"], trials)
 
     entry = {
         "run_id": run_id,
         "hypothesis_id": hyp_id,
         "legacy": False,
-        "recorded_at": recorded_at or datetime.now(timezone.utc).isoformat(),
+        "recorded_at": _now(recorded_at),
         "idea_status": idea_status,
-        "idea_status_reason": idea_status_reason,
-        "idea_status_ref": idea_status_ref,
-        "engineering_fault": fault,
-        "engineering_fault_detail": list(component_errors[:10]) if fault else [],
+        "idea_status_reason": idea.get("reason"),
+        "idea_status_ref": _ref(run_id, "artifacts/idea_status.yaml"),
+        "engineering_fault": None,
+        "engineering_fault_detail": [],
         "grid": grid,
         "variants": variants,
         "trial_ids": list(trials),
         "protocol_ref": protocol_ref,
         "timeframe": timeframe,
         "proposals": _proposals_block(run_dir, run_id, categories),
-        "registry": registry,
+        # the block registry is E-058 S2b
+        "registry": {"skipped": "not_built" if idea_status == "validated" else "not_validated"},
         "profit_bars": None,
         "profit_bars_reason": PROFIT_BARS_NOT_EVALUATED,
         "kb_entry_id": None,
@@ -390,9 +460,40 @@ def _atomic_write(path: Path, doc: dict) -> None:
         raise
 
 
+@contextlib.contextmanager
+def _memory_lock(path: Path):
+    """Exclusive lock around the read-modify-write, so two writers cannot
+    lose each other's entry. Reuses the E-011 campaign lock primitive
+    (tools/campaign_lock.py: O_CREAT|O_EXCL file, cleared only when its pid
+    is confirmed dead on this host or it is older than the stale threshold)
+    on its own lock file, with a bounded wait; a lock still held after
+    MEMORY_LOCK_WAIT_SECONDS raises instead of writing unlocked."""
+    lock_path = Path(path).parent / MEMORY_LOCK_FILENAME
+    deadline = time.monotonic() + MEMORY_LOCK_WAIT_SECONDS
+    while True:
+        try:
+            campaign_lock.acquire(lock_path)
+            break
+        except campaign_lock.CampaignLockHeld as exc:
+            if time.monotonic() >= deadline:
+                raise CampaignMemoryError(
+                    f"{lock_path} still held after {MEMORY_LOCK_WAIT_SECONDS}s -- another writer "
+                    f"is updating the campaign memory (or left a live lock). Not writing unlocked. "
+                    f"{exc}") from exc
+            time.sleep(_MEMORY_LOCK_POLL_SECONDS)
+    try:
+        yield
+    finally:
+        campaign_lock.release(lock_path)
+
+
 def upsert_memory(path: Path, entry: dict) -> dict:
-    """Insert or REPLACE (same run_id) one entry; atomic write (temp file +
-    os.replace in the same directory). Returns the written document."""
+    """Insert or REPLACE (same run_id) one entry, under _memory_lock; atomic
+    write (temp file + os.replace in the same directory). The document is
+    checked against workflow_artifacts/schemas/campaign_memory.schema.json by
+    validate_workflow_artifact (matched by file stem) before it is written:
+    warn by default, blocking under WORKFLOW_ARTIFACT_VALIDATION=raise.
+    Returns the written document."""
     run_id = entry.get("run_id") if isinstance(entry, dict) else None
     if not isinstance(run_id, str) or not run_id:
         raise CampaignMemoryError(f"memory entry has no run_id: {entry!r}")
@@ -400,8 +501,10 @@ def upsert_memory(path: Path, entry: dict) -> dict:
     if retired:
         raise CampaignMemoryError(f"memory entry for {run_id} carries retired field(s) {retired}")
     path = Path(path)
-    doc = load_memory(path)
-    doc["legacy_note"] = LEGACY_NOTE
-    doc["runs"][run_id] = entry
-    _atomic_write(path, doc)
+    with _memory_lock(path):
+        doc = load_memory(path)
+        doc["legacy_note"] = LEGACY_NOTE
+        doc["runs"][run_id] = entry
+        validate_workflow_artifact(path, doc)
+        _atomic_write(path, doc)
     return doc
