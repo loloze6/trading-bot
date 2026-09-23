@@ -138,7 +138,7 @@
     "proposed_change_dimension": {
       "type": ["string", "null"],
       "minLength": 1,
-      "description": "Non-null iff lineage_routing == refine and a winner exists: the winner's change_dimension. Same role as the legacy field (circuit breaker repeat detection)."
+      "description": "Non-null iff lineage_routing == refine: the evidence-bearing (S_max > 0) winner's change_dimension, or 'unspecified' for a binding refine no such proposal backs. Same role as the legacy field (circuit breaker repeat detection)."
     },
     "criteria_summary": {
       "type": "array",
@@ -211,6 +211,22 @@
     {
       "if": { "properties": { "decided_by": { "const": "scored_proposals" } }, "required": ["decided_by"] },
       "then": { "properties": { "pass_rule": { "properties": { "binding": { "const": false } } } } }
+    },
+    {
+      "$comment": "refine <-> dimension: every refine names a dimension (the winner's, or 'unspecified' for a binding refine no evidence-bearing proposal backs); no other route carries one.",
+      "if": { "properties": { "lineage_routing": { "const": "refine" } }, "required": ["lineage_routing"] },
+      "then": { "properties": { "proposed_change_dimension": { "type": "string", "minLength": 1 } } },
+      "else": { "properties": { "proposed_change_dimension": { "const": null } } }
+    },
+    {
+      "$comment": "A binding evaluation is by definition a PASS/FAIL result.",
+      "if": { "properties": { "pass_rule": { "properties": { "binding": { "const": true } }, "required": ["binding"] } }, "required": ["pass_rule"] },
+      "then": { "properties": { "pass_rule": { "properties": { "result": { "enum": ["PASS", "FAIL"] } } } } }
+    },
+    {
+      "$comment": "A FAIL result never promotes (would spend the single-use holdout).",
+      "if": { "properties": { "pass_rule": { "properties": { "result": { "const": "FAIL" } }, "required": ["result"] } }, "required": ["pass_rule"] },
+      "then": { "properties": { "hypothesis_verdict": { "not": { "const": "promote" } } } }
     }
   ]
 }

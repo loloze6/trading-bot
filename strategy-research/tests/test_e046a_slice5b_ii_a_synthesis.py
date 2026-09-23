@@ -273,19 +273,21 @@ def test_binding_pass_rule_carried_through_verbatim(tmp_path, result, hv, lr, di
     assert out["criteria_summary"] == [{"criterion": "a", "result": result}]
 
 
-def test_binding_uses_resolve_verdict_fields_predicate(tmp_path, monkeypatch):
-    """The binding check is delegated to _resolve_verdict_fields, not re-derived."""
-    calls = []
-    real = rpr._resolve_verdict_fields
-
-    def spy(*a, **kw):
-        calls.append(kw.get("pre_eval"))
-        return real(*a, **kw)
-
-    monkeypatch.setattr(rpr, "_resolve_verdict_fields", spy)
-    run = _make_run(tmp_path, pass_rule=_binding("FAIL", "kill", "pivot"))
-    assert _synth(run)["decided_by"] == "binding_pass_rule"
-    assert len(calls) == 1 and calls[0]["result"] == "FAIL"
+@pytest.mark.parametrize("result", ["PASS", "FAIL", "SPEC_ERROR", "legacy_not_evaluable", "VERDICT_BLOCKED"])
+@pytest.mark.parametrize("discretion", [None, "stage"])
+@pytest.mark.parametrize("hv,lr", [(None, None), ("kill", None), (None, "terminate"), ("kill", "pivot"),
+                                   ("promote", None)])
+def test_pass_rule_is_binding_agrees_with_resolve_verdict_fields(result, discretion, hv, lr):
+    """CODE-REVIEW REGRESSION: the binding predicate used to be inferred by
+    probing _resolve_verdict_fields with a sentinel interp. It is now an
+    explicit helper; this pins it to _resolve_verdict_fields's own binding
+    branch so the two cannot drift."""
+    pre = {"result": result, "discretion": discretion, "hypothesis_verdict": hv, "lineage_routing": lr}
+    sentinel = object()
+    got = rpr._resolve_verdict_fields({"hypothesis_verdict": sentinel, "lineage_routing": sentinel},
+                                      "", "", pre_eval=pre)
+    assert rpr._pass_rule_is_binding(pre) == (got[0] is not sentinel)
+    assert rpr._pass_rule_is_binding(None) is False
 
 
 @pytest.mark.parametrize("pass_rule", [
@@ -626,3 +628,146 @@ def test_rationale_parses_through_legacy_carryover_regexes(tmp_path):
                                             "cost_drag_pct": 142.82, "gross_pnl": -3.5}
     assert carry["diagnostic_rule_applied"].startswith("scored_proposals")
     assert "min_abs" in carry["what_not_to_try"][0]
+
+
+# ---------------------------------------------------------------------------
+# CODE-REVIEW REGRESSIONS (2026-09-23 review of b9e0da6d)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("label", ["NOT_READY", " not_ready "])
+def test_warmup_label_never_triggers_regime_misattribution(tmp_path, label):
+    """build_regime_validity groups warmup bars too, so NOT_READY shows up in
+    uninformative_regimes in real runs (runs 014-023, ~119 bars). It is not a
+    detector regime and must not pause the run."""
+    run = _make_run(tmp_path, protocol=_protocol_result(uninformative=(label,), n_bars=119))
+    out = _synth(run, report=_detector_report("low"))
+    assert out["decided_by"] != "safety_pause"
+    _assert_valid(out)
+
+
+def test_warmup_label_does_not_shield_a_real_uninformative_regime(tmp_path):
+    run = _make_run(tmp_path, protocol=_protocol_result(uninformative=("NOT_READY", "trending"), n_bars=119))
+    out = _synth(run, report=_detector_report("low"))
+    assert out["decided_by"] == "safety_pause"
+    assert out["pause"]["reason"] == "regime_misattribution"
+    assert not any("NOT_READY" in e for e in out["pause"]["evidence"])
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf")])
+def test_non_finite_n_bars_fails_loud(tmp_path, bad):
+    """A NaN median made `>= 20` False and silently dropped the RULE 4 regime."""
+    run = _make_run(tmp_path, protocol=_protocol_result(uninformative=("trending",), n_bars=bad))
+    with pytest.raises(rpr.VerdictSynthesisError):
+        _synth(run, report=_detector_report("low"))
+
+
+@pytest.mark.parametrize("report", [
+    {"per_symbol_per_timeframe": [{"symbol": "BTCUSDT", "timeframe": "1h", "confidence": "bogus"}]},
+    [1, 2],
+    {"per_symbol_per_timeframe": "nope"},
+])
+def test_malformed_detector_report_fails_loud_even_without_rule4(tmp_path, report):
+    run = _make_run(tmp_path)  # no uninformative regime -> RULE 4 never fires
+    with pytest.raises(rpr.VerdictSynthesisError):
+        _synth(run, report=report)
+
+
+def test_unknown_binding_pair_is_not_hidden_behind_a_safety_pause(tmp_path):
+    run = _make_run(tmp_path, protocol=_protocol_result(component_error_count=1),
+                    pass_rule=_binding("FAIL", "abandon", "retry"))
+    with pytest.raises(rpr.VerdictSynthesisError):
+        _synth(run)
+
+
+def test_unknown_pair_is_not_hidden_behind_verdict_blocked(tmp_path):
+    run = _make_run(tmp_path, pass_rule={"result": "VERDICT_BLOCKED", "hypothesis_verdict": "abandon",
+                                         "lineage_routing": None, "blocked_by": ["G5"]})
+    # VERDICT_BLOCKED is not binding, so the pair is not carried; it must still
+    # not be accepted as a valid verdict on the blocked path.
+    out = _synth(run)
+    assert out["decided_by"] == "verdict_blocked"
+    assert out["hypothesis_verdict"] is None
+
+
+def test_fail_result_with_promote_verdict_fails_loud(tmp_path):
+    """A mis-registered FAIL branch carrying promote would spend the holdout."""
+    run = _make_run(tmp_path, pass_rule=_binding("FAIL", "promote", None))
+    with pytest.raises(rpr.VerdictSynthesisError, match="FAIL"):
+        _synth(run)
+
+
+@pytest.mark.parametrize("field,value", [("result", ["PASS"]), ("hypothesis_verdict", ["kill"]),
+                                         ("lineage_routing", {"a": 1}), ("discretion", ["stage"])])
+def test_unhashable_pass_rule_values_raise_synthesis_error_not_typeerror(tmp_path, field, value):
+    pr = _binding("FAIL", "kill", "terminate")
+    pr[field] = value
+    run = _make_run(tmp_path, pass_rule=pr)
+    with pytest.raises(rpr.VerdictSynthesisError):
+        _synth(run)
+
+
+def test_binding_refine_without_proposals_gets_unspecified_dimension(tmp_path):
+    """dim=None would make the circuit breaker's `dim in recent_dims` never
+    match, so repeated unexplained refines would never trip it."""
+    run = _make_run(tmp_path, pass_rule=_binding("FAIL", "refine", "refine"))
+    out = _synth(run)
+    assert out["decided_by"] == "binding_pass_rule"
+    assert out["proposed_change_dimension"] == rpr.SYNTHESIS_UNSPECIFIED_DIMENSION
+    _assert_valid(out)
+
+
+def test_binding_refine_ignores_a_zero_score_winner_for_the_dimension(tmp_path):
+    run = _make_run(tmp_path, pass_rule=_binding("FAIL", "refine", "refine"),
+                    proposals={"profitability": [_proposal("profitability", scores=(0, 0, 0))]})
+    out = _synth(run)
+    assert out["proposed_change_dimension"] == rpr.SYNTHESIS_UNSPECIFIED_DIMENSION
+
+
+def test_binding_refine_uses_an_evidence_bearing_winner_for_the_dimension(tmp_path):
+    run = _make_run(tmp_path, pass_rule=_binding("FAIL", "refine", "refine"),
+                    proposals={"profitability": [_proposal("profitability", scores=(1, 0, 0), field="weight")]})
+    assert _synth(run)["proposed_change_dimension"] == "weight"
+
+
+@pytest.mark.parametrize("litter", [".DS_Store", "profitability.yaml~", "notes.txt"])
+def test_os_and_editor_litter_in_proposals_dir_is_ignored(tmp_path, litter):
+    run = _make_run(tmp_path, raw_proposals={"profitability.yaml": "[]", litter: "junk"})
+    assert _synth(run)["decided_by"] == "scored_proposals"
+
+
+@pytest.mark.parametrize("pid", ["profitability-", "profitability-run_1", "profitability-run_1-x"])
+def test_proposal_id_must_match_full_schema_pattern(tmp_path, pid):
+    run = _make_run(tmp_path, raw_proposals={
+        "profitability.yaml": _bad(lambda p: p.__setitem__("proposal_id", pid))})
+    with pytest.raises(rpr.VerdictSynthesisError):
+        _synth(run)
+
+
+@pytest.mark.parametrize("mutate", [
+    lambda o: o.__setitem__("proposed_change_dimension", "weight"),        # terminate + dimension
+    lambda o: o.__setitem__("pass_rule", {**o["pass_rule"], "result": "VERDICT_BLOCKED"}),  # binding w/o PASS/FAIL
+])
+def test_schema_rejects_inconsistent_outputs(tmp_path, mutate):
+    run = _make_run(tmp_path, pass_rule=_binding("FAIL", "kill", "terminate"))
+    out = _synth(run)
+    _assert_valid(out)
+    bad = copy.deepcopy(out)
+    mutate(bad)
+    assert list(VALIDATOR.iter_errors(bad)), "schema accepted an inconsistent output"
+
+
+def test_schema_rejects_refine_without_dimension(tmp_path):
+    run = _make_run(tmp_path, proposals={"profitability": [_proposal("profitability")]})
+    out = _synth(run)
+    assert out["lineage_routing"] == "refine"
+    bad = copy.deepcopy(out)
+    bad["proposed_change_dimension"] = None
+    assert list(VALIDATOR.iter_errors(bad))
+
+
+def test_schema_rejects_fail_plus_promote(tmp_path):
+    run = _make_run(tmp_path, pass_rule=_binding("PASS", "promote", None))
+    out = _synth(run)
+    bad = copy.deepcopy(out)
+    bad["pass_rule"]["result"] = "FAIL"
+    assert list(VALIDATOR.iter_errors(bad))

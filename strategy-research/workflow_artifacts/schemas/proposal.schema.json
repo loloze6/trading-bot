@@ -20,7 +20,17 @@
       "type": "array",
       "minItems": 1,
       "description": "Required, non-empty, when kind=patch; must be absent when kind=new_block. A before/after component-spec diff in STRATEGY_DESIGN_GUIDE.md's 'Component variant patterns' vocabulary (e.g. a scaling_factor sign flip, an atr_multiplier/threshold_filter adjustment) -- not a raw unstructured diff.",
-      "items": { "type": "object" }
+      "items": {
+        "type": "object",
+        "required": ["component_id", "field", "before", "after"],
+        "additionalProperties": false,
+        "properties": {
+          "component_id": { "type": "string", "minLength": 1, "description": "The component (or regime-config block) the change applies to." },
+          "field": { "type": "string", "minLength": 1, "description": "Dotted path of the changed parameter within that component, e.g. transforms[2].params.min_abs. The verdict synthesis (5b-ii-A) derives proposed_change_dimension from it." },
+          "before": { "description": "Current value." },
+          "after": { "description": "Proposed value." }
+        }
+      }
     },
     "block": {
       "type": "object",
@@ -34,7 +44,8 @@
         },
         "config_paths": {
           "type": "array",
-          "items": { "type": "string" }
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
         },
         "scaffolding": {
           "type": "array",

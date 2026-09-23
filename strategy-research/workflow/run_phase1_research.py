@@ -6846,6 +6846,16 @@ _SYNTHESIS_PROPOSAL_KEYS = frozenset(
 # verdict-interpreter/SKILL.md RULE 4: a regime with median n_bars < 20 is a
 # sample problem (Rule 5), not an uninformative-regime finding.
 _SYNTHESIS_RULE4_MIN_MEDIAN_N_BARS = 20
+# The engine's warmup label. build_regime_validity groups warmup bars too, so it
+# can appear in uninformative_regimes (seen in real runs 014-023); it is not a
+# detector regime and must never trigger RULE 4. Normalised the same way as
+# trading-bot/reporting/run_artifact.py's own NOT_READY exclusion.
+_SYNTHESIS_WARMUP_REGIME = "NOT_READY"
+# proposed_change_dimension for a BINDING refine that no evidence-bearing
+# proposal (S_max > 0) backs. A non-null sentinel so the circuit breaker's
+# `dim in recent_dims` check still sees repeated unexplained refines.
+SYNTHESIS_UNSPECIFIED_DIMENSION = "unspecified"
+_SYNTHESIS_PROPOSAL_ID_RE = re.compile(r"^[a-z_]+-.+-[0-9]+$")
 
 
 class VerdictSynthesisError(ValueError):
@@ -6909,6 +6919,27 @@ def _synthesis_safety_checks(protocol_result: dict, regime_detector_report: dict
         raise VerdictSynthesisError(
             f"protocol_result.yaml 'results' must be a list, got {type(results).__name__}")
 
+    # Validate the detector report on EVERY path, not only when RULE 4 fires,
+    # so a corrupt report fails loud before the one run where it matters.
+    by_symbol: dict = {}
+    if regime_detector_report is not None:
+        if not isinstance(regime_detector_report, dict):
+            raise VerdictSynthesisError(
+                f"regime_detector_report must be a mapping or None, got {type(regime_detector_report).__name__}")
+        entries = regime_detector_report.get("per_symbol_per_timeframe")
+        if not isinstance(entries, list):
+            raise VerdictSynthesisError(
+                "regime_detector_report.per_symbol_per_timeframe is not a list")
+        for j, e in enumerate(entries):
+            if not isinstance(e, dict):
+                raise VerdictSynthesisError(f"regime_detector_report entry [{j}] is not a mapping")
+            conf = e.get("confidence")
+            if not isinstance(conf, str) or conf not in _SYNTHESIS_KNOWN_DETECTOR_CONFIDENCE:
+                raise VerdictSynthesisError(
+                    f"regime_detector_report entry [{j}] confidence={conf!r} not in "
+                    f"{sorted(_SYNTHESIS_KNOWN_DETECTOR_CONFIDENCE)}")
+            by_symbol.setdefault(str(e.get("symbol")), []).append((e.get("timeframe"), conf))
+
     # --- component_execution_error -------------------------------------------
     ce_evidence = []
     for i, entry in enumerate(results):
@@ -6944,6 +6975,8 @@ def _synthesis_safety_checks(protocol_result: dict, regime_detector_report: dict
 
     rule4_regimes = []
     for regime in uninformative:
+        if regime.strip().upper() == _SYNTHESIS_WARMUP_REGIME:
+            continue
         n_bars = []
         for i, entry in enumerate(results):
             rv_all = entry.get("regime_validity") or {}
@@ -6952,9 +6985,9 @@ def _synthesis_safety_checks(protocol_result: dict, regime_detector_report: dict
             rv = rv_all.get(regime)
             if isinstance(rv, dict) and rv.get("n_bars") is not None:
                 nb = rv["n_bars"]
-                if isinstance(nb, bool) or not isinstance(nb, (int, float)):
+                if isinstance(nb, bool) or not isinstance(nb, (int, float)) or not math.isfinite(float(nb)):
                     raise VerdictSynthesisError(
-                        f"results[{i}].regime_validity[{regime!r}].n_bars={nb!r} is not numeric")
+                        f"results[{i}].regime_validity[{regime!r}].n_bars={nb!r} is not a finite number")
                 n_bars.append(nb)
         median_n = statistics.median(n_bars) if n_bars else None
         if median_n is None or median_n >= _SYNTHESIS_RULE4_MIN_MEDIAN_N_BARS:
@@ -6967,21 +7000,6 @@ def _synthesis_safety_checks(protocol_result: dict, regime_detector_report: dict
     if regime_detector_report is None:
         unconfirmed.append("regime_detector_report.yaml unavailable -- detector confidence unconfirmed")
     else:
-        entries = regime_detector_report.get("per_symbol_per_timeframe") \
-            if isinstance(regime_detector_report, dict) else None
-        if not isinstance(entries, list):
-            raise VerdictSynthesisError(
-                "regime_detector_report.per_symbol_per_timeframe is not a list")
-        by_symbol: dict = {}
-        for j, e in enumerate(entries):
-            if not isinstance(e, dict):
-                raise VerdictSynthesisError(f"regime_detector_report entry [{j}] is not a mapping")
-            conf = e.get("confidence")
-            if conf not in _SYNTHESIS_KNOWN_DETECTOR_CONFIDENCE:
-                raise VerdictSynthesisError(
-                    f"regime_detector_report entry [{j}] confidence={conf!r} not in "
-                    f"{sorted(_SYNTHESIS_KNOWN_DETECTOR_CONFIDENCE)}")
-            by_symbol.setdefault(str(e.get("symbol")), []).append((e.get("timeframe"), conf))
         if not tested_symbols:
             unconfirmed.append("no tested symbol in protocol_result.yaml results -- detector confidence unconfirmed")
         for sym in tested_symbols:
@@ -7038,8 +7056,12 @@ def _synthesis_load_proposals(proposals_dir: Path, categories: list) -> dict:
     is not used here)."""
     if proposals_dir.exists():
         expected_names = {f"{c}.yaml" for c in categories}
+        # Only an unexpected *.yaml/*.yml is suspicious (a mis-named proposal
+        # file that would otherwise be silently skipped); OS/editor litter
+        # (.DS_Store, foo.yaml~) is not a proposal.
         unexpected = sorted(p.name for p in proposals_dir.iterdir()
-                            if p.is_file() and p.name not in expected_names)
+                            if p.is_file() and p.name.endswith((".yaml", ".yml"))
+                            and not p.name.startswith(".") and p.name not in expected_names)
         if unexpected:
             raise VerdictSynthesisError(
                 f"{proposals_dir}: unexpected file(s) {unexpected} -- only "
@@ -7069,10 +7091,11 @@ def _synthesis_load_proposals(proposals_dir: Path, categories: list) -> dict:
                 if not isinstance(p.get(key), str) or not p[key]:
                     raise VerdictSynthesisError(f"{where}: {key} must be a non-empty string")
             pid = p.get("proposal_id")
-            if not isinstance(pid, str) or not pid.startswith(f"{cat}-"):
+            if not isinstance(pid, str) or not pid.startswith(f"{cat}-") \
+                    or not _SYNTHESIS_PROPOSAL_ID_RE.match(pid):
                 raise VerdictSynthesisError(
-                    f"{where}: proposal_id={pid!r} does not start with '{cat}-' "
-                    f"(a proposal in {cat}.yaml must be this category's own)")
+                    f"{where}: proposal_id={pid!r} must match <category>-<run_id>-<n> "
+                    f"with category '{cat}' (proposal.schema.json pattern)")
             if pid in seen_ids:
                 raise VerdictSynthesisError(f"{where}: duplicate proposal_id {pid!r}")
             seen_ids.add(pid)
@@ -7147,6 +7170,16 @@ def _synthesis_score(proposals_by_cat: dict, categories: list) -> dict:
     }
 
 
+def _pass_rule_is_binding(pre_eval: dict | None) -> bool:
+    """The exact predicate of _resolve_verdict_fields's binding branch (E-018):
+    result PASS/FAIL, not a `discretion: stage` branch, and at least one of the
+    two mechanical fields set. Kept identical to it by
+    test_pass_rule_is_binding_agrees_with_resolve_verdict_fields."""
+    return bool(pre_eval) and pre_eval.get("result") in ("PASS", "FAIL") \
+        and pre_eval.get("discretion") != "stage" \
+        and (pre_eval.get("hypothesis_verdict") is not None or pre_eval.get("lineage_routing") is not None)
+
+
 def _synthesize_verdict(run_dir: Path, hypothesis_family: str,
                         regime_detector_report: dict | None) -> dict:
     """
@@ -7178,19 +7211,23 @@ def _synthesize_verdict(run_dir: Path, hypothesis_family: str,
          (§5.1; see _synthesis_safety_checks for the exact triggers). The
          trigger decision never consults pass_rule_evaluation.yaml or any
          proposal (proposals are not even read on this path);
-         pass_rule_evaluation.yaml is only enum-validated beforehand, so an
-         unknown value there raises rather than hiding behind a pause.
+         pass_rule_evaluation.yaml -- including a binding verdict pair -- is
+         validated beforehand, so a bad value there raises rather than hiding
+         behind a pause. The engine's NOT_READY warmup label never counts as
+         an uninformative regime.
          Route: human_pause.
       2. verdict_blocked -- pass_rule_evaluation.yaml result=VERDICT_BLOCKED:
          the evaluator's G5 preconditions forbid ANY verdict, stage discretion
          included, so scoring proposals would issue an inadmissible one.
          Route: human_pause. (Legacy behaviour let the LLM decide here.)
-      3. binding_pass_rule -- Case A. Binding-ness is decided by
-         _resolve_verdict_fields itself (probed with a sentinel interp, so its
-         predicate is reused, not reimplemented); the (hypothesis_verdict,
-         lineage_routing) pair is carried through verbatim. Proposals are
-         still loaded (and must be well-formed) only to supply
-         proposed_change_dimension for a binding refine.
+      3. binding_pass_rule -- Case A. Binding-ness is _pass_rule_is_binding,
+         the same predicate as _resolve_verdict_fields's binding branch (a
+         test pins them together); the (hypothesis_verdict, lineage_routing)
+         pair is carried through verbatim after being checked, BEFORE step 1,
+         against the authority table and for result=FAIL + promote. Proposals
+         are still loaded (and must be well-formed) only to supply
+         proposed_change_dimension for a binding refine -- the winner's when
+         S_max > 0, else SYNTHESIS_UNSPECIFIED_DIMENSION.
       4. scored_proposals -- Case B: file absent, discretion: stage,
          legacy_not_evaluable or SPEC_ERROR (the four cases
          verdict-interpreter/SKILL.md hands to stage judgment). S_max = best
@@ -7263,6 +7300,9 @@ def _synthesize_verdict(run_dir: Path, hypothesis_family: str,
         pre_eval = _synthesis_load_yaml_strict(pre_path)
         if not isinstance(pre_eval, dict):
             raise VerdictSynthesisError(f"{pre_path}: not a mapping")
+        for key in ("result", "discretion", "hypothesis_verdict", "lineage_routing"):
+            if pre_eval.get(key) is not None and not isinstance(pre_eval.get(key), str):
+                raise VerdictSynthesisError(f"{pre_path}: {key}={pre_eval.get(key)!r} is not a string or null")
         if pre_eval.get("result") not in _SYNTHESIS_KNOWN_PASS_RULE_RESULTS:
             raise VerdictSynthesisError(
                 f"{pre_path}: result={pre_eval.get('result')!r} not in "
@@ -7286,13 +7326,23 @@ def _synthesize_verdict(run_dir: Path, hypothesis_family: str,
     if branch is not None and not isinstance(branch, str):
         raise VerdictSynthesisError(f"{pre_path}: statement_branch_matched={branch!r} is not a string")
 
-    # Case A binding-ness, decided by _resolve_verdict_fields's own predicate:
-    # with a sentinel interp and no breaker override it returns the sentinels
-    # unless its binding branch fired.
-    _not_binding = object()
-    probe = {"hypothesis_verdict": _not_binding, "lineage_routing": _not_binding}
-    hv, lr = _resolve_verdict_fields(probe, "", "", pre_eval=pre_eval)
-    binding = hv is not _not_binding
+    # Case A binding-ness: the same predicate _resolve_verdict_fields uses.
+    binding = _pass_rule_is_binding(pre_eval)
+    hv = lr = None
+    if binding:
+        hv, lr = pre_eval.get("hypothesis_verdict"), pre_eval.get("lineage_routing")
+        # Validated HERE, before the safety checks, so a corrupt binding pair
+        # is never hidden behind a pause.
+        if (hv, lr) not in _VERDICT_ROUTING_TO_LEGACY_STATUS:
+            raise VerdictSynthesisError(
+                f"{pre_path}: binding pair hypothesis_verdict={hv!r}, lineage_routing={lr!r} "
+                f"is not in the authority table {sorted(_VERDICT_ROUTING_TO_LEGACY_STATUS, key=str)}")
+        if pre_eval.get("result") == "FAIL" and hv == "promote":
+            # Would send a failed hypothesis to holdout_evaluation and spend
+            # the single-use holdout. A mis-registered outcome branch, not a verdict.
+            raise VerdictSynthesisError(
+                f"{pre_path}: result=FAIL carries hypothesis_verdict=promote -- inconsistent "
+                f"binding evaluation (check the pre-registered outcome branch)")
     if not binding and pre_eval is not None and pre_eval.get("result") in ("PASS", "FAIL") \
             and pre_eval.get("discretion") is None:
         # _resolve_verdict_fields skips its binding branch when BOTH mechanical
@@ -7372,7 +7422,13 @@ def _synthesize_verdict(run_dir: Path, hypothesis_family: str,
             f"pair hypothesis_verdict={hv!r}, lineage_routing={lr!r} is not in the authority "
             f"table {sorted(_VERDICT_ROUTING_TO_LEGACY_STATUS, key=str)}")
 
-    dimension = scoring["winner"]["change_dimension"] if (lr == "refine" and scoring["winner"]) else None
+    dimension = None
+    if lr == "refine":
+        # Only an evidence-bearing winner (S_max > 0) names the dimension, the
+        # same bar Case B uses; otherwise a non-null sentinel keeps the
+        # circuit breaker able to see repeated unexplained refines.
+        dimension = (scoring["winner"]["change_dimension"] if scoring["winner"] and s_max
+                     else SYNTHESIS_UNSPECIFIED_DIMENSION)
     return {**base, "decided_by": decided_by, "pause": None,
             "hypothesis_verdict": hv, "lineage_routing": lr, "scoring": scoring,
             "proposed_change_dimension": dimension, "rationale": rationale}
