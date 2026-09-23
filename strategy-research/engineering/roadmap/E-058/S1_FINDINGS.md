@@ -358,3 +358,17 @@ Run budget stays 0 as the plan says, but note: **no run on disk has `idea_status
 `grid_evaluation.yaml`** (checked all 60 `runs/` dirs). The plan's "verified on slices 4–5's
 runs" therefore waits on those slices' own real runs, which have not happened yet (no API
 budget). Until then verification is fixture-only.
+
+---
+
+## Decision (operator, 2026-09-23)
+
+All 7 "Guesses for the operator" accepted as recommended: register blocks only
+when `block_manifest.yaml` exists (teaching 1b to write it is a separate small
+ticket, consistent with the target's "1b writes config + manifest + rationale");
+new grid-based KB writer (`legacy_schema: false`); no backfill of old runs;
+`profit_bars: null` for now; scoreboard learns `grid_evaluation.yaml`, output
+location unchanged; component-error runs recorded as an engineering fault with
+no registry/KB entry; memory entry replaced on re-run, registry append-only and
+stops loudly on conflict. Build split S2a (flag + stage + memory writer) then
+S2b (registry + KB writer + scoreboard).
