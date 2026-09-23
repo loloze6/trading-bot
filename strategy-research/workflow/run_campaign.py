@@ -2170,9 +2170,16 @@ def process_once() -> bool:
 
         brief_path = ROOT / entry["refinement_brief_path"]
         brief = _parse_refinement_brief_yaml(brief_path)
+        # E-046a Slice 5b-ii-B1: an operator refinement brief is a refine child
+        # of parent_run_id, so it inherits the parent card's family exactly like
+        # _route_refine's child. Read BEFORE setup_run (a corrupted parent label
+        # raises with no child built); None and no state write while
+        # orchestrator.family_at_creation.enabled is off or for a legacy card.
+        inherited_family = orch._family_to_inherit(ROOT / "runs" / parent_run_id)
         child_id = _next_new_run_id()
         setup_run(child_id)
         _materialize_refinement_run(child_id, brief, brief_path)
+        orch._record_inherited_family(ROOT / "runs" / child_id, inherited_family)
         entry["run_ids"].append(child_id)
         entry["refinement_brief_consumed_for"] = entry["refinement_brief_path"]
         _save_queue(queue)

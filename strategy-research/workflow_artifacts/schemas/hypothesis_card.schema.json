@@ -16,6 +16,13 @@
   ],
   "properties": {
     "hypothesis_id": { "type": "string" },
+    "family": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 48,
+      "pattern": "^[a-z][a-z0-9]*(_[a-z0-9]+)*$",
+      "description": "E-046a Slice 5b-ii-B1: short lowercase snake_case name of the idea's mechanism, set ONCE at idea creation and inherited unchanged (written in code) by every refine child. Written only when orchestrator.family_at_creation.enabled is on (rules: skills/hypothesis-design/FAMILY_FIELD.md); optional here so legacy cards without it stay valid. The circuit breaker counts per family by exact string. Enforced in code by run_phase1_research._hypothesis_family_problem (same regex/length), not by this schema."
+    },
     "thesis": {
       "type": "string",
       "description": "One-sentence plain-English claim about why this strategy should work."
