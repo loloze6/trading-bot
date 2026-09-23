@@ -129,6 +129,15 @@ why, off by default), and the loop-health instrument
 expect. Built in E-030 — see `engineering/roadmap/E-030/EPIC.md` for the
 evidence.
 
+### "What does the campaign remember about each run (under the new grid pipeline)?"
+→ **[`docs/USER_GUIDE.md` stage 17 `regroup_record`](docs/USER_GUIDE.md#stage-17--regroup_record)**
+— `campaign_record/campaign_memory.yaml`, one entry per run (E-058 S2a, off by
+default: `orchestrator.regroup_record.enabled`). Writer
+`tools/campaign_memory.py`, schema
+`workflow_artifacts/schemas/campaign_memory.schema.json`. Runs before the stage
+are not listed; their history is `campaign_record/campaign_knowledge_base.yaml`.
+Trial counts stay in `campaign_state.yaml` → `trial_sharpes`.
+
 ### "What can run autonomously vs needs a human?"
 → **[`docs/WORKFLOW_CAPABILITIES.md`](docs/WORKFLOW_CAPABILITIES.md)** —
 per-stage autonomy boundary within one run.

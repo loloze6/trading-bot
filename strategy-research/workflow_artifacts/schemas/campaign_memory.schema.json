@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "E-058 S2a (delivery_plan_v26.md slice 6a; engineering/roadmap/E-058/S1_FINDINGS.md §3). Applied at write time: tools/campaign_memory.py::upsert_memory passes the whole document to tools/workflow_artifact_validation.validate_workflow_artifact, which picks this file by the target's stem (campaign_memory) like every schema in this directory -- warn-only by default, blocking only under WORKFLOW_ARTIFACT_VALIDATION=raise. tests/test_e058_s2a_regroup_record.py also validates real stage output against it strictly. Entries are closed (additionalProperties: false) so a retired field (hypothesis_family, altitude, lineage_routing, continuation_*) cannot creep in. Two entry forms: a full entry, and a fault-only entry for a run with component errors.",
+  "title": "campaign_record/campaign_memory.yaml",
+  "description": "Per-run campaign memory written by the regroup_record stage (orchestrator.regroup_record.enabled). One entry per run_id, replaced on re-run. Runs before the stage are not listed (legacy history: campaign_knowledge_base.yaml).",
+  "type": "object",
+  "required": ["schema_version", "legacy_note", "runs"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "legacy_note": { "type": "string", "minLength": 1 },
+    "runs": { "type": "object",
+              "additionalProperties": { "oneOf": [ { "$ref": "#/$defs/entry" }, { "$ref": "#/$defs/fault_entry" } ] } }
+  },
+  "$defs": {
+    "nullable_string": { "type": ["string", "null"] },
+    "cell": {
+      "type": "object",
+      "required": ["result"],
+      "additionalProperties": false,
+      "properties": {
+        "result": { "enum": ["PASS", "FAIL", "INCONCLUSIVE"] },
+        "value": {}, "threshold": {}, "n_windows": {}, "n_trades": {}, "reason": {},
+        "per_symbol": { "type": "object" }
+      }
+    },
+    "fault_entry": {
+      "type": "object",
+      "description": "A run with component errors: only the fact of the fault. Its grid, variants and proposals are not parsed (tools/campaign_memory.py::build_fault_entry).",
+      "required": ["run_id", "hypothesis_id", "legacy", "recorded_at", "engineering_fault", "engineering_fault_detail"],
+      "additionalProperties": false,
+      "properties": {
+        "run_id": { "type": "string", "minLength": 1 },
+        "hypothesis_id": { "$ref": "#/$defs/nullable_string", "description": "null when hypothesis_card.yaml is unreadable." },
+        "legacy": { "const": false },
+        "recorded_at": { "type": "string" },
+        "engineering_fault": { "const": "component_execution_error" },
+        "engineering_fault_detail": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 10 }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "required": ["run_id", "hypothesis_id", "legacy", "recorded_at", "idea_status",
+                   "idea_status_reason", "idea_status_ref", "engineering_fault",
+                   "engineering_fault_detail", "grid", "variants", "trial_ids", "protocol_ref",
+                   "timeframe", "proposals", "registry", "profit_bars", "profit_bars_reason",
+                   "kb_entry_id"],
+      "additionalProperties": false,
+      "properties": {
+        "run_id": { "type": "string", "minLength": 1 },
+        "hypothesis_id": { "type": "string", "minLength": 1 },
+        "legacy": { "const": false },
+        "recorded_at": { "type": "string" },
+        "idea_status": { "enum": ["validated", "refuted", "inconclusive"],
+                         "description": "Copied from idea_status.yaml (the grid)." },
+        "idea_status_reason": { "$ref": "#/$defs/nullable_string" },
+        "idea_status_ref": { "type": "string" },
+        "engineering_fault": { "type": "null" },
+        "engineering_fault_detail": { "type": "array", "maxItems": 0 },
+        "grid": {
+          "type": "object",
+          "required": ["ref", "criteria", "variants", "cells", "counts"],
+          "additionalProperties": false,
+          "properties": {
+            "ref": { "type": "string" },
+            "criteria": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+            "variants": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+            "cells": { "type": "object",
+                       "additionalProperties": { "type": "object", "additionalProperties": { "$ref": "#/$defs/cell" } } },
+            "counts": {
+              "type": "object", "additionalProperties": false,
+              "required": ["PASS", "FAIL", "INCONCLUSIVE"],
+              "properties": { "PASS": { "type": "integer" }, "FAIL": { "type": "integer" },
+                              "INCONCLUSIVE": { "type": "integer" } }
+            }
+          }
+        },
+        "variants": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["status", "reason", "config_ref", "forecast_hash", "symbols", "n_windows", "trial_id"],
+            "additionalProperties": false,
+            "properties": {
+              "status": { "enum": ["tested", "failed", "not_tested"] },
+              "reason": { "$ref": "#/$defs/nullable_string" },
+              "config_ref": { "$ref": "#/$defs/nullable_string" },
+              "forecast_hash": { "$ref": "#/$defs/nullable_string",
+                                 "description": "Copied from the variant's campaign_state.trial_sharpes row (a tested variant must have one); null for not_tested. Not the trading-bot run artifact's config hash (reporting/run_artifact.py), which uses compact separators." },
+              "symbols": { "type": "array", "items": { "type": "string" } },
+              "n_windows": { "type": "integer", "minimum": 0, "description": "Distinct walk-forward windows (not symbol x window rows)." },
+              "trial_id": { "$ref": "#/$defs/nullable_string",
+                            "description": "Read-only cross-link to campaign_state.trial_sharpes." }
+            }
+          }
+        },
+        "trial_ids": { "type": "array", "items": { "type": "string" } },
+        "protocol_ref": { "$ref": "#/$defs/nullable_string" },
+        "timeframe": { "$ref": "#/$defs/nullable_string" },
+        "proposals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["category", "ref", "proposal_ids", "count"],
+            "additionalProperties": false,
+            "properties": {
+              "category": { "type": "string" },
+              "ref": { "$ref": "#/$defs/nullable_string" },
+              "proposal_ids": { "type": "array", "items": { "type": "string" } },
+              "count": { "type": "integer", "minimum": 0 }
+            }
+          },
+          "description": "References only -- scores are never copied (they rank candidates in slice 6b)."
+        },
+        "registry": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["skipped"],
+          "properties": { "skipped": { "enum": ["not_built", "not_validated"] } },
+          "description": "S2a: always skipped; the block registry (block_ids) is E-058 S2b."
+        },
+        "profit_bars": { "type": "null" },
+        "profit_bars_reason": { "const": "not evaluated before regroup" },
+        "kb_entry_id": { "type": "null", "description": "The grid-based KB writer is E-058 S2b." }
+      }
+    }
+  }
+}

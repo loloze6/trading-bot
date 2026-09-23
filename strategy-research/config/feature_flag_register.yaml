@@ -283,6 +283,28 @@ flags:
       five reader prompts have never run against a real model, and the
       delivery plan's slice-5 run budget (2 real runs) is unspent.
 
+  - name: regroup_record
+    kind: orchestrator_config
+    config_key: orchestrator.regroup_record.enabled
+    reader: run_phase1_research._regroup_record_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "E-058 S2b (block registry, grid-based KB writer, grid-aware scoreboard) and the specialist_readers run budget it sits behind"
+    criterion: >
+      Landed 2026-09-23 (E-058 S2a, delivery_plan_v26.md slice 6a first
+      half). Off by default, and hard-dependent on specialist_readers being
+      on (raises loudly if set true without it -- see
+      _regroup_record_enabled's own docstring). While true:
+      specialist_readers -> regroup_record -> the unchanged grid route;
+      regroup_record writes one entry per run to
+      campaign_record/campaign_memory.yaml (tools/campaign_memory.py),
+      replaced on re-run, and writes no trial rows. Unit tested with
+      synthetic run dirs (tests/test_e058_s2a_regroup_record.py), flag-off
+      identity proven there. Held off_incomplete: slice 6a's other half (S2b)
+      is unbuilt, so the memory records "registry: skipped: not_built" and
+      "kb_entry_id: null" for every validated run, and no run on disk has yet
+      produced the idea_status.yaml / grid_evaluation.yaml it reads.
+
   - name: bar_equity
     kind: engine_param
     engine_default_files:
