@@ -553,6 +553,43 @@ orchestrator:
       # per-variant conformance-check restructure (a separate call site in
       # run_loop, not run_tool_worker), and _write_promotion_audit's
       # relationship to per-variant results.
+  specialist_readers:
+    enabled: false
+      # E-046a Slice 5b-ii-B (delivery_plan_v26.md slices 2 and 5;
+      # engineering/roadmap/E-046a/S1_FINDINGS_5B_II.md, REALIGNMENT). OFF BY
+      # DEFAULT and read at runtime by
+      # run_phase1_research._specialist_readers_enabled() -- same shape as
+      # orchestrator.config_direct_authoring.enabled above. HARD DEPENDENCIES:
+      # raises (does not silently no-op) if this is true while
+      # grid_evaluation.enabled or category_reports.enabled is false/absent --
+      # the readers read artifacts/reports/<category>.yaml and the route reads
+      # artifacts/idea_status.yaml, which only those two write. run_loop
+      # resolves the flag once at start, so the misconfiguration fails there.
+      #
+      # While false, STAGE_CONFIGS["specialist_readers"] is registered
+      # (unconditionally, same convention as strategy_config_authoring) but
+      # never routed to: protocol_execution's default_next stays
+      # verdict_interpreter and every route is byte-identical to before this
+      # slice -- proven by tests/test_e046a_slice5b_ii_b_readers_stage.py's
+      # flag-off tests.
+      #
+      # While true: protocol_execution -> specialist_readers, which runs the
+      # five reader skills (workflow_artifacts/skills/readers/) one after
+      # another, each seeing only its own report plus grid_evaluation.yaml
+      # and writing artifacts/proposals/<category>.yaml (validated by
+      # tools/reader_proposals.load_proposals, fail loud). The retune firewall
+      # runs before the regime_power reader. verdict_interpreter becomes
+      # unreached (not deleted) and verdict_interpretation.yaml is never
+      # written. The route then comes from the grid only: component errors in
+      # protocol_result.yaml -> human_pause (component_execution_error);
+      # idea_status validated -> promote; refuted -> kill/terminate;
+      # inconclusive -> human_pause (inconclusive_grid). Missing or malformed
+      # idea_status.yaml fails the run. Proposal scores never affect the
+      # route -- they are for the decide-next step (slice 6b).
+      #
+      # Held off_incomplete (see feature_flag_register.yaml): the orchestration
+      # is unit tested with a mocked LLM; no reader has yet run against a real
+      # model (no API budget in this slice's environment).
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------

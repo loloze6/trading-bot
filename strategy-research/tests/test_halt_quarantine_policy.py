@@ -567,7 +567,7 @@ def test_every_known_sticky_flag_branch_has_a_pause_flag_to_reason_entry(tmp_pat
         "regime_misattribution_flagged", "component_execution_error_flagged",
         "kb_reactivation_violation", "pass_rule_evaluation_disagreement",
         "anti_adjacency_gate_exhausted", "variant_anti_adjacency_gate_refused",
-        "variant_gate_insufficient", "profit_bars_reached",
+        "variant_gate_insufficient", "inconclusive_grid", "profit_bars_reached",
     )
     table_flags = {flag for flag, _ in camp._PAUSE_FLAG_TO_REASON}
     for flag in known_sticky_flags:

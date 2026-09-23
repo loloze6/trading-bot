@@ -188,6 +188,19 @@ STAGE_CONFIGS = {
         "default_next": "dynamic_routing",
         "skill": "verdict-interpreter",
     },
+    # E-046a Slice 5b-ii-B (orchestrator.specialist_readers.enabled, off by default):
+    # registered UNCONDITIONALLY (same convention as strategy_config_authoring above) but
+    # only ROUTED to when the flag is on -- see run_loop's protocol_execution override.
+    # Runs the five reader skills (workflow_artifacts/skills/readers/<category>-reader/)
+    # one after another; each writes artifacts/proposals/<category>.yaml. No "skill" key:
+    # this stage is 1:5, not 1:1, so it never goes through _SKILL_MAP -- see
+    # _run_specialist_readers. Under the flag verdict_interpreter above is unreached (not
+    # deleted), and the post-run route comes from the grid (idea_status.yaml), never from
+    # the readers' proposals -- see determine_post_specialist_readers_route.
+    "specialist_readers": {
+        "handoff": "protocol_to_specialist_readers.yaml",
+        "default_next": "dynamic_routing",
+    },
     "campaign_review": {
         "handoff": "campaign_review.yaml",
         "default_next": "dynamic_routing",
@@ -764,15 +777,23 @@ _SKILL_MAP = {
 
 
 def _build_stage_prompt(stage_name: str, handoff: dict, path: Path,
-                         retry_context: str | None = None) -> str:
+                         retry_context: str | None = None,
+                         skill_file_name: str | None = None) -> str:
     """Pure function: assembles the exact prompt text run_claude_worker sends
     to the model. Extracted (2026-08-23, E-032 S2a) so tests can assert on
     the fully-assembled prompt -- including the exclusion-digest
     required_input's flag-off/flag-on byte-identity proof -- WITHOUT
     invoking the agent SDK / spending any tokens. No behavior change: this
     is the same code that used to live inline in run_claude_worker, moved
-    verbatim."""
-    skill_file_name = _SKILL_MAP.get(stage_name)
+    verbatim.
+
+    `skill_file_name` (E-046a Slice 5b-ii-B): an explicit skill directory
+    under workflow_artifacts/skills/, used instead of the _SKILL_MAP lookup.
+    Only the specialist_readers stage passes it (one stage, five skills --
+    _SKILL_MAP is strictly 1:1). Omitted by every other caller, so their
+    prompts are unchanged."""
+    if skill_file_name is None:
+        skill_file_name = _SKILL_MAP.get(stage_name)
     if not skill_file_name:
         raise ValueError(f"No SKILL file mapped for stage: {stage_name}")
 
@@ -2476,6 +2497,400 @@ def _variant_loop_enabled() -> bool:
     return value
 
 
+# ---------------------------------------------------------------------------
+# E-046a Slice 5b-ii-B -- the specialist_readers stage and the interim route
+# from the grid (delivery_plan_v26.md slices 2 and 5; S1_FINDINGS_5B_II.md
+# §2-§4 and its REALIGNMENT section). OFF BY DEFAULT. When on:
+#   - protocol_execution routes to specialist_readers instead of
+#     verdict_interpreter (verdict_interpreter stays registered, unreached --
+#     the validation/config-direct-authoring precedent, not a deletion).
+#   - specialist_readers runs the five reader skills one after another. Each
+#     sees ONLY its own artifacts/reports/<category>.yaml plus
+#     artifacts/grid_evaluation.yaml and writes artifacts/proposals/
+#     <category>.yaml through run_reader_worker, which owns that explicit
+#     output path (run_claude_worker's shared filename regex is untouched).
+#   - the route after the stage comes from the grid ONLY: a component-error
+#     check on protocol_result.yaml first (an engineering fault makes the grid
+#     meaningless), then idea_status.yaml through the existing binding path
+#     (_resolve_verdict_fields -> _dispatch_verdict_route). The proposals'
+#     scores are never read here -- they rank the next candidate in the later
+#     decide-next step (slice 6b), and nothing else.
+# Nothing here reintroduces refine/pivot/escalate routing, the per-family
+# circuit breaker, hypothesis_family, or continuation children (all retired
+# in slice 6c): the route is only ever promote, kill/terminate or a pause.
+# ---------------------------------------------------------------------------
+
+def _specialist_readers_enabled() -> bool:
+    """False (no behavior change) when the key, the section, or the config
+    file is absent -- same silence-is-never-a-green-light rule as
+    _config_direct_authoring_enabled(). A non-bool value raises (a quoted
+    "false" must never read truthy). Structurally requires
+    orchestrator.grid_evaluation.enabled (the route reads idea_status.yaml,
+    which only the grid writes) and orchestrator.category_reports.enabled
+    (each reader reads its artifacts/reports/<category>.yaml, which only the
+    report builder writes): raises, loudly, if this flag is on while either
+    is off -- with either off the stage could only fail later, after spend,
+    or route on a guess."""
+    path = ROOT / "config" / "campaign_config.yaml"
+    if not path.exists():
+        return False
+    with open(path, encoding="utf-8") as f:
+        cfg = yaml.safe_load(f) or {}
+    sr_cfg = ((cfg.get("orchestrator") or {}).get("specialist_readers") or {})
+    value = sr_cfg.get("enabled", False)
+    if not isinstance(value, bool):
+        raise ValueError(
+            f"orchestrator.specialist_readers.enabled={value!r} is not a real "
+            f"boolean (got {type(value).__name__}) -- write an unquoted `true` or "
+            f"`false` in config/campaign_config.yaml, not a quoted string or null."
+        )
+    if value:
+        missing = [name for name, on in (("grid_evaluation", _grid_evaluation_enabled()),
+                                         ("category_reports", _category_reports_enabled()))
+                   if not on]
+        if missing:
+            raise ValueError(
+                "orchestrator.specialist_readers.enabled=true requires "
+                + " and ".join(f"orchestrator.{m}.enabled=true" for m in missing)
+                + " as well -- the readers read artifacts/reports/<category>.yaml "
+                "(written only under category_reports) and the route reads "
+                "artifacts/idea_status.yaml (written only under grid_evaluation). "
+                "Enable all three together."
+            )
+    return value
+
+
+_SPECIALIST_READERS_HANDOFF = "protocol_to_specialist_readers.yaml"
+_READER_MODEL = "claude-haiku-4-5"  # same model run_claude_worker uses for every stage
+_READER_OUTPUT_BLOCK_RE = re.compile(r"```ya?ml[^\n]*\n(.*?)```", re.DOTALL)
+
+
+def _reader_categories() -> list:
+    """The five categories, from tools/build_reports.py::REPORT_CATEGORIES --
+    one source of truth shared with the report builder (Slice 5a)."""
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import build_reports as _br
+    return list(_br.REPORT_CATEGORIES)
+
+
+def _reader_proposals_module():
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import reader_proposals as _rp
+    return _rp
+
+
+def _reader_skill_dir(category: str) -> str:
+    """Skill directory under workflow_artifacts/skills/ for one category."""
+    return f"readers/{category}-reader"
+
+
+def _ensure_specialist_readers_handoff(run_id: str, run_dir: Path) -> Path:
+    """Write the stage-level handoff run_loop loads for specialist_readers,
+    once. Created lazily at stage entry (not in _create_remaining_handoffs),
+    so flag-off runs never get this file. Its only required input is
+    protocol_result.yaml -- the component-error check runs before any
+    reader, and each reader's own inputs are checked per reader."""
+    handoff_path = run_dir / "handoffs" / _SPECIALIST_READERS_HANDOFF
+    if not handoff_path.exists():
+        save_yaml(handoff_path, {
+            "handoff_version": 1, "run_id": run_id,
+            "from_stage": "protocol_execution", "to_stage": "specialist_readers",
+            "assigned_engine": "claude",
+            "objective": (
+                "E-046a: run the five specialist readers, one after another. Each "
+                "reads only its own artifacts/reports/<category>.yaml plus "
+                "artifacts/grid_evaluation.yaml and proposes evidence-grounded "
+                "changes to artifacts/proposals/<category>.yaml. Readers never "
+                "decide or route; the route comes from artifacts/idea_status.yaml."
+            ),
+            "required_inputs": [
+                {"path": "artifacts/protocol_result.yaml",
+                 "reason": "component-error check, before any reader runs"},
+            ],
+            "deliverables": [f"proposals/{c}.yaml" for c in _reader_categories()],
+        })
+    return handoff_path
+
+
+def _protocol_component_errors(run_dir: Path) -> list:
+    """Every results[*] entry whose component_errors.count > 0, in
+    artifacts/protocol_result.yaml and (variant loop) in each
+    artifacts/variants/<id>/protocol_result.yaml -- the grid reads every
+    variant, so an error in any of them makes it meaningless. Missing
+    protocol_result.yaml, or a present but malformed component_errors block,
+    raises: an unreadable error count is not a zero one. An absent/null
+    block (component_errors off for that window) counts as none."""
+    artifacts = run_dir / "artifacts"
+    sources = [artifacts / "protocol_result.yaml"]
+    if not sources[0].exists():
+        raise FileNotFoundError(f"{sources[0]} is missing -- cannot check component errors")
+    variants_dir = artifacts / "variants"
+    if variants_dir.exists():
+        sources += sorted(p / "protocol_result.yaml" for p in variants_dir.iterdir()
+                          if p.is_dir() and (p / "protocol_result.yaml").exists())
+    errors = []
+    for src in sources:
+        pr = load_yaml(src) or {}
+        results = pr.get("results") or []
+        if not isinstance(results, list):
+            raise ValueError(f"{src}: results is not a list ({type(results).__name__})")
+        for i, r in enumerate(results):
+            ce = r.get("component_errors") if isinstance(r, dict) else None
+            if ce is None:
+                continue
+            count = ce.get("count") if isinstance(ce, dict) else None
+            if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+                raise ValueError(f"{src}: results[{i}].component_errors is malformed ({ce!r}) "
+                                 f"-- expected {{count: <int >= 0>, samples: [...]}}")
+            if count > 0:
+                errors.append(f"{src.relative_to(run_dir).as_posix()} results[{i}] "
+                              f"({r.get('symbol')}/{r.get('window')}): "
+                              f"component_errors.count={count}")
+    return errors
+
+
+def _load_idea_status(run_dir: Path, run_id: str) -> dict:
+    """artifacts/idea_status.yaml, validated -- raises on anything that is not
+    exactly what _build_idea_status_artifact writes for this run. The route
+    under specialist_readers is never guessed: a missing, unparseable, stale
+    (other run_id) or internally inconsistent file stops the run."""
+    path = run_dir / "artifacts" / "idea_status.yaml"
+    if not path.exists():
+        raise FileNotFoundError(
+            f"{path} is missing -- under orchestrator.specialist_readers.enabled the "
+            f"route comes only from the grid. It is written by protocol_execution when "
+            f"grid_evaluation is on AND the pass_rule is menu-shaped; check that run's "
+            f"protocol_execution log for a grid-evaluation warning. Refusing to guess a route.")
+    try:
+        doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        raise ValueError(f"{path}: unparseable YAML ({exc})") from exc
+    if not isinstance(doc, dict):
+        raise ValueError(f"{path}: expected a mapping, got {type(doc).__name__}")
+    status = doc.get("idea_status")
+    expected = _GRID_IDEA_STATUS_ROUTING.get(status)
+    if expected is None:
+        raise ValueError(f"{path}: idea_status={status!r} is not one of "
+                         f"{sorted(_GRID_IDEA_STATUS_ROUTING)}")
+    found = (doc.get("result"), doc.get("hypothesis_verdict"), doc.get("lineage_routing"))
+    if found != expected:
+        raise ValueError(f"{path}: (result, hypothesis_verdict, lineage_routing)={found} "
+                         f"disagrees with idea_status={status!r}'s fixed mapping {expected}")
+    if doc.get("run_id") != run_id:
+        raise ValueError(f"{path}: run_id={doc.get('run_id')!r} is not this run ({run_id!r}) "
+                         f"-- a copied or stale grid result")
+    return doc
+
+
+def _idea_hypothesis_id(run_dir: Path) -> str:
+    """The idea's identity under specialist_readers: hypothesis_card.yaml's
+    hypothesis_id (written by hypothesis_generation; verdict_interpretation.yaml
+    only ever restated it). Raises when absent -- falling back to the run_id
+    would let one hypothesis spend the single-use holdout twice under two run
+    ids."""
+    card = load_yaml(run_dir / "artifacts" / "hypothesis_card.yaml") or {}
+    hyp_id = card.get("hypothesis_id")
+    if not isinstance(hyp_id, str) or not hyp_id.strip():
+        raise ValueError(f"{run_dir / 'artifacts' / 'hypothesis_card.yaml'} has no hypothesis_id "
+                         f"-- cannot identify the idea for promotion/holdout accounting")
+    return hyp_id
+
+
+def _reader_handoff(category: str, run_id: str, stage_attempt) -> dict:
+    """The per-reader handoff, built in memory. Its only inputs are this
+    category's report and the grid -- deliberately none of the stage-wide
+    unions (B7 pre-registration, exclusion digest, config-direct context):
+    each reader's SKILL.md scopes it to exactly these two files."""
+    return {
+        "handoff_version": 1, "run_id": run_id,
+        "from_stage": "protocol_execution", "to_stage": "specialist_readers",
+        "reader_category": category,
+        "assigned_engine": "claude",
+        "objective": (f"Read artifacts/reports/{category}.yaml (and artifacts/grid_evaluation.yaml) "
+                      f"and propose zero or more evidence-grounded changes. Output a single YAML "
+                      f"list (`[]` for none) -- it is written to "
+                      f"artifacts/proposals/{category}.yaml."),
+        "required_inputs": [
+            {"path": f"artifacts/reports/{category}.yaml", "reason": f"the {category} report"},
+            {"path": "artifacts/grid_evaluation.yaml", "reason": "the grid's per-criterion result"},
+        ],
+        "deliverables": [f"proposals/{category}.yaml"],
+        "injected_context": {"stage_attempt": str(stage_attempt)},
+    }
+
+
+async def _invoke_reader_llm(prompt: str) -> tuple:
+    """One reader's LLM call. Returns (text, meta). Split out so tests can
+    replace the model without touching prompt building, parsing or writing."""
+    agent_output = ""
+    usage, total_cost, num_turns = {}, 0.0, None
+    async for message in query(prompt=prompt,
+                               options=ClaudeAgentOptions(model=_READER_MODEL, allowed_tools=[])):
+        if isinstance(message, AssistantMessage):
+            for block in message.content:
+                if isinstance(block, TextBlock):
+                    agent_output += block.text
+        if hasattr(message, "total_cost_usd"):
+            usage = getattr(message, "usage", {}) or {}
+            total_cost = getattr(message, "total_cost_usd", 0.0)
+            num_turns = getattr(message, "num_turns", None)
+    return agent_output, {"usage": usage, "cost_usd": total_cost, "num_turns": num_turns}
+
+
+def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0) -> Path:
+    """Run ONE reader skill and write its output to the explicit path
+    artifacts/proposals/<category>.yaml (S1_FINDINGS_5B_II.md §2 option (a):
+    this function owns the path; any filename the model writes in its fenced
+    block is ignored). Exactly one fenced YAML block is required -- zero or
+    several raise, after the raw output is saved for debugging. Validation of
+    the written file is the caller's job (reader_proposals.load_proposals)."""
+    handoff = _reader_handoff(category, run_id, stage_attempt)
+    prompt = _build_stage_prompt("specialist_readers", handoff, run_dir,
+                                 skill_file_name=_reader_skill_dir(category))
+    print(f"\n🧠 [READER INVOKED] {category} ({_reader_skill_dir(category)})")
+    start = time.time()
+    text, meta = asyncio.run(_invoke_reader_llm(prompt))
+    usage = meta.get("usage") or {}
+    tok = {k: usage.get(src, 0) for k, src in (("input", "input_tokens"), ("output", "output_tokens"),
+                                               ("cache_read", "cache_read_input_tokens"),
+                                               ("cache_creation", "cache_creation_input_tokens"))}
+    tok["total"] = sum(tok.values())
+    tok["weighted"] = round(_weighted_token_units(tok["input"], tok["output"],
+                                                  tok["cache_read"], tok["cache_creation"]), 1)
+    update_state(path=run_dir, audit_log={f"specialist_readers_{category}_attempt_{stage_attempt}": {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "engine": "claude-agent-sdk",
+        "execution_time_seconds": round(time.time() - start, 2),
+        "cost_usd": meta.get("cost_usd", 0.0),
+        "num_turns": meta.get("num_turns"),
+        "tokens": tok,
+    }})
+
+    blocks = _READER_OUTPUT_BLOCK_RE.findall(text or "")
+    if len(blocks) != 1:
+        debug_path = run_dir / "artifacts" / f"debug_specialist_readers_{category}_raw_output.txt"
+        debug_path.parent.mkdir(parents=True, exist_ok=True)
+        debug_path.write_text(text or "", encoding="utf-8")
+        raise RuntimeError(f"{category} reader returned {len(blocks)} fenced YAML block(s); exactly "
+                           f"one is required. Raw output saved to {debug_path}.")
+    dest = run_dir / "artifacts" / "proposals" / f"{category}.yaml"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(blocks[0].strip() + "\n", encoding="utf-8")
+    print(f"✅ [READER COMPLETE] {category} -> {dest.relative_to(run_dir).as_posix()}")
+    return dest
+
+
+def _run_specialist_readers(run_id: str, run_dir: Path, stage_attempt=0) -> dict:
+    """The per-category loop (S1_FINDINGS_5B_II.md §3 shape (a)). Sequential:
+    the orchestrator has no fan-out. A category whose proposals file already
+    exists (a resumed run) is re-validated, not re-run; a malformed one raises
+    rather than being silently regenerated. The retune firewall runs before
+    the regime_power reader (§4). Every write is validated with
+    reader_proposals.load_proposals across all five categories, so a bad
+    reader output stops the run at once. Returns the validated proposals --
+    for the log only; nothing downstream in this module routes on them."""
+    categories = _reader_categories()
+    rp = _reader_proposals_module()
+    proposals_dir = run_dir / "artifacts" / "proposals"
+    for category in categories:
+        dest = proposals_dir / f"{category}.yaml"
+        if dest.exists():
+            rp.load_proposals(proposals_dir, categories)
+            print(f"⏭️  proposals/{category}.yaml already present and valid -- reader not re-run.")
+            continue
+        if category == "regime_power":
+            # A2.2 retune firewall, relocated from the verdict_interpreter branch.
+            _aud_path = run_dir / "artifacts" / "regime_audit_decision.yaml"
+            if _aud_path.exists():
+                _fw_violations = _validate_retune_firewall(load_yaml(_aud_path) or {})
+                if _fw_violations:
+                    raise RuntimeError(
+                        "RETUNE FIREWALL VIOLATION — regime_audit_decision.yaml "
+                        "references forbidden strategy metrics:\n"
+                        + "\n".join(f"  - {v}" for v in _fw_violations)
+                    )
+        # Five LLM calls share one stage, so the loop-top budget check alone
+        # would only ever see this stage's spend after the fact.
+        _state = load_yaml(run_dir / "pipeline_state.yaml") or {}
+        _used, _ = _compute_weighted_budget_usage(_state.get("audit_log", {}))
+        _budget = _load_token_budget()
+        if _used > _budget:
+            raise RuntimeError(f"Weighted token budget exceeded before the {category} reader "
+                               f"({_used:,.0f} > {_budget:,.0f}).")
+        run_reader_worker(category, run_id, run_dir, stage_attempt)
+        rp.load_proposals(proposals_dir, categories)
+    missing = [c for c in categories if not (proposals_dir / f"{c}.yaml").exists()]
+    if missing:
+        raise FileNotFoundError(f"specialist_readers finished without proposals for {missing}")
+    return rp.load_proposals(proposals_dir, categories)
+
+
+def _run_specialist_readers_stage(run_id: str, run_dir: Path, stage_attempt=0) -> None:
+    """Stage body. Engineering errors first: when protocol_result.yaml reports
+    component errors the readers are not run at all (the grid they read is
+    meaningless and determine_post_specialist_readers_route pauses). Then
+    idea_status.yaml is validated BEFORE any reader spends a call, so a
+    missing grid result fails at once rather than after five LLM calls."""
+    if not _specialist_readers_enabled():
+        raise RuntimeError("specialist_readers reached with orchestrator.specialist_readers.enabled "
+                           "off -- reset pending_stage to verdict_interpreter or enable the flag.")
+    if _protocol_component_errors(run_dir):
+        print("⏭️  specialist_readers: component errors in protocol_result.yaml -- readers not "
+              "run (the grid is meaningless); the route pauses for a human.")
+        return
+    _load_idea_status(run_dir, run_id)
+    _run_specialist_readers(run_id, run_dir, stage_attempt)
+
+
+def determine_post_specialist_readers_route(path: Path, run_id: str) -> str:
+    """The interim route under orchestrator.specialist_readers.enabled
+    (delivery_plan_v26.md slice 2: "until slice 6c"). Reads ONLY
+    protocol_result.yaml and idea_status.yaml -- never proposals/*.yaml and
+    never verdict_interpretation.yaml.
+      1. any component error -> human_pause (component_execution_error_flagged)
+      2. idea_status validated -> promote (holdout path, unchanged)
+         idea_status refuted   -> kill / terminate
+         idea_status inconclusive -> human_pause (inconclusive_grid)
+    Validated/refuted go through the existing binding path:
+    _resolve_verdict_fields(pre_eval=idea_status) -> _dispatch_verdict_route.
+    No circuit breaker, no refine/pivot/escalate, no hypothesis_family: the
+    `interp` handed on is empty because there is no LLM narrative under this
+    flag, and neither function reads it on the promote / kill+terminate paths
+    except _route_kill's legacy altitude_history family field, left empty."""
+    if not _specialist_readers_enabled():
+        raise RuntimeError("determine_post_specialist_readers_route called with "
+                           "orchestrator.specialist_readers.enabled off")
+    errors = _protocol_component_errors(path)
+    if errors:
+        print("\n⚠️  component_execution_error: a strategy component raised during the "
+              "backtest -- an engineering fault, not a research finding. The grid is "
+              "meaningless on this run; pausing before any route.")
+        for e in errors[:10]:
+            print(f"   - {e}")
+        update_state(path=path, status="paused_for_human",
+                     flags={"component_execution_error_flagged": True})
+        return "human_pause"
+
+    idea = _load_idea_status(path, run_id)
+    status = idea["idea_status"]
+    if status == "inconclusive":
+        print(f"\n⏸️  inconclusive_grid: the grid could not decide this idea "
+              f"(reason: {idea.get('reason')!r}). A human decides -- see "
+              f"artifacts/grid_evaluation.yaml.")
+        update_state(path=path, status="paused_for_human", flags={"inconclusive_grid": True})
+        return "human_pause"
+
+    hypothesis_verdict, lineage_routing = _resolve_verdict_fields({}, "", "", pre_eval=idea)
+    print(f"\n🧮 Route from the grid: idea_status={status} -> "
+          f"{hypothesis_verdict}/{lineage_routing}")
+    return _dispatch_verdict_route(path, run_id, {}, load_campaign_state(),
+                                   hypothesis_verdict, lineage_routing)
+
+
 def _apply_config_direct_authoring_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
     """Union the config-direct-authoring flow's file-presence signals into
     required_inputs for the two stages whose SKILL.md prose branches on
@@ -3384,6 +3799,11 @@ def _create_remaining_handoffs(run_id: str, run_dir: Path):
             "deliverables": ["protocol_result.yaml"],
         })
 
+    # legacy routing (v26 card G) -- retired in slice 6c. Still written under
+    # orchestrator.specialist_readers.enabled (inert: that flag makes
+    # verdict_interpreter unreached, and its deliverables list is bookkeeping
+    # only), exactly like the data_availability_gate handoff above when that
+    # gate is off.
     if not vi_path.exists():
         save_yaml(vi_path, {
             "handoff_version": 1, "run_id": run_id,
@@ -5007,6 +5427,10 @@ def _route_kill(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
     inferred from a single hypothesis's kill verdict.
     """
     print("\n🛑 KILL: hypothesis dead (mechanism falsified / no edge / question answered negatively).")
+    # legacy routing (v26 card G) -- retired in slice 6c: under
+    # orchestrator.specialist_readers.enabled `interp` is {} (no LLM narrative),
+    # so the hypothesis_family written to altitude_history below is "" -- the
+    # retired family concept is deliberately not fed.
     diag = _extract_diagnostics(path)
     update_campaign_state_after_run(run_id, "hypothesis", "",
                                      interp.get("hypothesis_family", ""), "kill", diag)
@@ -5869,8 +6293,14 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
     DSR_THRESHOLD = 0.95
 
     # --- Load verdict interpretation for hypothesis_id ---
-    interp      = load_yaml(run_dir / "artifacts" / "verdict_interpretation.yaml") or {}
-    hyp_id      = interp.get("hypothesis_id", run_id)
+    if _specialist_readers_enabled():
+        # E-046a Slice 5b-ii-B: verdict_interpretation.yaml is never written under
+        # this flag; the idea's id comes from hypothesis_card.yaml (which the old
+        # stage only restated). Raises rather than falling back to run_id.
+        hyp_id = _idea_hypothesis_id(run_dir)
+    else:
+        interp      = load_yaml(run_dir / "artifacts" / "verdict_interpretation.yaml") or {}
+        hyp_id      = interp.get("hypothesis_id", run_id)
 
     # --- Load and filter trial_sharpes from campaign_state ---
     campaign   = load_campaign_state()
@@ -6392,6 +6822,11 @@ def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
         audit = load_yaml(audit_path) or {}
         hyp_id = audit.get("hypothesis_id", run_id)
         passes = audit.get("passes_deflated_threshold")
+    elif _specialist_readers_enabled():
+        # E-046a Slice 5b-ii-B: no verdict_interpretation.yaml under this flag --
+        # same re-point as _write_promotion_audit (hypothesis_card.yaml).
+        hyp_id = _idea_hypothesis_id(run_dir)
+        passes = None
     else:
         interp = load_yaml(ARTIFACTS / "verdict_interpretation.yaml") or {}
         hyp_id = interp.get("hypothesis_id", run_id)
@@ -7447,6 +7882,11 @@ def run_loop(run_id: str):
         _ensure_protocol_from_constraints(RUN_DIR, run_id, _machine_constraints)
         _ensure_protocol_ref_pinned(RUN_DIR, run_id, _machine_constraints)
 
+    # E-046a Slice 5b-ii-B: resolve the specialist_readers flag once, up front, so
+    # a flag set on without its grid_evaluation/category_reports dependencies
+    # fails at the start of the run, before any stage spends anything.
+    _specialist_readers_enabled()
+
     while True:
         current_stage = state.get("pending_stage")
          
@@ -7473,7 +7913,11 @@ def run_loop(run_id: str):
         config = STAGE_CONFIGS[current_stage]
         #Each stage has Handodff YAML (inputs) / required output and default next stage
         handoff_path = HANDOFFS / config["handoff"]
-        
+        if current_stage == "specialist_readers":
+            # E-046a Slice 5b-ii-B: created lazily at stage entry, so flag-off
+            # runs never get this file.
+            _ensure_specialist_readers_handoff(run_id, RUN_DIR)
+
 
 
         # 1. Verify required inputs exist before invoking the agent
@@ -7502,6 +7946,16 @@ def run_loop(run_id: str):
                      stage_attempts=_stage_attempts)
 
         try:
+            # E-046a Slice 5b-ii-B: under the flag verdict_interpreter is never
+            # invoked. A run already routed there before the flag was switched on
+            # stops here instead of spending the LLM call.
+            if current_stage == "verdict_interpreter" and _specialist_readers_enabled():
+                raise RuntimeError(
+                    "verdict_interpreter is unreached under "
+                    "orchestrator.specialist_readers.enabled -- this run was routed here "
+                    "before the flag was switched on. Reset pending_stage to "
+                    "specialist_readers (or switch the flag off) and resume.")
+
             # 3. Inject dynamic state directly into the run's existing handoff file
             handoff_data["run_id"] = state.get("run_id", run_id)
 
@@ -7575,7 +8029,12 @@ def run_loop(run_id: str):
 
             # Invoke the Agent (F4b: one bounded YAML-repair retry on failure)
             expected_outputs = [RUN_DIR / "artifacts" / x for x in handoff_data.get("deliverables", [])]
-            if not _skip_agent:
+            if current_stage == "specialist_readers":
+                # E-046a Slice 5b-ii-B: five reader calls, each through
+                # run_reader_worker (explicit output path), never through
+                # _invoke_agent_with_yaml_retry/_SKILL_MAP.
+                _run_specialist_readers_stage(run_id, RUN_DIR, _this_stage_attempt)
+            elif not _skip_agent:
                 if current_stage == "hypothesis_generation":
                     try:
                         _invoke_agent_with_yaml_retry(current_stage, run_id, RUN_DIR, expected_outputs, state)
@@ -7609,6 +8068,14 @@ def run_loop(run_id: str):
             # both "hypothesis_generation" and "validation"/etc. at once.
             if current_stage == "hypothesis_generation" and _config_direct_authoring_enabled():
                 next_stage = "strategy_config_authoring"
+
+            # E-046a Slice 5b-ii-B: under specialist_readers, protocol_execution's
+            # default_next (verdict_interpreter) is redirected -- verdict_interpreter
+            # becomes unreached, not deleted (same pattern as validation under
+            # config-direct authoring). The protocol_execution branches below can
+            # still override this with human_pause on a conformance violation.
+            if current_stage == "protocol_execution" and _specialist_readers_enabled():
+                next_stage = "specialist_readers"
 
             if current_stage == "validation":
                 next_stage = determine_post_validation_route(RUN_DIR) # Used to trigger state of refinement until (Artifact State is validated OR max refinement reached OR rejected)
@@ -7896,6 +8363,15 @@ def run_loop(run_id: str):
                 # back to "active" -- this branch was missing that guard, which
                 # would have silently un-paused a genuinely halted run and left
                 # resume_pipeline's status check refusing to resume it.
+                if next_stage == "human_pause":
+                    update_state(path=RUN_DIR, status="paused_for_human")
+                    break
+
+            elif current_stage == "specialist_readers":
+                # E-046a Slice 5b-ii-B: the route comes from the grid only
+                # (component-error check, then idea_status.yaml). The readers'
+                # proposals play no part in it.
+                next_stage = determine_post_specialist_readers_route(RUN_DIR, run_id)
                 if next_stage == "human_pause":
                     update_state(path=RUN_DIR, status="paused_for_human")
                     break

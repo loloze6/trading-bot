@@ -936,6 +936,15 @@ def _classify_human_pause(run_dir: Path, state: dict) -> str:
     # early-pipeline sticky-flag branches immediately above it.
     if flags.get("variant_gate_insufficient"):
         return "variant_gate_insufficient"
+    # E-046a Slice 5b-ii-B (orchestrator.specialist_readers.enabled): set by
+    # run_phase1_research.determine_post_specialist_readers_route when the grid's
+    # idea_status.yaml reads `inconclusive` -- delivery_plan_v26.md slice 2's
+    # "inconclusive -> human_pause (reason: inconclusive_grid)". A human decides;
+    # never quarantine-safe. It cannot co-occur with promotion_audit.yaml (an
+    # inconclusive grid never reaches the promote branch), so it needs no rank
+    # above that block; placed here beside the other late-pipeline sticky flags.
+    if flags.get("inconclusive_grid"):
+        return "inconclusive_grid"
     # delivery_plan_v26.md 0.2 (item 2) -- the branch-3 stop
     # (orchestrator.profit_bars_file.enabled, off by default). Must outrank the
     # promotion_audit block below for the exact same reason research_only_unverified
@@ -1167,6 +1176,9 @@ _PAUSE_FLAG_TO_REASON = (
     # which sits immediately after variant_anti_adjacency_gate_refused in
     # that function's own order -- see this flag's comment there.
     ("variant_gate_insufficient", "variant_gate_insufficient"),
+    # E-046a Slice 5b-ii-B. Mirrors _classify_human_pause's branch for this
+    # flag, which sits immediately after variant_gate_insufficient there.
+    ("inconclusive_grid", "inconclusive_grid"),
     # Profit-bars branch-3 stop (orchestrator.profit_bars_file.enabled). Mirrors
     # _classify_human_pause's branch for this flag -- see that flag's comment
     # there for why it must rank above the promotion_audit block. CODE-REVIEW
@@ -1490,6 +1502,15 @@ def _extract_run_numbers(run_dir: Path) -> dict:
         v = d.get("status") or d.get("protocol_verdict")
         if v:
             out["verdict_status"] = v
+
+    # E-046a Slice 5b-ii-B: under orchestrator.specialist_readers.enabled no
+    # verdict_interpretation.yaml is written; the grid's idea_status is the
+    # run's decision, so the log line shows that instead. Flag off: untouched.
+    is_path = artifacts / "idea_status.yaml"
+    if orch._specialist_readers_enabled() and is_path.exists():
+        d = orch.load_yaml(is_path) or {}
+        if d.get("idea_status"):
+            out["idea_status"] = d["idea_status"]
 
     return out
 

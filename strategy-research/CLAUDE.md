@@ -44,8 +44,12 @@ The pipeline is 12 numbered stages:
 Two caveats the guide explains in full:
 
 - The engine's own registry, `STAGE_CONFIGS`
-  (`workflow/run_phase1_research.py::STAGE_CONFIGS`), holds **10** entries as
-  of E-056 Slice 3b (2026-09-21). `data_availability_gate` (E-054 Layer 2)
+  (`workflow/run_phase1_research.py::STAGE_CONFIGS`), holds **11** entries as
+  of E-046a Slice 5b-ii-B (2026-09-23): the 11th, `specialist_readers`, is
+  registered unconditionally but routed to only when
+  `orchestrator.specialist_readers.enabled` is on (off by default), replacing
+  `verdict_interpreter` after `protocol_execution` (see `docs/USER_GUIDE.md`
+  stage 16). `data_availability_gate` (E-054 Layer 2)
   sits between `backtest_specification` and `protocol_execution`.
   **CORRECTED 2026-09-20** (delivery_plan_v26.md s:0.4 item 14): it is now ON
   BY DEFAULT, gated by `orchestrator.data_availability_gate.enabled` in
