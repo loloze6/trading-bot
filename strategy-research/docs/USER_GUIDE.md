@@ -23,6 +23,7 @@ Not sure this is the doc you need? See [`DOC_INDEX.md`](DOC_INDEX.md) first.
     - [Stage 9 — `regime_detector_validation`](#stage-9--regime_detector_validation)
     - [Not a stage — `regime_auditor` (a human procedure)](#not-a-stage--regime_auditor-a-human-procedure)
     - [Stage 11 — `verdict_interpreter`](#stage-11--verdict_interpreter)
+    - [Stage 16 — `specialist_readers`](#stage-16--specialist_readers)
     - [Stage 12 — `campaign_review`](#stage-12--campaign_review)
     - [Stage 13 — `holdout_evaluation`](#stage-13--holdout_evaluation)
   - [2.3 Decision Tree & Routing](#23-decision-tree--routing)
@@ -268,6 +269,7 @@ one place to read when the answer matters.
 | 9 | [**regime_detector_validation**](#stage-9--regime_detector_validation) | Python tool | Establish whether the regime detector is trustworthy enough to condition any metric. |
 | — | [**regime_auditor**](#not-a-stage--regime_auditor-a-human-procedure) | ⚠️ Human, not dispatched | Judge the detector without letting profitability leak into the decision. **Not dispatched by the orchestrator** — see the block. |
 | 11 | [**verdict_interpreter**](#stage-11--verdict_interpreter) | Claude | Decide what the result means, what to do next, and at what size of change. |
+| 16 | [**specialist_readers**](#stage-16--specialist_readers) | Claude (×5 reader skills) | Off by default (E-046a Slice 5b-ii-B, `orchestrator.specialist_readers.enabled`). Replaces stage 11 when on: five readers each propose evidence-grounded changes from one category report; the route comes from the grid (`idea_status.yaml`), never from the readers. |
 | 12 | [**campaign_review**](#stage-12--campaign_review) | Claude | Ask whether the campaign's whole line of attack is still worth pursuing. |
 | 13 | [**holdout_evaluation**](#stage-13--holdout_evaluation) | Python tool + human | Spend the one-shot holdout, and only after everything cheaper has passed. |
 
@@ -310,7 +312,7 @@ family, [altitude](#g-altitude), exhausted — are in the [Glossary](#6-glossary
 | **conformance gate** | A check that a run actually obeyed what it registered in advance — the [protocol](#g-protocol) it pinned, the method it declared. |
 | **upsert** | Write-or-replace. Used for trial rows so a re-run replaces its earlier row instead of adding a second one and inflating the count. |
 | **orchestrator** | The Python program that actually runs the pipeline: `workflow/run_phase1_research.py`. It decides which stage runs next and calls it. When this guide says "the orchestrator does X", it means that file. |
-| **`STAGE_CONFIGS`** | The orchestrator's **list of stages it knows how to run**. If a stage name is not a key in it, the orchestrator has no way to reach that stage. It holds 10 entries. |
+| **`STAGE_CONFIGS`** | The orchestrator's **list of stages it knows how to run**. If a stage name is not a key in it, the orchestrator has no way to reach that stage. It holds 11 entries. |
 | **`_SKILL_MAP`** | The orchestrator's **list of which stages are run by an LLM, and which instruction file each uses**. 7 entries. A stage missing from it cannot be given to Claude — `_build_stage_prompt` refuses and raises an error rather than guessing. |
 | **skill** | The instruction file an LLM stage is given, e.g. `workflow_artifacts/skills/quant-validation/SKILL.md`. It tells the model what to produce. A skill file can exist on disk without anything ever calling it. |
 | **`library_category`** | A field in `config/indicator_library.yaml` saying what **kind** of indicator something is — trend, volatility, funding, and so on. Two variants built from different categories are genuinely different ideas; two that differ only in a threshold are the same idea twice. |
@@ -1134,6 +1136,66 @@ enforced zero promotion-code access to the scoreboard
 by operator decision, once this stage became a reviewed, named exception to
 it — the firewall is now verified by inspection of the routing functions,
 not by a standing test.
+
+---
+
+#### Stage 16 — `specialist_readers`
+**Engine:** Claude — five skills, one call each, in order
+(`workflow_artifacts/skills/readers/<category>-reader/`, categories from
+`tools/build_reports.py::REPORT_CATEGORIES`).
+**Runs:** after `protocol_execution`, only when
+`orchestrator.specialist_readers.enabled` is on (off by default; requires
+`grid_evaluation` and `category_reports` on too, or the run fails at start).
+`default_next: dynamic_routing`.
+
+**Objective.** Turn each category report into concrete, evidence-cited
+proposals for what to try next — without deciding anything about this idea.
+
+**Design rationale.** An idea's status is the grid's job (`idea_status.yaml`,
+mechanical). Readers only propose; their scores rank the next candidate in the
+later decide-next step (delivery_plan_v26.md slice 6b). Keeping them out of the
+route means an LLM can never soften or harden a verdict.
+
+**Stage input (per reader):** `artifacts/reports/<category>.yaml` and
+`artifacts/grid_evaluation.yaml` — nothing else (no pre-registration, no other
+category's report, no regime-audit decision).
+
+**Stage output:** `artifacts/proposals/<category>.yaml` × 5 (a YAML list, `[]`
+for none), each validated by `tools/reader_proposals.py::load_proposals`; a
+malformed file stops the run.
+
+**Features / logic in place**
+
+1. **Explicit output path, validated before it lands.** `run_reader_worker`
+   validates each reader's single fenced YAML block for its category, then
+   moves it into `proposals/<category>.yaml` (temp file + `os.replace`);
+   `run_claude_worker`'s shared filename regex is not used or changed. An
+   invalid output gets one retry with the error in the prompt; a second
+   failure is saved as `debug_specialist_readers_<category>_raw_output.txt`
+   (never at the final path) and stops the run.
+2. **Retune firewall** (`_validate_retune_firewall`) runs at stage entry,
+   before any reader call (and on every resume).
+3. **Everything comes from this attempt.** Under the flag `protocol_execution`
+   deletes `idea_status.yaml`, `grid_evaluation.yaml`, `reports/` and
+   `proposals/` on entry, refreshes `regime_detector_report.yaml` before the
+   reports are built, and fails (after its trial rows are recorded) if the
+   grid or the reports cannot be produced. `run_loop` also refuses to start
+   a flag-on run whose `pre_registration.yaml` pass_rule is not menu-shaped.
+   A token budget exceeded between readers ends the run as
+   `rejected_budget_exceeded`, like the loop-top check.
+4. **Route from the grid only** (`::determine_post_specialist_readers_route`):
+   any `results[*].component_errors.count > 0` in `protocol_result.yaml` →
+   human pause `component_execution_error` (readers are not run); then
+   `idea_status.yaml`: `validated` → promote (holdout path, unchanged),
+   `refuted` → kill/terminate, `inconclusive` → human pause
+   `inconclusive_grid`. Missing or malformed `idea_status.yaml` fails the run.
+   No refine/pivot/escalate and no circuit breaker under this flag; a kill
+   records the run and its diagnostics only (no `altitude_history`, family
+   or `continuation_*` bookkeeping).
+5. **Stage 11 is unreached, not deleted.** Its registry entry and code stay
+   for flag-off runs; `verdict_interpretation.yaml` is never written under the
+   flag. Its readers are listed in
+   `engineering/roadmap/E-046a/S2_5B_II_B_CALLERS.md`.
 
 ---
 

@@ -118,9 +118,11 @@ flags:
       so switching it on has no unmet correctness criterion blocking it,
       only a "nothing would use it yet" one -- held off_incomplete rather
       than on until a real menu-shaped run exists to prove it end-to-end.
-      Also unwired: idea_status.yaml's validated/refuted/inconclusive ->
-      promote/kill/human_pause mapping is written into the artifact but not
-      yet read by any _resolve_verdict_fields call site (slice 6c's scope).
+      idea_status.yaml's validated/refuted/inconclusive ->
+      promote/kill/human_pause mapping is read by a _resolve_verdict_fields
+      call site only under specialist_readers (E-046a 5b-ii-B, off by
+      default, see that entry); with specialist_readers off it is written
+      but not read.
 
   - name: category_reports
     kind: orchestrator_config
@@ -142,7 +144,9 @@ flags:
       the first thing that consumes artifacts/reports/*.yaml -- so this is
       held off_incomplete for "nothing would use it yet," the same reasoning
       grid_evaluation above was held back for, not an unmet correctness
-      criterion.
+      criterion. (2026-09-23: the first consumer, the specialist_readers
+      stage, now exists behind its own off-by-default flag -- see that
+      entry.)
 
   - name: profit_bars_file
     kind: orchestrator_config
@@ -253,6 +257,31 @@ flags:
       constraint Slice 4a's own dispatch flagged (test suite exercises this
       via mocked subprocess, following test_e056_config_direct_authoring.py's
       precedent -- no resolvable trading-bot venv in this build environment).
+
+  - name: specialist_readers
+    kind: orchestrator_config
+    config_key: orchestrator.specialist_readers.enabled
+    reader: run_phase1_research._specialist_readers_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "E-046a slice 5b run budget (2 real runs read by all five readers -- no API budget in slice 5b-ii-B's own environment)"
+    criterion: >
+      Landed 2026-09-23 (E-046a Slice 5b-ii-B). Off by default, and
+      hard-dependent on grid_evaluation and category_reports both being on
+      (raises loudly if set true without them -- see
+      _specialist_readers_enabled's own docstring). While true:
+      protocol_execution routes to the new specialist_readers stage (five
+      reader skills, one after another, each writing
+      artifacts/proposals/<category>.yaml through run_reader_worker's explicit
+      output path, validated fail-loud by tools/reader_proposals.py);
+      verdict_interpreter is unreached (not deleted); the route comes from
+      the grid only (component errors -> human_pause, then idea_status.yaml:
+      validated -> promote, refuted -> kill/terminate, inconclusive ->
+      human_pause inconclusive_grid). Unit tested with a mocked LLM
+      (tests/test_e046a_slice5b_ii_b_readers_stage.py), flag-off identity
+      proven there. Held off_incomplete for an unmet PROOF criterion: the
+      five reader prompts have never run against a real model, and the
+      delivery plan's slice-5 run budget (2 real runs) is unspent.
 
   - name: bar_equity
     kind: engine_param
