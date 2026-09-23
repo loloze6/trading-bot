@@ -2526,231 +2526,6 @@ def _apply_config_direct_authoring_context(stage_name: str, handoff: dict, run_d
 
 
 # ---------------------------------------------------------------------------
-# E-046a Slice 5b-ii-B1 (2026-09-23): hypothesis `family` set ONCE at idea
-# creation, inherited unchanged on refine (operator decision item 4,
-# engineering/roadmap/E-046a/S1_FINDINGS_5B_II.md "Decision (operator,
-# 2026-09-23, second round)"). The circuit breaker and campaign_state's
-# per-family keys count by EXACT string; the legacy verdict_interpreter
-# re-invented the label every run, which silently defeated them.
-#
-# Off by default (orchestrator.family_at_creation.enabled). While off, every
-# function below is a no-op: hypothesis_generation's assembled prompt,
-# _route_refine's child scaffold and run_campaign's refinement-brief child are
-# byte-identical to before this section existed. The one consumer of the field
-# today is _synthesize_verdict (itself not yet wired -- 5b-ii-B2), which fails
-# closed on a card without a valid family regardless of this flag.
-# ---------------------------------------------------------------------------
-
-# Lowercase snake_case: [a-z][a-z0-9]* words joined by single underscores.
-HYPOTHESIS_FAMILY_RE = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
-HYPOTHESIS_FAMILY_MAX_LEN = 48
-# pipeline_state.yaml key a refine child carries from scaffold time until its
-# own hypothesis_generation has run. Written only by code, never by an LLM.
-_INHERITED_FAMILY_STATE_KEY = "inherited_hypothesis_family"
-# The field's authoring instructions. Kept OUT of hypothesis-design/SKILL.md on
-# purpose: SKILL.md is read verbatim into every hypothesis_generation prompt,
-# so editing it would change flag-off LLM input. Injected as a required_input
-# (path relative to the run dir, same convention as criterion_menu.yaml) only
-# when the flag is on.
-_FAMILY_FIELD_INSTRUCTIONS_PATH = "../../workflow_artifacts/skills/hypothesis-design/FAMILY_FIELD.md"
-
-
-def _family_at_creation_enabled() -> bool:
-    """False (no behavior change) when the key, the section, or the config
-    file is absent -- same silence-is-never-a-green-light rule as every other
-    orchestrator.<name>.enabled flag. Same fail-loud-on-non-bool rule as
-    _config_direct_authoring_enabled(): a quoted "false" must never read
-    truthy."""
-    path = ROOT / "config" / "campaign_config.yaml"
-    if not path.exists():
-        return False
-    with open(path, encoding="utf-8") as f:
-        cfg = yaml.safe_load(f) or {}
-    fac_cfg = ((cfg.get("orchestrator") or {}).get("family_at_creation") or {})
-    value = fac_cfg.get("enabled", False)
-    if not isinstance(value, bool):
-        raise ValueError(
-            f"orchestrator.family_at_creation.enabled={value!r} is not a real "
-            f"boolean (got {type(value).__name__}) -- write an unquoted `true` or "
-            f"`false` in config/campaign_config.yaml, not a quoted string or null."
-        )
-    return value
-
-
-def _hypothesis_family_problem(value) -> str | None:
-    """None when `value` is a well-formed family label, else a one-line reason.
-    Pure; shared by creation-time enforcement, refine inheritance and
-    _synthesize_verdict so the three can never disagree on what is valid.
-    No normalisation: ' Keltner ' is rejected, not silently stripped/lowered --
-    a label that needs rewriting was not set by the documented rule."""
-    if not isinstance(value, str):
-        return f"must be a string, got {type(value).__name__} ({value!r})"
-    if not value:
-        return "must be non-empty"
-    if len(value) > HYPOTHESIS_FAMILY_MAX_LEN:
-        return f"must be at most {HYPOTHESIS_FAMILY_MAX_LEN} characters, got {len(value)}"
-    # fullmatch, not match: `$` alone also matches before a trailing "\n".
-    if not HYPOTHESIS_FAMILY_RE.fullmatch(value):
-        return f"{value!r} is not lowercase snake_case ({HYPOTHESIS_FAMILY_RE.pattern})"
-    return None
-
-
-def _family_to_inherit(parent_run_dir: Path) -> str | None:
-    """The family a refine child of `parent_run_dir` must inherit, read from the
-    parent's OWN hypothesis_card.yaml (set at that idea's creation). Call it
-    BEFORE scaffolding the child, so a raise leaves no half-built child behind.
-
-    Returns None -- no inheritance, the child's own hypothesis_generation then
-    sets the family as a fresh creation -- when the flag is off, when the
-    parent never produced a card (e.g. an operator refinement brief on a
-    parent that failed before hypothesis_generation finished), or when the
-    parent card has no `family` KEY at all (a legacy card written before this
-    feature, or while the flag was off). Raises ValueError when the card is
-    not a mapping or the key is present with an invalid value (null, empty,
-    malformed): that is corruption, not a legacy absence, and must not be
-    propagated."""
-    if not _family_at_creation_enabled():
-        return None
-    card_path = parent_run_dir / "artifacts" / "hypothesis_card.yaml"
-    # A parent that is itself a refine child carries the lineage's family on
-    # its inheritance marker even when its own card is missing (it failed
-    # before hypothesis_generation finished) or predates the flag -- never
-    # drop the lineage label in that case.
-    parent_marker = _inherited_family_of(parent_run_dir)
-    if not card_path.exists():
-        if parent_marker is not None:
-            return parent_marker
-        print(f"⚠️  [E-046a family] {parent_run_dir.name}: no parent hypothesis_card.yaml -- the "
-              f"refine child will set its family at its own hypothesis_generation.")
-        return None
-    card = load_yaml(card_path)
-    if not isinstance(card, dict):
-        raise ValueError(f"[E-046a family] {card_path}: not a mapping -- refusing to guess the "
-                         f"family a refine child should inherit.")
-    if "family" not in card:
-        if parent_marker is not None:
-            return parent_marker
-        print(f"⚠️  [E-046a family] {parent_run_dir.name}: parent hypothesis_card.yaml carries no "
-              f"`family` (legacy card) -- the refine child will set its family at its own "
-              f"hypothesis_generation instead of inheriting one.")
-        return None
-    problem = _hypothesis_family_problem(card["family"])
-    if problem:
-        raise ValueError(
-            f"[E-046a family] {card_path}: family {problem} -- refusing to propagate a "
-            f"corrupted family label to a refine child.")
-    return card["family"]
-
-
-def _record_inherited_family(child_run_dir: Path, family: str | None) -> None:
-    """Persist the inherited family on the freshly-scaffolded child's
-    pipeline_state.yaml. No-op for None (flag off / legacy parent), so a
-    flag-off child's state file is byte-identical to before this feature."""
-    if family is None:
-        return
-    update_state(path=child_run_dir, **{_INHERITED_FAMILY_STATE_KEY: family})
-    print(f"  family '{family}' recorded for inheritance by {child_run_dir.name}")
-
-
-def _inherited_family_of(run_dir: Path) -> str | None:
-    """The inheritance marker on this run's pipeline_state.yaml, validated
-    (raises ValueError on a present-but-invalid marker), or None if absent."""
-    state_path = run_dir / "pipeline_state.yaml"
-    state = load_yaml(state_path) if state_path.exists() else None
-    if not isinstance(state, dict) or _INHERITED_FAMILY_STATE_KEY not in state:
-        return None
-    value = state[_INHERITED_FAMILY_STATE_KEY]
-    problem = _hypothesis_family_problem(value)
-    if problem:
-        raise ValueError(
-            f"[E-046a family] {state_path}: {_INHERITED_FAMILY_STATE_KEY} {problem}")
-    return value
-
-
-def _apply_family_at_creation_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
-    """Flag on + hypothesis_generation: add FAMILY_FIELD.md (the field's
-    authoring rules) to required_inputs, and -- for a refine child -- the
-    inherited value to injected_context, so the model writes the right label
-    in the first place. _enforce_hypothesis_family is what actually guarantees
-    it; this only saves a pointless overwrite.
-
-    Flag OFF (the default) or any other stage: no-op -- the handoff dict is
-    never mutated, so _build_stage_prompt's assembled prompt is byte-identical
-    to before this function existed (same acceptance bar as every other
-    _apply_* helper in this module)."""
-    if stage_name != "hypothesis_generation":
-        return
-    if not _family_at_creation_enabled():
-        return
-    required = handoff.setdefault("required_inputs", [])
-    if _FAMILY_FIELD_INSTRUCTIONS_PATH not in {req["path"] for req in required}:
-        required.append({
-            "path": _FAMILY_FIELD_INSTRUCTIONS_PATH,
-            "reason": ("E-046a Slice 5b-ii-B1: REQUIRED `family` field on hypothesis_card.yaml -- "
-                       "follow this file's rules exactly."),
-        })
-    inherited = _inherited_family_of(run_dir)
-    if inherited is not None:
-        handoff.setdefault("injected_context", {})
-        handoff["injected_context"][_INHERITED_FAMILY_STATE_KEY] = inherited
-
-
-def _enforce_hypothesis_family(run_dir: Path) -> None:
-    """Run after hypothesis_generation's deliverables exist. Flag off: no-op.
-
-    Flag on:
-      * refine child (inheritance marker present): the card's `family` is SET
-        to the inherited value in code, whatever the model wrote (missing,
-        malformed, or a different valid label) -- inheritance is mechanical,
-        never delegated to the LLM. The card is rewritten only if it differs.
-      * fresh idea (no marker): the model-authored `family` must be valid
-        (_hypothesis_family_problem); missing/empty/malformed raises
-        ValueError, which run_loop's per-stage handler records as
-        status=failed -- fail closed, never a guessed or normalised label."""
-    if not _family_at_creation_enabled():
-        return
-    card_path = run_dir / "artifacts" / "hypothesis_card.yaml"
-    # Plain safe_load, NOT load_yaml: load_yaml schema-validates on read (so
-    # under WORKFLOW_ARTIFACT_VALIDATION=raise a wrong `family` would raise
-    # before it can be overwritten) and LLM-repairs / keeps only the first
-    # document (so an overwrite would persist a silently mutated card).
-    # Unparseable or multi-document YAML fails loud here instead.
-    card = None
-    if card_path.exists():
-        try:
-            card = yaml.safe_load(card_path.read_text(encoding="utf-8"))
-        except yaml.YAMLError as exc:
-            raise ValueError(f"[E-046a family] {card_path}: not parseable as a single YAML "
-                             f"document ({exc}) -- cannot check its `family` field.") from exc
-    if not isinstance(card, dict):
-        raise ValueError(f"[E-046a family] {card_path}: missing or not a mapping -- cannot "
-                         f"check its `family` field.")
-    inherited = _inherited_family_of(run_dir)
-    if inherited is not None:
-        if card.get("family") != inherited:
-            print(f"⚠️  [E-046a family] {run_dir.name}: hypothesis_card.yaml family="
-                  f"{card.get('family')!r} overwritten with the inherited family {inherited!r} "
-                  f"(refine children never re-derive it).")
-            card["family"] = inherited
-            save_yaml(card_path, card)
-        return
-    _require_fresh_card_family(card, card_path)
-
-
-def _require_fresh_card_family(card: dict, card_path: Path) -> None:
-    """Fresh-idea rule shared by _enforce_hypothesis_family and the multi-card
-    split's pre-validation: the model-authored `family` must be present and
-    valid. Raises ValueError otherwise."""
-    if "family" not in card:
-        raise ValueError(
-            f"[E-046a family] {card_path}: no `family` field -- hypothesis_generation must set "
-            f"one at idea creation (see {_FAMILY_FIELD_INSTRUCTIONS_PATH}).")
-    problem = _hypothesis_family_problem(card["family"])
-    if problem:
-        raise ValueError(f"[E-046a family] {card_path}: family {problem}.")
-
-
-# ---------------------------------------------------------------------------
 # E-032 S2c -- anti-adjacency gate retry/escalate orchestration.
 #
 # Operator ruling (2026-08-23, EPIC.md Log): "Retry up to 4 times with the
@@ -3457,9 +3232,6 @@ async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | 
 
     # E-056 Slice 3b: criterion-menu/cost-model/base-config file-presence signals, off by default (see helper docstring above).
     _apply_config_direct_authoring_context(stage_name, handoff, RUN_DIR)
-
-    # E-046a Slice 5b-ii-B1: family-field instructions + inherited family, off by default (see helper docstring above).
-    _apply_family_at_creation_context(stage_name, handoff, RUN_DIR)
 
     # Select engine from handoff file, default to Claude if not specified
     engine = handoff.get("assigned_engine", "claude")
@@ -4900,25 +4672,6 @@ def _handle_hypothesis_generation_multi_card_split(run_id: str, run_dir: Path) -
           f"additional card.")
 
     first, rest = cards[0], cards[1:]
-
-    # E-046a Slice 5b-ii-B1 (flag on only; flag off: sibling_family stays None
-    # and both calls in the loop below are no-ops). Siblings skip
-    # hypothesis_generation, so run_loop's post-stage _enforce_hypothesis_family
-    # never sees their cards. A sibling of a refine child descends from the same
-    # refine brief and inherits the same family; a sibling of a fresh run is
-    # itself a fresh creation. Every card -- the first included, which run_loop
-    # re-checks after this returns -- is validated here BEFORE any sibling is
-    # scaffolded, so a bad label cannot leave a half-built split behind.
-    sibling_family = None
-    if _family_at_creation_enabled():
-        sibling_family = _inherited_family_of(run_dir)
-        if sibling_family is None:
-            for card in cards:
-                card_data = load_yaml(card)
-                if not isinstance(card_data, dict):
-                    raise ValueError(f"[E-046a family] {card}: not a mapping")
-                _require_fresh_card_family(card_data, card)
-
     shutil.copy(first, expected)
     print(f"   {run_id} keeps {first.name} as hypothesis_card.yaml")
 
@@ -4937,8 +4690,6 @@ def _handle_hypothesis_generation_multi_card_split(run_id: str, run_dir: Path) -
         update_state(path=child_dir, pending_stage="innovation_expansion",
                      current_stage="hypothesis_generation",
                      completed_stages=["hypothesis_generation"], status="active")
-        _record_inherited_family(child_dir, sibling_family)
-        _enforce_hypothesis_family(child_dir)
         children.append(child_id)
         print(f"   {child_id} scaffolded from {card.name}")
 
@@ -5073,15 +4824,9 @@ def _route_refine(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
                      kb_reactivation_violations=_kb_violations)
         return "human_pause"
 
-    # E-046a Slice 5b-ii-B1: the child inherits THIS run's card family, read
-    # before scaffolding so a corrupted label raises with no child built.
-    # None (and no state write) while the flag is off or for a legacy card.
-    inherited_family = _family_to_inherit(path)
-
     next_id = _next_run_id(run_id)
     print(f"\n🔄 REFINE (altitude 1): setting up {next_id} with proposed brief.")
     setup_next_run(path, next_id)
-    _record_inherited_family(ROOT / "runs" / next_id, inherited_family)
     # Copy findings_carryover.yaml (enables directional memory / parameter_bracket)
     carryover_src = path / "artifacts" / "findings_carryover.yaml"
     if carryover_src.exists():
@@ -7111,27 +6856,6 @@ _SYNTHESIS_WARMUP_REGIME = "NOT_READY"
 # `dim in recent_dims` check still sees repeated unexplained refines.
 SYNTHESIS_UNSPECIFIED_DIMENSION = "unspecified"
 _SYNTHESIS_PROPOSAL_ID_RE = re.compile(r"^[a-z_]+-.+-[0-9]+$")
-# 5b-ii-B1: the closed tag vocabulary of primary_failure_mode ("<tag>: ...").
-# The tag is the whole first sentence tools/near_miss_scoreboard.classify_bucket
-# reads, so each tag maps to one stable bucket (pinned by a test): the two
-# regime tags -> "regime", every other tag -> "other". The five reader
-# categories must equal build_reports.REPORT_CATEGORIES (also test-pinned; the
-# schema enumerates the same list).
-_SYNTHESIS_READER_CATEGORY_TAGS = ("profitability", "trade_efficiency", "forecast_power",
-                                   "regime_power", "component_attribution")
-_SYNTHESIS_FAILURE_MODE_TAGS = frozenset({
-    "component_execution_error", "regime_misattribution",   # safety_pause
-    "verdict_blocked",                                       # verdict_blocked
-    "pass_rule_branch",                                      # binding, no evidence-bearing winner
-    "no_evidence_bearing_proposal",                          # scored kill
-    *_SYNTHESIS_READER_CATEGORY_TAGS,                        # an evidence-bearing winner leads
-})
-
-
-def _synthesis_one_line(text: str) -> str:
-    """Collapse all whitespace runs (incl. newlines) to single spaces, so a
-    multi-line evidence entry cannot split primary_failure_mode across lines."""
-    return " ".join(str(text).split())
 
 
 class VerdictSynthesisError(ValueError):
@@ -7166,13 +6890,10 @@ def _synthesis_fmt_number(value: float) -> str:
     return text if text not in ("", "-0") else "0"
 
 
-def _synthesis_safety_checks(protocol_result: dict,
-                             regime_detector_report: dict | None) -> tuple[dict, str] | None:
+def _synthesis_safety_checks(protocol_result: dict, regime_detector_report: dict | None) -> dict | None:
     """§5.1 safety checks, read directly from protocol_result.yaml /
-    regime_detector_report.yaml -- never from reader proposals. Returns
-    (`pause` block, reactivation_trigger text), or None when neither trigger
-    fires. The trigger (5b-ii-B1) restates the check's own clearing condition,
-    built only from values this function already read.
+    regime_detector_report.yaml -- never from reader proposals. Returns a
+    `pause` block, or None when neither trigger fires.
 
     Trigger operationalisation (verdict-interpreter/SKILL.md mechanism_failure
     enum table), each deliberately OVER-inclusive where the table names a field
@@ -7238,12 +6959,9 @@ def _synthesis_safety_checks(protocol_result: dict,
                 f"protocol_result.yaml results[{i}] ({entry.get('symbol')}/{entry.get('window')}): "
                 f"component_errors.count={count}")
     if ce_evidence:
-        return ({"reason": "component_execution_error",
-                 "pipeline_flag": "component_execution_error_flagged",
-                 "evidence": ce_evidence},
-                f"component_execution_error: re-run once the component fault is fixed -- every "
-                f"protocol_result.yaml results[i].component_errors.count must be 0 "
-                f"({len(ce_evidence)} result(s) currently > 0)")
+        return {"reason": "component_execution_error",
+                "pipeline_flag": "component_execution_error_flagged",
+                "evidence": ce_evidence}
 
     # --- regime_misattribution -------------------------------------------------
     hv_block = protocol_result.get("hypothesis_verdict")
@@ -7297,15 +7015,9 @@ def _synthesis_safety_checks(protocol_result: dict,
         f"{'unmeasured' if m is None else m} >= {_SYNTHESIS_RULE4_MIN_MEDIAN_N_BARS} or unmeasured)"
         for r, m in rule4_regimes
     ] + unconfirmed
-    return ({"reason": "regime_misattribution",
-             "pipeline_flag": "regime_misattribution_flagged",
-             "evidence": evidence},
-            f"regime_misattribution: re-run once either (a) regime_detector_report.yaml exists "
-            f"and reports confidence=high for every tested symbol "
-            f"({', '.join(tested_symbols) or 'none recorded -- protocol_result.yaml results must name their symbol first'}), "
-            f"or (b) each uninformative regime [{', '.join(r for r, _ in rule4_regimes)}] has a "
-            f"measured median n_bars below {_SYNTHESIS_RULE4_MIN_MEDIAN_N_BARS} (a sample issue, "
-            f"not a regime finding)")
+    return {"reason": "regime_misattribution",
+            "pipeline_flag": "regime_misattribution_flagged",
+            "evidence": evidence}
 
 
 def _synthesis_change_dimension(proposal: dict, where: str) -> str:
@@ -7406,9 +7118,7 @@ def _synthesis_load_proposals(proposals_dir: Path, categories: list) -> dict:
                         f"{where}: block must carry a string rationale and no undeclared "
                         f"field(s) (got extra {blk_extra})")
             ev = p.get("evidence")
-            # e.strip(), not e (5b-ii-B1): a whitespace-only line is not
-            # evidence, and evidence[0] now feeds primary_failure_mode.
-            if not isinstance(ev, list) or not ev or not all(isinstance(e, str) and e.strip() for e in ev):
+            if not isinstance(ev, list) or not ev or not all(isinstance(e, str) and e for e in ev):
                 raise VerdictSynthesisError(f"{where}: evidence must be a non-empty list of non-empty strings")
             scores = p.get("scores")
             if not isinstance(scores, dict) or set(scores) != set(_SYNTHESIS_SCORE_KEYS):
@@ -7470,7 +7180,8 @@ def _pass_rule_is_binding(pre_eval: dict | None) -> bool:
         and (pre_eval.get("hypothesis_verdict") is not None or pre_eval.get("lineage_routing") is not None)
 
 
-def _synthesize_verdict(run_dir: Path, regime_detector_report: dict | None) -> dict:
+def _synthesize_verdict(run_dir: Path, hypothesis_family: str,
+                        regime_detector_report: dict | None) -> dict:
     """
     E-046a Slice 5b-ii-A: the mechanical replacement for verdict_interpreter's
     LLM routing judgment (S1_FINDINGS_5B_II.md §5). Returns the content of
@@ -7483,18 +7194,12 @@ def _synthesize_verdict(run_dir: Path, regime_detector_report: dict | None) -> d
     Inputs:
       run_dir                 -- the run directory; reads artifacts/
                                  hypothesis_card.yaml, protocol_result.yaml,
-                                 pass_rule_evaluation.yaml (optional),
-                                 proposals/<category>.yaml (each optional),
-                                 and pipeline_state.yaml (optional).
-                                 hypothesis_family is the card's `family`
-                                 (5b-ii-B1: set once at idea creation,
-                                 inherited on refine -- see
-                                 _enforce_hypothesis_family). A card without a
-                                 valid family (legacy, or written while
-                                 orchestrator.family_at_creation.enabled was
-                                 off) raises; so does a family that disagrees
-                                 with pipeline_state.yaml's
-                                 inherited_hypothesis_family marker.
+                                 pass_rule_evaluation.yaml (optional) and
+                                 proposals/<category>.yaml (each optional).
+      hypothesis_family       -- non-empty string, SUPPLIED BY THE CALLER: no
+                                 upstream artifact carries a family label
+                                 (hypothesis_card.schema.json has no family
+                                 field; the legacy value was LLM-authored).
       regime_detector_report  -- the campaign-root regime_detector_report.yaml
                                  content (e.g. _ensure_regime_detector_report's
                                  return), or None when unavailable. Explicit,
@@ -7542,33 +7247,11 @@ def _synthesize_verdict(run_dir: Path, regime_detector_report: dict | None) -> d
 
     The circuit breaker is NOT applied here: it depends on campaign state and
     stays at route time (determine_post_verdict_route), exactly as today.
-
-    primary_failure_mode / reactivation_trigger (5b-ii-B1, operator decision
-    item 5 -- rebuilt mechanically from inputs already read above, no LLM):
-    both are "<tag>: <detail>" with <tag> from a closed vocabulary, so the
-    first sentence tools/near_miss_scoreboard.classify_bucket buckets on is
-    exactly the tag (a stable bucket per tag -- see
-    _SYNTHESIS_FAILURE_MODE_TAGS). Per decided_by:
-      safety_pause      pfm "<pause reason>: <evidence[0]>[ (+N more)]"
-                        trigger "<pause reason>: <the check's clearing condition>"
-      verdict_blocked   pfm "verdict_blocked: <evidence[0]>"
-                        trigger "verdict_blocked: re-run once blocked_by [...] are satisfied"
-      binding_pass_rule promote -> pfm null. Otherwise, with an evidence-bearing
-                        winner (S_max > 0): "<winner category>: <proposal_id>
-                        (S=n/9) <its evidence[0]>; pass_rule <result> branch
-                        <b> (<hv>/<lr>), failed criteria [...]"; without one:
-                        "pass_rule_branch: pass_rule ...". trigger null.
-      scored_proposals  refine -> "<winner category>: <proposal_id> (S=n/9[, low
-                        confidence]) <its evidence[0]>[; failed criteria [...]]";
-                        kill -> "no_evidence_bearing_proposal: <why>[; failed
-                        criteria [...]]". trigger null.
-    reactivation_trigger is null on every non-pause path, deliberately: a
-    pre-registered kill is authoritative (a reader proposal it never tested
-    is not a reason to reopen it -- "never soften a kill"), a no-evidence
-    kill has nothing to reactivate on, and promote/refine are not closures.
-    Inventing text there would write an open reactivation_condition into the
-    KB (_write_kb_findings_entry) and keep a closed lineage looking open.
     """
+    if not isinstance(hypothesis_family, str) or not hypothesis_family.strip():
+        raise VerdictSynthesisError(f"hypothesis_family must be a non-empty string, got {hypothesis_family!r}")
+    hypothesis_family = hypothesis_family.strip()
+
     artifacts = Path(run_dir) / "artifacts"
     card_path = artifacts / "hypothesis_card.yaml"
     pr_path = artifacts / "protocol_result.yaml"
@@ -7576,34 +7259,9 @@ def _synthesize_verdict(run_dir: Path, regime_detector_report: dict | None) -> d
         if not required.exists():
             raise VerdictSynthesisError(f"required input {required} does not exist")
     card = _synthesis_load_yaml_strict(card_path)
-    if not isinstance(card, dict):
-        raise VerdictSynthesisError(f"{card_path}: not a mapping")
-    hypothesis_id = card.get("hypothesis_id")
+    hypothesis_id = card.get("hypothesis_id") if isinstance(card, dict) else None
     if not isinstance(hypothesis_id, str) or not hypothesis_id.strip():
         raise VerdictSynthesisError(f"{card_path}: missing/empty hypothesis_id")
-    # 5b-ii-B1: family comes from the card, never from a caller or an LLM
-    # verdict. Missing (legacy card), null, empty or malformed -> raise; no
-    # strip/lowercase repair (_hypothesis_family_problem).
-    if "family" not in card:
-        raise VerdictSynthesisError(
-            f"{card_path}: no `family` field (legacy card, or written while "
-            f"orchestrator.family_at_creation.enabled was off) -- cannot scope the "
-            f"circuit breaker; refusing to synthesize a verdict")
-    family_problem = _hypothesis_family_problem(card["family"])
-    if family_problem:
-        raise VerdictSynthesisError(f"{card_path}: family {family_problem}")
-    hypothesis_family = card["family"]
-    state_path = Path(run_dir) / "pipeline_state.yaml"
-    if state_path.exists():
-        run_state = _synthesis_load_yaml_strict(state_path)
-        if not isinstance(run_state, dict):
-            raise VerdictSynthesisError(f"{state_path}: not a mapping")
-        if _INHERITED_FAMILY_STATE_KEY in run_state \
-                and run_state[_INHERITED_FAMILY_STATE_KEY] != hypothesis_family:
-            raise VerdictSynthesisError(
-                f"{card_path}: family={hypothesis_family!r} disagrees with the inherited "
-                f"family {run_state[_INHERITED_FAMILY_STATE_KEY]!r} recorded on "
-                f"{state_path.name} -- a refine child must keep its parent's family")
     protocol_result = _synthesis_load_yaml_strict(pr_path)
     if not isinstance(protocol_result, dict):
         raise VerdictSynthesisError(f"{pr_path}: not a mapping")
@@ -7712,38 +7370,27 @@ def _synthesize_verdict(run_dir: Path, regime_detector_report: dict | None) -> d
         "diagnostic_snapshot": snapshot,
     }
 
-    def _paused(decided_by: str, pause: dict, reactivation_trigger: str) -> dict:
-        extra = len(pause["evidence"]) - 1
+    def _paused(decided_by: str, pause: dict) -> dict:
         return {**base, "decided_by": decided_by, "pause": pause,
                 "hypothesis_verdict": None, "lineage_routing": None, "scoring": None,
                 "proposed_change_dimension": None,
-                "primary_failure_mode": (f"{pause['reason']}: {_synthesis_one_line(pause['evidence'][0])}"
-                                         + (f" (+{extra} more)" if extra else "")),
-                "reactivation_trigger": reactivation_trigger,
                 "rationale": (f"{decided_by}: {pause['reason']} -- route to human_pause. "
                               f"{'; '.join(pause['evidence'])}. {numbers}")}
 
     # 1. safety checks -- independent of pass rule and proposals.
-    safety = _synthesis_safety_checks(protocol_result, regime_detector_report)
-    if safety is not None:
-        pause, trigger = safety
-        return _paused("safety_pause", pause, trigger)
+    pause = _synthesis_safety_checks(protocol_result, regime_detector_report)
+    if pause is not None:
+        return _paused("safety_pause", pause)
 
     # 2. VERDICT_BLOCKED.
     if pass_rule_block["result"] == "VERDICT_BLOCKED":
-        blocked_by = pre_eval.get("blocked_by")
-        if blocked_by is None:
-            blocked_by = []
-        if not isinstance(blocked_by, list) or not all(isinstance(g, str) and g.strip() for g in blocked_by):
-            raise VerdictSynthesisError(
-                f"{pre_path}: blocked_by={blocked_by!r} is not a list of non-empty strings")
+        blocked_by = pre_eval.get("blocked_by") or []
         return _paused("verdict_blocked", {
             "reason": "verdict_blocked",
             "pipeline_flag": "verdict_blocked_flagged",
             "evidence": [f"pass_rule_evaluation.yaml result=VERDICT_BLOCKED, blocked_by={blocked_by}: "
                          f"{pre_eval.get('reason') or 'no reason recorded'}"],
-        }, (f"verdict_blocked: re-run once pass_rule_evaluation.yaml's blocked precondition(s) "
-            f"[{', '.join(blocked_by) or 'none named'}] are satisfied (result no longer VERDICT_BLOCKED)"))
+        })
 
     import build_reports as _br  # tools/ is on sys.path (module top); one category list, one source
     categories = list(_br.REPORT_CATEGORIES)
@@ -7782,44 +7429,9 @@ def _synthesize_verdict(run_dir: Path, regime_detector_report: dict | None) -> d
         # circuit breaker able to see repeated unexplained refines.
         dimension = (scoring["winner"]["change_dimension"] if scoring["winner"] and s_max
                      else SYNTHESIS_UNSPECIFIED_DIMENSION)
-
-    # 5b-ii-B1: primary_failure_mode (see the docstring's per-path table).
-    # The winner "leads" only when evidence-bearing (S_max > 0) -- the same
-    # bar the dimension uses just above.
-    failed = [c["criterion"] for c in criteria_summary if c["result"] == "FAIL"]
-    failed_note = f"failed criteria [{', '.join(failed)}]"
-    lead = None
-    if scoring["winner"] and s_max:
-        w = scoring["winner"]
-        w_prop = next(p for p in proposals[w["category"]] if p["proposal_id"] == w["proposal_id"])
-        low = ", low confidence" if scoring["low_confidence"] else ""
-        lead = (w["category"], f"{w['proposal_id']} (S={s_max}/9{low}) "
-                               f"{_synthesis_one_line(w_prop['evidence'][0])}")
-    if hv == "promote":
-        failure_mode = None
-    elif decided_by == "binding_pass_rule":
-        pass_rule_text = (f"pass_rule {pass_rule_block['result']} branch {branch or 'unrecorded'} "
-                          f"({hv}/{lr}), {failed_note}")
-        failure_mode = (f"{lead[0]}: {lead[1]}; {pass_rule_text}" if lead
-                        else f"pass_rule_branch: {pass_rule_text}")
-    else:
-        tail = f"; {failed_note}" if failed else ""
-        if lead:
-            failure_mode = f"{lead[0]}: {lead[1]}{tail}"
-        else:
-            n_props = sum(scoring["proposal_counts"].values())
-            why = ("no reader proposed anything" if s_max is None
-                   else f"all {n_props} proposal(s) scored 0/9")
-            failure_mode = f"no_evidence_bearing_proposal: {why}{tail}"
-    if failure_mode is not None and failure_mode.split(": ", 1)[0] not in _SYNTHESIS_FAILURE_MODE_TAGS:
-        raise VerdictSynthesisError(f"primary_failure_mode tag outside the closed vocabulary: {failure_mode!r}")
     return {**base, "decided_by": decided_by, "pause": None,
             "hypothesis_verdict": hv, "lineage_routing": lr, "scoring": scoring,
-            "proposed_change_dimension": dimension,
-            "primary_failure_mode": failure_mode,
-            # Null on every non-pause path, deliberately -- see docstring.
-            "reactivation_trigger": None,
-            "rationale": rationale}
+            "proposed_change_dimension": dimension, "rationale": rationale}
 
 
 def determine_post_verdict_route(path: Path, run_id: str):
@@ -8596,11 +8208,6 @@ def run_loop(run_id: str):
                     _invoke_agent_with_yaml_retry(current_stage, run_id, RUN_DIR, expected_outputs, state)
             else:
                 ensure_files(expected_outputs)
-
-            # E-046a Slice 5b-ii-B1: family set once at creation / inherited on
-            # refine. No-op while orchestrator.family_at_creation.enabled is off.
-            if current_stage == "hypothesis_generation":
-                _enforce_hypothesis_family(RUN_DIR)
 
             # 4b. For campaign_review: validate YAML is parseable (LLM often emits colons in list items)
             if current_stage == "campaign_review" and not _skip_agent:

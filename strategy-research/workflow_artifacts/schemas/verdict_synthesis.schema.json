@@ -7,8 +7,7 @@
   "required": [
     "schema_version", "hypothesis_id", "hypothesis_family", "decided_by", "pause",
     "hypothesis_verdict", "lineage_routing", "pass_rule", "scoring",
-    "proposed_change_dimension", "criteria_summary", "diagnostic_snapshot",
-    "primary_failure_mode", "reactivation_trigger", "rationale"
+    "proposed_change_dimension", "criteria_summary", "diagnostic_snapshot", "rationale"
   ],
   "additionalProperties": false,
   "properties": {
@@ -21,9 +20,7 @@
     "hypothesis_family": {
       "type": "string",
       "minLength": 1,
-      "maxLength": 48,
-      "pattern": "^[a-z][a-z0-9]*(_[a-z0-9]+)*$",
-      "description": "E-046a 5b-ii-B1: copied from artifacts/hypothesis_card.yaml's `family` (set once at idea creation, inherited unchanged in code by refine children -- orchestrator.family_at_creation.enabled). A card without a valid family makes the synthesis raise. Used by the circuit breaker's per-family scoping (exact-string match)."
+      "description": "Supplied by the caller (no upstream artifact carries a family label today -- hypothesis_card.schema.json has no family field; the legacy value was LLM-authored inside verdict_interpretation.yaml). Used by the circuit breaker's per-family scoping."
     },
     "decided_by": {
       "enum": ["safety_pause", "verdict_blocked", "binding_pass_rule", "scored_proposals"]
@@ -167,18 +164,6 @@
         "gross_pnl": { "type": ["number", "null"] }
       }
     },
-    "primary_failure_mode": {
-      "type": ["string", "null"],
-      "minLength": 1,
-      "pattern": "^(component_execution_error|regime_misattribution|verdict_blocked|pass_rule_branch|no_evidence_bearing_proposal|profitability|trade_efficiency|forecast_power|regime_power|component_attribution): \\S",
-      "description": "E-046a 5b-ii-B1, rebuilt mechanically (no LLM): '<tag>: <detail>', null iff hypothesis_verdict == promote. <tag> is a closed vocabulary so the first sentence near_miss_scoreboard.classify_bucket reads is exactly the tag (regime_misattribution/regime_power -> 'regime', every other tag -> 'other'). safety_pause/verdict_blocked: the pause reason + its first evidence line. binding_pass_rule/scored_proposals: the evidence-bearing (S_max > 0) winner's category + '<proposal_id> (S=n/9) <its evidence[0]>' when one exists, else pass_rule_branch (binding) / no_evidence_bearing_proposal (scored kill); plus the pass-rule branch and failed criteria where present."
-    },
-    "reactivation_trigger": {
-      "type": ["string", "null"],
-      "minLength": 1,
-      "pattern": "^(component_execution_error|regime_misattribution|verdict_blocked): \\S",
-      "description": "E-046a 5b-ii-B1, rebuilt mechanically: non-null ONLY on the two pause paths, where it restates the pause's own clearing condition ('<pause reason>: re-run once ...'). Deliberately null on binding_pass_rule and scored_proposals: a pre-registered kill is authoritative (never softened by an untested reader proposal), a no-evidence kill has nothing to reactivate on, and promote/refine are not closures. Feeds the KB's reactivation_condition (5b-ii-B2), where invented text would keep a closed lineage looking open."
-    },
     "rationale": {
       "type": "string",
       "minLength": 1,
@@ -242,50 +227,6 @@
       "$comment": "A FAIL result never promotes (would spend the single-use holdout).",
       "if": { "properties": { "pass_rule": { "properties": { "result": { "const": "FAIL" } }, "required": ["result"] } }, "required": ["pass_rule"] },
       "then": { "properties": { "hypothesis_verdict": { "not": { "const": "promote" } } } }
-    },
-    {
-      "$comment": "5b-ii-B1: promote <-> no failure mode. Every other output (pauses included) names one.",
-      "if": { "properties": { "hypothesis_verdict": { "const": "promote" } }, "required": ["hypothesis_verdict"] },
-      "then": { "properties": { "primary_failure_mode": { "const": null } } },
-      "else": { "properties": { "primary_failure_mode": { "type": "string" } } }
-    },
-    {
-      "$comment": "5b-ii-B1: pause paths carry a trigger whose tag, like the failure mode's, is the pause reason.",
-      "if": { "properties": { "pause": { "not": { "type": "null" }, "properties": { "reason": { "const": "component_execution_error" } }, "required": ["reason"] } }, "required": ["pause"] },
-      "then": { "properties": {
-        "primary_failure_mode": { "type": "string", "pattern": "^component_execution_error: " },
-        "reactivation_trigger": { "type": "string", "pattern": "^component_execution_error: " } } }
-    },
-    {
-      "if": { "properties": { "pause": { "not": { "type": "null" }, "properties": { "reason": { "const": "regime_misattribution" } }, "required": ["reason"] } }, "required": ["pause"] },
-      "then": { "properties": {
-        "primary_failure_mode": { "type": "string", "pattern": "^regime_misattribution: " },
-        "reactivation_trigger": { "type": "string", "pattern": "^regime_misattribution: " } } }
-    },
-    {
-      "if": { "properties": { "pause": { "not": { "type": "null" }, "properties": { "reason": { "const": "verdict_blocked" } }, "required": ["reason"] } }, "required": ["pause"] },
-      "then": { "properties": {
-        "primary_failure_mode": { "type": "string", "pattern": "^verdict_blocked: " },
-        "reactivation_trigger": { "type": "string", "pattern": "^verdict_blocked: " } } }
-    },
-    {
-      "$comment": "5b-ii-B1: no reactivation trigger off the pause paths (see the field's description).",
-      "if": { "properties": { "decided_by": { "enum": ["binding_pass_rule", "scored_proposals"] } }, "required": ["decided_by"] },
-      "then": { "properties": { "reactivation_trigger": { "const": null } } }
-    },
-    {
-      "if": { "properties": { "decided_by": { "const": "binding_pass_rule" } }, "required": ["decided_by"] },
-      "then": { "properties": { "primary_failure_mode": {
-        "pattern": "^(pass_rule_branch|profitability|trade_efficiency|forecast_power|regime_power|component_attribution): " } } }
-    },
-    {
-      "if": { "properties": { "decided_by": { "const": "scored_proposals" }, "hypothesis_verdict": { "const": "kill" } }, "required": ["decided_by", "hypothesis_verdict"] },
-      "then": { "properties": { "primary_failure_mode": { "type": "string", "pattern": "^no_evidence_bearing_proposal: " } } }
-    },
-    {
-      "if": { "properties": { "decided_by": { "const": "scored_proposals" }, "hypothesis_verdict": { "const": "refine" } }, "required": ["decided_by", "hypothesis_verdict"] },
-      "then": { "properties": { "primary_failure_mode": { "type": "string",
-        "pattern": "^(profitability|trade_efficiency|forecast_power|regime_power|component_attribution): " } } }
     }
   ]
 }
