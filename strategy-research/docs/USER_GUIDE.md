@@ -1371,6 +1371,7 @@ Each [run](#g-run) stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-
 | `target_market` | Symbol, timeframe, and [regime](#g-regime) conditions where the signal applies |
 | `assumptions` | List of things that must be true for the signal to work (falsifiable) |
 | `expected_failure_modes` | Pre-enumerated ways this hypothesis could fail in practice |
+| `family` | *(Only while `orchestrator.family_at_creation.enabled` is on, E-046a Slice 5b-ii-B1.)* Short lowercase snake_case label for the idea's mechanism (e.g. `keltner_breakout`), set ONCE when the idea is created and copied unchanged by code onto every refine child. The circuit breaker counts refines/failures per family by exact string. Rules: `workflow_artifacts/skills/hypothesis-design/FAMILY_FIELD.md` |
 
 ---
 

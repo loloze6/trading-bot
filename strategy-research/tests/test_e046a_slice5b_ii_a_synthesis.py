@@ -108,7 +108,8 @@ def _make_run(tmp_path, *, protocol=None, pass_rule=None, proposals=None, raw_pr
     left absent. raw_proposals: {filename: text} written verbatim."""
     art = tmp_path / "run" / "artifacts"
     art.mkdir(parents=True)
-    (art / "hypothesis_card.yaml").write_text(yaml.safe_dump({"hypothesis_id": "H-TEST-1"}), encoding="utf-8")
+    (art / "hypothesis_card.yaml").write_text(
+        yaml.safe_dump({"hypothesis_id": "H-TEST-1", "family": FAMILY}), encoding="utf-8")
     (art / "protocol_result.yaml").write_text(
         yaml.safe_dump(protocol if protocol is not None else _protocol_result()), encoding="utf-8")
     if pass_rule is not None:
@@ -123,7 +124,7 @@ def _make_run(tmp_path, *, protocol=None, pass_rule=None, proposals=None, raw_pr
 
 
 def _synth(run_dir, report="default"):
-    return rpr._synthesize_verdict(run_dir, FAMILY, _detector_report() if report == "default" else report)
+    return rpr._synthesize_verdict(run_dir, _detector_report() if report == "default" else report)
 
 
 def _assert_valid(out):
@@ -451,9 +452,13 @@ def test_unknown_detector_confidence_fails_closed(tmp_path):
 
 
 def test_missing_required_inputs_and_family(tmp_path):
+    # 5b-ii-B1: the family now comes from the card (see
+    # test_e046a_slice5b_ii_b1_family.py for the full family matrix).
     run = _make_run(tmp_path)
+    (run / "artifacts" / "hypothesis_card.yaml").write_text(
+        yaml.safe_dump({"hypothesis_id": "H-TEST-1", "family": "  "}), encoding="utf-8")
     with pytest.raises(rpr.VerdictSynthesisError):
-        rpr._synthesize_verdict(run, "  ", _detector_report())
+        _synth(run)
     (run / "artifacts" / "hypothesis_card.yaml").unlink()
     with pytest.raises(rpr.VerdictSynthesisError):
         _synth(run)
