@@ -633,3 +633,27 @@ call); literal STAGE_CONFIGS deletion vs. unreached-pattern (operator call);
 `test_e056_config_direct_authoring.py`'s exact mock mechanics (still unread); the 3
 tools' comment-only status (still unverified); exact new function signatures for
 `run_reader_worker`/the synthesis function.
+
+---
+
+## Decision (operator, 2026-09-23)
+
+The three items flagged above as operator calls are resolved:
+
+1. **Synthesized artifact shape — NEW clean file/schema, not the legacy
+   `verdict_interpretation.yaml` path/shape.** Overrides this document's §7
+   recommendation (a). The operator judged the extra re-pointing effort worth a
+   clean target. Consequence: the 16 existing readers of the legacy file must be
+   re-pointed individually; that re-pointing belongs to 5b-ii-B. 5b-ii-A designs
+   the new filename/schema.
+2. **`STAGE_CONFIGS["verdict_interpreter"]` — bypass, not delete.** Accepts §1's
+   recommendation: keep the entry registered, make it unreached by redirecting
+   `STAGE_CONFIGS["protocol_execution"]["default_next"]` under the flag (the
+   `validation`/`strategy_config_authoring` precedent). Applies to 5b-ii-B.
+3. **Refine/kill threshold — static `S_max >= 6` as the first setup.** Accepts §5.2
+   as a starting constant, explicitly untuned. Clarified for the record: this is a
+   per-hypothesis refine-vs-kill decision for the non-binding (`discretion: stage`)
+   case, not a ranking of an ideas backlog; the refine/kill routing outcomes remain
+   live.
+
+Build order: 5b-ii-A (synthesis function + tests) first; 5b-ii-B after.
