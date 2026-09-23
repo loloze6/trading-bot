@@ -20,9 +20,9 @@ Covers:
      (S1_FINDINGS.md §4), confirmed new content, not adapted content.
   5. Routing-authority guard: every reader's own Forbidden section explicitly forbids emitting
      hypothesis_verdict/lineage_routing, and no reader's Output requirements section defines
-     either as a field it must populate -- the mechanical verdict-synthesis step (5b-ii, not
-     yet built) is the sole owner of that decision (S1_FINDINGS.md's "Decision" section,
-     2026-09-22).
+     either as a field it must populate -- an idea's status comes from the grid
+     (idea_status.yaml); reader scores only rank candidates for decide-next (E-046a
+     realignment, 2026-09-23).
 
 WHY THIS FILE'S TEST STRATEGY IS MOCKED-CONTENT VALIDATION, NOT A REAL LLM CALL
 --------------------------------------------------------------------------------
@@ -495,8 +495,8 @@ def test_schema_rejects_any_undeclared_top_level_field():
 def test_schema_requires_patch_items_to_name_their_field():
     """5b-ii-A REVIEW REGRESSION: patch items were bare {type: object}, so a
     reader could write {component, param, ...} and pass the schema while the
-    mechanical verdict synthesis (which derives the change dimension from
-    `field`) rejected it. The contract and the consumer now agree."""
+    loader (tools/reader_proposals.py) rejected it. The contract and the
+    consumer now agree."""
     bad = copy.deepcopy(_VALID_EXAMPLES["profitability"])
     assert bad["kind"] == "patch"
     bad["patch"] = [{"component": "keltner", "param": "atr_multiplier", "before": 2.0, "after": 2.5}]

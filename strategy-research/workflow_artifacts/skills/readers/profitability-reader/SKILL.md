@@ -4,8 +4,7 @@ description: Reads artifacts/reports/profitability.yaml (Slice 5a) plus artifact
   (E-046b, when present) and proposes evidence-grounded patch/new_block candidates to
   artifacts/proposals/profitability.yaml. One of 5 specialist readers replacing
   verdict-interpreter/SKILL.md's monolithic context (E-046a Slice 5b-i). Does NOT decide
-  hypothesis_verdict/lineage_routing/status -- that authority stays with the not-yet-built
-  mechanical verdict-synthesis step (5b-ii; see S1_FINDINGS.md's "Decision" section, 2026-09-22).
+  hypothesis_verdict/lineage_routing/status -- an idea's status comes from the grid (idea_status.yaml) and the scores only rank candidates for the decide-next step (E-046a realignment, 2026-09-23).
 ---
 
 # Profitability Reader
@@ -86,9 +85,8 @@ rubric_version: "profitability-reader-v1"
 
 **Patch item shape (required, `proposal.schema.json`):** every item of a `patch` list is
 exactly `{component_id, field, before, after}` -- `field` is the dotted path of the changed
-parameter inside that component (e.g. `transforms[2].params.min_abs`). The mechanical verdict
-synthesis derives the change dimension from `field`, so a patch item without it stops the
-pipeline. A `new_block`'s `block.config_paths` must list at least one path.
+parameter inside that component (e.g. `transforms[2].params.min_abs`). `tools/reader_proposals.py` rejects a patch item
+without it, which stops the pipeline. A `new_block`'s `block.config_paths` must list at least one path.
 
 ### `evidence` format rule
 Must cite a specific field path from `profitability.yaml`'s own `slices`, not a restatement:
@@ -167,9 +165,8 @@ fields actually show -- deviate only with an explicit, cited reason in `evidence
   (fragment_patterns.yaml specifically: it is ideation-only, never verdict-adjacent evidence,
   per verdict-interpreter/SKILL.md's own firewall).
 - Do not emit `hypothesis_verdict`/`lineage_routing`/`status`/`promote`/`kill`/`refine`/
-  `pivot`/`escalate` anywhere in `proposals/profitability.yaml`. That decision belongs to the
-  not-yet-built mechanical verdict-synthesis step (5b-ii) reading across all 5 readers'
-  proposals together -- a single reader proposing a route would pre-empt that step.
+  `pivot`/`escalate` anywhere in `proposals/profitability.yaml`. An idea's status comes from the grid, not from readers, and
+  verdict routing is being retired; a reader only proposes changes.
 - Do not propose a sizing/leverage-only patch to fix a cost_drag_pct problem (Rule 1) --
   mathematically invariant to sizing, see Rule 1 above.
 - Do not invent component classes, transform ops, or regime names absent from
