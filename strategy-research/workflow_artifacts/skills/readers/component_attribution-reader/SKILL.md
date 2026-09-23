@@ -7,8 +7,7 @@ description: Reads artifacts/reports/component_attribution.yaml (Slice 5a) plus
   Slice 5b-i). Unlike the other 4 readers, this category has NO existing rule-block analog in
   verdict-interpreter/SKILL.md -- its rules below are new content, authored for this build
   (see "Rules" section's own reasoning). Does NOT decide hypothesis_verdict/lineage_routing/
-  status -- that authority stays with the not-yet-built mechanical verdict-synthesis step
-  (5b-ii; see S1_FINDINGS.md's "Decision" section, 2026-09-22).
+  status -- an idea's status comes from the grid (idea_status.yaml) and the scores only rank candidates for the decide-next step (E-046a realignment, 2026-09-23).
 ---
 
 # Component Attribution Reader
@@ -79,9 +78,8 @@ component captures well (see Rule CA-2 below).
 
 **Patch item shape (required, `proposal.schema.json`):** every item of a `patch` list is
 exactly `{component_id, field, before, after}` -- `field` is the dotted path of the changed
-parameter inside that component (e.g. `transforms[2].params.min_abs`). The mechanical verdict
-synthesis derives the change dimension from `field`, so a patch item without it stops the
-pipeline. A `new_block`'s `block.config_paths` must list at least one path.
+parameter inside that component (e.g. `transforms[2].params.min_abs`). `tools/reader_proposals.py` rejects a patch item
+without it, which stops the pipeline. A `new_block`'s `block.config_paths` must list at least one path.
 
 ### `evidence` format rule
 ```yaml

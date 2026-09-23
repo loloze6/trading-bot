@@ -17,3 +17,7 @@ Pattern: first review reply was dense and jargon-heavy; the operator asked for t
 words.
 Rule: default to plain language, short sentences, one idea per sentence; keep file paths and line refs
 in the record file, not in the prose the operator reads.
+
+## 2026-09-23 — Built two slices on the legacy verdict vocabulary the target design had retired
+- **Pattern:** E-046a 5b-ii-A/B1 made the 5 readers' proposal scores decide refine/kill and fed a per-family circuit breaker. The agreed target (roadmap v26/v27 cards G/I, delivery_plan_v26.md slices 2, 6b, 6c) says: idea status = the grid (validated/refuted/inconclusive), reader scores only RANK the next candidate (decide_next, 6b), refine/pivot/escalate/kill + the circuit breaker are retired (6c), repeats are caught by an exact-match check (slice 8). I framed the 5b S1 question as "who synthesizes the readers into a routing decision", the operator answered the question as framed, and two builds followed. The operator caught it from the downstream questions ("why do we still have escalation?").
+- **Rule:** before designing any slice that touches verdicts, routing or "what runs next", re-read the target cards and the delivery plan's LATER slices that retire things, and check the design does not re-create what a later slice deletes. When an S1 finding offers a choice, first ask "does the target design already answer this?" — never pose a question whose framing presupposes retired machinery.

@@ -676,3 +676,39 @@ Raised by the 5b-ii-A build (PR #196, CUL-313):
    `config_to_failure_map`, `power_disposition`, `trade_attribution`,
    `prescreen_*` are dropped (`trade_attribution` has no reader at all). No LLM
    step is reintroduced for narrative fields.
+
+---
+
+## REALIGNMENT (operator, 2026-09-23) -- supersedes §5, §7-§8 and both Decision sections above
+
+The design in this document re-created the verdict routing the target
+retires. Per the target (roadmap v26/v27 cards G/I; delivery_plan_v26.md
+slices 2, 6b, 6c):
+
+- An idea's status is the **grid** (`idea_status.yaml`: validated / refuted /
+  inconclusive, slice 2, already built). Readers never decide it.
+- Reader proposal scores only **rank the next candidate** in the decide-next
+  step (slice 6b), by confidence_real desc, distance_to_profitable desc, cost
+  asc. There is no refine/kill threshold (`S_max`).
+- refine / pivot / escalate / kill, the per-family circuit breaker and
+  continuation children are **retired** in slice 6c. Repeats are caught by the
+  exact-match check (slice 8). An idea's identity is its `hypothesis_id`; a
+  same idea on another coin is a variant of that idea, not a new family.
+
+What was undone (branch `fix/e046a-realign-retire-verdict-synthesis`):
+- 5b-ii-B1 (PR #198, family-at-creation) reverted in full.
+- 5b-ii-A's `_synthesize_verdict`, `verdict_synthesis.schema.json` and their
+  tests removed; `run_phase1_research.py` is back to its pre-5b-ii-A content.
+- Kept: the proposal loader/validator, moved to `tools/reader_proposals.py`
+  for slice 6b, and the stricter patch-item contract in `proposal.schema.json`
+  plus the reader SKILL.md wording.
+
+**Redefined 5b-ii-B (next):** the `specialist_readers` stage loop (§2-§3 of
+this document still hold: explicit per-category output path, no shared-regex
+change) and the removal of `verdict_interpreter` behind a flag, with the
+interim route taken from the grid as delivery_plan_v26.md slice 2 already
+specifies (validated -> promote, refuted -> kill/terminate, inconclusive ->
+human_pause), plus a component-error pause (an engineering failure makes the
+grid meaningless). Every `verdict_interpretation.yaml` reader is then
+re-pointed or marked for retirement in 6c; reader scores play no part in the
+route.

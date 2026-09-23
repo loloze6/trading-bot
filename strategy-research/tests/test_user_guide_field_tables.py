@@ -76,12 +76,6 @@ KNOWN_PHANTOM: dict[str, set[str]] = {
     # but all 10 sampled runs predate the change (0 of 10 carry it). Same
     # situational shape as `episode_blocked_significance_by_symbol` above.
     "`pre_registration.yaml`": {"sample_split_design"},
-    # 2026-09-23 (E-046a Slice 5b-ii-B1): `family` is a real field -- written
-    # at idea creation and inherited by refine children -- but only while
-    # orchestrator.family_at_creation.enabled is on (off by default, switched
-    # on with 5b-ii-B2), so no real card carries it yet. Intended design; the
-    # USER_GUIDE entry says so. Remove once real cards carry it.
-    "`hypothesis_card.yaml`": {"family"},
     # NOTE: `verdict_interpretation.yaml` is deliberately absent. S2 rewrote that
     # table from real artifacts, so its five phantom names (altitude, verdict,
     # diagnostic_rule_applied, parameter_bracket, next_altitude) no longer appear

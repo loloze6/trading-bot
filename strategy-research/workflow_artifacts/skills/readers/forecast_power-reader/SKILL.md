@@ -4,8 +4,7 @@ description: Reads artifacts/reports/forecast_power.yaml (Slice 5a) plus artifac
   (E-046b, when present) and proposes evidence-grounded patch/new_block candidates to
   artifacts/proposals/forecast_power.yaml. One of 5 specialist readers replacing
   verdict-interpreter/SKILL.md's monolithic context (E-046a Slice 5b-i). Does NOT decide
-  hypothesis_verdict/lineage_routing/status -- that authority stays with the not-yet-built
-  mechanical verdict-synthesis step (5b-ii; see S1_FINDINGS.md's "Decision" section, 2026-09-22).
+  hypothesis_verdict/lineage_routing/status -- an idea's status comes from the grid (idea_status.yaml) and the scores only rank candidates for the decide-next step (E-046a realignment, 2026-09-23).
 ---
 
 # Forecast Power Reader
@@ -53,9 +52,8 @@ Same proposal shape as every other reader: `proposal_id: forecast_power-<run_id>
 
 **Patch item shape (required, `proposal.schema.json`):** every item of a `patch` list is
 exactly `{component_id, field, before, after}` -- `field` is the dotted path of the changed
-parameter inside that component (e.g. `transforms[2].params.min_abs`). The mechanical verdict
-synthesis derives the change dimension from `field`, so a patch item without it stops the
-pipeline. A `new_block`'s `block.config_paths` must list at least one path.
+parameter inside that component (e.g. `transforms[2].params.min_abs`). `tools/reader_proposals.py` rejects a patch item
+without it, which stops the pipeline. A `new_block`'s `block.config_paths` must list at least one path.
 
 ### `evidence` format rule
 ```yaml
