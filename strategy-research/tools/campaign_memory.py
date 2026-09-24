@@ -68,10 +68,14 @@ PROFIT_BARS_NOT_EVALUATED = "not evaluated before regroup"
 # artifacts/profit_bars_evaluation.yaml written by the per-backtest check
 # (run_phase1_research._evaluate_profit_bars_every_backtest). The promote-path
 # check writes the same file WITHOUT a scope (one candidate, no variants), which
-# this module must never mistake for per-variant results.
+# this module must never mistake for per-variant results. THE one definition:
+# the writer reads it from here (run_phase1_research._profit_bars_scope_every_backtest).
 PROFIT_BARS_SCOPE_EVERY_BACKTEST = "every_backtest"
 _PROFIT_RESULTS = ("PASS", "FAIL")
-_PROFIT_VARIANT_RESULTS = ("PASS", "FAIL", "NOT_TESTED")
+# INVALIDATED: tested on this attempt, but its trial row is invalidated_artifact
+# (conformance violation) -- never graded, never passing.
+_PROFIT_VARIANT_RESULTS = ("PASS", "FAIL", "NOT_TESTED", "INVALIDATED")
+_PROFIT_TESTED_RESULTS = ("PASS", "FAIL", "INVALIDATED")
 _PROFIT_BAR_RESULTS = ("PASS", "FAIL", "NOT_EVALUABLE")
 # memory entry `registry: {skipped: ...}` reasons (E-058 S2b; tools/block_registry.py)
 REGISTRY_SKIPPED_NOT_VALIDATED = "not_validated"
@@ -322,11 +326,13 @@ def _proposals_block(run_dir: Path, run_id: str, categories) -> list:
 def profit_bars_block(run_dir: Path, run_id: str, variants: dict) -> dict:
     """The memory's `profit_bars` value from the per-backtest check's
     artifacts/profit_bars_evaluation.yaml: one result per variant, each bar's
-    result/actual/threshold, the passing variants and whether the stop was
-    raised. `variants` is this entry's own variants block; the two must describe
-    the same variants (a tested variant was graded, an untested or failed one
-    was not), else this raises -- e.g. a stale protocol_result graded for a
-    variant whose backtest failed on this pass. Read only; decides nothing."""
+    result/actual/threshold and the passing variants (the profit_bars_reached
+    stop, if any, is raised after this record). `variants` is this entry's own variants block; the two must
+    describe the same variants (a tested variant was graded or invalidated, an
+    untested or failed one was not), else this raises -- e.g. a stale
+    protocol_result graded for a variant whose backtest failed on this pass.
+    Read only; decides nothing (the stop is raised by the route after
+    regroup_record, never here)."""
     path = Path(run_dir) / "artifacts" / "profit_bars_evaluation.yaml"
     doc = _load_mapping(path, "the per-backtest profit-bars evaluation "
                               "(orchestrator.profit_bars_every_backtest.enabled is on)")
@@ -336,11 +342,9 @@ def profit_bars_block(run_dir: Path, run_id: str, variants: dict) -> dict:
             f"(a promote-path evaluation has one candidate and no per-variant results)")
     if doc.get("run_id") != run_id:
         raise CampaignMemoryError(f"{path}: run_id={doc.get('run_id')!r} is not {run_id!r}")
-    result, passing, stop_raised = doc.get("result"), doc.get("passing"), doc.get("stop_raised")
+    result, passing = doc.get("result"), doc.get("passing")
     if result not in _PROFIT_RESULTS:
         raise CampaignMemoryError(f"{path}: result={result!r} not one of {_PROFIT_RESULTS}")
-    if not isinstance(stop_raised, bool):
-        raise CampaignMemoryError(f"{path}: stop_raised={stop_raised!r} is not a boolean")
     graded = doc.get("variants")
     if not isinstance(graded, dict) or not graded:
         raise CampaignMemoryError(f"{path}: variants must be a non-empty mapping")
@@ -351,8 +355,9 @@ def profit_bars_block(run_dir: Path, run_id: str, variants: dict) -> dict:
         if not isinstance(v, dict) or v.get("result") not in _PROFIT_VARIANT_RESULTS:
             raise CampaignMemoryError(f"{where}: result must be one of {_PROFIT_VARIANT_RESULTS}")
         bars = v.get("bars")
-        if not isinstance(bars, list) or (v["result"] == "NOT_TESTED") != (not bars):
-            raise CampaignMemoryError(f"{where}: bars must be a list, empty exactly when NOT_TESTED")
+        if not isinstance(bars, list) or (v["result"] in ("PASS", "FAIL")) != bool(bars):
+            raise CampaignMemoryError(f"{where}: bars must be a list, non-empty exactly when "
+                                      f"the variant was graded (PASS/FAIL)")
         compact = {}
         for i, b in enumerate(bars):
             if (not isinstance(b, dict) or not isinstance(b.get("name"), str)
@@ -370,22 +375,19 @@ def profit_bars_block(run_dir: Path, run_id: str, variants: dict) -> dict:
     if passing != expected_passing or result != ("PASS" if expected_passing else "FAIL"):
         raise CampaignMemoryError(f"{path}: result={result!r}/passing={passing!r} disagree with "
                                   f"the per-variant results (passing {expected_passing})")
-    if stop_raised and not expected_passing:
-        raise CampaignMemoryError(f"{path}: stop_raised is true but no variant passed")
     if set(out_variants) != set(variants):
         raise CampaignMemoryError(f"{path}: graded variants {sorted(out_variants)} are not this "
                                   f"entry's variants {sorted(variants)}")
     for vid, mv in variants.items():
         tested = mv.get("status") == "tested"
-        if tested != (out_variants[vid]["result"] != "NOT_TESTED"):
+        if tested != (out_variants[vid]["result"] in _PROFIT_TESTED_RESULTS):
             raise CampaignMemoryError(
                 f"{path}: variant {vid!r} is {mv.get('status')!r} in the memory but "
                 f"{out_variants[vid]['result']!r} in the profit-bars evaluation -- the two must "
                 f"describe the same backtests (stale protocol_result.yaml?)")
     return {"ref": _ref(run_id, "artifacts/profit_bars_evaluation.yaml"),
             "scope": PROFIT_BARS_SCOPE_EVERY_BACKTEST, "result": result,
-            "passing": expected_passing, "stop_raised": stop_raised,
-            "variants": out_variants}
+            "passing": expected_passing, "variants": out_variants}
 
 
 def _find_retired(obj, path="") -> list:

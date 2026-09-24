@@ -955,10 +955,10 @@ def _classify_human_pause(run_dir: Path, state: dict) -> str:
     # this check ranking first, every profit_bars_reached pause would misclassify as
     # `provisional_promote_awaiting_holdout`, whose RUNBOOK row tells the operator to
     # run the holdout backtest, exactly the act this stop exists to gate before.
-    # The same flag is also raised right after protocol_execution by the
-    # per-backtest check (orchestrator.profit_bars_every_backtest.enabled, which
-    # skips the promote-path check) -- no promotion_audit.yaml exists yet there,
-    # so this branch classifies it identically; no new reason, no new row.
+    # The same flag is also raised by the per-backtest check
+    # (orchestrator.profit_bars_every_backtest.enabled), in the route after
+    # regroup_record and before the grid route -- this branch classifies it
+    # identically; no new reason, no new row (RUNBOOK §3 has both origins).
     if flags.get("profit_bars_reached"):
         return "profit_bars_reached"
 

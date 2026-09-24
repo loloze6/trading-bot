@@ -1,0 +1,65 @@
+# Inputs for golden_harness.py (branch 3 code review, item 8). The bars below are
+# a frozen copy for this fixture only -- NOT the operator's config/profitability_bars.yaml
+# (which may be ratified/changed later without touching these golden outputs).
+bars:
+  sharpe_min: 0.5
+  max_drawdown_pct_max: 25.0
+  avg_daily_return_min: 0.0005
+  trade_count_min: 30
+  deflated_sharpe_threshold: 0.95
+  target_instrument_set: [BTCUSDT, ETHUSDT]
+  ratified_by: null
+  ratified_at: null
+
+# Covers dedup, an invalidated row, a non-finite Sharpe, expectancy and failed rows.
+ledger:
+  - {trial_id: r0, source: backtest, statistic_valid: sharpe, sharpe: 0.1, forecast_hash: h0}
+  - {trial_id: r1, source: backtest, statistic_valid: sharpe, sharpe: -0.3, forecast_hash: h1}
+  - {trial_id: r2, source: backtest, statistic_valid: sharpe, sharpe: 0.7, forecast_hash: h2}
+  - {trial_id: r3, source: backtest, statistic_valid: expectancy, sharpe: null, n_trades: 12, forecast_hash: h3}
+  - {trial_id: r4, source: backtest, statistic_valid: sharpe, sharpe: nan, forecast_hash: h4}
+  - {trial_id: r5, source: backtest, statistic_valid: sharpe, sharpe: 0.2, forecast_hash: h5, invalidated_artifact: true}
+  - {trial_id: r6, source: backtest_failed, statistic_valid: failed, sharpe: null, forecast_hash: h6}
+  - {trial_id: r7, source: backtest, statistic_valid: sharpe, sharpe: 0.4, forecast_hash: h7}
+  - {trial_id: r0, source: backtest, statistic_valid: sharpe, sharpe: 0.1, forecast_hash: h0}
+
+protocol_results:
+  generous:
+    per_symbol_summary:
+      BTCUSDT: {median_sharpe: 1.5, max_abs_drawdown_pct: 10.0, min_trade_count: 50}
+      ETHUSDT: {median_sharpe: 1.1, max_abs_drawdown_pct: 12.0, min_trade_count: 60}
+  sparse:
+    per_symbol_summary:
+      BTCUSDT: {median_sharpe: 0.3}
+    hypothesis_verdict:
+      diagnostics:
+        below_floor_pct: 80.0
+        per_trade_expectancy_bps: {mean: 5.0, se: 1.5}
+  dismal:
+    per_symbol_summary:
+      BTCUSDT: {median_sharpe: -2.0, max_abs_drawdown_pct: 40.0, min_trade_count: 3}
+  empty: {}
+
+scenarios:
+  single_generous_bars_on:
+    orchestrator: {profit_bars_file: {enabled: true}}
+    protocol_result: generous
+  single_sparse_bars_on:
+    orchestrator: {profit_bars_file: {enabled: true}}
+    protocol_result: sparse
+  single_empty_bars_off:
+    orchestrator: {}
+    protocol_result: empty
+  variant_loop_per_variant_bars_on:
+    orchestrator:
+      profit_bars_file: {enabled: true}
+      config_direct_authoring: {enabled: true}
+      variant_loop: {enabled: true}
+    protocol_result: dismal
+    variants: {base: dismal, design: generous, asset: sparse}
+  variant_loop_all_fail_bars_off:
+    orchestrator:
+      config_direct_authoring: {enabled: true}
+      variant_loop: {enabled: true}
+    protocol_result: dismal
+    variants: {base: dismal, design: empty}

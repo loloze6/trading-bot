@@ -143,14 +143,13 @@
     },
     "profit_bars": {
       "type": "object",
-      "required": ["ref", "scope", "result", "passing", "stop_raised", "variants"],
+      "required": ["ref", "scope", "result", "passing", "variants"],
       "additionalProperties": false,
       "properties": {
         "ref": { "type": "string" },
         "scope": { "const": "every_backtest" },
         "result": { "enum": ["PASS", "FAIL"], "description": "PASS when any tested variant passes every bar." },
         "passing": { "type": "array", "items": { "type": "string" } },
-        "stop_raised": { "type": "boolean", "description": "Whether the profit_bars_reached pause was raised on this run's protocol_execution pass." },
         "variants": {
           "type": "object",
           "minProperties": 1,
@@ -159,7 +158,8 @@
             "required": ["result", "bars"],
             "additionalProperties": false,
             "properties": {
-              "result": { "enum": ["PASS", "FAIL", "NOT_TESTED"] },
+              "result": { "enum": ["PASS", "FAIL", "NOT_TESTED", "INVALIDATED"],
+                          "description": "INVALIDATED: tested on this attempt but its trial row is invalidated_artifact (conformance) -- never graded, never passing." },
               "bars": {
                 "type": "object",
                 "additionalProperties": {

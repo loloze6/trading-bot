@@ -428,31 +428,34 @@ orchestrator:
       # Branch 3 on EVERY backtest (operator-approved 2026-09-24; delivery_plan_v26.md
       # target row "8 · profit bars ... one file, every backtest, stop rule"). OFF BY
       # DEFAULT, read by run_phase1_research._profit_bars_every_backtest_enabled().
-      # REQUIRES profit_bars_file.enabled above: on without it (or a non-bool value)
-      # fails the run in run_loop's pre-flight, before any stage spends anything.
+      # REQUIRES profit_bars_file.enabled above AND regroup_record.enabled (hence
+      # specialist_readers, grid_evaluation, category_reports): on without them (or
+      # a non-bool value) fails the run in run_loop's pre-flight, before any spend.
       #
       # While false: byte-identical -- nothing new is read or written, the
       # promote-path check above works exactly as before, and
       # campaign_memory.yaml keeps `profit_bars: null` + "not evaluated before
       # regroup".
       #
-      # While true: right after protocol_execution (after its conformance check),
-      # _evaluate_profit_bars_every_backtest grades EVERY tested variant's own
-      # protocol_result (Sharpe/DSR with the promotion audit's own math via
-      # _promotion_dsr_context; worst-symbol drawdown/trade count) against
-      # config/profitability_bars.yaml and writes a per-variant
-      # artifacts/profit_bars_evaluation.yaml (scope: every_backtest). If ANY
-      # variant passes every bar, the EXISTING profit_bars_reached stop is raised
-      # (same flag, pause and RUNBOOK row) -- even when the grid does not
-      # validate the idea; idea_status is never touched. A conformance pause
-      # raised on the same pass wins (the result is still recorded). The
-      # promote-path check is then SKIPPED: this check is the single writer of
-      # the artifact and the single raiser of the stop, so the two never
-      # double-pause or disagree. regroup_record fills campaign_memory.yaml's
-      # `profit_bars` with the per-variant results. A malformed bars file fails
-      # the run loudly (never a defaulted threshold). Same two blockers as
-      # profit_bars_file (unratified draft thresholds; avg_daily_return_min is
-      # always NOT_EVALUABLE, so no real run can reach PASS today).
+      # While true, in the target order judge -> learn -> profit check -> regroup +
+      # record -> decide: right after protocol_execution (after its conformance
+      # check) every variant tested on THAT attempt (the grid's columns; a
+      # conformance-invalidated trial is never graded) is graded against
+      # config/profitability_bars.yaml -- Sharpe/DSR with the promotion audit's
+      # own math, worst-symbol drawdown/trade count, and avg_daily_return_min
+      # from the per-window equity files (definition in
+      # config/profitability_bars.yaml) -- into a per-variant
+      # artifacts/profit_bars_evaluation.yaml (scope: every_backtest).
+      # protocol_execution completes normally (no pause there). regroup_record
+      # records the per-variant results in campaign_memory.yaml's `profit_bars`.
+      # Then, before the grid's route, the EXISTING profit_bars_reached stop is
+      # raised if any variant passed (same flag, pause and RUNBOOK row) -- even
+      # when the grid does not validate the idea; idea_status is never touched.
+      # A resume continues forward from regroup_record (never re-runs the
+      # backtests, never re-pauses on the same evaluation). The promote-path
+      # check is skipped only for a run holding its own every_backtest
+      # evaluation. A malformed bars file fails the run loudly (never a
+      # defaulted threshold). Still blocked on ratified bar values.
   category_reports:
     enabled: false
       # E-046a Slice 5a (delivery_plan_v26.md, "Slice 5 -- Reports and
