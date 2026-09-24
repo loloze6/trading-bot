@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "E-058 S2b (delivery_plan_v26.md slice 6a; engineering/roadmap/E-058/S1_FINDINGS.md §4). Applied at write time: tools/block_registry.py passes the whole document to tools/workflow_artifact_validation.validate_workflow_artifact (matched by the file stem block_registry) -- warn-only by default, blocking under WORKFLOW_ARTIFACT_VALIDATION=raise. tools/block_registry.py::load_registry also checks the structure strictly on every read. Append-only: code never edits or removes a block.",
+  "title": "campaign_record/block_registry.yaml",
+  "description": "Validated blocks, appended by the regroup_record stage (orchestrator.regroup_record.enabled) only for a run whose grid idea_status is validated, with no engineering fault, and with artifacts/block_manifest.yaml. A block is usable on any coin; symbols_tested is informational.",
+  "type": "object",
+  "required": ["schema_version", "revision", "updated_at", "blocks"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "revision": { "type": "integer", "minimum": 0,
+                  "description": "Bumped on every append (slice 6b reads it for 'changed since last composition')." },
+    "updated_at": { "type": ["string", "null"] },
+    "blocks": { "type": "array", "items": { "$ref": "#/$defs/block" } }
+  },
+  "$defs": {
+    "block": {
+      "type": "object",
+      "required": ["block_id", "hypothesis_id", "kind", "config_fragment", "regime_assignment",
+                   "criteria_passed", "variants_passed", "numbers", "symbols_tested",
+                   "correlation_to_composite", "residual_ic", "source_config_ref",
+                   "source_config_sha256", "validated_by_run", "registered_at"],
+      "additionalProperties": false,
+      "properties": {
+        "block_id": { "type": "string", "description": "<hypothesis_id>:<run_id>" },
+        "hypothesis_id": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["forecast", "regime"], "description": "block_manifest.yaml block.kind" },
+        "config_fragment": { "type": "object",
+                             "description": "{json_pointer: value} read from the tested base config at block_manifest.yaml block.config_paths." },
+        "regime_assignment": {
+          "type": "object", "additionalProperties": false,
+          "required": ["regimes", "detector_paths"],
+          "properties": {
+            "regimes": { "type": "array", "items": { "type": "string" } },
+            "detector_paths": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "criteria_passed": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "variants_passed": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "numbers": { "type": "object",
+                     "description": "grid cells {criterion: {variant: {value, threshold, n_windows, n_trades[, per_symbol]}}}" },
+        "symbols_tested": { "type": "array", "items": { "type": "string" } },
+        "correlation_to_composite": { "type": "null", "description": "slice 7" },
+        "residual_ic": { "type": "null", "description": "slice 7" },
+        "source_config_ref": { "type": "string" },
+        "source_config_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "validated_by_run": { "type": "string", "minLength": 1 },
+        "registered_at": { "type": "string" }
+      }
+    }
+  }
+}

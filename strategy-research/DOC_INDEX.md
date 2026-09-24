@@ -136,7 +136,11 @@ default: `orchestrator.regroup_record.enabled`). Writer
 `tools/campaign_memory.py`, schema
 `workflow_artifacts/schemas/campaign_memory.schema.json`. Runs before the stage
 are not listed; their history is `campaign_record/campaign_knowledge_base.yaml`.
-Trial counts stay in `campaign_state.yaml` → `trial_sharpes`.
+Trial counts stay in `campaign_state.yaml` → `trial_sharpes`. Same stage, same
+flag (E-058 S2b): validated blocks in `campaign_record/block_registry.yaml`
+(`tools/block_registry.py`, schema `workflow_artifacts/schemas/block_registry.schema.json`,
+append-only, needs `artifacts/block_manifest.yaml`), one `legacy_schema: false`
+KB entry per run (`tools/grid_kb_writer.py`), and the near-miss scoreboard rebuild.
 
 ### "What can run autonomously vs needs a human?"
 → **[`docs/WORKFLOW_CAPABILITIES.md`](docs/WORKFLOW_CAPABILITIES.md)** —

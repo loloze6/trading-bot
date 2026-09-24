@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$comment": "E-058 S2a (delivery_plan_v26.md slice 6a; engineering/roadmap/E-058/S1_FINDINGS.md §3). Applied at write time: tools/campaign_memory.py::upsert_memory passes the whole document to tools/workflow_artifact_validation.validate_workflow_artifact, which picks this file by the target's stem (campaign_memory) like every schema in this directory -- warn-only by default, blocking only under WORKFLOW_ARTIFACT_VALIDATION=raise. tests/test_e058_s2a_regroup_record.py also validates real stage output against it strictly. Entries are closed (additionalProperties: false) so a retired field (hypothesis_family, altitude, lineage_routing, continuation_*) cannot creep in. Two entry forms: a full entry, and a fault-only entry for a run with component errors.",
+  "$comment": "E-058 S2a/S2b (delivery_plan_v26.md slice 6a; engineering/roadmap/E-058/S1_FINDINGS.md §3). Applied at write time: tools/campaign_memory.py::upsert_memory passes the whole document to tools/workflow_artifact_validation.validate_workflow_artifact, which picks this file by the target's stem (campaign_memory) like every schema in this directory -- warn-only by default, blocking only under WORKFLOW_ARTIFACT_VALIDATION=raise. tests/test_e058_s2a_regroup_record.py also validates real stage output against it strictly. Entries are closed (additionalProperties: false) so a retired field (hypothesis_family, altitude, lineage_routing, continuation_*) cannot creep in. Two entry forms: a full entry, and a fault-only entry for a run with component errors.",
   "title": "campaign_record/campaign_memory.yaml",
   "description": "Per-run campaign memory written by the regroup_record stage (orchestrator.regroup_record.enabled). One entry per run_id, replaced on re-run. Runs before the stage are not listed (legacy history: campaign_knowledge_base.yaml).",
   "type": "object",
@@ -113,15 +113,18 @@
           "description": "References only -- scores are never copied (they rank candidates in slice 6b)."
         },
         "registry": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["skipped"],
-          "properties": { "skipped": { "enum": ["not_built", "not_validated"] } },
-          "description": "S2a: always skipped; the block registry (block_ids) is E-058 S2b."
+          "oneOf": [
+            { "type": "object", "additionalProperties": false, "required": ["block_ids"],
+              "properties": { "block_ids": { "type": "array", "items": { "type": "string" }, "minItems": 1 } } },
+            { "type": "object", "additionalProperties": false, "required": ["skipped"],
+              "properties": { "skipped": { "enum": ["no_manifest", "not_validated"] } } }
+          ],
+          "description": "E-058 S2b (tools/block_registry.py): block_ids registered in campaign_record/block_registry.yaml by this run, or why none was: not_validated (idea_status is not validated) or no_manifest (validated, but artifacts/block_manifest.yaml is absent)."
         },
         "profit_bars": { "type": "null" },
         "profit_bars_reason": { "const": "not evaluated before regroup" },
-        "kb_entry_id": { "type": "null", "description": "The grid-based KB writer is E-058 S2b." }
+        "kb_entry_id": { "type": ["string", "null"],
+                         "description": "E-058 S2b (tools/grid_kb_writer.py): id of this run's entry in campaign_knowledge_base.yaml (legacy_schema: false); null only when the KB file does not exist (the entry is then skipped with a loud log line, like the legacy writer)." }
       }
     }
   }

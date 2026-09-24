@@ -74,6 +74,26 @@ files, 59 run_* dirs total)
     `status` (14 refine / 10 pivot / 7 escalate / 2 kill / 5 absent-within-file,
     of 38). ZERO "promote" appears in either, across the whole history.
 
+GRID ROWS (E-058 S2b, 2026-09-23)
+    A run with `artifacts/grid_evaluation.yaml` (the E-046b grid, written by
+    protocol_execution) and NO verdict_interpretation.yaml is read from the
+    grid; its row carries evidence_tier `grid`, `legacy: false` and the grid's
+    `idea_status`. A run with a verdict file keeps its legacy row exactly as
+    before. Near miss: per criterion, the WORST failing cell across variants
+    and per-symbol sub-cells (unanimity, like the legacy _worst()); across
+    criteria, the nearest of those. Margins use the cell's own `value` and
+    `threshold` and a comparator frozen with the run -- the cell's
+    `comparator` stamp, else the run's own pre_registration.yaml -- never the
+    current config/criterion_menu.yaml. Grid rows rank by idea_status (see
+    _GRID_TIER0_KEY). Every other row is `legacy: true`. A run dir whose
+    files cannot be read gets a `malformed` row instead of failing the board.
+    The retired refine/pivot/escalate words are never read for a grid row
+    (its `status` stays not_recorded).
+    Wired (E-058 S2b): the orchestrator's regroup_record stage
+    (orchestrator.regroup_record.enabled, off by default) calls
+    build_scoreboard + write_scoreboard with an explicit out_dir after
+    recording each run. Nothing on the route reads the output (firewall).
+
 USAGE
     python tools/near_miss_scoreboard.py
     python tools/near_miss_scoreboard.py --runs-dir runs --out-dir engineering/roadmap/E-018/artifacts
@@ -131,7 +151,8 @@ _EXCLUDE_SYM = {"PASS", "FAIL", "AND", "AND ", "NOT", "RULE", "ANY", "ALL", "AT"
 # the threshold for the observation and produces a bogus zero margin.
 _REQUIREMENT_LABELS = {"required", "threshold", "target", "min", "max", "expected", "requirement"}
 
-_OP_NORM = {"≤": "<=", "≥": ">=", "<=": "<=", ">=": ">=", "<": "<", ">": ">"}
+_OP_NORM = {"≤": "<=", "≥": ">=", "<=": "<=", ">=": ">=", "<": "<", ">": ">",
+            "==": "=="}  # E-058 S2b: the grid's 5th comparator; it has no directional margin
 
 
 def _to_float(s):
@@ -403,11 +424,102 @@ def parse_criteria_summary(cs) -> list[Criterion]:
     return out
 
 
-def build_row(run_dir: Path) -> dict:
-    run_id = run_dir.name
-    verdict_path = run_dir / "artifacts" / "verdict_interpretation.yaml"
-    row = {
+def _grid_row(run_dir: Path, grid_path: Path, row: dict) -> dict:
+    """E-058 S2b: a row from grid_evaluation.yaml. A malformed grid raises (a
+    thin row would hide a broken artifact)."""
+    g = yaml.safe_load(grid_path.read_text(encoding="utf-8"))
+    if not isinstance(g, dict) or not isinstance(g.get("grid"), dict) \
+            or not isinstance(g.get("criteria"), list) or not isinstance(g.get("variants"), list):
+        raise ValueError(f"{grid_path}: not a grid_evaluation document (criteria/variants/grid)")
+    row["legacy"] = False
+    row["evidence_tier"] = "grid"
+    row["idea_status"] = g.get("idea_status") or "not_recorded"
+    row["grid_result"] = g.get("result", "not_recorded")
+    card_path = run_dir / "artifacts" / "hypothesis_card.yaml"
+    if card_path.exists():
+        card = yaml.safe_load(card_path.read_text(encoding="utf-8")) or {}
+        if isinstance(card, dict) and card.get("hypothesis_id"):
+            row["hypothesis_id"] = card["hypothesis_id"]
+    reason = g.get("reason")
+    if reason:
+        row["primary_failure_mode_text"] = " ".join(str(reason).split())[:400]
+
+    pre_comparators = _pre_registration_comparators(run_dir)
+    counts = {"PASS": 0, "FAIL": 0, "INCONCLUSIVE": 0}
+    binding = []  # one Criterion per criterion: its WORST failing sub-cell
+    unmeasured_fail = False
+    for crit in g["criteria"]:
+        cells = g["grid"].get(crit)
+        if not isinstance(cells, dict):
+            raise ValueError(f"{grid_path}: grid.{crit} is missing or not a mapping")
+        crit_fails = []
+        for variant in g["variants"]:
+            cell = cells.get(variant)
+            if not isinstance(cell, dict):
+                raise ValueError(f"{grid_path}: grid.{crit}.{variant} is missing or not a mapping")
+            if cell.get("result") in counts:
+                counts[cell["result"]] += 1
+            subs = [(f"{variant}/{sym}", c) for sym, c in (cell.get("per_symbol") or {}).items()
+                    if isinstance(c, dict)] or [(variant, cell)]
+            for where, c in subs:
+                if c.get("result") != "FAIL":
+                    continue
+                # Comparator frozen with the run: the cell's own (stamped by the
+                # evaluator), else the run's pre_registration -- never the
+                # CURRENT config/criterion_menu.yaml, which may have changed.
+                op = _OP_NORM.get(str(c.get("comparator") or cell.get("comparator"))) \
+                    or pre_comparators.get(crit)
+                value, threshold = _to_float(c.get("value")), _to_float(c.get("threshold"))
+                text = (f"{crit} @ {where}: value={c.get('value')} {op or '?'} "
+                        f"threshold={c.get('threshold')}")
+                crit_fails.append(Criterion(text, "FAIL", op, threshold, value,
+                                            "grid" if op else "grid_no_comparator", False))
+        measured = [c for c in crit_fails if c.margin_frac is not None]
+        if measured:
+            # Unanimity: the criterion is only as close as its WORST failing
+            # variant/symbol (the legacy _worst() rule), so take the minimum.
+            binding.append(min(measured, key=lambda c: c.margin_frac))
+        elif crit_fails:
+            unmeasured_fail = True
+    # grid CELLS (criterion x variant), not criteria; INCONCLUSIVE cells in "untested"
+    row["n_criteria_pass"] = counts["PASS"]
+    row["n_criteria_fail"] = counts["FAIL"]
+    row["n_criteria_untested"] = counts["INCONCLUSIVE"]
+    if binding:
+        # Across criteria, the nearest miss (legacy build_row's rule).
+        worst = max(binding, key=lambda c: c.margin_frac)
+        row["worst_fail_criterion_text"] = worst.raw[:300]
+        row["worst_fail_margin_frac"] = round(worst.margin_frac, 4)
+        row["worst_fail_margin_source"] = "grid"
+    elif unmeasured_fail:
+        row["worst_fail_margin_source"] = "grid_cell_without_value_or_comparator"
+    return row
+
+
+def _pre_registration_comparators(run_dir: Path) -> dict:
+    """{criterion_id: comparator} from the run's OWN pre_registration.yaml
+    (frozen with the run), via the evaluator's resolver with NO menu: the
+    current config/criterion_menu.yaml is deliberately not read, and no run
+    snapshots the menu. A criterion that names only its `id` therefore has no
+    comparator here; the evaluator's cell stamp covers it."""
+    pre_path = run_dir / "artifacts" / "pre_registration.yaml"
+    if not pre_path.exists():
+        return {}
+    import verdict_criteria_evaluator as _vce  # tools/ sibling, lazily for the caller's sys.path
+    pre = yaml.safe_load(pre_path.read_text(encoding="utf-8")) or {}
+    out = {}
+    for c in _vce._resolve_grid_criteria(pre if isinstance(pre, dict) else {}, None):
+        op = _OP_NORM.get(str(c.get("comparator")))
+        if c.get("id") and op:
+            out[c["id"]] = op
+    return out
+
+
+def _empty_row(run_id: str) -> dict:
+    return {
         "run_id": run_id,
+        "legacy": True,  # E-058 S2b: false only on a grid row
+        "idea_status": "not_recorded",
         "hypothesis_id": "not_recorded",
         "hypothesis_family": "not_recorded",
         "evidence_tier": "thin_no_verdict_file",
@@ -433,6 +545,18 @@ def build_row(run_dir: Path) -> dict:
         "era_behavior_text": "not_recorded",
         "era_behavior_source": "not_recorded",
     }
+
+
+def build_row(run_dir: Path) -> dict:
+    run_id = run_dir.name
+    verdict_path = run_dir / "artifacts" / "verdict_interpretation.yaml"
+    grid_path = run_dir / "artifacts" / "grid_evaluation.yaml"
+    row = _empty_row(run_id)
+
+    # E-058 S2b review fix 5: a run with a verdict file keeps its legacy row
+    # exactly as before; the grid row is built only when there is none.
+    if grid_path.exists() and not verdict_path.exists():
+        return _grid_row(run_dir, grid_path, row)
 
     if not verdict_path.exists():
         ps_path = run_dir / "pipeline_state.yaml"
@@ -505,8 +629,30 @@ def build_row(run_dir: Path) -> dict:
 # --- ranking ----------------------------------------------------------------
 _VERDICT_PRIORITY = {"refine": 0, "escalate": 1, "pivot": 2, "kill": 3, "not_recorded": 4}
 
+# E-058 S2b review fix 7: grid rows rank by the grid's idea_status (their
+# `status` is the dead not_recorded), consistent with the legacy priorities:
+#   validated    -> tier 0, ahead of every row (a pass is the best
+#                   idea-generation material and must never sit below a
+#                   legacy kill or any near miss);
+#   inconclusive -> tier 0, right after validated and ahead of every measured
+#                   miss (undecided, no criterion failed -- the "escalate"
+#                   analogue, never buried below a kill);
+#   refuted      -> ranked like any failing row: tier 0 by its worst-fail
+#                   margin when one was measured, else tier 1 at the legacy
+#                   `kill` priority.
+_GRID_TIER0_KEY = {"validated": float("-inf"), "inconclusive": -1e300}
+_GRID_REFUTED_PRIORITY = _VERDICT_PRIORITY["kill"]
+
 
 def _tier_sort_key(row):
+    ic = row.get("ic")
+    ic_key = -(ic if isinstance(ic, (int, float)) else -1e9)
+    if row.get("evidence_tier") == "grid":
+        status = row.get("idea_status")
+        if status in _GRID_TIER0_KEY:
+            return (0, _GRID_TIER0_KEY[status], ic_key, row["run_id"])
+        if row["worst_fail_margin_frac"] is None:
+            return (1, _GRID_REFUTED_PRIORITY, ic_key, row["run_id"])
     if row["worst_fail_margin_frac"] is not None:
         tier = 0
         key2 = -row["worst_fail_margin_frac"]  # ascending on -margin == descending on margin
@@ -517,8 +663,6 @@ def _tier_sort_key(row):
     else:
         tier = 2
         key2 = 0
-    ic = row.get("ic")
-    ic_key = -(ic if isinstance(ic, (int, float)) else -1e9)
     return (tier, key2, ic_key, row["run_id"])
 
 
@@ -532,8 +676,15 @@ def rank_rows(rows):
 def _denominator_report(rows):
     n = len(rows)
     lines = [f"Total run dirs scanned: {n}"]
-    has_verdict = [r for r in rows if r["evidence_tier"] != "thin_no_verdict_file"]
+    # A grid row exists only for a run WITHOUT a verdict file (build_row), and a
+    # malformed row's files could not be read -- neither counts as having one.
+    has_verdict = [r for r in rows
+                   if r["evidence_tier"] not in ("thin_no_verdict_file", "grid", "malformed")]
     lines.append(f"Have a verdict_interpretation.yaml: {len(has_verdict)} of {n}")
+    n_grid = sum(1 for r in rows if r["evidence_tier"] == "grid")
+    lines.append(f"Grid row (grid_evaluation.yaml, no verdict file; legacy: false): {n_grid} of {n}")
+    n_bad = sum(1 for r in rows if r["evidence_tier"] == "malformed")
+    lines.append(f"Malformed run dirs (row marked, not built): {n_bad} of {n}")
     full = [r for r in rows if r["evidence_tier"] == "full_protocol"]
     prescreen = [r for r in rows if r["evidence_tier"] == "prescreen_only"]
     lines.append(f"  full_protocol schema: {len(full)} of {n}")
@@ -602,31 +753,41 @@ def render_markdown(rows, denom_lines) -> str:
     return "\n".join(out) + "\n"
 
 
+def _malformed_row(run_id: str, exc: Exception) -> dict:
+    row = _empty_row(run_id)
+    row["evidence_tier"] = "malformed"
+    row["malformed_reason"] = f"{type(exc).__name__}: {' '.join(str(exc).split())[:300]}"
+    return row
+
+
 def build_scoreboard(runs_dir: Path):
+    """Every run_* dir gets a row. A run whose files cannot be read gets a
+    row marked evidence_tier `malformed` (with `malformed_reason`) instead
+    of failing the whole board (E-058 S2b review fix 3): one broken,
+    unrelated run must not hide the rest, and never fails the stage."""
+    runs_dir = Path(runs_dir)
     run_dirs = sorted(
         d for d in runs_dir.iterdir() if d.is_dir() and d.name.startswith("run_")
     )
-    rows = [build_row(d) for d in run_dirs]
+    rows = []
+    for d in run_dirs:
+        try:
+            rows.append(build_row(d))
+        except Exception as exc:
+            rows.append(_malformed_row(d.name, exc))
     rank_rows(rows)
     return rows
 
 
-def main(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--runs-dir", default=str(STRATEGY_RESEARCH_ROOT / "runs"))
-    ap.add_argument("--out-dir", default=str(STRATEGY_RESEARCH_ROOT / "engineering" / "roadmap" / "E-018" / "artifacts"))
-    args = ap.parse_args(argv)
-
-    runs_dir = Path(args.runs_dir)
-    out_dir = Path(args.out_dir)
+def write_scoreboard(rows, out_dir: Path) -> tuple:
+    """Writes <out_dir>/near_miss_scoreboard.{yaml,md}; returns both paths.
+    `out_dir` is required -- the regroup_record hook passes it explicitly,
+    because STRATEGY_RESEARCH_ROOT is not covered by the test sandbox."""
+    out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-
-    rows = build_scoreboard(runs_dir)
     denom_lines = _denominator_report(rows)
-
     yaml_path = out_dir / "near_miss_scoreboard.yaml"
     md_path = out_dir / "near_miss_scoreboard.md"
-
     yaml_doc = {
         "generated_by": "strategy-research/tools/near_miss_scoreboard.py",
         "purpose": "idea-generation raw material ONLY; not a promotion input",
@@ -635,21 +796,28 @@ def main(argv=None):
     }
     with yaml_path.open("w", encoding="utf-8") as f:
         yaml.safe_dump(yaml_doc, f, sort_keys=False, allow_unicode=True, width=100)
-
     md_path.write_text(render_markdown(rows, denom_lines), encoding="utf-8")
+    return yaml_path, md_path
 
-    for line in denom_lines:
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--runs-dir", default=str(STRATEGY_RESEARCH_ROOT / "runs"))
+    ap.add_argument("--out-dir", default=str(STRATEGY_RESEARCH_ROOT / "engineering" / "roadmap" / "E-018" / "artifacts"))
+    args = ap.parse_args(argv)
+
+    rows = build_scoreboard(Path(args.runs_dir))
+    yaml_path, md_path = write_scoreboard(rows, Path(args.out_dir))
+
+    for line in _denominator_report(rows):
         print(line)
     print(f"\nWrote {yaml_path}")
     print(f"Wrote {md_path}")
     print(
-        "\nNOT yet wired into the campaign loop (Task 3 note): the natural hook "
-        "would be workflow/run_campaign.py's end-of-campaign-review step "
-        "(campaign_review.yaml is written there today) calling this script's "
-        "build_scoreboard()/main() after each campaign_review, same lifecycle "
-        "point as campaign_knowledge_base.yaml's own refresh. Not done here: "
-        "that call site is decision-adjacent code and any change there needs "
-        "its own review against the firewall, out of scope for S1."
+        "\nWired (E-058 S2b) into the orchestrator's regroup_record stage, which runs "
+        "only under orchestrator.regroup_record.enabled (off by default) and rebuilds "
+        "this scoreboard after recording each run. Nothing on the route reads it "
+        "(firewall, by review)."
     )
     return 0
 

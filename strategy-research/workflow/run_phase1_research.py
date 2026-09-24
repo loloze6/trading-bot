@@ -1423,7 +1423,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
 
         protocol_path = _resolve_protocol_path(RUN_DIR, run_id)
         validation_path = ARTIFACTS / "validation_protocol.yaml"
-        base_variant_id = "base" if "base" in validated else sorted(validated)[0]
+        base_variant_id = _json_pointer_module().base_variant_id(validated)  # "base", else sorted()[0]
 
         per_variant_summaries: dict = {}
         base_summary = None
@@ -3106,7 +3106,11 @@ def determine_post_specialist_readers_route(path: Path, run_id: str, *,
 # trial rows (protocol_execution already recorded them; the memory only reads
 # their ids). No refine/pivot/escalate, circuit breaker, hypothesis_family,
 # altitude or continuation field is read or written (retired in slice 6c).
-# The block registry, the grid-based KB writer and the scoreboard are S2b.
+# E-058 S2b adds, under the same flag: the block registry
+# (tools/block_registry.py, validated + manifest only, append-only), one
+# grid-based KB entry per non-fault run (tools/grid_kb_writer.py,
+# legacy_schema: false, never merged into a legacy entry), the near-miss
+# scoreboard rebuild, and campaign-review's memory input.
 # ---------------------------------------------------------------------------
 
 _REGROUP_RECORD_HANDOFF = "specialist_readers_to_regroup_record.yaml"
@@ -3196,18 +3200,43 @@ def _run_regroup_record_stage(run_id: str, run_dir: Path) -> dict:
     errors = _protocol_component_errors(run_dir)
     idea = None if errors else _load_idea_status(run_dir, run_id)
     cm = _campaign_memory_module()
+    import block_registry as _br  # tools/ sibling, on sys.path via _campaign_memory_module
+    import grid_kb_writer as _kbw
     memory_path = _campaign_memory_path()
     if errors:
+        entry = None
+        step = "the campaign memory (campaign_record/campaign_memory.yaml)"
         try:
-            entry = cm.build_fault_entry(run_dir, run_id, errors)
-            cm.upsert_memory(memory_path, entry)
+            # E-058 S2b review fix 1: the fault-only memory entry is written
+            # FIRST; a fault run never registers a block or writes a KB entry.
+            fault = cm.build_fault_entry(run_dir, run_id, errors)
+            cm.upsert_memory(memory_path, fault)
+            entry = fault
             print(f"📒 [E-058] campaign memory: {run_id} recorded as engineering_fault="
                   f"{entry['engineering_fault']} -> {memory_path}")
+            # Then: an earlier VALIDATED pass of this same run may have left a
+            # block (append-only) or a grid KB entry. Code never removes them;
+            # stop loudly so a person decides. The pause below still fires.
+            step = "the stale-record check (block_registry.yaml / campaign_knowledge_base.yaml)"
+            stale = []
+            reg_path = _block_registry_path()
+            blocks = _br.blocks_for_run(reg_path, run_id)
+            if blocks:
+                stale.append(f"{reg_path} still holds block(s) {blocks} registered by an earlier "
+                             f"validated pass of {run_id}")
+            kb_id = _kbw.entry_id_for_run(_KB_PATH, run_id)
+            if kb_id:
+                stale.append(f"{_KB_PATH} still holds grid entry {kb_id!r} from an earlier pass "
+                             f"of {run_id}")
+            if stale:
+                raise RuntimeError(
+                    "; ".join(stale) + ". This re-run is an engineering fault, so those records "
+                    "no longer describe it -- the block registry is append-only and code never "
+                    "edits either file: a person decides whether to remove them.")
         except Exception as e:
-            entry = None
-            print(f"❌ [E-058] campaign memory: could NOT record {run_id}'s component_execution_error "
-                  f"({type(e).__name__}: {e}). The run still pauses for the component errors; "
-                  f"fix the memory file and resume to record it.")
+            print(f"❌ [E-058] regroup_record ({run_id}, component_execution_error): {step} "
+                  f"failed -- {type(e).__name__}: {e}. The run still pauses for the component "
+                  f"errors; resolve this and resume.")
     else:
         entry = cm.build_memory_entry(
             run_dir, run_id,
@@ -3215,10 +3244,85 @@ def _run_regroup_record_stage(run_id: str, run_dir: Path) -> dict:
             categories=_reader_categories(),
             protocol_root=ROOT,
         )
+        # E-058 S2b, in this order so a failure leaves nothing half-recorded
+        # that a re-run cannot redo: registry (append-only; conflict raises
+        # BEFORE the memory entry is replaced), KB entry (replaced on re-run),
+        # memory entry (replaced on re-run), then the scoreboard (derived).
+        entry["registry"] = _br.record_run(_block_registry_path(), run_dir, entry, root=ROOT)
+        entry["kb_entry_id"] = _kbw.write_kb_entry(
+            _KB_PATH, _kbw.build_kb_entry(entry), root=ROOT, recompute_views=_recompute_kb_views)
         cm.upsert_memory(memory_path, entry)
         print(f"📒 [E-058] campaign memory: {run_id} recorded "
               f"(idea_status={entry['idea_status']}) -> {memory_path}")
+        _write_near_miss_scoreboard()
     return {"entry": entry, "component_errors": errors, "idea": idea}
+
+
+def _block_registry_path() -> Path:
+    """Resolved from ROOT at call time, so the test sandbox's ROOT covers it."""
+    return ROOT / "campaign_record" / "block_registry.yaml"
+
+
+def _near_miss_scoreboard_dir() -> Path:
+    """The scoreboard's tracked home (E-018), resolved from ROOT at call time --
+    never near_miss_scoreboard.STRATEGY_RESEARCH_ROOT, which the sandbox does
+    not cover (S1_FINDINGS.md §1.4)."""
+    return ROOT / "engineering" / "roadmap" / "E-018" / "artifacts"
+
+
+def _write_near_miss_scoreboard() -> None:
+    """E-058 S2b: the scoreboard's documented hook. Idea-generation raw
+    material only; nothing on the route reads it (firewall, by review). It
+    decides nothing, so it can NEVER fail the stage (review fix 3): any
+    error is logged loudly and the stage continues to the route."""
+    try:
+        import near_miss_scoreboard as _nms  # tools/ sibling
+        rows = _nms.build_scoreboard(ROOT / "runs")
+        yaml_path, _ = _nms.write_scoreboard(rows, _near_miss_scoreboard_dir())
+        print(f"🗒️  [E-058] near-miss scoreboard rebuilt ({len(rows)} run dirs) -> {yaml_path}")
+    except Exception as e:
+        print(f"❌ [E-058] near-miss scoreboard NOT rebuilt ({type(e).__name__}: {e}). It is a "
+              f"firewalled view that decides nothing; the run continues to its route. Rebuild by "
+              f"hand with tools/near_miss_scoreboard.py once fixed.")
+
+
+# E-058 S2b: campaign-review's memory input, added only under the flag. Not in
+# the handoff template's required_inputs, because ensure_files would then fail
+# every flag-off run, which has no memory file (S1_FINDINGS.md §6).
+_REGROUP_RECORD_CONTEXT_STAGES = {"campaign_review"}
+
+
+def _apply_regroup_record_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
+    """Flag OFF (the default): no-op, the handoff dict is never touched, so
+    the assembled prompt is byte-identical. Flag on: campaign_review gets
+    campaign_record/campaign_memory.yaml as a required input -- only when the
+    file exists (review fix 8), so a campaign with no recorded run yet cannot
+    fail the stage with FileNotFoundError."""
+    if stage_name not in _REGROUP_RECORD_CONTEXT_STAGES:
+        return
+    if not _regroup_record_enabled():
+        return
+    path = "../../campaign_record/campaign_memory.yaml"
+    if not (Path(run_dir) / path).exists():
+        print("ℹ️  [E-058] campaign_review: no campaign_record/campaign_memory.yaml yet -- "
+              "not added as an input.")
+        return
+    required = handoff.setdefault("required_inputs", [])
+    if any(req.get("path") == path for req in required):
+        return
+    required.append({
+        "path": path,
+        "reason": ("E-058: the per-run campaign memory (orchestrator.regroup_record.enabled) -- "
+                   "the complete per-run list under this flag (campaign_state.yaml runs is "
+                   "incomplete under it). For every run you discuss, cite its idea_status "
+                   "(validated|refuted|inconclusive -- the idea's status comes ONLY from the "
+                   "grid; never restate or override it), grid.counts, registry (block_ids or "
+                   "skipped reason) and proposals (refs/ids/count only; reader scores decide "
+                   "nothing here). An entry with engineering_fault is a broken run, not a "
+                   "finding. Runs before the flag are absent; their history is "
+                   "campaign_knowledge_base.yaml, where an entry without legacy_schema: false "
+                   "is legacy."),
+    })
 
 
 def _apply_config_direct_authoring_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
@@ -3977,6 +4081,9 @@ async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | 
 
     # E-056 Slice 3b: criterion-menu/cost-model/base-config file-presence signals, off by default (see helper docstring above).
     _apply_config_direct_authoring_context(stage_name, handoff, RUN_DIR)
+
+    # E-058 S2b: campaign-review's memory input, off by default (see helper docstring above).
+    _apply_regroup_record_context(stage_name, handoff, RUN_DIR)
 
     # Select engine from handoff file, default to Claude if not specified
     engine = handoff.get("assigned_engine", "claude")
@@ -6087,6 +6194,11 @@ def _verdict_provenance_stamp(run_id_str: str) -> dict:
 
 def _find_kb_entry(findings: list, hyp_id: str) -> dict | None:
     for f in findings:
+        # E-058 S2b review fix 2: a grid entry (legacy_schema: false, written
+        # by tools/grid_kb_writer.py) is one run's record, never a legacy
+        # entry to merge into or to close by F09.
+        if f.get("legacy_schema") is False:
+            continue
         if f.get("hypothesis_id") == hyp_id:
             return f
         if hyp_id in f.get("hypothesis_ids", []):
@@ -6146,11 +6258,23 @@ def _write_kb_findings_entry(path: Path, run_id: str, interp: dict):
     campaign_knowledge_base.yaml. If the hypothesis_id already has an entry, increment
     evidence_count and append run_id. If not, create a minimal stub from verdict fields.
     Always calls _recompute_kb_views() before saving.
+
+    E-058 S2b review fix 2: the read-modify-write runs under the same
+    campaign_record/.campaign_knowledge_base.lock the grid KB writer takes,
+    so the two writers cannot lose each other's entries. The lock file is
+    removed on release; the KB bytes written are unchanged.
     """
     if not _KB_PATH.exists():
         print(f"⚠️  A5.1: campaign_knowledge_base.yaml not found — skipping KB update")
         return
+    cm = _campaign_memory_module()
+    import grid_kb_writer as _kbw  # tools/ sibling, on sys.path via _campaign_memory_module
+    with cm._file_lock(_KB_PATH.parent / _kbw.KB_LOCK_FILENAME, "the campaign knowledge base"):
+        _write_kb_findings_entry_locked(path, run_id, interp)
 
+
+def _write_kb_findings_entry_locked(path: Path, run_id: str, interp: dict):
+    """_write_kb_findings_entry's body, unchanged, run under the KB lock."""
     kb = load_yaml(_KB_PATH) or {}
     findings = kb.setdefault("findings", [])
 
@@ -7956,18 +8080,21 @@ class PatchApplicationError(Exception):
     'fail loud, not flattering' rule."""
 
 
+def _json_pointer_module():
+    """tools/json_pointer.py (E-058 S2b), imported lazily like the other
+    tools/ siblings."""
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import json_pointer as _jp
+    return _jp
+
+
 def _split_json_pointer(path: str) -> list:
     """RFC 6901 tokenization: '/' splits, '~1' -> '/' and '~0' -> '~' unescaped
     per segment. Raises PatchApplicationError on anything that isn't a
-    non-empty string starting with '/'."""
-    if not path or not isinstance(path, str) or not path.startswith("/"):
-        raise PatchApplicationError(
-            f"'{path!r}' is not a valid JSON Pointer -- must be a non-empty string starting with '/'"
-        )
-    segments = [seg.replace("~1", "/").replace("~0", "~") for seg in path.split("/")[1:]]
-    if not segments:
-        raise PatchApplicationError(f"'{path}' has no segments after the leading '/'")
-    return segments
+    non-empty string starting with '/'. Implementation: tools/json_pointer.py."""
+    return _json_pointer_module().split_json_pointer(path, PatchApplicationError)
 
 
 def _apply_json_pointer_patch(base_config: dict, patch: list) -> dict:
@@ -8053,28 +8180,9 @@ def _apply_json_pointer_patch(base_config: dict, patch: list) -> dict:
 
 def _json_pointer_exists(config, path: str) -> bool:
     """True iff the RFC 6901 pointer 'path' resolves inside config. Never
-    raises -- an invalid pointer simply does not exist."""
-    try:
-        segments = _split_json_pointer(path)
-    except PatchApplicationError:
-        return False
-    node = config
-    for seg in segments:
-        if isinstance(node, dict):
-            if seg not in node:
-                return False
-            node = node[seg]
-        elif isinstance(node, list):
-            try:
-                idx = int(seg)
-            except ValueError:
-                return False
-            if not (0 <= idx < len(node)):
-                return False
-            node = node[idx]
-        else:
-            return False
-    return True
+    raises -- an invalid pointer simply does not exist. Shared with
+    tools/block_registry.py via tools/json_pointer.py (E-058 S2b)."""
+    return _json_pointer_module().json_pointer_exists(config, path)
 
 
 def _check_manifest_paths(variant_config: dict, manifest: dict) -> list:
@@ -8083,9 +8191,8 @@ def _check_manifest_paths(variant_config: dict, manifest: dict) -> list:
     Gracefully returns [] when the manifest has no block.config_paths list at
     all -- the manifest contract is proposed, not built (§7c), so most runs
     will carry no manifest, or an empty one, and that alone is not a
-    failure."""
-    config_paths = ((manifest or {}).get("block") or {}).get("config_paths") or []
-    return [p for p in config_paths if not _json_pointer_exists(variant_config, p)]
+    failure. Implementation: tools/json_pointer.py (E-058 S2b)."""
+    return _json_pointer_module().manifest_missing_paths(variant_config, manifest)
 
 
 def _route_post_config_direct_backtest_specification(run_dir: Path) -> str:
