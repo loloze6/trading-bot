@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "E-056 1b block manifest (docs/STRATEGY_DESIGN_GUIDE.md §7c, built). Written by stage 1b (strategy_config_authoring, orchestrator.config_direct_authoring.enabled) next to the base config. The enforcing code is tools/block_manifest.py, shared by the backtest_specification tool stage (5a, fails loud) and tools/block_registry.py; this schema documents the same shape and tests/test_e056_1b_block_manifest.py keeps the two in agreement. Rules JSON Schema cannot express, enforced only in code: every pointer resolves in the base config; no pointer lies inside another's subtree (block vs block, block vs scaffolding); a forecast block has a path under /strategies/regimes/, a regime block a path at or under /regime_detector.",
+  "title": "artifacts/block_manifest.yaml",
+  "description": "Which part of the run's base strategy config IS the idea's block, as opposed to scaffolding. No coin restriction: a validated block is usable on any coin. The idea's identity (hypothesis_id) comes from the run, not from this file.",
+  "type": "object",
+  "required": ["block", "scaffolding", "rationale"],
+  "additionalProperties": false,
+  "properties": {
+    "block": {
+      "type": "object",
+      "required": ["kind", "config_paths"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["forecast", "regime"] },
+        "config_paths": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": { "$ref": "#/$defs/pointer" },
+          "description": "RFC 6901 JSON pointers into the base config; their values are the block (block_registry.yaml config_fragment)."
+        }
+      }
+    },
+    "scaffolding": {
+      "type": "array", "uniqueItems": true,
+      "items": { "$ref": "#/$defs/pointer" },
+      "description": "Pointers to config the idea needs to run but that is not the idea (warmup, a pass-through detector, ...). May be empty."
+    },
+    "rationale": { "type": "string", "minLength": 1, "pattern": "\\S",
+                   "description": "Why these paths are the block and the rest is scaffolding." }
+  },
+  "$defs": {
+    "pointer": { "type": "string", "pattern": "^/" }
+  }
+}

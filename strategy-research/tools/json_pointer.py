@@ -7,10 +7,10 @@ protocol_execution's base-variant choice), so tools/block_registry.py reads a
 block_manifest.yaml's pointers with exactly the code the orchestrator uses to
 check them. run_phase1_research keeps its private names as thin wrappers.
 
-NOT moved: block_manifest.yaml loading. The orchestrator's
-backtest_specification loads it with its LLM-output-tolerant load_yaml and
-treats any shape as "no paths"; block_registry loads it strictly and raises on a
-malformed manifest. Unifying them would change one of the two behaviours.
+block_manifest.yaml loading and its contract live in tools/block_manifest.py
+(E-056 1b block manifest), shared by the orchestrator's backtest_specification
+tool stage and tools/block_registry.py -- both load it strictly and raise on a
+malformed or unresolved manifest.
 """
 from __future__ import annotations
 
@@ -74,11 +74,15 @@ def resolve_json_pointer(config, path):
 
 
 def manifest_missing_paths(variant_config: dict, manifest) -> list:
-    """The manifest-declared config_paths (STRATEGY_DESIGN_GUIDE.md §7c's
-    block.config_paths) that do NOT resolve in variant_config; [] when the
-    manifest has no block.config_paths list at all."""
-    config_paths = ((manifest or {}).get("block") or {}).get("config_paths") or []
-    return [p for p in config_paths if not json_pointer_exists(variant_config, p)]
+    """The manifest-declared pointers (STRATEGY_DESIGN_GUIDE.md §7c's
+    block.config_paths, then scaffolding) that do NOT resolve in
+    variant_config; [] when the manifest lists none at all. The one resolution
+    check for block_manifest.yaml: tools/block_manifest.unresolved_paths and
+    run_phase1_research._check_manifest_paths both call it."""
+    manifest = manifest or {}
+    pointers = list((manifest.get("block") or {}).get("config_paths") or []) + \
+        list(manifest.get("scaffolding") or [])
+    return [p for p in pointers if not json_pointer_exists(variant_config, p)]
 
 
 def base_variant_id(variant_ids) -> str:

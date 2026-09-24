@@ -1903,9 +1903,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
         # artifacts/variant_patches.yaml -- base + design patch + asset patch, each
         # {variant_id, patch: [{path, value}], rationale}. This branch applies each variant's
         # patch to the base config, validates the result (validate_config.py, which includes V12
-        # component-existence automatically), checks the optional manifest's declared paths
-        # resolve (gracefully skipped when no manifest exists -- the manifest contract,
-        # STRATEGY_DESIGN_GUIDE.md §7c, is not built yet), and writes one strategy_config.json
+        # component-existence automatically), checks the manifest's declared paths resolve,
+        # and writes one strategy_config.json
         # per variant, plus a 'base' variant copy at candidate_strategy_config.json so the
         # EXISTING data_availability_gate/protocol_execution tool branches above (both
         # unmodified) can run against it exactly as they always have.
@@ -1928,8 +1927,22 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 "tool stage can run."
             )
 
-        manifest_path = ARTIFACTS / "block_manifest.yaml"
-        manifest = load_yaml(manifest_path) if manifest_path.exists() else None
+        # E-056 1b block manifest (STRATEGY_DESIGN_GUIDE.md §7c, built): 1b writes
+        # artifacts/block_manifest.yaml next to the config. Checked here, against the base
+        # config, with tools/block_manifest.py -- the exact check tools/block_registry.py
+        # runs later -- so a manifest this stage accepts is one the registry accepts.
+        # Missing, unparseable, malformed or unresolved: fail loud before any variant is
+        # built (this branch only runs under orchestrator.config_direct_authoring).
+        _bm = _block_manifest_module()
+        manifest_path = ARTIFACTS / _bm.MANIFEST_FILENAME
+        manifest = _bm.load_manifest_file(manifest_path, error_cls=RuntimeError)
+        if manifest is None:
+            raise RuntimeError(
+                "run_tool_worker(backtest_specification): artifacts/block_manifest.yaml is "
+                "missing -- strategy_config_authoring must write it next to the base config "
+                "(STRATEGY_DESIGN_GUIDE.md §7c) when its status is spec_ready."
+            )
+        _bm.check_manifest(manifest, base_config, where=str(manifest_path), error_cls=RuntimeError)
 
         variants_dir = ARTIFACTS / "variants"
         variants_dir.mkdir(parents=True, exist_ok=True)
@@ -1980,7 +1993,10 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 print(f"⚠️  [E-056 Slice3b] variant '{variant_id}' NOT TESTED: {reason}")
                 continue
 
-            missing_paths = _check_manifest_paths(variant_config, manifest) if manifest else []
+            # A variant patch can still replace a manifest path's parent; that variant no
+            # longer matches the manifest, so it is not tested (the base config was checked
+            # above; this also keeps the `base` variant -- the registry's source -- valid).
+            missing_paths = _check_manifest_paths(variant_config, manifest)
             if missing_paths:
                 reason = f"manifest paths unresolved: {missing_paths}"
                 index[variant_id] = {"status": "not_tested", "reason": reason}
@@ -8090,6 +8106,15 @@ def _json_pointer_module():
     return _jp
 
 
+def _block_manifest_module():
+    """tools/block_manifest.py (E-056 1b block manifest): the one implementation
+    of the STRATEGY_DESIGN_GUIDE.md §7c contract, shared with
+    tools/block_registry.py. Imported lazily like the other tools/ siblings."""
+    _json_pointer_module()  # puts tools/ on sys.path
+    import block_manifest as _bm
+    return _bm
+
+
 def _split_json_pointer(path: str) -> list:
     """RFC 6901 tokenization: '/' splits, '~1' -> '/' and '~0' -> '~' unescaped
     per segment. Raises PatchApplicationError on anything that isn't a
@@ -8186,12 +8211,13 @@ def _json_pointer_exists(config, path: str) -> bool:
 
 
 def _check_manifest_paths(variant_config: dict, manifest: dict) -> list:
-    """Returns the manifest-declared config_paths (STRATEGY_DESIGN_GUIDE.md
-    §7c's block.config_paths) that do NOT resolve in variant_config.
-    Gracefully returns [] when the manifest has no block.config_paths list at
-    all -- the manifest contract is proposed, not built (§7c), so most runs
-    will carry no manifest, or an empty one, and that alone is not a
-    failure. Implementation: tools/json_pointer.py (E-058 S2b)."""
+    """Returns the manifest-declared pointers (STRATEGY_DESIGN_GUIDE.md §7c's
+    block.config_paths, then scaffolding) that do NOT resolve in
+    variant_config; [] when the manifest lists none at all. The manifest
+    itself is shape-checked and resolved against the base config first, by
+    tools/block_manifest.check_manifest in the backtest_specification tool
+    stage; this per-variant check only catches a patch that removed a
+    manifest path. Implementation: tools/json_pointer.py (E-058 S2b)."""
     return _json_pointer_module().manifest_missing_paths(variant_config, manifest)
 
 

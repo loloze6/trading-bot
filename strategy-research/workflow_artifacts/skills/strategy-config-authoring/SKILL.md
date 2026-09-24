@@ -24,9 +24,9 @@ flow) is what turns it into variants, expressed as patches against the config th
   every available component, transform op, regime, and parameter for THIS flow. Sections 1-6 are carried over
   near-verbatim from `trading-bot/DOC/STRATEGY_CONFIG_REFERENCE.md`, which remains the code-owned reference and
   is authoritative if the two ever disagree — see the design guide's own provenance note. Section 7 is new,
-  config-direct-authoring-specific content; read its "PROPOSED, NOT BUILT" banners before treating §7a
-  (instrument-set field) or §7c (manifest contract) as current schema — neither is built yet. §7b (component-class
-  existence, `validate_config.py` VIOLATION V12) IS built and live.)
+  config-direct-authoring-specific content: §7a (instrument-set field) is PROPOSED, NOT BUILT; §7b
+  (component-class existence, `validate_config.py` VIOLATION V12) and §7c (the `block_manifest.yaml` contract
+  you write, see Output requirements) are built and live.)
 - `DATA_AVAILABILITY.md` (`strategy-research/docs/DATA_AVAILABILITY.md` — short, forced-read:
   what OHLCV timeframes/aux feeds are actually available, the exact-cache-missing fallback
   rule, and the bar-count/signal-shape checks to run before emitting a config for a new or
@@ -44,6 +44,7 @@ flow) is what turns it into variants, expressed as patches against the config th
 - `backtest_spec.yaml`   (same artifact name and shape `backtest-engineering` uses, minus `selected_variant_id`
   — see IMPROVEMENT 01's removal note below)
 - `decision.yaml`        (conforms to workflow_artifacts/schemas/decision.schema.json)
+- `block_manifest.yaml`  (only when status is spec_ready; STRATEGY_DESIGN_GUIDE.md §7c — see below)
 
 ## Output requirements
 `backtest_spec.yaml`:
@@ -63,6 +64,26 @@ The embedded `config` must:
   `episode_blocked_significance_by_symbol` — omitting it means the pre-registered
   requirement cannot be confirmed, which would violate the brief's binding requirement.
 
+`block_manifest.yaml` (next to `backtest_spec.yaml`; write it only when status is spec_ready). It says which
+part of the config you just wrote IS the hypothesis's block and which part is scaffolding. Exact shape, every key
+required, no other key (STRATEGY_DESIGN_GUIDE.md §7c):
+```yaml
+block:
+  kind: forecast            # forecast | regime -- nothing else
+  config_paths:             # JSON pointers into `config` (NOT into backtest_spec.yaml), e.g.
+    - /strategies/regimes/unknown/components/0
+scaffolding:                # JSON pointers to config the idea needs but that is not the idea; may be []
+  - /strategies/warmup
+  - /regime_detector
+rationale: one or two sentences -- which hypothesis claim each block path implements
+```
+- `kind: forecast` when the idea is a signal: at least one `config_paths` entry under `/strategies/regimes/`.
+  `kind: regime` when the idea is a regime gate: at least one entry at or under `/regime_detector`.
+- Every pointer must exist in `config`. A piece is block or scaffolding, never both: no pointer may sit inside
+  another's subtree. The backtest_specification tool stage checks all of this and stops the run on any miss.
+- No symbol/coin/timeframe field and no hypothesis id — a validated block is usable on any coin, and the run
+  already carries its `hypothesis_id`.
+
 `decision.yaml`:
 - stage: "strategy_config_authoring"
 - status: same value as backtest_spec.status (spec_ready | component_gap)
@@ -73,7 +94,8 @@ The embedded `config` must:
 
 If `hypothesis_card.yaml` carries `pass_through: true`, its `config` field is already a complete,
 upstream-authored strategy config (see `hypothesis-design/SKILL.md`'s IMPROVEMENT 08). Copy it through verbatim
-as this stage's own `backtest_spec.yaml.config` — do not re-author, re-derive `config_rationale` from scratch
+as this stage's own `backtest_spec.yaml.config`, and its `manifest` field verbatim as `block_manifest.yaml` —
+do not re-author, re-derive `config_rationale` from scratch
 (state "pass-through, see hypothesis_card.yaml.rationale" instead), or second-guess the supplied config's
 component choices. Still run it through the same validation this stage always performs before emitting
 `status: spec_ready` — a pass-through config is not exempt from being a VALID config, only from being
@@ -123,9 +145,8 @@ the original rationale.
   baseline, then modify only what the hypothesis requires. Do not omit regimes not
   explicitly mentioned in the brief — omitting trending/chop means those bars fall to
   default_regime behavior.
-- Do not attempt to author a `block_manifest.yaml` (STRATEGY_DESIGN_GUIDE.md §7c) — it is a proposed,
-  not-built schema. Nothing reads it yet. Similarly, do not invent a symbol/timeframe/instrument-set config
-  field (§7a) — also proposed, not built.
+- Write `block_manifest.yaml` for every spec_ready config (see Output requirements). Do not invent a
+  symbol/timeframe/instrument-set config field (§7a) — proposed, not built.
 
 ## Ungated hypotheses (post-A2.3) — THE canonical pattern
 

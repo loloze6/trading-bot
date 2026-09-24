@@ -10,10 +10,11 @@ it is read directly by `backtest-engineering/SKILL.md` and lives next to the
 engine code it documents (`regime_engine.py`, `strategy_engine.py`,
 `registry.py`). Re-sync this file with it if either drifts.
 
-Section 7 (below) is genuinely new content: an instrument-set/manifest
-proposal and one vocabulary callout, none of which exist in the schema or are
-enforced by code today. Read its own "PROPOSED, NOT BUILT" banner before
-treating anything in it as current behavior.
+Section 7 (below) is genuinely new content: an instrument-set proposal
+(§7a, PROPOSED, NOT BUILT), the component-existence check (§7b, built), the
+`block_manifest.yaml` contract (§7c, built 2026-09-24), and vocabulary /
+authoring callouts. Read each subsection's own banner before treating it as
+current behavior.
 
 Purpose: edit `strategy_config.json` without reading code. Every key, every
 option — plus, in §7, what a future config-direct-authoring path (Slice 3b,
@@ -340,9 +341,10 @@ Reads as: store vol-normalized pullback scores (500 deep) → current / mean(|hi
 ## 7. Design-guide-only content (new for E-056 Slice 3a)
 
 Everything above this line is the carried-over reference (§0 provenance
-note). Everything below is new: §7a and §7c are proposed, unbuilt schema
-additions; §7b is NOT a proposal — it is built and live (validate_config.py
-VIOLATION V12, shipped in this same slice); §7d is a vocabulary callout;
+note). Everything below is new: §7a is a proposed, unbuilt schema addition;
+§7b is NOT a proposal — it is built and live (validate_config.py
+VIOLATION V12, shipped in this same slice); §7c is built and live (the
+manifest contract, E-056 1b block-manifest ticket, 2026-09-24); §7d is a vocabulary callout;
 §7e is authoring guidance folded from `backtest-engineering/SKILL.md`'s
 Checklist/Forbidden sections (§6.7-9 above).
 
@@ -382,8 +384,10 @@ reference documentation, and this guide's own characterization session
 
 **Open question, deliberately not resolved here:** whether this field would
 live as a new top-level sibling of `regime_detector`/`strategies`/`aux_feeds`,
-or entirely inside the manifest contract in §7c instead. This depends on
-composition work (Slice 7) that is not built yet. Do not invent a resolution
+or somewhere else. (Not in the §7c block manifest: since that contract was
+built, 2026-09-24, it forbids any coin/instrument field — a validated block
+is usable on any coin.) This depends on composition work (Slice 7) that is
+not built yet. Do not invent a resolution
 to this question when authoring configs — it is unresolved by design, not by
 omission.
 
@@ -392,7 +396,7 @@ field, because it does not exist yet.
 
 ### §7b. Component-class existence check (`validate_config.py` VIOLATION V12) — BUILT, LIVE
 
-Unlike §7a and §7c, this is not a proposal — it shipped in this same slice
+Unlike §7a, this is not a proposal — it shipped in this same slice
 (E-056 Slice 3a). Every `class` value in `regime_detector.components[]` and
 `strategies.regimes.*.components[]` is now checked, at `validate_config.py`
 time, against `strategies.strategy_components` via
@@ -413,27 +417,61 @@ newly fail under V12 — this check only adds a new failure mode for configs
 that were already broken and would have failed at startup regardless. Shipped
 unconditionally, no flag, on exactly that empirical basis.
 
-### §7c. The manifest contract (`block_manifest.yaml`) — PROPOSED, NOT BUILT
+### §7c. The manifest contract (`block_manifest.yaml`) — BUILT, LIVE (config-direct-authoring flow)
 
-Has zero precedent anywhere in the current reference file, `validate_config.py`,
-or any skill file today — this is new content, not a reorganization of
-existing material. Proposed shape (from `delivery_plan_v26.md`'s Slice 3
-framing):
+Built 2026-09-24 (E-056 1b block-manifest ticket; was "PROPOSED, NOT
+BUILT"). Stage 1b (`strategy_config_authoring`, only under
+`orchestrator.config_direct_authoring.enabled`) writes
+`artifacts/block_manifest.yaml` next to `backtest_spec.yaml` whenever its
+status is `spec_ready`. It says which part of the base config IS the
+hypothesis's block, as opposed to scaffolding — so the block registry can
+store the block alone, without a second LLM pass re-deriving the boundary.
 
 ```yaml
 block:
-  kind: forecast | regime
-  config_paths: [ ... ]
-scaffolding: [ ... ]
-rationale: ...
+  kind: forecast                 # forecast | regime -- the only two block kinds
+  config_paths:                  # non-empty; JSON pointers into the base config
+    - /strategies/regimes/unknown/components/0
+scaffolding:                     # may be []; config the idea needs but that is not the idea
+  - /strategies/warmup
+  - /regime_detector
+rationale: the RSI pullback component is the hypothesis; the ungated detector and warmup only run it
 ```
 
-The intent is to let a future config-direct-authoring path (Slice 3b, not yet
-built — see `S2_FINDINGS.md` §9-10 for the build-list this guide is item 1
-of) describe a component/regime "block" and where its config paths live,
-without a second LLM pass re-deriving the same information. **Nothing reads
-or writes this file today.** Do not author one expecting any code to consume
-it.
+Rules (every one enforced by code):
+
+1. Exactly the keys `block` (with exactly `kind`, `config_paths`),
+   `scaffolding` and `rationale` — no others. `rationale` is a non-empty
+   string.
+2. `kind` is `forecast` or `regime`. A `forecast` block has at least one
+   `config_paths` entry under `/strategies/regimes/`; a `regime` block has at
+   least one at or under `/regime_detector`.
+3. Every pointer (block and scaffolding) is an RFC 6901 JSON pointer into the
+   strategy config itself (`/strategies/...`, not `/config/strategies/...`)
+   and resolves in the base config. Pointers are distinct.
+4. No pointer lies inside another's subtree — neither two block paths, nor a
+   block path and a scaffolding path. A config piece is block or scaffolding,
+   never both.
+5. No coin, symbol, timeframe or instrument field (a validated block is usable
+   on any coin), and no `hypothesis_id` (the run already carries the idea's
+   identity).
+
+**Who checks it.** One implementation, `strategy-research/tools/block_manifest.py`,
+used by both readers:
+
+- the tool-only `backtest_specification` stage (5a) checks it against 1b's
+  base config before building any variant; a missing, unparseable, malformed
+  or unresolved manifest stops the run (`RuntimeError`). A variant whose patch
+  removes a block path is marked `not_tested` (`manifest paths unresolved`);
+- `tools/block_registry.py` checks it again against the tested base config
+  when a validated run registers its block (`config_fragment` = the values at
+  `block.config_paths`).
+
+`workflow_artifacts/schemas/block_manifest.schema.json` documents the same
+shape (rules 1-3's shape part); `tests/test_e056_1b_block_manifest.py` keeps
+schema and code in agreement. A pass-through candidate's `manifest` field
+(hypothesis-design IMPROVEMENT 08) is written through verbatim and checked the
+same way.
 
 ### §7d. Comparator-vocabulary divergence
 

@@ -388,7 +388,16 @@ def test_route_post_config_direct_backtest_specification_base_not_tested_pauses(
 # 8. run_tool_worker("backtest_specification", ...) end to end (subprocess mocked)
 # ---------------------------------------------------------------------------
 
-def _write_backtest_spec_and_patches(run_dir: Path, patches: list) -> None:
+# E-056 1b block manifest: stage 1b now writes artifacts/block_manifest.yaml and
+# the tool stage fails loud without it, so every tool-stage fixture carries one.
+_MANIFEST = {
+    "block": {"kind": "forecast", "config_paths": ["/strategies/regimes/unknown/components/0"]},
+    "scaffolding": ["/strategies/warmup", "/regime_detector"],
+    "rationale": "the RSI pullback component is the idea",
+}
+
+
+def _write_backtest_spec_and_patches(run_dir: Path, patches: list, manifest=_MANIFEST) -> None:
     rpr.save_yaml(run_dir / "artifacts" / "backtest_spec.yaml", {
         "status": "spec_ready", "config": _BASE_CONFIG, "config_rationale": ["x"],
         "component_gap": None,
@@ -396,6 +405,8 @@ def _write_backtest_spec_and_patches(run_dir: Path, patches: list) -> None:
     rpr.save_yaml(run_dir / "artifacts" / "variant_patches.yaml", {
         "base_config_ref": "artifacts/backtest_spec.yaml", "variants": patches,
     })
+    if manifest is not None:
+        rpr.save_yaml(run_dir / "artifacts" / "block_manifest.yaml", manifest)
 
 
 def test_run_tool_worker_backtest_specification_all_variants_pass(monkeypatch):
@@ -497,14 +508,38 @@ def test_run_tool_worker_backtest_specification_validate_config_failure_marks_no
     assert "VIOLATION V9" in match[0]["report"]
 
 
-def test_run_tool_worker_backtest_specification_manifest_gracefully_absent(monkeypatch):
-    """No block_manifest.yaml on disk at all -- must not crash, must not skip
-    variants (the manifest contract is proposed, not built)."""
+def _no_subprocess(*a, **kw):
+    raise AssertionError("validate_config.py must not be reached")
+
+
+def test_run_tool_worker_backtest_specification_manifest_absent_fails_loud(monkeypatch):
+    """E-056 1b block manifest (was: 'gracefully absent'). 1b now writes
+    block_manifest.yaml; without it the tool stage stops before building any
+    variant."""
     run_dir = _minimal_run(rpr.ROOT, "run_823")
-    _write_backtest_spec_and_patches(run_dir, [{"variant_id": "base", "patch": [], "rationale": "base"}])
+    _write_backtest_spec_and_patches(run_dir, [{"variant_id": "base", "patch": [], "rationale": "base"}],
+                                     manifest=None)
     assert not (run_dir / "artifacts" / "block_manifest.yaml").exists()
+    monkeypatch.setattr(rpr.subprocess, "run", _no_subprocess)
+    with pytest.raises(RuntimeError, match="block_manifest.yaml is missing"):
+        asyncio.run(rpr.run_tool_worker("backtest_specification", "run_823"))
+    assert not (run_dir / "artifacts" / "variants" / "index.yaml").exists()
+
+
+def test_run_tool_worker_backtest_specification_manifest_missing_path_marks_not_tested(monkeypatch):
+    """The base config resolves every manifest path (checked up front); a variant
+    whose patch removes a block path is not tested."""
+    run_dir = _minimal_run(rpr.ROOT, "run_824")
+    _write_backtest_spec_and_patches(run_dir, [
+        {"variant_id": "base", "patch": [], "rationale": "base"},
+        {"variant_id": "drops_block", "patch": [{"path": "/strategies/regimes/unknown", "value": None}],
+         "rationale": "removes the block"},
+    ])
+    tested = []
 
     def _fake_subprocess_run(cmd, *args, **kwargs):
+        tested.append(cmd[-1])
+
         class _Ok:
             returncode = 0
             stdout = ""
@@ -512,26 +547,12 @@ def test_run_tool_worker_backtest_specification_manifest_gracefully_absent(monke
         return _Ok()
 
     monkeypatch.setattr(rpr.subprocess, "run", _fake_subprocess_run)
-    asyncio.run(rpr.run_tool_worker("backtest_specification", "run_823"))
-    index = rpr.load_yaml(run_dir / "artifacts" / "variants" / "index.yaml")
-    assert index["variants"]["base"]["status"] == "validated"
-
-
-def test_run_tool_worker_backtest_specification_manifest_missing_path_marks_not_tested(monkeypatch):
-    run_dir = _minimal_run(rpr.ROOT, "run_824")
-    _write_backtest_spec_and_patches(run_dir, [{"variant_id": "base", "patch": [], "rationale": "base"}])
-    rpr.save_yaml(run_dir / "artifacts" / "block_manifest.yaml", {
-        "block": {"kind": "forecast", "config_paths": ["/does/not/exist"]},
-        "scaffolding": [], "rationale": "test",
-    })
-
-    monkeypatch.setattr(rpr.subprocess, "run", lambda *a, **kw: (_ for _ in ()).throw(
-        AssertionError("validate_config.py must not be reached for a variant already rejected by the manifest check")
-    ))
     asyncio.run(rpr.run_tool_worker("backtest_specification", "run_824"))
     index = rpr.load_yaml(run_dir / "artifacts" / "variants" / "index.yaml")
-    assert index["variants"]["base"]["status"] == "not_tested"
-    assert "manifest paths unresolved" in index["variants"]["base"]["reason"]
+    assert index["variants"]["base"]["status"] == "validated"
+    assert index["variants"]["drops_block"]["status"] == "not_tested"
+    assert "manifest paths unresolved" in index["variants"]["drops_block"]["reason"]
+    assert not any("drops_block" in t for t in tested)
 
 
 def test_run_tool_worker_backtest_specification_raises_on_duplicate_variant_id(monkeypatch):
