@@ -84,6 +84,8 @@ QUEUE_STATUS = "QUEUE_STATUS"
 GATE_RESULT = "GATE_RESULT"      # LLM validation-stage gate, closed vocabulary
 RELATION = "RELATION"            # queue lineage relation, closed vocabulary
 SOURCE = "SOURCE"                # brief custody, closed vocabulary
+BRIEF_STATUS = "BRIEF_STATUS"    # E-059: open|exhausted, closed vocabulary
+ORIGIN = "ORIGIN"                # E-059: where a queue candidate came from, closed vocabulary
 REASON = "REASON"                # prose/label EXPLAINING `outcome` -- see below
 
 _SCALAR = (str, int, float, bool, type(None))
@@ -104,7 +106,12 @@ _POWER_KEYS = frozenset({
 
 _VERDICT_STATUS_VALUES = frozenset({"gated", "ungated", "stage_discretion", "void"})
 
-_QUEUE_STATUS_RE = re.compile(r"^(ready|done|in_progress|superseded|paused:.+|blocked_on_.+)$")
+# `queued` (E-059 S2a, delivery_plan_v26.md slice 6b; S1_FINDINGS_6B.md guess 5):
+# an agent candidate waiting in the queue. _select_entry never picks it (it
+# picks only in_progress/ready), and it is not `paused:` (which --resume picks)
+# nor `blocked_on_` (which the schedulability record reports as blocked).
+_QUEUE_STATUS_RE = re.compile(
+    r"^(ready|queued|done|in_progress|superseded|paused:.+|blocked_on_.+)$")
 
 # Three fields whose legitimate values collide with the verdict-token rule below
 # -- `validation_gate: PASS` is the LLM validation STAGE's gate, and
@@ -118,6 +125,12 @@ _RELATION_VALUES = frozenset({
     "reactivation",
 })
 _SOURCE_VALUES = frozenset({"agent", "operator_ratified", "user_delivered"})
+# E-059 S2a (S1_FINDINGS_6B.md §7). `brief_status` sits only on the entry that
+# owns a brief; absent = a legacy brief. `origin`: `composition` and
+# `campaign_review` are unused until slices 7 / 6c. Neither vocabulary holds a
+# word the verdict-token rule refuses.
+_BRIEF_STATUS_VALUES = frozenset({"open", "exhausted"})
+_ORIGIN_VALUES = frozenset({"brief", "reader", "composition", "campaign_review", "external"})
 
 # A BARE VERDICT TOKEN: a value that IS a verdict, as opposed to prose that
 # discusses one. Anchored and whole-value, so a paragraph containing the word
@@ -206,6 +219,11 @@ QUEUE_ENTRY_SCHEMA = {
     "verdict_void_reason": TEXT,
     "pass_rule_evaluation_ref": REF,
     "refinement_brief_path": TEXT, "refinement_brief_consumed_for": TEXT,
+    # E-059 S2a (decide-next and the queue, S1_FINDINGS_6B.md §7).
+    # `parked_reason` is added now and unused until slice 6c.
+    "brief_status": BRIEF_STATUS, "origin": ORIGIN,
+    "proposal_ref": REF, "card_ref": REF, "decision_ref": REF,
+    "parked_reason": TEXT,
 }
 
 # Dated correction families. A correction gets its own dated field so the prior
@@ -329,9 +347,10 @@ def _check_value(field: str, shape: str, value, errors: list):
     elif shape == QUEUE_STATUS:
         if value is not None and not _QUEUE_STATUS_RE.match(str(value).strip()):
             errors.append(f"{path}: {value!r} is not a recognised queue status")
-    elif shape in (GATE_RESULT, RELATION, SOURCE):
+    elif shape in (GATE_RESULT, RELATION, SOURCE, BRIEF_STATUS, ORIGIN):
         permitted = {GATE_RESULT: _GATE_RESULT_VALUES, RELATION: _RELATION_VALUES,
-                     SOURCE: _SOURCE_VALUES}[shape]
+                     SOURCE: _SOURCE_VALUES, BRIEF_STATUS: _BRIEF_STATUS_VALUES,
+                     ORIGIN: _ORIGIN_VALUES}[shape]
         if value is not None and str(value).strip() not in permitted:
             errors.append(f"{path}: {value!r} is not permitted here "
                           f"(closed vocabulary: {sorted(permitted)})")

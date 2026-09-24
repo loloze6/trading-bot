@@ -36,6 +36,10 @@ criteria:
     source: pooled
     comparator: ">"
     threshold: 0.3
+    # E-059 S2a: fields a hypothesis card may override when step 1a picks
+    # this entry (run_phase1_research._write_pass_rule_from_card refuses any
+    # other card-supplied field). None here: the anchor is the point.
+    card_overridable: []
     scale_free: true
     symbol_reducer: null
     floor:
@@ -66,6 +70,9 @@ criteria:
     metric: net_return_pct
     source: window
     reducer: sign_consistent_by_era
+    # E-059 S2a: the comment above allows a per-hypothesis `metric`; nothing
+    # else may be overridden by a card (see realized_edge_to_cost_ratio).
+    card_overridable: [metric]
     # comparator/threshold are unused by this reducer -- it resolves its own
     # PASS/FAIL directly (every represented era's median sign agrees and is
     # nonzero). Deliberately left absent rather than a misleading

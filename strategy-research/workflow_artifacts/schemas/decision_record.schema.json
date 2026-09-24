@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "E-059 S2a (delivery_plan_v26.md slice 6b; engineering/roadmap/E-059/S1_FINDINGS_6B.md §8 and its operator decision of 2026-09-24). Written by run_campaign._decide_next_step (orchestrator.decide_next.enabled) from tools/decide_next.py::decide, through run_phase1_research.save_yaml, which checks it against this file by stem (warn-only by default, blocking under WORKFLOW_ARTIFACT_VALIDATION=raise). Pinned against a real decide() output by tests/test_e059_s2a_decide_next.py. The record never carries hypothesis_family, altitude, lineage_routing, hypothesis_verdict or continuation_* (decide() refuses campaign_memory.RETIRED_FIELDS), and has no lineage-demotion field (operator decision 6). Proposal scores appear here only.",
+  "title": "runs/<run>/artifacts/decision_record.yaml",
+  "description": "One decide-next decision, taken after the run's queue entry was marked done: the inputs' fingerprints, R1/R2, operator entries, every candidate considered with its gates, cost and rank, and what was picked (or why the loop stopped).",
+  "type": "object",
+  "required": ["schema_version", "decided_at", "trigger", "inputs", "rules", "operator_entries",
+               "candidates", "picked", "stop"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "decided_at": { "type": "string" },
+    "trigger": {
+      "type": "object",
+      "required": ["after_run", "after_entry", "idea_status"],
+      "additionalProperties": false,
+      "properties": {
+        "after_run": { "type": "string" },
+        "after_entry": { "type": "string" },
+        "idea_status": { "enum": ["validated", "refuted", "inconclusive", null],
+                         "description": "From campaign_memory.yaml (the grid), never from pending_stage." }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "required": ["memory_sha256", "registry_revision", "queue_sha256",
+                   "known_component_classes_sha256", "component_requests", "data_requests"],
+      "additionalProperties": false,
+      "properties": {
+        "memory_sha256": { "type": ["string", "null"] },
+        "registry_revision": { "type": "integer", "minimum": 0 },
+        "queue_sha256": { "type": "string" },
+        "known_component_classes_sha256": { "type": ["string", "null"] },
+        "component_requests": { "type": "integer", "minimum": 0 },
+        "data_requests": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "rules": {
+      "type": "object",
+      "required": ["r1", "r2"],
+      "additionalProperties": false,
+      "properties": {
+        "r1": {
+          "type": "object",
+          "required": ["registry_revision", "last_composition_revision", "would_fire", "fired", "reason"],
+          "additionalProperties": false,
+          "properties": {
+            "registry_revision": { "type": "integer" },
+            "last_composition_revision": { "type": ["integer", "null"] },
+            "would_fire": { "type": "boolean" },
+            "fired": { "const": false, "description": "No-op until slice 7." },
+            "reason": { "type": "string" }
+          }
+        },
+        "r2": {
+          "type": "object",
+          "required": ["fired", "open_briefs", "enqueued", "reason"],
+          "additionalProperties": false,
+          "properties": {
+            "fired": { "const": false, "description": "R2 is E-059 S2b." },
+            "open_briefs": { "type": "array", "items": { "type": "string" } },
+            "enqueued": { "type": "array", "items": { "type": "string" } },
+            "reason": { "type": "string" }
+          }
+        }
+      }
+    },
+    "operator_entries": { "type": "array", "items": { "type": "string" } },
+    "candidates": { "type": "array", "items": { "$ref": "#/$defs/candidate" } },
+    "picked": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "object", "required": ["operator_entry", "why"], "additionalProperties": false,
+          "properties": { "operator_entry": { "type": "string" }, "why": { "type": "string" } } },
+        { "type": "object", "required": ["queue_entry_id", "why"], "additionalProperties": false,
+          "properties": { "queue_entry_id": { "type": "string" }, "why": { "type": "string" } } },
+        { "type": "object", "required": ["candidate_id", "queue_entry_id", "brief_path", "why"],
+          "additionalProperties": false,
+          "properties": { "candidate_id": { "type": "string" }, "queue_entry_id": { "type": "string" },
+                          "brief_path": { "type": "string" }, "why": { "type": "string" } } }
+      ]
+    },
+    "stop": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "object", "required": ["reason", "detail"], "additionalProperties": false,
+          "properties": { "reason": { "const": "no_eligible_candidate" },
+                          "detail": { "type": "string" } } }
+      ]
+    }
+  },
+  "$defs": {
+    "candidate": {
+      "type": "object",
+      "required": ["candidate_id", "origin", "kind", "category", "source_run", "parent_hypothesis_id",
+                   "hypothesis_id", "proposal_ref", "collapsed_sources", "scores",
+                   "resolved_config_sha256", "gates", "eligible", "cost", "rank"],
+      "additionalProperties": false,
+      "properties": {
+        "candidate_id": { "type": "string" },
+        "origin": { "const": "reader" },
+        "kind": { "enum": ["patch", "new_block"] },
+        "category": { "type": "string" },
+        "source_run": { "type": "string" },
+        "parent_hypothesis_id": { "type": ["string", "null"] },
+        "hypothesis_id": { "type": "string", "description": "<parent>__<proposal_id> (operator decision 1)" },
+        "proposal_ref": { "type": "string" },
+        "collapsed_sources": { "type": "array", "items": { "type": "string" } },
+        "scores": {
+          "type": "object",
+          "required": ["confidence_real", "distance_to_profitable", "mechanism_plausibility",
+                       "model_id", "rubric_version"],
+          "additionalProperties": false,
+          "properties": {
+            "confidence_real": { "type": "integer", "minimum": 0, "maximum": 3 },
+            "distance_to_profitable": { "type": "integer", "minimum": 0, "maximum": 3 },
+            "mechanism_plausibility": { "type": "integer", "minimum": 0, "maximum": 3 },
+            "model_id": { "type": ["string", "null"] },
+            "rubric_version": { "type": ["string", "null"] }
+          }
+        },
+        "resolved_config_sha256": { "type": ["string", "null"] },
+        "gates": {
+          "type": "object",
+          "required": ["novelty", "feasibility"],
+          "additionalProperties": false,
+          "properties": {
+            "novelty": {
+              "type": "object",
+              "required": ["exact_match", "matched_runs", "digest_advisory"],
+              "additionalProperties": false,
+              "properties": {
+                "exact_match": { "enum": ["NOVEL", "REPEAT", "NOT_EVALUATED", "NOT_APPLICABLE"],
+                                 "description": "Binding (operator decision 3): REPEAT makes the candidate ineligible." },
+                "matched_runs": { "type": "array", "items": { "type": "string" } },
+                "note": { "type": "string" },
+                "digest_advisory": {
+                  "type": "object",
+                  "description": "Legacy exclusion digest, layer 2 only. Information only: never refuses.",
+                  "required": ["outcome", "family", "family_confidence", "run_ids"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "outcome": { "enum": ["novel", "neighbour", "repeat", "not_available"] },
+                    "family": { "type": ["string", "null"] },
+                    "family_confidence": { "type": ["string", "null"] },
+                    "run_ids": { "type": "array", "items": { "type": "string" } }
+                  }
+                }
+              }
+            },
+            "feasibility": {
+              "type": "object",
+              "required": ["result", "reasons"],
+              "additionalProperties": false,
+              "properties": {
+                "result": { "enum": ["FEASIBLE", "INFEASIBLE", "UNKNOWN"] },
+                "reasons": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          }
+        },
+        "eligible": { "type": "boolean" },
+        "cost": {
+          "type": "object",
+          "required": ["backtests", "seconds_estimate", "basis"],
+          "additionalProperties": false,
+          "properties": {
+            "backtests": { "type": ["integer", "null"] },
+            "seconds_estimate": { "type": ["integer", "null"] },
+            "basis": { "type": "string" }
+          }
+        },
+        "rank": { "type": ["integer", "null"], "minimum": 1 }
+      }
+    }
+  }
+}

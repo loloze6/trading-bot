@@ -2462,6 +2462,8 @@ market_type are not `tradable: true` — **or are undeclared**
 | `config/detector_wishlist.yaml` | Detector families to build when an ungated edge exists. Each candidate's `trigger_condition.predicate` is a structured, machine-checkable expression evaluated by `workflow/run_campaign.py::evaluate_wishlist_predicate()` — no longer human-reviewed prose. `status`/`last_evaluated_at`/`last_evaluated_against`/`kb_state_hash`/`evaluation_note` are written ONLY by `evaluate_and_persist_wishlist_predicate()` (single authority — never hand-edit); a persisted `status` is only trustworthy if its `kb_state_hash` matches a fresh `sha256` of `campaign_knowledge_base.yaml`'s current bytes. See `RUNBOOK.md` section 3 and `docs/CONCEALMENT_INSTRUCTION_DOCTRINE.md`. |
 | `campaign_knowledge_base.yaml` | Durable findings store — see the file itself for the current count; this table doesn't track a point-in-time number. |
 | `campaign_record/campaign_memory.yaml` | Per-run memory (E-058 S2a), written only by stage 17 `regroup_record` when `orchestrator.regroup_record.enabled` is on (off by default). One entry per `run_id`; fields in the stage 17 block. No old runs; those live in `campaign_knowledge_base.yaml`. |
+| `runs/<run_id>/artifacts/decision_record.yaml` | One decide-next decision (E-059 S2a), written by `run_campaign.py`'s DONE branch only when `orchestrator.decide_next.enabled` is on (off by default), from `tools/decide_next.py`. Inputs' hashes, R1/R2 (no-ops), candidates with gates/cost/rank, `picked` or `stop`. Schema `workflow_artifacts/schemas/decision_record.schema.json`. See §5 `run_campaign.py`. |
+| `campaign_record/candidate_briefs/<id>.md` | The brief decide-next writes for the candidate it picked (E-059 S2a, same flag). No criteria on purpose: step 1a writes them. |
 
 ---
 
@@ -2579,6 +2581,49 @@ a hard-pause condition — without a human re-invoking the orchestrator between
 runs. Also owns `evaluate_wishlist_predicate()`/`evaluate_and_persist_wishlist_predicate()`
 (mechanical wishlist-trigger evaluation, single-authority persistence — see
 the config-files table above). Full operating detail: `RUNBOOK.md`.
+
+**Decide-next (E-059 S2a, off by default: `orchestrator.decide_next.enabled`,
+requires `regroup_record` and `config_direct_authoring`).** When a lineage
+finishes -- the DONE branch, or the E-030 quarantine path that marks it done --
+the finished entry's `outcome` becomes the grid's `idea_status`, citing
+`runs/<run_id>/artifacts/idea_status.yaml` (the queue's provenance gate refuses
+the flag-off `completed_rejected` with no reference; a run that ended before
+the grid keeps its stage outcome, declared `verdict_status: ungated`). Then
+`tools/decide_next.py` decides, and only AFTER the decision record (and any
+new queue entry) is on disk is the finished entry saved as `done` -- a failure
+leaves it `in_progress`, so the next step retries. The record
+(`runs/<run_id>/artifacts/decision_record.yaml`) says:
+- whatever `_select_entry` will run next if it still has an `in_progress` or
+  `ready` entry (operator entries therefore go first; nothing is minted);
+- else the best eligible reader proposal (from the runs in
+  `campaign_record/campaign_memory.yaml`) becomes ONE `ready` agent entry
+  (`source: agent`, `origin: reader`, `priority: 999`, `proposal_ref`,
+  `decision_ref`, no `relation`), with a brief in
+  `campaign_record/candidate_briefs/<proposal_id>.md` (its id must be a safe
+  `<category>-<source run>-<n>` name that collides with no queue id or brief);
+- else the loop stops (`DECIDE stop`, RUNBOOK §3 last row).
+
+Novelty is the exact match against the memory, binding: config hash, measured
+symbols, the protocol file's timeframe (normalised) and a content hash of its
+windows -- never the per-run protocol path; the legacy exclusion digest is
+recorded, never refuses. Ranking (after collapsing eligible duplicates on that
+key): `confidence_real` desc, `distance_to_profitable` desc, cost (backtests)
+asc, id asc; no lineage demotion. Scores only rank and appear only in the
+decision record. A picked candidate is a new idea (`<parent>__<proposal_id>`)
+that enters step 1a: its brief carries **no criteria**; `_materialize_run`
+writes `pre_registration.yaml` with `pass_rule: null` + `pass_rule_pending:
+hypothesis_generation`; run_loop defers the readers pre-flight; 1a gets the
+addendum `workflow_artifacts/skills/hypothesis-design/DECIDE_NEXT_CANDIDATES.md`
+(flag on only); and after EVERY completion of 1a `_write_pass_rule_from_card`
+rebuilds the pass_rule from the current card's menu criteria (only `id` plus a
+menu entry's `card_overridable` fields; K3 lint; pre-flight). The marker is
+dropped once the run moves past 1a. A patch's resolved config and manifest pass
+through to 1b; 5a stops if either hash differs from
+`candidate.source.expected_config_sha256` / `expected_manifest_sha256`. New
+queue fields (closed schema, `tools/record_schema.py`): `origin`,
+`proposal_ref`, `decision_ref`, `card_ref`, `brief_status`, `parked_reason`,
+and status `queued` (never auto-picked). Multi-card briefs, R2 and brief
+exhaustion are E-059 S2b.
 
 ### `tools/fragment_patterns.py` — Ideation-Only Fragment Diagnostics
 
