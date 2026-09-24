@@ -570,3 +570,35 @@ Run budget: the plan's 2 consecutive real runs, after S2a, where the first must 
 - **Flag:** false when absent; non-bool raises; on without `regroup_record` raises; register
   entry present (`test_feature_flag_register.py`).
 - **Docs gate:** `test_guide_covers_the_code.py`, `test_doc_anchors.py`.
+
+---
+
+## Decision (operator, 2026-09-24)
+
+1. **Accepted.** A reader patch becomes a NEW `hypothesis_id` (`<parent>__<proposal_id>`)
+   linked to its parent.
+2. **CHANGED -- criteria are NOT inherited from the source run.** A reader may propose an
+   idea unrelated to the idea that was tested (a `new_block` in particular). Every
+   candidate picked from a proposal therefore goes through step 1a, which writes a
+   hypothesis card and criteria **coherent with the proposed idea**, from the criterion
+   menu, as the target already does for every idea ("idea criteria are per-hypothesis
+   from an anchored criterion menu"; "all candidates enter at Step 1a"). The config
+   carried by a patch may pass through to 1b; a `new_block` is authored at 1b. The
+   pre_registration / preflight ordering problem this raises (§ on preflight) must be
+   solved in the S2 build: 1a writes the criteria before anything that needs them.
+3. **Accepted.** The exact-match repeat check (card K: config hash + symbols + timeframe +
+   protocol) becomes binding now, from campaign memory; the legacy digest stays
+   informational.
+4. **Accepted.** Operator-registered `ready` entries first, by priority; extra brief cards
+   scored by 1a on the same rubric.
+5. **Accepted.** New `queued` status.
+6. **DROPPED.** No lineage-depth demotion. Revisit only if endless tweaking shows up in
+   the first real runs.
+7. **Accepted, plus:** legacy briefs (no `brief_status`) are tagged obsolete in their
+   title and never trigger R2.
+8. **Accepted.** Under the flag the DONE branch writes `outcome: <idea_status>` citing
+   `idea_status.yaml`; the flag-off crash is a separate ticket.
+9. **Accepted.** A brief's extra hypotheses keep their card (`card_ref`) and skip
+   authoring when picked.
+
+Build split: S2a (core decide_next + queue fields + DONE-branch wiring), then S2b (briefs).
