@@ -132,25 +132,6 @@ def load_manifest(run_dir: Path):
                                   error_cls=BlockRegistryError)
 
 
-def _resolve_pointer(config, pointer: str, where: str):
-    """RFC 6901 read with the orchestrator's own resolution rules
-    (tools/json_pointer.py, shared with run_phase1_research._json_pointer_exists)."""
-    try:
-        return _jp.resolve_json_pointer(config, pointer)
-    except _jp.JsonPointerError as exc:
-        raise BlockRegistryError(f"{where}: manifest path {pointer!r} does not resolve in the "
-                                 f"tested base config ({exc})") from exc
-
-
-def _regime_assignment(kind: str, paths: list) -> dict:
-    """Derived from the pointer paths only: /strategies/regimes/<name>/... ->
-    <name>; a regime block's detector rules live under /regime_detector."""
-    regimes = sorted({p.split("/")[3].replace("~1", "/").replace("~0", "~")
-                      for p in paths if p.startswith("/strategies/regimes/") and len(p.split("/")) > 3})
-    detector = sorted(p for p in paths if p == "/regime_detector" or p.startswith("/regime_detector/"))
-    return {"regimes": regimes, "detector_paths": detector}
-
-
 def _base_variant(entry: dict) -> tuple:
     """The tested base config, chosen exactly as protocol_execution chooses
     its base variant (tools/json_pointer.base_variant_id: `base`, else the
@@ -194,11 +175,9 @@ def build_block(run_dir: Path, entry: dict, manifest: dict, *, root: Path,
             f"register a block the grid did not test")
     paths = manifest["block"]["config_paths"]
     where = str(Path(run_dir) / "artifacts" / MANIFEST_FILENAME)
-    # Same check 5a ran on 1b's base config (block AND scaffolding resolve).
-    unresolved = _bm.unresolved_paths(config, manifest)
-    if unresolved:
-        raise BlockRegistryError(f"{where}: manifest path(s) {unresolved} do not resolve in the "
-                                 f"tested base config {cfg_path}")
+    # The one resolution check (block AND scaffolding) -- the same 5a ran on 1b's base config.
+    _bm.check_manifest(manifest, config, where=f"{where} (tested base config {cfg_path})",
+                       error_cls=BlockRegistryError)
     grid = entry["grid"]
     numbers = {}
     for crit, row in grid["cells"].items():
@@ -218,8 +197,8 @@ def build_block(run_dir: Path, entry: dict, manifest: dict, *, root: Path,
         "block_id": f"{entry['hypothesis_id']}:{run_id}",
         "hypothesis_id": entry["hypothesis_id"],
         "kind": manifest["block"]["kind"],
-        "config_fragment": {p: _resolve_pointer(config, p, where) for p in paths},
-        "regime_assignment": _regime_assignment(manifest["block"]["kind"], paths),
+        "config_fragment": {p: _jp.resolve_json_pointer(config, p) for p in paths},
+        "regime_assignment": _bm.regime_assignment(paths),
         "criteria_passed": list(grid["criteria"]),
         "variants_passed": list(grid["variants"]),
         "numbers": numbers,

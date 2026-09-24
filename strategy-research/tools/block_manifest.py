@@ -32,11 +32,13 @@ Rules beyond the shape:
   * every pointer is RFC 6901 ('/'-prefixed; tools/json_pointer.py) and
     resolves in the base config -- block AND scaffolding;
   * no pointer appears twice, and no pointer lies inside another one's
-    subtree (within the block, or between block and scaffolding): a config
-    piece is either block or scaffolding, never both;
-  * kind `forecast` -> at least one block path under /strategies/regimes/;
+    subtree (block vs block, block vs scaffolding, scaffolding vs
+    scaffolding): each config piece is listed once, as block or scaffolding;
+  * kind `forecast` -> at least one block path strictly inside a named
+    regime, /strategies/regimes/<name>[/...];
     kind `regime`   -> at least one block path at or under /regime_detector.
-    (The registry derives regime_assignment from exactly these prefixes.)
+    Both are read off `regime_assignment` below -- the same function
+    tools/block_registry.py stores as the block's regime_assignment.
 
 Deliberately absent: a coin/symbol/instrument restriction (a validated block
 is usable on any coin, card F), `hypothesis_id` (the registry takes the idea's
@@ -55,8 +57,8 @@ MANIFEST_FILENAME = "block_manifest.yaml"
 MANIFEST_KINDS = ("forecast", "regime")
 MANIFEST_KEYS = ("block", "scaffolding", "rationale")
 BLOCK_KEYS = ("kind", "config_paths")
-# kind -> the pointer prefix at least one block path must sit at or under.
-KIND_ROOTS = {"forecast": "/strategies/regimes/", "regime": "/regime_detector"}
+# kind -> the regime_assignment() key at least one block path must land in.
+KIND_ASSIGNMENT_KEY = {"forecast": "regimes", "regime": "detector_paths"}
 
 
 class BlockManifestError(ValueError):
@@ -82,8 +84,16 @@ def _nested(a: str, b: str) -> bool:
     return sa[:n] == sb[:n]
 
 
-def _under(p: str, root: str) -> bool:
-    return p == root.rstrip("/") or p.startswith(root.rstrip("/") + "/")
+def regime_assignment(paths: list) -> dict:
+    """Derived from the pointer paths only: /strategies/regimes/<name>[/...]
+    -> <name> (a bare /strategies/regimes names no regime); a regime block's
+    detector pieces are the paths at or under /regime_detector. Stored by
+    tools/block_registry.py as the block's regime_assignment and used for the
+    kind rule in validate_manifest, so the two can never disagree."""
+    regimes = sorted({p.split("/")[3].replace("~1", "/").replace("~0", "~")
+                      for p in paths if p.startswith("/strategies/regimes/") and len(p.split("/")) > 3})
+    detector = sorted(p for p in paths if p == "/regime_detector" or p.startswith("/regime_detector/"))
+    return {"regimes": regimes, "detector_paths": detector}
 
 
 def validate_manifest(doc, where: str = MANIFEST_FILENAME, error_cls=BlockManifestError) -> dict:
@@ -127,18 +137,26 @@ def validate_manifest(doc, where: str = MANIFEST_FILENAME, error_cls=BlockManife
             if _nested(a, s):
                 raise error_cls(f"{where}: block path {a!r} and scaffolding path {s!r} overlap "
                                 f"-- a config piece is either block or scaffolding, not both")
-    root = KIND_ROOTS[kind]
-    if not any(_under(p, root) for p in paths):
-        raise error_cls(f"{where}: a {kind!r} block needs at least one config_path at or under "
-                        f"{root.rstrip('/')!r}, got {paths!r}")
+    for i, a in enumerate(scaffolding):
+        for b in scaffolding[i + 1:]:
+            if _nested(a, b):
+                raise error_cls(f"{where}: scaffolding paths {a!r} and {b!r} overlap -- list "
+                                f"each config piece once")
+    if not regime_assignment(paths)[KIND_ASSIGNMENT_KEY[kind]]:
+        need = ("strictly inside a named regime (/strategies/regimes/<name>[/...])"
+                if kind == "forecast" else "at or under /regime_detector")
+        raise error_cls(f"{where}: a {kind!r} block needs at least one config_path {need}, "
+                        f"got {paths!r}")
     return doc
 
 
 def unresolved_paths(config, manifest: dict) -> list:
     """Block and scaffolding pointers that do NOT resolve in `config`
-    (a shape-valid manifest is assumed). Same function the 5a stage's
-    per-variant check (_check_manifest_paths) calls."""
-    return _jp.manifest_missing_paths(config, manifest)
+    (a shape-valid manifest is assumed). Checked against the base config by
+    5a and by the registry. Per variant, 5a checks only the BLOCK paths
+    (json_pointer.manifest_missing_paths): a variant may change scaffolding."""
+    return _jp.manifest_missing_paths(config, manifest) + [
+        p for p in manifest["scaffolding"] if not _jp.json_pointer_exists(config, p)]
 
 
 def check_manifest(doc, config, where: str = MANIFEST_FILENAME,

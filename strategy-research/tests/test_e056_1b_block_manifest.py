@@ -120,6 +120,12 @@ CODE_ONLY_BAD = [
     ("forecast_without_regimes_path", _with(config_paths=["/strategies/warmup"], scaffolding=[]),
      "at least one"),
     ("regime_without_detector_path", _with(kind="regime"), "at least one"),
+    # code-review fix 3: the bare regimes map names no regime (registry regimes=[])
+    ("forecast_bare_regimes_map", _with(config_paths=["/strategies/regimes"],
+                                        scaffolding=["/strategies/warmup"]), "at least one"),
+    # code-review fix 10: scaffolding vs scaffolding
+    ("scaffolding_overlaps_scaffolding", _with(scaffolding=["/regime_detector",
+                                                            "/regime_detector/rules"]), "overlap"),
 ]
 # Shape-valid, but a pointer does not resolve in CONFIG.
 UNRESOLVED = [
@@ -164,7 +170,7 @@ def test_schema_constants_match_code():
     registry_kind = _schema("block_registry.schema.json")["$defs"]["block"]["properties"]["kind"]["enum"]
     assert tuple(registry_kind) == bm.MANIFEST_KINDS
     assert br.MANIFEST_KINDS is bm.MANIFEST_KINDS and br.MANIFEST_FILENAME == bm.MANIFEST_FILENAME
-    assert set(bm.KIND_ROOTS) == set(bm.MANIFEST_KINDS)
+    assert set(bm.KIND_ASSIGNMENT_KEY) == set(bm.MANIFEST_KINDS)
 
 
 @pytest.mark.parametrize("name,doc", VALID + [(n, d) for n, d, _ in UNRESOLVED],
@@ -299,6 +305,8 @@ def _registry_accepts(run_id: str, manifest) -> bool:
     assert block["config_fragment"] == {
         p: rpr._json_pointer_module().resolve_json_pointer(CONFIG, p)
         for p in manifest["block"]["config_paths"]}
+    # the kind rule and the stored regime_assignment agree (code-review fix 3)
+    assert block["regime_assignment"][bm.KIND_ASSIGNMENT_KEY[manifest["block"]["kind"]]]
     return True
 
 
@@ -313,23 +321,209 @@ def test_5a_and_registry_agree(monkeypatch, name, doc, expected):
     assert _registry_accepts(run_id, doc) is expected
 
 
-def test_5a_marks_a_variant_that_drops_a_scaffolding_path_not_tested(monkeypatch):
-    """Per-variant check covers scaffolding too (the same resolution function
-    the registry uses), so even a non-empty `base` patch cannot yield a base
-    variant the registry would refuse."""
+def test_5a_still_tests_a_variant_that_changes_scaffolding(monkeypatch):
+    """Code-review fix 6: per variant only BLOCK paths must resolve; a variant
+    may change (even drop) scaffolding and is still tested."""
     run_dir = _minimal_run(rpr.ROOT, "run_790")
     arts = run_dir / "artifacts"
     rpr.save_yaml(arts / "backtest_spec.yaml", {"status": "spec_ready", "config": CONFIG,
                                                 "config_rationale": ["x"], "component_gap": None})
     rpr.save_yaml(arts / "variant_patches.yaml", {"variants": [
-        {"variant_id": "base", "patch": [{"path": "/strategies", "value": {
+        {"variant_id": "base", "patch": [], "rationale": "base"},
+        {"variant_id": "design", "patch": [{"path": "/strategies", "value": {
             "regimes": CONFIG["strategies"]["regimes"]}}], "rationale": "drops warmup"}]})
     (arts / "block_manifest.yaml").write_text(yaml.safe_dump(GOOD), encoding="utf-8")
     monkeypatch.setattr(rpr.subprocess, "run", _ok_subprocess)
     asyncio.run(rpr.run_tool_worker("backtest_specification", "run_790"))
-    base = rpr.load_yaml(arts / "variants" / "index.yaml")["variants"]["base"]
-    assert base["status"] == "not_tested"
-    assert base["reason"] == "manifest paths unresolved: ['/strategies/warmup']"
+    variants = rpr.load_yaml(arts / "variants" / "index.yaml")["variants"]
+    assert variants["base"]["status"] == "validated"
+    assert variants["design"]["status"] == "validated"
+
+
+def test_per_variant_check_is_block_only():
+    no_scaffold = {"strategies": {"regimes": CONFIG["strategies"]["regimes"]}}
+    assert rpr._check_manifest_paths(no_scaffold, GOOD) == []
+    assert bm.unresolved_paths(no_scaffold, GOOD) == ["/strategies/warmup", "/regime_detector"]
+
+
+# ---------------------------------------------------------------------------
+# Code-review fix 1: the manifest is checked right after 1b, one retry
+# ---------------------------------------------------------------------------
+
+def _authored_1b(run_id: str, manifest) -> Path:
+    run_dir = _minimal_run(rpr.ROOT, run_id)
+    arts = run_dir / "artifacts"
+    rpr.save_yaml(arts / "backtest_spec.yaml", {"status": "spec_ready", "config": CONFIG,
+                                                "config_rationale": ["x"], "component_gap": None})
+    rpr.save_yaml(arts / "decision.yaml", {"stage": "strategy_config_authoring",
+                                           "status": "spec_ready", "rationale": "x",
+                                           "blocking_issues": []})
+    if manifest is not None:
+        (arts / "block_manifest.yaml").write_text(yaml.safe_dump(manifest), encoding="utf-8")
+    return run_dir
+
+
+def test_post_1b_route_valid_manifest_goes_to_innovation_expansion():
+    run_dir = _authored_1b("run_760", GOOD)
+    assert rpr.determine_post_strategy_config_authoring_route(run_dir) == "innovation_expansion"
+
+
+@pytest.mark.parametrize("manifest,match", [
+    (None, "is missing"),
+    (_with(kind="detector"), "block.kind"),
+    (_with(config_paths=["/strategies/regimes/unknown/components/3"]), "not resolve"),
+], ids=["missing", "malformed", "unresolved"])
+def test_post_1b_route_retries_once_then_fails_loud(monkeypatch, manifest, match):
+    _set_orchestrator({"config_direct_authoring": {"enabled": True}})
+    run_dir = _authored_1b("run_761", manifest)
+    assert rpr.determine_post_strategy_config_authoring_route(run_dir) == "strategy_config_authoring"
+    retry = rpr.load_yaml(run_dir / "pipeline_state.yaml")["block_manifest_retry"]
+    assert retry["attempts"] == 1 and match in retry["last_error"]
+    # the retry's handoff carries the error
+    handoff = {"required_inputs": []}
+    rpr._apply_block_manifest_retry_context("strategy_config_authoring", handoff, run_dir)
+    assert match in handoff["injected_context"]["block_manifest_error"]
+    other = {"required_inputs": []}
+    rpr._apply_block_manifest_retry_context("innovation_expansion", other, run_dir)
+    assert other == {"required_inputs": []}
+    # second bad manifest: fail loud, no third pass
+    with pytest.raises(RuntimeError, match="still invalid"):
+        rpr.determine_post_strategy_config_authoring_route(run_dir)
+
+
+def test_post_1b_route_retry_then_valid_resets_the_counter():
+    run_dir = _authored_1b("run_762", None)
+    assert rpr.determine_post_strategy_config_authoring_route(run_dir) == "strategy_config_authoring"
+    (run_dir / "artifacts" / "block_manifest.yaml").write_text(yaml.safe_dump(GOOD), encoding="utf-8")
+    assert rpr.determine_post_strategy_config_authoring_route(run_dir) == "innovation_expansion"
+    assert rpr.load_yaml(run_dir / "pipeline_state.yaml")["block_manifest_retry"]["attempts"] == 0
+
+
+def test_retry_context_is_a_no_op_with_the_flag_off():
+    _set_orchestrator(None)
+    run_dir = _authored_1b("run_763", None)
+    rpr.update_state(path=run_dir, block_manifest_retry={"attempts": 1, "last_error": "boom"})
+    handoff = {"required_inputs": []}
+    rpr._apply_block_manifest_retry_context("strategy_config_authoring", handoff, run_dir)
+    assert handoff == {"required_inputs": []}
+
+
+def test_route_loop_back_to_1b_is_driven_by_run_loop(monkeypatch):
+    """run_loop really re-enters strategy_config_authoring with the error in its
+    handoff, then stops loud on a second bad manifest -- innovation_expansion is
+    never invoked."""
+    _set_orchestrator({"config_direct_authoring": {"enabled": True}})
+    run_dir = _authored_1b("run_764", None)
+    state = rpr.load_yaml(run_dir / "pipeline_state.yaml")
+    state["pending_stage"] = "strategy_config_authoring"
+    rpr.save_yaml(run_dir / "pipeline_state.yaml", state)
+    tpl = SR_ROOT / "workflow_artifacts" / "templates" / "handoffs" / HANDOFF_1B.name
+    (run_dir / "handoffs").mkdir(exist_ok=True)
+    shutil.copy(tpl, run_dir / "handoffs" / HANDOFF_1B.name)
+    (run_dir / "artifacts" / "hypothesis_card.yaml").write_text("hypothesis_id: H-1\n", encoding="utf-8")
+    docs = rpr.ROOT / "docs"
+    docs.mkdir(parents=True, exist_ok=True)
+    (docs / "STRATEGY_DESIGN_GUIDE.md").write_text("guide\n", encoding="utf-8")
+    seen = []
+
+    async def _fake_invoke(stage_name, run_id, retry_context=None):
+        handoff = rpr.load_yaml(run_dir / "handoffs" / HANDOFF_1B.name)
+        rpr._clear_stale_block_manifest(stage_name, run_dir)
+        rpr._apply_block_manifest_retry_context(stage_name, handoff, run_dir)
+        seen.append((stage_name, (handoff.get("injected_context") or {}).get("block_manifest_error")))
+
+    monkeypatch.setattr(rpr, "async_invoke_agent", _fake_invoke)
+    rpr.run_loop("run_764")
+    assert [s for s, _ in seen] == ["strategy_config_authoring", "strategy_config_authoring"]
+    assert seen[0][1] is None and "is missing" in seen[1][1]
+    final = rpr.load_yaml(run_dir / "pipeline_state.yaml")
+    assert final["status"] == "failed" and "still invalid" in final["last_error"]
+
+
+# ---------------------------------------------------------------------------
+# Code-review fix 2: a stale manifest is removed when 1b starts
+# ---------------------------------------------------------------------------
+
+def _invoke_1b_capturing(monkeypatch, run_dir: Path, run_id: str) -> list:
+    (run_dir / "handoffs").mkdir(exist_ok=True)
+    shutil.copy(HANDOFF_1B, run_dir / "handoffs" / HANDOFF_1B.name)
+    seen = []
+
+    async def _fake_worker(stage_name, handoff, path, retry_context=None):
+        seen.append((path / "artifacts" / "block_manifest.yaml").exists())
+
+    monkeypatch.setattr(rpr, "run_claude_worker", _fake_worker)
+    asyncio.run(rpr.async_invoke_agent("strategy_config_authoring", run_id))
+    return seen
+
+
+def test_stale_manifest_is_deleted_when_1b_starts(monkeypatch):
+    _set_orchestrator({"config_direct_authoring": {"enabled": True}})
+    run_dir = _authored_1b("run_770", GOOD)
+    assert _invoke_1b_capturing(monkeypatch, run_dir, "run_770") == [False]
+    assert not (run_dir / "artifacts" / "block_manifest.yaml").exists()
+
+
+def test_stale_manifest_untouched_with_the_flag_off(monkeypatch):
+    _set_orchestrator(None)
+    run_dir = _authored_1b("run_771", GOOD)
+    assert _invoke_1b_capturing(monkeypatch, run_dir, "run_771") == [True]
+    rpr._clear_stale_block_manifest("innovation_expansion", run_dir)
+    assert (run_dir / "artifacts" / "block_manifest.yaml").exists()
+
+
+# ---------------------------------------------------------------------------
+# Code-review fixes 4, 7, 8, 9: docs, card schema, config text, one registry check
+# ---------------------------------------------------------------------------
+
+def test_reader_skills_and_proposal_schema_no_longer_call_7c_unbuilt():
+    readers = SR_ROOT / "workflow_artifacts" / "skills" / "readers"
+    stale = ("PROPOSED, NOT BUILT", "PROPOSED-NOT-BUILT", "Nothing reads block_manifest",
+             "nothing reads block_manifest")
+    for skill in readers.glob("*/SKILL.md"):
+        text = skill.read_text(encoding="utf-8")
+        assert not any(s in text for s in stale), skill
+    schema = (SCHEMAS / "proposal.schema.json").read_text(encoding="utf-8")
+    assert not any(s in schema for s in stale)
+    assert "§7c is built" in schema
+
+
+def _card_errors(card: dict) -> list:
+    import jsonschema
+    import workflow_artifact_validation as wav
+    schema = _schema("hypothesis_card.schema.json")
+    return [list(e.absolute_path) for e in wav._make_validator(jsonschema, schema).iter_errors(card)]
+
+
+def test_card_manifest_refs_the_manifest_schema():
+    assert _schema("hypothesis_card.schema.json")["properties"]["manifest"]["$ref"] == \
+        "block_manifest.schema.json"
+    bad = [e for e in _card_errors({"manifest": _with(kind="detector")}) if e[:1] == ["manifest"]]
+    assert bad
+    assert not [e for e in _card_errors({"manifest": GOOD}) if e[:1] == ["manifest"]]
+
+
+def test_campaign_config_describes_the_manifest():
+    text = (SR_ROOT / "config" / "campaign_config.yaml").read_text(encoding="utf-8")
+    block = text[text.index("  config_direct_authoring:"):text.index("  variant_loop:")]
+    assert "block_manifest.yaml" in block and "fails the run loud" in block
+
+
+def test_registry_resolves_manifest_paths_once():
+    assert not hasattr(br, "_resolve_pointer") and not hasattr(br, "_regime_assignment")
+    assert _registry_accepts("run_780", GOOD)
+    with pytest.raises(br.BlockRegistryError, match="do not resolve in the base config") as exc:
+        run_dir = _minimal_run(rpr.ROOT, "run_781r")
+        cfg = run_dir / "artifacts" / "candidate_strategy_config.json"
+        cfg.write_text(json.dumps(CONFIG), encoding="utf-8")
+        sha = hashlib.sha256(json.dumps(CONFIG, sort_keys=True).encode("utf-8")).hexdigest()
+        entry = {"run_id": "run_781", "hypothesis_id": "H-1",
+                 "variants": {"base": {"status": "tested", "config_ref": str(cfg.relative_to(rpr.ROOT)),
+                                       "forecast_hash": sha}},
+                 "grid": {"criteria": ["c"], "variants": ["base"],
+                          "cells": {"c": {"base": {"result": "PASS"}}}}}
+        br.build_block(run_dir, entry, _with(scaffolding=["/nope"]), root=rpr.ROOT)
+    assert str(exc.value).count("do not resolve") == 1 and "tested base config" in str(exc.value)
 
 
 # ---------------------------------------------------------------------------
@@ -350,10 +544,13 @@ def test_1b_skill_writes_the_manifest_and_no_longer_forbids_it():
 
 
 def test_manifest_files_are_read_only_by_the_flag_on_stage():
-    """The only prompt that reads the 1b skill / handoff / design guide is the
-    strategy_config_authoring stage, which is routed to only under
-    orchestrator.config_direct_authoring (test_e056_config_direct_authoring.py
-    covers the routing)."""
+    """The CONTENT of the 1b skill, its handoff and the design guide enters
+    only the strategy_config_authoring prompt (routed to only under
+    orchestrator.config_direct_authoring; test_e056_config_direct_authoring.py
+    covers the routing). Other skills -- innovation-expansion and the five
+    reader skills -- do NAME the design guide in their own text, but no other
+    handoff lists it as an input and workers run with allowed_tools=[], so
+    they never receive its content (proven prompt-by-prompt below)."""
     assert rpr._SKILL_MAP["strategy_config_authoring"] == "strategy-config-authoring"
     assert [s for s, k in rpr._SKILL_MAP.items() if k == "strategy-config-authoring"] == \
         ["strategy_config_authoring"]
@@ -395,6 +592,22 @@ def _prompts(sr: Path, run_dir: Path, stages) -> dict:
     return {stage: rpr._build_stage_prompt(stage, _handoff(sr, stage), run_dir) for stage in stages}
 
 
+def _reader_prompts(run_dir: Path) -> dict:
+    """The five specialist-reader prompts, built exactly as run_reader_worker
+    builds them (_reader_handoff + _reader_skill_dir)."""
+    out = {}
+    for category in rpr._reader_categories():
+        handoff = rpr._reader_handoff(category, "run_001", 0)
+        for req in handoff["required_inputs"]:
+            p = run_dir / req["path"]
+            if not p.exists():
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_text(f"stub for {req['path']}\n", encoding="utf-8")
+        out[category] = rpr._build_stage_prompt("specialist_readers", handoff, run_dir,
+                                                skill_file_name=rpr._reader_skill_dir(category))
+    return out
+
+
 def test_flag_off_prompts_do_not_depend_on_the_changed_files(tmp_path, monkeypatch):
     sr = tmp_path / "sr"
     shutil.copytree(SR_ROOT / "workflow_artifacts", sr / "workflow_artifacts")
@@ -406,6 +619,8 @@ def test_flag_off_prompts_do_not_depend_on_the_changed_files(tmp_path, monkeypat
     assert "backtest_specification" in flag_off
     _stub_required_inputs(sr, run_dir)
     before = _prompts(sr, run_dir, flag_off)
+    readers_before = _reader_prompts(run_dir)
+    assert len(readers_before) == 5
     on_before = _prompts(sr, run_dir, ["strategy_config_authoring"])
     changed = [sr / "workflow_artifacts" / "skills" / "strategy-config-authoring" / "SKILL.md",
                sr / "workflow_artifacts" / "templates" / "handoffs" / HANDOFF_1B.name,
@@ -415,6 +630,7 @@ def test_flag_off_prompts_do_not_depend_on_the_changed_files(tmp_path, monkeypat
         p.write_text("constraints: []\n" if p.suffix == ".yaml" else "BLANKED\n", encoding="utf-8")
     after = _prompts(sr, run_dir, flag_off)
     assert after == before
+    assert _reader_prompts(run_dir) == readers_before  # code-review fix 5
     # the harness does see a dependency where there is one
     assert _prompts(sr, run_dir, ["strategy_config_authoring"]) != on_before
 

@@ -347,6 +347,8 @@ def test_check_manifest_paths_resolving_and_unresolving():
 def test_determine_post_strategy_config_authoring_route_spec_ready():
     run_dir = _minimal_run(rpr.ROOT, "run_810")
     rpr.save_yaml(run_dir / "artifacts" / "decision.yaml", {"status": "spec_ready"})
+    # E-056 1b block manifest: spec_ready now also needs a valid manifest.
+    _write_backtest_spec_and_patches(run_dir, [])
     assert rpr.determine_post_strategy_config_authoring_route(run_dir) == "innovation_expansion"
 
 

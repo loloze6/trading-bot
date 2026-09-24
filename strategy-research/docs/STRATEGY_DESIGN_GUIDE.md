@@ -444,25 +444,33 @@ Rules (every one enforced by code):
    `scaffolding` and `rationale` — no others. `rationale` is a non-empty
    string.
 2. `kind` is `forecast` or `regime`. A `forecast` block has at least one
-   `config_paths` entry under `/strategies/regimes/`; a `regime` block has at
-   least one at or under `/regime_detector`.
+   `config_paths` entry inside a named regime (`/strategies/regimes/<name>`
+   or deeper — the bare `/strategies/regimes` names no regime); a `regime`
+   block has at least one at or under `/regime_detector`. This is read off
+   the same `regime_assignment` the registry stores for the block.
 3. Every pointer (block and scaffolding) is an RFC 6901 JSON pointer into the
    strategy config itself (`/strategies/...`, not `/config/strategies/...`)
    and resolves in the base config. Pointers are distinct.
-4. No pointer lies inside another's subtree — neither two block paths, nor a
-   block path and a scaffolding path. A config piece is block or scaffolding,
-   never both.
+4. No pointer lies inside another's subtree — not two block paths, not a
+   block path and a scaffolding path, not two scaffolding paths. Each config
+   piece is listed once, as block or scaffolding.
 5. No coin, symbol, timeframe or instrument field (a validated block is usable
    on any coin), and no `hypothesis_id` (the run already carries the idea's
    identity).
 
 **Who checks it.** One implementation, `strategy-research/tools/block_manifest.py`,
-used by both readers:
+used everywhere it is read:
 
-- the tool-only `backtest_specification` stage (5a) checks it against 1b's
-  base config before building any variant; a missing, unparseable, malformed
-  or unresolved manifest stops the run (`RuntimeError`). A variant whose patch
-  removes a block path is marked `not_tested` (`manifest paths unresolved`);
+- right after 1b (`determine_post_strategy_config_authoring_route`), against
+  `backtest_spec.yaml`'s config, before `innovation_expansion` runs: a
+  missing or invalid manifest sends 1b back ONCE with the error in its
+  handoff; a second failure stops the run. A stale manifest is deleted when
+  1b starts, so a pass never inherits an earlier one;
+- the tool-only `backtest_specification` stage (5a) re-checks it against 1b's
+  base config before building any variant (backstop; stops the run). Per
+  variant, only BLOCK paths must resolve — a variant may change scaffolding;
+  one whose patch removes a block path is marked `not_tested`
+  (`manifest paths unresolved`);
 - `tools/block_registry.py` checks it again against the tested base config
   when a validated run registers its block (`config_fragment` = the values at
   `block.config_paths`).
@@ -471,7 +479,8 @@ used by both readers:
 shape (rules 1-3's shape part); `tests/test_e056_1b_block_manifest.py` keeps
 schema and code in agreement. A pass-through candidate's `manifest` field
 (hypothesis-design IMPROVEMENT 08) is written through verbatim and checked the
-same way.
+same way; `hypothesis_card.schema.json`'s `manifest` field `$ref`s the
+manifest schema, so a malformed one is also caught at the card.
 
 ### §7d. Comparator-vocabulary divergence
 

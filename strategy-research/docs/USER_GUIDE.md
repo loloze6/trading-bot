@@ -489,7 +489,7 @@ post-validation/post-expansion to pre-expansion.
 |---|---|---|
 | `backtest_spec.yaml` | `runs/{run_id}/artifacts/` | innovation_expansion (as the base config to patch), the tool-only stage 6, verdict_interpreter |
 | `decision.yaml` | `runs/{run_id}/artifacts/` | `determine_post_strategy_config_authoring_route` |
-| `block_manifest.yaml` (spec_ready only) | `runs/{run_id}/artifacts/` | the tool-only stage 6 (checked, fails loud), `tools/block_registry.py` (stage 17) |
+| `block_manifest.yaml` (spec_ready only) | `runs/{run_id}/artifacts/` | `determine_post_strategy_config_authoring_route` (checked, one retry), the tool-only stage 6 (re-checked, fails loud), `tools/block_registry.py` (stage 17) |
 
 **Features / logic in place**
 
@@ -508,9 +508,14 @@ scaffolding: `{block: {kind: forecast|regime, config_paths: [JSON pointers]},
 scaffolding: [JSON pointers], rationale}` — contract in
 `STRATEGY_DESIGN_GUIDE.md` §7c, schema
 `workflow_artifacts/schemas/block_manifest.schema.json`, one implementation in
-`tools/block_manifest.py`. The tool-only stage 6 checks it against this
-stage's base config before building any variant: missing, malformed or
-unresolved stops the run. No coin field (a block is usable on any coin).
+`tools/block_manifest.py`. A stale manifest is deleted when this stage
+starts. Right after it, `determine_post_strategy_config_authoring_route`
+checks the manifest against `backtest_spec.yaml`'s config: missing or
+invalid sends this stage back once with the error in its handoff
+(`injected_context.block_manifest_error`), a second failure stops the run.
+The tool-only stage 6 re-checks it as a backstop; per variant only block
+paths must resolve (scaffolding may change). No coin field (a block is
+usable on any coin).
 
 ---
 

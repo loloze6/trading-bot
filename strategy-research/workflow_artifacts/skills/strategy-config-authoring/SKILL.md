@@ -77,10 +77,12 @@ scaffolding:                # JSON pointers to config the idea needs but that is
   - /regime_detector
 rationale: one or two sentences -- which hypothesis claim each block path implements
 ```
-- `kind: forecast` when the idea is a signal: at least one `config_paths` entry under `/strategies/regimes/`.
+- `kind: forecast` when the idea is a signal: at least one `config_paths` entry inside a named regime
+  (`/strategies/regimes/<name>/...`; the bare `/strategies/regimes` does not count).
   `kind: regime` when the idea is a regime gate: at least one entry at or under `/regime_detector`.
 - Every pointer must exist in `config`. A piece is block or scaffolding, never both: no pointer may sit inside
-  another's subtree. The backtest_specification tool stage checks all of this and stops the run on any miss.
+  another's subtree. The orchestrator checks all of this right after this stage: one miss sends you back once
+  with the error, a second stops the run.
 - No symbol/coin/timeframe field and no hypothesis id — a validated block is usable on any coin, and the run
   already carries its `hypothesis_id`.
 

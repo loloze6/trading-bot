@@ -74,15 +74,13 @@ def resolve_json_pointer(config, path):
 
 
 def manifest_missing_paths(variant_config: dict, manifest) -> list:
-    """The manifest-declared pointers (STRATEGY_DESIGN_GUIDE.md §7c's
-    block.config_paths, then scaffolding) that do NOT resolve in
-    variant_config; [] when the manifest lists none at all. The one resolution
-    check for block_manifest.yaml: tools/block_manifest.unresolved_paths and
-    run_phase1_research._check_manifest_paths both call it."""
-    manifest = manifest or {}
-    pointers = list((manifest.get("block") or {}).get("config_paths") or []) + \
-        list(manifest.get("scaffolding") or [])
-    return [p for p in pointers if not json_pointer_exists(variant_config, p)]
+    """The manifest-declared block.config_paths (STRATEGY_DESIGN_GUIDE.md
+    §7c) that do NOT resolve in variant_config; [] when the manifest has no
+    block.config_paths list at all. Block paths only: a variant may change
+    scaffolding. tools/block_manifest.unresolved_paths adds scaffolding for
+    the base-config check."""
+    config_paths = ((manifest or {}).get("block") or {}).get("config_paths") or []
+    return [p for p in config_paths if not json_pointer_exists(variant_config, p)]
 
 
 def base_variant_id(variant_ids) -> str:
