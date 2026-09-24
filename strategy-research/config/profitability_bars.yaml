@@ -41,18 +41,27 @@
 #     postRebalance_total_value (the equity after each bar's rebalance), warm-up bars
 #     (regime NOT_READY) dropped;
 #   - daily close = the last bar of each UTC calendar day;
-#   - DAY INTERSECTION: only UTC days on which EVERY coin of that window has a daily
+#   - COMMON DAYS: only UTC days on which EVERY coin of that window has a daily
 #     close are used; a day missing for any one coin is dropped for all coins (never
-#     filled, never a 0.0);
-#   - each coin is normalized to 1.0 at the window start (its close on the window's
-#     first common day); portfolio value on a common day = the arithmetic MEAN of the
-#     coins' normalized values (1/N of the capital in each coin at the window start,
-#     no re-weighting between coins afterwards);
-#   - daily return = SIMPLE return V_d / V_(previous common day) - 1, within one
-#     window only (windows are separate periods that each restart from a fresh
-#     balance; the first common day of a window adds no return).
-#   NOT_EVALUABLE when any window's equity file is missing, the coin set differs
-#   between windows, a window has no common day, or no window has two common days.
+#     filled, never a 0.0). Every window needs at least 2 common days;
+#   - COVERAGE FLOOR (operator-changeable constant
+#     run_phase1_research.PORTFOLIO_MIN_COMMON_DAY_COVERAGE, currently 0.9): in
+#     EVERY window the common days must be at least that fraction of the union of
+#     the coins' days (e.g. a much longer warm-up on one coin fails it loudly);
+#   - each coin is normalized to 1.0 at the first common day (divided by its daily
+#     close on the window's first common day); portfolio value = the arithmetic
+#     MEAN of the coins' normalized values (1/N of the capital in each coin at that
+#     close, no re-weighting between coins afterwards);
+#   - daily return = SIMPLE return V_d / V_(d-1) - 1 of the portfolio's daily
+#     closes, counted ONLY between two common days that are consecutive calendar
+#     days. A step across a gap (a dropped or missing day) is a multi-day return:
+#     it is NOT counted, and the chain restarts after the gap. Windows are separate
+#     periods that each restart from a fresh balance (the first common day of a
+#     window adds no return).
+#   NOT_EVALUABLE (with a `not_evaluable_reason` on the bar row and in `reasons`)
+#   when any window's equity file is missing, the coin set differs between windows,
+#   any window has fewer than 2 common days or is below the coverage floor or has
+#   no common bar, or no daily return is left after the gap rule.
 #
 # Schema (validated loudly by _load_profitability_bars -- missing or wrong-typed
 # fields raise, never silently default):
@@ -66,8 +75,12 @@
 #                                        per_symbol_summary.
 #                                        Flag on: the equal-weight PORTFOLIO's largest
 #                                        peak-to-trough drawdown, 100 * (1 - V_t /
-#                                        max_{s<=t} V_s) over the daily closes above,
-#                                        measured within each window; actual = the
+#                                        max_{s<=t} V_s), measured ON BARS (so intraday
+#                                        drops count): the portfolio curve over the
+#                                        COMMON BARS (timestamps at which every coin
+#                                        has a bar) from the first-common-day close
+#                                        onwards, each coin normalized as above,
+#                                        within each window; actual = the
 #                                        LARGEST window drawdown. This is the worst
 #                                        WINDOW of the combined portfolio, NOT the
 #                                        worst coin.
@@ -76,8 +89,10 @@
 #                                        day (0.0005 = 0.05 %/day).
 #                                        Flag off: NOT_EVALUABLE, as before.
 #                                        Flag on: the ARITHMETIC mean of the equal-weight
-#                                        PORTFOLIO's daily simple returns, pooled across
-#                                        all windows (not geometric, not annualised).
+#                                        PORTFOLIO's daily simple returns ON DAILY
+#                                        CLOSES (consecutive common days only, see the
+#                                        gap rule above), pooled across all windows
+#                                        (not geometric, not annualised).
 #                                        basis: portfolio_equal_weight
 #   trade_count_min             int   -- floor on the MINIMUM per-coin min_trade_count
 #                                        in protocol_result.yaml's per_symbol_summary

@@ -7576,7 +7576,8 @@ def _grade_profit_bars(bars: dict, *, sharpe, sharpe_note: str, dsr, dsr_note: s
     that function's docstring for the flag-off worst-symbol aggregation choice."""
     results = []
 
-    def _bar(name: str, threshold, actual, comparator: str, note: str = "", basis: str = ""):
+    def _bar(name: str, threshold, actual, comparator: str, note: str = "", basis: str = "",
+             not_evaluable_reason: str | None = None):
         if actual is None:
             outcome = "NOT_EVALUABLE"
         elif comparator == ">=":
@@ -7588,6 +7589,9 @@ def _grade_profit_bars(bars: dict, *, sharpe, sharpe_note: str, dsr, dsr_note: s
         entry = {"name": name, "threshold": threshold, "actual": actual, "result": outcome}
         if portfolio is not None:  # flag on only: flag-off rows stay byte-identical
             entry["basis"] = basis
+            if actual is None and not_evaluable_reason:
+                # A structured field (and a line in `reasons`), never only the note.
+                entry["not_evaluable_reason"] = not_evaluable_reason
         if note:
             entry["note"] = note
         results.append(entry)
@@ -7611,7 +7615,8 @@ def _grade_profit_bars(bars: dict, *, sharpe, sharpe_note: str, dsr, dsr_note: s
     else:
         _bar("max_drawdown_pct_max", bars["max_drawdown_pct_max"],
              portfolio["max_drawdown_pct"][0], "<=", note=portfolio["max_drawdown_pct"][1],
-             basis=_BASIS_PORTFOLIO_WORST_WINDOW)
+             basis=_BASIS_PORTFOLIO_WORST_WINDOW,
+             not_evaluable_reason=portfolio.get("not_evaluable_reason"))
 
     symbol_trade_counts = [v.get("min_trade_count") for v in pss.values()
                             if v.get("min_trade_count") is not None]
@@ -7636,12 +7641,14 @@ def _grade_profit_bars(bars: dict, *, sharpe, sharpe_note: str, dsr, dsr_note: s
     else:
         _bar("avg_daily_return_min", bars["avg_daily_return_min"],
              portfolio["avg_daily_return"][0], ">=", note=portfolio["avg_daily_return"][1],
-             basis=_BASIS_PORTFOLIO)
+             basis=_BASIS_PORTFOLIO,
+             not_evaluable_reason=portfolio.get("not_evaluable_reason"))
 
     outcomes = {r["result"] for r in results}
     overall = "PASS" if outcomes == {"PASS"} else "FAIL"
     reasons = [
         f"{r['name']}: {r['result']} (threshold={r['threshold']!r}, actual={r['actual']!r})"
+        + (f" -- {r['not_evaluable_reason']}" if r.get("not_evaluable_reason") else "")
         for r in results if r["result"] != "PASS"
     ]
 
@@ -7861,14 +7868,14 @@ def _find_window_equity_file(run_dir: Path, window_run_id: str) -> Path | None:
     hits = [r / window_run_id / "portfolio_states.csv" for r in roots
             if (r / window_run_id / "portfolio_states.csv").exists()]
     if len(hits) > 1:
-        raise ValueError(f"avg daily return: window run {window_run_id!r} has more than one "
+        raise ValueError(f"equal-weight portfolio: window run {window_run_id!r} has more than one "
                          f"portfolio_states.csv: {hits}")
     return hits[0] if hits else None
 
 
-def _window_daily_closes(path: Path) -> dict:
-    """{UTC date: equity} for one (coin, window) backtest: postRebalance_total_value
-    of the LAST bar of each UTC calendar day, warm-up bars (regime NOT_READY)
+def _window_equity_bars(path: Path) -> dict:
+    """{timestamp (naive UTC): equity} for one (coin, window) backtest:
+    postRebalance_total_value of every bar, warm-up bars (regime NOT_READY)
     dropped (see _portfolio_profit_metrics for how these are combined). Fails loud
     on a missing column or a non-numeric / non-positive equity value."""
     import csv as _csv
@@ -7876,7 +7883,7 @@ def _window_daily_closes(path: Path) -> dict:
         reader = _csv.DictReader(f)
         missing = {"timestamp", "regime", "postRebalance_total_value"} - set(reader.fieldnames or [])
         if missing:
-            raise ValueError(f"avg daily return: {path} lacks column(s) {sorted(missing)}")
+            raise ValueError(f"equal-weight portfolio: {path} lacks column(s) {sorted(missing)}")
         rows = []
         for row in reader:
             if str(row["regime"]).strip().upper() == "NOT_READY":
@@ -7887,17 +7894,28 @@ def _window_daily_closes(path: Path) -> dict:
             try:
                 equity = float(row["postRebalance_total_value"])
             except (TypeError, ValueError):
-                raise ValueError(f"avg daily return: {path} has a non-numeric "
+                raise ValueError(f"equal-weight portfolio: {path} has a non-numeric "
                                  f"postRebalance_total_value at {row['timestamp']!r}")
             if not math.isfinite(equity) or equity <= 0:
-                raise ValueError(f"avg daily return: {path} has equity {equity!r} at "
+                raise ValueError(f"equal-weight portfolio: {path} has equity {equity!r} at "
                                  f"{row['timestamp']!r}")
             rows.append((ts, equity))
     rows.sort(key=lambda r: r[0])
+    return dict(rows)
+
+
+def _daily_closes(bars: dict) -> dict:
+    """{UTC date: (timestamp, equity)} -- the LAST bar of each UTC calendar day."""
     daily: dict = {}
-    for ts, equity in rows:  # last bar of each calendar day
-        daily[ts.date()] = equity
+    for ts in sorted(bars):
+        daily[ts.date()] = (ts, bars[ts])
     return daily
+
+
+def _window_daily_closes(path: Path) -> dict:
+    """{UTC date: equity}: postRebalance_total_value of the LAST bar of each UTC
+    calendar day of one (coin, window) backtest, warm-up bars dropped."""
+    return {d: eq for d, (_ts, eq) in _daily_closes(_window_equity_bars(path)).items()}
 
 
 # basis values recorded on each bar row of a flag-on evaluation, so the artifact
@@ -7906,49 +7924,68 @@ _BASIS_PORTFOLIO = "portfolio_equal_weight"
 _BASIS_PORTFOLIO_WORST_WINDOW = "portfolio_equal_weight_worst_window"
 _BASIS_WORST_COIN = "worst_coin"
 
+# Coverage floor of the equal-weight portfolio (operator-changeable; mirrored in
+# config/profitability_bars.yaml's header). Within EACH window, the UTC days on
+# which every coin has a value (the intersection) must be at least this fraction
+# of the days on which any coin has a value (the union). Below it the portfolio
+# would be judged on a thinned-out sample (one coin's data gap, or a much longer
+# warm-up on one coin, silently removes those days for all coins), so both
+# portfolio bars read NOT_EVALUABLE instead.
+PORTFOLIO_MIN_COMMON_DAY_COVERAGE = 0.9
+
 
 def _portfolio_profit_metrics(run_dir: Path, pr: dict) -> dict:
     """avg_daily_return_min and max_drawdown_pct_max actual values for ONE backtest
     candidate, judged on the portfolio you would actually trade: every tested coin
     together, equally weighted (operator decision 2026-09-24). Returns
     {"avg_daily_return": (value or None, note),
-     "max_drawdown_pct": (value or None, note)}.
+     "max_drawdown_pct": (value or None, note),
+     "not_evaluable_reason": None, or why both values are None}.
 
     DEFINITION (mirrored in config/profitability_bars.yaml's header):
       * source: every (coin, window) backtest in protocol_result.results, via its
         portfolio_states.csv, column postRebalance_total_value (equity after each
         bar's rebalance), warm-up bars (regime NOT_READY) dropped;
       * daily close: the last bar of each UTC calendar day;
-      * per window, the COMBINED portfolio is built on the INTERSECTION of days:
-        only UTC days on which every coin of that window has a daily close. A day
-        missing for any coin is dropped for all coins (never filled, never 0.0);
-      * each coin is normalized to 1.0 at the window start (its close on the first
-        common day); portfolio value on a common day = the arithmetic MEAN of the
-        coins' normalized values (1/N of the capital in each coin at the window
-        start, no re-weighting between coins afterwards);
-      * daily return: SIMPLE return V_d / V_(previous common day) - 1, within one
-        window only (each window restarts from a fresh balance; the first common
-        day adds no return);
-      * avg daily return = the ARITHMETIC mean of the portfolio's daily returns,
-        pooled across all windows (a fraction per day; not geometric, not
-        annualised);
-      * max drawdown = per window, the largest peak-to-trough fall of the portfolio
-        curve over its common days, 100 * (1 - V_t / max_{s<=t} V_s) (a positive
+      * COMMON DAYS, per window: the UTC days on which every coin of that window
+        has a daily close (the intersection). A day missing for any coin is
+        dropped for all coins (never filled, never 0.0). The common days must
+        cover at least PORTFOLIO_MIN_COMMON_DAY_COVERAGE of the union of the
+        coins' days, and there must be at least 2 of them, in EVERY window;
+      * normalization: each coin is divided by its daily close on the FIRST COMMON
+        DAY of the window (so each coin is 1.0 there); portfolio value = the
+        arithmetic MEAN of the coins' normalized values (1/N of the capital in each
+        coin at that close, no re-weighting between coins afterwards);
+      * daily return: SIMPLE return V_d / V_(d-1) - 1 of the portfolio's daily
+        closes, counted only between two common days that are CONSECUTIVE calendar
+        days of the same window. A step across a gap (a dropped or missing day) is
+        a multi-day return and is NOT counted; the chain restarts after the gap.
+        Windows are separate periods that each restart from a fresh balance;
+      * avg daily return = the ARITHMETIC mean of those daily returns, pooled across
+        all windows (a fraction per day; not geometric, not annualised);
+      * max drawdown, on BARS (so intraday drops count): per window, the portfolio
+        curve over the COMMON BARS (timestamps at which every coin has a bar), from
+        the first-common-day close onwards, each coin normalized as above; the
+        largest peak-to-trough fall 100 * (1 - V_t / max_{s<=t} V_s) (a positive
         percent); actual = the LARGEST such WINDOW drawdown. This is the worst
         WINDOW of the combined portfolio, not the worst coin.
-    Both values None (NOT_EVALUABLE) when results is empty, any window's
-    portfolio_states.csv is missing, the coin set differs between windows (a coin
-    silently missing from one window would change the portfolio), a window has no
-    common day, or no window has two common days. A malformed results entry or a
-    duplicate (coin, window) raises."""
+    Both values None (NOT_EVALUABLE, reason in `not_evaluable_reason`) when results
+    is empty, any window's portfolio_states.csv is missing, the coin set differs
+    between windows (run_protocol writes every coin in every window, so a mismatch
+    means broken data), any window has fewer than 2 common days, is below the
+    coverage floor, or has no common bar from its first-common-day close onwards,
+    or no daily return is left after the gap rule. A malformed results entry or a
+    duplicate (coin, window) raises. Windows are visited in results order and
+    coins sorted as strings, so mixed label types cannot raise."""
     def _none(why: str) -> dict:
-        note = f"equal-weight portfolio: {why}"
-        return {"avg_daily_return": (None, note), "max_drawdown_pct": (None, note)}
+        reason = f"equal-weight portfolio NOT_EVALUABLE: {why}"
+        return {"avg_daily_return": (None, reason), "max_drawdown_pct": (None, reason),
+                "not_evaluable_reason": reason}
 
     results = pr.get("results") or []
     if not results:
         return _none("protocol_result has no per-window results")
-    windows: dict = {}  # window label -> {coin: {date: close}}
+    windows: dict = {}  # window label -> {coin: {timestamp: equity}}, results order
     for r in results:
         if not isinstance(r, dict) or any(r.get(k) in (None, "")
                                           for k in ("symbol", "window", "run_id")):
@@ -7961,50 +7998,72 @@ def _portfolio_profit_metrics(run_dir: Path, pr: dict) -> dict:
         path = _find_window_equity_file(run_dir, wid)
         if path is None:
             return _none(f"no portfolio_states.csv for window {win!r} ({sym}, run {wid!r})")
-        windows.setdefault(win, {})[sym] = _window_daily_closes(path)
+        windows.setdefault(win, {})[sym] = _window_equity_bars(path)
     coin_sets = {w: frozenset(c) for w, c in windows.items()}
     if len(set(coin_sets.values())) > 1:
         return _none("the coin set differs between windows "
-                     f"({ {w: sorted(c) for w, c in sorted(coin_sets.items())} })")
-    coins = sorted(next(iter(coin_sets.values())))
+                     f"({ {w: sorted(c, key=str) for w, c in coin_sets.items()} })")
+    coins = sorted(next(iter(coin_sets.values())), key=str)
 
     returns: list = []
     window_dd: dict = {}
-    skipped: list = []  # windows with a single common day: no return, no drawdown
-    dropped = 0
-    for win in sorted(windows):
-        closes = windows[win]
-        common = sorted(set.intersection(*(set(c) for c in closes.values())))
-        dropped += len(set().union(*(set(c) for c in closes.values()))) - len(common)
-        if not common:
-            return _none(f"window {win!r} has no UTC day on which every coin has a value")
+    n_union = n_common = n_gap_steps = n_bars = 0
+    for win, by_coin in windows.items():
+        daily = {c: _daily_closes(by_coin[c]) for c in coins}
+        union = set().union(*(set(d) for d in daily.values()))
+        common = sorted(set.intersection(*(set(d) for d in daily.values())))
+        coverage = len(common) / len(union) if union else 0.0
         if len(common) < 2:
-            skipped.append(win)
-            continue
-        start = {c: closes[c][common[0]] for c in coins}
-        curve = [sum(closes[c][d] / start[c] for c in coins) / len(coins) for d in common]
-        returns.extend(curve[i] / curve[i - 1] - 1.0 for i in range(1, len(curve)))
-        peak, dd = curve[0], 0.0
-        for v in curve:
-            peak = max(peak, v)
+            return _none(f"window {win!r} has {len(common)} UTC day(s) on which every coin "
+                         f"has a value; at least 2 are needed")
+        if coverage < PORTFOLIO_MIN_COMMON_DAY_COVERAGE:
+            return _none(f"window {win!r}: the {len(common)} common day(s) cover "
+                         f"{coverage:.1%} of the {len(union)} day(s) any coin has, below "
+                         f"PORTFOLIO_MIN_COMMON_DAY_COVERAGE={PORTFOLIO_MIN_COMMON_DAY_COVERAGE}")
+        n_union += len(union)
+        n_common += len(common)
+        anchor = {c: daily[c][common[0]][1] for c in coins}
+        curve = [sum(daily[c][d][1] / anchor[c] for c in coins) / len(coins) for d in common]
+        for i in range(1, len(common)):
+            if (common[i] - common[i - 1]).days == 1:
+                returns.append(curve[i] / curve[i - 1] - 1.0)
+            else:
+                n_gap_steps += 1
+        # Drawdown on the bar-level curve, from the first-common-day close onwards.
+        start_ts = max(daily[c][common[0]][0] for c in coins)
+        common_bars = sorted(t for t in set.intersection(*(set(by_coin[c]) for c in coins))
+                             if t >= start_ts)
+        if not common_bars:
+            return _none(f"window {win!r} has no bar, from its first-common-day close "
+                         f"onwards, at which every coin has a value")
+        n_bars += len(common_bars)
+        peak, dd = None, 0.0
+        for t in common_bars:
+            v = sum(by_coin[c][t] / anchor[c] for c in coins) / len(coins)
+            peak = v if peak is None else max(peak, v)
             dd = max(dd, 1.0 - v / peak)
         window_dd[win] = dd * 100.0
     if not returns:
-        return _none("no window has two common days, so there is no daily return")
+        return _none("no two common days are consecutive calendar days, so there is no "
+                     "daily return")
     worst_window = max(window_dd, key=lambda w: window_dd[w])
     base = (f"equal-weight portfolio of {len(coins)} coin(s) {coins}, each normalized to 1.0 "
-            f"at the window start (postRebalance_total_value, last bar per UTC day, "
-            f"post-warmup), on the {len(returns) + len(window_dd)} UTC day(s) where every coin "
-            f"has a value ({dropped} day(s) dropped by the intersection), over "
-            f"{len(window_dd)} window(s)"
-            + (f"; window(s) {skipped} skipped (a single common day)" if skipped else ""))
+            f"at its close on the first common day of each window (postRebalance_total_value, "
+            f"post-warmup), over {len(window_dd)} window(s); days: {n_union} in the union of "
+            f"the coins' days = {n_common} common + {n_union - n_common} dropped by the "
+            f"intersection (coverage floor {PORTFOLIO_MIN_COMMON_DAY_COVERAGE} per window); "
+            f"{n_common} common = {len(window_dd)} first day(s) + {len(returns)} daily "
+            f"return(s) + {n_gap_steps} multi-day step(s) across a gap, not counted")
     return {
         "avg_daily_return": (round(sum(returns) / len(returns), 8), (
-            f"arithmetic mean of the portfolio's {len(returns)} daily simple return(s), "
-            f"within each window, pooled across windows; {base}")),
+            f"arithmetic mean of the portfolio's {len(returns)} daily simple return(s) "
+            f"(last bar per UTC day, consecutive common days only), pooled across windows; "
+            f"{base}")),
         "max_drawdown_pct": (round(window_dd[worst_window], 6), (
-            f"largest peak-to-trough drawdown of the combined portfolio within one window "
-            f"(worst WINDOW {worst_window!r}, not the worst coin); {base}")),
+            f"largest peak-to-trough drawdown of the combined portfolio on its {n_bars} "
+            f"common bar(s), within one window (worst WINDOW {worst_window!r}, not the worst "
+            f"coin); {base}")),
+        "not_evaluable_reason": None,
     }
 
 
