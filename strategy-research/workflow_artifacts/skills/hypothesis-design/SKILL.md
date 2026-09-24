@@ -395,24 +395,6 @@ re-authoring one — see that skill's own required-inputs note. A candidate miss
 (`config`, `manifest`, `criteria`, `source`) is NOT a pass-through candidate — author it normally through
 IMPROVEMENT 01/04/07 above; a partial pass-through is a silent gap-filling trap, not a shortcut.
 
-### Decide-next candidates (E-059, `candidate.criteria_from: hypothesis_generation`)
-
-A candidate written by the decide-next step (`candidate.source.origin: reader`) carries **no `criteria` on
-purpose** and says so with `criteria_from: hypothesis_generation`. It comes from a reader's proposal after an
-earlier run (`candidate.source.proposal`: the patch or the new-block sketch, plus its evidence), and that
-proposal may be a different idea from the one that run tested. **You write this idea's card and its criteria,
-coherent with the PROPOSED idea — never copy the source run's criteria**, which the brief deliberately does not
-give you:
-- `hypothesis_id`: exactly `candidate.source.hypothesis_id` (a new idea, linked to its parent
-  `candidate.source.parent_hypothesis_id`). The orchestrator refuses the run before 1b if it differs.
-- `edge_source`, `signal_concept`, `thesis`: for the proposed change, as IMPROVEMENT 01/04 require.
-- `criteria`: from `config/criterion_menu.yaml` (IMPROVEMENT 07), chosen for what this proposed idea claims.
-  Required — the orchestrator writes `pre_registration.yaml`'s pass_rule from them right after this stage and
-  stops the run if they are missing or not menu ids.
-- Kind `patch` (`candidate.config` and `candidate.manifest` present): copy both into the card verbatim and set
-  `pass_through: true`, so 1b passes the config through (its hash is checked at 5a). Kind `new_block` (no
-  `candidate.config`): do not set `pass_through`; 1b authors the config for the sketched block.
-
 ---
 
 ## Checklist

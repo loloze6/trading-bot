@@ -674,23 +674,28 @@ orchestrator:
       # branch still writes `outcome: completed_rejected` with no reference,
       # which _save_queue refuses -- the separate flag-off ticket.)
       #
-      # While true, in the DONE branch only: the entry's outcome is the grid's
+      # While true, when a lineage finishes (the DONE branch, or the E-030
+      # quarantine path that marks it done): the entry's outcome is the grid's
       # idea_status citing runs/<run>/artifacts/idea_status.yaml (no grid,
-      # e.g. a data-gate decline: its stage outcome, verdict_status: ungated); then
+      # e.g. a data-gate decline: its stage outcome, verdict_status: ungated);
       # tools/decide_next.py writes runs/<run>/artifacts/decision_record.yaml
-      # and either lets an operator `ready` entry go first (by priority,
-      # unranked), or mints ONE `ready` agent entry (priority 999, origin:
-      # reader) from the best eligible reader proposal, or stops the loop when
-      # nothing is eligible. Novelty = the exact match (config hash + symbols
-      # + timeframe + protocol) against campaign_memory.yaml, binding; the
-      # legacy digest is recorded for information only. Ranking: confidence_real
-      # desc, distance_to_profitable desc, cost asc; no lineage demotion.
-      # The candidate's brief (campaign_record/candidate_briefs/) carries NO
-      # criteria: step 1a writes them for the proposed idea, and run_loop
-      # defers the readers pre-flight until 1a has written pass_rule into
-      # pre_registration.yaml. A patch's resolved config passes through to 1b
-      # and 5a checks its hash. Proposal scores only rank; idea status comes
-      # only from the grid. Multi-card briefs, R2 and brief exhaustion: S2b.
+      # naming what the scheduler (_select_entry) runs next: an existing
+      # in_progress/ready entry if any (operator entries go first, nothing
+      # minted), else ONE minted `ready` agent entry (priority 999, origin:
+      # reader) from the best eligible reader proposal, else a stop. The
+      # finished entry is saved `done` only after that (a failure is retried).
+      # Novelty = the exact match (config hash + measured symbols + the
+      # protocol file's timeframe + a content hash of its windows) against
+      # campaign_memory.yaml, binding; the legacy digest is recorded for
+      # information only. Ranking: confidence_real desc, distance_to_profitable
+      # desc, cost asc; no lineage demotion. The candidate's brief
+      # (campaign_record/candidate_briefs/) carries NO criteria: step 1a writes
+      # them for the proposed idea (with the DECIDE_NEXT_CANDIDATES.md addendum,
+      # injected only under this flag), and run_loop defers the readers
+      # pre-flight until 1a has written pass_rule into pre_registration.yaml.
+      # A patch's resolved config and manifest pass through to 1b and 5a checks
+      # both hashes. Proposal scores only rank; idea status comes only from the
+      # grid. Multi-card briefs, R2 and brief exhaustion: S2b.
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------

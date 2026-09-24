@@ -4,9 +4,11 @@ slice 6b "decide-next and the queue"; spec:
 engineering/roadmap/E-059/S1_FINDINGS_6B.md and its operator decision of
 2026-09-24, which overrides the recommendations above it).
 
-Called by run_campaign.process_once's DONE branch under
-orchestrator.decide_next.enabled (off by default), after a run's queue entry
-is marked done. Three pure steps and one loader:
+Called by run_campaign._finish_lineage_with_decision under
+orchestrator.decide_next.enabled (off by default), when a lineage finishes
+(the DONE branch, or the E-030 quarantine path that marks it done), BEFORE the
+finished entry is persisted as done (so a failure is retried). Three pure
+steps and one loader:
 
   load_inputs(root, queue, ...) -> inputs   reads the campaign memory, the block
                                             registry revision, every reader
@@ -20,22 +22,28 @@ is marked done. Three pure steps and one loader:
                                             the brief file for a picked candidate.
 
 What decides, in order:
-  1. An operator-registered `ready` entry (no `origin`, or `origin: external`)
-     always goes first, by priority, with no ranking (operator decision 4).
-     An agent entry that is already `ready` is picked next (idempotence).
+  1. If the scheduler (run_campaign._select_entry, passed in) would still run
+     an existing entry -- an in_progress one, else the lowest-priority ready
+     one, operator or agent -- that entry is `picked` and nothing is minted,
+     so the record always names what actually runs next (operator entries go
+     first because nothing is minted while one is waiting; decision 4).
   2. Otherwise every reader proposal still in the pool (referenced by a memory
      entry, not yet named by a queue entry's `proposal_ref`) becomes a
-     candidate. A patch is resolved against its source run's base config.
-     Gates: novelty -- the EXACT match of card K (config hash + symbols +
-     timeframe + protocol) against campaign memory, BINDING (operator decision
-     3); the legacy exclusion digest's layer 2 is recorded for information
-     only and never refuses; its layer 1 is not called. Feasibility -- the
-     patch resolves, the manifest still resolves, no unknown component class;
-     a regime block is infeasible before slice 7.
-  3. Eligible candidates are ranked: confidence_real desc,
+     candidate. Its proposal_id must be a safe name '<category>-<run_id>-<n>'
+     of its own source run and must not collide with a queue id or brief. A
+     patch is resolved against its source run's base config. Gates: novelty
+     -- the EXACT match of card K against campaign memory, BINDING (operator
+     decision 3), keyed on (config hash, measured symbols, the protocol file's
+     timeframe, a content hash of the protocol's windows) -- never the
+     per-run protocol path; the legacy exclusion digest's layer 2 is recorded
+     for information only and never refuses; its layer 1 is not called.
+     Feasibility -- the patch resolves, the manifest still resolves, no
+     unknown component class; a regime block is infeasible before slice 7.
+  3. Eligible candidates collapse (card I, full novelty key; ineligible ones
+     never collapse into them) and are ranked: confidence_real desc,
      distance_to_profitable desc, cost (backtests) asc, candidate_id asc.
      There is NO lineage-depth demotion (operator decision 6, dropped).
-  4. Nothing eligible and no operator entry -> stop.
+  4. Nothing scheduled and nothing eligible -> stop.
 
 What this module deliberately does NOT do:
   * decide or change an idea's status. The status comes only from the grid
@@ -89,6 +97,9 @@ SECONDS_PER_BACKTEST = 10.2
 COST_BASIS_SOURCE = "E-039 S1_FINDINGS.md L113-121"
 # Operator-registered entries: no origin, or an explicit external one.
 _OPERATOR_ORIGINS = (None, "external")
+# A proposal_id is used as a queue id and a file name: letters, digits, '_' and
+# '-' only (no '/', '\\', '..', '#', '.').
+_SAFE_ID_RE = re.compile(r"[A-Za-z0-9_-]+")
 _FIELD_PART_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)((?:\[\d+\])*)$")
 
 
@@ -210,10 +221,58 @@ def _base_variant(entry: dict) -> tuple:
     return vid, variants.get(vid)
 
 
-def _exact_index(memory: dict) -> dict:
-    """{(forecast_hash, symbols, timeframe, protocol_ref): [run_id, ...]} over
-    every TESTED variant in the memory. Legacy runs are not in memory, so they
-    can never match (slice 8.1)."""
+def normalize_timeframe(tf):
+    """'1H' / ' 1h ' -> '1h'; anything that is not a non-empty string -> None."""
+    return tf.strip().lower() if isinstance(tf, str) and tf.strip() else None
+
+
+def normalize_ref(ref):
+    """Path separators normalised ('\\' -> '/'), leading './' dropped."""
+    if not isinstance(ref, str) or not ref.strip():
+        return None
+    out = ref.strip().replace("\\", "/")
+    while out.startswith("./"):
+        out = out[2:]
+    return out
+
+
+def protocol_spec(root: Path, protocol_ref) -> dict | None:
+    """What a protocol file actually tests, independent of its per-run file
+    name (generated protocols are protocols/<run_id>_generated.json, so the
+    path never repeats): {timeframe (normalised), windows_sha256 (canonical
+    JSON of its `windows` list)}. None when the file cannot be read."""
+    ref = normalize_ref(protocol_ref)
+    if ref is None:
+        return None
+    path = Path(root) / ref
+    if not path.exists():
+        return None
+    text = path.read_text(encoding="utf-8")
+    doc = json.loads(text) if path.suffix == ".json" else yaml.safe_load(text)
+    if not isinstance(doc, dict) or not isinstance(doc.get("windows"), list):
+        return None
+    return {"timeframe": normalize_timeframe(doc.get("timeframe")),
+            "windows_sha256": _canonical_sha(doc["windows"])}
+
+
+def novelty_key(forecast_hash, symbols, entry: dict, specs: dict) -> tuple:
+    """Card K's exact key: (config hash, symbols, timeframe, window set).
+    Symbols come from the measured variant (protocol_result), the timeframe
+    and window set from the protocol file the engine ran (the memory entry's
+    own `timeframe` is copied from the LLM-written card, so it is only the
+    fallback when the protocol file cannot be read, normalised)."""
+    ref = normalize_ref(entry.get("protocol_ref"))
+    spec = specs.get(ref) if ref else None
+    if spec:
+        timeframe, window_set = spec["timeframe"], f"windows:{spec['windows_sha256']}"
+    else:
+        timeframe, window_set = normalize_timeframe(entry.get("timeframe")), f"unresolved:{ref}"
+    return (forecast_hash, tuple(sorted(symbols or [])), timeframe, window_set)
+
+
+def _exact_index(memory: dict, specs: dict) -> dict:
+    """{novelty_key: [run_id, ...]} over every TESTED variant in the memory.
+    Legacy runs are not in memory, so they can never match (slice 8.1)."""
     index: dict = {}
     for run_id in sorted((memory.get("runs") or {})):
         entry = memory["runs"][run_id]
@@ -222,8 +281,7 @@ def _exact_index(memory: dict) -> dict:
         for v in (entry.get("variants") or {}).values():
             if v.get("status") != "tested" or not v.get("forecast_hash"):
                 continue
-            key = (v["forecast_hash"], tuple(sorted(v.get("symbols") or [])),
-                   entry.get("timeframe"), entry.get("protocol_ref"))
+            key = novelty_key(v["forecast_hash"], v.get("symbols"), entry, specs)
             runs = index.setdefault(key, [])
             if run_id not in runs:
                 runs.append(run_id)
@@ -284,8 +342,19 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
         doc = _load_yaml_opt(root / "campaign_record" / name) or {}
         return len(doc.get("requests") or []) if isinstance(doc, dict) else 0
 
+    specs = {}
+    for entry in (memory.get("runs") or {}).values():
+        ref = normalize_ref(entry.get("protocol_ref"))
+        if ref and ref not in specs:
+            specs[ref] = protocol_spec(root, ref)
+    briefs_dir = root / CANDIDATE_BRIEFS_DIR
+    existing_briefs = (sorted(p.name for p in briefs_dir.iterdir() if p.is_file())
+                       if briefs_dir.exists() else [])
+
     return {
         "memory": memory,
+        "protocol_specs": specs,
+        "existing_candidate_briefs": existing_briefs,
         "memory_sha256": (hashlib.sha256(mem_path.read_bytes()).hexdigest()
                           if mem_path.exists() else None),
         "registry_revision": registry.get("revision", 0),
@@ -327,8 +396,20 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
     symbols = list(base.get("symbols") or [])
     n_windows = base.get("n_windows") or 0
     reasons = []
-    resolved_sha, novelty = None, None
+    resolved_sha, novelty, key = None, None, None
     config_for_digest = None
+    # The proposal_id becomes a queue id AND a file name: it must be a safe
+    # bare name, and its middle segment must be the run it came from.
+    if not (_SAFE_ID_RE.fullmatch(pid) and ".." not in pid
+            and re.fullmatch(rf"{re.escape(category)}-{re.escape(run_id)}-\d+", pid)):
+        reasons.append(f"unsafe_proposal_id: {pid!r} is not a safe '<category>-{run_id}-<n>' name")
+    else:
+        queue_ids = {e.get("id") for e in (inputs.get("queue") or {}).get("queue") or []
+                     if isinstance(e, dict)}
+        if pid in queue_ids:
+            reasons.append(f"queue_id_collision: a queue entry {pid!r} already exists")
+        if f"{pid}.md" in set(inputs.get("existing_candidate_briefs") or []):
+            reasons.append(f"brief_collision: {CANDIDATE_BRIEFS_DIR}/{pid}.md already exists")
     pre_reg = src.get("pre_registration") or {}
     if not isinstance(pre_reg.get("machine_constraints"), dict):
         reasons.append("source_has_no_protocol_pin: the source pre_registration.yaml carries "
@@ -362,8 +443,7 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
                     reasons.append(f"unknown_component_class: {sorted(new_classes)} "
                                    f"(no known class set was supplied)")
         if resolved_sha:
-            key = (resolved_sha, tuple(sorted(symbols)), entry.get("timeframe"),
-                   entry.get("protocol_ref"))
+            key = novelty_key(resolved_sha, symbols, entry, inputs.get("protocol_specs") or {})
             matched = list(exact.get(key) or [])
             novelty = {"exact_match": "REPEAT" if matched else "NOVEL", "matched_runs": matched}
         else:
@@ -383,7 +463,14 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
         src.get("card"), config_for_digest, symbols, entry.get("timeframe"), inputs.get("digest"))
     backtests = n_windows * N_VARIANTS * len(symbols) if (n_windows and symbols) else None
     eligible = novelty["exact_match"] != "REPEAT" and feas != "INFEASIBLE"
+    if p["kind"] == "patch":
+        collapse_key = ("patch", key) if key else ("single", pid)
+    else:
+        blk = p.get("block") or {}
+        collapse_key = ("new_block", blk.get("kind"),
+                        tuple(sorted(blk.get("config_paths") or [])), run_id)
     return {
+        "_collapse_key": collapse_key,
         "candidate_id": pid,
         "origin": ORIGIN_READER,
         "kind": p["kind"],
@@ -417,17 +504,14 @@ def _score_key(c: dict) -> tuple:
 
 
 def _collapse(cands: list) -> list:
-    """Card I: candidates that are the same thing collapse into one, keeping
-    the highest score tuple. Patches: identical resolved config hash. Sketches:
+    """Card I: ELIGIBLE candidates that are the same thing collapse into one,
+    keeping the highest score tuple. Called on eligible candidates only, so an
+    ineligible duplicate can never shadow an eligible one. Patches: the FULL
+    novelty key (config hash + symbols + timeframe + window set). Sketches:
     identical kind + config_paths from the same source run."""
     groups, order = {}, []
     for c in cands:
-        if c["kind"] == "patch" and c["resolved_config_sha256"]:
-            key = ("patch", c["resolved_config_sha256"])
-        elif c["kind"] == "new_block":
-            key = ("new_block", c["_block_key"])
-        else:
-            key = ("single", c["candidate_id"])
+        key = c["_collapse_key"]
         if key not in groups:
             order.append(key)
         groups.setdefault(key, []).append(c)
@@ -455,14 +539,36 @@ def _operator_entries(queue: dict) -> list:
     return sorted(entries, key=lambda e: e.get("priority", 999))  # stable, as _select_entry
 
 
-def decide(inputs: dict, *, now: str, trigger: dict) -> dict:
+def select_entry_rule(entries: list):
+    """A verbatim mirror of run_campaign._select_entry (first in_progress entry,
+    else the lowest-priority `ready` one, stable), for callers without the
+    campaign runner. run_campaign passes its own _select_entry to decide();
+    a test pins the two together."""
+    in_progress = [e for e in entries if e.get("status") == "in_progress"]
+    if in_progress:
+        return in_progress[0]
+    ready = [e for e in entries if e.get("status") == "ready"]
+    if not ready:
+        return None
+    ready.sort(key=lambda e: e.get("priority", 999))
+    return ready[0]
+
+
+def decide(inputs: dict, *, now: str, trigger: dict, select_entry=None) -> dict:
     """The decision record. Pure: reads only `inputs`; the same inputs, `now`
-    and `trigger` give the same record."""
+    and `trigger` give the same record. `inputs["queue"]` is the queue as it
+    will stand once the finished entry is marked done. `select_entry` is the
+    scheduler's own rule (run_campaign._select_entry; default: the mirror
+    above). `picked` is always what that rule will run next: an existing
+    in_progress or ready entry if there is one (nothing is minted), else the
+    minted top candidate (the only ready entry, so the rule picks it), else a
+    stop."""
+    select_entry = select_entry or select_entry_rule
     memory = inputs["memory"]
     queue = inputs["queue"]
     named = {e.get("proposal_ref") for e in (queue.get("queue") or [])
              if isinstance(e, dict) and e.get("proposal_ref")}
-    exact = _exact_index(memory)
+    exact = _exact_index(memory, inputs.get("protocol_specs") or {})
 
     cands = []
     for run_id in sorted(inputs.get("runs") or {}):
@@ -473,30 +579,25 @@ def decide(inputs: dict, *, now: str, trigger: dict) -> dict:
             ref = f"runs/{run_id}/artifacts/proposals/{cat}.yaml#{p['proposal_id']}"
             if ref in named:
                 continue  # already in the queue: out of the pool (§3.7)
-            c = _candidate(run_id, entry, src, cat, p, inputs, exact)
-            if p["kind"] == "new_block":
-                blk = p.get("block") or {}
-                c["_block_key"] = (blk.get("kind"), tuple(sorted(blk.get("config_paths") or [])),
-                                   run_id)
-            cands.append(c)
-    cands = _collapse(cands)
-    for c in cands:
-        c.pop("_block_key", None)
-    eligible = sorted((c for c in cands if c["eligible"]), key=rank_key)
+            cands.append(_candidate(run_id, entry, src, cat, p, inputs, exact))
+    # Split by eligibility FIRST; collapse only among eligible candidates.
+    eligible = sorted(_collapse([c for c in cands if c["eligible"]]), key=rank_key)
     for i, c in enumerate(eligible, 1):
         c["rank"] = i
     ineligible = sorted((c for c in cands if not c["eligible"]), key=lambda c: c["candidate_id"])
+    for c in eligible + ineligible:
+        c.pop("_collapse_key", None)
 
     operator = _operator_entries(queue)
-    agent_ready = [e for e in (queue.get("queue") or []) if isinstance(e, dict)
-                   and e.get("status") == "ready" and e.get("origin") not in _OPERATOR_ORIGINS]
+    scheduled = select_entry([e for e in (queue.get("queue") or []) if isinstance(e, dict)])
     picked, stop = None, None
-    if operator:
-        picked = {"operator_entry": operator[0]["id"],
-                  "why": "an operator-registered ready entry goes first, by priority, unranked"}
-    elif agent_ready:
-        picked = {"queue_entry_id": agent_ready[0]["id"],
-                  "why": "an agent entry is already ready; nothing new is minted"}
+    if scheduled is not None:
+        why = (f"the scheduler's own rule (_select_entry) runs this {scheduled.get('status')} "
+               f"entry next (priority {scheduled.get('priority')}); nothing is minted")
+        if scheduled.get("origin") in _OPERATOR_ORIGINS:
+            picked = {"operator_entry": scheduled["id"], "why": why}
+        else:
+            picked = {"queue_entry_id": scheduled["id"], "why": why}
     elif eligible:
         top = eligible[0]
         picked = {
@@ -510,7 +611,7 @@ def decide(inputs: dict, *, now: str, trigger: dict) -> dict:
         }
     else:
         stop = {"reason": "no_eligible_candidate",
-                "detail": (f"no operator ready entry, no ready agent entry, and 0 of "
+                "detail": (f"the scheduler has no in_progress or ready entry to run, and 0 of "
                            f"{len(cands)} candidate(s) eligible")}
 
     revision = inputs.get("registry_revision") or 0
@@ -610,6 +711,7 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str) -> tuple:
         source["resolved_patch"] = ops
         source["base_config_ref"] = src["base_config_ref"]
         source["expected_config_sha256"] = config_sha256(patched)
+        source["expected_manifest_sha256"] = config_sha256(src["manifest"])
     candidate["criteria_from"] = CRITERIA_FROM_1A
     candidate["source"] = source
     front["candidate"] = candidate

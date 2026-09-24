@@ -2346,7 +2346,15 @@ def process_once() -> bool:
                     entry["status"] = "done"
                     entry["outcome"] = _QUARANTINE_OUTCOME
                     component = None
-                _save_queue(queue)
+                decide_msg, keep_going = None, True
+                if decide_next_enabled and not requeueable:
+                    # E-059 S2a: this path also marks a lineage done, so decide-next
+                    # runs here too -- and the entry is persisted `done` only after
+                    # the decision (and any minted entry) is on disk (retryable).
+                    queue, entry, keep_going, decide_msg = _finish_lineage_with_decision(
+                        queue, entry, run_id)
+                else:
+                    _save_queue(queue)
                 _regenerate_summary(queue)
                 disposition = _apply_trial_accounting(reason, run_id, detail)
                 quarantine_record = {
@@ -2371,10 +2379,12 @@ def process_once() -> bool:
                      f"status={entry['status']} outcome={entry.get('outcome') or '-'} "
                      f"(trial accounting: {disposition}). Campaign continues; see this "
                      f"run's pipeline_state.yaml halt_history for the full record.")
+                if decide_msg:
+                    _log(decide_msg)
                 _write_loop_health()  # E-030 S3 — see the note at the first call site
                 if schedulability_enabled:  # E-031 S2 — same end-of-branch placement
                     _write_schedulability()
-                return True
+                return keep_going
         entry["status"] = f"paused:{reason}"
         _save_queue(queue)
         _regenerate_summary(queue)
@@ -2415,19 +2425,21 @@ def process_once() -> bool:
         return True
 
     entry["status"] = "done"
+    keep_going, decide_msg = True, None
     if decide_next_enabled:
         # E-059 S2a, operator decision 8: the idea's status from the grid, citing
         # idea_status.yaml, instead of `completed_rejected` with no reference
-        # (which _save_queue's provenance gate refuses). Flag off: unchanged.
+        # (which _save_queue's provenance gate refuses). The entry is persisted
+        # `done` only after the decision is on disk (retryable). Flag off: unchanged.
         _apply_idea_status_outcome(entry, run_id, pending or state.get("status"))
+        queue, entry, keep_going, decide_msg = _finish_lineage_with_decision(queue, entry, run_id)
     else:
         entry["outcome"] = pending or state.get("status")
-    _save_queue(queue)
+        _save_queue(queue)
     _regenerate_summary(queue)
     _log(f"DONE {entry['id']} ({run_id}) -> {entry['outcome']}")
-    keep_going = True
-    if decide_next_enabled:
-        keep_going = _decide_next_step(queue, entry, run_id)
+    if decide_msg:
+        _log(decide_msg)
     _write_loop_health()  # E-030 S3 — see the note at the first call site
     if schedulability_enabled:  # E-031 S2 — same end-of-branch placement
         _write_schedulability()
@@ -2475,54 +2487,83 @@ def _apply_idea_status_outcome(entry: dict, run_id: str, legacy_outcome) -> None
                 f"the grid judged the idea (E-059 S2a DONE branch)")
 
 
-def _decide_next_step(queue: dict, entry: dict, run_id: str) -> bool:
-    """Run tools/decide_next.py, write its record to
-    runs/<run>/artifacts/decision_record.yaml, apply it, log one DECIDE line.
-    Returns False only on a stop (nothing eligible, no operator entry)."""
+def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str) -> tuple:
+    """Decide next, then persist the finished entry -- in that order, so a
+    failure anywhere leaves the entry NOT done on disk (still in_progress):
+    the next process_once selects it again, its run_loop is a no-op on the
+    terminal run, and the decision is retried.
+
+    `entry` (inside `queue`) already carries its final status/outcome IN MEMORY
+    ONLY. Order: decide on that final queue (tools/decide_next.py, with this
+    module's _select_entry as the scheduling rule) -> if a candidate is picked,
+    refuse a colliding id/brief, write the brief, register it (rolled back if
+    registration fails) -> write decision_record.yaml -> reload the queue from
+    disk, put the final entry in, save. No record ever claims a pick that has
+    no queue entry. Returns (queue, entry, keep_going, decide_log_line)."""
+    import copy as _copy
     import decide_next as dn  # tools/ sibling (on sys.path, see the imports above)
+    final_queue = _copy.deepcopy(queue)
     digest_path = ROOT / "campaign_record" / "exclusion_digest.yaml"
     digest = orch.load_yaml(digest_path) if digest_path.exists() else None
     known = (dn.known_component_classes(_TRADING_BOT_ROOT)
              if (_TRADING_BOT_ROOT / "strategies" / "strategy_components.py").exists() else None)
-    inputs = dn.load_inputs(ROOT, queue, categories=orch._reader_categories(),
+    inputs = dn.load_inputs(ROOT, final_queue, categories=orch._reader_categories(),
                             known_classes=known, digest=digest)
     mem_entry = (inputs["memory"].get("runs") or {}).get(run_id) or {}
     trigger = {"after_run": run_id, "after_entry": entry["id"],
                "idea_status": mem_entry.get("idea_status")}
-    record = dn.decide(inputs, now=datetime.now(timezone.utc).isoformat(), trigger=trigger)
+    record = dn.decide(inputs, now=datetime.now(timezone.utc).isoformat(), trigger=trigger,
+                       select_entry=_select_entry)
     decision_ref = f"runs/{run_id}/artifacts/decision_record.yaml"
-    orch.save_yaml(ROOT / decision_ref, record)
     picked, stop = record.get("picked") or {}, record.get("stop")
-    if stop:
-        _log(f"DECIDE stop after {entry['id']} ({run_id}): {stop['reason']} -- "
-             f"{stop.get('detail')}. Record: {decision_ref}. See RUNBOOK.md §3.")
-        return False
+
     if picked.get("candidate_id"):
+        cid = picked["queue_entry_id"]
         rel, text = dn.candidate_brief(record, inputs, decision_ref=decision_ref)
         brief_path = ROOT / rel
+        on_disk_ids = {e.get("id") for e in _load_queue().get("queue") or [] if isinstance(e, dict)}
+        if cid in on_disk_ids or brief_path.exists():
+            raise RuntimeError(f"decide_next: queue id or brief for {cid!r} already exists "
+                               f"({brief_path}); refusing before anything is written")
+        cand = next(c for c in record["candidates"] if c["candidate_id"] == picked["candidate_id"])
         brief_path.parent.mkdir(parents=True, exist_ok=True)
         brief_path.write_text(text, encoding="utf-8")
-        cand = next(c for c in record["candidates"] if c["candidate_id"] == picked["candidate_id"])
-        rc = register_hypothesis(
-            brief_path, dn.AGENT_PRIORITY,
-            # Scores stay in the decision record only (S1 §8): never in the queue.
-            f"decide_next after {run_id}: {cand['kind']} from {cand['proposal_ref']} "
-            f"(rank {cand['rank']}; see decision_ref)",
-            entry_id=picked["queue_entry_id"], source="agent", relation=None,
-            extra={"origin": dn.ORIGIN_READER, "proposal_ref": cand["proposal_ref"],
-                   "decision_ref": decision_ref})
-        if rc != 0:
-            raise RuntimeError(f"decide_next: registering {picked['queue_entry_id']!r} was "
-                               f"refused (see the REGISTER line above); record {decision_ref}")
-        _log(f"DECIDE after {entry['id']} ({run_id}): picked {picked['candidate_id']} "
-             f"-> queue entry {picked['queue_entry_id']} (ready). Record: {decision_ref}")
-    elif picked.get("operator_entry"):
-        _log(f"DECIDE after {entry['id']} ({run_id}): operator entry "
-             f"{picked['operator_entry']} goes first. Record: {decision_ref}")
+        try:
+            rc = register_hypothesis(
+                brief_path, dn.AGENT_PRIORITY,
+                # Scores stay in the decision record only (S1 §8): never in the queue.
+                f"decide_next after {run_id}: {cand['kind']} from {cand['proposal_ref']} "
+                f"(rank {cand['rank']}; see decision_ref)",
+                entry_id=cid, source="agent", relation=None,
+                extra={"origin": dn.ORIGIN_READER, "proposal_ref": cand["proposal_ref"],
+                       "decision_ref": decision_ref})
+            if rc != 0:
+                raise RuntimeError(f"decide_next: registering {cid!r} was refused (see the "
+                                   f"REGISTER line above)")
+        except BaseException:
+            brief_path.unlink(missing_ok=True)  # never leave a brief with no queue entry
+            raise
+        msg = (f"DECIDE after {entry['id']} ({run_id}): picked {picked['candidate_id']} "
+               f"-> queue entry {cid} (ready). Record: {decision_ref}")
+    elif stop:
+        msg = (f"DECIDE stop after {entry['id']} ({run_id}): {stop['reason']} -- "
+               f"{stop.get('detail')}. Record: {decision_ref}. See RUNBOOK.md §3.")
     else:
-        _log(f"DECIDE after {entry['id']} ({run_id}): agent entry "
-             f"{picked.get('queue_entry_id')} is already ready. Record: {decision_ref}")
-    return True
+        nxt = picked.get("operator_entry") or picked.get("queue_entry_id")
+        msg = (f"DECIDE after {entry['id']} ({run_id}): the scheduler runs {nxt} next "
+               f"({'operator' if picked.get('operator_entry') else 'agent'} entry). "
+               f"Record: {decision_ref}")
+
+    orch.save_yaml(ROOT / decision_ref, record)
+    disk_queue = _load_queue()
+    items = disk_queue.get("queue") or []
+    idx = next((i for i, e in enumerate(items) if isinstance(e, dict) and e.get("id") == entry["id"]),
+               None)
+    if idx is None:
+        raise RuntimeError(f"decide_next: queue entry {entry['id']!r} vanished from disk")
+    items[idx] = entry
+    _save_queue(disk_queue)
+    return disk_queue, entry, stop is None, msg
 
 
 def run_forever(once: bool = False):

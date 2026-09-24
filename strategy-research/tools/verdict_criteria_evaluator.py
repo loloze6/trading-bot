@@ -1412,9 +1412,17 @@ def _resolve_grid_criteria(pre_registration: dict, menu) -> list:
     pass_rule = _find_pass_rule(pre_registration or {})
     if not _is_menu_shaped_pass_rule(pass_rule):
         return []
+    return resolve_criteria_against_menu(pass_rule["criteria"], menu)
+
+
+def resolve_criteria_against_menu(criteria: list, menu) -> list:
+    """The merge _resolve_grid_criteria applies to a menu-shaped pass_rule,
+    exposed on its own (E-059 S2a) so the 1a criteria writer resolves a card's
+    id-only criteria with exactly the grid's rule: criterion-supplied fields
+    win, `menu` backfills the rest; non-mapping entries are skipped."""
     menu_by_id = _menu_entries_by_id(menu)
     resolved = []
-    for raw in pass_rule["criteria"]:
+    for raw in criteria:
         if not isinstance(raw, dict):
             continue
         cid = raw.get("id")

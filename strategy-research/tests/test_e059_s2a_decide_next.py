@@ -343,8 +343,7 @@ def test_an_already_ready_agent_entry_mints_nothing():
     inputs = _one_source([_patch("profitability-run_061-1")])
     inputs["queue"] = {"queue": [{"id": "AG", "status": "ready", "origin": "reader"}]}
     rec = _decide(inputs)
-    assert rec["picked"] == {"queue_entry_id": "AG",
-                             "why": "an agent entry is already ready; nothing new is minted"}
+    assert rec["picked"]["queue_entry_id"] == "AG" and "candidate_id" not in rec["picked"]
 
 
 def test_a_queued_proposal_leaves_the_pool():
@@ -510,10 +509,13 @@ def test_proposal_candidate_gets_fresh_criteria_from_1a_never_the_source(campaig
     ids = [c["id"] for c in pre["pass_rule"]["criteria"]]
     assert ids == ["sign_consistent_by_era"]
     assert pre["pass_rule"] != _SOURCE_PASS_RULE
-    assert "pass_rule_pending" not in pre
     assert pre["pass_rule_source_ref"] == "runs/run_062/artifacts/hypothesis_card.yaml#criteria"
     assert vce._is_menu_shaped_pass_rule(pre["pass_rule"])
     rpr._check_specialist_readers_preflight(run_dir)  # passes now
+    # the marker stays until the run advances past 1a
+    assert pre["pass_rule_pending"] == "hypothesis_generation"
+    assert rpr._clear_pass_rule_pending(run_dir, "hypothesis_generation") is False
+    assert rpr._clear_pass_rule_pending(run_dir, "strategy_config_authoring") is True
     assert rpr._specialist_readers_preflight_deferred(run_dir, "hypothesis_generation") is False
 
 
@@ -592,7 +594,7 @@ def test_5a_hash_check_passes_on_a_verbatim_copy(tmp_path):
 
 def test_5a_hash_check_stops_on_a_drifted_copy(tmp_path):
     arts = _stage_5a(tmp_path, _base_config(min_abs=0.7), dn.config_sha256(_base_config(0.8)))
-    with pytest.raises(RuntimeError, match="pass-through config mismatch"):
+    with pytest.raises(RuntimeError, match="pass-through mismatch"):
         rpr._check_pass_through_config_hash(arts)
 
 
