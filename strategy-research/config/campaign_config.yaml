@@ -657,6 +657,40 @@ orchestrator:
       # (append-only), every non-fault run adds one legacy_schema: false entry
       # to campaign_knowledge_base.yaml, the near-miss scoreboard is rebuilt,
       # and campaign_review gets the memory file as an input.
+  decide_next:
+    enabled: false
+      # E-059 S2a (delivery_plan_v26.md slice 6b, "decide-next and the queue";
+      # engineering/roadmap/E-059/S1_FINDINGS_6B.md and its operator decision
+      # of 2026-09-24). OFF BY DEFAULT and read by
+      # run_phase1_research._decide_next_enabled(), called once per step by
+      # run_campaign.process_once. HARD DEPENDENCIES: raises (does not
+      # silently no-op) if true while regroup_record.enabled (hence
+      # specialist_readers, grid_evaluation, category_reports) or
+      # config_direct_authoring.enabled is false/absent.
+      #
+      # While false: process_once, its DONE branch, register_hypothesis's
+      # defaults and campaign_queue.yaml are byte-identical to before -- proven
+      # by tests/test_e059_s2a_decide_next.py's flag-off tests. (The DONE
+      # branch still writes `outcome: completed_rejected` with no reference,
+      # which _save_queue refuses -- the separate flag-off ticket.)
+      #
+      # While true, in the DONE branch only: the entry's outcome is the grid's
+      # idea_status citing runs/<run>/artifacts/idea_status.yaml (no grid,
+      # e.g. a data-gate decline: its stage outcome, verdict_status: ungated); then
+      # tools/decide_next.py writes runs/<run>/artifacts/decision_record.yaml
+      # and either lets an operator `ready` entry go first (by priority,
+      # unranked), or mints ONE `ready` agent entry (priority 999, origin:
+      # reader) from the best eligible reader proposal, or stops the loop when
+      # nothing is eligible. Novelty = the exact match (config hash + symbols
+      # + timeframe + protocol) against campaign_memory.yaml, binding; the
+      # legacy digest is recorded for information only. Ranking: confidence_real
+      # desc, distance_to_profitable desc, cost asc; no lineage demotion.
+      # The candidate's brief (campaign_record/candidate_briefs/) carries NO
+      # criteria: step 1a writes them for the proposed idea, and run_loop
+      # defers the readers pre-flight until 1a has written pass_rule into
+      # pre_registration.yaml. A patch's resolved config passes through to 1b
+      # and 5a checks its hash. Proposal scores only rank; idea status comes
+      # only from the grid. Multi-card briefs, R2 and brief exhaustion: S2b.
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------

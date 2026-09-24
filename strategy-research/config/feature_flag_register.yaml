@@ -336,6 +336,29 @@ flags:
       stage 1b under config_direct_authoring (E-056 1b block manifest,
       2026-09-24; tests/test_e056_1b_block_manifest.py).
 
+  - name: decide_next
+    kind: orchestrator_config
+    config_key: orchestrator.decide_next.enabled
+    reader: run_phase1_research._decide_next_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "the readers' run budget (no run on disk has artifacts/proposals/ or a campaign_memory.yaml entry to decide from), and its prerequisite flags regroup_record + config_direct_authoring, both off_incomplete; then delivery_plan_v26.md slice 6b's two consecutive real runs, the first ending refuted"
+    criterion: >
+      Landed 2026-09-24 (E-059 S2a, delivery_plan_v26.md slice 6b core;
+      engineering/roadmap/E-059/S1_FINDINGS_6B.md + operator decision).
+      Off by default; raises if set true without regroup_record (hence
+      specialist_readers, grid_evaluation, category_reports) and
+      config_direct_authoring (every picked candidate writes its criteria
+      at step 1a from the criterion menu, operator decision 2). While true,
+      in run_campaign.process_once's DONE branch: outcome := the grid's
+      idea_status citing idea_status.yaml (decision 8), then
+      tools/decide_next.py writes runs/<run>/artifacts/decision_record.yaml
+      and mints one ready agent entry, lets an operator ready entry go
+      first, or stops. Unit tested with synthetic memory/queue/proposals
+      and a stubbed run_loop (tests/test_e059_s2a_decide_next.py),
+      flag-off byte-identity proven there. S2b (multi-card briefs, R2,
+      brief exhaustion) not built.
+
   - name: bar_equity
     kind: engine_param
     engine_default_files:

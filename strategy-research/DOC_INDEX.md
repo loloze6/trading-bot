@@ -142,6 +142,18 @@ flag (E-058 S2b): validated blocks in `campaign_record/block_registry.yaml`
 append-only, needs `artifacts/block_manifest.yaml`), one `legacy_schema: false`
 KB entry per run (`tools/grid_kb_writer.py`), and the near-miss scoreboard rebuild.
 
+### "How does the campaign pick the next idea after a run finishes?"
+→ **[`docs/USER_GUIDE.md` §3 `decision_record.yaml`](docs/USER_GUIDE.md)** and
+`tools/decide_next.py`'s module docstring — decide-next (E-059 S2a, off by
+default: `orchestrator.decide_next.enabled`, requires `regroup_record` and
+`config_direct_authoring`). In `workflow/run_campaign.py`'s DONE branch it
+writes `runs/<run_id>/artifacts/decision_record.yaml` (schema
+`workflow_artifacts/schemas/decision_record.schema.json`): an operator `ready`
+entry goes first, else one reader proposal becomes a `ready` agent queue entry
+with a brief in `campaign_record/candidate_briefs/`, else the loop stops
+(`docs/RUNBOOK.md` §3, last row). Design and operator decisions:
+`engineering/roadmap/E-059/S1_FINDINGS_6B.md`.
+
 ### "What can run autonomously vs needs a human?"
 → **[`docs/WORKFLOW_CAPABILITIES.md`](docs/WORKFLOW_CAPABILITIES.md)** —
 per-stage autonomy boundary within one run.

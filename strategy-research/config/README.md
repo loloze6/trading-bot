@@ -202,6 +202,14 @@ clearest concurrent-writer risk in the repo (`:105`).
   variant, is inert: it records a disposition without reopening anything. There is
   no suffix whitelist to satisfy.
 - `notes` — carries the measured basis for the status. These are long on purpose; a status without a reason is how a blocker gets misattributed.
+- E-059 S2a (decide-next, `orchestrator.decide_next.enabled`, off by default):
+  status `queued` (a waiting agent candidate — inert to the selector, like any
+  other non-`ready`/`in_progress` token), and the closed-schema fields `origin`
+  (`brief|reader|composition|campaign_review|external`), `proposal_ref`,
+  `decision_ref`, `card_ref`, `brief_status` (`open|exhausted`) and
+  `parked_reason` (`tools/record_schema.py`). Agent entries written by
+  decide-next carry `source: agent`, `origin: reader`, `priority: 999` and no
+  `relation`.
 
 **STATUS** — live. **Tooling-written** — prefer changing it through the orchestrator.
 

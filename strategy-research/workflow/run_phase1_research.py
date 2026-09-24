@@ -1952,6 +1952,9 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 "(STRATEGY_DESIGN_GUIDE.md §7c) when its status is spec_ready."
             )
         _bm.check_manifest(manifest, base_config, where=str(manifest_path), error_cls=RuntimeError)
+        # E-059 S2a: a decide_next patch candidate's config must be 1b's verbatim
+        # pass-through copy (no-op for every other brief -- see the function).
+        _check_pass_through_config_hash(ARTIFACTS)
 
         variants_dir = ARTIFACTS / "variants"
         variants_dir.mkdir(parents=True, exist_ok=True)
@@ -2045,6 +2048,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 with open(ARTIFACTS / "candidate_strategy_config.json", "w", encoding="utf-8") as f:
                     json.dump(variant_config, f, indent=2)
 
+        # E-059 S2a: re-checked on the base variant actually written above.
+        _check_pass_through_config_hash(ARTIFACTS)
         save_yaml(variants_dir / "index.yaml", {"variants": index})
         if component_requests:
             requests_path = ROOT / "campaign_record" / "component_requests.yaml"
@@ -3222,6 +3227,177 @@ def _regroup_record_enabled() -> bool:
             "before its route. Enable both (with grid_evaluation and category_reports)."
         )
     return value
+
+
+def _decide_next_enabled() -> bool:
+    """E-059 S2a (delivery_plan_v26.md slice 6b; S1_FINDINGS_6B.md §9 and its
+    operator decision). False when the key, the section or the config file is
+    absent. A non-bool value raises. Requires, loudly:
+      * orchestrator.regroup_record.enabled (itself requiring
+        specialist_readers, grid_evaluation, category_reports) -- decide_next
+        reads campaign_record/campaign_memory.yaml and the reader proposals it
+        references, which exist only under those flags;
+      * orchestrator.config_direct_authoring.enabled -- operator decision 2:
+        every proposal-sourced candidate enters step 1a, which writes its
+        criteria from config/criterion_menu.yaml, and 1a only sees that menu
+        (IMPROVEMENT 07/08 of hypothesis-design) and 1b only honours a
+        pass-through config under this flag. Without it a candidate could only
+        fail pre-flight for want of a menu-shaped pass_rule.
+    Read by run_campaign.process_once (as orch._decide_next_enabled()), once per
+    step."""
+    path = ROOT / "config" / "campaign_config.yaml"
+    if not path.exists():
+        return False
+    with open(path, encoding="utf-8") as f:
+        cfg = yaml.safe_load(f) or {}
+    dn_cfg = ((cfg.get("orchestrator") or {}).get("decide_next") or {})
+    value = dn_cfg.get("enabled", False)
+    if not isinstance(value, bool):
+        raise ValueError(
+            f"orchestrator.decide_next.enabled={value!r} is not a real boolean "
+            f"(got {type(value).__name__}) -- write an unquoted `true` or `false` in "
+            f"config/campaign_config.yaml, not a quoted string or null."
+        )
+    if value:
+        missing = [name for name, on in (("regroup_record", _regroup_record_enabled()),
+                                         ("config_direct_authoring",
+                                          _config_direct_authoring_enabled()))
+                   if not on]
+        if missing:
+            raise ValueError(
+                "orchestrator.decide_next.enabled=true requires "
+                + " and ".join(f"orchestrator.{m}.enabled=true" for m in missing)
+                + " as well -- decide_next reads the campaign memory and reader proposals "
+                "(regroup_record, hence specialist_readers, grid_evaluation, category_reports), "
+                "and every picked candidate writes its criteria at step 1a from the criterion "
+                "menu (config_direct_authoring). Enable them together."
+            )
+    return value
+
+
+# ---------------------------------------------------------------------------
+# E-059 S2a, operator decision 2 (S1_FINDINGS_6B.md, 2026-09-24): criteria of a
+# proposal-sourced candidate are written at step 1a, never inherited from the
+# source run. run_campaign._materialize_run writes such a candidate's
+# pre_registration.yaml with `pass_rule: null` and
+# `pass_rule_pending: hypothesis_generation`. The specialist_readers pre-flight
+# (which needs a menu-shaped pass_rule) is therefore DEFERRED from run_loop's
+# start to the moment 1a has written the card: _write_pass_rule_from_card
+# resolves the card's `criteria` against config/criterion_menu.yaml into a
+# menu-shaped pass_rule, writes it, clears the pending marker, and the same
+# pre-flight then runs -- before 1b, 2 or any backtest. Keyed on the marker,
+# not on a flag: a pre_registration without it is untouched (byte-identical).
+# ---------------------------------------------------------------------------
+
+PASS_RULE_PENDING_KEY = "pass_rule_pending"
+PASS_RULE_PENDING_AT_1A = "hypothesis_generation"
+
+
+def _pass_rule_pending_at_1a(run_dir: Path) -> bool:
+    """True when this run's pre_registration.yaml says its pass_rule is written
+    at step 1a (a decide_next candidate, operator decision 2)."""
+    path = Path(run_dir) / "artifacts" / "pre_registration.yaml"
+    if not path.exists():
+        return False
+    doc = load_yaml(path) or {}
+    return isinstance(doc, dict) and doc.get(PASS_RULE_PENDING_KEY) == PASS_RULE_PENDING_AT_1A
+
+
+def _specialist_readers_preflight_deferred(run_dir: Path, pending_stage: str) -> bool:
+    """The start-of-run_loop pre-flight is deferred only while the run has not
+    yet passed step 1a AND its pass_rule is pending at 1a. A run past 1a that
+    still carries the marker is not deferred: the check then fails, loudly."""
+    return pending_stage == PASS_RULE_PENDING_AT_1A and _pass_rule_pending_at_1a(run_dir)
+
+
+def _write_pass_rule_from_card(run_dir: Path, run_id: str, sr_flag: bool) -> bool:
+    """After hypothesis_generation (1a): when pre_registration.yaml is pending
+    at 1a, build `pass_rule: {criteria: [...]}` from hypothesis_card.yaml's
+    `criteria` (each resolved against config/criterion_menu.yaml by `id`,
+    card-supplied fields winning -- the grid's own merge rule), write it,
+    drop the pending marker, record where the criteria came from, then run
+    the specialist_readers pre-flight when that flag is on. Returns False (a
+    no-op) when the marker is absent. Raises on anything else: a card with no
+    criteria, an unknown criterion id, a card hypothesis_id that is not the
+    candidate's, or a result the grid could not evaluate -- all before any
+    backtest is spent."""
+    run_dir = Path(run_dir)
+    if not _pass_rule_pending_at_1a(run_dir):
+        return False
+    arts = run_dir / "artifacts"
+    pre_reg_path = arts / "pre_registration.yaml"
+    pre_reg = load_yaml(pre_reg_path) or {}
+    card = load_yaml(arts / "hypothesis_card.yaml") or {}
+    brief = (load_yaml(arts / "research_brief.yaml") if (arts / "research_brief.yaml").exists()
+             else {}) or {}
+    expected_hid = (((brief.get("candidate") or {}).get("source")) or {}).get("hypothesis_id")
+    if expected_hid and card.get("hypothesis_id") != expected_hid:
+        raise ValueError(
+            f"{arts / 'hypothesis_card.yaml'}: hypothesis_id={card.get('hypothesis_id')!r} is not "
+            f"the candidate's {expected_hid!r} (research_brief.yaml candidate.source.hypothesis_id; "
+            f"operator decision 1: a reader patch is a NEW idea with that id). Refusing before 1b.")
+    raw = card.get("criteria")
+    if not isinstance(raw, list) or not raw:
+        raise ValueError(
+            f"{arts / 'hypothesis_card.yaml'} has no `criteria` list, but this run's "
+            f"pre_registration.yaml is pending at 1a ({PASS_RULE_PENDING_KEY}: "
+            f"{PASS_RULE_PENDING_AT_1A}) -- step 1a must write the idea's criteria from "
+            f"config/criterion_menu.yaml (hypothesis-design IMPROVEMENT 07/08). Refusing before 1b.")
+    menu_path = ROOT / "config" / "criterion_menu.yaml"
+    menu = (load_yaml(menu_path) if menu_path.exists() else {}) or {}
+    menu_by_id = {e["id"]: e for e in (menu.get("criteria") or [])
+                  if isinstance(e, dict) and e.get("id")}
+    criteria = []
+    for i, c in enumerate(raw):
+        cid = c.get("id") if isinstance(c, dict) else None
+        if cid not in menu_by_id:
+            raise ValueError(
+                f"{arts / 'hypothesis_card.yaml'}: criteria[{i}] id={cid!r} is not a live entry "
+                f"of config/criterion_menu.yaml ({sorted(menu_by_id)}) -- 1a picks from the menu only.")
+        merged = {**menu_by_id[cid], **{k: v for k, v in c.items() if v is not None}}
+        merged.pop("basis", None)  # menu prose, not a criterion field
+        criteria.append(merged)
+    pre_reg["pass_rule"] = {"criteria": criteria}
+    pre_reg.pop(PASS_RULE_PENDING_KEY, None)
+    pre_reg["pass_rule_source_ref"] = f"runs/{run_id}/artifacts/hypothesis_card.yaml#criteria"
+    save_yaml(pre_reg_path, pre_reg)
+    print(f"✅ [E-059] pre_registration.yaml pass_rule written from 1a's criteria "
+          f"{[c['id'] for c in criteria]} (not inherited from any source run)")
+    if sr_flag:
+        _check_specialist_readers_preflight(run_dir)
+    return True
+
+
+def _check_pass_through_config_hash(artifacts: Path) -> None:
+    """E-059 S2a, the 5a pass-through check (S1_FINDINGS_6B.md §3.3). A
+    decide_next patch candidate's research_brief.yaml carries
+    candidate.source.expected_config_sha256: the hash of the config decide_next
+    resolved (canonical JSON, the _compute_forecast_hash rule). 1b copies that
+    config through by prompt; this checks the copy -- 1b's backtest_spec.yaml
+    config and, once written, variants/base/strategy_config.json -- and stops
+    loudly on any difference, before any backtest. No expected hash (every
+    brief not written by decide_next, and new_block candidates): a no-op."""
+    brief_path = Path(artifacts) / "research_brief.yaml"
+    if not brief_path.exists():
+        return
+    brief = load_yaml(brief_path) or {}
+    source = ((brief.get("candidate") or {}) if isinstance(brief, dict) else {}).get("source") or {}
+    expected = source.get("expected_config_sha256") if isinstance(source, dict) else None
+    if not expected:
+        return
+    spec = load_yaml(Path(artifacts) / "backtest_spec.yaml") or {}
+    got = {"backtest_spec.yaml config": hashlib.sha256(
+        json.dumps(spec.get("config"), sort_keys=True).encode("utf-8")).hexdigest()}
+    base_cfg = Path(artifacts) / "variants" / "base" / "strategy_config.json"
+    if base_cfg.exists():
+        got["variants/base/strategy_config.json"] = _compute_forecast_hash(base_cfg)
+    bad = {k: v for k, v in got.items() if v != expected}
+    if bad:
+        raise RuntimeError(
+            f"run_tool_worker(backtest_specification): pass-through config mismatch -- "
+            f"decide_next resolved config sha256 {expected} (research_brief.yaml "
+            f"candidate.source.expected_config_sha256) but {bad}. Stage 1b did not copy the "
+            f"candidate's config through verbatim; refusing before any backtest.")
 
 
 def _campaign_memory_path() -> Path:
@@ -8681,10 +8857,12 @@ def determine_post_strategy_config_authoring_route(path: Path):
         return "human_pause"
 
 
-class PatchApplicationError(Exception):
-    """Raised by _apply_json_pointer_patch on any patch that cannot be
-    applied cleanly -- never silently no-opped, per this project's own
-    'fail loud, not flattering' rule."""
+# E-059 S2a: moved to tools/json_pointer.py (behaviour-preserving) so
+# tools/decide_next.py applies a reader patch with the same semantics without
+# importing this module. Re-exported under its old name: every
+# `except PatchApplicationError` / `rpr.PatchApplicationError` keeps working.
+# tools/ is already on sys.path (module top).
+from json_pointer import PatchApplicationError  # noqa: E402
 
 
 def _json_pointer_module():
@@ -8715,83 +8893,11 @@ def _split_json_pointer(path: str) -> list:
 
 def _apply_json_pointer_patch(base_config: dict, patch: list) -> dict:
     """Apply a list of {path, value} JSON-Pointer (RFC 6901) set-operations to
-    a DEEP COPY of base_config (base_config itself is never mutated -- every
-    variant patches from the same pristine base), returning the patched copy.
-
-    Semantics (E-056 Slice 3b, deliberately chosen -- see this slice's own
-    final report for the adversarial-review question this answers): a patch
-    entry SETS the value at 'path'. The path's PARENT container must already
-    exist in the config -- a patch targeting a path whose parent doesn't
-    exist RAISES PatchApplicationError; it never silently creates a new
-    nested chain of dicts and never silently no-ops. Only the FINAL segment
-    of a path may be new (adding a key that doesn't exist yet under an
-    EXISTING parent dict, or appending to a list via the RFC 6901 '-' token).
-    A list segment must be a base-10 integer index in range, or (for the
-    final segment only) the literal '-'; anything else raises."""
-    import copy as _copy
-    result = _copy.deepcopy(base_config)
-    for i, op in enumerate(patch):
-        # CODE-REVIEW FIX (2026-09-21): a malformed patch entry that isn't a
-        # dict at all (an LLM authoring slip, e.g. `patch: [21]` instead of
-        # `patch: [{path: ..., value: 21}]`) used to reach `"value" not in
-        # (op or {})` -- for a truthy non-dict like an int, `(op or {})`
-        # evaluates to the int itself, and `"value" not in 5` raises a bare
-        # TypeError instead of PatchApplicationError, which run_tool_worker's
-        # call site doesn't catch -- crashing the WHOLE tool stage for every
-        # variant instead of marking just this one variant not_tested, the
-        # graceful-degradation behavior every other failure mode here has.
-        if not isinstance(op, dict):
-            raise PatchApplicationError(
-                f"patch[{i}]: expected a mapping with 'path'/'value' keys, got "
-                f"{type(op).__name__} ({op!r})"
-            )
-        path = op.get("path")
-        if "value" not in op:
-            raise PatchApplicationError(f"patch[{i}] ({path}): missing required 'value' key")
-        segments = _split_json_pointer(path)
-        parent = result
-        for seg in segments[:-1]:
-            if isinstance(parent, dict):
-                if seg not in parent:
-                    raise PatchApplicationError(
-                        f"patch[{i}] ({path}): parent segment '{seg}' does not exist in the base "
-                        "config -- a patch may only set a NEW leaf key under an EXISTING parent, "
-                        "never create a new nested chain."
-                    )
-                parent = parent[seg]
-            elif isinstance(parent, list):
-                try:
-                    idx = int(seg)
-                except ValueError:
-                    raise PatchApplicationError(f"patch[{i}] ({path}): '{seg}' is not a valid list index")
-                if not (0 <= idx < len(parent)):
-                    raise PatchApplicationError(
-                        f"patch[{i}] ({path}): list index {idx} out of range (len={len(parent)})"
-                    )
-                parent = parent[idx]
-            else:
-                raise PatchApplicationError(
-                    f"patch[{i}] ({path}): cannot descend into a {type(parent).__name__} at segment '{seg}'"
-                )
-        leaf = segments[-1]
-        if isinstance(parent, dict):
-            parent[leaf] = op["value"]
-        elif isinstance(parent, list):
-            if leaf == "-":
-                parent.append(op["value"])
-            else:
-                try:
-                    idx = int(leaf)
-                except ValueError:
-                    raise PatchApplicationError(f"patch[{i}] ({path}): '{leaf}' is not a valid list index or '-'")
-                if not (0 <= idx < len(parent)):
-                    raise PatchApplicationError(
-                        f"patch[{i}] ({path}): list index {idx} out of range (len={len(parent)})"
-                    )
-                parent[idx] = op["value"]
-        else:
-            raise PatchApplicationError(f"patch[{i}] ({path}): cannot set a key on a {type(parent).__name__}")
-    return result
+    a DEEP COPY of base_config. Raises PatchApplicationError on any patch that
+    cannot be applied cleanly. Implementation (moved, behaviour-preserving,
+    E-059 S2a): tools/json_pointer.apply_json_pointer_patch, whose docstring
+    states the exact set semantics."""
+    return _json_pointer_module().apply_json_pointer_patch(base_config, patch)
 
 
 def _json_pointer_exists(config, path: str) -> bool:
@@ -8955,7 +9061,11 @@ def run_loop(run_id: str):
     try:
         _sr_flag = _specialist_readers_enabled()
         if _sr_flag and _pending_at_start and not _pending_at_start.startswith(_TERMINAL_AT_START):
-            _check_specialist_readers_preflight(RUN_DIR)
+            # E-059 S2a (operator decision 2): a decide_next candidate's pass_rule
+            # is written by 1a, so the check runs right after 1a instead
+            # (_write_pass_rule_from_card), still before any backtest.
+            if not _specialist_readers_preflight_deferred(RUN_DIR, _pending_at_start):
+                _check_specialist_readers_preflight(RUN_DIR)
     except Exception as e:
         print(f"❌ specialist_readers pre-flight failed: {e}")
         update_state(path=RUN_DIR, status="failed", last_error=str(e))
@@ -9159,6 +9269,9 @@ def run_loop(run_id: str):
                     except FileNotFoundError:
                         if not _handle_hypothesis_generation_multi_card_split(run_id, RUN_DIR):
                             raise
+                    # E-059 S2a (operator decision 2): no-op unless pre_registration.yaml
+                    # is pending at 1a; raises (-> status failed) before any spend.
+                    _write_pass_rule_from_card(RUN_DIR, run_id, _sr_flag)
                 else:
                     _invoke_agent_with_yaml_retry(current_stage, run_id, RUN_DIR, expected_outputs, state)
             else:

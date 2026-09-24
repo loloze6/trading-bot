@@ -349,6 +349,23 @@ def _materialize_run(run_id: str, brief: dict):
                 ),
             },
         }
+        # E-059 S2a (operator decision 2): a decide_next candidate's criteria are
+        # written by step 1a, never inherited -- its brief carries no pass_rule
+        # and says so. Mark the pre-registration pending at 1a; run_loop defers
+        # the specialist_readers pre-flight until
+        # run_phase1_research._write_pass_rule_from_card has written it. Absent
+        # marker (every other brief): nothing added, byte-identical.
+        _candidate = brief.get("candidate")
+        if (isinstance(_candidate, dict)
+                and _candidate.get("criteria_from") == orch.PASS_RULE_PENDING_AT_1A):
+            if (pre_registration["pass_rule"] is not None
+                    or machine_constraints.get("pass_rule") is not None):
+                raise ValueError(
+                    f"{run_id}: the brief says its criteria come from step 1a "
+                    f"(candidate.criteria_from: {orch.PASS_RULE_PENDING_AT_1A}) but also "
+                    f"carries a pass_rule -- refusing to materialize an inherited criterion.")
+            pre_registration[orch.PASS_RULE_PENDING_KEY] = orch.PASS_RULE_PENDING_AT_1A
+
         # B11 (K2 kernel): materialization-time total-mapping lint. Previously
         # a no-op on this path (machine_constraints-only briefs never carried
         # a pass_rule block); now receives real content whenever the rider
@@ -399,7 +416,16 @@ def _materialize_run(run_id: str, brief: dict):
 # tool's own write path.
 # ---------------------------------------------------------------------------
 
-def register_hypothesis(brief_path: Path, priority: int, notes: str) -> int:
+# E-059 S2a: the only keys `extra` may add (S1_FINDINGS_6B.md §7). Closed so a
+# caller cannot use it to write `status`/`outcome` or any other field.
+_REGISTER_EXTRA_KEYS = frozenset({"origin", "proposal_ref", "card_ref", "decision_ref",
+                                  "brief_status", "parked_reason"})
+
+
+def register_hypothesis(brief_path: Path, priority: int, notes: str, *,
+                        entry_id: str | None = None, source: str = "operator_ratified",
+                        relation: str | None = "new_registration",
+                        extra: dict | None = None) -> int:
     """Parse `brief_path` via the EXISTING _parse_brief_frontmatter (propagates
     its own ValueError, unmodified, on a malformed brief); derive the queue id
     from the brief's filename stem; refuse (one log line, nonzero return) if
@@ -407,7 +433,14 @@ def register_hypothesis(brief_path: Path, priority: int, notes: str) -> int:
     the H-041-C-v2 entry's own field set (id, brief_path, status: ready,
     priority, source: operator_ratified, relation: new_registration, notes,
     run_ids: [], no outcome key) via the EXISTING _load_queue/_save_queue
-    pair. Emits exactly one log line, success or refusal, never zero."""
+    pair. Emits exactly one log line, success or refusal, never zero.
+
+    E-059 S2a keyword-only arguments (defaults reproduce the entry above byte
+    for byte, so the CLI and existing callers are unchanged): `entry_id`
+    replaces the stem-derived id; `source` and `relation` set those fields
+    (relation=None omits the key -- agent entries carry no `relation`, whose
+    vocabulary is the retired routing words); `extra` adds only the E-059
+    queue fields in _REGISTER_EXTRA_KEYS (a ValueError otherwise)."""
     brief_path = Path(brief_path)
     try:
         _parse_brief_frontmatter(brief_path)
@@ -415,7 +448,12 @@ def register_hypothesis(brief_path: Path, priority: int, notes: str) -> int:
         _log(f"REGISTER REFUSED: malformed brief {brief_path}: {err}")
         return 1
 
-    new_id = brief_path.stem
+    extra = dict(extra or {})
+    unknown_extra = sorted(set(extra) - _REGISTER_EXTRA_KEYS)
+    if unknown_extra:
+        raise ValueError(f"register_hypothesis: extra key(s) {unknown_extra} are not "
+                         f"registrable (allowed: {sorted(_REGISTER_EXTRA_KEYS)})")
+    new_id = entry_id if entry_id is not None else brief_path.stem
     queue = _load_queue()
     existing_ids = {e["id"] for e in queue["queue"]}
     if new_id in existing_ids:
@@ -433,11 +471,14 @@ def register_hypothesis(brief_path: Path, priority: int, notes: str) -> int:
         "brief_path": brief_rel_str,
         "status": "ready",
         "priority": priority,
-        "source": "operator_ratified",
-        "relation": "new_registration",
+        "source": source,
+        "relation": relation,
         "notes": notes,
         "run_ids": [],
     }
+    if relation is None:
+        del entry["relation"]
+    entry.update(extra)
     queue["queue"].append(entry)
     _save_queue(queue)
     _log(f"REGISTER: queue entry '{new_id}' appended (brief={brief_rel_str}, "
@@ -1892,7 +1933,9 @@ def _schedulability_block_enabled() -> bool:
 # `in_progress` are schedulable; `done` and `superseded` are TERMINAL (both are
 # schema-legal per _QUEUE_STATUS_RE). Review fix 2, 2026-08-26: `superseded`
 # was previously bucketed as blocked, emitting a phantom blocker row.
-_SCHEDULABILITY_NON_BLOCKED_STATUSES = ("ready", "in_progress", "done", "superseded")
+# E-059 S2a: `queued` (an agent candidate waiting, never auto-picked) is not
+# blocked either -- S1_FINDINGS_6B.md guess 5.
+_SCHEDULABILITY_NON_BLOCKED_STATUSES = ("ready", "in_progress", "done", "superseded", "queued")
 
 # An entry id is followed in the log by one of these, or by end-of-line. NOT a
 # bare `in` test -- see _mentions_entry_id.
@@ -2152,6 +2195,9 @@ def process_once() -> bool:
     schedulability_enabled = _schedulability_block_enabled()
     if schedulability_enabled:
         _write_schedulability()
+    # E-059 S2a: resolved once per step, up front, so a misconfiguration (non-bool,
+    # or on without its prerequisite flags) stops before anything launches.
+    decide_next_enabled = orch._decide_next_enabled()
 
     queue = _load_queue()
     entry = _select_entry(queue["queue"])
@@ -2369,13 +2415,113 @@ def process_once() -> bool:
         return True
 
     entry["status"] = "done"
-    entry["outcome"] = pending or state.get("status")
+    if decide_next_enabled:
+        # E-059 S2a, operator decision 8: the idea's status from the grid, citing
+        # idea_status.yaml, instead of `completed_rejected` with no reference
+        # (which _save_queue's provenance gate refuses). Flag off: unchanged.
+        _apply_idea_status_outcome(entry, run_id, pending or state.get("status"))
+    else:
+        entry["outcome"] = pending or state.get("status")
     _save_queue(queue)
     _regenerate_summary(queue)
     _log(f"DONE {entry['id']} ({run_id}) -> {entry['outcome']}")
+    keep_going = True
+    if decide_next_enabled:
+        keep_going = _decide_next_step(queue, entry, run_id)
     _write_loop_health()  # E-030 S3 — see the note at the first call site
     if schedulability_enabled:  # E-031 S2 — same end-of-branch placement
         _write_schedulability()
+    return keep_going
+
+
+# ---------------------------------------------------------------------------
+# E-059 S2a -- decide-next in the DONE branch (delivery_plan_v26.md slice 6b;
+# engineering/roadmap/E-059/S1_FINDINGS_6B.md and its operator decision).
+# Reached only under orchestrator.decide_next.enabled, only after a lineage is
+# marked done. Before slice 6c that means after a refuted idea (or a validated
+# one blocked by the deflated-Sharpe gate); every other outcome halts first.
+# continuation_child is never read here: under the prerequisite flags no route
+# writes it (S1 §1.6), and this branch is reached only after the continuation
+# branch above has fallen through.
+# ---------------------------------------------------------------------------
+
+_BINDING_IDEA_STATUSES = ("validated", "refuted")
+_TRADING_BOT_ROOT = Path(__file__).resolve().parent.parent.parent / "trading-bot"
+
+
+def _apply_idea_status_outcome(entry: dict, run_id: str, legacy_outcome) -> None:
+    """outcome := the grid's idea_status (validated/refuted, citing
+    runs/<run>/artifacts/idea_status.yaml, whose result PASS/FAIL is the
+    provenance the queue gate accepts; inconclusive needs none). No
+    idea_status.yaml (the run ended before the grid, e.g. the data gate's
+    decline -> completed_rejected with no backtest): the legacy value, and when
+    that value is verdict-bearing it is declared `verdict_status: ungated` --
+    true (no grid judged it) and admissible, where a bare completed_rejected
+    would make _save_queue refuse the whole queue."""
+    ref = f"runs/{run_id}/artifacts/idea_status.yaml"
+    doc = orch.load_yaml(ROOT / ref) if (ROOT / ref).exists() else None
+    status = doc.get("idea_status") if isinstance(doc, dict) else None
+    if status in _BINDING_IDEA_STATUSES:
+        entry["outcome"] = status
+        entry["pass_rule_evaluation_ref"] = ref
+    elif status == "inconclusive":
+        entry["outcome"] = status
+    else:
+        entry["outcome"] = legacy_outcome
+        if vce.outcome_is_verdict_bearing(legacy_outcome) and not entry.get("pass_rule_evaluation_ref"):
+            entry["verdict_status"] = "ungated"
+            entry["verdict_status_basis"] = (
+                f"no idea_status.yaml for {run_id}: the run ended at {legacy_outcome} before "
+                f"the grid judged the idea (E-059 S2a DONE branch)")
+
+
+def _decide_next_step(queue: dict, entry: dict, run_id: str) -> bool:
+    """Run tools/decide_next.py, write its record to
+    runs/<run>/artifacts/decision_record.yaml, apply it, log one DECIDE line.
+    Returns False only on a stop (nothing eligible, no operator entry)."""
+    import decide_next as dn  # tools/ sibling (on sys.path, see the imports above)
+    digest_path = ROOT / "campaign_record" / "exclusion_digest.yaml"
+    digest = orch.load_yaml(digest_path) if digest_path.exists() else None
+    known = (dn.known_component_classes(_TRADING_BOT_ROOT)
+             if (_TRADING_BOT_ROOT / "strategies" / "strategy_components.py").exists() else None)
+    inputs = dn.load_inputs(ROOT, queue, categories=orch._reader_categories(),
+                            known_classes=known, digest=digest)
+    mem_entry = (inputs["memory"].get("runs") or {}).get(run_id) or {}
+    trigger = {"after_run": run_id, "after_entry": entry["id"],
+               "idea_status": mem_entry.get("idea_status")}
+    record = dn.decide(inputs, now=datetime.now(timezone.utc).isoformat(), trigger=trigger)
+    decision_ref = f"runs/{run_id}/artifacts/decision_record.yaml"
+    orch.save_yaml(ROOT / decision_ref, record)
+    picked, stop = record.get("picked") or {}, record.get("stop")
+    if stop:
+        _log(f"DECIDE stop after {entry['id']} ({run_id}): {stop['reason']} -- "
+             f"{stop.get('detail')}. Record: {decision_ref}. See RUNBOOK.md §3.")
+        return False
+    if picked.get("candidate_id"):
+        rel, text = dn.candidate_brief(record, inputs, decision_ref=decision_ref)
+        brief_path = ROOT / rel
+        brief_path.parent.mkdir(parents=True, exist_ok=True)
+        brief_path.write_text(text, encoding="utf-8")
+        cand = next(c for c in record["candidates"] if c["candidate_id"] == picked["candidate_id"])
+        rc = register_hypothesis(
+            brief_path, dn.AGENT_PRIORITY,
+            # Scores stay in the decision record only (S1 §8): never in the queue.
+            f"decide_next after {run_id}: {cand['kind']} from {cand['proposal_ref']} "
+            f"(rank {cand['rank']}; see decision_ref)",
+            entry_id=picked["queue_entry_id"], source="agent", relation=None,
+            extra={"origin": dn.ORIGIN_READER, "proposal_ref": cand["proposal_ref"],
+                   "decision_ref": decision_ref})
+        if rc != 0:
+            raise RuntimeError(f"decide_next: registering {picked['queue_entry_id']!r} was "
+                               f"refused (see the REGISTER line above); record {decision_ref}")
+        _log(f"DECIDE after {entry['id']} ({run_id}): picked {picked['candidate_id']} "
+             f"-> queue entry {picked['queue_entry_id']} (ready). Record: {decision_ref}")
+    elif picked.get("operator_entry"):
+        _log(f"DECIDE after {entry['id']} ({run_id}): operator entry "
+             f"{picked['operator_entry']} goes first. Record: {decision_ref}")
+    else:
+        _log(f"DECIDE after {entry['id']} ({run_id}): agent entry "
+             f"{picked.get('queue_entry_id')} is already ready. Record: {decision_ref}")
     return True
 
 
