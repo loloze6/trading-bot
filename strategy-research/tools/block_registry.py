@@ -45,6 +45,7 @@ from pathlib import Path
 import yaml
 
 import campaign_memory as _cm  # tools/ sibling: atomic write + lock primitive
+import json_pointer as _jp  # tools/ sibling: the orchestrator's pointer + base-variant rules
 from workflow_artifact_validation import validate_workflow_artifact
 
 SCHEMA_VERSION = 1
@@ -143,17 +144,13 @@ def load_manifest(run_dir: Path):
 
 
 def _resolve_pointer(config, pointer: str, where: str):
-    """RFC 6901 read (same tokenization as run_phase1_research._split_json_pointer)."""
-    node = config
-    for seg in (s.replace("~1", "/").replace("~0", "~") for s in pointer.split("/")[1:]):
-        if isinstance(node, dict) and seg in node:
-            node = node[seg]
-        elif isinstance(node, list) and seg.isdigit() and int(seg) < len(node):
-            node = node[int(seg)]
-        else:
-            raise BlockRegistryError(f"{where}: manifest path {pointer!r} does not resolve in the "
-                                     f"tested base config")
-    return node
+    """RFC 6901 read with the orchestrator's own resolution rules
+    (tools/json_pointer.py, shared with run_phase1_research._json_pointer_exists)."""
+    try:
+        return _jp.resolve_json_pointer(config, pointer)
+    except _jp.JsonPointerError as exc:
+        raise BlockRegistryError(f"{where}: manifest path {pointer!r} does not resolve in the "
+                                 f"tested base config ({exc})") from exc
 
 
 def _regime_assignment(kind: str, paths: list) -> dict:
@@ -166,19 +163,23 @@ def _regime_assignment(kind: str, paths: list) -> dict:
 
 
 def _base_variant(entry: dict) -> tuple:
-    """The tested base config: variant `base` (variant-loop / config-direct
-    columns) or the single run_id column. It must have been backtested -- a
-    block is never read from a config the grid did not test."""
+    """The tested base config, chosen exactly as protocol_execution chooses
+    its base variant (tools/json_pointer.base_variant_id: `base`, else the
+    first index-validated variant in sorted order). Index-validated variants
+    are the memory's `tested` and `failed` ones; the single run_id column
+    (variant loop off) is its own base. The base must have been backtested --
+    a block is never read from a config the grid did not test."""
     variants = entry.get("variants") or {}
     run_id = entry["run_id"]
-    vid = "base" if "base" in variants else (run_id if list(variants) == [run_id] else None)
+    validated = [vid for vid, v in variants.items() if v.get("status") in ("tested", "failed")]
+    vid = _jp.base_variant_id(validated) if validated else None
     info = variants.get(vid) if vid else None
     if not info or info.get("status") != "tested" or not info.get("config_ref") \
             or not info.get("forecast_hash"):
         raise BlockRegistryError(
-            f"{run_id}: no tested base variant with a config_ref and forecast_hash in the memory "
-            f"entry (variants: {sorted(variants)}) -- a block's config piece must come from the "
-            f"base config the grid actually tested")
+            f"{run_id}: base variant {vid!r} is not a tested variant with a config_ref and "
+            f"forecast_hash in the memory entry (variants: {sorted(variants)}) -- a block's config "
+            f"piece must come from the base config the grid actually tested")
     return vid, info
 
 
@@ -271,6 +272,14 @@ def _append(path: Path, run_id: str, new_blocks: list) -> None:
         doc["updated_at"] = _now()
         validate_workflow_artifact(path, doc)
         _cm._atomic_write(path, doc)
+
+
+def blocks_for_run(path: Path, run_id: str) -> list:
+    """block_ids `run_id` already registered (read only; [] when the file is
+    absent). A malformed registry raises."""
+    if not Path(path).exists():
+        return []
+    return [b["block_id"] for b in load_registry(path)["blocks"] if b["validated_by_run"] == run_id]
 
 
 def record_run(path: Path, run_dir: Path, entry: dict, *, root: Path) -> dict | None:

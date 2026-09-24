@@ -1287,8 +1287,10 @@ def _evaluate_grid_cell_for_symbol(criterion: dict, protocol_result: dict, eras:
             return {"result": "SPEC_ERROR",
                     "reason": f"criterion {cid!r}: comparator={comparator!r} not one of {_VALID_COMPARATORS}"}
         met = _apply_comparator(comparator, value, threshold)
+        # `comparator` stamped (E-058 S2b) so readers of the cell use the one
+        # this evaluation applied, not whatever the menu says later.
         return {"result": "PASS" if met else "FAIL", "value": value, "threshold": threshold,
-                "n_windows": n_windows, "n_trades": n_trades}
+                "comparator": comparator, "n_windows": n_windows, "n_trades": n_trades}
 
     # source == "pooled": reuses the existing three-source lookup
     # (per_symbol_summary / trade_diagnostics_summary /
@@ -1316,7 +1318,7 @@ def _evaluate_grid_cell_for_symbol(criterion: dict, protocol_result: dict, eras:
                 "reason": f"criterion {cid!r}: comparator={comparator!r} not one of {_VALID_COMPARATORS}"}
     met = _apply_comparator(comparator, value, threshold)
     return {"result": "PASS" if met else "FAIL", "value": value, "threshold": threshold,
-            "n_windows": n_windows, "n_trades": n_trades}
+            "comparator": comparator, "n_windows": n_windows, "n_trades": n_trades}
 
 
 def _dominant_cell_result(results: list) -> str:

@@ -115,6 +115,8 @@ def test_campaign_review_handoff_and_prompt_identical_flag_off(monkeypatch):
         rpr._build_stage_prompt("campaign_review", handoff, run_dir)
 
     _set_orchestrator(ALL_ON)
+    _memory_path().parent.mkdir(parents=True, exist_ok=True)
+    _memory_path().write_text("schema_version: 1\nruns: {}\n", encoding="utf-8")  # review fix 8
     on = json.loads(json.dumps(handoff))
     rpr._apply_regroup_record_context("campaign_review", on, run_dir)
     assert [r["path"] for r in on["required_inputs"]] == ["../../campaign_record/campaign_memory.yaml"]
@@ -243,10 +245,13 @@ def test_fault_rerun_of_a_registered_run_is_logged_and_still_pauses(monkeypatch,
                    "results": [{"symbol": "BTCUSDT", "window": "w1", "core": {},
                                 "component_errors": {"count": 1, "samples": []}}]})
     checks = rpr._run_regroup_record_stage(RUN_ID, run_dir)
-    assert checks["component_errors"] and checks["entry"] is None
-    assert "append-only" in capsys.readouterr().out
+    assert checks["component_errors"]
+    out = capsys.readouterr().out
+    # review fix 1: fault entry written FIRST, then the stale block / KB entry named loudly
+    assert "block_registry.yaml still holds block(s)" in out
+    assert "campaign_knowledge_base.yaml still holds grid entry 'grid_run_980'" in out
     assert _registry_path().read_bytes() == reg_before
-    assert _memory()["runs"][RUN_ID]["idea_status"] == "validated"
+    assert _memory()["runs"][RUN_ID]["engineering_fault"] == "component_execution_error"
 
 
 @pytest.mark.parametrize("idea_status", ["refuted", "inconclusive"])
@@ -501,8 +506,9 @@ def test_grid_row_closest_failing_cell_and_legacy_rows(tmp_path):
     g = rows["run_100"]
     assert g["evidence_tier"] == "grid" and g["legacy"] is False
     assert g["idea_status"] == "refuted" and g["hypothesis_id"] == "H-G"
-    assert g["worst_fail_margin_frac"] == pytest.approx((0.018 - 0.02) / 0.02)
-    assert g["worst_fail_criterion_text"].startswith("ic_median @ asset/ETHUSDT")
+    # review fix 4: ic_median binds at its WORST failing cell (base), not the nearest
+    assert g["worst_fail_margin_frac"] == pytest.approx((0.001 - 0.02) / 0.02)
+    assert g["worst_fail_criterion_text"].startswith("ic_median @ base")
     assert g["worst_fail_margin_source"] == "grid"
     assert (g["n_criteria_pass"], g["n_criteria_fail"], g["n_criteria_untested"]) == (1, 2, 1)
     assert g["status"] == "not_recorded" and g["hypothesis_family"] == "not_recorded"
@@ -511,7 +517,7 @@ def test_grid_row_closest_failing_cell_and_legacy_rows(tmp_path):
     assert rows["run_100"]["rank"] == 1  # the nearest miss ranks first
     denom = "\n".join(nms._denominator_report(list(rows.values())))
     assert "Have a verdict_interpretation.yaml: 1 of 3" in denom
-    assert "Have a grid_evaluation.yaml (tier grid, legacy: false): 1 of 3" in denom
+    assert "Grid row (grid_evaluation.yaml, no verdict file; legacy: false): 1 of 3" in denom
 
 
 def test_grid_row_without_comparator_records_no_margin(tmp_path):

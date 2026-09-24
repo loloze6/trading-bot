@@ -93,6 +93,26 @@ def build_kb_entry(memory_entry: dict) -> dict:
     return entry
 
 
+def entry_id_for_run(kb_path: Path, run_id: str) -> str | None:
+    """The id of this writer's entry for `run_id` if the KB holds one (read
+    only; None when the KB file is absent). A malformed KB raises."""
+    kb_path = Path(kb_path)
+    if not kb_path.exists():
+        return None
+    try:
+        kb = yaml.safe_load(kb_path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        raise GridKBError(f"{kb_path}: unparseable YAML ({exc})") from exc
+    findings = kb.get("findings") if isinstance(kb, dict) else None
+    if not isinstance(findings, list):
+        raise GridKBError(f"{kb_path}: findings is not a list")
+    want = kb_entry_id(run_id)
+    for f in findings:
+        if isinstance(f, dict) and f.get("id") == want and f.get("legacy_schema") is False:
+            return want
+    return None
+
+
 def _owned_by(existing: dict, entry: dict) -> bool:
     return (existing.get("legacy_schema") is False
             and existing.get("evidence_runs") == entry["evidence_runs"])

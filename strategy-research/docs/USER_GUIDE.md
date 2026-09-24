@@ -1304,8 +1304,14 @@ engineering_fault_detail}`.
    writes the manifest yet; teaching stage 1b to write it is its own ticket).
    The file is append-only: a re-run that would register a different block,
    or no block, for a run that already registered one stops before the memory
-   entry is replaced; a person decides. Same lock and atomic write as the
-   memory.
+   entry is replaced; a person decides. A component-error re-run writes its
+   fault-only memory entry FIRST, then, if an earlier validated pass left a
+   block or a grid KB entry, prints an error naming `block_registry.yaml` / the
+   KB (never edited by code); the `component_execution_error` pause still
+   fires. The base config is chosen exactly as `protocol_execution` chooses its
+   base variant (`base`, else the first validated id in sorted order;
+   `tools/json_pointer.py`, which also holds the JSON-pointer helpers both
+   share). Same lock and atomic write as the memory.
 9. **Grid KB entry (E-058 S2b, `tools/grid_kb_writer.py`).** Every non-fault
    run adds one entry `grid_<run_id>` to `campaign_knowledge_base.yaml`:
    `outcome: <idea_status>`, `legacy_schema: false`, and for validated/refuted
@@ -1316,17 +1322,22 @@ engineering_fault_detail}`.
    reached); a re-run replaces only its own entry. Every finding is
    re-validated before the write (closed schema + provenance); a malformed KB
    stops the run. An absent KB file is skipped with a WARNING line, as the
-   legacy writer does. Entries without `legacy_schema: false` are legacy.
+   legacy writer does. Entries without `legacy_schema: false` are legacy. The
+   legacy writer (`_write_kb_findings_entry`) skips grid entries when it looks
+   up a `hypothesis_id`, and takes the same `.campaign_knowledge_base.lock`.
 10. **Near-miss scoreboard (E-058 S2b).** After the memory is written the stage
    rebuilds `engineering/roadmap/E-018/artifacts/near_miss_scoreboard.{yaml,md}`
    (`tools/near_miss_scoreboard.py::build_scoreboard` + `write_scoreboard`;
-   rows from `grid_evaluation.yaml` are tier `grid`, `legacy: false`, near
-   miss = closest failing cell; older rows are `legacy: true`). Nothing on the
-   route reads it. Each run therefore changes that tracked file.
+   a run with `grid_evaluation.yaml` and no verdict file is tier `grid`,
+   `legacy: false`, ranked by `idea_status`, near miss = each criterion's worst
+   failing cell with the comparator frozen with the run; other rows are
+   `legacy: true`; an unreadable run dir gets a `malformed` row). Nothing on the
+   route reads it, and a scoreboard error is logged and never fails the stage.
+   Each run therefore changes that tracked file.
 11. **Campaign-review input (E-058 S2b).** Only with this flag on,
    `campaign_review`'s handoff gains `../../campaign_record/campaign_memory.yaml`
    as a required input (`_apply_regroup_record_context`) whose reason tells the
-   model which fields to cite. The template and `SKILL.md` are unchanged, so
+   model which fields to cite -- only when that file exists. The template and `SKILL.md` are unchanged, so
    the flag-off prompt is byte-identical.
 
 ---

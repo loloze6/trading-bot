@@ -76,15 +76,19 @@ files, 59 run_* dirs total)
 
 GRID ROWS (E-058 S2b, 2026-09-23)
     A run with `artifacts/grid_evaluation.yaml` (the E-046b grid, written by
-    protocol_execution) is read from THAT file instead of
-    verdict_interpretation.yaml, and its row carries evidence_tier `grid`,
-    `legacy: false` and the grid's `idea_status`. Its near miss is the closest
-    FAILing cell (per-symbol sub-cells included), from the cell's own `value`
-    and `threshold` and the criterion's comparator (resolved from the run's
-    pre_registration.yaml against config/criterion_menu.yaml by the
-    evaluator's own _resolve_grid_criteria). Every other row is `legacy: true`
-    and is built exactly as before. The retired refine/pivot/escalate words
-    are never read for a grid row (its `status` stays not_recorded).
+    protocol_execution) and NO verdict_interpretation.yaml is read from the
+    grid; its row carries evidence_tier `grid`, `legacy: false` and the grid's
+    `idea_status`. A run with a verdict file keeps its legacy row exactly as
+    before. Near miss: per criterion, the WORST failing cell across variants
+    and per-symbol sub-cells (unanimity, like the legacy _worst()); across
+    criteria, the nearest of those. Margins use the cell's own `value` and
+    `threshold` and a comparator frozen with the run -- the cell's
+    `comparator` stamp, else the run's own pre_registration.yaml -- never the
+    current config/criterion_menu.yaml. Grid rows rank by idea_status (see
+    _GRID_TIER0_KEY). Every other row is `legacy: true`. A run dir whose
+    files cannot be read gets a `malformed` row instead of failing the board.
+    The retired refine/pivot/escalate words are never read for a grid row
+    (its `status` stays not_recorded).
     Wired (E-058 S2b): the orchestrator's regroup_record stage
     (orchestrator.regroup_record.enabled, off by default) calls
     build_scoreboard + write_scoreboard with an explicit out_dir after
@@ -147,7 +151,8 @@ _EXCLUDE_SYM = {"PASS", "FAIL", "AND", "AND ", "NOT", "RULE", "ANY", "ALL", "AT"
 # the threshold for the observation and produces a bogus zero margin.
 _REQUIREMENT_LABELS = {"required", "threshold", "target", "min", "max", "expected", "requirement"}
 
-_OP_NORM = {"≤": "<=", "≥": ">=", "<=": "<=", ">=": ">=", "<": "<", ">": ">"}
+_OP_NORM = {"≤": "<=", "≥": ">=", "<=": "<=", ">=": ">=", "<": "<", ">": ">",
+            "==": "=="}  # E-058 S2b: the grid's 5th comparator; it has no directional margin
 
 
 def _to_float(s):
@@ -419,7 +424,7 @@ def parse_criteria_summary(cs) -> list[Criterion]:
     return out
 
 
-def _grid_row(run_dir: Path, grid_path: Path, row: dict, menu_path: Path | None) -> dict:
+def _grid_row(run_dir: Path, grid_path: Path, row: dict) -> dict:
     """E-058 S2b: a row from grid_evaluation.yaml. A malformed grid raises (a
     thin row would hide a broken artifact)."""
     g = yaml.safe_load(grid_path.read_text(encoding="utf-8"))
@@ -439,14 +444,15 @@ def _grid_row(run_dir: Path, grid_path: Path, row: dict, menu_path: Path | None)
     if reason:
         row["primary_failure_mode_text"] = " ".join(str(reason).split())[:400]
 
-    comparators = _grid_comparators(run_dir, menu_path)
+    pre_comparators = _pre_registration_comparators(run_dir)
     counts = {"PASS": 0, "FAIL": 0, "INCONCLUSIVE": 0}
-    fails = []
+    binding = []  # one Criterion per criterion: its WORST failing sub-cell
+    unmeasured_fail = False
     for crit in g["criteria"]:
         cells = g["grid"].get(crit)
         if not isinstance(cells, dict):
             raise ValueError(f"{grid_path}: grid.{crit} is missing or not a mapping")
-        op = comparators.get(crit)
+        crit_fails = []
         for variant in g["variants"]:
             cell = cells.get(variant)
             if not isinstance(cell, dict):
@@ -458,50 +464,59 @@ def _grid_row(run_dir: Path, grid_path: Path, row: dict, menu_path: Path | None)
             for where, c in subs:
                 if c.get("result") != "FAIL":
                     continue
+                # Comparator frozen with the run: the cell's own (stamped by the
+                # evaluator), else the run's pre_registration -- never the
+                # CURRENT config/criterion_menu.yaml, which may have changed.
+                op = _OP_NORM.get(str(c.get("comparator") or cell.get("comparator"))) \
+                    or pre_comparators.get(crit)
                 value, threshold = _to_float(c.get("value")), _to_float(c.get("threshold"))
                 text = (f"{crit} @ {where}: value={c.get('value')} {op or '?'} "
                         f"threshold={c.get('threshold')}")
-                fails.append(Criterion(text, "FAIL", op, threshold, value,
-                                       "grid" if op else "grid_no_comparator", False))
+                crit_fails.append(Criterion(text, "FAIL", op, threshold, value,
+                                            "grid" if op else "grid_no_comparator", False))
+        measured = [c for c in crit_fails if c.margin_frac is not None]
+        if measured:
+            # Unanimity: the criterion is only as close as its WORST failing
+            # variant/symbol (the legacy _worst() rule), so take the minimum.
+            binding.append(min(measured, key=lambda c: c.margin_frac))
+        elif crit_fails:
+            unmeasured_fail = True
     # grid CELLS (criterion x variant), not criteria; INCONCLUSIVE cells in "untested"
     row["n_criteria_pass"] = counts["PASS"]
     row["n_criteria_fail"] = counts["FAIL"]
     row["n_criteria_untested"] = counts["INCONCLUSIVE"]
-    with_margin = [c for c in fails if c.margin_frac is not None]
-    if with_margin:
-        worst = max(with_margin, key=lambda c: c.margin_frac)  # closest to 0 = nearest miss
+    if binding:
+        # Across criteria, the nearest miss (legacy build_row's rule).
+        worst = max(binding, key=lambda c: c.margin_frac)
         row["worst_fail_criterion_text"] = worst.raw[:300]
         row["worst_fail_margin_frac"] = round(worst.margin_frac, 4)
         row["worst_fail_margin_source"] = "grid"
-    elif fails:
+    elif unmeasured_fail:
         row["worst_fail_margin_source"] = "grid_cell_without_value_or_comparator"
     return row
 
 
-def _grid_comparators(run_dir: Path, menu_path: Path | None) -> dict:
-    """{criterion_id: comparator} from the run's pre_registration.yaml merged
-    against the criterion menu, by the grid evaluator's own resolver."""
+def _pre_registration_comparators(run_dir: Path) -> dict:
+    """{criterion_id: comparator} from the run's OWN pre_registration.yaml
+    (frozen with the run), via the evaluator's resolver with NO menu: the
+    current config/criterion_menu.yaml is deliberately not read, and no run
+    snapshots the menu. A criterion that names only its `id` therefore has no
+    comparator here; the evaluator's cell stamp covers it."""
     pre_path = run_dir / "artifacts" / "pre_registration.yaml"
     if not pre_path.exists():
         return {}
     import verdict_criteria_evaluator as _vce  # tools/ sibling, lazily for the caller's sys.path
     pre = yaml.safe_load(pre_path.read_text(encoding="utf-8")) or {}
-    menu = None
-    if menu_path is not None and Path(menu_path).exists():
-        menu = yaml.safe_load(Path(menu_path).read_text(encoding="utf-8"))
     out = {}
-    for c in _vce._resolve_grid_criteria(pre if isinstance(pre, dict) else {}, menu):
+    for c in _vce._resolve_grid_criteria(pre if isinstance(pre, dict) else {}, None):
         op = _OP_NORM.get(str(c.get("comparator")))
         if c.get("id") and op:
             out[c["id"]] = op
     return out
 
 
-def build_row(run_dir: Path, menu_path: Path | None = None) -> dict:
-    run_id = run_dir.name
-    verdict_path = run_dir / "artifacts" / "verdict_interpretation.yaml"
-    grid_path = run_dir / "artifacts" / "grid_evaluation.yaml"
-    row = {
+def _empty_row(run_id: str) -> dict:
+    return {
         "run_id": run_id,
         "legacy": True,  # E-058 S2b: false only on a grid row
         "idea_status": "not_recorded",
@@ -531,8 +546,17 @@ def build_row(run_dir: Path, menu_path: Path | None = None) -> dict:
         "era_behavior_source": "not_recorded",
     }
 
-    if grid_path.exists():
-        return _grid_row(run_dir, grid_path, row, menu_path)
+
+def build_row(run_dir: Path) -> dict:
+    run_id = run_dir.name
+    verdict_path = run_dir / "artifacts" / "verdict_interpretation.yaml"
+    grid_path = run_dir / "artifacts" / "grid_evaluation.yaml"
+    row = _empty_row(run_id)
+
+    # E-058 S2b review fix 5: a run with a verdict file keeps its legacy row
+    # exactly as before; the grid row is built only when there is none.
+    if grid_path.exists() and not verdict_path.exists():
+        return _grid_row(run_dir, grid_path, row)
 
     if not verdict_path.exists():
         ps_path = run_dir / "pipeline_state.yaml"
@@ -605,21 +629,40 @@ def build_row(run_dir: Path, menu_path: Path | None = None) -> dict:
 # --- ranking ----------------------------------------------------------------
 _VERDICT_PRIORITY = {"refine": 0, "escalate": 1, "pivot": 2, "kill": 3, "not_recorded": 4}
 
+# E-058 S2b review fix 7: grid rows rank by the grid's idea_status (their
+# `status` is the dead not_recorded), consistent with the legacy priorities:
+#   validated    -> tier 0, ahead of every row (a pass is the best
+#                   idea-generation material and must never sit below a
+#                   legacy kill or any near miss);
+#   inconclusive -> tier 0, right after validated and ahead of every measured
+#                   miss (undecided, no criterion failed -- the "escalate"
+#                   analogue, never buried below a kill);
+#   refuted      -> ranked like any failing row: tier 0 by its worst-fail
+#                   margin when one was measured, else tier 1 at the legacy
+#                   `kill` priority.
+_GRID_TIER0_KEY = {"validated": float("-inf"), "inconclusive": -1e300}
+_GRID_REFUTED_PRIORITY = _VERDICT_PRIORITY["kill"]
+
 
 def _tier_sort_key(row):
+    ic = row.get("ic")
+    ic_key = -(ic if isinstance(ic, (int, float)) else -1e9)
+    if row.get("evidence_tier") == "grid":
+        status = row.get("idea_status")
+        if status in _GRID_TIER0_KEY:
+            return (0, _GRID_TIER0_KEY[status], ic_key, row["run_id"])
+        if row["worst_fail_margin_frac"] is None:
+            return (1, _GRID_REFUTED_PRIORITY, ic_key, row["run_id"])
     if row["worst_fail_margin_frac"] is not None:
         tier = 0
         key2 = -row["worst_fail_margin_frac"]  # ascending on -margin == descending on margin
-    elif row["evidence_tier"] in ("full_protocol", "prescreen_only", "verdict_file_unrecognized_schema",
-                                  "grid"):
+    elif row["evidence_tier"] in ("full_protocol", "prescreen_only", "verdict_file_unrecognized_schema"):
         tier = 1
         vp = _VERDICT_PRIORITY.get(row["status"], 4)
         key2 = vp
     else:
         tier = 2
         key2 = 0
-    ic = row.get("ic")
-    ic_key = -(ic if isinstance(ic, (int, float)) else -1e9)
     return (tier, key2, ic_key, row["run_id"])
 
 
@@ -633,10 +676,15 @@ def rank_rows(rows):
 def _denominator_report(rows):
     n = len(rows)
     lines = [f"Total run dirs scanned: {n}"]
-    has_verdict = [r for r in rows if r["evidence_tier"] not in ("thin_no_verdict_file", "grid")]
+    # A grid row exists only for a run WITHOUT a verdict file (build_row), and a
+    # malformed row's files could not be read -- neither counts as having one.
+    has_verdict = [r for r in rows
+                   if r["evidence_tier"] not in ("thin_no_verdict_file", "grid", "malformed")]
     lines.append(f"Have a verdict_interpretation.yaml: {len(has_verdict)} of {n}")
     n_grid = sum(1 for r in rows if r["evidence_tier"] == "grid")
-    lines.append(f"Have a grid_evaluation.yaml (tier grid, legacy: false): {n_grid} of {n}")
+    lines.append(f"Grid row (grid_evaluation.yaml, no verdict file; legacy: false): {n_grid} of {n}")
+    n_bad = sum(1 for r in rows if r["evidence_tier"] == "malformed")
+    lines.append(f"Malformed run dirs (row marked, not built): {n_bad} of {n}")
     full = [r for r in rows if r["evidence_tier"] == "full_protocol"]
     prescreen = [r for r in rows if r["evidence_tier"] == "prescreen_only"]
     lines.append(f"  full_protocol schema: {len(full)} of {n}")
@@ -705,16 +753,28 @@ def render_markdown(rows, denom_lines) -> str:
     return "\n".join(out) + "\n"
 
 
-def build_scoreboard(runs_dir: Path, menu_path: Path | None = None):
-    """`menu_path` (config/criterion_menu.yaml) resolves grid comparators;
-    default: <runs_dir>/../config/criterion_menu.yaml."""
+def _malformed_row(run_id: str, exc: Exception) -> dict:
+    row = _empty_row(run_id)
+    row["evidence_tier"] = "malformed"
+    row["malformed_reason"] = f"{type(exc).__name__}: {' '.join(str(exc).split())[:300]}"
+    return row
+
+
+def build_scoreboard(runs_dir: Path):
+    """Every run_* dir gets a row. A run whose files cannot be read gets a
+    row marked evidence_tier `malformed` (with `malformed_reason`) instead
+    of failing the whole board (E-058 S2b review fix 3): one broken,
+    unrelated run must not hide the rest, and never fails the stage."""
     runs_dir = Path(runs_dir)
-    if menu_path is None:
-        menu_path = runs_dir.parent / "config" / "criterion_menu.yaml"
     run_dirs = sorted(
         d for d in runs_dir.iterdir() if d.is_dir() and d.name.startswith("run_")
     )
-    rows = [build_row(d, menu_path) for d in run_dirs]
+    rows = []
+    for d in run_dirs:
+        try:
+            rows.append(build_row(d))
+        except Exception as exc:
+            rows.append(_malformed_row(d.name, exc))
     rank_rows(rows)
     return rows
 
