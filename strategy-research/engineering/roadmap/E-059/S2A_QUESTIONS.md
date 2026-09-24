@@ -44,3 +44,13 @@ comparator by design (see the menu comment).
 This also affects any hand-registered menu-shaped brief that goes through
 `_materialize_run`, which runs the same two lints today (no such brief exists on
 disk).
+
+---
+
+## Decision (operator, 2026-09-24): option (c)
+
+Keep the current checks on the 1a pass_rule: criteria must be menu ids, overrides
+only from the menu entry's `card_overridable` list (stray keys refused), and the K3
+window_set_ref lint. The legacy B11 / CUL-267 lints stay off for menu-shaped
+criteria; the menu is the source of truth. Revisit (a) menu-aware lints only if a
+real malformed menu-shaped rule is ever observed.
