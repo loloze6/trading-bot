@@ -181,6 +181,11 @@ def _next_action_for_entry(entry: dict) -> str:
        entry.get("refinement_brief_consumed_for") != entry["refinement_brief_path"]:
         return "refinement_brief"
     if not entry.get("run_ids"):
+        # E-059 S2b (decision 9): a brief's extra card skips authoring -- it
+        # launches past step 1a with its saved card. Only such entries carry
+        # card_ref, so every other entry's action is unchanged.
+        if entry.get("card_ref"):
+            return "queued_card"
         return "fresh_launch"
     return "continue"
 
@@ -420,12 +425,14 @@ def _materialize_run(run_id: str, brief: dict):
 # caller cannot use it to write `status`/`outcome` or any other field.
 _REGISTER_EXTRA_KEYS = frozenset({"origin", "proposal_ref", "card_ref", "decision_ref",
                                   "brief_status", "parked_reason"})
+# E-059 S2b: the statuses a registration may start in.
+_REGISTER_STATUSES = ("ready", "queued")
 
 
 def register_hypothesis(brief_path: Path, priority: int, notes: str, *,
                         entry_id: str | None = None, source: str = "operator_ratified",
                         relation: str | None = "new_registration",
-                        extra: dict | None = None) -> int:
+                        extra: dict | None = None, status: str = "ready") -> int:
     """Parse `brief_path` via the EXISTING _parse_brief_frontmatter (propagates
     its own ValueError, unmodified, on a malformed brief); derive the queue id
     from the brief's filename stem; refuse (one log line, nonzero return) if
@@ -440,7 +447,12 @@ def register_hypothesis(brief_path: Path, priority: int, notes: str, *,
     replaces the stem-derived id; `source` and `relation` set those fields
     (relation=None omits the key -- agent entries carry no `relation`, whose
     vocabulary is the retired routing words); `extra` adds only the E-059
-    queue fields in _REGISTER_EXTRA_KEYS (a ValueError otherwise)."""
+    queue fields in _REGISTER_EXTRA_KEYS (a ValueError otherwise).
+
+    E-059 S2b: `status` is `ready` (default) or `queued` -- a brief's extra
+    card or a waiting R2 request, never auto-picked (a ValueError otherwise)."""
+    if status not in _REGISTER_STATUSES:
+        raise ValueError(f"register_hypothesis: status {status!r} not in {list(_REGISTER_STATUSES)}")
     brief_path = Path(brief_path)
     try:
         _parse_brief_frontmatter(brief_path)
@@ -469,7 +481,7 @@ def register_hypothesis(brief_path: Path, priority: int, notes: str, *,
     entry = {
         "id": new_id,
         "brief_path": brief_rel_str,
-        "status": "ready",
+        "status": status,
         "priority": priority,
         "source": source,
         "relation": relation,
@@ -482,7 +494,7 @@ def register_hypothesis(brief_path: Path, priority: int, notes: str, *,
     queue["queue"].append(entry)
     _save_queue(queue)
     _log(f"REGISTER: queue entry '{new_id}' appended (brief={brief_rel_str}, "
-         f"priority={priority}, status=ready).")
+         f"priority={priority}, status={status}).")
     return 0
 
 
@@ -1664,7 +1676,10 @@ def _regenerate_summary(queue: dict, dry_run: bool = False):
     ]
     for e in queue["queue"]:
         run_ids_str = ", ".join(e.get("run_ids", [])) or "-"
-        lines.append(f"| {e['id']} | {e['status']} | {run_ids_str} | {e.get('outcome') or '-'} |")
+        # E-059 S2b: a legacy brief's one-time "[obsolete] ..." title is shown
+        # next to its id; entries without a title render exactly as before.
+        id_cell = f"{e['id']} ({e['title']})" if e.get("title") else e["id"]
+        lines.append(f"| {id_cell} | {e['status']} | {run_ids_str} | {e.get('outcome') or '-'} |")
     lines += [
         "",
         "## Scoreboard",
@@ -2259,10 +2274,28 @@ def process_once() -> bool:
         run_id = _next_new_run_id()
         setup_run(run_id)
         _materialize_run(run_id, brief)
+        if decide_next_enabled:
+            # E-059 S2b: a brief run (not a reader candidate) gets the context
+            # that lets 1a score extra cards or report the brief exhausted.
+            _write_brief_hypotheses_context(queue, entry, run_id)
         entry["run_ids"] = [run_id]
         entry["status"] = "in_progress"
         _save_queue(queue)
         _log(f"LAUNCH {entry['id']} -> {run_id} (brief={entry['brief_path']})")
+    elif action == "queued_card":
+        # E-059 S2b (decision 9): the brief's extra card, already authored by 1a
+        # in an earlier run -- launched past 1a with that card, as the legacy
+        # split sibling was (no second 1a call, no card drift).
+        brief = _parse_brief_frontmatter(ROOT / entry["brief_path"])
+        run_id = _next_new_run_id()
+        setup_run(run_id)
+        _materialize_run(run_id, brief)
+        _launch_queued_card(entry, run_id)
+        entry["run_ids"] = [run_id]
+        entry["status"] = "in_progress"
+        _save_queue(queue)
+        _log(f"LAUNCH-CARD {entry['id']} -> {run_id} (card={entry['card_ref']}, "
+             f"brief={entry['brief_path']}; step 1a skipped)")
     else:
         run_id = entry["run_ids"][-1]
 
@@ -2285,6 +2318,13 @@ def process_once() -> bool:
         _save_queue(queue)
         _log(f"SPLIT {entry['id']}: {len(split_child_ids)} sibling hypothesis run(s) "
              f"{sorted(split_child_ids)} each given their own queue entry.")
+    if decide_next_enabled:
+        # E-059 S2b: the flag-on split left its extra cards in
+        # queued_hypotheses.yaml; enqueue them (queued, card_ref). register
+        # writes the queue file, so the in-memory queue is reloaded after.
+        if _enqueue_queued_hypotheses(entry, run_id):
+            queue = _load_queue()
+            entry = next(e for e in queue["queue"] if e.get("id") == entry["id"])
 
     state = orch.load_yaml(run_dir / "pipeline_state.yaml")
     _log_transition(entry, run_id, state)
@@ -2502,6 +2542,10 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str) -> tupl
     no queue entry. Returns (queue, entry, keep_going, decide_log_line)."""
     import copy as _copy
     import decide_next as dn  # tools/ sibling (on sys.path, see the imports above)
+    # E-059 S2b: field changes to OTHER entries (and the finished one), applied
+    # to the in-memory queue before deciding and to the disk queue at the end.
+    updates = _brief_updates(queue, entry)
+    _apply_updates(queue.get("queue") or [], updates)
     final_queue = _copy.deepcopy(queue)
     digest_path = ROOT / "campaign_record" / "exclusion_digest.yaml"
     digest = orch.load_yaml(digest_path) if digest_path.exists() else None
@@ -2517,7 +2561,15 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str) -> tupl
     decision_ref = f"runs/{run_id}/artifacts/decision_record.yaml"
     picked, stop = record.get("picked") or {}, record.get("stop")
 
-    if picked.get("candidate_id"):
+    if picked.get("candidate_id") and picked.get("card_ref"):
+        # E-059 S2b: the top candidate is a brief's waiting extra card.
+        cid = picked["queue_entry_id"]
+        updates.setdefault(cid, {}).update({"status": "ready", "decision_ref": decision_ref})
+        msg = (f"DECIDE after {entry['id']} ({run_id}): picked extra card {cid} "
+               f"(queued -> ready, card={picked['card_ref']}). Record: {decision_ref}")
+    elif picked.get("r2_request"):
+        msg = _apply_r2(record, final_queue, decision_ref, updates, entry, run_id)
+    elif picked.get("candidate_id"):
         cid = picked["queue_entry_id"]
         rel, text = dn.candidate_brief(record, inputs, decision_ref=decision_ref)
         brief_path = ROOT / rel
@@ -2562,8 +2614,154 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str) -> tupl
     if idx is None:
         raise RuntimeError(f"decide_next: queue entry {entry['id']!r} vanished from disk")
     items[idx] = entry
+    _apply_updates(items, updates)
     _save_queue(disk_queue)
     return disk_queue, entry, stop is None, msg
+
+
+# ---------------------------------------------------------------------------
+# E-059 S2b -- briefs (card M), brief status, R2, legacy briefs. Flag-on only:
+# every caller sits behind orch._decide_next_enabled().
+# ---------------------------------------------------------------------------
+
+def _apply_updates(items: list, updates: dict) -> None:
+    for e in items:
+        if isinstance(e, dict) and e.get("id") in updates:
+            e.update(updates[e["id"]])
+
+
+def _brief_updates(queue: dict, entry: dict) -> dict:
+    """{entry_id: {field: value}} to write with this decision:
+      * the brief's owner flips to `brief_status: exhausted` when the finished
+        run ended completed_brief_exhausted (step 1a said so; nothing else does);
+      * operator decision 7: every legacy brief (no brief_status) not yet
+        tagged gets `title: "[obsolete] <brief heading or id>"` -- once (an
+        entry already carrying the marker is skipped), on the QUEUE ENTRY
+        only; the brief file is read for its heading, never written.
+    Neither changes any status or what the scheduler picks."""
+    import decide_next as dn
+    items = [e for e in queue.get("queue") or [] if isinstance(e, dict)]
+    updates: dict = {}
+    if entry.get("outcome") == dn.BRIEF_EXHAUSTED_OUTCOME:
+        owner = dn.brief_owner(entry, items)
+        if owner is not None:
+            updates.setdefault(owner["id"], {})["brief_status"] = dn.BRIEF_EXHAUSTED
+    for e in items:
+        if dn.needs_obsolete_tag(e):
+            updates.setdefault(e["id"], {})["title"] = dn.obsolete_title(
+                e, dn.brief_heading(ROOT, e.get("brief_path")))
+    return updates
+
+
+def _apply_r2(record: dict, final_queue: dict, decision_ref: str, updates: dict,
+              entry: dict, run_id: str) -> str:
+    """Register R2's new requests (origin brief, on the owner's brief file,
+    priority 999, no relation) -- the ready one first -- and flip a reused
+    waiting request to ready. Refuses a colliding id before any write."""
+    import decide_next as dn
+    r2 = record["rules"]["r2"]
+    by_id = {e.get("id"): e for e in final_queue.get("queue") or [] if isinstance(e, dict)}
+    on_disk = {e.get("id") for e in _load_queue().get("queue") or [] if isinstance(e, dict)}
+    clash = [q["entry_id"] for q in r2["enqueued"] if q["entry_id"] in on_disk]
+    if clash:
+        raise RuntimeError(f"decide_next R2: queue id(s) {clash} already exist; refusing")
+    for q in sorted(r2["enqueued"], key=lambda q: q["status"] != "ready"):
+        owner = by_id[q["owner"]]
+        rc = register_hypothesis(
+            ROOT / owner["brief_path"], dn.AGENT_PRIORITY,
+            f"R2 after {run_id}: ask step 1a for more hypotheses on open brief {q['owner']} "
+            f"(see decision_ref)",
+            entry_id=q["entry_id"], source="agent", relation=None,
+            extra={"origin": dn.ORIGIN_BRIEF, "decision_ref": decision_ref}, status=q["status"])
+        if rc != 0:
+            raise RuntimeError(f"decide_next R2: registering {q['entry_id']!r} was refused")
+    ready = r2["ready"]
+    if not record["picked"]["new"]:
+        updates.setdefault(ready, {}).update({"status": "ready", "decision_ref": decision_ref})
+    return (f"DECIDE after {entry['id']} ({run_id}): R2 -- {len(r2['open_briefs'])} open brief(s); "
+            f"{ready} ready, {len(r2['enqueued'])} new request(s). Record: {decision_ref}")
+
+
+def _write_brief_hypotheses_context(queue: dict, entry: dict, run_id: str) -> None:
+    """runs/<run>/artifacts/brief_hypotheses_context.yaml for a brief run
+    (anything but a decide-next reader candidate). Its presence gives step 1a
+    the BRIEF_HYPOTHESES.md addendum; `already_produced` lists the hypothesis
+    ids this brief file has produced so far (every entry sharing it)."""
+    import decide_next as dn
+    if entry.get("origin") == dn.ORIGIN_READER:
+        return
+    items = [e for e in queue.get("queue") or [] if isinstance(e, dict)]
+    owner = dn.brief_owner(entry, items)
+    doc = {
+        "schema_version": 1,
+        "queue_entry": entry["id"],
+        "brief_owner": owner["id"] if owner else None,
+        "brief_path": entry.get("brief_path"),
+        "request": "more_hypotheses" if dn.is_r2_request(entry) else "first_launch",
+        "already_produced": dn.brief_hypothesis_ids(ROOT, queue, entry.get("brief_path")),
+    }
+    orch.save_yaml(ROOT / "runs" / run_id / "artifacts" / orch.BRIEF_CONTEXT_FILE, doc)
+
+
+def _launch_queued_card(entry: dict, run_id: str) -> None:
+    """Copy the saved card into the new run and start it at the stage after
+    1a, as run_loop would (strategy_config_authoring under config-direct
+    authoring, else innovation_expansion)."""
+    src = ROOT / entry["card_ref"]
+    if not src.is_file():
+        raise FileNotFoundError(f"queued card {src} for entry {entry['id']!r} is missing")
+    run_dir = ROOT / "runs" / run_id
+    shutil.copy(src, run_dir / "artifacts" / "hypothesis_card.yaml")
+    nxt = ("strategy_config_authoring" if orch._config_direct_authoring_enabled()
+           else "innovation_expansion")
+    orch.update_state(path=run_dir, pending_stage=nxt, current_stage="hypothesis_generation",
+                      completed_stages=["hypothesis_generation"], status="active")
+
+
+def _enqueue_queued_hypotheses(entry: dict, run_id: str) -> bool:
+    """Register each extra card listed in runs/<run>/artifacts/queued_hypotheses.yaml
+    (queued, origin brief, card_ref, priority 999, id <entry>__h<n>), then mark
+    the file enqueued. Idempotent: an entry already holding that id and
+    card_ref is skipped; the same id with another card raises. Returns True
+    when anything was registered."""
+    import decide_next as dn
+    path = ROOT / "runs" / run_id / "artifacts" / dn.QUEUED_HYPOTHESES_FILE
+    if not path.exists():
+        return False
+    doc = orch.load_yaml(path) or {}
+    if doc.get("enqueued"):
+        return False
+    existing = {e.get("id"): e for e in _load_queue().get("queue") or [] if isinstance(e, dict)}
+    wrote = False
+    for card in doc.get("cards") or []:
+        cid = f"{entry['id']}__h{card['n']}"
+        if cid in existing:
+            if existing[cid].get("card_ref") != card["card_ref"]:
+                raise RuntimeError(f"queue id {cid!r} exists with another card; refusing")
+            continue
+        rc = register_hypothesis(
+            ROOT / entry["brief_path"], dn.AGENT_PRIORITY,
+            f"Extra hypothesis {card['hypothesis_id']} from {run_id}'s step 1a "
+            f"(multi-card brief; ranked by its 1a scores, see {path.relative_to(ROOT).as_posix()})",
+            entry_id=cid, source="agent", relation=None,
+            extra={"origin": dn.ORIGIN_BRIEF, "card_ref": card["card_ref"]}, status="queued")
+        if rc != 0:
+            raise RuntimeError(f"registering extra card {cid!r} was refused")
+        wrote = True
+    doc["enqueued"] = True
+    orch.save_yaml(path, doc)
+    _log(f"QUEUED-CARDS {entry['id']} ({run_id}): {len(doc.get('cards') or [])} extra "
+         f"hypothesis card(s) in the queue as `queued`.")
+    return wrote
+
+
+def _register_from_cli(brief: Path, priority: int, notes: str) -> int:
+    """The `register` sub-command. E-059 S2b (S1 §7, decision 7): a brief
+    registered while decide_next is on starts `brief_status: open` (R2 may ask
+    step 1a for more of it). Flag off: exactly the call made before."""
+    if orch._decide_next_enabled():
+        return register_hypothesis(brief, priority, notes, extra={"brief_status": "open"})
+    return register_hypothesis(brief, priority, notes)
 
 
 def run_forever(once: bool = False):
@@ -2713,7 +2911,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     if args.command == "register":
-        sys.exit(register_hypothesis(args.brief, args.priority, args.notes))
+        sys.exit(_register_from_cli(args.brief, args.priority, args.notes))
 
     if args.dry_run:
         dry_run_verify()

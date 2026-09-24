@@ -3574,7 +3574,8 @@ def _queue_extra_hypothesis_cards(run_id: str, run_dir: Path, cards: list) -> bo
     if isinstance(prior, dict) and prior.get("enqueued"):
         raise ValueError(
             f"{queued_path} says the extra cards of an earlier 1a attempt are already in the queue; "
-            f"refusing to overwrite them. Resolve by hand (RUNBOOK.md §3) before resuming.")
+            f"refusing to overwrite them. Mark those `<entry>__h<n>` queue entries superseded "
+            f"and delete this file by hand before resuming.")
     scores_path = artifacts / EXTRA_CARD_SCORES_FILE
     raw = load_yaml(scores_path) if scores_path.exists() else None
     items = raw.get("cards") if isinstance(raw, dict) else None
@@ -3605,7 +3606,7 @@ def _queue_extra_hypothesis_cards(run_id: str, run_dir: Path, cards: list) -> bo
             raise ValueError(str(exc)) from exc
         records.append({"n": n, "source_card": card.name,
                         "card_ref": f"{dn.QUEUED_CARDS_DIR}/{run_id}/{card.name}",
-                        "hypothesis_id": hid.strip(), **scores_as_item(scores)})
+                        "hypothesis_id": hid.strip(), **_card_scores_as_item(scores)})
     # Every check passed: now write (card 1 as today, then the queued copies).
     shutil.copy(first, artifacts / "hypothesis_card.yaml")
     if dest.exists():
@@ -3621,7 +3622,7 @@ def _queue_extra_hypothesis_cards(run_id: str, run_dir: Path, cards: list) -> bo
     return True
 
 
-def scores_as_item(scores: dict) -> dict:
+def _card_scores_as_item(scores: dict) -> dict:
     """decide_next.validate_card_scores' flat dict back to the file shape
     {scores: {...}, model_id, rubric_version}."""
     return {"scores": {k: scores[k] for k in ("confidence_real", "distance_to_profitable",
@@ -4597,6 +4598,9 @@ async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | 
 
     # E-059 S2a: the decide-next candidate addendum, off by default (see helper docstring above).
     _apply_decide_next_context(stage_name, handoff, RUN_DIR)
+
+    # E-059 S2b: the brief-hypotheses addendum, off by default (see helper docstring above).
+    _apply_brief_hypotheses_context(stage_name, handoff, RUN_DIR)
 
     # E-058 S2b: campaign-review's memory input, off by default (see helper docstring above).
     _apply_regroup_record_context(stage_name, handoff, RUN_DIR)
@@ -6043,6 +6047,11 @@ def _handle_hypothesis_generation_multi_card_split(run_id: str, run_dir: Path) -
     cards = sorted(artifacts.glob("hypothesis_card_*.yaml"))
     if len(cards) < 2:
         return False  # genuinely missing, not a multi-card split — let the caller raise
+
+    # E-059 S2b: under orchestrator.decide_next.enabled the extra cards go to the
+    # queue (queued, card_ref) instead of sibling runs. Flag off: unchanged below.
+    if _decide_next_enabled():
+        return _queue_extra_hypothesis_cards(run_id, run_dir, cards)
 
     print(f"\n🔀 ARCHITECTURE RULE (one hypothesis per run): hypothesis_generation produced "
           f"{len(cards)} hypothesis cards instead of one ({[c.name for c in cards]}). "
@@ -9576,6 +9585,7 @@ def run_loop(run_id: str):
         update_state(path=RUN_DIR, current_stage=current_stage, status="running",
                      stage_attempts=_stage_attempts)
 
+        _brief_exhausted = False  # E-059 S2b: set only by hypothesis_generation below
         try:
             # E-046a Slice 5b-ii-B: under the flag verdict_interpreter is never
             # invoked. A run already routed there before the flag was switched on
@@ -9676,10 +9686,18 @@ def run_loop(run_id: str):
                         _invoke_agent_with_yaml_retry(current_stage, run_id, RUN_DIR, expected_outputs, state)
                     except FileNotFoundError:
                         if not _handle_hypothesis_generation_multi_card_split(run_id, RUN_DIR):
-                            raise
-                    # E-059 S2a (operator decision 2): no-op unless pre_registration.yaml
-                    # is pending at 1a; raises (-> status failed) before any spend.
-                    _write_pass_rule_from_card(RUN_DIR, run_id, _sr_flag)
+                            # E-059 S2b: no card + brief_status.yaml exhausted (flag on,
+                            # brief run only) is a valid 1a outcome. Flag off: False, raise.
+                            if not _brief_exhausted_signal(RUN_DIR):
+                                raise
+                            _brief_exhausted = True
+                    if not _brief_exhausted:
+                        # E-059 S2b: an exhausted signal next to a card raises (no-op
+                        # without the file or with the flag off).
+                        _brief_exhausted_signal(RUN_DIR)
+                        # E-059 S2a (operator decision 2): no-op unless pre_registration.yaml
+                        # is pending at 1a; raises (-> status failed) before any spend.
+                        _write_pass_rule_from_card(RUN_DIR, run_id, _sr_flag)
                 else:
                     _invoke_agent_with_yaml_retry(current_stage, run_id, RUN_DIR, expected_outputs, state)
             else:
@@ -9707,6 +9725,9 @@ def run_loop(run_id: str):
             # both "hypothesis_generation" and "validation"/etc. at once.
             if current_stage == "hypothesis_generation" and _config_direct_authoring_enabled():
                 next_stage = "strategy_config_authoring"
+            # E-059 S2b: 1a reported the brief exhausted and wrote no card -> terminal.
+            if current_stage == "hypothesis_generation" and _brief_exhausted:
+                next_stage = BRIEF_EXHAUSTED_STAGE
 
             # E-046a Slice 5b-ii-B: under specialist_readers, protocol_execution's
             # default_next (verdict_interpreter) is redirected -- verdict_interpreter

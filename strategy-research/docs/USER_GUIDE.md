@@ -2464,6 +2464,8 @@ market_type are not `tradable: true` — **or are undeclared**
 | `campaign_record/campaign_memory.yaml` | Per-run memory (E-058 S2a), written only by stage 17 `regroup_record` when `orchestrator.regroup_record.enabled` is on (off by default). One entry per `run_id`; fields in the stage 17 block. No old runs; those live in `campaign_knowledge_base.yaml`. |
 | `runs/<run_id>/artifacts/decision_record.yaml` | One decide-next decision (E-059 S2a), written by `run_campaign.py`'s DONE branch only when `orchestrator.decide_next.enabled` is on (off by default), from `tools/decide_next.py`. Inputs' hashes, R1/R2 (no-ops), candidates with gates/cost/rank, `picked` or `stop`. Schema `workflow_artifacts/schemas/decision_record.schema.json`. See §5 `run_campaign.py`. |
 | `campaign_record/candidate_briefs/<id>.md` | The brief decide-next writes for the candidate it picked (E-059 S2a, same flag). No criteria on purpose: step 1a writes them. |
+| `campaign_record/queued_cards/<run_id>/hypothesis_card_<n>.yaml` | A brief's extra hypothesis card, saved by the multi-card split under `orchestrator.decide_next.enabled` (E-059 S2b) and named by its queue entry's `card_ref`. Listed with its 1a scores in `runs/<run_id>/artifacts/queued_hypotheses.yaml`. |
+| `runs/<run_id>/artifacts/brief_status.yaml` | Step 1a's "brief exhausted" signal (E-059 S2b, same flag): `{brief_status: exhausted, reason}` and no card -> terminal `completed_brief_exhausted`. |
 
 ---
 
@@ -2622,8 +2624,41 @@ through to 1b; 5a stops if either hash differs from
 `candidate.source.expected_config_sha256` / `expected_manifest_sha256`. New
 queue fields (closed schema, `tools/record_schema.py`): `origin`,
 `proposal_ref`, `decision_ref`, `card_ref`, `brief_status`, `parked_reason`,
-and status `queued` (never auto-picked). Multi-card briefs, R2 and brief
-exhaustion are E-059 S2b.
+and status `queued` (never auto-picked).
+
+**Briefs, brief status and R2 (E-059 S2b, same flag).**
+- `python workflow/run_campaign.py register ...` while the flag is on writes
+  `brief_status: open` on the new entry: it owns that brief. An entry with no
+  `brief_status` is a **legacy brief** (operator decision 7): it never
+  triggers R2, and at the first decision after the flag is on its queue entry
+  gets a one-time `title: "[obsolete] <brief's first '# ' heading, else the
+  id>"` (shown next to the id in `campaign_summary.md`). Only the queue entry
+  is written; the brief file is never edited. Tagging changes no status and
+  nothing the scheduler picks.
+- A brief run (anything launched fresh that is not a reader candidate) gets
+  `runs/<run_id>/artifacts/brief_hypotheses_context.yaml` (the hypothesis ids
+  this brief already produced). Its presence gives step 1a the addendum
+  `workflow_artifacts/skills/hypothesis-design/BRIEF_HYPOTHESES.md` (flag on
+  only; `SKILL.md` is unchanged, so the flag-off prompt is byte-identical).
+- **Several cards** from 1a: card 1 runs now; cards 2..k are copied to
+  `campaign_record/queued_cards/<run_id>/`, listed with the three anchored
+  scores 1a wrote for each (`artifacts/extra_card_scores.yaml`, rubric
+  `brief-card-v1`) in `artifacts/queued_hypotheses.yaml`, and registered as
+  `queued` entries `<entry>__h<n>` (`origin: brief`, `card_ref`, `source:
+  agent`, priority 999). No sibling run and no `hypothesis_splits` row. A
+  missing/malformed score, or several cards from a reader candidate, fails
+  the run. When decide-next picks one (it ranks on the same key as a
+  proposal), it is flipped `queued` -> `ready`; its launch copies the card and
+  starts after 1a (`strategy_config_authoring`), so it is never re-authored.
+- **Exhausted**: 1a writes no card and `artifacts/brief_status.yaml`
+  `{brief_status: exhausted, reason}` -> the run ends
+  `completed_brief_exhausted` (a non-verdict outcome, no provenance needed) and
+  the brief's owner entry is flipped to `brief_status: exhausted`.
+- **R2**: when nothing is scheduled and no candidate is eligible, decide-next
+  asks 1a for more hypotheses on every `open` brief: it reuses that brief's
+  waiting request or mints `<owner>__more_<n>` (`origin: brief`, no
+  `card_ref`); the first is `ready`, the rest `queued`. The loop stops only
+  when no brief is open.
 
 ### `tools/fragment_patterns.py` — Ideation-Only Fragment Diagnostics
 

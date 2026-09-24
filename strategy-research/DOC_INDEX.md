@@ -151,7 +151,10 @@ writes `runs/<run_id>/artifacts/decision_record.yaml` (schema
 `workflow_artifacts/schemas/decision_record.schema.json`): an operator `ready`
 entry goes first, else one reader proposal becomes a `ready` agent queue entry
 with a brief in `campaign_record/candidate_briefs/`, else the loop stops
-(`docs/RUNBOOK.md` §3, last row). Design and operator decisions:
+(`docs/RUNBOOK.md` §3, last row). E-059 S2b adds a brief's extra hypothesis
+cards (queued, ranked by their 1a scores), `brief_status` open/exhausted, R2
+(ask 1a for more on open briefs) and the one-time `[obsolete]` title on legacy
+briefs. Design and operator decisions:
 `engineering/roadmap/E-059/S1_FINDINGS_6B.md`.
 
 ### "What can run autonomously vs needs a human?"
