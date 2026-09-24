@@ -7285,7 +7285,7 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
 
 
 def _grade_profit_bars(bars: dict, *, sharpe, sharpe_note: str, dsr, dsr_note: str,
-                       pss: dict, avg_daily_return: tuple | None = None) -> tuple:
+                       pss: dict, portfolio: dict | None = None) -> tuple:
     """Grade ONE candidate against every bar in a loaded profitability_bars.yaml
     doc. Returns (results, overall, reasons): results is the ordered list of
     {name, threshold, actual, result, note} bar rows, overall is "PASS" only when
@@ -7295,11 +7295,19 @@ def _grade_profit_bars(bars: dict, *, sharpe, sharpe_note: str, dsr, dsr_note: s
     evaluator on the variant's own protocol_result) and `*_note` names it. `pss`
     is that candidate's protocol_result per_symbol_summary.
 
+    `portfolio` is None for every flag-off caller: the rows are then exactly what
+    they were before branch 3 (worst-coin drawdown, NOT_EVALUABLE avg daily
+    return, no `basis` key). Under orchestrator.profit_bars_every_backtest the
+    caller passes _portfolio_profit_metrics(...): max_drawdown_pct_max and
+    avg_daily_return_min are then judged on the equal-weight portfolio of all
+    tested coins (operator decision 2026-09-24), and every row records the
+    definition that produced its `actual` in a `basis` key.
+
     Extracted verbatim 2026-09-24 from _evaluate_profit_bars (branch 3) -- see
-    that function's docstring for the worst-symbol aggregation choice."""
+    that function's docstring for the flag-off worst-symbol aggregation choice."""
     results = []
 
-    def _bar(name: str, threshold, actual, comparator: str, note: str = ""):
+    def _bar(name: str, threshold, actual, comparator: str, note: str = "", basis: str = ""):
         if actual is None:
             outcome = "NOT_EVALUABLE"
         elif comparator == ">=":
@@ -7309,24 +7317,32 @@ def _grade_profit_bars(bars: dict, *, sharpe, sharpe_note: str, dsr, dsr_note: s
         else:
             raise ValueError(f"_evaluate_profit_bars: unknown comparator {comparator!r}")
         entry = {"name": name, "threshold": threshold, "actual": actual, "result": outcome}
+        if portfolio is not None:  # flag on only: flag-off rows stay byte-identical
+            entry["basis"] = basis
         if note:
             entry["note"] = note
         results.append(entry)
 
-    _bar("sharpe_min", bars["sharpe_min"], sharpe, ">=", note=sharpe_note)
+    _bar("sharpe_min", bars["sharpe_min"], sharpe, ">=", note=sharpe_note,
+         basis="median_of_coin_median_sharpes")
 
     _bar(
         "deflated_sharpe_threshold", bars["deflated_sharpe_threshold"], dsr, ">=",
-        note=dsr_note,
+        note=dsr_note, basis="deflated_sharpe_on_campaign_trial_ledger",
     )
 
-    symbol_drawdowns = [v.get("max_abs_drawdown_pct") for v in pss.values()
-                         if v.get("max_abs_drawdown_pct") is not None]
-    worst_drawdown = max(symbol_drawdowns) if symbol_drawdowns else None
-    _bar(
-        "max_drawdown_pct_max", bars["max_drawdown_pct_max"], worst_drawdown, "<=",
-        note="protocol_result.yaml.per_symbol_summary[*].max_abs_drawdown_pct, worst symbol",
-    )
+    if portfolio is None:
+        symbol_drawdowns = [v.get("max_abs_drawdown_pct") for v in pss.values()
+                             if v.get("max_abs_drawdown_pct") is not None]
+        worst_drawdown = max(symbol_drawdowns) if symbol_drawdowns else None
+        _bar(
+            "max_drawdown_pct_max", bars["max_drawdown_pct_max"], worst_drawdown, "<=",
+            note="protocol_result.yaml.per_symbol_summary[*].max_abs_drawdown_pct, worst symbol",
+        )
+    else:
+        _bar("max_drawdown_pct_max", bars["max_drawdown_pct_max"],
+             portfolio["max_drawdown_pct"][0], "<=", note=portfolio["max_drawdown_pct"][1],
+             basis=_BASIS_PORTFOLIO_WORST_WINDOW)
 
     symbol_trade_counts = [v.get("min_trade_count") for v in pss.values()
                             if v.get("min_trade_count") is not None]
@@ -7334,22 +7350,24 @@ def _grade_profit_bars(bars: dict, *, sharpe, sharpe_note: str, dsr, dsr_note: s
     _bar(
         "trade_count_min", bars["trade_count_min"], worst_trade_count, ">=",
         note="protocol_result.yaml.per_symbol_summary[*].min_trade_count, worst symbol",
+        basis=_BASIS_WORST_COIN,
     )
 
-    # avg_daily_return_min: with `avg_daily_return` omitted (every flag-off
-    # caller) this reads NOT_EVALUABLE exactly as before -- protocol_result.yaml
-    # has no mean-daily-return field. Under orchestrator.profit_bars_every_backtest
-    # the caller passes (value, note) from _avg_daily_return_worst_symbol, which
-    # derives it from the per-window equity files (definition in its docstring).
-    if avg_daily_return is None:
+    # avg_daily_return_min: with `portfolio` omitted (every flag-off caller) this
+    # reads NOT_EVALUABLE exactly as before -- protocol_result.yaml has no
+    # mean-daily-return field. Under orchestrator.profit_bars_every_backtest the
+    # caller passes _portfolio_profit_metrics(...), derived from the per-window
+    # equity files (definition in its docstring).
+    if portfolio is None:
         _bar(
             "avg_daily_return_min", bars["avg_daily_return_min"], None, ">=",
             note="no source: protocol_result.yaml and metrics.json's bar_equity block "
                  "(off-by-default) neither one carries a mean-daily-return figure",
         )
     else:
-        _bar("avg_daily_return_min", bars["avg_daily_return_min"], avg_daily_return[0], ">=",
-             note=avg_daily_return[1])
+        _bar("avg_daily_return_min", bars["avg_daily_return_min"],
+             portfolio["avg_daily_return"][0], ">=", note=portfolio["avg_daily_return"][1],
+             basis=_BASIS_PORTFOLIO)
 
     outcomes = {r["result"] for r in results}
     overall = "PASS" if outcomes == {"PASS"} else "FAIL"
@@ -7361,7 +7379,7 @@ def _grade_profit_bars(bars: dict, *, sharpe, sharpe_note: str, dsr, dsr_note: s
     return results, overall, reasons
 
 
-def _evaluate_profit_bars(run_dir: Path, run_id: str, with_avg_daily_return: bool = False) -> dict:
+def _evaluate_profit_bars(run_dir: Path, run_id: str, portfolio_basis: bool = False) -> dict:
     """delivery_plan_v26.md 0.2 (item 2) -- the branch-3 stop. Sibling to
     _write_promotion_audit, called right after it (same run_dir) so this function
     can read promotion_audit.yaml's own just-written numbers rather than
@@ -7374,8 +7392,15 @@ def _evaluate_profit_bars(run_dir: Path, run_id: str, with_avg_daily_return: boo
 
     Each bar reads NOT_EVALUABLE, not a silent PASS or a crash, when its
     underlying metric genuinely is not present anywhere in this run's artifacts
-    (see per-bar comments in _grade_profit_bars -- avg_daily_return_min always does, today,
-    since nothing in this pipeline computes a mean daily return).
+    (see per-bar comments in _grade_profit_bars -- avg_daily_return_min always does
+    with portfolio_basis off, since nothing else in this pipeline computes a mean
+    daily return).
+
+    portfolio_basis=True is passed only under orchestrator.profit_bars_every_backtest
+    (and only for a run without its own every_backtest evaluation): drawdown and avg
+    daily return are then judged on the equal-weight portfolio of all coins
+    (_portfolio_profit_metrics) and every row carries `basis`. The paragraph below
+    describes the flag-off (portfolio_basis=False) behavior, which is unchanged.
 
     Aggregation choice for the two per-symbol_summary-sourced bars
     (max_drawdown_pct_max, trade_count_min): per_symbol_summary carries one
@@ -7406,10 +7431,11 @@ def _evaluate_profit_bars(run_dir: Path, run_id: str, with_avg_daily_return: boo
                  "insufficient-trials path, where no DSR is computed at all)",
         pss=pss,
         # Only under orchestrator.profit_bars_every_backtest (the caller passes
-        # with_avg_daily_return=True): the same per-window equity computation as
-        # the per-backtest check. Flag off: omitted, NOT_EVALUABLE as before.
-        avg_daily_return=(_avg_daily_return_worst_symbol(run_dir, pr)
-                          if with_avg_daily_return else None),
+        # portfolio_basis=True): the same equal-weight portfolio computation as the
+        # per-backtest check (drawdown and avg daily return), with `basis` on every
+        # row. Flag off: omitted -- worst-symbol drawdown and NOT_EVALUABLE avg
+        # daily return, byte-identical to before.
+        portfolio=(_portfolio_profit_metrics(run_dir, pr) if portfolio_basis else None),
     )
 
     evaluation = {
@@ -7571,10 +7597,11 @@ def _find_window_equity_file(run_dir: Path, window_run_id: str) -> Path | None:
     return hits[0] if hits else None
 
 
-def _window_daily_returns(path: Path) -> list:
-    """Day-over-day simple returns of one window's equity (see
-    _avg_daily_return_worst_symbol for the definition). Fails loud on a missing
-    column or a non-numeric / non-positive equity value."""
+def _window_daily_closes(path: Path) -> dict:
+    """{UTC date: equity} for one (coin, window) backtest: postRebalance_total_value
+    of the LAST bar of each UTC calendar day, warm-up bars (regime NOT_READY)
+    dropped (see _portfolio_profit_metrics for how these are combined). Fails loud
+    on a missing column or a non-numeric / non-positive equity value."""
     import csv as _csv
     with open(path, encoding="utf-8", newline="") as f:
         reader = _csv.DictReader(f)
@@ -7586,6 +7613,8 @@ def _window_daily_returns(path: Path) -> list:
             if str(row["regime"]).strip().upper() == "NOT_READY":
                 continue
             ts = datetime.fromisoformat(str(row["timestamp"]).strip())
+            if ts.tzinfo is not None:  # an aware stamp is bucketed by its UTC date
+                ts = ts.astimezone(timezone.utc).replace(tzinfo=None)
             try:
                 equity = float(row["postRebalance_total_value"])
             except (TypeError, ValueError):
@@ -7599,52 +7628,115 @@ def _window_daily_returns(path: Path) -> list:
     daily: dict = {}
     for ts, equity in rows:  # last bar of each calendar day
         daily[ts.date()] = equity
-    closes = [daily[d] for d in sorted(daily)]
-    return [closes[i] / closes[i - 1] - 1.0 for i in range(1, len(closes))]
+    return daily
 
 
-def _avg_daily_return_worst_symbol(run_dir: Path, pr: dict) -> tuple:
-    """avg_daily_return_min's actual value for ONE backtest candidate. Returns
-    (value or None, note).
+# basis values recorded on each bar row of a flag-on evaluation, so the artifact
+# says which definition produced `actual` (see config/profitability_bars.yaml).
+_BASIS_PORTFOLIO = "portfolio_equal_weight"
+_BASIS_PORTFOLIO_WORST_WINDOW = "portfolio_equal_weight_worst_window"
+_BASIS_WORST_COIN = "worst_coin"
 
-    DEFINITION (the operator must confirm this is what the bar means):
-      * source: every (symbol, window) backtest in protocol_result.results, via its
-        portfolio_states.csv (the engine's per-bar state; the same file and column
-        trading-bot's bar_equity block uses);
-      * equity: postRebalance_total_value, warm-up bars (regime NOT_READY) dropped;
-      * daily close: the last bar of each calendar day (UTC date of the timestamp);
-      * daily return: SIMPLE return close_d / close_(previous available day) - 1,
-        within one window only (never across two windows; each window starts from
-        a fresh balance). The first day of a window has no prior close and adds no
-        return. A day with no bar is absent, never a fabricated 0.0;
-      * per symbol: the ARITHMETIC mean of all its daily returns, pooled over its
-        windows (not geometric, not annualised; a fraction, 0.0005 = 0.05 %/day);
-      * actual = the WORST (lowest) symbol mean, the same worst-symbol rule as the
-        drawdown and trade-count bars.
-    None (NOT_EVALUABLE) when results is empty, any window's portfolio_states.csv
-    is missing, or a symbol has no daily return at all."""
+
+def _portfolio_profit_metrics(run_dir: Path, pr: dict) -> dict:
+    """avg_daily_return_min and max_drawdown_pct_max actual values for ONE backtest
+    candidate, judged on the portfolio you would actually trade: every tested coin
+    together, equally weighted (operator decision 2026-09-24). Returns
+    {"avg_daily_return": (value or None, note),
+     "max_drawdown_pct": (value or None, note)}.
+
+    DEFINITION (mirrored in config/profitability_bars.yaml's header):
+      * source: every (coin, window) backtest in protocol_result.results, via its
+        portfolio_states.csv, column postRebalance_total_value (equity after each
+        bar's rebalance), warm-up bars (regime NOT_READY) dropped;
+      * daily close: the last bar of each UTC calendar day;
+      * per window, the COMBINED portfolio is built on the INTERSECTION of days:
+        only UTC days on which every coin of that window has a daily close. A day
+        missing for any coin is dropped for all coins (never filled, never 0.0);
+      * each coin is normalized to 1.0 at the window start (its close on the first
+        common day); portfolio value on a common day = the arithmetic MEAN of the
+        coins' normalized values (1/N of the capital in each coin at the window
+        start, no re-weighting between coins afterwards);
+      * daily return: SIMPLE return V_d / V_(previous common day) - 1, within one
+        window only (each window restarts from a fresh balance; the first common
+        day adds no return);
+      * avg daily return = the ARITHMETIC mean of the portfolio's daily returns,
+        pooled across all windows (a fraction per day; not geometric, not
+        annualised);
+      * max drawdown = per window, the largest peak-to-trough fall of the portfolio
+        curve over its common days, 100 * (1 - V_t / max_{s<=t} V_s) (a positive
+        percent); actual = the LARGEST such WINDOW drawdown. This is the worst
+        WINDOW of the combined portfolio, not the worst coin.
+    Both values None (NOT_EVALUABLE) when results is empty, any window's
+    portfolio_states.csv is missing, the coin set differs between windows (a coin
+    silently missing from one window would change the portfolio), a window has no
+    common day, or no window has two common days. A malformed results entry or a
+    duplicate (coin, window) raises."""
+    def _none(why: str) -> dict:
+        note = f"equal-weight portfolio: {why}"
+        return {"avg_daily_return": (None, note), "max_drawdown_pct": (None, note)}
+
     results = pr.get("results") or []
     if not results:
-        return None, "avg daily return: protocol_result has no per-window results"
-    per_symbol: dict = {}
+        return _none("protocol_result has no per-window results")
+    windows: dict = {}  # window label -> {coin: {date: close}}
     for r in results:
-        wid = r.get("run_id") if isinstance(r, dict) else None
-        sym = r.get("symbol") if isinstance(r, dict) else None
-        path = _find_window_equity_file(run_dir, wid) if wid else None
+        if not isinstance(r, dict) or any(r.get(k) in (None, "")
+                                          for k in ("symbol", "window", "run_id")):
+            raise ValueError(f"equal-weight portfolio: protocol_result.results entry {r!r} "
+                             f"lacks symbol/window/run_id")
+        sym, win, wid = r["symbol"], r["window"], r["run_id"]
+        if sym in windows.get(win, {}):
+            raise ValueError(f"equal-weight portfolio: coin {sym!r} appears twice in window "
+                             f"{win!r}")
+        path = _find_window_equity_file(run_dir, wid)
         if path is None:
-            return None, (f"avg daily return: no portfolio_states.csv for window "
-                          f"{r.get('window') if isinstance(r, dict) else r!r} ({sym}, run {wid!r})")
-        per_symbol.setdefault(sym, []).extend(_window_daily_returns(path))
-    means = {}
-    for sym, rets in per_symbol.items():
-        if not rets:
-            return None, f"avg daily return: symbol {sym!r} has no daily return"
-        means[sym] = sum(rets) / len(rets)
-    worst = min(means, key=lambda s: means[s])
-    return round(means[worst], 8), (
-        f"arithmetic mean of daily simple returns (postRebalance_total_value, last bar per "
-        f"UTC day, post-warmup, within each window), pooled per symbol over "
-        f"{len(results)} window backtest(s); worst symbol {worst}")
+            return _none(f"no portfolio_states.csv for window {win!r} ({sym}, run {wid!r})")
+        windows.setdefault(win, {})[sym] = _window_daily_closes(path)
+    coin_sets = {w: frozenset(c) for w, c in windows.items()}
+    if len(set(coin_sets.values())) > 1:
+        return _none("the coin set differs between windows "
+                     f"({ {w: sorted(c) for w, c in sorted(coin_sets.items())} })")
+    coins = sorted(next(iter(coin_sets.values())))
+
+    returns: list = []
+    window_dd: dict = {}
+    skipped: list = []  # windows with a single common day: no return, no drawdown
+    dropped = 0
+    for win in sorted(windows):
+        closes = windows[win]
+        common = sorted(set.intersection(*(set(c) for c in closes.values())))
+        dropped += len(set().union(*(set(c) for c in closes.values()))) - len(common)
+        if not common:
+            return _none(f"window {win!r} has no UTC day on which every coin has a value")
+        if len(common) < 2:
+            skipped.append(win)
+            continue
+        start = {c: closes[c][common[0]] for c in coins}
+        curve = [sum(closes[c][d] / start[c] for c in coins) / len(coins) for d in common]
+        returns.extend(curve[i] / curve[i - 1] - 1.0 for i in range(1, len(curve)))
+        peak, dd = curve[0], 0.0
+        for v in curve:
+            peak = max(peak, v)
+            dd = max(dd, 1.0 - v / peak)
+        window_dd[win] = dd * 100.0
+    if not returns:
+        return _none("no window has two common days, so there is no daily return")
+    worst_window = max(window_dd, key=lambda w: window_dd[w])
+    base = (f"equal-weight portfolio of {len(coins)} coin(s) {coins}, each normalized to 1.0 "
+            f"at the window start (postRebalance_total_value, last bar per UTC day, "
+            f"post-warmup), on the {len(returns) + len(window_dd)} UTC day(s) where every coin "
+            f"has a value ({dropped} day(s) dropped by the intersection), over "
+            f"{len(window_dd)} window(s)"
+            + (f"; window(s) {skipped} skipped (a single common day)" if skipped else ""))
+    return {
+        "avg_daily_return": (round(sum(returns) / len(returns), 8), (
+            f"arithmetic mean of the portfolio's {len(returns)} daily simple return(s), "
+            f"within each window, pooled across windows; {base}")),
+        "max_drawdown_pct": (round(window_dd[worst_window], 6), (
+            f"largest peak-to-trough drawdown of the combined portfolio within one window "
+            f"(worst WINDOW {worst_window!r}, not the worst coin); {base}")),
+    }
 
 
 def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str) -> dict:
@@ -7657,9 +7749,10 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str) -> dict:
     Numbers per variant: Sharpe and DSR from _promotion_dsr_context's evaluator on
     that variant's own protocol_result (the promotion audit's own math and ledger
     basis, read after this attempt's trial rows were written and after the
-    conformance check invalidated any non-conforming one); drawdown and trade count
-    from its own per_symbol_summary (worst symbol); avg daily return from its own
-    per-window equity files (_avg_daily_return_worst_symbol).
+    conformance check invalidated any non-conforming one); trade count from its own
+    per_symbol_summary (minimum per coin); drawdown and avg daily return from the
+    equal-weight portfolio of all its coins, built from its own per-window equity
+    files (_portfolio_profit_metrics). Every bar row records its `basis`.
 
     result is PASS when ANY graded variant passes every bar; `passing` names them.
     A malformed or missing bars file raises ProfitabilityBarsSchemaError before
@@ -7678,7 +7771,6 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str) -> dict:
             continue
         pr = cand["protocol_result"]
         raw_median_sr, _sparse, _passes, _e_max, dsr_result = dsr_ctx["dsr_candidate"](pr)
-        adr, adr_note = _avg_daily_return_worst_symbol(run_dir, pr)
         results, overall, reasons = _grade_profit_bars(
             bars,
             sharpe=raw_median_sr,
@@ -7689,7 +7781,7 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str) -> dict:
                       f"ledger (the promotion audit's rule; None on the sparse-trading or "
                       f"insufficient-trials path, where no DSR is computed at all)"),
             pss=pr.get("per_symbol_summary") or {},
-            avg_daily_return=(adr, adr_note),
+            portfolio=_portfolio_profit_metrics(run_dir, pr),
         )
         variants[cid] = {**entry, "result": overall, "reason": None,
                          "bars": results, "reasons": reasons}
@@ -8196,7 +8288,8 @@ def _dispatch_verdict_route(path: Path, run_id: str, interp: dict, campaign: dic
         # numbers would re-stop a run the operator already released. Any other
         # case (flag off, or flag on but no such artifact, e.g. a run that
         # reached protocol_execution before the flag was on) runs the check as
-        # before; with the flag on it also grades avg_daily_return_min from the
+        # before; with the flag on it grades avg_daily_return_min and
+        # max_drawdown_pct_max on the equal-weight portfolio built from the
         # per-window equity files. The flag is read ONCE, inside the try, so even
         # a malformed flag value falls back to the unconditional holdout route.
         if _profit_bars_file_enabled():
@@ -8207,7 +8300,7 @@ def _dispatch_verdict_route(path: Path, run_id: str, interp: dict, campaign: dic
                           "artifacts/profit_bars_evaluation.yaml (scope every_backtest) already "
                           "graded every variant after protocol_execution.")
                     return "holdout_evaluation"
-                profit_bars_result = (_evaluate_profit_bars(path, run_id, with_avg_daily_return=True)
+                profit_bars_result = (_evaluate_profit_bars(path, run_id, portfolio_basis=True)
                                       if _pbe_on else _evaluate_profit_bars(path, run_id))
                 if profit_bars_result.get("result") == "PASS":
                     print("\n🛑 PROFIT BARS REACHED: every bar in config/profitability_bars.yaml "

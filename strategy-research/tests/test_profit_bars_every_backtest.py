@@ -22,7 +22,11 @@ Covers:
      never graded ([CR 7]).
   4. avg_daily_return_min computed from the per-window equity files, exact value,
      NOT_EVALUABLE on a missing file, and a real PASS without any monkeypatch
-     ([CR 4]).
+     ([CR 4]). Operator decision 2026-09-24: avg_daily_return_min and
+     max_drawdown_pct_max are judged on the equal-weight portfolio of all coins
+     (hand-computed 2-coin fixture, day intersection, per-window drawdown, one
+     losing coin inside a passing portfolio); trade_count_min stays the per-coin
+     minimum; every flag-on bar row records its `basis`.
   5. The stop: raised after regroup_record, protocol_execution completes, memory
      recorded first; resume goes forward without re-running backtests or
      re-pausing ([CR 1+2]); stays off when nothing passes; idea_status and the
@@ -390,27 +394,100 @@ def test_cr7_invalidated_trial_is_never_graded_or_passing():
 # 4. avg_daily_return_min
 # ---------------------------------------------------------------------------
 
-def test_cr4_avg_daily_return_exact_definition(tmp_path):
-    """Arithmetic mean of daily SIMPLE returns of the last bar per UTC day,
-    post-warmup, within each window, pooled per symbol; worst symbol wins."""
-    root = tmp_path / "run"
-    _write_equity(root / "results", "b1", [1000.0, 1010.0, 1000.0])  # +1%, -0.990099%
-    _write_equity(root / "results", "b2", [500.0, 510.0])            # +2% (new window)
-    _write_equity(root / "results", "e1", [1000.0, 1100.0])          # +10%
-    pr = {"results": [{"symbol": "BTCUSDT", "window": "w1", "run_id": "b1"},
-                      {"symbol": "BTCUSDT", "window": "w2", "run_id": "b2"},
-                      {"symbol": "ETHUSDT", "window": "w1", "run_id": "e1"}]}
-    value, note = rpr._avg_daily_return_worst_symbol(root, pr)
-    expected = (0.01 + (1000.0 / 1010.0 - 1.0) + 0.02) / 3
-    assert value == round(expected, 8)
-    assert "arithmetic mean" in note and "worst symbol BTCUSDT" in note
+def _write_equity_days(results_root: Path, window_run_id: str, closes: dict) -> None:
+    """portfolio_states.csv with one warm-up row, then for each {"2020-MM-DD": close}
+    a decoy morning bar and the day's LAST bar carrying the close."""
+    d = results_root / window_run_id
+    d.mkdir(parents=True, exist_ok=True)
+    lines = ["timestamp,regime,postRebalance_total_value",
+             "2019-12-31 23:00:00,NOT_READY,999999.0"]
+    for date, close in closes.items():
+        lines += [f"{date} 01:00:00,trend,{close * 7}", f"{date} 23:00:00,trend,{close}"]
+    (d / "portfolio_states.csv").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _days(closes: list, first: int = 2) -> dict:
+    return {f"2020-01-{first + i:02d}": c for i, c in enumerate(closes)}
+
+
+def _pm(root: Path, spec: dict) -> dict:
+    """_portfolio_profit_metrics on {(coin, window): {date: close}} equity files."""
+    results = []
+    for (sym, win), closes in spec.items():
+        wid = f"{sym}-{win}"
+        _write_equity_days(root / "results", wid, closes)
+        results.append({"symbol": sym, "window": win, "run_id": wid})
+    return rpr._portfolio_profit_metrics(root, {"results": results})
+
+
+def test_portfolio_return_and_drawdown_hand_computed_two_coins(tmp_path):
+    """A: 100,120,90,96 -> 1, 1.2, 0.9, 0.96. B: 100,100,110,99 -> 1, 1.0, 1.1, 0.99.
+    Equal-weight portfolio = 1, 1.1, 1.0, 0.975. Daily returns 0.1, -1/11, -0.025.
+    Drawdown: peak 1.1 -> trough 0.975 = 100 * (1 - 0.975/1.1) = 11.363636..%."""
+    m = _pm(tmp_path, {("A", "w1"): _days([100.0, 120.0, 90.0, 96.0]),
+                       ("B", "w1"): _days([100.0, 100.0, 110.0, 99.0])})
+    adr, adr_note = m["avg_daily_return"]
+    dd, dd_note = m["max_drawdown_pct"]
+    assert adr == round((0.1 + (1.0 / 1.1 - 1.0) + (0.975 / 1.0 - 1.0)) / 3, 8)
+    assert dd == round(100.0 * (1.0 - 0.975 / 1.1), 6)
+    assert "equal-weight portfolio of 2 coin(s) ['A', 'B']" in adr_note
+    assert "worst WINDOW 'w1', not the worst coin" in dd_note
+
+
+def test_portfolio_day_intersection(tmp_path):
+    """B has no bar on 01-04 and an extra day 01-06: only 01-02, 01-03, 01-05 are
+    used, for both coins. Portfolio: 1, (1.1+1.0)/2=1.05, (1.21+0.8)/2=1.005."""
+    m = _pm(tmp_path, {("A", "w1"): {"2020-01-02": 100.0, "2020-01-03": 110.0,
+                                     "2020-01-04": 500.0, "2020-01-05": 121.0},
+                       ("B", "w1"): {"2020-01-02": 200.0, "2020-01-03": 200.0,
+                                     "2020-01-05": 160.0, "2020-01-06": 999.0}})
+    assert m["avg_daily_return"][0] == round((0.05 + (1.005 / 1.05 - 1.0)) / 2, 8)
+    assert m["max_drawdown_pct"][0] == round(100.0 * (1.0 - 1.005 / 1.05), 6)
+    assert "on the 3 UTC day(s) where every coin has a value (2 day(s) dropped" \
+        in m["avg_daily_return"][1]
+
+
+def test_portfolio_drawdown_is_per_window_not_across_windows(tmp_path):
+    """w1: 1000 -> 1500 -> 1200 (20% drawdown). w2 restarts from a fresh 1000:
+    1000 -> 1100 -> 990 (10%). A curve concatenated across windows would read
+    1500 -> 990 = 34%; the bar reads the worst WINDOW, 20%. Returns pool across
+    both windows: 0.5, -0.2, 0.1, -0.1."""
+    w1, w2 = _days([1000.0, 1500.0, 1200.0]), _days([1000.0, 1100.0, 990.0], first=10)
+    m = _pm(tmp_path, {("A", "w1"): w1, ("B", "w1"): w1, ("A", "w2"): w2, ("B", "w2"): w2})
+    assert m["max_drawdown_pct"][0] == pytest.approx(20.0, abs=1e-9)
+    assert "worst WINDOW 'w1'" in m["max_drawdown_pct"][1]
+    assert m["avg_daily_return"][0] == round((0.5 - 0.2 + 0.1 - 0.1) / 4, 8)
+
+
+def test_portfolio_not_evaluable_when_coin_set_differs_between_windows(tmp_path):
+    """A coin silently missing from one window would change the portfolio."""
+    m = _pm(tmp_path, {("A", "w1"): _days([1.0, 2.0]), ("B", "w1"): _days([1.0, 2.0]),
+                       ("A", "w2"): _days([1.0, 2.0])})
+    assert m["avg_daily_return"][0] is None and m["max_drawdown_pct"][0] is None
+    assert "coin set differs" in m["avg_daily_return"][1]
+
+
+def test_portfolio_duplicate_coin_window_or_missing_window_fails_loud(tmp_path):
+    _write_equity_days(tmp_path / "results", "r1", _days([1.0, 2.0]))
+    dup = {"results": [{"symbol": "A", "window": "w1", "run_id": "r1"},
+                       {"symbol": "A", "window": "w1", "run_id": "r1"}]}
+    with pytest.raises(ValueError, match="appears twice"):
+        rpr._portfolio_profit_metrics(tmp_path, dup)
+    with pytest.raises(ValueError, match="lacks symbol/window/run_id"):
+        rpr._portfolio_profit_metrics(tmp_path, {"results": [{"symbol": "A", "run_id": "r1"}]})
+
+
+def test_portfolio_not_evaluable_without_a_common_day(tmp_path):
+    m = _pm(tmp_path, {("A", "w1"): _days([1.0, 2.0]), ("B", "w1"): _days([1.0, 2.0], first=20)})
+    assert m["max_drawdown_pct"][0] is None and "no UTC day" in m["max_drawdown_pct"][1]
 
 
 def test_cr4_avg_daily_return_not_evaluable_without_equity_files(tmp_path):
     pr = {"results": [{"symbol": "BTCUSDT", "window": "w1", "run_id": "absent"}]}
-    value, note = rpr._avg_daily_return_worst_symbol(tmp_path, pr)
-    assert value is None and "no portfolio_states.csv" in note
-    assert rpr._avg_daily_return_worst_symbol(tmp_path, {})[0] is None
+    m = rpr._portfolio_profit_metrics(tmp_path, pr)
+    assert m["avg_daily_return"][0] is None and "no portfolio_states.csv" in m["avg_daily_return"][1]
+    assert m["max_drawdown_pct"][0] is None
+    assert rpr._portfolio_profit_metrics(tmp_path, {})["avg_daily_return"][0] is None
 
 
 def test_cr4_malformed_equity_file_fails_loud(tmp_path):
@@ -419,8 +496,82 @@ def test_cr4_malformed_equity_file_fails_loud(tmp_path):
     (d / "portfolio_states.csv").write_text("timestamp,regime\n2020-01-01 00:00:00,trend\n",
                                             encoding="utf-8")
     with pytest.raises(ValueError, match="postRebalance_total_value"):
-        rpr._avg_daily_return_worst_symbol(
+        rpr._portfolio_profit_metrics(
             tmp_path, {"results": [{"symbol": "BTCUSDT", "window": "w", "run_id": "x"}]})
+
+
+def _one_coin_loses_run() -> Path:
+    """Single run (variant loop off). BTCUSDT loses 0.1 %/day with a 30% per-coin
+    drawdown in per_symbol_summary; ETHUSDT gains 0.4 %/day. Every other bar is
+    the good fixture's."""
+    run_dir = _single_run(good=True)
+    pr = rpr.load_yaml(run_dir / "artifacts" / "protocol_result.yaml")
+    for r in pr["results"]:
+        growth = 0.999 if r["symbol"] == "BTCUSDT" else 1.004
+        _write_equity(run_dir / "results", r["run_id"], [1000.0 * growth ** k for k in range(8)])
+    pr["per_symbol_summary"]["BTCUSDT"]["max_abs_drawdown_pct"] = 30.0
+    rpr.save_yaml(run_dir / "artifacts" / "protocol_result.yaml", pr)
+    return run_dir
+
+
+def test_one_coin_loses_portfolio_still_passes_without_monkeypatching():
+    """The operator's reason for the change: BTCUSDT alone loses (worst-coin mean
+    daily return -0.001, worst-coin drawdown 30% > 25%), yet the equal-weight
+    portfolio clears every bar. A real PASS: no bar is monkeypatched."""
+    _set_orchestrator(FULL_ON)
+    _write_bars()
+    run_dir = _one_coin_loses_run()
+    btc = rpr._window_daily_closes(run_dir / "results" / "single-BTCUSDT-w1" / "portfolio_states.csv")
+    btc_closes = [btc[d] for d in sorted(btc)]
+    assert btc_closes[-1] < btc_closes[0]  # the losing coin really loses
+    ev = rpr._evaluate_profit_bars_every_backtest(run_dir, RUN_ID)
+    bars = {b["name"]: b for b in ev["variants"][RUN_ID]["bars"]}
+    assert {b["result"] for b in bars.values()} == {"PASS"}
+    expected = sum((0.999 ** k + 1.004 ** k) / (0.999 ** (k - 1) + 1.004 ** (k - 1)) - 1.0
+                   for k in range(1, 8)) / 7
+    assert bars["avg_daily_return_min"]["actual"] == round(expected, 8)
+    assert bars["avg_daily_return_min"]["actual"] > 0.0005
+    assert bars["max_drawdown_pct_max"]["actual"] == 0.0  # the portfolio never falls
+    assert ev["passing"] == [RUN_ID] and ev["result"] == "PASS"
+    # Flag-off promote path on the same run: worst coin, so the drawdown bar fails.
+    off = {b["name"]: b for b in rpr._evaluate_profit_bars(run_dir, RUN_ID)["bars"]}
+    assert off["max_drawdown_pct_max"]["actual"] == 30.0
+    assert off["max_drawdown_pct_max"]["result"] == "FAIL"
+
+
+def test_trade_count_still_per_coin_minimum():
+    _set_orchestrator(FULL_ON)
+    _write_bars()
+    run_dir = _single_run(good=True)
+    pr = rpr.load_yaml(run_dir / "artifacts" / "protocol_result.yaml")
+    pr["per_symbol_summary"]["ETHUSDT"]["min_trade_count"] = 10
+    rpr.save_yaml(run_dir / "artifacts" / "protocol_result.yaml", pr)
+    ev = rpr._evaluate_profit_bars_every_backtest(run_dir, RUN_ID)
+    tc = {b["name"]: b for b in ev["variants"][RUN_ID]["bars"]}["trade_count_min"]
+    assert tc["actual"] == 10 and tc["result"] == "FAIL" and tc["basis"] == "worst_coin"
+    assert ev["result"] == "FAIL"
+
+
+_EXPECTED_BASIS = {
+    "sharpe_min": "median_of_coin_median_sharpes",
+    "deflated_sharpe_threshold": "deflated_sharpe_on_campaign_trial_ledger",
+    "max_drawdown_pct_max": "portfolio_equal_weight_worst_window",
+    "trade_count_min": "worst_coin",
+    "avg_daily_return_min": "portfolio_equal_weight",
+}
+
+
+def test_basis_recorded_on_every_bar_in_the_artifact():
+    _set_orchestrator(FULL_ON)
+    _write_bars()
+    run_dir = _single_run(good=True)
+    rpr._evaluate_profit_bars_every_backtest(run_dir, RUN_ID)
+    on_disk = _pbe(run_dir)["variants"][RUN_ID]["bars"]
+    assert {b["name"]: b["basis"] for b in on_disk} == _EXPECTED_BASIS
+    # The basis names match the definitions written in the bars-file header.
+    header = (SR_ROOT / "config" / "profitability_bars.yaml").read_text(encoding="utf-8")
+    for basis in _EXPECTED_BASIS.values():
+        assert f"basis: {basis}\n" in header, basis
 
 
 def test_cr4_real_pass_without_monkeypatching_any_bar():
@@ -634,18 +785,24 @@ def test_cr6_promote_path_runs_when_flag_on_but_no_every_backtest_evaluation(mon
     run_dir = _single_run(good=True)
     calls = _spy(monkeypatch)
     assert _promote(run_dir) == "human_pause"
-    assert calls == [{"with_avg_daily_return": True}]
+    assert calls == [{"portfolio_basis": True}]
 
 
 def test_cr4_promote_path_grades_avg_daily_return_only_with_the_flag():
     _write_bars()
     run_dir = _single_run(good=True)
     _set_orchestrator(FULL_ON)
-    on = rpr._evaluate_profit_bars(run_dir, RUN_ID, with_avg_daily_return=True)
+    on = rpr._evaluate_profit_bars(run_dir, RUN_ID, portfolio_basis=True)
     off = rpr._evaluate_profit_bars(run_dir, RUN_ID)
     adr_on = {b["name"]: b for b in on["bars"]}["avg_daily_return_min"]
     adr_off = {b["name"]: b for b in off["bars"]}["avg_daily_return_min"]
     assert adr_on["result"] == "PASS" and adr_off["result"] == "NOT_EVALUABLE"
+    # Flag on: the portfolio definitions, each row self-describing. Flag off: the
+    # old rows exactly -- worst-coin drawdown, no basis key.
+    assert {b["name"]: b["basis"] for b in on["bars"]} == _EXPECTED_BASIS
+    assert all("basis" not in b for b in off["bars"])
+    dd_off = {b["name"]: b for b in off["bars"]}["max_drawdown_pct_max"]
+    assert dd_off["actual"] == 12.0 and dd_off["note"].endswith("worst symbol")
 
 
 def test_promote_path_unchanged_without_the_new_flag(monkeypatch):
