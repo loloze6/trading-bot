@@ -185,6 +185,10 @@ KB_FINDING_SCHEMA = {
     "exhausted": FLAG, "exhausted_basis": TEXT,
     "reactivation_condition": TEXT, "reactivation_consumed_by": TEXT,
     "blocked_by_feed": TEXT, "research_only": FLAG, "closes_ac4": FLAG,
+    # E-058 S2b: `false` on entries written by tools/grid_kb_writer.py (the
+    # grid's idea_status as `outcome`). An entry WITHOUT `legacy_schema: false`
+    # is legacy when read (delivery_plan_v26.md §3).
+    "legacy_schema": FLAG,
     # annotations
     "a8_4_alignment": TEXT, "audit_note": TEXT, "autopsy_note": TEXT,
     "closes_ac4_note": TEXT, "engine_provenance_caveat": TEXT,

@@ -27,8 +27,11 @@ What this module deliberately does NOT do:
   * carry retired machinery (slice 6c): no hypothesis_family, altitude,
     lineage routing, continuation or verdict-routing field. build_memory_entry
     and upsert_memory refuse an entry that contains one (RETIRED_FIELDS).
-  * the block registry, the KB mirror and the scoreboard (E-058 S2b). Their
-    fields are present with an explicit "not built" / null value.
+  * the block registry, the KB entry and the scoreboard (E-058 S2b). They
+    live in tools/block_registry.py, tools/grid_kb_writer.py and
+    tools/near_miss_scoreboard.py; the regroup_record stage fills this
+    entry's `registry` and `kb_entry_id` from their results before the
+    entry is written.
 
 Importable without the orchestrator (same convention as reader_proposals.py):
 every path is passed in by the caller, so tests' ROOT sandbox covers it.
@@ -59,6 +62,9 @@ LEGACY_NOTE = (
 
 ENGINEERING_FAULT_COMPONENT_ERROR = "component_execution_error"
 PROFIT_BARS_NOT_EVALUATED = "not evaluated before regroup"
+# memory entry `registry: {skipped: ...}` reasons (E-058 S2b; tools/block_registry.py)
+REGISTRY_SKIPPED_NOT_VALIDATED = "not_validated"
+REGISTRY_SKIPPED_NO_MANIFEST = "no_manifest"
 
 # Retired in slice 6c (roadmap v26 card G): no memory entry may carry them.
 RETIRED_FIELDS = frozenset({
@@ -407,10 +413,13 @@ def build_memory_entry(run_dir: Path, run_id: str, *, trial_sharpes, categories,
         "protocol_ref": protocol_ref,
         "timeframe": timeframe,
         "proposals": _proposals_block(run_dir, run_id, categories),
-        # the block registry is E-058 S2b
-        "registry": {"skipped": "not_built" if idea_status == "validated" else "not_validated"},
+        # Filled by the regroup_record stage from tools/block_registry.py
+        # (E-058 S2b): {"block_ids": [...]} or {"skipped": <reason>}.
+        "registry": ({"skipped": REGISTRY_SKIPPED_NOT_VALIDATED} if idea_status != "validated"
+                     else None),
         "profit_bars": None,
         "profit_bars_reason": PROFIT_BARS_NOT_EVALUATED,
+        # Filled by the stage from tools/grid_kb_writer.py (E-058 S2b).
         "kb_entry_id": None,
     }
     retired = _find_retired(entry)
@@ -446,6 +455,9 @@ def load_memory(path: Path) -> dict:
 
 
 def _atomic_write(path: Path, doc: dict) -> None:
+    """Temp file + os.replace in the same directory (also used by
+    tools/block_registry.py and tools/grid_kb_writer.py, E-058 S2b)."""
+    path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent))
     try:
@@ -461,30 +473,37 @@ def _atomic_write(path: Path, doc: dict) -> None:
 
 
 @contextlib.contextmanager
-def _memory_lock(path: Path):
-    """Exclusive lock around the read-modify-write, so two writers cannot
-    lose each other's entry. Reuses the E-011 campaign lock primitive
+def _file_lock(lock_path: Path, what: str, error_cls=None, wait_seconds: float | None = None):
+    """Exclusive lock around a read-modify-write, so two writers cannot lose
+    each other's entry. Reuses the E-011 campaign lock primitive
     (tools/campaign_lock.py: O_CREAT|O_EXCL file, cleared only when its pid
     is confirmed dead on this host or it is older than the stale threshold)
-    on its own lock file, with a bounded wait; a lock still held after
-    MEMORY_LOCK_WAIT_SECONDS raises instead of writing unlocked."""
-    lock_path = Path(path).parent / MEMORY_LOCK_FILENAME
-    deadline = time.monotonic() + MEMORY_LOCK_WAIT_SECONDS
+    on its own lock file, with a bounded wait; a lock still held after the
+    wait raises `error_cls` instead of writing unlocked. Shared with
+    tools/block_registry.py and tools/grid_kb_writer.py (E-058 S2b)."""
+    error_cls = error_cls or CampaignMemoryError
+    wait = MEMORY_LOCK_WAIT_SECONDS if wait_seconds is None else wait_seconds
+    lock_path = Path(lock_path)
+    deadline = time.monotonic() + wait
     while True:
         try:
             campaign_lock.acquire(lock_path)
             break
         except campaign_lock.CampaignLockHeld as exc:
             if time.monotonic() >= deadline:
-                raise CampaignMemoryError(
-                    f"{lock_path} still held after {MEMORY_LOCK_WAIT_SECONDS}s -- another writer "
-                    f"is updating the campaign memory (or left a live lock). Not writing unlocked. "
+                raise error_cls(
+                    f"{lock_path} still held after {wait}s -- another writer "
+                    f"is updating {what} (or left a live lock). Not writing unlocked. "
                     f"{exc}") from exc
             time.sleep(_MEMORY_LOCK_POLL_SECONDS)
     try:
         yield
     finally:
         campaign_lock.release(lock_path)
+
+
+def _memory_lock(path: Path):
+    return _file_lock(Path(path).parent / MEMORY_LOCK_FILENAME, "the campaign memory")
 
 
 def upsert_memory(path: Path, entry: dict) -> dict:
