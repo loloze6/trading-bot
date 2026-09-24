@@ -199,8 +199,8 @@
       "description": "E-056 Slice 3b IMPROVEMENT 08 (pass_through candidates only): the fully-authored strategy config, copied verbatim from research_brief.yaml/an attached candidate block. CODE-REVIEW FIX (2026-09-21): added -- hypothesis-design/SKILL.md's IMPROVEMENT 08 instructs copying this field through, but additionalProperties:false would have rejected any card that did."
     },
     "manifest": {
-      "type": "object",
-      "description": "E-056 Slice 3b IMPROVEMENT 08 (pass_through candidates only): the block manifest, copied verbatim alongside config. Same fix as config above."
+      "$ref": "block_manifest.schema.json",
+      "description": "E-056 Slice 3b IMPROVEMENT 08 (pass_through candidates only): the block manifest, copied verbatim alongside config, then written by 1b as artifacts/block_manifest.yaml. Same fix as config above. E-056 1b block manifest (code-review fix 7): $ref's the block_manifest schema so a malformed pass-through manifest is caught at the card (shape only; resolution against the config is checked in code after 1b)."
     },
     "source": {
       "type": "string",

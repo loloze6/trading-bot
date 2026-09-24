@@ -309,9 +309,9 @@ def test_registry_resolves_exactly_what_the_orchestrator_accepts(pointer):
     cfg = {"l": [10, 11], "d": {"k": 1}}
     exists = rpr._json_pointer_exists(cfg, pointer)
     try:
-        br._resolve_pointer(cfg, pointer, "where")
+        br._jp.resolve_json_pointer(cfg, pointer)  # what build_block reads fragments with
         resolved = True
-    except br.BlockRegistryError:
+    except br._jp.JsonPointerError:
         resolved = False
     assert resolved == exists
 

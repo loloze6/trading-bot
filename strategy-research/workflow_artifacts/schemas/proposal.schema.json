@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$comment": "E-046a Slice 5b-i (readers + reports consumption). Documentation/test-validation only -- no code loads this file at runtime (see strategy-research/CLAUDE.md's 'Schemas are declared but not enforced' note). Shape grounded in S1_FINDINGS.md §7's proposed schema, itself grounded against STRATEGY_DESIGN_GUIDE.md's 'Component variant patterns' section (kind:patch vocabulary) and §7c's block_manifest.yaml contract (kind:new_block vocabulary -- §7c is itself PROPOSED, NOT BUILT; a reader proposing kind:new_block is proposing IN that vocabulary, not building the manifest contract). One entry in the list written by a workflow_artifacts/skills/readers/<category>-reader/SKILL.md skill to artifacts/proposals/<category>.yaml.",
+  "$comment": "E-046a Slice 5b-i (readers + reports consumption). Documentation/test-validation only -- no code loads this file at runtime (see strategy-research/CLAUDE.md's 'Schemas are declared but not enforced' note). Shape grounded in S1_FINDINGS.md §7's proposed schema, itself grounded against STRATEGY_DESIGN_GUIDE.md's 'Component variant patterns' section (kind:patch vocabulary) and §7c's block_manifest.yaml contract (kind:new_block vocabulary -- §7c is built since 2026-09-24: stage 1b writes a run's real block_manifest.yaml, checked by tools/block_manifest.py; a reader proposing kind:new_block only sketches IN that vocabulary and writes no manifest). One entry in the list written by a workflow_artifacts/skills/readers/<category>-reader/SKILL.md skill to artifacts/proposals/<category>.yaml.",
   "title": "proposals/<category>.yaml entry",
   "description": "A single evidence-grounded proposal from one of the 5 specialist readers (profitability, trade_efficiency, forecast_power, regime_power, component_attribution). A reader proposes evidence plus a patch/new_block sketch -- it does NOT decide an idea's status (that is the grid, idea_status.yaml) and never routes. Its scores only rank candidates for the decide-next step (delivery_plan_v26.md slice 6b; E-046a realignment 2026-09-23). Loaded and validated by tools/reader_proposals.py.",
   "type": "object",
@@ -34,7 +34,7 @@
     },
     "block": {
       "type": "object",
-      "description": "Required when kind=new_block; must be absent when kind=patch. A block_manifest.yaml-shaped sketch (STRATEGY_DESIGN_GUIDE.md §7c, itself PROPOSED-NOT-BUILT -- nothing reads block_manifest.yaml today; this field exists so a human/5b-ii reviewer has a concrete sketch, not so any code can consume it).",
+      "description": "Required when kind=new_block; must be absent when kind=patch. A block_manifest.yaml-shaped sketch (STRATEGY_DESIGN_GUIDE.md §7c, built: stage 1b writes the real block_manifest.yaml and tools/block_manifest.py checks it; this proposal field is only a sketch for a human/5b-ii reviewer -- no code registers it as a block).",
       "required": ["kind", "config_paths", "rationale"],
       "additionalProperties": false,
       "properties": {
