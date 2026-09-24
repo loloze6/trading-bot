@@ -105,7 +105,7 @@ def write_kb_entry(kb_path: Path, entry: dict, *, root: Path, recompute_views=No
     (run_phase1_research._recompute_kb_views), as the legacy writer does."""
     kb_path = Path(kb_path)
     if not kb_path.exists():
-        print(f"⚠️  [E-058] KB: {kb_path} not found -- the grid KB entry for "
+        print(f"WARNING [E-058] KB: {kb_path} not found -- the grid KB entry for "
               f"{entry['evidence_runs'][0]} is NOT written (the legacy writer skips the same way). "
               f"Memory records kb_entry_id: null.")
         return None
@@ -128,9 +128,13 @@ def write_kb_entry(kb_path: Path, entry: dict, *, root: Path, recompute_views=No
                 f"{kb_path}: id {entry['id']!r} is held by an entry this writer did not write "
                 f"(legacy_schema is not false or evidence_runs differ) -- not overwriting it")
         # Closed schema + provenance, for the new entry and every existing one
-        # (a hand-edited entry must not slip in behind this write).
+        # (a hand-edited entry must not slip in behind this write) -- except
+        # this writer's own entry being replaced: its citation points at the
+        # run's idea_status.yaml, which the re-run has already rewritten.
         _vce.validate_verdict_provenance(entry, entry_ref=f"KB finding {entry['id']!r}", root=root)
-        for f in findings:
+        for i, f in enumerate(findings):
+            if idx and i == idx[0]:
+                continue
             _vce.validate_verdict_provenance(f, entry_ref=f"KB finding {f.get('id')!r}", root=root)
         if idx:
             findings[idx[0]] = entry
@@ -139,5 +143,5 @@ def write_kb_entry(kb_path: Path, entry: dict, *, root: Path, recompute_views=No
         if recompute_views is not None:
             recompute_views(kb)
         _cm._atomic_write(kb_path, kb)
-    print(f"📚 [E-058] KB: {entry['id']} (outcome={entry['outcome']}, legacy_schema=false) -> {kb_path}")
+    print(f"[E-058] KB: wrote {entry['id']} (outcome={entry['outcome']}, legacy_schema=false) -> {kb_path}")
     return entry["id"]

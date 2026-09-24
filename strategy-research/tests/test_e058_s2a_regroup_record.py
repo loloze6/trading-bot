@@ -421,10 +421,11 @@ def test_entry_flag_off_column_shape(idea_status):
     assert e["trial_ids"] == [RUN_ID]  # backtest rows only; not the prescreen row, not run_9800
     assert e["protocol_ref"] == "protocols/p.json"
     assert e["timeframe"] == "1h"
-    assert e["registry"] == ({"skipped": "not_built"} if idea_status == "validated"
+    # E-058 S2b: a validated run without block_manifest.yaml registers nothing
+    assert e["registry"] == ({"skipped": "no_manifest"} if idea_status == "validated"
                              else {"skipped": "not_validated"})
     assert e["profit_bars"] is None and e["profit_bars_reason"] == "not evaluated before regroup"
-    assert e["kb_entry_id"] is None
+    assert e["kb_entry_id"] is None  # no KB file in the sandbox: skipped loudly (S2b)
 
 
 def test_entry_variant_loop_shape():

@@ -3106,7 +3106,11 @@ def determine_post_specialist_readers_route(path: Path, run_id: str, *,
 # trial rows (protocol_execution already recorded them; the memory only reads
 # their ids). No refine/pivot/escalate, circuit breaker, hypothesis_family,
 # altitude or continuation field is read or written (retired in slice 6c).
-# The block registry, the grid-based KB writer and the scoreboard are S2b.
+# E-058 S2b adds, under the same flag: the block registry
+# (tools/block_registry.py, validated + manifest only, append-only), one
+# grid-based KB entry per non-fault run (tools/grid_kb_writer.py,
+# legacy_schema: false, never merged into a legacy entry), the near-miss
+# scoreboard rebuild, and campaign-review's memory input.
 # ---------------------------------------------------------------------------
 
 _REGROUP_RECORD_HANDOFF = "specialist_readers_to_regroup_record.yaml"
@@ -3196,10 +3200,16 @@ def _run_regroup_record_stage(run_id: str, run_dir: Path) -> dict:
     errors = _protocol_component_errors(run_dir)
     idea = None if errors else _load_idea_status(run_dir, run_id)
     cm = _campaign_memory_module()
+    import block_registry as _br  # tools/ sibling, on sys.path via _campaign_memory_module
+    import grid_kb_writer as _kbw
     memory_path = _campaign_memory_path()
     if errors:
         try:
             entry = cm.build_fault_entry(run_dir, run_id, errors)
+            # E-058 S2b: a fault run never registers a block or writes a KB
+            # entry; this only refuses (loudly) to hide a block the same run
+            # registered on an earlier, validated pass.
+            _br.record_run(_block_registry_path(), run_dir, entry, root=ROOT)
             cm.upsert_memory(memory_path, entry)
             print(f"📒 [E-058] campaign memory: {run_id} recorded as engineering_fault="
                   f"{entry['engineering_fault']} -> {memory_path}")
@@ -3215,10 +3225,72 @@ def _run_regroup_record_stage(run_id: str, run_dir: Path) -> dict:
             categories=_reader_categories(),
             protocol_root=ROOT,
         )
+        # E-058 S2b, in this order so a failure leaves nothing half-recorded
+        # that a re-run cannot redo: registry (append-only; conflict raises
+        # BEFORE the memory entry is replaced), KB entry (replaced on re-run),
+        # memory entry (replaced on re-run), then the scoreboard (derived).
+        entry["registry"] = _br.record_run(_block_registry_path(), run_dir, entry, root=ROOT)
+        entry["kb_entry_id"] = _kbw.write_kb_entry(
+            _KB_PATH, _kbw.build_kb_entry(entry), root=ROOT, recompute_views=_recompute_kb_views)
         cm.upsert_memory(memory_path, entry)
         print(f"📒 [E-058] campaign memory: {run_id} recorded "
               f"(idea_status={entry['idea_status']}) -> {memory_path}")
+        _write_near_miss_scoreboard()
     return {"entry": entry, "component_errors": errors, "idea": idea}
+
+
+def _block_registry_path() -> Path:
+    """Resolved from ROOT at call time, so the test sandbox's ROOT covers it."""
+    return ROOT / "campaign_record" / "block_registry.yaml"
+
+
+def _near_miss_scoreboard_dir() -> Path:
+    """The scoreboard's tracked home (E-018), resolved from ROOT at call time --
+    never near_miss_scoreboard.STRATEGY_RESEARCH_ROOT, which the sandbox does
+    not cover (S1_FINDINGS.md §1.4)."""
+    return ROOT / "engineering" / "roadmap" / "E-018" / "artifacts"
+
+
+def _write_near_miss_scoreboard() -> None:
+    """E-058 S2b: the scoreboard's documented hook. Idea-generation raw
+    material only; nothing on the route reads it (firewall, by review)."""
+    import near_miss_scoreboard as _nms  # tools/ sibling
+    rows = _nms.build_scoreboard(ROOT / "runs", ROOT / "config" / "criterion_menu.yaml")
+    yaml_path, _ = _nms.write_scoreboard(rows, _near_miss_scoreboard_dir())
+    print(f"🗒️  [E-058] near-miss scoreboard rebuilt ({len(rows)} run dirs) -> {yaml_path}")
+
+
+# E-058 S2b: campaign-review's memory input, added only under the flag. Not in
+# the handoff template's required_inputs, because ensure_files would then fail
+# every flag-off run, which has no memory file (S1_FINDINGS.md §6).
+_REGROUP_RECORD_CONTEXT_STAGES = {"campaign_review"}
+
+
+def _apply_regroup_record_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
+    """Flag OFF (the default): no-op, the handoff dict is never touched, so
+    the assembled prompt is byte-identical. Flag on: campaign_review gets
+    campaign_record/campaign_memory.yaml as a required input."""
+    if stage_name not in _REGROUP_RECORD_CONTEXT_STAGES:
+        return
+    if not _regroup_record_enabled():
+        return
+    required = handoff.setdefault("required_inputs", [])
+    path = "../../campaign_record/campaign_memory.yaml"
+    if any(req.get("path") == path for req in required):
+        return
+    required.append({
+        "path": path,
+        "reason": ("E-058: the per-run campaign memory (orchestrator.regroup_record.enabled) -- "
+                   "the complete per-run list under this flag (campaign_state.yaml runs is "
+                   "incomplete under it). For every run you discuss, cite its idea_status "
+                   "(validated|refuted|inconclusive -- the idea's status comes ONLY from the "
+                   "grid; never restate or override it), grid.counts, registry (block_ids or "
+                   "skipped reason) and proposals (refs/ids/count only; reader scores decide "
+                   "nothing here). An entry with engineering_fault is a broken run, not a "
+                   "finding. Runs before the flag are absent; their history is "
+                   "campaign_knowledge_base.yaml, where an entry without legacy_schema: false "
+                   "is legacy."),
+    })
 
 
 def _apply_config_direct_authoring_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
@@ -3977,6 +4049,9 @@ async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | 
 
     # E-056 Slice 3b: criterion-menu/cost-model/base-config file-presence signals, off by default (see helper docstring above).
     _apply_config_direct_authoring_context(stage_name, handoff, RUN_DIR)
+
+    # E-058 S2b: campaign-review's memory input, off by default (see helper docstring above).
+    _apply_regroup_record_context(stage_name, handoff, RUN_DIR)
 
     # Select engine from handoff file, default to Claude if not specified
     engine = handoff.get("assigned_engine", "claude")

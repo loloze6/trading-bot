@@ -288,12 +288,12 @@ def record_run(path: Path, run_dir: Path, entry: dict, *, root: Path) -> dict | 
     manifest = load_manifest(run_dir)
     if manifest is None:
         _append(path, run_id, [])
-        print(f"⚠️  [E-058] block registry: {run_id} is VALIDATED but has no "
+        print(f"WARNING [E-058] block registry: {run_id} is VALIDATED but has no "
               f"artifacts/{MANIFEST_FILENAME} -- nothing says which part of its config is the "
               f"block, so NO block is registered (memory: registry.skipped=no_manifest). "
               f"Teaching strategy_config_authoring to write the manifest is a separate ticket.")
         return {"skipped": _cm.REGISTRY_SKIPPED_NO_MANIFEST}
     block = build_block(run_dir, entry, manifest, root=root)
     _append(path, run_id, [block])
-    print(f"🧱 [E-058] block registry: {block['block_id']} ({block['kind']}) -> {path}")
+    print(f"[E-058] block registry: registered {block['block_id']} ({block['kind']}) -> {path}")
     return {"block_ids": [block["block_id"]]}

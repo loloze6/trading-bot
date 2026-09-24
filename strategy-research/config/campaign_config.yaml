@@ -613,7 +613,11 @@ orchestrator:
       # the grid's cells, per-variant status, trial ids (read only -- it writes
       # NO trial rows), proposal references (never scores), and
       # engineering_fault for a component-error run. Old runs are not
-      # backfilled. Block registry, KB writer and scoreboard are E-058 S2b.
+      # backfilled. E-058 S2b, same flag: validated runs with a
+      # block_manifest.yaml append to campaign_record/block_registry.yaml
+      # (append-only), every non-fault run adds one legacy_schema: false entry
+      # to campaign_knowledge_base.yaml, the near-miss scoreboard is rebuilt,
+      # and campaign_review gets the memory file as an input.
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------

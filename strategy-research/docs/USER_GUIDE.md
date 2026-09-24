@@ -1246,9 +1246,9 @@ trial_ids              # this run's backtest / backtest_failed rows in trial_sha
 protocol_ref           # protocol_result.yaml's protocol_file
 timeframe              # hypothesis_card.yaml (string or null; anything else raises)
 proposals: [{category, ref, proposal_ids, count}]   # never scores
-registry: {skipped: not_built|not_validated}   # block registry is E-058 S2b
+registry: {block_ids: [...]} | {skipped: no_manifest|not_validated}   # E-058 S2b, see item 8
 profit_bars: null, profit_bars_reason: "not evaluated before regroup"
-kb_entry_id: null      # grid-based KB writer is E-058 S2b
+kb_entry_id: grid_<run_id> | null   # E-058 S2b, see item 9; null only when the KB file is absent
 ```
 
 A run with component errors gets the fault-only form instead:
@@ -1285,6 +1285,49 @@ engineering_fault_detail}`.
 7. **Not stopped by the loop-top token budget check.** It is a zero-cost tool
    stage that carries the route flag-off runs take in the readers' own
    iteration; the next stage is budget-checked as usual.
+8. **Block registry (E-058 S2b, `tools/block_registry.py`).** A run whose
+   grid is `validated`, with no engineering fault, AND with
+   `artifacts/block_manifest.yaml` (`{block: {kind: forecast|regime,
+   config_paths: [JSON pointers]}}`) appends one block to
+   `campaign_record/block_registry.yaml` (`schema_version`, `revision`,
+   `updated_at`, `blocks: [...]`; schema
+   `workflow_artifacts/schemas/block_registry.schema.json`). A block holds
+   `block_id` (`<hypothesis_id>:<run_id>`), `kind`, `config_fragment` (the
+   pointers' values in the tested base config, whose sha256 must equal the
+   base variant's trial `forecast_hash`), `regime_assignment`,
+   `criteria_passed`, `variants_passed`, `numbers` (grid cells),
+   `symbols_tested` (informational: a block is usable on any coin),
+   `correlation_to_composite: null` and `residual_ic: null` (slice 7),
+   `source_config_ref`, `source_config_sha256`, `validated_by_run`,
+   `registered_at`. No manifest: nothing is registered, the memory says
+   `registry: {skipped: no_manifest}` and a WARNING line is printed (nothing
+   writes the manifest yet; teaching stage 1b to write it is its own ticket).
+   The file is append-only: a re-run that would register a different block,
+   or no block, for a run that already registered one stops before the memory
+   entry is replaced; a person decides. Same lock and atomic write as the
+   memory.
+9. **Grid KB entry (E-058 S2b, `tools/grid_kb_writer.py`).** Every non-fault
+   run adds one entry `grid_<run_id>` to `campaign_knowledge_base.yaml`:
+   `outcome: <idea_status>`, `legacy_schema: false`, and for validated/refuted
+   `verdict_status: gated` + `pass_rule_evaluation_ref:
+   runs/<id>/artifacts/idea_status.yaml` (which carries `result: PASS|FAIL`).
+   It never merges into or closes another entry (a legacy entry with the same
+   `hypothesis_id` is untouched, so the F09 reactivation closure is never
+   reached); a re-run replaces only its own entry. Every finding is
+   re-validated before the write (closed schema + provenance); a malformed KB
+   stops the run. An absent KB file is skipped with a WARNING line, as the
+   legacy writer does. Entries without `legacy_schema: false` are legacy.
+10. **Near-miss scoreboard (E-058 S2b).** After the memory is written the stage
+   rebuilds `engineering/roadmap/E-018/artifacts/near_miss_scoreboard.{yaml,md}`
+   (`tools/near_miss_scoreboard.py::build_scoreboard` + `write_scoreboard`;
+   rows from `grid_evaluation.yaml` are tier `grid`, `legacy: false`, near
+   miss = closest failing cell; older rows are `legacy: true`). Nothing on the
+   route reads it. Each run therefore changes that tracked file.
+11. **Campaign-review input (E-058 S2b).** Only with this flag on,
+   `campaign_review`'s handoff gains `../../campaign_record/campaign_memory.yaml`
+   as a required input (`_apply_regroup_record_context`) whose reason tells the
+   model which fields to cite. The template and `SKILL.md` are unchanged, so
+   the flag-off prompt is byte-identical.
 
 ---
 
