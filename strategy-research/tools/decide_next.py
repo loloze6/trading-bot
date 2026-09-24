@@ -43,7 +43,20 @@ What decides, in order:
      never collapse into them) and are ranked: confidence_real desc,
      distance_to_profitable desc, cost (backtests) asc, candidate_id asc.
      There is NO lineage-depth demotion (operator decision 6, dropped).
-  4. Nothing scheduled and nothing eligible -> stop.
+  4. Nothing scheduled and nothing eligible -> R2 (E-059 S2b): for every
+     brief whose owner entry is `brief_status: open`, ask step 1a for more
+     hypotheses -- reuse that brief's waiting request, or mint one
+     `<owner>__more_<n>` (origin: brief). Exactly one request is `ready`, the
+     rest `queued`. Legacy briefs (no `brief_status`, operator decision 7)
+     and exhausted ones never trigger R2.
+  5. Nothing scheduled, nothing eligible and no open brief -> stop.
+
+E-059 S2b adds the brief's extra hypotheses (card M, operator decisions 4 and
+9) as candidates next to the reader proposals: a `queued` queue entry with
+`origin: brief` and a `card_ref` (the card 1a already wrote, so it skips
+authoring when picked), ranked on the three anchored scores step 1a wrote
+for it (rubric brief-card-v1, runs/<run>/artifacts/queued_hypotheses.yaml),
+with the same key as a proposal. Its pick flips it `queued` -> `ready`.
 
 What this module deliberately does NOT do:
   * decide or change an idea's status. The status comes only from the grid
@@ -59,10 +72,11 @@ What this module deliberately does NOT do:
   * refine/pivot/escalate/kill routing, the circuit breaker,
     hypothesis_family, altitude_history, continuation children (retired in
     slice 6c). The record refuses to carry any of them.
-  * R1 (composition brief): recorded as a no-op until slice 7. R2 (ask 1a
-    for more hypotheses on open briefs), brief exhaustion and multi-card
-    briefs: E-059 S2b.
-  * write trial rows, touch the holdout, or write any file. The caller writes.
+  * R1 (composition brief): recorded as a no-op until slice 7.
+  * decide a brief is exhausted. Only step 1a says so (brief_status.yaml ->
+    the run's completed_brief_exhausted outcome); the caller flips the owner.
+  * write trial rows, touch the holdout, or write any file. The caller writes
+    (including the one-time "[obsolete]" title on legacy briefs).
 
 Importable without the orchestrator: every path is passed in by the caller.
 """
@@ -101,6 +115,24 @@ _OPERATOR_ORIGINS = (None, "external")
 # '-' only (no '/', '\\', '..', '#', '.').
 _SAFE_ID_RE = re.compile(r"[A-Za-z0-9_-]+")
 _FIELD_PART_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)((?:\[\d+\])*)$")
+
+# E-059 S2b -- briefs (card M) and R2.
+ORIGIN_BRIEF = "brief"
+BRIEF_OPEN = "open"
+BRIEF_EXHAUSTED = "exhausted"
+# The run's terminal pending_stage (and queue outcome) when step 1a reports the
+# brief exhausted. Registered in verdict_criteria_evaluator._NON_VERDICT_OUTCOMES.
+BRIEF_EXHAUSTED_OUTCOME = "completed_brief_exhausted"
+# Operator decision 7: the one-time marker written on a legacy brief's queue
+# entry `title` (never in the brief file).
+OBSOLETE_TITLE_TAG = "[obsolete]"
+# The anchored rubric step 1a scores extra cards on (hypothesis-design
+# BRIEF_HYPOTHESES.md, injected only under the flag).
+BRIEF_CARD_RUBRIC = "brief-card-v1"
+QUEUED_CARDS_DIR = "campaign_record/queued_cards"
+QUEUED_HYPOTHESES_FILE = "queued_hypotheses.yaml"
+# Statuses in which an R2 request is still outstanding (not yet run to the end).
+_OUTSTANDING_STATUSES = ("queued", "ready", "in_progress")
 
 
 class DecideNextError(ValueError):
@@ -296,6 +328,183 @@ def _load_yaml_opt(path: Path):
 
 
 # ---------------------------------------------------------------------------
+# E-059 S2b -- briefs: owners, legacy briefs, extra cards, R2 requests
+# ---------------------------------------------------------------------------
+
+def _entries(queue) -> list:
+    return [e for e in ((queue or {}).get("queue") or []) if isinstance(e, dict)]
+
+
+def is_brief_owner(entry: dict) -> bool:
+    """The entry that owns a brief carries `brief_status` (open|exhausted).
+    Written by `register` while the flag is on; never on an agent entry."""
+    return entry.get("brief_status") in (BRIEF_OPEN, BRIEF_EXHAUSTED)
+
+
+def is_card_entry(entry: dict) -> bool:
+    """A brief's extra hypothesis: its card was written by 1a (`card_ref`)."""
+    return entry.get("origin") == ORIGIN_BRIEF and bool(entry.get("card_ref"))
+
+
+def is_r2_request(entry: dict) -> bool:
+    """An R2 request: ask 1a for more hypotheses on its owner's brief."""
+    return entry.get("origin") == ORIGIN_BRIEF and not entry.get("card_ref")
+
+
+def is_legacy_brief(entry: dict) -> bool:
+    """Operator decision 7: an operator-registered entry (no origin, or
+    `external`) with no `brief_status` is a legacy brief. It never triggers R2."""
+    return entry.get("origin") in _OPERATOR_ORIGINS and "brief_status" not in entry
+
+
+def needs_obsolete_tag(entry: dict) -> bool:
+    """True for a legacy brief whose `title` does not carry the marker yet,
+    so the marker is written exactly once."""
+    return is_legacy_brief(entry) and not str(entry.get("title") or "").startswith(
+        OBSOLETE_TITLE_TAG)
+
+
+def obsolete_title(entry: dict, heading) -> str:
+    """'[obsolete] <existing title | brief heading | entry id>'."""
+    base = entry.get("title") or (heading.strip() if isinstance(heading, str) and heading.strip()
+                                  else None) or entry.get("id")
+    return f"{OBSOLETE_TITLE_TAG} {base}"
+
+
+def brief_heading(root: Path, brief_path) -> str | None:
+    """The first markdown '# ' heading below a brief's frontmatter (read only;
+    the file is never written). None when absent or unreadable."""
+    ref = normalize_ref(brief_path)
+    if ref is None:
+        return None
+    path = Path(root) / ref
+    if not path.is_file():
+        return None
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.startswith("# "):
+            return line[2:].strip() or None
+    return None
+
+
+def brief_owner(entry: dict, entries: list) -> dict | None:
+    """The entry owning `entry`'s brief: the entry itself when it carries
+    `brief_status`; for an origin-brief entry, the one entry with the same
+    brief_path that carries it; else None (a legacy brief or a reader
+    candidate). Two owners of one brief file raises."""
+    if is_brief_owner(entry):
+        return entry
+    if entry.get("origin") != ORIGIN_BRIEF:
+        return None
+    ref = normalize_ref(entry.get("brief_path"))
+    owners = [e for e in entries if is_brief_owner(e) and normalize_ref(e.get("brief_path")) == ref]
+    if len(owners) > 1:
+        raise DecideNextError(f"brief {ref!r} has {len(owners)} owner entries "
+                              f"{[e.get('id') for e in owners]} carrying brief_status")
+    return owners[0] if owners else None
+
+
+def validate_card_scores(item, where: str) -> dict:
+    """{confidence_real, distance_to_profitable, mechanism_plausibility (ints
+    0..3), model_id, rubric_version (non-empty strings)} -- the reader
+    proposals' score shape. Raises DecideNextError otherwise."""
+    if not isinstance(item, dict):
+        raise DecideNextError(f"{where}: scores are not a mapping")
+    scores = item.get("scores")
+    if not isinstance(scores, dict) or set(scores) != set(_rp.SCORE_KEYS):
+        raise DecideNextError(f"{where}: scores must have exactly {list(_rp.SCORE_KEYS)}")
+    for key in _rp.SCORE_KEYS:
+        v = scores[key]
+        if isinstance(v, bool) or not isinstance(v, int) or not 0 <= v <= 3:
+            raise DecideNextError(f"{where}: scores.{key}={v!r} is not an integer in 0..3")
+    for key in ("model_id", "rubric_version"):
+        if not (isinstance(item.get(key), str) and item[key].strip()):
+            raise DecideNextError(f"{where}: {key} must be a non-empty string")
+    return {**{k: scores[k] for k in _rp.SCORE_KEYS},
+            "model_id": item["model_id"], "rubric_version": item["rubric_version"]}
+
+
+def _card_source_run(card_ref: str) -> str:
+    """runs id from 'campaign_record/queued_cards/<run_id>/<file>'."""
+    ref = normalize_ref(card_ref) or ""
+    prefix = QUEUED_CARDS_DIR + "/"
+    parts = ref[len(prefix):].split("/") if ref.startswith(prefix) else []
+    if len(parts) != 2 or not _SAFE_ID_RE.fullmatch(parts[0]):
+        raise DecideNextError(f"card_ref {card_ref!r} is not '{QUEUED_CARDS_DIR}/<run_id>/<card>'")
+    return parts[0]
+
+
+def load_queued_card(root: Path, card_ref: str) -> dict:
+    """{source_run, hypothesis_id, scores} of one queued card, from its source
+    run's artifacts/queued_hypotheses.yaml (written by the split under the
+    flag). A card with no record or malformed scores raises: scores are 1a's
+    output, and a card that cannot be ranked must stop loudly."""
+    run_id = _card_source_run(card_ref)
+    path = Path(root) / "runs" / run_id / "artifacts" / QUEUED_HYPOTHESES_FILE
+    doc = _load_yaml_opt(path)
+    cards = doc.get("cards") if isinstance(doc, dict) else None
+    ref = normalize_ref(card_ref)
+    match = [c for c in (cards or []) if isinstance(c, dict) and normalize_ref(c.get("card_ref")) == ref]
+    if len(match) != 1:
+        raise DecideNextError(f"{path}: {len(match)} record(s) for card {ref!r} (expected 1)")
+    return {"source_run": run_id, "hypothesis_id": match[0].get("hypothesis_id"),
+            "scores": validate_card_scores(match[0], f"{path} card {ref}")}
+
+
+def brief_protocol_cost(root: Path, brief_path):
+    """(backtests, basis) from a brief's pinned protocol file
+    (machine_constraints.protocol_ref: its windows x symbols x N_VARIANTS), or
+    (None, reason) when it cannot be resolved -- a null cost ranks last."""
+    ref = normalize_ref(brief_path)
+    path = Path(root) / ref if ref else None
+    if path is None or not path.is_file():
+        return None, "brief file not found"
+    text = path.read_text(encoding="utf-8")
+    m = re.match(r"\A---\s*\n(.*?\n)---\s*\n", text, re.DOTALL)
+    front = (yaml.safe_load(m.group(1)) or {}) if m else {}
+    mc = front.get("machine_constraints") if isinstance(front, dict) else None
+    pref = normalize_ref((mc or {}).get("protocol_ref")) if isinstance(mc, dict) else None
+    if not pref or not (Path(root) / pref).is_file():
+        return None, "the brief pins no readable protocol_ref"
+    ptext = (Path(root) / pref).read_text(encoding="utf-8")
+    proto = json.loads(ptext) if pref.endswith(".json") else yaml.safe_load(ptext)
+    windows = proto.get("windows") if isinstance(proto, dict) else None
+    symbols = proto.get("symbols") if isinstance(proto, dict) else None
+    if not isinstance(windows, list) or not windows or not isinstance(symbols, list) or not symbols:
+        return None, f"{pref} has no windows/symbols list"
+    return (len(windows) * N_VARIANTS * len(symbols),
+            f"{len(windows)} windows x {N_VARIANTS} variants x {len(symbols)} symbol(s) "
+            f"x {SECONDS_PER_BACKTEST} s ({COST_BASIS_SOURCE}; protocol {pref})")
+
+
+def brief_hypothesis_ids(root: Path, queue, brief_path) -> list:
+    """Every hypothesis_id already produced from one brief file: the card of
+    each run of every entry sharing that brief_path, and each queued card not
+    yet run. Handed to step 1a on an R2 request so it does not repeat them."""
+    ref = normalize_ref(brief_path)
+    found = set()
+    for e in _entries(queue):
+        if normalize_ref(e.get("brief_path")) != ref:
+            continue
+        paths = [Path(root) / "runs" / r / "artifacts" / "hypothesis_card.yaml"
+                 for r in (e.get("run_ids") or [])]
+        if e.get("card_ref") and not e.get("run_ids"):
+            paths.append(Path(root) / normalize_ref(e["card_ref"]))
+        for p in paths:
+            card = _load_yaml_opt(p)
+            hid = card.get("hypothesis_id") if isinstance(card, dict) else None
+            if isinstance(hid, str) and hid.strip():
+                found.add(hid.strip())
+    return sorted(found)
+
+
+def _next_request_id(owner_id: str, taken: set) -> str:
+    n = 1
+    while f"{owner_id}__more_{n}" in taken:
+        n += 1
+    return f"{owner_id}__more_{n}"
+
+
+# ---------------------------------------------------------------------------
 # Loader
 # ---------------------------------------------------------------------------
 
@@ -351,7 +560,16 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
     existing_briefs = (sorted(p.name for p in briefs_dir.iterdir() if p.is_file())
                        if briefs_dir.exists() else [])
 
+    # E-059 S2b: every waiting extra card (queued, origin brief, card_ref).
+    brief_cards = {}
+    for e in _entries(queue):
+        if is_card_entry(e) and e.get("status") == "queued":
+            card = load_queued_card(root, e["card_ref"])
+            backtests, basis = brief_protocol_cost(root, e.get("brief_path"))
+            brief_cards[e["id"]] = {**card, "cost_backtests": backtests, "cost_basis": basis}
+
     return {
+        "brief_cards": brief_cards,
         "memory": memory,
         "protocol_specs": specs,
         "existing_candidate_briefs": existing_briefs,
@@ -498,6 +716,95 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
     }
 
 
+def _card_candidate(entry: dict, info: dict, owner) -> dict:
+    """A brief's extra hypothesis (card M) as a candidate: its card is already
+    written, so there is no config to hash and no novelty key before 1b; its
+    feasibility is decided by step 3's data gate, as for a sketch. Always
+    eligible: scores only rank (decision 4), they never exclude an idea."""
+    backtests = info.get("cost_backtests")
+    return {
+        "_collapse_key": ("card", entry["id"]),
+        "candidate_id": entry["id"],
+        "origin": ORIGIN_BRIEF,
+        "kind": "card",
+        "category": None,
+        "source_run": info["source_run"],
+        "parent_hypothesis_id": None,
+        "hypothesis_id": info.get("hypothesis_id"),
+        "proposal_ref": None,
+        "card_ref": entry["card_ref"],
+        "brief_owner": owner.get("id") if owner else None,
+        "collapsed_sources": [],
+        "scores": dict(info["scores"]),
+        "resolved_config_sha256": None,
+        "gates": {
+            "novelty": {"exact_match": "NOT_APPLICABLE", "matched_runs": [],
+                        "note": "no config until 1b authors it",
+                        "digest_advisory": {"outcome": "not_available", "family": None,
+                                            "family_confidence": None, "run_ids": []}},
+            "feasibility": {"result": "UNKNOWN",
+                            "reasons": ["config authored at 1b; step 3's data gate stays binding"]},
+        },
+        "eligible": True,
+        "cost": {
+            "backtests": backtests,
+            "seconds_estimate": (round(backtests * SECONDS_PER_BACKTEST)
+                                 if backtests is not None else None),
+            "basis": info.get("cost_basis") or "unresolved",
+        },
+        "rank": None,
+    }
+
+
+def _r2(entries: list, *, select: bool) -> dict:
+    """R2 (S1_FINDINGS_6B.md §4.3). `select` is False when something is
+    already scheduled or eligible: the rule is then only recorded. When it
+    fires: per open brief (owner priority, then id), its outstanding request
+    is reused or a new `<owner>__more_<n>` is minted; the first becomes
+    `ready`, every other one `queued`."""
+    open_owners = sorted((e for e in entries if e.get("brief_status") == BRIEF_OPEN),
+                         key=lambda e: (e.get("priority", 999), e.get("id")))
+    out = {
+        "fired": False,
+        "open_briefs": [e["id"] for e in open_owners],
+        "exhausted_briefs": sorted(e["id"] for e in entries
+                                   if e.get("brief_status") == BRIEF_EXHAUSTED),
+        "legacy_briefs": sorted(e["id"] for e in entries if is_legacy_brief(e)),
+        "enqueued": [],
+        "ready": None,
+        "reason": "",
+    }
+    if not select:
+        out["reason"] = "not needed: the scheduler has an entry to run, or a candidate is eligible"
+        return out
+    if not open_owners:
+        out["reason"] = ("no open brief (every brief with a brief_status is exhausted; legacy "
+                         "briefs never trigger R2, operator decision 7)")
+        return out
+    taken = {e.get("id") for e in entries}
+    requests = []  # (entry_id, owner_id, new)
+    for owner in open_owners:
+        mine = [e for e in entries if is_r2_request(e) and brief_owner(e, entries) is owner]
+        waiting = [e for e in mine if e.get("status") in _OUTSTANDING_STATUSES]
+        if waiting:
+            requests.append((waiting[0]["id"], owner["id"], False))
+        else:
+            rid = _next_request_id(owner["id"], taken)
+            taken.add(rid)
+            requests.append((rid, owner["id"], True))
+    out.update({
+        "fired": True,
+        "enqueued": [{"entry_id": rid, "owner": oid,
+                      "status": "ready" if i == 0 else "queued"}
+                     for i, (rid, oid, new) in enumerate(requests) if new],
+        "ready": requests[0][0],
+        "reason": (f"nothing scheduled and no eligible candidate: ask step 1a for more hypotheses "
+                   f"on {len(open_owners)} open brief(s)"),
+    })
+    out["_requests"] = requests
+    return out
+
+
 def _score_key(c: dict) -> tuple:
     return (-c["scores"]["confidence_real"], -c["scores"]["distance_to_profitable"],
             c["candidate_id"])
@@ -561,8 +868,9 @@ def decide(inputs: dict, *, now: str, trigger: dict, select_entry=None) -> dict:
     scheduler's own rule (run_campaign._select_entry; default: the mirror
     above). `picked` is always what that rule will run next: an existing
     in_progress or ready entry if there is one (nothing is minted), else the
-    minted top candidate (the only ready entry, so the rule picks it), else a
-    stop."""
+    top candidate -- a reader proposal to mint, or a waiting extra card to
+    flip ready (either way the only ready entry, so the rule picks it) --,
+    else R2's ready request (E-059 S2b), else a stop (no open brief left)."""
     select_entry = select_entry or select_entry_rule
     memory = inputs["memory"]
     queue = inputs["queue"]
@@ -580,6 +888,15 @@ def decide(inputs: dict, *, now: str, trigger: dict, select_entry=None) -> dict:
             if ref in named:
                 continue  # already in the queue: out of the pool (§3.7)
             cands.append(_candidate(run_id, entry, src, cat, p, inputs, exact))
+    # E-059 S2b: a brief's waiting extra cards, ranked with the proposals.
+    entries = _entries(queue)
+    brief_cards = inputs.get("brief_cards") or {}
+    for e in entries:
+        if is_card_entry(e) and e.get("status") == "queued":
+            if e["id"] not in brief_cards:
+                raise DecideNextError(f"queued card entry {e['id']!r} has no loaded card record "
+                                      f"(load_inputs reads {QUEUED_HYPOTHESES_FILE})")
+            cands.append(_card_candidate(e, brief_cards[e["id"]], brief_owner(e, entries)))
     # Split by eligibility FIRST; collapse only among eligible candidates.
     eligible = sorted(_collapse([c for c in cands if c["eligible"]]), key=rank_key)
     for i, c in enumerate(eligible, 1):
@@ -600,19 +917,36 @@ def decide(inputs: dict, *, now: str, trigger: dict, select_entry=None) -> dict:
             picked = {"queue_entry_id": scheduled["id"], "why": why}
     elif eligible:
         top = eligible[0]
-        picked = {
-            "candidate_id": top["candidate_id"],
-            "queue_entry_id": top["candidate_id"],
-            "brief_path": f"{CANDIDATE_BRIEFS_DIR}/{top['candidate_id']}.md",
-            "why": (f"rank 1 of {len(eligible)} eligible: confidence_real="
-                    f"{top['scores']['confidence_real']}, distance_to_profitable="
-                    f"{top['scores']['distance_to_profitable']}, backtests="
-                    f"{top['cost']['backtests']}"),
-        }
-    else:
+        why = (f"rank 1 of {len(eligible)} eligible: confidence_real="
+               f"{top['scores']['confidence_real']}, distance_to_profitable="
+               f"{top['scores']['distance_to_profitable']}, backtests="
+               f"{top['cost']['backtests']}")
+        if top["origin"] == ORIGIN_BRIEF:
+            # A waiting extra card: flipped queued -> ready by the caller.
+            picked = {"candidate_id": top["candidate_id"], "queue_entry_id": top["candidate_id"],
+                      "card_ref": top["card_ref"], "why": why}
+        else:
+            picked = {
+                "candidate_id": top["candidate_id"],
+                "queue_entry_id": top["candidate_id"],
+                "brief_path": f"{CANDIDATE_BRIEFS_DIR}/{top['candidate_id']}.md",
+                "why": why,
+            }
+    r2 = _r2(entries, select=scheduled is None and not eligible)
+    requests = r2.pop("_requests", None)
+    if requests:
+        rid, oid, new = requests[0]
+        owner = next(e for e in entries if e.get("id") == oid)
+        picked = {"r2_request": rid, "queue_entry_id": rid, "brief_owner": oid,
+                  "brief_path": owner.get("brief_path"), "new": new,
+                  "why": (f"R2: no entry scheduled and no eligible candidate; ask step 1a for "
+                          f"more hypotheses on open brief {oid}")}
+    elif picked is None:
         stop = {"reason": "no_eligible_candidate",
-                "detail": (f"the scheduler has no in_progress or ready entry to run, and 0 of "
-                           f"{len(cands)} candidate(s) eligible")}
+                "detail": (f"the scheduler has no in_progress or ready entry to run, 0 of "
+                           f"{len(cands)} candidate(s) eligible, and no open brief for R2 "
+                           f"({len(r2['exhausted_briefs'])} exhausted, "
+                           f"{len(r2['legacy_briefs'])} legacy)")}
 
     revision = inputs.get("registry_revision") or 0
     known = inputs.get("known_classes")
@@ -632,8 +966,7 @@ def decide(inputs: dict, *, now: str, trigger: dict, select_entry=None) -> dict:
             "r1": {"registry_revision": revision, "last_composition_revision": None,
                    "would_fire": revision >= 2, "fired": False,
                    "reason": "composition brief writer is slice 7"},
-            "r2": {"fired": False, "open_briefs": [], "enqueued": [],
-                   "reason": "R2 (1a requests on open briefs) is E-059 S2b"},
+            "r2": r2,
         },
         "operator_entries": [e["id"] for e in operator],
         "candidates": eligible + ineligible,

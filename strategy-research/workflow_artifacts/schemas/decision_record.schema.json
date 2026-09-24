@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$comment": "E-059 S2a (delivery_plan_v26.md slice 6b; engineering/roadmap/E-059/S1_FINDINGS_6B.md §8 and its operator decision of 2026-09-24). Written by run_campaign._decide_next_step (orchestrator.decide_next.enabled) from tools/decide_next.py::decide, through run_phase1_research.save_yaml, which checks it against this file by stem (warn-only by default, blocking under WORKFLOW_ARTIFACT_VALIDATION=raise). Pinned against a real decide() output by tests/test_e059_s2a_decide_next.py. The record never carries hypothesis_family, altitude, lineage_routing, hypothesis_verdict or continuation_* (decide() refuses campaign_memory.RETIRED_FIELDS), and has no lineage-demotion field (operator decision 6). Proposal scores appear here only.",
+  "$comment": "E-059 S2a (delivery_plan_v26.md slice 6b; engineering/roadmap/E-059/S1_FINDINGS_6B.md §8 and its operator decision of 2026-09-24). Written by run_campaign._decide_next_step (orchestrator.decide_next.enabled) from tools/decide_next.py::decide, through run_phase1_research.save_yaml, which checks it against this file by stem (warn-only by default, blocking under WORKFLOW_ARTIFACT_VALIDATION=raise). Pinned against a real decide() output by tests/test_e059_s2a_decide_next.py. The record never carries hypothesis_family, altitude, lineage_routing, hypothesis_verdict or continuation_* (decide() refuses campaign_memory.RETIRED_FIELDS), and has no lineage-demotion field (operator decision 6). Proposal scores appear here only. E-059 S2b: rules.r2 fires (asks step 1a for more hypotheses on open briefs), picked gains the card and R2-request shapes, and candidates include a brief's waiting extra cards (origin brief, kind card), whose 1a scores also appear here only.",
   "title": "runs/<run>/artifacts/decision_record.yaml",
   "description": "One decide-next decision, taken after the run's queue entry was marked done: the inputs' fingerprints, R1/R2, operator entries, every candidate considered with its gates, cost and rank, and what was picked (or why the loop stopped).",
   "type": "object",
@@ -54,12 +54,21 @@
         },
         "r2": {
           "type": "object",
-          "required": ["fired", "open_briefs", "enqueued", "reason"],
+          "required": ["fired", "open_briefs", "exhausted_briefs", "legacy_briefs", "enqueued",
+                       "ready", "reason"],
           "additionalProperties": false,
           "properties": {
-            "fired": { "const": false, "description": "R2 is E-059 S2b." },
+            "fired": { "type": "boolean",
+                       "description": "E-059 S2b: true when nothing was scheduled, no candidate was eligible and at least one brief is open." },
             "open_briefs": { "type": "array", "items": { "type": "string" } },
-            "enqueued": { "type": "array", "items": { "type": "string" } },
+            "exhausted_briefs": { "type": "array", "items": { "type": "string" } },
+            "legacy_briefs": { "type": "array", "items": { "type": "string" },
+                               "description": "No brief_status (operator decision 7): tagged obsolete, never trigger R2." },
+            "enqueued": { "type": "array", "items": {
+              "type": "object", "required": ["entry_id", "owner", "status"], "additionalProperties": false,
+              "properties": { "entry_id": { "type": "string" }, "owner": { "type": "string" },
+                              "status": { "enum": ["ready", "queued"] } } } },
+            "ready": { "type": ["string", "null"] },
             "reason": { "type": "string" }
           }
         }
@@ -77,7 +86,19 @@
         { "type": "object", "required": ["candidate_id", "queue_entry_id", "brief_path", "why"],
           "additionalProperties": false,
           "properties": { "candidate_id": { "type": "string" }, "queue_entry_id": { "type": "string" },
-                          "brief_path": { "type": "string" }, "why": { "type": "string" } } }
+                          "brief_path": { "type": "string" }, "why": { "type": "string" } } },
+        { "type": "object", "required": ["candidate_id", "queue_entry_id", "card_ref", "why"],
+          "additionalProperties": false,
+          "description": "E-059 S2b: a brief's waiting extra card, flipped queued -> ready.",
+          "properties": { "candidate_id": { "type": "string" }, "queue_entry_id": { "type": "string" },
+                          "card_ref": { "type": "string" }, "why": { "type": "string" } } },
+        { "type": "object",
+          "required": ["r2_request", "queue_entry_id", "brief_owner", "brief_path", "new", "why"],
+          "additionalProperties": false,
+          "description": "E-059 S2b: R2's ready request (new: minted now; false: a waiting one flipped ready).",
+          "properties": { "r2_request": { "type": "string" }, "queue_entry_id": { "type": "string" },
+                          "brief_owner": { "type": "string" }, "brief_path": { "type": "string" },
+                          "new": { "type": "boolean" }, "why": { "type": "string" } } }
       ]
     },
     "stop": {
@@ -98,13 +119,18 @@
       "additionalProperties": false,
       "properties": {
         "candidate_id": { "type": "string" },
-        "origin": { "const": "reader" },
-        "kind": { "enum": ["patch", "new_block"] },
-        "category": { "type": "string" },
+        "origin": { "enum": ["reader", "brief"] },
+        "kind": { "enum": ["patch", "new_block", "card"],
+                  "description": "card (E-059 S2b): a brief's extra hypothesis whose card 1a already wrote." },
+        "category": { "type": ["string", "null"] },
         "source_run": { "type": "string" },
         "parent_hypothesis_id": { "type": ["string", "null"] },
-        "hypothesis_id": { "type": "string", "description": "<parent>__<proposal_id> (operator decision 1)" },
-        "proposal_ref": { "type": "string" },
+        "hypothesis_id": { "type": ["string", "null"],
+                           "description": "Reader: <parent>__<proposal_id> (operator decision 1). Card: the card's own id." },
+        "proposal_ref": { "type": ["string", "null"] },
+        "card_ref": { "type": "string", "description": "E-059 S2b, kind card only." },
+        "brief_owner": { "type": ["string", "null"],
+                         "description": "E-059 S2b, kind card only: the entry owning the brief (null for a legacy brief)." },
         "collapsed_sources": { "type": "array", "items": { "type": "string" } },
         "scores": {
           "type": "object",

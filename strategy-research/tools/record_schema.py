@@ -224,6 +224,10 @@ QUEUE_ENTRY_SCHEMA = {
     "brief_status": BRIEF_STATUS, "origin": ORIGIN,
     "proposal_ref": REF, "card_ref": REF, "decision_ref": REF,
     "parked_reason": TEXT,
+    # E-059 S2b (operator decision 7): written ONCE, in code, on a legacy brief
+    # entry (no `brief_status`) as "[obsolete] <brief heading or id>" -- the
+    # brief file itself is never edited. Absent on every other entry.
+    "title": TEXT,
 }
 
 # Dated correction families. A correction gets its own dated field so the prior
