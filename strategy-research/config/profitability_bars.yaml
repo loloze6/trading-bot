@@ -27,46 +27,87 @@
 #     gate's behavior and deserves its own flag/verification, not bundled silently
 #     into the branch-3 stop).
 #
+# Two definitions exist, and every flag-on evaluation row records which one it used
+# in a `basis` key (profit_bars_evaluation.yaml), so the artifact is self-describing:
+#   * orchestrator.profit_bars_every_backtest.enabled OFF (only profit_bars_file on):
+#     the promote-path definitions, unchanged and byte-identical -- no `basis` key.
+#   * orchestrator.profit_bars_every_backtest.enabled ON (operator decision
+#     2026-09-24): the bars are judged on the portfolio you would actually trade --
+#     all tested coins together, EQUALLY WEIGHTED -- for return and drawdown.
+#
+# The EQUAL-WEIGHT PORTFOLIO (flag on; run_phase1_research._portfolio_profit_metrics),
+# built separately for each graded variant and for each walk-forward window:
+#   - source: every (coin, window) backtest's portfolio_states.csv, column
+#     postRebalance_total_value (the equity after each bar's rebalance), warm-up bars
+#     (regime NOT_READY) dropped;
+#   - daily close = the last bar of each UTC calendar day;
+#   - COMMON DAYS: only UTC days on which EVERY coin of that window has a daily
+#     close are used; a day missing for any one coin is dropped for all coins (never
+#     filled, never a 0.0). Every window needs at least 2 common days;
+#   - COVERAGE FLOOR (operator-changeable constant
+#     run_phase1_research.PORTFOLIO_MIN_COMMON_DAY_COVERAGE, currently 0.9): in
+#     EVERY window the common days must be at least that fraction of the union of
+#     the coins' days (e.g. a much longer warm-up on one coin fails it loudly);
+#   - each coin is normalized to 1.0 at the first common day (divided by its daily
+#     close on the window's first common day); portfolio value = the arithmetic
+#     MEAN of the coins' normalized values (1/N of the capital in each coin at that
+#     close, no re-weighting between coins afterwards);
+#   - daily return = SIMPLE return V_d / V_(d-1) - 1 of the portfolio's daily
+#     closes, counted ONLY between two common days that are consecutive calendar
+#     days. A step across a gap (a dropped or missing day) is a multi-day return:
+#     it is NOT counted, and the chain restarts after the gap. Windows are separate
+#     periods that each restart from a fresh balance (the first common day of a
+#     window adds no return).
+#   NOT_EVALUABLE (with a `not_evaluable_reason` on the bar row and in `reasons`)
+#   when any window's equity file is missing, the coin set differs between windows,
+#   any window has fewer than 2 common days or is below the coverage floor or has
+#   no common bar, or no daily return is left after the gap rule.
+#
 # Schema (validated loudly by _load_profitability_bars -- missing or wrong-typed
 # fields raise, never silently default):
-#   sharpe_min                 float  -- floor on promotion_audit.yaml's raw_median_sharpe
-#   max_drawdown_pct_max       float  -- ceiling (positive percent) on the worst
-#                                        per-symbol max_abs_drawdown_pct in
-#                                        protocol_result.yaml's per_symbol_summary
+#   sharpe_min                 float  -- floor on the median of the per-coin
+#                                        median_sharpe values (promotion_audit.yaml's
+#                                        raw_median_sharpe rule). Same both ways.
+#                                        basis: median_of_coin_median_sharpes
+#   max_drawdown_pct_max       float  -- ceiling, positive percent.
+#                                        Flag off: the worst per-coin
+#                                        max_abs_drawdown_pct in protocol_result.yaml's
+#                                        per_symbol_summary.
+#                                        Flag on: the equal-weight PORTFOLIO's largest
+#                                        peak-to-trough drawdown, 100 * (1 - V_t /
+#                                        max_{s<=t} V_s), measured ON BARS (so intraday
+#                                        drops count): the portfolio curve over the
+#                                        COMMON BARS (timestamps at which every coin
+#                                        has a bar) from the first-common-day close
+#                                        onwards, each coin normalized as above,
+#                                        within each window; actual = the
+#                                        LARGEST window drawdown. This is the worst
+#                                        WINDOW of the combined portfolio, NOT the
+#                                        worst coin.
+#                                        basis: portfolio_equal_weight_worst_window
 #   avg_daily_return_min       float  -- floor on mean daily return, as a FRACTION per
-#                                        day (0.0005 = 0.05 %/day). With only
-#                                        profit_bars_file on: still NOT_EVALUABLE, as
-#                                        before. Under profit_bars_every_backtest it is
-#                                        computed (run_phase1_research.
-#                                        _avg_daily_return_worst_symbol), for each graded
-#                                        variant, as:
-#                                          - every (symbol, window) backtest's
-#                                            portfolio_states.csv, column
-#                                            postRebalance_total_value (the equity after
-#                                            each bar's rebalance), warm-up bars
-#                                            (regime NOT_READY) dropped;
-#                                          - daily close = last bar of each UTC calendar
-#                                            day; daily return = SIMPLE return
-#                                            close_d / close_previous_day - 1, within one
-#                                            window only (the first day of a window adds
-#                                            no return; a day with no bar is absent,
-#                                            never a 0.0);
-#                                          - per symbol: ARITHMETIC mean of all its daily
-#                                            returns pooled over its windows (not
-#                                            geometric, not annualised);
-#                                          - actual = the WORST (lowest) symbol mean.
-#                                        NOT_EVALUABLE when any window's equity file is
-#                                        missing. OPERATOR: confirm this matches what the
-#                                        bar means before ratifying.
-#   trade_count_min             int   -- floor on the worst per-symbol min_trade_count
+#                                        day (0.0005 = 0.05 %/day).
+#                                        Flag off: NOT_EVALUABLE, as before.
+#                                        Flag on: the ARITHMETIC mean of the equal-weight
+#                                        PORTFOLIO's daily simple returns ON DAILY
+#                                        CLOSES (consecutive common days only, see the
+#                                        gap rule above), pooled across all windows
+#                                        (not geometric, not annualised).
+#                                        basis: portfolio_equal_weight
+#   trade_count_min             int   -- floor on the MINIMUM per-coin min_trade_count
 #                                        in protocol_result.yaml's per_symbol_summary
+#                                        (a per-coin rule, unchanged by the portfolio
+#                                        decision). Same both ways.
+#                                        basis: worst_coin
 #   deflated_sharpe_threshold  float  -- floor on promotion_audit.yaml's own
 #                                        deflated_sharpe_ratio (a SEPARATE number from
 #                                        promotion_audit.yaml's internal, hardcoded
 #                                        DSR_THRESHOLD=0.95 gate that already decides
 #                                        passes_deflated_threshold -- this bar re-checks
 #                                        the same measured DSR against the operator's
-#                                        own campaign-wide number, which may differ)
+#                                        own campaign-wide number, which may differ).
+#                                        Same both ways.
+#                                        basis: deflated_sharpe_on_campaign_trial_ledger
 #   target_instrument_set     list[str] -- which symbols this campaign trades; not
 #                                        itself a PASS/FAIL bar in this slice (no bar
 #                                        checks per_symbol_summary membership against

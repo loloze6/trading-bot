@@ -442,9 +442,10 @@ orchestrator:
       # check) every variant tested on THAT attempt (the grid's columns; a
       # conformance-invalidated trial is never graded) is graded against
       # config/profitability_bars.yaml -- Sharpe/DSR with the promotion audit's
-      # own math, worst-symbol drawdown/trade count, and avg_daily_return_min
-      # from the per-window equity files (definition in
-      # config/profitability_bars.yaml) -- into a per-variant
+      # own math, per-coin minimum trade count, and drawdown + avg_daily_return_min
+      # on the equal-weight portfolio of all tested coins, built from the
+      # per-window equity files (definitions, and the `basis` recorded on each
+      # bar row, in config/profitability_bars.yaml) -- into a per-variant
       # artifacts/profit_bars_evaluation.yaml (scope: every_backtest).
       # protocol_execution completes normally (no pause there). regroup_record
       # records the per-variant results in campaign_memory.yaml's `profit_bars`.
