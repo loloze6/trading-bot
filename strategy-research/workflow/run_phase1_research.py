@@ -1201,6 +1201,15 @@ async def run_tool_worker(stage_name: str, run_id: str):
     _sr_on = stage_name == "protocol_execution" and _specialist_readers_enabled()
     if _sr_on:
         _clear_specialist_readers_artifacts(RUN_DIR)
+    # Branch 3 on every backtest (code review 2026-09-24): the per-variant profit
+    # evaluation must come from THIS attempt too -- a stale one from a previous
+    # attempt would otherwise be recorded / routed on. Flag off: nothing deleted.
+    if stage_name == "protocol_execution" and _profit_bars_every_backtest_enabled():
+        _stale_pbe = ARTIFACTS / _PROFIT_BARS_EVALUATION_FILE
+        if _stale_pbe.exists():
+            _stale_pbe.unlink()
+            print(f"🧹 [branch 3] protocol_execution re-run: cleared previous attempt's "
+                  f"{_PROFIT_BARS_EVALUATION_FILE}")
 
     if stage_name == "data_availability_gate" and _variant_loop_enabled():
         # E-033.1 Slice 4b (delivery_plan_v26.md Slice 4, sub-slice 2 of 2:
@@ -2190,6 +2199,60 @@ def _profit_bars_file_enabled() -> bool:
         cfg = yaml.safe_load(f) or {}
     pbf_cfg = ((cfg.get("orchestrator") or {}).get("profit_bars_file") or {})
     return bool(pbf_cfg.get("enabled", False))
+
+
+# Branch 3 on every backtest (operator-approved 2026-09-24; delivery_plan_v26.md
+# target row "8 · profit bars ... one file, every backtest, stop rule"). See
+# config/campaign_config.yaml's orchestrator.profit_bars_every_backtest.enabled.
+def _profit_bars_every_backtest_enabled() -> bool:
+    """False when the key, the section or the config file is absent. A non-bool
+    value raises. Requires orchestrator.profit_bars_file.enabled AND
+    orchestrator.regroup_record.enabled (hence specialist_readers): raises,
+    loudly, if this flag is on without them. run_loop resolves it once, in its
+    pre-flight, so a misconfiguration fails the run before any spend.
+
+    While false: nothing new is read or written, and the promote-path check
+    (_dispatch_verdict_route -> _evaluate_profit_bars) runs exactly as before.
+    While true: _evaluate_profit_bars_every_backtest grades every tested variant
+    of the attempt right after protocol_execution (never pausing there);
+    regroup_record records the per-variant results in the campaign memory; the
+    route after it raises profit_bars_reached (_profit_bars_stop_route). The
+    promote path skips its own evaluation only for a run holding that
+    every_backtest evaluation (see the coexistence note in
+    _dispatch_verdict_route)."""
+    path = ROOT / "config" / "campaign_config.yaml"
+    if not path.exists():
+        return False
+    with open(path, encoding="utf-8") as f:
+        cfg = yaml.safe_load(f) or {}
+    pbe_cfg = ((cfg.get("orchestrator") or {}).get("profit_bars_every_backtest") or {})
+    value = pbe_cfg.get("enabled", False)
+    if not isinstance(value, bool):
+        raise ValueError(
+            f"orchestrator.profit_bars_every_backtest.enabled={value!r} is not a real "
+            f"boolean (got {type(value).__name__}) -- write an unquoted `true` or `false` "
+            f"in config/campaign_config.yaml, not a quoted string or null."
+        )
+    if value and not _profit_bars_file_enabled():
+        raise ValueError(
+            "orchestrator.profit_bars_every_backtest.enabled=true requires "
+            "orchestrator.profit_bars_file.enabled=true as well -- the per-backtest check "
+            "grades every variant against config/profitability_bars.yaml, which is only "
+            "read under that flag. Enable both, or neither."
+        )
+    if value and not _regroup_record_enabled():
+        # Code review 2026-09-24 (order judge -> learn -> profit check -> regroup +
+        # record -> decide): the stop is raised in the route AFTER regroup_record,
+        # which itself requires specialist_readers (and grid_evaluation +
+        # category_reports) -- _regroup_record_enabled raises on those.
+        raise ValueError(
+            "orchestrator.profit_bars_every_backtest.enabled=true requires "
+            "orchestrator.regroup_record.enabled=true as well (and therefore "
+            "specialist_readers, grid_evaluation and category_reports) -- the profit "
+            "result is recorded in the campaign memory by regroup_record and the "
+            "profit_bars_reached stop is raised in the route after it."
+        )
+    return value
 
 
 # Required fields and their expected types for config/profitability_bars.yaml.
@@ -3199,7 +3262,8 @@ def _ensure_regroup_record_handoff(run_id: str, run_dir: Path) -> Path:
     return handoff_path
 
 
-def _run_regroup_record_stage(run_id: str, run_dir: Path) -> dict:
+def _run_regroup_record_stage(run_id: str, run_dir: Path,
+                              profit_bars_evaluated: bool = False) -> dict:
     """Stage body. Reached only from run_loop, which already refuses this
     stage when the flag is off (no second flag check here).
 
@@ -3259,6 +3323,10 @@ def _run_regroup_record_stage(run_id: str, run_dir: Path) -> dict:
             trial_sharpes=(load_campaign_state() or {}).get("trial_sharpes") or [],
             categories=_reader_categories(),
             protocol_root=ROOT,
+            # Branch 3 on every backtest: the per-variant profit-bars results
+            # (written after protocol_execution) fill `profit_bars`; flag off
+            # keeps null + "not evaluated before regroup".
+            profit_bars_evaluated=profit_bars_evaluated,
         )
         # E-058 S2b, in this order so a failure leaves nothing half-recorded
         # that a re-run cannot redo: registry (append-only; conflict raises
@@ -6735,33 +6803,21 @@ def _dedupe_trials(valid_trials: list) -> tuple[list, int]:
     return deduped_trials, n_dedup_removed
 
 
-def _write_promotion_audit(run_dir: Path, run_id: str):
-    """
-    A6.2: Write promotion_audit.yaml before holdout_evaluation.
-    Compute Deflated Sharpe over statistic_valid='sharpe' trials from campaign_state.
-    For sparse-trading candidates (statistic_valid='expectancy'), record expectancy t-stat.
+def _promotion_dsr_context() -> dict:
+    """The campaign-wide trial-ledger statistics and the per-candidate
+    Deflated-Sharpe evaluator that _write_promotion_audit applies to each
+    candidate protocol_result.
 
-    RESTRUCTURED 2026-09-22 (E-033.1 Slice 4b, build item 9 / S1_FINDINGS.md §6.5,
-    per the operator's 2026-09-22 "Decision" section, Branch 3): under
-    orchestrator.variant_loop.enabled, this function now evaluates EVERY
-    variant's own protocol_result.yaml (RUN_DIR/artifacts/variants/<variant_id>/
-    protocol_result.yaml, written per-variant by Slice 4a's protocol_execution
-    loop) independently, instead of the singular bridge-file
-    artifacts/protocol_result.yaml alone -- an existential quantifier across
-    variants: the overall promotion result PASSES if AT LEAST ONE variant's
-    own DSR/expectancy verdict passes. The per-candidate math itself
-    (_dsr_candidate below) is verbatim the original single-result computation,
-    extracted unchanged so the campaign-wide trial-ledger statistics
-    (deduped_trials/sharpe_values/n_dsr_total/n_trials/excluded/total_tested --
-    these are the SAME across every variant, since the multiple-testing
-    correction's distribution is estimated from the whole campaign's trial
-    ledger, not per-variant) are computed exactly once regardless of which
-    protocol_result(s) they're evaluated against. Flag-off path below is
-    untouched code, reached unconditionally when
-    orchestrator.variant_loop.enabled is off/absent -- byte-identical
-    promotion_audit.yaml to every pre-4b run (save_yaml uses sort_keys=False,
-    so the dict's insertion order was preserved exactly, not just its keys).
-    """
+    EXTRACTED VERBATIM 2026-09-24 (branch 3, profit bars on every backtest)
+    from _write_promotion_audit's own body so the per-backtest profit-bars
+    check (_evaluate_profit_bars_every_backtest) grades each variant's
+    Sharpe/DSR with the SAME math and the SAME ledger basis as the promotion
+    audit, instead of a second copy that could drift (this module's lockstep
+    history: #40/#43, #56, #57). Nothing is written here; the ledger is only
+    read. Returns {dsr_candidate, campaign, n_dsr_total, n_trials, excluded,
+    total_tested, DSR_THRESHOLD}; dsr_candidate(pr) returns (raw_median_sr,
+    is_sparse, passes_deflated, e_max_sr, dsr_result) for ONE
+    protocol_result dict, exactly as before the extraction."""
     import math as _math
     from statistics import NormalDist as _NDist
 
@@ -6776,16 +6832,6 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
 
     EULER_GAMMA = 0.5772156649
     DSR_THRESHOLD = 0.95
-
-    # --- Load verdict interpretation for hypothesis_id ---
-    if _specialist_readers_enabled():
-        # E-046a Slice 5b-ii-B: verdict_interpretation.yaml is never written under
-        # this flag; the idea's id comes from hypothesis_card.yaml (which the old
-        # stage only restated). Raises rather than falling back to run_id.
-        hyp_id = _idea_hypothesis_id(run_dir)
-    else:
-        interp      = load_yaml(run_dir / "artifacts" / "verdict_interpretation.yaml") or {}
-        hyp_id      = interp.get("hypothesis_id", run_id)
 
     # --- Load and filter trial_sharpes from campaign_state ---
     campaign   = load_campaign_state()
@@ -7025,6 +7071,65 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
                 }
 
         return raw_median_sr, is_sparse, passes_deflated, e_max_sr, dsr_result
+    return {
+        "dsr_candidate": _dsr_candidate,
+        "campaign":      campaign,
+        "n_dsr_total":   n_dsr_total,
+        "n_trials":      n_trials,
+        "excluded":      excluded,
+        "total_tested":  total_tested,
+        "DSR_THRESHOLD": DSR_THRESHOLD,
+    }
+
+
+def _write_promotion_audit(run_dir: Path, run_id: str):
+    """
+    A6.2: Write promotion_audit.yaml before holdout_evaluation.
+    Compute Deflated Sharpe over statistic_valid='sharpe' trials from campaign_state.
+    For sparse-trading candidates (statistic_valid='expectancy'), record expectancy t-stat.
+
+    RESTRUCTURED 2026-09-22 (E-033.1 Slice 4b, build item 9 / S1_FINDINGS.md §6.5,
+    per the operator's 2026-09-22 "Decision" section, Branch 3): under
+    orchestrator.variant_loop.enabled, this function now evaluates EVERY
+    variant's own protocol_result.yaml (RUN_DIR/artifacts/variants/<variant_id>/
+    protocol_result.yaml, written per-variant by Slice 4a's protocol_execution
+    loop) independently, instead of the singular bridge-file
+    artifacts/protocol_result.yaml alone -- an existential quantifier across
+    variants: the overall promotion result PASSES if AT LEAST ONE variant's
+    own DSR/expectancy verdict passes. The per-candidate math itself
+    (_dsr_candidate below) is verbatim the original single-result computation,
+    extracted unchanged so the campaign-wide trial-ledger statistics
+    (deduped_trials/sharpe_values/n_dsr_total/n_trials/excluded/total_tested --
+    these are the SAME across every variant, since the multiple-testing
+    correction's distribution is estimated from the whole campaign's trial
+    ledger, not per-variant) are computed exactly once regardless of which
+    protocol_result(s) they're evaluated against. Flag-off path below is
+    untouched code, reached unconditionally when
+    orchestrator.variant_loop.enabled is off/absent -- byte-identical
+    promotion_audit.yaml to every pre-4b run (save_yaml uses sort_keys=False,
+    so the dict's insertion order was preserved exactly, not just its keys).
+    """
+    # --- Load verdict interpretation for hypothesis_id ---
+    if _specialist_readers_enabled():
+        # E-046a Slice 5b-ii-B: verdict_interpretation.yaml is never written under
+        # this flag; the idea's id comes from hypothesis_card.yaml (which the old
+        # stage only restated). Raises rather than falling back to run_id.
+        hyp_id = _idea_hypothesis_id(run_dir)
+    else:
+        interp      = load_yaml(run_dir / "artifacts" / "verdict_interpretation.yaml") or {}
+        hyp_id      = interp.get("hypothesis_id", run_id)
+
+    # Branch 3 (2026-09-24): the ledger statistics and _dsr_candidate were
+    # extracted verbatim into _promotion_dsr_context() -- same values, same
+    # order of evaluation after hyp_id, so promotion_audit.yaml is unchanged.
+    _dsr_ctx        = _promotion_dsr_context()
+    campaign        = _dsr_ctx["campaign"]
+    n_dsr_total     = _dsr_ctx["n_dsr_total"]
+    n_trials        = _dsr_ctx["n_trials"]
+    excluded        = _dsr_ctx["excluded"]
+    total_tested    = _dsr_ctx["total_tested"]
+    DSR_THRESHOLD   = _dsr_ctx["DSR_THRESHOLD"]
+    _dsr_candidate  = _dsr_ctx["dsr_candidate"]
 
     if _variant_loop_enabled():
         # Slice 4b (E-033.1), per the operator's 2026-09-22 Decision section
@@ -7179,38 +7284,19 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
           f"n_trials={n_trials}, passes={status_str})")
 
 
-def _evaluate_profit_bars(run_dir: Path, run_id: str) -> dict:
-    """delivery_plan_v26.md 0.2 (item 2) -- the branch-3 stop. Sibling to
-    _write_promotion_audit, called right after it (same run_dir) so this function
-    can read promotion_audit.yaml's own just-written numbers rather than
-    re-deriving them. Evaluates every bar in config/profitability_bars.yaml against
-    the real numbers already present in promotion_audit.yaml / protocol_result.yaml
-    for this run -- NOT against protocol_result.yaml's raw candidate numbers
-    directly for the Sharpe/DSR bars (promotion_audit.yaml is the one place those
-    are already reconciled: dedup, invalidated-trial exclusion, the sparse-vs-DSR
-    branch). Writes artifacts/profit_bars_evaluation.yaml and returns the same dict.
+def _grade_profit_bars(bars: dict, *, sharpe, sharpe_note: str, dsr, dsr_note: str,
+                       pss: dict, avg_daily_return: tuple | None = None) -> tuple:
+    """Grade ONE candidate against every bar in a loaded profitability_bars.yaml
+    doc. Returns (results, overall, reasons): results is the ordered list of
+    {name, threshold, actual, result, note} bar rows, overall is "PASS" only when
+    EVERY bar reads PASS (a NOT_EVALUABLE bar blocks it), reasons lists every
+    non-PASS bar. `sharpe`/`dsr` come from the caller's own source (the promote
+    path: promotion_audit.yaml; the per-backtest path: _promotion_dsr_context's
+    evaluator on the variant's own protocol_result) and `*_note` names it. `pss`
+    is that candidate's protocol_result per_symbol_summary.
 
-    Each bar reads NOT_EVALUABLE, not a silent PASS or a crash, when its
-    underlying metric genuinely is not present anywhere in this run's artifacts
-    (see per-bar comments below -- avg_daily_return_min always does, today,
-    since nothing in this pipeline computes a mean daily return).
-
-    Aggregation choice for the two per-symbol_summary-sourced bars
-    (max_drawdown_pct_max, trade_count_min): per_symbol_summary carries one
-    value per symbol, not a single campaign-wide number, and profitability_bars.yaml
-    declares one threshold. Deliberately conservative in the fail-loud direction:
-    max_drawdown_pct_max compares against the WORST (highest) per-symbol drawdown,
-    trade_count_min compares against the WORST (lowest) per-symbol trade count --
-    a bar that would fail on any one traded symbol reads FAIL, not PASS-on-average.
-    """
-    bars = _load_profitability_bars()
-
-    audit_path = run_dir / "artifacts" / "promotion_audit.yaml"
-    audit = load_yaml(audit_path) if audit_path.exists() else {}
-    pr_path = run_dir / "artifacts" / "protocol_result.yaml"
-    pr = load_yaml(pr_path) if pr_path.exists() else {}
-    pss = pr.get("per_symbol_summary") or {}
-
+    Extracted verbatim 2026-09-24 from _evaluate_profit_bars (branch 3) -- see
+    that function's docstring for the worst-symbol aggregation choice."""
     results = []
 
     def _bar(name: str, threshold, actual, comparator: str, note: str = ""):
@@ -7227,16 +7313,11 @@ def _evaluate_profit_bars(run_dir: Path, run_id: str) -> dict:
             entry["note"] = note
         results.append(entry)
 
-    _bar(
-        "sharpe_min", bars["sharpe_min"], audit.get("raw_median_sharpe"), ">=",
-        note="promotion_audit.yaml.raw_median_sharpe",
-    )
+    _bar("sharpe_min", bars["sharpe_min"], sharpe, ">=", note=sharpe_note)
 
     _bar(
-        "deflated_sharpe_threshold", bars["deflated_sharpe_threshold"],
-        audit.get("deflated_sharpe_ratio"), ">=",
-        note="promotion_audit.yaml.deflated_sharpe_ratio (None on the sparse-trading or "
-             "insufficient-trials path, where no DSR is computed at all)",
+        "deflated_sharpe_threshold", bars["deflated_sharpe_threshold"], dsr, ">=",
+        note=dsr_note,
     )
 
     symbol_drawdowns = [v.get("max_abs_drawdown_pct") for v in pss.values()
@@ -7255,17 +7336,20 @@ def _evaluate_profit_bars(run_dir: Path, run_id: str) -> dict:
         note="protocol_result.yaml.per_symbol_summary[*].min_trade_count, worst symbol",
     )
 
-    # Not computed anywhere in this pipeline today: protocol_result.yaml has no
-    # mean-daily-return field, and trading-bot's bar_equity metrics.json block
-    # (itself off-by-default, reporting/run_artifact.py::build_bar_equity) has no
-    # mean-return field either -- only maxDD/Sharpe/Sortino/exposure/turnover.
-    # Reads NOT_EVALUABLE honestly rather than silently passing or inventing a
-    # proxy computation this dispatch was not asked to build.
-    _bar(
-        "avg_daily_return_min", bars["avg_daily_return_min"], None, ">=",
-        note="no source: protocol_result.yaml and metrics.json's bar_equity block "
-             "(off-by-default) neither one carries a mean-daily-return figure",
-    )
+    # avg_daily_return_min: with `avg_daily_return` omitted (every flag-off
+    # caller) this reads NOT_EVALUABLE exactly as before -- protocol_result.yaml
+    # has no mean-daily-return field. Under orchestrator.profit_bars_every_backtest
+    # the caller passes (value, note) from _avg_daily_return_worst_symbol, which
+    # derives it from the per-window equity files (definition in its docstring).
+    if avg_daily_return is None:
+        _bar(
+            "avg_daily_return_min", bars["avg_daily_return_min"], None, ">=",
+            note="no source: protocol_result.yaml and metrics.json's bar_equity block "
+                 "(off-by-default) neither one carries a mean-daily-return figure",
+        )
+    else:
+        _bar("avg_daily_return_min", bars["avg_daily_return_min"], avg_daily_return[0], ">=",
+             note=avg_daily_return[1])
 
     outcomes = {r["result"] for r in results}
     overall = "PASS" if outcomes == {"PASS"} else "FAIL"
@@ -7273,6 +7357,60 @@ def _evaluate_profit_bars(run_dir: Path, run_id: str) -> dict:
         f"{r['name']}: {r['result']} (threshold={r['threshold']!r}, actual={r['actual']!r})"
         for r in results if r["result"] != "PASS"
     ]
+
+    return results, overall, reasons
+
+
+def _evaluate_profit_bars(run_dir: Path, run_id: str, with_avg_daily_return: bool = False) -> dict:
+    """delivery_plan_v26.md 0.2 (item 2) -- the branch-3 stop. Sibling to
+    _write_promotion_audit, called right after it (same run_dir) so this function
+    can read promotion_audit.yaml's own just-written numbers rather than
+    re-deriving them. Evaluates every bar in config/profitability_bars.yaml against
+    the real numbers already present in promotion_audit.yaml / protocol_result.yaml
+    for this run -- NOT against protocol_result.yaml's raw candidate numbers
+    directly for the Sharpe/DSR bars (promotion_audit.yaml is the one place those
+    are already reconciled: dedup, invalidated-trial exclusion, the sparse-vs-DSR
+    branch). Writes artifacts/profit_bars_evaluation.yaml and returns the same dict.
+
+    Each bar reads NOT_EVALUABLE, not a silent PASS or a crash, when its
+    underlying metric genuinely is not present anywhere in this run's artifacts
+    (see per-bar comments in _grade_profit_bars -- avg_daily_return_min always does, today,
+    since nothing in this pipeline computes a mean daily return).
+
+    Aggregation choice for the two per-symbol_summary-sourced bars
+    (max_drawdown_pct_max, trade_count_min): per_symbol_summary carries one
+    value per symbol, not a single campaign-wide number, and profitability_bars.yaml
+    declares one threshold. Deliberately conservative in the fail-loud direction:
+    max_drawdown_pct_max compares against the WORST (highest) per-symbol drawdown,
+    trade_count_min compares against the WORST (lowest) per-symbol trade count --
+    a bar that would fail on any one traded symbol reads FAIL, not PASS-on-average.
+    """
+    bars = _load_profitability_bars()
+
+    audit_path = run_dir / "artifacts" / "promotion_audit.yaml"
+    audit = load_yaml(audit_path) if audit_path.exists() else {}
+    pr_path = run_dir / "artifacts" / "protocol_result.yaml"
+    pr = load_yaml(pr_path) if pr_path.exists() else {}
+    pss = pr.get("per_symbol_summary") or {}
+
+    # Branch 3 (2026-09-24): the bar-by-bar grading moved verbatim into
+    # _grade_profit_bars so the per-backtest check grades every variant with the
+    # same comparators, aggregation and NOT_EVALUABLE rules. Same notes, same
+    # order, same output as before.
+    results, overall, reasons = _grade_profit_bars(
+        bars,
+        sharpe=audit.get("raw_median_sharpe"),
+        sharpe_note="promotion_audit.yaml.raw_median_sharpe",
+        dsr=audit.get("deflated_sharpe_ratio"),
+        dsr_note="promotion_audit.yaml.deflated_sharpe_ratio (None on the sparse-trading or "
+                 "insufficient-trials path, where no DSR is computed at all)",
+        pss=pss,
+        # Only under orchestrator.profit_bars_every_backtest (the caller passes
+        # with_avg_daily_return=True): the same per-window equity computation as
+        # the per-backtest check. Flag off: omitted, NOT_EVALUABLE as before.
+        avg_daily_return=(_avg_daily_return_worst_symbol(run_dir, pr)
+                          if with_avg_daily_return else None),
+    )
 
     evaluation = {
         "run_id": run_id,
@@ -7284,6 +7422,351 @@ def _evaluate_profit_bars(run_dir: Path, run_id: str) -> dict:
     save_yaml(run_dir / "artifacts" / "profit_bars_evaluation.yaml", evaluation)
     print(f"⚙️  0.2: profit_bars_evaluation.yaml written (result={overall})")
     return evaluation
+
+
+# --- Branch 3 on every backtest (orchestrator.profit_bars_every_backtest.enabled) ---
+#
+# Why here and not on the promote path: the promote path is reached only by an
+# idea the walk-forward verdict route promotes, so only grid-validated ideas were
+# ever checked against the bars. Branch 3 is independent of the grid (branch 1)
+# and the readers (branch 2): every tested variant of THIS protocol_execution
+# attempt is graded right after protocol_execution, and a variant may reach the
+# bars while the idea itself is not validated.
+#
+# Order (code review 2026-09-24): judge (grid, in protocol_execution) -> learn
+# (specialist_readers) -> profit check (graded right after protocol_execution,
+# recorded, never paused there) -> regroup + record (campaign memory carries the
+# per-variant results) -> decide (the route after regroup_record raises the
+# profit_bars_reached stop BEFORE the grid route, see _profit_bars_stop_route).
+# A resume re-enters regroup_record, never protocol_execution: the backtests are
+# never re-run by a resume.
+#
+# Hard alignment rule (do not relax): this check reads protocol results, the
+# per-window equity files and the trial ledger; it writes only
+# artifacts/profit_bars_evaluation.yaml and (later, in the route) the pause flag.
+# It writes no trial row (slice 4 owns them), never touches idea_status.yaml /
+# grid_evaluation.yaml, and feeds nothing retired (refine/pivot/escalate/kill,
+# the circuit breaker, hypothesis_family, altitude_history, continuation
+# children).
+
+_PROFIT_BARS_EVALUATION_FILE = "profit_bars_evaluation.yaml"
+
+
+def _profit_bars_scope_every_backtest() -> str:
+    """The one scope constant, owned by tools/campaign_memory.py (its reader)."""
+    return _campaign_memory_module().PROFIT_BARS_SCOPE_EVERY_BACKTEST
+
+
+def _invalidated_trial_ids() -> set:
+    """trial_ids carrying invalidated_artifact (a conformance violation marks
+    the row; _mark_trial_invalidated). Read only."""
+    rows = (load_campaign_state() or {}).get("trial_sharpes") or []
+    return {r.get("trial_id") for r in rows if isinstance(r, dict) and r.get("invalidated_artifact")}
+
+
+def _profit_bars_backtest_candidates(run_dir: Path, run_id: str) -> dict:
+    """The backtests THIS protocol_execution attempt produced, keyed as the grid
+    keys its columns: {candidate_id: {kind, trial_id, protocol_result_ref,
+    protocol_result, result, reason}}; `result` is None for a gradeable
+    candidate, else "NOT_TESTED" or "INVALIDATED".
+
+    The tested set is the columns of this attempt's grid_evaluation.yaml (the
+    flag requires specialist_readers, which deletes the previous attempt's grid at
+    protocol_execution entry, and fails protocol_execution when no grid is
+    written) -- never "which protocol_result.yaml files exist on disk", which can
+    hold a stale file from an earlier attempt whose backtest failed this time.
+      * variant loop on: one entry per artifacts/variants/index.yaml variant. A
+        grid column is tested (its own artifacts/variants/<id>/protocol_result.yaml
+        must exist); a validated variant without a column failed its backtest; any
+        other index status was not tested.
+      * variant loop off: the grid's single column, run_id, graded from
+        artifacts/protocol_result.yaml.
+    A tested candidate whose trial row is invalidated_artifact (conformance
+    violation) is INVALIDATED: never graded, never passing.
+
+    SLICE 7 SEAM (composition, not built here): a composite's backtest is a
+    second candidate kind. Add it here as {kind: "composite", ...} from wherever
+    slice 7 writes its protocol result; _evaluate_profit_bars_every_backtest
+    grades every candidate the same way, and the any-candidate-passes stop rule
+    already covers it.
+
+    Raises (fail loud) on a missing/malformed grid, a grid column outside the
+    index, a tested column without its result file, or a result that is not a
+    mapping."""
+    arts = run_dir / "artifacts"
+    grid_path = arts / "grid_evaluation.yaml"
+    if not grid_path.exists():
+        raise FileNotFoundError(
+            f"profit bars (every backtest): {grid_path} is missing -- the tested variants of "
+            f"this attempt are the grid's columns, and protocol_execution writes the grid "
+            f"under specialist_readers.")
+    columns = (load_yaml(grid_path) or {}).get("variants")
+    if not isinstance(columns, list) or not columns:
+        raise ValueError(f"profit bars (every backtest): {grid_path} has no variant columns.")
+    invalidated = _invalidated_trial_ids()
+    out: dict = {}
+
+    def _tested(cid: str, trial_id: str, rel: str) -> dict:
+        if trial_id in invalidated:
+            return {"kind": "variant", "trial_id": trial_id, "protocol_result_ref": None,
+                    "protocol_result": None, "result": "INVALIDATED",
+                    "reason": f"trial {trial_id!r} is invalidated_artifact (conformance "
+                              f"violation): not graded, never passing"}
+        if not (run_dir / rel).exists():
+            raise FileNotFoundError(
+                f"profit bars (every backtest): grid column {cid!r} has no {run_dir / rel}.")
+        pr = load_yaml(run_dir / rel)
+        if not isinstance(pr, dict):
+            raise ValueError(f"profit bars (every backtest): {rel} is not a mapping "
+                             f"({type(pr).__name__}).")
+        return {"kind": "variant", "trial_id": trial_id, "protocol_result_ref": rel,
+                "protocol_result": pr, "result": None, "reason": None}
+
+    if _variant_loop_enabled():
+        index_path = arts / "variants" / "index.yaml"
+        variants = (load_yaml(index_path) or {}).get("variants") if index_path.exists() else None
+        if not isinstance(variants, dict) or not variants:
+            raise ValueError(f"profit bars (every backtest): {index_path} lists no variants.")
+        unknown = [c for c in columns if c not in variants]
+        if unknown:
+            raise ValueError(f"profit bars (every backtest): grid column(s) {unknown} are not "
+                             f"in {index_path}.")
+        for vid in sorted(variants):
+            info = variants[vid] if isinstance(variants[vid], dict) else {}
+            if vid in columns:
+                out[vid] = _tested(vid, f"{run_id}:{vid}",
+                                   f"artifacts/variants/{vid}/protocol_result.yaml")
+            elif info.get("status") == "validated":
+                out[vid] = {"kind": "variant", "trial_id": None, "protocol_result_ref": None,
+                            "protocol_result": None, "result": "NOT_TESTED",
+                            "reason": "validated, but no grid column on this attempt "
+                                      "(its backtest failed)"}
+            else:
+                out[vid] = {"kind": "variant", "trial_id": None, "protocol_result_ref": None,
+                            "protocol_result": None, "result": "NOT_TESTED",
+                            "reason": f"not tested (index status {info.get('status')!r}): "
+                                      f"{info.get('reason')}"}
+    else:
+        if columns != [run_id]:
+            raise ValueError(f"profit bars (every backtest): variant loop off, so the grid must "
+                             f"have the single column {run_id!r}; got {columns}.")
+        out[run_id] = _tested(run_id, run_id, "artifacts/protocol_result.yaml")
+    return out
+
+
+def _find_window_equity_file(run_dir: Path, window_run_id: str) -> Path | None:
+    """portfolio_states.csv of one (symbol, window) backtest. tools/run_protocol.py
+    writes it under <out_dir>/results/<window run_id>/, with out_dir = RUN_DIR
+    (variant loop off) or RUN_DIR/variants/<variant_id> (variant loop on). The
+    window run_id is unique; more than one match raises."""
+    roots = [run_dir / "results"]
+    vroot = run_dir / "variants"
+    if vroot.exists():
+        roots += [d / "results" for d in sorted(vroot.iterdir()) if d.is_dir()]
+    hits = [r / window_run_id / "portfolio_states.csv" for r in roots
+            if (r / window_run_id / "portfolio_states.csv").exists()]
+    if len(hits) > 1:
+        raise ValueError(f"avg daily return: window run {window_run_id!r} has more than one "
+                         f"portfolio_states.csv: {hits}")
+    return hits[0] if hits else None
+
+
+def _window_daily_returns(path: Path) -> list:
+    """Day-over-day simple returns of one window's equity (see
+    _avg_daily_return_worst_symbol for the definition). Fails loud on a missing
+    column or a non-numeric / non-positive equity value."""
+    import csv as _csv
+    with open(path, encoding="utf-8", newline="") as f:
+        reader = _csv.DictReader(f)
+        missing = {"timestamp", "regime", "postRebalance_total_value"} - set(reader.fieldnames or [])
+        if missing:
+            raise ValueError(f"avg daily return: {path} lacks column(s) {sorted(missing)}")
+        rows = []
+        for row in reader:
+            if str(row["regime"]).strip().upper() == "NOT_READY":
+                continue
+            ts = datetime.fromisoformat(str(row["timestamp"]).strip())
+            try:
+                equity = float(row["postRebalance_total_value"])
+            except (TypeError, ValueError):
+                raise ValueError(f"avg daily return: {path} has a non-numeric "
+                                 f"postRebalance_total_value at {row['timestamp']!r}")
+            if not math.isfinite(equity) or equity <= 0:
+                raise ValueError(f"avg daily return: {path} has equity {equity!r} at "
+                                 f"{row['timestamp']!r}")
+            rows.append((ts, equity))
+    rows.sort(key=lambda r: r[0])
+    daily: dict = {}
+    for ts, equity in rows:  # last bar of each calendar day
+        daily[ts.date()] = equity
+    closes = [daily[d] for d in sorted(daily)]
+    return [closes[i] / closes[i - 1] - 1.0 for i in range(1, len(closes))]
+
+
+def _avg_daily_return_worst_symbol(run_dir: Path, pr: dict) -> tuple:
+    """avg_daily_return_min's actual value for ONE backtest candidate. Returns
+    (value or None, note).
+
+    DEFINITION (the operator must confirm this is what the bar means):
+      * source: every (symbol, window) backtest in protocol_result.results, via its
+        portfolio_states.csv (the engine's per-bar state; the same file and column
+        trading-bot's bar_equity block uses);
+      * equity: postRebalance_total_value, warm-up bars (regime NOT_READY) dropped;
+      * daily close: the last bar of each calendar day (UTC date of the timestamp);
+      * daily return: SIMPLE return close_d / close_(previous available day) - 1,
+        within one window only (never across two windows; each window starts from
+        a fresh balance). The first day of a window has no prior close and adds no
+        return. A day with no bar is absent, never a fabricated 0.0;
+      * per symbol: the ARITHMETIC mean of all its daily returns, pooled over its
+        windows (not geometric, not annualised; a fraction, 0.0005 = 0.05 %/day);
+      * actual = the WORST (lowest) symbol mean, the same worst-symbol rule as the
+        drawdown and trade-count bars.
+    None (NOT_EVALUABLE) when results is empty, any window's portfolio_states.csv
+    is missing, or a symbol has no daily return at all."""
+    results = pr.get("results") or []
+    if not results:
+        return None, "avg daily return: protocol_result has no per-window results"
+    per_symbol: dict = {}
+    for r in results:
+        wid = r.get("run_id") if isinstance(r, dict) else None
+        sym = r.get("symbol") if isinstance(r, dict) else None
+        path = _find_window_equity_file(run_dir, wid) if wid else None
+        if path is None:
+            return None, (f"avg daily return: no portfolio_states.csv for window "
+                          f"{r.get('window') if isinstance(r, dict) else r!r} ({sym}, run {wid!r})")
+        per_symbol.setdefault(sym, []).extend(_window_daily_returns(path))
+    means = {}
+    for sym, rets in per_symbol.items():
+        if not rets:
+            return None, f"avg daily return: symbol {sym!r} has no daily return"
+        means[sym] = sum(rets) / len(rets)
+    worst = min(means, key=lambda s: means[s])
+    return round(means[worst], 8), (
+        f"arithmetic mean of daily simple returns (postRebalance_total_value, last bar per "
+        f"UTC day, post-warmup, within each window), pooled per symbol over "
+        f"{len(results)} window backtest(s); worst symbol {worst}")
+
+
+def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str) -> dict:
+    """Grade every tested variant of THIS attempt (see
+    _profit_bars_backtest_candidates) against every bar in
+    config/profitability_bars.yaml; write artifacts/profit_bars_evaluation.yaml
+    (per-variant shape, scope every_backtest) and return it. Never pauses: the
+    profit_bars_reached stop is raised later, in the route after regroup_record.
+
+    Numbers per variant: Sharpe and DSR from _promotion_dsr_context's evaluator on
+    that variant's own protocol_result (the promotion audit's own math and ledger
+    basis, read after this attempt's trial rows were written and after the
+    conformance check invalidated any non-conforming one); drawdown and trade count
+    from its own per_symbol_summary (worst symbol); avg daily return from its own
+    per-window equity files (_avg_daily_return_worst_symbol).
+
+    result is PASS when ANY graded variant passes every bar; `passing` names them.
+    A malformed or missing bars file raises ProfitabilityBarsSchemaError before
+    anything is graded or written (fail loud; never a defaulted threshold)."""
+    bars = _load_profitability_bars()
+    candidates = _profit_bars_backtest_candidates(run_dir, run_id)
+    dsr_ctx = _promotion_dsr_context()
+
+    variants: dict = {}
+    for cid, cand in candidates.items():
+        entry = {"kind": cand["kind"], "trial_id": cand["trial_id"],
+                 "protocol_result_ref": cand["protocol_result_ref"]}
+        if cand["protocol_result"] is None:
+            variants[cid] = {**entry, "result": cand["result"], "reason": cand["reason"],
+                             "bars": [], "reasons": []}
+            continue
+        pr = cand["protocol_result"]
+        raw_median_sr, _sparse, _passes, _e_max, dsr_result = dsr_ctx["dsr_candidate"](pr)
+        adr, adr_note = _avg_daily_return_worst_symbol(run_dir, pr)
+        results, overall, reasons = _grade_profit_bars(
+            bars,
+            sharpe=raw_median_sr,
+            sharpe_note=(f"{cand['protocol_result_ref']}: median of per_symbol_summary[*]"
+                         f".median_sharpe (the promotion audit's raw_median_sharpe rule)"),
+            dsr=dsr_result.get("deflated_sharpe_ratio"),
+            dsr_note=(f"{cand['protocol_result_ref']}: deflated Sharpe on the campaign trial "
+                      f"ledger (the promotion audit's rule; None on the sparse-trading or "
+                      f"insufficient-trials path, where no DSR is computed at all)"),
+            pss=pr.get("per_symbol_summary") or {},
+            avg_daily_return=(adr, adr_note),
+        )
+        variants[cid] = {**entry, "result": overall, "reason": None,
+                         "bars": results, "reasons": reasons}
+
+    passing = sorted(cid for cid, v in variants.items() if v["result"] == "PASS")
+    overall = "PASS" if passing else "FAIL"
+    evaluation = {
+        "run_id": run_id,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "scope": _profit_bars_scope_every_backtest(),
+        "bars_ratified_by": bars["ratified_by"],
+        "bars_ratified_at": bars["ratified_at"],
+        "dsr_basis": {"n_dsr_total": dsr_ctx["n_dsr_total"], "n_trials": dsr_ctx["n_trials"]},
+        # Per-variant shape. Composites (slice 7) would add their own graded
+        # entries -- see _profit_bars_backtest_candidates' seam note.
+        "variants": variants,
+        "passing": passing,
+        "result": overall,
+    }
+    save_yaml(run_dir / "artifacts" / _PROFIT_BARS_EVALUATION_FILE, evaluation)
+    graded = sum(1 for v in variants.values() if v["bars"])
+    print(f"⚙️  branch 3: profit_bars_evaluation.yaml written, {graded} graded variant(s) of "
+          f"{len(variants)} (result={overall}, passing={passing}) -- recorded; any stop is "
+          f"raised after regroup_record")
+    return evaluation
+
+
+def _load_every_backtest_evaluation(run_dir: Path, run_id: str) -> dict | None:
+    """This run's per-backtest evaluation, or None when absent or not
+    scope=every_backtest for this run_id (e.g. a promote-path file)."""
+    path = run_dir / "artifacts" / _PROFIT_BARS_EVALUATION_FILE
+    if not path.exists():
+        return None
+    doc = load_yaml(path)
+    if (not isinstance(doc, dict) or doc.get("scope") != _profit_bars_scope_every_backtest()
+            or doc.get("run_id") != run_id):
+        return None
+    return doc
+
+
+def _profit_bars_stop_route(run_dir: Path, run_id: str) -> str | None:
+    """The decide step's branch-3 stop, called by run_loop after regroup_record
+    (so the memory already holds the per-variant results) and BEFORE the grid
+    route: "human_pause" when this attempt's evaluation has a passing variant and
+    this exact evaluation has not already stopped the run; else None (the grid
+    route follows, unchanged).
+
+    Same mechanics as the inconclusive_grid pause: status paused_for_human, the
+    existing flag profit_bars_reached, pending_stage left at regroup_record (past
+    protocol_execution). `profit_bars_stop_evaluation` records the evaluation's
+    generated_at: a resume re-enters regroup_record and this route, which then
+    sees the stop was already raised for this evaluation and continues into the
+    grid route -- forward, never re-running the backtests and never re-pausing on
+    the same numbers. A new protocol_execution attempt writes a new evaluation and
+    can stop again. Never changes idea_status."""
+    ev = _load_every_backtest_evaluation(run_dir, run_id)
+    if ev is None:
+        raise FileNotFoundError(
+            f"profit bars (every backtest): {run_dir / 'artifacts' / _PROFIT_BARS_EVALUATION_FILE} "
+            f"is missing or not this run's every_backtest evaluation -- it is written right "
+            f"after protocol_execution under the flag.")
+    passing = ev.get("passing") or []
+    if not passing:
+        return None
+    state = load_yaml(run_dir / "pipeline_state.yaml") or {}
+    if state.get("profit_bars_stop_evaluation") == ev.get("generated_at"):
+        print(f"⚙️  branch 3: profit_bars_reached was already raised for this evaluation "
+              f"({ev.get('generated_at')}); continuing into the grid route.")
+        return None
+    idea = load_yaml(run_dir / "artifacts" / "idea_status.yaml") or {}
+    print(f"\n🛑 PROFIT BARS REACHED: variant(s) {passing} passed every bar in "
+          f"config/profitability_bars.yaml. The grid's idea_status is "
+          f"{idea.get('idea_status')!r} (unchanged -- it comes only from the grid). "
+          f"Pausing for the operator (branch-3 stop).")
+    update_state(path=run_dir, status="paused_for_human", flags={"profit_bars_reached": True},
+                 profit_bars_stop_evaluation=ev.get("generated_at"))
+    return "human_pause"
 
 
 def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
@@ -7702,9 +8185,30 @@ def _dispatch_verdict_route(path: Path, run_id: str, interp: dict, campaign: dic
         # failure -- promotion_audit.yaml is already on disk by this point either
         # way, so on any exception this falls back to the pre-existing unconditional
         # "holdout_evaluation" route rather than raising.
+        #
+        # Coexistence with branch 3 on every backtest (code review 2026-09-24):
+        # the promote-path check is skipped ONLY when THIS run already holds its
+        # own scope=every_backtest evaluation (written right after
+        # protocol_execution, graded on every variant with the same Sharpe/DSR
+        # math, and the one that raises profit_bars_reached in the route after
+        # regroup_record). A second evaluation would overwrite that per-variant
+        # artifact with a single-candidate one, and a second pause on the same
+        # numbers would re-stop a run the operator already released. Any other
+        # case (flag off, or flag on but no such artifact, e.g. a run that
+        # reached protocol_execution before the flag was on) runs the check as
+        # before; with the flag on it also grades avg_daily_return_min from the
+        # per-window equity files. The flag is read ONCE, inside the try, so even
+        # a malformed flag value falls back to the unconditional holdout route.
         if _profit_bars_file_enabled():
             try:
-                profit_bars_result = _evaluate_profit_bars(path, run_id)
+                _pbe_on = _profit_bars_every_backtest_enabled()
+                if _pbe_on and _load_every_backtest_evaluation(path, run_id) is not None:
+                    print("⚙️  0.2: promote-path profit-bars check skipped -- this run's "
+                          "artifacts/profit_bars_evaluation.yaml (scope every_backtest) already "
+                          "graded every variant after protocol_execution.")
+                    return "holdout_evaluation"
+                profit_bars_result = (_evaluate_profit_bars(path, run_id, with_avg_daily_return=True)
+                                      if _pbe_on else _evaluate_profit_bars(path, run_id))
                 if profit_bars_result.get("result") == "PASS":
                     print("\n🛑 PROFIT BARS REACHED: every bar in config/profitability_bars.yaml "
                           "passed. Pausing for human regroup before the single-use holdout gate "
@@ -8469,6 +8973,16 @@ def run_loop(run_id: str):
         print(f"❌ regroup_record pre-flight failed: {e}")
         update_state(path=RUN_DIR, status="failed", last_error=str(e))
         return
+    # Branch 3 on every backtest: resolved ONCE the same way, so its dependency on
+    # profit_bars_file (or a non-bool value) fails the run here, before any spend.
+    _pbe_flag = False
+    try:
+        if _pending_at_start and not _pending_at_start.startswith(_TERMINAL_AT_START):
+            _pbe_flag = _profit_bars_every_backtest_enabled()
+    except Exception as e:
+        print(f"❌ profit_bars_every_backtest pre-flight failed: {e}")
+        update_state(path=RUN_DIR, status="failed", last_error=str(e))
+        return
 
     while True:
         current_stage = state.get("pending_stage")
@@ -8636,7 +9150,8 @@ def run_loop(run_id: str):
             elif current_stage == "regroup_record":
                 # E-058 S2a: tool stage, no LLM call, no _SKILL_MAP entry. Its
                 # component-error / idea_status checks are reused by the route below.
-                _rr_checks = _run_regroup_record_stage(run_id, RUN_DIR)
+                _rr_checks = _run_regroup_record_stage(run_id, RUN_DIR,
+                                                       profit_bars_evaluated=_pbe_flag)
             elif not _skip_agent:
                 if current_stage == "hypothesis_generation":
                     try:
@@ -8987,9 +9502,17 @@ def run_loop(run_id: str):
             elif current_stage == "regroup_record":
                 # E-058 S2a: the unchanged grid route, after the memory is written,
                 # on the checks the stage already made this iteration.
-                next_stage = determine_post_specialist_readers_route(
-                    RUN_DIR, run_id, component_errors=_rr_checks["component_errors"],
-                    idea=_rr_checks["idea"])
+                # Branch 3 on every backtest: the decide step first raises the
+                # profit_bars_reached stop when a variant passed every bar (the
+                # memory already records it). A component-error run skips it: its
+                # own pause below wins. None -> the grid route, unchanged.
+                next_stage = None
+                if _pbe_flag and not _rr_checks["component_errors"]:
+                    next_stage = _profit_bars_stop_route(RUN_DIR, run_id)
+                if next_stage is None:
+                    next_stage = determine_post_specialist_readers_route(
+                        RUN_DIR, run_id, component_errors=_rr_checks["component_errors"],
+                        idea=_rr_checks["idea"])
                 if next_stage == "human_pause":
                     update_state(path=RUN_DIR, status="paused_for_human")
                     break
@@ -9003,6 +9526,16 @@ def run_loop(run_id: str):
                 if next_stage == "human_pause":
                     update_state(path=RUN_DIR, status="paused_for_human")
                     break
+
+            # Branch 3 on every backtest (orchestrator.profit_bars_every_backtest.
+            # enabled, off by default): after either protocol_execution branch above
+            # (so after its conformance check, which may have invalidated a
+            # variant's trial row), grade every tested variant of this attempt and
+            # write profit_bars_evaluation.yaml. It NEVER changes next_stage and
+            # never pauses here: protocol_execution completes normally; the stop is
+            # raised in the route after regroup_record (_profit_bars_stop_route).
+            if current_stage == "protocol_execution" and _pbe_flag:
+                _evaluate_profit_bars_every_backtest(RUN_DIR, run_id)
 
             # 6. Mark completed and stage next phase
             completed = state.get("completed_stages", [])

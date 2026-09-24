@@ -121,10 +121,60 @@
           ],
           "description": "E-058 S2b (tools/block_registry.py): block_ids registered in campaign_record/block_registry.yaml by this run, or why none was: not_validated (idea_status is not validated) or no_manifest (validated, but artifacts/block_manifest.yaml is absent)."
         },
-        "profit_bars": { "type": "null" },
-        "profit_bars_reason": { "const": "not evaluated before regroup" },
+        "profit_bars": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/profit_bars" }
+          ],
+          "description": "Branch 3 on every backtest (orchestrator.profit_bars_every_backtest.enabled, tools/campaign_memory.py::profit_bars_block): one profit-bars result per variant from artifacts/profit_bars_evaluation.yaml. null when that check is off (then profit_bars_reason says why). Never decides idea_status."
+        },
+        "profit_bars_reason": {
+          "enum": ["not evaluated before regroup", null],
+          "description": "null exactly when profit_bars is filled (enforced by build_memory_entry and by the allOf rule on this entry)."
+        },
         "kb_entry_id": { "type": ["string", "null"],
                          "description": "E-058 S2b (tools/grid_kb_writer.py): id of this run's entry in campaign_knowledge_base.yaml (legacy_schema: false); null only when the KB file does not exist (the entry is then skipped with a loud log line, like the legacy writer)." }
+      },
+      "allOf": [
+        { "if": { "properties": { "profit_bars": { "type": "null" } } },
+          "then": { "properties": { "profit_bars_reason": { "const": "not evaluated before regroup" } } },
+          "else": { "properties": { "profit_bars_reason": { "type": "null" } } } }
+      ]
+    },
+    "profit_bars": {
+      "type": "object",
+      "required": ["ref", "scope", "result", "passing", "variants"],
+      "additionalProperties": false,
+      "properties": {
+        "ref": { "type": "string" },
+        "scope": { "const": "every_backtest" },
+        "result": { "enum": ["PASS", "FAIL"], "description": "PASS when any tested variant passes every bar." },
+        "passing": { "type": "array", "items": { "type": "string" } },
+        "variants": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "object",
+            "required": ["result", "bars"],
+            "additionalProperties": false,
+            "properties": {
+              "result": { "enum": ["PASS", "FAIL", "NOT_TESTED", "INVALIDATED"],
+                          "description": "INVALIDATED: tested on this attempt but its trial row is invalidated_artifact (conformance) -- never graded, never passing." },
+              "bars": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "object",
+                  "required": ["result", "actual", "threshold"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "result": { "enum": ["PASS", "FAIL", "NOT_EVALUABLE"] },
+                    "actual": {}, "threshold": {}
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   }

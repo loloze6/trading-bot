@@ -1,0 +1,37 @@
+run_id: run_gold
+generated_at: <normalised>
+bars:
+- name: sharpe_min
+  threshold: 0.5
+  actual: 0.3
+  result: FAIL
+  note: promotion_audit.yaml.raw_median_sharpe
+- name: deflated_sharpe_threshold
+  threshold: 0.95
+  actual: null
+  result: NOT_EVALUABLE
+  note: promotion_audit.yaml.deflated_sharpe_ratio (None on the sparse-trading or
+    insufficient-trials path, where no DSR is computed at all)
+- name: max_drawdown_pct_max
+  threshold: 25.0
+  actual: 40.0
+  result: FAIL
+  note: protocol_result.yaml.per_symbol_summary[*].max_abs_drawdown_pct, worst symbol
+- name: trade_count_min
+  threshold: 30
+  actual: 3
+  result: FAIL
+  note: protocol_result.yaml.per_symbol_summary[*].min_trade_count, worst symbol
+- name: avg_daily_return_min
+  threshold: 0.0005
+  actual: null
+  result: NOT_EVALUABLE
+  note: 'no source: protocol_result.yaml and metrics.json''s bar_equity block (off-by-default)
+    neither one carries a mean-daily-return figure'
+result: FAIL
+reasons:
+- 'sharpe_min: FAIL (threshold=0.5, actual=0.3)'
+- 'deflated_sharpe_threshold: NOT_EVALUABLE (threshold=0.95, actual=None)'
+- 'max_drawdown_pct_max: FAIL (threshold=25.0, actual=40.0)'
+- 'trade_count_min: FAIL (threshold=30, actual=3)'
+- 'avg_daily_return_min: NOT_EVALUABLE (threshold=0.0005, actual=None)'

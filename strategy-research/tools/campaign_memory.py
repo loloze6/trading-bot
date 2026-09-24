@@ -61,7 +61,22 @@ LEGACY_NOTE = (
 )
 
 ENGINEERING_FAULT_COMPONENT_ERROR = "component_execution_error"
+# `profit_bars: null` + this reason: the branch-3 per-backtest check is off
+# (orchestrator.profit_bars_every_backtest.enabled). When it is on, `profit_bars`
+# holds the per-variant results (profit_bars_block) and the reason is null.
 PROFIT_BARS_NOT_EVALUATED = "not evaluated before regroup"
+# artifacts/profit_bars_evaluation.yaml written by the per-backtest check
+# (run_phase1_research._evaluate_profit_bars_every_backtest). The promote-path
+# check writes the same file WITHOUT a scope (one candidate, no variants), which
+# this module must never mistake for per-variant results. THE one definition:
+# the writer reads it from here (run_phase1_research._profit_bars_scope_every_backtest).
+PROFIT_BARS_SCOPE_EVERY_BACKTEST = "every_backtest"
+_PROFIT_RESULTS = ("PASS", "FAIL")
+# INVALIDATED: tested on this attempt, but its trial row is invalidated_artifact
+# (conformance violation) -- never graded, never passing.
+_PROFIT_VARIANT_RESULTS = ("PASS", "FAIL", "NOT_TESTED", "INVALIDATED")
+_PROFIT_TESTED_RESULTS = ("PASS", "FAIL", "INVALIDATED")
+_PROFIT_BAR_RESULTS = ("PASS", "FAIL", "NOT_EVALUABLE")
 # memory entry `registry: {skipped: ...}` reasons (E-058 S2b; tools/block_registry.py)
 REGISTRY_SKIPPED_NOT_VALIDATED = "not_validated"
 REGISTRY_SKIPPED_NO_MANIFEST = "no_manifest"
@@ -308,6 +323,73 @@ def _proposals_block(run_dir: Path, run_id: str, categories) -> list:
     } for cat in categories]
 
 
+def profit_bars_block(run_dir: Path, run_id: str, variants: dict) -> dict:
+    """The memory's `profit_bars` value from the per-backtest check's
+    artifacts/profit_bars_evaluation.yaml: one result per variant, each bar's
+    result/actual/threshold and the passing variants (the profit_bars_reached
+    stop, if any, is raised after this record). `variants` is this entry's own variants block; the two must
+    describe the same variants (a tested variant was graded or invalidated, an
+    untested or failed one was not), else this raises -- e.g. a stale
+    protocol_result graded for a variant whose backtest failed on this pass.
+    Read only; decides nothing (the stop is raised by the route after
+    regroup_record, never here)."""
+    path = Path(run_dir) / "artifacts" / "profit_bars_evaluation.yaml"
+    doc = _load_mapping(path, "the per-backtest profit-bars evaluation "
+                              "(orchestrator.profit_bars_every_backtest.enabled is on)")
+    if doc.get("scope") != PROFIT_BARS_SCOPE_EVERY_BACKTEST:
+        raise CampaignMemoryError(
+            f"{path}: scope={doc.get('scope')!r}, expected {PROFIT_BARS_SCOPE_EVERY_BACKTEST!r} "
+            f"(a promote-path evaluation has one candidate and no per-variant results)")
+    if doc.get("run_id") != run_id:
+        raise CampaignMemoryError(f"{path}: run_id={doc.get('run_id')!r} is not {run_id!r}")
+    result, passing = doc.get("result"), doc.get("passing")
+    if result not in _PROFIT_RESULTS:
+        raise CampaignMemoryError(f"{path}: result={result!r} not one of {_PROFIT_RESULTS}")
+    graded = doc.get("variants")
+    if not isinstance(graded, dict) or not graded:
+        raise CampaignMemoryError(f"{path}: variants must be a non-empty mapping")
+    out_variants = {}
+    for vid in sorted(graded):
+        v = graded[vid]
+        where = f"{path}: variants.{vid}"
+        if not isinstance(v, dict) or v.get("result") not in _PROFIT_VARIANT_RESULTS:
+            raise CampaignMemoryError(f"{where}: result must be one of {_PROFIT_VARIANT_RESULTS}")
+        bars = v.get("bars")
+        if not isinstance(bars, list) or (v["result"] in ("PASS", "FAIL")) != bool(bars):
+            raise CampaignMemoryError(f"{where}: bars must be a list, non-empty exactly when "
+                                      f"the variant was graded (PASS/FAIL)")
+        compact = {}
+        for i, b in enumerate(bars):
+            if (not isinstance(b, dict) or not isinstance(b.get("name"), str)
+                    or b.get("result") not in _PROFIT_BAR_RESULTS or b["name"] in compact):
+                raise CampaignMemoryError(f"{where}.bars[{i}]: needs a unique name and a result "
+                                          f"in {_PROFIT_BAR_RESULTS} ({b!r})")
+            compact[b["name"]] = {"result": b["result"], "actual": b.get("actual"),
+                                  "threshold": b.get("threshold")}
+        if bars:
+            every_pass = all(c["result"] == "PASS" for c in compact.values())
+            if every_pass != (v["result"] == "PASS"):
+                raise CampaignMemoryError(f"{where}: result={v['result']!r} disagrees with its bars")
+        out_variants[vid] = {"result": v["result"], "bars": compact}
+    expected_passing = sorted(vid for vid, v in out_variants.items() if v["result"] == "PASS")
+    if passing != expected_passing or result != ("PASS" if expected_passing else "FAIL"):
+        raise CampaignMemoryError(f"{path}: result={result!r}/passing={passing!r} disagree with "
+                                  f"the per-variant results (passing {expected_passing})")
+    if set(out_variants) != set(variants):
+        raise CampaignMemoryError(f"{path}: graded variants {sorted(out_variants)} are not this "
+                                  f"entry's variants {sorted(variants)}")
+    for vid, mv in variants.items():
+        tested = mv.get("status") == "tested"
+        if tested != (out_variants[vid]["result"] in _PROFIT_TESTED_RESULTS):
+            raise CampaignMemoryError(
+                f"{path}: variant {vid!r} is {mv.get('status')!r} in the memory but "
+                f"{out_variants[vid]['result']!r} in the profit-bars evaluation -- the two must "
+                f"describe the same backtests (stale protocol_result.yaml?)")
+    return {"ref": _ref(run_id, "artifacts/profit_bars_evaluation.yaml"),
+            "scope": PROFIT_BARS_SCOPE_EVERY_BACKTEST, "result": result,
+            "passing": expected_passing, "variants": out_variants}
+
+
 def _find_retired(obj, path="") -> list:
     found = []
     if isinstance(obj, dict):
@@ -353,12 +435,17 @@ def build_fault_entry(run_dir: Path, run_id: str, component_errors: list,
 
 
 def build_memory_entry(run_dir: Path, run_id: str, *, trial_sharpes, categories,
-                       protocol_root: Path | None = None, recorded_at: str | None = None) -> dict:
+                       protocol_root: Path | None = None, recorded_at: str | None = None,
+                       profit_bars_evaluated: bool = False) -> dict:
     """One run's full memory entry (a run WITHOUT component errors -- see
     build_fault_entry for those), from artifacts that exist under the flag.
     `trial_sharpes` (campaign_state, read only) and `categories` (the reader
-    categories) are passed in. Raises CampaignMemoryError on any malformed or
-    inconsistent input."""
+    categories) are passed in. `profit_bars_evaluated` is True when the
+    per-backtest profit-bars check is on (the caller reads
+    orchestrator.profit_bars_every_backtest.enabled): `profit_bars` is then the
+    per-variant block from artifacts/profit_bars_evaluation.yaml (required) and
+    its reason null; False keeps `profit_bars: null` + PROFIT_BARS_NOT_EVALUATED.
+    Raises CampaignMemoryError on any malformed or inconsistent input."""
     run_dir = Path(run_dir)
     arts = run_dir / "artifacts"
     card = _load_mapping(arts / "hypothesis_card.yaml", "the idea's identity (hypothesis_id)")
@@ -417,8 +504,9 @@ def build_memory_entry(run_dir: Path, run_id: str, *, trial_sharpes, categories,
         # (E-058 S2b): {"block_ids": [...]} or {"skipped": <reason>}.
         "registry": ({"skipped": REGISTRY_SKIPPED_NOT_VALIDATED} if idea_status != "validated"
                      else None),
-        "profit_bars": None,
-        "profit_bars_reason": PROFIT_BARS_NOT_EVALUATED,
+        "profit_bars": (profit_bars_block(run_dir, run_id, variants) if profit_bars_evaluated
+                        else None),
+        "profit_bars_reason": None if profit_bars_evaluated else PROFIT_BARS_NOT_EVALUATED,
         # Filled by the stage from tools/grid_kb_writer.py (E-058 S2b).
         "kb_entry_id": None,
     }

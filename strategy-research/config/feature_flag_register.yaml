@@ -176,6 +176,29 @@ flags:
       lists it as "new ticket" as of 2026-09-19); blocked_on names the item
       directly rather than inventing an E-XXX identifier.
 
+  - name: profit_bars_every_backtest
+    kind: orchestrator_config
+    config_key: orchestrator.profit_bars_every_backtest.enabled
+    reader: run_phase1_research._profit_bars_every_backtest_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "the profit_bars_file flag above (unratified draft bar values)"
+    criterion: >
+      Landed 2026-09-24 (branch 3 on every backtest, operator-approved the
+      same day; code-review fixes the same day). Requires profit_bars_file
+      and regroup_record (hence specialist_readers); the run fails
+      pre-flight otherwise. Off: byte-identical, promote-path check
+      unchanged (golden fixtures from master 83794d9a). On: every variant
+      tested on the attempt is graded right after protocol_execution
+      (per-variant artifacts/profit_bars_evaluation.yaml, scope
+      every_backtest, avg_daily_return_min computed from the per-window
+      equity files), regroup_record records it in the campaign memory, and
+      the route after regroup_record raises the existing profit_bars_reached
+      stop; idea_status is never touched. Tested by
+      tests/test_profit_bars_every_backtest.py. Turn on together with
+      profit_bars_file once the operator ratifies the bar values and
+      confirms the avg_daily_return_min definition.
+
   - name: data_availability_gate
     kind: orchestrator_config
     config_key: orchestrator.data_availability_gate.enabled
