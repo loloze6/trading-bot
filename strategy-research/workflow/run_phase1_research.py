@@ -1912,9 +1912,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
         # artifacts/variant_patches.yaml -- base + design patch + asset patch, each
         # {variant_id, patch: [{path, value}], rationale}. This branch applies each variant's
         # patch to the base config, validates the result (validate_config.py, which includes V12
-        # component-existence automatically), checks the optional manifest's declared paths
-        # resolve (gracefully skipped when no manifest exists -- the manifest contract,
-        # STRATEGY_DESIGN_GUIDE.md §7c, is not built yet), and writes one strategy_config.json
+        # component-existence automatically), checks the manifest's declared paths resolve,
+        # and writes one strategy_config.json
         # per variant, plus a 'base' variant copy at candidate_strategy_config.json so the
         # EXISTING data_availability_gate/protocol_execution tool branches above (both
         # unmodified) can run against it exactly as they always have.
@@ -1937,8 +1936,22 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 "tool stage can run."
             )
 
-        manifest_path = ARTIFACTS / "block_manifest.yaml"
-        manifest = load_yaml(manifest_path) if manifest_path.exists() else None
+        # E-056 1b block manifest (STRATEGY_DESIGN_GUIDE.md §7c, built): 1b writes
+        # artifacts/block_manifest.yaml next to the config. Checked here, against the base
+        # config, with tools/block_manifest.py -- the exact check tools/block_registry.py
+        # runs later -- so a manifest this stage accepts is one the registry accepts.
+        # Missing, unparseable, malformed or unresolved: fail loud before any variant is
+        # built (this branch only runs under orchestrator.config_direct_authoring).
+        _bm = _block_manifest_module()
+        manifest_path = ARTIFACTS / _bm.MANIFEST_FILENAME
+        manifest = _bm.load_manifest_file(manifest_path, error_cls=RuntimeError)
+        if manifest is None:
+            raise RuntimeError(
+                "run_tool_worker(backtest_specification): artifacts/block_manifest.yaml is "
+                "missing -- strategy_config_authoring must write it next to the base config "
+                "(STRATEGY_DESIGN_GUIDE.md §7c) when its status is spec_ready."
+            )
+        _bm.check_manifest(manifest, base_config, where=str(manifest_path), error_cls=RuntimeError)
 
         variants_dir = ARTIFACTS / "variants"
         variants_dir.mkdir(parents=True, exist_ok=True)
@@ -1989,7 +2002,10 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 print(f"⚠️  [E-056 Slice3b] variant '{variant_id}' NOT TESTED: {reason}")
                 continue
 
-            missing_paths = _check_manifest_paths(variant_config, manifest) if manifest else []
+            # A variant patch can still remove a BLOCK path; that variant no longer holds
+            # the idea, so it is not tested. Scaffolding may change per variant (the base
+            # config's scaffolding was checked above).
+            missing_paths = _check_manifest_paths(variant_config, manifest)
             if missing_paths:
                 reason = f"manifest paths unresolved: {missing_paths}"
                 index[variant_id] = {"status": "not_tested", "reason": reason}
@@ -4152,6 +4168,11 @@ async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | 
 
     # E-058 S2b: campaign-review's memory input, off by default (see helper docstring above).
     _apply_regroup_record_context(stage_name, handoff, RUN_DIR)
+
+    # E-056 1b block manifest: stale-manifest removal + manifest-retry context,
+    # strategy_config_authoring under config_direct_authoring only (see helper docstrings).
+    _clear_stale_block_manifest(stage_name, RUN_DIR)
+    _apply_block_manifest_retry_context(stage_name, handoff, RUN_DIR)
 
     # Select engine from handoff file, default to Claude if not specified
     engine = handoff.get("assigned_engine", "claude")
@@ -8551,6 +8572,88 @@ def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
     raise ValueError(f"Unknown campaign_review recommendation: {rec}")
 
 
+# E-056 1b block manifest (code-review fix 1): 1b's manifest is checked right
+# after 1b, before innovation_expansion spends an LLM call on patches. One
+# re-try of 1b carries the error; a second bad manifest fails the run.
+_BLOCK_MANIFEST_RETRY_MAX = 1
+_BLOCK_MANIFEST_RETRY_STATE_KEY = "block_manifest_retry"
+
+
+def _block_manifest_error(path: Path):
+    """None when artifacts/block_manifest.yaml exists and passes
+    tools/block_manifest.check_manifest against the config in
+    artifacts/backtest_spec.yaml (the same check 5a and the registry run);
+    otherwise the error text."""
+    _bm = _block_manifest_module()
+    manifest_path = path / "artifacts" / _bm.MANIFEST_FILENAME
+    spec_path = path / "artifacts" / "backtest_spec.yaml"
+    try:
+        spec = load_yaml(spec_path) if spec_path.exists() else None
+        config = spec.get("config") if isinstance(spec, dict) else None
+        if not isinstance(config, dict):
+            return f"{spec_path} has no 'config' mapping to check the manifest against"
+        manifest = _bm.load_manifest_file(manifest_path)
+        if manifest is None:
+            return (f"{manifest_path} is missing -- a spec_ready config needs its block manifest "
+                    f"(STRATEGY_DESIGN_GUIDE.md §7c)")
+        _bm.check_manifest(manifest, config, where=str(manifest_path))
+    except _bm.BlockManifestError as exc:
+        return str(exc)
+    return None
+
+
+def _route_block_manifest_check(path: Path) -> str:
+    """spec_ready from 1b: innovation_expansion when the manifest is valid;
+    otherwise back to strategy_config_authoring ONCE with the error (carried by
+    _apply_block_manifest_retry_context); a second failure raises."""
+    error = _block_manifest_error(path)
+    state = load_yaml(path / "pipeline_state.yaml") or {}
+    attempts = (state.get(_BLOCK_MANIFEST_RETRY_STATE_KEY) or {}).get("attempts", 0)
+    if error is None:
+        if attempts:
+            update_state(path=path, **{_BLOCK_MANIFEST_RETRY_STATE_KEY: {"attempts": 0, "last_error": None}})
+        return "innovation_expansion"
+    if attempts >= _BLOCK_MANIFEST_RETRY_MAX:
+        raise RuntimeError(
+            f"strategy_config_authoring: block_manifest.yaml still invalid after "
+            f"{attempts} retry -- {error}")
+    update_state(path=path, **{_BLOCK_MANIFEST_RETRY_STATE_KEY: {
+        "attempts": attempts + 1, "last_error": error}})
+    print(f"🔁 [E-056 1b] block_manifest.yaml invalid -- retrying strategy_config_authoring "
+          f"once with the error: {error}")
+    return "strategy_config_authoring"
+
+
+def _apply_block_manifest_retry_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
+    """Under config_direct_authoring, on a manifest retry of
+    strategy_config_authoring, put the previous manifest error into that
+    stage's handoff. Flag off, another stage, or no retry pending: no-op."""
+    if stage_name != "strategy_config_authoring" or not _config_direct_authoring_enabled():
+        return
+    state_path = run_dir / "pipeline_state.yaml"
+    state = (load_yaml(state_path) or {}) if state_path.exists() else {}
+    retry = state.get(_BLOCK_MANIFEST_RETRY_STATE_KEY) or {}
+    if not retry.get("attempts") or not retry.get("last_error"):
+        return
+    handoff.setdefault("injected_context", {})
+    handoff["injected_context"]["block_manifest_error"] = (
+        f"Retry {retry['attempts']}/{_BLOCK_MANIFEST_RETRY_MAX}. Your previous "
+        f"block_manifest.yaml was rejected: {retry['last_error']}. Re-emit backtest_spec.yaml, "
+        f"decision.yaml and a corrected block_manifest.yaml (STRATEGY_DESIGN_GUIDE.md §7c).")
+
+
+def _clear_stale_block_manifest(stage_name: str, run_dir: Path) -> None:
+    """Under config_direct_authoring, delete artifacts/block_manifest.yaml as
+    strategy_config_authoring starts, so a 1b pass never inherits an earlier
+    pass's (or idea's) manifest. Flag off or another stage: no-op."""
+    if stage_name != "strategy_config_authoring" or not _config_direct_authoring_enabled():
+        return
+    stale = run_dir / "artifacts" / _block_manifest_module().MANIFEST_FILENAME
+    if stale.exists():
+        stale.unlink()
+        print(f"[E-056 1b] removed stale {stale} before strategy_config_authoring")
+
+
 def determine_post_strategy_config_authoring_route(path: Path):
     """Routing for the new strategy_config_authoring stage (E-056 Slice 3b,
     config-direct authoring). Mirrors determine_post_spec_route's shape
@@ -8564,7 +8667,7 @@ def determine_post_strategy_config_authoring_route(path: Path):
     decision = load_yaml(path / "artifacts" / "decision.yaml")
     status = decision.get("status", "").strip().lower()
     if status == "spec_ready":
-        return "innovation_expansion"
+        return _route_block_manifest_check(path)
     if status == "component_gap":
         update_state(path=path, status="paused_for_human")
         print("\n⏸️ COMPONENT GAP: hypothesis needs an engine piece that does not exist. "
@@ -8592,6 +8695,15 @@ def _json_pointer_module():
         sys.path.insert(0, _tools)
     import json_pointer as _jp
     return _jp
+
+
+def _block_manifest_module():
+    """tools/block_manifest.py (E-056 1b block manifest): the one implementation
+    of the STRATEGY_DESIGN_GUIDE.md §7c contract, shared with
+    tools/block_registry.py. Imported lazily like the other tools/ siblings."""
+    _json_pointer_module()  # puts tools/ on sys.path
+    import block_manifest as _bm
+    return _bm
 
 
 def _split_json_pointer(path: str) -> list:
@@ -8690,12 +8802,12 @@ def _json_pointer_exists(config, path: str) -> bool:
 
 
 def _check_manifest_paths(variant_config: dict, manifest: dict) -> list:
-    """Returns the manifest-declared config_paths (STRATEGY_DESIGN_GUIDE.md
-    §7c's block.config_paths) that do NOT resolve in variant_config.
-    Gracefully returns [] when the manifest has no block.config_paths list at
-    all -- the manifest contract is proposed, not built (§7c), so most runs
-    will carry no manifest, or an empty one, and that alone is not a
-    failure. Implementation: tools/json_pointer.py (E-058 S2b)."""
+    """Returns the manifest-declared block.config_paths (STRATEGY_DESIGN_GUIDE.md
+    §7c) that do NOT resolve in variant_config; [] when the manifest has no
+    block.config_paths list at all. Block paths only -- a variant may change
+    scaffolding. The whole manifest is checked against the base config first,
+    by tools/block_manifest.check_manifest (after 1b, and again in the
+    backtest_specification tool stage). Implementation: tools/json_pointer.py."""
     return _json_pointer_module().manifest_missing_paths(variant_config, manifest)
 
 

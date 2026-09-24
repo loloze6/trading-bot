@@ -8,7 +8,9 @@ Written ONLY by the orchestrator's `regroup_record` tool stage
 (orchestrator.regroup_record.enabled, off by default), from the run's memory
 entry (tools/campaign_memory.py) plus two run files:
   * artifacts/block_manifest.yaml -- which part of the config IS the block
-    (STRATEGY_DESIGN_GUIDE.md §7c: {block: {kind, config_paths}, ...});
+    (STRATEGY_DESIGN_GUIDE.md §7c: {block: {kind, config_paths}, scaffolding,
+    rationale}), checked by tools/block_manifest.py -- the same code the
+    orchestrator's 5a stage checks it with (one contract, two readers);
   * the tested base config the manifest's JSON pointers are read from.
 
 A block is registered only when ALL hold:
@@ -18,7 +20,9 @@ A block is registered only when ALL hold:
     registered -- its memory entry is the fault-only form);
   * the run's block_manifest.yaml exists. Without it the memory entry says
     `registry: {skipped: no_manifest}` and a loud line is printed; that is not
-    a failure (guess 1: nothing writes the manifest yet).
+    a failure here (guess 1). Stage 1b writes it under
+    orchestrator.config_direct_authoring, where 5a already fails loud when it is
+    missing; a run from another flow simply has none.
 
 Append-only. An entry is never edited or removed by code. A re-run of a run
 that already registered a block must produce exactly the same block (then it
@@ -44,14 +48,15 @@ from pathlib import Path
 
 import yaml
 
+import block_manifest as _bm  # tools/ sibling: THE manifest contract (shared with 5a)
 import campaign_memory as _cm  # tools/ sibling: atomic write + lock primitive
 import json_pointer as _jp  # tools/ sibling: the orchestrator's pointer + base-variant rules
 from workflow_artifact_validation import validate_workflow_artifact
 
 SCHEMA_VERSION = 1
 REGISTRY_LOCK_FILENAME = ".block_registry.lock"
-MANIFEST_FILENAME = "block_manifest.yaml"
-MANIFEST_KINDS = ("forecast", "regime")
+MANIFEST_FILENAME = _bm.MANIFEST_FILENAME
+MANIFEST_KINDS = _bm.MANIFEST_KINDS
 _NUMBER_KEYS = ("value", "threshold", "n_windows", "n_trades")
 # Fields that may differ between two registrations of the same block without
 # the block itself having changed.
@@ -121,45 +126,10 @@ def load_registry(path: Path) -> dict:
 
 
 def load_manifest(run_dir: Path):
-    """artifacts/block_manifest.yaml, validated; None when absent."""
-    path = Path(run_dir) / "artifacts" / MANIFEST_FILENAME
-    if not path.exists():
-        return None
-    try:
-        doc = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except yaml.YAMLError as exc:
-        raise BlockRegistryError(f"{path}: unparseable YAML ({exc})") from exc
-    block = doc.get("block") if isinstance(doc, dict) else None
-    if not isinstance(block, dict):
-        raise BlockRegistryError(f"{path}: expected {{block: {{kind, config_paths}}}}, got {doc!r}")
-    if block.get("kind") not in MANIFEST_KINDS:
-        raise BlockRegistryError(f"{path}: block.kind={block.get('kind')!r} not one of {MANIFEST_KINDS}")
-    paths = block.get("config_paths")
-    if (not isinstance(paths, list) or not paths
-            or not all(isinstance(p, str) and p.startswith("/") for p in paths)
-            or len(set(paths)) != len(paths)):
-        raise BlockRegistryError(f"{path}: block.config_paths must be a non-empty list of distinct "
-                                 f"JSON pointers ('/...'), got {paths!r}")
-    return doc
-
-
-def _resolve_pointer(config, pointer: str, where: str):
-    """RFC 6901 read with the orchestrator's own resolution rules
-    (tools/json_pointer.py, shared with run_phase1_research._json_pointer_exists)."""
-    try:
-        return _jp.resolve_json_pointer(config, pointer)
-    except _jp.JsonPointerError as exc:
-        raise BlockRegistryError(f"{where}: manifest path {pointer!r} does not resolve in the "
-                                 f"tested base config ({exc})") from exc
-
-
-def _regime_assignment(kind: str, paths: list) -> dict:
-    """Derived from the pointer paths only: /strategies/regimes/<name>/... ->
-    <name>; a regime block's detector rules live under /regime_detector."""
-    regimes = sorted({p.split("/")[3].replace("~1", "/").replace("~0", "~")
-                      for p in paths if p.startswith("/strategies/regimes/") and len(p.split("/")) > 3})
-    detector = sorted(p for p in paths if p == "/regime_detector" or p.startswith("/regime_detector/"))
-    return {"regimes": regimes, "detector_paths": detector}
+    """artifacts/block_manifest.yaml, shape-validated by tools/block_manifest.py
+    (the orchestrator's own check); None when absent."""
+    return _bm.load_manifest_file(Path(run_dir) / "artifacts" / MANIFEST_FILENAME,
+                                  error_cls=BlockRegistryError)
 
 
 def _base_variant(entry: dict) -> tuple:
@@ -205,6 +175,9 @@ def build_block(run_dir: Path, entry: dict, manifest: dict, *, root: Path,
             f"register a block the grid did not test")
     paths = manifest["block"]["config_paths"]
     where = str(Path(run_dir) / "artifacts" / MANIFEST_FILENAME)
+    # The one resolution check (block AND scaffolding) -- the same 5a ran on 1b's base config.
+    _bm.check_manifest(manifest, config, where=f"{where} (tested base config {cfg_path})",
+                       error_cls=BlockRegistryError)
     grid = entry["grid"]
     numbers = {}
     for crit, row in grid["cells"].items():
@@ -224,8 +197,8 @@ def build_block(run_dir: Path, entry: dict, manifest: dict, *, root: Path,
         "block_id": f"{entry['hypothesis_id']}:{run_id}",
         "hypothesis_id": entry["hypothesis_id"],
         "kind": manifest["block"]["kind"],
-        "config_fragment": {p: _resolve_pointer(config, p, where) for p in paths},
-        "regime_assignment": _regime_assignment(manifest["block"]["kind"], paths),
+        "config_fragment": {p: _jp.resolve_json_pointer(config, p) for p in paths},
+        "regime_assignment": _bm.regime_assignment(paths),
         "criteria_passed": list(grid["criteria"]),
         "variants_passed": list(grid["variants"]),
         "numbers": numbers,
@@ -300,7 +273,7 @@ def record_run(path: Path, run_dir: Path, entry: dict, *, root: Path) -> dict | 
         print(f"WARNING [E-058] block registry: {run_id} is VALIDATED but has no "
               f"artifacts/{MANIFEST_FILENAME} -- nothing says which part of its config is the "
               f"block, so NO block is registered (memory: registry.skipped=no_manifest). "
-              f"Teaching strategy_config_authoring to write the manifest is a separate ticket.")
+              f"Only strategy_config_authoring (orchestrator.config_direct_authoring) writes it.")
         return {"skipped": _cm.REGISTRY_SKIPPED_NO_MANIFEST}
     block = build_block(run_dir, entry, manifest, root=root)
     _append(path, run_id, [block])

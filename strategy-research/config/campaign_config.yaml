@@ -537,7 +537,13 @@ orchestrator:
       # strategy_config_authoring stage instead of straight to
       # innovation_expansion; that stage authors ONE base strategy config
       # (backtest_spec.yaml/decision.yaml, same contract backtest-engineering
-      # used at its OLD position). innovation_expansion then produces
+      # used at its OLD position) plus, when spec_ready,
+      # artifacts/block_manifest.yaml (STRATEGY_DESIGN_GUIDE.md §7c; E-056 1b
+      # block manifest, 2026-09-24). A stale manifest is deleted when the
+      # stage starts; a missing or invalid one sends 1b back once with the
+      # error, then fails the run loud, and the tool-only
+      # backtest_specification stage re-checks it as a backstop (also fails
+      # loud). innovation_expansion then produces
       # variant_patches.yaml (patches against that base config) instead of
       # prose expanded_variants; the validation stage becomes naturally
       # unreached (its registry entry and routing code stay intact, unused);

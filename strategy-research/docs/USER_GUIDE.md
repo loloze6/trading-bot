@@ -489,6 +489,7 @@ post-validation/post-expansion to pre-expansion.
 |---|---|---|
 | `backtest_spec.yaml` | `runs/{run_id}/artifacts/` | innovation_expansion (as the base config to patch), the tool-only stage 6, verdict_interpreter |
 | `decision.yaml` | `runs/{run_id}/artifacts/` | `determine_post_strategy_config_authoring_route` |
+| `block_manifest.yaml` (spec_ready only) | `runs/{run_id}/artifacts/` | `determine_post_strategy_config_authoring_route` (checked, one retry), the tool-only stage 6 (re-checked, fails loud), `tools/block_registry.py` (stage 17) |
 
 **Features / logic in place**
 
@@ -501,6 +502,20 @@ for stage 6, just a different success target.
 Carried over intact from that skill (E-056 Slice 3b's own pre-registered
 success signal for this rewrite was a byte-diff against the retired content
 confirming no rule was silently dropped).
+**3. Writes `block_manifest.yaml` (E-056 1b block manifest, 2026-09-24).**
+Which part of the base config IS the hypothesis's block, as opposed to
+scaffolding: `{block: {kind: forecast|regime, config_paths: [JSON pointers]},
+scaffolding: [JSON pointers], rationale}` — contract in
+`STRATEGY_DESIGN_GUIDE.md` §7c, schema
+`workflow_artifacts/schemas/block_manifest.schema.json`, one implementation in
+`tools/block_manifest.py`. A stale manifest is deleted when this stage
+starts. Right after it, `determine_post_strategy_config_authoring_route`
+checks the manifest against `backtest_spec.yaml`'s config: missing or
+invalid sends this stage back once with the error in its handoff
+(`injected_context.block_manifest_error`), a second failure stops the run.
+The tool-only stage 6 re-checks it as a backstop; per variant only block
+paths must resolve (scaffolding may change). No coin field (a block is
+usable on any coin).
 
 ---
 
@@ -1288,7 +1303,8 @@ engineering_fault_detail}`.
 8. **Block registry (E-058 S2b, `tools/block_registry.py`).** A run whose
    grid is `validated`, with no engineering fault, AND with
    `artifacts/block_manifest.yaml` (`{block: {kind: forecast|regime,
-   config_paths: [JSON pointers]}}`) appends one block to
+   config_paths: [JSON pointers]}, scaffolding, rationale}`, checked by
+   `tools/block_manifest.py` exactly as stage 6 checks it) appends one block to
    `campaign_record/block_registry.yaml` (`schema_version`, `revision`,
    `updated_at`, `blocks: [...]`; schema
    `workflow_artifacts/schemas/block_registry.schema.json`). A block holds
@@ -1300,8 +1316,9 @@ engineering_fault_detail}`.
    `correlation_to_composite: null` and `residual_ic: null` (slice 7),
    `source_config_ref`, `source_config_sha256`, `validated_by_run`,
    `registered_at`. No manifest: nothing is registered, the memory says
-   `registry: {skipped: no_manifest}` and a WARNING line is printed (nothing
-   writes the manifest yet; teaching stage 1b to write it is its own ticket).
+   `registry: {skipped: no_manifest}` and a WARNING line is printed (only
+   stage 15, under `orchestrator.config_direct_authoring`, writes the
+   manifest).
    The file is append-only: a re-run that would register a different block,
    or no block, for a run that already registered one stops before the memory
    entry is replaced; a person decides. A component-error re-run writes its

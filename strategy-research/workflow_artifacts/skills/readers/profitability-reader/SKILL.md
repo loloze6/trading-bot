@@ -71,9 +71,9 @@ patch: [...]        # kind: patch only -- a Component variant pattern (STRATEGY_
                      # absent from STRATEGY_DESIGN_GUIDE.md's catalog (§4).
 block: {...}         # kind: new_block only -- a block_manifest.yaml-shaped sketch
                      # (STRATEGY_DESIGN_GUIDE.md §7c: kind/config_paths/scaffolding/rationale).
-                     # §7c is PROPOSED, NOT BUILT -- you are proposing IN that vocabulary,
-                     # not authoring the manifest contract itself. Nothing reads block_manifest.yaml
-                     # today; this field exists so a human/5b-ii reviewer has a concrete sketch.
+                     # §7c is built: stage 1b writes a run's real block_manifest.yaml. This
+                     # field is only a sketch IN that vocabulary for a human/5b-ii reviewer --
+                     # you are not writing block_manifest.yaml, and no code registers it.
 evidence: [...]      # each item traceable to a field in THIS report -- see format rule below
 scores:
   confidence_real: 0-3

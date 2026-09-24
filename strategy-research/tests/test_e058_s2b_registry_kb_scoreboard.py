@@ -193,7 +193,8 @@ def test_regime_block_assignment_from_detector_paths():
     _set_orchestrator(ALL_ON)
     run_dir = _seed_s2b()
     rpr.save_yaml(run_dir / "artifacts" / "block_manifest.yaml",
-                  {"block": {"kind": "regime", "config_paths": ["/regime_detector/rules/0"]}})
+                  {"block": {"kind": "regime", "config_paths": ["/regime_detector/rules/0"]},
+                   "scaffolding": ["/strategies"], "rationale": "the trending gate"})
     rpr._run_regroup_record_stage(RUN_ID, run_dir)
     block = _registry()["blocks"][0]
     assert block["kind"] == "regime"
@@ -219,7 +220,8 @@ def test_rerun_that_would_change_a_block_stops_loudly(change):
     arts = run_dir / "artifacts"
     if change == "manifest":
         rpr.save_yaml(arts / "block_manifest.yaml",
-                      {"block": {"kind": "forecast", "config_paths": ["/strategies/regimes/ranging"]}})
+                      {"block": {"kind": "forecast", "config_paths": ["/strategies/regimes/ranging"]},
+                       "scaffolding": [], "rationale": "a different block"})
     elif change == "no_manifest":
         (arts / "block_manifest.yaml").unlink()
     else:
@@ -286,11 +288,16 @@ def test_config_changed_after_backtest_refuses_to_register():
     assert not _registry_path().exists() and not _memory_path().exists()
 
 
+_M = {"scaffolding": [], "rationale": "r"}  # E-056 1b: the full §7c contract
+
+
 @pytest.mark.parametrize("manifest,match", [
-    ({"block": {"kind": "detector", "config_paths": ["/a"]}}, "block.kind"),
-    ({"block": {"kind": "forecast", "config_paths": []}}, "config_paths"),
-    ({"block": {"kind": "forecast", "config_paths": ["strategies"]}}, "config_paths"),
-    ({"block": {"kind": "forecast", "config_paths": ["/strategies/nope"]}}, "does not resolve"),
+    ({"block": {"kind": "detector", "config_paths": ["/a"]}, **_M}, "block.kind"),
+    ({"block": {"kind": "forecast", "config_paths": []}, **_M}, "config_paths"),
+    ({"block": {"kind": "forecast", "config_paths": ["strategies"]}, **_M}, "config_paths"),
+    ({"block": {"kind": "forecast", "config_paths": ["/strategies/regimes/nope"]}, **_M},
+     "not resolve"),
+    ({"block": {"kind": "forecast", "config_paths": ["/strategies/regimes/trending"]}}, "missing"),
     (["not", "a", "mapping"], "expected"),
 ])
 def test_malformed_manifest_fails_loud(manifest, match):
