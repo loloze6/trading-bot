@@ -248,6 +248,23 @@ above at `data_availability_gate`/`protocol_execution`, run against the
 `base` variant. See `strategy-config-authoring`/`innovation-expansion`
 SKILL.md for the full mechanics.
 
+**Verdict-routing-retired variant (E-059 S3, slice 6c S2a, off by default —
+`orchestrator.verdict_routing_retired.enabled`; requires `decide_next` and
+`profit_bars_every_backtest`).** Under the readers/regroup flags the graph
+already reads `protocol_execution` → `specialist_readers` (16) →
+`regroup_record` (17) → the grid's route. With this flag on, that route no
+longer branches into promote / kill / refine / pivot / escalate: after the
+`component_execution_error` pause and the `profit_bars_reached` stop
+(both unchanged), the run ends at `completed_validated`, `completed_refuted`
+or `completed_inconclusive` — the grid's `idea_status`, nothing else — and
+`run_campaign.py`'s DONE branch runs decide-next, the only thing that picks
+the next run. `verdict_interpreter` (11), the circuit breakers, the
+escalation/timeframe protocols, continuation children and the route to
+`holdout_evaluation` (13) are unreachable (their code stays for flag-off
+runs, marked `# legacy routing (v26 card G)`; `_dispatch_verdict_route`
+raises if entered, on the flag value run_loop read once in its pre-flight). The holdout is reached only from the `profit_bars_reached` stop
+plus an operator unlock (slice 6c S2d, not built yet). See stage 17, item 12.
+
 ---
 
 ### 2.2 Stage Objectives
@@ -1356,6 +1373,30 @@ engineering_fault_detail}`.
    as a required input (`_apply_regroup_record_context`) whose reason tells the
    model which fields to cite -- only when that file exists. The template and `SKILL.md` are unchanged, so
    the flag-off prompt is byte-identical.
+12. **Route with verdict routing retired (E-059 S3, slice 6c S2a,
+   `orchestrator.verdict_routing_retired.enabled`, off by default; requires
+   `decide_next` and `profit_bars_every_backtest`, else every run fails at
+   start).** The route after this stage becomes: component errors → pause
+   (unchanged); the `profit_bars_reached` stop (unchanged); else
+   `completed_<idea_status>` (`completed_validated` / `completed_refuted` /
+   `completed_inconclusive`, `status: completed`). Inconclusive no longer
+   pauses. `_dispatch_verdict_route` and every function it fed are never
+   called; no child run is scaffolded and no `continuation_child` written;
+   `promotion_audit.yaml` is not written and nothing routes to
+   `holdout_evaluation`. A run found there pauses as
+   `holdout_refused_under_retired_routing`, unless its holdout was already
+   spent by hand (`holdout_result.yaml` present): then only the
+   `holdout_consumed_by` record runs and the run ends. A run found at
+   `campaign_review` pauses as `campaign_review_refused_under_retired_routing`
+   before its LLM call (until slice 6c S2b). The run is still appended to
+   `campaign_state.runs`, with one `diagnostics_log` row per run. A resume
+   after the `profit_bars_reached` stop ends the run the same way. The queue
+   runner halts on a legacy continuation
+   (`legacy_continuation_under_retired_routing`, also before `run_loop` when
+   the current run was minted by legacy routing), on an unconsumed
+   `refinement_brief_path` (`refinement_brief_under_retired_routing`), and at
+   DONE on a missing, unreadable or mismatched `idea_status.yaml`
+   (`idea_status_missing_at_done`); RUNBOOK §3.
 
 ---
 
@@ -1483,6 +1524,12 @@ its `implementation_allowed` flag is checked immediately, in the same step:
 | **anything else** | → human pause, **deliberately fail-closed**. `KNOWN_STATUSES` holds only the two above; an unrecognised value is not guessed at. A real run produced `validation_incomplete` and took this branch — see [E037-23](../engineering/roadmap/E-037/FINDINGS.md#e037-23). |
 
 #### After verdict_interpreter — the Altitude System
+
+> Under `orchestrator.verdict_routing_retired.enabled` (slice 6c S2a, off by
+> default) nothing in this subsection, the circuit breakers below or "After
+> campaign_review" is reached: the run ends `completed_<idea_status>` after
+> stage 17 and decide-next picks the next run (§2.1's verdict-routing-retired
+> variant).
 
 The verdict interpreter assigns an **altitude** to each decision. Altitude measures how far from the original hypothesis the next step will move.
 
@@ -2604,6 +2651,13 @@ leaves it `in_progress`, so the next step retries. The record
   `campaign_record/candidate_briefs/<proposal_id>.md` (its id must be a safe
   `<category>-<source run>-<n>` name that collides with no queue id or brief);
 - else the loop stops (`DECIDE stop`, RUNBOOK §3 last row).
+
+Under `orchestrator.verdict_routing_retired.enabled` (slice 6c S2a) every run
+ends `completed_<idea_status>`, so this DONE branch runs after every
+validated, refuted and inconclusive idea, and a legacy continuation
+(`completed_refined|reframed|escalated` with a `continuation_child`) halts
+the step instead of being followed
+(`legacy_continuation_under_retired_routing`).
 
 Novelty is the exact match against the memory, binding: config hash, measured
 symbols, the protocol file's timeframe (normalised) and a content hash of its

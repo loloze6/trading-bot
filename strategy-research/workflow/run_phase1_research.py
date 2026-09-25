@@ -3127,7 +3127,8 @@ def _run_specialist_readers_stage(run_id: str, run_dir: Path, stage_attempt=0) -
 
 def determine_post_specialist_readers_route(path: Path, run_id: str, *,
                                            component_errors: list | None = None,
-                                           idea: dict | None = None) -> str:
+                                           idea: dict | None = None,
+                                           routing_retired: bool = False) -> str:
     """The interim route under orchestrator.specialist_readers.enabled
     (delivery_plan_v26.md slice 2: "until slice 6c"). Reads ONLY
     protocol_result.yaml and idea_status.yaml -- never proposals/*.yaml and
@@ -3145,7 +3146,13 @@ def determine_post_specialist_readers_route(path: Path, run_id: str, *,
 
     `component_errors` / `idea` (E-058 S2a): passed by run_loop when the
     regroup_record stage already computed them this iteration; None (every
-    other caller, and the flag-off path) computes them here as before."""
+    other caller, and the flag-off path) computes them here as before.
+
+    `routing_retired` (slice 6c S2a): passed True by run_loop only under
+    orchestrator.verdict_routing_retired.enabled (resolved in its pre-flight).
+    The component-error pause is unchanged; after it the run ends
+    completed_<idea_status> (_route_retired_idea_status) -- no inconclusive
+    pause, no _resolve_verdict_fields, no _dispatch_verdict_route."""
     if not _specialist_readers_enabled():
         raise RuntimeError("determine_post_specialist_readers_route called with "
                            "orchestrator.specialist_readers.enabled off")
@@ -3162,6 +3169,8 @@ def determine_post_specialist_readers_route(path: Path, run_id: str, *,
 
     if idea is None:
         idea = _load_idea_status(path, run_id)
+    if routing_retired:
+        return _route_retired_idea_status(path, run_id, idea)
     status = idea["idea_status"]
     if status == "inconclusive":
         print(f"\n⏸️  inconclusive_grid: the grid could not decide this idea "
@@ -3273,6 +3282,181 @@ def _decide_next_enabled() -> bool:
                 "menu (config_direct_authoring). Enable them together."
             )
     return value
+
+
+# ---------------------------------------------------------------------------
+# E-059 S3 / slice 6c S2a -- verdict routing retired (delivery_plan_v26.md slice
+# 6c; engineering/roadmap/E-059/S1_FINDINGS_6C.md and its operator decision of
+# 2026-09-25). OFF BY DEFAULT. When on, the route after regroup_record ends the
+# run at completed_<idea_status> (validated / refuted / inconclusive): the idea
+# status comes only from the grid, and the next run is chosen only by
+# decide_next (run_campaign's DONE branch). Refine, pivot, escalate, kill, the
+# circuit breaker, the escalation/timeframe protocols and continuation_child are
+# unreachable; their code stays for flag-off runs, marked
+# `# legacy routing (v26 card G)`. Nothing routes to holdout_evaluation: the
+# holdout is reached only through the branch-3 profit_bars_reached stop plus an
+# operator unlock (slice 6c S2d, not built yet).
+# ---------------------------------------------------------------------------
+
+# The three run endings under the flag, one per grid idea_status. Pinned in
+# every outcome list by tests/test_e059_6c_s2a_route_retirement.py.
+RETIRED_ROUTING_TERMINALS = ("completed_validated", "completed_refuted",
+                             "completed_inconclusive")
+
+
+def _strict_orchestrator_flag(name: str, requires: tuple = (), why: str = "") -> bool:
+    """Generic strict reader for orchestrator.<name>.enabled (slice 6c S2a code
+    review, item 10). False when the key, the section or the config file is
+    absent; a non-bool value raises; when true, every (dep_name, dep_reader) in
+    `requires` must read true, else it raises naming each missing dependency
+    (`why` is appended to that error). Each dep_reader enforces its own chain.
+    Used by _verdict_routing_retired_enabled; the older readers keep their own
+    bodies (no drive-by refactor)."""
+    path = ROOT / "config" / "campaign_config.yaml"
+    if not path.exists():
+        return False
+    with open(path, encoding="utf-8") as f:
+        cfg = yaml.safe_load(f) or {}
+    value = ((cfg.get("orchestrator") or {}).get(name) or {}).get("enabled", False)
+    if not isinstance(value, bool):
+        raise ValueError(
+            f"orchestrator.{name}.enabled={value!r} is not a real boolean "
+            f"(got {type(value).__name__}) -- write an unquoted `true` or `false` in "
+            f"config/campaign_config.yaml, not a quoted string or null."
+        )
+    if value:
+        missing = [dep for dep, reader in requires if not reader()]
+        if missing:
+            raise ValueError(
+                f"orchestrator.{name}.enabled=true requires "
+                + " and ".join(f"orchestrator.{m}.enabled=true" for m in missing)
+                + (f" as well -- {why}" if why else " as well.")
+            )
+    return value
+
+
+def _verdict_routing_retired_enabled() -> bool:
+    """False when the key, the section or the config file is absent. A non-bool
+    value raises. Requires, loudly:
+      * orchestrator.decide_next.enabled (itself requiring regroup_record,
+        specialist_readers, grid_evaluation, category_reports and
+        config_direct_authoring) -- once routing is gone, only decide-next
+        picks the next run;
+      * orchestrator.profit_bars_every_backtest.enabled (itself requiring
+        profit_bars_file) -- the promote-path profit-bars check lives inside
+        the retired _dispatch_verdict_route, so without the per-backtest check
+        no run would ever be graded against the bars (S1_FINDINGS_6C.md §4).
+    Read ONCE per run, in run_loop's pre-flight (that value is passed to every
+    decision inside the run), and once per step in run_campaign.process_once."""
+    return _strict_orchestrator_flag(
+        "verdict_routing_retired",
+        requires=(("decide_next", _decide_next_enabled),
+                  ("profit_bars_every_backtest", _profit_bars_every_backtest_enabled)),
+        why=("with verdict routing retired, only decide_next picks the next run, and only "
+             "the per-backtest profit-bars check grades a run against "
+             "config/profitability_bars.yaml. Enable them together."))
+
+
+def _record_run_in_campaign_state(run_id: str, diag: dict) -> None:
+    """The campaign_state bookkeeping kept once the retired machinery is gone
+    (shared by _route_retired_idea_status and _route_kill's readers-flag
+    branch): the run in `runs` and ONE `diagnostics_log` row per run_id, both
+    idempotent -- a re-run of the route (e.g. after a resume) replaces the
+    run's row in place instead of appending a duplicate. Nothing else: no
+    altitude_history, failed_families or continuation field, no trial row."""
+    state = load_campaign_state()
+    state.setdefault("runs", [])
+    if run_id not in state["runs"]:
+        state["runs"].append(run_id)
+    log = state.setdefault("diagnostics_log", [])
+    row = {"run": run_id, **diag}
+    idx = next((i for i, r in enumerate(log) if isinstance(r, dict) and r.get("run") == run_id),
+               None)
+    if idx is None:
+        log.append(row)
+    else:
+        log[idx] = row
+    _save_campaign_state(state)
+
+
+def _route_retired_idea_status(path: Path, run_id: str, idea: dict) -> str:
+    """The route after regroup_record under verdict_routing_retired (called by
+    determine_post_specialist_readers_route AFTER its component-error pause):
+    completed_<idea_status>, whatever the status. No pause (inconclusive no
+    longer pauses, S1 guess 2), no child run, no continuation_child, no
+    campaign-state field of the retired machinery, no route to the holdout.
+    The bookkeeping later readers rely on is kept for every status
+    (_record_run_in_campaign_state). Trial accounting is untouched (it lives
+    in protocol_execution)."""
+    status = idea.get("idea_status") if isinstance(idea, dict) else None
+    terminal = f"completed_{status}"
+    if terminal not in RETIRED_ROUTING_TERMINALS:
+        raise ValueError(f"verdict_routing_retired: idea_status {status!r} for {run_id} is not "
+                         f"validated/refuted/inconclusive -- refusing to route.")
+    _record_run_in_campaign_state(run_id, _extract_diagnostics(path))
+    print(f"\n🧮 Route from the grid (verdict routing retired): idea_status={status} -> "
+          f"{terminal}. The next run is chosen by decide_next; nothing routes to the holdout.")
+    return terminal
+
+
+# Slice 6c S2a code review (item 7): run_loop's refusals under the flag pause
+# with these sticky flags (classified by run_campaign._classify_human_pause;
+# RUNBOOK §3 rows of the same names), never a generic failure.
+HOLDOUT_REFUSED_FLAG = "holdout_refused_under_retired_routing"
+CAMPAIGN_REVIEW_REFUSED_FLAG = "campaign_review_refused_under_retired_routing"
+
+
+def _holdout_hypothesis_id(run_dir: Path, run_id: str) -> tuple:
+    """(hypothesis_id, passes_deflated_threshold), derived exactly as
+    _route_holdout_evaluation derives them -- shared, so the spent-holdout
+    record under verdict_routing_retired names the id the single-use check
+    keys on."""
+    artifacts = run_dir / "artifacts"
+    audit_path = artifacts / "promotion_audit.yaml"
+    if audit_path.exists():
+        audit = load_yaml(audit_path) or {}
+        return audit.get("hypothesis_id", run_id), audit.get("passes_deflated_threshold")
+    if _specialist_readers_enabled():
+        # E-046a Slice 5b-ii-B: no verdict_interpretation.yaml under this flag --
+        # same re-point as _write_promotion_audit (hypothesis_card.yaml).
+        return _idea_hypothesis_id(run_dir), None
+    interp = load_yaml(artifacts / "verdict_interpretation.yaml") or {}
+    return interp.get("hypothesis_id", run_id), None
+
+
+def _mark_holdout_consumed(policy: dict, consumed: list, hyp_id: str) -> None:
+    """Step 4 of _route_holdout_evaluation: record the single-use spend in
+    campaign_data_policy.yaml holdout_consumed_by."""
+    policy["holdout_consumed_by"] = list(consumed) + [hyp_id]
+    save_yaml(_DATA_POLICY_PATH, policy)
+    print(f"⚙️  A6.1: {hyp_id} marked in holdout_consumed_by (single-use consumed).")
+
+
+def _record_spent_holdout(run_dir: Path, run_id: str) -> str:
+    """Slice 6c S2a code review (item 1). Under verdict_routing_retired, a run
+    found at holdout_evaluation WITH artifacts/holdout_result.yaml has already
+    spent the seal by hand. The spend must never go unrecorded, so only the
+    record step runs: hypothesis_id is added to holdout_consumed_by (once -- an
+    id already there is not added again) and the run ends on the recorded
+    result exactly as step 4 of _route_holdout_evaluation maps it (pass ->
+    completed_promoted, fail -> completed_rejected, anything else ->
+    human_pause). No other holdout gate runs and nothing new is spent."""
+    hyp_id, _ = _holdout_hypothesis_id(run_dir, run_id)
+    policy = (load_yaml(_DATA_POLICY_PATH) or {}) if _DATA_POLICY_PATH.exists() else {}
+    consumed = policy.get("holdout_consumed_by") or []
+    if hyp_id in consumed:
+        print(f"⚙️  A6.1: {hyp_id} already in holdout_consumed_by -- the spend is on record.")
+    else:
+        _mark_holdout_consumed(policy, consumed, hyp_id)
+    hr = load_yaml(run_dir / "artifacts" / "holdout_result.yaml") or {}
+    status = str(hr.get("status", "")).lower()
+    print(f"\n📒 verdict_routing_retired: the holdout already spent by hand for {hyp_id} is "
+          f"recorded (status={status!r}); nothing new is spent.")
+    if status == "pass":
+        return "completed_promoted"
+    if status == "fail":
+        return "completed_rejected"
+    return "human_pause"
 
 
 # ---------------------------------------------------------------------------
@@ -6223,6 +6407,8 @@ def _next_timeframe_from_universe(campaign: dict):
     return None
 
 
+# legacy routing (v26 card G) -- not called under orchestrator.verdict_routing_retired
+# (slice 6c S2a); kept for flag-off runs.
 def _create_escalation_protocol(symbol: str, timeframe: str) -> Path:
     """
     Create a new protocol file for the escalated instrument.
@@ -6246,6 +6432,8 @@ def _create_escalation_protocol(symbol: str, timeframe: str) -> Path:
     return proto_path
 
 
+# legacy routing (v26 card G) -- not called under orchestrator.verdict_routing_retired
+# (slice 6c S2a); kept for flag-off runs.
 def _create_timeframe_protocol(timeframe: str) -> Path:
     """Create a new protocol file for a timeframe escalation."""
     import json
@@ -6263,6 +6451,8 @@ def _create_timeframe_protocol(timeframe: str) -> Path:
     return proto_path
 
 
+# legacy routing (v26 card G) -- not called under orchestrator.verdict_routing_retired
+# (slice 6c S2a); kept for flag-off runs.
 def _route_refine(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
     proposed = path / "artifacts" / "proposed_brief.yaml"
     if not proposed.exists():
@@ -6320,6 +6510,8 @@ def _route_refine(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
     return "completed_refined"
 
 
+# legacy routing (v26 card G) -- not called under orchestrator.verdict_routing_retired
+# (slice 6c S2a); kept for flag-off runs.
 def _route_pivot(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
     family = interp.get("hypothesis_family", "")
 
@@ -6380,6 +6572,8 @@ def _route_pivot(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
     return "completed_refined"
 
 
+# legacy routing (v26 card G) -- not called under orchestrator.verdict_routing_retired
+# (slice 6c S2a); kept for flag-off runs.
 def _route_escalate(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
     esc_path = path / "artifacts" / "escalation_request.yaml"
     # When the circuit breaker forces escalate (overriding an LLM pivot verdict),
@@ -6465,6 +6659,8 @@ def _route_escalate(path: Path, run_id: str, interp: dict, campaign: dict) -> st
         raise ValueError(f"_route_escalate: unknown escalation target '{target}'")
 
 
+# legacy routing (v26 card G) -- not called under orchestrator.verdict_routing_retired
+# (slice 6c S2a); kept for flag-off runs.
 def _route_kill(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
     """
     A9 (K2 kernel, 2026-07-13): PER-HYPOTHESIS termination only. Prior to
@@ -6486,13 +6682,9 @@ def _route_kill(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
         # the retired machinery (v26 card G, slice 6c) -- no altitude_history row
         # (family-keyed), no failed_families, no continuation_* writes. Only the
         # run list and the diagnostics log are kept; trial accounting is untouched
-        # (it lives in protocol_execution, not here).
-        state = load_campaign_state()
-        state.setdefault("runs", [])
-        if run_id not in state["runs"]:
-            state["runs"].append(run_id)
-        state.setdefault("diagnostics_log", []).append({"run": run_id, **diag})
-        _save_campaign_state(state)
+        # (it lives in protocol_execution, not here). Shared with slice 6c's
+        # route (_record_run_in_campaign_state; one diagnostics row per run).
+        _record_run_in_campaign_state(run_id, diag)
         return "completed_rejected"
     # legacy routing (v26 card G) -- retired in slice 6c.
     update_campaign_state_after_run(run_id, "hypothesis", "",
@@ -6503,6 +6695,8 @@ def _route_kill(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
     return "completed_rejected"
 
 
+# legacy routing (v26 card G) -- not called under orchestrator.verdict_routing_retired
+# (slice 6c S2a); kept for flag-off runs.
 def _route_campaign_terminate(path: Path, run_id: str, interp_or_review: dict, campaign: dict) -> str:
     """
     A9 (K2 kernel): campaign-WIDE termination -- the search space itself is
@@ -7224,6 +7418,8 @@ def _verify_verdict_outputs(run_dir: Path, mechanical_lineage_routing: str | Non
     return violations
 
 
+# legacy routing (v26 card G) -- not called under orchestrator.verdict_routing_retired
+# (slice 6c S2a); kept for flag-off runs.
 def _should_trigger_campaign_review(campaign: dict) -> bool:
     """
     Trigger campaign review when:
@@ -8463,20 +8659,8 @@ def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
     ARTIFACTS = run_dir / "artifacts"
 
     # Load hypothesis_id from promotion_audit or verdict_interpretation
-    audit_path = ARTIFACTS / "promotion_audit.yaml"
-    if audit_path.exists():
-        audit = load_yaml(audit_path) or {}
-        hyp_id = audit.get("hypothesis_id", run_id)
-        passes = audit.get("passes_deflated_threshold")
-    elif _specialist_readers_enabled():
-        # E-046a Slice 5b-ii-B: no verdict_interpretation.yaml under this flag --
-        # same re-point as _write_promotion_audit (hypothesis_card.yaml).
-        hyp_id = _idea_hypothesis_id(run_dir)
-        passes = None
-    else:
-        interp = load_yaml(ARTIFACTS / "verdict_interpretation.yaml") or {}
-        hyp_id = interp.get("hypothesis_id", run_id)
-        passes = None
+    # (_holdout_hypothesis_id, shared with _record_spent_holdout).
+    hyp_id, passes = _holdout_hypothesis_id(run_dir, run_id)
 
     # 1. Deflated Sharpe gate (if not sparse / not indeterminate)
     if passes is False:
@@ -8605,9 +8789,7 @@ def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
     status = hr.get("status", "").lower()
 
     # 4. Mark holdout as consumed (regardless of pass/fail — single-use)
-    policy["holdout_consumed_by"] = list(consumed) + [hyp_id]
-    save_yaml(_DATA_POLICY_PATH, policy)
-    print(f"⚙️  A6.1: {hyp_id} marked in holdout_consumed_by (single-use consumed).")
+    _mark_holdout_consumed(policy, consumed, hyp_id)
 
     if status == "pass":
         print(f"\n🏆 TERMINAL PROMOTE: holdout_result.yaml status=pass for {hyp_id}. "
@@ -8636,6 +8818,8 @@ def _family_names(failed_families: list) -> list:
     return [(f.get("name") if isinstance(f, dict) else f) for f in failed_families]
 
 
+# legacy routing (v26 card G) -- not called under orchestrator.verdict_routing_retired
+# (slice 6c S2a); kept for flag-off runs.
 def _apply_circuit_breaker(status: str, interp: dict, campaign: dict) -> str:
     """
     F6 (2026-07-04): circuit-breaker state is scoped PER hypothesis family. A global
@@ -8682,6 +8866,8 @@ def _apply_circuit_breaker(status: str, interp: dict, campaign: dict) -> str:
 # enum value (the legacy vocabulary never distinguished "mechanism dead" from
 # "campaign routes elsewhere" -- this is a backward-compat approximation for
 # OLD artifacts only, never used for a new-schema run).
+# legacy routing (v26 card G) -- not called under orchestrator.verdict_routing_retired
+# (slice 6c S2a); kept for flag-off runs.
 _LEGACY_STATUS_TO_VERDICT_ROUTING = {
     "promote":  ("promote", None),
     "kill":     ("kill", "terminate"),
@@ -8700,6 +8886,8 @@ _LEGACY_STATUS_TO_VERDICT_ROUTING = {
 _VERDICT_ROUTING_TO_LEGACY_STATUS = {v: k for k, v in _LEGACY_STATUS_TO_VERDICT_ROUTING.items()}
 
 
+# legacy routing (v26 card G) -- not called under orchestrator.verdict_routing_retired
+# (slice 6c S2a); kept for flag-off runs.
 def _resolve_verdict_fields(interp: dict, original_status: str, breaker_status: str,
                              pre_eval: dict | None = None) -> tuple:
     """
@@ -8809,8 +8997,11 @@ def _check_pass_rule_evaluation_conformance(path: Path, hypothesis_verdict: str,
     return violations
 
 
+# legacy routing (v26 card G) -- not called under orchestrator.verdict_routing_retired
+# (slice 6c S2a); kept for flag-off runs.
 def _dispatch_verdict_route(path: Path, run_id: str, interp: dict, campaign: dict,
-                             hypothesis_verdict: str, lineage_routing: str | None) -> str:
+                             hypothesis_verdict: str, lineage_routing: str | None,
+                             routing_retired: bool = False) -> str:
     """
     A8 (K2 kernel), R1 (operator ruling): the SINGLE verdict->route dispatcher,
     shared by determine_post_verdict_route and
@@ -8839,6 +9030,15 @@ def _dispatch_verdict_route(path: Path, run_id: str, interp: dict, campaign: dic
     lr="pivot"), can reach an invalid pair -- and must be caught here,
     never silently dispatched on lineage_routing alone.
     """
+    # Slice 6c S2a: the ONE refusal of the legacy routing, keyed on run_loop's
+    # own pre-flight reading of orchestrator.verdict_routing_retired.enabled
+    # (passed down as routing_retired; never re-read inside a run).
+    if routing_retired:
+        raise RuntimeError(
+            "_dispatch_verdict_route is legacy verdict routing (v26 card G), retired under "
+            "orchestrator.verdict_routing_retired.enabled -- it must not run. Under the flag "
+            "the run ends completed_<idea_status> after regroup_record and decide_next picks "
+            "the next run.")
     valid_pairs = {
         ("kill", "terminate"), ("kill", "pivot"), ("kill", "escalate"),
         ("refine", "refine"), ("promote", None),
@@ -8915,7 +9115,9 @@ def _dispatch_verdict_route(path: Path, run_id: str, interp: dict, campaign: dic
     return _route_kill(path, run_id, interp, campaign)
 
 
-def determine_post_verdict_route(path: Path, run_id: str):
+# legacy routing (v26 card G) -- not called under orchestrator.verdict_routing_retired
+# (slice 6c S2a); kept for flag-off runs.
+def determine_post_verdict_route(path: Path, run_id: str, routing_retired: bool = False):
     interp = load_yaml(path / "artifacts" / "verdict_interpretation.yaml")
     # `status` is the new altitude-aware field; fall back to `protocol_verdict` for old runs
     status = (interp.get("status") or interp.get("protocol_verdict") or "").strip().lower()
@@ -9046,7 +9248,8 @@ def determine_post_verdict_route(path: Path, run_id: str):
     # generation / KB write / output verification / campaign-review-trigger,
     # exactly as the old status=="promote"/"kill" branches did.
     if hypothesis_verdict == "promote" or lineage_routing == "terminate":
-        return _dispatch_verdict_route(path, run_id, interp, campaign, hypothesis_verdict, lineage_routing)
+        return _dispatch_verdict_route(path, run_id, interp, campaign, hypothesis_verdict, lineage_routing,
+                                       routing_retired=routing_retired)
 
     # Auto-generate findings_carryover if missing (catches both normal and resume paths)
     _auto_generate_findings_carryover(path, interp, lineage_routing)
@@ -9083,9 +9286,12 @@ def determine_post_verdict_route(path: Path, run_id: str):
             save_yaml(cr_handoff, cr_data)
         return "campaign_review"
 
-    return _dispatch_verdict_route(path, run_id, interp, campaign, hypothesis_verdict, lineage_routing)
+    return _dispatch_verdict_route(path, run_id, interp, campaign, hypothesis_verdict, lineage_routing,
+                                   routing_retired=routing_retired)
 
 
+# legacy routing (v26 card G) -- not called under orchestrator.verdict_routing_retired
+# (slice 6c S2a); kept for flag-off runs.
 def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
     review = load_yaml(path / "artifacts" / "campaign_review.yaml")
     rec = review.get("recommendation", "").strip().lower()
@@ -9596,6 +9802,17 @@ def run_loop(run_id: str):
         print(f"❌ profit_bars_every_backtest pre-flight failed: {e}")
         update_state(path=RUN_DIR, status="failed", last_error=str(e))
         return
+    # Slice 6c S2a: verdict routing retired, resolved ONCE the same way (its
+    # dependencies on decide_next and profit_bars_every_backtest, or a non-bool
+    # value, fail the run here, before any spend).
+    _vrr_flag = False
+    try:
+        if _pending_at_start and not _pending_at_start.startswith(_TERMINAL_AT_START):
+            _vrr_flag = _verdict_routing_retired_enabled()
+    except Exception as e:
+        print(f"❌ verdict_routing_retired pre-flight failed: {e}")
+        update_state(path=RUN_DIR, status="failed", last_error=str(e))
+        return
 
     while True:
         current_stage = state.get("pending_stage")
@@ -9643,6 +9860,49 @@ def run_loop(run_id: str):
                 update_state(path=RUN_DIR, status="failed", last_error=_msg)
                 break
             _ensure_regroup_record_handoff(run_id, RUN_DIR)
+        elif current_stage == "holdout_evaluation" and _vrr_flag:
+            # Slice 6c S2a: under the flag nothing routes here, and the operator
+            # decision of 2026-09-25 allows the holdout ONLY through the branch-3
+            # profit_bars_reached stop plus an operator unlock (S2d, not built
+            # yet). Code review item 1: a run found here WITH holdout_result.yaml
+            # already spent the seal by hand -- only the record step runs
+            # (_record_spent_holdout), so the spend is never left unrecorded.
+            # Without it: a classified pause (HOLDOUT_REFUSED_FLAG), no gate runs.
+            if (ARTIFACTS / "holdout_result.yaml").exists():
+                try:
+                    _terminal = _record_spent_holdout(RUN_DIR, run_id)
+                except Exception as e:
+                    print(f"❌ Error recording the spent holdout: {e}")
+                    update_state(path=RUN_DIR, status="failed", last_error=str(e))
+                    break
+                if _terminal == "human_pause":
+                    update_state(path=RUN_DIR, status="paused_for_human")
+                    break
+                update_state(path=RUN_DIR,
+                             status="active" if _terminal != "completed_rejected" else "rejected",
+                             completed_stages=(state.get("completed_stages") or [])
+                             + ["holdout_evaluation"],
+                             current_stage="holdout_evaluation", pending_stage=_terminal)
+                state = load_yaml(STATE_FILE)
+                continue
+            print("⏸️  holdout_evaluation is refused under orchestrator.verdict_routing_retired."
+                  "enabled: the holdout is reached only through the profit_bars_reached stop "
+                  "plus an operator unlock (slice 6c S2d, not built yet). Nothing was spent. "
+                  f"See docs/RUNBOOK.md §3 ({HOLDOUT_REFUSED_FLAG}).")
+            update_state(path=RUN_DIR, status="paused_for_human",
+                         flags={HOLDOUT_REFUSED_FLAG: True})
+            break
+        elif current_stage == "campaign_review" and _vrr_flag:
+            # Slice 6c S2a: nothing routes to campaign_review under the flag yet
+            # (S2b adds its trigger and flag branch, relaxing THIS guard -- the one
+            # refusal for this stage). Paused BEFORE the LLM call, so a legacy run
+            # left here spends nothing.
+            print("⏸️  campaign_review is unreached under orchestrator.verdict_routing_retired."
+                  "enabled until slice 6c S2b; its route is legacy verdict routing (v26 card G). "
+                  f"See docs/RUNBOOK.md §3 ({CAMPAIGN_REVIEW_REFUSED_FLAG}).")
+            update_state(path=RUN_DIR, status="paused_for_human",
+                         flags={CAMPAIGN_REVIEW_REFUSED_FLAG: True})
+            break
 
 
 
@@ -10111,7 +10371,10 @@ def run_loop(run_id: str):
             elif current_stage == "verdict_interpreter":
                 _interp = load_yaml(ARTIFACTS / "verdict_interpretation.yaml")
                 _auto_generate_findings_carryover(RUN_DIR, _interp)
-                next_stage = determine_post_verdict_route(RUN_DIR, run_id)
+                # Slice 6c S2a: the pre-flight's flag reading is passed down (the
+                # kwarg only when on, so the flag-off call is unchanged).
+                next_stage = determine_post_verdict_route(
+                    RUN_DIR, run_id, **({"routing_retired": True} if _vrr_flag else {}))
                 # CODE-REVIEW FIX (2026-09-21): the profit-bars stop
                 # (determine_post_verdict_route -> _dispatch_verdict_route's
                 # promote branch) can now return "human_pause" here, something
@@ -10150,10 +10413,13 @@ def run_loop(run_id: str):
                 next_stage = None
                 if _pbe_flag and not _rr_checks["component_errors"]:
                     next_stage = _profit_bars_stop_route(RUN_DIR, run_id)
+                # Slice 6c S2a: under verdict_routing_retired the grid route ends
+                # the run at completed_<idea_status> (never a pause except the
+                # component-error one, never the holdout).
                 if next_stage is None:
                     next_stage = determine_post_specialist_readers_route(
                         RUN_DIR, run_id, component_errors=_rr_checks["component_errors"],
-                        idea=_rr_checks["idea"])
+                        idea=_rr_checks["idea"], routing_retired=_vrr_flag)
                 if next_stage == "human_pause":
                     update_state(path=RUN_DIR, status="paused_for_human")
                     break
@@ -10181,9 +10447,13 @@ def run_loop(run_id: str):
             # 6. Mark completed and stage next phase
             completed = state.get("completed_stages", [])
             completed.append(current_stage)
-            
-            update_state(path=RUN_DIR, 
-                status="active" if next_stage != "completed_rejected" else "rejected",
+
+            # Slice 6c S2a: the three retired-routing endings are finished runs
+            # ("completed"); they are produced only under the flag, so every
+            # flag-off run keeps the status it had before.
+            update_state(path=RUN_DIR,
+                status=("completed" if next_stage in RETIRED_ROUTING_TERMINALS
+                        else "active" if next_stage != "completed_rejected" else "rejected"),
                 completed_stages=completed,
                 current_stage=current_stage,
                 pending_stage=next_stage

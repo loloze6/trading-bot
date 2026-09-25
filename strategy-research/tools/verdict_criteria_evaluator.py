@@ -99,6 +99,11 @@ _VERDICT_BEARING_OUTCOMES = frozenset({
     "no_edge_observed",
     "era_conditional_instability",
     "completed_rejected",
+    # Slice 6c S2a (orchestrator.verdict_routing_retired): run endings that
+    # state the grid's binding idea_status -- claims, so they need provenance
+    # (the DONE branch writes the idea_status itself, citing idea_status.yaml).
+    # Pinned by tests/test_e059_6c_s2a_route_retirement.py.
+    "completed_validated", "completed_refuted",
 })
 # Process/engineering states, and honest self-declarations of non-verdict. These
 # are admissible with no provenance BECAUSE they claim nothing about the
@@ -151,6 +156,9 @@ _NON_VERDICT_OUTCOMES = frozenset({
     # brief already produced; the run stops before 1b. Again a statement about
     # the brief, not about any hypothesis.
     "completed_no_new_hypothesis",
+    # Slice 6c S2a: the grid could not decide the idea; like `inconclusive`,
+    # it claims nothing. Pinned by tests/test_e059_6c_s2a_route_retirement.py.
+    "completed_inconclusive",
 })
 
 # An entry may honestly declare that it holds no gated verdict. This is not a

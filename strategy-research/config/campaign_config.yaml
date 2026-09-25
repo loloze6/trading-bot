@@ -708,6 +708,40 @@ orchestrator:
       # (2) consecutive R2 requests with no new card, so R2 terminates; the
       # loop stops only when no eligible brief is open. Legacy briefs (no brief_status) never trigger R2 and
       # get a one-time "[obsolete] ..." queue-entry title (brief file untouched).
+  verdict_routing_retired:
+    enabled: false
+      # E-059 S3, slice 6c S2a (delivery_plan_v26.md slice 6c;
+      # engineering/roadmap/E-059/S1_FINDINGS_6C.md and its operator decision
+      # of 2026-09-25). OFF BY DEFAULT and read by
+      # run_phase1_research._verdict_routing_retired_enabled(), resolved once
+      # in run_loop's pre-flight and once per step in run_campaign.process_once.
+      # HARD DEPENDENCIES: raises (does not silently no-op) if true while
+      # decide_next.enabled (hence regroup_record, specialist_readers,
+      # grid_evaluation, category_reports, config_direct_authoring) or
+      # profit_bars_every_backtest.enabled (hence profit_bars_file) is
+      # false/absent. DECLARED BEHAVIOUR CHANGE when switched on.
+      #
+      # While false: the stage graph, every route, campaign_queue.yaml,
+      # campaign_log.md and every artifact are byte-identical to before --
+      # proven by tests/test_e059_6c_s2a_route_retirement.py and the legacy
+      # K2 / E-018 / K4 routing tests.
+      #
+      # While true: after regroup_record (component-error pause and the
+      # profit_bars_reached stop unchanged) the run ends
+      # completed_validated|completed_refuted|completed_inconclusive, from the
+      # grid's idea_status alone; inconclusive no longer pauses. The DONE
+      # branch then runs decide_next, the only thing that picks the next run.
+      # Refine, pivot, escalate, kill, the circuit breaker, the escalation /
+      # timeframe protocols and continuation_child are never reached
+      # (_dispatch_verdict_route raises if entered); nothing routes to
+      # holdout_evaluation (the holdout is reached only through the
+      # profit_bars_reached stop plus an operator unlock, slice 6c S2d): a run
+      # found there pauses (holdout_refused_under_retired_routing), or, if its
+      # holdout_result.yaml shows it was already spent by hand, only the
+      # holdout_consumed_by record runs. A run found at campaign_review pauses
+      # before its LLM call until slice 6c S2b. process_once halts on a legacy
+      # continuation, an unconsumed refinement_brief_path, and a missing or
+      # mismatched idea_status.yaml at DONE (RUNBOOK §3).
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------
