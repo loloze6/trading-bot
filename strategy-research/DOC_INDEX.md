@@ -157,6 +157,17 @@ cards (queued, ranked by their 1a scores), `brief_status` open/exhausted, R2
 briefs. Design and operator decisions:
 `engineering/roadmap/E-059/S1_FINDINGS_6B.md`.
 
+### "Where did refine / pivot / escalate / kill go?"
+→ **[`docs/USER_GUIDE.md` stage 17 `regroup_record`, item 12](docs/USER_GUIDE.md#stage-17--regroup_record)**
+— verdict routing retired (E-059 S3, slice 6c S2a, off by default:
+`orchestrator.verdict_routing_retired.enabled`, requires `decide_next` and
+`profit_bars_every_backtest`). A run ends `completed_<idea_status>` after
+`regroup_record` and decide-next picks the next run; the holdout is reached
+only from the `profit_bars_reached` stop plus an operator unlock (S2d). Run
+endings and the `legacy_continuation_under_retired_routing` halt:
+`docs/RUNBOOK.md` §3. Design and operator decision:
+`engineering/roadmap/E-059/S1_FINDINGS_6C.md`.
+
 ### "What can run autonomously vs needs a human?"
 → **[`docs/WORKFLOW_CAPABILITIES.md`](docs/WORKFLOW_CAPABILITIES.md)** —
 per-stage autonomy boundary within one run.

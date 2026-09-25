@@ -365,6 +365,30 @@ flags:
       none is open, and legacy briefs get a one-time "[obsolete]" queue
       title. Flag-off split, 1a prompt and queue proven unchanged.
 
+  - name: verdict_routing_retired
+    kind: orchestrator_config
+    config_key: orchestrator.verdict_routing_retired.enabled
+    reader: run_phase1_research._verdict_routing_retired_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "its prerequisite flags decide_next and profit_bars_every_backtest, both off_incomplete; slice 6c's remaining sub-slices S2b (campaign review under the flag), S2c (parked states) and S2d (the holdout unlock); then the 6b two-run proof re-checked with this flag on, with the before/after artifact diff recorded here (declared behaviour change, delivery_plan_v26.md 0.2)"
+    criterion: >
+      Landed 2026-09-25 (E-059 S3, delivery_plan_v26.md slice 6c S2a;
+      engineering/roadmap/E-059/S1_FINDINGS_6C.md + operator decision).
+      Off by default; raises if set true without decide_next and
+      profit_bars_every_backtest. While true, the route after regroup_record
+      ends the run at completed_<idea_status> (validated / refuted /
+      inconclusive, from the grid only; inconclusive no longer pauses) and
+      decide_next picks the next run. Refine, pivot, escalate, kill, the
+      circuit breaker, the escalation/timeframe protocols and
+      continuation_child are unreachable (the legacy routers raise if
+      entered); nothing routes to holdout_evaluation and a run found there is
+      refused (campaign_review likewise, until S2b); a legacy continuation halts process_once
+      (legacy_continuation_under_retired_routing). Unit tested with synthetic
+      runs and a stubbed run_loop (tests/test_e059_6c_s2a_route_retirement.py);
+      flag-off byte-identity proven there and by the K2/E-018/K4 tests.
+      DECLARED BEHAVIOUR CHANGE when switched on.
+
   - name: bar_equity
     kind: engine_param
     engine_default_files:

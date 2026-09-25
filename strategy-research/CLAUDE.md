@@ -53,7 +53,13 @@ Two caveats the guide explains in full:
   to only when `orchestrator.regroup_record.enabled` is on (off by default;
   requires `specialist_readers`): it sits between `specialist_readers` and its
   route and writes `campaign_record/campaign_memory.yaml` (`docs/USER_GUIDE.md`
-  stage 17). `data_availability_gate` (E-054 Layer 2)
+  stage 17). With `orchestrator.verdict_routing_retired.enabled` also on
+  (E-059 S3 / slice 6c S2a, off by default; requires `decide_next` and
+  `profit_bars_every_backtest`), that route ends the run at
+  `completed_<idea_status>` and decide-next picks the next run: refine /
+  pivot / escalate / kill, the circuit breaker, continuation children and the
+  route to `holdout_evaluation` are unreachable (code kept, marked
+  `# legacy routing (v26 card G)`). `data_availability_gate` (E-054 Layer 2)
   sits between `backtest_specification` and `protocol_execution`.
   **CORRECTED 2026-09-20** (delivery_plan_v26.md s:0.4 item 14): it is now ON
   BY DEFAULT, gated by `orchestrator.data_availability_gate.enabled` in

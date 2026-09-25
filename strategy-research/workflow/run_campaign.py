@@ -101,6 +101,9 @@ _FRONTMATTER_RE = re.compile(r"\A---\s*\n(.*?\n)---\s*\n", re.DOTALL)
 # _route_pivot return this same string (A2 is the separate, later ledger item
 # that would give them distinct terminal strings; not done here).
 _LINEAGE_CONTINUATION_STAGES = ("completed_reframed", "completed_escalated", "completed_refined")
+# Slice 6c S2a: process_once's halt when a legacy continuation reaches it under
+# orchestrator.verdict_routing_retired.enabled (RUNBOOK.md §3 row of this name).
+LEGACY_CONTINUATION_HALT = "legacy_continuation_under_retired_routing"
 
 
 # ---------------------------------------------------------------------------
@@ -2213,6 +2216,9 @@ def process_once() -> bool:
     # E-059 S2a: resolved once per step, up front, so a misconfiguration (non-bool,
     # or on without its prerequisite flags) stops before anything launches.
     decide_next_enabled = orch._decide_next_enabled()
+    # Slice 6c S2a: verdict routing retired, resolved the same way (it requires
+    # decide_next and profit_bars_every_backtest, or raises).
+    routing_retired = orch._verdict_routing_retired_enabled()
 
     queue = _load_queue()
     entry = _select_entry(queue["queue"])
@@ -2464,6 +2470,27 @@ def process_once() -> bool:
     # correctly, since the intent lives on disk, not in this call's locals.
     pending = state.get("pending_stage") or ""
     continuation_child = state.get("continuation_child")
+    if routing_retired and pending in _LINEAGE_CONTINUATION_STAGES and continuation_child:
+        # Slice 6c S2a (S1_FINDINGS_6C.md guess 12): no route writes
+        # continuation_child under the flag, so this is a run the legacy routing
+        # finished before the flag was switched on. It is never followed
+        # silently: the child was minted by retired machinery, not by decide_next.
+        reason = LEGACY_CONTINUATION_HALT
+        detail = (f"{run_id} ended {pending} with continuation_child={continuation_child!r} "
+                  f"(written by {state.get('continuation_created_by')!r}) under "
+                  f"orchestrator.verdict_routing_retired.enabled -- legacy routing minted that "
+                  f"child; decide_next never follows it. A person decides whether to register "
+                  f"it as a new entry or mark this lineage done")
+        entry["status"] = f"paused:{reason}"
+        _save_queue(queue)
+        _regenerate_summary(queue)
+        _append_halt_history(run_dir, state, reason, detail)
+        _log(f"HALT — {reason}: {detail}. Campaign stopped on {entry['id']} / {run_id}. "
+             f"See RUNBOOK.md §3.")
+        _write_loop_health()
+        if schedulability_enabled:
+            _write_schedulability()
+        return False
     if pending in _LINEAGE_CONTINUATION_STAGES and continuation_child and \
             continuation_child not in split_child_ids:
         entry["run_ids"].append(continuation_child)
