@@ -371,7 +371,7 @@ flags:
     reader: run_phase1_research._verdict_routing_retired_enabled
     owner: Jeremy
     state: off_incomplete
-    blocked_on: "its prerequisite flags decide_next and profit_bars_every_backtest, both off_incomplete; slice 6c's remaining sub-slices S2b (campaign review under the flag), S2c (parked states) and S2d (the holdout unlock); then the 6b two-run proof re-checked with this flag on, with the before/after artifact diff recorded here (declared behaviour change, delivery_plan_v26.md 0.2)"
+    blocked_on: "its prerequisite flags decide_next and profit_bars_every_backtest, both off_incomplete; slice 6c's remaining sub-slices S2c (parked states) and S2d (the holdout unlock); then the 6b two-run proof re-checked with this flag on, with the before/after artifact diff recorded here (declared behaviour change, delivery_plan_v26.md 0.2)"
     criterion: >
       Landed 2026-09-25 (E-059 S3, delivery_plan_v26.md slice 6c S2a;
       engineering/roadmap/E-059/S1_FINDINGS_6C.md + operator decision).
@@ -390,6 +390,15 @@ flags:
       runs and a stubbed run_loop (tests/test_e059_6c_s2a_route_retirement.py);
       flag-off byte-identity proven there and by the K2/E-018/K4 tests.
       DECLARED BEHAVIOUR CHANGE when switched on.
+      Slice 6c S2b landed 2026-09-25 (campaign review under the flag):
+      trigger on every review_every_n_runs-th run recorded in the campaign
+      memory without an engineering_fault; continue/escalate_* recorded only
+      (returning before any verdict_interpretation.yaml load); reframe -> a
+      candidate brief registered ready (origin campaign_review) before
+      decide-next; terminate -> the campaign_review_terminate pause; a
+      flag-gated skill note as a required input. Tests:
+      tests/test_e059_6c_s2b_campaign_review.py (flag-off prompt and legacy
+      route unchanged there).
 
   - name: bar_equity
     kind: engine_param

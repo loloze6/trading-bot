@@ -3460,6 +3460,327 @@ def _record_spent_holdout(run_dir: Path, run_id: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# E-059 S3 / slice 6c S2b -- campaign review under verdict_routing_retired
+# (S1_FINDINGS_6C.md §5 and guesses 3-6; operator decision of 2026-09-25: build
+# on the S1 defaults). Reached only when run_loop's pre-flight read the flag on.
+#   * Trigger (guess 3): every review_every_n_runs-th (campaign_state.yaml,
+#     default 6) run recorded in campaign_record/campaign_memory.yaml without an
+#     engineering_fault -- never the retired failed_families list. Evaluated in
+#     run_loop after the grid route, so the component-error pause and the
+#     profit_bars_reached stop come first.
+#   * continue / escalate_* (guess 4): recorded, never routed; they return
+#     before any verdict_interpretation.yaml could be read.
+#   * reframe (guess 6): a candidate brief file; process_once registers it as a
+#     `ready` queue entry (origin campaign_review) BEFORE decide-next, which
+#     alone picks the next run.
+#   * terminate (guess 5): a real stop -- a classified pause
+#     (campaign_review_terminate, RUNBOOK §3). After the operator's resume the
+#     run ends completed_<idea_status> and decide-next runs.
+# The run's ending is always completed_<idea_status>, re-read from the grid's
+# idea_status.yaml: a review never changes an idea's status.
+# ---------------------------------------------------------------------------
+
+# pipeline_state.yaml keys, written only under the flag.
+CAMPAIGN_REVIEW_TRIGGER_KEY = "campaign_review_trigger"
+CAMPAIGN_REVIEW_REFRAME_KEY = "campaign_review_reframe_brief"
+CAMPAIGN_REVIEW_TERMINATE_KEY = "campaign_review_terminate_review"
+# The terminate stop's sticky flag (run_campaign._classify_human_pause; RUNBOOK §3).
+CAMPAIGN_REVIEW_TERMINATE_FLAG = "campaign_review_terminate"
+# The queue origin of a reframe's entry (tools/record_schema.py _ORIGIN_VALUES).
+CAMPAIGN_REVIEW_ORIGIN = "campaign_review"
+# The flag-gated skill note, injected as a required input (never in SKILL.md,
+# so the flag-off prompt is unchanged).
+_RETIRED_REVIEW_GUIDANCE = "../../workflow_artifacts/skills/campaign-review/RETIRED_ROUTING.md"
+# run_campaign._parse_brief_frontmatter's required keys. It cannot be imported
+# here (circular import, S1_FINDINGS_6B.md §6); a test pins the two together.
+REFRAME_BRIEF_REQUIRED_KEYS = ("strategy_domain", "market_universe", "timeframe",
+                               "research_goal", "venue", "product")
+_REVIEW_RECORDED_ONLY = ("continue", "escalate_instrument", "escalate_component")
+
+
+def _rel_to_run(path: Path) -> str:
+    """A ROOT-relative path as a run's handoff input ("../../<rel>")."""
+    return "../../" + Path(path).relative_to(ROOT).as_posix()
+
+
+def _retired_review_trigger(run_id: str) -> dict | None:
+    """Guess 3: the trigger record when this run makes the recorded-run count a
+    multiple of review_every_n_runs, else None. Counts campaign-memory entries
+    with no engineering_fault. The run itself must be one of them: regroup_record
+    records it before this is called, so its absence is an integrity failure
+    (raises), never a silent "no review"."""
+    cm = _campaign_memory_module()
+    memory_path = _campaign_memory_path()
+    runs = cm.load_memory(memory_path).get("runs") or {}
+    entry = runs.get(run_id)
+    if not isinstance(entry, dict) or entry.get("engineering_fault"):
+        raise ValueError(
+            f"campaign review trigger: {run_id} has no recorded entry without an "
+            f"engineering_fault in {memory_path} -- regroup_record records every run before "
+            f"this point. Refusing to count runs without it.")
+    n = (load_campaign_state() or {}).get("review_every_n_runs", 6)
+    if isinstance(n, bool) or not isinstance(n, int) or n < 1:
+        raise ValueError(f"campaign_state.yaml review_every_n_runs={n!r} is not a positive "
+                         f"integer -- refusing to guess the campaign-review cadence.")
+    recorded = sum(1 for e in runs.values() if isinstance(e, dict) and not e.get("engineering_fault"))
+    if recorded % n:
+        return None
+    return {"rule": "every_n_recorded_runs", "review_every_n_runs": n,
+            "recorded_runs": recorded, "memory": _campaign_memory_path().relative_to(ROOT).as_posix()}
+
+
+def _write_retired_review_handoff(run_dir: Path, run_id: str) -> Path:
+    """The campaign_review handoff under the flag. Written in full (not the
+    legacy template: its campaign_state/KB paths predate the campaign_record/
+    move and would fail ensure_files, and campaign_state.yaml carries the
+    retired fields). Inputs: the run's research brief, the campaign memory
+    (the per-run record) and the KB. The skill note is added at invoke time
+    (_apply_retired_routing_review_context). verdict_interpretation.yaml is
+    never an input."""
+    handoff = {
+        "handoff_version": 1,
+        "run_id": run_id,
+        "from_stage": "regroup_record",
+        "to_stage": "campaign_review",
+        "assigned_engine": "claude",
+        "objective": (
+            "Step back from single runs and assess the whole campaign from its memory. "
+            "Recommend continue, reframe, escalate_instrument, escalate_component or "
+            "terminate; under orchestrator.verdict_routing_retired only reframe (a new "
+            "brief in the queue) and terminate (a stop for the operator) act."),
+        "primary_input_artifact": _rel_to_run(_campaign_memory_path()),
+        "required_inputs": [
+            {"path": _rel_to_run(_campaign_memory_path()),
+             "reason": "the per-run campaign memory -- every run's idea_status (from the grid "
+                       "only), grid counts, registry and proposals. The complete record."},
+            {"path": "artifacts/research_brief.yaml",
+             "reason": "this run's research question, to compare with the campaign's direction"},
+            {"path": _rel_to_run(_KB_PATH),
+             "reason": "A5.1-5.3: the KB of tested mechanisms, power-parked findings and "
+                       "exhausted cells. Read before any recommendation."},
+        ],
+        "deliverables": ["campaign_review.yaml"],
+        "constraints": [
+            "Cite runs from the campaign memory by run_id and idea_status; never restate or "
+            "override an idea_status.",
+            "If recommendation is reframe, next_research_question must be a complete "
+            "research_brief (see the note in your inputs).",
+            "KB GATE -- answer the three KB questions of the skill (untested cells, exhausted "
+            "cells forbidden, combination candidates) in campaign_review.yaml.",
+        ],
+    }
+    path = run_dir / "handoffs" / STAGE_CONFIGS["campaign_review"]["handoff"]
+    save_yaml(path, handoff)
+    return path
+
+
+def _retired_review_route(run_dir: Path, run_id: str, terminal: str) -> str:
+    """run_loop, after the grid route under the flag: `terminal` unless the
+    guess-3 trigger fires, then "campaign_review" -- with its handoff written
+    and the trigger recorded on pipeline_state.yaml (the marker run_loop's
+    campaign_review guard and the context helper read)."""
+    trigger = _retired_review_trigger(run_id)
+    if trigger is None:
+        return terminal
+    trigger["idea_status_terminal"] = terminal
+    _write_retired_review_handoff(run_dir, run_id)
+    update_state(path=run_dir, **{CAMPAIGN_REVIEW_TRIGGER_KEY: trigger})
+    print(f"\n🔭 CAMPAIGN REVIEW TRIGGERED (verdict routing retired): {trigger['recorded_runs']} "
+          f"recorded runs in the campaign memory, every {trigger['review_every_n_runs']}.")
+    return "campaign_review"
+
+
+def _apply_retired_routing_review_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
+    """campaign_review of a run whose review was triggered under the flag (its
+    pipeline_state.yaml carries CAMPAIGN_REVIEW_TRIGGER_KEY, written only
+    under the flag): add the skill note RETIRED_ROUTING.md as a required input.
+    Any other stage or run (every flag-off run): no-op -- the handoff is never
+    mutated, so the prompt is byte-identical. Keyed on the marker rather than a
+    second flag read: run_loop reads the flag once per run."""
+    if stage_name != "campaign_review":
+        return
+    state_path = Path(run_dir) / "pipeline_state.yaml"
+    state = (load_yaml(state_path) or {}) if state_path.exists() else {}
+    if not state.get(CAMPAIGN_REVIEW_TRIGGER_KEY):
+        return
+    required = handoff.setdefault("required_inputs", [])
+    if any(req.get("path") == _RETIRED_REVIEW_GUIDANCE for req in required):
+        return
+    required.append({"path": _RETIRED_REVIEW_GUIDANCE,
+                     "reason": "E-059 slice 6c S2b: verdict routing is retired -- what each "
+                               "recommendation does now, and what to cite. It replaces the "
+                               "skill's escalation-era terminate guard."})
+
+
+def _review_idea_terminal(run_dir: Path, run_id: str) -> str:
+    """completed_<idea_status>, re-read from the grid's idea_status.yaml
+    (validated by _load_idea_status): a review never changes an idea's status."""
+    terminal = f"completed_{_load_idea_status(run_dir, run_id)['idea_status']}"
+    if terminal not in RETIRED_ROUTING_TERMINALS:
+        raise ValueError(f"campaign review ({run_id}): {terminal!r} is not a retired-routing ending")
+    return terminal
+
+
+def _record_review_component_request(run_id: str, review: dict) -> None:
+    """escalate_component (guess 4): the rationale goes where card J says the
+    operator looks, campaign_record/component_requests.yaml, as
+    {run_id, stage: campaign_review, variant_id: null, reason}. Once per run: a
+    re-entered route (after a resume) does not append it again."""
+    path = ROOT / "campaign_record" / "component_requests.yaml"
+    doc = (load_yaml(path) or {}) if path.exists() else {}
+    requests = doc.get("requests") or []
+    if any(isinstance(r, dict) and r.get("run_id") == run_id and r.get("stage") == "campaign_review"
+           for r in requests):
+        return
+    requests.append({"run_id": run_id, "stage": "campaign_review", "variant_id": None,
+                     "reason": str(review.get("recommendation_rationale") or "no rationale provided")})
+    path.parent.mkdir(parents=True, exist_ok=True)
+    save_yaml(path, {**doc, "requests": requests})
+
+
+def _write_reframe_brief(run_dir: Path, run_id: str, nrq: dict) -> str:
+    """Guess 6: campaign_record/candidate_briefs/<run_id>__reframe.md, a
+    frontmatter brief from next_research_question. A required key it lacks is
+    filled from this run's research_brief.yaml (and named in the prose); one
+    still missing stops the run loudly -- a brief is never dropped silently.
+    A `candidate` block is refused: it would pass the brief off as a
+    decide-next candidate. Idempotent for the same text; a different text over
+    an existing file raises (briefs are never overwritten). Returns the
+    ROOT-relative path."""
+    if "candidate" in nrq:
+        raise ValueError(f"campaign review ({run_id}): next_research_question carries a "
+                         f"`candidate` block -- a reframe is not a decide-next candidate. "
+                         f"Refusing to write the brief.")
+    brief = dict(nrq)
+    src_path = run_dir / "artifacts" / "research_brief.yaml"
+    src = (load_yaml(src_path) or {}) if src_path.exists() else {}
+    filled = []
+    for key in REFRAME_BRIEF_REQUIRED_KEYS:
+        if not brief.get(key) and isinstance(src, dict) and src.get(key):
+            brief[key] = src[key]
+            filled.append(key)
+    missing = [k for k in REFRAME_BRIEF_REQUIRED_KEYS if not brief.get(k)]
+    if missing:
+        raise ValueError(
+            f"campaign review ({run_id}): the reframe's next_research_question lacks {missing}, "
+            f"and {src_path} does not supply them -- refusing to register an incomplete brief. "
+            f"Complete next_research_question in artifacts/campaign_review.yaml and resume.")
+    rel = f"{_decide_next_tools().CANDIDATE_BRIEFS_DIR}/{run_id}__reframe.md"
+    text = ("---\n" + yaml.safe_dump(brief, sort_keys=False, allow_unicode=True) + "---\n\n"
+            f"# Reframe from campaign review ({run_id})\n\n"
+            f"Written by the orchestrator from runs/{run_id}/artifacts/campaign_review.yaml "
+            f"(recommendation: reframe; E-059 slice 6c S2b). Registered as a `ready` queue "
+            f"entry with origin campaign_review; decide-next picks the next run.\n"
+            + (f"\nFilled from runs/{run_id}/artifacts/research_brief.yaml: {', '.join(filled)}.\n"
+               if filled else ""))
+    path = ROOT / rel
+    if path.exists():
+        if path.read_text(encoding="utf-8") == text:
+            return rel
+        raise RuntimeError(f"campaign review ({run_id}): {path} already exists with other "
+                           f"content -- briefs are never overwritten. Move it aside and resume.")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    return rel
+
+
+def _route_retired_campaign_terminate(run_dir: Path, run_id: str, review: dict,
+                                      terminal: str) -> str:
+    """Guess 5: terminate really stops. campaign_decision.yaml as before, minus
+    the retired fields (families_tried, altitude_justification) and with
+    runs_attempted from the campaign memory; then a pause with its own flag.
+    Nothing else in campaign_state.yaml is written (its `space_empty` status
+    has no reader). `CAMPAIGN_REVIEW_TERMINATE_KEY` records the review's hash:
+    after the operator's resume the same review ends the run at `terminal`
+    (decide-next then runs) instead of pausing again."""
+    review_sha = hashlib.sha256(
+        (run_dir / "artifacts" / "campaign_review.yaml").read_bytes()).hexdigest()
+    state = load_yaml(run_dir / "pipeline_state.yaml") or {}
+    if state.get(CAMPAIGN_REVIEW_TERMINATE_KEY) == review_sha:
+        print(f"⚙️  campaign_review_terminate was already raised for this review; the operator "
+              f"resumed -> {terminal}. decide-next picks the next run.")
+        return terminal
+    runs = _campaign_memory_module().load_memory(_campaign_memory_path()).get("runs") or {}
+    counts: dict = {}
+    for e in runs.values():
+        key = e.get("idea_status") or f"engineering_fault:{e.get('engineering_fault')}"
+        counts[key] = counts.get(key, 0) + 1
+    campaign = load_campaign_state() or {}
+    decision = {
+        "campaign_id": campaign.get("campaign_id", "default"),
+        "terminal_run": run_id,
+        "decision": "terminate",
+        "source": "campaign_review (orchestrator.verdict_routing_retired; E-059 slice 6c S2b)",
+        "rationale": review.get("primary_failure_mode")
+                     or review.get("recommendation_rationale", "no rationale provided"),
+        "runs_attempted": sorted(runs),
+        "idea_status_counts": dict(sorted(counts.items())),
+        "instruments_tried": campaign.get("instruments_tried", []),
+        "components_built": campaign.get("components_built", []),
+        "utc": datetime.now(timezone.utc).isoformat(),
+    }
+    save_yaml(ROOT / "campaign_decision.yaml", decision)
+    print(f"\n🛑 CAMPAIGN REVIEW: terminate -> the campaign stops here "
+          f"({CAMPAIGN_REVIEW_TERMINATE_FLAG}; campaign_decision.yaml written). See "
+          f"docs/RUNBOOK.md §3.")
+    update_state(path=run_dir, status="paused_for_human",
+                 flags={CAMPAIGN_REVIEW_TERMINATE_FLAG: True},
+                 **{CAMPAIGN_REVIEW_TERMINATE_KEY: review_sha})
+    return "human_pause"
+
+
+def _route_retired_campaign_review(run_dir: Path, run_id: str) -> str:
+    """determine_post_campaign_review_route's branch under the flag (called
+    first, before that function loads anything). Every recommendation ends in
+    completed_<idea_status> except terminate (a pause) and a reframe refused by
+    the A5.4 KB-reactivation check (a pause, as flag-off). continue and
+    escalate_* are recorded, not routed, and return before any
+    verdict_interpretation.yaml could be read; a continue's
+    next_research_question is ignored. Never picks the next run, never
+    scaffolds a run, never writes a continuation or a campaign_state field."""
+    review = load_yaml(run_dir / "artifacts" / "campaign_review.yaml")
+    if not isinstance(review, dict):
+        raise ValueError(f"{run_dir / 'artifacts' / 'campaign_review.yaml'} is not a mapping")
+    rec = str(review.get("recommendation") or "").strip().lower()
+    terminal = _review_idea_terminal(run_dir, run_id)
+    if rec in _REVIEW_RECORDED_ONLY:
+        print(f"\n🔭 campaign_review: {rec} recorded, not routed (v26 card G) -> {terminal}.")
+        if rec == "continue" and review.get("next_research_question"):
+            print("   next_research_question on a continue is ignored (only a reframe adds a brief).")
+        if rec == "escalate_component":
+            _record_review_component_request(run_id, review)
+            print("   rationale appended to campaign_record/component_requests.yaml.")
+        return terminal
+    if rec == "reframe":
+        nrq = review.get("next_research_question")
+        if isinstance(nrq, str):
+            nrq = yaml.safe_load(nrq)
+        if not isinstance(nrq, dict) or not nrq:
+            raise ValueError(f"campaign review ({run_id}): reframe without a next_research_question "
+                             f"mapping -- refusing to drop the reframe silently.")
+        # A5.4 (F09): the same KB-reactivation gate as flag-off, before any write.
+        kb = load_yaml(_KB_PATH) if _KB_PATH.exists() else {}
+        violations = _check_kb_reactivation_conformance(nrq, kb or {})
+        if violations:
+            print("\n🛑 [A5.4] KB-REACTIVATION CONFORMANCE VIOLATION — this reframe targets an "
+                  "already-closed KB entry:")
+            for v in violations:
+                print(f"   - {v}")
+            update_state(path=run_dir, status="paused_for_human",
+                         flags={"kb_reactivation_violation": True},
+                         kb_reactivation_violations=violations)
+            return "human_pause"
+        rel = _write_reframe_brief(run_dir, run_id, nrq)
+        update_state(path=run_dir, **{CAMPAIGN_REVIEW_REFRAME_KEY: rel})
+        print(f"\n🔄 campaign_review: reframe -> {rel} (registered in the queue at DONE; "
+              f"decide-next picks the next run) -> {terminal}.")
+        return terminal
+    if rec == "terminate":
+        return _route_retired_campaign_terminate(run_dir, run_id, review, terminal)
+    raise ValueError(f"Unknown campaign_review recommendation: {rec}")
+
+
+# ---------------------------------------------------------------------------
 # E-059 S2a, operator decision 2 (S1_FINDINGS_6B.md, 2026-09-24): criteria of a
 # proposal-sourced candidate are written at step 1a, never inherited from the
 # source run. A candidate is recognised by its research_brief.yaml carrying
@@ -4874,6 +5195,10 @@ async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | 
 
     # E-058 S2b: campaign-review's memory input, off by default (see helper docstring above).
     _apply_regroup_record_context(stage_name, handoff, RUN_DIR)
+
+    # E-059 slice 6c S2b: campaign-review's retired-routing note, only for a review
+    # the flag's trigger started (see helper docstring above).
+    _apply_retired_routing_review_context(stage_name, handoff, RUN_DIR)
 
     # E-056 1b block manifest: stale-manifest removal + manifest-retry context,
     # strategy_config_authoring under config_direct_authoring only (see helper docstrings).
@@ -9290,9 +9615,14 @@ def determine_post_verdict_route(path: Path, run_id: str, routing_retired: bool 
                                    routing_retired=routing_retired)
 
 
-# legacy routing (v26 card G) -- not called under orchestrator.verdict_routing_retired
-# (slice 6c S2a); kept for flag-off runs.
-def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
+# legacy routing (v26 card G) -- under orchestrator.verdict_routing_retired only its
+# first line runs (slice 6c S2b: _route_retired_campaign_review); the rest is flag-off only.
+def determine_post_campaign_review_route(path: Path, run_id: str, routing_retired: bool = False) -> str:
+    # Slice 6c S2b: run_loop passes its pre-flight reading of the flag. The
+    # branch returns before anything below is loaded (verdict_interpretation.yaml
+    # included) -- no legacy route, circuit breaker or child run.
+    if routing_retired:
+        return _route_retired_campaign_review(path, run_id)
     review = load_yaml(path / "artifacts" / "campaign_review.yaml")
     rec = review.get("recommendation", "").strip().lower()
 
@@ -9892,13 +10222,16 @@ def run_loop(run_id: str):
             update_state(path=RUN_DIR, status="paused_for_human",
                          flags={HOLDOUT_REFUSED_FLAG: True})
             break
-        elif current_stage == "campaign_review" and _vrr_flag:
-            # Slice 6c S2a: nothing routes to campaign_review under the flag yet
-            # (S2b adds its trigger and flag branch, relaxing THIS guard -- the one
-            # refusal for this stage). Paused BEFORE the LLM call, so a legacy run
-            # left here spends nothing.
-            print("⏸️  campaign_review is unreached under orchestrator.verdict_routing_retired."
-                  "enabled until slice 6c S2b; its route is legacy verdict routing (v26 card G). "
+        elif (current_stage == "campaign_review" and _vrr_flag
+              and not state.get(CAMPAIGN_REVIEW_TRIGGER_KEY)):
+            # Slice 6c S2a guard, relaxed in slice 6c S2b (the one refusal for this
+            # stage): a review the memory-count trigger started under the flag
+            # (_retired_review_route) carries CAMPAIGN_REVIEW_TRIGGER_KEY and runs.
+            # Any other run found here -- a legacy review left over from before the
+            # flag -- pauses BEFORE the LLM call, so it spends nothing.
+            print("⏸️  campaign_review was reached without the memory-count trigger under "
+                  "orchestrator.verdict_routing_retired.enabled (a legacy review); its route is "
+                  "legacy verdict routing (v26 card G). "
                   f"See docs/RUNBOOK.md §3 ({CAMPAIGN_REVIEW_REFUSED_FLAG}).")
             update_state(path=RUN_DIR, status="paused_for_human",
                          flags={CAMPAIGN_REVIEW_REFUSED_FLAG: True})
@@ -10420,6 +10753,20 @@ def run_loop(run_id: str):
                     next_stage = determine_post_specialist_readers_route(
                         RUN_DIR, run_id, component_errors=_rr_checks["component_errors"],
                         idea=_rr_checks["idea"], routing_retired=_vrr_flag)
+                if next_stage == "human_pause":
+                    update_state(path=RUN_DIR, status="paused_for_human")
+                    break
+                # Slice 6c S2b: the memory-count campaign-review trigger, after the
+                # component-error pause, the profit-bars stop and the grid route.
+                if _vrr_flag and next_stage in RETIRED_ROUTING_TERMINALS:
+                    next_stage = _retired_review_route(RUN_DIR, run_id, next_stage)
+
+            elif current_stage == "campaign_review" and _vrr_flag:
+                # Slice 6c S2b: the flag branch (reframe -> a queued brief,
+                # terminate -> a stop, continue/escalate_* -> recorded only). A pause
+                # keeps pending_stage at campaign_review.
+                next_stage = determine_post_campaign_review_route(RUN_DIR, run_id,
+                                                                  routing_retired=True)
                 if next_stage == "human_pause":
                     update_state(path=RUN_DIR, status="paused_for_human")
                     break

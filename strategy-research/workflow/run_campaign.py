@@ -1037,6 +1037,11 @@ def _classify_human_pause(run_dir: Path, state: dict) -> str:
         return "holdout_refused_under_retired_routing"
     if flags.get("campaign_review_refused_under_retired_routing"):
         return "campaign_review_refused_under_retired_routing"
+    # Slice 6c S2b: campaign review said stop (orchestrator.verdict_routing_retired).
+    # Beside the two refusals above, which share its origin; a stale lower flag
+    # (e.g. profit_bars_reached from earlier in this run) must not mask a stop.
+    if flags.get("campaign_review_terminate"):
+        return "campaign_review_terminate"
     if flags.get("no_signal_artifact_flagged"):
         return "no_signal_artifact"
     if flags.get("conformance_violation") or state.get("conformance_violations"):
@@ -1318,6 +1323,8 @@ _PAUSE_FLAG_TO_REASON = (
     ("holdout_refused_under_retired_routing", "holdout_refused_under_retired_routing"),
     ("campaign_review_refused_under_retired_routing",
      "campaign_review_refused_under_retired_routing"),
+    # Slice 6c S2b: mirrors the branch directly below those in _classify_human_pause.
+    ("campaign_review_terminate", "campaign_review_terminate"),
     ("no_signal_artifact_flagged", "no_signal_artifact"),
     ("conformance_violation", "conformance_gate_failure"),
     ("regime_misattribution_flagged", "regime_misattribution"),
@@ -2632,6 +2639,12 @@ def process_once() -> bool:
             if blocker:
                 return _halt_retired_routing(queue, entry, run_id, IDEA_STATUS_HALT, blocker,
                                              schedulability_enabled)
+            # Slice 6c S2b (guess 6): a campaign-review reframe's brief becomes a
+            # `ready` queue entry BEFORE decide-next, which alone picks the next
+            # run. register writes the queue file, so the queue is reloaded after.
+            if _register_campaign_review_reframe(entry, run_id, state):
+                queue = _load_queue()
+                entry = next(e for e in queue["queue"] if e.get("id") == entry["id"])
     if pending in _LINEAGE_CONTINUATION_STAGES and continuation_child and \
             continuation_child not in split_child_ids:
         entry["run_ids"].append(continuation_child)
@@ -2964,6 +2977,43 @@ def _enqueue_queued_hypotheses(entry: dict, run_id: str) -> bool:
     _log(f"QUEUED-CARDS {entry['id']} ({run_id}): {len(doc.get('cards') or [])} extra "
          f"hypothesis card(s) in the queue as `queued`.")
     return wrote
+
+
+def _register_campaign_review_reframe(entry: dict, run_id: str, state: dict) -> bool:
+    """Slice 6c S2b (S1_FINDINGS_6C.md guess 6), under
+    orchestrator.verdict_routing_retired only. The run's campaign review said
+    reframe and wrote a candidate brief (pipeline_state.yaml names it under
+    orch.CAMPAIGN_REVIEW_REFRAME_KEY): register it as a `ready` entry -- id =
+    the brief's stem, priority decide_next.AGENT_PRIORITY, source agent, no
+    relation, origin campaign_review. Nothing else: no run, no pick (decide-next
+    records the pick). Idempotent: an entry already holding that id AND that
+    brief with origin campaign_review is skipped (a retried DONE step); the same
+    id with anything else, or a refused registration, raises. Returns True when
+    an entry was registered."""
+    rel = state.get(orch.CAMPAIGN_REVIEW_REFRAME_KEY)
+    if not rel:
+        return False
+    import decide_next as dn
+    brief_path = ROOT / rel
+    new_id = brief_path.stem
+    existing = {e.get("id"): e for e in _load_queue().get("queue") or [] if isinstance(e, dict)}
+    if new_id in existing:
+        prior = existing[new_id]
+        if prior.get("brief_path") == rel and prior.get("origin") == orch.CAMPAIGN_REVIEW_ORIGIN:
+            return False
+        raise RuntimeError(f"campaign review reframe: queue id {new_id!r} already exists with "
+                           f"another brief or origin; refusing (brief={rel})")
+    rc = register_hypothesis(
+        brief_path, dn.AGENT_PRIORITY,
+        f"Reframe from {run_id}'s campaign review (runs/{run_id}/artifacts/campaign_review.yaml)",
+        entry_id=new_id, source="agent", relation=None,
+        extra={"origin": orch.CAMPAIGN_REVIEW_ORIGIN}, status="ready")
+    if rc != 0:
+        raise RuntimeError(f"campaign review reframe: registering {new_id!r} was refused (see the "
+                           f"REGISTER line above)")
+    _log(f"REFRAME {entry['id']} ({run_id}): campaign review's brief registered as {new_id} "
+         f"(ready, origin {orch.CAMPAIGN_REVIEW_ORIGIN}, brief={rel}); decide-next picks the next run.")
+    return True
 
 
 def _register_from_cli(brief: Path, priority: int, notes: str) -> int:

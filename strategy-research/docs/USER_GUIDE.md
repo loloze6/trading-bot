@@ -1386,9 +1386,10 @@ engineering_fault_detail}`.
    `holdout_evaluation`. A run found there pauses as
    `holdout_refused_under_retired_routing`, unless its holdout was already
    spent by hand (`holdout_result.yaml` present): then only the
-   `holdout_consumed_by` record runs and the run ends. A run found at
-   `campaign_review` pauses as `campaign_review_refused_under_retired_routing`
-   before its LLM call (until slice 6c S2b). The run is still appended to
+   `holdout_consumed_by` record runs and the run ends. Campaign review runs
+   only through the memory-count trigger of item 13 (slice 6c S2b); any other
+   run found at `campaign_review` (a legacy review) pauses as
+   `campaign_review_refused_under_retired_routing` before its LLM call. The run is still appended to
    `campaign_state.runs`, with one `diagnostics_log` row per run. A resume
    after the `profit_bars_reached` stop ends the run the same way. The queue
    runner halts on a legacy continuation
@@ -1397,6 +1398,33 @@ engineering_fault_detail}`.
    `refinement_brief_path` (`refinement_brief_under_retired_routing`), and at
    DONE on a missing, unreadable or mismatched `idea_status.yaml`
    (`idea_status_missing_at_done`); RUNBOOK §3.
+13. **Campaign review with verdict routing retired (E-059 S3, slice 6c S2b,
+   same flag).** After item 12's route has produced `completed_<idea_status>`,
+   `_retired_review_trigger` counts the entries of
+   `campaign_record/campaign_memory.yaml` without an `engineering_fault`; when
+   the count is a multiple of `campaign_state.yaml`'s `review_every_n_runs`
+   (6), the run goes to stage 12 instead (`pipeline_state.yaml` records the
+   trigger under `campaign_review_trigger`). The legacy trigger
+   (`failed_families`, which never changes again and already holds 9
+   distinct families, so it would fire after every run) is never evaluated.
+   The review gets its own handoff (inputs: the memory, the run's
+   `research_brief.yaml` and the KB, at their `campaign_record/` paths; never
+   `campaign_state.yaml` or `verdict_interpretation.yaml`) plus the note
+   `workflow_artifacts/skills/campaign-review/RETIRED_ROUTING.md` as a
+   required input (`_apply_retired_routing_review_context`; `SKILL.md` and the
+   legacy template are unchanged, so the flag-off prompt is byte-identical).
+   Its route (`_route_retired_campaign_review`, the first line of
+   `determine_post_campaign_review_route` under the flag):
+   `continue` / `escalate_instrument` / `escalate_component` are recorded,
+   not routed (`escalate_component` appends its rationale to
+   `campaign_record/component_requests.yaml`); `reframe` writes
+   `campaign_record/candidate_briefs/<run_id>__reframe.md`, which the queue
+   runner registers as a `ready` entry (`origin: campaign_review`,
+   `priority: 999`) before decide-next runs (the A5.4 KB-reactivation check
+   still comes first); `terminate` writes `campaign_decision.yaml` and stops
+   the campaign as the `campaign_review_terminate` pause. Every ending is
+   `completed_<idea_status>`, re-read from `idea_status.yaml`: the review never
+   changes an idea's status and never picks the next run. RUNBOOK §3.
 
 ---
 
@@ -1431,6 +1459,10 @@ per-family breaker, deliberately, so both paths behave the same.
 
 **Routes / outcomes:** continue · reframe (new brief) · escalate (new
 instrument/timeframe) · terminate.
+
+**Under `orchestrator.verdict_routing_retired.enabled`** (slice 6c S2b, off by
+default) the trigger, the inputs and the routes above are replaced: see stage
+17, item 13.
 
 ---
 
@@ -1529,7 +1561,7 @@ its `implementation_allowed` flag is checked immediately, in the same step:
 > default) nothing in this subsection, the circuit breakers below or "After
 > campaign_review" is reached: the run ends `completed_<idea_status>` after
 > stage 17 and decide-next picks the next run (§2.1's verdict-routing-retired
-> variant).
+> variant). Campaign review's own flag route (slice 6c S2b) is stage 17, item 13.
 
 The verdict interpreter assigns an **altitude** to each decision. Altitude measures how far from the original hypothesis the next step will move.
 
@@ -2657,7 +2689,11 @@ ends `completed_<idea_status>`, so this DONE branch runs after every
 validated, refuted and inconclusive idea, and a legacy continuation
 (`completed_refined|reframed|escalated` with a `continuation_child`) halts
 the step instead of being followed
-(`legacy_continuation_under_retired_routing`).
+(`legacy_continuation_under_retired_routing`). When the run's campaign review
+said `reframe` (slice 6c S2b), its brief is registered first, as a `ready`
+entry with `origin: campaign_review` (`_register_campaign_review_reframe`,
+idempotent on a retried step); decide-next then records the pick, and an
+operator `ready` entry still goes first.
 
 Novelty is the exact match against the memory, binding: config hash, measured
 symbols, the protocol file's timeframe (normalised) and a content hash of its
