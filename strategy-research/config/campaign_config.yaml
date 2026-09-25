@@ -732,13 +732,16 @@ orchestrator:
       # grid's idea_status alone; inconclusive no longer pauses. The DONE
       # branch then runs decide_next, the only thing that picks the next run.
       # Refine, pivot, escalate, kill, the circuit breaker, the escalation /
-      # timeframe protocols and continuation_child are never reached (the
-      # legacy routers raise if entered); nothing routes to
-      # holdout_evaluation, and a run found there is refused (the holdout is
-      # reached only through the profit_bars_reached stop plus an operator
-      # unlock, slice 6c S2d); a run found at campaign_review is refused before
-      # its LLM call until slice 6c S2b. A legacy run ending in a continuation under the
-      # flag halts process_once: legacy_continuation_under_retired_routing.
+      # timeframe protocols and continuation_child are never reached
+      # (_dispatch_verdict_route raises if entered); nothing routes to
+      # holdout_evaluation (the holdout is reached only through the
+      # profit_bars_reached stop plus an operator unlock, slice 6c S2d): a run
+      # found there pauses (holdout_refused_under_retired_routing), or, if its
+      # holdout_result.yaml shows it was already spent by hand, only the
+      # holdout_consumed_by record runs. A run found at campaign_review pauses
+      # before its LLM call until slice 6c S2b. process_once halts on a legacy
+      # continuation, an unconsumed refinement_brief_path, and a missing or
+      # mismatched idea_status.yaml at DONE (RUNBOOK §3).
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------

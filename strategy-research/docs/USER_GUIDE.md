@@ -261,8 +261,8 @@ or `completed_inconclusive` — the grid's `idea_status`, nothing else — and
 the next run. `verdict_interpreter` (11), the circuit breakers, the
 escalation/timeframe protocols, continuation children and the route to
 `holdout_evaluation` (13) are unreachable (their code stays for flag-off
-runs, marked `# legacy routing (v26 card G)`, and the legacy routers raise
-if entered). The holdout is reached only from the `profit_bars_reached` stop
+runs, marked `# legacy routing (v26 card G)`; `_dispatch_verdict_route`
+raises if entered, on the flag value run_loop read once in its pre-flight). The holdout is reached only from the `profit_bars_reached` stop
 plus an operator unlock (slice 6c S2d, not built yet). See stage 17, item 12.
 
 ---
@@ -1383,12 +1383,20 @@ engineering_fault_detail}`.
    pauses. `_dispatch_verdict_route` and every function it fed are never
    called; no child run is scaffolded and no `continuation_child` written;
    `promotion_audit.yaml` is not written and nothing routes to
-   `holdout_evaluation` (a run found there is refused, as is one found at
-   `campaign_review` until slice 6c S2b, before its LLM call). The run is still
-   appended to `campaign_state.runs` and `diagnostics_log`. A resume after
-   the `profit_bars_reached` stop ends the run the same way. Legacy
-   continuations reaching the queue runner halt it
-   (`legacy_continuation_under_retired_routing`, RUNBOOK §3).
+   `holdout_evaluation`. A run found there pauses as
+   `holdout_refused_under_retired_routing`, unless its holdout was already
+   spent by hand (`holdout_result.yaml` present): then only the
+   `holdout_consumed_by` record runs and the run ends. A run found at
+   `campaign_review` pauses as `campaign_review_refused_under_retired_routing`
+   before its LLM call (until slice 6c S2b). The run is still appended to
+   `campaign_state.runs`, with one `diagnostics_log` row per run. A resume
+   after the `profit_bars_reached` stop ends the run the same way. The queue
+   runner halts on a legacy continuation
+   (`legacy_continuation_under_retired_routing`, also before `run_loop` when
+   the current run was minted by legacy routing), on an unconsumed
+   `refinement_brief_path` (`refinement_brief_under_retired_routing`), and at
+   DONE on a missing, unreadable or mismatched `idea_status.yaml`
+   (`idea_status_missing_at_done`); RUNBOOK §3.
 
 ---
 

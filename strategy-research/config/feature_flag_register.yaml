@@ -381,10 +381,12 @@ flags:
       inconclusive, from the grid only; inconclusive no longer pauses) and
       decide_next picks the next run. Refine, pivot, escalate, kill, the
       circuit breaker, the escalation/timeframe protocols and
-      continuation_child are unreachable (the legacy routers raise if
-      entered); nothing routes to holdout_evaluation and a run found there is
-      refused (campaign_review likewise, until S2b); a legacy continuation halts process_once
-      (legacy_continuation_under_retired_routing). Unit tested with synthetic
+      continuation_child are unreachable (_dispatch_verdict_route raises if
+      entered); nothing routes to holdout_evaluation: a run found there
+      pauses, or has its hand-spent holdout recorded (campaign_review pauses
+      likewise, until S2b); process_once halts on a legacy continuation, an
+      unconsumed refinement_brief_path and a missing idea_status.yaml at DONE.
+      Code review fixes: tests in the same file. Unit tested with synthetic
       runs and a stubbed run_loop (tests/test_e059_6c_s2a_route_retirement.py);
       flag-off byte-identity proven there and by the K2/E-018/K4 tests.
       DECLARED BEHAVIOUR CHANGE when switched on.

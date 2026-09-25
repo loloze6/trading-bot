@@ -226,9 +226,12 @@ def test_route_function_returns_completed_status_and_feeds_nothing(monkeypatch, 
     campaign = rpr.load_campaign_state()
     assert campaign["runs"] == [RUN_ID]
     assert [d["run"] for d in campaign["diagnostics_log"]] == [RUN_ID]
-    # a second call does not duplicate the run (resume re-enters the route)
+    # a second call duplicates neither the run nor its diagnostics row (a
+    # resume re-enters the route; code review item 6)
     rpr.determine_post_specialist_readers_route(run_dir, RUN_ID, routing_retired=True)
-    assert rpr.load_campaign_state()["runs"] == [RUN_ID]
+    campaign = rpr.load_campaign_state()
+    assert campaign["runs"] == [RUN_ID]
+    assert [d["run"] for d in campaign["diagnostics_log"]] == [RUN_ID]
 
 
 def test_route_function_component_errors_still_pause(monkeypatch):
@@ -338,37 +341,89 @@ def test_process_once_done_branch_decides_next(campaign_root, monkeypatch, idea_
 # 5. Guards
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("call", [
-    lambda d: rpr._dispatch_verdict_route(d, RUN_ID, {}, {}, "promote", None),
-    lambda d: rpr.determine_post_verdict_route(d, RUN_ID),
-    lambda d: rpr.determine_post_campaign_review_route(d, RUN_ID),
-])
-def test_legacy_routers_refuse_under_the_flag(call):
+def test_dispatch_refuses_on_the_passed_flag_only(monkeypatch):
+    """Code review items 4 + 8: ONE refusal, in _dispatch_verdict_route, keyed on
+    the flag run_loop resolved -- never a live re-read of the config."""
     _set_orchestrator(RETIRED_ON)
     run_dir = _seed()
+    monkeypatch.setattr(rpr, "_verdict_routing_retired_enabled",
+                        lambda: (_ for _ in ()).throw(AssertionError("re-read inside a run")))
     with pytest.raises(RuntimeError, match="legacy verdict routing"):
-        call(run_dir)
+        rpr._dispatch_verdict_route(run_dir, RUN_ID, {}, {}, "promote", None,
+                                    routing_retired=True)
     assert not (run_dir / "artifacts" / "promotion_audit.yaml").exists()
 
 
-def test_refusal_helper_is_a_no_op_flag_off():
-    _set_orchestrator(PREREQS)
-    rpr._refuse_under_retired_routing("x")  # no raise
-    _set_orchestrator(None)
-    rpr._refuse_under_retired_routing("x")
+def test_single_refusal_site_per_entry_point():
+    """Code review item 8: no guards on guards -- the old live-reading helper is
+    gone, and neither determine_post_verdict_route nor
+    determine_post_campaign_review_route carries a refusal of its own."""
+    import inspect
+    assert not hasattr(rpr, "_refuse_under_retired_routing")
+    for fn in (rpr.determine_post_verdict_route, rpr.determine_post_campaign_review_route):
+        src = inspect.getsource(fn)
+        assert "_verdict_routing_retired_enabled" not in src, fn.__name__
+        assert "legacy verdict routing" not in src, fn.__name__
+    assert "legacy verdict routing" in inspect.getsource(rpr._dispatch_verdict_route)
 
 
-def test_holdout_evaluation_is_refused_under_the_flag(monkeypatch):
+def test_run_loop_reads_the_flag_once(monkeypatch):
+    """Code review item 4: the pre-flight is the only reading inside a run."""
+    _set_orchestrator(RETIRED_ON)
+    run_dir = _graded_run("refuted", good=False)
+    real, calls = rpr._verdict_routing_retired_enabled, []
+
+    def _counted():
+        calls.append(1)
+        return real()
+    monkeypatch.setattr(rpr, "_verdict_routing_retired_enabled", _counted)
+    rpr.run_loop(RUN_ID)
+    assert _state(run_dir)["pending_stage"] == "completed_refuted"
+    assert len(calls) == 1
+
+
+def test_holdout_without_result_pauses_classified_and_spends_nothing(monkeypatch):
+    """Code review items 1 + 7: no holdout_result.yaml -> refused, as its own
+    classified pause (never unhandled_exception, never the 'run the holdout'
+    row even though promotion_audit.yaml exists)."""
     _set_orchestrator(RETIRED_ON)
     run_dir = _seed(idea_status="validated", pending="holdout_evaluation")
-    policy = rpr.ROOT / "config" / "campaign_data_policy.yaml"
+    rpr.save_yaml(run_dir / "artifacts" / "promotion_audit.yaml", {"hypothesis_id": "H-MEM-1"})
+    policy = rpr._DATA_POLICY_PATH
     policy_before = policy.read_bytes() if policy.exists() else None
     _forbid(monkeypatch)
     rpr.run_loop(RUN_ID)
     state = _state(run_dir)
-    assert state["status"] == "failed" and "holdout_evaluation is refused" in state["last_error"]
-    assert state["pending_stage"] == "holdout_evaluation"
+    assert state["status"] == "paused_for_human" and state["pending_stage"] == "holdout_evaluation"
+    assert state["flags"] == {rpr.HOLDOUT_REFUSED_FLAG: True}
+    assert camp._classify_human_pause(run_dir, state) == "holdout_refused_under_retired_routing"
+    assert camp._hard_pause_reason(run_dir, state)[0] == "holdout_refused_under_retired_routing"
     assert (policy.read_bytes() if policy.exists() else None) == policy_before
+
+
+@pytest.mark.parametrize("result,terminal", [("fail", "completed_rejected"),
+                                             ("pass", "completed_promoted")])
+def test_holdout_already_spent_is_recorded_then_the_run_ends(monkeypatch, result, terminal):
+    """Code review item 1: holdout_result.yaml present = the seal was spent by
+    hand. Only the consume record runs (once), then the run ends; no other
+    holdout gate runs."""
+    _set_orchestrator(RETIRED_ON)
+    run_dir = _seed(idea_status="validated", pending="holdout_evaluation")
+    rpr.save_yaml(run_dir / "artifacts" / "holdout_result.yaml", {"status": result})
+    rpr.save_yaml(rpr._DATA_POLICY_PATH, {"holdout_range": ["a", "b"],
+                                          "holdout_consumed_by": ["H-OTHER"]})
+    _forbid(monkeypatch)
+    rpr.run_loop(RUN_ID)
+    state = _state(run_dir)
+    assert state["pending_stage"] == terminal
+    assert state["completed_stages"][-1] == "holdout_evaluation"
+    policy = rpr.load_yaml(rpr._DATA_POLICY_PATH)
+    assert policy["holdout_consumed_by"] == ["H-OTHER", "H-MEM-1"]
+    assert policy["holdout_range"] == ["a", "b"]
+    # recorded once: a second pass over the same run does not append again
+    rpr.update_state(path=run_dir, pending_stage="holdout_evaluation", status="active")
+    rpr.run_loop(RUN_ID)
+    assert rpr.load_yaml(rpr._DATA_POLICY_PATH)["holdout_consumed_by"] == ["H-OTHER", "H-MEM-1"]
 
 
 def test_campaign_review_stage_is_refused_before_any_llm_call(monkeypatch):
@@ -384,8 +439,48 @@ def test_campaign_review_stage_is_refused_before_any_llm_call(monkeypatch):
     rpr.run_loop(RUN_ID)
     state = _state(run_dir)
     assert calls == []
-    assert state["status"] == "failed" and "campaign_review is unreached" in state["last_error"]
-    assert state["pending_stage"] == "campaign_review"
+    assert state["status"] == "paused_for_human" and state["pending_stage"] == "campaign_review"
+    assert camp._classify_human_pause(run_dir, state) == \
+        "campaign_review_refused_under_retired_routing"
+
+
+@pytest.mark.parametrize("reason", ["holdout_refused_under_retired_routing",
+                                    "campaign_review_refused_under_retired_routing",
+                                    "refinement_brief_under_retired_routing",
+                                    "idea_status_missing_at_done"])
+def test_new_halt_reasons_have_runbook_rows(reason):
+    assert f"| `{reason}`" in (_SR / "docs" / "RUNBOOK.md").read_text(encoding="utf-8")
+    rs.validate_queue_entry({"id": "x", "status": f"paused:{reason}"})
+
+
+def test_refusal_flags_mirror_the_pause_table():
+    table = dict(camp._PAUSE_FLAG_TO_REASON)
+    for flag in (rpr.HOLDOUT_REFUSED_FLAG, rpr.CAMPAIGN_REVIEW_REFUSED_FLAG):
+        assert table[flag] == flag == camp._classify_human_pause(Path("."), {"flags": {flag: True}})
+
+
+def test_kill_route_readers_branch_uses_the_shared_bookkeeping(monkeypatch):
+    """Code review item 9: one helper for the campaign_state bookkeeping."""
+    _set_orchestrator(RETIRED_ON)
+    run_dir = _seed()
+    seen = []
+    monkeypatch.setattr(rpr, "_record_run_in_campaign_state",
+                        lambda run_id, diag: seen.append(run_id))
+    assert rpr._route_kill(run_dir, RUN_ID, {}, {}) == "completed_rejected"
+    assert rpr._route_retired_idea_status(run_dir, RUN_ID, {"idea_status": "refuted"}) == \
+        "completed_refuted"
+    assert seen == [RUN_ID, RUN_ID]
+
+
+def test_generic_strict_flag_reader():
+    """Code review item 10."""
+    _set_orchestrator({"a": {"enabled": True}, "b": {"enabled": "yes"}})
+    assert rpr._strict_orchestrator_flag("absent") is False
+    assert rpr._strict_orchestrator_flag("a", requires=(("x", lambda: True),)) is True
+    with pytest.raises(ValueError, match=r"requires orchestrator\.x\.enabled=true as well -- w"):
+        rpr._strict_orchestrator_flag("a", requires=(("x", lambda: False),), why="w")
+    with pytest.raises(ValueError, match="not a real boolean"):
+        rpr._strict_orchestrator_flag("b")
 
 
 def _legacy_continuation(campaign_root, flags):
@@ -424,6 +519,103 @@ def test_flag_off_legacy_continuation_is_followed_as_before(campaign_root, monke
     assert entry["status"] == "in_progress" and entry["run_ids"] == ["run_912", "run_913"]
     log = (campaign_root["root"] / "campaign_log.md").read_text(encoding="utf-8")
     assert "CONTINUE TEST_ENTRY lineage run_912 -> run_913 (completed_refined)" in log
+
+
+def _minted_child_entry(campaign_root, flags):
+    """The realistic legacy case: the queue already followed run_913, which
+    run_912's legacy refine minted; run_913 itself is mid-pipeline."""
+    _write_flags(campaign_root["root"], **flags)
+    _write_fresh_scaffold(campaign_root["runs_dir"], "run_912", status="active",
+                          pending_stage="completed_refined", continuation_child="run_913",
+                          continuation_created_by="_route_refine")
+    _write_fresh_scaffold(campaign_root["runs_dir"], "run_913", status="active",
+                          pending_stage="hypothesis_generation")
+    entry = {**_entry("run_912"), "run_ids": ["run_912", "run_913"]}
+    _save_queue_entries(campaign_root["queue_path"], [entry])
+    _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_912"], trial_sharpes=[])
+
+
+def test_continue_action_on_a_legacy_minted_run_halts_before_run_loop(campaign_root, monkeypatch):
+    """Code review item 2."""
+    ran = []
+    monkeypatch.setattr(rpr, "run_loop", lambda run_id: ran.append(run_id))
+    _minted_child_entry(campaign_root, FLAT_ON)
+    assert camp.process_once() is False
+    assert ran == []
+    entry = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))["queue"][0]
+    assert entry["status"] == "paused:legacy_continuation_under_retired_routing"
+    state = yaml.safe_load((campaign_root["runs_dir"] / "run_913" / "pipeline_state.yaml")
+                           .read_text(encoding="utf-8"))
+    assert state["halt_history"][-1]["reason"] == "legacy_continuation_under_retired_routing"
+    assert "run_912's continuation_child is 'run_913'" in state["halt_history"][-1]["detail"]
+
+
+def test_continue_action_flag_off_runs_the_minted_run_as_before(campaign_root, monkeypatch):
+    ran = []
+    monkeypatch.setattr(rpr, "run_loop", lambda run_id: ran.append(run_id))
+    _minted_child_entry(campaign_root, {})
+    camp.process_once()
+    assert ran == ["run_913"]
+
+
+def test_resume_stays_blocked_until_the_legacy_continuation_is_resolved(campaign_root, monkeypatch):
+    """Code review item 7: --resume re-checks the halt's own condition."""
+    monkeypatch.setattr(rpr, "run_loop", lambda run_id: None)
+    _minted_child_entry(campaign_root, FLAT_ON)
+    camp.process_once()
+    queue = camp._load_queue()
+    assert camp.resume_paused_entry(queue) is False
+    assert queue["queue"][0]["status"] == "paused:legacy_continuation_under_retired_routing"
+    # the operator drops the minted run from the lineage and clears the pointer
+    rpr.update_state(path=campaign_root["runs_dir"] / "run_912", continuation_child=None,
+                     continuation_created_by=None)
+    queue["queue"][0]["run_ids"] = ["run_912"]
+    rpr.update_state(path=campaign_root["runs_dir"] / "run_912", pending_stage="completed_rejected")
+    camp._save_queue(queue)
+    queue = camp._load_queue()
+    assert camp.resume_paused_entry(queue) is True
+
+
+def test_refinement_brief_action_halts_without_scaffolding(campaign_root, monkeypatch):
+    """Code review item 3."""
+    ran, scaffolded = [], []
+    monkeypatch.setattr(rpr, "run_loop", lambda run_id: ran.append(run_id))
+    monkeypatch.setattr(camp, "setup_run", lambda run_id: scaffolded.append(run_id))
+    _write_flags(campaign_root["root"], **FLAT_ON)
+    _write_fresh_scaffold(campaign_root["runs_dir"], "run_912", status="rejected",
+                          pending_stage="completed_rejected")
+    entry = {**_entry("run_912"), "refinement_brief_path": "briefs/refine.yaml"}
+    _save_queue_entries(campaign_root["queue_path"], [entry])
+    _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_912"], trial_sharpes=[])
+    assert camp.process_once() is False
+    assert ran == [] and scaffolded == []
+    queue = camp._load_queue()
+    assert queue["queue"][0]["status"] == "paused:refinement_brief_under_retired_routing"
+    assert queue["queue"][0]["run_ids"] == ["run_912"]
+    assert camp.resume_paused_entry(queue) is False  # still carries the brief path
+
+
+@pytest.mark.parametrize("damage", ["missing", "unreadable", "mismatch"])
+def test_done_fails_closed_without_a_matching_idea_status(campaign_root, monkeypatch, damage):
+    """Code review item 5: never recorded `ungated` under the flag."""
+    monkeypatch.setattr(rpr, "run_loop", lambda run_id: None)
+    run_dir = _stage_flag_on_source(campaign_root, [_patch("profitability-run_061-1")],
+                                    idea_status="validated")
+    _write_flags(campaign_root["root"], **FLAT_ON)
+    rpr.update_state(path=run_dir, status="completed", pending_stage="completed_validated")
+    ref = run_dir / "artifacts" / "idea_status.yaml"
+    if damage == "missing":
+        ref.unlink()
+    elif damage == "unreadable":
+        ref.write_text("idea_status: [unclosed\n", encoding="utf-8")
+    else:
+        ref.write_text(yaml.safe_dump({"idea_status": "refuted"}), encoding="utf-8")
+    assert camp.process_once() is False
+    entry = camp._load_queue()["queue"][0]
+    assert entry["status"] == "paused:idea_status_missing_at_done"
+    assert "verdict_status" not in entry and entry.get("outcome") is None
+    assert not (run_dir / "artifacts" / "decision_record.yaml").exists()
+    assert camp.resume_paused_entry(camp._load_queue()) is False
 
 
 # ---------------------------------------------------------------------------

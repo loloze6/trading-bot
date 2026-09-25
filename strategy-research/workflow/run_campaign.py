@@ -104,6 +104,14 @@ _LINEAGE_CONTINUATION_STAGES = ("completed_reframed", "completed_escalated", "co
 # Slice 6c S2a: process_once's halt when a legacy continuation reaches it under
 # orchestrator.verdict_routing_retired.enabled (RUNBOOK.md §3 row of this name).
 LEGACY_CONTINUATION_HALT = "legacy_continuation_under_retired_routing"
+# Slice 6c S2a code review (items 3, 5): the refinement_brief action is retired
+# with the routing it fed, and a completed_<idea_status> run must cite its
+# idea_status.yaml at DONE time (fail closed, never `ungated`).
+REFINEMENT_BRIEF_HALT = "refinement_brief_under_retired_routing"
+IDEA_STATUS_HALT = "idea_status_missing_at_done"
+# The legacy routers that mint a continuation child (K4 A1's
+# continuation_created_by values; _route_kill records one with no child).
+_LEGACY_MINTING_ROUTERS = ("_route_refine", "_route_pivot", "_route_escalate")
 
 
 # ---------------------------------------------------------------------------
@@ -191,6 +199,91 @@ def _next_action_for_entry(entry: dict) -> str:
             return "queued_card"
         return "fresh_launch"
     return "continue"
+
+
+def _run_state(run_id: str) -> dict:
+    path = ROOT / "runs" / run_id / "pipeline_state.yaml"
+    return (orch.load_yaml(path) or {}) if path.exists() else {}
+
+
+def _legacy_continuation_blocker(entry: dict) -> str | None:
+    """Slice 6c S2a (code review item 2). Why the entry's current run
+    (run_ids[-1]) belongs to a lineage the retired routing extended, or None:
+      * an earlier run of the entry recorded it as its continuation_child
+        (the legacy router minted it -- the realistic case: the queue already
+        followed the child before the flag was switched on);
+      * it ended at a continuation stage with a continuation_child of its own;
+      * its own continuation_created_by names a minting legacy router.
+    Read-only. Used before run_loop, after it, and by --resume."""
+    run_ids = entry.get("run_ids") or []
+    if not run_ids:
+        return None
+    cur = run_ids[-1]
+    for prev in run_ids[:-1]:
+        pst = _run_state(prev)
+        if pst.get("continuation_child") == cur:
+            return (f"{cur} was minted by legacy routing: {prev}'s continuation_child is {cur!r} "
+                    f"(written by {pst.get('continuation_created_by')!r})")
+    st = _run_state(cur)
+    if (st.get("pending_stage") or "") in _LINEAGE_CONTINUATION_STAGES and st.get("continuation_child"):
+        return (f"{cur} ended {st.get('pending_stage')} with continuation_child="
+                f"{st.get('continuation_child')!r} (written by {st.get('continuation_created_by')!r})")
+    if st.get("continuation_created_by") in _LEGACY_MINTING_ROUTERS:
+        return f"{cur}'s continuation_created_by is the legacy router {st.get('continuation_created_by')!r}"
+    return None
+
+
+def _idea_status_blocker(run_id: str, pending: str) -> str | None:
+    """Slice 6c S2a (code review item 5). A run ending completed_<status>
+    under the flag must cite a readable idea_status.yaml whose idea_status is
+    that same status; anything else is an integrity failure, returned as text."""
+    ref = ROOT / "runs" / run_id / "artifacts" / "idea_status.yaml"
+    expected = pending[len("completed_"):]
+    if not ref.exists():
+        return f"{run_id} ended {pending} but runs/{run_id}/artifacts/idea_status.yaml is missing"
+    try:
+        doc = orch.load_yaml(ref)
+    except Exception as e:  # unreadable is the same integrity failure as missing
+        return f"{run_id} ended {pending} but its idea_status.yaml is unreadable ({e})"
+    status = doc.get("idea_status") if isinstance(doc, dict) else None
+    if status != expected:
+        return f"{run_id} ended {pending} but its idea_status.yaml reads idea_status={status!r}"
+    return None
+
+
+def _retired_routing_halt_blocker(entry: dict, reason: str) -> str | None:
+    """For --resume: the condition behind one of this slice's halts, if it
+    still holds (the run itself is not paused, so its status cannot say)."""
+    if reason == LEGACY_CONTINUATION_HALT:
+        return _legacy_continuation_blocker(entry)
+    if reason == REFINEMENT_BRIEF_HALT:
+        return ("the entry still carries an unconsumed refinement_brief_path"
+                if _next_action_for_entry(entry) == "refinement_brief" else None)
+    if reason == IDEA_STATUS_HALT and entry.get("run_ids"):
+        run_id = entry["run_ids"][-1]
+        pending = _run_state(run_id).get("pending_stage") or ""
+        if pending in orch.RETIRED_ROUTING_TERMINALS:
+            return _idea_status_blocker(run_id, pending)
+    return None
+
+
+def _halt_retired_routing(queue: dict, entry: dict, run_id, reason: str,
+                          detail: str, schedulability_enabled: bool) -> bool:
+    """One halt for this slice's process_once refusals: paused:<reason>, a
+    halt_history record on the run (when there is one), a HALT log line."""
+    entry["status"] = f"paused:{reason}"
+    _save_queue(queue)
+    _regenerate_summary(queue)
+    if run_id and (ROOT / "runs" / run_id / "pipeline_state.yaml").exists():
+        run_dir = ROOT / "runs" / run_id
+        _append_halt_history(run_dir, orch.load_yaml(run_dir / "pipeline_state.yaml") or {},
+                             reason, detail)
+    _log(f"HALT — {reason}: {detail}. Campaign stopped on {entry['id']}"
+         f"{' / ' + run_id if run_id else ''}. See RUNBOOK.md §3.")
+    _write_loop_health()
+    if schedulability_enabled:
+        _write_schedulability()
+    return False
 
 
 # ---------------------------------------------------------------------------
@@ -933,6 +1026,17 @@ def _classify_human_pause(run_dir: Path, state: dict) -> str:
     #     resurfaces on the next pass once tradability is declared.
     if flags.get("research_only_unverified"):
         return "research_only_unverified"
+    # Slice 6c S2a code review (item 7): run_loop's refusals under
+    # orchestrator.verdict_routing_retired. Directly below the research_only hold
+    # (which must outrank every sticky flag; both rows warn against running the
+    # holdout) and above everything else: a refused holdout run may hold
+    # promotion_audit.yaml and no holdout_result.yaml, so ranked lower it would
+    # read `provisional_promote_awaiting_holdout`, whose RUNBOOK row says to run
+    # the holdout backtest -- the act the flag forbids.
+    if flags.get("holdout_refused_under_retired_routing"):
+        return "holdout_refused_under_retired_routing"
+    if flags.get("campaign_review_refused_under_retired_routing"):
+        return "campaign_review_refused_under_retired_routing"
     if flags.get("no_signal_artifact_flagged"):
         return "no_signal_artifact"
     if flags.get("conformance_violation") or state.get("conformance_violations"):
@@ -1209,6 +1313,11 @@ _QUARANTINE_OUTCOME = "quarantined_engineering_failure"
 # execution, rather than a second hand-maintained list nobody verifies.
 _PAUSE_FLAG_TO_REASON = (
     ("research_only_unverified", "research_only_unverified"),
+    # Slice 6c S2a code review (item 7). Mirrors the two branches directly below
+    # research_only_unverified in _classify_human_pause.
+    ("holdout_refused_under_retired_routing", "holdout_refused_under_retired_routing"),
+    ("campaign_review_refused_under_retired_routing",
+     "campaign_review_refused_under_retired_routing"),
     ("no_signal_artifact_flagged", "no_signal_artifact"),
     ("conformance_violation", "conformance_gate_failure"),
     ("regime_misattribution_flagged", "regime_misattribution"),
@@ -1498,6 +1607,14 @@ def resume_paused_entry(queue: dict) -> bool:
         orch.resume_pipeline(run_id)
         return True
 
+    if reason in (LEGACY_CONTINUATION_HALT, REFINEMENT_BRIEF_HALT, IDEA_STATUS_HALT):
+        # Slice 6c S2a: the run is not paused for these halts, so its status
+        # cannot say whether they are resolved; the halt's own condition does.
+        blocker = _retired_routing_halt_blocker(entry, reason)
+        if blocker:
+            print(f"{entry['id']} is still blocked ({reason}): {blocker}. Resolve it first "
+                  f"(see RUNBOOK.md §3), then retry --resume.")
+            return False
     state = orch.load_yaml(run_dir / "pipeline_state.yaml")
     still_stuck = (
         state.get("status") in ("paused_for_human", "failed")
@@ -1572,8 +1689,14 @@ def _extract_run_numbers(run_dir: Path) -> dict:
     except ValueError:
         _sr_on = False  # best-effort log line: a misconfigured flag fails run_loop, not this
     if _sr_on and is_path.exists():
-        d = orch.load_yaml(is_path) or {}
-        if d.get("idea_status"):
+        # Slice 6c S2a code review (item 5): best-effort like the flag read above --
+        # an unreadable idea_status.yaml must reach process_once's integrity halt
+        # (idea_status_missing_at_done), not crash this log line first.
+        try:
+            d = orch.load_yaml(is_path) or {}
+        except Exception:
+            d = {}
+        if isinstance(d, dict) and d.get("idea_status"):
             out["idea_status"] = d["idea_status"]
 
     return out
@@ -2228,6 +2351,17 @@ def process_once() -> bool:
 
     action = _next_action_for_entry(entry)
 
+    if action == "refinement_brief" and routing_retired:
+        # Slice 6c S2a (code review item 3): the operator-authored continuation is
+        # retired with the routing; never scaffold a child. Register the brief as
+        # its own queue entry instead (register_hypothesis / `register`).
+        parent = (entry.get("run_ids") or [None])[-1]
+        return _halt_retired_routing(
+            queue, entry, parent, REFINEMENT_BRIEF_HALT,
+            f"refinement_brief_path={entry['refinement_brief_path']!r} would scaffold a "
+            f"continuation child under orchestrator.verdict_routing_retired.enabled; no child "
+            f"is created. Register the brief as a new entry (run_campaign.py register) and "
+            f"remove refinement_brief_path from {entry['id']}", schedulability_enabled)
     if action == "refinement_brief":
         # B1: an operator-authored refinement_brief_path takes precedence
         # over the internal LLM routing's own proposed_brief.yaml — but
@@ -2319,6 +2453,16 @@ def process_once() -> bool:
              f"brief={entry['brief_path']}; step 1a skipped)")
     else:
         run_id = entry["run_ids"][-1]
+        if routing_retired:
+            # Slice 6c S2a (code review item 2): never run a lineage step the
+            # retired routing minted -- checked BEFORE run_loop spends anything.
+            blocker = _legacy_continuation_blocker(entry)
+            if blocker:
+                return _halt_retired_routing(
+                    queue, entry, run_id, LEGACY_CONTINUATION_HALT,
+                    f"{blocker}, under orchestrator.verdict_routing_retired.enabled -- decide_next "
+                    f"never follows a legacy continuation; a person decides",
+                    schedulability_enabled)
 
     run_dir = ROOT / "runs" / run_id
     before_splits = _snapshot_hypothesis_splits()
@@ -2470,27 +2614,24 @@ def process_once() -> bool:
     # correctly, since the intent lives on disk, not in this call's locals.
     pending = state.get("pending_stage") or ""
     continuation_child = state.get("continuation_child")
-    if routing_retired and pending in _LINEAGE_CONTINUATION_STAGES and continuation_child:
+    if routing_retired:
         # Slice 6c S2a (S1_FINDINGS_6C.md guess 12): no route writes
-        # continuation_child under the flag, so this is a run the legacy routing
-        # finished before the flag was switched on. It is never followed
-        # silently: the child was minted by retired machinery, not by decide_next.
-        reason = LEGACY_CONTINUATION_HALT
-        detail = (f"{run_id} ended {pending} with continuation_child={continuation_child!r} "
-                  f"(written by {state.get('continuation_created_by')!r}) under "
-                  f"orchestrator.verdict_routing_retired.enabled -- legacy routing minted that "
-                  f"child; decide_next never follows it. A person decides whether to register "
-                  f"it as a new entry or mark this lineage done")
-        entry["status"] = f"paused:{reason}"
-        _save_queue(queue)
-        _regenerate_summary(queue)
-        _append_halt_history(run_dir, state, reason, detail)
-        _log(f"HALT — {reason}: {detail}. Campaign stopped on {entry['id']} / {run_id}. "
-             f"See RUNBOOK.md §3.")
-        _write_loop_health()
-        if schedulability_enabled:
-            _write_schedulability()
-        return False
+        # continuation_child under the flag, so a continuation here was made by
+        # the legacy routing before the flag was switched on. Never followed.
+        blocker = _legacy_continuation_blocker(entry)
+        if blocker:
+            return _halt_retired_routing(
+                queue, entry, run_id, LEGACY_CONTINUATION_HALT,
+                f"{blocker}, under orchestrator.verdict_routing_retired.enabled -- decide_next "
+                f"never follows a legacy continuation; a person decides",
+                schedulability_enabled)
+        # Code review item 5: fail closed at DONE -- a completed_<idea_status>
+        # run must cite a readable, matching idea_status.yaml (never `ungated`).
+        if pending in orch.RETIRED_ROUTING_TERMINALS:
+            blocker = _idea_status_blocker(run_id, pending)
+            if blocker:
+                return _halt_retired_routing(queue, entry, run_id, IDEA_STATUS_HALT, blocker,
+                                             schedulability_enabled)
     if pending in _LINEAGE_CONTINUATION_STAGES and continuation_child and \
             continuation_child not in split_child_ids:
         entry["run_ids"].append(continuation_child)
