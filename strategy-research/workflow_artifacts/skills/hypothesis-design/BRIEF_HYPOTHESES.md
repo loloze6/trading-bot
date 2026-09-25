@@ -8,7 +8,10 @@
 
 **Read `artifacts/brief_hypotheses_context.yaml` first.** `already_produced`
 lists every `hypothesis_id` this brief has already produced. Never write a
-card that repeats one of them, under the same or another id. When `request`
+card that repeats one of them, under the same or another id: a card with an
+id in that list is rejected, and a run whose cards are all repeats ends
+without testing anything. Do not write both `hypothesis_card.yaml` and
+numbered cards or a scores file: that output is refused as ambiguous. When `request`
 is `more_hypotheses`, the orchestrator is asking for NEW hypotheses from the
 same brief.
 

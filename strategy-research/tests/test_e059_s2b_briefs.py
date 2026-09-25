@@ -124,13 +124,17 @@ def test_schema_accepts_title_and_register_accepts_queued_only(campaign_root):
 # The split (run_phase1_research._handle_hypothesis_generation_multi_card_split)
 # ---------------------------------------------------------------------------
 
-def _stage_cards(run_dir: Path, n=3, scores=True):
+def _stage_cards(run_dir: Path, n=3, scores=True, context=True, produced=(), ids=None):
     arts = run_dir / "artifacts"
     arts.mkdir(parents=True, exist_ok=True)
     (arts / "research_brief.yaml").write_text("strategy_domain: crypto\n", encoding="utf-8")
+    if context:
+        (arts / "brief_hypotheses_context.yaml").write_text(yaml.safe_dump(
+            {"already_produced": list(produced)}), encoding="utf-8")
     for i in range(1, n + 1):
+        hid = ids[i - 1] if ids else f"H{i}"
         (arts / f"hypothesis_card_{i}.yaml").write_text(
-            yaml.safe_dump({"hypothesis_id": f"H{i}", "criteria": [{"id": "sign_consistent_by_era"}]}),
+            yaml.safe_dump({"hypothesis_id": hid, "criteria": [{"id": "sign_consistent_by_era"}]}),
             encoding="utf-8")
     if scores:
         (arts / "extra_card_scores.yaml").write_text(yaml.safe_dump({"cards": [
@@ -181,7 +185,7 @@ def test_split_flag_on_queues_extra_cards_with_scores(campaign_root, monkeypatch
     (lambda arts: (arts / "extra_card_scores.yaml").unlink(), "extra_card_scores"),
     (lambda arts: (arts / "extra_card_scores.yaml").write_text(yaml.safe_dump({"cards": [
         {"card": "hypothesis_card_2.yaml", "scores": dict(_SCORES, confidence_real=4),
-         "model_id": "m", "rubric_version": "v"}]})), "0..3"),
+         "model_id": "m", "rubric_version": "brief-card-v1"}]})), "0..3"),
     (lambda arts: (arts / "research_brief.yaml").write_text(yaml.safe_dump(
         {"candidate": {"criteria_from": "hypothesis_generation"}})), "reader candidate"),
 ])
@@ -206,9 +210,10 @@ def _flag_on_split_step(campaign_root, monkeypatch):
 
     def fake_run_loop(run_id):
         run_dir = root / "runs" / run_id
-        _stage_cards(run_dir, n=3)
+        _stage_cards(run_dir, n=3, context=False)  # process_once wrote the context
         assert rpr._handle_hypothesis_generation_multi_card_split(run_id, run_dir)
-        rpr.update_state(path=run_dir, status="paused_for_human", pending_stage="human_pause")
+        rpr.update_state(path=run_dir, status="paused_for_human", pending_stage="human_pause",
+                         completed_stages=["hypothesis_generation"])
     monkeypatch.setattr(rpr, "run_loop", fake_run_loop)
     camp.process_once()
     return root
@@ -293,7 +298,8 @@ def test_r2_fires_only_for_open_briefs():
     assert r2["fired"] is True and r2["open_briefs"] == ["B", "A"]
     assert r2["exhausted_briefs"] == ["C"] and r2["legacy_briefs"] == ["LEG"]
     assert r2["enqueued"] == [{"entry_id": "B__more_1", "owner": "B", "status": "ready"},
-                              {"entry_id": "A__more_1", "owner": "A", "status": "queued"}]
+                              {"entry_id": "A__more_1", "owner": "A", "status": "ready"}]
+    assert r2["ready"] == ["B__more_1", "A__more_1"]
     assert rec["picked"]["r2_request"] == "B__more_1" and rec["picked"]["new"] is True
     assert rec["stop"] is None
 

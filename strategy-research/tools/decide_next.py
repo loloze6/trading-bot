@@ -46,10 +46,13 @@ What decides, in order:
   4. Nothing scheduled and nothing eligible -> R2 (E-059 S2b): for every
      brief whose owner entry is `brief_status: open`, ask step 1a for more
      hypotheses -- reuse that brief's waiting request, or mint one
-     `<owner>__more_<n>` (origin: brief). Exactly one request is `ready`, the
-     rest `queued`. Legacy briefs (no `brief_status`, operator decision 7)
-     and exhausted ones never trigger R2.
-  5. Nothing scheduled, nothing eligible and no open brief -> stop.
+     `<owner>__more_<n>` (origin: brief). Every such request is `ready`, so
+     no brief waits behind another; the scheduler's priority order applies.
+     Legacy briefs (no `brief_status`, operator decision 7), exhausted ones,
+     owners superseded/paused/blocked, and briefs whose last
+     BRIEF_MAX_CONSECUTIVE_EMPTY_R2 requests yielded no new card never
+     trigger R2 (the caller marks the last kind exhausted).
+  5. Nothing scheduled, nothing eligible and no eligible open brief -> stop.
 
 E-059 S2b adds the brief's extra hypotheses (card M, operator decisions 4 and
 9) as candidates next to the reader proposals: a `queued` queue entry with
@@ -131,8 +134,25 @@ OBSOLETE_TITLE_TAG = "[obsolete]"
 BRIEF_CARD_RUBRIC = "brief-card-v1"
 QUEUED_CARDS_DIR = "campaign_record/queued_cards"
 QUEUED_HYPOTHESES_FILE = "queued_hypotheses.yaml"
+# The run's terminal pending_stage (and queue outcome) when every card step 1a
+# wrote repeats a hypothesis this brief already produced (code-review fix 1).
+# Non-verdict: registered in verdict_criteria_evaluator._NON_VERDICT_OUTCOMES.
+NO_NEW_HYPOTHESIS_OUTCOME = "completed_no_new_hypothesis"
+# R2 MUST TERMINATE (code-review fix 1). An open brief is marked exhausted
+# (brief_status_reason: no_new_hypothesis) once this many CONSECUTIVE R2
+# requests on it ended without a new, eligible card: 1a repeated an old card
+# (completed_no_new_hypothesis), the run was quarantined, it failed or was
+# paused, or the request was superseded. OPERATOR-ADJUSTABLE: raise it to give
+# a brief more tries, never set it below 1.
+BRIEF_MAX_CONSECUTIVE_EMPTY_R2 = 2
+AUTO_EXHAUSTED_REASON = "no_new_hypothesis"
 # Statuses in which an R2 request is still outstanding (not yet run to the end).
 _OUTSTANDING_STATUSES = ("queued", "ready", "in_progress")
+# Queue outcomes of a finished R2 request that produced no new, eligible card.
+_EMPTY_R2_OUTCOMES = frozenset({NO_NEW_HYPOTHESIS_OUTCOME, BRIEF_EXHAUSTED_OUTCOME,
+                                "quarantined_engineering_failure"})
+# Code-review fix 6: an owner in one of these states never gets an R2 request.
+_R2_INELIGIBLE_OWNER_STATUS_PREFIXES = ("superseded", "paused:", "blocked_")
 
 
 class DecideNextError(ValueError):
@@ -371,18 +391,37 @@ def obsolete_title(entry: dict, heading) -> str:
     return f"{OBSOLETE_TITLE_TAG} {base}"
 
 
+_FRONTMATTER_RE = re.compile(r"\A---\s*\n(.*?\n)---\s*\n", re.DOTALL)
+
+
 def brief_heading(root: Path, brief_path) -> str | None:
-    """The first markdown '# ' heading below a brief's frontmatter (read only;
-    the file is never written). None when absent or unreadable."""
+    """A human title for a brief (read only; the file is never written).
+    Markdown brief: the first '# ' heading of the BODY -- the YAML frontmatter
+    (whose '# ' lines are YAML comments) is skipped. Pure-YAML brief
+    (.yaml/.yml): its top-level `title`, else `name`. None when there is
+    none, or the file is missing/unreadable (the caller falls back to the id)."""
     ref = normalize_ref(brief_path)
     if ref is None:
         return None
     path = Path(root) / ref
     if not path.is_file():
         return None
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if line.startswith("# "):
-            return line[2:].strip() or None
+    text = path.read_text(encoding="utf-8")
+    if path.suffix.lower() in (".yaml", ".yml"):
+        try:
+            doc = yaml.safe_load(text)
+        except yaml.YAMLError:
+            return None
+        for key in ("title", "name"):
+            val = doc.get(key) if isinstance(doc, dict) else None
+            if isinstance(val, str) and val.strip():
+                return val.strip()
+        return None
+    m = _FRONTMATTER_RE.match(text)
+    body = text[m.end():] if m else text
+    for line in body.splitlines():
+        if line.startswith("# ") and line[2:].strip():
+            return line[2:].strip()
     return None
 
 
@@ -404,21 +443,21 @@ def brief_owner(entry: dict, entries: list) -> dict | None:
 
 
 def validate_card_scores(item, where: str) -> dict:
-    """{confidence_real, distance_to_profitable, mechanism_plausibility (ints
-    0..3), model_id, rubric_version (non-empty strings)} -- the reader
-    proposals' score shape. Raises DecideNextError otherwise."""
+    """{scores: {<reader_proposals.SCORE_KEYS>: int 0..3}, model_id (non-empty
+    string), rubric_version == BRIEF_CARD_RUBRIC}, checked with the reader
+    proposals' own score validator. Raises DecideNextError otherwise."""
     if not isinstance(item, dict):
         raise DecideNextError(f"{where}: scores are not a mapping")
     scores = item.get("scores")
-    if not isinstance(scores, dict) or set(scores) != set(_rp.SCORE_KEYS):
-        raise DecideNextError(f"{where}: scores must have exactly {list(_rp.SCORE_KEYS)}")
-    for key in _rp.SCORE_KEYS:
-        v = scores[key]
-        if isinstance(v, bool) or not isinstance(v, int) or not 0 <= v <= 3:
-            raise DecideNextError(f"{where}: scores.{key}={v!r} is not an integer in 0..3")
-    for key in ("model_id", "rubric_version"):
-        if not (isinstance(item.get(key), str) and item[key].strip()):
-            raise DecideNextError(f"{where}: {key} must be a non-empty string")
+    try:
+        _rp.check_scores(scores, where)
+    except _rp.ProposalError as exc:
+        raise DecideNextError(str(exc)) from exc
+    if not (isinstance(item.get("model_id"), str) and item["model_id"].strip()):
+        raise DecideNextError(f"{where}: model_id must be a non-empty string")
+    if item.get("rubric_version") != BRIEF_CARD_RUBRIC:
+        raise DecideNextError(f"{where}: rubric_version={item.get('rubric_version')!r} is not "
+                              f"{BRIEF_CARD_RUBRIC!r} (the only rubric extra cards are scored on)")
     return {**{k: scores[k] for k in _rp.SCORE_KEYS},
             "model_id": item["model_id"], "rubric_version": item["rubric_version"]}
 
@@ -495,6 +534,50 @@ def brief_hypothesis_ids(root: Path, queue, brief_path) -> list:
             if isinstance(hid, str) and hid.strip():
                 found.add(hid.strip())
     return sorted(found)
+
+
+def _request_number(entry: dict, owner_id: str) -> int:
+    m = re.fullmatch(re.escape(owner_id) + r"__more_(\d+)", str(entry.get("id")))
+    return int(m.group(1)) if m else 0
+
+
+def r2_request_yielded(entry: dict) -> bool | None:
+    """Did a finished R2 request produce a new, eligible card? None while it is
+    still outstanding (queued/ready/in_progress). True when it ran to `done`
+    with any other outcome than the empty ones, or was parked blocked_on_* (its
+    card needed an engine piece: it WAS a new card). False otherwise:
+    completed_no_new_hypothesis, completed_brief_exhausted, a quarantine, a
+    failure or pause (paused:*), or superseded."""
+    status = str(entry.get("status") or "")
+    if status in _OUTSTANDING_STATUSES:
+        return None
+    if status.startswith("blocked_on_"):
+        return True
+    if status == "done":
+        return entry.get("outcome") not in _EMPTY_R2_OUTCOMES
+    return False
+
+
+def consecutive_empty_r2(owner: dict, entries: list) -> list:
+    """The ids of the trailing run of finished R2 requests on `owner`'s brief
+    that yielded no new, eligible card (request-number order; outstanding
+    requests neither count nor break the run)."""
+    mine = sorted((e for e in entries if is_r2_request(e) and brief_owner(e, entries) is owner),
+                  key=lambda e: _request_number(e, owner["id"]))
+    streak = []
+    for e in mine:
+        yielded = r2_request_yielded(e)
+        if yielded is None:
+            continue
+        streak = [] if yielded else streak + [e["id"]]
+    return streak
+
+
+def r2_eligible_owner(entry: dict) -> bool:
+    """An open brief whose owner entry is not superseded, paused or blocked
+    (code-review fix 6)."""
+    return (entry.get("brief_status") == BRIEF_OPEN
+            and not str(entry.get("status") or "").startswith(_R2_INELIGIBLE_OWNER_STATUS_PREFIXES))
 
 
 def _next_request_id(owner_id: str, taken: set) -> str:
@@ -759,31 +842,40 @@ def _card_candidate(entry: dict, info: dict, owner) -> dict:
 def _r2(entries: list, *, select: bool) -> dict:
     """R2 (S1_FINDINGS_6B.md §4.3). `select` is False when something is
     already scheduled or eligible: the rule is then only recorded. When it
-    fires: per open brief (owner priority, then id), its outstanding request
-    is reused or a new `<owner>__more_<n>` is minted; the first becomes
-    `ready`, every other one `queued`."""
+    fires, EVERY eligible open brief (r2_eligible_owner, and fewer than
+    BRIEF_MAX_CONSECUTIVE_EMPTY_R2 consecutive empty requests) gets a `ready`
+    request -- its waiting one is flipped ready, or a new `<owner>__more_<n>`
+    is minted ready -- so no brief waits behind another (code-review fix 3);
+    the scheduler's own priority order then picks among them."""
     open_owners = sorted((e for e in entries if e.get("brief_status") == BRIEF_OPEN),
                          key=lambda e: (e.get("priority", 999), e.get("id")))
+    spent = {e["id"]: consecutive_empty_r2(e, entries) for e in open_owners}
+    spent = {k: v for k, v in spent.items() if len(v) >= BRIEF_MAX_CONSECUTIVE_EMPTY_R2}
+    eligible = [e for e in open_owners if r2_eligible_owner(e) and e["id"] not in spent]
     out = {
         "fired": False,
         "open_briefs": [e["id"] for e in open_owners],
+        "eligible_briefs": [e["id"] for e in eligible],
         "exhausted_briefs": sorted(e["id"] for e in entries
                                    if e.get("brief_status") == BRIEF_EXHAUSTED),
+        "no_new_hypothesis_briefs": sorted(spent),
         "legacy_briefs": sorted(e["id"] for e in entries if is_legacy_brief(e)),
+        "max_consecutive_empty_r2": BRIEF_MAX_CONSECUTIVE_EMPTY_R2,
         "enqueued": [],
-        "ready": None,
+        "ready": [],
         "reason": "",
     }
     if not select:
         out["reason"] = "not needed: the scheduler has an entry to run, or a candidate is eligible"
         return out
-    if not open_owners:
-        out["reason"] = ("no open brief (every brief with a brief_status is exhausted; legacy "
-                         "briefs never trigger R2, operator decision 7)")
+    if not eligible:
+        out["reason"] = ("no eligible open brief (exhausted, no new hypothesis after "
+                         f"{BRIEF_MAX_CONSECUTIVE_EMPTY_R2} consecutive empty R2 requests, owner "
+                         "superseded/paused/blocked, or legacy -- operator decision 7)")
         return out
     taken = {e.get("id") for e in entries}
     requests = []  # (entry_id, owner_id, new)
-    for owner in open_owners:
+    for owner in eligible:
         mine = [e for e in entries if is_r2_request(e) and brief_owner(e, entries) is owner]
         waiting = [e for e in mine if e.get("status") in _OUTSTANDING_STATUSES]
         if waiting:
@@ -794,12 +886,11 @@ def _r2(entries: list, *, select: bool) -> dict:
             requests.append((rid, owner["id"], True))
     out.update({
         "fired": True,
-        "enqueued": [{"entry_id": rid, "owner": oid,
-                      "status": "ready" if i == 0 else "queued"}
-                     for i, (rid, oid, new) in enumerate(requests) if new],
-        "ready": requests[0][0],
+        "enqueued": [{"entry_id": rid, "owner": oid, "status": "ready"}
+                     for rid, oid, new in requests if new],
+        "ready": [rid for rid, _, _ in requests],
         "reason": (f"nothing scheduled and no eligible candidate: ask step 1a for more hypotheses "
-                   f"on {len(open_owners)} open brief(s)"),
+                   f"on {len(eligible)} eligible open brief(s)"),
     })
     out["_requests"] = requests
     return out
@@ -935,7 +1026,14 @@ def decide(inputs: dict, *, now: str, trigger: dict, select_entry=None) -> dict:
     r2 = _r2(entries, select=scheduled is None and not eligible)
     requests = r2.pop("_requests", None)
     if requests:
-        rid, oid, new = requests[0]
+        # What the scheduler will actually run: its own rule over the queue
+        # with every request ready (waiting ones flipped, new ones appended).
+        ready_ids = {rid for rid, _, _ in requests}
+        sim = [dict(e, status="ready") if e.get("id") in ready_ids else e for e in entries]
+        sim += [{"id": rid, "status": "ready", "priority": AGENT_PRIORITY}
+                for rid, _, new in requests if new]
+        first = select_entry(sim)["id"]
+        rid, oid, new = next(r for r in requests if r[0] == first)
         owner = next(e for e in entries if e.get("id") == oid)
         picked = {"r2_request": rid, "queue_entry_id": rid, "brief_owner": oid,
                   "brief_path": owner.get("brief_path"), "new": new,

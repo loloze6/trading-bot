@@ -2286,6 +2286,21 @@ def process_once() -> bool:
         # E-059 S2b (decision 9): the brief's extra card, already authored by 1a
         # in an earlier run -- launched past 1a with that card, as the legacy
         # split sibling was (no second 1a call, no card drift).
+        if not (ROOT / str(entry.get("card_ref"))).is_file():
+            # Code-review fix 7: checked BEFORE any run dir exists -- pause the
+            # entry, no orphan run, no crash.
+            reason = "queued_card_missing"
+            detail = (f"card_ref={entry.get('card_ref')!r} does not exist; restore the card file "
+                      f"(or mark the entry superseded) and set status back to ready")
+            entry["status"] = f"paused:{reason}"
+            _save_queue(queue)
+            _regenerate_summary(queue)
+            _log(f"HALT — {reason}: {detail}. Campaign stopped on {entry['id']} (no run "
+                 f"created, so no halt_history; this log line is the record). See RUNBOOK.md §3.")
+            _write_loop_health()
+            if schedulability_enabled:
+                _write_schedulability()
+            return False
         brief = _parse_brief_frontmatter(ROOT / entry["brief_path"])
         run_id = _next_new_run_id()
         setup_run(run_id)
@@ -2638,14 +2653,29 @@ def _brief_updates(queue: dict, entry: dict) -> dict:
         tagged gets `title: "[obsolete] <brief heading or id>"` -- once (an
         entry already carrying the marker is skipped), on the QUEUE ENTRY
         only; the brief file is read for its heading, never written.
-    Neither changes any status or what the scheduler picks."""
+      * R2 MUST TERMINATE (code-review fix 1): an open owner whose last
+        decide_next.BRIEF_MAX_CONSECUTIVE_EMPTY_R2 finished R2 requests all
+        yielded no new, eligible card (repeat, quarantine, failure/pause,
+        superseded) flips to exhausted with brief_status_reason
+        `no_new_hypothesis`.
+    None of these changes a status the scheduler picks by."""
     import decide_next as dn
     items = [e for e in queue.get("queue") or [] if isinstance(e, dict)]
     updates: dict = {}
     if entry.get("outcome") == dn.BRIEF_EXHAUSTED_OUTCOME:
         owner = dn.brief_owner(entry, items)
         if owner is not None:
-            updates.setdefault(owner["id"], {})["brief_status"] = dn.BRIEF_EXHAUSTED
+            updates.setdefault(owner["id"], {}).update(
+                {"brief_status": dn.BRIEF_EXHAUSTED, "brief_status_reason": "step_1a_reported"})
+    for e in items:
+        if e.get("brief_status") == dn.BRIEF_OPEN and e["id"] not in updates:
+            streak = dn.consecutive_empty_r2(e, items)
+            if len(streak) >= dn.BRIEF_MAX_CONSECUTIVE_EMPTY_R2:
+                updates[e["id"]] = {"brief_status": dn.BRIEF_EXHAUSTED,
+                                    "brief_status_reason": dn.AUTO_EXHAUSTED_REASON}
+                _log(f"BRIEF-EXHAUSTED {e['id']}: {len(streak)} consecutive R2 requests "
+                     f"{streak} yielded no new hypothesis (limit "
+                     f"{dn.BRIEF_MAX_CONSECUTIVE_EMPTY_R2}).")
     for e in items:
         if dn.needs_obsolete_tag(e):
             updates.setdefault(e["id"], {})["title"] = dn.obsolete_title(
@@ -2656,8 +2686,8 @@ def _brief_updates(queue: dict, entry: dict) -> dict:
 def _apply_r2(record: dict, final_queue: dict, decision_ref: str, updates: dict,
               entry: dict, run_id: str) -> str:
     """Register R2's new requests (origin brief, on the owner's brief file,
-    priority 999, no relation) -- the ready one first -- and flip a reused
-    waiting request to ready. Refuses a colliding id before any write."""
+    priority 999, no relation), all `ready`, and flip every reused waiting
+    request to ready. Refuses a colliding id before any write."""
     import decide_next as dn
     r2 = record["rules"]["r2"]
     by_id = {e.get("id"): e for e in final_queue.get("queue") or [] if isinstance(e, dict)}
@@ -2665,7 +2695,7 @@ def _apply_r2(record: dict, final_queue: dict, decision_ref: str, updates: dict,
     clash = [q["entry_id"] for q in r2["enqueued"] if q["entry_id"] in on_disk]
     if clash:
         raise RuntimeError(f"decide_next R2: queue id(s) {clash} already exist; refusing")
-    for q in sorted(r2["enqueued"], key=lambda q: q["status"] != "ready"):
+    for q in r2["enqueued"]:
         owner = by_id[q["owner"]]
         rc = register_hypothesis(
             ROOT / owner["brief_path"], dn.AGENT_PRIORITY,
@@ -2675,23 +2705,27 @@ def _apply_r2(record: dict, final_queue: dict, decision_ref: str, updates: dict,
             extra={"origin": dn.ORIGIN_BRIEF, "decision_ref": decision_ref}, status=q["status"])
         if rc != 0:
             raise RuntimeError(f"decide_next R2: registering {q['entry_id']!r} was refused")
-    ready = r2["ready"]
-    if not record["picked"]["new"]:
-        updates.setdefault(ready, {}).update({"status": "ready", "decision_ref": decision_ref})
-    return (f"DECIDE after {entry['id']} ({run_id}): R2 -- {len(r2['open_briefs'])} open brief(s); "
-            f"{ready} ready, {len(r2['enqueued'])} new request(s). Record: {decision_ref}")
+    new_ids = {q["entry_id"] for q in r2["enqueued"]}
+    for rid in r2["ready"]:  # code-review fix 3: every waiting request becomes schedulable
+        if rid not in new_ids:
+            updates.setdefault(rid, {}).update({"status": "ready", "decision_ref": decision_ref})
+    return (f"DECIDE after {entry['id']} ({run_id}): R2 -- {len(r2['eligible_briefs'])} eligible "
+            f"open brief(s); ready: {r2['ready']} ({len(new_ids)} new); the scheduler runs "
+            f"{record['picked']['queue_entry_id']} first. Record: {decision_ref}")
 
 
 def _write_brief_hypotheses_context(queue: dict, entry: dict, run_id: str) -> None:
-    """runs/<run>/artifacts/brief_hypotheses_context.yaml for a brief run
-    (anything but a decide-next reader candidate). Its presence gives step 1a
+    """runs/<run>/artifacts/brief_hypotheses_context.yaml for a run of a brief
+    that has an owner (the owner itself, or an origin-brief request). Its presence gives step 1a
     the BRIEF_HYPOTHESES.md addendum; `already_produced` lists the hypothesis
     ids this brief file has produced so far (every entry sharing it)."""
     import decide_next as dn
-    if entry.get("origin") == dn.ORIGIN_READER:
-        return
     items = [e for e in queue.get("queue") or [] if isinstance(e, dict)]
     owner = dn.brief_owner(entry, items)
+    if owner is None:
+        # Code-review fix 9: a reader candidate or a LEGACY brief (no
+        # brief_status, operator decision 7) gets no context, hence no addendum.
+        return
     doc = {
         "schema_version": 1,
         "queue_entry": entry["id"],
@@ -2730,6 +2764,15 @@ def _enqueue_queued_hypotheses(entry: dict, run_id: str) -> bool:
         return False
     doc = orch.load_yaml(path) or {}
     if doc.get("enqueued"):
+        return False
+    # Code-review fix 2: only from a run whose step 1a COMPLETED and that has not
+    # failed -- never from a run whose 1a output was refused (the split or a
+    # later 1a check raised) or that failed.
+    state = orch.load_yaml(ROOT / "runs" / run_id / "pipeline_state.yaml") or {}
+    if (state.get("status") == "failed"
+            or "hypothesis_generation" not in (state.get("completed_stages") or [])):
+        _log(f"QUEUED-CARDS {entry['id']} ({run_id}): NOT enqueued -- step 1a did not complete "
+             f"cleanly (status={state.get('status')!r}).")
         return False
     existing = {e.get("id"): e for e in _load_queue().get("queue") or [] if isinstance(e, dict)}
     wrote = False

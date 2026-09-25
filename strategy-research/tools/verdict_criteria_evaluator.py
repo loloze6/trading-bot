@@ -147,6 +147,10 @@ _NON_VERDICT_OUTCOMES = frozenset({
     # ideas; it claims nothing about any hypothesis, so it needs no provenance.
     # Pinned in every outcome list by tests/test_e059_s2b_briefs.py.
     "completed_brief_exhausted",
+    # E-059 S2b code-review fix 1: every card 1a wrote repeats a hypothesis this
+    # brief already produced; the run stops before 1b. Again a statement about
+    # the brief, not about any hypothesis.
+    "completed_no_new_hypothesis",
 })
 
 # An entry may honestly declare that it holds no gated verdict. This is not a

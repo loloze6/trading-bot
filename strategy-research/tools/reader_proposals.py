@@ -86,7 +86,13 @@ def _check_proposal(p, cat: str, where: str) -> None:
     ev = p.get("evidence")
     if not isinstance(ev, list) or not ev or not all(_non_empty_str(e) for e in ev):
         raise ProposalError(f"{where}: evidence must be a non-empty list of non-empty strings")
-    scores = p.get("scores")
+    check_scores(p.get("scores"), where)
+
+
+def check_scores(scores, where: str) -> None:
+    """The anchored score shape: exactly SCORE_KEYS, each an integer 0..3.
+    Shared with tools/decide_next.py (E-059 S2b: a brief's extra cards are
+    scored on the same shape). Raises ProposalError."""
     if not isinstance(scores, dict) or set(scores) != set(SCORE_KEYS):
         raise ProposalError(f"{where}: scores must have exactly {list(SCORE_KEYS)}")
     for key in SCORE_KEYS:

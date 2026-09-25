@@ -54,21 +54,28 @@
         },
         "r2": {
           "type": "object",
-          "required": ["fired", "open_briefs", "exhausted_briefs", "legacy_briefs", "enqueued",
-                       "ready", "reason"],
+          "required": ["fired", "open_briefs", "eligible_briefs", "exhausted_briefs",
+                       "no_new_hypothesis_briefs", "legacy_briefs", "max_consecutive_empty_r2",
+                       "enqueued", "ready", "reason"],
           "additionalProperties": false,
           "properties": {
             "fired": { "type": "boolean",
-                       "description": "E-059 S2b: true when nothing was scheduled, no candidate was eligible and at least one brief is open." },
+                       "description": "E-059 S2b: true when nothing was scheduled, no candidate was eligible and at least one open brief is eligible." },
             "open_briefs": { "type": "array", "items": { "type": "string" } },
+            "eligible_briefs": { "type": "array", "items": { "type": "string" },
+                                 "description": "Open briefs whose owner is not superseded/paused/blocked and that are under the empty-R2 limit." },
             "exhausted_briefs": { "type": "array", "items": { "type": "string" } },
+            "no_new_hypothesis_briefs": { "type": "array", "items": { "type": "string" },
+                                          "description": "Open briefs at BRIEF_MAX_CONSECUTIVE_EMPTY_R2 consecutive empty R2 requests (the caller marks them exhausted)." },
             "legacy_briefs": { "type": "array", "items": { "type": "string" },
                                "description": "No brief_status (operator decision 7): tagged obsolete, never trigger R2." },
+            "max_consecutive_empty_r2": { "type": "integer", "minimum": 1 },
             "enqueued": { "type": "array", "items": {
               "type": "object", "required": ["entry_id", "owner", "status"], "additionalProperties": false,
               "properties": { "entry_id": { "type": "string" }, "owner": { "type": "string" },
-                              "status": { "enum": ["ready", "queued"] } } } },
-            "ready": { "type": ["string", "null"] },
+                              "status": { "const": "ready" } } } },
+            "ready": { "type": "array", "items": { "type": "string" },
+                       "description": "Every R2 request made schedulable (code-review fix 3)." },
             "reason": { "type": "string" }
           }
         }

@@ -702,8 +702,11 @@ orchestrator:
       # card_ref) ranked by the scores 1a writes for them, launched past 1a
       # when picked; 1a may report the brief exhausted (brief_status.yaml ->
       # completed_brief_exhausted, owner flipped); R2 asks 1a for more on open
-      # briefs when nothing else is runnable; the loop stops only when no
-      # brief is open. Legacy briefs (no brief_status) never trigger R2 and
+      # briefs when nothing else is runnable (every eligible brief gets a
+      # ready request); a card the brief already produced is rejected, and a
+      # brief is marked exhausted after decide_next.BRIEF_MAX_CONSECUTIVE_EMPTY_R2
+      # (2) consecutive R2 requests with no new card, so R2 terminates; the
+      # loop stops only when no eligible brief is open. Legacy briefs (no brief_status) never trigger R2 and
       # get a one-time "[obsolete] ..." queue-entry title (brief file untouched).
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)

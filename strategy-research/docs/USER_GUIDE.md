@@ -2655,10 +2655,30 @@ and status `queued` (never auto-picked).
   `completed_brief_exhausted` (a non-verdict outcome, no provenance needed) and
   the brief's owner entry is flipped to `brief_status: exhausted`.
 - **R2**: when nothing is scheduled and no candidate is eligible, decide-next
-  asks 1a for more hypotheses on every `open` brief: it reuses that brief's
-  waiting request or mints `<owner>__more_<n>` (`origin: brief`, no
-  `card_ref`); the first is `ready`, the rest `queued`. The loop stops only
-  when no brief is open.
+  asks 1a for more hypotheses on every eligible `open` brief: it reuses that
+  brief's waiting request or mints `<owner>__more_<n>` (`origin: brief`, no
+  `card_ref`), and EVERY such request is `ready` (no brief waits behind
+  another; the scheduler's priority order applies). An owner that is
+  superseded, `paused:*` or `blocked_*` gets no request. The loop stops only
+  when no eligible brief is open.
+- **R2 terminates** (code-review fix 1): a card whose `hypothesis_id` the
+  brief already produced is rejected. In the multi-card path it is dropped
+  (listed under `rejected` in `queued_hypotheses.yaml`); when no new card is
+  left, or a single card repeats, the run ends `completed_no_new_hypothesis`
+  before 1b (`artifacts/brief_repeat.yaml`). An open brief whose last
+  `decide_next.BRIEF_MAX_CONSECUTIVE_EMPTY_R2` (= 2, operator-adjustable)
+  finished R2 requests all ended without a new, eligible card -- no new
+  hypothesis, quarantined, failed/paused, or superseded -- is flipped to
+  `brief_status: exhausted` with `brief_status_reason: no_new_hypothesis`
+  (`step_1a_reported` when 1a said so itself).
+- **Ambiguous 1a output fails the run**: `hypothesis_card.yaml` together with
+  `hypothesis_card_<n>.yaml` or `extra_card_scores.yaml`; a score item naming
+  no card file; a rubric other than `brief-card-v1`; an exhausted signal next
+  to cards (checked before anything is copied). Extra cards are enqueued only
+  from a run whose 1a completed and that did not fail. Legacy briefs get no
+  brief context, hence no addendum; one that writes several cards fails.
+- **A picked card whose file is missing** pauses its entry
+  (`paused:queued_card_missing`) before any run dir is created.
 
 ### `tools/fragment_patterns.py` — Ideation-Only Fragment Diagnostics
 

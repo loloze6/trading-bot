@@ -228,6 +228,9 @@ QUEUE_ENTRY_SCHEMA = {
     # entry (no `brief_status`) as "[obsolete] <brief heading or id>" -- the
     # brief file itself is never edited. Absent on every other entry.
     "title": TEXT,
+    # E-059 S2b code-review fix 1: why an owner's brief_status became
+    # exhausted (step_1a_reported | no_new_hypothesis). Owner entries only.
+    "brief_status_reason": TEXT,
 }
 
 # Dated correction families. A correction gets its own dated field so the prior
