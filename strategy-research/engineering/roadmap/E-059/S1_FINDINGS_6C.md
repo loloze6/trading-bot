@@ -488,3 +488,21 @@ What fixtures can prove, and S2 should ship as one end-to-end test:
   killed-run accounting under the readers flag).
 
 The real two runs stay as S4 of the epic, run by the operator.
+
+---
+
+## Decision (operator, 2026-09-25)
+
+**Guess 1 (holdout path) -- answered; S2d is unblocked.** The holdout is reached
+ONLY through branch 3: a backtest passes every profit bar -> the existing
+`profit_bars_reached` stop -> the operator restarts with a holdout unlock. Branch 1
+(the grid / idea status) is knowledge enrichment and block identification only; a
+`validated` idea NEVER leads to the holdout by itself, and grid validation is NOT a
+precondition for the unlock (the RUNBOOK's best-of-N warning stays as information).
+Supersedes the S1 recommendation's "refused unless the idea is validated".
+Implementation direction for S2d: on `--resume` from `profit_bars_reached`, an
+operator file `holdout_decision.yaml` says `spend` (-> the existing
+`holdout_evaluation` stage with all its guards, for the backtest that reached the
+bars) or `continue` (-> decide-next). Any other resume path to the holdout is refused.
+
+**Guesses 2-13:** no operator objection; build on the S1 defaults.
