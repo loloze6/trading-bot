@@ -165,7 +165,9 @@ briefs. Design and operator decisions:
 `regroup_record` and decide-next picks the next run; the holdout is reached
 only from the `profit_bars_reached` stop plus an operator unlock (S2d). Run
 endings and the `legacy_continuation_under_retired_routing` halt:
-`docs/RUNBOOK.md` §3. Design and operator decision:
+`docs/RUNBOOK.md` §3. Campaign review under the same flag (slice 6c S2b:
+memory-count trigger, reframe → a `ready` queue entry, terminate → the
+`campaign_review_terminate` stop): stage 17, item 13. Design and operator decision:
 `engineering/roadmap/E-059/S1_FINDINGS_6C.md`.
 
 ### "What can run autonomously vs needs a human?"

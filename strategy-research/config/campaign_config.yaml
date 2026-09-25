@@ -738,10 +738,24 @@ orchestrator:
       # profit_bars_reached stop plus an operator unlock, slice 6c S2d): a run
       # found there pauses (holdout_refused_under_retired_routing), or, if its
       # holdout_result.yaml shows it was already spent by hand, only the
-      # holdout_consumed_by record runs. A run found at campaign_review pauses
-      # before its LLM call until slice 6c S2b. process_once halts on a legacy
+      # holdout_consumed_by record runs. process_once halts on a legacy
       # continuation, an unconsumed refinement_brief_path, and a missing or
       # mismatched idea_status.yaml at DONE (RUNBOOK §3).
+      #
+      # Slice 6c S2b: campaign review fires once review_every_n_runs
+      # (campaign_state.yaml, 6) runs recorded in campaign_memory.yaml without an
+      # engineering_fault are not yet covered by a COMPLETED review
+      # (campaign_record/campaign_review_log.yaml) -- never on failed_families.
+      # Its handoff reads a code-written digest of the memory, the run's brief
+      # and the KB (optional; never verdict_interpretation.yaml) plus the note
+      # skills/campaign-review/RETIRED_ROUTING.md. continue / escalate_* are
+      # recorded only; reframe writes a candidate brief (criteria at step 1a,
+      # the source run's protocol pin) that process_once registers as a ready
+      # entry (origin campaign_review) before decide-next; terminate pauses
+      # (campaign_review_terminate) and is recorded in campaign_decision.yaml's
+      # history. Any other run found at campaign_review (a legacy review)
+      # pauses before its LLM call; a triggered review resumed with this flag
+      # off fails loud.
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------
