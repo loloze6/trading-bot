@@ -70,6 +70,7 @@ import run_phase1_research as orch  # noqa: E402  (path insert must precede this
 import campaign_lock  # noqa: E402  (E-011 S1b, single-writer campaign launch lock)
 import record_schema  # noqa: E402  (closed record schema, see _save_queue)
 import verdict_criteria_evaluator as vce  # noqa: E402  (G6, see _save_queue)
+import campaign_review_retired as crr  # noqa: E402  (slice 6c S2b: shared with the orchestrator)
 from setup_run import setup_run  # noqa: E402
 
 # CUL-213: this is the unattended campaign entry point; its emoji status prints
@@ -109,6 +110,10 @@ LEGACY_CONTINUATION_HALT = "legacy_continuation_under_retired_routing"
 # idea_status.yaml at DONE time (fail closed, never `ungated`).
 REFINEMENT_BRIEF_HALT = "refinement_brief_under_retired_routing"
 IDEA_STATUS_HALT = "idea_status_missing_at_done"
+# Slice 6c S2b review fixes 3 + 5: a campaign-review reframe brief that cannot be
+# registered at DONE (flag switched off, brief missing, id collision, refused
+# registration) halts -- never a raw exception, never a silently dropped brief.
+REFRAME_HALT = "campaign_review_reframe_unregistered"
 # The legacy routers that mint a continuation child (K4 A1's
 # continuation_created_by values; _route_kill records one with no child).
 _LEGACY_MINTING_ROUTERS = ("_route_refine", "_route_pivot", "_route_escalate")
@@ -259,6 +264,10 @@ def _retired_routing_halt_blocker(entry: dict, reason: str) -> str | None:
     if reason == REFINEMENT_BRIEF_HALT:
         return ("the entry still carries an unconsumed refinement_brief_path"
                 if _next_action_for_entry(entry) == "refinement_brief" else None)
+    if reason == REFRAME_HALT and entry.get("run_ids"):
+        run_id = entry["run_ids"][-1]
+        return _reframe_registration_blocker(run_id, _run_state(run_id),
+                                             orch._verdict_routing_retired_enabled())
     if reason == IDEA_STATUS_HALT and entry.get("run_ids"):
         run_id = entry["run_ids"][-1]
         pending = _run_state(run_id).get("pending_stage") or ""
@@ -363,10 +372,9 @@ def _parse_brief_frontmatter(brief_path: Path) -> dict:
     # internal function/parameter naming was aligned to "market_type" to match
     # trading-bot/config/cost_model.json's axis name -- see check_venue_tradability()
     # above, which takes brief.get("product") and passes it in as market_type.
-    for required in (
-        "strategy_domain", "market_universe", "timeframe", "research_goal",
-        "venue", "product",
-    ):
+    # The tuple lives in tools/campaign_review_retired.py (slice 6c S2b review
+    # fix 9) so the orchestrator's reframe-brief writer checks the same keys.
+    for required in crr.REFRAME_BRIEF_REQUIRED_KEYS:
         if not data.get(required):
             raise ValueError(f"{brief_path}: frontmatter missing required field '{required}'.")
     return data
@@ -457,13 +465,16 @@ def _materialize_run(run_id: str, brief: dict):
         # run_phase1_research._write_pass_rule_from_card has written it. Absent
         # marker (every other brief): nothing added, byte-identical.
         _candidate = brief.get("candidate")
-        if (isinstance(_candidate, dict)
-                and _candidate.get("criteria_from") == orch.PASS_RULE_PENDING_AT_1A):
+        # Slice 6c S2b review fix 1: or the BRIEF-LEVEL field a campaign-review
+        # reframe brief carries (no candidate block). No other brief has it.
+        if ((isinstance(_candidate, dict)
+                and _candidate.get("criteria_from") == orch.PASS_RULE_PENDING_AT_1A)
+                or brief.get("criteria_from") == orch.PASS_RULE_PENDING_AT_1A):
             if (pre_registration["pass_rule"] is not None
                     or machine_constraints.get("pass_rule") is not None):
                 raise ValueError(
                     f"{run_id}: the brief says its criteria come from step 1a "
-                    f"(candidate.criteria_from: {orch.PASS_RULE_PENDING_AT_1A}) but also "
+                    f"(criteria_from: {orch.PASS_RULE_PENDING_AT_1A}) but also "
                     f"carries a pass_rule -- refusing to materialize an inherited criterion.")
             pre_registration[orch.PASS_RULE_PENDING_KEY] = orch.PASS_RULE_PENDING_AT_1A
 
@@ -1040,8 +1051,8 @@ def _classify_human_pause(run_dir: Path, state: dict) -> str:
     # Slice 6c S2b: campaign review said stop (orchestrator.verdict_routing_retired).
     # Beside the two refusals above, which share its origin; a stale lower flag
     # (e.g. profit_bars_reached from earlier in this run) must not mask a stop.
-    if flags.get("campaign_review_terminate"):
-        return "campaign_review_terminate"
+    if flags.get(crr.CAMPAIGN_REVIEW_TERMINATE_FLAG):
+        return crr.CAMPAIGN_REVIEW_TERMINATE_FLAG
     if flags.get("no_signal_artifact_flagged"):
         return "no_signal_artifact"
     if flags.get("conformance_violation") or state.get("conformance_violations"):
@@ -1176,6 +1187,22 @@ def _hard_pause_reason(run_dir: Path, state: dict):
 
     if pending == "rejected_budget_exceeded":
         return "budget_breaker", ""
+
+    # Slice 6c S2b review fixes 2+4 and 6, reached only by a run whose review the
+    # verdict_routing_retired trigger started (flag-off runs never carry the
+    # marker or the flag, so neither branch can fire for them):
+    #   * run_loop's budget stop leaves status=rejected_budget_exceeded with the
+    #     review still pending -- a classified halt, never a silent DONE;
+    #   * campaign review said stop -- it outranks the wishlist check below, so
+    #     a terminate is never reported as a wishlist question.
+    if state.get(orch.CAMPAIGN_REVIEW_TRIGGER_KEY):
+        if status == "rejected_budget_exceeded" and pending == "campaign_review":
+            return "budget_breaker", ("campaign_review stopped by the weighted token budget; the "
+                                      "review is still pending (it never completed, so the "
+                                      "cadence carries it forward)")
+        if status == "paused_for_human" and (state.get("flags") or {}).get(
+                crr.CAMPAIGN_REVIEW_TERMINATE_FLAG):
+            return crr.CAMPAIGN_REVIEW_TERMINATE_FLAG, ""
 
     cr_path = run_dir / "artifacts" / "campaign_review.yaml"
     if cr_path.exists():
@@ -1324,7 +1351,7 @@ _PAUSE_FLAG_TO_REASON = (
     ("campaign_review_refused_under_retired_routing",
      "campaign_review_refused_under_retired_routing"),
     # Slice 6c S2b: mirrors the branch directly below those in _classify_human_pause.
-    ("campaign_review_terminate", "campaign_review_terminate"),
+    (crr.CAMPAIGN_REVIEW_TERMINATE_FLAG, crr.CAMPAIGN_REVIEW_TERMINATE_FLAG),
     ("no_signal_artifact_flagged", "no_signal_artifact"),
     ("conformance_violation", "conformance_gate_failure"),
     ("regime_misattribution_flagged", "regime_misattribution"),
@@ -1614,7 +1641,7 @@ def resume_paused_entry(queue: dict) -> bool:
         orch.resume_pipeline(run_id)
         return True
 
-    if reason in (LEGACY_CONTINUATION_HALT, REFINEMENT_BRIEF_HALT, IDEA_STATUS_HALT):
+    if reason in (LEGACY_CONTINUATION_HALT, REFINEMENT_BRIEF_HALT, IDEA_STATUS_HALT, REFRAME_HALT):
         # Slice 6c S2a: the run is not paused for these halts, so its status
         # cannot say whether they are resolved; the halt's own condition does.
         blocker = _retired_routing_halt_blocker(entry, reason)
@@ -2639,12 +2666,26 @@ def process_once() -> bool:
             if blocker:
                 return _halt_retired_routing(queue, entry, run_id, IDEA_STATUS_HALT, blocker,
                                              schedulability_enabled)
-            # Slice 6c S2b (guess 6): a campaign-review reframe's brief becomes a
-            # `ready` queue entry BEFORE decide-next, which alone picks the next
-            # run. register writes the queue file, so the queue is reloaded after.
-            if _register_campaign_review_reframe(entry, run_id, state):
-                queue = _load_queue()
-                entry = next(e for e in queue["queue"] if e.get("id") == entry["id"])
+    if state.get(orch.CAMPAIGN_REVIEW_REFRAME_KEY):
+        # Slice 6c S2b (guess 6): a campaign-review reframe's brief becomes a
+        # `ready` queue entry BEFORE decide-next, which alone picks the next run.
+        # Only a run whose review the flag's trigger started carries the key.
+        # Review fixes 3 + 5: anything that stops the registration -- the flag
+        # switched off since, a missing brief, an id collision, a refused
+        # registration -- is a classified halt with a halt_history record.
+        registered = False
+        blocker = _reframe_registration_blocker(run_id, state, routing_retired)
+        if blocker is None:
+            try:
+                registered = _register_campaign_review_reframe(entry, run_id, state)
+            except Exception as e:  # classified below, never a raw crash
+                blocker = f"registering {state[orch.CAMPAIGN_REVIEW_REFRAME_KEY]} failed: {e}"
+        if blocker:
+            return _halt_retired_routing(queue, entry, run_id, REFRAME_HALT, blocker,
+                                         schedulability_enabled)
+        if registered:  # register wrote the queue file: reload it
+            queue = _load_queue()
+            entry = next(e for e in queue["queue"] if e.get("id") == entry["id"])
     if pending in _LINEAGE_CONTINUATION_STAGES and continuation_child and \
             continuation_child not in split_child_ids:
         entry["run_ids"].append(continuation_child)
@@ -2979,38 +3020,60 @@ def _enqueue_queued_hypotheses(entry: dict, run_id: str) -> bool:
     return wrote
 
 
+def _reframe_registration_blocker(run_id: str, state: dict, routing_retired: bool) -> str | None:
+    """Slice 6c S2b review fixes 3 + 5. Why the run's campaign-review reframe
+    brief (pipeline_state.yaml orch.CAMPAIGN_REVIEW_REFRAME_KEY) cannot be
+    registered now, or None (also None when there is no brief, or it is
+    already registered). Read-only; used at DONE and by --resume."""
+    rel = state.get(orch.CAMPAIGN_REVIEW_REFRAME_KEY)
+    if not rel:
+        return None
+    if not routing_retired:
+        return (f"{run_id}'s campaign review wrote the reframe brief {rel} under "
+                f"orchestrator.verdict_routing_retired.enabled, but the flag is now off -- the "
+                f"brief is never dropped silently. Switch the flag back on and --resume (it is "
+                f"then registered), or register it by hand and remove "
+                f"{orch.CAMPAIGN_REVIEW_REFRAME_KEY} from runs/{run_id}/pipeline_state.yaml")
+    if not (ROOT / rel).is_file():
+        return (f"{run_id}'s reframe brief {rel} is missing (restore it, or remove "
+                f"{orch.CAMPAIGN_REVIEW_REFRAME_KEY} from runs/{run_id}/pipeline_state.yaml)")
+    new_id = Path(rel).stem
+    prior = next((e for e in _load_queue().get("queue") or []
+                  if isinstance(e, dict) and e.get("id") == new_id), None)
+    if prior is not None and not (prior.get("brief_path") == rel
+                                  and prior.get("origin") == orch.CAMPAIGN_REVIEW_ORIGIN):
+        return (f"queue id {new_id!r} already exists with another brief or origin "
+                f"(brief={prior.get('brief_path')!r}, origin={prior.get('origin')!r}); rename "
+                f"one of them")
+    return None
+
+
 def _register_campaign_review_reframe(entry: dict, run_id: str, state: dict) -> bool:
     """Slice 6c S2b (S1_FINDINGS_6C.md guess 6), under
-    orchestrator.verdict_routing_retired only. The run's campaign review said
-    reframe and wrote a candidate brief (pipeline_state.yaml names it under
-    orch.CAMPAIGN_REVIEW_REFRAME_KEY): register it as a `ready` entry -- id =
-    the brief's stem, priority decide_next.AGENT_PRIORITY, source agent, no
-    relation, origin campaign_review. Nothing else: no run, no pick (decide-next
-    records the pick). Idempotent: an entry already holding that id AND that
-    brief with origin campaign_review is skipped (a retried DONE step); the same
-    id with anything else, or a refused registration, raises. Returns True when
-    an entry was registered."""
+    orchestrator.verdict_routing_retired only, once
+    _reframe_registration_blocker has returned None. Registers the reframe
+    brief as a `ready` entry -- id = the brief's stem, priority
+    decide_next.AGENT_PRIORITY, source agent, no relation, origin
+    campaign_review. Nothing else: no run, no pick (decide-next records the
+    pick). An entry already holding that id (the blocker has checked it is
+    this brief) is skipped: a retried DONE step. A refused registration
+    raises; the caller turns it into a classified halt. Returns True when an
+    entry was registered."""
     rel = state.get(orch.CAMPAIGN_REVIEW_REFRAME_KEY)
     if not rel:
         return False
     import decide_next as dn
     brief_path = ROOT / rel
     new_id = brief_path.stem
-    existing = {e.get("id"): e for e in _load_queue().get("queue") or [] if isinstance(e, dict)}
-    if new_id in existing:
-        prior = existing[new_id]
-        if prior.get("brief_path") == rel and prior.get("origin") == orch.CAMPAIGN_REVIEW_ORIGIN:
-            return False
-        raise RuntimeError(f"campaign review reframe: queue id {new_id!r} already exists with "
-                           f"another brief or origin; refusing (brief={rel})")
+    if any(isinstance(e, dict) and e.get("id") == new_id for e in _load_queue().get("queue") or []):
+        return False
     rc = register_hypothesis(
         brief_path, dn.AGENT_PRIORITY,
         f"Reframe from {run_id}'s campaign review (runs/{run_id}/artifacts/campaign_review.yaml)",
         entry_id=new_id, source="agent", relation=None,
         extra={"origin": orch.CAMPAIGN_REVIEW_ORIGIN}, status="ready")
     if rc != 0:
-        raise RuntimeError(f"campaign review reframe: registering {new_id!r} was refused (see the "
-                           f"REGISTER line above)")
+        raise RuntimeError(f"registering {new_id!r} was refused (see the REGISTER line above)")
     _log(f"REFRAME {entry['id']} ({run_id}): campaign review's brief registered as {new_id} "
          f"(ready, origin {orch.CAMPAIGN_REVIEW_ORIGIN}, brief={rel}); decide-next picks the next run.")
     return True

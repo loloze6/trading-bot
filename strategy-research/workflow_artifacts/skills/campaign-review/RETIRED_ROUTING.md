@@ -10,18 +10,22 @@ everywhere else SKILL.md stands.
 ## What changed
 
 - **An idea's status comes only from the grid.** Every run in
-  `campaign_record/campaign_memory.yaml` carries its `idea_status`
+  `artifacts/campaign_review_digest.yaml` carries its `idea_status`
   (`validated`, `refuted` or `inconclusive`). Cite it; never restate, override
   or re-grade it. An entry with `engineering_fault` is a broken run, not a
   finding.
 - **The next run is chosen only by decide-next.** Your review never picks it.
-- **Your inputs:** the campaign memory (the complete per-run record), this
-  run's `research_brief.yaml` and the KB. `campaign_state.yaml`'s
+- **Your inputs:** `artifacts/campaign_review_digest.yaml` (written by code
+  from the campaign memory: every run since the last completed review in full,
+  counts for the earlier runs), this run's `research_brief.yaml` and, when it
+  exists, the KB (if it is absent, its input says so: answer the KB questions
+  with "no KB yet", never invent KB content). `campaign_state.yaml`'s
   `failed_families`, `hypothesis_family`, altitude history, `diagnostics_log`
   and `verdict_interpretation.yaml` belong to the retired routing: do not ask
   for them and do not reason from them.
-- **Why you were called:** every `review_every_n_runs` (6) runs recorded in the
-  memory without an engineering fault.
+- **Why you were called:** at least `review_every_n_runs` (6) runs recorded
+  in the memory without an engineering fault are not yet covered by a
+  completed review -- they are the digest's `runs_since_last_review`.
 
 ## What each recommendation does now
 
@@ -39,13 +43,11 @@ everywhere else SKILL.md stands.
   `strategy_domain`, `market_universe`, `timeframe`, `research_goal`, `venue`
   and `product`. A key you leave out is taken from this run's
   `research_brief.yaml`; if it is missing there too, the run stops.
-- It must not carry a `candidate` block (that marks a decide-next candidate,
-  which a reframe is not).
-- It is launched like any registered brief. Its criteria are never inherited
-  from this run: without `machine_constraints` and a pre-registered
-  `evaluation.pass_rule` built from `config/criterion_menu.yaml`, the run is
-  refused at launch (before anything is spent) until the operator completes
-  the brief.
+- Do NOT write `candidate`, `criteria_from`, `machine_constraints` or
+  `evaluation.pass_rule` (the run stops if you do). The orchestrator adds
+  them: the new idea's criteria are chosen at step 1a from
+  `config/criterion_menu.yaml` (never inherited from this run), and its
+  protocol is pinned to this run's.
 - It is a NEW question: the wishlist and KB-reactivation rules of SKILL.md
   still apply, and the orchestrator still checks both.
 

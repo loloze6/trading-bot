@@ -1401,30 +1401,44 @@ engineering_fault_detail}`.
 13. **Campaign review with verdict routing retired (E-059 S3, slice 6c S2b,
    same flag).** After item 12's route has produced `completed_<idea_status>`,
    `_retired_review_trigger` counts the entries of
-   `campaign_record/campaign_memory.yaml` without an `engineering_fault`; when
-   the count is a multiple of `campaign_state.yaml`'s `review_every_n_runs`
-   (6), the run goes to stage 12 instead (`pipeline_state.yaml` records the
-   trigger under `campaign_review_trigger`). The legacy trigger
-   (`failed_families`, which never changes again and already holds 9
-   distinct families, so it would fire after every run) is never evaluated.
-   The review gets its own handoff (inputs: the memory, the run's
-   `research_brief.yaml` and the KB, at their `campaign_record/` paths; never
-   `campaign_state.yaml` or `verdict_interpretation.yaml`) plus the note
-   `workflow_artifacts/skills/campaign-review/RETIRED_ROUTING.md` as a
-   required input (`_apply_retired_routing_review_context`; `SKILL.md` and the
-   legacy template are unchanged, so the flag-off prompt is byte-identical).
+   `campaign_record/campaign_memory.yaml` without an `engineering_fault` that no
+   COMPLETED review has covered yet (`campaign_record/campaign_review_log.yaml`,
+   append-only); when that count reaches `campaign_state.yaml`'s
+   `review_every_n_runs` (6), the run goes to stage 12 instead
+   (`pipeline_state.yaml` records the trigger, with the counted runs, under
+   `campaign_review_trigger`). Only a completed review resets the count, so a
+   review lost to a budget stop, a pause, a crash or a late flag switch is due
+   again on the next run, and no run is ever counted twice. The legacy trigger
+   (`failed_families`, which never changes again and already holds 9 distinct
+   families, so it would fire after every run) is never evaluated. The review
+   gets its own handoff: a code-written digest of the memory
+   (`artifacts/campaign_review_digest.yaml`: the runs since the last completed
+   review in full, counts for the earlier ones), the run's
+   `research_brief.yaml`, and the KB as an OPTIONAL input (absent: its reason
+   says so); never the whole memory, `campaign_state.yaml` or
+   `verdict_interpretation.yaml`. With the flag still on, the note
+   `workflow_artifacts/skills/campaign-review/RETIRED_ROUTING.md` is added as
+   a required input (`_apply_retired_routing_review_context`; `SKILL.md` and
+   the legacy template are unchanged, so the flag-off prompt is
+   byte-identical). A triggered review resumed with the flag off fails loud.
    Its route (`_route_retired_campaign_review`, the first line of
    `determine_post_campaign_review_route` under the flag):
    `continue` / `escalate_instrument` / `escalate_component` are recorded,
    not routed (`escalate_component` appends its rationale to
-   `campaign_record/component_requests.yaml`); `reframe` writes
-   `campaign_record/candidate_briefs/<run_id>__reframe.md`, which the queue
-   runner registers as a `ready` entry (`origin: campaign_review`,
-   `priority: 999`) before decide-next runs (the A5.4 KB-reactivation check
-   still comes first); `terminate` writes `campaign_decision.yaml` and stops
-   the campaign as the `campaign_review_terminate` pause. Every ending is
-   `completed_<idea_status>`, re-read from `idea_status.yaml`: the review never
-   changes an idea's status and never picks the next run. RUNBOOK §3.
+   `campaign_record/component_requests.yaml`, through the locked writer shared
+   with `backtest_specification`); `reframe` writes
+   `campaign_record/candidate_briefs/<run_id>__reframe.md` with
+   `criteria_from: hypothesis_generation` (criteria fitted at step 1a from the
+   menu, as for a decide-next candidate) and the source run's protocol pin,
+   which the queue runner registers as a `ready` entry (`origin:
+   campaign_review`, `priority: 999`) before decide-next runs (the A5.4
+   KB-reactivation check still comes first; a registration that cannot happen
+   halts as `campaign_review_reframe_unregistered`); `terminate` appends to the
+   `campaign_decision.yaml` history and stops the campaign as the
+   `campaign_review_terminate` pause (an operator's continue-anyway resume
+   appends an `override_continue` event). Every ending is
+   `completed_<idea_status>`, re-read from `idea_status.yaml`: the review
+   never changes an idea's status and never picks the next run. RUNBOOK §3.
 
 ---
 

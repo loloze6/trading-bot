@@ -2052,13 +2052,12 @@ async def run_tool_worker(stage_name: str, run_id: str):
         _check_pass_through_config_hash(ARTIFACTS)
         save_yaml(variants_dir / "index.yaml", {"variants": index})
         if component_requests:
-            requests_path = ROOT / "campaign_record" / "component_requests.yaml"
-            requests_path.parent.mkdir(parents=True, exist_ok=True)
-            existing = (load_yaml(requests_path) or {}) if requests_path.exists() else {}
-            existing_requests = existing.get("requests", [])
-            for req in component_requests:
-                existing_requests.append({"run_id": run_id, "stage": "backtest_specification", **req})
-            save_yaml(requests_path, {"requests": existing_requests})
+            # Slice 6c S2b review fix 8: one locked, atomic appender shared with
+            # campaign review's escalate_component (same {requests: [...]} file).
+            _crr.append_component_requests(
+                ROOT / _crr.COMPONENT_REQUESTS_REL,
+                [{"run_id": run_id, "stage": "backtest_specification", **req}
+                 for req in component_requests])
 
         validated_count = sum(1 for v in index.values() if v["status"] == "validated")
         print(f"✅ [E-056 Slice3b] backtest_specification (config-direct authoring): "
@@ -3462,39 +3461,47 @@ def _record_spent_holdout(run_dir: Path, run_id: str) -> str:
 # ---------------------------------------------------------------------------
 # E-059 S3 / slice 6c S2b -- campaign review under verdict_routing_retired
 # (S1_FINDINGS_6C.md §5 and guesses 3-6; operator decision of 2026-09-25: build
-# on the S1 defaults). Reached only when run_loop's pre-flight read the flag on.
-#   * Trigger (guess 3): every review_every_n_runs-th (campaign_state.yaml,
-#     default 6) run recorded in campaign_record/campaign_memory.yaml without an
-#     engineering_fault -- never the retired failed_families list. Evaluated in
-#     run_loop after the grid route, so the component-error pause and the
-#     profit_bars_reached stop come first.
+# on the S1 defaults; code-review fixes 1-10). Reached only when run_loop's
+# pre-flight read the flag on.
+#   * Cadence (guess 3, review fixes 2+4): a review is due when at least
+#     review_every_n_runs (campaign_state.yaml, default 6) runs recorded in
+#     campaign_record/campaign_memory.yaml without an engineering_fault are
+#     not yet covered by a COMPLETED review (campaign_record/
+#     campaign_review_log.yaml). Only a completed review resets the count, so
+#     a missed one carries forward and none fires twice on the same runs.
+#     Never the retired failed_families list. Evaluated in run_loop after the
+#     grid route, so the component-error pause and the profit-bars stop come first.
 #   * continue / escalate_* (guess 4): recorded, never routed; they return
 #     before any verdict_interpretation.yaml could be read.
-#   * reframe (guess 6): a candidate brief file; process_once registers it as a
-#     `ready` queue entry (origin campaign_review) BEFORE decide-next, which
-#     alone picks the next run.
+#   * reframe (guess 6, review fix 1): a candidate brief whose criteria are
+#     written at step 1a (criteria_from: hypothesis_generation, operator
+#     decision 2 of 6b) with the source run's protocol pin; process_once
+#     registers it as a `ready` queue entry (origin campaign_review) BEFORE
+#     decide-next, which alone picks the next run.
 #   * terminate (guess 5): a real stop -- a classified pause
-#     (campaign_review_terminate, RUNBOOK §3). After the operator's resume the
-#     run ends completed_<idea_status> and decide-next runs.
+#     (campaign_review_terminate, RUNBOOK §3), recorded in the append-only
+#     campaign_decision.yaml history; an operator's continue-anyway resume
+#     records an override there, then the run ends and decide-next runs.
 # The run's ending is always completed_<idea_status>, re-read from the grid's
 # idea_status.yaml: a review never changes an idea's status.
 # ---------------------------------------------------------------------------
+
+import campaign_review_retired as _crr  # tools/ sibling (on sys.path, module top)
 
 # pipeline_state.yaml keys, written only under the flag.
 CAMPAIGN_REVIEW_TRIGGER_KEY = "campaign_review_trigger"
 CAMPAIGN_REVIEW_REFRAME_KEY = "campaign_review_reframe_brief"
 CAMPAIGN_REVIEW_TERMINATE_KEY = "campaign_review_terminate_review"
-# The terminate stop's sticky flag (run_campaign._classify_human_pause; RUNBOOK §3).
-CAMPAIGN_REVIEW_TERMINATE_FLAG = "campaign_review_terminate"
+# The terminate stop's sticky flag; one definition, shared with run_campaign.
+CAMPAIGN_REVIEW_TERMINATE_FLAG = _crr.CAMPAIGN_REVIEW_TERMINATE_FLAG
 # The queue origin of a reframe's entry (tools/record_schema.py _ORIGIN_VALUES).
 CAMPAIGN_REVIEW_ORIGIN = "campaign_review"
 # The flag-gated skill note, injected as a required input (never in SKILL.md,
 # so the flag-off prompt is unchanged).
 _RETIRED_REVIEW_GUIDANCE = "../../workflow_artifacts/skills/campaign-review/RETIRED_ROUTING.md"
-# run_campaign._parse_brief_frontmatter's required keys. It cannot be imported
-# here (circular import, S1_FINDINGS_6B.md §6); a test pins the two together.
-REFRAME_BRIEF_REQUIRED_KEYS = ("strategy_domain", "market_universe", "timeframe",
-                               "research_goal", "venue", "product")
+# The code-written digest of the campaign memory the review reads (review fix 10).
+CAMPAIGN_REVIEW_DIGEST_FILE = "campaign_review_digest.yaml"
+REFRAME_BRIEF_REQUIRED_KEYS = _crr.REFRAME_BRIEF_REQUIRED_KEYS
 _REVIEW_RECORDED_ONLY = ("continue", "escalate_instrument", "escalate_component")
 
 
@@ -3503,40 +3510,89 @@ def _rel_to_run(path: Path) -> str:
     return "../../" + Path(path).relative_to(ROOT).as_posix()
 
 
+def _review_log_path() -> Path:
+    return ROOT / _crr.REVIEW_LOG_REL
+
+
+def _review_cadence() -> int:
+    n = (load_campaign_state() or {}).get("review_every_n_runs", 6)
+    if isinstance(n, bool) or not isinstance(n, int) or n < 1:
+        raise ValueError(f"campaign_state.yaml review_every_n_runs={n!r} is not a positive "
+                         f"integer -- refusing to guess the campaign-review cadence.")
+    return n
+
+
 def _retired_review_trigger(run_id: str) -> dict | None:
-    """Guess 3: the trigger record when this run makes the recorded-run count a
-    multiple of review_every_n_runs, else None. Counts campaign-memory entries
-    with no engineering_fault. The run itself must be one of them: regroup_record
-    records it before this is called, so its absence is an integrity failure
-    (raises), never a silent "no review"."""
-    cm = _campaign_memory_module()
+    """The trigger record when at least review_every_n_runs counted runs are
+    not yet covered by a completed review, else None. The run itself must be a
+    counted memory entry: regroup_record records it before this is called, so
+    its absence is an integrity failure (raises), never a silent "no review"."""
     memory_path = _campaign_memory_path()
-    runs = cm.load_memory(memory_path).get("runs") or {}
+    runs = _campaign_memory_module().load_memory(memory_path).get("runs") or {}
     entry = runs.get(run_id)
     if not isinstance(entry, dict) or entry.get("engineering_fault"):
         raise ValueError(
             f"campaign review trigger: {run_id} has no recorded entry without an "
             f"engineering_fault in {memory_path} -- regroup_record records every run before "
             f"this point. Refusing to count runs without it.")
-    n = (load_campaign_state() or {}).get("review_every_n_runs", 6)
-    if isinstance(n, bool) or not isinstance(n, int) or n < 1:
-        raise ValueError(f"campaign_state.yaml review_every_n_runs={n!r} is not a positive "
-                         f"integer -- refusing to guess the campaign-review cadence.")
-    recorded = sum(1 for e in runs.values() if isinstance(e, dict) and not e.get("engineering_fault"))
-    if recorded % n:
+    n = _review_cadence()
+    since = _crr.runs_since_last_review(runs, _crr.load_review_log(_review_log_path()))
+    if len(since) < n:
         return None
-    return {"rule": "every_n_recorded_runs", "review_every_n_runs": n,
-            "recorded_runs": recorded, "memory": _campaign_memory_path().relative_to(ROOT).as_posix()}
+    return {"rule": "runs_since_last_completed_review", "review_every_n_runs": n,
+            "runs_since_last_review": len(since), "since_runs": since,
+            "memory": memory_path.relative_to(ROOT).as_posix()}
+
+
+def _idea_status_counts(entries) -> dict:
+    counts: dict = {}
+    for e in entries:
+        key = e.get("idea_status") or f"engineering_fault:{e.get('engineering_fault')}"
+        counts[key] = counts.get(key, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def _write_review_digest(run_dir: Path, trigger: dict) -> Path:
+    """Review fix 10: what the review reads instead of the whole memory --
+    every run since the last completed review in full, and aggregate counts
+    for the earlier ones. Written by code, never by the model."""
+    runs = _campaign_memory_module().load_memory(_campaign_memory_path()).get("runs") or {}
+    since = set(trigger["since_runs"])
+    earlier = [e for rid, e in sorted(runs.items()) if rid not in since]
+    log = _crr.load_review_log(_review_log_path())
+    last = (log.get("completed") or [None])[-1]
+    digest = {
+        "schema_version": 1,
+        "written_by": "run_phase1_research._write_review_digest (E-059 slice 6c S2b)",
+        "review_every_n_runs": trigger["review_every_n_runs"],
+        "last_completed_review": ({k: last.get(k) for k in ("run_id", "recommendation",
+                                                            "completed_at")}
+                                  if isinstance(last, dict) else None),
+        "runs_since_last_review": {rid: runs[rid] for rid in sorted(since) if rid in runs},
+        "earlier_runs": {"count": len(earlier),
+                         "idea_status_counts": _idea_status_counts(earlier)},
+        "all_runs_idea_status_counts": _idea_status_counts(runs.values()),
+    }
+    path = run_dir / "artifacts" / CAMPAIGN_REVIEW_DIGEST_FILE
+    save_yaml(path, digest)
+    return path
 
 
 def _write_retired_review_handoff(run_dir: Path, run_id: str) -> Path:
     """The campaign_review handoff under the flag. Written in full (not the
     legacy template: its campaign_state/KB paths predate the campaign_record/
     move and would fail ensure_files, and campaign_state.yaml carries the
-    retired fields). Inputs: the run's research brief, the campaign memory
-    (the per-run record) and the KB. The skill note is added at invoke time
+    retired fields). Required: the run's digest of the memory and its brief.
+    The KB is OPTIONAL (review fix 10): absent, the reason says so and the
+    stage still runs. The skill note is added at invoke time
     (_apply_retired_routing_review_context). verdict_interpretation.yaml is
     never an input."""
+    kb_reason = ("A5.1-5.3: the KB of tested mechanisms, power-parked findings and exhausted "
+                 "cells. Read before any recommendation.")
+    if not _KB_PATH.exists():
+        kb_reason = ("ABSENT when this review was triggered: the campaign has no knowledge "
+                     "base yet. Answer each KB GATE question with 'no KB yet' -- do not invent "
+                     "KB content.")
     handoff = {
         "handoff_version": 1,
         "run_id": run_id,
@@ -3544,25 +3600,24 @@ def _write_retired_review_handoff(run_dir: Path, run_id: str) -> Path:
         "to_stage": "campaign_review",
         "assigned_engine": "claude",
         "objective": (
-            "Step back from single runs and assess the whole campaign from its memory. "
+            "Step back from single runs and assess the whole campaign from its memory digest. "
             "Recommend continue, reframe, escalate_instrument, escalate_component or "
             "terminate; under orchestrator.verdict_routing_retired only reframe (a new "
             "brief in the queue) and terminate (a stop for the operator) act."),
-        "primary_input_artifact": _rel_to_run(_campaign_memory_path()),
+        "primary_input_artifact": f"artifacts/{CAMPAIGN_REVIEW_DIGEST_FILE}",
         "required_inputs": [
-            {"path": _rel_to_run(_campaign_memory_path()),
-             "reason": "the per-run campaign memory -- every run's idea_status (from the grid "
-                       "only), grid counts, registry and proposals. The complete record."},
+            {"path": f"artifacts/{CAMPAIGN_REVIEW_DIGEST_FILE}",
+             "reason": "the campaign memory, digested by code: every run since the last "
+                       "completed review in full (idea_status from the grid only, grid counts, "
+                       "registry, proposals), aggregate counts for the earlier runs."},
             {"path": "artifacts/research_brief.yaml",
              "reason": "this run's research question, to compare with the campaign's direction"},
-            {"path": _rel_to_run(_KB_PATH),
-             "reason": "A5.1-5.3: the KB of tested mechanisms, power-parked findings and "
-                       "exhausted cells. Read before any recommendation."},
         ],
+        "optional_inputs": [{"path": _rel_to_run(_KB_PATH), "reason": kb_reason}],
         "deliverables": ["campaign_review.yaml"],
         "constraints": [
-            "Cite runs from the campaign memory by run_id and idea_status; never restate or "
-            "override an idea_status.",
+            "Cite runs from the digest by run_id and idea_status; never restate or override "
+            "an idea_status.",
             "If recommendation is reframe, next_research_question must be a complete "
             "research_brief (see the note in your inputs).",
             "KB GATE -- answer the three KB questions of the skill (untested cells, exhausted "
@@ -3575,33 +3630,38 @@ def _write_retired_review_handoff(run_dir: Path, run_id: str) -> Path:
 
 
 def _retired_review_route(run_dir: Path, run_id: str, terminal: str) -> str:
-    """run_loop, after the grid route under the flag: `terminal` unless the
-    guess-3 trigger fires, then "campaign_review" -- with its handoff written
-    and the trigger recorded on pipeline_state.yaml (the marker run_loop's
-    campaign_review guard and the context helper read)."""
+    """run_loop, after the grid route under the flag: `terminal` unless a
+    review is due, then "campaign_review" -- with its digest and handoff
+    written and the trigger recorded on pipeline_state.yaml (the marker
+    run_loop's campaign_review guards and the context helpers read)."""
     trigger = _retired_review_trigger(run_id)
     if trigger is None:
         return terminal
     trigger["idea_status_terminal"] = terminal
+    _write_review_digest(run_dir, trigger)
     _write_retired_review_handoff(run_dir, run_id)
     update_state(path=run_dir, **{CAMPAIGN_REVIEW_TRIGGER_KEY: trigger})
-    print(f"\n🔭 CAMPAIGN REVIEW TRIGGERED (verdict routing retired): {trigger['recorded_runs']} "
-          f"recorded runs in the campaign memory, every {trigger['review_every_n_runs']}.")
+    print(f"\n🔭 CAMPAIGN REVIEW TRIGGERED (verdict routing retired): "
+          f"{trigger['runs_since_last_review']} recorded runs since the last completed review "
+          f"(cadence {trigger['review_every_n_runs']}).")
     return "campaign_review"
 
 
-def _apply_retired_routing_review_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
-    """campaign_review of a run whose review was triggered under the flag (its
-    pipeline_state.yaml carries CAMPAIGN_REVIEW_TRIGGER_KEY, written only
-    under the flag): add the skill note RETIRED_ROUTING.md as a required input.
-    Any other stage or run (every flag-off run): no-op -- the handoff is never
-    mutated, so the prompt is byte-identical. Keyed on the marker rather than a
-    second flag read: run_loop reads the flag once per run."""
-    if stage_name != "campaign_review":
-        return
+def _retired_review_marked(run_dir: Path) -> bool:
     state_path = Path(run_dir) / "pipeline_state.yaml"
     state = (load_yaml(state_path) or {}) if state_path.exists() else {}
-    if not state.get(CAMPAIGN_REVIEW_TRIGGER_KEY):
+    return bool(state.get(CAMPAIGN_REVIEW_TRIGGER_KEY))
+
+
+def _apply_retired_routing_review_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
+    """campaign_review of a run whose review was triggered under the flag AND
+    with the flag still on (review fix 3): add the skill note
+    RETIRED_ROUTING.md as a required input. The marker is checked first, so
+    every flag-off run (no marker) returns before any flag read and the
+    handoff is never mutated: the prompt is byte-identical."""
+    if stage_name != "campaign_review" or not _retired_review_marked(run_dir):
+        return
+    if not _verdict_routing_retired_enabled():
         return
     required = handoff.setdefault("required_inputs", [])
     if any(req.get("path") == _RETIRED_REVIEW_GUIDANCE for req in required):
@@ -3624,33 +3684,51 @@ def _review_idea_terminal(run_dir: Path, run_id: str) -> str:
 def _record_review_component_request(run_id: str, review: dict) -> None:
     """escalate_component (guess 4): the rationale goes where card J says the
     operator looks, campaign_record/component_requests.yaml, as
-    {run_id, stage: campaign_review, variant_id: null, reason}. Once per run: a
-    re-entered route (after a resume) does not append it again."""
-    path = ROOT / "campaign_record" / "component_requests.yaml"
-    doc = (load_yaml(path) or {}) if path.exists() else {}
-    requests = doc.get("requests") or []
-    if any(isinstance(r, dict) and r.get("run_id") == run_id and r.get("stage") == "campaign_review"
-           for r in requests):
-        return
-    requests.append({"run_id": run_id, "stage": "campaign_review", "variant_id": None,
-                     "reason": str(review.get("recommendation_rationale") or "no rationale provided")})
-    path.parent.mkdir(parents=True, exist_ok=True)
-    save_yaml(path, {**doc, "requests": requests})
+    {run_id, stage: campaign_review, variant_id: null, reason} -- through the
+    shared locked writer. Once per run."""
+    _crr.append_component_requests(
+        ROOT / _crr.COMPONENT_REQUESTS_REL,
+        [{"run_id": run_id, "stage": "campaign_review", "variant_id": None,
+          "reason": str(review.get("recommendation_rationale") or "no rationale provided")}],
+        unless=lambda r: r.get("run_id") == run_id and r.get("stage") == "campaign_review")
+
+
+def _source_protocol_pin(run_dir: Path, run_id: str) -> dict:
+    """Review fix 1: the reframe's protocol pin, from the source run's own
+    pre_registration.yaml machine_constraints (protocol_ref [+ its content
+    hash], or a generated protocol spec). None found: raise -- a reframe
+    brief with no protocol would not launch."""
+    pre_path = run_dir / "artifacts" / "pre_registration.yaml"
+    pre = (load_yaml(pre_path) or {}) if pre_path.exists() else {}
+    mc = (pre.get("machine_constraints") or {}) if isinstance(pre, dict) else {}
+    if mc.get("protocol_ref"):
+        return {k: mc[k] for k in ("protocol_ref", "protocol_ref_content_hash") if mc.get(k)}
+    if mc.get("protocol"):
+        return {"protocol": mc["protocol"]}
+    raise ValueError(f"campaign review ({run_id}): {pre_path} has no machine_constraints "
+                     f"protocol_ref or protocol -- the reframe brief has no protocol to pin. "
+                     f"Refusing to write a brief that could not launch.")
 
 
 def _write_reframe_brief(run_dir: Path, run_id: str, nrq: dict) -> str:
-    """Guess 6: campaign_record/candidate_briefs/<run_id>__reframe.md, a
-    frontmatter brief from next_research_question. A required key it lacks is
-    filled from this run's research_brief.yaml (and named in the prose); one
-    still missing stops the run loudly -- a brief is never dropped silently.
-    A `candidate` block is refused: it would pass the brief off as a
-    decide-next candidate. Idempotent for the same text; a different text over
-    an existing file raises (briefs are never overwritten). Returns the
-    ROOT-relative path."""
-    if "candidate" in nrq:
-        raise ValueError(f"campaign review ({run_id}): next_research_question carries a "
-                         f"`candidate` block -- a reframe is not a decide-next candidate. "
-                         f"Refusing to write the brief.")
+    """Guess 6 + review fix 1: campaign_record/candidate_briefs/<run_id>__reframe.md,
+    a frontmatter brief from next_research_question. A required key it lacks
+    is filled from this run's research_brief.yaml (named in the prose); one
+    still missing stops the run loudly. The orchestrator adds
+    `criteria_from: hypothesis_generation` (criteria fitted to the new idea at
+    step 1a, from the menu -- operator decision 2 of 6b) and
+    `machine_constraints` = the source run's protocol pin. The review may not
+    set criteria, a protocol or a `candidate` block itself (refused).
+    Idempotent for the same text; a different text over an existing file
+    raises (briefs are never overwritten). Returns the ROOT-relative path."""
+    evaluation = nrq.get("evaluation")
+    owned = [k for k in ("candidate", "criteria_from", "machine_constraints") if k in nrq]
+    if isinstance(evaluation, dict) and "pass_rule" in evaluation:
+        owned.append("evaluation.pass_rule")
+    if owned:
+        raise ValueError(f"campaign review ({run_id}): next_research_question sets {owned} -- the "
+                         f"orchestrator writes those (criteria at step 1a, the source run's "
+                         f"protocol pin). Refusing to write the brief.")
     brief = dict(nrq)
     src_path = run_dir / "artifacts" / "research_brief.yaml"
     src = (load_yaml(src_path) or {}) if src_path.exists() else {}
@@ -3665,12 +3743,16 @@ def _write_reframe_brief(run_dir: Path, run_id: str, nrq: dict) -> str:
             f"campaign review ({run_id}): the reframe's next_research_question lacks {missing}, "
             f"and {src_path} does not supply them -- refusing to register an incomplete brief. "
             f"Complete next_research_question in artifacts/campaign_review.yaml and resume.")
+    brief["criteria_from"] = PASS_RULE_PENDING_AT_1A
+    brief["machine_constraints"] = _source_protocol_pin(run_dir, run_id)
     rel = f"{_decide_next_tools().CANDIDATE_BRIEFS_DIR}/{run_id}__reframe.md"
     text = ("---\n" + yaml.safe_dump(brief, sort_keys=False, allow_unicode=True) + "---\n\n"
             f"# Reframe from campaign review ({run_id})\n\n"
             f"Written by the orchestrator from runs/{run_id}/artifacts/campaign_review.yaml "
             f"(recommendation: reframe; E-059 slice 6c S2b). Registered as a `ready` queue "
-            f"entry with origin campaign_review; decide-next picks the next run.\n"
+            f"entry with origin campaign_review; decide-next picks the next run. Its criteria "
+            f"are written at step 1a from config/criterion_menu.yaml (criteria_from); its "
+            f"protocol pin is {run_id}'s.\n"
             + (f"\nFilled from runs/{run_id}/artifacts/research_brief.yaml: {', '.join(filled)}.\n"
                if filled else ""))
     path = ROOT / rel
@@ -3684,44 +3766,46 @@ def _write_reframe_brief(run_dir: Path, run_id: str, nrq: dict) -> str:
     return rel
 
 
+def _review_sha(run_dir: Path) -> str:
+    return hashlib.sha256((run_dir / "artifacts" / "campaign_review.yaml").read_bytes()).hexdigest()
+
+
 def _route_retired_campaign_terminate(run_dir: Path, run_id: str, review: dict,
                                       terminal: str) -> str:
-    """Guess 5: terminate really stops. campaign_decision.yaml as before, minus
-    the retired fields (families_tried, altitude_justification) and with
-    runs_attempted from the campaign memory; then a pause with its own flag.
-    Nothing else in campaign_state.yaml is written (its `space_empty` status
-    has no reader). `CAMPAIGN_REVIEW_TERMINATE_KEY` records the review's hash:
-    after the operator's resume the same review ends the run at `terminal`
-    (decide-next then runs) instead of pausing again."""
-    review_sha = hashlib.sha256(
-        (run_dir / "artifacts" / "campaign_review.yaml").read_bytes()).hexdigest()
+    """Guess 5 + review fix 7: terminate really stops. A `terminate` event is
+    appended to campaign_decision.yaml's history (runs_attempted and idea
+    status counts from the campaign memory; no families_tried or
+    altitude_justification); then a pause with its own flag. Nothing in
+    campaign_state.yaml is written (its `space_empty` has no reader).
+    `CAMPAIGN_REVIEW_TERMINATE_KEY` records the review's hash: the operator's
+    continue-anyway resume of the same review appends an `override_continue`
+    event and ends the run at `terminal` (decide-next then runs)."""
+    review_sha = _review_sha(run_dir)
+    decision_path = ROOT / _crr.DECISION_REL
     state = load_yaml(run_dir / "pipeline_state.yaml") or {}
     if state.get(CAMPAIGN_REVIEW_TERMINATE_KEY) == review_sha:
+        _crr.append_decision_event(decision_path, {
+            "event": "override_continue", "run_id": run_id, "review_sha256": review_sha,
+            "note": "the operator cleared the campaign_review_terminate stop and resumed; "
+                    "the campaign continues (decide-next picks the next run)"})
         print(f"⚙️  campaign_review_terminate was already raised for this review; the operator "
-              f"resumed -> {terminal}. decide-next picks the next run.")
+              f"resumed -> override recorded in campaign_decision.yaml -> {terminal}.")
         return terminal
     runs = _campaign_memory_module().load_memory(_campaign_memory_path()).get("runs") or {}
-    counts: dict = {}
-    for e in runs.values():
-        key = e.get("idea_status") or f"engineering_fault:{e.get('engineering_fault')}"
-        counts[key] = counts.get(key, 0) + 1
     campaign = load_campaign_state() or {}
-    decision = {
+    _crr.append_decision_event(decision_path, {
+        "event": "terminate", "run_id": run_id, "review_sha256": review_sha,
         "campaign_id": campaign.get("campaign_id", "default"),
-        "terminal_run": run_id,
-        "decision": "terminate",
         "source": "campaign_review (orchestrator.verdict_routing_retired; E-059 slice 6c S2b)",
         "rationale": review.get("primary_failure_mode")
                      or review.get("recommendation_rationale", "no rationale provided"),
         "runs_attempted": sorted(runs),
-        "idea_status_counts": dict(sorted(counts.items())),
+        "idea_status_counts": _idea_status_counts(runs.values()),
         "instruments_tried": campaign.get("instruments_tried", []),
         "components_built": campaign.get("components_built", []),
-        "utc": datetime.now(timezone.utc).isoformat(),
-    }
-    save_yaml(ROOT / "campaign_decision.yaml", decision)
+    })
     print(f"\n🛑 CAMPAIGN REVIEW: terminate -> the campaign stops here "
-          f"({CAMPAIGN_REVIEW_TERMINATE_FLAG}; campaign_decision.yaml written). See "
+          f"({CAMPAIGN_REVIEW_TERMINATE_FLAG}; recorded in campaign_decision.yaml). See "
           f"docs/RUNBOOK.md §3.")
     update_state(path=run_dir, status="paused_for_human",
                  flags={CAMPAIGN_REVIEW_TERMINATE_FLAG: True},
@@ -3729,13 +3813,28 @@ def _route_retired_campaign_terminate(run_dir: Path, run_id: str, review: dict,
     return "human_pause"
 
 
+def _complete_retired_review(run_dir: Path, run_id: str, rec: str) -> None:
+    """Review fixes 2+4: the one place a review COMPLETES -- it covers the
+    runs its trigger counted, so only now does the cadence count reset."""
+    state = load_yaml(run_dir / "pipeline_state.yaml") or {}
+    trigger = state.get(CAMPAIGN_REVIEW_TRIGGER_KEY)
+    if not isinstance(trigger, dict) or not isinstance(trigger.get("since_runs"), list):
+        raise ValueError(f"campaign review ({run_id}): pipeline_state.yaml carries no "
+                         f"{CAMPAIGN_REVIEW_TRIGGER_KEY} with since_runs -- refusing to mark a "
+                         f"review complete without knowing which runs it covered.")
+    _crr.record_completed_review(_review_log_path(), run_id=run_id,
+                                 review_sha256=_review_sha(run_dir),
+                                 covered=trigger["since_runs"], recommendation=rec)
+
+
 def _route_retired_campaign_review(run_dir: Path, run_id: str) -> str:
     """determine_post_campaign_review_route's branch under the flag (called
     first, before that function loads anything). Every recommendation ends in
-    completed_<idea_status> except terminate (a pause) and a reframe refused by
-    the A5.4 KB-reactivation check (a pause, as flag-off). continue and
-    escalate_* are recorded, not routed, and return before any
-    verdict_interpretation.yaml could be read; a continue's
+    completed_<idea_status> except terminate (a pause until the operator
+    overrides it) and a reframe refused by the A5.4 KB-reactivation check (a
+    pause, as flag-off). A review is recorded as completed only when the route
+    ends the run. continue and escalate_* are recorded, not routed, and return
+    before any verdict_interpretation.yaml could be read; a continue's
     next_research_question is ignored. Never picks the next run, never
     scaffolds a run, never writes a continuation or a campaign_state field."""
     review = load_yaml(run_dir / "artifacts" / "campaign_review.yaml")
@@ -3750,6 +3849,7 @@ def _route_retired_campaign_review(run_dir: Path, run_id: str) -> str:
         if rec == "escalate_component":
             _record_review_component_request(run_id, review)
             print("   rationale appended to campaign_record/component_requests.yaml.")
+        _complete_retired_review(run_dir, run_id, rec)
         return terminal
     if rec == "reframe":
         nrq = review.get("next_research_question")
@@ -3772,11 +3872,15 @@ def _route_retired_campaign_review(run_dir: Path, run_id: str) -> str:
             return "human_pause"
         rel = _write_reframe_brief(run_dir, run_id, nrq)
         update_state(path=run_dir, **{CAMPAIGN_REVIEW_REFRAME_KEY: rel})
+        _complete_retired_review(run_dir, run_id, rec)
         print(f"\n🔄 campaign_review: reframe -> {rel} (registered in the queue at DONE; "
               f"decide-next picks the next run) -> {terminal}.")
         return terminal
     if rec == "terminate":
-        return _route_retired_campaign_terminate(run_dir, run_id, review, terminal)
+        out = _route_retired_campaign_terminate(run_dir, run_id, review, terminal)
+        if out == terminal:
+            _complete_retired_review(run_dir, run_id, rec)
+        return out
     raise ValueError(f"Unknown campaign_review recommendation: {rec}")
 
 
@@ -3815,6 +3919,18 @@ def _decide_next_candidate(run_dir: Path) -> dict | None:
     if isinstance(cand, dict) and cand.get("criteria_from") == PASS_RULE_PENDING_AT_1A:
         return cand
     return None
+
+
+def _brief_criteria_from_1a(run_dir: Path) -> bool:
+    """Slice 6c S2b review fix 1: research_brief.yaml's BRIEF-LEVEL
+    `criteria_from: hypothesis_generation` (a campaign-review reframe brief):
+    the idea's criteria are written at step 1a, like a decide-next candidate's,
+    but with no candidate block. No such key on any other brief."""
+    path = Path(run_dir) / "artifacts" / "research_brief.yaml"
+    if not path.exists():
+        return False
+    brief = load_yaml(path) or {}
+    return isinstance(brief, dict) and brief.get("criteria_from") == PASS_RULE_PENDING_AT_1A
 
 
 def _pass_rule_pending_at_1a(run_dir: Path) -> bool:
@@ -3893,14 +4009,16 @@ def _write_pass_rule_from_card(run_dir: Path, run_id: str, sr_flag: bool) -> boo
     Returns False (a no-op) for any other run. Raises before any spend."""
     run_dir = Path(run_dir)
     cand = _decide_next_candidate(run_dir)
-    if cand is None:
+    # Slice 6c S2b review fix 1: a campaign-review reframe brief carries
+    # criteria_from at brief level (no candidate block, no source id to match).
+    if cand is None and not _brief_criteria_from_1a(run_dir):
         return False
     arts = run_dir / "artifacts"
     card_path = arts / "hypothesis_card.yaml"
     card = (load_yaml(card_path) if card_path.exists() else {}) or {}
-    expected_hid = ((cand.get("source") or {}) if isinstance(cand.get("source"), dict)
-                    else {}).get("hypothesis_id")
-    if not expected_hid or card.get("hypothesis_id") != expected_hid:
+    expected_hid = (((cand.get("source") or {}) if isinstance(cand.get("source"), dict)
+                     else {}).get("hypothesis_id") if cand is not None else None)
+    if cand is not None and (not expected_hid or card.get("hypothesis_id") != expected_hid):
         raise ValueError(
             f"{card_path}: hypothesis_id={card.get('hypothesis_id')!r} is not the candidate's "
             f"{expected_hid!r} (research_brief.yaml candidate.source.hypothesis_id; operator "
@@ -4406,6 +4524,11 @@ def _apply_regroup_record_context(stage_name: str, handoff: dict, run_dir: Path)
     if stage_name not in _REGROUP_RECORD_CONTEXT_STAGES:
         return
     if not _regroup_record_enabled():
+        return
+    # Slice 6c S2b review fix 10: a review started by the verdict_routing_retired
+    # trigger reads the code-written digest of the memory instead of the whole
+    # file (its handoff names it). Only such runs carry the marker.
+    if _retired_review_marked(run_dir):
         return
     path = "../../campaign_record/campaign_memory.yaml"
     if not (Path(run_dir) / path).exists():
@@ -10221,6 +10344,19 @@ def run_loop(run_id: str):
                   f"See docs/RUNBOOK.md §3 ({HOLDOUT_REFUSED_FLAG}).")
             update_state(path=RUN_DIR, status="paused_for_human",
                          flags={HOLDOUT_REFUSED_FLAG: True})
+            break
+        elif (current_stage == "campaign_review" and not _vrr_flag
+              and state.get(CAMPAIGN_REVIEW_TRIGGER_KEY)):
+            # Slice 6c S2b review fix 3, mirroring the regroup_record guard: a
+            # review the flag's trigger started, resumed with the flag off, stops
+            # loudly -- the legacy route must never act on it. Flag-off runs never
+            # carry the marker, so they never reach this branch.
+            _msg = ("campaign_review was triggered under orchestrator.verdict_routing_retired."
+                    "enabled (pipeline_state.yaml carries campaign_review_trigger), but the flag "
+                    "is now off -- the legacy route must not act on it. Switch the flag back on "
+                    "and resume (RUNBOOK §3, campaign_review_terminate row).")
+            print(f"❌ {_msg}")
+            update_state(path=RUN_DIR, status="failed", last_error=_msg)
             break
         elif (current_stage == "campaign_review" and _vrr_flag
               and not state.get(CAMPAIGN_REVIEW_TRIGGER_KEY)):

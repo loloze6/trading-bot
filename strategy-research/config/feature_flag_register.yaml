@@ -391,8 +391,9 @@ flags:
       flag-off byte-identity proven there and by the K2/E-018/K4 tests.
       DECLARED BEHAVIOUR CHANGE when switched on.
       Slice 6c S2b landed 2026-09-25 (campaign review under the flag):
-      trigger on every review_every_n_runs-th run recorded in the campaign
-      memory without an engineering_fault; continue/escalate_* recorded only
+      a review is due once review_every_n_runs recorded runs without an
+      engineering_fault are not covered by a completed review (code-review
+      fixes: tests/test_e059_6c_s2b_review_fixes.py); continue/escalate_* recorded only
       (returning before any verdict_interpretation.yaml load); reframe -> a
       candidate brief registered ready (origin campaign_review) before
       decide-next; terminate -> the campaign_review_terminate pause; a
