@@ -356,8 +356,14 @@ flags:
       and mints one ready agent entry, lets an operator ready entry go
       first, or stops. Unit tested with synthetic memory/queue/proposals
       and a stubbed run_loop (tests/test_e059_s2a_decide_next.py),
-      flag-off byte-identity proven there. S2b (multi-card briefs, R2,
-      brief exhaustion) not built.
+      flag-off byte-identity proven there. S2b (2026-09-25,
+      tests/test_e059_s2b_briefs.py): a multi-card 1a queues cards 2..k
+      (queued, origin brief, card_ref; launched past 1a when picked; ranked
+      by 1a's brief-card-v1 scores), `register` writes brief_status: open,
+      1a may report a brief exhausted (completed_brief_exhausted, owner
+      flipped), R2 asks 1a for more on open briefs, the loop stops only when
+      none is open, and legacy briefs get a one-time "[obsolete]" queue
+      title. Flag-off split, 1a prompt and queue proven unchanged.
 
   - name: bar_equity
     kind: engine_param

@@ -696,7 +696,18 @@ orchestrator:
       # pre-flight until 1a has written pass_rule into pre_registration.yaml.
       # A patch's resolved config and manifest pass through to 1b and 5a checks
       # both hashes. Proposal scores only rank; idea status comes only from the
-      # grid. Multi-card briefs, R2 and brief exhaustion: S2b.
+      # grid.
+      # E-059 S2b (same flag): `register` writes brief_status: open; a
+      # multi-card 1a queues cards 2..k (status queued, origin brief,
+      # card_ref) ranked by the scores 1a writes for them, launched past 1a
+      # when picked; 1a may report the brief exhausted (brief_status.yaml ->
+      # completed_brief_exhausted, owner flipped); R2 asks 1a for more on open
+      # briefs when nothing else is runnable (every eligible brief gets a
+      # ready request); a card the brief already produced is rejected, and a
+      # brief is marked exhausted after decide_next.BRIEF_MAX_CONSECUTIVE_EMPTY_R2
+      # (2) consecutive R2 requests with no new card, so R2 terminates; the
+      # loop stops only when no eligible brief is open. Legacy briefs (no brief_status) never trigger R2 and
+      # get a one-time "[obsolete] ..." queue-entry title (brief file untouched).
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------

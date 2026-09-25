@@ -210,6 +210,11 @@ clearest concurrent-writer risk in the repo (`:105`).
   `parked_reason` (`tools/record_schema.py`). Agent entries written by
   decide-next carry `source: agent`, `origin: reader`, `priority: 999` and no
   `relation`.
+- E-059 S2b (same flag): a brief's extra cards (`<entry>__h<n>`) and R2
+  requests (`<owner>__more_<n>`) carry `source: agent`, `origin: brief`,
+  `priority: 999`, no `relation` (cards also `card_ref`); the owner of a brief
+  carries `brief_status`. `title` (closed-schema, TEXT) is written once, in
+  code, as `[obsolete] <heading or id>` on legacy briefs only.
 
 **STATUS** — live. **Tooling-written** — prefer changing it through the orchestrator.
 

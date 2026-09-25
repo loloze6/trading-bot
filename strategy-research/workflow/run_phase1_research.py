@@ -3490,6 +3490,256 @@ def _check_pass_through_config_hash(artifacts: Path) -> None:
             f"candidate's config/manifest through verbatim; refusing before any backtest.")
 
 
+# ---------------------------------------------------------------------------
+# E-059 S2b -- briefs (card M) and brief exhaustion, under
+# orchestrator.decide_next.enabled only (S1_FINDINGS_6B.md §4.3, §6 and the
+# operator decision of 2026-09-24: 4, 7, 9).
+#
+# run_campaign.process_once writes artifacts/brief_hypotheses_context.yaml when
+# it launches a brief run under the flag (an operator brief or an R2 request --
+# never a decide-next reader candidate). Its presence is what makes step 1a
+# get the BRIEF_HYPOTHESES.md addendum, which lets 1a:
+#   * write several cards (hypothesis_card_<n>.yaml) plus
+#     artifacts/extra_card_scores.yaml -- the three anchored 0-3 scores
+#     (rubric brief-card-v1) per card, used ONLY to rank the extra cards;
+#   * or write no card and artifacts/brief_status.yaml
+#     {brief_status: exhausted, reason} -> terminal completed_brief_exhausted.
+# Under the flag the multi-card split scaffolds no sibling run and writes no
+# campaign_state.hypothesis_splits row: cards 2..k are copied to
+# campaign_record/queued_cards/<run_id>/ and listed with their scores in
+# artifacts/queued_hypotheses.yaml, which process_once enqueues through
+# register_hypothesis (status queued, origin brief, card_ref). Flag off: every
+# function below is a no-op and the 1a prompt is byte-identical.
+# ---------------------------------------------------------------------------
+
+BRIEF_CONTEXT_FILE = "brief_hypotheses_context.yaml"
+EXTRA_CARD_SCORES_FILE = "extra_card_scores.yaml"
+BRIEF_STATUS_FILE = "brief_status.yaml"
+BRIEF_EXHAUSTED_STAGE = "completed_brief_exhausted"
+# Code-review fix 1: every card 1a wrote repeats one this brief already produced.
+NO_NEW_HYPOTHESIS_STAGE = "completed_no_new_hypothesis"
+_BRIEF_HYPOTHESES_GUIDANCE = "../../workflow_artifacts/skills/hypothesis-design/BRIEF_HYPOTHESES.md"
+
+
+def _decide_next_tools():
+    """tools/decide_next.py, imported lazily (tools/ is on sys.path: module top)."""
+    import decide_next as _dn
+    return _dn
+
+
+def _brief_run_context(run_dir: Path) -> dict | None:
+    """artifacts/brief_hypotheses_context.yaml of a brief run under
+    orchestrator.decide_next.enabled, else None. The file is checked FIRST, so
+    a flag-off run (which never has it) reads no config."""
+    path = Path(run_dir) / "artifacts" / BRIEF_CONTEXT_FILE
+    if not path.exists() or not _decide_next_enabled():
+        return None
+    doc = load_yaml(path)
+    return doc if isinstance(doc, dict) else {}
+
+
+def _already_produced(ctx: dict) -> set:
+    return {h for h in (ctx.get("already_produced") or []) if isinstance(h, str)}
+
+
+def _apply_brief_hypotheses_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
+    """hypothesis_generation of a brief run under orchestrator.decide_next.enabled:
+    add the BRIEF_HYPOTHESES.md addendum and artifacts/brief_hypotheses_context.yaml
+    (the hypothesis ids already produced from this brief) as required inputs.
+    Flag off, another stage, no context file, or a decide-next reader candidate:
+    no-op -- the handoff is never mutated, so the 1a prompt is byte-identical."""
+    if stage_name != "hypothesis_generation":
+        return
+    if _brief_run_context(run_dir) is None or _decide_next_candidate(run_dir) is not None:
+        return
+    required = handoff.setdefault("required_inputs", [])
+    existing = {req.get("path") for req in required}
+    for path, reason in (
+            (_BRIEF_HYPOTHESES_GUIDANCE,
+             "E-059 S2b: this run authors hypotheses from a brief -- extra cards are scored "
+             "for ranking, and an exhausted brief is reported per this addendum."),
+            (f"artifacts/{BRIEF_CONTEXT_FILE}",
+             "E-059 S2b: the hypotheses already produced from this brief -- do not repeat them.")):
+        if path not in existing:
+            required.append({"path": path, "reason": reason})
+
+
+def _queue_extra_hypothesis_cards(run_id: str, run_dir: Path, cards: list) -> bool:
+    """The flag-on branch of the multi-card split (S1 §6, decisions 4 and 9).
+    Every check runs BEFORE anything is copied or written (code-review fix 2):
+    an exhausted signal next to the cards (contradiction), a decide-next
+    reader candidate (its brief is ONE proposed idea), a legacy brief (no
+    brief context: no addendum, so no scores -- fix 9), a card with no
+    hypothesis_id, a score item naming no card file (fix 8), a missing or
+    malformed score or a rubric other than brief-card-v1 (fix 5), or cards of
+    an earlier attempt already enqueued. All raise: the run fails before 1b.
+
+    Code-review fix 1: a card repeating a hypothesis this brief already
+    produced (or another card of this output) is REJECTED -- recorded, never
+    kept or queued. The first new card becomes this run's hypothesis_card.yaml;
+    the other new ones are copied to campaign_record/queued_cards/<run_id>/ and
+    listed with their scores in artifacts/queued_hypotheses.yaml for
+    run_campaign.process_once to enqueue. If every card repeats, card 1 is kept
+    and _brief_card_is_repeat ends the run completed_no_new_hypothesis.
+    No sibling run, no hypothesis_splits row."""
+    dn = _decide_next_tools()
+    artifacts = Path(run_dir) / "artifacts"
+    if (artifacts / BRIEF_STATUS_FILE).exists():
+        raise ValueError(f"{artifacts / BRIEF_STATUS_FILE} says the brief is exhausted, but step 1a "
+                         f"also wrote {len(cards)} hypothesis cards -- contradictory output, "
+                         f"refusing to pick one.")
+    if _decide_next_candidate(run_dir) is not None:
+        raise ValueError(
+            f"{run_id}: step 1a wrote {len(cards)} cards for a decide-next reader candidate, whose "
+            f"brief is one proposed idea (hypothesis_id fixed by candidate.source). Refusing to "
+            f"queue the extras.")
+    ctx = _brief_run_context(run_dir)
+    if ctx is None:
+        raise ValueError(
+            f"{run_id}: step 1a wrote {len(cards)} cards, but this run has no "
+            f"artifacts/{BRIEF_CONTEXT_FILE} (a legacy brief, operator decision 7): it never got "
+            f"the scoring addendum, so its extra cards cannot be ranked. Register the brief anew "
+            f"with the flag on (brief_status: open).")
+    queued_path = artifacts / dn.QUEUED_HYPOTHESES_FILE
+    prior = load_yaml(queued_path) if queued_path.exists() else None
+    if isinstance(prior, dict) and prior.get("enqueued"):
+        raise ValueError(
+            f"{queued_path} says the extra cards of an earlier 1a attempt are already in the queue; "
+            f"refusing to overwrite them. Mark those `<entry>__h<n>` queue entries superseded "
+            f"and delete this file by hand before resuming.")
+    scores_path = artifacts / EXTRA_CARD_SCORES_FILE
+    raw = load_yaml(scores_path) if scores_path.exists() else None
+    items = raw.get("cards") if isinstance(raw, dict) else None
+    if not isinstance(items, list):
+        raise ValueError(
+            f"{scores_path} is missing or has no `cards` list, but step 1a wrote {len(cards)} "
+            f"hypothesis cards: every extra card needs its anchored scores (rubric "
+            f"{dn.BRIEF_CARD_RUBRIC}, BRIEF_HYPOTHESES.md) to be ranked.")
+    names = {c.name for c in cards}
+    by_card = {}
+    for i, item in enumerate(items):
+        name = item.get("card") if isinstance(item, dict) else None
+        if not isinstance(name, str) or name in by_card:
+            raise ValueError(f"{scores_path}: cards[{i}] has a missing or duplicate `card` name")
+        if name not in names:
+            raise ValueError(f"{scores_path}: cards[{i}] scores {name!r}, which is not one of the "
+                             f"cards step 1a wrote ({sorted(names)})")
+        by_card[name] = item
+    seen = set(_already_produced(ctx))
+    new_cards, rejected = [], []
+    for card in cards:
+        doc = load_yaml(card) or {}
+        hid = doc.get("hypothesis_id") if isinstance(doc, dict) else None
+        if not isinstance(hid, str) or not hid.strip():
+            raise ValueError(f"{card}: no hypothesis_id -- every card must name its idea")
+        hid = hid.strip()
+        if hid in seen:
+            rejected.append({"card": card.name, "hypothesis_id": hid,
+                             "reason": "already produced from this brief"})
+            continue
+        seen.add(hid)
+        new_cards.append((card, hid))
+    kept = new_cards[0][0] if new_cards else cards[0]
+    records = []
+    for n, (card, hid) in enumerate(new_cards[1:], start=2):
+        if card.name not in by_card:
+            raise ValueError(f"{scores_path}: no scores for {card.name}")
+        try:
+            scores = dn.validate_card_scores(by_card[card.name], f"{scores_path} {card.name}")
+        except dn.DecideNextError as exc:
+            raise ValueError(str(exc)) from exc
+        records.append({"n": n, "source_card": card.name,
+                        "card_ref": f"{dn.QUEUED_CARDS_DIR}/{run_id}/{card.name}",
+                        "hypothesis_id": hid, **_card_scores_as_item(scores)})
+    # Every check passed: now write (the kept card, then the queued copies).
+    dest = ROOT / dn.QUEUED_CARDS_DIR / run_id
+    shutil.copy(kept, artifacts / "hypothesis_card.yaml")
+    if dest.exists():
+        shutil.rmtree(dest)  # a re-run of 1a whose cards were never enqueued (checked above)
+    if records:
+        dest.mkdir(parents=True)
+        for card, _ in new_cards[1:]:
+            shutil.copy(card, dest / card.name)
+    save_yaml(queued_path, {"schema_version": 1, "run_id": run_id, "kept_card": kept.name,
+                            "enqueued": False, "cards": records, "rejected": rejected})
+    print(f"\n[E-059] hypothesis_generation produced {len(cards)} cards: {run_id} keeps "
+          f"{kept.name}; {len(records)} new extra card(s) saved for the queue, {len(rejected)} "
+          f"rejected as already produced. No sibling run scaffolded.")
+    return True
+
+
+def _card_scores_as_item(scores: dict) -> dict:
+    """decide_next.validate_card_scores' flat dict back to the file shape
+    {scores: {...}, model_id, rubric_version}."""
+    keys = _decide_next_tools()._rp.SCORE_KEYS
+    return {"scores": {k: scores[k] for k in keys},
+            "model_id": scores["model_id"], "rubric_version": scores["rubric_version"]}
+
+
+def _brief_single_card_check(run_dir: Path) -> None:
+    """Code-review fix 8. A brief run (flag on, context present) that wrote
+    hypothesis_card.yaml must not ALSO leave hypothesis_card_<n>.yaml or
+    extra_card_scores.yaml: that output is ambiguous (one card or several?),
+    so it raises. No-op otherwise (flag off: nothing read)."""
+    if _brief_run_context(run_dir) is None:
+        return
+    artifacts = Path(run_dir) / "artifacts"
+    stray = sorted(p.name for p in artifacts.glob("hypothesis_card_*.yaml"))
+    if (artifacts / EXTRA_CARD_SCORES_FILE).exists():
+        stray.append(EXTRA_CARD_SCORES_FILE)
+    if (artifacts / "hypothesis_card.yaml").exists() and stray:
+        raise ValueError(f"{artifacts}: step 1a wrote hypothesis_card.yaml AND {stray} -- "
+                         f"ambiguous output (one card or several?), refusing to pick.")
+
+
+def _brief_card_is_repeat(run_dir: Path) -> bool:
+    """Code-review fix 1. True when this brief run's hypothesis_card.yaml
+    repeats a hypothesis_id the brief already produced (context
+    `already_produced`): the card is rejected, recorded in
+    artifacts/brief_repeat.yaml, and run_loop ends the run
+    completed_no_new_hypothesis before 1b. False for any other run (flag off:
+    nothing read)."""
+    ctx = _brief_run_context(run_dir)
+    if ctx is None:
+        return False
+    artifacts = Path(run_dir) / "artifacts"
+    card_path = artifacts / "hypothesis_card.yaml"
+    card = load_yaml(card_path) if card_path.exists() else None
+    hid = card.get("hypothesis_id") if isinstance(card, dict) else None
+    if not (isinstance(hid, str) and hid.strip() in _already_produced(ctx)):
+        return False
+    save_yaml(artifacts / "brief_repeat.yaml", {
+        "hypothesis_id": hid.strip(), "reason": "already produced from this brief",
+        "run_end": NO_NEW_HYPOTHESIS_STAGE})
+    print(f"[E-059] step 1a repeated {hid.strip()!r}, already produced from this brief -- "
+          f"card rejected, run ends {NO_NEW_HYPOTHESIS_STAGE} (no spend beyond 1a).")
+    return True
+
+
+def _brief_exhausted_signal(run_dir: Path) -> bool:
+    """True when step 1a reported the brief exhausted: artifacts/brief_status.yaml
+    {brief_status: exhausted, reason: <text>}, written for a brief run (its
+    context file present) under orchestrator.decide_next.enabled, with NO card.
+    No file, or the flag off: False, reads nothing else (flag-off byte-identity).
+    Raises on a malformed file, a file on a run that is not a brief run, or an
+    exhausted signal next to a card (a contradiction, never silently resolved)."""
+    artifacts = Path(run_dir) / "artifacts"
+    path = artifacts / BRIEF_STATUS_FILE
+    if not path.exists() or not _decide_next_enabled():
+        return False
+    doc = load_yaml(path)
+    if not (isinstance(doc, dict) and doc.get("brief_status") == "exhausted"
+            and isinstance(doc.get("reason"), str) and doc["reason"].strip()):
+        raise ValueError(f"{path} must be {{brief_status: exhausted, reason: <text>}}; got {doc!r}")
+    if not (artifacts / BRIEF_CONTEXT_FILE).exists() or _decide_next_candidate(run_dir) is not None:
+        raise ValueError(f"{path}: only a brief run (artifacts/{BRIEF_CONTEXT_FILE} present, not a "
+                         f"decide-next reader candidate) may report its brief exhausted.")
+    if (artifacts / "hypothesis_card.yaml").exists() or list(artifacts.glob("hypothesis_card_*.yaml")):
+        raise ValueError(f"{path} says the brief is exhausted, but step 1a also wrote a hypothesis "
+                         f"card -- contradictory output, refusing to pick one.")
+    return True
+
+
 def _campaign_memory_path() -> Path:
     """Resolved from ROOT at call time, so the test sandbox's ROOT covers it."""
     return ROOT / "campaign_record" / "campaign_memory.yaml"
@@ -4434,6 +4684,9 @@ async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | 
 
     # E-059 S2a: the decide-next candidate addendum, off by default (see helper docstring above).
     _apply_decide_next_context(stage_name, handoff, RUN_DIR)
+
+    # E-059 S2b: the brief-hypotheses addendum, off by default (see helper docstring above).
+    _apply_brief_hypotheses_context(stage_name, handoff, RUN_DIR)
 
     # E-058 S2b: campaign-review's memory input, off by default (see helper docstring above).
     _apply_regroup_record_context(stage_name, handoff, RUN_DIR)
@@ -5880,6 +6133,11 @@ def _handle_hypothesis_generation_multi_card_split(run_id: str, run_dir: Path) -
     cards = sorted(artifacts.glob("hypothesis_card_*.yaml"))
     if len(cards) < 2:
         return False  # genuinely missing, not a multi-card split — let the caller raise
+
+    # E-059 S2b: under orchestrator.decide_next.enabled the extra cards go to the
+    # queue (queued, card_ref) instead of sibling runs. Flag off: unchanged below.
+    if _decide_next_enabled():
+        return _queue_extra_hypothesis_cards(run_id, run_dir, cards)
 
     print(f"\n🔀 ARCHITECTURE RULE (one hypothesis per run): hypothesis_generation produced "
           f"{len(cards)} hypothesis cards instead of one ({[c.name for c in cards]}). "
@@ -9413,6 +9671,8 @@ def run_loop(run_id: str):
         update_state(path=RUN_DIR, current_stage=current_stage, status="running",
                      stage_attempts=_stage_attempts)
 
+        _brief_exhausted = False  # E-059 S2b: set only by hypothesis_generation below
+        _brief_no_new = False  # E-059 S2b review fix 1: likewise
         try:
             # E-046a Slice 5b-ii-B: under the flag verdict_interpreter is never
             # invoked. A run already routed there before the flag was switched on
@@ -9509,14 +9769,32 @@ def run_loop(run_id: str):
                                                        profit_bars_evaluated=_pbe_flag)
             elif not _skip_agent:
                 if current_stage == "hypothesis_generation":
+                    _split = False
                     try:
                         _invoke_agent_with_yaml_retry(current_stage, run_id, RUN_DIR, expected_outputs, state)
                     except FileNotFoundError:
-                        if not _handle_hypothesis_generation_multi_card_split(run_id, RUN_DIR):
+                        if _handle_hypothesis_generation_multi_card_split(run_id, RUN_DIR):
+                            _split = True
+                        # E-059 S2b: no card + brief_status.yaml exhausted (flag on,
+                        # brief run only) is a valid 1a outcome. Flag off: False, raise.
+                        elif _brief_exhausted_signal(RUN_DIR):
+                            _brief_exhausted = True
+                        else:
                             raise
-                    # E-059 S2a (operator decision 2): no-op unless pre_registration.yaml
-                    # is pending at 1a; raises (-> status failed) before any spend.
-                    _write_pass_rule_from_card(RUN_DIR, run_id, _sr_flag)
+                    if not _brief_exhausted:
+                        # E-059 S2b: an exhausted signal next to a card raises; so does
+                        # an ambiguous single-card output (review fix 8). Both no-ops
+                        # without a brief context / with the flag off.
+                        _brief_exhausted_signal(RUN_DIR)
+                        if not _split:
+                            _brief_single_card_check(RUN_DIR)
+                        # E-059 S2b review fix 1: a card this brief already produced
+                        # ends the run before 1b (no-op for any other run).
+                        _brief_no_new = _brief_card_is_repeat(RUN_DIR)
+                        if not _brief_no_new:
+                            # E-059 S2a (operator decision 2): no-op unless pre_registration.yaml
+                            # is pending at 1a; raises (-> status failed) before any spend.
+                            _write_pass_rule_from_card(RUN_DIR, run_id, _sr_flag)
                 else:
                     _invoke_agent_with_yaml_retry(current_stage, run_id, RUN_DIR, expected_outputs, state)
             else:
@@ -9544,6 +9822,11 @@ def run_loop(run_id: str):
             # both "hypothesis_generation" and "validation"/etc. at once.
             if current_stage == "hypothesis_generation" and _config_direct_authoring_enabled():
                 next_stage = "strategy_config_authoring"
+            # E-059 S2b: 1a reported the brief exhausted and wrote no card -> terminal.
+            if current_stage == "hypothesis_generation" and _brief_exhausted:
+                next_stage = BRIEF_EXHAUSTED_STAGE
+            elif current_stage == "hypothesis_generation" and _brief_no_new:
+                next_stage = NO_NEW_HYPOTHESIS_STAGE
 
             # E-046a Slice 5b-ii-B: under specialist_readers, protocol_execution's
             # default_next (verdict_interpreter) is redirected -- verdict_interpreter
