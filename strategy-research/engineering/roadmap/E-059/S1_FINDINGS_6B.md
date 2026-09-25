@@ -602,3 +602,16 @@ Run budget: the plan's 2 consecutive real runs, after S2a, where the first must 
    authoring when picked.
 
 Build split: S2a (core decide_next + queue fields + DONE-branch wiring), then S2b (briefs).
+
+## Note (2026-09-25): brief-card-v1 rubric review
+
+Operator asked the orchestrator to challenge the S2b `brief-card-v1` rubric
+(`hypothesis-design/BRIEF_HYPOTHESES.md`) against the roadmap. Verdict: aligned --
+same three dimensions as the readers' proposal scores (target: confidence real,
+distance to profitable, mechanism plausibility), the mechanism anchors encode the
+"who is on the other side" test, the highest anchors require a cited measurement,
+and scores only rank. Known consequence, accepted: an untested brief card usually
+scores `confidence_real` 0-1 while evidence-backed reader proposals score 2-3, so
+brief cards mostly run when reader proposals run out -- the plan's intent (R2 is the
+empty-queue fallback), but a bias toward refinement over exploration. Revisit if the
+first real runs show brief ideas never getting their turn.
