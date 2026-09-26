@@ -18,7 +18,9 @@
         "after_run": { "type": "string" },
         "after_entry": { "type": "string" },
         "idea_status": { "enum": ["validated", "refuted", "inconclusive", null],
-                         "description": "From campaign_memory.yaml (the grid), never from pending_stage." }
+                         "description": "From campaign_memory.yaml (the grid), never from pending_stage." },
+        "parked": { "enum": ["component", "data"],
+                    "description": "Slice 6c S2c: present only on a decision taken after the run parked (waiting_for_<kind>); absent on the DONE decision." }
       }
     },
     "inputs": {

@@ -117,6 +117,11 @@ REFRAME_HALT = "campaign_review_reframe_unregistered"
 # The legacy routers that mint a continuation child (K4 A1's
 # continuation_created_by values; _route_kill records one with no child).
 _LEGACY_MINTING_ROUTERS = ("_route_refine", "_route_pivot", "_route_escalate")
+# Slice 6c S2c: a parked entry's queue status, one per park kind (they match
+# record_schema._QUEUE_STATUS_RE's `paused:.+`). --resume skips them; only
+# --unpark restores one. Written only under orchestrator.verdict_routing_retired.
+PARKED_STATUS_PREFIX = "paused:waiting_for_"
+PARKED_STATUSES = tuple(f"{PARKED_STATUS_PREFIX}{k}" for k in orch.PARK_KINDS)
 
 
 # ---------------------------------------------------------------------------
@@ -1232,7 +1237,7 @@ def _hard_pause_reason(run_dir: Path, state: dict):
 
 
 def _append_halt_history(run_dir: Path, state: dict, reason: str, detail: str = "",
-                         quarantine: dict | None = None) -> None:
+                         quarantine: dict | None = None, parked: dict | None = None) -> None:
     """E-030 S1 durable-halt-record fix. `pipeline_state.yaml`'s `last_error` is
     written in full at halt time (run_loop's except-block, `last_error=str(e)`,
     untruncated) but RUNBOOK.md section 4's own documented resume procedure has the
@@ -1276,6 +1281,10 @@ def _append_halt_history(run_dir: Path, state: dict, reason: str, detail: str = 
     }
     if quarantine is not None:
         record["quarantine"] = quarantine
+    if parked is not None:
+        # Slice 6c S2c: the park marker, so the instrument can tell a park (the
+        # loop continued) from an escalated halt (it stopped).
+        record["parked"] = parked
     history.append(record)
     orch.update_state(path=run_dir, halt_history=history)
 
@@ -1605,16 +1614,29 @@ def _apply_trial_accounting(reason: str, run_id: str, detail: str) -> str:
 # Resuming a halted campaign after a human fix
 # ---------------------------------------------------------------------------
 
-def resume_paused_entry(queue: dict) -> bool:
+def resume_paused_entry(queue: dict, unpark: str | None = None) -> bool:
     """Called for --resume. Verifies the human has actually resolved the
     pause before flipping the queue entry back to in_progress. For the
     data_block_hitl pause specifically, invokes orch.resume_pipeline()
     directly (its own hardcoded resume path); every other pause type just
     needs the queue entry unlocked so the normal loop calls run_loop() again,
-    which continues from pipeline_state.yaml's own pending_stage."""
-    paused = [e for e in queue["queue"] if str(e.get("status", "")).startswith("paused:")]
+    which continues from pipeline_state.yaml's own pending_stage.
+
+    Slice 6c S2c: a parked entry (paused:waiting_for_*) is never taken by
+    --resume -- it is not a campaign stop, and taking it first would refuse
+    the real pause behind it. `unpark=<entry_id>` (--unpark) restores one
+    parked entry instead (_unpark_entry)."""
+    if unpark is not None:
+        return _unpark_entry(unpark)
+    paused = [e for e in queue["queue"] if str(e.get("status", "")).startswith("paused:")
+              and not str(e.get("status", "")).startswith(PARKED_STATUS_PREFIX)]
     if not paused:
         print("No paused queue entry found — nothing to resume.")
+        parked = [e["id"] for e in queue["queue"]
+                  if str(e.get("status", "")).startswith(PARKED_STATUS_PREFIX)]
+        if parked:
+            print(f"Parked entries ({parked}) are not resumed by --resume: build the component "
+                  f"or fetch the data, then --unpark <entry_id> (RUNBOOK.md §4).")
         return False
     entry = paused[0]
     if not entry.get("run_ids"):
@@ -1664,6 +1686,93 @@ def resume_paused_entry(queue: dict) -> bool:
     _log(f"RESUME {entry['id']} / {run_id}: resolution confirmed for '{reason}', "
          f"resuming queue processing.")
     return True
+
+
+def _parked_class_defined(class_path: str) -> bool:
+    """Whether the dotted class path a V12 park named now exists: trading-bot/
+    <module>.py (or <module>/__init__.py) defines it at top level. Read with ast
+    -- the engine is never imported here, as in decide_next.known_component_classes.
+    A definition that still fails to import is caught when the run re-validates
+    at backtest_specification (and parks again)."""
+    import ast
+    module, _, name = str(class_path).rpartition(".")
+    if not module or not name:
+        return False
+    base = _TRADING_BOT_ROOT.joinpath(*module.split("."))
+    for path in (base.with_suffix(".py"), base / "__init__.py"):
+        if path.is_file():
+            try:
+                tree = ast.parse(path.read_text(encoding="utf-8"))
+            except SyntaxError:
+                return False
+            return any(isinstance(n, ast.ClassDef) and n.name == name for n in tree.body)
+    return False
+
+
+def _unpark_entry(entry_id: str) -> bool:
+    """--unpark <entry_id> (slice 6c S2c, S1_FINDINGS_6C.md guess 8), after the
+    operator built the component or fetched the data. Under the campaign lock
+    (the single-writer rule), refuses unless the entry is paused:waiting_for_*
+    and its run carries the matching parked marker, and -- for a component park
+    -- while any class the park named is still not defined. Then clears the
+    marker, sets the run `status: active` at the marker's resume_stage (the same
+    run continues; parking always happens before any backtest, so no trial row
+    is lost), and sets the entry `ready` with its priority kept -- never
+    in_progress, so there are never two active lineages. The scheduler runs it
+    by its own rule; nothing is minted and decide-next is not called."""
+    lock_path = campaign_lock.lock_path_for(orch.CAMPAIGN_STATE_PATH)
+    try:
+        campaign_lock.acquire(lock_path)
+    except campaign_lock.CampaignLockHeld as exc:
+        print(f"--unpark refused: {exc}")
+        return False
+    try:
+        queue = _load_queue()  # re-read under the lock
+        entry = next((e for e in queue.get("queue") or []
+                      if isinstance(e, dict) and e.get("id") == entry_id), None)
+        if entry is None:
+            print(f"--unpark refused: no queue entry {entry_id!r}.")
+            return False
+        status = str(entry.get("status") or "")
+        if not status.startswith(PARKED_STATUS_PREFIX):
+            print(f"--unpark refused: {entry_id} is {status!r}, not parked "
+                  f"({' / '.join(PARKED_STATUSES)}). A campaign pause uses --resume.")
+            return False
+        if not entry.get("run_ids"):
+            print(f"--unpark refused: {entry_id} is parked but has no run_ids — inconsistent state.")
+            return False
+        run_id = entry["run_ids"][-1]
+        run_dir = ROOT / "runs" / run_id
+        state = _run_state(run_id)
+        marker = state.get(orch.PARKED_KEY)
+        kind = status[len(PARKED_STATUS_PREFIX):]
+        if not isinstance(marker, dict) or marker.get("kind") != kind:
+            print(f"--unpark refused: {run_id}'s pipeline_state.yaml {orch.PARKED_KEY} is "
+                  f"{marker!r}, which does not match the entry's {status!r}. Inconsistent "
+                  f"state: fix one of them by hand.")
+            return False
+        if state.get("status") != "paused_for_human":
+            print(f"--unpark refused: {run_id} is status={state.get('status')!r}, expected "
+                  f"'paused_for_human' for a parked run.")
+            return False
+        if kind == "component":
+            missing = [c for c in marker.get("classes") or [] if not _parked_class_defined(c)]
+            if missing:
+                print(f"--unpark refused: {entry_id} waits on {missing}, still not defined under "
+                      f"{_TRADING_BOT_ROOT}. Build it first (STRATEGY_EXTENDING.md).")
+                return False
+        resume_stage = marker.get("resume_stage") or state.get("pending_stage")
+        orch.update_state(path=run_dir, status="active", pending_stage=resume_stage,
+                          **{orch.PARKED_KEY: None})
+        entry["status"] = "ready"
+        entry.pop("parked_reason", None)
+        _save_queue(queue)
+        _regenerate_summary(queue)
+        _log(f"UNPARK {entry_id} / {run_id}: waiting_for_{kind} cleared by the operator; entry "
+             f"ready (priority {entry.get('priority')}), the run resumes at {resume_stage}.")
+        return True
+    finally:
+        campaign_lock.release(lock_path)
 
 
 # ---------------------------------------------------------------------------
@@ -1840,6 +1949,20 @@ def _regenerate_summary(queue: dict, dry_run: bool = False):
         # next to its id; entries without a title render exactly as before.
         id_cell = f"{e['id']} ({e['title']})" if e.get("title") else e["id"]
         lines.append(f"| {id_cell} | {e['status']} | {run_ids_str} | {e.get('outcome') or '-'} |")
+    # Slice 6c S2c (card J: "surfaced in the campaign summary"). Only when an
+    # entry is parked, so a summary without one is unchanged.
+    parked = [e for e in queue["queue"]
+              if str(e.get("status", "")).startswith(PARKED_STATUS_PREFIX)]
+    if parked:
+        lines += ["", "## Parked (waiting for a component or data; unpark with --unpark <id>)", "",
+                  "| id | status | run | waiting on | requests |", "|---|---|---|---|---|"]
+        for e in parked:
+            run_id = (e.get("run_ids") or ["-"])[-1]
+            marker = _run_state(run_id).get(orch.PARKED_KEY) if run_id != "-" else None
+            marker = marker if isinstance(marker, dict) else {}
+            refs = ", ".join(marker.get("request_refs") or []) or "-"
+            why = " ".join(str(e.get("parked_reason") or "-").split()).replace("|", "/")
+            lines.append(f"| {e['id']} | {e['status']} | {run_id} | {why} | {refs} |")
     lines += [
         "",
         "## Scoreboard",
@@ -2004,8 +2127,14 @@ def _compute_loop_health() -> dict:
     auto_recovered = 0
     escalated = 0
     repeat_pairs = 0
+    parked = 0
     for _run_id, history in histories:
         for i, record in enumerate(history):
+            if "parked" in record:
+                # Slice 6c S2c: a park stopped a run, not the loop -- neither
+                # auto-recovered nor escalated, and never an R4 repeat.
+                parked += 1
+                continue
             if "quarantine" in record:
                 auto_recovered += 1
             else:
@@ -2015,6 +2144,19 @@ def _compute_loop_health() -> dict:
             if _repeat_quarantine({"halt_history": history[:i]}, record.get("reason")):
                 repeat_pairs += 1
 
+    outcomes = {
+        "auto_recovered": auto_recovered,
+        "escalated": escalated,
+        "halt_history_records": auto_recovered + escalated,
+        "repeat_quarantine_escalations": repeat_pairs,
+        "denominator_note": ("halt_history across every run on disk, which covers "
+                             "both quarantined and escalated halts. Does not equal "
+                             "halts.total."),
+    }
+    if parked:
+        # Only when a park exists (orchestrator.verdict_routing_retired), so the
+        # flag-off file is unchanged. Not in halt_history_records.
+        outcomes["parked"] = parked
     return {
         "computed_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "source": {
@@ -2035,15 +2177,7 @@ def _compute_loop_health() -> dict:
                                  "NOT counted here -- see outcomes."),
         },
         "cause_breakdown": breakdown,
-        "outcomes": {
-            "auto_recovered": auto_recovered,
-            "escalated": escalated,
-            "halt_history_records": auto_recovered + escalated,
-            "repeat_quarantine_escalations": repeat_pairs,
-            "denominator_note": ("halt_history across every run on disk, which covers "
-                                 "both quarantined and escalated halts. Does not equal "
-                                 "halts.total."),
-        },
+        "outcomes": outcomes,
         "policy": {
             "quarantine_enabled": _quarantine_enabled(),
             "quarantine_safe_reasons": sorted(_QUARANTINE_SAFE_REASONS),
@@ -2380,7 +2514,7 @@ def process_once() -> bool:
     queue = _load_queue()
     entry = _select_entry(queue["queue"])
     if entry is None:
-        _log("Queue exhausted — no ready or in_progress entries remain.")
+        _log("Queue exhausted — no ready or in_progress entries remain." + _parked_note(queue))
         return False
 
     action = _next_action_for_entry(entry)
@@ -2527,6 +2661,12 @@ def process_once() -> bool:
 
     state = orch.load_yaml(run_dir / "pipeline_state.yaml")
     _log_transition(entry, run_id, state)
+
+    if routing_retired and state.get("status") == "paused_for_human" and state.get(orch.PARKED_KEY):
+        # Slice 6c S2c (S1_FINDINGS_6C.md §6, guess 9): a run waiting on a missing
+        # component or missing data parks instead of pausing the campaign. Before
+        # _hard_pause_reason, so the E-030 quarantine never sees a parkable reason.
+        return _park_entry(queue, entry, run_id, run_dir, state, schedulability_enabled)
 
     pause = _hard_pause_reason(run_dir, state)
     if pause:
@@ -2764,7 +2904,62 @@ def _apply_idea_status_outcome(entry: dict, run_id: str, legacy_outcome) -> None
                 f"the grid judged the idea (E-059 S2a DONE branch)")
 
 
-def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str) -> tuple:
+QUEUE_EXHAUSTED_WITH_OPEN_BRIEFS = "queue_exhausted_with_open_briefs"  # RUNBOOK §3 row
+
+
+def _parked_note(queue: dict) -> str:
+    """Slice 6c S2c (guess 13): appended to the loop's stop lines ("Queue
+    exhausted" and a decide-next stop) when parked entries remain, naming them
+    and the RUNBOOK row. Empty when none is parked -- always, with the flag off."""
+    parked = [e.get("id") for e in (queue.get("queue") or [])
+              if isinstance(e, dict) and str(e.get("status", "")).startswith(PARKED_STATUS_PREFIX)]
+    if not parked:
+        return ""
+    return (f" Parked, waiting for a component or data: {parked} -- unpark with --unpark <id> "
+            f"(RUNBOOK.md §3 {QUEUE_EXHAUSTED_WITH_OPEN_BRIEFS}).")
+
+
+def _park_entry(queue: dict, entry: dict, run_id: str, run_dir: Path, state: dict,
+                schedulability_enabled: bool) -> bool:
+    """Slice 6c S2c. The run carries a parked marker (run_phase1_research._park_run):
+    the entry becomes paused:waiting_for_<kind> with parked_reason, a halt_history
+    record carries the marker, a PARKED line is logged, and decide-next picks the
+    next run. The entry is saved parked BEFORE deciding: a paused run left
+    in_progress would be re-run by run_loop from its parking stage on the next
+    step, so a decide-next failure (which propagates, as on the DONE path) must
+    find the entry already parked. The decision record gets its own name, so the
+    run's later DONE decision never overwrites it. Returns keep_going."""
+    marker = state[orch.PARKED_KEY]
+    kind = marker.get("kind") if isinstance(marker, dict) else None
+    if kind not in orch.PARK_KINDS:
+        raise RuntimeError(f"{run_id}: pipeline_state.yaml {orch.PARKED_KEY}={marker!r} has no "
+                           f"known kind {orch.PARK_KINDS}")
+    reason = f"waiting_for_{kind}"
+    refs = list(marker.get("request_refs") or [])
+    detail = f"{kind} at {marker.get('stage')}: {marker.get('reason')}"
+    entry["status"] = f"{PARKED_STATUS_PREFIX}{kind}"
+    entry["parked_reason"] = f"{reason} at {marker.get('stage')}: {marker.get('reason')}"
+    _save_queue(queue)
+    _append_halt_history(run_dir, state, reason, detail, parked=dict(marker))
+    _log(f"PARKED {entry['id']} / {run_id}: {detail}. Requests: {refs}. The campaign continues; "
+         f"unpark with --unpark {entry['id']} (RUNBOOK.md §4).")
+    # Same file name (so save_yaml's schema check applies), one directory per park.
+    n = 1 + len(list((run_dir / "artifacts" / "parked").glob("park_*")))
+    queue, entry, keep_going, decide_msg = _finish_lineage_with_decision(
+        queue, entry, run_id,
+        decision_ref=f"runs/{run_id}/artifacts/parked/park_{n}/decision_record.yaml",
+        trigger_extra={"parked": kind})
+    _regenerate_summary(queue)
+    _log(decide_msg)
+    _write_loop_health()
+    if schedulability_enabled:
+        _write_schedulability()
+    return keep_going
+
+
+def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
+                                  decision_ref: str | None = None,
+                                  trigger_extra: dict | None = None) -> tuple:
     """Decide next, then persist the finished entry -- in that order, so a
     failure anywhere leaves the entry NOT done on disk (still in_progress):
     the next process_once selects it again, its run_loop is a no-op on the
@@ -2793,9 +2988,10 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str) -> tupl
     mem_entry = (inputs["memory"].get("runs") or {}).get(run_id) or {}
     trigger = {"after_run": run_id, "after_entry": entry["id"],
                "idea_status": mem_entry.get("idea_status")}
+    trigger.update(trigger_extra or {})  # slice 6c S2c: {"parked": kind}; else nothing
     record = dn.decide(inputs, now=datetime.now(timezone.utc).isoformat(), trigger=trigger,
                        select_entry=_select_entry)
-    decision_ref = f"runs/{run_id}/artifacts/decision_record.yaml"
+    decision_ref = decision_ref or f"runs/{run_id}/artifacts/decision_record.yaml"
     picked, stop = record.get("picked") or {}, record.get("stop")
 
     if picked.get("candidate_id") and picked.get("card_ref"):
@@ -2836,7 +3032,8 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str) -> tupl
                f"-> queue entry {cid} (ready). Record: {decision_ref}")
     elif stop:
         msg = (f"DECIDE stop after {entry['id']} ({run_id}): {stop['reason']} -- "
-               f"{stop.get('detail')}. Record: {decision_ref}. See RUNBOOK.md §3.")
+               f"{stop.get('detail')}. Record: {decision_ref}. See RUNBOOK.md §3."
+               + _parked_note(final_queue))
     else:
         nxt = picked.get("operator_entry") or picked.get("queue_entry_id")
         msg = (f"DECIDE after {entry['id']} ({run_id}): the scheduler runs {nxt} next "
@@ -3215,6 +3412,9 @@ if __name__ == "__main__":
                         help="Process a single queue step (one launch/continue/advance), then exit.")
     parser.add_argument("--resume", action="store_true",
                         help="Resume a campaign halted at a hard pause, after the human has resolved it.")
+    parser.add_argument("--unpark", metavar="ENTRY_ID",
+                        help="Slice 6c S2c: restore a parked entry (paused:waiting_for_component|"
+                             "data) once the component or data exists; sets it ready, then exits.")
     subparsers = parser.add_subparsers(dest="command")
     register_parser = subparsers.add_parser(
         "register",
@@ -3240,6 +3440,11 @@ if __name__ == "__main__":
     if args.dry_run:
         dry_run_verify()
         sys.exit(0)
+
+    if args.unpark:
+        # Takes and releases the campaign lock itself (refused while a campaign
+        # runs); relaunch afterwards to continue the queue.
+        sys.exit(0 if resume_paused_entry(_load_queue(), unpark=args.unpark) else 1)
 
     if args.resume:
         if not resume_paused_entry(_load_queue()):

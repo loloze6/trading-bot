@@ -544,14 +544,18 @@ def _request_number(entry: dict, owner_id: str) -> int:
 def r2_request_yielded(entry: dict) -> bool | None:
     """Did a finished R2 request produce a new, eligible card? None while it is
     still outstanding (queued/ready/in_progress). True when it ran to `done`
-    with any other outcome than the empty ones, or was parked blocked_on_* (its
-    card needed an engine piece: it WAS a new card). False otherwise:
+    with any other outcome than the empty ones, or was parked blocked_on_* or
+    paused:waiting_for_* (its card needed an engine piece or data: it WAS a new
+    card). False otherwise:
     completed_no_new_hypothesis, completed_brief_exhausted, a quarantine, a
     failure or pause (paused:*), or superseded."""
     status = str(entry.get("status") or "")
     if status in _OUTSTANDING_STATUSES:
         return None
-    if status.startswith("blocked_on_"):
+    # Slice 6c S2c: a parked request (paused:waiting_for_component|data) is the
+    # retired-routing form of blocked_on_*: its card WAS new, it waits on an
+    # engine piece or data.
+    if status.startswith(("blocked_on_", "paused:waiting_for_")):
         return True
     if status == "done":
         return entry.get("outcome") not in _EMPTY_R2_OUTCOMES
