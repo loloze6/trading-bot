@@ -1622,11 +1622,16 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     _menu = load_yaml(_menu_path) if _menu_path.exists() else {}
                     # E-060 S2: under composition_runs the grid reads copies carrying
                     # the residual IC; off, it reads per_variant_summaries unchanged.
-                    _grid_inputs = (_residual_ic_grid_inputs(per_variant_summaries, RUN_DIR,
-                                                             protocol_path, TBOT_PYTHON)
-                                    if _composition_runs_enabled() else per_variant_summaries)
-                    _grid_result = _vce.evaluate_grid(
-                        _grid_inputs, _pre_reg_for_eval or {}, _brief_for_eval, _menu)
+                    if _composition_runs_enabled():
+                        _grid_inputs, _grid_pre_reg = _residual_ic_grid_inputs(
+                            per_variant_summaries, RUN_DIR, protocol_path, TBOT_PYTHON,
+                            _pre_reg_for_eval or {})
+                        _grid_result = _vce.evaluate_grid(
+                            _grid_inputs, _grid_pre_reg, _brief_for_eval, _menu,
+                            composition_runs=True)
+                    else:
+                        _grid_result = _vce.evaluate_grid(
+                            per_variant_summaries, _pre_reg_for_eval or {}, _brief_for_eval, _menu)
                     _grid_result["evaluated_at"] = datetime.now(timezone.utc).isoformat()
                     save_yaml(ARTIFACTS / "grid_evaluation.yaml", _grid_result)
                     _idea_status_artifact = _build_idea_status_artifact(_grid_result, run_id)
@@ -3442,6 +3447,22 @@ def _residual_ic_exempt_reason(run_dir: Path) -> str | None:
               if isinstance(cand.get("manifest"), dict) else {}).get("kind")}
     if "regime" in kinds:
         return "regime block"
+    # Code review fix 6: a 1a-authored brief carries no candidate block. Once
+    # they exist, the hypothesis card (a block kind field, if 1a wrote one) and
+    # 1b's block_manifest.yaml (the authoritative kind) decide -- so at grid
+    # time a regime-detector idea from an ordinary brief is exempt too.
+    arts = Path(run_dir) / "artifacts"
+    for name, pick in (("hypothesis_card.yaml",
+                        lambda d: d.get("block_kind") or ((d.get("block") or {})
+                                                          if isinstance(d.get("block"), dict)
+                                                          else {}).get("kind")),
+                       ("block_manifest.yaml",
+                        lambda d: ((d.get("block") or {}) if isinstance(d.get("block"), dict)
+                                   else {}).get("kind"))):
+        p = arts / name
+        doc = (load_yaml(p) if p.exists() else {}) or {}
+        if isinstance(doc, dict) and pick(doc) == "regime":
+            return "regime block"
     return None
 
 
@@ -3490,26 +3511,46 @@ def _ensure_residual_ic_in_pre_registration(run_dir: Path) -> bool:
 
 
 def _residual_ic_grid_inputs(per_variant_summaries: dict, run_dir: Path, protocol_path,
-                             python_exe) -> dict:
-    """Each variant's residual IC against the current composite, written to
-    artifacts/residual_ic.yaml, and returned as DEEP COPIES of the variant
-    summaries carrying hypothesis_verdict.diagnostics.residual_ic -- the grid's
-    inputs only. The saved protocol_result.yaml files and trial rows are not
-    touched. The composite computation writes no trial row."""
+                             python_exe, pre_registration: dict) -> tuple:
+    """(grid inputs, grid pre_registration). Each variant's residual IC
+    against the current composite, written to artifacts/residual_ic.yaml, and
+    returned as DEEP COPIES of the variant summaries carrying
+    hypothesis_verdict.diagnostics.residual_ic -- the grid's inputs only. The
+    saved protocol_result.yaml files and trial rows are not touched. The
+    composite computation writes no trial row.
+    An exempt idea (regime block -- now detectable from 1b's manifest -- or a
+    composition run): nothing is computed and no subprocess runs;
+    residual_ic.yaml records `skipped` + the timeframe, and the grid reads a
+    copy of the pre-registration without the residual_ic criterion (loudly)."""
     import copy
     _tools = str(Path(__file__).parent.parent / "tools")
     if _tools not in sys.path:
         sys.path.insert(0, _tools)
     import composite_cache as _cc
+    import verdict_criteria_evaluator as _vce
     run_dir = Path(run_dir)
+    exempt = _residual_ic_exempt_reason(run_dir)
     doc = _cc.residual_ic_by_variant(
         per_variant_summaries,
         {vid: run_dir / "variants" / vid / "results" for vid in per_variant_summaries},
         root=ROOT, protocol_path=Path(protocol_path),
         registry_path=_block_registry_path(),
         compositions_path=ROOT / "campaign_record" / "compositions.yaml",
-        policy_path=_DATA_POLICY_PATH, python_exe=python_exe)
+        holdout_range=_load_holdout_range(), breach_cls=HoldoutBoundaryBreach,
+        exempt_reason=exempt, python_exe=python_exe)
     save_yaml(run_dir / "artifacts" / _RESIDUAL_IC_ARTIFACT, doc)
+    if exempt:
+        grid_pre = copy.deepcopy(pre_registration)
+        rule = _vce._find_pass_rule(grid_pre)
+        if isinstance(rule, dict) and isinstance(rule.get("criteria"), list):
+            dropped = [c for c in rule["criteria"]
+                       if isinstance(c, dict) and c.get("id") == _RESIDUAL_IC_CRITERION_ID]
+            rule["criteria"] = [c for c in rule["criteria"] if c not in dropped]
+            if dropped:
+                print(f"⚠️  [E-060] {run_dir.name}: {exempt} -- residual_ic is not graded for "
+                      f"this idea (removed from the grid's copy of the pass_rule)")
+        print(f"✅ [E-060] residual_ic.yaml written: skipped ({exempt})")
+        return per_variant_summaries, grid_pre
     out = {}
     for vid, summary in per_variant_summaries.items():
         s = copy.deepcopy(summary)
@@ -3524,7 +3565,7 @@ def _residual_ic_grid_inputs(per_variant_summaries: dict, run_dir: Path, protoco
     print(f"✅ [E-060] residual_ic.yaml written (composite={doc['composite']['kind']}, "
           f"timeframe={doc['timeframe']}): "
           f"{ {v: d.get('value') for v, d in doc['variants'].items()} }")
-    return out
+    return out, pre_registration
 
 
 # ---------------------------------------------------------------------------

@@ -60,12 +60,13 @@
           "oneOf": [
             { "type": "null" },
             { "type": "object", "additionalProperties": false,
-              "required": ["value", "n_eff", "p_value", "fully_explained", "composite",
-                           "composite_registry_hash"],
+              "required": ["value", "n_eff", "p_value", "p_value_one_sided", "fully_explained",
+                           "composite", "composite_registry_hash"],
               "properties": {
                 "value": { "type": ["number", "null"] },
                 "n_eff": { "type": ["integer", "null"], "minimum": 0 },
                 "p_value": { "type": ["number", "null"] },
+                "p_value_one_sided": { "type": ["number", "null"] },
                 "fully_explained": { "type": "boolean" },
                 "composite": { "enum": ["none", "block", "composition", "STALE"] },
                 "composite_registry_hash": { "type": ["string", "null"] }

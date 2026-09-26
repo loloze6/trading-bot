@@ -171,31 +171,39 @@ def _composition_fields(run_dir: Path, run_id: str, vid: str, kind: str) -> dict
     """E-060 S2: timeframe, timeframe_category, residual_ic and
     correlation_to_composite from artifacts/residual_ic.yaml (written by
     protocol_execution under composition_runs) for the base variant `vid`.
-    Missing file / variant raises: under the flag every block carries them.
-    A regime block records its timeframe; its residual-IC fields stay null
-    (it is not a forecast)."""
+    A file that is ABSENT is absent by design -- the run's protocol_execution
+    happened with the flag off -- so the block keeps the E-058 shape (no
+    timeframe keys, both null; composite_cache then excludes it loudly). A
+    file marked `skipped` (an exempt idea) gives the timeframe with null
+    residual-IC fields; so does a regime block (it is not a forecast). A
+    present, non-skipped file without the base variant raises."""
     path = Path(run_dir) / "artifacts" / RESIDUAL_IC_ARTIFACT
     if not path.exists():
-        raise BlockRegistryError(f"{run_id}: {path} is missing -- under "
-                                 f"orchestrator.composition_runs every block records its "
-                                 f"timeframe and residual IC from it")
+        print(f"WARNING [E-060] block registry: {run_id} has no artifacts/{RESIDUAL_IC_ARTIFACT} "
+              f"(protocol_execution ran with orchestrator.composition_runs off) -- block "
+              f"registered without timeframe / residual IC")
+        return {}
     try:
         doc = yaml.safe_load(path.read_text(encoding="utf-8"))
     except yaml.YAMLError as exc:
         raise BlockRegistryError(f"{path}: unparseable YAML ({exc})") from exc
     doc = doc if isinstance(doc, dict) else {}
-    diag = (doc.get("variants") or {}).get(vid)
-    if not isinstance(diag, dict) or not isinstance(doc.get("timeframe"), str) \
+    if not isinstance(doc.get("timeframe"), str) \
             or doc.get("timeframe_category") not in ("high", "medium", "low", "daily"):
-        raise BlockRegistryError(f"{path}: no residual-IC record for base variant {vid!r}, or no "
-                                 f"valid timeframe / timeframe_category")
+        raise BlockRegistryError(f"{path}: no valid timeframe / timeframe_category")
     out = {"timeframe": doc["timeframe"], "timeframe_category": doc["timeframe_category"],
            "residual_ic": None, "correlation_to_composite": None}
+    if doc.get("skipped"):
+        return out
+    diag = (doc.get("variants") or {}).get(vid)
+    if not isinstance(diag, dict):
+        raise BlockRegistryError(f"{path}: no residual-IC record for base variant {vid!r}")
     if kind == "forecast":
         basis = {"composite": diag.get("composite"),
                  "composite_registry_hash": diag.get("composite_registry_hash")}
         out["residual_ic"] = {"value": diag.get("value"), "n_eff": diag.get("n_eff"),
                               "p_value": diag.get("p_value"),
+                              "p_value_one_sided": diag.get("p_value_one_sided"),
                               "fully_explained": diag.get("fully_explained"), **basis}
         out["correlation_to_composite"] = {"value": diag.get("correlation_to_composite"), **basis}
     return out

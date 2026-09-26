@@ -119,7 +119,9 @@ code_added_criteria:
     # on the current composite's forecast (tools/residual_ic.py), pooled over
     # coins; n_eff = gap-aware one-day blocks (tools/residual_ic.py). Written
     # by protocol_execution into hypothesis_verdict.diagnostics.residual_ic.
-    # composite STALE -> INCONCLUSIVE; fully_explained -> FAIL (evaluator).
+    # composite STALE -> INCONCLUSIVE; fully_explained -> FAIL (evaluator,
+    # only with evaluate_grid(composition_runs=True); flag off, this entry
+    # takes the ordinary path, where min_n_eff raises as it always has).
     metric: residual_ic
     statistic: value
     source: pooled
@@ -128,6 +130,11 @@ code_added_criteria:
     # operator-adjustable here. The orchestrator noted 0.02 may better match
     # "genuinely useful". Ratify before switching composition_runs on.
     threshold: 0.01
+    # PLACEHOLDER, UNRATIFIED, operator-adjustable (code review of E-060 S2):
+    # PASS also needs the one-sided p (H1: residual IC > 0, block-adjusted on
+    # n_eff) below this. Without it a pure-noise block with n_eff at the floor
+    # clears the 0.01 threshold about half the time.
+    max_p_value: 0.05
     ratified: false
     card_overridable: []
     scale_free: true

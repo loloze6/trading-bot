@@ -126,12 +126,12 @@ def test_join_drops_and_counts_missing_bars_and_n_eff_is_gap_aware():
     cand = _recs(Z_CAND[:100], RETS[:100])
     comp = _recs(Z_COMP[:100], RETS[:100])
     del cand[10]          # candidate lacks bar 10
-    del comp[50:60]       # composite lacks bars 50..59 (-> a gap in the joined series)
+    del comp[50:58]       # composite lacks bars 50..57 (-> a gap in the joined series)
     d = ric.compute_residual_ic({"BTCUSDT": cand}, {"BTCUSDT": comp}, block_size=24,
                                 expected_step_by_symbol={"BTCUSDT": 1}, composite_label="block")
-    assert d["n_dropped_composite_only"] == 1 and d["n_dropped_candidate_only"] == 10
-    assert d["n_bars"] == 89
-    # joined bars: 0..9 | 11..49 | 60..99 -> runs of 10, 39, 40 bars -> 0+1+1 blocks of 24
+    assert d["n_dropped_composite_only"] == 1 and d["n_dropped_candidate_only"] == 8
+    assert d["n_bars"] == 91 and d["coverage_by_symbol"] == {"BTCUSDT": round(91 / 99, 6)}
+    # joined bars: 0..9 | 11..49 | 58..99 -> runs of 10, 39, 42 bars -> 0+1+1 blocks of 24
     assert d["n_eff"] == 2
 
 
@@ -181,11 +181,13 @@ def _cell(diag, crit=None):
     pr = {"results": [{"symbol": "BTCUSDT", "window": "2020-01", "core": {"trade_count": 3}}],
           "hypothesis_verdict": {"diagnostics": {"residual_ic": diag}}}
     pre_reg = {"pass_rule": {"criteria": [crit or _menu_residual_crit()]}}
-    return vce.evaluate_grid({"base": pr}, pre_reg, {}, REAL_MENU)["grid"]["residual_ic"]["base"]
+    return vce.evaluate_grid({"base": pr}, pre_reg, {}, REAL_MENU,
+                             composition_runs=True)["grid"]["residual_ic"]["base"]
 
 
 def _diag(**kw):
-    d = {"value": 0.05, "n_eff": 30, "fully_explained": False, "composite": "block"}
+    d = {"value": 0.05, "n_eff": 30, "p_value_one_sided": 0.01, "fully_explained": False,
+         "composite": "block"}
     d.update(kw)
     return d
 
@@ -193,6 +195,7 @@ def _diag(**kw):
 def test_menu_entry_is_the_operator_placeholder():
     crit = _menu_residual_crit()
     assert (crit["comparator"], crit["threshold"], crit["floor"]) == (">", 0.01, {"min_n_eff": 30})
+    assert crit["max_p_value"] == 0.05
     assert crit["source"] == "pooled" and crit["statistic"] == "value" and crit["scale_free"]
     assert "residual_ic" not in {c["id"] for c in REAL_MENU["criteria"]}  # never picked by 1a
 
@@ -205,6 +208,8 @@ def test_menu_entry_is_the_operator_placeholder():
     (_diag(value=None, fully_explained=True), "FAIL"),  # exact duplicate (guess 7)
     (_diag(value=None, n_eff=None, composite="STALE"), "INCONCLUSIVE"),  # guess 4
     (_diag(value=None, reason="candidate_constant"), "INCONCLUSIVE"),
+    (_diag(p_value_one_sided=0.05), "FAIL"),            # significance gate (review fix 4)
+    (_diag(p_value_one_sided=None), "INCONCLUSIVE"),
 ])
 def test_residual_ic_cell(diag, result):
     cell = _cell(diag)
@@ -215,8 +220,39 @@ def test_residual_ic_cell(diag, result):
 def test_missing_diagnostic_is_inconclusive():
     pr = {"results": [{"symbol": "BTCUSDT", "window": "2020-01", "core": {"trade_count": 3}}]}
     pre_reg = {"pass_rule": {"criteria": [_menu_residual_crit()]}}
-    grid = vce.evaluate_grid({"base": pr}, pre_reg, {}, REAL_MENU)
+    grid = vce.evaluate_grid({"base": pr}, pre_reg, {}, REAL_MENU, composition_runs=True)
     assert grid["grid"]["residual_ic"]["base"]["result"] == "INCONCLUSIVE"
+
+
+def test_flag_off_min_n_eff_still_raises_for_every_criterion():
+    """Review fix 3: the residual_ic cell path runs ONLY for residual_ic AND
+    only with composition_runs=True; everything else keeps raising."""
+    diag = _diag()
+    pr = {"results": [{"symbol": "BTCUSDT", "window": "2020-01", "core": {"trade_count": 3}}],
+          "hypothesis_verdict": {"diagnostics": {"residual_ic": diag, "other_ic": diag}}}
+    residual = {"pass_rule": {"criteria": [_menu_residual_crit()]}}
+    with pytest.raises(NotImplementedError, match="min_n_eff"):
+        vce.evaluate_grid({"b": pr}, residual, {}, REAL_MENU)  # flag off
+    other = {"pass_rule": {"criteria": [{**_menu_residual_crit(), "id": "other_ic",
+                                         "metric": "other_ic"}]}}
+    with pytest.raises(NotImplementedError, match="min_n_eff"):
+        vce.evaluate_grid({"b": pr}, other, {}, REAL_MENU, composition_runs=True)
+
+
+def test_pure_noise_block_at_the_n_eff_floor_rarely_passes():
+    """Review fix 4: 720 hourly bars -> n_eff 30. Without the p gate about
+    half of pure-noise blocks clear IC > 0.01."""
+    passes = 0
+    trials = 200
+    for seed in range(trials):
+        rng = random.Random(1000 + seed)
+        f = [rng.gauss(0, 1) for _ in range(720)]
+        r = [rng.gauss(0, 1) for _ in range(720)]
+        d = ric.compute_residual_ic({"BTCUSDT": _recs(f, r)}, None, block_size=24,
+                                    expected_step_by_symbol={"BTCUSDT": 1})
+        assert d["n_eff"] == 30
+        passes += _cell(d)["result"] == "PASS"
+    assert passes / trials < 0.10
 
 
 def test_min_n_eff_on_a_window_source_criterion_still_raises():
@@ -300,33 +336,57 @@ def test_resolver_two_blocks_with_their_composition_run():
     blocks = [_block("H1:r1"), _block("H2:r2")]
     h = cc.composite_registry_hash(blocks)
     r = cc.resolve_current_composite({"blocks": blocks}, [
-        {"registry_hash": h, "base_config_ref": "runs/run_c/variants/base.json"}], "1h")
+        {"registry_hash": h, "base_config_ref": "runs/run_c/variants/base.json",
+         "base_config_sha256": "a" * 64}], "1h")
     assert r["kind"] == "composition" and r["config_ref"] == "runs/run_c/variants/base.json"
+    assert r["expected_config_sha256"] == "a" * 64
     # a block on another timeframe does not change this timeframe's composite
     assert cc.composite_registry_hash(blocks) == cc.composite_registry_hash(list(reversed(blocks)))
 
 
-def test_resolver_block_without_timeframe_raises():
+def test_resolver_composition_without_its_config_sha_raises():
+    """Review fix 7: same rule as the single-block path."""
+    blocks = [_block("H1:r1"), _block("H2:r2")]
+    h = cc.composite_registry_hash(blocks)
+    with pytest.raises(cc.CompositeError, match="base_config_sha256"):
+        cc.resolve_current_composite({"blocks": blocks}, [
+            {"registry_hash": h, "base_config_ref": "runs/run_c/variants/base.json"}], "1h")
+
+
+def test_resolver_excludes_a_block_without_timeframe_loudly(capsys):
+    """Review fix 5: never breaks composition, on this or any timeframe."""
     b = _block("H1:r1")
     del b["timeframe"]
-    with pytest.raises(cc.CompositeError, match="no timeframe"):
-        cc.resolve_current_composite({"blocks": [b]}, [], "1h")
+    ok = _block("H2:r2")
+    r = cc.resolve_current_composite({"blocks": [b, ok]}, [], "1h")
+    assert r["kind"] == "block" and r["block_ids"] == ["H2:r2"]
+    assert r["excluded_blocks"][0]["block_id"] == "H1:r1"
+    assert "H1:r1" in capsys.readouterr().out
+    assert cc.resolve_current_composite({"blocks": [b]}, [], "1d")["kind"] == "none"
 
 
-def _write_bars(results_dir: Path, wrid: str, forecasts, t0="2020-01-01"):
-    """bars.csv with timestamp/close/forecast; closes are a fixed random walk so
-    next-bar returns are identical for every config run on the same bars."""
+GIT = "g" * 40
+
+
+def _write_bars(results_dir: Path, wrid: str, forecasts, t0="2020-01-01", tz=None,
+                data_sha="d" * 64, git_sha=GIT):
+    """bars.csv with timestamp/close/forecast (+ the window's manifest.json);
+    closes are a fixed random walk so next-bar returns are identical for every
+    config run on the same bars."""
     import pandas as pd
     rng = random.Random(42)
     closes, c = [], 100.0
     for _ in forecasts:
         closes.append(c)
         c *= 1.0 + rng.gauss(0.0, 0.01)
-    ts = pd.date_range(t0, periods=len(forecasts), freq="h")
+    ts = pd.date_range(t0, periods=len(forecasts), freq="h", tz=tz)
     d = results_dir / wrid
     d.mkdir(parents=True, exist_ok=True)
     pd.DataFrame({"timestamp": ts, "close": closes, "forecast": forecasts}).to_csv(
         d / "bars.csv", index=False)
+    (d / "manifest.json").write_text(json.dumps({"git_sha": git_sha,
+                                                 "data": {"data_sha256": data_sha}}),
+                                     encoding="utf-8")
 
 
 def _summary(wrid):
@@ -349,13 +409,21 @@ def _protocol() -> dict:
             "holdout": {"start": start, "end": end}}
 
 
-def _composite_runner(forecasts, calls):
+def _composite_runner(forecasts, calls, **bars_kw):
     def run(config_path, protocol_path, out_dir):
         calls.append(Path(config_path))
-        _write_bars(Path(out_dir) / "results", "wr_comp", forecasts)
+        _write_bars(Path(out_dir) / "results", "wr_comp", forecasts, **bars_kw)
         (Path(out_dir) / "protocol_summary.json").write_text(json.dumps(_summary("wr_comp")),
                                                              encoding="utf-8")
     return run
+
+
+FP = {"git_sha": GIT, "data": {"BTCUSDT|2020-01": "d" * 64}}
+
+
+def _series(resolved, proto, runner, fp=FP):
+    return cc.composite_series(resolved, root=rpr.ROOT, protocol_path=proto,
+                               holdout_range=_seal(), candidate_fingerprint=fp, runner=runner)
 
 
 def _config_on_disk(rel="runs/run_700/artifacts/variants/base/strategy_config.json"):
@@ -376,18 +444,62 @@ def test_composite_series_is_computed_once_then_cached():
     proto = _write_protocol(rpr.ROOT, "p1h.json", _protocol())
     calls = []
     runner = _composite_runner(Z_COMP[:900], calls)
-    recs, steps, cache_dir = cc.composite_series(_resolved(rel, sha), root=rpr.ROOT,
-                                                 protocol_path=proto,
-                                                 policy_path=rpr._DATA_POLICY_PATH, runner=runner)
+    recs, steps, cache_dir = _series(_resolved(rel, sha), proto, runner)
     assert len(calls) == 1 and len(recs["BTCUSDT"]) == 899  # last bar has no next return
     assert cache_dir.parent == rpr.ROOT / "campaign_record" / "composite" / "0123456789abcdef"
     meta = yaml.safe_load((cache_dir / "composite.yaml").read_text(encoding="utf-8"))
     assert meta["config_sha256"] == sha and meta["kind"] == "block"
-    again, _, dir2 = cc.composite_series(_resolved(rel, sha), root=rpr.ROOT, protocol_path=proto,
-                                         policy_path=rpr._DATA_POLICY_PATH, runner=runner)
+    assert meta["engine_git_sha"] == GIT
+    again, _, dir2 = _series(_resolved(rel, sha), proto, runner)
     assert len(calls) == 1 and dir2 == cache_dir and again == recs
     # not a trial: nothing touched the trial ledger
     assert not rpr.CAMPAIGN_STATE_PATH.exists()
+
+
+def test_cache_hit_with_missing_bars_is_recomputed():
+    """Review fix 1."""
+    rel, sha = _config_on_disk()
+    proto = _write_protocol(rpr.ROOT, "p1h.json", _protocol())
+    calls = []
+    runner = _composite_runner(Z_COMP[:900], calls)
+    _, _, cache_dir = _series(_resolved(rel, sha), proto, runner)
+    (cache_dir / "results" / "wr_comp" / "bars.csv").unlink()
+    recs, _, _ = _series(_resolved(rel, sha), proto, runner)
+    assert len(calls) == 2 and len(recs["BTCUSDT"]) == 899
+
+
+def test_cache_key_covers_engine_and_market_data():
+    """Review fix 2: another engine version or other data -> another entry;
+    a composite that read different data from the candidate is refused."""
+    rel, sha = _config_on_disk()
+    proto = _write_protocol(rpr.ROOT, "p1h.json", _protocol())
+    calls = []
+    _, _, d1 = _series(_resolved(rel, sha), proto, _composite_runner(Z_COMP[:900], calls))
+    fp2 = {"git_sha": "h" * 40, "data": FP["data"]}
+    _, _, d2 = _series(_resolved(rel, sha), proto,
+                       _composite_runner(Z_COMP[:900], calls, git_sha="h" * 40), fp=fp2)
+    assert len(calls) == 2 and d1 != d2
+    fp3 = {"git_sha": GIT, "data": {"BTCUSDT|2020-01": "e" * 64}}
+    with pytest.raises(cc.CompositeError, match="different market data"):
+        _series(_resolved(rel, sha), proto, _composite_runner(Z_COMP[:900], calls), fp=fp3)
+
+
+def test_cache_writes_are_locked(monkeypatch):
+    """Review fix 2: a held lock (a concurrent miss) is waited on, never raced."""
+    import campaign_lock
+    rel, sha = _config_on_disk()
+    proto = _write_protocol(rpr.ROOT, "p1h.json", _protocol())
+    parent = rpr.ROOT / "campaign_record" / "composite" / "0123456789abcdef"
+    parent.mkdir(parents=True)
+    campaign_lock.acquire(parent / cc.COMPOSITE_LOCK_FILENAME)
+    monkeypatch.setattr(cc, "COMPOSITE_LOCK_WAIT_SECONDS", 0.2)
+    calls = []
+    try:
+        with pytest.raises(cc.CompositeError, match="still held"):
+            _series(_resolved(rel, sha), proto, _composite_runner(Z_COMP[:900], calls))
+    finally:
+        campaign_lock.release(parent / cc.COMPOSITE_LOCK_FILENAME)
+    assert calls == []
 
 
 def test_composite_never_reaches_the_holdout():
@@ -398,10 +510,24 @@ def test_composite_never_reaches_the_holdout():
     proto = _write_protocol(rpr.ROOT, "bad.json", bad)
     calls = []
     with pytest.raises(cc.CompositeError, match="holdout"):
-        cc.composite_series(_resolved(rel, sha), root=rpr.ROOT, protocol_path=proto,
-                            policy_path=rpr._DATA_POLICY_PATH,
-                            runner=_composite_runner([1.0], calls))
+        _series(_resolved(rel, sha), proto, _composite_runner([1.0], calls))
     assert calls == []
+
+
+@pytest.mark.parametrize("test_dates", [None, {"start": "2020-01-01"}, {"start": "2020-01-01",
+                                        "end": "someday"}, {"start": 20200101, "end": "2020-02-01"}])
+def test_holdout_guard_fails_closed_on_missing_or_non_iso_dates(test_dates):
+    """Review fix 9: reuses _load_holdout_range + HoldoutBoundaryBreach."""
+    proto = _protocol()
+    w = {"label": "2020-03"}
+    if test_dates is not None:
+        w["test"] = test_dates
+    proto["windows"].append(w)
+    with pytest.raises(rpr.HoldoutBoundaryBreach):
+        cc.check_protocol_outside_holdout(proto, rpr._load_holdout_range(),
+                                          breach_cls=rpr.HoldoutBoundaryBreach)
+    cc.check_protocol_outside_holdout(_protocol(), rpr._load_holdout_range(),
+                                      breach_cls=rpr.HoldoutBoundaryBreach)  # clean one passes
 
 
 def test_composite_refuses_the_sealed_store_and_a_changed_config():
@@ -410,12 +536,10 @@ def test_composite_refuses_the_sealed_store_and_a_changed_config():
     sealed.parent.mkdir(parents=True)
     sealed.write_text(json.dumps(_protocol()), encoding="utf-8")
     with pytest.raises(cc.CompositeError, match="holdout_sealed"):
-        cc.composite_series(_resolved(rel, sha), root=rpr.ROOT, protocol_path=sealed,
-                            policy_path=rpr._DATA_POLICY_PATH, runner=lambda *a: None)
+        _series(_resolved(rel, sha), sealed, lambda *a: None)
     proto = _write_protocol(rpr.ROOT, "p1h.json", _protocol())
     with pytest.raises(cc.CompositeError, match="changed"):
-        cc.composite_series(_resolved(rel, "f" * 64), root=rpr.ROOT, protocol_path=proto,
-                            policy_path=rpr._DATA_POLICY_PATH, runner=lambda *a: None)
+        _series(_resolved(rel, "f" * 64), proto, lambda *a: None)
 
 
 def _registry_file(blocks):
@@ -456,7 +580,7 @@ def test_residual_ic_by_variant_for_0_1_2_blocks(n_blocks):
     doc = cc.residual_ic_by_variant(
         summaries, results, root=rpr.ROOT, protocol_path=proto, registry_path=reg,
         compositions_path=rpr.ROOT / "campaign_record" / "compositions.yaml",
-        policy_path=rpr._DATA_POLICY_PATH, runner=_composite_runner(Z_COMP[:n], calls))
+        holdout_range=_seal(), runner=_composite_runner(Z_COMP[:n], calls))
     assert doc["timeframe"] == "1h" and doc["timeframe_category"] == "low"
     base, other = doc["variants"]["base"], doc["variants"]["other"]
     if n_blocks == 0:
@@ -474,9 +598,100 @@ def test_residual_ic_by_variant_for_0_1_2_blocks(n_blocks):
         assert base["composite"] == "STALE" and base["value"] is None
         pre_reg = {"pass_rule": {"criteria": [_menu_residual_crit()]}}
         pr = {**summaries["base"], "hypothesis_verdict": {"diagnostics": {"residual_ic": base}}}
-        grid = vce.evaluate_grid({"base": pr}, pre_reg, {}, REAL_MENU)
+        grid = vce.evaluate_grid({"base": pr}, pre_reg, {}, REAL_MENU, composition_runs=True)
         assert grid["grid"]["residual_ic"]["base"]["result"] == "INCONCLUSIVE"
     assert not rpr.CAMPAIGN_STATE_PATH.exists()  # no trial row, ever
+
+
+def test_exempt_run_computes_nothing_and_runs_no_subprocess():
+    """Review fix 5: an exempt idea skips the residual IC and its composite run."""
+    rel, sha = _config_on_disk()
+    proto = _write_protocol(rpr.ROOT, "p1h.json", _protocol())
+    reg = _registry_file([_block("H1:run_700", ref=rel, sha=sha)])
+    calls = []
+    doc = cc.residual_ic_by_variant(
+        {"base": _summary("wr_base")}, {"base": rpr.ROOT / "nowhere"}, root=rpr.ROOT,
+        protocol_path=proto, registry_path=reg,
+        compositions_path=rpr.ROOT / "campaign_record" / "compositions.yaml",
+        holdout_range=_seal(), exempt_reason="regime block",
+        runner=_composite_runner(Z_COMP[:10], calls))
+    assert doc["skipped"] == "regime block" and doc["variants"] == {} and calls == []
+    assert doc["timeframe"] == "1h" and doc["timeframe_category"] == "low"
+
+
+# ---------------------------------------------------------------------------
+# 5b. Review fixes 1, 8, 10: coverage, tz, finiteness, ordering
+# ---------------------------------------------------------------------------
+
+def test_low_composite_coverage_is_inconclusive():
+    cand = _recs(Z_CAND[:200], RETS[:200])
+    comp = _recs(Z_COMP[:200], RETS[:200])[:170]  # 85% of the candidate's bars
+    d = ric.compute_residual_ic({"BTCUSDT": cand}, {"BTCUSDT": comp}, block_size=1,
+                                composite_label="block")
+    assert d["value"] is None and d["reason"].startswith("composite_coverage")
+    assert d["coverage_by_symbol"] == {"BTCUSDT": 0.85}
+    assert ric.MIN_COMPOSITE_COVERAGE == 0.9
+    ok = ric.compute_residual_ic({"BTCUSDT": cand}, {"BTCUSDT": _recs(Z_COMP[:200], RETS[:200])[:180]},
+                                 block_size=1, composite_label="block")
+    assert ok["value"] is not None  # exactly 90% is enough
+
+
+def test_composite_missing_a_symbol_is_inconclusive():
+    cand = {"BTCUSDT": _recs(Z_CAND[:100], RETS[:100]), "ETHUSDT": _recs(Z_CAND[:100], RETS[:100])}
+    comp = {"BTCUSDT": _recs(Z_COMP[:100], RETS[:100])}
+    d = ric.compute_residual_ic(cand, comp, block_size=1, composite_label="block")
+    assert d["value"] is None and "ETHUSDT" in d["reason"]
+
+
+def test_timestamps_are_utc_normalised_before_the_join():
+    import pandas as pd
+    base = pd.Timestamp("2020-01-01 00:00")
+    naive = [{"timestamp": base + pd.Timedelta(hours=i), "forecast": f, "next_return_bps": r}
+             for i, (f, r) in enumerate(zip(Z_CAND[:300], RETS[:300]))]
+    aware = [{"timestamp": (base + pd.Timedelta(hours=i)).tz_localize("UTC").tz_convert("Europe/Paris"),
+              "forecast": f, "next_return_bps": r}
+             for i, (f, r) in enumerate(zip(Z_COMP[:300], RETS[:300]))]
+    d = ric.compute_residual_ic({"BTCUSDT": naive}, {"BTCUSDT": aware}, block_size=24,
+                                expected_step_by_symbol={"BTCUSDT": pd.Timedelta(hours=1)},
+                                composite_label="block")
+    assert d["n_bars"] == 300 and d["n_dropped_candidate_only"] == 0 and d["value"] is not None
+    assert d["n_eff"] == 300 // 24
+
+
+@pytest.mark.parametrize("where", ["forecast", "return", "composite"])
+def test_non_finite_inputs_are_rejected_never_ranked(where):
+    cand = _recs(Z_CAND[:100], RETS[:100])
+    comp = _recs(Z_COMP[:100], RETS[:100])
+    if where == "forecast":
+        cand[5]["forecast"] = float("nan")
+    elif where == "return":
+        cand[7]["next_return_bps"] = float("inf")
+    else:
+        comp[9]["forecast"] = float("nan")
+    d = ric.compute_residual_ic({"BTCUSDT": cand}, {"BTCUSDT": comp}, block_size=1,
+                                composite_label="block")
+    assert d["value"] is None and d["reason"].startswith("non_finite")
+
+
+def test_out_of_order_records_are_refused():
+    cand = _recs(Z_CAND[:50], RETS[:50])
+    cand[10], cand[11] = cand[11], cand[10]
+    with pytest.raises(ric.RecordOrderError):
+        ric.compute_residual_ic({"BTCUSDT": cand}, None, block_size=1)
+
+
+def test_reader_sorts_by_timestamp_not_window_label(tmp_path):
+    """Two windows whose labels sort opposite to their times."""
+    res = tmp_path / "results"
+    _write_bars(res, "wr_late", [1.0, 2.0, 3.0], t0="2020-03-01")
+    _write_bars(res, "wr_early", [4.0, 5.0, 6.0], t0="2020-01-01")
+    summary = {"results": [
+        {"symbol": "BTCUSDT", "window": "a_late", "run_id": "wr_late"},
+        {"symbol": "BTCUSDT", "window": "b_early", "run_id": "wr_early"}]}
+    recs, _ = ric.symbol_records_from_protocol_result(summary, res)
+    ts = [r["timestamp"] for r in recs["BTCUSDT"]]
+    assert ts == sorted(ts) and [r["forecast"] for r in recs["BTCUSDT"]] == [4.0, 5.0, 1.0, 2.0]
+    ric.compute_residual_ic(recs, None, block_size=1)  # accepted: strictly increasing
 
 
 # ---------------------------------------------------------------------------
@@ -504,7 +719,8 @@ def _registry_run(run_id="run_750", diag=None, timeframe="1h"):
     return run_dir, entry
 
 
-DIAG = {"value": 0.05, "n_eff": 41, "p_value": 0.2, "fully_explained": False,
+DIAG = {"value": 0.05, "n_eff": 41, "p_value": 0.2, "p_value_one_sided": 0.1,
+        "fully_explained": False,
         "correlation_to_composite": 0.31, "composite": "block",
         "composite_registry_hash": "0123456789abcdef", "n_bars": 999}
 
@@ -530,6 +746,7 @@ def test_registry_flag_on_records_timeframe_and_residual_ic():
                            composition_runs=True)
     assert block["timeframe"] == "4h" and block["timeframe_category"] == "low"
     assert block["residual_ic"] == {"value": 0.05, "n_eff": 41, "p_value": 0.2,
+                                    "p_value_one_sided": 0.1,
                                     "fully_explained": False, "composite": "block",
                                     "composite_registry_hash": "0123456789abcdef"}
     assert block["correlation_to_composite"] == {"value": 0.31, "composite": "block",
@@ -542,9 +759,32 @@ def test_registry_flag_on_records_timeframe_and_residual_ic():
     assert loaded["blocks"][0]["timeframe"] == "4h"
 
 
-def test_registry_flag_on_without_the_artifact_raises():
+def test_registry_flag_on_without_the_artifact_is_absent_by_design(capsys):
+    """Review fix 5: protocol_execution ran with the flag off -> no raise,
+    the E-058 shape, a loud line."""
     run_dir, entry = _registry_run(diag=None)
-    with pytest.raises(br.BlockRegistryError, match="residual_ic.yaml"):
+    block = br.build_block(run_dir, entry, br.load_manifest(run_dir), root=rpr.ROOT,
+                           composition_runs=True)
+    assert tuple(block) == br.BLOCK_FIELDS and block["residual_ic"] is None
+    assert "residual_ic.yaml" in capsys.readouterr().out
+
+
+def test_registry_skipped_artifact_records_timeframe_only():
+    run_dir, entry = _registry_run(diag=None)
+    rpr.save_yaml(run_dir / "artifacts" / "residual_ic.yaml",
+                  {"timeframe": "1d", "timeframe_category": "daily", "skipped": "regime block",
+                   "composite": None, "variants": {}})
+    block = br.build_block(run_dir, entry, br.load_manifest(run_dir), root=rpr.ROOT,
+                           composition_runs=True)
+    assert block["timeframe"] == "1d" and block["residual_ic"] is None
+
+
+def test_registry_present_artifact_without_the_base_variant_raises():
+    run_dir, entry = _registry_run(diag=None)
+    rpr.save_yaml(run_dir / "artifacts" / "residual_ic.yaml",
+                  {"timeframe": "1h", "timeframe_category": "low", "skipped": None,
+                   "variants": {"other": DIAG}})
+    with pytest.raises(br.BlockRegistryError, match="base variant"):
         br.build_block(run_dir, entry, br.load_manifest(run_dir), root=rpr.ROOT,
                        composition_runs=True)
 
@@ -622,6 +862,20 @@ def test_exemptions_regime_and_composition():
     assert rpr._residual_ic_exempt_reason(run_dir) is None
 
 
+def test_regime_idea_from_an_ordinary_brief_is_exempt_via_manifest_or_card():
+    """Review fix 6: no candidate block -- 1b's manifest (or a card kind) decides."""
+    run_dir = _minimal_run(rpr.ROOT, "run_762")
+    _brief(run_dir, {"research_goal": "a detector idea"})
+    assert rpr._residual_ic_exempt_reason(run_dir) is None
+    rpr.save_yaml(run_dir / "artifacts" / "block_manifest.yaml",
+                  {"block": {"kind": "regime", "config_paths": ["/regime_detector"]}})
+    assert rpr._residual_ic_exempt_reason(run_dir) == "regime block"
+    (run_dir / "artifacts" / "block_manifest.yaml").unlink()
+    rpr.save_yaml(run_dir / "artifacts" / "hypothesis_card.yaml",
+                  {"hypothesis_id": "H", "block": {"kind": "regime"}})
+    assert rpr._residual_ic_exempt_reason(run_dir) == "regime block"
+
+
 def _menu_into_sandbox():
     (rpr.ROOT / "config" / "criterion_menu.yaml").write_text(
         (SR_ROOT / "config" / "criterion_menu.yaml").read_text(encoding="utf-8"), encoding="utf-8")
@@ -643,9 +897,14 @@ def test_ensure_residual_ic_on_a_1a_written_pass_rule():
     assert rpr._ensure_residual_ic_in_pre_registration(run_dir) is False
 
 
-def _variant_loop_run(monkeypatch, run_id, flag_on):
+def _variant_loop_run(monkeypatch, run_id, flag_on, manifest_kind=None):
     """A 2-variant protocol_execution with a fake subprocess writing bars.csv;
     grid on; pre_registration carries a menu criterion (+ residual_ic when on)."""
+    if manifest_kind:
+        arts0 = rpr.ROOT / "runs" / run_id / "artifacts"
+        arts0.mkdir(parents=True, exist_ok=True)
+        rpr.save_yaml(arts0 / "block_manifest.yaml",
+                      {"block": {"kind": manifest_kind, "config_paths": ["/x"]}})
     _set_orchestrator({"config_direct_authoring": {"enabled": True},
                        "variant_loop": {"enabled": True}, "grid_evaluation": {"enabled": True}})
     monkeypatch.setattr(rpr, "_composition_runs_enabled", lambda: flag_on)
@@ -718,3 +977,18 @@ def test_protocol_execution_flag_on_grades_residual_ic_without_touching_saved_re
     assert "residual_ic" not in saved["hypothesis_verdict"]["diagnostics"]
     rows = rpr.load_campaign_state()["trial_sharpes"]
     assert sorted(r["trial_id"] for r in rows) == ["run_771:base", "run_771:other"]
+
+
+def test_protocol_execution_regime_idea_is_exempt_at_grid_time(monkeypatch):
+    """Review fix 6: 1a appended residual_ic before the manifest existed; at
+    grid time the regime manifest exempts it -- nothing computed, not graded."""
+    calls = []
+    real_series = cc.composite_series
+    monkeypatch.setattr(cc, "composite_series",
+                        lambda *a, **k: calls.append(1) or real_series(*a, **k))
+    run_dir, _ = _variant_loop_run(monkeypatch, "run_772", flag_on=True, manifest_kind="regime")
+    arts = run_dir / "artifacts"
+    doc = rpr.load_yaml(arts / "residual_ic.yaml")
+    assert doc["skipped"] == "regime block" and doc["variants"] == {} and calls == []
+    grid = rpr.load_yaml(arts / "grid_evaluation.yaml")
+    assert grid["criteria"] == ["realized_edge_to_cost_ratio"]
