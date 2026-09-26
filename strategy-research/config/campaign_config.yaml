@@ -759,6 +759,29 @@ orchestrator:
       # history. Any other run found at campaign_review (a legacy review)
       # pauses before its LLM call; a triggered review resumed with this flag
       # off fails loud.
+  composition_runs:
+    enabled: false
+      # E-060 S2 (delivery_plan_v26.md slice 7 item 7.1;
+      # engineering/roadmap/E-060/S1_FINDINGS.md + the operator decision of
+      # 2026-09-26). OFF BY DEFAULT, read by
+      # run_phase1_research._composition_runs_enabled(). HARD DEPENDENCIES:
+      # raises if true while decide_next, variant_loop,
+      # profit_bars_every_backtest or verdict_routing_retired is off.
+      #
+      # While false: nothing new is read or written -- the grid, the block
+      # registry and every other artifact are byte-identical (proven by
+      # tests/test_e060_s2_residual_ic.py).
+      #
+      # While true: step 1a's pass_rule gets the code-added residual_ic
+      # criterion (config/criterion_menu.yaml code_added_criteria; threshold a
+      # PLACEHOLDER to ratify first) for every forecast-block idea;
+      # protocol_execution computes each variant's residual IC against the
+      # current composite (tools/composite_cache.py, cached under
+      # campaign_record/composite/, not a trial, never the holdout) and writes
+      # artifacts/residual_ic.yaml; the block registry records each block's
+      # timeframe, timeframe category, residual_ic and
+      # correlation_to_composite. DECLARED BEHAVIOUR CHANGE when switched on.
+      # S3 (composition brief writer, 1b composition mode) extends this flag.
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------

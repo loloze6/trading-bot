@@ -1620,8 +1620,18 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 if _vce._is_menu_shaped_pass_rule(_pass_rule_for_grid):
                     _menu_path = ROOT / "config" / "criterion_menu.yaml"
                     _menu = load_yaml(_menu_path) if _menu_path.exists() else {}
-                    _grid_result = _vce.evaluate_grid(
-                        per_variant_summaries, _pre_reg_for_eval or {}, _brief_for_eval, _menu)
+                    # E-060 S2: under composition_runs the grid reads copies carrying
+                    # the residual IC; off, it reads per_variant_summaries unchanged.
+                    if _composition_runs_enabled():
+                        _grid_inputs, _grid_pre_reg = _residual_ic_grid_inputs(
+                            per_variant_summaries, RUN_DIR, protocol_path, TBOT_PYTHON,
+                            _pre_reg_for_eval or {})
+                        _grid_result = _vce.evaluate_grid(
+                            _grid_inputs, _grid_pre_reg, _brief_for_eval, _menu,
+                            composition_runs=True)
+                    else:
+                        _grid_result = _vce.evaluate_grid(
+                            per_variant_summaries, _pre_reg_for_eval or {}, _brief_for_eval, _menu)
                     _grid_result["evaluated_at"] = datetime.now(timezone.utc).isoformat()
                     save_yaml(ARTIFACTS / "grid_evaluation.yaml", _grid_result)
                     _idea_status_artifact = _build_idea_status_artifact(_grid_result, run_id)
@@ -3357,6 +3367,208 @@ def _verdict_routing_retired_enabled() -> bool:
 
 
 # ---------------------------------------------------------------------------
+# E-060 S2 -- composition runs, part 1: the residual-IC criterion, the
+# composite cache and the registry's timeframe / residual-IC fields
+# (delivery_plan_v26.md slice 7 item 7.1; engineering/roadmap/E-060/
+# S1_FINDINGS.md guesses 4-8 and the operator decision of 2026-09-26).
+# OFF BY DEFAULT. When on:
+#   * step 1a's pass_rule gets the code-added `residual_ic` criterion
+#     (config/criterion_menu.yaml code_added_criteria) for every
+#     forecast-block idea (_with_residual_ic_criterion);
+#   * protocol_execution (variant loop) computes each variant's residual IC
+#     against the current composite (tools/composite_cache.py,
+#     tools/residual_ic.py), writes artifacts/residual_ic.yaml and injects it
+#     into the grid's copy of the variant's protocol result
+#     (hypothesis_verdict.diagnostics.residual_ic) -- the saved
+#     protocol_result.yaml files and the trial rows are untouched;
+#   * regroup_record's registry entry records the block's timeframe, its
+#     timeframe category, residual_ic and correlation_to_composite.
+# The composite is not a trial, not graded, and never reaches the holdout.
+# Off: nothing new is read or written.
+# ---------------------------------------------------------------------------
+
+_RESIDUAL_IC_CRITERION_ID = "residual_ic"
+_RESIDUAL_IC_ARTIFACT = "residual_ic.yaml"
+# code_added_criteria keys that describe the entry rather than define the criterion.
+_CODE_CRITERION_META_KEYS = ("basis", "card_overridable", "requires_flag", "ratified")
+
+
+def _composition_runs_enabled() -> bool:
+    """False when the key, the section or the config file is absent. A non-bool
+    value raises. Requires, loudly (S1_FINDINGS.md "Flag design"):
+      * orchestrator.decide_next.enabled (hence regroup_record,
+        specialist_readers, grid_evaluation, category_reports,
+        config_direct_authoring) -- the criterion is written at 1a from the
+        menu, and the registry is written by regroup_record;
+      * orchestrator.variant_loop.enabled -- the residual IC is computed per
+        variant inside the variant loop's protocol_execution;
+      * orchestrator.profit_bars_every_backtest.enabled (hence
+        profit_bars_file) and orchestrator.verdict_routing_retired.enabled --
+        without the latter a composition run could reach refine/pivot
+        routing, which must never be fed."""
+    return _strict_orchestrator_flag(
+        "composition_runs",
+        requires=(("decide_next", _decide_next_enabled),
+                  ("variant_loop", _variant_loop_enabled),
+                  ("profit_bars_every_backtest", _profit_bars_every_backtest_enabled),
+                  ("verdict_routing_retired", _verdict_routing_retired_enabled)),
+        why=("the residual-IC criterion is written at 1a from the criterion menu, computed "
+             "per variant in the variant loop, recorded by regroup_record, and a composition "
+             "run must never reach retired refine/pivot routing. Enable them together."))
+
+
+def _residual_ic_menu_entry(menu: dict) -> dict:
+    """config/criterion_menu.yaml's code_added_criteria `residual_ic` entry,
+    stripped of its descriptive keys. Raises when it is missing."""
+    import copy
+    for entry in (menu or {}).get("code_added_criteria") or []:
+        if isinstance(entry, dict) and entry.get("id") == _RESIDUAL_IC_CRITERION_ID:
+            return {k: copy.deepcopy(v) for k, v in entry.items()
+                    if k not in _CODE_CRITERION_META_KEYS}
+    raise ValueError("config/criterion_menu.yaml has no code_added_criteria entry "
+                     f"{_RESIDUAL_IC_CRITERION_ID!r} -- orchestrator.composition_runs.enabled "
+                     "requires it (E-060 S2)")
+
+
+def _residual_ic_exempt_reason(run_dir: Path) -> str | None:
+    """Why this run's idea is NOT a forecast-block idea (guess 6: the
+    criterion is required for every forecast block, not for composition runs
+    or regime blocks). None = required."""
+    path = Path(run_dir) / "artifacts" / "research_brief.yaml"
+    brief = (load_yaml(path) if path.exists() else {}) or {}
+    cand = brief.get("candidate") if isinstance(brief, dict) else None
+    cand = cand if isinstance(cand, dict) else {}
+    source = cand.get("source") if isinstance(cand.get("source"), dict) else {}
+    if "composition" in (brief.get("origin"), source.get("origin")) or brief.get("composition"):
+        return "composition run"
+    proposal = source.get("proposal") if isinstance(source.get("proposal"), dict) else {}
+    kinds = {((proposal.get("block") or {}) if isinstance(proposal.get("block"), dict) else {}).get("kind"),
+             (((cand.get("manifest") or {}).get("block") or {})
+              if isinstance(cand.get("manifest"), dict) else {}).get("kind")}
+    if "regime" in kinds:
+        return "regime block"
+    # Code review fix 6: a 1a-authored brief carries no candidate block. Once
+    # they exist, the hypothesis card (a block kind field, if 1a wrote one) and
+    # 1b's block_manifest.yaml (the authoritative kind) decide -- so at grid
+    # time a regime-detector idea from an ordinary brief is exempt too.
+    arts = Path(run_dir) / "artifacts"
+    for name, pick in (("hypothesis_card.yaml",
+                        lambda d: d.get("block_kind") or ((d.get("block") or {})
+                                                          if isinstance(d.get("block"), dict)
+                                                          else {}).get("kind")),
+                       ("block_manifest.yaml",
+                        lambda d: ((d.get("block") or {}) if isinstance(d.get("block"), dict)
+                                   else {}).get("kind"))):
+        p = arts / name
+        doc = (load_yaml(p) if p.exists() else {}) or {}
+        if isinstance(doc, dict) and pick(doc) == "regime":
+            return "regime block"
+    return None
+
+
+def _with_residual_ic_criterion(pass_rule: dict, menu: dict) -> dict:
+    """pass_rule with the code's `residual_ic` criterion appended (any
+    criterion already carrying that id is replaced: code, not 1a, sets it)."""
+    crit = _residual_ic_menu_entry(menu)
+    others = [c for c in (pass_rule.get("criteria") or [])
+              if not (isinstance(c, dict) and c.get("id") == _RESIDUAL_IC_CRITERION_ID)]
+    return {**pass_rule, "criteria": others + [crit]}
+
+
+def _ensure_residual_ic_in_pre_registration(run_dir: Path) -> bool:
+    """For a run whose pass_rule step 1a wrote directly (a research brief, not
+    a decide-next candidate): the same append as _write_pass_rule_from_card,
+    on pre_registration.yaml, wherever its pass_rule sits. Caller checks the
+    flag. No-op (False) for an exempt idea or a pass_rule the grid cannot read
+    (not menu-shaped -- no grid is written for it anyway)."""
+    if _residual_ic_exempt_reason(run_dir):
+        return False
+    path = Path(run_dir) / "artifacts" / "pre_registration.yaml"
+    if not path.exists():
+        return False
+    pre_reg = load_yaml(path) or {}
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import verdict_criteria_evaluator as _vce
+    pass_rule = _vce._find_pass_rule(pre_reg)
+    if not _vce._is_menu_shaped_pass_rule(pass_rule):
+        print(f"⚠️  [E-060] {path}: pass_rule is not menu-shaped -- residual_ic not added "
+              f"(no grid is written for this run)")
+        return False
+    menu_path = ROOT / "config" / "criterion_menu.yaml"
+    menu = (load_yaml(menu_path) if menu_path.exists() else {}) or {}
+    new_rule = _with_residual_ic_criterion(pass_rule, menu)
+    if new_rule == pass_rule:
+        return False
+    if pre_reg.get("pass_rule") is not None:
+        pre_reg["pass_rule"] = new_rule
+    else:
+        pre_reg["machine_constraints"]["pass_rule"] = new_rule
+    save_yaml(path, pre_reg)
+    print(f"✅ [E-060] pre_registration.yaml: code-added criterion residual_ic appended")
+    return True
+
+
+def _residual_ic_grid_inputs(per_variant_summaries: dict, run_dir: Path, protocol_path,
+                             python_exe, pre_registration: dict) -> tuple:
+    """(grid inputs, grid pre_registration). Each variant's residual IC
+    against the current composite, written to artifacts/residual_ic.yaml, and
+    returned as DEEP COPIES of the variant summaries carrying
+    hypothesis_verdict.diagnostics.residual_ic -- the grid's inputs only. The
+    saved protocol_result.yaml files and trial rows are not touched. The
+    composite computation writes no trial row.
+    An exempt idea (regime block -- now detectable from 1b's manifest -- or a
+    composition run): nothing is computed and no subprocess runs;
+    residual_ic.yaml records `skipped` + the timeframe, and the grid reads a
+    copy of the pre-registration without the residual_ic criterion (loudly)."""
+    import copy
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import composite_cache as _cc
+    import verdict_criteria_evaluator as _vce
+    run_dir = Path(run_dir)
+    exempt = _residual_ic_exempt_reason(run_dir)
+    doc = _cc.residual_ic_by_variant(
+        per_variant_summaries,
+        {vid: run_dir / "variants" / vid / "results" for vid in per_variant_summaries},
+        root=ROOT, protocol_path=Path(protocol_path),
+        registry_path=_block_registry_path(),
+        compositions_path=ROOT / "campaign_record" / "compositions.yaml",
+        holdout_range=_load_holdout_range(), breach_cls=HoldoutBoundaryBreach,
+        exempt_reason=exempt, python_exe=python_exe)
+    save_yaml(run_dir / "artifacts" / _RESIDUAL_IC_ARTIFACT, doc)
+    if exempt:
+        grid_pre = copy.deepcopy(pre_registration)
+        rule = _vce._find_pass_rule(grid_pre)
+        if isinstance(rule, dict) and isinstance(rule.get("criteria"), list):
+            dropped = [c for c in rule["criteria"]
+                       if isinstance(c, dict) and c.get("id") == _RESIDUAL_IC_CRITERION_ID]
+            rule["criteria"] = [c for c in rule["criteria"] if c not in dropped]
+            if dropped:
+                print(f"⚠️  [E-060] {run_dir.name}: {exempt} -- residual_ic is not graded for "
+                      f"this idea (removed from the grid's copy of the pass_rule)")
+        print(f"✅ [E-060] residual_ic.yaml written: skipped ({exempt})")
+        return per_variant_summaries, grid_pre
+    out = {}
+    for vid, summary in per_variant_summaries.items():
+        s = copy.deepcopy(summary)
+        hv = s.get("hypothesis_verdict")
+        if not isinstance(hv, dict):
+            hv = s["hypothesis_verdict"] = {}
+        diag = hv.get("diagnostics")
+        if not isinstance(diag, dict):
+            diag = hv["diagnostics"] = {}
+        diag[_RESIDUAL_IC_CRITERION_ID] = copy.deepcopy(doc["variants"][vid])
+        out[vid] = s
+    print(f"✅ [E-060] residual_ic.yaml written (composite={doc['composite']['kind']}, "
+          f"timeframe={doc['timeframe']}): "
+          f"{ {v: d.get('value') for v, d in doc['variants'].items()} }")
+    return out, pre_registration
+
+
+# ---------------------------------------------------------------------------
 # Slice 6c S2c -- parked states (S1_FINDINGS_6C.md §6 and guesses 7-9), under
 # orchestrator.verdict_routing_retired.enabled only. A run that waits on a
 # missing component or on missing data does not pause the campaign: the
@@ -4744,6 +4956,9 @@ def _write_pass_rule_from_card(run_dir: Path, run_id: str, sr_flag: bool) -> boo
     menu_path = ROOT / "config" / "criterion_menu.yaml"
     menu = (load_yaml(menu_path) if menu_path.exists() else {}) or {}
     pass_rule = _pass_rule_from_card(card, menu, str(card_path))
+    # E-060 S2 (guess 6): code, not 1a, adds residual_ic for a forecast-block idea.
+    if _composition_runs_enabled() and not _residual_ic_exempt_reason(run_dir):
+        pass_rule = _with_residual_ic_criterion(pass_rule, menu)
     pre_reg_path = arts / "pre_registration.yaml"
     if not pre_reg_path.exists():
         raise FileNotFoundError(f"{pre_reg_path} is missing for a decide-next candidate -- it is "
@@ -5189,7 +5404,8 @@ def _run_regroup_record_stage(run_id: str, run_dir: Path,
         # that a re-run cannot redo: registry (append-only; conflict raises
         # BEFORE the memory entry is replaced), KB entry (replaced on re-run),
         # memory entry (replaced on re-run), then the scoreboard (derived).
-        entry["registry"] = _br.record_run(_block_registry_path(), run_dir, entry, root=ROOT)
+        entry["registry"] = _br.record_run(_block_registry_path(), run_dir, entry, root=ROOT,
+                                           composition_runs=_composition_runs_enabled())
         entry["kb_entry_id"] = _kbw.write_kb_entry(
             _KB_PATH, _kbw.build_kb_entry(entry), root=ROOT, recompute_views=_recompute_kb_views)
         cm.upsert_memory(memory_path, entry)
@@ -11348,7 +11564,11 @@ def run_loop(run_id: str):
                         if not _brief_no_new:
                             # E-059 S2a (operator decision 2): no-op unless pre_registration.yaml
                             # is pending at 1a; raises (-> status failed) before any spend.
-                            _write_pass_rule_from_card(RUN_DIR, run_id, _sr_flag)
+                            if (not _write_pass_rule_from_card(RUN_DIR, run_id, _sr_flag)
+                                    and _composition_runs_enabled()):
+                                # E-060 S2: a pass_rule 1a wrote itself gets the same
+                                # code-added residual_ic, still before any spend.
+                                _ensure_residual_ic_in_pre_registration(RUN_DIR)
                 else:
                     _invoke_agent_with_yaml_retry(current_stage, run_id, RUN_DIR, expected_outputs, state)
             else:
