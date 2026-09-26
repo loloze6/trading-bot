@@ -399,3 +399,32 @@ rule are undefined in the target; proposals given. Residual IC buildable from ex
 helpers; the evaluator's `min_n_eff` floor raises today and must be wired. R1 is a recorded
 no-op at `decide_next.py:1112-1114`. Composites never register as blocks. S4 is blocked until
 two real blocks validate (registry empty, no API key). Proposed S5 for regime blocks.
+
+---
+
+## Decision (operator, 2026-09-26)
+
+1. **Standardisation -- extend the existing history-based feature, no fixed factor.**
+   The operator rejected a computed-once scale factor (it would also leak the future if
+   computed over the whole test period). Composition standardises each block's FINAL
+   forecast history at combination time with the existing past-values-only approach,
+   scale-only so a block's genuine directional bias survives: value / rolling mean of
+   |past values| (ratio_to_mean style), or / rolling std without mean subtraction; then x10,
+   the forecast scale's target average (not arbitrary). Today's zscore / ratio_to_mean ops
+   act on a component's raw history and discard the pipeline value, so the feature must be
+   extended to operate on the block's post-pipeline forecast series.
+2. **Weighting schemes (the three composition variants):** (a) equal; (b) inverse volatility
+   of each block's stand-alone returns (risk, which differs from signal size even after
+   standardisation); (c) proportional to residual IC. Computed by code.
+3. **Timeframe:** record each block's exact timeframe in the registry, plus a category:
+   high = up to and including 15min; medium = over 15min, under 1h; low = 1h up to under
+   1 day; daily = 1 day or more. Categories decide which blocks are candidates together;
+   until the engine supports mixed bar sizes, a composition combines only blocks with the
+   SAME exact bar size.
+4. **Regime blocks are validated on regime-identification quality** (their own accuracy /
+   stability metrics in the grid), not on profitability. "Gated vs ungated" is only a
+   composition question (is the detector worth using in a composite), not the block's
+   validation. Still a later sub-step behind its own flag.
+5. **Residual IC threshold:** keep the placeholder (> 0.01, n_eff >= 30) as an operator-
+   adjustable setting; the orchestrator noted 0.02 may better match "genuinely useful".
+6. **Priority** as recommended (guess 10).
