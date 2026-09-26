@@ -517,16 +517,13 @@ orch.update_state(
     # unclaimed, which outranks all of them while status == 'failed'). The list must
     # stay complete AND correctly ordered: a stale higher-priority flag masks every
     # lower one, so the operator is shown the wrong reason and follows the wrong row.
-    flags={'research_only_unverified': False, 'no_signal_artifact_flagged': False,
-           'conformance_violation': False, 'regime_misattribution_flagged': False,
-           'component_execution_error_flagged': False, 'kb_reactivation_violation': False,
-           'pass_rule_evaluation_disagreement': False, 'stale_escalation_unclaimed': False,
-           'anti_adjacency_gate_exhausted': False, 'variant_anti_adjacency_gate_refused': False,
-           'variant_gate_insufficient': False, 'inconclusive_grid': False,
-           'profit_bars_reached': False, 'holdout_refused_under_retired_routing': False,
-           'campaign_review_refused_under_retired_routing': False, 'campaign_review_terminate': False,
-           'holdout_unlock_refused': False, 'holdout_unlocked_awaiting_result': False,
-           'holdout_unlocked_result_inconclusive': False},
+    flags={'research_only_unverified': False, 'no_signal_artifact_flagged': False, 'conformance_violation': False,
+           'regime_misattribution_flagged': False, 'component_execution_error_flagged': False, 'kb_reactivation_violation': False,
+           'pass_rule_evaluation_disagreement': False, 'stale_escalation_unclaimed': False, 'anti_adjacency_gate_exhausted': False,
+           'variant_anti_adjacency_gate_refused': False, 'variant_gate_insufficient': False, 'inconclusive_grid': False,
+           'profit_bars_reached': False, 'holdout_refused_under_retired_routing': False, 'campaign_review_terminate': False,
+           'campaign_review_refused_under_retired_routing': False, 'holdout_unlock_refused': False,
+           'holdout_unlocked_awaiting_result': False, 'holdout_unlocked_result_inconclusive': False},
 )
 "
 ```
