@@ -1460,20 +1460,30 @@ engineering_fault_detail}`.
    may be spent on. The file has a closed schema: `decision` (`spend` or
    `continue`), `run_id`, `profit_bars_stop_evaluation` (the stop it answers,
    from `pipeline_state.yaml`), `variant_id` (a passing backtest; required for
-   `spend`), `ratified_by`, `ratified_at`, and an optional `note`. After
+   `spend`), `trial_ledgers_merged` (`true`, required for `spend`),
+   `ratified_by`, `ratified_at`, and an optional `note`. After
    `regroup_record` and the stop route, `_holdout_unlock_route` reads it:
    - `continue` records the choice (`pipeline_state.yaml` →
      `holdout_decision_record`), leaves the holdout untouched, and ends the run
      `completed_<idea_status>`, so decide-next runs;
-   - `spend` goes to the existing `holdout_evaluation` gate, with every guard
-     (single use, the research_only hold), for the named variant. It is
-     refused unless this run's evaluation records PASS for that variant, graded
-     under the current bars file, which must be ratified, and the hypothesis is
-     not in `holdout_consumed_by`. The gate pauses for the manual backtest
-     (`holdout_unlocked_awaiting_result`). Once `holdout_result.yaml` exists,
-     a per-run intent (`holdout_consume_record`) is written before the marker,
-     so a crash never writes it twice or skips it. The run ends
-     `completed_promoted` or `completed_rejected`, and decide-next runs.
+   - `spend` goes to `holdout_evaluation` for the named variant, with the
+     single-use check and the research_only hold. It is refused unless
+     `trial_ledgers_merged: true` is attested, this run's evaluation records
+     PASS for that variant under the bars file in place now (whole-file
+     sha256), the variant's deflated Sharpe still clears the bar on the
+     current trial ledger, the hypothesis (from `hypothesis_card.yaml` only) is
+     not in `holdout_consumed_by`, and no other run or writer holds an
+     unfinished spend of the one physical seal. Bars ratification is the
+     operator's manual check, not enforced in code. The run pauses for the
+     manual backtest (`holdout_unlocked_awaiting_result`). Once
+     `holdout_result.yaml` exists, the spend is recorded first (a per-run
+     intent, `holdout_consume_record`, then the marker if absent), so a crash
+     never writes it twice or skips it. Only then is the ending decided: a
+     result not bound to the unlock (`variant_id`, `trial_id`,
+     `decision_sha256`) or rewritten after the record pauses; otherwise the run
+     ends `completed_promoted` or `completed_rejected`, and decide-next runs.
+     A result with no valid unlock is recorded and pauses as
+     `holdout_spent_without_unlock`, never promoted.
    A missing, malformed, wrong-run, stale or otherwise refused file pauses as
    `holdout_unlock_refused` (the code is in `holdout_unlock_refusal`), and
    `--resume` refuses it first. Every other path to the holdout is refused as

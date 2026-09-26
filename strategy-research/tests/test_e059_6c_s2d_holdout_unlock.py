@@ -39,7 +39,7 @@ from test_e058_s2a_regroup_record import RUN_ID, _set_orchestrator  # noqa: E402
 from test_profit_bars_every_backtest import (  # noqa: E402
     _VALID_BARS, _write_bars, _single_run, _state)
 from test_e059_6c_s2a_route_retirement import (  # noqa: E402
-    PREREQS, RETIRED_ON, FLAT_ON, _MUST_NOT_RUN, _forbid)
+    PREREQS, RETIRED_ON, FLAT_ON, _forbid)
 from test_halt_quarantine_policy import (  # noqa: E402
     _save_queue_entries, _entry,
     campaign_root,  # noqa: F401  (fixture)
@@ -48,8 +48,6 @@ from test_e059_s2a_decide_next import _write_flags, _patch, _stage_flag_on_sourc
 
 HYP = "H-MEM-1"  # _seed's hypothesis_card.yaml
 RATIFIED = {**_VALID_BARS, "ratified_by": "operator", "ratified_at": "2020-01-01"}
-# Everything that must never run on these paths, except the holdout gate itself.
-_NOT_THE_GATE = tuple(n for n in _MUST_NOT_RUN if n != "_route_holdout_evaluation")
 
 
 @pytest.fixture(autouse=True)
@@ -74,7 +72,8 @@ def _stopped_run(idea_status="validated", good=True, orchestrator=RETIRED_ON,
     _set_orchestrator(orchestrator)
     _write_bars(bars)
     run_dir = _single_run(good, idea_status=idea_status)
-    rpr._evaluate_profit_bars_every_backtest(run_dir, RUN_ID)
+    rpr._evaluate_profit_bars_every_backtest(
+        run_dir, RUN_ID, record_bars_sha=orchestrator is RETIRED_ON)
     brief = {"research_only": False} if tradable else {}
     rpr.save_yaml(run_dir / "artifacts" / "research_brief.yaml", brief)
     _policy()
@@ -82,10 +81,24 @@ def _stopped_run(idea_status="validated", good=True, orchestrator=RETIRED_ON,
     return run_dir
 
 
+def _result(run_dir, status="pass", **over) -> None:
+    """The hand-written holdout_result.yaml, bound to the run's spend unlock
+    (variant_id, trial_id, decision_sha256), as the RUNBOOK says to write it."""
+    rec = _state(run_dir).get(rpr.HOLDOUT_DECISION_RECORD_KEY) or {}
+    doc = {"status": status, "hypothesis_id": rec.get("hypothesis_id"),
+           "variant_id": rec.get("variant_id"), "trial_id": rec.get("trial_id"),
+           "decision_sha256": rec.get("decision_sha256")}
+    doc.update(over)
+    doc = {k: v for k, v in doc.items() if v is not _DROP}
+    rpr.save_yaml(run_dir / "artifacts" / "holdout_result.yaml", doc)
+
+
 def _decision(run_dir, decision="spend", **over) -> Path:
     doc = {"decision": decision, "run_id": RUN_ID,
            "profit_bars_stop_evaluation": _state(run_dir).get("profit_bars_stop_evaluation"),
            "variant_id": RUN_ID, "ratified_by": "operator", "ratified_at": "2020-01-01"}
+    if decision == "spend":
+        doc["trial_ledgers_merged"] = True
     doc.update(over)
     doc = {k: v for k, v in doc.items() if v is not _DROP}
     path = run_dir / "artifacts" / rpr.HOLDOUT_DECISION_FILE
@@ -161,14 +174,7 @@ def test_flag_off_holdout_gate_signature_is_unchanged(monkeypatch):
 
 def test_spend_happy_path_every_guard_then_recorded_once(monkeypatch):
     run_dir = _stopped_run("validated")
-    _forbid(monkeypatch, _NOT_THE_GATE)
-    gate_calls = []
-    real_gate = rpr._route_holdout_evaluation
-
-    def _gate(*a, **k):
-        gate_calls.append(k.get("before_consume") is not None)
-        return real_gate(*a, **k)
-    monkeypatch.setattr(rpr, "_route_holdout_evaluation", _gate)
+    _forbid(monkeypatch)  # the legacy gate included: the flag path never calls it
     _decision(run_dir, "spend", note="the one we pre-registered")
 
     # resume: unlocked -> holdout_evaluation -> the gate pauses for the manual backtest
@@ -187,16 +193,16 @@ def test_spend_happy_path_every_guard_then_recorded_once(monkeypatch):
     assert rpr.load_campaign_state()["runs"] == [RUN_ID]  # bookkeeping kept
 
     # the operator runs the holdout backtest by hand and writes the result
-    rpr.save_yaml(run_dir / "artifacts" / "holdout_result.yaml", {"status": "pass"})
+    _result(run_dir, "pass")
     _resume(run_dir, rpr.HOLDOUT_AWAITING_RESULT_FLAG)
     state = _state(run_dir)
     assert state["pending_stage"] == "completed_promoted"
     assert state["completed_stages"][-1] == "holdout_evaluation"
     assert _consumed() == [HYP]
     consume = state[rpr.HOLDOUT_CONSUME_RECORD_KEY]
-    assert consume["hypothesis_id"] == HYP and consume["variant_id"] == RUN_ID
-    assert consume["decision_sha256"] == rec["decision_sha256"]
-    assert gate_calls == [True, True]  # the existing gate, both passes
+    assert consume["hypothesis_id"] == HYP and consume["unlock"]["variant_id"] == RUN_ID
+    assert consume["unlock"]["decision_sha256"] == rec["decision_sha256"]
+    assert consume["consumed_before"] is False
 
     # a stray re-entry never writes the marker again
     rpr.update_state(path=run_dir, status="active", pending_stage="holdout_evaluation")
@@ -209,14 +215,14 @@ def test_spend_on_a_refuted_idea_reaches_the_gate(monkeypatch):
     """Grid validation is NOT a precondition (operator decision): a refuted
     idea whose variant passed every bar may be spent on."""
     run_dir = _stopped_run("refuted")
-    _forbid(monkeypatch, _NOT_THE_GATE)
+    _forbid(monkeypatch)
     _decision(run_dir, "spend")
     _resume(run_dir)
     assert _state(run_dir)[rpr.HOLDOUT_DECISION_RECORD_KEY]["decision"] == "spend"
-    rpr.save_yaml(run_dir / "artifacts" / "holdout_result.yaml", {"status": "fail"})
+    _result(run_dir, "fail")
     _resume(run_dir, rpr.HOLDOUT_AWAITING_RESULT_FLAG)
     state = _state(run_dir)
-    assert state[rpr.HOLDOUT_CONSUME_RECORD_KEY]["variant_id"] == RUN_ID
+    assert state[rpr.HOLDOUT_CONSUME_RECORD_KEY]["unlock"]["variant_id"] == RUN_ID
     assert state["pending_stage"] == "completed_rejected" and state["status"] == "rejected"
     assert _consumed() == [HYP]
 
@@ -225,7 +231,7 @@ def test_spend_still_meets_the_research_only_hold(monkeypatch):
     """The existing guards run unchanged: an undeclared brief holds before
     anyone is told to run the holdout."""
     run_dir = _stopped_run("validated", tradable=False)
-    _forbid(monkeypatch, _NOT_THE_GATE)
+    _forbid(monkeypatch)
     _decision(run_dir, "spend")
     _resume(run_dir)
     state = _state(run_dir)
@@ -235,20 +241,24 @@ def test_spend_still_meets_the_research_only_hold(monkeypatch):
     assert _consumed() == []
 
 
-def test_inconclusive_holdout_result_pauses_classified_then_finishes(monkeypatch):
+def test_inconclusive_holdout_result_pauses_and_can_never_be_relabelled(monkeypatch):
+    """Review fix 5: an inconclusive result is spent and recorded; rewriting it
+    to `pass` is recorded as a relabel attempt and refused -- never promoted."""
     run_dir = _stopped_run("validated")
     _decision(run_dir, "spend")
     _resume(run_dir)
-    rpr.save_yaml(run_dir / "artifacts" / "holdout_result.yaml", {"status": "unclear"})
+    _result(run_dir, "unclear")
     _resume(run_dir, rpr.HOLDOUT_AWAITING_RESULT_FLAG)
     state = _state(run_dir)
     assert state["pending_stage"] == "holdout_evaluation" and state["status"] == "paused_for_human"
     assert camp._classify_human_pause(run_dir, state) == rpr.HOLDOUT_RESULT_INCONCLUSIVE_FLAG
-    assert _consumed() == [HYP]  # spent and recorded, like the legacy gate
-    # the operator corrects the result: only the record step runs, no second write
-    rpr.save_yaml(run_dir / "artifacts" / "holdout_result.yaml", {"status": "pass"})
+    assert _consumed() == [HYP]  # spent and recorded
+    _result(run_dir, "pass")
     _resume(run_dir, rpr.HOLDOUT_RESULT_INCONCLUSIVE_FLAG)
-    assert _state(run_dir)["pending_stage"] == "completed_promoted"
+    state = _state(run_dir)
+    assert state["pending_stage"] == "holdout_evaluation"
+    assert camp._classify_human_pause(run_dir, state) == rpr.HOLDOUT_RESULT_RELABELLED_FLAG
+    assert len(state[rpr.HOLDOUT_RELABEL_KEY]) == 1
     assert _consumed() == [HYP]
 
 
@@ -258,11 +268,6 @@ def test_inconclusive_holdout_result_pauses_classified_then_finishes(monkeypatch
 
 def _stale(run_dir):
     _decision(run_dir, profit_bars_stop_evaluation="another-stop")
-
-
-def _unratified_after(run_dir):
-    _write_bars({**RATIFIED, "ratified_by": None, "ratified_at": None})
-    _decision(run_dir)
 
 
 def _threshold_moved(run_dir):
@@ -286,8 +291,11 @@ _REFUSALS = {
     "no_pass": ("variant_not_passing", lambda d: _decision(d, variant_id="not-a-variant")),
     "already_consumed": ("holdout_already_consumed",
                          lambda d: (_policy([HYP]), _decision(d))),
-    "bars_unratified": ("bars_unratified", _unratified_after),
     "bars_changed": ("bars_changed", _threshold_moved),
+    "blank_ratified_by": ("decision_malformed", lambda d: _decision(d, ratified_by="   ")),
+    "ledgers_not_attested": ("ledgers_not_merged",
+                             lambda d: _decision(d, trial_ledgers_merged=_DROP)),
+    "ledgers_false": ("ledgers_not_merged", lambda d: _decision(d, trial_ledgers_merged=False)),
 }
 
 
@@ -312,10 +320,9 @@ def test_refused_resume_spends_nothing(monkeypatch, case):
     assert "holdout_evaluation" not in (state.get("completed_stages") or [])
 
 
-def test_refusal_on_an_unratified_evaluation_even_when_the_file_is_ratified_later(monkeypatch):
-    """Graded under placeholder bars, ratified afterwards: the ratification
-    differs from the evaluation's -> bars_changed (never spent on numbers
-    graded before the bars were an operator decision)."""
+def test_bars_edited_after_grading_refuse_the_spend(monkeypatch):
+    """Review fix 7: the whole file's sha256 -- even a ratification-only edit
+    after grading changes the file, so the spend is refused (bars_changed)."""
     run_dir = _stopped_run("validated", bars={**RATIFIED, "ratified_by": None,
                                               "ratified_at": None})
     _forbid(monkeypatch)
@@ -447,10 +454,9 @@ def test_the_run_after_the_decision_is_chosen_by_decide_next(campaign_root, monk
 @pytest.mark.parametrize("crash", ["before_marker", "after_marker"])
 def test_consume_marker_written_exactly_once_across_a_crash(monkeypatch, crash):
     run_dir = _stopped_run("validated")
-    _policy(["H-OTHER"])
     _decision(run_dir, "spend")
     _resume(run_dir)  # awaiting the manual backtest
-    rpr.save_yaml(run_dir / "artifacts" / "holdout_result.yaml", {"status": "pass"})
+    _result(run_dir, "pass")
     real_mark = rpr._mark_holdout_consumed
 
     def _crashing(policy, consumed, hyp_id):
@@ -462,14 +468,14 @@ def test_consume_marker_written_exactly_once_across_a_crash(monkeypatch, crash):
     state = _state(run_dir)
     assert state["status"] == "failed" and state["pending_stage"] == "holdout_evaluation"
     assert state[rpr.HOLDOUT_CONSUME_RECORD_KEY]["hypothesis_id"] == HYP  # intent first
-    assert _consumed() == (["H-OTHER", HYP] if crash == "after_marker" else ["H-OTHER"])
+    assert _consumed() == ([HYP] if crash == "after_marker" else [])
 
     monkeypatch.setattr(rpr, "_mark_holdout_consumed", real_mark)
     _forbid(monkeypatch, ("_route_holdout_evaluation",))  # the finish only, never the gate
     _resume(run_dir)
     state = _state(run_dir)
     # never skipped, never doubled, and the result is not misread as a second spend
-    assert _consumed() == ["H-OTHER", HYP]
+    assert _consumed() == [HYP]
     assert state["pending_stage"] == "completed_promoted"
 
 
@@ -497,7 +503,7 @@ def test_back_out_after_the_seal_is_spent_still_records_it_once(monkeypatch, spe
     run_dir = _stopped_run("validated")
     _decision(run_dir, "spend")
     _resume(run_dir)
-    rpr.save_yaml(run_dir / "artifacts" / "holdout_result.yaml", {"status": "fail"})
+    _result(run_dir, "fail")
     if spent == "consume_record":  # crash between the intent and the marker
         real_mark = rpr._mark_holdout_consumed
         monkeypatch.setattr(rpr, "_mark_holdout_consumed",
@@ -518,7 +524,7 @@ def test_a_second_run_of_the_same_hypothesis_cannot_spend_again(monkeypatch):
     run_dir = _stopped_run("validated")
     _decision(run_dir, "spend")
     _resume(run_dir)
-    rpr.save_yaml(run_dir / "artifacts" / "holdout_result.yaml", {"status": "pass"})
+    _result(run_dir, "pass")
     _resume(run_dir, rpr.HOLDOUT_AWAITING_RESULT_FLAG)
     assert _state(run_dir)["pending_stage"] == "completed_promoted"
     assert _consumed() == [HYP]
@@ -528,7 +534,7 @@ def test_a_second_run_of_the_same_hypothesis_cannot_spend_again(monkeypatch):
                      **{rpr.HOLDOUT_CONSUME_RECORD_KEY: None,
                         rpr.HOLDOUT_DECISION_RECORD_KEY: None})
     (run_dir / "artifacts" / "holdout_result.yaml").unlink()
-    rpr._evaluate_profit_bars_every_backtest(run_dir, RUN_ID)  # a new evaluation
+    rpr._evaluate_profit_bars_every_backtest(run_dir, RUN_ID, record_bars_sha=True)
     rpr.run_loop(RUN_ID)
     assert _state(run_dir)["flags"]["profit_bars_reached"] is True
     _decision(run_dir, "spend")
@@ -570,7 +576,8 @@ def test_resume_cli_flag_off_does_not_read_the_decision(campaign_root, monkeypat
 
 
 _NEW_FLAGS = ("HOLDOUT_UNLOCK_REFUSED_FLAG", "HOLDOUT_AWAITING_RESULT_FLAG",
-              "HOLDOUT_RESULT_INCONCLUSIVE_FLAG")
+              "HOLDOUT_RESULT_INCONCLUSIVE_FLAG", "HOLDOUT_SPENT_WITHOUT_UNLOCK_FLAG",
+              "HOLDOUT_RESULT_UNBOUND_FLAG", "HOLDOUT_RESULT_RELABELLED_FLAG")
 
 
 @pytest.mark.parametrize("const", _NEW_FLAGS)

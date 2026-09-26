@@ -413,12 +413,12 @@ def test_holdout_without_result_pauses_classified_and_spends_nothing(monkeypatch
     assert (policy.read_bytes() if policy.exists() else None) == policy_before
 
 
-@pytest.mark.parametrize("result,terminal", [("fail", "completed_rejected"),
-                                             ("pass", "completed_promoted")])
-def test_holdout_already_spent_is_recorded_then_the_run_ends(monkeypatch, result, terminal):
+@pytest.mark.parametrize("result", ["fail", "pass"])
+def test_holdout_already_spent_is_recorded_then_the_run_ends(monkeypatch, result):
     """Code review item 1: holdout_result.yaml present = the seal was spent by
-    hand. Only the consume record runs (once), then the run ends; no other
-    holdout gate runs."""
+    hand. Only the consume record runs (once); no other holdout gate runs.
+    Slice 6c S2d review fix 3: with no operator unlock the run then pauses as
+    holdout_spent_without_unlock -- never completed_promoted."""
     _set_orchestrator(RETIRED_ON)
     run_dir = _seed(idea_status="validated", pending="holdout_evaluation")
     rpr.save_yaml(run_dir / "artifacts" / "holdout_result.yaml", {"status": result})
@@ -427,8 +427,9 @@ def test_holdout_already_spent_is_recorded_then_the_run_ends(monkeypatch, result
     _forbid(monkeypatch)
     rpr.run_loop(RUN_ID)
     state = _state(run_dir)
-    assert state["pending_stage"] == terminal
-    assert state["completed_stages"][-1] == "holdout_evaluation"
+    assert state["pending_stage"] == "holdout_evaluation" and state["status"] == "paused_for_human"
+    assert camp._classify_human_pause(run_dir, state) == rpr.HOLDOUT_SPENT_WITHOUT_UNLOCK_FLAG
+    assert state[rpr.HOLDOUT_CONSUME_RECORD_KEY]["hypothesis_id"] == "H-MEM-1"
     policy = rpr.load_yaml(rpr._DATA_POLICY_PATH)
     assert policy["holdout_consumed_by"] == ["H-OTHER", "H-MEM-1"]
     assert policy["holdout_range"] == ["a", "b"]

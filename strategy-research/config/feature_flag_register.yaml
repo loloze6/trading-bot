@@ -416,11 +416,17 @@ flags:
       profit_bars_reached stop with the operator file
       runs/<run>/artifacts/holdout_decision.yaml (closed schema: decision
       spend|continue, run_id, profit_bars_stop_evaluation, variant_id,
-      ratified_by, ratified_at, note). spend -> the existing
-      holdout_evaluation gate with every guard, for the named variant,
-      refused unless this run's evaluation records PASS for it under the
-      current, ratified bars file and the hypothesis is not in
-      holdout_consumed_by; continue -> completed_<idea_status> and
+      trial_ledgers_merged, ratified_by, ratified_at, note). spend ->
+      holdout_evaluation for the named variant, refused unless the ledgers
+      are attested merged, this run's evaluation records PASS for it under
+      the same bars file (whole-file sha256), its deflated Sharpe clears the
+      bar on the current ledger, the hypothesis (card only) is not in
+      holdout_consumed_by and no other run or writer holds an unfinished
+      spend; bars ratification is the operator's manual check (operator
+      decision 2026-09-26). A result is recorded first, bound to the unlock
+      and never relabelled; one without an unlock is never promoted
+      (code-review fixes: tests/test_e059_6c_s2d_review_fixes.py);
+      continue -> completed_<idea_status> and
       decide-next. A missing/malformed/stale/wrong-run file refuses the
       resume (holdout_unlock_refused, one RUNBOOK row per code; --resume
       refuses first). The consume marker is written once: a per-run intent

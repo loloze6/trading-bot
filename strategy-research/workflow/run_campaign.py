@@ -1060,6 +1060,13 @@ def _classify_human_pause(run_dir: Path, state: dict) -> str:
         return orch.HOLDOUT_AWAITING_RESULT_FLAG
     if flags.get(orch.HOLDOUT_RESULT_INCONCLUSIVE_FLAG):
         return orch.HOLDOUT_RESULT_INCONCLUSIVE_FLAG
+    # Slice 6c S2d review fixes 3-5: a spent seal whose ending is withheld.
+    if flags.get(orch.HOLDOUT_SPENT_WITHOUT_UNLOCK_FLAG):
+        return orch.HOLDOUT_SPENT_WITHOUT_UNLOCK_FLAG
+    if flags.get(orch.HOLDOUT_RESULT_UNBOUND_FLAG):
+        return orch.HOLDOUT_RESULT_UNBOUND_FLAG
+    if flags.get(orch.HOLDOUT_RESULT_RELABELLED_FLAG):
+        return orch.HOLDOUT_RESULT_RELABELLED_FLAG
     if flags.get("campaign_review_refused_under_retired_routing"):
         return "campaign_review_refused_under_retired_routing"
     # Slice 6c S2b: campaign review said stop (orchestrator.verdict_routing_retired).
@@ -1377,6 +1384,9 @@ _PAUSE_FLAG_TO_REASON = (
     (orch.HOLDOUT_UNLOCK_REFUSED_FLAG, orch.HOLDOUT_UNLOCK_REFUSED_FLAG),
     (orch.HOLDOUT_AWAITING_RESULT_FLAG, orch.HOLDOUT_AWAITING_RESULT_FLAG),
     (orch.HOLDOUT_RESULT_INCONCLUSIVE_FLAG, orch.HOLDOUT_RESULT_INCONCLUSIVE_FLAG),
+    (orch.HOLDOUT_SPENT_WITHOUT_UNLOCK_FLAG, orch.HOLDOUT_SPENT_WITHOUT_UNLOCK_FLAG),
+    (orch.HOLDOUT_RESULT_UNBOUND_FLAG, orch.HOLDOUT_RESULT_UNBOUND_FLAG),
+    (orch.HOLDOUT_RESULT_RELABELLED_FLAG, orch.HOLDOUT_RESULT_RELABELLED_FLAG),
     ("campaign_review_refused_under_retired_routing",
      "campaign_review_refused_under_retired_routing"),
     # Slice 6c S2b: mirrors the branch directly below those in _classify_human_pause.
