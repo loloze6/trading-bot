@@ -125,6 +125,23 @@ do not copy one vocabulary into the other's field.
 }
 ```
 
+**Block combiner (E-060 S3a, opt-in; written only by code under `orchestrator.composition_runs`).**
+A regime may add `blocks` + `block_standardisation` (both or neither; `validate_config.py`
+VIOLATION V13, same check the engine runs at construction):
+```json
+"unknown": {
+  "components": [ ... ],
+  "blocks": [{"id": "b0", "weight": 0.5, "components": ["b0__sig"]}, ...],
+  "block_standardisation": {"target": 10.0, "window": 500, "min_periods": 30}
+}
+```
+Every component belongs to exactly one block. Per bar, each block's FINAL forecast
+(its components' pipelines weighted within the block, clipped ±20) is appended to a rolling
+history; the regime forecast is Σ (W_b/ΣW) × target × v_t / mean(|v| over the last `window`
+values), clipped ±20 (scale-only, the `ratio_to_mean` convention, past values only). Until
+every block holds `min_periods` values the regime is not ready and forecasts 0.0. A regime
+without these keys is computed exactly as before.
+
 ### Component spec (both engines)
 | Key | Type | Default | Meaning |
 |---|---|---|---|

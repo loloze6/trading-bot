@@ -455,7 +455,16 @@ flags:
       block registry records timeframe, timeframe_category, residual_ic and
       correlation_to_composite. Tests: tests/test_e060_s2_residual_ic.py
       (flag-off byte-identity there). DECLARED BEHAVIOUR CHANGE when
-      switched on.
+      switched on. E-060 S3a (2026-09-26) adds tools/composition.py, whose
+      writers refuse unless passed the flag's value True: the three weighting
+      schemes (equal / inverse daily-return vol / residual IC), the
+      code-written variant configs base / vol_scaled / ic_weighted plus
+      composition_manifest.yaml, and campaign_record/compositions.yaml
+      (locked, atomic, append-only). The configs use the engine's opt-in
+      block combiner (strategies.regimes.<r>.blocks + block_standardisation;
+      validate_config.py V13), which a config without those keys never
+      reaches. No caller yet (S3b). Tests: tests/test_e060_s3a_composition.py,
+      trading-bot/tests/test_e060_block_standardisation.py.
 
   - name: bar_equity
     kind: engine_param
