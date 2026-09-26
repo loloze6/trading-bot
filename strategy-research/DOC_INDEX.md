@@ -163,7 +163,9 @@ briefs. Design and operator decisions:
 `orchestrator.verdict_routing_retired.enabled`, requires `decide_next` and
 `profit_bars_every_backtest`). A run ends `completed_<idea_status>` after
 `regroup_record` and decide-next picks the next run; the holdout is reached
-only from the `profit_bars_reached` stop plus an operator unlock (S2d). Run
+only from the `profit_bars_reached` stop plus an operator unlock (slice 6c S2d:
+`artifacts/holdout_decision.yaml`, `spend` or `continue`; stage 17, item 14;
+the procedure and every refusal row: `docs/RUNBOOK.md` §3). Run
 endings and the `legacy_continuation_under_retired_routing` halt:
 `docs/RUNBOOK.md` §3. Campaign review under the same flag (slice 6c S2b:
 memory-count trigger, reframe → a `ready` queue entry, terminate → the

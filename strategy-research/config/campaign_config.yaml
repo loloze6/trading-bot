@@ -735,8 +735,11 @@ orchestrator:
       # timeframe protocols and continuation_child are never reached
       # (_dispatch_verdict_route raises if entered); nothing routes to
       # holdout_evaluation (the holdout is reached only through the
-      # profit_bars_reached stop plus an operator unlock, slice 6c S2d): a run
-      # found there pauses (holdout_refused_under_retired_routing), or, if its
+      # profit_bars_reached stop plus an operator unlock, slice 6c S2d: the
+      # resume reads runs/<run>/artifacts/holdout_decision.yaml -- spend -> the
+      # existing holdout gate for the named passing variant, continue ->
+      # completed_<idea_status>; RUNBOOK §3): any other run found there pauses
+      # (holdout_refused_under_retired_routing), or, if its
       # holdout_result.yaml shows it was already spent by hand, only the
       # holdout_consumed_by record runs. process_once halts on a legacy
       # continuation, an unconsumed refinement_brief_path, and a missing or
