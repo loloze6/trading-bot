@@ -147,6 +147,38 @@ def transform_min_periods(op: str, params: Dict[str, Any]) -> int:
     return TRANSFORM_MIN_PERIODS[op]
 
 
+# ---------------------------------------------------------------------------
+# E-060 S3a: block-level standardisation at combination time.
+#
+# NOT a transform op (TRANSFORM_OPS_REGISTRY above is unchanged): the history
+# ops act on ONE component's raw history and discard the pipeline value, while
+# a composition must standardise each block's FINAL forecast. The engine
+# (strategy_engine.py, opt-in regime key `blocks`) keeps the rolling mean of
+# |final forecast| over the block's PAST active values and calls this.
+#
+# Scale-only (operator decision 2026-09-26): value / mean(|past values|), no
+# mean subtraction, so a block's directional bias survives and a zero stays
+# zero; then x target (10, the forecast scale's target average absolute value),
+# capped at +-cap so one block (e.g. a sparse one whose first non-zero value
+# follows a quiet stretch) cannot saturate the composite.
+#
+# WHY THIS CANNOT LEAK: `past_abs_mean` is computed by the caller from values
+# of bars strictly before the current one; the current value is not in its own
+# denominator, and nothing after the current bar exists yet.
+# ---------------------------------------------------------------------------
+BLOCK_STANDARDISATION_TARGET = 10.0
+
+
+def standardise_block_forecast(value: float, past_abs_mean: float,
+                               target: float = BLOCK_STANDARDISATION_TARGET,
+                               cap: float = 20.0) -> float:
+    """clip(target * value / past_abs_mean, -cap, cap); 0.0 when the past mean
+    absolute value is ~0 (the same 1e-10 guard as `_ratio_to_mean`)."""
+    if not past_abs_mean > 1e-10:
+        return 0.0
+    return float(np.clip(target * value / past_abs_mean, -cap, cap))
+
+
 def component_effective_lookback(c_spec: Dict[str, Any], comp_required: int) -> int:
     """
     Return the history buffer size needed for one component spec.

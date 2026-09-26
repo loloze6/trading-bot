@@ -334,6 +334,15 @@ def validate(config: dict) -> List[str]:
         for j, comp in enumerate(rcfg.get("components", [])):
             _check_component_class(f"strategies.regimes.{rname}.components[{j}]", comp)
 
+    # V13 (E-060 S3a): the opt-in block combiner (`blocks` +
+    # `block_standardisation` on a strategies regime). Silent for every regime
+    # that uses neither key. Reuses the engine's own check, so V13 fails on
+    # exactly the configs the engine refuses to construct.
+    from strategies.strategy_engine import validate_block_combiner
+    for rname, rcfg in config["strategies"].get("regimes", {}).items():
+        for msg in validate_block_combiner(rname, rcfg):
+            violations.append(f"VIOLATION V13 {msg}")
+
     return violations
 
 

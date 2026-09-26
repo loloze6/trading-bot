@@ -100,6 +100,30 @@ Comparison ops: `gte`, `gt`, `lte`, `lt`, `between` (`low`/`high`, inclusive).
 }
 ```
 
+**Block combiner (E-060 S3a, opt-in; written only by code under `orchestrator.composition_runs`).**
+A regime may add `blocks` + `block_standardisation` (both or neither; `validate_config.py`
+VIOLATION V13, the same check the engine runs at construction):
+```json
+"unknown": {
+  "components": [ ... each with "lookback" pinned to its source engine's deque length ... ],
+  "blocks": [{"id": "b0", "weight": 0.5, "components": ["b0__sig"],
+              "source": {"required_bars": 150, "warmup": 150, "buffer_bars": 250,
+                         "regime_detector": { ...the source config's detector... },
+                         "parts": {"trending": ["b0__sig"]}}}, ...],
+  "block_standardisation": {"target": 10.0, "window": 500, "min_periods": 30}
+}
+```
+Every component belongs to exactly one block. Each block runs as it was validated: its
+components and its own gate (the source `regime_detector`, its own
+`ConfigDrivenRegimeEngine`) see the last `buffer_bars` bars; on a bar its gate classifies
+into regime r, its final forecast is part r (weights normalised within the part, clipped
+±20); in any other regime, or before its source would be ready, it abstains (0, nothing
+recorded). The regime forecast is Σ (W_b/ΣW) × clip(target × v_t / mean(|v| over the
+block's last `window` PAST active values), ±20), clipped ±20: scale-only, past values only,
+0 until `min_periods` past active values exist. `get_required_periods()` includes each
+block's `required_bars + warmup + min_periods`. A non-finite block value raises
+(`BlockCombinerError`). A regime without these keys is computed exactly as before.
+
 ### Component spec (both engines)
 | Key | Type | Default | Meaning |
 |---|---|---|---|
