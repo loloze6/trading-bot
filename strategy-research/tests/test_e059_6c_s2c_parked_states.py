@@ -48,10 +48,17 @@ from test_e033_slice4b_gate_conformance_promotion import (  # noqa: E402
     _minimal_run_at, _noop_invoke, _write_handoff)
 from test_k3_protocol_pinning import _minimal_run  # noqa: E402
 
-V12 = ("VIOLATION V12 strategies.regimes.trend.components[0].class: cannot load "
-       "'strategies.strategy_components.FooComponent': module has no attribute 'FooComponent'")
-V12_B = ("VIOLATION V12 regime_detector.components[1].class: cannot load "
-         "'strategies.strategy_components.BarComponent': no attribute")
+def _v12_line(cls="FooComponent", loc="strategies.regimes.trend.components[0]",
+              module="strategies.strategy_components"):
+    """validate_config.py's V12 line, with strategies/registry._load_class's own
+    message for a class the module does not define."""
+    path = f"{module}.{cls}"
+    return (f"VIOLATION V12 {loc}.class: cannot load '{path}': Cannot load component class "
+            f"'{path}': module '{module}' has no attribute '{cls}'")
+
+
+V12 = _v12_line()
+V12_B = _v12_line("BarComponent", "regime_detector.components[1]")
 V12_NO_KEY = "VIOLATION V12 regime_detector.components[0]: missing required 'class' key"
 V3 = "VIOLATION V3 strategies.regimes.trend: bad transform"
 DATA = "data_availability_gate outcome=decline: no funding feed before 2021"
@@ -59,9 +66,45 @@ DATA_REFINE = "data_availability_gate outcome=refine: window 3 partially availab
 FOO = "strategies.strategy_components.FooComponent"
 
 
+def _write_component(tbot: Path, *names):
+    """strategies/strategy_components.py defining ExistingComponent plus `names`
+    (FooComponent when none is given)."""
+    names = names or ("FooComponent",)
+    path = tbot / "strategies" / "strategy_components.py"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    body = "".join(f"class {n}:\n    pass\n\n" for n in ("ExistingComponent", *names))
+    path.write_text(body, encoding="utf-8")
+
+
 @pytest.fixture(autouse=True)
 def _stub_tbot_python(monkeypatch):
     monkeypatch.setattr(rpr, "_resolve_tbot_python", lambda: Path("stub-python"))
+
+
+@pytest.fixture(autouse=True)
+def tbot(tmp_path, monkeypatch):
+    """A trading-bot checkout whose component module defines only
+    ExistingComponent (FooComponent / BarComponent are genuinely missing)."""
+    root = tmp_path / "tbot_root"
+    _write_component(root, "ExistingComponent")
+    monkeypatch.setattr(rpr, "_TRADING_BOT_ROOT", root, raising=False)
+    monkeypatch.setattr(camp, "_TRADING_BOT_ROOT", root)
+    return root
+
+
+def _gate_doc(outcome="decline", start="2021-01-01", end="2021-03-31", **window) -> dict:
+    """A data_availability_gate.yaml whose one price window came back short
+    from a real (Layer 2) fetch, no fetch error, outside the sealed range."""
+    w = {"label": "w1", "symbol": "BTCUSDT", "start": start, "end": end, "layer": 2,
+         "outcome": outcome, "missing_fraction": 0.4, "reason": "40.0% of expected bars missing",
+         **window}
+    return {"outcome": outcome, "reasons": [f"BTCUSDT w1: {w['reason']}"], "windows": [w],
+            "aux_feeds": []}
+
+
+def _write_variant_gate(run_dir: Path, vid: str, doc=None):
+    rpr.save_yaml(run_dir / "artifacts" / "variants" / vid / "data_availability_gate.yaml",
+                  doc or _gate_doc())
 
 
 def _nt(reason, report=None):
@@ -98,7 +141,8 @@ def _write_cfg(root: Path, flat: dict | None, quarantine=None):
 
 @pytest.mark.parametrize("variants,expected", [
     ({"a": _v12(), "b": _v12(V12_B)}, ("component", [FOO, "strategies.strategy_components.BarComponent"])),
-    ({"a": _ok(), "b": _nt(DATA), "c": _nt(DATA_REFINE)}, ("data", [])),
+    ({"a": _ok(), "b": _nt(DATA), "c": _nt(DATA)}, ("data", [])),
+    ({"a": _ok(), "b": _nt(DATA), "c": _nt(DATA_REFINE)}, (None, [])),  # a refine never parks
     ({"a": _nt(DATA), "b": _v12()}, ("component", [FOO])),  # a mix parks as component
     ({"a": _v12(V12 + "\n" + V3)}, (None, [])),               # another V-code: design error
     ({"a": _v12(V12_NO_KEY)}, (None, [])),                     # missing 'class' key: design error
@@ -111,7 +155,10 @@ def _write_cfg(root: Path, flat: dict | None, quarantine=None):
     ({}, (None, [])),
 ])
 def test_variant_park_kind(variants, expected):
-    kind, classes = rpr._variant_park_kind(variants)
+    run_dir = _minimal_run(rpr.ROOT, "run_949")
+    for vid in variants:
+        _write_variant_gate(run_dir, vid)
+    kind, classes = rpr._variant_park_kind(variants, run_dir / "artifacts")
     assert (kind, sorted(classes)) == (expected[0], sorted(expected[1]))
 
 
@@ -227,7 +274,9 @@ def _gate_run(monkeypatch, run_id, variant_loop: bool, retired=True) -> Path:
 def test_variant_data_gate_shortfall_parks_as_data(monkeypatch):
     run_dir = _gate_run(monkeypatch, "run_952", variant_loop=True)
     rpr.save_yaml(run_dir / "artifacts" / "variants" / "index.yaml", {"variants": {
-        "base": _ok(), "design_v2": _nt(DATA), "asset_v2": _nt(DATA_REFINE)}})
+        "base": _ok(), "design_v2": _nt(DATA), "asset_v2": _nt(DATA)}})
+    _write_variant_gate(run_dir, "design_v2")
+    _write_variant_gate(run_dir, "asset_v2")
     rpr.run_loop("run_952")
     state = _state(run_dir)
     assert state["status"] == "paused_for_human"
@@ -243,6 +292,7 @@ def test_variant_data_gate_mix_with_v12_parks_as_component(monkeypatch):
     run_dir = _gate_run(monkeypatch, "run_953", variant_loop=True)
     rpr.save_yaml(run_dir / "artifacts" / "variants" / "index.yaml", {"variants": {
         "base": _ok(), "design_v2": _nt(DATA), "asset_v2": _v12()}})
+    _write_variant_gate(run_dir, "design_v2")
     rpr.run_loop("run_953")
     marker = _state(run_dir)[rpr.PARKED_KEY]
     assert marker["kind"] == "component" and marker["classes"] == [FOO]
@@ -255,6 +305,8 @@ def test_variant_data_gate_crash_or_flag_off_stays_the_pause(monkeypatch, retire
     bad = (_nt("data_availability_gate.py crashed (exit 1): boom") if retired else _nt(DATA))
     rpr.save_yaml(run_dir / "artifacts" / "variants" / "index.yaml", {"variants": {
         "base": _ok(), "design_v2": _nt(DATA), "asset_v2": bad}})
+    _write_variant_gate(run_dir, "design_v2")
+    _write_variant_gate(run_dir, "asset_v2")
     rpr.run_loop("run_954")
     state = _state(run_dir)
     assert state["status"] == "paused_for_human"
@@ -262,11 +314,12 @@ def test_variant_data_gate_crash_or_flag_off_stays_the_pause(monkeypatch, retire
     assert rpr.PARKED_KEY not in state
 
 
-@pytest.mark.parametrize("outcome", ["refine", "decline"])
-def test_single_data_gate_refine_and_decline_park(monkeypatch, outcome):
+@pytest.mark.parametrize("outcome", ["decline"])
+def test_single_data_gate_fetchable_decline_parks(monkeypatch, outcome):
     run_dir = _gate_run(monkeypatch, "run_955", variant_loop=False)
-    rpr.save_yaml(run_dir / "artifacts" / "data_availability_gate.yaml",
-                  {"outcome": outcome, "reasons": ["no funding feed before 2021"]})
+    doc = _gate_doc(outcome)
+    doc["reasons"] = ["no funding feed before 2021"]
+    rpr.save_yaml(run_dir / "artifacts" / "data_availability_gate.yaml", doc)
     rpr.run_loop("run_955")
     state = _state(run_dir)
     assert state["status"] == "paused_for_human"
@@ -510,24 +563,16 @@ def test_resume_with_only_parked_entries_resumes_nothing(campaign_root, capsys):
         "paused:waiting_for_component"
 
 
-def _write_component(tbot: Path, name="FooComponent"):
-    path = tbot / "strategies" / "strategy_components.py"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(f"class {name}:\n    pass\n", encoding="utf-8")
-
-
-def test_unpark_restores_the_entry_and_the_same_run_continues(campaign_root, monkeypatch, tmp_path):
+def test_unpark_restores_the_entry_and_the_same_run_continues(campaign_root, monkeypatch, tbot):
     run_dir = _parked_entry(campaign_root)
-    tbot = tmp_path / "tbot"
-    monkeypatch.setattr(camp, "_TRADING_BOT_ROOT", tbot)
     # the class is still missing: refused, nothing changes
     before = campaign_root["queue_path"].read_text(encoding="utf-8")
-    assert camp.resume_paused_entry(camp._load_queue(), unpark="PARK_ME") is False
+    assert camp._unpark_entry("PARK_ME") is False
     assert campaign_root["queue_path"].read_text(encoding="utf-8") == before
     assert _state(run_dir)[rpr.PARKED_KEY]["kind"] == "component"
 
     _write_component(tbot)
-    assert camp.resume_paused_entry(camp._load_queue(), unpark="PARK_ME") is True
+    assert camp._unpark_entry("PARK_ME") is True
     entry = next(e for e in _queue(campaign_root) if e["id"] == "PARK_ME")
     assert entry["status"] == "ready" and entry["priority"] == 5
     assert "parked_reason" not in entry and entry["run_ids"] == ["run_062"]
@@ -554,17 +599,15 @@ def test_unpark_restores_the_entry_and_the_same_run_continues(campaign_root, mon
 
 def test_unpark_data_park_needs_no_class_check(campaign_root):
     run_dir = _parked_entry(campaign_root, classes=(), kind="data")
-    assert camp.resume_paused_entry(camp._load_queue(), unpark="PARK_ME") is True
+    assert camp._unpark_entry("PARK_ME") is True
     assert _state(run_dir)["status"] == "active"
 
 
 @pytest.mark.parametrize("damage", ["not_parked", "unknown_id", "marker_missing", "kind_mismatch",
                                     "run_not_paused"])
-def test_unpark_refusals(campaign_root, monkeypatch, tmp_path, damage):
+def test_unpark_refusals(campaign_root, tbot, damage):
     run_dir = _parked_entry(campaign_root)
-    tbot = tmp_path / "tbot"
     _write_component(tbot)
-    monkeypatch.setattr(camp, "_TRADING_BOT_ROOT", tbot)
     queue = _queue(campaign_root)
     entry_id = "PARK_ME"
     if damage == "not_parked":
@@ -579,19 +622,17 @@ def test_unpark_refusals(campaign_root, monkeypatch, tmp_path, damage):
         rpr.update_state(path=run_dir, status="active")
     _save_queue_entries(campaign_root["queue_path"], queue)
     before = campaign_root["queue_path"].read_text(encoding="utf-8")
-    assert camp.resume_paused_entry(camp._load_queue(), unpark=entry_id) is False
+    assert camp._unpark_entry(entry_id) is False
     assert campaign_root["queue_path"].read_text(encoding="utf-8") == before
 
 
-def test_unpark_refused_while_the_campaign_lock_is_held(campaign_root, monkeypatch, tmp_path):
+def test_unpark_refused_while_the_campaign_lock_is_held(campaign_root, tbot):
     run_dir = _parked_entry(campaign_root)
-    tbot = tmp_path / "tbot"
     _write_component(tbot)
-    monkeypatch.setattr(camp, "_TRADING_BOT_ROOT", tbot)
     lock = campaign_lock.lock_path_for(rpr.CAMPAIGN_STATE_PATH)
     campaign_lock.acquire(lock)
     try:
-        assert camp.resume_paused_entry(camp._load_queue(), unpark="PARK_ME") is False
+        assert camp._unpark_entry("PARK_ME") is False
         assert lock.exists()  # never released on someone else's behalf
     finally:
         campaign_lock.release(lock)
@@ -600,19 +641,19 @@ def test_unpark_refused_while_the_campaign_lock_is_held(campaign_root, monkeypat
         "paused:waiting_for_component"
 
 
-def test_parked_class_defined_reads_source_without_importing(tmp_path, monkeypatch):
-    monkeypatch.setattr(camp, "_TRADING_BOT_ROOT", tmp_path)
+def test_component_class_status_reads_source_without_importing(tmp_path):
     _write_component(tmp_path)
-    assert camp._parked_class_defined(FOO) is True
-    assert camp._parked_class_defined("strategies.strategy_components.Missing") is False
-    assert camp._parked_class_defined("strategies.nowhere.FooComponent") is False
-    assert camp._parked_class_defined("FooComponent") is False
+    assert dn.component_class_status(tmp_path, FOO) == "defined"
+    assert dn.component_class_status(tmp_path, "strategies.strategy_components.Missing") == "missing"
+    assert dn.component_class_status(tmp_path, "strategies.nowhere.FooComponent") == "invalid"
+    assert dn.component_class_status(tmp_path, "FooComponent") == "invalid"
+    assert dn.component_class_status(tmp_path / "absent", FOO) == "invalid"
 
 
 def test_cli_exposes_unpark():
     src = (_SR / "workflow" / "run_campaign.py").read_text(encoding="utf-8")
     assert 'parser.add_argument("--unpark"' in src
-    assert "resume_paused_entry(_load_queue(), unpark=args.unpark)" in src
+    assert "_unpark_entry(args.unpark)" in src and "unpark=" not in src
 
 
 # ---------------------------------------------------------------------------
@@ -678,12 +719,15 @@ def test_parking_is_not_a_pause_reason_nor_an_outcome():
                                     schema=rs.QUEUE_ENTRY_SCHEMA)
 
 
-def test_decide_next_treats_a_parked_request_as_a_new_card_and_a_parked_owner_as_ineligible():
-    assert dn.r2_request_yielded({"status": "paused:waiting_for_component"}) is True
-    assert dn.r2_request_yielded({"status": "paused:waiting_for_data"}) is True
+def test_decide_next_treats_a_parked_request_as_empty_and_a_parked_owner_as_eligible():
+    assert dn.PARKED_STATUS_PREFIX == camp.PARKED_STATUS_PREFIX
+    assert dn.r2_request_yielded({"status": "paused:waiting_for_component"}) is False
+    assert dn.r2_request_yielded({"status": "paused:waiting_for_data"}) is False
     assert dn.r2_request_yielded({"status": "paused:component_execution_error"}) is False
+    assert dn.r2_eligible_owner({"brief_status": dn.BRIEF_OPEN,
+                                 "status": "paused:waiting_for_data"})
     assert not dn.r2_eligible_owner({"brief_status": dn.BRIEF_OPEN,
-                                     "status": "paused:waiting_for_data"})
+                                     "status": "paused:component_execution_error"})
 
 
 def test_decision_record_schema_admits_exactly_the_park_kinds():

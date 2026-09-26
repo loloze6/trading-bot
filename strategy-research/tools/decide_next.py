@@ -153,6 +153,9 @@ _EMPTY_R2_OUTCOMES = frozenset({NO_NEW_HYPOTHESIS_OUTCOME, BRIEF_EXHAUSTED_OUTCO
                                 "quarantined_engineering_failure"})
 # Code-review fix 6: an owner in one of these states never gets an R2 request.
 _R2_INELIGIBLE_OWNER_STATUS_PREFIXES = ("superseded", "paused:", "blocked_")
+# Slice 6c S2c: a parked queue entry's status prefix (run_campaign.PARKED_STATUS_PREFIX
+# mirrors it; a test pins the two). A parked OWNER stays R2-eligible (review fix 6).
+PARKED_STATUS_PREFIX = "paused:waiting_for_"
 
 
 class DecideNextError(ValueError):
@@ -174,14 +177,49 @@ def _canonical_sha(obj) -> str:
     return hashlib.sha256(json.dumps(obj, sort_keys=True, default=str).encode("utf-8")).hexdigest()
 
 
+# The one module component classes live in: the scope of known_component_classes
+# AND of component_class_status (slice 6c S2c review fixes 2 + 8 -- one
+# definition of "is this component class defined", shared by decide-next's
+# feasibility check, 5a parking and --unpark).
+COMPONENT_MODULE = "strategies.strategy_components"
+_CLASS_PATH_RE = re.compile(r"^[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)+$")
+
+
+def _component_module_path(trading_bot_root: Path) -> Path:
+    return Path(trading_bot_root).joinpath(*COMPONENT_MODULE.split(".")).with_suffix(".py")
+
+
+def _top_level_class_names(trading_bot_root: Path) -> list:
+    tree = ast.parse(_component_module_path(trading_bot_root).read_text(encoding="utf-8"))
+    return [n.name for n in tree.body if isinstance(n, ast.ClassDef)]
+
+
 def known_component_classes(trading_bot_root: Path) -> list:
     """Dotted class paths defined at the top level of
     trading-bot/strategies/strategy_components.py, read with ast (no import of
     the engine). The same module 5a's V12 check loads classes from."""
-    path = Path(trading_bot_root) / "strategies" / "strategy_components.py"
-    tree = ast.parse(path.read_text(encoding="utf-8"))
-    return sorted(f"strategies.strategy_components.{n.name}"
-                  for n in tree.body if isinstance(n, ast.ClassDef))
+    return sorted(f"{COMPONENT_MODULE}.{n}" for n in _top_level_class_names(trading_bot_root))
+
+
+def component_class_status(trading_bot_root: Path, class_path) -> str:
+    """'defined' | 'missing' | 'invalid' for one dotted component class path,
+    in known_component_classes' scope, read with ast (never imported):
+      * invalid -- not a well-formed dotted path (a dotless name included), a
+        module other than COMPONENT_MODULE (a module typo), or that module's
+        file absent or unparseable: a config / engineering error;
+      * missing -- the module exists and parses, and the class is not defined
+        at its top level (the one case a run may wait on);
+      * defined -- it is."""
+    if not isinstance(class_path, str) or not _CLASS_PATH_RE.match(class_path):
+        return "invalid"
+    module, _, name = class_path.rpartition(".")
+    if module != COMPONENT_MODULE or not _component_module_path(trading_bot_root).is_file():
+        return "invalid"
+    try:
+        names = _top_level_class_names(trading_bot_root)
+    except (SyntaxError, ValueError, OSError):
+        return "invalid"
+    return "defined" if name in names else "missing"
 
 
 def _component_classes(config) -> set:
@@ -544,18 +582,22 @@ def _request_number(entry: dict, owner_id: str) -> int:
 def r2_request_yielded(entry: dict) -> bool | None:
     """Did a finished R2 request produce a new, eligible card? None while it is
     still outstanding (queued/ready/in_progress). True when it ran to `done`
-    with any other outcome than the empty ones, or was parked blocked_on_* or
-    paused:waiting_for_* (its card needed an engine piece or data: it WAS a new
-    card). False otherwise:
+    with any other outcome than the empty ones, or was parked blocked_on_* (its
+    card needed an engine piece: it WAS a new card). False otherwise -- a
+    retired-routing park (paused:waiting_for_*) included, since it tested
+    nothing:
     completed_no_new_hypothesis, completed_brief_exhausted, a quarantine, a
     failure or pause (paused:*), or superseded."""
     status = str(entry.get("status") or "")
     if status in _OUTSTANDING_STATUSES:
         return None
-    # Slice 6c S2c: a parked request (paused:waiting_for_component|data) is the
-    # retired-routing form of blocked_on_*: its card WAS new, it waits on an
-    # engine piece or data.
-    if status.startswith(("blocked_on_", "paused:waiting_for_")):
+    # Slice 6c S2c review fix 1: a parked request (paused:waiting_for_*) tested
+    # nothing, so it counts as EMPTY (the `paused:` fall-through below): a brief
+    # whose cards keep parking auto-exhausts, and R2 terminates. An unparked
+    # card still comes back through the queue (--unpark sets it ready).
+    if status.startswith(PARKED_STATUS_PREFIX):
+        return False
+    if status.startswith("blocked_on_"):
         return True
     if status == "done":
         return entry.get("outcome") not in _EMPTY_R2_OUTCOMES
@@ -580,8 +622,10 @@ def consecutive_empty_r2(owner: dict, entries: list) -> list:
 def r2_eligible_owner(entry: dict) -> bool:
     """An open brief whose owner entry is not superseded, paused or blocked
     (code-review fix 6)."""
+    status = str(entry.get("status") or "")
     return (entry.get("brief_status") == BRIEF_OPEN
-            and not str(entry.get("status") or "").startswith(_R2_INELIGIBLE_OWNER_STATUS_PREFIXES))
+            and (status.startswith(PARKED_STATUS_PREFIX)
+                 or not status.startswith(_R2_INELIGIBLE_OWNER_STATUS_PREFIXES)))
 
 
 def _next_request_id(owner_id: str, taken: set) -> str:

@@ -139,7 +139,8 @@ rule (`R2`–`R5`) this would have to satisfy.
 ## 4b. Parked runs (E-059 slice 6c S2c)
 
 Under `orchestrator.verdict_routing_retired.enabled` (off by default), a run
-that waits on a missing component or on missing data is **parked**, not
+that waits on a genuinely missing component class or on missing data a fetch
+can close (never data inside the sealed range) is **parked**, not
 halted: its entry becomes `paused:waiting_for_component` or
 `paused:waiting_for_data`, a `PARKED` line (not `HALT`) is logged, and
 decide-next picks the next run. The park runs **before** the quarantine

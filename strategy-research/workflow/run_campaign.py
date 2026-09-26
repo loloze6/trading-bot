@@ -1614,7 +1614,7 @@ def _apply_trial_accounting(reason: str, run_id: str, detail: str) -> str:
 # Resuming a halted campaign after a human fix
 # ---------------------------------------------------------------------------
 
-def resume_paused_entry(queue: dict, unpark: str | None = None) -> bool:
+def resume_paused_entry(queue: dict) -> bool:
     """Called for --resume. Verifies the human has actually resolved the
     pause before flipping the queue entry back to in_progress. For the
     data_block_hitl pause specifically, invokes orch.resume_pipeline()
@@ -1624,10 +1624,7 @@ def resume_paused_entry(queue: dict, unpark: str | None = None) -> bool:
 
     Slice 6c S2c: a parked entry (paused:waiting_for_*) is never taken by
     --resume -- it is not a campaign stop, and taking it first would refuse
-    the real pause behind it. `unpark=<entry_id>` (--unpark) restores one
-    parked entry instead (_unpark_entry)."""
-    if unpark is not None:
-        return _unpark_entry(unpark)
+    the real pause behind it. --unpark (_unpark_entry) restores one."""
     paused = [e for e in queue["queue"] if str(e.get("status", "")).startswith("paused:")
               and not str(e.get("status", "")).startswith(PARKED_STATUS_PREFIX)]
     if not paused:
@@ -1688,27 +1685,6 @@ def resume_paused_entry(queue: dict, unpark: str | None = None) -> bool:
     return True
 
 
-def _parked_class_defined(class_path: str) -> bool:
-    """Whether the dotted class path a V12 park named now exists: trading-bot/
-    <module>.py (or <module>/__init__.py) defines it at top level. Read with ast
-    -- the engine is never imported here, as in decide_next.known_component_classes.
-    A definition that still fails to import is caught when the run re-validates
-    at backtest_specification (and parks again)."""
-    import ast
-    module, _, name = str(class_path).rpartition(".")
-    if not module or not name:
-        return False
-    base = _TRADING_BOT_ROOT.joinpath(*module.split("."))
-    for path in (base.with_suffix(".py"), base / "__init__.py"):
-        if path.is_file():
-            try:
-                tree = ast.parse(path.read_text(encoding="utf-8"))
-            except SyntaxError:
-                return False
-            return any(isinstance(n, ast.ClassDef) and n.name == name for n in tree.body)
-    return False
-
-
 def _unpark_entry(entry_id: str) -> bool:
     """--unpark <entry_id> (slice 6c S2c, S1_FINDINGS_6C.md guess 8), after the
     operator built the component or fetched the data. Under the campaign lock
@@ -1756,7 +1732,14 @@ def _unpark_entry(entry_id: str) -> bool:
                   f"'paused_for_human' for a parked run.")
             return False
         if kind == "component":
-            missing = [c for c in marker.get("classes") or [] if not _parked_class_defined(c)]
+            # The one shared "is this component class defined" check (review
+            # fixes 2 + 8): the same function and scope 5a parking and
+            # decide_next.known_component_classes use. A definition that still
+            # fails to import is caught when the run re-validates at
+            # backtest_specification (and pauses or parks again).
+            import decide_next as dn
+            missing = [c for c in marker.get("classes") or []
+                       if dn.component_class_status(_TRADING_BOT_ROOT, c) != "defined"]
             if missing:
                 print(f"--unpark refused: {entry_id} waits on {missing}, still not defined under "
                       f"{_TRADING_BOT_ROOT}. Build it first (STRATEGY_EXTENDING.md).")
@@ -1770,6 +1753,9 @@ def _unpark_entry(entry_id: str) -> bool:
         _regenerate_summary(queue)
         _log(f"UNPARK {entry_id} / {run_id}: waiting_for_{kind} cleared by the operator; entry "
              f"ready (priority {entry.get('priority')}), the run resumes at {resume_stage}.")
+        _write_loop_health()  # review fix 9: like every other status-changing branch
+        if _schedulability_block_enabled():
+            _write_schedulability()
         return True
     finally:
         campaign_lock.release(lock_path)
@@ -2631,6 +2617,14 @@ def process_once() -> bool:
                     f"{blocker}, under orchestrator.verdict_routing_retired.enabled -- decide_next "
                     f"never follows a legacy continuation; a person decides",
                     schedulability_enabled)
+            # Slice 6c S2c review fix 3: the run already parked (a crash between
+            # its marker and the queue save, or a decide-next failure after the
+            # park): finish the park -- never call run_loop on a parked run.
+            pre = _run_state(run_id)
+            if pre.get("status") == "paused_for_human" and pre.get(orch.PARKED_KEY):
+                _log_transition(entry, run_id, pre)
+                return _park_entry(queue, entry, run_id, ROOT / "runs" / run_id, pre,
+                                   schedulability_enabled)
 
     run_dir = ROOT / "runs" / run_id
     before_splits = _snapshot_hypothesis_splits()
@@ -2924,11 +2918,16 @@ def _park_entry(queue: dict, entry: dict, run_id: str, run_dir: Path, state: dic
     """Slice 6c S2c. The run carries a parked marker (run_phase1_research._park_run):
     the entry becomes paused:waiting_for_<kind> with parked_reason, a halt_history
     record carries the marker, a PARKED line is logged, and decide-next picks the
-    next run. The entry is saved parked BEFORE deciding: a paused run left
-    in_progress would be re-run by run_loop from its parking stage on the next
-    step, so a decide-next failure (which propagates, as on the DONE path) must
-    find the entry already parked. The decision record gets its own name, so the
-    run's later DONE decision never overwrites it. Returns keep_going."""
+    next run. The decision record gets its own name, so the run's later DONE
+    decision never overwrites it. Returns keep_going.
+
+    Retryable, like the DONE branch (review fix 4): the entry is persisted parked
+    only by _finish_lineage_with_decision, AFTER the decision is on disk. If
+    deciding fails, the entry is left as it was (in_progress) and the next
+    process_once re-enters here BEFORE run_loop (review fix 3), so the parked
+    run is never re-run and the decision is retried. The halt_history record
+    and the PARKED line are written once per park (keyed on the marker's
+    parked_at), never again on a retry."""
     marker = state[orch.PARKED_KEY]
     kind = marker.get("kind") if isinstance(marker, dict) else None
     if kind not in orch.PARK_KINDS:
@@ -2937,14 +2936,19 @@ def _park_entry(queue: dict, entry: dict, run_id: str, run_dir: Path, state: dic
     reason = f"waiting_for_{kind}"
     refs = list(marker.get("request_refs") or [])
     detail = f"{kind} at {marker.get('stage')}: {marker.get('reason')}"
+    history = [h for h in state.get("halt_history") or [] if isinstance(h, dict)]
+    if history and (history[-1].get("parked") or {}).get("parked_at") == marker.get("parked_at"):
+        _log(f"PARKED {entry['id']} / {run_id}: retrying the decision after this park ({detail}).")
+    else:
+        _append_halt_history(run_dir, state, reason, detail, parked=dict(marker))
+        history.append({"parked": marker})
+        _log(f"PARKED {entry['id']} / {run_id}: {detail}. Requests: {refs}. The campaign "
+             f"continues; unpark with --unpark {entry['id']} (RUNBOOK.md §4).")
     entry["status"] = f"{PARKED_STATUS_PREFIX}{kind}"
     entry["parked_reason"] = f"{reason} at {marker.get('stage')}: {marker.get('reason')}"
-    _save_queue(queue)
-    _append_halt_history(run_dir, state, reason, detail, parked=dict(marker))
-    _log(f"PARKED {entry['id']} / {run_id}: {detail}. Requests: {refs}. The campaign continues; "
-         f"unpark with --unpark {entry['id']} (RUNBOOK.md §4).")
-    # Same file name (so save_yaml's schema check applies), one directory per park.
-    n = 1 + len(list((run_dir / "artifacts" / "parked").glob("park_*")))
+    # One directory per park (the n-th park of this run), stable across retries;
+    # same file name, so save_yaml's schema check applies.
+    n = sum(1 for h in history if "parked" in h)
     queue, entry, keep_going, decide_msg = _finish_lineage_with_decision(
         queue, entry, run_id,
         decision_ref=f"runs/{run_id}/artifacts/parked/park_{n}/decision_record.yaml",
@@ -3444,7 +3448,7 @@ if __name__ == "__main__":
     if args.unpark:
         # Takes and releases the campaign lock itself (refused while a campaign
         # runs); relaunch afterwards to continue the queue.
-        sys.exit(0 if resume_paused_entry(_load_queue(), unpark=args.unpark) else 1)
+        sys.exit(0 if _unpark_entry(args.unpark) else 1)
 
     if args.resume:
         if not resume_paused_entry(_load_queue()):

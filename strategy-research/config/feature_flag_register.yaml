@@ -401,15 +401,16 @@ flags:
       tests/test_e059_6c_s2b_campaign_review.py (flag-off prompt and legacy
       route unchanged there).
       Slice 6c S2c (parked states): a run waiting on a missing component
-      (1b component_gap; 5a failing only on V12 cannot-load) or on missing
-      data (the data gate's refine/decline; a per-variant shortfall whose
-      not_tested variants are all data-gated) is parked -- the entry becomes
+      (1b component_gap; 5a failing only on a genuinely missing class) or on
+      fetchable missing data (a data-gate decline outside the sealed range,
+      without a fetch error or a reserved/unknown feed) is parked -- the entry becomes
       paused:waiting_for_component|data, a PARKED line and a halt_history
       record are written, decide-next picks the next run; ahead of the E-030
       quarantine. --resume skips parked entries; --unpark <entry_id> (under
       the campaign lock) restores one to ready and the same run resumes at
       its parking stage. Tests: tests/test_e059_6c_s2c_parked_states.py
-      (flag-off pauses unchanged there).
+      (flag-off pauses unchanged there); code-review fixes:
+      tests/test_e059_6c_s2c_review_fixes.py.
 
   - name: bar_equity
     kind: engine_param

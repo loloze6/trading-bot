@@ -265,8 +265,9 @@ runs, marked `# legacy routing (v26 card G)`; `_dispatch_verdict_route`
 raises if entered, on the flag value run_loop read once in its pre-flight). The holdout is reached only from the `profit_bars_reached` stop
 plus an operator unlock (slice 6c S2d, not built yet). See stage 17, item 12.
 Slice 6c S2c: under the same flag a run waiting on a missing component (step
-1b's `component_gap`, or 5a failing only on V12 cannot-load) or on missing
-data (the data gate's `refine`/`decline`) is **parked**, not paused: its
+1b's `component_gap`, or 5a failing only on a genuinely missing class) or on
+fetchable missing data (a data-gate `decline` outside the sealed range, with no
+fetch error, reserved or unknown feed) is **parked**, not paused: its
 queue entry becomes `paused:waiting_for_component|data`, decide-next picks the
 next run, and `run_campaign.py --unpark <entry_id>` restores it once the piece
 exists (`docs/RUNBOOK.md` §3/§4).
