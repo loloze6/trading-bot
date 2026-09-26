@@ -68,27 +68,50 @@ def _now() -> str:
 # component_requests.yaml
 # ---------------------------------------------------------------------------
 
-def append_component_requests(path: Path, records: list, *, unless=None) -> int:
-    """Append `records` to {requests: [...]} under the lock, atomically.
-    `unless(existing_record) -> bool`: a record is skipped when any existing
-    one matches (per-caller idempotence). Returns the number appended."""
+def append_requests(path: Path, records: list, *, unless=None, key=None) -> int:
+    """Append `records` to a {requests: [...]} file under its lock, atomically
+    (component_requests.yaml, and -- slice 6c S2c review fix 7 -- the parked
+    runs' data_requests.yaml). Two idempotence hooks, both optional:
+    `unless(existing_record) -> bool` skips a record when any existing one
+    matches (the caller's own rule); `key(record) -> hashable` skips a record
+    whose key equals that of any existing record or of one appended earlier in
+    this same call. Returns the number appended."""
     records = list(records or [])
     if not records:
         return 0
-    with _lock(path, "component_requests.yaml"):
+    path = Path(path)
+    with _lock(path, path.name):
         doc = _load_mapping(path, {})
         requests = doc.get("requests") or []
         if not isinstance(requests, list):
             raise CampaignReviewRecordError(f"{path}: requests is not a list")
+        seen = ({key(r) for r in requests if isinstance(r, dict)} if key is not None else set())
         added = 0
         for rec in records:
             if unless is not None and any(isinstance(r, dict) and unless(r) for r in requests):
                 continue
+            if key is not None:
+                k = key(rec)
+                if k in seen:
+                    continue
+                seen.add(k)
             requests.append(rec)
             added += 1
         if added:
             _cm._atomic_write(path, {**doc, "requests": requests})
         return added
+
+
+def request_key(rec: dict) -> tuple:
+    """The identity of one request row for `append_requests(key=...)`: the
+    same run, stage, variant and reason is the same request."""
+    return (rec.get("run_id"), rec.get("stage"), rec.get("variant_id"), str(rec.get("reason")))
+
+
+def append_component_requests(path: Path, records: list, *, unless=None, key=None) -> int:
+    """component_requests.yaml's appender: `append_requests` (kept under this
+    name for its existing callers)."""
+    return append_requests(path, records, unless=unless, key=key)
 
 
 # ---------------------------------------------------------------------------

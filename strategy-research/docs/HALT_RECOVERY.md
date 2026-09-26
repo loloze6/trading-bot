@@ -136,8 +136,30 @@ rule (`R2`–`R5`) this would have to satisfy.
 
 ---
 
+## 4b. Parked runs (E-059 slice 6c S2c)
+
+Under `orchestrator.verdict_routing_retired.enabled` (off by default), a run
+that waits on a genuinely missing component class or on missing data a fetch
+can close (never data inside the sealed range) is **parked**, not
+halted: its entry becomes `paused:waiting_for_component` or
+`paused:waiting_for_data`, a `PARKED` line (not `HALT`) is logged, and
+decide-next picks the next run. The park runs **before** the quarantine
+policy of section 2, so a `component_gap` under that flag is parked, never
+quarantined as `blocked_on_component`. Its `halt_history` record carries a
+`parked` key, and `loop_health.yaml` counts it under `outcomes.parked`
+(written only when a park exists) — neither auto-recovered nor escalated,
+and never part of the repeat-escalate check of section 3. Bring one back with
+`run_campaign.py --unpark <entry_id>`; `--resume` skips parked entries. See
+`RUNBOOK.md` section 3 (row `paused:waiting_for_component` /
+`paused:waiting_for_data`) and section 4, "Parked entries".
+
+---
+
 ## 5. Quick reference — is my halt going to stop the campaign?
 
+0. Under `orchestrator.verdict_routing_retired.enabled`, is the run waiting
+   on a missing component or missing data (section 4b)? → No, it parks and
+   the queue continues.
 1. Is the reason on the four-item table in section 2, **and** is
    `quarantine_enabled: true`? → No, it quarantines and the queue continues
    (unless the flags looked ambiguous, or this exact reason just fired on

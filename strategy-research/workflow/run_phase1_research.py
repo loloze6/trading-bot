@@ -1333,13 +1333,10 @@ async def run_tool_worker(stage_name: str, run_id: str):
             # own backtest_specification branch above (:1797-1803): a flat,
             # append-only "requests" list, each row stamped with run_id and
             # stage so multiple runs/stages can share one file.
-            requests_path = ROOT / "campaign_record" / "data_requests.yaml"
-            requests_path.parent.mkdir(parents=True, exist_ok=True)
-            existing = (load_yaml(requests_path) or {}) if requests_path.exists() else {}
-            existing_requests = existing.get("requests", [])
-            for req in data_requests:
-                existing_requests.append({"run_id": run_id, "stage": "data_availability_gate", **req})
-            save_yaml(requests_path, {"requests": existing_requests})
+            # Slice 6c S2c review fix 7: under verdict_routing_retired a parked
+            # run re-runs this gate on --unpark; no duplicate rows then.
+            _append_data_requests(run_id, data_requests,
+                                  **({"dedupe": True} if _verdict_routing_retired_enabled() else {}))
 
         remaining = sum(1 for v in variants_idx.values() if v.get("status") == "validated")
         print(f"✅ data_availability_gate (variant loop): {remaining}/{len(validated)} "
@@ -2057,7 +2054,10 @@ async def run_tool_worker(stage_name: str, run_id: str):
             _crr.append_component_requests(
                 ROOT / _crr.COMPONENT_REQUESTS_REL,
                 [{"run_id": run_id, "stage": "backtest_specification", **req}
-                 for req in component_requests])
+                 for req in component_requests],
+                # Slice 6c S2c review fix 7: a parked run re-runs this stage on
+                # --unpark; under the flag the same request is not appended twice.
+                **({"key": _crr.request_key} if _verdict_routing_retired_enabled() else {}))
 
         validated_count = sum(1 for v in index.values() if v["status"] == "validated")
         print(f"✅ [E-056 Slice3b] backtest_specification (config-direct authoring): "
@@ -3354,6 +3354,169 @@ def _verdict_routing_retired_enabled() -> bool:
         why=("with verdict routing retired, only decide_next picks the next run, and only "
              "the per-backtest profit-bars check grades a run against "
              "config/profitability_bars.yaml. Enable them together."))
+
+
+# ---------------------------------------------------------------------------
+# Slice 6c S2c -- parked states (S1_FINDINGS_6C.md §6 and guesses 7-9), under
+# orchestrator.verdict_routing_retired.enabled only. A run that waits on a
+# missing component or on missing data does not pause the campaign: the
+# parkable sites below write pipeline_state.yaml `parked` (plus the usual
+# status paused_for_human) and stop the run; run_campaign.process_once reads
+# the marker, marks the queue entry paused:waiting_for_<kind>, and decide-next
+# picks the next run. run_campaign --unpark clears the marker. Nothing here is
+# reached with the flag off, and no new sticky flag or pause row exists: the
+# marker is read by process_once, never by _classify_human_pause.
+# ---------------------------------------------------------------------------
+
+PARKED_KEY = "parked"
+PARK_KINDS = ("component", "data")
+# The trading-bot checkout (same anchor as run_campaign._TRADING_BOT_ROOT): where
+# decide_next.component_class_status reads strategies/strategy_components.py.
+_TRADING_BOT_ROOT = Path(__file__).resolve().parent.parent.parent / "trading-bot"
+# validate_config.py's V12 "cannot load" line. The loader's own message follows
+# (strategies/registry._load_class); only its getattr failure -- "module '<m>'
+# has no attribute '<Class>'" -- proves the module imported and the class is
+# absent. An ImportError inside the module, a module typo, a dotless path, or
+# a V12 "missing required 'class' key" is an engineering/config error.
+_V12_CANNOT_LOAD_RE = re.compile(r"^VIOLATION V12 \S+\.class: cannot load '([^']+)': (.*)$")
+# data_availability_gate.py's reasons for a shortfall no fetch can close
+# (review fix 5): a reserved feed (a data-POLICY decline) and an unbuilt feed.
+_UNFETCHABLE_AUX_REASON_MARKERS = ("is a RESERVED feed", "is not a known feed")
+
+
+def _v12_missing_classes(report) -> list:
+    """The class paths a validate_config.py report cannot load, when EVERY
+    non-empty line of the report is a V12 cannot-load whose class is genuinely
+    missing: the loader says the module has no such attribute (so the module
+    imported) AND decide_next.component_class_status reads it 'missing' (a
+    well-formed path in the component module, which exists and parses, and does
+    not define it). [] otherwise -- another V-code, a missing 'class' key, an
+    ImportError, a typo, a crash: design/engineering errors, never parked
+    (guess 7; slice 6c S2c review fix 2)."""
+    import decide_next as _dn  # tools/ sibling (on sys.path, module top)
+    lines = [ln.strip() for ln in str(report or "").splitlines() if ln.strip()]
+    classes = []
+    for ln in lines:
+        m = _V12_CANNOT_LOAD_RE.match(ln)
+        if not m:
+            return []
+        class_path, detail = m.group(1), m.group(2)
+        module, _, name = class_path.rpartition(".")
+        if (f"module '{module}' has no attribute '{name}'" not in detail
+                or _dn.component_class_status(_TRADING_BOT_ROOT, class_path) != "missing"):
+            return []
+        classes.append(class_path)
+    return sorted(set(classes))
+
+
+def _gate_shortfall_fetchable(gate: dict) -> bool:
+    """Slice 6c S2c review fix 5: True only when a data_availability_gate.yaml
+    DECLINE is a shortfall a fetch can close -- every non-validating price
+    window was checked for real (Layer 2, not a Layer 1 venue/listing/timeframe
+    impossibility), returned short WITHOUT raising (a SealedDataError or any
+    other fetch error never parks), and lies wholly outside the sealed holdout
+    range; every non-validating aux feed likewise, and is neither reserved nor
+    unbuilt. A gate `refine`, an unreadable policy, or anything unknown: False
+    (the previous, terminal behaviour)."""
+    if not isinstance(gate, dict) or gate.get("outcome") != "decline":
+        return False
+    try:
+        seal_start, seal_end = _load_holdout_range()
+    except Exception:
+        return False
+    bad = [r for r in (gate.get("windows") or []) if isinstance(r, dict)
+           and r.get("outcome") != "validate"]
+    bad_aux = [r for r in (gate.get("aux_feeds") or []) if isinstance(r, dict)
+               and r.get("outcome") != "validate"]
+    if not (bad or bad_aux):
+        return False
+    for r in bad + bad_aux:
+        if r.get("fetch_error") or any(isinstance(p, dict) and p.get("fetch_error")
+                                       for p in (r.get("per_symbol") or {}).values()):
+            return False
+        if any(m in str(r.get("reason") or "") for m in _UNFETCHABLE_AUX_REASON_MARKERS):
+            return False
+        start, end = str(r.get("start") or "")[:10], str(r.get("end") or "")[:10]
+        if len(start) != 10 or len(end) != 10 or not (end < seal_start or start > seal_end):
+            return False
+    for r in bad:
+        if r.get("layer") != 2:
+            return False
+    return True
+
+
+def _variant_park_kind(variants: dict, artifacts_dir=None) -> tuple:
+    """(kind, classes) for the not_tested variants of artifacts/variants/index.yaml:
+    'component' when each one is a genuinely missing class (5a,
+    _v12_missing_classes) or a fetchable data decline and at least one is a
+    class -- a mix parks as component, the data gate re-runs on unpark anyway;
+    'data' when each one is a fetchable data decline (its own
+    artifacts/variants/<id>/data_availability_gate.yaml, _gate_shortfall_fetchable);
+    (None, []) when any other reason is present (a patch failure, unresolved
+    manifest paths, another V-code, a gate crash, a gate refine, an
+    unfetchable decline -- which stay what they are today) or none is not_tested."""
+    classes, data, other = set(), 0, 0
+    for vid, v in (variants or {}).items():
+        if not isinstance(v, dict) or v.get("status") != "not_tested":
+            continue
+        reason = str(v.get("reason") or "")
+        found = (_v12_missing_classes(v.get("report"))
+                 if reason == "validate_config.py violations" else [])
+        gate_path = (Path(artifacts_dir) / "variants" / str(vid) / "data_availability_gate.yaml"
+                     if artifacts_dir is not None else None)
+        if found:
+            classes.update(found)
+        elif (reason.startswith("data_availability_gate outcome=decline:")
+              and gate_path is not None and gate_path.is_file()
+              and _gate_shortfall_fetchable(load_yaml(gate_path) or {})):
+            data += 1
+        else:
+            other += 1
+    if other or not (classes or data):
+        return None, []
+    return ("component" if classes else "data"), sorted(classes)
+
+
+def _append_data_requests(run_id: str, requests: list, *, dedupe: bool = False) -> None:
+    """campaign_record/data_requests.yaml, a flat append-only {requests: [...]}
+    list, each row stamped with run_id and stage data_availability_gate.
+    dedupe=False: the per-variant gate's writer, moved here unchanged (E-033.1
+    Slice 4b) -- flag-off byte-identical. dedupe=True (under
+    orchestrator.verdict_routing_retired, slice 6c S2c review fix 7): the
+    locked, idempotent appender shared with component_requests.yaml, so a
+    park/unpark cycle re-running the gate adds no duplicate row."""
+    requests_path = ROOT / "campaign_record" / "data_requests.yaml"
+    rows = [{"run_id": run_id, "stage": "data_availability_gate", **req} for req in requests]
+    if dedupe:
+        _crr.append_requests(requests_path, rows, key=_crr.request_key)
+        return
+    requests_path.parent.mkdir(parents=True, exist_ok=True)
+    existing = (load_yaml(requests_path) or {}) if requests_path.exists() else {}
+    existing_requests = existing.get("requests", [])
+    existing_requests.extend(rows)
+    save_yaml(requests_path, {"requests": existing_requests})
+
+
+def _park_run(run_dir: Path, *, kind: str, stage: str, reason: str, request_refs: list,
+              resume_stage: str, classes=()) -> str:
+    """Writes the parked marker and status paused_for_human; returns
+    "human_pause" so every caller stops the run exactly as a pause does
+    (pending_stage stays the parking stage). resume_stage is where --unpark
+    restarts the SAME run (guess 8). The marker is replaced, never merged."""
+    if kind not in PARK_KINDS:
+        raise ValueError(f"_park_run: unknown park kind {kind!r}")
+    marker = {
+        "kind": kind, "stage": stage, "reason": str(reason),
+        "request_refs": list(request_refs), "resume_stage": resume_stage,
+        "classes": list(classes),
+        "parked_at": datetime.now(timezone.utc).isoformat(),
+    }
+    update_state(path=run_dir, **{PARKED_KEY: None})  # update_state merges dicts
+    update_state(path=run_dir, status="paused_for_human", **{PARKED_KEY: marker})
+    print(f"\n🅿️  PARKED (waiting_for_{kind}) at {stage}: {reason}. Requests: "
+          f"{list(request_refs)}. The campaign continues; unpark with run_campaign.py "
+          f"--unpark <entry_id> once the {kind} exists (docs/RUNBOOK.md §4).")
+    return "human_pause"
 
 
 def _record_run_in_campaign_state(run_id: str, diag: dict) -> None:
@@ -9992,7 +10155,7 @@ def _clear_stale_block_manifest(stage_name: str, run_dir: Path) -> None:
         print(f"[E-056 1b] removed stale {stale} before strategy_config_authoring")
 
 
-def determine_post_strategy_config_authoring_route(path: Path):
+def determine_post_strategy_config_authoring_route(path: Path, *, routing_retired: bool = False):
     """Routing for the new strategy_config_authoring stage (E-056 Slice 3b,
     config-direct authoring). Mirrors determine_post_spec_route's shape
     exactly -- same decision.yaml contract (status spec_ready|component_gap)
@@ -10000,12 +10163,32 @@ def determine_post_strategy_config_authoring_route(path: Path):
     strategy_config_authoring runs BEFORE innovation_expansion in this flow
     (it authors the BASE config that innovation_expansion patches into
     variants), where backtest-engineering used to run AFTER it and pick one
-    variant from an already-expanded menu."""
+    variant from an already-expanded menu.
+
+    Slice 6c S2c: with routing_retired (run_loop passes it only when
+    orchestrator.verdict_routing_retired is on), component_gap parks the run
+    (waiting_for_component) instead of pausing the campaign; the rationale is
+    appended to campaign_record/component_requests.yaml."""
     KNOWN_STATUSES = {"spec_ready", "component_gap"}
     decision = load_yaml(path / "artifacts" / "decision.yaml")
     status = decision.get("status", "").strip().lower()
     if status == "spec_ready":
         return _route_block_manifest_check(path)
+    if status == "component_gap" and routing_retired:
+        run_id = path.name
+        reason = str(decision.get("rationale") or "component_gap (no rationale given)")
+        _crr.append_component_requests(
+            ROOT / _crr.COMPONENT_REQUESTS_REL,
+            [{"run_id": run_id, "stage": "strategy_config_authoring", "variant_id": None,
+              "reason": reason, "blocking_issues": decision.get("blocking_issues") or []}],
+            unless=lambda r: (r.get("run_id") == run_id
+                              and r.get("stage") == "strategy_config_authoring"
+                              and r.get("reason") == reason))
+        return _park_run(path, kind="component", stage="strategy_config_authoring",
+                         reason=f"component_gap: {reason}",
+                         request_refs=[f"runs/{run_id}/artifacts/decision.yaml",
+                                       _crr.COMPONENT_REQUESTS_REL],
+                         resume_stage="strategy_config_authoring")
     if status == "component_gap":
         update_state(path=path, status="paused_for_human")
         print("\n⏸️ COMPONENT GAP: hypothesis needs an engine piece that does not exist. "
@@ -10079,7 +10262,8 @@ def _check_manifest_paths(variant_config: dict, manifest: dict) -> list:
     return _json_pointer_module().manifest_missing_paths(variant_config, manifest)
 
 
-def _route_post_config_direct_backtest_specification(run_dir: Path) -> str:
+def _route_post_config_direct_backtest_specification(run_dir: Path, *,
+                                                     routing_retired: bool = False) -> str:
     """Routing for the config-direct-authoring flow's tool-only
     backtest_specification stage. By the time run_loop reaches this branch,
     run_tool_worker's own "backtest_specification" branch (below) has already
@@ -10091,9 +10275,30 @@ def _route_post_config_direct_backtest_specification(run_dir: Path) -> str:
     decision.yaml, since config-direct authoring produces N pursued variants
     per run, not one selected variant -- see S2_FINDINGS.md §7 on why
     _record_variant_selection's single-selected-variant model does not apply
-    here."""
+    here.
+
+    Slice 6c S2c: with routing_retired (passed by run_loop only when
+    orchestrator.verdict_routing_retired is on), a "nothing validated" outcome
+    whose blocking variants all failed ONLY on V12 cannot-load (a missing
+    class) parks the run (waiting_for_component); any other failure stays the
+    pause below."""
     index = load_yaml(run_dir / "artifacts" / "variants" / "index.yaml") or {}
     variants = index.get("variants", {})
+    if routing_retired:
+        # The variants that block: every variant in the variant loop (none is
+        # validated when this fires), only `base` otherwise.
+        blocking = (variants if _variant_loop_enabled()
+                    else ({"base": variants["base"]} if "base" in variants else {}))
+        nothing_validated = not any(v.get("status") == "validated" for v in blocking.values())
+        kind, classes = (_variant_park_kind(blocking, run_dir / "artifacts")
+                          if nothing_validated else (None, []))
+        if kind == "component":
+            return _park_run(
+                run_dir, kind="component", stage="backtest_specification",
+                reason=f"no variant passed validation; missing class(es): {classes}",
+                request_refs=[_crr.COMPONENT_REQUESTS_REL,
+                              f"runs/{run_dir.name}/artifacts/variants/index.yaml"],
+                resume_stage="backtest_specification", classes=classes)
     if _variant_loop_enabled():
         # E-033.1 Slice 4a: config-direct authoring produces N pursued
         # variants per run, not one selected variant -- widen the "is there
@@ -10265,6 +10470,19 @@ def run_loop(run_id: str):
     except Exception as e:
         print(f"❌ verdict_routing_retired pre-flight failed: {e}")
         update_state(path=RUN_DIR, status="failed", last_error=str(e))
+        return
+    # Slice 6c S2c: a parked run is restarted only through run_campaign.py
+    # --unpark, which clears the marker after its checks. A run still carrying
+    # the marker here was restarted by hand: stop loudly before any spend, so a
+    # stale marker can never make a LATER, unrelated pause read as a park.
+    if _vrr_flag and state.get(PARKED_KEY):
+        _msg = (f"{run_id} is parked ({PARKED_KEY}: waiting_for_"
+                f"{(state.get(PARKED_KEY) or {}).get('kind')}) but was restarted without "
+                f"run_campaign.py --unpark. Restore status paused_for_human and the queue "
+                f"entry's paused:waiting_for_<kind>, then --unpark (docs/RUNBOOK.md §4); or set "
+                f"{PARKED_KEY}: null by hand, which skips the unpark checks.")
+        print(f"❌ {_msg}")
+        update_state(path=RUN_DIR, status="failed", last_error=_msg)
         return
 
     while True:
@@ -10579,7 +10797,9 @@ def run_loop(run_id: str):
                 # E-056 Slice 3b: only reached when config_direct_authoring is on --
                 # nothing routes here otherwise (see the override above and
                 # STAGE_CONFIGS's own registration comment).
-                next_stage = determine_post_strategy_config_authoring_route(RUN_DIR)
+                # Slice 6c S2c: the kwarg only when on, so the flag-off call is unchanged.
+                next_stage = determine_post_strategy_config_authoring_route(
+                    RUN_DIR, **({"routing_retired": True} if _vrr_flag else {}))
                 if next_stage == "human_pause":
                     break
 
@@ -10606,7 +10826,8 @@ def run_loop(run_id: str):
                 # see above) already applied variant_patches.yaml's patches, validated
                 # each variant, and wrote artifacts/variants/index.yaml -- this only
                 # decides where to route next.
-                next_stage = _route_post_config_direct_backtest_specification(RUN_DIR)
+                next_stage = _route_post_config_direct_backtest_specification(
+                    RUN_DIR, **({"routing_retired": True} if _vrr_flag else {}))
                 if next_stage == "human_pause":
                     break
 
@@ -10702,6 +10923,28 @@ def run_loop(run_id: str):
                 index = load_yaml(ARTIFACTS / "variants" / "index.yaml") or {}
                 variants_idx = index.get("variants", {})
                 remaining = [vid for vid, v in variants_idx.items() if v.get("status") == "validated"]
+                # Slice 6c S2c: under verdict_routing_retired, a shortfall whose
+                # not_tested variants all wait on data (or a missing class) parks
+                # the run; --unpark restarts it at backtest_specification, which
+                # rebuilds index.yaml before the gate runs again. No sticky flag.
+                _park_kind, _park_classes = ((_variant_park_kind(variants_idx, ARTIFACTS)
+                                              if _vrr_flag and len(remaining) < 3
+                                              else (None, [])))
+                if _park_kind:
+                    _refs = ["campaign_record/data_requests.yaml",
+                             f"runs/{run_id}/artifacts/variants/index.yaml"]
+                    if _park_kind == "component":
+                        _refs.insert(0, _crr.COMPONENT_REQUESTS_REL)
+                    next_stage = _park_run(
+                        RUN_DIR, kind=_park_kind, stage="data_availability_gate",
+                        reason=(f"only {len(remaining)}/{len(variants_idx)} variant(s) remain "
+                                f"validated after the per-variant data-availability gate "
+                                f"(need >= 3)"
+                                + (f"; missing class(es): {_park_classes}"
+                                   if _park_classes else "")),
+                        request_refs=_refs, resume_stage="backtest_specification",
+                        classes=_park_classes)
+                    break
                 if len(remaining) < 3:
                     print(f"⏸️  PIPELINE PAUSED: only {len(remaining)}/{len(variants_idx)} "
                           "variant(s) remain validated after the per-variant "
@@ -10724,6 +10967,27 @@ def run_loop(run_id: str):
                 # branch above.
                 gate = load_yaml(ARTIFACTS / "data_availability_gate.yaml") or {}
                 gate_outcome = gate.get("outcome", "decline")
+                if _vrr_flag and _gate_shortfall_fetchable(gate):
+                    # Slice 6c S2c (guess 7, card J; review fix 5): a decline whose
+                    # shortfall a fetch can close parks the run (waiting_for_data)
+                    # instead of rejecting it; the gate re-runs on --unpark. A
+                    # refine, and a decline no fetch can close (sealed window,
+                    # reserved or unbuilt feed, before listing, a fetch error),
+                    # keep the previous behaviour below.
+                    _reasons = list(gate.get("reasons") or [])
+                    _append_data_requests(run_id, [{
+                        "variant_id": None, "outcome": gate["outcome"],
+                        "reason": (f"data_availability_gate outcome={gate['outcome']}: "
+                                   + "; ".join(str(r) for r in _reasons[:10])),
+                        "reasons": _reasons}], dedupe=True)
+                    next_stage = _park_run(
+                        RUN_DIR, kind="data", stage="data_availability_gate",
+                        reason=(f"data_availability_gate outcome={gate['outcome']}: "
+                                + "; ".join(str(r) for r in _reasons[:3])),
+                        request_refs=[f"runs/{run_id}/artifacts/data_availability_gate.yaml",
+                                      "campaign_record/data_requests.yaml"],
+                        resume_stage="data_availability_gate")
+                    break
                 if gate_outcome == "validate":
                     print("✅ E-054 Layer 2: VALIDATE — advancing to protocol_execution.")
                     next_stage = "protocol_execution"
