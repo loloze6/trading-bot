@@ -128,7 +128,7 @@ def test_v12_missing_classes_needs_every_line_to_be_a_cannot_load():
 def _gap_run(run_id="run_950") -> Path:
     run_dir = _minimal_run(rpr.ROOT, run_id)
     rpr.save_yaml(run_dir / "artifacts" / "decision.yaml", {
-        "stage": "strategy_config_authoring", "status": "component_gap",
+        "hypothesis_id": "H-1", "stage": "strategy_config_authoring", "status": "component_gap",
         "rationale": "needs FooComponent, which does not exist",
         "blocking_issues": ["engine lacks FooComponent"]})
     return run_dir
@@ -333,8 +333,8 @@ def _parking_run_loop(campaign_root, kind="component", ran=None):
             ran.append(run_id)
         run_dir = campaign_root["runs_dir"] / run_id
         rpr.save_yaml(run_dir / "artifacts" / "decision.yaml", {
-            "stage": "strategy_config_authoring", "status": "component_gap",
-            "rationale": "needs FooComponent"})
+            "hypothesis_id": "H-1", "stage": "strategy_config_authoring",
+            "status": "component_gap", "rationale": "needs FooComponent"})
         if kind == "component":
             rpr.determine_post_strategy_config_authoring_route(run_dir, routing_retired=True)
         else:
@@ -406,7 +406,9 @@ def test_a_parked_run_never_blocks_the_next_one(campaign_root, monkeypatch):
     # decide-next saw OTHER scheduled next (nothing minted)
     record = yaml.safe_load((campaign_root["root"] / "runs" / "run_062" / "artifacts" / "parked" /
                              "park_1" / "decision_record.yaml").read_text(encoding="utf-8"))
-    assert record["picked"]["queue_entry_id"] == "OTHER"
+    picked = record["picked"]
+    assert (picked.get("operator_entry") or picked.get("queue_entry_id")) == "OTHER"
+    assert "candidate_id" not in picked
     assert [e["id"] for e in queue] == ["TEST_ENTRY", "PARK_ME", "OTHER"]
 
     class _Stop(Exception):
@@ -451,7 +453,8 @@ def test_flag_off_a_pause_stays_a_pause(campaign_root, monkeypatch):
         def _pause(run_id, marker=marker):
             rd = campaign_root["runs_dir"] / run_id
             rpr.save_yaml(rd / "artifacts" / "decision.yaml",
-                          {"status": "component_gap", "rationale": "needs FooComponent"})
+                          {"hypothesis_id": "H-1", "stage": "strategy_config_authoring",
+                           "status": "component_gap", "rationale": "needs FooComponent"})
             assert rpr.determine_post_strategy_config_authoring_route(rd) == "human_pause"
             if marker:
                 rpr.update_state(path=rd, **{rpr.PARKED_KEY: marker})
@@ -637,7 +640,8 @@ def test_flag_off_quarantine_is_unchanged(campaign_root, monkeypatch):
     def _pause(run_id):
         rd = campaign_root["runs_dir"] / run_id
         rpr.save_yaml(rd / "artifacts" / "decision.yaml",
-                      {"status": "component_gap", "rationale": "needs FooComponent"})
+                      {"hypothesis_id": "H-1", "stage": "strategy_config_authoring",
+                           "status": "component_gap", "rationale": "needs FooComponent"})
         rpr.determine_post_strategy_config_authoring_route(rd)
     monkeypatch.setattr(rpr, "run_loop", _pause)
     assert camp.process_once() is True
