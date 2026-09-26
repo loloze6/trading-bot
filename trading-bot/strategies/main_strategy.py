@@ -81,6 +81,9 @@ class AdvancedStrategy(MainStrategy):
         self.data_buffer.register_calculated_column(
             'stddev_24', lambda df: df['close'].rolling(std_dev_period).std()
         )
+        # E-060 S3a: blocks recompute these columns on their source-length window
+        # slice. Stored only; a config without `blocks` never reads them.
+        self.strategy_engine.set_indicators(self.data_buffer.indicators)
 
         self.last_forecast = 0.0
         # F7: memoized regime_engine.classify() result for the bar currently being

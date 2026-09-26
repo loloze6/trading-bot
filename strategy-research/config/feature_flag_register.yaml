@@ -462,8 +462,10 @@ flags:
       composition_manifest.yaml, and campaign_record/compositions.yaml
       (locked, atomic, append-only). The configs use the engine's opt-in
       block combiner (strategies.regimes.<r>.blocks + block_standardisation;
-      validate_config.py V13), which a config without those keys never
-      reaches. No caller yet (S3b). Tests: tests/test_e060_s3a_composition.py,
+      validate_config.py V13): each block runs as validated (source lookbacks,
+      warm-up, buffer, and its own source detector as a gate), standardised
+      past-only and capped at +-20; a config without those keys never reaches
+      it. No caller yet (S3b). Tests: tests/test_e060_s3a_composition.py,
       trading-bot/tests/test_e060_block_standardisation.py.
 
   - name: bar_equity

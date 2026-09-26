@@ -22,7 +22,8 @@ import yaml
 SR_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(SR_ROOT / "tools"))
 
-import composite_cache as cc  # noqa: E402
+import composite_cache as cc  # noqa: E402  (also puts trading-bot/ on sys.path)
+from strategies.main_strategy import AdvancedStrategy  # noqa: E402
 import composition as comp  # noqa: E402
 import campaign_memory as cm  # noqa: E402
 
@@ -197,8 +198,20 @@ def test_writer_produces_three_valid_configs_and_a_manifest(tmp_path):
         [ptr] = mb["config_paths"]
         idx = int(ptr.rsplit("/", 1)[1])
         got = base["strategies"]["regimes"]["unknown"]["components"][idx]
-        assert {**got, "id": frag["id"]} == frag and got["id"] == f"{mb['config_block_id']}__sig"
-    assert base["strategies"]["warmup"] == 41  # max of the blocks' own warmups
+        # verbatim except the prefixed id and the lookback pinned to the source deque
+        assert {k: v for k, v in got.items() if k not in ("id", "lookback")} == \
+            {k: v for k, v in frag.items() if k != "id"}
+        assert got["id"] == f"{mb['config_block_id']}__sig"
+        src = AdvancedStrategy(config_path=str(tmp_path / block["source_config_ref"]))
+        assert got["lookback"] == src.strategy_engine._history["unknown"]["sig"].maxlen
+        cfg_block = base["strategies"]["regimes"]["unknown"]["blocks"][int(mb["config_block_id"][1:])]
+        assert cfg_block["source"] == {
+            "required_bars": src.required_bars, "warmup": src.strategy_engine._warmup,
+            "buffer_bars": src.data_buffer.max_size,
+            "regime_detector": json.loads((tmp_path / block["source_config_ref"]).read_text(
+                encoding="utf-8"))["regime_detector"],
+            "parts": {"unknown": [got["id"]]}}
+    assert "warmup" not in base["strategies"]  # each block keeps its own source warmup
     assert base["regime_detector"]["default_regime"] == "unknown"
 
 
@@ -277,6 +290,189 @@ def test_aux_feeds_carried_and_disagreeing_min_allocation_change_raises(tmp_path
         _write(tmp_path / "m", doc=doc2)
 
 
+def test_aux_feed_declared_differently_by_two_blocks_raises(tmp_path):
+    doc = _registry(tmp_path)
+    feeds = ([{"name": "funding_rate", "params": {"venue": "a"}}],
+             [{"name": "funding_rate", "params": {"venue": "b"}}])
+    for k, fd in enumerate(feeds):
+        b = doc["blocks"][k]
+        p = tmp_path / b["source_config_ref"]
+        cfg = json.loads(p.read_text(encoding="utf-8"))
+        cfg["aux_feeds"] = fd
+        p.write_text(json.dumps(cfg), encoding="utf-8")
+        b["source_config_sha256"] = _canon(cfg)
+    with pytest.raises(comp.CompositionError, match="declare aux feed 'funding_rate' differently"):
+        _write(tmp_path, doc=doc)
+    assert not (tmp_path / "campaign_record").exists()
+
+
+# --- blocks AS VALIDATED: stand-alone equality, pinned lookbacks, gating ------
+
+EMA = "strategies.strategy_components.EMASpreadComponent"
+DETECTOR = {"mode": "threshold_rules",
+            "components": [{"id": "pe", "class": PE, "params": {"period": 6}}],
+            "rules": [{"regime": "trending", "any_of": [[{"id": "pe", "op": "gt", "value": 0.0}]]},
+                      {"regime": "mean_reversion", "any_of": [[{"id": "pe", "op": "lte", "value": 0.0}]]}],
+            "default_regime": "unknown"}
+
+
+def _gated_source(regimes: dict, detector=DETECTOR):
+    return {"regime_detector": copy.deepcopy(detector),
+            "strategies": {"regimes": {**{"trending": None, "mean_reversion": None, "chop": None,
+                                          "unknown": None}, **regimes}}}
+
+
+def _registry_from_sources(root: Path, sources: list, tf="1h"):
+    """sources: [(config, [pointer, ...])] -> a registry doc with one block each."""
+    blocks = []
+    for k, (cfg, ptrs) in enumerate(sources):
+        ref = f"runs/run_95{k}/strategy_config.json"
+        (root / ref).parent.mkdir(parents=True, exist_ok=True)
+        (root / ref).write_text(json.dumps(cfg), encoding="utf-8")
+        frag = {}
+        for ptr in ptrs:
+            node = cfg
+            for seg in ptr.strip("/").split("/"):
+                node = node[int(seg)] if isinstance(node, list) else node[seg]
+            frag[ptr] = node
+        blocks.append({"block_id": f"H-5{k}:run_95{k}", "kind": "forecast", "config_fragment": frag,
+                       "residual_ic": {"value": 0.02 + 0.01 * k, "fully_explained": False},
+                       "source_config_ref": ref, "source_config_sha256": _canon(cfg),
+                       "validated_by_run": f"run_95{k}", "timeframe": tf,
+                       "timeframe_category": cc.timeframe_category(tf)})
+    return {"schema_version": 1, "revision": len(blocks), "blocks": blocks}
+
+
+def _bars(n, seed):
+    rng = np.random.default_rng(seed)
+    close = 100 * np.exp(np.cumsum(rng.normal(0, 0.01, n)))
+    return pd.DataFrame({"timestamp": pd.date_range("2024-01-01", periods=n, freq="h"),
+                         "open": close, "high": close * 1.002, "low": close * 0.998,
+                         "close": close, "volume": 1.0})
+
+
+def _standalone_vs_composite(tmp_path, sources, n=700, seed=0):
+    doc = _registry_from_sources(tmp_path, sources)
+    _, out, m = _write(tmp_path, doc=doc)
+    comp_strat = AdvancedStrategy(config_path=str(out / "base.json"))
+    alone = {b["block_id"]: AdvancedStrategy(config_path=str(tmp_path / b["source_config_ref"]))
+             for b in doc["blocks"]}
+    cb = {mb["block_id"]: int(mb["config_block_id"][1:]) for mb in m["blocks"]}
+    df = _bars(n, seed)
+    rows = []
+    for i in range(len(df)):
+        comp_strat.update(df.iloc[[i]])
+        blocks = comp_strat.strategy_engine._block_regimes["unknown"]["blocks"]
+        row = {}
+        for bid, s in alone.items():
+            s.update(df.iloc[[i]])
+            sig = s.generate_signals()
+            row[bid] = (sig.forecast, sig.regime, blocks[cb[bid]].raw, blocks[cb[bid]].regime)
+        rows.append(row)
+    return rows, comp_strat, alone, m
+
+
+def test_block_forecast_equals_standalone_even_next_to_a_longer_lookback_block(tmp_path):
+    """Fix 2: block A (short lookback) next to block B (EMA spread over the
+    whole window + ratio_to_mean over a long deque, so it needs a much longer
+    lookback and buffer) -- each block's final forecast in the composite equals
+    its stand-alone forecast on every bar."""
+    a = _source_config(5, [{"op": "identity"}])
+    b = _source_config(0, [{"op": "ratio_to_mean"}, {"op": "scale", "params": {"factor": 10}}])
+    b["strategies"]["regimes"]["unknown"]["components"][0].update(
+        {"class": EMA, "params": {"fast_period": 12, "slow_period": 150}, "lookback": 400})
+    ptr = "/strategies/regimes/unknown/components/0"
+    rows, comp_strat, alone, m = _standalone_vs_composite(tmp_path, [(a, [ptr]), (b, [ptr])])
+    assert comp_strat.required_bars > max(s.required_bars for s in alone.values())
+    live = {bid: 0 for bid in alone}
+    for row in rows:
+        for bid, (f_alone, _r, raw, _cr) in row.items():
+            assert raw == f_alone, (bid, raw, f_alone)
+            live[bid] += f_alone != 0.0
+    assert all(v > 100 for v in live.values()), live
+
+
+def test_pinned_lookback_matters(tmp_path):
+    """Without the pin, block A's ratio_to_mean deque would take the composite
+    engine's (longer) default lookback -- the pin is what keeps it equal."""
+    a = _source_config(5, [{"op": "ratio_to_mean"}])
+    b = _source_config(0, [{"op": "identity"}])
+    b["strategies"]["regimes"]["unknown"]["components"][0].update(
+        {"class": EMA, "params": {"fast_period": 12, "slow_period": 150}})
+    ptr = "/strategies/regimes/unknown/components/0"
+    doc = _registry_from_sources(tmp_path, [(a, [ptr]), (b, [ptr])])
+    _, out, _m = _write(tmp_path, doc=doc)
+    cfg = json.loads((out / "base.json").read_text(encoding="utf-8"))
+    src_a = AdvancedStrategy(config_path=str(tmp_path / doc["blocks"][0]["source_config_ref"]))
+    pinned = cfg["strategies"]["regimes"]["unknown"]["components"][0]["lookback"]
+    assert pinned == src_a.strategy_engine._history["unknown"]["sig"].maxlen
+    cfg["strategies"]["regimes"]["unknown"]["components"][0].pop("lookback")
+    from strategies.strategy_engine import ConfigDrivenStrategyEngine
+    unpinned = ConfigDrivenStrategyEngine(cfg["strategies"])._history["unknown"]["b0__sig"].maxlen
+    assert unpinned != pinned
+
+
+def test_gated_blocks_keep_their_own_gate_and_equal_standalone(tmp_path):
+    """Fix 3: a block validated under a detector abstains outside its
+    regime(s) inside the composite; a fragment spanning two source regimes
+    uses each part only in its own regime; both equal their stand-alone
+    forecasts bar for bar."""
+    a = _source_config(5, [{"op": "identity"}])
+    trend_only = _gated_source({"trending": {"components": [
+        {"id": "t", "class": PE, "params": {"period": 9}, "weight": 1.0,
+         "transforms": [{"op": "identity"}, {"op": "scale", "params": {"factor": 100}}]}]}})
+    two_regimes = _gated_source({
+        "trending": {"components": [
+            {"id": "t", "class": PE, "params": {"period": 4}, "weight": 1.0,
+             "transforms": [{"op": "identity"}]}]},
+        "mean_reversion": {"components": [
+            {"id": "m", "class": PE, "params": {"period": 7}, "weight": 2.0,
+             "transforms": [{"op": "negate"}]},
+            {"id": "m2", "class": PE, "params": {"period": 3}, "weight": 1.0,
+             "transforms": [{"op": "identity"}]}]}})
+    ptr = "/strategies/regimes/unknown/components/0"
+    rows, comp_strat, _alone, m = _standalone_vs_composite(tmp_path, [
+        (a, [ptr]),
+        (trend_only, ["/strategies/regimes/trending/components/0"]),
+        (two_regimes, ["/strategies/regimes/trending", "/strategies/regimes/mean_reversion/components"]),
+    ])
+    cfg = json.loads((tmp_path / m["variants"]["base"]["config_ref"]).read_text(encoding="utf-8"))
+    blocks = cfg["strategies"]["regimes"]["unknown"]["blocks"]
+    assert blocks[1]["source"]["regime_detector"] == DETECTOR
+    assert blocks[1]["source"]["parts"] == {"trending": ["b1__t"]}
+    assert blocks[2]["source"]["parts"] == {"mean_reversion": ["b2__m", "b2__m2"], "trending": ["b2__t"]}
+    abstained = {"H-51:run_951": 0, "H-52:run_952": 0}
+    by_regime = {"trending": 0, "mean_reversion": 0}
+    for row in rows:
+        for bid, (f_alone, r_alone, raw, r_comp) in row.items():
+            assert raw == f_alone, (bid, raw, f_alone, r_alone, r_comp)
+        f, _r, raw, r_comp = row["H-51:run_951"]
+        if r_comp == "mean_reversion":
+            assert raw == 0.0
+            abstained["H-51:run_951"] += 1
+        _f, _r, raw2, r2 = row["H-52:run_952"]
+        if r2 in by_regime and raw2 != 0.0:
+            by_regime[r2] += 1
+    assert abstained["H-51:run_951"] > 50
+    assert all(v > 50 for v in by_regime.values()), by_regime
+    # its scale is fitted on active bars only: the gated block's history is
+    # shorter than the ungated block's
+    eng_blocks = comp_strat.strategy_engine._block_regimes["unknown"]["blocks"]
+    assert eng_blocks[1]._appends < eng_blocks[0]._appends
+
+
+def test_partial_regime_fragment_is_refused(tmp_path):
+    two = _gated_source({"mean_reversion": {"components": [
+        {"id": "m", "class": PE, "params": {"period": 7}, "weight": 2.0, "transforms": [{"op": "identity"}]},
+        {"id": "m2", "class": PE, "params": {"period": 3}, "weight": 1.0, "transforms": [{"op": "identity"}]}]}})
+    a = _source_config(5, [{"op": "identity"}])
+    doc = _registry_from_sources(tmp_path, [
+        (a, ["/strategies/regimes/unknown/components/0"]),
+        (two, ["/strategies/regimes/mean_reversion/components/0"])])
+    with pytest.raises(comp.CompositionError, match="partial regime"):
+        _write(tmp_path, doc=doc)
+
+
 def test_written_configs_load_in_the_engine_and_forecast(tmp_path):
     """The real validator passes and the real AdvancedStrategy runs the
     written base config on synthetic bars: NOT_READY first, then a finite,
@@ -287,7 +483,6 @@ def test_written_configs_load_in_the_engine_and_forecast(tmp_path):
         "_vc", SR_ROOT.parent / "trading-bot" / "tools" / "validate_config.py")
     vc = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(vc)
-    from strategies.main_strategy import AdvancedStrategy
     for vid in ("base", "vol_scaled", "ic_weighted"):
         assert vc.validate(json.loads((out / f"{vid}.json").read_text(encoding="utf-8"))) == []
     strat = AdvancedStrategy(config_path=str(out / "base.json"))

@@ -152,34 +152,31 @@ def transform_min_periods(op: str, params: Dict[str, Any]) -> int:
 #
 # NOT a transform op (TRANSFORM_OPS_REGISTRY above is unchanged): the history
 # ops act on ONE component's raw history and discard the pipeline value, while
-# a composition must standardise each block's FINAL forecast -- the value the
-# block emitted when it was validated (its components' pipelines, weighted and
-# clipped exactly as the engine does). ConfigDrivenStrategyEngine keeps a
-# rolling history of that final value per block (opt-in regime key `blocks`,
-# see strategy_engine.py) and calls this function on it.
+# a composition must standardise each block's FINAL forecast. The engine
+# (strategy_engine.py, opt-in regime key `blocks`) keeps the rolling mean of
+# |final forecast| over the block's PAST active values and calls this.
 #
-# Scale-only (operator decision 2026-09-26): the same ratio_to_mean convention
-# as `_ratio_to_mean` -- latest / mean(|history|), no mean subtraction, so a
-# block's directional bias survives and a zero stays zero -- then x target
-# (10, the forecast scale's target average absolute value).
+# Scale-only (operator decision 2026-09-26): value / mean(|past values|), no
+# mean subtraction, so a block's directional bias survives and a zero stays
+# zero; then x target (10, the forecast scale's target average absolute value),
+# capped at +-cap so one block (e.g. a sparse one whose first non-zero value
+# follows a quiet stretch) cannot saturate the composite.
 #
-# WHY THIS CANNOT LEAK: `history` holds the block's final forecasts up to and
-# including the current bar and nothing later (the engine appends one value per
-# update(), computed from data up to that bar's close). The denominator is the
-# mean over that past window only; appending future bars never changes an
-# earlier output. Warm-up: the engine emits 0.0 (and is_ready() is False) until
-# `min_periods` values exist -- no value is ever back-filled or estimated from
-# later data.
+# WHY THIS CANNOT LEAK: `past_abs_mean` is computed by the caller from values
+# of bars strictly before the current one; the current value is not in its own
+# denominator, and nothing after the current bar exists yet.
 # ---------------------------------------------------------------------------
 BLOCK_STANDARDISATION_TARGET = 10.0
 
 
-def standardise_block_forecast(history: pd.Series, target: float = BLOCK_STANDARDISATION_TARGET) -> float:
-    """target * latest / mean(|history|) -- `_ratio_to_mean` scaled to `target`.
-    0.0 when the mean absolute value is ~0 (same guard as `_ratio_to_mean`)."""
-    if not len(history):
+def standardise_block_forecast(value: float, past_abs_mean: float,
+                               target: float = BLOCK_STANDARDISATION_TARGET,
+                               cap: float = 20.0) -> float:
+    """clip(target * value / past_abs_mean, -cap, cap); 0.0 when the past mean
+    absolute value is ~0 (the same 1e-10 guard as `_ratio_to_mean`)."""
+    if not past_abs_mean > 1e-10:
         return 0.0
-    return float(target * _ratio_to_mean(history))
+    return float(np.clip(target * value / past_abs_mean, -cap, cap))
 
 
 def component_effective_lookback(c_spec: Dict[str, Any], comp_required: int) -> int:

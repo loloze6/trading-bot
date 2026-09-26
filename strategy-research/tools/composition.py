@@ -24,15 +24,18 @@ timeframe-less block is excluded loudly and regime blocks never enter):
      non-finite / zero / negative residual IC.
   2. the three variant configs -- `base` (equal), `vol_scaled`, `ic_weighted`
      -- each the SAME composite config except for the block weights:
-     the ungated pattern (STRATEGY_DESIGN_GUIDE.md §7e; S1 §5: ungated
-     unless a regime block is listed, and regime blocks are not combined
-     before 7.4), every block's components copied verbatim from its registry
-     `config_fragment` (only the id is prefixed with the block's config id,
-     so two blocks cannot collide), grouped under the engine's opt-in block
-     combiner (`strategies.regimes.unknown.blocks` +
-     `block_standardisation`, trading-bot/strategies/strategy_engine.py):
-     each block's FINAL forecast is standardised at combination time,
-     past values only (operator decision 1), then weighted;
+     every block combined AS VALIDATED under the engine's opt-in block
+     combiner (`strategies.regimes.unknown.blocks` + `block_standardisation`,
+     trading-bot/strategies/strategy_engine.py): its components copied
+     verbatim from its registry `config_fragment` (id prefixed with the
+     block's config id so two blocks cannot collide; `lookback` pinned to the
+     source engine's deque length), its source timing (required_bars,
+     warmup, buffer length) and its source regime_detector as its own gate --
+     a gated block abstains outside its validated regime(s). The composite's
+     own detector is the trivial ungated pattern (§7e) that routes every bar
+     to the combiner. Each block's FINAL forecast is standardised at
+     combination time on its own past active values only (operator decision
+     1), capped +-20, then weighted;
   3. a composition manifest listing every block, its components' pointers in
      the composite config, and its weight under each scheme;
   4. campaign_record/compositions.yaml (record_composition): locked, atomic,
@@ -190,8 +193,8 @@ def scheme_weights(blocks: list, daily_returns_by_block: dict) -> dict:
 # 2. assembling the composite config
 # ---------------------------------------------------------------------------
 
-def block_component_specs(block: dict) -> tuple:
-    """(component specs, source regimes) from a registry block's
+def block_component_specs(block: dict) -> list:
+    """[(source regime, component spec)] from a registry block's
     config_fragment. Supported pointer shapes (a forecast block's pieces):
     /strategies/regimes/<r> (a regime's `components`),
     /strategies/regimes/<r>/components (the list) and
@@ -202,7 +205,7 @@ def block_component_specs(block: dict) -> tuple:
     frag = block.get("config_fragment")
     if not isinstance(frag, dict) or not frag:
         raise CompositionError(f"block {bid!r}: empty or malformed config_fragment")
-    specs, regimes = [], set()
+    out = []
     for ptr, value in frag.items():
         segs = _jp.split_json_pointer(ptr, error_cls=CompositionError)
         if len(segs) < 3 or segs[:2] != ["strategies", "regimes"]:
@@ -225,19 +228,16 @@ def block_component_specs(block: dict) -> tuple:
             missing = [k for k in ("id", "class", "weight", "transforms") if k not in c]
             if missing:
                 raise CompositionError(f"block {bid!r}: component {c.get('id')!r} lacks {missing}")
-        specs.extend(copy.deepcopy(got))
-        regimes.add(segs[2])
-    ids = [c["id"] for c in specs]
-    if len(ids) != len(set(ids)):
-        raise CompositionError(f"block {bid!r}: component ids repeat across its pieces {ids}")
-    return specs, sorted(regimes)
+            out.append((segs[2], copy.deepcopy(c)))
+    keys = [(r, c["id"]) for r, c in out]
+    if len(keys) != len(set(keys)):
+        raise CompositionError(f"block {bid!r}: a component appears twice in its fragment {keys}")
+    return out
 
 
-def _source_scaffolding(block: dict, root: Path) -> dict:
-    """The parts of the block's tested base config a composite must carry:
-    aux_feeds, strategies.warmup, strategies.min_allocation_change. The config
-    is sha-checked against the registry; any other key raises (unknown
-    scaffolding cannot be merged safely)."""
+def _load_source_config(block: dict, root: Path) -> tuple:
+    """(path, config) of the block's tested base config, sha-checked against
+    the registry; top-level / strategies keys the writer cannot carry raise."""
     bid = block["block_id"]
     path = Path(root) / block["source_config_ref"]
     _cc._refuse_sealed(path)
@@ -253,39 +253,101 @@ def _source_scaffolding(block: dict, root: Path) -> dict:
     if extra or extra_s:
         raise CompositionError(f"block {bid!r}: source config carries key(s) {extra + extra_s} "
                                f"the composition writer does not know how to merge")
-    strat = cfg.get("strategies") or {}
-    return {"aux_feeds": list(cfg.get("aux_feeds") or []),
-            "warmup": strat.get("warmup"),
-            "min_allocation_change": strat.get("min_allocation_change")}
+    return path, cfg
+
+
+def assemble_block(block: dict, cbid: str, root: Path) -> dict:
+    """One block AS VALIDATED:
+      * each component spec copied verbatim, id prefixed with `cbid`, and its
+        `lookback` pinned to the deque length its SOURCE engine used;
+      * `source`: the source AdvancedStrategy's required_bars, strategy-engine
+        warmup and buffer length, the source regime_detector (the block's own
+        gate) and `parts` {source regime: [component ids]};
+      * every part must be the WHOLE component list of that source regime, so
+        the part's forecast is exactly the source's forecast in that regime.
+    The numbers are read from a real AdvancedStrategy built on the source
+    config, not re-derived."""
+    from strategies.main_strategy import AdvancedStrategy  # trading-bot/ on sys.path
+    bid = block["block_id"]
+    path, src_cfg = _load_source_config(block, root)
+    pieces = block_component_specs(block)
+    src = AdvancedStrategy(config_path=str(path))
+    se = src.strategy_engine
+    src_regimes = src_cfg["strategies"].get("regimes") or {}
+    parts, comps = {}, []
+    for regime, spec in pieces:
+        src_ids = [c["id"] for c in (src_regimes.get(regime) or {}).get("components", [])]
+        if spec["id"] not in src_ids:
+            raise CompositionError(f"block {bid!r}: component {spec['id']!r} is not in its source "
+                                   f"config's regime {regime!r}")
+        new = copy.deepcopy(spec)
+        new["lookback"] = se._history[regime][spec["id"]].maxlen
+        new["id"] = f"{cbid}__{spec['id']}"
+        comps.append(new)
+        parts.setdefault(regime, []).append((spec["id"], new["id"]))
+    for regime, pairs in parts.items():
+        src_ids = [c["id"] for c in src_regimes[regime]["components"]]
+        if sorted(o for o, _n in pairs) != sorted(src_ids):
+            raise CompositionError(
+                f"block {bid!r}: its fragment holds {sorted(o for o, _n in pairs)} of source regime "
+                f"{regime!r}, whose forecast is made of {sorted(src_ids)} -- the block's validated "
+                f"forecast cannot be reproduced from a partial regime")
+    return {"block_id": bid, "config_block_id": cbid, "components": comps,
+            "source": {"required_bars": int(src.required_bars),
+                       "warmup": int(se._warmup),
+                       "buffer_bars": int(src.data_buffer.max_size),
+                       "regime_detector": copy.deepcopy(src_cfg["regime_detector"]),
+                       "parts": {r: [n for _o, n in pairs] for r, pairs in sorted(parts.items())}},
+            "scaffolding": {"aux_feeds": list(src_cfg.get("aux_feeds") or []),
+                            "min_allocation_change":
+                                (src_cfg.get("strategies") or {}).get("min_allocation_change")}}
+
+
+def _feed_name(entry):
+    if isinstance(entry, str):
+        return entry
+    if isinstance(entry, dict) and isinstance(entry.get("name"), str):
+        return entry["name"]
+    raise CompositionError(f"aux_feeds entry {entry!r} has no name")
 
 
 def _merge_scaffolding(parts: dict) -> dict:
-    feeds = []
+    """aux_feeds: union by feed name; the same name declared differently by two
+    blocks raises (never duplicated, never last-wins). min_allocation_change:
+    all blocks must agree."""
+    feeds, by_name = [], {}
     for bid in sorted(parts):
         for f in parts[bid]["aux_feeds"]:
-            if f not in feeds:
-                feeds.append(f)
-    warmups = [p["warmup"] for p in parts.values() if p["warmup"] is not None]
+            name = _feed_name(f)
+            if name in by_name:
+                if json.dumps(by_name[name][1], sort_keys=True) != json.dumps(f, sort_keys=True):
+                    raise CompositionError(
+                        f"blocks {by_name[name][0]!r} and {bid!r} declare aux feed {name!r} "
+                        f"differently ({by_name[name][1]!r} vs {f!r}) -- a person decides")
+                continue
+            by_name[name] = (bid, f)
+            feeds.append(copy.deepcopy(f))
     macs = {json.dumps(p["min_allocation_change"]) for p in parts.values()}
     if len(macs) > 1:
         raise CompositionError(f"blocks disagree on strategies.min_allocation_change "
                                f"({ {b: p['min_allocation_change'] for b, p in parts.items()} })"
                                f" -- a person decides")
-    return {"aux_feeds": feeds, "warmup": max(warmups) if warmups else None,
+    return {"aux_feeds": feeds,
             "min_allocation_change": next(iter(parts.values()))["min_allocation_change"]}
 
 
 def assemble_composite_config(assembled: list, weights: dict, scaffolding: dict) -> dict:
-    """The composite config for one weighting. `assembled`: [{block_id,
-    config_block_id, components}] in config order; `weights`: {block_id: w}."""
+    """The composite config for one weighting. `assembled`: assemble_block()
+    results in config order; `weights`: {block_id: w}. The composite's own
+    detector is the trivial ungated one (every bar -> `unknown`); each block
+    is gated by its OWN source detector inside the engine's block combiner."""
     comps, blocks = [], []
     for a in assembled:
         comps.extend(copy.deepcopy(a["components"]))
         blocks.append({"id": a["config_block_id"], "weight": weights[a["block_id"]],
-                       "components": [c["id"] for c in a["components"]]})
+                       "components": [c["id"] for c in a["components"]],
+                       "source": copy.deepcopy(a["source"])})
     strategies: dict = {}
-    if scaffolding["warmup"] is not None:
-        strategies["warmup"] = scaffolding["warmup"]
     if scaffolding["min_allocation_change"] is not None:
         strategies["min_allocation_change"] = scaffolding["min_allocation_change"]
     strategies["regimes"] = {
@@ -295,7 +357,7 @@ def assemble_composite_config(assembled: list, weights: dict, scaffolding: dict)
     }
     cfg = {"regime_detector": copy.deepcopy(_UNGATED_DETECTOR), "strategies": strategies}
     if scaffolding["aux_feeds"]:
-        cfg["aux_feeds"] = list(scaffolding["aux_feeds"])
+        cfg["aux_feeds"] = copy.deepcopy(scaffolding["aux_feeds"])
     return cfg
 
 
@@ -341,17 +403,16 @@ def write_composition_variants(registry_doc: dict, timeframe, out_dir: Path, *, 
     assembled, parts, manifest_blocks = [], {}, []
     for k, block in enumerate(blocks):
         bid = block["block_id"]
-        specs, src_regimes = block_component_specs(block)
-        cbid = f"b{k}"
-        for c in specs:
-            c["id"] = f"{cbid}__{c['id']}"
-        assembled.append({"block_id": bid, "config_block_id": cbid, "components": specs})
-        parts[bid] = _source_scaffolding(block, root)
-        manifest_blocks.append({"block_id": bid, "config_block_id": cbid,
+        a = assemble_block(block, f"b{k}", root)
+        assembled.append(a)
+        parts[bid] = a["scaffolding"]
+        manifest_blocks.append({"block_id": bid, "config_block_id": a["config_block_id"],
                                 "source_config_ref": block["source_config_ref"],
                                 "source_config_sha256": block["source_config_sha256"],
-                                "source_regimes": src_regimes,
-                                "component_ids": [c["id"] for c in specs],
+                                "source_regimes": sorted(a["source"]["parts"]),
+                                "source_required_bars": a["source"]["required_bars"],
+                                "source_warmup": a["source"]["warmup"],
+                                "component_ids": [c["id"] for c in a["components"]],
                                 "residual_ic": block["residual_ic"]["value"],
                                 "daily_return_vol": daily_return_vol(daily_returns_by_block[bid], bid),
                                 "n_daily_returns": len(daily_returns_by_block[bid])})
@@ -393,15 +454,15 @@ def write_composition_variants(registry_doc: dict, timeframe, out_dir: Path, *, 
                         "/strategies/regimes/mean_reversion", "/strategies/regimes/chop",
                         f"/strategies/regimes/{COMPOSITE_REGIME}/blocks",
                         f"/strategies/regimes/{COMPOSITE_REGIME}/block_standardisation"]
-                       + (["/strategies/warmup"] if scaffolding["warmup"] is not None else [])
                        + (["/strategies/min_allocation_change"]
                           if scaffolding["min_allocation_change"] is not None else [])
                        + (["/aux_feeds"] if scaffolding["aux_feeds"] else []),
         "variants": variants,
         "rationale": ("code-written composition (E-060 S3a): same-timeframe registry forecast "
-                      "blocks, ungated, each block's final forecast standardised past-only "
-                      "(value / rolling mean |value| x target) at combination time, then "
-                      "weighted by the scheme. The variants differ only in the block weights. "
+                      "blocks, each run as validated (gated by its own source detector, its "
+                      "source lookbacks and warm-up), each block's final forecast "
+                      "standardised past-only (value / mean |past active values| x target, "
+                      "capped +-20) at combination time, then weighted by the scheme. The variants differ only in the block weights. "
                       "Residual ICs are as registered (each measured against the composite of "
                       "its own registration time). A composite never registers as a block."),
     }
