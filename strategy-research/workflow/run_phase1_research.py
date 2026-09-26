@@ -3294,7 +3294,7 @@ def _decide_next_enabled() -> bool:
 # unreachable; their code stays for flag-off runs, marked
 # `# legacy routing (v26 card G)`. Nothing routes to holdout_evaluation: the
 # holdout is reached only through the branch-3 profit_bars_reached stop plus an
-# operator unlock (slice 6c S2d, not built yet).
+# operator unlock (slice 6c S2d, _holdout_unlock_route below).
 # ---------------------------------------------------------------------------
 
 # The three run endings under the flag, one per grid idea_status. Pinned in
@@ -3594,31 +3594,586 @@ def _mark_holdout_consumed(policy: dict, consumed: list, hyp_id: str) -> None:
     print(f"⚙️  A6.1: {hyp_id} marked in holdout_consumed_by (single-use consumed).")
 
 
-def _record_spent_holdout(run_dir: Path, run_id: str) -> str:
-    """Slice 6c S2a code review (item 1). Under verdict_routing_retired, a run
-    found at holdout_evaluation WITH artifacts/holdout_result.yaml has already
-    spent the seal by hand. The spend must never go unrecorded, so only the
-    record step runs: hypothesis_id is added to holdout_consumed_by (once -- an
-    id already there is not added again) and the run ends on the recorded
-    result exactly as step 4 of _route_holdout_evaluation maps it (pass ->
-    completed_promoted, fail -> completed_rejected, anything else ->
-    human_pause). No other holdout gate runs and nothing new is spent."""
-    hyp_id, _ = _holdout_hypothesis_id(run_dir, run_id)
-    policy = (load_yaml(_DATA_POLICY_PATH) or {}) if _DATA_POLICY_PATH.exists() else {}
-    consumed = policy.get("holdout_consumed_by") or []
-    if hyp_id in consumed:
+def _load_data_policy() -> dict:
+    return (load_yaml(_DATA_POLICY_PATH) or {}) if _DATA_POLICY_PATH.exists() else {}
+
+
+def _holdout_already_spent(hyp_id: str, policy: dict | None = None) -> bool:
+    """The single-use check (A6.1), in one place: is hyp_id in
+    campaign_data_policy.yaml holdout_consumed_by?"""
+    policy = _load_data_policy() if policy is None else policy
+    return hyp_id in (policy.get("holdout_consumed_by") or [])
+
+
+def _mark_holdout_consumed_if_absent(hyp_id: str) -> bool:
+    """The consume marker, written only when absent (so a crash before or
+    after the write ends with exactly one entry). True when written now."""
+    policy = _load_data_policy()
+    if _holdout_already_spent(hyp_id, policy):
         print(f"⚙️  A6.1: {hyp_id} already in holdout_consumed_by -- the spend is on record.")
-    else:
-        _mark_holdout_consumed(policy, consumed, hyp_id)
+        return False
+    _mark_holdout_consumed(policy, policy.get("holdout_consumed_by") or [], hyp_id)
+    return True
+
+
+def _holdout_result_terminal(status: str) -> str | None:
+    """The gate's step-4 mapping: pass -> completed_promoted, fail ->
+    completed_rejected, anything else -> None (a human decides)."""
+    return {"pass": "completed_promoted", "fail": "completed_rejected"}.get(status)
+
+
+# Slice 6c S2d review fix 3: a holdout_result.yaml with no valid operator
+# unlock is recorded as consumed, then always pauses -- never a promotion.
+HOLDOUT_SPENT_WITHOUT_UNLOCK_FLAG = "holdout_spent_without_unlock"
+# pipeline_state.yaml key: the per-run consume intent, written BEFORE the marker
+# (S2d; also by the S2a record path, review fix 1 needs it to account the spend).
+HOLDOUT_CONSUME_RECORD_KEY = "holdout_consume_record"
+
+
+def _write_consume_intent(run_dir: Path, run_id: str, hyp_id: str, **extra) -> dict:
+    """Persists the run's consume intent (hypothesis_id, the result's sha256,
+    whether the hypothesis had ALREADY consumed the holdout before this run)
+    before the marker is written. Written once: an existing intent is kept."""
+    state = load_yaml(run_dir / "pipeline_state.yaml") or {}
+    if state.get(HOLDOUT_CONSUME_RECORD_KEY):
+        return state[HOLDOUT_CONSUME_RECORD_KEY]
+    hr_path = run_dir / "artifacts" / "holdout_result.yaml"
+    intent = {"hypothesis_id": hyp_id, "run_id": run_id,
+              "consumed_before": _holdout_already_spent(hyp_id),
+              "holdout_result_sha256": hashlib.sha256(hr_path.read_bytes()).hexdigest(),
+              "recorded_at": datetime.now(timezone.utc).isoformat(), **extra}
+    update_state(path=run_dir, **{HOLDOUT_CONSUME_RECORD_KEY: intent})
+    return intent
+
+
+def _record_spent_holdout(run_dir: Path, run_id: str) -> str:
+    """Slice 6c S2a code review (item 1), tightened by S2d review fixes 3 and 8.
+    Under verdict_routing_retired, a run found at holdout_evaluation WITH
+    artifacts/holdout_result.yaml and WITHOUT a valid operator unlock has spent
+    the seal by hand. The spend is recorded first (the consume intent, then the
+    marker if absent), and the run then ALWAYS pauses as
+    holdout_spent_without_unlock: no unlock, no promotion. hypothesis_id comes
+    only from hypothesis_card.yaml, never a promotion_audit.yaml."""
+    hyp_id = _idea_hypothesis_id(run_dir)
+    _write_consume_intent(run_dir, run_id, hyp_id, unlock=None)
+    _mark_holdout_consumed_if_absent(hyp_id)
     hr = load_yaml(run_dir / "artifacts" / "holdout_result.yaml") or {}
     status = str(hr.get("status", "")).lower()
-    print(f"\n📒 verdict_routing_retired: the holdout already spent by hand for {hyp_id} is "
-          f"recorded (status={status!r}); nothing new is spent.")
-    if status == "pass":
-        return "completed_promoted"
-    if status == "fail":
-        return "completed_rejected"
+    print(f"\n🛑 verdict_routing_retired: the holdout spent by hand for {hyp_id} is recorded "
+          f"(status={status!r}), but no operator unlock authorised it -- never promoted. "
+          f"See docs/RUNBOOK.md §3 ({HOLDOUT_SPENT_WITHOUT_UNLOCK_FLAG}).")
+    update_state(path=run_dir, flags={HOLDOUT_SPENT_WITHOUT_UNLOCK_FLAG: True})
     return "human_pause"
+
+
+# ---------------------------------------------------------------------------
+# Slice 6c S2d -- the holdout unlock (S1_FINDINGS_6C.md guess 1 and the
+# operator decision of 2026-09-25), under orchestrator.verdict_routing_retired
+# only. The holdout is reached ONLY through branch 3: a backtest passed every
+# profit bar -> the profit_bars_reached stop -> the operator resumes with
+# artifacts/holdout_decision.yaml. The grid's idea_status plays no part: a
+# validated idea never reaches the holdout by itself, and a refuted or
+# inconclusive idea whose variant passed the bars may still be spent on.
+#   * spend    -> holdout_evaluation for the named variant; refused unless this
+#                 run's evaluation records PASS for it under the current
+#                 bars file (by sha256), its deflated Sharpe still
+#                 clears the bar on the CURRENT trial ledger, the operator
+#                 attests the trial ledgers are merged, no other run holds an
+#                 unfinished spend of the one physical seal, and the hypothesis
+#                 has not consumed the holdout.
+#   * continue -> the holdout is untouched, the choice is recorded, the run
+#                 ends completed_<idea_status> and decide-next runs.
+# Once holdout_result.yaml exists the spend is RECORDED FIRST (consume intent,
+# then the marker if absent); only then can a check change the ending (an
+# unbound or relabelled result, a second spend, the research_only hold) --
+# never skip the record. Code review fixes 1-10 (tests in
+# tests/test_e059_6c_s2d_review_fixes.py).
+# ---------------------------------------------------------------------------
+
+HOLDOUT_DECISION_FILE = "holdout_decision.yaml"
+HOLDOUT_DECISIONS = ("spend", "continue")
+# The operator file's closed schema: a key outside these two tuples is refused
+# (a typo such as `varient_id` must never read as "no variant named").
+HOLDOUT_DECISION_REQUIRED_KEYS = ("decision", "run_id", "profit_bars_stop_evaluation",
+                                  "ratified_by", "ratified_at")
+# variant_id and trial_ledgers_merged: true are required for spend.
+HOLDOUT_DECISION_OPTIONAL_KEYS = ("variant_id", "trial_ledgers_merged", "note")
+# What holdout_result.yaml must state, besides `status`, to bind it to the unlock.
+HOLDOUT_RESULT_BINDING_KEYS = ("variant_id", "trial_id", "decision_sha256")
+# pipeline_state.yaml keys, written only under the flag.
+HOLDOUT_DECISION_RECORD_KEY = "holdout_decision_record"
+HOLDOUT_UNLOCK_REFUSAL_KEY = "holdout_unlock_refusal"
+HOLDOUT_RELABEL_KEY = "holdout_result_relabel_attempts"
+# The evaluation's record of the whole bars file (review fix 7).
+BARS_FILE_SHA_FIELD = "bars_file_sha256"
+# Sticky pause flags (run_campaign._classify_human_pause; RUNBOOK §3 rows).
+HOLDOUT_UNLOCK_REFUSED_FLAG = "holdout_unlock_refused"
+HOLDOUT_AWAITING_RESULT_FLAG = "holdout_unlocked_awaiting_result"
+HOLDOUT_RESULT_INCONCLUSIVE_FLAG = "holdout_unlocked_result_inconclusive"
+HOLDOUT_RESULT_UNBOUND_FLAG = "holdout_result_unbound"
+HOLDOUT_RESULT_RELABELLED_FLAG = "holdout_result_relabelled"
+# Every refusal code; each has its own RUNBOOK §3 row (pinned by the tests).
+HOLDOUT_UNLOCK_REFUSALS = (
+    "decision_missing",        # no holdout_decision.yaml
+    "decision_malformed",      # unparseable, not a mapping, or outside the schema
+    "decision_wrong_run",      # run_id names another run
+    "decision_stale",          # written for another profit_bars_reached stop
+    "decision_changed",        # edited after it unlocked the spend, before the backtest
+    "variant_not_passing",     # the named variant is not PASS in this run's evaluation
+    "bars_changed",            # the evaluation was graded under another bars file
+    "holdout_already_consumed",  # the hypothesis is in holdout_consumed_by
+    "seal_spend_pending",      # another run or writer holds an unfinished spend
+    "ledgers_not_merged",      # spend without trial_ledgers_merged: true
+    "dsr_fails_current_ledger",  # deflated Sharpe does not clear the bar on today's ledger
+)
+
+
+class HoldoutUnlockRefused(Exception):
+    """A spend or continue that must not proceed. `code` is one of
+    HOLDOUT_UNLOCK_REFUSALS."""
+
+    def __init__(self, code: str, detail: str):
+        if code not in HOLDOUT_UNLOCK_REFUSALS:
+            raise ValueError(f"unknown holdout-unlock refusal code {code!r}")
+        super().__init__(f"{code}: {detail}")
+        self.code = code
+        self.detail = detail
+
+
+def _holdout_decision_path(run_dir: Path) -> Path:
+    return run_dir / "artifacts" / HOLDOUT_DECISION_FILE
+
+
+def _is_ratified(value) -> bool:
+    """A non-blank string (the decision file's run_id / stop / ratified_by /
+    variant_id). None, "", "   " or a non-string are refused."""
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _bars_file_path() -> Path:
+    return ROOT / "config" / "profitability_bars.yaml"
+
+
+def _bars_file_sha256() -> str | None:
+    path = _bars_file_path()
+    return hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+
+
+def _read_holdout_decision(run_dir: Path) -> tuple:
+    """(doc, sha256) of the operator file, schema-checked. Parsed with plain
+    yaml.safe_load -- never load_yaml's repair pass, which could turn a broken
+    operator file into a plausible one."""
+    from datetime import date as _date
+    path = _holdout_decision_path(run_dir)
+    if not path.is_file():
+        raise HoldoutUnlockRefused("decision_missing", f"{path} does not exist")
+    raw = path.read_bytes()
+    sha = hashlib.sha256(raw).hexdigest()
+    try:
+        doc = yaml.safe_load(raw.decode("utf-8"))
+    except (yaml.YAMLError, UnicodeDecodeError) as e:
+        raise HoldoutUnlockRefused("decision_malformed", f"{path} does not parse: {e}")
+    if not isinstance(doc, dict):
+        raise HoldoutUnlockRefused("decision_malformed",
+                                   f"{path} is not a mapping (got {type(doc).__name__})")
+    allowed = HOLDOUT_DECISION_REQUIRED_KEYS + HOLDOUT_DECISION_OPTIONAL_KEYS
+    unknown = sorted(str(k) for k in doc if k not in allowed)
+    missing = [k for k in HOLDOUT_DECISION_REQUIRED_KEYS if k not in doc]
+    if unknown or missing:
+        raise HoldoutUnlockRefused(
+            "decision_malformed", f"{path}: unknown key(s) {unknown}, missing key(s) {missing}; "
+            f"allowed: {list(allowed)}")
+    problems = []
+    if doc["decision"] not in HOLDOUT_DECISIONS:
+        problems.append(f"decision={doc['decision']!r} is not one of {list(HOLDOUT_DECISIONS)}")
+    for key in ("run_id", "profit_bars_stop_evaluation", "ratified_by"):
+        if not _is_ratified(doc[key]):
+            problems.append(f"{key} must be a non-empty (quoted) string, got {doc[key]!r}")
+    ratified_at = doc["ratified_at"]
+    if isinstance(ratified_at, str):
+        try:
+            datetime.fromisoformat(ratified_at.strip())
+        except ValueError:
+            problems.append(f"ratified_at={ratified_at!r} is not an ISO date or datetime")
+    elif not isinstance(ratified_at, (_date, datetime)):
+        problems.append(f"ratified_at must be an ISO date or datetime, got {ratified_at!r}")
+    variant = doc.get("variant_id")
+    if doc["decision"] == "spend" and not _is_ratified(variant):
+        problems.append("variant_id (the passing backtest) is required for decision: spend")
+    elif variant is not None and not _is_ratified(variant):
+        problems.append(f"variant_id must be a non-empty string or absent, got {variant!r}")
+    merged = doc.get("trial_ledgers_merged")
+    if merged is not None and not isinstance(merged, bool):
+        problems.append(f"trial_ledgers_merged must be an unquoted true/false, got {merged!r}")
+    if doc.get("note") is not None and not isinstance(doc["note"], str):
+        problems.append("note must be a string")
+    if problems:
+        raise HoldoutUnlockRefused("decision_malformed", f"{path}: " + "; ".join(problems))
+    return doc, sha
+
+
+def _evaluation_under_current_bars(ev: dict) -> dict:
+    """Refuses unless the bars file in place now is byte-for-byte the file the
+    evaluation was graded under (its whole-file sha256, review fix 7), so the
+    bars cannot change under a PASS unnoticed. Bars ratification is the
+    operator's manual check, not enforced here (operator decision 2026-09-26,
+    replacing review fix 6). Returns the loaded bars."""
+    try:
+        bars = _load_profitability_bars()
+    except ProfitabilityBarsSchemaError as e:
+        raise HoldoutUnlockRefused("bars_changed", f"the current bars file does not load: {e}")
+    graded, now = ev.get(BARS_FILE_SHA_FIELD), _bars_file_sha256()
+    if not graded or graded != now:
+        raise HoldoutUnlockRefused(
+            "bars_changed", f"the evaluation was graded under bars file sha256 {graded!r}; the "
+            f"file in place now is {now!r}")
+    return bars
+
+
+def _dsr_on_current_ledger(run_dir: Path, variant: str, entry: dict, bars: dict,
+                           ev: dict) -> dict:
+    """Review fix 8: the variant's deflated Sharpe, recomputed NOW on the
+    current campaign trial ledger with the promotion audit's own evaluator
+    (_promotion_dsr_context), must still clear deflated_sharpe_threshold. N only
+    grows, so a figure graded earlier on fewer trials is never trusted alone."""
+    basis = (ev.get("dsr_basis") or {}).get("n_dsr_total")
+    if entry.get("trial_id") in _invalidated_trial_ids():
+        raise HoldoutUnlockRefused("dsr_fails_current_ledger",
+                                   f"trial {entry.get('trial_id')!r} is now invalidated_artifact")
+    rel = entry.get("protocol_result_ref")
+    try:
+        pr = load_yaml(run_dir / rel) if rel else None
+        if not isinstance(pr, dict):
+            raise ValueError(f"no readable protocol_result at {rel!r}")
+        ctx = _promotion_dsr_context()
+        dsr = ctx["dsr_candidate"](pr)[4].get("deflated_sharpe_ratio")
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        raise HoldoutUnlockRefused("dsr_fails_current_ledger",
+                                   f"the deflated Sharpe cannot be reproduced: {e}")
+    threshold = bars["deflated_sharpe_threshold"]
+    if not isinstance(dsr, (int, float)) or not math.isfinite(dsr) or dsr < threshold:
+        raise HoldoutUnlockRefused(
+            "dsr_fails_current_ledger", f"variant {variant!r}: deflated Sharpe on the current "
+            f"ledger is {dsr!r} (threshold {threshold}; ledger N now {ctx['n_dsr_total']}, at "
+            f"grading {basis})")
+    return {"deflated_sharpe_ratio": dsr, "n_dsr_total": ctx["n_dsr_total"],
+            "n_trials": ctx["n_trials"], "n_dsr_total_at_grading": basis}
+
+
+_FINISHED_PREFIXES = ("completed", "rejected", "failed_validation")
+
+
+def _other_pending_spends(run_id: str) -> list:
+    """Review fix 1 -- one physical seal, one pending spend. Every OTHER run
+    whose pipeline_state.yaml holds a spend decision or a consume record and
+    has not finished (any hypothesis), plus every hypothesis in the tracked
+    campaign_data_policy.yaml holdout_consumed_by that no finished run here
+    accounts for (the other writer's spend, or a hand spend, which may still be
+    in flight). Fail closed: an unreadable state counts as pending."""
+    pending, finished_ids = [], set()
+    for sp in sorted((ROOT / "runs").glob("*/pipeline_state.yaml")):
+        rid = sp.parent.name
+        try:
+            st = load_yaml(sp) or {}
+        except Exception as e:
+            if rid != run_id:
+                pending.append(f"{rid} (pipeline_state.yaml unreadable: {e})")
+            continue
+        consume = st.get(HOLDOUT_CONSUME_RECORD_KEY)
+        spend = st.get(HOLDOUT_DECISION_RECORD_KEY)
+        done = str(st.get("pending_stage") or "").startswith(_FINISHED_PREFIXES)
+        if done and isinstance(consume, dict):
+            finished_ids.add(consume.get("hypothesis_id"))
+        if rid == run_id or done:
+            continue
+        if consume or (isinstance(spend, dict) and spend.get("decision") == "spend"):
+            pending.append(f"{rid} ({'consume record' if consume else 'spend decision'}, "
+                           f"pending_stage={st.get('pending_stage')!r})")
+    unaccounted = [h for h in (_load_data_policy().get("holdout_consumed_by") or [])
+                   if h not in finished_ids]
+    if unaccounted:
+        pending.append(f"campaign_data_policy.yaml holdout_consumed_by {unaccounted} (no finished "
+                       f"run in this checkout accounts for them: another writer's or a hand spend)")
+    return pending
+
+
+def _profit_stop_raised(run_dir: Path, run_id: str, state: dict | None = None) -> dict | None:
+    """Review fix 10: this run's every_backtest evaluation when the
+    profit_bars_reached stop was raised for it (a passing variant, and the
+    run's recorded stop names its generated_at); else None."""
+    if state is None:
+        state = load_yaml(run_dir / "pipeline_state.yaml") or {}
+    ev = _load_every_backtest_evaluation(run_dir, run_id)
+    if (ev is None or not ev.get("passing") or not state.get("profit_bars_stop_evaluation")
+            or state.get("profit_bars_stop_evaluation") != ev.get("generated_at")):
+        return None
+    return ev
+
+
+def _validate_holdout_decision(run_dir: Path, run_id: str, state: dict) -> dict:
+    """The operator's decision checked against THIS run and THIS stop; for a
+    spend, every precondition of the operator decision of 2026-09-25 and of
+    code-review fixes 1, 6-9. Read-only. Returns the record to store
+    (HOLDOUT_DECISION_RECORD_KEY); raises HoldoutUnlockRefused otherwise."""
+    doc, sha = _read_holdout_decision(run_dir)
+    if doc["run_id"] != run_id:
+        raise HoldoutUnlockRefused("decision_wrong_run",
+                                   f"run_id={doc['run_id']!r}, but this run is {run_id!r}")
+    ev = _profit_stop_raised(run_dir, run_id, state)
+    stop = state.get("profit_bars_stop_evaluation")
+    if ev is None:
+        raise HoldoutUnlockRefused(
+            "decision_stale", f"this run has no raised profit_bars_reached stop matching its "
+            f"current evaluation (pipeline_state profit_bars_stop_evaluation={stop!r})")
+    if doc["profit_bars_stop_evaluation"] != stop:
+        raise HoldoutUnlockRefused(
+            "decision_stale", f"profit_bars_stop_evaluation={doc['profit_bars_stop_evaluation']!r} "
+            f"names another stop; this run's stop is {stop!r}")
+    variant = doc.get("variant_id")
+    record = {
+        "decision": doc["decision"], "run_id": run_id,
+        "profit_bars_stop_evaluation": stop, "variant_id": variant,
+        "ratified_by": doc["ratified_by"], "ratified_at": str(doc["ratified_at"]),
+        "note": doc.get("note"), "decision_sha256": sha,
+        "recorded_at": datetime.now(timezone.utc).isoformat(),
+    }
+    entry = None
+    if variant is not None:
+        entry = (ev.get("variants") or {}).get(variant)
+        bar_rows = (entry or {}).get("bars") or []
+        if (variant not in (ev.get("passing") or []) or not isinstance(entry, dict)
+                or entry.get("result") != "PASS" or not bar_rows
+                or any(not isinstance(r, dict) or r.get("result") != "PASS" for r in bar_rows)):
+            raise HoldoutUnlockRefused(
+                "variant_not_passing", f"variant {variant!r} is not PASS on every bar in this "
+                f"run's profit_bars_evaluation.yaml (passing: {ev.get('passing')})")
+        record.update(trial_id=entry.get("trial_id"),
+                      protocol_result_ref=entry.get("protocol_result_ref"))
+    if doc["decision"] == "spend":
+        if doc.get("trial_ledgers_merged") is not True:
+            raise HoldoutUnlockRefused(
+                "ledgers_not_merged", "a spend needs `trial_ledgers_merged: true`, the "
+                "operator's attestation that both writers' trial ledgers are merged (no "
+                "holdout touch until they are)")
+        bars = _evaluation_under_current_bars(ev)
+        hyp_id = _idea_hypothesis_id(run_dir)  # never a promotion_audit.yaml (fix 8)
+        if _holdout_already_spent(hyp_id):
+            raise HoldoutUnlockRefused(
+                "holdout_already_consumed", f"{hyp_id} is already in campaign_data_policy.yaml "
+                f"holdout_consumed_by -- the holdout is single-use per hypothesis (A6.1)")
+        others = _other_pending_spends(run_id)
+        if others:
+            raise HoldoutUnlockRefused(
+                "seal_spend_pending", "the holdout is one physical seal and another spend is "
+                "unfinished: " + "; ".join(others))
+        record["dsr_recheck"] = _dsr_on_current_ledger(run_dir, variant, entry, bars, ev)
+        record["hypothesis_id"] = hyp_id
+        record["trial_ledgers_merged"] = True
+    return record
+
+
+def _refuse_holdout_unlock(run_dir: Path, refusal: HoldoutUnlockRefused) -> str:
+    """The classified pause for a refused decision. Nothing is spent; any
+    earlier decision record is dropped, so a stale spend can never survive a
+    refusal. pending_stage is left where it was."""
+    print(f"\n🛑 HOLDOUT UNLOCK REFUSED ({refusal.code}): {refusal.detail}. Nothing was spent. "
+          f"See docs/RUNBOOK.md §3 ({HOLDOUT_UNLOCK_REFUSED_FLAG} / {refusal.code}).")
+    update_state(path=run_dir, **{HOLDOUT_DECISION_RECORD_KEY: None})
+    update_state(path=run_dir, status="paused_for_human",
+                 flags={HOLDOUT_UNLOCK_REFUSED_FLAG: True},
+                 **{HOLDOUT_UNLOCK_REFUSAL_KEY: {
+                     "code": refusal.code, "detail": refusal.detail,
+                     "at": datetime.now(timezone.utc).isoformat()}})
+    return "human_pause"
+
+
+def _clear_sticky_flags(run_dir: Path, *flags: str) -> None:
+    """Clears the named flags only when set (update_state merges `flags`, so a
+    flag left true would mask a later, different pause)."""
+    state = load_yaml(run_dir / "pipeline_state.yaml") or {}
+    set_flags = {f: False for f in flags if (state.get("flags") or {}).get(f)}
+    if set_flags:
+        update_state(path=run_dir, flags=set_flags)
+
+
+def _holdout_unlock_route(run_dir: Path, run_id: str) -> str | None:
+    """Called by run_loop after regroup_record, under the flag, when the
+    profit-bars stop route returned None. None when the stop was NOT raised for
+    this run's current evaluation (no passing variant: any holdout_decision.yaml
+    is ignored, and a validated idea goes on to completed_validated like any
+    other). Otherwise this is the resume from profit_bars_reached:
+      already spent (a consume record or holdout_result.yaml) -> "holdout_evaluation"
+                  (the record step; no decision can route around it);
+      spend    -> "holdout_evaluation" (the run is still recorded in
+                  campaign_state.runs, as the retired route would);
+      continue -> None (the retired route follows: completed_<idea_status>);
+      refused  -> "human_pause" (holdout_unlock_refused)."""
+    state = load_yaml(run_dir / "pipeline_state.yaml") or {}
+    if _profit_stop_raised(run_dir, run_id, state) is None:
+        if _holdout_decision_path(run_dir).exists():
+            print(f"⚙️  holdout unlock: {HOLDOUT_DECISION_FILE} ignored -- no profit_bars_reached "
+                  f"stop was raised for this run's evaluation; the holdout is reached only "
+                  f"from that stop.")
+        return None
+    if state.get(HOLDOUT_CONSUME_RECORD_KEY) or (run_dir / "artifacts" / "holdout_result.yaml").exists():
+        print(f"⚠️  holdout unlock: {run_id} already spent the holdout (a consume record or "
+              f"holdout_result.yaml is present) -- routing to holdout_evaluation to record it; "
+              f"{HOLDOUT_DECISION_FILE} is not consulted.")
+        return "holdout_evaluation"
+    try:
+        record = _validate_holdout_decision(run_dir, run_id, state)
+    except HoldoutUnlockRefused as refusal:
+        return _refuse_holdout_unlock(run_dir, refusal)
+    update_state(path=run_dir, **{HOLDOUT_DECISION_RECORD_KEY: None,
+                                  HOLDOUT_UNLOCK_REFUSAL_KEY: None})
+    update_state(path=run_dir, **{HOLDOUT_DECISION_RECORD_KEY: record})
+    _clear_sticky_flags(run_dir, HOLDOUT_UNLOCK_REFUSED_FLAG, HOLDOUT_AWAITING_RESULT_FLAG)
+    if record["decision"] == "continue":
+        print(f"\n📒 holdout decision: continue (ratified by {record['ratified_by']} at "
+              f"{record['ratified_at']}). The holdout is untouched; the run ends "
+              f"completed_<idea_status> and decide-next picks the next run.")
+        return None
+    _record_run_in_campaign_state(run_id, _extract_diagnostics(run_dir))
+    print(f"\n🔓 holdout decision: SPEND on variant {record['variant_id']!r} (trial "
+          f"{record.get('trial_id')!r}, {record.get('protocol_result_ref')}), hypothesis "
+          f"{record['hypothesis_id']}, ratified by {record['ratified_by']} at "
+          f"{record['ratified_at']}. Routing to holdout_evaluation.")
+    return "holdout_evaluation"
+
+
+def _spend_unlock_for(state: dict, run_id: str) -> dict | None:
+    """The spend record that lets holdout_evaluation run under the flag, or
+    None: it must name this run, say spend, and be bound to the run's current
+    profit_bars_reached stop."""
+    rec = state.get(HOLDOUT_DECISION_RECORD_KEY)
+    if (isinstance(rec, dict) and rec.get("decision") == "spend" and rec.get("run_id") == run_id
+            and rec.get("profit_bars_stop_evaluation")
+            and rec.get("profit_bars_stop_evaluation") == state.get("profit_bars_stop_evaluation")):
+        return rec
+    return None
+
+
+def _spent_holdout_ending(run_dir: Path, run_id: str, intent: dict, unlock: dict) -> str:
+    """The ending of an unlocked spend whose record is ALREADY made (intent +
+    marker). Every check here changes only the ending, never the record:
+    a second spend -> completed_rejected; a relabelled result (fix 5) or one
+    not bound to the unlock (fix 4) -> a classified pause; the research_only
+    hold; then the gate's pass/fail mapping, an unknown status pausing."""
+    hyp_id = intent.get("hypothesis_id")
+    if intent.get("consumed_before"):
+        print(f"\n🛑 HOLDOUT REFUSED: {hyp_id} had already consumed the single holdout "
+              f"evaluation before this run -- a second holdout attempt is forbidden (A6.1). "
+              f"This run's spend is on record.")
+        return "completed_rejected"
+    hr_path = run_dir / "artifacts" / "holdout_result.yaml"
+    raw = hr_path.read_bytes()
+    now_sha = hashlib.sha256(raw).hexdigest()
+    if now_sha != intent.get("holdout_result_sha256"):
+        attempts = list((load_yaml(run_dir / "pipeline_state.yaml") or {}).get(HOLDOUT_RELABEL_KEY)
+                        or [])
+        attempts.append({"holdout_result_sha256": now_sha,
+                         "content": raw.decode("utf-8", errors="replace")[:2000],
+                         "at": datetime.now(timezone.utc).isoformat()})
+        update_state(path=run_dir, flags={HOLDOUT_RESULT_RELABELLED_FLAG: True},
+                     **{HOLDOUT_RELABEL_KEY: attempts})
+        print(f"\n🛑 holdout_result.yaml changed after the spend was recorded (sha256 "
+              f"{intent.get('holdout_result_sha256')} -> {now_sha}). The attempt is recorded; the "
+              f"result stays as first recorded. See docs/RUNBOOK.md §3 "
+              f"({HOLDOUT_RESULT_RELABELLED_FLAG}).")
+        return "human_pause"
+    hr = yaml.safe_load(raw.decode("utf-8", errors="replace")) if raw else None
+    hr = hr if isinstance(hr, dict) else {}
+    expected = {"variant_id": unlock.get("variant_id"), "trial_id": unlock.get("trial_id"),
+                "decision_sha256": unlock.get("decision_sha256")}
+    mismatched = {k: (hr.get(k), v) for k, v in expected.items() if hr.get(k) != v}
+    card_hyp = _idea_hypothesis_id(run_dir)
+    if mismatched or card_hyp != unlock.get("hypothesis_id") or hyp_id != unlock.get("hypothesis_id"):
+        update_state(path=run_dir, flags={HOLDOUT_RESULT_UNBOUND_FLAG: True})
+        print(f"\n🛑 holdout_result.yaml is not bound to the unlock: mismatched "
+              f"{ {k: {'result': a, 'unlock': b} for k, (a, b) in mismatched.items()} }, "
+              f"hypothesis card {card_hyp!r} / recorded {hyp_id!r} / unlock "
+              f"{unlock.get('hypothesis_id')!r}. The spend is on record; never promoted. "
+              f"See docs/RUNBOOK.md §3 ({HOLDOUT_RESULT_UNBOUND_FLAG}).")
+        return "human_pause"
+    if _research_only_hold(run_dir, run_id):
+        return "human_pause"
+    status = str(hr.get("status", "")).lower()
+    terminal = _holdout_result_terminal(status)
+    if terminal is None:
+        update_state(path=run_dir, flags={HOLDOUT_RESULT_INCONCLUSIVE_FLAG: True})
+        print(f"\n⏸️  HOLDOUT INCONCLUSIVE for {hyp_id} (status={status!r}); the spend is on "
+              f"record. See docs/RUNBOOK.md §3 ({HOLDOUT_RESULT_INCONCLUSIVE_FLAG}).")
+        return "human_pause"
+    print(f"\n{'🏆' if terminal == 'completed_promoted' else '🛑'} holdout_result status="
+          f"{status} for {hyp_id} (variant {unlock.get('variant_id')!r}) -> {terminal}.")
+    return terminal
+
+
+def _unlocked_holdout_evaluation(run_dir: Path, run_id: str, state: dict) -> str:
+    """holdout_evaluation under the flag, after an operator spend unlocked it.
+      * no holdout_result.yaml yet (nothing spent): the decision is re-checked
+        from disk (never trusted from state alone; edited since -> refused),
+        including the pending-spend, ledger and DSR checks; then the
+        research_only hold; then a pause for the manual backtest
+        (holdout_unlocked_awaiting_result).
+      * holdout_result.yaml present (the seal is spent): RECORD FIRST -- the
+        consume intent, then the marker if absent -- and only then
+        _spent_holdout_ending decides the ending. No precondition can refuse
+        before the record (review fix 2). A crash anywhere after the intent
+        resumes here and only finishes the record."""
+    unlock = _spend_unlock_for(state, run_id)
+    consume = state.get(HOLDOUT_CONSUME_RECORD_KEY)
+    if unlock is None:
+        raise ValueError(f"{run_id}: holdout_evaluation reached without this run's spend unlock")
+    hr_path = run_dir / "artifacts" / "holdout_result.yaml"
+    if not consume and not hr_path.exists():
+        try:
+            fresh = _validate_holdout_decision(run_dir, run_id, state)
+        except HoldoutUnlockRefused as refusal:
+            return _refuse_holdout_unlock(run_dir, refusal)
+        if (fresh["decision"] != "spend" or fresh["decision_sha256"] != unlock["decision_sha256"]
+                or fresh.get("variant_id") != unlock.get("variant_id")):
+            return _refuse_holdout_unlock(run_dir, HoldoutUnlockRefused(
+                "decision_changed", f"{HOLDOUT_DECISION_FILE} changed after it unlocked the spend "
+                f"(recorded sha256 {unlock['decision_sha256']}, now {fresh['decision_sha256']})"))
+        if _research_only_hold(run_dir, run_id):
+            return "human_pause"
+        holdout_range = _load_data_policy().get("holdout_range", [])
+        print(f"\n⏸️  HOLDOUT: holdout_result.yaml not yet present for {unlock['hypothesis_id']}. "
+              f"Run the holdout backtest by hand for variant {unlock['variant_id']!r} ONLY "
+              f"(trial {unlock.get('trial_id')!r}) on the range {holdout_range}, write "
+              f"holdout_result.yaml with status, variant_id, trial_id and decision_sha256 "
+              f"{unlock['decision_sha256']}, then resume.")
+        update_state(path=run_dir, flags={HOLDOUT_AWAITING_RESULT_FLAG: True})
+        return "human_pause"
+    if not hr_path.exists():
+        raise FileNotFoundError(f"{hr_path} is missing, but {run_id} recorded a holdout spend "
+                                f"against it -- restore it (never delete a spent result)")
+    _clear_sticky_flags(run_dir, HOLDOUT_AWAITING_RESULT_FLAG, HOLDOUT_RESULT_INCONCLUSIVE_FLAG)
+    intent = consume or _write_consume_intent(
+        run_dir, run_id, unlock["hypothesis_id"], unlock={
+            k: unlock.get(k) for k in ("variant_id", "trial_id", "protocol_result_ref",
+                                       "decision_sha256")})
+    if intent.get("run_id") != run_id or not intent.get("hypothesis_id"):
+        raise ValueError(f"{HOLDOUT_CONSUME_RECORD_KEY} on {run_id} is not this run's: {intent!r}")
+    _mark_holdout_consumed_if_absent(intent["hypothesis_id"])
+    return _spent_holdout_ending(run_dir, run_id, intent, unlock)
+
+
+def holdout_decision_resume_blocker(run_dir: Path, run_id: str) -> str | None:
+    """For run_campaign.resume_paused_entry (the profit_bars_reached and
+    holdout_unlock_refused pauses, flag on): the refusal a resume would meet,
+    or None. Read-only; run_loop checks again, authoritatively."""
+    state = load_yaml(run_dir / "pipeline_state.yaml") or {}
+    if _profit_stop_raised(run_dir, run_id, state) is None:
+        return None
+    if state.get(HOLDOUT_CONSUME_RECORD_KEY) or (run_dir / "artifacts" / "holdout_result.yaml").exists():
+        return None  # already spent: run_loop routes to the record step (_holdout_unlock_route)
+    try:
+        _validate_holdout_decision(run_dir, run_id, state)
+    except HoldoutUnlockRefused as refusal:
+        return f"{HOLDOUT_UNLOCK_REFUSED_FLAG} ({refusal.code}): {refusal.detail}"
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -9132,7 +9687,8 @@ def _portfolio_profit_metrics(run_dir: Path, pr: dict) -> dict:
     }
 
 
-def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str) -> dict:
+def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
+                                         record_bars_sha: bool = False) -> dict:
     """Grade every tested variant of THIS attempt (see
     _profit_bars_backtest_candidates) against every bar in
     config/profitability_bars.yaml; write artifacts/profit_bars_evaluation.yaml
@@ -9149,8 +9705,14 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str) -> dict:
 
     result is PASS when ANY graded variant passes every bar; `passing` names them.
     A malformed or missing bars file raises ProfitabilityBarsSchemaError before
-    anything is graded or written (fail loud; never a defaulted threshold)."""
+    anything is graded or written (fail loud; never a defaulted threshold).
+    record_bars_sha (verdict_routing_retired only): also record the whole bars
+    file's sha256 (BARS_FILE_SHA_FIELD)."""
+    bars_sha = _bars_file_sha256() if record_bars_sha else None
     bars = _load_profitability_bars()
+    if record_bars_sha and _bars_file_sha256() != bars_sha:
+        raise ProfitabilityBarsSchemaError("config/profitability_bars.yaml changed while it was "
+                                           "being loaded -- grade again.")
     candidates = _profit_bars_backtest_candidates(run_dir, run_id)
     dsr_ctx = _promotion_dsr_context()
 
@@ -9194,6 +9756,11 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str) -> dict:
         "passing": passing,
         "result": overall,
     }
+    if record_bars_sha:
+        # Slice 6c S2d review fix 7 (verdict_routing_retired only, so every
+        # other caller's file is unchanged): the whole bars file this was graded
+        # under, compared byte-for-byte at spend time.
+        evaluation[BARS_FILE_SHA_FIELD] = bars_sha
     save_yaml(run_dir / "artifacts" / _PROFIT_BARS_EVALUATION_FILE, evaluation)
     graded = sum(1 for v in variants.values() if v["bars"])
     print(f"⚙️  branch 3: profit_bars_evaluation.yaml written, {graded} graded variant(s) of "
@@ -9254,75 +9821,14 @@ def _profit_bars_stop_route(run_dir: Path, run_id: str) -> str | None:
     return "human_pause"
 
 
-def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
-    """
-    Improvement 06: single-use holdout gate. Steps are listed in EXECUTION order;
-    the order is load-bearing, so keep this list and the code in step.
-    1.  Check promotion_audit.yaml — if passes_deflated_threshold is False, terminal reject.
-    2.  Check campaign_data_policy.yaml — refuse if hypothesis_id already consumed.
-    2b. Hold unless the brief affirmatively declares the strategy tradable (E-015 S3).
-        Below 1 and 2 because both are terminal rejects that never touch the seal;
-        above 3 and 4 because those are the acts it exists to prevent.
-    3.  If holdout_result.yaml is absent, pause for human (holdout backtest must be
-        run externally).
-    4.  Mark the holdout consumed, then evaluate holdout_result.yaml's status.
-    """
-    ARTIFACTS = run_dir / "artifacts"
-
-    # Load hypothesis_id from promotion_audit or verdict_interpretation
-    # (_holdout_hypothesis_id, shared with _record_spent_holdout).
-    hyp_id, passes = _holdout_hypothesis_id(run_dir, run_id)
-
-    # 1. Deflated Sharpe gate (if not sparse / not indeterminate)
-    if passes is False:
-        print(f"\n🛑 HOLDOUT BLOCKED: promotion_audit.yaml passes_deflated_threshold=False "
-              f"for {hyp_id}. DSR too low — trial count and Sharpe distribution do not support promotion.")
-        return "completed_rejected"
-
-    # 2. Single-use enforcement
-    policy = load_yaml(_DATA_POLICY_PATH) or {} if _DATA_POLICY_PATH.exists() else {}
-    consumed = policy.get("holdout_consumed_by", [])
-    if hyp_id in consumed:
-        print(f"\n🛑 HOLDOUT REFUSED: {hyp_id} has already consumed the single holdout evaluation "
-              f"(found in campaign_data_policy.yaml holdout_consumed_by). "
-              f"Second holdout attempt is mechanically forbidden per A6.1.")
-        return "completed_rejected"
-
-    # --- 2b. research_only / venue gate (E-015 S3) -------------------------------
-    # POSITION: deliberately below steps 1-2 and above step 3. It must precede step
-    # 3, whose message tells a human to go run the holdout backtest, and step 4,
-    # which marks the seal consumed — those are the acts this gate exists to stop.
-    # It must NOT precede steps 1-2: both return completed_rejected, which is
-    # terminal and already safe, and holding above them would halt the whole
-    # campaign (a classified pause makes process_once return False) for a run that
-    # step 1 was going to reject anyway — trading a clean terminal reject for a
-    # paperwork pause that resolves into the same rejection.
-    # Until now research_only was written by run_campaign.py's _materialize_run and
-    # read by nothing, so it protected nothing: a brief for a product we cannot
-    # legally trade could reach the holdout and inform a live-money decision on
-    # research-only evidence.
-    #
-    # AFFIRMATIVE check, not a negative one. `research_only is True` alone would be
-    # decorative: measured 2026-08-18, 0 of 57 briefs in the tree carry the key at
-    # all, and it is written by only one of the three research_brief.yaml writers,
-    # so it does not survive a refine or a reframe. Requiring research_only is False
-    # makes a missing/undeclared brief refuse instead of sail through, which matches
-    # venue_tradability.yaml's own rule that silence must never resolve to a green
-    # light — and needs no propagation machinery to be correct for child runs.
-    #
-    # Safe to make fail-closed: holdout_consumed_by is empty and no run has ever
-    # reached this gate (measured, same date), so there is no legacy corpus this
-    # blocks. The first run it stops is fixed by declaring venue/product on the
-    # brief, which is exactly what this epic's registration rule asks for.
-    #
-    # On the upper bound of that position: ahead of step 3's human_pause, not merely
-    # ahead of step 4's holdout_consumed_by write. Step 3 instructs a human to go run
-    # the holdout backtest, and in this project's doctrine looking is spending, so
-    # holding after that instruction has been printed would be holding after the fact.
-    # load_yaml raises FileNotFoundError rather than returning None, and a run dir
-    # with no research_brief.yaml at all must refuse like any other undeclared brief
-    # — not crash out of the router with a traceback.
-    _brief_path = ARTIFACTS / "research_brief.yaml"
+def _research_only_hold(run_dir: Path, run_id: str) -> bool:
+    """Step 2b of _route_holdout_evaluation (E-015 S3), extracted verbatim by
+    slice 6c S2d review fix 10 so the unlocked path under
+    orchestrator.verdict_routing_retired runs the SAME hold. True when held
+    (status paused_for_human, flags.research_only_unverified); False when the
+    brief declares research_only: false (any stale hold flag is cleared).
+    See the gate's step-2b comment for why it is affirmative."""
+    _brief_path = run_dir / "artifacts" / "research_brief.yaml"
     brief = (load_yaml(_brief_path) or {}) if _brief_path.exists() else {}
     if brief.get("research_only") is not False:
         declared = brief.get("research_only", "<absent>")
@@ -9366,7 +9872,7 @@ def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
         # other classified pause already has.
         update_state(path=run_dir, status="paused_for_human",
                      flags={"research_only_unverified": True})
-        return "human_pause"
+        return True
 
     # Passed: clear any hold left from a previous attempt. The flag is sticky
     # (update_state merges rather than replaces), so without this the operator who
@@ -9385,6 +9891,84 @@ def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
     if (_state.get("flags") or {}).get("research_only_unverified"):
         update_state(path=run_dir, flags={"research_only_unverified": False})
         print(f"✅ {run_id}: tradability now declared — research_only hold cleared.")
+    return False
+
+
+def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
+    """
+    Improvement 06: single-use holdout gate. Steps are listed in EXECUTION order;
+    the order is load-bearing, so keep this list and the code in step.
+    1.  Check promotion_audit.yaml — if passes_deflated_threshold is False, terminal reject.
+    2.  Check campaign_data_policy.yaml — refuse if hypothesis_id already consumed.
+    2b. Hold unless the brief affirmatively declares the strategy tradable (E-015 S3).
+        Below 1 and 2 because both are terminal rejects that never touch the seal;
+        above 3 and 4 because those are the acts it exists to prevent.
+    3.  If holdout_result.yaml is absent, pause for human (holdout backtest must be
+        run externally).
+    4.  Mark the holdout consumed, then evaluate holdout_result.yaml's status.
+
+    Slice 6c S2d review fix 10: the single-use check (_holdout_already_spent)
+    and the research_only hold (_research_only_hold) are shared with the
+    unlocked path under orchestrator.verdict_routing_retired, which never calls
+    this function. Behaviour unchanged.
+    """
+    ARTIFACTS = run_dir / "artifacts"
+
+    # Load hypothesis_id from promotion_audit or verdict_interpretation
+    # (_holdout_hypothesis_id, shared with _record_spent_holdout).
+    hyp_id, passes = _holdout_hypothesis_id(run_dir, run_id)
+
+    # 1. Deflated Sharpe gate (if not sparse / not indeterminate)
+    if passes is False:
+        print(f"\n🛑 HOLDOUT BLOCKED: promotion_audit.yaml passes_deflated_threshold=False "
+              f"for {hyp_id}. DSR too low — trial count and Sharpe distribution do not support promotion.")
+        return "completed_rejected"
+
+    # 2. Single-use enforcement
+    policy = load_yaml(_DATA_POLICY_PATH) or {} if _DATA_POLICY_PATH.exists() else {}
+    consumed = policy.get("holdout_consumed_by", [])
+    if _holdout_already_spent(hyp_id, policy):
+        print(f"\n🛑 HOLDOUT REFUSED: {hyp_id} has already consumed the single holdout evaluation "
+              f"(found in campaign_data_policy.yaml holdout_consumed_by). "
+              f"Second holdout attempt is mechanically forbidden per A6.1.")
+        return "completed_rejected"
+
+    # --- 2b. research_only / venue gate (E-015 S3) -------------------------------
+    # POSITION: deliberately below steps 1-2 and above step 3. It must precede step
+    # 3, whose message tells a human to go run the holdout backtest, and step 4,
+    # which marks the seal consumed — those are the acts this gate exists to stop.
+    # It must NOT precede steps 1-2: both return completed_rejected, which is
+    # terminal and already safe, and holding above them would halt the whole
+    # campaign (a classified pause makes process_once return False) for a run that
+    # step 1 was going to reject anyway — trading a clean terminal reject for a
+    # paperwork pause that resolves into the same rejection.
+    # Until now research_only was written by run_campaign.py's _materialize_run and
+    # read by nothing, so it protected nothing: a brief for a product we cannot
+    # legally trade could reach the holdout and inform a live-money decision on
+    # research-only evidence.
+    #
+    # AFFIRMATIVE check, not a negative one. `research_only is True` alone would be
+    # decorative: measured 2026-08-18, 0 of 57 briefs in the tree carry the key at
+    # all, and it is written by only one of the three research_brief.yaml writers,
+    # so it does not survive a refine or a reframe. Requiring research_only is False
+    # makes a missing/undeclared brief refuse instead of sail through, which matches
+    # venue_tradability.yaml's own rule that silence must never resolve to a green
+    # light — and needs no propagation machinery to be correct for child runs.
+    #
+    # Safe to make fail-closed: holdout_consumed_by is empty and no run has ever
+    # reached this gate (measured, same date), so there is no legacy corpus this
+    # blocks. The first run it stops is fixed by declaring venue/product on the
+    # brief, which is exactly what this epic's registration rule asks for.
+    #
+    # On the upper bound of that position: ahead of step 3's human_pause, not merely
+    # ahead of step 4's holdout_consumed_by write. Step 3 instructs a human to go run
+    # the holdout backtest, and in this project's doctrine looking is spending, so
+    # holding after that instruction has been printed would be holding after the fact.
+    # load_yaml raises FileNotFoundError rather than returning None, and a run dir
+    # with no research_brief.yaml at all must refuse like any other undeclared brief
+    # — not crash out of the router with a traceback.
+    if _research_only_hold(run_dir, run_id):
+        return "human_pause"
 
     # 3. Check if holdout_result.yaml is present
     hr_path = ARTIFACTS / "holdout_result.yaml"
@@ -10534,11 +11118,33 @@ def run_loop(run_id: str):
         elif current_stage == "holdout_evaluation" and _vrr_flag:
             # Slice 6c S2a: under the flag nothing routes here, and the operator
             # decision of 2026-09-25 allows the holdout ONLY through the branch-3
-            # profit_bars_reached stop plus an operator unlock (S2d, not built
-            # yet). Code review item 1: a run found here WITH holdout_result.yaml
+            # profit_bars_reached stop plus an operator unlock (S2d below).
+            # Code review item 1: a run found here WITH holdout_result.yaml
             # already spent the seal by hand -- only the record step runs
             # (_record_spent_holdout), so the spend is never left unrecorded.
             # Without it: a classified pause (HOLDOUT_REFUSED_FLAG), no gate runs.
+            if _spend_unlock_for(state, run_id):
+                # Slice 6c S2d: the operator's spend, bound to this run's stop,
+                # unlocked it (_unlocked_holdout_evaluation: re-check, then the
+                # manual backtest; once a result exists, record first). Without
+                # a valid unlock a result is only recorded, never promoted
+                # (_record_spent_holdout, review fix 3).
+                try:
+                    _terminal = _unlocked_holdout_evaluation(RUN_DIR, run_id, state)
+                except Exception as e:
+                    print(f"❌ Error in the unlocked holdout_evaluation: {e}")
+                    update_state(path=RUN_DIR, status="failed", last_error=str(e))
+                    break
+                if _terminal == "human_pause":
+                    update_state(path=RUN_DIR, status="paused_for_human")
+                    break
+                update_state(path=RUN_DIR,
+                             status="active" if _terminal != "completed_rejected" else "rejected",
+                             completed_stages=(state.get("completed_stages") or [])
+                             + ["holdout_evaluation"],
+                             current_stage="holdout_evaluation", pending_stage=_terminal)
+                state = load_yaml(STATE_FILE)
+                continue
             if (ARTIFACTS / "holdout_result.yaml").exists():
                 try:
                     _terminal = _record_spent_holdout(RUN_DIR, run_id)
@@ -10558,7 +11164,8 @@ def run_loop(run_id: str):
                 continue
             print("⏸️  holdout_evaluation is refused under orchestrator.verdict_routing_retired."
                   "enabled: the holdout is reached only through the profit_bars_reached stop "
-                  "plus an operator unlock (slice 6c S2d, not built yet). Nothing was spent. "
+                  f"plus an operator spend in artifacts/{HOLDOUT_DECISION_FILE} (slice 6c S2d), "
+                  "and this run carries no such unlock. Nothing was spent. "
                   f"See docs/RUNBOOK.md §3 ({HOLDOUT_REFUSED_FLAG}).")
             update_state(path=RUN_DIR, status="paused_for_human",
                          flags={HOLDOUT_REFUSED_FLAG: True})
@@ -11146,6 +11753,11 @@ def run_loop(run_id: str):
                 next_stage = None
                 if _pbe_flag and not _rr_checks["component_errors"]:
                     next_stage = _profit_bars_stop_route(RUN_DIR, run_id)
+                    # Slice 6c S2d: the resume from that stop reads the operator's
+                    # holdout_decision.yaml -- spend -> holdout_evaluation,
+                    # continue -> None (the route below), else a refusal pause.
+                    if next_stage is None and _vrr_flag:
+                        next_stage = _holdout_unlock_route(RUN_DIR, run_id)
                 # Slice 6c S2a: under verdict_routing_retired the grid route ends
                 # the run at completed_<idea_status> (never a pause except the
                 # component-error one, never the holdout).
@@ -11158,6 +11770,8 @@ def run_loop(run_id: str):
                     break
                 # Slice 6c S2b: the memory-count campaign-review trigger, after the
                 # component-error pause, the profit-bars stop and the grid route.
+                # (An operator spend -> holdout_evaluation is not a terminal: no
+                # review this run; the cadence carries it forward.)
                 if _vrr_flag and next_stage in RETIRED_ROUTING_TERMINALS:
                     next_stage = _retired_review_route(RUN_DIR, run_id, next_stage)
 
@@ -11189,7 +11803,8 @@ def run_loop(run_id: str):
             # never pauses here: protocol_execution completes normally; the stop is
             # raised in the route after regroup_record (_profit_bars_stop_route).
             if current_stage == "protocol_execution" and _pbe_flag:
-                _evaluate_profit_bars_every_backtest(RUN_DIR, run_id)
+                _evaluate_profit_bars_every_backtest(
+                    RUN_DIR, run_id, **({"record_bars_sha": True} if _vrr_flag else {}))
 
             # 6. Mark completed and stage next phase
             completed = state.get("completed_stages", [])

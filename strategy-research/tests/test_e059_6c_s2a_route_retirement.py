@@ -273,9 +273,19 @@ def test_run_loop_ends_completed_status_after_regroup_record(monkeypatch, idea_s
     assert not (run_dir / "artifacts" / "promotion_audit.yaml").exists()
 
 
+def _continue_decision(run_dir: Path) -> None:
+    """Slice 6c S2d: resuming from the stop needs the operator's
+    holdout_decision.yaml; `continue` keeps the S2a ending."""
+    stop = _state(run_dir)["profit_bars_stop_evaluation"]
+    rpr.save_yaml(run_dir / "artifacts" / rpr.HOLDOUT_DECISION_FILE, {
+        "decision": "continue", "run_id": RUN_ID, "profit_bars_stop_evaluation": stop,
+        "ratified_by": "operator", "ratified_at": "2020-01-01"})
+
+
 def test_profit_bars_stop_then_resume_ends_completed_validated(monkeypatch):
-    """The branch-3 stop is unchanged; after the operator's resume the run ends
-    completed_validated -- never the holdout (S2d adds the unlock)."""
+    """The branch-3 stop is unchanged; after the operator's resume with a
+    `continue` decision (slice 6c S2d) the run ends completed_validated --
+    never the holdout."""
     _set_orchestrator(RETIRED_ON)
     run_dir = _graded_run("validated", good=True)
     _forbid(monkeypatch)
@@ -285,6 +295,7 @@ def test_profit_bars_stop_then_resume_ends_completed_validated(monkeypatch):
     assert paused["flags"] == {"profit_bars_reached": True}
     assert camp._classify_human_pause(run_dir, paused) == "profit_bars_reached"
     rpr.update_state(path=run_dir, status="active", flags={"profit_bars_reached": False})
+    _continue_decision(run_dir)
     rpr.run_loop(RUN_ID)
     state = _state(run_dir)
     assert state["pending_stage"] == "completed_validated" and state["status"] == "completed"
@@ -300,6 +311,7 @@ def test_full_loop_from_protocol_execution_ends_completed(monkeypatch):
     assert _state(run_dir)["flags"]["profit_bars_reached"] is True
     assert _pbe(run_dir)["passing"] == [RUN_ID]
     rpr.update_state(path=run_dir, status="active", flags={"profit_bars_reached": False})
+    _continue_decision(run_dir)
     _forbid(monkeypatch)
     _run_dir, stages, calls = _loop(monkeypatch, RETIRED_ON, fresh=False)
     state = _state(run_dir)
@@ -401,12 +413,12 @@ def test_holdout_without_result_pauses_classified_and_spends_nothing(monkeypatch
     assert (policy.read_bytes() if policy.exists() else None) == policy_before
 
 
-@pytest.mark.parametrize("result,terminal", [("fail", "completed_rejected"),
-                                             ("pass", "completed_promoted")])
-def test_holdout_already_spent_is_recorded_then_the_run_ends(monkeypatch, result, terminal):
+@pytest.mark.parametrize("result", ["fail", "pass"])
+def test_holdout_already_spent_is_recorded_then_the_run_ends(monkeypatch, result):
     """Code review item 1: holdout_result.yaml present = the seal was spent by
-    hand. Only the consume record runs (once), then the run ends; no other
-    holdout gate runs."""
+    hand. Only the consume record runs (once); no other holdout gate runs.
+    Slice 6c S2d review fix 3: with no operator unlock the run then pauses as
+    holdout_spent_without_unlock -- never completed_promoted."""
     _set_orchestrator(RETIRED_ON)
     run_dir = _seed(idea_status="validated", pending="holdout_evaluation")
     rpr.save_yaml(run_dir / "artifacts" / "holdout_result.yaml", {"status": result})
@@ -415,8 +427,9 @@ def test_holdout_already_spent_is_recorded_then_the_run_ends(monkeypatch, result
     _forbid(monkeypatch)
     rpr.run_loop(RUN_ID)
     state = _state(run_dir)
-    assert state["pending_stage"] == terminal
-    assert state["completed_stages"][-1] == "holdout_evaluation"
+    assert state["pending_stage"] == "holdout_evaluation" and state["status"] == "paused_for_human"
+    assert camp._classify_human_pause(run_dir, state) == rpr.HOLDOUT_SPENT_WITHOUT_UNLOCK_FLAG
+    assert state[rpr.HOLDOUT_CONSUME_RECORD_KEY]["hypothesis_id"] == "H-MEM-1"
     policy = rpr.load_yaml(rpr._DATA_POLICY_PATH)
     assert policy["holdout_consumed_by"] == ["H-OTHER", "H-MEM-1"]
     assert policy["holdout_range"] == ["a", "b"]

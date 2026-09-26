@@ -263,7 +263,10 @@ escalation/timeframe protocols, continuation children and the route to
 `holdout_evaluation` (13) are unreachable (their code stays for flag-off
 runs, marked `# legacy routing (v26 card G)`; `_dispatch_verdict_route`
 raises if entered, on the flag value run_loop read once in its pre-flight). The holdout is reached only from the `profit_bars_reached` stop
-plus an operator unlock (slice 6c S2d, not built yet). See stage 17, item 12.
+plus an operator unlock (slice 6c S2d): the resume reads
+`artifacts/holdout_decision.yaml` — `spend` → the existing
+`holdout_evaluation` gate for the named passing variant, `continue` →
+`completed_<idea_status>` and decide-next. See stage 17, items 12 and 14.
 Slice 6c S2c: under the same flag a run waiting on a missing component (step
 1b's `component_gap`, or 5a failing only on a genuinely missing class) or on
 fetchable missing data (a data-gate `decline` outside the sealed range, with no
@@ -1390,7 +1393,7 @@ engineering_fault_detail}`.
    pauses. `_dispatch_verdict_route` and every function it fed are never
    called; no child run is scaffolded and no `continuation_child` written;
    `promotion_audit.yaml` is not written and nothing routes to
-   `holdout_evaluation`. A run found there pauses as
+   `holdout_evaluation` except the operator's `spend` (item 14). Any other run found there pauses as
    `holdout_refused_under_retired_routing`, unless its holdout was already
    spent by hand (`holdout_result.yaml` present): then only the
    `holdout_consumed_by` record runs and the run ends. Campaign review runs
@@ -1398,7 +1401,8 @@ engineering_fault_detail}`.
    run found at `campaign_review` (a legacy review) pauses as
    `campaign_review_refused_under_retired_routing` before its LLM call. The run is still appended to
    `campaign_state.runs`, with one `diagnostics_log` row per run. A resume
-   after the `profit_bars_reached` stop ends the run the same way. The queue
+   after the `profit_bars_reached` stop is decided by the operator's
+   `holdout_decision.yaml` (item 14): `continue` ends the run the same way. The queue
    runner halts on a legacy continuation
    (`legacy_continuation_under_retired_routing`, also before `run_loop` when
    the current run was minted by legacy routing), on an unconsumed
@@ -1446,6 +1450,45 @@ engineering_fault_detail}`.
    appends an `override_continue` event). Every ending is
    `completed_<idea_status>`, re-read from `idea_status.yaml`: the review
    never changes an idea's status and never picks the next run. RUNBOOK §3.
+14. **The holdout unlock with verdict routing retired (E-059 S3, slice 6c S2d,
+   same flag).** Operator decision of 2026-09-25: the holdout is reached ONLY
+   through branch 3. A backtest passes every profit bar, the
+   `profit_bars_reached` stop fires, and the operator resumes with
+   `runs/<run_id>/artifacts/holdout_decision.yaml`. The grid's `idea_status`
+   is neither a precondition nor a route. A `validated` idea never reaches the
+   holdout by itself, and a refuted or inconclusive idea whose variant passed
+   may be spent on. The file has a closed schema: `decision` (`spend` or
+   `continue`), `run_id`, `profit_bars_stop_evaluation` (the stop it answers,
+   from `pipeline_state.yaml`), `variant_id` (a passing backtest; required for
+   `spend`), `trial_ledgers_merged` (`true`, required for `spend`),
+   `ratified_by`, `ratified_at`, and an optional `note`. After
+   `regroup_record` and the stop route, `_holdout_unlock_route` reads it:
+   - `continue` records the choice (`pipeline_state.yaml` →
+     `holdout_decision_record`), leaves the holdout untouched, and ends the run
+     `completed_<idea_status>`, so decide-next runs;
+   - `spend` goes to `holdout_evaluation` for the named variant, with the
+     single-use check and the research_only hold. It is refused unless
+     `trial_ledgers_merged: true` is attested, this run's evaluation records
+     PASS for that variant under the bars file in place now (whole-file
+     sha256), the variant's deflated Sharpe still clears the bar on the
+     current trial ledger, the hypothesis (from `hypothesis_card.yaml` only) is
+     not in `holdout_consumed_by`, and no other run or writer holds an
+     unfinished spend of the one physical seal. Bars ratification is the
+     operator's manual check, not enforced in code. The run pauses for the
+     manual backtest (`holdout_unlocked_awaiting_result`). Once
+     `holdout_result.yaml` exists, the spend is recorded first (a per-run
+     intent, `holdout_consume_record`, then the marker if absent), so a crash
+     never writes it twice or skips it. Only then is the ending decided: a
+     result not bound to the unlock (`variant_id`, `trial_id`,
+     `decision_sha256`) or rewritten after the record pauses; otherwise the run
+     ends `completed_promoted` or `completed_rejected`, and decide-next runs.
+     A result with no valid unlock is recorded and pauses as
+     `holdout_spent_without_unlock`, never promoted.
+   A missing, malformed, wrong-run, stale or otherwise refused file pauses as
+   `holdout_unlock_refused` (the code is in `holdout_unlock_refusal`), and
+   `--resume` refuses it first. Every other path to the holdout is refused as
+   `holdout_refused_under_retired_routing`. RUNBOOK §3 has the procedure and
+   one row per refusal code.
 
 ---
 

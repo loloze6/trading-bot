@@ -371,7 +371,7 @@ flags:
     reader: run_phase1_research._verdict_routing_retired_enabled
     owner: Jeremy
     state: off_incomplete
-    blocked_on: "its prerequisite flags decide_next and profit_bars_every_backtest, both off_incomplete; slice 6c's remaining sub-slice S2d (the holdout unlock); then the 6b two-run proof re-checked with this flag on, with the before/after artifact diff recorded here (declared behaviour change, delivery_plan_v26.md 0.2)"
+    blocked_on: "its prerequisite flags decide_next and profit_bars_every_backtest, both off_incomplete; then the 6b two-run proof re-checked with this flag on, with the before/after artifact diff recorded here (declared behaviour change, delivery_plan_v26.md 0.2)"
     criterion: >
       Landed 2026-09-25 (E-059 S3, delivery_plan_v26.md slice 6c S2a;
       engineering/roadmap/E-059/S1_FINDINGS_6C.md + operator decision).
@@ -411,6 +411,28 @@ flags:
       its parking stage. Tests: tests/test_e059_6c_s2c_parked_states.py
       (flag-off pauses unchanged there); code-review fixes:
       tests/test_e059_6c_s2c_review_fixes.py.
+      Slice 6c S2d (the holdout unlock; operator decision of 2026-09-25):
+      the holdout is reached ONLY by resuming from the branch-3
+      profit_bars_reached stop with the operator file
+      runs/<run>/artifacts/holdout_decision.yaml (closed schema: decision
+      spend|continue, run_id, profit_bars_stop_evaluation, variant_id,
+      trial_ledgers_merged, ratified_by, ratified_at, note). spend ->
+      holdout_evaluation for the named variant, refused unless the ledgers
+      are attested merged, this run's evaluation records PASS for it under
+      the same bars file (whole-file sha256), its deflated Sharpe clears the
+      bar on the current ledger, the hypothesis (card only) is not in
+      holdout_consumed_by and no other run or writer holds an unfinished
+      spend; bars ratification is the operator's manual check (operator
+      decision 2026-09-26). A result is recorded first, bound to the unlock
+      and never relabelled; one without an unlock is never promoted
+      (code-review fixes: tests/test_e059_6c_s2d_review_fixes.py);
+      continue -> completed_<idea_status> and
+      decide-next. A missing/malformed/stale/wrong-run file refuses the
+      resume (holdout_unlock_refused, one RUNBOOK row per code; --resume
+      refuses first). The consume marker is written once: a per-run intent
+      record precedes it and a run carrying it only finishes the record.
+      Grid idea_status is never a precondition. Tests:
+      tests/test_e059_6c_s2d_holdout_unlock.py (flag-off byte-identity there).
 
   - name: bar_equity
     kind: engine_param

@@ -1051,6 +1051,22 @@ def _classify_human_pause(run_dir: Path, state: dict) -> str:
     # the holdout backtest -- the act the flag forbids.
     if flags.get("holdout_refused_under_retired_routing"):
         return "holdout_refused_under_retired_routing"
+    # Slice 6c S2d: the holdout unlock's three pauses, beside the refusal above
+    # and for the same reason -- a run here may carry a stale profit_bars_reached
+    # flag, which must not mask a refused, awaiting or inconclusive spend.
+    if flags.get(orch.HOLDOUT_UNLOCK_REFUSED_FLAG):
+        return orch.HOLDOUT_UNLOCK_REFUSED_FLAG
+    if flags.get(orch.HOLDOUT_AWAITING_RESULT_FLAG):
+        return orch.HOLDOUT_AWAITING_RESULT_FLAG
+    if flags.get(orch.HOLDOUT_RESULT_INCONCLUSIVE_FLAG):
+        return orch.HOLDOUT_RESULT_INCONCLUSIVE_FLAG
+    # Slice 6c S2d review fixes 3-5: a spent seal whose ending is withheld.
+    if flags.get(orch.HOLDOUT_SPENT_WITHOUT_UNLOCK_FLAG):
+        return orch.HOLDOUT_SPENT_WITHOUT_UNLOCK_FLAG
+    if flags.get(orch.HOLDOUT_RESULT_UNBOUND_FLAG):
+        return orch.HOLDOUT_RESULT_UNBOUND_FLAG
+    if flags.get(orch.HOLDOUT_RESULT_RELABELLED_FLAG):
+        return orch.HOLDOUT_RESULT_RELABELLED_FLAG
     if flags.get("campaign_review_refused_under_retired_routing"):
         return "campaign_review_refused_under_retired_routing"
     # Slice 6c S2b: campaign review said stop (orchestrator.verdict_routing_retired).
@@ -1231,7 +1247,14 @@ def _hard_pause_reason(run_dir: Path, state: dict):
                 return "wishlist_trigger", f"{matched}: {verdict['detail']}"
 
     if status == "paused_for_human" or pending == "human_pause":
-        return _classify_human_pause(run_dir, state), ""
+        reason = _classify_human_pause(run_dir, state)
+        if reason == orch.HOLDOUT_UNLOCK_REFUSED_FLAG:
+            # Slice 6c S2d: the HALT line names the refusal code (RUNBOOK §3 has
+            # one row per code). Every other reason: unchanged, no detail.
+            refusal = state.get(orch.HOLDOUT_UNLOCK_REFUSAL_KEY) or {}
+            return reason, (f"{refusal.get('code')}: {refusal.get('detail')}"[:300]
+                            if refusal else "")
+        return reason, ""
 
     return None
 
@@ -1357,6 +1380,13 @@ _PAUSE_FLAG_TO_REASON = (
     # Slice 6c S2a code review (item 7). Mirrors the two branches directly below
     # research_only_unverified in _classify_human_pause.
     ("holdout_refused_under_retired_routing", "holdout_refused_under_retired_routing"),
+    # Slice 6c S2d: mirrors the three branches directly below that one.
+    (orch.HOLDOUT_UNLOCK_REFUSED_FLAG, orch.HOLDOUT_UNLOCK_REFUSED_FLAG),
+    (orch.HOLDOUT_AWAITING_RESULT_FLAG, orch.HOLDOUT_AWAITING_RESULT_FLAG),
+    (orch.HOLDOUT_RESULT_INCONCLUSIVE_FLAG, orch.HOLDOUT_RESULT_INCONCLUSIVE_FLAG),
+    (orch.HOLDOUT_SPENT_WITHOUT_UNLOCK_FLAG, orch.HOLDOUT_SPENT_WITHOUT_UNLOCK_FLAG),
+    (orch.HOLDOUT_RESULT_UNBOUND_FLAG, orch.HOLDOUT_RESULT_UNBOUND_FLAG),
+    (orch.HOLDOUT_RESULT_RELABELLED_FLAG, orch.HOLDOUT_RESULT_RELABELLED_FLAG),
     ("campaign_review_refused_under_retired_routing",
      "campaign_review_refused_under_retired_routing"),
     # Slice 6c S2b: mirrors the branch directly below those in _classify_human_pause.
@@ -1678,6 +1708,17 @@ def resume_paused_entry(queue: dict) -> bool:
               f"pending_stage={state.get('pending_stage')!r}. Resolve the '{reason}' pause "
               f"first (see RUNBOOK.md), then retry --resume.")
         return False
+    if (reason in ("profit_bars_reached", orch.HOLDOUT_UNLOCK_REFUSED_FLAG)
+            and orch._verdict_routing_retired_enabled()):
+        # Slice 6c S2d: resuming from the branch-3 stop needs a valid operator
+        # holdout_decision.yaml (spend or continue) -- refused here, loudly,
+        # before anything runs; run_loop checks it again, authoritatively.
+        blocker = orch.holdout_decision_resume_blocker(run_dir, run_id)
+        if blocker:
+            print(f"--resume refused for {entry['id']} / {run_id}: {blocker}. Write or fix "
+                  f"runs/{run_id}/artifacts/{orch.HOLDOUT_DECISION_FILE} (RUNBOOK.md §3, "
+                  f"'{reason}' row), then retry --resume.")
+            return False
     entry["status"] = "in_progress"
     _save_queue(queue)
     _log(f"RESUME {entry['id']} / {run_id}: resolution confirmed for '{reason}', "
