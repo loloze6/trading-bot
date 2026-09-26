@@ -29,9 +29,16 @@ that already registered a block must produce exactly the same block (then it
 is a no-op); anything else -- a different block, or no block at all -- raises
 BlockRegistryError and a person decides (guess 7).
 
+E-060 S2 (slice 7 item 7.1), under orchestrator.composition_runs.enabled
+only (record_run(..., composition_runs=True)): the entry also carries the
+block's exact `timeframe` and its `timeframe_category` (operator decision 3:
+high <= 15min < medium < 1h <= low < 1d <= daily), and `residual_ic` /
+`correlation_to_composite` become mappings read from the run's
+artifacts/residual_ic.yaml (the numbers the grid's residual_ic cell was
+evaluated on) for the base variant. Flag off: the entry is exactly the E-058
+shape (both null, no timeframe keys).
+
 Deliberately NOT here:
-  * `correlation_to_composite` / `residual_ic`: slice 7 computes them; they
-    are written as null.
   * a coin restriction: a block validated anywhere is usable on any coin
     (target decision, card F). `symbols_tested` is informational only.
   * reader proposal scores, refine/pivot/escalate, hypothesis_family,
@@ -68,6 +75,9 @@ BLOCK_FIELDS = (
     "correlation_to_composite", "residual_ic", "source_config_ref",
     "source_config_sha256", "validated_by_run", "registered_at",
 )
+# E-060 S2: written together, only under orchestrator.composition_runs.
+TIMEFRAME_FIELDS = ("timeframe", "timeframe_category")
+RESIDUAL_IC_ARTIFACT = "residual_ic.yaml"
 
 
 class BlockRegistryError(ValueError):
@@ -110,9 +120,13 @@ def load_registry(path: Path) -> dict:
         if not isinstance(block, dict):
             raise BlockRegistryError(f"{path}: blocks[{i}] is not a mapping")
         missing = [f for f in BLOCK_FIELDS if f not in block]
-        extra = sorted(set(block) - set(BLOCK_FIELDS))
+        extra = sorted(set(block) - set(BLOCK_FIELDS) - set(TIMEFRAME_FIELDS))
         if missing or extra:
             raise BlockRegistryError(f"{path}: blocks[{i}] missing {missing} / unknown {extra}")
+        tf_present = [f for f in TIMEFRAME_FIELDS if f in block]
+        if tf_present and len(tf_present) != len(TIMEFRAME_FIELDS):
+            raise BlockRegistryError(f"{path}: blocks[{i}] carries {tf_present} but not all of "
+                                     f"{list(TIMEFRAME_FIELDS)} -- they are written together")
         bid = block["block_id"]
         if not isinstance(bid, str) or not bid or bid in seen:
             raise BlockRegistryError(f"{path}: blocks[{i}].block_id={bid!r} is empty or duplicated")
@@ -153,9 +167,44 @@ def _base_variant(entry: dict) -> tuple:
     return vid, info
 
 
+def _composition_fields(run_dir: Path, run_id: str, vid: str, kind: str) -> dict:
+    """E-060 S2: timeframe, timeframe_category, residual_ic and
+    correlation_to_composite from artifacts/residual_ic.yaml (written by
+    protocol_execution under composition_runs) for the base variant `vid`.
+    Missing file / variant raises: under the flag every block carries them.
+    A regime block records its timeframe; its residual-IC fields stay null
+    (it is not a forecast)."""
+    path = Path(run_dir) / "artifacts" / RESIDUAL_IC_ARTIFACT
+    if not path.exists():
+        raise BlockRegistryError(f"{run_id}: {path} is missing -- under "
+                                 f"orchestrator.composition_runs every block records its "
+                                 f"timeframe and residual IC from it")
+    try:
+        doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        raise BlockRegistryError(f"{path}: unparseable YAML ({exc})") from exc
+    doc = doc if isinstance(doc, dict) else {}
+    diag = (doc.get("variants") or {}).get(vid)
+    if not isinstance(diag, dict) or not isinstance(doc.get("timeframe"), str) \
+            or doc.get("timeframe_category") not in ("high", "medium", "low", "daily"):
+        raise BlockRegistryError(f"{path}: no residual-IC record for base variant {vid!r}, or no "
+                                 f"valid timeframe / timeframe_category")
+    out = {"timeframe": doc["timeframe"], "timeframe_category": doc["timeframe_category"],
+           "residual_ic": None, "correlation_to_composite": None}
+    if kind == "forecast":
+        basis = {"composite": diag.get("composite"),
+                 "composite_registry_hash": diag.get("composite_registry_hash")}
+        out["residual_ic"] = {"value": diag.get("value"), "n_eff": diag.get("n_eff"),
+                              "p_value": diag.get("p_value"),
+                              "fully_explained": diag.get("fully_explained"), **basis}
+        out["correlation_to_composite"] = {"value": diag.get("correlation_to_composite"), **basis}
+    return out
+
+
 def build_block(run_dir: Path, entry: dict, manifest: dict, *, root: Path,
-                registered_at: str | None = None) -> dict:
-    """One registry entry (pure apart from reading the base config)."""
+                registered_at: str | None = None, composition_runs: bool = False) -> dict:
+    """One registry entry (pure apart from reading the base config, and under
+    composition_runs artifacts/residual_ic.yaml)."""
     run_id = entry["run_id"]
     vid, info = _base_variant(entry)
     cfg_path = Path(root) / info["config_ref"]
@@ -193,7 +242,7 @@ def build_block(run_dir: Path, entry: dict, manifest: dict, *, root: Path,
             numbers[crit][variant] = num
     symbols = sorted({s for v in (entry.get("variants") or {}).values()
                       if v.get("status") == "tested" for s in (v.get("symbols") or [])})
-    return {
+    block = {
         "block_id": f"{entry['hypothesis_id']}:{run_id}",
         "hypothesis_id": entry["hypothesis_id"],
         "kind": manifest["block"]["kind"],
@@ -203,13 +252,16 @@ def build_block(run_dir: Path, entry: dict, manifest: dict, *, root: Path,
         "variants_passed": list(grid["variants"]),
         "numbers": numbers,
         "symbols_tested": symbols,  # informational: any-coin eligibility (card F)
-        "correlation_to_composite": None,  # slice 7
-        "residual_ic": None,  # slice 7
+        "correlation_to_composite": None,  # filled under composition_runs (E-060 S2)
+        "residual_ic": None,  # filled under composition_runs (E-060 S2)
         "source_config_ref": info["config_ref"],
         "source_config_sha256": sha,
         "validated_by_run": run_id,
         "registered_at": registered_at or _now(),
     }
+    if composition_runs:
+        block.update(_composition_fields(run_dir, run_id, vid, block["kind"]))
+    return block
 
 
 def _stable(block: dict) -> dict:
@@ -255,7 +307,8 @@ def blocks_for_run(path: Path, run_id: str) -> list:
     return [b["block_id"] for b in load_registry(path)["blocks"] if b["validated_by_run"] == run_id]
 
 
-def record_run(path: Path, run_dir: Path, entry: dict, *, root: Path) -> dict | None:
+def record_run(path: Path, run_dir: Path, entry: dict, *, root: Path,
+               composition_runs: bool = False) -> dict | None:
     """The regroup_record hook. Returns the memory entry's `registry` value
     ({"block_ids": [...]} or {"skipped": reason}); None for a fault-only
     entry, which carries no registry field. Raises BlockRegistryError on a
@@ -275,7 +328,7 @@ def record_run(path: Path, run_dir: Path, entry: dict, *, root: Path) -> dict | 
               f"block, so NO block is registered (memory: registry.skipped=no_manifest). "
               f"Only strategy_config_authoring (orchestrator.config_direct_authoring) writes it.")
         return {"skipped": _cm.REGISTRY_SKIPPED_NO_MANIFEST}
-    block = build_block(run_dir, entry, manifest, root=root)
+    block = build_block(run_dir, entry, manifest, root=root, composition_runs=composition_runs)
     _append(path, run_id, [block])
     print(f"[E-058] block registry: registered {block['block_id']} ({block['kind']}) -> {path}")
     return {"block_ids": [block["block_id"]]}

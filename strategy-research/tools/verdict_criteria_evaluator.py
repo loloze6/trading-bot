@@ -223,18 +223,23 @@ def _lookup_metric_value(protocol_result: dict, criterion: dict, symbol: str | N
         return (per_symbol_summary.get(symbol) or {}).get(metric)
 
     statistic = criterion.get("statistic")
+    val = _lookup_pooled_metric_raw(protocol_result, metric)
+    if isinstance(val, dict) and statistic:
+        return val.get(statistic)
+    return val
+
+
+def _lookup_pooled_metric_raw(protocol_result: dict, metric: str):
+    """The pooled metric's whole stored object (a scalar or a mapping), same
+    lookup order as _lookup_metric_value: trade_diagnostics_summary first,
+    then hypothesis_verdict.diagnostics. None when absent. E-060 S2 reads a
+    mapping's `n_eff` / `fully_explained` / `composite` beside its value."""
     tds = protocol_result.get("trade_diagnostics_summary") or {}
     if metric in tds:
-        val = tds[metric]
-        if isinstance(val, dict) and statistic:
-            return val.get(statistic)
-        return val
+        return tds[metric]
     hv_diag = (protocol_result.get("hypothesis_verdict") or {}).get("diagnostics") or {}
     if metric in hv_diag:
-        val = hv_diag[metric]
-        if isinstance(val, dict) and statistic:
-            return val.get(statistic)
-        return val
+        return hv_diag[metric]
     return None
 
 
@@ -1208,27 +1213,37 @@ def _reduce_sign_consistent_by_era(value_window_pairs, eras: list):
     return True, detail
 
 
-def _check_floor(n_windows: int, n_trades: int, floor: dict | None):
+# Sentinel: the caller has no n_eff source at all (a `window`-source
+# criterion). Distinct from None, which is "the metric was expected to carry
+# an n_eff and did not".
+_N_EFF_NOT_APPLICABLE = object()
+
+
+def _check_floor(n_windows: int, n_trades: int, floor: dict | None,
+                 n_eff=_N_EFF_NOT_APPLICABLE):
     """Gates the reducer's/lookup's OWN input count before any comparator
     runs (S1_FINDINGS.md §3). Returns (ok: bool, reason: str | None).
 
-    `min_n_eff` deliberately RAISES rather than being silently treated as
-    satisfied or as zero -- S1_FINDINGS.md's 'Not determined' section found
-    no field anywhere in the addressable protocol_result.yaml corpus
-    (core / per_symbol_summary / trade_diagnostics_summary /
-    hypothesis_verdict.diagnostics) that resolves an effective-sample-size
-    statistic. A criterion that declares this floor cannot be honestly
-    evaluated yet."""
+    `min_n_eff` (E-060 S2): read from the n_eff that comes WITH a pooled
+    metric (its mapping's `n_eff`, e.g. hypothesis_verdict.diagnostics.
+    residual_ic.n_eff -- the gap-aware effective sample size). A pooled metric
+    without one -> not ok (INCONCLUSIVE), never treated as satisfied or as
+    zero. A `window`-source criterion has no n_eff source at all, so declaring
+    the floor there still RAISES, as before this slice."""
     floor = floor or {}
     if floor.get("min_n_eff") is not None:
-        raise NotImplementedError(
-            f"floor.min_n_eff={floor['min_n_eff']!r} is not computable in this slice -- no "
-            f"field named n_eff (or an equivalent effective-sample-size statistic) exists "
-            f"anywhere in the addressable protocol_result.yaml corpus (S1_FINDINGS.md's 'Not "
-            f"determined' section). Refusing to silently treat this floor as satisfied or as "
-            f"zero -- remove min_n_eff from this criterion's floor, or wire a real n_eff "
-            f"source before using it."
-        )
+        if n_eff is _N_EFF_NOT_APPLICABLE:
+            raise NotImplementedError(
+                f"floor.min_n_eff={floor['min_n_eff']!r} is only computable for a pooled metric "
+                f"that carries its own n_eff (E-060 S2, e.g. residual_ic) -- a window-source "
+                f"criterion has none. Refusing to silently treat this floor as satisfied or as "
+                f"zero -- remove min_n_eff from this criterion's floor."
+            )
+        if not isinstance(n_eff, (int, float)) or isinstance(n_eff, bool):
+            return False, (f"n_eff not available for this metric -- floor.min_n_eff="
+                           f"{floor['min_n_eff']} cannot be checked")
+        if n_eff < floor["min_n_eff"]:
+            return False, f"n_eff={n_eff} < floor.min_n_eff={floor['min_n_eff']}"
     min_windows = floor.get("min_windows")
     if min_windows is not None and n_windows < min_windows:
         return False, f"n_windows={n_windows} < floor.min_windows={min_windows}"
@@ -1323,6 +1338,12 @@ def _evaluate_grid_cell_for_symbol(criterion: dict, protocol_result: dict, eras:
                if isinstance(e, dict) and (symbol is None or e.get("symbol") == symbol)]
     n_windows = len(entries)
     n_trades = sum(((e.get("core") or {}).get("trade_count") or 0) for e in entries)
+    if (floor or {}).get("min_n_eff") is not None:
+        # E-060 S2: an n_eff-floored pooled metric (residual_ic). Everything in
+        # this branch is new -- before S2 a min_n_eff floor raised -- so no
+        # existing criterion's cell changes shape.
+        return _evaluate_n_eff_pooled_cell(criterion, protocol_result, symbol, value,
+                                           n_windows, n_trades)
     floor_ok, floor_reason = _check_floor(n_windows, n_trades, floor)
     if not floor_ok:
         return {"result": "INCONCLUSIVE", "n_windows": n_windows, "n_trades": n_trades,
@@ -1337,6 +1358,45 @@ def _evaluate_grid_cell_for_symbol(criterion: dict, protocol_result: dict, eras:
     met = _apply_comparator(comparator, value, threshold)
     return {"result": "PASS" if met else "FAIL", "value": value, "threshold": threshold,
             "comparator": comparator, "n_windows": n_windows, "n_trades": n_trades}
+
+
+def _evaluate_n_eff_pooled_cell(criterion: dict, protocol_result: dict, symbol, value,
+                                n_windows: int, n_trades: int) -> dict:
+    """A pooled cell whose floor declares min_n_eff (E-060 S2; S1_FINDINGS.md
+    §3, guesses 4 and 7). The metric's stored mapping carries the n_eff the
+    floor reads, plus two states the value alone cannot express:
+      * composite == "STALE"      -> INCONCLUSIVE (the composite for this
+        registry revision does not exist yet);
+      * fully_explained == true   -> FAIL (an exact or scaled duplicate of the
+        composite: its residual has no variance; no fake 0.0 is written).
+    Order: STALE, then the floors, then fully_explained, then the value."""
+    cid = criterion.get("id")
+    metric = criterion.get("metric")
+    comparator = criterion.get("comparator")
+    threshold = criterion.get("threshold")
+    raw = None if symbol is not None else _lookup_pooled_metric_raw(protocol_result, metric)
+    raw = raw if isinstance(raw, dict) else {}
+    n_eff = raw.get("n_eff")
+    cell = {"n_windows": n_windows, "n_trades": n_trades, "n_eff": n_eff,
+            "composite": raw.get("composite"), "fully_explained": raw.get("fully_explained")}
+    if raw.get("composite") == "STALE":
+        return {"result": "INCONCLUSIVE", **cell,
+                "reason": raw.get("reason") or f"{metric}: the composite is stale"}
+    floor_ok, floor_reason = _check_floor(n_windows, n_trades, criterion.get("floor"), n_eff=n_eff)
+    if not floor_ok:
+        return {"result": "INCONCLUSIVE", **cell, "reason": floor_reason}
+    if raw.get("fully_explained") is True:
+        return {"result": "FAIL", "value": None, "threshold": threshold, "comparator": comparator,
+                **cell, "reason": raw.get("reason") or f"{metric}: fully explained by the composite"}
+    if value is None:
+        return {"result": "INCONCLUSIVE", **cell,
+                "reason": raw.get("reason") or f"pooled metric {metric!r} resolved to None"}
+    if comparator not in _VALID_COMPARATORS:
+        return {"result": "SPEC_ERROR",
+                "reason": f"criterion {cid!r}: comparator={comparator!r} not one of {_VALID_COMPARATORS}"}
+    met = _apply_comparator(comparator, value, threshold)
+    return {"result": "PASS" if met else "FAIL", "value": value, "threshold": threshold,
+            "comparator": comparator, **cell}
 
 
 def _dominant_cell_result(results: list) -> str:

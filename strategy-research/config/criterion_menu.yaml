@@ -91,25 +91,51 @@ criteria:
       magnitude, so it does not depend on which coin or parameter value a
       variant uses (card B's scale-free requirement).
 
-  # --- Not yet wired -- placeholders only (dispatch item 5) ---
+  # --- Not yet wired -- placeholder only (dispatch item 5) ---
   #
-  # Neither name resolves to any field anywhere in the run_059 corpus
-  # (grep-checked against tools/run_protocol.py's protocol_result.yaml
-  # construction: no `residual_ic` or `gated_beats_ungated` key exists in
-  # core / per_symbol_summary / trade_diagnostics_summary /
-  # hypothesis_verdict.diagnostics). S1_FINDINGS.md §7 item 3 names both as
-  # S2 menu seeds, but a real resolution path for either depends on
-  # composition work (slice 7) this slice does not build. Left commented out
-  # deliberately -- an active, un-resolvable `source`/`reducer` entry here
-  # would let a pass_rule accidentally reference it and either SPEC_ERROR
-  # confusingly at evaluation time or (worse) silently resolve to something
-  # wrong. A commented block cannot be matched by `id` at all.
+  # gated_beats_ungated resolves to no field anywhere (grep-checked against
+  # tools/run_protocol.py's protocol_result.yaml construction). It belongs to
+  # the regime-block story (E-060 S1 guess 13 / operator decision 4), not
+  # built yet. Left commented out deliberately -- a commented block cannot be
+  # matched by `id` at all.
   #
-  # - id: residual_ic
-  #   metric: <not yet resolvable -- depends on slice 7 composition work>
-  #   source: <TBD>
-  #   scale_free: true
   # - id: gated_beats_ungated
-  #   metric: <not yet resolvable -- depends on slice 7 composition work>
+  #   metric: <not yet resolvable -- regime blocks, a later E-060 story>
   #   source: <TBD>
   #   scale_free: true
+
+# E-060 S2 (delivery_plan_v26.md slice 7 item 7.1; engineering/roadmap/E-060/
+# S1_FINDINGS.md guesses 6-8 + operator decision 5 of 2026-09-26).
+# Criteria that CODE adds to a pass_rule -- never picked by step 1a. They live
+# outside `criteria:` on purpose: 1a picks only from `criteria` (a card naming
+# one of these is refused as an unknown id, exactly as before this section
+# existed), and evaluate_grid backfills only from `criteria` -- the entry is
+# copied whole into pre_registration.yaml's pass_rule by
+# run_phase1_research._with_residual_ic_criterion, only under
+# orchestrator.composition_runs.enabled.
+code_added_criteria:
+  - id: residual_ic
+    # Rank IC of the candidate's residual after an expanding least-squares fit
+    # on the current composite's forecast (tools/residual_ic.py), pooled over
+    # coins; n_eff = gap-aware one-day blocks (tools/residual_ic.py). Written
+    # by protocol_execution into hypothesis_verdict.diagnostics.residual_ic.
+    # composite STALE -> INCONCLUSIVE; fully_explained -> FAIL (evaluator).
+    metric: residual_ic
+    statistic: value
+    source: pooled
+    comparator: ">"
+    # PLACEHOLDER, UNRATIFIED (operator decision 5): > 0.01 with n_eff >= 30,
+    # operator-adjustable here. The orchestrator noted 0.02 may better match
+    # "genuinely useful". Ratify before switching composition_runs on.
+    threshold: 0.01
+    ratified: false
+    card_overridable: []
+    scale_free: true
+    symbol_reducer: null
+    floor:
+      min_n_eff: 30
+    requires_flag: orchestrator.composition_runs.enabled
+    basis: >
+      Card A: a block must hold information the composite does not. Rank-based,
+      so scale-free: the rolling scale-only standardisation of operator
+      decision 1 (S3) cannot change it.

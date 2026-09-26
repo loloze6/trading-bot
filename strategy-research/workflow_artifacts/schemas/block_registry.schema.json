@@ -21,6 +21,8 @@
                    "correlation_to_composite", "residual_ic", "source_config_ref",
                    "source_config_sha256", "validated_by_run", "registered_at"],
       "additionalProperties": false,
+      "dependentRequired": { "timeframe": ["timeframe_category"],
+                             "timeframe_category": ["timeframe"] },
       "properties": {
         "block_id": { "type": "string", "description": "<hypothesis_id>:<run_id>" },
         "hypothesis_id": { "type": "string", "minLength": 1 },
@@ -40,8 +42,40 @@
         "numbers": { "type": "object",
                      "description": "grid cells {criterion: {variant: {value, threshold, n_windows, n_trades[, per_symbol]}}}" },
         "symbols_tested": { "type": "array", "items": { "type": "string" } },
-        "correlation_to_composite": { "type": "null", "description": "slice 7" },
-        "residual_ic": { "type": "null", "description": "slice 7" },
+        "correlation_to_composite": {
+          "description": "E-060 S2: null with orchestrator.composition_runs off (and for a regime block); else the base variant's Pearson correlation with the current composite (value null when there is no composite).",
+          "oneOf": [
+            { "type": "null" },
+            { "type": "object", "additionalProperties": false,
+              "required": ["value", "composite", "composite_registry_hash"],
+              "properties": {
+                "value": { "type": ["number", "null"] },
+                "composite": { "enum": ["none", "block", "composition", "STALE"] },
+                "composite_registry_hash": { "type": ["string", "null"] }
+              } }
+          ]
+        },
+        "residual_ic": {
+          "description": "E-060 S2: null with orchestrator.composition_runs off (and for a regime block); else the base variant's residual-IC record (tools/residual_ic.py) the grid's residual_ic cell was evaluated on.",
+          "oneOf": [
+            { "type": "null" },
+            { "type": "object", "additionalProperties": false,
+              "required": ["value", "n_eff", "p_value", "fully_explained", "composite",
+                           "composite_registry_hash"],
+              "properties": {
+                "value": { "type": ["number", "null"] },
+                "n_eff": { "type": ["integer", "null"], "minimum": 0 },
+                "p_value": { "type": ["number", "null"] },
+                "fully_explained": { "type": "boolean" },
+                "composite": { "enum": ["none", "block", "composition", "STALE"] },
+                "composite_registry_hash": { "type": ["string", "null"] }
+              } }
+          ]
+        },
+        "timeframe": { "type": "string", "pattern": "^\\s*\\d+\\s*[smhdwSMHDW]\\s*$",
+                       "description": "E-060 S2 (composition_runs only): the exact bar size the block was validated on (the protocol's timeframe)." },
+        "timeframe_category": { "enum": ["high", "medium", "low", "daily"],
+                                "description": "E-060 S2 operator decision 3: high <= 15min; medium > 15min and < 1h; low >= 1h and < 1d; daily >= 1d." },
         "source_config_ref": { "type": "string" },
         "source_config_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
         "validated_by_run": { "type": "string", "minLength": 1 },
