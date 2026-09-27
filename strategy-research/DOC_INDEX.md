@@ -13,6 +13,10 @@ Organized by the question a reader actually arrives with, not by directory.
 ### "What do I do this session?"
 → For **engineering work**: **[`engineering/roadmap/EPICS.md`](engineering/roadmap/EPICS.md)** —
 one line per epic, the only mandatory read for engineering.
+→ For **operator decisions made after the roadmap review**:
+**[`engineering/DECISION_LOG.md`](engineering/DECISION_LOG.md)** — the single, numbered index of
+every operator decision from 2026-09-16 onward; `engineering_roadmap.html` (v27) has not been
+updated since 2026-09-20 and no longer carries these on its own.
 → For **campaign/research work**: **[`docs/CAMPAIGN_PROGRAM.md`](docs/CAMPAIGN_PROGRAM.md)** (phase
 plan) and `config/campaign_queue.yaml` (current queue state).
 → **[`HANDOFF_CURRENT.md`](engineering/sessions/HANDOFF_20260724.md)** —
