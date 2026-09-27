@@ -2181,16 +2181,28 @@ def _apply_b7_mandatory_inputs(stage_name: str, handoff: dict, run_dir: Path) ->
 # halt_policy.quarantine_enabled -- see run_campaign._quarantine_enabled();
 # switched ON 2026-09-02 by E-041).
 #
-# E-036 S2a (2026-09-27, S1_FINDINGS_SLICE8.md operator decision 3) REPOINTED
-# the input -- a declared live prompt change: it used to be
-# campaign_record/exclusion_digest.yaml (family-scoped (family, instrument,
-# timeframe) triples); it is now artifacts/tried_ideas.yaml, a per-run
-# snapshot derived at prompt time from campaign_record/campaign_memory.yaml by
+# E-036 S2a (2026-09-27, S1_FINDINGS_SLICE8.md operator decision 3): when
+# campaign_record/campaign_memory.yaml exists, the input is
+# artifacts/tried_ideas.yaml -- a per-run snapshot derived at prompt time by
 # tools/campaign_memory.tried_ideas (idea hypothesis_id, coins, timeframe, the
 # grid's idea_status; no family grouping; at most TRIED_IDEAS_MAX_ROWS rows, so
-# the prompt stays bounded). No memory file (orchestrator.regroup_record off):
-# no input, exactly as a missing digest file behaved.
+# the prompt stays bounded) -- and the legacy digest is NOT also fed. When it
+# does not exist (orchestrator.regroup_record off, today's default), the input
+# is the legacy campaign_record/exclusion_digest.yaml exactly as before this
+# story (same path, same reason text, same missing-file skip): the default
+# prompt input is byte-identical (tests/test_exclusion_digest_input.py pins it).
 _EXCLUSION_DIGEST_INPUT_STAGES = {"hypothesis_generation", "innovation_expansion"}
+_EXCLUSION_DIGEST_RELATIVE_PATH = "../../campaign_record/exclusion_digest.yaml"
+_EXCLUSION_DIGEST_REASON = (
+    "E-032 S2a: family-scoped (family, instrument, timeframe) triples "
+    "already tried, freshly derived from run artifacts -- NOT "
+    "campaign_state.yaml's stale, family-blind instruments_tried/"
+    "timeframes_tried lists. Prefer a candidate whose family is absent "
+    "here, or whose (instrument, timeframe) triple is absent under its "
+    "family, over a same-family tweak when both are viable. This is "
+    "raw material, not a binding gate -- the anti_adjacency_gate tool "
+    "stage makes the mechanical refusal decision downstream."
+)
 _TRIED_IDEAS_RELATIVE_PATH = "artifacts/tried_ideas.yaml"
 _TRIED_IDEAS_REASON = (
     "E-036 S2a: what was already tried -- one row per run recorded in "
@@ -2489,19 +2501,21 @@ def _exclusion_digest_input_enabled() -> bool:
 
 
 def _apply_exclusion_digest_input(stage_name: str, handoff: dict, run_dir: Path) -> None:
-    """Union the "already tried" view into handoff['optional_inputs'] for the
-    two generating stages, ONLY when the flag is on and
-    campaign_record/campaign_memory.yaml exists -- deduplicated, same
+    """Union "what was already tried" into handoff['optional_inputs'] for the
+    two generating stages, ONLY when the flag is on -- deduplicated, same
     skip-gracefully-on-absence discipline as _apply_b7_mandatory_inputs.
     optional_inputs (not required_inputs): a missing input must never crash a
     stage that predates this feature.
 
-    E-036 S2a: the view is artifacts/tried_ideas.yaml, derived here from the
-    memory (tools/campaign_memory.tried_ideas) and written into the run before
-    the stage reads it -- so the run keeps a record of exactly what the model
-    was shown. No memory file: nothing is written or added, the same
-    degradation the old code applied to a missing exclusion_digest.yaml. A
-    malformed memory raises (CampaignMemoryError), never silently skipped.
+    Which input (E-036 S2a):
+      * campaign_record/campaign_memory.yaml exists -> artifacts/tried_ideas.yaml,
+        derived here (tools/campaign_memory.tried_ideas) and written into the
+        run before the stage reads it, so the run keeps exactly what the
+        model was shown. The legacy digest is NOT also fed. A malformed
+        memory raises (CampaignMemoryError), never silently skipped.
+      * no memory file -> campaign_record/exclusion_digest.yaml, exactly as
+        before E-036 S2a (same path, same reason, skipped when the file is
+        missing): byte-identical default prompt input.
 
     Flag OFF: this function is a no-op -- the handoff dict is never mutated
     and nothing is written, so _build_stage_prompt's assembled prompt text is
@@ -2512,15 +2526,19 @@ def _apply_exclusion_digest_input(stage_name: str, handoff: dict, run_dir: Path)
     if not _exclusion_digest_input_enabled():
         return
     memory_path = ROOT / "campaign_record" / "campaign_memory.yaml"
-    if not memory_path.exists():
+    if memory_path.exists():
+        import campaign_memory as _cm_mod  # tools/ sibling (tools/ is on sys.path, module top)
+        view = _cm_mod.tried_ideas(_cm_mod.load_memory(memory_path), root=ROOT)
+        save_yaml(run_dir / _TRIED_IDEAS_RELATIVE_PATH, view)
+        path, reason = _TRIED_IDEAS_RELATIVE_PATH, _TRIED_IDEAS_REASON
+    elif (run_dir / _EXCLUSION_DIGEST_RELATIVE_PATH).exists():
+        path, reason = _EXCLUSION_DIGEST_RELATIVE_PATH, _EXCLUSION_DIGEST_REASON
+    else:
         return
-    import campaign_memory as _cm_mod  # tools/ sibling (tools/ is on sys.path, module top)
-    view = _cm_mod.tried_ideas(_cm_mod.load_memory(memory_path), root=ROOT)
-    save_yaml(run_dir / _TRIED_IDEAS_RELATIVE_PATH, view)
     optional = handoff.setdefault("optional_inputs", [])
-    if _TRIED_IDEAS_RELATIVE_PATH in {req["path"] for req in optional}:
+    if path in {req["path"] for req in optional}:
         return
-    optional.append({"path": _TRIED_IDEAS_RELATIVE_PATH, "reason": _TRIED_IDEAS_REASON})
+    optional.append({"path": path, "reason": reason})
 
 
 # E-032 S2b: two of hypothesis_generation's OWN declared optional_inputs
@@ -3976,6 +3994,18 @@ def _gate_shortfall_fetchable(gate: dict) -> bool:
     return True
 
 
+# E-036 S2a: the exact-match gate's skip reason prefix (_gate_config_direct_variants).
+_REPEAT_REASON_PREFIX = "repeat:"
+
+
+def _is_repeat_skip(v) -> bool:
+    """True for an index.yaml entry the exact-match gate skipped as a repeat
+    (not_tested, reason "repeat: ..."). Never a data or engineering problem:
+    the data gate's shortfall check and _variant_park_kind leave it out."""
+    return (isinstance(v, dict) and v.get("status") == "not_tested"
+            and str(v.get("reason") or "").startswith(_REPEAT_REASON_PREFIX))
+
+
 def _variant_park_kind(variants: dict, artifacts_dir=None) -> tuple:
     """(kind, classes) for the not_tested variants of artifacts/variants/index.yaml:
     'component' when each one is a genuinely missing class (5a,
@@ -3985,10 +4015,12 @@ def _variant_park_kind(variants: dict, artifacts_dir=None) -> tuple:
     artifacts/variants/<id>/data_availability_gate.yaml, _gate_shortfall_fetchable);
     (None, []) when any other reason is present (a patch failure, unresolved
     manifest paths, another V-code, a gate crash, a gate refine, an
-    unfetchable decline -- which stay what they are today) or none is not_tested."""
+    unfetchable decline -- which stay what they are today) or none is not_tested.
+    E-036 S2a: a repeat skip (_is_repeat_skip) is ignored -- it counts as
+    neither class, data nor other."""
     classes, data, other = set(), 0, 0
     for vid, v in (variants or {}).items():
-        if not isinstance(v, dict) or v.get("status") != "not_tested":
+        if not isinstance(v, dict) or v.get("status") != "not_tested" or _is_repeat_skip(v):
             continue
         reason = str(v.get("reason") or "")
         found = (_v12_missing_classes(v.get("report"))
@@ -5938,11 +5970,11 @@ def _coerce_scalar_instrument(value, run_dir: Path):
     json, but the real corpus does not honor that -- of 46 sampled cards, 34
     are plain strings, 10 carry a LIST (['BTCUSDT', 'ETHUSDT']), 2 carry a
     DICT ({'asset': 'BTCUSDT', ...}). All three used to flow straight into
-    variant_selection.yaml's 'instrument' field and from there into
-    evaluate_candidate()'s instrument= override, where a non-string-non-list
-    silently compares False against every digest triple -- Layer-2 matching
-    quietly never fires for roughly a fifth of the corpus's shape, with no
-    error anywhere. Exactly the class of silent-wrong-answer bug this
+    variant_selection.yaml's 'instrument' field, where (until E-036 S2a
+    replaced the family digest with the exact-match key) the gate's
+    per-instrument digest lookup silently compared a non-string-non-list
+    False against every digest triple -- Layer-2 matching quietly never
+    fired for roughly a fifth of the corpus's shape, with no error anywhere. Exactly the class of silent-wrong-answer bug this
     project has spent this whole session finding and refusing to leave in
     place.
 
@@ -6127,7 +6159,6 @@ def _variant_anti_adjacency_gate_enabled() -> bool:
 
 
 _CAMPAIGN_MEMORY_REL = "campaign_record/campaign_memory.yaml"
-_REPEAT_REASON_PREFIX = "repeat:"
 
 
 def _repeat_gate_context(run_dir: Path, run_id: str) -> dict:
@@ -6146,9 +6177,14 @@ def _repeat_gate_context(run_dir: Path, run_id: str) -> dict:
         protocol_file.
       * symbols -- that protocol's `symbols` (what tools/run_protocol.py
         iterates; campaign_memory measures them back from its results).
-      * specs -- novelty.protocol_specs over the memory plus this protocol.
-      * kb / hypothesis_id / card timeframe -- Layer 1's advisory inputs and
-        the key's unresolved-protocol fallback."""
+      * specs -- novelty.protocol_specs over the memory (an unreadable memory
+        protocol degrades to an unresolved key, listed in
+        `protocol_warnings`), plus this run's protocol read STRICTLY (fail
+        loud: the candidate's key must never be unresolved).
+      * index -- novelty.match_index, built once per run (this run excluded).
+      * layer1_advisory -- the KB's advisory verdict, computed once per run
+        (it depends only on the run's hypothesis_id and the protocol's
+        timeframe)."""
     import anti_adjacency_gate as _aag  # tools/ sibling (tools/ is on sys.path)
     import campaign_memory as _cm_mod
     import novelty as _nov
@@ -6164,27 +6200,33 @@ def _repeat_gate_context(run_dir: Path, run_id: str) -> dict:
     memory = _cm_mod.load_memory(memory_path)
     protocol_path = _resolve_protocol_path(run_dir, run_id)
     protocol_ref = _cm_mod.protocol_ref_of(str(protocol_path), ROOT)
-    proto_text = Path(protocol_path).read_text(encoding="utf-8")
-    proto = (json.loads(proto_text) if Path(protocol_path).suffix == ".json"
-             else yaml.safe_load(proto_text))
-    symbols = proto.get("symbols") if isinstance(proto, dict) else None
+    proto = _nov.load_protocol(ROOT, protocol_ref)  # strict: raises NoveltyError
+    symbols = proto.get("symbols")
     if not (isinstance(symbols, list) and symbols and all(isinstance(s, str) and s for s in symbols)):
         raise RuntimeError(
             f"[E-036 S2a] {run_dir.name}: protocol {protocol_ref} has no usable `symbols` list "
             f"({symbols!r}) -- cannot build the exact-match key.")
     card_path = run_dir / "artifacts" / "hypothesis_card.yaml"
     card = (load_yaml(card_path) or {}) if card_path.exists() else {}
+    card = card if isinstance(card, dict) else {}
     kb_path = ROOT / "campaign_record" / "campaign_knowledge_base.yaml"
+    kb = (load_yaml(kb_path) or {}) if kb_path.exists() else None
+    warnings: list = []
+    specs = _nov.protocol_specs(ROOT, memory, warnings=warnings)
+    cand_spec = _nov.protocol_spec(ROOT, protocol_ref, strict=True)
+    specs[_nov.normalize_ref(protocol_ref)] = cand_spec
     return {
         "aag": _aag,
-        "memory": memory,
         "memory_present": memory_present,
         "protocol_ref": protocol_ref,
+        "protocol_warnings": warnings,
         "symbols": sorted(set(symbols)),
-        "specs": _nov.protocol_specs(ROOT, memory, extra_refs=[protocol_ref]),
-        "kb": (load_yaml(kb_path) or {}) if kb_path.exists() else None,
-        "hypothesis_id": card.get("hypothesis_id") if isinstance(card, dict) else None,
-        "card_timeframe": card.get("timeframe") if isinstance(card, dict) else None,
+        "specs": specs,
+        "index": _nov.match_index(memory, specs, exclude_run_id=run_id),
+        "hypothesis_id": card.get("hypothesis_id"),
+        "card_timeframe": card.get("timeframe"),
+        "layer1_advisory": _aag.layer1_advisory(card.get("hypothesis_id"), cand_spec["timeframe"],
+                                                kb, ROOT / "runs"),
     }
 
 
@@ -6197,10 +6239,8 @@ def _check_variant_repeat(ctx: dict, config_path: Path, run_id: str) -> dict:
     forecast_hash = _compute_forecast_hash(Path(config_path))
     key = aag.candidate_key(forecast_hash, ctx["symbols"], ctx["protocol_ref"], ctx["specs"],
                             card_timeframe=ctx["card_timeframe"])
-    result = aag.evaluate_candidate(key, ctx["memory"], ctx["specs"], kb=ctx["kb"],
-                                    candidate_hid=ctx["hypothesis_id"],
-                                    candidate_timeframe=key[2], runs_dir=ROOT / "runs",
-                                    exclude_run_id=run_id)
+    result = aag.layer2_digest_check(key, ctx["index"])
+    result["layer1_advisory"] = ctx["layer1_advisory"]
     return {**dict(result),
             "key": {"forecast_hash": key[0], "symbols": list(key[1]), "timeframe": key[2],
                     "window_set": key[3]},
@@ -6269,6 +6309,7 @@ def _route_post_variant_selection(run_dir: Path, run_id: str) -> str | None:
         "hypothesis_id": selection.get("hypothesis_id") or ctx["hypothesis_id"],
         "protocol_ref": ctx["protocol_ref"],
         "memory_present": ctx["memory_present"],
+        "protocol_warnings": ctx["protocol_warnings"],
     })
 
     if result["route"] == "admit":
@@ -6297,7 +6338,9 @@ def _gate_config_direct_variants(run_dir: Path, run_id: str) -> str | None:
     run_tool_worker has written artifacts/variants/index.yaml.
 
     Flag OFF (default): returns None immediately -- nothing is read or
-    written; the route is byte-identical.
+    written; the route is byte-identical. A composition run (E-060
+    _composition_mode) is never gated either: a composite is not a new idea
+    (S3b design, the same reason its step 2 has no novelty gate).
 
     Flag ON: checks every variant protocol_execution would run -- every
     `validated` one under orchestrator.variant_loop, else `base` only --
@@ -6309,7 +6352,11 @@ def _gate_config_direct_variants(run_dir: Path, run_id: str) -> str | None:
         skip the per-variant data gate uses). protocol_execution runs only
         `validated` variants, so a skipped repeat gets no trial row and no
         grid column; campaign memory records it as not_tested with that
-        reason. The others proceed unchanged.
+        reason. The others proceed. A repeat skip is never a data or
+        engineering problem (_is_repeat_skip): the variant loop's ">= 3
+        remaining" check counts only non-repeat variants (so when repeats
+        alone shrink the set, every remaining non-repeat variant proceeds)
+        and _variant_park_kind ignores repeat skips.
       * EVERY checked variant a repeat: returns completed_no_new_hypothesis
         (NO_NEW_HYPOTHESIS_STAGE) -- the existing non-verdict terminal
         ending for "this run has nothing new to test" (registered in
@@ -6320,6 +6367,8 @@ def _gate_config_direct_variants(run_dir: Path, run_id: str) -> str | None:
     The per-variant results go to artifacts/variant_anti_adjacency_result.yaml.
     Layer 1 (KB) is recorded per variant as `layer1_advisory`, never a skip."""
     if not _variant_anti_adjacency_gate_enabled():
+        return None
+    if _composition_mode(run_dir):
         return None
     artifacts = run_dir / "artifacts"
     index_path = artifacts / "variants" / "index.yaml"
@@ -6359,6 +6408,7 @@ def _gate_config_direct_variants(run_dir: Path, run_id: str) -> str | None:
         "flow": "config_direct",
         "protocol_ref": ctx["protocol_ref"],
         "memory_present": ctx["memory_present"],
+        "protocol_warnings": ctx["protocol_warnings"],
         "checked": checked,
         "repeats": repeats,
         "run_end": NO_NEW_HYPOTHESIS_STAGE if all_repeat else None,
@@ -11872,12 +11922,20 @@ def run_loop(run_id: str):
                 index = load_yaml(ARTIFACTS / "variants" / "index.yaml") or {}
                 variants_idx = index.get("variants", {})
                 remaining = [vid for vid, v in variants_idx.items() if v.get("status") == "validated"]
+                # E-036 S2a: variants the exact-match gate skipped as repeats
+                # are not a shortfall. Only non-repeat variants count: when
+                # repeats alone shrink the set below 3, every remaining
+                # non-repeat variant proceeds; a data decline among them still
+                # pauses/parks exactly as before. No repeat skip: min_needed
+                # stays 3 (byte-identical).
+                _n_repeat = sum(1 for v in variants_idx.values() if _is_repeat_skip(v))
+                _min_needed = max(1, min(3, len(variants_idx) - _n_repeat)) if _n_repeat else 3
                 # Slice 6c S2c: under verdict_routing_retired, a shortfall whose
                 # not_tested variants all wait on data (or a missing class) parks
                 # the run; --unpark restarts it at backtest_specification, which
                 # rebuilds index.yaml before the gate runs again. No sticky flag.
                 _park_kind, _park_classes = ((_variant_park_kind(variants_idx, ARTIFACTS)
-                                              if _vrr_flag and len(remaining) < 3
+                                              if _vrr_flag and len(remaining) < _min_needed
                                               else (None, [])))
                 if _park_kind:
                     _refs = ["campaign_record/data_requests.yaml",
@@ -11888,16 +11946,16 @@ def run_loop(run_id: str):
                         RUN_DIR, kind=_park_kind, stage="data_availability_gate",
                         reason=(f"only {len(remaining)}/{len(variants_idx)} variant(s) remain "
                                 f"validated after the per-variant data-availability gate "
-                                f"(need >= 3)"
+                                f"(need >= {_min_needed})"
                                 + (f"; missing class(es): {_park_classes}"
                                    if _park_classes else "")),
                         request_refs=_refs, resume_stage="backtest_specification",
                         classes=_park_classes)
                     break
-                if len(remaining) < 3:
+                if len(remaining) < _min_needed:
                     print(f"⏸️  PIPELINE PAUSED: only {len(remaining)}/{len(variants_idx)} "
                           "variant(s) remain validated after the per-variant "
-                          "data-availability gate (need >= 3). See "
+                          f"data-availability gate (need >= {_min_needed}). See "
                           "artifacts/variants/index.yaml and "
                           "campaign_record/data_requests.yaml.")
                     update_state(path=RUN_DIR, status="paused_for_human",

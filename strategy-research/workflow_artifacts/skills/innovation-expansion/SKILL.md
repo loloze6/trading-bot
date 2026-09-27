@@ -171,33 +171,43 @@ promising.
 
 ---
 
-## IMPROVEMENT 05 — Expansion Aware of What Was Already Tried (E-032 S2b; repointed E-036 S2a)
+## IMPROVEMENT 05 — Expansion Aware of What Was Already Tried (E-032 S2b; E-036 S2a)
 
 ### Optional input
 
-`artifacts/tried_ideas.yaml` is added to your context files ONLY when
-`config/campaign_config.yaml`'s `orchestrator.exclusion_digest_input.enabled` is true
-AND the campaign record (`campaign_record/campaign_memory.yaml`) exists. It will not
-always be present. **If it is absent from your provided context, this section does not
-apply.**
+When `config/campaign_config.yaml`'s `orchestrator.exclusion_digest_input.enabled` is
+true, ONE of two files is added to your context files:
 
-### When present: check what the base idea has already been tested on
+- `artifacts/tried_ideas.yaml` — when the campaign record
+  (`campaign_record/campaign_memory.yaml`) exists: one row per recorded run with the
+  idea (`hypothesis_id`), the coins it was tested on (`symbols`), the `timeframe`, and
+  the grid's `idea_status` (`validated`, `refuted`, `inconclusive`; null for an
+  engineering fault).
+- `campaign_record/exclusion_digest.yaml` — the legacy file, used while no campaign
+  record is kept: runs grouped by family, as `(family, instrument, timeframe)` triples
+  with their `run_ids`, plus `failed_families_passthrough` (families with a recorded
+  `root_cause`, or a bare name with no diagnosis).
 
-It lists, one row per recorded run: the idea (`hypothesis_id`), its coins (`symbols`),
-the `timeframe`, and the grid's `idea_status`. No family grouping: an idea's identity
-is its `hypothesis_id`; the same idea on other coins or another timeframe is a variant
-of it.
+Either way the question is the same: which idea, on which coins and timeframe, has
+already been tested, and with what result. An idea's identity is its `hypothesis_id`;
+the same idea on other coins or another timeframe is a variant of it. **If neither file
+is present in your context, this section does not apply.** Absence is not evidence of a
+fresh search space.
 
-1. Find the rows for the base hypothesis's idea. A variant that would re-run it on
-   coins and a timeframe it was already tested on, with a materially unchanged
-   mechanism, does not go in `expanded_variants` — move it to `variants_not_pursued`
-   in `innovation_notes.yaml`, with `reason` citing the `run_id` it would repeat.
-2. Prefer variants on coins or a timeframe not yet listed for this idea, and say why
-   a different result is expected there. IMPROVEMENT 04's diversity test still
-   applies on its own grounds.
+### When one is present: check what the base idea has already been tested on
+
+1. Find what the base hypothesis's idea was already tested on (its rows in
+   `tried_ideas.yaml`, or its family's triples in the legacy digest). A variant that
+   would re-run it on coins and a timeframe already tested, with a materially
+   unchanged mechanism, does not go in `expanded_variants` — move it to
+   `variants_not_pursued` in `innovation_notes.yaml`, with `reason` citing the
+   `run_id` it would repeat (or the `root_cause` that excluded it).
+2. Prefer variants on coins or a timeframe not yet tested for this idea, and say why a
+   different result is expected there. IMPROVEMENT 04's diversity test still applies on
+   its own grounds.
 3. **You are empowered to say the idea is exhausted.** If every honestly-constructable
-   variant repeats a listed run, say so in `innovation_notes.yaml`'s `summary` and
-   `key_insight` — name the `run_id`s and their `idea_status` — rather than forcing a
+   variant repeats a tested run, say so in `innovation_notes.yaml`'s `summary` and
+   `key_insight` — name the `run_id`s and their result — rather than forcing a
    cosmetic variant through. An honest `variants_not_pursued` list with a thin
    `expanded_variants` beats three variants that only re-run what was already tested.
 
@@ -287,9 +297,10 @@ patch form.
 - **Improvement 04: run diversity test against indicator_library.yaml; reject cosmetic expansions.**
 - Populate `library_category`, `data_requirements`, `diversity_axis` on every variant.
 - Write `diversity_audit` section in `innovation_notes.yaml`.
-- If `artifacts/tried_ideas.yaml` is present in context: check what the base idea was
-  already tested on before expanding; route any variant that would repeat a listed run
-  unchanged to `variants_not_pursued` instead of `expanded_variants`. (Improvement 05)
+- If `artifacts/tried_ideas.yaml` or `campaign_record/exclusion_digest.yaml` is present
+  in context: check what the base idea was already tested on before expanding; route
+  any variant that would repeat a tested run unchanged to `variants_not_pursued`
+  instead of `expanded_variants`. (Improvement 05)
 - **Improvement 06: name >=2 asset-generalizability candidate symbols from a
   DIFFERENT `coin_universe.yaml` category than the base instrument (or state
   the specific single-asset opt-out reason).** Write the `asset_diversity_audit`
@@ -307,11 +318,11 @@ patch form.
 - Do NOT include regime-gated variants in the run queue (`expanded_variants`). They go in `regime_specific_variants` with `status: detector_wishlist_pending`.
 - If `research_brief.yaml` contains "one variant only", "single variant", or "no variants" in its `constraints` field, do NOT expand into multiple variants. Pass the base hypothesis through to a single variant (V1 only) matching the brief's signal_concept exactly. Expansion is only appropriate when the brief does not constrain variant count.
 - **Improvement 04: Do NOT accept an expansion where all variants share the same library `category` AND `data_requirements`. This is cosmetic diversity — redo it.**
-- Do not re-run an idea listed in `artifacts/tried_ideas.yaml` on the same coins and
-  timeframe under a materially unchanged mechanism, when the file is present in
-  context. (Improvement 05)
-- Do not treat its absence as evidence the search space is fresh — the campaign record
-  may simply not be kept yet. (Improvement 05)
+- Do not re-run an idea already tested on the same coins and timeframe (per
+  `artifacts/tried_ideas.yaml` or the legacy exclusion digest, whichever is in context)
+  under a materially unchanged mechanism. (Improvement 05)
+- Do not treat the absence of both files as evidence the search space is fresh.
+  (Improvement 05)
 - Do not silently omit `asset_diversity_audit` from `innovation_notes.yaml`. An
   empty or missing section is indistinguishable from "forgot to check" — if the
   mechanism is genuinely single-asset, say so explicitly with the reason.
@@ -323,4 +334,4 @@ patch form.
   when the latter is produced.**
 
 ## Context rule
-Use `research_brief.yaml`, `hypothesis_card.yaml`, `config/available_feeds.yaml`, `config/indicator_library.yaml`, `config/coin_universe.yaml`, and, when present, `artifacts/tried_ideas.yaml` and `artifacts/backtest_spec.yaml` (Improvement 07, config-direct-authoring flow only). Do not read other files unless explicitly required.
+Use `research_brief.yaml`, `hypothesis_card.yaml`, `config/available_feeds.yaml`, `config/indicator_library.yaml`, `config/coin_universe.yaml`, and, when present, `artifacts/tried_ideas.yaml` or `campaign_record/exclusion_digest.yaml` and `artifacts/backtest_spec.yaml` (Improvement 07, config-direct-authoring flow only). Do not read other files unless explicitly required.

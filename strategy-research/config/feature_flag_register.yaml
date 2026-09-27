@@ -32,14 +32,15 @@ flags:
     criterion: >
       Switched on 2026-09-02. Finished, tested (E-032 S2a); the digest file
       already existed on disk, so it fires immediately with no unmet
-      condition. REPOINTED 2026-09-27 (E-036 S2a, declared live prompt
-      change; engineering/roadmap/E-036/S1_FINDINGS_SLICE8.md operator
-      decision 3): the input is now artifacts/tried_ideas.yaml, derived at
-      prompt time from campaign_record/campaign_memory.yaml (idea
-      hypothesis_id, coins, timeframe, grid idea_status; no family
-      grouping) instead of campaign_record/exclusion_digest.yaml. With no
-      memory file (regroup_record off, today's default) the stages get no
-      input, as a missing digest file already behaved.
+      condition. E-036 S2a (2026-09-27, engineering/roadmap/E-036/
+      S1_FINDINGS_SLICE8.md operator decision 3): when
+      campaign_record/campaign_memory.yaml exists the input is
+      artifacts/tried_ideas.yaml (idea hypothesis_id, coins, timeframe, grid
+      idea_status; no family grouping) instead of the digest; with no
+      memory file (regroup_record off, today's default) it is
+      campaign_record/exclusion_digest.yaml exactly as before, so the default
+      prompt input is byte-identical. The two skills' IMPROVEMENT 05 text
+      was rewritten to describe either input (a declared prompt change).
 
   - name: stale_input_path_fix
     kind: orchestrator_config

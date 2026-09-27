@@ -577,19 +577,23 @@ def tried_ideas(memory: dict, *, root: Path, max_rows: int = TRIED_IDEAS_MAX_ROW
     variants' measured symbols), timeframe (the protocol file's, else the
     card's -- tools/novelty.py's rule), idea_status, variants_tested} plus
     `engineering_fault` on a fault entry. `root` is strategy-research/ (a
-    memory entry's protocol_ref is relative to it)."""
+    memory entry's protocol_ref is relative to it). An unreadable protocol
+    file is listed under `warnings` (key present only then)."""
     import novelty as _nov  # tools/ sibling, imported lazily for the caller's sys.path
     runs = (memory or {}).get("runs") or {}
     ordered = sorted(runs.values(), key=lambda e: (str(e.get("recorded_at") or ""), str(e.get("run_id"))))
     kept = ordered[-max_rows:] if max_rows and len(ordered) > max_rows else ordered
-    specs: dict = {}
+    warnings: list = []
+    # The one protocol-spec loop (novelty.protocol_specs), over the kept rows
+    # only; an unreadable protocol never crashes the prompt -- the row falls
+    # back to the card timeframe and the problem is listed in `warnings`.
+    specs = _nov.protocol_specs(root, {"runs": {e.get("run_id"): e for e in kept}},
+                                warnings=warnings)
     rows = []
     for e in kept:
         tested = [v for v in (e.get("variants") or {}).values()
                   if isinstance(v, dict) and v.get("status") == "tested"]
         ref = _nov.normalize_ref(e.get("protocol_ref"))
-        if ref and ref not in specs:
-            specs[ref] = _nov.protocol_spec(root, ref)
         spec = specs.get(ref) if ref else None
         row = {
             "run_id": e.get("run_id"),
@@ -602,9 +606,12 @@ def tried_ideas(memory: dict, *, root: Path, max_rows: int = TRIED_IDEAS_MAX_ROW
         if e.get("engineering_fault"):
             row["engineering_fault"] = e["engineering_fault"]
         rows.append(row)
-    return {"source": "campaign_record/campaign_memory.yaml", "note": TRIED_IDEAS_NOTE,
+    view = {"source": "campaign_record/campaign_memory.yaml", "note": TRIED_IDEAS_NOTE,
             "max_rows": max_rows, "runs_in_memory": len(runs),
             "omitted_older_runs": len(ordered) - len(kept), "runs": rows}
+    if warnings:
+        view["warnings"] = warnings
+    return view
 
 
 def _atomic_write(path: Path, doc: dict) -> None:

@@ -290,7 +290,7 @@ def _memory(forecast_hash):
 def test_layer2_exact_repeat_refuses_with_the_matched_memory_variant():
     key = gate.candidate_key("fh-a", ["BTCUSDT"], "protocols/unreadable.json", {},
                              card_timeframe="1h")
-    result = gate.layer2_digest_check(key, _memory("fh-a"), {})
+    result = gate.layer2_digest_check(key, gate._nov.match_index(_memory("fh-a"), {}))
     assert result.route == "refuse"
     assert result["outcome"] == "repeat"
     assert result["matched"] == [{"run_id": "run_001", "variant_id": "run_001"}]
@@ -299,7 +299,7 @@ def test_layer2_exact_repeat_refuses_with_the_matched_memory_variant():
 def test_layer2_anything_else_is_novel_never_a_neighbour():
     key = gate.candidate_key("fh-b", ["BTCUSDT"], "protocols/unreadable.json", {},
                              card_timeframe="1h")
-    result = gate.layer2_digest_check(key, _memory("fh-a"), {})
+    result = gate.layer2_digest_check(key, gate._nov.match_index(_memory("fh-a"), {}))
     assert result.route == "admit"
     assert result["outcome"] == "novel"
     assert "neighbours" not in result

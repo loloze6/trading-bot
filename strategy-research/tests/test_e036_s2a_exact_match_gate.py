@@ -367,10 +367,11 @@ def test_layer2_is_binary_and_the_neighbour_machinery_is_gone():
     specs = _specs(rpr.ROOT)
     memory = _mem(_entry("run_001"))
     base = aag.candidate_key("fh-1", ["BTCUSDT"], "protocols/p.json", specs)
-    assert aag.layer2_digest_check(base, memory, specs)["outcome"] == "repeat"
+    index = nov.match_index(memory, specs)
+    assert aag.layer2_digest_check(base, index)["outcome"] == "repeat"
     for key in (aag.candidate_key("fh-2", ["BTCUSDT"], "protocols/p.json", specs),
                 aag.candidate_key("fh-1", ["ETHUSDT"], "protocols/p.json", specs)):
-        res = aag.layer2_digest_check(key, memory, specs)
+        res = aag.layer2_digest_check(key, index)
         assert res.route == "admit" and res["outcome"] == "novel" and "neighbours" not in res
 
 
@@ -383,11 +384,10 @@ def test_transform_only_change_is_novel_where_the_old_fingerprint_said_repeat():
     assert bed.composition_fingerprint(a) == bed.composition_fingerprint(b)
     _protocol("p.json")
     specs = _specs(rpr.ROOT)
-    fh_a = hashlib.sha256(json.dumps(a, sort_keys=True).encode()).hexdigest()
-    fh_b = hashlib.sha256(json.dumps(b, sort_keys=True).encode()).hexdigest()
+    fh_a, fh_b = nov.forecast_hash_of_config(a), nov.forecast_hash_of_config(b)
     memory = _mem(_entry("run_001", fh=fh_a))
     res = aag.layer2_digest_check(aag.candidate_key(fh_b, ["BTCUSDT"], "protocols/p.json", specs),
-                                  memory, specs)
+                                  nov.match_index(memory, specs))
     assert res.route == "admit" and res["outcome"] == "novel"
 
 
@@ -617,3 +617,198 @@ def test_register_and_config_keep_the_gate_off():
     assert "S2b" in entry["blocked_on"]
     cfg = yaml.safe_load((SR_ROOT / "config" / "campaign_config.yaml").read_text(encoding="utf-8"))
     assert cfg["orchestrator"]["variant_anti_adjacency_gate"]["enabled"] is False
+
+
+
+# ---------------------------------------------------------------------------
+# Code-review fixes (E-036 S2a review)
+# ---------------------------------------------------------------------------
+
+def test_forecast_hash_is_the_trial_rows_canonicalisation(tmp_path):
+    """One canonicalisation: novelty.forecast_hash_of_config ==
+    run_phase1_research._compute_forecast_hash == decide_next.config_sha256."""
+    cfg = _config(0.3)
+    path = _write_json(tmp_path / "c.json", cfg)
+    assert (rpr._compute_forecast_hash(path) == nov.forecast_hash_of_config(cfg)
+            == dn.config_sha256(cfg)
+            == hashlib.sha256(json.dumps(cfg, sort_keys=True).encode()).hexdigest())
+
+
+def test_decide_next_legacy_true_entry_no_longer_refuses():
+    """Review fix 5: the intended decide_next exact-match change -- a memory
+    entry marked legacy: true never makes a candidate a REPEAT."""
+    import test_e059_s2a_decide_next as t
+    p = t._patch("profitability-run_061-1", after=0.8)
+    inputs = t._one_source([p])
+    inputs["memory"]["runs"]["run_050"] = t._memory_entry(
+        "run_050", fh=dn.config_sha256(t._base_config(min_abs=0.8)))
+    c = t._by_id(t._decide(inputs))["profitability-run_061-1"]
+    assert c["gates"]["novelty"]["exact_match"] == "REPEAT"   # same entry, not legacy
+    inputs["memory"]["runs"]["run_050"]["legacy"] = True
+    c = t._by_id(t._decide(inputs))["profitability-run_061-1"]
+    assert c["gates"]["novelty"]["exact_match"] == "NOVEL" and c["eligible"] is True
+
+
+def test_memory_protocol_unreadable_degrades_with_a_warning_candidate_fails_loud():
+    """Review fix 4."""
+    bad = rpr.ROOT / "protocols" / "bad.json"
+    bad.parent.mkdir(parents=True, exist_ok=True)
+    bad.write_text("{not json", encoding="utf-8")
+    _protocol("p.json")
+    warnings = []
+    assert nov.protocol_spec(rpr.ROOT, "protocols/bad.json", warnings=warnings) is None
+    assert warnings and warnings[0]["protocol_ref"] == "protocols/bad.json"
+    with pytest.raises(nov.NoveltyError):
+        nov.protocol_spec(rpr.ROOT, "protocols/bad.json", strict=True)
+    with pytest.raises(nov.NoveltyError):
+        nov.protocol_spec(rpr.ROOT, "protocols/missing.json", strict=True)
+    # a memory entry on the bad protocol can never match a resolved candidate
+    memory = _mem(_entry("run_001", ref="protocols/bad.json"))
+    specs = nov.protocol_specs(rpr.ROOT, memory, extra_refs=["protocols/p.json"])
+    key = nov.novelty_key("fh-1", ["BTCUSDT"], {"protocol_ref": "protocols/p.json"}, specs)
+    assert nov.lookup(key, memory, specs) == "NOVEL"
+
+
+def test_tried_ideas_prompt_survives_one_bad_old_protocol():
+    """Review fix 4: the prompt path lists the problem, it does not crash."""
+    _prior_run_in_memory("run_050", _config(), protocol_name="run_050_generated.json")
+    (rpr.ROOT / "protocols" / "run_050_generated.json").write_text("{broken", encoding="utf-8")
+    _set_flags(exclusion_digest_input=True)
+    run_dir = _minimal_run(rpr.ROOT, "run_061")
+    handoff = {"required_inputs": [], "optional_inputs": []}
+    rpr._apply_exclusion_digest_input("hypothesis_generation", handoff, run_dir)
+    view = rpr.load_yaml(run_dir / "artifacts" / "tried_ideas.yaml")
+    assert view["runs"][0]["timeframe"] == "1h"  # the card timeframe fallback
+    assert view["warnings"][0]["protocol_ref"] == "protocols/run_050_generated.json"
+
+
+def test_candidate_with_a_malformed_own_protocol_fails_loud():
+    _prior_run_in_memory("run_050", _config(), protocol_name="run_050_generated.json")
+    run_dir = _legacy_candidate("run_061", _config(), "run_061_generated.json")
+    (rpr.ROOT / "protocols" / "run_061_generated.json").write_text(
+        json.dumps({"symbols": ["BTCUSDT"], "timeframe": "1h"}), encoding="utf-8")  # no windows
+    _set_flags(variant_selection_record=True, variant_anti_adjacency_gate=True)
+    with pytest.raises(nov.NoveltyError, match="windows"):
+        rpr._route_post_variant_selection(run_dir, "run_061")
+
+
+def test_advisory_and_index_are_built_once_per_run(monkeypatch):
+    """Review fixes 6 + 7: three variants, one KB advisory, one index."""
+    _prior_run_in_memory("run_050", _config(), protocol_name="run_050_generated.json",
+                         variant_loop=True)
+    run_dir = _config_direct_candidate(
+        "run_061", {"base": _config(0.6), "design": _config(0.7), "asset": _config(0.9)},
+        "run_061_generated.json")
+    _set_flags(**_CD_ON)
+    calls = {"adv": 0, "idx": 0}
+    real_adv, real_idx = aag.layer1_advisory, nov.match_index
+
+    def _adv(*a, **k):
+        calls["adv"] += 1
+        return real_adv(*a, **k)
+
+    def _idx(*a, **k):
+        calls["idx"] += 1
+        return real_idx(*a, **k)
+    monkeypatch.setattr(aag, "layer1_advisory", _adv)
+    monkeypatch.setattr(nov, "match_index", _idx)
+    assert rpr._route_post_config_direct_backtest_specification(run_dir) == "protocol_execution"
+    assert calls == {"adv": 1, "idx": 1}
+    res = rpr.load_yaml(run_dir / "artifacts" / "variant_anti_adjacency_result.yaml")
+    assert sorted(res["variants"]) == ["asset", "base", "design"]
+
+
+def test_composition_runs_are_never_gated(monkeypatch):
+    """Review fix 3: a composite gets no novelty gate (E-060 S3b design)."""
+    _prior_run_in_memory("run_050", _config(), protocol_name="run_050_generated.json",
+                         variant_loop=True)
+    run_dir = _config_direct_candidate("run_061", {"base": _config(), "design": _config(0.7)},
+                                       "run_061_generated.json")
+    _set_flags(**_CD_ON)
+    monkeypatch.setattr(rpr, "_composition_mode", lambda d: True)
+    before = (run_dir / "artifacts" / "variants" / "index.yaml").read_bytes()
+    assert rpr._gate_config_direct_variants(run_dir, "run_061") is None
+    assert (run_dir / "artifacts" / "variants" / "index.yaml").read_bytes() == before
+    assert not (run_dir / "artifacts" / "variant_anti_adjacency_result.yaml").exists()
+
+
+def test_cli_accepts_a_yaml_protocol_and_derives_the_same_key(tmp_path, monkeypatch):
+    """Review fix 9: the CLI keys a candidate exactly as the 5a gate does."""
+    _prior_run_in_memory("run_050", _config(), protocol_name="run_050_generated.json")
+    proto = rpr.ROOT / "protocols" / "cand.yaml"
+    proto.write_text(yaml.safe_dump({"symbols": SYMBOLS, "timeframe": "1h", "windows": WINDOWS}),
+                     encoding="utf-8")
+    cfg = _write_json(tmp_path / "cfg.json", _config())
+    monkeypatch.setattr(aag, "_SR", rpr.ROOT)
+    out = tmp_path / "res.yaml"
+    rc = aag.main([str(cfg), str(proto), "--memory", str(_memory_path()),
+                   "--kb", str(tmp_path / "nokb.yaml"), "--out", str(out)])
+    assert rc == 1
+    res = yaml.safe_load(out.read_text(encoding="utf-8"))
+    assert res["matched"] == [{"run_id": "run_050", "variant_id": "run_050"}]
+
+
+# --- review fix 2: a repeat skip is never a data shortfall --------------------
+
+class _StopAtProtocolExecution(Exception):
+    pass
+
+
+def _data_gate_run(monkeypatch, run_id, variants: dict, retired: bool):
+    import test_e059_6c_s2c_parked_states as ps
+    from test_e033_slice4b_gate_conformance_promotion import _minimal_run_at
+
+    async def _invoke(stage_name, rid, retry_context=None):
+        if stage_name == "protocol_execution":
+            raise _StopAtProtocolExecution("reached protocol_execution")
+    monkeypatch.setattr(rpr, "async_invoke_agent", _invoke)
+    monkeypatch.setattr(rpr, "_check_specialist_readers_preflight", lambda run_dir: None)
+    cfg = {"config_direct_authoring": {"enabled": True}, "variant_loop": {"enabled": True}}
+    if retired:
+        cfg = {**ps.RETIRED_ON, **cfg}
+    ps._set_flag(rpr.ROOT, cfg)
+    run_dir = _minimal_run_at(rpr.ROOT, run_id, "data_availability_gate")
+    ps._write_handoff(run_dir, "backtest_spec_to_data_availability_gate.yaml")
+    ps._write_handoff(run_dir, "backtest_spec_to_protocol_execution.yaml")
+    rpr.save_yaml(run_dir / "artifacts" / "variants" / "index.yaml", {"variants": variants})
+    return run_dir
+
+
+def _repeat_nt():
+    return {"status": "not_tested", "reason": "repeat: exact match of tested variant(s) "
+            "['run_050:base'] in campaign_record/campaign_memory.yaml",
+            "config_path": "artifacts/variants/x/strategy_config.json"}
+
+
+@pytest.mark.parametrize("retired", [True, False])
+def test_four_variants_two_repeats_proceed_past_the_data_gate(monkeypatch, retired):
+    import test_e059_6c_s2c_parked_states as ps
+    variants = {"base": ps._ok(), "design": ps._ok(), "asset": _repeat_nt(), "extra": _repeat_nt()}
+    run_dir = _data_gate_run(monkeypatch, "run_970", variants, retired)
+    rpr.run_loop("run_970")
+    state = rpr.load_yaml(run_dir / "pipeline_state.yaml")
+    assert state["pending_stage"] == "protocol_execution"  # reached, then the stub stopped it
+    assert "variant_gate_insufficient" not in (state.get("flags") or {})
+    assert rpr.PARKED_KEY not in state
+
+
+def test_one_repeat_and_two_fetchable_declines_park_waiting_for_data(monkeypatch):
+    import test_e059_6c_s2c_parked_states as ps
+    variants = {"base": ps._ok(), "asset": _repeat_nt(),
+                "design_v2": ps._nt(ps.DATA), "asset_v2": ps._nt(ps.DATA)}
+    run_dir = _data_gate_run(monkeypatch, "run_971", variants, retired=True)
+    ps._write_variant_gate(run_dir, "design_v2")
+    ps._write_variant_gate(run_dir, "asset_v2")
+    rpr.run_loop("run_971")
+    state = rpr.load_yaml(run_dir / "pipeline_state.yaml")
+    assert state["status"] == "paused_for_human"
+    assert "variant_gate_insufficient" not in (state.get("flags") or {})
+    marker = state[rpr.PARKED_KEY]
+    assert marker["kind"] == "data" and "need >= 3" in marker["reason"]
+
+
+def test_park_kind_ignores_repeat_skips():
+    import test_e059_6c_s2c_parked_states as ps
+    assert rpr._variant_park_kind({"a": _repeat_nt()}) == (None, [])
+    assert rpr._variant_park_kind({"a": _repeat_nt(), "b": ps._nt("patch application failed: x")}) \
+        == (None, [])  # the patch failure is still "other"

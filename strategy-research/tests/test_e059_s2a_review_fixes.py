@@ -238,11 +238,11 @@ def test_a_1a_rerun_rewrites_the_pass_rule_and_rechecks_the_id(campaign_root):
 # d0038635 (LF line endings), measured with `git show d0038635:<path> | sha256sum`,
 # was ba59fb3df0a62aca10991fedd112992f47f2881219c7697a161eec5aa4baef6d.
 # RE-PINNED by E-036 S2a (2026-09-27): a DECLARED change to the skill's
-# IMPROVEMENT 05 section only (the exclusion_digest_input prompt input was
-# repointed from the family digest to artifacts/tried_ideas.yaml,
-# S1_FINDINGS_SLICE8.md operator decision 3). decide_next's addendum is still
+# IMPROVEMENT 05 section only (rewritten to describe either "already tried"
+# input -- artifacts/tried_ideas.yaml when campaign memory exists, else the
+# legacy exclusion digest; S1_FINDINGS_SLICE8.md operator decision 3). decide_next's addendum is still
 # not in the skill -- this pin keeps guarding that.
-_MASTER_SKILL_SHA256 = "fabe354317d38b04f88d4ee9f107e95fa87e098bdc6cfde0388c260002337585"
+_MASTER_SKILL_SHA256 = "773051a327b81f4b9f6cd616a220e35ad2982cb3a11110df3bac3a2dfa4c545a"
 
 
 def test_hypothesis_design_skill_is_byte_identical_to_master():

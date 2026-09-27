@@ -151,17 +151,16 @@ orchestrator:
       # (E-032 S2a's own off-by-default bar -- comparing assembled PROMPT TEXT,
       # not just asserting the code path is skipped).
       #
-      # REPOINTED 2026-09-27 (E-036 S2a, DECLARED LIVE PROMPT CHANGE;
-      # engineering/roadmap/E-036/S1_FINDINGS_SLICE8.md operator decision 3):
-      # while true, hypothesis_generation and innovation_expansion get
-      # artifacts/tried_ideas.yaml as an optional input -- derived at prompt
-      # time from campaign_record/campaign_memory.yaml by
-      # tools/campaign_memory.tried_ideas: one row per recorded run (idea
-      # hypothesis_id, coins, timeframe, the grid's idea_status), no family
-      # grouping, at most TRIED_IDEAS_MAX_ROWS rows. It no longer reads
-      # campaign_record/exclusion_digest.yaml (family-scoped triples). No
-      # memory file (orchestrator.regroup_record off, today's default): no
-      # input at all, exactly as a missing digest file behaved.
+      # E-036 S2a (2026-09-27; engineering/roadmap/E-036/S1_FINDINGS_SLICE8.md
+      # operator decision 3): when campaign_record/campaign_memory.yaml
+      # exists, the two stages get artifacts/tried_ideas.yaml INSTEAD of the
+      # digest -- derived at prompt time by tools/campaign_memory.tried_ideas:
+      # one row per recorded run (idea hypothesis_id, coins, timeframe, the
+      # grid's idea_status), no family grouping, at most TRIED_IDEAS_MAX_ROWS
+      # rows. With no memory file (orchestrator.regroup_record off, today's
+      # default) they get campaign_record/exclusion_digest.yaml exactly as
+      # before (same path and reason text): the default prompt input is
+      # byte-identical. Only the two skills' IMPROVEMENT 05 text changed.
       #
       # This is raw material for the LLM stage, never a binding gate by itself
       # -- the mechanical refusal is the 5a exact-match check
@@ -212,8 +211,8 @@ orchestrator:
       # Read at runtime by
       # run_phase1_research._variant_selection_record_enabled() -- same
       # shape as exclusion_digest_input.enabled / stale_input_path_fix.enabled
-      # / anti_adjacency_retry.enabled above (a sixth explicit exception to
-      # this file's "declared parity only" rule).
+      # above (an explicit exception to this file's "declared parity only"
+      # rule).
       #
       # While false, _record_variant_selection() is a no-op: it returns
       # before reading anything else on disk, so no artifact is written and

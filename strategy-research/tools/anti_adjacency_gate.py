@@ -63,7 +63,6 @@ CLI:
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import re
 from pathlib import Path
@@ -367,19 +366,21 @@ def layer1_kb_check(candidate_hid: str, candidate_timeframe: str,
 def candidate_key(forecast_hash: str, symbols, protocol_ref, specs: dict,
                   card_timeframe=None) -> tuple:
     """The candidate's exact-match key, built with the SAME function the
-    memory side uses (novelty.novelty_key): `forecast_hash` from
-    run_phase1_research._compute_forecast_hash over the config file the
-    backtest will run, `symbols` the protocol's symbols (what
+    memory side uses (novelty.novelty_key): `forecast_hash` the canonical
+    hash of the config file the backtest will run
+    (run_phase1_research._compute_forecast_hash /
+    novelty.forecast_hash_of_config), `symbols` the protocol's symbols (what
     tools/run_protocol.py iterates, and so what campaign_memory measures),
     `protocol_ref` the protocol file the backtest will run (relative to
-    strategy-research/, as campaign_memory records it), `card_timeframe` only
-    the unresolved-protocol fallback."""
+    strategy-research/, campaign_memory.protocol_ref_of), `card_timeframe`
+    only the unresolved-protocol fallback. The caller must have put the
+    candidate's protocol in `specs` strictly (novelty.protocol_spec(...,
+    strict=True)), so a candidate key is never "unresolved"."""
     return _nov.novelty_key(forecast_hash, sorted(set(symbols or [])),
                             {"protocol_ref": protocol_ref, "timeframe": card_timeframe}, specs)
 
 
-def layer2_digest_check(key: tuple, memory: dict, specs: dict, *,
-                        exclude_run_id: str | None = None) -> GateResult:
+def layer2_digest_check(key: tuple, index: dict) -> GateResult:
     """E-036 S2a (slice 8.1, operator decision 2026-09-27): BINARY.
 
       REPEAT -> REFUSE. A tested variant in campaign_memory.yaml has exactly
@@ -388,13 +389,13 @@ def layer2_digest_check(key: tuple, memory: dict, specs: dict, *,
       {run_id, variant_id}.
       NOVEL -> ADMIT. Nothing in memory has this key.
 
-    There is no third outcome: no family, no neighbour, no composition
-    fingerprint (the rejected E-036 S2 design and its NEIGHBOUR tier are
-    retired). A run with no memory entry, or an entry marked `legacy: true`,
-    can never produce REPEAT. `exclude_run_id`: the run being checked, so a
-    re-run never matches its own earlier memory entry. The name is kept from
-    E-032 for its callers; there is no digest behind it any more."""
-    matched = _nov.exact_matches(key, memory, specs, exclude_run_id=exclude_run_id)
+    `index` is novelty.match_index(memory, specs, exclude_run_id=...), built
+    once per run. There is no third outcome: no family, no neighbour, no
+    composition fingerprint (the rejected E-036 S2 design is retired). A run
+    with no memory entry, or an entry marked `legacy: true`, can never produce
+    REPEAT. The name is kept from E-032 for its callers; there is no digest
+    behind it any more."""
+    matched = list(index.get(key) or [])
     if matched:
         refs = [f"{m['run_id']}:{m['variant_id']}" for m in matched]
         return REFUSE("exact_match",
@@ -410,8 +411,10 @@ def layer1_advisory(candidate_hid, candidate_timeframe, kb: dict | None,
     """Layer 1 (KB reactivation) as a WARNING only (operator decision 4,
     2026-09-27): recorded next to the result, never a refusal -- its input
     includes pass_rule_evaluation.yaml's retired lineage_routing field
-    (S1_FINDINGS_6B.md §5.1), so it cannot bind. {status: warn | admit |
-    no_opinion | not_evaluated, reasons, kb_finding_id}."""
+    (S1_FINDINGS_6B.md §5.1), so it cannot bind. It depends only on the run's
+    hypothesis_id and timeframe, so a caller checking several variants of
+    one run computes it once. {status: warn | admit | no_opinion |
+    not_evaluated, reasons, kb_finding_id}."""
     if kb is None:
         return {"status": "not_evaluated",
                 "reasons": ["campaign_knowledge_base.yaml not available"], "kb_finding_id": None}
@@ -431,9 +434,13 @@ def evaluate_candidate(key: tuple, memory: dict, specs: dict, *, kb: dict | None
                        candidate_hid=None, candidate_timeframe=None,
                        runs_dir: Path = DEFAULT_RUNS_DIR,
                        exclude_run_id: str | None = None) -> GateResult:
-    """The gate's result: Layer 2's binary exact match alone decides the
-    route; Layer 1 is attached as `layer1_advisory` and never changes it."""
-    result = layer2_digest_check(key, memory, specs, exclude_run_id=exclude_run_id)
+    """One candidate, end to end (the CLI's path): Layer 2's binary exact
+    match alone decides the route; Layer 1 is attached as `layer1_advisory`
+    and never changes it. A caller checking several variants of one run
+    builds novelty.match_index and layer1_advisory once and calls
+    layer2_digest_check per variant instead."""
+    index = _nov.match_index(memory, specs, exclude_run_id=exclude_run_id)
+    result = layer2_digest_check(key, index)
     result["layer1_advisory"] = layer1_advisory(candidate_hid, candidate_timeframe, kb, runs_dir)
     return result
 
@@ -441,7 +448,8 @@ def evaluate_candidate(key: tuple, memory: dict, specs: dict, *, kb: dict | None
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("config", type=Path, help="the strategy config file the backtest will run")
-    parser.add_argument("protocol", help="the protocol file, relative to strategy-research/")
+    parser.add_argument("protocol", type=Path,
+                        help="the protocol file (JSON or YAML) the backtest will run")
     parser.add_argument("--memory", type=Path, default=DEFAULT_MEMORY_PATH)
     parser.add_argument("--kb", type=Path, default=DEFAULT_KB_PATH)
     parser.add_argument("--runs-dir", type=Path, default=DEFAULT_RUNS_DIR)
@@ -450,14 +458,14 @@ def main(argv=None) -> int:
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args(argv)
 
-    # The same canonicalisation as run_phase1_research._compute_forecast_hash.
-    forecast_hash = hashlib.sha256(json.dumps(
-        json.loads(args.config.read_text(encoding="utf-8")), sort_keys=True).encode("utf-8")).hexdigest()
+    forecast_hash = _nov.forecast_hash_of_config(
+        json.loads(args.config.read_text(encoding="utf-8")))
+    protocol_ref = _cm.protocol_ref_of(str(args.protocol), _SR)
     memory = _cm.load_memory(args.memory)
-    specs = _nov.protocol_specs(_SR, memory, extra_refs=[args.protocol])
-    proto_path = _SR / _nov.normalize_ref(args.protocol)
-    proto = json.loads(proto_path.read_text(encoding="utf-8"))
-    key = candidate_key(forecast_hash, proto.get("symbols"), args.protocol, specs)
+    specs = _nov.protocol_specs(_SR, memory)
+    specs[_nov.normalize_ref(protocol_ref)] = _nov.protocol_spec(_SR, protocol_ref, strict=True)
+    proto = _nov.load_protocol(_SR, protocol_ref)
+    key = candidate_key(forecast_hash, proto.get("symbols"), protocol_ref, specs)
     kb = _load_yaml(args.kb) if args.kb.exists() else None
     result = evaluate_candidate(key, memory, specs, kb=kb, candidate_hid=args.hypothesis_id,
                                 candidate_timeframe=key[2], runs_dir=args.runs_dir,

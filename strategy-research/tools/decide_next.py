@@ -183,8 +183,9 @@ class DecideNextError(ValueError):
 def config_sha256(config) -> str:
     """The run_phase1_research._compute_forecast_hash canonicalisation
     (json.dumps(..., sort_keys=True), sha256) applied to an in-memory config,
-    so a resolved candidate config hashes exactly as its trial row will."""
-    return hashlib.sha256(json.dumps(config, sort_keys=True).encode("utf-8")).hexdigest()
+    so a resolved candidate config hashes exactly as its trial row will.
+    E-036 S2a: one definition, tools/novelty.forecast_hash_of_config."""
+    return _nov.forecast_hash_of_config(config)
 
 
 def _canonical_sha(obj) -> str:
@@ -328,8 +329,12 @@ def _base_variant(entry: dict) -> tuple:
 # E-036 S2a (slice 8.1): the exact-match key and its lookup live in
 # tools/novelty.py, extracted verbatim from here, so this module and the 5a
 # gate (tools/anti_adjacency_gate.py) share ONE definition of "the same idea".
-# Re-exported under their old names: decide_next's behaviour is unchanged
-# (tests/test_e036_s2a_exact_match_gate.py pins it).
+# Re-exported under their old names. decide_next's behaviour is unchanged
+# (tests/test_e036_s2a_exact_match_gate.py pins it against the pre-extraction
+# code) except for two DECLARED changes: a memory entry marked `legacy: true`
+# can no longer produce a REPEAT (slice 8.1), and a memory entry whose
+# protocol file is unparseable now keys "unresolved" (never matches) with a
+# warning instead of crashing the decision.
 normalize_timeframe = _nov.normalize_timeframe
 normalize_ref = _nov.normalize_ref
 protocol_spec = _nov.protocol_spec
@@ -646,11 +651,9 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
         doc = _load_yaml_opt(root / "campaign_record" / name) or {}
         return len(doc.get("requests") or []) if isinstance(doc, dict) else 0
 
-    specs = {}
-    for entry in (memory.get("runs") or {}).values():
-        ref = normalize_ref(entry.get("protocol_ref"))
-        if ref and ref not in specs:
-            specs[ref] = protocol_spec(root, ref)
+    # E-036 S2a: the one protocol-spec loop (tools/novelty.protocol_specs). An
+    # unreadable memory protocol is None -> that entry keys "unresolved".
+    specs = _nov.protocol_specs(root, memory)
     briefs_dir = root / CANDIDATE_BRIEFS_DIR
     existing_briefs = (sorted(p.name for p in briefs_dir.iterdir() if p.is_file())
                        if briefs_dir.exists() else [])

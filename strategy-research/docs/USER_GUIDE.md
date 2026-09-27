@@ -476,13 +476,14 @@ rather than rejected.**
 (`run_phase1_research.py::_handle_hypothesis_generation_multi_card_split`)
 
 **5. What was already tried is an optional input.**
-Under `orchestrator.exclusion_digest_input.enabled` (on) and when
-`campaign_record/campaign_memory.yaml` exists, the stage receives
+Under `orchestrator.exclusion_digest_input.enabled` (on), the stage receives
 [`tried_ideas.yaml`](#tried_ideasyaml-per-run) — one row per recorded run
-(idea, coins, timeframe, grid status), no family grouping
-(`run_phase1_research.py::_apply_exclusion_digest_input`, E-036 S2a). The skill
-is told to redirect rather than repeat; the binding check is the exact-match
-check at stage 6.
+(idea, coins, timeframe, grid status), no family grouping — when
+`campaign_record/campaign_memory.yaml` exists; otherwise (today's default)
+the legacy family-grain `campaign_record/exclusion_digest.yaml`, exactly as
+before E-036 S2a (`run_phase1_research.py::_apply_exclusion_digest_input`).
+The skill is told to redirect rather than repeat; the binding check is the
+exact-match check at stage 6.
 
 ---
 
@@ -753,7 +754,11 @@ for every queue origin (operator, external, queued card, reader, brief).
 - Config-direct flow (tool stage): per variant, before routing
   (`::_gate_config_direct_variants`); a REPEAT variant is marked `not_tested`
   (`reason: "repeat: ..."`) and is never backtested (no trial row); if every
-  variant is a repeat the run ends `completed_no_new_hypothesis`.
+  variant is a repeat the run ends `completed_no_new_hypothesis`. A repeat
+  skip is never read as a data shortfall: the variant loop's "at least 3
+  validated" check counts only non-repeat variants (repeats alone never
+  pause the run; data declines among the rest still pause or park as
+  before), and parking ignores repeat skips. Composition runs are not gated.
 Result: [`variant_anti_adjacency_result.yaml`](#variant_anti_adjacency_resultyaml-per-run).
 With no memory file and `regroup_record` off, the gate raises rather than
 admit everything.
@@ -2194,8 +2199,9 @@ Internal run state — not a research artifact but the orchestrator's working me
 
 > ### ⚠️ One of these five artifacts is still flag-gated off
 >
-> `variant_selection.yaml`, `variants_not_pursued.yaml`, `tried_ideas.yaml`
-> and `schedulability.yaml` are produced by default — their gating flags were
+> `variant_selection.yaml`, `variants_not_pursued.yaml`, the "already tried"
+> prompt input (`exclusion_digest.yaml`, or `tried_ideas.yaml` once a campaign
+> memory exists) and `schedulability.yaml` are produced or used by default — their gating flags were
 > switched on (E-041, 2026-09-02). `variant_anti_adjacency_result.yaml` is the
 > exception: `orchestrator.variant_anti_adjacency_gate.enabled` stays `false`.
 > Its first design (a family / composition-fingerprint key) was rejected on
@@ -2207,7 +2213,7 @@ Internal run state — not a research artifact but the orchestrator's working me
 > |---|---|---|
 > | `orchestrator.variant_selection_record.enabled` | `variant_selection.yaml`, `variants_not_pursued.yaml` | `true` |
 > | `orchestrator.variant_anti_adjacency_gate.enabled` | `variant_anti_adjacency_result.yaml` | `false` — blocked on E-036 S2b |
-> | `orchestrator.exclusion_digest_input.enabled` | `tried_ideas.yaml` (needs `campaign_memory.yaml`) | `true` |
+> | `orchestrator.exclusion_digest_input.enabled` | `tried_ideas.yaml` when `campaign_memory.yaml` exists, else `exclusion_digest.yaml` | `true` |
 > | `orchestrator.schedulability_block.enabled` | `schedulability.yaml` | `true` |
 >
 > Flags are read **at runtime**, so this table states the committed default,
@@ -2274,11 +2280,15 @@ operator rejected (E-036, 2026-09-02; family machinery retired, card G).
 `hypothesis_id` (an idea's identity), `symbols` its tested variants ran on,
 `timeframe` (the protocol file's), the grid's `idea_status` — oldest first, at
 most `TRIED_IDEAS_MAX_ROWS` (200) most recent rows, the rest counted in
-`omitted_older_runs`. Derived, never edited; the run keeps exactly what the
-model was shown. No memory file: no input (the stages get nothing). Repointed
-from the family digest by E-036 S2a — a declared prompt change.
-`exclusion_digest.yaml` stays on disk, read only by decide-next's
-informational `digest_advisory`.
+`omitted_older_runs`; an unreadable old protocol file is listed under
+`warnings` and never crashes the prompt. Derived, never edited; the run keeps
+exactly what the model was shown. It REPLACES the legacy digest as the input
+when the memory exists (never both). With no memory file (today's default)
+the stages get `campaign_record/exclusion_digest.yaml` exactly as before
+E-036 S2a — family-scoped `(family, instrument, timeframe)` triples,
+regenerated on demand by `tools/build_exclusion_digest.py` — so the default
+prompt input is unchanged; decide-next also records a lookup from it
+(`digest_advisory`, information only).
 
 ### `variant_anti_adjacency_result.yaml` (per run)
 
@@ -3053,7 +3063,7 @@ by how load-bearing they are, not alphabetically.
 |---|---|
 | `tools/anti_adjacency_gate.py` | The exact-match repeat check at stage 6 (E-036 S2a): REPEAT/NOVEL against `campaign_memory.yaml`; KB check advisory only. |
 | `tools/novelty.py` | The one exact-match key and lookup (config hash, symbols, protocol timeframe + windows hash), shared by `decide_next.py` and the stage-6 check. |
-| `tools/build_exclusion_digest.py` | LEGACY family-grain digest of what has been tried; read only by decide-next's informational `digest_advisory` (`legacy_family_lookup`). Never a refusal signal. |
+| `tools/build_exclusion_digest.py` | LEGACY family-grain digest of what has been tried: the stages' prompt input while no `campaign_memory.yaml` exists, and decide-next's informational `digest_advisory` (`legacy_family_lookup`). Never a refusal signal. |
 
 **Data and measurement**
 
