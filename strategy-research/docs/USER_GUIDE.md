@@ -34,6 +34,7 @@ Not sure this is the doc you need? See [`DOC_INDEX.md`](DOC_INDEX.md) first.
     - [Circuit Breakers (anti-loop protection)](#circuit-breakers-anti-loop-protection)
     - [After campaign_review](#after-campaign_review)
     - [After holdout_evaluation](#after-holdout_evaluation)
+    - [Composition mode (E-060 S3b, `orchestrator.composition_runs.enabled`, off by default)](#composition-mode-e-060-s3b-orchestratorcomposition_runsenabled-off-by-default)
 - [3. Artifacts](#3-artifacts)
   - [`research_brief.yaml`](#research_briefyaml)
   - [`hypothesis_card.yaml`](#hypothesis_cardyaml)
@@ -1675,6 +1676,36 @@ The orchestrator detects search-space exhaustion and forces an altitude climb au
 | `status: pass` | → completed_promoted (terminal success) |
 | `status: fail` | → completed_rejected (terminal — no further path) |
 | `status: inconclusive` | → human_pause |
+
+#### Composition mode (E-060 S3b, `orchestrator.composition_runs.enabled`, off by default)
+
+Requires `decide_next`, `variant_loop`, `profit_bars_every_backtest` and
+`verdict_routing_retired`. Nothing below runs with the flag off.
+
+1. **R1 (decide-next).** When an exact bar size holds >= 2 registered forecast
+   blocks whose set has not been composed, R1 picks `composition-<tf>-<hash>`:
+   behind a run in progress and ready operator entries, ahead of every agent
+   entry, candidate and R2. Once per registry state per timeframe; an
+   inconclusive composite re-fires (`<id>-a<n>`) only when its deflated-Sharpe
+   bar was missing for want of trials and the ledger now has them.
+2. **Code-written variants** (`tools/composition.py`). `base` = equal weights;
+   `vol_scaled` (1/σ of each block's stand-alone daily returns, from
+   `tools/portfolio_daily.py`) and `ic_weighted` (residual IC) carry a per-window
+   `weight_schedule` whose entry for a window is estimated only from data dated
+   before that window starts (equal weights, recorded as `estimated: false`, when
+   there is too little); the engine applies an entry from its date on. The
+   manifest and `campaign_record/compositions.yaml` are written with them.
+3. **The run.** Steps 1a (card, pass_rule = `profit_bars`), 1b (config and
+   `artifacts/composition_manifest.yaml`, no `block_manifest.yaml`) and 2
+   (`variant_patches.yaml`) are code, never an LLM call. 5a checks every variant
+   against the manifest (`check_composition_config`: blocks present, gated and
+   pinned as their source, scaffolding, weights and schedule). The grid grades
+   `profit_bars` with branch 3's own grading (FAIL on a failed bar,
+   INCONCLUSIVE on a NOT_EVALUABLE bar or an invalidated trial); branch 3
+   labels the variants `composite`. A composite never registers as a block.
+4. **7.5.** A reader patch on a composite is admitted only if it still passes
+   the same manifest check, and runs as a composition too.
+5. **Failures.** `docs/RUNBOOK.md` §3 `composition_failed`.
 
 ---
 

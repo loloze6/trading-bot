@@ -1117,6 +1117,59 @@ def period_after(manifest, root):
 RUN_LOOP = rpr.run_loop  # the real one (step 1 stubs it)
 
 
+def test_r1_preparation_failure_is_a_classified_pause_and_the_campaign_continues(
+        campaign_root, monkeypatch):
+    """Review fix 2: a block's stand-alone returns are missing -> no raw
+    traceback; a failure row, a paused composition entry and a halt_history
+    record; the decision is made again without it (here: a reader candidate
+    is picked) and R1 never re-fires that block set."""
+    from test_e059_s2a_decide_next import _patch
+    root = campaign_root["root"]
+    doc = _stage_campaign(campaign_root)
+    run0 = doc["blocks"][0]["validated_by_run"]
+    (root / "runs" / run0 / "artifacts" / "variants" / "base" / "protocol_result.yaml").unlink()
+    # run_061 also has a reader proposal, so there is something else to run
+    arts = root / "runs" / "run_061" / "artifacts"
+    (arts / "proposals").mkdir()
+    (arts / "proposals" / "profitability.yaml").write_text(yaml.safe_dump(
+        [_patch("profitability-run_061-1")]), encoding="utf-8")
+    src = _src([])
+    for name, d in (("block_manifest.yaml", {"block": {"kind": "forecast", "config_paths": [
+                        "/strategies/regimes/unknown/components/0"]},
+                        "scaffolding": ["/regime_detector"], "rationale": "r"}),
+                    ("pre_registration.yaml", src["pre_registration"]),
+                    ("research_brief.yaml", src["research_brief"]),
+                    ("hypothesis_card.yaml", src["card"])):
+        (arts / name).write_text(yaml.safe_dump(d), encoding="utf-8")
+    from test_e059_s2a_decide_next import _base_config
+    (arts / "variants" / "base").mkdir(parents=True)
+    (arts / "variants" / "base" / "strategy_config.json").write_text(
+        json.dumps(_base_config()), encoding="utf-8")
+    mem_path = root / "campaign_record" / "campaign_memory.yaml"
+    mem = yaml.safe_load(mem_path.read_text(encoding="utf-8"))
+    mem["runs"]["run_061"] = _memory_entry("run_061", proposal_ids=["profitability-run_061-1"])
+    mem_path.write_text(yaml.safe_dump(mem), encoding="utf-8")
+    monkeypatch.setattr(rpr, "run_loop", lambda run_id: None)
+
+    assert camp.process_once() is True  # no traceback, the campaign continues
+    h = cc.composite_registry_hash(doc["blocks"])
+    eid = f"composition-1h-{h}"
+    queue = {e["id"]: e for e in yaml.safe_load(
+        campaign_root["queue_path"].read_text(encoding="utf-8"))["queue"]}
+    assert queue[eid]["status"] == "paused:composition_failed"
+    assert queue[eid]["origin"] == "composition" and queue[eid]["run_ids"] == []
+    assert queue["profitability-run_061-1"]["status"] == "ready"
+    rows = comp.load_composition_failures(root / "campaign_record" / "compositions.yaml")
+    assert [r["registry_hash"] for r in rows] == [h] and "protocol_result.yaml" in rows[0]["reason"]
+    state = yaml.safe_load((root / "runs" / "run_061" / "pipeline_state.yaml").read_text(
+        encoding="utf-8"))
+    assert state["halt_history"][-1]["reason"] == "composition_failed"
+    rec = yaml.safe_load((arts / "decision_record.yaml").read_text(encoding="utf-8"))
+    assert rec["picked"]["candidate_id"] == "profitability-run_061-1"
+    assert rec["rules"]["r1"]["timeframes"][0]["status"] == "failed_before"
+    assert "HALT — composition_failed" in (root / "campaign_log.md").read_text(encoding="utf-8")
+
+
 def test_a_crashed_composition_run_pauses_and_is_never_quarantined(campaign_root, monkeypatch):
     root = campaign_root["root"]
     _write_flags(root, **FLAT_COMP_ON)

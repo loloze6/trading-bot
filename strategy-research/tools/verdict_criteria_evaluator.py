@@ -1457,13 +1457,17 @@ def _evaluate_profit_bars_cell(criterion: dict, variant_id, grader) -> dict:
     bar_results = [b.get("result") for b in bars if isinstance(b, dict)]
     if overall == "INVALIDATED":
         result = "INCONCLUSIVE"
+    elif overall == "PASS" and (not bar_results or set(bar_results) != {"PASS"}):
+        result = None  # contradicts its own rows: SPEC_ERROR below
     elif "FAIL" in bar_results:
         result = "FAIL"
     elif "NOT_EVALUABLE" in bar_results:
         result = "INCONCLUSIVE"
-    elif overall == "PASS" and bar_results and set(bar_results) == {"PASS"}:
+    elif overall == "PASS":
         result = "PASS"
     else:
+        result = None
+    if result is None:
         return {"result": "SPEC_ERROR",
                 "reason": f"criterion {cid!r}: grader result {overall!r} disagrees with its bar "
                           f"rows {bar_results} for {variant_id!r}"}
