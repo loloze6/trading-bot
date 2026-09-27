@@ -493,3 +493,31 @@ Under `config_direct_authoring` (and `variant_loop` for the floor). Flag off: no
 - A real cross-sectional engine (cross-coin ranking) — nothing in `run_protocol.py` supports it (G4).
 - Venue-aware costs for Kraken-sourced asset coins — the cost model is per symbol, not per venue.
 - `target_instrument_set` for composites and for the profit-bars stop — C5.3.
+
+---
+
+## Decision (operator's standing instruction, 2026-09-28 night)
+
+The operator is away with a standing instruction: SMALL questions are taken on the S1
+recommendation, BIG ones are parked. Recorded by the orchestrator:
+
+- **Accepted as recommended (SMALL):** G1 (variant carries `kind` + `symbol`; 5a writes a
+  per-variant protocol with `symbols: [<symbol>]` and its venue; run_protocol / data gate
+  unchanged), G2 (base coin = protocol `symbols[0]`), G3 (asset variant = empty patch + a coin
+  from a different `coin_universe.yaml` category covering every window), G4 (cross-sectional
+  variants not built now; composition runs exempt), G5 (a variant's portfolio is its one coin;
+  branch 3 unchanged — shared with E-062), G6 (DSR trial dedupe keys on coin too; old rows
+  byte-identical), G7 (reports compacted to per-slice aggregates with a size budget and a loud
+  guard), G8 (per-variant report shape, schema_version 2), G9 (block type =
+  `(kind, sorted component classes, timeframe_category)`; code writes `registry_summary.yaml`),
+  G10 (card-I distance anchors; 0.3 / 0.6 are ranking-only placeholders; `rubric_version` v2),
+  G11 (crashed variant = INCONCLUSIVE `not_graded` column; `failed_variants`), G12 (variant
+  shape 3–4, one retry then pause `variant_shape_invalid` / `variant_config_error`), G15
+  (cite D-014).
+- **G14:** C1.3 takes the "optional validation protocol" branch and still computes the
+  diagnostics block with an empty rule set (passed to the C1 fix dispatch).
+- **Parked for the operator (BIG):** G13 — whether an asset variant may run only on the windows
+  its coin covers (changes card E). Default until decided: full coverage required; no eligible
+  coin → the idea parks `waiting_for_data`.
+- **Sequencing:** S2a → S2b → S2c; S2d after S2a (parallel to S2b); S2e after S2d; none starts
+  before C1.1 is on master; C1.2/C1.3 before S2c/S2d.
