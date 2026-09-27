@@ -167,6 +167,14 @@ def novelty_key(forecast_hash, symbols, entry: dict, specs: dict) -> tuple:
     return (forecast_hash, tuple(sorted(symbols or [])), timeframe, window_set)
 
 
+def key_dict(key: tuple) -> dict:
+    """A novelty key as the mapping the 5a gate records
+    (variant_anti_adjacency_result.yaml `key`) -- THE one shape, shared by
+    run_phase1_research._check_variant_repeat and tools/replay_repeat_gate.py."""
+    return {"forecast_hash": key[0], "symbols": list(key[1]), "timeframe": key[2],
+            "window_set": key[3]}
+
+
 def _tested_variants(memory: dict):
     """(run_id, variant_id, entry, variant) for every TESTED variant with a
     forecast_hash, in sorted run order. Skipped: engineering-fault entries and

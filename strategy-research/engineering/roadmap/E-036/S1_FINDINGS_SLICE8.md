@@ -414,3 +414,31 @@ only after the read-only corpus replay (S2b) has published refuse/admit counts a
 have been reported to the operator — S2a ships the redesigned gate with the flag still
 off. Guess 6 (`requires_feed` row shape via the existing dedupe appender) taken as the
 default.
+
+---
+
+## Correction (2026-09-27, E-036 S2b — found while building S2a, measured in `S2B_REPLAY.md`)
+
+The text above is left as written; two statements in it are wrong:
+
+- **(a) The key's fourth field is not the raw `protocol_ref`.** §2 ("Key"), guess 2 and
+  Decision 2 give the key as `(forecast_hash, sorted(symbols), timeframe, protocol_ref)`,
+  with `protocol_ref` = `protocol_result.yaml`'s `protocol_file`. The key decide_next
+  used (and `tools/novelty.py::novelty_key` now shares) reads the protocol FILE:
+  `(forecast_hash, sorted(symbols), <the file's timeframe>, "windows:" + <sha256 of the
+  file's windows>)`. The memory stores `protocol_ref`; the key resolves it to what the
+  file tests, so differently-named generated protocols with the same windows and
+  timeframe match. The card timeframe is only the fallback when the file cannot be read,
+  and such a key (`unresolved:<ref>`) never matches.
+- **(b) `backtest_spec.yaml`'s config is not written verbatim.** §1 ("Readers") says the
+  5a call site reads `backtest_spec.yaml`'s own `config` as the candidate config. Before
+  `candidate_strategy_config.json` is written, `run_loop` (F4d) injects
+  `machine_constraints.significance_methodology` into that config; the trial row's
+  `forecast_hash` and the S2a gate hash `candidate_strategy_config.json`. In the corpus,
+  5 of the 40 runs that have both files hash differently (`S2B_REPLAY.md` §7), and
+  **only 2 of those 5 come from F4d** (run_048, run_060). The other 3 have other
+  causes: run_024's `candidate_strategy_config.json` was edited after the spec (its
+  `unknown` regime is `null` where the spec had a zero-weight `BuyAndHoldStrategy`
+  component), and run_036 and run_037 are forced diagnostics whose `backtest_spec.yaml`
+  has no `config` at all (the config was placed in `candidate_strategy_config.json`
+  directly).

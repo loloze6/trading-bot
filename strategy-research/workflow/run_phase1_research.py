@@ -2918,34 +2918,12 @@ def _protocol_component_errors(run_dir: Path) -> list:
     variant, so an error in any of them makes it meaningless. Missing
     protocol_result.yaml, or a present but malformed component_errors block,
     raises: an unreadable error count is not a zero one. An absent/null
-    block (component_errors off for that window) counts as none."""
-    artifacts = run_dir / "artifacts"
-    sources = [artifacts / "protocol_result.yaml"]
-    if not sources[0].exists():
-        raise FileNotFoundError(f"{sources[0]} is missing -- cannot check component errors")
-    variants_dir = artifacts / "variants"
-    if variants_dir.exists():
-        sources += sorted(p / "protocol_result.yaml" for p in variants_dir.iterdir()
-                          if p.is_dir() and (p / "protocol_result.yaml").exists())
-    errors = []
-    for src in sources:
-        pr = load_yaml(src) or {}
-        results = pr.get("results") or []
-        if not isinstance(results, list):
-            raise ValueError(f"{src}: results is not a list ({type(results).__name__})")
-        for i, r in enumerate(results):
-            ce = r.get("component_errors") if isinstance(r, dict) else None
-            if ce is None:
-                continue
-            count = ce.get("count") if isinstance(ce, dict) else None
-            if isinstance(count, bool) or not isinstance(count, int) or count < 0:
-                raise ValueError(f"{src}: results[{i}].component_errors is malformed ({ce!r}) "
-                                 f"-- expected {{count: <int >= 0>, samples: [...]}}")
-            if count > 0:
-                errors.append(f"{src.relative_to(run_dir).as_posix()} results[{i}] "
-                              f"({r.get('symbol')}/{r.get('window')}): "
-                              f"component_errors.count={count}")
-    return errors
+    block (component_errors off for that window) counts as none.
+
+    The body lives in tools/campaign_memory.protocol_component_errors (E-036
+    S2b: shared with tools/replay_repeat_gate.py); this orchestrator reads the
+    files with its own load_yaml, exactly as before."""
+    return _campaign_memory_module().protocol_component_errors(run_dir, load=load_yaml)
 
 
 def _load_idea_status(run_dir: Path, run_id: str) -> dict:
@@ -6235,6 +6213,7 @@ def _check_variant_repeat(ctx: dict, config_path: Path, run_id: str) -> dict:
     the backtest will run, hashed by _compute_forecast_hash -- the function
     its trial row's forecast_hash comes from -- and the shared context."""
     import campaign_memory as _cm_mod  # tools/ sibling: the path-relativising rule
+    import novelty as _nov  # tools/ sibling: the recorded key shape (key_dict)
     aag = ctx["aag"]
     forecast_hash = _compute_forecast_hash(Path(config_path))
     key = aag.candidate_key(forecast_hash, ctx["symbols"], ctx["protocol_ref"], ctx["specs"],
@@ -6242,8 +6221,7 @@ def _check_variant_repeat(ctx: dict, config_path: Path, run_id: str) -> dict:
     result = aag.layer2_digest_check(key, ctx["index"])
     result["layer1_advisory"] = ctx["layer1_advisory"]
     return {**dict(result),
-            "key": {"forecast_hash": key[0], "symbols": list(key[1]), "timeframe": key[2],
-                    "window_set": key[3]},
+            "key": _nov.key_dict(key),
             "config_ref": _cm_mod.protocol_ref_of(str(config_path), ROOT)}
 
 
