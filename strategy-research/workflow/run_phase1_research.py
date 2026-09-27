@@ -4252,10 +4252,154 @@ def _holdout_hypothesis_id(run_dir: Path, run_id: str) -> tuple:
 
 def _mark_holdout_consumed(policy: dict, consumed: list, hyp_id: str) -> None:
     """Step 4 of _route_holdout_evaluation: record the single-use spend in
-    campaign_data_policy.yaml holdout_consumed_by."""
-    policy["holdout_consumed_by"] = list(consumed) + [hyp_id]
-    save_yaml(_DATA_POLICY_PATH, policy)
+    campaign_data_policy.yaml holdout_consumed_by.
+
+    CUL-331: the ONLY writer of the tracked policy file (both the legacy gate
+    and the verdict_routing_retired record path reach it, the latter through
+    _mark_holdout_consumed_if_absent). It used to save_yaml() the whole dict,
+    which dropped every comment in the file on each record. It now edits the
+    holdout_consumed_by value in place (_policy_text_with_consumed_marker);
+    every other byte is kept. A policy file that does not exist yet is still
+    created by save_yaml, as before (there is nothing to keep)."""
+    new_consumed = list(consumed) + [hyp_id]
+    policy["holdout_consumed_by"] = new_consumed
+    if not _DATA_POLICY_PATH.exists():
+        save_yaml(_DATA_POLICY_PATH, policy)
+    else:
+        _write_consumed_marker_in_place(_DATA_POLICY_PATH, list(consumed), hyp_id)
     print(f"⚙️  A6.1: {hyp_id} marked in holdout_consumed_by (single-use consumed).")
+
+
+_CONSUMED_KEY = "holdout_consumed_by"
+# A top-level (column-0, unquoted) `holdout_consumed_by:` key line. Comment
+# lines that merely mention the key start with '#' and never match.
+_CONSUMED_KEY_LINE = re.compile(r"holdout_consumed_by[ \t]*:(?=[ \t\r\n]|$)")
+# One line of a block sequence: `- item` (any indent, including none).
+_BLOCK_ITEM_LINE = re.compile(r"([ \t]*)-(?=[ \t\r\n]|$)")
+
+
+def _flow_yaml(value) -> str:
+    return yaml.safe_dump(value, default_flow_style=True, width=float("inf"),
+                          allow_unicode=True).strip()
+
+
+def _split_line_ending(line: str) -> tuple:
+    body = line.rstrip("\r\n")
+    return body, line[len(body):]
+
+
+def _policy_text_with_consumed_marker(text: str, consumed: list, hyp_id: str) -> str:
+    """CUL-331: `text` (the policy file) with hyp_id appended to its
+    holdout_consumed_by value and every other byte unchanged -- comments,
+    blank lines, key order, quoting and line endings.
+
+      * block value (`holdout_consumed_by:` then `- id` lines): one new
+        `- hyp_id` line after the last item, at the items' indent;
+      * flow / empty / null value (`holdout_consumed_by: []`): that one line
+        is rewritten as `holdout_consumed_by: [..., hyp_id]`, keeping a
+        trailing comment and the line ending;
+      * key absent: `holdout_consumed_by: [hyp_id]` appended at the end.
+
+    Strict parse-back: the result must parse to exactly the old document
+    with holdout_consumed_by == consumed + [hyp_id] (same keys, same order),
+    and the old value must equal `consumed` (the caller's view -- a policy
+    changed underneath it is refused, never overwritten). Anything else --
+    an unparseable file, the key written twice or in a form this edit cannot
+    locate, hyp_id already present -- raises ValueError; nothing is written."""
+    try:
+        return _policy_text_with_consumed_marker_unchecked(text, consumed, hyp_id)
+    except yaml.YAMLError as exc:
+        raise ValueError(f"campaign_data_policy.yaml consume-marker edit: YAML error, "
+                         f"refusing to write: {exc}") from exc
+
+
+def _policy_text_with_consumed_marker_unchecked(text: str, consumed: list, hyp_id: str) -> str:
+    """_policy_text_with_consumed_marker's body; YAML errors propagate raw."""
+    old_doc = yaml.safe_load(text) if text.strip() else {}
+    if old_doc is None:
+        old_doc = {}
+    if not isinstance(old_doc, dict):
+        raise ValueError(f"campaign_data_policy.yaml is not a mapping: {type(old_doc).__name__}")
+    on_disk = old_doc.get(_CONSUMED_KEY) or []
+    if list(on_disk) != list(consumed):
+        raise ValueError(f"campaign_data_policy.yaml {_CONSUMED_KEY} changed underneath this "
+                         f"record (read {list(consumed)!r}, now {list(on_disk)!r}); refusing to "
+                         f"overwrite it -- re-run so the single-use check sees the current list")
+    if hyp_id in on_disk:
+        raise ValueError(f"{hyp_id} is already in campaign_data_policy.yaml {_CONSUMED_KEY}; "
+                         f"refusing to record the same spend twice")
+    new_consumed = list(consumed) + [hyp_id]
+    newline = "\r\n" if "\r\n" in text else "\n"
+    lines = text.splitlines(keepends=True)
+    key_idx = [i for i, line in enumerate(lines) if _CONSUMED_KEY_LINE.match(line)]
+    if len(key_idx) > 1:
+        raise ValueError(f"campaign_data_policy.yaml has {len(key_idx)} top-level "
+                         f"{_CONSUMED_KEY} lines (at {[i + 1 for i in key_idx]}); refusing to guess")
+    if not key_idx:
+        if _CONSUMED_KEY in old_doc:
+            raise ValueError(f"campaign_data_policy.yaml carries {_CONSUMED_KEY} in a form this "
+                             f"edit cannot locate (not an unquoted column-0 key); refusing to guess")
+        if lines and not lines[-1].endswith(("\n", "\r")):
+            lines[-1] += newline
+        lines.append(f"{_CONSUMED_KEY}: {_flow_yaml(new_consumed)}{newline}")
+    else:
+        i = key_idx[0]
+        items = []
+        j = i + 1
+        while j < len(lines) and _BLOCK_ITEM_LINE.match(lines[j]):
+            items.append(j)
+            j += 1
+        body, ending = _split_line_ending(lines[i])
+        value = body[_CONSUMED_KEY_LINE.match(body).end():]
+        if items and not value.strip():
+            last = items[-1]
+            indent = _BLOCK_ITEM_LINE.match(lines[last]).group(1)
+            last_body, last_ending = _split_line_ending(lines[last])
+            lines[last] = last_body + (last_ending or newline)
+            item = _flow_yaml([hyp_id])[1:-1]  # flow-safe scalar is block-safe too
+            lines.insert(last + 1, f"{indent}- {item}{last_ending}")
+        else:
+            comment = ""
+            full = yaml.safe_load(f"k:{value}")
+            for m in re.finditer(r"[ \t]+#", value):
+                try:
+                    if yaml.safe_load(f"k:{value[:m.start()]}") == full:
+                        comment = value[m.start():]
+                        break
+                except yaml.YAMLError:
+                    continue
+            lines[i] = f"{_CONSUMED_KEY}: {_flow_yaml(new_consumed)}{comment}{ending}"
+    new_text = "".join(lines)
+    expected = {**old_doc, _CONSUMED_KEY: new_consumed}
+    new_doc = yaml.safe_load(new_text)
+    if new_doc != expected or list(new_doc) != list(expected):
+        raise ValueError("campaign_data_policy.yaml consume-marker edit did not parse back to "
+                         "the old policy plus exactly the marker; refusing to write it")
+    return new_text
+
+
+def _write_consumed_marker_in_place(path: Path, consumed: list, hyp_id: str) -> None:
+    """CUL-331: the comment-preserving consume-marker write. Reads the file as
+    bytes (no newline translation), edits it via
+    _policy_text_with_consumed_marker, and replaces it atomically --
+    temp file in the same directory, then os.replace, as save_yaml does -- so
+    a failure at any point leaves the original file intact."""
+    text = path.read_bytes().decode("utf-8")
+    new_text = _policy_text_with_consumed_marker(text, consumed, hyp_id)
+    validate_workflow_artifact(path, yaml.safe_load(new_text))  # save_yaml parity
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent))
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(new_text.encode("utf-8"))
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_name, path)
+    except BaseException:
+        try:
+            os.unlink(tmp_name)
+        except OSError:
+            pass
+        raise
 
 
 def _load_data_policy() -> dict:
