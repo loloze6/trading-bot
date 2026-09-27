@@ -382,6 +382,14 @@ session could not perform.
 - **`requires_feed`:** schema accepts/rejects; router writes the correct row shape via the
   existing dedupe appender (idempotent on re-run, per its own contract); `decide_next`
   marks the candidate `infeasible: requires_feed` until a matching resolved entry exists.
+  **CORRECTED 2026-09-27 (E-035 S2c as built, PR for `feat/e035-s2c-feed-requests`):**
+  decide_next's test is "the feed is wired" (a `FEED_REGISTRY` key), not a resolved
+  `data_requests.yaml` entry; venue/symbol/window coverage stays the data-availability
+  gate's job at step 3 (parks `waiting_for_data`). Reasons are `requires_feed:<feed>`
+  (unknown → acquisition row) and `requires_feed_reserved:<feed>` (reserved → designation
+  row); an already-wired feed files no row. Only a candidate whose resolved config reads
+  the feed (or a `new_block`, which has no config yet) is blocked; a patch that does not
+  read it is not. One request row per (run, stage, feed).
 - **Register:** `test_feature_flag_register.py` updated for the `anti_adjacency_retry`
   removal and `variant_anti_adjacency_gate`'s new criterion text.
 - **Docs gate:** `test_guide_covers_the_code.py`, `test_doc_anchors.py`.
