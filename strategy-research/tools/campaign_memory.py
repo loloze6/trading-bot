@@ -436,6 +436,21 @@ def build_fault_entry(run_dir: Path, run_id: str, component_errors: list,
     }
 
 
+def protocol_ref_of(protocol_file, protocol_root: Path | None = None):
+    """A memory entry's `protocol_ref`: protocol_result.yaml's `protocol_file`
+    (the path tools/run_protocol.py was given), relative to `protocol_root`
+    when it lies under it, POSIX separators; None when absent. THE one
+    definition -- the 5a exact-match gate (E-036 S2a) derives a candidate's
+    protocol_ref with it, so both sides of the key come from one rule."""
+    if not protocol_file:
+        return None
+    p = Path(protocol_file)
+    if protocol_root is not None:
+        with contextlib.suppress(ValueError, OSError):
+            p = p.resolve().relative_to(Path(protocol_root).resolve())
+    return p.as_posix()
+
+
 def build_memory_entry(run_dir: Path, run_id: str, *, trial_sharpes, categories,
                        protocol_root: Path | None = None, recorded_at: str | None = None,
                        profit_bars_evaluated: bool = False) -> dict:
@@ -462,14 +477,7 @@ def build_memory_entry(run_dir: Path, run_id: str, *, trial_sharpes, categories,
     trials = _trial_rows(run_id, trial_sharpes)
 
     pr = _load_mapping(arts / "protocol_result.yaml", "protocol_execution output")
-    protocol_file = pr.get("protocol_file")
-    protocol_ref = None
-    if protocol_file:
-        p = Path(protocol_file)
-        if protocol_root is not None:
-            with contextlib.suppress(ValueError, OSError):
-                p = p.resolve().relative_to(Path(protocol_root).resolve())
-        protocol_ref = p.as_posix()
+    protocol_ref = protocol_ref_of(pr.get("protocol_file"), protocol_root)
 
     is_path = arts / "idea_status.yaml"
     idea = _load_mapping(is_path, "the grid's idea status")
@@ -542,6 +550,61 @@ def load_memory(path: Path) -> dict:
         if not isinstance(entry, dict) or entry.get("run_id") != key:
             raise CampaignMemoryError(f"{path}: runs.{key} is not an entry keyed by its own run_id")
     return doc
+
+
+# E-036 S2a: the idea-writing stages' "already tried" view (below). Bounds the
+# prompt: only the most recently recorded runs are listed, the rest counted.
+TRIED_IDEAS_MAX_ROWS = 200
+TRIED_IDEAS_NOTE = (
+    "What was already tried: one row per run recorded in "
+    "campaign_record/campaign_memory.yaml -- the idea (hypothesis_id), the coins its "
+    "tested variants ran on, the timeframe of the protocol it ran, and the grid's "
+    "idea_status (validated / refuted / inconclusive; null for an engineering fault). "
+    "No family grouping: an idea's identity is its hypothesis_id. Derived fresh from "
+    "the memory for this stage; never edited by hand."
+)
+
+
+def tried_ideas(memory: dict, *, root: Path, max_rows: int = TRIED_IDEAS_MAX_ROWS) -> dict:
+    """E-036 S2a (slice 8.1, operator decision 3): the compact, rebuildable
+    view of the memory that the idea-writing stages (hypothesis_generation,
+    innovation_expansion) get as an optional prompt input under
+    orchestrator.exclusion_digest_input. Read only; decides nothing.
+
+    One row per memory entry, oldest first by recorded_at (run_id breaks
+    ties), at most `max_rows` (the most recent; the rest counted in
+    `omitted_older_runs`): {run_id, hypothesis_id, symbols (the tested
+    variants' measured symbols), timeframe (the protocol file's, else the
+    card's -- tools/novelty.py's rule), idea_status, variants_tested} plus
+    `engineering_fault` on a fault entry. `root` is strategy-research/ (a
+    memory entry's protocol_ref is relative to it)."""
+    import novelty as _nov  # tools/ sibling, imported lazily for the caller's sys.path
+    runs = (memory or {}).get("runs") or {}
+    ordered = sorted(runs.values(), key=lambda e: (str(e.get("recorded_at") or ""), str(e.get("run_id"))))
+    kept = ordered[-max_rows:] if max_rows and len(ordered) > max_rows else ordered
+    specs: dict = {}
+    rows = []
+    for e in kept:
+        tested = [v for v in (e.get("variants") or {}).values()
+                  if isinstance(v, dict) and v.get("status") == "tested"]
+        ref = _nov.normalize_ref(e.get("protocol_ref"))
+        if ref and ref not in specs:
+            specs[ref] = _nov.protocol_spec(root, ref)
+        spec = specs.get(ref) if ref else None
+        row = {
+            "run_id": e.get("run_id"),
+            "hypothesis_id": e.get("hypothesis_id"),
+            "symbols": sorted({s for v in tested for s in (v.get("symbols") or [])}),
+            "timeframe": (spec or {}).get("timeframe") or _nov.normalize_timeframe(e.get("timeframe")),
+            "idea_status": e.get("idea_status"),
+            "variants_tested": len(tested),
+        }
+        if e.get("engineering_fault"):
+            row["engineering_fault"] = e["engineering_fault"]
+        rows.append(row)
+    return {"source": "campaign_record/campaign_memory.yaml", "note": TRIED_IDEAS_NOTE,
+            "max_rows": max_rows, "runs_in_memory": len(runs),
+            "omitted_older_runs": len(ordered) - len(kept), "runs": rows}
 
 
 def _atomic_write(path: Path, doc: dict) -> None:

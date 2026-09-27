@@ -8,38 +8,35 @@ prose. See engineering/roadmap/E-032/artifacts/s1_idea_generation.md Task 3
 for the full design rationale and the worked calibration case this module
 is regression-tested against.
 
-WHAT IT DECIDES
-A candidate hypothesis (family, instrument, timeframe) is ADMIT or REFUSE,
-using two layers, evaluated IN THIS ORDER and never reversed:
+WHAT IT DECIDES (E-036 S2a, delivery_plan_v26.md slice 8.1; spec:
+engineering/roadmap/E-036/S1_FINDINGS_SLICE8.md and its operator decision
+of 2026-09-27)
+A candidate VARIANT -- the exact config a backtest is about to run, on the
+protocol it will run -- is ADMIT or REFUSE:
 
-  Layer 1 -- campaign_knowledge_base.yaml, matched at MECHANISM grain (via
-  hypothesis_id containment, see _kb_findings_matching_candidate), never at
-  FAMILY grain. This distinction is load-bearing, not stylistic: a family
-  (e.g. "funding_rate_extreme") can contain several INDEPENDENT KB findings
-  that reached different, unrelated verdicts (H-041-A's extreme-threshold
-  formulation closed permanently at run_050; FUNDING_RATE_CONTINUOUS_MEAN_
-  REVERSION_EXPANDED is a distinct, still-open mechanism). Matching at
-  family grain would let H-041-A's closure silently REFUSE a candidate that
-  has nothing to do with it -- the exact failure mode this gate exists to
-  avoid, just relocated one layer down. Matching is via normalized
-  hypothesis_id containment (handles the real-world "_EXPANDED" suffix
-  drift between a run's own hypothesis_card.yaml and its KB entry, observed
-  on run_044) -- see _normalize_hid().
+  Layer 2 (binding) -- the exact-match check. The candidate's key
+  (tools/novelty.py: config hash, sorted symbols, the protocol file's
+  timeframe and a hash of its windows) is looked up in
+  campaign_record/campaign_memory.yaml, the one source of truth, through the
+  SAME functions tools/decide_next.py uses. REPEAT -> REFUSE, NOVEL ->
+  ADMIT. Binary: there is no NEIGHBOUR outcome and nothing here groups by
+  family or compares composition fingerprints (the E-036 S2 design was
+  rejected 2026-09-02; family machinery is retired, card G). A run with no
+  memory entry (every run before the regroup_record stage) or an entry
+  marked `legacy: true` can never produce REPEAT.
 
-  Layer 2 -- the exclusion digest (build_exclusion_digest.py), matched at
-  FAMILY grain first (has THIS family already run at THIS (instrument,
-  timeframe)?), then at COMPOSITION grain (E-036 S2): a family/instrument/
-  timeframe collision alone is no longer sufficient to REFUSE. Three
-  outcomes, not two -- see layer2_digest_check's own docstring for the full
-  REPEAT/NEIGHBOUR/NOVEL contract. Only reached when Layer 1 has no opinion
-  (no matching KB finding, or a matching finding with no
-  reactivation_condition/exhausted verdict either way). Never trust
-  campaign_state.yaml's flat instruments_tried/timeframes_tried lists here
-  -- see the digest module's own docstring for the measured false-refusal
-  this avoids.
+  Layer 1 (advisory only) -- campaign_knowledge_base.yaml, matched at
+  MECHANISM grain (via hypothesis_id containment, see
+  _kb_findings_matching_candidate). Its verdict is recorded as
+  `layer1_advisory` next to the result and NEVER refuses (operator decision
+  4): part of its input is pass_rule_evaluation.yaml's lineage_routing, a
+  retired routing field (S1_FINDINGS_6B.md §5.1). The mechanism-grain notes
+  and the precedence rule below describe what that warning means.
 
-  Default -- ADMIT. Absence of history is not evidence of an unresearched
-  idea being bad; it is simply not yet REFUSED by anything on record.
+  Callers (run_phase1_research): _route_post_variant_selection (the legacy
+  LLM backtest_specification flow) and _gate_config_direct_variants (the
+  config-direct tool-stage 5a, one check per variant), both under
+  orchestrator.variant_anti_adjacency_gate.enabled (off by default).
 
 PRECEDENCE RULE (added by the dispatching session's 2026-08-23 review of
 S1; not in S1's original design -- see EPIC.md's review log entry).
@@ -61,28 +58,26 @@ it holds even if a human forgets to set the KB's own
 terminating run did not itself test.
 
 CLI:
-  python strategy-research/tools/anti_adjacency_gate.py <candidate.yaml> [--digest ...] [--kb ...] [--out ...]
+  python strategy-research/tools/anti_adjacency_gate.py <strategy_config.json> <protocols/x.json> [--memory ...] [--kb ...] [--hypothesis-id ...] [--out ...]
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 from pathlib import Path
 
 import yaml
 
-from build_exclusion_digest import (
-    classify_family,
-    composition_fingerprint,
-    extract_instruments,
-    extract_timeframes,
-)
+import campaign_memory as _cm  # tools/ sibling: the memory loader (the ONE source)
+import novelty as _nov  # tools/ sibling: the exact-match key shared with decide_next
+from build_exclusion_digest import extract_timeframes  # Layer 1's run-card timeframe reader
 
 _HERE = Path(__file__).resolve().parent
 _SR = _HERE.parent
 
-DEFAULT_DIGEST_PATH = _SR / "campaign_record" / "exclusion_digest.yaml"
+DEFAULT_MEMORY_PATH = _SR / "campaign_record" / "campaign_memory.yaml"
 DEFAULT_KB_PATH = _SR / "campaign_record" / "campaign_knowledge_base.yaml"
 DEFAULT_RUNS_DIR = _SR / "runs"
 
@@ -366,203 +361,107 @@ def layer1_kb_check(candidate_hid: str, candidate_timeframe: str,
 
 
 # ---------------------------------------------------------------------------
-# Layer 2 -- exclusion digest, family grain THEN composition grain (E-036 S2)
+# Layer 2 -- exact match against campaign memory (E-036 S2a, slice 8.1)
 # ---------------------------------------------------------------------------
 
-def _describe_fingerprint_diff(candidate_fingerprint: dict | None,
-                                entry_fingerprint: dict | None,
-                                entry_fidelity: str) -> str:
-    """Human-readable "how they differ" note attached to a NEIGHBOUR result
-    (EPIC.md design point 2: "attach the near neighbours to the result --
-    run_ids and how they differ"). Never asserts a difference it cannot see:
-    a coarse entry or a candidate with no config on hand yields an honest
-    "cannot be verified" note, not a fabricated diff."""
-    if entry_fidelity != "structured" or entry_fingerprint is None:
-        return "prior run recorded at fidelity=coarse (no structured config on record) -- composition cannot be compared"
-    if candidate_fingerprint is None:
-        return "candidate has no structured config available -- composition cannot be compared"
-    if candidate_fingerprint == entry_fingerprint:
-        # Should not be reachable (an identical fingerprint is a REPEAT, not
-        # a NEIGHBOUR) -- kept as an honest fallback rather than a crash if
-        # a future caller reaches this some other way.
-        return "identical composition"
-
-    diffs = []
-    if candidate_fingerprint.get("mode") != entry_fingerprint.get("mode"):
-        diffs.append(f"regime_detector.mode {entry_fingerprint.get('mode')!r} -> "
-                      f"{candidate_fingerprint.get('mode')!r}")
-    if candidate_fingerprint.get("rule_count") != entry_fingerprint.get("rule_count"):
-        diffs.append(f"rule_count {entry_fingerprint.get('rule_count')} -> "
-                      f"{candidate_fingerprint.get('rule_count')}")
-    cand_components = {json.dumps(c, sort_keys=True) for c in candidate_fingerprint.get("components", [])}
-    entry_components = {json.dumps(c, sort_keys=True) for c in entry_fingerprint.get("components", [])}
-    if cand_components != entry_components:
-        added = len(cand_components - entry_components)
-        removed = len(entry_components - cand_components)
-        diffs.append(f"components differ ({removed} not in candidate, {added} not in prior run)")
-    return "; ".join(diffs) if diffs else "differs in composition fingerprint (unrecognized shape)"
+def candidate_key(forecast_hash: str, symbols, protocol_ref, specs: dict,
+                  card_timeframe=None) -> tuple:
+    """The candidate's exact-match key, built with the SAME function the
+    memory side uses (novelty.novelty_key): `forecast_hash` from
+    run_phase1_research._compute_forecast_hash over the config file the
+    backtest will run, `symbols` the protocol's symbols (what
+    tools/run_protocol.py iterates, and so what campaign_memory measures),
+    `protocol_ref` the protocol file the backtest will run (relative to
+    strategy-research/, as campaign_memory records it), `card_timeframe` only
+    the unresolved-protocol fallback."""
+    return _nov.novelty_key(forecast_hash, sorted(set(symbols or [])),
+                            {"protocol_ref": protocol_ref, "timeframe": card_timeframe}, specs)
 
 
-def layer2_digest_check(candidate: dict, instrument: str, timeframe: str,
-                         digest: dict, candidate_config: dict | None = None) -> GateResult:
-    """E-036 S2: three outcomes, not two (EPIC.md's design, point 2).
+def layer2_digest_check(key: tuple, memory: dict, specs: dict, *,
+                        exclude_run_id: str | None = None) -> GateResult:
+    """E-036 S2a (slice 8.1, operator decision 2026-09-27): BINARY.
 
-      REPEAT -> REFUSE. Same family/instrument/timeframe AND an identical
-      composition fingerprint (both sides must be fidelity="structured" --
-      see point 3 below). The only case that blocks.
+      REPEAT -> REFUSE. A tested variant in campaign_memory.yaml has exactly
+      this key (tools/novelty.py: config hash, symbols, the protocol file's
+      timeframe, a hash of its windows). `matched`: every such
+      {run_id, variant_id}.
+      NOVEL -> ADMIT. Nothing in memory has this key.
 
-      NEIGHBOUR -> ADMIT, with the colliding runs attached (`neighbours`:
-      run_ids + how they differ). Same family/instrument/timeframe as one or
-      more prior runs, but no identical fingerprint could be established --
-      either because the compositions genuinely differ (a parameter sweep),
-      or because one side (a coarse digest entry, or a candidate with no
-      structured config passed in) never captured composition at all.
+    There is no third outcome: no family, no neighbour, no composition
+    fingerprint (the rejected E-036 S2 design and its NEIGHBOUR tier are
+    retired). A run with no memory entry, or an entry marked `legacy: true`,
+    can never produce REPEAT. `exclude_run_id`: the run being checked, so a
+    re-run never matches its own earlier memory entry. The name is kept from
+    E-032 for its callers; there is no digest behind it any more."""
+    matched = _nov.exact_matches(key, memory, specs, exclude_run_id=exclude_run_id)
+    if matched:
+        refs = [f"{m['run_id']}:{m['variant_id']}" for m in matched]
+        return REFUSE("exact_match",
+                      f"exact repeat of tested variant(s) {refs} in campaign_memory.yaml "
+                      f"(same config hash, symbols, timeframe and protocol windows)",
+                      outcome="repeat", matched=matched)
+    return ADMIT("exact_match", "no tested variant in campaign_memory.yaml has this exact key",
+                 outcome="novel", matched=[])
 
-      NOVEL -> ADMIT. No family/instrument/timeframe match in the digest.
 
-    Design point 3: a coarse-fidelity entry can never produce REPEAT -- we
-    cannot prove an exact repeat from a record that never captured
-    composition. This falls out mechanically below: REPEAT requires
-    entry["fidelity"] == "structured" AND entry["fingerprint"] is not None
-    AND candidate_config was supplied (so candidate_fingerprint is not
-    None) AND the two fingerprints are equal.
-
-    Design point 4: regime allocation is part of identity for free --
-    composition_fingerprint() keys each component on the regime it sits
-    under, so (mean_reversion, rsi, period=14) and (trending, rsi,
-    period=14) never produce equal fingerprints.
-    """
-    family, confidence = classify_family(candidate)
-    candidate_fingerprint = composition_fingerprint(candidate_config) if candidate_config else None
-
-    families = digest.get("families", {})
-    entry = families.get(family)
-    matches = [
-        triple for triple in (entry.get("triples", []) if entry else [])
-        if triple.get("instrument") == instrument and triple.get("timeframe") == timeframe
-    ]
-
-    if not matches:
-        # Never a silent auto-refuse on a bare-string low-detail
-        # failed_families entry -- flag it as supporting context only
-        # (mirrors S1's Task 3 predicate exactly).
-        low_detail_flag = any(
-            e.get("family") == family and e.get("detail") == "bare_string_low_detail"
-            for e in digest.get("failed_families_passthrough", [])
-        )
-        return ADMIT(
-            "digest",
-            f"no matching family/instrument/timeframe triple in the digest for "
-            f"family '{family}'" + (" (weak prior: bare-string failed_families entry "
-                                     "exists for this family, not gating)" if low_detail_flag else ""),
-            family=family, family_confidence=confidence, outcome="novel",
-            low_detail_prior_failure=low_detail_flag,
-        )
-
-    repeat = next(
-        (triple for triple in matches
-         if triple.get("fidelity") == "structured"
-         and triple.get("fingerprint") is not None
-         and candidate_fingerprint is not None
-         and triple["fingerprint"] == candidate_fingerprint),
-        None,
-    )
-    if repeat is not None:
-        return REFUSE(
-            "digest",
-            f"family '{family}' already run at ({instrument}, {timeframe}) with an "
-            f"identical composition -- run_ids={repeat['run_ids']}",
-            family=family, family_confidence=confidence, outcome="repeat",
-            run_ids=repeat["run_ids"],
-        )
-
-    neighbours = [
-        {
-            "run_ids": triple["run_ids"],
-            "fidelity": triple.get("fidelity", "coarse"),
-            "differs": _describe_fingerprint_diff(
-                candidate_fingerprint, triple.get("fingerprint"), triple.get("fidelity", "coarse")),
-        }
-        for triple in matches
-    ]
-    all_run_ids = sorted({rid for n in neighbours for rid in n["run_ids"]})
-    return ADMIT(
-        "digest",
-        f"family '{family}' already run at ({instrument}, {timeframe}) but no "
-        f"identical composition on record -- admitted as a neighbour, "
-        f"run_ids={all_run_ids}",
-        family=family, family_confidence=confidence, outcome="neighbour",
-        neighbours=neighbours,
-    )
+def layer1_advisory(candidate_hid, candidate_timeframe, kb: dict | None,
+                    runs_dir: Path) -> dict:
+    """Layer 1 (KB reactivation) as a WARNING only (operator decision 4,
+    2026-09-27): recorded next to the result, never a refusal -- its input
+    includes pass_rule_evaluation.yaml's retired lineage_routing field
+    (S1_FINDINGS_6B.md §5.1), so it cannot bind. {status: warn | admit |
+    no_opinion | not_evaluated, reasons, kb_finding_id}."""
+    if kb is None:
+        return {"status": "not_evaluated",
+                "reasons": ["campaign_knowledge_base.yaml not available"], "kb_finding_id": None}
+    res = layer1_kb_check(str(candidate_hid or ""), candidate_timeframe,
+                          (kb or {}).get("findings", []) or [], runs_dir)
+    if res is None:
+        return {"status": "no_opinion", "reasons": [], "kb_finding_id": None}
+    return {"status": "warn" if res.route == "refuse" else "admit",
+            "reasons": list(res.get("reasons") or []), "kb_finding_id": res.get("kb_finding_id")}
 
 
 # ---------------------------------------------------------------------------
 # Top-level
 # ---------------------------------------------------------------------------
 
-def evaluate_candidate(candidate: dict, digest: dict, kb: dict, runs_dir: Path,
-                        instrument: str | None = None, timeframe: str | None = None,
-                        candidate_config: dict | None = None) -> GateResult:
-    """candidate: a hypothesis_card.yaml-shaped dict (or close enough --
-    only hypothesis_id, edge_source, library_lookup, thesis, target_market,
-    timeframe are read). instrument/timeframe: override the values that
-    would otherwise be derived from candidate['target_market']/['timeframe']
-    -- required when a caller is evaluating one variant of a multi-symbol
-    card individually (e.g. an expanded_hypothesis_card.yaml variant).
-
-    candidate_config (E-036 S2): the candidate's own candidate_strategy_
-    config.json-shaped dict, when the caller has one on hand (i.e. at or
-    after backtest_specification). Threaded into Layer 2 to derive the
-    candidate's own composition fingerprint -- without it, Layer 2 can
-    never return REPEAT for this candidate (there is nothing to compare a
-    prior run's fingerprint against), only NEIGHBOUR or NOVEL. This is
-    correct, not a limitation to work around: a caller earlier in the
-    pipeline (e.g. _route_post_innovation_expansion, which runs before
-    backtest_specification has chosen a composition at all) has no
-    composition to name, so it cannot honestly claim a repeat either."""
-    if timeframe is None:
-        tfs = extract_timeframes(candidate)
-        timeframe = tfs[0] if tfs else None
-    if instrument is None:
-        instruments = extract_instruments(candidate)
-        instrument = instruments[0] if instruments else None
-
-    kb_findings = kb.get("findings", [])
-    result = layer1_kb_check(candidate.get("hypothesis_id", ""), timeframe, kb_findings, runs_dir)
-    if result is not None:
-        return result
-
-    return layer2_digest_check(candidate, instrument, timeframe, digest, candidate_config=candidate_config)
+def evaluate_candidate(key: tuple, memory: dict, specs: dict, *, kb: dict | None = None,
+                       candidate_hid=None, candidate_timeframe=None,
+                       runs_dir: Path = DEFAULT_RUNS_DIR,
+                       exclude_run_id: str | None = None) -> GateResult:
+    """The gate's result: Layer 2's binary exact match alone decides the
+    route; Layer 1 is attached as `layer1_advisory` and never changes it."""
+    result = layer2_digest_check(key, memory, specs, exclude_run_id=exclude_run_id)
+    result["layer1_advisory"] = layer1_advisory(candidate_hid, candidate_timeframe, kb, runs_dir)
+    return result
 
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("candidate", type=Path, help="hypothesis_card.yaml-shaped candidate")
-    parser.add_argument("--digest", type=Path, default=DEFAULT_DIGEST_PATH)
+    parser.add_argument("config", type=Path, help="the strategy config file the backtest will run")
+    parser.add_argument("protocol", help="the protocol file, relative to strategy-research/")
+    parser.add_argument("--memory", type=Path, default=DEFAULT_MEMORY_PATH)
     parser.add_argument("--kb", type=Path, default=DEFAULT_KB_PATH)
     parser.add_argument("--runs-dir", type=Path, default=DEFAULT_RUNS_DIR)
-    parser.add_argument("--instrument", default=None)
-    parser.add_argument("--timeframe", default=None)
-    parser.add_argument("--candidate-config", type=Path, default=None,
-                         help="candidate_strategy_config.json-shaped file for the candidate "
-                              "being evaluated (E-036 S2) -- enables REPEAT detection; "
-                              "without it, a family/instrument/timeframe collision can only "
-                              "ever resolve to NEIGHBOUR or NOVEL, never REPEAT.")
+    parser.add_argument("--hypothesis-id", default=None)
+    parser.add_argument("--exclude-run-id", default=None)
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args(argv)
 
-    candidate = _load_yaml(args.candidate)
-    digest = _load_yaml(args.digest)
-    kb = _load_yaml(args.kb)
-    candidate_config = None
-    if args.candidate_config is not None:
-        with open(args.candidate_config, encoding="utf-8") as f:
-            candidate_config = json.load(f)
-
-    result = evaluate_candidate(candidate, digest, kb, args.runs_dir,
-                                 instrument=args.instrument, timeframe=args.timeframe,
-                                 candidate_config=candidate_config)
-
+    # The same canonicalisation as run_phase1_research._compute_forecast_hash.
+    forecast_hash = hashlib.sha256(json.dumps(
+        json.loads(args.config.read_text(encoding="utf-8")), sort_keys=True).encode("utf-8")).hexdigest()
+    memory = _cm.load_memory(args.memory)
+    specs = _nov.protocol_specs(_SR, memory, extra_refs=[args.protocol])
+    proto_path = _SR / _nov.normalize_ref(args.protocol)
+    proto = json.loads(proto_path.read_text(encoding="utf-8"))
+    key = candidate_key(forecast_hash, proto.get("symbols"), args.protocol, specs)
+    kb = _load_yaml(args.kb) if args.kb.exists() else None
+    result = evaluate_candidate(key, memory, specs, kb=kb, candidate_hid=args.hypothesis_id,
+                                candidate_timeframe=key[2], runs_dir=args.runs_dir,
+                                exclude_run_id=args.exclude_run_id)
     out_data = dict(result)
     if args.out:
         with open(args.out, "w", encoding="utf-8") as f:

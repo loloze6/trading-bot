@@ -32,7 +32,14 @@ flags:
     criterion: >
       Switched on 2026-09-02. Finished, tested (E-032 S2a); the digest file
       already existed on disk, so it fires immediately with no unmet
-      condition.
+      condition. REPOINTED 2026-09-27 (E-036 S2a, declared live prompt
+      change; engineering/roadmap/E-036/S1_FINDINGS_SLICE8.md operator
+      decision 3): the input is now artifacts/tried_ideas.yaml, derived at
+      prompt time from campaign_record/campaign_memory.yaml (idea
+      hypothesis_id, coins, timeframe, grid idea_status; no family
+      grouping) instead of campaign_record/exclusion_digest.yaml. With no
+      memory file (regroup_record off, today's default) the stages get no
+      input, as a missing digest file already behaved.
 
   - name: stale_input_path_fix
     kind: orchestrator_config
@@ -68,22 +75,13 @@ flags:
       reads the file it writes yet (E-031 S3, the refill-vs-escalate
       decision, is unbuilt), so it cannot change any run's outcome.
 
-  - name: anti_adjacency_retry
-    kind: orchestrator_config
-    config_key: orchestrator.anti_adjacency_retry.enabled
-    reader: run_phase1_research._anti_adjacency_retry_enabled
-    owner: Jeremy
-    state: off_incomplete
-    blocked_on: E-036
-    criterion: >
-      E-032 S2c's own fix (composition-fingerprint adjacency) shipped and is
-      verified working as designed, but Jeremy REJECTED the underlying
-      design on review (2026-09-02): a flat (regime, component, params,
-      weight) fingerprint doesn't convincingly answer "are these two
-      strategies the same idea," given the real strategy structure (a
-      regime detector mapping to per-regime, weighted sub-strategy
-      compositions). Unpark trigger: E-036 restarted with a reconsidered
-      design, not merely re-reviewed.
+  # anti_adjacency_retry (orchestrator.anti_adjacency_retry.enabled,
+  # run_phase1_research._anti_adjacency_retry_enabled) was REMOVED 2026-09-27
+  # by E-036 S2a, not flipped: it fired before backtest_specification had
+  # produced any config, so an exact repeat was structurally unreachable at
+  # its call site and it never had a working REPEAT effect
+  # (engineering/roadmap/E-036/S1_FINDINGS_SLICE8.md §1 and §5, operator
+  # decision 2026-09-27). The exact-match check lives at 5a, below.
 
   - name: variant_anti_adjacency_gate
     kind: orchestrator_config
@@ -91,11 +89,26 @@ flags:
     reader: run_phase1_research._variant_anti_adjacency_gate_enabled
     owner: Jeremy
     state: off_incomplete
-    blocked_on: E-036
+    blocked_on: "E-036 S2b corpus replay + operator review"
     criterion: >
-      Same rejected design as anti_adjacency_retry above -- both are call
-      sites of the same tools/anti_adjacency_gate.py mechanism and the same
-      rejected fingerprint.
+      Redesigned 2026-09-27 (E-036 S2a, delivery_plan_v26.md slice 8.1;
+      engineering/roadmap/E-036/S1_FINDINGS_SLICE8.md + operator decision):
+      the 5a exact-match repeat check. Binary REPEAT/NOVEL on the key
+      decide_next already binds on (tools/novelty.py: config hash, sorted
+      symbols, the protocol file's timeframe and a hash of its windows),
+      looked up in campaign_record/campaign_memory.yaml -- no family, no
+      NEIGHBOUR, no composition fingerprint (the rejected 2026-09-02
+      design). Layer 1 (KB) is advisory only. Two call sites: the legacy
+      LLM backtest_specification flow (_route_post_variant_selection:
+      REPEAT -> human_pause) and the config-direct tool-stage 5a
+      (_gate_config_direct_variants: a REPEAT variant is marked not_tested
+      and gets no backtest or trial row; every variant a repeat ends the
+      run completed_no_new_hypothesis). Requires regroup_record when no
+      memory file exists (fails loud otherwise). Unit and end-to-end tested
+      (tests/test_e036_s2a_exact_match_gate.py), flag-off byte identity
+      proven there. Switch-on criterion: the read-only corpus replay (E-036
+      S2b) has published refuse/admit counts under the old family-grain key
+      vs the new exact-match key, and the operator has reviewed them.
 
   - name: grid_evaluation
     kind: orchestrator_config

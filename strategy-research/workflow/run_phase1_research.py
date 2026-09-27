@@ -2175,14 +2175,34 @@ def _apply_b7_mandatory_inputs(stage_name: str, handoff: dict, run_dir: Path) ->
 # research_brief_to_hypothesis.yaml's optional campaign_knowledge_base.yaml
 # entry, points at a path -- "../../campaign_knowledge_base.yaml" -- that
 # does not exist; the real file lives under campaign_record/, so that
-# optional_input has always silently no-op'd). This union puts
-# campaign_record/exclusion_digest.yaml (build_exclusion_digest.py's output)
-# in front of the model, gated by config/campaign_config.yaml's
-# orchestrator.exclusion_digest_input.enabled (default false; same
-# off-by-default shape as E-030 S2a's halt_policy.quarantine_enabled --
-# see run_campaign._quarantine_enabled()).
+# optional_input has always silently no-op'd). This union puts what was
+# already tried in front of the model, gated by config/campaign_config.yaml's
+# orchestrator.exclusion_digest_input.enabled (same shape as E-030 S2a's
+# halt_policy.quarantine_enabled -- see run_campaign._quarantine_enabled();
+# switched ON 2026-09-02 by E-041).
+#
+# E-036 S2a (2026-09-27, S1_FINDINGS_SLICE8.md operator decision 3) REPOINTED
+# the input -- a declared live prompt change: it used to be
+# campaign_record/exclusion_digest.yaml (family-scoped (family, instrument,
+# timeframe) triples); it is now artifacts/tried_ideas.yaml, a per-run
+# snapshot derived at prompt time from campaign_record/campaign_memory.yaml by
+# tools/campaign_memory.tried_ideas (idea hypothesis_id, coins, timeframe, the
+# grid's idea_status; no family grouping; at most TRIED_IDEAS_MAX_ROWS rows, so
+# the prompt stays bounded). No memory file (orchestrator.regroup_record off):
+# no input, exactly as a missing digest file behaved.
 _EXCLUSION_DIGEST_INPUT_STAGES = {"hypothesis_generation", "innovation_expansion"}
-_EXCLUSION_DIGEST_RELATIVE_PATH = "../../campaign_record/exclusion_digest.yaml"
+_TRIED_IDEAS_RELATIVE_PATH = "artifacts/tried_ideas.yaml"
+_TRIED_IDEAS_REASON = (
+    "E-036 S2a: what was already tried -- one row per run recorded in "
+    "campaign_record/campaign_memory.yaml: the idea (hypothesis_id), its coins, the "
+    "timeframe it ran on, and the grid's idea_status (validated / refuted / "
+    "inconclusive). No family grouping: an idea's identity is its hypothesis_id, and "
+    "the same idea on other coins or another timeframe is a variant of it. Prefer an "
+    "idea, or a coin/timeframe, not listed here over re-proposing a listed one "
+    "unchanged. This is raw material, not a binding gate -- the exact-match check at "
+    "5a refuses an exact repeat (same config, coins, timeframe and protocol windows) "
+    "downstream."
+)
 
 
 # E-046b S2 (the grid, engineering_roadmap.html card C). Off-by-default flag,
@@ -2469,46 +2489,38 @@ def _exclusion_digest_input_enabled() -> bool:
 
 
 def _apply_exclusion_digest_input(stage_name: str, handoff: dict, run_dir: Path) -> None:
-    """Union campaign_record/exclusion_digest.yaml into
-    handoff['optional_inputs'] for the two generating stages, ONLY when the
-    flag is on and the file exists on disk -- deduplicated, same
+    """Union the "already tried" view into handoff['optional_inputs'] for the
+    two generating stages, ONLY when the flag is on and
+    campaign_record/campaign_memory.yaml exists -- deduplicated, same
     skip-gracefully-on-absence discipline as _apply_b7_mandatory_inputs.
-    optional_inputs (not required_inputs): a missing digest must never crash
-    a stage that predates this feature; run_claude_worker's context-gathering
-    loop already treats a missing optional_input as silently absent.
+    optional_inputs (not required_inputs): a missing input must never crash a
+    stage that predates this feature.
 
-    Flag OFF (the default): this function is a no-op -- the handoff dict is
-    never mutated, so _build_stage_prompt's assembled prompt text is
-    byte-identical to before this function existed. This is the actual
-    off-by-default proof point (tests/test_exclusion_digest_input.py), not
-    merely "the gate is skipped" -- adding an optional_input changes what
-    run_claude_worker reads into context_blocks, which changes the prompt
-    text an LLM stage receives, which is a real behavior change if it ever
-    fires unconditionally."""
+    E-036 S2a: the view is artifacts/tried_ideas.yaml, derived here from the
+    memory (tools/campaign_memory.tried_ideas) and written into the run before
+    the stage reads it -- so the run keeps a record of exactly what the model
+    was shown. No memory file: nothing is written or added, the same
+    degradation the old code applied to a missing exclusion_digest.yaml. A
+    malformed memory raises (CampaignMemoryError), never silently skipped.
+
+    Flag OFF: this function is a no-op -- the handoff dict is never mutated
+    and nothing is written, so _build_stage_prompt's assembled prompt text is
+    byte-identical to before this function existed
+    (tests/test_exclusion_digest_input.py)."""
     if stage_name not in _EXCLUSION_DIGEST_INPUT_STAGES:
         return
     if not _exclusion_digest_input_enabled():
         return
-    if not (run_dir / _EXCLUSION_DIGEST_RELATIVE_PATH).exists():
+    memory_path = ROOT / "campaign_record" / "campaign_memory.yaml"
+    if not memory_path.exists():
         return
+    import campaign_memory as _cm_mod  # tools/ sibling (tools/ is on sys.path, module top)
+    view = _cm_mod.tried_ideas(_cm_mod.load_memory(memory_path), root=ROOT)
+    save_yaml(run_dir / _TRIED_IDEAS_RELATIVE_PATH, view)
     optional = handoff.setdefault("optional_inputs", [])
-    existing_paths = {req["path"] for req in optional}
-    if _EXCLUSION_DIGEST_RELATIVE_PATH in existing_paths:
+    if _TRIED_IDEAS_RELATIVE_PATH in {req["path"] for req in optional}:
         return
-    optional.append({
-        "path": _EXCLUSION_DIGEST_RELATIVE_PATH,
-        "reason": (
-            "E-032 S2a: family-scoped (family, instrument, timeframe) triples "
-            "already tried, freshly derived from run artifacts -- NOT "
-            "campaign_state.yaml's stale, family-blind instruments_tried/"
-            "timeframes_tried lists. Prefer a candidate whose family is absent "
-            "here, or whose (instrument, timeframe) triple is absent under its "
-            "family, over a same-family tweak when both are viable. This is "
-            "raw material, not a binding gate -- the anti_adjacency_gate tool "
-            "stage makes the mechanical refusal decision downstream."
-        ),
-    })
-    existing_paths.add(_EXCLUSION_DIGEST_RELATIVE_PATH)
+    optional.append({"path": _TRIED_IDEAS_RELATIVE_PATH, "reason": _TRIED_IDEAS_REASON})
 
 
 # E-032 S2b: two of hypothesis_generation's OWN declared optional_inputs
@@ -5847,191 +5859,15 @@ def _apply_config_direct_authoring_context(stage_name: str, handoff: dict, run_d
 
 
 # ---------------------------------------------------------------------------
-# E-032 S2c -- anti-adjacency gate retry/escalate orchestration.
-#
-# Operator ruling (2026-08-23, EPIC.md Log): "Retry up to 4 times with the
-# exclusion list, then escalate to me." Wiring point (Task 1 of this story):
-# right after innovation_expansion produces its deliverables, before
-# validation -- matches stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/]'s already-declared (but previously
-# unread) anti_adjacency_gate `tool:` entry's position and its
-# next: [validation, hypothesis_generation] routing. S1/S2a's build-list
-# item 4 recommended exactly this insertion point.
-#
-# Two constraints already on record when this story was dispatched, both
-# implemented literally below, not rediscovered:
-#   1. The attempt counter (state["anti_adjacency_gate_retry"]["attempts"])
-#      is a NEW, dedicated top-level state key -- independent of BOTH
-#      counters.refinements_used and stage_attempts (E-030 S1.5 Piece 2:
-#      reusing refinements_used for a re-entry counter causes a same-counter
-#      re-entry to overwrite an audit key instead of appending one; a retry
-#      loop is exactly that re-entry shape).
-#   2. Each retry carries the PREVIOUS refusal's reason into
-#      hypothesis_generation's next prompt via _apply_anti_adjacency_retry_
-#      context below (E-030 R3: "a bare retry is not a retry", evidenced by
-#      halt #5 in E-030's own taxonomy work).
+# E-032 S2c's anti-adjacency retry (orchestrator.anti_adjacency_retry,
+# _anti_adjacency_retry_enabled, _route_post_innovation_expansion's gate call and
+# _apply_anti_adjacency_retry_context) was RETIRED by E-036 S2a (2026-09-27,
+# engineering/roadmap/E-036/S1_FINDINGS_SLICE8.md §1 and its operator decision):
+# it fired before backtest_specification had produced any config, so an exact
+# repeat was structurally unreachable there -- the flag never had a working
+# REPEAT effect and was off. The exact-match check lives at 5a
+# (_route_post_variant_selection / _gate_config_direct_variants below).
 # ---------------------------------------------------------------------------
-_ANTI_ADJACENCY_RETRY_MAX_ATTEMPTS = 4
-
-
-def _anti_adjacency_retry_enabled() -> bool:
-    """False (no behavior change) when the key, the section, or the config
-    file is absent -- same silence-is-never-a-green-light rule as the other
-    three orchestrator flags (run_campaign._quarantine_enabled(),
-    _exclusion_digest_input_enabled(), _stale_input_path_fix_enabled())."""
-    path = ROOT / "config" / "campaign_config.yaml"
-    if not path.exists():
-        return False
-    with open(path, encoding="utf-8") as f:
-        cfg = yaml.safe_load(f) or {}
-    retry_cfg = ((cfg.get("orchestrator") or {}).get("anti_adjacency_retry") or {})
-    return bool(retry_cfg.get("enabled", False))
-
-
-def _route_post_innovation_expansion(run_dir: Path, run_id: str, state: dict) -> str:
-    """Decides what happens after innovation_expansion, per the operator
-    ruling above. Flag OFF (the default): returns STAGE_CONFIGS[
-    'innovation_expansion']['default_next'] ('validation') immediately --
-    no digest/KB file is read, no gate is imported, no state field is
-    written. This is the actual off-by-default proof point: not merely
-    'the retry loop never fires' but 'this function's body past the flag
-    check never executes', so run_loop's stage-advance logic is entirely
-    unreached by any new code path (tests/test_anti_adjacency_retry_
-    policy.py).
-
-    Flag ON: evaluates the run's own hypothesis_card.yaml (the base
-    hypothesis innovation_expansion has just produced variants of -- per S1,
-    a schema-conformant expansion is definitionally a child of this one
-    card) against the anti-adjacency gate.
-      - ADMIT -> 'validation' (the unchanged default_next), attempt counter
-        reset to 0 (an ADMIT ends the REFUSE streak for this lineage step).
-      - REFUSE, attempts < 4 -> 'hypothesis_generation' (retry; the refusal
-        reason is stashed on state for _apply_anti_adjacency_retry_context
-        to carry into that stage's next prompt).
-      - REFUSE, attempts == 4 (the 4th CONSECUTIVE refusal) -> 'human_pause',
-        via the project's existing escalation mechanism (status=
-        'paused_for_human', exactly like every other human-in-the-loop stop
-        in this file) plus a flags entry run_campaign._classify_human_pause
-        can name (see its own new branch), rather than falling through to
-        the generic 'human_pause_unclassified' bucket every other flag-keyed
-        pause reason avoids.
-    """
-    default_next = STAGE_CONFIGS["innovation_expansion"]["default_next"]
-    if not _anti_adjacency_retry_enabled():
-        return default_next
-
-    tools_path = str(Path(__file__).parent.parent / "tools")
-    if tools_path not in sys.path:
-        sys.path.insert(0, tools_path)
-    import anti_adjacency_gate as _aag
-
-    candidate_path = run_dir / "artifacts" / "hypothesis_card.yaml"
-    candidate = load_yaml(candidate_path) if candidate_path.exists() else {}
-    digest_path = ROOT / "campaign_record" / "exclusion_digest.yaml"
-    kb_path = ROOT / "campaign_record" / "campaign_knowledge_base.yaml"
-    # FIX 3 (review, 2026-08-24): stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/] declares both files
-    # required_inputs for this stage. A genuinely ABSENT file is a
-    # misconfiguration (build_exclusion_digest.py was never run / the KB was
-    # never seeded) and must fail loud, per this project's own standing rule
-    # ("anything feeding decisions raises on degenerate inputs") -- silently
-    # substituting {} would rubber-stamp ADMIT for every candidate with
-    # nothing in the logs distinguishing it from a real, legitimate
-    # clean-slate ADMIT (an EXISTING but empty file, e.g. a fresh campaign
-    # with no digest history yet, is exactly that legitimate case and must
-    # still ADMIT).
-    if not digest_path.exists():
-        raise RuntimeError(
-            f"[E-032 S2c] anti-adjacency gate cannot evaluate: required input "
-            f"missing at {digest_path}. exclusion_digest.yaml is a "
-            f"required_inputs entry for this stage (stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/] [ARCHIVED 2026-08-24 -> E-033/artifacts/]) -- "
-            f"run tools/build_exclusion_digest.py, do not silently ADMIT."
-        )
-    digest = load_yaml(digest_path) or {}
-
-    if not kb_path.exists():
-        raise RuntimeError(
-            f"[E-032 S2c] anti-adjacency gate cannot evaluate: required input "
-            f"missing at {kb_path}. campaign_knowledge_base.yaml is a "
-            f"required_inputs entry for this stage (stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/] [ARCHIVED 2026-08-24 -> E-033/artifacts/]) -- "
-            f"do not silently ADMIT."
-        )
-    kb = load_yaml(kb_path) or {}
-
-    result = _aag.evaluate_candidate(candidate or {}, digest or {}, kb or {}, ROOT / "runs")
-    save_yaml(run_dir / "artifacts" / "anti_adjacency_result.yaml", dict(result))
-
-    gate_retry = dict(state.get("anti_adjacency_gate_retry") or {})
-    attempts = gate_retry.get("attempts", 0)
-    history = list(gate_retry.get("history", []))
-
-    if result.route == "admit":
-        print(f"✅ [E-032 S2c] anti-adjacency gate ADMIT for {run_id} "
-              f"(layer={result.get('layer')}): {result.get('reasons')}")
-        update_state(path=run_dir, anti_adjacency_gate_retry={
-            "attempts": 0, "last_reason": None, "history": history,
-        })
-        return "validation"
-
-    # REFUSE
-    reason_text = "; ".join(result.get("reasons", []))
-    attempts += 1
-    history.append({"attempt": attempts, "route": "refuse", "reason": reason_text})
-
-    if attempts >= _ANTI_ADJACENCY_RETRY_MAX_ATTEMPTS:
-        update_state(
-            path=run_dir,
-            anti_adjacency_gate_retry={"attempts": attempts, "last_reason": reason_text, "history": history},
-            status="paused_for_human",
-            flags={"anti_adjacency_gate_exhausted": True},
-        )
-        print(f"\n⏸️  PIPELINE PAUSED: anti-adjacency gate REFUSEd {attempts} consecutive "
-              f"times for {run_id}. Escalating per operator ruling (2026-08-23, "
-              f"E-032 EPIC.md): 'retry up to 4 times ... then escalate'.")
-        print(f"   Last refusal: {reason_text}")
-        return "human_pause"
-
-    update_state(
-        path=run_dir,
-        anti_adjacency_gate_retry={"attempts": attempts, "last_reason": reason_text, "history": history},
-    )
-    print(f"🔁 [E-032 S2c] anti-adjacency gate REFUSE ({attempts}/"
-          f"{_ANTI_ADJACENCY_RETRY_MAX_ATTEMPTS}) for {run_id}: {reason_text} -- "
-          f"retrying hypothesis_generation with the refusal reason.")
-    return "hypothesis_generation"
-
-
-def _apply_anti_adjacency_retry_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
-    """Constraint 2 (operator ruling, E-030 R3 precedent): on a gate-REFUSE
-    retry loop-back to hypothesis_generation, inject the PREVIOUS refusal's
-    reason into that stage's next prompt -- not a bare re-invocation. Reads
-    the dedicated anti_adjacency_gate_retry state _route_post_innovation_
-    expansion just wrote.
-
-    Flag OFF, wrong stage, or no retry in progress (attempts == 0, e.g. the
-    FIRST pass through hypothesis_generation, or after an ADMIT reset it):
-    no-op -- the handoff dict is never mutated, matching
-    _apply_exclusion_digest_input/_apply_stale_input_path_fix's own
-    off-by-default proof shape (byte-identical assembled prompt, not merely
-    'the code path is skipped')."""
-    if stage_name != "hypothesis_generation":
-        return
-    if not _anti_adjacency_retry_enabled():
-        return
-    state_path = run_dir / "pipeline_state.yaml"
-    if not state_path.exists():
-        return
-    state = load_yaml(state_path) or {}
-    gate_retry = state.get("anti_adjacency_gate_retry") or {}
-    attempts = gate_retry.get("attempts", 0)
-    last_reason = gate_retry.get("last_reason")
-    if not last_reason or attempts <= 0:
-        return
-    handoff.setdefault("injected_context", {})
-    handoff["injected_context"]["anti_adjacency_gate_refusal"] = (
-        f"Attempt {attempts}/{_ANTI_ADJACENCY_RETRY_MAX_ATTEMPTS}. Your previous "
-        f"proposal was REFUSED by the anti-adjacency gate: {last_reason}. Propose a "
-        f"genuinely different family/instrument/timeframe -- not a cosmetic variant "
-        f"of the refused candidate."
-    )
 
 
 # E-034 S2: record which expanded_variants menu entry backtest_specification
@@ -6081,7 +5917,7 @@ def _variant_selection_record_enabled() -> bool:
     """False when the key, the section, or the config file is absent -- same
     silence-is-never-a-green-light rule as every other orchestrator.<name>.
     enabled flag in this module (_exclusion_digest_input_enabled,
-    _stale_input_path_fix_enabled, _anti_adjacency_retry_enabled). Reads via
+    _stale_input_path_fix_enabled, _variant_anti_adjacency_gate_enabled). Reads via
     ROOT so the test sandbox (tests/conftest.py's autouse guard) can seed its
     own value without touching the real repository."""
     path = ROOT / "config" / "campaign_config.yaml"
@@ -6254,33 +6090,33 @@ def _record_variant_selection(run_dir: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# E-034 S3 -- the NEW, LATER anti-adjacency gate call site.
+# E-034 S3 / E-036 S2a -- the 5a exact-match repeat check
+# (orchestrator.variant_anti_adjacency_gate.enabled, off by default).
 #
-# Closes the OPEN DEFECT logged in E-032/EPIC.md on 2026-08-24:
-# _route_post_innovation_expansion (above) is the gate's ONLY existing call
-# site, and it runs BEFORE `validation` -- reading run_dir/artifacts/
-# hypothesis_card.yaml, the pre-expansion PARENT idea. By construction it
-# cannot see anything innovation_expansion invents, and it runs before
-# backtest_specification has chosen a variant at all -- there is nothing
-# concrete for it to read yet at that point. E-032's own Log entry is
-# explicit that fixing this needs "a NEW gate call site after
-# backtest_specification, not a redirect of the existing pre-validation
-# call" -- this is that new call site, not a change to the old one, which
-# keeps doing its existing (weaker, "was the original idea a repeat") job
-# unchanged.
+# Redesigned by E-036 S2a (delivery_plan_v26.md slice 8.1;
+# engineering/roadmap/E-036/S1_FINDINGS_SLICE8.md + operator decision
+# 2026-09-27): the gate is the binary exact-match check of tools/novelty.py
+# (the key decide_next already binds on), looked up in
+# campaign_record/campaign_memory.yaml -- no family digest, no NEIGHBOUR, no
+# composition fingerprint. It is the backstop for every queue origin
+# (operator, external, queued_card, reader, brief): decide_next checks only the
+# candidates it mints, this checks the config a backtest is about to run.
 #
-# This function is called ONLY right after _record_variant_selection() has
-# successfully written artifacts/variant_selection.yaml (same run_loop
-# region, same lifecycle point) -- so that file is guaranteed to exist
-# whenever this function's body runs past its own flag check.
+# Two call sites, one per 5a flow:
+#   * _route_post_variant_selection -- the legacy LLM backtest_specification
+#     flow, after candidate_strategy_config.json is written (the file the
+#     trial row's forecast_hash is computed from).
+#   * _gate_config_direct_variants -- the config-direct tool-stage 5a
+#     (orchestrator.config_direct_authoring, which decide_next requires),
+#     one check per variant that protocol_execution would run.
 # ---------------------------------------------------------------------------
 
 def _variant_anti_adjacency_gate_enabled() -> bool:
     """False (no behavior change) when the key, the section, or the config
     file is absent -- same silence-is-never-a-green-light rule as the other
-    five orchestrator.<name>.enabled flags in this module
+    orchestrator.<name>.enabled flags in this module
     (_exclusion_digest_input_enabled, _stale_input_path_fix_enabled,
-    _anti_adjacency_retry_enabled, _variant_selection_record_enabled)."""
+    _variant_selection_record_enabled)."""
     path = ROOT / "config" / "campaign_config.yaml"
     if not path.exists():
         return False
@@ -6290,86 +6126,108 @@ def _variant_anti_adjacency_gate_enabled() -> bool:
     return bool(section.get("enabled", False))
 
 
+_CAMPAIGN_MEMORY_REL = "campaign_record/campaign_memory.yaml"
+_REPEAT_REASON_PREFIX = "repeat:"
+
+
+def _repeat_gate_context(run_dir: Path, run_id: str) -> dict:
+    """Everything the exact-match check needs that is the same for every
+    variant of one run, from the SAME sources campaign_memory.yaml's entries
+    are built from:
+      * memory -- campaign_record/campaign_memory.yaml (tools/campaign_memory.
+        load_memory). Absent: a fresh campaign's legitimate empty memory when
+        orchestrator.regroup_record is on; a misconfiguration (raise) when it
+        is off -- nothing would ever write the memory this gate reads, so
+        every check would silently ADMIT.
+      * protocol_ref -- the protocol this run will execute
+        (_resolve_protocol_path, the resolver protocol_execution and the data
+        gate use), made relative to ROOT by campaign_memory.protocol_ref_of,
+        the rule regroup_record applies to protocol_result.yaml's
+        protocol_file.
+      * symbols -- that protocol's `symbols` (what tools/run_protocol.py
+        iterates; campaign_memory measures them back from its results).
+      * specs -- novelty.protocol_specs over the memory plus this protocol.
+      * kb / hypothesis_id / card timeframe -- Layer 1's advisory inputs and
+        the key's unresolved-protocol fallback."""
+    import anti_adjacency_gate as _aag  # tools/ sibling (tools/ is on sys.path)
+    import campaign_memory as _cm_mod
+    import novelty as _nov
+    memory_path = ROOT / _CAMPAIGN_MEMORY_REL
+    memory_present = memory_path.exists()
+    if not memory_present and not _regroup_record_enabled():
+        raise RuntimeError(
+            f"[E-036 S2a] {run_dir.name}: orchestrator.variant_anti_adjacency_gate.enabled is "
+            f"true but {_CAMPAIGN_MEMORY_REL} does not exist and "
+            f"orchestrator.regroup_record.enabled is off -- nothing writes the memory this "
+            f"gate reads, so every variant would silently ADMIT. Turn on regroup_record "
+            f"(and its prerequisites) first.")
+    memory = _cm_mod.load_memory(memory_path)
+    protocol_path = _resolve_protocol_path(run_dir, run_id)
+    protocol_ref = _cm_mod.protocol_ref_of(str(protocol_path), ROOT)
+    proto_text = Path(protocol_path).read_text(encoding="utf-8")
+    proto = (json.loads(proto_text) if Path(protocol_path).suffix == ".json"
+             else yaml.safe_load(proto_text))
+    symbols = proto.get("symbols") if isinstance(proto, dict) else None
+    if not (isinstance(symbols, list) and symbols and all(isinstance(s, str) and s for s in symbols)):
+        raise RuntimeError(
+            f"[E-036 S2a] {run_dir.name}: protocol {protocol_ref} has no usable `symbols` list "
+            f"({symbols!r}) -- cannot build the exact-match key.")
+    card_path = run_dir / "artifacts" / "hypothesis_card.yaml"
+    card = (load_yaml(card_path) or {}) if card_path.exists() else {}
+    kb_path = ROOT / "campaign_record" / "campaign_knowledge_base.yaml"
+    return {
+        "aag": _aag,
+        "memory": memory,
+        "memory_present": memory_present,
+        "protocol_ref": protocol_ref,
+        "symbols": sorted(set(symbols)),
+        "specs": _nov.protocol_specs(ROOT, memory, extra_refs=[protocol_ref]),
+        "kb": (load_yaml(kb_path) or {}) if kb_path.exists() else None,
+        "hypothesis_id": card.get("hypothesis_id") if isinstance(card, dict) else None,
+        "card_timeframe": card.get("timeframe") if isinstance(card, dict) else None,
+    }
+
+
+def _check_variant_repeat(ctx: dict, config_path: Path, run_id: str) -> dict:
+    """One variant's gate result (a plain dict): the key from the config file
+    the backtest will run, hashed by _compute_forecast_hash -- the function
+    its trial row's forecast_hash comes from -- and the shared context."""
+    import campaign_memory as _cm_mod  # tools/ sibling: the path-relativising rule
+    aag = ctx["aag"]
+    forecast_hash = _compute_forecast_hash(Path(config_path))
+    key = aag.candidate_key(forecast_hash, ctx["symbols"], ctx["protocol_ref"], ctx["specs"],
+                            card_timeframe=ctx["card_timeframe"])
+    result = aag.evaluate_candidate(key, ctx["memory"], ctx["specs"], kb=ctx["kb"],
+                                    candidate_hid=ctx["hypothesis_id"],
+                                    candidate_timeframe=key[2], runs_dir=ROOT / "runs",
+                                    exclude_run_id=run_id)
+    return {**dict(result),
+            "key": {"forecast_hash": key[0], "symbols": list(key[1]), "timeframe": key[2],
+                    "window_set": key[3]},
+            "config_ref": _cm_mod.protocol_ref_of(str(config_path), ROOT)}
+
+
 def _route_post_variant_selection(run_dir: Path, run_id: str) -> str | None:
-    """E-034 S3. Gates the CHOSEN VARIANT -- the thing that will actually be
-    backtested -- rather than the pre-expansion parent hypothesis_card.yaml
-    _route_post_innovation_expansion is stuck reading.
+    """E-034 S3, redesigned by E-036 S2a. The legacy (LLM
+    backtest_specification) flow's 5a exact-match check, called by run_loop
+    right AFTER artifacts/candidate_strategy_config.json is written (the file
+    protocol_execution runs and hashes into the trial row) and before
+    validate_config.py.
 
-    Flag OFF (default): returns None immediately -- variant_selection.yaml
-    is never read, the gate module is never imported, no new
-    pipeline_state.yaml field is written, no new artifact is created. The
-    caller (run_loop's backtest_specification branch) leaves its own
-    next_stage untouched, so behavior is byte-identical to before this
-    function existed. Mirrors _route_post_innovation_expansion's own
-    off-by-default shape.
+    Flag OFF (default): returns None immediately -- nothing is read, no
+    artifact or state field is written; run_loop is byte-identical.
 
-    Flag ON: requires orchestrator.variant_selection_record.enabled to ALSO
-    be true (checked here, fail loud, not a silent no-op) -- this gate reads
-    artifacts/variant_selection.yaml, which only _record_variant_selection()
-    (gated by that OTHER flag) ever writes. Enabling this gate without its
-    producer is a misconfiguration, not a legitimate "nothing to gate yet"
-    state: a genuinely fresh run would have neither flag on, and a stale
-    variant_selection.yaml left over from an earlier flag-on run would let
-    this gate silently evaluate a WRONG run's artifact -- worse than
-    refusing to start. Per this project's standing rule ("anything feeding
-    decisions raises on degenerate inputs").
-
-    Candidate construction (per E-034 S1 Task 4's explicit recommendation):
-    merges the PARENT hypothesis_card.yaml's classification-relevant fields
-    (library_lookup, edge_source, thesis, hypothesis_id) -- needed by
-    classify_family() -- with the CHOSEN VARIANT's own definition
-    (variant_selection.yaml's variant_definition, which overrides any
-    parent field it also carries). Measured (E-034 S1 Task 2): variants
-    essentially never carry library_lookup/edge_source/thesis themselves
-    (target_market/timeframe presence is only ~15%/~24%, and no dict
-    variant in the 138-item corpus carried a library_lookup key at all), so
-    building the candidate from variant_selection.yaml alone would starve
-    classify_family() down to a bare hypothesis_id keyword match every
-    time. instrument/timeframe are NEVER derived from the merged candidate
-    dict -- they are passed explicitly via evaluate_candidate()'s
-    instrument=/timeframe= override parameters, sourced from variant_
-    selection.yaml's own ALREADY-RESOLVED values (variant override, else
-    parent card -- _record_variant_selection did that resolution once;
-    this function does not redo it). This is exactly the override mechanism
-    the docstring of evaluate_candidate() describes and, until this story,
-    no real caller ever used.
-
-      - ADMIT -> returns None (the caller's own next_stage, already decided
-        by determine_post_spec_route, is left untouched).
-      - REFUSE -> status=paused_for_human, flags.
-        variant_anti_adjacency_gate_refused=True, returns 'human_pause'.
-
-    REFUSE policy (decided here; no operator ruling covers this LATER
-    checkpoint -- S2c's "retry 4 times, then escalate" ruling was scoped to
-    the EARLIER, cheaper checkpoint before validation/backtest_specification
-    had spent anything): immediate escalation, no automatic retry, and a
-    DISTINCT flag from anti_adjacency_gate_exhausted so an operator scanning
-    halts can tell "refused early, cheap" apart from "refused late, after
-    two stages' spend" at a glance. Reasoning:
-
-    1. Cost asymmetry. By the time this gate can evaluate anything, TWO
-       additional LLM stages (validation, backtest_specification) have run
-       for this lineage step beyond what the earlier checkpoint would have
-       already spent. S2c's retry lever only had innovation_expansion's
-       output to lose; retrying here would throw that away too.
-    2. The lever doesn't fit the failure mode. S2c's retry (regenerate an
-       entirely new hypothesis at hypothesis_generation) is the right
-       response to "this whole idea is adjacent." A REFUSE here means
-       something narrower and different: the ALREADY-ADMITTED parent idea's
-       CHOSEN VARIANT pivoted into an excluded (family, instrument,
-       timeframe) combination. Discarding the whole hypothesis and
-       regenerating from scratch does not target that -- it also throws
-       away every OTHER still-viable variant this run already reasoned
-       about and persisted in variants_not_pursued.yaml, which is exactly
-       the artifact E-034 built so that supply would not be wasted.
-    3. A human has better information at hand than a blind retry would. The
-       halt leaves both variant_selection.yaml (what collided, and why) and
-       variants_not_pursued.yaml (what else was on the menu) on disk --
-       enough to pick a different already-generated variant or author a
-       genuinely new one, cheaper than another full validation ->
-       backtest_specification round-trip with no guarantee of a better
-       outcome.
-    """
+    Flag ON: requires orchestrator.variant_selection_record.enabled (fail
+    loud, unchanged from E-034 S3: the result records variant_selection.yaml's
+    selected_variant_id). Checks candidate_strategy_config.json's key against
+    campaign_memory.yaml (_repeat_gate_context, _check_variant_repeat) and
+    writes artifacts/variant_anti_adjacency_result.yaml.
+      - NOVEL -> None (run_loop's next_stage untouched).
+      - REPEAT -> status=paused_for_human,
+        flags.variant_anti_adjacency_gate_refused=True, returns 'human_pause'
+        (E-034 S3's escalate-on-first-refusal policy, unchanged: two LLM
+        stages are already spent; a person picks another variant).
+    Layer 1 (KB) is recorded as `layer1_advisory` and never pauses."""
     if not _variant_anti_adjacency_gate_enabled():
         return None
 
@@ -6395,111 +6253,26 @@ def _route_post_variant_selection(run_dir: Path, run_id: str) -> str | None:
             f"has succeeded -- a caller-ordering bug, not a degenerate-"
             f"input case to route around."
         )
+    config_path = artifacts / "candidate_strategy_config.json"
+    if not config_path.exists():
+        raise RuntimeError(
+            f"[E-036 S2a] {run_dir.name}: variant_anti_adjacency_gate is enabled but "
+            f"{config_path} does not exist -- this function must only be called right "
+            f"after run_loop writes it (a caller-ordering bug).")
     selection = load_yaml(selection_path) or {}
 
-    hypothesis_card_path = artifacts / "hypothesis_card.yaml"
-    hypothesis_card = load_yaml(hypothesis_card_path) if hypothesis_card_path.exists() else {}
-
-    candidate = dict(hypothesis_card or {})
-    variant_definition = selection.get("variant_definition")
-    if isinstance(variant_definition, dict):
-        candidate.update(variant_definition)
-    candidate["hypothesis_id"] = selection.get("hypothesis_id") or candidate.get("hypothesis_id")
-
-    # E-036 S2: the chosen variant's own structured composition, when one is
-    # already on disk. backtest_spec.yaml's `config` field is the SAME dict
-    # that this stage's caller writes verbatim to candidate_strategy_
-    # config.json moments after this function returns (see the
-    # "backtest_specification" branch of run_loop, a few lines below where
-    # candidate_path is written) -- reading it here is not a guess at the
-    # composition, it is the composition, just not yet copied to its final
-    # artifact path. Without it, Layer 2 can only ever return NEIGHBOUR/NOVEL
-    # for a family/instrument/timeframe collision, never REPEAT (see
-    # evaluate_candidate()'s own docstring) -- a real duplicate composition
-    # reaching this checkpoint would otherwise never be caught here.
-    backtest_spec_path = artifacts / "backtest_spec.yaml"
-    backtest_spec = load_yaml(backtest_spec_path) if backtest_spec_path.exists() else {}
-    candidate_config = backtest_spec.get("config") if isinstance(backtest_spec, dict) else None
-    if not isinstance(candidate_config, dict):
-        candidate_config = None
-
-    tools_path = str(Path(__file__).parent.parent / "tools")
-    if tools_path not in sys.path:
-        sys.path.insert(0, tools_path)
-    import anti_adjacency_gate as _aag
-
-    digest_path = ROOT / "campaign_record" / "exclusion_digest.yaml"
-    kb_path = ROOT / "campaign_record" / "campaign_knowledge_base.yaml"
-    # Same FIX-3 fail-loud discipline _route_post_innovation_expansion
-    # applies to these two files: a genuinely ABSENT required input must
-    # raise, never silently substitute {} and rubber-stamp ADMIT. An
-    # EXISTING-but-empty file (the legitimate clean-slate case) still
-    # ADMITs exactly as before.
-    if not digest_path.exists():
-        raise RuntimeError(
-            f"[E-034 S3] variant anti-adjacency gate cannot evaluate: "
-            f"required input missing at {digest_path}. Run "
-            f"tools/build_exclusion_digest.py, do not silently ADMIT."
-        )
-    digest = load_yaml(digest_path) or {}
-
-    if not kb_path.exists():
-        raise RuntimeError(
-            f"[E-034 S3] variant anti-adjacency gate cannot evaluate: "
-            f"required input missing at {kb_path}. campaign_knowledge_"
-            f"base.yaml is required -- do not silently ADMIT."
-        )
-    kb = load_yaml(kb_path) or {}
-
-    # E-034 S3 review fix (2026-08-25): selection["instrument"] may be a
-    # list[str] -- _coerce_scalar_instrument (S2) now preserves genuine
-    # multi-symbol data (e.g. a funding-family hypothesis naming both
-    # BTCUSDT and ETHUSDT) rather than forcing a false single answer.
-    # Evaluate EVERY named instrument; a collision on ANY of them is a real
-    # collision (REFUSE wins), never silently checked against only one and
-    # reported ADMIT for the rest.
-    instrument_value = selection.get("instrument")
-    instruments_to_check = (
-        instrument_value if isinstance(instrument_value, list) else [instrument_value]
-    )
-    per_instrument_results = [
-        _aag.evaluate_candidate(
-            candidate, digest or {}, kb or {}, ROOT / "runs",
-            instrument=instr, timeframe=selection.get("timeframe"),
-            candidate_config=candidate_config,
-        )
-        for instr in instruments_to_check
-    ]
-    # E-036 S2: with three Layer-2 outcomes instead of two, "first REFUSE,
-    # else first result" would silently drop a NEIGHBOUR found on one
-    # instrument if a DIFFERENT checked instrument came back NOVEL and
-    # happened to sort first -- exactly the information design point 2 says
-    # must reach the result. Priority: REFUSE > NEIGHBOUR > first result.
-    result = (
-        next((r for r in per_instrument_results if r.route == "refuse"), None)
-        or next((r for r in per_instrument_results if r.get("outcome") == "neighbour"), None)
-        or per_instrument_results[0]
-    )
-    # Success signal (E-034/EPIC.md): "the gate result references the chosen
-    # variant's identifier, not the base hypothesis id." The gate's own
-    # MATCHING logic must still key Layer 1 (KB) off the base/mechanism
-    # hypothesis_id -- campaign_knowledge_base.yaml findings are registered
-    # against mechanism ids (e.g. funding_rate_continuous_mean_reversion_
-    # expanded_auto), never per-variant ids like V2-THRESHOLD-20p0, so using
-    # selected_variant_id AS candidate_hid would silently break every KB
-    # match (including the calibration case). The RESULT ARTIFACT, however,
-    # is exactly where the variant identifier belongs -- so it is recorded
-    # here, verbatim from variant_selection.yaml, alongside the gate's own
-    # route/layer/reasons.
+    ctx = _repeat_gate_context(run_dir, run_id)
+    result = _check_variant_repeat(ctx, config_path, run_id)
     save_yaml(artifacts / "variant_anti_adjacency_result.yaml", {
-        **dict(result),
+        **result,
         "selected_variant_id": selection.get("selected_variant_id"),
-        "hypothesis_id": candidate.get("hypothesis_id"),
+        "hypothesis_id": selection.get("hypothesis_id") or ctx["hypothesis_id"],
+        "protocol_ref": ctx["protocol_ref"],
+        "memory_present": ctx["memory_present"],
     })
 
-    if result.route == "admit":
-        print(f"✅ [E-034 S3] variant anti-adjacency gate ADMIT for {run_id} "
-              f"(layer={result.get('layer')}): {result.get('reasons')}")
+    if result["route"] == "admit":
+        print(f"✅ [E-036 S2a] exact-match gate ADMIT for {run_id}: {result.get('reasons')}")
         return None
 
     reason_text = "; ".join(result.get("reasons", []))
@@ -6511,13 +6284,93 @@ def _route_post_variant_selection(run_dir: Path, run_id: str) -> str | None:
             "route": "refuse", "layer": result.get("layer"), "reason": reason_text,
         },
     )
-    print(f"\n⏸️  PIPELINE PAUSED: variant anti-adjacency gate REFUSEd the "
-          f"CHOSEN VARIANT for {run_id} (layer={result.get('layer')}): "
-          f"{reason_text}. Escalating immediately -- no auto-retry at this "
-          f"later checkpoint (two stages already spent; see this "
-          f"function's own docstring for why that differs from the "
-          f"earlier, cheaper anti_adjacency_retry checkpoint).")
+    print(f"\n⏸️  PIPELINE PAUSED: the exact-match gate REFUSEd {run_id}'s chosen "
+          f"variant as a REPEAT: {reason_text}. Escalating (no auto-retry: validation "
+          f"and backtest_specification are already spent) -- see "
+          f"artifacts/variant_anti_adjacency_result.yaml and variants_not_pursued.yaml.")
     return "human_pause"
+
+
+def _gate_config_direct_variants(run_dir: Path, run_id: str) -> str | None:
+    """E-036 S2a: the config-direct tool-stage 5a exact-match check, called
+    at the top of _route_post_config_direct_backtest_specification, after
+    run_tool_worker has written artifacts/variants/index.yaml.
+
+    Flag OFF (default): returns None immediately -- nothing is read or
+    written; the route is byte-identical.
+
+    Flag ON: checks every variant protocol_execution would run -- every
+    `validated` one under orchestrator.variant_loop, else `base` only --
+    against campaign_memory.yaml, each keyed on the file whose hash its trial
+    row would carry (variant loop: its config_path; otherwise
+    candidate_strategy_config.json, which protocol_execution runs).
+      * A REPEAT variant is skipped: marked `not_tested` in index.yaml with
+        reason "repeat: ..." naming the matching memory run:variant (the same
+        skip the per-variant data gate uses). protocol_execution runs only
+        `validated` variants, so a skipped repeat gets no trial row and no
+        grid column; campaign memory records it as not_tested with that
+        reason. The others proceed unchanged.
+      * EVERY checked variant a repeat: returns completed_no_new_hypothesis
+        (NO_NEW_HYPOTHESIS_STAGE) -- the existing non-verdict terminal
+        ending for "this run has nothing new to test" (registered in
+        verdict_criteria_evaluator._NON_VERDICT_OUTCOMES), reused rather than
+        a new state. No backtest, no trial row, no grid.
+      * Nothing checked (no validated variant): None -- the route's own
+        existing handling applies.
+    The per-variant results go to artifacts/variant_anti_adjacency_result.yaml.
+    Layer 1 (KB) is recorded per variant as `layer1_advisory`, never a skip."""
+    if not _variant_anti_adjacency_gate_enabled():
+        return None
+    artifacts = run_dir / "artifacts"
+    index_path = artifacts / "variants" / "index.yaml"
+    index_doc = load_yaml(index_path) or {}
+    variants = index_doc.get("variants") or {}
+    loop_on = _variant_loop_enabled()
+    checked = sorted(vid for vid, v in variants.items()
+                     if isinstance(v, dict) and v.get("status") == "validated"
+                     and (loop_on or vid == "base"))
+    if not checked:
+        return None
+
+    ctx = _repeat_gate_context(run_dir, run_id)
+    results, repeats = {}, []
+    for vid in checked:
+        info = variants[vid]
+        if loop_on:
+            if not info.get("config_path"):
+                raise RuntimeError(f"[E-036 S2a] {run_id}: variant {vid!r} is validated in "
+                                   f"{index_path} but has no config_path -- refusing to guess.")
+            config_path = run_dir / info["config_path"]
+        else:
+            config_path = artifacts / "candidate_strategy_config.json"
+        res = _check_variant_repeat(ctx, config_path, run_id)
+        results[vid] = res
+        if res["route"] == "refuse":
+            refs = [f"{m['run_id']}:{m['variant_id']}" for m in res["matched"]]
+            variants[vid] = {**info, "status": "not_tested",
+                             "reason": (f"{_REPEAT_REASON_PREFIX} exact match of tested "
+                                        f"variant(s) {refs} in {_CAMPAIGN_MEMORY_REL}")}
+            repeats.append(vid)
+            print(f"⏭️  [E-036 S2a] variant '{vid}' is an exact REPEAT of {refs} -- skipped "
+                  f"(not_tested, no backtest, no trial row).")
+    all_repeat = len(repeats) == len(checked)
+    save_yaml(artifacts / "variant_anti_adjacency_result.yaml", {
+        "run_id": run_id,
+        "flow": "config_direct",
+        "protocol_ref": ctx["protocol_ref"],
+        "memory_present": ctx["memory_present"],
+        "checked": checked,
+        "repeats": repeats,
+        "run_end": NO_NEW_HYPOTHESIS_STAGE if all_repeat else None,
+        "variants": results,
+    })
+    if repeats:
+        save_yaml(index_path, {**index_doc, "variants": variants})
+    if all_repeat:
+        print(f"\n🔁 [E-036 S2a] every variant {run_id} would test is an exact repeat of a "
+              f"tested one -- run ends {NO_NEW_HYPOTHESIS_STAGE} (no backtest, no trial row).")
+        return NO_NEW_HYPOTHESIS_STAGE
+    return None
 
 
 async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | None = None):
@@ -6547,9 +6400,6 @@ async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | 
 
     # E-032 S2b: repoint known-stale optional_input paths, off by default (see helper docstring above).
     _apply_stale_input_path_fix(stage_name, handoff)
-
-    # E-032 S2c: carry the previous gate-refusal reason into a retry, off by default (see helper docstring above).
-    _apply_anti_adjacency_retry_context(stage_name, handoff, RUN_DIR)
 
     # E-056 Slice 3b: criterion-menu/cost-model/base-config file-presence signals, off by default (see helper docstring above).
     _apply_config_direct_authoring_context(stage_name, handoff, RUN_DIR)
@@ -11334,6 +11184,13 @@ def _route_post_config_direct_backtest_specification(run_dir: Path, *,
     whose blocking variants all failed ONLY on V12 cannot-load (a missing
     class) parks the run (waiting_for_component); any other failure stays the
     pause below."""
+    # E-036 S2a: the 5a exact-match check, off by default (see
+    # _gate_config_direct_variants). Flag off: None, nothing read. A repeat
+    # variant is marked not_tested in index.yaml BEFORE it is read below; every
+    # checked variant a repeat ends the run completed_no_new_hypothesis.
+    _repeat_end = _gate_config_direct_variants(run_dir, run_dir.name)
+    if _repeat_end is not None:
+        return _repeat_end
     index = load_yaml(run_dir / "artifacts" / "variants" / "index.yaml") or {}
     variants = index.get("variants", {})
     if routing_retired:
@@ -11901,19 +11758,13 @@ def run_loop(run_id: str):
                 next_stage = "backtest_specification"
 
             elif current_stage == "innovation_expansion":
-                # E-032 S2c: anti-adjacency gate + retry/escalate policy, off by
-                # default (see _route_post_innovation_expansion's own docstring).
-                # Flag off: returns config["default_next"] ('validation')
-                # immediately, identical to today's unconditional assignment above.
-                next_stage = _route_post_innovation_expansion(RUN_DIR, run_id, state)
-                if next_stage == "human_pause":
-                    break # Break the while loop to stop the script cleanly, same as every other human-in-the-loop stop below
+                # E-036 S2a retired E-032 S2c's anti-adjacency retry here (it fired
+                # before any config existed; see the retirement note above
+                # _record_variant_selection): next_stage stays config["default_next"]
+                # ('validation'), exactly what the flag-off route returned.
                 # E-056 Slice 3b: under config-direct authoring, the validation stage
-                # becomes naturally unreached (not deleted) -- redirect its ADMIT
-                # target straight to the tool-only backtest_specification stage instead.
-                # Only overrides the specific 'validation' outcome; any other
-                # _route_post_innovation_expansion result (human_pause, a retry back to
-                # hypothesis_generation) is untouched.
+                # becomes naturally unreached (not deleted) -- redirect straight to the
+                # tool-only backtest_specification stage instead.
                 if next_stage == "validation" and _config_direct_authoring_enabled():
                     next_stage = "backtest_specification"
 
@@ -11938,16 +11789,6 @@ def run_loop(run_id: str):
                     # config/variant was actually implemented, so there is
                     # nothing to record.
                     _record_variant_selection(RUN_DIR)
-                    # E-034 S3: gate the CHOSEN VARIANT, off by default (see
-                    # _route_post_variant_selection's own docstring). Flag
-                    # off: returns None immediately, next_stage below is
-                    # untouched. Flag on + REFUSE: escalates to a human
-                    # right here, before any config-schema work is spent on
-                    # a variant the gate has just refused.
-                    _variant_gate_next = _route_post_variant_selection(RUN_DIR, run_id)
-                    if _variant_gate_next == "human_pause":
-                        next_stage = "human_pause"
-                        break
                     spec = load_yaml(ARTIFACTS / "backtest_spec.yaml")
                     config_obj = spec.get("config")
                     # F4d (2026-07-05, run_047): force-inject significance_methodology
@@ -11961,6 +11802,17 @@ def run_loop(run_id: str):
                     candidate_path = ARTIFACTS / "candidate_strategy_config.json"
                     with open(candidate_path, "w", encoding="utf-8") as f:
                         json.dump(config_obj, f, indent=2)
+                    # E-034 S3 / E-036 S2a: the exact-match repeat check on the
+                    # CHOSEN VARIANT, off by default (see
+                    # _route_post_variant_selection's own docstring). Called
+                    # after the file above is written -- it is the config
+                    # protocol_execution runs and hashes into the trial row
+                    # (F4d's injection included) -- and before any
+                    # config-schema work. Flag off: returns None immediately.
+                    _variant_gate_next = _route_post_variant_selection(RUN_DIR, run_id)
+                    if _variant_gate_next == "human_pause":
+                        next_stage = "human_pause"
+                        break
                     validator  = Path("..") / "trading-bot" / "tools" / "validate_config.py"
                     TBOT_PYTHON = _resolve_tbot_python()
                     result = subprocess.run(

@@ -232,51 +232,42 @@ library_lookup:
 
 ---
 
-## IMPROVEMENT 05 — Exclusion-Digest Awareness: Redirect, Don't Repeat (E-032 S2b)
+## IMPROVEMENT 05 — What Was Already Tried: Redirect, Don't Repeat (E-032 S2b; repointed E-036 S2a)
 
-### Optional, off by default
+### Optional input
 
-`campaign_record/exclusion_digest.yaml` is unioned into your context files ONLY when
-`config/campaign_config.yaml`'s `orchestrator.exclusion_digest_input.enabled` is true.
-It will not always be present. **If it is absent from your provided context, this
-section does not apply — proceed as before.** Absence of the digest is not evidence
-of a fresh search space; it may simply mean the flag is off.
+`artifacts/tried_ideas.yaml` is added to your context files ONLY when
+`config/campaign_config.yaml`'s `orchestrator.exclusion_digest_input.enabled` is true
+AND the campaign record (`campaign_record/campaign_memory.yaml`) exists. It will not
+always be present. **If it is absent from your provided context, this section does not
+apply — proceed as before.** Absence is not evidence of a fresh search space; the
+campaign record may simply not be kept yet.
 
-### When it IS present: read it before you commit to a family
+### When it IS present: read it before you commit to an idea
 
-The digest is family-scoped, not indicator-scoped (IMPROVEMENT 04's
-`campaign_empirical_results` check is per-indicator; this is campaign-wide, across
-every run, keyed at `(family, instrument, timeframe)` — the grain that actually
-distinguishes a fresh cell from a retested one). Its `families` map lists, per family,
-the `(instrument, timeframe)` triples already run and their `run_ids`. Its
-`failed_families_passthrough` lists families with either a recorded `root_cause`
-(`detail: dict_entry`) or, more weakly, a bare name with no diagnosis
-(`detail: bare_string_low_detail`).
+It lists, one row per recorded run: the idea (`hypothesis_id`), the coins it was
+tested on (`symbols`), the `timeframe`, and the grid's `idea_status` (`validated`,
+`refuted` or `inconclusive`; null for an engineering fault). There is no family
+grouping: an idea's identity is its `hypothesis_id`, and the same idea on other coins
+or another timeframe is a variant of that idea, not a new one.
 
 **Before finalizing `edge_source` and `signal_concept`:**
-1. Classify your candidate's family the same way IMPROVEMENT 04's lookup does
-   (structural indicator id first, then mechanism keyword).
-2. If the digest's `families` entry for that family already has a triple at the SAME
-   `(instrument, timeframe)` you intend to target — **do not propose it as-is.** Target
-   a different, untried `(instrument, timeframe)` under that family, or move to a
-   different family/category entirely.
-3. If `failed_families_passthrough` names your family with a `root_cause`
-   (`dict_entry`): your redirect must address that root cause structurally — a
-   different `edge_source.category`, a different `evidence_type`, or a materially
-   different `specific_mechanism` — never a parameter change alone. A
-   `bare_string_low_detail` entry is weaker evidence; note it, but it does not by
-   itself forbid a well-argued re-attempt.
-4. **You are empowered, not just permitted, to declare a family exhausted.** If every
-   angle you can honestly construct on a family collides with step 2 or 3, say so
-   directly in `rationale` (name the family, the colliding triples, the root_cause) and
-   select a genuinely different family — not the next parameter over. Record the
-   redirect in `library_lookup.prior_campaign_failures` (cite the colliding `run_ids`
-   from the digest) so the decision is auditable, not just asserted.
+1. If your candidate is an idea already listed (same mechanism, whatever its name),
+   do not propose it unchanged on coins and a timeframe it was already tested on.
+   Propose it on coins or a timeframe not yet listed for it, with a stated reason to
+   expect a different result, or move to a different idea.
+2. A `refuted` row is evidence against re-proposing that idea as it was; an
+   `inconclusive` row is not a refutation — say what would make the next test
+   decisive. A `validated` row is not a reason to copy the idea.
+3. Record what you checked in `library_lookup.prior_campaign_failures` (cite the
+   `run_id`s you are redirecting from) so the decision is auditable, not just
+   asserted.
 
-**This is raw material, not the gate.** The mechanical refusal is
-`tools/anti_adjacency_gate.py`, downstream and deterministic. Nothing here overrides
-it, and a hypothesis that ignores this section is not thereby invalid — it is simply
-more likely to be refused later, more slowly, after you have already written it.
+**This is raw material, not the gate.** The mechanical refusal is the exact-match
+check at step 5a (`tools/anti_adjacency_gate.py`, same config, coins, timeframe and
+protocol windows), downstream and deterministic. Nothing here overrides it, and a
+hypothesis that ignores this section is not thereby invalid — it is simply more
+likely to be refused later, after you have already written it.
 
 ---
 
@@ -407,10 +398,9 @@ IMPROVEMENT 01/04/07 above; a partial pass-through is a silent gap-filling trap,
 - Check: is `evidence_type` available? If not, add `requires_new_feed` and route to feed_wishlist.
 - Check: is the hypothesis ungated? Any regime condition → reformulate or route to detector_wishlist.
 - Check: indicator library lookup steps 1–4 complete; `library_lookup` field populated in card.
-- If `campaign_record/exclusion_digest.yaml` is present in context: check your
-  candidate's family against it before finalizing `edge_source`. Prefer a
-  family/instrument/timeframe combination absent from `families`, or address a named
-  `root_cause` structurally. (Improvement 05)
+- If `artifacts/tried_ideas.yaml` is present in context: check your candidate
+  against it before finalizing `edge_source`. Prefer an idea, or coins/timeframe,
+  not already listed over re-proposing a listed idea unchanged. (Improvement 05)
 - State the idea in a way that can be tested without unavailable data.
 - Include at least 3 failure modes.
 - Prefer hypotheses that can be integrated as a minimal change in the current strategy architecture.
@@ -429,15 +419,15 @@ IMPROVEMENT 01/04/07 above; a partial pass-through is a silent gap-filling trap,
 - Do not assume unavailable data.
 - Do not propose ideas that require replacing the whole existing bot architecture.
 - Do not re-propose an indicator + mechanism combination already marked `outcome: failed` in the library's `campaign_empirical_results` for the same symbol/timeframe without a materially new mechanism. (Improvement 04)
-- Do not repropose a family+instrument+timeframe triple already present in the
-  exclusion digest under a materially unchanged mechanism, when the digest is present
-  in context. (Improvement 05)
-- Do not treat digest absence as evidence of a fresh search space — it may simply mean
-  `orchestrator.exclusion_digest_input.enabled` is off. (Improvement 05)
+- Do not repropose an idea listed in `artifacts/tried_ideas.yaml` on the same coins
+  and timeframe under a materially unchanged mechanism, when the file is present in
+  context. (Improvement 05)
+- Do not treat its absence as evidence of a fresh search space — the campaign record
+  may simply not be kept yet. (Improvement 05)
 - **Config-direct-authoring flow only:** do not invent a criterion id, metric, source, or reducer outside
   `config/criterion_menu.yaml`'s live entries (Improvement 07). Do not hardcode cost numbers — read
   `config/cost_model.yaml` (Improvement 07). Do not re-derive `edge_source`/`signal_concept`/`criteria` for a
   candidate that already qualifies as a pass-through (Improvement 08) — copy it through instead.
 
 ## Context rule
-Read `research_brief.yaml`, `config/available_feeds.yaml`, `feed_wishlist.yaml`, `config/indicator_library.yaml`, and, when present, `campaign_record/exclusion_digest.yaml` and `campaign_record/campaign_knowledge_base.yaml`. Config-direct-authoring flow only: also read `config/criterion_menu.yaml` and `config/cost_model.yaml` (Improvement 07). Do not read other files unless the handoff explicitly requires them.
+Read `research_brief.yaml`, `config/available_feeds.yaml`, `feed_wishlist.yaml`, `config/indicator_library.yaml`, and, when present, `artifacts/tried_ideas.yaml` and `campaign_record/campaign_knowledge_base.yaml`. Config-direct-authoring flow only: also read `config/criterion_menu.yaml` and `config/cost_model.yaml` (Improvement 07). Do not read other files unless the handoff explicitly requires them.

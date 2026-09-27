@@ -35,8 +35,10 @@ What decides, in order:
      -- the EXACT match of card K against campaign memory, BINDING (operator
      decision 3), keyed on (config hash, measured symbols, the protocol file's
      timeframe, a content hash of the protocol's windows) -- never the
-     per-run protocol path; the legacy exclusion digest's layer 2 is recorded
-     for information only and never refuses; its layer 1 is not called.
+     per-run protocol path (tools/novelty.py, shared with the 5a gate since
+     E-036 S2a); the legacy exclusion digest's family lookup
+     (build_exclusion_digest.legacy_family_lookup) is recorded for
+     information only and never refuses; the KB layer is not called.
      Feasibility -- the patch resolves, the manifest still resolves, no
      unknown component class; a regime block is infeasible before slice 7.
   3. Eligible candidates collapse (card I, full novelty key; ineligible ones
@@ -109,6 +111,7 @@ import block_registry as _br  # tools/ sibling: registry loader (revision for R1
 import composition_names as _names  # tools/ sibling: the shared composition names
 import campaign_memory as _cm  # tools/ sibling: memory loader + retired-field scan
 import json_pointer as _jp  # tools/ sibling: pointer + patch semantics shared with 5a
+import novelty as _nov  # tools/ sibling: the exact-match key shared with the 5a gate (E-036 S2a)
 import reader_proposals as _rp  # tools/ sibling: proposal loader/validator
 
 SCHEMA_VERSION = 1
@@ -322,71 +325,16 @@ def _base_variant(entry: dict) -> tuple:
     return vid, variants.get(vid)
 
 
-def normalize_timeframe(tf):
-    """'1H' / ' 1h ' -> '1h'; anything that is not a non-empty string -> None."""
-    return tf.strip().lower() if isinstance(tf, str) and tf.strip() else None
-
-
-def normalize_ref(ref):
-    """Path separators normalised ('\\' -> '/'), leading './' dropped."""
-    if not isinstance(ref, str) or not ref.strip():
-        return None
-    out = ref.strip().replace("\\", "/")
-    while out.startswith("./"):
-        out = out[2:]
-    return out
-
-
-def protocol_spec(root: Path, protocol_ref) -> dict | None:
-    """What a protocol file actually tests, independent of its per-run file
-    name (generated protocols are protocols/<run_id>_generated.json, so the
-    path never repeats): {timeframe (normalised), windows_sha256 (canonical
-    JSON of its `windows` list)}. None when the file cannot be read."""
-    ref = normalize_ref(protocol_ref)
-    if ref is None:
-        return None
-    path = Path(root) / ref
-    if not path.exists():
-        return None
-    text = path.read_text(encoding="utf-8")
-    doc = json.loads(text) if path.suffix == ".json" else yaml.safe_load(text)
-    if not isinstance(doc, dict) or not isinstance(doc.get("windows"), list):
-        return None
-    return {"timeframe": normalize_timeframe(doc.get("timeframe")),
-            "windows_sha256": _canonical_sha(doc["windows"])}
-
-
-def novelty_key(forecast_hash, symbols, entry: dict, specs: dict) -> tuple:
-    """Card K's exact key: (config hash, symbols, timeframe, window set).
-    Symbols come from the measured variant (protocol_result), the timeframe
-    and window set from the protocol file the engine ran (the memory entry's
-    own `timeframe` is copied from the LLM-written card, so it is only the
-    fallback when the protocol file cannot be read, normalised)."""
-    ref = normalize_ref(entry.get("protocol_ref"))
-    spec = specs.get(ref) if ref else None
-    if spec:
-        timeframe, window_set = spec["timeframe"], f"windows:{spec['windows_sha256']}"
-    else:
-        timeframe, window_set = normalize_timeframe(entry.get("timeframe")), f"unresolved:{ref}"
-    return (forecast_hash, tuple(sorted(symbols or [])), timeframe, window_set)
-
-
-def _exact_index(memory: dict, specs: dict) -> dict:
-    """{novelty_key: [run_id, ...]} over every TESTED variant in the memory.
-    Legacy runs are not in memory, so they can never match (slice 8.1)."""
-    index: dict = {}
-    for run_id in sorted((memory.get("runs") or {})):
-        entry = memory["runs"][run_id]
-        if entry.get("engineering_fault"):
-            continue
-        for v in (entry.get("variants") or {}).values():
-            if v.get("status") != "tested" or not v.get("forecast_hash"):
-                continue
-            key = novelty_key(v["forecast_hash"], v.get("symbols"), entry, specs)
-            runs = index.setdefault(key, [])
-            if run_id not in runs:
-                runs.append(run_id)
-    return index
+# E-036 S2a (slice 8.1): the exact-match key and its lookup live in
+# tools/novelty.py, extracted verbatim from here, so this module and the 5a
+# gate (tools/anti_adjacency_gate.py) share ONE definition of "the same idea".
+# Re-exported under their old names: decide_next's behaviour is unchanged
+# (tests/test_e036_s2a_exact_match_gate.py pins it).
+normalize_timeframe = _nov.normalize_timeframe
+normalize_ref = _nov.normalize_ref
+protocol_spec = _nov.protocol_spec
+novelty_key = _nov.novelty_key
+_exact_index = _nov.exact_index
 
 
 def _load_yaml_opt(path: Path):
@@ -1114,13 +1062,12 @@ def _digest_advisory(card, config, symbols, timeframe, digest) -> dict:
     if not digest or not isinstance(card, dict):
         return {"outcome": "not_available", "family": None, "family_confidence": None,
                 "run_ids": []}
-    import anti_adjacency_gate as _aag  # tools/ sibling, imported lazily
-    res = _aag.layer2_digest_check(card, (symbols or [None])[0], timeframe, digest,
-                                   candidate_config=config)
-    run_ids = list(res.get("run_ids") or sorted(
-        {r for n in res.get("neighbours") or [] for r in n.get("run_ids") or []}))
-    return {"outcome": res.get("outcome"), "family": res.get("family"),
-            "family_confidence": res.get("family_confidence"), "run_ids": run_ids}
+    # E-036 S2a: anti_adjacency_gate.layer2_digest_check is now the exact-match
+    # check; the family-grain lookup this field records moved, unchanged, to
+    # build_exclusion_digest.legacy_family_lookup (information only).
+    import build_exclusion_digest as _bed  # tools/ sibling, imported lazily
+    return _bed.legacy_family_lookup(card, (symbols or [None])[0], timeframe, digest,
+                                     candidate_config=config)
 
 
 def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inputs: dict,

@@ -171,47 +171,40 @@ promising.
 
 ---
 
-## IMPROVEMENT 05 — Exclusion-Digest-Aware Expansion: Redirect the Lineage, Don't Just Vary It (E-032 S2b)
+## IMPROVEMENT 05 — Expansion Aware of What Was Already Tried (E-032 S2b; repointed E-036 S2a)
 
-### Optional, off by default
+### Optional input
 
-`campaign_record/exclusion_digest.yaml` is unioned into your context files ONLY when
-`config/campaign_config.yaml`'s `orchestrator.exclusion_digest_input.enabled` is true.
-It will not always be present. **If it is absent from your provided context, this
-section does not apply.**
+`artifacts/tried_ideas.yaml` is added to your context files ONLY when
+`config/campaign_config.yaml`'s `orchestrator.exclusion_digest_input.enabled` is true
+AND the campaign record (`campaign_record/campaign_memory.yaml`) exists. It will not
+always be present. **If it is absent from your provided context, this section does not
+apply.**
 
-### When present: check the base hypothesis's OWN family saturation before expanding
+### When present: check what the base idea has already been tested on
 
-This stage is the one most likely to produce adjacent variants by construction — the
-mission is to expand ONE hypothesis. That makes it the stage most in need of a hard
-check against repeating a lineage the campaign has already run.
+It lists, one row per recorded run: the idea (`hypothesis_id`), its coins (`symbols`),
+the `timeframe`, and the grid's `idea_status`. No family grouping: an idea's identity
+is its `hypothesis_id`; the same idea on other coins or another timeframe is a variant
+of it.
 
-1. Look up the base hypothesis's family in the digest's `families` map. Count its
-   triples across ALL `(instrument, timeframe)` pairs, not just the base hypothesis's
-   own pair.
-2. If that family already carries triples at 2+ distinct `(instrument, timeframe)`
-   pairs, treat it as heavily searched: at least one variant in `expanded_variants`
-   MUST cross into a different `library_category` or `data_requirements`. IMPROVEMENT
-   04's diversity test already requires this on cosmetic-diversity grounds — the
-   digest is a second, independent reason to enforce it, not a new rule.
-3. For each candidate variant, do not add it to `expanded_variants` if it would land on
-   a `(family, instrument, timeframe)` triple already in the digest under a materially
-   unchanged mechanism. Move it to `variants_not_pursued` in `innovation_notes.yaml`
-   instead, with `reason` citing the specific family/triple, or the
-   `failed_families_passthrough` `root_cause`, that excluded it.
-4. **You are empowered to call the whole lineage exhausted.** If every honestly-
-   constructable variant from this base hypothesis collides with the digest or a
-   recorded `root_cause`, say so directly in `innovation_notes.yaml`'s `summary` and
-   `key_insight` — name the family, the colliding triples, the root_cause — rather
-   than forcing a cosmetic variant through to fill the queue. An honest
-   `variants_not_pursued` list with a thin or empty `expanded_variants` is a better
-   outcome than three variants that only vary parameters within an already-searched
-   family: the same standard `hypothesis-design`'s "quality over volume" section
-   already holds hypothesis count to.
+1. Find the rows for the base hypothesis's idea. A variant that would re-run it on
+   coins and a timeframe it was already tested on, with a materially unchanged
+   mechanism, does not go in `expanded_variants` — move it to `variants_not_pursued`
+   in `innovation_notes.yaml`, with `reason` citing the `run_id` it would repeat.
+2. Prefer variants on coins or a timeframe not yet listed for this idea, and say why
+   a different result is expected there. IMPROVEMENT 04's diversity test still
+   applies on its own grounds.
+3. **You are empowered to say the idea is exhausted.** If every honestly-constructable
+   variant repeats a listed run, say so in `innovation_notes.yaml`'s `summary` and
+   `key_insight` — name the `run_id`s and their `idea_status` — rather than forcing a
+   cosmetic variant through. An honest `variants_not_pursued` list with a thin
+   `expanded_variants` beats three variants that only re-run what was already tested.
 
-**This is raw material, not the gate.** `tools/anti_adjacency_gate.py` makes the
-mechanical refusal downstream, deterministically. This section governs what a
-proactive stage proposes on its own, before the gate ever has to say no.
+**This is raw material, not the gate.** The exact-match check at step 5a
+(`tools/anti_adjacency_gate.py`) refuses an exact repeat — same config, coins,
+timeframe and protocol windows — downstream, deterministically. This section governs
+what a proactive stage proposes on its own, before that check has to say no.
 
 ---
 
@@ -294,10 +287,9 @@ patch form.
 - **Improvement 04: run diversity test against indicator_library.yaml; reject cosmetic expansions.**
 - Populate `library_category`, `data_requirements`, `diversity_axis` on every variant.
 - Write `diversity_audit` section in `innovation_notes.yaml`.
-- If `campaign_record/exclusion_digest.yaml` is present in context: check the base
-  hypothesis's family saturation before expanding; route any variant that would
-  repeat a digest triple to `variants_not_pursued` instead of `expanded_variants`.
-  (Improvement 05)
+- If `artifacts/tried_ideas.yaml` is present in context: check what the base idea was
+  already tested on before expanding; route any variant that would repeat a listed run
+  unchanged to `variants_not_pursued` instead of `expanded_variants`. (Improvement 05)
 - **Improvement 06: name >=2 asset-generalizability candidate symbols from a
   DIFFERENT `coin_universe.yaml` category than the base instrument (or state
   the specific single-asset opt-out reason).** Write the `asset_diversity_audit`
@@ -315,11 +307,11 @@ patch form.
 - Do NOT include regime-gated variants in the run queue (`expanded_variants`). They go in `regime_specific_variants` with `status: detector_wishlist_pending`.
 - If `research_brief.yaml` contains "one variant only", "single variant", or "no variants" in its `constraints` field, do NOT expand into multiple variants. Pass the base hypothesis through to a single variant (V1 only) matching the brief's signal_concept exactly. Expansion is only appropriate when the brief does not constrain variant count.
 - **Improvement 04: Do NOT accept an expansion where all variants share the same library `category` AND `data_requirements`. This is cosmetic diversity — redo it.**
-- Do not repropose a `(family, instrument, timeframe)` triple already present in the
-  exclusion digest under a materially unchanged mechanism, when the digest is present
-  in context. (Improvement 05)
-- Do not treat digest absence as evidence the search space is fresh — it may simply
-  mean `orchestrator.exclusion_digest_input.enabled` is off. (Improvement 05)
+- Do not re-run an idea listed in `artifacts/tried_ideas.yaml` on the same coins and
+  timeframe under a materially unchanged mechanism, when the file is present in
+  context. (Improvement 05)
+- Do not treat its absence as evidence the search space is fresh — the campaign record
+  may simply not be kept yet. (Improvement 05)
 - Do not silently omit `asset_diversity_audit` from `innovation_notes.yaml`. An
   empty or missing section is indistinguishable from "forgot to check" — if the
   mechanism is genuinely single-asset, say so explicitly with the reason.
@@ -331,4 +323,4 @@ patch form.
   when the latter is produced.**
 
 ## Context rule
-Use `research_brief.yaml`, `hypothesis_card.yaml`, `config/available_feeds.yaml`, `config/indicator_library.yaml`, `config/coin_universe.yaml`, and, when present, `campaign_record/exclusion_digest.yaml` and `artifacts/backtest_spec.yaml` (Improvement 07, config-direct-authoring flow only). Do not read other files unless explicitly required.
+Use `research_brief.yaml`, `hypothesis_card.yaml`, `config/available_feeds.yaml`, `config/indicator_library.yaml`, `config/coin_universe.yaml`, and, when present, `artifacts/tried_ideas.yaml` and `artifacts/backtest_spec.yaml` (Improvement 07, config-direct-authoring flow only). Do not read other files unless explicitly required.

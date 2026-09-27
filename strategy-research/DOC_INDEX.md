@@ -157,6 +157,19 @@ cards (queued, ranked by their 1a scores), `brief_status` open/exhausted, R2
 briefs. Design and operator decisions:
 `engineering/roadmap/E-059/S1_FINDINGS_6B.md`.
 
+### "How does the campaign stop re-running an idea it already tested?"
+→ **[`docs/USER_GUIDE.md` stage 6, item 2](docs/USER_GUIDE.md#stage-6--backtest_specification)**
+and §3 [`variant_anti_adjacency_result.yaml`](docs/USER_GUIDE.md#variant_anti_adjacency_resultyaml-per-run)
+— the exact-match repeat check (E-036 S2a, off by default:
+`orchestrator.variant_anti_adjacency_gate.enabled`). One key in
+`tools/novelty.py` (config hash, symbols, protocol timeframe + windows hash),
+looked up in `campaign_record/campaign_memory.yaml`, shared by decide-next and
+the stage-6 check (`tools/anti_adjacency_gate.py`); binary REPEAT/NOVEL, the KB
+check advisory only. The idea-writing stages see what was tried through
+[`tried_ideas.yaml`](docs/USER_GUIDE.md#tried_ideasyaml-per-run)
+(`orchestrator.exclusion_digest_input.enabled`). Design and operator decision:
+`engineering/roadmap/E-036/S1_FINDINGS_SLICE8.md`.
+
 ### "How are validated blocks combined into a composite?"
 → **[`docs/USER_GUIDE.md` §2.3 "Composition mode"](docs/USER_GUIDE.md)** —
 E-060 S3b, off by default: `orchestrator.composition_runs.enabled` (requires
