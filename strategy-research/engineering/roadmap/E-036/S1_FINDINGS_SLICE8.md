@@ -435,4 +435,10 @@ The text above is left as written; two statements in it are wrong:
   `candidate_strategy_config.json` is written, `run_loop` (F4d) injects
   `machine_constraints.significance_methodology` into that config; the trial row's
   `forecast_hash` and the S2a gate hash `candidate_strategy_config.json`. In the corpus,
-  5 of the 40 runs that have both files hash differently (`S2B_REPLAY.md` §6).
+  5 of the 40 runs that have both files hash differently (`S2B_REPLAY.md` §7), and
+  **only 2 of those 5 come from F4d** (run_048, run_060). The other 3 have other
+  causes: run_024's `candidate_strategy_config.json` was edited after the spec (its
+  `unknown` regime is `null` where the spec had a zero-weight `BuyAndHoldStrategy`
+  component), and run_036 and run_037 are forced diagnostics whose `backtest_spec.yaml`
+  has no `config` at all (the config was placed in `candidate_strategy_config.json`
+  directly).

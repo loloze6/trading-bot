@@ -409,6 +409,49 @@ def _now(recorded_at):
     return recorded_at or datetime.now(timezone.utc).isoformat()
 
 
+def protocol_component_errors(run_dir: Path, *, load) -> list:
+    """Every results[*] entry whose component_errors.count > 0, in
+    artifacts/protocol_result.yaml and (variant loop) in each
+    artifacts/variants/<id>/protocol_result.yaml -- the grid reads every
+    variant, so an error in any of them makes it meaningless. Missing
+    protocol_result.yaml, or a present but malformed component_errors block,
+    raises: an unreadable error count is not a zero one. An absent/null
+    block (component_errors off for that window) counts as none.
+
+    THE one definition (moved verbatim from
+    run_phase1_research._protocol_component_errors, E-036 S2b), shared by the
+    orchestrator's regroup_record and tools/replay_repeat_gate.py. `load` is
+    the caller's YAML reader (the orchestrator passes its load_yaml)."""
+    run_dir = Path(run_dir)
+    artifacts = run_dir / "artifacts"
+    sources = [artifacts / "protocol_result.yaml"]
+    if not sources[0].exists():
+        raise FileNotFoundError(f"{sources[0]} is missing -- cannot check component errors")
+    variants_dir = artifacts / "variants"
+    if variants_dir.exists():
+        sources += sorted(p / "protocol_result.yaml" for p in variants_dir.iterdir()
+                          if p.is_dir() and (p / "protocol_result.yaml").exists())
+    errors = []
+    for src in sources:
+        pr = load(src) or {}
+        results = pr.get("results") or []
+        if not isinstance(results, list):
+            raise ValueError(f"{src}: results is not a list ({type(results).__name__})")
+        for i, r in enumerate(results):
+            ce = r.get("component_errors") if isinstance(r, dict) else None
+            if ce is None:
+                continue
+            count = ce.get("count") if isinstance(ce, dict) else None
+            if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+                raise ValueError(f"{src}: results[{i}].component_errors is malformed ({ce!r}) "
+                                 f"-- expected {{count: <int >= 0>, samples: [...]}}")
+            if count > 0:
+                errors.append(f"{src.relative_to(run_dir).as_posix()} results[{i}] "
+                              f"({r.get('symbol')}/{r.get('window')}): "
+                              f"component_errors.count={count}")
+    return errors
+
+
 def build_fault_entry(run_dir: Path, run_id: str, component_errors: list,
                       recorded_at: str | None = None) -> dict:
     """The minimal, fault-only entry for a run with component errors. Its grid,
