@@ -943,6 +943,70 @@ def _build_stage_prompt(stage_name: str, handoff: dict, path: Path,
 # run_reader_worker) -- one constant so the two paths cannot drift.
 _CLAUDE_WORKER_MODEL = "claude-haiku-4-5"
 
+# CUL-336: see _stage_agent_options.
+_STAGE_AGENT_CWD = Path(tempfile.gettempdir()) / "strategy_research_stage_agent_cwd"
+_DISABLE_AUTO_MEMORY_ENV = "CLAUDE_CODE_DISABLE_AUTO_MEMORY"
+
+
+def _stage_agent_options() -> ClaudeAgentOptions:
+    """CUL-336 (2026-09-27): the options every Claude stage agent runs with.
+    run_claude_worker and _invoke_reader_llm both call this, and it is the
+    only ClaudeAgentOptions(...) construction in this module
+    (tests/test_cul336_closed_book_stages.py pins both), so the two paths
+    cannot drift.
+
+    Closed-book: the agent sees only its prompt (skill + handoff + the
+    handoff's input files pasted as text) and can open nothing itself. Read
+    from the installed claude_agent_sdk==0.2.82, not assumed:
+      - tools=[] -> `--tools ""`: no built-in tool exists. Before CUL-336 only
+        allowed_tools=[] was passed, which sends no flag at all (it lists the
+        tools that run WITHOUT ASKING; it does not limit which tools exist),
+        so every stage had the CLI's default tool set, and a run_060
+        validation agent Read two config files on its own
+        (engineering/roadmap/E-035/S1_FINDINGS.md section 1.2).
+      - setting_sources=[] -> `--setting-sources=`: no user/project/local
+        settings file loads, so no machine's permission allow rules apply and
+        no CLAUDE.md is loaded (the SDK loads CLAUDE.md only with "project").
+      - strict_mcp_config=True -> `--strict-mcp-config`: no MCP server from
+        any config file. MCP tools are not built-in tools, so tools=[] alone
+        does not remove them; 4 of the 5 retained SDK stage transcripts list
+        claude.ai Slack tools among the agent's deferred tools.
+      - env CLAUDE_CODE_DISABLE_AUTO_MEMORY=1 (merged by the SDK on top of
+        the inherited environment, not replacing it): the bundled CLI
+        (2.1.142) loads the auto-memory MEMORY.md behind its own gate, which
+        reads this env var, the settings key autoMemoryEnabled (absent once
+        no settings file loads, so the default -- ON -- applies) and feature
+        flags; it is NOT behind --setting-sources the way project CLAUDE.md
+        files are. Its path is keyed on the git root of the cwd, so a stage
+        launched from strategy-research/ would load the operator's own
+        session memory for this repository.
+      - cwd=_STAGE_AGENT_CWD, a neutral empty directory in the system temp
+        dir, outside any repository: no git root, so no repo-keyed memory,
+        and nothing to find even if a file tool ever came back. Nothing in a
+        stage depends on the agent's cwd -- the prompt (skill, handoff,
+        inputs) is assembled in this process from this process's own cwd.
+        One fixed directory rather than one per call: the CLI files each
+        session's transcript under ~/.claude/projects/<cwd key>/, and a
+        fresh directory per call would scatter one folder per stage call.
+      - max_turns is left unset on purpose: with no tool there is no
+        tool-result round trip, so a stage is one turn by construction, and
+        the audit log's num_turns shows it. A cap would only add a new
+        failure mode (the CLI's max-turns error result) on top of that.
+      - allowed_tools is left at its default ([]): it never removed a tool
+        (tools=[] does) and passing it changes no CLI argument.
+    A fresh object per call: ClaudeAgentOptions is a mutable dataclass.
+    What a stage needs to read reaches it through its handoff (see
+    _apply_closed_book_inputs), never through a tool."""
+    _STAGE_AGENT_CWD.mkdir(parents=True, exist_ok=True)
+    return ClaudeAgentOptions(
+        model=_CLAUDE_WORKER_MODEL,
+        tools=[],  # the option that removes tools: --tools ""
+        setting_sources=[],
+        strict_mcp_config=True,
+        env={_DISABLE_AUTO_MEMORY_ENV: "1"},
+        cwd=str(_STAGE_AGENT_CWD),
+    )
+
 
 def _usage_token_record(usage: dict) -> dict:
     """The audit_log `tokens` block for one SDK `usage` dict: raw counts, total,
@@ -982,11 +1046,11 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
     total_cost = 0.0
     num_turns = None
 
-    # We pass an empty allowed_tools list to prevent it from wandering off
-    # and strictly enforce our handoff file constraints.
+    # CUL-336: closed-book -- no tools, no settings files, no MCP servers
+    # (see _stage_agent_options). The handoff's inputs are the only context.
     async for message in query(
         prompt=full_prompt,
-        options=ClaudeAgentOptions(model=_CLAUDE_WORKER_MODEL, allowed_tools=[])
+        options=_stage_agent_options()
     ):
         # Accumulate text content from assistant messages
         if isinstance(message, AssistantMessage):
@@ -2214,6 +2278,155 @@ def _apply_b7_mandatory_inputs(stage_name: str, handoff: dict, run_dir: Path) ->
         existing_paths.add(mandatory_path)
 
 
+# CUL-336 (2026-09-27): files a stage's own SKILL.md tells it to read that no
+# handoff delivered. While stage agents had the CLI's default tools they could
+# open such files themselves (measured once: a run_060 validation agent Read
+# config/cost_model.yaml); closed-book (_stage_agent_options) they see only
+# what the prompt carries, so the files are unioned into the handoff here, the
+# same deterministic way as B7. Entries: (path relative to the run dir, kind,
+# reason); a path starting with "@" is resolved at call time
+# (_CLOSED_BOOK_DYNAMIC_PATHS). Kinds:
+#   required        tracked reference files -- a missing one is a broken
+#                   checkout and _build_stage_prompt raises.
+#   optional        run artifacts that exist on some paths only.
+#   refine_only     optional, and added only when this run is already in a
+#                   validation refine loop (artifacts/refinement_notes.yaml
+#                   exists) -- the only refine signal code has before the
+#                   stage decides; keeps the skill's minimal-context rule on a
+#                   first pass.
+#   after_backtest  required when artifacts/protocol_result.yaml records a
+#                   completed backtest (a non-empty results list), else
+#                   optional.
+# Deliberately NOT here: campaign_data_policy.yaml for validation (its skill
+# says not to read it directly; the one field it fed, sample_split_design.
+# walk_forward_range, has no code reader), and trade_diagnostics.json's
+# per-trade list (up to ~480 KB measured, runs/run_059) -- verdict_interpreter
+# gets only its summary block, which is all its skill reads
+# (_write_trade_diagnostics_summary).
+_TRADE_DIAGNOSTICS_SUMMARY_REL = "artifacts/trade_diagnostics_summary.yaml"
+_CLOSED_BOOK_QUANT_FUNDAMENTALS = (
+    "../../workflow_artifacts/skills/quant-fundamentals/SKILL.md", "required",
+    "CUL-336: this stage's skill says to read quant-fundamentals before applying its rules "
+    "or proposing a config change; it is authoritative over a conflicting skill rule.",
+)
+_CLOSED_BOOK_STAGE_INPUTS = {
+    "innovation_expansion": (
+        ("../../config/coin_universe.yaml", "required",
+         "CUL-336: skill required input (Improvement 06 asset-generalizability check -- "
+         "candidate symbols from a different category than the base instrument)."),
+    ),
+    "validation": (
+        ("../../config/cost_model.yaml", "required",
+         "CUL-336: skill Improvement 09 -- populate cost_feasibility from round_trip_cost_bps; "
+         "the single source of truth for cost numbers (implausible blocks approval)."),
+        ("artifacts/innovation_notes.yaml", "refine_only",
+         "CUL-336: skill input, needed only on a refine verdict (context for the plan); given "
+         "because this run is already in a refine loop."),
+        ("../../docs/DATA_AVAILABILITY.md", "refine_only",
+         "CUL-336: skill input, for a refine blocker about data/timeframe availability; given "
+         "because this run is already in a refine loop."),
+    ),
+    "backtest_specification": (
+        ("artifacts/innovation_notes.yaml", "optional",
+         "CUL-336: skill required input (Improvement 02 asset_diversity_audit candidate symbols)."),
+        ("../../docs/DATA_AVAILABILITY.md", "optional",
+         "CUL-336: forced-read whenever timeframe/symbol/venue differs from a prior config."),
+        ("artifacts/findings_carryover.yaml", "optional",
+         "CUL-336: if present, the parameter_bracket midpoint is mandatory for that dimension."),
+        ("artifacts/run_context.yaml", "optional",
+         "CUL-336: if present, run_type drives the skill's Replication guard."),
+        _CLOSED_BOOK_QUANT_FUNDAMENTALS,
+    ),
+    "strategy_config_authoring": (_CLOSED_BOOK_QUANT_FUNDAMENTALS,),
+    "verdict_interpreter": (
+        ("artifacts/pass_rule_evaluation.yaml", "after_backtest",
+         "CUL-336: skill REQUIRED input (K2) -- when result is PASS or FAIL, hypothesis_verdict/"
+         "lineage_routing are copy-through. Required once protocol_result.yaml records a "
+         "completed backtest."),
+        ("../../config/coin_universe.yaml", "required",
+         "CUL-336: skill input (E-026 asset stability gate; escalation target selection)."),
+        ("@campaign_state", "optional",
+         "CUL-336: skill input -- cross-run altitude history (altitude decision logic, circuit "
+         "breaker). The old ../../campaign_state.yaml path never resolved after the E-002 move."),
+        (_TRADE_DIAGNOSTICS_SUMMARY_REL, "optional",
+         "CUL-336: the summary block of this run's trade_diagnostics.json (STEP 03 trade "
+         "attribution, fee_reduction_metrics). Written by code from that file; the per-trade "
+         "list is left out (size)."),
+        _CLOSED_BOOK_QUANT_FUNDAMENTALS,
+    ),
+    "campaign_review": (_CLOSED_BOOK_QUANT_FUNDAMENTALS,),
+}
+
+
+def _closed_book_dynamic_path(token: str) -> str:
+    """Paths that follow a module-level location (patched in tests)."""
+    if token == "@campaign_state":
+        return _rel_to_run(CAMPAIGN_STATE_PATH)
+    raise ValueError(f"unknown closed-book path token {token!r}")
+
+
+def _completed_backtest(run_dir: Path) -> bool:
+    """True when artifacts/protocol_result.yaml exists and records at least
+    one backtest result -- the file is written only after a backtest ran."""
+    path = run_dir / "artifacts" / "protocol_result.yaml"
+    if not path.exists():
+        return False
+    doc = load_yaml(path)
+    return isinstance(doc, dict) and bool(doc.get("results"))
+
+
+def _write_trade_diagnostics_summary(run_dir: Path) -> None:
+    """verdict_interpreter's skill reads only the `summary` block of
+    trade_diagnostics.json (written by tools/run_protocol.py into the run dir,
+    where tools/build_reports.py also looks for it). The full file carries
+    every trade -- 481,835 bytes on runs/run_059 -- so only the summary is
+    put in front of the model, written into the run so the run keeps exactly
+    what the model was shown. Absent file: nothing written (optional input).
+    A present but malformed file raises."""
+    src = run_dir / "trade_diagnostics.json"
+    if not src.exists():
+        return
+    with open(src, encoding="utf-8") as f:
+        doc = json.load(f)
+    if not isinstance(doc, dict) or "summary" not in doc:
+        raise ValueError(f"{src} has no top-level 'summary' block")
+    save_yaml(run_dir / _TRADE_DIAGNOSTICS_SUMMARY_REL, {
+        "source": "trade_diagnostics.json (summary block only; per-trade list omitted)",
+        "summary": doc["summary"],
+    })
+
+
+def _apply_closed_book_inputs(stage_name: str, handoff: dict, run_dir: Path) -> None:
+    """Union _CLOSED_BOOK_STAGE_INPUTS[stage_name] into the handoff's
+    required_inputs/optional_inputs. A path already named keeps its entry,
+    except that required wins: a path in both lists ends up required only.
+    Always on: part of CUL-336's declared default change, no flag."""
+    entries = _CLOSED_BOOK_STAGE_INPUTS.get(stage_name)
+    if not entries:
+        return
+    if stage_name == "verdict_interpreter":
+        _write_trade_diagnostics_summary(run_dir)
+    required = handoff.setdefault("required_inputs", [])
+    optional = handoff.setdefault("optional_inputs", [])
+    in_refine_loop = (run_dir / "artifacts" / "refinement_notes.yaml").exists()
+    backtest_done = _completed_backtest(run_dir)
+    for path, kind, reason in entries:
+        if path.startswith("@"):
+            path = _closed_book_dynamic_path(path)
+        if kind == "refine_only":
+            if not in_refine_loop:
+                continue
+            kind = "optional"
+        elif kind == "after_backtest":
+            kind = "required" if backtest_done else "optional"
+        target = required if kind == "required" else optional
+        if path in {r["path"] for r in required} or path in {r["path"] for r in target}:
+            continue
+        target.append({"path": path, "reason": reason})
+    required_paths = {r["path"] for r in required}
+    optional[:] = [r for r in optional if r["path"] not in required_paths]
+
+
 # E-032 S2a: the exclusion digest as a required_input on the two stages that
 # invent content. See engineering/roadmap/E-032/EPIC.md's 2026-08-23 review
 # entry -- "E-032 is primarily an INPUT problem, not a disposition problem."
@@ -2613,7 +2826,10 @@ def _apply_exclusion_digest_input(stage_name: str, handoff: dict, run_dir: Path)
 # verdict_interpreter is outside E-032's two generating stages entirely. Both
 # are a distinct pre-existing bug in stages this epic does not own; fixing
 # them belongs to whoever owns campaign_review/verdict_interpreter next, not
-# to this story. (A structurally identical but separate defect exists in
+# to this story. [CUL-336, 2026-09-27: the verdict_interpreter template entry
+# was removed; _apply_closed_book_inputs now supplies config/coin_universe.yaml
+# and campaign_record/campaign_state.yaml to that stage. campaign_review's two
+# required stale paths are still as described here.] (A structurally identical but separate defect exists in
 # run_gemini_worker's own, un-refactored copy of the context-gathering loop:
 # it has no `else` at all, so it silently skips even a MISSING REQUIRED input
 # instead of raising. Not touched here either -- assigned_engine is "claude"
@@ -3090,12 +3306,10 @@ def _reader_feed_vocabulary() -> dict:
 async def _invoke_reader_llm(prompt: str) -> tuple:
     """One reader's LLM call. Returns (text, meta). Split out so tests can
     replace the model without touching prompt building, parsing or writing.
-    Same model constant as run_claude_worker (_CLAUDE_WORKER_MODEL)."""
+    Same options helper as run_claude_worker (_stage_agent_options, CUL-336)."""
     agent_output = ""
     usage, total_cost, num_turns = {}, 0.0, None
-    async for message in query(prompt=prompt,
-                               options=ClaudeAgentOptions(model=_CLAUDE_WORKER_MODEL,
-                                                          allowed_tools=[])):
+    async for message in query(prompt=prompt, options=_stage_agent_options()):
         if isinstance(message, AssistantMessage):
             for block in message.content:
                 if isinstance(block, TextBlock):
@@ -6832,6 +7046,9 @@ async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | 
     # B7: deterministic mandatory-inputs union (see helper docstring above).
     _apply_b7_mandatory_inputs(stage_name, handoff, RUN_DIR)
 
+    # CUL-336: closed-book stages get the files their skills tell them to read (see helper docstring above).
+    _apply_closed_book_inputs(stage_name, handoff, RUN_DIR)
+
     # E-032 S2a: exclusion-digest union, off by default (see helper docstring above).
     _apply_exclusion_digest_input(stage_name, handoff, RUN_DIR)
 
@@ -7034,7 +7251,9 @@ def _create_remaining_handoffs(run_id: str, run_dir: Path):
                  "reason": "original research question and constraints"},
             ],
             "optional_inputs": [
-                {"path": "../../campaign_state.yaml",
+                # CUL-336: was ../../campaign_state.yaml, which never resolved
+                # after the E-002 move under campaign_record/.
+                {"path": _rel_to_run(CAMPAIGN_STATE_PATH),
                  "reason": "cross-run altitude history; drives circuit-breaker altitude decisions"},
                 {"path": "../../engineering/roadmap/E-018/artifacts/near_miss_scoreboard.yaml",
                  "reason": "E-018 (2026-09-13): ranked table of past near-miss root causes -- "

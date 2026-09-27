@@ -102,6 +102,29 @@ happily without any of this, so 1a is NOT a preflight.
    `=== DRY RUN PASSED ===`. That warning was the exact cause of a later halt.
    A passing dry run with warnings is not a green light.
 
+**5. First real run after CUL-336 (stage agents closed-book, 2026-09-27).**
+   Stage agents no longer have tools, settings files or MCP servers
+   (`_stage_agent_options`, USER_GUIDE §5). On the first real run, check
+   `runs/<run_id>/pipeline_state.yaml`'s `audit_log`: every stage's
+   `num_turns` should be `1` (more than 1 means a tool round trip still
+   happened -- stop and report it). Token counts move both ways: the tool
+   schemas, CLAUDE.md files and auto-memory are gone, but several stages now
+   carry new input files (bytes added per call: validation +16.7 KB on a
+   first pass, +~21-31 KB in a refine loop; innovation_expansion +10.0 KB;
+   backtest_specification +15.8 KB plus any run artifacts present;
+   strategy_config_authoring and campaign_review +10.9 KB; verdict_interpreter
+   +~47 KB, of which campaign_state.yaml is ~25.7 KB and grows with the
+   campaign). So `tokens.cache_read`/`cache_creation` may RISE for those
+   stages; compare per stage against the input sizes above, not against a
+   blanket "lower". Stage transcripts, if you look for them, are now under
+   `~/.claude/projects/` in the folder for the neutral cwd
+   `<system temp>/strategy_research_stage_agent_cwd`, and should show no tool
+   calls. A `FileNotFoundError: Agent strictly requires ...` naming
+   `config/cost_model.yaml`, `config/coin_universe.yaml` or
+   `quant-fundamentals/SKILL.md` means a broken checkout, not a flaky stage;
+   naming `artifacts/pass_rule_evaluation.yaml` means the backtest completed
+   but C7's write failed (its own log line says so).
+
 ## 1. Launch the campaign
 
 ### 1a. Dry run first (no LLM spend, zero footprint)

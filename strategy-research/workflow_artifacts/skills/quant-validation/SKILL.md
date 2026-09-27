@@ -20,6 +20,13 @@ job; it now happens here instead of one stage later.
 - `DATA_AVAILABILITY.md` (`strategy-research/docs/DATA_AVAILABILITY.md` — read only if a
   refine blocker is about data/timeframe availability; short by design to fit this skill's
   minimal-context rule)
+- `config/cost_model.yaml` (always provided — see IMPROVEMENT 09)
+
+You cannot open files (CUL-336, 2026-09-27): only the files pasted into your
+prompt exist for you. `innovation_notes.yaml` and `DATA_AVAILABILITY.md` are
+provided only when this run is already in a refine loop (a previous validation
+of this run returned `refine`); on a first pass, write the refinement plan from
+the expanded card and your own blocking issues.
 
 ## Required outputs
 - `validation_protocol.yaml`
@@ -95,7 +102,7 @@ how the pre-backtest windows are laid out:
 
 ```yaml
 sample_split_design:
-  walk_forward_range: "<from walk_forward_extension in campaign_data_policy.yaml>"
+  walk_forward_range: null  # campaign_data_policy.yaml is not in your inputs (CUL-336); leave null unless a provided file states the range
   windows: <integer — number of walk-forward windows planned>
   window_size_bars: <integer>
   step_size_bars: <integer>

@@ -549,8 +549,10 @@ def test_manifest_files_are_read_only_by_the_flag_on_stage():
     orchestrator.config_direct_authoring; test_e056_config_direct_authoring.py
     covers the routing). Other skills -- innovation-expansion and the five
     reader skills -- do NAME the design guide in their own text, but no other
-    handoff lists it as an input and workers run with allowed_tools=[], so
-    they never receive its content (proven prompt-by-prompt below)."""
+    handoff lists it as an input and workers run closed-book (tools=[],
+    setting_sources=[] -- CUL-336; before it, allowed_tools=[] alone left the
+    CLI's default tools on), so they never receive its content (proven
+    prompt-by-prompt below)."""
     assert rpr._SKILL_MAP["strategy_config_authoring"] == "strategy-config-authoring"
     assert [s for s, k in rpr._SKILL_MAP.items() if k == "strategy-config-authoring"] == \
         ["strategy_config_authoring"]

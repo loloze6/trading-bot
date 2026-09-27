@@ -33,6 +33,12 @@ need to change:
    Even if a stage's prose said "go find something new," it has no mechanism
    to do so — it is a closed-book single-shot completion over whatever text
    was concatenated into the prompt.
+   **CORRECTED 2026-09-27 (CUL-336):** this was wrong when written. In
+   claude_agent_sdk 0.2.82 `allowed_tools=[]` sends no CLI flag; stages had the
+   CLI's default tool set and loaded the operator's settings files (a run_060
+   validation agent read two config files itself — E-035
+   `S1_FINDINGS.md` §1.2). Closed-book since CUL-336: `tools=[]`,
+   `setting_sources=[]`, `strict_mcp_config=True` (`_stage_agent_options`).
 
 The anti-adjacency gate (Task 3) is buildable today from existing fields, but
 two of its four candidate keys (`instruments_tried`, `timeframes_tried`) are

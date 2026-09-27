@@ -157,10 +157,16 @@ diagnostic layer over LIFO trade fragments — forecast-bin outcome tables,
 entry/exit component attribution, initial-entry-vs-scale-up cost comparison,
 and duration/regime cross-tabs, all tagged `basis: lifo_fragment,
 ideation_only`. It is an explicit, narrow exception to the Context rule
-below: this skill may read a specific completed run's `fragment_patterns.yaml`
+below: this skill may use a specific completed run's `fragment_patterns.yaml`
 for the sole purpose of motivating a NEW candidate hypothesis — never to
 read the campaign more broadly, and never as a substitute for
 `campaign_state.yaml`'s diagnostics_log.
+
+**You cannot open files (CUL-336, 2026-09-27).** You have no tools: you see
+only the files pasted into your prompt. No handoff of this stage delivers a
+`fragment_patterns.yaml`, so this section applies only if one appears among
+your provided context files. If none does, skip fragment-pattern ideation —
+do not describe or cite a fragment pattern you have not been given.
 
 If a pattern in `fragment_patterns.yaml` motivates a candidate hypothesis:
 - Draft it as a stub brief (`research_brief.yaml` shape, see
@@ -230,6 +236,8 @@ If a pattern in `fragment_patterns.yaml` motivates a candidate hypothesis:
 ## Context rule
 Read campaign_state.yaml and research_brief.yaml only. Do not read individual run
 artifacts — the campaign_state diagnostics_log is the summarized truth. EXCEPTION:
-a specific completed run's fragment_patterns.yaml may be read for the sole purpose
-of drafting a fragment-pattern-motivated proposed hypothesis (see that section
-above) — this does not broaden the rule to other per-run artifacts.
+a specific completed run's fragment_patterns.yaml, if it is among your provided
+context files, may be used for the sole purpose of drafting a
+fragment-pattern-motivated proposed hypothesis (see that section above) — this
+does not broaden the rule to other per-run artifacts. You cannot open any file
+yourself (CUL-336): only what is pasted into your prompt exists for you.
