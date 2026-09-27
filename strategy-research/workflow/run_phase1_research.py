@@ -1631,7 +1631,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
                         _grid_result = _vce.evaluate_grid(
                             _grid_inputs, _grid_pre_reg, _brief_for_eval, _menu,
                             composition_runs=True,
-                            **({"profit_bars_grader": _profit_bars_grid_grader(RUN_DIR)}
+                            **({"profit_bars_grader": _profit_bars_grid_grader(RUN_DIR, run_id)}
                                if _composition_mode(RUN_DIR) else {}))
                     else:
                         _grid_result = _vce.evaluate_grid(
@@ -1968,7 +1968,9 @@ async def run_tool_worker(stage_name: str, run_id: str):
             # must then hash to its code-written file (a reader patch's may not)
             _comp_strict = (base_config is not None and _canonical_json_sha256(base_config)
                             == comp_manifest["variants"]["base"]["config_sha256"])
-            _check_composition_variant(ARTIFACTS, "base", base_config, comp_manifest, _comp_strict)
+            _comp_registry = _load_block_registry_doc()  # once for every variant (fix 8)
+            _check_composition_variant(ARTIFACTS, "base", base_config, comp_manifest, _comp_strict,
+                                       _comp_registry)
         else:
             _bm = _block_manifest_module()
             manifest_path = ARTIFACTS / _bm.MANIFEST_FILENAME
@@ -2038,7 +2040,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 # E-060 S3b: code-written patches -- a mismatch is an engineering
                 # fault and raises (never a quietly not_tested variant).
                 _check_composition_variant(ARTIFACTS, variant_id, variant_config, comp_manifest,
-                                           _comp_strict)
+                                           _comp_strict, _comp_registry)
                 missing_paths = []
             else:
                 # A variant patch can still remove a BLOCK path; that variant no longer
@@ -3448,15 +3450,9 @@ def _composition_runs_enabled() -> bool:
 
 def _residual_ic_menu_entry(menu: dict) -> dict:
     """config/criterion_menu.yaml's code_added_criteria `residual_ic` entry,
-    stripped of its descriptive keys. Raises when it is missing."""
-    import copy
-    for entry in (menu or {}).get("code_added_criteria") or []:
-        if isinstance(entry, dict) and entry.get("id") == _RESIDUAL_IC_CRITERION_ID:
-            return {k: copy.deepcopy(v) for k, v in entry.items()
-                    if k not in _CODE_CRITERION_META_KEYS}
-    raise ValueError("config/criterion_menu.yaml has no code_added_criteria entry "
-                     f"{_RESIDUAL_IC_CRITERION_ID!r} -- orchestrator.composition_runs.enabled "
-                     "requires it (E-060 S2)")
+    stripped of its descriptive keys. Raises when it is missing (E-060 S3b
+    review fix 10: one reader, _code_added_criterion)."""
+    return _code_added_criterion(menu, _RESIDUAL_IC_CRITERION_ID)
 
 
 def _residual_ic_exempt_reason(run_dir: Path) -> str | None:
@@ -3626,7 +3622,8 @@ def _residual_ic_grid_inputs(per_variant_summaries: dict, run_dir: Path, protoco
 _COMPOSITION_CODE_STAGES = ("hypothesis_generation", "strategy_config_authoring",
                             "innovation_expansion")
 _PROFIT_BARS_CRITERION_ID = "profit_bars"
-_COMPOSITION_MANIFEST_FILE = "composition_manifest.yaml"
+import composition_names as _composition_names  # noqa: E402  (tools/: one definition)
+_COMPOSITION_MANIFEST_FILE = _composition_names.MANIFEST_FILENAME
 
 
 def _composition_module():
@@ -3830,14 +3827,15 @@ def _run_composition_code_stage(stage: str, run_id: str, run_dir: Path, sr_flag:
 
 
 def _check_composition_variant(artifacts: Path, variant_id: str, variant_config: dict,
-                               manifest: dict, strict_sha: bool) -> None:
+                               manifest: dict, strict_sha: bool, registry_doc: dict) -> None:
     """5a for one composition variant: check_composition_config against the
     variant's scheme, and -- for an R1 composition (strict_sha: its base is
     the code-written base) -- the variant config's canonical sha256 must equal
     the code-written file's. Raises (fail loud: the patches are code-written,
-    a mismatch is an engineering fault, never a not_tested variant)."""
+    a mismatch is an engineering fault, never a not_tested variant).
+    `registry_doc`: loaded ONCE by the caller for every variant (review fix 8)."""
     _composition_module().check_composition_config(variant_config, manifest, variant_id,
-                                                   root=ROOT, registry_doc=_load_block_registry_doc())
+                                                   root=ROOT, registry_doc=registry_doc)
     if strict_sha:
         want = manifest["variants"][variant_id]["config_sha256"]
         got = _canonical_json_sha256(variant_config)
@@ -3846,22 +3844,34 @@ def _check_composition_variant(artifacts: Path, variant_id: str, variant_config:
                                f"code-written {want} ({manifest['variants'][variant_id]['config_ref']})")
 
 
-def _profit_bars_grid_grader(run_dir: Path):
+def _profit_bars_grid_grader(run_dir: Path, run_id: str):
     """The grid's profit_bars grader (guess 9): variant_id -> branch 3's own
     grading of artifacts/variants/<id>/protocol_result.yaml
     (_grade_profit_bars_protocol_result, same bars file, same DSR context,
-    same equal-weight portfolio). Reads only; writes nothing."""
+    same equal-weight portfolio), through the SAME tested-candidate helper
+    branch 3 uses (_profit_bars_tested_candidate): a variant whose trial row
+    is invalidated_artifact is INVALIDATED -- never graded, never passing
+    (review fix 4). Each answer also carries the variant's weight schedule
+    from artifacts/composition_manifest.yaml (review fix 5: which windows used
+    estimated weights, which equal). Reads only; writes nothing."""
     bars = _load_profitability_bars()
     dsr_ctx = _promotion_dsr_context()
+    invalidated = _invalidated_trial_ids()
+    kind = "composite" if _composition_mode(Path(run_dir)) else "variant"
+    man_path = Path(run_dir) / "artifacts" / _COMPOSITION_MANIFEST_FILE
+    manifest = (load_yaml(man_path) if man_path.exists() else None) or {}
 
     def grade(variant_id: str) -> dict:
-        rel = f"artifacts/variants/{variant_id}/protocol_result.yaml"
-        pr = load_yaml(Path(run_dir) / rel)
-        if not isinstance(pr, dict):
-            raise ValueError(f"profit_bars grid cell: {rel} is not a mapping")
-        results, overall, reasons = _grade_profit_bars_protocol_result(run_dir, pr, rel, bars,
-                                                                       dsr_ctx)
-        return {"result": overall, "bars": results, "reasons": reasons}
+        cand = _profit_bars_tested_candidate(
+            Path(run_dir), variant_id, f"{run_id}:{variant_id}",
+            f"artifacts/variants/{variant_id}/protocol_result.yaml", kind, invalidated)
+        sched = ((manifest.get("variants") or {}).get(variant_id) or {}).get("weight_schedule")
+        extra = {"weight_schedule": sched} if sched is not None else {}
+        if cand["protocol_result"] is None:
+            return {"result": cand["result"], "bars": [], "reasons": [cand["reason"]], **extra}
+        results, overall, reasons = _grade_profit_bars_protocol_result(
+            Path(run_dir), cand["protocol_result"], cand["protocol_result_ref"], bars, dsr_ctx)
+        return {"result": overall, "bars": results, "reasons": reasons, **extra}
     return grade
 
 
@@ -9902,6 +9912,30 @@ def _invalidated_trial_ids() -> set:
     return {r.get("trial_id") for r in rows if isinstance(r, dict) and r.get("invalidated_artifact")}
 
 
+def _profit_bars_tested_candidate(run_dir: Path, cid: str, trial_id: str, rel: str, kind: str,
+                                  invalidated: set) -> dict:
+    """ONE tested backtest as branch 3 grades it: {kind, trial_id,
+    protocol_result_ref, protocol_result, result, reason}. A trial row marked
+    invalidated_artifact (conformance violation) is INVALIDATED -- never graded,
+    never passing. Shared by branch 3 (_profit_bars_backtest_candidates) and
+    the composition grid's profit_bars grader (_profit_bars_grid_grader), so
+    the two cannot disagree (E-060 S3b review fix 4)."""
+    if trial_id in invalidated:
+        return {"kind": kind, "trial_id": trial_id, "protocol_result_ref": None,
+                "protocol_result": None, "result": "INVALIDATED",
+                "reason": f"trial {trial_id!r} is invalidated_artifact (conformance "
+                          f"violation): not graded, never passing"}
+    if not (run_dir / rel).exists():
+        raise FileNotFoundError(
+            f"profit bars (every backtest): grid column {cid!r} has no {run_dir / rel}.")
+    pr = load_yaml(run_dir / rel)
+    if not isinstance(pr, dict):
+        raise ValueError(f"profit bars (every backtest): {rel} is not a mapping "
+                         f"({type(pr).__name__}).")
+    return {"kind": kind, "trial_id": trial_id, "protocol_result_ref": rel,
+            "protocol_result": pr, "result": None, "reason": None}
+
+
 def _profit_bars_backtest_candidates(run_dir: Path, run_id: str) -> dict:
     """The backtests THIS protocol_execution attempt produced, keyed as the grid
     keys its columns: {candidate_id: {kind, trial_id, protocol_result_ref,
@@ -9948,20 +9982,7 @@ def _profit_bars_backtest_candidates(run_dir: Path, run_id: str) -> dict:
     out: dict = {}
 
     def _tested(cid: str, trial_id: str, rel: str) -> dict:
-        if trial_id in invalidated:
-            return {"kind": kind, "trial_id": trial_id, "protocol_result_ref": None,
-                    "protocol_result": None, "result": "INVALIDATED",
-                    "reason": f"trial {trial_id!r} is invalidated_artifact (conformance "
-                              f"violation): not graded, never passing"}
-        if not (run_dir / rel).exists():
-            raise FileNotFoundError(
-                f"profit bars (every backtest): grid column {cid!r} has no {run_dir / rel}.")
-        pr = load_yaml(run_dir / rel)
-        if not isinstance(pr, dict):
-            raise ValueError(f"profit bars (every backtest): {rel} is not a mapping "
-                             f"({type(pr).__name__}).")
-        return {"kind": kind, "trial_id": trial_id, "protocol_result_ref": rel,
-                "protocol_result": pr, "result": None, "reason": None}
+        return _profit_bars_tested_candidate(run_dir, cid, trial_id, rel, kind, invalidated)
 
     if _variant_loop_enabled():
         index_path = arts / "variants" / "index.yaml"
@@ -9995,66 +10016,14 @@ def _profit_bars_backtest_candidates(run_dir: Path, run_id: str) -> dict:
     return out
 
 
-def _find_window_equity_file(run_dir: Path, window_run_id: str) -> Path | None:
-    """portfolio_states.csv of one (symbol, window) backtest. tools/run_protocol.py
-    writes it under <out_dir>/results/<window run_id>/, with out_dir = RUN_DIR
-    (variant loop off) or RUN_DIR/variants/<variant_id> (variant loop on). The
-    window run_id is unique; more than one match raises."""
-    roots = [run_dir / "results"]
-    vroot = run_dir / "variants"
-    if vroot.exists():
-        roots += [d / "results" for d in sorted(vroot.iterdir()) if d.is_dir()]
-    hits = [r / window_run_id / "portfolio_states.csv" for r in roots
-            if (r / window_run_id / "portfolio_states.csv").exists()]
-    if len(hits) > 1:
-        raise ValueError(f"equal-weight portfolio: window run {window_run_id!r} has more than one "
-                         f"portfolio_states.csv: {hits}")
-    return hits[0] if hits else None
-
-
-def _window_equity_bars(path: Path) -> dict:
-    """{timestamp (naive UTC): equity} for one (coin, window) backtest:
-    postRebalance_total_value of every bar, warm-up bars (regime NOT_READY)
-    dropped (see _portfolio_profit_metrics for how these are combined). Fails loud
-    on a missing column or a non-numeric / non-positive equity value."""
-    import csv as _csv
-    with open(path, encoding="utf-8", newline="") as f:
-        reader = _csv.DictReader(f)
-        missing = {"timestamp", "regime", "postRebalance_total_value"} - set(reader.fieldnames or [])
-        if missing:
-            raise ValueError(f"equal-weight portfolio: {path} lacks column(s) {sorted(missing)}")
-        rows = []
-        for row in reader:
-            if str(row["regime"]).strip().upper() == "NOT_READY":
-                continue
-            ts = datetime.fromisoformat(str(row["timestamp"]).strip())
-            if ts.tzinfo is not None:  # an aware stamp is bucketed by its UTC date
-                ts = ts.astimezone(timezone.utc).replace(tzinfo=None)
-            try:
-                equity = float(row["postRebalance_total_value"])
-            except (TypeError, ValueError):
-                raise ValueError(f"equal-weight portfolio: {path} has a non-numeric "
-                                 f"postRebalance_total_value at {row['timestamp']!r}")
-            if not math.isfinite(equity) or equity <= 0:
-                raise ValueError(f"equal-weight portfolio: {path} has equity {equity!r} at "
-                                 f"{row['timestamp']!r}")
-            rows.append((ts, equity))
-    rows.sort(key=lambda r: r[0])
-    return dict(rows)
-
-
-def _daily_closes(bars: dict) -> dict:
-    """{UTC date: (timestamp, equity)} -- the LAST bar of each UTC calendar day."""
-    daily: dict = {}
-    for ts in sorted(bars):
-        daily[ts.date()] = (ts, bars[ts])
-    return daily
-
-
-def _window_daily_closes(path: Path) -> dict:
-    """{UTC date: equity}: postRebalance_total_value of the LAST bar of each UTC
-    calendar day of one (coin, window) backtest, warm-up bars dropped."""
-    return {d: eq for d, (_ts, eq) in _daily_closes(_window_equity_bars(path)).items()}
+# E-060 S3b code review fix 9: the equal-weight portfolio's readers live in
+# tools/portfolio_daily.py (one definition, shared with the composition's
+# stand-alone block returns). The old names stay as aliases.
+import portfolio_daily as _pd  # noqa: E402  (tools/ is on sys.path, module top)
+_find_window_equity_file = _pd.find_window_equity_file
+_window_equity_bars = _pd.window_equity_bars
+_daily_closes = _pd.daily_closes
+_window_daily_closes = _pd.window_daily_closes
 
 
 # basis values recorded on each bar row of a flag-on evaluation, so the artifact
@@ -10063,14 +10032,7 @@ _BASIS_PORTFOLIO = "portfolio_equal_weight"
 _BASIS_PORTFOLIO_WORST_WINDOW = "portfolio_equal_weight_worst_window"
 _BASIS_WORST_COIN = "worst_coin"
 
-# Coverage floor of the equal-weight portfolio (operator-changeable; mirrored in
-# config/profitability_bars.yaml's header). Within EACH window, the UTC days on
-# which every coin has a value (the intersection) must be at least this fraction
-# of the days on which any coin has a value (the union). Below it the portfolio
-# would be judged on a thinned-out sample (one coin's data gap, or a much longer
-# warm-up on one coin, silently removes those days for all coins), so both
-# portfolio bars read NOT_EVALUABLE instead.
-PORTFOLIO_MIN_COMMON_DAY_COVERAGE = 0.9
+PORTFOLIO_MIN_COMMON_DAY_COVERAGE = _pd.PORTFOLIO_MIN_COMMON_DAY_COVERAGE  # one definition
 
 
 def _portfolio_profit_metrics(run_dir: Path, pr: dict) -> dict:
@@ -10121,53 +10083,28 @@ def _portfolio_profit_metrics(run_dir: Path, pr: dict) -> dict:
         return {"avg_daily_return": (None, reason), "max_drawdown_pct": (None, reason),
                 "not_evaluable_reason": reason}
 
-    results = pr.get("results") or []
-    if not results:
-        return _none("protocol_result has no per-window results")
-    windows: dict = {}  # window label -> {coin: {timestamp: equity}}, results order
-    for r in results:
-        if not isinstance(r, dict) or any(r.get(k) in (None, "")
-                                          for k in ("symbol", "window", "run_id")):
-            raise ValueError(f"equal-weight portfolio: protocol_result.results entry {r!r} "
-                             f"lacks symbol/window/run_id")
-        sym, win, wid = r["symbol"], r["window"], r["run_id"]
-        if sym in windows.get(win, {}):
-            raise ValueError(f"equal-weight portfolio: coin {sym!r} appears twice in window "
-                             f"{win!r}")
-        path = _find_window_equity_file(run_dir, wid)
-        if path is None:
-            return _none(f"no portfolio_states.csv for window {win!r} ({sym}, run {wid!r})")
-        windows.setdefault(win, {})[sym] = _window_equity_bars(path)
-    coin_sets = {w: frozenset(c) for w, c in windows.items()}
-    if len(set(coin_sets.values())) > 1:
-        return _none("the coin set differs between windows "
-                     f"({ {w: sorted(c, key=str) for w, c in coin_sets.items()} })")
-    coins = sorted(next(iter(coin_sets.values())), key=str)
+    # E-060 S3b code review fix 9: the readers, the common days and the daily
+    # returns come from tools/portfolio_daily.py (shared with the composition);
+    # same order of checks, same messages.
+    try:
+        windows, coins = _pd.load_windows(run_dir, pr)
+    except _pd.PortfolioNotEvaluable as exc:
+        return _none(str(exc))
 
     returns: list = []
     window_dd: dict = {}
     n_union = n_common = n_gap_steps = n_bars = 0
     for win, by_coin in windows.items():
-        daily = {c: _daily_closes(by_coin[c]) for c in coins}
-        union = set().union(*(set(d) for d in daily.values()))
-        common = sorted(set.intersection(*(set(d) for d in daily.values())))
-        coverage = len(common) / len(union) if union else 0.0
-        if len(common) < 2:
-            return _none(f"window {win!r} has {len(common)} UTC day(s) on which every coin "
-                         f"has a value; at least 2 are needed")
-        if coverage < PORTFOLIO_MIN_COMMON_DAY_COVERAGE:
-            return _none(f"window {win!r}: the {len(common)} common day(s) cover "
-                         f"{coverage:.1%} of the {len(union)} day(s) any coin has, below "
-                         f"PORTFOLIO_MIN_COMMON_DAY_COVERAGE={PORTFOLIO_MIN_COMMON_DAY_COVERAGE}")
+        try:
+            wc = _pd.window_common_curve(win, by_coin, coins)
+        except _pd.PortfolioNotEvaluable as exc:
+            return _none(str(exc))
+        daily, union, common, anchor = wc["daily"], wc["union"], wc["common"], wc["anchor"]
         n_union += len(union)
         n_common += len(common)
-        anchor = {c: daily[c][common[0]][1] for c in coins}
-        curve = [sum(daily[c][d][1] / anchor[c] for c in coins) / len(coins) for d in common]
-        for i in range(1, len(common)):
-            if (common[i] - common[i - 1]).days == 1:
-                returns.append(curve[i] / curve[i - 1] - 1.0)
-            else:
-                n_gap_steps += 1
+        rets, gaps = _pd.consecutive_daily_returns(common, wc["curve"])
+        returns.extend(r for _d, r in rets)
+        n_gap_steps += gaps
         # Drawdown on the bar-level curve, from the first-common-day close onwards.
         start_ts = max(daily[c][common[0]][0] for c in coins)
         common_bars = sorted(t for t in set.intersection(*(set(by_coin[c]) for c in coins))

@@ -1429,29 +1429,50 @@ def _evaluate_residual_ic_cell(criterion: dict, protocol_result: dict, symbol, v
 # evaluate_grid(composition_runs=True). Flag off (or no grader), the source is
 # not one of _VALID_GRID_SOURCES and the cell stays the SPEC_ERROR it always was.
 PROFIT_BARS_CRITERION_SOURCE = "profit_bars"
-_PROFIT_BARS_CELL_RESULTS = ("PASS", "FAIL")
+# The grader's own answers (branch 3's): PASS / FAIL for a graded variant,
+# INVALIDATED for a variant whose trial row is invalidated_artifact.
+_PROFIT_BARS_GRADER_RESULTS = ("PASS", "FAIL", "INVALIDATED")
+_PROFIT_BARS_CELL_RESULTS = ("PASS", "FAIL", "INCONCLUSIVE")
 
 
 def _evaluate_profit_bars_cell(criterion: dict, variant_id, grader) -> dict:
-    """One profit_bars cell: the grader's overall result for `variant_id`
-    (PASS only when every bar reads PASS; a NOT_EVALUABLE bar is not a PASS,
-    exactly as branch 3 reads it). Anything else is a SPEC_ERROR, never a
-    silent pass."""
+    """One profit_bars cell from the grader's bar rows for `variant_id`
+    (E-060 S3b review fix 1): FAIL when any bar FAILs; else INCONCLUSIVE when
+    any bar is NOT_EVALUABLE (a missing input is not a measured failure) or
+    the variant is INVALIDATED (never graded); else PASS -- which is exactly
+    branch 3's PASS (every bar PASS), so the grid and the branch-3 stop agree.
+    Anything else is a SPEC_ERROR, never a silent pass."""
     cid = criterion.get("id")
     if grader is None:
         return {"result": "SPEC_ERROR",
                 "reason": f"criterion {cid!r}: source={PROFIT_BARS_CRITERION_SOURCE!r} needs the "
                           f"profit-bars grader (composition runs only)"}
     graded = grader(variant_id)
-    result = graded.get("result") if isinstance(graded, dict) else None
-    if result not in _PROFIT_BARS_CELL_RESULTS:
+    overall = graded.get("result") if isinstance(graded, dict) else None
+    if overall not in _PROFIT_BARS_GRADER_RESULTS:
         return {"result": "SPEC_ERROR",
-                "reason": f"criterion {cid!r}: the profit-bars grader returned {result!r} for "
-                          f"{variant_id!r}, not one of {_PROFIT_BARS_CELL_RESULTS}"}
+                "reason": f"criterion {cid!r}: the profit-bars grader returned {overall!r} for "
+                          f"{variant_id!r}, not one of {_PROFIT_BARS_GRADER_RESULTS}"}
+    bars = graded.get("bars") or []
+    bar_results = [b.get("result") for b in bars if isinstance(b, dict)]
+    if overall == "INVALIDATED":
+        result = "INCONCLUSIVE"
+    elif "FAIL" in bar_results:
+        result = "FAIL"
+    elif "NOT_EVALUABLE" in bar_results:
+        result = "INCONCLUSIVE"
+    elif overall == "PASS" and bar_results and set(bar_results) == {"PASS"}:
+        result = "PASS"
+    else:
+        return {"result": "SPEC_ERROR",
+                "reason": f"criterion {cid!r}: grader result {overall!r} disagrees with its bar "
+                          f"rows {bar_results} for {variant_id!r}"}
     reasons = list(graded.get("reasons") or [])
-    return {"result": result, "source": PROFIT_BARS_CRITERION_SOURCE,
-            "bars": graded.get("bars") or [],
-            "reason": "; ".join(reasons) if reasons else None}
+    cell = {"result": result, "source": PROFIT_BARS_CRITERION_SOURCE, "bars": bars,
+            "reason": "; ".join(str(r) for r in reasons) if reasons else None}
+    if "weight_schedule" in graded:
+        cell["weight_schedule"] = graded["weight_schedule"]
+    return cell
 
 
 def _dominant_cell_result(results: list) -> str:

@@ -91,14 +91,22 @@ def _with_comp(inputs, blocks, revision=None):
     return inputs
 
 
-def _equity_csv(path: Path, days=40, seed=0, t0="2020-01-01", not_ready=5):
+def _equity_csv(path: Path, days=40, seed=0, t0="2020-01-01", not_ready=5, bars=True):
+    """portfolio_states.csv, plus (bars=True) a bars.csv next to it whose
+    forecast leads the next bar's move (so a residual IC is measurable)."""
     rng = random.Random(seed)
     eq, lines = 10000.0, ["timestamp,regime,postRebalance_total_value"]
+    close, blines = 100.0, ["timestamp,close,forecast"]
     for i, t in enumerate(pd.date_range(t0, periods=days * 24, freq="h")):
         eq *= 1.0 + rng.gauss(0.0, 0.002)
         lines.append(f"{t.isoformat()},{'NOT_READY' if i < not_ready else 'unknown'},{eq:.6f}")
+        f = rng.gauss(0.0, 1.0)
+        blines.append(f"{t.isoformat()},{close:.6f},{f:.6f}")
+        close *= 1.0 + 0.002 * f + rng.gauss(0.0, 0.002)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    if bars:
+        (path.parent / "bars.csv").write_text("\n".join(blines) + "\n", encoding="utf-8")
 
 
 def _validating_run(root: Path, block: dict, days=40, windows=("2020-01", "2020-03"),
@@ -117,7 +125,26 @@ def _validating_run(root: Path, block: dict, days=40, windows=("2020-01", "2020-
     path = root / "runs" / run / "artifacts" / "variants" / "base" / "protocol_result.yaml"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(yaml.safe_dump(pr), encoding="utf-8")
+    # the residual-IC basis recorded at registration (S2): no composite yet
+    (root / "runs" / run / "artifacts" / "residual_ic.yaml").write_text(yaml.safe_dump(
+        {"timeframe": "1h", "timeframe_category": "low", "skipped": None,
+         "composite": {"kind": "none", "cache_dir": None}, "variants": {}}), encoding="utf-8")
     return pr
+
+
+def _written(tmp_path, window_starts=None, prior_ic=None, rets=None):
+    """Code-written composition from the S3a fixture registry (per-window
+    weights: window 1 equal, window 2 estimated -- review fix 5)."""
+    from test_e060_s3a_composition import WINDOW_STARTS, _prior_ic_from_registry
+    doc = _registry(tmp_path)
+    out = tmp_path / "campaign_record" / "compositions" / "c1"
+    m = comp.write_composition_variants(
+        doc, "1h", out, root=tmp_path, daily_returns_by_block=rets or _rets_for(doc),
+        window_starts=window_starts or WINDOW_STARTS,
+        prior_ic=prior_ic or _prior_ic_from_registry, enabled=True)
+    cfgs = {vid: json.loads((out / f"{vid}.json").read_text(encoding="utf-8"))
+            for vid in ("base", "vol_scaled", "ic_weighted")}
+    return doc, m, cfgs
 
 
 # ---------------------------------------------------------------------------
@@ -291,7 +318,7 @@ def test_r1_records_match_the_schema():
 
 
 # ---------------------------------------------------------------------------
-# 3. The stand-alone daily-returns loader
+# 3. The stand-alone daily-returns loader (review fix 9: one shared helper)
 # ---------------------------------------------------------------------------
 
 def test_loader_reads_the_validating_run_and_matches_the_profit_bars_portfolio(tmp_path):
@@ -300,15 +327,27 @@ def test_loader_reads_the_validating_run_and_matches_the_profit_bars_portfolio(t
     pr = _validating_run(tmp_path, block)
     rets = comp.load_block_daily_returns(block, root=tmp_path)
     assert len(rets) == 2 * 39  # 2 windows x (40 common days - 1)
+    assert all(isinstance(d, type(pd.Timestamp("2020-01-01").date())) for d, _r in rets)
     run_dir = tmp_path / "runs" / block["validated_by_run"]
     avg = rpr._portfolio_profit_metrics(run_dir, pr)["avg_daily_return"][0]
-    assert round(statistics.mean(rets), 8) == avg
-    assert comp.PORTFOLIO_MIN_COMMON_DAY_COVERAGE == rpr.PORTFOLIO_MIN_COMMON_DAY_COVERAGE
+    assert round(statistics.mean(r for _d, r in rets), 8) == avg
+
+
+def test_one_daily_returns_helper_shared_by_profit_bars_and_composition():
+    """Review fix 9: no second copy of the readers or the coverage floor."""
+    import portfolio_daily as pd_
+    assert rpr._window_equity_bars is pd_.window_equity_bars
+    assert rpr._find_window_equity_file is pd_.find_window_equity_file
+    assert rpr._daily_closes is pd_.daily_closes
+    assert rpr.PORTFOLIO_MIN_COMMON_DAY_COVERAGE is pd_.PORTFOLIO_MIN_COMMON_DAY_COVERAGE
+    assert not hasattr(comp, "PORTFOLIO_MIN_COMMON_DAY_COVERAGE")
+    src = (_SR / "tools" / "composition.py").read_text(encoding="utf-8")
+    assert '"variants" / vid / "results"' not in src and "portfolio_states.csv\"" not in src
 
 
 @pytest.mark.parametrize("break_it, needle", [
     ("no_protocol_result", "protocol_result.yaml is missing"),
-    ("no_equity", "portfolio_states.csv is missing"),
+    ("no_equity", "no portfolio_states.csv"),
     ("short", "at least 30"),
     ("bad_ref", "is not"),
     ("changed_config", "changed after it was validated"),
@@ -342,18 +381,82 @@ def test_loader_fails_loud(tmp_path, break_it, needle):
 
 
 # ---------------------------------------------------------------------------
-# 4. Code-written variants + the 5a check
+# 3b. No lookahead in the weights (review fix 5)
 # ---------------------------------------------------------------------------
 
-def _written(tmp_path):
-    doc = _registry(tmp_path)
-    out = tmp_path / "campaign_record" / "compositions" / "c1"
-    m = comp.write_composition_variants(doc, "1h", out, root=tmp_path,
-                                        daily_returns_by_block=_rets_for(doc), enabled=True)
-    cfgs = {vid: json.loads((out / f"{vid}.json").read_text(encoding="utf-8"))
-            for vid in ("base", "vol_scaled", "ic_weighted")}
-    return doc, m, cfgs
+def _perturbed_after(rets, cut):
+    """The same series with every return dated on/after `cut` replaced."""
+    import random as _r
+    rng = _r.Random(7)
+    return {b: [(d, r if d < cut else rng.gauss(0.0, 0.5)) for d, r in v] for b, v in rets.items()}
 
+
+def test_vol_weights_of_a_window_ignore_data_inside_and_after_it(tmp_path):
+    doc = _registry(tmp_path)
+    rets = _rets_for(doc)  # 60 daily returns from 2020-01-01
+    blocks = doc["blocks"]
+    starts = ["2020-01-01", "2020-02-15", "2020-03-15"]
+    cut = pd.Timestamp("2020-02-15").date()
+    a = comp.window_weight_schedule("vol_scaled", blocks, starts, daily_returns_by_block=rets)
+    b = comp.window_weight_schedule("vol_scaled", blocks, starts,
+                                    daily_returns_by_block=_perturbed_after(rets, cut))
+    # windows starting on/before the cut: identical -- data inside/after never used
+    assert a[:2] == b[:2]
+    assert a[2] != b[2]  # a later window does see the changed (now past) data
+    # the first window has no prior data: equal weights, recorded as not estimated
+    assert a[0]["basis"]["estimated"] is False and a[0]["weights"] == comp.equal_weights(
+        [x["block_id"] for x in blocks])
+    assert a[1]["basis"]["estimated"] is True and a[1]["basis"]["data_before"] == "2020-02-15"
+    assert a[1]["basis"]["n_daily_returns"] == {x["block_id"]: 45 for x in blocks}
+
+
+def test_ic_weights_ask_only_for_data_before_each_window(tmp_path):
+    doc = _registry(tmp_path)
+    asked = []
+
+    def prior_ic(block, d):
+        asked.append((block["block_id"], d))
+        return {"value": 0.02 if block["block_id"].startswith("H-0") else 0.01, "n_eff": 40}
+    sched = comp.window_weight_schedule("ic_weighted", doc["blocks"], ["2020-03-15", "2020-01-01"],
+                                        prior_ic=prior_ic)
+    assert [e["from"] for e in sched] == ["2020-01-01", "2020-03-15"]
+    assert sorted({d for _b, d in asked}) == [pd.Timestamp("2020-01-01").date(),
+                                               pd.Timestamp("2020-03-15").date()]
+    assert sched[0]["weights"]["H-0:run_900"] == pytest.approx(2 / 3)
+
+
+def test_prior_residual_ic_uses_only_bars_realised_before_the_window(tmp_path):
+    doc = _registry(tmp_path)
+    block = doc["blocks"][0]
+    _validating_run(tmp_path, block, windows=("2020-01", "2020-03"))
+    before = pd.Timestamp("2020-02-20").date()
+    a = comp.load_block_prior_residual_ic(block, before, root=tmp_path, timeframe="1h")
+    # rewrite every bar of the LATER window: the measurement before it cannot move
+    for p in (tmp_path / "runs" / block["validated_by_run"] / "variants" / "base" /
+              "results").glob("*2020-03/bars.csv"):
+        df = pd.read_csv(p)
+        df["forecast"] = -df["forecast"] * 3.0
+        df.to_csv(p, index=False)
+    b = comp.load_block_prior_residual_ic(block, before, root=tmp_path, timeframe="1h")
+    assert a == b and a["n_bars"] > 0
+    full = comp.load_block_prior_residual_ic(block, pd.Timestamp("2020-06-01").date(),
+                                             root=tmp_path, timeframe="1h")
+    assert full["n_bars"] > a["n_bars"]
+
+
+def test_engine_config_carries_the_window_schedule_and_equal_static_weights(tmp_path):
+    _doc, m, cfgs = _written(tmp_path)
+    reg = _reg(cfgs["vol_scaled"])
+    assert {b["weight"] for b in reg["blocks"]} == {0.5}
+    assert [e["from"] for e in reg["weight_schedule"]] == ["2020-01-01", "2020-03-15"]
+    assert "weight_schedule" not in _reg(cfgs["base"])
+    for e in m["variants"]["vol_scaled"]["weight_schedule"]:
+        assert "estimated" in e["basis"]
+
+
+# ---------------------------------------------------------------------------
+# 4. Code-written variants + the 5a check
+# ---------------------------------------------------------------------------
 
 def test_variant_patches_rebuild_the_code_written_configs_exactly(tmp_path):
     import json_pointer as jp
@@ -363,14 +466,14 @@ def test_variant_patches_rebuild_the_code_written_configs_exactly(tmp_path):
     for v in patches["variants"]:
         built = jp.apply_json_pointer_patch(cfgs["base"], v["patch"])
         assert dn.config_sha256(built) == m["variants"][v["variant_id"]]["config_sha256"]
-        assert all(p["path"].endswith("/weight") for p in v["patch"])
+        assert all(p["path"].endswith(("/weight", "/weight_schedule")) for p in v["patch"])
 
 
 def test_5a_check_passes_each_variant_on_its_own_scheme_only(tmp_path):
     doc, m, cfgs = _written(tmp_path)
     for vid, cfg in cfgs.items():
         comp.check_composition_config(cfg, m, vid, root=tmp_path, registry_doc=doc)
-    with pytest.raises(comp.CompositionError, match="weights differ"):
+    with pytest.raises(comp.CompositionError, match="weight_schedule"):
         comp.check_composition_config(cfgs["base"], m, "vol_scaled", root=tmp_path,
                                       registry_doc=doc)
 
@@ -396,6 +499,14 @@ def _reg(cfg):
     (lambda c: c["regime_detector"].__setitem__("default_regime", "chop"), "ungated"),
     (lambda c: c["strategies"]["regimes"].__setitem__("chop", {"components": []}), "carry"),
     (lambda c: _reg(c)["blocks"][0].__setitem__("weight", -0.5), "positive finite"),
+    # review fix 7: the scaffolding
+    (lambda c: c.__setitem__("aux_feeds", ["funding_rate"]), "aux_feeds"),
+    (lambda c: c["strategies"].__setitem__("warmup", 51), "outside its scaffolding"),
+    (lambda c: c["strategies"].__setitem__("min_allocation_change", 0.3), "min_allocation_change"),
+    (lambda c: c.__setitem__("significance_methodology", "x"), "outside its scaffolding"),
+    (lambda c: _reg(c).__setitem__("weight_schedule",
+                                   [{"from": "2020-01-01", "weights": {"b0": 1.0, "b1": 1.0}}]),
+     "weight_schedule"),
 ])
 def test_5a_check_fails_loud(tmp_path, mutate, needle):
     doc, m, cfgs = _written(tmp_path)
@@ -403,6 +514,16 @@ def test_5a_check_fails_loud(tmp_path, mutate, needle):
     mutate(cfg)
     with pytest.raises(comp.CompositionError, match=needle):
         comp.check_composition_config(cfg, m, "base", root=tmp_path, registry_doc=doc)
+
+
+def test_5a_check_refuses_a_manifest_whose_pointers_do_not_match_its_components(tmp_path):
+    """Review fix 7: a missing config_paths entry raises instead of zip()
+    silently checking fewer pointers."""
+    doc, m, cfgs = _written(tmp_path)
+    m2 = copy.deepcopy(m)
+    m2["blocks"][0]["config_paths"] = []
+    with pytest.raises(comp.CompositionError, match="one to one"):
+        comp.check_composition_config(cfgs["base"], m2, "base", root=tmp_path, registry_doc=doc)
 
 
 def test_5a_check_refuses_a_block_missing_from_the_registry(tmp_path):
@@ -422,46 +543,102 @@ def test_5a_check_allows_a_reader_patch_to_a_component_parameter(tmp_path):
     comp.check_composition_config(cfg, m, "base", root=tmp_path, registry_doc=doc)
 
 
+def test_5a_builds_each_blocks_source_once_per_process(tmp_path, monkeypatch):
+    """Review fix 8: three variants x two blocks -> two source builds."""
+    doc, m, cfgs = _written(tmp_path)
+    comp._ASSEMBLED.clear()
+    calls = []
+    real = comp._assemble_block
+    monkeypatch.setattr(comp, "_assemble_block", lambda *a: calls.append(a[1]) or real(*a))
+    for vid, cfg in cfgs.items():
+        comp.check_composition_config(cfg, m, vid, root=tmp_path, registry_doc=doc)
+    assert sorted(calls) == ["b0", "b1"]
+
+
 # ---------------------------------------------------------------------------
 # 5. profit_bars grading in the grid
 # ---------------------------------------------------------------------------
 
+def _bars(*results):
+    return [{"name": f"bar{i}", "result": r} for i, r in enumerate(results)]
+
+
 def test_profit_bars_cell_is_the_graders_result():
     crit = rpr._code_added_criterion(REAL_MENU, "profit_bars")
     pre = {"pass_rule": {"criteria": [crit]}}
-    graded = {"base": {"result": "PASS", "bars": [{"name": "sharpe_min", "result": "PASS"}],
-                       "reasons": []},
-              "vol_scaled": {"result": "FAIL", "bars": [], "reasons": ["sharpe_min: FAIL"]}}
+    graded = {"base": {"result": "PASS", "bars": _bars("PASS", "PASS"), "reasons": []},
+              "vol_scaled": {"result": "FAIL", "bars": _bars("FAIL", "PASS"),
+                             "reasons": ["sharpe_min: FAIL"]}}
     out = vce.evaluate_grid({v: {"results": []} for v in graded}, pre, {}, REAL_MENU,
                             composition_runs=True, profit_bars_grader=lambda v: graded[v])
     assert out["result"] == "GRID_EVALUATED" and out["idea_status"] == "refuted"
     assert out["grid"]["profit_bars"]["base"]["result"] == "PASS"
     assert out["grid"]["profit_bars"]["vol_scaled"]["reason"] == "sharpe_min: FAIL"
-    # all pass -> validated; a grader answer that is not PASS/FAIL -> SPEC_ERROR; no grader
     out = vce.evaluate_grid({"base": {}}, pre, {}, REAL_MENU, composition_runs=True,
                             profit_bars_grader=lambda v: graded["base"])
     assert out["idea_status"] == "validated"
-    for grader in (lambda v: {"result": "NOT_EVALUABLE"}, None):
+    for grader in (lambda v: {"result": "NOT_EVALUABLE"}, None,
+                   lambda v: {"result": "PASS", "bars": _bars("PASS", "FAIL")}):
         out = vce.evaluate_grid({"base": {}}, pre, {}, REAL_MENU, composition_runs=True,
                                 profit_bars_grader=grader)
         assert out["result"] == "SPEC_ERROR" and out["idea_status"] is None
 
 
+def test_not_evaluable_bar_is_inconclusive_never_fail():
+    """Review fix 1: a missing input (NOT_EVALUABLE) is not a measured failure."""
+    crit = rpr._code_added_criterion(REAL_MENU, "profit_bars")
+    pre = {"pass_rule": {"criteria": [crit]}}
+    g = {"result": "FAIL", "bars": _bars("PASS", "NOT_EVALUABLE"), "reasons": ["dsr: NOT_EVALUABLE"]}
+    out = vce.evaluate_grid({"base": {}}, pre, {}, REAL_MENU, composition_runs=True,
+                            profit_bars_grader=lambda v: g)
+    assert out["grid"]["profit_bars"]["base"]["result"] == "INCONCLUSIVE"
+    assert out["idea_status"] == "inconclusive"
+    g2 = {"result": "FAIL", "bars": _bars("FAIL", "NOT_EVALUABLE"), "reasons": []}
+    out = vce.evaluate_grid({"base": {}}, pre, {}, REAL_MENU, composition_runs=True,
+                            profit_bars_grader=lambda v: g2)
+    assert out["grid"]["profit_bars"]["base"]["result"] == "FAIL"
+
+
+def test_grid_grader_and_branch_3_share_the_invalidation_rule(monkeypatch):
+    """Review fix 4: an invalidated trial is never graded by either -- the
+    grid cell is INCONCLUSIVE, branch 3's candidate INVALIDATED."""
+    run_id = "run_790"
+    run_dir = rpr.ROOT / "runs" / run_id
+    (run_dir / "artifacts" / "variants" / "base").mkdir(parents=True)
+    rpr.save_yaml(run_dir / "artifacts" / "variants" / "base" / "protocol_result.yaml",
+                  {"results": [], "per_symbol_summary": {}})
+    rpr.save_yaml(run_dir / "artifacts" / "grid_evaluation.yaml", {"variants": ["base"]})
+    rpr.save_yaml(run_dir / "artifacts" / "variants" / "index.yaml",
+                  {"variants": {"base": {"status": "validated"}}})
+    monkeypatch.setattr(rpr, "_invalidated_trial_ids", lambda: {f"{run_id}:base"})
+    monkeypatch.setattr(rpr, "_load_profitability_bars", lambda *a: {})
+    monkeypatch.setattr(rpr, "_promotion_dsr_context", lambda: {})
+    monkeypatch.setattr(rpr, "_variant_loop_enabled", lambda: True)
+    graded = rpr._profit_bars_grid_grader(run_dir, run_id)("base")
+    assert graded["result"] == "INVALIDATED"
+    b3 = rpr._profit_bars_backtest_candidates(run_dir, run_id)["base"]
+    assert b3["result"] == "INVALIDATED"
+    crit = rpr._code_added_criterion(REAL_MENU, "profit_bars")
+    out = vce.evaluate_grid({"base": {}}, {"pass_rule": {"criteria": [crit]}}, {}, REAL_MENU,
+                            composition_runs=True, profit_bars_grader=lambda v: graded)
+    assert out["grid"]["profit_bars"]["base"]["result"] == "INCONCLUSIVE"
+
+
 # ---------------------------------------------------------------------------
-# 6. 7.5 -- a reader patch from a composition run is accepted
+# 6. 7.5 -- a reader patch from a composition run (review fixes 3 and 6)
 # ---------------------------------------------------------------------------
 
-def _composition_source(tmp_path, ptrs_ok=True):
+def _composition_source(tmp_path, field="params.period", delta=2):
     from test_e059_s2a_decide_next import _patch
-    _doc, m, cfgs = _written(tmp_path)
-    if not ptrs_ok:
-        m = copy.deepcopy(m)
-        m["blocks"][0]["config_paths"] = ["/strategies/regimes/unknown/components/9"]
-    period = _reg(cfgs["base"])["components"][0]["params"]["period"]
-    p = _patch("profitability-run_061-1", component_id="b0__sig", field="params.period",
-               before=period, after=period + 2)
+    doc, m, cfgs = _written(tmp_path)
+    before = _reg(cfgs["base"])["components"][0]
+    for part in field.split("."):
+        before = before[part]
+    p = _patch("profitability-run_061-1", component_id="b0__sig", field=field,
+               before=before, after=before + delta)
     inputs = _one_source([p], config=cfgs["base"], manifest=None)
     inputs["runs"]["run_061"]["composition_manifest"] = m
+    inputs["runs"]["run_061"]["composition_check"] = dn._composition_checker(tmp_path, doc, m)
     return inputs, m, cfgs
 
 
@@ -483,11 +660,34 @@ def test_patch_on_a_composition_is_feasible_with_its_composition_manifest(tmp_pa
         _reg(cfgs["base"])["components"][0]["params"]["period"] + 2
 
 
-def test_patch_on_a_composition_with_unresolved_manifest_paths_is_infeasible(tmp_path):
-    inputs, _m, _c = _composition_source(tmp_path, ptrs_ok=False)
+@pytest.mark.parametrize("field, delta", [("lookback", 5), ("weight", 1.0)])
+def test_patch_that_breaks_the_composition_check_is_infeasible(tmp_path, field, delta):
+    """Review fix 3: the same check as 1b/5a, not a pointer check."""
+    inputs, _m, _c = _composition_source(tmp_path, field=field, delta=delta)
+    c = _by_id(_decide(inputs))["profitability-run_061-1"]
+    reasons = c["gates"]["feasibility"]["reasons"]
+    if field == "weight":  # a component weight inside a block is its part weight: allowed
+        assert c["eligible"] is True, reasons
+    else:
+        assert c["eligible"] is False
+        assert any(r.startswith("composition_check_failed") and "lookback" in r for r in reasons)
+
+
+def test_flag_off_a_composite_patch_is_infeasible_never_a_crash(campaign_root):
+    """Review fix 6: with the flag off decide-next never reads a composition
+    manifest -- the patch is source_manifest_missing."""
+    from test_e059_s2a_decide_next import _stage_flag_on_source, _patch
+    run_dir = _stage_flag_on_source(campaign_root, [_patch("profitability-run_061-1")])
+    (run_dir / "artifacts" / "block_manifest.yaml").unlink()
+    (run_dir / "artifacts" / "composition_manifest.yaml").write_text(
+        yaml.safe_dump({"kind": "composition"}), encoding="utf-8")
+    root = campaign_root["root"]
+    queue = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))
+    inputs = dn.load_inputs(root, queue, categories=["profitability"], known_classes=None)
+    assert "composition_manifest" not in inputs["runs"]["run_061"]
     c = _by_id(_decide(inputs))["profitability-run_061-1"]
     assert c["eligible"] is False
-    assert any(r.startswith("manifest_unresolved") for r in c["gates"]["feasibility"]["reasons"])
+    assert c["gates"]["feasibility"]["reasons"][0].startswith("source_manifest_missing")
 
 
 def test_a_run_with_neither_manifest_is_still_source_manifest_missing(tmp_path):
@@ -495,6 +695,130 @@ def test_a_run_with_neither_manifest_is_still_source_manifest_missing(tmp_path):
     c = _by_id(_decide(_one_source([_patch("profitability-run_061-1")], manifest=None)))
     assert c["profitability-run_061-1"]["gates"]["feasibility"]["reasons"][0].startswith(
         "source_manifest_missing")
+
+
+def test_a_failed_7_5_run_is_composition_failed_whatever_its_origin(campaign_root, monkeypatch):
+    """Review fix 3: a reader patch on a composite (origin reader) that fails
+    at 1b/5a pauses as composition_failed, never quarantined."""
+    root = campaign_root["root"]
+    _write_flags(root, **FLAT_COMP_ON)
+    cfg = yaml.safe_load((root / "config" / "campaign_config.yaml").read_text(encoding="utf-8"))
+    cfg["orchestrator"]["halt_policy"] = {"quarantine_enabled": True}
+    (root / "config" / "campaign_config.yaml").write_text(yaml.safe_dump(cfg), encoding="utf-8")
+    monkeypatch.setattr(rpr, "run_loop", lambda run_id: None)
+    run_dir = _write_fresh_scaffold(campaign_root["runs_dir"], "run_071", status="failed",
+                                    pending_stage="backtest_specification",
+                                    last_error="5a: weights differ")
+    rpr.save_yaml(run_dir / "artifacts" / "research_brief.yaml",
+                  {"candidate": {"composition": {"manifest_ref": "x"}}})
+    e = dict(_entry("run_071", "profitability-run_061-1"), origin="reader", source="agent")
+    _save_queue_entries(campaign_root["queue_path"], [e])
+    _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_071"], trial_sharpes=[])
+    assert camp.process_once() is False
+    after = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))["queue"][0]
+    assert after["status"] == "paused:composition_failed"
+    assert "QUARANTINE" not in (root / "campaign_log.md").read_text(encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# 6b. R1: inconclusive re-fire and preparation failures (review fixes 1, 2)
+# ---------------------------------------------------------------------------
+
+def _inconclusive_setup(not_eval, graded_basis, now_basis, attempts=1):
+    blocks = [_blk("A1"), _blk("A2")]
+    base = dn.composition_entry_id("1h", cc.composite_registry_hash(blocks))
+    ids = [dn.composition_attempt_id(base, n) for n in range(1, attempts + 1)]
+    inputs = _with_comp(_one_source([]), blocks)
+    inputs["queue"] = {"queue": [{"id": i, "status": "done", "outcome": "inconclusive",
+                                  "origin": "composition", "run_ids": ["run_x"]} for i in ids]}
+    inputs["composition"]["inconclusive"] = {ids[-1]: {"not_evaluable": not_eval,
+                                                       "dsr_basis": graded_basis}}
+    inputs["composition"]["dsr_basis"] = now_basis
+    return inputs, base
+
+
+def test_inconclusive_for_want_of_trials_refires_once_the_ledger_has_them():
+    inputs, base = _inconclusive_setup(["deflated_sharpe_threshold"],
+                                       {"n_dsr_total": 1, "n_trials": 1},
+                                       {"n_dsr_total": 5, "n_trials": 4})
+    rec, r1 = _r1(inputs)
+    assert r1["fired"] is True and r1["entry_id"] == f"{base}-a2"
+    assert "ledger now has" in r1["timeframes"][0]["reason"]
+    assert rec["picked"]["composition"] == f"{base}-a2"
+
+
+@pytest.mark.parametrize("not_eval, graded, now", [
+    (["deflated_sharpe_threshold"], {"n_dsr_total": 1, "n_trials": 1},
+     {"n_dsr_total": 1, "n_trials": 1}),                      # ledger unchanged: wait
+    (["avg_daily_return_min"], {"n_dsr_total": 1, "n_trials": 1},
+     {"n_dsr_total": 9, "n_trials": 9}),                      # a property of its own data
+    (["deflated_sharpe_threshold"], {"n_dsr_total": 5, "n_trials": 5},
+     {"n_dsr_total": 9, "n_trials": 9}),                      # trials were not what was missing
+])
+def test_inconclusive_never_refires_on_unchanged_inputs(not_eval, graded, now):
+    inputs, _base = _inconclusive_setup(not_eval, graded, now)
+    _rec, r1 = _r1(inputs)
+    assert r1["fired"] is False and r1["timeframes"][0]["status"] == "fired_before"
+    assert r1["timeframes"][0]["reason"]
+
+
+def test_a_refired_attempt_is_itself_never_rerun_while_outstanding():
+    inputs, base = _inconclusive_setup(["deflated_sharpe_threshold"],
+                                       {"n_dsr_total": 1, "n_trials": 1},
+                                       {"n_dsr_total": 5, "n_trials": 5}, attempts=2)
+    inputs["queue"]["queue"][-1]["status"] = "ready"
+    _rec, r1 = _r1(inputs)
+    assert r1["fired"] is False and r1["timeframes"][0]["status"] == "fired_before"
+
+
+def test_an_unresolved_failure_row_marks_the_block_set_as_fired():
+    blocks = [_blk("A1"), _blk("A2")]
+    h = cc.composite_registry_hash(blocks)
+    inputs = _with_comp(_one_source([]), blocks)
+    inputs["composition"]["failures"] = [{"registry_hash": h, "entry_id": "x", "reason": "r",
+                                          "resolved": False}]
+    _rec, r1 = _r1(inputs)
+    assert r1["fired"] is False and r1["timeframes"][0]["status"] == "failed_before"
+    inputs["composition"]["failures"][0]["resolved"] = True
+    _rec, r1 = _r1(inputs)
+    assert r1["fired"] is True
+    # a new block-set revision fires regardless of an old failure
+    inputs["composition"]["failures"][0]["resolved"] = False
+    inputs = _with_comp(inputs, blocks + [_blk("A3")], revision=3)
+    inputs["composition"]["failures"] = [{"registry_hash": h, "entry_id": "x", "reason": "r",
+                                          "resolved": False}]
+    _rec, r1 = _r1(inputs)
+    assert r1["fired"] is True
+
+
+def test_record_composition_failure_is_locked_append_only(tmp_path):
+    path = tmp_path / "campaign_record" / "compositions.yaml"
+    row = comp.record_composition_failure(path, registry_hash="h", timeframe="1h",
+                                          entry_id="e1", reason="boom", enabled=True)
+    assert row["resolved"] is False
+    comp.record_composition_failure(path, registry_hash="h", timeframe="1h", entry_id="e1",
+                                    reason="again", enabled=True)
+    rows = comp.load_composition_failures(path)
+    assert [r["reason"] for r in rows] == ["boom"]
+    assert cc.load_compositions(path) == []
+    with pytest.raises(comp.CompositionError, match="composition_runs is off"):
+        comp.record_composition_failure(path, registry_hash="h", timeframe="1h", entry_id="e2",
+                                        reason="x", enabled=False)
+
+
+# ---------------------------------------------------------------------------
+# 6c. One definition of each shared name (review fix 10)
+# ---------------------------------------------------------------------------
+
+def test_single_constants():
+    import composition_names as names
+    assert comp.MANIFEST_FILENAME is names.MANIFEST_FILENAME
+    assert dn.COMPOSITION_MANIFEST_FILE is names.MANIFEST_FILENAME
+    assert rpr._COMPOSITION_MANIFEST_FILE is names.MANIFEST_FILENAME
+    assert dn.ORIGIN_COMPOSITION is names.ORIGIN_COMPOSITION
+    assert camp.COMPOSITION_ORIGIN is names.ORIGIN_COMPOSITION
+    assert rpr._residual_ic_menu_entry(REAL_MENU) == rpr._code_added_criterion(REAL_MENU,
+                                                                               "residual_ic")
 
 
 # ---------------------------------------------------------------------------
@@ -528,8 +852,11 @@ def _stage_campaign(campaign_root):
     _write_flags(root, **FLAT_COMP_ON)
     for name in ("criterion_menu.yaml", "profitability_bars.yaml"):
         shutil.copy(_SR / "config" / name, root / "config" / name)
+    # two composite windows: the first has no prior block data (equal weights),
+    # the second starts after the blocks' validating windows (estimated weights)
     proto = {"symbols": ["BTCUSDT", "ETHUSDT"], "timeframe": "1h",
-             "windows": [{"label": "2020-01", "test": {"start": "2020-01-01", "end": "2020-02-09"}}]}
+             "windows": [{"label": "2020-01", "test": {"start": "2020-01-01", "end": "2020-02-09"}},
+                         {"label": "2020-05", "test": {"start": "2020-05-01", "end": "2020-06-09"}}]}
     (root / "protocols").mkdir(exist_ok=True)
     (root / "protocols" / "p1h.json").write_text(json.dumps(proto), encoding="utf-8")
     doc = _registry(root)
@@ -612,12 +939,19 @@ def test_end_to_end_registry_change_to_graded_composite(campaign_root, monkeypat
     assert sorted(p.name for p in cdir.iterdir()) == [
         "base.json", "composition_manifest.yaml", "ic_weighted.json", "vol_scaled.json"]
     manifest = yaml.safe_load((cdir / "composition_manifest.yaml").read_text(encoding="utf-8"))
-    # the vol_scaled weights are 1/sigma of each block's stand-alone daily returns
-    sig = {b["block_id"]: statistics.stdev(comp.load_block_daily_returns(b, root=root))
+    # vol_scaled: window 1 (no prior data) equal; window 2 = 1/sigma of each
+    # block's stand-alone daily returns dated before 2020-05-01 (all of them here)
+    first, second = manifest["variants"]["vol_scaled"]["weight_schedule"]
+    assert first["from"] == "2020-01-01" and first["basis"]["estimated"] is False
+    assert set(first["weights"].values()) == {0.5}
+    sig = {b["block_id"]: statistics.stdev(r for _d, r in comp.load_block_daily_returns(b, root=root))
            for b in doc["blocks"]}
     inv = {b: 1 / s for b, s in sig.items()}
-    assert manifest["variants"]["vol_scaled"]["weights"] == {
-        b: pytest.approx(v / sum(inv.values()), rel=1e-12) for b, v in inv.items()}
+    assert second["from"] == "2020-05-01" and second["basis"]["estimated"] is True
+    assert second["weights"] == {b: pytest.approx(v / sum(inv.values()), rel=1e-12)
+                                 for b, v in inv.items()}
+    ic_first, ic_second = manifest["variants"]["ic_weighted"]["weight_schedule"]
+    assert ic_first["basis"]["estimated"] is False  # nothing measured before window 1
     comps = yaml.safe_load((root / "campaign_record" / "compositions.yaml").read_text(
         encoding="utf-8"))["compositions"]
     assert [c["registry_hash"] for c in comps] == [h]
@@ -718,14 +1052,19 @@ def test_end_to_end_registry_change_to_graded_composite(campaign_root, monkeypat
     # the idea status came from the grid only; the run ended through decide-next
     idea = yaml.safe_load((arts / "idea_status.yaml").read_text(encoding="utf-8"))
     assert idea["idea_status"] == grid["idea_status"]
-    # The fixture's trial ledger is too short for a deflated Sharpe, so the DSR
-    # bar is NOT_EVALUABLE: no variant passes, the grid says refuted (the same
-    # answer branch 3 recorded), and the run ends through decide-next.
-    assert pbe["passing"] == [] and grid["idea_status"] == "refuted"
-    assert entry["status"] == "done" and entry["outcome"] == "refuted"
+    # Branch 3 passes nothing; each grid cell reads the same bars: FAIL when a
+    # bar FAILs, INCONCLUSIVE when one is NOT_EVALUABLE (review fix 1).
+    assert pbe["passing"] == []
+    for vid in ("base", "vol_scaled", "ic_weighted"):
+        res = [b["result"] for b in pbe["variants"][vid]["bars"]]
+        want = "FAIL" if "FAIL" in res else ("INCONCLUSIVE" if "NOT_EVALUABLE" in res else "PASS")
+        assert grid["grid"]["profit_bars"][vid]["result"] == want
+        assert grid["grid"]["profit_bars"][vid]["weight_schedule"] == \
+            manifest["variants"][vid]["weight_schedule"]
+    assert entry["status"] == "done" and entry["outcome"] == grid["idea_status"]
     rec2 = yaml.safe_load((run_dir / "artifacts" / "decision_record.yaml").read_text(
         encoding="utf-8"))
-    # R1 never fires twice for the same registry state
+    # R1 never fires twice for the same registry state and the same inputs
     assert rec2["rules"]["r1"]["fired"] is False
     assert rec2["rules"]["r1"]["timeframes"][0]["status"] == "fired_before"
 

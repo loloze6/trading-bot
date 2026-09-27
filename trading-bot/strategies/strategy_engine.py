@@ -46,8 +46,20 @@ logger = logging.getLogger("trading_bot")
 #
 # A regime without these keys never enters any of this: its update(),
 # is_ready() and forecast() are the pre-S3a code paths.
+#
+# E-060 S3b: optional `weight_schedule` on the same regime --
+#   [{"from": "YYYY-MM-DD", "weights": {block_id: W > 0, ...}}, ...]
+# strictly increasing `from` dates, every entry weighting exactly the blocks.
+# On a bar whose timestamp (the data's `timestamp` column, UTC) is on or after
+# an entry's `from` (00:00 UTC), the LAST such entry's weights replace the
+# blocks' own `weight`; before the first entry the blocks' `weight` applies.
+# WHY THIS CANNOT LEAK: an entry is a set of constants fixed before the run;
+# the code that writes it (strategy-research/tools/composition.py) estimates
+# each entry only from data strictly before its `from`, and the engine applies
+# it only to bars at or after `from`. A config without the key never enters it.
 # ---------------------------------------------------------------------------
 BLOCK_COMBINER_KEYS = ("blocks", "block_standardisation")
+WEIGHT_SCHEDULE_KEY = "weight_schedule"
 BLOCK_KEYS = ("id", "weight", "components", "source")
 BLOCK_SOURCE_KEYS = ("required_bars", "warmup", "buffer_bars", "regime_detector", "parts")
 BLOCK_STANDARDISATION_KEYS = ("target", "window", "min_periods")
@@ -83,9 +95,13 @@ def validate_block_combiner(rname: str, rcfg: Any) -> list:
     parts partition its components; block ids are unique strings that differ
     from every component id. Used by the engine (raises) and by
     tools/validate_config.py (V13)."""
+    loc = f"strategies.regimes.{rname}"
+    if isinstance(rcfg, dict) and WEIGHT_SCHEDULE_KEY in rcfg \
+            and not all(k in rcfg for k in BLOCK_COMBINER_KEYS):
+        return [f"{loc}.{WEIGHT_SCHEDULE_KEY}: only valid with the block combiner "
+                f"{list(BLOCK_COMBINER_KEYS)}"]
     if not isinstance(rcfg, dict) or not any(k in rcfg for k in BLOCK_COMBINER_KEYS):
         return []
-    loc = f"strategies.regimes.{rname}"
     missing = [k for k in BLOCK_COMBINER_KEYS if k not in rcfg]
     if missing:
         return [f"{loc}: block combiner needs both {list(BLOCK_COMBINER_KEYS)}, missing {missing}"]
@@ -165,6 +181,36 @@ def validate_block_combiner(rname: str, rcfg: Any) -> list:
     if not (_is_int(win) and _is_int(mp)) or win < 2 or not (2 <= mp <= win):
         out.append(f"{loc}.block_standardisation: window={win!r}, min_periods={mp!r} -- need "
                    f"integers with 2 <= min_periods <= window")
+    if WEIGHT_SCHEDULE_KEY in rcfg:
+        out += _validate_weight_schedule(loc, rcfg[WEIGHT_SCHEDULE_KEY], seen_b)
+    return out
+
+
+def _validate_weight_schedule(loc: str, sched: Any, block_ids: list) -> list:
+    """E-060 S3b: the optional per-date block weights (module comment)."""
+    import datetime as _dt
+    if not isinstance(sched, list) or not sched:
+        return [f"{loc}.{WEIGHT_SCHEDULE_KEY}: must be a non-empty list"]
+    out, prev = [], None
+    for i, e in enumerate(sched):
+        el = f"{loc}.{WEIGHT_SCHEDULE_KEY}[{i}]"
+        if not isinstance(e, dict) or set(e) != {"from", "weights"}:
+            out.append(f"{el}: must have exactly keys ['from', 'weights']; got {e!r}")
+            continue
+        try:
+            d = _dt.date.fromisoformat(e["from"]) if isinstance(e["from"], str) else None
+        except ValueError:
+            d = None
+        if d is None:
+            out.append(f"{el}.from={e['from']!r}: must be an ISO date YYYY-MM-DD")
+        elif prev is not None and d <= prev:
+            out.append(f"{el}.from={e['from']!r}: dates must be strictly increasing")
+        prev = d or prev
+        w = e["weights"]
+        if not isinstance(w, dict) or sorted(w) != sorted(block_ids) \
+                or not all(_is_num(x) and x > 0 for x in w.values()):
+            out.append(f"{el}.weights: must weight exactly the blocks {sorted(block_ids)} with "
+                       f"finite numbers > 0; got {w!r}")
     return out
 
 
@@ -309,6 +355,9 @@ class ConfigDrivenStrategyEngine:
                 "blocks": [_Block(b, specs, st["window"]) for b in rcfg["blocks"]],
                 "target": float(st["target"]),
                 "min_periods": st["min_periods"],
+                # E-060 S3b: [(from date, {block_id: weight})], [] when absent
+                "schedule": [(pd.Timestamp(e["from"]).date(), dict(e["weights"]))
+                             for e in rcfg.get(WEIGHT_SCHEDULE_KEY) or []],
             }
             for b in self._block_regimes[rname]["blocks"]:
                 short = {c: self._history[rname][c].maxlen for c in b.cids
@@ -426,16 +475,36 @@ class ConfigDrivenStrategyEngine:
         return (self._n_data >= block.required_bars and block.gate.is_ready()
                 and all(len(self._history[rname][c]) >= max(2, block.warmup) for c in block.cids))
 
+    def _block_weights(self, reg: Dict[str, Any]) -> Dict[str, float]:
+        """Each block's weight on this bar: its own `weight`, or -- with a
+        weight_schedule (E-060 S3b) -- the last entry whose `from` date is on
+        or before this bar's UTC date. A schedule without a bar timestamp
+        fails loud."""
+        weights = {b.id: b.weight for b in reg["blocks"]}
+        if not reg["schedule"]:
+            return weights
+        if self._data is None or "timestamp" not in self._data.columns or not len(self._data):
+            raise BlockCombinerError("weight_schedule needs the bar's `timestamp` column")
+        ts = pd.Timestamp(self._data["timestamp"].iloc[-1])
+        if ts.tzinfo is not None:
+            ts = ts.tz_convert("UTC")
+        day = ts.date()
+        for start, w in reg["schedule"]:
+            if start <= day:
+                weights = {k: float(v) for k, v in w.items()}
+        return weights
+
     def _forecast_blocks(self, rkey: str) -> Tuple[float, Dict[str, Any]]:
         reg = self._block_regimes[rkey]
-        total_w = sum(b.weight for b in reg["blocks"])
+        weights = self._block_weights(reg)
+        total_w = sum(weights[b.id] for b in reg["blocks"])
         ensemble = 0.0
         debug: Dict[str, Any] = {}
         for b in reg["blocks"]:
             if not self._block_ready(rkey, b):
                 return 0.0, {"not_ready_block": b.id}
         for b in reg["blocks"]:
-            w_norm = b.weight / total_w
+            w_norm = weights[b.id] / total_w
             ensemble += w_norm * b.value
             # Same four keys as a component row (bars.csv consumers read a block
             # as one unit) plus `active`: last_history_value = the block's final

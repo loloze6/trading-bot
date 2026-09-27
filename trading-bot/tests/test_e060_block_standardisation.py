@@ -457,3 +457,66 @@ def test_block_warmup_longer_than_its_deques_fails_loud():
 def test_required_feeds_include_block_gates():
     eng = ConfigDrivenStrategyEngine(_block_cfg())
     assert eng.required_feeds() == {}
+
+
+# --- E-060 S3b: weight_schedule (per-window weights, no lookahead) ---------
+
+def _sched_cfg(schedule, w=(1.0, 1.0)):
+    cfg = _block_cfg(w=w)
+    cfg["regimes"]["unknown"]["weight_schedule"] = schedule
+    return cfg
+
+
+def test_weight_schedule_switches_weights_only_from_its_date():
+    df = _ohlcv(300, seed=11)  # hourly from 2024-01-01: 2024-01-08 starts at bar 168
+    sched = [{"from": "2024-01-08", "weights": {"b0": 1.0, "b1": 3.0}}]
+    _, plain = _run(_block_cfg(w=(1.0, 1.0)), df)
+    _, sched_out = _run(_sched_cfg(sched), df)
+    _, fixed = _run(_block_cfg(w=(1.0, 3.0)), df)
+    assert sched_out[:168] == plain[:168]  # before `from`: the blocks' own weights
+    assert sched_out[168:] == fixed[168:]  # from `from` on: the entry's weights
+    assert sched_out[168:] != plain[168:]
+
+
+def test_weight_schedule_never_changes_bars_before_its_date():
+    """No lookahead: an entry dated after bar t cannot change bar t."""
+    df = _ohlcv(300, seed=12)
+    _, a = _run(_sched_cfg([{"from": "2024-01-08", "weights": {"b0": 1.0, "b1": 9.0}}]), df)
+    _, b = _run(_sched_cfg([{"from": "2024-01-08", "weights": {"b0": 7.0, "b1": 1.0}}]), df)
+    assert a[:168] == b[:168]
+    assert validate(_config_for(_sched_cfg([{"from": "2024-01-08",
+                                             "weights": {"b0": 1.0, "b1": 9.0}}]))) == []
+
+
+def _config_for(strategies):
+    return {"regime_detector": dict(UNGATED), "strategies": strategies}
+
+
+@pytest.mark.parametrize("sched, needle", [
+    ([], "non-empty"),
+    ([{"from": "2024-13-01", "weights": {"b0": 1.0, "b1": 1.0}}], "ISO date"),
+    ([{"from": "2024-01-08", "weights": {"b0": 1.0}}], "exactly the blocks"),
+    ([{"from": "2024-01-08", "weights": {"b0": 1.0, "b1": 0.0}}], "exactly the blocks"),
+    ([{"from": "2024-01-08", "weights": {"b0": 1.0, "b1": 1.0}},
+      {"from": "2024-01-08", "weights": {"b0": 1.0, "b1": 1.0}}], "strictly increasing"),
+    ([{"from": "2024-01-08"}], "exactly keys"),
+])
+def test_malformed_weight_schedule_is_reported(sched, needle):
+    errs = validate_block_combiner("unknown", _sched_cfg(sched)["regimes"]["unknown"])
+    assert any(needle in e for e in errs), errs
+
+
+def test_weight_schedule_without_the_combiner_is_refused():
+    rcfg = {"components": [], "weight_schedule": [{"from": "2024-01-01", "weights": {}}]}
+    assert validate_block_combiner("unknown", rcfg)
+
+
+def test_weight_schedule_without_a_timestamp_fails_loud():
+    df = _ohlcv(300, seed=13).drop(columns=["timestamp"])
+    eng = ConfigDrivenStrategyEngine(_sched_cfg([{"from": "2024-01-08",
+                                                  "weights": {"b0": 1.0, "b1": 2.0}}]))
+    with pytest.raises(BlockCombinerError, match="timestamp"):
+        for i in range(1, len(df) + 1):
+            eng.update(df.iloc[:i])
+            if eng.is_ready(MarketRegime.UNKNOWN):
+                eng.forecast(MarketRegime.UNKNOWN)

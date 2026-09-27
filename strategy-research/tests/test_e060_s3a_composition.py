@@ -79,9 +79,25 @@ def _returns(sigma, n=60, seed=0):
     return list(r * sigma)
 
 
+RET_DAY0 = pd.Timestamp("2020-01-01").date()
+# E-060 S3b (review fix 5): window 1 has no prior data -> equal weights;
+# window 2 starts after every return in _rets_for (60 days from RET_DAY0).
+WINDOW_STARTS = ["2020-01-01", "2020-03-15"]
+
+
 def _rets_for(doc, sigmas=(0.01, 0.03)):
-    return {b["block_id"]: _returns(sigmas[i % len(sigmas)], seed=i)
+    """Dated stand-alone daily returns [(date, r)] (E-060 S3b)."""
+    return {b["block_id"]: [(RET_DAY0 + pd.Timedelta(days=k).to_pytimedelta(), r)
+                            for k, r in enumerate(_returns(sigmas[i % len(sigmas)], seed=i))]
             for i, b in enumerate(doc["blocks"])}
+
+
+def _prior_ic_from_registry(block, d):
+    """Fake prior-IC measurement: the registry value, available only after
+    the first window start (nothing before it)."""
+    if d <= RET_DAY0:
+        return {"value": None, "n_eff": 0, "reason": "no bar before the first window"}
+    return {"value": (block.get("residual_ic") or {}).get("value"), "n_eff": 60}
 
 
 # --- 1. weighting schemes ----------------------------------------------------
@@ -152,7 +168,8 @@ def _write(tmp_path, doc=None, rets=None, tf="1h", enabled=True):
     out = tmp_path / "campaign_record" / "compositions" / "c1"
     m = comp.write_composition_variants(doc, tf, out, root=tmp_path,
                                         daily_returns_by_block=rets or _rets_for(doc),
-                                        enabled=enabled)
+                                        window_starts=WINDOW_STARTS,
+                                        prior_ic=_prior_ic_from_registry, enabled=enabled)
     return doc, out, m
 
 
@@ -173,9 +190,18 @@ def test_writer_produces_three_valid_configs_and_a_manifest(tmp_path):
     assert m["registry_hash"] == cc.composite_registry_hash(doc["blocks"])
     assert m["timeframe"] == "1h" and m["timeframe_category"] == "low"
     assert [b["block_id"] for b in m["blocks"]] == ["H-0:run_900", "H-1:run_901"]
-    assert m["variants"]["base"]["weights"] == {"H-0:run_900": 0.5, "H-1:run_901": 0.5}
-    assert m["variants"]["vol_scaled"]["weights"]["H-0:run_900"] == pytest.approx(0.75)
-    assert m["variants"]["ic_weighted"]["weights"]["H-0:run_900"] == pytest.approx(0.75)
+    eq = {"H-0:run_900": 0.5, "H-1:run_901": 0.5}
+    # E-060 S3b (review fix 5): static weights are equal; vol_scaled / ic_weighted
+    # change per window -- window 1 (no prior data) equal, window 2 estimated.
+    for vid in ("base", "vol_scaled", "ic_weighted"):
+        assert m["variants"][vid]["weights"] == eq
+    assert m["variants"]["base"]["weight_schedule"] == []
+    for vid in ("vol_scaled", "ic_weighted"):
+        first, second = m["variants"][vid]["weight_schedule"]
+        assert first["from"] == "2020-01-01" and first["weights"] == eq
+        assert first["basis"]["estimated"] is False
+        assert second["from"] == "2020-03-15" and second["basis"]["estimated"] is True
+        assert second["weights"]["H-0:run_900"] == pytest.approx(0.75)
     cfgs = {vid: json.loads((out / f"{vid}.json").read_text(encoding="utf-8"))
             for vid in ("base", "vol_scaled", "ic_weighted")}
     for vid, cfg in cfgs.items():
@@ -185,11 +211,14 @@ def test_writer_produces_three_valid_configs_and_a_manifest(tmp_path):
         # block weights are the scheme's; nothing else differs between variants
         assert {b["id"]: b["weight"] for b in reg["blocks"]} == {
             mb["config_block_id"]: m["variants"][vid]["weights"][mb["block_id"]] for mb in m["blocks"]}
+        assert [e["from"] for e in reg.get("weight_schedule", [])] == \
+            [e["from"] for e in m["variants"][vid]["weight_schedule"]]
         assert reg["block_standardisation"] == {"target": 10.0, "window": 500, "min_periods": 30}
     strip = lambda c: [{**b, "weight": None} for b in c["strategies"]["regimes"]["unknown"]["blocks"]]
     assert strip(cfgs["base"]) == strip(cfgs["vol_scaled"]) == strip(cfgs["ic_weighted"])
     for c in cfgs.values():
         c["strategies"]["regimes"]["unknown"]["blocks"] = None
+        c["strategies"]["regimes"]["unknown"].pop("weight_schedule", None)
     assert cfgs["base"] == cfgs["vol_scaled"] == cfgs["ic_weighted"]
     # components copied verbatim from the registry fragments, only the id prefixed
     base = json.loads((out / "base.json").read_text(encoding="utf-8"))
@@ -238,10 +267,14 @@ def test_writer_missing_return_series_and_bad_ic_write_nothing(tmp_path):
     rets.pop("H-1:run_901")
     with pytest.raises(comp.CompositionError, match="no stand-alone daily return series"):
         _write(tmp_path, doc=doc, rets=rets)
-    doc["blocks"][1]["residual_ic"]["value"] = -0.01
-    with pytest.raises(comp.CompositionError, match="zero or negative"):
-        _write(tmp_path, doc=doc)
     assert not (tmp_path / "campaign_record").exists()
+    # E-060 S3b: a negative prior residual IC is not an error -- that window
+    # falls back to equal weights and says why
+    doc["blocks"][1]["residual_ic"]["value"] = -0.01
+    _, _, m = _write(tmp_path, doc=doc)
+    second = m["variants"]["ic_weighted"]["weight_schedule"][1]
+    assert second["basis"]["estimated"] is False and "<= 0" in second["basis"]["reason"]
+    assert second["weights"] == {"H-0:run_900": 0.5, "H-1:run_901": 0.5}
 
 
 def test_writer_refuses_tampered_source_config_and_param_level_fragment(tmp_path):

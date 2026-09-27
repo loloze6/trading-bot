@@ -106,6 +106,7 @@ from pathlib import Path
 import yaml
 
 import block_registry as _br  # tools/ sibling: registry loader (revision for R1)
+import composition_names as _names  # tools/ sibling: the shared composition names
 import campaign_memory as _cm  # tools/ sibling: memory loader + retired-field scan
 import json_pointer as _jp  # tools/ sibling: pointer + patch semantics shared with 5a
 import reader_proposals as _rp  # tools/ sibling: proposal loader/validator
@@ -650,7 +651,7 @@ def _next_request_id(owner_id: str, taken: set) -> str:
 # ---------------------------------------------------------------------------
 
 def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None,
-                digest=None, composition_runs: bool = False) -> dict:
+                digest=None, composition_runs: bool = False, dsr_basis: dict | None = None) -> dict:
     """Everything decide() reads, from disk under `root` (strategy-research/).
     `queue` is the caller's in-memory queue document (after its own write).
     `known_classes` is the known component class set (known_component_classes)
@@ -688,9 +689,6 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
             "base_config": base_config,
             "base_config_ref": base_ref,
             "manifest": _load_yaml_opt(arts / "block_manifest.yaml"),
-            # E-060 S3b (7.5): a composition run's manifest (absent on every
-            # other run -- only a composition run writes it).
-            "composition_manifest": _load_yaml_opt(arts / COMPOSITION_MANIFEST_FILE),
             "pre_registration": _load_yaml_opt(arts / "pre_registration.yaml"),
             "research_brief": _load_yaml_opt(arts / "research_brief.yaml"),
             "card": _load_yaml_opt(arts / "hypothesis_card.yaml"),
@@ -733,8 +731,34 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
         "data_requests_count": _count("data_requests.yaml"),
     }
     if composition_runs:
-        out["composition"] = load_composition_inputs(root, registry, memory)
+        # E-060 S3b (7.5 + review fix 6): only under the flag -- a composition
+        # run's manifest and the check its reader patches must pass. Flag off,
+        # a composite's patch has no manifest here: source_manifest_missing.
+        comp_inputs = load_composition_inputs(root, registry, memory, queue=queue,
+                                              dsr_basis=dsr_basis)
+        for run_id, src in runs.items():
+            man = _load_yaml_opt(root / "runs" / run_id / "artifacts" / COMPOSITION_MANIFEST_FILE)
+            if isinstance(man, dict):
+                src["composition_manifest"] = man
+                src["composition_check"] = _composition_checker(root, registry, man)
+        out["composition"] = comp_inputs
     return out
+
+
+def _composition_checker(root: Path, registry: dict, manifest: dict):
+    """callable(config) -> None | reason: tools/composition.check_composition_config
+    against the source composition manifest (base = equal weights) -- the same
+    check 5a runs, so a patch decide-next admits is one 1b/5a accept (review
+    fix 3)."""
+    def check(config):
+        import composition as _comp  # lazily: flag-on only
+        try:
+            _comp.check_composition_config(config, manifest, "base", root=root,
+                                           registry_doc=registry)
+        except _comp.CompositionError as exc:
+            return str(exc)
+        return None
+    return check
 
 
 # ---------------------------------------------------------------------------
@@ -743,9 +767,10 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
 # (orchestrator.composition_runs on); otherwise R1 is the recorded no-op.
 # ---------------------------------------------------------------------------
 
-ORIGIN_COMPOSITION = "composition"
-COMPOSITION_MANIFEST_FILE = "composition_manifest.yaml"
-COMPOSITIONS_DIR = "campaign_record/compositions"
+ORIGIN_COMPOSITION = _names.ORIGIN_COMPOSITION
+COMPOSITION_MANIFEST_FILE = _names.MANIFEST_FILENAME
+COMPOSITIONS_DIR = _names.COMPOSITIONS_DIR
+COMPOSITIONS_FILE = _names.COMPOSITIONS_FILE
 COMPOSITION_HYPOTHESIS_PREFIX = "COMPOSITION"
 
 
@@ -762,37 +787,140 @@ def composition_entry_id(timeframe: str, registry_hash: str) -> str:
     return eid
 
 
-def load_composition_inputs(root: Path, registry: dict, memory: dict) -> dict:
-    """R1's inputs: the registry document, compositions.yaml's entries and,
-    for every forecast block that carries a timeframe, its validating run's
-    pre_registration.yaml and research_brief.yaml (the composition brief's
-    protocol pin and brief keys). Read only."""
+def composition_attempt_id(base_id: str, attempt: int) -> str:
+    """Attempt 1 is the base id; a re-fire after an inconclusive attempt
+    (review fix 1) is `<base>-a<n>`."""
+    return base_id if attempt <= 1 else f"{base_id}-a{attempt}"
+
+
+def _attempts(base_id: str, entries: list) -> list:
+    """[(attempt n, entry)] of every queue entry of one block set, oldest first."""
+    out = []
+    for e in entries:
+        eid = str(e.get("id") or "")
+        if eid == base_id:
+            out.append((1, e))
+        else:
+            m = re.fullmatch(re.escape(base_id) + r"-a(\d+)", eid)
+            if m:
+                out.append((int(m.group(1)), e))
+    return sorted(out, key=lambda t: t[0])
+
+
+# The one bar whose NOT_EVALUABLE can clear with time: the deflated Sharpe
+# needs >= 2 trials in the ledger (and >= 2 real Sharpe values). The others
+# (drawdown / avg daily return coverage, trade counts) are properties of the
+# composite's own fixed data, so re-running would give the same answer.
+_REFIRABLE_BAR = "deflated_sharpe_threshold"
+_MIN_DSR_TRIALS = 2  # run_phase1_research._promotion_dsr_context's own minimum
+
+
+def load_composition_inputs(root: Path, registry: dict, memory: dict, *, queue=None,
+                            dsr_basis: dict | None = None) -> dict:
+    """R1's inputs: the registry document, compositions.yaml's entries and
+    failure rows, for every forecast block that carries a timeframe its
+    validating run's pre_registration.yaml and research_brief.yaml (the
+    composition brief's protocol pin and brief keys) and the pinned protocol
+    files, and -- for every finished INCONCLUSIVE composition attempt -- its
+    last run's profit_bars_evaluation.yaml summary (review fix 1).
+    `dsr_basis`: the CURRENT trial-ledger basis {n_dsr_total, n_trials}
+    (run_phase1_research._promotion_dsr_context), passed by the caller.
+    Read only."""
     import composite_cache as _cc  # tools/ sibling, lazily: flag-on only
+    import composition as _comp
     root = Path(root)
-    sources = {}
+    sources, protocols = {}, {}
     for block in registry.get("blocks") or []:
         run_id = block.get("validated_by_run")
         if block.get("kind") != "forecast" or not block.get("timeframe") or run_id in sources:
             continue
         arts = root / "runs" / str(run_id) / "artifacts"
+        ref = normalize_ref(((memory.get("runs") or {}).get(run_id) or {}).get("protocol_ref"))
         sources[run_id] = {
             "pre_registration": _load_yaml_opt(arts / "pre_registration.yaml"),
             "research_brief": _load_yaml_opt(arts / "research_brief.yaml"),
-            "protocol_ref": normalize_ref(((memory.get("runs") or {}).get(run_id) or {})
-                                          .get("protocol_ref")),
+            "protocol_ref": ref,
         }
+        if ref and ref not in protocols and (root / ref).is_file():
+            text = (root / ref).read_text(encoding="utf-8")
+            protocols[ref] = json.loads(text) if ref.endswith(".json") else yaml.safe_load(text)
+    inconclusive = {}
+    for e in _entries(queue):
+        if (e.get("origin") == ORIGIN_COMPOSITION and e.get("status") == "done"
+                and e.get("outcome") == "inconclusive" and e.get("run_ids")):
+            ev = _load_yaml_opt(root / "runs" / e["run_ids"][-1] / "artifacts" /
+                                "profit_bars_evaluation.yaml")
+            ev = ev if isinstance(ev, dict) else {}
+            not_eval = sorted({b.get("name") for v in (ev.get("variants") or {}).values()
+                               if isinstance(v, dict) for b in (v.get("bars") or [])
+                               if isinstance(b, dict) and b.get("result") == "NOT_EVALUABLE"})
+            inconclusive[e["id"]] = {"not_evaluable": not_eval, "dsr_basis": ev.get("dsr_basis")}
+    path = root / _names.COMPOSITIONS_FILE
     return {"registry": copy.deepcopy(registry),
-            "compositions": _cc.load_compositions(root / "campaign_record" / "compositions.yaml"),
-            "sources": sources}
+            "compositions": _cc.load_compositions(path),
+            "failures": _comp.load_composition_failures(path),
+            "sources": sources, "protocols": protocols,
+            "inconclusive": inconclusive, "dsr_basis": dsr_basis}
 
 
-def _r1_timeframes(comp_inputs: dict, queue_ids: set) -> tuple:
+def _dsr_computable(basis) -> bool:
+    return (isinstance(basis, dict) and (basis.get("n_dsr_total") or 0) >= _MIN_DSR_TRIALS
+            and (basis.get("n_trials") or 0) >= _MIN_DSR_TRIALS)
+
+
+def _classify_block_set(base_id: str, registry_hash: str, entries: list,
+                        comp_inputs: dict) -> tuple:
+    """(status, entry_id, reason) for one block set with >= 2 blocks:
+      * failed_before -- an unresolved failure row in compositions.yaml (a
+        preparation fault, review fix 2): never re-fired by code;
+      * fired_before  -- an attempt exists and is outstanding, done with a
+        binding answer, paused, or inconclusive with its missing input still
+        missing;
+      * eligible      -- no attempt yet, or (review fix 1) the latest attempt
+        ended inconclusive ONLY because the deflated-Sharpe bar was not
+        evaluable for want of trials, and the ledger now has them -- a NEW
+        attempt id, so a finished attempt is never re-run in a loop."""
+    failures = [f for f in comp_inputs.get("failures") or []
+                if f.get("registry_hash") == registry_hash and f.get("resolved") is not True]
+    if failures:
+        return ("failed_before", None,
+                f"preparation failed ({failures[-1].get('entry_id')}: "
+                f"{str(failures[-1].get('reason'))[:200]}); unresolved in "
+                f"{_names.COMPOSITIONS_FILE} -- set resolved: true to allow a new attempt")
+    attempts = _attempts(base_id, entries)
+    if not attempts:
+        return "eligible", base_id, "never composed in this registry state"
+    n, last = attempts[-1]
+    if last.get("status") != "done" or last.get("outcome") != "inconclusive":
+        return ("fired_before", None,
+                f"attempt {last.get('id')} is {last.get('status')} "
+                f"(outcome {last.get('outcome')!r})")
+    info = (comp_inputs.get("inconclusive") or {}).get(last.get("id")) or {}
+    not_eval = info.get("not_evaluable") or []
+    if not not_eval or set(not_eval) - {_REFIRABLE_BAR}:
+        return ("fired_before", None,
+                f"attempt {last.get('id')} was inconclusive on {not_eval or 'unknown bars'}: "
+                f"properties of its own data, a re-run would give the same answer")
+    if _dsr_computable(info.get("dsr_basis")):
+        return ("fired_before", None,
+                f"attempt {last.get('id')} was inconclusive although the ledger already had "
+                f"enough trials ({info.get('dsr_basis')}) -- not a missing input")
+    if not _dsr_computable(comp_inputs.get("dsr_basis")):
+        return ("fired_before", None,
+                f"attempt {last.get('id')} was inconclusive for want of trials "
+                f"({info.get('dsr_basis')}); the ledger still has "
+                f"{comp_inputs.get('dsr_basis')} -- waits until it has >= {_MIN_DSR_TRIALS}")
+    return ("eligible", composition_attempt_id(base_id, n + 1),
+            f"attempt {last.get('id')} was inconclusive for want of trials "
+            f"({info.get('dsr_basis')}); the ledger now has {comp_inputs.get('dsr_basis')}")
+
+
+def _r1_timeframes(comp_inputs: dict, entries: list) -> tuple:
     """([per-timeframe row], excluded_blocks). One row per exact bar size
     (in seconds; shortest first) that carries at least one forecast block:
     {timeframe, timeframe_category, block_ids, registry_hash, entry_id,
-    status}. status: `single_block` (fewer than 2 -- operator decision 3),
-    `fired_before` (its queue entry exists: R1 already fired for this
-    registry state), `eligible`."""
+    status, reason}. status: `single_block` (fewer than 2 -- operator
+    decision 3), else _classify_block_set's."""
     import composite_cache as _cc  # lazily: flag-on only
     import timeframe as _tf
     registry = comp_inputs["registry"]
@@ -809,11 +937,13 @@ def _r1_timeframes(comp_inputs: dict, queue_ids: set) -> tuple:
         row = {"timeframe": tf, "timeframe_category": _cc.timeframe_category(tf),
                "block_ids": ids, "registry_hash": None, "entry_id": None}
         if len(blocks) < 2:
-            row["status"] = "single_block"
+            row["status"], row["reason"] = "single_block", "fewer than 2 forecast blocks"
         else:
             row["registry_hash"] = _cc.composite_registry_hash(blocks)
-            row["entry_id"] = composition_entry_id(tf, row["registry_hash"])
-            row["status"] = "fired_before" if row["entry_id"] in queue_ids else "eligible"
+            base = composition_entry_id(tf, row["registry_hash"])
+            status, eid, reason = _classify_block_set(base, row["registry_hash"], entries,
+                                                      comp_inputs)
+            row.update(status=status, entry_id=eid or base, reason=reason)
         rows.append(row)
     if not by_secs:
         # every forecast block lacks a timeframe (or there is none): still
@@ -838,8 +968,7 @@ def _r1(inputs: dict, entries: list, *, scheduled, operator: list) -> tuple:
         return ({"registry_revision": revision, "last_composition_revision": None,
                  "would_fire": revision >= 2, "fired": False,
                  "reason": "composition brief writer is slice 7"}, None)
-    queue_ids = {e.get("id") for e in entries}
-    rows, excluded = _r1_timeframes(comp_inputs, queue_ids)
+    rows, excluded = _r1_timeframes(comp_inputs, entries)
     revs = [c.get("registry_revision") for c in comp_inputs.get("compositions") or []
             if isinstance(c, dict) and isinstance(c.get("registry_revision"), int)]
     eligible = [r for r in rows if r["status"] == "eligible"]
@@ -867,18 +996,6 @@ def _r1(inputs: dict, entries: list, *, scheduled, operator: list) -> tuple:
                        f"not been composed in this registry state: composition "
                        f"{row['entry_id']} queued ahead of agent entries"))
     return rec, {"row": row, "priority": priority}
-
-
-def composition_manifest_missing_paths(config, manifest) -> list:
-    """The composition manifest's component pointers (blocks[*].config_paths)
-    that do not resolve in `config` -- the 7.5 feasibility check of a reader
-    patch on a composite. A manifest without blocks resolves nothing: every
-    block is reported missing."""
-    blocks = manifest.get("blocks") if isinstance(manifest, dict) else None
-    if not isinstance(blocks, list) or not blocks:
-        return ["<composition manifest lists no blocks>"]
-    return [ptr for b in blocks if isinstance(b, dict) for ptr in (b.get("config_paths") or [])
-            if not _jp.json_pointer_exists(config, ptr)]
 
 
 def _composition_pin(comp_inputs: dict, block_ids: list) -> dict:
@@ -910,6 +1027,23 @@ def _composition_pin(comp_inputs: dict, block_ids: list) -> dict:
         raise DecideNextError(f"{run_id}: research_brief.yaml is missing")
     return {"run_id": run_id, "machine_constraints": mc, "research_brief": src["research_brief"],
             "protocol_ref": src["protocol_ref"], "protocol_counts": counts}
+
+
+def composition_window_starts(inputs: dict, block_ids: list) -> list:
+    """The composite's window test-start dates: the windows of the protocol
+    the composition is pinned to (_composition_pin). The per-window weights
+    are estimated before each (tools/composition.window_weight_schedule).
+    Raises when the pinned protocol file or its window dates are missing."""
+    comp = inputs["composition"]
+    pin = _composition_pin(comp, block_ids)
+    proto = (comp.get("protocols") or {}).get(pin["protocol_ref"])
+    windows = proto.get("windows") if isinstance(proto, dict) else None
+    starts = [((w or {}).get("test") or {}).get("start") for w in windows or []
+              if isinstance(w, dict)]
+    if not starts or not all(isinstance(x, str) and x for x in starts):
+        raise DecideNextError(f"pinned protocol {pin['protocol_ref']!r} has no window test start "
+                              f"dates -- the per-window weights cannot be placed")
+    return sorted(set(starts))
 
 
 def composition_brief(record: dict, inputs: dict, manifest: dict, *, manifest_ref: str,
@@ -1036,11 +1170,17 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
             else:
                 config_for_digest = patched
                 resolved_sha = config_sha256(patched)
-                missing = (composition_manifest_missing_paths(patched, comp_manifest)
-                           if isinstance(comp_manifest, dict)
-                           else _jp.manifest_missing_paths(patched, src["manifest"]))
-                if missing:
-                    reasons.append(f"manifest_unresolved: {missing}")
+                if isinstance(comp_manifest, dict):
+                    # review fix 3: the SAME check 1b/5a run (weights, lookback,
+                    # class, source gate, detector, standardisation, scaffolding).
+                    check = src.get("composition_check")
+                    bad = check(patched) if check else "no composition check was loaded"
+                    if bad:
+                        reasons.append(f"composition_check_failed: {bad}")
+                else:
+                    missing = _jp.manifest_missing_paths(patched, src["manifest"])
+                    if missing:
+                        reasons.append(f"manifest_unresolved: {missing}")
                 new_classes = _component_classes(patched) - _component_classes(src["base_config"])
                 if new_classes and inputs.get("known_classes") is not None:
                     unknown = sorted(new_classes - set(inputs["known_classes"]))

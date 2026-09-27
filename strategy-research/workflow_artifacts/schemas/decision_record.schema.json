@@ -57,7 +57,7 @@
               "description": "E-060 S3b (composition_runs only): one row per exact bar size carrying forecast blocks.",
               "items": {
                 "type": "object",
-                "required": ["timeframe", "timeframe_category", "block_ids", "registry_hash", "entry_id", "status"],
+                "required": ["timeframe", "timeframe_category", "block_ids", "registry_hash", "entry_id", "status", "reason"],
                 "additionalProperties": false,
                 "properties": {
                   "timeframe": { "type": "string" },
@@ -65,7 +65,8 @@
                   "block_ids": { "type": "array", "items": { "type": "string" } },
                   "registry_hash": { "type": ["string", "null"] },
                   "entry_id": { "type": ["string", "null"] },
-                  "status": { "enum": ["single_block", "fired_before", "eligible"] }
+                  "status": { "enum": ["single_block", "fired_before", "failed_before", "eligible"] },
+                  "reason": { "type": "string" }
                 }
               }
             },
