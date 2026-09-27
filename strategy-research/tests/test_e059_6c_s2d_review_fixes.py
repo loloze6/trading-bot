@@ -286,7 +286,7 @@ def test_continue_needs_no_attestation(monkeypatch):
 def test_the_seal_checks_exist_once():
     src = (_SR / "workflow" / "run_phase1_research.py").read_text(encoding="utf-8")
     # the single-use membership test lives only in _holdout_already_spent
-    assert src.count('in (policy.get("holdout_consumed_by") or [])') == 1
+    assert src.count('in _consumed_list(policy.get("holdout_consumed_by"))') == 1
     assert src.count("hyp_id in consumed") == 0
     for name in ("_profit_stop_raised", "_holdout_already_spent",
                  "_mark_holdout_consumed_if_absent", "_holdout_result_terminal"):

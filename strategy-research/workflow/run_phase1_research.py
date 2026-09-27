@@ -514,11 +514,51 @@ def save_yaml(path: Path, data):
     # CUL-11: opt-in write-side schema check. Warn-by-default (no-op if no schema for
     # path.stem); under WORKFLOW_ARTIFACT_VALIDATION=raise a violation blocks the write.
     validate_workflow_artifact(path, data)
+    _atomic_write_bytes(path, _yaml_file_bytes(data))
+
+
+def _yaml_file_bytes(data) -> bytes:
+    """The exact bytes save_yaml has always written: yaml.safe_dump as a
+    text-mode file writes it (newline=None: "\\n" -> os.linesep, UTF-8)."""
+    text = yaml.safe_dump(data, sort_keys=False, allow_unicode=True)
+    return text.replace("\n", os.linesep).encode("utf-8")
+
+
+_ANY_BYTES = object()
+
+
+def _atomic_write_bytes(path: Path, data: bytes, *, durable: bool = False,
+                        expect=_ANY_BYTES) -> bool:
+    """Temp file in the destination's own directory, then os.replace (atomic
+    on POSIX and Windows): readers see the old or the new content, never a
+    partial one, and a failure at any point leaves the original in place.
+
+    durable=True (CUL-331, the holdout consume marker) also fsyncs the temp
+    file before the replace, copies the existing file's mode onto it (mkstemp
+    creates 0600), and on POSIX fsyncs the directory after the replace so the
+    rename itself survives a crash (skipped on Windows, where a directory
+    cannot be opened for fsync).
+
+    expect: when given, the replace happens only if the file's current bytes
+    (None = no file) still equal it; otherwise the temp file is removed and
+    False is returned, for the caller to re-read and re-apply. True once
+    written."""
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent))
     try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            yaml.safe_dump(data, f, sort_keys=False, allow_unicode=True)
+        with os.fdopen(fd, "wb") as f:
+            f.write(data)
+            if durable:
+                f.flush()
+                os.fsync(f.fileno())
+        if durable and path.exists():
+            with contextlib.suppress(OSError):
+                shutil.copymode(path, tmp_name)
+        if expect is not _ANY_BYTES:
+            current = path.read_bytes() if path.exists() else None
+            if current != expect:
+                os.unlink(tmp_name)
+                return False
         os.replace(tmp_name, path)
     except BaseException:
         try:
@@ -526,6 +566,14 @@ def save_yaml(path: Path, data):
         except OSError:
             pass
         raise
+    if durable and os.name != "nt":
+        with contextlib.suppress(OSError):
+            dir_fd = os.open(str(path.parent), os.O_RDONLY)
+            try:
+                os.fsync(dir_fd)
+            finally:
+                os.close(dir_fd)
+    return True
 
 def update_state(path: Path, **kwargs):
     # NOT `or {}`, tried and reverted 2026-08-18. Verified by execution, since two
@@ -4252,10 +4300,248 @@ def _holdout_hypothesis_id(run_dir: Path, run_id: str) -> tuple:
 
 def _mark_holdout_consumed(policy: dict, consumed: list, hyp_id: str) -> None:
     """Step 4 of _route_holdout_evaluation: record the single-use spend in
-    campaign_data_policy.yaml holdout_consumed_by."""
-    policy["holdout_consumed_by"] = list(consumed) + [hyp_id]
-    save_yaml(_DATA_POLICY_PATH, policy)
+    campaign_data_policy.yaml holdout_consumed_by.
+
+    CUL-331: the ONLY writer of the tracked policy file. The legacy gate calls
+    it directly; the verdict_routing_retired record paths (_record_spent_holdout
+    and the S2d unlock) reach it through _mark_holdout_consumed_if_absent. It
+    runs AFTER the seal is spent, so it must never refuse. Recording the
+    marker is mandatory; keeping the file's comments is best effort.
+
+      * Under the policy lock (_policy_lock), the file is re-read and the
+        marker applied to what is on disk NOW: the list becomes the on-disk
+        list plus any of `consumed` + [hyp_id] not already in it. Another
+        writer's entry is never dropped, and an id already there is never
+        written twice.
+      * In-place edit when _edit_consumed_in_place can do it and its strict
+        parse-back check passes: only the holdout_consumed_by value changes.
+        Every other byte stays as it was, comments included.
+      * Otherwise (a shape the editor does not handle, a file only
+        load_yaml's repair can parse, a non-list value) -> master's behaviour:
+        the whole parsed policy plus the marker is rewritten, exactly as
+        save_yaml writes it, with a loud WARNING that comments were lost.
+      * The write is atomic and durable (_atomic_write_bytes). If the file's
+        bytes change between the read and the replace, it is re-read and the
+        marker re-applied."""
+    new_consumed = _write_consumed_marker(_DATA_POLICY_PATH, policy, consumed, hyp_id)
+    policy["holdout_consumed_by"] = new_consumed
     print(f"⚙️  A6.1: {hyp_id} marked in holdout_consumed_by (single-use consumed).")
+
+
+_CONSUMED_KEY = "holdout_consumed_by"
+_POLICY_LOCK_FILENAME = ".campaign_data_policy.yaml.lock"
+_MARKER_WRITE_ATTEMPTS = 5
+# A top-level (column-0, unquoted) `holdout_consumed_by:` key line. Comment
+# lines that merely mention the key start with '#' and never match.
+_CONSUMED_KEY_LINE = re.compile(r"holdout_consumed_by[ \t]*:(?=[ \t\r\n]|$)")
+# One line of a block sequence: `- item` (any indent, including none).
+_BLOCK_ITEM_LINE = re.compile(r"([ \t]*)-(?=[ \t\r\n]|$)")
+_COMMENT_OR_BLANK_LINE = re.compile(r"[ \t]*(#.*)?[\r\n]*$")
+
+
+def _consumed_list(value) -> list:
+    """holdout_consumed_by, normalised to a list: None -> [], a list as is,
+    a scalar string -> [it] (never iterated as characters). Any other type
+    -> [str(value)], so the old value stays visible and nothing is erased."""
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return list(value)
+    if isinstance(value, str):
+        return [value]
+    return [str(value)]
+
+
+@contextlib.contextmanager
+def _policy_lock():
+    """The policy writer's lock, the same O_EXCL lock-file primitive the
+    campaign-memory and KB writers use (campaign_memory._file_lock). If the
+    lock cannot be taken, the write goes ahead unlocked with a WARNING, as
+    master's writer (which took no lock) always did: the marker is mandatory."""
+    lock_path = _DATA_POLICY_PATH.parent / _POLICY_LOCK_FILENAME
+    with contextlib.ExitStack() as stack:
+        try:
+            stack.enter_context(_campaign_memory_module()._file_lock(
+                lock_path, "campaign_data_policy.yaml"))
+        except Exception as exc:
+            print(f"⚠️  WARNING (CUL-331): could not lock {lock_path} ({exc}); recording the "
+                  f"holdout consume marker unlocked, as before this lock existed.")
+        yield
+
+
+def _flow_yaml(value) -> str:
+    return yaml.safe_dump(value, default_flow_style=True, width=float("inf"),
+                          allow_unicode=True).strip()
+
+
+def _flow_scalar(value) -> str:
+    return _flow_yaml([value])[1:-1]  # a flow-safe scalar is block-safe too
+
+
+def _split_line_ending(line: str) -> tuple:
+    body = line.rstrip("\r\n")
+    return body, line[len(body):]
+
+
+def _split_trailing_comment(value: str):
+    """(value, comment) for the text after `key:`, or None if it does not
+    parse. The comment starts at the first whitespace+'#' whose cut parses to
+    the same value, so a '#' inside a quoted scalar is never taken for one."""
+    try:
+        full = yaml.safe_load(f"k:{value}")
+    except yaml.YAMLError:
+        return None
+    for m in re.finditer(r"[ \t]+#", value):
+        try:
+            if yaml.safe_load(f"k:{value[:m.start()]}") == full:
+                return value[:m.start()], value[m.start():]
+        except yaml.YAMLError:
+            continue
+    return value, ""
+
+
+def _edit_consumed_in_place(text: str, doc: dict, new_list: list):
+    """CUL-331: `text` with holdout_consumed_by set to new_list, and every
+    other byte unchanged, or None when this edit cannot do that (the caller
+    then falls back to a full rewrite). new_list is the old list plus extras.
+
+      * block list: one `- id` line per extra after the last item, at its
+        indent; comment and blank lines between the key and the items, or
+        between items, are kept;
+      * single-line flow list: `, id` inserted before the closing bracket;
+        the existing ids, their quoting and spacing are left alone;
+      * empty / null / scalar string value: the value becomes a flow list;
+      * key absent: `holdout_consumed_by: [ids]` appended at the end.
+    A trailing comment on the key line and all line endings are kept. The
+    result must parse to exactly {**doc, holdout_consumed_by: new_list},
+    same keys in the same order, else None."""
+    old_list = _consumed_list(doc.get(_CONSUMED_KEY))
+    extras = new_list[len(old_list):]
+    if new_list[:len(old_list)] != old_list or not extras:
+        return None
+    newline = "\r\n" if "\r\n" in text else "\n"
+    lines = text.splitlines(keepends=True)
+    key_idx = [i for i, line in enumerate(lines) if _CONSUMED_KEY_LINE.match(line)]
+    if len(key_idx) > 1 or (not key_idx and _CONSUMED_KEY in doc):
+        return None
+    if not key_idx:
+        if lines and not lines[-1].endswith(("\n", "\r")):
+            lines[-1] += newline
+        lines.append(f"{_CONSUMED_KEY}: {_flow_yaml(new_list)}{newline}")
+    else:
+        i = key_idx[0]
+        items = []
+        for j in range(i + 1, len(lines)):
+            if _BLOCK_ITEM_LINE.match(lines[j]):
+                items.append(j)
+            elif not _COMMENT_OR_BLANK_LINE.fullmatch(lines[j]):
+                break
+        body, ending = _split_line_ending(lines[i])
+        prefix = body[:_CONSUMED_KEY_LINE.match(body).end()]
+        split = _split_trailing_comment(body[len(prefix):])
+        if split is None:
+            return None
+        value, comment = split
+        stripped = value.strip()
+        if items:
+            if stripped:
+                return None
+            last = items[-1]
+            indent = _BLOCK_ITEM_LINE.match(lines[last]).group(1)
+            last_body, last_ending = _split_line_ending(lines[last])
+            lines[last] = last_body + (last_ending or newline)
+            added = [f"{indent}- {_flow_scalar(x)}" for x in extras]
+            lines.insert(last + 1, newline.join(added) + last_ending)
+        elif stripped.startswith("[") and stripped.endswith("]"):
+            open_, close = value.index("["), value.rindex("]")
+            inner = value[open_ + 1:close]
+            rendered = ", ".join(_flow_scalar(x) for x in extras)
+            keep = len(inner.rstrip())
+            inner = (inner[:keep] + ", " + rendered + inner[keep:]) if inner.strip() \
+                else (inner + rendered)
+            lines[i] = prefix + value[:open_ + 1] + inner + value[close:] + comment + ending
+        else:
+            lead = value[:len(value) - len(value.lstrip())] or " "
+            trail = value[len(value.rstrip()):]
+            lines[i] = prefix + lead + _flow_yaml(new_list) + trail + comment + ending
+    new_text = "".join(lines)
+    expected = {**doc, _CONSUMED_KEY: new_list}
+    try:
+        new_doc = yaml.safe_load(new_text)
+    except yaml.YAMLError:
+        return None
+    if not isinstance(new_doc, dict) or new_doc != expected or list(new_doc) != list(expected):
+        return None
+    return new_text
+
+
+def _parse_policy_text(text: str):
+    """(doc, strict): the policy parsed strictly, else through load_yaml's
+    repair pass (strict False), else (None, False)."""
+    try:
+        doc = yaml.safe_load(text)
+        if doc is None or isinstance(doc, dict):
+            return (doc or {}), True
+    except yaml.YAMLError:
+        pass
+    try:
+        docs = list(yaml.safe_load_all(_repair_yaml(text, source=_DATA_POLICY_PATH.name)))
+    except yaml.YAMLError:
+        return None, False
+    doc = docs[0] if docs else None
+    return (doc if isinstance(doc, dict) else None), False
+
+
+def _consume_marker_bytes(raw: bytes | None, policy: dict, consumed: list, hyp_id: str):
+    """(bytes to write or None when already recorded, the new list) for the
+    policy file whose current bytes are `raw` (None = no file)."""
+    text = None if raw is None else raw.decode("utf-8")
+    doc, strict = _parse_policy_text(text) if text is not None else (None, False)
+    base = doc if doc is not None else dict(policy)  # unparseable: master's view
+    old_value = base.get(_CONSUMED_KEY)
+    new_list = _consumed_list(old_value)
+    for x in _consumed_list(consumed) + [hyp_id]:
+        if x not in new_list:
+            new_list.append(x)
+    if doc is not None and new_list == _consumed_list(old_value) and (
+            old_value is None or isinstance(old_value, (list, str))):
+        return None, new_list
+    if strict and (old_value is None or isinstance(old_value, (list, str))):
+        new_text = _edit_consumed_in_place(text, doc, new_list)
+        if new_text is not None:
+            return new_text.encode("utf-8"), new_list
+    if old_value is not None and not isinstance(old_value, (list, str)):
+        print(f"⚠️  WARNING (CUL-331): campaign_data_policy.yaml {_CONSUMED_KEY} was a "
+              f"{type(old_value).__name__}, not a list: kept as {_consumed_list(old_value)!r} "
+              f"at the head of the new list.")
+    if raw is not None:
+        print(f"⚠️  WARNING (CUL-331): campaign_data_policy.yaml could not be edited in place; "
+              f"it was REWRITTEN whole to record the holdout consume marker for {hyp_id}, and "
+              f"its comments were LOST. Restore them from git by hand, keeping the "
+              f"{_CONSUMED_KEY} value now on disk.")
+    rewritten = {**base, _CONSUMED_KEY: new_list}
+    validate_workflow_artifact(_DATA_POLICY_PATH, rewritten)  # save_yaml parity
+    return _yaml_file_bytes(rewritten), new_list
+
+
+def _write_consumed_marker(path: Path, policy: dict, consumed: list, hyp_id: str) -> list:
+    """The consume-marker write (see _mark_holdout_consumed); returns the
+    list now on disk. The bytes read are compared with the file again just
+    before os.replace; a change in between means re-read and re-apply. The
+    last attempt writes regardless, as master's writer always did."""
+    with _policy_lock():
+        for attempt in range(_MARKER_WRITE_ATTEMPTS):
+            raw = path.read_bytes() if path.exists() else None
+            data, new_list = _consume_marker_bytes(raw, policy, consumed, hyp_id)
+            if data is None:
+                print(f"⚙️  A6.1: {hyp_id} was already in holdout_consumed_by on disk.")
+                return new_list
+            last = attempt == _MARKER_WRITE_ATTEMPTS - 1
+            if _atomic_write_bytes(path, data, durable=True, expect=_ANY_BYTES if last else raw):
+                return new_list
+            print(f"⚠️  campaign_data_policy.yaml changed while recording {hyp_id}; "
+                  f"re-reading and re-applying the marker.")
+    raise AssertionError("unreachable: the last attempt always writes")
 
 
 def _load_data_policy() -> dict:
@@ -4266,7 +4552,7 @@ def _holdout_already_spent(hyp_id: str, policy: dict | None = None) -> bool:
     """The single-use check (A6.1), in one place: is hyp_id in
     campaign_data_policy.yaml holdout_consumed_by?"""
     policy = _load_data_policy() if policy is None else policy
-    return hyp_id in (policy.get("holdout_consumed_by") or [])
+    return hyp_id in _consumed_list(policy.get("holdout_consumed_by"))  # exact, never substring
 
 
 def _mark_holdout_consumed_if_absent(hyp_id: str) -> bool:
@@ -4553,7 +4839,7 @@ def _other_pending_spends(run_id: str) -> list:
         if consume or (isinstance(spend, dict) and spend.get("decision") == "spend"):
             pending.append(f"{rid} ({'consume record' if consume else 'spend decision'}, "
                            f"pending_stage={st.get('pending_stage')!r})")
-    unaccounted = [h for h in (_load_data_policy().get("holdout_consumed_by") or [])
+    unaccounted = [h for h in _consumed_list(_load_data_policy().get("holdout_consumed_by"))
                    if h not in finished_ids]
     if unaccounted:
         pending.append(f"campaign_data_policy.yaml holdout_consumed_by {unaccounted} (no finished "
@@ -10395,7 +10681,7 @@ def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
 
     # 2. Single-use enforcement
     policy = load_yaml(_DATA_POLICY_PATH) or {} if _DATA_POLICY_PATH.exists() else {}
-    consumed = policy.get("holdout_consumed_by", [])
+    consumed = policy.get("holdout_consumed_by") or []
     if _holdout_already_spent(hyp_id, policy):
         print(f"\n🛑 HOLDOUT REFUSED: {hyp_id} has already consumed the single holdout evaluation "
               f"(found in campaign_data_policy.yaml holdout_consumed_by). "

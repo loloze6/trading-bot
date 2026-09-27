@@ -174,7 +174,7 @@ the most consequential file in this directory.*
 - `walk_forward_extension` — the range you may search over now.
 - `backward_extension` — the 2018–2023 backfill, with per-feed true start dates (funding did not exist before perpetuals launched).
 - `eras` — era boundaries for episode-blocked significance; every prescreen over backfilled data must report per-era, not only pooled.
-- `holdout_consumed_by` — hypothesis ids that have spent their **single** holdout evaluation. There is no second attempt.
+- `holdout_consumed_by` — hypothesis ids that have spent their **single** holdout evaluation. There is no second attempt. The only code that writes this file is `workflow/run_phase1_research.py::_mark_holdout_consumed` (both the legacy holdout gate and the `verdict_routing_retired` record path). Under a lock, it edits this one value in place and keeps every other byte, comments included (CUL-331; before that fix it re-dumped the whole file and dropped every comment). The marker is written after the seal is spent, so it never refuses. If the file has a shape the in-place edit cannot handle, it falls back to the old full rewrite, and a loud WARNING says the comments were lost.
 - `holdout_contaminated_runs` — quarantined runs that crossed the boundary.
 
 **STATUS** — live. Hand-edited, rarely, and never casually.
