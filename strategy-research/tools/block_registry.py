@@ -316,15 +316,23 @@ def blocks_for_run(path: Path, run_id: str) -> list:
 
 
 def record_run(path: Path, run_dir: Path, entry: dict, *, root: Path,
-               composition_runs: bool = False) -> dict | None:
+               composition_runs: bool = False, composition_run: bool = False) -> dict | None:
     """The regroup_record hook. Returns the memory entry's `registry` value
     ({"block_ids": [...]} or {"skipped": reason}); None for a fault-only
     entry, which carries no registry field. Raises BlockRegistryError on a
-    malformed file/manifest or an append-only conflict."""
+    malformed file/manifest or an append-only conflict.
+    `composition_run` (E-060 S3b, guess 11; the caller passes it only under
+    orchestrator.composition_runs): the run is a composition -- a composite
+    NEVER registers as a block (registering would change the registry and
+    re-trigger R1 forever), whatever its idea_status: {"skipped":
+    "composition"}, no block_manifest.yaml read, no warning."""
     run_id = entry["run_id"]
     if entry.get("engineering_fault") is not None:
         _append(path, run_id, [])  # never registers; only refuses to hide an old block
         return None
+    if composition_run:
+        _append(path, run_id, [])  # never registers; only refuses to hide an old block
+        return {"skipped": _cm.REGISTRY_SKIPPED_COMPOSITION}
     if entry.get("legacy") is not False or entry.get("idea_status") != "validated":
         _append(path, run_id, [])
         return {"skipped": _cm.REGISTRY_SKIPPED_NOT_VALIDATED}

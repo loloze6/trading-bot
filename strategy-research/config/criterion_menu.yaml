@@ -146,3 +146,23 @@ code_added_criteria:
       Card A: a block must hold information the composite does not. Rank-based,
       so scale-free: the rolling scale-only standardisation of operator
       decision 1 (S3) cannot change it.
+  - id: profit_bars
+    # E-060 S3b (S1_FINDINGS.md guess 9): a composition run's only criterion.
+    # A composite's criteria ARE the profit bars (card F): the cell is the
+    # result of the same grading function branch 3 runs on that variant
+    # (run_phase1_research._grade_profit_bars_protocol_result against
+    # config/profitability_bars.yaml) -- one computation, so the grid and
+    # branch 3 cannot disagree. PASS only when every bar reads PASS (a
+    # NOT_EVALUABLE bar is not a PASS, as in branch 3). Written into a
+    # composition run's pass_rule by code at step 1a (never picked by 1a) and
+    # graded only by evaluate_grid(composition_runs=True); anywhere else its
+    # source is not a grid source and the cell is a SPEC_ERROR.
+    metric: profit_bars
+    source: profit_bars
+    card_overridable: []
+    scale_free: true
+    symbol_reducer: null
+    requires_flag: orchestrator.composition_runs.enabled
+    basis: >
+      Card F: a composite is judged on the campaign's profit bars, not on idea
+      criteria -- the blocks it combines were each already validated.

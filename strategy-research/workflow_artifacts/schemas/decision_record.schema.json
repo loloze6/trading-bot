@@ -50,8 +50,31 @@
             "registry_revision": { "type": "integer" },
             "last_composition_revision": { "type": ["integer", "null"] },
             "would_fire": { "type": "boolean" },
-            "fired": { "const": false, "description": "No-op until slice 7." },
-            "reason": { "type": "string" }
+            "fired": { "type": "boolean", "description": "Always false without orchestrator.composition_runs (the recorded no-op). E-060 S3b, with it: true when a composition was picked this decision." },
+            "reason": { "type": "string" },
+            "timeframes": {
+              "type": "array",
+              "description": "E-060 S3b (composition_runs only): one row per exact bar size carrying forecast blocks.",
+              "items": {
+                "type": "object",
+                "required": ["timeframe", "timeframe_category", "block_ids", "registry_hash", "entry_id", "status", "reason"],
+                "additionalProperties": false,
+                "properties": {
+                  "timeframe": { "type": "string" },
+                  "timeframe_category": { "enum": ["high", "medium", "low", "daily"] },
+                  "block_ids": { "type": "array", "items": { "type": "string" } },
+                  "registry_hash": { "type": ["string", "null"] },
+                  "entry_id": { "type": ["string", "null"] },
+                  "status": { "enum": ["single_block", "fired_before", "failed_before", "eligible"] },
+                  "reason": { "type": "string" }
+                }
+              }
+            },
+            "excluded_blocks": { "type": "array", "items": { "type": "object" } },
+            "entry_id": { "type": "string" },
+            "timeframe": { "type": "string" },
+            "registry_hash": { "type": "string" },
+            "priority": { "type": "number" }
           }
         },
         "r2": {
@@ -107,7 +130,16 @@
           "description": "E-059 S2b: R2's ready request (new: minted now; false: a waiting one flipped ready).",
           "properties": { "r2_request": { "type": "string" }, "queue_entry_id": { "type": "string" },
                           "brief_owner": { "type": "string" }, "brief_path": { "type": "string" },
-                          "new": { "type": "boolean" }, "why": { "type": "string" } } }
+                          "new": { "type": "boolean" }, "why": { "type": "string" } } },
+        { "type": "object",
+          "required": ["composition", "queue_entry_id", "brief_path", "timeframe", "registry_hash",
+                       "priority", "why"],
+          "additionalProperties": false,
+          "description": "E-060 S3b: R1's composition (orchestrator.composition_runs only).",
+          "properties": { "composition": { "type": "string" }, "queue_entry_id": { "type": "string" },
+                          "brief_path": { "type": "string" }, "timeframe": { "type": "string" },
+                          "registry_hash": { "type": "string" }, "priority": { "type": "number" },
+                          "why": { "type": "string" } } }
       ]
     },
     "stop": {

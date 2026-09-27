@@ -117,9 +117,9 @@
             { "type": "object", "additionalProperties": false, "required": ["block_ids"],
               "properties": { "block_ids": { "type": "array", "items": { "type": "string" }, "minItems": 1 } } },
             { "type": "object", "additionalProperties": false, "required": ["skipped"],
-              "properties": { "skipped": { "enum": ["no_manifest", "not_validated"] } } }
+              "properties": { "skipped": { "enum": ["no_manifest", "not_validated", "composition"] } } }
           ],
-          "description": "E-058 S2b (tools/block_registry.py): block_ids registered in campaign_record/block_registry.yaml by this run, or why none was: not_validated (idea_status is not validated) or no_manifest (validated, but artifacts/block_manifest.yaml is absent)."
+          "description": "E-058 S2b (tools/block_registry.py): block_ids registered in campaign_record/block_registry.yaml by this run, or why none was: not_validated (idea_status is not validated), no_manifest (validated, but artifacts/block_manifest.yaml is absent) or composition (E-060 S3b: a composition run -- a composite never registers as a block)."
         },
         "profit_bars": {
           "oneOf": [

@@ -3,18 +3,30 @@
   "title": "Hypothesis Card",
   "description": "A single, testable trading strategy hypothesis with an explicit edge-source declaration. Improvement 01 (A1.1-A1.3).",
   "type": "object",
-  "required": [
-    "hypothesis_id",
-    "thesis",
-    "rationale",
-    "edge_source",
-    "signal_concept",
-    "target_market",
-    "timeframe",
-    "assumptions",
-    "expected_failure_modes"
-  ],
+  "if": { "required": ["composition"] },
+  "then": {
+    "description": "E-060 S3b: a composition run's card, written by code (step 1a composition pass-through, no LLM). A composite has no single edge source of its own: its blocks were each validated with theirs.",
+    "required": ["hypothesis_id", "thesis", "timeframe", "composition", "criteria", "pass_through", "source"]
+  },
+  "else": {
+    "required": [
+      "hypothesis_id",
+      "thesis",
+      "rationale",
+      "edge_source",
+      "signal_concept",
+      "target_market",
+      "timeframe",
+      "assumptions",
+      "expected_failure_modes"
+    ]
+  },
   "properties": {
+    "composition": {
+      "type": "object",
+      "description": "E-060 S3b: the composition this card passes through (registry_hash, registry_revision, timeframe, timeframe_category, block_ids, manifest_ref). Present only on a composition run's code-written card.",
+      "required": ["registry_hash", "timeframe", "block_ids", "manifest_ref"]
+    },
     "hypothesis_id": { "type": "string" },
     "thesis": {
       "type": "string",

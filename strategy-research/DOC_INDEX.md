@@ -157,6 +157,19 @@ cards (queued, ranked by their 1a scores), `brief_status` open/exhausted, R2
 briefs. Design and operator decisions:
 `engineering/roadmap/E-059/S1_FINDINGS_6B.md`.
 
+### "How are validated blocks combined into a composite?"
+→ **[`docs/USER_GUIDE.md` §2.3 "Composition mode"](docs/USER_GUIDE.md)** —
+E-060 S3b, off by default: `orchestrator.composition_runs.enabled` (requires
+`decide_next`, `variant_loop`, `profit_bars_every_backtest`,
+`verdict_routing_retired`). Decide-next's R1 queues
+`composition-<tf>-<registry_hash>` when an exact timeframe holds >= 2 forecast
+blocks not yet composed; `tools/composition.py` writes the variants (per-window
+weights, estimated only from data before each window), the manifest and
+`campaign_record/compositions.yaml`; the run's 1a/1b/step 2 are code, graded on
+the profit bars; a composite never registers as a block. Failures:
+`docs/RUNBOOK.md` §3 `composition_failed`. Design and decisions:
+`engineering/roadmap/E-060/S1_FINDINGS.md`.
+
 ### "Where did refine / pivot / escalate / kill go?"
 → **[`docs/USER_GUIDE.md` stage 17 `regroup_record`, item 12](docs/USER_GUIDE.md#stage-17--regroup_record)**
 — verdict routing retired (E-059 S3, slice 6c S2a, off by default:
