@@ -26,7 +26,11 @@ a refined brief that fixes the identified failure, or a final decision to kill o
 - `backtest_spec.yaml`         (config_rationale: what config choices mapped to which claims)
 - `research_brief.yaml`        (original research question and constraints)
 - `campaign_state.yaml`        (cross-run altitude history; what has been tried and at which altitude)
-- `trade_diagnostics.json`     (Step 03 — optional; present when trades occurred. Read summary block.)
+- `trade_diagnostics.json`     (Step 03 — optional; present when trades occurred. Read summary block.
+                                CUL-336: you cannot open files; its summary block is provided as
+                                `artifacts/trade_diagnostics_summary.yaml` when the run has one --
+                                the per-trade list is not provided. Wherever this skill says
+                                `trade_diagnostics.json`'s summary, use that file.)
 - `post_backtest_routes`       (E-039/CUL-264, 2026-09-11 — optional, injected directly into this
                                 stage's own handoff, not a separate file. Present only when a real
                                 backtest ran and produced measured trade/window data. See the
@@ -562,7 +566,9 @@ with the EXACT diagnostic values that triggered the rule:
 
 ## STEP 03 — Trade Attribution (required when trade_diagnostics.json is available)
 
-Read `trade_diagnostics.json` summary block. Apply the decision table below to populate
+Read `trade_diagnostics.json` summary block (provided as
+`artifacts/trade_diagnostics_summary.yaml`; if it is not among your inputs,
+the run has no trade diagnostics -- skip this step). Apply the decision table below to populate
 `trade_attribution` in `verdict_interpretation.yaml`:
 
 ```yaml

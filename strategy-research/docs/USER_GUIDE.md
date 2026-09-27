@@ -648,9 +648,10 @@ how (E-039 S4, 2026-09-12 — see item 4 below).
 `innovation_expansion_to_validation.yaml`, `pipeline_state.yaml`
 (for the refinement counter), `pre_registration.yaml` if present (the
 pre-registered `sample_split_design.holdout_range`, A6.1 — see below),
-`config/cost_model.yaml` (required, for `cost_feasibility`) and, optionally,
-`docs/DATA_AVAILABILITY.md` — the last two and `innovation_notes.yaml` are
-added by code (CUL-336). `config/campaign_data_policy.yaml` is deliberately
+`config/cost_model.yaml` (required, for `cost_feasibility`, added by code —
+CUL-336). `innovation_notes.yaml` and `docs/DATA_AVAILABILITY.md` are added
+only when the run is already in a refine loop (`artifacts/refinement_notes.yaml`
+exists), keeping a first pass at minimal context. `config/campaign_data_policy.yaml` is deliberately
 not an input: the skill says not to read it directly, and the one field it
 fed (`sample_split_design.walk_forward_range`) has no code reader.
 
@@ -1133,12 +1134,16 @@ size of change.
 
 **Stage input:** `protocol_result.yaml`, `pass_rule_evaluation.yaml`
 (**required**), `trade_diagnostics.json`, `regime_detector_report.yaml` and
-`regime_audit_decision.yaml` if present. (CUL-336: `pass_rule_evaluation.yaml`,
-`config/coin_universe.yaml` and `quant-fundamentals/SKILL.md` reach the prompt
-through `_apply_closed_book_inputs`; before it no handoff listed the first two
-at a path that resolves, and the agent could only have opened them itself.
-`campaign_state.yaml`, `trade_diagnostics.json` and `innovation_notes.yaml` are
-still not handoff inputs of this stage.) `post_backtest_routes` (CUL-264) is
+`regime_audit_decision.yaml` if present. (CUL-336: these reach the prompt
+through `_apply_closed_book_inputs` — before it no handoff listed them at a path
+that resolves, and the agent could only have opened them itself:
+`pass_rule_evaluation.yaml`, required once `protocol_result.yaml` records a
+completed backtest, optional otherwise; `config/coin_universe.yaml` and
+`quant-fundamentals/SKILL.md`, required; `campaign_record/campaign_state.yaml`,
+optional; and `artifacts/trade_diagnostics_summary.yaml`, the `summary` block
+of this run's `trade_diagnostics.json`, written by code — the per-trade list
+(up to ~480 KB) is not given. `innovation_notes.yaml` is still not an input of
+this stage.) `post_backtest_routes` (CUL-264) is
 injected directly into this stage's own handoff — not a separate file — when a real
 backtest produced measured trade/window data; see item 7 below.
 `config/coin_universe.yaml` and `innovation_notes.yaml`, if available, feed
@@ -3020,7 +3025,7 @@ The central state machine. Manages the entire lifecycle of a run.
 **Responsibilities:**
 - Loads/saves `pipeline_state.yaml` and `campaign_state.yaml` at every transition.
 - Invokes skills by building prompts from [handoff](#g-handoff) files + [skill](#g-skill) personas and sending them to the Claude SDK or Gemini API.
-- **Stage agents run closed-book (CUL-336, 2026-09-27).** Every Claude stage call (`run_claude_worker` and the five specialist readers) uses the options from `_stage_agent_options()`, the only place they are built: `tools=[]` (no built-in tool: no Read, Grep, Bash, Web…), `setting_sources=[]` (no user/project/local settings file, so no machine's permission allow rules and no CLAUDE.md), `strict_mcp_config=True` (no MCP server). The agent sees its prompt and nothing else, so every file a stage needs must be in its handoff's `required_inputs`/`optional_inputs`. Before CUL-336 the calls passed only `allowed_tools=[]`, which in claude_agent_sdk 0.2.82 sends no flag at all, so stages had the CLI's default tools and a run_060 validation agent read two config files on its own (E-035 S1_FINDINGS §1.2). The files stage skills tell the agent to read and no handoff delivered are now added by `_apply_closed_book_inputs` (`_CLOSED_BOOK_STAGE_INPUTS`): `config/cost_model.yaml` for validation, `config/coin_universe.yaml` for innovation_expansion and verdict_interpreter, `quant-fundamentals/SKILL.md` for backtest_specification, strategy_config_authoring, verdict_interpreter and campaign_review, plus optional run artifacts (see each stage's "Stage input"). `max_turns` is not set: with no tools a stage is one turn by construction, and `num_turns` in the audit log shows it.
+- **Stage agents run closed-book (CUL-336, 2026-09-27).** Every Claude stage call (`run_claude_worker` and the five specialist readers) uses the options from `_stage_agent_options()`, the only place they are built: `tools=[]` (no built-in tool: no Read, Grep, Bash, Web…), `setting_sources=[]` (no user/project/local settings file, so no machine's permission allow rules and no CLAUDE.md), `strict_mcp_config=True` (no MCP server), `env={"CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"}` (the bundled CLI loads the auto-memory `MEMORY.md` — keyed on the cwd's git root, i.e. the operator's own session memory for this repository — behind this env var and settings/feature flags, not behind `--setting-sources`), and `cwd` = one fixed empty directory in the system temp dir (`strategy_research_stage_agent_cwd`), outside any repository; the prompt itself is still assembled in-process, so nothing depends on the agent's cwd, and stage transcripts now sit under `~/.claude/projects/<that dir's key>/`. The agent sees its prompt and nothing else, so every file a stage needs must be in its handoff's `required_inputs`/`optional_inputs`. Before CUL-336 the calls passed only `allowed_tools=[]`, which in claude_agent_sdk 0.2.82 sends no flag at all, so stages had the CLI's default tools and a run_060 validation agent read two config files on its own (E-035 S1_FINDINGS §1.2). The files stage skills tell the agent to read and no handoff delivered are now added by `_apply_closed_book_inputs` (`_CLOSED_BOOK_STAGE_INPUTS`): `config/cost_model.yaml` for validation, `config/coin_universe.yaml` for innovation_expansion and verdict_interpreter, `quant-fundamentals/SKILL.md` for backtest_specification, strategy_config_authoring, verdict_interpreter and campaign_review, `campaign_record/campaign_state.yaml` and a trade-diagnostics summary for verdict_interpreter, plus conditional run artifacts (see each stage's "Stage input"). A test (`test_every_skill_reference_is_delivered_or_waived`) fails when a stage skill names a repo path, or lists a "Required inputs" item, that no handoff delivers and no waiver explains. `max_turns` is not set: with no tools a stage is one turn by construction, and `num_turns` in the audit log shows it.
 - Routes between stages based on [artifact](#g-artifact) contents (e.g., reads `validation_decision.yaml.status` to decide next step).
 - Enforces circuit breakers (refinement budget, token budget, [altitude](#g-altitude) escalation logic).
 - Tracks token usage and cost per stage in the [audit log](#g-audit-log).
