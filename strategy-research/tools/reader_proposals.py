@@ -23,10 +23,17 @@ import yaml
 
 SCORE_KEYS = ("confidence_real", "distance_to_profitable", "mechanism_plausibility")
 _PROPOSAL_KEYS = frozenset(
-    {"proposal_id", "kind", "patch", "block", "evidence", "scores", "model_id", "rubric_version"})
+    {"proposal_id", "kind", "patch", "block", "evidence", "scores", "model_id", "rubric_version",
+     "requires_feed"})
 _PATCH_ITEM_KEYS = frozenset({"component_id", "field", "before", "after"})
 _BLOCK_KEYS = frozenset({"kind", "config_paths", "scaffolding", "rationale"})
 _PROPOSAL_ID_RE = re.compile(r"^[a-z_]+-.+-[0-9]+$")
+# E-035 S2c: the optional `requires_feed` field, orthogonal to `kind`.
+REQUIRES_FEED_KEYS = frozenset({"feed", "reason"})
+# A feed is named as a strategy config's aux_feeds entry names it (a
+# trading-bot FEED_REGISTRY key) -- lowercase snake_case, so it compares
+# exactly against the registry's keys.
+FEED_NAME_RE = re.compile(r"[a-z][a-z0-9_]*")
 
 
 class ProposalError(ValueError):
@@ -87,6 +94,20 @@ def _check_proposal(p, cat: str, where: str) -> None:
     if not isinstance(ev, list) or not ev or not all(_non_empty_str(e) for e in ev):
         raise ProposalError(f"{where}: evidence must be a non-empty list of non-empty strings")
     check_scores(p.get("scores"), where)
+    if "requires_feed" in p:
+        _check_requires_feed(p["requires_feed"], where)
+
+
+def _check_requires_feed(rf, where: str) -> None:
+    """E-035 S2c: exactly {feed, reason}; feed a lowercase snake_case name,
+    reason a non-empty string. Present-but-null is malformed, not 'absent'."""
+    if not isinstance(rf, dict) or set(rf) != REQUIRES_FEED_KEYS:
+        raise ProposalError(f"{where}: requires_feed must be exactly {{feed, reason}}")
+    if not isinstance(rf["feed"], str) or not FEED_NAME_RE.fullmatch(rf["feed"]):
+        raise ProposalError(f"{where}: requires_feed.feed={rf['feed']!r} must be a lowercase "
+                            f"snake_case feed name (e.g. funding_rate, open_interest)")
+    if not _non_empty_str(rf["reason"]):
+        raise ProposalError(f"{where}: requires_feed.reason must be a non-empty string")
 
 
 def check_scores(scores, where: str) -> None:

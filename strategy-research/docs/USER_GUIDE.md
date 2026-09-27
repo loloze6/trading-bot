@@ -1243,7 +1243,14 @@ category's report, no regime-audit decision).
 
 **Stage output:** `artifacts/proposals/<category>.yaml` × 5 (a YAML list, `[]`
 for none), each validated by `tools/reader_proposals.py::load_proposals`; a
-malformed file stops the run.
+malformed file stops the run. A proposal's fields
+(`workflow_artifacts/schemas/proposal.schema.json`): `proposal_id`
+(`<category>-<run_id>-<n>`), `kind` (`patch` | `new_block`), `patch` or
+`block`, `evidence`, `scores` (three 0-3 anchors), `model_id`,
+`rubric_version`, and the optional `requires_feed: {feed, reason}` (E-035
+S2c, item 7). Plus, only when some proposal carries `requires_feed` for a
+feed that is not wired, one row per such feed in
+`campaign_record/data_requests.yaml`.
 
 **Features / logic in place**
 
@@ -1279,6 +1286,30 @@ malformed file stops the run.
    `engineering/roadmap/E-046a/S2_5B_II_B_CALLERS.md`.
 6. **With stage 17 on**, the route in item 4 runs after `regroup_record`
    instead of here (same function, same result).
+7. **Feed requests** (E-035 S2c, delivery_plan_v26.md slice 8.2; no flag of
+   its own). A proposal of either `kind` may carry `requires_feed: {feed,
+   reason}` when its report shows the missing data would plausibly change the
+   result: `feed` is a lowercase snake_case name as a strategy config's
+   `aux_feeds` would name it, `reason` a non-empty string; any other shape
+   stops the run. One vocabulary: each reader's handoff carries
+   `injected_context.feed_names` (`run_phase1_research._reader_feed_vocabulary`)
+   -- `wired` (`FEED_REGISTRY` keys), `reserved` (`RESERVED_FEED_REGISTRY`
+   keys) and `wishlist_only` (`campaign_record/feed_wishlist.yaml` names in
+   neither) -- and its SKILL.md tells it to use a listed name, never a
+   synonym. An unreadable registry or wishlist is reported in that block,
+   never raised. After the proposals validate, `_route_reader_feed_requests`
+   reads the feed registry (only if some proposal carries the field; then an
+   unreadable registry stops the run) and appends ONE row per feed asked for
+   that is not wired to `campaign_record/data_requests.yaml`:
+   `{run_id, stage: specialist_reader, feed, request, proposals: [{category,
+   proposal_id, reason}], reason}`, where `request` is `acquisition` (never
+   built; reason `requires_feed:<feed> -- ...`) or `designation` (a reserved
+   feed, which needs a `campaign_data_policy.yaml` designation; reason
+   `requires_feed_reserved:<feed> -- ...`). A wired feed gets no row. Rows are
+   keyed on (run, stage, feed) (`campaign_review_retired.feed_request_key`),
+   so a resume, or a re-attempt that asks for the same feed in other words or
+   under another proposal id, adds nothing. It changes no status, route or
+   queue entry: decide-next gates the candidate (§5 `run_campaign.py`).
 
 ---
 
@@ -2693,6 +2724,7 @@ market_type are not `tradable: true` — **or are undeclared**
 | `config/detector_wishlist.yaml` | Detector families to build when an ungated edge exists. Each candidate's `trigger_condition.predicate` is a structured, machine-checkable expression evaluated by `workflow/run_campaign.py::evaluate_wishlist_predicate()` — no longer human-reviewed prose. `status`/`last_evaluated_at`/`last_evaluated_against`/`kb_state_hash`/`evaluation_note` are written ONLY by `evaluate_and_persist_wishlist_predicate()` (single authority — never hand-edit); a persisted `status` is only trustworthy if its `kb_state_hash` matches a fresh `sha256` of `campaign_knowledge_base.yaml`'s current bytes. See `RUNBOOK.md` section 3 and `docs/CONCEALMENT_INSTRUCTION_DOCTRINE.md`. |
 | `campaign_knowledge_base.yaml` | Durable findings store — see the file itself for the current count; this table doesn't track a point-in-time number. |
 | `campaign_record/campaign_memory.yaml` | Per-run memory (E-058 S2a), written only by stage 17 `regroup_record` when `orchestrator.regroup_record.enabled` is on (off by default). One entry per `run_id`; fields in the stage 17 block. No old runs; those live in `campaign_knowledge_base.yaml`. |
+| `campaign_record/data_requests.yaml` | Append-only `{requests: [...]}` intake of the feed-acquisition lane. Two writers, both through `run_phase1_research._append_data_requests`: the data-availability gate's per-variant declines (`stage: data_availability_gate`, `{run_id, stage, variant_id, outcome, reason, reasons}`; idempotent only under `verdict_routing_retired`), and (E-035 S2c) stage 16's `requires_feed` proposals (`stage: specialist_reader`, one row per feed that is not wired: `{run_id, stage, feed, request: acquisition|designation, proposals: [{category, proposal_id, reason}], reason}`, always idempotent on `campaign_review_retired.feed_request_key` = run, stage, feed; the gate's rows keep `request_key` = run, stage, variant, reason). Existing rows are never rewritten. Decide-next records its row count as information; the binding check is its own `requires_feed` feasibility gate. |
 | `runs/<run_id>/artifacts/decision_record.yaml` | One decide-next decision (E-059 S2a), written by `run_campaign.py`'s DONE branch only when `orchestrator.decide_next.enabled` is on (off by default), from `tools/decide_next.py`. Inputs' hashes, R1/R2 (no-ops), candidates with gates/cost/rank, `picked` or `stop`. Schema `workflow_artifacts/schemas/decision_record.schema.json`. See §5 `run_campaign.py`. |
 | `campaign_record/candidate_briefs/<id>.md` | The brief decide-next writes for the candidate it picked (E-059 S2a, same flag). No criteria on purpose: step 1a writes them. |
 | `campaign_record/queued_cards/<run_id>/hypothesis_card_<n>.yaml` | A brief's extra hypothesis card, saved by the multi-card split under `orchestrator.decide_next.enabled` (E-059 S2b) and named by its queue entry's `card_ref`. Listed with its 1a scores in `runs/<run_id>/artifacts/queued_hypotheses.yaml`. |
@@ -2851,7 +2883,39 @@ Novelty is the exact match against the memory, binding: config hash, measured
 symbols, the protocol file's timeframe (normalised) and a content hash of its
 windows -- never the per-run protocol path (`tools/novelty.py`, shared with
 the stage-6 exact-match check); the legacy exclusion digest is recorded, never
-refuses. Ranking (after collapsing eligible duplicates on that
+refuses. Feasibility makes a candidate `INFEASIBLE` (ineligible, still listed
+in the record with its `reasons`) when: its id is unsafe or collides with a
+queue id or brief (`unsafe_proposal_id`, `queue_id_collision`,
+`brief_collision`); the source run has no protocol pin or brief
+(`source_has_no_protocol_pin`, `source_brief_missing`); a patch's source is
+untested, missing or does not resolve (`source_base_variant_not_tested`,
+`source_config_missing`, `source_manifest_missing`, `patch_unresolvable`,
+`stale_before`, `manifest_unresolved`, `composition_check_failed`,
+`unknown_component_class`); a sketch is a regime block
+(`regime_block_needs_composition`); or (E-035 S2c) its proposal carries
+`requires_feed`, the feed is not wired, and the candidate would read it --
+reason `requires_feed_reserved:<feed> -- ...` for a reserved feed (needs a
+data-policy designation) or `requires_feed:<feed> -- ...` otherwise (needs
+an acquisition, or no feed set was supplied). Reasons name only the missing
+feed, so an unrelated registry change never rewrites them. "Would read it":
+the patch's resolved config lists the feed in `aux_feeds` or uses a component
+class whose `consumes_feeds` names it (`decide_next.config_feeds`); a patch
+whose resolved config reads neither is not blocked (its request row is still
+filed at stage 16), and a new_block -- no config before 1b -- always counts
+as reading it. The layering is deliberate: decide-next checks only that the
+feed is WIRED (a `FEED_REGISTRY` key of `trading-bot/data/feed_registry.py`,
+classified as the data-availability gate does -- reserved first); whether a
+wired feed covers the run's venue, symbols and windows stays that gate's
+check at stage 14, which parks the run `waiting_for_data` under slice 6c S2c.
+The registries and the components' `consumes_feeds` are read with ast
+(`decide_next.load_feed_set`) only when some proposal carries `requires_feed`,
+and then an unreadable file stops the decision (retried like any decide
+failure); the record's `inputs.feed_set_sha256` is written only then. Such a
+candidate stays in the pool and is re-checked at every decision; its
+`gates.feasibility.requires_feed` records `{feed, status, consumed,
+available, reason}`, and when picked its brief's goal says which feed it
+needs. Candidates without `requires_feed` are unchanged.
+Ranking (after collapsing eligible duplicates on that
 key): `confidence_real` desc, `distance_to_profitable` desc, cost (backtests)
 asc, id asc; no lineage demotion. Scores only rank and appear only in the
 decision record. A picked candidate is a new idea (`<parent>__<proposal_id>`)

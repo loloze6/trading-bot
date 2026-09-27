@@ -644,6 +644,39 @@ Restore `status: paused_for_human` on the run and `paused:waiting_for_<kind>`
 on the entry, then `--unpark`; or set `parked: null` by hand, which skips the
 unpark checks.
 
+### Reader proposals waiting on a feed (E-035 S2c)
+
+A reader proposal with `requires_feed` is not a parked run and has no queue
+entry. Stage 16 writes one `stage: specialist_reader` row per run and feed to
+`campaign_record/data_requests.yaml`, and only for a feed that is not wired:
+
+| `request` | Reason prefix | What a human does |
+|---|---|---|
+| `acquisition` | `requires_feed:<feed>` | Build and wire the feed into the engine (`trading-bot/data/ADDING_A_FEED.md`). |
+| `designation` | `requires_feed_reserved:<feed>` | The feed exists in `RESERVED_FEED_REGISTRY`; decide whether to commit a `config/campaign_data_policy.yaml` designation covering the window. Nothing to build. |
+
+Decide-next lists the candidate as `INFEASIBLE` with the same reason prefix in
+each `decision_record.yaml` while the feed is not wired AND the candidate would
+read it (a new_block always counts; a patch whose resolved config reads
+neither the feed's `aux_feeds` entry nor a component consuming it is not
+blocked). There is nothing to unpark: once the feed is wired, the next decision
+re-checks the candidate and can pick it.
+
+The two checks are layered, not duplicated: decide-next asks only "is the feed
+wired" (a `FEED_REGISTRY` key in `trading-bot/data/feed_registry.py`); whether
+it covers the run's venue, symbols and windows is the data-availability gate's
+check at USER_GUIDE stage 14, which parks a short run `waiting_for_data`
+(section above). So never add a name to `FEED_REGISTRY` without the fetcher and
+data behind it -- that makes the candidate eligible and moves the failure to
+the gate.
+
+If a decision fails with a `DecideNextError` naming `data/feed_registry.py` or
+`strategies/strategy_components.py`, some proposal carries `requires_feed` and
+that file no longer has the literal shape decide-next reads with ast
+(`FEED_REGISTRY = {...}`, `RESERVED_FEED_REGISTRY` as a dict or a
+comprehension over a literal tuple, `consumes_feeds = (...)`). Campaigns whose
+proposals carry no `requires_feed` never read either file for this.
+
 ---
 
 ## 5. Stop cleanly

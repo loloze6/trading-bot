@@ -3058,6 +3058,11 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
     digest = orch.load_yaml(digest_path) if digest_path.exists() else None
     known = (dn.known_component_classes(_TRADING_BOT_ROOT)
              if (_TRADING_BOT_ROOT / "strategies" / "strategy_components.py").exists() else None)
+    # E-035 S2c: the feed set a requires_feed proposal is checked against,
+    # read lazily -- load_inputs calls it only when some proposal carries
+    # requires_feed, and it then fails loud if the registry is unreadable.
+    def feeds():
+        return dn.load_feed_set(_TRADING_BOT_ROOT)
     # E-060 S3b: R1's inputs only under orchestrator.composition_runs (the kwargs
     # only when on, so the flag-off call is unchanged).
     comp_on = orch._composition_runs_enabled()
@@ -3065,7 +3070,7 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
     def _decide():
         inputs = dn.load_inputs(
             ROOT, final_queue, categories=orch._reader_categories(), known_classes=known,
-            digest=digest,
+            digest=digest, feed_set=feeds,
             **({"composition_runs": True, "dsr_basis": _ledger_dsr_basis()} if comp_on else {}))
         mem_entry = (inputs["memory"].get("runs") or {}).get(run_id) or {}
         trigger = {"after_run": run_id, "after_entry": entry["id"],

@@ -40,7 +40,9 @@ What decides, in order:
      (build_exclusion_digest.legacy_family_lookup) is recorded for
      information only and never refuses; the KB layer is not called.
      Feasibility -- the patch resolves, the manifest still resolves, no
-     unknown component class; a regime block is infeasible before slice 7.
+     unknown component class; a regime block is infeasible before slice 7;
+     (E-035 S2c) a proposal's `requires_feed` blocks it only while that feed
+     is not WIRED and the candidate's config consumes it (requires_feed_gate).
   3. Eligible candidates collapse (card I, full novelty key; ineligible ones
      never collapse into them) and are ranked: confidence_real desc,
      distance_to_profitable desc, cost (backtests) asc, candidate_id asc.
@@ -235,6 +237,231 @@ def component_class_status(trading_bot_root: Path, class_path) -> str:
     except (SyntaxError, ValueError, OSError):
         return "invalid"
     return "defined" if name in names else "missing"
+
+
+# ---------------------------------------------------------------------------
+# E-035 S2c (slice 8.2): feeds a reader proposal may require
+# ---------------------------------------------------------------------------
+# The layering (one check per step, never duplicated):
+#   * HERE, at decide-next: is the feed WIRED -- a key of
+#     trading-bot/data/feed_registry.py's FEED_REGISTRY, the registry the
+#     engine loads every backtest from -- and does the candidate's config
+#     consume it? That is all decide-next can know before a config exists.
+#   * At step 3 (tools/data_availability_gate.py, stage 14): does the wired
+#     feed actually COVER this run's venue, symbols and windows? A shortfall
+#     there parks the run waiting_for_data (slice 6c S2c), as for any feed.
+# The classification is the gate's own (check_aux_feed_window): a
+# RESERVED_FEED_REGISTRY name is checked first and is declined until a
+# committed campaign_data_policy.yaml designation covers it (a DESIGNATION,
+# not an acquisition); any other name outside FEED_REGISTRY was never built
+# (an ACQUISITION). Both registries are read with ast, like
+# known_component_classes: the module imports pandas and the fetchers, which
+# decide_next must not need.
+FEED_REGISTRY_MODULE = "data.feed_registry"
+FEED_REGISTRY_NAME = "FEED_REGISTRY"
+RESERVED_FEED_REGISTRY_NAME = "RESERVED_FEED_REGISTRY"
+FEED_WIRED, FEED_RESERVED, FEED_UNKNOWN = "wired", "reserved", "unknown"
+CONSUMES_FEEDS_ATTR = "consumes_feeds"  # SubStrategyComponent.consumes_feeds
+
+
+def feed_registry_path(trading_bot_root: Path) -> Path:
+    """trading-bot/data/feed_registry.py under `trading_bot_root`."""
+    return Path(trading_bot_root).joinpath(*FEED_REGISTRY_MODULE.split(".")).with_suffix(".py")
+
+
+def _parse_module(path: Path) -> ast.Module:
+    try:
+        return ast.parse(Path(path).read_text(encoding="utf-8"))
+    except (OSError, SyntaxError, ValueError) as exc:
+        raise DecideNextError(f"{path}: cannot be read ({type(exc).__name__}: {exc})") from exc
+
+
+def _module_assignments(tree: ast.Module) -> dict:
+    """name -> value node, for every module-level `NAME = <value>`."""
+    out = {}
+    for node in tree.body:
+        if (isinstance(node, ast.Assign) and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Name)):
+            out[node.targets[0].id] = node.value
+    return out
+
+
+def _str_sequence(node, assigns: dict):
+    """The strings of a tuple/list literal whose items are string constants or
+    names bound at module level to one -- or of a name bound to such a
+    literal. None for any other shape."""
+    if isinstance(node, ast.Name) and isinstance(assigns.get(node.id), (ast.Tuple, ast.List)):
+        node = assigns[node.id]
+    if not isinstance(node, (ast.Tuple, ast.List)):
+        return None
+    out = []
+    for item in node.elts:
+        if isinstance(item, ast.Name):
+            item = assigns.get(item.id)
+        if not (isinstance(item, ast.Constant) and isinstance(item.value, str)):
+            return None
+        out.append(item.value)
+    return out
+
+
+def _registry_keys(tree: ast.Module, name: str, path: Path) -> list:
+    """Sorted string keys of the module-level `name = {...}` dict literal, or
+    of `name = {k: ... for k in <literal tuple/list, or a name bound to one>}`
+    (the shape RESERVED_FEED_REGISTRY has). Raises DecideNextError for any
+    other shape, or no keys -- a silent empty set would give every
+    requires_feed proposal the wrong status."""
+    node = _module_assignments(tree).get(name)
+    keys = None
+    if isinstance(node, ast.Dict):
+        if all(isinstance(k, ast.Constant) and isinstance(k.value, str) for k in node.keys):
+            keys = [k.value for k in node.keys]
+    elif (isinstance(node, ast.DictComp) and len(node.generators) == 1
+          and not node.generators[0].ifs and isinstance(node.generators[0].target, ast.Name)
+          and isinstance(node.key, ast.Name) and node.key.id == node.generators[0].target.id):
+        keys = _str_sequence(node.generators[0].iter, _module_assignments(tree))
+    if not keys:
+        raise DecideNextError(f"{path}: no module-level {name} dict literal (or comprehension over "
+                              f"a literal tuple) with string keys -- cannot classify feeds")
+    return sorted(keys)
+
+
+def known_feeds(trading_bot_root: Path) -> list:
+    """Sorted FEED_REGISTRY keys (the WIRED feeds), read with ast (never
+    imported). Raises DecideNextError when unreadable."""
+    path = feed_registry_path(trading_bot_root)
+    return _registry_keys(_parse_module(path), FEED_REGISTRY_NAME, path)
+
+
+def load_feed_registry(trading_bot_root: Path) -> dict:
+    """{"wired": FEED_REGISTRY keys, "reserved": RESERVED_FEED_REGISTRY keys},
+    both sorted, read with ast. Raises DecideNextError when the module is
+    missing, does not parse, or either registry is not a literal it can read."""
+    path = feed_registry_path(trading_bot_root)
+    tree = _parse_module(path)
+    return {FEED_WIRED: _registry_keys(tree, FEED_REGISTRY_NAME, path),
+            FEED_RESERVED: _registry_keys(tree, RESERVED_FEED_REGISTRY_NAME, path)}
+
+
+def component_consumed_feeds(trading_bot_root: Path) -> dict:
+    """{dotted class path: sorted feeds} for every top-level class of
+    COMPONENT_MODULE whose `consumes_feeds` (its own, or inherited from a
+    class of the same module) is non-empty -- the declaration the engine's
+    required_feeds() reads. Read with ast; raises DecideNextError when the
+    module is unreadable or a `consumes_feeds` is not a literal tuple/list of
+    strings (or of module-level string constants)."""
+    path = _component_module_path(trading_bot_root)
+    tree = _parse_module(path)
+    assigns = _module_assignments(tree)
+    classes = {n.name: n for n in tree.body if isinstance(n, ast.ClassDef)}
+    own = {}
+    for name, cls in classes.items():
+        for node in cls.body:
+            if (isinstance(node, ast.Assign) and len(node.targets) == 1
+                    and isinstance(node.targets[0], ast.Name)
+                    and node.targets[0].id == CONSUMES_FEEDS_ATTR):
+                feeds = _str_sequence(node.value, assigns)
+                if feeds is None:
+                    raise DecideNextError(f"{path}: {name}.{CONSUMES_FEEDS_ATTR} is not a literal "
+                                          f"tuple of feed names")
+                own[name] = feeds
+
+    def _resolve(name, seen=()):
+        if name in own:
+            return own[name]
+        for base in classes[name].bases:
+            if isinstance(base, ast.Name) and base.id in classes and base.id not in seen:
+                got = _resolve(base.id, seen + (name,))
+                if got is not None:
+                    return got
+        return None
+
+    out = {}
+    for name in classes:
+        feeds = _resolve(name)
+        if feeds:
+            out[f"{COMPONENT_MODULE}.{name}"] = sorted(set(feeds))
+    return out
+
+
+def load_feed_set(trading_bot_root: Path) -> dict:
+    """Everything requires_feed_gate needs: load_feed_registry's wired and
+    reserved names plus component_consumed_feeds. Fails loud (DecideNextError)
+    when either source cannot be read. Callers compute it only when some
+    proposal carries requires_feed (load_inputs' `feed_set` callable)."""
+    return {**load_feed_registry(trading_bot_root),
+            "component_feeds": component_consumed_feeds(trading_bot_root)}
+
+
+def feed_status(feed: str, feed_set) -> str | None:
+    """The gate's own classification of one feed name (check_aux_feed_window
+    checks the reserved registry first): 'reserved', 'wired' or 'unknown'.
+    None when no feed set was supplied."""
+    if feed_set is None:
+        return None
+    if feed in set(feed_set.get(FEED_RESERVED) or ()):
+        return FEED_RESERVED
+    if feed in set(feed_set.get(FEED_WIRED) or ()):
+        return FEED_WIRED
+    return FEED_UNKNOWN
+
+
+def _aux_feed_name(entry):
+    if isinstance(entry, str):
+        return entry
+    if isinstance(entry, dict) and isinstance(entry.get("name"), str):
+        return entry["name"]
+    return None
+
+
+def config_feeds(config, component_feeds: dict) -> set:
+    """The feeds a strategy config consumes: its `aux_feeds` (what the
+    data-availability gate reads, evaluate_variant) plus every feed its
+    component classes declare in `consumes_feeds` (what the engine's
+    required_feeds() reads)."""
+    if not isinstance(config, dict):
+        return set()
+    out = {n for n in (_aux_feed_name(e) for e in (config.get("aux_feeds") or [])) if n}
+    for cls in _component_classes(config):
+        out.update((component_feeds or {}).get(cls) or ())
+    return out
+
+
+def requires_feed_gate(p: dict, feed_set, config=None) -> tuple:
+    """(record, reason) for one proposal. (None, None) when the proposal has
+    no requires_feed -- nothing is recorded, so such candidates are unchanged.
+
+    Otherwise record = {feed, status, consumed, available, reason}:
+      status   -- feed_status (None: no feed set supplied);
+      consumed -- whether `config` (the candidate's RESOLVED config) consumes
+                  the feed (config_feeds); None when there is no resolved
+                  config (a new_block before 1b, an unresolved patch) or no
+                  feed set;
+      available -- status == 'wired'.
+    The candidate is blocked (reason not None) unless the feed is wired or its
+    resolved config provably does not read it: a patch that leaves the feed
+    unread is testable today (its request row is still filed at stage 16).
+    Reasons name only the missing feed -- never the registry's contents -- so
+    an unrelated registry change never rewrites a waiting candidate's reason:
+      requires_feed_reserved:<feed> -- a reserved feed (needs a designation);
+      requires_feed:<feed>          -- not wired (needs an acquisition), or no
+                                       feed set was supplied."""
+    rf = p.get("requires_feed")
+    if rf is None:
+        return None, None
+    feed = rf["feed"]
+    status = feed_status(feed, feed_set)
+    consumed = (None if config is None or feed_set is None
+                else feed in config_feeds(config, feed_set.get("component_feeds")))
+    record = {"feed": feed, "status": status, "consumed": consumed,
+              "available": status == FEED_WIRED, "reason": rf["reason"]}
+    if status == FEED_WIRED or consumed is False:
+        return record, None
+    if status is None:
+        return record, f"requires_feed:{feed} -- no feed set was supplied"
+    if status == FEED_RESERVED:
+        return record, (f"requires_feed_reserved:{feed} -- a reserved feed: the data-availability "
+                        f"gate declines it until a campaign_data_policy.yaml designation covers it")
+    return record, f"requires_feed:{feed} -- not wired in {FEED_REGISTRY_MODULE}.{FEED_REGISTRY_NAME}"
 
 
 def _component_classes(config) -> set:
@@ -604,11 +831,18 @@ def _next_request_id(owner_id: str, taken: set) -> str:
 # ---------------------------------------------------------------------------
 
 def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None,
-                digest=None, composition_runs: bool = False, dsr_basis: dict | None = None) -> dict:
+                digest=None, composition_runs: bool = False, dsr_basis: dict | None = None,
+                feed_set=None) -> dict:
     """Everything decide() reads, from disk under `root` (strategy-research/).
     `queue` is the caller's in-memory queue document (after its own write).
     `known_classes` is the known component class set (known_component_classes)
     or None; `digest` the legacy exclusion digest document or None.
+    `feed_set` (E-035 S2c): None, a load_feed_set document, or a zero-argument
+    callable returning one. It is used -- and a callable is CALLED -- only
+    when some loaded proposal carries `requires_feed`; otherwise
+    inputs["feed_set"] is None and nothing about feeds is read, so a campaign
+    whose readers never ask for a feed does not depend on the feed registry's
+    syntax. A callable's DecideNextError propagates (fail loud).
     `composition_runs` (E-060 S3b; the caller passes
     run_phase1_research._composition_runs_enabled()): also read the whole
     block registry, campaign_record/compositions.yaml and each forecast
@@ -666,6 +900,11 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
             backtests, basis = brief_protocol_cost(root, e.get("brief_path"))
             brief_cards[e["id"]] = {**card, "cost_backtests": backtests, "cost_basis": basis}
 
+    needs_feeds = any("requires_feed" in item["proposal"]
+                      for src in runs.values() for item in src["proposals"])
+    if needs_feeds and callable(feed_set):
+        feed_set = feed_set()
+
     out = {
         "brief_cards": brief_cards,
         "memory": memory,
@@ -676,6 +915,7 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
         "registry_revision": registry.get("revision", 0),
         "queue": copy.deepcopy(queue),
         "known_classes": sorted(known_classes) if known_classes is not None else None,
+        "feed_set": copy.deepcopy(feed_set) if needs_feeds else None,
         "digest": digest,
         "runs": runs,
         "component_requests_count": _count("component_requests.yaml"),
@@ -1139,6 +1379,11 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
                 elif new_classes:
                     reasons.append(f"unknown_component_class: {sorted(new_classes)} "
                                    f"(no known class set was supplied)")
+        # E-035 S2c: a patch waits on its feed (INFEASIBLE, recorded, never
+        # dropped) only if the resolved config consumes it and it is not wired.
+        feed_record, feed_reason = requires_feed_gate(p, inputs.get("feed_set"), config_for_digest)
+        if feed_reason:
+            reasons.append(feed_reason)
         if resolved_sha:
             key = novelty_key(resolved_sha, symbols, entry, inputs.get("protocol_specs") or {})
             matched = list(exact.get(key) or [])
@@ -1151,6 +1396,11 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
         if blk.get("kind") == "regime":
             reasons.append("regime_block_needs_composition: a regime block is validated only "
                            "as a composition variant (cards A/F, slice 7)")
+        # E-035 S2c: no config exists before 1b, so a sketch needing a feed that
+        # is not wired waits for it.
+        feed_record, feed_reason = requires_feed_gate(p, inputs.get("feed_set"))
+        if feed_reason:
+            reasons.append(feed_reason)
         novelty = {"exact_match": "NOT_APPLICABLE", "matched_runs": [],
                    "note": "no config until 1b authors it"}
         feas = "INFEASIBLE" if reasons else "UNKNOWN"
@@ -1160,6 +1410,9 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
         src.get("card"), config_for_digest, symbols, entry.get("timeframe"), inputs.get("digest"))
     backtests = n_windows * N_VARIANTS * len(symbols) if (n_windows and symbols) else None
     eligible = novelty["exact_match"] != "REPEAT" and feas != "INFEASIBLE"
+    feasibility = {"result": feas, "reasons": reasons}
+    if feed_record is not None:
+        feasibility["requires_feed"] = feed_record
     if p["kind"] == "patch":
         collapse_key = ("patch", key) if key else ("single", pid)
     else:
@@ -1181,7 +1434,7 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
                    "model_id": p.get("model_id"), "rubric_version": p.get("rubric_version")},
         "resolved_config_sha256": resolved_sha,
         "gates": {"novelty": novelty,
-                  "feasibility": {"result": feas, "reasons": reasons}},
+                  "feasibility": feasibility},
         "eligible": eligible,
         "cost": {
             "backtests": backtests,
@@ -1470,6 +1723,9 @@ def decide(inputs: dict, *, now: str, trigger: dict, select_entry=None) -> dict:
             "known_component_classes_sha256": _canonical_sha(known) if known is not None else None,
             "component_requests": inputs.get("component_requests_count", 0),
             "data_requests": inputs.get("data_requests_count", 0),
+            # E-035 S2c: only when some proposal carried requires_feed.
+            **({"feed_set_sha256": _canonical_sha(inputs["feed_set"])}
+               if inputs.get("feed_set") is not None else {}),
         },
         "rules": {
             "r1": r1,
@@ -1527,6 +1783,11 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str) -> tuple:
         goal = (f"Test a new {blk.get('kind')} block proposed by the {category} reader after "
                 f"{run_id}: {blk.get('rationale')} (config paths {blk.get('config_paths')}). "
                 f"Evidence: {evidence}")
+    rf = p.get("requires_feed")
+    if rf is not None:
+        # E-035 S2c: picked once the feed is wired, or (a patch) when its resolved
+        # config does not read the feed (requires_feed_gate); either way 1a sees it.
+        goal += f" Needs feed {rf['feed']}: {rf['reason']}"
     front["research_goal"] = goal
     mc = copy.deepcopy((src["pre_registration"] or {}).get("machine_constraints") or {})
     mc.pop("pass_rule", None)  # never inherit criteria (operator decision 2)
@@ -1538,8 +1799,8 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str) -> tuple:
         "parent_hypothesis_id": cand["parent_hypothesis_id"],
         "hypothesis_id": cand["hypothesis_id"],
         "decision_ref": decision_ref,
-        "proposal": {k: copy.deepcopy(p[k]) for k in ("kind", "patch", "block", "evidence")
-                     if k in p},
+        "proposal": {k: copy.deepcopy(p[k])
+                     for k in ("kind", "patch", "block", "evidence", "requires_feed") if k in p},
     }
     candidate = {}
     if p["kind"] == "patch":

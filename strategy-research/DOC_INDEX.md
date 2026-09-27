@@ -157,6 +157,25 @@ cards (queued, ranked by their 1a scores), `brief_status` open/exhausted, R2
 briefs. Design and operator decisions:
 `engineering/roadmap/E-059/S1_FINDINGS_6B.md`.
 
+### "What happens to a proposal that needs a data feed we don't have?"
+→ **[`docs/USER_GUIDE.md` stage 16, item 7](docs/USER_GUIDE.md#stage-16--specialist_readers)**
+and §5 `run_campaign.py` (decide-next feasibility) — the feed-acquisition lane
+(E-035 S2c, delivery_plan_v26.md slice 8.2; no flag of its own, it runs only
+where `specialist_readers` / `decide_next` run). A reader proposal may carry
+`requires_feed: {feed, reason}` (`workflow_artifacts/schemas/proposal.schema.json`,
+checked by `tools/reader_proposals.py`); stage 16 appends one row per run and
+feed that is not wired to `campaign_record/data_requests.yaml` (`request:
+acquisition`, or `designation` for a reserved feed), and decide-next keeps the
+candidate `INFEASIBLE` (`requires_feed:<feed>` / `requires_feed_reserved:<feed>`)
+while the feed is not a `FEED_REGISTRY` key in `trading-bot/data/feed_registry.py`
+and the candidate would read it. Coverage of a wired feed stays the
+data-availability gate's check ([`docs/RUNBOOK.md`](docs/RUNBOOK.md) "Reader
+proposals waiting on a feed"). The older `requires_new_feed` →
+`campaign_record/feed_wishlist.yaml` lane (step 1a, prose-only) is separate;
+its names are shown to the readers as wishlist-only. The automated
+external-knowledge dispatch (the rest of E-035) is not built. Design:
+`engineering/roadmap/E-036/S1_FINDINGS_SLICE8.md` §3-§4.
+
 ### "How does the campaign stop re-running an idea it already tested?"
 → **[`docs/USER_GUIDE.md` stage 6, item 2](docs/USER_GUIDE.md#stage-6--backtest_specification)**
 and §3 [`variant_anti_adjacency_result.yaml`](docs/USER_GUIDE.md#variant_anti_adjacency_resultyaml-per-run)
