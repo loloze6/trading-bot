@@ -53,7 +53,7 @@ header, docs move with code). Added, from what the review taught us:
 
 | # | Item | Evidence | Done when |
 |---|---|---|---|
-| C0.1 | Merge CUL-336 (closed-book stage agents), after its code review. | branch `fix/cul-336-closed-book-stages` | merged |
+| C0.1 | Merge CUL-336 (closed-book stage agents) after its review fixes — incl. switching off the CLI auto-memory the stage agents still load, and restoring legacy stages' cross-run inputs. | branch `fix/cul-336-closed-book-stages` | merged |
 | C0.2 | Create the trading-bot Python environment the tool stages call: `venv/` at the repo root (Windows: `venv/Scripts/python.exe`) from `trading-bot/requirements.txt` (pandas<3 trap), never committed. Fix `RUNBOOK.md`'s interpreter paths. | A3 §3.2; `_resolve_tbot_python` | `_resolve_tbot_python()` returns it; e054/k3 tool-worker tests pass without a junction |
 | C0.3 | Confirm Claude CLI auth for the SDK on this machine (operator), and that `google-genai` is installed (import-time dependency, no key needed). | A3 §3.6 | one stubbed-free `claude` call works (operator runs it) |
 
@@ -75,7 +75,7 @@ Variant-count handling (A5) moves to C2.5 because it depends on one-coin-per-var
 **Done when:** C1.1 passes; all fixes are flag-on paths only, flag-off byte-identity pinned.
 **Run budget:** none (the test is the proof).
 
-## C2 — Vision fixes (decisions already taken; see DECISION_LOG 2026-09-27)
+## C2 — Vision fixes (decisions already taken: D-003, D-014, D-015, D-016, D-017)
 
 One S1 for the whole slice (it touches stage 2, the protocol runner, the grid, the reports and
 the readers), then S2a–S2e.
@@ -91,7 +91,7 @@ the readers), then S2a–S2e.
 **Done when:** each item has its tests, C1.1 extended (per-coin variants, per-variant reports),
 flag-off byte-identical. **Run budget:** none here (C4 proves it).
 
-## C3 — Profit bars v2 (E-062, new epic; decisions DECISION_LOG 2026-09-27)
+## C3 — Profit bars v2 (E-062, new epic; decisions D-034..D-039)
 
 Short S1 (how walk-forward windows chain into one curve: are they contiguous, overlapping,
 gapped; what "whole test" means per protocol), then S2.
