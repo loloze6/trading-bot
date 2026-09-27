@@ -132,10 +132,16 @@ def measure_tool_grant() -> None:
     src = (ROOT / "workflow" / "run_phase1_research.py").read_text(encoding="utf-8", errors="replace")
     for m in re.finditer(r"ClaudeAgentOptions\(([^)]*)\)", src):
         print(f"  ClaudeAgentOptions({m.group(1)})")
-    if "allowed_tools=[]" in src:
-        print("  ==> allowed_tools=[] confirmed: stage agents have ZERO tool access")
-        print("      (no WebSearch, no WebFetch, no MCP, no filesystem beyond the")
-        print("      hand-assembled context_blocks) -- closed-book completion only.")
+    # CORRECTED 2026-09-27 (CUL-336, E-035 S1_FINDINGS.md section 1): the old
+    # check here treated `allowed_tools=[]` as "zero tool access". It is not:
+    # in claude_agent_sdk 0.2.82 allowed_tools=[] sends no flag, and the tool
+    # set is `tools`. Closed-book needs tools=[] and setting_sources=[].
+    if "tools=[]" in src.replace("allowed_tools=[]", "") and "setting_sources=[]" in src:
+        print("  ==> tools=[] and setting_sources=[] present: stage agents are closed-book")
+        print("      (no built-in tools, no settings files) -- see _stage_agent_options.")
+    else:
+        print("  ==> tools=[]/setting_sources=[] NOT both present: stage agents get the")
+        print("      CLI's default tool set (allowed_tools=[] alone restricts nothing).")
 
 
 if __name__ == "__main__":

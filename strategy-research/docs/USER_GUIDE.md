@@ -520,6 +520,7 @@ post-validation/post-expansion to pre-expansion.
 | `STRATEGY_DESIGN_GUIDE.md` | `strategy-research/docs/` | yes |
 | `DATA_AVAILABILITY.md` | `strategy-research/docs/` | optional, forced-read on a new timeframe/symbol/venue |
 | `WORKFLOW_CAPABILITIES.md` | `strategy-research/docs/` | optional |
+| `quant-fundamentals/SKILL.md` | `workflow_artifacts/skills/`, added by code (CUL-336) | yes |
 
 **Stage output**
 
@@ -583,7 +584,8 @@ parameterisation.
 > [E037-36](../engineering/roadmap/E-037/FINDINGS.md#e037-36).
 
 **Stage input:** `hypothesis_card.yaml`, handoff
-`hypothesis_to_innovation_expansion.yaml`, `config/indicator_library.yaml`;
+`hypothesis_to_innovation_expansion.yaml`, `config/indicator_library.yaml`,
+`config/coin_universe.yaml` (added by code, CUL-336);
 optionally [`tried_ideas.yaml`](#tried_ideasyaml-per-run) (same rule as
 stage 2's item 5).
 
@@ -645,7 +647,12 @@ how (E-039 S4, 2026-09-12 — see item 4 below).
 `innovation_notes.yaml` (only needed on the refine path), handoff
 `innovation_expansion_to_validation.yaml`, `pipeline_state.yaml`
 (for the refinement counter), `pre_registration.yaml` if present (the
-pre-registered `sample_split_design.holdout_range`, A6.1 — see below).
+pre-registered `sample_split_design.holdout_range`, A6.1 — see below),
+`config/cost_model.yaml` (required, for `cost_feasibility`) and, optionally,
+`docs/DATA_AVAILABILITY.md` — the last two and `innovation_notes.yaml` are
+added by code (CUL-336). `config/campaign_data_policy.yaml` is deliberately
+not an input: the skill says not to read it directly, and the one field it
+fed (`sample_split_design.walk_forward_range`) has no code reader.
 
 **Stage output:** `validation_protocol.yaml`, `validation_decision.yaml`,
 and — only when its own `status` is `refine` — `refinement_notes.yaml`
@@ -726,7 +733,10 @@ actually execute.
 
 **Stage input:** `expanded_hypothesis_card.yaml`,
 `validation_decision.yaml`, handoff
-`validation_to_backtest_specification.yaml`.
+`validation_to_backtest_specification.yaml`; added by code (CUL-336):
+`quant-fundamentals/SKILL.md` (required) and, when present,
+`innovation_notes.yaml`, `docs/DATA_AVAILABILITY.md`,
+`findings_carryover.yaml`, `run_context.yaml`.
 
 **Stage output:** `candidate_strategy_config.json`, `decision.yaml`,
 `variant_selection.yaml`.
@@ -1123,7 +1133,12 @@ size of change.
 
 **Stage input:** `protocol_result.yaml`, `pass_rule_evaluation.yaml`
 (**required**), `trade_diagnostics.json`, `regime_detector_report.yaml` and
-`regime_audit_decision.yaml` if present. `post_backtest_routes` (CUL-264) is
+`regime_audit_decision.yaml` if present. (CUL-336: `pass_rule_evaluation.yaml`,
+`config/coin_universe.yaml` and `quant-fundamentals/SKILL.md` reach the prompt
+through `_apply_closed_book_inputs`; before it no handoff listed the first two
+at a path that resolves, and the agent could only have opened them itself.
+`campaign_state.yaml`, `trade_diagnostics.json` and `innovation_notes.yaml` are
+still not handoff inputs of this stage.) `post_backtest_routes` (CUL-264) is
 injected directly into this stage's own handoff — not a separate file — when a real
 backtest produced measured trade/window data; see item 7 below.
 `config/coin_universe.yaml` and `innovation_notes.yaml`, if available, feed
@@ -1575,7 +1590,8 @@ whole line of attack is still worth pursuing.
   anyone asked why the kills kept recurring."
 
 **Stage input:** `campaign_state.yaml`, prior verdicts,
-`campaign_knowledge_base.yaml`.
+`campaign_knowledge_base.yaml`, and `quant-fundamentals/SKILL.md` (added by
+code, CUL-336).
 
 **Stage output:** `campaign_review.yaml`.
 
@@ -2745,7 +2761,7 @@ market_type are not `tradable: true` — **or are undeclared**
 > selection.
 
 
-Skills are LLM persona prompts stored in `skills/{name}/SKILL.md`. Each [skill](#g-skill) defines a role, a checklist, constraints, and forbidden actions for a Claude agent acting as a specialist. The orchestrator loads the relevant skill at each stage and passes it as the system prompt.
+Skills are LLM persona prompts stored in `skills/{name}/SKILL.md`. Each [skill](#g-skill) defines a role, a checklist, constraints, and forbidden actions for a Claude agent acting as a specialist. The orchestrator loads the relevant skill at each stage and passes it as the system prompt. The agent has no tools (CUL-336, see §5 `run_phase1_research.py`): a skill line such as "read X" works only if X is in the stage's handoff inputs.
 
 ---
 
@@ -3004,6 +3020,7 @@ The central state machine. Manages the entire lifecycle of a run.
 **Responsibilities:**
 - Loads/saves `pipeline_state.yaml` and `campaign_state.yaml` at every transition.
 - Invokes skills by building prompts from [handoff](#g-handoff) files + [skill](#g-skill) personas and sending them to the Claude SDK or Gemini API.
+- **Stage agents run closed-book (CUL-336, 2026-09-27).** Every Claude stage call (`run_claude_worker` and the five specialist readers) uses the options from `_stage_agent_options()`, the only place they are built: `tools=[]` (no built-in tool: no Read, Grep, Bash, Web…), `setting_sources=[]` (no user/project/local settings file, so no machine's permission allow rules and no CLAUDE.md), `strict_mcp_config=True` (no MCP server). The agent sees its prompt and nothing else, so every file a stage needs must be in its handoff's `required_inputs`/`optional_inputs`. Before CUL-336 the calls passed only `allowed_tools=[]`, which in claude_agent_sdk 0.2.82 sends no flag at all, so stages had the CLI's default tools and a run_060 validation agent read two config files on its own (E-035 S1_FINDINGS §1.2). The files stage skills tell the agent to read and no handoff delivered are now added by `_apply_closed_book_inputs` (`_CLOSED_BOOK_STAGE_INPUTS`): `config/cost_model.yaml` for validation, `config/coin_universe.yaml` for innovation_expansion and verdict_interpreter, `quant-fundamentals/SKILL.md` for backtest_specification, strategy_config_authoring, verdict_interpreter and campaign_review, plus optional run artifacts (see each stage's "Stage input"). `max_turns` is not set: with no tools a stage is one turn by construction, and `num_turns` in the audit log shows it.
 - Routes between stages based on [artifact](#g-artifact) contents (e.g., reads `validation_decision.yaml.status` to decide next step).
 - Enforces circuit breakers (refinement budget, token budget, [altitude](#g-altitude) escalation logic).
 - Tracks token usage and cost per stage in the [audit log](#g-audit-log).

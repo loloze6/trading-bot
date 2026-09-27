@@ -944,6 +944,45 @@ def _build_stage_prompt(stage_name: str, handoff: dict, path: Path,
 _CLAUDE_WORKER_MODEL = "claude-haiku-4-5"
 
 
+def _stage_agent_options() -> ClaudeAgentOptions:
+    """CUL-336 (2026-09-27): the options every Claude stage agent runs with.
+    run_claude_worker and _invoke_reader_llm both call this, and it is the
+    only ClaudeAgentOptions(...) construction in this module
+    (tests/test_cul336_closed_book_stages.py pins both), so the two paths
+    cannot drift.
+
+    Closed-book: the agent sees only its prompt (skill + handoff + the
+    handoff's input files pasted as text) and can open nothing itself. Read
+    from the installed claude_agent_sdk==0.2.82, not assumed:
+      - tools=[] -> `--tools ""`: no built-in tool exists. Before CUL-336 only
+        allowed_tools=[] was passed, which sends no flag at all (it lists the
+        tools that run WITHOUT ASKING; it does not limit which tools exist),
+        so every stage had the CLI's default tool set, and a run_060
+        validation agent Read two config files on its own
+        (engineering/roadmap/E-035/S1_FINDINGS.md section 1.2).
+      - setting_sources=[] -> `--setting-sources=`: no user/project/local
+        settings file loads, so no machine's permission allow rules apply and
+        no CLAUDE.md is loaded (the SDK loads CLAUDE.md only with "project").
+      - strict_mcp_config=True -> `--strict-mcp-config`: no MCP server from
+        any config file. MCP tools are not built-in tools, so tools=[] alone
+        does not remove them; 4 of the 5 retained SDK stage transcripts list
+        claude.ai Slack tools among the agent's deferred tools.
+      - max_turns is left unset on purpose: with no tool there is no
+        tool-result round trip, so a stage is one turn by construction, and
+        the audit log's num_turns shows it. A cap would only add a new
+        failure mode (the CLI's max-turns error result) on top of that.
+    A fresh object per call: ClaudeAgentOptions is a mutable dataclass.
+    What a stage needs to read reaches it through its handoff (see
+    _apply_closed_book_inputs), never through a tool."""
+    return ClaudeAgentOptions(
+        model=_CLAUDE_WORKER_MODEL,
+        tools=[],
+        allowed_tools=[],
+        setting_sources=[],
+        strict_mcp_config=True,
+    )
+
+
 def _usage_token_record(usage: dict) -> dict:
     """The audit_log `tokens` block for one SDK `usage` dict: raw counts, total,
     and the F4c weighted units the budget breaker sums. Shared by
@@ -982,11 +1021,11 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
     total_cost = 0.0
     num_turns = None
 
-    # We pass an empty allowed_tools list to prevent it from wandering off
-    # and strictly enforce our handoff file constraints.
+    # CUL-336: closed-book -- no tools, no settings files, no MCP servers
+    # (see _stage_agent_options). The handoff's inputs are the only context.
     async for message in query(
         prompt=full_prompt,
-        options=ClaudeAgentOptions(model=_CLAUDE_WORKER_MODEL, allowed_tools=[])
+        options=_stage_agent_options()
     ):
         # Accumulate text content from assistant messages
         if isinstance(message, AssistantMessage):
@@ -2214,6 +2253,80 @@ def _apply_b7_mandatory_inputs(stage_name: str, handoff: dict, run_dir: Path) ->
         existing_paths.add(mandatory_path)
 
 
+# CUL-336 (2026-09-27): files a stage's own SKILL.md tells it to read that no
+# handoff delivered. While stage agents had the CLI's default tools they could
+# open such files themselves (measured once: a run_060 validation agent Read
+# config/cost_model.yaml); closed-book (_stage_agent_options) they see only
+# what the prompt carries, so the files are unioned into the handoff here, the
+# same deterministic way as B7. Entries: (path relative to the run dir, kind,
+# reason). "required" only for tracked reference files -- a missing one is a
+# broken checkout and _build_stage_prompt raises; run artifacts that exist on
+# some paths only are "optional". Deliberately NOT here: campaign_data_policy.
+# yaml for validation (its skill says not to read it directly; the one field
+# it fed, sample_split_design.walk_forward_range, has no code reader), and
+# cross-run history (campaign_state.yaml, the knowledge base,
+# trade_diagnostics.json), whose delivery is its own budget decision.
+_CLOSED_BOOK_QUANT_FUNDAMENTALS = (
+    "../../workflow_artifacts/skills/quant-fundamentals/SKILL.md", "required",
+    "CUL-336: this stage's skill says to read quant-fundamentals before applying its rules "
+    "or proposing a config change; it is authoritative over a conflicting skill rule.",
+)
+_CLOSED_BOOK_STAGE_INPUTS = {
+    "innovation_expansion": (
+        ("../../config/coin_universe.yaml", "required",
+         "CUL-336: skill required input (Improvement 06 asset-generalizability check -- "
+         "candidate symbols from a different category than the base instrument)."),
+    ),
+    "validation": (
+        ("../../config/cost_model.yaml", "required",
+         "CUL-336: skill Improvement 09 -- populate cost_feasibility from round_trip_cost_bps; "
+         "the single source of truth for cost numbers (implausible blocks approval)."),
+        ("artifacts/innovation_notes.yaml", "optional",
+         "CUL-336: skill input, needed only on a refine verdict (context for the plan)."),
+        ("../../docs/DATA_AVAILABILITY.md", "optional",
+         "CUL-336: skill input, only when a refine blocker is about data/timeframe availability."),
+    ),
+    "backtest_specification": (
+        ("artifacts/innovation_notes.yaml", "optional",
+         "CUL-336: skill required input (Improvement 02 asset_diversity_audit candidate symbols)."),
+        ("../../docs/DATA_AVAILABILITY.md", "optional",
+         "CUL-336: forced-read whenever timeframe/symbol/venue differs from a prior config."),
+        ("artifacts/findings_carryover.yaml", "optional",
+         "CUL-336: if present, the parameter_bracket midpoint is mandatory for that dimension."),
+        ("artifacts/run_context.yaml", "optional",
+         "CUL-336: if present, run_type drives the skill's Replication guard."),
+        _CLOSED_BOOK_QUANT_FUNDAMENTALS,
+    ),
+    "strategy_config_authoring": (_CLOSED_BOOK_QUANT_FUNDAMENTALS,),
+    "verdict_interpreter": (
+        ("artifacts/pass_rule_evaluation.yaml", "optional",
+         "CUL-336: skill REQUIRED input (K2) -- when result is PASS or FAIL, hypothesis_verdict/"
+         "lineage_routing are copy-through. Absent when no backtest completed."),
+        ("../../config/coin_universe.yaml", "required",
+         "CUL-336: skill input (E-026 asset stability gate; escalation target selection). The "
+         "template's ../../coin_universe.yaml path does not resolve."),
+        _CLOSED_BOOK_QUANT_FUNDAMENTALS,
+    ),
+    "campaign_review": (_CLOSED_BOOK_QUANT_FUNDAMENTALS,),
+}
+
+
+def _apply_closed_book_inputs(stage_name: str, handoff: dict) -> None:
+    """Union _CLOSED_BOOK_STAGE_INPUTS[stage_name] into the handoff's
+    required_inputs/optional_inputs, skipping any path either list already
+    names. Always on: part of CUL-336's declared default change, no flag."""
+    entries = _CLOSED_BOOK_STAGE_INPUTS.get(stage_name)
+    if not entries:
+        return
+    existing = {req["path"] for key in ("required_inputs", "optional_inputs")
+                for req in (handoff.get(key) or [])}
+    for path, kind, reason in entries:
+        if path in existing:
+            continue
+        handoff.setdefault(f"{kind}_inputs", []).append({"path": path, "reason": reason})
+        existing.add(path)
+
+
 # E-032 S2a: the exclusion digest as a required_input on the two stages that
 # invent content. See engineering/roadmap/E-032/EPIC.md's 2026-08-23 review
 # entry -- "E-032 is primarily an INPUT problem, not a disposition problem."
@@ -3090,12 +3203,10 @@ def _reader_feed_vocabulary() -> dict:
 async def _invoke_reader_llm(prompt: str) -> tuple:
     """One reader's LLM call. Returns (text, meta). Split out so tests can
     replace the model without touching prompt building, parsing or writing.
-    Same model constant as run_claude_worker (_CLAUDE_WORKER_MODEL)."""
+    Same options helper as run_claude_worker (_stage_agent_options, CUL-336)."""
     agent_output = ""
     usage, total_cost, num_turns = {}, 0.0, None
-    async for message in query(prompt=prompt,
-                               options=ClaudeAgentOptions(model=_CLAUDE_WORKER_MODEL,
-                                                          allowed_tools=[])):
+    async for message in query(prompt=prompt, options=_stage_agent_options()):
         if isinstance(message, AssistantMessage):
             for block in message.content:
                 if isinstance(block, TextBlock):
@@ -6831,6 +6942,9 @@ async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | 
 
     # B7: deterministic mandatory-inputs union (see helper docstring above).
     _apply_b7_mandatory_inputs(stage_name, handoff, RUN_DIR)
+
+    # CUL-336: closed-book stages get the files their skills tell them to read (see helper docstring above).
+    _apply_closed_book_inputs(stage_name, handoff)
 
     # E-032 S2a: exclusion-digest union, off by default (see helper docstring above).
     _apply_exclusion_digest_input(stage_name, handoff, RUN_DIR)

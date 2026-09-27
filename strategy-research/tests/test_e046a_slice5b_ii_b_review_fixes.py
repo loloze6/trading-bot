@@ -285,7 +285,7 @@ def test_fix10_reader_uses_shared_model_and_token_helper(monkeypatch):
     seen = []
 
     class _Opts:
-        def __init__(self, model, allowed_tools):
+        def __init__(self, model, **_closed_book):  # CUL-336: + tools/setting_sources/...
             seen.append(model)
 
     async def _query(prompt, options):

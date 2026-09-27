@@ -102,6 +102,18 @@ happily without any of this, so 1a is NOT a preflight.
    `=== DRY RUN PASSED ===`. That warning was the exact cause of a later halt.
    A passing dry run with warnings is not a green light.
 
+**5. First real run after CUL-336 (stage agents closed-book, 2026-09-27).**
+   Stage agents no longer have tools, settings files or MCP servers
+   (`_stage_agent_options`, USER_GUIDE §5). On the first real run, check
+   `runs/<run_id>/pipeline_state.yaml`'s `audit_log`: every stage's
+   `num_turns` should be `1` (more than 1 means a tool round trip still
+   happened -- stop and report it), and `tokens.cache_read`/`cache_creation`
+   per stage should be lower than on earlier runs (no tool schemas, no
+   CLAUDE.md), except where new inputs were added (see §5 of the guide). A
+   `FileNotFoundError: Agent strictly requires ...` naming `config/cost_model.yaml`,
+   `config/coin_universe.yaml` or `quant-fundamentals/SKILL.md` means a broken
+   checkout, not a flaky stage.
+
 ## 1. Launch the campaign
 
 ### 1a. Dry run first (no LLM spend, zero footprint)
