@@ -440,7 +440,7 @@ flags:
     reader: run_phase1_research._composition_runs_enabled
     owner: Jeremy
     state: off_incomplete
-    blocked_on: "E-060 S3 (composition brief writer, 1b composition mode, 5a checks) and the operator's ratification of the residual_ic placeholder threshold in config/criterion_menu.yaml; its prerequisite flags (decide_next, variant_loop, profit_bars_every_backtest, verdict_routing_retired) are themselves off"
+    blocked_on: "E-060 S4 (the first real composition run needs two blocks validated by real runs) and the operator's ratification of the residual_ic placeholder threshold in config/criterion_menu.yaml; its prerequisite flags (decide_next, variant_loop, profit_bars_every_backtest, verdict_routing_retired) are themselves off"
     criterion: >
       Landed 2026-09-26 (E-060 S2, delivery_plan_v26.md slice 7 item 7.1;
       engineering/roadmap/E-060/S1_FINDINGS.md + operator decision
@@ -465,8 +465,20 @@ flags:
       validate_config.py V13): each block runs as validated (source lookbacks,
       warm-up, buffer, and its own source detector as a gate), standardised
       past-only and capped at +-20; a config without those keys never reaches
-      it. No caller yet (S3b). Tests: tests/test_e060_s3a_composition.py,
-      trading-bot/tests/test_e060_block_standardisation.py.
+      it. Tests: tests/test_e060_s3a_composition.py,
+      trading-bot/tests/test_e060_block_standardisation.py. E-060 S3b wires
+      it: decide-next's R1 picks composition-<tf>-<registry_hash> when an
+      exact timeframe holds >= 2 forecast blocks not yet composed (once per
+      registry state; behind in-progress and operator entries, ahead of
+      agent entries); run_campaign writes the variants from each block's
+      stand-alone daily returns (fail loud), compositions.yaml, the brief and
+      the queue entry (origin composition); a composition run's 1a/1b/step 2
+      are code (no LLM), 5a checks the composition manifest, the grid's
+      profit_bars criterion is branch 3's own grading, branch 3 labels the
+      variants composite, a composite never registers as a block, a crashed
+      composition run pauses as composition_failed, and a reader patch on a
+      composite is accepted with its composition manifest (7.5). Tests:
+      tests/test_e060_s3b_composition_wiring.py (flag-off identity there).
 
   - name: bar_equity
     kind: engine_param
