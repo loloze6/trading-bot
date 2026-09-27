@@ -83,6 +83,18 @@ five reader `SKILL.md` files, and `workflow/run_phase1_research.py` at the cited
    against current code as a prerequisite reopened-S1 task, not something this document can
    certify done from a stub file.
 
+   **RESOLVED 2026-09-27 (orchestrator, Linear read after this document was written):**
+   Linear project P-CUL-36 (E-035) holds no filed issues; its description carries the
+   story list with **S1 and S2 both unchecked** ("S1 — Characterize and STOP: where the
+   grant lives, what triggers exhaustion of internal sources, how a returned mechanism is
+   shaped"; "S2 — the external-knowledge dispatch path, with source/date recording"). So
+   "S1 as filed" in slice 8.2 means that story text, not a finished characterization, and
+   the artifact table's "S2 (exists)" means the story line exists, not a build. The
+   2026-09-20 note on the project confirms the manual path (operator writes a brief from
+   outside reading) already works and that the feed-acquisition lane is added scope. The
+   recommendation above stands: the automated external dispatch needs its own S1 before
+   any build; the feed lane can be built now.
+
 6. **`requires_feed` row shape into `data_requests.yaml`.** *(default is safe to build on)*
    No schema conflict exists (the file is an unclosed, flat `{requests: [...]}` list — see
    §3). Recommendation: reuse the existing idempotent appender
