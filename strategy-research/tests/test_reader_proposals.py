@@ -117,6 +117,10 @@ _BAD_ENTRIES = {
     "requires_feed_upper_feed": lambda p: p.__setitem__(
         "requires_feed", {"feed": "Open_Interest", "reason": "r"}),
     "requires_feed_digit_first": lambda p: p.__setitem__("requires_feed", {"feed": "1h_oi", "reason": "r"}),
+    # `$` matches before a trailing newline under Python's re.search, which
+    # jsonschema uses for `pattern`; the schema's `not` closes it (review fix 9).
+    "requires_feed_trailing_newline": lambda p: p.__setitem__(
+        "requires_feed", {"feed": "open_interest\n", "reason": "r"}),
     "requires_feed_feed_not_str": lambda p: p.__setitem__("requires_feed", {"feed": 3, "reason": "r"}),
 }
 

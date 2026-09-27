@@ -2992,8 +2992,51 @@ def _reader_handoff(category: str, run_id: str, stage_attempt) -> dict:
             {"path": "artifacts/grid_evaluation.yaml", "reason": "the grid's per-criterion result"},
         ],
         "deliverables": [f"proposals/{category}.yaml"],
-        "injected_context": {"stage_attempt": str(stage_attempt)},
+        "injected_context": {"stage_attempt": str(stage_attempt),
+                             "feed_names": _reader_feed_vocabulary()},
     }
+
+
+FEED_WISHLIST_REL = "campaign_record/feed_wishlist.yaml"
+
+
+def _reader_feed_vocabulary() -> dict:
+    """E-035 S2c: the canonical names a reader's `requires_feed.feed` must use
+    when one fits, so readers do not invent synonyms:
+      wired         -- FEED_REGISTRY keys (usable today);
+      reserved      -- RESERVED_FEED_REGISTRY keys (need a data-policy designation);
+      wishlist_only -- feed_name entries of campaign_record/feed_wishlist.yaml
+                       not in either registry (named, never built).
+    Built for every reader call, so it never raises: an unreadable registry
+    or wishlist is reported in the dict (and printed) instead -- a campaign
+    whose readers never ask for a feed must not stop on the registry's
+    syntax. The router (_route_reader_feed_requests) reads the registry again
+    and fails loud when a proposal does carry requires_feed."""
+    import decide_next as _dn  # tools/ sibling (on sys.path, module top)
+    out = {"rule": ("Set requires_feed.feed to one of these names when one fits; coin a new "
+                    "lowercase snake_case name only when none does, never a synonym of a "
+                    "listed one. wishlist_only names are wishlist entries, not wired feeds.")}
+    try:
+        reg = _dn.load_feed_registry(_TRADING_BOT_ROOT)
+        out["wired"], out["reserved"] = reg["wired"], reg["reserved"]
+    except _dn.DecideNextError as exc:
+        print(f"⚠️ WARNING: reader feed names: feed registry unreadable: {exc}")
+        reg = {"wired": [], "reserved": []}
+        out["registry_error"] = str(exc)
+    wishlist = []
+    path = ROOT / FEED_WISHLIST_REL
+    try:
+        doc = yaml.safe_load(path.read_text(encoding="utf-8")) if path.exists() else {}
+        for item in (doc or {}).get("wishlist") or []:
+            name = item.get("feed_name") if isinstance(item, dict) else None
+            if isinstance(name, str) and name not in wishlist:
+                wishlist.append(name)
+    except (OSError, yaml.YAMLError, AttributeError) as exc:
+        print(f"⚠️ WARNING: reader feed names: {FEED_WISHLIST_REL} unreadable: {exc}")
+        out["wishlist_error"] = str(exc)
+    known = set(reg["wired"]) | set(reg["reserved"])
+    out["wishlist_only"] = sorted(n for n in wishlist if n not in known)
+    return out
 
 
 async def _invoke_reader_llm(prompt: str) -> tuple:
@@ -3172,11 +3215,12 @@ def _run_specialist_readers_stage(run_id: str, run_dir: Path, stage_attempt=0) -
     _load_idea_status(run_dir, run_id)
     _check_retune_firewall(run_dir)
     proposals = _run_specialist_readers(run_id, run_dir, stage_attempt)
-    # E-035 S2c: a validated proposal carrying requires_feed becomes a
-    # data_requests.yaml row (idempotent; nothing written when none does).
+    # E-035 S2c: each feed the validated proposals ask for and do not have
+    # becomes a data_requests.yaml row (idempotent per run and feed; nothing
+    # written when no proposal carries requires_feed).
     n_feed = _route_reader_feed_requests(run_id, proposals)
     if n_feed:
-        print(f"📥 specialist_readers: {n_feed} requires_feed proposal(s) routed to "
+        print(f"📥 specialist_readers: {n_feed} feed request(s) offered to "
               f"campaign_record/data_requests.yaml (stage {READER_FEED_REQUEST_STAGE}).")
 
 
@@ -4026,7 +4070,7 @@ def _variant_park_kind(variants: dict, artifacts_dir=None) -> tuple:
 
 
 def _append_data_requests(run_id: str, requests: list, *, dedupe: bool = False,
-                          stage: str = "data_availability_gate") -> None:
+                          stage: str = "data_availability_gate", key=None) -> None:
     """campaign_record/data_requests.yaml, a flat append-only {requests: [...]}
     list, each row stamped with run_id and `stage` (default
     data_availability_gate; E-035 S2c's reader router passes
@@ -4035,11 +4079,13 @@ def _append_data_requests(run_id: str, requests: list, *, dedupe: bool = False,
     orchestrator.verdict_routing_retired, slice 6c S2c review fix 7; always for
     the reader router): the locked, idempotent appender shared with
     component_requests.yaml, so a park/unpark cycle re-running the gate (or a
-    re-run of the readers stage) adds no duplicate row."""
+    re-run of the readers stage) adds no duplicate row. `key` is the row
+    identity (default campaign_review_retired.request_key, the gate's; the
+    reader router passes feed_request_key)."""
     requests_path = ROOT / "campaign_record" / "data_requests.yaml"
     rows = [{"run_id": run_id, "stage": stage, **req} for req in requests]
     if dedupe:
-        _crr.append_requests(requests_path, rows, key=_crr.request_key)
+        _crr.append_requests(requests_path, rows, key=key or _crr.request_key)
         return
     requests_path.parent.mkdir(parents=True, exist_ok=True)
     existing = (load_yaml(requests_path) or {}) if requests_path.exists() else {}
@@ -4052,40 +4098,66 @@ def _append_data_requests(run_id: str, requests: list, *, dedupe: bool = False,
 READER_FEED_REQUEST_STAGE = "specialist_reader"
 
 
-def _reader_feed_request_rows(proposals: dict) -> list:
-    """One data_requests.yaml row (without run_id/stage) per validated
-    proposal carrying `requires_feed`, in category then file order:
-    {category, proposal_id, requires_feed: {feed, reason}, reason}. The
-    top-level `reason` names the feed ('requires_feed:<feed> -- <reason>'), and
-    campaign_review_retired.request_key is (run, stage, variant, proposal,
-    reason): two proposals of one run never collapse into one row, a re-run of
-    the stage adds nothing, and a re-attempt whose same proposal_id asks for
-    another feed adds a new row."""
-    rows = []
+# What a reader feed-request row asks a human for, by the gate's own
+# classification (decide_next.feed_status): a reserved feed needs a
+# campaign_data_policy.yaml designation; an unknown one must be built.
+READER_FEED_REQUEST_KINDS = {"reserved": "designation", "unknown": "acquisition"}
+
+
+def _reader_feed_request_rows(proposals: dict, feed_set: dict) -> list:
+    """The data_requests.yaml rows (without run_id/stage) for the validated
+    proposals carrying `requires_feed`: ONE row per feed, in first-seen order
+    (category order, then file order):
+      {feed, request: designation|acquisition,
+       proposals: [{category, proposal_id, reason}, ...],
+       reason: '<requires_feed|requires_feed_reserved>:<feed> -- ...'}
+    A feed already WIRED (a FEED_REGISTRY key, not reserved) gets no row:
+    there is nothing to acquire -- whether it covers the run's venue, symbols
+    and windows is the data-availability gate's check at step 3."""
+    import decide_next as _dn  # tools/ sibling (on sys.path, module top)
+    by_feed: dict = {}
     for category, items in proposals.items():
         for p in items or []:
             rf = p.get("requires_feed")
-            if rf is None:
-                continue
-            rows.append({
-                "category": category,
-                "proposal_id": p["proposal_id"],
-                "requires_feed": {"feed": rf["feed"], "reason": rf["reason"]},
-                "reason": f"requires_feed:{rf['feed']} -- {rf['reason']}",
-            })
+            if rf is not None:
+                by_feed.setdefault(rf["feed"], []).append(
+                    {"category": category, "proposal_id": p["proposal_id"], "reason": rf["reason"]})
+    rows = []
+    for feed, asks in by_feed.items():
+        status = _dn.feed_status(feed, feed_set)
+        if status not in READER_FEED_REQUEST_KINDS:  # wired
+            continue
+        request = READER_FEED_REQUEST_KINDS[status]
+        prefix = "requires_feed_reserved" if status == "reserved" else "requires_feed"
+        rows.append({"feed": feed, "request": request, "proposals": asks,
+                     "reason": f"{prefix}:{feed} -- {request} asked by {len(asks)} reader "
+                               f"proposal(s): {', '.join(a['proposal_id'] for a in asks)}"})
     return rows
 
 
-def _route_reader_feed_requests(run_id: str, proposals: dict) -> int:
+def _route_reader_feed_requests(run_id: str, proposals: dict, *, feed_registry=None) -> int:
     """After specialist_readers validates the proposals: append one row per
-    `requires_feed` proposal to campaign_record/data_requests.yaml through the
-    locked, idempotent appender (dedupe=True). Writes nothing -- the file is
-    not even created -- when no proposal carries it. Proposes only: it never
-    changes the idea's status, the route or the queue (decide_next gates the
+    feed they ask for and do not have to campaign_record/data_requests.yaml
+    through the locked, idempotent appender, keyed on (run, stage, feed)
+    (campaign_review_retired.feed_request_key) -- a resume or a re-attempt
+    that asks for the same feed again, whatever its wording or proposal_id,
+    adds nothing. The feed registry is read (decide_next.load_feed_registry,
+    or the `feed_registry` document passed in) only when some proposal
+    carries requires_feed, and then fails loud when unreadable. Writes
+    nothing -- the file is not even created -- when no proposal carries it or
+    every feed asked for is already wired. Proposes only: it never changes
+    the idea's status, the route or the queue (decide_next gates the
     candidate). Returns the number of rows offered."""
-    rows = _reader_feed_request_rows(proposals)
+    if not any(p.get("requires_feed") is not None
+               for items in proposals.values() for p in items or []):
+        return 0
+    if feed_registry is None:
+        import decide_next as _dn  # tools/ sibling (on sys.path, module top)
+        feed_registry = _dn.load_feed_registry(_TRADING_BOT_ROOT)
+    rows = _reader_feed_request_rows(proposals, feed_registry)
     if rows:
-        _append_data_requests(run_id, rows, dedupe=True, stage=READER_FEED_REQUEST_STAGE)
+        _append_data_requests(run_id, rows, dedupe=True, stage=READER_FEED_REQUEST_STAGE,
+                              key=_crr.feed_request_key)
     return len(rows)
 
 

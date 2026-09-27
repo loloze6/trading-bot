@@ -34,7 +34,9 @@
         "queue_sha256": { "type": "string" },
         "known_component_classes_sha256": { "type": ["string", "null"] },
         "component_requests": { "type": "integer", "minimum": 0 },
-        "data_requests": { "type": "integer", "minimum": 0 }
+        "data_requests": { "type": "integer", "minimum": 0 },
+        "feed_set_sha256": { "type": "string",
+                             "description": "E-035 S2c: present only when some proposal carried requires_feed and the feed set (decide_next.load_feed_set: FEED_REGISTRY + RESERVED_FEED_REGISTRY keys, components' consumes_feeds) was computed." }
       }
     },
     "rules": {
@@ -224,12 +226,16 @@
                 "reasons": { "type": "array", "items": { "type": "string" } },
                 "requires_feed": {
                   "type": "object",
-                  "description": "E-035 S2c: present only when the candidate's proposal carries requires_feed. available=false makes the candidate INFEASIBLE (reason requires_feed:<feed> ...) until <feed> is a key of trading-bot/data/feed_registry.py's FEED_REGISTRY (decide_next.known_feeds).",
-                  "required": ["feed", "available", "reason"],
+                  "description": "E-035 S2c: present only when the candidate's proposal carries requires_feed (decide_next.requires_feed_gate). The candidate is INFEASIBLE unless status=wired or consumed=false, with reason requires_feed_reserved:<feed> (status reserved: needs a campaign_data_policy.yaml designation) or requires_feed:<feed> (status unknown: needs an acquisition; or no feed set supplied). Coverage of the run's venue/symbols/windows stays the data-availability gate's check at step 3.",
+                  "required": ["feed", "status", "consumed", "available", "reason"],
                   "additionalProperties": false,
                   "properties": {
                     "feed": { "type": "string" },
-                    "available": { "type": "boolean" },
+                    "status": { "enum": ["wired", "reserved", "unknown", null],
+                                "description": "The data-availability gate's own classification (reserved first, then FEED_REGISTRY); null when no feed set was supplied." },
+                    "consumed": { "type": ["boolean", "null"],
+                                  "description": "Whether the candidate's resolved config consumes the feed (aux_feeds or a component class's consumes_feeds); null without a resolved config (a new_block, an unresolved patch) or without a feed set." },
+                    "available": { "type": "boolean", "description": "status == wired." },
                     "reason": { "type": "string" }
                   }
                 }

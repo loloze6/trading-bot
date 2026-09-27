@@ -104,11 +104,17 @@ def append_requests(path: Path, records: list, *, unless=None, key=None) -> int:
 
 def request_key(rec: dict) -> tuple:
     """The identity of one request row for `append_requests(key=...)`: the
-    same run, stage, variant, proposal and reason is the same request.
-    `proposal_id` (E-035 S2c: a reader's requires_feed row carries one, no
-    variant) is None on every other row, so their identity is unchanged."""
-    return (rec.get("run_id"), rec.get("stage"), rec.get("variant_id"), rec.get("proposal_id"),
-            str(rec.get("reason")))
+    same run, stage, variant and reason is the same request."""
+    return (rec.get("run_id"), rec.get("stage"), rec.get("variant_id"), str(rec.get("reason")))
+
+
+def feed_request_key(rec: dict) -> tuple:
+    """E-035 S2c: the identity of one reader feed-request row
+    (stage specialist_reader) for `append_requests(key=...)`: the same run,
+    stage and feed is the same request -- never the reader's free-text reason
+    or its per-attempt proposal_id, so a re-attempt asking for the same feed
+    adds nothing. Gate rows keep `request_key`."""
+    return (rec.get("run_id"), rec.get("stage"), rec.get("feed"))
 
 
 def append_component_requests(path: Path, records: list, *, unless=None, key=None) -> int:

@@ -87,19 +87,27 @@ without it, which stops the pipeline. A `new_block`'s `block.config_paths` must 
 Either `kind` may carry ONE extra field saying the proposal needs a data feed:
 ```yaml
 requires_feed:
-  feed: open_interest   # lowercase snake_case: the name a strategy config's aux_feeds entry
-                        # would use -- an existing feed's name when one fits (e.g. funding_rate),
-                        # else a plain name for the missing data (open_interest,
-                        # order_book_depth, liquidations)
+  feed: open_interest   # lowercase snake_case, from your handoff's feed_names (below)
   reason: "<why the result turns on that data, naming the regime_power.yaml field it rests on>"
 ```
 Emit it only when a field of THIS report shows the missing data would plausibly change the
 result, and cite that field in both `reason` and `evidence`. Never invent a need: a proposal
 that can be tested on the data the run already used carries no `requires_feed`, and "more
 data might help" is not evidence. It is not a third `kind` -- the proposal still carries its
-`patch` or `block` sketch. What happens next is not yours to decide: the pipeline appends the
-request to `campaign_record/data_requests.yaml`, and decide-next keeps the proposal waiting
-(infeasible) until that feed exists. It never changes this idea's status or route.
+`patch` or `block` sketch.
+
+**Feed names -- one vocabulary.** Your handoff's `injected_context.feed_names` lists the
+canonical names: `wired` (the engine's FEED_REGISTRY, usable today), `reserved` (built, but
+declined until a data-policy designation covers them) and `wishlist_only` (named in
+`campaign_record/feed_wishlist.yaml`, never built). When one of them names the data you mean,
+use it exactly -- never a synonym (`oi` or `open_interest_data` for a listed `open_interest`).
+Coin a new lowercase snake_case name (e.g. `open_interest`, `order_book_depth`,
+`liquidations`) only when none fits.
+
+What happens next is not yours to decide: for a feed that is not wired the pipeline files one
+request per feed in `campaign_record/data_requests.yaml` (an acquisition, or a designation for
+a reserved feed), and decide-next keeps the proposal waiting (infeasible) while that feed is
+not wired and the config it would test reads it. It never changes this idea's status or route.
 `tools/reader_proposals.py` rejects any other shape (a missing or empty `reason`, a
 non-snake_case `feed`, an extra key), which stops the pipeline.
 
