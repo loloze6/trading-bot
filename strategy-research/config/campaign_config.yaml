@@ -151,20 +151,20 @@ orchestrator:
       # (E-032 S2a's own off-by-default bar -- comparing assembled PROMPT TEXT,
       # not just asserting the code path is skipped).
       #
-      # While true, campaign_record/exclusion_digest.yaml (built by
-      # tools/build_exclusion_digest.py -- family-scoped (family, instrument,
-      # timeframe) triples, freshly derived from run artifacts, never from
-      # campaign_state.yaml's stale flat instruments_tried/timeframes_tried
-      # lists) is unioned into optional_inputs for hypothesis_generation and
-      # innovation_expansion ONLY, and only when the file exists on disk.
+      # E-036 S2a (2026-09-27; engineering/roadmap/E-036/S1_FINDINGS_SLICE8.md
+      # operator decision 3): when campaign_record/campaign_memory.yaml
+      # exists, the two stages get artifacts/tried_ideas.yaml INSTEAD of the
+      # digest -- derived at prompt time by tools/campaign_memory.tried_ideas:
+      # one row per recorded run (idea hypothesis_id, coins, timeframe, the
+      # grid's idea_status), no family grouping, at most TRIED_IDEAS_MAX_ROWS
+      # rows. With no memory file (orchestrator.regroup_record off, today's
+      # default) they get campaign_record/exclusion_digest.yaml exactly as
+      # before (same path and reason text): the default prompt input is
+      # byte-identical. Only the two skills' IMPROVEMENT 05 text changed.
       #
       # This is raw material for the LLM stage, never a binding gate by itself
-      # -- the mechanical refusal decision is tools/anti_adjacency_gate.py (a
-      # deterministic `tool:` stage, same class as signal_prescreen), which
-      # reads campaign_knowledge_base.yaml directly for its KB layer and this
-      # digest for its per-family fallback layer. See
-      # engineering/roadmap/E-032/EPIC.md and
-      # engineering/roadmap/E-032/artifacts/s1_idea_generation.md Task 3.
+      # -- the mechanical refusal is the 5a exact-match check
+      # (orchestrator.variant_anti_adjacency_gate below, tools/novelty.py).
   stale_input_path_fix:
     enabled: true
       # E-032 S2b. SWITCHED ON 2026-09-02 (E-041, flag 3 of 7) -- DECLARED
@@ -194,40 +194,6 @@ orchestrator:
       # identical stale-path bug, nor verdict_interpreter's one optional
       # instance -- see the code comment above _STALE_INPUT_PATH_FIXES for
       # why those are out of this story's scope.
-  anti_adjacency_retry:
-    enabled: false
-      # E-032 S2c. OFF BY DEFAULT and read at runtime by
-      # run_phase1_research._anti_adjacency_retry_enabled() -- same shape as
-      # exclusion_digest_input.enabled / stale_input_path_fix.enabled just
-      # above (a fifth explicit exception to this file's "declared parity
-      # only" rule). Operator ruling (2026-08-23, E-032/EPIC.md Log):
-      # "Retry up to 4 times with the exclusion list, then escalate to me."
-      #
-      # While false, _route_post_innovation_expansion() returns
-      # STAGE_CONFIGS['innovation_expansion']['default_next'] ('validation')
-      # immediately -- the anti_adjacency_gate tool is never imported, the
-      # exclusion digest / KB are never read, and no new pipeline_state.yaml
-      # field is written. run_loop's stage-advance logic is byte-identical to
-      # its pre-E-032-S2c behavior. Proven by
-      # tests/test_anti_adjacency_retry_policy.py's flag-off/flag-on
-      # behavior comparison (same acceptance bar as S2a/S2b: compare actual
-      # output, not just assert the code path is skipped).
-      #
-      # While true: right after innovation_expansion produces its
-      # deliverables, the run's hypothesis_card.yaml is evaluated by
-      # tools/anti_adjacency_gate.py (Layer 1 campaign_knowledge_base.yaml,
-      # Layer 2 campaign_record/exclusion_digest.yaml). ADMIT -> validation,
-      # attempt counter reset. REFUSE -> loop back to hypothesis_generation
-      # with the refusal reason carried into its next prompt (a dedicated
-      # counter, state['anti_adjacency_gate_retry']['attempts'], independent
-      # of BOTH counters.refinements_used and stage_attempts -- E-030 S1.5
-      # Piece 2 precedent). The 4th CONSECUTIVE REFUSE for the same lineage
-      # step stops auto-actioning and escalates via the project's existing
-      # human_pause mechanism (status=paused_for_human, flags.
-      # anti_adjacency_gate_exhausted -> run_campaign._classify_human_pause).
-      #
-      # See engineering/roadmap/E-032/EPIC.md's S2c story entry and
-      # 2026-08-23 operator-ruling Log entry.
   variant_selection_record:
     enabled: true
       # E-034 S2. SWITCHED ON 2026-09-02 (E-041, flag 4 of 7) -- DECLARED
@@ -245,8 +211,8 @@ orchestrator:
       # Read at runtime by
       # run_phase1_research._variant_selection_record_enabled() -- same
       # shape as exclusion_digest_input.enabled / stale_input_path_fix.enabled
-      # / anti_adjacency_retry.enabled above (a sixth explicit exception to
-      # this file's "declared parity only" rule).
+      # above (an explicit exception to this file's "declared parity only"
+      # rule).
       #
       # While false, _record_variant_selection() is a no-op: it returns
       # before reading anything else on disk, so no artifact is written and
@@ -271,49 +237,36 @@ orchestrator:
       # s1_selection_record.md Task 3 for the full design.
   variant_anti_adjacency_gate:
     enabled: false
-      # E-034 S3. OFF BY DEFAULT and read at runtime by
-      # run_phase1_research._variant_anti_adjacency_gate_enabled() -- same
-      # shape as the four orchestrator.<name>.enabled flags above (the fifth
-      # such flag; a sixth explicit exception to this file's "declared parity
-      # only" rule, counting halt_policy.quarantine_enabled).
-      # REQUIRES variant_selection_record.enabled to ALSO be true -- checked
-      # at runtime, fail loud (RuntimeError), not a silent no-op: this gate
-      # reads artifacts/variant_selection.yaml, which only that OTHER flag's
-      # function ever writes.
+      # E-034 S3, REDESIGNED by E-036 S2a (2026-09-27, delivery_plan_v26.md
+      # slice 8.1; engineering/roadmap/E-036/S1_FINDINGS_SLICE8.md + operator
+      # decision). OFF BY DEFAULT, read at runtime by
+      # run_phase1_research._variant_anti_adjacency_gate_enabled().
       #
-      # While false, _route_post_variant_selection() is a no-op: it returns
-      # before reading anything else on disk, so no artifact is written and
-      # run_loop's backtest_specification branch behaves exactly as before
-      # this feature existed. Proven by tests/test_variant_anti_adjacency_
-      # gate.py's flag-off/flag-on comparison (same acceptance bar as every
-      # prior story in this chain: compare actual pipeline state/output, not
-      # just assert the code path is skipped).
+      # The 5a exact-match repeat check: binary REPEAT/NOVEL on the key
+      # decide_next already binds on (tools/novelty.py: config hash, sorted
+      # symbols, the protocol file's timeframe and a hash of its windows),
+      # looked up in campaign_record/campaign_memory.yaml. No family, no
+      # NEIGHBOUR, no composition fingerprint. Layer 1 (the KB) is recorded as
+      # an advisory warning and never refuses. It covers every queue origin:
+      # decide_next checks only the candidates it mints; this checks the
+      # config a backtest is about to run.
       #
-      # While true: closes the OPEN DEFECT logged in E-032/EPIC.md on
-      # 2026-08-24. The pre-existing anti_adjacency_retry gate (above) runs
-      # BEFORE validation, reading the pre-expansion PARENT hypothesis_
-      # card.yaml -- it structurally cannot see what innovation_expansion
-      # invented, let alone which variant backtest_specification will
-      # choose. This flag adds a SECOND, LATER gate call, right after
-      # variant_selection.yaml exists (E-034 S2's own output): it evaluates
-      # the CHOSEN VARIANT itself (merging the parent card's classification
-      # fields with the variant's own overrides, and passing variant_
-      # selection.yaml's already-resolved instrument/timeframe explicitly
-      # via evaluate_candidate()'s override parameters).
+      # Two call sites. Legacy LLM backtest_specification flow
+      # (_route_post_variant_selection, after candidate_strategy_config.json
+      # is written; requires variant_selection_record): REPEAT ->
+      # status=paused_for_human, flags.variant_anti_adjacency_gate_refused.
+      # Config-direct tool-stage 5a (_gate_config_direct_variants): a REPEAT
+      # variant is marked not_tested ("repeat: ...") and gets no backtest and
+      # no trial row; every variant a repeat ends the run
+      # completed_no_new_hypothesis. With no campaign_memory.yaml and
+      # regroup_record off, the gate raises (nothing would ever write what it
+      # reads).
       #
-      # ADMIT -> unchanged next_stage. REFUSE -> status=paused_for_human,
-      # flags.variant_anti_adjacency_gate_refused=True (a DISTINCT flag from
-      # anti_adjacency_gate_exhausted -- see run_campaign._classify_human_
-      # pause's own comment). Unlike the earlier checkpoint's 4-retry-then-
-      # escalate policy, this checkpoint escalates on the FIRST REFUSE, with
-      # no automatic retry: two additional LLM stages (validation,
-      # backtest_specification) have already run by the time this gate can
-      # evaluate anything, and the earlier checkpoint's retry lever
-      # (regenerate an entirely new hypothesis) does not even target this
-      # failure mode (a pivot inside an already-admitted idea's chosen
-      # variant, not the idea itself). See _route_post_variant_selection's
-      # own docstring for the full reasoning, and engineering/roadmap/
-      # E-034/EPIC.md's S3 Log entry.
+      # While false, both call sites return before reading anything: no
+      # artifact, no state field, byte-identical (tests/
+      # test_e036_s2a_exact_match_gate.py). Switched on only after the E-036
+      # S2b corpus replay has published refuse/admit counts and the operator
+      # has reviewed them (feature_flag_register.yaml).
   schedulability_block:
     enabled: true
       # E-031 S2. SWITCHED ON 2026-09-02 (E-041, flag 5 of 7) -- DECLARED

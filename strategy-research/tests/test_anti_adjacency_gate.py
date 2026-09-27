@@ -15,6 +15,16 @@ this is the actual historical case S1 traced by hand
 (engineering/roadmap/E-032/artifacts/s1_idea_generation.md Task 3), and a
 synthetic stand-in would not be testing the same thing. Read-only; nothing
 here writes to the real repository.
+
+E-036 S2a (2026-09-27, engineering/roadmap/E-036/S1_FINDINGS_SLICE8.md
+operator decision): Layer 1 is ADVISORY ONLY -- the calibration cases now
+assert its advisory status (admit / warn) through layer1_advisory(), and
+evaluate_candidate() never refuses on it. Layer 2 is the binary exact-match
+check against campaign_memory.yaml; the family-digest / NEIGHBOUR /
+composition-fingerprint tests that stood in this file were RETIRED with that
+design (the rejected 2026-09-02 design). The new Layer 2 is tested in
+tests/test_e036_s2a_exact_match_gate.py; the two binary checks kept below
+are this file's own smoke tests of it.
 """
 import sys
 from pathlib import Path
@@ -66,14 +76,11 @@ def test_calibration_case_admits_the_4h_funding_retest():
     funding_rate_continuous_mean_reversion_expanded_auto's reactivation_condition
     is open and unconsumed (the daily branch was consumed by
     funding_mr_daily_retest_killed; 4h was explicitly deferred, never
-    tested) -- Layer 1 must ADMIT."""
+    tested) -- Layer 1's advisory must read ADMIT, not a warning."""
     kb = _load_real_kb()
-    digest = bed.build_digest()  # empty campaign_state ok; Layer 1 resolves this before Layer 2
-    result = gate.evaluate_candidate(_FUNDING_4H_CANDIDATE, digest, kb, _REAL_RUNS_DIR,
-                                      instrument="BTCUSDT", timeframe="4h")
-    assert result.route == "admit"
-    assert result["layer"] == "kb"
-    assert "funding_rate_continuous_mean_reversion_expanded_auto" in result["reasons"][0]
+    adv = gate.layer1_advisory(_FUNDING_4H_CANDIDATE["hypothesis_id"], "4h", kb, _REAL_RUNS_DIR)
+    assert adv["status"] == "admit"
+    assert "funding_rate_continuous_mean_reversion_expanded_auto" in adv["reasons"][0]
 
 
 def test_calibration_case_naive_flat_list_gate_would_refuse_the_same_candidate():
@@ -97,34 +104,29 @@ def test_calibration_case_naive_flat_list_gate_would_refuse_the_same_candidate()
     assert naive_route == "refuse", "the naive flat-list gate must wrongly refuse 4h"
 
     kb = _load_real_kb()
-    digest = bed.build_digest()
-    real_route = gate.evaluate_candidate(_FUNDING_4H_CANDIDATE, digest, kb, _REAL_RUNS_DIR,
-                                          instrument="BTCUSDT", timeframe="4h").route
-    assert real_route == "admit"
-    assert real_route != naive_route, (
-        "the layered gate and the naive flat-list gate must DISAGREE on this "
-        "candidate -- proving the layering changes the outcome, not just the "
-        "code path"
-    )
+    real = gate.layer1_advisory(_FUNDING_4H_CANDIDATE["hypothesis_id"], "4h", kb, _REAL_RUNS_DIR)
+    assert real["status"] == "admit"
 
 
-def test_precedence_rule_refuses_the_daily_branch_terminated_by_run_059():
+def test_precedence_rule_warns_on_the_daily_branch_terminated_by_run_059():
     """The additional requirement the dispatching session added (EPIC.md's
     2026-08-23 review entry): a registered lineage_routing=terminate closes
     the lineage it names. run_059's pass_rule_evaluation.yaml registers
     lineage_routing=terminate for the DAILY branch of
-    funding_rate_continuous_mean_reversion_expanded_auto (via
-    funding_mr_daily_retest_killed's explicit textual reference to the
-    parent) -- a fresh candidate proposing that same daily branch must be
-    REFUSED, even though the KB parent's own reactivation_condition text
-    still nominally lists 'daily' as a branch."""
+    funding_rate_continuous_mean_reversion_expanded_auto -- Layer 1 still
+    says so, but since E-036 S2a only as an advisory WARNING: the gate's
+    route stays ADMIT (layer1_kb_check itself still returns its REFUSE)."""
     kb = _load_real_kb()
-    digest = bed.build_digest()
-    result = gate.evaluate_candidate(_FUNDING_DAILY_CANDIDATE, digest, kb, _REAL_RUNS_DIR,
-                                      instrument="BTCUSDT", timeframe="1d")
-    assert result.route == "refuse"
-    assert result["layer"] == "kb"
-    assert "closed by a run registered lineage_routing=terminate" in result["reasons"][0]
+    raw = gate.layer1_kb_check(_FUNDING_DAILY_CANDIDATE["hypothesis_id"], "1d",
+                               kb["findings"], _REAL_RUNS_DIR)
+    assert raw.route == "refuse"
+    assert "closed by a run registered lineage_routing=terminate" in raw["reasons"][0]
+    adv = gate.layer1_advisory(_FUNDING_DAILY_CANDIDATE["hypothesis_id"], "1d", kb, _REAL_RUNS_DIR)
+    assert adv["status"] == "warn"
+    result = gate.evaluate_candidate(("fh", ("BTCUSDT",), "1d", "windows:x"), {"runs": {}}, {},
+                                     kb=kb, candidate_hid=_FUNDING_DAILY_CANDIDATE["hypothesis_id"],
+                                     candidate_timeframe="1d", runs_dir=_REAL_RUNS_DIR)
+    assert result.route == "admit" and result["layer1_advisory"]["status"] == "warn"
 
 
 def test_precedence_rule_never_touches_the_sibling_4h_branch():
@@ -132,13 +134,10 @@ def test_precedence_rule_never_touches_the_sibling_4h_branch():
     accidentally also close 4h (a single shared 'exhausted' flag on the
     parent would do exactly that, wrongly)."""
     kb = _load_real_kb()
-    digest = bed.build_digest()
-    admit_4h = gate.evaluate_candidate(_FUNDING_4H_CANDIDATE, digest, kb, _REAL_RUNS_DIR,
-                                        instrument="BTCUSDT", timeframe="4h")
-    refuse_1d = gate.evaluate_candidate(_FUNDING_DAILY_CANDIDATE, digest, kb, _REAL_RUNS_DIR,
-                                         instrument="BTCUSDT", timeframe="1d")
-    assert admit_4h.route == "admit"
-    assert refuse_1d.route == "refuse"
+    admit_4h = gate.layer1_advisory(_FUNDING_4H_CANDIDATE["hypothesis_id"], "4h", kb, _REAL_RUNS_DIR)
+    warn_1d = gate.layer1_advisory(_FUNDING_DAILY_CANDIDATE["hypothesis_id"], "1d", kb, _REAL_RUNS_DIR)
+    assert admit_4h["status"] == "admit"
+    assert warn_1d["status"] == "warn"
 
 
 # ---------------------------------------------------------------------------
@@ -199,10 +198,8 @@ def test_layer1_does_not_conflate_family_siblings_with_different_verdicts():
     h041a_result = gate.layer1_kb_check("H-041-A", "1h", kb["findings"], _REAL_RUNS_DIR)
     assert h041a_result is not None and h041a_result.route == "refuse"
     # ...but must have NO bearing on the unrelated EXPANDED lineage's candidate.
-    digest = bed.build_digest()
-    expanded_result = gate.evaluate_candidate(_FUNDING_4H_CANDIDATE, digest, kb, _REAL_RUNS_DIR,
-                                               instrument="BTCUSDT", timeframe="4h")
-    assert expanded_result.route == "admit"
+    expanded = gate.layer1_advisory(_FUNDING_4H_CANDIDATE["hypothesis_id"], "4h", kb, _REAL_RUNS_DIR)
+    assert expanded["status"] == "admit"
 
 
 def test_layer1_verdict_is_independent_of_kb_finding_list_order():
@@ -269,221 +266,47 @@ def test_layer1_reactivation_consumed_by_does_not_close_an_unconsumed_sibling_br
 
 
 # ---------------------------------------------------------------------------
-# Layer 2 unit tests (synthetic digest)
+# Layer 2 -- E-036 S2a: the binary exact-match check (smoke tests; the full
+# suite is tests/test_e036_s2a_exact_match_gate.py). RETIRED here with the
+# rejected family-digest design: the coarse-triple NEIGHBOUR, the new-
+# instrument-for-known-family, the bare-string failed_families, the
+# parameter-sweep NEIGHBOUR, the identical-fingerprint REPEAT, the regime-
+# collision, the coarse-fidelity and the no-config tests. Each asserted a
+# family/fingerprint outcome that no longer exists; their subject (what
+# counts as "the same idea") is now the exact key, tested in the new file.
+# composition_fingerprint itself stays in build_exclusion_digest.py (the
+# legacy digest builder and decide_next's informational digest_advisory),
+# so its own bare-config test is kept below.
 # ---------------------------------------------------------------------------
 
-def _digest(families, failed_families_passthrough=None):
-    return {
-        "families": families,
-        "failed_families_passthrough": failed_families_passthrough or [],
-        "components_built_passthrough": [],
-    }
+def _memory(forecast_hash):
+    return {"runs": {"run_001": {
+        "run_id": "run_001", "legacy": False, "engineering_fault": None, "timeframe": "1h",
+        "protocol_ref": "protocols/unreadable.json",
+        "variants": {"run_001": {"status": "tested", "forecast_hash": forecast_hash,
+                                 "symbols": ["BTCUSDT"]}}}}}
 
 
-def test_layer2_coarse_triple_match_admits_as_neighbour_not_refuse():
-    """E-036 S2: this test used to assert REFUSE for a bare (family,
-    instrument, timeframe) collision -- exactly the over-coarse behavior
-    E-036 exists to fix (see engineering/roadmap/E-036/EPIC.md: a keltner
-    candidate at a different atr_mult than a prior run was wrongly REFUSEd
-    on this same triple-only key). A digest entry with no fingerprint
-    (fidelity="coarse", the shape every entry had before this story) can
-    now only ever produce NEIGHBOUR, never REPEAT -- design point 3. The
-    genuine-repeat case (identical fingerprint -> REFUSE) is covered
-    separately below."""
-    digest = _digest({
-        "keltner_channel": {"confidence": "keyword_bounded", "triples": [
-            {"instrument": "AVAXUSDT", "timeframe": "4h", "fidelity": "coarse",
-             "fingerprint": None, "run_ids": ["run_030"]},
-        ]},
-    })
-    candidate = {"hypothesis_id": "KELTNER_NEW", "target_market": ["AVAXUSDT"], "timeframe": "4h",
-                 "thesis": "Keltner mean reversion on AVAX."}
-    result = gate.evaluate_candidate(candidate, digest, _kb([]), _REAL_RUNS_DIR)
-    assert result.route == "admit"
-    assert result["layer"] == "digest"
-    assert result["outcome"] == "neighbour"
-    assert result["neighbours"][0]["run_ids"] == ["run_030"]
-    assert result["neighbours"][0]["fidelity"] == "coarse"
-
-
-def test_layer2_admits_new_instrument_for_known_family():
-    digest = _digest({
-        "keltner_channel": {"confidence": "keyword_bounded", "triples": [
-            {"instrument": "AVAXUSDT", "timeframe": "4h", "run_ids": ["run_030"]},
-        ]},
-    })
-    candidate = {"hypothesis_id": "KELTNER_NEW_SYMBOL", "target_market": ["DOTUSDT"], "timeframe": "4h",
-                 "thesis": "Keltner mean reversion on DOT."}
-    result = gate.evaluate_candidate(candidate, digest, _kb([]), _REAL_RUNS_DIR)
-    assert result.route == "admit"
-
-
-def test_layer2_never_auto_refuses_on_bare_string_failed_family():
-    digest = _digest(
-        {},
-        failed_families_passthrough=[{"family": "sma_trend", "detail": "bare_string_low_detail"}],
-    )
-    candidate = {"hypothesis_id": "SMA_NEW", "target_market": ["BTCUSDT"], "timeframe": "1h",
-                 "thesis": "SMA crossover on BTC."}
-    result = gate.evaluate_candidate(candidate, digest, _kb([]), _REAL_RUNS_DIR)
-    assert result.route == "admit", "a bare-string low-detail entry must never be a silent veto"
-    assert result["low_detail_prior_failure"] is True
-
-
-# ---------------------------------------------------------------------------
-# E-036 S2 -- composition fingerprint (mandatory regression tests, per
-# EPIC.md's "Done when" and the dispatching session's test list). These
-# prove the defect measured in EPIC.md is closed: the digest key was
-# (family, instrument, timeframe) alone, which collapsed 21 of 39 runs
-# carrying both a hypothesis_card.yaml and a candidate_strategy_config.json
-# into "already tried" -- a parameter sweep read as a repeat.
-# ---------------------------------------------------------------------------
-
-def _kc_config(atr_mult, regime="mean_reversion", component_id="keltner"):
-    """Same candidate_strategy_config.json shape as the real corpus (e.g.
-    runs/run_016/artifacts/candidate_strategy_config.json)."""
-    return {
-        "regime_detector": {"mode": "threshold_rules", "rules": [{"regime": regime}]},
-        "strategies": {"regimes": {regime: {"components": [
-            {"id": component_id, "class": "strategies.strategy_components.KeltnerBreakoutComponent",
-             "params": {"atr_multiplier": atr_mult, "ema_period": 20}, "weight": 1.0,
-             "transforms": [{"op": "identity"}]},
-        ]}}},
-    }
-
-
-def _kc_digest_structured(instrument, timeframe, run_id, config):
-    fingerprint = bed.composition_fingerprint(config)
-    return _digest({
-        "keltner_channel": {"confidence": "structural_indicator_id", "triples": [
-            {"instrument": instrument, "timeframe": timeframe, "fidelity": "structured",
-             "fingerprint": fingerprint, "run_ids": [run_id]},
-        ]},
-    })
-
-
-_KELTNER_CANDIDATE_BASE = {
-    "hypothesis_id": "KELTNER_ATR_SWEEP", "target_market": ["BTCUSDT"], "timeframe": "1h",
-    "library_lookup": {"indicator_id": "keltner_channel"},
-    "thesis": "Keltner channel mean reversion on BTC, 1h.",
-}
-
-
-def test_reproduced_case_parameter_sweep_admits_as_neighbour_not_refuse():
-    """THE headline case from EPIC.md, reproduced and closed: a keltner
-    candidate at atr_mult=3.0, with a prior run on record at atr_mult=2.0
-    for the SAME (family, instrument, timeframe) -- must ADMIT as a
-    NEIGHBOUR, with the prior run_id attached, not REFUSE. Before E-036,
-    the digest's (family, instrument, timeframe)-only key REFUSEd this
-    exact shape of candidate (EPIC.md: "candidate: keltner_channel,
-    BTCUSDT, 1h, atr_mult 3.0 (prior run used 2.0) ... verdict: refuse")."""
-    prior_config = _kc_config(atr_mult=2.0)
-    digest = _kc_digest_structured("BTCUSDT", "1h", "run_016", prior_config)
-    candidate_config = _kc_config(atr_mult=3.0)
-
-    result = gate.evaluate_candidate(_KELTNER_CANDIDATE_BASE, digest, _kb([]), _REAL_RUNS_DIR,
-                                      instrument="BTCUSDT", timeframe="1h",
-                                      candidate_config=candidate_config)
-
-    assert result.route == "admit", (
-        "a parameter sweep (different atr_mult, same family/instrument/timeframe) "
-        "must ADMIT -- this is the exact case the current triple-only key wrongly REFUSEd"
-    )
-    assert result["layer"] == "digest"
-    assert result["outcome"] == "neighbour"
-    assert result["neighbours"][0]["run_ids"] == ["run_016"]
-    assert result["neighbours"][0]["fidelity"] == "structured"
-    assert "differ" in result["neighbours"][0]["differs"]
-
-
-def test_genuine_repeat_identical_fingerprint_refuses():
-    """The only case that blocks (EPIC.md design point 2): SAME family,
-    instrument, timeframe AND an IDENTICAL composition fingerprint on both
-    sides (both fidelity="structured"). This is a genuine re-run and must
-    REFUSE."""
-    config = _kc_config(atr_mult=2.0)
-    digest = _kc_digest_structured("BTCUSDT", "1h", "run_016", config)
-    # A fresh candidate proposing the byte-for-byte identical composition.
-    identical_config = _kc_config(atr_mult=2.0)
-
-    result = gate.evaluate_candidate(_KELTNER_CANDIDATE_BASE, digest, _kb([]), _REAL_RUNS_DIR,
-                                      instrument="BTCUSDT", timeframe="1h",
-                                      candidate_config=identical_config)
-
+def test_layer2_exact_repeat_refuses_with_the_matched_memory_variant():
+    key = gate.candidate_key("fh-a", ["BTCUSDT"], "protocols/unreadable.json", {},
+                             card_timeframe="1h")
+    result = gate.layer2_digest_check(key, gate._nov.match_index(_memory("fh-a"), {}))
     assert result.route == "refuse"
-    assert result["layer"] == "digest"
     assert result["outcome"] == "repeat"
-    assert result["run_ids"] == ["run_016"]
+    assert result["matched"] == [{"run_id": "run_001", "variant_id": "run_001"}]
 
 
-def test_same_component_identical_params_different_regime_does_not_collide():
-    """EPIC.md design point 4: (mean_reversion, rsi, period=14) and
-    (trending, rsi, period=14) are different strategies and must not
-    collide. Regime is folded into the fingerprint for free -- an
-    IDENTICAL component/params/weight under a DIFFERENT regime must not
-    read as a REPEAT (nor even collide as a NEIGHBOUR entry sharing the
-    same fingerprint -- the fingerprints themselves must differ)."""
-    mr_config = _kc_config(atr_mult=2.0, regime="mean_reversion")
-    trending_config = _kc_config(atr_mult=2.0, regime="trending")
-    assert bed.composition_fingerprint(mr_config) != bed.composition_fingerprint(trending_config), (
-        "same component, same params, different regime must produce DIFFERENT "
-        "fingerprints -- the regime is part of identity"
-    )
-
-    digest = _kc_digest_structured("BTCUSDT", "1h", "run_016", mr_config)
-    result = gate.evaluate_candidate(_KELTNER_CANDIDATE_BASE, digest, _kb([]), _REAL_RUNS_DIR,
-                                      instrument="BTCUSDT", timeframe="1h",
-                                      candidate_config=trending_config)
-
+def test_layer2_anything_else_is_novel_never_a_neighbour():
+    key = gate.candidate_key("fh-b", ["BTCUSDT"], "protocols/unreadable.json", {},
+                             card_timeframe="1h")
+    result = gate.layer2_digest_check(key, gate._nov.match_index(_memory("fh-a"), {}))
     assert result.route == "admit"
-    assert result["outcome"] == "neighbour", (
-        "same family/instrument/timeframe still collides at that grain, but the "
-        "differing regime means it is a NEIGHBOUR, never mistaken for the SAME "
-        "strategy"
-    )
-
-
-def test_coarse_fidelity_entry_never_produces_repeat():
-    """Design point 3: a coarse-fidelity match can never produce REPEAT, at
-    most NEIGHBOUR -- even when the candidate itself DOES supply a
-    structured config. We cannot prove an exact repeat from a record that
-    never captured composition."""
-    digest = _digest({
-        "keltner_channel": {"confidence": "structural_indicator_id", "triples": [
-            {"instrument": "BTCUSDT", "timeframe": "1h", "fidelity": "coarse",
-             "fingerprint": None, "run_ids": ["run_777"]},
-        ]},
-    })
-    candidate_config = _kc_config(atr_mult=2.0)
-
-    result = gate.evaluate_candidate(_KELTNER_CANDIDATE_BASE, digest, _kb([]), _REAL_RUNS_DIR,
-                                      instrument="BTCUSDT", timeframe="1h",
-                                      candidate_config=candidate_config)
-
-    assert result.route == "admit"
-    assert result["outcome"] == "neighbour"
-    assert result["neighbours"][0]["fidelity"] == "coarse"
-
-
-def test_candidate_with_no_structured_config_never_produces_repeat():
-    """Complement of the coarse-entry case: when the CANDIDATE side has no
-    structured config (candidate_config=None, e.g. the pre-backtest-
-    specification call site), REPEAT must also be unreachable -- there is
-    nothing to compare the prior run's fingerprint against."""
-    config = _kc_config(atr_mult=2.0)
-    digest = _kc_digest_structured("BTCUSDT", "1h", "run_016", config)
-
-    result = gate.evaluate_candidate(_KELTNER_CANDIDATE_BASE, digest, _kb([]), _REAL_RUNS_DIR,
-                                      instrument="BTCUSDT", timeframe="1h",
-                                      candidate_config=None)
-
-    assert result.route == "admit"
-    assert result["outcome"] == "neighbour"
+    assert result["outcome"] == "novel"
+    assert "neighbours" not in result
 
 
 def test_composition_fingerprint_present_but_empty_config_is_not_none():
-    """A present-but-structurally-bare config (e.g. {"regime_detector": {}},
-    the pre-E-036 fixture default in test_variant_anti_adjacency_gate.py)
+    """A present-but-structurally-bare config (e.g. {"regime_detector": {}})
     must still produce a real fingerprint distinguishable from "no config
     at all" -- composition_fingerprint(None-ish input) is the "never had a
     config" case, not "had an empty one"."""

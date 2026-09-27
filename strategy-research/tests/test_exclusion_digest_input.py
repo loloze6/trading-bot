@@ -231,3 +231,100 @@ def test_flag_on_innovation_expansion_prompt_also_carries_digest_content():
     rpr._apply_exclusion_digest_input("innovation_expansion", handoff, run_dir)
     prompt = rpr._build_stage_prompt("innovation_expansion", handoff, run_dir)
     assert "funding_rate_extreme" in prompt
+
+
+# ---------------------------------------------------------------------------
+# E-036 S2a (2026-09-27, S1_FINDINGS_SLICE8.md operator decision 3 + code
+# review). Every test above is master's, unchanged: with no
+# campaign_record/campaign_memory.yaml (regroup_record off, today's default)
+# the input is still exclusion_digest.yaml, byte-identical. When the memory
+# exists the input is artifacts/tried_ideas.yaml INSTEAD (never both).
+# ---------------------------------------------------------------------------
+
+from test_e036_s2a_exact_match_gate import _config, _prior_run_in_memory  # noqa: E402
+
+_TRIED = "artifacts/tried_ideas.yaml"
+_DIGEST = "../../campaign_record/exclusion_digest.yaml"
+# VERBATIM the reason string origin/master (ed8b406e) hard-coded -- the pin.
+_MASTER_DIGEST_REASON = (
+    "E-032 S2a: family-scoped (family, instrument, timeframe) triples "
+    "already tried, freshly derived from run artifacts -- NOT "
+    "campaign_state.yaml's stale, family-blind instruments_tried/"
+    "timeframes_tried lists. Prefer a candidate whose family is absent "
+    "here, or whose (instrument, timeframe) triple is absent under its "
+    "family, over a same-family tweak when both are viable. This is "
+    "raw material, not a binding gate -- the anti_adjacency_gate tool "
+    "stage makes the mechanical refusal decision downstream."
+)
+
+
+def test_default_without_memory_is_byte_identical_to_master():
+    """The pin: flag on (the committed default), digest on disk, no memory
+    file -> exactly master's handoff entry and assembled prompt, and nothing
+    written into the run."""
+    root = rpr.ROOT
+    _set_flag(root, True)
+    _write_digest(root)
+    run_dir = _minimal_run(root, "run_920")
+    handoff = _base_handoff()
+    rpr._apply_exclusion_digest_input("hypothesis_generation", handoff, run_dir)
+    assert handoff["optional_inputs"] == [{"path": _DIGEST, "reason": _MASTER_DIGEST_REASON}]
+    master_handoff = _base_handoff()
+    master_handoff["optional_inputs"].append({"path": _DIGEST, "reason": _MASTER_DIGEST_REASON})
+    assert (rpr._build_stage_prompt("hypothesis_generation", handoff, run_dir)
+            == rpr._build_stage_prompt("hypothesis_generation", master_handoff, run_dir))
+    assert not (run_dir / _TRIED).exists()
+
+
+def test_with_memory_the_input_is_tried_ideas_instead_of_the_digest():
+    root = rpr.ROOT
+    _set_flag(root, True)
+    _write_digest(root)  # still on disk -- must NOT also be fed
+    _prior_run_in_memory("run_044", _config(), protocol_name="run_044_generated.json")
+    run_dir = _minimal_run(root, "run_921")
+    handoff = _base_handoff()
+    rpr._apply_exclusion_digest_input("hypothesis_generation", handoff, run_dir)
+    assert [r["path"] for r in handoff["optional_inputs"]] == [_TRIED]
+    view = rpr.load_yaml(run_dir / _TRIED)
+    assert view["runs"] == [{"run_id": "run_044", "hypothesis_id": "H-PRIOR",
+                             "symbols": ["BTCUSDT", "ETHUSDT"], "timeframe": "1h",
+                             "idea_status": "refuted", "variants_tested": 1}]
+    prompt = rpr._build_stage_prompt("hypothesis_generation", handoff, run_dir)
+    assert "H-PRIOR" in prompt and f"CONTENT OF {_DIGEST}" not in prompt
+
+
+def test_with_memory_flag_off_writes_nothing_and_prompt_is_unchanged():
+    root = rpr.ROOT
+    _set_flag(root, False)
+    _prior_run_in_memory("run_044", _config(), protocol_name="run_044_generated.json")
+    run_dir = _minimal_run(root, "run_922")
+    baseline = rpr._build_stage_prompt("hypothesis_generation", _base_handoff(), run_dir)
+    handoff = _base_handoff()
+    rpr._apply_exclusion_digest_input("hypothesis_generation", handoff, run_dir)
+    assert handoff["optional_inputs"] == []
+    assert rpr._build_stage_prompt("hypothesis_generation", handoff, run_dir) == baseline
+    assert not (run_dir / _TRIED).exists()
+
+
+def test_tried_ideas_reason_names_the_campaign_record_and_no_family_grouping():
+    root = rpr.ROOT
+    _set_flag(root, True)
+    _prior_run_in_memory("run_044", _config(), protocol_name="run_044_generated.json")
+    run_dir = _minimal_run(root, "run_923")
+    handoff = _base_handoff()
+    rpr._apply_exclusion_digest_input("innovation_expansion", handoff, run_dir)
+    reason = handoff["optional_inputs"][0]["reason"]
+    assert "campaign_memory.yaml" in reason and "No family grouping" in reason
+    assert "family-scoped" not in reason
+
+
+def test_tried_ideas_view_is_bounded_most_recent_kept():
+    import campaign_memory as cm
+    runs = {f"run_{i:03d}": {"run_id": f"run_{i:03d}", "hypothesis_id": f"H{i}",
+                             "recorded_at": f"2021-01-{i + 1:02d}T00:00:00+00:00",
+                             "idea_status": "refuted", "timeframe": "1h", "variants": {}}
+            for i in range(5)}
+    view = cm.tried_ideas({"runs": runs}, root=rpr.ROOT, max_rows=3)
+    assert [r["run_id"] for r in view["runs"]] == ["run_002", "run_003", "run_004"]
+    assert view["omitted_older_runs"] == 2 and view["runs_in_memory"] == 5
+    assert "family" not in yaml.safe_dump(view["runs"])

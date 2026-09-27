@@ -191,8 +191,10 @@ def test_scan_run_triples_skips_unparseable_card_without_crashing(tmp_path):
 
 # ---------------------------------------------------------------------------
 # E-036 S2 -- composition_fingerprint() and the structured/coarse split in
-# scan_run_triples(). See test_anti_adjacency_gate.py for the Layer-2
-# REPEAT/NEIGHBOUR/NOVEL behavior this feeds.
+# scan_run_triples(). LEGACY since E-036 S2a: nothing refuses on this digest;
+# its only reader is decide_next's informational digest_advisory
+# (legacy_family_lookup). The binding repeat check is the exact match in
+# tools/novelty.py (tests/test_e036_s2a_exact_match_gate.py).
 # ---------------------------------------------------------------------------
 
 def _write_config(runs_dir: Path, run_id: str, config: dict) -> None:

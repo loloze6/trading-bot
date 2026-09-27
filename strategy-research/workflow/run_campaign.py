@@ -1101,7 +1101,11 @@ def _classify_human_pause(run_dir: Path, state: dict) -> str:
     # other flag-keyed reason in this function. Not in _QUARANTINE_SAFE_
     # REASONS or _REQUEUEABLE_QUARANTINE_REASONS below: this is a genuine
     # must-escalate per the operator's own ruling, not an auto-recoverable
-    # engineering failure.
+    # engineering failure. E-036 S2a (2026-09-27) RETIRED the writer (the
+    # anti_adjacency_retry flag and _route_post_innovation_expansion's gate
+    # call, S1_FINDINGS_SLICE8.md §1): nothing sets this flag any more. The
+    # branch stays only so a pipeline_state.yaml written before then still
+    # classifies as itself.
     if flags.get("anti_adjacency_gate_exhausted"):
         return "anti_adjacency_gate_exhausted"
     # E-034 S3. Set by run_phase1_research._route_post_variant_selection when

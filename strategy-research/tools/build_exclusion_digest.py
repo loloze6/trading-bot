@@ -1,6 +1,17 @@
 """
 build_exclusion_digest.py -- E-032 S2a, Task 1.
 
+LEGACY since E-036 S2a (2026-09-27, engineering/roadmap/E-036/
+S1_FINDINGS_SLICE8.md operator decision): nothing refuses on this digest any
+more and no prompt reads it. The repeat check is the exact match against
+campaign_record/campaign_memory.yaml (tools/novelty.py, via
+tools/anti_adjacency_gate.py at 5a and tools/decide_next.py), and the
+idea-writing stages see artifacts/tried_ideas.yaml
+(campaign_memory.tried_ideas). What remains here: the digest builder, its
+family classifier / composition fingerprint, and legacy_family_lookup, which
+decide_next records as its informational `digest_advisory`. Do not build new
+machinery on the family grain (retired, card G).
+
 Deterministic, read-only, regenerable-on-demand digest of what has already
 been tried, keyed the way a gate actually needs it: per FAMILY, not as a
 flat cross-family list.
@@ -444,6 +455,43 @@ def _refresh_failed_families(campaign_state: dict, digest_families: dict) -> dic
     return refreshed
 
 
+def legacy_family_lookup(card: dict, instrument, timeframe, digest: dict,
+                         candidate_config: dict | None = None) -> dict:
+    """LEGACY, INFORMATION ONLY -- never a refusal signal (E-036 S2a,
+    S1_FINDINGS_SLICE8.md operator decision 1 + 2). The family-grain lookup
+    that tools/anti_adjacency_gate.layer2_digest_check performed before slice
+    8.1 replaced it with the exact-match key (tools/novelty.py), kept here,
+    next to the family digest it reads, for its one remaining reader:
+    tools/decide_next.py's `digest_advisory` field, which records it and never
+    acts on it. Byte-identical to that old lookup's outcome/family/run_ids.
+
+    {outcome: novel | repeat | neighbour, family, family_confidence, run_ids}:
+      repeat    -- same family/instrument/timeframe AND an identical
+                   structured composition fingerprint (run_ids of that triple);
+      neighbour -- same family/instrument/timeframe, no identical fingerprint
+                   (run_ids of every colliding triple, sorted);
+      novel     -- no family/instrument/timeframe triple (run_ids []).
+    Do not build on this: family machinery is retired (card G)."""
+    family, confidence = classify_family(card)
+    candidate_fingerprint = composition_fingerprint(candidate_config) if candidate_config else None
+    entry = (digest.get("families") or {}).get(family)
+    matches = [t for t in (entry.get("triples", []) if entry else [])
+               if t.get("instrument") == instrument and t.get("timeframe") == timeframe]
+    out = {"outcome": "novel", "family": family, "family_confidence": confidence, "run_ids": []}
+    if not matches:
+        return out
+    repeat = next((t for t in matches
+                   if t.get("fidelity") == "structured" and t.get("fingerprint") is not None
+                   and candidate_fingerprint is not None
+                   and t["fingerprint"] == candidate_fingerprint), None)
+    if repeat is not None:
+        out.update(outcome="repeat", run_ids=list(repeat["run_ids"]))
+        return out
+    out.update(outcome="neighbour",
+               run_ids=sorted({rid for t in matches for rid in t["run_ids"]}))
+    return out
+
+
 def build_digest(runs_dir: Path = DEFAULT_RUNS_DIR,
                   campaign_state_path: Path = DEFAULT_CAMPAIGN_STATE_PATH) -> dict:
     scan = scan_run_triples(runs_dir)
@@ -464,9 +512,10 @@ def build_digest(runs_dir: Path = DEFAULT_RUNS_DIR,
             "Family-scoped (family, instrument, timeframe) triples, derived FRESH from "
             "runs/run_*/artifacts/hypothesis_card.yaml every time this runs -- never read "
             "from campaign_state.yaml's stale instruments_tried/timeframes_tried lists. "
-            "A Layer-2-only input: the anti-adjacency gate reads campaign_knowledge_base.yaml "
-            "directly for Layer 1 (KB reactivation clauses), which always takes precedence "
-            "over anything in this file. Never use the failed_families_passthrough block "
+            "LEGACY, information only (E-036 S2a): no gate and no prompt reads this file; "
+            "decide_next records a family lookup from it (digest_advisory) and never acts "
+            "on it. The repeat check is the exact match against campaign_memory.yaml "
+            "(tools/novelty.py). Never use the failed_families_passthrough block "
             "below as a global veto -- entries with detail=bare_string_low_detail carry no "
             "evidence_window/root_cause and must be weighted weaker than a dict entry."
         ),

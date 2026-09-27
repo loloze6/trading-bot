@@ -53,8 +53,8 @@ Not sure this is the doc you need? See [`DOC_INDEX.md`](DOC_INDEX.md) first.
   - [`pipeline_state.yaml`](#pipeline_stateyaml)
   - [`variant_selection.yaml` (per run)](#variant_selectionyaml-per-run)
   - [`variants_not_pursued.yaml` (per run)](#variants_not_pursuedyaml-per-run)
-  - [`exclusion_digest.yaml` (campaign level)](#exclusion_digestyaml-campaign-level)
-  - [`anti_adjacency_result.yaml` (per run)](#anti_adjacency_resultyaml-per-run)
+  - [`tried_ideas.yaml` (per run)](#tried_ideasyaml-per-run)
+  - [`variant_anti_adjacency_result.yaml` (per run)](#variant_anti_adjacency_resultyaml-per-run)
   - [`schedulability.yaml` (campaign level)](#schedulabilityyaml-campaign-level)
   - [`campaign_state.yaml`](#campaign_stateyaml)
   - [Handoff files (`handoffs/{from}_to_{to}.yaml`)](#handoff-files-handoffsfrom_to_toyaml)
@@ -475,6 +475,16 @@ being written against imaginary data.
 rather than rejected.**
 (`run_phase1_research.py::_handle_hypothesis_generation_multi_card_split`)
 
+**5. What was already tried is an optional input.**
+Under `orchestrator.exclusion_digest_input.enabled` (on), the stage receives
+[`tried_ideas.yaml`](#tried_ideasyaml-per-run) — one row per recorded run
+(idea, coins, timeframe, grid status), no family grouping — when
+`campaign_record/campaign_memory.yaml` exists; otherwise (today's default)
+the legacy family-grain `campaign_record/exclusion_digest.yaml`, exactly as
+before E-036 S2a (`run_phase1_research.py::_apply_exclusion_digest_input`).
+The skill is told to redirect rather than repeat; the binding check is the
+exact-match check at stage 6.
+
 ---
 
 #### Stage 15 — `strategy_config_authoring`
@@ -573,7 +583,9 @@ parameterisation.
 > [E037-36](../engineering/roadmap/E-037/FINDINGS.md#e037-36).
 
 **Stage input:** `hypothesis_card.yaml`, handoff
-`hypothesis_to_innovation_expansion.yaml`, `config/indicator_library.yaml`.
+`hypothesis_to_innovation_expansion.yaml`, `config/indicator_library.yaml`;
+optionally [`tried_ideas.yaml`](#tried_ideasyaml-per-run) (same rule as
+stage 2's item 5).
 
 **Stage output:** `expanded_hypothesis_card.yaml`, `innovation_notes.yaml`
 (including a self-reported `diversity_audit` block).
@@ -728,6 +740,29 @@ first — see below). `component_gap` → `human_pause` with a pointer to
 that the SKILL may need a new status case rather than guessing
 (`::determine_post_spec_route`). Failing closed on an unknown status is deliberate.
 
+**2. Exact-match repeat check (off by default).**
+Under `orchestrator.variant_anti_adjacency_gate.enabled` (E-034 S3, redesigned
+by E-036 S2a; `false`), the config about to be backtested is checked against
+`campaign_record/campaign_memory.yaml` on the same key decide-next binds on
+(`tools/novelty.py`: config hash, sorted symbols, the protocol file's timeframe
+and a hash of its windows). Binary: REPEAT or NOVEL — no family, no
+neighbour; the knowledge-base check is recorded as an advisory only. It runs
+for every queue origin (operator, external, queued card, reader, brief).
+- LLM flow: right after `candidate_strategy_config.json` is written
+  (`::_route_post_variant_selection`); REPEAT → `human_pause`, reason
+  `variant_anti_adjacency_gate_refused`.
+- Config-direct flow (tool stage): per variant, before routing
+  (`::_gate_config_direct_variants`); a REPEAT variant is marked `not_tested`
+  (`reason: "repeat: ..."`) and is never backtested (no trial row); if every
+  variant is a repeat the run ends `completed_no_new_hypothesis`. A repeat
+  skip is never read as a data shortfall: the variant loop's "at least 3
+  validated" check counts only non-repeat variants (repeats alone never
+  pause the run; data declines among the rest still pause or park as
+  before), and parking ignores repeat skips. Composition runs are not gated.
+Result: [`variant_anti_adjacency_result.yaml`](#variant_anti_adjacency_resultyaml-per-run).
+With no memory file and `regroup_record` off, the gate raises rather than
+admit everything.
+
 **Routes / outcomes**
 
 | `decision.status` | Next |
@@ -735,6 +770,7 @@ that the SKILL may need a new status case rather than guessing
 | `spec_ready` | stage 14 `data_availability_gate` by default (`orchestrator.data_availability_gate.enabled`, default true — see stage 14's own block), else stage 8 `protocol_execution` directly if explicitly disabled in config |
 | `component_gap` | `human_pause` — extend the engine, then resume |
 | anything else | `human_pause` |
+| exact repeat (gate on, item 2) | LLM flow: `human_pause`; config-direct: repeat variants skipped, all repeats → `completed_no_new_hypothesis` |
 
 ---
 
@@ -2163,26 +2199,30 @@ Internal run state — not a research artifact but the orchestrator's working me
 
 > ### ⚠️ One of these five artifacts is still flag-gated off
 >
-> `variant_selection.yaml`, `variants_not_pursued.yaml`, `exclusion_digest.yaml`
-> and `schedulability.yaml` are now produced by default — their gating flags
-> were switched on (E-041, 2026-09-02). `anti_adjacency_result.yaml` is the
-> exception: `orchestrator.variant_anti_adjacency_gate.enabled` stays `false`,
-> not because it is unfinished but because the adjacency-key design it depends
-> on was reviewed and rejected on its own merits (E-036) — it is off pending a
-> redesign, not pending a build.
+> `variant_selection.yaml`, `variants_not_pursued.yaml`, the "already tried"
+> prompt input (`exclusion_digest.yaml`, or `tried_ideas.yaml` once a campaign
+> memory exists) and `schedulability.yaml` are produced or used by default — their gating flags were
+> switched on (E-041, 2026-09-02). `variant_anti_adjacency_result.yaml` is the
+> exception: `orchestrator.variant_anti_adjacency_gate.enabled` stays `false`.
+> Its first design (a family / composition-fingerprint key) was rejected on
+> review (E-036, 2026-09-02); E-036 S2a (2026-09-27) rebuilt it as the
+> exact-match check, and it is switched on only after the S2b corpus replay
+> has published refuse/admit counts and the operator has reviewed them.
 >
 > | Flag in `config/campaign_config.yaml` | Gates | Default |
 > |---|---|---|
 > | `orchestrator.variant_selection_record.enabled` | `variant_selection.yaml`, `variants_not_pursued.yaml` | `true` |
-> | `orchestrator.variant_anti_adjacency_gate.enabled` | `anti_adjacency_result.yaml` | `false` — blocked on E-036 |
-> | `orchestrator.exclusion_digest_input.enabled` | `exclusion_digest.yaml` | `true` |
+> | `orchestrator.variant_anti_adjacency_gate.enabled` | `variant_anti_adjacency_result.yaml` | `false` — blocked on E-036 S2b |
+> | `orchestrator.exclusion_digest_input.enabled` | `tried_ideas.yaml` when `campaign_memory.yaml` exists, else `exclusion_digest.yaml` | `true` |
 > | `orchestrator.schedulability_block.enabled` | `schedulability.yaml` | `true` |
 >
 > Flags are read **at runtime**, so this table states the committed default,
 > not a permanent fact. A missing key, section or file resolves to `false` —
 > silence is never a green light. `variant_anti_adjacency_gate` additionally
-> requires `variant_selection_record` to be on (it is) and raises loudly if it
-> is not — that precondition is met, it is the flag itself that stays off.
+> requires `variant_selection_record` in the LLM flow, and `regroup_record`
+> when no `campaign_memory.yaml` exists yet; it raises loudly if either is
+> missing. `orchestrator.anti_adjacency_retry` was removed by E-036 S2a (it
+> fired before any config existed, so it could never catch a repeat).
 >
 > See [E037-21](../engineering/roadmap/E-037/FINDINGS.md#e037-21) for how this
 > was found, and E-041 for the switch-on decisions.
@@ -2223,35 +2263,52 @@ already reasoned about. This is the supply side of that problem.
 its derived ID, plus an optional "why it lost" only when the stage actually
 said so — never fabricated.
 
-### `exclusion_digest.yaml` (campaign level)
+### `tried_ideas.yaml` (per run)
 
-**Objective:** tell the idea generator what has already been tried, at a grain
-fine enough to be useful.
+**Objective:** tell the idea-writing stages (2 and 3) what has already been
+tried.
 
-**Why it exists:** `campaign_state.yaml`'s flat `instruments_tried` /
-`timeframes_tried` lists are **family-blind** — a `4h` entry contributed by
-Keltner runs makes 4h look "tried" for the funding family too. Gating on them
-refuses good ideas and admits bad ones.
+**Why it exists:** without it the generator cannot see campaign history and
+re-proposes old ideas. Its predecessor, `campaign_record/exclusion_digest.yaml`
+(`tools/build_exclusion_digest.py`), grouped runs into families, a grain the
+operator rejected (E-036, 2026-09-02; family machinery retired, card G).
 
-**Logic:** regenerated fresh from `runs/*/artifacts/hypothesis_card.yaml`,
-never read from the stale flat lists. Keyed on
-`(family, instrument, timeframe)` triples.
+**Logic:** written into `runs/<run_id>/artifacts/` at prompt time, only under
+`orchestrator.exclusion_digest_input.enabled` and only when
+`campaign_record/campaign_memory.yaml` exists, by
+`tools/campaign_memory.tried_ideas`: one row per memory entry — `run_id`,
+`hypothesis_id` (an idea's identity), `symbols` its tested variants ran on,
+`timeframe` (the protocol file's), the grid's `idea_status` — oldest first, at
+most `TRIED_IDEAS_MAX_ROWS` (200) most recent rows, the rest counted in
+`omitted_older_runs`; an unreadable old protocol file is listed under
+`warnings` and never crashes the prompt. Derived, never edited; the run keeps
+exactly what the model was shown. It REPLACES the legacy digest as the input
+when the memory exists (never both). With no memory file (today's default)
+the stages get `campaign_record/exclusion_digest.yaml` exactly as before
+E-036 S2a — family-scoped `(family, instrument, timeframe)` triples,
+regenerated on demand by `tools/build_exclusion_digest.py` — so the default
+prompt input is unchanged; decide-next also records a lookup from it
+(`digest_advisory`, information only).
 
-### `anti_adjacency_result.yaml` (per run)
+### `variant_anti_adjacency_result.yaml` (per run)
 
-**Objective:** record whether a candidate is a repeat of something already
-tried, and on what evidence.
+**Objective:** record whether the config about to be backtested is an exact
+repeat of one already tested, and of which.
 
-**Logic:** two layers, most specific first. **Layer 1** reads the knowledge
-base at *mechanism* grain (matching `hypothesis_id`, sorted longest-first so a
-verdict never depends on YAML ordering) and honours reactivation clauses
-per-branch — a terminated `daily` branch does not close an open `4h` sibling.
-**Layer 2** checks the digest's `(family, instrument, timeframe)` triple.
-Default is ADMIT; a REFUSE must be positively evidenced.
-
-Runs at two points: once on the parent idea before `validation`, and again on
-the **chosen variant** after `backtest_specification` — the second is the one
-that can see a variant that pivoted away from a clean parent.
+**Logic:** written by the exact-match check at stage 6 (item 2) under
+`orchestrator.variant_anti_adjacency_gate.enabled`. **Layer 2 (binding):** the
+candidate's key — `forecast_hash` (`_compute_forecast_hash` of the file the
+backtest runs, the trial row's own hash), sorted symbols of the protocol it
+runs, that protocol's timeframe and a hash of its windows — looked up in
+`campaign_memory.yaml` through `tools/novelty.py`, the same functions
+decide-next uses. `route: refuse`, `outcome: repeat` and `matched: [{run_id,
+variant_id}]` on a hit; else `admit` / `novel`. A run with no memory entry, an
+entry marked `legacy: true`, and the run itself never match. **Layer 1
+(advisory):** the knowledge base at mechanism grain, recorded as
+`layer1_advisory` (`warn` / `admit` / `no_opinion` / `not_evaluated`); it
+never refuses. Also carries `key`, `config_ref`, `protocol_ref`,
+`memory_present`; the LLM flow adds `selected_variant_id`; the config-direct
+flow writes one result per checked variant plus `repeats` and `run_end`.
 
 ### `schedulability.yaml` (campaign level)
 
@@ -2792,8 +2849,9 @@ operator `ready` entry still goes first.
 
 Novelty is the exact match against the memory, binding: config hash, measured
 symbols, the protocol file's timeframe (normalised) and a content hash of its
-windows -- never the per-run protocol path; the legacy exclusion digest is
-recorded, never refuses. Ranking (after collapsing eligible duplicates on that
+windows -- never the per-run protocol path (`tools/novelty.py`, shared with
+the stage-6 exact-match check); the legacy exclusion digest is recorded, never
+refuses. Ranking (after collapsing eligible duplicates on that
 key): `confidence_real` desc, `distance_to_profitable` desc, cost (backtests)
 asc, id asc; no lineage demotion. Scores only rank and appear only in the
 decision record. A picked candidate is a new idea (`<parent>__<proposal_id>`)
@@ -3003,8 +3061,9 @@ by how load-bearing they are, not alphabetically.
 
 | Tool | What it does |
 |---|---|
-| `tools/anti_adjacency_gate.py` | Deterministic tool stage: is this candidate a restatement of something already killed? |
-| `tools/build_exclusion_digest.py` | Read-only, regenerable digest of what the [campaign](#g-campaign) has already excluded. |
+| `tools/anti_adjacency_gate.py` | The exact-match repeat check at stage 6 (E-036 S2a): REPEAT/NOVEL against `campaign_memory.yaml`; KB check advisory only. |
+| `tools/novelty.py` | The one exact-match key and lookup (config hash, symbols, protocol timeframe + windows hash), shared by `decide_next.py` and the stage-6 check. |
+| `tools/build_exclusion_digest.py` | LEGACY family-grain digest of what has been tried: the stages' prompt input while no `campaign_memory.yaml` exists, and decide-next's informational `digest_advisory` (`legacy_family_lookup`). Never a refusal signal. |
 
 **Data and measurement**
 
