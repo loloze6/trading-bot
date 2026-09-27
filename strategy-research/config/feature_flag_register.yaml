@@ -321,6 +321,12 @@ flags:
       proven there. Held off_incomplete for an unmet PROOF criterion: the
       five reader prompts have never run against a real model, and the
       delivery plan's slice-5 run budget (2 real runs) is unspent.
+      E-035 S2c (2026-09-27, slice 8.2, no new flag): under this same flag,
+      after the proposals validate, each one carrying the optional
+      requires_feed {feed, reason} appends one row (stage specialist_reader)
+      to campaign_record/data_requests.yaml through the locked, idempotent
+      appender; nothing is written when none carries it
+      (tests/test_e035_s2c_feed_requests.py).
 
   - name: regroup_record
     kind: orchestrator_config
@@ -377,7 +383,13 @@ flags:
       1a may report a brief exhausted (completed_brief_exhausted, owner
       flipped), R2 asks 1a for more on open briefs, the loop stops only when
       none is open, and legacy briefs get a one-time "[obsolete]" queue
-      title. Flag-off split, 1a prompt and queue proven unchanged.
+      title. Flag-off split, 1a prompt and queue proven unchanged. E-035 S2c
+      (2026-09-27, slice 8.2, no new flag): a candidate whose proposal
+      carries requires_feed is INFEASIBLE (reason requires_feed:<feed>,
+      recorded, never dropped) until <feed> is a FEED_REGISTRY key of
+      trading-bot/data/feed_registry.py -- the data-availability gate's feed
+      set (decide_next.known_feeds, read with ast); records for candidates
+      without it are unchanged (tests/test_e035_s2c_feed_requests.py).
 
   - name: verdict_routing_retired
     kind: orchestrator_config

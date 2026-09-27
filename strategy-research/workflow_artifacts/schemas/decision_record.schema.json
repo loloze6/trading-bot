@@ -221,7 +221,18 @@
               "additionalProperties": false,
               "properties": {
                 "result": { "enum": ["FEASIBLE", "INFEASIBLE", "UNKNOWN"] },
-                "reasons": { "type": "array", "items": { "type": "string" } }
+                "reasons": { "type": "array", "items": { "type": "string" } },
+                "requires_feed": {
+                  "type": "object",
+                  "description": "E-035 S2c: present only when the candidate's proposal carries requires_feed. available=false makes the candidate INFEASIBLE (reason requires_feed:<feed> ...) until <feed> is a key of trading-bot/data/feed_registry.py's FEED_REGISTRY (decide_next.known_feeds).",
+                  "required": ["feed", "available", "reason"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "feed": { "type": "string" },
+                    "available": { "type": "boolean" },
+                    "reason": { "type": "string" }
+                  }
+                }
               }
             }
           }

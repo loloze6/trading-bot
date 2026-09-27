@@ -55,6 +55,26 @@ exactly `{component_id, field, before, after}` -- `field` is the dotted path of 
 parameter inside that component (e.g. `transforms[2].params.min_abs`). `tools/reader_proposals.py` rejects a patch item
 without it, which stops the pipeline. A `new_block`'s `block.config_paths` must list at least one path.
 
+### `requires_feed` (optional -- only when this report shows the need)
+Either `kind` may carry ONE extra field saying the proposal needs a data feed:
+```yaml
+requires_feed:
+  feed: open_interest   # lowercase snake_case: the name a strategy config's aux_feeds entry
+                        # would use -- an existing feed's name when one fits (e.g. funding_rate),
+                        # else a plain name for the missing data (open_interest,
+                        # order_book_depth, liquidations)
+  reason: "<why the result turns on that data, naming the forecast_power.yaml field it rests on>"
+```
+Emit it only when a field of THIS report shows the missing data would plausibly change the
+result, and cite that field in both `reason` and `evidence`. Never invent a need: a proposal
+that can be tested on the data the run already used carries no `requires_feed`, and "more
+data might help" is not evidence. It is not a third `kind` -- the proposal still carries its
+`patch` or `block` sketch. What happens next is not yours to decide: the pipeline appends the
+request to `campaign_record/data_requests.yaml`, and decide-next keeps the proposal waiting
+(infeasible) until that feed exists. It never changes this idea's status or route.
+`tools/reader_proposals.py` rejects any other shape (a missing or empty `reason`, a
+non-snake_case `feed`, an extra key), which stops the pipeline.
+
 ### `evidence` format rule
 ```yaml
 # GOOD

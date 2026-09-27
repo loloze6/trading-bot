@@ -1243,7 +1243,13 @@ category's report, no regime-audit decision).
 
 **Stage output:** `artifacts/proposals/<category>.yaml` × 5 (a YAML list, `[]`
 for none), each validated by `tools/reader_proposals.py::load_proposals`; a
-malformed file stops the run.
+malformed file stops the run. A proposal's fields
+(`workflow_artifacts/schemas/proposal.schema.json`): `proposal_id`
+(`<category>-<run_id>-<n>`), `kind` (`patch` | `new_block`), `patch` or
+`block`, `evidence`, `scores` (three 0-3 anchors), `model_id`,
+`rubric_version`, and the optional `requires_feed: {feed, reason}` (E-035
+S2c, item 7). Plus, only when some proposal carries `requires_feed`, rows in
+`campaign_record/data_requests.yaml`.
 
 **Features / logic in place**
 
@@ -1279,6 +1285,21 @@ malformed file stops the run.
    `engineering/roadmap/E-046a/S2_5B_II_B_CALLERS.md`.
 6. **With stage 17 on**, the route in item 4 runs after `regroup_record`
    instead of here (same function, same result).
+7. **Feed requests** (E-035 S2c, delivery_plan_v26.md slice 8.2; no flag of
+   its own). A proposal of either `kind` may carry `requires_feed: {feed,
+   reason}` when its report shows the missing data would plausibly change the
+   result: `feed` is a lowercase snake_case name as a strategy config's
+   `aux_feeds` would name it (a `FEED_REGISTRY` key such as `funding_rate`,
+   or a new name such as `open_interest`), `reason` a non-empty string; any
+   other shape stops the run. After the proposals validate,
+   `_route_reader_feed_requests` appends one row per such proposal to
+   `campaign_record/data_requests.yaml` (`_append_data_requests(...,
+   dedupe=True)`, the locked idempotent appender): `{run_id, stage:
+   specialist_reader, category, proposal_id, requires_feed: {feed, reason},
+   reason: "requires_feed:<feed> -- <reason>"}`. A resume or re-run adds no
+   duplicate; nothing is written when no proposal carries the field. It
+   changes no status, route or queue entry: decide-next gates the candidate
+   (§5 `run_campaign.py`).
 
 ---
 
@@ -2693,6 +2714,7 @@ market_type are not `tradable: true` — **or are undeclared**
 | `config/detector_wishlist.yaml` | Detector families to build when an ungated edge exists. Each candidate's `trigger_condition.predicate` is a structured, machine-checkable expression evaluated by `workflow/run_campaign.py::evaluate_wishlist_predicate()` — no longer human-reviewed prose. `status`/`last_evaluated_at`/`last_evaluated_against`/`kb_state_hash`/`evaluation_note` are written ONLY by `evaluate_and_persist_wishlist_predicate()` (single authority — never hand-edit); a persisted `status` is only trustworthy if its `kb_state_hash` matches a fresh `sha256` of `campaign_knowledge_base.yaml`'s current bytes. See `RUNBOOK.md` section 3 and `docs/CONCEALMENT_INSTRUCTION_DOCTRINE.md`. |
 | `campaign_knowledge_base.yaml` | Durable findings store — see the file itself for the current count; this table doesn't track a point-in-time number. |
 | `campaign_record/campaign_memory.yaml` | Per-run memory (E-058 S2a), written only by stage 17 `regroup_record` when `orchestrator.regroup_record.enabled` is on (off by default). One entry per `run_id`; fields in the stage 17 block. No old runs; those live in `campaign_knowledge_base.yaml`. |
+| `campaign_record/data_requests.yaml` | Append-only `{requests: [...]}` intake of the feed-acquisition lane. Two writers, both through `run_phase1_research._append_data_requests`: the data-availability gate's per-variant declines (`stage: data_availability_gate`, `{run_id, stage, variant_id, outcome, reason, reasons}`; idempotent only under `verdict_routing_retired`), and (E-035 S2c) stage 16's `requires_feed` proposals (`stage: specialist_reader`, `{run_id, stage, category, proposal_id, requires_feed: {feed, reason}, reason}`, always idempotent on `campaign_review_retired.request_key` = run, stage, variant, proposal, reason). Existing rows are never rewritten. Decide-next records its row count as information; the binding check is its own `requires_feed` feasibility gate. |
 | `runs/<run_id>/artifacts/decision_record.yaml` | One decide-next decision (E-059 S2a), written by `run_campaign.py`'s DONE branch only when `orchestrator.decide_next.enabled` is on (off by default), from `tools/decide_next.py`. Inputs' hashes, R1/R2 (no-ops), candidates with gates/cost/rank, `picked` or `stop`. Schema `workflow_artifacts/schemas/decision_record.schema.json`. See §5 `run_campaign.py`. |
 | `campaign_record/candidate_briefs/<id>.md` | The brief decide-next writes for the candidate it picked (E-059 S2a, same flag). No criteria on purpose: step 1a writes them. |
 | `campaign_record/queued_cards/<run_id>/hypothesis_card_<n>.yaml` | A brief's extra hypothesis card, saved by the multi-card split under `orchestrator.decide_next.enabled` (E-059 S2b) and named by its queue entry's `card_ref`. Listed with its 1a scores in `runs/<run_id>/artifacts/queued_hypotheses.yaml`. |
@@ -2851,7 +2873,26 @@ Novelty is the exact match against the memory, binding: config hash, measured
 symbols, the protocol file's timeframe (normalised) and a content hash of its
 windows -- never the per-run protocol path (`tools/novelty.py`, shared with
 the stage-6 exact-match check); the legacy exclusion digest is recorded, never
-refuses. Ranking (after collapsing eligible duplicates on that
+refuses. Feasibility makes a candidate `INFEASIBLE` (ineligible, still listed
+in the record with its `reasons`) when: its id is unsafe or collides with a
+queue id or brief (`unsafe_proposal_id`, `queue_id_collision`,
+`brief_collision`); the source run has no protocol pin or brief
+(`source_has_no_protocol_pin`, `source_brief_missing`); a patch's source is
+untested, missing or does not resolve (`source_base_variant_not_tested`,
+`source_config_missing`, `source_manifest_missing`, `patch_unresolvable`,
+`stale_before`, `manifest_unresolved`, `composition_check_failed`,
+`unknown_component_class`); a sketch is a regime block
+(`regime_block_needs_composition`); or (E-035 S2c) its proposal carries
+`requires_feed` and the feed is not available -- reason `requires_feed:<feed>
+-- ...`. "Available" is the data-availability gate's own feed set: the keys of
+`trading-bot/data/feed_registry.py`'s `FEED_REGISTRY` (`decide_next.known_feeds`,
+read with ast; a `RESERVED_FEED_REGISTRY` name is not in it, as the gate
+declines those). When no feed set can be read the candidate stays infeasible.
+Such a candidate stays in the pool and is re-checked at every decision, so it
+becomes eligible once the feed is wired; its `gates.feasibility.requires_feed`
+records `{feed, available, reason}`, and when picked its brief's goal says
+which feed it needs. Candidates without `requires_feed` are unchanged.
+Ranking (after collapsing eligible duplicates on that
 key): `confidence_real` desc, `distance_to_profitable` desc, cost (backtests)
 asc, id asc; no lineage demotion. Scores only rank and appear only in the
 decision record. A picked candidate is a new idea (`<parent>__<proposal_id>`)

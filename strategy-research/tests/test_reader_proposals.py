@@ -61,6 +61,18 @@ def test_every_schema_valid_example_loads(tmp_path):
     assert all(len(out[c]) == 1 for c in _VALID_EXAMPLES)
 
 
+def test_every_valid_example_with_requires_feed_loads_and_validates(tmp_path):
+    """E-035 S2c: the optional field, orthogonal to kind, on every example."""
+    files = {}
+    for cat, ex in _VALID_EXAMPLES.items():
+        p = _with_id(ex, cat)
+        p["requires_feed"] = {"feed": "open_interest", "reason": "slices.overall.x=1"}
+        assert _schema_ok(p)
+        files[f"{cat}.yaml"] = yaml.safe_dump([p])
+    out = rp.load_proposals(_write(tmp_path, files), CATEGORIES)
+    assert all(out[c][0]["requires_feed"]["feed"] == "open_interest" for c in _VALID_EXAMPLES)
+
+
 def test_missing_dir_missing_file_and_empty_list_mean_no_proposals(tmp_path):
     assert rp.load_proposals(tmp_path / "absent", CATEGORIES) == {c: [] for c in CATEGORIES}
     out = rp.load_proposals(_write(tmp_path, {"profitability.yaml": "[]"}), CATEGORIES)
@@ -88,6 +100,24 @@ _BAD_ENTRIES = {
     "score_missing": lambda p: p["scores"].pop("mechanism_plausibility"),
     "missing_model_id": lambda p: p.pop("model_id"),
     "bad_id_pattern": lambda p: p.__setitem__("proposal_id", "profitability-run_1"),
+    # E-035 S2c: the optional requires_feed field, exactly {feed, reason}.
+    "requires_feed_null": lambda p: p.__setitem__("requires_feed", None),
+    "requires_feed_string": lambda p: p.__setitem__("requires_feed", "open_interest"),
+    "requires_feed_no_reason": lambda p: p.__setitem__("requires_feed", {"feed": "open_interest"}),
+    "requires_feed_no_feed": lambda p: p.__setitem__("requires_feed", {"reason": "r"}),
+    "requires_feed_empty_reason": lambda p: p.__setitem__(
+        "requires_feed", {"feed": "open_interest", "reason": ""}),
+    "requires_feed_blank_reason": lambda p: p.__setitem__(
+        "requires_feed", {"feed": "open_interest", "reason": "   "}),
+    "requires_feed_extra_key": lambda p: p.__setitem__(
+        "requires_feed", {"feed": "open_interest", "reason": "r", "priority": "high"}),
+    "requires_feed_empty_feed": lambda p: p.__setitem__("requires_feed", {"feed": "", "reason": "r"}),
+    "requires_feed_spaced_feed": lambda p: p.__setitem__(
+        "requires_feed", {"feed": "open interest", "reason": "r"}),
+    "requires_feed_upper_feed": lambda p: p.__setitem__(
+        "requires_feed", {"feed": "Open_Interest", "reason": "r"}),
+    "requires_feed_digit_first": lambda p: p.__setitem__("requires_feed", {"feed": "1h_oi", "reason": "r"}),
+    "requires_feed_feed_not_str": lambda p: p.__setitem__("requires_feed", {"feed": 3, "reason": "r"}),
 }
 
 

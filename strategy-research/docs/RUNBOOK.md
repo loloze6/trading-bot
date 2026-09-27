@@ -644,6 +644,19 @@ Restore `status: paused_for_human` on the run and `paused:waiting_for_<kind>`
 on the entry, then `--unpark`; or set `parked: null` by hand, which skips the
 unpark checks.
 
+### Reader proposals waiting on a feed (E-035 S2c)
+
+A reader proposal with `requires_feed` is not a parked run and has no queue
+entry: stage 16 writes a `stage: specialist_reader` row to
+`campaign_record/data_requests.yaml`, and decide-next lists the candidate as
+`INFEASIBLE` (`requires_feed:<feed>`) in each `decision_record.yaml` until the
+feed is a `FEED_REGISTRY` key in `trading-bot/data/feed_registry.py`. There is
+nothing to unpark: wire the feed into the engine (`trading-bot/data/ADDING_A_FEED.md`),
+and the next decision re-checks the candidate and can pick it. Never add a
+name to `FEED_REGISTRY` without the fetcher behind it -- that marks the
+candidate feasible while its data does not exist (the data-availability gate,
+USER_GUIDE stage 14, would then decline it).
+
 ---
 
 ## 5. Stop cleanly

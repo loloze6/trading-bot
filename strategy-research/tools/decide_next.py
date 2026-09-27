@@ -237,6 +237,63 @@ def component_class_status(trading_bot_root: Path, class_path) -> str:
     return "defined" if name in names else "missing"
 
 
+# E-035 S2c (slice 8.2): "is this feed available" -- the SAME feed set the
+# data-availability gate (tools/data_availability_gate.py::check_aux_feed_window)
+# accepts: the keys of trading-bot/data/feed_registry.py's FEED_REGISTRY. A
+# RESERVED_FEED_REGISTRY name is not in it (the gate declines those
+# unconditionally), so it is not available here either. Read with ast, like
+# known_component_classes: the registry module imports pandas and the fetchers,
+# which decide_next must not need.
+FEED_REGISTRY_MODULE = "data.feed_registry"
+FEED_REGISTRY_NAME = "FEED_REGISTRY"
+
+
+def _feed_registry_path(trading_bot_root: Path) -> Path:
+    return Path(trading_bot_root).joinpath(*FEED_REGISTRY_MODULE.split(".")).with_suffix(".py")
+
+
+def known_feeds(trading_bot_root: Path) -> list:
+    """Sorted FEED_REGISTRY keys, read with ast (never imported). Raises
+    DecideNextError when the module has no module-level `FEED_REGISTRY = {...}`
+    dict literal with string keys -- a silent empty set would mark every
+    requires_feed candidate infeasible for the wrong reason."""
+    path = _feed_registry_path(trading_bot_root)
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    for node in tree.body:
+        if (isinstance(node, ast.Assign) and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Name)
+                and node.targets[0].id == FEED_REGISTRY_NAME and isinstance(node.value, ast.Dict)):
+            keys = node.value.keys
+            if not keys or not all(isinstance(k, ast.Constant) and isinstance(k.value, str)
+                                   for k in keys):
+                break
+            return sorted(k.value for k in keys)
+    raise DecideNextError(f"{path}: no module-level {FEED_REGISTRY_NAME} dict literal with "
+                          f"string keys -- cannot tell which feeds are available")
+
+
+def requires_feed_gate(p: dict, available_feeds) -> tuple:
+    """(record, reason) for one proposal. (None, None) when the proposal has
+    no requires_feed -- nothing is recorded, so such candidates are unchanged.
+    Otherwise record = {feed, available, reason} and reason is None when the
+    feed is in `available_feeds`, else 'requires_feed:<feed> -- ...' (the
+    candidate is INFEASIBLE until the feed is available). `available_feeds`
+    None (no feed set supplied) is never read as 'available'."""
+    rf = p.get("requires_feed")
+    if rf is None:
+        return None, None
+    feed = rf["feed"]
+    available = available_feeds is not None and feed in set(available_feeds)
+    record = {"feed": feed, "available": available, "reason": rf["reason"]}
+    if available:
+        return record, None
+    if available_feeds is None:
+        return record, (f"requires_feed:{feed} -- no available feed set was supplied "
+                        f"({FEED_REGISTRY_MODULE}.{FEED_REGISTRY_NAME} not read)")
+    return record, (f"requires_feed:{feed} -- not in {FEED_REGISTRY_MODULE}.{FEED_REGISTRY_NAME} "
+                    f"{sorted(available_feeds)} (the data-availability gate's feed set)")
+
+
 def _component_classes(config) -> set:
     out = set()
     if not isinstance(config, dict):
@@ -604,11 +661,15 @@ def _next_request_id(owner_id: str, taken: set) -> str:
 # ---------------------------------------------------------------------------
 
 def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None,
-                digest=None, composition_runs: bool = False, dsr_basis: dict | None = None) -> dict:
+                digest=None, composition_runs: bool = False, dsr_basis: dict | None = None,
+                available_feeds=None) -> dict:
     """Everything decide() reads, from disk under `root` (strategy-research/).
     `queue` is the caller's in-memory queue document (after its own write).
     `known_classes` is the known component class set (known_component_classes)
     or None; `digest` the legacy exclusion digest document or None.
+    `available_feeds` (E-035 S2c) is the available feed set (known_feeds) or
+    None: a proposal carrying `requires_feed` is INFEASIBLE unless its feed is
+    in it. It is read only by such proposals; others are unchanged.
     `composition_runs` (E-060 S3b; the caller passes
     run_phase1_research._composition_runs_enabled()): also read the whole
     block registry, campaign_record/compositions.yaml and each forecast
@@ -676,6 +737,7 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
         "registry_revision": registry.get("revision", 0),
         "queue": copy.deepcopy(queue),
         "known_classes": sorted(known_classes) if known_classes is not None else None,
+        "available_feeds": sorted(available_feeds) if available_feeds is not None else None,
         "digest": digest,
         "runs": runs,
         "component_requests_count": _count("component_requests.yaml"),
@@ -1102,6 +1164,11 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
                        "no machine_constraints to pin the candidate's windows")
     if not isinstance(src.get("research_brief"), dict):
         reasons.append("source_brief_missing: the source research_brief.yaml is missing")
+    # E-035 S2c: a proposal that needs a feed we do not have waits (INFEASIBLE,
+    # recorded, never dropped) until that feed is available.
+    feed_record, feed_reason = requires_feed_gate(p, inputs.get("available_feeds"))
+    if feed_reason:
+        reasons.append(feed_reason)
     if p["kind"] == "patch":
         if base.get("status") != "tested":
             reasons.append("source_base_variant_not_tested")
@@ -1160,6 +1227,9 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
         src.get("card"), config_for_digest, symbols, entry.get("timeframe"), inputs.get("digest"))
     backtests = n_windows * N_VARIANTS * len(symbols) if (n_windows and symbols) else None
     eligible = novelty["exact_match"] != "REPEAT" and feas != "INFEASIBLE"
+    feasibility = {"result": feas, "reasons": reasons}
+    if feed_record is not None:
+        feasibility["requires_feed"] = feed_record
     if p["kind"] == "patch":
         collapse_key = ("patch", key) if key else ("single", pid)
     else:
@@ -1181,7 +1251,7 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
                    "model_id": p.get("model_id"), "rubric_version": p.get("rubric_version")},
         "resolved_config_sha256": resolved_sha,
         "gates": {"novelty": novelty,
-                  "feasibility": {"result": feas, "reasons": reasons}},
+                  "feasibility": feasibility},
         "eligible": eligible,
         "cost": {
             "backtests": backtests,
@@ -1527,6 +1597,10 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str) -> tuple:
         goal = (f"Test a new {blk.get('kind')} block proposed by the {category} reader after "
                 f"{run_id}: {blk.get('rationale')} (config paths {blk.get('config_paths')}). "
                 f"Evidence: {evidence}")
+    rf = p.get("requires_feed")
+    if rf is not None:
+        # E-035 S2c: picked only once the feed is available (requires_feed_gate).
+        goal += f" Needs feed {rf['feed']}: {rf['reason']}"
     front["research_goal"] = goal
     mc = copy.deepcopy((src["pre_registration"] or {}).get("machine_constraints") or {})
     mc.pop("pass_rule", None)  # never inherit criteria (operator decision 2)
@@ -1538,8 +1612,8 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str) -> tuple:
         "parent_hypothesis_id": cand["parent_hypothesis_id"],
         "hypothesis_id": cand["hypothesis_id"],
         "decision_ref": decision_ref,
-        "proposal": {k: copy.deepcopy(p[k]) for k in ("kind", "patch", "block", "evidence")
-                     if k in p},
+        "proposal": {k: copy.deepcopy(p[k])
+                     for k in ("kind", "patch", "block", "evidence", "requires_feed") if k in p},
     }
     candidate = {}
     if p["kind"] == "patch":
