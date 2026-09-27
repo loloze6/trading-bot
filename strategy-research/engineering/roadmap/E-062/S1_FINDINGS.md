@@ -350,3 +350,31 @@ one failing only buy-and-hold; assert `bars_definitions: v2` and the seven rows.
 | **S2c** | Docs: bars header wording checks, RUNBOOK/USER_GUIDE profit-bar sections, `DECISION_LOG.md` (the accepted guesses as new D-numbers; D-034..D-039 → built-flag-off), Linear E-062. | S2b |
 
 After S2b: the operator signs `ratified_by`/`ratified_at` (and `residual_ic.ratified`) before C4.
+
+---
+
+## Decision (operator's standing instruction, 2026-09-28 night)
+
+The operator is away with a standing instruction: SMALL questions are taken on the S1
+recommendation, BIG ones are parked. Recorded by the orchestrator:
+
+- **Accepted as recommended (SMALL):** G1 window chaining (earliest window owns a day, gaps
+  linked flat and not counted, a missing junction day treated as a gap); G2 0.9 coverage per
+  window and on the whole chained span; G3 Sharpe = mean / sample stdev (ddof 1) x sqrt(365),
+  rf 0, NOT_EVALUABLE below 30 daily returns or zero stdev; G4 the DSR bar keeps its
+  ledger-consistent basis, only `sharpe_min` moves; G5 trade count excludes
+  `exit_reason: end_of_window` forced closes, both counts recorded; G6 buy-and-hold = total
+  compounded return over the same counted days, one round trip per coin (fee from
+  `cost_model.yaml` + the engine's slippage), PASS iff strategy minus buy-and-hold > 0;
+  G7 "survives 2x costs" is a profit bar (branch 3) on the pooled `realized_edge_to_cost_ratio`
+  > 2.2 with a 100-trade floor (NOT_EVALUABLE below), the menu entry gets 2.2 / 100 but stays
+  optional for 1a; G8 new flag `orchestrator.profit_bars_v2.enabled` requiring
+  `profit_bars_every_backtest`, evaluations record `bars_definitions: v2`, a spend under other
+  definitions is refused via `bars_changed`; G9 ratification fields stay null for the operator,
+  plus the unquoted-date loader fix; G11 no correction for junction fees (conservative).
+- **Parked for the operator (BIG):** G10 — slow strategies take the sparse path where no DSR is
+  computed, so branch 3 can never pass for them even with D-035's whole-test trade count.
+  Fixing it changes trial accounting. Not blocking S2; to be decided with the operator.
+- **Sequencing:** S2a (pure functions) may run now in parallel with C1; S2b after C1.1 lands
+  (and ideally after C2.1); the operator must sign the bars file before C4 (sha changes at merge
+  and at signature).
