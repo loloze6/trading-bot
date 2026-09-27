@@ -66,10 +66,17 @@ gated behind an off-by-default flag) · **not built** (decision recorded, no cod
 
 | D-NNN | date | decision | roadmap card(s) | source | where in code | status |
 |---|---|---|---|---|---|---|
-| D-020 | 2026-09-24 | Under `profit_bars_every_backtest`, bars are graded on the **equal-weight portfolio** of tested coins for return and drawdown: avg daily return = mean of portfolio daily simple returns; drawdown = bar-level portfolio curve. Sharpe stays a median of per-coin medians and the trade-count floor stays worst-coin (NOT pooled). Recorded only in a yaml comment and the flag register, not a dedicated S1 Decision section. | card B (B.5/B.7) | `strategy-research/config/profitability_bars.yaml:34-37`; `strategy-research/config/feature_flag_register.yaml:200-214,456-457`; noted as found-only-in-yaml by `review_2026-09-27/A2_cards_A-G.md` B.7 | `run_phase1_research._portfolio_profit_metrics` / `_evaluate_profit_bars_every_backtest` | built-flag-off |
+| D-020 | 2026-09-24 | (Sharpe, drawdown and trade-count bases superseded by D-034..D-036) Under `profit_bars_every_backtest`, bars are graded on the **equal-weight portfolio** of tested coins for return and drawdown: avg daily return = mean of portfolio daily simple returns; drawdown = bar-level portfolio curve. Sharpe stays a median of per-coin medians and the trade-count floor stays worst-coin (NOT pooled). Recorded only in a yaml comment and the flag register, not a dedicated S1 Decision section. | card B (B.5/B.7) | `strategy-research/config/profitability_bars.yaml:34-37`; `strategy-research/config/feature_flag_register.yaml:200-214,456-457`; noted as found-only-in-yaml by `review_2026-09-27/A2_cards_A-G.md` B.7 | `run_phase1_research._portfolio_profit_metrics` / `_evaluate_profit_bars_every_backtest` | built-flag-off |
 | — | 2026-09-24 | NOT_EVALUABLE when coin sets differ between compared runs. | card B | same as D-020 (implied by the "COMMON DAYS" construction in `profitability_bars.yaml:44-45`) | `profitability_bars.yaml` `basis`/COMMON DAYS logic | built-flag-off |
 | D-021 | 2026-09-25 | **Guess 1 (holdout path) answered.** The holdout is reached **ONLY** through branch 3: a backtest passes every profit bar → the `profit_bars_reached` stop → the operator resumes with an operator-written `holdout_decision.yaml` (`spend` or `continue`). Branch 1 (the grid/idea status) is **knowledge enrichment and block identification only** — a `validated` idea never leads to the holdout by itself, and grid validation is NOT a precondition for the unlock (supersedes the S1 recommendation's "refused unless the idea is validated"). Guesses 2–13: no operator objection, build on the S1 defaults. | card B, slice 6c S2d | `engineering/roadmap/E-059/S1_FINDINGS_6C.md:494-508` ("Decision (operator, 2026-09-25)") | `docs/RUNBOOK.md` `profit_bars_reached` / `holdout_unlocked_awaiting_result` rows; `feature_flag_register.yaml:447-459` | built-flag-off (`orchestrator.verdict_routing_retired.enabled`) |
 | — | 2026-09-26 | Bars ratification is the operator's **manual** check; not enforced in code. | card B | `feature_flag_register.yaml:447-459` ("operator decision 2026-09-26"); `docs/RUNBOOK.md` `holdout_unlock_refused` row; `review_2026-09-27/A2_cards_A-G.md` B.5 | `config/profitability_bars.yaml` (`ratified_by`/`ratified_at`, both `null` — the loader does not check them) | built-flag-off (manual gate, not code-enforced) |
+| D-034 | 2026-09-27 | **Max drawdown** = worst drawdown over the **whole test period** on the equal-weight portfolio curve (windows chained), not the worst single window. Supersedes D-020's drawdown basis. | card B | operator, 2026-09-27 session ("Ok for the questions"); `review_2026-09-27/PLACEHOLDER_VALUES_PROPOSAL.md` | not built (today: worst single window, `tools/portfolio_daily.py`) | not built (delivery_plan_v26_continuation C3.1) |
+| D-035 | 2026-09-27 | **Trade count** = at least **100 trades per coin over the whole test** (not a per-window minimum). Supersedes D-020's trade-count basis. | card B | same as D-034 | not built (today: min over coins of per-window minimum, `tools/run_protocol.py` ~L2233) | not built (C3.2) |
+| D-036 | 2026-09-27 | **Sharpe** = on the equal-weight portfolio's **daily returns over the whole test**, same basis as return and drawdown. Supersedes D-020's Sharpe basis. | card B | same as D-034 | not built (today: median of per-window, per-coin Sharpes) | not built (C3.3) |
+| D-037 | 2026-09-27 | New bar: **beats equal-weight buy-and-hold** of the tested coins, after costs (CLAUDE.fork.md bar, previously not checked anywhere). | card B | same as D-034 | not built | not built (C3.4) |
+| D-038 | 2026-09-27 | New **mandatory** bar: **survives 2× costs**, expressed as realized gross edge / cost ratio **> 2.2** (covers doubled slippage), for every idea — not only when 1a picks the cost criterion. | cards B, E | same as D-034 | not built (today `criterion_menu.yaml` `realized_edge_to_cost_ratio > 0.3`, optional) | not built (C3.5) |
+| D-039 | 2026-09-27 | **Values ratified** (ship together with D-034..D-038 so definitions and numbers change in one PR): `sharpe_min` 1.0; `avg_daily_return_min` 0.0005 (kept); `deflated_sharpe_threshold` 0.95 (kept); `max_drawdown_pct_max` 20 (whole-period basis — stricter than the old per-window meaning); cost ratio > 2.2 with floor `min_trades` 100; residual IC `threshold` 0.02, `max_p_value` 0.05 one-sided, `min_n_eff` 30. Supersedes D-026's placeholder. | cards B, E, F | operator, 2026-09-27 session ("Ok for the values"); `review_2026-09-27/PLACEHOLDER_VALUES_PROPOSAL.md` summary table | not yet written to `config/profitability_bars.yaml` / `config/criterion_menu.yaml` | agreed, not built (C3.6) |
+| D-040 | 2026-09-27 | CUL-335 (move `holdout_consumed_by` to a machine-owned ledger): keep in backlog, do **before the first real holdout spend**. | (holdout infra) | operator, 2026-09-27 session ("I follow your reco"); Linear CUL-335 comment 2026-09-27 | not built | not built (C5.9) |
 
 ## Composition
 
@@ -79,7 +86,7 @@ gated behind an off-by-default flag) · **not built** (decision recorded, no cod
 | D-023 | 2026-09-26 | **Weighting schemes**, computed by code: (a) equal; (b) inverse volatility of each block's stand-alone returns; (c) proportional to residual IC. | E-060 | `S1_FINDINGS.md:416-418`, item 2 | PR #222 | built-flag-off |
 | D-024 | 2026-09-26 | **Timeframe categories:** high = ≤15min; medium = >15min, <1h; low = 1h–<1day; daily = ≥1day. Categories decide which blocks are candidates together; until the engine supports mixed bar sizes, composition combines only blocks with the SAME exact bar size. Each block's exact timeframe is recorded in the registry. | E-060 | `S1_FINDINGS.md:419-423`, item 3 | registry timeframe field | built-flag-off |
 | D-025 | 2026-09-26 | **Regime blocks are validated on regime-identification quality** (their own accuracy/stability metrics in the grid), not on profitability. "Gated vs ungated" is only a composition question, not the block's validation — deferred to a later sub-step (proposed S5), behind its own flag. | E-060, card (regime blocks) | `S1_FINDINGS.md:424-427`, item 4 | not yet built (S5 proposed, `criterion_menu.yaml:96-105` `gated_beats_ungated` commented out) | not built |
-| D-026 | 2026-09-26 | **Residual-IC threshold** kept as an operator-adjustable placeholder: `> 0.01` with `n_eff >= 30`; the orchestrator noted `0.02` may better match "genuinely useful." Ratify before switching `composition_runs` on. | E-060 | `S1_FINDINGS.md:428-429`, item 5 | `strategy-research/config/criterion_menu.yaml:107-134` (`code_added_criteria.residual_ic`, marked PLACEHOLDER, UNRATIFIED) | built-flag-off (unratified placeholder) |
+| D-026 | 2026-09-26 | (superseded by D-039) **Residual-IC threshold** kept as an operator-adjustable placeholder: `> 0.01` with `n_eff >= 30`; the orchestrator noted `0.02` may better match "genuinely useful." Ratify before switching `composition_runs` on. | E-060 | `S1_FINDINGS.md:428-429`, item 5 | `strategy-research/config/criterion_menu.yaml:107-134` (`code_added_criteria.residual_ic`, marked PLACEHOLDER, UNRATIFIED) | built-flag-off (unratified placeholder) |
 | — | 2026-09-26 | Priority as recommended (guess 10); no further detail recorded beyond acceptance. | E-060 | `S1_FINDINGS.md:430`, item 6 | — | built-flag-off |
 
 ## Repeat check & outside ideas (slice 8)
@@ -96,31 +103,18 @@ gated behind an off-by-default flag) · **not built** (decision recorded, no cod
 | D-028 | 2026-09-23 | 7 "Guesses for the operator" all accepted for the grid-based KB writer (slice 6a/E-058): register blocks only when `block_manifest.yaml` exists; **new** grid-based KB writer (`legacy_schema: false`), not `_write_kb_findings_entry` kept in parallel as the plan's literal text said; no backfill of old runs; `profit_bars: null` for now; scoreboard learns `grid_evaluation.yaml`, output location unchanged; component-error runs recorded as an engineering fault with no registry/KB entry; memory entry replaced on re-run, registry append-only and stops loudly on conflict. | card (KB / near-miss scoreboard) | `engineering/roadmap/E-058/S1_FINDINGS.md:364-374` ("Decision (operator, 2026-09-23)") | `strategy-research/tools/grid_kb_writer.py`, called from `regroup_record` (`run_phase1_research.py:9060`) | built |
 | D-029 | 2026-09-27 | CUL-336: stage agents run **closed-book** — `tools=[]`, `setting_sources=[]`, `strict_mcp_config=True` at the one `ClaudeAgentOptions` construction site (`_stage_agent_options`). Declared default behaviour change (no flag, no flag-off byte-identity): every stage loses default CLI tools, settings files, CLAUDE.md and MCP servers. Required per-stage file inputs (e.g. `config/cost_model.yaml`, `config/coin_universe.yaml`, `quant-fundamentals/SKILL.md`) are now delivered explicitly via `_apply_closed_book_inputs`. | (infra / safety, not a roadmap card) | commit `58922181` "fix(CUL-336): stage agents run closed-book"; `SESSION_LOG.md` 2026-09-27 entry | `strategy-research/workflow/run_phase1_research.py::_stage_agent_options`, `_apply_closed_book_inputs`; branch `fix/cul-336-closed-book-stages` (**not yet merged to master** as of this writing) | built (on an unmerged branch) |
 | D-030 | 2026-09-27 | A consolidated decision log (this file) is the single index of operator decisions; the roadmap becomes v28 only once delivery plan v2 is approved. | (process) | operator, 2026-09-27 session | `strategy-research/engineering/DECISION_LOG.md` (this file) | built |
+| D-031 | 2026-09-27 | Interim safety net approved: a **deny rule for `Read` on `holdout_sealed`** in the operator's user-level Claude settings (every session and agent). | (infra / safety) | operator, 2026-09-27 session ("1, 2 yes"); Linear CUL-336 comment 2026-09-27 | operator's `~/.claude/settings.json` `permissions.deny` (not in the repo) | done |
+| D-032 | 2026-09-27 | E-035's automated external-knowledge dispatch is **parked as its own epic**; resume from `E-035/S1_FINDINGS.md`'s guesses; prerequisite CUL-336. | E-035 | operator, 2026-09-27 session ("should be an epic that can be left parked now"); Linear P-CUL-36 comment 2026-09-27 | not built | parked |
+| D-033 | 2026-09-27 | The next plan is a **continuation of delivery plan v26** (`delivery_plan_v26_continuation.md`), built from the 2026-09-27 delivery review. | (process) | operator, 2026-09-27 session ("Go for the delivery plan v2 (maybe better called continuation)") | `strategy-research/engineering/delivery_plan_v26_continuation.md` | draft for approval |
 
 ---
 
 ## Decisions without a written source
 
-The following items were named as decided in this session's brief but could not be matched to a
-recorded decision text in the repository. They are listed here rather than invented a source for:
-
-- **A settings deny rule for `Read` on `local_data/holdout_sealed/`.** `SESSION_LOG.md`'s
-  2026-09-27 next-session prompt poses this as an **open question** ("...and whether to add a
-  settings deny rule for Read on local_data/holdout_sealed/") alongside the CUL-336 fix — it is
-  not resolved to a yes/no in any doc found, and the CUL-336 commit (`58922181`) touches no
-  `.claude/settings.json` file. Do not read this file as confirming the rule was adopted.
-- **CUL-335 ("keep in backlog, do before first real holdout spend").** CUL-335 is filed
-  (`SESSION_LOG.md` 2026-09-27: "CUL-335 (machine-owned consume ledger follow-up)") but its
-  disposition — backlog vs. now, and the "before first real holdout spend" framing — is listed
-  as an **open operator decision** in the same session's next-session prompt, not a resolved one.
-- **E-035 S1 guesses** (R3 trigger from decide_next's stop; model-knowledge-only first, no web;
-  mechanism-only lint; one dispatch per campaign; repeat gate on first; an operator-written
-  `config/external_brief_template.md`). `engineering/roadmap/E-035/S1_FINDINGS.md` has no
-  `## Decision` section as of this checkout; these are listed as **open** in `SESSION_LOG.md`'s
-  2026-09-27 next-session prompt, item 2.
-- **When to switch on the new-pipeline flag set for real runs** (run budgets: E-059 S4 two-run
-  proof, E-060 S4 first composition run, slice 8.2's one external idea). Also listed as an open
-  item in the same next-session prompt (item 4), not yet resolved.
+None left. The four items first listed here (the holdout deny rule, CUL-335's disposition, the
+E-035 parking, the real-run switch-on) were resolved in the operator's 2026-09-27 session and
+are now D-031, D-040, D-032, and "Decisions pending" below respectively; their written sources
+are the Linear comments posted at decision time and this log.
 
 ## Conflicts found between sources
 
@@ -141,19 +135,11 @@ recorded decision text in the repository. They are listed here rather than inven
   writing. This session's operator confirmation (D-014) resolves that gap going forward, but the
   review document itself predates it and should not be read as already reflecting D-014.
 
-## Decisions pending (placeholder values awaiting operator sign-off)
+## Decisions pending
 
-- **Profit bars** (`strategy-research/config/profitability_bars.yaml`): every numeric threshold
-  (`sharpe_min`, `max_drawdown_pct_max`, `avg_daily_return_min`, `trade_count_min`,
-  `deflated_sharpe_threshold`) is marked "DRAFT — NOT RATIFIED" in the file's own header;
-  `ratified_by`/`ratified_at` are both `null`. Per D-021, ratification is a manual operator check,
-  not code-enforced — these must be signed off before any `profit_bars_reached` stop is trusted
-  for a real decision (`DELIVERY_REVIEW.md` C2).
-- **Residual-IC thresholds** (`strategy-research/config/criterion_menu.yaml`
-  `code_added_criteria.residual_ic`): `threshold: 0.01` and the one-sided p-value cutoff are both
-  marked PLACEHOLDER, UNRATIFIED (D-026). The orchestrator's own note flags `0.02` as a candidate
-  replacement for "genuinely useful." Ratify before `orchestrator.composition_runs.enabled` goes
-  on for a real run.
-- **Cost criterion** (`realized_edge_to_cost_ratio > 0.3`): lets gross edge cover only 30% of
-  fees, short of card E's "survives 2× costs" framing (`DELIVERY_REVIEW.md` C3). No operator
-  ratification recorded either way.
+- **First real run:** which protocol / window layout it uses (it sets every standard error in
+  the profit-bar proposal), and when the operator switches the target flag set on
+  (`delivery_plan_v26_continuation.md` C4).
+- **Model per stage** after the first real runs' cost is measured (today every stage runs on
+  `claude-haiku-4-5`).
+- **Tie-break doc note:** `DELIVERY_REVIEW.md` C1 predates D-014 and should be read with it.
