@@ -1,6 +1,6 @@
 # Delivery plan v26 — continuation (from "built" to "runs for real")
 
-**Status:** draft for operator approval (2026-09-27). Continues `delivery_plan_v26.md`, whose
+**Status:** approved by the operator 2026-09-27 (D-033). Continues `delivery_plan_v26.md`, whose
 slices 0–8 are built behind flags (see `review_2026-09-27/DELIVERY_REVIEW.md`). Source of the
 *what*: the roadmap v27 cards plus `DECISION_LOG.md` (every operator decision since
 2026-09-20). This file is the *in which order, proven how*. Review finding ids (A1…, B1…,
@@ -55,7 +55,7 @@ header, docs move with code). Added, from what the review taught us:
 |---|---|---|---|
 | C0.1 | Merge CUL-336 (closed-book stage agents) after its review fixes — incl. switching off the CLI auto-memory the stage agents still load, and restoring legacy stages' cross-run inputs. | branch `fix/cul-336-closed-book-stages` | merged |
 | C0.2 | Create the trading-bot Python environment the tool stages call: `venv/` at the repo root (Windows: `venv/Scripts/python.exe`) from `trading-bot/requirements.txt` (pandas<3 trap), never committed. Fix `RUNBOOK.md`'s interpreter paths. | A3 §3.2; `_resolve_tbot_python` | `_resolve_tbot_python()` returns it; e054/k3 tool-worker tests pass without a junction |
-| C0.3 | Confirm Claude CLI auth for the SDK on this machine (operator), and that `google-genai` is installed (import-time dependency, no key needed). | A3 §3.6 | one stubbed-free `claude` call works (operator runs it) |
+| C0.3 | Claude calls go through the Claude CLI logged in with the operator's account (no API key; credentials present; runs count against the account's usage limits); `GEMINI_API_KEY` is set. Verify one real stage call still authenticates after CUL-336 (neutral cwd, no settings). | A3 §3.6 | one real stage call works |
 
 ## C1 — One full run works (E-061, new epic: "Run the new pipeline end to end")
 
