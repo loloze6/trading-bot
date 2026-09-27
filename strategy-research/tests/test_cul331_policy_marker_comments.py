@@ -1,13 +1,16 @@
 """
 CUL-331: recording the holdout consume marker must not strip
-campaign_data_policy.yaml's comments.
+campaign_data_policy.yaml's comments -- and must NEVER be less safe than the
+save_yaml writer it replaces. The marker is written after the seal is spent, so
+it never refuses: any shape the in-place edit cannot handle falls back to
+master's full rewrite (with a WARNING that comments were lost).
 
 The marker (holdout_consumed_by) used to be written by save_yaml() of the
-whole parsed dict, which dropped every comment line of the tracked policy file
-on each record. _mark_holdout_consumed -- the only writer of that file, reached
-by the legacy holdout gate (_route_holdout_evaluation step 4) and by the
+whole parsed dict. _mark_holdout_consumed -- the only writer of that file,
+reached by the legacy holdout gate (_route_holdout_evaluation step 4) and the
 verdict_routing_retired record paths (_record_spent_holdout and the S2d unlock,
-both via _mark_holdout_consumed_if_absent) -- now edits the value in place.
+via _mark_holdout_consumed_if_absent) -- now edits the value in place when it
+safely can.
 
 Every test here writes a COPY of the policy: conftest's autouse sandbox
 redirects rpr._DATA_POLICY_PATH into tmp_path and seeds it with a verbatim copy
@@ -16,6 +19,8 @@ written literally anywhere in this file.
 """
 from __future__ import annotations
 
+import os
+import stat
 import sys
 from pathlib import Path
 
@@ -31,6 +36,7 @@ import run_phase1_research as rpr  # noqa: E402
 _REAL_POLICY = _SR / "config" / "campaign_data_policy.yaml"
 KEY = "holdout_consumed_by"
 HYP = "H-CUL331"
+LOST = "comments were LOST"
 
 
 def _real_bytes(newline: str | None = None) -> bytes:
@@ -56,13 +62,22 @@ def _key_line_idx(lines: list) -> int:
     return idx[0]
 
 
+def _only_policy_left(path: Path) -> None:
+    """No temp file and no lock file left behind."""
+    assert sorted(p.name for p in path.parent.iterdir()) == [path.name]
+
+
+def _comments(blob: bytes) -> int:
+    return sum(1 for ln in blob.splitlines() if ln.lstrip().startswith(b"#"))
+
+
 # ---------------------------------------------------------------------------
 # 1. The regression: every other byte of the real policy survives a record
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("newline", [None, "\r\n", "\n"], ids=["as_checked_out", "crlf", "lf"])
-def test_marker_write_keeps_every_other_byte_of_the_real_policy(tmp_path, newline):
-    """THE regression (fails on the save_yaml writer: ~248 comment lines lost).
+def test_marker_write_keeps_every_other_byte_of_the_real_policy(tmp_path, newline, capsys):
+    """THE regression (fails on the save_yaml writer: every comment line lost).
     Only the key line changes; comments, blank lines, order, quoting and line
     endings are byte-identical; the parse equals the old document + marker."""
     before = _real_bytes(newline)
@@ -81,11 +96,12 @@ def test_marker_write_keeps_every_other_byte_of_the_real_policy(tmp_path, newlin
             assert a == b, f"line {i + 1} changed"
     ending = old_lines[k][len(old_lines[k].rstrip(b"\r\n")):]
     assert new_lines[k] == f"{KEY}: [{HYP}]".encode() + ending
-    comments = lambda blob: sum(1 for ln in blob.splitlines() if ln.lstrip().startswith(b"#"))  # noqa: E731
-    assert comments(after) == comments(before) > 200
+    assert _comments(after) == _comments(before) > 200
     new_doc = yaml.safe_load(after.decode("utf-8"))
     assert new_doc == {**old_doc, KEY: [HYP]}
     assert list(new_doc) == list(old_doc)
+    assert "WARNING" not in capsys.readouterr().out
+    _only_policy_left(path)
 
 
 def test_marker_write_through_load_yaml_is_the_consumed_list(tmp_path):
@@ -97,94 +113,197 @@ def test_marker_write_through_load_yaml_is_the_consumed_list(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# 2. Shapes of the value
+# 2. Shapes the in-place edit handles (no WARNING, only the value changes)
 # ---------------------------------------------------------------------------
 
 _HEAD = "# head comment\nholdout_range: [a, b]  # range comment\n\n"
 _TAIL = "\n# tail comment\nholdout_failure_is_terminal: true\n"
 
 
+def _in_place(tmp_path, capsys, value_text: str, consumed, expected_value_text: str,
+              hyp=HYP, newline="\n"):
+    text = (_HEAD + value_text + _TAIL).replace("\n", newline)
+    path = _sandbox_policy(tmp_path, text.encode())
+    rpr._mark_holdout_consumed({}, consumed, hyp)
+    assert "WARNING" not in capsys.readouterr().out
+    expected = (_HEAD + expected_value_text + _TAIL).replace("\n", newline)
+    assert path.read_bytes().decode() == expected
+    _only_policy_left(path)
+    return yaml.safe_load(expected)[KEY]
+
+
 @pytest.mark.parametrize("newline", ["\n", "\r\n"])
-def test_block_list_gets_one_new_item_line(tmp_path, newline):
+def test_block_list_gets_one_new_item_line(tmp_path, capsys, newline):
     """A block list (what save_yaml writes) gains one `- id` line, at the
     items' own indent, after the last item; nothing else moves."""
-    text = _HEAD + f"{KEY}:\n  - H-OTHER  # first\n  - 'H-2'\n" + _TAIL
-    text = text.replace("\n", newline)
-    path = _sandbox_policy(tmp_path, text.encode())
-    rpr._mark_holdout_consumed({}, ["H-OTHER", "H-2"], HYP)
-    expected = text.replace(f"  - 'H-2'{newline}", f"  - 'H-2'{newline}  - {HYP}{newline}")
-    assert path.read_bytes() == expected.encode()
+    got = _in_place(tmp_path, capsys, f"{KEY}:\n  - H-OTHER  # first\n  - 'H-2'\n",
+                    ["H-OTHER", "H-2"],
+                    f"{KEY}:\n  - H-OTHER  # first\n  - 'H-2'\n  - {HYP}\n", newline=newline)
+    assert got == ["H-OTHER", "H-2", HYP]
 
 
-def test_flow_list_keeps_its_trailing_comment(tmp_path):
-    text = _HEAD + f"{KEY}: [H-OTHER]   # spent ids ('#' inside: fine)\n" + _TAIL
-    path = _sandbox_policy(tmp_path, text.encode())
-    rpr._mark_holdout_consumed({}, ["H-OTHER"], HYP)
-    assert path.read_bytes().decode() == text.replace(
-        f"{KEY}: [H-OTHER]   #", f"{KEY}: [H-OTHER, {HYP}]   #")
+def test_block_list_with_comments_and_blanks_around_items(tmp_path, capsys):
+    """Review 1+2: a comment on the key line, a comment/blank line before the
+    items and comments between items are kept; the new item goes last."""
+    value = (f"{KEY}:   # spent ids\n\n  # first spend\n  - H-A\n  # second spend\n"
+             f"\n  - H-B\n# a column-0 note after the list\n")
+    got = _in_place(tmp_path, capsys, value, ["H-A", "H-B"],
+                    value.replace("  - H-B\n", f"  - H-B\n  - {HYP}\n"))
+    assert got == ["H-A", "H-B", HYP]
 
 
-@pytest.mark.parametrize("value", ["", " null", " ~"])
-def test_null_value_becomes_a_one_item_list(tmp_path, value):
-    text = _HEAD + f"{KEY}:{value}\n" + _TAIL
+def test_flow_list_append_keeps_quoting_and_spacing(tmp_path, capsys):
+    """Review 6: `, id` goes before the closing bracket; the existing ids,
+    their quoting and spacing, the key spacing and the comment are untouched."""
+    value = f"{KEY} :   [ 'H-A' ,\"H-B\",H-C  ]   # spent ids ('#' inside: fine)\n"
+    got = _in_place(tmp_path, capsys, value, ["H-A", "H-B", "H-C"],
+                    value.replace("H-C  ]", f"H-C, {HYP}  ]"))
+    assert got == ["H-A", "H-B", "H-C", HYP]
+
+
+@pytest.mark.parametrize("value,expected", [
+    (f"{KEY}: []\n", f"{KEY}: [{HYP}]\n"),
+    (f"{KEY}: [ ]  # none yet\n", f"{KEY}: [ {HYP}]  # none yet\n"),
+    (f"{KEY}:\n", f"{KEY}: [{HYP}]\n"),
+    (f"{KEY}: null\n", f"{KEY}: [{HYP}]\n"),
+    (f"{KEY}: ~   # nothing\n", f"{KEY}: [{HYP}]   # nothing\n"),
+    (f"{KEY}:  # nothing\n", f"{KEY}: [{HYP}]  # nothing\n"),
+])
+def test_empty_and_null_values(tmp_path, capsys, value, expected):
+    assert _in_place(tmp_path, capsys, value, [], expected) == [HYP]
+
+
+def test_scalar_string_value_becomes_a_list_keeping_the_old_spend(tmp_path, capsys):
+    """Review 3: `holdout_consumed_by: H-1` is ["H-1"]; the old spend is kept."""
+    got = _in_place(tmp_path, capsys, f"{KEY}: H-1\n", "H-1", f"{KEY}: [H-1, {HYP}]\n")
+    assert got == ["H-1", HYP]
+
+
+def test_absent_key_is_appended_at_the_end(tmp_path, capsys):
+    text = _HEAD + "holdout_failure_is_terminal: true"  # no final newline either
     path = _sandbox_policy(tmp_path, text.encode())
     rpr._mark_holdout_consumed({}, [], HYP)
-    assert path.read_bytes().decode() == text.replace(f"{KEY}:{value}\n", f"{KEY}: [{HYP}]\n")
-
-
-@pytest.mark.parametrize("ends_with_newline", [True, False])
-def test_absent_key_is_appended_at_the_end(tmp_path, ends_with_newline):
-    """Absent key: appended last (save_yaml's key order too)."""
-    text = _HEAD + "holdout_failure_is_terminal: true" + ("\n" if ends_with_newline else "")
-    path = _sandbox_policy(tmp_path, text.encode())
-    rpr._mark_holdout_consumed({}, [], HYP)
+    assert "WARNING" not in capsys.readouterr().out
     assert path.read_bytes().decode() == (
         _HEAD + "holdout_failure_is_terminal: true\n" + f"{KEY}: [{HYP}]\n")
-    assert list(yaml.safe_load(path.read_text()))[-1] == KEY
 
 
-def test_an_id_that_needs_quoting_is_quoted(tmp_path):
+def test_an_id_that_needs_quoting_is_quoted(tmp_path, capsys):
     odd = "H: #1"
-    text = _HEAD + f"{KEY}:\n- H-OTHER\n" + _TAIL
-    path = _sandbox_policy(tmp_path, text.encode())
-    rpr._mark_holdout_consumed({}, ["H-OTHER"], odd)
-    assert yaml.safe_load(path.read_text())[KEY] == ["H-OTHER", odd]
+    got = _in_place(tmp_path, capsys, f"{KEY}:\n- H-OTHER\n", ["H-OTHER"],
+                    f"{KEY}:\n- H-OTHER\n- 'H: #1'\n", hyp=odd)
+    assert got == ["H-OTHER", odd]
 
 
-def test_missing_policy_file_is_still_created_as_before(tmp_path):
-    """Unchanged: no file -> save_yaml creates it with just the marker."""
+def test_missing_policy_file_is_created_exactly_as_save_yaml_did(tmp_path):
+    """Unchanged: no file -> master's save_yaml bytes of the caller's policy."""
     path = rpr._DATA_POLICY_PATH
     assert tmp_path.resolve() in path.resolve().parents
     path.unlink(missing_ok=True)
+    policy = {"holdout_range": ["a", "b"]}
+    rpr._mark_holdout_consumed(policy, [], HYP)
+    assert path.read_bytes() == rpr._yaml_file_bytes({"holdout_range": ["a", "b"], KEY: [HYP]})
+    assert policy == {"holdout_range": ["a", "b"], KEY: [HYP]}  # caller's dict updated, as before
+    _only_policy_left(path)
+
+
+# ---------------------------------------------------------------------------
+# 3. Shapes the edit cannot handle: master's full rewrite + a loud WARNING
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("text,consumed,expected_list", [
+    (f"{KEY}: [H-A]\nx: 1\n{KEY}: []\n", [], [HYP]),                 # key twice
+    (f'"{KEY}": [H-A]  # quoted key\nx: 1\n', ["H-A"], ["H-A", HYP]),
+    (f"# c\n{KEY}: [H-A,\n  H-B]\nx: 1\n", ["H-A", "H-B"], ["H-A", "H-B", HYP]),  # multi-line flow
+    (f"{KEY}:\n  - H-A: note\n    more: x\n", [{"H-A": "note", "more": "x"}],
+     [{"H-A": "note", "more": "x"}, HYP]),                           # multi-line item
+    (f"# c\nnote: colon: inside\n{KEY}: [H-A]\n", ["H-A"], ["H-A", HYP]),  # repair-only
+])
+def test_unhandled_shapes_still_record_via_full_rewrite(tmp_path, capsys, text, consumed,
+                                                        expected_list):
+    """Review 1+2: never refuse after the spend. The file is rewritten as
+    save_yaml wrote it (load_yaml's parse + the marker) and says so loudly."""
+    path = _sandbox_policy(tmp_path, text.encode())
+    base = rpr.load_yaml(path)
+    rpr._mark_holdout_consumed({}, consumed, HYP)
+    out = capsys.readouterr().out
+    assert "WARNING (CUL-331)" in out and LOST in out
+    assert path.read_bytes() == rpr._yaml_file_bytes({**base, KEY: expected_list})
+    assert rpr.load_yaml(path)[KEY] == expected_list
+    _only_policy_left(path)
+
+
+@pytest.mark.parametrize("value,kept", [
+    ({"H-A": "note"}, str({"H-A": "note"})),
+    (7, "7"),
+    (True, "True"),
+])
+def test_non_list_value_is_never_erased(tmp_path, capsys, value, kept):
+    """Review 3: a mapping or other non-list, non-string value is kept,
+    stringified, at the head of the new list (full rewrite, WARNING)."""
+    path = _sandbox_policy(tmp_path, yaml.safe_dump({"holdout_range": ["a", "b"], KEY: value},
+                                                    sort_keys=False).encode())
+    rpr._mark_holdout_consumed({}, [], HYP)
+    out = capsys.readouterr().out
+    assert "was a" in out and LOST in out
+    assert rpr.load_yaml(path)[KEY] == [kept, HYP]
+    assert rpr.load_yaml(path)["holdout_range"] == ["a", "b"]
+
+
+def test_unparseable_policy_falls_back_to_the_callers_view(tmp_path, capsys):
+    """Even a file no parse can read gets the marker: master's behaviour
+    (the caller's policy dict + the marker), never a refusal."""
+    path = _sandbox_policy(tmp_path, b"holdout_range: [a, b\n{{{\n")
+    rpr._mark_holdout_consumed({"holdout_range": ["a", "b"]}, [], HYP)
+    assert LOST in capsys.readouterr().out
+    assert rpr.load_yaml(path) == {"holdout_range": ["a", "b"], KEY: [HYP]}
+    # the caller's view already listing the id is no reason to leave the file unreadable
+    path.write_bytes(b"holdout_range: [a, b\n{{{\n")
+    rpr._mark_holdout_consumed({KEY: [HYP]}, [HYP], HYP)
+    assert rpr.load_yaml(path) == {KEY: [HYP]}
+
+
+# ---------------------------------------------------------------------------
+# 4. Never drop, never double (single-use semantics unchanged)
+# ---------------------------------------------------------------------------
+
+def test_a_stale_caller_view_is_merged_not_overwritten(tmp_path, capsys):
+    """Master wrote consumed + [hyp] and dropped another writer's entry; now
+    the on-disk list is kept and the caller's ids are added."""
+    path = _sandbox_policy(tmp_path, f"{KEY}: [H-OTHER]\n".encode())
+    rpr._mark_holdout_consumed({}, ["H-MINE"], HYP)
+    assert "WARNING" not in capsys.readouterr().out
+    assert path.read_bytes() == f"{KEY}: [H-OTHER, H-MINE, {HYP}]\n".encode()
+
+
+def test_an_id_already_on_disk_is_not_written_twice(tmp_path):
+    text = f"# c\n{KEY}: [{HYP}]\n"
+    path = _sandbox_policy(tmp_path, text.encode())
     policy = {}
     rpr._mark_holdout_consumed(policy, [], HYP)
-    assert yaml.safe_load(path.read_text()) == {KEY: [HYP]}
-    assert policy == {KEY: [HYP]}  # the caller's dict is updated, as before
-
-
-# ---------------------------------------------------------------------------
-# 3. Refusals: raise, write nothing
-# ---------------------------------------------------------------------------
-
-@pytest.mark.parametrize("text,consumed,match", [
-    (f"{KEY}: []\nx: 1\n{KEY}: []\n", [], "2 top-level"),
-    (f'"{KEY}": []\nx: 1\n', [], "cannot locate"),
-    (f"{KEY}: [H-OTHER]\n", [], "changed underneath"),          # stale caller view
-    (f"{KEY}: [{HYP}]\n", [HYP], "already in"),                  # never double
-    (f"{KEY}: [a,\n  b]\n", ["a", "b"], "did not parse back|YAML error"),  # multi-line flow
-    (f"{KEY}:\n  # note\n  - a\n", ["a"], "did not parse back|YAML error"),
-    ("key: [unclosed\n", [], "YAML error"),
-])
-def test_edit_refuses_and_leaves_the_file_untouched(tmp_path, text, consumed, match):
-    path = _sandbox_policy(tmp_path, text.encode())
-    with pytest.raises(ValueError, match=match):
-        rpr._mark_holdout_consumed({}, consumed, HYP)
     assert path.read_bytes() == text.encode()
-    assert sorted(p.name for p in path.parent.iterdir()) == [path.name]
+    assert policy[KEY] == [HYP]
+    _only_policy_left(path)
+
+
+def test_already_spent_is_exact_membership_never_a_substring():
+    """Review 3: a scalar string must not substring-match."""
+    policy = {KEY: "H-10"}
+    assert not rpr._holdout_already_spent("H-1", policy)
+    assert rpr._holdout_already_spent("H-10", policy)
+    assert not rpr._holdout_already_spent("H-1", {KEY: None})
+    assert rpr._holdout_already_spent("H-1", {KEY: ["H-1"]})
+
+
+def test_other_pending_spends_reads_a_scalar_as_one_id():
+    """The pending-spend reader normalises the same way (one id, not chars)."""
+    rpr._DATA_POLICY_PATH.write_text(f"{KEY}: H-10\n", encoding="utf-8")
+    pending = rpr._other_pending_spends("run_none")
+    assert any("['H-10']" in p for p in pending), pending
 
 
 # ---------------------------------------------------------------------------
-# 4. Atomic: a failure mid-write leaves the original intact
+# 5. Atomic, durable, locked, and re-applied on a concurrent change
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("fail_at", ["fsync", "replace"])
@@ -198,21 +317,115 @@ def test_failure_mid_write_leaves_the_original_intact(tmp_path, monkeypatch, fai
     with pytest.raises(OSError, match="simulated"):
         rpr._mark_holdout_consumed_if_absent(HYP)
     assert path.read_bytes() == before
-    assert sorted(p.name for p in path.parent.iterdir()) == [path.name]  # no temp left
+    _only_policy_left(path)  # no temp file, and the lock was released
+
+
+def test_the_temp_file_is_fsynced_before_the_replace(tmp_path, monkeypatch):
+    path = _sandbox_policy(tmp_path, _real_bytes())
+    events = []
+    real_fsync, real_replace = os.fsync, os.replace
+    monkeypatch.setattr(rpr.os, "fsync", lambda fd: (events.append("fsync"), real_fsync(fd))[1])
+    monkeypatch.setattr(rpr.os, "replace", lambda a, b: (events.append("replace"),
+                                                         real_replace(a, b))[1])
+    rpr._mark_holdout_consumed_if_absent(HYP)
+    assert events[:2] == ["fsync", "replace"]
+    assert rpr._holdout_already_spent(HYP)
+    assert path.exists()
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX file modes and directory fsync")
+def test_posix_mode_is_kept_and_the_directory_is_fsynced(tmp_path, monkeypatch):
+    path = _sandbox_policy(tmp_path, _real_bytes())
+    path.chmod(0o644)
+    opened = []
+    real_open = os.open
+    monkeypatch.setattr(rpr.os, "open", lambda p, *a, **k: (opened.append(p), real_open(p, *a, **k))[1])
+    rpr._mark_holdout_consumed_if_absent(HYP)
+    assert stat.S_IMODE(path.stat().st_mode) == 0o644
+    assert str(path.parent) in opened
+
+
+def test_a_concurrent_append_is_re_read_and_re_applied(tmp_path, monkeypatch, capsys):
+    """Review 5: another writer lands between our read and our replace; the
+    bytes check sees it, re-reads and re-applies -- both entries survive."""
+    text = f"# policy\n{KEY}: []\nx: 1\n"
+    path = _sandbox_policy(tmp_path, text.encode())
+    real_mkstemp = rpr.tempfile.mkstemp
+    fired = []
+
+    def _mkstemp(*a, **k):
+        if not fired:
+            fired.append(1)
+            path.write_bytes(text.replace(f"{KEY}: []", f"{KEY}: [H-OTHER]").encode())
+        return real_mkstemp(*a, **k)
+    monkeypatch.setattr(rpr.tempfile, "mkstemp", _mkstemp)
+    rpr._mark_holdout_consumed({}, [], HYP)
+    assert "re-applying" in capsys.readouterr().out
+    assert path.read_bytes() == f"# policy\n{KEY}: [H-OTHER, {HYP}]\nx: 1\n".encode()
+    _only_policy_left(path)
+
+
+def test_the_write_runs_under_the_policy_lock(tmp_path, monkeypatch):
+    path = _sandbox_policy(tmp_path, _real_bytes())
+    lock = path.parent / rpr._POLICY_LOCK_FILENAME
+    seen = []
+    real = rpr._atomic_write_bytes
+
+    def _spy(*a, **k):
+        seen.append(lock.exists())
+        return real(*a, **k)
+    monkeypatch.setattr(rpr, "_atomic_write_bytes", _spy)
+    rpr._mark_holdout_consumed_if_absent(HYP)
+    assert seen == [True]
+    assert not lock.exists()
+
+
+def test_a_held_lock_never_blocks_the_record(tmp_path, monkeypatch, capsys):
+    """A lock that cannot be taken (live holder, bounded wait) -> WARNING and
+    the marker is recorded anyway, as master's lock-free writer always did."""
+    import campaign_lock
+    cm = rpr._campaign_memory_module()
+    monkeypatch.setattr(cm, "MEMORY_LOCK_WAIT_SECONDS", 0.2)
+    path = _sandbox_policy(tmp_path, _real_bytes())
+    lock = path.parent / rpr._POLICY_LOCK_FILENAME
+    campaign_lock.acquire(lock)  # held by this (live) process
+    try:
+        rpr._mark_holdout_consumed_if_absent(HYP)
+    finally:
+        campaign_lock.release(lock)
+    assert "could not lock" in capsys.readouterr().out
+    assert rpr._holdout_already_spent(HYP)
+
+
+@pytest.mark.parametrize("doc", [
+    {"a": 1, "b": [1, 2], "c": {"d": "é → ü"}, "e": None},
+    {"run_id": "run_1", "flags": {}, "text": "line1\nline2\n", "n": 1.5},
+    [1, "two", {"three": 3}],
+])
+def test_save_yaml_bytes_are_unchanged(tmp_path, doc):
+    """Review 8: save_yaml now goes through _atomic_write_bytes; its bytes
+    are exactly what the old text-mode safe_dump wrote."""
+    ref = tmp_path / "ref.yaml"
+    with open(ref, "w", encoding="utf-8") as f:
+        yaml.safe_dump(doc, f, sort_keys=False, allow_unicode=True)
+    out = tmp_path / "sub" / "out.yaml"
+    rpr.save_yaml(out, doc)
+    assert out.read_bytes() == ref.read_bytes()
+    assert sorted(p.name for p in out.parent.iterdir()) == ["out.yaml"]
 
 
 # ---------------------------------------------------------------------------
-# 5. Both writer paths go through the in-place edit; double consume refused
+# 6. Both writer paths go through the new writer; double consume refused
 # ---------------------------------------------------------------------------
 
 def _spy(monkeypatch) -> list:
     calls = []
-    real = rpr._write_consumed_marker_in_place
+    real = rpr._write_consumed_marker
 
-    def _wrapped(path, consumed, hyp_id):
+    def _wrapped(path, policy, consumed, hyp_id):
         calls.append(hyp_id)
-        return real(path, consumed, hyp_id)
-    monkeypatch.setattr(rpr, "_write_consumed_marker_in_place", _wrapped)
+        return real(path, policy, consumed, hyp_id)
+    monkeypatch.setattr(rpr, "_write_consumed_marker", _wrapped)
     return calls
 
 
@@ -229,8 +442,15 @@ def _legacy_run_dir(root: Path, hyp: str) -> Path:
     return root
 
 
-def test_legacy_gate_writes_the_marker_in_place_and_refuses_a_second_spend(tmp_path, monkeypatch):
-    before = _real_bytes()
+@pytest.mark.parametrize("shape", ["[]", "", " ~", " null"])
+def test_legacy_gate_records_on_every_empty_shape_and_refuses_a_second_spend(
+        tmp_path, monkeypatch, shape, capsys):
+    """Review 4: null / ~ / empty values end to end through the legacy gate
+    (master crashed on list(None) there, after the spend)."""
+    real = _real_bytes()
+    line = f"{KEY}: []".encode()
+    assert real.count(line) == 1
+    before = real.replace(line, f"{KEY}:{shape if shape != '[]' else ' []'}".encode())
     path = _sandbox_policy(tmp_path, before)
     calls = _spy(monkeypatch)
     run_dir = _legacy_run_dir(tmp_path / "run_x", HYP)
@@ -238,8 +458,12 @@ def test_legacy_gate_writes_the_marker_in_place_and_refuses_a_second_spend(tmp_p
     assert rpr._route_holdout_evaluation(run_dir, "run_x") == "completed_rejected"
     assert calls == [HYP]
     after = path.read_bytes()
+    assert "WARNING" not in capsys.readouterr().out
     assert yaml.safe_load(after.decode("utf-8"))[KEY] == [HYP]
-    assert after.count(b"#") == before.count(b"#")
+    old_lines, new_lines = before.splitlines(keepends=True), after.splitlines(keepends=True)
+    k = _key_line_idx(old_lines)
+    assert [ln for i, ln in enumerate(new_lines) if i != k] == \
+        [ln for i, ln in enumerate(old_lines) if i != k]
 
     # the second attempt is refused at step 2 and never writes
     assert rpr._route_holdout_evaluation(run_dir, "run_x") == "completed_rejected"
@@ -282,11 +506,12 @@ def test_retired_routing_record_path_writes_the_marker_in_place(tmp_path, monkey
 
 
 def test_the_only_writer_of_the_policy_file_is_the_marker():
-    """Every save_yaml(_DATA_POLICY_PATH, ...) in the workflow is the
-    missing-file branch of _mark_holdout_consumed: no other writer can strip
-    the comments again."""
+    """No save_yaml(_DATA_POLICY_PATH, ...) is left anywhere in the workflow:
+    the one writer is _write_consumed_marker, called from
+    _mark_holdout_consumed; save_yaml shares its atomic write helper."""
     src = Path(rpr.__file__).read_text(encoding="utf-8")
-    assert src.count("save_yaml(_DATA_POLICY_PATH") == 1
+    assert src.count("save_yaml(_DATA_POLICY_PATH") == 0
     body = src.split("def _mark_holdout_consumed(", 1)[1].split("\ndef ", 1)[0]
-    assert "save_yaml(_DATA_POLICY_PATH" in body
-    assert "_write_consumed_marker_in_place(_DATA_POLICY_PATH" in body
+    assert "_write_consumed_marker(_DATA_POLICY_PATH" in body
+    save = src.split("def save_yaml(", 1)[1].split("\ndef ", 1)[0]
+    assert "_atomic_write_bytes(path, _yaml_file_bytes(data))" in save
