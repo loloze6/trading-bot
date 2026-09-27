@@ -75,7 +75,17 @@ What this module deliberately does NOT do:
   * refine/pivot/escalate/kill routing, the circuit breaker,
     hypothesis_family, altitude_history, continuation children (retired in
     slice 6c). The record refuses to carry any of them.
-  * R1 (composition brief): recorded as a no-op until slice 7.
+  * R1 (composition brief) without orchestrator.composition_runs: recorded as
+    the same no-op as before. With it (E-060 S3b, load_inputs(...,
+    composition_runs=True)): when an exact timeframe holds >= 2 forecast
+    blocks whose set has no composition queue entry yet, R1 picks
+    `composition-<tf>-<registry_hash>` -- behind a run in progress and behind
+    ready operator entries, ahead of every agent entry, candidate and R2
+    (guess 10); once per registry state per timeframe. The caller writes the
+    code-made variants + manifest (tools/composition.py), the brief
+    (composition_brief) and the queue entry (origin composition). A
+    composition's reader patches are accepted with its composition manifest
+    as their source (7.5).
   * decide a brief is exhausted. Only step 1a says so (brief_status.yaml ->
     the run's completed_brief_exhausted outcome); the caller flips the owner.
   * write trial rows, touch the holdout, or write any file. The caller writes
@@ -640,11 +650,16 @@ def _next_request_id(owner_id: str, taken: set) -> str:
 # ---------------------------------------------------------------------------
 
 def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None,
-                digest=None) -> dict:
+                digest=None, composition_runs: bool = False) -> dict:
     """Everything decide() reads, from disk under `root` (strategy-research/).
     `queue` is the caller's in-memory queue document (after its own write).
     `known_classes` is the known component class set (known_component_classes)
-    or None; `digest` the legacy exclusion digest document or None."""
+    or None; `digest` the legacy exclusion digest document or None.
+    `composition_runs` (E-060 S3b; the caller passes
+    run_phase1_research._composition_runs_enabled()): also read the whole
+    block registry, campaign_record/compositions.yaml and each forecast
+    block's validating run (inputs["composition"]) -- R1's inputs. Off: no
+    such key, nothing more is read, and R1 stays the recorded no-op."""
     root = Path(root)
     mem_path = root / "campaign_record" / "campaign_memory.yaml"
     memory = _cm.load_memory(mem_path)
@@ -673,6 +688,9 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
             "base_config": base_config,
             "base_config_ref": base_ref,
             "manifest": _load_yaml_opt(arts / "block_manifest.yaml"),
+            # E-060 S3b (7.5): a composition run's manifest (absent on every
+            # other run -- only a composition run writes it).
+            "composition_manifest": _load_yaml_opt(arts / COMPOSITION_MANIFEST_FILE),
             "pre_registration": _load_yaml_opt(arts / "pre_registration.yaml"),
             "research_brief": _load_yaml_opt(arts / "research_brief.yaml"),
             "card": _load_yaml_opt(arts / "hypothesis_card.yaml"),
@@ -699,7 +717,7 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
             backtests, basis = brief_protocol_cost(root, e.get("brief_path"))
             brief_cards[e["id"]] = {**card, "cost_backtests": backtests, "cost_basis": basis}
 
-    return {
+    out = {
         "brief_cards": brief_cards,
         "memory": memory,
         "protocol_specs": specs,
@@ -714,6 +732,241 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
         "component_requests_count": _count("component_requests.yaml"),
         "data_requests_count": _count("data_requests.yaml"),
     }
+    if composition_runs:
+        out["composition"] = load_composition_inputs(root, registry, memory)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# E-060 S3b -- R1, the composition trigger (S1_FINDINGS.md §4, guesses 3, 10,
+# 11 and operator decisions 3 + 6). Only when inputs carry "composition"
+# (orchestrator.composition_runs on); otherwise R1 is the recorded no-op.
+# ---------------------------------------------------------------------------
+
+ORIGIN_COMPOSITION = "composition"
+COMPOSITION_MANIFEST_FILE = "composition_manifest.yaml"
+COMPOSITIONS_DIR = "campaign_record/compositions"
+COMPOSITION_HYPOTHESIS_PREFIX = "COMPOSITION"
+
+
+def composition_entry_id(timeframe: str, registry_hash: str) -> str:
+    """The queue id (and brief / directory name) of the composition of one
+    exact timeframe's block set. registry_hash identifies that set
+    (composite_cache.composite_registry_hash), so the id is stable for one
+    registry state of that timeframe and new when a block joins it -- R1 fires
+    ONCE per registry revision per timeframe."""
+    tf = normalize_timeframe(timeframe)
+    eid = f"composition-{tf}-{registry_hash}"
+    if not tf or not _SAFE_ID_RE.fullmatch(eid):
+        raise DecideNextError(f"timeframe {timeframe!r} gives an unsafe composition id {eid!r}")
+    return eid
+
+
+def load_composition_inputs(root: Path, registry: dict, memory: dict) -> dict:
+    """R1's inputs: the registry document, compositions.yaml's entries and,
+    for every forecast block that carries a timeframe, its validating run's
+    pre_registration.yaml and research_brief.yaml (the composition brief's
+    protocol pin and brief keys). Read only."""
+    import composite_cache as _cc  # tools/ sibling, lazily: flag-on only
+    root = Path(root)
+    sources = {}
+    for block in registry.get("blocks") or []:
+        run_id = block.get("validated_by_run")
+        if block.get("kind") != "forecast" or not block.get("timeframe") or run_id in sources:
+            continue
+        arts = root / "runs" / str(run_id) / "artifacts"
+        sources[run_id] = {
+            "pre_registration": _load_yaml_opt(arts / "pre_registration.yaml"),
+            "research_brief": _load_yaml_opt(arts / "research_brief.yaml"),
+            "protocol_ref": normalize_ref(((memory.get("runs") or {}).get(run_id) or {})
+                                          .get("protocol_ref")),
+        }
+    return {"registry": copy.deepcopy(registry),
+            "compositions": _cc.load_compositions(root / "campaign_record" / "compositions.yaml"),
+            "sources": sources}
+
+
+def _r1_timeframes(comp_inputs: dict, queue_ids: set) -> tuple:
+    """([per-timeframe row], excluded_blocks). One row per exact bar size
+    (in seconds; shortest first) that carries at least one forecast block:
+    {timeframe, timeframe_category, block_ids, registry_hash, entry_id,
+    status}. status: `single_block` (fewer than 2 -- operator decision 3),
+    `fired_before` (its queue entry exists: R1 already fired for this
+    registry state), `eligible`."""
+    import composite_cache as _cc  # lazily: flag-on only
+    import timeframe as _tf
+    registry = comp_inputs["registry"]
+    by_secs: dict = {}
+    for block in registry.get("blocks") or []:
+        if block.get("kind") == "forecast" and block.get("timeframe"):
+            by_secs.setdefault(_tf.timeframe_seconds(block["timeframe"]), block["timeframe"])
+    rows, excluded = [], []
+    for secs in sorted(by_secs):
+        tf = by_secs[secs]
+        blocks, excl = _cc.forecast_blocks_on_timeframe(registry, tf)
+        excluded = excl
+        ids = sorted(b["block_id"] for b in blocks)
+        row = {"timeframe": tf, "timeframe_category": _cc.timeframe_category(tf),
+               "block_ids": ids, "registry_hash": None, "entry_id": None}
+        if len(blocks) < 2:
+            row["status"] = "single_block"
+        else:
+            row["registry_hash"] = _cc.composite_registry_hash(blocks)
+            row["entry_id"] = composition_entry_id(tf, row["registry_hash"])
+            row["status"] = "fired_before" if row["entry_id"] in queue_ids else "eligible"
+        rows.append(row)
+    if not by_secs:
+        # every forecast block lacks a timeframe (or there is none): still
+        # report the excluded ones, loudly (composite_cache prints them)
+        forecast = [b for b in registry.get("blocks") or [] if b.get("kind") == "forecast"]
+        if forecast:
+            _, excluded = _cc.forecast_blocks_on_timeframe(registry, "1h")
+    return rows, excluded
+
+
+def _r1(inputs: dict, entries: list, *, scheduled, operator: list) -> tuple:
+    """(r1 record, request or None). Flag off (no inputs["composition"]): the
+    unchanged no-op record. Flag on: the first `eligible` timeframe (shortest
+    bar first) fires unless a run is in progress or an operator entry is
+    ready (guess 10: behind both); it is then scheduled AHEAD of every agent
+    entry (reader candidates, extra cards, R2 requests, reframes) by a
+    priority strictly below every ready agent entry's. One composition per
+    decision; the next eligible timeframe fires at a later decision."""
+    revision = inputs.get("registry_revision") or 0
+    comp_inputs = inputs.get("composition")
+    if comp_inputs is None:
+        return ({"registry_revision": revision, "last_composition_revision": None,
+                 "would_fire": revision >= 2, "fired": False,
+                 "reason": "composition brief writer is slice 7"}, None)
+    queue_ids = {e.get("id") for e in entries}
+    rows, excluded = _r1_timeframes(comp_inputs, queue_ids)
+    revs = [c.get("registry_revision") for c in comp_inputs.get("compositions") or []
+            if isinstance(c, dict) and isinstance(c.get("registry_revision"), int)]
+    eligible = [r for r in rows if r["status"] == "eligible"]
+    rec = {"registry_revision": revision,
+           "last_composition_revision": max(revs) if revs else None,
+           "would_fire": bool(eligible), "fired": False, "reason": "",
+           "timeframes": rows, "excluded_blocks": excluded}
+    if not eligible:
+        rec["reason"] = ("no timeframe has a new set of >= 2 forecast blocks (operator decision "
+                         "3: same exact bar size only; R1 fires once per registry state)")
+        return rec, None
+    if scheduled is not None and scheduled.get("status") == "in_progress":
+        rec["reason"] = f"deferred: {scheduled.get('id')} is in progress (guess 10)"
+        return rec, None
+    if operator:
+        rec["reason"] = (f"deferred: operator entr{'y' if len(operator) == 1 else 'ies'} "
+                         f"{[e['id'] for e in operator]} ready (guess 10: behind operator entries)")
+        return rec, None
+    row = eligible[0]
+    ready_prios = [e.get("priority", AGENT_PRIORITY) for e in entries if e.get("status") == "ready"]
+    priority = min([AGENT_PRIORITY] + [p for p in ready_prios if isinstance(p, (int, float))]) - 1
+    rec.update(fired=True, entry_id=row["entry_id"], timeframe=row["timeframe"],
+               registry_hash=row["registry_hash"], priority=priority,
+               reason=(f"the forecast blocks on {row['timeframe']} ({len(row['block_ids'])}) have "
+                       f"not been composed in this registry state: composition "
+                       f"{row['entry_id']} queued ahead of agent entries"))
+    return rec, {"row": row, "priority": priority}
+
+
+def composition_manifest_missing_paths(config, manifest) -> list:
+    """The composition manifest's component pointers (blocks[*].config_paths)
+    that do not resolve in `config` -- the 7.5 feasibility check of a reader
+    patch on a composite. A manifest without blocks resolves nothing: every
+    block is reported missing."""
+    blocks = manifest.get("blocks") if isinstance(manifest, dict) else None
+    if not isinstance(blocks, list) or not blocks:
+        return ["<composition manifest lists no blocks>"]
+    return [ptr for b in blocks if isinstance(b, dict) for ptr in (b.get("config_paths") or [])
+            if not _jp.json_pointer_exists(config, ptr)]
+
+
+def _composition_pin(comp_inputs: dict, block_ids: list) -> dict:
+    """The protocol pin of a composition: the validating runs' most common
+    protocol_ref, tie -> the most recently registered block's (S1 §4). Returns
+    {run_id, machine_constraints (pass_rule dropped), research_brief}.
+    Raises when a block's run has no memory protocol_ref or no pin."""
+    registry = comp_inputs["registry"]
+    order = [b for b in registry.get("blocks") or [] if b.get("block_id") in set(block_ids)]
+    counts: dict = {}
+    for b in order:
+        src = comp_inputs["sources"].get(b["validated_by_run"]) or {}
+        ref = src.get("protocol_ref")
+        if not ref:
+            raise DecideNextError(f"block {b['block_id']!r}: its run {b['validated_by_run']} has no "
+                                  f"protocol_ref in the campaign memory -- no protocol to pin")
+        counts[ref] = counts.get(ref, 0) + 1
+    top = max(counts.values())
+    # registry order is append order: the last block with a top-count ref wins a tie
+    run_id = next(b["validated_by_run"] for b in reversed(order)
+                  if counts[comp_inputs["sources"][b["validated_by_run"]]["protocol_ref"]] == top)
+    src = comp_inputs["sources"][run_id]
+    mc = copy.deepcopy(((src.get("pre_registration") or {}).get("machine_constraints")) or {})
+    if not mc:
+        raise DecideNextError(f"{run_id}: pre_registration.yaml carries no machine_constraints -- "
+                              f"the composition's windows cannot be pinned")
+    mc.pop("pass_rule", None)  # criteria are the profit bars, never inherited
+    if not isinstance(src.get("research_brief"), dict):
+        raise DecideNextError(f"{run_id}: research_brief.yaml is missing")
+    return {"run_id": run_id, "machine_constraints": mc, "research_brief": src["research_brief"],
+            "protocol_ref": src["protocol_ref"], "protocol_counts": counts}
+
+
+def composition_brief(record: dict, inputs: dict, manifest: dict, *, manifest_ref: str,
+                      manifest_sha256: str, decision_ref: str) -> tuple:
+    """(rel_path, text) of the brief for record['picked'] (an R1 composition).
+    Frontmatter: the pinned validating run's brief keys and machine_constraints
+    (no pass_rule), a research goal naming the blocks, and `candidate` =
+    {criteria_from: hypothesis_generation, composition: {manifest_ref,
+    manifest_sha256, registry_revision, registry_hash, timeframe,
+    timeframe_category, block_ids}, source: {origin: composition,
+    hypothesis_id, decision_ref, base_config_ref, expected_config_sha256}}.
+    The configs and the manifest are code-written (tools/composition.py);
+    steps 1a / 1b pass them through and author nothing."""
+    picked = record.get("picked") or {}
+    r1 = record["rules"]["r1"]
+    if not picked.get("composition") or picked["composition"] != r1.get("entry_id"):
+        raise DecideNextError("composition_brief: the record's pick is not R1's composition")
+    if manifest.get("registry_hash") != r1["registry_hash"]:
+        raise DecideNextError(f"the written manifest's registry_hash {manifest.get('registry_hash')} "
+                              f"is not R1's {r1['registry_hash']}")
+    comp = inputs["composition"]
+    block_ids = [b["block_id"] for b in manifest["blocks"]]
+    pin = _composition_pin(comp, block_ids)
+    brief = pin["research_brief"]
+    front = {k: brief.get(k) for k in ("strategy_domain", "market_universe", "timeframe",
+                                       "venue", "product")}
+    front["timeframe"] = manifest["timeframe"]
+    front["research_goal"] = (
+        f"Composition of the {len(block_ids)} validated forecast blocks on {manifest['timeframe']} "
+        f"({', '.join(block_ids)}), each run as validated, standardised past-only and weighted "
+        f"three ways (equal, inverse stand-alone volatility, residual IC). Graded on the profit "
+        f"bars (card F).")
+    front["machine_constraints"] = pin["machine_constraints"]
+    base = manifest["variants"]["base"]
+    hyp = f"{COMPOSITION_HYPOTHESIS_PREFIX}-{picked['composition'][len('composition-'):]}"
+    front["candidate"] = {
+        "criteria_from": CRITERIA_FROM_1A,
+        "composition": {"manifest_ref": manifest_ref, "manifest_sha256": manifest_sha256,
+                        "registry_revision": manifest.get("registry_revision"),
+                        "registry_hash": manifest["registry_hash"],
+                        "timeframe": manifest["timeframe"],
+                        "timeframe_category": manifest["timeframe_category"],
+                        "block_ids": block_ids},
+        "source": {"origin": ORIGIN_COMPOSITION, "hypothesis_id": hyp,
+                   "decision_ref": decision_ref, "protocol_pinned_from": pin["run_id"],
+                   "base_config_ref": base["config_ref"],
+                   "expected_config_sha256": base["config_sha256"]},
+    }
+    rel = picked["brief_path"]
+    text = ("---\n" + yaml.safe_dump(front, sort_keys=False, allow_unicode=True) + "---\n\n"
+            f"# {picked['composition']}\n\n"
+            f"Written by tools/decide_next.py (E-060 S3b, R1) after "
+            f"{record['trigger'].get('after_run')}; decision record: {decision_ref}.\n\n"
+            "The three variant configs and the composition manifest were written by code "
+            f"({manifest_ref}); step 1a passes this candidate through (criteria = the profit bars) "
+            "and step 1b authors nothing. A composite never registers as a block.\n")
+    return rel, text
 
 
 # ---------------------------------------------------------------------------
@@ -768,9 +1021,12 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
     if p["kind"] == "patch":
         if base.get("status") != "tested":
             reasons.append("source_base_variant_not_tested")
+        # E-060 S3b (7.5): a composition run has no block_manifest.yaml; its
+        # composition manifest is the source manifest (only such a run has one).
+        comp_manifest = src.get("composition_manifest")
         if not isinstance(src.get("base_config"), dict):
             reasons.append("source_config_missing: the source base variant's config is not on disk")
-        elif not isinstance(src.get("manifest"), dict):
+        elif not isinstance(src.get("manifest"), dict) and not isinstance(comp_manifest, dict):
             reasons.append("source_manifest_missing: a pass-through config needs the source "
                            "block_manifest.yaml")
         else:
@@ -780,7 +1036,9 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
             else:
                 config_for_digest = patched
                 resolved_sha = config_sha256(patched)
-                missing = _jp.manifest_missing_paths(patched, src["manifest"])
+                missing = (composition_manifest_missing_paths(patched, comp_manifest)
+                           if isinstance(comp_manifest, dict)
+                           else _jp.manifest_missing_paths(patched, src["manifest"]))
                 if missing:
                     reasons.append(f"manifest_unresolved: {missing}")
                 new_classes = _component_classes(patched) - _component_classes(src["base_config"])
@@ -1047,7 +1305,22 @@ def decide(inputs: dict, *, now: str, trigger: dict, select_entry=None) -> dict:
     operator = _operator_entries(queue)
     scheduled = select_entry([e for e in (queue.get("queue") or []) if isinstance(e, dict)])
     picked, stop = None, None
-    if scheduled is not None:
+    # E-060 S3b: R1 (a no-op record unless inputs carry "composition").
+    r1, r1_request = _r1(inputs, entries, scheduled=scheduled, operator=operator)
+    if r1_request is not None:
+        row, prio = r1_request["row"], r1_request["priority"]
+        sim = entries + [{"id": row["entry_id"], "status": "ready", "priority": prio}]
+        if select_entry(sim)["id"] != row["entry_id"]:
+            raise DecideNextError(f"R1: the scheduler would not run {row['entry_id']} (priority "
+                                  f"{prio}) first -- refusing a pick that would not run next")
+        picked = {"composition": row["entry_id"], "queue_entry_id": row["entry_id"],
+                  "brief_path": f"{CANDIDATE_BRIEFS_DIR}/{row['entry_id']}.md",
+                  "timeframe": row["timeframe"], "registry_hash": row["registry_hash"],
+                  "priority": prio,
+                  "why": (f"R1: {len(row['block_ids'])} forecast blocks on {row['timeframe']} "
+                          f"not yet composed in this registry state; ahead of agent entries, "
+                          f"behind in-progress and operator entries (guess 10)")}
+    elif scheduled is not None:
         why = (f"the scheduler's own rule (_select_entry) runs this {scheduled.get('status')} "
                f"entry next (priority {scheduled.get('priority')}); nothing is minted")
         if scheduled.get("origin") in _OPERATOR_ORIGINS:
@@ -1071,7 +1344,7 @@ def decide(inputs: dict, *, now: str, trigger: dict, select_entry=None) -> dict:
                 "brief_path": f"{CANDIDATE_BRIEFS_DIR}/{top['candidate_id']}.md",
                 "why": why,
             }
-    r2 = _r2(entries, select=scheduled is None and not eligible)
+    r2 = _r2(entries, select=scheduled is None and not eligible and r1_request is None)
     requests = r2.pop("_requests", None)
     if requests:
         # What the scheduler will actually run: its own rule over the queue
@@ -1109,9 +1382,7 @@ def decide(inputs: dict, *, now: str, trigger: dict, select_entry=None) -> dict:
             "data_requests": inputs.get("data_requests_count", 0),
         },
         "rules": {
-            "r1": {"registry_revision": revision, "last_composition_revision": None,
-                   "would_fire": revision >= 2, "fired": False,
-                   "reason": "composition brief writer is slice 7"},
+            "r1": r1,
             "r2": r2,
         },
         "operator_entries": [e["id"] for e in operator],
@@ -1186,11 +1457,28 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str) -> tuple:
         if why:
             raise DecideNextError(f"picked patch {cid!r} no longer resolves: {why}")
         candidate["config"] = patched
-        candidate["manifest"] = copy.deepcopy(src["manifest"])
+        comp_manifest = src.get("composition_manifest")
+        if isinstance(comp_manifest, dict):
+            # E-060 S3b (7.5): a patch on a composite is itself a composition-mode
+            # run (never a block; criteria = the profit bars; its variants are
+            # the source manifest's schemes). No block manifest to pass through.
+            candidate["composition"] = {
+                "manifest_ref": f"runs/{run_id}/artifacts/{COMPOSITION_MANIFEST_FILE}",
+                "manifest_sha256": config_sha256(comp_manifest),
+                "registry_revision": comp_manifest.get("registry_revision"),
+                "registry_hash": comp_manifest.get("registry_hash"),
+                "timeframe": comp_manifest.get("timeframe"),
+                "timeframe_category": comp_manifest.get("timeframe_category"),
+                "block_ids": [b.get("block_id") for b in comp_manifest.get("blocks") or []],
+            }
+            source["source_kind"] = ORIGIN_COMPOSITION
+        else:
+            candidate["manifest"] = copy.deepcopy(src["manifest"])
         source["resolved_patch"] = ops
         source["base_config_ref"] = src["base_config_ref"]
         source["expected_config_sha256"] = config_sha256(patched)
-        source["expected_manifest_sha256"] = config_sha256(src["manifest"])
+        if not isinstance(comp_manifest, dict):
+            source["expected_manifest_sha256"] = config_sha256(src["manifest"])
     candidate["criteria_from"] = CRITERIA_FROM_1A
     candidate["source"] = source
     front["candidate"] = candidate

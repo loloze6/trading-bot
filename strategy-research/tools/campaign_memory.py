@@ -80,6 +80,8 @@ _PROFIT_BAR_RESULTS = ("PASS", "FAIL", "NOT_EVALUABLE")
 # memory entry `registry: {skipped: ...}` reasons (E-058 S2b; tools/block_registry.py)
 REGISTRY_SKIPPED_NOT_VALIDATED = "not_validated"
 REGISTRY_SKIPPED_NO_MANIFEST = "no_manifest"
+# E-060 S3b (guess 11): a composition run -- a composite never registers as a block.
+REGISTRY_SKIPPED_COMPOSITION = "composition"
 
 # Retired in slice 6c (roadmap v26 card G): no memory entry may carry them.
 RETIRED_FIELDS = frozenset({

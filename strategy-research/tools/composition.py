@@ -42,6 +42,17 @@ timeframe-less block is excluded loudly and regime blocks never enter):
      append-only; the read contract of tools/composite_cache.py
      (`registry_hash`, `base_config_ref`, `base_config_sha256`, timeframe).
 
+E-060 S3b adds the pieces its callers need (run_campaign's R1 wiring, the
+orchestrator's composition mode and 5a):
+  5. load_block_daily_returns -- the stand-alone daily returns of one block,
+     read from the run that validated it (fail loud when missing or short);
+  6. variant_patches_from_manifest -- the code-written variant_patches.yaml
+     (the three variants differ only in the block weights);
+  7. check_composition_config -- the 5a check of a composite config against
+     its composition manifest: every block present, gated and pinned as its
+     source, no component outside the blocks, the scheme's weights within
+     tolerance.
+
 What it never does: register a composite as a block (the registry is not
 touched -- guess 11), write a trial row, run a backtest, choose a run, or
 read anything under local_data/holdout_sealed/.
@@ -49,9 +60,11 @@ read anything under local_data/holdout_sealed/.
 from __future__ import annotations
 
 import copy
+import csv
 import hashlib
 import json
 import math
+import re
 import statistics
 from datetime import datetime, timezone
 from pathlib import Path
@@ -558,3 +571,294 @@ def record_composition(path: Path, entry: dict, *, root: Path, enabled) -> bool:
         doc["updated_at"] = datetime.now(timezone.utc).isoformat()
         _cm._atomic_write(path, doc)
     return True
+
+
+# ---------------------------------------------------------------------------
+# 5. stand-alone daily returns of a block (E-060 S3b; input of vol_scaled)
+# ---------------------------------------------------------------------------
+
+# Mirrors run_phase1_research.PORTFOLIO_MIN_COMMON_DAY_COVERAGE (a test pins
+# the two equal): the per-window common-day coverage floor of the profit
+# bars' equal-weight portfolio, whose daily returns this reproduces.
+PORTFOLIO_MIN_COMMON_DAY_COVERAGE = 0.9
+_SOURCE_VARIANT_CONFIG_RE = re.compile(
+    r"^runs/(?P<run>[A-Za-z0-9_-]+)/artifacts/variants/(?P<vid>[A-Za-z0-9_-]+)/strategy_config\.json$")
+
+
+def _window_equity(path: Path, bid) -> dict:
+    """{naive-UTC timestamp: postRebalance_total_value} of one (coin, window)
+    backtest, warm-up bars (regime NOT_READY) dropped. Same reading as
+    run_phase1_research._window_equity_bars; anything malformed raises."""
+    with open(path, encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        missing = {"timestamp", "regime", "postRebalance_total_value"} - set(reader.fieldnames or [])
+        if missing:
+            raise CompositionError(f"block {bid!r}: {path} lacks column(s) {sorted(missing)}")
+        rows = {}
+        for row in reader:
+            if str(row["regime"]).strip().upper() == "NOT_READY":
+                continue
+            ts = datetime.fromisoformat(str(row["timestamp"]).strip())
+            if ts.tzinfo is not None:
+                ts = ts.astimezone(timezone.utc).replace(tzinfo=None)
+            try:
+                equity = float(row["postRebalance_total_value"])
+            except (TypeError, ValueError) as exc:
+                raise CompositionError(f"block {bid!r}: {path} has a non-numeric equity at "
+                                       f"{row['timestamp']!r}") from exc
+            if not math.isfinite(equity) or equity <= 0:
+                raise CompositionError(f"block {bid!r}: {path} has equity {equity!r} at "
+                                       f"{row['timestamp']!r}")
+            rows[ts] = equity
+    return rows
+
+
+def _last_close_per_day(bars: dict) -> dict:
+    daily: dict = {}
+    for ts in sorted(bars):
+        daily[ts.date()] = bars[ts]
+    return daily
+
+
+def load_block_daily_returns(block: dict, *, root: Path) -> list:
+    """The block's stand-alone daily returns: the equal-weight portfolio of
+    every coin of the base variant that VALIDATED it (the variant its registry
+    `source_config_ref` names), with the profit bars' definition
+    (run_phase1_research._portfolio_profit_metrics): last bar per UTC day of
+    postRebalance_total_value (warm-up dropped), the days every coin has
+    (coverage >= PORTFOLIO_MIN_COMMON_DAY_COVERAGE per window), each coin
+    normalised at the window's first common day, simple returns between
+    CONSECUTIVE common days only, pooled across windows in results order.
+    Every missing file, malformed row, coin-set mismatch or thin window raises
+    CompositionError -- as does a series shorter than MIN_DAILY_RETURNS: an
+    inverse-vol weight is never estimated on a guess."""
+    bid = block.get("block_id")
+    root = Path(root)
+    ref = str(block.get("source_config_ref") or "").replace("\\", "/")
+    m = _SOURCE_VARIANT_CONFIG_RE.match(ref)
+    if not m:
+        raise CompositionError(f"block {bid!r}: source_config_ref {ref!r} is not "
+                               f"runs/<run>/artifacts/variants/<variant>/strategy_config.json -- "
+                               f"its validating run's per-variant results cannot be located")
+    run, vid = m.group("run"), m.group("vid")
+    if run != block.get("validated_by_run"):
+        raise CompositionError(f"block {bid!r}: source_config_ref names {run!r}, the block was "
+                               f"validated by {block.get('validated_by_run')!r}")
+    cfg_path = root / ref
+    _cc._refuse_sealed(cfg_path)
+    if not cfg_path.exists():
+        raise CompositionError(f"block {bid!r}: source config {cfg_path} is missing")
+    if _cc._canonical_config_sha256(cfg_path) != block.get("source_config_sha256"):
+        raise CompositionError(f"block {bid!r}: {cfg_path} changed after it was validated")
+    pr_path = root / "runs" / run / "artifacts" / "variants" / vid / "protocol_result.yaml"
+    if not pr_path.exists():
+        raise CompositionError(f"block {bid!r}: {pr_path} is missing -- no stand-alone returns")
+    pr = yaml.safe_load(pr_path.read_text(encoding="utf-8"))
+    results = (pr or {}).get("results") if isinstance(pr, dict) else None
+    if not isinstance(results, list) or not results:
+        raise CompositionError(f"block {bid!r}: {pr_path} has no per-window results")
+    results_dir = root / "runs" / run / "variants" / vid / "results"
+    windows: dict = {}
+    for r in results:
+        if not isinstance(r, dict) or any(r.get(k) in (None, "") for k in ("symbol", "window", "run_id")):
+            raise CompositionError(f"block {bid!r}: {pr_path} results entry {r!r} lacks "
+                                   f"symbol/window/run_id")
+        if r["symbol"] in windows.get(r["window"], {}):
+            raise CompositionError(f"block {bid!r}: coin {r['symbol']!r} twice in window "
+                                   f"{r['window']!r}")
+        path = results_dir / str(r["run_id"]) / "portfolio_states.csv"
+        _cc._refuse_sealed(path)
+        if not path.exists():
+            raise CompositionError(f"block {bid!r}: {path} is missing -- no stand-alone returns "
+                                   f"for window {r['window']!r} ({r['symbol']})")
+        windows.setdefault(r["window"], {})[r["symbol"]] = _window_equity(path, bid)
+    coin_sets = {frozenset(c) for c in windows.values()}
+    if len(coin_sets) > 1:
+        raise CompositionError(f"block {bid!r}: the coin set differs between windows")
+    coins = sorted(next(iter(coin_sets)), key=str)
+    returns = []
+    for win, by_coin in windows.items():
+        daily = {c: _last_close_per_day(by_coin[c]) for c in coins}
+        union = set().union(*(set(d) for d in daily.values()))
+        common = sorted(set.intersection(*(set(d) for d in daily.values())))
+        if len(common) < 2:
+            raise CompositionError(f"block {bid!r}: window {win!r} has {len(common)} common "
+                                   f"day(s); at least 2 are needed")
+        if len(common) / len(union) < PORTFOLIO_MIN_COMMON_DAY_COVERAGE:
+            raise CompositionError(f"block {bid!r}: window {win!r}: common days cover "
+                                   f"{len(common) / len(union):.1%} of the coins' days, below "
+                                   f"{PORTFOLIO_MIN_COMMON_DAY_COVERAGE}")
+        anchor = {c: daily[c][common[0]] for c in coins}
+        curve = [sum(daily[c][d] / anchor[c] for c in coins) / len(coins) for d in common]
+        for i in range(1, len(common)):
+            if (common[i] - common[i - 1]).days == 1:
+                returns.append(curve[i] / curve[i - 1] - 1.0)
+    if len(returns) < MIN_DAILY_RETURNS:
+        raise CompositionError(f"block {bid!r}: {len(returns)} stand-alone daily return(s) in "
+                               f"{run}/{vid}, at least {MIN_DAILY_RETURNS} are needed to estimate "
+                               f"its volatility")
+    return returns
+
+
+def load_daily_returns_by_block(blocks: list, *, root: Path) -> dict:
+    """{block_id: load_block_daily_returns(block)} -- raises on the first bad block."""
+    return {b["block_id"]: load_block_daily_returns(b, root=root) for b in blocks}
+
+
+# ---------------------------------------------------------------------------
+# 6. the code-written variant_patches.yaml (guess 12)
+# ---------------------------------------------------------------------------
+
+def _weight_pointer(i: int) -> str:
+    return f"/strategies/regimes/{COMPOSITE_REGIME}/blocks/{i}/weight"
+
+
+def variant_patches_from_manifest(manifest: dict) -> dict:
+    """variant_patches.yaml for a composition run: one variant per scheme
+    (`base` = equal, `vol_scaled`, `ic_weighted`), each a patch setting every
+    block's weight to that scheme's weight. The block order is the manifest's
+    (the order write_composition_variants placed them in the config). Written
+    by code, never by an LLM: the variants differ ONLY in the weights."""
+    _check_manifest_shape(manifest)
+    variants = []
+    for scheme in SCHEMES:
+        vid = VARIANT_BY_SCHEME[scheme]
+        weights = manifest["variants"][vid]["weights"]
+        variants.append({
+            "variant_id": vid,
+            "patch": [{"path": _weight_pointer(i), "value": weights[mb["block_id"]]}
+                      for i, mb in enumerate(manifest["blocks"])],
+            "rationale": f"composition scheme {scheme} (code-written, E-060 S3b)",
+        })
+    return {"generated_by": "tools/composition.py (E-060 S3b, code-written -- no LLM)",
+            "composition_registry_hash": manifest["registry_hash"], "variants": variants}
+
+
+# ---------------------------------------------------------------------------
+# 7. the 5a check of a composite config against its manifest
+# ---------------------------------------------------------------------------
+
+WEIGHT_TOLERANCE = 1e-6  # S1_FINDINGS.md §5: normalised weights within 1e-6
+
+
+def _check_manifest_shape(manifest) -> None:
+    if not isinstance(manifest, dict) or manifest.get("kind") != "composition" \
+            or manifest.get("schema_version") != SCHEMA_VERSION:
+        raise CompositionError("not a composition manifest (kind: composition, "
+                               f"schema_version: {SCHEMA_VERSION})")
+    blocks = manifest.get("blocks")
+    if not isinstance(blocks, list) or len(blocks) < 2:
+        raise CompositionError("composition manifest lists fewer than two blocks")
+    ids = [b.get("block_id") for b in blocks if isinstance(b, dict)]
+    if len(ids) != len(blocks) or len(set(ids)) != len(ids):
+        raise CompositionError(f"composition manifest blocks malformed or duplicated: {ids}")
+    variants = manifest.get("variants")
+    for scheme in SCHEMES:
+        vid = VARIANT_BY_SCHEME[scheme]
+        w = ((variants or {}).get(vid) or {}).get("weights")
+        if not isinstance(w, dict) or sorted(w) != sorted(ids):
+            raise CompositionError(f"composition manifest variant {vid!r} does not weight exactly "
+                                   f"the listed blocks {sorted(ids)}")
+
+
+def check_composition_config(config: dict, manifest: dict, variant_id: str, *, root: Path,
+                             registry_doc: dict) -> None:
+    """5a (S1_FINDINGS.md §5, as built for the block combiner): raise
+    CompositionError unless `config` is the composite the manifest describes,
+    weighted by `variant_id`'s scheme:
+      * the composite's own detector is the ungated one; only its regime
+        carries anything; its block_standardisation is the manifest's;
+      * every manifest block is present exactly once (by config block id), no
+        other block, and every component belongs to exactly one block;
+      * each block is gated and pinned AS ITS SOURCE: its `source` (source
+        detector, required_bars, warm-up, buffer, parts) and each component's
+        id, class and pinned lookback equal what assemble_block derives NOW
+        from the registry block and its sha-checked source config. A
+        component's params/transforms are not compared here: an R1 run's
+        config is pinned byte for byte by the brief's config sha256, and a
+        reader patch (7.5) may change them;
+      * the block weights, normalised, equal the scheme's within
+        WEIGHT_TOLERANCE."""
+    _check_manifest_shape(manifest)
+    if variant_id not in manifest["variants"]:
+        raise CompositionError(f"variant {variant_id!r} is not in the composition manifest "
+                               f"({sorted(manifest['variants'])})")
+    if not isinstance(config, dict):
+        raise CompositionError("composite config is not a mapping")
+    if config.get("regime_detector") != _UNGATED_DETECTOR:
+        raise CompositionError("the composite's regime_detector is not the ungated pattern "
+                               f"(every bar -> {COMPOSITE_REGIME!r})")
+    regimes = ((config.get("strategies") or {}).get("regimes")) or {}
+    others = sorted(r for r, v in regimes.items() if r != COMPOSITE_REGIME and v is not None)
+    if others:
+        raise CompositionError(f"regime(s) {others} carry components -- a composite has only "
+                               f"{COMPOSITE_REGIME!r}")
+    reg = regimes.get(COMPOSITE_REGIME)
+    if not isinstance(reg, dict) or not isinstance(reg.get("blocks"), list) \
+            or not isinstance(reg.get("components"), list):
+        raise CompositionError(f"regime {COMPOSITE_REGIME!r} has no blocks/components lists")
+    if reg.get("block_standardisation") != manifest.get("standardisation"):
+        raise CompositionError(f"block_standardisation {reg.get('block_standardisation')!r} is "
+                               f"not the manifest's {manifest.get('standardisation')!r}")
+    cfg_blocks = {}
+    for b in reg["blocks"]:
+        bid = b.get("id") if isinstance(b, dict) else None
+        if bid in cfg_blocks:
+            raise CompositionError(f"config block {bid!r} appears twice")
+        cfg_blocks[bid] = b
+    want = [mb["config_block_id"] for mb in manifest["blocks"]]
+    if sorted(cfg_blocks, key=str) != sorted(want):
+        raise CompositionError(f"config blocks {sorted(cfg_blocks, key=str)} are not the "
+                               f"manifest's {sorted(want)}")
+    comps_by_id = {}
+    for c in reg["components"]:
+        cid = c.get("id") if isinstance(c, dict) else None
+        if cid in comps_by_id:
+            raise CompositionError(f"component {cid!r} appears twice")
+        comps_by_id[cid] = c
+    owned = [cid for mb in manifest["blocks"] for cid in mb["component_ids"]]
+    if len(owned) != len(set(owned)) or set(owned) != set(comps_by_id):
+        raise CompositionError(f"components {sorted(map(str, set(comps_by_id) ^ set(owned)))} (or "
+                               f"a component listed by two blocks) -- every component must be "
+                               f"owned by exactly one manifest block")
+    registry_blocks = {b.get("block_id"): b for b in (registry_doc or {}).get("blocks") or []}
+    for mb in manifest["blocks"]:
+        bid, cbid = mb["block_id"], mb["config_block_id"]
+        blk = cfg_blocks[cbid]
+        if blk.get("components") != mb["component_ids"]:
+            raise CompositionError(f"block {bid!r}: its components {blk.get('components')} are "
+                                   f"not the manifest's {mb['component_ids']}")
+        for ptr, cid in zip(mb.get("config_paths") or [], mb["component_ids"]):
+            if not _jp.json_pointer_exists(config, ptr) or \
+                    (_jp.resolve_json_pointer(config, ptr) or {}).get("id") != cid:
+                raise CompositionError(f"block {bid!r}: manifest pointer {ptr} does not hold "
+                                       f"component {cid!r}")
+        reg_block = registry_blocks.get(bid)
+        if reg_block is None:
+            raise CompositionError(f"block {bid!r} is not in the block registry")
+        if reg_block.get("source_config_sha256") != mb.get("source_config_sha256"):
+            raise CompositionError(f"block {bid!r}: the registry's source config sha differs "
+                                   f"from the manifest's")
+        expected = assemble_block(reg_block, cbid, root)
+        if blk.get("source") != expected["source"]:
+            raise CompositionError(f"block {bid!r} is not gated/timed as its source: config "
+                                   f"source {blk.get('source')!r} != {expected['source']!r}")
+        for exp in expected["components"]:
+            got = comps_by_id.get(exp["id"]) or {}
+            for key in ("class", "lookback"):
+                if got.get(key) != exp.get(key):
+                    raise CompositionError(f"block {bid!r}: component {exp['id']!r} {key} "
+                                           f"{got.get(key)!r} != its source's {exp.get(key)!r}")
+    raw = {mb["block_id"]: cfg_blocks[mb["config_block_id"]].get("weight")
+           for mb in manifest["blocks"]}
+    bad = {b: w for b, w in raw.items()
+           if isinstance(w, bool) or not isinstance(w, (int, float)) or not math.isfinite(w) or w <= 0}
+    if bad:
+        raise CompositionError(f"block weight(s) {bad} are not positive finite numbers")
+    got_w = _normalise(raw)
+    want_w = _normalise(manifest["variants"][variant_id]["weights"])
+    off = {b: (got_w[b], want_w[b]) for b in want_w if abs(got_w[b] - want_w[b]) > WEIGHT_TOLERANCE}
+    if off:
+        raise CompositionError(f"variant {variant_id!r}: normalised block weights differ from the "
+                               f"{manifest['variants'][variant_id].get('scheme')!r} scheme beyond "
+                               f"{WEIGHT_TOLERANCE}: {off}")

@@ -1422,6 +1422,38 @@ def _evaluate_residual_ic_cell(criterion: dict, protocol_result: dict, symbol, v
             "comparator": comparator, **cell}
 
 
+# E-060 S3b (S1_FINDINGS.md guess 9): a composite's criteria ARE the profit
+# bars. A criterion with this `source` is graded by the caller's grader -- the
+# same grading function branch 3 runs (run_phase1_research.
+# _grade_profit_bars_protocol_result) -- and only under
+# evaluate_grid(composition_runs=True). Flag off (or no grader), the source is
+# not one of _VALID_GRID_SOURCES and the cell stays the SPEC_ERROR it always was.
+PROFIT_BARS_CRITERION_SOURCE = "profit_bars"
+_PROFIT_BARS_CELL_RESULTS = ("PASS", "FAIL")
+
+
+def _evaluate_profit_bars_cell(criterion: dict, variant_id, grader) -> dict:
+    """One profit_bars cell: the grader's overall result for `variant_id`
+    (PASS only when every bar reads PASS; a NOT_EVALUABLE bar is not a PASS,
+    exactly as branch 3 reads it). Anything else is a SPEC_ERROR, never a
+    silent pass."""
+    cid = criterion.get("id")
+    if grader is None:
+        return {"result": "SPEC_ERROR",
+                "reason": f"criterion {cid!r}: source={PROFIT_BARS_CRITERION_SOURCE!r} needs the "
+                          f"profit-bars grader (composition runs only)"}
+    graded = grader(variant_id)
+    result = graded.get("result") if isinstance(graded, dict) else None
+    if result not in _PROFIT_BARS_CELL_RESULTS:
+        return {"result": "SPEC_ERROR",
+                "reason": f"criterion {cid!r}: the profit-bars grader returned {result!r} for "
+                          f"{variant_id!r}, not one of {_PROFIT_BARS_CELL_RESULTS}"}
+    reasons = list(graded.get("reasons") or [])
+    return {"result": result, "source": PROFIT_BARS_CRITERION_SOURCE,
+            "bars": graded.get("bars") or [],
+            "reason": "; ".join(reasons) if reasons else None}
+
+
 def _dominant_cell_result(results: list) -> str:
     """SPEC_ERROR > FAIL > INCONCLUSIVE > PASS. Used to roll multiple
     per-symbol cells (symbol_reducer=per_symbol_all) up into one cell result
@@ -1539,7 +1571,8 @@ def resolve_criteria_against_menu(criteria: list, menu) -> list:
 
 
 def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
-                   research_brief: dict | None, menu, *, composition_runs: bool = False) -> dict:
+                   research_brief: dict | None, menu, *, composition_runs: bool = False,
+                   profit_bars_grader=None) -> dict:
     """
     E-046b S2: the grid (engineering_roadmap.html card C) -- criteria x
     variants, every cell mechanical, unanimity across variants. No LLM
@@ -1568,6 +1601,11 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
     `menu`: `config/criterion_menu.yaml`'s loaded document (a dict with a
     `criteria` list, or a bare list) -- used only to backfill criterion
     fields not already given directly in `pre_registration`.
+
+    `profit_bars_grader` (E-060 S3b, composition runs only): a callable
+    variant_id -> {result: PASS|FAIL, bars, reasons}, the branch-3 grading of
+    that variant. Read only for a criterion with source `profit_bars` and only
+    with composition_runs=True; every other call is unchanged.
 
     Returns {"result": "GRID_EVALUATED" | "SPEC_ERROR", "criteria": [id, ...],
     "variants": [variant_id, ...], "grid": {criterion_id: {variant_id:
@@ -1608,8 +1646,11 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
             raise ValueError(f"a resolved grid criterion has no id: {crit!r}")
         row = {}
         for variant_id in variant_ids:
-            cell = _evaluate_grid_cell(crit, protocol_results_by_variant[variant_id], eras,
-                                       composition_runs=composition_runs)
+            if composition_runs and crit.get("source") == PROFIT_BARS_CRITERION_SOURCE:
+                cell = _evaluate_profit_bars_cell(crit, variant_id, profit_bars_grader)
+            else:
+                cell = _evaluate_grid_cell(crit, protocol_results_by_variant[variant_id], eras,
+                                           composition_runs=composition_runs)
             row[variant_id] = cell
             if cell["result"] == "SPEC_ERROR":
                 spec_errors.append({"criterion_id": cid, "variant_id": variant_id,

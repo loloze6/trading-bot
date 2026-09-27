@@ -1626,9 +1626,13 @@ async def run_tool_worker(stage_name: str, run_id: str):
                         _grid_inputs, _grid_pre_reg = _residual_ic_grid_inputs(
                             per_variant_summaries, RUN_DIR, protocol_path, TBOT_PYTHON,
                             _pre_reg_for_eval or {})
+                        # E-060 S3b: a composition run's profit_bars cells are
+                        # graded by branch 3's own function (guess 9).
                         _grid_result = _vce.evaluate_grid(
                             _grid_inputs, _grid_pre_reg, _brief_for_eval, _menu,
-                            composition_runs=True)
+                            composition_runs=True,
+                            **({"profit_bars_grader": _profit_bars_grid_grader(RUN_DIR)}
+                               if _composition_mode(RUN_DIR) else {}))
                     else:
                         _grid_result = _vce.evaluate_grid(
                             per_variant_summaries, _pre_reg_for_eval or {}, _brief_for_eval, _menu)
@@ -1949,16 +1953,34 @@ async def run_tool_worker(stage_name: str, run_id: str):
         # runs later -- so a manifest this stage accepts is one the registry accepts.
         # Missing, unparseable, malformed or unresolved: fail loud before any variant is
         # built (this branch only runs under orchestrator.config_direct_authoring).
-        _bm = _block_manifest_module()
-        manifest_path = ARTIFACTS / _bm.MANIFEST_FILENAME
-        manifest = _bm.load_manifest_file(manifest_path, error_cls=RuntimeError)
-        if manifest is None:
-            raise RuntimeError(
-                "run_tool_worker(backtest_specification): artifacts/block_manifest.yaml is "
-                "missing -- strategy_config_authoring must write it next to the base config "
-                "(STRATEGY_DESIGN_GUIDE.md §7c) when its status is spec_ready."
-            )
-        _bm.check_manifest(manifest, base_config, where=str(manifest_path), error_cls=RuntimeError)
+        # E-060 S3b: a composition run has no block manifest -- its composition
+        # manifest is checked instead (every block present, gated and pinned as
+        # its source, the scheme's weights), on the base and on every variant.
+        _comp_run = _composition_mode(RUN_DIR)
+        if _comp_run:
+            _comp_cand = _composition_candidate(RUN_DIR)
+            comp_manifest = _load_composition_manifest(RUN_DIR, _comp_cand)
+            if load_yaml(ARTIFACTS / _COMPOSITION_MANIFEST_FILE) != comp_manifest:
+                raise RuntimeError(
+                    f"run_tool_worker(backtest_specification): artifacts/"
+                    f"{_COMPOSITION_MANIFEST_FILE} is not the brief's composition manifest")
+            # an R1 composition's base IS the code-written base: every variant
+            # must then hash to its code-written file (a reader patch's may not)
+            _comp_strict = (base_config is not None and _canonical_json_sha256(base_config)
+                            == comp_manifest["variants"]["base"]["config_sha256"])
+            _check_composition_variant(ARTIFACTS, "base", base_config, comp_manifest, _comp_strict)
+        else:
+            _bm = _block_manifest_module()
+            manifest_path = ARTIFACTS / _bm.MANIFEST_FILENAME
+            manifest = _bm.load_manifest_file(manifest_path, error_cls=RuntimeError)
+            if manifest is None:
+                raise RuntimeError(
+                    "run_tool_worker(backtest_specification): artifacts/block_manifest.yaml is "
+                    "missing -- strategy_config_authoring must write it next to the base config "
+                    "(STRATEGY_DESIGN_GUIDE.md §7c) when its status is spec_ready."
+                )
+            _bm.check_manifest(manifest, base_config, where=str(manifest_path),
+                               error_cls=RuntimeError)
         # E-059 S2a: a decide_next patch candidate's config must be 1b's verbatim
         # pass-through copy (no-op for every other brief -- see the function).
         _check_pass_through_config_hash(ARTIFACTS)
@@ -2012,10 +2034,17 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 print(f"⚠️  [E-056 Slice3b] variant '{variant_id}' NOT TESTED: {reason}")
                 continue
 
-            # A variant patch can still remove a BLOCK path; that variant no longer holds
-            # the idea, so it is not tested. Scaffolding may change per variant (the base
-            # config's scaffolding was checked above).
-            missing_paths = _check_manifest_paths(variant_config, manifest)
+            if _comp_run:
+                # E-060 S3b: code-written patches -- a mismatch is an engineering
+                # fault and raises (never a quietly not_tested variant).
+                _check_composition_variant(ARTIFACTS, variant_id, variant_config, comp_manifest,
+                                           _comp_strict)
+                missing_paths = []
+            else:
+                # A variant patch can still remove a BLOCK path; that variant no longer
+                # holds the idea, so it is not tested. Scaffolding may change per variant
+                # (the base config's scaffolding was checked above).
+                missing_paths = _check_manifest_paths(variant_config, manifest)
             if missing_paths:
                 reason = f"manifest paths unresolved: {missing_paths}"
                 index[variant_id] = {"status": "not_tested", "reason": reason}
@@ -3439,7 +3468,10 @@ def _residual_ic_exempt_reason(run_dir: Path) -> str | None:
     cand = brief.get("candidate") if isinstance(brief, dict) else None
     cand = cand if isinstance(cand, dict) else {}
     source = cand.get("source") if isinstance(cand.get("source"), dict) else {}
-    if "composition" in (brief.get("origin"), source.get("origin")) or brief.get("composition"):
+    if "composition" in (brief.get("origin"), source.get("origin")) or brief.get("composition") \
+            or isinstance(cand.get("composition"), dict):
+        # E-060 S3b: candidate.composition also marks a reader patch on a
+        # composite (7.5) -- itself a composition run.
         return "composition run"
     proposal = source.get("proposal") if isinstance(source.get("proposal"), dict) else {}
     kinds = {((proposal.get("block") or {}) if isinstance(proposal.get("block"), dict) else {}).get("kind"),
@@ -3566,6 +3598,271 @@ def _residual_ic_grid_inputs(per_variant_summaries: dict, run_dir: Path, protoco
           f"timeframe={doc['timeframe']}): "
           f"{ {v: d.get('value') for v, d in doc['variants'].items()} }")
     return out, pre_registration
+
+
+# ---------------------------------------------------------------------------
+# E-060 S3b -- composition runs, part 2: composition mode (delivery_plan_v26.md
+# slice 7 items 7.2, 7.3, 7.5; engineering/roadmap/E-060/S1_FINDINGS.md guesses
+# 9-12 and the operator decisions of 2026-09-26). Only under
+# orchestrator.composition_runs.enabled, and only for a run whose
+# research_brief.yaml carries `candidate.composition` -- an R1 composition
+# (tools/decide_next.composition_brief) or a reader patch on one (7.5). Such a
+# run authors NOTHING with an LLM:
+#   * step 1a passes the candidate through: a code-written card and the
+#     pass_rule [profit_bars] (config/criterion_menu.yaml code_added_criteria);
+#   * step 1b copies the code-written base config (sha-checked) and the
+#     composition manifest (sha-checked) -- no block_manifest.yaml;
+#   * step 2 writes variant_patches.yaml from the manifest's schemes;
+#   * 5a checks every variant against the manifest (tools/composition.
+#     check_composition_config) instead of a block manifest;
+#   * the grid grades the profit_bars criterion with branch 3's own grading
+#     function; branch 3 labels the variants `composite`;
+#   * regroup_record never registers a composite as a block.
+# Everything else (the data gate, the backtests and their trial rows, the
+# readers, the memory, decide-next, the branch-3 stop and the operator-only
+# holdout unlock) is the ordinary path. Off: nothing here runs.
+# ---------------------------------------------------------------------------
+
+_COMPOSITION_CODE_STAGES = ("hypothesis_generation", "strategy_config_authoring",
+                            "innovation_expansion")
+_PROFIT_BARS_CRITERION_ID = "profit_bars"
+_COMPOSITION_MANIFEST_FILE = "composition_manifest.yaml"
+
+
+def _composition_module():
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import composition as _comp
+    return _comp
+
+
+def _load_block_registry_doc() -> dict:
+    """campaign_record/block_registry.yaml (read only; malformed raises)."""
+    _composition_module()  # puts tools/ on sys.path
+    import block_registry as _br
+    return _br.load_registry(_block_registry_path())
+
+
+def _composition_candidate(run_dir: Path) -> dict | None:
+    """research_brief.yaml's `candidate` when it carries a `composition`
+    block, else None. Read only."""
+    path = Path(run_dir) / "artifacts" / "research_brief.yaml"
+    if not path.exists():
+        return None
+    brief = load_yaml(path) or {}
+    cand = brief.get("candidate") if isinstance(brief, dict) else None
+    if isinstance(cand, dict) and isinstance(cand.get("composition"), dict):
+        return cand
+    return None
+
+
+def _composition_mode(run_dir: Path) -> bool:
+    """True for a composition run under the flag. A composition brief with the
+    flag off raises: it must never fall through to the LLM stages."""
+    if _composition_candidate(run_dir) is None:
+        return False
+    if not _composition_runs_enabled():
+        raise ValueError(f"{Path(run_dir).name}: research_brief.yaml carries candidate.composition "
+                         f"but orchestrator.composition_runs is off -- a composition brief is never "
+                         f"authored by the LLM stages. Switch the flag back on, or mark the entry "
+                         f"superseded.")
+    return True
+
+
+def _code_added_criterion(menu: dict, cid: str) -> dict:
+    import copy
+    for entry in (menu or {}).get("code_added_criteria") or []:
+        if isinstance(entry, dict) and entry.get("id") == cid:
+            return {k: copy.deepcopy(v) for k, v in entry.items()
+                    if k not in _CODE_CRITERION_META_KEYS}
+    raise ValueError(f"config/criterion_menu.yaml has no code_added_criteria entry {cid!r} -- "
+                     f"orchestrator.composition_runs.enabled requires it (E-060 S3b)")
+
+
+def _load_composition_manifest(run_dir: Path, cand: dict) -> dict:
+    """The candidate's composition manifest from its manifest_ref, checked
+    against the brief: canonical sha256 (manifest_sha256), registry_hash and
+    timeframe. Raises on any difference."""
+    comp = cand["composition"]
+    ref = comp.get("manifest_ref")
+    path = ROOT / str(ref)
+    _composition_module()._cc._refuse_sealed(path)
+    if not ref or not path.exists():
+        raise FileNotFoundError(f"{Path(run_dir).name}: composition manifest {path} is missing")
+    manifest = yaml.safe_load(path.read_text(encoding="utf-8"))
+    got = _canonical_json_sha256(manifest)
+    if got != comp.get("manifest_sha256"):
+        raise RuntimeError(f"{path}: canonical sha256 {got} differs from the brief's "
+                           f"manifest_sha256 {comp.get('manifest_sha256')} -- changed after R1 wrote it")
+    for key in ("registry_hash", "timeframe"):
+        if manifest.get(key) != comp.get(key):
+            raise RuntimeError(f"{path}: {key}={manifest.get(key)!r} is not the brief's "
+                               f"{comp.get(key)!r}")
+    return manifest
+
+
+def _composition_pass_through_1a(run_dir: Path, run_id: str, sr_flag: bool) -> None:
+    """Step 1a in composition mode (IMPROVEMENT 09 of hypothesis-design, done
+    by code): the card is the candidate passed through, and the pass_rule is
+    the profit bars (guess 9) -- never picked by an LLM, never inherited.
+    Writes hypothesis_card.yaml and pre_registration.yaml's pass_rule, runs
+    the K3 lint and (flag on) the specialist_readers pre-flight. Raises before
+    any spend."""
+    cand = _composition_candidate(run_dir)
+    source = cand.get("source") if isinstance(cand.get("source"), dict) else {}
+    hyp = source.get("hypothesis_id")
+    if not isinstance(hyp, str) or not hyp.strip():
+        raise ValueError(f"{run_id}: research_brief.yaml candidate.source has no hypothesis_id")
+    manifest = _load_composition_manifest(run_dir, cand)
+    comp = cand["composition"]
+    arts = Path(run_dir) / "artifacts"
+    card = {
+        "hypothesis_id": hyp,
+        "thesis": (f"The validated forecast blocks {comp['block_ids']} on {manifest['timeframe']}, "
+                   f"combined as validated, clear the campaign's profit bars together."),
+        "timeframe": manifest["timeframe"],
+        "pass_through": True,
+        "source": (f"code (E-060 S3b composition pass-through, no LLM): "
+                   f"{source.get('origin')} candidate, manifest {comp['manifest_ref']}"),
+        "composition": {"registry_hash": manifest["registry_hash"],
+                        "registry_revision": manifest.get("registry_revision"),
+                        "timeframe": manifest["timeframe"],
+                        "timeframe_category": manifest["timeframe_category"],
+                        "block_ids": [b["block_id"] for b in manifest["blocks"]],
+                        "manifest_ref": comp["manifest_ref"]},
+        "criteria": [{"id": _PROFIT_BARS_CRITERION_ID}],
+    }
+    save_yaml(arts / "hypothesis_card.yaml", card)
+    menu_path = ROOT / "config" / "criterion_menu.yaml"
+    menu = (load_yaml(menu_path) if menu_path.exists() else {}) or {}
+    pass_rule = {"criteria": [_code_added_criterion(menu, _PROFIT_BARS_CRITERION_ID)]}
+    pre_path = arts / "pre_registration.yaml"
+    if not pre_path.exists():
+        raise FileNotFoundError(f"{pre_path} is missing for a composition run -- it is written at "
+                                f"materialization (run_campaign._materialize_run).")
+    pre_reg = load_yaml(pre_path) or {}
+    violations = _lint_machine_constraints_protocol_selection(
+        pre_reg.get("machine_constraints") or {}, pass_rule)
+    if violations:
+        raise ValueError(f"{run_id}: the composition pass_rule failed the K3 protocol-selection "
+                         f"lint:\n" + "\n".join(f"  - {v}" for v in violations))
+    pre_reg["pass_rule"] = pass_rule
+    pre_reg["pass_rule_source_ref"] = "config/criterion_menu.yaml#code_added_criteria/profit_bars"
+    save_yaml(pre_path, pre_reg)
+    print(f"✅ [E-060 S3b] composition 1a pass-through: card {hyp} written by code, "
+          f"pass_rule = [profit_bars] (no LLM call)")
+    if sr_flag:
+        _check_specialist_readers_preflight(run_dir)
+
+
+def _composition_base_config(run_dir: Path, cand: dict) -> dict:
+    """The run's base config, verified against candidate.source.
+    expected_config_sha256: candidate.config (a reader patch, 7.5) or the
+    code-written file at source.base_config_ref (an R1 composition)."""
+    source = cand.get("source") if isinstance(cand.get("source"), dict) else {}
+    expected = source.get("expected_config_sha256")
+    if not expected:
+        raise RuntimeError(f"{Path(run_dir).name}: candidate.source has no expected_config_sha256")
+    if isinstance(cand.get("config"), dict):
+        config = cand["config"]
+    else:
+        path = ROOT / str(source.get("base_config_ref"))
+        _composition_module()._cc._refuse_sealed(path)
+        if not path.exists():
+            raise FileNotFoundError(f"composition base config {path} is missing")
+        config = json.loads(path.read_text(encoding="utf-8"))
+    got = _canonical_json_sha256(config)
+    if got != expected:
+        raise RuntimeError(f"composition base config sha256 {got} differs from the brief's "
+                           f"expected_config_sha256 {expected}")
+    return config
+
+
+def _composition_1b(run_dir: Path, run_id: str) -> None:
+    """Step 1b in composition mode: no authoring. Copies the verified base
+    config into backtest_spec.yaml (spec_ready), the verified manifest into
+    artifacts/composition_manifest.yaml, writes decision.yaml, and checks the
+    base config against the manifest (equal weights) before anything else
+    runs. Writes no block_manifest.yaml (a composite is never a block)."""
+    import copy
+    cand = _composition_candidate(run_dir)
+    manifest = _load_composition_manifest(run_dir, cand)
+    config = _composition_base_config(run_dir, cand)
+    _composition_module().check_composition_config(config, manifest, "base", root=ROOT,
+                                                   registry_doc=_load_block_registry_doc())
+    arts = Path(run_dir) / "artifacts"
+    hyp = (load_yaml(arts / "hypothesis_card.yaml") or {}).get("hypothesis_id")
+    save_yaml(arts / _COMPOSITION_MANIFEST_FILE, copy.deepcopy(manifest))
+    save_yaml(arts / "backtest_spec.yaml", {
+        "hypothesis_id": hyp, "status": "spec_ready", "config": copy.deepcopy(config),
+        "config_rationale": [{"hypothesis_claim": "composition of validated blocks",
+                              "config_choice": "code-written by tools/composition.py (E-060 S3b); "
+                                               "passed through unchanged, no LLM"}]})
+    save_yaml(arts / "decision.yaml", {
+        "hypothesis_id": hyp, "stage": "strategy_config_authoring", "status": "spec_ready",
+        "rationale": "E-060 S3b composition mode: the code-written base config and composition "
+                     "manifest were passed through (sha-checked); nothing authored"})
+    print(f"✅ [E-060 S3b] composition 1b: base config + composition manifest passed through "
+          f"(no LLM call)")
+
+
+def _composition_variant_patches(run_dir: Path) -> None:
+    """Step 2 in composition mode: variant_patches.yaml from the manifest's
+    three schemes (guess 12) -- code, not the innovation-expansion LLM."""
+    arts = Path(run_dir) / "artifacts"
+    manifest = load_yaml(arts / _COMPOSITION_MANIFEST_FILE)
+    save_yaml(arts / "variant_patches.yaml",
+              _composition_module().variant_patches_from_manifest(manifest))
+    print("✅ [E-060 S3b] composition variants: variant_patches.yaml written by code "
+          "(base / vol_scaled / ic_weighted -- weights only)")
+
+
+def _run_composition_code_stage(stage: str, run_id: str, run_dir: Path, sr_flag: bool) -> None:
+    if stage == "hypothesis_generation":
+        _composition_pass_through_1a(run_dir, run_id, sr_flag)
+    elif stage == "strategy_config_authoring":
+        _composition_1b(run_dir, run_id)
+    elif stage == "innovation_expansion":
+        _composition_variant_patches(run_dir)
+    else:  # pragma: no cover -- guarded by _COMPOSITION_CODE_STAGES
+        raise ValueError(f"no composition code stage {stage!r}")
+
+
+def _check_composition_variant(artifacts: Path, variant_id: str, variant_config: dict,
+                               manifest: dict, strict_sha: bool) -> None:
+    """5a for one composition variant: check_composition_config against the
+    variant's scheme, and -- for an R1 composition (strict_sha: its base is
+    the code-written base) -- the variant config's canonical sha256 must equal
+    the code-written file's. Raises (fail loud: the patches are code-written,
+    a mismatch is an engineering fault, never a not_tested variant)."""
+    _composition_module().check_composition_config(variant_config, manifest, variant_id,
+                                                   root=ROOT, registry_doc=_load_block_registry_doc())
+    if strict_sha:
+        want = manifest["variants"][variant_id]["config_sha256"]
+        got = _canonical_json_sha256(variant_config)
+        if got != want:
+            raise RuntimeError(f"composition variant {variant_id!r}: config sha256 {got} is not the "
+                               f"code-written {want} ({manifest['variants'][variant_id]['config_ref']})")
+
+
+def _profit_bars_grid_grader(run_dir: Path):
+    """The grid's profit_bars grader (guess 9): variant_id -> branch 3's own
+    grading of artifacts/variants/<id>/protocol_result.yaml
+    (_grade_profit_bars_protocol_result, same bars file, same DSR context,
+    same equal-weight portfolio). Reads only; writes nothing."""
+    bars = _load_profitability_bars()
+    dsr_ctx = _promotion_dsr_context()
+
+    def grade(variant_id: str) -> dict:
+        rel = f"artifacts/variants/{variant_id}/protocol_result.yaml"
+        pr = load_yaml(Path(run_dir) / rel)
+        if not isinstance(pr, dict):
+            raise ValueError(f"profit_bars grid cell: {rel} is not a mapping")
+        results, overall, reasons = _grade_profit_bars_protocol_result(run_dir, pr, rel, bars,
+                                                                       dsr_ctx)
+        return {"result": overall, "bars": results, "reasons": reasons}
+    return grade
 
 
 # ---------------------------------------------------------------------------
@@ -5404,8 +5701,11 @@ def _run_regroup_record_stage(run_id: str, run_dir: Path,
         # that a re-run cannot redo: registry (append-only; conflict raises
         # BEFORE the memory entry is replaced), KB entry (replaced on re-run),
         # memory entry (replaced on re-run), then the scoreboard (derived).
-        entry["registry"] = _br.record_run(_block_registry_path(), run_dir, entry, root=ROOT,
-                                           composition_runs=_composition_runs_enabled())
+        _comp_on = _composition_runs_enabled()
+        entry["registry"] = _br.record_run(
+            _block_registry_path(), run_dir, entry, root=ROOT, composition_runs=_comp_on,
+            # E-060 S3b (guess 11): a composition run never registers a block.
+            **({"composition_run": True} if _comp_on and _composition_mode(run_dir) else {}))
         entry["kb_entry_id"] = _kbw.write_kb_entry(
             _KB_PATH, _kbw.build_kb_entry(entry), root=ROOT, recompute_views=_recompute_kb_views)
         cm.upsert_memory(memory_path, entry)
@@ -9642,11 +9942,14 @@ def _profit_bars_backtest_candidates(run_dir: Path, run_id: str) -> dict:
     if not isinstance(columns, list) or not columns:
         raise ValueError(f"profit bars (every backtest): {grid_path} has no variant columns.")
     invalidated = _invalidated_trial_ids()
+    # E-060 S3b (the slice-7 seam below): a composition run's variants ARE the
+    # composite backtests -- same grading, same stop rule, label `composite`.
+    kind = "composite" if _composition_mode(run_dir) else "variant"
     out: dict = {}
 
     def _tested(cid: str, trial_id: str, rel: str) -> dict:
         if trial_id in invalidated:
-            return {"kind": "variant", "trial_id": trial_id, "protocol_result_ref": None,
+            return {"kind": kind, "trial_id": trial_id, "protocol_result_ref": None,
                     "protocol_result": None, "result": "INVALIDATED",
                     "reason": f"trial {trial_id!r} is invalidated_artifact (conformance "
                               f"violation): not graded, never passing"}
@@ -9657,7 +9960,7 @@ def _profit_bars_backtest_candidates(run_dir: Path, run_id: str) -> dict:
         if not isinstance(pr, dict):
             raise ValueError(f"profit bars (every backtest): {rel} is not a mapping "
                              f"({type(pr).__name__}).")
-        return {"kind": "variant", "trial_id": trial_id, "protocol_result_ref": rel,
+        return {"kind": kind, "trial_id": trial_id, "protocol_result_ref": rel,
                 "protocol_result": pr, "result": None, "reason": None}
 
     if _variant_loop_enabled():
@@ -9675,12 +9978,12 @@ def _profit_bars_backtest_candidates(run_dir: Path, run_id: str) -> dict:
                 out[vid] = _tested(vid, f"{run_id}:{vid}",
                                    f"artifacts/variants/{vid}/protocol_result.yaml")
             elif info.get("status") == "validated":
-                out[vid] = {"kind": "variant", "trial_id": None, "protocol_result_ref": None,
+                out[vid] = {"kind": kind, "trial_id": None, "protocol_result_ref": None,
                             "protocol_result": None, "result": "NOT_TESTED",
                             "reason": "validated, but no grid column on this attempt "
                                       "(its backtest failed)"}
             else:
-                out[vid] = {"kind": "variant", "trial_id": None, "protocol_result_ref": None,
+                out[vid] = {"kind": kind, "trial_id": None, "protocol_result_ref": None,
                             "protocol_result": None, "result": "NOT_TESTED",
                             "reason": f"not tested (index status {info.get('status')!r}): "
                                       f"{info.get('reason')}"}
@@ -9903,6 +10206,30 @@ def _portfolio_profit_metrics(run_dir: Path, pr: dict) -> dict:
     }
 
 
+def _grade_profit_bars_protocol_result(run_dir: Path, pr: dict, pr_ref: str, bars: dict,
+                                       dsr_ctx: dict) -> tuple:
+    """Branch 3's grading of ONE tested backtest (a variant, or a composite's
+    variant): Sharpe and DSR from the promotion audit's evaluator on its own
+    protocol_result, trade count from its per_symbol_summary, drawdown and avg
+    daily return from its equal-weight portfolio -- (results, overall,
+    reasons) from _grade_profit_bars. Extracted verbatim (E-060 S3b) so the
+    grid's profit_bars cell of a composition run calls the SAME function
+    (_profit_bars_grid_grader): the two cannot disagree on the same inputs."""
+    raw_median_sr, _sparse, _passes, _e_max, dsr_result = dsr_ctx["dsr_candidate"](pr)
+    return _grade_profit_bars(
+        bars,
+        sharpe=raw_median_sr,
+        sharpe_note=(f"{pr_ref}: median of per_symbol_summary[*]"
+                     f".median_sharpe (the promotion audit's raw_median_sharpe rule)"),
+        dsr=dsr_result.get("deflated_sharpe_ratio"),
+        dsr_note=(f"{pr_ref}: deflated Sharpe on the campaign trial "
+                  f"ledger (the promotion audit's rule; None on the sparse-trading or "
+                  f"insufficient-trials path, where no DSR is computed at all)"),
+        pss=pr.get("per_symbol_summary") or {},
+        portfolio=_portfolio_profit_metrics(run_dir, pr),
+    )
+
+
 def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
                                          record_bars_sha: bool = False) -> dict:
     """Grade every tested variant of THIS attempt (see
@@ -9940,20 +10267,8 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
             variants[cid] = {**entry, "result": cand["result"], "reason": cand["reason"],
                              "bars": [], "reasons": []}
             continue
-        pr = cand["protocol_result"]
-        raw_median_sr, _sparse, _passes, _e_max, dsr_result = dsr_ctx["dsr_candidate"](pr)
-        results, overall, reasons = _grade_profit_bars(
-            bars,
-            sharpe=raw_median_sr,
-            sharpe_note=(f"{cand['protocol_result_ref']}: median of per_symbol_summary[*]"
-                         f".median_sharpe (the promotion audit's raw_median_sharpe rule)"),
-            dsr=dsr_result.get("deflated_sharpe_ratio"),
-            dsr_note=(f"{cand['protocol_result_ref']}: deflated Sharpe on the campaign trial "
-                      f"ledger (the promotion audit's rule; None on the sparse-trading or "
-                      f"insufficient-trials path, where no DSR is computed at all)"),
-            pss=pr.get("per_symbol_summary") or {},
-            portfolio=_portfolio_profit_metrics(run_dir, pr),
-        )
+        results, overall, reasons = _grade_profit_bars_protocol_result(
+            run_dir, cand["protocol_result"], cand["protocol_result_ref"], bars, dsr_ctx)
         variants[cid] = {**entry, "result": overall, "reason": None,
                          "bars": results, "reasons": reasons}
 
@@ -11527,6 +11842,11 @@ def run_loop(run_id: str):
 
             # Invoke the Agent (F4b: one bounded YAML-repair retry on failure)
             expected_outputs = [RUN_DIR / "artifacts" / x for x in handoff_data.get("deliverables", [])]
+            # E-060 S3b: a composition run's 1a / 1b / step 2 are code, never an
+            # LLM call (only under orchestrator.composition_runs; raises when a
+            # composition brief meets the flag off).
+            _comp_mode = (current_stage in _COMPOSITION_CODE_STAGES
+                          and _composition_mode(RUN_DIR))
             if current_stage == "specialist_readers":
                 # E-046a Slice 5b-ii-B: five reader calls, each through
                 # run_reader_worker (explicit output path), never through
@@ -11537,6 +11857,8 @@ def run_loop(run_id: str):
                 # component-error / idea_status checks are reused by the route below.
                 _rr_checks = _run_regroup_record_stage(run_id, RUN_DIR,
                                                        profit_bars_evaluated=_pbe_flag)
+            elif _comp_mode:
+                _run_composition_code_stage(current_stage, run_id, RUN_DIR, _sr_flag)
             elif not _skip_agent:
                 if current_stage == "hypothesis_generation":
                     _split = False
@@ -11620,6 +11942,12 @@ def run_loop(run_id: str):
                 if next_stage == "human_pause":
                     break # Break the while loop to stop the script cleanly
 
+            elif current_stage == "strategy_config_authoring" and _comp_mode:
+                # E-060 S3b: no block manifest to check (a composite is never a
+                # block); the base config was checked against the composition
+                # manifest inside the code stage.
+                next_stage = "innovation_expansion"
+
             elif current_stage == "strategy_config_authoring":
                 # E-056 Slice 3b: only reached when config_direct_authoring is on --
                 # nothing routes here otherwise (see the override above and
@@ -11629,6 +11957,11 @@ def run_loop(run_id: str):
                     RUN_DIR, **({"routing_retired": True} if _vrr_flag else {}))
                 if next_stage == "human_pause":
                     break
+
+            elif current_stage == "innovation_expansion" and _comp_mode:
+                # E-060 S3b: the variants are code-written; no novelty gate (a
+                # composite is not a new idea) -- straight to the tool-only 5a.
+                next_stage = "backtest_specification"
 
             elif current_stage == "innovation_expansion":
                 # E-032 S2c: anti-adjacency gate + retry/escalate policy, off by

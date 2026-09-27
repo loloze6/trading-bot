@@ -1362,6 +1362,16 @@ _QUARANTINE_SAFE_REASONS = frozenset({
 # tools/record_schema.py. Nothing in the selection path needs to change.
 _REQUEUEABLE_QUARANTINE_REASONS = frozenset({"component_gap", "new_component_escalation"})
 
+# E-060 S3b: a composition run (queue origin `composition`, registered by R1
+# under orchestrator.composition_runs) ending in one of these engineering
+# faults pauses the campaign as `paused:composition_failed` (RUNBOOK §3) --
+# never quarantined, never retried by code. Any other pause of a composition
+# run (e.g. the branch-3 profit_bars_reached stop) keeps its own reason.
+COMPOSITION_ORIGIN = "composition"
+COMPOSITION_FAILED_REASON = "composition_failed"
+_COMPOSITION_FAULT_REASONS = _QUARANTINE_SAFE_REASONS | frozenset(
+    {"unhandled_exception", "stale_escalation_unclaimed", "budget_breaker"})
+
 # R8/R6: the one outcome value a quarantine may write. Registered as non-verdict-
 # bearing in tools/verdict_criteria_evaluator._NON_VERDICT_OUTCOMES (see that entry's
 # comment) so _save_queue's provenance gate admits it without a
@@ -2704,6 +2714,12 @@ def process_once() -> bool:
         return _park_entry(queue, entry, run_id, run_dir, state, schedulability_enabled)
 
     pause = _hard_pause_reason(run_dir, state)
+    if pause and entry.get("origin") == COMPOSITION_ORIGIN and pause[0] in _COMPOSITION_FAULT_REASONS:
+        # E-060 S3b (guess 10): a composition run that crashes pauses for the
+        # operator -- never quarantined (which would mark it done), never
+        # re-fired: R1 fires once per registry state (its queue entry exists).
+        # Only entries R1 registered carry this origin (composition_runs on).
+        pause = (COMPOSITION_FAILED_REASON, f"{pause[0]}: {pause[1]}")
     if pause:
         reason, detail = pause
         # E-030 S2a. Quarantine + escalate. Everything below the `if` is reached
@@ -3028,8 +3044,12 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
     digest = orch.load_yaml(digest_path) if digest_path.exists() else None
     known = (dn.known_component_classes(_TRADING_BOT_ROOT)
              if (_TRADING_BOT_ROOT / "strategies" / "strategy_components.py").exists() else None)
+    # E-060 S3b: R1's inputs only under orchestrator.composition_runs (the kwarg
+    # only when on, so the flag-off call is unchanged).
     inputs = dn.load_inputs(ROOT, final_queue, categories=orch._reader_categories(),
-                            known_classes=known, digest=digest)
+                            known_classes=known, digest=digest,
+                            **({"composition_runs": True} if orch._composition_runs_enabled()
+                               else {}))
     mem_entry = (inputs["memory"].get("runs") or {}).get(run_id) or {}
     trigger = {"after_run": run_id, "after_entry": entry["id"],
                "idea_status": mem_entry.get("idea_status")}
@@ -3047,6 +3067,8 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
                f"(queued -> ready, card={picked['card_ref']}). Record: {decision_ref}")
     elif picked.get("r2_request"):
         msg = _apply_r2(record, final_queue, decision_ref, updates, entry, run_id)
+    elif picked.get("composition"):
+        msg = _apply_r1(record, inputs, decision_ref, entry, run_id)
     elif picked.get("candidate_id"):
         cid = picked["queue_entry_id"]
         rel, text = dn.candidate_brief(record, inputs, decision_ref=decision_ref)
@@ -3176,6 +3198,86 @@ def _apply_r2(record: dict, final_queue: dict, decision_ref: str, updates: dict,
     return (f"DECIDE after {entry['id']} ({run_id}): R2 -- {len(r2['eligible_briefs'])} eligible "
             f"open brief(s); ready: {r2['ready']} ({len(new_ids)} new); the scheduler runs "
             f"{record['picked']['queue_entry_id']} first. Record: {decision_ref}")
+
+
+def _apply_r1(record: dict, inputs: dict, decision_ref: str, entry: dict, run_id: str) -> str:
+    """E-060 S3b: R1 picked a composition (only under
+    orchestrator.composition_runs). Code, not an LLM, writes everything, in
+    this order, each step idempotent so a retried decision redoes it byte for
+    byte:
+      1. each block's stand-alone daily returns from its validating run
+         (tools/composition.load_daily_returns_by_block -- fails loud when
+         missing or short);
+      2. the three variant configs + composition_manifest.yaml under
+         campaign_record/compositions/<entry id>/ (write_composition_variants);
+      3. the campaign_record/compositions.yaml entry (record_composition);
+      4. the brief (decide_next.composition_brief) and the queue entry
+         (origin composition, R1's priority; the brief is removed again if the
+         registration is refused).
+    Any CompositionError stops the step loudly as composition_failed before
+    the queue entry exists: the finished entry stays in_progress on disk, so
+    nothing is lost and nothing is retried until the operator restarts
+    (RUNBOOK §3 composition_failed). Writes no trial row, runs no backtest,
+    registers no block."""
+    import decide_next as dn
+    import composite_cache as cc
+    import composition as comp
+    picked = record["picked"]
+    eid = picked["composition"]
+    registry = inputs["composition"]["registry"]
+    blocks, _excluded = cc.forecast_blocks_on_timeframe(registry, picked["timeframe"])
+    if len(blocks) < 2 or cc.composite_registry_hash(blocks) != picked["registry_hash"]:
+        raise RuntimeError(f"{COMPOSITION_FAILED_REASON}: R1 picked {eid}, but the registry's "
+                           f"blocks on {picked['timeframe']} no longer hash to "
+                           f"{picked['registry_hash']} -- refusing")
+    on_disk = {e.get("id") for e in _load_queue().get("queue") or [] if isinstance(e, dict)}
+    if eid in on_disk:
+        raise RuntimeError(f"{COMPOSITION_FAILED_REASON}: queue id {eid!r} already exists; refusing")
+    out_dir = ROOT / dn.COMPOSITIONS_DIR / eid
+    try:
+        returns = comp.load_daily_returns_by_block(blocks, root=ROOT)
+        manifest = comp.write_composition_variants(
+            registry, picked["timeframe"], out_dir, root=ROOT, daily_returns_by_block=returns,
+            enabled=True)
+        manifest_ref = (out_dir / comp.MANIFEST_FILENAME).relative_to(ROOT).as_posix()
+        rel, text = dn.composition_brief(record, inputs, manifest, manifest_ref=manifest_ref,
+                                         manifest_sha256=dn.config_sha256(manifest),
+                                         decision_ref=decision_ref)
+        comp.record_composition(ROOT / "campaign_record" / "compositions.yaml",
+                                comp.composition_entry(manifest, manifest_ref), root=ROOT,
+                                enabled=True)
+    except (comp.CompositionError, cc.CompositeError, dn.DecideNextError) as e:
+        raise RuntimeError(
+            f"{COMPOSITION_FAILED_REASON}: R1 picked {eid} but it could not be prepared: {e}. "
+            f"No queue entry was written; fix the input and restart (RUNBOOK.md §3 "
+            f"{COMPOSITION_FAILED_REASON}).") from e
+    brief_path = ROOT / rel
+    wrote = False
+    if brief_path.exists():
+        if brief_path.read_text(encoding="utf-8") != text:
+            raise RuntimeError(f"{COMPOSITION_FAILED_REASON}: {brief_path} exists with other "
+                               f"content; refusing to overwrite a brief")
+    else:
+        brief_path.parent.mkdir(parents=True, exist_ok=True)
+        brief_path.write_text(text, encoding="utf-8")
+        wrote = True
+    try:
+        rc = register_hypothesis(
+            brief_path, picked["priority"],
+            f"R1 after {run_id}: composition of {len(blocks)} forecast blocks on "
+            f"{picked['timeframe']} (code-written variants {out_dir.relative_to(ROOT).as_posix()}; "
+            f"see decision_ref)",
+            entry_id=eid, source="agent", relation=None,
+            extra={"origin": dn.ORIGIN_COMPOSITION, "decision_ref": decision_ref})
+        if rc != 0:
+            raise RuntimeError(f"decide_next R1: registering {eid!r} was refused")
+    except BaseException:
+        if wrote:
+            brief_path.unlink(missing_ok=True)  # never leave a brief with no queue entry
+        raise
+    return (f"DECIDE after {entry['id']} ({run_id}): R1 -- composition {eid} of "
+            f"{[b['block_id'] for b in blocks]} on {picked['timeframe']} (ready, priority "
+            f"{picked['priority']}; variants + manifest written by code). Record: {decision_ref}")
 
 
 def _write_brief_hypotheses_context(queue: dict, entry: dict, run_id: str) -> None:
