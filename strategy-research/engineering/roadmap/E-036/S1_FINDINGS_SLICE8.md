@@ -385,3 +385,32 @@ session could not perform.
 - **Register:** `test_feature_flag_register.py` updated for the `anti_adjacency_retry`
   removal and `variant_anti_adjacency_gate`'s new criterion text.
 - **Docs gate:** `test_guide_covers_the_code.py`, `test_doc_anchors.py`.
+
+---
+
+## Decision (operator, 2026-09-27)
+
+All five recommendations accepted ("Go"):
+
+1. **No NEIGHBOUR.** `layer2_digest_check` returns binary `REPEAT`/`NOVEL` only; no family
+   or similarity tier.
+2. **One key, one source.** The exact-match key is decide_next's
+   `(forecast_hash, sorted(symbols), timeframe, protocol_ref)`, read from
+   `campaign_memory.yaml`, through one shared pure function imported by both
+   `decide_next.py` and the 5a gate. No second hash formula, no hand-maintained digest.
+   The 5a gate is the backstop for operator/`external`/`queued_card` entries that
+   decide_next never checks.
+3. **Idea-writing prompt input.** The live `exclusion_digest_input` surfacing is repointed
+   to the same information from the campaign record (idea, coins, timeframe, grid status),
+   with no family grouping; the prompt reason text is updated in the same PR. Declared
+   as a live prompt-text change.
+4. **Layer 1 (KB reactivation) is advisory only** — it warns, never refuses.
+5. **Scope.** Build the exact-match check and the E-035 feed-acquisition lane now. The
+   automated external-knowledge dispatch gets its own S1 later (Linear P-CUL-36 S1/S2 are
+   unchecked stories); the manual path (operator brief from outside reading) already works.
+
+Sequencing (orchestrator): the default switch-on of `variant_anti_adjacency_gate` happens
+only after the read-only corpus replay (S2b) has published refuse/admit counts and they
+have been reported to the operator — S2a ships the redesigned gate with the flag still
+off. Guess 6 (`requires_feed` row shape via the existing dedupe appender) taken as the
+default.
