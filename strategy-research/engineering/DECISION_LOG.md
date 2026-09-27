@@ -1,0 +1,159 @@
+# Decision Log — operator decisions since the 2026-09-16 roadmap review
+
+**How to use this file.** (1) This is the single index of operator decisions from the
+2026-09-16 roadmap review onward — `engineering_roadmap.html` (v27) has not been updated since
+2026-09-20 and no longer carries them. (2) A decision made from here on gets the next `D-NNN`
+number and is added to this file **in the same PR** as its S1 doc's own `## Decision` section —
+do not let the two drift apart again (this is exactly what happened to E-033 S1's 2026-09-22
+"readers must see ALL variants" decision, lost between slices until the 2026-09-27 delivery
+review re-found it). (3) The roadmap card a decision changes/confirms should cite the D-number
+in its own text going forward. (4) Numbering is chronological by decision date, not by when it
+was entered here. (5) A superseded decision is marked `superseded by D-xxx` and never deleted —
+the sequence of correction is itself the record.
+
+Status legend: **built** (shipped in code, flag may still be off) · **built-flag-off** (shipped,
+gated behind an off-by-default flag) · **not built** (decision recorded, no code yet) ·
+**superseded by D-xxx**.
+
+---
+
+## Grid & criteria
+
+| D-NNN | date | decision | roadmap card(s) | source | where in code | status |
+|---|---|---|---|---|---|---|
+| D-001 | 2026-09-20 | FAIL dominates the grid tie-break: if any criterion cell genuinely fails with enough data, the idea is REFUTED overall, even if another cell is INCONCLUSIVE for lack of data. Recorded as an *overnight autonomous* call awaiting Jeremy's confirmation. | card C (unanimity rule) | `engineering/roadmap/E-046b/S1_FINDINGS.md:365-369` ("Decision (operator's session, 2026-09-20, overnight autonomous)") | `strategy-research/tools/verdict_criteria_evaluator.py` ~L1640 | built (labelled OPERATOR-CONFIRMED in code before the confirmation below existed — see D-014) |
+| D-002 | 2026-09-22 | Every per-backtest control (data-availability gate, conformance checking, anything gated per-backtest) must run independently per variant, never once for the whole run; this is the explicit design principle behind slice 4b's per-variant gate loop. | card C / slice 4b | `engineering/roadmap/E-033/S1_FINDINGS.md:411-422` ("Decision (operator, 2026-09-22)") | Slice 4b per-variant `data_availability_gate` loop, `_mark_trial_invalidated(trial_id, reason)` | built |
+| D-013 | 2026-09-24 | Option (c): keep the 1a pass_rule's current checks (menu ids only, overrides from the menu entry's `card_overridable` list, K3 window_set_ref lint); the legacy B11 / CUL-267 lints stay off for menu-shaped criteria — the menu is the source of truth. Revisit menu-aware lints only if a real malformed menu-shaped rule is observed. | slice 6 / E-059 S2a | `engineering/roadmap/E-059/S2A_QUESTIONS.md:50-56` ("Decision (operator, 2026-09-24): option (c)") | `criterion_menu.yaml`, `card_overridable` allowlist | built |
+| D-014 | 2026-09-27 | **CONFIRMED** (supersedes D-001's "awaiting confirmation" status, same rule unchanged): the grid tie-break stands as built — a genuine FAIL on any cell, with sufficient data, makes the idea REFUTED even if other cells are INCONCLUSIVE. | card C | operator, 2026-09-27 session; `strategy-research/engineering/review_2026-09-27/DELIVERY_REVIEW.md` C1 (open item), confirmed in this session | `verdict_criteria_evaluator.py` ~L1640 | built |
+| D-015 | 2026-09-27 | A variant whose backtest crashes/fails for a technical reason can never contribute to a VALIDATED idea: the idea is at best INCONCLUSIVE. The failed trial is still counted (trial accounting unaffected). | card C, B4 | operator, 2026-09-27 session; `DELIVERY_REVIEW.md` B4 | not built — today the grid grades only the surviving variants and can validate on 1–2 of 3 (`run_phase1_research.py` ~L1525-1572, ~L1685) | not built |
+
+## Variants
+
+| D-NNN | date | decision | roadmap card(s) | source | where in code | status |
+|---|---|---|---|---|---|---|
+| D-003 | 2026-09-22 | Category reports and the specialist readers (slice 5b) must receive **ALL** variants' backtest results, not a single representative one — category reports/readers must become variant-aware before 5b is genuinely built; do not carry forward Slice 4a's base-only assumption. | card C, slice 5b | `engineering/roadmap/E-033/S1_FINDINGS.md:411,434-440` ("Decision (operator, 2026-09-22)", Branch 2) | **not built** — `tools/build_reports.py` has zero "variant" hits, reads only the singular `artifacts/protocol_result.yaml` (base variant) | not built (confirmed gap, `DELIVERY_REVIEW.md` B2) |
+| D-004 | 2026-09-22 | The profitability-bars stop (`_write_promotion_audit`) must check ALL variants and PASS iff at least one clears every bar — an existential quantifier across variants, not a single aggregate/base-only check. | card C, slice 4b item 9 | `engineering/roadmap/E-033/S1_FINDINGS.md:441-448` (same Decision, Branch 3) | `strategy-research/tools/protocol_resolution.py:77`; `run_phase1_research.py:7523` (`assert_promotion_ratified` / `_write_promotion_audit`) | built |
+| D-005 | 2026-09-22 | Slice 4a's singular `artifacts/protocol_result.yaml` bridge file stays as-is for consumers not yet migrated (`run_loop` conformance branch, `verdict-interpreter/SKILL.md`), but is explicitly temporary scaffolding, not the target design. | slice 4a/4b | `engineering/roadmap/E-033/S1_FINDINGS.md:450-454` | as above | built (interim) |
+| D-016 | 2026-09-27 | Variants carry their own coin, one coin per variant (card C "default one symbol per variant"; card D "asset variation on a coin from a different category") — confirmed as the intended design; the coin is a **backtest input**, not a strategy-config field. | card C, card D, B1/B5 | operator, 2026-09-27 session; `DELIVERY_REVIEW.md` B1/B5 | not built — strategy config has no symbol field (`docs/STRATEGY_DESIGN_GUIDE.md:396` "PROPOSED, NOT BUILT"); all variants share the run's protocol/coins today | not built |
+
+## Readers & ranking
+
+| D-NNN | date | decision | roadmap card(s) | source | where in code | status |
+|---|---|---|---|---|---|---|
+| D-006 | 2026-09-22 | Verdict synthesis across the 5 readers' proposals is **mechanical, not an LLM stage** — a plain deterministic function, once each reads its own report + `grid_evaluation.yaml`. The exact aggregation rule is undesigned, left to 5b-ii's own scoping. | slice 5b-ii | `engineering/roadmap/E-046a/S1_FINDINGS.md:472-493` ("Decision (operator, 2026-09-22)") | superseded — see D-009 (REALIGNMENT retired the synthesis stage entirely) | superseded by D-009 |
+| D-007 | 2026-09-23 | Synthesized artifact shape: a **NEW** clean file/schema, not the legacy `verdict_interpretation.yaml` path/shape; the 16 existing legacy readers must be individually re-pointed (5b-ii-B). | slice 5b-ii-A/B | `engineering/roadmap/E-046a/S1_FINDINGS_5B_II.md:639-648` ("Decision (operator, 2026-09-23)", item 1) | superseded — see D-009 | superseded by D-009 |
+| D-008 | 2026-09-23 | `STAGE_CONFIGS["verdict_interpreter"]` — **bypass, not delete.** Keep the entry registered, make it unreached by redirecting `STAGE_CONFIGS["protocol_execution"]["default_next"]` under the flag (same precedent as `validation`/`strategy_config_authoring`). This is the decision that stands today, superseding delivery_plan_v26.md's original "removed from STAGE_CONFIGS" text (2026-09-20). | card F, slice 5b-ii-B | `engineering/roadmap/E-046a/S1_FINDINGS_5B_II.md:639,649-652`; reconfirmed unchanged by the REALIGNMENT note on the same file | `run_phase1_research.py:186-197,833` — `STAGE_CONFIGS["verdict_interpreter"]` still present, unreached via redirected `default_next` | built |
+| D-009 | 2026-09-23 | **REALIGNMENT — supersedes D-006, D-007, and the two 2026-09-23 Decision sections in `E-046a/S1_FINDINGS_5B_II.md`.** An idea's status comes only from the **grid**; readers never decide it. Reader proposal scores only **rank the next candidate** in decide-next (confidence_real desc, distance_to_profitable desc, cost asc) — no refine/kill threshold (`S_max`). refine/pivot/escalate/kill, the per-family circuit breaker and continuation children are **retired** in slice 6c. An idea's identity is its `hypothesis_id`; the same idea on another coin is a variant, not a new family. Branch `fix/e046a-realign-retire-verdict-synthesis` reverted 5b-ii-B1 (family-at-creation) in full and removed `_synthesize_verdict`/`verdict_synthesis.schema.json`. | cards G, I; delivery_plan_v26.md slices 2, 6b, 6c | `engineering/roadmap/E-046a/S1_FINDINGS_5B_II.md:682-714` ("REALIGNMENT (operator, 2026-09-23)") | `strategy-research/tools/reader_proposals.py`, `proposal.schema.json`; readers wired to nothing yet | built |
+| D-010 | 2026-09-23 | Delete the `verdict-interpreter` skill outright once slice 5b ships — "the five specialist readers are the whole explanation layer." | slice 5b | `engineering/roadmap/E-046b/S1_FINDINGS.md:287` ("Part 5 operator decision") | superseded by D-008 (bypass, not delete — later, more specific decision, same day category) | superseded by D-008 |
+| D-017 | 2026-09-27 | "Distance to profitable" follows **card I**: 3 = fills a missing block type with low correlation to the registry; 0 = neighbour of something validated. Confirmed as the intended design (readers currently score the opposite way — see status). | card I, B3 | operator, 2026-09-27 session; `DELIVERY_REVIEW.md` B3 | not built — reader skills currently score 3 = "metric within ~25% of a pass threshold" (`readers/profitability-reader/SKILL.md:172-177`); readers cannot see the block registry | not built |
+
+## Decide-next & queue
+
+| D-NNN | date | decision | roadmap card(s) | source | where in code | status |
+|---|---|---|---|---|---|---|
+| D-011 | 2026-09-24 | Nine items accepted for decide-next/queue design: (1) a reader patch becomes a new `hypothesis_id` (`<parent>__<proposal_id>`) linked to its parent; (2) **CHANGED** — criteria are NOT inherited from the source run; every candidate goes through step 1a to write criteria coherent with the proposed idea from the criterion menu; (3) the exact-match repeat check (config hash + symbols + timeframe + protocol) is binding now, from campaign memory — the legacy digest stays informational; (4) operator-registered `ready` entries go first by priority, extra brief cards scored by 1a on the same rubric; (5) new `queued` status; (6) **DROPPED** — no lineage-depth demotion (revisit only if endless tweaking appears in real runs); (7) legacy briefs (no `brief_status`) are tagged obsolete and never trigger R2; (8) under the flag, the DONE branch writes `outcome: <idea_status>` citing `idea_status.yaml`; (9) a brief's extra hypotheses keep their `card_ref` and skip re-authoring when picked. | card K, slice 6b | `engineering/roadmap/E-059/S1_FINDINGS_6B.md:576-604` ("Decision (operator, 2026-09-24)") | `run_campaign.py`/`decide_next.py`, `docs/RUNBOOK.md` decide-next rows | built-flag-off (`orchestrator.decide_next.enabled`) |
+| D-018 | 2026-09-25 | brief-card-v1 rubric (`hypothesis-design/BRIEF_HYPOTHESES.md`) reviewed against the roadmap and judged aligned: same three scoring dimensions as reader proposals, mechanism anchors encode "who is on the other side," highest anchors require a cited measurement. Known, accepted consequence: an untested brief card usually scores lower than an evidence-backed reader proposal, so brief cards mostly run only when reader proposals run out — revisit if real runs show brief ideas never getting a turn. | slice 6b | `engineering/roadmap/E-059/S1_FINDINGS_6B.md:606-617` ("Note (2026-09-25): brief-card-v1 rubric review") | `hypothesis-design/BRIEF_HYPOTHESES.md` | built-flag-off |
+| D-012 | 2026-09-25 | The exact-match repeat check is **binding**, not merely informational (see also D-011 item 3). | card K, slice 8 | `engineering/roadmap/E-059/S1_FINDINGS_6B.md` Decision item 3; `S2A_QUESTIONS.md` option (c) confirms the same binding intent for the pass-rule side | `tools/novelty.py`, `tools/anti_adjacency_gate.py` | built-flag-off |
+
+## Routing retirement
+
+| D-NNN | date | decision | roadmap card(s) | source | where in code | status |
+|---|---|---|---|---|---|---|
+| D-019 | 2026-09-20 | `verdict_interpreter` stage removed / made unreached under the new-pipeline flag — original framing was literal `STAGE_CONFIGS` deletion. | card F | `strategy-research/engineering/delivery_plan_v26.md:315` ("Corrected 2026-09-20 (operator decision)") | superseded by D-008 (bypass, not delete, 2026-09-23) | superseded by D-008 |
+| — | 2026-09-23 | See D-008/D-009 above — routing retirement is covered by the REALIGNMENT decision, not a separate entry. | card G | — | — | — |
+
+## Holdout & profit bars
+
+| D-NNN | date | decision | roadmap card(s) | source | where in code | status |
+|---|---|---|---|---|---|---|
+| D-020 | 2026-09-24 | Under `profit_bars_every_backtest`, bars are graded on the **equal-weight portfolio** of tested coins for return and drawdown: avg daily return = mean of portfolio daily simple returns; drawdown = bar-level portfolio curve. Sharpe stays a median of per-coin medians and the trade-count floor stays worst-coin (NOT pooled). Recorded only in a yaml comment and the flag register, not a dedicated S1 Decision section. | card B (B.5/B.7) | `strategy-research/config/profitability_bars.yaml:34-37`; `strategy-research/config/feature_flag_register.yaml:200-214,456-457`; noted as found-only-in-yaml by `review_2026-09-27/A2_cards_A-G.md` B.7 | `run_phase1_research._portfolio_profit_metrics` / `_evaluate_profit_bars_every_backtest` | built-flag-off |
+| — | 2026-09-24 | NOT_EVALUABLE when coin sets differ between compared runs. | card B | same as D-020 (implied by the "COMMON DAYS" construction in `profitability_bars.yaml:44-45`) | `profitability_bars.yaml` `basis`/COMMON DAYS logic | built-flag-off |
+| D-021 | 2026-09-25 | **Guess 1 (holdout path) answered.** The holdout is reached **ONLY** through branch 3: a backtest passes every profit bar → the `profit_bars_reached` stop → the operator resumes with an operator-written `holdout_decision.yaml` (`spend` or `continue`). Branch 1 (the grid/idea status) is **knowledge enrichment and block identification only** — a `validated` idea never leads to the holdout by itself, and grid validation is NOT a precondition for the unlock (supersedes the S1 recommendation's "refused unless the idea is validated"). Guesses 2–13: no operator objection, build on the S1 defaults. | card B, slice 6c S2d | `engineering/roadmap/E-059/S1_FINDINGS_6C.md:494-508` ("Decision (operator, 2026-09-25)") | `docs/RUNBOOK.md` `profit_bars_reached` / `holdout_unlocked_awaiting_result` rows; `feature_flag_register.yaml:447-459` | built-flag-off (`orchestrator.verdict_routing_retired.enabled`) |
+| — | 2026-09-26 | Bars ratification is the operator's **manual** check; not enforced in code. | card B | `feature_flag_register.yaml:447-459` ("operator decision 2026-09-26"); `docs/RUNBOOK.md` `holdout_unlock_refused` row; `review_2026-09-27/A2_cards_A-G.md` B.5 | `config/profitability_bars.yaml` (`ratified_by`/`ratified_at`, both `null` — the loader does not check them) | built-flag-off (manual gate, not code-enforced) |
+
+## Composition
+
+| D-NNN | date | decision | roadmap card(s) | source | where in code | status |
+|---|---|---|---|---|---|---|
+| D-022 | 2026-09-26 | **Standardisation:** extend the existing history-based feature (zscore / ratio_to_mean style), no fixed computed-once scale factor (rejected — leaks the future if computed over the whole test period). Each block's post-pipeline forecast history is standardised at combination time, scale-only (mean/std of past values, never mean-subtracted so directional bias survives), then ×10 to the forecast scale's target average. | new composition epic (E-060) | `engineering/roadmap/E-060/S1_FINDINGS.md:405-415` ("Decision (operator, 2026-09-26)", item 1) | PR #222 `a809ac61` (rolling scale-only standardisation) | built-flag-off |
+| D-023 | 2026-09-26 | **Weighting schemes**, computed by code: (a) equal; (b) inverse volatility of each block's stand-alone returns; (c) proportional to residual IC. | E-060 | `S1_FINDINGS.md:416-418`, item 2 | PR #222 | built-flag-off |
+| D-024 | 2026-09-26 | **Timeframe categories:** high = ≤15min; medium = >15min, <1h; low = 1h–<1day; daily = ≥1day. Categories decide which blocks are candidates together; until the engine supports mixed bar sizes, composition combines only blocks with the SAME exact bar size. Each block's exact timeframe is recorded in the registry. | E-060 | `S1_FINDINGS.md:419-423`, item 3 | registry timeframe field | built-flag-off |
+| D-025 | 2026-09-26 | **Regime blocks are validated on regime-identification quality** (their own accuracy/stability metrics in the grid), not on profitability. "Gated vs ungated" is only a composition question, not the block's validation — deferred to a later sub-step (proposed S5), behind its own flag. | E-060, card (regime blocks) | `S1_FINDINGS.md:424-427`, item 4 | not yet built (S5 proposed, `criterion_menu.yaml:96-105` `gated_beats_ungated` commented out) | not built |
+| D-026 | 2026-09-26 | **Residual-IC threshold** kept as an operator-adjustable placeholder: `> 0.01` with `n_eff >= 30`; the orchestrator noted `0.02` may better match "genuinely useful." Ratify before switching `composition_runs` on. | E-060 | `S1_FINDINGS.md:428-429`, item 5 | `strategy-research/config/criterion_menu.yaml:107-134` (`code_added_criteria.residual_ic`, marked PLACEHOLDER, UNRATIFIED) | built-flag-off (unratified placeholder) |
+| — | 2026-09-26 | Priority as recommended (guess 10); no further detail recorded beyond acceptance. | E-060 | `S1_FINDINGS.md:430`, item 6 | — | built-flag-off |
+
+## Repeat check & outside ideas (slice 8)
+
+| D-NNN | date | decision | roadmap card(s) | source | where in code | status |
+|---|---|---|---|---|---|---|
+| D-027 | 2026-09-27 | All five S1 recommendations accepted ("Go"): (1) **No NEIGHBOUR** — `layer2_digest_check` returns binary REPEAT/NOVEL only, no family/similarity tier; (2) **one key, one source** — the exact-match key is decide_next's `(forecast_hash, sorted(symbols), timeframe, protocol_ref)` read from `campaign_memory.yaml` through one shared pure function used by both `decide_next.py` and the 5a gate — no second hash formula; (3) the idea-writing prompt input is repointed to the same campaign-record information, no family grouping, declared as a live prompt-text change; (4) Layer 1 (KB reactivation) is **advisory only** — it warns, never refuses; (5) build the exact-match check and the E-035 feed-acquisition lane now; the automated external-knowledge dispatch gets its own S1 later, the manual operator-brief path already works. | card K, slice 8 | `engineering/roadmap/E-036/S1_FINDINGS_SLICE8.md:399-424` ("Decision (operator, 2026-09-27)") | `strategy-research/tools/novelty.py`; PR #226/#227/#228 (E-036 S2a/S2b, E-035 S2c) | built-flag-off (`orchestrator.variant_anti_adjacency_gate.enabled` off; S2b replay is read-only) |
+| — | 2026-09-27 | `variant_anti_adjacency_gate`'s default switch-on happens only after the read-only corpus replay (S2b) has published refuse/admit counts and reported them to the operator — S2a ships the gate with the flag still off. | slice 8 | `S1_FINDINGS_SLICE8.md:420-424` (Sequencing note, same Decision) | S2b done (`#227`, read-only replay: 0 REPEAT under live rules on the old corpus) | built-flag-off |
+
+## Process / infra
+
+| D-NNN | date | decision | roadmap card(s) | source | where in code | status |
+|---|---|---|---|---|---|---|
+| D-028 | 2026-09-23 | 7 "Guesses for the operator" all accepted for the grid-based KB writer (slice 6a/E-058): register blocks only when `block_manifest.yaml` exists; **new** grid-based KB writer (`legacy_schema: false`), not `_write_kb_findings_entry` kept in parallel as the plan's literal text said; no backfill of old runs; `profit_bars: null` for now; scoreboard learns `grid_evaluation.yaml`, output location unchanged; component-error runs recorded as an engineering fault with no registry/KB entry; memory entry replaced on re-run, registry append-only and stops loudly on conflict. | card (KB / near-miss scoreboard) | `engineering/roadmap/E-058/S1_FINDINGS.md:364-374` ("Decision (operator, 2026-09-23)") | `strategy-research/tools/grid_kb_writer.py`, called from `regroup_record` (`run_phase1_research.py:9060`) | built |
+| D-029 | 2026-09-27 | CUL-336: stage agents run **closed-book** — `tools=[]`, `setting_sources=[]`, `strict_mcp_config=True` at the one `ClaudeAgentOptions` construction site (`_stage_agent_options`). Declared default behaviour change (no flag, no flag-off byte-identity): every stage loses default CLI tools, settings files, CLAUDE.md and MCP servers. Required per-stage file inputs (e.g. `config/cost_model.yaml`, `config/coin_universe.yaml`, `quant-fundamentals/SKILL.md`) are now delivered explicitly via `_apply_closed_book_inputs`. | (infra / safety, not a roadmap card) | commit `58922181` "fix(CUL-336): stage agents run closed-book"; `SESSION_LOG.md` 2026-09-27 entry | `strategy-research/workflow/run_phase1_research.py::_stage_agent_options`, `_apply_closed_book_inputs`; branch `fix/cul-336-closed-book-stages` (**not yet merged to master** as of this writing) | built (on an unmerged branch) |
+| D-030 | 2026-09-27 | A consolidated decision log (this file) is the single index of operator decisions; the roadmap becomes v28 only once delivery plan v2 is approved. | (process) | operator, 2026-09-27 session | `strategy-research/engineering/DECISION_LOG.md` (this file) | built |
+
+---
+
+## Decisions without a written source
+
+The following items were named as decided in this session's brief but could not be matched to a
+recorded decision text in the repository. They are listed here rather than invented a source for:
+
+- **A settings deny rule for `Read` on `local_data/holdout_sealed/`.** `SESSION_LOG.md`'s
+  2026-09-27 next-session prompt poses this as an **open question** ("...and whether to add a
+  settings deny rule for Read on local_data/holdout_sealed/") alongside the CUL-336 fix — it is
+  not resolved to a yes/no in any doc found, and the CUL-336 commit (`58922181`) touches no
+  `.claude/settings.json` file. Do not read this file as confirming the rule was adopted.
+- **CUL-335 ("keep in backlog, do before first real holdout spend").** CUL-335 is filed
+  (`SESSION_LOG.md` 2026-09-27: "CUL-335 (machine-owned consume ledger follow-up)") but its
+  disposition — backlog vs. now, and the "before first real holdout spend" framing — is listed
+  as an **open operator decision** in the same session's next-session prompt, not a resolved one.
+- **E-035 S1 guesses** (R3 trigger from decide_next's stop; model-knowledge-only first, no web;
+  mechanism-only lint; one dispatch per campaign; repeat gate on first; an operator-written
+  `config/external_brief_template.md`). `engineering/roadmap/E-035/S1_FINDINGS.md` has no
+  `## Decision` section as of this checkout; these are listed as **open** in `SESSION_LOG.md`'s
+  2026-09-27 next-session prompt, item 2.
+- **When to switch on the new-pipeline flag set for real runs** (run budgets: E-059 S4 two-run
+  proof, E-060 S4 first composition run, slice 8.2's one external idea). Also listed as an open
+  item in the same next-session prompt (item 4), not yet resolved.
+
+## Conflicts found between sources
+
+- **`verdict_interpreter`'s fate** is stated three different ways across the corpus, in
+  chronological order: (1) `delivery_plan_v26.md:315` "Corrected 2026-09-20 (operator decision)":
+  removed from `STAGE_CONFIGS` outright (D-019); (2) `E-046b/S1_FINDINGS.md:287` "Part 5 operator
+  decision": "delete it" (D-010); (3) `E-046a/S1_FINDINGS_5B_II.md:649-652` "Decision (operator,
+  2026-09-23)": "bypass, not delete — keep the entry registered, make it unreached" (D-008),
+  reconfirmed by the same file's REALIGNMENT section. **(3) is the decision that stands** — it is
+  the latest, most specific, and matches the code (`STAGE_CONFIGS["verdict_interpreter"]` is
+  still present and registered). (1) and (2) are recorded above as superseded, not deleted.
+  `review_2026-09-27/A1_slices_4-5.md` (row 5b.4, finding 4) independently flags that the plan's
+  own prose was never annotated to reflect this correction.
+- **The FAIL/INCONCLUSIVE tie-break's confirmation status** is inconsistent across docs written
+  the same day it was reportedly confirmed: `C1` in `DELIVERY_REVIEW.md` (2026-09-27) still
+  describes it as "labelled OPERATOR-CONFIRMED in code, but its record says it was an overnight
+  autonomous call awaiting Jeremy's confirmation" — i.e. as of the review, still unconfirmed in
+  writing. This session's operator confirmation (D-014) resolves that gap going forward, but the
+  review document itself predates it and should not be read as already reflecting D-014.
+
+## Decisions pending (placeholder values awaiting operator sign-off)
+
+- **Profit bars** (`strategy-research/config/profitability_bars.yaml`): every numeric threshold
+  (`sharpe_min`, `max_drawdown_pct_max`, `avg_daily_return_min`, `trade_count_min`,
+  `deflated_sharpe_threshold`) is marked "DRAFT — NOT RATIFIED" in the file's own header;
+  `ratified_by`/`ratified_at` are both `null`. Per D-021, ratification is a manual operator check,
+  not code-enforced — these must be signed off before any `profit_bars_reached` stop is trusted
+  for a real decision (`DELIVERY_REVIEW.md` C2).
+- **Residual-IC thresholds** (`strategy-research/config/criterion_menu.yaml`
+  `code_added_criteria.residual_ic`): `threshold: 0.01` and the one-sided p-value cutoff are both
+  marked PLACEHOLDER, UNRATIFIED (D-026). The orchestrator's own note flags `0.02` as a candidate
+  replacement for "genuinely useful." Ratify before `orchestrator.composition_runs.enabled` goes
+  on for a real run.
+- **Cost criterion** (`realized_edge_to_cost_ratio > 0.3`): lets gross edge cover only 30% of
+  fees, short of card E's "survives 2× costs" framing (`DELIVERY_REVIEW.md` C3). No operator
+  ratification recorded either way.
