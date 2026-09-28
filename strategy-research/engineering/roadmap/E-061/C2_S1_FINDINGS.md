@@ -502,6 +502,33 @@ configs, argv and trial rows). One module, `tools/variant_coin.py`.
   asset (the 2-era floor). The Step-2 injected context (base coin, windows, earliest date per
   coin) is not built; Step 2 still sees only `coin_universe.yaml`.
 
+### S2c built (branch `feat/c2-s2c-variant-shape`)
+
+C2.5 / G12, under `orchestrator.variant_loop` and only when `variant_patches.yaml` declares
+`kind`/`symbol` (S2b's per-coin mode); composition runs exempt (G4). Flag off, a legacy file and
+composition runs route exactly as before (`tests/test_e061_c2_s2c_variant_shape.py`).
+
+- **Shape** (`tools/variant_coin.check_variant_shape`): 3-4 variants, unique safe ids, exactly one
+  `base`, >= 1 `design`, 1-2 `asset`; G4: a `symbols` key or a list in `symbol` is refused; each
+  entry reuses `resolve_variant` -- a `variant_coin:` refusal is a shape problem. **Not** a shape
+  problem: an asset refused only for coverage. D-042 (binding, after G12 was written) makes it
+  untested with the idea at best inconclusive, "instead of blocking the whole idea", which 5a and
+  the grid already do; G12's "incl. the Layer-1 coverage precheck" predates D-042.
+- **Where:** right after Step 2 (`_route_variant_shape_check`), and again at the top of 5a's route
+  (`_route_variant_step2_outputs`: the shape, then 5a's config errors -- a patch that does not
+  apply, unresolved manifest paths, a V-code other than a genuinely missing class, a
+  `variant_coin:` refusal), before the repeat gate. A V12 missing class, a repeat skip and a
+  coverage skip are not config errors.
+- **Retry / pause:** one retry of Step 2 per run, shared by both checks
+  (`pipeline_state.yaml` → `variant_shape_retry: {attempts, last_check, last_error, history}`,
+  reset to 0 once 5a's route accepts the variants); the error reaches Step 2 as
+  `injected_context.variant_shape_error`. A second failure pauses `variant_shape_invalid` or
+  `variant_config_error` (`run_campaign` classifier + table, RUNBOOK §3 rows, §4 reset list).
+- **Floor:** with the data gate off, 5a's route applies the gate's floor of 3 (`_variant_floor`,
+  the gate's former inline computation, shared).
+- **Not built:** a step-2 output with no `kind`/`symbol` at all reads as legacy and is not
+  checked (the per-coin-mode flag rule).
+
 ---
 
 ## C2.5 — Variant shape (card D; review A5)
