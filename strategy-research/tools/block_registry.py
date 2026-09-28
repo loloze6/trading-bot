@@ -214,6 +214,17 @@ def build_block(run_dir: Path, entry: dict, manifest: dict, *, root: Path,
     """One registry entry (pure apart from reading the base config, and under
     composition_runs artifacts/residual_ic.yaml)."""
     run_id = entry["run_id"]
+    # E-061 C2 S2a (D-015): a crashed variant can never be part of a validated
+    # idea, so a grid column whose variant is not `tested` in the memory (a
+    # failed_variants column) must never reach a registered block. Unreachable
+    # through the grid (its not_graded cells are INCONCLUSIVE, so the idea is
+    # not validated); refused loudly here in case a memory entry says otherwise.
+    untested = [v for v in (entry.get("grid") or {}).get("variants") or []
+                if ((entry.get("variants") or {}).get(v) or {}).get("status") != "tested"]
+    if untested:
+        raise BlockRegistryError(f"{run_id}: grid column(s) {untested} are not tested variants "
+                                 f"but the idea is validated -- a crashed variant never "
+                                 f"validates an idea (D-015); inconsistent memory entry")
     vid, info = _base_variant(entry)
     cfg_path = Path(root) / info["config_ref"]
     if not cfg_path.exists():

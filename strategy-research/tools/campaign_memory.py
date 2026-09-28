@@ -568,7 +568,8 @@ def build_memory_entry(run_dir: Path, run_id: str, *, trial_sharpes, categories,
         raise CampaignMemoryError(f"{grid_path}: idea_status={grid_doc.get('idea_status')!r} "
                                   f"disagrees with idea_status.yaml ({idea_status!r})")
     grid = _grid_block(run_id, grid_doc, grid_path)
-    variants = _variants_block(run_dir, run_id, grid["variants"], trials)
+    variants = _variants_block(run_dir, run_id, grid["variants"], trials,
+                               _grid_failed_variants(grid_doc, grid["variants"], grid_path))
 
     entry = {
         "run_id": run_id,
