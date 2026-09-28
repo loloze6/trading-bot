@@ -510,14 +510,15 @@ flags:
     reader: run_phase1_research._composition_runs_enabled
     owner: Jeremy
     state: off_incomplete
-    blocked_on: "E-060 S4 (the first real composition run needs two blocks validated by real runs) and the operator's ratification of the residual_ic placeholder threshold in config/criterion_menu.yaml; its prerequisite flags (decide_next, variant_loop, profit_bars_every_backtest, verdict_routing_retired) are themselves off"
+    blocked_on: "E-060 S4 (the first real composition run needs two blocks validated by real runs) and the operator's ratification of the residual_ic D-039 threshold in config/criterion_menu.yaml; its prerequisite flags (decide_next, variant_loop, profit_bars_every_backtest, verdict_routing_retired) are themselves off"
     criterion: >
       Landed 2026-09-26 (E-060 S2, delivery_plan_v26.md slice 7 item 7.1;
       engineering/roadmap/E-060/S1_FINDINGS.md + operator decision
       2026-09-26). Off by default; raises if set true without decide_next,
       variant_loop, profit_bars_every_backtest and verdict_routing_retired.
-      While true: the code-added residual_ic criterion (> 0.01 with one-sided
-      p < 0.05, n_eff >= 30, unratified placeholders) joins every forecast-block idea's pass_rule at
+      While true: the code-added residual_ic criterion (> 0.02 with one-sided
+      p < 0.05, n_eff >= 30; D-039 values, awaiting operator ratification --
+      `ratified: false` in config/criterion_menu.yaml) joins every forecast-block idea's pass_rule at
       1a; protocol_execution computes the residual IC per variant against the
       current composite (tools/residual_ic.py, tools/composite_cache.py:
       none / one block / a recorded composition / STALE -> INCONCLUSIVE; not

@@ -40,6 +40,12 @@ criteria:
     # profitability_bars.yaml), which grades every backtest under
     # orchestrator.profit_bars_v2; this menu entry stays optional for step 1a
     # (E-062 S1 G7).
+    # Same numbers, NOT the same definition as that profit bar: this menu
+    # criterion reads run_protocol's ratio rounded to 4 dp over all trades, and
+    # its min_trades floor (sum of core.trade_count) counts end_of_window forced
+    # closes; the bar takes
+    # min(all trades, non-forced trades), unrounded, with its floor on
+    # non-forced trades only (tools/portfolio_whole_test.pooled_edge_to_cost_ratio).
     threshold: 2.2
     # E-059 S2a: fields a hypothesis card may override when step 1a picks
     # this entry (run_phase1_research._write_pass_rule_from_card refuses any
