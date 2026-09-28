@@ -71,10 +71,10 @@ The stubs are realistic, not permissive:
 Finding -> test (see each marker's reason for the pinned failure):
   A1 (C1.2)  test_a1_config_direct_handoffs_reach_protocol_execution
   A2 (C1.3)  test_a2_protocol_execution_never_passes_a_missing_validation_protocol
-  A4 (C1.4)  test_a4_uncaught_stage_exception_is_a_classified_pause
-  A6 (C1.5)  test_a6_generic_promotion_protocol_refused_before_any_llm_call
+  A4 (C1.4)  test_a4_uncaught_stage_exception_is_a_classified_pause       (fixed, no marker)
+  A6 (C1.5)  test_a6_generic_promotion_protocol_refused_before_any_llm_call (fixed, no marker)
   A7 (C1.6)  test_a7_era_id_handles_the_open_ended_last_era
-  A8 (C1.5)  test_a8_flag_misconfiguration_refused_before_any_llm_call[*]
+  A8 (C1.5)  test_a8_flag_misconfiguration_refused_before_any_llm_call[*] (fixed, no marker)
   A5 (pin)   test_a5_one_variant_failing_validate_config_pins_the_pause
   B2 / A3 §3.4 (C2.2)
              test_b2_category_reports_carry_trade_and_bar_slices
@@ -1172,12 +1172,9 @@ def test_a2_protocol_execution_never_passes_a_missing_validation_protocol(harnes
 # A4: an uncaught stage exception
 # ---------------------------------------------------------------------------
 
-@pytest.mark.xfail(strict=True, raises=PinnedFailure, reason=(
-    "E-061 C1.4 (A4). Pinned on master: an exception raised at run_loop's input check "
-    "(ensure_files, outside its try) escapes run_loop and process_once uncaught -- "
-    "FileNotFoundError: E-061 injected: stage input missing -- no classified pause, no "
-    "halt_history, the queue entry stays in_progress and a restart re-crashes."))
 def test_a4_uncaught_stage_exception_is_a_classified_pause(harness, monkeypatch):
+    """Fixed by E-061 C1.4 (was strict-xfail on master: the injected FileNotFoundError
+    escaped run_loop and process_once uncaught)."""
     h = harness.build()
     h.register_brief()
     real = rpr.ensure_files
@@ -1233,12 +1230,9 @@ def _assert_classified_refusal(h: Harness, ret, exc, *needles: str) -> None:
         assert needle in detail, (needle, detail[-2000:])
 
 
-@pytest.mark.xfail(strict=True, raises=PinnedFailure, reason=(
-    "E-061 C1.5 (A6, D-3). Pinned on master: the pinned protocol's generic, unratified "
-    "promotion block is only checked at its first _resolve_protocol_path (5a), so 1a, 1b "
-    "and 2 are spent first: 3 LLM calls [hypothesis_generation, strategy_config_authoring, "
-    "innovation_expansion] (then the A1 FileNotFoundError escapes at 5a)."))
 def test_a6_generic_promotion_protocol_refused_before_any_llm_call(harness):
+    """Fixed by E-061 C1.5 (was strict-xfail on master: the D-3 check ran only at its
+    first _resolve_protocol_path, 5a, after 1a/1b/2 had spent)."""
     h = harness.build(promotion=dict(rpr._GENERIC_PROMOTION))
     h.register_brief()
     ret, exc = _drive(h)
@@ -1249,21 +1243,12 @@ def test_a6_generic_promotion_protocol_refused_before_any_llm_call(harness):
     _assert_classified_refusal(h, ret, exc, PROTOCOL_NAME, "promotion", "ratified")
 
 
-@pytest.mark.parametrize("case", [
-    pytest.param("lazy_dependency", marks=pytest.mark.xfail(
-        strict=True, raises=PinnedFailure, reason=(
-            "E-061 C1.5 (A8). composition_runs on without variant_loop. Pinned on master: "
-            "accepted at launch; step 1a is spent (1 LLM call), then "
-            "_write_pass_rule_from_card's _composition_runs_enabled() raises "
-            "'orchestrator.composition_runs.enabled=true requires "
-            "orchestrator.variant_loop.enabled=true'."))),
-    pytest.param("quoted_boolean", marks=pytest.mark.xfail(
-        strict=True, raises=PinnedFailure, reason=(
-            "E-061 C1.5 (A8). grid_evaluation.enabled: \"false\" (quoted). Pinned on "
-            "master: the non-strict reader reads bool('false') == True, the run launches "
-            "and spends 1a/1b/2 (3 LLM calls) before the A1 crash at 5a."))),
-])
+@pytest.mark.parametrize("case", ["lazy_dependency", "quoted_boolean"])
 def test_a8_flag_misconfiguration_refused_before_any_llm_call(harness, case):
+    """Fixed by E-061 C1.5. Was strict-xfail on master: lazy_dependency (composition_runs
+    on without variant_loop) spent 1a before _write_pass_rule_from_card raised;
+    quoted_boolean (grid_evaluation.enabled: "false") read bool('false') == True and
+    spent 1a/1b/2 before the A1 crash at 5a."""
     if case == "lazy_dependency":
         h = harness.build(flags={**TARGET_FLAGS, "variant_loop": False})
         culprit = "variant_loop"

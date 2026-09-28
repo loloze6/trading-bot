@@ -114,6 +114,8 @@ from pathlib import Path
 
 import yaml
 
+from abandoned_launch import is_abandoned_launch  # tools/ sibling (E-061 C1.4)
+
 STRATEGY_RESEARCH_ROOT = Path(__file__).resolve().parent.parent
 
 # --- failure-mode buckets, carried forward from
@@ -766,8 +768,10 @@ def build_scoreboard(runs_dir: Path):
     of failing the whole board (E-058 S2b review fix 3): one broken,
     unrelated run must not hide the rest, and never fails the stage."""
     runs_dir = Path(runs_dir)
+    # E-061 C1.4: a run dir a failed launch abandoned gets no row.
     run_dirs = sorted(
-        d for d in runs_dir.iterdir() if d.is_dir() and d.name.startswith("run_")
+        d for d in runs_dir.iterdir()
+        if d.is_dir() and d.name.startswith("run_") and not is_abandoned_launch(d)
     )
     rows = []
     for d in run_dirs:

@@ -3090,6 +3090,94 @@ and status `queued` (never auto-picked).
 - **A picked card whose file is missing** pauses its entry
   (`paused:queued_card_missing`) before any run dir is created.
 
+**Launch pre-flight and the stage-exception pause (E-061 C1.4 / C1.5).** Every
+refusal below is a classified pause -- `paused:<reason>` on the entry, a `HALT`
+line naming the culprit, a `halt_history` record when a run exists, and
+`process_once` returning False -- never a crashed campaign process that a
+restart re-crashes, and never after an LLM call. `docs/RUNBOOK.md` §3 has one
+row per reason with its resolution.
+
+1. **Flags, on every step, before anything launches** (`_flag_preflight`):
+   `config/campaign_config.yaml` is parsed once and handed to every real flag
+   reader (`_flag_readers`; each reader takes an optional parsed `cfg`, so the
+   readers are the single source of the rules and `process_once` takes its own
+   schedulability / decide_next / verdict-routing values from that one
+   reading). Every `orchestrator.<name>.enabled` and
+   `halt_policy.quarantine_enabled` must be a real YAML boolean (a quoted
+   `"false"` or a null is refused, every offending key named), and every flag
+   dependency must hold -- each reader's own chain, plus the edges once
+   enforced only after spend (A3 §1): `variant_loop` → `config_direct_authoring`,
+   `composition_runs` → `decide_next` + `variant_loop` +
+   `profit_bars_every_backtest` + `verdict_routing_retired`, and
+   `variant_anti_adjacency_gate` → `regroup_record` while
+   `campaign_memory.yaml` does not exist (→ `variant_selection_record` on the
+   legacy path). Refused: `paused:flag_misconfiguration`, before `setup_run`
+   for a fresh entry. `--resume` re-runs the check. The seven readers that used
+   plain `bool()` (`grid_evaluation`, `category_reports`, `profit_bars_file`,
+   `exclusion_digest_input`, `stale_input_path_fix`, `variant_selection_record`,
+   `variant_anti_adjacency_gate`) and `schedulability_block` now use the one
+   strict check (`_strict_orchestrator_flag`); an unquoted boolean or a missing
+   key reads exactly as before. `register` reads `decide_next`'s own value
+   only, so a misconfigured prerequisite is refused here, not by a crash at
+   registration.
+2. **The protocol the run will execute, before `run_loop`**
+   (`_protocol_preflight`): a `machine_constraints.protocol_ref` pin, or --
+   with neither pin nor generated protocol -- the protocol
+   `tools/protocol_resolution.resolve_protocol_path` selects from
+   `run_context.yaml` or a claimed `campaign_state.last_escalation` (no state
+   write), must pass the D-3 guard (`assert_promotion_ratified`) -- previously
+   first checked at 5a, after 1a/1b/2. For a generated protocol
+   (`machine_constraints.protocol`, `_generated_protocol_plan`) spend is
+   checked FIRST: once data may have been spent on the run (a trial row, any
+   `protocol_result*`, or `protocol_execution` ever entered) the expected
+   protocol is never rebuilt and nothing is regenerated -- only the existing
+   generated file gets the D-3 check (a missing one is refused; after
+   `protocol_execution` completed nothing is checked). Before any spend it
+   must be generatable from `pre_registration.yaml`
+   (`_expected_generated_protocol` raises exactly where generation raises;
+   refused otherwise, before anything is touched), and only a
+   `promotion`-only difference from the file is regenerated
+   (`_regenerate_protocol`: temp file + `os.replace`, the fields logged) -- a
+   `windows` / `symbols` / `timeframe` / `holdout` difference is refused.
+   Refused: `paused:protocol_promotion_unratified`, the run `paused_for_human`
+   with the reason in `last_error`.
+3. **An exception escaping `run_loop`** (or the step in 2): the split /
+   queued-card bookkeeping runs (if it fails too, the queue is re-read from
+   disk, missing split siblings are re-added, and a paused entry no longer in
+   the file is never saved back), then the run is `paused_for_human` with
+   `last_error: "<Type>: <message>"` and `flags.stage_exception: true`, the
+   entry `paused:stage_exception`. **An exception while launching** (the
+   brief, `setup_run`, the materialization and its lints, the brief context,
+   the queued card): `paused:launch_exception`; the entry is restored to its
+   pre-launch state and records `launch_failed_run_id` (or null),
+   `launch_exception_detail` and `launch_prior_status`; a run dir already
+   created is marked `status: abandoned_launch` (known to `reconcile_orphans`,
+   skipped by every `runs/run_*` knowledge scanner -- the exclusion digest, the
+   near-miss scoreboard, the replay repeat gate -- never added to `run_ids`);
+   `--resume` relaunches the entry with its pre-launch status.
+   `KeyboardInterrupt` / `SystemExit` pass through. Exceptions after
+   `run_loop` returned (the DONE branch's decide-next) still propagate: that
+   path is retryable by design.
+4. **Classification and un-pausing**: the three run flags (`stage_exception`,
+   `protocol_promotion_unratified`, `launch_exception`) rank above the
+   artifact-based reasons in `_classify_human_pause` (a fresh halt wins over an
+   old artifact), and every un-pause path (`--resume`, `--unpark`,
+   `resume_pipeline`) clears them (a stale one never masks a later holdout
+   step). The `data_block_hitl` resume reads `human_resolution.yaml` first,
+   inside the classified handling (a malformed file keeps the entry
+   `paused:data_block_hitl`): anything but `resolved_proceed` only closes the
+   run (no pre-flight). `resolved_proceed` runs 1 and 2 (and a pre-spend
+   regeneration) before `resume_pipeline`; a refusal -- or an exception in
+   them -- keeps the entry `paused:data_block_hitl` (the error in
+   `last_error`, a HALT line), and an exception from `resume_pipeline` itself
+   is a `stage_exception` pause (schedulability.yaml still written when its
+   block is on).
+
+With a valid flag set and a ratified (or no pre-registered) protocol, 1 and 2
+are read only and the step is unchanged (the one write is regenerating, before
+any spend, a generated protocol whose promotion block alone was changed in its
+pre-registration).
+
 ### `tools/fragment_patterns.py` — Ideation-Only Fragment Diagnostics
 
 Computes `fragment_patterns.yaml` from a completed [run](#g-run)'s `trades.json`/`bars.csv`:

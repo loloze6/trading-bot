@@ -62,6 +62,8 @@ from pathlib import Path
 
 import yaml
 
+from abandoned_launch import is_abandoned_launch  # tools/ sibling (E-061 C1.4)
+
 _HERE = Path(__file__).resolve().parent          # strategy-research/tools/
 _SR = _HERE.parent                                # strategy-research/
 
@@ -334,8 +336,9 @@ def scan_run_triples(runs_dir: Path) -> dict:
     families: dict[str, dict] = {}
     skipped: list[dict] = []
 
+    # E-061 C1.4: a run dir a failed launch abandoned is not campaign knowledge.
     run_dirs = sorted(
-        (p for p in runs_dir.glob("run_*") if p.is_dir()),
+        (p for p in runs_dir.glob("run_*") if p.is_dir() and not is_abandoned_launch(p)),
         key=lambda p: p.name,
     )
     scanned = 0
