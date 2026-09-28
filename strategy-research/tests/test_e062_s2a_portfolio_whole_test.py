@@ -340,16 +340,18 @@ def test_first_window_head_and_bounds_misuse():
     with pytest.raises(NE, match="coins start on different days") as ei:
         pw.chain_windows(two, ["A", "B"], _bnd(w0=(0, 20)))
     assert "('w0', 'B', 2020-01-01)" in str(ei.value)
-    # data before the given start / after the given end: wrong bounds
+    # data before the given start / after the given end: the data does not fit
+    # the window -- NOT_EVALUABLE, never a crash of the grading (S2b-1 fix M1)
     for b in (_bnd(w0=(2, 20)), _bnd(w0=(1, 19))):
-        with pytest.raises(ValueError, match="nominal (start|end)") as ei:
+        with pytest.raises(NE, match="nominal (start|end).*does not fit the window"):
             _chain(wins, ["X"], b)
-        assert not isinstance(ei.value, NE)
-    # a start far before the first recorded day: a manifest (prefetch) start
+    # a start far before the first recorded day: missing/late head data (or a
+    # manifest's prefetch start) -- NOT_EVALUABLE naming every missing head cell
     far = {"w0": {"X": _bars(10, [100.0] * 11)}}
-    with pytest.raises(ValueError, match="manifest's start .*warm-up prefetch") as ei:
+    with pytest.raises(NE, match="missing or late head data .*warm-up prefetch") as ei:
         pw.chain_windows(far, ["X"], _bnd(w0=(0, 20)))
-    assert not isinstance(ei.value, NE)
+    assert "10 missing (window, coin, day) cell(s)" in str(ei.value)
+    assert "('w0', 'X', 2020-01-01)" in str(ei.value)
     ch = pw.chain_windows(far, ["X"], _bnd(w0=(0, 20)), warmup_days=10)  # declared warm-up
     assert ch["n_engine_head_days"] == 10
     with pytest.raises(ValueError, match="exactly the windows' labels"):

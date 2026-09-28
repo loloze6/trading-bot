@@ -38,7 +38,8 @@ import golden_harness  # noqa: E402
 
 from test_e058_s2a_regroup_record import (  # noqa: E402
     ALL_ON, RUN_ID, _seed, _set_orchestrator, _minimal_run_at)
-from test_profit_bars_every_backtest import _seed_dsr_ledger  # noqa: E402
+from test_e058_s2a_regroup_record import _grid  # noqa: E402
+from test_profit_bars_every_backtest import VARIANT_LOOP_ON, _seed_dsr_ledger  # noqa: E402
 
 PB = {"profit_bars_file": {"enabled": True}, "profit_bars_every_backtest": {"enabled": True}}
 FULL_ON = {**ALL_ON, **PB}
@@ -141,16 +142,19 @@ def _trade(sym, win, reason, rr, cost):
 
 def _build(out_dir: Path, *, coins=("BTCUSDT",), windows=(W1, W2), strat=_default_strat,
            price=-0.001, n_signal=59, n_eow=1, rr=0.45, cost=15.0, trades_file=True,
-           protocol=True, protocol_windows=None, tail=1, manifest=True, n_per_coin=None) -> dict:
+           protocol=True, protocol_windows=None, tail=1, manifest=True, n_per_coin=None,
+           head=0) -> dict:
     """A protocol_result whose windows, equity/close files, manifests, trade
-    records and protocol JSON all exist. Defaults clear every v2 bar."""
+    records and protocol JSON all exist. Defaults clear every v2 bar. `head`:
+    days of recorded data missing at the FIRST window's test start."""
     out_dir.mkdir(parents=True, exist_ok=True)
     results, trades = [], []
     for sym in coins:
         ns = (n_per_coin or {}).get(sym, n_signal)
-        for lab, s, e in windows:
+        for k, (lab, s, e) in enumerate(windows):
             wid = f"{out_dir.name}-{sym}-{lab}"
-            _write_window(out_dir, wid, s, e - timedelta(days=tail), label=lab, strat=strat,
+            _write_window(out_dir, wid, s + timedelta(days=head if k == 0 else 0),
+                          e - timedelta(days=tail), label=lab, strat=strat,
                           price=price, manifest=manifest)
             results.append({"symbol": sym, "window": lab, "run_id": wid,
                             "core": {"trade_count": ns + n_eow, "sharpe": 1.0}})
@@ -496,6 +500,55 @@ def test_engine_tail_beyond_the_limit_is_not_evaluable(tmp_path):
     rows, _o, _r, _x = _rows(_build(run_dir, tail=7), run_dir)
     for name in CHAIN_ROWS:
         _assert_not_evaluable(rows[name], "max_engine_tail_days")
+
+
+def test_m1_head_data_hole_beyond_warmup_is_not_evaluable(tmp_path):
+    """Fix M1: the only coin misses its first 3 test days (> warmup_days=2):
+    the chain rows read NOT_EVALUABLE naming the missing head cells; the trade
+    rows are still graded."""
+    run_dir = tmp_path / "run"
+    rows, overall, _r, _x = _rows(_build(run_dir, head=3), run_dir)
+    for name in CHAIN_ROWS:
+        _assert_not_evaluable(rows[name], "missing or late head data")
+        assert "3 missing (window, coin, day) cell(s)" in rows[name]["not_evaluable_reason"]
+    assert rows["trade_count_min"]["result"] == rows["cost_edge_ratio_min"]["result"] == "PASS"
+    assert overall == "FAIL"
+    rows2, _o, _r, _x = _rows(_build(tmp_path / "run2", head=2), tmp_path / "run2")
+    assert rows2["sharpe_min"]["result"] == "PASS"  # 2 days: the engine head gap, accepted
+
+
+def test_m1_one_variant_head_hole_does_not_abort_the_other_variants():
+    """Fix M1 end to end: `design`'s coin misses its first 3 test days. Its
+    chain rows read NOT_EVALUABLE, `base` is graded on its own numbers, and the
+    evaluation is written -- no exception aborts the grading of every variant."""
+    _set_orchestrator({**V2_ON, **VARIANT_LOOP_ON})
+    _write_bars(V2_BARS)
+    _write_cost_model()
+    run_dir = _seed(variant_loop=True)
+    arts = run_dir / "artifacts"
+    vids = ["base", "design"]
+    rpr.save_yaml(arts / "variants" / "index.yaml", {"variants": {
+        v: {"status": "validated", "config_path": f"artifacts/variants/{v}/strategy_config.json"}
+        for v in vids}})
+    for v in vids:
+        rpr.save_yaml(arts / "variants" / v / "protocol_result.yaml",
+                      _build(run_dir / "variants" / v, head=3 if v == "design" else 0))
+    grid = _grid(vids, "refuted")
+    rpr.save_yaml(arts / "grid_evaluation.yaml", grid)
+    rpr.save_yaml(arts / "idea_status.yaml", rpr._build_idea_status_artifact(grid, RUN_ID))
+    rpr.save_yaml(rpr.CAMPAIGN_STATE_PATH, {"campaign_id": "t", "runs": [], "trial_sharpes": [
+        {"trial_id": f"{RUN_ID}:{v}", "source": "backtest", "sharpe": 0.3,
+         "forecast_hash": f"fh-{v}"} for v in vids]})
+    _seed_dsr_ledger()
+    ev = rpr._evaluate_profit_bars_every_backtest(run_dir, RUN_ID)
+    assert ev == _pbe(run_dir) and ev["bars_definitions"] == "v2"
+    design = {r["name"]: r for r in ev["variants"]["design"]["bars"]}
+    base = {r["name"]: r for r in ev["variants"]["base"]["bars"]}
+    for name in CHAIN_ROWS:
+        _assert_not_evaluable(design[name], "missing or late head data")
+        assert base[name]["result"] in ("PASS", "FAIL") and base[name]["actual"] is not None
+    assert design["trade_count_min"]["result"] == "PASS"
+    assert ev["variants"]["design"]["result"] == "FAIL" and "design" not in ev["passing"]
 
 
 def test_missing_manifest_makes_only_buy_and_hold_not_evaluable(tmp_path):

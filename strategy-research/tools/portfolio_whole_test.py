@@ -399,17 +399,19 @@ def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
         inclusive by day. NEVER a window manifest's start: that is the warm-up
         PREFETCH start, earlier than test.start.
     warmup_days: the most days a window's recorded data may start after its
-        nominal start (see ENGINE SHORTFALL). More than that raises ValueError:
-        the bounds look like the manifest's prefetch start, not the protocol's
+        nominal start (see ENGINE SHORTFALL). More than that is NOT_EVALUABLE
+        naming the missing head cells: missing or late head data, or bounds
+        taken from the manifest's prefetch start rather than the protocol's
         test.start (the warm-up is never recorded). Pass the run's prefetch
         span in days when it is longer than DEFAULT_WARMUP_DAYS.
     max_engine_tail_days: the most days a window's recorded data may stop
         before its nominal end (see ENGINE SHORTFALL); more is NOT_EVALUABLE.
 
-    Bounds checks (ValueError, an input bug): a recorded bar before a window's
-    nominal start or after its nominal end; the head shortfall above; two
-    windows with the same nominal start; a window that lies inside earlier
-    windows.
+    Data that does not fit the bounds (NOT_EVALUABLE, E-062 S2b-1 fix M1: a
+    data hole must not abort the grading of other variants): a recorded bar
+    before a window's nominal start or after its nominal end; the head
+    shortfall above. Bounds checks (ValueError, an input bug): two windows
+    with the same nominal start; a window that lies inside earlier windows.
 
     Per window (unchanged v1 definition, portfolio_daily.window_common_curve):
     the common UTC days (every coin has a daily close), >= 2 of them, covering
@@ -433,7 +435,7 @@ def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
         BOTH the numerator and the denominator of the whole-test coverage (a
         day inside the next window's effective span stays counted);
       * a tail shortfall of more than max_engine_tail_days is NOT_EVALUABLE;
-        a head shortfall of more than warmup_days raises ValueError (above);
+        a head shortfall of more than warmup_days is NOT_EVALUABLE too (above);
       * when coins DISAGREE on their first or last recorded day, the days on
         which some coins have data and others do not are MISSING DATA:
         NOT_EVALUABLE naming every missing (window, coin, day) cell and their
@@ -510,18 +512,27 @@ def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
         if len(firsts) < len(coins):
             continue  # a coin with no bar: window_common_curve reports it (NOT_EVALUABLE)
         first_rec, last_rec = min(firsts.values()), max(lasts.values())
+        # The recorded data does not fit the given bounds: NOT_EVALUABLE, not a
+        # crash (E-062 S2b-1 fix M1) -- the grader passes the protocol's own
+        # test bounds, so late / missing head data (an outage, a large-gap
+        # reset) or a mis-filed window must leave only that variant's rows
+        # unevaluable, never abort the grading of every other variant.
         if first_rec < s:
-            raise ValueError(f"window {win!r} has a recorded bar on {first_rec}, before its "
-                             f"nominal start {s} (wrong bounds?)")
+            raise PortfolioNotEvaluable(
+                f"window {win!r} has a recorded bar on {first_rec}, before its nominal start "
+                f"{s}: the recorded data does not fit the window (wrong bounds?)")
         if last_rec > e:
-            raise ValueError(f"window {win!r} has a recorded bar on {last_rec}, after its "
-                             f"nominal end {e} (wrong bounds?)")
+            raise PortfolioNotEvaluable(
+                f"window {win!r} has a recorded bar on {last_rec}, after its nominal end "
+                f"{e}: the recorded data does not fit the window (wrong bounds?)")
         if (first_rec - s).days > warmup_days:
-            raise ValueError(
-                f"window {win!r}: first recorded day {first_rec} is {(first_rec - s).days} "
-                f"days after the given start {s} (> warmup_days={warmup_days}): the bounds "
-                f"look like a window manifest's start (the warm-up prefetch start), not the "
-                f"protocol's test.start -- pass window_bounds_from_protocol(...)")
+            raise _not_evaluable_cells(
+                f"window {win!r}: every coin starts on {first_rec}, {(first_rec - s).days} "
+                f"days after its nominal start {s} (> warmup_days={warmup_days}) -- missing "
+                f"or late head data (or bounds taken from a window manifest's warm-up "
+                f"prefetch start: pass window_bounds_from_protocol(...))",
+                [(win, c, d) for d in _days(s, date.fromordinal(first_rec.toordinal() - 1))
+                 for c in coins])
         daily_w = {c: {t.date() for t in by_coin[c]} for c in coins}
         if len(set(firsts.values())) > 1:
             raise _not_evaluable_cells(
