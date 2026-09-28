@@ -579,6 +579,8 @@ def test_every_known_sticky_flag_branch_has_a_pause_flag_to_reason_entry(tmp_pat
         "holdout_spent_without_unlock", "holdout_result_unbound", "holdout_result_relabelled",
         # E-061 C1.4 / C1.5.
         "stage_exception", "protocol_promotion_unratified",
+        # E-061 C2 S2c.
+        "variant_shape_invalid", "variant_config_error",
     )
     table_flags = {flag for flag, _ in camp._PAUSE_FLAG_TO_REASON}
     for flag in known_sticky_flags:

@@ -7418,6 +7418,8 @@ async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | 
     # strategy_config_authoring under config_direct_authoring only (see helper docstrings).
     _clear_stale_block_manifest(stage_name, RUN_DIR)
     _apply_block_manifest_retry_context(stage_name, handoff, RUN_DIR)
+    # E-061 C2 S2c: Step 2's variant-shape retry context (see helper docstring).
+    _apply_variant_shape_retry_context(stage_name, handoff, RUN_DIR)
 
     # Select engine from handoff file, default to Claude if not specified
     engine = handoff.get("assigned_engine", "claude")
@@ -12536,6 +12538,161 @@ def _apply_block_manifest_retry_context(stage_name: str, handoff: dict, run_dir:
         f"decision.yaml and a corrected block_manifest.yaml (STRATEGY_DESIGN_GUIDE.md §7c).")
 
 
+# E-061 C2 S2c (C2_S1_FINDINGS.md G12, card D; review A5): Step 2's variant
+# shape. Under config-direct authoring + the variant loop, for a per-coin
+# variant_patches.yaml (S2b's per_coin_mode) and never for a composition run
+# (G4), Step 2's output is checked twice -- its shape right after Step 2
+# (variant_coin.check_variant_shape), and again with 5a's per-variant results
+# before the data gate. A failure sends Step 2 back ONCE with the error (the
+# _route_block_manifest_check precedent); a second failure pauses the run
+# (flag variant_shape_invalid, or variant_config_error when 5a refused a
+# variant's config), never a raise. One retry budget for both checks, counted
+# in pipeline_state.yaml (VARIANT_STEP2_RETRY_STATE_KEY), so it survives a
+# restart; reset once 5a's route accepts the variants.
+_VARIANT_STEP2_RETRY_MAX = 1
+VARIANT_STEP2_RETRY_STATE_KEY = "variant_shape_retry"
+VARIANT_SHAPE_INVALID_FLAG = "variant_shape_invalid"
+VARIANT_CONFIG_ERROR_FLAG = "variant_config_error"
+_VARIANT_CONFIG_REPORT_CHARS = 1500  # per variant, in the retry error
+
+
+def _variant_shape_check_applies(run_dir: Path) -> bool:
+    """E-061 C2 S2c: True when Step 2's variant shape is checked -- config-direct
+    authoring and the variant loop on, not a composition run, and
+    artifacts/variant_patches.yaml is per-coin (some entry declares kind or
+    symbol, variant_coin.per_coin_mode). False otherwise: the flags off, a
+    legacy file or a composition run route exactly as before (nothing read
+    beyond the flags, the brief and the file, nothing written)."""
+    if not (_config_direct_authoring_enabled() and _variant_loop_enabled()):
+        return False
+    if _composition_mode(run_dir):
+        return False
+    path = Path(run_dir) / "artifacts" / "variant_patches.yaml"
+    doc = load_yaml(path) if path.exists() else None
+    variants = doc.get("variants") if isinstance(doc, dict) else None
+    return isinstance(variants, list) and _variant_coin_module().per_coin_mode(variants)
+
+
+def _variant_shape_problems(run_dir: Path, run_id: str) -> list:
+    """variant_coin.check_variant_shape on artifacts/variant_patches.yaml, with
+    5a's own coin context (_variant_coin_context: the run protocol,
+    coin_universe.yaml, the Layer-1 audit and precheck, the policy eras)."""
+    doc = load_yaml(Path(run_dir) / "artifacts" / "variant_patches.yaml") or {}
+    return _variant_coin_module().check_variant_shape(doc.get("variants"),
+                                                      **_variant_coin_context(run_dir, run_id))
+
+
+def _variant_config_errors(variants: dict) -> list:
+    """[(variant_id, detail)] for every not_tested index entry 5a refused for a
+    config problem: a patch that does not apply, unresolved manifest paths, a
+    validate_config.py violation that is not a genuinely missing class, a
+    variant_coin refusal. NOT errors: a repeat skip, a D-042 coverage skip (both
+    never block, E-036 S2a / D-042), and a V12 cannot-load of a missing class
+    (_v12_missing_classes: the component path -- park or pause, unchanged)."""
+    out = []
+    for vid, v in sorted((variants or {}).items()):
+        if not isinstance(v, dict) or v.get("status") != "not_tested":
+            continue
+        if _is_repeat_skip(v) or _is_coverage_skip(v):
+            continue
+        reason = str(v.get("reason") or "")
+        if reason == "validate_config.py violations" and _v12_missing_classes(v.get("report")):
+            continue
+        report = str(v.get("report") or "").strip()
+        if report:
+            if len(report) > _VARIANT_CONFIG_REPORT_CHARS:
+                report = report[:_VARIANT_CONFIG_REPORT_CHARS] + " ...[truncated]"
+            reason = f"{reason}: {report}"
+        out.append((vid, reason or "not_tested (no reason recorded)"))
+    return out
+
+
+def _variant_step2_retry_or_pause(run_dir: Path, flag: str, error: str) -> str:
+    """One failed Step 2 output (flag: VARIANT_SHAPE_INVALID_FLAG or
+    VARIANT_CONFIG_ERROR_FLAG). Retry left: count it in pipeline_state.yaml and
+    return innovation_expansion (the error reaches Step 2 through
+    _apply_variant_shape_retry_context). None left: pause the run with the
+    flag and return human_pause. Every failure is kept in the record's
+    `history`."""
+    state = load_yaml(Path(run_dir) / "pipeline_state.yaml") or {}
+    record = state.get(VARIANT_STEP2_RETRY_STATE_KEY) or {}
+    attempts = int(record.get("attempts") or 0)
+    history = list(record.get("history") or []) + [
+        {"check": flag, "error": error, "at": datetime.now(timezone.utc).isoformat()}]
+    if attempts >= _VARIANT_STEP2_RETRY_MAX:
+        update_state(path=run_dir, status="paused_for_human", flags={flag: True},
+                     **{VARIANT_STEP2_RETRY_STATE_KEY: {
+                         "attempts": attempts, "last_check": flag, "last_error": error,
+                         "history": history}})
+        what = ("variant shape invalid" if flag == VARIANT_SHAPE_INVALID_FLAG
+                else "variant config error")
+        print(f"\n⏸️  PIPELINE PAUSED ({flag}): Step 2's output is still invalid after "
+              f"{attempts} retry -- {what}: {error}. See pipeline_state.yaml "
+              f"{VARIANT_STEP2_RETRY_STATE_KEY}, artifacts/variant_patches.yaml"
+              + (" and artifacts/variants/index.yaml" if flag == VARIANT_CONFIG_ERROR_FLAG
+                 else "") + f" (docs/RUNBOOK.md §3, {flag}).")
+        return "human_pause"
+    update_state(path=run_dir, **{VARIANT_STEP2_RETRY_STATE_KEY: {
+        "attempts": attempts + 1, "last_check": flag, "last_error": error, "history": history}})
+    print(f"🔁 [E-061 C2 S2c] {flag}: retrying innovation_expansion once with the error: {error}")
+    return "innovation_expansion"
+
+
+def _route_variant_shape_check(run_dir: Path, run_id: str) -> str:
+    """After Step 2 (only when _variant_shape_check_applies): 5a when the shape
+    is valid, else one retry of Step 2, then the variant_shape_invalid pause."""
+    problems = _variant_shape_problems(run_dir, run_id)
+    if not problems:
+        return "backtest_specification"
+    return _variant_step2_retry_or_pause(run_dir, VARIANT_SHAPE_INVALID_FLAG, "; ".join(problems))
+
+
+def _route_variant_step2_outputs(run_dir: Path, run_id: str) -> str | None:
+    """5a's route, first (only when _variant_shape_check_applies): the shape
+    again (a file edited after Step 2's check, or a run resumed at 5a), then
+    every config error in artifacts/variants/index.yaml. Either one: a retry
+    of Step 2 or the pause (its route string). Neither: the retry counter is
+    reset and None -- the route goes on as before."""
+    problems = _variant_shape_problems(run_dir, run_id)
+    if problems:
+        return _variant_step2_retry_or_pause(run_dir, VARIANT_SHAPE_INVALID_FLAG,
+                                             "; ".join(problems))
+    index = load_yaml(Path(run_dir) / "artifacts" / "variants" / "index.yaml") or {}
+    errors = _variant_config_errors(index.get("variants") or {})
+    if errors:
+        return _variant_step2_retry_or_pause(
+            run_dir, VARIANT_CONFIG_ERROR_FLAG,
+            "; ".join(f"variant {vid!r} not tested -- {detail}" for vid, detail in errors))
+    state = load_yaml(Path(run_dir) / "pipeline_state.yaml") or {}
+    if (state.get(VARIANT_STEP2_RETRY_STATE_KEY) or {}).get("attempts"):
+        update_state(path=run_dir, **{VARIANT_STEP2_RETRY_STATE_KEY: {
+            "attempts": 0, "last_check": None, "last_error": None}})
+    return None
+
+
+def _apply_variant_shape_retry_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
+    """E-061 C2 S2c: on a retry of innovation_expansion, put the previous
+    output's error into that stage's handoff. Flag off, another stage, or no
+    retry pending: no-op."""
+    if stage_name != "innovation_expansion" or not _config_direct_authoring_enabled():
+        return
+    state_path = run_dir / "pipeline_state.yaml"
+    state = (load_yaml(state_path) or {}) if state_path.exists() else {}
+    retry = state.get(VARIANT_STEP2_RETRY_STATE_KEY) or {}
+    if not retry.get("attempts") or not retry.get("last_error"):
+        return
+    handoff.setdefault("injected_context", {})
+    handoff["injected_context"]["variant_shape_error"] = (
+        f"Retry {retry['attempts']}/{_VARIANT_STEP2_RETRY_MAX}. Your previous "
+        f"variant_patches.yaml was rejected ({retry.get('last_check')}): {retry['last_error']}. "
+        f"Re-emit expanded_hypothesis_card.yaml, innovation_notes.yaml and a corrected "
+        f"variant_patches.yaml: 3 or 4 variants -- exactly one `base` (variant_id base, empty "
+        f"patch), at least one `design` (a non-empty patch that applies to the base config and "
+        f"passes validate_config.py, on the base coin), one or two `asset` (empty patch, one "
+        f"config/coin_universe.yaml coin of another category than the base coin) "
+        f"(innovation-expansion SKILL.md IMPROVEMENT 07).")
+
+
 def _clear_stale_block_manifest(stage_name: str, run_dir: Path) -> None:
     """Under config_direct_authoring, delete artifacts/block_manifest.yaml as
     strategy_config_authoring starts, so a 1b pass never inherits an earlier
@@ -12796,7 +12953,20 @@ def _route_post_config_direct_backtest_specification(run_dir: Path, *,
     orchestrator.verdict_routing_retired is on), a "nothing validated" outcome
     whose blocking variants all failed ONLY on V12 cannot-load (a missing
     class) parks the run (waiting_for_component); any other failure stays the
-    pause below."""
+    pause below.
+
+    E-061 C2 S2c: under the variant loop with a per-coin variant_patches.yaml
+    (_variant_shape_check_applies), Step 2's output is checked first
+    (_route_variant_step2_outputs: the shape, then 5a's config errors -- one
+    retry of Step 2, then the variant_shape_invalid / variant_config_error
+    pause), before the repeat gate; and with the data gate switched off, the
+    data gate's floor of 3 validated variants (_variant_floor) is applied here
+    before protocol_execution."""
+    _s2c = _variant_shape_check_applies(run_dir)
+    if _s2c:
+        _s2c_route = _route_variant_step2_outputs(run_dir, run_dir.name)
+        if _s2c_route is not None:
+            return _s2c_route
     # E-036 S2a: the 5a exact-match check, off by default (see
     # _gate_config_direct_variants). Flag off: None, nothing read. A repeat
     # variant is marked not_tested in index.yaml BEFORE it is read below; every
@@ -12848,7 +13018,42 @@ def _route_post_config_direct_backtest_specification(run_dir: Path, *,
             return "human_pause"
     if _data_availability_gate_enabled():
         return "data_availability_gate"
+    if _s2c:
+        # E-061 C2 S2c: the data gate is off, so its floor runs here. After the
+        # checks above, a shortfall can only be a missing class (repeat and
+        # coverage skips are not counted, like at the gate).
+        remaining, min_needed = _variant_floor(variants)
+        if len(remaining) < min_needed:
+            reason = (f"only {len(remaining)}/{len(variants)} variant(s) validated at 5a with the "
+                      f"data gate off (need >= {min_needed})")
+            kind, classes = (_variant_park_kind(variants, run_dir / "artifacts")
+                             if routing_retired else (None, []))
+            if kind:
+                return _park_run(
+                    run_dir, kind=kind, stage="backtest_specification",
+                    reason=reason + (f"; missing class(es): {classes}" if classes else ""),
+                    request_refs=[_crr.COMPONENT_REQUESTS_REL,
+                                  f"runs/{run_dir.name}/artifacts/variants/index.yaml"],
+                    resume_stage="backtest_specification", classes=classes)
+            print(f"⏸️  PIPELINE PAUSED: {reason}. See artifacts/variants/index.yaml and "
+                  f"campaign_record/component_requests.yaml.")
+            update_state(path=run_dir, status="paused_for_human",
+                         flags={"variant_gate_insufficient": True})
+            return "human_pause"
     return "protocol_execution"
+
+
+def _variant_floor(variants_idx: dict) -> tuple:
+    """(validated variant ids, the minimum needed) for the variant loop's floor
+    after the per-variant data gate (E-033.1 Slice 4b) -- and, E-061 C2 S2c, at
+    5a when that gate is switched off. E-036 S2a: variants the exact-match gate
+    skipped as repeats are not a shortfall -- only non-repeat variants count;
+    no repeat skip: the minimum stays 3. E-061 C2 S2b: a D-042 coverage skip
+    counts like a repeat skip."""
+    remaining = [vid for vid, v in variants_idx.items() if v.get("status") == "validated"]
+    n_skip = sum(1 for v in variants_idx.values() if _is_repeat_skip(v) or _is_coverage_skip(v))
+    min_needed = max(1, min(3, len(variants_idx) - n_skip)) if n_skip else 3
+    return remaining, min_needed
 
 
 def determine_post_spec_route(path: Path):
@@ -13411,6 +13616,12 @@ def run_loop(run_id: str):
                 # tool-only backtest_specification stage instead.
                 if next_stage == "validation" and _config_direct_authoring_enabled():
                     next_stage = "backtest_specification"
+                    # E-061 C2 S2c: Step 2's variant shape (variant loop + per-coin
+                    # file only); an invalid one retries Step 2 once, then pauses.
+                    if _variant_shape_check_applies(RUN_DIR):
+                        next_stage = _route_variant_shape_check(RUN_DIR, run_id)
+                        if next_stage == "human_pause":
+                            break
 
             elif current_stage == "backtest_specification" and _config_direct_authoring_enabled():
                 # E-056 Slice 3b: tool-only path. run_tool_worker's own
@@ -13515,7 +13726,6 @@ def run_loop(run_id: str):
                 # run_campaign.py.
                 index = load_yaml(ARTIFACTS / "variants" / "index.yaml") or {}
                 variants_idx = index.get("variants", {})
-                remaining = [vid for vid, v in variants_idx.items() if v.get("status") == "validated"]
                 # E-036 S2a: variants the exact-match gate skipped as repeats
                 # are not a shortfall. Only non-repeat variants count: when
                 # repeats alone shrink the set below 3, every remaining
@@ -13523,9 +13733,9 @@ def run_loop(run_id: str):
                 # pauses/parks exactly as before. No repeat skip: min_needed
                 # stays 3 (byte-identical).
                 # E-061 C2 S2b: a D-042 coverage skip counts like a repeat skip.
-                _n_repeat = sum(1 for v in variants_idx.values()
-                                if _is_repeat_skip(v) or _is_coverage_skip(v))
-                _min_needed = max(1, min(3, len(variants_idx) - _n_repeat)) if _n_repeat else 3
+                # E-061 C2 S2c: moved unchanged into _variant_floor (shared with
+                # 5a's route when the data gate is off).
+                remaining, _min_needed = _variant_floor(variants_idx)
                 # Slice 6c S2c: under verdict_routing_retired, a shortfall whose
                 # not_tested variants all wait on data (or a missing class) parks
                 # the run; --unpark restarts it at backtest_specification, which
