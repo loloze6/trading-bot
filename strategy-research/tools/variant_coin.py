@@ -461,7 +461,10 @@ def check_variant_shape(variants, *, source: dict, universe: dict, layer1: dict,
     variant_patches.yaml `variants` list is not the shape Step 2 must write
     (empty = it is). Called after Step 2 and again before 5a's route lets the
     variants go on (run_phase1_research); the caller only calls it in per-coin
-    mode, never for a composition run (G4: its variants are weighting schemes).
+    mode, never for a composition run (G4: its variants are weighting schemes)
+    -- or, review fix M1, once the run has produced a per-coin output: a list
+    that is then no longer per-coin is refused ("per-coin fields (kind/symbol)
+    missing").
 
       * 3 or 4 variants, each a mapping with a unique, safe `variant_id`;
       * exactly one `base`, at least one `design`, one or two `asset`;
@@ -480,6 +483,12 @@ def check_variant_shape(variants, *, source: dict, universe: dict, layer1: dict,
     tally, as the variant Step 2 wrote."""
     if not isinstance(variants, list) or not variants:
         return [f"`variants` must be a non-empty list, not {type(variants).__name__}"]
+    if not per_coin_mode(variants):
+        # Review fix M1: the caller only checks a non-per-coin list once the run
+        # has already produced a per-coin output -- a retry that dropped them.
+        return ["per-coin fields (kind/symbol) missing: every variant must declare its `kind` "
+                "(base / design / asset) and an asset variant its `symbol` -- this run's "
+                "variant_patches.yaml is per-coin, a legacy (coin-less) file is not accepted"]
     problems = []
     n = len(variants)
     if not VARIANT_SHAPE_MIN <= n <= VARIANT_SHAPE_MAX:

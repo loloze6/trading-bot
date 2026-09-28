@@ -12562,7 +12562,16 @@ def _variant_shape_check_applies(run_dir: Path) -> bool:
     artifacts/variant_patches.yaml is per-coin (some entry declares kind or
     symbol, variant_coin.per_coin_mode). False otherwise: the flags off, a
     legacy file or a composition run route exactly as before (nothing read
-    beyond the flags, the brief and the file, nothing written)."""
+    beyond the flags, the brief, the file and pipeline_state.yaml, nothing
+    written).
+
+    Review fix M1: per-coin mode is NOT re-decided from each new file alone.
+    Once pipeline_state.yaml holds VARIANT_STEP2_RETRY_STATE_KEY, this run has
+    already produced a per-coin output (the key is only ever written by the
+    checks below), so a later file that is not per-coin -- a Step 2 retry that
+    dropped kind/symbol -- is a shape failure, not a legacy file: True, and
+    variant_coin.check_variant_shape reports the missing per-coin fields. A
+    first-ever legacy file (no key) is unchanged."""
     if not (_config_direct_authoring_enabled() and _variant_loop_enabled()):
         return False
     if _composition_mode(run_dir):
@@ -12570,7 +12579,11 @@ def _variant_shape_check_applies(run_dir: Path) -> bool:
     path = Path(run_dir) / "artifacts" / "variant_patches.yaml"
     doc = load_yaml(path) if path.exists() else None
     variants = doc.get("variants") if isinstance(doc, dict) else None
-    return isinstance(variants, list) and _variant_coin_module().per_coin_mode(variants)
+    if isinstance(variants, list) and _variant_coin_module().per_coin_mode(variants):
+        return True
+    state_path = Path(run_dir) / "pipeline_state.yaml"
+    state = (load_yaml(state_path) or {}) if state_path.exists() else {}
+    return isinstance(state, dict) and VARIANT_STEP2_RETRY_STATE_KEY in state
 
 
 def _variant_shape_problems(run_dir: Path, run_id: str) -> list:
@@ -12607,27 +12620,30 @@ def _variant_config_errors(variants: dict) -> list:
     return out
 
 
-def _variant_step2_retry_or_pause(run_dir: Path, flag: str, error: str) -> str:
+def _variant_step2_retry_or_pause(run_dir: Path, flag: str, error: str, *,
+                                  retry: bool = True) -> str:
     """One failed Step 2 output (flag: VARIANT_SHAPE_INVALID_FLAG or
     VARIANT_CONFIG_ERROR_FLAG). Retry left: count it in pipeline_state.yaml and
     return innovation_expansion (the error reaches Step 2 through
-    _apply_variant_shape_retry_context). None left: pause the run with the
-    flag and return human_pause. Every failure is kept in the record's
-    `history`."""
+    _apply_variant_shape_retry_context). None left -- or retry=False, a fault
+    Step 2 cannot fix (review fix M2: the base config itself) -- pause the run
+    with the flag and return human_pause, the retry budget untouched. Every
+    failure is kept in the record's `history`."""
     state = load_yaml(Path(run_dir) / "pipeline_state.yaml") or {}
     record = state.get(VARIANT_STEP2_RETRY_STATE_KEY) or {}
     attempts = int(record.get("attempts") or 0)
     history = list(record.get("history") or []) + [
         {"check": flag, "error": error, "at": datetime.now(timezone.utc).isoformat()}]
-    if attempts >= _VARIANT_STEP2_RETRY_MAX:
+    if not retry or attempts >= _VARIANT_STEP2_RETRY_MAX:
         update_state(path=run_dir, status="paused_for_human", flags={flag: True},
                      **{VARIANT_STEP2_RETRY_STATE_KEY: {
                          "attempts": attempts, "last_check": flag, "last_error": error,
                          "history": history}})
         what = ("variant shape invalid" if flag == VARIANT_SHAPE_INVALID_FLAG
                 else "variant config error")
-        print(f"\n⏸️  PIPELINE PAUSED ({flag}): Step 2's output is still invalid after "
-              f"{attempts} retry -- {what}: {error}. See pipeline_state.yaml "
+        why = (f"Step 2's output is still invalid after {attempts} retry" if retry
+               else "no Step 2 retry (Step 2 cannot fix this)")
+        print(f"\n⏸️  PIPELINE PAUSED ({flag}): {why} -- {what}: {error}. See pipeline_state.yaml "
               f"{VARIANT_STEP2_RETRY_STATE_KEY}, artifacts/variant_patches.yaml"
               + (" and artifacts/variants/index.yaml" if flag == VARIANT_CONFIG_ERROR_FLAG
                  else "") + f" (docs/RUNBOOK.md §3, {flag}).")
@@ -12659,6 +12675,20 @@ def _route_variant_step2_outputs(run_dir: Path, run_id: str) -> str | None:
                                              "; ".join(problems))
     index = load_yaml(Path(run_dir) / "artifacts" / "variants" / "index.yaml") or {}
     errors = _variant_config_errors(index.get("variants") or {})
+    base_errors = [detail for vid, detail in errors if vid == "base"]
+    if base_errors:
+        # Review fix M2: `base` is the 1b base config with an empty patch, so its
+        # config error is 1b's (strategy_config_authoring), not Step 2's -- a
+        # Step 2 retry cannot fix it. Pause at once, the retry budget untouched.
+        others = [f"variant {vid!r} not tested -- {detail}" for vid, detail in errors
+                  if vid != "base"]
+        return _variant_step2_retry_or_pause(
+            run_dir, VARIANT_CONFIG_ERROR_FLAG,
+            f"the base config (strategy_config_authoring, 1b: "
+            f"artifacts/candidate_strategy_config.json) is at fault -- variant 'base' (empty "
+            f"patch) not tested -- {base_errors[0]}; fix or re-author 1b's base config, a "
+            f"Step 2 retry cannot fix it" + ("; also: " + "; ".join(others) if others else ""),
+            retry=False)
     if errors:
         return _variant_step2_retry_or_pause(
             run_dir, VARIANT_CONFIG_ERROR_FLAG,
@@ -12673,17 +12703,20 @@ def _route_variant_step2_outputs(run_dir: Path, run_id: str) -> str | None:
 def _apply_variant_shape_retry_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
     """E-061 C2 S2c: on a retry of innovation_expansion, put the previous
     output's error into that stage's handoff. Flag off, another stage, or no
-    retry pending: no-op."""
+    error pending (none yet, or reset once 5a's route accepted the variants):
+    no-op. Review fix T2: keyed on `last_error` alone, so an operator reset of
+    `attempts` to 0 (a fresh retry, RUNBOOK §3) still shows Step 2 the error."""
     if stage_name != "innovation_expansion" or not _config_direct_authoring_enabled():
         return
     state_path = run_dir / "pipeline_state.yaml"
     state = (load_yaml(state_path) or {}) if state_path.exists() else {}
     retry = state.get(VARIANT_STEP2_RETRY_STATE_KEY) or {}
-    if not retry.get("attempts") or not retry.get("last_error"):
+    if not retry.get("last_error"):
         return
+    attempts = int(retry.get("attempts") or 0)
     handoff.setdefault("injected_context", {})
     handoff["injected_context"]["variant_shape_error"] = (
-        f"Retry {retry['attempts']}/{_VARIANT_STEP2_RETRY_MAX}. Your previous "
+        (f"Retry {attempts}/{_VARIANT_STEP2_RETRY_MAX}. " if attempts else "") + f"Your previous "
         f"variant_patches.yaml was rejected ({retry.get('last_check')}): {retry['last_error']}. "
         f"Re-emit expanded_hypothesis_card.yaml, innovation_notes.yaml and a corrected "
         f"variant_patches.yaml: 3 or 4 variants -- exactly one `base` (variant_id base, empty "
@@ -12868,6 +12901,24 @@ def _partial_coverage_variants(variants_idx: dict, graded) -> dict:
     return out
 
 
+_COIN_INFO_PRINTED: set = set()
+
+
+def _first_coin_info_this_pass(run_dir: Path, symbols) -> bool:
+    """Review fix T4: True the first time _variant_coin_context sees this pass --
+    keyed on the run, the protocol's symbols and the bytes of Step 2's
+    artifacts/variant_patches.yaml (a new Step 2 output is a new pass) -- so the
+    S2b "one coin per variant" info line prints at most once per pass, not once
+    per caller (the Step 2 check, 5a, 5a's route, protocol_execution)."""
+    patches = Path(run_dir) / "artifacts" / "variant_patches.yaml"
+    digest = hashlib.sha256(patches.read_bytes()).hexdigest() if patches.exists() else None
+    key = (str(Path(run_dir).resolve()), tuple(str(s) for s in symbols), digest)
+    if key in _COIN_INFO_PRINTED:
+        return False
+    _COIN_INFO_PRINTED.add(key)
+    return True
+
+
 def _variant_coin_context(run_dir: Path, run_id: str) -> dict:
     """The inputs 5a's per-coin checks (variant_coin.resolve_variant) share
     across one run's variants: the run protocol (the SAME resolver the data gate
@@ -12879,7 +12930,7 @@ def _variant_coin_context(run_dir: Path, run_id: str) -> dict:
     vc = _variant_coin_module()
     source = vc.load_protocol_file(_resolve_protocol_path(run_dir, run_id))
     base = vc.base_coin(source)
-    if len(source["symbols"]) > 1:
+    if len(source["symbols"]) > 1 and _first_coin_info_this_pass(run_dir, source["symbols"]):
         print(f"ℹ️  [E-061 C2 S2b] one coin per variant: base/design run on {base!r} (the run "
               f"protocol's symbols[0], G2); its other symbols {source['symbols'][1:]} are unused "
               f"under the variant loop.")
@@ -13020,8 +13071,12 @@ def _route_post_config_direct_backtest_specification(run_dir: Path, *,
         return "data_availability_gate"
     if _s2c:
         # E-061 C2 S2c: the data gate is off, so its floor runs here. After the
-        # checks above, a shortfall can only be a missing class (repeat and
-        # coverage skips are not counted, like at the gate).
+        # checks above, a shortfall is a missing class (a V12 cannot-load, left
+        # out of _variant_config_errors) or a variant the repeat gate
+        # (_gate_config_direct_variants, which runs after them) marked
+        # not_tested `variant_coin:` because its per-coin protocol.json is
+        # missing or malformed. Repeat and coverage skips are not counted, like
+        # at the gate.
         remaining, min_needed = _variant_floor(variants)
         if len(remaining) < min_needed:
             reason = (f"only {len(remaining)}/{len(variants)} variant(s) validated at 5a with the "

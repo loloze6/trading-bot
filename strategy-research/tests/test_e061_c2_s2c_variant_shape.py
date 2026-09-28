@@ -208,6 +208,52 @@ def test_one_budget_for_both_checks_and_reset_on_acceptance(monkeypatch):
     assert handoff == {}
 
 
+def test_retry_that_drops_kind_and_symbol_is_a_shape_failure(monkeypatch):
+    """Review fix M1: once the run produced a per-coin output, a Step 2 retry
+    that strips kind/symbol is NOT read as a legacy file -- the check still
+    applies and the second invalid output pauses variant_shape_invalid."""
+    run_dir = _per_coin_run("run_957", PER_COIN_PATCHES[:2], monkeypatch)  # no asset
+    assert rpr._route_variant_shape_check(run_dir, "run_957") == "innovation_expansion"
+    rpr.save_yaml(run_dir / "artifacts" / "variant_patches.yaml",
+                  {"variants": _strip_coin(PER_COIN_PATCHES)})
+    assert rpr._variant_shape_check_applies(run_dir) is True
+    assert rpr._route_variant_shape_check(run_dir, "run_957") == "human_pause"
+    st = _state(run_dir)
+    assert st["status"] == "paused_for_human" and st["flags"][SHAPE] is True
+    assert "per-coin fields (kind/symbol) missing" in st[KEY]["last_error"]
+    assert _shape(_strip_coin(PER_COIN_PATCHES))[0].startswith("per-coin fields (kind/symbol) missing")
+
+
+def test_error_reaches_step2_after_an_operator_reset_of_attempts(monkeypatch):
+    """Review fix T2: the RUNBOOK reset variant_shape_retry={'attempts': 0} gives
+    the retry back, and Step 2 still sees the last error."""
+    run_dir = _per_coin_run("run_958", PER_COIN_PATCHES, monkeypatch)
+    rpr.update_state(path=run_dir, **{KEY: {"attempts": 1, "last_check": SHAPE,
+                                            "last_error": "0 kind-asset variant(s)"}})
+    rpr.update_state(path=run_dir, **{KEY: {"attempts": 0}})  # the operator reset
+    handoff = {}
+    rpr._apply_variant_shape_retry_context("innovation_expansion", handoff, run_dir)
+    ctx = handoff["injected_context"]["variant_shape_error"]
+    assert ctx.startswith("Your previous variant_patches.yaml was rejected") and "0 kind-asset" in ctx
+
+
+def test_coin_info_line_prints_once_per_pass(monkeypatch, capsys):
+    """Review fix T4: the S2b 'one coin per variant' line prints at most once per
+    pass (same variant_patches.yaml), again for a new Step 2 output."""
+    run_dir = _per_coin_run("run_959", PER_COIN_PATCHES, monkeypatch)
+    monkeypatch.setattr(rpr, "_COIN_INFO_PRINTED", set())
+    capsys.readouterr()  # drop 5a's own output
+    multi = {**SOURCE, "symbols": ["BTCUSDT", "ETHUSDT"]}
+    monkeypatch.setattr(vc, "load_protocol_file", lambda p: copy.deepcopy(multi))
+    for _ in range(3):
+        rpr._variant_coin_context(run_dir, "run_959")
+    assert capsys.readouterr().out.count("one coin per variant") == 1
+    rpr.save_yaml(run_dir / "artifacts" / "variant_patches.yaml",
+                  {"variants": PER_COIN_PATCHES[:2]})
+    rpr._variant_coin_context(run_dir, "run_959")
+    assert capsys.readouterr().out.count("one coin per variant") == 1
+
+
 # ---------------------------------------------------------------------------
 # 3. 5a's config errors
 # ---------------------------------------------------------------------------
@@ -251,6 +297,29 @@ def test_config_error_retries_then_pauses_and_never_reaches_the_data_gate(monkey
     st = _state(run_dir)
     assert st["flags"] == {CONFIG: True}
     assert "variant_gate_insufficient" not in st["flags"]
+
+
+def test_base_config_error_pauses_at_once_without_a_step2_retry(monkeypatch):
+    """Review fix M2: `base` (empty patch) not_tested for a config reason is 1b's
+    fault -- no Step 2 retry, the variant_config_error pause at once, the retry
+    budget untouched, the error naming the base config (1b)."""
+    run_dir = _per_coin_run("run_968", PER_COIN_PATCHES, monkeypatch)
+    idx_path = run_dir / "artifacts" / "variants" / "index.yaml"
+    idx = rpr.load_yaml(idx_path)
+    idx["variants"]["base"].update({"status": "not_tested",
+                                    "reason": "validate_config.py violations",
+                                    "report": "VIOLATION V3 op: 'z'"})
+    rpr.save_yaml(idx_path, idx)
+    monkeypatch.setattr(rpr, "_v12_missing_classes", lambda report: [])
+    assert rpr._route_post_config_direct_backtest_specification(run_dir) == "human_pause"
+    st = _state(run_dir)
+    assert st["status"] == "paused_for_human" and st["flags"] == {CONFIG: True}
+    assert st[KEY]["attempts"] == 0 and st[KEY]["last_check"] == CONFIG
+    err = st[KEY]["last_error"]
+    assert "base config" in err and "1b" in err and "VIOLATION V3" in err
+    assert camp._classify_human_pause(run_dir, st) == CONFIG
+    runbook = (SR_ROOT / "docs" / "RUNBOOK.md").read_text(encoding="utf-8")
+    assert "If the base config is at fault" in runbook and "fix/re-author 1b" in runbook
 
 
 def test_missing_class_stays_the_component_park(monkeypatch):
