@@ -525,31 +525,70 @@ def _lint_brief_protocol_agreement(brief_path: Path, data: dict) -> None:
             )
 
 
-def _check_generate_protocol_promotion_not_generic(brief_path: Path, data: dict) -> None:
-    """C5.6 (D-043), replacing the C1.7 promotion-REQUIRED registration check.
-    Under config_direct_authoring (this function's only caller is gated on it)
-    a generated protocol needs no `promotion` block: nothing that decides reads
-    one (run_phase1_research._generated_protocol_promotion's docstring), so a
-    brief without one registers. A block the brief DOES carry is copied into
-    the generated protocol verbatim -- and if it is the abolished generic block
-    the D-3 guard refuses that protocol at launch pre-flight anyway (a
-    generated file never carries promotion_provenance). This refuses the same
-    brief at REGISTRATION instead, before it reaches the queue. Generate path
-    only (machine_constraints.protocol); a pinned protocol_ref's block lives in
-    the pinned FILE, which D-3 checks at pre-flight and at every resolution."""
+def _check_generate_protocol_has_promotion(brief_path: Path, data: dict) -> None:
+    """Second-round code-review fix: registration-time half of the G7 gate.
+    run_phase1_research.py::_require_pre_registered_promotion already
+    refuses to GENERATE a protocol with no `promotion` block at LAUNCH --
+    this refuses the same brief at REGISTRATION instead, before it even
+    reaches the queue. Only applies to the generate path
+    (machine_constraints.protocol); a pinned protocol_ref's promotion block
+    lives in the pinned FILE already (D-3/assert_promotion_ratified checks
+    that file, not this). C5.6: still the check under config_direct_authoring
+    while verdict routing is live (G7 is kept there)."""
     mc = data.get("machine_constraints") or {}
     proto = mc.get("protocol")
-    if isinstance(proto, dict) and protocol_resolution.promotion_is_generic(proto.get("promotion")):
+    if isinstance(proto, dict) and not proto.get("promotion"):
         raise ValueError(
-            f"{brief_path}: machine_constraints.protocol.promotion is the abolished generic "
-            f"block {dict(proto['promotion'])} -- the generated protocol would be refused by "
-            f"the D-3 guard at launch (a generated protocol never carries "
-            f"promotion_provenance). Delete the block: under config_direct_authoring a "
-            f"generated protocol needs none (C5.6, D-043) -- or pre-register real thresholds."
+            f"{brief_path}: machine_constraints.protocol has no `promotion` block. "
+            f"run_phase1_research.py's G7 gate (_require_pre_registered_promotion) "
+            f"would refuse to generate this protocol at launch anyway -- refusing at "
+            f"registration instead. Add median_sharpe_gt/max_abs_drawdown_pct_lt/"
+            f"min_trade_count_gte/kill_median_sharpe_lt under "
+            f"machine_constraints.protocol.promotion with YOUR pre-registered "
+            f"thresholds (no thresholds after seeing data -- see "
+            f"CLAUDE.fork.md/HYPOTHESIS.md convention)."
         )
 
 
-def _lint_new_pipeline_registration(brief_path: Path, data: dict) -> None:
+def _check_retired_generate_protocol_promotion(brief_path: Path, data: dict) -> list:
+    """C5.6 (D-043): the registration promotion check under
+    config_direct_authoring AND verdict_routing_retired, where a protocol's
+    promotion block decides nothing and the generated protocol carries none
+    (run_phase1_research._generated_protocol_promotion drops whatever the brief
+    pre-registered). Generate path only (machine_constraints.protocol).
+    Returns the notes to log; raises ValueError to refuse.
+
+      * no `promotion` key: registers, no note;
+      * present but empty (`promotion: {}`, a bare `promotion:`, null):
+        refused -- the shape flag-off G7 refuses, never silently read as none;
+      * the abolished generic block: refused, as before;
+      * any other block: registers, with a note that it is ignored."""
+    mc = data.get("machine_constraints") or {}
+    proto = mc.get("protocol")
+    if not isinstance(proto, dict) or "promotion" not in proto:
+        return []
+    block = proto["promotion"]
+    if not block:
+        raise ValueError(
+            f"{brief_path}: machine_constraints.protocol.promotion is present but empty "
+            f"({block!r}). Under config_direct_authoring + verdict_routing_retired a "
+            f"generated protocol needs no promotion block (C5.6, D-043) -- delete the "
+            f"`promotion` key. (With verdict routing live, the G7 gate refuses an empty "
+            f"block exactly as it refuses a missing one.)"
+        )
+    if protocol_resolution.promotion_is_generic(block):
+        raise ValueError(
+            f"{brief_path}: machine_constraints.protocol.promotion is the abolished generic "
+            f"block {dict(block)}. Delete it: under config_direct_authoring + "
+            f"verdict_routing_retired a generated protocol needs no promotion block "
+            f"(C5.6, D-043), and these four numbers were never pre-registered by anyone."
+        )
+    return ["machine_constraints.protocol.promotion is ignored -- under "
+            "config_direct_authoring + verdict_routing_retired the generated protocol "
+            "carries no promotion block and nothing reads one (C5.6, D-043)"]
+
+
+def _lint_new_pipeline_registration(brief_path: Path, data: dict) -> list:
     """Registration-ONLY checks for the config-direct-authoring ("new
     pipeline") path (second-round code-review fixes) -- called from
     register_hypothesis, NEVER from _parse_brief_frontmatter. Both checks
@@ -558,8 +597,10 @@ def _lint_new_pipeline_registration(brief_path: Path, data: dict) -> None:
     (materialization, dry-run, a resumed run re-parsing its own
     already-registered brief) would be wasted work at best and, for the
     promotion check, would re-raise on every resume of a run whose brief a
-    human already registered successfully once. (C5.6: the promotion check is
-    now the generic-block refusal, no longer "a block is required".)
+    human already registered successfully once. (C5.6: under
+    config_direct_authoring + verdict_routing_retired the promotion check is
+    _check_retired_generate_protocol_promotion -- no block required; under
+    config_direct_authoring alone it is still "a block is required".)
 
     A no-op entirely when orchestrator.config_direct_authoring.enabled is
     off/absent: both checks are specific to the config-direct path this
@@ -571,11 +612,29 @@ def _lint_new_pipeline_registration(brief_path: Path, data: dict) -> None:
     `protocol` set to a bare string instead of a dict, or a `protocol_ref`
     file that is not valid JSON) is wrapped into one clear message instead
     of escaping as a raw YAMLError/JSONDecodeError/AttributeError/TypeError
-    that register_hypothesis's `except ValueError` would miss entirely."""
+    that register_hypothesis's `except ValueError` would miss entirely.
+
+    Returns the notes to append to the REGISTER log line (C5.6: an ignored
+    promotion block); [] otherwise."""
     if not orch._config_direct_authoring_enabled():
-        return
+        return []
+    # C5.6: which promotion check applies depends on verdict_routing_retired too.
+    # A config that cannot be read is NOT reported as a brief defect: the
+    # promotion check is skipped with a note (the launch pre-flight refuses that
+    # config before anything runs, and re-checks the protocol before any spend).
     try:
-        _check_generate_protocol_promotion_not_generic(brief_path, data)
+        promotion_retired = orch._verdict_routing_retired_enabled()
+    except ValueError as exc:
+        promotion_retired = None
+        notes = [f"promotion check skipped -- config/campaign_config.yaml: {exc} (the "
+                 f"launch pre-flight refuses this config before anything runs)"]
+    else:
+        notes = []
+    try:
+        if promotion_retired:
+            notes = _check_retired_generate_protocol_promotion(brief_path, data)
+        elif promotion_retired is False:
+            _check_generate_protocol_has_promotion(brief_path, data)
         _lint_brief_protocol_agreement(brief_path, data)
     except ValueError:
         raise
@@ -585,6 +644,7 @@ def _lint_new_pipeline_registration(brief_path: Path, data: dict) -> None:
             f"{exc}) -- refusing to register a brief whose protocol pin/generation "
             f"spec cannot be understood."
         ) from exc
+    return notes
 
 
 def _parse_brief_frontmatter(brief_path: Path) -> dict:
@@ -648,8 +708,7 @@ def _parse_brief_frontmatter(brief_path: Path) -> dict:
         )
 
     # E-061 C1.7 second-round code-review fix: the universe/timeframe
-    # cross-check and the generate-path promotion check (C5.6: now the
-    # generic-block refusal, no block required) are
+    # cross-check and the generate-path promotion check are
     # registration-ONLY (see _lint_new_pipeline_registration's own
     # docstring) -- called from register_hypothesis, not from here.
     return data
@@ -679,9 +738,30 @@ def _next_new_run_id() -> str:
     return f"run_{next_num:03d}"
 
 
-def _materialize_run(run_id: str, brief: dict):
+def _without_retired_promotion(run_id: str, machine_constraints):
+    """C5.6 (D-043) review fixes 3/4: machine_constraints without
+    protocol.promotion, for a run materialized under config_direct_authoring +
+    verdict_routing_retired. Nothing reads the block there, and
+    pre_registration.yaml is a context file of LLM stages (and the source of
+    decide_next candidates' machine_constraints), so it is dropped here, once,
+    with a logged note -- never copied along. Anything else: unchanged."""
+    proto = machine_constraints.get("protocol") if isinstance(machine_constraints, dict) else None
+    if not (isinstance(proto, dict) and "promotion" in proto):
+        return machine_constraints
+    _log(f"PROMOTION {run_id}: machine_constraints.protocol.promotion dropped from "
+         f"pre_registration.yaml -- under config_direct_authoring + verdict_routing_retired "
+         f"nothing reads it (C5.6, D-043).")
+    return {**machine_constraints,
+            "protocol": {k: v for k, v in proto.items() if k != "promotion"}}
+
+
+def _materialize_run(run_id: str, brief: dict, *, promotion_retired: bool = False):
     """Write runs/<run_id>/artifacts/research_brief.yaml (and pre_registration.yaml
-    if the brief carries machine_constraints) into an already-scaffolded run dir."""
+    if the brief carries machine_constraints) into an already-scaffolded run dir.
+    `promotion_retired` (C5.6): the launch pre-flight's reading of
+    config_direct_authoring AND verdict_routing_retired -- then
+    machine_constraints.protocol.promotion is not written
+    (_without_retired_promotion)."""
     run_dir = ROOT / "runs" / run_id
     artifacts = run_dir / "artifacts"
     research_brief = {k: v for k, v in brief.items() if k != "machine_constraints"}
@@ -694,6 +774,8 @@ def _materialize_run(run_id: str, brief: dict):
     orch.save_yaml(artifacts / "research_brief.yaml", research_brief)
 
     machine_constraints = brief.get("machine_constraints")
+    if machine_constraints and promotion_retired:
+        machine_constraints = _without_retired_promotion(run_id, machine_constraints)
     if machine_constraints:
         # B4/B7 rider (2026-07-16): pass_rule copy-through on the fresh_launch
         # path, mirroring _materialize_refinement_run's own extraction exactly
@@ -841,7 +923,7 @@ def register_hypothesis(brief_path: Path, priority: int, notes: str, *,
         # E-061 C1.7 second-round code-review fix: registration-only, and
         # only under config_direct_authoring -- see that function's own
         # docstring for why this is not inside _parse_brief_frontmatter.
-        _lint_new_pipeline_registration(brief_path, _brief_data)
+        _register_notes = _lint_new_pipeline_registration(brief_path, _brief_data)
     except ValueError as err:
         _log(f"REGISTER REFUSED: malformed brief {brief_path}: {err}")
         return 1
@@ -880,7 +962,8 @@ def register_hypothesis(brief_path: Path, priority: int, notes: str, *,
     queue["queue"].append(entry)
     _save_queue(queue)
     _log(f"REGISTER: queue entry '{new_id}' appended (brief={brief_rel_str}, "
-         f"priority={priority}, status={status}).")
+         f"priority={priority}, status={status})."
+         + "".join(f" NOTE: {n}." for n in _register_notes))
     return 0
 
 
@@ -2060,8 +2143,9 @@ def resume_paused_entry(queue: dict) -> bool:
                 if flag_refusal is not None:
                     refusal = f"{FLAG_PREFLIGHT_HALT}: {flag_refusal}"
                 else:
-                    refusal, regeneration = _protocol_preflight(run_dir, run_id,
-                                                                ignore_pending=True)
+                    refusal, regeneration = _protocol_preflight(
+                        run_dir, run_id, ignore_pending=True,
+                        promotion_retired=_promotion_retired_from(flag_values, flag_refusal))
                     if refusal is not None:
                         refusal = f"{PROTOCOL_PREFLIGHT_HALT}: {refusal}"
                     elif regeneration is not None:
@@ -3070,6 +3154,16 @@ def _flag_preflight_refusal() -> str | None:
     return _flag_preflight()[1]
 
 
+def _promotion_retired_from(values: dict, refusal: str | None) -> bool:
+    """C5.6 (D-043): orch._promotion_retired_enabled's value, derived from the
+    pre-flight's ONE parsed reading (_flag_preflight) instead of re-reading
+    config/campaign_config.yaml: config_direct_authoring AND
+    verdict_routing_retired. False on a refused flag set (nothing launches
+    then anyway)."""
+    return (refusal is None and values.get("config_direct_authoring") is True
+            and values.get("verdict_routing_retired") is True)
+
+
 _PREFLIGHT_TERMINAL_PREFIXES = ("completed", "rejected", "human_pause", "failed_validation")
 # The fields a generated protocol is built from (_ensure_protocol_from_constraints).
 _GENERATED_PROTOCOL_FIELDS = ("symbols", "timeframe", "windows", "holdout", "promotion")
@@ -3099,14 +3193,16 @@ def _data_spend_evidence(run_dir: Path, run_id: str, state: dict) -> list:
     return evidence
 
 
-def _expected_generated_protocol(generated: dict, run_id: str) -> dict:
+def _expected_generated_protocol(generated: dict, run_id: str, *,
+                                 promotion_retired: bool) -> dict:
     """The protocol _ensure_protocol_from_constraints would write from these
     machine_constraints.protocol, field for field: same order, same helpers,
     and it raises exactly where generation raises (fourth-round review fix 5 --
     pinned by a parity test over malformed inputs): a missing symbols / start /
     end key, windows reaching the holdout, a `holdout` override disagreeing
-    with the policy (CUL-339), no promotion block (flag off -- under
-    config_direct_authoring none is required and the key is then absent, C5.6).
+    with the policy (CUL-339), no promotion block (unless `promotion_retired`
+    -- the pre-flight's reading of config_direct_authoring AND
+    verdict_routing_retired -- when the key is always absent, C5.6).
     An empty symbols list is accepted, as generation accepts it."""
     symbols = generated["symbols"]
     per_symbol_start = generated.get("per_symbol_start") or {}
@@ -3117,11 +3213,23 @@ def _expected_generated_protocol(generated: dict, run_id: str) -> dict:
         "timeframe": generated.get("timeframe", "1h"),
         "windows": windows,
         "holdout": orch._generated_protocol_holdout_block(generated),
-        **orch._generated_protocol_promotion(generated, run_id),
+        **orch._generated_protocol_promotion(generated, run_id,
+                                              promotion_retired=promotion_retired),
     }
 
 
-def _generated_protocol_plan(run_dir: Path, run_id: str, generated: dict, state: dict) -> tuple:
+def _generated_field(doc: dict, key: str):
+    """A generated-protocol field for the regeneration diff. C5.6 review fix 9:
+    `promotion` absent, null and empty ({}) are the same "no block", so a file
+    written with one and expected with another is not regenerated. Under G7
+    the expected block is never empty, so the flag-off comparison is
+    unchanged."""
+    value = doc.get(key)
+    return (value or None) if key == "promotion" else value
+
+
+def _generated_protocol_plan(run_dir: Path, run_id: str, generated: dict, state: dict, *,
+                             promotion_retired: bool) -> tuple:
     """(refusal, regeneration) for a machine_constraints.protocol run.
 
     Spend evidence is checked FIRST (fourth-round review fix 1). Once data may
@@ -3141,7 +3249,12 @@ def _generated_protocol_plan(run_dir: Path, run_id: str, generated: dict, state:
       * a file that differs: refused when anything but `promotion` differs
         (windows, symbols, timeframe, holdout are never rewritten); a
         promotion-only difference returns the regeneration (applied atomically
-        before run_loop)."""
+        before run_loop).
+    C5.6: `promotion_retired` comes from the pre-flight's single parsed flag
+    reading (no config read here, so a config error is never reported as a
+    pre_registration generation error). Under it the expected protocol has no
+    `promotion` key; an absent, null or empty block compares equal (no
+    spurious regeneration)."""
     path = orch.ROOT / "protocols" / f"{run_id}_generated.json"
     where = f"machine_constraints.protocol (generated {path.name})"
     if "protocol_execution" in (state.get("completed_stages") or []):
@@ -3159,7 +3272,8 @@ def _generated_protocol_plan(run_dir: Path, run_id: str, generated: dict, state:
             return f"{where}: {e}", None
         return None, None
     try:
-        expected = _expected_generated_protocol(generated, run_id)
+        expected = _expected_generated_protocol(generated, run_id,
+                                                promotion_retired=promotion_retired)
     except Exception as e:
         return (f"{where}: pre_registration.yaml's machine_constraints.protocol cannot generate "
                 f"a protocol ({type(e).__name__}: {e}) -- fix it before this run spends "
@@ -3169,11 +3283,8 @@ def _generated_protocol_plan(run_dir: Path, run_id: str, generated: dict, state:
                f"never carries one), so the protocol would be refused at its first use, after "
                f"1a/1b/2. Pre-register real thresholds for this hypothesis in "
                f"pre_registration.yaml's machine_constraints.protocol.promotion")
-    if orch._config_direct_authoring_enabled():
-        generic += (" -- or delete that block: under config_direct_authoring a generated "
-                    "protocol needs none (C5.6, D-043)")
-    # C5.6: under config_direct_authoring `expected` may carry no `promotion` key
-    # (none pre-registered); flag off it always does (G7), so .get() is identical.
+    # C5.6: under promotion_retired `expected` carries no `promotion` key; otherwise
+    # it always does (G7), so .get() is identical to the old subscript there.
     if not path.exists():
         return (generic if protocol_resolution.promotion_is_generic(expected.get("promotion"))
                 else None), None
@@ -3182,7 +3293,8 @@ def _generated_protocol_plan(run_dir: Path, run_id: str, generated: dict, state:
     except (OSError, ValueError) as e:
         return f"{where}: {path.name} cannot be read ({type(e).__name__}: {e})", None
     differing = [k for k in _GENERATED_PROTOCOL_FIELDS
-                 if not isinstance(current, dict) or current.get(k) != expected.get(k)]
+                 if not isinstance(current, dict)
+                 or _generated_field(current, k) != _generated_field(expected, k)]
     if not differing:
         try:
             protocol_resolution.assert_promotion_ratified(path)
@@ -3199,7 +3311,8 @@ def _generated_protocol_plan(run_dir: Path, run_id: str, generated: dict, state:
     return None, {"path": path, "doc": expected, "differing": differing}
 
 
-def _protocol_preflight(run_dir: Path, run_id: str, *, ignore_pending: bool = False) -> tuple:
+def _protocol_preflight(run_dir: Path, run_id: str, *, promotion_retired: bool,
+                        ignore_pending: bool = False) -> tuple:
     """(refusal, regeneration): why the protocol this run WILL execute would be
     refused by the D-3 guard (tools/protocol_resolution.assert_promotion_ratified)
     at its first use -- _resolve_protocol_path at 5a / the data gate, after 1a,
@@ -3207,6 +3320,7 @@ def _protocol_preflight(run_dir: Path, run_id: str, *, ignore_pending: bool = Fa
     before any LLM call; skipped for a terminal pending_stage unless
     `ignore_pending` (the data_block_hitl resume restarts a paused run). Read
     only; a regeneration it returns is applied by _regenerate_protocol.
+    `promotion_retired`: _promotion_retired_from(the caller's _flag_preflight).
 
       * machine_constraints.protocol_ref (a pin), while the backtest is ahead:
         the pinned file, exactly as _ensure_protocol_ref_pinned resolves it. A
@@ -3228,7 +3342,8 @@ def _protocol_preflight(run_dir: Path, run_id: str, *, ignore_pending: bool = Fa
     constraints = constraints if isinstance(constraints, dict) else {}
     ref, generated = constraints.get("protocol_ref"), constraints.get("protocol")
     if isinstance(generated, dict) and not ref:
-        return _generated_protocol_plan(run_dir, run_id, generated, state)
+        return _generated_protocol_plan(run_dir, run_id, generated, state,
+                                        promotion_retired=promotion_retired)
     if "protocol_execution" in (state.get("completed_stages") or []):
         return None, None
     if isinstance(ref, str) and ref.strip():
@@ -3257,10 +3372,11 @@ def _protocol_preflight(run_dir: Path, run_id: str, *, ignore_pending: bool = Fa
     return None, None
 
 
-def _protocol_preflight_refusal(run_dir: Path, run_id: str, *,
+def _protocol_preflight_refusal(run_dir: Path, run_id: str, *, promotion_retired: bool,
                                 ignore_pending: bool = False) -> str | None:
     """The refusal half of _protocol_preflight."""
-    return _protocol_preflight(run_dir, run_id, ignore_pending=ignore_pending)[0]
+    return _protocol_preflight(run_dir, run_id, promotion_retired=promotion_retired,
+                               ignore_pending=ignore_pending)[0]
 
 
 def _regenerate_protocol(run_id: str, regeneration: dict) -> None:
@@ -3441,7 +3557,7 @@ _LAUNCH_ACTIONS = ("refinement_brief", "fresh_launch", "queued_card")
 
 
 def _launch_run(queue: dict, entry: dict, action: str, decide_next_enabled: bool,
-                created: list) -> str:
+                created: list, *, promotion_retired: bool) -> str:
     """The launch half of a process_once step (the three launch actions, after
     their own pre-checks), moved here unchanged so process_once can classify an
     exception from any of it (C1.4 review fix 6). `created` receives the new run
@@ -3464,7 +3580,7 @@ def _launch_run(queue: dict, entry: dict, action: str, decide_next_enabled: bool
         run_id = _next_new_run_id()
         created.append(run_id)
         setup_run(run_id)
-        _materialize_run(run_id, brief)
+        _materialize_run(run_id, brief, promotion_retired=promotion_retired)
         if decide_next_enabled:
             # E-059 S2b: a brief run (not a reader candidate) gets the context
             # that lets 1a score extra cards or report the brief exhausted.
@@ -3479,7 +3595,7 @@ def _launch_run(queue: dict, entry: dict, action: str, decide_next_enabled: bool
     run_id = _next_new_run_id()
     created.append(run_id)
     setup_run(run_id)
-    _materialize_run(run_id, brief)
+    _materialize_run(run_id, brief, promotion_retired=promotion_retired)
     _launch_queued_card(entry, run_id)
     entry["run_ids"] = [run_id]
     entry["status"] = "in_progress"
@@ -3490,7 +3606,8 @@ def _launch_run(queue: dict, entry: dict, action: str, decide_next_enabled: bool
 
 
 def _run_after_preflight(queue: dict, entry: dict, run_id: str, before_splits: list,
-                         decide_next_enabled: bool, schedulability_enabled: bool):
+                         decide_next_enabled: bool, schedulability_enabled: bool, *,
+                         promotion_retired: bool):
     """The protocol pre-flight, a pre-spend generated-protocol regeneration and
     run_loop. Returns None when run_loop returned normally, else process_once's
     return value after a classified pause: protocol_promotion_unratified, or
@@ -3500,7 +3617,8 @@ def _run_after_preflight(queue: dict, entry: dict, run_id: str, before_splits: l
     overwritten). KeyboardInterrupt and SystemExit pass through."""
     run_dir = ROOT / "runs" / run_id
     try:
-        refusal, regeneration = _protocol_preflight(run_dir, run_id)
+        refusal, regeneration = _protocol_preflight(run_dir, run_id,
+                                                    promotion_retired=promotion_retired)
         if refusal is None:
             if regeneration is not None:
                 _regenerate_protocol(run_id, regeneration)
@@ -3561,6 +3679,7 @@ def process_once() -> bool:
     # prerequisite flags) stops before anything launches -- now as a flag refusal.
     decide_next_enabled = flag_refusal is None and flag_values.get("decide_next") is True
     routing_retired = flag_refusal is None and flag_values.get("verdict_routing_retired") is True
+    promotion_retired = _promotion_retired_from(flag_values, flag_refusal)  # C5.6
 
     queue = _load_queue()
     entry = _select_entry(queue["queue"])
@@ -3650,7 +3769,8 @@ def process_once() -> bool:
         # pause (launch_exception); a run dir it created is recorded and paused.
         created, before = [], copy.deepcopy(entry)
         try:
-            run_id = _launch_run(queue, entry, action, decide_next_enabled, created)
+            run_id = _launch_run(queue, entry, action, decide_next_enabled, created,
+                                 promotion_retired=promotion_retired)
         except Exception as exc:
             return _halt_launch_exception(queue, entry, before, created, exc,
                                           schedulability_enabled)
@@ -3680,7 +3800,7 @@ def process_once() -> bool:
     # E-061 C1.5 / C1.4: the protocol pre-flight (before 1a), then run_loop; a
     # refusal or an escaping Exception is a classified pause (None: ran normally).
     halted = _run_after_preflight(queue, entry, run_id, before_splits, decide_next_enabled,
-                                  schedulability_enabled)
+                                  schedulability_enabled, promotion_retired=promotion_retired)
     if halted is not None:
         return halted
     queue, entry, split_child_ids = _record_run_loop_children(

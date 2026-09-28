@@ -24,10 +24,13 @@ Round 2 (this file's current shape):
      machine_constraints.protocol.promotion is caught too.
   5. Under orchestrator.config_direct_authoring.enabled, registration now ALSO
      refuses a generate-path brief with no `promotion` block at all
-     (previously only caught at LAUNCH by G7). SUPERSEDED by C5.6 (D-043):
-     under the flag a generated protocol needs no promotion block, G7 is
-     skipped, and registration refuses only the abolished GENERIC block
-     (run_campaign._check_generate_protocol_promotion_not_generic).
+     (previously only caught at LAUNCH by G7). C5.6 (D-043): still so under
+     config_direct_authoring ALONE (verdict routing live, G7 kept); under
+     config_direct_authoring + verdict_routing_retired (the new pipeline this
+     template is for) a generated protocol needs no promotion block, and
+     registration refuses only the abolished GENERIC block or a present-but-
+     empty one, accepting any other with a logged note
+     (run_campaign._check_retired_generate_protocol_promotion).
   6. The universe/timeframe cross-check MOVED: it is no longer inside
      _parse_brief_frontmatter (which runs on every re-parse -- materialization,
      dry-run, resume); it is now registration-ONLY
@@ -168,6 +171,22 @@ def _enable_config_direct_authoring(root: Path) -> None:
     config_dir.mkdir(exist_ok=True)
     (config_dir / "campaign_config.yaml").write_text(
         yaml.safe_dump({"orchestrator": {"config_direct_authoring": {"enabled": True}}}),
+        encoding="utf-8",
+    )
+
+
+# C5.6: the new pipeline this template is for -- config_direct_authoring AND
+# verdict_routing_retired (with every dependency its strict reader checks).
+_NEW_PIPELINE_FLAGS = ("config_direct_authoring", "verdict_routing_retired", "decide_next",
+                       "regroup_record", "specialist_readers", "grid_evaluation",
+                       "category_reports", "profit_bars_every_backtest", "profit_bars_file")
+
+
+def _enable_new_pipeline(root: Path) -> None:
+    config_dir = root / "config"
+    config_dir.mkdir(exist_ok=True)
+    (config_dir / "campaign_config.yaml").write_text(
+        yaml.safe_dump({"orchestrator": {n: {"enabled": True} for n in _NEW_PIPELINE_FLAGS}}),
         encoding="utf-8",
     )
 
@@ -397,38 +416,71 @@ def test_mismatched_universe_flag_off_is_not_checked(campaign_root):
 
 
 # ---------------------------------------------------------------------------
-# config_direct_authoring ON: generic-promotion refusal (C5.6; was
-# promotion-required before D-043) + universe/timeframe cross-check, both
-# registration-only.
+# config_direct_authoring ON: the promotion check + universe/timeframe
+# cross-check, both registration-only. C5.6 (D-043): which promotion check
+# depends on verdict_routing_retired too.
 # ---------------------------------------------------------------------------
 
-def test_generate_protocol_with_no_promotion_registers_under_config_direct_authoring(campaign_root):
+def test_generate_protocol_with_no_promotion_registers_under_the_new_pipeline(campaign_root,
+                                                                              capsys):
     """C5.6 (D-043): the filled template -- no promotion block at all --
-    registers under config_direct_authoring. (Before C5.6 this was refused:
-    the operator had to invent thresholds nothing reads.)"""
+    registers under config_direct_authoring + verdict_routing_retired, with
+    no note. (Before C5.6 the operator had to invent thresholds nothing reads.)"""
     root = campaign_root["root"]
-    _enable_config_direct_authoring(root)
-    assert orch._config_direct_authoring_enabled() is True
+    _enable_new_pipeline(root)
+    assert orch._promotion_retired_enabled() is True
     rc = _register(root, "no_promotion", _filled_template_text())
     assert rc == 0
     queue = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))
     assert [e["id"] for e in queue["queue"]] == ["no_promotion"]
+    assert "NOTE" not in capsys.readouterr().out
 
 
-def test_generic_promotion_block_is_refused_under_config_direct_authoring(campaign_root):
-    """C5.6: a brief that carries the abolished generic block is refused at
-    registration -- the generated protocol would carry it verbatim and the
-    D-3 guard would refuse it at launch pre-flight anyway."""
+def test_generate_protocol_with_no_promotion_is_refused_under_config_direct_alone(campaign_root):
+    """C5.6 review fix 1: config_direct_authoring with verdict routing live
+    keeps G7, so registration keeps refusing a brief with no block (the
+    pre-C5.6 behaviour, unchanged)."""
     root = campaign_root["root"]
     _enable_config_direct_authoring(root)
-    rc = _register(root, "generic_promotion",
-                   _with_promotion_block(_filled_template_text(), _GENERIC_PROMOTION_BLOCK))
+    assert orch._config_direct_authoring_enabled() is True
+    assert orch._promotion_retired_enabled() is False
+    rc = _register(root, "no_promotion", _filled_template_text())
     assert rc == 1
     queue = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))
     assert queue["queue"] == []
-    data = camp._parse_brief_frontmatter(root / "briefs" / "generic_promotion.md")
-    with pytest.raises(ValueError, match="abolished generic block"):
-        camp._lint_new_pipeline_registration(root / "briefs" / "generic_promotion.md", data)
+    data = camp._parse_brief_frontmatter(root / "briefs" / "no_promotion.md")
+    with pytest.raises(ValueError, match="has no `promotion` block"):
+        camp._lint_new_pipeline_registration(root / "briefs" / "no_promotion.md", data)
+
+
+@pytest.mark.parametrize("block,match", [
+    (_GENERIC_PROMOTION_BLOCK, "abolished generic block"),
+    ("    promotion: {}\n", "present but empty"),
+    ("    promotion:\n", "present but empty"),
+], ids=["generic", "empty", "null"])
+def test_generic_or_empty_promotion_block_is_refused_under_the_new_pipeline(campaign_root,
+                                                                            block, match):
+    """C5.6: the abolished generic block, and a present-but-empty one (review
+    fix 9: the shape flag-off G7 refuses), are refused at registration."""
+    root = campaign_root["root"]
+    _enable_new_pipeline(root)
+    rc = _register(root, "bad_promotion", _with_promotion_block(_filled_template_text(), block))
+    assert rc == 1
+    queue = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))
+    assert queue["queue"] == []
+    data = camp._parse_brief_frontmatter(root / "briefs" / "bad_promotion.md")
+    with pytest.raises(ValueError, match=match):
+        camp._lint_new_pipeline_registration(root / "briefs" / "bad_promotion.md", data)
+
+
+def test_generic_promotion_block_registers_under_config_direct_alone(campaign_root):
+    """config_direct_authoring alone: G7's registration half accepts any block,
+    exactly as before C5.6; the D-3 launch pre-flight refuses the generic one."""
+    root = campaign_root["root"]
+    _enable_config_direct_authoring(root)
+    rc = _register(root, "generic_cd_only",
+                   _with_promotion_block(_filled_template_text(), _GENERIC_PROMOTION_BLOCK))
+    assert rc == 0
 
 
 def test_generic_promotion_block_registers_when_flag_is_off(campaign_root):
@@ -447,6 +499,34 @@ def test_fully_filled_brief_with_promotion_registers_under_config_direct_authori
     assert rc == 0
     queue = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))
     assert len(queue["queue"]) == 1
+
+
+def test_real_promotion_block_registers_with_a_note_under_the_new_pipeline(campaign_root,
+                                                                           capsys):
+    """C5.6 review fix 3: a real block is accepted and ignored, with a note on
+    the REGISTER line (still exactly one log line)."""
+    root = campaign_root["root"]
+    _enable_new_pipeline(root)
+    rc = _register(root, "fully_filled", _filled_template_text_with_promotion())
+    assert rc == 0
+    lines = [ln for ln in capsys.readouterr().out.splitlines() if "REGISTER" in ln]
+    assert len(lines) == 1
+    assert "NOTE: machine_constraints.protocol.promotion is ignored" in lines[0]
+
+
+def test_unreadable_config_is_not_reported_as_a_brief_defect(campaign_root, capsys):
+    """C5.6 review fix 5: a config/campaign_config.yaml the verdict-routing
+    reader refuses skips the promotion check with a note (the launch
+    pre-flight refuses that config) instead of calling the brief malformed."""
+    root = campaign_root["root"]
+    (root / "config").mkdir(exist_ok=True)
+    (root / "config" / "campaign_config.yaml").write_text(yaml.safe_dump({"orchestrator": {
+        "config_direct_authoring": {"enabled": True},
+        "verdict_routing_retired": {"enabled": "true"}}}), encoding="utf-8")
+    rc = _register(root, "cfg_broken", _filled_template_text())
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "malformed brief" not in out and "NOTE: promotion check skipped" in out
 
 
 def test_mismatched_market_universe_is_refused_under_flag(campaign_root):

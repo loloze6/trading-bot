@@ -45,14 +45,19 @@
 #    at registration, and ONLY under config_direct_authoring -- a
 #    launch/resume re-parsing an already-registered brief does not re-run
 #    them (same review fix).
-# 4. Do NOT add a `promotion` block (C5.6, decision D-043). Under
-#    config_direct_authoring nothing that decides reads one -- the grid and
-#    the profit bars decide -- so a generated protocol needs none, and none
-#    is invented for you (see the long comment below). Registration refuses
-#    only the abolished generic block (median_sharpe_gt 0 /
-#    max_abs_drawdown_pct_lt 30 / min_trade_count_gte 20 /
-#    kill_median_sharpe_lt -1), which the D-3 guard would refuse at launch
-#    anyway.
+# 4. Do NOT add a `promotion` block (C5.6, decision D-043). Under the new
+#    pipeline -- orchestrator.config_direct_authoring AND
+#    orchestrator.verdict_routing_retired both on (the target flag set) --
+#    nothing that decides reads one: the grid and the profit bars decide, so
+#    a generated protocol needs none and none is invented for you (see the
+#    long comment below). There, registration refuses the abolished generic
+#    block (median_sharpe_gt 0 / max_abs_drawdown_pct_lt 30 /
+#    min_trade_count_gte 20 / kill_median_sharpe_lt -1) and a present-but-
+#    empty `promotion:`; any other block registers with a note and is DROPPED
+#    (never copied into pre_registration.yaml or the generated protocol).
+#    With config_direct_authoring on but verdict routing still live, the
+#    legacy verdict still decides and a real pre-registered block is
+#    REQUIRED (G7, refused at registration without one).
 # 5. Register it: `python workflow/run_campaign.py register --brief
 #    briefs/<your_brief_name>.md --priority <n> --notes "<n>"` (RUNBOOK.md
 #    §1a-bis has the pre-launch checks to run before spending any LLM
@@ -125,14 +130,15 @@
 #     no protocol-local holdout block for --holdout to misread);
 #   * promotion: deliberately ABSENT (C5.6, D-043). A protocol's promotion
 #     block only feeds tools/run_protocol.py's legacy top-level
-#     promote/kill/refine verdict, which nothing under config_direct_authoring
-#     reads; with no block that verdict is recorded as null with a reason.
-#     Under config_direct_authoring the G7 gate
-#     (`_require_pre_registered_promotion`) is skipped, so the generated
-#     protocol simply carries no `promotion` key -- the abolished generic
-#     default is never substituted. (Flag OFF, G7 still refuses a generated
-#     protocol with no block, exactly as before -- this template is for the
-#     new pipeline only.)
+#     promote/kill/refine verdict, which nothing reads once
+#     config_direct_authoring AND verdict_routing_retired are both on: the
+#     G7 gate (`_require_pre_registered_promotion`) is then skipped, the
+#     generated protocol carries no `promotion` key (the abolished generic
+#     default is never substituted), and run_tool_worker passes
+#     --legacy-verdict-retired, so the legacy verdict is recorded as null
+#     with a reason. (config_direct_authoring alone, or flag OFF: G7 still
+#     refuses a generated protocol with no block, exactly as before -- this
+#     template is for the new pipeline only.)
 #
 # WHY brief_status IS NOT SET HERE (code-review correction)
 # -------------------------------------------------------------
@@ -174,7 +180,8 @@ machine_constraints:
     # holdout: intentionally omitted -- defaults to campaign_data_policy.yaml's
     #   own holdout_range (see the long comment above).
     # promotion: intentionally omitted -- not needed under
-    #   config_direct_authoring (C5.6, D-043; see the long comment above).
+    #   config_direct_authoring + verdict_routing_retired (C5.6, D-043; see
+    #   the long comment above).
 ---
 
 # <FILL IN: a short human title for this brief>

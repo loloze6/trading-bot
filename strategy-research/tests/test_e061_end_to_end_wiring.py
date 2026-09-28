@@ -74,7 +74,9 @@ Finding -> test (see each marker's reason for the pinned failure):
   A4 (C1.4)  test_a4_uncaught_stage_exception_is_a_classified_pause       (fixed, no marker)
   A6 (C1.5)  test_a6_generic_promotion_protocol_refused_before_any_llm_call (fixed, no marker)
   C5.6       test_c5_6_generated_protocol_without_promotion_completes
-             test_c5_6_generated_protocol_with_a_generic_block_is_refused_at_registration
+             test_c5_6_pre_registered_block_is_dropped_and_never_reaches_a_prompt
+             test_c5_6_pinned_protocol_block_never_reaches_a_prompt
+             test_c5_6_generic_or_empty_block_is_refused_at_registration[*]
   A7 (C1.6)  test_a7_era_id_handles_the_open_ended_last_era
   A8 (C1.5)  test_a8_flag_misconfiguration_refused_before_any_llm_call[*] (fixed, no marker)
   A5 (pin)   test_a5_one_variant_failing_validate_config_pins_the_pause
@@ -342,6 +344,7 @@ class Harness:
         self.mp = monkeypatch
         self.violations: list = []
         self.llm_calls: list = []          # (stage, run_id) -- stage agents
+        self.prompts: list = []            # (stage, run_id, the full assembled prompt)
         self.reader_calls: list = []       # (category, run_id)
         self.argv: list = []               # every stubbed tool subprocess argv
         self.real_argv: list = []          # every real process argv (git only)
@@ -500,6 +503,7 @@ class Harness:
         stage = re.search(r"^\s*to_stage: ['\"]?(\w+)", segment, re.M)
         run = re.search(r"^\s*run_id: ['\"]?(run_\d+)", segment, re.M)
         stage, run_id = (stage.group(1) if stage else None), (run.group(1) if run else None)
+        self.prompts.append((stage, run_id, prompt))
         text = self._answer(stage, run_id, segment)
 
         async def _stream():
@@ -712,7 +716,9 @@ class Harness:
         trade_diagnostics.json and protocol_summary.json, whose hypothesis_verdict
         is the tool's own: evaluate_against_decision_rules on the parsed file
         with --validation-protocol, diagnostics_only_hypothesis_verdict with
-        --diagnostics-only (G14), null with neither."""
+        --diagnostics-only (G14), null with neither. C5.6: without
+        --legacy-verdict-retired a missing/partial promotion block is refused
+        first too; the top-level verdict is the tool's own (null under the flag)."""
         import run_protocol as rp  # the tool's own config digest, loader and evaluators
         config_path, protocol_path = Path(argv[2]), Path(argv[3])
         out = Path(argv[argv.index("--out-dir") + 1])
@@ -721,20 +727,26 @@ class Harness:
         prof = self.profile(vid)
         proto = json.loads(protocol_path.read_text(encoding="utf-8"))
         diagnostics_only = "--diagnostics-only" in argv
+        legacy_retired = "--legacy-verdict-retired" in argv
         vp_doc = None
-        if "--validation-protocol" in argv or diagnostics_only:
-            import contextlib
-            import io
-            err = io.StringIO()
-            try:
-                with contextlib.redirect_stderr(err):
-                    if "--validation-protocol" in argv and diagnostics_only:
-                        rp._refuse_before_any_backtest("mutually exclusive flags")
-                    if not diagnostics_only:
-                        vp_doc = rp._load_validation_protocol(
-                            argv[argv.index("--validation-protocol") + 1])
-            except SystemExit as exc:  # the real tool: refused before any window ran
-                return self._done(exc.code, stderr=err.getvalue())
+        import contextlib
+        import io
+        err = io.StringIO()
+        try:
+            with contextlib.redirect_stderr(err):
+                if "--validation-protocol" in argv and diagnostics_only:
+                    rp._refuse_before_any_backtest("mutually exclusive flags")
+                if "--validation-protocol" in argv:
+                    vp_doc = rp._load_validation_protocol(
+                        argv[argv.index("--validation-protocol") + 1])
+                block = proto.get("promotion")
+                if not legacy_retired and not (
+                        isinstance(block, dict)
+                        and all(k in block for k in rp.LEGACY_VERDICT_PROMOTION_KEYS)):
+                    # C5.6: the real tool refuses this before any window runs
+                    rp._refuse_before_any_backtest("no complete promotion block")
+        except SystemExit as exc:  # the real tool: refused before any window ran
+            return self._done(exc.code, stderr=err.getvalue())
         results, trades = [], []
         seed = int(nov.forecast_hash_of_config([run_id, vid])[:8], 16)
         for k, symbol in enumerate(proto["symbols"]):
@@ -776,10 +788,12 @@ class Harness:
             "protocol_file": argv[3],
             "results": results,
             "per_symbol_summary": per_symbol,
-            # C5.6: the real tool records the legacy verdict as null when the
-            # protocol has no promotion block (tools/run_protocol.py).
-            **({"verdict": "refine", "verdict_reason": "stub"} if proto.get("promotion")
-               else {"verdict": None, "verdict_reason": rp.NO_PROMOTION_VERDICT_REASON}),
+            # C5.6: the real tool's legacy verdict -- null under
+            # --legacy-verdict-retired, else computed from the protocol's block.
+            **dict(zip(("verdict", "verdict_reason"),
+                       (None, rp.LEGACY_VERDICT_RETIRED_REASON) if legacy_retired
+                       else rp.legacy_top_level_verdict(per_symbol, proto["symbols"],
+                                                        proto["promotion"]))),
             "hypothesis_verdict": hypothesis_verdict,
             "trade_diagnostics_summary": tds,
             "prescreen_backtest_cross_check": None,
@@ -1252,11 +1266,16 @@ def test_a6_generic_promotion_protocol_refused_before_any_llm_call(harness):
 
 
 # ---------------------------------------------------------------------------
-# C5.6 (D-043): a generated protocol needs no promotion block under the new
-# pipeline; an unratified generic block is still refused.
+# C5.6 (D-043): under config_direct_authoring + verdict_routing_retired (the
+# target flag set) a generated protocol carries no promotion block, the legacy
+# top-level verdict is not computed, and neither reaches any LLM prompt.
 # ---------------------------------------------------------------------------
 
-def _generated_constraints(promotion=None) -> dict:
+_NON_GENERIC_PROMOTION = {"median_sharpe_gt": 0.5, "max_abs_drawdown_pct_lt": 25,
+                          "min_trade_count_gte": 10, "kill_median_sharpe_lt": -1}
+
+
+def _generated_constraints(promotion="absent") -> dict:
     """machine_constraints.protocol generating exactly WINDOW_LABELS' six monthly
     windows (train range) on SYMBOLS at 1h; holdout defaulted from the policy."""
     first, last = WINDOW_LABELS[0], WINDOW_LABELS[-1]
@@ -1264,20 +1283,30 @@ def _generated_constraints(promotion=None) -> dict:
     ny, nm = (y + 1, 1) if m == 12 else (y, m + 1)
     proto = {"symbols": list(SYMBOLS), "timeframe": "1h", "start": f"{first}-01",
              "end": f"{ny:04d}-{nm:02d}-01"}
-    if promotion is not None:
+    if promotion != "absent":
         proto["promotion"] = promotion
     return {"protocol": proto}
 
 
-@pytest.mark.slow
-def test_c5_6_generated_protocol_without_promotion_completes(harness):
-    """The joined-up run on a GENERATED protocol whose brief pre-registers no
-    promotion block: registered, launched and completed (completed_refuted),
-    with every config-direct consumer written -- trial rows, grid, idea status,
-    profit bars, memory, reports -- while the legacy top-level verdict is null."""
-    h = harness.build(promotion=None)
-    h.register_brief(machine_constraints=_generated_constraints())
-    r1 = "run_001"
+def _assert_no_promotion_or_verdict_in_prompts(h: Harness) -> None:
+    """Review fix 4: no assembled prompt (skill + handoff + every context file)
+    delivered to any LLM stage carries a protocol's promotion block or the
+    legacy top-level verdict. Not vacuous: the stage agents and every reader
+    were prompted, and the readers' context files are inlined."""
+    import run_protocol as rp
+    stages = {stage for stage, _r, _p in h.prompts}
+    assert set(STAGE_AGENTS) | {"specialist_readers"} <= stages, stages
+    assert any("--- CONTENT OF artifacts/reports/" in p for _s, _r, p in h.prompts)
+    for stage, run_id, prompt in h.prompts:
+        where = f"{stage} on {run_id}"
+        for key in (*rp.LEGACY_VERDICT_PROMOTION_KEYS, "promotion_provenance"):
+            assert key not in prompt, f"{where}: prompt carries {key!r}"
+        assert rp.LEGACY_VERDICT_RETIRED_REASON not in prompt, where
+        top = re.findall(r"(?m)^(verdict|verdict_reason):", prompt)
+        assert top == [], f"{where}: prompt carries a top-level {top}"
+
+
+def _assert_c5_6_run_completed(h: Harness, r1: str = "run_001") -> None:
     keep_going, exc = _drive(h)
     if exc is not None:
         raise exc
@@ -1292,14 +1321,16 @@ def test_c5_6_generated_protocol_without_promotion_completes(harness):
     proto = json.loads(generated.read_text(encoding="utf-8"))
     assert "promotion" not in proto
     assert [w["label"] for w in proto["windows"]] == list(WINDOW_LABELS)
-    assert {Path(a[3]).name for a in h.calls_to("run_protocol.py")} == {generated.name}
-    assert len(h.calls_to("run_protocol.py")) == 3
+    calls = h.calls_to("run_protocol.py")
+    assert {Path(a[3]).name for a in calls} == {generated.name}
+    assert len(calls) == 3
+    assert all("--legacy-verdict-retired" in a for a in calls), calls
 
     import run_protocol as rp
     for vid in ("asset", "base", "design"):
         pr = h.art(r1, f"variants/{vid}/protocol_result.yaml")
         assert pr["verdict"] is None, vid
-        assert pr["verdict_reason"] == rp.NO_PROMOTION_VERDICT_REASON
+        assert pr["verdict_reason"] == rp.LEGACY_VERDICT_RETIRED_REASON
     rows = [r for r in h.trial_rows() if r["trial_id"].startswith(f"{r1}:")]
     assert sorted(r["trial_id"] for r in rows) == [f"{r1}:asset", f"{r1}:base", f"{r1}:design"]
     grid = h.art(r1, "grid_evaluation.yaml")
@@ -1312,17 +1343,57 @@ def test_c5_6_generated_protocol_without_promotion_completes(harness):
     memory = yaml.safe_load(rpr._campaign_memory_path().read_text(encoding="utf-8"))
     assert memory["runs"][r1]["idea_status"] == "refuted"
     assert h.art(r1, "decision_record.yaml") is not None
+    _assert_no_promotion_or_verdict_in_prompts(h)
     _assert_holdout_untouched(h)
 
 
-def test_c5_6_generated_protocol_with_a_generic_block_is_refused_at_registration(harness):
-    """Choice for C5.6 item 1: an unratified generic block is REFUSED, never
-    carried along. A generate brief carrying it does not register (the D-3
-    guard would refuse the generated protocol at the launch pre-flight anyway);
-    nothing is queued and no LLM call is made."""
+@pytest.mark.slow
+def test_c5_6_generated_protocol_without_promotion_completes(harness):
+    """The joined-up run on a GENERATED protocol whose brief pre-registers no
+    promotion block: registered, launched and completed (completed_refuted),
+    with every config-direct consumer written -- trial rows, grid, idea status,
+    profit bars, memory, reports -- while the legacy top-level verdict is null
+    (every run_protocol.py call carries --legacy-verdict-retired)."""
     h = harness.build(promotion=None)
-    h.register_brief(machine_constraints=_generated_constraints(dict(rpr._GENERIC_PROMOTION)),
-                     expect_rc=1)
+    h.register_brief(machine_constraints=_generated_constraints())
+    _assert_c5_6_run_completed(h)
+
+
+@pytest.mark.slow
+def test_c5_6_pre_registered_block_is_dropped_and_never_reaches_a_prompt(harness):
+    """Review fixes 3 + 4: a real (non-generic) block in the brief registers
+    with a logged note, is NOT copied into the generated protocol, and neither
+    it nor a top-level verdict reaches any LLM prompt."""
+    h = harness.build(promotion=None)
+    h.register_brief(machine_constraints=_generated_constraints(dict(_NON_GENERIC_PROMOTION)))
+    assert "NOTE: machine_constraints.protocol.promotion is ignored" in h.log_text()
+    _assert_c5_6_run_completed(h)
+
+
+@pytest.mark.slow
+def test_c5_6_pinned_protocol_block_never_reaches_a_prompt(harness):
+    """Review fix 4 on the pinned path: the wiring protocol HAS a (non-generic)
+    promotion block; under the target flags run_protocol.py does not read it
+    (--legacy-verdict-retired) and it reaches no prompt."""
+    h = harness.build()
+    h.register_brief()
+    _keep_going, exc = _drive(h)
+    if exc is not None:
+        raise exc
+    assert h.state("run_001").get("last_error") is None
+    calls = h.calls_to("run_protocol.py")
+    assert calls and all("--legacy-verdict-retired" in a for a in calls), calls
+    _assert_no_promotion_or_verdict_in_prompts(h)
+
+
+@pytest.mark.parametrize("block", [dict(rpr._GENERIC_PROMOTION), {}, None],
+                         ids=["generic", "empty", "null"])
+def test_c5_6_generic_or_empty_block_is_refused_at_registration(harness, block):
+    """An unratified generic block, and a present-but-empty one (review fix 9:
+    the shape flag-off G7 refuses), do not register; nothing is queued and no
+    LLM call is made."""
+    h = harness.build(promotion=None)
+    h.register_brief(machine_constraints=_generated_constraints(block), expect_rc=1)
     assert h.queue() == []
     assert _drive(h) == (False, None)
     assert h.llm_calls == [] and h.argv == []
