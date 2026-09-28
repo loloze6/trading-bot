@@ -391,10 +391,10 @@ def test_generated_protocol_with_a_generic_promotion_is_refused_before_generatio
     run_dir = _scaffold(constraints={"protocol": {"symbols": ["BTCUSDT"], "start": "2022-01-01",
                                                   "end": "2022-03-01",
                                                   "promotion": dict(rpr._GENERIC_PROMOTION)}})
-    refusal = camp._protocol_preflight_refusal(run_dir, RUN)
+    refusal = camp._protocol_preflight_refusal(run_dir, RUN, promotion_retired=False)
     assert refusal and "G7/D-3" in refusal and f"{RUN}_generated.json" in refusal
     run_dir2 = _scaffold("run_002", constraints=_generated_constraints(_NON_GENERIC))
-    assert camp._protocol_preflight_refusal(run_dir2, "run_002") is None
+    assert camp._protocol_preflight_refusal(run_dir2, "run_002", promotion_retired=False) is None
 
 
 def test_protocol_check_skips_runs_past_their_backtest_and_unpinned_runs():
@@ -402,13 +402,14 @@ def test_protocol_check_skips_runs_past_their_backtest_and_unpinned_runs():
     pin = {"protocol_ref": "protocols/generic.json"}
     past = _scaffold("run_010", constraints=pin, completed_stages=["protocol_execution"],
                      pending_stage="specialist_readers")
-    assert camp._protocol_preflight_refusal(past, "run_010") is None
+    assert camp._protocol_preflight_refusal(past, "run_010", promotion_retired=False) is None
     done = _scaffold("run_011", constraints=pin, pending_stage="completed_refuted")
-    assert camp._protocol_preflight_refusal(done, "run_011") is None
+    assert camp._protocol_preflight_refusal(done, "run_011", promotion_retired=False) is None
     unpinned = _scaffold("run_012")
-    assert camp._protocol_preflight_refusal(unpinned, "run_012") is None
+    assert camp._protocol_preflight_refusal(unpinned, "run_012", promotion_retired=False) is None
     missing = _scaffold("run_013", constraints={"protocol_ref": "protocols/nope.json"})
-    assert camp._protocol_preflight_refusal(missing, "run_013") is None  # the pin raises later
+    # the pin raises later
+    assert camp._protocol_preflight_refusal(missing, "run_013", promotion_retired=False) is None
 
 
 def test_register_reads_decide_next_itself_not_its_prerequisites(monkeypatch):
@@ -610,7 +611,7 @@ def test_an_unclaimed_escalation_is_left_to_run_loop():
     state["last_escalation"] = {"protocol_path": str(proto), "claimed_by_run": "run_999"}
     rpr._save_campaign_state(state)
     run_dir = _scaffold()
-    assert camp._protocol_preflight_refusal(run_dir, RUN) is None
+    assert camp._protocol_preflight_refusal(run_dir, RUN, promotion_retired=False) is None
 
 
 def test_a_run_context_protocol_is_refused_before_run_loop():
@@ -619,7 +620,7 @@ def test_a_run_context_protocol_is_refused_before_run_loop():
     (run_dir / "artifacts" / "run_context.yaml").write_text(
         yaml.safe_dump({"run_type": "forced_diagnostic", "protocol": "forced_generic.json"}),
         encoding="utf-8")
-    refusal = camp._protocol_preflight_refusal(run_dir, RUN)
+    refusal = camp._protocol_preflight_refusal(run_dir, RUN, promotion_retired=False)
     assert refusal and "run_context.yaml" in refusal and "forced_generic.json" in refusal
 
 
@@ -715,7 +716,8 @@ def test_the_expected_protocol_is_exactly_what_generation_writes():
     run_dir = _scaffold(constraints=constraints)
     path = rpr._ensure_protocol_from_constraints(run_dir, RUN, constraints)
     written = json.loads(path.read_text(encoding="utf-8"))
-    assert camp._expected_generated_protocol(constraints["protocol"], RUN) == written
+    assert camp._expected_generated_protocol(constraints["protocol"], RUN,
+                                             promotion_retired=False) == written
 
 
 def test_a_promotion_only_fix_before_any_spend_is_regenerated_atomically(monkeypatch):
@@ -736,7 +738,8 @@ def test_a_promotion_only_fix_before_any_spend_is_regenerated_atomically(monkeyp
     with pytest.raises(_Reached):
         camp.process_once()
     doc = json.loads(gen_path.read_text(encoding="utf-8"))
-    assert doc == camp._expected_generated_protocol(_generated_constraints(_NON_GENERIC)["protocol"], RUN)
+    assert doc == camp._expected_generated_protocol(
+        _generated_constraints(_NON_GENERIC)["protocol"], RUN, promotion_retired=False)
     assert "regenerated before any spend -- field(s) ['promotion']" in _log_text()
     assert not list(gen_path.parent.glob(f".{gen_path.name}.*"))
 
@@ -768,7 +771,7 @@ def test_after_spend_the_generated_file_is_never_rebuilt_or_regenerated(monkeypa
     for edited in (_generated_constraints(_OTHER),                     # the rules changed
                    {"protocol": {"promotion": _OTHER}}):               # cannot even generate
         _set_pre_registration(run_dir, edited)
-        assert camp._protocol_preflight(run_dir, RUN) == (None, None)
+        assert camp._protocol_preflight(run_dir, RUN, promotion_retired=False) == (None, None)
     _queue([_entry()])
     _reach_run_loop(monkeypatch)
     with pytest.raises(_Reached):
@@ -783,7 +786,7 @@ def test_after_spend_an_unratified_generated_file_is_still_refused_by_d3():
     run_dir = _scaffold(constraints=constraints)
     rpr._ensure_protocol_from_constraints(run_dir, RUN, constraints)
     (run_dir / "artifacts" / "protocol_result.yaml").write_text("x: 1\n", encoding="utf-8")
-    refusal, regeneration = camp._protocol_preflight(run_dir, RUN)
+    refusal, regeneration = camp._protocol_preflight(run_dir, RUN, promotion_retired=False)
     assert regeneration is None and "[G7/D-3]" in refusal and "ratified_by" in refusal
     assert "fix it before" not in refusal
 
@@ -792,7 +795,7 @@ def test_after_spend_a_missing_generated_file_is_refused():
     constraints = _generated_constraints(_NON_GENERIC)
     run_dir = _scaffold(constraints=constraints)
     (run_dir / "artifacts" / "protocol_result.yaml").write_text("x: 1\n", encoding="utf-8")
-    refusal, _ = camp._protocol_preflight(run_dir, RUN)
+    refusal, _ = camp._protocol_preflight(run_dir, RUN, promotion_retired=False)
     assert refusal and "file is missing although data may already have been spent" in refusal
 
 
@@ -821,7 +824,8 @@ def test_real_generated_run_shapes_under_the_hitl_resume(tmp_path, monkeypatch, 
     monkeypatch.setattr(camp, "ROOT", sandbox)
     run_dir = sandbox / "runs" / run_id
     assert not rpr._load_machine_constraints(run_dir)["protocol"].get("promotion")
-    refusal, regeneration = camp._protocol_preflight(run_dir, run_id, ignore_pending=True)
+    refusal, regeneration = camp._protocol_preflight(run_dir, run_id, ignore_pending=True,
+                                                     promotion_retired=False)
     assert regeneration is None
     assert refusal is None or ("fix it before" not in refusal and "[G7/D-3]" in refusal), refusal
     before = (sandbox / "protocols" / f"{run_id}_generated.json").read_bytes()
@@ -837,7 +841,7 @@ def test_a_non_promotion_change_before_spend_is_refused(monkeypatch, change, fie
     gen_path = rpr._ensure_protocol_from_constraints(run_dir, RUN, constraints)
     before_bytes = gen_path.read_bytes()
     _set_pre_registration(run_dir, _generated_constraints(_OTHER, **change))
-    refusal, regeneration = camp._protocol_preflight(run_dir, RUN)
+    refusal, regeneration = camp._protocol_preflight(run_dir, RUN, promotion_retired=False)
     assert regeneration is None and refusal and field in refusal
     assert "only a promotion-block change is regenerated" in refusal
     assert gen_path.read_bytes() == before_bytes
@@ -852,7 +856,7 @@ def test_inputs_that_cannot_generate_are_refused_and_keep_the_file():
                    {"protocol": {k: v for k, v in constraints["protocol"].items()
                                  if k != "symbols"}}):
         _set_pre_registration(run_dir, broken)
-        refusal, regeneration = camp._protocol_preflight(run_dir, RUN)
+        refusal, regeneration = camp._protocol_preflight(run_dir, RUN, promotion_retired=False)
         assert regeneration is None and "cannot generate a protocol" in refusal, broken
         assert gen_path.read_bytes() == before_bytes
 
@@ -867,7 +871,7 @@ def test_windows_reaching_the_holdout_are_refused_before_generation():
     constraints["protocol"]["end"] = (_dt.date.fromisoformat(str(hs))
                                       + _dt.timedelta(days=40)).isoformat()
     _set_pre_registration(run_dir, constraints)
-    refusal, regeneration = camp._protocol_preflight(run_dir, RUN)
+    refusal, regeneration = camp._protocol_preflight(run_dir, RUN, promotion_retired=False)
     assert regeneration is None and refusal and "cannot generate a protocol" in refusal
 
 
@@ -1136,7 +1140,8 @@ def test_expected_protocol_raises_exactly_where_generation_raises():
     for n, gen in enumerate(cases):
         run_id = f"run_{300 + n:03d}"
         run_dir = _scaffold(run_id)
-        expected = _outcome(lambda: camp._expected_generated_protocol(gen, run_id))
+        expected = _outcome(lambda: camp._expected_generated_protocol(
+            gen, run_id, promotion_retired=False))
 
         def _generate():
             path = rpr._ensure_protocol_from_constraints(run_dir, run_id, {"protocol": gen})
