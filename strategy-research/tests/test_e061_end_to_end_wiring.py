@@ -3,58 +3,72 @@ E-061 C1.1 -- the end-to-end wiring test (delivery_plan_v26_continuation.md C1.1
 review_2026-09-27/A3_all_flags_on.md §5 items 1-9; DELIVERY_REVIEW.md section A).
 
 WRITTEN FIRST, TO FAIL ON MASTER. Every test that the review's section-A findings
-break today is marked ``xfail(strict=True)`` with the finding it fails on, so the
-suite stays green and the fix for that finding must flip exactly its xfail (a
-strict xfail that unexpectedly passes FAILS the suite: remove the marker in the
-fixing PR). The reason text of each marker quotes the failure actually observed
-on master when this file was written.
+break today is marked ``xfail(strict=True, raises=PinnedFailure)``. A test raises
+``PinnedFailure`` ONLY after it has recognised the specific signature of the
+finding it waits on (quoted in the marker's reason, as observed on master when
+this file was written). Any other failure -- a different exception, a plain
+assertion, a guard violation -- is a real FAIL, never an XFAIL. The fix for a
+finding must flip exactly its xfail (a strict xfail that passes FAILS the suite:
+remove the marker in the fixing PR).
 
 What makes this test different from the near-end-to-end test it replaces as the
 proof (test_e060_s3b_composition_wiring.py::test_end_to_end_registry_change_to_
 graded_composite, which swaps ``setup_run`` for empty-input handoffs, turns the
 data gate off and so hides A1 and A2 -- review finding A9):
 
+  * the production layout: the sandbox is the CWD, ``run_phase1_research.ROOT``
+    is the RELATIVE ``Path(".")`` with its relative path globals
+    (CAMPAIGN_STATE_PATH, _KB_PATH, _DATA_POLICY_PATH), while run_campaign and
+    setup_run keep their absolute ROOT, exactly as when the campaign runs from
+    strategy-research/;
   * the REAL ``setup_run`` copies the REAL handoff templates
-    (``setup_run.TEMPLATES_DIR`` is never touched), into a sandbox that is both
-    ``ROOT`` and the CWD -- exactly the production layout, where
-    ``run_phase1_research.ROOT = Path(".")`` and the CWD is strategy-research/;
+    (``setup_run.TEMPLATES_DIR`` is never touched);
   * the full target flag set of A3 §1 (unquoted booleans) is written into the
     sandbox's copy of the REAL ``config/campaign_config.yaml``;
   * the operator brief is registered through the real ``register`` sub-command
     function (``run_campaign._register_from_cli``) and launched by
     ``run_campaign.process_once()`` -- the campaign loop's own entry point;
-  * only the two outward edges are stubbed: the LLM (``run_claude_worker`` /
-    ``_invoke_reader_llm``, keyed on stage) and the tool subprocesses
-    (``validate_config.py``, ``data_availability_gate.py``, ``run_protocol.py``,
-    ``validate_regime_detector.py``, via ``subprocess.run`` +
-    ``_resolve_tbot_python``). Everything between them -- prompt assembly
-    (``_build_stage_prompt`` is called by the LLM stub, so a missing required
-    input fails exactly as it would before a real call), handoff loading,
-    routing, the grid, the reports, the readers' validation, regroup, the
-    profit bars, decide_next -- is the real code.
+  * only the two outward edges are stubbed:
+      - the model, at the SDK ``query`` level (``run_phase1_research.query``):
+        the real ``run_claude_worker`` / ``_invoke_reader_llm`` build the real
+        prompt, stream the stub's messages, parse its fenced ```yaml # <file>.yaml
+        blocks and write the deliverables, which the real handoff check then
+        reads;
+      - the tool subprocesses (``validate_config.py``, ``data_availability_gate.py``,
+        ``run_protocol.py``, ``validate_regime_detector.py``) behind the stub
+        interpreter of ``_resolve_tbot_python``. ``subprocess.run`` and
+        ``subprocess.Popen`` are both guarded: every argv is recorded; any repo
+        script (tools/, workflow/, trading-bot/, whatever the interpreter --
+        ``sys.executable``, composite_cache's runner, setup_run.py) and any
+        program other than git is refused.
+
+Guards (A3 §5 items 5-6). The stubs COLLECT every violation -- an argv naming
+holdout_sealed, an unexpected tool subprocess, a real subprocess other than git,
+an unexpected LLM stage, a Gemini call -- into ``Harness.violations`` (and raise
+where they are hit), and the fixture asserts the list empty at teardown for every
+test, so production code that swallows an exception cannot hide one.
 
 The stubs are realistic, not permissive:
   * every LLM deliverable that has a workflow_artifacts/schemas/ schema is
-    validated against it inside the stub (a stub that writes an invalid card
-    fails loudly; variant_patches.yaml has no schema yet -- review C11);
-  * the strategy configs are real ones: base / design / asset below returned
-    exit 0 from the real trading-bot/tools/validate_config.py, and the invalid
-    variant of the A5 test returned the real V3 message the stub reproduces
-    (measured once with the real validator when this file was written);
-  * the ``run_protocol.py`` stub emulates the real tool's order of work
-    (tools/run_protocol.py): it writes every window's ``results/<window run
-    id>/portfolio_states.csv`` + ``bars.csv`` and ``trade_diagnostics.json``
-    under ``--out-dir``, and only THEN opens ``--validation-protocol`` when one
-    is passed (run_protocol.py:2289-2291) -- a missing file there is the
-    FileNotFoundError / non-zero exit the real tool would produce after
-    spending the data (finding A2);
-  * no network, no real LLM, no real backtest, no Gemini (asserted), and never
-    ``local_data/holdout_sealed/`` (asserted on every recorded argv). No date
-    inside the sealed holdout range is written here: the one place that needs
-    the policy's ranges (the open-ended era of the A7 test) reads them at
+    validated against it inside the stub (variant_patches.yaml has no schema
+    yet -- review C11);
+  * the strategy configs are real ones: base / design / asset returned exit 0
+    from the real trading-bot/tools/validate_config.py, and the invalid variant
+    of the A5 test returned the real V3 message the stub reproduces (measured
+    once with the real validator when this file was written);
+  * the ``run_protocol.py`` stub follows the real tool's order of work
+    (tools/run_protocol.py): every window's ``results/<window run id>/
+    portfolio_states.csv`` + ``bars.csv``, then ``trade_diagnostics.json`` (trade
+    records with exactly the keys of ``_compute_trade_records_for_window``), and
+    only THEN opens ``--validation-protocol`` when one is passed
+    (run_protocol.py:2289-2291); ``config_sha256`` is the tool's own
+    ``_config_sha``;
+  * no network, no real LLM, no real backtest, no Gemini, never
+    ``local_data/holdout_sealed/`` and never ``--holdout``. No date inside the
+    sealed holdout range is written here: the A7 test reads the policy's eras at
     runtime.
 
-Finding -> test (see each marker's reason for the failure observed on master):
+Finding -> test (see each marker's reason for the pinned failure):
   A1 (C1.2)  test_a1_config_direct_handoffs_reach_protocol_execution
   A2 (C1.3)  test_a2_protocol_execution_never_passes_a_missing_validation_protocol
   A4 (C1.4)  test_a4_uncaught_stage_exception_is_a_classified_pause
@@ -73,21 +87,20 @@ The reports' trade/bar-slice assertion that A3 §5 item 8 lists is its own test
 so that C1 can close on C1.2-C1.7 alone (continuation plan: "C1 done when C1.1
 passes") and each failure points at one finding.
 
-How the markers were proven (not only "it fails"): each test was run once with
-pytest --runxfail to capture its failure on master (quoted in its reason), and
-once more under a throw-away, monkeypatch-only simulation of the fix it waits on
-(never committed): simulated C1.2 flipped exactly the A1 and A5 tests, C1.2+C1.3
-flipped the two joined-up tests and A2, C1.4 / C1.5 / C1.6 flipped A4 / A6+A8 /
-A7, and only a simulated C2.2 (build_reports reading variants/base/) flipped B2
--- so a test here cannot pass for a reason
-other than its fix, nor stay red after it because of a bug of its own.
+How the markers were proven (not only "it fails"): each test was run with pytest
+--runxfail to capture its failure on master, and again under a throw-away,
+monkeypatch-only simulation of the fix it waits on (never committed): simulated
+C1.2 flipped exactly A1 and A5, C1.2+C1.3 flipped the two joined-up tests and A2,
+C1.4 / C1.5 / C1.6 flipped A4 / A6+A8 / A7, and only a simulated C2.2
+(build_reports reading variants/base/) flipped B2 -- so a test here cannot pass
+for a reason other than its fix, nor stay red after it because of a bug of its
+own.
 """
 from __future__ import annotations
 
 import asyncio
 import copy
 import datetime as _dt
-import hashlib
 import json
 import random
 import re
@@ -100,18 +113,31 @@ import pytest
 import yaml
 
 _SR = Path(__file__).resolve().parent.parent
+_REPO = _SR.parent
 sys.path.insert(0, str(_SR / "workflow"))
 sys.path.insert(0, str(_SR / "tools"))
 
 import run_phase1_research as rpr  # noqa: E402
 import run_campaign as camp  # noqa: E402
 import setup_run as sr  # noqa: E402
+import novelty as nov  # noqa: E402
+
+from claude_agent_sdk import AssistantMessage, ResultMessage, TextBlock  # noqa: E402
 
 jsonschema = pytest.importorskip("jsonschema")
 
 _REAL_SUBPROCESS_RUN = _subprocess_mod.run
+_REAL_POPEN = _subprocess_mod.Popen
 _STUB_PYTHON = "stub-trading-bot-python"
 _SCHEMAS = _SR / "workflow_artifacts" / "schemas"
+_ALLOWED_PROGRAMS = ("git", "git.exe")
+
+
+class PinnedFailure(Exception):
+    """Raised by a test only once it recognised the exact failure its xfail
+    marker names. Deliberately NOT an AssertionError: any other failure stays a
+    real FAIL under ``raises=PinnedFailure``."""
+
 
 # ---------------------------------------------------------------------------
 # The target flag set, A3 §1 (paste-ready block), set in place in a copy of the
@@ -152,6 +178,8 @@ WINDOW_LABELS = ("2022-01", "2022-02", "2022-03", "2022-04", "2022-05", "2022-06
 DAYS_PER_WINDOW = 8
 BRIEF_ID = "E061_first_brief"
 FIRST_HYPOTHESIS = "H-E061-RSI-PULLBACK-1H"
+STAGE_AGENTS = ("hypothesis_generation", "strategy_config_authoring", "innovation_expansion")
+CD_STAGES = ("backtest_specification", "data_availability_gate", "protocol_execution")
 
 # ---------------------------------------------------------------------------
 # Real strategy configs (each returned exit 0 from the real validate_config.py)
@@ -184,9 +212,23 @@ BLOCK_MANIFEST = {
 RSI_PERIOD = "/strategies/regimes/unknown/components/0/params/period"
 ER_PERIOD = "/regime_detector/components/0/params/period"
 BAD_OP = "/strategies/regimes/unknown/components/0/transforms/2/op"
+DESIGN_PERIOD_STEP = 7   # the design variant: a slower RSI, period + 7
+ASSET_ER_PERIOD = 48
 # The real validator's message for BAD_OP -> "no_such_op" (measured, exit 1).
 V3_MESSAGE = ("VIOLATION V3 strategies.regimes.unknown.components[0].transforms[2].op: "
               "'no_such_op' not in TRANSFORM_OPS_REGISTRY")
+# The keys tools/run_protocol.py::_compute_trade_records_for_window writes per trade.
+TRADE_RECORD_KEYS = (
+    "trade_id", "symbol", "window", "regime_at_entry", "direction", "entry_time", "exit_time",
+    "holding_bars", "realized_return", "profitable_net", "net_portfolio_return_pct", "mae",
+    "mfe", "entry_efficiency", "exit_efficiency", "exit_reason", "post_exit_return_5bars",
+    "post_exit_return_20bars", "cost_paid", "entry_price", "exit_price", "entry_idx",
+    "exit_idx", "pre_entry_drift_pct", "entered_earlier_better", "post_exit_drift_pct",
+    "held_longer_better")
+
+
+def _rsi_period(config: dict) -> int:
+    return config["strategies"]["regimes"]["unknown"]["components"][0]["params"]["period"]
 
 
 def _flags_of(root: Path) -> dict:
@@ -209,12 +251,8 @@ def _write_flags(root: Path, flags: dict, *, raw_override: dict | None = None) -
         yaml.safe_dump(cfg, sort_keys=False), encoding="utf-8")
 
 
-def _holdout_range() -> tuple:
-    return rpr._load_holdout_range()
-
-
-def _protocol(promotion: dict | None = "default") -> dict:
-    hs, he = _holdout_range()
+def _protocol(promotion="default") -> dict:
+    hs, he = rpr._load_holdout_range()
     windows = []
     for label in WINDOW_LABELS:
         y, m = int(label[:4]), int(label[5:])
@@ -254,8 +292,28 @@ def _schema_check(name: str, doc) -> None:
     jsonschema.Draft7Validator(json.loads(path.read_text(encoding="utf-8"))).validate(doc)
 
 
-def _sha(cfg: dict) -> str:
-    return hashlib.sha256(json.dumps(cfg, sort_keys=True).encode("utf-8")).hexdigest()
+def _fenced(docs: dict) -> str:
+    """What a well-behaved stage agent returns: one ```yaml # <file>.yaml block
+    per deliverable (the format run_claude_worker's parser consumes)."""
+    return "\n".join(f"```yaml\n# {name}\n{yaml.safe_dump(doc, sort_keys=False)}```"
+                     for name, doc in docs.items())
+
+
+class _GuardedPopen(_REAL_POPEN):
+    """subprocess.Popen, recording every argv and refusing (recorded, raised) any
+    real process other than git -- the backstop under subprocess.run's stub."""
+    harness = None
+
+    def __init__(self, args, *a, **k):
+        h = type(self).harness
+        if h is not None:
+            argv = [str(x) for x in (args if isinstance(args, (list, tuple)) else [args])]
+            h.real_argv.append(argv)
+            why = h.forbidden(argv)
+            if why:
+                h.violation(f"real subprocess refused ({why}): {argv}")
+                raise RuntimeError(f"E-061 guard: real subprocess refused ({why}): {argv}")
+        super().__init__(args, *a, **k)
 
 
 # ---------------------------------------------------------------------------
@@ -263,21 +321,25 @@ def _sha(cfg: dict) -> str:
 # ---------------------------------------------------------------------------
 
 class Harness:
-    """One sandboxed campaign: real setup_run + templates, stubbed LLM and
-    subprocesses, everything recorded."""
+    """One sandboxed campaign: real setup_run + templates, the model stubbed at
+    the SDK query level, tool subprocesses stubbed, everything recorded."""
 
     def __init__(self, root: Path, monkeypatch):
         self.root = root
         self.mp = monkeypatch
-        self.llm_calls: list = []          # (stage, run_id)
+        self.violations: list = []
+        self.llm_calls: list = []          # (stage, run_id) -- stage agents
         self.reader_calls: list = []       # (category, run_id)
-        self.gemini_calls: list = []
-        self.argv: list = []               # every tool subprocess argv
-        # metric profile per variant id (overridable per test)
-        self.profiles: dict = {}
-        self.extra_variant: dict | None = None      # stage-2 addition (run 2 repeat)
-        self.bad_variant: str | None = None         # stage-2 variant with an invalid op
-        self.reader_proposals = True                # run 1's profitability reader proposes
+        self.argv: list = []               # every stubbed tool subprocess argv
+        self.real_argv: list = []          # every real process argv (git only)
+        self.handoff_loads: list = []      # (pending_stage, handoff name, missing inputs)
+        self.profiles: dict = {}           # metric profile per variant id
+        self.extra_variant: dict | None = None
+        self.bad_variant: str | None = None
+        self.reader_proposals = True
+
+    def violation(self, text: str) -> None:
+        self.violations.append(text)
 
     # -- sandbox -----------------------------------------------------------
     def build(self, *, flags=TARGET_FLAGS, raw_override=None, promotion="default") -> "Harness":
@@ -298,10 +360,22 @@ class Harness:
         (root / "protocols" / PROTOCOL_NAME).write_text(
             json.dumps(_protocol(promotion), indent=2), encoding="utf-8")
         self.policy_before = (root / "config" / "campaign_data_policy.yaml").read_bytes()
-        # Production layout: ROOT is the CWD (run_phase1_research.ROOT = Path(".")).
+        # The production layout (strategy-research/ is the CWD): run_phase1_research's
+        # ROOT and its path globals are RELATIVE; run_campaign's and setup_run's are
+        # absolute (both resolve from __file__).
         self.mp.chdir(root)
+        self.mp.setattr(rpr, "ROOT", Path("."))
+        self.mp.setattr(rpr, "CAMPAIGN_STATE_PATH", Path("campaign_record") / "campaign_state.yaml")
+        self.mp.setattr(rpr, "_KB_PATH", Path("campaign_record") / "campaign_knowledge_base.yaml")
+        self.mp.setattr(rpr, "_DATA_POLICY_PATH", Path("config") / "campaign_data_policy.yaml")
+        self.mp.setattr(camp, "ROOT", root)
+        self.mp.setattr(camp, "QUEUE_PATH", root / "config" / "campaign_queue.yaml")
+        self.mp.setattr(camp, "CAMPAIGN_LOG_PATH", root / "campaign_record" / "campaign_log.md")
+        self.mp.setattr(camp, "CAMPAIGN_SUMMARY_PATH",
+                        root / "campaign_record" / "campaign_summary.md")
+        self.mp.setattr(camp, "BASELINE_PATH", root / "config" / "campaign_baseline_runs.yaml")
+        self.mp.setattr(sr, "ROOT", root)
         assert sr.TEMPLATES_DIR == _SR / "workflow_artifacts" / "templates" / "handoffs"
-        assert sr.ROOT == root and camp.ROOT == root and rpr.ROOT == root
         self._install_stubs()
         return self
 
@@ -315,8 +389,7 @@ class Harness:
         return brief
 
     def queue(self) -> list:
-        return yaml.safe_load((self.root / "config" / "campaign_queue.yaml")
-                              .read_text(encoding="utf-8"))["queue"]
+        return yaml.safe_load(camp.QUEUE_PATH.read_text(encoding="utf-8"))["queue"]
 
     def entry(self, entry_id: str) -> dict:
         return next(e for e in self.queue() if e["id"] == entry_id)
@@ -325,21 +398,22 @@ class Harness:
         return self.root / "runs" / run_id
 
     def state(self, run_id: str) -> dict:
-        return yaml.safe_load((self.run_dir(run_id) / "pipeline_state.yaml")
-                              .read_text(encoding="utf-8"))
+        path = self.run_dir(run_id) / "pipeline_state.yaml"
+        return yaml.safe_load(path.read_text(encoding="utf-8")) if path.exists() else {}
 
     def art(self, run_id: str, rel: str):
         path = self.run_dir(run_id) / "artifacts" / rel
         return yaml.safe_load(path.read_text(encoding="utf-8")) if path.exists() else None
 
     def trial_rows(self) -> list:
-        path = self.root / "campaign_state.yaml"
-        if not path.exists():
-            return []
-        return (yaml.safe_load(path.read_text(encoding="utf-8")) or {}).get("trial_sharpes") or []
+        return rpr.load_campaign_state().get("trial_sharpes") or []
+
+    def log_text(self) -> str:
+        p = camp.CAMPAIGN_LOG_PATH
+        return p.read_text(encoding="utf-8") if p.exists() else ""
 
     def calls_to(self, script: str) -> list:
-        return [a for a in self.argv if a[1].endswith(script)]
+        return [a for a in self.argv if Path(a[1]).name == script]
 
     def missing_validation_protocol_args(self) -> list:
         out = []
@@ -350,43 +424,103 @@ class Harness:
                     out.append(str(p))
         return out
 
+    def forbidden(self, argv: list) -> str | None:
+        if any("holdout_sealed" in a for a in argv):
+            return "names holdout_sealed"
+        for a in argv:
+            if a.lower().endswith(".py"):
+                parts = {p.lower() for p in Path(a).parts}
+                inside = False
+                try:
+                    Path(a).resolve().relative_to(_REPO)
+                    inside = True
+                except (ValueError, OSError):
+                    pass
+                if parts & {"tools", "workflow", "trading-bot"} or inside:
+                    return f"runs a repo script {a}"
+        prog = Path(argv[0]).name.lower() if argv else ""
+        if prog not in _ALLOWED_PROGRAMS:
+            return f"program {argv[0] if argv else None!r} is not on the allowlist {_ALLOWED_PROGRAMS}"
+        return None
+
     # -- stubs -------------------------------------------------------------
     def _install_stubs(self):
-        self.mp.setattr(rpr, "run_claude_worker", self._claude_worker)
-        self.mp.setattr(rpr, "_invoke_reader_llm", self._reader_llm)
+        self.mp.setattr(rpr, "query", self._query)
         self.mp.setattr(rpr, "run_gemini_worker", self._gemini_worker)
         self.mp.setattr(rpr, "_resolve_tbot_python", lambda: Path(_STUB_PYTHON))
-        self.mp.setattr(rpr.subprocess, "run", self._subprocess_run)
+        self.mp.setattr(_subprocess_mod, "run", self._subprocess_run)
+        self.mp.setattr(_subprocess_mod, "Popen", _GuardedPopen)
+        self.mp.setattr(_GuardedPopen, "harness", self)
+        real_load = rpr.load_yaml
+
+        def load_yaml(path):
+            """Spy: every handoff run_loop / async_invoke_agent ACTUALLY loads, with
+            the run's pending_stage at that moment and its missing required inputs."""
+            p = Path(path)
+            if p.parent.name != "handoffs":
+                return real_load(path)
+            run_dir = p.parent.parent
+            stage = (real_load(run_dir / "pipeline_state.yaml") or {}).get("pending_stage")
+            try:
+                doc = real_load(path)
+            except FileNotFoundError:
+                self.handoff_loads.append((stage, p.name, [f"<the handoff {p.name} itself>"]))
+                raise
+            missing = [x["path"] for x in (doc or {}).get("required_inputs") or []
+                       if not (run_dir / x["path"]).exists()]
+            self.handoff_loads.append((stage, p.name, missing))
+            return doc
+        self.mp.setattr(rpr, "load_yaml", load_yaml)
 
     async def _gemini_worker(self, stage_name, *a, **k):
-        self.gemini_calls.append(stage_name)
-        raise AssertionError(f"Gemini worker invoked for {stage_name} -- no stage uses it")
+        self.violation(f"Gemini worker invoked for {stage_name}")
+        raise AssertionError(f"E-061 guard: Gemini worker invoked for {stage_name}")
 
-    async def _claude_worker(self, stage_name, handoff, path, retry_context=None):
-        """Stands in for the model only: the REAL prompt is assembled first (a
-        missing required input or skill raises here, before the would-be call),
-        then the deliverables a well-behaved model writes are saved."""
-        run_dir = Path(path)
-        self.llm_calls.append((stage_name, run_dir.name))
-        rpr._build_stage_prompt(stage_name, handoff, run_dir, retry_context=retry_context)
-        arts = run_dir / "artifacts"
-        attempt = (handoff.get("injected_context") or {}).get("stage_attempt", "0")
-        rpr.update_state(path=run_dir, audit_log={f"{stage_name}_attempt_{attempt}": {
-            "engine": "stub-claude", "cost_usd": 0.0, "num_turns": 1,
-            "tokens": {"input": 1000, "output": 200, "cache_read": 0, "cache_creation": 0,
-                       "total": 1200, "weighted": 2000.0}}})
-        brief = yaml.safe_load((arts / "research_brief.yaml").read_text(encoding="utf-8")) or {}
-        cand = brief.get("candidate") if isinstance(brief.get("candidate"), dict) else None
-        if stage_name == "hypothesis_generation":
-            self._write_card(arts, cand)
-        elif stage_name == "strategy_config_authoring":
-            self._write_1b(arts, cand)
-        elif stage_name == "innovation_expansion":
-            self._write_stage2(arts, run_dir.name)
-        else:
-            raise AssertionError(f"unexpected LLM stage {stage_name!r} on {run_dir.name}")
+    def _query(self, *, prompt, options=None):
+        """claude_agent_sdk.query as the real workers call it: an async stream of
+        an AssistantMessage (the answer) and a ResultMessage (cost/usage)."""
+        segment = prompt.split("YOUR HANDOFF INSTRUCTIONS:", 1)[-1].split(
+            "YOUR PROVIDED CONTEXT FILES:", 1)[0]
+        stage = re.search(r"^\s*to_stage: ['\"]?(\w+)", segment, re.M)
+        run = re.search(r"^\s*run_id: ['\"]?(run_\d+)", segment, re.M)
+        stage, run_id = (stage.group(1) if stage else None), (run.group(1) if run else None)
+        text = self._answer(stage, run_id, segment)
 
-    def _write_card(self, arts: Path, cand):
+        async def _stream():
+            yield AssistantMessage(content=[TextBlock(text=text)], model="stub-claude")
+            yield ResultMessage(subtype="success", duration_ms=1, duration_api_ms=1,
+                                is_error=False, num_turns=1, session_id="e061-stub",
+                                total_cost_usd=0.0,
+                                usage={"input_tokens": 1000, "output_tokens": 200})
+        return _stream()
+
+    def _answer(self, stage, run_id, segment) -> str:
+        if run_id is None:
+            self.violation(f"LLM call with no run_id in its handoff (stage {stage!r})")
+            raise AssertionError("E-061 guard: LLM call without a run_id")
+        run_dir = self.run_dir(run_id)
+        if stage == "specialist_readers":
+            category = re.search(r"^\s*reader_category: (\w+)", segment, re.M).group(1)
+            self.reader_calls.append((category, run_id))
+            return self._reader_answer(category, run_id)
+        if stage not in STAGE_AGENTS:
+            self.violation(f"unexpected LLM stage {stage!r} on {run_id}")
+            raise AssertionError(f"E-061 guard: unexpected LLM stage {stage!r} on {run_id}")
+        self.llm_calls.append((stage, run_id))
+        builder = {"hypothesis_generation": self.card_docs,
+                   "strategy_config_authoring": self.docs_1b,
+                   "innovation_expansion": self.docs_stage2}[stage]
+        return "My deliverables follow.\n" + _fenced(builder(run_dir))
+
+    @staticmethod
+    def _candidate(run_dir: Path):
+        brief = yaml.safe_load((run_dir / "artifacts" / "research_brief.yaml")
+                               .read_text(encoding="utf-8")) or {}
+        cand = brief.get("candidate")
+        return cand if isinstance(cand, dict) else None
+
+    def card_docs(self, run_dir: Path) -> dict:
+        cand = self._candidate(run_dir)
         hid = cand["source"]["hypothesis_id"] if cand else FIRST_HYPOTHESIS
         card = {
             "hypothesis_id": hid,
@@ -402,11 +536,11 @@ class Harness:
             "timeframe": "1h",
             "assumptions": ["costs as in config/cost_model.yaml"],
             "expected_failure_modes": ["trend regimes", "fee drag", "thin signal"],
-            "criteria": [{"id": "realized_edge_to_cost_ratio"}, {"id": "sign_consistent_by_era"}],
             "library_lookup": {"indicator_id": None, "regime_affinity_for_target": "neutral",
                                "crowding_risk": "high"},
             "power_parameters": {"activation_rate": 0.1, "plausible_ic_upper": 0.05,
                                  "n_bars": 4000, "n_symbols": 2, "is_market_wide": False},
+            "criteria": [{"id": "realized_edge_to_cost_ratio"}, {"id": "sign_consistent_by_era"}],
             "cost_feasibility": {"assumed_round_trip_cost_bps": 10.0,
                                  "expected_holding_bars": {"min": 3, "max": 12},
                                  "expected_trades_per_window": 20,
@@ -415,11 +549,12 @@ class Harness:
                                  "plausibility_rationale": "thin edge against 10 bps"},
         }
         _schema_check("hypothesis_card", card)
-        (arts / "hypothesis_card.yaml").write_text(yaml.safe_dump(card, sort_keys=False),
-                                                   encoding="utf-8")
+        return {"hypothesis_card.yaml": card}
 
-    def _write_1b(self, arts: Path, cand):
-        card = yaml.safe_load((arts / "hypothesis_card.yaml").read_text(encoding="utf-8"))
+    def docs_1b(self, run_dir: Path) -> dict:
+        cand = self._candidate(run_dir)
+        card = yaml.safe_load((run_dir / "artifacts" / "hypothesis_card.yaml")
+                              .read_text(encoding="utf-8"))
         config = copy.deepcopy(cand["config"]) if cand else copy.deepcopy(BASE_CONFIG)
         manifest = copy.deepcopy(cand["manifest"]) if cand else copy.deepcopy(BLOCK_MANIFEST)
         spec = {"hypothesis_id": card["hypothesis_id"], "status": "spec_ready", "config": config,
@@ -431,20 +566,20 @@ class Harness:
         _schema_check("backtest_spec", spec)
         _schema_check("decision", decision)
         _schema_check("block_manifest", manifest)
-        for name, doc in (("backtest_spec.yaml", spec), ("decision.yaml", decision),
-                          ("block_manifest.yaml", manifest)):
-            (arts / name).write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+        return {"backtest_spec.yaml": spec, "decision.yaml": decision,
+                "block_manifest.yaml": manifest}
 
-    def _write_stage2(self, arts: Path, run_id: str):
+    def docs_stage2(self, run_dir: Path) -> dict:
+        arts = run_dir / "artifacts"
         card = yaml.safe_load((arts / "hypothesis_card.yaml").read_text(encoding="utf-8"))
         spec = yaml.safe_load((arts / "backtest_spec.yaml").read_text(encoding="utf-8"))
-        base_period = spec["config"]["strategies"]["regimes"]["unknown"]["components"][0][
-            "params"]["period"]
         variants = [
             {"variant_id": "base", "patch": [], "rationale": "the base config, unmodified"},
-            {"variant_id": "design", "patch": [{"path": RSI_PERIOD, "value": base_period + 7}],
+            {"variant_id": "design",
+             "patch": [{"path": RSI_PERIOD,
+                        "value": _rsi_period(spec["config"]) + DESIGN_PERIOD_STEP}],
              "rationale": "design axis: a slower RSI"},
-            {"variant_id": "asset", "patch": [{"path": ER_PERIOD, "value": 48}],
+            {"variant_id": "asset", "patch": [{"path": ER_PERIOD, "value": ASSET_ER_PERIOD}],
              "rationale": "the skill's asset-variant shape (IMPROVEMENT 07 example path)"},
         ]
         if self.bad_variant:
@@ -458,7 +593,7 @@ class Harness:
                     "reverse_hypothesis": "overbought RSI, short",
                     "behavioral_features": ["capitulation"],
                     "regime_specific_variants": ["range only"]}
-        notes = {"run_id": run_id, "stage": "innovation_expansion",
+        notes = {"run_id": run_dir.name, "stage": "innovation_expansion",
                  "base_hypothesis_id": card["hypothesis_id"], "summary": "three variants",
                  "key_insight": "period and detector speed", "recommended_test_order": {"1": "base"},
                  "risks_identified": [{"risk": "overfit", "detail": "few windows"}],
@@ -466,22 +601,17 @@ class Harness:
                  "integration_notes": "patches against backtest_spec.yaml"}
         _schema_check("expanded_hypothesis_card", expanded)
         _schema_check("innovation_notes", notes)
-        for name, doc in (("expanded_hypothesis_card.yaml", expanded),
-                          ("innovation_notes.yaml", notes),
-                          ("variant_patches.yaml", {"base_config_ref": "artifacts/backtest_spec.yaml",
-                                                    "variants": variants})):
-            (arts / name).write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+        return {"expanded_hypothesis_card.yaml": expanded, "innovation_notes.yaml": notes,
+                "variant_patches.yaml": {"base_config_ref": "artifacts/backtest_spec.yaml",
+                                         "variants": variants}}
 
-    async def _reader_llm(self, prompt: str):
-        category = re.search(r"reader_category: (\w+)", prompt).group(1)
-        run_id = re.search(r"\nrun_id: (run_\d+)", prompt).group(1)
-        self.reader_calls.append((category, run_id))
+    def _reader_answer(self, category: str, run_id: str) -> str:
         body = "[]\n"
         if category == "profitability" and self.reader_proposals and run_id == "run_001":
             proposal = {
                 "proposal_id": f"profitability-{run_id}-1", "kind": "patch",
                 "patch": [{"component_id": "rsi", "field": "params.period",
-                           "before": 14, "after": 10}],
+                           "before": _rsi_period(BASE_CONFIG), "after": 10}],
                 "evidence": ["reports/profitability.yaml per_symbol: median sharpe 0.2 on both "
                              "coins, cost ratio 0.1"],
                 "scores": {"confidence_real": 2, "distance_to_profitable": 1,
@@ -489,29 +619,38 @@ class Harness:
                 "model_id": "stub-reader", "rubric_version": "profitability-reader-v1"}
             _schema_check("proposal", proposal)
             body = yaml.safe_dump([proposal], sort_keys=False)
-        text = f"Here are my proposals.\n```yaml\n{body}```\n"
-        return text, {"usage": {"input_tokens": 500, "output_tokens": 100}, "cost_usd": 0.0,
-                      "num_turns": 1}
+        return f"Here are my proposals.\n```yaml\n{body}```\n"
 
     # -- subprocesses --------------------------------------------------------
     def _subprocess_run(self, cmd, *a, **k):
-        argv = [str(c) for c in cmd]
+        argv = [str(c) for c in (cmd if isinstance(cmd, (list, tuple)) else [cmd])]
         if not argv or argv[0] != _STUB_PYTHON:
-            return _REAL_SUBPROCESS_RUN(cmd, *a, **k)  # e.g. git, never a tool script
+            why = self.forbidden(argv)
+            if why:
+                self.real_argv.append(argv)
+                self.violation(f"subprocess.run refused ({why}): {argv}")
+                raise RuntimeError(f"E-061 guard: subprocess.run refused ({why}): {argv}")
+            return _REAL_SUBPROCESS_RUN(cmd, *a, **k)  # git only
         self.argv.append(argv)
-        assert not any("holdout_sealed" in x for x in argv), argv
-        script = Path(argv[1]).name
+        if any("holdout_sealed" in x for x in argv):
+            self.violation(f"tool argv names holdout_sealed: {argv}")
+            raise AssertionError(f"E-061 guard: holdout_sealed in {argv}")
+        if "--holdout" in argv:
+            self.violation(f"tool argv carries --holdout: {argv}")
+            raise AssertionError(f"E-061 guard: --holdout in {argv}")
         handler = {"validate_config.py": self._validate_config,
                    "data_availability_gate.py": self._data_gate,
                    "run_protocol.py": self._run_protocol,
-                   "validate_regime_detector.py": self._regime_detector}.get(script)
+                   "validate_regime_detector.py": self._regime_detector}.get(Path(argv[1]).name)
         if handler is None:
-            raise AssertionError(f"unexpected tool subprocess: {argv}")
+            self.violation(f"unexpected tool subprocess: {argv}")
+            raise AssertionError(f"E-061 guard: unexpected tool subprocess {argv}")
         return handler(argv)
 
     @staticmethod
     def _done(rc=0, stdout="", stderr=""):
-        return _subprocess_mod.CompletedProcess(args=[], returncode=rc, stdout=stdout, stderr=stderr)
+        return _subprocess_mod.CompletedProcess(args=[], returncode=rc, stdout=stdout,
+                                                stderr=stderr)
 
     def _validate_config(self, argv):
         cfg = json.loads(Path(argv[2]).read_text(encoding="utf-8"))
@@ -539,8 +678,8 @@ class Harness:
         rpt = yaml.safe_load((_SR / "regime_detector_report.yaml").read_text(encoding="utf-8"))
         rpt["evaluated_at"] = _dt.datetime.now(_dt.timezone.utc).isoformat()
         rpt["config_source"] = argv[argv.index("--config") + 1]
-        (self.root / "regime_detector_report.yaml").write_text(yaml.safe_dump(rpt),
-                                                               encoding="utf-8")
+        (Path(rpr.ROOT) / "regime_detector_report.yaml").write_text(yaml.safe_dump(rpt),
+                                                                    encoding="utf-8")
         return self._done(0)
 
     def profile(self, vid: str) -> dict:
@@ -551,6 +690,7 @@ class Harness:
         """tools/run_protocol.py's order of work: every window's backtest files,
         then trade_diagnostics.json, THEN --validation-protocol is opened
         (run_protocol.py:2289-2291), then protocol_summary.json."""
+        import run_protocol as rp  # the tool's own config digest
         config_path, protocol_path = Path(argv[2]), Path(argv[3])
         out = Path(argv[argv.index("--out-dir") + 1])
         vid = out.name
@@ -558,7 +698,7 @@ class Harness:
         prof = self.profile(vid)
         proto = json.loads(protocol_path.read_text(encoding="utf-8"))
         results, trades = [], []
-        seed = int(hashlib.sha256(f"{run_id}:{vid}".encode()).hexdigest()[:8], 16)
+        seed = int(nov.forecast_hash_of_config([run_id, vid])[:8], 16)
         for k, symbol in enumerate(proto["symbols"]):
             for j, w in enumerate(proto["windows"]):
                 wrid = f"{run_id}_{vid}_{symbol}_{w['label']}"
@@ -574,12 +714,8 @@ class Harness:
                     "regime_validity": {"trending": {"valid": True},
                                         "mean_reversion": {"valid": True}},
                 })
-                for t in range(3):
-                    trades.append({"symbol": symbol, "window": w["label"], "run_id": wrid,
-                                   "regime_at_entry": ("trending", "mean_reversion")[t % 2],
-                                   "entry_time": f"{w['test']['start']}T0{t}:00:00",
-                                   "exit_time": f"{w['test']['start']}T0{t + 3}:00:00",
-                                   "net_bps": 5.0 - t, "exit_reason": "signal_flip"})
+                trades += [_trade_record(symbol, w, t) for t in range(3)]
+        assert all(tuple(t) == TRADE_RECORD_KEYS for t in trades)
         tds = {"realized_edge_to_cost_ratio": prof["edge"],
                "per_trade_expectancy_bps": {"mean": 3.0, "se": 1.0, "t_stat": 3.0,
                                             "n": len(results) * prof["trades"]},
@@ -599,8 +735,8 @@ class Harness:
                       for s in proto["symbols"]}
         summary = {
             "protocol_run_id": f"{run_id}_{vid}",
-            "config_sha256": _sha(json.loads(config_path.read_text(encoding="utf-8"))),
-            "protocol_file": str(protocol_path),
+            "config_sha256": rp._config_sha(config_path)[0],
+            "protocol_file": argv[3],
             "results": results,
             "per_symbol_summary": per_symbol,
             "verdict": "refine", "verdict_reason": "stub",
@@ -612,6 +748,17 @@ class Harness:
         (out / "protocol_summary.json").write_text(json.dumps(summary, indent=2),
                                                    encoding="utf-8")
         return self._done(0)
+
+
+def _trade_record(symbol: str, window: dict, t: int) -> dict:
+    """One trade in exactly the shape _compute_trade_records_for_window writes."""
+    start = window["test"]["start"]
+    return dict(zip(TRADE_RECORD_KEYS, (
+        f"{symbol}-{window['label']}-{t}", symbol, window["label"],
+        ("trending", "mean_reversion")[t % 2], "long",
+        f"{start}T0{t}:00:00", f"{start}T0{t + 3}:00:00", 3, 0.05 - 0.01 * t, t == 0,
+        0.0005 - 0.0001 * t, -0.2, 0.3, 0.5, 0.5, "signal_flip", 0.01, 0.02, 10.0,
+        100.0, 100.05, 10 + t, 13 + t, 0.1, False, 0.05, True)))
 
 
 def _write_window(res_dir: Path, start: str, prof: dict, *, seed: int) -> None:
@@ -637,18 +784,63 @@ def _write_window(res_dir: Path, start: str, prof: dict, *, seed: int) -> None:
 
 @pytest.fixture
 def harness(monkeypatch):
-    """The conftest's autouse sandbox (ROOT of run_campaign, run_phase1_research
-    and setup_run redirected to one tmp dir), made the CWD, with the real
-    configs, skills and templates."""
-    return Harness(camp.ROOT, monkeypatch)
+    """The conftest's autouse sandbox made the CWD, with the real configs, skills
+    and templates. Every guard violation any stub recorded fails the test at
+    teardown, whatever production code did with the exception."""
+    h = Harness(camp.ROOT, monkeypatch)
+    yield h
+    assert h.violations == [], f"E-061 guard violations: {h.violations}"
+    non_git = [a for a in h.real_argv if Path(a[0]).name.lower() not in _ALLOWED_PROGRAMS]
+    assert non_git == [], non_git
 
 
 def _assert_holdout_untouched(h: Harness) -> None:
     assert (h.root / "config" / "campaign_data_policy.yaml").read_bytes() == h.policy_before
     assert not list(h.root.glob("runs/*/artifacts/holdout_result.yaml"))
-    for a in h.argv:
+    for a in h.argv + h.real_argv:
         assert "--holdout" not in a, a
         assert not any("holdout_sealed" in x for x in a), a
+
+
+# ---------------------------------------------------------------------------
+# Pinned signatures
+# ---------------------------------------------------------------------------
+
+_A1_DELIVERABLE_RE = re.compile(r"Missing files: .*artifacts[\\/]+data_availability_gate\.yaml")
+
+
+def _drive(h: Harness):
+    """process_once(), with an escaping exception returned rather than raised, so
+    the caller can tell today's pinned escape from any other failure."""
+    try:
+        return camp.process_once(), None
+    except Exception as exc:
+        return None, exc
+
+
+def _a1_signature(h: Harness, exc, run_id: str) -> str | None:
+    """A1: a config-direct stage's handoff, as run_loop actually loaded it, is
+    missing or names a required input nothing wrote -- or the gate handoff asks
+    for a singular deliverable the variant loop never writes."""
+    for stage, name, missing in h.handoff_loads:
+        if stage in CD_STAGES and missing:
+            return f"{stage} loaded handoffs/{name} with missing {missing}"
+    text = f"{exc or ''} {h.state(run_id).get('last_error') or ''}"
+    if _A1_DELIVERABLE_RE.search(text):
+        return f"deliverable artifacts/data_availability_gate.yaml missing: {text.strip()[:200]}"
+    return None
+
+
+def _pin_joined(h: Harness, exc, run_id: str) -> None:
+    """The joined-up tests wait on C1.2 (A1) then C1.3 (A2)."""
+    a1 = _a1_signature(h, exc, run_id)
+    if a1:
+        raise PinnedFailure(f"A1 (C1.2): {a1}")
+    missing_vp = h.missing_validation_protocol_args()
+    if missing_vp:
+        raise PinnedFailure(f"A2 (C1.3): --validation-protocol names missing {missing_vp[:1]}")
+    if exc is not None:
+        raise exc
 
 
 # ---------------------------------------------------------------------------
@@ -656,20 +848,21 @@ def _assert_holdout_untouched(h: Harness) -> None:
 # ---------------------------------------------------------------------------
 
 @pytest.mark.slow
-@pytest.mark.xfail(strict=True, reason=(
-    "E-061 C1.2 (A1) then C1.3 (A2). Observed on master: process_once() raises, "
-    "uncaught, at stage 5a backtest_specification -- FileNotFoundError: Missing files: "
-    "[...runs/run_001/artifacts/validation_protocol.yaml] (template "
-    "validation_to_backtest_specification.yaml:13, ensure_files outside run_loop's try), "
-    "after 1a/1b/2 were spent. With A1 fixed, every variant's run_protocol.py would exit 1 "
-    "on --validation-protocol (A2)."))
+@pytest.mark.xfail(strict=True, raises=PinnedFailure, reason=(
+    "E-061 C1.2 (A1) then C1.3 (A2). Pinned on master: run_loop loads "
+    "handoffs/validation_to_backtest_specification.yaml at backtest_specification with "
+    "missing ['artifacts/validation_protocol.yaml'] -> FileNotFoundError: Missing files: "
+    "[...runs/run_001/artifacts/validation_protocol.yaml] escapes process_once() after "
+    "1a/1b/2 were spent. With A1 fixed: every variant's run_protocol.py gets "
+    "--validation-protocol naming that missing file (A2)."))
 def test_end_to_end_two_runs_with_the_real_run_setup(harness):
     h = harness.build()
     h.register_brief()
+    r1 = "run_001"
 
     # ---- run 1: launch -> completed_<idea_status> -> decide_next mints a candidate
-    keep_going = camp.process_once()
-    r1 = "run_001"
+    keep_going, exc = _drive(h)
+    _pin_joined(h, exc, r1)
     st1 = h.state(r1)
     assert st1.get("last_error") is None, st1.get("last_error")
     assert keep_going is True
@@ -677,27 +870,26 @@ def test_end_to_end_two_runs_with_the_real_run_setup(harness):
     owner = h.entry(BRIEF_ID)
     assert owner["status"] == "done" and owner["outcome"] == "refuted"
     assert owner["pass_rule_evaluation_ref"] == f"runs/{r1}/artifacts/idea_status.yaml"
-    # the stages that ran, in order, and nothing on Gemini
-    assert h.llm_calls == [("hypothesis_generation", r1), ("strategy_config_authoring", r1),
-                           ("innovation_expansion", r1)]
+    assert h.llm_calls == [(s, r1) for s in STAGE_AGENTS]
     assert sorted(c for c, _ in h.reader_calls) == sorted(rpr._reader_categories())
-    assert h.gemini_calls == []
+    # the real worker parsed the stub's fenced blocks into the deliverables
+    for rel in ("hypothesis_card.yaml", "backtest_spec.yaml", "decision.yaml",
+                "block_manifest.yaml", "expanded_hypothesis_card.yaml", "innovation_notes.yaml",
+                "variant_patches.yaml"):
+        assert h.art(r1, rel) is not None, rel
     # 1a's criteria became the pre-registered pass_rule (+ code-added residual_ic)
     pre1 = h.art(r1, "pre_registration.yaml")
     assert [c["id"] for c in pre1["pass_rule"]["criteria"]] == [
         "realized_edge_to_cost_ratio", "sign_consistent_by_era", "residual_ic"]
     assert "pass_rule_pending" not in pre1
-    # tools: 3 validations, 3 data gates, 3 backtests, no missing --validation-protocol
     assert len(h.calls_to("validate_config.py")) == 3
     assert len(h.calls_to("data_availability_gate.py")) == 3
     assert len(h.calls_to("run_protocol.py")) == 3
     assert h.missing_validation_protocol_args() == []
-    # one trial row per variant, run:variant, all real backtests
     rows1 = [r for r in h.trial_rows() if r["trial_id"].startswith(f"{r1}:")]
     assert sorted(r["trial_id"] for r in rows1) == [f"{r1}:asset", f"{r1}:base", f"{r1}:design"]
     assert {r["source"] for r in rows1} == {"backtest"}
     assert {r["statistic_valid"] for r in rows1} == {"sharpe"}
-    # the artifacts of every new stage
     grid = h.art(r1, "grid_evaluation.yaml")
     assert sorted(grid["variants"]) == ["asset", "base", "design"]
     assert h.art(r1, "idea_status.yaml")["idea_status"] == "refuted" == grid["idea_status"]
@@ -707,11 +899,10 @@ def test_end_to_end_two_runs_with_the_real_run_setup(harness):
     pbe = h.art(r1, "profit_bars_evaluation.yaml")
     assert pbe["scope"] == "every_backtest" and pbe["passing"] == []
     assert sorted(pbe["variants"]) == ["asset", "base", "design"]
-    memory = yaml.safe_load((h.root / "campaign_record" / "campaign_memory.yaml")
-                            .read_text(encoding="utf-8"))
+    memory = yaml.safe_load(rpr._campaign_memory_path().read_text(encoding="utf-8"))
     assert memory["runs"][r1]["idea_status"] == "refuted"
     assert sorted(memory["runs"][r1]["trial_ids"]) == [f"{r1}:asset", f"{r1}:base", f"{r1}:design"]
-    reg = h.root / "campaign_record" / "block_registry.yaml"
+    reg = rpr._block_registry_path()
     assert not reg.exists() or not (yaml.safe_load(reg.read_text(encoding="utf-8")) or {}).get(
         "blocks"), "a refuted idea registered a block"
     record1 = h.art(r1, "decision_record.yaml")
@@ -721,28 +912,31 @@ def test_end_to_end_two_runs_with_the_real_run_setup(harness):
     assert cand_entry["status"] == "ready" and cand_entry["origin"] == "reader"
 
     # ---- run 2: the candidate (1a criteria rebuilt, 5a hash check, memory repeat gate).
-    # Its stage 2 also re-proposes exactly run 1's `design` config (rsi period 21,
-    # everything else the base): the 5a exact-match gate must see run 1 in memory.
+    # Its stage 2 also re-proposes exactly run 1's `design` config (the base's RSI
+    # period + the design step, everything else the base): the 5a exact-match gate
+    # must see run 1 in memory.
+    run1_design_period = _rsi_period(BASE_CONFIG) + DESIGN_PERIOD_STEP
     h.extra_variant = {"variant_id": "repeat_of_run1_design",
-                       "patch": [{"path": RSI_PERIOD, "value": 21}],
+                       "patch": [{"path": RSI_PERIOD, "value": run1_design_period}],
                        "rationale": "a variant the campaign already tested"}
-    keep_going = camp.process_once()
+    keep_going, exc = _drive(h)
     r2 = h.entry(cid)["run_ids"][0]
     assert r2 == "run_002"
+    _pin_joined(h, exc, r2)
     st2 = h.state(r2)
     assert st2.get("last_error") is None, st2.get("last_error")
     assert st2["pending_stage"] in rpr.RETIRED_ROUTING_TERMINALS, st2["pending_stage"]
-    brief2 = h.art(r2, "research_brief.yaml")
-    cand = brief2["candidate"]
+    cand = h.art(r2, "research_brief.yaml")["candidate"]
     assert cand["criteria_from"] == "hypothesis_generation"
     assert h.art(r2, "hypothesis_card.yaml")["hypothesis_id"] == cand["source"]["hypothesis_id"]
     pre2 = h.art(r2, "pre_registration.yaml")
     assert pre2["pass_rule_source_ref"] == f"runs/{r2}/artifacts/hypothesis_card.yaml#criteria"
-    # 5a: the pass-through config is the decide_next-resolved one, byte for byte
     base2 = json.loads((h.run_dir(r2) / "artifacts" / "variants" / "base" /
                         "strategy_config.json").read_text(encoding="utf-8"))
-    assert _sha(base2) == cand["source"]["expected_config_sha256"]
-    # the exact-match gate saw run 1 in the campaign memory
+    assert nov.forecast_hash_of_config(base2) == cand["source"]["expected_config_sha256"]
+    run1_design = json.loads((h.run_dir(r1) / "artifacts" / "variants" / "design" /
+                              "strategy_config.json").read_text(encoding="utf-8"))
+    assert _rsi_period(run1_design) == run1_design_period
     index2 = h.art(r2, "variants/index.yaml")["variants"]
     rep = index2["repeat_of_run1_design"]
     assert rep["status"] == "not_tested" and f"{r1}:design" in rep["reason"]
@@ -751,15 +945,13 @@ def test_end_to_end_two_runs_with_the_real_run_setup(harness):
     rows2 = sorted(r["trial_id"] for r in h.trial_rows() if r["trial_id"].startswith(f"{r2}:"))
     assert rows2 == [f"{r2}:asset", f"{r2}:base", f"{r2}:design"]
     assert h.missing_validation_protocol_args() == []
-    memory = yaml.safe_load((h.root / "campaign_record" / "campaign_memory.yaml")
-                            .read_text(encoding="utf-8"))
+    memory = yaml.safe_load(rpr._campaign_memory_path().read_text(encoding="utf-8"))
     assert set(memory["runs"]) == {r1, r2}
     assert h.art(r2, "decision_record.yaml") is not None
     done2 = h.entry(cid)
     assert done2["status"] == "done"
     assert done2["outcome"] == st2["pending_stage"][len("completed_"):]
     assert isinstance(keep_going, bool)
-    assert h.gemini_calls == []
     _assert_holdout_untouched(h)
 
 
@@ -767,29 +959,30 @@ def test_end_to_end_two_runs_with_the_real_run_setup(harness):
 # A3 §5 item 9: the profit-bars PASS path -> stop -> continue -> resume
 # ---------------------------------------------------------------------------
 
-def _seed_trial_ledger(root: Path, n: int = 30) -> None:
-    """Earlier campaign trials (a realistic ledger, low Sharpes), so the deflated
-    Sharpe of a strong variant is computable on the ledger it is graded on."""
+def _seed_trial_ledger(n: int = 30) -> None:
+    """Earlier campaign trials (a realistic ledger, low Sharpes), written through
+    the orchestrator's own ledger writer, so the deflated Sharpe of a strong
+    variant is computable on the ledger it is graded on."""
     rng = random.Random(61)
-    rows = [{"trial_id": f"run_9{k:02d}:base", "source": "backtest",
-             "sharpe": round(0.1 + rng.uniform(-0.03, 0.03), 4), "expectancy_bps": 1.0,
-             "n_trades": 200, "statistic_valid": "sharpe", "below_floor_pct": 0.0,
-             "forecast_hash": hashlib.sha256(f"seed-{k}".encode()).hexdigest()}
-            for k in range(n)]
-    state = {"campaign_id": "e061", "research_question": "", "runs": [], "trial_sharpes": rows,
-             "status": "active"}
-    (root / "campaign_state.yaml").write_text(yaml.safe_dump(state, sort_keys=False),
-                                              encoding="utf-8")
+    state = rpr.load_campaign_state()
+    state["trial_sharpes"] = [
+        {"trial_id": f"run_9{k:02d}:base", "source": "backtest",
+         "sharpe": round(0.1 + rng.uniform(-0.03, 0.03), 4), "expectancy_bps": 1.0,
+         "n_trades": 200, "statistic_valid": "sharpe", "below_floor_pct": 0.0,
+         "forecast_hash": nov.forecast_hash_of_config({"seed": k})}
+        for k in range(n)]
+    rpr._save_campaign_state(state)
 
 
 @pytest.mark.slow
-@pytest.mark.xfail(strict=True, reason=(
-    "E-061 C1.2 (A1) then C1.3 (A2): the run never reaches its backtests. Observed on "
-    "master: FileNotFoundError: Missing files: [...runs/run_001/artifacts/"
-    "validation_protocol.yaml] raised out of process_once() at 5a."))
+@pytest.mark.xfail(strict=True, raises=PinnedFailure, reason=(
+    "E-061 C1.2 (A1) then C1.3 (A2): the run never reaches its backtests. Pinned on "
+    "master: handoffs/validation_to_backtest_specification.yaml loaded at "
+    "backtest_specification with missing ['artifacts/validation_protocol.yaml'] -> "
+    "FileNotFoundError escapes process_once() at 5a."))
 def test_profit_bars_stop_then_holdout_continue_then_resume(harness):
     h = harness.build()
-    _seed_trial_ledger(h.root)
+    _seed_trial_ledger()
     # `design` clears every bar: Sharpe 3 >= 0.5, >= 30 trades per coin, a steady
     # equity curve (avg daily return ~0.3% >= 0.0005, drawdown far under 25%),
     # and a deflated Sharpe above 0.95 on the seeded ledger.
@@ -798,7 +991,9 @@ def test_profit_bars_stop_then_holdout_continue_then_resume(harness):
     h.register_brief()
     r1 = "run_001"
 
-    assert camp.process_once() is False
+    ret, exc = _drive(h)
+    _pin_joined(h, exc, r1)
+    assert ret is False
     st = h.state(r1)
     assert st.get("last_error") is None, st.get("last_error")
     assert h.entry(BRIEF_ID)["status"] == "paused:profit_bars_reached"
@@ -821,7 +1016,9 @@ def test_profit_bars_stop_then_holdout_continue_then_resume(harness):
     rpr.update_state(path=h.run_dir(r1), status="active", flags={"profit_bars_reached": False})
     assert camp.resume_paused_entry(camp._load_queue()) is True
     assert h.entry(BRIEF_ID)["status"] == "in_progress"
-    camp.process_once()
+    _ret, exc = _drive(h)
+    if exc is not None:
+        raise exc
 
     st = h.state(r1)
     assert st.get("last_error") is None, st.get("last_error")
@@ -831,8 +1028,7 @@ def test_profit_bars_stop_then_holdout_continue_then_resume(harness):
     assert h.art(r1, "decision_record.yaml") is not None
     # the resume re-entered regroup_record: no backtest re-ran, no LLM stage re-ran
     assert len(h.calls_to("run_protocol.py")) == n_backtests
-    assert [s for s, r in h.llm_calls if r == r1] == [
-        "hypothesis_generation", "strategy_config_authoring", "innovation_expansion"]
+    assert [s for s, r in h.llm_calls if r == r1] == list(STAGE_AGENTS)
     _assert_holdout_untouched(h)
 
 
@@ -845,21 +1041,22 @@ class _ReachedProtocolExecution(RuntimeError):
 
 
 @pytest.mark.slow
-@pytest.mark.xfail(strict=True, reason=(
-    "E-061 C1.2 (A1). Observed on master: process_once() raises FileNotFoundError: "
-    "Missing files: [...runs/run_001/artifacts/validation_protocol.yaml] at 5a "
-    "(validation_to_backtest_specification.yaml:13 requires it; nothing writes it under "
-    "config-direct). Behind it: backtest_spec_to_data_availability_gate.yaml is never "
-    "created on the config-direct branch, and backtest_spec_to_protocol_execution.yaml:13 "
-    "requires validation_protocol.yaml too. Found while proving this test (not in A3): "
-    "the data-gate handoff _create_remaining_handoffs writes lists the deliverable "
-    "artifacts/data_availability_gate.yaml, which the variant loop never writes (it writes "
-    "artifacts/variants/<id>/data_availability_gate.yaml), so reusing it as-is fails the "
-    "gate stage with 'Missing files: [...artifacts/data_availability_gate.yaml]'."))
+@pytest.mark.xfail(strict=True, raises=PinnedFailure, reason=(
+    "E-061 C1.2 (A1). Pinned on master (spy on the handoff run_loop actually loads): "
+    "backtest_specification loads handoffs/validation_to_backtest_specification.yaml with "
+    "missing ['artifacts/validation_protocol.yaml'] (template line 13; nothing writes it "
+    "under config-direct) and FileNotFoundError escapes process_once(). Behind it: "
+    "backtest_spec_to_data_availability_gate.yaml is never created on the config-direct "
+    "branch, backtest_spec_to_protocol_execution.yaml:13 requires validation_protocol.yaml, "
+    "and -- found while proving this test, not in A3 -- the gate handoff "
+    "_create_remaining_handoffs writes lists the deliverable "
+    "artifacts/data_availability_gate.yaml, which the variant loop never writes "
+    "('Missing files: [...artifacts/data_availability_gate.yaml]')."))
 def test_a1_config_direct_handoffs_reach_protocol_execution(harness, monkeypatch):
     """Stops the run at the protocol_execution worker (so this test is independent of
-    A2): every config-direct stage from 5a to protocol_execution must load its handoff,
-    find every required input and produce its deliverables."""
+    A2): every config-direct stage from 5a to protocol_execution must load a handoff
+    -- whichever one run_loop resolves, recorded by the load spy -- whose required
+    inputs all exist, and produce its deliverables."""
     h = harness.build()
     h.register_brief()
     reached = []
@@ -872,21 +1069,27 @@ def test_a1_config_direct_handoffs_reach_protocol_execution(harness, monkeypatch
         return await real_worker(stage_name, run_id)
 
     monkeypatch.setattr(rpr, "run_tool_worker", _worker)
-    camp.process_once()
+    _ret, exc = _drive(h)
+    a1 = _a1_signature(h, exc, "run_001")
+    if a1:
+        raise PinnedFailure(f"A1 (C1.2): {a1}")
+    if exc is not None:
+        raise exc
     assert reached == ["run_001"], h.state("run_001").get("last_error")
-    run_dir = h.run_dir("run_001")
-    for stage in ("backtest_specification", "data_availability_gate", "protocol_execution"):
-        handoff = yaml.safe_load((run_dir / "handoffs" / rpr.STAGE_CONFIGS[stage]["handoff"])
-                                 .read_text(encoding="utf-8"))
-        missing = [x["path"] for x in handoff.get("required_inputs") or []
-                   if not (run_dir / x["path"]).exists()]
-        assert missing == [], (stage, missing)
+    loaded = {stage: missing for stage, _name, missing in h.handoff_loads if stage in CD_STAGES}
+    assert sorted(loaded) == sorted(CD_STAGES), h.handoff_loads
+    assert all(m == [] for m in loaded.values()), loaded
     assert "stopped at protocol_execution" in (h.state("run_001").get("last_error") or "")
 
 
 # ---------------------------------------------------------------------------
 # A2: --validation-protocol under config-direct
 # ---------------------------------------------------------------------------
+
+def _write_docs(arts: Path, docs: dict) -> None:
+    for name, doc in docs.items():
+        (arts / name).write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+
 
 def _stage_at_protocol_execution(h: Harness, run_id: str = "run_001",
                                  validation_protocol: bool = False) -> Path:
@@ -897,24 +1100,24 @@ def _stage_at_protocol_execution(h: Harness, run_id: str = "run_001",
     brief = camp._parse_brief_frontmatter(h.register_brief())
     sr.setup_run(run_id)
     camp._materialize_run(run_id, brief)
-    run_dir = h.run_dir(run_id)
+    run_dir = Path(rpr.ROOT) / "runs" / run_id
     arts = run_dir / "artifacts"
     rpr._ensure_protocol_ref_pinned(run_dir, run_id, rpr._load_machine_constraints(run_dir))
-    h._write_card(arts, None)
+    _write_docs(arts, h.card_docs(run_dir))
     assert rpr._write_pass_rule_from_card(run_dir, run_id, True) is True
-    h._write_1b(arts, None)
+    _write_docs(arts, h.docs_1b(run_dir))
     configs = {"base": BASE_CONFIG,
-               "design": rpr._apply_json_pointer_patch(BASE_CONFIG, [{"path": RSI_PERIOD,
-                                                                      "value": 21}]),
-               "asset": rpr._apply_json_pointer_patch(BASE_CONFIG, [{"path": ER_PERIOD,
-                                                                     "value": 48}])}
+               "design": rpr._apply_json_pointer_patch(BASE_CONFIG, [{
+                   "path": RSI_PERIOD, "value": _rsi_period(BASE_CONFIG) + DESIGN_PERIOD_STEP}]),
+               "asset": rpr._apply_json_pointer_patch(BASE_CONFIG, [{
+                   "path": ER_PERIOD, "value": ASSET_ER_PERIOD}])}
     index = {}
     for vid, cfg in configs.items():
         (arts / "variants" / vid).mkdir(parents=True, exist_ok=True)
         (arts / "variants" / vid / "strategy_config.json").write_text(
             json.dumps(cfg, indent=2), encoding="utf-8")
-        index[vid] = {"status": "validated", "config_path": f"artifacts/variants/{vid}/"
-                                                            f"strategy_config.json"}
+        index[vid] = {"status": "validated",
+                      "config_path": f"artifacts/variants/{vid}/strategy_config.json"}
     (arts / "candidate_strategy_config.json").write_text(json.dumps(BASE_CONFIG, indent=2),
                                                          encoding="utf-8")
     rpr.save_yaml(arts / "variants" / "index.yaml", {"variants": index})
@@ -930,10 +1133,10 @@ def _stage_at_protocol_execution(h: Harness, run_id: str = "run_001",
     return run_dir
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "E-061 C1.3 (A2). Observed on master: run_tool_worker passes '--validation-protocol "
-    "<run>/artifacts/validation_protocol.yaml' (a file config-direct never writes) to "
-    "every variant's run_protocol.py; the tool opens it only after the windows ran, so "
+@pytest.mark.xfail(strict=True, raises=PinnedFailure, reason=(
+    "E-061 C1.3 (A2). Pinned on master: run_tool_worker passes '--validation-protocol "
+    "runs/run_001/artifacts/validation_protocol.yaml' (a file config-direct never writes) "
+    "to every variant's run_protocol.py; the tool opens it only after the windows ran, so "
     "every variant exits 1 -> 3 backtest_failed trial rows and RuntimeError: "
     "run_tool_worker(protocol_execution): all 3 validated variant(s) failed."))
 def test_a2_protocol_execution_never_passes_a_missing_validation_protocol(harness):
@@ -941,7 +1144,7 @@ def test_a2_protocol_execution_never_passes_a_missing_validation_protocol(harnes
     --validation-protocol after the windows ran). If C1.3 is fixed the other way the
     plan allows -- teaching run_protocol.py that the file is optional -- update
     Harness._run_protocol to the new behaviour in the same PR, and drop the argv
-    assertion below for the one it replaces."""
+    pin below for the one it replaces."""
     h = harness.build()
     run_dir = _stage_at_protocol_execution(h)
     err = None
@@ -949,9 +1152,11 @@ def test_a2_protocol_execution_never_passes_a_missing_validation_protocol(harnes
         asyncio.run(rpr.run_tool_worker("protocol_execution", "run_001"))
     except RuntimeError as exc:
         err = exc
-    assert h.missing_validation_protocol_args() == [], (
-        f"--validation-protocol points at a missing file; worker error: {err}")
-    assert err is None
+    missing_vp = h.missing_validation_protocol_args()
+    if missing_vp:
+        raise PinnedFailure(f"A2 (C1.3): --validation-protocol names missing {missing_vp[0]}; "
+                            f"worker error: {err}")
+    assert err is None, err
     rows = h.trial_rows()
     assert sorted(r["trial_id"] for r in rows) == ["run_001:asset", "run_001:base",
                                                    "run_001:design"]
@@ -964,8 +1169,8 @@ def test_a2_protocol_execution_never_passes_a_missing_validation_protocol(harnes
 # A4: an uncaught stage exception
 # ---------------------------------------------------------------------------
 
-@pytest.mark.xfail(strict=True, reason=(
-    "E-061 C1.4 (A4). Observed on master: the exception raised at run_loop's input check "
+@pytest.mark.xfail(strict=True, raises=PinnedFailure, reason=(
+    "E-061 C1.4 (A4). Pinned on master: an exception raised at run_loop's input check "
     "(ensure_files, outside its try) escapes run_loop and process_once uncaught -- "
     "FileNotFoundError: E-061 injected: stage input missing -- no classified pause, no "
     "halt_history, the queue entry stays in_progress and a restart re-crashes."))
@@ -982,17 +1187,23 @@ def test_a4_uncaught_stage_exception_is_a_classified_pause(harness, monkeypatch)
         return real(paths)
 
     monkeypatch.setattr(rpr, "ensure_files", _ensure_files)
-    assert camp.process_once() is False  # must not raise
+    ret, exc = _drive(h)
+    if isinstance(exc, FileNotFoundError) and "E-061 injected" in str(exc):
+        raise PinnedFailure(f"A4 (C1.4): escaped process_once: {exc}")
+    if exc is not None:
+        raise exc
+    assert ret is False
     entry = h.entry(BRIEF_ID)
     assert entry["status"].startswith("paused:"), entry["status"]
     st = h.state("run_001")
     assert "E-061 injected" in (st.get("last_error") or "")
     assert st["status"] in ("paused_for_human", "failed")
     assert st.get("halt_history"), "no halt_history record"
-    assert "HALT" in (h.root / "campaign_log.md").read_text(encoding="utf-8")
+    assert "HALT" in h.log_text()
     assert h.llm_calls == []
     # a restart does not re-crash (nor re-run the stage)
-    assert camp.process_once() is False
+    ret, exc = _drive(h)
+    assert exc is None and ret is False, exc
     assert h.llm_calls == []
 
 
@@ -1000,68 +1211,77 @@ def test_a4_uncaught_stage_exception_is_a_classified_pause(harness, monkeypatch)
 # A6 (D-3) and A8: refused at launch, before any LLM call
 # ---------------------------------------------------------------------------
 
-def _drive_catching(h: Harness):
-    try:
-        return camp.process_once(), None
-    except Exception as exc:  # the report names the escape; the assertion is the spend
-        return None, exc
+def _refusal_record(h: Harness, exc) -> tuple:
+    """(queue entry status, every recorded reason: exception, run state, log)."""
+    parts = [str(exc or "")]
+    if h.run_dir("run_001").exists():
+        st = h.state("run_001")
+        parts += [str(st.get("last_error") or ""), json.dumps(st.get("halt_history") or [])]
+    parts.append(h.log_text())
+    return h.entry(BRIEF_ID)["status"], "\n".join(parts)
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "E-061 C1.5 (A6, D-3). Observed on master: the pinned protocol's generic, unratified "
-    "promotion block is only checked at its first _resolve_protocol_path (5a's repeat "
-    "gate), so 1a, 1b and 2 are spent first: 3 LLM calls (and then the A1 "
-    "FileNotFoundError escapes process_once at 5a before D-3 is even reached)."))
+def _assert_classified_refusal(h: Harness, ret, exc, *needles: str) -> None:
+    assert exc is None, f"process_once raised instead of pausing: {exc!r}"
+    assert ret is False
+    status, detail = _refusal_record(h, exc)
+    assert status.startswith("paused:"), status
+    for needle in needles:
+        assert needle in detail, (needle, detail[-2000:])
+
+
+@pytest.mark.xfail(strict=True, raises=PinnedFailure, reason=(
+    "E-061 C1.5 (A6, D-3). Pinned on master: the pinned protocol's generic, unratified "
+    "promotion block is only checked at its first _resolve_protocol_path (5a), so 1a, 1b "
+    "and 2 are spent first: 3 LLM calls [hypothesis_generation, strategy_config_authoring, "
+    "innovation_expansion] (then the A1 FileNotFoundError escapes at 5a)."))
 def test_a6_generic_promotion_protocol_refused_before_any_llm_call(harness):
     h = harness.build(promotion=dict(rpr._GENERIC_PROMOTION))
     h.register_brief()
-    ret, exc = _drive_catching(h)
-    assert h.llm_calls == [], (f"{len(h.llm_calls)} LLM call(s) before the D-3 refusal: "
-                               f"{h.llm_calls}; process_once raised {exc!r}")
-    assert exc is None and ret is False
-    detail = json.dumps(h.state("run_001")) if h.run_dir("run_001").exists() else ""
-    detail += (h.root / "campaign_log.md").read_text(encoding="utf-8")
-    assert "promotion" in detail
+    ret, exc = _drive(h)
+    if h.llm_calls:
+        raise PinnedFailure(f"A6 (C1.5): {len(h.llm_calls)} LLM call(s) before the D-3 "
+                            f"refusal: {h.llm_calls}")
+    # The refusal names this protocol and its unratified generic promotion block.
+    _assert_classified_refusal(h, ret, exc, PROTOCOL_NAME, "promotion", "ratified")
 
 
 @pytest.mark.parametrize("case", [
-    pytest.param("lazy_dependency", marks=pytest.mark.xfail(strict=True, reason=(
-        "E-061 C1.5 (A8). composition_runs on without variant_loop. Observed on master: "
-        "accepted at launch; step 1a is spent, then _write_pass_rule_from_card's "
-        "_composition_runs_enabled() raises 'requires ... variant_loop' -> 1 LLM call."))),
-    pytest.param("quoted_boolean", marks=pytest.mark.xfail(strict=True, reason=(
-        "E-061 C1.5 (A8). grid_evaluation.enabled: \"false\" (quoted). Observed on "
-        "master: the non-strict reader reads bool('false') == True, the run launches "
-        "and spends 1a/1b/2 (3 LLM calls) before the A1 crash at 5a."))),
+    pytest.param("lazy_dependency", marks=pytest.mark.xfail(
+        strict=True, raises=PinnedFailure, reason=(
+            "E-061 C1.5 (A8). composition_runs on without variant_loop. Pinned on master: "
+            "accepted at launch; step 1a is spent (1 LLM call), then "
+            "_write_pass_rule_from_card's _composition_runs_enabled() raises "
+            "'orchestrator.composition_runs.enabled=true requires "
+            "orchestrator.variant_loop.enabled=true'."))),
+    pytest.param("quoted_boolean", marks=pytest.mark.xfail(
+        strict=True, raises=PinnedFailure, reason=(
+            "E-061 C1.5 (A8). grid_evaluation.enabled: \"false\" (quoted). Pinned on "
+            "master: the non-strict reader reads bool('false') == True, the run launches "
+            "and spends 1a/1b/2 (3 LLM calls) before the A1 crash at 5a."))),
 ])
 def test_a8_flag_misconfiguration_refused_before_any_llm_call(harness, case):
     if case == "lazy_dependency":
-        flags = {**TARGET_FLAGS, "variant_loop": False}
-        h = harness.build(flags=flags)
+        h = harness.build(flags={**TARGET_FLAGS, "variant_loop": False})
         culprit = "variant_loop"
     else:
         h = harness.build(raw_override={"grid_evaluation": "false"})
         assert _flags_of(h.root)["grid_evaluation"]["enabled"] == "false"
         culprit = "grid_evaluation"
     h.register_brief()
-    ret, exc = _drive_catching(h)
-    assert h.llm_calls == [], (f"{len(h.llm_calls)} LLM call(s) before the {culprit} "
-                               f"misconfiguration was refused: {h.llm_calls}; "
-                               f"process_once raised {exc!r}")
-    detail = str(exc or "")
-    if h.run_dir("run_001").exists():
-        detail += json.dumps(h.state("run_001"))
-    if (h.root / "campaign_log.md").exists():
-        detail += (h.root / "campaign_log.md").read_text(encoding="utf-8")
-    assert culprit in detail
+    ret, exc = _drive(h)
+    if h.llm_calls:
+        raise PinnedFailure(f"A8 (C1.5): {len(h.llm_calls)} LLM call(s) before the "
+                            f"{culprit} misconfiguration was refused: {h.llm_calls}")
+    _assert_classified_refusal(h, ret, exc, culprit)
 
 
 # ---------------------------------------------------------------------------
 # A7: the open-ended last era
 # ---------------------------------------------------------------------------
 
-@pytest.mark.xfail(strict=True, raises=TypeError, reason=(
-    "E-061 C1.6 (A7). Observed on master: tools/run_protocol.py::_era_id_for_timestamp "
+@pytest.mark.xfail(strict=True, raises=PinnedFailure, reason=(
+    "E-061 C1.6 (A7). Pinned on master: tools/run_protocol.py::_era_id_for_timestamp "
     "compares `lo <= d <= hi` with hi=None for era_2026_h2_forward_recorded -> TypeError: "
     "'<=' not supported between instances of 'str' and 'NoneType'."))
 def test_a7_era_id_handles_the_open_ended_last_era():
@@ -1072,7 +1292,13 @@ def test_a7_era_id_handles_the_open_ended_last_era():
     assert last["range"][1] is None  # the open-ended era this finding is about
     lo = _dt.date.fromisoformat(str(last["range"][0]))
     ts = (lo + _dt.timedelta(days=30)).isoformat()  # computed, never a literal
-    assert rp._era_id_for_timestamp(ts, eras) == last["era_id"]
+    try:
+        era = rp._era_id_for_timestamp(ts, eras)
+    except TypeError as exc:
+        if "'<=' not supported between instances of 'str' and 'NoneType'" in str(exc):
+            raise PinnedFailure(f"A7 (C1.6): {exc}") from exc
+        raise
+    assert era == last["era_id"]
 
 
 # ---------------------------------------------------------------------------
@@ -1080,16 +1306,23 @@ def test_a7_era_id_handles_the_open_ended_last_era():
 # ---------------------------------------------------------------------------
 
 @pytest.mark.slow
-@pytest.mark.xfail(strict=True, reason=(
-    "E-061 C1.2 (A1): the data-gate route is never reached. Observed on master: "
-    "FileNotFoundError: Missing files: [...runs/run_001/artifacts/validation_protocol.yaml] "
-    "raised out of process_once() at 5a. PINS finding A5's behaviour once reached; "
-    "C2.5 changes that behaviour on purpose and must update this test."))
+@pytest.mark.xfail(strict=True, raises=PinnedFailure, reason=(
+    "E-061 C1.2 (A1): the data-gate route is never reached. Pinned on master: "
+    "handoffs/validation_to_backtest_specification.yaml loaded at backtest_specification "
+    "with missing ['artifacts/validation_protocol.yaml'] -> FileNotFoundError escapes "
+    "process_once() at 5a. PINS finding A5's behaviour once reached; C2.5 changes that "
+    "behaviour on purpose and must update this test."))
 def test_a5_one_variant_failing_validate_config_pins_the_pause(harness):
     h = harness.build()
     h.bad_variant = "design"
     h.register_brief()
-    assert camp.process_once() is False
+    ret, exc = _drive(h)
+    a1 = _a1_signature(h, exc, "run_001")
+    if a1:
+        raise PinnedFailure(f"A1 (C1.2): {a1}")
+    if exc is not None:
+        raise exc
+    assert ret is False
     st = h.state("run_001")
     assert st.get("last_error") is None, st.get("last_error")
     index = h.art("run_001", "variants/index.yaml")["variants"]
@@ -1110,12 +1343,14 @@ def test_a5_one_variant_failing_validate_config_pins_the_pause(harness):
 # B2 / A3 §3.4: the category reports under the variant loop
 # ---------------------------------------------------------------------------
 
+_TRADE_OR_BAR_SOURCE = re.compile(r"trade_diagnostics\.json|bars\.csv")
+
+
 def _unavailable_slices(node, path="") -> list:
-    """Every {unavailable: true} slice whose reason is a missing trade or bar file."""
+    """Every {unavailable: true} slice whose reason is a missing trade or bar source."""
     out = []
     if isinstance(node, dict):
-        if node.get("unavailable") is True and re.search(
-                r"trade_diagnostics\.json|bars\.csv", str(node.get("reason"))):
+        if node.get("unavailable") is True and _TRADE_OR_BAR_SOURCE.search(str(node.get("reason"))):
             out.append((path, node.get("reason")))
         for k, v in node.items():
             out += _unavailable_slices(v, f"{path}.{k}")
@@ -1125,12 +1360,14 @@ def _unavailable_slices(node, path="") -> list:
     return out
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "E-061 C2.2 (B2; A3 §3.4 / top finding 8). Observed on master: build_reports reads "
+@pytest.mark.xfail(strict=True, raises=PinnedFailure, reason=(
+    "E-061 C2.2 (B2; A3 §3.4 / top finding 8). Pinned on master: build_reports reads "
     "RUN_DIR/trade_diagnostics.json and RUN_DIR/results/<w>/bars.csv, while the variant "
     "loop writes them under RUN_DIR/variants/<id>/ -- trade_efficiency's per_window/"
-    "per_regime/per_symbol, regime_power's hindsight_lag and component_attribution come "
-    "out {unavailable: true} with no error."))
+    "per_regime/per_symbol ('no trade_diagnostics.json found alongside this run'), "
+    "regime_power's hindsight_lag ('bars.csv missing') and component_attribution ('no "
+    "debug_info.components.*.* columns found in any window's bars.csv') come out "
+    "{unavailable: true} with no error."))
 def test_b2_category_reports_carry_trade_and_bar_slices(harness):
     h = harness.build()
     run_dir = _stage_at_protocol_execution(h, validation_protocol=True)
@@ -1139,4 +1376,6 @@ def test_b2_category_reports_carry_trade_and_bar_slices(harness):
                for cat in ("trade_efficiency", "regime_power", "component_attribution")}
     assert all(reports.values()), sorted(p.name for p in (run_dir / "artifacts").iterdir())
     bad = {cat: _unavailable_slices(doc) for cat, doc in reports.items()}
-    assert not any(bad.values()), bad
+    if any(bad.values()):
+        raise PinnedFailure(f"B2 (C2.2): slices unavailable for a missing trade/bar source: "
+                            f"{ {c: [p for p, _ in v] for c, v in bad.items()} }")
