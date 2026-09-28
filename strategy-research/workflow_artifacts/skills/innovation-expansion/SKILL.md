@@ -240,21 +240,35 @@ any structured patch output.
 base_config_ref: artifacts/backtest_spec.yaml   # where the base config this patches against lives
 variants:
   - variant_id: base
+    kind: base
+    symbol: BTCUSDT             # the protocol's first symbol (the base coin)
     patch: []
     rationale: "The base config as strategy_config_authoring produced it, unmodified — always include this
       entry verbatim so the base itself is one of the pursued variants, not just a patch target."
   - variant_id: <design_variant_name>
+    kind: design
+    symbol: BTCUSDT             # the base coin too: a design variant changes the config, not the coin
     patch:
       - path: "/strategies/regimes/unknown/components/0/params/period"
         value: 21
     rationale: "<what this patch changes and why — the design-axis variant>"
   - variant_id: <asset_variant_name>
-    patch:
-      - path: "/regime_detector/components/0/params/period"
-        value: 21
-    rationale: "<the asset-generalizability variant — IMPROVEMENT 06 below still applies: pick the symbol from a
+    kind: asset
+    symbol: XRPUSDT             # a coin_universe.yaml coin from a DIFFERENT category than the base coin
+    patch: []                   # empty: the coin is the one change
+    rationale: "<the asset-generalizability variant — IMPROVEMENT 06 above: the SAME config on a coin from a
       DIFFERENT coin_universe.yaml category than the base>"
 ```
+
+**The coin is a backtest input, not a config field** (DECISION_LOG D-016): each variant names its coin in
+`symbol`; there is no config path that encodes the traded symbol, so never patch one. `kind` is `base`, `design`
+or `asset`. `base` and `design` run on the base coin (the run protocol's first symbol; if you omit their `symbol`,
+code sets it, and a different one is refused). An `asset` variant has an EMPTY
+patch and a `symbol` from `config/coin_universe.yaml` in a category different from the base coin's. Prefer a coin
+whose data covers the protocol's windows: one that covers only part of them runs on the windows it covers only if
+that is at least 60% of the windows (D-042; its former 2-era condition was dropped, D-045); otherwise the variant
+is not run and the idea can at best be inconclusive. A variant that runs on only part of the windows is graded,
+but until its time-dependent bars are normalised (E-062 S2b) it cannot make the idea validated.
 
 Each `patch` entry is `{path, value}`, `path` a JSON Pointer (RFC 6901) string starting with `/`, e.g.
 `/strategies/regimes/unknown/components/0/params/period`. **The patch's target path's PARENT must already exist
@@ -266,9 +280,9 @@ an invented path segment fails at `backtest_specification` time, not here.
 
 **Always include the `base` variant (empty patch) in `variants`** — it is what lets the base config itself
 still get tested, not merely serve as a patch target. Add a "design patch" variant (a variant along the
-signal's own design axis — a parameter, a transform, a component swap) and an "asset patch" variant (the
-IMPROVEMENT 06 asset-generalizability candidate, expressed as a patch changing whatever config path encodes the
-traded symbol/instrument for this hypothesis) per the "base + a design patch + an asset patch" shape this slice
+signal's own design axis — a parameter, a transform, a component swap) and an "asset" variant (the
+IMPROVEMENT 06 asset-generalizability candidate: `kind: asset`, the base config unchanged — empty patch — on the
+coin named in `symbol`) per the "base + a design patch + an asset coin" shape this slice
 targets — more are permitted if genuinely justified (same "quality over volume" discipline IMPROVEMENT 04's
 diversity test already applies), but do not pad the list with cosmetic parameter-only variants that would fail
 IMPROVEMENT 04's diversity test if they were expressed as prose.
@@ -307,8 +321,9 @@ patch form.
   section in `innovation_notes.yaml`.
 - **Improvement 07 (config-direct-authoring flow only, signaled by `artifacts/backtest_spec.yaml`
   presence): write `variant_patches.yaml` with a `base` (empty-patch) entry, a design-axis
-  variant, and an asset variant at minimum; every `patch[].path` must be a valid JSON Pointer
-  whose parent already exists in the base config.**
+  variant, and an asset variant at minimum, each with its `kind` and `symbol` (the asset
+  variant: empty patch, a coin from another category); every `patch[].path` must be a valid
+  JSON Pointer whose parent already exists in the base config.**
 
 ## Forbidden
 - Do not skip interpretability.

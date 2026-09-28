@@ -149,6 +149,17 @@ def deduplicate_trials(records: list[dict]) -> tuple[list[dict], int]:
        per source. A genuine duplicate is the SAME (forecast_hash, source) twice.
        Trials with no forecast_hash are treated as unique and always kept.
 
+    E-061 C2 S2b (G6): the key is (forecast_hash, sorted symbols or None,
+    source). A per-coin variant's row (written by the variant loop) carries
+    `symbols`, so an asset variant with the base's exact config on another coin
+    stays its own trial (card D). A row without the field keys (hash, None,
+    source) -- the same partition as the former (hash, source): every existing
+    ledger dedupes exactly as before. So a legacy row without `symbols` and a
+    per-coin row for the same config (same hash, same source) count as TWO
+    trials, never one -- the conservative direction for the DSR (N can only be
+    over-counted, never under-counted). A present but malformed `symbols`
+    raises. Lockstep with run_phase1_research._dedupe_trials.
+
     Returns (deduped_list, n_removed).
     """
     # Pre-pass: index every (trial_id, source) present and the reproduces_trial it
@@ -176,7 +187,16 @@ def deduplicate_trials(records: list[dict]) -> tuple[list[dict], int]:
             # No hash — treat as unique; always keep
             kept.append(rec)
             continue
-        key = (fh, rec.get("source"))
+        if "symbols" in rec:
+            syms = rec["symbols"]
+            if not (isinstance(syms, list) and syms
+                    and all(isinstance(s, str) and s for s in syms)):
+                raise ValueError(f"trial {rec.get('trial_id')!r}: symbols {syms!r} is not a "
+                                 f"non-empty list of non-empty strings (E-061 C2 S2b)")
+            coins = tuple(sorted(syms))
+        else:
+            coins = None
+        key = (fh, coins, rec.get("source"))
         if key in seen_keys:
             n_removed += 1
         else:

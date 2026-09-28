@@ -84,6 +84,12 @@ Finding -> test (see each marker's reason for the pinned failure):
              test_b2_category_reports_carry_trade_and_bar_slices
   B4 / D-015 (C2.4, E-061 C2 S2a)
              test_c2_4_one_crashed_variant_never_validates           (fixed, no marker)
+  B1/B5 / D-016, D-042 (C2.1, E-061 C2 S2b) -- one coin per variant: every stage-2
+             answer is base (BTCUSDT) + design + asset (XRPUSDT, another
+             category), and the two joined-up runs assert each variant's own
+             protocol, coin, trial row and memory entry
+             (_assert_one_coin_per_variant);
+             test_c2_s2b_partial_coverage_asset_is_untested_and_blocks_nothing
   A9 -- the joined-up path (A3 §5 items 7-9):
              test_end_to_end_two_runs_with_the_real_run_setup
              test_profit_bars_stop_then_holdout_continue_then_resume
@@ -184,7 +190,7 @@ TARGET_FLAGS = {
 # campaign_record/, never the real trial ledger, never local_data/.
 _CONFIG_COPIES = ("criterion_menu.yaml", "profitability_bars.yaml", "available_feeds.yaml",
                   "indicator_library.yaml", "cost_model.yaml", "venue_tradability.yaml",
-                  "coin_universe.yaml")
+                  "coin_universe.yaml", "venue_data_capability.yaml")
 _DOC_COPIES = ("STRATEGY_DESIGN_GUIDE.md", "DATA_AVAILABILITY.md", "WORKFLOW_CAPABILITIES.md")
 
 PROTOCOL_NAME = "e061_wiring_1h.json"
@@ -231,6 +237,10 @@ ER_PERIOD = "/regime_detector/components/0/params/period"
 BAD_OP = "/strategies/regimes/unknown/components/0/transforms/2/op"
 DESIGN_PERIOD_STEP = 7   # the design variant: a slower RSI, period + 7
 ASSET_ER_PERIOD = 48
+# E-061 C2 S2b (D-016): the asset variant is the base config on a coin from
+# another coin_universe.yaml category -- XRPUSDT (payment, Kraken: venue symbol
+# XRPUSD) for the BTCUSDT base (store_of_value, the protocol's symbols[0]).
+ASSET_COIN, ASSET_VENUE_SYMBOL, ASSET_EXCHANGE = "XRPUSDT", "XRPUSD", "kraken"
 # The real validator's message for BAD_OP -> "no_such_op" (measured, exit 1).
 V3_MESSAGE = ("VIOLATION V3 strategies.regimes.unknown.components[0].transforms[2].op: "
               "'no_such_op' not in TRANSFORM_OPS_REGISTRY")
@@ -355,6 +365,7 @@ class Harness:
         self.extra_variant: dict | None = None
         self.bad_variant: str | None = None
         self.crash_variant: str | None = None  # run_protocol.py crashes for it (C2.4)
+        self.gate_declines: set = set()  # the Layer-2 data gate declines these (C2 S2b H1)
         self.reader_proposals = True
 
     def violation(self, text: str) -> None:
@@ -596,14 +607,17 @@ class Harness:
         arts = run_dir / "artifacts"
         card = yaml.safe_load((arts / "hypothesis_card.yaml").read_text(encoding="utf-8"))
         spec = yaml.safe_load((arts / "backtest_spec.yaml").read_text(encoding="utf-8"))
+        # E-061 C2 S2b: one coin per variant, the skill's IMPROVEMENT 07 shape --
+        # kind + symbol; the design variant leaves its symbol to code (G2).
         variants = [
-            {"variant_id": "base", "patch": [], "rationale": "the base config, unmodified"},
-            {"variant_id": "design",
+            {"variant_id": "base", "kind": "base", "symbol": SYMBOLS[0], "patch": [],
+             "rationale": "the base config, unmodified"},
+            {"variant_id": "design", "kind": "design",
              "patch": [{"path": RSI_PERIOD,
                         "value": _rsi_period(spec["config"]) + DESIGN_PERIOD_STEP}],
              "rationale": "design axis: a slower RSI"},
-            {"variant_id": "asset", "patch": [{"path": ER_PERIOD, "value": ASSET_ER_PERIOD}],
-             "rationale": "the skill's asset-variant shape (IMPROVEMENT 07 example path)"},
+            {"variant_id": "asset", "kind": "asset", "symbol": ASSET_COIN, "patch": [],
+             "rationale": "the same config on a coin from another category"},
         ]
         if self.bad_variant:
             v = next(v for v in variants if v["variant_id"] == self.bad_variant)
@@ -687,15 +701,22 @@ class Harness:
         out = Path(argv[argv.index("--out-dir") + 1])
         out.mkdir(parents=True, exist_ok=True)
         proto = json.loads(Path(argv[3]).read_text(encoding="utf-8"))
+        # C2 S2b H1: a declined variant's first window has no data at the source
+        # (the real tool's decline: exit 2, outcome decline, a reason per window)
+        decline = out.parent.name in self.gate_declines
+        first = proto["windows"][0]["label"]
         doc = {"schema_version": 1, "checked_at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
                "exchange": "binance", "timeframe": proto["timeframe"], "symbols": proto["symbols"],
-               "gap_tolerance": 0.02, "outcome": "validate", "reasons": [],
-               "windows": [{"symbol": s, "label": w["label"], "outcome": "validate",
-                            "missing_fraction": 0.0} for s in proto["symbols"]
-                           for w in proto["windows"]],
+               "gap_tolerance": 0.02, "outcome": "decline" if decline else "validate",
+               "reasons": ([f"{proto['symbols'][0]} {first}: no bars before the coin's listing"]
+                           if decline else []),
+               "windows": [{"symbol": s, "label": w["label"],
+                            "outcome": "decline" if decline and w["label"] == first else "validate",
+                            "missing_fraction": 1.0 if decline and w["label"] == first else 0.0}
+                           for s in proto["symbols"] for w in proto["windows"]],
                "aux_feeds": []}
         (out / "data_availability_gate.yaml").write_text(yaml.safe_dump(doc), encoding="utf-8")
-        return self._done(0)
+        return self._done(2 if decline else 0)
 
     def _regime_detector(self, argv):
         rpt = yaml.safe_load((_SR / "regime_detector_report.yaml").read_text(encoding="utf-8"))
@@ -905,6 +926,58 @@ def _pin_joined(h: Harness, exc, run_id: str) -> None:
         raise exc
 
 
+def _variant_of_out_dir(argv: list) -> tuple:
+    """(run_id, variant_id) of a data-gate / run_protocol.py call from its
+    --out-dir: runs/<run>/variants/<vid>[/data_availability]."""
+    out = Path(argv[argv.index("--out-dir") + 1])
+    if out.name == "data_availability":
+        out = out.parent
+    return out.parent.parent.name, out.name
+
+
+def _assert_one_coin_per_variant(h: Harness, run_id: str, rows: list) -> None:
+    """E-061 C2 S2b (G1, G2, G6): each variant carries its kind and coin in the
+    index, the data gate and run_protocol.py both ran its OWN protocol.json (one
+    coin), its backtest and its memory entry hold exactly that coin, and its
+    trial row carries it -- so base and asset, sharing one config (same
+    forecast_hash), both count in the DSR dedupe."""
+    index = h.art(run_id, "variants/index.yaml")["variants"]
+    coins = {"base": (SYMBOLS[0], SYMBOLS[0]), "design": (SYMBOLS[0], SYMBOLS[0]),
+             "asset": (ASSET_COIN, ASSET_VENUE_SYMBOL)}
+    arts = h.run_dir(run_id) / "artifacts"
+    for vid, (coin, venue) in coins.items():
+        assert (index[vid]["kind"], index[vid]["symbol"]) == (vid, coin), index[vid]
+        proto = json.loads((arts / "variants" / vid / "protocol.json").read_text(encoding="utf-8"))
+        assert proto["symbols"] == [venue]
+        assert proto["windows"] == _protocol()["windows"]  # full coverage: every window
+    asset_proto = json.loads((arts / "variants" / "asset" / "protocol.json").read_text(
+        encoding="utf-8"))
+    assert asset_proto["exchange"] == ASSET_EXCHANGE
+    assert index["asset"]["coverage"]["fraction"] == 1.0
+    seen = {}
+    for script in ("data_availability_gate.py", "run_protocol.py"):
+        for a in h.calls_to(script):
+            run, vid = _variant_of_out_dir(a)
+            if run == run_id:
+                assert Path(a[3]).as_posix().endswith(
+                    f"runs/{run_id}/artifacts/variants/{vid}/protocol.json"), a
+                seen.setdefault(script, set()).add(vid)
+    assert all(seen.get(s, set()) >= set(coins) for s in ("data_availability_gate.py",
+                                                          "run_protocol.py")), seen
+    for vid, (_coin, venue) in coins.items():
+        pr = h.art(run_id, f"variants/{vid}/protocol_result.yaml")
+        assert {r["symbol"] for r in pr["results"]} == {venue}
+    by_tid = {r["trial_id"]: r for r in rows}
+    for vid, (_coin, venue) in coins.items():
+        assert by_tid[f"{run_id}:{vid}"]["symbols"] == [venue]
+    assert (by_tid[f"{run_id}:base"]["forecast_hash"]
+            == by_tid[f"{run_id}:asset"]["forecast_hash"])
+    assert len(rpr._dedupe_trials(rows)[0]) == len(rows)
+    memory = yaml.safe_load(rpr._campaign_memory_path().read_text(encoding="utf-8"))
+    for vid, (_coin, venue) in coins.items():
+        assert memory["runs"][run_id]["variants"][vid]["symbols"] == [venue]
+
+
 # ---------------------------------------------------------------------------
 # A9: the joined-up path, two runs (A3 §5 items 7-8)
 # ---------------------------------------------------------------------------
@@ -945,6 +1018,7 @@ def test_end_to_end_two_runs_with_the_real_run_setup(harness):
     assert sorted(r["trial_id"] for r in rows1) == [f"{r1}:asset", f"{r1}:base", f"{r1}:design"]
     assert {r["source"] for r in rows1} == {"backtest"}
     assert {r["statistic_valid"] for r in rows1} == {"sharpe"}
+    _assert_one_coin_per_variant(h, r1, rows1)
     grid = h.art(r1, "grid_evaluation.yaml")
     assert sorted(grid["variants"]) == ["asset", "base", "design"]
     assert h.art(r1, "idea_status.yaml")["idea_status"] == "refuted" == grid["idea_status"]
@@ -963,6 +1037,9 @@ def test_end_to_end_two_runs_with_the_real_run_setup(harness):
     record1 = h.art(r1, "decision_record.yaml")
     cid = f"profitability-{r1}-1"
     assert record1["picked"]["candidate_id"] == cid
+    # C2 S2b: the candidate's cost basis is one coin (the source base variant's)
+    picked = next(c for c in record1["candidates"] if c["candidate_id"] == cid)
+    assert picked["cost"]["backtests"] == len(WINDOW_LABELS) * 3 * 1
     cand_entry = h.entry(cid)
     assert cand_entry["status"] == "ready" and cand_entry["origin"] == "reader"
 
@@ -971,7 +1048,7 @@ def test_end_to_end_two_runs_with_the_real_run_setup(harness):
     # period + the design step, everything else the base): the 5a exact-match gate
     # must see run 1 in memory.
     run1_design_period = _rsi_period(BASE_CONFIG) + DESIGN_PERIOD_STEP
-    h.extra_variant = {"variant_id": "repeat_of_run1_design",
+    h.extra_variant = {"variant_id": "repeat_of_run1_design", "kind": "design",
                        "patch": [{"path": RSI_PERIOD, "value": run1_design_period}],
                        "rationale": "a variant the campaign already tested"}
     keep_going, exc = _drive(h)
@@ -999,6 +1076,8 @@ def test_end_to_end_two_runs_with_the_real_run_setup(harness):
     assert gate["memory_present"] is True and gate["repeats"] == ["repeat_of_run1_design"]
     rows2 = sorted(r["trial_id"] for r in h.trial_rows() if r["trial_id"].startswith(f"{r2}:"))
     assert rows2 == [f"{r2}:asset", f"{r2}:base", f"{r2}:design"]
+    _assert_one_coin_per_variant(
+        h, r2, [r for r in h.trial_rows() if r["trial_id"].startswith(f"{r2}:")])
     assert h.missing_validation_protocol_args() == []
     memory = yaml.safe_load(rpr._campaign_memory_path().read_text(encoding="utf-8"))
     assert set(memory["runs"]) == {r1, r2}
@@ -1138,6 +1217,117 @@ def test_c2_4_one_crashed_variant_never_validates(harness):
     reg = rpr._block_registry_path()
     assert not reg.exists() or not (yaml.safe_load(reg.read_text(encoding="utf-8")) or {}).get(
         "blocks"), "an idea with a crashed variant registered a block"
+    assert isinstance(keep_going, bool)
+    _assert_holdout_untouched(h)
+
+
+# ---------------------------------------------------------------------------
+# C2.1 (E-061 C2 S2b, D-042): an asset coin that covers too few windows
+# ---------------------------------------------------------------------------
+
+@pytest.mark.slow
+def test_c2_s2b_partial_coverage_asset_is_untested_and_blocks_nothing(harness):
+    """The sandbox's Layer-1 audit gives the asset coin (here a Binance-listed
+    XRPUSDT) an earliest date inside the protocol's 4th window: that window
+    straddles the listing (review fix H2), so the coin covers 2 of the 6 windows
+    (33%) -- below D-042's 60% of the windows (its 2-era condition was dropped,
+    D-045). 5a
+    marks it not_tested (insufficient_coverage), no data is touched for it, and
+    the run is NOT blocked: base and design are gated and backtested, the data
+    gate's floor counts the skip like a repeat, and the grid lists it in
+    untested_variants -- with every graded cell passing (the C2.4 profile), the
+    idea ends inconclusive, not validated, and registers no block."""
+    h = harness.build()
+    universe = yaml.safe_load((h.root / "config" / "coin_universe.yaml").read_text(encoding="utf-8"))
+    for cat in universe["categories"].values():
+        for coin in cat.get("coins") or []:
+            if coin["symbol"] == ASSET_COIN:
+                coin.pop("exchange", None)
+                coin.pop("cache_key", None)
+    (h.root / "config" / "coin_universe.yaml").write_text(yaml.safe_dump(universe),
+                                                          encoding="utf-8")
+    layer1 = yaml.safe_load((h.root / "config" / "venue_data_capability.yaml")
+                            .read_text(encoding="utf-8"))
+    earliest = layer1["venues"]["binance"]["spot"]["symbols"]["earliest_ohlcv_utc"]
+    earliest[ASSET_COIN] = f"{WINDOW_LABELS[3]}-15T00:00:00Z"  # inside the 4th window
+    (h.root / "config" / "venue_data_capability.yaml").write_text(yaml.safe_dump(layer1),
+                                                                  encoding="utf-8")
+    for vid in ("base", "design", "asset"):
+        h.profiles[vid] = {"sharpe": 0.3, "edge": 1.5, "trades": 40}
+    h.register_brief()
+    r1 = "run_001"
+    keep_going, exc = _drive(h)
+    _pin_joined(h, exc, r1)
+    st = h.state(r1)
+    assert st.get("last_error") is None, st.get("last_error")
+    assert st["pending_stage"] == "completed_inconclusive" and st["status"] == "completed"
+    asset = h.art(r1, "variants/index.yaml")["variants"]["asset"]
+    assert asset["status"] == "not_tested"
+    assert asset["reason"].startswith("insufficient_coverage:") and "2/6" in asset["reason"]
+    assert asset["coverage"]["windows_run"] == list(WINDOW_LABELS[4:])
+    assert not (h.run_dir(r1) / "artifacts" / "variants" / "asset" / "protocol.json").exists()
+    for script in ("validate_config.py", "data_availability_gate.py", "run_protocol.py"):
+        assert len(h.calls_to(script)) == 2, script  # base + design only
+    grid = h.art(r1, "grid_evaluation.yaml")
+    assert sorted(grid["variants"]) == ["base", "design"]
+    assert list(grid["untested_variants"]) == ["asset"]
+    assert grid["untested_variants"]["asset"].startswith("insufficient_coverage:")
+    for crit, row in grid["grid"].items():
+        assert row["base"]["result"] == row["design"]["result"] == "PASS", (crit, row)
+    rows = sorted(r["trial_id"] for r in h.trial_rows() if r["trial_id"].startswith(f"{r1}:"))
+    assert rows == [f"{r1}:base", f"{r1}:design"]  # no look was spent on the asset coin
+    memory = yaml.safe_load(rpr._campaign_memory_path().read_text(encoding="utf-8"))
+    e = memory["runs"][r1]
+    assert e["idea_status"] == "inconclusive"
+    assert e["variants"]["asset"]["status"] == "not_tested"
+    assert e["registry"] == {"skipped": "not_validated"}
+    assert isinstance(keep_going, bool)
+    _assert_holdout_untouched(h)
+
+
+@pytest.mark.slow
+def test_c2_s2b_layer2_declined_asset_blocks_nothing(harness):
+    """Review fix H1 (D-042): the asset coin (Kraken XRPUSD -- no per-coin Layer-1
+    listing date, so 5a admits it on every window) is declined by the REAL Layer-2
+    data gate (its first window has no bars). That decline is a non-blocking
+    coverage skip: the run is neither paused nor parked, base and design are
+    backtested, no look is spent on the asset, and with every graded cell passing
+    the idea ends inconclusive, not validated, and registers no block."""
+    h = harness.build()
+    h.gate_declines = {"asset"}
+    for vid in ("base", "design", "asset"):
+        h.profiles[vid] = {"sharpe": 0.3, "edge": 1.5, "trades": 40}
+    h.register_brief()
+    r1 = "run_001"
+    keep_going, exc = _drive(h)
+    _pin_joined(h, exc, r1)
+    st = h.state(r1)
+    assert st.get("last_error") is None, st.get("last_error")
+    assert not (st.get("flags") or {}).get("variant_gate_insufficient")
+    assert st["pending_stage"] == "completed_inconclusive" and st["status"] == "completed"
+    asset = h.art(r1, "variants/index.yaml")["variants"]["asset"]
+    assert asset["status"] == "not_tested" and asset["coverage"]["fraction"] == 1.0
+    assert asset["reason"].startswith("insufficient_coverage: layer2 data_availability_gate "
+                                      "outcome=decline")
+    assert len(h.calls_to("data_availability_gate.py")) == 3
+    assert len(h.calls_to("run_protocol.py")) == 2  # base + design only
+    grid = h.art(r1, "grid_evaluation.yaml")
+    assert sorted(grid["variants"]) == ["base", "design"]
+    assert list(grid["untested_variants"]) == ["asset"]
+    assert grid["untested_variants"]["asset"].startswith("insufficient_coverage: layer2")
+    for crit, row in grid["grid"].items():
+        assert row["base"]["result"] == row["design"]["result"] == "PASS", (crit, row)
+    rows = sorted(r["trial_id"] for r in h.trial_rows() if r["trial_id"].startswith(f"{r1}:"))
+    assert rows == [f"{r1}:base", f"{r1}:design"]  # no trial row for the declined asset
+    memory = yaml.safe_load(rpr._campaign_memory_path().read_text(encoding="utf-8"))
+    e = memory["runs"][r1]
+    assert e["idea_status"] == "inconclusive"
+    assert e["variants"]["asset"]["status"] == "not_tested"
+    assert e["registry"] == {"skipped": "not_validated"}
+    # M3: a per-coin run's memory entry names the run protocol (the key the repeat
+    # gate builds), not the variant protocol.json the bridge file mirrors
+    assert e["protocol_ref"] == h.art(r1, "variant_anti_adjacency_result.yaml")["protocol_ref"]
+    assert not e["protocol_ref"].endswith("protocol.json"), e["protocol_ref"]
     assert isinstance(keep_going, bool)
     _assert_holdout_untouched(h)
 
@@ -1390,7 +1580,13 @@ def _assert_c5_6_run_completed(h: Harness, r1: str = "run_001") -> None:
     assert "promotion" not in proto
     assert [w["label"] for w in proto["windows"]] == list(WINDOW_LABELS)
     calls = h.calls_to("run_protocol.py")
-    assert {Path(a[3]).name for a in calls} == {generated.name}
+    # E-061 C2 S2b: each variant runs its own protocol.json, derived from the
+    # generated one (one coin; no promotion block either)
+    assert {Path(a[3]).name for a in calls} == {"protocol.json"}
+    for a in calls:
+        vproto = json.loads(Path(a[3]).read_text(encoding="utf-8"))
+        assert ({k: v for k, v in vproto.items() if k not in ("symbols", "exchange")}
+                == {k: v for k, v in proto.items() if k != "symbols"})
     assert len(calls) == 3
     assert all("--legacy-verdict-retired" in a for a in calls), calls
 

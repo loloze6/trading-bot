@@ -246,7 +246,11 @@ def proof_writer_is_verdict_blind() -> dict:
 def _seed_ledger_with_kill_and_distinct_row(state_path: Path):
     """A kill row (no Sharpe) + one distinct-forecast_hash real-Sharpe row.
     Distinct hashes per G2: dedup collapses same-(forecast_hash, source), so N counts
-    a killed run only when its config differs from every other counted run."""
+    a killed run only when its config differs from every other counted run.
+    E-061 C2 S2b (G6) re-checked: the key is now (forecast_hash, sorted symbols or
+    None, source); these rows carry no `symbols` (the pipeline's single-run writer
+    never adds it), so they key (hash, None, source) and the assumption holds
+    unchanged. Only a per-coin variant row also keys on its coin."""
     trials = [
         {"trial_id": "run_k901", "source": "backtest", "sharpe": None,
          "expectancy_bps": None, "n_trades": 120, "statistic_valid": "neither",

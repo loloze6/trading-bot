@@ -886,7 +886,12 @@ def load_block_prior_residual_ic(block: dict, before, *, root: Path, timeframe) 
     cand, steps = _ric.symbol_records_from_protocol_result(pr, _results_dir(run_dir, pr, bid))
     comp = None
     if kind != "none":
-        cache_dir = Path(root) / str((doc.get("composite") or {}).get("cache_dir"))
+        # E-061 C2 S2b: per-coin variants each had their coin group's composite
+        # (composite.cache_dirs); a run without it has the one cache_dir.
+        _comp = doc.get("composite") or {}
+        _by_vid = _comp.get("cache_dirs")
+        cache_dir = Path(root) / str(_by_vid[vid] if isinstance(_by_vid, dict) and vid in _by_vid
+                                     else _comp.get("cache_dir"))
         _cc._refuse_sealed(cache_dir)
         summary_path = cache_dir / "protocol_summary.json"
         if not summary_path.exists():
