@@ -87,6 +87,7 @@ import composition_names as _composition_names  # noqa: E402  (E-060 S3b: shared
 import protocol_resolution  # noqa: E402  (E-061 C1.5: the D-3 guard, checked at launch)
 import abandoned_launch  # noqa: E402  (E-061 C1.4: the abandoned-launch marker, one source)
 from setup_run import setup_run  # noqa: E402
+from timeframe import timeframe_seconds  # noqa: E402  (E-061 C1.7 second-round: shared bar-size arithmetic)
 
 # CUL-213: this is the unattended campaign entry point; its emoji status prints
 # crash on a Windows cp1252 console (UnicodeEncodeError) the moment stdout is
@@ -377,6 +378,214 @@ def check_venue_tradability(venue, market_type) -> bool:
     return entry.get("tradable") is True
 
 
+# E-061 C1.7 code-review fix: a brief copied verbatim from
+# workflow_artifacts/templates/research_brief_new_pipeline.md (its placeholders
+# never replaced) must never register -- registering it would queue a run that
+# either crashes on nonsense values or, worse, silently treats a placeholder
+# string as a real one. The sentinel is the template's own marker text.
+_PLACEHOLDER_SENTINEL = "<FILL IN"
+
+
+def _contains_placeholder(value) -> bool:
+    """True if `value` (a str, or a nested list/dict of them) still carries
+    _PLACEHOLDER_SENTINEL anywhere. Recurses into BOTH lists and dicts
+    (second-round code-review fix: the first version only recursed into
+    lists, so a `<FILL IN` left inside a dict -- e.g.
+    machine_constraints.protocol.promotion -- was invisible to it)."""
+    if isinstance(value, str):
+        return _PLACEHOLDER_SENTINEL in value
+    if isinstance(value, list):
+        return any(_contains_placeholder(v) for v in value)
+    if isinstance(value, dict):
+        return any(_contains_placeholder(v) for v in value.values())
+    return False
+
+
+def _find_placeholder_paths(value, path: str = "") -> list:
+    """Every location inside `value` (recursing into dicts and lists) that
+    still carries _PLACEHOLDER_SENTINEL, as a list of dotted/bracketed
+    paths -- lets a refusal message name every offending field at once
+    instead of stopping at the first."""
+    found = []
+    if isinstance(value, str):
+        if _PLACEHOLDER_SENTINEL in value:
+            found.append(path or "<root>")
+    elif isinstance(value, list):
+        for i, v in enumerate(value):
+            found.extend(_find_placeholder_paths(v, f"{path}[{i}]"))
+    elif isinstance(value, dict):
+        for k, v in value.items():
+            found.extend(_find_placeholder_paths(v, f"{path}.{k}" if path else str(k)))
+    return found
+
+
+def _normalize_symbol(sym) -> str:
+    """BTC == BTCUSDT (second-round code-review fix). This repo's existing
+    convention for deriving a base asset from a pair -- see
+    trading-bot/execution/portfolio_info.py's own
+    `symbol.replace('USDT', '')` (used repeatedly there for the same
+    purpose; no dedicated helper exists there either, this mirrors that
+    exact convention rather than inventing a new one). Every `symbols` value
+    in this codebase (protocols/*.json, config/coin_universe.yaml) is a
+    Binance-shaped pair ending in USDT regardless of actual trading venue,
+    so stripping that one suffix is sufficient -- there is no second quote
+    currency to handle at this project's abstraction level."""
+    return sym[:-4] if isinstance(sym, str) and sym.endswith("USDT") else sym
+
+
+def _lint_brief_protocol_agreement(brief_path: Path, data: dict) -> None:
+    """E-061 C1.7 code-review fix: refuse a brief whose market_universe/timeframe
+    disagree with the protocol machine_constraints will actually execute --
+    the same drift class K3/Q1 (_lint_machine_constraints_protocol_selection's
+    window_set_ref check) already refuses one level down, applied here to
+    symbols/bar-size identity instead of window-set identity. Checked against
+    machine_constraints.protocol (generate) directly, or against
+    machine_constraints.protocol_ref's own file (pin) when that is what the
+    brief carries -- the two keys are mutually exclusive (K3).
+
+    Registration-ONLY (second-round code-review fix): called from
+    _lint_new_pipeline_registration, itself called only from
+    register_hypothesis -- NOT from _parse_brief_frontmatter, so a brief's
+    every OTHER re-parse (materialization, dry-run, a resumed run re-reading
+    its own already-registered brief) does not re-read a pinned protocol
+    file or re-run this comparison. Also config_direct_authoring-gated (see
+    that caller) -- this whole cross-check is specific to the "new pipeline"
+    this delivery-plan slice is about.
+
+    Timeframes compare by SECONDS (tools/timeframe.py::timeframe_seconds --
+    the project's one shared bar-size arithmetic, so "60m" and "1h" agree),
+    and symbols after normalizing base-asset vs full-pair naming (BTC ==
+    BTCUSDT, see _normalize_symbol). The generate path's OMITTED timeframe
+    defaults to "1h" -- the SAME literal default
+    run_phase1_research.py::_ensure_protocol_from_constraints itself uses
+    (`proto_constraint.get("timeframe", "1h")`) -- so a brief that also
+    omits timeframe is compared against what will actually generate, not
+    silently skipped.
+
+    venue has NO protocol-side counterpart and is deliberately not
+    cross-checked: no protocols/*.json file carries a venue/exchange field --
+    `symbols` like "BTCUSDT" is this repo's Binance-shaped OHLCV cache key,
+    entirely independent of the Kraken venue naming config/
+    venue_tradability.yaml's brief.venue/brief.product use.
+
+    Raises ONLY ValueError -- the caller wraps any other exception type this
+    function or its JSON read might raise (malformed machine_constraints
+    shapes) into one, so register_hypothesis's `except ValueError` always
+    sees a clean refusal rather than a raw crash."""
+    mc = data.get("machine_constraints") or {}
+    proto = mc.get("protocol")
+    proto_ref = mc.get("protocol_ref")
+    if proto:
+        proto_symbols = proto.get("symbols")
+        # SAME default _ensure_protocol_from_constraints itself uses when the
+        # generate block omits timeframe -- comparing against None here would
+        # silently skip the exact case a brief is most likely to get wrong.
+        proto_timeframe = proto.get("timeframe", "1h")
+        source = "machine_constraints.protocol"
+    elif proto_ref:
+        ref_path = ROOT / "protocols" / orch._path_basename_any_os(proto_ref)
+        if not ref_path.exists():
+            return  # _ensure_protocol_ref_pinned raises its own clear error at launch
+        with open(ref_path, encoding="utf-8") as f:
+            proto_obj = json.load(f) or {}
+        proto_symbols, proto_timeframe = proto_obj.get("symbols"), proto_obj.get("timeframe")
+        source = f"machine_constraints.protocol_ref={proto_ref!r}"
+    else:
+        return  # nothing pinned/generated yet -- nothing to cross-check
+
+    market_universe = data.get("market_universe")
+    if proto_symbols is not None and market_universe is not None:
+        # market_universe is a list of symbols in this template, but existing
+        # briefs across the corpus (and several tests) also use a single
+        # comma-joined string (e.g. "BTCUSDT,ETHUSDT") or one bare symbol
+        # ("BTCUSDT") -- normalize all three shapes the same way rather than
+        # narrowing the field to the one shape this template happens to use.
+        if isinstance(market_universe, list):
+            raw_brief_symbols = market_universe
+        elif isinstance(market_universe, str):
+            raw_brief_symbols = [s.strip() for s in market_universe.split(",") if s.strip()]
+        else:
+            raw_brief_symbols = [market_universe]
+        brief_symbols = {_normalize_symbol(s) for s in raw_brief_symbols}
+        proto_symbols_norm = {_normalize_symbol(s) for s in proto_symbols}
+        if brief_symbols != proto_symbols_norm:
+            raise ValueError(
+                f"{brief_path}: market_universe={sorted(raw_brief_symbols)} does not "
+                f"match {source}'s symbols={sorted(proto_symbols)} -- a brief's "
+                f"declared universe must agree with what it will actually backtest."
+            )
+
+    timeframe = data.get("timeframe")
+    if proto_timeframe is not None and timeframe is not None:
+        if timeframe_seconds(timeframe) != timeframe_seconds(proto_timeframe):
+            raise ValueError(
+                f"{brief_path}: timeframe={timeframe!r} does not match {source}'s "
+                f"timeframe={proto_timeframe!r} -- a brief's declared bar size must "
+                f"agree with what it will actually backtest."
+            )
+
+
+def _check_generate_protocol_has_promotion(brief_path: Path, data: dict) -> None:
+    """Second-round code-review fix: registration-time half of the G7 gate.
+    run_phase1_research.py::_require_pre_registered_promotion already
+    refuses to GENERATE a protocol with no `promotion` block at LAUNCH --
+    this refuses the same brief at REGISTRATION instead, before it even
+    reaches the queue. Only applies to the generate path
+    (machine_constraints.protocol); a pinned protocol_ref's promotion block
+    lives in the pinned FILE already (D-3/assert_promotion_ratified checks
+    that file, not this)."""
+    mc = data.get("machine_constraints") or {}
+    proto = mc.get("protocol")
+    if isinstance(proto, dict) and not proto.get("promotion"):
+        raise ValueError(
+            f"{brief_path}: machine_constraints.protocol has no `promotion` block. "
+            f"run_phase1_research.py's G7 gate (_require_pre_registered_promotion) "
+            f"would refuse to generate this protocol at launch anyway -- refusing at "
+            f"registration instead. Add median_sharpe_gt/max_abs_drawdown_pct_lt/"
+            f"min_trade_count_gte/kill_median_sharpe_lt under "
+            f"machine_constraints.protocol.promotion with YOUR pre-registered "
+            f"thresholds (no thresholds after seeing data -- see "
+            f"CLAUDE.fork.md/HYPOTHESIS.md convention)."
+        )
+
+
+def _lint_new_pipeline_registration(brief_path: Path, data: dict) -> None:
+    """Registration-ONLY checks for the config-direct-authoring ("new
+    pipeline") path (second-round code-review fixes) -- called from
+    register_hypothesis, NEVER from _parse_brief_frontmatter. Both checks
+    below either read a protocol JSON file or inspect machine_constraints'
+    shape, and running them on every OTHER _parse_brief_frontmatter call
+    (materialization, dry-run, a resumed run re-parsing its own
+    already-registered brief) would be wasted work at best and, for the
+    promotion check, would re-raise on every resume of a run whose brief a
+    human already registered successfully once.
+
+    A no-op entirely when orchestrator.config_direct_authoring.enabled is
+    off/absent: both checks are specific to the config-direct path this
+    delivery-plan slice is about; enabling them unconditionally would be a
+    real, undeclared behaviour change to every OTHER pipeline's existing,
+    working briefs.
+
+    Raises ONLY ValueError: a malformed machine_constraints shape (e.g.
+    `protocol` set to a bare string instead of a dict, or a `protocol_ref`
+    file that is not valid JSON) is wrapped into one clear message instead
+    of escaping as a raw YAMLError/JSONDecodeError/AttributeError/TypeError
+    that register_hypothesis's `except ValueError` would miss entirely."""
+    if not orch._config_direct_authoring_enabled():
+        return
+    try:
+        _check_generate_protocol_has_promotion(brief_path, data)
+        _lint_brief_protocol_agreement(brief_path, data)
+    except ValueError:
+        raise
+    except (yaml.YAMLError, json.JSONDecodeError, AttributeError, TypeError, KeyError) as exc:
+        raise ValueError(
+            f"{brief_path}: machine_constraints is malformed ({type(exc).__name__}: "
+            f"{exc}) -- refusing to register a brief whose protocol pin/generation "
+            f"spec cannot be understood."
+        ) from exc
+
+
 def _parse_brief_frontmatter(brief_path: Path) -> dict:
     """Extract the leading '---'-delimited YAML block from a brief .md file.
     That block IS the research_brief.yaml content (plus an optional
@@ -412,6 +621,35 @@ def _parse_brief_frontmatter(brief_path: Path) -> dict:
     for required in crr.REFRAME_BRIEF_REQUIRED_KEYS:
         if not data.get(required):
             raise ValueError(f"{brief_path}: frontmatter missing required field '{required}'.")
+
+    # E-061 C1.7 second-round code-review fix: scan the WHOLE frontmatter
+    # tree, not just the top-level required fields -- a placeholder left
+    # inside machine_constraints (e.g. an uncommented `promotion` block whose
+    # values were never filled in) is just as dangerous to register as one
+    # left in strategy_domain. This runs on every _parse_brief_frontmatter
+    # call (registration, materialization, dry-run, resume), unlike the two
+    # config_direct_authoring-gated checks below -- a placeholder surviving
+    # to launch is exactly as bad as one surviving to registration, so this
+    # is intentionally NOT registration-only. DECLARED BEHAVIOUR CHANGE: any
+    # existing brief anywhere in the corpus that happens to contain the
+    # literal substring "<FILL IN" (in a value, not a comment -- comments
+    # are never part of `data`) would now fail EVERY re-parse, not just
+    # registration, where it previously only failed for the four narrower
+    # required-field checks below.
+    placeholder_paths = _find_placeholder_paths(data)
+    if placeholder_paths:
+        raise ValueError(
+            f"{brief_path}: frontmatter still carries the unfilled template "
+            f"placeholder sentinel '{_PLACEHOLDER_SENTINEL}' at {placeholder_paths} "
+            f"-- replace every one with your own value before registering "
+            f"(workflow_artifacts/templates/research_brief_new_pipeline.md's own "
+            f"header comment explains each field)."
+        )
+
+    # E-061 C1.7 second-round code-review fix: the universe/timeframe
+    # cross-check and the generate-path promotion-required check are
+    # registration-ONLY (see _lint_new_pipeline_registration's own
+    # docstring) -- called from register_hypothesis, not from here.
     return data
 
 
@@ -597,7 +835,11 @@ def register_hypothesis(brief_path: Path, priority: int, notes: str, *,
         raise ValueError(f"register_hypothesis: status {status!r} not in {list(_REGISTER_STATUSES)}")
     brief_path = Path(brief_path)
     try:
-        _parse_brief_frontmatter(brief_path)
+        _brief_data = _parse_brief_frontmatter(brief_path)
+        # E-061 C1.7 second-round code-review fix: registration-only, and
+        # only under config_direct_authoring -- see that function's own
+        # docstring for why this is not inside _parse_brief_frontmatter.
+        _lint_new_pipeline_registration(brief_path, _brief_data)
     except ValueError as err:
         _log(f"REGISTER REFUSED: malformed brief {brief_path}: {err}")
         return 1

@@ -74,6 +74,127 @@ def _load_small_yaml(path: Path) -> dict:
         return yaml.safe_load(f) or {}
 
 
+def load_campaign_data_policy(policy_path: Path | None = None) -> dict:
+    """The ONE shared reader for config/campaign_data_policy.yaml (E-061
+    C1.6/C1.7 second-round code-review fix, dedup). Previously two
+    independent implementations existed: tools/run_protocol.py's own
+    `_load_campaign_data_policy()` (whole file) and
+    tools/verdict_criteria_evaluator.py's `_load_campaign_data_policy_eras()`
+    (opened and parsed the same file a second time, independently, just to
+    read `eras`). Both are now thin delegators to this function (and to
+    `load_policy_eras` below).
+
+    Fail-SOFT (returns {} if the file is absent), matching both former
+    implementations' own behaviour for this specific, additive use --
+    callers that genuinely require the file to exist do their own loud
+    presence check (e.g. run_phase1_research.py::_load_holdout_range,
+    which is a hard dependency for holdout-boundary safety, not an optional
+    read)."""
+    p = Path(policy_path) if policy_path else (
+        Path(__file__).resolve().parent.parent / "config" / "campaign_data_policy.yaml")
+    if not p.exists():
+        return {}
+    with open(p, encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
+
+
+def load_policy_eras(policy_path: Path | None = None) -> list:
+    """The `eras` list from `load_campaign_data_policy` above -- the ONE
+    shared accessor both tools/run_protocol.py (via its own
+    `_load_campaign_data_policy()`, itself now delegating here) and
+    tools/verdict_criteria_evaluator.py use."""
+    return load_campaign_data_policy(policy_path).get("eras") or []
+
+
+# E-061 C1.6/C1.7 second-round code-review fix: memoizes era_id_for_timestamp's
+# LOOKUP (which era a given calendar day belongs to), keyed on the already-
+# normalized "YYYY-MM-DD" string plus id(eras) -- NOT on the raw `ts` passed
+# in, so two different representations of the same UTC day (a string, a
+# tz-aware Timestamp that normalizes to it, ...) share one cache entry. A
+# plain dict, not functools.lru_cache: `eras` is a list of dicts and
+# therefore unhashable, so identity (id()) stands in for it -- correct here
+# because a caller either reuses the SAME eras list object across many calls
+# (the common case: loaded once per process) or passes a fresh one each time
+# (a synthetic test list), in which case a stale id() simply never gets a
+# cache hit rather than returning a wrong answer. Intentionally unbounded:
+# one process's total distinct (era-list-identity, calendar-day) pairs is
+# bounded by the campaign's own date range, at most a few thousand entries.
+_ERA_LOOKUP_CACHE: dict[tuple[int, str], str] = {}
+
+
+def era_id_for_timestamp(ts, eras: list) -> str:
+    """The ONE shared implementation (E-061 C1.6 code-review fix), replacing
+    two independent copies that had drifted (tools/run_protocol.py and
+    tools/verdict_criteria_evaluator.py, both originally A8.5.1a: map a bar
+    timestamp to its era_id per campaign_data_policy.yaml's `eras` list).
+    Returns 'era_unmapped' if the timestamp falls outside every declared era
+    (should not happen for in-policy data, but must not crash).
+
+    campaign_data_policy.yaml's last era (era_2026_h2_forward_recorded) has an
+    open-ended upper bound, `range: [2026-07-26, null]`; a naive `lo <= d <= hi`
+    raises TypeError against that None (`str <= None` is unorderable in Python
+    3). No era currently declares a null LOWER bound, but the same hazard
+    applies symmetrically, so both sides are guarded.
+
+    Simplified from the two former per-file implementations' explicit
+    None-branching (an `if lo is None / if hi is None / if lo is None and hi
+    is None` cascade, each returning early) to a single boolean expression per
+    era: `(lo is None or lo <= d) and (hi is None or d <= hi)`. This is
+    behaviourally identical for all four cases -- `lo is None` alone makes the
+    first clause vacuously True (any `d` matches from below), `hi is None`
+    alone does the same for the second clause (any `d` matches from above),
+    both None makes the whole expression True unconditionally, and both set
+    reduces to the original `lo <= d <= hi` -- see
+    test_protocol_resolution_era_id.py's boundary/None/gap cases for the
+    executed proof, not just this docstring's claim.
+
+    TIMESTAMP NORMALIZATION (second-round code-review fix). A tz-AWARE
+    timestamp is converted to UTC before its calendar date is taken --
+    campaign_data_policy.yaml's era boundaries are UTC-anchored bar dates, so
+    e.g. a 02:00 Asia/Kolkata (UTC+5:30) reading of an era's first calendar
+    day must resolve by its UTC date (still the PREVIOUS day, 20:30 UTC),
+    not its local one, or a bar just after UTC midnight silently attributes
+    to the wrong era for any caller passing tz-aware data (see
+    test_protocol_resolution_era_id.py's tz-aware tests, which compute their
+    probe dates from the policy file at runtime rather than using a literal
+    one here). A tz-NAIVE timestamp is treated AS ALREADY UTC --
+    UNCHANGED from every prior version of this function: every real caller in
+    this codebase (bar timestamps, ISO date strings from the policy file
+    itself) is naive-and-implicitly-UTC, so this is a pin, not a new
+    decision. A bare int/float (e.g. an epoch-ms integer) is REJECTED with
+    ValueError rather than silently guessed at -- pandas' own
+    `Timestamp(int)` unit inference (nanoseconds by default, ms/s only with
+    an explicit `unit=`) makes a bare number ambiguous, and an ambiguous
+    value feeding an era classification is exactly the class of silent-
+    default bug this module exists to avoid (see timeframe.py::
+    timeframe_seconds's identical philosophy)."""
+    if isinstance(ts, bool) or isinstance(ts, (int, float)):
+        raise ValueError(
+            f"era_id_for_timestamp: a bare number ({ts!r}) is ambiguous -- pandas "
+            f"infers its unit inconsistently (nanoseconds by default). Pass an ISO "
+            f"date string, a datetime/Timestamp, or another type pandas parses "
+            f"unambiguously, not a raw int/float."
+        )
+    import pandas as pd
+    parsed = pd.Timestamp(ts)
+    if parsed.tzinfo is not None:
+        parsed = parsed.tz_convert("UTC")
+    d = parsed.strftime("%Y-%m-%d")
+
+    cache_key = (id(eras), d)
+    cached = _ERA_LOOKUP_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
+
+    for era in eras:
+        lo, hi = era["range"]
+        if (lo is None or lo <= d) and (hi is None or d <= hi):
+            _ERA_LOOKUP_CACHE[cache_key] = era["era_id"]
+            return era["era_id"]
+    _ERA_LOOKUP_CACHE[cache_key] = "era_unmapped"
+    return "era_unmapped"
+
+
 def assert_promotion_ratified(protocol_path: Path) -> None:
     """Byte-for-byte port of run_phase1_research.py::_assert_promotion_ratified.
     See that function's own docstring for the full G7/D-3 history."""

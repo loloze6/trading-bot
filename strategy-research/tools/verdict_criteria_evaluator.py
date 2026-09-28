@@ -48,6 +48,7 @@ if _TOOLS_DIR not in sys.path:
     sys.path.insert(0, _TOOLS_DIR)
 
 import record_schema as _record_schema  # noqa: E402
+import protocol_resolution as _protocol_resolution  # noqa: E402  (E-061 C1.6: one shared _era_id_for_timestamp)
 
 _VALID_COMPARATORS = (">=", ">", "<=", "<", "==")
 
@@ -1062,44 +1063,23 @@ _VALID_GRID_REDUCERS = ("median", "mean", "min", "max", "fraction_above", "sign_
 
 
 def _era_id_for_timestamp(ts, eras: list) -> str:
-    """Grid's own copy -- deliberately NOT importing run_protocol.py (that
-    module launches subprocesses and carries import-time weight this
-    evaluator otherwise avoids).
-
-    PROACTIVE FIX (not yet hit in the corpus) of the bug
-    S1_FINDINGS.md documents in run_protocol.py's identically-named
-    function: `campaign_data_policy.yaml`'s last era
-    (era_2026_h2_forward_recorded) has an open-ended upper bound,
-    `range: [2026-07-26, null]`. The original `lo <= d <= hi` raises
-    TypeError the moment a timestamp reaches that far without matching an
-    earlier era (`str <= None` is unorderable in Python 3). Here, `hi is
-    None` is treated as +inf -- any date >= lo matches -- and `hi` is never
-    compared to `d` directly when it is None."""
-    import pandas as pd
-    d = pd.Timestamp(ts).strftime("%Y-%m-%d")
-    for era in eras:
-        lo, hi = era["range"]
-        if hi is None:
-            if lo <= d:
-                return era["era_id"]
-            continue
-        if lo <= d <= hi:
-            return era["era_id"]
-    return "era_unmapped"
+    """Thin delegator (E-061 C1.6 code-review fix, dedup) to the ONE shared
+    implementation, tools/protocol_resolution.py::era_id_for_timestamp.
+    Grid used to carry its own independent copy specifically to avoid
+    importing run_protocol.py (that module launches subprocesses and carries
+    import-time weight this evaluator otherwise avoids) -- protocol_resolution.py
+    is the dependency-light module that already exists for exactly this kind
+    of second consumer (see its own module docstring), so this no longer
+    requires a second copy to dodge that weight."""
+    return _protocol_resolution.era_id_for_timestamp(ts, eras)
 
 
 def _load_campaign_data_policy_eras() -> list:
-    """Local copy of run_protocol.py::_load_campaign_data_policy, scoped to
-    just the `eras` list this module needs -- same "small,
-    strategy-research-specific config reader, not general statistics"
-    rationale that function's own docstring gives for not centralizing it."""
-    import yaml as _yaml
-    path = Path(__file__).resolve().parent.parent / "config" / "campaign_data_policy.yaml"
-    if not path.exists():
-        return []
-    with open(path, encoding="utf-8") as f:
-        doc = _yaml.safe_load(f) or {}
-    return doc.get("eras") or []
+    """Thin delegator (E-061 C1.6/C1.7 second-round code-review fix, dedup)
+    to the ONE shared implementation, tools/protocol_resolution.py::
+    load_policy_eras -- see that function's own docstring. Kept as a
+    module-level name here so this module's own callers are unchanged."""
+    return _protocol_resolution.load_policy_eras()
 
 
 def _window_label_to_timestamp(window_label):

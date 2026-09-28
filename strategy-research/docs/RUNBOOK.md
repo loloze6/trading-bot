@@ -264,6 +264,188 @@ bypasses `--once`'s token-budget breaker and queue bookkeeping — see A7.)
 Safe to run repeatedly by hand instead of the continuous loop, but do not
 assume it stops at the next stage boundary.
 
+### 1e. Start a campaign on the new pipeline (config-direct authoring, E-061 C1.7)
+
+**Requires E-061 C1.2–C1.5 merged to master first.** As of this writing
+they are open branches (`fix/e061-c1-2-3-config-direct-handoffs`,
+`fix/e061-c1-4-5-pauses-preflight`), not yet on `master` — the delivery
+plan's own sequencing (`engineering/delivery_plan_v26_continuation.md`
+"C1 S2a: the wiring test (red), then C1.2–C1.7 until green") makes C1.1
+passing (all of C1.2–C1.7 landed) the gate before the first real run, which
+is continuation step **C4**, not this section by itself. Do not run this
+section's flag set against a `master` that lacks C1.2–C1.5: the config-direct
+handoffs (C1.2/C1.3) and the classified-pause/pre-flight checks (C1.4/C1.5)
+below are exactly what makes a real run survivable rather than crashing the
+campaign process or silently spending LLM budget on a misconfiguration.
+
+"The new pipeline" is the `config_direct_authoring` route: the single
+BASE strategy config is authored directly at the `strategy_config_authoring`
+stage instead of going through `validation`, and `backtest_specification`
+becomes a deterministic tool stage that applies `innovation_expansion`'s
+patches to it (`strategy-research/CLAUDE.md`, `docs/USER_GUIDE.md` §2.1/§2.2).
+This section is everything needed to get the FIRST run going on it, in order.
+Do all of §0b (PREFLIGHT) first — nothing below replaces it.
+
+**1. Set the target flag set — one edit, while no campaign is running.**
+Every flag lives under `orchestrator:` in `config/campaign_config.yaml` and is
+already declared there (each with its own long comment explaining its
+dependencies — read those before flipping anything you don't recognize).
+Edit the file in place; leave comments and every other key alone. Values are
+**unquoted booleans** — a quoted `"false"` reads as `bool("false")` = `True`
+for the non-strict readers, which is exactly backwards
+(`engineering/review_2026-09-27/A3_all_flags_on.md` §1's "quoted_boolean"
+misconfiguration finding):
+
+```yaml
+orchestrator:
+  exclusion_digest_input:       {enabled: true}   # already on; switches to tried_ideas.yaml once memory exists
+  stale_input_path_fix:         {enabled: true}   # already on
+  variant_selection_record:     {enabled: true}   # already on; legacy path only (inert under config-direct)
+  schedulability_block:         {enabled: true}   # already on
+  data_availability_gate:       {enabled: true}   # already on (default true)
+  config_direct_authoring:      {enabled: true}
+  variant_loop:                 {enabled: true}
+  grid_evaluation:              {enabled: true}
+  category_reports:             {enabled: true}
+  specialist_readers:           {enabled: true}
+  regroup_record:               {enabled: true}
+  profit_bars_file:             {enabled: true}   # ratify config/profitability_bars.yaml FIRST (code does not check)
+  profit_bars_every_backtest:   {enabled: true}
+  decide_next:                  {enabled: true}
+  verdict_routing_retired:      {enabled: true}   # DECLARED BEHAVIOUR CHANGE
+  variant_anti_adjacency_gate:  {enabled: true}
+  composition_runs:             {enabled: true}   # residual_ic threshold is a placeholder (criterion_menu.yaml ratified: false)
+  halt_policy:
+    quarantine_enabled: false                     # leave off (its DONE path also calls decide_next)
+```
+
+Several of these are `requires`-chained (e.g. `variant_loop` needs
+`config_direct_authoring`; `decide_next` needs `regroup_record` +
+`config_direct_authoring`). **Once C1.5 is merged** (see the requirement at
+the top of this section), every one of these dependencies — including
+`variant_loop`, `composition_runs`, and `variant_anti_adjacency_gate`, the
+three that `engineering/review_2026-09-27/A3_all_flags_on.md` §1 measured as
+still lazily-checked on `master` at the time of that review (first read only
+at 5a/the data gate/protocol_execution, after 1a/1b/2 had already spent LLM
+budget) — is checked pre-flight, before any LLM call, and a broken chain
+raises loudly right there instead of surfacing three stages later. Flip the
+whole block together regardless, not one flag at a time across separate
+campaign runs — a partially-applied target set is exactly the
+misconfiguration this check exists to catch.
+
+**2. Ratify `config/profitability_bars.yaml` before relying on it.** The file
+as it ships is explicitly marked DRAFT — every number is a placeholder
+invented to exercise the loader, `ratified_by`/`ratified_at` are both `null`,
+and the loader (`run_phase1_research._load_profitability_bars`) does **not**
+check ratification status itself; a PASS against unratified placeholder bars
+still raises the real `profit_bars_reached` holdout stop (§3's own
+`profit_bars_reached` row says so directly — "Do not treat
+`config/profitability_bars.yaml`'s shipped thresholds as ratified" — and
+delivery_plan_v26_continuation.md C5.7/C3 both name this gap). **E-062
+("Profit bars v2", delivery_plan_v26_continuation.md C3) is expected to
+replace these numbers before they mean anything** — check whether E-062 has
+landed before you ratify. If it hasn't, either wait for it, or explicitly
+record that you are ratifying today's placeholder numbers as a deliberate,
+provisional choice (fill in `ratified_by`/`ratified_at` and say so in your
+notes) — never leave them `null` while `profit_bars_file`/
+`profit_bars_every_backtest` are on and treat a resulting stop as a real
+verdict.
+
+**3. Register the first brief from the C1.7 template.** Copy
+`workflow_artifacts/templates/research_brief_new_pipeline.md` (a frontmatter
+.md, not a bare .yaml — the format `register_hypothesis` actually reads;
+lives beside `research_brief.yaml`, the OTHER template in that directory, for
+the legacy validation-gate pipeline's own artifact shape — see the new
+template's own header for how the two relate) to `briefs/<your_brief_name>.md`
+and replace every `<FILL IN...>` placeholder — the template's own header
+comment explains each field, including why `criteria_from:
+hypothesis_generation` is pre-filled, and why `machine_constraints.protocol`
+GENERATES a fresh protocol (multi-era windows, 2018-02-01..2025-12-31, holdout
+defaulted from `campaign_data_policy.yaml`) rather than pinning an existing
+`protocols/*.json` file — a full check of all 13 existing files against (in
+train+validation range; spans ≥3 real eras with substantive, not
+boundary-sliver, coverage; never touches the sealed window; a holdout block
+consistent with the policy or none; D-3-clean on a real registered threshold,
+not a lowered-count technicality) found none that qualifies on all five; see
+the E-061 C1.6+C1.7 code-review commit for the full table. **You must add your
+own pre-registered `promotion` thresholds under `machine_constraints.protocol`
+before this brief can even REGISTER** — the template deliberately does not
+invent them (no thresholds after seeing data); under
+`orchestrator.config_direct_authoring.enabled`, registration itself now
+refuses a generate-path brief with no `promotion` block (code-review fix), and
+`run_phase1_research.py`'s G7 gate (`_require_pre_registered_promotion`)
+refuses again at launch as a second, independent backstop, in case
+config_direct_authoring was off at registration time and got turned on later.
+
+A code-review pass on this template also added registration-time-ONLY checks
+(`run_campaign.register_hypothesis`, gated by
+`orchestrator.config_direct_authoring.enabled` — flag off, or a launch/resume
+re-parsing an already-registered brief, runs neither): a copy that still
+carries the `<FILL IN` placeholder sentinel ANYWHERE in the frontmatter
+(including nested inside `machine_constraints`) is refused outright, and
+`market_universe`/`timeframe` are cross-checked against whatever protocol
+`machine_constraints` names — compared by bar-size SECONDS (`"60m"` and
+`"1h"` agree) and by base-asset-normalized symbol (`BTC` and `BTCUSDT` agree,
+this repo's existing convention — see
+`trading-bot/execution/portfolio_info.py`'s own `symbol.replace('USDT', '')`).
+A real mismatch (e.g. you changed `market_universe` but not
+`machine_constraints.protocol.symbols`) is refused with a clear message
+rather than silently backtesting against a universe the brief never declared.
+`venue` has no protocol-side counterpart (no protocol file carries a
+venue/exchange field) and is not cross-checked. Every one of these checks
+raises only `ValueError` — a malformed `machine_constraints` shape (e.g.
+`protocol` set to a bare string) is wrapped into a clean "REGISTER REFUSED"
+message rather than crashing with a raw traceback.
+
+Then register it exactly as any other brief (§1a-bis's four checks still
+apply — run its check-all-four snippet before spending any LLM budget):
+
+```bash
+PYTHONUTF8=1 ../venv/Scripts/python.exe workflow/run_campaign.py register \
+  --brief briefs/<your_brief_name>.md --priority 1 --notes "first new-pipeline brief"
+```
+
+Under `decide_next` (on per step 1 above), this starts the QUEUE ENTRY
+`brief_status: open` (`run_campaign._register_from_cli` sets it on the entry
+it creates — it is not, and should not be, set inside the brief file itself)
+— R2 may later ask step 1a for more of it once this brief's own lineage is
+exhausted.
+
+**4. Dry run, then launch.** Do not skip §1a — a passing dry run with
+warnings is still not a green light (§0b point 4). Then launch single-step
+(§1d) for the first run so you can check each stage as it lands, rather than
+the continuous loop (§1b) or background mode (§1c, currently blocked — read
+its own warning before using it regardless).
+
+**5. First-run checks — run these after the run reaches its first pause or
+DONE, not only at the very end** (same checklist delivery_plan_v26_continuation.md
+C4.3 uses for the two-run proof, applied here to run one):
+  - **`num_turns` is `1` for every stage** (§0b point 5, CUL-336): read
+    `runs/<run_id>/pipeline_state.yaml`'s `audit_log` — anything above 1 means
+    a tool round trip happened even though stage agents are closed-book; stop
+    and report it rather than continuing.
+  - **Trial rows are named `<run_id>:<variant_id>`** in
+    `campaign_state.trial_sharpes` (one-coin-per-variant naming, C2.1) — a
+    killed run must still land a row; a loop that logs only its winners
+    produces a meaningless Sharpe (`CLAUDE.fork.md` backlog item 5).
+  - **Memory, registry, and decision record are written**: check for
+    `campaign_record/campaign_memory.yaml` (upserted by `regroup_record`),
+    `campaign_record/block_registry.yaml` (validated + append-only manifest),
+    and — once the run reaches DONE — `runs/<run_id>/artifacts/decision_record.yaml`.
+    Their absence after a run that should have reached those stages is a
+    silent-drift finding, not something to shrug off.
+  - **The holdout is never touched.** No path under the sealed holdout store
+    should appear in any stage's inputs or `run_context.yaml` — this is a
+    single-hypothesis, single-use resource (`holdout_evaluation`, once per
+    hypothesis) and this first run should not reach it at all under a fresh
+    brief.
+
+**6. Stop.** Same as any other campaign — section 5 below (`kill "$(cat
+campaign.pid)"` for background, `Ctrl+C` in the foreground). Nothing about
+the new pipeline changes how a run is interrupted or resumed: a kill takes
+effect wherever `run_loop()` currently is, and re-invoking `run_campaign.py`
+later re-enters the same stage from scratch.
+
 ---
 
 ## 2. Check status
