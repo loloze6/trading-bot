@@ -213,6 +213,31 @@ flags:
       profit_bars_file once the operator ratifies the bar values and
       confirms the avg_daily_return_min definition.
 
+  - name: profit_bars_v2
+    kind: orchestrator_config
+    config_key: orchestrator.profit_bars_v2.enabled
+    reader: run_phase1_research._profit_bars_v2_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "E-062 (S2b-2 one scoring for the DSR / trial ledger, S2b-3 D-042 normalisation, S2b-4 end-to-end test) and the operator's signature (ratified_by / ratified_at) on config/profitability_bars.yaml"
+    criterion: >
+      Landed 2026-09-29 (E-062 S2b-1, engineering/roadmap/E-062/S1_FINDINGS.md
+      Q5/Q7/G8; D-034..D-039). Requires profit_bars_every_backtest; the run
+      fails pre-flight otherwise, and a non-bool value is refused. Off:
+      byte-identical -- the v1 definitions, the v1 loader schema, no
+      bars_definitions key (golden fixtures tests/fixtures/profit_bars_golden/
+      and tests/test_profit_bars_every_backtest.py / test_profit_bars_stop.py
+      unchanged). On: every variant graded after protocol_execution (and the
+      composition grid's profit_bars cell) on seven rows -- whole-test chained
+      drawdown, whole-test daily Sharpe, whole-test mean daily return, trades
+      per coin without end_of_window forced closes, beats buy-and-hold after
+      costs (strict >), pooled realized edge / cost ratio (strict >, with the
+      cost_edge_min_trades floor), and the DSR on its unchanged ledger basis;
+      each row records its basis; the evaluation records bars_definitions: v2
+      and a spend under other definitions is refused (bars_changed). Tested by
+      tests/test_e062_s2b1_profit_bars_v2.py. Turn on in C4's target flag set
+      once the S2b slices land and the operator has signed the bars file.
+
   - name: data_availability_gate
     kind: orchestrator_config
     config_key: orchestrator.data_availability_gate.enabled

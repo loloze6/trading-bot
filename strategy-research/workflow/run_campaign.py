@@ -3091,6 +3091,7 @@ def _flag_readers() -> dict:
         "specialist_readers": orch._specialist_readers_enabled,
         "regroup_record": orch._regroup_record_enabled,
         "profit_bars_every_backtest": orch._profit_bars_every_backtest_enabled,
+        "profit_bars_v2": orch._profit_bars_v2_enabled,  # E-062 S2b-1
         "decide_next": orch._decide_next_enabled,
         "verdict_routing_retired": orch._verdict_routing_retired_enabled,
         "composition_runs": orch._composition_runs_enabled,

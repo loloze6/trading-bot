@@ -414,6 +414,29 @@ orchestrator:
       # check is skipped only for a run holding its own every_backtest
       # evaluation. A malformed bars file fails the run loudly (never a
       # defaulted threshold). Still blocked on ratified bar values.
+  profit_bars_v2:
+    enabled: false
+      # E-062 S2b-1 (engineering/roadmap/E-062/S1_FINDINGS.md Q7/G8; D-034..D-039).
+      # OFF BY DEFAULT, read by run_phase1_research._profit_bars_v2_enabled().
+      # REQUIRES profit_bars_every_backtest.enabled above (hence profit_bars_file
+      # and regroup_record): on without it (or a non-bool value) fails the run in
+      # run_loop's pre-flight and run_campaign's launch pre-flight, before any spend.
+      #
+      # While false: nothing changes -- the v1 definitions, the v1 loader schema,
+      # no `bars_definitions` key in profit_bars_evaluation.yaml.
+      #
+      # While true: the per-backtest check and the composition grid's profit_bars
+      # cell grade every variant on the v2 definitions (see
+      # config/profitability_bars.yaml's header): whole-test chained drawdown,
+      # Sharpe and avg daily return on the equal-weight portfolio; trades per coin
+      # over the whole test without end_of_window forced closes; beats buy-and-hold
+      # after costs; pooled realized edge / cost ratio > cost_edge_ratio_min with a
+      # cost_edge_min_trades floor. The bars file must carry the three v2 keys. The
+      # evaluation records `bars_definitions: v2`, and a holdout spend refuses
+      # `bars_changed` when the evaluation's definitions differ from this flag now.
+      # The DSR bar keeps its trial-ledger basis (D-041 is E-062 S2b-2); the
+      # temporary D-042 partial-coverage cap still applies (S2b-3). The legacy
+      # promote path never uses v2.
   category_reports:
     enabled: false
       # E-046a Slice 5a (delivery_plan_v26.md, "Slice 5 -- Reports and

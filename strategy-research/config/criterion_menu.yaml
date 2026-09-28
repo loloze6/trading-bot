@@ -35,7 +35,12 @@ criteria:
     metric: realized_edge_to_cost_ratio
     source: pooled
     comparator: ">"
-    threshold: 0.3
+    # D-038/D-039 (operator, 2026-09-27): > 2.2 with a 100-trade floor -- the
+    # same numbers as the profit bar cost_edge_ratio_min (config/
+    # profitability_bars.yaml), which grades every backtest under
+    # orchestrator.profit_bars_v2; this menu entry stays optional for step 1a
+    # (E-062 S1 G7).
+    threshold: 2.2
     # E-059 S2a: fields a hypothesis card may override when step 1a picks
     # this entry (run_phase1_research._write_pass_rule_from_card refuses any
     # other card-supplied field). None here: the anchor is the point.
@@ -44,17 +49,19 @@ criteria:
     symbol_reducer: null
     floor:
       min_windows: 5
-      min_trades: 15
+      min_trades: 100
     basis: >
-      Dispatch-specified anchor (0.3). CLAUDE.fork.md's own cost-survival bar
-      ("still positive at 1.5x/2x modeled costs") wants a multiple-of-cost
-      margin, not a raw-bps figure -- 0.3x is deliberately a low, idea-level
-      admissibility bar (is there ANY edge over the measured cost basis at
-      all), not the campaign-wide profit bar (card B's separate file).
-      Revisit once real realized_edge_to_cost_ratio values exist to anchor
-      against: measured 2026-09-20, every current protocol_result.yaml in
-      the corpus (run_054, run_059) predates the CUL-300 field and resolves
-      this metric to None.
+      D-038/D-039 (operator, 2026-09-27): "survives 2x costs". Gross edge
+      minus twice the cost is positive iff the ratio is > 2.0 (which implies
+      positive at 1.5x too, CLAUDE.fork.md's cost-stress bar); 2.2 = 2 + the
+      slippage round trip / fee round trip (about 0.2 for ETH, 0.13 for BTC,
+      review_2026-09-27/PLACEHOLDER_VALUES_PROPOSAL.md §3), so doubled
+      slippage is covered too. Floor: 100 trades. The same numbers are the
+      campaign-wide profit bar cost_edge_ratio_min (config/
+      profitability_bars.yaml, graded on every backtest under
+      orchestrator.profit_bars_v2); this idea-level entry stays one that
+      step 1a may pick (E-062 S1 G7). Replaces the 2026-09-20
+      dispatch-specified 0.3 / 15-trade anchor.
     # UNDER-COMPLETE for perpetuals held across a funding settlement
     # (run_protocol.py's own comment on this field): funding cash flows are
     # not modeled anywhere in the engine's trade records until E-053 lands.
@@ -126,14 +133,14 @@ code_added_criteria:
     statistic: value
     source: pooled
     comparator: ">"
-    # PLACEHOLDER, UNRATIFIED (operator decision 5): > 0.01 with n_eff >= 30,
-    # operator-adjustable here. The orchestrator noted 0.02 may better match
-    # "genuinely useful". Ratify before switching composition_runs on.
-    threshold: 0.01
-    # PLACEHOLDER, UNRATIFIED, operator-adjustable (code review of E-060 S2):
-    # PASS also needs the one-sided p (H1: residual IC > 0, block-adjusted on
-    # n_eff) below this. Without it a pure-noise block with n_eff at the floor
-    # clears the 0.01 threshold about half the time.
+    # D-039 (operator, 2026-09-27; supersedes D-026's 0.01 placeholder):
+    # > 0.02 with n_eff >= 30. `ratified` below stays false until the
+    # operator signs (E-062 S1 G9).
+    threshold: 0.02
+    # D-039: PASS also needs the one-sided p (H1: residual IC > 0,
+    # block-adjusted on n_eff) below this (code review of E-060 S2: without
+    # it a pure-noise block with n_eff at the floor cleared the old 0.01
+    # threshold about half the time).
     max_p_value: 0.05
     ratified: false
     card_overridable: []

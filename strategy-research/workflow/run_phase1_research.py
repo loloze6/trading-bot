@@ -2856,6 +2856,52 @@ def _profit_bars_every_backtest_enabled(cfg: dict | None = None) -> bool:
     return value
 
 
+# E-062 S2b-1 -- profit bars v2 (engineering/roadmap/E-062/S1_FINDINGS.md Q7 and
+# G8; D-034..D-039). See config/campaign_config.yaml's
+# orchestrator.profit_bars_v2.enabled.
+def _profit_bars_v2_enabled(cfg: dict | None = None) -> bool:
+    """False when the key, the section or the config file is absent. A non-bool
+    value raises. Requires orchestrator.profit_bars_every_backtest.enabled
+    (itself requiring profit_bars_file and regroup_record): raises, loudly, if
+    this flag is on without it. run_loop resolves it once, in its pre-flight,
+    and run_campaign's launch pre-flight on every step, so a misconfiguration
+    fails before any spend.
+
+    While false: nothing changes -- the v1 bar definitions, the v1 loader
+    schema, no `bars_definitions` key in the evaluation.
+    While true: the per-backtest check (_evaluate_profit_bars_every_backtest)
+    and the composition grid's profit_bars cell grade every variant on the v2
+    definitions (_grade_profit_bars_v2: whole-test chained drawdown, Sharpe and
+    avg daily return, whole-test trade count per coin without end_of_window
+    forced closes, beats buy-and-hold after costs, pooled edge/cost ratio with
+    its trade floor); the bars file must carry the three v2 keys; the
+    evaluation records `bars_definitions: v2`; a holdout spend refuses
+    `bars_changed` when the evaluation's definitions differ from the flag now.
+    The legacy promote path (_evaluate_profit_bars) never uses v2."""
+    cfg = _orchestrator_config(cfg)
+    v2_cfg = ((cfg.get("orchestrator") or {}).get("profit_bars_v2") or {})
+    value = v2_cfg.get("enabled", False)
+    if not isinstance(value, bool):
+        raise ValueError(
+            f"orchestrator.profit_bars_v2.enabled={value!r} is not a real "
+            f"boolean (got {type(value).__name__}) -- write an unquoted `true` or `false` "
+            f"in config/campaign_config.yaml, not a quoted string or null."
+        )
+    if value and not _flag_dep(_profit_bars_every_backtest_enabled, cfg):
+        raise ValueError(
+            "orchestrator.profit_bars_v2.enabled=true requires "
+            "orchestrator.profit_bars_every_backtest.enabled=true as well -- the v2 "
+            "definitions grade the per-backtest check's variants; nothing else reads "
+            "them. Enable both, or neither."
+        )
+    return value
+
+
+# The `bars_definitions` value a v2 evaluation records (absent = v1).
+PROFIT_BARS_DEFINITIONS_V2 = "v2"
+PROFIT_BARS_DEFINITIONS_V1 = "v1"
+
+
 # Required fields and their expected types for config/profitability_bars.yaml.
 # Kept as a module-level constant so the schema is visible in one place and the
 # loader below (and its tests) can iterate it instead of repeating field names.
@@ -2870,6 +2916,15 @@ _PROFITABILITY_BARS_SCHEMA = {
     "ratified_at":                (str, type(None)),
 }
 
+# E-062 S2b-1: the keys the v2 definitions add (S1_FINDINGS.md Q5). Required only
+# when the loader is called with v2=True; the v1 loader ignores them, as it
+# ignores every extra key.
+_PROFITABILITY_BARS_V2_SCHEMA = {
+    "buy_and_hold_excess_return_min": (int, float),
+    "cost_edge_ratio_min":            (int, float),
+    "cost_edge_min_trades":           (int,),
+}
+
 
 class ProfitabilityBarsSchemaError(ValueError):
     """Raised by _load_profitability_bars on any missing or wrong-typed field --
@@ -2877,11 +2932,19 @@ class ProfitabilityBarsSchemaError(ValueError):
     verdicts meaningless without anyone knowing the config was malformed)."""
 
 
-def _load_profitability_bars(path: Path | None = None) -> dict:
+def _load_profitability_bars(path: Path | None = None, *, v2: bool = False) -> dict:
     """Load and schema-validate config/profitability_bars.yaml. Raises
     ProfitabilityBarsSchemaError loudly on any missing field, wrong type, or an
     unparseable/empty file -- never silently defaults a threshold. `path` is
-    overridable for tests; defaults to ROOT / "config" / "profitability_bars.yaml"."""
+    overridable for tests; defaults to ROOT / "config" / "profitability_bars.yaml".
+
+    v2=True (callers pass _profit_bars_v2_enabled()): the three
+    _PROFITABILITY_BARS_V2_SCHEMA keys are required too, and
+    cost_edge_min_trades must be >= 1. v2=False: exactly the v1 schema.
+
+    ratified_at may be an unquoted YAML date (`ratified_at: 2026-09-30` loads as
+    a datetime.date, E-062 S1 G9); it is returned as its ISO string, so every
+    reader sees `str | None` as before."""
     bars_path = path if path is not None else (ROOT / "config" / "profitability_bars.yaml")
     if not bars_path.exists():
         raise ProfitabilityBarsSchemaError(f"{bars_path} does not exist.")
@@ -2892,14 +2955,25 @@ def _load_profitability_bars(path: Path | None = None) -> dict:
             f"{bars_path} did not parse to a mapping (got {type(doc).__name__})."
         )
 
-    missing = [k for k in _PROFITABILITY_BARS_SCHEMA if k not in doc]
+    schema = dict(_PROFITABILITY_BARS_SCHEMA)
+    if v2:
+        schema.update(_PROFITABILITY_BARS_V2_SCHEMA)
+    missing = [k for k in schema if k not in doc]
     if missing:
         raise ProfitabilityBarsSchemaError(
-            f"{bars_path} is missing required field(s): {sorted(missing)}."
+            f"{bars_path} is missing required field(s): {sorted(missing)}"
+            + (" (profit_bars_v2 is on: the v2 definitions need the "
+               f"{sorted(_PROFITABILITY_BARS_V2_SCHEMA)} keys)." if v2 else ".")
         )
 
+    # E-062 S1 G9: an unquoted YAML date (or date-time) is accepted and
+    # normalised to its ISO string.
+    from datetime import date as _date
+    if isinstance(doc.get("ratified_at"), _date):
+        doc["ratified_at"] = doc["ratified_at"].isoformat()
+
     wrong_type = []
-    for key, expected_types in _PROFITABILITY_BARS_SCHEMA.items():
+    for key, expected_types in schema.items():
         value = doc[key]
         # bool is a subclass of int in Python -- explicitly reject it for the
         # numeric fields so `sharpe_min: true` doesn't silently pass as 1.
@@ -2915,6 +2989,10 @@ def _load_profitability_bars(path: Path | None = None) -> dict:
     if not doc["target_instrument_set"]:
         raise ProfitabilityBarsSchemaError(
             f"{bars_path}'s target_instrument_set is empty -- must list at least one symbol."
+        )
+    if v2 and doc["cost_edge_min_trades"] < 1:
+        raise ProfitabilityBarsSchemaError(
+            f"{bars_path}'s cost_edge_min_trades={doc['cost_edge_min_trades']!r} must be >= 1."
         )
 
     return doc
@@ -4421,8 +4499,13 @@ def _profit_bars_grid_grader(run_dir: Path, run_id: str):
     is invalidated_artifact is INVALIDATED -- never graded, never passing
     (review fix 4). Each answer also carries the variant's weight schedule
     from artifacts/composition_manifest.yaml (review fix 5: which windows used
-    estimated weights, which equal). Reads only; writes nothing."""
-    bars = _load_profitability_bars()
+    estimated weights, which equal). Reads only; writes nothing. Under
+    orchestrator.profit_bars_v2.enabled the cell is graded on the v2
+    definitions, like branch 3 (E-062 S1 Q6)."""
+    v2 = _profit_bars_v2_enabled()
+    # Flag off: the exact pre-v2 calls (no new keyword reaches a flag-off callee).
+    v2_kw = {"v2": True} if v2 else {}
+    bars = _load_profitability_bars(**v2_kw)
     dsr_ctx = _promotion_dsr_context()
     invalidated = _invalidated_trial_ids()
     kind = "composite" if _composition_mode(Path(run_dir)) else "variant"
@@ -4438,7 +4521,8 @@ def _profit_bars_grid_grader(run_dir: Path, run_id: str):
         if cand["protocol_result"] is None:
             return {"result": cand["result"], "bars": [], "reasons": [cand["reason"]], **extra}
         results, overall, reasons = _grade_profit_bars_protocol_result(
-            Path(run_dir), cand["protocol_result"], cand["protocol_result_ref"], bars, dsr_ctx)
+            Path(run_dir), cand["protocol_result"], cand["protocol_result_ref"], bars, dsr_ctx,
+            **v2_kw)
         return {"result": overall, "bars": results, "reasons": reasons, **extra}
     return grade
 
@@ -5244,9 +5328,25 @@ def _evaluation_under_current_bars(ev: dict) -> dict:
     evaluation was graded under (its whole-file sha256, review fix 7), so the
     bars cannot change under a PASS unnoticed. Bars ratification is the
     operator's manual check, not enforced here (operator decision 2026-09-26,
-    replacing review fix 6). Returns the loaded bars."""
+    replacing review fix 6). Returns the loaded bars.
+
+    E-062 S2b-1 (S1_FINDINGS.md Q7/G8): also refuses `bars_changed` when the
+    evaluation's `bars_definitions` (absent = v1) differ from the definitions
+    in force now (orchestrator.profit_bars_v2.enabled) -- the same bytes graded
+    under other definitions are another bar. An unreadable flag refuses too."""
     try:
-        bars = _load_profitability_bars()
+        v2_now = _profit_bars_v2_enabled()
+    except ValueError as e:
+        raise HoldoutUnlockRefused("bars_changed", f"the profit_bars_v2 flag does not read: {e}")
+    graded_defs = ev.get("bars_definitions") or PROFIT_BARS_DEFINITIONS_V1
+    now_defs = PROFIT_BARS_DEFINITIONS_V2 if v2_now else PROFIT_BARS_DEFINITIONS_V1
+    if graded_defs != now_defs:
+        raise HoldoutUnlockRefused(
+            "bars_changed", f"the evaluation was graded under bar definitions {graded_defs!r}; "
+            f"the definitions in force now (orchestrator.profit_bars_v2.enabled="
+            f"{str(v2_now).lower()}) are {now_defs!r}")
+    try:
+        bars = _load_profitability_bars(**({"v2": True} if v2_now else {}))
     except ProfitabilityBarsSchemaError as e:
         raise HoldoutUnlockRefused("bars_changed", f"the current bars file does not load: {e}")
     graded, now = ev.get(BARS_FILE_SHA_FIELD), _bars_file_sha256()
@@ -10896,7 +10996,7 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
 
 
 def _grade_profit_bars(bars: dict, *, sharpe, sharpe_note: str, dsr, dsr_note: str,
-                       pss: dict, portfolio: dict | None = None) -> tuple:
+                       pss: dict, portfolio: dict | None = None, v2: dict | None = None) -> tuple:
     """Grade ONE candidate against every bar in a loaded profitability_bars.yaml
     doc. Returns (results, overall, reasons): results is the ordered list of
     {name, threshold, actual, result, note} bar rows, overall is "PASS" only when
@@ -10915,7 +11015,15 @@ def _grade_profit_bars(bars: dict, *, sharpe, sharpe_note: str, dsr, dsr_note: s
     definition that produced its `actual` in a `basis` key.
 
     Extracted verbatim 2026-09-24 from _evaluate_profit_bars (branch 3) -- see
-    that function's docstring for the flag-off worst-symbol aggregation choice."""
+    that function's docstring for the flag-off worst-symbol aggregation choice.
+
+    `v2` (E-062 S2b-1) is None for every caller unless
+    orchestrator.profit_bars_v2.enabled is on; then it is
+    _whole_test_profit_metrics(...) and the v2 rows are emitted instead
+    (_grade_profit_bars_v2; `sharpe`, `pss` and `portfolio` are not read). The
+    v1 body below is untouched."""
+    if v2 is not None:
+        return _grade_profit_bars_v2(bars, dsr=dsr, dsr_note=dsr_note, metrics=v2)
     results = []
 
     def _bar(name: str, threshold, actual, comparator: str, note: str = "", basis: str = "",
@@ -11392,16 +11500,375 @@ def _portfolio_profit_metrics(run_dir: Path, pr: dict) -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# E-062 S2b-1 -- profit bars v2 (orchestrator.profit_bars_v2.enabled).
+# Definitions: engineering/roadmap/E-062/S1_FINDINGS.md Q1-Q5, decisions G1-G9
+# and G11 plus the "Amendments during S2a"; D-034..D-039. The numbers come from
+# the pure functions of tools/portfolio_whole_test.py (E-062 S2a) -- nothing is
+# re-implemented here; this block only finds each variant's own artifacts and
+# turns the results into bar rows. No lookahead: every input is the variant's
+# own test-window output (per-window portfolio_states.csv / manifest.json, its
+# trade_diagnostics.json, its protocol JSON's window bounds), nothing past a
+# window's last recorded bar, nothing under local_data/holdout_sealed/.
+# ---------------------------------------------------------------------------
+
+# One `basis` per v2 row (config/profitability_bars.yaml's header documents each).
+_BASIS_V2 = {
+    "sharpe_min": "portfolio_equal_weight_whole_test_chained_daily_sharpe",
+    "deflated_sharpe_threshold": "deflated_sharpe_on_campaign_trial_ledger",
+    "max_drawdown_pct_max": "portfolio_equal_weight_whole_test_chained",
+    "trade_count_min": "per_coin_total_whole_test_excl_window_closes",
+    "avg_daily_return_min": "portfolio_equal_weight_whole_test_chained_mean_daily_return",
+    "buy_and_hold_excess_return_min": "portfolio_equal_weight_vs_buy_and_hold",
+    "cost_edge_ratio_min": "pooled_trades_realized_edge_to_cost",
+}
+# Comparator per v2 row: strict `>` where D-037 ("beats") and D-038 ("> 2.2")
+# say so; every other row keeps its v1 comparator.
+_COMPARATOR_V2 = {
+    "sharpe_min": ">=", "deflated_sharpe_threshold": ">=", "max_drawdown_pct_max": "<=",
+    "trade_count_min": ">=", "avg_daily_return_min": ">=",
+    "buy_and_hold_excess_return_min": ">", "cost_edge_ratio_min": ">",
+}
+_TRADE_DIAGNOSTICS_FILE = "trade_diagnostics.json"
+
+
+def _portfolio_whole_test_module():
+    import portfolio_whole_test  # tools/ sibling (on sys.path); imported only under v2
+    return portfolio_whole_test
+
+
+def _v2_protocol_window_bounds(pr: dict, windows: dict) -> dict:
+    """{window label (as in `windows`): (nominal start, nominal end)} from the
+    protocol JSON the backtest actually ran on (protocol_result.protocol_file,
+    run_protocol's own argument). Never a manifest's start (the warm-up
+    prefetch start). PortfolioNotEvaluable when the file cannot be found or its
+    windows are not exactly the results' windows (a chain over a subset would
+    silently drop a period); labels are matched as strings (a YAML label may
+    load as an int)."""
+    pwt = _portfolio_whole_test_module()
+    raw = pr.get("protocol_file")
+    if not isinstance(raw, str) or not raw.strip():
+        raise _pd.PortfolioNotEvaluable("protocol_result has no protocol_file, so the windows' "
+                                        "nominal test bounds are unknown")
+    path = Path(raw)
+    if not path.is_absolute() and not path.exists():
+        path = ROOT / path
+    if not path.is_file():
+        raise _pd.PortfolioNotEvaluable(f"protocol file {raw!r} (the windows' nominal test "
+                                        f"bounds) does not exist")
+    bounds = pwt.load_protocol_window_bounds(path)
+    by_str = {str(k): v for k, v in bounds.items()}
+    win_by_str = {str(w): w for w in windows}
+    if len(by_str) != len(bounds) or len(win_by_str) != len(windows) \
+            or set(by_str) != set(win_by_str):
+        raise _pd.PortfolioNotEvaluable(
+            f"the protocol's windows {sorted(by_str)} are not the results' windows "
+            f"{sorted(win_by_str)}")
+    return {win_by_str[s]: by_str[s] for s in by_str}
+
+
+def _v2_out_dir(run_dir: Path, pr: dict) -> Path | None:
+    """The run_protocol --out-dir of this candidate: the directory holding its
+    results/<window run_id>/ folders (and its trade_diagnostics.json). None when
+    no window's portfolio_states.csv exists; raises when the windows disagree."""
+    dirs = set()
+    for r in pr.get("results") or []:
+        wid = r.get("run_id") if isinstance(r, dict) else None
+        path = _pd.find_window_equity_file(run_dir, wid) if wid else None
+        if path is not None:
+            dirs.add(path.parent.parent.parent.resolve())
+    if len(dirs) > 1:
+        raise ValueError(f"profit bars v2: the windows of one protocol result sit under "
+                         f"different out dirs {sorted(map(str, dirs))}")
+    return next(iter(dirs)) if dirs else None
+
+
+def _v2_trade_records(run_dir: Path, pr: dict) -> tuple:
+    """(records, note): the candidate's trade_diagnostics.json `trades` (run_protocol
+    writes the file only when at least one trade exists). [] when every
+    core.trade_count is 0 (a file left by an earlier attempt is then never
+    read); None when trades exist but the file does not."""
+    results = pr.get("results") or []
+    total = sum((r.get("core") or {}).get("trade_count") or 0
+                for r in results if isinstance(r, dict))
+    if total == 0:
+        return [], "no trade in any window (every core.trade_count is 0)"
+    out_dir = _v2_out_dir(run_dir, pr)
+    path = out_dir / _TRADE_DIAGNOSTICS_FILE if out_dir is not None else None
+    if path is None or not path.is_file():
+        return None, (f"{total} trade(s) in core.trade_count but no {_TRADE_DIAGNOSTICS_FILE} "
+                      f"next to the window results")
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    trades = doc.get("trades") if isinstance(doc, dict) else None
+    if not isinstance(trades, list):
+        raise ValueError(f"profit bars v2: {path} has no `trades` list")
+    return trades, str(path)
+
+
+def _v2_manifest_slippage(run_dir: Path, pr: dict, coins: list) -> dict:
+    """{coin: one-way slippage bps} from every window's manifest.json
+    (config.cost_model.slippage_bps, the slippage in effect for that backtest,
+    trading-bot/core/launcher.py's provenance fold). PortfolioNotEvaluable when
+    a manifest or the key is missing, or one coin's windows disagree."""
+    pwt = _portfolio_whole_test_module()
+    seen: dict = {}
+    for r in pr.get("results") or []:
+        sym, wid = r["symbol"], r["run_id"]
+        eq = _pd.find_window_equity_file(run_dir, wid)
+        man = eq.parent / "manifest.json" if eq is not None else None
+        if man is None or not man.is_file():
+            raise _pd.PortfolioNotEvaluable(f"no manifest.json for window run {wid!r} ({sym}): "
+                                            f"the slippage charged is unknown")
+        doc = json.loads(man.read_text(encoding="utf-8"))
+        slip = (((doc.get("config") or {}).get("cost_model") or {}).get("slippage_bps")
+                if isinstance(doc, dict) else None)
+        if slip is None:
+            raise _pd.PortfolioNotEvaluable(f"{man} has no config.cost_model.slippage_bps")
+        seen.setdefault(sym, set()).add(pwt.slippage_bps_for_symbol(slip, sym))
+    out = {}
+    for c in coins:
+        vals = seen.get(c) or set()
+        if len(vals) != 1:
+            raise _pd.PortfolioNotEvaluable(f"coin {c!r}: the windows' manifests give slippage "
+                                            f"{sorted(vals)} bps, not one value")
+        out[c] = next(iter(vals))
+    return out
+
+
+def _v2_charged_fees(coins: list, records: list | None) -> dict:
+    """{coin: one-way commission bps} the strategy was charged: cost_model.yaml's
+    spot fee_rate_bps (the pipeline never passes --commission-bps /
+    --cost-product, and the run does not record them), CHECKED against every
+    trade record's cost_paid (= 2 x the fee actually charged,
+    run_protocol._cost_paid_bps): a record that disagrees means the run was
+    charged another fee -> PortfolioNotEvaluable, never a guessed fee."""
+    pwt = _portfolio_whole_test_module()
+    path = ROOT / "config" / "cost_model.yaml"
+    cost_model = (yaml.safe_load(path.read_text(encoding="utf-8")) if path.is_file() else None)
+    out = {}
+    for c in coins:
+        try:
+            out[c] = pwt.charged_fee_bps(c, cost_model, None, "spot")
+        except ValueError as exc:
+            raise _pd.PortfolioNotEvaluable(f"commission for {c!r}: {exc}") from None
+    for rec in records or []:
+        sym, cost = rec.get("symbol"), rec.get("cost_paid")
+        if sym in out and cost is not None and abs(float(cost) - round(out[sym] * 2, 2)) > 1e-9:
+            raise _pd.PortfolioNotEvaluable(
+                f"a {sym} trade record paid cost_paid={cost!r} bps round trip, not 2 x "
+                f"{out[sym]} (cost_model.yaml spot): the run was charged another commission "
+                f"(--commission-bps / --cost-product are not recorded), so buy-and-hold's "
+                f"cost is unknown")
+    return out
+
+
+def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
+    """The v2 actual value of every row except the DSR, for ONE candidate:
+    {bar name: {"actual": value or None, "note": str, "not_evaluable_reason":
+    None or str, "detail": dict}}.
+
+      * max_drawdown_pct_max, avg_daily_return_min, sharpe_min: the chained
+        whole-test equal-weight portfolio (chain_windows over the protocol's
+        nominal window bounds): whole_test_max_drawdown (bars, D-034), the mean
+        of the chained daily returns, whole_test_sharpe (G3, D-036);
+      * buy_and_hold_excess_return_min: chained_buy_and_hold's excess
+        (strategy total - buy-and-hold total, one round trip per coin at the fee
+        charged + the manifest's slippage; G6, D-037);
+      * trade_count_min: whole_test_trade_counts' worst coin of
+        excluding_end_of_window (G5, D-035); both counts per coin in `detail`;
+      * cost_edge_ratio_min: pooled_edge_to_cost_ratio with the bars file's
+        cost_edge_min_trades (G7, D-038, S2a amendment).
+    A PortfolioNotEvaluable becomes that row's not_evaluable_reason (the chain's
+    reason covers the four chain rows); a malformed artifact raises."""
+    pwt = _portfolio_whole_test_module()
+    out: dict = {}
+
+    def _row(name, actual=None, note="", reason=None, detail=None):
+        if actual is not None and (not isinstance(actual, (int, float)) or isinstance(actual, bool)
+                                   or not math.isfinite(actual)):
+            raise ValueError(f"profit bars v2: {name} actual {actual!r} is not a finite number")
+        out[name] = {"actual": None if reason else actual,
+                     "note": note or (reason or ""),
+                     "not_evaluable_reason": reason, "detail": detail or {}}
+
+    # -- trade records (trade count, cost ratio, fee check) --------------------
+    records, rec_src = _v2_trade_records(run_dir, pr)
+    counts = count_reason = None
+    if records is None:
+        count_reason = f"whole-test trade count NOT_EVALUABLE: {rec_src}"
+    else:
+        try:
+            counts = pwt.whole_test_trade_counts(records, pr.get("results") or [])
+        except _pd.PortfolioNotEvaluable as exc:
+            count_reason = f"whole-test trade count NOT_EVALUABLE: {exc}"
+    if count_reason:
+        _row("trade_count_min", reason=count_reason)
+    else:
+        worst = min(counts, key=lambda c: (counts[c]["excluding_end_of_window"], str(c)))
+        _row("trade_count_min", counts[worst]["excluding_end_of_window"],
+             note=(f"trades per coin over the whole test without end_of_window forced "
+                   f"closes, worst coin {worst!r}; source {rec_src}"),
+             detail={"worst_coin": worst,
+                     "per_coin": {str(c): dict(v) for c, v in counts.items()}})
+
+    if count_reason:
+        _row("cost_edge_ratio_min", reason=("pooled edge/cost ratio NOT_EVALUABLE: the trade "
+                                            "records do not match the results -- "
+                                            + count_reason))
+    else:
+        try:
+            ec = pwt.pooled_edge_to_cost_ratio(records, bars["cost_edge_min_trades"])
+            _row("cost_edge_ratio_min", ec["ratio"],
+                 note=(f"min(ratio over all {ec['n_trades'] + ec['n_excluded_end_of_window']} "
+                       f"trade(s), ratio without the {ec['n_excluded_end_of_window']} "
+                       f"end_of_window forced close(s)), unrounded; floor "
+                       f"{bars['cost_edge_min_trades']} non-forced trades"),
+                 detail={**{k: ec[k] for k in ("ratio_all_trades", "ratio_excluding_end_of_window",
+                                               "n_trades", "n_excluded_end_of_window")},
+                         "min_trades": bars["cost_edge_min_trades"]})
+        except _pd.PortfolioNotEvaluable as exc:
+            _row("cost_edge_ratio_min", reason=f"pooled edge/cost ratio NOT_EVALUABLE: {exc}")
+
+    # -- the chained whole-test portfolio --------------------------------------
+    chain = chain_reason = None
+    try:
+        windows, coins = _pd.load_windows(run_dir, pr)
+        bounds = _v2_protocol_window_bounds(pr, windows)
+        chain = pwt.chain_windows(windows, coins, bounds)
+    except _pd.PortfolioNotEvaluable as exc:
+        chain_reason = f"whole-test portfolio NOT_EVALUABLE: {exc}"
+    if chain is None:
+        for name in ("max_drawdown_pct_max", "avg_daily_return_min", "sharpe_min",
+                     "buy_and_hold_excess_return_min"):
+            _row(name, reason=chain_reason)
+        return out
+
+    span = (f"equal-weight portfolio of {len(coins)} coin(s) {coins}, {len(chain['segments'])} "
+            f"window(s) chained over {chain['nominal_first_day']}..{chain['nominal_last_day']} "
+            f"({chain['n_counted_calendar_days']} counted day(s), coverage "
+            f"{chain['coverage']:.4f}, {chain['n_gap_days']} protocol gap day(s), "
+            f"{chain['n_engine_tail_days'] + chain['n_engine_head_days']} engine edge day(s) "
+            f"excluded, {chain['n_multi_day_steps']} multi-day step(s))")
+    chain_detail = {"first_day": chain["first_day"].isoformat(),
+                    "last_day": chain["last_day"].isoformat(),
+                    "n_windows": len(chain["segments"]),
+                    "n_daily_returns": len(chain["daily_returns"]),
+                    "n_counted_calendar_days": chain["n_counted_calendar_days"],
+                    "coverage": chain["coverage"]}
+    dd = pwt.whole_test_max_drawdown(chain)
+    _row("max_drawdown_pct_max", dd["max_drawdown_pct"],
+         note=f"largest peak-to-trough fall of the chained bar-level curve; {span}",
+         detail={**chain_detail, "peak_ts": str(dd["peak_ts"]), "trough_ts": str(dd["trough_ts"]),
+                 "n_bars": dd["n_bars"]})
+    rets = [r for _d, r in chain["daily_returns"]]
+    _row("avg_daily_return_min", sum(rets) / len(rets),
+         note=f"arithmetic mean of the {len(rets)} chained daily simple return(s); {span}",
+         detail=chain_detail)
+    try:
+        _row("sharpe_min", pwt.whole_test_sharpe(chain["daily_returns"]),
+             note=(f"mean / sample stdev (ddof 1) x sqrt(365), rf 0, of the {len(rets)} chained "
+                   f"daily return(s); {span}"),
+             detail=chain_detail)
+    except _pd.PortfolioNotEvaluable as exc:
+        _row("sharpe_min", reason=f"whole-test Sharpe NOT_EVALUABLE: {exc}")
+
+    try:
+        close_windows: dict = {}
+        for r in pr.get("results") or []:
+            path = _pd.find_window_equity_file(run_dir, r["run_id"])
+            close_windows.setdefault(r["window"], {})[r["symbol"]] = pwt.window_close_bars(path)
+        slip = _v2_manifest_slippage(run_dir, pr, coins)
+        fees = _v2_charged_fees(coins, records)
+        bh = pwt.chained_buy_and_hold(chain, close_windows, fees, slip)
+        _row("buy_and_hold_excess_return_min", bh["excess_return"],
+             note=(f"strategy total return {bh['strategy_total_return']:.6f} minus equal-weight "
+                   f"buy-and-hold {bh['buy_and_hold_total_return']:.6f} (gross "
+                   f"{bh['buy_and_hold_gross_return']:.6f}, one round trip per coin at "
+                   f"{bh['cost_per_side_bps']} bps per side) over the same chained days; {span}"),
+             detail={**chain_detail,
+                     **{k: bh[k] for k in ("strategy_total_return", "buy_and_hold_total_return",
+                                           "buy_and_hold_gross_return", "cost_multiplier")},
+                     "cost_per_side_bps": {str(c): v for c, v in bh["cost_per_side_bps"].items()}})
+    except _pd.PortfolioNotEvaluable as exc:
+        _row("buy_and_hold_excess_return_min",
+             reason=f"buy-and-hold comparison NOT_EVALUABLE: {exc}")
+    return out
+
+
+def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict) -> tuple:
+    """The v2 bar rows (E-062 S2b-1): (results, overall, reasons) in
+    _grade_profit_bars' shape. Seven rows, in this order, each keeping its bars
+    file name and carrying `basis` (_BASIS_V2), `comparator` (_COMPARATOR_V2),
+    `note`, `detail` and -- when NOT_EVALUABLE -- `not_evaluable_reason`:
+    sharpe_min, deflated_sharpe_threshold (its ledger basis unchanged, G4 --
+    D-041 is S2b-2), max_drawdown_pct_max, trade_count_min,
+    avg_daily_return_min, buy_and_hold_excess_return_min, cost_edge_ratio_min.
+    `metrics` is _whole_test_profit_metrics(...). overall is PASS only when every
+    row is PASS."""
+    rows = {**metrics,
+            "deflated_sharpe_threshold": {
+                "actual": dsr, "note": dsr_note, "detail": {},
+                "not_evaluable_reason": (None if dsr is not None else
+                                         "no deflated Sharpe (sparse-trading or "
+                                         "insufficient-trials path)")}}
+    results = []
+    for name in ("sharpe_min", "deflated_sharpe_threshold", "max_drawdown_pct_max",
+                 "trade_count_min", "avg_daily_return_min", "buy_and_hold_excess_return_min",
+                 "cost_edge_ratio_min"):
+        row, threshold, comp = rows[name], bars[name], _COMPARATOR_V2[name]
+        actual = row["actual"]
+        if actual is None:
+            outcome = "NOT_EVALUABLE"
+        elif comp == ">=":
+            outcome = "PASS" if actual >= threshold else "FAIL"
+        elif comp == "<=":
+            outcome = "PASS" if actual <= threshold else "FAIL"
+        elif comp == ">":
+            outcome = "PASS" if actual > threshold else "FAIL"
+        else:  # pragma: no cover -- _COMPARATOR_V2 is a constant
+            raise ValueError(f"profit bars v2: unknown comparator {comp!r}")
+        entry = {"name": name, "threshold": threshold, "actual": actual, "result": outcome,
+                 "basis": _BASIS_V2[name], "comparator": comp}
+        if actual is None:
+            entry["not_evaluable_reason"] = row.get("not_evaluable_reason") or "no value"
+        if row.get("note"):
+            entry["note"] = row["note"]
+        if row.get("detail"):
+            entry["detail"] = row["detail"]
+        results.append(entry)
+    overall = "PASS" if {r["result"] for r in results} == {"PASS"} else "FAIL"
+    reasons = [
+        f"{r['name']}: {r['result']} (threshold={r['threshold']!r}, actual={r['actual']!r})"
+        + (f" -- {r['not_evaluable_reason']}" if r.get("not_evaluable_reason") else "")
+        for r in results if r["result"] != "PASS"
+    ]
+    return results, overall, reasons
+
+
 def _grade_profit_bars_protocol_result(run_dir: Path, pr: dict, pr_ref: str, bars: dict,
-                                       dsr_ctx: dict) -> tuple:
+                                       dsr_ctx: dict, *, v2: bool = False) -> tuple:
     """Branch 3's grading of ONE tested backtest (a variant, or a composite's
     variant): Sharpe and DSR from the promotion audit's evaluator on its own
     protocol_result, trade count from its per_symbol_summary, drawdown and avg
     daily return from its equal-weight portfolio -- (results, overall,
     reasons) from _grade_profit_bars. Extracted verbatim (E-060 S3b) so the
     grid's profit_bars cell of a composition run calls the SAME function
-    (_profit_bars_grid_grader): the two cannot disagree on the same inputs."""
+    (_profit_bars_grid_grader): the two cannot disagree on the same inputs.
+
+    v2=True (orchestrator.profit_bars_v2.enabled, E-062 S2b-1): the v2 rows
+    (_grade_profit_bars_v2 on _whole_test_profit_metrics); the DSR keeps its
+    ledger basis. v2=False: exactly as before."""
     raw_median_sr, _sparse, _passes, _e_max, dsr_result = dsr_ctx["dsr_candidate"](pr)
+    if v2:
+        return _grade_profit_bars(
+            bars, sharpe=None, sharpe_note="",
+            dsr=dsr_result.get("deflated_sharpe_ratio"),
+            dsr_note=(f"{pr_ref}: deflated Sharpe on the campaign trial ledger (the promotion "
+                      f"audit's rule, per-window Sharpe basis unchanged until E-062 S2b-2; None "
+                      f"on the sparse-trading or insufficient-trials path)"),
+            pss=pr.get("per_symbol_summary") or {},
+            v2=_whole_test_profit_metrics(run_dir, pr, bars),
+        )
     return _grade_profit_bars(
         bars,
         sharpe=raw_median_sr,
@@ -11486,9 +11953,16 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
     A malformed or missing bars file raises ProfitabilityBarsSchemaError before
     anything is graded or written (fail loud; never a defaulted threshold).
     record_bars_sha (verdict_routing_retired only): also record the whole bars
-    file's sha256 (BARS_FILE_SHA_FIELD)."""
+    file's sha256 (BARS_FILE_SHA_FIELD).
+
+    E-062 S2b-1: under orchestrator.profit_bars_v2.enabled every variant is
+    graded on the v2 definitions (_grade_profit_bars_protocol_result(v2=True))
+    and the evaluation records `bars_definitions: v2`; flag off, unchanged."""
+    v2 = _profit_bars_v2_enabled()
+    # Flag off: the exact pre-v2 calls (no new keyword reaches a flag-off callee).
+    v2_kw = {"v2": True} if v2 else {}
     bars_sha = _bars_file_sha256() if record_bars_sha else None
-    bars = _load_profitability_bars()
+    bars = _load_profitability_bars(**v2_kw)
     if record_bars_sha and _bars_file_sha256() != bars_sha:
         raise ProfitabilityBarsSchemaError("config/profitability_bars.yaml changed while it was "
                                            "being loaded -- grade again.")
@@ -11504,7 +11978,8 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
                              "bars": [], "reasons": []}
             continue
         results, overall, reasons = _grade_profit_bars_protocol_result(
-            run_dir, cand["protocol_result"], cand["protocol_result_ref"], bars, dsr_ctx)
+            run_dir, cand["protocol_result"], cand["protocol_result_ref"], bars, dsr_ctx,
+            **v2_kw)
         if cand.get("partial_coverage"):
             # Review fix M1 (TEMPORARY, D-042; lifted by E-062 S2b).
             results, overall, reasons = _cap_partial_coverage_bars(
@@ -11519,6 +11994,8 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
         "run_id": run_id,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "scope": _profit_bars_scope_every_backtest(),
+        # E-062 S2b-1: present only under profit_bars_v2 (flag off: no key).
+        **({"bars_definitions": PROFIT_BARS_DEFINITIONS_V2} if v2 else {}),
         "bars_ratified_by": bars["ratified_by"],
         "bars_ratified_at": bars["ratified_at"],
         "dsr_basis": {"n_dsr_total": dsr_ctx["n_dsr_total"], "n_trials": dsr_ctx["n_trials"]},
@@ -12958,6 +13435,16 @@ def run_loop(run_id: str):
             _pbe_flag = _profit_bars_every_backtest_enabled()
     except Exception as e:
         print(f"❌ profit_bars_every_backtest pre-flight failed: {e}")
+        update_state(path=RUN_DIR, status="failed", last_error=str(e))
+        return
+    # E-062 S2b-1: profit bars v2, resolved ONCE the same way (its dependency on
+    # profit_bars_every_backtest, or a non-bool value, fails the run here, before
+    # any spend). The graders read the flag again where they grade.
+    try:
+        if _pending_at_start and not _pending_at_start.startswith(_TERMINAL_AT_START):
+            _profit_bars_v2_enabled()
+    except Exception as e:
+        print(f"❌ profit_bars_v2 pre-flight failed: {e}")
         update_state(path=RUN_DIR, status="failed", last_error=str(e))
         return
     # Slice 6c S2a: verdict routing retired, resolved ONCE the same way (its
