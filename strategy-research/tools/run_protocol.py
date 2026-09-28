@@ -32,6 +32,7 @@ from core.launcher import run_backtest, parse_interval_seconds
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 from workflow_artifact_validation import validate_workflow_artifact  # noqa: E402  (CUL-11 sibling helper)
+import cost_helpers as _cost_helpers  # noqa: E402  (E-062 S2a: one shared commission / edge-to-cost definition)
 
 # CUL-213: the emoji status prints in this module (incl. the load-bearing
 # ⚠️⚠️⚠️ [CROSS-CHECK] DISAGREEMENT line) crash on a Windows cp1252 console
@@ -256,67 +257,12 @@ def _load_cost_model() -> dict | None:
         return None
 
 
-def _commission_rate_for_symbol(symbol: str, cost_model: dict | None, product: str = "spot") -> float | None:
-    """
-    2026-07-20 (Dispatch H): convert cost_model.yaml's fee_rate_bps[symbol] (a
-    ONE-WAY taker fee in bps, per that file's own header) into launcher.run_backtest's
-    commission_rate (a per-side fraction, e.g. 0.0005 for 5bps). Straight bps->fraction
-    conversion (/10000), NOT a round-trip conversion: portfolio_info.py's
-    update_local_balance applies commission_rate exactly twice per round trip for BOTH
-    LONG (once at 'LONG' open, once at 'REDUCE_LONG'/'CLOSE') and SHORT (once at
-    'SHORT' open, once at 'REDUCE_SHORT'/'CLOSE') -- confirmed symmetric by direct code
-    read and cross-checked against real trades.json records (entry_commission +
-    exit_commission = total_commission on both LONG and SHORT trades in run_018). So a
-    single per-event fraction of fee_bps/10000 reproduces a round-trip cost of
-    fee_bps*2, matching cost_model.yaml's own round_trip_cost_bps = 2*taker_fee+...
-    convention -- no *2 or /2 here, that would double- or half-charge.
-
-    product: 'spot' (default, reads the top-level fee_rate_bps -- unchanged existing
-        behavior) or 'perp' (reads the additive cost_model['perp']['fee_rate_bps']
-        block instead). NOT a general default switch: callers must opt into 'perp'
-        explicitly per invocation (see main()'s --cost-product flag) so unrelated
-        spot/default runs are never silently re-costed at perp rates.
-
-    Returns None (defer to the engine's own DEFAULT_COMMISSION_RATE) if no cost model
-    is loaded, the requested product block is absent, or the symbol has neither a
-    specific nor a 'default' fee_rate_bps entry.
-    """
-    if not cost_model:
-        return None
-    if product == "perp":
-        fees = cost_model.get("perp", {}).get("fee_rate_bps", {})
-    else:
-        fees = cost_model.get("fee_rate_bps", {})
-    rate_bps = fees.get(symbol)
-    if rate_bps is None:
-        rate_bps = fees.get("default")
-    if rate_bps is None:
-        return None
-    return float(rate_bps) / 10000.0
-
-
-def _resolve_commission_rate(
-    symbol: str, cost_model: dict | None, commission_bps: float | None, product: str
-) -> float | None:
-    """
-    2026-07-20 (Dispatch L): --commission-bps, when set, takes precedence over
-    --cost-product for every symbol -- an explicit, flat one-way-per-leg rate for
-    controlled fee-isolation experiments, independent of cost_model.yaml (useful
-    when neither the 'spot' nor 'perp' block happens to supply the exact rate an
-    experiment needs, e.g. the historical DEFAULT_COMMISSION_RATE of 10bps, which
-    is neither cost_model.yaml's spot 7.5bps nor its perp 5bps). Same conversion
-    as _commission_rate_for_symbol (fee_bps / 10000, one-way-per-side, no
-    double-charge -- see that function's docstring for the full rationale; the
-    engine applies commission_rate exactly twice per round trip for both LONG and
-    SHORT, so no extra *2/  /2 factor here either).
-
-    commission_bps absent (None): falls through unchanged to
-    _commission_rate_for_symbol(..., product=product) -- byte-identical to
-    pre-existing (pre-Dispatch-L) behavior.
-    """
-    if commission_bps is not None:
-        return float(commission_bps) / 10000.0
-    return _commission_rate_for_symbol(symbol, cost_model, product=product)
+# E-062 S2a (code review finding 3): the commission lookup moved, verbatim, to
+# tools/cost_helpers.py so tools/portfolio_whole_test.py's buy-and-hold uses the
+# SAME definition without importing this module (which imports core.launcher).
+# The old names stay as aliases; behaviour is unchanged.
+_commission_rate_for_symbol = _cost_helpers.commission_rate_for_symbol
+_resolve_commission_rate = _cost_helpers.resolve_commission_rate
 
 
 def _ts_normalize(ts: str) -> str:
@@ -586,11 +532,28 @@ def _infer_exit_reason(
     return "signal_flip"  # default (allocation dropped below rebalance threshold)
 
 
-def _cost_paid_bps(trade: dict, cost_model: dict | None) -> float:
+def _cost_paid_bps(trade: dict, cost_model: dict | None,
+                   commission_bps: float | None = None, product: str = "spot") -> float:
     """
     A3.2: per-trade round-trip cost in bps.
     Uses config/cost_model.yaml when available; falls back to actual commission data.
+
+    E-062 S2a (second-round review finding 6): the one-way fee is resolved by
+    the SAME function that sets the engine's commission_rate
+    (cost_helpers.resolve_fee_bps with the run's --commission-bps /
+    --cost-product), so cost_paid is the fee actually charged. With the default
+    flags (None, "spot") and a symbol or 'default' entry in fee_rate_bps this is
+    the value the lookup below always returned. Differences: a --commission-bps
+    or --cost-product perp run now reports its real fee (it used to report the
+    spot table's), and a symbol whose table entry is 0 now reports 0 (the old
+    `or` fell through to 'default'). When nothing resolves, the legacy lookup
+    below runs unchanged.
     """
+    if cost_model or commission_bps is not None:
+        fee_bps = _cost_helpers.resolve_fee_bps(
+            trade.get("symbol", ""), cost_model, commission_bps, product)
+        if fee_bps is not None:
+            return round(fee_bps * 2, 2)  # round-trip = 2 legs
     if cost_model:
         symbol = trade.get("symbol", "")
         fees = cost_model.get("fee_rate_bps", {})
@@ -607,10 +570,14 @@ def _compute_trade_records_for_window(
     window: str,
     window_end: str,
     cost_model: dict | None,
+    commission_bps: float | None = None,
+    cost_product: str = "spot",
 ) -> list:
     """
     Compute per-trade diagnostic records for one backtest window.
     Returns empty list if no trades or missing data files.
+    commission_bps / cost_product: the run's --commission-bps / --cost-product,
+    so each record's cost_paid is the fee the engine charged (_cost_paid_bps).
     """
     trades = _load_trades(run_dir)
     if not trades:
@@ -663,7 +630,7 @@ def _compute_trade_records_for_window(
         exit_eff  = _compute_exit_efficiency(side, entry_price, exit_price, holding_bars)
         post_5, post_20 = _compute_post_exit_returns(side, exit_price, bars, exit_idx)
         exit_reason = _infer_exit_reason(side, exit_forecast, bars, exit_idx, window_end)
-        cost_bps = _cost_paid_bps(trade, cost_model)
+        cost_bps = _cost_paid_bps(trade, cost_model, commission_bps, cost_product)
 
         # E-016 (fee-reduction autopsy): per-trade halves of the enter_earlier/
         # exit_later metrics, plus entry_price/exit_price/entry_idx/exit_idx --
@@ -1107,18 +1074,10 @@ def _aggregate_trade_diagnostics(
     # the payload that it happened. Both now come from the exact same
     # filtered set, so the ratio is always a like-for-like comparison over
     # the trades that actually have a measured cost.
-    _records_with_cost = [r for r in all_records if r.get("cost_paid") is not None]
-    gross_edge_bps_values = [r["realized_return"] * 100 for r in _records_with_cost]
-    cost_bps_values = [r["cost_paid"] for r in _records_with_cost]
-    mean_gross_edge_bps = statistics.mean(gross_edge_bps_values) if gross_edge_bps_values else None
-    mean_cost_bps = statistics.mean(cost_bps_values) if cost_bps_values else None
-    # Zero cost -> null, not inf/nan (matches this file's existing
-    # zero-denominator convention, e.g. pnl_concentration/loss_conc above).
-    realized_edge_to_cost_ratio = (
-        round(mean_gross_edge_bps / mean_cost_bps, 4)
-        if mean_gross_edge_bps is not None and mean_cost_bps not in (None, 0)
-        else None
-    )
+    # E-062 S2a (code review finding 6): the computation moved, verbatim, to
+    # tools/cost_helpers.realized_edge_to_cost_ratio (one definition, shared with
+    # tools/portfolio_whole_test.pooled_edge_to_cost_ratio); output unchanged.
+    realized_edge_to_cost_ratio = _cost_helpers.realized_edge_to_cost_ratio(all_records)
     cost_components_measured = _compute_cost_basis(all_records)
 
     return {
@@ -2173,7 +2132,8 @@ def main():
 
             # Step 03: compute trade diagnostics while run directory is available
             trade_records = _compute_trade_records_for_window(
-                rd, symbol, label, end, cost_model
+                rd, symbol, label, end, cost_model,
+                commission_bps=args.commission_bps, cost_product=args.cost_product,
             )
             all_trade_records.extend(trade_records)
 
