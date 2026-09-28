@@ -469,7 +469,9 @@ def test_a_parked_run_never_blocks_the_next_one(campaign_root, monkeypatch):
     assert "candidate_id" not in picked
     assert [e["id"] for e in queue] == ["TEST_ENTRY", "PARK_ME", "OTHER"]
 
-    class _Stop(Exception):
+    # BaseException, not Exception: since E-061 C1.4 an Exception escaping
+    # run_loop is a classified pause (paused:stage_exception), not a raise.
+    class _Stop(BaseException):
         pass
 
     def _record(run_id):
