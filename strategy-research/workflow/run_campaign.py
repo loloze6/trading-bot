@@ -861,6 +861,21 @@ def _materialize_run(run_id: str, brief: dict, *, promotion_retired: bool = Fals
                 + "\n".join(f"  - {v}" for v in _struct_violations)
             )
 
+        # C5.1 (DELIVERY_REVIEW.md C4, D-013): the menu lint slice 2 promised
+        # ("Once slice 2 lands, extend the same lint...") and never shipped --
+        # an operator brief's own menu-shaped pass_rule used to reach this
+        # point with NO menu check at all (id liveness, card_overridable,
+        # scale_free threshold lock, floor no-lowering), unlike a 1a-written
+        # candidate's (_pass_rule_from_card). Same gate as B11/CUL-267 above.
+        _menu_path = ROOT / "config" / "criterion_menu.yaml"
+        _menu = (orch.load_yaml(_menu_path) if _menu_path.exists() else {}) or {}
+        _menu_violations = vce.lint_menu_shaped_pass_rule(pre_registration.get("pass_rule"), _menu)
+        if _menu_violations:
+            raise ValueError(
+                f"{run_id}: pre_registration.yaml pass_rule failed the C5.1 menu lint "
+                f"-- refusing to materialize:\n" + "\n".join(f"  - {v}" for v in _menu_violations)
+            )
+
         # K3 (B3, §9 Q1): protocol_ref selection lint, same materialization
         # gate as B11's total-mapping lint above -- a rejected brief never
         # reaches pre_registration.yaml at all.
@@ -1072,6 +1087,18 @@ def _materialize_refinement_run(child_id: str, brief: dict, brief_path: Path):
             f"{child_id}: refinement brief's pass_rule failed the CUL-267 criterion "
             f"structure lint -- refusing to materialize:\n"
             + "\n".join(f"  - {v}" for v in _struct_violations)
+        )
+
+    # C5.1 (DELIVERY_REVIEW.md C4, D-013): same menu lint as _materialize_run --
+    # a refinement brief's own menu-shaped pass_rule gets the same id
+    # liveness / card_overridable / scale_free / floor checks.
+    _menu_path = ROOT / "config" / "criterion_menu.yaml"
+    _menu = (orch.load_yaml(_menu_path) if _menu_path.exists() else {}) or {}
+    _menu_violations = vce.lint_menu_shaped_pass_rule(pre_registration.get("pass_rule"), _menu)
+    if _menu_violations:
+        raise ValueError(
+            f"{child_id}: refinement brief's pass_rule failed the C5.1 menu lint -- "
+            f"refusing to materialize:\n" + "\n".join(f"  - {v}" for v in _menu_violations)
         )
 
     if machine_constraints:

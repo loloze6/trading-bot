@@ -340,7 +340,16 @@ def lint_pass_rule_structure(pass_rule) -> list[str]:
 
     Returns a list of violation strings; empty means the criteria are
     structurally clean and no criterion in this pass_rule can hit the three
-    SPEC_ERROR causes this lint targets."""
+    SPEC_ERROR causes this lint targets.
+
+    C5.1 (D-013): a criterion that `is_menu_referencing_criterion` (carries
+    an `id`, no `metric_basis`) is skipped here entirely -- the menu schema
+    has no `metric_basis` field and several reducers (e.g.
+    `sign_consistent_by_era`) carry no `comparator`/`null_handling` at all,
+    so this legacy-schema lint would false-positive on a menu-shaped
+    criterion (reproduced directly against `config/criterion_menu.yaml`'s
+    `sign_consistent_by_era` entry before this fix). `lint_menu_shaped_pass_rule`
+    is that criterion's actual structural check."""
     violations: list[str] = []
     if pass_rule is None or isinstance(pass_rule, str):
         return violations  # legacy shape -- nothing to lint (same as B11's own lint)
@@ -353,6 +362,8 @@ def lint_pass_rule_structure(pass_rule) -> list[str]:
         if not isinstance(criterion, dict):
             violations.append(f"criteria[{idx}] is not a mapping (got {type(criterion).__name__})")
             continue
+        if is_menu_referencing_criterion(criterion):
+            continue  # C5.1: checked by lint_menu_shaped_pass_rule instead
         cid = criterion.get("id") or f"criteria[{idx}]"
 
         metric = criterion.get("metric")
@@ -1573,6 +1584,151 @@ def resolve_criteria_against_menu(criteria: list, menu) -> list:
             merged["id"] = cid
         resolved.append(merged)
     return resolved
+
+
+# ---------------------------------------------------------------------------
+# C5.1 (DELIVERY_REVIEW.md C4 / A2_cards_A-G.md finding 5, D-013): the
+# registration-time menu lint slice 2's own dispatch text promised ("Once
+# slice 2 lands, extend the same lint to the menu's scale_free: true rule")
+# and never shipped. `_pass_rule_from_card` (run_phase1_research.py) already
+# enforces two of these rules for a 1a-written candidate's criteria (menu id
+# validity, `card_overridable` allowlist) -- the functions below make that
+# the ONE shared implementation (no more re-deriving `allowed`/`refused` by
+# hand at each call site) and add the two rules the review found nowhere in
+# code: a `scale_free: false` menu entry's threshold can never be overridden,
+# and a criterion's `floor` override can only ever raise the menu's sample
+# floor, never lower or drop it.
+# ---------------------------------------------------------------------------
+
+# Legacy (pre-menu, K2/C7) criteria are REQUIRED to carry `metric_basis`
+# (`_lint_pass_rule_total_mapping`'s own B11 check). No `config/
+# criterion_menu.yaml` entry has ever carried that field -- it is not part of
+# the menu schema (S1_FINDINGS.md §3's record shape omits it entirely). A
+# committed real run (run_058/059/060) confirms the opposite collision this
+# guards against: those pre-K2 criteria carry an `id` (used only as a human
+# label, e.g. "a"/"b"/"c") AND a `source` field -- but `source` there is
+# operator-judgment PROSE, not the menu schema's `window|pooled|profit_bars`
+# enum, so detecting "menu-shaped" via `source`/`reducer` presence alone (as
+# `_is_menu_shaped_pass_rule` does, correctly, for evaluate_grid's OWN
+# narrower purpose of picking an evaluator) would misclassify every one of
+# them here and wrongly exempt them from CUL-267/B11's real structural
+# checks. `id` + absence of `metric_basis` does not collide with that real
+# corpus (verified directly, not assumed): every real committed criterion
+# carries `metric_basis`.
+def is_menu_referencing_criterion(criterion) -> bool:
+    """True iff `criterion` identifies itself against `config/
+    criterion_menu.yaml` (carries an `id`, and is not a legacy criterion --
+    i.e. carries no `metric_basis`). Used to (a) exempt such a criterion from
+    the legacy B11/CUL-267 structural lints, which assume fields the menu
+    schema does not have, and (b) select which criteria `lint_menu_shaped_pass_rule`
+    below actually checks. A self-contained criterion with no `id` at all
+    (this module's own documented shape: "the menu is not consulted for that
+    criterion at all") is deliberately NOT included -- it never identifies
+    against the menu, so there is nothing here to check or to exempt."""
+    return (isinstance(criterion, dict)
+            and bool(criterion.get("id"))
+            and "metric_basis" not in criterion)
+
+
+def menu_criterion_overrides_violations(criterion: dict, menu_entry: dict) -> list[str]:
+    """Pure per-criterion check against its menu entry: `card_overridable`
+    allowlist, the `scale_free: false` threshold lock, and floor no-lowering.
+    Does not check id validity/liveness -- that differs by caller (1a's card
+    writer requires every criterion to name a live id and raises immediately;
+    `lint_menu_shaped_pass_rule` below tolerates checking only id-bearing
+    criteria and accumulates violations instead).
+
+    `criterion` may be RAW/pre-merge (1a's own shorthand: only `id` plus any
+    fields it actually supplies) or fully spelled out by hand (an operator
+    brief restating every menu-backfilled field verbatim, e.g. after copying
+    a 1a-resolved criterion into a new brief) -- a key is only counted as an
+    override when its value actually DIFFERS from the menu's for that key;
+    restating the menu's own value is redundant, not an override, and is not
+    flagged (this is what lets `resolve_criteria_against_menu`'s output, which
+    always carries every backfilled key, be re-checked without every field
+    tripping the allowlist)."""
+    violations: list[str] = []
+    allowed = {"id"} | set(menu_entry.get("card_overridable") or [])
+    refused = sorted(
+        key for key in set(criterion) - allowed
+        if key not in menu_entry or criterion[key] != menu_entry[key]
+    )
+    if refused:
+        violations.append(
+            f"carries {refused}, which the menu entry does not let a criterion "
+            f"override (allowed: {sorted(allowed)})"
+        )
+
+    # Independent of card_overridable on purpose (defense in depth against a
+    # future menu entry that mistakenly lists `threshold` as overridable on a
+    # non-scale-free entry): a scale_free: false entry's threshold is not
+    # comparable across hypotheses by construction, so it may never be
+    # SET TO A DIFFERENT VALUE than the menu's -- restating the same value is
+    # tolerated, same rule as above.
+    if (menu_entry.get("scale_free") is False and "threshold" in criterion
+            and criterion["threshold"] != menu_entry.get("threshold")):
+        violations.append(
+            f"menu entry {menu_entry.get('id')!r} is scale_free: false -- its "
+            f"threshold must come from the menu, never overridden by a criterion"
+        )
+
+    menu_floor = menu_entry.get("floor") or {}
+    if menu_floor and "floor" in criterion:
+        crit_floor = criterion.get("floor")
+        if not isinstance(crit_floor, dict):
+            violations.append(
+                f"floor override {crit_floor!r} is not a mapping -- cannot compare "
+                f"against the menu's floor {menu_floor!r}"
+            )
+        else:
+            for floor_key, menu_value in menu_floor.items():
+                crit_value = crit_floor.get(floor_key)
+                if (not isinstance(crit_value, (int, float))
+                        or isinstance(crit_value, bool)
+                        or crit_value < menu_value):
+                    violations.append(
+                        f"floor override sets {floor_key!r}={crit_value!r}, below the "
+                        f"menu's {menu_value!r} -- a criterion may raise its sample "
+                        f"floor, never lower or drop it"
+                    )
+    return violations
+
+
+def lint_menu_shaped_pass_rule(pass_rule, menu) -> list[str]:
+    """Registration-time lint (C5.1) over EVERY id-bearing, non-legacy
+    criterion in `pass_rule` -- menu id liveness plus
+    `menu_criterion_overrides_violations` above. Unlike `_pass_rule_from_card`
+    (which is 1a-only and raises on the first violation), this accumulates
+    every violation, mirrors the B11/CUL-267 calling convention exactly, and
+    applies uniformly to ANY pre_registration.yaml pass_rule -- a 1a-written
+    one (already checked by `_pass_rule_from_card`, so always clean here too)
+    or an operator brief's own hand-written `evaluation.pass_rule`, which
+    previously went through no menu check at all (DELIVERY_REVIEW.md C4).
+
+    A criterion that is not `is_menu_referencing_criterion` (no `id`, or a
+    legacy criterion carrying `metric_basis`) is left entirely alone here --
+    those are B11/CUL-267's concern, unchanged."""
+    violations: list[str] = []
+    if pass_rule is None or isinstance(pass_rule, str) or not isinstance(pass_rule, dict):
+        return violations
+    criteria = pass_rule.get("criteria")
+    if not isinstance(criteria, list):
+        return violations
+    menu_by_id = _menu_entries_by_id(menu)
+    for idx, criterion in enumerate(criteria):
+        if not is_menu_referencing_criterion(criterion):
+            continue
+        cid = criterion.get("id")
+        entry = menu_by_id.get(cid)
+        if entry is None:
+            violations.append(
+                f"criteria[{idx}] id={cid!r} is not a live entry of "
+                f"config/criterion_menu.yaml ({sorted(menu_by_id)})"
+            )
+            continue
+        for v in menu_criterion_overrides_violations(criterion, entry):
+            violations.append(f"criteria[{idx}] (id={cid!r}): {v}")
+    return violations
 
 
 def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
