@@ -85,6 +85,7 @@ import verdict_criteria_evaluator as vce  # noqa: E402  (G6, see _save_queue)
 import campaign_review_retired as crr  # noqa: E402  (slice 6c S2b: shared with the orchestrator)
 import composition_names as _composition_names  # noqa: E402  (E-060 S3b: shared names)
 import protocol_resolution  # noqa: E402  (E-061 C1.5: the D-3 guard, checked at launch)
+import abandoned_launch  # noqa: E402  (E-061 C1.4: the abandoned-launch marker, one source)
 from setup_run import setup_run  # noqa: E402
 
 # CUL-213: this is the unattended campaign entry point; its emoji status prints
@@ -150,7 +151,7 @@ PROTOCOL_PREFLIGHT_HALT = "protocol_promotion_unratified"
 LAUNCH_EXCEPTION_HALT = "launch_exception"
 # The run-level halts above: each sets flags.<reason> on the run, cleared by a
 # successful --resume (review fix 1).
-_RUN_FLAG_HALTS = (STAGE_EXCEPTION_HALT, PROTOCOL_PREFLIGHT_HALT, LAUNCH_EXCEPTION_HALT)
+_RUN_FLAG_HALTS = orch.RUN_HALT_FLAGS  # (STAGE_EXCEPTION_, PROTOCOL_PREFLIGHT_, LAUNCH_EXCEPTION_HALT)
 
 
 # ---------------------------------------------------------------------------
@@ -1882,15 +1883,15 @@ def resume_paused_entry(queue: dict) -> bool:
 
 
 def _clear_run_halt_flags(run_dir: Path) -> None:
-    """E-061 review fix 1: a successful --resume clears the run-level halt flags
+    """E-061 review fix 1 (+ fourth-round fix 2): every un-pause path -- --resume,
+    --unpark, and resume_pipeline itself -- clears the run-level halt flags
     (stage_exception, protocol_promotion_unratified, launch_exception) the
     operator's RUNBOOK §4 reset may have left set -- update_state only merges
     flags, so a stale one would otherwise stay true for the rest of the run."""
     state_path = run_dir / "pipeline_state.yaml"
     if not state_path.exists():
         return
-    flags = (orch.load_yaml(state_path) or {}).get("flags") or {}
-    stale = {name: False for name in _RUN_FLAG_HALTS if flags.get(name)}
+    stale = orch._stale_run_halt_flags(orch.load_yaml(state_path) or {})
     if stale:
         orch.update_state(path=run_dir, flags=stale)
 
@@ -1957,6 +1958,7 @@ def _unpark_entry(entry_id: str) -> bool:
         resume_stage = marker.get("resume_stage") or state.get("pending_stage")
         orch.update_state(path=run_dir, status="active", pending_stage=resume_stage,
                           **{orch.PARKED_KEY: None})
+        _clear_run_halt_flags(run_dir)  # E-061 fourth-round fix 2: every un-pause path
         entry["status"] = "ready"
         entry.pop("parked_reason", None)
         _save_queue(queue)
@@ -2661,10 +2663,7 @@ def _is_quarantined_orphan(run_id: str) -> bool:
     is known the same way -- recorded, never reported as unexpected."""
     if (ROOT / "runs" / run_id / "ORPHANED_README.md").exists():
         return True
-    try:
-        return _run_state(run_id).get("status") == ABANDONED_LAUNCH_STATUS
-    except Exception:  # an unreadable state is not a known abandoned launch
-        return False
+    return abandoned_launch.is_abandoned_launch(ROOT / "runs" / run_id)
 
 
 def reconcile_orphans() -> list:
@@ -2835,12 +2834,12 @@ def _data_spend_evidence(run_dir: Path, run_id: str, state: dict) -> list:
 
 def _expected_generated_protocol(generated: dict, run_id: str) -> dict:
     """The protocol _ensure_protocol_from_constraints would write from these
-    machine_constraints.protocol, field for field (same order, same helpers).
-    Raises exactly where generation would (no promotion block, no symbols /
-    start / end, windows reaching the holdout)."""
+    machine_constraints.protocol, field for field: same order, same helpers,
+    and it raises exactly where generation raises (fourth-round review fix 5 --
+    pinned by a parity test over malformed inputs): a missing symbols / start /
+    end key, windows reaching the holdout, no promotion block. An empty symbols
+    list is accepted, as generation accepts it."""
     symbols = generated["symbols"]
-    if not symbols:
-        raise ValueError("machine_constraints.protocol.symbols is empty")
     per_symbol_start = generated.get("per_symbol_start") or {}
     start = min(per_symbol_start.values()) if per_symbol_start else generated["start"]
     windows = orch._generate_monthly_windows(start, generated["end"])
@@ -2855,38 +2854,54 @@ def _expected_generated_protocol(generated: dict, run_id: str) -> dict:
 
 
 def _generated_protocol_plan(run_dir: Path, run_id: str, generated: dict, state: dict) -> tuple:
-    """(refusal, regeneration) for a machine_constraints.protocol run. The
-    protocol the run WILL use is the one pre_registration.yaml generates;
-    third-round review fixes 1-2:
+    """(refusal, regeneration) for a machine_constraints.protocol run.
+
+    Spend evidence is checked FIRST (fourth-round review fix 1). Once data may
+    have been spent on the run, or protocol_execution completed, the expected
+    protocol is never rebuilt from pre_registration.yaml and nothing is ever
+    regenerated -- the rules stay those the data was judged by:
+      * protocol_execution completed: nothing is checked (as before E-061's
+        generated-protocol rules: the protocol was judged at its first use);
+      * otherwise the EXISTING generated file gets the D-3 check, nothing more
+        (a missing file is refused: run_loop would generate it now, from rules
+        that may have changed since the data was seen).
+    Before any spend (third-round review fixes 1-2):
       * inputs that would make generation raise are refused up front;
       * no file yet: judged on the pre-registered promotion block (a generated
-        file never carries promotion_provenance) -- unless data may already
-        have been spent, then refused (a regeneration after spend would change
-        the rules after the data was seen);
+        file never carries promotion_provenance);
       * a file that matches: judged as it is (a hand ratification holds);
-      * a file that differs: refused once data may have been spent, and refused
-        when anything but `promotion` differs (windows, symbols, timeframe,
-        holdout are never rewritten); a promotion-only difference, pre-spend,
-        returns the regeneration (applied atomically before run_loop)."""
+      * a file that differs: refused when anything but `promotion` differs
+        (windows, symbols, timeframe, holdout are never rewritten); a
+        promotion-only difference returns the regeneration (applied atomically
+        before run_loop)."""
     path = orch.ROOT / "protocols" / f"{run_id}_generated.json"
     where = f"machine_constraints.protocol (generated {path.name})"
+    if "protocol_execution" in (state.get("completed_stages") or []):
+        return None, None
+    spent = _data_spend_evidence(run_dir, run_id, state)
+    if spent:
+        if not path.exists():
+            return (f"{where}: the generated protocol file is missing although data may already "
+                    f"have been spent ({'; '.join(spent)}) -- refusing to let run_loop generate "
+                    f"it now from pre_registration.yaml (the rules may have changed since the "
+                    f"data was seen). Restore {path.name}"), None
+        try:
+            protocol_resolution.assert_promotion_ratified(path)
+        except protocol_resolution.UngatedProtocolError as e:
+            return f"{where}: {e}", None
+        return None, None
     try:
         expected = _expected_generated_protocol(generated, run_id)
     except Exception as e:
         return (f"{where}: pre_registration.yaml's machine_constraints.protocol cannot generate "
                 f"a protocol ({type(e).__name__}: {e}) -- fix it before this run spends "
                 f"anything"), None
-    spent = _data_spend_evidence(run_dir, run_id, state)
     generic = (f"[G7/D-3] {where}: the brief's pre-registered promotion block is the abolished "
                f"generic block with no promotion_provenance.ratified_by (a generated protocol "
                f"never carries one), so the protocol would be refused at its first use, after "
                f"1a/1b/2. Pre-register real thresholds for this hypothesis in "
                f"pre_registration.yaml's machine_constraints.protocol.promotion")
     if not path.exists():
-        if spent:
-            return (f"{where}: the generated protocol file is missing although data may already "
-                    f"have been spent ({'; '.join(spent)}) -- refusing to generate it now from "
-                    f"pre_registration.yaml"), None
         return (generic if protocol_resolution.promotion_is_generic(expected["promotion"])
                 else None), None
     try:
@@ -2896,19 +2911,11 @@ def _generated_protocol_plan(run_dir: Path, run_id: str, generated: dict, state:
     differing = [k for k in _GENERATED_PROTOCOL_FIELDS
                  if not isinstance(current, dict) or current.get(k) != expected[k]]
     if not differing:
-        if "protocol_execution" in (state.get("completed_stages") or []):
-            return None, None  # already judged at its first use; nothing changed since
         try:
             protocol_resolution.assert_promotion_ratified(path)
         except protocol_resolution.UngatedProtocolError as e:
             return f"{where}: {e}", None
         return None, None
-    if spent:
-        return (f"{where}: {path.name} differs from pre_registration.yaml's "
-                f"machine_constraints.protocol in {differing}, and data may already have been "
-                f"spent ({'; '.join(spent)}) -- refusing to regenerate: the pre-registered rules "
-                f"cannot change after data was seen. Restore pre_registration.yaml to match "
-                f"{path.name}"), None
     if differing != ["promotion"]:
         return (f"{where}: {path.name} differs from pre_registration.yaml's "
                 f"machine_constraints.protocol in {differing} -- only a promotion-block change "
@@ -3021,7 +3028,7 @@ def _halt_run(queue: dict, entry: dict, run_id, run_dir, reason: str, detail: st
     return _halt_retired_routing(queue, entry, record_run, reason, detail, schedulability_enabled)
 
 
-ABANDONED_LAUNCH_STATUS = "abandoned_launch"
+ABANDONED_LAUNCH_STATUS = abandoned_launch.ABANDONED_LAUNCH_STATUS
 
 
 def _mark_abandoned_launch(run_dir: Path, run_id: str, detail: str) -> None:

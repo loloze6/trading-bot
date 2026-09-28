@@ -2478,6 +2478,12 @@ _TRIED_IDEAS_REASON = (
 )
 
 
+# E-061 C1.4 / C1.5: the run-level halt flags run_campaign sets on a classified
+# pause (stage_exception, protocol_promotion_unratified, launch_exception); every
+# un-pause path clears them (_stale_run_halt_flags). One source for both modules.
+RUN_HALT_FLAGS = ("stage_exception", "protocol_promotion_unratified", "launch_exception")
+
+
 def _orchestrator_config(cfg: dict | None = None) -> dict:
     """E-061 C1.5 (third-round review fix 10): the parsed config/campaign_config.yaml
     a flag reader works on -- `cfg` when the caller already parsed it (run_campaign's
@@ -11889,6 +11895,16 @@ def determine_post_spec_route(path: Path):
               f"Rationale: {decision.get('rationale', '<none>')}")
         return "human_pause"
 
+def _stale_run_halt_flags(state: dict) -> dict:
+    """E-061 C1.4 (fourth-round review fix 2): {flag: False} for each
+    RUN_HALT_FLAGS entry still set on this state -- every un-pause path
+    (run_campaign's --resume and --unpark, resume_pipeline) clears them, so a
+    flag from an earlier halt never outranks a later, real classification.
+    Empty when none is set (the state is then written exactly as before)."""
+    flags = (state or {}).get("flags") or {}
+    return {name: False for name in RUN_HALT_FLAGS if flags.get(name)}
+
+
 def resume_pipeline(run_id: str):
     RUN_DIR = ROOT / "runs" / run_id
     state = load_yaml(RUN_DIR / "pipeline_state.yaml")
@@ -11898,22 +11914,25 @@ def resume_pipeline(run_id: str):
 
     resolution_path = RUN_DIR / "artifacts" / "human_resolution.yaml"
     ensure_files([resolution_path])
-    
+
     resolution = load_yaml(resolution_path)
+    _stale = _stale_run_halt_flags(state)  # E-061: an un-pause clears the halt flags
     if resolution.get("status") == "resolved_proceed":
         print("✅ Human resolution verified. Resuming pipeline...")
         # Inject the human's paths directly into the state so the next agent can see them
         update_state(
-            path=RUN_DIR, 
+            path=RUN_DIR,
             status="active",
             current_stage="human_resolution",
             pending_stage="backtest_specification", # Move to Phase 2
-            injected_human_context=resolution.get("injected_context")
+            injected_human_context=resolution.get("injected_context"),
+            **({"flags": _stale} if _stale else {})
         )
         run_loop(run_id)
     else:
         print("❌ Human marked issue as unresolvable. Ending run.")
-        update_state(path=RUN_DIR, status="rejected", pending_stage="completed_rejected")
+        update_state(path=RUN_DIR, status="rejected", pending_stage="completed_rejected",
+                     **({"flags": _stale} if _stale else {}))
 
 def run_loop(run_id: str):
     """Main loop to run through the stages of Phase 1 with dynamic routing and state management.

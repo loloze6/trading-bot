@@ -87,6 +87,7 @@ from pathlib import Path
 
 import yaml
 
+from abandoned_launch import is_abandoned_launch  # tools/ sibling (E-061 C1.4)
 import anti_adjacency_gate as _aag  # tools/ sibling: candidate_key, layer2_digest_check
 import build_exclusion_digest as _bed  # tools/ sibling: the retired family digest
 import campaign_memory as _cm  # tools/ sibling: the memory writers and helpers
@@ -149,8 +150,10 @@ def _run_sort_key(path: Path):
 
 
 def run_dirs_in_order(runs_dir: Path) -> list:
-    """Every runs_dir/run_<digits> directory, in run-number order."""
-    return sorted((p for p in Path(runs_dir).iterdir() if p.is_dir() and _RUN_RE.match(p.name)),
+    """Every runs_dir/run_<digits> directory, in run-number order (E-061 C1.4:
+    except a run dir a failed launch abandoned)."""
+    return sorted((p for p in Path(runs_dir).iterdir()
+                   if p.is_dir() and _RUN_RE.match(p.name) and not is_abandoned_launch(p)),
                   key=_run_sort_key)
 
 
