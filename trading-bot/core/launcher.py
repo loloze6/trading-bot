@@ -628,7 +628,8 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         [start, end), every bar trades) -- bit-identical, see
         tests/test_warmup_prefetch_bit_identical.py.
     holdout_start: when warmup_prefetch is True and this is set (a "YYYY-MM-DD"
-        string), asserts the computed prefetch fetch_start never reaches at or
+        string), raises ValueError (CUL-339: formerly an `assert`, which
+        `python -O` strips) if the computed prefetch fetch_start reaches at or
         past holdout_start -- the backward-extended warmup buffer must never
         pull holdout data into a training window. No-op unless both
         warmup_prefetch=True and holdout_start are set.
@@ -917,12 +918,14 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
 
         if holdout_start is not None:
             holdout_start_dt = datetime.datetime.strptime(holdout_start, "%Y-%m-%d")
-            assert fetch_start_dt < holdout_start_dt, (
-                f"warmup_prefetch: computed fetch_start={fetch_start} is at or past "
-                f"holdout_start={holdout_start} -- the backward-extended warmup buffer "
-                f"would pull holdout data into a training window. Investigate before "
-                f"proceeding (likely a window scheduled too close to the holdout boundary)."
-            )
+            # CUL-339: an explicit raise, not `assert` -- `python -O` strips asserts.
+            if not fetch_start_dt < holdout_start_dt:
+                raise ValueError(
+                    f"warmup_prefetch: computed fetch_start={fetch_start} is at or past "
+                    f"holdout_start={holdout_start} -- the backward-extended warmup buffer "
+                    f"would pull holdout data into a training window. Investigate before "
+                    f"proceeding (likely a window scheduled too close to the holdout boundary)."
+                )
 
     engine = BacktestEngine(
         data_manager=stack.data_manager,

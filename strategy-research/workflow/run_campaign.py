@@ -3102,18 +3102,18 @@ def _expected_generated_protocol(generated: dict, run_id: str) -> dict:
     machine_constraints.protocol, field for field: same order, same helpers,
     and it raises exactly where generation raises (fourth-round review fix 5 --
     pinned by a parity test over malformed inputs): a missing symbols / start /
-    end key, windows reaching the holdout, no promotion block. An empty symbols
+    end key, windows reaching the holdout, a `holdout` override disagreeing
+    with the policy (CUL-339), no promotion block. An empty symbols
     list is accepted, as generation accepts it."""
     symbols = generated["symbols"]
     per_symbol_start = generated.get("per_symbol_start") or {}
     start = min(per_symbol_start.values()) if per_symbol_start else generated["start"]
     windows = orch._generate_monthly_windows(start, generated["end"])
-    policy_start, policy_end = orch._load_holdout_range()
     return {
         "symbols": symbols,
         "timeframe": generated.get("timeframe", "1h"),
         "windows": windows,
-        "holdout": generated.get("holdout", {"start": policy_start, "end": policy_end}),
+        "holdout": orch._generated_protocol_holdout_block(generated),
         "promotion": orch._require_pre_registered_promotion(generated, run_id),
     }
 
