@@ -35,6 +35,7 @@ if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 from workflow_artifact_validation import validate_workflow_artifact  # noqa: E402  (CUL-11 sibling helper)
 import cost_helpers as _cost_helpers  # noqa: E402  (E-062 S2a: one shared commission / edge-to-cost definition)
+import protocol_resolution as _protocol_resolution  # noqa: E402  (E-061 C1.6: one shared _era_id_for_timestamp)
 
 # CUL-213: the emoji status prints in this module (incl. the load-bearing
 # ⚠️⚠️⚠️ [CROSS-CHECK] DISAGREEMENT line) crash on a Windows cp1252 console
@@ -1352,32 +1353,23 @@ _DATA_POLICY_PATH = Path(_SR) / "config" / "campaign_data_policy.yaml"
 
 
 def _load_campaign_data_policy() -> dict:
-    """Local copy (E-039 step 5, 2026-09-12): prescreen_signal.py's own
-    identically-named function is being removed along with that file. This
-    is a small, strategy-research-specific config reader (not general
-    statistics), so it lives here directly rather than in
-    trading-bot/performance/signal_statistics.py."""
-    import yaml
-    p = Path(_DATA_POLICY_PATH)
-    if not p.exists():
-        return {}
-    with open(p, encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+    """Thin delegator (E-061 C1.6/C1.7 second-round code-review fix, dedup)
+    to the ONE shared implementation, tools/protocol_resolution.py::
+    load_campaign_data_policy -- see that function's own docstring. Kept as
+    a module-level name here so this module's own callers are unchanged.
+    CUL-339: passes _DATA_POLICY_PATH (read at call time) so a test can
+    sandbox the policy with monkeypatch."""
+    return _protocol_resolution.load_campaign_data_policy(Path(_DATA_POLICY_PATH))
 
 
 def _era_id_for_timestamp(ts, eras: list) -> str:
-    """Local copy (E-039 step 5, 2026-09-12) of prescreen_signal.py's own
-    _era_id_for_timestamp -- A8.5.1a: map a bar timestamp to its era_id per
-    campaign_data_policy.yaml's `eras` list. Returns 'era_unmapped' if the
-    timestamp falls outside every declared era (should not happen for
-    in-policy data, but must not crash)."""
-    import pandas as pd
-    d = pd.Timestamp(ts).strftime("%Y-%m-%d")
-    for era in eras:
-        lo, hi = era["range"]
-        if lo <= d <= hi:
-            return era["era_id"]
-    return "era_unmapped"
+    """Thin delegator (E-061 C1.6 code-review fix, dedup) to the ONE shared
+    implementation, tools/protocol_resolution.py::era_id_for_timestamp -- see
+    that function's own docstring for the open-ended-era history and the
+    None-handling logic. Kept as a module-level name here (rather than
+    replacing every call site with the qualified name) so this module's own
+    A8.5.1a callers are unchanged."""
+    return _protocol_resolution.era_id_for_timestamp(ts, eras)
 
 
 def _a851a_episode_significance(rows: list, runs_root, timeframe: str) -> dict | None:

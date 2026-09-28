@@ -41,6 +41,15 @@ HARD PAUSE CONDITIONS (never routed around — the whole campaign halts):
                                        or holdout_result.yaml is inconclusive)
   5. budget_breaker                  (per-run weighted token budget exceeded)
   + unhandled_exception              (run_loop's own except-block failure)
+  + stage_exception                  (E-061 C1.4: an exception that ESCAPED
+                                       run_loop -- classified here, never a
+                                       crashed campaign process)
+  + launch_exception                 (E-061 C1.4: an exception while launching,
+                                       before run_loop -- the run dir, if any, is
+                                       recorded and paused, never orphaned)
+  + flag_misconfiguration /          (E-061 C1.5: the launch pre-flight, before
+    protocol_promotion_unratified     any LLM call -- see _flag_preflight_refusal
+                                       and _protocol_preflight_refusal)
   + a residual bucket for every other status=="paused_for_human" case
     (component_gap, new_component escalation, regime_misattribution,
     component_execution_error, data-block HITL, verdict-verification failure)
@@ -53,12 +62,15 @@ See RUNBOOK.md for the operational playbook (launch / status / resume / stop).
 
 import argparse
 import contextlib
+import copy
 import hashlib
+import json
 import os
 import re
 import shutil
 import sys
 import tempfile
+import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -72,7 +84,10 @@ import record_schema  # noqa: E402  (closed record schema, see _save_queue)
 import verdict_criteria_evaluator as vce  # noqa: E402  (G6, see _save_queue)
 import campaign_review_retired as crr  # noqa: E402  (slice 6c S2b: shared with the orchestrator)
 import composition_names as _composition_names  # noqa: E402  (E-060 S3b: shared names)
+import protocol_resolution  # noqa: E402  (E-061 C1.5: the D-3 guard, checked at launch)
+import abandoned_launch  # noqa: E402  (E-061 C1.4: the abandoned-launch marker, one source)
 from setup_run import setup_run  # noqa: E402
+from timeframe import timeframe_seconds  # noqa: E402  (E-061 C1.7 second-round: shared bar-size arithmetic)
 
 # CUL-213: this is the unattended campaign entry point; its emoji status prints
 # crash on a Windows cp1252 console (UnicodeEncodeError) the moment stdout is
@@ -123,6 +138,21 @@ _LEGACY_MINTING_ROUTERS = ("_route_refine", "_route_pivot", "_route_escalate")
 # --unpark restores one. Written only under orchestrator.verdict_routing_retired.
 PARKED_STATUS_PREFIX = "paused:waiting_for_"
 PARKED_STATUSES = tuple(f"{PARKED_STATUS_PREFIX}{k}" for k in orch.PARK_KINDS)
+# E-061 C1.4 (DELIVERY_REVIEW.md A4): an exception that escapes run_loop is a
+# classified pause (RUNBOOK.md §3 row of this name), never a crashed campaign
+# process that a restart re-crashes. The same name is the run's flag.
+STAGE_EXCEPTION_HALT = "stage_exception"
+# E-061 C1.5 (A6, A8): the launch pre-flight's two refusals, before any LLM call.
+# A flag refusal is config-level (no run flag; --resume re-checks the config);
+# a protocol refusal is run-level (the run's flag of the same name).
+FLAG_PREFLIGHT_HALT = "flag_misconfiguration"
+PROTOCOL_PREFLIGHT_HALT = "protocol_promotion_unratified"
+# E-061 C1.4 review fix 6: an exception while launching (setup_run / materialize /
+# the brief context / the queued card), before run_loop.
+LAUNCH_EXCEPTION_HALT = "launch_exception"
+# The run-level halts above: each sets flags.<reason> on the run, cleared by a
+# successful --resume (review fix 1).
+_RUN_FLAG_HALTS = orch.RUN_HALT_FLAGS  # (STAGE_EXCEPTION_, PROTOCOL_PREFLIGHT_, LAUNCH_EXCEPTION_HALT)
 
 
 # ---------------------------------------------------------------------------
@@ -348,6 +378,214 @@ def check_venue_tradability(venue, market_type) -> bool:
     return entry.get("tradable") is True
 
 
+# E-061 C1.7 code-review fix: a brief copied verbatim from
+# workflow_artifacts/templates/research_brief_new_pipeline.md (its placeholders
+# never replaced) must never register -- registering it would queue a run that
+# either crashes on nonsense values or, worse, silently treats a placeholder
+# string as a real one. The sentinel is the template's own marker text.
+_PLACEHOLDER_SENTINEL = "<FILL IN"
+
+
+def _contains_placeholder(value) -> bool:
+    """True if `value` (a str, or a nested list/dict of them) still carries
+    _PLACEHOLDER_SENTINEL anywhere. Recurses into BOTH lists and dicts
+    (second-round code-review fix: the first version only recursed into
+    lists, so a `<FILL IN` left inside a dict -- e.g.
+    machine_constraints.protocol.promotion -- was invisible to it)."""
+    if isinstance(value, str):
+        return _PLACEHOLDER_SENTINEL in value
+    if isinstance(value, list):
+        return any(_contains_placeholder(v) for v in value)
+    if isinstance(value, dict):
+        return any(_contains_placeholder(v) for v in value.values())
+    return False
+
+
+def _find_placeholder_paths(value, path: str = "") -> list:
+    """Every location inside `value` (recursing into dicts and lists) that
+    still carries _PLACEHOLDER_SENTINEL, as a list of dotted/bracketed
+    paths -- lets a refusal message name every offending field at once
+    instead of stopping at the first."""
+    found = []
+    if isinstance(value, str):
+        if _PLACEHOLDER_SENTINEL in value:
+            found.append(path or "<root>")
+    elif isinstance(value, list):
+        for i, v in enumerate(value):
+            found.extend(_find_placeholder_paths(v, f"{path}[{i}]"))
+    elif isinstance(value, dict):
+        for k, v in value.items():
+            found.extend(_find_placeholder_paths(v, f"{path}.{k}" if path else str(k)))
+    return found
+
+
+def _normalize_symbol(sym) -> str:
+    """BTC == BTCUSDT (second-round code-review fix). This repo's existing
+    convention for deriving a base asset from a pair -- see
+    trading-bot/execution/portfolio_info.py's own
+    `symbol.replace('USDT', '')` (used repeatedly there for the same
+    purpose; no dedicated helper exists there either, this mirrors that
+    exact convention rather than inventing a new one). Every `symbols` value
+    in this codebase (protocols/*.json, config/coin_universe.yaml) is a
+    Binance-shaped pair ending in USDT regardless of actual trading venue,
+    so stripping that one suffix is sufficient -- there is no second quote
+    currency to handle at this project's abstraction level."""
+    return sym[:-4] if isinstance(sym, str) and sym.endswith("USDT") else sym
+
+
+def _lint_brief_protocol_agreement(brief_path: Path, data: dict) -> None:
+    """E-061 C1.7 code-review fix: refuse a brief whose market_universe/timeframe
+    disagree with the protocol machine_constraints will actually execute --
+    the same drift class K3/Q1 (_lint_machine_constraints_protocol_selection's
+    window_set_ref check) already refuses one level down, applied here to
+    symbols/bar-size identity instead of window-set identity. Checked against
+    machine_constraints.protocol (generate) directly, or against
+    machine_constraints.protocol_ref's own file (pin) when that is what the
+    brief carries -- the two keys are mutually exclusive (K3).
+
+    Registration-ONLY (second-round code-review fix): called from
+    _lint_new_pipeline_registration, itself called only from
+    register_hypothesis -- NOT from _parse_brief_frontmatter, so a brief's
+    every OTHER re-parse (materialization, dry-run, a resumed run re-reading
+    its own already-registered brief) does not re-read a pinned protocol
+    file or re-run this comparison. Also config_direct_authoring-gated (see
+    that caller) -- this whole cross-check is specific to the "new pipeline"
+    this delivery-plan slice is about.
+
+    Timeframes compare by SECONDS (tools/timeframe.py::timeframe_seconds --
+    the project's one shared bar-size arithmetic, so "60m" and "1h" agree),
+    and symbols after normalizing base-asset vs full-pair naming (BTC ==
+    BTCUSDT, see _normalize_symbol). The generate path's OMITTED timeframe
+    defaults to "1h" -- the SAME literal default
+    run_phase1_research.py::_ensure_protocol_from_constraints itself uses
+    (`proto_constraint.get("timeframe", "1h")`) -- so a brief that also
+    omits timeframe is compared against what will actually generate, not
+    silently skipped.
+
+    venue has NO protocol-side counterpart and is deliberately not
+    cross-checked: no protocols/*.json file carries a venue/exchange field --
+    `symbols` like "BTCUSDT" is this repo's Binance-shaped OHLCV cache key,
+    entirely independent of the Kraken venue naming config/
+    venue_tradability.yaml's brief.venue/brief.product use.
+
+    Raises ONLY ValueError -- the caller wraps any other exception type this
+    function or its JSON read might raise (malformed machine_constraints
+    shapes) into one, so register_hypothesis's `except ValueError` always
+    sees a clean refusal rather than a raw crash."""
+    mc = data.get("machine_constraints") or {}
+    proto = mc.get("protocol")
+    proto_ref = mc.get("protocol_ref")
+    if proto:
+        proto_symbols = proto.get("symbols")
+        # SAME default _ensure_protocol_from_constraints itself uses when the
+        # generate block omits timeframe -- comparing against None here would
+        # silently skip the exact case a brief is most likely to get wrong.
+        proto_timeframe = proto.get("timeframe", "1h")
+        source = "machine_constraints.protocol"
+    elif proto_ref:
+        ref_path = ROOT / "protocols" / orch._path_basename_any_os(proto_ref)
+        if not ref_path.exists():
+            return  # _ensure_protocol_ref_pinned raises its own clear error at launch
+        with open(ref_path, encoding="utf-8") as f:
+            proto_obj = json.load(f) or {}
+        proto_symbols, proto_timeframe = proto_obj.get("symbols"), proto_obj.get("timeframe")
+        source = f"machine_constraints.protocol_ref={proto_ref!r}"
+    else:
+        return  # nothing pinned/generated yet -- nothing to cross-check
+
+    market_universe = data.get("market_universe")
+    if proto_symbols is not None and market_universe is not None:
+        # market_universe is a list of symbols in this template, but existing
+        # briefs across the corpus (and several tests) also use a single
+        # comma-joined string (e.g. "BTCUSDT,ETHUSDT") or one bare symbol
+        # ("BTCUSDT") -- normalize all three shapes the same way rather than
+        # narrowing the field to the one shape this template happens to use.
+        if isinstance(market_universe, list):
+            raw_brief_symbols = market_universe
+        elif isinstance(market_universe, str):
+            raw_brief_symbols = [s.strip() for s in market_universe.split(",") if s.strip()]
+        else:
+            raw_brief_symbols = [market_universe]
+        brief_symbols = {_normalize_symbol(s) for s in raw_brief_symbols}
+        proto_symbols_norm = {_normalize_symbol(s) for s in proto_symbols}
+        if brief_symbols != proto_symbols_norm:
+            raise ValueError(
+                f"{brief_path}: market_universe={sorted(raw_brief_symbols)} does not "
+                f"match {source}'s symbols={sorted(proto_symbols)} -- a brief's "
+                f"declared universe must agree with what it will actually backtest."
+            )
+
+    timeframe = data.get("timeframe")
+    if proto_timeframe is not None and timeframe is not None:
+        if timeframe_seconds(timeframe) != timeframe_seconds(proto_timeframe):
+            raise ValueError(
+                f"{brief_path}: timeframe={timeframe!r} does not match {source}'s "
+                f"timeframe={proto_timeframe!r} -- a brief's declared bar size must "
+                f"agree with what it will actually backtest."
+            )
+
+
+def _check_generate_protocol_has_promotion(brief_path: Path, data: dict) -> None:
+    """Second-round code-review fix: registration-time half of the G7 gate.
+    run_phase1_research.py::_require_pre_registered_promotion already
+    refuses to GENERATE a protocol with no `promotion` block at LAUNCH --
+    this refuses the same brief at REGISTRATION instead, before it even
+    reaches the queue. Only applies to the generate path
+    (machine_constraints.protocol); a pinned protocol_ref's promotion block
+    lives in the pinned FILE already (D-3/assert_promotion_ratified checks
+    that file, not this)."""
+    mc = data.get("machine_constraints") or {}
+    proto = mc.get("protocol")
+    if isinstance(proto, dict) and not proto.get("promotion"):
+        raise ValueError(
+            f"{brief_path}: machine_constraints.protocol has no `promotion` block. "
+            f"run_phase1_research.py's G7 gate (_require_pre_registered_promotion) "
+            f"would refuse to generate this protocol at launch anyway -- refusing at "
+            f"registration instead. Add median_sharpe_gt/max_abs_drawdown_pct_lt/"
+            f"min_trade_count_gte/kill_median_sharpe_lt under "
+            f"machine_constraints.protocol.promotion with YOUR pre-registered "
+            f"thresholds (no thresholds after seeing data -- see "
+            f"CLAUDE.fork.md/HYPOTHESIS.md convention)."
+        )
+
+
+def _lint_new_pipeline_registration(brief_path: Path, data: dict) -> None:
+    """Registration-ONLY checks for the config-direct-authoring ("new
+    pipeline") path (second-round code-review fixes) -- called from
+    register_hypothesis, NEVER from _parse_brief_frontmatter. Both checks
+    below either read a protocol JSON file or inspect machine_constraints'
+    shape, and running them on every OTHER _parse_brief_frontmatter call
+    (materialization, dry-run, a resumed run re-parsing its own
+    already-registered brief) would be wasted work at best and, for the
+    promotion check, would re-raise on every resume of a run whose brief a
+    human already registered successfully once.
+
+    A no-op entirely when orchestrator.config_direct_authoring.enabled is
+    off/absent: both checks are specific to the config-direct path this
+    delivery-plan slice is about; enabling them unconditionally would be a
+    real, undeclared behaviour change to every OTHER pipeline's existing,
+    working briefs.
+
+    Raises ONLY ValueError: a malformed machine_constraints shape (e.g.
+    `protocol` set to a bare string instead of a dict, or a `protocol_ref`
+    file that is not valid JSON) is wrapped into one clear message instead
+    of escaping as a raw YAMLError/JSONDecodeError/AttributeError/TypeError
+    that register_hypothesis's `except ValueError` would miss entirely."""
+    if not orch._config_direct_authoring_enabled():
+        return
+    try:
+        _check_generate_protocol_has_promotion(brief_path, data)
+        _lint_brief_protocol_agreement(brief_path, data)
+    except ValueError:
+        raise
+    except (yaml.YAMLError, json.JSONDecodeError, AttributeError, TypeError, KeyError) as exc:
+        raise ValueError(
+            f"{brief_path}: machine_constraints is malformed ({type(exc).__name__}: "
+            f"{exc}) -- refusing to register a brief whose protocol pin/generation "
+            f"spec cannot be understood."
+        ) from exc
+
+
 def _parse_brief_frontmatter(brief_path: Path) -> dict:
     """Extract the leading '---'-delimited YAML block from a brief .md file.
     That block IS the research_brief.yaml content (plus an optional
@@ -383,6 +621,35 @@ def _parse_brief_frontmatter(brief_path: Path) -> dict:
     for required in crr.REFRAME_BRIEF_REQUIRED_KEYS:
         if not data.get(required):
             raise ValueError(f"{brief_path}: frontmatter missing required field '{required}'.")
+
+    # E-061 C1.7 second-round code-review fix: scan the WHOLE frontmatter
+    # tree, not just the top-level required fields -- a placeholder left
+    # inside machine_constraints (e.g. an uncommented `promotion` block whose
+    # values were never filled in) is just as dangerous to register as one
+    # left in strategy_domain. This runs on every _parse_brief_frontmatter
+    # call (registration, materialization, dry-run, resume), unlike the two
+    # config_direct_authoring-gated checks below -- a placeholder surviving
+    # to launch is exactly as bad as one surviving to registration, so this
+    # is intentionally NOT registration-only. DECLARED BEHAVIOUR CHANGE: any
+    # existing brief anywhere in the corpus that happens to contain the
+    # literal substring "<FILL IN" (in a value, not a comment -- comments
+    # are never part of `data`) would now fail EVERY re-parse, not just
+    # registration, where it previously only failed for the four narrower
+    # required-field checks below.
+    placeholder_paths = _find_placeholder_paths(data)
+    if placeholder_paths:
+        raise ValueError(
+            f"{brief_path}: frontmatter still carries the unfilled template "
+            f"placeholder sentinel '{_PLACEHOLDER_SENTINEL}' at {placeholder_paths} "
+            f"-- replace every one with your own value before registering "
+            f"(workflow_artifacts/templates/research_brief_new_pipeline.md's own "
+            f"header comment explains each field)."
+        )
+
+    # E-061 C1.7 second-round code-review fix: the universe/timeframe
+    # cross-check and the generate-path promotion-required check are
+    # registration-ONLY (see _lint_new_pipeline_registration's own
+    # docstring) -- called from register_hypothesis, not from here.
     return data
 
 
@@ -568,7 +835,11 @@ def register_hypothesis(brief_path: Path, priority: int, notes: str, *,
         raise ValueError(f"register_hypothesis: status {status!r} not in {list(_REGISTER_STATUSES)}")
     brief_path = Path(brief_path)
     try:
-        _parse_brief_frontmatter(brief_path)
+        _brief_data = _parse_brief_frontmatter(brief_path)
+        # E-061 C1.7 second-round code-review fix: registration-only, and
+        # only under config_direct_authoring -- see that function's own
+        # docstring for why this is not inside _parse_brief_frontmatter.
+        _lint_new_pipeline_registration(brief_path, _brief_data)
     except ValueError as err:
         _log(f"REGISTER REFUSED: malformed brief {brief_path}: {err}")
         return 1
@@ -1163,6 +1434,19 @@ def _classify_human_pause(run_dir: Path, state: dict) -> str:
     # identically; no new reason, no new row (RUNBOOK §3 has both origins).
     if flags.get("profit_bars_reached"):
         return "profit_bars_reached"
+    # E-061 C1.4 / C1.5: process_once halts on these directly, with the reason
+    # named (it never needs this function for them). Named here so a later
+    # classification of the same state reads as itself. Ranked ABOVE the
+    # artifact-based reasons below (third-round review fix 8): a flag set by
+    # THIS halt must win over an old artifact (e.g. a refinement_notes.yaml from
+    # an earlier data block). Staleness is handled by clearing, not by rank: a
+    # successful --resume sets all three back to false (_clear_run_halt_flags).
+    if flags.get(STAGE_EXCEPTION_HALT):
+        return STAGE_EXCEPTION_HALT
+    if flags.get(PROTOCOL_PREFLIGHT_HALT):
+        return PROTOCOL_PREFLIGHT_HALT
+    if flags.get(LAUNCH_EXCEPTION_HALT):
+        return LAUNCH_EXCEPTION_HALT
 
     artifacts = run_dir / "artifacts"
     audit_path = artifacts / "promotion_audit.yaml"
@@ -1453,6 +1737,12 @@ _PAUSE_FLAG_TO_REASON = (
     # exists to catch -- the test's own known_sticky_flags tuple was also
     # missing this flag, so it did not catch itself; both fixed together.
     ("profit_bars_reached", "profit_bars_reached"),
+    # E-061 C1.4 / C1.5. Mirrors the three branches directly below
+    # profit_bars_reached in _classify_human_pause (a stale one alongside a
+    # quarantine-safe reason escalates -- R11 -- rather than quarantines).
+    (STAGE_EXCEPTION_HALT, STAGE_EXCEPTION_HALT),
+    (PROTOCOL_PREFLIGHT_HALT, PROTOCOL_PREFLIGHT_HALT),
+    (LAUNCH_EXCEPTION_HALT, LAUNCH_EXCEPTION_HALT),
     # _hard_pause_reason reads this one BEFORE _classify_human_pause is ever called
     # (while status == "failed"); it is must-escalate in its own right, so its
     # presence alongside anything else is unambiguously a reason not to quarantine.
@@ -1690,6 +1980,40 @@ def resume_paused_entry(queue: dict) -> bool:
                   f"or fetch the data, then --unpark <entry_id> (RUNBOOK.md §4).")
         return False
     entry = paused[0]
+    if entry["status"] == f"paused:{FLAG_PREFLIGHT_HALT}":
+        # E-061 C1.5: config-level, so the config itself says whether it is
+        # resolved. A fresh entry refused before setup_run has no run: back to
+        # ready. One with a run continues below (its status was not touched).
+        refusal = _flag_preflight_refusal()
+        if refusal:
+            print(f"--resume refused for {entry['id']}: the flag pre-flight still refuses: "
+                  f"{refusal}. Fix config/campaign_config.yaml (RUNBOOK.md §3, "
+                  f"'{FLAG_PREFLIGHT_HALT}' row), then retry --resume.")
+            return False
+        if not entry.get("run_ids"):
+            entry["status"] = "ready"
+            _save_queue(queue)
+            _log(f"RESUME {entry['id']}: flag pre-flight passes; no run was created, so the "
+                 f"entry is ready again.")
+            return True
+    if entry["status"] == f"paused:{LAUNCH_EXCEPTION_HALT}":
+        # E-061 (third-round review fix 5): the failed launch is recorded on the
+        # entry (launch_failed_run_id, launch_exception_detail), never in
+        # run_ids, and its run dir is marked abandoned_launch. The entry was put
+        # back as it was before the launch, so --resume relaunches it with the
+        # status it had then (launch_prior_status, fourth-round review fix 4 --
+        # never a second in_progress lineage); an entry recorded before that
+        # field existed falls back to ready / in_progress by whether it has runs.
+        # Fix the cause first -- the same failure pauses it again.
+        failed = entry.pop("launch_failed_run_id", None)
+        entry.pop("launch_exception_detail", None)
+        prior = entry.pop("launch_prior_status", None)
+        entry["status"] = prior or ("in_progress" if entry.get("run_ids") else "ready")
+        _save_queue(queue)
+        _log(f"RESUME {entry['id']}: launch_exception -- relaunching as {entry['status']} "
+             f"(the failed launch {failed or '(no run id allocated)'} stays "
+             f"{ABANDONED_LAUNCH_STATUS}).")
+        return True
     if not entry.get("run_ids"):
         print(f"Queue entry {entry['id']} is marked paused but has no run_ids — inconsistent state.")
         return False
@@ -1708,10 +2032,72 @@ def resume_paused_entry(queue: dict) -> bool:
             print(f"Missing {resolution_path} — write it first (status: resolved_proceed or "
                   f"unresolvable), per RUNBOOK.md, then retry --resume.")
             return False
+        # E-061 review fix 4 (+ third-round fixes 3-4): resume_pipeline goes
+        # straight into run_loop. The resolution is read FIRST: anything but
+        # resolved_proceed only closes the run (resume_pipeline marks it
+        # rejected), so no pre-flight or regeneration applies. resolved_proceed
+        # runs the same pre-flights as process_once (and a pre-spend protocol
+        # regeneration) before anything is resumed: a refusal -- or an exception
+        # in them -- leaves the entry paused:data_block_hitl so --resume can still
+        # complete the resolution. An exception from resume_pipeline itself is a
+        # classified stage_exception pause, never a raw traceback with the entry
+        # left in_progress.
+        # Fourth-round review fixes 7-8: the flag values are read for every
+        # resolution (a non-proceed resume still writes schedulability.yaml if
+        # it ends in a pause), and the resolution file itself is parsed inside
+        # the classified handling -- a malformed one is refused like any other
+        # pre-flight failure, the entry staying paused:data_block_hitl.
+        flag_values, flag_refusal = _flag_preflight()
+        try:
+            resolution = orch.load_yaml(resolution_path)
+            if not isinstance(resolution, dict):
+                raise ValueError(f"{resolution_path.name} is not a mapping "
+                                 f"(got {type(resolution).__name__})")
+            refusal = None
+            if resolution.get("status") == "resolved_proceed":
+                if flag_refusal is not None:
+                    refusal = f"{FLAG_PREFLIGHT_HALT}: {flag_refusal}"
+                else:
+                    refusal, regeneration = _protocol_preflight(run_dir, run_id,
+                                                                ignore_pending=True)
+                    if refusal is not None:
+                        refusal = f"{PROTOCOL_PREFLIGHT_HALT}: {refusal}"
+                    elif regeneration is not None:
+                        _regenerate_protocol(run_id, regeneration)
+        except Exception as exc:
+            traceback.print_exc()
+            detail = (f"the data_block_hitl --resume pre-flight raised "
+                      f"{type(exc).__name__}: {exc}")
+            try:
+                orch.update_state(path=run_dir, last_error=detail)
+                _append_halt_history(run_dir, orch.load_yaml(run_dir / "pipeline_state.yaml")
+                                     or {}, "data_block_hitl", detail)
+            except Exception as state_exc:
+                detail += (f" [{run_id}: pipeline_state.yaml could not be updated "
+                           f"({type(state_exc).__name__}: {state_exc})]")
+            print(f"--resume refused for {entry['id']} / {run_id}: {detail}. See RUNBOOK.md "
+                  f"§3; fix it, then retry --resume.")
+            _log(f"RESUME REFUSED {entry['id']} / {run_id} (data_block_hitl): {detail}")
+            _log(f"HALT — data_block_hitl: {detail}. {entry['id']} / {run_id} stays "
+                 f"paused:data_block_hitl; fix it and retry --resume. See RUNBOOK.md §3.")
+            return False
+        if refusal:
+            print(f"--resume refused for {entry['id']} / {run_id} before resume_pipeline: "
+                  f"{refusal}. See RUNBOOK.md §3; fix it, then retry --resume.")
+            _log(f"RESUME REFUSED {entry['id']} / {run_id} (data_block_hitl): {refusal}")
+            return False
+        _clear_run_halt_flags(run_dir)
         entry["status"] = "in_progress"
         _save_queue(queue)
         _log(f"RESUME {entry['id']} / {run_id}: data_block_hitl — invoking resume_pipeline().")
-        orch.resume_pipeline(run_id)
+        try:
+            orch.resume_pipeline(run_id)
+        except Exception as exc:
+            traceback.print_exc()
+            _halt_run(queue, entry, run_id, run_dir, STAGE_EXCEPTION_HALT,
+                      f"{type(exc).__name__}: {exc}",
+                      flag_values.get("schedulability_block") is True)
+            return False
         return True
 
     if reason in (LEGACY_CONTINUATION_HALT, REFINEMENT_BRIEF_HALT, IDEA_STATUS_HALT, REFRAME_HALT):
@@ -1743,11 +2129,26 @@ def resume_paused_entry(queue: dict) -> bool:
                   f"runs/{run_id}/artifacts/{orch.HOLDOUT_DECISION_FILE} (RUNBOOK.md §3, "
                   f"'{reason}' row), then retry --resume.")
             return False
+    _clear_run_halt_flags(run_dir)
     entry["status"] = "in_progress"
     _save_queue(queue)
     _log(f"RESUME {entry['id']} / {run_id}: resolution confirmed for '{reason}', "
          f"resuming queue processing.")
     return True
+
+
+def _clear_run_halt_flags(run_dir: Path) -> None:
+    """E-061 review fix 1 (+ fourth-round fix 2): every un-pause path -- --resume,
+    --unpark, and resume_pipeline itself -- clears the run-level halt flags
+    (stage_exception, protocol_promotion_unratified, launch_exception) the
+    operator's RUNBOOK §4 reset may have left set -- update_state only merges
+    flags, so a stale one would otherwise stay true for the rest of the run."""
+    state_path = run_dir / "pipeline_state.yaml"
+    if not state_path.exists():
+        return
+    stale = orch._stale_run_halt_flags(orch.load_yaml(state_path) or {})
+    if stale:
+        orch.update_state(path=run_dir, flags=stale)
 
 
 def _unpark_entry(entry_id: str) -> bool:
@@ -1812,6 +2213,7 @@ def _unpark_entry(entry_id: str) -> bool:
         resume_stage = marker.get("resume_stage") or state.get("pending_stage")
         orch.update_state(path=run_dir, status="active", pending_stage=resume_stage,
                           **{orch.PARKED_KEY: None})
+        _clear_run_halt_flags(run_dir)  # E-061 fourth-round fix 2: every un-pause path
         entry["status"] = "ready"
         entry.pop("parked_reason", None)
         _save_queue(queue)
@@ -2276,17 +2678,19 @@ def _write_loop_health() -> dict:
 # _select_entry's result is even inspected, so it runs on every path.
 # ---------------------------------------------------------------------------
 
-def _schedulability_block_enabled() -> bool:
+def _schedulability_block_enabled(cfg: dict | None = None) -> bool:
     """E-031 S2 gate. False (no file written, no behavior change) when the
     key, the section, or the config file is absent -- same silence-is-never-
-    a-green-light rule as _quarantine_enabled() just above."""
-    path = ROOT / "config" / "campaign_config.yaml"
-    if not path.exists():
-        return False
-    with open(path, encoding="utf-8") as f:
-        cfg = yaml.safe_load(f) or {}
-    section = ((cfg.get("orchestrator") or {}).get("schedulability_block") or {})
-    return bool(section.get("enabled", False))
+    a-green-light rule as _quarantine_enabled() just above. `cfg`: the parsed
+    config, when the caller (the E-061 launch pre-flight) already has it."""
+    if cfg is None:
+        path = ROOT / "config" / "campaign_config.yaml"
+        if not path.exists():
+            return False
+        with open(path, encoding="utf-8") as f:
+            cfg = yaml.safe_load(f) or {}
+    # E-061 C1.5: strict, the one check every orchestrator.<name>.enabled reader uses.
+    return orch._strict_orchestrator_flag("schedulability_block", cfg=cfg)
 
 
 # Statuses that are NOT "blocked" for schedulability purposes. `ready` and
@@ -2507,8 +2911,14 @@ def _is_quarantined_orphan(run_id: str) -> bool:
     """Hand-set convention (run_055/run_056 precedent): an ORPHANED_README.md
     in the run's own directory. A3 leaves A4's later work (a first-class
     quarantined_orphan STATUS field recognized by selectors) as a separate,
-    later ledger item -- this is only the detection half."""
-    return (ROOT / "runs" / run_id / "ORPHANED_README.md").exists()
+    later ledger item -- this is only the detection half.
+
+    E-061 C1.4 (third-round review fix 6): a run dir a failed launch left behind
+    (pipeline_state.yaml status: abandoned_launch, see _mark_abandoned_launch)
+    is known the same way -- recorded, never reported as unexpected."""
+    if (ROOT / "runs" / run_id / "ORPHANED_README.md").exists():
+        return True
+    return abandoned_launch.is_abandoned_launch(ROOT / "runs" / run_id)
 
 
 def reconcile_orphans() -> list:
@@ -2542,31 +2952,623 @@ def reconcile_orphans() -> list:
     return orphans
 
 
+# ---------------------------------------------------------------------------
+# E-061 C1.4 / C1.5 -- the launch pre-flight and the stage-exception pause
+# (delivery_plan_v26_continuation.md C1; review_2026-09-27/DELIVERY_REVIEW.md
+# A4, A6, A8; A3_all_flags_on.md §1 and §3.3). Every refusal here is a
+# classified pause (paused:<reason>, a HALT line naming the culprit, a
+# halt_history record when a run exists) and process_once returns False: the
+# campaign process never crashes into a restart loop, and nothing is spent.
+# ---------------------------------------------------------------------------
+
+def _flag_readers() -> dict:
+    """{flag name: its reader}, looked up at call time. The launch pre-flight
+    calls EVERY one of them, on one parsed config (third-round review fix 10:
+    the readers are the single source of the rules -- no copy of them here)."""
+    return {
+        "exclusion_digest_input": orch._exclusion_digest_input_enabled,
+        "stale_input_path_fix": orch._stale_input_path_fix_enabled,
+        "variant_selection_record": orch._variant_selection_record_enabled,
+        "data_availability_gate": orch._data_availability_gate_enabled,
+        "grid_evaluation": orch._grid_evaluation_enabled,
+        "category_reports": orch._category_reports_enabled,
+        "profit_bars_file": orch._profit_bars_file_enabled,
+        "config_direct_authoring": orch._config_direct_authoring_enabled,
+        "variant_loop": orch._variant_loop_enabled,
+        "specialist_readers": orch._specialist_readers_enabled,
+        "regroup_record": orch._regroup_record_enabled,
+        "profit_bars_every_backtest": orch._profit_bars_every_backtest_enabled,
+        "decide_next": orch._decide_next_enabled,
+        "verdict_routing_retired": orch._verdict_routing_retired_enabled,
+        "composition_runs": orch._composition_runs_enabled,
+        "variant_anti_adjacency_gate": orch._variant_anti_adjacency_gate_enabled,
+        "schedulability_block": _schedulability_block_enabled,
+    }
+
+
+def _flag_preflight() -> tuple:
+    """(values, refusal): config/campaign_config.yaml parsed ONCE and handed to
+    every real flag reader (_flag_readers), before anything launches, on every
+    step. `values` holds each flag whose reader returned (so a valid
+    schedulability_block still reads true while another flag is refused);
+    `refusal` names every problem, or is None.
+
+      (b) every orchestrator.<name>.enabled -- and halt_policy.quarantine_enabled
+          -- is a real YAML bool; a quoted "false" or a null is refused;
+      (a) every flag dependency holds, including the two the readers used to
+          raise only after spend (A3 §1): variant_loop -> config_direct_authoring
+          (first read at 5a), composition_runs -> its four prerequisites (first
+          read after 1a); plus variant_anti_adjacency_gate's two, which its call
+          sites check only at 5a -- regroup_record while campaign_memory.yaml
+          does not exist (_repeat_gate_context), and variant_selection_record on
+          the legacy, non-config-direct path (_route_post_variant_selection).
+    Any other failure reading the config is a refusal too, never a crash."""
+    path = ROOT / "config" / "campaign_config.yaml"
+    try:
+        cfg = (yaml.safe_load(path.read_text(encoding="utf-8")) or {}) if path.exists() else {}
+        if not isinstance(cfg, dict) or not isinstance(cfg.get("orchestrator") or {}, dict):
+            return {}, "config/campaign_config.yaml's orchestrator: section is not a mapping"
+    except Exception as e:  # a refusal, never a crash (KeyboardInterrupt passes)
+        return {}, f"config/campaign_config.yaml could not be read: {type(e).__name__}: {e}"
+    orch_cfg = cfg.get("orchestrator") or {}
+    readers = _flag_readers()
+    values, problems = {}, []
+
+    def _note(text):
+        if text not in problems:
+            problems.append(text)
+    # Fourth-round review fix 6: a flag section that is not a mapping (e.g.
+    # `data_availability_gate: false`) would read as absent -- its default --
+    # through every reader's `(section or {})`. Refused, named.
+    for name in list(readers) + ["halt_policy"]:
+        section = orch_cfg.get(name)
+        if section is not None and not isinstance(section, dict):
+            key = "quarantine_enabled" if name == "halt_policy" else "enabled"
+            _note(f"orchestrator.{name} is not a mapping (got {type(section).__name__} "
+                  f"{section!r}) -- write `{name}: {{{key}: true}}` or `{{{key}: false}}` "
+                  f"in config/campaign_config.yaml")
+    for name, reader in readers.items():
+        try:
+            values[name] = reader(cfg)
+        except ValueError as e:
+            _note(str(e))
+        except Exception as e:
+            _note(f"orchestrator.{name}: {type(e).__name__}: {e}")
+    # a flag no reader owns (e.g. a retired one) still gets the same type check
+    for name in sorted(orch_cfg):
+        section = orch_cfg[name]
+        if name not in readers and isinstance(section, dict) and "enabled" in section:
+            try:
+                orch._strict_orchestrator_flag(name, cfg=cfg)
+            except ValueError as e:
+                _note(str(e))
+    halt_policy = orch_cfg.get("halt_policy")
+    if isinstance(halt_policy, dict) and "quarantine_enabled" in halt_policy \
+            and not isinstance(halt_policy["quarantine_enabled"], bool):
+        _note(f"orchestrator.halt_policy.quarantine_enabled={halt_policy['quarantine_enabled']!r} "
+              f"is not a real boolean -- write an unquoted `true` or `false` in "
+              f"config/campaign_config.yaml")
+    if not problems and values.get("variant_anti_adjacency_gate"):
+        if not values.get("config_direct_authoring") and not values.get("variant_selection_record"):
+            _note("orchestrator.variant_anti_adjacency_gate.enabled=true requires "
+                  "orchestrator.variant_selection_record.enabled=true on the legacy "
+                  "(config_direct_authoring off) path -- the gate reads "
+                  "artifacts/variant_selection.yaml, which only that flag writes")
+        elif not (orch.ROOT / orch._CAMPAIGN_MEMORY_REL).exists() and \
+                not values.get("regroup_record"):
+            _note(f"orchestrator.variant_anti_adjacency_gate.enabled=true requires "
+                  f"orchestrator.regroup_record.enabled=true while "
+                  f"{orch._CAMPAIGN_MEMORY_REL} does not exist -- nothing would write "
+                  f"the memory the gate reads, so every variant would silently ADMIT")
+    return values, ("; ".join(problems) or None)
+
+
+def _flag_preflight_refusal() -> str | None:
+    """The refusal half of _flag_preflight (None: the flag set may launch)."""
+    return _flag_preflight()[1]
+
+
+_PREFLIGHT_TERMINAL_PREFIXES = ("completed", "rejected", "human_pause", "failed_validation")
+# The fields a generated protocol is built from (_ensure_protocol_from_constraints).
+_GENERATED_PROTOCOL_FIELDS = ("symbols", "timeframe", "windows", "holdout", "promotion")
+
+
+def _data_spend_evidence(run_dir: Path, run_id: str, state: dict) -> list:
+    """Why data may already have been spent on this run (empty: none found): a
+    trial row, a protocol_result file (the run's or a variant's), or
+    protocol_execution ever entered (completed, attempted, current, audited)."""
+    evidence = []
+    trials = orch.load_campaign_state().get("trial_sharpes") or []
+    if _run_has_trial_row(run_id) or any(
+            str(t.get("trial_id", "")).startswith(f"{run_id}:") for t in trials
+            if isinstance(t, dict)):
+        evidence.append("a trial row in campaign_state.trial_sharpes")
+    arts = run_dir / "artifacts"
+    results = sorted({p.relative_to(run_dir).as_posix()
+                      for p in list(arts.glob("protocol_result*"))
+                      + list(arts.glob("variants/*/protocol_result*"))})
+    if results:
+        evidence.append(f"{results[0]}" + (f" (+{len(results) - 1} more)" if len(results) > 1 else ""))
+    if ("protocol_execution" in (state.get("completed_stages") or [])
+            or (state.get("stage_attempts") or {}).get("protocol_execution")
+            or state.get("current_stage") == "protocol_execution"
+            or any(str(k).startswith("protocol_execution") for k in state.get("audit_log") or {})):
+        evidence.append("protocol_execution was entered")
+    return evidence
+
+
+def _expected_generated_protocol(generated: dict, run_id: str) -> dict:
+    """The protocol _ensure_protocol_from_constraints would write from these
+    machine_constraints.protocol, field for field: same order, same helpers,
+    and it raises exactly where generation raises (fourth-round review fix 5 --
+    pinned by a parity test over malformed inputs): a missing symbols / start /
+    end key, windows reaching the holdout, no promotion block. An empty symbols
+    list is accepted, as generation accepts it."""
+    symbols = generated["symbols"]
+    per_symbol_start = generated.get("per_symbol_start") or {}
+    start = min(per_symbol_start.values()) if per_symbol_start else generated["start"]
+    windows = orch._generate_monthly_windows(start, generated["end"])
+    policy_start, policy_end = orch._load_holdout_range()
+    return {
+        "symbols": symbols,
+        "timeframe": generated.get("timeframe", "1h"),
+        "windows": windows,
+        "holdout": generated.get("holdout", {"start": policy_start, "end": policy_end}),
+        "promotion": orch._require_pre_registered_promotion(generated, run_id),
+    }
+
+
+def _generated_protocol_plan(run_dir: Path, run_id: str, generated: dict, state: dict) -> tuple:
+    """(refusal, regeneration) for a machine_constraints.protocol run.
+
+    Spend evidence is checked FIRST (fourth-round review fix 1). Once data may
+    have been spent on the run, or protocol_execution completed, the expected
+    protocol is never rebuilt from pre_registration.yaml and nothing is ever
+    regenerated -- the rules stay those the data was judged by:
+      * protocol_execution completed: nothing is checked (as before E-061's
+        generated-protocol rules: the protocol was judged at its first use);
+      * otherwise the EXISTING generated file gets the D-3 check, nothing more
+        (a missing file is refused: run_loop would generate it now, from rules
+        that may have changed since the data was seen).
+    Before any spend (third-round review fixes 1-2):
+      * inputs that would make generation raise are refused up front;
+      * no file yet: judged on the pre-registered promotion block (a generated
+        file never carries promotion_provenance);
+      * a file that matches: judged as it is (a hand ratification holds);
+      * a file that differs: refused when anything but `promotion` differs
+        (windows, symbols, timeframe, holdout are never rewritten); a
+        promotion-only difference returns the regeneration (applied atomically
+        before run_loop)."""
+    path = orch.ROOT / "protocols" / f"{run_id}_generated.json"
+    where = f"machine_constraints.protocol (generated {path.name})"
+    if "protocol_execution" in (state.get("completed_stages") or []):
+        return None, None
+    spent = _data_spend_evidence(run_dir, run_id, state)
+    if spent:
+        if not path.exists():
+            return (f"{where}: the generated protocol file is missing although data may already "
+                    f"have been spent ({'; '.join(spent)}) -- refusing to let run_loop generate "
+                    f"it now from pre_registration.yaml (the rules may have changed since the "
+                    f"data was seen). Restore {path.name}"), None
+        try:
+            protocol_resolution.assert_promotion_ratified(path)
+        except protocol_resolution.UngatedProtocolError as e:
+            return f"{where}: {e}", None
+        return None, None
+    try:
+        expected = _expected_generated_protocol(generated, run_id)
+    except Exception as e:
+        return (f"{where}: pre_registration.yaml's machine_constraints.protocol cannot generate "
+                f"a protocol ({type(e).__name__}: {e}) -- fix it before this run spends "
+                f"anything"), None
+    generic = (f"[G7/D-3] {where}: the brief's pre-registered promotion block is the abolished "
+               f"generic block with no promotion_provenance.ratified_by (a generated protocol "
+               f"never carries one), so the protocol would be refused at its first use, after "
+               f"1a/1b/2. Pre-register real thresholds for this hypothesis in "
+               f"pre_registration.yaml's machine_constraints.protocol.promotion")
+    if not path.exists():
+        return (generic if protocol_resolution.promotion_is_generic(expected["promotion"])
+                else None), None
+    try:
+        current = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        return f"{where}: {path.name} cannot be read ({type(e).__name__}: {e})", None
+    differing = [k for k in _GENERATED_PROTOCOL_FIELDS
+                 if not isinstance(current, dict) or current.get(k) != expected[k]]
+    if not differing:
+        try:
+            protocol_resolution.assert_promotion_ratified(path)
+        except protocol_resolution.UngatedProtocolError as e:
+            return f"{where}: {e}", None
+        return None, None
+    if differing != ["promotion"]:
+        return (f"{where}: {path.name} differs from pre_registration.yaml's "
+                f"machine_constraints.protocol in {differing} -- only a promotion-block change "
+                f"is regenerated; refusing to rewrite windows, symbols, timeframe or holdout. "
+                f"Restore pre_registration.yaml to match {path.name}, or register a new brief"), None
+    if protocol_resolution.promotion_is_generic(expected["promotion"]):
+        return generic, None
+    return None, {"path": path, "doc": expected, "differing": differing}
+
+
+def _protocol_preflight(run_dir: Path, run_id: str, *, ignore_pending: bool = False) -> tuple:
+    """(refusal, regeneration): why the protocol this run WILL execute would be
+    refused by the D-3 guard (tools/protocol_resolution.assert_promotion_ratified)
+    at its first use -- _resolve_protocol_path at 5a / the data gate, after 1a,
+    1b and 2 have spent (A3 §3.3, A6) -- or None. Checked before run_loop, so
+    before any LLM call; skipped for a terminal pending_stage unless
+    `ignore_pending` (the data_block_hitl resume restarts a paused run). Read
+    only; a regeneration it returns is applied by _regenerate_protocol.
+
+      * machine_constraints.protocol_ref (a pin), while the backtest is ahead:
+        the pinned file, exactly as _ensure_protocol_ref_pinned resolves it. A
+        missing file is the pin's own error (run_loop -> stage_exception).
+      * machine_constraints.protocol (generated): _generated_protocol_plan --
+        also after the backtest (a changed pre-registration is then refused).
+      * otherwise, while the backtest is ahead, when the run has a
+        run_context.yaml or is the claimed consumer of
+        campaign_state.last_escalation: the protocol
+        tools/protocol_resolution.resolve_protocol_path selects (the same
+        resolver as _resolve_protocol_path), with no state write. Its B10
+        refusal is left to run_loop, unchanged."""
+    state_path = run_dir / "pipeline_state.yaml"
+    state = (orch.load_yaml(state_path) or {}) if state_path.exists() else {}
+    if not ignore_pending and \
+            (state.get("pending_stage") or "").startswith(_PREFLIGHT_TERMINAL_PREFIXES):
+        return None, None
+    constraints = orch._load_machine_constraints(run_dir)
+    constraints = constraints if isinstance(constraints, dict) else {}
+    ref, generated = constraints.get("protocol_ref"), constraints.get("protocol")
+    if isinstance(generated, dict) and not ref:
+        return _generated_protocol_plan(run_dir, run_id, generated, state)
+    if "protocol_execution" in (state.get("completed_stages") or []):
+        return None, None
+    if isinstance(ref, str) and ref.strip():
+        path = orch.ROOT / "protocols" / orch._path_basename_any_os(ref)
+        try:
+            protocol_resolution.assert_promotion_ratified(path)
+        except protocol_resolution.UngatedProtocolError as e:
+            return f"machine_constraints.protocol_ref={ref!r}: {e}", None
+        return None, None
+    run_ctx = run_dir / "artifacts" / "run_context.yaml"
+    campaign = orch.load_campaign_state()
+    last = campaign.get("last_escalation") or {}
+    claimed = bool(last.get("protocol_path")) and last.get("claimed_by_run") == run_id
+    if not (run_ctx.exists() or claimed):
+        return None, None
+    try:
+        protocol_resolution.resolve_protocol_path(
+            run_dir=run_dir, run_id=run_id, protocols_root=orch.ROOT / "protocols",
+            campaign_state=campaign, on_stale_escalation=None)
+    except protocol_resolution.UngatedProtocolError as e:
+        source = "run_context.yaml" if run_ctx.exists() else \
+            f"campaign_state.last_escalation (claimed by {run_id})"
+        return f"the protocol resolved from {source}: {e}", None
+    except RuntimeError:
+        return None, None  # B10 / malformed pin: _resolve_protocol_path raises it, as before
+    return None, None
+
+
+def _protocol_preflight_refusal(run_dir: Path, run_id: str, *,
+                                ignore_pending: bool = False) -> str | None:
+    """The refusal half of _protocol_preflight."""
+    return _protocol_preflight(run_dir, run_id, ignore_pending=ignore_pending)[0]
+
+
+def _regenerate_protocol(run_id: str, regeneration: dict) -> None:
+    """Rewrite a generated protocol whose promotion block changed in
+    pre_registration.yaml (pre-spend only; _generated_protocol_plan decided).
+    Atomic: a temp file in the same directory, then os.replace -- the original
+    is never unlinked first, so a failure leaves it intact."""
+    path = regeneration["path"]
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent))
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(regeneration["doc"], f, indent=2)
+        os.replace(tmp_name, path)
+    except BaseException:
+        with contextlib.suppress(OSError):
+            os.unlink(tmp_name)
+        raise
+    _log(f"PROTOCOL {run_id}: {path.name} regenerated before any spend -- field(s) "
+         f"{regeneration['differing']} changed in pre_registration.yaml's "
+         f"machine_constraints.protocol since it was written.")
+
+
+def _halt_run(queue: dict, entry: dict, run_id, run_dir, reason: str, detail: str,
+              schedulability_enabled: bool) -> bool:
+    """A classified pause that also marks the run: status paused_for_human,
+    last_error, flags.<reason> (cleared again by a successful --resume). If the
+    run's pipeline_state.yaml cannot be written (it may be the cause), the
+    queue entry still pauses and the HALT line says so -- no halt_history then."""
+    record_run = run_id
+    if run_id is not None:
+        try:
+            orch.update_state(path=run_dir, status="paused_for_human", last_error=detail,
+                              flags={reason: True})
+        except Exception as state_exc:
+            record_run = None
+            detail = (f"{detail} [{run_id}: pipeline_state.yaml could not be updated "
+                      f"({type(state_exc).__name__}: {state_exc}); no halt_history]")
+    return _halt_retired_routing(queue, entry, record_run, reason, detail, schedulability_enabled)
+
+
+ABANDONED_LAUNCH_STATUS = abandoned_launch.ABANDONED_LAUNCH_STATUS
+
+
+def _mark_abandoned_launch(run_dir: Path, run_id: str, detail: str) -> None:
+    """A run dir a failed launch left behind: status abandoned_launch (its
+    pipeline_state.yaml created if setup_run did not get that far), so
+    reconcile_orphans never reports it as an unexpected orphan."""
+    note = ("E-061 C1.4: this run dir was created by a launch that raised before "
+            "run_loop; it spent nothing and is not part of any lineage. The queue "
+            "entry records it as launch_failed_run_id.")
+    state_path = run_dir / "pipeline_state.yaml"
+    if state_path.exists() and orch.load_yaml(state_path):
+        orch.update_state(path=run_dir, status=ABANDONED_LAUNCH_STATUS, last_error=detail,
+                          abandoned_note=note)
+    else:
+        orch.save_yaml(state_path, {"run_id": run_id, "status": ABANDONED_LAUNCH_STATUS,
+                                    "last_error": detail, "abandoned_note": note,
+                                    "audit_log": {}})
+
+
+def _halt_launch_exception(queue: dict, entry: dict, before: dict, created: list,
+                           exc: Exception, schedulability_enabled: bool) -> bool:
+    """C1.4 (review fixes 6; third-round 5-6): an exception while launching
+    (setup_run, _materialize_run / _materialize_refinement_run,
+    _write_brief_hypotheses_context, _launch_queued_card). The entry is put
+    back as it was before the launch (a refinement parent stays its last run)
+    and records the failed launch explicitly -- launch_failed_run_id (null when
+    it raised before allocating one) and launch_exception_detail. A run dir the
+    launch created is marked abandoned_launch, never added to run_ids."""
+    traceback.print_exc()
+    detail = f"{type(exc).__name__}: {exc}"
+    entry.clear()
+    entry.update(copy.deepcopy(before))
+    run_id = created[-1] if created else None
+    run_dir = ROOT / "runs" / run_id if run_id else None
+    recorded = None
+    if run_dir is not None and run_dir.exists():
+        try:
+            _mark_abandoned_launch(run_dir, run_id, detail)
+            recorded = run_id
+        except Exception as mark_exc:
+            detail = (f"{detail} [{run_id} could not be marked {ABANDONED_LAUNCH_STATUS}: "
+                      f"{type(mark_exc).__name__}: {mark_exc}]")
+    entry["launch_failed_run_id"] = run_id
+    entry["launch_exception_detail"] = detail
+    entry["launch_prior_status"] = before.get("status")  # restored by --resume
+    if run_id is not None:
+        detail = f"{detail} (launching {run_id}, now {ABANDONED_LAUNCH_STATUS})"
+    return _halt_retired_routing(queue, entry, recorded, LAUNCH_EXCEPTION_HALT, detail,
+                                 schedulability_enabled)
+
+
+def _record_run_loop_children(queue: dict, entry: dict, run_id: str, before_splits: list,
+                              decide_next_enabled: bool) -> tuple:
+    """What run_loop left for the queue: split siblings (their own entries) and,
+    under decide_next, the brief's extra cards. Run after every run_loop call --
+    also one that raised (C1.4 review fix 2), so a sibling recorded before the
+    exception is never lost. Returns (queue, entry, split_child_ids)."""
+    after_splits = _snapshot_hypothesis_splits()
+
+    # Any hypothesis_generation split(s) that happened anywhere during this run_loop
+    # call (whether on run_id itself or an internal reframe/escalate continuation
+    # within the same call) get their OWN queue entries — checked before the
+    # lineage-continuation logic below so a split sibling is never mistaken for one.
+    new_split_events = after_splits[len(before_splits):]
+    split_child_ids = set()
+    for ev in new_split_events:
+        for child_id in ev.get("children", []):
+            split_child_ids.add(child_id)
+            _add_queue_entry_for_split_child(queue, entry, ev.get("parent_run", run_id), child_id)
+    if split_child_ids:
+        _save_queue(queue)
+        _log(f"SPLIT {entry['id']}: {len(split_child_ids)} sibling hypothesis run(s) "
+             f"{sorted(split_child_ids)} each given their own queue entry.")
+    if decide_next_enabled:
+        # E-059 S2b: the flag-on split left its extra cards in
+        # queued_hypotheses.yaml; enqueue them (queued, card_ref). register
+        # writes the queue file, so the in-memory queue is reloaded after.
+        if _enqueue_queued_hypotheses(entry, run_id):
+            queue = _load_queue()
+            entry = next(e for e in queue["queue"] if e.get("id") == entry["id"])
+    return queue, entry, split_child_ids
+
+
+def _reapply_split_children(queue: dict, entry: dict, run_id: str, before_splits: list) -> None:
+    """Fourth-round review fix 3: after the bookkeeping failed and the queue was
+    re-read from disk, add each split sibling that is still missing (best
+    effort, idempotent -- an existing `<entry>__split_<child>` is left alone),
+    each addition logged. The caller's pause saves the queue."""
+    try:
+        new_events = _snapshot_hypothesis_splits()[len(before_splits):]
+    except Exception as e:
+        _log(f"SPLIT {entry['id']}: could not re-read hypothesis_splits to re-apply sibling "
+             f"entries ({type(e).__name__}: {e}); check campaign_state.yaml by hand.")
+        return
+    existing = {e.get("id") for e in queue.get("queue") or [] if isinstance(e, dict)}
+    for ev in new_events:
+        for child_id in ev.get("children", []):
+            if f"{entry['id']}__split_{child_id}" in existing:
+                continue
+            try:
+                _add_queue_entry_for_split_child(queue, entry, ev.get("parent_run", run_id),
+                                                 child_id)
+                existing.add(f"{entry['id']}__split_{child_id}")
+                _log(f"SPLIT {entry['id']}: sibling {child_id} re-applied after the failed "
+                     f"bookkeeping (its own queue entry).")
+            except Exception as e:
+                _log(f"SPLIT {entry['id']}: sibling {child_id} could NOT be re-applied "
+                     f"({type(e).__name__}: {e}); add its queue entry by hand.")
+
+
+def _halt_detached_entry(entry_id: str, run_id: str, run_dir: Path, detail: str,
+                         schedulability_enabled: bool) -> bool:
+    """Fourth-round review fix 3: the paused entry is gone from the re-read queue
+    file. The run is still marked (flags.stage_exception), but the queue file is
+    left exactly as re-read -- a detached entry is never saved back into it."""
+    record = run_id
+    try:
+        orch.update_state(path=run_dir, status="paused_for_human", last_error=detail,
+                          flags={STAGE_EXCEPTION_HALT: True})
+        _append_halt_history(run_dir, orch.load_yaml(run_dir / "pipeline_state.yaml") or {},
+                             STAGE_EXCEPTION_HALT, detail)
+    except Exception as state_exc:
+        record = None
+        detail += (f" [{run_id}: pipeline_state.yaml could not be updated "
+                   f"({type(state_exc).__name__}: {state_exc}); no halt_history]")
+    _log(f"HALT — {STAGE_EXCEPTION_HALT}: {detail}. QUEUE ENTRY {entry_id} IS NOT IN "
+         f"config/campaign_queue.yaml after re-reading it -- the queue file was left as "
+         f"re-read (nothing saved over it). Restore the entry by hand (run "
+         f"{record or run_id}). See RUNBOOK.md §3.")
+    _write_loop_health()
+    if schedulability_enabled:
+        _write_schedulability()
+    return False
+
+
+_LAUNCH_ACTIONS = ("refinement_brief", "fresh_launch", "queued_card")
+
+
+def _launch_run(queue: dict, entry: dict, action: str, decide_next_enabled: bool,
+                created: list) -> str:
+    """The launch half of a process_once step (the three launch actions, after
+    their own pre-checks), moved here unchanged so process_once can classify an
+    exception from any of it (C1.4 review fix 6). `created` receives the new run
+    id as soon as it is allocated. Returns the run id to run."""
+    if action == "refinement_brief":
+        brief_path = ROOT / entry["refinement_brief_path"]
+        brief = _parse_refinement_brief_yaml(brief_path)
+        child_id = _next_new_run_id()
+        created.append(child_id)
+        setup_run(child_id)
+        _materialize_refinement_run(child_id, brief, brief_path)
+        entry["run_ids"].append(child_id)
+        entry["refinement_brief_consumed_for"] = entry["refinement_brief_path"]
+        _save_queue(queue)
+        _log(f"REFINEMENT-BRIEF {entry['id']} -> {child_id} (brief={entry['refinement_brief_path']})")
+        return child_id
+    if action == "fresh_launch":
+        brief_path = ROOT / entry["brief_path"]
+        brief = _parse_brief_frontmatter(brief_path)
+        run_id = _next_new_run_id()
+        created.append(run_id)
+        setup_run(run_id)
+        _materialize_run(run_id, brief)
+        if decide_next_enabled:
+            # E-059 S2b: a brief run (not a reader candidate) gets the context
+            # that lets 1a score extra cards or report the brief exhausted.
+            _write_brief_hypotheses_context(queue, entry, run_id)
+        entry["run_ids"] = [run_id]
+        entry["status"] = "in_progress"
+        _save_queue(queue)
+        _log(f"LAUNCH {entry['id']} -> {run_id} (brief={entry['brief_path']})")
+        return run_id
+    # queued_card (its card file was checked before any run dir exists)
+    brief = _parse_brief_frontmatter(ROOT / entry["brief_path"])
+    run_id = _next_new_run_id()
+    created.append(run_id)
+    setup_run(run_id)
+    _materialize_run(run_id, brief)
+    _launch_queued_card(entry, run_id)
+    entry["run_ids"] = [run_id]
+    entry["status"] = "in_progress"
+    _save_queue(queue)
+    _log(f"LAUNCH-CARD {entry['id']} -> {run_id} (card={entry['card_ref']}, "
+         f"brief={entry['brief_path']}; step 1a skipped)")
+    return run_id
+
+
+def _run_after_preflight(queue: dict, entry: dict, run_id: str, before_splits: list,
+                         decide_next_enabled: bool, schedulability_enabled: bool):
+    """The protocol pre-flight, a pre-spend generated-protocol regeneration and
+    run_loop. Returns None when run_loop returned normally, else process_once's
+    return value after a classified pause: protocol_promotion_unratified, or
+    stage_exception for an Exception escaping any of them (C1.4) -- after the
+    split / queued-card bookkeeping, which must not be lost (if that raises
+    too, the queue is re-read from disk first, so nothing it registered is
+    overwritten). KeyboardInterrupt and SystemExit pass through."""
+    run_dir = ROOT / "runs" / run_id
+    try:
+        refusal, regeneration = _protocol_preflight(run_dir, run_id)
+        if refusal is None:
+            if regeneration is not None:
+                _regenerate_protocol(run_id, regeneration)
+            orch.run_loop(run_id)
+    except Exception as exc:
+        traceback.print_exc()
+        detail = f"{type(exc).__name__}: {exc}"
+        try:
+            queue, entry, _ = _record_run_loop_children(queue, entry, run_id, before_splits,
+                                                        decide_next_enabled)
+        except Exception as book_exc:
+            detail += (f" [the split / queued-card bookkeeping after it also failed: "
+                       f"{type(book_exc).__name__}: {book_exc}]")
+            # Fourth-round review fix 3: the queue file is the truth (the failed
+            # bookkeeping may have registered entries there). Re-read it, re-apply
+            # the split-sibling entries idempotently, and never save an entry that
+            # is no longer in it.
+            queue = _load_queue()
+            found = next((e for e in queue.get("queue") or []
+                          if isinstance(e, dict) and e.get("id") == entry["id"]), None)
+            if found is None:
+                return _halt_detached_entry(entry["id"], run_id, run_dir, detail,
+                                            schedulability_enabled)
+            entry = found
+            _reapply_split_children(queue, entry, run_id, before_splits)
+        return _halt_run(queue, entry, run_id, run_dir, STAGE_EXCEPTION_HALT, detail,
+                         schedulability_enabled)
+    if refusal is not None:
+        return _halt_run(queue, entry, run_id, run_dir, PROTOCOL_PREFLIGHT_HALT, refusal,
+                         schedulability_enabled)
+    return None
+
+
 def process_once() -> bool:
     """Runs exactly one launch/continue/advance step. Returns True if the
     caller should keep looping, False if the campaign is done or halted."""
     reconcile_orphans()  # A3: read-only, logs only newly-unexpected orphans
 
+    # E-061 C1.5: the flag pre-flight, on every step before anything launches:
+    # the config parsed once and handed to every real flag reader. A refusal
+    # pauses the selected entry below (never raises). The step's own flag values
+    # (schedulability, decide_next, verdict routing) come from this one reading
+    # (third-round review fix 9) -- each resolved exactly as its reader resolves
+    # it, so a passing step is byte-identical to before.
+    flag_values, flag_refusal = _flag_preflight()
+
     # E-031 S2. Written BEFORE the queue-exhausted check below on EVERY step
     # (not only when exhausted) -- closing E-030's own measured blind spot
     # (all four _write_loop_health() call sites sit after a non-None
     # _select_entry() result). Flag-off: no-op, byte-identical to before
-    # this feature existed.
-    schedulability_enabled = _schedulability_block_enabled()
+    # this feature existed. E-061 review fix 10: still written, fresh, when the
+    # refusal is about another flag and schedulability_block itself reads true.
+    schedulability_enabled = flag_values.get("schedulability_block") is True
     if schedulability_enabled:
         _write_schedulability()
-    # E-059 S2a: resolved once per step, up front, so a misconfiguration (non-bool,
-    # or on without its prerequisite flags) stops before anything launches.
-    decide_next_enabled = orch._decide_next_enabled()
-    # Slice 6c S2a: verdict routing retired, resolved the same way (it requires
-    # decide_next and profit_bars_every_backtest, or raises).
-    routing_retired = orch._verdict_routing_retired_enabled()
+    # E-059 S2a / slice 6c S2a: decide_next and verdict_routing_retired, resolved
+    # once per step, up front, so a misconfiguration (non-bool, or on without its
+    # prerequisite flags) stops before anything launches -- now as a flag refusal.
+    decide_next_enabled = flag_refusal is None and flag_values.get("decide_next") is True
+    routing_retired = flag_refusal is None and flag_values.get("verdict_routing_retired") is True
 
     queue = _load_queue()
     entry = _select_entry(queue["queue"])
     if entry is None:
+        if flag_refusal is not None:
+            _log(f"HALT — {FLAG_PREFLIGHT_HALT}: {flag_refusal}. No ready or in_progress entry "
+                 f"to pause; fix config/campaign_config.yaml before launching. See RUNBOOK.md §3.")
+            return False
         _log("Queue exhausted — no ready or in_progress entries remain." + _parked_note(queue))
         return False
+    if flag_refusal is not None:
+        # Before setup_run: a fresh entry gets no run (--resume re-checks the
+        # config and sets it back to ready); an in-progress run gets a
+        # halt_history record and keeps its own status.
+        return _halt_retired_routing(queue, entry, (entry.get("run_ids") or [None])[-1],
+                                     FLAG_PREFLIGHT_HALT, flag_refusal, schedulability_enabled)
 
     action = _next_action_for_entry(entry)
 
@@ -2616,31 +3618,6 @@ def process_once() -> bool:
             if schedulability_enabled:  # E-031 S2 — same end-of-branch placement
                 _write_schedulability()
             return False
-
-        brief_path = ROOT / entry["refinement_brief_path"]
-        brief = _parse_refinement_brief_yaml(brief_path)
-        child_id = _next_new_run_id()
-        setup_run(child_id)
-        _materialize_refinement_run(child_id, brief, brief_path)
-        entry["run_ids"].append(child_id)
-        entry["refinement_brief_consumed_for"] = entry["refinement_brief_path"]
-        _save_queue(queue)
-        _log(f"REFINEMENT-BRIEF {entry['id']} -> {child_id} (brief={entry['refinement_brief_path']})")
-        run_id = child_id
-    elif action == "fresh_launch":
-        brief_path = ROOT / entry["brief_path"]
-        brief = _parse_brief_frontmatter(brief_path)
-        run_id = _next_new_run_id()
-        setup_run(run_id)
-        _materialize_run(run_id, brief)
-        if decide_next_enabled:
-            # E-059 S2b: a brief run (not a reader candidate) gets the context
-            # that lets 1a score extra cards or report the brief exhausted.
-            _write_brief_hypotheses_context(queue, entry, run_id)
-        entry["run_ids"] = [run_id]
-        entry["status"] = "in_progress"
-        _save_queue(queue)
-        _log(f"LAUNCH {entry['id']} -> {run_id} (brief={entry['brief_path']})")
     elif action == "queued_card":
         # E-059 S2b (decision 9): the brief's extra card, already authored by 1a
         # in an earlier run -- launched past 1a with that card, as the legacy
@@ -2660,16 +3637,15 @@ def process_once() -> bool:
             if schedulability_enabled:
                 _write_schedulability()
             return False
-        brief = _parse_brief_frontmatter(ROOT / entry["brief_path"])
-        run_id = _next_new_run_id()
-        setup_run(run_id)
-        _materialize_run(run_id, brief)
-        _launch_queued_card(entry, run_id)
-        entry["run_ids"] = [run_id]
-        entry["status"] = "in_progress"
-        _save_queue(queue)
-        _log(f"LAUNCH-CARD {entry['id']} -> {run_id} (card={entry['card_ref']}, "
-             f"brief={entry['brief_path']}; step 1a skipped)")
+    if action in _LAUNCH_ACTIONS:
+        # E-061 C1.4 review fix 6: any exception while launching is a classified
+        # pause (launch_exception); a run dir it created is recorded and paused.
+        created, before = [], copy.deepcopy(entry)
+        try:
+            run_id = _launch_run(queue, entry, action, decide_next_enabled, created)
+        except Exception as exc:
+            return _halt_launch_exception(queue, entry, before, created, exc,
+                                          schedulability_enabled)
     else:
         run_id = entry["run_ids"][-1]
         if routing_retired:
@@ -2693,30 +3669,14 @@ def process_once() -> bool:
 
     run_dir = ROOT / "runs" / run_id
     before_splits = _snapshot_hypothesis_splits()
-    orch.run_loop(run_id)
-    after_splits = _snapshot_hypothesis_splits()
-
-    # Any hypothesis_generation split(s) that happened anywhere during this run_loop
-    # call (whether on run_id itself or an internal reframe/escalate continuation
-    # within the same call) get their OWN queue entries — checked before the
-    # lineage-continuation logic below so a split sibling is never mistaken for one.
-    new_split_events = after_splits[len(before_splits):]
-    split_child_ids = set()
-    for ev in new_split_events:
-        for child_id in ev.get("children", []):
-            split_child_ids.add(child_id)
-            _add_queue_entry_for_split_child(queue, entry, ev.get("parent_run", run_id), child_id)
-    if split_child_ids:
-        _save_queue(queue)
-        _log(f"SPLIT {entry['id']}: {len(split_child_ids)} sibling hypothesis run(s) "
-             f"{sorted(split_child_ids)} each given their own queue entry.")
-    if decide_next_enabled:
-        # E-059 S2b: the flag-on split left its extra cards in
-        # queued_hypotheses.yaml; enqueue them (queued, card_ref). register
-        # writes the queue file, so the in-memory queue is reloaded after.
-        if _enqueue_queued_hypotheses(entry, run_id):
-            queue = _load_queue()
-            entry = next(e for e in queue["queue"] if e.get("id") == entry["id"])
+    # E-061 C1.5 / C1.4: the protocol pre-flight (before 1a), then run_loop; a
+    # refusal or an escaping Exception is a classified pause (None: ran normally).
+    halted = _run_after_preflight(queue, entry, run_id, before_splits, decide_next_enabled,
+                                  schedulability_enabled)
+    if halted is not None:
+        return halted
+    queue, entry, split_child_ids = _record_run_loop_children(
+        queue, entry, run_id, before_splits, decide_next_enabled)
 
     state = orch.load_yaml(run_dir / "pipeline_state.yaml")
     _log_transition(entry, run_id, state)
@@ -3527,8 +4487,13 @@ def _register_campaign_review_reframe(entry: dict, run_id: str, state: dict) -> 
 def _register_from_cli(brief: Path, priority: int, notes: str) -> int:
     """The `register` sub-command. E-059 S2b (S1 §7, decision 7): a brief
     registered while decide_next is on starts `brief_status: open` (R2 may ask
-    step 1a for more of it). Flag off: exactly the call made before."""
-    if orch._decide_next_enabled():
+    step 1a for more of it). Flag off: exactly the call made before.
+
+    E-061 C1.5: reads decide_next's OWN value (strict: a non-bool still raises
+    here), not its prerequisite chain. A misconfigured prerequisite used to
+    crash `register`; it is now refused where every flag is checked -- the
+    launch pre-flight in process_once, a classified pause naming the flag."""
+    if orch._strict_orchestrator_flag("decide_next"):
         return register_hypothesis(brief, priority, notes, extra={"brief_status": "open"})
     return register_hypothesis(brief, priority, notes)
 
