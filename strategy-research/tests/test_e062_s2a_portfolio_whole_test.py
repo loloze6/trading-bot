@@ -53,6 +53,25 @@ def _skip_days(bars: dict, days: set) -> dict:
     return {t: v for t, v in bars.items() if t.date() not in days}
 
 
+def _bnd(**spans) -> dict:
+    """{label: (nominal start, nominal end)} from day indices."""
+    return {w: (_day(a), _day(b)) for w, (a, b) in spans.items()}
+
+
+def _auto_bounds(wins) -> dict:
+    """Bounds equal to each window's recorded day range (complete data only)."""
+    out = {}
+    for w, by_coin in wins.items():
+        days = [t.date() for bars in (by_coin.values() if isinstance(by_coin, dict) else [])
+                if isinstance(bars, dict) for t in bars if isinstance(t, datetime)]
+        out[w] = (min(days), max(days)) if days else (D0, D0)
+    return out
+
+
+def _chain(wins, coins, bounds=None, **kw):
+    return pw.chain_windows(wins, coins, _auto_bounds(wins) if bounds is None else bounds, **kw)
+
+
 def _v1_pooled_returns(windows: dict, coins: list) -> list:
     """Today's (v1) pooled daily returns, results order."""
     out = []
@@ -100,7 +119,7 @@ def test_contiguous_one_day_overlap_reproduces_v1_pooled_returns_exactly():
     chained daily returns ARE today's pooled daily returns -- same days, same
     floats (==, not approx)."""
     wins = _contiguous_layout()
-    ch = pw.chain_windows(wins, ["A", "B"])
+    ch = _chain(wins, ["A", "B"])
     assert ch["daily_returns"] == _v1_pooled_returns(wins, ["A", "B"])
     assert len(ch["daily_returns"]) == 30  # 3 windows x 10 returns, day 0 is the anchor
     assert [s["kind"] for s in ch["segments"]] == ["first", "junction", "junction"]
@@ -123,7 +142,7 @@ def test_contiguous_layout_through_the_real_readers_matches_v1_file_path(tmp_pat
             results.append({"symbol": coin, "window": win, "run_id": rid})
     pr = {"results": results}
     windows, coins = pdv1.load_windows(tmp_path, pr)
-    ch = pw.chain_windows(windows, coins)
+    ch = _chain(windows, coins)
     assert ch["daily_returns"] == pdv1.portfolio_daily_returns(tmp_path, pr)
 
 
@@ -131,7 +150,7 @@ def test_chained_levels_multiply_across_junctions():
     """One coin. w0 days 0..2: 100, 110, 121 (level 1.0, 1.1, 1.21). w1 days
     2..4: 1000, 900, 990 (joins at day 2, scale 1.21/1.0; levels day 3 =
     1.21 * 0.9 = 1.089, day 4 = 1.21 * 0.99 = 1.1979)."""
-    ch = pw.chain_windows({"w0": {"X": _bars(0, [100.0, 110.0, 121.0])},
+    ch = _chain({"w0": {"X": _bars(0, [100.0, 110.0, 121.0])},
                            "w1": {"X": _bars(2, [1000.0, 900.0, 990.0])}}, ["X"])
     lv = dict(ch["daily_levels"])
     assert lv[_day(0)] == 1.0
@@ -143,20 +162,21 @@ def test_chained_levels_multiply_across_junctions():
 def test_out_of_order_windows_give_the_same_chain_as_sorted():
     wins = _contiguous_layout()
     rev = {k: wins[k] for k in reversed(list(wins))}
-    a, b = pw.chain_windows(wins, ["A", "B"]), pw.chain_windows(rev, ["A", "B"])
+    a, b = _chain(wins, ["A", "B"]), _chain(rev, ["A", "B"])
     assert a["daily_returns"] == b["daily_returns"]
     assert a["bar_levels"] == b["bar_levels"]
     assert [s["window"] for s in b["segments"]] == ["w0", "w1", "w2"]
 
 
 def test_gap_is_linked_flat_and_not_counted():
-    """w0 days 0..19, w1 days 21..40 (day 20 missing from both). The chain is
-    flat from day 19 to day 21 (level unchanged), no return on day 21, one gap
-    day. Returns 19 + 19 = 38; calendar 0..40 = 41 days; coverage 39/41."""
+    """Protocol bounds w0 = days 0..19, w1 = days 21..40: a real gap (day 20).
+    The chain is flat from day 19 to day 21 (level unchanged), no return on day
+    21, one gap day. Returns 19 + 19 = 38; nominal span 0..40 = 41 days;
+    coverage 39/41."""
     w0 = [100.0 + i for i in range(20)]
     w1 = [500.0 * (1.0 + 0.001 * i) for i in range(20)]
-    ch = pw.chain_windows({"w0": {"X": _bars(0, w0)}, "w1": {"X": _bars(21, w1)}}, ["X"],
-                          window_starts={"w0": _day(0), "w1": _day(21)})
+    ch = _chain({"w0": {"X": _bars(0, w0)}, "w1": {"X": _bars(21, w1)}}, ["X"],
+                _bnd(w0=(0, 19), w1=(21, 40)))
     assert [s["kind"] for s in ch["segments"]] == ["first", "gap"]
     assert ch["n_gap_days"] == 1 and ch["n_gap_links"] == 1
     lv = dict(ch["daily_levels"])
@@ -172,12 +192,12 @@ def test_gap_is_linked_flat_and_not_counted():
 
 
 def test_long_gap_fails_whole_test_coverage():
-    """w0 days 0..9, w1 days 15..24: returns 9 + 9 = 18, calendar 25 days,
+    """Bounds w0 = 0..9, w1 = 15..24: returns 9 + 9 = 18, nominal span 25 days,
     (18 + 1) / 25 = 0.76 < 0.9 -> NOT_EVALUABLE (each window alone is fine)."""
     with pytest.raises(NE, match="WHOLE_TEST_MIN_COVERAGE"):
-        pw.chain_windows({"w0": {"X": _bars(0, [100.0] * 9 + [101.0])},
-                          "w1": {"X": _bars(15, [100.0] * 9 + [99.0])}}, ["X"],
-                         window_starts={"w0": _day(0), "w1": _day(15)})
+        _chain({"w0": {"X": _bars(0, [100.0] * 9 + [101.0])},
+                "w1": {"X": _bars(15, [100.0] * 9 + [99.0])}}, ["X"],
+               _bnd(w0=(0, 9), w1=(15, 24)))
 
 
 def test_overlap_longer_than_one_day_keeps_the_earliest_windows_days():
@@ -186,7 +206,8 @@ def test_overlap_longer_than_one_day_keeps_the_earliest_windows_days():
     11 is w1's v(11)/v(10) - 1; days 8..10 come from w0."""
     w0 = [100.0 * 1.01 ** i for i in range(11)]
     w1 = [70.0 + 3.0 * ((i * 5) % 7) for i in range(14)]  # day 7+i
-    ch = pw.chain_windows({"w0": {"X": _bars(0, w0)}, "w1": {"X": _bars(7, w1)}}, ["X"])
+    ch = _chain({"w0": {"X": _bars(0, w0)}, "w1": {"X": _bars(7, w1)}}, ["X"],
+                _bnd(w0=(0, 10), w1=(7, 20)))
     seg = ch["segments"][1]
     assert seg["kind"] == "overlap" and seg["join_day"] == _day(10)
     rets = dict(ch["daily_returns"])
@@ -201,54 +222,111 @@ def test_overlap_longer_than_one_day_keeps_the_earliest_windows_days():
     assert dict(ch["bar_levels"])[datetime(2020, 1, 11, 23)] == pytest.approx(lv[_day(10)])
 
 
-def test_missing_junction_day_is_not_evaluable():
-    """Code review finding 4 (deviation from G1's "treat as gap"): w0 days
-    0..10; w1's nominal start is day 10 (one-day overlap) but it lacks day 10.
-    Linking flat would drop the day-10 -> day-11 P&L -> NOT_EVALUABLE."""
+def test_missing_junction_day_is_not_evaluable_and_names_the_cell():
+    """Code review finding 4 (deviation from G1's "treat as gap"): w0 = days
+    0..10, w1's nominal start is day 10 (one-day overlap) but its data starts on
+    day 11. Linking flat would drop the day-10 -> day-11 P&L -> NOT_EVALUABLE,
+    and the reason names the one missing (window, coin, day) cell."""
     wins = {"w0": {"X": _bars(0, [100.0 + i for i in range(11)])},
             "w1": {"X": _bars(11, [200.0 + i for i in range(10)])}}
-    with pytest.raises(NE, match="junction day 2020-01-11"):
-        pw.chain_windows(wins, ["X"], window_starts={"w0": _day(0), "w1": _day(10)})
-    # without window_starts the same layout is ambiguous (gap or missing day)
-    with pytest.raises(NE, match="cannot be told from a missing junction day"):
-        pw.chain_windows(wins, ["X"])
+    with pytest.raises(NE, match="junction day 2020-01-11") as ei:
+        _chain(wins, ["X"], _bnd(w0=(0, 10), w1=(10, 20)))
+    assert "1 missing (window, coin, day) cell(s): ('w1', 'X', 2020-01-11)" in str(ei.value)
+
+
+def test_missing_junction_cells_list_every_coin_and_count():
+    """Two coins lack the junction day: both cells listed, count 2."""
+    a = _bars(0, [100.0] * 11)
+    w1 = {c: _bars(11, [100.0] * 10) for c in ("A", "B")}
+    with pytest.raises(NE) as ei:
+        _chain({"w0": {"A": a, "B": dict(a)}, "w1": w1}, ["A", "B"],
+               _bnd(w0=(0, 10), w1=(10, 20)))
+    msg = str(ei.value)
+    assert "2 missing (window, coin, day) cell(s)" in msg
+    assert "('w1', 'A', 2020-01-11)" in msg and "('w1', 'B', 2020-01-11)" in msg
 
 
 def test_missing_junction_day_inside_a_longer_overlap_is_not_evaluable():
-    """w0 days 0..10; w1 days 7..20 without day 10: no junction day."""
+    """w0 days 0..10; w1 nominal 7..20 without day 10: no junction day."""
     w1 = _skip_days(_bars(7, [300.0 + i for i in range(14)]), {_day(10)})
     wins = {"w0": {"X": _bars(0, [100.0 + i for i in range(11)])}, "w1": {"X": w1}}
     with pytest.raises(NE, match="junction day 2020-01-11"):
-        pw.chain_windows(wins, ["X"])
-    with pytest.raises(NE, match="junction day 2020-01-11"):
-        pw.chain_windows(wins, ["X"], window_starts={"w0": _day(0), "w1": _day(7)})
+        _chain(wins, ["X"], _bnd(w0=(0, 10), w1=(7, 20)))
 
 
 def test_gap_window_missing_its_start_day_is_not_evaluable():
-    """A real gap (nominal start day 21) but w1's data starts on day 22."""
+    """A real gap (w1 nominal start day 21) but w1's data starts on day 22."""
     wins = {"w0": {"X": _bars(0, [100.0] * 20)}, "w1": {"X": _bars(22, [100.0] * 19)}}
-    with pytest.raises(NE, match="nominal start day 2020-01-22"):
-        pw.chain_windows(wins, ["X"], window_starts={"w0": _day(0), "w1": _day(21)})
+    with pytest.raises(NE, match="nominal start day 2020-01-22") as ei:
+        _chain(wins, ["X"], _bnd(w0=(0, 19), w1=(21, 40)))
+    assert "('w1', 'X', 2020-01-22)" in str(ei.value)
 
 
-def test_first_window_missing_its_start_day_is_not_evaluable_and_data_before_start_raises():
+def test_missing_tail_of_a_window_is_not_evaluable_probe():
+    """Second-round finding 1 probe: coin B falls 100 -> 60 over w0's last 3
+    days, but those 3 days are missing from B's data (per-window coverage 28/31
+    still passes v1's floor). w1 then restarts both coins at 1.0, so the loss
+    would vanish from the chain. With the protocol's bounds the tail is missing
+    -> NOT_EVALUABLE naming the 3 cells. Bounds are required, so there is no
+    path without them."""
+    a0 = _bars(0, [100.0] * 31)
+    b0 = _skip_days(_bars(0, [100.0] * 28 + [80.0, 70.0, 60.0]), {_day(28), _day(29), _day(30)})
+    w1 = {c: _bars(30, [100.0] * 31) for c in ("A", "B")}
+    wins = {"w0": {"A": a0, "B": b0}, "w1": w1}
+    pdv1.window_common_curve("w0", wins["w0"], ["A", "B"])  # v1 floor passes
+    with pytest.raises(NE, match="before its nominal end 2020-01-31") as ei:
+        pw.chain_windows(wins, ["A", "B"], _bnd(w0=(0, 30), w1=(30, 60)))
+    msg = str(ei.value)
+    assert "3 missing (window, coin, day) cell(s)" in msg
+    assert "('w0', 'B', 2020-01-29)" in msg and "('w0', 'B', 2020-01-31)" in msg
+    with pytest.raises(TypeError):
+        pw.chain_windows(wins, ["A", "B"])  # window_bounds is required
+
+
+def test_last_window_missing_its_final_three_days_is_not_evaluable():
+    """Second-round finding 3: the span is the protocol's nominal span, so a
+    truncated tail is never a silently shorter test."""
+    wins = {"w0": {"X": _bars(0, [100.0] * 31)}, "w1": {"X": _bars(30, [100.0] * 28)}}
+    with pytest.raises(NE, match="last common day 2020-02-27 is before its nominal end "
+                                 "2020-03-01") as ei:
+        pw.chain_windows(wins, ["X"], _bnd(w0=(0, 30), w1=(30, 60)))
+    assert "3 missing (window, coin, day) cell(s)" in str(ei.value)
+
+
+def test_first_window_head_and_bounds_misuse():
     wins = {"w0": {"X": _bars(1, [100.0] * 20)}}
-    with pytest.raises(NE, match="first window 'w0' has no common day on its start"):
-        pw.chain_windows(wins, ["X"], window_starts={"w0": _day(0)})
-    with pytest.raises(ValueError, match="before its nominal start") as ei:
-        pw.chain_windows(wins, ["X"], window_starts={"w0": _day(2)})
+    # one day of missing head data: NOT_EVALUABLE with the cell
+    with pytest.raises(NE, match="first window 'w0': first common day 2020-01-02") as ei:
+        pw.chain_windows(wins, ["X"], _bnd(w0=(0, 20)))
+    assert "('w0', 'X', 2020-01-01)" in str(ei.value)
+    # data before the given start / after the given end: wrong bounds
+    for b in (_bnd(w0=(2, 20)), _bnd(w0=(1, 19))):
+        with pytest.raises(ValueError, match="nominal (start|end)") as ei:
+            _chain(wins, ["X"], b)
+        assert not isinstance(ei.value, NE)
+    # a start far before the first recorded day: a manifest (prefetch) start
+    far = {"w0": {"X": _bars(10, [100.0] * 11)}}
+    with pytest.raises(ValueError, match="manifest's start .*warm-up prefetch") as ei:
+        pw.chain_windows(far, ["X"], _bnd(w0=(0, 20)))
     assert not isinstance(ei.value, NE)
+    with pytest.raises(NE, match="missing head data"):  # a longer declared warm-up
+        pw.chain_windows(far, ["X"], _bnd(w0=(0, 20)), warmup_days=10)
     with pytest.raises(ValueError, match="exactly the windows' labels"):
-        pw.chain_windows(wins, ["X"], window_starts={"w9": _day(1)})
+        pw.chain_windows(wins, ["X"], _bnd(w9=(1, 20)))
     with pytest.raises(ValueError, match="is not a date"):
-        pw.chain_windows(wins, ["X"], window_starts={"w0": datetime(2020, 1, 2)})
+        _chain(wins, ["X"], {"w0": (datetime(2020, 1, 2), _day(20))})
+    with pytest.raises(ValueError, match="is before start"):
+        _chain(wins, ["X"], {"w0": (_day(20), _day(1))})
+    with pytest.raises(ValueError, match="warmup_days"):
+        pw.chain_windows(wins, ["X"], _bnd(w0=(1, 20)), warmup_days=-1)
 
 
-def test_window_inside_an_earlier_window_is_not_evaluable():
-    """w1 (days 5..7) lies inside w0 (0..20): it cannot hold the junction day 20."""
-    with pytest.raises(NE, match="junction day 2020-01-21"):
-        pw.chain_windows({"w0": {"X": _bars(0, [100.0 + i for i in range(21)])},
-                          "w1": {"X": _bars(5, [1.0, 2.0, 3.0])}}, ["X"])
+def test_window_inside_an_earlier_window_raises():
+    """w1 (nominal 5..7) lies inside w0 (0..20): a protocol layout error."""
+    with pytest.raises(ValueError, match="lies inside earlier windows") as ei:
+        _chain({"w0": {"X": _bars(0, [100.0 + i for i in range(21)])},
+                "w1": {"X": _bars(5, [1.0, 2.0, 3.0])}}, ["X"])
+    assert not isinstance(ei.value, NE)
 
 
 def test_join_bar_includes_the_anchor_level_when_a_coin_lacks_the_close_bar():
@@ -261,26 +339,47 @@ def test_join_bar_includes_the_anchor_level_when_a_coin_lacks_the_close_bar():
     del b[datetime(2020, 1, 1, 23)]
     b[datetime(2020, 1, 1, 22)] = 100.0
     b = dict(sorted(b.items()))
-    ch = pw.chain_windows({"w0": {"A": a, "B": b}}, ["A", "B"])
+    ch = _chain({"w0": {"A": a, "B": b}}, ["A", "B"])
     assert ch["bar_levels"][0] == (datetime(2020, 1, 1, 23), 1.0)
     dd = pw.whole_test_max_drawdown(ch)
     assert dd["max_drawdown_pct"] == pytest.approx(10.0, rel=1e-12)
     assert dd["peak_ts"] == datetime(2020, 1, 1, 23)
 
 
-def test_gap_links_flat_only_with_window_starts():
-    wins = {"w0": {"X": _bars(0, [100.0 + i for i in range(20)])},
-            "w1": {"X": _bars(21, [500.0 + i for i in range(20)])}}
-    with pytest.raises(NE, match="cannot be told"):
-        pw.chain_windows(wins, ["X"])
-    ch = pw.chain_windows(wins, ["X"], window_starts={"w0": _day(0), "w1": _day(21)})
-    assert ch["segments"][1]["kind"] == "gap"
+def test_duplicate_nominal_start_raises():
+    with pytest.raises(ValueError, match="same nominal start"):
+        _chain({"w0": {"X": _bars(0, [1.0, 2.0])},
+                "w1": {"X": _bars(0, [1.0, 2.0, 3.0])}}, ["X"])
 
 
-def test_duplicate_anchor_is_not_evaluable():
-    with pytest.raises(NE, match="share the anchor day"):
-        pw.chain_windows({"w0": {"X": _bars(0, [1.0, 2.0])},
-                          "w1": {"X": _bars(0, [1.0, 2.0, 3.0])}}, ["X"])
+def test_window_bounds_from_the_protocol_json():
+    """The real committed baseline_v1 protocol: 11 monthly windows, label ->
+    (test.start, test.end), each end equal to the next start (one-day overlap,
+    end inclusive by day)."""
+    b = pw.load_protocol_window_bounds(SR_ROOT / "protocols" / "baseline_v1.json")
+    assert len(b) == 11
+    assert b["2024-01"] == (date(2024, 1, 1), date(2024, 2, 1))
+    spans = sorted(b.values())
+    assert all(spans[i][1] == spans[i + 1][0] for i in range(len(spans) - 1))
+
+
+@pytest.mark.parametrize("protocol,frag", [
+    ({}, "no `windows` list"),
+    ({"windows": []}, "no `windows` list"),
+    ({"windows": [{"label": "a"}]}, "lacks label/test"),
+    ({"windows": [{"label": "a", "test": {"start": "2020-1-1", "end": "2020-02-01"}}]},
+     "not a YYYY-MM-DD date"),
+    ({"windows": [{"label": "a", "test": {"start": "2020-02-01", "end": "2020-01-01"}}]},
+     "is before test.start"),
+    ({"windows": [{"label": "a", "test": {"start": "2020-01-01", "end": "2020-02-01"}},
+                  {"label": "a", "test": {"start": "2020-02-01", "end": "2020-03-01"}}]},
+     "missing or repeated"),
+    ({"windows": [{"label": ["a"], "test": {"start": "2020-01-01", "end": "2020-02-01"}}]},
+     "not hashable"),
+])
+def test_window_bounds_from_protocol_rejects_malformed(protocol, frag):
+    with pytest.raises(ValueError, match=frag):
+        pw.window_bounds_from_protocol(protocol)
 
 
 def test_two_coins_common_day_drop():
@@ -289,7 +388,7 @@ def test_two_coins_common_day_drop():
     Returns 20 - 2 = 18; whole-test coverage (18 + 1) / 21 = 0.905 >= 0.9."""
     a = _bars(0, [100.0 + i for i in range(21)])
     b = _skip_days(_bars(0, [50.0 + 2 * i for i in range(21)]), {_day(5)})
-    ch = pw.chain_windows({"w0": {"A": a, "B": b}}, ["A", "B"])
+    ch = _chain({"w0": {"A": a, "B": b}}, ["A", "B"])
     rd = [d for d, _r in ch["daily_returns"]]
     assert _day(5) not in rd and _day(6) not in rd and len(rd) == 18
     assert ch["n_multi_day_steps"] == 1
@@ -305,7 +404,7 @@ def test_whole_test_coverage_counts_return_days_so_it_is_stricter_than_per_windo
     b = _skip_days(_bars(0, [50.0 + 2 * i for i in range(11)]), {_day(5)})
     pdv1.window_common_curve("w0", {"A": a, "B": b}, ["A", "B"])  # v1: passes
     with pytest.raises(NE, match="8 daily return"):
-        pw.chain_windows({"w0": {"A": a, "B": b}}, ["A", "B"])
+        _chain({"w0": {"A": a, "B": b}}, ["A", "B"])
 
 
 def test_per_window_coverage_below_floor_is_not_evaluable():
@@ -313,14 +412,14 @@ def test_per_window_coverage_below_floor_is_not_evaluable():
     a = _bars(0, [100.0] * 10)
     b = _skip_days(_bars(0, [100.0] * 10), {_day(4), _day(5)})
     with pytest.raises(NE, match="PORTFOLIO_MIN_COMMON_DAY_COVERAGE"):
-        pw.chain_windows({"w0": {"A": a, "B": b}}, ["A", "B"])
+        _chain({"w0": {"A": a, "B": b}}, ["A", "B"])
 
 
 def test_coin_set_differs_is_not_evaluable():
     with pytest.raises(NE, match="has coins"):
-        pw.chain_windows({"w0": {"A": _bars(0, [1.0, 2.0])}}, ["A", "B"])
+        _chain({"w0": {"A": _bars(0, [1.0, 2.0])}}, ["A", "B"])
     with pytest.raises(NE, match="no windows"):
-        pw.chain_windows({}, ["A"])
+        _chain({}, ["A"])
 
 
 @pytest.mark.parametrize("bad", [float("nan"), float("inf"), 0.0, -1.0, True, "1.0"])
@@ -328,7 +427,7 @@ def test_degenerate_values_raise(bad):
     bars = _bars(0, [100.0, 101.0, 102.0])
     bars[datetime(2020, 1, 2, 23)] = bad
     with pytest.raises(ValueError) as ei:
-        pw.chain_windows({"w0": {"X": bars}}, ["X"])
+        _chain({"w0": {"X": bars}}, ["X"])
     assert not isinstance(ei.value, NE)
 
 
@@ -336,22 +435,22 @@ def test_unsorted_timestamps_raise():
     bars = _bars(0, [100.0, 101.0, 102.0])
     unsorted = dict(reversed(list(bars.items())))
     with pytest.raises(ValueError, match="strictly increasing") as ei:
-        pw.chain_windows({"w0": {"X": unsorted}}, ["X"])
+        _chain({"w0": {"X": unsorted}}, ["X"])
     assert not isinstance(ei.value, NE)
 
 
 def test_non_datetime_or_aware_timestamp_raises():
     from datetime import timezone
     with pytest.raises(ValueError, match="not a datetime"):
-        pw.chain_windows({"w0": {"X": {"2020-01-01 23:00": 1.0}}}, ["X"])
+        _chain({"w0": {"X": {"2020-01-01 23:00": 1.0}}}, ["X"])
     with pytest.raises(ValueError, match="naive"):
-        pw.chain_windows({"w0": {"X": {datetime(2020, 1, 1, 23, tzinfo=timezone.utc): 1.0}}},
+        _chain({"w0": {"X": {datetime(2020, 1, 1, 23, tzinfo=timezone.utc): 1.0}}},
                          ["X"])
 
 
 def test_duplicate_coins_raise():
     with pytest.raises(ValueError, match="without duplicates"):
-        pw.chain_windows({"w0": {"X": _bars(0, [1.0, 2.0])}}, ["X", "X"])
+        _chain({"w0": {"X": _bars(0, [1.0, 2.0])}}, ["X", "X"])
 
 
 # ---------------------------------------------------------------------------
@@ -364,7 +463,7 @@ def test_drawdown_spanning_two_windows_is_found_where_v1_misses_it(tmp_path):
     drawdown 10%). Chained: 1.1 * 0.9 = 0.99 at day 5 against the 1.2 peak ->
     100 * (1 - 0.99/1.2) = 17.5%. v1 reports the worst window: 10%."""
     w0, w1 = _bars(0, [100.0, 120.0, 115.0, 110.0]), _bars(3, [1000.0, 950.0, 900.0])
-    ch = pw.chain_windows({"w0": {"X": w0}, "w1": {"X": w1}}, ["X"])
+    ch = _chain({"w0": {"X": w0}, "w1": {"X": w1}}, ["X"])
     dd = pw.whole_test_max_drawdown(ch)
     assert dd["max_drawdown_pct"] == pytest.approx(17.5, rel=1e-12)
     assert dd["peak_ts"] == datetime(2020, 1, 2, 23) and dd["trough_ts"] == datetime(2020, 1, 6, 23)
@@ -385,7 +484,7 @@ def test_drawdown_within_one_window_equals_v1(tmp_path):
     bar curve IS v1's per-window bar curve: v1 reports the same number."""
     a = _bars(0, [100.0, 120.0, 90.0, 96.0], intraday={2: [80.0]})
     b = _bars(0, [100.0, 100.0, 110.0, 99.0], intraday={2: [110.0]})
-    ch = pw.chain_windows({"w1": {"A": a, "B": b}}, ["A", "B"])
+    ch = _chain({"w1": {"A": a, "B": b}}, ["A", "B"])
     dd = pw.whole_test_max_drawdown(ch)["max_drawdown_pct"]
     assert dd == pytest.approx(100.0 * (1.0 - 0.95 / 1.1), rel=1e-12)
     for rid, bars in (("A-w1", a), ("B-w1", b)):
@@ -409,7 +508,7 @@ def test_running_peak_drawdown_matches_the_engines_bar_equity_formula():
             d = _day(10 * k + 4)
             win[coin][datetime(d.year, d.month, d.day, 5)] = 60.0 - 5 * k
             win[coin] = dict(sorted(win[coin].items()))
-    ch = pw.chain_windows(wins, ["A", "B"])
+    ch = _chain(wins, ["A", "B"])
     ours = pw.whole_test_max_drawdown(ch)["max_drawdown_pct"]
     theirs = engine_dd(pd.Series([v for _t, v in ch["bar_levels"]]))
     assert ours > 0
@@ -417,7 +516,7 @@ def test_running_peak_drawdown_matches_the_engines_bar_equity_formula():
 
 
 def test_drawdown_of_monotone_curve_is_zero_and_bad_chain_raises():
-    ch = pw.chain_windows({"w0": {"X": _bars(0, [1.0, 2.0, 3.0])}}, ["X"])
+    ch = _chain({"w0": {"X": _bars(0, [1.0, 2.0, 3.0])}}, ["X"])
     assert pw.whole_test_max_drawdown(ch)["max_drawdown_pct"] == 0.0
     with pytest.raises(ValueError):
         pw.whole_test_max_drawdown({"bar_levels": []})
@@ -447,7 +546,7 @@ def test_sharpe_hand_computed():
 
 def test_sharpe_from_a_chain_uses_the_chained_daily_returns():
     wins = _contiguous_layout()
-    ch = pw.chain_windows(wins, ["A", "B"])
+    ch = _chain(wins, ["A", "B"])
     r = [x for _d, x in ch["daily_returns"]]
     m = sum(r) / len(r)
     sd = math.sqrt(sum((x - m) ** 2 for x in r) / (len(r) - 1))
@@ -599,7 +698,7 @@ def test_buy_and_hold_rising_prices_flat_strategy_fails_by_hand():
     = 0.00085 per side; B&H total = 1.1 * (1 - 0.00085)^2 - 1; excess < 0."""
     closes = [100.0 + i for i in range(11)]
     eq = _bars(0, [1000.0] * 11)
-    ch = pw.chain_windows({"w0": {"X": eq}}, ["X"])
+    ch = _chain({"w0": {"X": eq}}, ["X"])
     bh = pw.chained_buy_and_hold(ch, {"w0": {"X": _bars(0, closes)}}, {"X": 7.5}, {"X": 1.0})
     expected_bh = 1.1 * (1.0 - 0.00085) ** 2 - 1.0
     assert bh["strategy_total_return"] == 0.0
@@ -612,7 +711,7 @@ def test_buy_and_hold_rising_prices_flat_strategy_fails_by_hand():
 
 def test_buy_and_hold_falling_prices_flat_strategy_passes_by_hand():
     closes = [100.0 - 2 * i for i in range(11)]  # 100 -> 80
-    ch = pw.chain_windows({"w0": {"X": _bars(0, [1000.0] * 11)}}, ["X"])
+    ch = _chain({"w0": {"X": _bars(0, [1000.0] * 11)}}, ["X"])
     bh = pw.chained_buy_and_hold(ch, {"w0": {"X": _bars(0, closes)}}, {"X": 7.5}, {"X": 1.5})
     expected_bh = 0.8 * (1.0 - 0.0009) ** 2 - 1.0
     assert bh["buy_and_hold_total_return"] == pytest.approx(expected_bh, rel=1e-12)
@@ -626,11 +725,11 @@ def test_buy_and_hold_strategy_tracking_price_net_of_its_own_costs_fails_by_the_
     excess 0, which the strict `> 0` bar fails."""
     closes = [100.0 + i for i in range(11)]
     m = (1.0 - 0.00085) ** 2
-    ch = pw.chain_windows({"w0": {"X": _bars(0, closes)}}, ["X"])
+    ch = _chain({"w0": {"X": _bars(0, closes)}}, ["X"])
     bh = pw.chained_buy_and_hold(ch, {"w0": {"X": _bars(0, closes)}}, {"X": 7.5}, {"X": 1.0})
     assert bh["excess_return"] == pytest.approx(1.1 * (1.0 - m), rel=1e-9)
     net = closes[:-1] + [closes[-1] * m]
-    ch2 = pw.chain_windows({"w0": {"X": _bars(0, net)}}, ["X"])
+    ch2 = _chain({"w0": {"X": _bars(0, net)}}, ["X"])
     bh2 = pw.chained_buy_and_hold(ch2, {"w0": {"X": _bars(0, closes)}}, {"X": 7.5}, {"X": 1.0})
     assert bh2["excess_return"] == pytest.approx(0.0, abs=1e-12)
 
@@ -645,7 +744,7 @@ def test_buy_and_hold_two_coins_reset_to_equal_weight_each_window_by_hand():
           "w1": {"A": _bars(2, [1.0] * 3), "B": _bars(2, [1.0] * 3)}}
     cl = {"w0": {"A": _bars(0, [100.0, 105.0, 110.0]), "B": _bars(0, [50.0, 40.0, 45.0])},
           "w1": {"A": _bars(2, [110.0, 121.0, 99.0]), "B": _bars(2, [45.0, 45.0, 54.0])}}
-    ch = pw.chain_windows(eq, ["A", "B"])  # 5 calendar days, 4 returns: coverage 1.0
+    ch = _chain(eq, ["A", "B"])  # 5 calendar days, 4 returns: coverage 1.0
     bh = pw.chained_buy_and_hold(ch, cl, {"A": 7.5, "B": 7.5}, {"A": 1.0, "B": 1.5})
     mult = ((1.0 - 0.00085) ** 2 + (1.0 - 0.0009) ** 2) / 2.0
     assert bh["buy_and_hold_gross_return"] == pytest.approx(0.05, rel=1e-12)
@@ -664,7 +763,7 @@ def test_buy_and_hold_strategy_loss_across_a_missing_day_fails_the_bar():
     only daily returns would have hidden the loss (strategy 0, excess > 0)."""
     eq = _skip_days(_bars(0, [100.0] * 10 + [50.0] * 21), {_day(10)})
     cl = _skip_days(_bars(0, [100.0] * 31), {_day(10)})
-    ch = pw.chain_windows({"w0": {"X": eq}}, ["X"])
+    ch = _chain({"w0": {"X": eq}}, ["X"])
     assert ch["n_multi_day_steps"] == 1
     assert all(r == 0.0 for _d, r in ch["daily_returns"])  # the loss is in no daily return
     bh = pw.chained_buy_and_hold(ch, {"w0": {"X": cl}}, {"X": 7.5}, {"X": 1.0})
@@ -679,7 +778,7 @@ def test_buy_and_hold_price_move_across_a_multi_day_step_is_included():
     gross = 1.0 (level 100 -> 200), not 0 -- both sides on the chained level."""
     eq = _skip_days(_bars(0, [1000.0] * 31), {_day(10)})
     cl = _skip_days(_bars(0, [100.0] * 10 + [200.0] * 21), {_day(10)})
-    ch = pw.chain_windows({"w0": {"X": eq}}, ["X"])
+    ch = _chain({"w0": {"X": eq}}, ["X"])
     bh = pw.chained_buy_and_hold(ch, {"w0": {"X": cl}}, {"X": 0.0}, {"X": 0.0})
     assert bh["buy_and_hold_gross_return"] == pytest.approx(1.0, rel=1e-12)
     assert bh["excess_return"] == pytest.approx(-1.0, rel=1e-12)
@@ -694,7 +793,7 @@ def test_buy_and_hold_is_flat_across_a_real_protocol_gap_for_both_sides():
     eq = {"w0": {"X": _bars(0, [1.0] * 20)}, "w1": {"X": _bars(21, [1.0] * 20)}}
     cl = {"w0": {"X": _bars(0, [100.0] * 20)},
           "w1": {"X": _bars(21, [200.0] * 19 + [220.0])}}
-    ch = pw.chain_windows(eq, ["X"], window_starts={"w0": _day(0), "w1": _day(21)})
+    ch = _chain(eq, ["X"], _bnd(w0=(0, 19), w1=(21, 40)))
     bh = pw.chained_buy_and_hold(ch, cl, {"X": 0.0}, {"X": 0.0})
     assert bh["buy_and_hold_gross_return"] == pytest.approx(0.1, rel=1e-12)
     assert bh["strategy_total_return"] == 0.0
@@ -703,7 +802,7 @@ def test_buy_and_hold_is_flat_across_a_real_protocol_gap_for_both_sides():
 
 def test_buy_and_hold_mismatched_inputs_raise_value_error_not_not_evaluable():
     eq = {"w0": {"X": _bars(0, [1.0] * 5)}}
-    ch = pw.chain_windows(eq, ["X"])
+    ch = _chain(eq, ["X"])
 
     def raises(exc_match, *args):
         with pytest.raises(ValueError, match=exc_match) as ei:
@@ -731,21 +830,22 @@ def test_numpy_scalars_are_numbers_and_numpy_bools_are_not():
     np = pytest.importorskip("numpy")
     eq = {t: np.float64(v) for t, v in _bars(0, [1000.0] * 11).items()}
     cl = {t: np.float32(v) for t, v in _bars(0, [100.0 + i for i in range(11)]).items()}
-    ch = pw.chain_windows({"w0": {"X": eq}}, ["X"])
+    ch = _chain({"w0": {"X": eq}}, ["X"])
     bh = pw.chained_buy_and_hold(ch, {"w0": {"X": cl}}, {"X": np.float64(7.5)},
                                  {"X": np.int64(1)})
     assert bh["buy_and_hold_gross_return"] == pytest.approx(0.1, rel=1e-6)
     bad = dict(eq)
     bad[datetime(2020, 1, 2, 23)] = np.bool_(True)
     with pytest.raises(ValueError, match="not a number"):
-        pw.chain_windows({"w0": {"X": bad}}, ["X"])
+        _chain({"w0": {"X": bad}}, ["X"])
 
 
 def test_fee_is_the_commission_run_protocol_charged_via_the_shared_function():
     """One definition (code review finding 3): charged_fee_bps is
-    cost_helpers.resolve_commission_rate x 1e4 -- the same function run_protocol
-    passes to run_backtest (its old names are aliases of it). Spot 7.5, perp 5,
-    --commission-bps wins; never the manifest's fee_bps (10)."""
+    cost_helpers.resolve_fee_bps, of which resolve_commission_rate -- what
+    run_protocol passes to run_backtest (its old names are aliases of it) -- is
+    the /10000 form. Spot 7.5, perp 5, --commission-bps wins; never the
+    manifest's fee_bps (10)."""
     import cost_helpers
     import run_protocol as rp
     assert rp._commission_rate_for_symbol is cost_helpers.commission_rate_for_symbol
@@ -755,6 +855,8 @@ def test_fee_is_the_commission_run_protocol_charged_via_the_shared_function():
                            ("BTCUSDT", 10.0, "spot"), ("NOPEUSDT", None, "spot")):
         assert pw.charged_fee_bps(sym, cm, bps, prod) == pytest.approx(
             rp._resolve_commission_rate(sym, cm, bps, prod) * 10_000.0, rel=1e-15)
+        assert pw.charged_fee_bps(sym, cm, bps, prod) == cost_helpers.resolve_fee_bps(
+            sym, cm, bps, prod)
     assert pw.charged_fee_bps("BTCUSDT", cm) == pytest.approx(7.5)
     assert pw.charged_fee_bps("BTCUSDT", cm, product="perp") == pytest.approx(5.0)
     assert pw.charged_fee_bps("BTCUSDT", cm, commission_bps=10.0) == pytest.approx(10.0)
@@ -852,20 +954,40 @@ def _trade(sym="BTCUSDT", win="w0", reason="signal_flip", rr=0.5, cost=15.0):
 
 
 def test_edge_cost_ratio_on_non_forced_trades_with_the_floor():
-    """100 signal trades, gross 0.33% = 33 bps each, cost 15 bps: 33/15 = 2.2."""
+    """100 signal trades, gross 0.33% = 33 bps each, cost 15 bps: 33/15 = 2.2
+    (unrounded float), both ratios equal with no forced close."""
     recs = [_trade(rr=0.33) for _ in range(100)]
-    assert pw.pooled_edge_to_cost_ratio(recs, min_trades=100) == {
-        "ratio": 2.2, "n_trades": 100, "n_excluded_end_of_window": 0}
+    got = pw.pooled_edge_to_cost_ratio(recs, min_trades=100)
+    assert got["ratio"] == pytest.approx(2.2, rel=1e-12)
+    assert got["ratio_all_trades"] == got["ratio_excluding_end_of_window"] == got["ratio"]
+    assert got["n_trades"] == 100 and got["n_excluded_end_of_window"] == 0
 
 
-def test_edge_cost_ratio_excludes_forced_closes_from_ratio_and_floor():
-    """100 signal trades at 30 bps plus 50 forced closes at 300 bps: the forced
-    closes would lift the pooled ratio to (100x30 + 50x300)/150/15 = 8.0; with
-    them excluded it is 30/15 = 2.0, over exactly 100 trades."""
+def test_edge_cost_ratio_forced_close_gains_cannot_lift_it():
+    """100 signal trades at 30 bps plus 50 forced closes at 300 bps: over all
+    records (100x30 + 50x300)/150/15 = 8.0; without the forced closes 30/15 =
+    2.0; the bar reads the lower, 2.0, over exactly 100 trades."""
     recs = ([_trade(rr=0.30) for _ in range(100)]
             + [_trade(reason="end_of_window", rr=3.0) for _ in range(50)])
     got = pw.pooled_edge_to_cost_ratio(recs, min_trades=100)
-    assert got == {"ratio": 2.0, "n_trades": 100, "n_excluded_end_of_window": 50}
+    assert got["ratio_all_trades"] == pytest.approx(8.0, rel=1e-12)
+    assert got["ratio_excluding_end_of_window"] == pytest.approx(2.0, rel=1e-12)
+    assert got["ratio"] == got["ratio_excluding_end_of_window"]
+    assert got["n_trades"] == 100 and got["n_excluded_end_of_window"] == 50
+
+
+def test_edge_cost_ratio_forced_close_losses_cannot_be_hidden_probe():
+    """Second-round finding 2 probe: 100 signal trades at +33 bps and 50 forced
+    closes at -300 bps, all at 15 bps cost. Non-forced only: 33/15 = 2.2 (would
+    pass a `>= 2.2` reading); over all records (100x33 - 50x300)/150 = -78 bps
+    -> -78/15 = -5.2. The bar reads min = -5.2: FAIL."""
+    recs = ([_trade(rr=0.33) for _ in range(100)]
+            + [_trade(reason="end_of_window", rr=-3.0) for _ in range(50)])
+    got = pw.pooled_edge_to_cost_ratio(recs, min_trades=100)
+    assert got["ratio_excluding_end_of_window"] == pytest.approx(2.2, rel=1e-12)
+    assert got["ratio_all_trades"] == pytest.approx(-5.2, rel=1e-12)
+    assert got["ratio"] == got["ratio_all_trades"]
+    assert not got["ratio"] > 2.2
 
 
 def test_always_long_two_coins_96_windows_is_not_evaluable_not_pass():
@@ -880,20 +1002,29 @@ def test_always_long_two_coins_96_windows_is_not_evaluable_not_pass():
         pw.pooled_edge_to_cost_ratio(recs, min_trades=100)
 
 
+def test_edge_cost_ratio_is_unrounded_so_just_below_the_bar_stays_below():
+    """Second-round finding 7: gross 32.9994 bps / 15 bps = 2.19996, which the
+    descriptive summary rounds to 2.2. The bar value stays 2.19996 < 2.2 (FAIL
+    under `> 2.2` and under `>= 2.2`)."""
+    import cost_helpers
+    recs = [_trade(rr=0.329994) for _ in range(100)]
+    got = pw.pooled_edge_to_cost_ratio(recs, min_trades=100)["ratio"]
+    assert cost_helpers.realized_edge_to_cost_ratio(recs) == 2.2
+    assert got == pytest.approx(2.19996, rel=1e-9)
+    assert got < 2.2 and not got >= 2.2
+
+
 @pytest.mark.parametrize("recs,frag", [
     ([_trade() for _ in range(99)], "fewer than min_trades=100"),
     ([_trade() for _ in range(99)] + [_trade(cost=None)], "lack a measured cost"),
+    ([_trade() for _ in range(100)] + [_trade(reason="end_of_window", cost=None)],
+     "1 of 101 trade record"),
     ([_trade(cost=0.0) for _ in range(120)], "zero mean measured cost"),
     ([], "fewer than min_trades=100"),
 ])
 def test_edge_cost_ratio_not_evaluable(recs, frag):
     with pytest.raises(NE, match=frag):
         pw.pooled_edge_to_cost_ratio(recs, min_trades=100)
-
-
-def test_edge_cost_ratio_forced_close_without_cost_does_not_block():
-    recs = [_trade() for _ in range(100)] + [_trade(reason="end_of_window", cost=None)]
-    assert pw.pooled_edge_to_cost_ratio(recs, min_trades=100)["n_trades"] == 100
 
 
 def test_edge_cost_ratio_bad_inputs_raise_value_error():
@@ -903,7 +1034,7 @@ def test_edge_cost_ratio_bad_inputs_raise_value_error():
             pw.pooled_edge_to_cost_ratio(ok, min_trades=bad_min)
     for bad in (_trade(rr=float("nan")), _trade(rr=None), _trade(cost=-1.0),
                 _trade(cost=float("inf")), _trade(reason="take_profit"), _trade(sym=["X"]),
-                {"symbol": "X"}, "not a record"):
+                _trade(reason="end_of_window", rr=None), {"symbol": "X"}, "not a record"):
         with pytest.raises(ValueError) as ei:
             pw.pooled_edge_to_cost_ratio(ok + [bad], min_trades=100)
         assert not isinstance(ei.value, NE)
@@ -912,8 +1043,9 @@ def test_edge_cost_ratio_bad_inputs_raise_value_error():
 
 
 def test_edge_cost_ratio_is_the_shared_function_run_protocol_uses():
-    """Same formula, one definition: on the same (non-forced) records the value
-    equals run_protocol._aggregate_trade_diagnostics's figure."""
+    """Same formula, one definition: on the same (non-forced) records the bar's
+    unrounded value, rounded to 4 decimals, is run_protocol's summary figure."""
+    import cost_helpers
     import run_protocol as rp
     recs = []
     for k in range(120):
@@ -924,7 +1056,93 @@ def test_edge_cost_ratio_is_the_shared_function_run_protocol_uses():
                      "exit_efficiency": None})
     summary = rp._aggregate_trade_diagnostics(recs, [{"core": {"trade_count": 30}}] * 4)
     got = pw.pooled_edge_to_cost_ratio(recs, min_trades=100)
-    assert got["ratio"] == summary["realized_edge_to_cost_ratio"] and got["n_trades"] == 120
+    assert got["ratio"] == cost_helpers.realized_edge_to_cost_ratio_unrounded(recs)
+    assert round(got["ratio"], 4) == summary["realized_edge_to_cost_ratio"]
+    assert got["n_trades"] == 120
+
+
+# ---------------------------------------------------------------------------
+# run_protocol cost_paid: the fee actually charged (second-round finding 6)
+# ---------------------------------------------------------------------------
+
+# _cost_paid_bps outputs with the DEFAULT flags, computed with the code at
+# 946c9023 (before the change) on the real config/cost_model.yaml and edge
+# cases; the new code must return exactly these.
+_COST_PAID_DEFAULT_PINS = [
+    ({"symbol": "BTCUSDT"}, "real", 15.0), ({"symbol": "ETHUSDT"}, "real", 15.0),
+    ({"symbol": "SOLUSDT"}, "real", 15.0), ({"symbol": "AVAXUSDT"}, "real", 15.0),
+    ({"symbol": "BNBUSDT"}, "real", 12.0), ({"symbol": "NOPEUSDT"}, "real", 15.0),
+    ({"symbol": ""}, "real", 15.0), ({}, "real", 15.0),
+    ({"symbol": "BTCUSDT"}, {"fee_rate_bps": {}}, 20.0),
+    ({"symbol": "BTCUSDT", "total_commission_percent": 0.15}, None, 15.0),
+    ({"symbol": "BTCUSDT"}, None, 0.0),
+    ({"symbol": "BTCUSDT", "total_commission_percent": 0.2}, {}, 20.0),
+    ({"symbol": "X"}, {"fee_rate_bps": {"X": 3.333}}, 6.67),
+]
+
+
+def test_cost_paid_default_flags_byte_identical():
+    import run_protocol as rp
+    cm = yaml.safe_load((SR_ROOT / "config" / "cost_model.yaml").read_text(encoding="utf-8"))
+    for trade, model, expected in _COST_PAID_DEFAULT_PINS:
+        got = rp._cost_paid_bps(dict(trade), cm if model == "real" else model)
+        assert got == expected and type(got) is float, (trade, model, got)
+        got2 = rp._cost_paid_bps(dict(trade), cm if model == "real" else model, None, "spot")
+        assert got2 == expected
+
+
+def test_cost_paid_follows_commission_bps_and_cost_product():
+    """cost_paid = 2 x the one-way fee the engine charged, by the same lookup
+    (charged_fee_bps / resolve_fee_bps): --commission-bps 10 -> 20 bps round
+    trip (was 15, the spot table's); --cost-product perp -> 10 (was 15)."""
+    import run_protocol as rp
+    cm = yaml.safe_load((SR_ROOT / "config" / "cost_model.yaml").read_text(encoding="utf-8"))
+    t = {"symbol": "BTCUSDT"}
+    assert rp._cost_paid_bps(t, cm, 10.0, "spot") == 20.0
+    assert rp._cost_paid_bps(t, cm, None, "perp") == 10.0
+    assert rp._cost_paid_bps(t, None, 12.5, "spot") == 25.0
+    for bps, prod in ((10.0, "spot"), (None, "perp"), (None, "spot"), (3.0, "perp")):
+        assert rp._cost_paid_bps(t, cm, bps, prod) == round(
+            2 * pw.charged_fee_bps("BTCUSDT", cm, bps, prod), 2)
+
+
+def test_cost_paid_through_the_trade_records_with_commission_bps(tmp_path):
+    """End to end through _compute_trade_records_for_window: a run made with
+    --commission-bps 10 records cost_paid 20.0 (2 x 10), the fee the engine
+    charged; the default call still records 15.0."""
+    import csv
+    import json
+    import run_protocol as rp
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    stamps = [f"2020-01-0{d} 0{h}:00:00" for d in (1, 2, 3) for h in range(3)]
+    with open(run_dir / "bars.csv", "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["timestamp", "open", "high", "low", "close"])
+        w.writeheader()
+        for i, ts in enumerate(stamps):
+            w.writerow({"timestamp": ts, "open": 100.0 + i, "high": 101.0 + i,
+                        "low": 99.0 + i, "close": 100.5 + i})
+    trade = {"trade_id": "t1", "symbol": "BTCUSDT", "side": "LONG", "entry_price": 100.0,
+             "exit_price": 101.0, "entry_time": "2020-01-01T01:00:00",
+             "exit_time": "2020-01-02T01:00:00", "duration_minutes": 1440.0,
+             "profit_loss_percent": 1.0, "net_portfolio_profit_loss_percent": 0.8,
+             "profitable_net": True, "exit_forecast": -1.0, "total_commission_percent": 0.2}
+    (run_dir / "trades.json").write_text(json.dumps([trade]), encoding="utf-8")
+    cm = yaml.safe_load((SR_ROOT / "config" / "cost_model.yaml").read_text(encoding="utf-8"))
+    (rec,) = rp._compute_trade_records_for_window(run_dir, "BTCUSDT", "w", "2020-01-04", cm,
+                                                  commission_bps=10.0, cost_product="spot")
+    assert rec["cost_paid"] == 20.0
+    (rec,) = rp._compute_trade_records_for_window(run_dir, "BTCUSDT", "w", "2020-01-04", cm)
+    assert rec["cost_paid"] == 15.0
+
+
+def test_run_protocol_passes_the_runs_fee_flags_to_the_trade_records():
+    """Static check of the one call site in main(): the run's own
+    --commission-bps / --cost-product reach cost_paid."""
+    src = (SR_ROOT / "tools" / "run_protocol.py").read_text(encoding="utf-8")
+    assert src.count("_compute_trade_records_for_window(") == 2  # the def + one call
+    assert src.count("= _compute_trade_records_for_window(\n") == 1
+    assert "commission_bps=args.commission_bps, cost_product=args.cost_product," in src
 
 
 def _pin_records(kind: str) -> list:

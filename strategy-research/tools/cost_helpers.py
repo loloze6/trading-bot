@@ -1,22 +1,48 @@
 """
 Cost helpers shared by tools/run_protocol.py and tools/portfolio_whole_test.py
-(E-062 S2a code review, findings 3 and 6) -- ONE definition of:
+(E-062 S2a code review, findings 3 and 6; second round 6 and 7) -- ONE
+definition of:
 
-  * the commission rate the engine is charged per symbol
-    (commission_rate_for_symbol, resolve_commission_rate), and
+  * the commission the engine is charged per symbol, in bps (fee_bps_for_symbol,
+    resolve_fee_bps) and as run_backtest's per-side fraction
+    (commission_rate_for_symbol, resolve_commission_rate); and
   * the realized gross edge / cost ratio of a set of trade records
-    (realized_edge_to_cost_ratio).
+    (realized_edge_to_cost_ratio_unrounded; realized_edge_to_cost_ratio is the
+    same value rounded to 4 decimals, as run_protocol's descriptive summary
+    has always shown it).
 
 Moved verbatim out of run_protocol.py (its _commission_rate_for_symbol,
 _resolve_commission_rate and the inline ratio block of
 _aggregate_trade_diagnostics), so a caller can use them WITHOUT importing
-run_protocol, which imports trading-bot's core.launcher at module level.
-run_protocol keeps its old names as aliases/calls; its output is unchanged
-(pinned in tests/test_e062_s2a_portfolio_whole_test.py). Standard library only.
+run_protocol, which imports trading-bot's core.launcher at module level. The
+bps functions are the same lookup stopped before the /10000 conversion, so the
+fraction functions return exactly what they returned before. run_protocol keeps
+its old names as aliases/calls; its output is unchanged (pinned in
+tests/test_e062_s2a_portfolio_whole_test.py). Standard library only.
 """
 from __future__ import annotations
 
 import statistics
+
+
+def fee_bps_for_symbol(symbol: str, cost_model: dict | None, product: str = "spot") -> float | None:
+    """One-way commission in bps for `symbol` from cost_model.yaml: the
+    top-level fee_rate_bps (product 'spot') or cost_model['perp']['fee_rate_bps']
+    (product 'perp'), the symbol's entry else 'default'. None when no cost
+    model, no product block, or neither entry exists (the engine then uses its
+    own default rate). See commission_rate_for_symbol for the full rationale."""
+    if not cost_model:
+        return None
+    if product == "perp":
+        fees = cost_model.get("perp", {}).get("fee_rate_bps", {})
+    else:
+        fees = cost_model.get("fee_rate_bps", {})
+    rate_bps = fees.get(symbol)
+    if rate_bps is None:
+        rate_bps = fees.get("default")
+    if rate_bps is None:
+        return None
+    return float(rate_bps)
 
 
 def commission_rate_for_symbol(symbol: str, cost_model: dict | None, product: str = "spot") -> float | None:
@@ -37,25 +63,30 @@ def commission_rate_for_symbol(symbol: str, cost_model: dict | None, product: st
     product: 'spot' (default, reads the top-level fee_rate_bps -- unchanged existing
         behavior) or 'perp' (reads the additive cost_model['perp']['fee_rate_bps']
         block instead). NOT a general default switch: callers must opt into 'perp'
-        explicitly per invocation (see main()'s --cost-product flag) so unrelated
-        spot/default runs are never silently re-costed at perp rates.
+        explicitly per invocation (see tools/run_protocol.py main()'s --cost-product
+        flag) so unrelated spot/default runs are never silently re-costed at perp
+        rates.
 
     Returns None (defer to the engine's own DEFAULT_COMMISSION_RATE) if no cost model
     is loaded, the requested product block is absent, or the symbol has neither a
     specific nor a 'default' fee_rate_bps entry.
     """
-    if not cost_model:
-        return None
-    if product == "perp":
-        fees = cost_model.get("perp", {}).get("fee_rate_bps", {})
-    else:
-        fees = cost_model.get("fee_rate_bps", {})
-    rate_bps = fees.get(symbol)
-    if rate_bps is None:
-        rate_bps = fees.get("default")
+    rate_bps = fee_bps_for_symbol(symbol, cost_model, product=product)
     if rate_bps is None:
         return None
-    return float(rate_bps) / 10000.0
+    return rate_bps / 10000.0
+
+
+def resolve_fee_bps(
+    symbol: str, cost_model: dict | None, commission_bps: float | None, product: str
+) -> float | None:
+    """One-way commission in bps the engine is charged for `symbol` under a
+    run's flags: --commission-bps when set (it wins for every symbol), else
+    fee_bps_for_symbol(symbol, cost_model, product). resolve_commission_rate is
+    this value / 10000."""
+    if commission_bps is not None:
+        return float(commission_bps)
+    return fee_bps_for_symbol(symbol, cost_model, product=product)
 
 
 def resolve_commission_rate(
@@ -82,9 +113,10 @@ def resolve_commission_rate(
     return commission_rate_for_symbol(symbol, cost_model, product=product)
 
 
-def realized_edge_to_cost_ratio(records: list) -> float | None:
-    """CUL-300 realized gross edge / cost ratio of trade records (moved verbatim
-    from run_protocol._aggregate_trade_diagnostics; comments kept):
+def realized_edge_to_cost_ratio_unrounded(records: list) -> float | None:
+    """CUL-300 realized gross edge / cost ratio of trade records, UNROUNDED
+    (moved verbatim from run_protocol._aggregate_trade_diagnostics; comments
+    kept). A pass/fail bar must compare this value, never the rounded one.
 
     Numerator is GROSS (pre-commission) edge, from realized_return -- the
     position-level gross return (% of position value). Deliberately NOT
@@ -105,7 +137,15 @@ def realized_edge_to_cost_ratio(records: list) -> float | None:
     mean_gross_edge_bps = statistics.mean(gross_edge_bps_values) if gross_edge_bps_values else None
     mean_cost_bps = statistics.mean(cost_bps_values) if cost_bps_values else None
     return (
-        round(mean_gross_edge_bps / mean_cost_bps, 4)
+        mean_gross_edge_bps / mean_cost_bps
         if mean_gross_edge_bps is not None and mean_cost_bps not in (None, 0)
         else None
     )
+
+
+def realized_edge_to_cost_ratio(records: list) -> float | None:
+    """realized_edge_to_cost_ratio_unrounded rounded to 4 decimals -- the
+    descriptive figure run_protocol's trade_diagnostics_summary has always
+    carried (round(mean_gross / mean_cost, 4))."""
+    raw = realized_edge_to_cost_ratio_unrounded(records)
+    return round(raw, 4) if raw is not None else None

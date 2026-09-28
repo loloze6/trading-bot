@@ -532,11 +532,28 @@ def _infer_exit_reason(
     return "signal_flip"  # default (allocation dropped below rebalance threshold)
 
 
-def _cost_paid_bps(trade: dict, cost_model: dict | None) -> float:
+def _cost_paid_bps(trade: dict, cost_model: dict | None,
+                   commission_bps: float | None = None, product: str = "spot") -> float:
     """
     A3.2: per-trade round-trip cost in bps.
     Uses config/cost_model.yaml when available; falls back to actual commission data.
+
+    E-062 S2a (second-round review finding 6): the one-way fee is resolved by
+    the SAME function that sets the engine's commission_rate
+    (cost_helpers.resolve_fee_bps with the run's --commission-bps /
+    --cost-product), so cost_paid is the fee actually charged. With the default
+    flags (None, "spot") and a symbol or 'default' entry in fee_rate_bps this is
+    the value the lookup below always returned. Differences: a --commission-bps
+    or --cost-product perp run now reports its real fee (it used to report the
+    spot table's), and a symbol whose table entry is 0 now reports 0 (the old
+    `or` fell through to 'default'). When nothing resolves, the legacy lookup
+    below runs unchanged.
     """
+    if cost_model or commission_bps is not None:
+        fee_bps = _cost_helpers.resolve_fee_bps(
+            trade.get("symbol", ""), cost_model, commission_bps, product)
+        if fee_bps is not None:
+            return round(fee_bps * 2, 2)  # round-trip = 2 legs
     if cost_model:
         symbol = trade.get("symbol", "")
         fees = cost_model.get("fee_rate_bps", {})
@@ -553,10 +570,14 @@ def _compute_trade_records_for_window(
     window: str,
     window_end: str,
     cost_model: dict | None,
+    commission_bps: float | None = None,
+    cost_product: str = "spot",
 ) -> list:
     """
     Compute per-trade diagnostic records for one backtest window.
     Returns empty list if no trades or missing data files.
+    commission_bps / cost_product: the run's --commission-bps / --cost-product,
+    so each record's cost_paid is the fee the engine charged (_cost_paid_bps).
     """
     trades = _load_trades(run_dir)
     if not trades:
@@ -609,7 +630,7 @@ def _compute_trade_records_for_window(
         exit_eff  = _compute_exit_efficiency(side, entry_price, exit_price, holding_bars)
         post_5, post_20 = _compute_post_exit_returns(side, exit_price, bars, exit_idx)
         exit_reason = _infer_exit_reason(side, exit_forecast, bars, exit_idx, window_end)
-        cost_bps = _cost_paid_bps(trade, cost_model)
+        cost_bps = _cost_paid_bps(trade, cost_model, commission_bps, cost_product)
 
         # E-016 (fee-reduction autopsy): per-trade halves of the enter_earlier/
         # exit_later metrics, plus entry_price/exit_price/entry_idx/exit_idx --
@@ -2111,7 +2132,8 @@ def main():
 
             # Step 03: compute trade diagnostics while run directory is available
             trade_records = _compute_trade_records_for_window(
-                rd, symbol, label, end, cost_model
+                rd, symbol, label, end, cost_model,
+                commission_bps=args.commission_bps, cost_product=args.cost_product,
             )
             all_trade_records.extend(trade_records)
 

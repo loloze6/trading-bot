@@ -26,15 +26,19 @@ rows identically).
 DEVIATION FROM THE ACCEPTED G1 TEXT (code review finding 4): G1 says "a
 junction day that the later window lacks is treated as a gap" (linked flat).
 Linking flat drops real P&L the strategy made or lost while the data is
-missing, so here a missing junction day is NOT_EVALUABLE instead. Only a real
-protocol gap (the later window's nominal start is after the last chained day,
-known only from `window_starts`) is linked flat as G1 says. Without
-`window_starts`, any window starting after the last chained day is ambiguous
-(gap or missing junction day) and is NOT_EVALUABLE.
+missing, so here a missing junction day is NOT_EVALUABLE instead, and so is a
+window whose data stops before its nominal end or starts after its nominal
+start (second-round findings 1 and 3). The NOT_EVALUABLE reason lists every
+missing (window, coin, day) cell and their count (finding 4). Only a real
+protocol gap -- a window whose nominal start is after the previous windows'
+nominal end, known from the protocol's window bounds -- is linked flat, as G1
+says. chain_windows therefore REQUIRES the protocol's nominal (start, end) per
+window (window_bounds_from_protocol / load_protocol_window_bounds), never a
+window manifest's start (the warm-up prefetch start).
 
 What v2 adds:
   * chain_windows: one whole-test daily and bar-level curve out of the
-    per-window curves (G1, G2);
+    per-window curves, over the protocol's nominal span (G1, G2);
   * whole_test_max_drawdown: drawdown on the chained BAR-level curve (D-034);
   * whole_test_sharpe: Sharpe of the chained daily returns (G3, D-036);
   * whole_test_trade_counts: per-coin trade count over the whole test, raw and
@@ -42,10 +46,11 @@ What v2 adds:
   * chained_buy_and_hold: strategy vs equal-weight buy-and-hold on the chained
     level (final level - 1, multi-day steps included), one round trip per coin
     (G6, D-037);
-  * pooled_edge_to_cost_ratio: the shared realized_edge_to_cost_ratio
-    (tools/cost_helpers.py) over the trades that are NOT end_of_window forced
-    closes, with the min-trades floor on the same set (G7, D-038);
-  * readers/lookups: window_close_bars, charged_fee_bps, slippage_bps_for_symbol.
+  * pooled_edge_to_cost_ratio: the shared, UNROUNDED realized edge / cost
+    ratio (tools/cost_helpers.py), the lower of all trades and non-forced
+    trades, with the min-trades floor on the non-forced trades (G7, D-038);
+  * readers/lookups: window_close_bars, window_bounds_from_protocol,
+    load_protocol_window_bounds, charged_fee_bps, slippage_bps_for_symbol.
 
 S2b SCOPE NOTE (fee): buy-and-hold must be charged the commission the strategy
 was actually charged. run_protocol passes run_backtest a commission_rate from
@@ -266,96 +271,216 @@ def window_close_bars(path: Path) -> dict:
 # G1/G2: window chaining
 # ---------------------------------------------------------------------------
 
-def chain_windows(windows: Mapping, coins, window_starts: Mapping | None = None) -> dict:
+# How many days a window's first recorded day may fall after its nominal start
+# before the bounds are refused as the wrong kind (see chain_windows). The
+# smallest warm-up prefetch the engine uses is 2 x required_bars with
+# required_bars >= 24 (AdvancedStrategy), i.e. 48 hourly bars = 2 days.
+DEFAULT_WARMUP_DAYS = 2
+
+# At most this many (window, coin, day) cells are spelled out in a
+# NOT_EVALUABLE reason (the total count is always given).
+_MAX_CELLS_SHOWN = 20
+
+
+def _parse_protocol_date(value, what: str) -> date:
+    if isinstance(value, datetime) or not isinstance(value, (str, date)):
+        raise ValueError(f"{what}: {value!r} is not a YYYY-MM-DD date")
+    if isinstance(value, date):
+        return value
+    try:
+        if len(value) != 10:
+            raise ValueError
+        return date.fromisoformat(value)
+    except ValueError:
+        raise ValueError(f"{what}: {value!r} is not a YYYY-MM-DD date") from None
+
+
+def window_bounds_from_protocol(protocol: Mapping) -> dict:
+    """{window label: (nominal start, nominal end)} from a protocol's
+    `windows` list -- each entry {"label": ..., "test": {"start": "YYYY-MM-DD",
+    "end": "YYYY-MM-DD"}}, the format of every protocols/*.json and of
+    run_phase1_research._generate_monthly_windows; run_protocol.py reads the
+    same `window["test"]["start"/"end"]`. `end` is INCLUSIVE by day at the
+    engine (trading-bot/data/fetchers/base_fetcher.py _inclusive_end). These
+    are the bounds chain_windows expects. NEVER pass a window manifest's start
+    instead: the manifest records the warm-up PREFETCH start, before the
+    protocol's test.start. Raises ValueError on a malformed protocol."""
+    wins = protocol.get("windows") if isinstance(protocol, Mapping) else None
+    if not isinstance(wins, list) or not wins:
+        raise ValueError("protocol has no `windows` list")
+    out: dict = {}
+    for w in wins:
+        if not isinstance(w, Mapping) or not isinstance(w.get("test"), Mapping):
+            raise ValueError(f"protocol window {w!r} lacks label/test")
+        label = w.get("label")
+        _hashable(label, "protocol window label")
+        if label in (None, "") or label in out:
+            raise ValueError(f"protocol window label {label!r} is missing or repeated")
+        start = _parse_protocol_date(w["test"].get("start"), f"window {label!r} test.start")
+        end = _parse_protocol_date(w["test"].get("end"), f"window {label!r} test.end")
+        if end < start:
+            raise ValueError(f"window {label!r}: test.end {end} is before test.start {start}")
+        out[label] = (start, end)
+    return out
+
+
+def load_protocol_window_bounds(path: Path) -> dict:
+    """window_bounds_from_protocol of a protocol JSON file (explicit file reader)."""
+    import json
+    with open(path, encoding="utf-8") as f:
+        return window_bounds_from_protocol(json.load(f))
+
+
+def _check_bounds(window_bounds, windows) -> dict:
+    if not isinstance(window_bounds, Mapping) or set(window_bounds) != set(windows):
+        raise ValueError("window_bounds must map exactly the windows' labels to (start, end) "
+                         "dates (window_bounds_from_protocol)")
+    out, starts = {}, {}
+    for w, b in window_bounds.items():
+        try:
+            s, e = b
+        except (TypeError, ValueError):
+            raise ValueError(f"window_bounds[{w!r}] = {b!r} is not a (start, end) pair") from None
+        for d in (s, e):
+            if not isinstance(d, date) or isinstance(d, datetime):
+                raise ValueError(f"window_bounds[{w!r}] = {b!r}: {d!r} is not a date")
+        if e < s:
+            raise ValueError(f"window_bounds[{w!r}]: end {e} is before start {s}")
+        if s in starts:
+            raise ValueError(f"windows {starts[s]!r} and {w!r} have the same nominal start {s}")
+        starts[s] = w
+        out[w] = (s, e)
+    return out
+
+
+def _missing_cells(win, daily_w, coins, days) -> list:
+    """(window, coin, day) for every coin lacking a daily close on each day."""
+    return [(win, c, d) for d in days for c in coins if d not in daily_w[c]]
+
+
+def _not_evaluable_cells(reason: str, cells: list):
+    shown = ", ".join(f"({w!r}, {c!r}, {d})" for w, c, d in cells[:_MAX_CELLS_SHOWN])
+    more = f", ... {len(cells) - _MAX_CELLS_SHOWN} more" if len(cells) > _MAX_CELLS_SHOWN else ""
+    return PortfolioNotEvaluable(f"{reason}; {len(cells)} missing (window, coin, day) "
+                                 f"cell(s): {shown}{more}")
+
+
+def _days(first: date, last: date) -> list:
+    return [date.fromordinal(o) for o in range(first.toordinal(), last.toordinal() + 1)]
+
+
+def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
+                  warmup_days: int = DEFAULT_WARMUP_DAYS) -> dict:
     """One whole-test equal-weight portfolio curve from per-window backtests.
 
     windows: {window label: {coin: {naive UTC timestamp: equity}}} -- the shape
         portfolio_daily.load_windows returns (postRebalance_total_value,
-        warm-up bars already dropped by its NOT_READY filter). Label order does
-        not matter: windows are chained by anchor day.
+        warm-up bars already dropped by its NOT_READY filter).
     coins: the coins every window must hold.
-    window_starts: optional {window label: nominal start date} (the protocol's
-        window `test.start`). Needed to tell a real protocol gap from a
-        missing junction day; without it, a window starting after the last
-        chained day is NOT_EVALUABLE.
+    window_bounds: REQUIRED {window label: (nominal start, nominal end)} -- the
+        protocol's test.start / test.end (window_bounds_from_protocol), end
+        inclusive by day. NEVER a window manifest's start: that is the warm-up
+        PREFETCH start, earlier than test.start.
+    warmup_days: a window whose first recorded day is more than this many days
+        after its nominal start raises ValueError -- the bounds look like the
+        manifest's prefetch start, not the protocol's test.start (the warm-up is
+        never recorded). A smaller head shortfall is missing data
+        (NOT_EVALUABLE, below). Pass the run's prefetch span in days when it is
+        longer than DEFAULT_WARMUP_DAYS.
+
+    Bounds checks (ValueError, an input bug): a recorded bar before a window's
+    nominal start or after its nominal end; the head shortfall above; two
+    windows with the same nominal start; a window whose nominal end is before
+    a day already chained (it lies inside earlier windows).
 
     Per window (unchanged v1 definition, portfolio_daily.window_common_curve):
     the common UTC days (every coin has a daily close), >= 2 of them, covering
     >= PORTFOLIO_MIN_COMMON_DAY_COVERAGE of the union; each coin normalised at
     its close on the window's first common day (the ANCHOR); portfolio = mean.
 
-    Chaining. Windows are sorted by anchor; two windows with the same anchor
-    -> NOT_EVALUABLE. The first window starts the chain at level 1.0 on its
-    anchor (with window_starts: its anchor must be its nominal start day, else
-    NOT_EVALUABLE -- missing data at the start). With `last_day` = the last day
-    already in the chain, the next window w must hold its JOIN day J:
-      * J = last_day when w is meant to overlap the chain (window_starts[w] <=
-        last_day, or, without window_starts, its anchor <= last_day): the
-        one-day overlap every protocol has today ("junction", anchor ==
-        last_day) or a longer overlap ("overlap": the EARLIEST window keeps its
-        days);
-      * J = window_starts[w] when that nominal start is after last_day: a real
-        protocol GAP ("gap"). The chain is linked FLAT from last_day to J and
-        the calendar days strictly between them are reported in n_gap_days.
-      * J missing from w's common days -> NOT_EVALUABLE (a missing junction day,
-        or missing data at a gap window's start; deviation from G1's "treat as
-        gap", see the module docstring). Without window_starts, anchor >
-        last_day -> NOT_EVALUABLE (ambiguous).
-    Window w is scaled by level(J) / v_w(J) and owns its common days after J.
-    A daily return is counted for a day d only when d and the previous day in
-    the chain are consecutive calendar days of the SAME window (v_w(d) /
-    v_w(d-1) - 1: bit-identical to portfolio_daily.consecutive_daily_returns);
-    a multi-day step inside a window is still in the LEVEL, just not a daily
-    return (n_multi_day_steps).
+    Completeness (governing rule: missing data is NOT_EVALUABLE, never a
+    silently shorter or flatter test). Windows are chained in nominal-start
+    order and every window must hold, as common days:
+      * its nominal END (else its tail is missing: a coin's loss on the
+        missing tail days would vanish -- second-round review finding 1);
+      * the first window: its nominal START (else the head is missing);
+      * a later window w, with `last_day` = the last chained day (= the latest
+        nominal end so far, since every tail is complete):
+          - nominal start <= last_day (the one-day overlap every protocol has
+            today, "junction", or a longer one, "overlap": the EARLIEST window
+            keeps its days): w must hold last_day, its JOIN day;
+          - nominal start > last_day: a real protocol GAP ("gap"). w must hold
+            its nominal start, where it joins; the chain is linked FLAT across
+            the gap (G1) and the calendar days strictly between are
+            n_gap_days.
+    A missing day raises NOT_EVALUABLE naming every missing (window, coin, day)
+    cell and their count. DEVIATION FROM G1: G1 says a missing junction day
+    is "treated as a gap"; here it is NOT_EVALUABLE (code review finding 4) --
+    linking flat would drop real P&L.
 
-    Bars: each window contributes, between its close on J and its close on its
-    last common day, (a) its COMMON BARS (timestamps at which every coin has a
-    bar) and (b) the daily-close level of every day it owns -- plus, for the
-    first window and a gap window, the level at J itself. (b) puts the anchor
-    level (1.0 for the first window) and each day's close in the curve even when
-    a coin lacks the bar at another coin's close time (code review finding 5:
-    otherwise a fall from the anchor to the first common bar is not a
-    drawdown). When every coin has its close bar, (b) coincides with a common
-    bar, so for a single such window this is exactly v1's drawdown bar set.
+    Window w is scaled by level(join) / v_w(join) and owns its common days
+    after the join day. A daily return is counted for a day d only when d and
+    the previous day in the chain are consecutive calendar days of the SAME
+    window (v_w(d) / v_w(d-1) - 1: bit-identical to
+    portfolio_daily.consecutive_daily_returns); a multi-day step inside a
+    window is still in the LEVEL, just not a daily return (n_multi_day_steps).
 
-    Whole-test coverage (G2): (number of daily returns + 1) must be >=
-    WHOLE_TEST_MIN_COVERAGE x calendar days from the first anchor to the last
-    chained day (inclusive), else NOT_EVALUABLE; no daily return at all ->
-    NOT_EVALUABLE. It counts RETURN days, so one missing day inside a window
-    costs two counted days (stricter than the per-window floor).
+    Bars: each window contributes, between its close on the join day and its
+    close on its nominal end, (a) its COMMON BARS (timestamps at which every
+    coin has a bar) and (b) the daily-close level of every day it owns -- plus,
+    for the first window and a gap window, the level at the join day itself.
+    (b) puts the anchor level (1.0 for the first window) and each day's close
+    in the curve even when a coin lacks the bar at another coin's close time
+    (code review finding 5). When every coin has its close bar, (b) coincides
+    with a common bar, so for a single such window this is exactly v1's
+    drawdown bar set.
+
+    Whole-test coverage (G2), against the NOMINAL span (first window's nominal
+    start to the last nominal end, inclusive -- with the completeness checks
+    above the chain spans exactly that): (number of daily returns + 1) must be
+    >= WHOLE_TEST_MIN_COVERAGE x its calendar days, else NOT_EVALUABLE. It
+    counts RETURN days, so one missing day inside a window costs two counted
+    days (stricter than the per-window floor).
 
     Returns {coins, segments, daily_levels [(date, level)], daily_returns
     [(date, return)], bar_levels [(timestamp, level)], first_day, last_day,
     n_calendar_days, n_gap_days, n_gap_links, n_multi_day_steps, coverage}.
-    `segments` is one dict per window in chain order: window, anchor, join_day,
-    end_day, kind (first | junction | overlap | gap), scale, common (its common
-    days), return_days, n_gap_days_before."""
+    `segments` is one dict per window in chain order: window, nominal_start,
+    nominal_end, anchor, join_day, end_day, kind (first | junction | overlap |
+    gap), scale, common (its common days), return_days, n_gap_days_before."""
     coins = _check_coins(coins)
-    if not isinstance(windows, Mapping) or not windows:
-        if isinstance(windows, Mapping):
-            raise PortfolioNotEvaluable("no windows to chain")
+    if not isinstance(windows, Mapping):
         raise ValueError(f"windows must be a mapping, got {type(windows).__name__}")
+    if not windows:
+        raise PortfolioNotEvaluable("no windows to chain")
     _check_windows(windows, coins)
-    if window_starts is not None:
-        if not isinstance(window_starts, Mapping) or set(window_starts) != set(windows):
-            raise ValueError("window_starts must map exactly the windows' labels to dates")
-        for w, d in window_starts.items():
-            if not isinstance(d, date) or isinstance(d, datetime):
-                raise ValueError(f"window_starts[{w!r}] = {d!r} is not a date")
+    bounds = _check_bounds(window_bounds, windows)
+    if not _is_int(warmup_days) or warmup_days < 0:
+        raise ValueError(f"warmup_days must be a non-negative int, got {warmup_days!r}")
+
+    for win, by_coin in windows.items():
+        s, e = bounds[win]
+        stamps = [t for c in coins for t in by_coin[c]]
+        if not stamps:
+            continue  # no bar at all: window_common_curve reports it (NOT_EVALUABLE)
+        first_rec, last_rec = min(stamps).date(), max(stamps).date()
+        if first_rec < s:
+            raise ValueError(f"window {win!r} has a recorded bar on {first_rec}, before its "
+                             f"nominal start {s} (wrong bounds?)")
+        if last_rec > e:
+            raise ValueError(f"window {win!r} has a recorded bar on {last_rec}, after its "
+                             f"nominal end {e} (wrong bounds?)")
+        if (first_rec - s).days > warmup_days:
+            raise ValueError(
+                f"window {win!r}: first recorded day {first_rec} is {(first_rec - s).days} "
+                f"days after the given start {s} (> warmup_days={warmup_days}): the bounds "
+                f"look like a window manifest's start (the warm-up prefetch start), not the "
+                f"protocol's test.start -- pass window_bounds_from_protocol(...)")
 
     plans = []
     for win, by_coin in windows.items():
         wc = _pd.window_common_curve(win, by_coin, coins)
-        plans.append((wc["common"][0], win, by_coin, wc))
-    anchors: dict = {}
-    for anchor, win, _b, _w in plans:
-        if anchor in anchors:
-            raise PortfolioNotEvaluable(f"windows {anchors[anchor]!r} and {win!r} share the "
-                                        f"anchor day {anchor}; the chain order is undefined")
-        anchors[anchor] = win
-        if window_starts is not None and anchor < window_starts[win]:
-            raise ValueError(f"window {win!r} has data on {anchor}, before its nominal start "
-                             f"{window_starts[win]}")
+        plans.append((bounds[win][0], win, by_coin, wc))
     plans.sort(key=lambda p: p[0])
 
     segments: list = []
@@ -365,36 +490,47 @@ def chain_windows(windows: Mapping, coins, window_starts: Mapping | None = None)
     level = last_day = None
     n_gap_days = n_gap_links = n_multi = 0
 
-    for anchor, win, by_coin, wc in plans:
+    for nominal_start, win, by_coin, wc in plans:
+        nominal_end = bounds[win][1]
         common, daily_w, anchor_val = wc["common"], wc["daily"], wc["anchor"]
+        anchor = common[0]
         v = dict(zip(common, wc["curve"]))
+        if common[-1] != nominal_end:
+            raise _not_evaluable_cells(
+                f"window {win!r}: last common day {common[-1]} is before its nominal end "
+                f"{nominal_end} -- missing tail data would drop real P&L",
+                _missing_cells(win, daily_w, coins,
+                               _days(date.fromordinal(common[-1].toordinal() + 1), nominal_end)))
         gap_before = 0
         if last_day is None:
-            if window_starts is not None and anchor != window_starts[win]:
-                raise PortfolioNotEvaluable(
-                    f"first window {win!r} has no common day on its start "
-                    f"{window_starts[win]} (first common day {anchor}): missing data")
+            if anchor != nominal_start:
+                raise _not_evaluable_cells(
+                    f"first window {win!r}: first common day {anchor} is after its nominal "
+                    f"start {nominal_start} -- missing head data",
+                    _missing_cells(win, daily_w, coins,
+                                   _days(nominal_start, date.fromordinal(anchor.toordinal() - 1))))
             kind, join = "first", anchor
-        else:
-            start = window_starts[win] if window_starts is not None else None
-            if (start if start is not None else anchor) <= last_day:
-                kind, join = ("junction" if anchor == last_day else "overlap"), last_day
-            elif start is None:
-                raise PortfolioNotEvaluable(
-                    f"window {win!r} starts on {anchor}, after the last chained day "
-                    f"{last_day}: without window_starts a protocol gap cannot be told "
-                    f"from a missing junction day")
-            else:
-                kind, join = "gap", start
+        elif nominal_start <= last_day:
+            if nominal_end < last_day:
+                raise ValueError(f"window {win!r} (nominal {nominal_start}..{nominal_end}) lies "
+                                 f"inside earlier windows (chain already reaches {last_day})")
+            kind, join = ("junction" if anchor == last_day else "overlap"), last_day
             if join not in v:
-                what = ("its junction day" if kind != "gap" else "its nominal start day")
-                raise PortfolioNotEvaluable(
-                    f"window {win!r} has no common day on {what} {join} (its common days "
-                    f"start {anchor}): missing data would drop real P&L from the chain")
-            if kind == "gap":
-                gap_before = (join - last_day).days - 1
-                n_gap_days += gap_before
-                n_gap_links += 1
+                raise _not_evaluable_cells(
+                    f"window {win!r} has no common day on its junction day {join} -- missing "
+                    f"data would drop real P&L from the chain",
+                    _missing_cells(win, daily_w, coins, [join]))
+        else:
+            kind, join = "gap", nominal_start
+            if join not in v:
+                raise _not_evaluable_cells(
+                    f"window {win!r} (after a protocol gap) has no common day on its nominal "
+                    f"start day {join} -- missing head data",
+                    _missing_cells(win, daily_w, coins,
+                                   _days(nominal_start, date.fromordinal(anchor.toordinal() - 1))))
+            gap_before = (join - last_day).days - 1
+            n_gap_days += gap_before
+            n_gap_links += 1
 
         scale = (1.0 if level is None else level) / v[join]
         close_ts = {d: max(daily_w[c][d][0] for c in coins) for d in common}
@@ -430,7 +566,8 @@ def chain_windows(windows: Mapping, coins, window_starts: Mapping | None = None)
                                  f"{win!r} ({bar_levels[-1][0]} then {t})")
             bar_levels.append((t, points[t]))
 
-        segments.append({"window": win, "anchor": anchor, "join_day": join,
+        segments.append({"window": win, "nominal_start": nominal_start,
+                         "nominal_end": nominal_end, "anchor": anchor, "join_day": join,
                          "end_day": common[-1], "kind": kind, "scale": scale,
                          "common": list(common), "return_days": return_days,
                          "n_gap_days_before": gap_before})
@@ -438,14 +575,18 @@ def chain_windows(windows: Mapping, coins, window_starts: Mapping | None = None)
     if not daily_returns:
         raise PortfolioNotEvaluable("no two chained days are consecutive calendar days of "
                                     "one window, so there is no daily return")
-    first_day = daily_levels[0][0]
-    n_calendar = (last_day - first_day).days + 1
+    first_day = plans[0][0]
+    last_nominal = max(e for _s, e in bounds.values())
+    if daily_levels[0][0] != first_day or last_day != last_nominal:
+        raise ValueError(f"chain spans {daily_levels[0][0]}..{last_day}, not the nominal "
+                         f"{first_day}..{last_nominal}")  # unreachable after the checks above
+    n_calendar = (last_nominal - first_day).days + 1
     coverage = (len(daily_returns) + 1) / n_calendar
     if coverage < WHOLE_TEST_MIN_COVERAGE:
         raise PortfolioNotEvaluable(
             f"whole test: {len(daily_returns)} daily return(s) + 1 cover {coverage:.1%} of the "
-            f"{n_calendar} calendar day(s) from {first_day} to {last_day} ({n_gap_days} gap "
-            f"day(s) over {n_gap_links} gap link(s)), below "
+            f"{n_calendar} calendar day(s) of the nominal span {first_day} to {last_nominal} "
+            f"({n_gap_days} gap day(s) over {n_gap_links} gap link(s)), below "
             f"WHOLE_TEST_MIN_COVERAGE={WHOLE_TEST_MIN_COVERAGE}")
     return {"coins": list(coins), "segments": segments, "daily_levels": daily_levels,
             "daily_returns": daily_returns, "bar_levels": bar_levels,
@@ -594,8 +735,9 @@ def whole_test_trade_counts(trade_records, results) -> dict:
 def charged_fee_bps(symbol: str, cost_model: Mapping | None, commission_bps=None,
                     product: str = "spot") -> float:
     """One-way commission in bps the engine charged `symbol`, by the SAME
-    function run_protocol uses to build run_backtest's commission_rate
-    (tools/cost_helpers.resolve_commission_rate: --commission-bps if set, else
+    lookup run_protocol uses to build run_backtest's commission_rate and each
+    trade's cost_paid (tools/cost_helpers.resolve_fee_bps, of which
+    resolve_commission_rate is the /10000 form: --commission-bps if set, else
     cost_model.yaml's fee_rate_bps for `product`). Raises when that function
     returns None (the engine then fell back to its own default rate, which this
     module will not guess). The caller must pass the run's own commission_bps /
@@ -605,11 +747,11 @@ def charged_fee_bps(symbol: str, cost_model: Mapping | None, commission_bps=None
         raise ValueError("cost_model must be a mapping or None")
     if commission_bps is not None:
         _nonneg(commission_bps, "commission_bps")
-    rate = _ch.resolve_commission_rate(symbol, cost_model, commission_bps, product)
-    if rate is None:
+    fee = _ch.resolve_fee_bps(symbol, cost_model, commission_bps, product)
+    if fee is None:
         raise ValueError(f"no commission rate for {symbol!r} (product {product!r}): the "
                          f"engine would have used its default rate")
-    return _nonneg(rate * 10_000.0, f"commission for {symbol}")
+    return _nonneg(fee, f"commission for {symbol}")
 
 
 def slippage_bps_for_symbol(slippage, symbol: str) -> float:
@@ -635,7 +777,7 @@ def chained_buy_and_hold(chain: dict, close_windows: Mapping, fee_bps: Mapping,
                          slippage_bps: Mapping) -> dict:
     """Strategy vs equal-weight buy-and-hold on the SAME chained schedule (G6).
 
-    chain: chain_windows(equity windows, coins, ...).
+    chain: chain_windows(equity windows, coins, window_bounds).
     close_windows: {window label: {coin: {timestamp: close}}} of the SAME
         backtests (window_close_bars), i.e. the prices the strategy saw. The
         window labels and coin sets must be the chain's, and each window's
@@ -716,49 +858,60 @@ def chained_buy_and_hold(chain: dict, close_windows: Mapping, fee_bps: Mapping,
 # ---------------------------------------------------------------------------
 
 def pooled_edge_to_cost_ratio(trade_records, min_trades: int) -> dict:
-    """The variant's POOLED realized gross edge / cost ratio, with the floor,
-    over its trade records EXCLUDING end_of_window forced closes (code review
-    finding 6: a forced close at every window end is not a trade the strategy
-    chose; an always-long book would otherwise reach the floor by construction).
+    """The variant's POOLED realized gross edge / cost ratio for the D-038 bar,
+    conservative both ways (second-round review finding 2):
 
-    The ratio is tools/cost_helpers.realized_edge_to_cost_ratio -- the SAME
-    function run_protocol._aggregate_trade_diagnostics uses for its
-    realized_edge_to_cost_ratio (mean gross bps over mean cost_paid bps) -- on
-    that reduced set; no second formula. min_trades is the bar file's
-    cost_edge_min_trades (D-039: 100).
+      ratio = min(ratio over ALL trade records,
+                  ratio over the records that are NOT end_of_window forced closes)
 
-    NOT_EVALUABLE when fewer than min_trades records remain, when any remaining
-    record lacks a measured cost (cost_paid None), or when the ratio is None
-    (zero mean cost). Raises ValueError on a malformed record. Returns {ratio,
-    n_trades, n_excluded_end_of_window}."""
+    so forced closes can neither lift the figure (a big forced-close gain,
+    code review finding 6) nor hide a loss (a big forced-close loss). The
+    trade FLOOR counts only the non-forced records (an always-long book gets
+    one forced close per window and must not reach the floor by construction).
+
+    Both ratios are tools/cost_helpers.realized_edge_to_cost_ratio_unrounded --
+    the SAME computation run_protocol._aggregate_trade_diagnostics shows,
+    rounded to 4 decimals, as realized_edge_to_cost_ratio -- UNROUNDED here
+    (finding 7: a value just below the threshold must not round up to it).
+    min_trades is the bar file's cost_edge_min_trades (D-039: 100).
+
+    NOT_EVALUABLE when any record (forced closes included) lacks a measured
+    cost (cost_paid None), when fewer than min_trades non-forced records
+    remain, or when either ratio is None (zero mean cost). Raises ValueError
+    on a malformed record. Returns {ratio, ratio_all_trades,
+    ratio_excluding_end_of_window, n_trades, n_excluded_end_of_window}."""
     if not _is_int(min_trades) or min_trades < 1:
         raise ValueError(f"min_trades must be a positive int, got {min_trades!r}")
     if isinstance(trade_records, (str, bytes)) or isinstance(trade_records, Mapping) \
             or not hasattr(trade_records, "__iter__"):
         raise ValueError(f"trade_records must be a list of records, got "
                          f"{type(trade_records).__name__}")
-    kept, n_forced = [], 0
+    records, kept, n_forced = [], [], 0
     for rec in trade_records:
         sym, win, reason = _check_trade_record(rec)
-        if reason == END_OF_WINDOW:
-            n_forced += 1
-            continue
         rr = rec.get("realized_return")
         if not _is_real(rr) or not math.isfinite(float(rr)):
             raise ValueError(f"trade record ({sym}, {win}) has realized_return {rr!r}")
         cost = rec.get("cost_paid")
         if cost is not None:
             _nonneg(cost, f"trade record ({sym}, {win}) cost_paid")
-        kept.append(rec)
-    missing_cost = sum(1 for r in kept if r.get("cost_paid") is None)
+        records.append(rec)
+        if reason == END_OF_WINDOW:
+            n_forced += 1
+        else:
+            kept.append(rec)
+    missing_cost = sum(1 for r in records if r.get("cost_paid") is None)
     if missing_cost:
-        raise PortfolioNotEvaluable(f"edge/cost ratio: {missing_cost} of {len(kept)} trade(s) "
-                                    f"(end_of_window closes excluded) lack a measured cost")
+        raise PortfolioNotEvaluable(f"edge/cost ratio: {missing_cost} of {len(records)} trade "
+                                    f"record(s) lack a measured cost")
     if len(kept) < min_trades:
-        raise PortfolioNotEvaluable(f"edge/cost ratio: {len(kept)} trade(s) with a measured cost "
-                                    f"after excluding {n_forced} end_of_window forced close(s), "
-                                    f"fewer than min_trades={min_trades}")
-    ratio = _ch.realized_edge_to_cost_ratio(kept)
-    if ratio is None:
+        raise PortfolioNotEvaluable(f"edge/cost ratio: {len(kept)} trade(s) after excluding "
+                                    f"{n_forced} end_of_window forced close(s), fewer than "
+                                    f"min_trades={min_trades}")
+    r_all = _ch.realized_edge_to_cost_ratio_unrounded(records)
+    r_kept = _ch.realized_edge_to_cost_ratio_unrounded(kept)
+    if r_all is None or r_kept is None:
         raise PortfolioNotEvaluable("edge/cost ratio: zero mean measured cost")
-    return {"ratio": float(ratio), "n_trades": len(kept), "n_excluded_end_of_window": n_forced}
+    return {"ratio": min(float(r_all), float(r_kept)), "ratio_all_trades": float(r_all),
+            "ratio_excluding_end_of_window": float(r_kept), "n_trades": len(kept),
+            "n_excluded_end_of_window": n_forced}
