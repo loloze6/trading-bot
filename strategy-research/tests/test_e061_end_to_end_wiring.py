@@ -92,9 +92,14 @@ How the markers were proven (not only "it fails"): each test was run with pytest
 monkeypatch-only simulation of the fix it waits on (never committed): simulated
 C1.2 flipped exactly A1 and A5, C1.2+C1.3 flipped the two joined-up tests and A2,
 C1.4 / C1.5 / C1.6 flipped A4 / A6+A8 / A7, and only a simulated C2.2
-(build_reports reading variants/base/) flipped B2 -- so a test here cannot pass
-for a reason other than its fix, nor stay red after it because of a bug of its
-own.
+(build_reports reading variants/base/) flipped B2; with every simulated fix at
+once all 11 tests pass outright. So a test here cannot pass for a reason other
+than its fix, nor stay red after it because of a bug of its own. The guards were
+proven the same way: a repo script run through subprocess.run (setup_run.py via
+sys.executable) or through a direct Popen (tools/run_protocol.py), a non-git
+program, a Gemini call and a holdout_sealed argv -- each swallowed by the caller --
+all failed the test at teardown. In the joined-up runs no real subprocess ran at
+all (every tool call went to the stubs).
 """
 from __future__ import annotations
 
