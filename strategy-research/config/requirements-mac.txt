@@ -12,12 +12,15 @@
 # file's own comments name 0.2.82.
 # google-genai: imported at module level (undeclared upstream; no version
 # recorded anywhere in the tree). Pinned at first install, 2026-07-31;
-# realign if Jeremy reports a different version. NOTE: run_phase1_research
-# constructs genai.Client() at import time, so importing it requires the
-# Gemini API key environment variable to EXIST (any value; no network
-# happens at construction — the exact variable name is documented at the
-# Client() construction site in run_phase1_research.py). No key lives in
-# this repo, ever. This file deliberately avoids spelling the variable name:
-# the repo's pre-commit secret scan blocks it in diffs, by design.
+# realign if Jeremy reports a different version. CORRECTED 2026-09-28
+# (re-verified directly against run_phase1_research.py's `_get_client()`):
+# genai.Client() is constructed LAZILY, on first use inside
+# run_gemini_worker, not at import time -- importing run_phase1_research no
+# longer requires the Gemini API key environment variable to exist. The key
+# is still read (no network) the first time a Gemini-assigned stage actually
+# runs; no template in this tree assigns `gemini` today, so a default run
+# never needs it at all. No key lives in this repo, ever. This file
+# deliberately avoids spelling the variable name: the repo's pre-commit
+# secret scan blocks it in diffs, by design.
 claude-agent-sdk==0.2.82
 google-genai==2.16.0

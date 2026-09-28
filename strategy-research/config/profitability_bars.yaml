@@ -19,13 +19,21 @@
 #     protocol_execution): every variant tested on the attempt is checked against
 #     every bar here; the stop is raised after regroup_record. The promote-path
 #     reader above is then skipped for that run.
-#   - the holdout gate (Step 12, _route_holdout_evaluation) -- not yet wired to read
-#     this file in this slice; still reads promotion_audit.yaml's own hardcoded
-#     DSR_THRESHOLD=0.95. That repointing is out of scope for item 2 as dispatched
-#     (0.2's own text says only _route_holdout_evaluation step 1 "make it read the
-#     file's threshold" -- left for a follow-up since it changes a currently-live
-#     gate's behavior and deserves its own flag/verification, not bundled silently
-#     into the branch-3 stop).
+#   - the LEGACY holdout gate (Step 12, _route_holdout_evaluation, flag-off routing) --
+#     still not wired to read this file; it reads promotion_audit.yaml's own hardcoded
+#     DSR_THRESHOLD=0.95, unchanged. That repointing was out of scope for item 2 as
+#     dispatched (0.2's own text says only _route_holdout_evaluation step 1 "make it
+#     read the file's threshold" -- left for a follow-up since it changes a
+#     currently-live gate's behavior and deserves its own flag/verification, not
+#     bundled silently into the branch-3 stop).
+#   - CORRECTED 2026-09-28: the NEWER holdout-unlock path under
+#     orchestrator.verdict_routing_retired.enabled (`_validate_holdout_decision` ->
+#     `_dsr_on_current_ledger`, E-059 6c S2d review fix 8, landed after the paragraph
+#     above was written) DOES read this file's `deflated_sharpe_threshold` -- the
+#     variant's deflated Sharpe is recomputed on the current campaign trial ledger and
+#     must still clear it before a `spend` decision is accepted. So the field is live
+#     on that path; only the legacy `_route_holdout_evaluation` function above remains
+#     un-repointed.
 #
 # Two definitions exist, and every flag-on evaluation row records which one it used
 # in a `basis` key (profit_bars_evaluation.yaml), so the artifact is self-describing:
