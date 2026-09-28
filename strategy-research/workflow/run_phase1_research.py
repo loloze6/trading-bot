@@ -5370,11 +5370,14 @@ def _evaluation_under_current_bars(ev: dict) -> dict:
     E-062 S2b-1 (S1_FINDINGS.md Q7/G8): also refuses `bars_changed` when the
     evaluation's `bars_definitions` (absent = v1) differ from the definitions
     in force now (orchestrator.profit_bars_v2.enabled) -- the same bytes graded
-    under other definitions are another bar. An unreadable flag refuses too."""
+    under other definitions are another bar. An unreadable flag refuses too,
+    whatever the error (fail closed: e.g. a non-mapping `profit_bars_v2: true`
+    raises AttributeError, not ValueError)."""
     try:
         v2_now = _profit_bars_v2_enabled()
-    except ValueError as e:
-        raise HoldoutUnlockRefused("bars_changed", f"the profit_bars_v2 flag does not read: {e}")
+    except Exception as e:  # noqa: BLE001 -- any unreadable flag must refuse the spend
+        raise HoldoutUnlockRefused(
+            "bars_changed", f"the profit_bars_v2 flag does not read: {type(e).__name__}: {e}")
     graded_defs = ev.get("bars_definitions") or PROFIT_BARS_DEFINITIONS_V1
     now_defs = PROFIT_BARS_DEFINITIONS_V2 if v2_now else PROFIT_BARS_DEFINITIONS_V1
     if graded_defs != now_defs:

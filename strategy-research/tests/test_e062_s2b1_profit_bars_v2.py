@@ -626,12 +626,16 @@ def test_spend_refused_when_a_v1_evaluation_meets_the_v2_flag():
     assert exc.value.code == "bars_changed" and "'v1'" in exc.value.detail
 
 
-def test_spend_refused_when_the_flag_does_not_read():
-    _set_orchestrator({**FULL_ON, "profit_bars_v2": {"enabled": "false"}})
+@pytest.mark.parametrize("section", [{"enabled": "false"}, True, ["enabled"], "on"])
+def test_spend_refused_when_the_flag_does_not_read(section):
+    """Tidy 4: a non-bool value (ValueError) and a non-mapping section
+    (`profit_bars_v2: true` -> AttributeError) both refuse bars_changed."""
+    _set_orchestrator({**FULL_ON, "profit_bars_v2": section})
     _write_bars(V2_BARS)
     with pytest.raises(rpr.HoldoutUnlockRefused) as exc:
         rpr._evaluation_under_current_bars({rpr.BARS_FILE_SHA_FIELD: rpr._bars_file_sha256()})
     assert exc.value.code == "bars_changed"
+    assert "the profit_bars_v2 flag does not read" in exc.value.detail
 
 
 def test_partial_coverage_cap_still_applies_under_v2(monkeypatch):
