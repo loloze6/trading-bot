@@ -101,7 +101,13 @@ _INDEX_STATUSES = ("validated", "not_tested")
 # failed_attempt (E-061 C2 S2a, D-015): the prefixed reason protocol_execution
 # persists for a variant refused / failed on an attempt of this run, carried into
 # every later attempt's failed_variants unless that variant is re-run successfully.
-_INDEX_KEYS = frozenset({"status", "reason", "config_path", "report", "failed_attempt"})
+# kind / symbol / protocol_path / coverage (E-061 C2 S2b, one coin per variant):
+# written by 5a under orchestrator.variant_loop for a per-coin variant -- its
+# kind (base | design | asset), its coin_universe.yaml coin, its own protocol
+# file and, for an asset coin, the windows that coin covers (D-042).
+_INDEX_KEYS = frozenset({"status", "reason", "config_path", "report", "failed_attempt",
+                         "kind", "symbol", "protocol_path", "coverage"})
+_INDEX_KINDS = ("base", "design", "asset")  # variant_coin.VARIANT_KINDS
 
 MEMORY_LOCK_FILENAME = ".campaign_memory.lock"
 MEMORY_LOCK_WAIT_SECONDS = 30.0
@@ -233,9 +239,14 @@ def _check_index_entry(vid, info, index_path: Path) -> None:
     if info.get("status") not in _INDEX_STATUSES:
         raise CampaignMemoryError(f"{index_path}: variants.{vid}.status={info.get('status')!r} "
                                   f"is not one of {_INDEX_STATUSES}")
-    for key in ("config_path", "reason", "failed_attempt"):
+    for key in ("config_path", "reason", "failed_attempt", "symbol", "protocol_path"):
         if info.get(key) is not None and not isinstance(info[key], str):
             raise CampaignMemoryError(f"{index_path}: variants.{vid}.{key} is not a string")
+    if "kind" in info and info["kind"] not in _INDEX_KINDS:
+        raise CampaignMemoryError(f"{index_path}: variants.{vid}.kind={info['kind']!r} is not one "
+                                  f"of {_INDEX_KINDS}")
+    if info.get("coverage") is not None and not isinstance(info["coverage"], dict):
+        raise CampaignMemoryError(f"{index_path}: variants.{vid}.coverage is not a mapping")
     if info["status"] == "validated" and not info.get("config_path"):
         raise CampaignMemoryError(f"{index_path}: variants.{vid} is validated but has no config_path")
 
@@ -528,6 +539,45 @@ def protocol_ref_of(protocol_file, protocol_root: Path | None = None):
     return p.as_posix()
 
 
+def _check_validated_is_whole(run_dir: Path, run_id: str, grid_doc: dict, grid_path: Path,
+                              failed_variants: dict, variants: dict) -> None:
+    """CUL-342 item 2 (E-061 C2 S2b), the belt before the block registry: a
+    `validated` idea must have had EVERY variant graded in this run (card D,
+    D-015). The grid's own rollup already refuses to validate otherwise; this
+    re-checks what reaches block_registry.record_run, so a grid written before
+    S2a (no failed/untested keys) or edited by hand cannot register a block on
+    part of an idea. Raises CampaignMemoryError on any of:
+      * a non-empty `failed_variants` or `untested_variants` in the grid;
+      * a memory variant that is not `tested`;
+      * the single-column path (variant loop off) while
+        artifacts/variants/index.yaml lists a variant other than `base`: only
+        the base config ran, the idea's other variants never did."""
+    problems = []
+    if failed_variants:
+        problems.append(f"failed_variants {sorted(failed_variants)}")
+    untested = grid_doc.get("untested_variants")
+    if untested:
+        problems.append(f"untested_variants "
+                        f"{sorted(untested) if isinstance(untested, dict) else untested!r}")
+    not_tested = sorted(vid for vid, v in variants.items() if v.get("status") != "tested")
+    if not_tested:
+        problems.append(f"variant(s) {not_tested} not tested "
+                        f"({ {vid: variants[vid].get('status') for vid in not_tested} })")
+    index_path = Path(run_dir) / "artifacts" / "variants" / "index.yaml"
+    if list(variants) == [run_id] and index_path.exists():
+        index = _load_mapping(index_path, "variant index").get("variants")
+        others = sorted(v for v in (index or {}) if v != "base")
+        if others:
+            problems.append(f"only the base config ran (single column {run_id!r}, variant loop "
+                            f"off) while {index_path} lists {others}")
+    if problems:
+        raise CampaignMemoryError(
+            f"{grid_path}: idea_status 'validated' but not every variant of the idea was graded "
+            f"in this run -- {'; '.join(problems)}. An idea validates only when all its variants "
+            f"are graded (card D, D-015); refusing to record it (the block registry would "
+            f"register a block on part of an idea).")
+
+
 def build_memory_entry(run_dir: Path, run_id: str, *, trial_sharpes, categories,
                        protocol_root: Path | None = None, recorded_at: str | None = None,
                        profit_bars_evaluated: bool = False) -> dict:
@@ -569,8 +619,11 @@ def build_memory_entry(run_dir: Path, run_id: str, *, trial_sharpes, categories,
         raise CampaignMemoryError(f"{grid_path}: idea_status={grid_doc.get('idea_status')!r} "
                                   f"disagrees with idea_status.yaml ({idea_status!r})")
     grid = _grid_block(run_id, grid_doc, grid_path)
-    variants = _variants_block(run_dir, run_id, grid["variants"], trials,
-                               _grid_failed_variants(grid_doc, grid_path))
+    failed_variants = _grid_failed_variants(grid_doc, grid_path)
+    variants = _variants_block(run_dir, run_id, grid["variants"], trials, failed_variants)
+    if idea_status == "validated":
+        _check_validated_is_whole(run_dir, run_id, grid_doc, grid_path, failed_variants,
+                                  variants)
 
     entry = {
         "run_id": run_id,
