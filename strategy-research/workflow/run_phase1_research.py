@@ -11602,7 +11602,11 @@ def _v2_trade_records(run_dir: Path, pr: dict) -> tuple:
     trades = doc.get("trades") if isinstance(doc, dict) else None
     if not isinstance(trades, list):
         raise ValueError(f"profit bars v2: {path} has no `trades` list")
-    return trades, str(path)
+    try:  # the artifact names its source relative to the run dir (no machine path)
+        src = path.resolve().relative_to(Path(run_dir).resolve()).as_posix()
+    except ValueError:
+        src = str(path)
+    return trades, src
 
 
 def _v2_manifest_slippage(run_dir: Path, pr: dict, coins: list) -> dict:
@@ -11763,12 +11767,12 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
     rets = [r for _d, r in chain["daily_returns"]]
     _row("avg_daily_return_min", sum(rets) / len(rets),
          note=f"arithmetic mean of the {len(rets)} chained daily simple return(s); {span}",
-         detail=chain_detail)
+         detail=dict(chain_detail))  # a copy: a shared dict would dump as a YAML alias
     try:
         _row("sharpe_min", pwt.whole_test_sharpe(chain["daily_returns"]),
              note=(f"mean / sample stdev (ddof 1) x sqrt(365), rf 0, of the {len(rets)} chained "
                    f"daily return(s); {span}"),
-             detail=chain_detail)
+             detail=dict(chain_detail))
     except _pd.PortfolioNotEvaluable as exc:
         _row("sharpe_min", reason=f"whole-test Sharpe NOT_EVALUABLE: {exc}")
 

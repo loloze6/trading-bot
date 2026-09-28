@@ -523,8 +523,7 @@ def test_variant_out_dir_is_found_under_variants(tmp_path):
     pr = _build(run_dir / "variants" / "design")
     rows, overall, _r, _x = _rows(pr, run_dir)
     assert overall == "PASS"
-    assert str(run_dir / "variants" / "design" / "trade_diagnostics.json") in \
-        rows["trade_count_min"]["note"]
+    assert "source variants/design/trade_diagnostics.json" in rows["trade_count_min"]["note"]
 
 
 # ---------------------------------------------------------------------------
@@ -542,6 +541,9 @@ def test_evaluation_records_bars_definitions_v2():
     assert ev["variants"][RUN_ID]["result"] == "PASS", ev["variants"][RUN_ID]["reasons"]
     assert ev["passing"] == [RUN_ID]
     assert rpr._evaluation_under_current_bars(ev)["cost_edge_ratio_min"] == 2.2
+    text = (run_dir / "artifacts" / "profit_bars_evaluation.yaml").read_text(encoding="utf-8")
+    assert "&id" not in text and "*id" not in text  # no YAML aliases between rows
+    assert "source trade_diagnostics.json" in {r["name"]: r for r in rows}["trade_count_min"]["note"]
 
 
 def test_v2_evaluation_needs_the_v2_keys():
