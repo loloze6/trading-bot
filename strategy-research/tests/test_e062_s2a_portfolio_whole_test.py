@@ -396,6 +396,26 @@ def test_drawdown_within_one_window_equals_v1(tmp_path):
     assert round(dd, 6) == v1
 
 
+def test_running_peak_drawdown_matches_the_engines_bar_equity_formula():
+    """Code review finding 8: the running-peak formula equals
+    trading-bot/performance/bar_equity.max_drawdown_pct (sign flipped) on a
+    shared fixture -- a chained multi-window, two-coin curve with intraday dips."""
+    pd = pytest.importorskip("pandas")
+    sys.path.insert(0, str(SR_ROOT.parent / "trading-bot"))
+    from performance.bar_equity import max_drawdown_pct as engine_dd
+    wins = _contiguous_layout()
+    for k, win in enumerate(wins.values()):
+        for coin in ("A", "B"):
+            d = _day(10 * k + 4)
+            win[coin][datetime(d.year, d.month, d.day, 5)] = 60.0 - 5 * k
+            win[coin] = dict(sorted(win[coin].items()))
+    ch = pw.chain_windows(wins, ["A", "B"])
+    ours = pw.whole_test_max_drawdown(ch)["max_drawdown_pct"]
+    theirs = engine_dd(pd.Series([v for _t, v in ch["bar_levels"]]))
+    assert ours > 0
+    assert ours == pytest.approx(-theirs, rel=1e-12)
+
+
 def test_drawdown_of_monotone_curve_is_zero_and_bad_chain_raises():
     ch = pw.chain_windows({"w0": {"X": _bars(0, [1.0, 2.0, 3.0])}}, ["X"])
     assert pw.whole_test_max_drawdown(ch)["max_drawdown_pct"] == 0.0
