@@ -1121,10 +1121,12 @@ def _seed_trial_ledger(n: int = 30) -> None:
 def test_profit_bars_stop_then_holdout_continue_then_resume(harness):
     h = harness.build()
     _seed_trial_ledger()
-    # `design` clears every bar: Sharpe 3 >= 0.5, >= 30 trades per coin, a steady
-    # equity curve (avg daily return ~0.3% >= 0.0005, drawdown far under 25%),
-    # and a deflated Sharpe above 0.95 on the seeded ledger.
-    h.profiles["design"] = {"sharpe": 3.0, "edge": 0.9, "trades": 40,
+    # `design` clears every bar (D-039 values): Sharpe 3 >= 1.0, >= 100 trades per
+    # coin, a steady equity curve (avg daily return ~0.3% >= 0.0005, drawdown far
+    # under 20%), and a deflated Sharpe above 0.95 on the seeded ledger. Its edge
+    # 0.9 stays under the menu's cost ratio 2.2, so the grid still refutes the
+    # idea after the operator's `continue` (completed_refuted below).
+    h.profiles["design"] = {"sharpe": 3.0, "edge": 0.9, "trades": 120,
                             "drift_per_day": 0.003, "noise": 0.0005}
     h.register_brief()
     r1 = "run_001"
@@ -1176,15 +1178,16 @@ def test_profit_bars_stop_then_holdout_continue_then_resume(harness):
 
 @pytest.mark.slow
 def test_c2_4_one_crashed_variant_never_validates(harness):
-    """Every variant's profile clears every grid criterion (edge 1.5 >> the cost
-    ratio floor): with all three backtests succeeding this run ends
+    """Every variant's profile clears every grid criterion (edge 3.0 > the menu's
+    D-039 cost ratio threshold 2.2; 6 windows x 40 trades = 240 pooled trades >=
+    its 100-trade floor): with all three backtests succeeding this run ends
     completed_validated (measured once with this profile when the test was
     written). `asset`'s backtest crashes after touching data, so the two
     survivors alone would validate -- the idea must end inconclusive, register no
     block, and still count three trial rows (one backtest_failed)."""
     h = harness.build()
     for vid in ("base", "design", "asset"):
-        h.profiles[vid] = {"sharpe": 0.3, "edge": 1.5, "trades": 40}
+        h.profiles[vid] = {"sharpe": 0.3, "edge": 3.0, "trades": 40}
     h.crash_variant = "asset"
     h.register_brief()
     r1 = "run_001"
@@ -1262,7 +1265,7 @@ def test_c2_s2b_partial_coverage_asset_is_untested_and_blocks_nothing(harness):
     (h.root / "config" / "venue_data_capability.yaml").write_text(yaml.safe_dump(layer1),
                                                                   encoding="utf-8")
     for vid in ("base", "design", "asset"):
-        h.profiles[vid] = {"sharpe": 0.3, "edge": 1.5, "trades": 40}
+        h.profiles[vid] = {"sharpe": 0.3, "edge": 3.0, "trades": 40}
     h.register_brief()
     r1 = "run_001"
     keep_going, exc = _drive(h)
@@ -1305,7 +1308,7 @@ def test_c2_s2b_layer2_declined_asset_blocks_nothing(harness):
     h = harness.build()
     h.gate_declines = {"asset"}
     for vid in ("base", "design", "asset"):
-        h.profiles[vid] = {"sharpe": 0.3, "edge": 1.5, "trades": 40}
+        h.profiles[vid] = {"sharpe": 0.3, "edge": 3.0, "trades": 40}
     h.register_brief()
     r1 = "run_001"
     keep_going, exc = _drive(h)
