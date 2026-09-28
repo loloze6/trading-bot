@@ -155,7 +155,8 @@ def test_gap_is_linked_flat_and_not_counted():
     day. Returns 19 + 19 = 38; calendar 0..40 = 41 days; coverage 39/41."""
     w0 = [100.0 + i for i in range(20)]
     w1 = [500.0 * (1.0 + 0.001 * i) for i in range(20)]
-    ch = pw.chain_windows({"w0": {"X": _bars(0, w0)}, "w1": {"X": _bars(21, w1)}}, ["X"])
+    ch = pw.chain_windows({"w0": {"X": _bars(0, w0)}, "w1": {"X": _bars(21, w1)}}, ["X"],
+                          window_starts={"w0": _day(0), "w1": _day(21)})
     assert [s["kind"] for s in ch["segments"]] == ["first", "gap"]
     assert ch["n_gap_days"] == 1 and ch["n_gap_links"] == 1
     lv = dict(ch["daily_levels"])
@@ -175,7 +176,8 @@ def test_long_gap_fails_whole_test_coverage():
     (18 + 1) / 25 = 0.76 < 0.9 -> NOT_EVALUABLE (each window alone is fine)."""
     with pytest.raises(NE, match="WHOLE_TEST_MIN_COVERAGE"):
         pw.chain_windows({"w0": {"X": _bars(0, [100.0] * 9 + [101.0])},
-                          "w1": {"X": _bars(15, [100.0] * 9 + [99.0])}}, ["X"])
+                          "w1": {"X": _bars(15, [100.0] * 9 + [99.0])}}, ["X"],
+                         window_starts={"w0": _day(0), "w1": _day(15)})
 
 
 def test_overlap_longer_than_one_day_keeps_the_earliest_windows_days():
@@ -199,35 +201,80 @@ def test_overlap_longer_than_one_day_keeps_the_earliest_windows_days():
     assert dict(ch["bar_levels"])[datetime(2020, 1, 11, 23)] == pytest.approx(lv[_day(10)])
 
 
-def test_missing_junction_day_is_treated_as_a_gap():
-    """w0 days 0..10; w1 would start on day 10 but lacks it (first bar day 11).
-    Not NOT_EVALUABLE (G1 decision): a gap link at day 11 with 0 missing
-    calendar days, and no return on day 11."""
-    ch = pw.chain_windows({"w0": {"X": _bars(0, [100.0 + i for i in range(11)])},
-                           "w1": {"X": _bars(11, [200.0 + i for i in range(10)])}}, ["X"])
-    seg = ch["segments"][1]
-    assert seg["kind"] == "gap" and seg["join_day"] == _day(11)
-    assert ch["n_gap_links"] == 1 and ch["n_gap_days"] == 0
-    assert _day(11) not in dict(ch["daily_returns"])
-    assert len(ch["daily_returns"]) == 10 + 9
+def test_missing_junction_day_is_not_evaluable():
+    """Code review finding 4 (deviation from G1's "treat as gap"): w0 days
+    0..10; w1's nominal start is day 10 (one-day overlap) but it lacks day 10.
+    Linking flat would drop the day-10 -> day-11 P&L -> NOT_EVALUABLE."""
+    wins = {"w0": {"X": _bars(0, [100.0 + i for i in range(11)])},
+            "w1": {"X": _bars(11, [200.0 + i for i in range(10)])}}
+    with pytest.raises(NE, match="junction day 2020-01-11"):
+        pw.chain_windows(wins, ["X"], window_starts={"w0": _day(0), "w1": _day(10)})
+    # without window_starts the same layout is ambiguous (gap or missing day)
+    with pytest.raises(NE, match="cannot be told from a missing junction day"):
+        pw.chain_windows(wins, ["X"])
 
 
-def test_missing_junction_day_inside_a_longer_overlap_is_a_gap():
-    """w0 days 0..10; w1 days 7..20 without day 10: w1 joins at day 11."""
+def test_missing_junction_day_inside_a_longer_overlap_is_not_evaluable():
+    """w0 days 0..10; w1 days 7..20 without day 10: no junction day."""
     w1 = _skip_days(_bars(7, [300.0 + i for i in range(14)]), {_day(10)})
-    ch = pw.chain_windows({"w0": {"X": _bars(0, [100.0 + i for i in range(11)])},
-                           "w1": {"X": w1}}, ["X"])
-    seg = ch["segments"][1]
-    assert seg["kind"] == "gap" and seg["join_day"] == _day(11)
-    assert _day(11) not in dict(ch["daily_returns"])
+    wins = {"w0": {"X": _bars(0, [100.0 + i for i in range(11)])}, "w1": {"X": w1}}
+    with pytest.raises(NE, match="junction day 2020-01-11"):
+        pw.chain_windows(wins, ["X"])
+    with pytest.raises(NE, match="junction day 2020-01-11"):
+        pw.chain_windows(wins, ["X"], window_starts={"w0": _day(0), "w1": _day(7)})
 
 
-def test_window_inside_an_earlier_window_contributes_nothing():
-    ch = pw.chain_windows({"w0": {"X": _bars(0, [100.0 + i for i in range(21)])},
-                           "w1": {"X": _bars(5, [1.0, 2.0, 3.0])}}, ["X"])
-    assert ch["segments"][1]["kind"] == "contained"
-    assert len(ch["daily_returns"]) == 20
-    assert all(t.date() <= _day(20) for t, _v in ch["bar_levels"])
+def test_gap_window_missing_its_start_day_is_not_evaluable():
+    """A real gap (nominal start day 21) but w1's data starts on day 22."""
+    wins = {"w0": {"X": _bars(0, [100.0] * 20)}, "w1": {"X": _bars(22, [100.0] * 19)}}
+    with pytest.raises(NE, match="nominal start day 2020-01-22"):
+        pw.chain_windows(wins, ["X"], window_starts={"w0": _day(0), "w1": _day(21)})
+
+
+def test_first_window_missing_its_start_day_is_not_evaluable_and_data_before_start_raises():
+    wins = {"w0": {"X": _bars(1, [100.0] * 20)}}
+    with pytest.raises(NE, match="first window 'w0' has no common day on its start"):
+        pw.chain_windows(wins, ["X"], window_starts={"w0": _day(0)})
+    with pytest.raises(ValueError, match="before its nominal start") as ei:
+        pw.chain_windows(wins, ["X"], window_starts={"w0": _day(2)})
+    assert not isinstance(ei.value, NE)
+    with pytest.raises(ValueError, match="exactly the windows' labels"):
+        pw.chain_windows(wins, ["X"], window_starts={"w9": _day(1)})
+    with pytest.raises(ValueError, match="is not a date"):
+        pw.chain_windows(wins, ["X"], window_starts={"w0": datetime(2020, 1, 2)})
+
+
+def test_window_inside_an_earlier_window_is_not_evaluable():
+    """w1 (days 5..7) lies inside w0 (0..20): it cannot hold the junction day 20."""
+    with pytest.raises(NE, match="junction day 2020-01-21"):
+        pw.chain_windows({"w0": {"X": _bars(0, [100.0 + i for i in range(21)])},
+                          "w1": {"X": _bars(5, [1.0, 2.0, 3.0])}}, ["X"])
+
+
+def test_join_bar_includes_the_anchor_level_when_a_coin_lacks_the_close_bar():
+    """Code review finding 5 probe: B has no 23:00 bar on the anchor day (its
+    close is at 22:00), so no COMMON bar sits at the anchor close. Both coins
+    then fall 10% the next day. The anchor level 1.0 must be in the bar curve:
+    drawdown 10% (v1 starts at the first common bar, 0.9, and reports 0%)."""
+    a = _bars(0, [100.0, 90.0, 90.0])
+    b = _bars(0, [100.0, 90.0, 90.0])
+    del b[datetime(2020, 1, 1, 23)]
+    b[datetime(2020, 1, 1, 22)] = 100.0
+    b = dict(sorted(b.items()))
+    ch = pw.chain_windows({"w0": {"A": a, "B": b}}, ["A", "B"])
+    assert ch["bar_levels"][0] == (datetime(2020, 1, 1, 23), 1.0)
+    dd = pw.whole_test_max_drawdown(ch)
+    assert dd["max_drawdown_pct"] == pytest.approx(10.0, rel=1e-12)
+    assert dd["peak_ts"] == datetime(2020, 1, 1, 23)
+
+
+def test_gap_links_flat_only_with_window_starts():
+    wins = {"w0": {"X": _bars(0, [100.0 + i for i in range(20)])},
+            "w1": {"X": _bars(21, [500.0 + i for i in range(20)])}}
+    with pytest.raises(NE, match="cannot be told"):
+        pw.chain_windows(wins, ["X"])
+    ch = pw.chain_windows(wins, ["X"], window_starts={"w0": _day(0), "w1": _day(21)})
+    assert ch["segments"][1]["kind"] == "gap"
 
 
 def test_duplicate_anchor_is_not_evaluable():
@@ -426,22 +473,42 @@ def test_always_long_strategy_counts_zero_trades_excluding_window_closes():
         "BTC": {"raw": 96, "end_of_window": 96, "excluding_end_of_window": 0}}
 
 
-def test_trade_counts_with_and_without_window_closes_two_coins():
-    """BTC: w0 3 signal + 1 forced, w1 2 signal. ETH: w0 1 forced, w1 none."""
+def test_trade_counts_two_coins_zero_trade_coin_is_listed():
+    """BTC: w0 3 signal + 1 forced, w1 2 signal. ETH: no trade at all (and no
+    record) -- it must still appear, with 0 (code review finding 2)."""
     recs = ([_rec("BTC", "w0")] * 3 + [_rec("BTC", "w0", "end_of_window")]
-            + [_rec("BTC", "w1")] * 2 + [_rec("ETH", "w0", "end_of_window")])
-    res = [_res("BTC", "w0", 4), _res("BTC", "w1", 2), _res("ETH", "w0", 1), _res("ETH", "w1", 0)]
-    out = pw.whole_test_trade_counts(recs, res)
-    assert out == {"BTC": {"raw": 6, "end_of_window": 1, "excluding_end_of_window": 5},
-                   "ETH": {"raw": 1, "end_of_window": 1, "excluding_end_of_window": 0}}
-    assert pw.whole_test_trade_counts(recs) == out  # no cross-check, same coins here
+            + [_rec("BTC", "w1")] * 2)
+    res = [_res("BTC", "w0", 4), _res("BTC", "w1", 2), _res("ETH", "w0", 0), _res("ETH", "w1", 0)]
+    assert pw.whole_test_trade_counts(recs, res) == {
+        "BTC": {"raw": 6, "end_of_window": 1, "excluding_end_of_window": 5},
+        "ETH": {"raw": 0, "end_of_window": 0, "excluding_end_of_window": 0}}
+
+
+def test_trade_counts_results_are_required():
+    with pytest.raises(TypeError):
+        pw.whole_test_trade_counts([_rec("BTC", "w0")])  # noqa -- no results argument
+    with pytest.raises(ValueError, match="results must be a list"):
+        pw.whole_test_trade_counts([_rec("BTC", "w0")], None)
+    with pytest.raises(ValueError, match="results is empty"):
+        pw.whole_test_trade_counts([], [])
+    with pytest.raises(ValueError, match="trade_records must be a list"):
+        pw.whole_test_trade_counts(None, [_res("BTC", "w0", 0)])
+
+
+def test_signal_trade_crossing_a_junction_is_counted_once():
+    """A position opened in w0 and still held at its end is force-closed there
+    (end_of_window, excluded) and re-opened in w1, where a signal flip closes
+    it (counted): one trade, not two."""
+    recs = [_rec("BTC", "w0", "end_of_window"), _rec("BTC", "w1", "signal_flip")]
+    res = [_res("BTC", "w0", 1), _res("BTC", "w1", 1)]
+    assert pw.whole_test_trade_counts(recs, res)["BTC"] == {
+        "raw": 2, "end_of_window": 1, "excluding_end_of_window": 1}
 
 
 def test_trade_counts_no_trades_anywhere_is_zero():
     res = [_res("BTC", "w0", 0), _res("BTC", "w1", 0)]
     assert pw.whole_test_trade_counts([], res) == {
         "BTC": {"raw": 0, "end_of_window": 0, "excluding_end_of_window": 0}}
-    assert pw.whole_test_trade_counts(None, res)["BTC"]["raw"] == 0
 
 
 def test_trade_counts_record_core_mismatch_is_not_evaluable():
@@ -452,18 +519,36 @@ def test_trade_counts_record_core_mismatch_is_not_evaluable():
 
 
 def test_trade_counts_malformed_inputs_raise():
+    res = [_res("BTC", "w0", 1)]
     with pytest.raises(ValueError, match="exit_reason 'take_profit'"):
-        pw.whole_test_trade_counts([_rec("BTC", "w0", "take_profit")])
+        pw.whole_test_trade_counts([_rec("BTC", "w0", "take_profit")], res)
     with pytest.raises(ValueError, match="exit_reason None"):
-        pw.whole_test_trade_counts([{"symbol": "BTC", "window": "w0"}])
+        pw.whole_test_trade_counts([{"symbol": "BTC", "window": "w0"}], res)
     with pytest.raises(ValueError, match="lacks symbol/window"):
-        pw.whole_test_trade_counts([{"window": "w0", "exit_reason": "signal_flip"}])
+        pw.whole_test_trade_counts([{"window": "w0", "exit_reason": "signal_flip"}], res)
     with pytest.raises(ValueError, match="not in the results"):
-        pw.whole_test_trade_counts([_rec("BTC", "w9")], [_res("BTC", "w0", 0)])
+        pw.whole_test_trade_counts([_rec("BTC", "w9")], res)
     with pytest.raises(ValueError, match="twice"):
         pw.whole_test_trade_counts([], [_res("BTC", "w0", 0), _res("BTC", "w0", 0)])
     with pytest.raises(ValueError, match="core.trade_count"):
         pw.whole_test_trade_counts([], [{"symbol": "BTC", "window": "w0", "core": {}}])
+    with pytest.raises(ValueError, match="core.trade_count"):
+        pw.whole_test_trade_counts([], [{"symbol": "BTC", "window": "w0",
+                                          "core": {"trade_count": True}}])
+    # unhashable symbol / exit_reason: ValueError, never TypeError
+    with pytest.raises(ValueError, match="not hashable"):
+        pw.whole_test_trade_counts([_rec(["BTC"], "w0")], res)
+    with pytest.raises(ValueError, match="not hashable"):
+        pw.whole_test_trade_counts([_rec("BTC", "w0", ["signal_flip"])], res)
+    with pytest.raises(ValueError, match="not hashable"):
+        pw.whole_test_trade_counts([], [{"symbol": {"a": 1}, "window": "w0",
+                                          "core": {"trade_count": 0}}])
+
+
+def test_trade_counts_accept_numpy_integers():
+    np = pytest.importorskip("numpy")
+    res = [{"symbol": "BTC", "window": "w0", "core": {"trade_count": np.int64(1)}}]
+    assert pw.whole_test_trade_counts([_rec("BTC", "w0")], res)["BTC"]["raw"] == 1
 
 
 def test_exit_reason_vocabulary_matches_the_trade_diagnostics_schema():
@@ -501,7 +586,8 @@ def test_buy_and_hold_rising_prices_flat_strategy_fails_by_hand():
     assert bh["buy_and_hold_gross_return"] == pytest.approx(0.1, rel=1e-12)
     assert bh["buy_and_hold_total_return"] == pytest.approx(expected_bh, rel=1e-12)
     assert bh["excess_return"] == pytest.approx(-expected_bh, rel=1e-12)
-    assert bh["excess_return"] < 0 and bh["n_days"] == 10
+    assert bh["excess_return"] < 0 and bh["n_daily_returns"] == 10
+    assert bh["n_calendar_days"] == 11
 
 
 def test_buy_and_hold_falling_prices_flat_strategy_passes_by_hand():
@@ -539,58 +625,126 @@ def test_buy_and_hold_two_coins_reset_to_equal_weight_each_window_by_hand():
           "w1": {"A": _bars(2, [1.0] * 3), "B": _bars(2, [1.0] * 3)}}
     cl = {"w0": {"A": _bars(0, [100.0, 105.0, 110.0]), "B": _bars(0, [50.0, 40.0, 45.0])},
           "w1": {"A": _bars(2, [110.0, 121.0, 99.0]), "B": _bars(2, [45.0, 45.0, 54.0])}}
-    # 5 calendar days, 4 returns: coverage (4+1)/5 = 1.0
-    ch = pw.chain_windows(eq, ["A", "B"])
+    ch = pw.chain_windows(eq, ["A", "B"])  # 5 calendar days, 4 returns: coverage 1.0
     bh = pw.chained_buy_and_hold(ch, cl, {"A": 7.5, "B": 7.5}, {"A": 1.0, "B": 1.5})
     mult = ((1.0 - 0.00085) ** 2 + (1.0 - 0.0009) ** 2) / 2.0
     assert bh["buy_and_hold_gross_return"] == pytest.approx(0.05, rel=1e-12)
     assert bh["cost_multiplier"] == pytest.approx(mult, rel=1e-15)
     assert bh["buy_and_hold_total_return"] == pytest.approx(1.05 * mult - 1.0, rel=1e-12)
-    assert bh["n_days"] == 4
+    assert bh["n_daily_returns"] == 4
     assert bh["cost_per_side_bps"] == pytest.approx({"A": 8.5, "B": 9.0})
 
 
-def test_buy_and_hold_uses_only_the_chains_counted_days():
-    """A gap day (no return) and an overlap: B&H is measured on exactly the
-    strategy's counted days -- the price move across the gap is not counted."""
+def test_buy_and_hold_strategy_loss_across_a_missing_day_fails_the_bar():
+    """Code review finding 1 probe: prices flat at 100; the strategy's equity
+    falls 100 -> 50 across a day missing from the data (day 10 absent inside
+    the window; days 0..30 otherwise). The multi-day step is not a daily
+    return, but it IS in the chained level: strategy total = 0.5 - 1 = -0.5,
+    buy-and-hold = 1.0 x (1 - 0.00085)^2 - 1 -> excess < 0 (FAIL). Counting
+    only daily returns would have hidden the loss (strategy 0, excess > 0)."""
+    eq = _skip_days(_bars(0, [100.0] * 10 + [50.0] * 21), {_day(10)})
+    cl = _skip_days(_bars(0, [100.0] * 31), {_day(10)})
+    ch = pw.chain_windows({"w0": {"X": eq}}, ["X"])
+    assert ch["n_multi_day_steps"] == 1
+    assert all(r == 0.0 for _d, r in ch["daily_returns"])  # the loss is in no daily return
+    bh = pw.chained_buy_and_hold(ch, {"w0": {"X": cl}}, {"X": 7.5}, {"X": 1.0})
+    assert bh["strategy_total_return"] == pytest.approx(-0.5, rel=1e-12)
+    assert bh["buy_and_hold_total_return"] == pytest.approx((1.0 - 0.00085) ** 2 - 1.0,
+                                                            rel=1e-12)
+    assert bh["excess_return"] < 0
+
+
+def test_buy_and_hold_price_move_across_a_multi_day_step_is_included():
+    """Strategy flat; the PRICE doubles across the missing day 10: buy-and-hold
+    gross = 1.0 (level 100 -> 200), not 0 -- both sides on the chained level."""
+    eq = _skip_days(_bars(0, [1000.0] * 31), {_day(10)})
+    cl = _skip_days(_bars(0, [100.0] * 10 + [200.0] * 21), {_day(10)})
+    ch = pw.chain_windows({"w0": {"X": eq}}, ["X"])
+    bh = pw.chained_buy_and_hold(ch, {"w0": {"X": cl}}, {"X": 0.0}, {"X": 0.0})
+    assert bh["buy_and_hold_gross_return"] == pytest.approx(1.0, rel=1e-12)
+    assert bh["excess_return"] == pytest.approx(-1.0, rel=1e-12)
+
+
+def test_buy_and_hold_is_flat_across_a_real_protocol_gap_for_both_sides():
+    """w0 days 0..19 and w1 days 21..40 with nominal starts 0 and 21 (a real
+    gap, day 20). Prices jump 100 -> 200 across the gap and then rise to 220 on
+    w1's last day. Across the gap both sides are flat (no window was trading),
+    so buy-and-hold gross = (100/100) x (220/200) - 1 = 0.1; the strategy
+    (flat equity) is 0."""
     eq = {"w0": {"X": _bars(0, [1.0] * 20)}, "w1": {"X": _bars(21, [1.0] * 20)}}
     cl = {"w0": {"X": _bars(0, [100.0] * 20)},
-          "w1": {"X": _bars(21, [200.0] * 19 + [220.0])}}  # jump across the gap not counted
-    ch = pw.chain_windows(eq, ["X"])
+          "w1": {"X": _bars(21, [200.0] * 19 + [220.0])}}
+    ch = pw.chain_windows(eq, ["X"], window_starts={"w0": _day(0), "w1": _day(21)})
     bh = pw.chained_buy_and_hold(ch, cl, {"X": 0.0}, {"X": 0.0})
     assert bh["buy_and_hold_gross_return"] == pytest.approx(0.1, rel=1e-12)
-    assert bh["n_days"] == len(ch["daily_returns"]) == 38
+    assert bh["strategy_total_return"] == 0.0
+    assert bh["n_daily_returns"] == len(ch["daily_returns"]) == 38
 
 
-def test_buy_and_hold_mismatched_inputs_raise():
+def test_buy_and_hold_mismatched_inputs_raise_value_error_not_not_evaluable():
     eq = {"w0": {"X": _bars(0, [1.0] * 5)}}
     ch = pw.chain_windows(eq, ["X"])
-    with pytest.raises(ValueError, match="different common days"):
-        pw.chained_buy_and_hold(ch, {"w0": {"X": _bars(0, [1.0] * 6)}}, {"X": 1}, {"X": 1})
-    with pytest.raises(ValueError, match="differ from the chained windows"):
-        pw.chained_buy_and_hold(ch, {"w9": {"X": _bars(0, [1.0] * 5)}}, {"X": 1}, {"X": 1})
-    with pytest.raises(ValueError, match="no fee/slippage"):
-        pw.chained_buy_and_hold(ch, {"w0": {"X": _bars(0, [1.0] * 5)}}, {}, {"X": 1})
-    with pytest.raises(ValueError, match="non-negative"):
-        pw.chained_buy_and_hold(ch, {"w0": {"X": _bars(0, [1.0] * 5)}}, {"X": -1}, {"X": 1})
+
+    def raises(exc_match, *args):
+        with pytest.raises(ValueError, match=exc_match) as ei:
+            pw.chained_buy_and_hold(ch, *args)
+        assert not isinstance(ei.value, NE)
+
+    raises("different common days", {"w0": {"X": _bars(0, [1.0] * 6)}}, {"X": 1}, {"X": 1})
+    raises("differ from the chained windows", {"w9": {"X": _bars(0, [1.0] * 5)}},
+           {"X": 1}, {"X": 1})
+    raises("has coins", {"w0": {"X": _bars(0, [1.0] * 5), "Y": _bars(0, [1.0] * 5)}},
+           {"X": 1}, {"X": 1})
+    raises("has coins", {"w0": {"Y": _bars(0, [1.0] * 5)}}, {"X": 1}, {"X": 1})
+    raises("inconsistent", {"w0": {"X": _bars(0, [1.0])}}, {"X": 1}, {"X": 1})
+    raises("no fee/slippage", {"w0": {"X": _bars(0, [1.0] * 5)}}, {}, {"X": 1})
+    raises("non-negative", {"w0": {"X": _bars(0, [1.0] * 5)}}, {"X": -1}, {"X": 1})
+    raises("non-negative", {"w0": {"X": _bars(0, [1.0] * 5)}}, {"X": True}, {"X": 1})
     bad = _bars(0, [1.0] * 5)
     bad[datetime(2020, 1, 3, 23)] = float("nan")
-    with pytest.raises(ValueError):
-        pw.chained_buy_and_hold(ch, {"w0": {"X": bad}}, {"X": 1}, {"X": 1})
+    raises("finite positive", {"w0": {"X": bad}}, {"X": 1}, {"X": 1})
+    with pytest.raises(ValueError, match="not a chain_windows result"):
+        pw.chained_buy_and_hold({}, {"w0": {"X": _bars(0, [1.0] * 5)}}, {"X": 1}, {"X": 1})
 
 
-def test_fee_comes_from_cost_model_yaml_not_the_manifest_fee_bps():
-    """The engine charged cost_model.yaml's fee_rate_bps (7.5 spot), not the
-    manifest's fee_bps (cost_model.json table, 10)."""
+def test_numpy_scalars_are_numbers_and_numpy_bools_are_not():
+    np = pytest.importorskip("numpy")
+    eq = {t: np.float64(v) for t, v in _bars(0, [1000.0] * 11).items()}
+    cl = {t: np.float32(v) for t, v in _bars(0, [100.0 + i for i in range(11)]).items()}
+    ch = pw.chain_windows({"w0": {"X": eq}}, ["X"])
+    bh = pw.chained_buy_and_hold(ch, {"w0": {"X": cl}}, {"X": np.float64(7.5)},
+                                 {"X": np.int64(1)})
+    assert bh["buy_and_hold_gross_return"] == pytest.approx(0.1, rel=1e-6)
+    bad = dict(eq)
+    bad[datetime(2020, 1, 2, 23)] = np.bool_(True)
+    with pytest.raises(ValueError, match="not a number"):
+        pw.chain_windows({"w0": {"X": bad}}, ["X"])
+
+
+def test_fee_is_the_commission_run_protocol_charged_via_the_shared_function():
+    """One definition (code review finding 3): charged_fee_bps is
+    cost_helpers.resolve_commission_rate x 1e4 -- the same function run_protocol
+    passes to run_backtest (its old names are aliases of it). Spot 7.5, perp 5,
+    --commission-bps wins; never the manifest's fee_bps (10)."""
+    import cost_helpers
+    import run_protocol as rp
+    assert rp._commission_rate_for_symbol is cost_helpers.commission_rate_for_symbol
+    assert rp._resolve_commission_rate is cost_helpers.resolve_commission_rate
     cm = yaml.safe_load((SR_ROOT / "config" / "cost_model.yaml").read_text(encoding="utf-8"))
-    assert pw.spot_fee_rate_bps(cm, "BTCUSDT") == float(cm["fee_rate_bps"]["BTCUSDT"]) == 7.5
-    assert pw.spot_fee_rate_bps(cm, "NOPEUSDT") == float(cm["fee_rate_bps"]["default"])
-    manifest_fee = {"fee_bps": 10, "slippage_bps": {"default": 1.5, "BTCUSDT": 1}}
-    assert pw.spot_fee_rate_bps(cm, "BTCUSDT") != manifest_fee["fee_bps"]
-    with pytest.raises(ValueError, match="neither"):
-        pw.spot_fee_rate_bps({"fee_rate_bps": {"BTCUSDT": 7.5}}, "ETHUSDT")
-    with pytest.raises(ValueError, match="no fee_rate_bps"):
-        pw.spot_fee_rate_bps({}, "BTCUSDT")
+    for sym, bps, prod in (("BTCUSDT", None, "spot"), ("ETHUSDT", None, "perp"),
+                           ("BTCUSDT", 10.0, "spot"), ("NOPEUSDT", None, "spot")):
+        assert pw.charged_fee_bps(sym, cm, bps, prod) == pytest.approx(
+            rp._resolve_commission_rate(sym, cm, bps, prod) * 10_000.0, rel=1e-15)
+    assert pw.charged_fee_bps("BTCUSDT", cm) == pytest.approx(7.5)
+    assert pw.charged_fee_bps("BTCUSDT", cm, product="perp") == pytest.approx(5.0)
+    assert pw.charged_fee_bps("BTCUSDT", cm, commission_bps=10.0) == pytest.approx(10.0)
+    assert pw.charged_fee_bps("BTCUSDT", cm) != 10  # the manifest's fee_bps
+    with pytest.raises(ValueError, match="default rate"):
+        pw.charged_fee_bps("BTCUSDT", None)
+    with pytest.raises(ValueError, match="default rate"):
+        pw.charged_fee_bps("ETHUSDT", {"fee_rate_bps": {"BTCUSDT": 7.5}})
+    with pytest.raises(ValueError, match="commission_bps"):
+        pw.charged_fee_bps("BTCUSDT", cm, commission_bps=float("nan"))
 
 
 def test_slippage_resolution_mirrors_the_engine():
@@ -606,6 +760,8 @@ def test_slippage_resolution_mirrors_the_engine():
         pw.slippage_bps_for_symbol({"BTCUSDT": 1}, "ETHUSDT")
     with pytest.raises(ValueError):
         pw.slippage_bps_for_symbol(float("nan"), "BTCUSDT")
+    with pytest.raises(ValueError, match="not hashable"):
+        pw.slippage_bps_for_symbol(table, ["BTCUSDT"])
 
 
 def test_window_close_bars_reader(tmp_path):
@@ -615,19 +771,15 @@ def test_window_close_bars_reader(tmp_path):
     p = tmp_path / "results" / "r1" / "portfolio_states.csv"
     got = pw.window_close_bars(p)
     assert got == cl  # warm-up row (close -1) dropped by the NOT_READY filter
-    assert list(got) == list(pdv1.window_equity_bars(p))  # same bars as the equity reader
-    # missing close column
     q = tmp_path / "noclose.csv"
     q.write_text("timestamp,regime,postRebalance_total_value\n2020-01-01 23:00:00,trend,1\n",
                  encoding="utf-8")
     with pytest.raises(ValueError, match="lacks column"):
         pw.window_close_bars(q)
-    # non-positive close after warm-up
     z = tmp_path / "zero.csv"
     z.write_text("timestamp,regime,close\n2020-01-01 23:00:00,trend,0\n", encoding="utf-8")
     with pytest.raises(ValueError, match="close 0.0"):
         pw.window_close_bars(z)
-    # a timestamp repeated with a different close
     dup = tmp_path / "dup.csv"
     dup.write_text("timestamp,regime,close\n2020-01-01 23:00:00,trend,5\n"
                    "2020-01-01 23:00:00,trend,6\n", encoding="utf-8")
@@ -639,60 +791,164 @@ def test_window_close_bars_reader(tmp_path):
     assert pw.window_close_bars(same) == {datetime(2020, 1, 1, 23): 5.0}
 
 
+def test_window_close_bars_parses_exactly_like_window_equity_bars(tmp_path):
+    """Code review finding 8: the copy must read the same rows. One CSV with
+    NOT_READY rows before AND inside the window (a large-gap reset), mixed-case
+    and padded regime labels, timezone-aware stamps (+00:00 and +02:00), rows
+    out of order, and the engine's re-recorded final bar (same timestamp, same
+    close, different equity): both readers return the same timestamps in the
+    same order; the equity reader keeps the last equity, as it always did."""
+    rows = [
+        "timestamp,regime,postRebalance_total_value,close",
+        "2019-12-31 22:00:00,NOT_READY,999.0,1.0",
+        "2020-01-01 23:00:00,trend,100.0,10.0",
+        "2020-01-02 01:00:00+00:00,range,101.0,10.5",
+        "2020-01-02 03:00:00+02:00, not_ready ,555.0,99.0",
+        "2020-01-03 23:00:00,Trend,103.0,11.0",
+        "2020-01-02 23:00:00,trend,102.0,10.8",
+        "2020-01-04 00:30:00+02:00,trend,104.0,11.2",
+        "2020-01-04 23:00:00,trend,105.0,11.5",
+        "2020-01-04 23:00:00,trend,104.5,11.5",
+    ]
+    p = tmp_path / "states.csv"
+    p.write_text("\n".join(rows) + "\n", encoding="utf-8")
+    closes = pw.window_close_bars(p)
+    equity = pdv1.window_equity_bars(p)
+    assert list(closes) == list(equity)
+    assert list(closes) == [datetime(2020, 1, 1, 23), datetime(2020, 1, 2, 1),
+                            datetime(2020, 1, 2, 23), datetime(2020, 1, 3, 22, 30),
+                            datetime(2020, 1, 3, 23), datetime(2020, 1, 4, 23)]
+    assert equity[datetime(2020, 1, 4, 23)] == 104.5
+    assert closes[datetime(2020, 1, 4, 23)] == 11.5
+
+
 # ---------------------------------------------------------------------------
 # G7: pooled edge / cost ratio
 # ---------------------------------------------------------------------------
 
-def _summary(ratio, n, fees=True):
-    return {"realized_edge_to_cost_ratio": ratio, "per_trade_expectancy_bps": {"n": n},
-            "cost_components_measured": {"fees": fees, "funding": False}}
+def _trade(sym="BTCUSDT", win="w0", reason="signal_flip", rr=0.5, cost=15.0):
+    return {"symbol": sym, "window": win, "exit_reason": reason, "realized_return": rr,
+            "cost_paid": cost}
 
 
-def test_edge_cost_ratio_reads_the_existing_value_with_the_floor():
-    assert pw.pooled_edge_to_cost_ratio(_summary(2.3, 100), min_trades=100) == {
-        "ratio": 2.3, "n_trades": 100}
-    assert pw.pooled_edge_to_cost_ratio(_summary(-0.5, 250), min_trades=100)["ratio"] == -0.5
+def test_edge_cost_ratio_on_non_forced_trades_with_the_floor():
+    """100 signal trades, gross 0.33% = 33 bps each, cost 15 bps: 33/15 = 2.2."""
+    recs = [_trade(rr=0.33) for _ in range(100)]
+    assert pw.pooled_edge_to_cost_ratio(recs, min_trades=100) == {
+        "ratio": 2.2, "n_trades": 100, "n_excluded_end_of_window": 0}
 
 
-@pytest.mark.parametrize("summary,frag", [
-    (None, "no trade_diagnostics_summary"),
-    ({}, "no trade_diagnostics_summary"),
-    (_summary(2.3, 99), "fewer than min_trades=100"),
-    (_summary(None, 150), "is None"),
-    (_summary(2.3, 150, fees=False), "fees is False"),
-    ({"realized_edge_to_cost_ratio": 2.3, "per_trade_expectancy_bps": {"n": 150}},
-     "fees is None"),
+def test_edge_cost_ratio_excludes_forced_closes_from_ratio_and_floor():
+    """100 signal trades at 30 bps plus 50 forced closes at 300 bps: the forced
+    closes would lift the pooled ratio to (100x30 + 50x300)/150/15 = 8.0; with
+    them excluded it is 30/15 = 2.0, over exactly 100 trades."""
+    recs = ([_trade(rr=0.30) for _ in range(100)]
+            + [_trade(reason="end_of_window", rr=3.0) for _ in range(50)])
+    got = pw.pooled_edge_to_cost_ratio(recs, min_trades=100)
+    assert got == {"ratio": 2.0, "n_trades": 100, "n_excluded_end_of_window": 50}
+
+
+def test_always_long_two_coins_96_windows_is_not_evaluable_not_pass():
+    """Code review finding 6: one forced close per (coin, window), 2 x 96 = 192
+    records, each gross 5% against 15 bps -- pooled over all records the ratio
+    is 33 with n = 192 >= 100 (a PASS). Without forced closes: 0 trades."""
+    recs = [_trade(sym=s, win=f"w{k}", reason="end_of_window", rr=5.0)
+            for s in ("BTCUSDT", "ETHUSDT") for k in range(96)]
+    import cost_helpers
+    assert cost_helpers.realized_edge_to_cost_ratio(recs) > 2.2  # the flattering number
+    with pytest.raises(NE, match="0 trade.*192 end_of_window.*min_trades=100"):
+        pw.pooled_edge_to_cost_ratio(recs, min_trades=100)
+
+
+@pytest.mark.parametrize("recs,frag", [
+    ([_trade() for _ in range(99)], "fewer than min_trades=100"),
+    ([_trade() for _ in range(99)] + [_trade(cost=None)], "lack a measured cost"),
+    ([_trade(cost=0.0) for _ in range(120)], "zero mean measured cost"),
+    ([], "fewer than min_trades=100"),
 ])
-def test_edge_cost_ratio_not_evaluable(summary, frag):
+def test_edge_cost_ratio_not_evaluable(recs, frag):
     with pytest.raises(NE, match=frag):
-        pw.pooled_edge_to_cost_ratio(summary, min_trades=100)
+        pw.pooled_edge_to_cost_ratio(recs, min_trades=100)
 
 
-def test_edge_cost_ratio_bad_inputs_raise():
-    with pytest.raises(ValueError, match="min_trades"):
-        pw.pooled_edge_to_cost_ratio(_summary(2.3, 100), min_trades=0)
-    with pytest.raises(ValueError, match="realized_edge_to_cost_ratio is nan"):
-        pw.pooled_edge_to_cost_ratio(_summary(float("nan"), 100), min_trades=100)
-    with pytest.raises(ValueError, match="per_trade_expectancy_bps.n"):
-        pw.pooled_edge_to_cost_ratio(_summary(2.3, None), min_trades=100)
+def test_edge_cost_ratio_forced_close_without_cost_does_not_block():
+    recs = [_trade() for _ in range(100)] + [_trade(reason="end_of_window", cost=None)]
+    assert pw.pooled_edge_to_cost_ratio(recs, min_trades=100)["n_trades"] == 100
 
 
-def test_edge_cost_ratio_is_the_run_protocol_figure_not_a_second_formula():
-    """Pooled over two coins: the value returned is exactly the one
-    run_protocol._aggregate_trade_diagnostics put in the summary."""
+def test_edge_cost_ratio_bad_inputs_raise_value_error():
+    ok = [_trade() for _ in range(100)]
+    for bad_min in (0, True, 1.5):
+        with pytest.raises(ValueError, match="min_trades"):
+            pw.pooled_edge_to_cost_ratio(ok, min_trades=bad_min)
+    for bad in (_trade(rr=float("nan")), _trade(rr=None), _trade(cost=-1.0),
+                _trade(cost=float("inf")), _trade(reason="take_profit"), _trade(sym=["X"]),
+                {"symbol": "X"}, "not a record"):
+        with pytest.raises(ValueError) as ei:
+            pw.pooled_edge_to_cost_ratio(ok + [bad], min_trades=100)
+        assert not isinstance(ei.value, NE)
+    with pytest.raises(ValueError, match="trade_records must be a list"):
+        pw.pooled_edge_to_cost_ratio({"trades": ok}, min_trades=100)
+
+
+def test_edge_cost_ratio_is_the_shared_function_run_protocol_uses():
+    """Same formula, one definition: on the same (non-forced) records the value
+    equals run_protocol._aggregate_trade_diagnostics's figure."""
     import run_protocol as rp
     recs = []
     for k in range(120):
-        sym = "BTCUSDT" if k % 2 else "ETHUSDT"
-        recs.append({"symbol": sym, "window": f"w{k % 4}", "exit_reason": "signal_flip",
-                     "realized_return": 0.2 + 0.01 * (k % 7), "cost_paid": 15.0,
-                     "net_portfolio_return_pct": 0.05, "holding_bars": 3, "mae": 0.1,
-                     "mfe": 0.3, "profitable_net": True, "entry_efficiency": None,
+        recs.append({"symbol": "BTCUSDT" if k % 2 else "ETHUSDT", "window": f"w{k % 4}",
+                     "exit_reason": "signal_flip", "realized_return": 0.2 + 0.01 * (k % 7),
+                     "cost_paid": 15.0, "net_portfolio_return_pct": 0.05, "holding_bars": 3,
+                     "mae": 0.1, "mfe": 0.3, "profitable_net": True, "entry_efficiency": None,
                      "exit_efficiency": None})
-    results = [{"core": {"trade_count": 30}} for _ in range(4)]
-    summary = rp._aggregate_trade_diagnostics(recs, results)
-    got = pw.pooled_edge_to_cost_ratio(summary, min_trades=100)
+    summary = rp._aggregate_trade_diagnostics(recs, [{"core": {"trade_count": 30}}] * 4)
+    got = pw.pooled_edge_to_cost_ratio(recs, min_trades=100)
     assert got["ratio"] == summary["realized_edge_to_cost_ratio"] and got["n_trades"] == 120
+
+
+def _pin_records(kind: str) -> list:
+    recs = []
+    for k in range(60):
+        cost = 15.0 if k % 2 else 12.0
+        if kind == "partial" and k % 5 == 0:
+            cost = None
+        if kind == "none":
+            cost = None
+        if kind == "zero":
+            cost = 0.0
+        recs.append({
+            "symbol": "BTCUSDT" if k % 3 else "ETHUSDT", "window": f"w{k % 6}",
+            "exit_reason": "end_of_window" if k % 7 == 0 else "signal_flip",
+            "realized_return": ((k * 37) % 23 - 9) / 10.0, "cost_paid": cost,
+            "net_portfolio_return_pct": ((k * 11) % 13 - 6) / 100.0, "holding_bars": 1 + k % 9,
+            "mae": 0.1 * (k % 4), "mfe": 0.2 * (k % 5), "profitable_net": bool(k % 2),
+            "entry_efficiency": 0.5, "exit_efficiency": None,
+        })
+    return recs
+
+
+# run_protocol._aggregate_trade_diagnostics output on _pin_records, computed at
+# the base commit (origin/master 21920594) BEFORE the ratio moved to
+# cost_helpers: (realized_edge_to_cost_ratio, sha256 of the whole summary as
+# json.dumps(sort_keys=True)). The refactor must reproduce both exactly.
+_RP_SUMMARY_PINS = {
+    "full": (1.3951, "d1afb4879085e77573a5577ca6276a713182b9475c5269cb1bdd77e28e6abfda"),
+    "partial": (2.392, "7776b8b430a73e7d93267616b557ed1b093457ee506fe329df33cba1323f190d"),
+    "none": (None, "5d2546a26ad7e6ee83dbe7ba85480b44c7504eb917c3d1cea3e11fd103249555"),
+    "zero": (None, "51fefa58e5b380db33e24778a20a53e9fd18596f1a1f168be2b0f5de9e8f60e7"),
+}
+
+
+@pytest.mark.parametrize("kind", sorted(_RP_SUMMARY_PINS))
+def test_run_protocol_trade_summary_byte_identical_after_the_refactor(kind):
+    import json
+    import run_protocol as rp
+    s = rp._aggregate_trade_diagnostics(_pin_records(kind), [{"core": {"trade_count": 10}}] * 6)
+    ratio, digest = _RP_SUMMARY_PINS[kind]
+    assert s["realized_edge_to_cost_ratio"] == ratio
+    assert hashlib.sha256(json.dumps(s, sort_keys=True, default=str).encode()).hexdigest() \
+        == digest
 
 
 # ---------------------------------------------------------------------------
