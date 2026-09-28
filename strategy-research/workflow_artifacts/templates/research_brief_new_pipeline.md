@@ -41,15 +41,18 @@
 #    == BTCUSDT -- so "60m"/"1h" and "BTC, ETH"/"BTCUSDT, ETHUSDT" both agree)
 #    and refuses a real mismatch; `venue` has no protocol-side counterpart
 #    (no protocol file carries a venue/exchange field) and is not
-#    cross-checked. This check, and the promotion-required check in step 4,
-#    run ONLY at registration, and ONLY under config_direct_authoring -- a
+#    cross-checked. This check, and the promotion check in step 4, run ONLY
+#    at registration, and ONLY under config_direct_authoring -- a
 #    launch/resume re-parsing an already-registered brief does not re-run
 #    them (same review fix).
-# 4. Fill in `machine_constraints.protocol.promotion` with YOUR pre-registered
-#    thresholds (see the long comment below) -- under config_direct_authoring,
-#    registration now REFUSES a generate-path brief with no promotion block
-#    at all (code review fix; previously this was caught only at launch, by
-#    run_phase1_research.py's own G7 gate).
+# 4. Do NOT add a `promotion` block (C5.6, decision D-043). Under
+#    config_direct_authoring nothing that decides reads one -- the grid and
+#    the profit bars decide -- so a generated protocol needs none, and none
+#    is invented for you (see the long comment below). Registration refuses
+#    only the abolished generic block (median_sharpe_gt 0 /
+#    max_abs_drawdown_pct_lt 30 / min_trade_count_gte 20 /
+#    kill_median_sharpe_lt -1), which the D-3 guard would refuse at launch
+#    anyway.
 # 5. Register it: `python workflow/run_campaign.py register --brief
 #    briefs/<your_brief_name>.md --priority <n> --notes "<n>"` (RUNBOOK.md
 #    §1a-bis has the pre-launch checks to run before spending any LLM
@@ -120,13 +123,16 @@
 #     absent, which is the one value that cannot silently drift out of sync
 #     with the policy (and sidesteps CUL-339 above entirely, since there is
 #     no protocol-local holdout block for --holdout to misread);
-#   * promotion: NOT pre-filled -- see step 4 above and the registration-time
-#     refusal it now triggers (code review fix) if left commented out.
-#     `_require_pre_registered_promotion` (G7) ALSO refuses to generate a
-#     protocol with no promotion block at launch, rather than substituting
-#     the abolished generic default -- inventing numbers here on your behalf
-#     would violate CLAUDE.fork.md's "no thresholds after seeing data --
-#     ever" rule just as much as picking them after a backtest would.
+#   * promotion: deliberately ABSENT (C5.6, D-043). A protocol's promotion
+#     block only feeds tools/run_protocol.py's legacy top-level
+#     promote/kill/refine verdict, which nothing under config_direct_authoring
+#     reads; with no block that verdict is recorded as null with a reason.
+#     Under config_direct_authoring the G7 gate
+#     (`_require_pre_registered_promotion`) is skipped, so the generated
+#     protocol simply carries no `promotion` key -- the abolished generic
+#     default is never substituted. (Flag OFF, G7 still refuses a generated
+#     protocol with no block, exactly as before -- this template is for the
+#     new pipeline only.)
 #
 # WHY brief_status IS NOT SET HERE (code-review correction)
 # -------------------------------------------------------------
@@ -167,14 +173,8 @@ machine_constraints:
     end: "2025-12-31"
     # holdout: intentionally omitted -- defaults to campaign_data_policy.yaml's
     #   own holdout_range (see the long comment above).
-    # promotion: REQUIRED before this brief can register under
-    #   config_direct_authoring (code review fix) -- see the long comment
-    #   above. Uncomment and fill in with YOUR pre-registered thresholds:
-    # promotion:
-    #   median_sharpe_gt: <FILL IN>
-    #   max_abs_drawdown_pct_lt: <FILL IN>
-    #   min_trade_count_gte: <FILL IN>
-    #   kill_median_sharpe_lt: <FILL IN>
+    # promotion: intentionally omitted -- not needed under
+    #   config_direct_authoring (C5.6, D-043; see the long comment above).
 ---
 
 # <FILL IN: a short human title for this brief>

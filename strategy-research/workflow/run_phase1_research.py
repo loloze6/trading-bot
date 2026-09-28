@@ -7969,7 +7969,9 @@ def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: d
         "timeframe": timeframe,
         "windows": windows,
         "holdout": _generated_protocol_holdout_block(proto_constraint),
-        "promotion": _require_pre_registered_promotion(proto_constraint, run_id),
+        # C5.6 (D-043): G7 flag off; under config_direct_authoring no block is
+        # required and none is invented (see _generated_protocol_promotion).
+        **_generated_protocol_promotion(proto_constraint, run_id),
     }
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(protocol_obj, f, indent=2)
@@ -8105,6 +8107,31 @@ def _require_pre_registered_promotion(proto_constraint: dict, run_id: str) -> di
             f"mapping) to the brief's machine_constraints, then re-run."
         )
     return promotion
+
+
+def _generated_protocol_promotion(proto_constraint: dict, run_id: str) -> dict:
+    """C5.6 (D-043): the `promotion` entry of a generated protocol, as a dict to
+    splice into it. The ONE place both the generator
+    (_ensure_protocol_from_constraints) and run_campaign's pre-flight
+    (_expected_generated_protocol) decide it, so the two cannot drift.
+
+    Flag off: {"promotion": <block>} through G7 (_require_pre_registered_promotion),
+    which refuses a brief with none -- exactly as before.
+
+    Under orchestrator.config_direct_authoring.enabled nothing that decides reads
+    a protocol's promotion block: the grid and the profit bars decide, and
+    tools/run_protocol.py's top-level promote/kill verdict is legacy (it records
+    `verdict: null` with a reason when the block is absent). So G7 is skipped:
+    a brief with no block gets a protocol with NO `promotion` key -- never a
+    substitute. A block the brief does carry is copied verbatim, and the D-3
+    guard (protocol_resolution.assert_promotion_ratified) still refuses it at
+    pre-flight and at every protocol resolution if it is the abolished generic
+    block (a generated file never carries promotion_provenance), so stale
+    generic thresholds cannot ride along silently."""
+    if _config_direct_authoring_enabled():
+        pre_registered = proto_constraint.get("promotion")
+        return {"promotion": pre_registered} if pre_registered else {}
+    return {"promotion": _require_pre_registered_promotion(proto_constraint, run_id)}
 
 
 

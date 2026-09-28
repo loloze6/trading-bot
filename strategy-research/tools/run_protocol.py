@@ -1798,6 +1798,17 @@ def diagnostics_only_hypothesis_verdict(results: list,
     }
 
 
+# C5.6 (D-043): a protocol with no `promotion` block -- what a config-direct
+# run's generated protocol is when the brief pre-registers none. The legacy
+# top-level promote/kill/refine verdict needs those thresholds; without them it
+# is recorded as null with this reason, never computed from invented numbers.
+# Nothing under config_direct_authoring reads the top-level verdict (the grid
+# and the profit bars decide). A protocol that HAS a block is unchanged.
+NO_PROMOTION_VERDICT_REASON = (
+    "protocol has no `promotion` block -- no legacy promote/kill/refine verdict "
+    "(config-direct runs need none, C5.6 / D-043)")
+
+
 # E-061 C1.3: a refusal BEFORE any window ran -- no market data was touched, so
 # the orchestrator records no trial row for it (an engineering failure, not a
 # spent look). The exit code and the stderr token live in tools/protocol_refusal.py,
@@ -2427,7 +2438,7 @@ def main():
               f"({len(all_trade_records)} trades)")
 
     # Per-symbol summary (A3.4: median_sharpe excludes null-sharpe sparse windows)
-    promo = protocol["promotion"]
+    promo = protocol.get("promotion")  # C5.6: may be absent (config-direct)
     per_symbol = {}
     for symbol in symbols:
         rows    = [r for r in results if r["symbol"] == symbol]
@@ -2464,7 +2475,10 @@ def main():
             return False
         return p["median_sharpe"] < promo["kill_median_sharpe_lt"]
 
-    if all(_promote(s) for s in symbols):
+    if not promo:
+        verdict = None
+        verdict_reason = NO_PROMOTION_VERDICT_REASON
+    elif all(_promote(s) for s in symbols):
         verdict = "promote"
         parts = [f"{s}: median_sharpe={per_symbol[s]['median_sharpe']:.3f}>0"
                  f" max_dd={per_symbol[s]['max_abs_drawdown_pct']:.1f}%<30"

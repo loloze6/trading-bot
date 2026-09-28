@@ -73,6 +73,8 @@ Finding -> test (see each marker's reason for the pinned failure):
   A2 (C1.3)  test_a2_protocol_execution_never_passes_a_missing_validation_protocol
   A4 (C1.4)  test_a4_uncaught_stage_exception_is_a_classified_pause       (fixed, no marker)
   A6 (C1.5)  test_a6_generic_promotion_protocol_refused_before_any_llm_call (fixed, no marker)
+  C5.6       test_c5_6_generated_protocol_without_promotion_completes
+             test_c5_6_generated_protocol_with_a_generic_block_is_refused_at_registration
   A7 (C1.6)  test_a7_era_id_handles_the_open_ended_last_era
   A8 (C1.5)  test_a8_flag_misconfiguration_refused_before_any_llm_call[*] (fixed, no marker)
   A5 (pin)   test_a5_one_variant_failing_validate_config_pins_the_pause
@@ -282,7 +284,7 @@ def _protocol(promotion="default") -> dict:
     return proto
 
 
-def _brief_text(protocol_ref: str) -> str:
+def _brief_text(protocol_ref: str, machine_constraints: dict | None = None) -> str:
     front = {
         "strategy_domain": "crypto_directional",
         "market_universe": ",".join(SYMBOLS),
@@ -292,7 +294,7 @@ def _brief_text(protocol_ref: str) -> str:
         "venue": "binance",
         "product": "perp",
         "criteria_from": "hypothesis_generation",
-        "machine_constraints": {"protocol_ref": protocol_ref},
+        "machine_constraints": machine_constraints or {"protocol_ref": protocol_ref},
     }
     return ("---\n" + yaml.safe_dump(front, sort_keys=False) + "---\n\n"
             "# E-061 wiring-test brief\n\nOperator brief for the new pipeline (sandbox).\n")
@@ -390,10 +392,13 @@ class Harness:
         self._install_stubs()
         return self
 
-    def register_brief(self, protocol_ref: str = f"protocols/{PROTOCOL_NAME}") -> Path:
+    def register_brief(self, protocol_ref: str = f"protocols/{PROTOCOL_NAME}",
+                       machine_constraints: dict | None = None, expect_rc: int = 0) -> Path:
         brief = self.root / "briefs" / f"{BRIEF_ID}.md"
-        brief.write_text(_brief_text(protocol_ref), encoding="utf-8")
-        assert camp._register_from_cli(brief, 1, "E-061 C1.1 wiring test") == 0
+        brief.write_text(_brief_text(protocol_ref, machine_constraints), encoding="utf-8")
+        assert camp._register_from_cli(brief, 1, "E-061 C1.1 wiring test") == expect_rc
+        if expect_rc:
+            return brief
         entry = self.queue()[0]
         assert entry["id"] == BRIEF_ID and entry["status"] == "ready"
         assert entry["brief_status"] == "open"
@@ -771,7 +776,10 @@ class Harness:
             "protocol_file": argv[3],
             "results": results,
             "per_symbol_summary": per_symbol,
-            "verdict": "refine", "verdict_reason": "stub",
+            # C5.6: the real tool records the legacy verdict as null when the
+            # protocol has no promotion block (tools/run_protocol.py).
+            **({"verdict": "refine", "verdict_reason": "stub"} if proto.get("promotion")
+               else {"verdict": None, "verdict_reason": rp.NO_PROMOTION_VERDICT_REASON}),
             "hypothesis_verdict": hypothesis_verdict,
             "trade_diagnostics_summary": tds,
             "prescreen_backtest_cross_check": None,
@@ -1241,6 +1249,83 @@ def test_a6_generic_promotion_protocol_refused_before_any_llm_call(harness):
                             f"refusal: {h.llm_calls}")
     # The refusal names this protocol and its unratified generic promotion block.
     _assert_classified_refusal(h, ret, exc, PROTOCOL_NAME, "promotion", "ratified")
+
+
+# ---------------------------------------------------------------------------
+# C5.6 (D-043): a generated protocol needs no promotion block under the new
+# pipeline; an unratified generic block is still refused.
+# ---------------------------------------------------------------------------
+
+def _generated_constraints(promotion=None) -> dict:
+    """machine_constraints.protocol generating exactly WINDOW_LABELS' six monthly
+    windows (train range) on SYMBOLS at 1h; holdout defaulted from the policy."""
+    first, last = WINDOW_LABELS[0], WINDOW_LABELS[-1]
+    y, m = int(last[:4]), int(last[5:])
+    ny, nm = (y + 1, 1) if m == 12 else (y, m + 1)
+    proto = {"symbols": list(SYMBOLS), "timeframe": "1h", "start": f"{first}-01",
+             "end": f"{ny:04d}-{nm:02d}-01"}
+    if promotion is not None:
+        proto["promotion"] = promotion
+    return {"protocol": proto}
+
+
+@pytest.mark.slow
+def test_c5_6_generated_protocol_without_promotion_completes(harness):
+    """The joined-up run on a GENERATED protocol whose brief pre-registers no
+    promotion block: registered, launched and completed (completed_refuted),
+    with every config-direct consumer written -- trial rows, grid, idea status,
+    profit bars, memory, reports -- while the legacy top-level verdict is null."""
+    h = harness.build(promotion=None)
+    h.register_brief(machine_constraints=_generated_constraints())
+    r1 = "run_001"
+    keep_going, exc = _drive(h)
+    if exc is not None:
+        raise exc
+    st = h.state(r1)
+    assert st.get("last_error") is None, st.get("last_error")
+    assert keep_going is True
+    assert st["pending_stage"] == "completed_refuted" and st["status"] == "completed"
+    assert h.entry(BRIEF_ID)["status"] == "done"
+    assert h.llm_calls == [(s, r1) for s in STAGE_AGENTS]
+
+    generated = h.root / "protocols" / f"{r1}_generated.json"
+    proto = json.loads(generated.read_text(encoding="utf-8"))
+    assert "promotion" not in proto
+    assert [w["label"] for w in proto["windows"]] == list(WINDOW_LABELS)
+    assert {Path(a[3]).name for a in h.calls_to("run_protocol.py")} == {generated.name}
+    assert len(h.calls_to("run_protocol.py")) == 3
+
+    import run_protocol as rp
+    for vid in ("asset", "base", "design"):
+        pr = h.art(r1, f"variants/{vid}/protocol_result.yaml")
+        assert pr["verdict"] is None, vid
+        assert pr["verdict_reason"] == rp.NO_PROMOTION_VERDICT_REASON
+    rows = [r for r in h.trial_rows() if r["trial_id"].startswith(f"{r1}:")]
+    assert sorted(r["trial_id"] for r in rows) == [f"{r1}:asset", f"{r1}:base", f"{r1}:design"]
+    grid = h.art(r1, "grid_evaluation.yaml")
+    assert sorted(grid["variants"]) == ["asset", "base", "design"]
+    assert h.art(r1, "idea_status.yaml")["idea_status"] == "refuted" == grid["idea_status"]
+    pbe = h.art(r1, "profit_bars_evaluation.yaml")
+    assert sorted(pbe["variants"]) == ["asset", "base", "design"]
+    for cat in rpr._reader_categories():
+        assert h.art(r1, f"reports/{cat}.yaml") is not None, cat
+    memory = yaml.safe_load(rpr._campaign_memory_path().read_text(encoding="utf-8"))
+    assert memory["runs"][r1]["idea_status"] == "refuted"
+    assert h.art(r1, "decision_record.yaml") is not None
+    _assert_holdout_untouched(h)
+
+
+def test_c5_6_generated_protocol_with_a_generic_block_is_refused_at_registration(harness):
+    """Choice for C5.6 item 1: an unratified generic block is REFUSED, never
+    carried along. A generate brief carrying it does not register (the D-3
+    guard would refuse the generated protocol at the launch pre-flight anyway);
+    nothing is queued and no LLM call is made."""
+    h = harness.build(promotion=None)
+    h.register_brief(machine_constraints=_generated_constraints(dict(rpr._GENERIC_PROMOTION)),
+                     expect_rc=1)
+    assert h.queue() == []
+    assert _drive(h) == (False, None)
+    assert h.llm_calls == [] and h.argv == []
 
 
 @pytest.mark.parametrize("case", ["lazy_dependency", "quoted_boolean"])

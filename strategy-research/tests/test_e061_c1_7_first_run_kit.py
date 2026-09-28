@@ -24,7 +24,10 @@ Round 2 (this file's current shape):
      machine_constraints.protocol.promotion is caught too.
   5. Under orchestrator.config_direct_authoring.enabled, registration now ALSO
      refuses a generate-path brief with no `promotion` block at all
-     (previously only caught at LAUNCH by G7).
+     (previously only caught at LAUNCH by G7). SUPERSEDED by C5.6 (D-043):
+     under the flag a generated protocol needs no promotion block, G7 is
+     skipped, and registration refuses only the abolished GENERIC block
+     (run_campaign._check_generate_protocol_promotion_not_generic).
   6. The universe/timeframe cross-check MOVED: it is no longer inside
      _parse_brief_frontmatter (which runs on every re-parse -- materialization,
      dry-run, resume); it is now registration-ONLY
@@ -98,17 +101,29 @@ _PLACEHOLDER_TEXT = {
   step 1a via criteria_from below.)>""", "Testing momentum on BTC/ETH."),
 }
 
-_COMMENTED_PROMOTION_BLOCK = """    # promotion:
-    #   median_sharpe_gt: <FILL IN>
-    #   max_abs_drawdown_pct_lt: <FILL IN>
-    #   min_trade_count_gte: <FILL IN>
-    #   kill_median_sharpe_lt: <FILL IN>"""
+# C5.6 (D-043): the template no longer carries a (commented) promotion block --
+# a config-direct generated protocol needs none. Tests that want one insert it
+# right after the generate block's `end:` line.
+_PROTOCOL_END_LINE = '    end: "2025-12-31"\n'
 
 _REAL_PROMOTION_BLOCK = """    promotion:
       median_sharpe_gt: 0.5
       max_abs_drawdown_pct_lt: 30
       min_trade_count_gte: 10
-      kill_median_sharpe_lt: -1"""
+      kill_median_sharpe_lt: -1
+"""
+
+_GENERIC_PROMOTION_BLOCK = """    promotion:
+      median_sharpe_gt: 0
+      max_abs_drawdown_pct_lt: 30
+      min_trade_count_gte: 20
+      kill_median_sharpe_lt: -1
+"""
+
+
+def _with_promotion_block(text: str, block: str) -> str:
+    assert text.count(_PROTOCOL_END_LINE) == 1, "fixture drift: generate block's end line not found"
+    return text.replace(_PROTOCOL_END_LINE, _PROTOCOL_END_LINE + block)
 
 
 def _frontmatter_block(text: str) -> str:
@@ -119,17 +134,17 @@ def _frontmatter_block(text: str) -> str:
 
 def _filled_template_text() -> str:
     """The template with every prose placeholder replaced -- what an
-    operator's brief looks like BEFORE they add a promotion block.
+    operator's brief looks like, ready to register (C5.6: no promotion block).
     market_universe/timeframe are already concrete in the template (matching
     machine_constraints.protocol exactly), so only the four prose
-    placeholders need filling; `promotion` stays commented out (the
-    deliberate default -- see test_raw_template_and_no_promotion_is_refused_
-    under_config_direct_authoring).
+    placeholders need filling; there is no `promotion` block (C5.6, D-043 --
+    see test_generate_protocol_with_no_promotion_registers_under_config_
+    direct_authoring).
 
     Only the FRONTMATTER (parsed) data is checked for a remaining sentinel --
     the header comment block legitimately uses the literal string "<FILL IN"
-    prose (explaining the convention itself, and the commented-out
-    `# promotion:` example), and comments are never parsed data."""
+    prose (explaining the convention itself), and comments are never parsed
+    data."""
     text = _TEMPLATE_PATH.read_text(encoding="utf-8")
     for _key, (placeholder, replacement) in _PLACEHOLDER_TEXT.items():
         assert placeholder in text, f"fixture drift: {_key} placeholder text not found in template"
@@ -143,12 +158,9 @@ def _filled_template_text() -> str:
 
 
 def _filled_template_text_with_promotion() -> str:
-    """`_filled_template_text` plus a real, uncommented promotion block --
-    what an operator's brief looks like once fully ready to register under
-    config_direct_authoring."""
-    text = _filled_template_text()
-    assert _COMMENTED_PROMOTION_BLOCK in text, "fixture drift: commented promotion block not found"
-    return text.replace(_COMMENTED_PROMOTION_BLOCK, _REAL_PROMOTION_BLOCK)
+    """`_filled_template_text` plus a real (non-generic) promotion block -- an
+    optional pre-registration, still accepted under config_direct_authoring."""
+    return _with_promotion_block(_filled_template_text(), _REAL_PROMOTION_BLOCK)
 
 
 def _enable_config_direct_authoring(root: Path) -> None:
@@ -189,6 +201,9 @@ def test_template_file_exists_and_is_well_formed():
     assert proto["timeframe"] == "1h"
     assert "holdout" not in proto, "holdout must default from the policy, not be hand-copied"
     assert "promotion" not in proto, "promotion must never be invented on the operator's behalf"
+    # C5.6 (D-043): not even as a commented-out "fill this in" example.
+    mc_text = _frontmatter_block(text).split("\nmachine_constraints:", 1)[1]
+    assert "median_sharpe_gt" not in mc_text and "<FILL IN" not in mc_text
 
     # market_universe/timeframe are pre-filled to EXACTLY match the generated
     # protocol (the cross-check would otherwise refuse this template's own
@@ -312,11 +327,12 @@ def test_placeholder_inside_machine_constraints_is_refused(tmp_path):
     like one in a top-level field. Independent of config_direct_authoring --
     the placeholder scan is never flag-gated (no campaign_config.yaml exists
     in this tmp_path at all)."""
-    text = _filled_template_text().replace(_COMMENTED_PROMOTION_BLOCK, """    promotion:
+    text = _with_promotion_block(_filled_template_text(), """    promotion:
       median_sharpe_gt: <FILL IN>
       max_abs_drawdown_pct_lt: 30
       min_trade_count_gte: 10
-      kill_median_sharpe_lt: -1""")
+      kill_median_sharpe_lt: -1
+""")
     brief_path = tmp_path / "b.md"
     brief_path.write_text(text, encoding="utf-8")
     with pytest.raises(ValueError, match="placeholder sentinel") as excinfo:
@@ -325,15 +341,16 @@ def test_placeholder_inside_machine_constraints_is_refused(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# Flag-off byte-identity: filled copy (promotion still commented out)
+# Flag-off byte-identity: filled copy (no promotion block)
 # registers with NEITHER new check running, exactly as before both existed.
 # ---------------------------------------------------------------------------
 
 def test_filled_copy_with_no_promotion_registers_when_flag_is_off(campaign_root):
     """DECLARED BEHAVIOUR: with orchestrator.config_direct_authoring off (the
     sandbox default -- no campaign_config.yaml at all), a brief with NO
-    promotion block registers successfully -- the promotion-required check
-    and the universe/timeframe cross-check both no-op entirely. This is the
+    promotion block registers successfully -- the promotion check (C5.6: the
+    generic-block refusal) and the universe/timeframe cross-check both no-op
+    entirely. This is the
     'flag off: register behaviour byte-identical except placeholder
     refusal' declaration from the second-round code review."""
     assert orch._config_direct_authoring_enabled() is False
@@ -380,18 +397,47 @@ def test_mismatched_universe_flag_off_is_not_checked(campaign_root):
 
 
 # ---------------------------------------------------------------------------
-# config_direct_authoring ON: promotion-required + universe/timeframe
-# cross-check, both registration-only.
+# config_direct_authoring ON: generic-promotion refusal (C5.6; was
+# promotion-required before D-043) + universe/timeframe cross-check, both
+# registration-only.
 # ---------------------------------------------------------------------------
 
-def test_generate_protocol_with_no_promotion_is_refused_under_config_direct_authoring(campaign_root):
+def test_generate_protocol_with_no_promotion_registers_under_config_direct_authoring(campaign_root):
+    """C5.6 (D-043): the filled template -- no promotion block at all --
+    registers under config_direct_authoring. (Before C5.6 this was refused:
+    the operator had to invent thresholds nothing reads.)"""
     root = campaign_root["root"]
     _enable_config_direct_authoring(root)
     assert orch._config_direct_authoring_enabled() is True
     rc = _register(root, "no_promotion", _filled_template_text())
+    assert rc == 0
+    queue = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))
+    assert [e["id"] for e in queue["queue"]] == ["no_promotion"]
+
+
+def test_generic_promotion_block_is_refused_under_config_direct_authoring(campaign_root):
+    """C5.6: a brief that carries the abolished generic block is refused at
+    registration -- the generated protocol would carry it verbatim and the
+    D-3 guard would refuse it at launch pre-flight anyway."""
+    root = campaign_root["root"]
+    _enable_config_direct_authoring(root)
+    rc = _register(root, "generic_promotion",
+                   _with_promotion_block(_filled_template_text(), _GENERIC_PROMOTION_BLOCK))
     assert rc == 1
     queue = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))
     assert queue["queue"] == []
+    data = camp._parse_brief_frontmatter(root / "briefs" / "generic_promotion.md")
+    with pytest.raises(ValueError, match="abolished generic block"):
+        camp._lint_new_pipeline_registration(root / "briefs" / "generic_promotion.md", data)
+
+
+def test_generic_promotion_block_registers_when_flag_is_off(campaign_root):
+    """Flag off: the registration lint is a no-op, exactly as before C5.6 (G7
+    and D-3 still apply at launch, unchanged)."""
+    assert orch._config_direct_authoring_enabled() is False
+    rc = _register(campaign_root["root"], "generic_flag_off",
+                   _with_promotion_block(_filled_template_text(), _GENERIC_PROMOTION_BLOCK))
+    assert rc == 0
 
 
 def test_fully_filled_brief_with_promotion_registers_under_config_direct_authoring(campaign_root):

@@ -525,27 +525,27 @@ def _lint_brief_protocol_agreement(brief_path: Path, data: dict) -> None:
             )
 
 
-def _check_generate_protocol_has_promotion(brief_path: Path, data: dict) -> None:
-    """Second-round code-review fix: registration-time half of the G7 gate.
-    run_phase1_research.py::_require_pre_registered_promotion already
-    refuses to GENERATE a protocol with no `promotion` block at LAUNCH --
-    this refuses the same brief at REGISTRATION instead, before it even
-    reaches the queue. Only applies to the generate path
-    (machine_constraints.protocol); a pinned protocol_ref's promotion block
-    lives in the pinned FILE already (D-3/assert_promotion_ratified checks
-    that file, not this)."""
+def _check_generate_protocol_promotion_not_generic(brief_path: Path, data: dict) -> None:
+    """C5.6 (D-043), replacing the C1.7 promotion-REQUIRED registration check.
+    Under config_direct_authoring (this function's only caller is gated on it)
+    a generated protocol needs no `promotion` block: nothing that decides reads
+    one (run_phase1_research._generated_protocol_promotion's docstring), so a
+    brief without one registers. A block the brief DOES carry is copied into
+    the generated protocol verbatim -- and if it is the abolished generic block
+    the D-3 guard refuses that protocol at launch pre-flight anyway (a
+    generated file never carries promotion_provenance). This refuses the same
+    brief at REGISTRATION instead, before it reaches the queue. Generate path
+    only (machine_constraints.protocol); a pinned protocol_ref's block lives in
+    the pinned FILE, which D-3 checks at pre-flight and at every resolution."""
     mc = data.get("machine_constraints") or {}
     proto = mc.get("protocol")
-    if isinstance(proto, dict) and not proto.get("promotion"):
+    if isinstance(proto, dict) and protocol_resolution.promotion_is_generic(proto.get("promotion")):
         raise ValueError(
-            f"{brief_path}: machine_constraints.protocol has no `promotion` block. "
-            f"run_phase1_research.py's G7 gate (_require_pre_registered_promotion) "
-            f"would refuse to generate this protocol at launch anyway -- refusing at "
-            f"registration instead. Add median_sharpe_gt/max_abs_drawdown_pct_lt/"
-            f"min_trade_count_gte/kill_median_sharpe_lt under "
-            f"machine_constraints.protocol.promotion with YOUR pre-registered "
-            f"thresholds (no thresholds after seeing data -- see "
-            f"CLAUDE.fork.md/HYPOTHESIS.md convention)."
+            f"{brief_path}: machine_constraints.protocol.promotion is the abolished generic "
+            f"block {dict(proto['promotion'])} -- the generated protocol would be refused by "
+            f"the D-3 guard at launch (a generated protocol never carries "
+            f"promotion_provenance). Delete the block: under config_direct_authoring a "
+            f"generated protocol needs none (C5.6, D-043) -- or pre-register real thresholds."
         )
 
 
@@ -558,7 +558,8 @@ def _lint_new_pipeline_registration(brief_path: Path, data: dict) -> None:
     (materialization, dry-run, a resumed run re-parsing its own
     already-registered brief) would be wasted work at best and, for the
     promotion check, would re-raise on every resume of a run whose brief a
-    human already registered successfully once.
+    human already registered successfully once. (C5.6: the promotion check is
+    now the generic-block refusal, no longer "a block is required".)
 
     A no-op entirely when orchestrator.config_direct_authoring.enabled is
     off/absent: both checks are specific to the config-direct path this
@@ -574,7 +575,7 @@ def _lint_new_pipeline_registration(brief_path: Path, data: dict) -> None:
     if not orch._config_direct_authoring_enabled():
         return
     try:
-        _check_generate_protocol_has_promotion(brief_path, data)
+        _check_generate_protocol_promotion_not_generic(brief_path, data)
         _lint_brief_protocol_agreement(brief_path, data)
     except ValueError:
         raise
@@ -647,7 +648,8 @@ def _parse_brief_frontmatter(brief_path: Path) -> dict:
         )
 
     # E-061 C1.7 second-round code-review fix: the universe/timeframe
-    # cross-check and the generate-path promotion-required check are
+    # cross-check and the generate-path promotion check (C5.6: now the
+    # generic-block refusal, no block required) are
     # registration-ONLY (see _lint_new_pipeline_registration's own
     # docstring) -- called from register_hypothesis, not from here.
     return data
@@ -3103,8 +3105,9 @@ def _expected_generated_protocol(generated: dict, run_id: str) -> dict:
     and it raises exactly where generation raises (fourth-round review fix 5 --
     pinned by a parity test over malformed inputs): a missing symbols / start /
     end key, windows reaching the holdout, a `holdout` override disagreeing
-    with the policy (CUL-339), no promotion block. An empty symbols
-    list is accepted, as generation accepts it."""
+    with the policy (CUL-339), no promotion block (flag off -- under
+    config_direct_authoring none is required and the key is then absent, C5.6).
+    An empty symbols list is accepted, as generation accepts it."""
     symbols = generated["symbols"]
     per_symbol_start = generated.get("per_symbol_start") or {}
     start = min(per_symbol_start.values()) if per_symbol_start else generated["start"]
@@ -3114,7 +3117,7 @@ def _expected_generated_protocol(generated: dict, run_id: str) -> dict:
         "timeframe": generated.get("timeframe", "1h"),
         "windows": windows,
         "holdout": orch._generated_protocol_holdout_block(generated),
-        "promotion": orch._require_pre_registered_promotion(generated, run_id),
+        **orch._generated_protocol_promotion(generated, run_id),
     }
 
 
@@ -3166,15 +3169,20 @@ def _generated_protocol_plan(run_dir: Path, run_id: str, generated: dict, state:
                f"never carries one), so the protocol would be refused at its first use, after "
                f"1a/1b/2. Pre-register real thresholds for this hypothesis in "
                f"pre_registration.yaml's machine_constraints.protocol.promotion")
+    if orch._config_direct_authoring_enabled():
+        generic += (" -- or delete that block: under config_direct_authoring a generated "
+                    "protocol needs none (C5.6, D-043)")
+    # C5.6: under config_direct_authoring `expected` may carry no `promotion` key
+    # (none pre-registered); flag off it always does (G7), so .get() is identical.
     if not path.exists():
-        return (generic if protocol_resolution.promotion_is_generic(expected["promotion"])
+        return (generic if protocol_resolution.promotion_is_generic(expected.get("promotion"))
                 else None), None
     try:
         current = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as e:
         return f"{where}: {path.name} cannot be read ({type(e).__name__}: {e})", None
     differing = [k for k in _GENERATED_PROTOCOL_FIELDS
-                 if not isinstance(current, dict) or current.get(k) != expected[k]]
+                 if not isinstance(current, dict) or current.get(k) != expected.get(k)]
     if not differing:
         try:
             protocol_resolution.assert_promotion_ratified(path)
@@ -3186,7 +3194,7 @@ def _generated_protocol_plan(run_dir: Path, run_id: str, generated: dict, state:
                 f"machine_constraints.protocol in {differing} -- only a promotion-block change "
                 f"is regenerated; refusing to rewrite windows, symbols, timeframe or holdout. "
                 f"Restore pre_registration.yaml to match {path.name}, or register a new brief"), None
-    if protocol_resolution.promotion_is_generic(expected["promotion"]):
+    if protocol_resolution.promotion_is_generic(expected.get("promotion")):
         return generic, None
     return None, {"path": path, "doc": expected, "differing": differing}
 
