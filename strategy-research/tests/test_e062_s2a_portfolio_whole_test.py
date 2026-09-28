@@ -222,59 +222,90 @@ def test_overlap_longer_than_one_day_keeps_the_earliest_windows_days():
     assert dict(ch["bar_levels"])[datetime(2020, 1, 11, 23)] == pytest.approx(lv[_day(10)])
 
 
-def test_missing_junction_day_is_not_evaluable_and_names_the_cell():
+def test_missing_junction_day_for_one_coin_is_not_evaluable_and_names_the_cell():
     """Code review finding 4 (deviation from G1's "treat as gap"): w0 = days
-    0..10, w1's nominal start is day 10 (one-day overlap) but its data starts on
-    day 11. Linking flat would drop the day-10 -> day-11 P&L -> NOT_EVALUABLE,
-    and the reason names the one missing (window, coin, day) cell."""
-    wins = {"w0": {"X": _bars(0, [100.0 + i for i in range(11)])},
-            "w1": {"X": _bars(11, [200.0 + i for i in range(10)])}}
+    0..10, w1 nominal 10..20 (one-day overlap). Coin A has w1's junction day
+    10, coin B's w1 data starts on day 11: the coins disagree on w1's first
+    day -> missing data -> NOT_EVALUABLE naming the one missing cell."""
+    w0 = {c: _bars(0, [100.0 + i for i in range(11)]) for c in ("A", "B")}
+    w1 = {"A": _bars(10, [200.0 + i for i in range(11)]),
+          "B": _bars(11, [200.0 + i for i in range(10)])}
+    with pytest.raises(NE, match="coins start on different days") as ei:
+        _chain({"w0": w0, "w1": w1}, ["A", "B"], _bnd(w0=(0, 10), w1=(10, 20)))
+    assert "1 missing (window, coin, day) cell(s): ('w1', 'B', 2020-01-11)" in str(ei.value)
+
+
+def test_junction_hole_inside_a_window_lists_every_coin_and_count():
+    """w1 (nominal 7..20) has data from day 7 for both coins but neither has
+    the junction day 10 (last chained day): NOT_EVALUABLE, both cells, count 2."""
+    w0 = {c: _bars(0, [100.0] * 11) for c in ("A", "B")}
+    w1 = {c: _skip_days(_bars(7, [100.0] * 14), {_day(10)}) for c in ("A", "B")}
     with pytest.raises(NE, match="junction day 2020-01-11") as ei:
-        _chain(wins, ["X"], _bnd(w0=(0, 10), w1=(10, 20)))
-    assert "1 missing (window, coin, day) cell(s): ('w1', 'X', 2020-01-11)" in str(ei.value)
-
-
-def test_missing_junction_cells_list_every_coin_and_count():
-    """Two coins lack the junction day: both cells listed, count 2."""
-    a = _bars(0, [100.0] * 11)
-    w1 = {c: _bars(11, [100.0] * 10) for c in ("A", "B")}
-    with pytest.raises(NE) as ei:
-        _chain({"w0": {"A": a, "B": dict(a)}, "w1": w1}, ["A", "B"],
-               _bnd(w0=(0, 10), w1=(10, 20)))
+        _chain({"w0": w0, "w1": w1}, ["A", "B"], _bnd(w0=(0, 10), w1=(7, 20)))
     msg = str(ei.value)
     assert "2 missing (window, coin, day) cell(s)" in msg
     assert "('w1', 'A', 2020-01-11)" in msg and "('w1', 'B', 2020-01-11)" in msg
 
 
-def test_missing_junction_day_inside_a_longer_overlap_is_not_evaluable():
-    """w0 days 0..10; w1 nominal 7..20 without day 10: no junction day."""
-    w1 = _skip_days(_bars(7, [300.0 + i for i in range(14)]), {_day(10)})
-    wins = {"w0": {"X": _bars(0, [100.0 + i for i in range(11)])}, "w1": {"X": w1}}
-    with pytest.raises(NE, match="junction day 2020-01-11"):
-        _chain(wins, ["X"], _bnd(w0=(0, 10), w1=(7, 20)))
+def test_measured_engine_layout_all_coins_stop_three_days_short_is_evaluable():
+    """The layout measured on real runs: every coin of a window stops 3 days
+    before test.end (w0 nominal 0..30, recorded 0..27; w1 nominal 30..60,
+    recorded 30..57). The engine tail days 28, 29 are flat and excluded from
+    coverage (day 30 is w1's first day, still counted); w1's own tail 58..60
+    too. Returns: w0 27 + w1 27 = 54 (w1 joins flat at day 30, no return on
+    it). Counted days: nominal 61 - 5 engine days = 56; coverage 55/56."""
+    w0 = {c: _bars(0, [100.0 + i * (1 + k) for i in range(28)]) for k, c in enumerate("AB")}
+    w1 = {c: _bars(30, [50.0 + i for i in range(28)]) for c in "AB"}
+    ch = _chain({"w0": w0, "w1": w1}, ["A", "B"], _bnd(w0=(0, 30), w1=(30, 60)))
+    assert [s["kind"] for s in ch["segments"]] == ["first", "gap"]
+    assert [s["engine_tail_days"] for s in ch["segments"]] == [3, 3]
+    assert ch["n_engine_tail_days"] == 6 and ch["n_engine_head_days"] == 0
+    assert ch["engine_gap_days_excluded"] == [_day(28), _day(29), _day(58), _day(59), _day(60)]
+    assert ch["n_gap_days"] == 0 and ch["n_gap_links"] == 1
+    lv = dict(ch["daily_levels"])
+    assert lv[_day(30)] == pytest.approx(lv[_day(27)], rel=1e-15)  # flat across the tail
+    assert _day(30) not in dict(ch["daily_returns"])
+    assert len(ch["daily_returns"]) == 54
+    assert ch["n_calendar_days"] == 61 and ch["n_counted_calendar_days"] == 56
+    assert ch["coverage"] == 55 / 56
+    assert ch["first_day"] == _day(0) and ch["last_day"] == _day(57)
 
 
-def test_gap_window_missing_its_start_day_is_not_evaluable():
-    """A real gap (w1 nominal start day 21) but w1's data starts on day 22."""
+def test_measured_layout_buy_and_hold_is_flat_across_the_engine_tail():
+    """Prices jump 100 -> 200 across the engine tail days: buy-and-hold is flat
+    there like the strategy (nobody traded), so its gross is w0 (110/100) x
+    w1 (220/200) - 1 = 0.21."""
+    eq = {"w0": {"X": _bars(0, [1.0] * 28)}, "w1": {"X": _bars(30, [1.0] * 28)}}
+    cl = {"w0": {"X": _bars(0, [100.0] * 27 + [110.0])},
+          "w1": {"X": _bars(30, [200.0] * 27 + [220.0])}}
+    ch = _chain(eq, ["X"], _bnd(w0=(0, 30), w1=(30, 60)))
+    bh = pw.chained_buy_and_hold(ch, cl, {"X": 0.0}, {"X": 0.0})
+    assert bh["buy_and_hold_gross_return"] == pytest.approx(0.21, rel=1e-12)
+
+
+def test_engine_head_shortfall_all_coins_agree_is_a_flat_gap():
+    """A gap window whose coins all start one day after test.start (within
+    warmup_days): a protocol gap, flat, the head day excluded from coverage."""
     wins = {"w0": {"X": _bars(0, [100.0] * 20)}, "w1": {"X": _bars(22, [100.0] * 19)}}
-    with pytest.raises(NE, match="nominal start day 2020-01-22") as ei:
-        _chain(wins, ["X"], _bnd(w0=(0, 19), w1=(21, 40)))
-    assert "('w1', 'X', 2020-01-22)" in str(ei.value)
+    ch = _chain(wins, ["X"], _bnd(w0=(0, 19), w1=(21, 40)))
+    seg = ch["segments"][1]
+    assert seg["kind"] == "gap" and seg["join_day"] == _day(22) and seg["engine_head_days"] == 1
+    assert ch["n_gap_days"] == 1 and ch["engine_gap_days_excluded"] == [_day(21)]
 
 
-def test_missing_tail_of_a_window_is_not_evaluable_probe():
+def test_missing_tail_of_one_coin_is_not_evaluable_probe():
     """Second-round finding 1 probe: coin B falls 100 -> 60 over w0's last 3
-    days, but those 3 days are missing from B's data (per-window coverage 28/31
-    still passes v1's floor). w1 then restarts both coins at 1.0, so the loss
-    would vanish from the chain. With the protocol's bounds the tail is missing
-    -> NOT_EVALUABLE naming the 3 cells. Bounds are required, so there is no
-    path without them."""
+    days, but those 3 days are missing from B's data while coin A continues
+    (per-window coverage 28/31 still passes v1's floor). w1 then restarts both
+    coins at 1.0, so the loss would vanish. The coins disagree on w0's last
+    day -> NOT_EVALUABLE naming the 3 cells. Bounds are required, so there is
+    no path without them."""
     a0 = _bars(0, [100.0] * 31)
     b0 = _skip_days(_bars(0, [100.0] * 28 + [80.0, 70.0, 60.0]), {_day(28), _day(29), _day(30)})
     w1 = {c: _bars(30, [100.0] * 31) for c in ("A", "B")}
     wins = {"w0": {"A": a0, "B": b0}, "w1": w1}
     pdv1.window_common_curve("w0", wins["w0"], ["A", "B"])  # v1 floor passes
-    with pytest.raises(NE, match="before its nominal end 2020-01-31") as ei:
+    with pytest.raises(NE, match="coins stop on different days") as ei:
         pw.chain_windows(wins, ["A", "B"], _bnd(w0=(0, 30), w1=(30, 60)))
     msg = str(ei.value)
     assert "3 missing (window, coin, day) cell(s)" in msg
@@ -283,22 +314,32 @@ def test_missing_tail_of_a_window_is_not_evaluable_probe():
         pw.chain_windows(wins, ["A", "B"])  # window_bounds is required
 
 
-def test_last_window_missing_its_final_three_days_is_not_evaluable():
-    """Second-round finding 3: the span is the protocol's nominal span, so a
-    truncated tail is never a silently shorter test."""
-    wins = {"w0": {"X": _bars(0, [100.0] * 31)}, "w1": {"X": _bars(30, [100.0] * 28)}}
-    with pytest.raises(NE, match="last common day 2020-02-27 is before its nominal end "
-                                 "2020-03-01") as ei:
-        pw.chain_windows(wins, ["X"], _bnd(w0=(0, 30), w1=(30, 60)))
-    assert "3 missing (window, coin, day) cell(s)" in str(ei.value)
+def test_tail_shortfall_beyond_the_engine_limit_is_not_evaluable():
+    """Every coin stops 6 days before test.end (> MAX_ENGINE_TAIL_DAYS = 5):
+    not the engine's systematic shortfall -> NOT_EVALUABLE with 6 cells; 5
+    days is still accepted; a larger declared limit accepts 6."""
+    assert pw.MAX_ENGINE_TAIL_DAYS == 5
+    six = {"w0": {"X": _bars(0, [100.0] * 25)}}
+    with pytest.raises(NE, match="6 days before its nominal end") as ei:
+        pw.chain_windows(six, ["X"], _bnd(w0=(0, 30)))
+    assert "6 missing (window, coin, day) cell(s)" in str(ei.value)
+    five = {"w0": {"X": _bars(0, [100.0] * 26)}}
+    assert pw.chain_windows(five, ["X"], _bnd(w0=(0, 30)))["n_engine_tail_days"] == 5
+    assert pw.chain_windows(six, ["X"], _bnd(w0=(0, 30)),
+                            max_engine_tail_days=6)["n_engine_tail_days"] == 6
 
 
 def test_first_window_head_and_bounds_misuse():
     wins = {"w0": {"X": _bars(1, [100.0] * 20)}}
-    # one day of missing head data: NOT_EVALUABLE with the cell
-    with pytest.raises(NE, match="first window 'w0': first common day 2020-01-02") as ei:
-        pw.chain_windows(wins, ["X"], _bnd(w0=(0, 20)))
-    assert "('w0', 'X', 2020-01-01)" in str(ei.value)
+    # one day of head shortfall, the (only) coin agrees: engine head gap
+    ch = pw.chain_windows(wins, ["X"], _bnd(w0=(0, 20)))
+    assert ch["n_engine_head_days"] == 1 and ch["engine_gap_days_excluded"] == [_day(0)]
+    assert ch["n_counted_calendar_days"] == 20
+    # coins disagree on the first day: missing head data
+    two = {"w0": {"A": _bars(0, [100.0] * 21), "B": _bars(1, [100.0] * 20)}}
+    with pytest.raises(NE, match="coins start on different days") as ei:
+        pw.chain_windows(two, ["A", "B"], _bnd(w0=(0, 20)))
+    assert "('w0', 'B', 2020-01-01)" in str(ei.value)
     # data before the given start / after the given end: wrong bounds
     for b in (_bnd(w0=(2, 20)), _bnd(w0=(1, 19))):
         with pytest.raises(ValueError, match="nominal (start|end)") as ei:
@@ -309,16 +350,17 @@ def test_first_window_head_and_bounds_misuse():
     with pytest.raises(ValueError, match="manifest's start .*warm-up prefetch") as ei:
         pw.chain_windows(far, ["X"], _bnd(w0=(0, 20)))
     assert not isinstance(ei.value, NE)
-    with pytest.raises(NE, match="missing head data"):  # a longer declared warm-up
-        pw.chain_windows(far, ["X"], _bnd(w0=(0, 20)), warmup_days=10)
+    ch = pw.chain_windows(far, ["X"], _bnd(w0=(0, 20)), warmup_days=10)  # declared warm-up
+    assert ch["n_engine_head_days"] == 10
     with pytest.raises(ValueError, match="exactly the windows' labels"):
-        pw.chain_windows(wins, ["X"], _bnd(w9=(1, 20)))
+        _chain(wins, ["X"], _bnd(w9=(1, 20)))
     with pytest.raises(ValueError, match="is not a date"):
         _chain(wins, ["X"], {"w0": (datetime(2020, 1, 2), _day(20))})
     with pytest.raises(ValueError, match="is before start"):
         _chain(wins, ["X"], {"w0": (_day(20), _day(1))})
-    with pytest.raises(ValueError, match="warmup_days"):
-        pw.chain_windows(wins, ["X"], _bnd(w0=(1, 20)), warmup_days=-1)
+    for kw in ({"warmup_days": -1}, {"max_engine_tail_days": True}):
+        with pytest.raises(ValueError, match="non-negative int"):
+            pw.chain_windows(wins, ["X"], _bnd(w0=(1, 20)), **kw)
 
 
 def test_window_inside_an_earlier_window_raises():

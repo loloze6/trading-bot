@@ -26,15 +26,18 @@ rows identically).
 DEVIATION FROM THE ACCEPTED G1 TEXT (code review finding 4): G1 says "a
 junction day that the later window lacks is treated as a gap" (linked flat).
 Linking flat drops real P&L the strategy made or lost while the data is
-missing, so here a missing junction day is NOT_EVALUABLE instead, and so is a
-window whose data stops before its nominal end or starts after its nominal
-start (second-round findings 1 and 3). The NOT_EVALUABLE reason lists every
-missing (window, coin, day) cell and their count (finding 4). Only a real
-protocol gap -- a window whose nominal start is after the previous windows'
-nominal end, known from the protocol's window bounds -- is linked flat, as G1
-says. chain_windows therefore REQUIRES the protocol's nominal (start, end) per
-window (window_bounds_from_protocol / load_protocol_window_bounds), never a
-window manifest's start (the warm-up prefetch start).
+missing, so here a missing junction day is NOT_EVALUABLE instead, and so are
+coins that disagree on where a window's data starts or stops (second-round
+findings 1 and 3). The NOT_EVALUABLE reason lists every missing (window, coin,
+day) cell and their count (finding 4). Linked flat, as G1 says, are only a
+real protocol gap (a window whose nominal start is after the previous windows'
+nominal end) and the engine's systematic shortfall at a window's edges (every
+coin stops together 1-3 days before test.end: those days were never traded;
+limited to MAX_ENGINE_TAIL_DAYS / warmup_days, and excluded from coverage --
+see chain_windows). chain_windows therefore REQUIRES the protocol's nominal
+(start, end) per window (window_bounds_from_protocol /
+load_protocol_window_bounds), never a window manifest's start (the warm-up
+prefetch start).
 
 What v2 adds:
   * chain_windows: one whole-test daily and bar-level curve out of the
@@ -277,6 +280,11 @@ def window_close_bars(path: Path) -> dict:
 # required_bars >= 24 (AdvancedStrategy), i.e. 48 hourly bars = 2 days.
 DEFAULT_WARMUP_DAYS = 2
 
+# The most days a window's recorded data may stop before its nominal end, all
+# coins together, and still be the engine's systematic shortfall (measured 1-3
+# days on real runs) rather than missing data -- see chain_windows.
+MAX_ENGINE_TAIL_DAYS = 5
+
 # At most this many (window, coin, day) cells are spelled out in a
 # NOT_EVALUABLE reason (the total count is always given).
 _MAX_CELLS_SHOWN = 20
@@ -369,8 +377,17 @@ def _days(first: date, last: date) -> list:
     return [date.fromordinal(o) for o in range(first.toordinal(), last.toordinal() + 1)]
 
 
+def _ordinal_cover(spans) -> set:
+    """Ordinals of every day inside any of the inclusive (first, last) spans."""
+    out: set = set()
+    for a, b in spans:
+        out.update(range(a.toordinal(), b.toordinal() + 1))
+    return out
+
+
 def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
-                  warmup_days: int = DEFAULT_WARMUP_DAYS) -> dict:
+                  warmup_days: int = DEFAULT_WARMUP_DAYS,
+                  max_engine_tail_days: int = MAX_ENGINE_TAIL_DAYS) -> dict:
     """One whole-test equal-weight portfolio curve from per-window backtests.
 
     windows: {window label: {coin: {naive UTC timestamp: equity}}} -- the shape
@@ -381,42 +398,63 @@ def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
         protocol's test.start / test.end (window_bounds_from_protocol), end
         inclusive by day. NEVER a window manifest's start: that is the warm-up
         PREFETCH start, earlier than test.start.
-    warmup_days: a window whose first recorded day is more than this many days
-        after its nominal start raises ValueError -- the bounds look like the
-        manifest's prefetch start, not the protocol's test.start (the warm-up is
-        never recorded). A smaller head shortfall is missing data
-        (NOT_EVALUABLE, below). Pass the run's prefetch span in days when it is
-        longer than DEFAULT_WARMUP_DAYS.
+    warmup_days: the most days a window's recorded data may start after its
+        nominal start (see ENGINE SHORTFALL). More than that raises ValueError:
+        the bounds look like the manifest's prefetch start, not the protocol's
+        test.start (the warm-up is never recorded). Pass the run's prefetch
+        span in days when it is longer than DEFAULT_WARMUP_DAYS.
+    max_engine_tail_days: the most days a window's recorded data may stop
+        before its nominal end (see ENGINE SHORTFALL); more is NOT_EVALUABLE.
 
     Bounds checks (ValueError, an input bug): a recorded bar before a window's
     nominal start or after its nominal end; the head shortfall above; two
-    windows with the same nominal start; a window whose nominal end is before
-    a day already chained (it lies inside earlier windows).
+    windows with the same nominal start; a window that lies inside earlier
+    windows.
 
     Per window (unchanged v1 definition, portfolio_daily.window_common_curve):
     the common UTC days (every coin has a daily close), >= 2 of them, covering
     >= PORTFOLIO_MIN_COMMON_DAY_COVERAGE of the union; each coin normalised at
     its close on the window's first common day (the ANCHOR); portfolio = mean.
 
-    Completeness (governing rule: missing data is NOT_EVALUABLE, never a
-    silently shorter or flatter test). Windows are chained in nominal-start
-    order and every window must hold, as common days:
-      * its nominal END (else its tail is missing: a coin's loss on the
-        missing tail days would vanish -- second-round review finding 1);
-      * the first window: its nominal START (else the head is missing);
-      * a later window w, with `last_day` = the last chained day (= the latest
-        nominal end so far, since every tail is complete):
-          - nominal start <= last_day (the one-day overlap every protocol has
-            today, "junction", or a longer one, "overlap": the EARLIEST window
-            keeps its days): w must hold last_day, its JOIN day;
-          - nominal start > last_day: a real protocol GAP ("gap"). w must hold
-            its nominal start, where it joins; the chain is linked FLAT across
-            the gap (G1) and the calendar days strictly between are
-            n_gap_days.
-    A missing day raises NOT_EVALUABLE naming every missing (window, coin, day)
-    cell and their count. DEVIATION FROM G1: G1 says a missing junction day
-    is "treated as a gap"; here it is NOT_EVALUABLE (code review finding 4) --
-    linking flat would drop real P&L.
+    ENGINE SHORTFALL vs MISSING DATA (orchestrator decision, after measuring
+    run artifacts' recorded dates). The engine's last recorded bar falls
+    systematically 1-3 days before a window's test.end, identically for every
+    coin of the window (e.g. a window ending 2018-10-01 recorded through
+    2018-09-28; tests/test_run_protocol_exit_reason.py's docstring notes the
+    same: "the engine's last bar routinely falls days short of the protocol's
+    declared boundary"). Those days were never traded by anyone, so:
+      * the window's EFFECTIVE end is the last recorded day when EVERY coin's
+        last recorded bar falls on that same day, and the effective start is
+        the first recorded day when every coin's first recorded bar falls on
+        that same day;
+      * the days between an effective and a nominal bound (engine tail / head
+        days, n_engine_tail_days / n_engine_head_days) are a PROTOCOL GAP:
+        linked flat for the strategy and for buy-and-hold, and excluded from
+        BOTH the numerator and the denominator of the whole-test coverage (a
+        day inside the next window's effective span stays counted);
+      * a tail shortfall of more than max_engine_tail_days is NOT_EVALUABLE;
+        a head shortfall of more than warmup_days raises ValueError (above);
+      * when coins DISAGREE on their first or last recorded day, the days on
+        which some coins have data and others do not are MISSING DATA:
+        NOT_EVALUABLE naming every missing (window, coin, day) cell and their
+        count (so one coin's loss on days another coin still shows can never
+        vanish -- second-round review finding 1).
+    With one coin per variant (D-016) coins cannot disagree, so a whole-coin
+    data hole at a window edge of up to max_engine_tail_days (tail) or
+    warmup_days (head) is indistinguishable from the engine's shortfall and is
+    treated as one: flat on both sides, excluded from coverage.
+
+    Chaining. Windows are chained in nominal-start order; `last_day` = the
+    last chained day. A window w whose effective start is <= last_day
+    overlaps the chain ("junction" when it starts exactly on last_day,
+    "overlap" for a longer overlap -- the EARLIEST window keeps its days) and
+    must hold last_day, its JOIN day, as a common day: a missing junction day
+    is NOT_EVALUABLE with its cells (DEVIATION FROM G1, which says "treat as
+    gap": linking flat would drop real P&L -- code review finding 4). A window
+    whose effective start is after last_day is a "gap": it joins at its
+    effective start and the chain is linked FLAT; the calendar days strictly
+    between are engine tail/head days (inside some window's nominal span) or
+    protocol gap days (inside none, n_gap_days, G1).
 
     Window w is scaled by level(join) / v_w(join) and owns its common days
     after the join day. A daily return is counted for a day d only when d and
@@ -426,7 +464,7 @@ def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
     window is still in the LEVEL, just not a daily return (n_multi_day_steps).
 
     Bars: each window contributes, between its close on the join day and its
-    close on its nominal end, (a) its COMMON BARS (timestamps at which every
+    close on its effective end, (a) its COMMON BARS (timestamps at which every
     coin has a bar) and (b) the daily-close level of every day it owns -- plus,
     for the first window and a gap window, the level at the join day itself.
     (b) puts the anchor level (1.0 for the first window) and each day's close
@@ -435,19 +473,24 @@ def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
     with a common bar, so for a single such window this is exactly v1's
     drawdown bar set.
 
-    Whole-test coverage (G2), against the NOMINAL span (first window's nominal
-    start to the last nominal end, inclusive -- with the completeness checks
-    above the chain spans exactly that): (number of daily returns + 1) must be
-    >= WHOLE_TEST_MIN_COVERAGE x its calendar days, else NOT_EVALUABLE. It
-    counts RETURN days, so one missing day inside a window costs two counted
-    days (stricter than the per-window floor).
+    Whole-test coverage (G2): (number of daily returns + 1) must be >=
+    WHOLE_TEST_MIN_COVERAGE x the counted calendar days = the nominal span
+    (first window's nominal start to the last nominal end, inclusive) minus
+    the engine tail/head days no window's effective span covers. Protocol gap
+    days stay counted (G2). It counts RETURN days, so one missing day inside a
+    window costs two counted days (stricter than the per-window floor).
 
     Returns {coins, segments, daily_levels [(date, level)], daily_returns
     [(date, return)], bar_levels [(timestamp, level)], first_day, last_day,
-    n_calendar_days, n_gap_days, n_gap_links, n_multi_day_steps, coverage}.
+    nominal_first_day, nominal_last_day, n_calendar_days (the nominal span),
+    n_counted_calendar_days (the coverage denominator), n_gap_days,
+    n_gap_links, n_engine_tail_days, n_engine_head_days,
+    engine_gap_days_excluded (sorted dates), n_multi_day_steps, coverage}.
     `segments` is one dict per window in chain order: window, nominal_start,
-    nominal_end, anchor, join_day, end_day, kind (first | junction | overlap |
-    gap), scale, common (its common days), return_days, n_gap_days_before."""
+    nominal_end, effective_start, effective_end, engine_head_days,
+    engine_tail_days, anchor, join_day, end_day, kind (first | junction |
+    overlap | gap), scale, common (its common days), return_days,
+    n_gap_days_before."""
     coins = _check_coins(coins)
     if not isinstance(windows, Mapping):
         raise ValueError(f"windows must be a mapping, got {type(windows).__name__}")
@@ -455,15 +498,18 @@ def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
         raise PortfolioNotEvaluable("no windows to chain")
     _check_windows(windows, coins)
     bounds = _check_bounds(window_bounds, windows)
-    if not _is_int(warmup_days) or warmup_days < 0:
-        raise ValueError(f"warmup_days must be a non-negative int, got {warmup_days!r}")
+    for name, val in (("warmup_days", warmup_days), ("max_engine_tail_days", max_engine_tail_days)):
+        if not _is_int(val) or val < 0:
+            raise ValueError(f"{name} must be a non-negative int, got {val!r}")
 
+    effective: dict = {}
     for win, by_coin in windows.items():
         s, e = bounds[win]
-        stamps = [t for c in coins for t in by_coin[c]]
-        if not stamps:
-            continue  # no bar at all: window_common_curve reports it (NOT_EVALUABLE)
-        first_rec, last_rec = min(stamps).date(), max(stamps).date()
+        firsts = {c: min(by_coin[c]).date() for c in coins if by_coin[c]}
+        lasts = {c: max(by_coin[c]).date() for c in coins if by_coin[c]}
+        if len(firsts) < len(coins):
+            continue  # a coin with no bar: window_common_curve reports it (NOT_EVALUABLE)
+        first_rec, last_rec = min(firsts.values()), max(lasts.values())
         if first_rec < s:
             raise ValueError(f"window {win!r} has a recorded bar on {first_rec}, before its "
                              f"nominal start {s} (wrong bounds?)")
@@ -476,6 +522,30 @@ def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
                 f"days after the given start {s} (> warmup_days={warmup_days}): the bounds "
                 f"look like a window manifest's start (the warm-up prefetch start), not the "
                 f"protocol's test.start -- pass window_bounds_from_protocol(...)")
+        daily_w = {c: {t.date() for t in by_coin[c]} for c in coins}
+        if len(set(firsts.values())) > 1:
+            raise _not_evaluable_cells(
+                f"window {win!r}: coins start on different days "
+                f"({ {c: str(d) for c, d in sorted(firsts.items(), key=lambda kv: str(kv[0]))} }) "
+                f"-- missing head data",
+                [(win, c, d) for d in _days(first_rec, date.fromordinal(
+                    max(firsts.values()).toordinal() - 1))
+                 for c in coins if d not in daily_w[c]])
+        if len(set(lasts.values())) > 1:
+            raise _not_evaluable_cells(
+                f"window {win!r}: coins stop on different days "
+                f"({ {c: str(d) for c, d in sorted(lasts.items(), key=lambda kv: str(kv[0]))} }) "
+                f"-- missing tail data would drop real P&L",
+                [(win, c, d) for d in _days(date.fromordinal(
+                    min(lasts.values()).toordinal() + 1), last_rec)
+                 for c in coins if d not in daily_w[c]])
+        if (e - last_rec).days > max_engine_tail_days:
+            raise _not_evaluable_cells(
+                f"window {win!r}: every coin stops on {last_rec}, {(e - last_rec).days} days "
+                f"before its nominal end {e} (> max_engine_tail_days={max_engine_tail_days})",
+                [(win, c, d) for d in _days(date.fromordinal(last_rec.toordinal() + 1), e)
+                 for c in coins])
+        effective[win] = (first_rec, last_rec)
 
     plans = []
     for win, by_coin in windows.items():
@@ -483,6 +553,8 @@ def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
         plans.append((bounds[win][0], win, by_coin, wc))
     plans.sort(key=lambda p: p[0])
 
+    nominal_cover = _ordinal_cover(bounds.values())
+    effective_cover = _ordinal_cover(effective.values())
     segments: list = []
     daily_levels: list = []
     daily_returns: list = []
@@ -492,27 +564,19 @@ def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
 
     for nominal_start, win, by_coin, wc in plans:
         nominal_end = bounds[win][1]
+        eff_start, eff_end = effective[win]
         common, daily_w, anchor_val = wc["common"], wc["daily"], wc["anchor"]
         anchor = common[0]
+        if anchor != eff_start or common[-1] != eff_end:  # every coin has both days
+            raise ValueError(f"window {win!r}: common days {anchor}..{common[-1]} do not match "
+                             f"the effective span {eff_start}..{eff_end}")
         v = dict(zip(common, wc["curve"]))
-        if common[-1] != nominal_end:
-            raise _not_evaluable_cells(
-                f"window {win!r}: last common day {common[-1]} is before its nominal end "
-                f"{nominal_end} -- missing tail data would drop real P&L",
-                _missing_cells(win, daily_w, coins,
-                               _days(date.fromordinal(common[-1].toordinal() + 1), nominal_end)))
         gap_before = 0
         if last_day is None:
-            if anchor != nominal_start:
-                raise _not_evaluable_cells(
-                    f"first window {win!r}: first common day {anchor} is after its nominal "
-                    f"start {nominal_start} -- missing head data",
-                    _missing_cells(win, daily_w, coins,
-                                   _days(nominal_start, date.fromordinal(anchor.toordinal() - 1))))
             kind, join = "first", anchor
-        elif nominal_start <= last_day:
-            if nominal_end < last_day:
-                raise ValueError(f"window {win!r} (nominal {nominal_start}..{nominal_end}) lies "
+        elif eff_start <= last_day:
+            if eff_end < last_day:
+                raise ValueError(f"window {win!r} (effective {eff_start}..{eff_end}) lies "
                                  f"inside earlier windows (chain already reaches {last_day})")
             kind, join = ("junction" if anchor == last_day else "overlap"), last_day
             if join not in v:
@@ -521,14 +585,9 @@ def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
                     f"data would drop real P&L from the chain",
                     _missing_cells(win, daily_w, coins, [join]))
         else:
-            kind, join = "gap", nominal_start
-            if join not in v:
-                raise _not_evaluable_cells(
-                    f"window {win!r} (after a protocol gap) has no common day on its nominal "
-                    f"start day {join} -- missing head data",
-                    _missing_cells(win, daily_w, coins,
-                                   _days(nominal_start, date.fromordinal(anchor.toordinal() - 1))))
-            gap_before = (join - last_day).days - 1
+            kind, join = "gap", eff_start
+            between = range(last_day.toordinal() + 1, join.toordinal())
+            gap_before = sum(1 for o in between if o not in nominal_cover)
             n_gap_days += gap_before
             n_gap_links += 1
 
@@ -567,7 +626,11 @@ def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
             bar_levels.append((t, points[t]))
 
         segments.append({"window": win, "nominal_start": nominal_start,
-                         "nominal_end": nominal_end, "anchor": anchor, "join_day": join,
+                         "nominal_end": nominal_end, "effective_start": eff_start,
+                         "effective_end": eff_end,
+                         "engine_head_days": (eff_start - nominal_start).days,
+                         "engine_tail_days": (nominal_end - eff_end).days,
+                         "anchor": anchor, "join_day": join,
                          "end_day": common[-1], "kind": kind, "scale": scale,
                          "common": list(common), "return_days": return_days,
                          "n_gap_days_before": gap_before})
@@ -575,23 +638,28 @@ def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
     if not daily_returns:
         raise PortfolioNotEvaluable("no two chained days are consecutive calendar days of "
                                     "one window, so there is no daily return")
-    first_day = plans[0][0]
-    last_nominal = max(e for _s, e in bounds.values())
-    if daily_levels[0][0] != first_day or last_day != last_nominal:
-        raise ValueError(f"chain spans {daily_levels[0][0]}..{last_day}, not the nominal "
-                         f"{first_day}..{last_nominal}")  # unreachable after the checks above
-    n_calendar = (last_nominal - first_day).days + 1
-    coverage = (len(daily_returns) + 1) / n_calendar
+    nominal_first = plans[0][0]
+    nominal_last = max(e for _s, e in bounds.values())
+    engine_gap = sorted(o for o in nominal_cover if o not in effective_cover)
+    n_nominal = (nominal_last - nominal_first).days + 1
+    n_counted = n_nominal - len(engine_gap)
+    coverage = (len(daily_returns) + 1) / n_counted
     if coverage < WHOLE_TEST_MIN_COVERAGE:
         raise PortfolioNotEvaluable(
             f"whole test: {len(daily_returns)} daily return(s) + 1 cover {coverage:.1%} of the "
-            f"{n_calendar} calendar day(s) of the nominal span {first_day} to {last_nominal} "
-            f"({n_gap_days} gap day(s) over {n_gap_links} gap link(s)), below "
-            f"WHOLE_TEST_MIN_COVERAGE={WHOLE_TEST_MIN_COVERAGE}")
+            f"{n_counted} counted calendar day(s) (nominal span {nominal_first} to "
+            f"{nominal_last} = {n_nominal} day(s), minus {len(engine_gap)} engine tail/head "
+            f"day(s); {n_gap_days} protocol gap day(s) over {n_gap_links} gap link(s) stay "
+            f"counted), below WHOLE_TEST_MIN_COVERAGE={WHOLE_TEST_MIN_COVERAGE}")
     return {"coins": list(coins), "segments": segments, "daily_levels": daily_levels,
             "daily_returns": daily_returns, "bar_levels": bar_levels,
-            "first_day": first_day, "last_day": last_day, "n_calendar_days": n_calendar,
+            "first_day": daily_levels[0][0], "last_day": last_day,
+            "nominal_first_day": nominal_first, "nominal_last_day": nominal_last,
+            "n_calendar_days": n_nominal, "n_counted_calendar_days": n_counted,
             "n_gap_days": n_gap_days, "n_gap_links": n_gap_links,
+            "n_engine_tail_days": sum(s["engine_tail_days"] for s in segments),
+            "n_engine_head_days": sum(s["engine_head_days"] for s in segments),
+            "engine_gap_days_excluded": [date.fromordinal(o) for o in engine_gap],
             "n_multi_day_steps": n_multi, "coverage": coverage}
 
 
