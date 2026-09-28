@@ -286,6 +286,38 @@ read only under `specialist_readers`.
 - **C1.1 extension:** each reader prompt (captured at the stubbed `_invoke_reader_llm`) contains all
   three variant ids and is under the budget.
 
+### S2d built (2026-09-28)
+
+Built on `feat/c2-s2d-per-variant-reports`, base `72b032a5` (master). `tools/build_reports.py`:
+`load_run_sources` gained three keyword overrides (`protocol_result_path`/`trade_diagnostics_path`/
+`variant_run_dir`, all default `None` → today's exact paths); `build_reports(run_dir, write=True,
+*, variants=None, failed_variants=None, untested_variants=None)` — `variants=None` keeps the
+original single-report shape, `variants={vid: {kind, symbol, status}}` builds `schema_version: 2`
+with `variants.<vid>.slices` per graded variant plus top-level `failed_variants`/`untested_variants`
+(mirrors `evaluate_grid`'s own key names, per the S2a amendments below — no per-variant "failed"
+column, ever). G7: `trade_efficiency`/`component_attribution`'s `per_window`/`per_regime`/
+`per_symbol` are now `_aggregate_records`/`_aggregate_by_component` (n/mean/median/p10/p90),
+UNCONDITIONALLY (also under `variants=None`) — the two existing re-projection tests that asserted
+raw record equality were rewritten to assert the aggregate against an independently-computed
+statistic instead. `REPORT_CHAR_BUDGET` (400,000 chars, `_check_report_budget`) raises loud on any
+oversized report, checked on every build. The `protocol_execution`+`variant_loop` call site
+(`rpr.py`, was `:1916-1917`) now builds `{vid: {kind, symbol, status}}` from `index.yaml` (kind/
+symbol read via `.get()`, `None` until S2b lands — never invented) plus `failed_variants`/
+`untested_variants` already computed by S2a's own loop; the flag-off call site (`:2103-2104`) is
+untouched. Five reader SKILLs: "Report shape" rewritten for the `variants:`/`schema_version: 2`
+wrapper, every rule/scoring/evidence path re-pointed at `variants.base.slices...` (patches still
+target the base config), plus a new "Cross-variant check" paragraph per reader (a result holding on
+`base`+`design` but not `asset` is coin-specific, cite both, lower confidence). G14 verified, not
+built: `run_protocol.py`'s `diagnostics_only_hypothesis_verdict` (C1.3) already computes the
+diagnostics block under `--diagnostics-only` with no rule set — `profitability.yaml`'s `overall`
+slice is populated by config-direct runs today. `tests/test_e061_end_to_end_wiring.py`'s B2 xfail
+removed (passes for real: `build_reports` now reads each variant's own
+`variants/<vid>/trade_diagnostics.json`/`results/.../bars.csv`, no more unavailable trade/bar
+slices under the variant loop); one pre-existing test's `build_reports` stub
+(`test_e060_s3b_composition_wiring.py`) updated to accept the two new call kwargs. 240 targeted
+tests green (`test_e046a_category_reports`, `test_e046a_slice5b_i_reader_skills`,
+`test_e061_end_to_end_wiring`, `test_e033_slice4a_variant_loop`, `test_e060_s3b_composition_wiring`).
+
 ---
 
 ## C2.3 — "Distance to profitable" per card I (D-017)
@@ -469,6 +501,33 @@ configs, argv and trial rows). One module, `tools/variant_coin.py`.
   Layer-1 date until that audit gains Kraken dates. A single-era protocol can never run a partial
   asset (the 2-era floor). The Step-2 injected context (base coin, windows, earliest date per
   coin) is not built; Step 2 still sees only `coin_universe.yaml`.
+
+### S2c built (branch `feat/c2-s2c-variant-shape`)
+
+C2.5 / G12, under `orchestrator.variant_loop` and only when `variant_patches.yaml` declares
+`kind`/`symbol` (S2b's per-coin mode); composition runs exempt (G4). Flag off, a legacy file and
+composition runs route exactly as before (`tests/test_e061_c2_s2c_variant_shape.py`).
+
+- **Shape** (`tools/variant_coin.check_variant_shape`): 3-4 variants, unique safe ids, exactly one
+  `base`, >= 1 `design`, 1-2 `asset`; G4: a `symbols` key or a list in `symbol` is refused; each
+  entry reuses `resolve_variant` -- a `variant_coin:` refusal is a shape problem. **Not** a shape
+  problem: an asset refused only for coverage. D-042 (binding, after G12 was written) makes it
+  untested with the idea at best inconclusive, "instead of blocking the whole idea", which 5a and
+  the grid already do; G12's "incl. the Layer-1 coverage precheck" predates D-042.
+- **Where:** right after Step 2 (`_route_variant_shape_check`), and again at the top of 5a's route
+  (`_route_variant_step2_outputs`: the shape, then 5a's config errors -- a patch that does not
+  apply, unresolved manifest paths, a V-code other than a genuinely missing class, a
+  `variant_coin:` refusal), before the repeat gate. A V12 missing class, a repeat skip and a
+  coverage skip are not config errors.
+- **Retry / pause:** one retry of Step 2 per run, shared by both checks
+  (`pipeline_state.yaml` → `variant_shape_retry: {attempts, last_check, last_error, history}`,
+  reset to 0 once 5a's route accepts the variants); the error reaches Step 2 as
+  `injected_context.variant_shape_error`. A second failure pauses `variant_shape_invalid` or
+  `variant_config_error` (`run_campaign` classifier + table, RUNBOOK §3 rows, §4 reset list).
+- **Floor:** with the data gate off, 5a's route applies the gate's floor of 3 (`_variant_floor`,
+  the gate's former inline computation, shared).
+- **Not built:** a step-2 output with no `kind`/`symbol` at all reads as legacy and is not
+  checked (the per-coin-mode flag rule).
 
 ---
 

@@ -30,8 +30,19 @@ that cut -- it is written as the explicit `{"unavailable": true, "reason":
 readers must be able to tell "this cut genuinely has nothing" apart from "the
 builder forgot this cut."
 
-SOURCES, AND THE ONE EXCEPTION TO "ZERO NEW COMPUTATION"
-----------------------------------------------------------
+PER-VARIANT REPORTS (E-061 C2 S2d, schema_version 2)
+-----------------------------------------------------
+`build_reports(run_dir, variants={...})` builds the same five files in a
+different top-level shape -- see `build_reports`'s own docstring for the
+exact fields. Every variant's `slices` are still built by the same functions
+below, just pointed (via `_variant_sources`) at that variant's own
+`artifacts/variants/<vid>/protocol_result.yaml` /
+`variants/<vid>/trade_diagnostics.json` / `variants/<vid>/results/.../bars.csv`
+instead of the run-level defaults. `variants=None` (the default) is
+byte-identical to this module's pre-S2d behaviour.
+
+SOURCES, AND THE TWO EXCEPTIONS TO "ZERO NEW COMPUTATION"
+------------------------------------------------------------
 Every value in every report is a direct re-projection (copy, or regrouping-
 by-existing-key with no arithmetic) of a field that already exists in one of:
 
@@ -47,15 +58,29 @@ by-existing-key with no arithmetic) of a field that already exists in one of:
     carries the source file's own config_source field through verbatim so a
     reader can judge that for itself)
 
-...with exactly ONE exception, scoped by delivery_plan_v26.md's own Slice 5a
-text: the regime_power report's `hindsight_lag` values (see
-_compute_hindsight_lag below), inherited from E-040's decided regime-power
-checks. E-040 (EPICS.md) actually names three checks -- (a) does using the
-regime label beat ignoring it, (b) a hindsight-lag comparison that measures
-LAG, not correctness, and (c) detector health numbers -- but delivery_plan_
-v26.md's Slice 5a bullet narrows THIS slice's inherited scope to only (b) and
-(c). (a) is intentionally NOT computed anywhere in this file; regime_power's
-`overall` slice says so explicitly rather than silently omitting it.
+...with exactly TWO exceptions, both scoped and both approved before being
+written:
+
+  1. delivery_plan_v26.md's own Slice 5a text: the regime_power report's
+     `hindsight_lag` values (see _compute_hindsight_lag below), inherited
+     from E-040's decided regime-power checks. E-040 (EPICS.md) actually
+     names three checks -- (a) does using the regime label beat ignoring it,
+     (b) a hindsight-lag comparison that measures LAG, not correctness, and
+     (c) detector health numbers -- but delivery_plan_v26.md's Slice 5a
+     bullet narrows THIS slice's inherited scope to only (b) and (c). (a) is
+     intentionally NOT computed anywhere in this file; regime_power's
+     `overall` slice says so explicitly rather than silently omitting it.
+  2. E-061 C2 S2d (G7, C2_S1_FINDINGS.md, operator-accepted 2026-09-28):
+     trade_efficiency's and component_attribution's per_window/per_regime/
+     per_symbol slices are n/mean/median/p10/p90 AGGREGATES
+     (`_aggregate_records` / `_aggregate_by_component`) over the same raw
+     trade-diagnostics/bars.csv records the pre-S2d version copied verbatim
+     -- a real record count and simple order statistics, never a fabricated
+     or curve-fit figure. This applies whether or not `variants` is passed
+     (a single-run trade_efficiency/component_attribution report is
+     compacted too) -- the one thing `variants=None`'s docstring promise
+     does NOT cover byte-for-byte, because these two reports' raw per-record
+     lists were themselves the reason S2d exists (see REPORT_CHAR_BUDGET).
 
 THE LOOKAHEAD TRAP, AND WHY THIS IS SAFE
 ------------------------------------------
@@ -148,6 +173,81 @@ def _group_by(items: list[dict], key_fn: Callable[[dict], Any]) -> dict[Any, lis
     return dict(grouped)
 
 
+def _percentile(sorted_values: list[float], pct: float) -> float:
+    """Linear-interpolation percentile (numpy's default 'linear' method),
+    `sorted_values` must already be sorted and non-empty."""
+    n = len(sorted_values)
+    if n == 1:
+        return sorted_values[0]
+    k = (n - 1) * pct
+    f = int(k)
+    c = min(f + 1, n - 1)
+    if f == c:
+        return sorted_values[f]
+    return sorted_values[f] * (c - k) + sorted_values[c] * (k - f)
+
+
+def _numeric_or_none(value: Any) -> float | None:
+    """Coerces a record value to float for aggregation, or None if it isn't
+    numeric. Trade-diagnostics records are already real Python int/float
+    (JSON-loaded); bars.csv-derived component-attribution records are raw
+    CSV strings (csv.DictReader, never cast upstream -- same as every other
+    bars.csv consumer in this file, e.g. _compute_hindsight_lag's own
+    `float(row["close"])`), so a numeric-looking string is coerced too.
+    Booleans are excluded on purpose (never averaged as 0/1 here -- a rate
+    would be a different, not-yet-decided statistic)."""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value)
+        except ValueError:
+            return None
+    return None
+
+
+def _aggregate_records(records: list[dict]) -> dict:
+    """[NEW COMPUTATION -- G7, C2_S1_FINDINGS.md, operator-accepted 2026-09-28]
+    Collapses a list of per-record dicts (one per trade, or one per bar-
+    component measurement) into {n, <numeric field>: {mean, median, p10,
+    p90}}, dropping the individual records. Non-numeric fields (ids,
+    timestamps, labels) are summarized only by inclusion in `n` -- their
+    per-record values still exist verbatim upstream (trade_diagnostics.json /
+    bars.csv), this is a report-scale slice, not the only copy of the data."""
+    agg: dict = {"n": len(records)}
+    if not records:
+        return agg
+    fields: dict[str, list[float]] = defaultdict(list)
+    for rec in records:
+        for key, value in rec.items():
+            num = _numeric_or_none(value)
+            if num is None:
+                continue
+            fields[key].append(num)
+    for key in sorted(fields):
+        values = sorted(fields[key])
+        if not values:
+            continue
+        agg[key] = {
+            "mean": statistics.fmean(values),
+            "median": statistics.median(values),
+            "p10": _percentile(values, 0.10),
+            "p90": _percentile(values, 0.90),
+        }
+    return agg
+
+
+def _aggregate_by_component(records: list[dict]) -> dict:
+    """component_attribution's own compaction (G7): aggregate WITHIN each
+    component, never across components -- blending unrelated components'
+    values into one set of stats would hide exactly the per-component signal
+    this report exists to carry."""
+    by_component = _group_by(records, lambda rec: rec["component"])
+    return {comp: _aggregate_records(recs) for comp, recs in sorted(by_component.items())}
+
+
 def _write_yaml_atomic(path: Path, data: Any) -> None:
     """Same temp-file-then-os.replace pattern as
     workflow/run_phase1_research.py::save_yaml, so a crash mid-write can
@@ -191,27 +291,46 @@ def _load_bars_csv(path: Path) -> list[dict] | None:
 # Source loading
 # ---------------------------------------------------------------------------
 
-def load_run_sources(run_dir: Path) -> dict:
+def load_run_sources(run_dir: Path, *, protocol_result_path: Path | None = None,
+                      trade_diagnostics_path: Path | None = None,
+                      variant_run_dir: Path | None = None) -> dict:
     """Load every source artifact this tool re-projects, from one run
     directory. Missing files are represented as None/{}/[] -- every builder
     function below must handle that explicitly (see each function's
-    _unavailable(...) branches) rather than assume presence."""
+    _unavailable(...) branches) rather than assume presence.
+
+    E-061 C2 S2d: the three keyword overrides let a caller point this at one
+    VARIANT's own sources instead of the run-level defaults, without changing
+    a single line of any builder function below (they only ever read the
+    returned `sources` dict). Every default is exactly today's single-run
+    path, so `load_run_sources(run_dir)` is byte-identical to before this
+    slice. Callers pass:
+      protocol_result_path = RUN_DIR/artifacts/variants/<vid>/protocol_result.yaml
+      trade_diagnostics_path = RUN_DIR/variants/<vid>/trade_diagnostics.json
+      variant_run_dir = RUN_DIR/variants/<vid>   (bars.csv lives under
+        <variant_run_dir>/results/<window_run_id>/bars.csv)
+    """
     run_dir = Path(run_dir)
     artifacts = run_dir / "artifacts"
-    protocol_result = _load_yaml(artifacts / "protocol_result.yaml") or {}
-    trade_diagnostics = _load_json(run_dir / "trade_diagnostics.json")
+    pr_path = protocol_result_path if protocol_result_path is not None \
+        else artifacts / "protocol_result.yaml"
+    protocol_result = _load_yaml(pr_path) or {}
+    td_path = trade_diagnostics_path if trade_diagnostics_path is not None \
+        else run_dir / "trade_diagnostics.json"
+    trade_diagnostics = _load_json(td_path)
     # regime_detector_report.yaml is CAMPAIGN-LEVEL (strategy-research root),
     # not per-run -- run_dir is .../strategy-research/runs/<run_id>, so its
     # parent.parent is strategy-research/.
     sr_root = run_dir.parent.parent
     regime_detector_report = _load_yaml(sr_root / "regime_detector_report.yaml")
 
+    bars_root = variant_run_dir if variant_run_dir is not None else run_dir
     bars_by_window: dict[tuple, list[dict] | None] = {}
     for entry in protocol_result.get("results") or []:
         window_run_id = entry.get("run_id")
         if not window_run_id:
             continue
-        bars_path = run_dir / "results" / window_run_id / "bars.csv"
+        bars_path = bars_root / "results" / window_run_id / "bars.csv"
         bars_by_window[(entry.get("symbol"), entry.get("window"))] = _load_bars_csv(bars_path)
 
     return {
@@ -291,9 +410,14 @@ def build_trade_efficiency_report(sources: dict) -> dict:
     td = sources["trade_diagnostics"]
     trades = (td or {}).get("trades") if td else None
     if trades:
-        per_window = _group_by(trades, lambda t: t.get("window"))
-        per_symbol = _group_by(trades, lambda t: t.get("symbol"))
-        per_regime = _group_by(trades, lambda t: t.get("regime_at_entry"))
+        # G7 compaction: each grouping is {key: aggregate}, not {key: [raw
+        # trade dicts]} -- see _aggregate_records' docstring.
+        per_window = {k: _aggregate_records(v)
+                      for k, v in _group_by(trades, lambda t: t.get("window")).items()}
+        per_symbol = {k: _aggregate_records(v)
+                      for k, v in _group_by(trades, lambda t: t.get("symbol")).items()}
+        per_regime = {k: _aggregate_records(v)
+                      for k, v in _group_by(trades, lambda t: t.get("regime_at_entry")).items()}
     else:
         reason = (
             "no trade_diagnostics.json found alongside this run (or it has an "
@@ -611,8 +735,9 @@ def build_component_attribution_report(sources: dict) -> dict:
         overall = {
             "components_discovered": sorted(discovered),
             "note": "inventory only (component names parsed from bars.csv "
-                    "debug_info.components.* column headers) -- zero aggregation "
-                    "performed here; see per_window for the raw per-bar values.",
+                    "debug_info.components.* column headers); per_window/per_regime/"
+                    "per_symbol below are G7-compacted per-component aggregates "
+                    "(n, mean, median, p10, p90), not raw per-bar rows.",
         }
     else:
         overall = _unavailable(
@@ -620,7 +745,11 @@ def build_component_attribution_report(sources: dict) -> dict:
             "for this run.")
 
     if all_records:
-        per_window = _group_by(all_records, lambda rec: rec["window"])
+        # G7 compaction: aggregate WITHIN each component (_aggregate_by_component),
+        # per window/regime/symbol -- {key: {component: aggregate}}, not
+        # {key: [raw per-bar-per-component records]}.
+        per_window = {k: _aggregate_by_component(v)
+                      for k, v in _group_by(all_records, lambda rec: rec["window"]).items()}
         # CODE-REVIEW FIX (2026-09-21): every window's bars.csv ends with one
         # trailing boundary row whose `regime` value is the empty string (the
         # not-yet-classified final bar -- same data quirk _transition_indices
@@ -630,8 +759,10 @@ def build_component_attribution_report(sources: dict) -> dict:
         # Excluded from per_regime specifically; per_window/per_symbol are
         # unaffected since they don't key on regime.
         _regime_records = [rec for rec in all_records if rec["regime"] != ""]
-        per_regime = _group_by(_regime_records, lambda rec: rec["regime"])
-        per_symbol = _group_by(all_records, lambda rec: rec["symbol"])
+        per_regime = {k: _aggregate_by_component(v)
+                      for k, v in _group_by(_regime_records, lambda rec: rec["regime"]).items()}
+        per_symbol = {k: _aggregate_by_component(v)
+                      for k, v in _group_by(all_records, lambda rec: rec["symbol"]).items()}
     else:
         reason = "no component records extracted (see overall slice's reason)."
         per_window = _unavailable(reason)
@@ -653,26 +784,149 @@ BUILDERS: dict[str, Callable[[dict], dict]] = {
     "component_attribution": build_component_attribution_report,
 }
 
+# E-061 C2 S2d (G7): a report this size, YAML-serialized, is a real bug (an
+# unbounded grouping key -- e.g. one component/window/regime pair per bar
+# that G7's aggregation should have collapsed), never something to silently
+# truncate. Generous over any real report measured so far (C2_S1_FINDINGS.md's
+# own table showed up to ~440K chars for an UNCOMPACTED trade_efficiency
+# report and ~1.7M for UNCOMPACTED component_attribution; G7's aggregation
+# brings both down by orders of magnitude, and profitability/forecast_power/
+# regime_power's per-window rows stay well under this even pooling every
+# variant of a run).
+REPORT_CHAR_BUDGET = 400_000
 
-def build_reports(run_dir: Path | str, write: bool = True) -> dict[str, dict]:
-    """Build all five category reports for one run directory. When `write`
-    is True (the default, and what workflow/run_phase1_research.py's
-    protocol_execution branch uses), writes each to
-    <run_dir>/artifacts/reports/<category>.yaml via the same atomic
-    temp-file-then-replace pattern as save_yaml. Returns the built dicts
-    either way, so tests can inspect content without touching disk
+
+def _check_report_budget(category: str, report: dict) -> None:
+    """Fail loud (G7) rather than silently write, or silently truncate, an
+    oversized report -- see REPORT_CHAR_BUDGET's own comment."""
+    size = len(yaml.safe_dump(report, sort_keys=False, allow_unicode=True))
+    if size > REPORT_CHAR_BUDGET:
+        raise ValueError(
+            f"{category}.yaml would be {size} chars, over REPORT_CHAR_BUDGET="
+            f"{REPORT_CHAR_BUDGET} -- refusing to write an oversized report. This means "
+            f"a grouping key has unbounded cardinality (e.g. too many distinct windows/"
+            f"components/variants) -- fix the aggregation, never raise this budget to "
+            f"make the symptom disappear."
+        )
+
+
+def _variant_sources(run_dir: Path, variant_id: str) -> dict:
+    """load_run_sources pointed at one variant's own artifacts (E-061 C2 S2b's
+    per-variant layout, S1_FINDINGS.md C2.2 proposed change #2):
+      artifacts/variants/<vid>/protocol_result.yaml
+      variants/<vid>/trade_diagnostics.json
+      variants/<vid>/results/<window_run_id>/bars.csv"""
+    variant_artifacts_dir = run_dir / "artifacts" / "variants" / variant_id
+    variant_run_dir = run_dir / "variants" / variant_id
+    return load_run_sources(
+        run_dir,
+        protocol_result_path=variant_artifacts_dir / "protocol_result.yaml",
+        trade_diagnostics_path=variant_run_dir / "trade_diagnostics.json",
+        variant_run_dir=variant_run_dir,
+    )
+
+
+def build_reports(run_dir: Path | str, write: bool = True, *,
+                   variants: dict[str, dict] | None = None,
+                   failed_variants: dict[str, str] | None = None,
+                   untested_variants: dict[str, str] | None = None) -> dict[str, dict]:
+    """Build all five category reports for one run directory.
+
+    `variants=None` (the default): today's single-run behaviour -- reads the
+    run-level artifacts/protocol_result.yaml, trade_diagnostics.json and
+    results/<w>/bars.csv, and every report keeps its original
+    `{category, source_run_id, generated_at, slices}` shape. profitability/
+    forecast_power/regime_power are byte-identical to before E-061 C2 S2d;
+    trade_efficiency/component_attribution's per_window/per_regime/per_symbol
+    slices are G7-compacted aggregates rather than raw record lists even here
+    -- see the module docstring's "two exceptions" section (exception 2).
+
+    `variants={<vid>: {kind, symbol, status, ...}}` (E-061 C2 S2d, G7/G8,
+    C2_S1_FINDINGS.md's C2.2): builds each of the five reports from every
+    named variant's OWN sources (`_variant_sources`) instead of the run-level
+    ones, and wraps them as `schema_version: 2`:
+
+        category: <name>
+        source_run_id: <run_dir.name>
+        generated_at: <UTC ISO timestamp>
+        schema_version: 2
+        variants:
+          <vid>: {kind: <str|None>, symbol: <str|None>, status: <str>,
+                  coverage: <str>,  # only present when the caller's vinfo carries one
+                  slices: {overall, per_window, per_regime, per_symbol}}
+          ...
+        failed_variants: {<vid>: <reason>}       # only when failed_variants given
+        untested_variants: {<vid>: <reason>}     # only when untested_variants given
+
+    `kind`/`symbol` are read from each `variants[vid]` entry when present and
+    left `None` otherwise (E-061 C2 S2b adds those fields to
+    artifacts/variants/index.yaml; this function never invents them). `status`
+    defaults to `"graded"` when the caller's vinfo doesn't carry one --
+    meaning only "this variant was backtested and graded," never a verdict
+    (readers must not read it as "this variant passed"). `coverage` is a
+    plain passthrough, present only when `vinfo` carries one (E-061 C2 S2b's
+    D-042 partial-coverage marker, e.g. `"partial, windows run 2 of 4"`) --
+    this function never computes it. There is no separate top-level `slices`
+    for a "base" variant -- G8's own token-saving call -- every variant,
+    including base, lives under `variants.<vid>.slices`. `failed_variants`/
+    `untested_variants` are never columns: they carry only the reason string
+    a reader can cite, exactly mirroring `verdict_criteria_evaluator.evaluate_grid`'s
+    own top-level keys of the same name, so a reader that already understands
+    grid_evaluation.yaml reads these the same way.
+
+    Every built report is checked against REPORT_CHAR_BUDGET before being
+    returned or written (both branches) -- see that constant's own comment.
+
+    When `write` is True (the default, and what
+    workflow/run_phase1_research.py's protocol_execution branch uses), writes
+    each report to <run_dir>/artifacts/reports/<category>.yaml via the same
+    atomic temp-file-then-replace pattern as save_yaml. Returns the built
+    dicts either way, so tests can inspect content without touching disk
     (write=False)."""
     run_dir = Path(run_dir)
-    sources = load_run_sources(run_dir)
     generated_at = datetime.now(timezone.utc).isoformat()
     source_run_id = run_dir.name
 
-    reports = {}
-    for name, builder in BUILDERS.items():
-        report = builder(sources)
-        report["source_run_id"] = source_run_id
-        report["generated_at"] = generated_at
-        reports[name] = report
+    reports: dict[str, dict] = {}
+    if variants is None:
+        sources = load_run_sources(run_dir)
+        for name, builder in BUILDERS.items():
+            report = builder(sources)
+            report["source_run_id"] = source_run_id
+            report["generated_at"] = generated_at
+            _check_report_budget(name, report)
+            reports[name] = report
+    else:
+        if not isinstance(variants, dict) or not variants:
+            raise ValueError(
+                "variants must be a non-empty {variant_id: {...}} dict when given -- pass "
+                "None (the default) for single-run behaviour, never an empty dict.")
+        per_variant_sources = {vid: _variant_sources(run_dir, vid) for vid in variants}
+        for name, builder in BUILDERS.items():
+            variant_blocks = {}
+            for vid, vinfo in variants.items():
+                built = builder(per_variant_sources[vid])
+                variant_blocks[vid] = {
+                    "kind": (vinfo or {}).get("kind"),
+                    "symbol": (vinfo or {}).get("symbol"),
+                    "status": (vinfo or {}).get("status", "graded"),
+                    **({"coverage": vinfo["coverage"]}
+                       if isinstance(vinfo, dict) and vinfo.get("coverage") else {}),
+                    "slices": built["slices"],
+                }
+            report = {
+                "category": name,
+                "source_run_id": source_run_id,
+                "generated_at": generated_at,
+                "schema_version": 2,
+                "variants": variant_blocks,
+            }
+            if failed_variants:
+                report["failed_variants"] = dict(failed_variants)
+            if untested_variants:
+                report["untested_variants"] = dict(untested_variants)
+            _check_report_budget(name, report)
+            reports[name] = report
 
     if write:
         out_dir = run_dir / "artifacts" / "reports"

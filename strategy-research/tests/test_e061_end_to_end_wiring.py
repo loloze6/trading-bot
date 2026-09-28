@@ -79,9 +79,13 @@ Finding -> test (see each marker's reason for the pinned failure):
              test_c5_6_generic_or_empty_block_is_refused_at_registration[*]
   A7 (C1.6)  test_a7_era_id_handles_the_open_ended_last_era
   A8 (C1.5)  test_a8_flag_misconfiguration_refused_before_any_llm_call[*] (fixed, no marker)
-  A5 (pin)   test_a5_one_variant_failing_validate_config_pins_the_pause
-  B2 / A3 §3.4 (C2.2)
-             test_b2_category_reports_carry_trade_and_bar_slices
+  A5 / G12 (C2.5, E-061 C2 S2c) -- the pin became the new behaviour:
+             test_a5_one_variant_failing_validate_config_pauses_variant_config_error
+             test_c2_5_invalid_shape_retries_once_then_the_run_proceeds
+             test_c2_5_config_error_retries_once_then_the_run_proceeds
+             test_c2_5_two_invalid_shapes_pause_variant_shape_invalid
+  B2 / A3 §3.4 (C2.2, E-061 C2 S2d)
+             test_b2_category_reports_carry_trade_and_bar_slices          (fixed, no marker)
   B4 / D-015 (C2.4, E-061 C2 S2a)
              test_c2_4_one_crashed_variant_never_validates           (fixed, no marker)
   B1/B5 / D-016, D-042 (C2.1, E-061 C2 S2b) -- one coin per variant: every stage-2
@@ -366,6 +370,9 @@ class Harness:
         self.bad_variant: str | None = None
         self.crash_variant: str | None = None  # run_protocol.py crashes for it (C2.4)
         self.gate_declines: set = set()  # the Layer-2 data gate declines these (C2 S2b H1)
+        # C2 S2c: one function per Step 2 call, applied (in order) to that call's
+        # variants; once the list is empty, Step 2 answers the normal shape.
+        self.stage2_mutations: list = []
         self.reader_proposals = True
 
     def violation(self, text: str) -> None:
@@ -624,6 +631,8 @@ class Harness:
             v["patch"] = [{"path": BAD_OP, "value": "no_such_op"}]
         if self.extra_variant:
             variants.append(copy.deepcopy(self.extra_variant))
+        if self.stage2_mutations:
+            variants = self.stage2_mutations.pop(0)(variants)
         expanded = {"base_hypothesis_id": card["hypothesis_id"],
                     "expanded_variants": [v["variant_id"] for v in variants],
                     "alternative_data_candidates": ["funding rate"],
@@ -1706,13 +1715,16 @@ def test_a7_era_id_handles_the_open_ended_last_era():
 
 
 # ---------------------------------------------------------------------------
-# A5 (pinned, changes with C2.5): one variant fails validate_config
+# A5 (changed by C2.5, E-061 C2 S2c): one variant fails validate_config
 # ---------------------------------------------------------------------------
 
 @pytest.mark.slow
-def test_a5_one_variant_failing_validate_config_pins_the_pause(harness):
-    """PINS finding A5's behaviour (reachable since C1.2): C2.5 changes that
-    behaviour on purpose and must update this test."""
+def test_a5_one_variant_failing_validate_config_pauses_variant_config_error(harness):
+    """Finding A5, as C2.5 changes it on purpose (this test pinned the old
+    behaviour: 2 < 3 validated after the data gate -> the misleading
+    variant_gate_insufficient pause). Now 5a's route sends Step 2 back ONCE with
+    the V3 error; Step 2 writes the same bad design again, so the run pauses
+    variant_config_error -- before the data gate, with no backtest."""
     h = harness.build()
     h.bad_variant = "design"
     h.register_brief()
@@ -1730,13 +1742,139 @@ def test_a5_one_variant_failing_validate_config_pins_the_pause(harness):
     assert index["design"]["reason"] == "validate_config.py violations"
     assert V3_MESSAGE in index["design"]["report"]
     assert index["base"]["status"] == index["asset"]["status"] == "validated"
-    # today's floor: 2 < 3 validated after the data gate -> the (misleading) pause
-    assert st["status"] == "paused_for_human"
-    assert st["flags"].get("variant_gate_insufficient") is True
-    assert h.entry(BRIEF_ID)["status"] == "paused:variant_gate_insufficient"
+    assert st["status"] == "paused_for_human" and st["pending_stage"] == "backtest_specification"
+    assert st["flags"].get(rpr.VARIANT_CONFIG_ERROR_FLAG) is True
+    assert not st["flags"].get("variant_gate_insufficient")
+    assert h.entry(BRIEF_ID)["status"] == f"paused:{rpr.VARIANT_CONFIG_ERROR_FLAG}"
+    rec = st[rpr.VARIANT_STEP2_RETRY_STATE_KEY]
+    assert rec["attempts"] == 1
+    assert [x["check"] for x in rec["history"]] == [rpr.VARIANT_CONFIG_ERROR_FLAG] * 2
+    assert V3_MESSAGE in rec["last_error"]
+    assert [s for s, _ in h.llm_calls] == ["hypothesis_generation", "strategy_config_authoring",
+                                           "innovation_expansion", "innovation_expansion"]
+    assert len(h.calls_to("validate_config.py")) == 6  # 5a ran twice, 3 variants each
+    assert h.calls_to("data_availability_gate.py") == []  # a config error never reaches it
     assert h.trial_rows() == []  # paused before any backtest
     assert h.calls_to("run_protocol.py") == []
     assert h.reader_calls == []
+    _assert_holdout_untouched(h)
+
+
+# ---------------------------------------------------------------------------
+# C2.5 (E-061 C2 S2c, G12): Step 2's variant shape -- one retry, then a pause
+# ---------------------------------------------------------------------------
+
+def _drop_asset(variants: list) -> list:
+    return [v for v in variants if v["kind"] != "asset"]
+
+
+def _break_design(variants: list) -> list:
+    return [({**v, "patch": [{"path": BAD_OP, "value": "no_such_op"}]}
+             if v["variant_id"] == "design" else v) for v in variants]
+
+
+def _step2_prompts(h: Harness, run_id: str) -> list:
+    return [p for s, r, p in h.prompts if s == "innovation_expansion" and r == run_id]
+
+
+def _assert_retried_run_completed(h: Harness, r1: str, check: str, needle: str) -> None:
+    """The run after ONE invalid Step 2 output and a valid retry: completed,
+    exactly as the joined-up run 1 (3 variants, one coin each), the retry visible
+    in the audit log, the stage attempts and pipeline_state.yaml's retry record."""
+    st = h.state(r1)
+    assert st.get("last_error") is None, st.get("last_error")
+    assert st["pending_stage"] == "completed_refuted" and st["status"] == "completed"
+    assert h.entry(BRIEF_ID)["status"] == "done"
+    assert [s for s, r in h.llm_calls if r == r1] == [
+        "hypothesis_generation", "strategy_config_authoring", "innovation_expansion",
+        "innovation_expansion"]
+    # the prompt renders the handoff as YAML (long strings folded, quotes
+    # escaped): compare on whitespace-normalised text, with quote-free needles
+    prompts = [" ".join(p.split()) for p in _step2_prompts(h, r1)]
+    assert len(prompts) == 2
+    rejected = "Your previous variant_patches.yaml was rejected"  # the injected retry context
+    assert rejected not in prompts[0]
+    assert rejected in prompts[1] and needle in prompts[1]
+    assert st["stage_attempts"]["innovation_expansion"] == 2
+    assert len([k for k in st["audit_log"] if k.startswith("innovation_expansion_attempt_")]) == 2
+    rec = st[rpr.VARIANT_STEP2_RETRY_STATE_KEY]
+    assert rec["attempts"] == 0 and rec["last_error"] is None  # reset once 5a accepted
+    assert [x["check"] for x in rec["history"]] == [check]
+    assert needle in rec["history"][0]["error"]
+    assert not {k for k, v in (st.get("flags") or {}).items() if v}
+    rows = [r for r in h.trial_rows() if r["trial_id"].startswith(f"{r1}:")]
+    assert sorted(r["trial_id"] for r in rows) == [f"{r1}:asset", f"{r1}:base", f"{r1}:design"]
+    _assert_one_coin_per_variant(h, r1, rows)
+    assert sorted(h.art(r1, "grid_evaluation.yaml")["variants"]) == ["asset", "base", "design"]
+    _assert_holdout_untouched(h)
+
+
+@pytest.mark.slow
+def test_c2_5_invalid_shape_retries_once_then_the_run_proceeds(harness):
+    """Step 2's first output has no asset variant (2 variants): the shape check
+    sends it back once, with the error in its handoff, before 5a spends
+    anything; the second output is valid and the run completes as usual."""
+    h = harness.build()
+    h.stage2_mutations = [_drop_asset]
+    h.register_brief()
+    r1 = "run_001"
+    keep_going, exc = _drive(h)
+    _pin_joined(h, exc, r1)
+    _assert_retried_run_completed(h, r1, rpr.VARIANT_SHAPE_INVALID_FLAG, "0 kind-asset")
+    first = yaml.safe_load((h.run_dir(r1) / rpr._PREVIOUS_ATTEMPTS_DIR
+                            / "innovation_expansion_attempt_1" / "variant_patches.yaml")
+                           .read_text(encoding="utf-8"))
+    assert [v["variant_id"] for v in first["variants"]] == ["base", "design"]  # the evidence kept
+    # the rejected output never reached 5a: one 5a pass, three variants
+    assert len(h.calls_to("validate_config.py")) == 3
+    assert isinstance(keep_going, bool)
+
+
+@pytest.mark.slow
+def test_c2_5_config_error_retries_once_then_the_run_proceeds(harness):
+    """5a refuses the first output's design variant (V3): Step 2 is sent back once
+    with the validator's message, never the misleading data-gate pause; the
+    second output is valid and the run completes."""
+    h = harness.build()
+    h.stage2_mutations = [_break_design]
+    h.register_brief()
+    r1 = "run_001"
+    keep_going, exc = _drive(h)
+    _pin_joined(h, exc, r1)
+    _assert_retried_run_completed(h, r1, rpr.VARIANT_CONFIG_ERROR_FLAG,
+                                  "not in TRANSFORM_OPS_REGISTRY")
+    assert len(h.calls_to("validate_config.py")) == 6  # 5a ran twice
+    assert len(h.calls_to("data_availability_gate.py")) == 3  # the gate saw only the good output
+    assert isinstance(keep_going, bool)
+
+
+@pytest.mark.slow
+def test_c2_5_two_invalid_shapes_pause_variant_shape_invalid(harness):
+    """Both Step 2 outputs lack an asset variant: the run pauses
+    variant_shape_invalid at innovation_expansion -- a classified pause, not a
+    raise -- and 5a never runs (no validate_config, no data touched, no trial)."""
+    h = harness.build()
+    h.stage2_mutations = [_drop_asset, _drop_asset]
+    h.register_brief()
+    ret, exc = _drive(h)
+    if exc is not None:
+        raise exc
+    assert ret is False
+    st = h.state("run_001")
+    assert st.get("last_error") is None, st.get("last_error")
+    assert st["status"] == "paused_for_human" and st["pending_stage"] == "innovation_expansion"
+    assert st["flags"].get(rpr.VARIANT_SHAPE_INVALID_FLAG) is True
+    assert h.entry(BRIEF_ID)["status"] == f"paused:{rpr.VARIANT_SHAPE_INVALID_FLAG}"
+    assert f"{rpr.VARIANT_SHAPE_INVALID_FLAG}" in h.log_text()
+    rec = st[rpr.VARIANT_STEP2_RETRY_STATE_KEY]
+    assert rec["attempts"] == 1
+    assert [x["check"] for x in rec["history"]] == [rpr.VARIANT_SHAPE_INVALID_FLAG] * 2
+    assert [s for s, _ in h.llm_calls].count("innovation_expansion") == 2
+    assert h.art("run_001", "variants/index.yaml") is None  # 5a never ran
+    for script in ("validate_config.py", "data_availability_gate.py", "run_protocol.py"):
+        assert h.calls_to(script) == [], script
+    assert h.trial_rows() == [] and h.reader_calls == []
+    _assert_holdout_untouched(h)
 
 
 # ---------------------------------------------------------------------------
@@ -1760,15 +1898,15 @@ def _unavailable_slices(node, path="") -> list:
     return out
 
 
-@pytest.mark.xfail(strict=True, raises=PinnedFailure, reason=(
-    "E-061 C2.2 (B2; A3 §3.4 / top finding 8). Pinned on master: build_reports reads "
-    "RUN_DIR/trade_diagnostics.json and RUN_DIR/results/<w>/bars.csv, while the variant "
-    "loop writes them under RUN_DIR/variants/<id>/ -- trade_efficiency's per_window/"
-    "per_regime/per_symbol ('no trade_diagnostics.json found alongside this run'), "
-    "regime_power's hindsight_lag ('bars.csv missing') and component_attribution ('no "
-    "debug_info.components.*.* columns found in any window's bars.csv') come out "
-    "{unavailable: true} with no error."))
 def test_b2_category_reports_carry_trade_and_bar_slices(harness):
+    """FIXED by E-061 C2 S2d (was strict-xfail on master: build_reports read
+    RUN_DIR/trade_diagnostics.json and RUN_DIR/results/<w>/bars.csv, while the
+    variant loop writes them under RUN_DIR/variants/<id>/ -- every slice came
+    out {unavailable: true} with no error). build_reports now reads each
+    variant's OWN artifacts/variants/<vid>/protocol_result.yaml,
+    variants/<vid>/trade_diagnostics.json and variants/<vid>/results/<w>/
+    bars.csv (`_variant_sources`), so no trade/bar slice is unavailable for
+    a missing source under the variant loop."""
     h = harness.build()
     run_dir = _stage_at_protocol_execution(h, validation_protocol=True)
     asyncio.run(rpr.run_tool_worker("protocol_execution", "run_001"))
@@ -1776,6 +1914,14 @@ def test_b2_category_reports_carry_trade_and_bar_slices(harness):
                for cat in ("trade_efficiency", "regime_power", "component_attribution")}
     assert all(reports.values()), sorted(p.name for p in (run_dir / "artifacts").iterdir())
     bad = {cat: _unavailable_slices(doc) for cat, doc in reports.items()}
-    if any(bad.values()):
-        raise PinnedFailure(f"B2 (C2.2): slices unavailable for a missing trade/bar source: "
-                            f"{ {c: [p for p, _ in v] for c, v in bad.items()} }")
+    assert not any(bad.values()), (
+        f"slices unavailable for a missing trade/bar source: "
+        f"{ {c: [p for p, _ in v] for c, v in bad.items()} }")
+    # E-061 C2 S2d shape check: every reader-facing report is schema_version 2
+    # with a `variants` map holding each of the three graded variants
+    # (asset/base/design, per this test's own fixture) -- not the pre-S2d
+    # bare `slices` shape.
+    for cat, doc in reports.items():
+        assert doc.get("schema_version") == 2, f"{cat}.yaml: expected schema_version 2, got {doc!r}"
+        assert set(doc.get("variants") or {}) == {"asset", "base", "design"}, \
+            f"{cat}.yaml: expected all 3 graded variants, got {sorted(doc.get('variants') or {})}"

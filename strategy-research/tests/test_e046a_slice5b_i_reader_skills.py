@@ -161,6 +161,27 @@ def test_reader_skill_scopes_grid_evaluation_as_optional(category):
     assert "optional" in text.lower()
 
 
+@pytest.mark.parametrize("category", CATEGORIES)
+def test_reader_skill_mentions_variants_shape(category):
+    """E-061 C2 S2d ("experts see every variant," D-003/G8): every reader's
+    own Report shape section must describe reading its category's report
+    through the `variants.<vid>.slices...` wrapper (schema_version 2) --
+    not the pre-S2d bare `slices...` shape."""
+    text = _skill_text(category)
+    assert "variants." in text
+    assert "schema_version" in text
+
+
+@pytest.mark.parametrize("category", CATEGORIES)
+def test_reader_skill_names_failed_and_untested_variants(category):
+    """Every reader must know failed_variants/untested_variants exist as
+    their own top-level rows (never a graded `variants` column) -- the
+    B2/D-003 fix this slice is scoped to."""
+    text = _skill_text(category)
+    assert "failed_variants" in text
+    assert "untested_variants" in text
+
+
 def test_component_attribution_states_it_is_new_territory():
     """S1_FINDINGS.md §4: component_attribution has no existing rule-block analog in
     verdict-interpreter/SKILL.md -- its own SKILL.md must say so, not silently present

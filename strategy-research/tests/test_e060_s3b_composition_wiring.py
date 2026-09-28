@@ -992,7 +992,12 @@ def test_end_to_end_registry_change_to_graded_composite(campaign_root, monkeypat
     monkeypatch.setattr(rpr, "_run_specialist_readers_stage", _readers)
     monkeypatch.setattr(rpr, "_refresh_regime_detector_report_for_readers", lambda *a: None)
     import build_reports
-    monkeypatch.setattr(build_reports, "build_reports", lambda run_dir, write=True: {})
+    # E-061 C2 S2d: the variant-loop call site now also passes
+    # variants=/failed_variants=/untested_variants= -- accept and ignore them,
+    # this stub only exists to skip real report building against fixture
+    # protocol results that aren't full protocol_result documents.
+    monkeypatch.setattr(build_reports, "build_reports",
+                         lambda run_dir, write=True, **kwargs: {})
 
     def _scaffold(run_id):
         run_dir = _write_fresh_scaffold(campaign_root["runs_dir"], run_id,

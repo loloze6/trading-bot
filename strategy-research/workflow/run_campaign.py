@@ -1506,6 +1506,18 @@ def _classify_human_pause(run_dir: Path, state: dict) -> str:
     # must-escalate, not an auto-recoverable engineering failure.
     if flags.get("variant_anti_adjacency_gate_refused"):
         return "variant_anti_adjacency_gate_refused"
+    # E-061 C2 S2c (C2_S1_FINDINGS.md G12): set by run_phase1_research's
+    # _variant_step2_retry_or_pause when Step 2's output is still invalid after
+    # its one retry -- the variant shape (3-4 variants, one base, >= 1 design,
+    # 1-2 asset, one coin each), or 5a refused a variant's config (a patch that
+    # does not apply, unresolved manifest paths, a V-code other than a missing
+    # class). Before variant_gate_insufficient: both stop the run before the
+    # data gate, so the floor's label only ever reads a data or class loss.
+    # A human decides; never quarantine-safe.
+    if flags.get("variant_shape_invalid"):
+        return "variant_shape_invalid"
+    if flags.get("variant_config_error"):
+        return "variant_config_error"
     # E-033.1 Slice 4b (2026-09-22): set by run_phase1_research's
     # data_availability_gate elif-branch in run_loop when, after the
     # per-variant data-availability gate has run, fewer than 3 variants
@@ -1834,8 +1846,12 @@ _PAUSE_FLAG_TO_REASON = (
     # (test_every_known_sticky_flag_branch_has_a_pause_flag_to_reason_entry)
     # specifically to catch a future omission of exactly this kind.
     ("variant_anti_adjacency_gate_refused", "variant_anti_adjacency_gate_refused"),
+    # E-061 C2 S2c. Mirrors the two branches directly above
+    # variant_gate_insufficient in _classify_human_pause.
+    ("variant_shape_invalid", "variant_shape_invalid"),
+    ("variant_config_error", "variant_config_error"),
     # E-033.1 Slice 4b. Mirrors _classify_human_pause's branch for this flag,
-    # which sits immediately after variant_anti_adjacency_gate_refused in
+    # which sits immediately after variant_config_error (E-061 C2 S2c) in
     # that function's own order -- see this flag's comment there.
     ("variant_gate_insufficient", "variant_gate_insufficient"),
     # E-046a Slice 5b-ii-B. Mirrors _classify_human_pause's branch for this

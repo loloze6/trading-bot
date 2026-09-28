@@ -50,6 +50,10 @@ NOT_EVALUABLE, so it can never pass the profit bars (never
 (`protocol_sha256`); verify_variant_protocol re-checks the file against it and
 against its derivation before any backtest.
 
+E-061 C2 S2c (G12): check_variant_shape -- the whole list Step 2 wrote (3-4
+variants, one base, >= 1 design, 1-2 asset, no multi-coin variant), built on
+resolve_variant's per-entry checks.
+
 No lookahead: the only inputs are the protocol file, coin_universe.yaml, the
 Layer-1 venue audit (config/venue_data_capability.yaml, structural venue facts)
 and the policy's era boundaries -- no bar, no return, no result is read.
@@ -90,6 +94,13 @@ D042_TIME_DEPENDENT_BARS = ("trade_count_min", "max_drawdown_pct_max")
 COIN_REASON_PREFIX = "variant_coin:"
 # era_id_for_timestamp's value outside every declared era: never counted.
 _UNMAPPED_ERA = "era_unmapped"
+# E-061 C2 S2c (C2_S1_FINDINGS.md G12, card D): the variant shape Step 2 must
+# write under per-coin mode -- 3 or 4 variants: exactly one base, at least one
+# design, one or two asset.
+VARIANT_SHAPE_MIN, VARIANT_SHAPE_MAX = 3, 4
+ASSET_VARIANTS_MIN, ASSET_VARIANTS_MAX = 1, 2
+# A variant_id is used as a bare path segment by 5a (artifacts/variants/<id>/).
+VARIANT_ID_PATTERN = r"[A-Za-z0-9_-]+"
 # protocol keys a variant's protocol.json may differ on from its run protocol.
 _VARIANT_KEYS = ("symbols", "exchange", "windows")
 
@@ -442,3 +453,81 @@ def resolve_variant(entry: dict, *, source: dict, universe: dict, layer1: dict,
     proto = variant_protocol(source, symbol=vsym, exchange=exchange,
                              windows_run=None if full else coverage["windows_run"])
     return {**out, "ok": True, "protocol": proto, "coverage": coverage}
+
+
+def check_variant_shape(variants, *, source: dict, universe: dict, layer1: dict,
+                        precheck, era_of) -> list:
+    """E-061 C2 S2c (C2_S1_FINDINGS.md G12, card D): why a per-coin
+    variant_patches.yaml `variants` list is not the shape Step 2 must write
+    (empty = it is). Called after Step 2 and again before 5a's route lets the
+    variants go on (run_phase1_research); the caller only calls it in per-coin
+    mode, never for a composition run (G4: its variants are weighting schemes)
+    -- or, review fix M1, once the run has produced a per-coin output: a list
+    that is then no longer per-coin is refused ("per-coin fields (kind/symbol)
+    missing").
+
+      * 3 or 4 variants, each a mapping with a unique, safe `variant_id`;
+      * exactly one `base`, at least one `design`, one or two `asset`;
+      * G4: no multi-coin (cross-sectional) variant -- a `symbols` key, or a
+        list in `symbol` -- since run_protocol.py backtests each coin alone;
+      * each entry passes resolve_variant's own per-entry checks (kind, base
+        = variant_id `base` with an empty patch, design = a non-empty patch on
+        the base coin, asset = an empty patch and a coin_universe.yaml coin of
+        another category). They are NOT repeated here: a refusal whose reason
+        starts COIN_REASON_PREFIX is a shape problem.
+
+    An asset coin refused ONLY for coverage (COVERAGE_REASON_PREFIX) is not a
+    shape problem: D-042 (a binding operator decision) makes that variant untested --
+    the idea at best inconclusive -- "instead of blocking the whole idea", and
+    5a / the grid already do exactly that. The asset still counts in the kind
+    tally, as the variant Step 2 wrote."""
+    if not isinstance(variants, list) or not variants:
+        return [f"`variants` must be a non-empty list, not {type(variants).__name__}"]
+    if not per_coin_mode(variants):
+        # Review fix M1: the caller only checks a non-per-coin list once the run
+        # has already produced a per-coin output -- a retry that dropped them.
+        return ["per-coin fields (kind/symbol) missing: every variant must declare its `kind` "
+                "(base / design / asset) and an asset variant its `symbol` -- this run's "
+                "variant_patches.yaml is per-coin, a legacy (coin-less) file is not accepted"]
+    problems = []
+    n = len(variants)
+    if not VARIANT_SHAPE_MIN <= n <= VARIANT_SHAPE_MAX:
+        problems.append(f"{n} variants: Step 2 writes {VARIANT_SHAPE_MIN} or {VARIANT_SHAPE_MAX} "
+                        f"(exactly one base, at least one design, {ASSET_VARIANTS_MIN} or "
+                        f"{ASSET_VARIANTS_MAX} asset)")
+    kinds = {k: [] for k in VARIANT_KINDS}
+    seen = set()
+    for i, entry in enumerate(variants):
+        where = f"variants[{i}]"
+        if not isinstance(entry, dict):
+            problems.append(f"{where} is not a mapping")
+            continue
+        vid = entry.get("variant_id")
+        if not (isinstance(vid, str) and re.fullmatch(VARIANT_ID_PATTERN, vid)):
+            problems.append(f"{where}: variant_id {vid!r} is not a safe bare identifier "
+                            f"(letters, digits, '_', '-')")
+        elif vid in seen:
+            problems.append(f"{where}: duplicate variant_id {vid!r}")
+        else:
+            seen.add(vid)
+            where = f"variant {vid!r}"
+        if "symbols" in entry or isinstance(entry.get("symbol"), (list, tuple)):
+            problems.append(f"{where}: a multi-coin (cross-sectional) variant is not built (G4) -- "
+                            f"run_protocol.py backtests each coin alone; name ONE coin in `symbol`")
+            continue
+        res = resolve_variant(entry, source=source, universe=universe, layer1=layer1,
+                              precheck=precheck, era_of=era_of)
+        if not res["ok"] and str(res["reason"]).startswith(COIN_REASON_PREFIX):
+            problems.append(f"{where}: {res['reason']}")
+        if entry.get("kind") in VARIANT_KINDS:
+            kinds[entry["kind"]].append(vid)
+    if len(kinds["base"]) != 1:
+        problems.append(f"{len(kinds['base'])} kind-base variant(s) {kinds['base']}: exactly one "
+                        f"(variant_id 'base', empty patch)")
+    if not kinds["design"]:
+        problems.append("no kind-design variant: at least one (a non-empty patch, on the base coin)")
+    if not ASSET_VARIANTS_MIN <= len(kinds["asset"]) <= ASSET_VARIANTS_MAX:
+        problems.append(f"{len(kinds['asset'])} kind-asset variant(s) {kinds['asset']}: "
+                        f"{ASSET_VARIANTS_MIN} or {ASSET_VARIANTS_MAX} (an empty patch, a "
+                        f"coin_universe.yaml coin of another category than the base coin)")
+    return problems

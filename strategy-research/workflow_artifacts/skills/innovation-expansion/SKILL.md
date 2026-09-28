@@ -283,9 +283,13 @@ still get tested, not merely serve as a patch target. Add a "design patch" varia
 signal's own design axis — a parameter, a transform, a component swap) and an "asset" variant (the
 IMPROVEMENT 06 asset-generalizability candidate: `kind: asset`, the base config unchanged — empty patch — on the
 coin named in `symbol`) per the "base + a design patch + an asset coin" shape this slice
-targets — more are permitted if genuinely justified (same "quality over volume" discipline IMPROVEMENT 04's
-diversity test already applies), but do not pad the list with cosmetic parameter-only variants that would fail
-IMPROVEMENT 04's diversity test if they were expressed as prose.
+targets. **Checked by code (E-061 C2 S2c, when your variants carry `kind`/`symbol`): write 3 or 4 variants —
+exactly one `base`, at least one `design`, one or two `asset`, each naming ONE coin (never a `symbols` list: a
+multi-coin, cross-sectional variant is not built).** A fourth variant is a second design or a second asset coin,
+only if genuinely justified (same "quality over volume" discipline IMPROVEMENT 04's diversity test already
+applies) — do not pad the list with cosmetic parameter-only variants. An output that breaks this shape, or whose
+design patch does not apply or fails `validate_config.py`, is sent back to you ONCE with the error in your
+injected context (`variant_shape_error`); a second invalid output pauses the run.
 
 ### Relationship to `expanded_hypothesis_card.yaml` and `innovation_notes.yaml`
 
