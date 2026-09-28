@@ -1064,7 +1064,8 @@ def _resolve_pass_rule(protocol_result: dict, pre_registration: dict) -> dict:
 # shaped pass_rule.criteria list (entries carrying `source`/`reducer`
 # fields). See strategy-research/engineering/roadmap/E-046b/S1_FINDINGS.md
 # for the full characterization this implements, including the
-# operator-confirmed FAIL-dominates-INCONCLUSIVE tie-break and the
+# operator-confirmed FAIL-dominates-INCONCLUSIVE tie-break (confirmed as
+# D-014, engineering/DECISION_LOG.md) and the
 # independently-verified `_era_id_for_timestamp` None-comparison bug this
 # module's own era resolver proactively guards against.
 # ---------------------------------------------------------------------------
@@ -1731,9 +1732,74 @@ def lint_menu_shaped_pass_rule(pass_rule, menu) -> list[str]:
     return violations
 
 
+# ---------------------------------------------------------------------------
+# E-061 C2 S2a (D-015): the two ways a validated variant ends protocol_execution
+# without a graded result, kept apart by the reason's prefix -- a refusal touched
+# no data and wrote no trial row (E-061 C1.3); a failed backtest spent a look and
+# has a `backtest_failed` trial row.
+FAILED_VARIANT_REFUSED = "refused:"
+FAILED_VARIANT_BACKTEST_FAILED = "backtest_failed:"
+FAILED_VARIANT_PREFIXES = (FAILED_VARIANT_REFUSED, FAILED_VARIANT_BACKTEST_FAILED)
+
+
+def _check_variant_reasons(value, name: str, graded_ids, prefixes=None) -> dict:
+    """{variant_id: reason} or raises ValueError: a NON-EMPTY mapping of non-empty
+    string ids to non-empty string reasons (each starting with one of `prefixes`
+    when given), none of them also a graded column."""
+    if not isinstance(value, dict) or not value:
+        raise ValueError(f"{name} must be a non-empty {{variant_id: reason}} mapping, got "
+                         f"{value!r}")
+    for vid, reason in value.items():
+        if not isinstance(vid, str) or not vid or not isinstance(reason, str) or not reason:
+            raise ValueError(f"{name} entry {vid!r}: {reason!r} -- both the variant id and its "
+                             f"reason must be non-empty strings")
+        if prefixes and not reason.startswith(prefixes):
+            raise ValueError(f"{name}.{vid} reason {reason!r} must start with one of {prefixes}")
+    both = sorted(set(value) & set(graded_ids or []))
+    if both:
+        raise ValueError(f"variant(s) {both} are both graded columns and in {name} -- a "
+                         f"variant either produced a graded result in this run or it did not")
+    return dict(value)
+
+
+def check_failed_variants(failed_variants, graded_ids) -> dict:
+    """The ONE validator of a grid's `failed_variants` (E-061 C2 S2a, D-015),
+    shared by evaluate_grid, branch 3 (run_phase1_research.
+    _profit_bars_backtest_candidates) and the campaign memory: a non-empty
+    {variant_id: reason} mapping, each reason prefixed `refused:` or
+    `backtest_failed:`, no id also a graded column. Raises ValueError."""
+    return _check_variant_reasons(failed_variants, "failed_variants", graded_ids,
+                                  FAILED_VARIANT_PREFIXES)
+
+
+def grid_failed_variants(grid_doc) -> dict:
+    """A written grid's `failed_variants`: {} when the key is absent (a grid with
+    no failed variant, and every grid written before S2a); otherwise
+    check_failed_variants against the grid's own graded columns -- so a present
+    but empty / None / '' / list value raises instead of reading as "none"."""
+    if not isinstance(grid_doc, dict) or "failed_variants" not in grid_doc:
+        return {}
+    return check_failed_variants(grid_doc["failed_variants"], grid_doc.get("variants") or [])
+
+
+def _failed_variants_reason(failed: dict) -> str:
+    """The idea-status reason clause for `failed_variants`, worded by prefix."""
+    refused = sorted(v for v, r in failed.items() if r.startswith(FAILED_VARIANT_REFUSED))
+    crashed = sorted(v for v, r in failed.items() if r.startswith(FAILED_VARIANT_BACKTEST_FAILED))
+    parts = []
+    if refused:
+        parts.append(f"variant(s) {refused} were refused before any backtest (no data touched, "
+                     f"no trial row)")
+    if crashed:
+        parts.append(f"variant(s) {crashed} failed their backtest (a backtest_failed trial row "
+                     f"counts the look)")
+    return "; ".join(parts) + " -- a variant without a graded result never validates an idea (D-015)"
+
+
 def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
                    research_brief: dict | None, menu, *, composition_runs: bool = False,
-                   profit_bars_grader=None) -> dict:
+                   profit_bars_grader=None, failed_variants: dict | None = None,
+                   untested_variants: dict | None = None) -> dict:
     """
     E-046b S2: the grid (engineering_roadmap.html card C) -- criteria x
     variants, every cell mechanical, unanimity across variants. No LLM
@@ -1768,13 +1834,31 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
     that variant. Read only for a criterion with source `profit_bars` and only
     with composition_runs=True; every other call is unchanged.
 
+    `failed_variants` (E-061 C2 S2a, D-015): {variant_id: reason} for every
+    variant of this run that went into protocol_execution validated but
+    produced no graded result -- `refused: ...` (refused before any backtest,
+    no trial row) or `backtest_failed: ...` (a spent look). It is NOT a column:
+    `variants`/`grid` hold graded columns only, and no grader ever runs for a
+    failed variant. The result carries it as top-level `failed_variants`
+    (validated by check_failed_variants, the one shared validator).
+    `untested_variants` (E-061 C2 S2a, card D): {variant_id: reason} for every
+    other variant of the idea (artifacts/variants/index.yaml) that has no
+    graded column in THIS run -- skipped as an exact REPEAT, declined by the
+    data gate, or refused by 5a. Carried as top-level `untested_variants`.
+    Either one non-empty makes the idea at best INCONCLUSIVE: an idea
+    validates only when every one of its variants (base, design, asset) is
+    graded in one run -- earlier graded results live in the memory, but
+    unanimity is judged within one run. A genuine FAIL on a graded column
+    still refutes (D-014). None or {} -> byte-identical to the call without it.
+
     Returns {"result": "GRID_EVALUATED" | "SPEC_ERROR", "criteria": [id, ...],
     "variants": [variant_id, ...], "grid": {criterion_id: {variant_id:
     cell_dict}}, "idea_status": "validated"|"refuted"|"inconclusive"|None,
-    "reason": str}.
+    "reason": str} (+ "failed_variants" / "untested_variants" when any).
 
     Idea-level status (card C, OPERATOR-CONFIRMED tie-break,
-    S1_FINDINGS.md's appended 2026-09-20 decision): ANY cell that genuinely
+    S1_FINDINGS.md's appended 2026-09-20 decision, confirmed as D-014 in
+    engineering/DECISION_LOG.md): ANY cell that genuinely
     FAILs with sufficient data -> REFUTED, regardless of other cells being
     INCONCLUSIVE. Else ANY INCONCLUSIVE cell (with no FAIL present) ->
     INCONCLUSIVE. Else -> VALIDATED. A cell that could not even be evaluated
@@ -1798,6 +1882,11 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
 
     eras = _load_campaign_data_policy_eras()
     variant_ids = list(protocol_results_by_variant.keys())
+    failed = ({} if failed_variants is None or failed_variants == {}
+              else check_failed_variants(failed_variants, variant_ids))
+    untested = ({} if untested_variants is None or untested_variants == {}
+                else _check_variant_reasons(untested_variants, "untested_variants",
+                                            variant_ids + list(failed)))
 
     grid: dict = {}
     spec_errors = []
@@ -1818,6 +1907,8 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
                                      "reason": cell.get("reason")})
         grid[cid] = row
 
+    unscored_keys = {**({"failed_variants": failed} if failed else {}),
+                  **({"untested_variants": untested} if untested else {})}
     if spec_errors:
         return {
             "result": "SPEC_ERROR",
@@ -1826,8 +1917,12 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
             "grid": grid,
             "idea_status": None,
             "reason": f"{len(spec_errors)} cell(s) could not be evaluated: {spec_errors}",
+            **unscored_keys,
         }
 
+    # FAIL dominates INCONCLUSIVE (D-014, engineering/DECISION_LOG.md): a genuine
+    # FAIL with sufficient data refutes the idea even where other cells are
+    # INCONCLUSIVE or a variant has no graded result (failed / untested, D-015).
     all_cell_results = [cell["result"] for row in grid.values() for cell in row.values()]
     if any(r == "FAIL" for r in all_cell_results):
         idea_status = "refuted"
@@ -1835,9 +1930,17 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
     elif any(r == "INCONCLUSIVE" for r in all_cell_results):
         idea_status = "inconclusive"
         reason = "no criterion FAILed, but at least one cell lacked sufficient data to judge"
+    elif failed or untested:
+        idea_status = "inconclusive"
+        reason = "every criterion PASSed on every graded variant, but not every variant was graded"
     else:
         idea_status = "validated"
         reason = "every criterion PASSed on every variant"
+    if failed:
+        reason += "; " + _failed_variants_reason(failed)
+    if untested:
+        reason += (f"; variant(s) {sorted(untested)} have no graded result in this run -- an "
+                   f"idea validates only when all its variants are graded in one run (card D)")
 
     return {
         "result": "GRID_EVALUATED",
@@ -1846,4 +1949,5 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
         "grid": grid,
         "idea_status": idea_status,
         "reason": reason,
+        **unscored_keys,
     }

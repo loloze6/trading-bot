@@ -245,7 +245,8 @@ def test_two_variant_unanimity_one_fails_refutes():
 
 # ---------------------------------------------------------------------------
 # FAIL-dominates-INCONCLUSIVE tie-break (operator-confirmed,
-# S1_FINDINGS.md's appended 2026-09-20 decision)
+# S1_FINDINGS.md's appended 2026-09-20 decision; confirmed as D-014 in
+# engineering/DECISION_LOG.md)
 # ---------------------------------------------------------------------------
 
 def test_fail_dominates_inconclusive_tie_break():
