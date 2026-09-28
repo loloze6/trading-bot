@@ -1088,11 +1088,13 @@ def test_c2_4_one_crashed_variant_never_validates(harness):
 
     grid = h.art(r1, "grid_evaluation.yaml")
     assert grid["idea_status"] == "inconclusive"
-    assert sorted(grid["variants"]) == ["asset", "base", "design"]
+    # graded columns only; the crashed variant is in failed_variants, never a column
+    assert sorted(grid["variants"]) == ["base", "design"]
     assert list(grid["failed_variants"]) == ["asset"]
+    assert grid["failed_variants"]["asset"].startswith("backtest_failed:")
     assert "non-zero exit" in grid["failed_variants"]["asset"]
     for crit, row in grid["grid"].items():
-        assert row["asset"]["not_graded"] is True and row["asset"]["result"] == "INCONCLUSIVE"
+        assert "asset" not in row
         # the survivors alone would have validated: every graded cell PASSes
         assert row["base"]["result"] == row["design"]["result"] == "PASS", (crit, row)
     assert h.art(r1, "idea_status.yaml")["idea_status"] == "inconclusive"
@@ -1104,6 +1106,7 @@ def test_c2_4_one_crashed_variant_never_validates(harness):
 
     pbe = h.art(r1, "profit_bars_evaluation.yaml")
     assert pbe["variants"]["asset"]["result"] == "NOT_TESTED" and "asset" not in pbe["passing"]
+    assert pbe["variants"]["asset"]["trial_id"] == f"{r1}:asset"  # its backtest_failed row
     memory = yaml.safe_load(rpr._campaign_memory_path().read_text(encoding="utf-8"))
     e = memory["runs"][r1]
     assert e["idea_status"] == "inconclusive"

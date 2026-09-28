@@ -1588,14 +1588,24 @@ async def run_tool_worker(stage_name: str, run_id: str):
         base_summary = None
         refused_variants: dict = {}  # E-061 C1.3: variant_id -> reason (no trial row)
         # E-061 C2 S2a (D-015): variant_id -> reason for every validated variant
-        # that produced no graded result (the `continue` branches below, refusals
-        # included). The grid gives each an INCONCLUSIVE not_graded column, so a
-        # crashed variant can never be part of a validated idea. Trial rows are
-        # unchanged (each failure branch still records its own).
+        # that produced no graded result (the `continue` branches below), prefixed
+        # `refused:` (no data touched, no trial row) or `backtest_failed:` (a spent
+        # look). The grid carries it as top-level failed_variants -- never a column
+        # -- and the idea is then at best inconclusive. Trial rows are unchanged
+        # (each failure branch still records its own). Each reason is also
+        # persisted as index.yaml `failed_attempt`, so a later attempt of this run
+        # (resume / retry of protocol_execution) still counts the variant unless
+        # it re-runs it successfully -- otherwise a refused variant (not_tested
+        # after attempt 1, never re-run) would silently drop out of the idea.
+        _vce_prefixes = _verdict_criteria_evaluator_module()
         failed_variants: dict = {}
+        carried_failures = {vid: v["failed_attempt"] for vid, v in variants_idx.items()
+                            if isinstance(v, dict) and v.get("failed_attempt")}
 
-        def _variant_failed(vid: str, why: str) -> None:
-            failed_variants[vid] = f"backtest_failed: {why}"
+        def _variant_failed(vid: str, why: str, *, refused: bool = False) -> None:
+            prefix = (_vce_prefixes.FAILED_VARIANT_REFUSED if refused
+                      else _vce_prefixes.FAILED_VARIANT_BACKTEST_FAILED)
+            failed_variants[vid] = f"{prefix} {why}"
 
         for variant_id in sorted(validated):
             vinfo = validated[variant_id]
@@ -1649,7 +1659,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 print(f"⚠️  protocol_execution: variant '{variant_id}' refused before any "
                       f"backtest (no data touched, no trial row); continuing with remaining "
                       f"variants.\n{result.stderr}")
-                _variant_failed(variant_id, refused_variants[variant_id])
+                _variant_failed(variant_id, refused_variants[variant_id], refused=True)
                 continue
             if result.returncode != 0:
                 # Self-adversarial review item: variant 2 of 3 failing must
@@ -1687,10 +1697,6 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 with open(summary_path, encoding="utf-8") as f:
                     summary = json.load(f)
                 save_yaml(variant_artifacts_dir / "protocol_result.yaml", summary)
-                if variant_id == base_variant_id:
-                    # Decision B bridge -- singular file mirrors the base variant exactly.
-                    save_yaml(ARTIFACTS / "protocol_result.yaml", summary)
-                    base_summary = summary
             except Exception as _win_err:
                 try:
                     _record_failed_backtest_trial(
@@ -1724,16 +1730,42 @@ async def run_tool_worker(stage_name: str, run_id: str):
                                             f"{type(_write_err).__name__}")
                 continue
 
+            if variant_id == base_variant_id:
+                # Decision B bridge -- singular file mirrors the base variant exactly.
+                # E-061 C2 S2a: only once base's trial row is written -- a base whose
+                # trial write failed is a failed variant, and its result must never
+                # feed the singular file, C7 or the category reports.
+                save_yaml(ARTIFACTS / "protocol_result.yaml", summary)
+                base_summary = summary
             per_variant_summaries[variant_id] = summary
             top_verdict = summary.get("verdict", "unknown")
             print(f"✅ Variant '{variant_id}' protocol complete. Verdict: {top_verdict}")
 
-        if refused_variants:
+        # E-061 C2 S2a (D-015): a variant refused / failed on an EARLIER attempt of
+        # this run stays counted unless this attempt re-ran it successfully.
+        for _vid, _reason in carried_failures.items():
+            if _vid not in per_variant_summaries and _vid not in failed_variants:
+                failed_variants[_vid] = _reason
+        if refused_variants or failed_variants or carried_failures:
             # E-061 C1.3: record the refusals (no data touched, no trial row).
             for _vid, _reason in refused_variants.items():
                 variants_idx[_vid] = {**variants_idx[_vid], "status": "not_tested",
                                       "reason": _reason}
+            # E-061 C2 S2a: persist this attempt's failures; clear a carried one
+            # whose variant this attempt re-ran successfully.
+            for _vid in per_variant_summaries:
+                variants_idx[_vid].pop("failed_attempt", None)
+            for _vid, _reason in failed_variants.items():
+                variants_idx[_vid] = {**variants_idx[_vid], "failed_attempt": _reason}
             save_yaml(ARTIFACTS / "variants" / "index.yaml", {"variants": variants_idx})
+        # E-061 C2 S2a (card D): every other variant of the idea with no graded
+        # result in THIS attempt -- skipped as an exact REPEAT, declined by the data
+        # gate, refused by 5a. Unanimity is judged within one run, so the idea is
+        # then at best inconclusive (earlier graded results live in the memory).
+        untested_variants = {
+            _vid: str((_v or {}).get("reason") or f"index status {(_v or {}).get('status')!r}")
+            for _vid, _v in variants_idx.items()
+            if _vid not in per_variant_summaries and _vid not in failed_variants}
 
         if not per_variant_summaries:
             raise RuntimeError(
@@ -1747,8 +1779,12 @@ async def run_tool_worker(stage_name: str, run_id: str):
         # variant if base itself failed) -- mirrors the flag-off branch's
         # single-result shape exactly, written to the same singular
         # artifacts/ paths. Not per-variant here; see this branch's own
-        # header comment.
-        _rep_summary = base_summary if base_summary is not None else next(iter(per_variant_summaries.values()))
+        # header comment. E-061 C2 S2a: "succeeded" = graded, i.e. its trial row
+        # was written (base_summary is set only then); a failed variant's result,
+        # base's included, never feeds these artifacts. per_variant_summaries is
+        # never empty here (all-failed raised above), so a representative exists.
+        _rep_vid = base_variant_id if base_summary is not None else next(iter(per_variant_summaries))
+        _rep_summary = per_variant_summaries[_rep_vid]
         if base_summary is None:
             # CODE-REVIEW FIX (2026-09-22): Decision B's bridge file
             # (artifacts/protocol_result.yaml, singular) was previously only
@@ -1787,7 +1823,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
             _pass_rule_eval["evaluator_version"] = 2
             save_yaml(ARTIFACTS / "pass_rule_evaluation.yaml", _pass_rule_eval)
             _pre_reg_result = _pass_rule_eval.get("result")
-            print(f"✅ [C7] pass_rule_evaluation.yaml written (base variant): result={_pre_reg_result}")
+            print(f"✅ [C7] pass_rule_evaluation.yaml written ({_rep_vid!r} variant): "
+                  f"result={_pre_reg_result}")
         except Exception as _c7_err:
             print(f"⚠️  [C7] pass_rule_evaluation.yaml raised {type(_c7_err).__name__}: "
                   f"{_c7_err} -- at least one variant's backtest already succeeded and is "
@@ -1811,10 +1848,13 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 if _vce._is_menu_shaped_pass_rule(_pass_rule_for_grid):
                     _menu_path = ROOT / "config" / "criterion_menu.yaml"
                     _menu = load_yaml(_menu_path) if _menu_path.exists() else {}
-                    # E-061 C2 S2a (D-015): the crashed variants' not_graded
-                    # columns. Passed only when there is one, so a run where every
-                    # variant succeeded writes a byte-identical grid.
-                    _failed_kw = {"failed_variants": failed_variants} if failed_variants else {}
+                    # E-061 C2 S2a (D-015, card D): the variants of this idea with
+                    # no graded column in this attempt. Passed only when non-empty,
+                    # so a run where every variant was graded writes a
+                    # byte-identical grid.
+                    _failed_kw = {**({"failed_variants": failed_variants} if failed_variants else {}),
+                                  **({"untested_variants": untested_variants}
+                                     if untested_variants else {})}
                     # E-060 S2: under composition_runs the grid reads copies carrying
                     # the residual IC; off, it reads per_variant_summaries unchanged.
                     if _composition_runs_enabled():
@@ -1840,8 +1880,10 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     print(f"✅ [E-046b] grid_evaluation.yaml written across "
                           f"{sorted(per_variant_summaries)}: result={_grid_result.get('result')} "
                           f"idea_status={_grid_result.get('idea_status')}"
-                          + (f" (not graded, backtest failed: {sorted(failed_variants)})"
-                             if failed_variants else ""))
+                          + (f" (failed, not graded: {sorted(failed_variants)})"
+                             if failed_variants else "")
+                          + (f" (untested this run: {sorted(untested_variants)})"
+                             if untested_variants else ""))
                 elif _sr_on:
                     _sr_errors.append("pre_registration.yaml's pass_rule is not menu-shaped -- no grid")
             except Exception as _grid_err:
@@ -6342,6 +6384,14 @@ def _campaign_memory_module():
     return _cm
 
 
+def _verdict_criteria_evaluator_module():
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import verdict_criteria_evaluator as _vce
+    return _vce
+
+
 def _ensure_regroup_record_handoff(run_id: str, run_dir: Path) -> Path:
     """Stage-level handoff, written lazily at stage entry (flag-off runs never
     get this file), like _ensure_specialist_readers_handoff."""
@@ -10719,6 +10769,14 @@ def _invalidated_trial_ids() -> set:
     return {r.get("trial_id") for r in rows if isinstance(r, dict) and r.get("invalidated_artifact")}
 
 
+def _backtest_failed_trial_ids() -> set:
+    """trial_ids carrying a `backtest_failed` row (a spent look whose backtest
+    produced no graded result). Read only."""
+    rows = (load_campaign_state() or {}).get("trial_sharpes") or []
+    return {r.get("trial_id") for r in rows
+            if isinstance(r, dict) and r.get("source") == "backtest_failed"}
+
+
 def _profit_bars_tested_candidate(run_dir: Path, cid: str, trial_id: str, rel: str, kind: str,
                                   invalidated: set) -> dict:
     """ONE tested backtest as branch 3 grades it: {kind, trial_id,
@@ -10755,11 +10813,12 @@ def _profit_bars_backtest_candidates(run_dir: Path, run_id: str) -> dict:
     written) -- never "which protocol_result.yaml files exist on disk", which can
     hold a stale file from an earlier attempt whose backtest failed this time.
       * variant loop on: one entry per artifacts/variants/index.yaml variant. A
-        grid column not in the grid's failed_variants is tested (its own
-        artifacts/variants/<id>/protocol_result.yaml must exist); a column in
-        failed_variants (E-061 C2 S2a, D-015) or a validated variant without a
-        column (a grid written before S2a) failed its backtest; any other index
-        status was not tested.
+        grid column is tested (its own artifacts/variants/<id>/protocol_result.yaml
+        must exist); a variant in the grid's failed_variants (E-061 C2 S2a,
+        D-015; never a column) is NOT_TESTED -- a `backtest_failed:` one with
+        its backtest_failed trial_id, a `refused:` one with none; a validated
+        variant without a column (a grid written before S2a) failed its
+        backtest; any other index status was not tested.
       * variant loop off: the grid's single column, run_id, graded from
         artifacts/protocol_result.yaml.
     A tested candidate whose trial row is invalidated_artifact (conformance
@@ -10785,14 +10844,17 @@ def _profit_bars_backtest_candidates(run_dir: Path, run_id: str) -> dict:
     columns = grid_doc.get("variants")
     if not isinstance(columns, list) or not columns:
         raise ValueError(f"profit bars (every backtest): {grid_path} has no variant columns.")
-    # E-061 C2 S2a (D-015): a column in failed_variants is a crashed variant's
-    # not_graded column, never a tested backtest -- it is NOT_TESTED here, so it
-    # can never be graded or pass the bars (its result file may be missing, or a
-    # stale one from an earlier attempt).
-    failed = grid_doc.get("failed_variants") or {}
-    if not isinstance(failed, dict) or any(v not in columns for v in failed):
-        raise ValueError(f"profit bars (every backtest): {grid_path} failed_variants "
-                         f"{failed!r} is not a mapping of this grid's columns.")
+    # E-061 C2 S2a (D-015): a failed variant is never a column; it is NOT_TESTED
+    # here, so it can never be graded or pass the bars (its result file may be
+    # missing, or a stale one from an earlier attempt). The evaluator's own
+    # validator: a present but malformed failed_variants raises.
+    _vce = _verdict_criteria_evaluator_module()
+    try:
+        failed = _vce.grid_failed_variants(grid_doc)
+    except ValueError as exc:
+        raise ValueError(f"profit bars (every backtest): {grid_path}: {exc}") from exc
+    # D-021: the grid's idea status is NOT a holdout precondition -- the graded
+    # survivors of an inconclusive (or refuted) idea are still graded here, on purpose.
     invalidated = _invalidated_trial_ids()
     # E-060 S3b (the slice-7 seam below): a composition run's variants ARE the
     # composite backtests -- same grading, same stop rule, label `composite`.
@@ -10807,17 +10869,27 @@ def _profit_bars_backtest_candidates(run_dir: Path, run_id: str) -> dict:
         variants = (load_yaml(index_path) or {}).get("variants") if index_path.exists() else None
         if not isinstance(variants, dict) or not variants:
             raise ValueError(f"profit bars (every backtest): {index_path} lists no variants.")
-        unknown = [c for c in columns if c not in variants]
+        unknown = [c for c in list(columns) + list(failed) if c not in variants]
         if unknown:
-            raise ValueError(f"profit bars (every backtest): grid column(s) {unknown} are not "
-                             f"in {index_path}.")
+            raise ValueError(f"profit bars (every backtest): grid column(s) / failed variant(s) "
+                             f"{unknown} are not in {index_path}.")
+        failed_rows = _backtest_failed_trial_ids() if failed else set()
         for vid in sorted(variants):
             info = variants[vid] if isinstance(variants[vid], dict) else {}
             if vid in failed:
-                out[vid] = {"kind": kind, "trial_id": None, "protocol_result_ref": None,
+                # A crashed variant carries its real backtest_failed trial_id; a
+                # refused one touched no data and has no trial row (null).
+                refused = failed[vid].startswith(_vce.FAILED_VARIANT_REFUSED)
+                tid = f"{run_id}:{vid}"
+                out[vid] = {"kind": kind,
+                            "trial_id": None if refused or tid not in failed_rows else tid,
+                            "protocol_result_ref": None,
                             "protocol_result": None, "result": "NOT_TESTED",
-                            "reason": f"grid column not graded ({failed[vid]}): never graded, "
-                                      f"never passing"}
+                            "reason": (f"refused before any backtest, no data touched "
+                                       f"({failed[vid]}): never graded, never passing"
+                                       if refused else
+                                       f"backtest failed ({failed[vid]}): never graded, "
+                                       f"never passing")}
             elif vid in columns:
                 out[vid] = _tested(vid, f"{run_id}:{vid}",
                                    f"artifacts/variants/{vid}/protocol_result.yaml")

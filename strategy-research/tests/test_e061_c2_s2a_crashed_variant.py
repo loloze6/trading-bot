@@ -1,26 +1,30 @@
 """
-E-061 C2 S2a -- a crashed variant can never validate an idea (D-015; C2_S1_FINDINGS.md
-C2.4, guesses G11 and G15). The joined-up case lives in test_e061_end_to_end_wiring.py
+E-061 C2 S2a -- a variant without a graded result can never validate an idea
+(D-015; C2_S1_FINDINGS.md C2.4, guesses G11 and G15), plus the review round's
+fixes. The joined-up case lives in test_e061_end_to_end_wiring.py
 (test_c2_4_one_crashed_variant_never_validates).
 
-Covers, one block per consumer of "grid column = tested variant":
-  1. The grid (tools/verdict_criteria_evaluator.py::evaluate_grid): a failed
-     variant is an INCONCLUSIVE not_graded column, no grader runs for it; FAIL on
-     another variant still refutes (D-014); failed_variants None / {} is
-     byte-identical to the call without it; malformed input raises.
+Design (review round): the grid's `variants` / `grid` hold GRADED columns only; a
+variant refused or failed in protocol_execution is listed ONLY in the top-level
+`failed_variants` {vid: reason}, the reason prefixed `refused:` (no data touched,
+no trial row) or `backtest_failed:` (a spent look); every other variant of the idea
+without a graded column in this run (REPEAT skip, data-gate decline, 5a refusal) is
+in `untested_variants`. Either one non-empty makes the idea at best inconclusive; a
+genuine FAIL still refutes (D-014).
+
+  1. The grid (tools/verdict_criteria_evaluator.py::evaluate_grid) and the one
+     shared validator (check_failed_variants / grid_failed_variants).
   2. The variant loop (run_phase1_research.run_tool_worker, protocol_execution):
-     a crashed variant reaches the grid as a failed column; the idea is
-     inconclusive where the survivors alone would validate; trial rows unchanged.
-  3. Branch 3 (_profit_bars_backtest_candidates): a failed column is NOT_TESTED,
-     never graded -- even with a stale passing protocol_result.yaml on disk.
-  4. Campaign memory (tools/campaign_memory.py): the failed column is `failed`
-     (never `tested`), its cells keep `not_graded`, schema-valid; a corrupt
-     failed_variants raises. decide_next / novelty read that status.
-  5. Block registry (tools/block_registry.py::build_block): refuses a validated
-     entry whose grid holds a non-tested column.
+     crash / refusal prefixes, the re-run bypass (failed_attempt persisted in
+     index.yaml), the repeat-gate case (whole idea in one run), a base whose
+     trial write failed never feeds the singular artifacts.
+  3. Branch 3 (_profit_bars_backtest_candidates): a failed variant is NOT_TESTED
+     (crashed: its backtest_failed trial_id; refused: null); malformed input
+     raises; D-021 -- the graded survivors of an inconclusive idea are still graded.
+  4. Campaign memory (tools/campaign_memory.py): crashed -> `failed`, refused ->
+     `not_tested`; corrupt failed_variants raises; decide_next / novelty.
 """
 import asyncio
-import copy
 import json
 import sys
 from pathlib import Path
@@ -36,22 +40,23 @@ sys.path.insert(0, str(SR_ROOT / "tools"))
 import run_phase1_research as rpr  # noqa: E402
 import verdict_criteria_evaluator as vce  # noqa: E402
 import campaign_memory as cm  # noqa: E402
-import block_registry as br  # noqa: E402
 import decide_next as dn  # noqa: E402
 import novelty as nov  # noqa: E402
+import protocol_refusal  # noqa: E402
 
 from test_grid_evaluation import (  # noqa: E402
     _protocol_result, _windows_for_reducer, _menu_shaped_pre_reg)
-from test_e033_slice4a_variant_loop import (  # noqa: E402
-    _set_flag, _write_three_variant_index, _summary_for)
+from test_e033_slice4a_variant_loop import _set_flag, _summary_for  # noqa: E402
 from test_k3_protocol_pinning import _minimal_run, _write_protocol  # noqa: E402
 from test_profit_bars_every_backtest import (  # noqa: E402
     FULL_ON, VARIANT_LOOP_ON, RUN_ID, _variant_run, _write_bars, _grid, _memory,
     _set_orchestrator, _SCHEMA)
 
 CRASH = "backtest_failed: run_protocol.py non-zero exit (1)"
+REFUSED = "refused: run_protocol.py refused before any backtest (no data touched): x"
 PASS_CRIT = {"id": "c1", "metric": "net_return_pct", "source": "window", "reducer": "median",
              "comparator": ">", "threshold": 0.0, "floor": {"min_windows": 1}}
+VIDS = ("asset_v2", "base", "design_v2")
 
 
 @pytest.fixture(autouse=True)
@@ -68,7 +73,7 @@ def _bad():
 
 
 # ---------------------------------------------------------------------------
-# 1. The grid
+# 1. The grid and the shared validator
 # ---------------------------------------------------------------------------
 
 def test_two_passing_survivors_and_one_crashed_variant_is_inconclusive():
@@ -78,23 +83,31 @@ def test_two_passing_survivors_and_one_crashed_variant_is_inconclusive():
     res = vce.evaluate_grid({"base": _good(), "design": _good()}, pre, {}, {},
                             failed_variants={"asset": CRASH})
     assert res["idea_status"] == "inconclusive"
-    assert res["variants"] == ["base", "design", "asset"]
+    assert res["variants"] == ["base", "design"]  # graded columns only
+    assert res["grid"] == survivors["grid"]       # no column, no cell for the failed one
     assert res["failed_variants"] == {"asset": CRASH}
-    assert res["grid"]["c1"]["asset"] == {"result": "INCONCLUSIVE", "not_graded": True,
-                                          "reason": CRASH}
-    assert res["grid"]["c1"]["base"] == survivors["grid"]["c1"]["base"]
-    assert "['asset']" in res["reason"] and "D-015" in res["reason"]
+    assert "failed their backtest" in res["reason"] and "D-015" in res["reason"]
+    assert "refused" not in res["reason"]
+
+
+def test_a_refused_variant_is_worded_as_a_refusal():
+    res = vce.evaluate_grid({"base": _good()}, _menu_shaped_pre_reg([PASS_CRIT]), {}, {},
+                            failed_variants={"asset": REFUSED, "design": CRASH})
+    assert res["idea_status"] == "inconclusive"
+    assert "['asset'] were refused before any backtest (no data touched" in res["reason"]
+    assert "['design'] failed their backtest" in res["reason"]
 
 
 def test_a_genuine_fail_on_a_survivor_still_refutes():
-    """D-014: FAIL dominates the crashed column's INCONCLUSIVE."""
+    """D-014: FAIL dominates a variant without a graded result."""
     pre = _menu_shaped_pre_reg([PASS_CRIT])
-    res = vce.evaluate_grid({"base": _bad()}, pre, {}, {}, failed_variants={"asset": CRASH})
+    res = vce.evaluate_grid({"base": _bad()}, pre, {}, {}, failed_variants={"asset": CRASH},
+                            untested_variants={"design": "repeat: exact match"})
     assert res["idea_status"] == "refuted"
-    assert res["grid"]["c1"]["asset"]["not_graded"] is True
+    assert res["variants"] == ["base"]
 
 
-def test_no_grader_runs_for_a_failed_column(monkeypatch):
+def test_no_grader_runs_for_a_failed_variant(monkeypatch):
     graded, profit = [], []
     real = vce._evaluate_grid_cell
 
@@ -112,37 +125,84 @@ def test_no_grader_runs_for_a_failed_column(monkeypatch):
     res = vce.evaluate_grid({"base": _good()}, pre, {}, {}, composition_runs=True,
                             profit_bars_grader=_grader, failed_variants={"asset": CRASH})
     assert len(graded) == 1 and profit == ["base"]
-    assert all(res["grid"][c]["asset"]["not_graded"] for c in ("c1", "profit_bars"))
+    assert all("asset" not in row for row in res["grid"].values())
     assert res["idea_status"] == "inconclusive"
 
 
-@pytest.mark.parametrize("failed", [None, {}])
-def test_no_failed_variant_is_byte_identical(failed):
+def test_an_untested_variant_keeps_the_idea_inconclusive():
+    """Card D: unanimity is judged within one run -- a variant of the idea
+    with no graded column here (a REPEAT skip) blocks `validated`."""
+    pre = _menu_shaped_pre_reg([PASS_CRIT])
+    res = vce.evaluate_grid({"asset": _good()}, pre, {}, {},
+                            untested_variants={"base": "repeat: exact match of run_1:base",
+                                               "design": "repeat: exact match of run_1:design"})
+    assert res["idea_status"] == "inconclusive"
+    assert res["variants"] == ["asset"] and "failed_variants" not in res
+    assert sorted(res["untested_variants"]) == ["base", "design"]
+    assert "all its variants are graded in one run" in res["reason"]
+
+
+@pytest.mark.parametrize("kw", [{"failed_variants": None}, {"failed_variants": {}},
+                                {"untested_variants": None}, {"untested_variants": {}}])
+def test_no_failed_or_untested_variant_is_byte_identical(kw):
     pre = _menu_shaped_pre_reg([PASS_CRIT])
     today = vce.evaluate_grid({"base": _good(), "design": _bad()}, pre, {}, {})
-    got = vce.evaluate_grid({"base": _good(), "design": _bad()}, pre, {}, {},
-                            failed_variants=failed)
+    got = vce.evaluate_grid({"base": _good(), "design": _bad()}, pre, {}, {}, **kw)
     assert yaml.safe_dump(got) == yaml.safe_dump(today)
-    assert "failed_variants" not in got
+    assert "failed_variants" not in got and "untested_variants" not in got
 
 
-@pytest.mark.parametrize("failed,exc,match", [
-    ({"base": CRASH}, ValueError, "both graded"),
-    ({"asset": ""}, ValueError, "non-empty strings"),
-    ({"asset": None}, ValueError, "non-empty strings"),
-    (["asset"], TypeError, "dict"),
+@pytest.mark.parametrize("failed,match", [
+    ({"base": CRASH}, "both graded"),
+    ({"asset": ""}, "non-empty strings"),
+    ({"asset": None}, "non-empty strings"),
+    ({"asset": "run_protocol.py crashed"}, "must start with one of"),
+    (["asset"], "non-empty"),
+    ([], "non-empty"),
+    ("", "non-empty"),
 ])
-def test_malformed_failed_variants_raise(failed, exc, match):
-    with pytest.raises(exc, match=match):
+def test_malformed_failed_variants_raise(failed, match):
+    with pytest.raises(ValueError, match=match):
         vce.evaluate_grid({"base": _good()}, _menu_shaped_pre_reg([PASS_CRIT]), {}, {},
                           failed_variants=failed)
+
+
+def test_untested_overlapping_a_graded_or_failed_variant_raises():
+    pre = _menu_shaped_pre_reg([PASS_CRIT])
+    for untested in ({"base": "x"}, {"asset": "x"}):
+        with pytest.raises(ValueError, match="both graded"):
+            vce.evaluate_grid({"base": _good()}, pre, {}, {}, failed_variants={"asset": CRASH},
+                              untested_variants=untested)
+
+
+@pytest.mark.parametrize("value", [[], "", None, {}, ["asset"]])
+def test_grid_failed_variants_refuses_a_present_but_empty_value(value):
+    """The shared reader: absent -> {}; present -> must be a real mapping."""
+    assert vce.grid_failed_variants({"variants": ["base"]}) == {}
+    with pytest.raises(ValueError, match="non-empty"):
+        vce.grid_failed_variants({"variants": ["base"], "failed_variants": value})
 
 
 # ---------------------------------------------------------------------------
 # 2. The variant loop
 # ---------------------------------------------------------------------------
 
-def _loop_with_crash(monkeypatch, run_id: str, crash: str | None):
+def _write_index(run_dir: Path, variants: dict | None = None) -> None:
+    """The three-variant idea (base / design / asset), all validated unless
+    `variants` overrides an entry."""
+    vdir = run_dir / "artifacts" / "variants"
+    index = {}
+    for vid in VIDS:
+        (vdir / vid).mkdir(parents=True, exist_ok=True)
+        (vdir / vid / "strategy_config.json").write_text(json.dumps({"variant": vid}),
+                                                          encoding="utf-8")
+        index[vid] = {"status": "validated",
+                      "config_path": f"artifacts/variants/{vid}/strategy_config.json"}
+    index.update(variants or {})
+    rpr.save_yaml(vdir / "index.yaml", {"variants": index})
+
+
+def _setup_run(run_id: str, variants: dict | None = None) -> Path:
     _set_flag(rpr.ROOT, {"config_direct_authoring": {"enabled": True},
                          "variant_loop": {"enabled": True},
                          "grid_evaluation": {"enabled": True}})
@@ -150,97 +210,271 @@ def _loop_with_crash(monkeypatch, run_id: str, crash: str | None):
     run_dir = _minimal_run(rpr.ROOT, run_id)
     (run_dir / "artifacts" / "validation_protocol.yaml").write_text("{}", encoding="utf-8")
     rpr._ensure_protocol_ref_pinned(run_dir, run_id, {"protocol_ref": f"protocols/{run_id}.json"})
-    _write_three_variant_index(run_dir)
+    _write_index(run_dir, variants)
     rpr.save_yaml(run_dir / "artifacts" / "pre_registration.yaml",
                   _menu_shaped_pre_reg([{**PASS_CRIT, "metric": "sharpe"}]))
+    return run_dir
 
+
+def _attempt(monkeypatch, run_id: str, *, crash=(), refuse=()):
+    """One protocol_execution attempt: variants in `crash` exit non-zero after
+    touching data, variants in `refuse` exit EXIT_NO_DATA_TOUCHED with the token;
+    every other variant succeeds with a passing summary tagged by its id."""
     def _run(cmd, *a, **k):
         vid = Path(cmd[2]).parent.name
         out = Path(cmd[cmd.index("--out-dir") + 1])
         out.mkdir(parents=True, exist_ok=True)
-        if vid == crash:
-            class _Fail:
-                returncode, stdout, stderr = 1, "", "boom"
-            return _Fail()
+
+        class _R:
+            returncode, stdout, stderr = 0, "", ""
+        if vid in refuse:
+            _R.returncode = protocol_refusal.EXIT_NO_DATA_TOUCHED
+            _R.stderr = f"{protocol_refusal.NO_DATA_TOUCHED_TOKEN}: x -- refusing.\n"
+            return _R()
+        if vid in crash:
+            _R.returncode, _R.stderr = 1, "boom"
+            return _R()
         summary = _summary_for(vid)
         summary["results"] = _windows_for_reducer([1.0, 2.0, 3.0])
         for r in summary["results"]:
             r["core"]["sharpe"] = 1.0
         (out / "protocol_summary.json").write_text(json.dumps(summary), encoding="utf-8")
-
-        class _Ok:
-            returncode, stdout, stderr = 0, "", ""
-        return _Ok()
+        return _R()
     monkeypatch.setattr(rpr.subprocess, "run", _run)
     asyncio.run(rpr.run_tool_worker("protocol_execution", run_id))
-    return run_dir
 
 
-def test_variant_loop_passes_the_crashed_variant_to_the_grid(monkeypatch):
-    run_dir = _loop_with_crash(monkeypatch, "run_941", crash="design_v2")
-    grid = rpr.load_yaml(run_dir / "artifacts" / "grid_evaluation.yaml")
+def _grid_of(run_dir):
+    return rpr.load_yaml(run_dir / "artifacts" / "grid_evaluation.yaml")
+
+
+def _index_of(run_dir):
+    return rpr.load_yaml(run_dir / "artifacts" / "variants" / "index.yaml")["variants"]
+
+
+def _rows(run_id):
+    return sorted((t["trial_id"], t["source"]) for t in rpr.load_campaign_state()["trial_sharpes"]
+                  if t["trial_id"].startswith(f"{run_id}:"))
+
+
+def test_variant_loop_records_the_crashed_variant_in_failed_variants_only(monkeypatch):
+    run_dir = _setup_run("run_941")
+    _attempt(monkeypatch, "run_941", crash={"design_v2"})
+    grid = _grid_of(run_dir)
     assert grid["failed_variants"] == {"design_v2": CRASH}
-    assert grid["variants"] == ["asset_v2", "base", "design_v2"]
-    assert grid["idea_status"] == "inconclusive"
+    assert grid["variants"] == ["asset_v2", "base"]
+    assert all("design_v2" not in row for row in grid["grid"].values())
+    assert grid["idea_status"] == "inconclusive" and "untested_variants" not in grid
     assert rpr.load_yaml(run_dir / "artifacts" / "idea_status.yaml")["idea_status"] == "inconclusive"
-    rows = sorted((t["trial_id"], t["source"]) for t in rpr.load_campaign_state()["trial_sharpes"])
-    assert rows == [("run_941:asset_v2", "backtest"), ("run_941:base", "backtest"),
-                    ("run_941:design_v2", "backtest_failed")]
+    assert _rows("run_941") == [("run_941:asset_v2", "backtest"), ("run_941:base", "backtest"),
+                                ("run_941:design_v2", "backtest_failed")]
+    idx = _index_of(run_dir)
+    assert idx["design_v2"]["failed_attempt"] == CRASH and idx["design_v2"]["status"] == "validated"
+    assert "failed_attempt" not in idx["base"]
 
 
-def test_variant_loop_without_a_crash_validates_and_writes_no_failed_key(monkeypatch):
-    run_dir = _loop_with_crash(monkeypatch, "run_942", crash=None)
-    grid = rpr.load_yaml(run_dir / "artifacts" / "grid_evaluation.yaml")
+def test_variant_loop_keeps_a_refusal_apart_from_a_crash(monkeypatch):
+    run_dir = _setup_run("run_943")
+    _attempt(monkeypatch, "run_943", crash={"design_v2"}, refuse={"asset_v2"})
+    grid = _grid_of(run_dir)
+    assert grid["failed_variants"]["asset_v2"].startswith("refused: run_protocol.py refused")
+    assert grid["failed_variants"]["design_v2"] == CRASH
+    assert grid["variants"] == ["base"]
+    assert "['asset_v2'] were refused before any backtest" in grid["reason"]
+    assert "['design_v2'] failed their backtest" in grid["reason"]
+    # no trial row for the refusal, one backtest_failed row for the crash
+    assert _rows("run_943") == [("run_943:base", "backtest"),
+                                ("run_943:design_v2", "backtest_failed")]
+    idx = _index_of(run_dir)
+    assert idx["asset_v2"]["status"] == "not_tested"
+    assert idx["asset_v2"]["failed_attempt"] == grid["failed_variants"]["asset_v2"]
+
+
+def test_variant_loop_without_a_failure_validates_and_writes_no_extra_key(monkeypatch):
+    run_dir = _setup_run("run_942")
+    index_before = (run_dir / "artifacts" / "variants" / "index.yaml").read_bytes()
+    _attempt(monkeypatch, "run_942")
+    grid = _grid_of(run_dir)
+    assert "failed_variants" not in grid and "untested_variants" not in grid
+    assert grid["idea_status"] == "validated"
+    assert (run_dir / "artifacts" / "variants" / "index.yaml").read_bytes() == index_before
+
+
+def test_rerun_keeps_a_variant_refused_on_an_earlier_attempt(monkeypatch):
+    """The reviewer's scenario: attempt 1 -- asset refused, base and design crash
+    (all failed, protocol_execution raises); resume -- base and design succeed.
+    The refused asset is not re-run (not_tested) yet must stay counted: the idea
+    is NOT validated."""
+    run_dir = _setup_run("run_944")
+    with pytest.raises(RuntimeError, match="all 3 validated variant"):
+        _attempt(monkeypatch, "run_944", crash={"base", "design_v2"}, refuse={"asset_v2"})
+    idx = _index_of(run_dir)
+    assert idx["asset_v2"]["failed_attempt"].startswith("refused:")
+    assert idx["base"]["failed_attempt"] == idx["design_v2"]["failed_attempt"] == CRASH
+
+    _attempt(monkeypatch, "run_944")  # resume: only base and design are validated
+    grid = _grid_of(run_dir)
+    assert grid["variants"] == ["base", "design_v2"]
+    assert list(grid["failed_variants"]) == ["asset_v2"]
+    assert grid["failed_variants"]["asset_v2"].startswith("refused:")
+    assert grid["idea_status"] == "inconclusive"
+    idx = _index_of(run_dir)
+    assert "failed_attempt" not in idx["base"] and "failed_attempt" not in idx["design_v2"]
+    assert idx["asset_v2"]["failed_attempt"].startswith("refused:")
+    # the attempt-1 looks stay counted next to the attempt-2 backtests
+    assert _rows("run_944") == [("run_944:base", "backtest"), ("run_944:base", "backtest_failed"),
+                                ("run_944:design_v2", "backtest"),
+                                ("run_944:design_v2", "backtest_failed")]
+
+
+def test_rerun_that_regrades_the_crashed_variant_clears_it(monkeypatch):
+    run_dir = _setup_run("run_945")
+    _attempt(monkeypatch, "run_945", crash={"asset_v2"})
+    assert _grid_of(run_dir)["idea_status"] == "inconclusive"
+    _attempt(monkeypatch, "run_945")  # the crashed variant is re-run and succeeds
+    grid = _grid_of(run_dir)
     assert "failed_variants" not in grid and grid["idea_status"] == "validated"
+    assert all("failed_attempt" not in v for v in _index_of(run_dir).values())
+
+
+def test_repeat_skipped_variants_keep_the_idea_inconclusive(monkeypatch):
+    """Run 1's asset crashed; run 2 re-runs only the asset (base and design are
+    exact REPEATs of run 1, skipped by the gate) and it PASSes. The earlier
+    graded results live in the memory, but unanimity is judged within one run:
+    run 2 stays inconclusive."""
+    run_1 = _setup_run("run_946")
+    _attempt(monkeypatch, "run_946", crash={"asset_v2"})
+    assert _grid_of(run_1)["idea_status"] == "inconclusive"
+    repeat = {vid: {"status": "not_tested",
+                    "config_path": f"artifacts/variants/{vid}/strategy_config.json",
+                    "reason": f"{rpr._REPEAT_REASON_PREFIX} exact match of tested run_946:{vid}"}
+              for vid in ("base", "design_v2")}
+    run_2 = _setup_run("run_947", repeat)
+    _attempt(monkeypatch, "run_947")
+    grid = _grid_of(run_2)
+    assert grid["variants"] == ["asset_v2"]
+    assert all(row["asset_v2"]["result"] == "PASS" for row in grid["grid"].values())
+    assert grid["idea_status"] == "inconclusive"
+    assert "failed_variants" not in grid
+    assert sorted(grid["untested_variants"]) == ["base", "design_v2"]
+    assert grid["untested_variants"]["base"].startswith(rpr._REPEAT_REASON_PREFIX)
+
+
+def test_a_base_whose_trial_write_failed_never_feeds_the_singular_artifacts(monkeypatch):
+    run_dir = _setup_run("run_948")
+    real_record = rpr._record_backtest_trial
+
+    def _record(run_id, summary, config_path, *, trial_id):
+        if trial_id.endswith(":base"):
+            raise OSError("ledger unwritable")
+        return real_record(run_id, summary, config_path, trial_id=trial_id)
+    monkeypatch.setattr(rpr, "_record_backtest_trial", _record)
+    seen = []
+    real_c7 = vce.evaluate_pass_rule_criteria
+
+    def _c7(summary, *a, **k):
+        seen.append(summary["config_sha256"])
+        return real_c7(summary, *a, **k)
+    monkeypatch.setattr(vce, "evaluate_pass_rule_criteria", _c7)
+    _attempt(monkeypatch, "run_948")
+    grid = _grid_of(run_dir)
+    assert grid["failed_variants"] == {
+        "base": "backtest_failed: the backtest completed but its trial write raised OSError"}
+    assert grid["variants"] == ["asset_v2", "design_v2"]
+    # C7 and the singular bridge file (read by the category reports) come from
+    # the first GRADED variant, never from base
+    assert seen == ["sha-asset_v2"]
+    singular = rpr.load_yaml(run_dir / "artifacts" / "protocol_result.yaml")
+    assert singular["config_sha256"] == "sha-asset_v2"
+    assert ("run_948:base", "backtest_failed") in _rows("run_948")
 
 
 # ---------------------------------------------------------------------------
 # 3. Branch 3 and 4. memory
 # ---------------------------------------------------------------------------
 
-def _crashed_column_run(stale_good: bool) -> Path:
-    """`base` graded (all PASS), `broken` crashed: a failed_variants column, with a
-    stale passing protocol_result.yaml left on disk when stale_good."""
+def _failed_run(stale_good: bool = False, refused_asset: bool = False) -> Path:
+    """`base` graded (all PASS); `broken` crashed (validated, a backtest_failed
+    row) -- listed in failed_variants, never a column, with a stale passing
+    protocol_result.yaml left on disk when stale_good; with refused_asset,
+    `asset` was refused before any backtest (not_tested, no trial row)."""
     run_dir = _variant_run({"base": True}, stale={"good": True} if stale_good else None)
     arts = run_dir / "artifacts"
+    failed = {"broken": CRASH}
+    if refused_asset:
+        index = rpr.load_yaml(arts / "variants" / "index.yaml")
+        index["variants"]["asset"] = {"status": "not_tested", "reason": REFUSED[len("refused: "):],
+                                      "config_path": "artifacts/variants/asset/strategy_config.json",
+                                      "failed_attempt": REFUSED}
+        rpr.save_yaml(arts / "variants" / "index.yaml", index)
+        failed["asset"] = REFUSED
     grid = _grid(["base"], "validated")
-    for row in grid["grid"].values():
-        row["broken"] = vce._not_graded_cell(CRASH)
-    grid.update(variants=["base", "broken"], failed_variants={"broken": CRASH},
-                idea_status="inconclusive", reason="crashed column")
+    grid.update(failed_variants=failed, idea_status="inconclusive",
+                reason="every criterion PASSed on every graded variant, but not every variant "
+                       "was graded; " + vce._failed_variants_reason(failed))
     rpr.save_yaml(arts / "grid_evaluation.yaml", grid)
     rpr.save_yaml(arts / "idea_status.yaml", rpr._build_idea_status_artifact(grid, RUN_ID))
     return run_dir
 
 
-def test_branch3_failed_column_is_not_tested_even_with_a_stale_passing_result():
+def test_branch3_crashed_variant_is_not_tested_with_its_trial_id():
     _set_orchestrator({**FULL_ON, **VARIANT_LOOP_ON})
     _write_bars()
-    run_dir = _crashed_column_run(stale_good=True)
+    run_dir = _failed_run(stale_good=True)
     assert (run_dir / "artifacts" / "variants" / "broken" / "protocol_result.yaml").exists()
     cands = rpr._profit_bars_backtest_candidates(run_dir, RUN_ID)
-    assert cands["broken"]["result"] == "NOT_TESTED" and CRASH in cands["broken"]["reason"]
-    assert cands["base"]["result"] is None  # gradeable
+    b = cands["broken"]
+    assert b["result"] == "NOT_TESTED" and b["protocol_result"] is None
+    assert b["trial_id"] == f"{RUN_ID}:broken"  # its real backtest_failed row
+    assert b["reason"].startswith("backtest failed (") and CRASH in b["reason"]
     ev = rpr._evaluate_profit_bars_every_backtest(run_dir, RUN_ID)
     assert ev["variants"]["broken"]["result"] == "NOT_TESTED" and ev["variants"]["broken"]["bars"] == []
+    assert ev["variants"]["broken"]["trial_id"] == f"{RUN_ID}:broken"
     assert "broken" not in ev["passing"]
 
 
-def test_branch3_refuses_a_failed_variant_outside_the_columns():
+def test_branch3_refused_variant_is_not_tested_without_a_trial_id():
     _set_orchestrator({**FULL_ON, **VARIANT_LOOP_ON})
-    run_dir = _crashed_column_run(stale_good=False)
+    _write_bars()
+    run_dir = _failed_run(refused_asset=True)
+    a = rpr._profit_bars_backtest_candidates(run_dir, RUN_ID)["asset"]
+    assert a["result"] == "NOT_TESTED" and a["trial_id"] is None
+    assert a["reason"].startswith("refused before any backtest, no data touched")
+
+
+def test_branch3_grades_the_survivors_of_an_inconclusive_idea():
+    """D-021: grid status is not a holdout precondition -- base passes every bar
+    although the idea is inconclusive (a crashed variant), and branch 3 says so."""
+    _set_orchestrator({**FULL_ON, **VARIANT_LOOP_ON})
+    _write_bars()
+    run_dir = _failed_run()
+    assert rpr.load_yaml(run_dir / "artifacts" / "idea_status.yaml")["idea_status"] == "inconclusive"
+    ev = rpr._evaluate_profit_bars_every_backtest(run_dir, RUN_ID)
+    assert ev["variants"]["base"]["result"] == "PASS"
+    assert ev["passing"] == ["base"] and ev["result"] == "PASS"
+
+
+@pytest.mark.parametrize("value,match", [
+    ({"ghost": CRASH}, "not in"),
+    ({"base": CRASH}, "both graded"),
+    ({"broken": "crashed"}, "must start with one of"),
+    ([], "non-empty"), ("", "non-empty"), (None, "non-empty"),
+])
+def test_branch3_refuses_a_malformed_failed_variants(value, match):
+    _set_orchestrator({**FULL_ON, **VARIANT_LOOP_ON})
+    run_dir = _failed_run()
     path = run_dir / "artifacts" / "grid_evaluation.yaml"
     grid = rpr.load_yaml(path)
-    grid["failed_variants"] = {"ghost": CRASH}
+    grid["failed_variants"] = value
     rpr.save_yaml(path, grid)
-    with pytest.raises(ValueError, match="failed_variants"):
+    with pytest.raises(ValueError, match=match):
         rpr._profit_bars_backtest_candidates(run_dir, RUN_ID)
 
 
-def test_memory_marks_the_crashed_column_failed_and_keeps_not_graded():
+def test_memory_records_crashed_as_failed_and_refused_as_not_tested():
     _set_orchestrator({**FULL_ON, **VARIANT_LOOP_ON})
     _write_bars()
-    run_dir = _crashed_column_run(stale_good=True)
+    run_dir = _failed_run(stale_good=True, refused_asset=True)
     rpr._evaluate_profit_bars_every_backtest(run_dir, RUN_ID)
     rpr._run_regroup_record_stage(RUN_ID, run_dir, profit_bars_evaluated=True)
     doc = _memory()
@@ -249,10 +483,11 @@ def test_memory_marks_the_crashed_column_failed_and_keeps_not_graded():
     assert e["variants"]["broken"]["status"] == "failed"
     assert e["variants"]["broken"]["reason"] == CRASH
     assert e["variants"]["broken"]["trial_id"] == f"{RUN_ID}:broken"  # its backtest_failed row
+    assert e["variants"]["asset"]["status"] == "not_tested"
+    assert e["variants"]["asset"]["reason"] == REFUSED and e["variants"]["asset"]["trial_id"] is None
     assert e["variants"]["base"]["status"] == "tested"
-    cell = e["grid"]["cells"]["ic_median"]["broken"]
-    assert cell == {"result": "INCONCLUSIVE", "reason": CRASH, "not_graded": True}
-    assert e["grid"]["counts"]["INCONCLUSIVE"] == 2
+    assert e["grid"]["variants"] == ["base"]
+    assert all(set(row) == {"base"} for row in e["grid"]["cells"].values())
     assert e["profit_bars"]["variants"]["broken"]["result"] == "NOT_TESTED"
     assert e["registry"] == {"skipped": cm.REGISTRY_SKIPPED_NOT_VALIDATED}
     jsonschema.Draft202012Validator(_SCHEMA).validate(doc)
@@ -270,10 +505,7 @@ def test_decide_next_sees_a_crashed_base_as_not_tested():
                                  "config_path": "artifacts/variants/base/strategy_config.json"}
     rpr.save_yaml(arts / "variants" / "index.yaml", index)
     grid = _grid(["design"], "validated")
-    for row in grid["grid"].values():
-        row["base"] = vce._not_graded_cell(CRASH)
-    grid.update(variants=["design", "base"], failed_variants={"base": CRASH},
-                idea_status="inconclusive", reason="crashed base")
+    grid.update(failed_variants={"base": CRASH}, idea_status="inconclusive", reason="crashed base")
     rpr.save_yaml(arts / "grid_evaluation.yaml", grid)
     rpr.save_yaml(arts / "idea_status.yaml", rpr._build_idea_status_artifact(grid, RUN_ID))
     rpr._evaluate_profit_bars_every_backtest(run_dir, RUN_ID)
@@ -283,32 +515,18 @@ def test_decide_next_sees_a_crashed_base_as_not_tested():
     assert vid == "base" and base["status"] == "failed"  # -> source_base_variant_not_tested
 
 
-@pytest.mark.parametrize("mutate,match", [
-    (lambda g: g.update(failed_variants={"ghost": CRASH}), "must be a grid column"),
-    (lambda g: g.update(failed_variants=[]), "non-empty mapping"),
-    (lambda g: g["grid"]["ic_median"].update(broken={"result": "PASS"}), "not_graded"),
+@pytest.mark.parametrize("value,match", [
+    ({"ghost": CRASH}, "not in the index"),
+    ({"base": CRASH}, "both graded"),
+    ({"broken": "crashed"}, "must start with one of"),
+    ([], "non-empty"), ("", "non-empty"), (None, "non-empty"),
 ])
-def test_memory_refuses_a_corrupt_failed_variants(mutate, match):
+def test_memory_refuses_a_corrupt_failed_variants(value, match):
     _set_orchestrator({**FULL_ON, **VARIANT_LOOP_ON})
-    run_dir = _crashed_column_run(stale_good=False)
+    run_dir = _failed_run()
     path = run_dir / "artifacts" / "grid_evaluation.yaml"
     grid = rpr.load_yaml(path)
-    mutate(grid)
+    grid["failed_variants"] = value
     rpr.save_yaml(path, grid)
     with pytest.raises(cm.CampaignMemoryError, match=match):
         rpr._run_regroup_record_stage(RUN_ID, run_dir)
-
-
-# ---------------------------------------------------------------------------
-# 5. Block registry
-# ---------------------------------------------------------------------------
-
-def test_block_registry_refuses_a_validated_entry_with_a_non_tested_column(tmp_path):
-    entry = {"run_id": RUN_ID, "hypothesis_id": "H", "legacy": False,
-             "idea_status": "validated", "engineering_fault": None,
-             "grid": {"criteria": ["c1"], "variants": ["base", "asset"],
-                      "cells": {"c1": {"base": {"result": "PASS"},
-                                       "asset": {"result": "PASS"}}}},
-             "variants": {"base": {"status": "tested"}, "asset": {"status": "failed"}}}
-    with pytest.raises(br.BlockRegistryError, match="D-015"):
-        br.build_block(tmp_path, copy.deepcopy(entry), {"block": {}}, root=tmp_path)
