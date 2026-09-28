@@ -71,9 +71,9 @@
     },
     "hypothesis_verdict": {
       "type": ["object", "null"],
-      "description": "Present when --validation-protocol is supplied. Contains criteria results and the diagnostics block read by verdict-interpreter.",
+      "description": "Present when --validation-protocol is supplied (criteria results and the diagnostics block read by verdict-interpreter), or under --diagnostics-only (E-061 C1.3, config-direct authoring: the diagnostics block, no criteria, verdict null). Null otherwise.",
       "properties": {
-        "verdict":          { "type": "string", "enum": ["promote", "refine", "kill"] },
+        "verdict":          { "type": ["string", "null"], "enum": ["promote", "refine", "kill", null] },
         "criteria_results": { "type": "array" },
         "verdict_reason":   { "type": "string" },
         "diagnostics": {

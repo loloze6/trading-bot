@@ -268,6 +268,11 @@ def _gate_run(monkeypatch, run_id, variant_loop: bool, retired=True) -> Path:
     _set_flag(rpr.ROOT, cfg)
     run_dir = _minimal_run_at(rpr.ROOT, run_id, "data_availability_gate")
     _write_handoff(run_dir, "backtest_spec_to_data_availability_gate.yaml")
+    if not variant_loop:
+        # E-061 C1.2: the config-direct gate handoff requires the base config 5a
+        # writes (the single gate runs on it); the stubbed stage reads nothing.
+        (run_dir / "artifacts" / "candidate_strategy_config.json").write_text(
+            "{}", encoding="utf-8")
     return run_dir
 
 
