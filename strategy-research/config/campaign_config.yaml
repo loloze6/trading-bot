@@ -101,8 +101,12 @@ orchestrator:
     # cost was $0.35 (see run_047, 2026-07-05). Empirically, hypothesis_generation +
     # innovation_expansion + validation together came to ~478,000 weighted units for a real,
     # legitimately-approved reactivation hypothesis with a multi-turn validation call; 1,500,000
-    # leaves headroom for the remaining LLM stages (backtest_specification, verdict_interpreter)
-    # while still catching genuinely runaway behavior. Revisit if a normal run trips this again —
+    # leaves headroom for the remaining LLM stages (at the time: backtest_specification,
+    # verdict_interpreter) while still catching genuinely runaway behavior. CORRECTED 2026-09-28:
+    # that stage list is 2026-07-05 history, not today's — under orchestrator.config_direct_
+    # authoring.enabled, backtest_specification is a code/tool stage, not LLM (strategy_config_
+    # authoring is the new LLM stage instead), and under orchestrator.specialist_readers.enabled,
+    # five reader calls replace verdict_interpreter. Revisit if a normal run trips this again —
     # widen the constant, don't disable the breaker.
   max_refinements_default: 2            # default fallback when not in pipeline_state.yaml governance block
   review_every_n_runs_default: 6        # default campaign-review cadence
@@ -460,9 +464,12 @@ orchestrator:
       # backtest_specification branch and
       # STAGE_CONFIGS["data_availability_gate"]. validate ->
       # protocol_execution; refine -> paused_for_human (Path C in the
-      # module docstring; "variant not tested" instead of a loop pause is
-      # deferred to a later slice that does not exist yet); decline ->
-      # completed_rejected, no backtest spent.
+      # module docstring) unless orchestrator.variant_loop.enabled, in which
+      # case a per-variant refine/decline marks that variant not_tested
+      # instead (E-033.1 Slice 4b, landed 2026-09-22, PR #188 -- CORRECTED
+      # 2026-09-28, this comment previously called that behavior "deferred to
+      # a later slice that does not exist yet"); decline -> completed_rejected,
+      # no backtest spent.
       #
       # While explicitly false: the backtest_specification ->
       # protocol_execution route is byte-identical to every run before
@@ -545,7 +552,12 @@ orchestrator:
       # instead): the per-variant data-availability-gate loop, the
       # per-variant conformance-check restructure (a separate call site in
       # run_loop, not run_tool_worker), and _write_promotion_audit's
-      # relationship to per-variant results.
+      # relationship to per-variant results. CORRECTED 2026-09-28: Slice 4b
+      # landed 2026-09-22 (PR #188) and all three are present in this
+      # checkout (see feature_flag_register.yaml's variant_loop entry and
+      # tests/test_e033_slice4b_gate_conformance_promotion.py) -- this flag
+      # stays off_incomplete only because config_direct_authoring, its hard
+      # dependency, itself still needs a real end-to-end LLM-authoring proof.
   specialist_readers:
     enabled: false
       # E-046a Slice 5b-ii-B (delivery_plan_v26.md slices 2 and 5;

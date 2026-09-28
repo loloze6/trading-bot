@@ -3,6 +3,10 @@
 **Status:** draft, reviewed once by the operator (2026-09-19/20); four corrections applied
 (composition is its own new epic, not E-044; no E-048 gate on composition; `verdict_interpreter`
 is deleted, not kept as a narrator; a block is usable on any coin once validated anywhere).
+**Superseded by D-008 (2026-09-23, `engineering/DECISION_LOG.md`):** the `verdict_interpreter`
+correction above is no longer the decision that stands — it is bypassed, not deleted (its
+`STAGE_CONFIGS` entry stays registered and unreached under the flag, same precedent as the
+`validation` stage below). See the line-315 note for the mechanics.
 Nothing in Linear has been changed yet. Companion documents: `engineering_roadmap.html` (v27,
 the target — cards A–N and the 14-step walkthrough) and `roadmap_review_2026-09-18.md` (the
 code-verified findings and the decisions record). The board is the source of truth for *what*;
@@ -252,6 +256,11 @@ Depends on 1.1 and, for criteria, on 1.2's menu. **Declared behaviour change whe
   requested_at}`) and marks the variant `not_tested` in `artifacts/variants/index.yaml`.
   The `validation` stage is removed from `STAGE_CONFIGS` and from `determine_post_validation_route`
   callers when the flag is on (card N: deleted; keep the code path only for flag-off runs).
+  **Superseded in implementation (no separate DECISION_LOG.md row; recorded via D-008's own
+  reference to it as precedent):** the `validation` stage was NOT deleted from `STAGE_CONFIGS` —
+  it stays registered and simply becomes unreached under the flag (`run_phase1_research.py`'s
+  `STAGE_CONFIGS["validation"]` entry is still present, re-verified 2026-09-28), for flag-off
+  byte-identity. Full removal is future clean-up work under D-043 (2026-09-28).
 - Variant selection: `_record_variant_selection` / `variants_not_pursued.yaml` (E-034) become
   legacy; under the flag every variant is pursued.
 - Flag: `orchestrator.config_direct_authoring.enabled`. Off: stage graph and every artifact
@@ -314,7 +323,11 @@ vocabulary.
   (`_validate_retune_firewall`, ≈L2474, re-pointed at its output). **Corrected 2026-09-20
   (operator decision):** the `verdict_interpreter` stage is **removed from `STAGE_CONFIGS`**
   under this slice's flag, not kept as a narrator — the five readers are the whole
-  explanation layer. Every caller of `verdict_interpretation.yaml` must be re-pointed or
+  explanation layer. **Superseded by D-008 (2026-09-23, `engineering/DECISION_LOG.md`; also
+  logged there as D-019 pointing back at this exact line):** the decision that stands today is
+  bypass, not delete — `STAGE_CONFIGS["verdict_interpreter"]` stays registered, made unreached
+  by redirecting `STAGE_CONFIGS["protocol_execution"]["default_next"]` under the flag (re-verified
+  2026-09-28: still present in `run_phase1_research.py`). Every caller of `verdict_interpretation.yaml` must be re-pointed or
   retired: `_inject_regime_context_into_handoff`, `_auto_generate_findings_carryover`,
   `_write_kb_findings_entry`, `_check_kb_reactivation_conformance`, the
   `campaign-review/SKILL.md` required-input list, and `tools/near_miss_scoreboard.py`'s
@@ -383,7 +396,8 @@ The largest slice; three sub-slices, each behind its own flag, in this order.
   `register_hypothesis`) and `terminate`; `continue`/`escalate_*` no longer route.
   `verdict_interpreter` is deleted (decided in slice 5b, not folded in — see the correction
   there); this slice's own S1 must independently confirm every remaining caller of
-  `verdict_interpretation.yaml` is re-pointed before the flag can go on.
+  `verdict_interpretation.yaml` is re-pointed before the flag can go on. **Superseded by D-008
+  (2026-09-23):** bypass, not delete — see the slice-5b note above.
 - Parked states: `_classify_human_pause` gains no new *pause* rows for component/data; instead
   `process_once` marks the entry `paused:waiting_for_component|data`, appends a
   `campaign_log.md` PARKED line, and continues. `resume_paused_entry` (≈L1322) learns
