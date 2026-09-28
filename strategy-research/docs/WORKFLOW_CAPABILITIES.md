@@ -41,7 +41,11 @@ Read this before deciding whether to pause for human review.
   section of the relevant component entry.
 
 ### Holdout execution
-- The holdout window (2025-01-01 onward) requires explicit --holdout --i-understand flags.
+- The holdout window is `holdout_range` in config/campaign_data_policy.yaml (a closed
+  range; never restate its dates) and requires explicit --holdout --i-understand flags.
+  run_protocol.py takes the range from the policy only (CUL-339): a protocol `holdout`
+  block that disagrees with it (e.g. `end: null`) is refused before any data is fetched.
+  Omit the block, or copy the policy range exactly.
 - Never run holdout automatically. Always human-triggered.
 
 ### Capital deployment

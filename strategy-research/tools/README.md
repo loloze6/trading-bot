@@ -427,7 +427,7 @@ python strategy-research/tools/run_protocol.py <config_path> <protocol_path>
 - `--out-dir` — where results land; the orchestrator points this at the run folder.
 - `--cost-product` — which fee table to charge the run at: `spot` (default) or `perp`. Don't use `perp` for funding-carry ideas.
 - `--commission-bps` — manual fee override, to ask "does the edge still hold at X bps?". Beats `--cost-product` when both are given.
-- `--holdout` + `--i-understand` — unlocks the sealed final test data. Two flags on purpose, so it can't happen by accident.
+- `--holdout` + `--i-understand` — unlocks the sealed final test data. Two flags on purpose, so it can't happen by accident. The range is `holdout_range` from `config/campaign_data_policy.yaml`, never the protocol's own `holdout` block (CUL-339): a block that disagrees on either end (`end: null` included), or an open-ended policy range, is refused before any fetch (exit 3, `NO DATA TOUCHED`). Walk-forward runs bound every window by min(protocol holdout start, policy holdout start).
 - `_SPARSE_TRADE_FLOOR = 5` (`:33`) — windows with fewer closed trades get a **null** Sharpe rather than a noisy one.
 
 **STATUS** — live.

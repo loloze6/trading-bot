@@ -162,6 +162,7 @@ the most consequential file in this directory.*
 - `tools/prescreen_signal.py:625` — `_load_campaign_data_policy()`; `:1081` applies it
 - `tools/check_data.py:36` — `_DEFAULT_POLICY`, the holdout-overlap check
 - `tools/validate_regime_detector.py:426`; `tools/measure_bar_sigma.py:105,125` — refuses to read sealed candles
+- `tools/run_protocol.py::_policy_holdout_range` (CUL-339) — the ONLY source of the range `--holdout` backtests. A protocol's own `holdout` block is cross-checked, never used: if it disagrees with `holdout_range` on either end (an `end: null` included), or the policy range is missing, malformed or open-ended, the run is refused before any fetch (exit 3, `NO DATA TOUCHED`). Walk-forward runs use min(protocol holdout start, policy holdout start) as the training-window bound, so a protocol block can only make that guard stricter.
 - `workflow/run_phase1_research.py:3894` — `_DATA_POLICY_PATH`; `:4076,4105` — refuses a second holdout evaluation
 - `workflow/stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/; never drove the pipeline]:81,130,162` — required input of three stages
 - `tools/holdout_date_gate.sh:5`, `tools/hooks/pre-commit:12` — the window the commit gate enforces

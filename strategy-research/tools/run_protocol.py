@@ -19,6 +19,7 @@ import collections
 from datetime import datetime, timezone, date
 from hashlib import sha256
 from pathlib import Path
+from typing import NoReturn
 
 _HERE = os.path.dirname(os.path.abspath(__file__))   # strategy-research/tools/
 _SR   = os.path.dirname(_HERE)                        # strategy-research/
@@ -1344,6 +1345,12 @@ def _assemble_pooled_symbol_records(rows: list, runs_root) -> tuple:
     return records, expected_step, all_have_timestamp
 
 
+#: CUL-339: the campaign data policy -- the single source of truth for
+#: holdout_range. Read at CALL time (never captured at import) so a test can
+#: point it at a sandboxed copy with monkeypatch.
+_DATA_POLICY_PATH = Path(_SR) / "config" / "campaign_data_policy.yaml"
+
+
 def _load_campaign_data_policy() -> dict:
     """Local copy (E-039 step 5, 2026-09-12): prescreen_signal.py's own
     identically-named function is being removed along with that file. This
@@ -1351,7 +1358,7 @@ def _load_campaign_data_policy() -> dict:
     statistics), so it lives here directly rather than in
     trading-bot/performance/signal_statistics.py."""
     import yaml
-    p = Path(_SR) / "config" / "campaign_data_policy.yaml"
+    p = Path(_DATA_POLICY_PATH)
     if not p.exists():
         return {}
     with open(p, encoding="utf-8") as f:
@@ -1806,12 +1813,105 @@ def diagnostics_only_hypothesis_verdict(results: list,
 from protocol_refusal import EXIT_NO_DATA_TOUCHED, NO_DATA_TOUCHED_TOKEN  # noqa: E402
 
 
-def _refuse_before_any_backtest(reason: str) -> None:
+def _refuse_before_any_backtest(reason: str) -> NoReturn:
     """Exit EXIT_NO_DATA_TOUCHED with NO_DATA_TOUCHED_TOKEN opening stderr's line."""
     sys.stderr.flush()
     print(f"{NO_DATA_TOUCHED_TOKEN}: {reason} -- refusing to run any backtest.",
           file=sys.stderr)
     sys.exit(EXIT_NO_DATA_TOUCHED)
+
+
+_ISO_DAY = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def _iso_day(value) -> str | None:
+    """A strict "YYYY-MM-DD" day (a str of exactly that shape, or a date that
+    YAML parsed from an unquoted one), or None for anything else -- including a
+    timestamp, a null or a garbage string. Callers treat None as unusable."""
+    if isinstance(value, date) and not isinstance(value, datetime):
+        return value.isoformat()
+    if not isinstance(value, str) or not _ISO_DAY.fullmatch(value):
+        return None
+    try:
+        return date.fromisoformat(value).isoformat()
+    except ValueError:
+        return None
+
+
+def _policy_holdout_range() -> tuple[str, str]:
+    """CUL-339: (start, end) of campaign_data_policy.yaml's holdout_range, both
+    inclusive "YYYY-MM-DD" days. The policy is the ONLY source of the sealed
+    range -- this function never falls back to a protocol's own `holdout`
+    block and never writes the dates anywhere. Deny by default: a missing or
+    unreadable policy, a malformed range, an open (null/empty) end, or an end
+    before the start all refuse before any backtest (exit EXIT_NO_DATA_TOUCHED)."""
+    try:
+        policy = _load_campaign_data_policy()
+    except Exception as exc:  # yaml.YAMLError / OSError / UnicodeDecodeError
+        _refuse_before_any_backtest(f"cannot read the campaign data policy at "
+                                    f"{_DATA_POLICY_PATH} ({type(exc).__name__}: {exc})")
+    hr = policy.get("holdout_range") if isinstance(policy, dict) else None
+    if not isinstance(hr, (list, tuple)) or len(hr) != 2:
+        _refuse_before_any_backtest(f"{_DATA_POLICY_PATH} has no usable holdout_range "
+                                    f"(got {hr!r}); the sealed range is unknown")
+    start, end = _iso_day(hr[0]), _iso_day(hr[1])
+    if start is None:
+        _refuse_before_any_backtest(f"{_DATA_POLICY_PATH} holdout_range start {hr[0]!r} "
+                                    f"is not a YYYY-MM-DD day")
+    if end is None:
+        _refuse_before_any_backtest(f"{_DATA_POLICY_PATH} holdout_range end {hr[1]!r} is "
+                                    f"open or not a YYYY-MM-DD day; the holdout is a CLOSED "
+                                    f"range and an open end would score post-holdout data")
+    if end < start:
+        _refuse_before_any_backtest(f"{_DATA_POLICY_PATH} holdout_range ends ({end}) "
+                                    f"before it starts ({start})")
+    return start, end
+
+
+def _resolve_holdout_window(protocol: dict) -> tuple[str, str]:
+    """CUL-339: the window `--holdout` backtests. It is the policy's
+    holdout_range and nothing else. A protocol with no `holdout` block (absent
+    or null) uses it as-is; a protocol whose block disagrees with it on either
+    end -- including an `end: null`, which used to mean "today" and scored the
+    whole sealed window plus post-holdout data -- is refused before any fetch.
+    The block is never used to widen, narrow or shift the range."""
+    start, end = _policy_holdout_range()
+    block = protocol.get("holdout")
+    if block is None:
+        return start, end
+    if not isinstance(block, dict):
+        _refuse_before_any_backtest(f"the protocol's holdout block {block!r} is not a "
+                                    f"{{start, end}} mapping")
+    p_start, p_end = block.get("start"), block.get("end")
+    if _iso_day(p_start) != start or _iso_day(p_end) != end:
+        _refuse_before_any_backtest(
+            f"the protocol's holdout block {{start: {p_start!r}, end: {p_end!r}}} disagrees "
+            f"with campaign_data_policy.yaml holdout_range [{start}, {end}]. --holdout takes "
+            f"its range ONLY from the policy; fix or remove the protocol's block")
+    return start, end
+
+
+def _training_holdout_start(protocol: dict) -> str:
+    """CUL-339: the upper bound every walk-forward window (and its warmup
+    prefetch) must stay strictly before -- min(protocol holdout start, policy
+    holdout start), so a protocol's own block can only make the guard STRICTER
+    than the policy, never looser. A protocol with no block (or a block with no
+    start) gets the policy start; a present but malformed start is refused."""
+    policy_start, _ = _policy_holdout_range()
+    block = protocol.get("holdout")
+    if block is None:
+        return policy_start
+    if not isinstance(block, dict):
+        _refuse_before_any_backtest(f"the protocol's holdout block {block!r} is not a "
+                                    f"{{start, end}} mapping")
+    raw = block.get("start")
+    if raw is None:
+        return policy_start
+    p_start = _iso_day(raw)
+    if p_start is None:
+        _refuse_before_any_backtest(f"the protocol's holdout start {raw!r} is not a "
+                                    f"YYYY-MM-DD day")
+    return min(p_start, policy_start)
 
 
 # The dry run's synthetic input: two windows of one symbol, every field the
@@ -2030,6 +2130,15 @@ def main():
     with open(args.protocol_path, encoding="utf-8") as f:
         protocol = json.load(f)
 
+    # CUL-339: resolve the holdout boundary from campaign_data_policy.yaml NOW,
+    # before any output directory, snapshot or data fetch. Either resolver
+    # refuses (EXIT_NO_DATA_TOUCHED) on a disagreeing protocol block or an
+    # unusable policy range.
+    if args.holdout:
+        holdout_window = _resolve_holdout_window(protocol)
+    else:
+        _holdout_start = _training_holdout_start(protocol)
+
     # CUL-165 / GH#79: read the config bytes once and hash those bytes, so the
     # protocol-level stamp certifies the exact bytes every run_backtest() below
     # parses. The run_id/out_dir are derived from the hash (before out_dir
@@ -2110,9 +2219,12 @@ def main():
     # HOLDOUT MODE
     # ------------------------------------------------------------------
     if args.holdout:
-        h = protocol["holdout"]
-        start = h["start"]
-        end   = h["end"] if h["end"] is not None else date.today().isoformat()
+        # CUL-339: the policy's holdout_range, resolved (and cross-checked
+        # against the protocol's own block) before out_dir was created above.
+        # It used to be read from protocol["holdout"], with `end: null` meaning
+        # date.today() -- a block of {start: <validation year>, end: null}
+        # would have scored validation, the whole seal and post-holdout data.
+        start, end = holdout_window
 
         _runs_root = str(out_dir / "results") if args.out_dir else None
         holdout_results = {}
@@ -2182,7 +2294,9 @@ def main():
     # is checked against it below, both directly (this loop, general protocol
     # sanity: no training window may reach into holdout) and inside run_backtest
     # itself (the prefetch's computed fetch_start must stay before it too).
-    _holdout_start = protocol.get("holdout", {}).get("start")
+    # CUL-339: _holdout_start is resolved right after the protocol is loaded --
+    # min(protocol holdout start, policy holdout start), never None, so the
+    # guard can no longer be looser than the policy or silently absent.
 
     for symbol in symbols:
         for window in protocol["windows"]:
