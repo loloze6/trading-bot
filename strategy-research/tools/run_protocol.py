@@ -7,6 +7,7 @@ CLI (run from repo root or strategy-research/):
 """
 import sys
 import contextlib
+import copy
 import os
 import csv
 import json
@@ -1839,45 +1840,59 @@ def diagnostics_only_hypothesis_verdict(results: list,
     }
 
 
-# E-061 C1.3 review fix 4: a refusal BEFORE any window ran -- no market data was
-# touched, so the orchestrator records no trial row for it (an engineering
-# failure, not a spent look). Both the exit code and the stderr token are
-# required for the orchestrator to classify an exit this way.
-EXIT_NO_DATA_TOUCHED = 3
-NO_DATA_TOUCHED_TOKEN = "[run_protocol] NO DATA TOUCHED"
+# E-061 C1.3: a refusal BEFORE any window ran -- no market data was touched, so
+# the orchestrator records no trial row for it (an engineering failure, not a
+# spent look). The exit code and the stderr token live in tools/protocol_refusal.py,
+# shared with the orchestrator.
+from protocol_refusal import EXIT_NO_DATA_TOUCHED, NO_DATA_TOUCHED_TOKEN  # noqa: E402
 
 
 def _refuse_before_any_backtest(reason: str) -> None:
+    """Exit EXIT_NO_DATA_TOUCHED with NO_DATA_TOUCHED_TOKEN opening stderr's line."""
+    sys.stderr.flush()
     print(f"{NO_DATA_TOUCHED_TOKEN}: {reason} -- refusing to run any backtest.",
           file=sys.stderr)
     sys.exit(EXIT_NO_DATA_TOUCHED)
 
 
-def _load_validation_protocol(path) -> dict:
-    """E-061 C1.3: open, parse and shape-check --validation-protocol BEFORE any
-    backtest runs (it used to be opened only after every window had run). A
-    missing, unreadable, empty or non-mapping file, or one whose
-    `decision_rules` (required) or `required_evidence` (optional) cannot be
-    evaluated by evaluate_against_decision_rules, exits EXIT_NO_DATA_TOUCHED
-    with NO_DATA_TOUCHED_TOKEN on stderr."""
+# The dry run's synthetic input: two windows of one symbol, every field the
+# rule evaluator reads. Only the validation protocol's SHAPE is under test.
+_DRY_RUN_PER_SYMBOL = {"DRYRUN": {"median_sharpe": 0.1, "max_abs_drawdown_pct": 5.0,
+                                  "min_trade_count": 20, "zero_trade_slot_pct": 0.0}}
+_DRY_RUN_RESULTS = [
+    {"symbol": "DRYRUN", "window": f"w{i}", "run_id": f"dry_{i}", "per_regime": {},
+     "regime_validity": {}, "data_quality": None, "component_errors": None,
+     "core": {"trade_count": 20, "sharpe": 0.1, "net_return_pct": 1.0, "win_rate": 0.5,
+              "max_drawdown_pct": -5.0, "forecast_return_corr": 0.01,
+              "forecast_return_corr_pvalue": 0.5, "gross_pnl": 1.0, "cost_drag_pct": 10.0,
+              "avg_trade_duration_bars": 5}}
+    for i in (1, 2)]
+
+
+def _load_validation_protocol(path, timeframe: str = "1h") -> dict:
+    """E-061 C1.3: read --validation-protocol and DRY-RUN the rule evaluator on
+    it BEFORE any backtest (it used to be opened only after every window had
+    run). The refusal is exactly "would evaluate_against_decision_rules crash on
+    this document": a missing, unreadable (incl. undecodable), unparseable file,
+    or one the evaluator raises on (run_003's `decision_rules: {approve: [...]}`,
+    `approve_if_all_met: null`, an empty or non-mapping document) exits
+    EXIT_NO_DATA_TOUCHED with NO_DATA_TOUCHED_TOKEN. A document the evaluator
+    accepts -- even one with zero rules, like run_018's rules nested under
+    `variants` -- proceeds exactly as before."""
     import yaml
     try:
         with open(path, encoding="utf-8") as f:
             doc = yaml.safe_load(f)
-    except (OSError, yaml.YAMLError) as exc:
+    except (OSError, ValueError, yaml.YAMLError) as exc:  # ValueError: UnicodeDecodeError
         _refuse_before_any_backtest(f"--validation-protocol {str(path)!r} cannot be read "
                                     f"({type(exc).__name__}: {exc})")
-    if not isinstance(doc, dict) or not doc:
-        _refuse_before_any_backtest(f"--validation-protocol {str(path)!r} is not a non-empty "
-                                    f"mapping (got {type(doc).__name__})")
-    if not isinstance(doc.get("decision_rules"), (dict, list)):
-        _refuse_before_any_backtest(f"--validation-protocol {str(path)!r}: decision_rules is "
-                                    f"missing or not a mapping/list "
-                                    f"(got {type(doc.get('decision_rules')).__name__})")
-    if not isinstance(doc.get("required_evidence"), (list, dict, type(None))):
-        _refuse_before_any_backtest(f"--validation-protocol {str(path)!r}: required_evidence "
-                                    f"is not a list (got "
-                                    f"{type(doc.get('required_evidence')).__name__})")
+    try:
+        evaluate_against_decision_rules(
+            copy.deepcopy(_DRY_RUN_PER_SYMBOL), copy.deepcopy(_DRY_RUN_RESULTS),
+            copy.deepcopy(doc), None, runs_root=None, timeframe=timeframe)
+    except Exception as exc:
+        _refuse_before_any_backtest(f"--validation-protocol {str(path)!r}: the rule evaluator "
+                                    f"cannot evaluate it ({type(exc).__name__}: {exc})")
     return doc
 
 
