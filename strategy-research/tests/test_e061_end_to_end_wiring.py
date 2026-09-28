@@ -100,6 +100,11 @@ sys.executable) or through a direct Popen (tools/run_protocol.py), a non-git
 program, a Gemini call and a holdout_sealed argv -- each swallowed by the caller --
 all failed the test at teardown. In the joined-up runs no real subprocess ran at
 all (every tool call went to the stubs).
+
+C1.2 + C1.3 landed (fix/e061-c1-2-3-config-direct-handoffs): A1, A2, A5 and the
+two joined-up tests pass and their markers are gone; Harness._run_protocol now
+mirrors the tool's new behaviour (validation protocol opened first; without one,
+the diagnostics block with an empty rule set).
 """
 from __future__ import annotations
 
@@ -692,16 +697,27 @@ class Harness:
         return {**base, **self.profiles.get(vid, {})}
 
     def _run_protocol(self, argv):
-        """tools/run_protocol.py's order of work: every window's backtest files,
-        then trade_diagnostics.json, THEN --validation-protocol is opened
-        (run_protocol.py:2289-2291), then protocol_summary.json."""
-        import run_protocol as rp  # the tool's own config digest
+        """tools/run_protocol.py's order of work (E-061 C1.3): --validation-protocol,
+        when passed, is opened FIRST (_load_validation_protocol: a missing file
+        exits 1 before any window runs); then every window's backtest files, then
+        trade_diagnostics.json, then protocol_summary.json. Without the flag the
+        tool writes the diagnostics block with an empty rule set and no verdict
+        (diagnostics_only_hypothesis_verdict, G14) -- the stub calls that very
+        function, so its output is the real tool's shape."""
+        import run_protocol as rp  # the tool's own config digest and diagnostics
         config_path, protocol_path = Path(argv[2]), Path(argv[3])
         out = Path(argv[argv.index("--out-dir") + 1])
         vid = out.name
         run_id = out.parent.parent.name
         prof = self.profile(vid)
         proto = json.loads(protocol_path.read_text(encoding="utf-8"))
+        vp = None
+        if "--validation-protocol" in argv:
+            vp = Path(argv[argv.index("--validation-protocol") + 1])
+            if not vp.exists():  # the real tool: refused before any window ran
+                return self._done(1, stderr=f"ERROR: --validation-protocol '{vp}' cannot be "
+                                            f"read (FileNotFoundError) -- refusing to run any "
+                                            f"backtest.")
         results, trades = [], []
         seed = int(nov.forecast_hash_of_config([run_id, vid])[:8], 16)
         for k, symbol in enumerate(proto["symbols"]):
@@ -727,17 +743,16 @@ class Harness:
                "zero_trade_slot_pct": 0.0}
         (out / "trade_diagnostics.json").write_text(
             json.dumps({"trades": trades, "summary": tds}, indent=2), encoding="utf-8")
-        hypothesis_verdict = None
-        if "--validation-protocol" in argv:
-            vp = Path(argv[argv.index("--validation-protocol") + 1])
-            if not vp.exists():  # the real tool: open() raises, after all windows ran
-                return self._done(1, stderr=f"FileNotFoundError: [Errno 2] No such file or "
-                                            f"directory: '{vp}'")
-            hypothesis_verdict = {"verdict": "refine", "verdict_reason": "stub decision rules",
-                                  "diagnostics": {}}
         per_symbol = {s: {"median_sharpe": prof["sharpe"], "max_abs_drawdown_pct": 3.0,
                           "min_trade_count": prof["trades"], "zero_trade_slot_pct": 0.0}
                       for s in proto["symbols"]}
+        if vp is not None:
+            hypothesis_verdict = {"verdict": "refine", "verdict_reason": "stub decision rules",
+                                  "diagnostics": {}}
+        else:
+            hypothesis_verdict = rp.diagnostics_only_hypothesis_verdict(
+                per_symbol, results, tds, runs_root=str(out / "results"),
+                timeframe=proto["timeframe"])
         summary = {
             "protocol_run_id": f"{run_id}_{vid}",
             "config_sha256": rp._config_sha(config_path)[0],
@@ -853,13 +868,6 @@ def _pin_joined(h: Harness, exc, run_id: str) -> None:
 # ---------------------------------------------------------------------------
 
 @pytest.mark.slow
-@pytest.mark.xfail(strict=True, raises=PinnedFailure, reason=(
-    "E-061 C1.2 (A1) then C1.3 (A2). Pinned on master: run_loop loads "
-    "handoffs/validation_to_backtest_specification.yaml at backtest_specification with "
-    "missing ['artifacts/validation_protocol.yaml'] -> FileNotFoundError: Missing files: "
-    "[...runs/run_001/artifacts/validation_protocol.yaml] escapes process_once() after "
-    "1a/1b/2 were spent. With A1 fixed: every variant's run_protocol.py gets "
-    "--validation-protocol naming that missing file (A2)."))
 def test_end_to_end_two_runs_with_the_real_run_setup(harness):
     h = harness.build()
     h.register_brief()
@@ -980,11 +988,6 @@ def _seed_trial_ledger(n: int = 30) -> None:
 
 
 @pytest.mark.slow
-@pytest.mark.xfail(strict=True, raises=PinnedFailure, reason=(
-    "E-061 C1.2 (A1) then C1.3 (A2): the run never reaches its backtests. Pinned on "
-    "master: handoffs/validation_to_backtest_specification.yaml loaded at "
-    "backtest_specification with missing ['artifacts/validation_protocol.yaml'] -> "
-    "FileNotFoundError escapes process_once() at 5a."))
 def test_profit_bars_stop_then_holdout_continue_then_resume(harness):
     h = harness.build()
     _seed_trial_ledger()
@@ -1046,17 +1049,6 @@ class _ReachedProtocolExecution(RuntimeError):
 
 
 @pytest.mark.slow
-@pytest.mark.xfail(strict=True, raises=PinnedFailure, reason=(
-    "E-061 C1.2 (A1). Pinned on master (spy on the handoff run_loop actually loads): "
-    "backtest_specification loads handoffs/validation_to_backtest_specification.yaml with "
-    "missing ['artifacts/validation_protocol.yaml'] (template line 13; nothing writes it "
-    "under config-direct) and FileNotFoundError escapes process_once(). Behind it: "
-    "backtest_spec_to_data_availability_gate.yaml is never created on the config-direct "
-    "branch, backtest_spec_to_protocol_execution.yaml:13 requires validation_protocol.yaml, "
-    "and -- found while proving this test, not in A3 -- the gate handoff "
-    "_create_remaining_handoffs writes lists the deliverable "
-    "artifacts/data_availability_gate.yaml, which the variant loop never writes "
-    "('Missing files: [...artifacts/data_availability_gate.yaml]')."))
 def test_a1_config_direct_handoffs_reach_protocol_execution(harness, monkeypatch):
     """Stops the run at the protocol_execution worker (so this test is independent of
     A2): every config-direct stage from 5a to protocol_execution must load a handoff
@@ -1138,18 +1130,11 @@ def _stage_at_protocol_execution(h: Harness, run_id: str = "run_001",
     return run_dir
 
 
-@pytest.mark.xfail(strict=True, raises=PinnedFailure, reason=(
-    "E-061 C1.3 (A2). Pinned on master: run_tool_worker passes '--validation-protocol "
-    "runs/run_001/artifacts/validation_protocol.yaml' (a file config-direct never writes) "
-    "to every variant's run_protocol.py; the tool opens it only after the windows ran, so "
-    "every variant exits 1 -> 3 backtest_failed trial rows and RuntimeError: "
-    "run_tool_worker(protocol_execution): all 3 validated variant(s) failed."))
 def test_a2_protocol_execution_never_passes_a_missing_validation_protocol(harness):
-    """The run_protocol.py stub reproduces the tool as it is today (it opens
-    --validation-protocol after the windows ran). If C1.3 is fixed the other way the
-    plan allows -- teaching run_protocol.py that the file is optional -- update
-    Harness._run_protocol to the new behaviour in the same PR, and drop the argv
-    pin below for the one it replaces."""
+    """E-061 C1.3 took both halves: run_tool_worker passes --validation-protocol only
+    when the file exists (the argv pin below), and run_protocol.py -- mirrored by
+    Harness._run_protocol -- opens a passed file before any window runs and, with no
+    file, writes the diagnostics block with an empty rule set (G14)."""
     h = harness.build()
     run_dir = _stage_at_protocol_execution(h)
     err = None
@@ -1311,13 +1296,9 @@ def test_a7_era_id_handles_the_open_ended_last_era():
 # ---------------------------------------------------------------------------
 
 @pytest.mark.slow
-@pytest.mark.xfail(strict=True, raises=PinnedFailure, reason=(
-    "E-061 C1.2 (A1): the data-gate route is never reached. Pinned on master: "
-    "handoffs/validation_to_backtest_specification.yaml loaded at backtest_specification "
-    "with missing ['artifacts/validation_protocol.yaml'] -> FileNotFoundError escapes "
-    "process_once() at 5a. PINS finding A5's behaviour once reached; C2.5 changes that "
-    "behaviour on purpose and must update this test."))
 def test_a5_one_variant_failing_validate_config_pins_the_pause(harness):
+    """PINS finding A5's behaviour (reachable since C1.2): C2.5 changes that
+    behaviour on purpose and must update this test."""
     h = harness.build()
     h.bad_variant = "design"
     h.register_brief()

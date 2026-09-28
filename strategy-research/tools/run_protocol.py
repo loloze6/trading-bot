@@ -1791,6 +1791,55 @@ def evaluate_against_decision_rules(
     }
 
 
+# E-061 C1.3 (G14, C2_S1_FINDINGS.md Decision): the reason written when no
+# --validation-protocol is given. Config-direct authoring never writes
+# validation_protocol.yaml, so this is its normal case, not a degraded one.
+DIAGNOSTICS_ONLY_VERDICT_REASON = (
+    "no --validation-protocol: diagnostics only (empty rule set, no verdict)")
+
+
+def diagnostics_only_hypothesis_verdict(
+    per_symbol_summary: dict,
+    results: list,
+    trade_diagnostics_summary: dict | None = None,
+    runs_root=None,
+    timeframe: str = "1h",
+) -> dict:
+    """E-061 C1.3 (G14): the hypothesis_verdict block when the run has no
+    validation protocol. The diagnostics block (cost drag, gross PnL,
+    forecast/return correlation, below_floor_pct, per-trade expectancy, ...)
+    is computed exactly as evaluate_against_decision_rules computes it, with
+    an EMPTY rule set, so its readers (build_reports' overall slices, the
+    trial row's expectancy / statistic_valid, the profitability reader) keep
+    their inputs. With no rules there is nothing to judge: `verdict` is None
+    (never the 'refine' an empty rule set falls through to) and
+    `criteria_results` is empty. A run WITH a validation protocol never
+    reaches this function (byte-identical to before)."""
+    hv = evaluate_against_decision_rules(
+        per_symbol_summary, results, {}, trade_diagnostics_summary,
+        runs_root=runs_root, timeframe=timeframe,
+    )
+    hv['verdict'] = None
+    hv['verdict_reason'] = DIAGNOSTICS_ONLY_VERDICT_REASON
+    return hv
+
+
+def _load_validation_protocol(path) -> dict:
+    """E-061 C1.3: open and parse --validation-protocol BEFORE any backtest
+    runs, so a missing or unreadable file fails the tool without spending
+    data (it used to be opened only after every window had run). Exits 1
+    with the reason on stderr, like the tool's other argument errors."""
+    import yaml
+    try:
+        with open(path, encoding="utf-8") as f:
+            return yaml.safe_load(f)
+    except (OSError, yaml.YAMLError) as exc:
+        print(f"ERROR: --validation-protocol {path!r} cannot be read ({type(exc).__name__}: "
+              f"{exc}) -- refusing to run any backtest. Pass an existing file, or leave the "
+              "flag out to compute the diagnostics with an empty rule set.", file=sys.stderr)
+        sys.exit(1)
+
+
 def _cross_check_prescreen_vs_backtest(out_dir: Path, results: list, extended: dict | None = None) -> dict | None:
     """
     2026-07-09: institutionalized after the P4_ts_trend incident where prescreen's
@@ -1942,6 +1991,12 @@ def main():
         print("ERROR: --holdout requires --i-understand (and vice versa). Pass both or neither.",
               file=sys.stderr)
         sys.exit(1)
+
+    # E-061 C1.3: read the validation protocol now, before any data is spent.
+    # Holdout mode never reads it (unchanged).
+    validation_protocol = None
+    if args.validation_protocol and not args.holdout:
+        validation_protocol = _load_validation_protocol(args.validation_protocol)
 
     if args.commission_bps is not None:
         print(f"[cost-override] --commission-bps={args.commission_bps} -> "
@@ -2285,17 +2340,21 @@ def main():
         per_symbol, results, _runs_root, protocol_timeframe)
     cross_check = _cross_check_prescreen_vs_backtest(out_dir, results, extended_for_cross_check)
 
-    hypothesis_verdict = None
     if args.validation_protocol:
-        import yaml
-        with open(args.validation_protocol, encoding="utf-8") as f:
-            vp = yaml.safe_load(f)
+        # Parsed before the windows ran (_load_validation_protocol, E-061 C1.3).
         hypothesis_verdict = evaluate_against_decision_rules(
-            per_symbol, results, vp, trade_diagnostics_summary or None,
+            per_symbol, results, validation_protocol, trade_diagnostics_summary or None,
             runs_root=_runs_root, timeframe=protocol_timeframe,
         )
-        print(f"Hypothesis verdict : {hypothesis_verdict['verdict']}")
-        print(f"Reason             : {hypothesis_verdict['verdict_reason']}")
+    else:
+        # E-061 C1.3 (G14): no validation protocol -> the diagnostics block
+        # with an empty rule set, no verdict. Was `hypothesis_verdict: null`.
+        hypothesis_verdict = diagnostics_only_hypothesis_verdict(
+            per_symbol, results, trade_diagnostics_summary or None,
+            runs_root=_runs_root, timeframe=protocol_timeframe,
+        )
+    print(f"Hypothesis verdict : {hypothesis_verdict['verdict']}")
+    print(f"Reason             : {hypothesis_verdict['verdict_reason']}")
 
     summary = {
         "protocol_run_id":        run_id,

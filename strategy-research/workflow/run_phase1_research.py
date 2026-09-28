@@ -1299,6 +1299,19 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
         with open(debug_path, "w", encoding="utf-8") as f:
             f.write(agent_output)
 
+def _validation_protocol_args(validation_path: Path) -> list:
+    """E-061 C1.3 (review A2): the `--validation-protocol <path>` pair for a
+    run_protocol.py call. Config-direct authoring never writes
+    validation_protocol.yaml, so under it the pair is passed only when the
+    file exists; without one, run_protocol.py computes the diagnostics block
+    with an empty rule set (G14). Passing the missing path spent every
+    window's data and then failed the variant. Flag off: always passed,
+    exactly as before (the legacy flow's handoff already requires the file)."""
+    if validation_path.exists() or not _config_direct_authoring_enabled():
+        return ["--validation-protocol", str(validation_path)]
+    return []
+
+
 async def run_tool_worker(stage_name: str, run_id: str):
     """Executes a deterministic tool stage. No LLM call. No token cost."""
     RUN_DIR = ROOT / "runs" / run_id
@@ -1579,7 +1592,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
             cmd = [
                 str(TBOT_PYTHON), str(ROOT / "tools" / "run_protocol.py"),
                 str(variant_config_path), str(protocol_path),
-                "--validation-protocol", str(validation_path),
+                *_validation_protocol_args(validation_path),
                 "--out-dir", str(variant_run_dir),
             ]
             print(f"--- protocol_execution: variant '{variant_id}' ---")
@@ -1799,7 +1812,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
         cmd = [
             str(TBOT_PYTHON), str(ROOT / "tools" / "run_protocol.py"),
             str(config_path), str(protocol_path),
-            "--validation-protocol", str(validation_path),
+            *_validation_protocol_args(validation_path),
             "--out-dir", str(RUN_DIR),
         ]
         result = subprocess.run(cmd, capture_output=True, text=True)
@@ -7279,6 +7292,112 @@ def _create_remaining_handoffs(run_id: str, run_dir: Path):
         })
 
 
+# ---------------------------------------------------------------------------
+# E-061 C1.2 (review A1): the handoff contract under config-direct authoring.
+# The legacy handoffs of 5a and protocol_execution (templates copied by
+# setup_run) require artifacts/validation_protocol.yaml, which only the
+# validation stage writes -- and config-direct never reaches that stage; the
+# data-gate handoff was written only by _create_remaining_handoffs, on the
+# legacy 5a branch. So under orchestrator.config_direct_authoring.enabled
+# these three stages load their OWN handoff, written by code at stage entry
+# (like the specialist_readers / regroup_record handoffs), naming the inputs
+# the config-direct tool branches of run_tool_worker actually read and the
+# files they always write. Flag off: never consulted, never written -- the
+# legacy handoffs are loaded exactly as before.
+# ---------------------------------------------------------------------------
+_CONFIG_DIRECT_HANDOFFS = {
+    "backtest_specification": "config_direct_backtest_specification.yaml",
+    "data_availability_gate": "config_direct_data_availability_gate.yaml",
+    "protocol_execution": "config_direct_protocol_execution.yaml",
+}
+# The per-variant files the variant loop writes are listed for the reader
+# only, not checked: a variant whose tool call crashed is marked not_tested
+# and the loop continues (its isolation design), so a checked per-variant
+# deliverable would turn one variant's crash into a stage failure.
+_VARIANT_INDEX_REL = "variants/index.yaml"
+
+
+def _config_direct_handoff_doc(stage_name: str, run_id: str, variant_loop: bool) -> dict:
+    """The config-direct handoff of one of _CONFIG_DIRECT_HANDOFFS' stages."""
+    index_input = {"path": f"artifacts/{_VARIANT_INDEX_REL}",
+                   "reason": "the variants 5a validated; this stage runs once per validated variant"}
+    candidate_input = {"path": "artifacts/candidate_strategy_config.json",
+                       "reason": "the base variant's config (written by 5a; no variant loop)"}
+    doc = {"handoff_version": 1, "run_id": run_id, "assigned_engine": "tool",
+           "config_direct_authoring": True}
+    if stage_name == "backtest_specification":
+        doc.update({
+            "from_stage": "innovation_expansion", "to_stage": "backtest_specification",
+            "objective": (
+                "E-056 config-direct authoring (tool, no LLM): apply each variant's patch in "
+                "artifacts/variant_patches.yaml to the base config in artifacts/backtest_spec.yaml, "
+                "validate every variant (validate_config.py) and write "
+                "artifacts/variants/<variant_id>/strategy_config.json plus "
+                "artifacts/variants/index.yaml."),
+            "required_inputs": [
+                {"path": "artifacts/backtest_spec.yaml",
+                 "reason": "strategy_config_authoring's base config (status spec_ready)"},
+                {"path": "artifacts/variant_patches.yaml",
+                 "reason": "innovation_expansion's variants: patches against the base config"},
+            ],
+            "deliverables": [_VARIANT_INDEX_REL],
+        })
+    elif stage_name == "data_availability_gate":
+        doc.update({
+            "from_stage": "backtest_specification", "to_stage": "data_availability_gate",
+            "objective": (
+                "E-054 Layer 2 under config-direct authoring: check that the data each "
+                "validated variant needs can be assembled for the resolved protocol's windows, "
+                "before any backtest. Outcome per variant: validate / refine / decline."),
+        })
+        if variant_loop:
+            doc.update({
+                "required_inputs": [index_input],
+                "deliverables": [_VARIANT_INDEX_REL],
+                "per_variant_outputs": ["variants/<variant_id>/data_availability_gate.yaml"],
+            })
+        else:
+            doc.update({"required_inputs": [candidate_input],
+                        "deliverables": ["data_availability_gate.yaml"]})
+    elif stage_name == "protocol_execution":
+        doc.update({
+            "from_stage": "backtest_specification", "to_stage": "protocol_execution",
+            "objective": (
+                "Run the full walk-forward protocol against each validated variant's config. "
+                "Config-direct authoring writes no validation_protocol.yaml: run_protocol.py "
+                "then computes the diagnostics block with an empty rule set (no verdict)."),
+            "required_inputs": [index_input if variant_loop else candidate_input],
+            "deliverables": ["protocol_result.yaml"],
+        })
+        if variant_loop:
+            doc["per_variant_outputs"] = ["variants/<variant_id>/protocol_result.yaml"]
+    else:
+        raise ValueError(f"no config-direct handoff for stage {stage_name!r}")
+    return doc
+
+
+def _ensure_config_direct_handoff(stage_name: str, run_id: str, run_dir: Path) -> Path:
+    """Write the config-direct handoff of `stage_name` once, at stage entry
+    (flag-off runs never get these files), and return its path."""
+    handoff_path = run_dir / "handoffs" / _CONFIG_DIRECT_HANDOFFS[stage_name]
+    if not handoff_path.exists():
+        save_yaml(handoff_path,
+                  _config_direct_handoff_doc(stage_name, run_id, _variant_loop_enabled()))
+    return handoff_path
+
+
+def _apply_config_direct_deliverables(stage_name: str, handoff: dict) -> None:
+    """E-061 C1.2: under config-direct authoring, step 2 (innovation_expansion)
+    must also write artifacts/variant_patches.yaml -- 5a reads nothing else --
+    so it is a checked deliverable of the stage, not left to fail at 5a. Flag
+    off: no-op (the handoff dict is never mutated)."""
+    if stage_name != "innovation_expansion" or not _config_direct_authoring_enabled():
+        return
+    deliverables = handoff.setdefault("deliverables", [])
+    if "variant_patches.yaml" not in deliverables:
+        deliverables.append("variant_patches.yaml")
+
+
 def _ensure_regime_detector_report(run_id: str, run_dir: Path) -> dict | None:
     """
     Improvement 02: ensure regime_detector_report.yaml exists and is < 30 days old.
@@ -12081,6 +12200,10 @@ def run_loop(run_id: str):
         config = STAGE_CONFIGS[current_stage]
         #Each stage has Handodff YAML (inputs) / required output and default next stage
         handoff_path = HANDOFFS / config["handoff"]
+        # E-061 C1.2: under config-direct authoring 5a / the data gate /
+        # protocol_execution load their own handoff (written here, at entry).
+        if current_stage in _CONFIG_DIRECT_HANDOFFS and _config_direct_authoring_enabled():
+            handoff_path = _ensure_config_direct_handoff(current_stage, run_id, RUN_DIR)
         if current_stage == "specialist_readers":
             # E-046a Slice 5b-ii-B: created lazily at stage entry, so flag-off
             # runs never get this file.
@@ -12185,6 +12308,7 @@ def run_loop(run_id: str):
         handoff_data = load_yaml(handoff_path)
         required_input_paths = [RUN_DIR / x["path"] for x in handoff_data.get("required_inputs", [])]
         ensure_files(required_input_paths)
+        _apply_config_direct_deliverables(current_stage, handoff_data)  # E-061 C1.2; flag off: no-op
 
         # 2. Update state to running
         # E-030 S1.5 Piece 2: stage_attempts[current_stage] counts literal entries of

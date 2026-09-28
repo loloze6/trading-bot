@@ -36,6 +36,7 @@ Sandboxing: relies on tests/conftest.py's autouse _sandbox_by_default fixture
 precedent as test_e033_slice4a_variant_loop.py / test_k3_protocol_pinning.py.
 """
 import asyncio
+import shutil
 import sys
 from pathlib import Path
 
@@ -410,6 +411,16 @@ def _write_conformance_fixture(run_dir: Path, run_id: str, violating_variant: st
         vid: {"status": "validated", "config_path": f"artifacts/variants/{vid}/strategy_config.json"}
         for vid in ("base", "design_v2", "asset_v2")
     }})
+    _write_bridge_result(run_dir)
+
+
+def _write_bridge_result(run_dir: Path) -> None:
+    """E-061 C1.2: under config-direct protocol_execution's handoff checks
+    artifacts/protocol_result.yaml, the Decision-B bridge copy of the base
+    variant's result the real variant loop always writes when any variant
+    succeeds. The stubbed stage writes nothing, so seed it here."""
+    shutil.copyfile(run_dir / "artifacts" / "variants" / "base" / "protocol_result.yaml",
+                    run_dir / "artifacts" / "protocol_result.yaml")
 
 
 def test_run_loop_protocol_execution_conformance_invalidates_only_violating_variant(monkeypatch):
@@ -462,6 +473,7 @@ def test_run_loop_protocol_execution_conformance_all_variants_violate_reports_al
         vid: {"status": "validated", "config_path": f"artifacts/variants/{vid}/strategy_config.json"}
         for vid in ("base", "design_v2", "asset_v2")
     }})
+    _write_bridge_result(run_dir)
     campaign = rpr.load_campaign_state()
     campaign["trial_sharpes"] = [
         {"trial_id": f"run_981:{vid}", "source": "backtest", "sharpe": 0.1}
