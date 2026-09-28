@@ -8,16 +8,18 @@ C1.2 -- the handoff contract under config-direct authoring:
   * 5a / data gate / protocol_execution / verdict_interpreter load their own
     code-written handoff, rebuilt at every stage entry from the current flags,
     whose required inputs never name validation_protocol.yaml;
-  * checked outputs must be written by THIS attempt: step 2's
-    variant_patches.yaml (a deliverable in memory only), 5a's
-    variants/index.yaml, and the variant-loop gate's index plus the gate file
-    of every variant still validated after it;
+  * a stage's outputs are cleared at each attempt's start (moved to
+    .previous_attempts/) and must exist after it: step 2's variant_patches.yaml
+    (a deliverable in memory only), 5a's variants/index.yaml, the variant-loop
+    gate's file for every variant still validated after it;
   * hypothesis_to_innovation_expansion.yaml has one required_inputs key.
 C1.3 -- the validation protocol is optional under config-direct:
   * run_tool_worker passes --validation-protocol only when the file exists,
     else --diagnostics-only (config-direct only);
-  * run_protocol.py checks a passed file before any backtest (exit 3 + a "no
-    data touched" token, which the orchestrator records with no trial row);
+  * run_protocol.py dry-runs the rule evaluator on a passed file before any
+    backtest and refuses exactly when it would crash (exit 3, the "no data
+    touched" token opening stderr); the orchestrator records such a refusal
+    with no trial row only when no window result was written, per variant;
     --diagnostics-only writes the diagnostics block with no rule set; with
     neither flag hypothesis_verdict stays null (composite_cache, manual calls).
 Flag off: the legacy handoffs are loaded, nothing new is written, the argv
@@ -29,9 +31,7 @@ in a per-test tmp_path). No real subprocess, no real backtest, no LLM.
 """
 import asyncio
 import json
-import os
 import sys
-import time
 from pathlib import Path
 
 import pytest
@@ -47,6 +47,7 @@ import run_phase1_research as rpr  # noqa: E402
 import run_protocol as rp  # noqa: E402
 import setup_run as sr  # noqa: E402
 import composite_cache as cc  # noqa: E402
+import protocol_refusal  # noqa: E402
 
 from test_k3_protocol_pinning import _minimal_run, _write_protocol  # noqa: E402
 
@@ -67,12 +68,6 @@ def _set_flags(**flags) -> None:
 
 
 _CD_VL = dict(config_direct_authoring=True, variant_loop=True)
-
-
-def _age(path: Path, seconds: float = 3600) -> None:
-    """Make `path` look written by an earlier attempt."""
-    t = time.time() - seconds
-    os.utime(path, (t, t))
 
 
 # ---------------------------------------------------------------------------
@@ -122,13 +117,19 @@ def test_config_direct_verdict_interpreter_handoff_is_the_template_minus_the_pro
     assert doc["deliverables"] == template["deliverables"]
 
 
-def test_config_direct_stage_handoff_path():
-    handoffs = Path("h")
-    assert rpr._config_direct_stage_handoff_path("verdict_interpreter", handoffs) is None
+def test_config_direct_handoff_path_is_none_off_the_flag_or_the_stages():
+    run_dir = _minimal_run(rpr.ROOT, "run_001")
+    (run_dir / "handoffs").mkdir()
+    assert rpr._config_direct_handoff_path("verdict_interpreter", "run_001", run_dir,
+                                           rebuild=True) is None  # flag off
     _set_flags(config_direct_authoring=True)
-    assert rpr._config_direct_stage_handoff_path("verdict_interpreter", handoffs) == \
-        handoffs / "config_direct_verdict_interpreter.yaml"
-    assert rpr._config_direct_stage_handoff_path("validation", handoffs) is None
+    assert rpr._config_direct_handoff_path("validation", "run_001", run_dir,
+                                           rebuild=True) is None
+    assert not list((run_dir / "handoffs").iterdir())
+    path = rpr._config_direct_handoff_path("verdict_interpreter", "run_001", run_dir,
+                                           rebuild=False)  # created when missing
+    assert path == run_dir / "handoffs" / "config_direct_verdict_interpreter.yaml"
+    assert path.exists()
 
 
 @pytest.mark.parametrize("variant_loop,inputs,deliverables", [
@@ -159,19 +160,25 @@ def test_config_direct_handoff_unknown_stage_raises():
         rpr._config_direct_handoff_doc("validation", "run_001", True)
 
 
-def test_ensure_config_direct_handoff_rebuilds_from_the_current_flags():
-    """Review fix 6: rewritten at every entry -- never a stale shape."""
+def test_config_direct_handoff_path_rebuilds_from_the_current_flags():
+    """Review fix 6: run_loop's rebuild=True rewrites it at every entry; the
+    rebuild=False read (async_invoke_agent) never overwrites run_loop's file."""
     _set_flags(**_CD_VL)
     run_dir = _minimal_run(rpr.ROOT, "run_001")
     (run_dir / "handoffs").mkdir()
-    path = rpr._ensure_config_direct_handoff("protocol_execution", "run_001", run_dir)
+    path = rpr._config_direct_handoff_path("protocol_execution", "run_001", run_dir,
+                                           rebuild=True)
     assert path == run_dir / "handoffs" / "config_direct_protocol_execution.yaml"
     assert rpr.load_yaml(path) == rpr._config_direct_handoff_doc("protocol_execution",
                                                                   "run_001", True)
     _set_flags(config_direct_authoring=True)  # variant loop switched off
-    rpr._ensure_config_direct_handoff("protocol_execution", "run_001", run_dir)
+    rpr._config_direct_handoff_path("protocol_execution", "run_001", run_dir, rebuild=True)
     assert rpr.load_yaml(path) == rpr._config_direct_handoff_doc("protocol_execution",
                                                                   "run_001", False)
+    rpr.save_yaml(path, {"injected": True})
+    assert rpr._config_direct_handoff_path("protocol_execution", "run_001", run_dir,
+                                           rebuild=False) == path
+    assert rpr.load_yaml(path) == {"injected": True}
 
 
 def test_config_direct_step2_deliverables():
@@ -333,16 +340,33 @@ def test_step2_without_variant_patches_fails_the_stage(monkeypatch):
     assert st["status"] == "failed" and "variant_patches.yaml" in st["last_error"]
 
 
-def test_step2_stale_variant_patches_fails_the_stage(monkeypatch):
-    """A previous attempt's variant_patches.yaml never satisfies the check."""
+def test_step2_previous_variant_patches_is_cleared_and_fails_the_stage(monkeypatch):
+    """Review round 3 (fixes 4/5): a previous attempt's variant_patches.yaml is
+    moved aside at the attempt's start, so it can never satisfy the check."""
     _set_flags(config_direct_authoring=True)
     run_dir = _step2_run()
-    stale = run_dir / "artifacts" / "variant_patches.yaml"
-    stale.write_text("variants: []\n", encoding="utf-8")
-    _age(stale)
+    old = run_dir / "artifacts" / "variant_patches.yaml"
+    old.write_text("variants: []\n", encoding="utf-8")
     _drive(monkeypatch, "run_001", _writes(run_dir / "artifacts", _TWO))
-    err = _last_error(run_dir)
-    assert "not written by this attempt" in err and "variant_patches.yaml" in err
+    assert "variant_patches.yaml" in _last_error(run_dir)
+    assert not old.exists()
+    kept = list((run_dir / ".previous_attempts").rglob("variant_patches.yaml"))
+    assert [k.read_text(encoding="utf-8") for k in kept] == ["variants: []\n"]
+
+
+def test_step2_composition_mode_in_process_write_passes(monkeypatch):
+    """Composition mode writes variant_patches.yaml in-process (code, no LLM):
+    cleared at entry, written by the attempt, the check passes."""
+    _set_flags(config_direct_authoring=True)
+    run_dir = _step2_run()
+    arts = run_dir / "artifacts"
+    (arts / "variant_patches.yaml").write_text("variants: [previous]\n", encoding="utf-8")
+    monkeypatch.setattr(rpr, "_composition_mode", lambda rd: True)
+    monkeypatch.setattr(rpr, "_composition_variant_patches", lambda rd: rpr.save_yaml(
+        Path(rd) / "artifacts" / "variant_patches.yaml", {"variants": ["this attempt"]}))
+    _drive(monkeypatch, "run_001")  # step 2 is code; the next (tool) stage stops
+    assert "stopped at backtest_specification" in _last_error(run_dir)
+    assert rpr.load_yaml(arts / "variant_patches.yaml") == {"variants": ["this attempt"]}
 
 
 def test_step2_deliverable_is_never_persisted_and_a_flag_off_resume_ignores_it(monkeypatch):
@@ -381,22 +405,27 @@ def _gate_or_5a_run(stage: str) -> Path:
     rpr.save_yaml(arts / "variants" / "index.yaml", {"variants": {
         "base": {"status": "validated", "config_path": "x"},
         "design": {"status": "validated", "config_path": "y"}}})
-    _age(arts / "variants" / "index.yaml")
+    for vid in ("base", "design"):  # a previous attempt's gate files
+        rpr.save_yaml(arts / "variants" / vid / "data_availability_gate.yaml",
+                      {"outcome": "validate", "attempt": "previous"})
     return run_dir
 
 
-def test_5a_stale_index_fails(monkeypatch):
+def test_5a_previous_index_is_cleared_and_fails(monkeypatch):
     run_dir = _gate_or_5a_run("backtest_specification")
     _drive(monkeypatch, "run_001", lambda s: None if s == "backtest_specification" else _Stop)
-    err = _last_error(run_dir)
-    assert "not written by this attempt" in err and "index.yaml" in err
+    assert "index.yaml" in _last_error(run_dir)
+    assert not (run_dir / "artifacts" / "variants" / "index.yaml").exists()
+    assert list((run_dir / ".previous_attempts").rglob("index.yaml"))
 
 
 def test_gate_that_writes_nothing_fails(monkeypatch):
+    """The previous attempt's gate files are cleared; a gate that writes nothing
+    leaves every still-validated variant without one."""
     run_dir = _gate_or_5a_run("data_availability_gate")
     _drive(monkeypatch, "run_001", lambda s: None if s == "data_availability_gate" else _Stop)
     err = _last_error(run_dir)
-    assert "not written by this attempt" in err and "index.yaml" in err
+    assert "did not write" in err and "base" in err and "design" in err
 
 
 def test_gate_missing_a_validated_variants_file_fails(monkeypatch):
@@ -406,14 +435,13 @@ def test_gate_missing_a_validated_variants_file_fails(monkeypatch):
     def _body(stage):
         if stage != "data_availability_gate":
             return _Stop
-        rpr.save_yaml(arts / "variants" / "index.yaml", rpr.load_yaml(
-            arts / "variants" / "index.yaml"))  # rewritten, both still validated
         rpr.save_yaml(arts / "variants" / "base" / "data_availability_gate.yaml",
-                      {"outcome": "validate"})
+                      {"outcome": "validate"})  # design's file is not written
 
     _drive(monkeypatch, "run_001", _body)
     err = _last_error(run_dir)
-    assert "missing" in err and "design" in err and "data_availability_gate.yaml" in err
+    assert "did not write" in err
+    assert "design" in err and "\\base\\" not in err and "/base/" not in err
 
 
 def test_gate_checks_exactly_the_variants_still_validated(monkeypatch):
@@ -431,16 +459,19 @@ def test_gate_checks_exactly_the_variants_still_validated(monkeypatch):
                       {"outcome": "validate"})
 
     _drive(monkeypatch, "run_001", _body)
-    assert "not written by this attempt" not in _last_error(run_dir)
+    assert "did not write" not in _last_error(run_dir)
 
 
 # ---------------------------------------------------------------------------
 # C1.3 -- run_tool_worker
 # ---------------------------------------------------------------------------
 
-def test_no_data_constants_match_run_protocol():
-    assert rpr._RUN_PROTOCOL_NO_DATA_EXIT == rp.EXIT_NO_DATA_TOUCHED
-    assert rpr._RUN_PROTOCOL_NO_DATA_TOKEN == rp.NO_DATA_TOUCHED_TOKEN
+def test_one_definition_of_the_refusal_signal():
+    """Review round 3 fix 9: both sides use tools/protocol_refusal.py."""
+    assert rp.EXIT_NO_DATA_TOUCHED is protocol_refusal.EXIT_NO_DATA_TOUCHED
+    assert rp.NO_DATA_TOUCHED_TOKEN is protocol_refusal.NO_DATA_TOUCHED_TOKEN
+    assert rpr._protocol_refusal is protocol_refusal
+    assert not hasattr(rpr, "_RUN_PROTOCOL_NO_DATA_EXIT")
 
 
 def test_validation_protocol_args(tmp_path):
@@ -537,73 +568,137 @@ def test_config_direct_without_variant_loop_argv(monkeypatch):
     assert "--validation-protocol" not in argv and "--diagnostics-only" in argv
 
 
-_REFUSED = _Done(3, stderr=f"{rp.NO_DATA_TOUCHED_TOKEN}: bad validation protocol")
+_TOKEN_LINE = f"{protocol_refusal.NO_DATA_TOUCHED_TOKEN}: bad validation protocol\n"
+_REFUSED = _Done(protocol_refusal.EXIT_NO_DATA_TOUCHED, stderr=_TOKEN_LINE)
 
 
-@pytest.mark.parametrize("variant_loop", [True, False])
-def test_refusal_before_any_backtest_records_no_trial(monkeypatch, variant_loop):
-    """Review fix 4: exit 3 + the token -> engineering failure, no trial row."""
-    if variant_loop:
-        _set_flags(**_CD_VL)
-        run_dir = _variant_loop_run("run_913")
-    else:
-        run_dir = _pinned_run("run_913")
-        (run_dir / "artifacts" / "candidate_strategy_config.json").write_text(
-            "{}", encoding="utf-8")
+def _legacy_run(run_id: str) -> Path:
+    run_dir = _pinned_run(run_id)
+    (run_dir / "artifacts" / "candidate_strategy_config.json").write_text("{}", encoding="utf-8")
+    return run_dir
+
+
+def test_refusal_before_any_backtest_legacy_branch_records_no_trial(monkeypatch):
+    """Exit 3, the token opening stderr, no window written -> engineering failure."""
+    _legacy_run("run_913")
     monkeypatch.setattr(rpr.subprocess, "run", _fake_protocol_run([], _REFUSED))
     with pytest.raises(RuntimeError, match="no data touched"):
         asyncio.run(rpr.run_tool_worker("protocol_execution", "run_913"))
     assert rpr.load_campaign_state().get("trial_sharpes", []) == []
 
 
+def _abc_run(run_id: str) -> Path:
+    run_dir = _pinned_run(run_id)
+    arts = run_dir / "artifacts"
+    index = {}
+    for vid in ("a", "b", "c"):
+        (arts / "variants" / vid).mkdir(parents=True)
+        (arts / "variants" / vid / "strategy_config.json").write_text("{}", encoding="utf-8")
+        index[vid] = {"status": "validated",
+                      "config_path": f"artifacts/variants/{vid}/strategy_config.json"}
+    rpr.save_yaml(arts / "variants" / "index.yaml", {"variants": index})
+    return run_dir
+
+
+def test_variant_loop_one_refused_variant_the_others_run(monkeypatch):
+    """Review round 3 fix 6: variant a is refused before any backtest -> not_tested,
+    no trial row; b and c run and record their trials; the post-loop artifacts
+    (the protocol_result.yaml bridge) are written."""
+    _set_flags(**_CD_VL)
+    run_dir = _abc_run("run_915")
+    ok = _fake_protocol_run([])
+
+    def _run(cmd, *a, **k):
+        if Path(cmd[cmd.index("--out-dir") + 1]).name == "a":
+            return _REFUSED
+        return ok(cmd, *a, **k)
+
+    monkeypatch.setattr(rpr.subprocess, "run", _run)
+    asyncio.run(rpr.run_tool_worker("protocol_execution", "run_915"))
+    rows = rpr.load_campaign_state().get("trial_sharpes", [])
+    assert sorted((r["trial_id"], r["source"]) for r in rows) == [
+        ("run_915:b", "backtest"), ("run_915:c", "backtest")]
+    index = rpr.load_yaml(run_dir / "artifacts" / "variants" / "index.yaml")["variants"]
+    assert index["a"]["status"] == "not_tested"
+    assert "no data touched" in index["a"]["reason"]
+    assert index["b"]["status"] == index["c"]["status"] == "validated"
+    assert (run_dir / "artifacts" / "protocol_result.yaml").exists()
+
+
+def _writes_a_window_then(result):
+    """A fake run_protocol.py that writes one window result, then exits `result`."""
+    def _run(cmd, *a, **k):
+        out = Path(cmd[cmd.index("--out-dir") + 1])
+        (out / "results" / "win_1").mkdir(parents=True, exist_ok=True)
+        return result
+    return _run
+
+
 @pytest.mark.parametrize("variant_loop", [True, False])
-@pytest.mark.parametrize("result", [_Done(1, stderr="Traceback: boom"),
-                                    _Done(3, stderr="exit 3 without the token")])
-def test_real_backtest_failure_still_records_its_trial(monkeypatch, variant_loop, result):
+@pytest.mark.parametrize("case", ["exit1", "exit3_no_token", "token_not_first_line",
+                                  "spoofed_after_windows"])
+def test_real_backtest_failure_still_records_its_trial(monkeypatch, variant_loop, case):
+    """Anything but exit 3 + the token opening stderr + no window written by the
+    call is a real (data-touching) failure: a backtest_failed row."""
     if variant_loop:
         _set_flags(**_CD_VL)
-        run_dir = _variant_loop_run("run_914")
+        _variant_loop_run("run_914")
     else:
-        run_dir = _pinned_run("run_914")
-        (run_dir / "artifacts" / "candidate_strategy_config.json").write_text(
-            "{}", encoding="utf-8")
-    monkeypatch.setattr(rpr.subprocess, "run", _fake_protocol_run([], result))
+        _legacy_run("run_914")
+    fake = {
+        "exit1": _fake_protocol_run([], _Done(1, stderr="Traceback: boom")),
+        "exit3_no_token": _fake_protocol_run([], _Done(3, stderr="exit 3 without the token")),
+        "token_not_first_line": _fake_protocol_run([], _Done(3, stderr="window log\n" +
+                                                             _TOKEN_LINE)),
+        "spoofed_after_windows": _writes_a_window_then(_REFUSED),
+    }[case]
+    monkeypatch.setattr(rpr.subprocess, "run", fake)
     with pytest.raises(RuntimeError):
         asyncio.run(rpr.run_tool_worker("protocol_execution", "run_914"))
     rows = rpr.load_campaign_state().get("trial_sharpes", [])
     assert [r["source"] for r in rows] == ["backtest_failed"]
 
 
+def test_stderr_declares_no_data_touched_is_anchored():
+    t = protocol_refusal.NO_DATA_TOUCHED_TOKEN
+    assert protocol_refusal.stderr_declares_no_data_touched(f"{t}: x\nmore")
+    assert not protocol_refusal.stderr_declares_no_data_touched(f"warning\n{t}: x")
+    assert not protocol_refusal.stderr_declares_no_data_touched(None)
+
+
 # ---- the trial row under config-direct (G14, intended) ----------------------
 
-def _sparse_summary(hypothesis_verdict):
+def _sparse_summary(hypothesis_verdict, median_sharpe=0.3):
     return {"config_sha256": "x", "protocol_file": "p", "verdict": "refine",
             "results": [{"symbol": "BTCUSDT", "window": f"w{i}", "run_id": f"r{i}",
                          "core": {"trade_count": 2, "sharpe": None}} for i in range(4)],
-            "per_symbol_summary": {"BTCUSDT": {"median_sharpe": 0.3}},
+            "per_symbol_summary": {"BTCUSDT": {"median_sharpe": median_sharpe}},
             "hypothesis_verdict": hypothesis_verdict}
 
 
-def test_trial_row_statistic_valid_and_expectancy_under_diagnostics_only(tmp_path):
-    """G14: a sparse strategy (every window < 5 trades). Master / flag off with no
-    validation protocol: hypothesis_verdict null -> below_floor_pct 0,
-    statistic_valid 'sharpe', expectancy_bps None. Under --diagnostics-only:
-    below_floor_pct 100 -> statistic_valid 'expectancy', expectancy_bps the
-    per-trade mean."""
+@pytest.mark.parametrize("median_sharpe,before", [(0.3, "sharpe"), (None, "neither")])
+def test_trial_row_statistic_valid_and_expectancy_under_diagnostics_only(tmp_path,
+                                                                       median_sharpe, before):
+    """G14: a sparse strategy (every window < 5 trades). With hypothesis_verdict
+    null (what a config-direct row would read without the diagnostics; on master
+    those runs recorded only a backtest_failed row): below_floor_pct 0,
+    statistic_valid 'sharpe' -- or 'neither' when median_sharpe is None --,
+    expectancy_bps None. Under --diagnostics-only: below_floor_pct 100 ->
+    statistic_valid 'expectancy', expectancy_bps the per-trade mean."""
     cfg = tmp_path / "c.json"
     cfg.write_text("{}", encoding="utf-8")
     tds = {"per_trade_expectancy_bps": {"mean": -7.5, "se": 2.0, "t_stat": -3.7, "n": 8},
            "zero_trade_slot_pct": 0.0, "fee_reduction_metrics": None}
-    rpr._record_backtest_trial("run_a", _sparse_summary(None), cfg)
-    s = _sparse_summary(None)
+    rpr._record_backtest_trial("run_a", _sparse_summary(None, median_sharpe), cfg)
+    s = _sparse_summary(None, median_sharpe)
     s["hypothesis_verdict"] = rp.diagnostics_only_hypothesis_verdict(s["results"], tds)
     rpr._record_backtest_trial("run_b", s, cfg)
     rows = {r["trial_id"]: r for r in rpr.load_campaign_state()["trial_sharpes"]}
     assert (rows["run_a"]["statistic_valid"], rows["run_a"]["expectancy_bps"],
-            rows["run_a"]["below_floor_pct"]) == ("sharpe", None, 0.0)
+            rows["run_a"]["below_floor_pct"]) == (before, None, 0.0)
     assert (rows["run_b"]["statistic_valid"], rows["run_b"]["expectancy_bps"],
             rows["run_b"]["below_floor_pct"]) == ("expectancy", -7.5, 100.0)
-    assert rows["run_a"]["sharpe"] == rows["run_b"]["sharpe"] == 0.3
+    assert rows["run_a"]["sharpe"] == rows["run_b"]["sharpe"] == median_sharpe
 
 
 # ---------------------------------------------------------------------------
@@ -731,26 +826,84 @@ def test_run_protocol_with_validation_protocol_is_the_rule_evaluator(monkeypatch
     assert hv["verdict"] == "promote" and hv["criteria_results"]
 
 
-@pytest.mark.parametrize("content", [
-    None,                                     # file missing
-    "",                                       # empty
-    "decision_rules: [unclosed\n",            # unparseable
-    "- a\n- b\n",                             # a list, not a mapping
-    "required_evidence: []\n",                # no decision_rules
-    "decision_rules: 'approve if good'\n",    # decision_rules not a mapping/list
-    "decision_rules: []\nrequired_evidence: 'x'\n",  # required_evidence a string
-], ids=["missing", "empty", "unparseable", "list", "no_rules", "rules_str", "evidence_str"])
-def test_bad_validation_protocol_refused_before_any_backtest(monkeypatch, tmp_path, capsys,
-                                                             content):
-    vp = tmp_path / "validation_protocol.yaml"
-    if content is not None:
-        vp.write_text(content, encoding="utf-8")
+_REAL_RUNS = _SR / "runs"
+
+
+def _real_protocol_copy(run_id: str, tmp_path: Path) -> Path:
+    """A byte copy of a real run's validation_protocol.yaml (the real file is
+    only read, never modified)."""
+    src = _REAL_RUNS / run_id / "artifacts" / "validation_protocol.yaml"
+    if not src.exists():
+        pytest.skip(f"{src} not in this checkout")
+    dst = tmp_path / f"{run_id}_validation_protocol.yaml"
+    dst.write_bytes(src.read_bytes())
+    return dst
+
+
+def _assert_refused_before_any_backtest(monkeypatch, tmp_path, capsys, vp: Path) -> None:
     with pytest.raises(SystemExit) as exc:
         _main(monkeypatch, tmp_path, "--validation-protocol", str(vp))
-    assert exc.value.code == rp.EXIT_NO_DATA_TOUCHED
-    assert rp.NO_DATA_TOUCHED_TOKEN in capsys.readouterr().err
+    assert exc.value.code == protocol_refusal.EXIT_NO_DATA_TOUCHED
+    assert protocol_refusal.stderr_declares_no_data_touched(capsys.readouterr().err)
     assert rp.run_backtest.calls == 0
     assert not (tmp_path / "out" / "protocol_summary.json").exists()
+
+
+@pytest.mark.parametrize("content", [
+    None,                                              # file missing
+    "",                                                # empty (None: .get crashes)
+    "decision_rules: [unclosed\n",                     # unparseable
+    "- a\n- b\n",                                      # a list, not a mapping
+    "decision_rules:\n  approve_if_all_met: null\n",   # list(None) crashes
+    b"decision_rules: [\x93median_sharpe > 0\x94]\n",  # cp1252 smart quotes, not UTF-8
+], ids=["missing", "empty", "unparseable", "list", "approve_if_all_met_null", "cp1252"])
+def test_bad_validation_protocol_refused_before_any_backtest(monkeypatch, tmp_path, capsys,
+                                                             content):
+    """Refused exactly when the rule evaluator (or reading the file) would fail."""
+    vp = tmp_path / "validation_protocol.yaml"
+    if isinstance(content, bytes):
+        vp.write_bytes(content)
+    elif content is not None:
+        vp.write_text(content, encoding="utf-8")
+    _assert_refused_before_any_backtest(monkeypatch, tmp_path, capsys, vp)
+
+
+def test_real_run_003_shape_refused_before_any_backtest(monkeypatch, tmp_path, capsys):
+    """run_003: `decision_rules: {approve: [...], reject: [...]}` -- the evaluator
+    raises on a list where it splits a string; master spent every window first."""
+    vp = _real_protocol_copy("run_003", tmp_path)
+    assert isinstance(yaml.safe_load(vp.read_text(encoding="utf-8"))["decision_rules"]
+                      ["approve"], list)
+    _assert_refused_before_any_backtest(monkeypatch, tmp_path, capsys, vp)
+
+
+def test_real_run_018_shape_proceeds_exactly_as_master(monkeypatch, tmp_path):
+    """run_018: rules nested under `variants`, none at the top -- the evaluator
+    returns (zero rules), so the run proceeds and hypothesis_verdict is exactly
+    the evaluator's on that document, as on master."""
+    vp = _real_protocol_copy("run_018", tmp_path)
+    doc = yaml.safe_load(vp.read_text(encoding="utf-8"))
+    assert "decision_rules" not in doc and doc.get("variants")
+    summary, stub = _main(monkeypatch, tmp_path, "--validation-protocol", str(vp))
+    assert stub.calls == 2
+    expected = rp.evaluate_against_decision_rules(
+        summary["per_symbol_summary"], summary["results"], doc,
+        summary["trade_diagnostics_summary"] or None,
+        runs_root=str((tmp_path / "out" / "results").resolve()), timeframe="1h")
+    assert json.loads(json.dumps(expected, default=str)) == summary["hypothesis_verdict"]
+    assert summary["hypothesis_verdict"]["criteria_results"] == []
+
+
+@pytest.mark.parametrize("content", [
+    "required_evidence: []\n",                         # no decision_rules: zero rules
+    "decision_rules: []\nrequired_evidence: 'x'\n",    # a string of evidence: iterated
+], ids=["no_rules", "evidence_str"])
+def test_shapes_master_ran_still_run(monkeypatch, tmp_path, content):
+    """Only an evaluator crash refuses; shapes master evaluated still run."""
+    vp = tmp_path / "validation_protocol.yaml"
+    vp.write_text(content, encoding="utf-8")
+    summary, stub = _main(monkeypatch, tmp_path, "--validation-protocol", str(vp))
+    assert stub.calls == 2 and summary["hypothesis_verdict"] is not None
 
 
 def test_diagnostics_only_and_validation_protocol_are_exclusive(monkeypatch, tmp_path):

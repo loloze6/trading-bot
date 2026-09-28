@@ -699,11 +699,11 @@ class Harness:
 
     def _run_protocol(self, argv):
         """tools/run_protocol.py's order of work (E-061 C1.3): --validation-protocol
-        and --diagnostics-only together, or a --validation-protocol file that is
-        missing, unparseable, empty, not a mapping or without evaluable
-        decision_rules, are refused FIRST, before any window runs (the tool's own
+        and --diagnostics-only together, or a --validation-protocol file that
+        cannot be read or that the rule evaluator cannot evaluate (a dry run),
+        are refused FIRST, before any window runs (the tool's own
         _load_validation_protocol, called here; exit EXIT_NO_DATA_TOUCHED with
-        NO_DATA_TOUCHED_TOKEN). Then every window's backtest files,
+        NO_DATA_TOUCHED_TOKEN opening stderr). Then every window's backtest files,
         trade_diagnostics.json and protocol_summary.json, whose hypothesis_verdict
         is the tool's own: evaluate_against_decision_rules on the parsed file
         with --validation-protocol, diagnostics_only_hypothesis_verdict with
