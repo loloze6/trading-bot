@@ -1799,7 +1799,8 @@ def _failed_variants_reason(failed: dict) -> str:
 def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
                    research_brief: dict | None, menu, *, composition_runs: bool = False,
                    profit_bars_grader=None, failed_variants: dict | None = None,
-                   untested_variants: dict | None = None) -> dict:
+                   untested_variants: dict | None = None,
+                   partial_coverage_variants: dict | None = None) -> dict:
     """
     E-046b S2: the grid (engineering_roadmap.html card C) -- criteria x
     variants, every cell mechanical, unanimity across variants. No LLM
@@ -1850,11 +1851,20 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
     graded in one run -- earlier graded results live in the memory, but
     unanimity is judged within one run. A genuine FAIL on a graded column
     still refutes (D-014). None or {} -> byte-identical to the call without it.
+    `partial_coverage_variants` (E-061 C2 S2b review fix M1; TEMPORARY, D-042,
+    lifted by E-062 S2b): {variant_id: reason} for GRADED columns that ran on
+    fewer windows than the run protocol (an asset coin on partial coverage).
+    They are graded like any column -- a genuine FAIL still refutes -- but,
+    while their time-dependent bars are not normalised to the shorter period,
+    they cap the idea at INCONCLUSIVE, like an untested column: never
+    `validated`. Carried as top-level `partial_coverage_variants`. None or {}
+    -> byte-identical to the call without it.
 
     Returns {"result": "GRID_EVALUATED" | "SPEC_ERROR", "criteria": [id, ...],
     "variants": [variant_id, ...], "grid": {criterion_id: {variant_id:
     cell_dict}}, "idea_status": "validated"|"refuted"|"inconclusive"|None,
-    "reason": str} (+ "failed_variants" / "untested_variants" when any).
+    "reason": str} (+ "failed_variants" / "untested_variants" /
+    "partial_coverage_variants" when any).
 
     Idea-level status (card C, OPERATOR-CONFIRMED tie-break,
     S1_FINDINGS.md's appended 2026-09-20 decision, confirmed as D-014 in
@@ -1887,6 +1897,13 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
     untested = ({} if untested_variants is None or untested_variants == {}
                 else _check_variant_reasons(untested_variants, "untested_variants",
                                             variant_ids + list(failed)))
+    partial = ({} if partial_coverage_variants is None or partial_coverage_variants == {}
+               else _check_variant_reasons(partial_coverage_variants, "partial_coverage_variants",
+                                           list(failed) + list(untested)))
+    _not_columns = sorted(set(partial) - set(variant_ids))
+    if _not_columns:
+        raise ValueError(f"partial_coverage_variants {_not_columns} are not graded columns -- "
+                         f"only a graded variant can have run on partial coverage")
 
     grid: dict = {}
     spec_errors = []
@@ -1908,7 +1925,8 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
         grid[cid] = row
 
     unscored_keys = {**({"failed_variants": failed} if failed else {}),
-                  **({"untested_variants": untested} if untested else {})}
+                  **({"untested_variants": untested} if untested else {}),
+                  **({"partial_coverage_variants": partial} if partial else {})}
     if spec_errors:
         return {
             "result": "SPEC_ERROR",
@@ -1933,6 +1951,11 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
     elif failed or untested:
         idea_status = "inconclusive"
         reason = "every criterion PASSed on every graded variant, but not every variant was graded"
+    elif partial:
+        # TEMPORARY (D-042; lifted by E-062 S2b): see partial_coverage_variants.
+        idea_status = "inconclusive"
+        reason = ("every criterion PASSed on every variant, but at least one variant ran on "
+                  "partial coverage")
     else:
         idea_status = "validated"
         reason = "every criterion PASSed on every variant"
@@ -1941,6 +1964,10 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
     if untested:
         reason += (f"; variant(s) {sorted(untested)} have no graded result in this run -- an "
                    f"idea validates only when all its variants are graded in one run (card D)")
+    if partial:
+        reason += (f"; variant(s) {sorted(partial)} ran on partial coverage -- until E-062 S2b "
+                   f"normalises the time-dependent bars to the shorter period, such a variant "
+                   f"never validates an idea (D-042, temporary)")
 
     return {
         "result": "GRID_EVALUATED",

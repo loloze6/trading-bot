@@ -653,12 +653,12 @@ def test_end_to_end_1b_manifest_to_registered_block(monkeypatch):
                                            "blocking_issues": []})
     (arts / "block_manifest.yaml").write_text(yaml.safe_dump(GOOD), encoding="utf-8")
     assert rpr.determine_post_strategy_config_authoring_route(run_dir) == "innovation_expansion"
-    # innovation_expansion's patches, then the 5a tool stage
+    # innovation_expansion's patches, then the 5a tool stage. E-061 C2 S2b
+    # (CUL-342, declared): base only -- with the variant loop off only the base
+    # is backtested, so a `design` in the index would (correctly) keep this idea
+    # from validating and registering (campaign_memory's belt check).
     rpr.save_yaml(arts / "variant_patches.yaml", {"variants": [
-        {"variant_id": "base", "patch": [], "rationale": "base"},
-        {"variant_id": "design", "patch": [
-            {"path": "/strategies/regimes/unknown/components/0/params/period", "value": 21}],
-         "rationale": "longer"}]})
+        {"variant_id": "base", "patch": [], "rationale": "base"}]})
     monkeypatch.setattr(rpr.subprocess, "run", _ok_subprocess)
     asyncio.run(rpr.run_tool_worker("backtest_specification", RUN_ID))
     base_cfg = json.loads((arts / "candidate_strategy_config.json").read_text(encoding="utf-8"))

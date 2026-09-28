@@ -379,13 +379,26 @@ def residual_ic_by_variant(variant_summaries: dict, variant_results_dirs: dict, 
                            root: Path, protocol_path: Path, registry_path: Path,
                            compositions_path: Path, holdout_range: tuple,
                            breach_cls=CompositeError, exempt_reason: str | None = None,
-                           runner=None, python_exe=None) -> dict:
+                           runner=None, python_exe=None,
+                           variant_protocol_paths: dict | None = None) -> dict:
     """The residual-IC diagnostic for every tested variant of one run. Returns
     {timeframe, timeframe_category, composite: {...}, variants: {variant_id:
     diagnostic}} -- or, for an exempt idea (a regime block or a composition
     run), {timeframe, timeframe_category, skipped: reason, variants: {}}
     without resolving or running anything.
-    `variant_results_dirs`: {variant_id: <variant out-dir>/results}."""
+    `variant_results_dirs`: {variant_id: <variant out-dir>/results}.
+
+    `variant_protocol_paths` (E-061 C2 S2b, one coin per variant): {variant_id:
+    the protocol that variant ran}; a variant not listed ran `protocol_path`.
+    Variants are grouped by the CONTENT of their protocol file (its coin and
+    windows), and one composite runs per group on that group's protocol -- the
+    single-fingerprint check then applies within a group only (variants on
+    different coins legitimately read different market data). The cache key
+    already includes the protocol sha, so per-coin caches separate naturally.
+    `composite.cache_dir` is then the group of `base` (else the first variant
+    in sorted order) -- the one tools/composition.py reads for a block's
+    validating base variant -- and `composite.cache_dirs` maps every variant to
+    its group's. None: the single-group path, byte-identical to before."""
     import block_registry as _br  # tools/ sibling
     protocol = json.loads(Path(protocol_path).read_text(encoding="utf-8"))
     timeframe = protocol.get("timeframe", "1h")  # run_protocol's own default
@@ -395,19 +408,38 @@ def residual_ic_by_variant(variant_summaries: dict, variant_results_dirs: dict, 
     block_size = _tf.bars_per_day(timeframe)
     resolved = resolve_current_composite(_br.load_registry(registry_path),
                                          load_compositions(compositions_path), timeframe)
-    comp_records = comp_note = None
+    grouped = variant_protocol_paths is not None
+    groups: dict = {}  # protocol content sha -> (protocol path, [variant ids])
+    for vid in sorted(variant_summaries):
+        vpath = Path((variant_protocol_paths or {}).get(vid) or protocol_path)
+        if grouped:
+            vproto = json.loads(vpath.read_text(encoding="utf-8"))
+            if vproto.get("timeframe", "1h") != timeframe:
+                raise CompositeError(f"variant {vid!r} ran timeframe {vproto.get('timeframe')!r}, "
+                                     f"the run {timeframe!r} -- one residual IC basis per run")
+            gkey = hashlib.sha256(vpath.read_bytes()).hexdigest()
+        else:
+            gkey = None
+        groups.setdefault(gkey, (vpath, []))[1].append(vid)
+    comp_by_vid: dict = {}
+    cache_by_vid: dict = {}
     if resolved["kind"] in (KIND_BLOCK, KIND_COMPOSITION):
-        fps = {vid: run_fingerprint(variant_summaries[vid], variant_results_dirs[vid])
-               for vid in sorted(variant_summaries)}
-        first = next(iter(fps.values()))
-        if any(fp != first for fp in fps.values()):
-            raise CompositeError("the variants of this run read different market data or ran on "
-                                 "different engine versions -- one composite cannot serve them")
-        comp_records, _steps, cache_dir = composite_series(
-            resolved, root=root, protocol_path=protocol_path, holdout_range=holdout_range,
-            candidate_fingerprint=first, breach_cls=breach_cls, runner=runner,
-            python_exe=python_exe)
-        comp_note = cache_dir.relative_to(Path(root)).as_posix()
+        for gpath, vids in groups.values():
+            fps = {vid: run_fingerprint(variant_summaries[vid], variant_results_dirs[vid])
+                   for vid in vids}
+            first = next(iter(fps.values()))
+            if any(fp != first for fp in fps.values()):
+                raise CompositeError(
+                    "the variants of this run read different market data or ran on different "
+                    "engine versions -- one composite cannot serve them"
+                    + (f" (coin group {sorted(vids)})" if grouped else ""))
+            comp_records, _steps, cache_dir = composite_series(
+                resolved, root=root, protocol_path=gpath if grouped else protocol_path,
+                holdout_range=holdout_range, candidate_fingerprint=first, breach_cls=breach_cls,
+                runner=runner, python_exe=python_exe)
+            note = cache_dir.relative_to(Path(root)).as_posix()
+            for vid in vids:
+                comp_by_vid[vid], cache_by_vid[vid] = comp_records, note
     variants = {}
     for vid in sorted(variant_summaries):
         if resolved["kind"] == KIND_STALE:
@@ -416,17 +448,21 @@ def residual_ic_by_variant(variant_summaries: dict, variant_results_dirs: dict, 
             records, steps = _ric.symbol_records_from_protocol_result(
                 variant_summaries[vid], variant_results_dirs[vid])
             label = _ric.COMPOSITE_NONE if resolved["kind"] == KIND_NONE else resolved["kind"]
-            diag = _ric.compute_residual_ic(records, comp_records, block_size=block_size,
+            diag = _ric.compute_residual_ic(records, comp_by_vid.get(vid), block_size=block_size,
                                             expected_step_by_symbol=steps, composite_label=label)
         diag["composite_registry_hash"] = resolved["registry_hash"]
         variants[vid] = diag
+    rep = "base" if "base" in cache_by_vid else next(iter(sorted(cache_by_vid)), None)
+    composite = {"kind": resolved["kind"], "registry_hash": resolved["registry_hash"],
+                 "block_ids": resolved["block_ids"],
+                 "excluded_blocks": resolved["excluded_blocks"],
+                 "config_ref": resolved["config_ref"],
+                 "cache_dir": cache_by_vid.get(rep) if rep else None, "reason": resolved["reason"]}
+    if grouped:
+        composite["cache_dirs"] = dict(sorted(cache_by_vid.items()))
     return {
         **head,
         "skipped": None,
-        "composite": {"kind": resolved["kind"], "registry_hash": resolved["registry_hash"],
-                      "block_ids": resolved["block_ids"],
-                      "excluded_blocks": resolved["excluded_blocks"],
-                      "config_ref": resolved["config_ref"],
-                      "cache_dir": comp_note, "reason": resolved["reason"]},
+        "composite": composite,
         "variants": variants,
     }

@@ -312,6 +312,42 @@ venues:
           "not a record of what we've fetched" rule, same as the note below).
           A symbol outside this list is unconfirmed and declines by default,
           mirroring binance.spot's existing earliest_ohlcv_utc gate exactly.
+        # BEGIN GENERATED: refresh_coin_start_dates.py (kraken earliest_ohlcv_utc)
+        earliest_ohlcv_utc:
+          AAVEUSD: "2020-12-15T00:00:00Z"
+          ADAUSD: "2018-09-28T00:00:00Z"
+          AVAXUSD: "2021-12-21T00:00:00Z"
+          DOGEUSD: "2019-12-19T00:00:00Z"
+          INJUSD: "2021-08-10T00:00:00Z"
+          LINKUSD: "2019-09-25T00:00:00Z"
+          LTCUSD: "2013-10-24T00:00:00Z"
+          NEARUSD: "2022-06-16T00:00:00Z"
+          ONDOUSD: "2024-04-11T00:00:00Z"
+          SOLUSD: "2021-06-17T00:00:00Z"
+          SUIUSD: "2023-05-03T00:00:00Z"
+          TAOUSD: "2024-07-01T00:00:00Z"
+          TRXUSD: "2020-03-05T00:00:00Z"
+          UNIUSD: "2020-10-15T00:00:00Z"
+          XMRUSD: "2017-01-02T00:00:00Z"
+          XRPUSD: "2017-05-18T00:00:00Z"
+          ZECUSD: "2016-10-29T00:00:00Z"
+        earliest_ohlcv_utc_basis: >
+          Added 2026-09-28 (fix/layer1-per-coin-start-dates). Each date is
+          the first row's timestamp of the coin's OWN local
+          local_data/kraken_<SYM>_1h.csv cache (the finest timeframe any
+          protocol here requests), read by
+          strategy-research/tools/refresh_coin_start_dates.py (header + first
+          data row only, never the rest of the file). This is OUR CACHE's
+          observed start, not an independently venue-audited listing date --
+          same caveat as the `unconfirmed` note below and coin_universe.yaml's
+          own per-pair notes -- but it is real and load-bearing: it closes the
+          gap where a Kraken coin with no per-symbol gate looked available all
+          the way back to the venue-wide 2013-09-01 floor regardless of when
+          OUR data (or the coin itself) actually begins. A symbol with a local
+          kraken_<SYM>_1h.csv cache is listed here; one without a cache file is
+          NOT listed and keeps declining via only the venue-wide
+          floor/confirmed_universe gates above (see layer1_price_precheck).
+        # END GENERATED: refresh_coin_start_dates.py
         pattern: >
           19-pair breadth universe currently declared in
           strategy-research/config/coin_universe.yaml, USD-quoted

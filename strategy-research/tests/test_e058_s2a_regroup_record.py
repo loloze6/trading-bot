@@ -106,12 +106,17 @@ def _seed(run_id=RUN_ID, idea_status="refuted", errors_count=None, variant_loop=
     if variant_loop:
         variants = ["base", "design"]
         index = {}
-        for v in variants + ["broken"]:
+        # E-061 C2 S2b (CUL-342 item 2): a validated idea has every variant graded
+        # -- the memory's belt check refuses one with a failed / untested variant
+        # -- so a validated seed's index holds only the graded columns.
+        whole = idea_status == "validated"
+        for v in variants + ([] if whole else ["broken"]):
             cfg = arts / "variants" / v / "strategy_config.json"
             cfg.parent.mkdir(parents=True, exist_ok=True)
             cfg.write_text(json.dumps({"v": v}), encoding="utf-8")
             index[v] = {"status": "validated", "config_path": f"artifacts/variants/{v}/strategy_config.json"}
-        index["asset"] = {"status": "not_tested", "reason": "patch application failed: /x"}
+        if not whole:
+            index["asset"] = {"status": "not_tested", "reason": "patch application failed: /x"}
         rpr.save_yaml(arts / "variants" / "index.yaml", {"variants": index})
         for v in variants:
             rpr.save_yaml(arts / "variants" / v / "protocol_result.yaml",
@@ -453,9 +458,13 @@ def test_entry_variant_loop_shape():
 def test_config_direct_without_variant_loop_uses_the_single_column():
     """config_direct_authoring writes artifacts/variants/index.yaml, but with the
     variant loop off only the base config is backtested and the grid's one column
-    is named after run_id -- the index must not be mistaken for loop columns."""
+    is named after run_id -- the index must not be mistaken for loop columns.
+    E-061 C2 S2b (CUL-342, declared): seeded `inconclusive`, the status such a run
+    now gets (its grid lists the index's other variants as untested); a
+    `validated` one is refused by the memory's belt check
+    (test_e061_c2_s2b_one_coin_per_variant.py)."""
     _set_orchestrator(ALL_ON)
-    run_dir = _seed(idea_status="validated")
+    run_dir = _seed(idea_status="inconclusive")
     rpr.save_yaml(run_dir / "artifacts" / "variants" / "index.yaml", {"variants": {
         "base": {"status": "validated", "config_path": "artifacts/variants/base/strategy_config.json"},
         "design": {"status": "validated", "config_path": "artifacts/variants/design/strategy_config.json"}}})
