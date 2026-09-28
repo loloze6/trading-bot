@@ -149,9 +149,22 @@ def test_an_unreadable_policy_denies_by_default(tmp_path):
 def test_run_protocol_rejects_a_window_ending_exactly_on_the_seal():
     """
     The `<=` form let `end == holdout_start` through, which is the one value
-    that breaches. Asserted against the source because the guard sits inside a
-    per-window backtest loop that cannot be driven without a full data stack.
+    that breaches. CUL-339: the guard is now run_protocol's pre-flight
+    (_preflight_training_windows -> holdout_policy.check_windows_before), run
+    before any backtest, so it is driven directly here instead of asserted
+    against the source (end-to-end refusal: test_cul339_holdout_range_from_policy).
     """
+    import datetime as _dt
+    sys.path.insert(0, str(ROOT / "tools"))
+    import holdout_policy as hp
+
+    day_before = (_dt.date.fromisoformat(HOLDOUT_START) - _dt.timedelta(days=1)).isoformat()
+    month_start = (_dt.date.fromisoformat(HOLDOUT_START) - _dt.timedelta(days=31)).isoformat()
+    with pytest.raises(hp.HoldoutPolicyError, match="INCLUSIVE-BY-DAY"):
+        hp.check_windows_before(
+            [{"label": "last", "test": {"start": month_start, "end": HOLDOUT_START}}],
+            HOLDOUT_START)
+    hp.check_windows_before(
+        [{"label": "last", "test": {"start": month_start, "end": day_before}}], HOLDOUT_START)
     text = (ROOT / "tools" / "run_protocol.py").read_text(encoding="utf-8")
-    assert "assert end < _holdout_start" in text
-    assert "assert end <= _holdout_start" not in text
+    assert "_preflight_training_windows(protocol, _holdout_start)" in text
