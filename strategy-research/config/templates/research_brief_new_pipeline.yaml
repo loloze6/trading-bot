@@ -12,17 +12,25 @@
 #    block below IS the research_brief.yaml content, exactly as
 #    run_campaign.py::_parse_brief_frontmatter expects -- see RUNBOOK.md
 #    "Start a campaign on the new pipeline").
-# 2. Replace every "<FILL IN...>" placeholder below with your idea. Every
+# 2. Replace every "<FILL IN...>" placeholder below with your idea.
+#    Registration REFUSES a copy that still carries the placeholder sentinel
+#    in any required field (run_campaign.py::_parse_brief_frontmatter, code
+#    review fix) -- the raw template cannot be registered by accident. Every
 #    field run_campaign.py::REFRAME_BRIEF_REQUIRED_KEYS requires
 #    (strategy_domain, market_universe, timeframe, research_goal, venue,
-#    product) must be non-empty or registration raises immediately.
-# 3. Register it: `python workflow/run_campaign.py register --brief
+#    product) must also be non-placeholder and non-empty.
+# 3. If your idea needs a DIFFERENT universe or bar size than the default
+#    below (BTCUSDT+ETHUSDT, 1h), change market_universe/timeframe AND
+#    machine_constraints.protocol.symbols/timeframe TOGETHER -- registration
+#    cross-checks the two and refuses a mismatch (same review fix; see the
+#    comment on machine_constraints below).
+# 4. Register it: `python workflow/run_campaign.py register --brief
 #    briefs/<your_brief_name>.md --priority <n> --notes "<n>"` (RUNBOOK.md
 #    §1a-bis has the pre-launch checks to run before spending any LLM
-#    budget).
+#    budget). `brief_status` is NOT set here -- see the note below.
 #
-# WHY criteria_from + machine_constraints ARE PRE-FILLED
-# --------------------------------------------------------
+# WHY criteria_from IS PRE-FILLED
+# --------------------------------
 # `criteria_from: hypothesis_generation` (== the orchestrator's own
 # PASS_RULE_PENDING_AT_1A / CRITERIA_FROM_1A constant,
 # workflow/run_phase1_research.py) defers pass_rule authorship to step 1a
@@ -34,45 +42,78 @@
 # _materialize_run's guard raises (a brief cannot both defer to step 1a and
 # carry a pre-registered pass_rule).
 #
-# `machine_constraints.protocol_ref` pins an EXISTING, already-vetted
-# protocol file so the run never falls through to a stale
-# campaign_state.last_escalation (RUNBOOK.md §1a-bis point 1) and never
-# executes against the abolished generic promotion block (D-3 /
-# tools/protocol_resolution.py::assert_promotion_ratified). The pin below,
-# protocols/diagnostic_btceth_4h.json, was chosen from the five protocols
-# A3 §3.3 measured as NOT carrying that unratified block (checked directly
-# against protocol_resolution.assert_promotion_ratified on this checkout:
-# diagnostic_btceth_4h, funding_mr_4h_retest_v1, funding_mr_daily_retest_v1,
-# h041c_v2_backext, ts_trend_daily_v1) because it is the most GENERIC of the
-# five -- BTCUSDT+ETHUSDT, both symbols with full ohlcv/fear_greed/
-# funding_rate coverage across every non-holdout era in
-# config/campaign_data_policy.yaml, 4h bars (fast to iterate, sparse enough
-# that a diagnostic promotion.min_trade_count_gte of 10 is realistic), and a
-# name ("Diagnostic protocol") that says outright it is a starting point, not
-# a specific hypothesis family's pre-registered window set the way
-# funding_mr_*/ts_trend_daily_v1/h041c_v2_backext are. Swap it for a protocol
-# that actually matches your idea's timeframe/universe once you have one --
-# this pin is a safe DEFAULT, not a recommendation to test on 4h BTC/ETH.
+# WHY THIS IS A GENERATED PROTOCOL, NOT A PIN (code-review correction)
+# ----------------------------------------------------------------------
+# An earlier version of this template pinned an EXISTING file,
+# protocols/diagnostic_btceth_4h.json, via machine_constraints.protocol_ref,
+# and described it as "safe" and covering "every non-holdout era". Neither
+# claim survived a full check against all 13 files in protocols/:
+#   * diagnostic_btceth_4h.json's 11 windows sit ENTIRELY inside 2024
+#     (one era: era_2024_burned) -- sign_consistent_by_era would pass
+#     trivially, one era can never demonstrate era-stability;
+#   * its own `holdout` block is {start: 2025-01-01, end: null}. run_protocol.py
+#     --holdout resolves a null end as "today" (a separately reported,
+#     unfixed finding -- see FORK/RUNBOOK notes), so that block SPANS the
+#     sealed window (campaign_data_policy.yaml's own holdout_range) if anyone
+#     ever runs --holdout against it -- the opposite of "safe";
+#   * it passes tools/protocol_resolution.py's D-3 check
+#     (assert_promotion_ratified) only because min_trade_count_gte was
+#     lowered from the abolished generic default's 20 to 10 -- median_sharpe_gt
+#     stays at the generic default's 0. That is a byte-inequality technicality,
+#     not a real pre-registered threshold.
+# Checking all 13 protocols against five criteria (test windows entirely in
+# train+validation; span >= 3 real eras with substantive coverage, not a
+# calendar-boundary sliver; never touch the sealed window; a holdout block
+# consistent with campaign_data_policy.yaml's holdout_range or none; D-3
+# clean on a REAL registered threshold, not a technicality) found none that
+# cleanly qualifies on all five -- see the E-061 C1.6+C1.7 code-review commit
+# message for the full 13-row table. So this template GENERATES its own
+# protocol via machine_constraints.protocol (the OTHER, pre-existing
+# mechanism run_phase1_research.py::_ensure_protocol_from_constraints
+# provides -- see its own docstring, and K3/G7 in that file for how a
+# generated protocol is validated) instead of pinning an existing file:
 #
-# `protocol_ref_content_hash` is the STRUCTURAL hash
-# (_compute_protocol_content_hash: canonical JSON with protocol_version/
-# protocol_content_hash removed) measured against protocols/
-# diagnostic_btceth_4h.json on THIS checkout. If that file's content ever
-# changes, the pin's own guard (run_phase1_research.py::
-# _ensure_protocol_ref_pinned) raises rather than silently running your
-# hypothesis against different windows -- recompute it (RUNBOOK.md
-# §1a-bis's check-all-four snippet) before your first real launch if you are
-# not registering this on the same day you read this comment.
+#   * symbols/timeframe: BTCUSDT + ETHUSDT at 1h -- both have full
+#     ohlcv/fear_greed coverage from 2018-02-01 and funding_rate from
+#     2019-09/11 (config/campaign_data_policy.yaml backward_extension);
+#   * start/end: 2018-02-01 .. 2025-12-31 -- generates ~95 monthly windows
+#     (matching protocols/run_048_generated.json's own start/end, which used
+#     the identical range) genuinely spanning FOUR real eras with substantive
+#     coverage in each: era_2018_pre_funding (2018-02 to 2019-09, ~19 months),
+#     era_2019_2023_full_feed (2019-09 to 2023-12, ~52 months),
+#     era_2024_burned (all 11 months), era_2024_2025_walk_forward_extension
+#     (all 13 months) -- not a one-day boundary artifact;
+#   * holdout: deliberately OMITTED -- _ensure_protocol_from_constraints
+#     defaults it to campaign_data_policy.yaml's own holdout_range when
+#     absent, which is the one value that cannot silently drift out of sync
+#     with the policy;
+#   * promotion: deliberately OMITTED. `_require_pre_registered_promotion`
+#     (G7) REFUSES to generate a protocol with no promotion block rather than
+#     substituting the abolished generic default -- this is the fail-loud
+#     behaviour the D-3 gate exists to guarantee, and inventing numbers here
+#     on your behalf would violate CLAUDE.fork.md's "no thresholds after
+#     seeing data -- ever" rule just as much as picking them after a backtest
+#     would. Add your own real, pre-registered
+#     {median_sharpe_gt, max_abs_drawdown_pct_lt, min_trade_count_gte,
+#     kill_median_sharpe_lt} under machine_constraints.protocol.promotion
+#     BEFORE your first real launch -- until you do, run_phase1_research.py
+#     raises a clear UngatedProtocolError naming exactly this, rather than
+#     silently running against invented thresholds.
+#
+# WHY brief_status IS NOT SET HERE (code-review correction)
+# -------------------------------------------------------------
+# An earlier version of this template set `brief_status: open` at the brief
+# level. That field is never read there -- run_campaign.py's
+# `_register_from_cli` (the `register` sub-command) sets it on the QUEUE
+# ENTRY it creates (`{"brief_status": "open"}`, only when
+# orchestrator.decide_next.enabled is on), not on the brief file itself; a
+# brief-level copy was inert prose, not configuration. Nothing here to fill
+# in or check -- decide_next's own registration path handles it.
 # ============================================================================
 
-brief_status: open
-
 strategy_domain: "<FILL IN: e.g. momentum, mean_reversion, funding_carry, breadth>"
-market_universe:
-  - "<FILL IN: e.g. BTCUSDT -- must exist in config/coin_universe.yaml for the
-    universe you intend; single-symbol or multi-symbol both valid>"
-timeframe: "<FILL IN: e.g. 4h -- must match data actually available;
-  see docs/DATA_AVAILABILITY.md before registering a NEW timeframe>"
+market_universe: [BTCUSDT, ETHUSDT]
+timeframe: "1h"
 venue: "<FILL IN: e.g. kraken -- must be a (venue, product) pair marked
   tradable: true in config/venue_tradability.yaml, or the run is auto-flagged
   research_only>"
@@ -91,8 +132,20 @@ available_data: []
 criteria_from: hypothesis_generation
 
 machine_constraints:
-  protocol_ref: protocols/diagnostic_btceth_4h.json
-  protocol_ref_content_hash: sha256:424968e14b412add34e8288b2370e414127aeb672c78a6b04135a87422ab3cb9
+  protocol:
+    symbols: [BTCUSDT, ETHUSDT]
+    timeframe: "1h"
+    start: "2018-02-01"
+    end: "2025-12-31"
+    # holdout: intentionally omitted -- defaults to campaign_data_policy.yaml's
+    #   own holdout_range (see the long comment above).
+    # promotion: REQUIRED before this brief can launch -- see the long comment
+    #   above. Uncomment and fill in with YOUR pre-registered thresholds:
+    # promotion:
+    #   median_sharpe_gt: <FILL IN>
+    #   max_abs_drawdown_pct_lt: <FILL IN>
+    #   min_trade_count_gte: <FILL IN>
+    #   kill_median_sharpe_lt: <FILL IN>
 ---
 
 # <FILL IN: a short human title for this brief>

@@ -266,6 +266,18 @@ assume it stops at the next stage boundary.
 
 ### 1e. Start a campaign on the new pipeline (config-direct authoring, E-061 C1.7)
 
+**Requires E-061 C1.2–C1.5 merged to master first.** As of this writing
+they are open branches (`fix/e061-c1-2-3-config-direct-handoffs`,
+`fix/e061-c1-4-5-pauses-preflight`), not yet on `master` — the delivery
+plan's own sequencing (`engineering/delivery_plan_v26_continuation.md`
+"C1 S2a: the wiring test (red), then C1.2–C1.7 until green") makes C1.1
+passing (all of C1.2–C1.7 landed) the gate before the first real run, which
+is continuation step **C4**, not this section by itself. Do not run this
+section's flag set against a `master` that lacks C1.2–C1.5: the config-direct
+handoffs (C1.2/C1.3) and the classified-pause/pre-flight checks (C1.4/C1.5)
+below are exactly what makes a real run survivable rather than crashing the
+campaign process or silently spending LLM budget on a misconfiguration.
+
 "The new pipeline" is the `config_direct_authoring` route: the single
 BASE strategy config is authored directly at the `strategy_config_authoring`
 stage instead of going through `validation`, and `backtest_specification`
@@ -309,9 +321,17 @@ orchestrator:
 
 Several of these are `requires`-chained (e.g. `variant_loop` needs
 `config_direct_authoring`; `decide_next` needs `regroup_record` +
-`config_direct_authoring`) and raise loudly, pre-flight, on a broken
-dependency — so flip the whole block together, not one flag at a time across
-separate campaign runs.
+`config_direct_authoring`). **Once C1.5 is merged** (see the requirement at
+the top of this section), every one of these dependencies — including
+`variant_loop`, `composition_runs`, and `variant_anti_adjacency_gate`, the
+three that `engineering/review_2026-09-27/A3_all_flags_on.md` §1 measured as
+still lazily-checked on `master` at the time of that review (first read only
+at 5a/the data gate/protocol_execution, after 1a/1b/2 had already spent LLM
+budget) — is checked pre-flight, before any LLM call, and a broken chain
+raises loudly right there instead of surfacing three stages later. Flip the
+whole block together regardless, not one flag at a time across separate
+campaign runs — a partially-applied target set is exactly the
+misconfiguration this check exists to catch.
 
 **2. Ratify `config/profitability_bars.yaml` before relying on it.** The file
 as it ships is explicitly marked DRAFT — every number is a placeholder
@@ -333,21 +353,45 @@ verdict.
 `config/templates/research_brief_new_pipeline.yaml` to
 `briefs/<your_brief_name>.md` and replace every `<FILL IN...>` placeholder —
 the template's own header comment explains each field, including why
-`criteria_from: hypothesis_generation` and `machine_constraints.protocol_ref`
-are pre-filled (a safe, D-3-clean protocol pin so the first run can never fall
-through to a stale `campaign_state.last_escalation` or execute against the
-abolished generic promotion block). Then register it exactly as any other
-brief (§1a-bis's four checks still apply — run its check-all-four snippet
-before spending any LLM budget):
+`criteria_from: hypothesis_generation` is pre-filled, and why
+`machine_constraints.protocol` GENERATES a fresh protocol (multi-era windows,
+2018-02-01..2025-12-31, holdout defaulted from `campaign_data_policy.yaml`)
+rather than pinning an existing `protocols/*.json` file — a full check of all
+13 existing files against (in train+validation range; spans ≥3 real eras
+with substantive, not boundary-sliver, coverage; never touches the sealed
+window; a holdout block consistent with the policy or none; D-3-clean on a
+real registered threshold, not a lowered-count technicality) found none that
+qualifies on all five; see the E-061 C1.6+C1.7 code-review commit for the
+full table. **You must add your own pre-registered `promotion` thresholds
+under `machine_constraints.protocol` before this brief can launch** — the
+template deliberately does not invent them (no thresholds after seeing data),
+and `run_phase1_research.py`'s G7 gate (`_require_pre_registered_promotion`)
+refuses to generate the protocol without them, loudly, rather than
+substituting a default.
+
+A code-review pass on this template also added two registration-time checks
+(`run_campaign._parse_brief_frontmatter`): a copy that still carries the
+`<FILL IN` placeholder sentinel in a required field is refused outright, and
+`market_universe`/`timeframe` are cross-checked against whatever protocol
+`machine_constraints` names — a mismatch (e.g. you changed `market_universe`
+but not `machine_constraints.protocol.symbols`) is refused with a clear
+message rather than silently backtesting against a universe the brief never
+declared. `venue` has no protocol-side counterpart (no protocol file carries
+a venue/exchange field) and is not cross-checked.
+
+Then register it exactly as any other brief (§1a-bis's four checks still
+apply — run its check-all-four snippet before spending any LLM budget):
 
 ```bash
 PYTHONUTF8=1 ../venv/Scripts/python.exe workflow/run_campaign.py register \
   --brief briefs/<your_brief_name>.md --priority 1 --notes "first new-pipeline brief"
 ```
 
-Under `decide_next` (on per step 1 above), this starts the brief
-`brief_status: open` — R2 may later ask step 1a for more of it once this
-brief's own lineage is exhausted (`run_campaign._register_from_cli`).
+Under `decide_next` (on per step 1 above), this starts the QUEUE ENTRY
+`brief_status: open` (`run_campaign._register_from_cli` sets it on the entry
+it creates — it is not, and should not be, set inside the brief file itself)
+— R2 may later ask step 1a for more of it once this brief's own lineage is
+exhausted.
 
 **4. Dry run, then launch.** Do not skip §1a — a passing dry run with
 warnings is still not a green light (§0b point 4). Then launch single-step

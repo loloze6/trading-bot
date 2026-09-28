@@ -348,6 +348,86 @@ def check_venue_tradability(venue, market_type) -> bool:
     return entry.get("tradable") is True
 
 
+# E-061 C1.7 code-review fix: a brief copied verbatim from
+# config/templates/research_brief_new_pipeline.yaml (its placeholders never
+# replaced) must never register -- registering it would queue a run that
+# either crashes on nonsense values or, worse, silently treats a placeholder
+# string as a real one. The sentinel is the template's own marker text.
+_PLACEHOLDER_SENTINEL = "<FILL IN"
+
+
+def _contains_placeholder(value) -> bool:
+    """True if `value` (a str, or a list of them) still carries
+    _PLACEHOLDER_SENTINEL. Recurses into lists only -- REFRAME_BRIEF_REQUIRED_KEYS
+    values are strings or a list of strings (market_universe), never nested
+    further."""
+    if isinstance(value, str):
+        return _PLACEHOLDER_SENTINEL in value
+    if isinstance(value, list):
+        return any(_contains_placeholder(v) for v in value)
+    return False
+
+
+def _lint_brief_protocol_agreement(brief_path: Path, data: dict) -> None:
+    """E-061 C1.7 code-review fix: refuse a brief whose market_universe/timeframe
+    disagree with the protocol machine_constraints will actually execute --
+    the same drift class K3/Q1 (_lint_machine_constraints_protocol_selection's
+    window_set_ref check) already refuses one level down, applied here to
+    symbols/bar-size identity instead of window-set identity. Checked against
+    machine_constraints.protocol (generate) directly, or against
+    machine_constraints.protocol_ref's own file (pin) when that is what the
+    brief carries -- the two keys are mutually exclusive (K3).
+
+    venue has NO protocol-side counterpart and is deliberately not
+    cross-checked: no protocols/*.json file carries a venue/exchange field --
+    `symbols` like "BTCUSDT" is this repo's Binance-shaped OHLCV cache key,
+    entirely independent of the Kraken venue naming config/
+    venue_tradability.yaml's brief.venue/brief.product use."""
+    mc = data.get("machine_constraints") or {}
+    proto = mc.get("protocol")
+    proto_ref = mc.get("protocol_ref")
+    if proto:
+        proto_symbols, proto_timeframe, source = (
+            proto.get("symbols"), proto.get("timeframe"), "machine_constraints.protocol")
+    elif proto_ref:
+        ref_path = ROOT / "protocols" / orch._path_basename_any_os(proto_ref)
+        if not ref_path.exists():
+            return  # _ensure_protocol_ref_pinned raises its own clear error at launch
+        proto_obj = yaml.safe_load(ref_path.read_text(encoding="utf-8")) or {}
+        proto_symbols, proto_timeframe = proto_obj.get("symbols"), proto_obj.get("timeframe")
+        source = f"machine_constraints.protocol_ref={proto_ref!r}"
+    else:
+        return  # nothing pinned/generated yet -- nothing to cross-check
+
+    market_universe = data.get("market_universe")
+    if proto_symbols is not None and market_universe is not None:
+        # market_universe is a list of symbols in this template, but existing
+        # briefs across the corpus (and several tests) also use a single
+        # comma-joined string (e.g. "BTCUSDT,ETHUSDT") or one bare symbol
+        # ("BTCUSDT") -- normalize all three shapes the same way rather than
+        # narrowing the field to the one shape this template happens to use.
+        if isinstance(market_universe, list):
+            brief_symbols = set(market_universe)
+        elif isinstance(market_universe, str):
+            brief_symbols = {s.strip() for s in market_universe.split(",") if s.strip()}
+        else:
+            brief_symbols = {market_universe}
+        if brief_symbols != set(proto_symbols):
+            raise ValueError(
+                f"{brief_path}: market_universe={sorted(brief_symbols)} does not match "
+                f"{source}'s symbols={sorted(proto_symbols)} -- a brief's declared "
+                f"universe must agree with what it will actually backtest."
+            )
+
+    timeframe = data.get("timeframe")
+    if proto_timeframe is not None and timeframe is not None and timeframe != proto_timeframe:
+        raise ValueError(
+            f"{brief_path}: timeframe={timeframe!r} does not match {source}'s "
+            f"timeframe={proto_timeframe!r} -- a brief's declared bar size must agree "
+            f"with what it will actually backtest."
+        )
+
+
 def _parse_brief_frontmatter(brief_path: Path) -> dict:
     """Extract the leading '---'-delimited YAML block from a brief .md file.
     That block IS the research_brief.yaml content (plus an optional
@@ -383,6 +463,18 @@ def _parse_brief_frontmatter(brief_path: Path) -> dict:
     for required in crr.REFRAME_BRIEF_REQUIRED_KEYS:
         if not data.get(required):
             raise ValueError(f"{brief_path}: frontmatter missing required field '{required}'.")
+        # E-061 C1.7 code-review fix: an unfilled template placeholder is not a
+        # missing field (the `not data.get(required)` check above passes --
+        # the placeholder text is truthy) but must refuse identically.
+        if _contains_placeholder(data[required]):
+            raise ValueError(
+                f"{brief_path}: frontmatter field '{required}'={data[required]!r} still "
+                f"carries the unfilled template placeholder sentinel "
+                f"'{_PLACEHOLDER_SENTINEL}' -- replace it with your own value before "
+                f"registering (config/templates/research_brief_new_pipeline.yaml's own "
+                f"header comment explains each field)."
+            )
+    _lint_brief_protocol_agreement(brief_path, data)
     return data
 
 

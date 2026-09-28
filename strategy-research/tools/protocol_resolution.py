@@ -74,6 +74,40 @@ def _load_small_yaml(path: Path) -> dict:
         return yaml.safe_load(f) or {}
 
 
+def era_id_for_timestamp(ts, eras: list) -> str:
+    """The ONE shared implementation (E-061 C1.6 code-review fix), replacing
+    two independent copies that had drifted (tools/run_protocol.py and
+    tools/verdict_criteria_evaluator.py, both originally A8.5.1a: map a bar
+    timestamp to its era_id per campaign_data_policy.yaml's `eras` list).
+    Returns 'era_unmapped' if the timestamp falls outside every declared era
+    (should not happen for in-policy data, but must not crash).
+
+    campaign_data_policy.yaml's last era (era_2026_h2_forward_recorded) has an
+    open-ended upper bound, `range: [2026-07-26, null]`; a naive `lo <= d <= hi`
+    raises TypeError against that None (`str <= None` is unorderable in Python
+    3). No era currently declares a null LOWER bound, but the same hazard
+    applies symmetrically, so both sides are guarded.
+
+    Simplified from the two former per-file implementations' explicit
+    None-branching (an `if lo is None / if hi is None / if lo is None and hi
+    is None` cascade, each returning early) to a single boolean expression per
+    era: `(lo is None or lo <= d) and (hi is None or d <= hi)`. This is
+    behaviourally identical for all four cases -- `lo is None` alone makes the
+    first clause vacuously True (any `d` matches from below), `hi is None`
+    alone does the same for the second clause (any `d` matches from above),
+    both None makes the whole expression True unconditionally, and both set
+    reduces to the original `lo <= d <= hi` -- see
+    test_protocol_resolution_era_id.py's boundary/None/gap cases for the
+    executed proof, not just this docstring's claim."""
+    import pandas as pd
+    d = pd.Timestamp(ts).strftime("%Y-%m-%d")
+    for era in eras:
+        lo, hi = era["range"]
+        if (lo is None or lo <= d) and (hi is None or d <= hi):
+            return era["era_id"]
+    return "era_unmapped"
+
+
 def assert_promotion_ratified(protocol_path: Path) -> None:
     """Byte-for-byte port of run_phase1_research.py::_assert_promotion_ratified.
     See that function's own docstring for the full G7/D-3 history."""

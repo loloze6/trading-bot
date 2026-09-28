@@ -33,6 +33,7 @@ if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 from workflow_artifact_validation import validate_workflow_artifact  # noqa: E402  (CUL-11 sibling helper)
 import cost_helpers as _cost_helpers  # noqa: E402  (E-062 S2a: one shared commission / edge-to-cost definition)
+import protocol_resolution as _protocol_resolution  # noqa: E402  (E-061 C1.6: one shared _era_id_for_timestamp)
 
 # CUL-213: the emoji status prints in this module (incl. the load-bearing
 # ⚠️⚠️⚠️ [CROSS-CHECK] DISAGREEMENT line) crash on a Windows cp1252 console
@@ -1358,39 +1359,13 @@ def _load_campaign_data_policy() -> dict:
 
 
 def _era_id_for_timestamp(ts, eras: list) -> str:
-    """Local copy (E-039 step 5, 2026-09-12) of prescreen_signal.py's own
-    _era_id_for_timestamp -- A8.5.1a: map a bar timestamp to its era_id per
-    campaign_data_policy.yaml's `eras` list. Returns 'era_unmapped' if the
-    timestamp falls outside every declared era (should not happen for
-    in-policy data, but must not crash).
-
-    FIXED (E-061 C1.6): campaign_data_policy.yaml's last era
-    (era_2026_h2_forward_recorded) has an open-ended upper bound,
-    `range: [2026-07-26, null]`. The original `lo <= d <= hi` raised
-    TypeError the moment a timestamp reached that far without matching an
-    earlier era (`str <= None` is unorderable in Python 3). `hi is None` is
-    now treated as +inf (any date >= lo matches) and `lo is None` is treated
-    as -inf (any date <= hi matches) symmetrically -- `hi`/`lo` are never
-    compared to `d` directly when None. Mirrors
-    verdict_criteria_evaluator.py::_era_id_for_timestamp, which already
-    carried this fix proactively."""
-    import pandas as pd
-    d = pd.Timestamp(ts).strftime("%Y-%m-%d")
-    for era in eras:
-        lo, hi = era["range"]
-        if lo is None and hi is None:
-            return era["era_id"]
-        if lo is None:
-            if d <= hi:
-                return era["era_id"]
-            continue
-        if hi is None:
-            if lo <= d:
-                return era["era_id"]
-            continue
-        if lo <= d <= hi:
-            return era["era_id"]
-    return "era_unmapped"
+    """Thin delegator (E-061 C1.6 code-review fix, dedup) to the ONE shared
+    implementation, tools/protocol_resolution.py::era_id_for_timestamp -- see
+    that function's own docstring for the open-ended-era history and the
+    None-handling logic. Kept as a module-level name here (rather than
+    replacing every call site with the qualified name) so this module's own
+    A8.5.1a callers are unchanged."""
+    return _protocol_resolution.era_id_for_timestamp(ts, eras)
 
 
 def _a851a_episode_significance(rows: list, runs_root, timeframe: str) -> dict | None:
