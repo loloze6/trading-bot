@@ -7,6 +7,7 @@ CLI (run from repo root or strategy-research/):
 """
 import sys
 import contextlib
+import copy
 import os
 import csv
 import json
@@ -1662,6 +1663,31 @@ def evaluate_against_decision_rules(
     untested = [r for r in criteria_results if r['result'] in _NOT_REALLY_EVALUATED]
     fail_n   = sum(1 for r in tested if r['result'] == 'FAIL')
 
+    diagnostics = _build_diagnostics(results, criteria_results, trade_diagnostics_summary)
+
+    return {
+        'verdict':          verdict,
+        'criteria_results': criteria_results,
+        'verdict_reason':   f"{fail_n} of {len(tested)} evaluable criteria FAIL; "
+                            f"{len(untested)} UNTESTED",
+        'diagnostics':      diagnostics,
+    }
+
+
+# E-061 C1.3 review fix 3: the one criteria-derived diagnostic, when there is
+# no rule set to derive it from (diagnostics-only mode).
+WIN_RATE_VS_SHARPE_NO_RULES = "N/A (no rule set)"
+
+
+def _build_diagnostics(results: list, criteria_results: list | None,
+                       trade_diagnostics_summary: dict | None) -> dict:
+    """The hypothesis_verdict.diagnostics block (moved verbatim out of
+    evaluate_against_decision_rules, E-061 C1.3, so the diagnostics-only mode
+    computes it without evaluating any criterion). Everything here derives from
+    the per-window `results` and the trade-diagnostics summary, except
+    `win_rate_vs_sharpe`, which reads the evaluated criteria: with
+    `criteria_results=None` (no rule set) it is WIN_RATE_VS_SHARPE_NO_RULES,
+    never the "both PASS or N/A" an empty evaluation would print."""
     # Diagnostics block — evidence for altitude decision by verdict_interpreter
     gross_pnls  = [r["core"].get("gross_pnl")                for r in results if r["core"].get("gross_pnl")                is not None]
     cost_drags  = [r["core"].get("cost_drag_pct")            for r in results if r["core"].get("cost_drag_pct")            is not None]
@@ -1700,11 +1726,13 @@ def evaluate_against_decision_rules(
             if not stats.get("informative", True) and regime not in uninformative:
                 uninformative.append(regime)
 
-    wr_rows     = [row for row in criteria_results if row.get("field") == "median_win_rate"]
-    sharpe_rows = [row for row in criteria_results if row.get("field") == "median_sharpe"]
+    wr_rows     = [row for row in criteria_results or [] if row.get("field") == "median_win_rate"]
+    sharpe_rows = [row for row in criteria_results or [] if row.get("field") == "median_sharpe"]
     wr_pass     = bool(wr_rows)     and all(r["result"] == "PASS" for r in wr_rows)
     sharpe_fail = bool(sharpe_rows) and any(r["result"] == "FAIL" for r in sharpe_rows)
-    if wr_pass and sharpe_fail:
+    if criteria_results is None:
+        wr_vs_sharpe = WIN_RATE_VS_SHARPE_NO_RULES
+    elif wr_pass and sharpe_fail:
         wr_vs_sharpe = "win_rate PASS + sharpe FAIL"
     elif not wr_pass and sharpe_fail:
         wr_vs_sharpe = "both FAIL"
@@ -1741,13 +1769,90 @@ def evaluate_against_decision_rules(
         # verdict-interpreter/SKILL.md's fee-reduction autopsy rule).
         diagnostics["fee_reduction_metrics"] = trade_diagnostics_summary.get("fee_reduction_metrics")
 
+    return diagnostics
+
+
+# E-061 C1.3 (G14, C2_S1_FINDINGS.md Decision): --diagnostics-only, passed by
+# the orchestrator only under orchestrator.config_direct_authoring (which never
+# writes validation_protocol.yaml). Without the flag and without
+# --validation-protocol, hypothesis_verdict stays null exactly as before.
+DIAGNOSTICS_ONLY_VERDICT_REASON = (
+    "--diagnostics-only: no validation protocol, no rule set -- diagnostics only, no verdict")
+
+
+def diagnostics_only_hypothesis_verdict(results: list,
+                                        trade_diagnostics_summary: dict | None = None) -> dict:
+    """E-061 C1.3 (G14): hypothesis_verdict under --diagnostics-only. The
+    diagnostics block (cost drag, gross PnL, forecast/return correlation,
+    below_floor_pct, per-trade expectancy, ...) is the one
+    evaluate_against_decision_rules writes (same _build_diagnostics), so its
+    readers (build_reports' overall slices, the trial row's expectancy /
+    statistic_valid, the profitability reader) keep their inputs. No rule set:
+    `verdict` None, `criteria_results` empty, win_rate_vs_sharpe
+    WIN_RATE_VS_SHARPE_NO_RULES. Evaluates no criterion, so it does not build
+    the extended (per-symbol, bootstrap) summary a second time."""
     return {
-        'verdict':          verdict,
-        'criteria_results': criteria_results,
-        'verdict_reason':   f"{fail_n} of {len(tested)} evaluable criteria FAIL; "
-                            f"{len(untested)} UNTESTED",
-        'diagnostics':      diagnostics,
+        'verdict':          None,
+        'criteria_results': [],
+        'verdict_reason':   DIAGNOSTICS_ONLY_VERDICT_REASON,
+        'diagnostics':      _build_diagnostics(results, None, trade_diagnostics_summary),
     }
+
+
+# E-061 C1.3: a refusal BEFORE any window ran -- no market data was touched, so
+# the orchestrator records no trial row for it (an engineering failure, not a
+# spent look). The exit code and the stderr token live in tools/protocol_refusal.py,
+# shared with the orchestrator.
+from protocol_refusal import EXIT_NO_DATA_TOUCHED, NO_DATA_TOUCHED_TOKEN  # noqa: E402
+
+
+def _refuse_before_any_backtest(reason: str) -> None:
+    """Exit EXIT_NO_DATA_TOUCHED with NO_DATA_TOUCHED_TOKEN opening stderr's line."""
+    sys.stderr.flush()
+    print(f"{NO_DATA_TOUCHED_TOKEN}: {reason} -- refusing to run any backtest.",
+          file=sys.stderr)
+    sys.exit(EXIT_NO_DATA_TOUCHED)
+
+
+# The dry run's synthetic input: two windows of one symbol, every field the
+# rule evaluator reads. Only the validation protocol's SHAPE is under test.
+_DRY_RUN_PER_SYMBOL = {"DRYRUN": {"median_sharpe": 0.1, "max_abs_drawdown_pct": 5.0,
+                                  "min_trade_count": 20, "zero_trade_slot_pct": 0.0}}
+_DRY_RUN_RESULTS = [
+    {"symbol": "DRYRUN", "window": f"w{i}", "run_id": f"dry_{i}", "per_regime": {},
+     "regime_validity": {}, "data_quality": None, "component_errors": None,
+     "core": {"trade_count": 20, "sharpe": 0.1, "net_return_pct": 1.0, "win_rate": 0.5,
+              "max_drawdown_pct": -5.0, "forecast_return_corr": 0.01,
+              "forecast_return_corr_pvalue": 0.5, "gross_pnl": 1.0, "cost_drag_pct": 10.0,
+              "avg_trade_duration_bars": 5}}
+    for i in (1, 2)]
+
+
+def _load_validation_protocol(path, timeframe: str = "1h") -> dict:
+    """E-061 C1.3: read --validation-protocol and DRY-RUN the rule evaluator on
+    it BEFORE any backtest (it used to be opened only after every window had
+    run). The refusal is exactly "would evaluate_against_decision_rules crash on
+    this document": a missing, unreadable (incl. undecodable), unparseable file,
+    or one the evaluator raises on (run_003's `decision_rules: {approve: [...]}`,
+    `approve_if_all_met: null`, an empty or non-mapping document) exits
+    EXIT_NO_DATA_TOUCHED with NO_DATA_TOUCHED_TOKEN. A document the evaluator
+    accepts -- even one with zero rules, like run_018's rules nested under
+    `variants` -- proceeds exactly as before."""
+    import yaml
+    try:
+        with open(path, encoding="utf-8") as f:
+            doc = yaml.safe_load(f)
+    except (OSError, ValueError, yaml.YAMLError) as exc:  # ValueError: UnicodeDecodeError
+        _refuse_before_any_backtest(f"--validation-protocol {str(path)!r} cannot be read "
+                                    f"({type(exc).__name__}: {exc})")
+    try:
+        evaluate_against_decision_rules(
+            copy.deepcopy(_DRY_RUN_PER_SYMBOL), copy.deepcopy(_DRY_RUN_RESULTS),
+            copy.deepcopy(doc), None, runs_root=None, timeframe=timeframe)
+    except Exception as exc:
+        _refuse_before_any_backtest(f"--validation-protocol {str(path)!r}: the rule evaluator "
+                                    f"cannot evaluate it ({type(exc).__name__}: {exc})")
+    return doc
 
 
 def _cross_check_prescreen_vs_backtest(out_dir: Path, results: list, extended: dict | None = None) -> dict | None:
@@ -1855,6 +1960,12 @@ def main():
     parser.add_argument("--i-understand", action="store_true", dest="i_understand")
     parser.add_argument("--validation-protocol", default=None,
                         help="Path to validation_protocol.yaml for hypothesis-specific verdict")
+    parser.add_argument("--diagnostics-only", action="store_true", dest="diagnostics_only",
+                        help="E-061 C1.3: no validation protocol (config-direct authoring) -- "
+                             "write hypothesis_verdict as the diagnostics block with no rule "
+                             "set and no verdict. Without it (and without "
+                             "--validation-protocol) hypothesis_verdict stays null. Mutually "
+                             "exclusive with --validation-protocol.")
     parser.add_argument("--out-dir", default=None,
                         help="Override output directory (default: results/protocols/<run_id>)")
     parser.add_argument("--cost-product", default="spot", choices=["spot", "perp"],
@@ -1901,6 +2012,15 @@ def main():
         print("ERROR: --holdout requires --i-understand (and vice versa). Pass both or neither.",
               file=sys.stderr)
         sys.exit(1)
+
+    # E-061 C1.3: read the validation protocol now, before any data is spent.
+    # Holdout mode never reads it (unchanged).
+    if args.diagnostics_only and args.validation_protocol:
+        _refuse_before_any_backtest("--diagnostics-only and --validation-protocol are "
+                                    "mutually exclusive")
+    validation_protocol = None
+    if args.validation_protocol and not args.holdout:
+        validation_protocol = _load_validation_protocol(args.validation_protocol)
 
     if args.commission_bps is not None:
         print(f"[cost-override] --commission-bps={args.commission_bps} -> "
@@ -2246,14 +2366,18 @@ def main():
     cross_check = _cross_check_prescreen_vs_backtest(out_dir, results, extended_for_cross_check)
 
     hypothesis_verdict = None
-    if args.validation_protocol:
-        import yaml
-        with open(args.validation_protocol, encoding="utf-8") as f:
-            vp = yaml.safe_load(f)
+    if validation_protocol is not None:
+        # Parsed and shape-checked before the windows ran (_load_validation_protocol).
         hypothesis_verdict = evaluate_against_decision_rules(
-            per_symbol, results, vp, trade_diagnostics_summary or None,
+            per_symbol, results, validation_protocol, trade_diagnostics_summary or None,
             runs_root=_runs_root, timeframe=protocol_timeframe,
         )
+    elif args.diagnostics_only:
+        # E-061 C1.3 (G14): config-direct authoring -> the diagnostics block,
+        # no rule set, no verdict.
+        hypothesis_verdict = diagnostics_only_hypothesis_verdict(
+            results, trade_diagnostics_summary or None)
+    if hypothesis_verdict is not None:
         print(f"Hypothesis verdict : {hypothesis_verdict['verdict']}")
         print(f"Reason             : {hypothesis_verdict['verdict_reason']}")
 
