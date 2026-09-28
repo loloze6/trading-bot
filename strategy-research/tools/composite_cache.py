@@ -75,6 +75,7 @@ import yaml
 
 import residual_ic as _ric  # tools/ sibling (also puts trading-bot/ on sys.path)
 import timeframe as _tf  # tools/ sibling: the one timeframe parser
+import holdout_policy as _holdout_policy  # tools/ sibling: the one holdout_range / day parser (CUL-339)
 
 SCHEMA_VERSION = 1
 COMPOSITE_META_FILENAME = "composite.yaml"
@@ -203,23 +204,26 @@ def _refuse_sealed(path: Path) -> None:
 
 
 def _iso(value, what: str, breach_cls) -> date:
-    if not isinstance(value, str):
-        raise breach_cls(f"{what}={value!r} is not an ISO date string -- refusing (fail closed)")
-    try:
-        return date.fromisoformat(value.strip()[:10])  # a date or the date part of a timestamp
-    except ValueError as exc:
-        raise breach_cls(f"{what}={value!r} is not an ISO date -- refusing (fail closed)") from exc
+    """A strict YYYY-MM-DD day via tools/holdout_policy.py (CUL-339: the ONE
+    parser). Stricter than before: a timestamp, padding or trailing text used
+    to be cut to its first 10 characters and accepted; it is now refused."""
+    day = _holdout_policy.iso_day(value)
+    if day is None:
+        raise breach_cls(f"{what}={value!r} is not a YYYY-MM-DD day -- refusing (fail closed)")
+    return date.fromisoformat(day)
 
 
 def check_protocol_outside_holdout(protocol: dict, holdout_range: tuple, *,
                                    breach_cls=CompositeError) -> None:
     """Every test window must carry real ISO start/end dates and lie wholly
     before or wholly after the sealed range (both ends inclusive -- the engine
-    reads the whole end DAY). Anything missing or unparseable fails closed."""
-    if not (isinstance(holdout_range, (list, tuple)) and len(holdout_range) == 2):
-        raise breach_cls(f"holdout range {holdout_range!r} is not (start, end)")
-    lo = _iso(holdout_range[0], "holdout start", breach_cls)
-    hi = _iso(holdout_range[1], "holdout end", breach_cls)
+    reads the whole end DAY). Anything missing or unparseable fails closed.
+    The range itself must be a closed strict-day pair (holdout_policy)."""
+    try:
+        lo_s, hi_s = _holdout_policy.parse_holdout_range(holdout_range, "holdout range")
+    except _holdout_policy.HoldoutPolicyError as exc:
+        raise breach_cls(f"{exc} -- refusing (fail closed)") from exc
+    lo, hi = date.fromisoformat(lo_s), date.fromisoformat(hi_s)
     windows = protocol.get("windows")
     if not isinstance(windows, list) or not windows:
         raise breach_cls("protocol has no windows -- nothing to check, refusing (fail closed)")

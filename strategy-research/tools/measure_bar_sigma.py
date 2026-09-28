@@ -86,6 +86,11 @@ from typing import Dict, List, Optional, Sequence
 
 import pandas as pd
 
+try:  # CUL-339: the ONE holdout_range parser, a tools/ sibling
+    from . import holdout_policy as _holdout_policy  # imported as tools.measure_bar_sigma
+except ImportError:  # run as a script, or imported with tools/ on sys.path
+    import holdout_policy as _holdout_policy
+
 _HERE = Path(__file__).resolve()
 _SR = _HERE.parents[1]
 _REPO = _HERE.parents[2]
@@ -116,21 +121,21 @@ def _holdout_range_from_policy():
     `campaign_data_policy.yaml` instead of silently drifting from it. This module
     is import-isolated for pre-registration integrity (`test_module_cannot_reach
     _the_recorded_capture` pins its imports to stdlib+pandas), so it CANNOT reuse
-    `data_manager._holdout_bounds`; it reads the same single source of truth with
-    a minimal parser over the one contractually-pinned line the policy documents
-    ("exactly ONE holdout_range key, DOUBLE-QUOTED ISO YYYY-MM-DD"). Deny by
-    default: any failure to locate that line raises rather than guessing a
-    window it cannot prove.
+    `data_manager._holdout_bounds`. CUL-339: it now reads the policy through
+    tools/holdout_policy.py, the ONE strict holdout_range parser -- itself
+    stdlib-only at import and reading only the policy file, so the isolation
+    argument above still holds (test_module_cannot_reach_the_recorded_capture
+    checks holdout_policy's own imports too). Stricter than the old line
+    parser: both ends must be strict YYYY-MM-DD days, end >= start, and the
+    document must parse as YAML. Deny by default: any failure raises
+    HoldoutViolation rather than guessing a window it cannot prove.
     """
-    for line in _POLICY_PATH.read_text(encoding="utf-8").splitlines():
-        if line.split("#", 1)[0].strip().startswith("holdout_range:"):
-            inside = line.split("[", 1)[1].split("]", 1)[0]
-            lo, hi = (p.strip().strip('"').strip("'") for p in inside.split(",")[:2])
-            return lo, hi
-    raise HoldoutViolation(
-        f"cannot locate holdout_range in {_POLICY_PATH} -- refusing to guess the "
-        "sealed window."
-    )
+    try:
+        return _holdout_policy.load_holdout_range(_POLICY_PATH)
+    except _holdout_policy.HoldoutPolicyError as exc:
+        raise HoldoutViolation(
+            f"{exc} -- refusing to guess the sealed window."
+        ) from exc
 
 
 class HoldoutViolation(RuntimeError):
