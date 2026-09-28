@@ -177,12 +177,14 @@ def test_asset_partial_coverage_runs_on_the_covered_windows_d042():
 
 def test_a_window_on_the_listing_date_counts_and_a_coin_without_a_date_keeps_the_precheck():
     """H2's boundary: earliest == test.start is covered. A coin the Layer-1 audit
-    gives no date (every Kraken coin) keeps the precheck's own reading."""
+    gives no date keeps the precheck's own reading. (Since PR #250 the real audit
+    carries per-coin Kraken dates from our local caches.)"""
     universe, layer1 = _synthetic("2019-05-01T00:00:00Z")
     cov = vc.window_coverage(_source(_months("2019-03", 4)), exchange="binance", symbol="XRPUSDT",
                              layer1=layer1, precheck=dag.layer1_price_precheck, era_of=_era_of)
     assert cov["windows_run"] == ["2019-05", "2019-06"]
-    assert vc.layer1_earliest(REAL_LAYER1, "kraken", "XRPUSD") is None
+    assert vc.layer1_earliest(layer1, "kraken", "XRPUSD") is None
+    assert vc.layer1_earliest(REAL_LAYER1, "kraken", "XRPUSD") == "2017-05-18T00:00:00Z"
     assert vc.layer1_earliest(layer1, "binance", "XRPUSDT") == "2019-05-01T00:00:00Z"
 
 

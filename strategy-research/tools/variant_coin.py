@@ -77,8 +77,8 @@ VARIANT_PROTOCOL_FILENAME = "protocol.json"
 # index.yaml `reason` prefix of an asset variant skipped for coverage (D-042).
 COVERAGE_REASON_PREFIX = "insufficient_coverage:"
 # The same skip when it is the Layer-2 data gate (a real data touch) that
-# declines / refines an asset variant -- e.g. a Kraken coin, which has no
-# per-coin Layer-1 listing date, lacking data in its pre-listing windows. It
+# declines / refines an asset variant -- e.g. a coin with no per-coin Layer-1
+# date, or with gaps Layer 1 cannot see, lacking data in some windows. It
 # starts with COVERAGE_REASON_PREFIX, so it is read exactly like a 5a skip.
 LAYER2_COVERAGE_REASON_PREFIX = f"{COVERAGE_REASON_PREFIX} layer2"
 # D-042's time-dependent profit bars (config/profitability_bars.yaml names):
@@ -173,8 +173,9 @@ def _naive_utc(ts):
 def layer1_earliest(layer1: dict, exchange: str, symbol: str):
     """The coin's Layer-1 earliest OHLCV date (venue_data_capability.yaml
     venues.<exchange>.spot.symbols.earliest_ohlcv_utc.<symbol>), or None when
-    the audit records none for it (every Kraken coin today: Kraken publishes no
-    per-coin listing date -- only a venue-wide earliest_possible_utc)."""
+    the audit records none for it (such a coin keeps the precheck's own reading;
+    Kraken per-coin dates come from our local caches' first rows since PR #250,
+    tools/refresh_coin_start_dates.py)."""
     spot = ((((layer1 or {}).get("venues") or {}).get(exchange) or {}).get("spot") or {})
     earliest = ((spot.get("symbols") or {}).get("earliest_ohlcv_utc") or {})
     value = earliest.get(symbol) if isinstance(earliest, dict) else None
