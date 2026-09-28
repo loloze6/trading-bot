@@ -2478,11 +2478,33 @@ _TRIED_IDEAS_REASON = (
 )
 
 
+def _orchestrator_config(cfg: dict | None = None) -> dict:
+    """E-061 C1.5 (third-round review fix 10): the parsed config/campaign_config.yaml
+    a flag reader works on -- `cfg` when the caller already parsed it (run_campaign's
+    launch pre-flight parses it ONCE and calls every real reader with it), else
+    read here ({} when the file is absent, so each reader's own default holds).
+    """
+    if cfg is not None:
+        return cfg
+    path = ROOT / "config" / "campaign_config.yaml"
+    if not path.exists():
+        return {}
+    with open(path, encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
+
+
+def _flag_dep(reader, cfg: dict | None) -> bool:
+    """A prerequisite flag read by a flag reader: on the same parsed config when one
+    was passed, else exactly as before (no argument -- so a reader replaced in a
+    test by a zero-argument stub still works on the runtime path)."""
+    return reader() if cfg is None else reader(cfg)
+
+
 # E-046b S2 (the grid, engineering_roadmap.html card C). Off-by-default flag,
 # same shape as _exclusion_digest_input_enabled() below. See
 # config/campaign_config.yaml's orchestrator.grid_evaluation.enabled comment
 # for the full rationale.
-def _grid_evaluation_enabled() -> bool:
+def _grid_evaluation_enabled(cfg: dict | None = None) -> bool:
     """False (no behavior change) when the key, the section, or the file is
     absent -- same silence-is-never-a-green-light rule as
     _exclusion_digest_input_enabled() below. While false, the
@@ -2490,11 +2512,7 @@ def _grid_evaluation_enabled() -> bool:
     and its pass_rule_evaluation.yaml write are completely untouched, and
     artifacts/grid_evaluation.yaml / artifacts/idea_status.yaml are never
     written."""
-    path = ROOT / "config" / "campaign_config.yaml"
-    if not path.exists():
-        return False
-    with open(path, encoding="utf-8") as f:
-        cfg = yaml.safe_load(f) or {}
+    cfg = _orchestrator_config(cfg)
     return _strict_orchestrator_flag("grid_evaluation", cfg=cfg)  # E-061 C1.5: strict
 
 
@@ -2502,17 +2520,13 @@ def _grid_evaluation_enabled() -> bool:
 # Off-by-default flag, same shape as _grid_evaluation_enabled() above. See
 # config/campaign_config.yaml's orchestrator.category_reports.enabled
 # comment for the full rationale.
-def _category_reports_enabled() -> bool:
+def _category_reports_enabled(cfg: dict | None = None) -> bool:
     """False (no behavior change) when the key, the section, or the file is
     absent -- same silence-is-never-a-green-light rule as
     _grid_evaluation_enabled() above. While false, nothing under
     artifacts/reports/ is ever written and every other artifact the
     protocol_execution branch produces is untouched."""
-    path = ROOT / "config" / "campaign_config.yaml"
-    if not path.exists():
-        return False
-    with open(path, encoding="utf-8") as f:
-        cfg = yaml.safe_load(f) or {}
+    cfg = _orchestrator_config(cfg)
     return _strict_orchestrator_flag("category_reports", cfg=cfg)  # E-061 C1.5: strict
 
 
@@ -2520,7 +2534,7 @@ def _category_reports_enabled() -> bool:
 # branch-3 stop. Off-by-default flag, same shape as _grid_evaluation_enabled()
 # above. See config/campaign_config.yaml's orchestrator.profit_bars_file.enabled
 # comment for the full rationale.
-def _profit_bars_file_enabled() -> bool:
+def _profit_bars_file_enabled(cfg: dict | None = None) -> bool:
     """False (no behavior change) when the key, the section, or the file is
     absent -- same silence-is-never-a-green-light rule as
     _grid_evaluation_enabled() above. While false, _dispatch_verdict_route's
@@ -2528,18 +2542,14 @@ def _profit_bars_file_enabled() -> bool:
     unconditionally returns "holdout_evaluation", exactly as before this
     feature existed -- artifacts/profit_bars_evaluation.yaml is never written
     and config/profitability_bars.yaml is never read."""
-    path = ROOT / "config" / "campaign_config.yaml"
-    if not path.exists():
-        return False
-    with open(path, encoding="utf-8") as f:
-        cfg = yaml.safe_load(f) or {}
+    cfg = _orchestrator_config(cfg)
     return _strict_orchestrator_flag("profit_bars_file", cfg=cfg)  # E-061 C1.5: strict
 
 
 # Branch 3 on every backtest (operator-approved 2026-09-24; delivery_plan_v26.md
 # target row "8 · profit bars ... one file, every backtest, stop rule"). See
 # config/campaign_config.yaml's orchestrator.profit_bars_every_backtest.enabled.
-def _profit_bars_every_backtest_enabled() -> bool:
+def _profit_bars_every_backtest_enabled(cfg: dict | None = None) -> bool:
     """False when the key, the section or the config file is absent. A non-bool
     value raises. Requires orchestrator.profit_bars_file.enabled AND
     orchestrator.regroup_record.enabled (hence specialist_readers): raises,
@@ -2555,11 +2565,7 @@ def _profit_bars_every_backtest_enabled() -> bool:
     promote path skips its own evaluation only for a run holding that
     every_backtest evaluation (see the coexistence note in
     _dispatch_verdict_route)."""
-    path = ROOT / "config" / "campaign_config.yaml"
-    if not path.exists():
-        return False
-    with open(path, encoding="utf-8") as f:
-        cfg = yaml.safe_load(f) or {}
+    cfg = _orchestrator_config(cfg)
     pbe_cfg = ((cfg.get("orchestrator") or {}).get("profit_bars_every_backtest") or {})
     value = pbe_cfg.get("enabled", False)
     if not isinstance(value, bool):
@@ -2568,14 +2574,14 @@ def _profit_bars_every_backtest_enabled() -> bool:
             f"boolean (got {type(value).__name__}) -- write an unquoted `true` or `false` "
             f"in config/campaign_config.yaml, not a quoted string or null."
         )
-    if value and not _profit_bars_file_enabled():
+    if value and not _flag_dep(_profit_bars_file_enabled, cfg):
         raise ValueError(
             "orchestrator.profit_bars_every_backtest.enabled=true requires "
             "orchestrator.profit_bars_file.enabled=true as well -- the per-backtest check "
             "grades every variant against config/profitability_bars.yaml, which is only "
             "read under that flag. Enable both, or neither."
         )
-    if value and not _regroup_record_enabled():
+    if value and not _flag_dep(_regroup_record_enabled, cfg):
         # Code review 2026-09-24 (order judge -> learn -> profit check -> regroup +
         # record -> decide): the stop is raised in the route AFTER regroup_record,
         # which itself requires specialist_readers (and grid_evaluation +
@@ -2658,7 +2664,7 @@ def _load_profitability_bars(path: Path | None = None) -> dict:
 # 2026-09-20). Replaces the old _E054_GATE_ENABLED env var
 # (E054_DATA_AVAILABILITY_GATE=1). Same config-loading shape as
 # _grid_evaluation_enabled() above -- but the DEFAULT is inverted.
-def _data_availability_gate_enabled() -> bool:
+def _data_availability_gate_enabled(cfg: dict | None = None) -> bool:
     """True (gate runs) when the key, the section, or the config file itself
     is missing -- the ONE flag in this module that defaults ON instead of
     off. Every other flag here (_grid_evaluation_enabled,
@@ -2674,11 +2680,7 @@ def _data_availability_gate_enabled() -> bool:
     (backtest_specification -> protocol_execution, data_availability_gate
     stage never routed to) -- see
     tests/test_e054_stage_wiring.py's explicit-off case."""
-    path = ROOT / "config" / "campaign_config.yaml"
-    if not path.exists():
-        return True
-    with open(path, encoding="utf-8") as f:
-        cfg = yaml.safe_load(f) or {}
+    cfg = _orchestrator_config(cfg)
     dag_cfg = ((cfg.get("orchestrator") or {}).get("data_availability_gate") or {})
     value = dag_cfg.get("enabled", True)
     # CODE-REVIEW FIX (2026-09-21): bool(value) silently mis-coerces two real
@@ -2742,18 +2744,14 @@ def _build_idea_status_artifact(grid_result: dict, run_id: str) -> dict:
     }
 
 
-def _exclusion_digest_input_enabled() -> bool:
+def _exclusion_digest_input_enabled(cfg: dict | None = None) -> bool:
     """False (no behavior change) when the key, the section, or the file is
     absent -- silence is never a green light, mirroring
     run_campaign._quarantine_enabled()'s own rule verbatim. Reads via ROOT
     (not a source-file-relative path) for the same reason that function
     does: so the test sandbox (tests/conftest.py's autouse guard patches
     ROOT) can seed its own value without touching the real repository."""
-    path = ROOT / "config" / "campaign_config.yaml"
-    if not path.exists():
-        return False
-    with open(path, encoding="utf-8") as f:
-        cfg = yaml.safe_load(f) or {}
+    cfg = _orchestrator_config(cfg)
     return _strict_orchestrator_flag("exclusion_digest_input", cfg=cfg)  # E-061 C1.5: strict
 
 
@@ -2845,16 +2843,12 @@ _STALE_INPUT_PATH_FIXES = {
 }
 
 
-def _stale_input_path_fix_enabled() -> bool:
+def _stale_input_path_fix_enabled(cfg: dict | None = None) -> bool:
     """False when the key, the section, or the config file is absent -- same
     silence-is-never-a-green-light rule as _exclusion_digest_input_enabled()
     and run_campaign._quarantine_enabled(). Reads via ROOT so the test
     sandbox (tests/conftest.py's autouse guard) can seed its own value."""
-    path = ROOT / "config" / "campaign_config.yaml"
-    if not path.exists():
-        return False
-    with open(path, encoding="utf-8") as f:
-        cfg = yaml.safe_load(f) or {}
+    cfg = _orchestrator_config(cfg)
     return _strict_orchestrator_flag("stale_input_path_fix", cfg=cfg)  # E-061 C1.5: strict
 
 
@@ -2905,18 +2899,14 @@ def _apply_stale_input_path_fix(stage_name: str, handoff: dict) -> None:
 _CONFIG_DIRECT_AUTHORING_CONTEXT_STAGES = {"hypothesis_generation", "innovation_expansion"}
 
 
-def _config_direct_authoring_enabled() -> bool:
+def _config_direct_authoring_enabled(cfg: dict | None = None) -> bool:
     """False (no behavior change) when the key, the section, or the config
     file is absent -- same silence-is-never-a-green-light rule as
     _exclusion_digest_input_enabled()/_stale_input_path_fix_enabled() above
     (this is NOT the one inverted-default flag in this file -- that is
     _data_availability_gate_enabled() alone; see its own docstring for why
     it's the deliberate exception)."""
-    path = ROOT / "config" / "campaign_config.yaml"
-    if not path.exists():
-        return False
-    with open(path, encoding="utf-8") as f:
-        cfg = yaml.safe_load(f) or {}
+    cfg = _orchestrator_config(cfg)
     cda_cfg = ((cfg.get("orchestrator") or {}).get("config_direct_authoring") or {})
     value = cda_cfg.get("enabled", False)
     # CODE-REVIEW FIX (2026-09-21): bool(value) silently mis-coerces a quoted
@@ -2936,7 +2926,7 @@ def _config_direct_authoring_enabled() -> bool:
     return value
 
 
-def _variant_loop_enabled() -> bool:
+def _variant_loop_enabled(cfg: dict | None = None) -> bool:
     """E-033.1 Slice 4a (delivery_plan_v26.md Slice 4, sub-slice 1 of 2: "loop
     restructure + trial accounting"). False (no behavior change) when the
     key, the section, or the config file is absent -- same silence-is-never-
@@ -2954,11 +2944,7 @@ def _variant_loop_enabled() -> bool:
     is set while config_direct_authoring.enabled is false or absent --
     S1_FINDINGS.md §9 flagged this exact hard-dependency as a real invalid-
     config state, not a redundant flag."""
-    path = ROOT / "config" / "campaign_config.yaml"
-    if not path.exists():
-        return False
-    with open(path, encoding="utf-8") as f:
-        cfg = yaml.safe_load(f) or {}
+    cfg = _orchestrator_config(cfg)
     vl_cfg = ((cfg.get("orchestrator") or {}).get("variant_loop") or {})
     value = vl_cfg.get("enabled", False)
     # Same "fail loud on anything that isn't a real bool" rule
@@ -2970,7 +2956,7 @@ def _variant_loop_enabled() -> bool:
             f"boolean (got {type(value).__name__}) -- write an unquoted `true` or "
             f"`false` in config/campaign_config.yaml, not a quoted string or null."
         )
-    if value and not _config_direct_authoring_enabled():
+    if value and not _flag_dep(_config_direct_authoring_enabled, cfg):
         raise ValueError(
             "orchestrator.variant_loop.enabled=true requires "
             "orchestrator.config_direct_authoring.enabled=true as well -- "
@@ -3006,7 +2992,7 @@ def _variant_loop_enabled() -> bool:
 # in slice 6c): the route is only ever promote, kill/terminate or a pause.
 # ---------------------------------------------------------------------------
 
-def _specialist_readers_enabled() -> bool:
+def _specialist_readers_enabled(cfg: dict | None = None) -> bool:
     """False (no behavior change) when the key, the section, or the config
     file is absent -- same silence-is-never-a-green-light rule as
     _config_direct_authoring_enabled(). A non-bool value raises (a quoted
@@ -3017,11 +3003,7 @@ def _specialist_readers_enabled() -> bool:
     report builder writes): raises, loudly, if this flag is on while either
     is off -- with either off the stage could only fail later, after spend,
     or route on a guess."""
-    path = ROOT / "config" / "campaign_config.yaml"
-    if not path.exists():
-        return False
-    with open(path, encoding="utf-8") as f:
-        cfg = yaml.safe_load(f) or {}
+    cfg = _orchestrator_config(cfg)
     sr_cfg = ((cfg.get("orchestrator") or {}).get("specialist_readers") or {})
     value = sr_cfg.get("enabled", False)
     if not isinstance(value, bool):
@@ -3031,8 +3013,9 @@ def _specialist_readers_enabled() -> bool:
             f"`false` in config/campaign_config.yaml, not a quoted string or null."
         )
     if value:
-        missing = [name for name, on in (("grid_evaluation", _grid_evaluation_enabled()),
-                                         ("category_reports", _category_reports_enabled()))
+        missing = [name for name, on in (
+                       ("grid_evaluation", _flag_dep(_grid_evaluation_enabled, cfg)),
+                       ("category_reports", _flag_dep(_category_reports_enabled, cfg)))
                    if not on]
         if missing:
             raise ValueError(
@@ -3565,17 +3548,13 @@ def determine_post_specialist_readers_route(path: Path, run_id: str, *,
 _REGROUP_RECORD_HANDOFF = "specialist_readers_to_regroup_record.yaml"
 
 
-def _regroup_record_enabled() -> bool:
+def _regroup_record_enabled(cfg: dict | None = None) -> bool:
     """False when the key, the section or the config file is absent. A
     non-bool value raises. Requires orchestrator.specialist_readers.enabled
     (itself requiring grid_evaluation + category_reports): raises, loudly, if
     this flag is on without it -- without the readers flag the stage is never
     routed to and there is no idea_status route to record before."""
-    path = ROOT / "config" / "campaign_config.yaml"
-    if not path.exists():
-        return False
-    with open(path, encoding="utf-8") as f:
-        cfg = yaml.safe_load(f) or {}
+    cfg = _orchestrator_config(cfg)
     rr_cfg = ((cfg.get("orchestrator") or {}).get("regroup_record") or {})
     value = rr_cfg.get("enabled", False)
     if not isinstance(value, bool):
@@ -3584,7 +3563,7 @@ def _regroup_record_enabled() -> bool:
             f"(got {type(value).__name__}) -- write an unquoted `true` or `false` in "
             f"config/campaign_config.yaml, not a quoted string or null."
         )
-    if value and not _specialist_readers_enabled():
+    if value and not _flag_dep(_specialist_readers_enabled, cfg):
         raise ValueError(
             "orchestrator.regroup_record.enabled=true requires "
             "orchestrator.specialist_readers.enabled=true as well -- regroup_record runs "
@@ -3594,7 +3573,7 @@ def _regroup_record_enabled() -> bool:
     return value
 
 
-def _decide_next_enabled() -> bool:
+def _decide_next_enabled(cfg: dict | None = None) -> bool:
     """E-059 S2a (delivery_plan_v26.md slice 6b; S1_FINDINGS_6B.md §9 and its
     operator decision). False when the key, the section or the config file is
     absent. A non-bool value raises. Requires, loudly:
@@ -3610,11 +3589,7 @@ def _decide_next_enabled() -> bool:
         fail pre-flight for want of a menu-shaped pass_rule.
     Read by run_campaign.process_once (as orch._decide_next_enabled()), once per
     step."""
-    path = ROOT / "config" / "campaign_config.yaml"
-    if not path.exists():
-        return False
-    with open(path, encoding="utf-8") as f:
-        cfg = yaml.safe_load(f) or {}
+    cfg = _orchestrator_config(cfg)
     dn_cfg = ((cfg.get("orchestrator") or {}).get("decide_next") or {})
     value = dn_cfg.get("enabled", False)
     if not isinstance(value, bool):
@@ -3624,9 +3599,10 @@ def _decide_next_enabled() -> bool:
             f"config/campaign_config.yaml, not a quoted string or null."
         )
     if value:
-        missing = [name for name, on in (("regroup_record", _regroup_record_enabled()),
+        missing = [name for name, on in (
+                       ("regroup_record", _flag_dep(_regroup_record_enabled, cfg)),
                                          ("config_direct_authoring",
-                                          _config_direct_authoring_enabled()))
+                                          _flag_dep(_config_direct_authoring_enabled, cfg)))
                    if not on]
         if missing:
             raise ValueError(
@@ -3671,9 +3647,10 @@ def _strict_orchestrator_flag(name: str, requires: tuple = (), why: str = "", *,
     _composition_runs_enabled.
 
     E-061 C1.5 (A8): also THE one strict check of the seven readers that used
-    plain bool() (they pass the `cfg` they already parsed) and of
-    run_campaign's launch pre-flight, which parses the config once and passes
-    it here with in-memory dependency readers -- one check, one message."""
+    plain bool(). Every reader takes an optional parsed `cfg`
+    (_orchestrator_config), which run_campaign's launch pre-flight passes to all
+    of them after parsing the config once -- one check, one message, no copy of
+    the rules outside the readers."""
     if cfg is None:
         path = ROOT / "config" / "campaign_config.yaml"
         if not path.exists():
@@ -3698,7 +3675,7 @@ def _strict_orchestrator_flag(name: str, requires: tuple = (), why: str = "", *,
     return value
 
 
-def _verdict_routing_retired_enabled() -> bool:
+def _verdict_routing_retired_enabled(cfg: dict | None = None) -> bool:
     """False when the key, the section or the config file is absent. A non-bool
     value raises. Requires, loudly:
       * orchestrator.decide_next.enabled (itself requiring regroup_record,
@@ -3712,9 +3689,10 @@ def _verdict_routing_retired_enabled() -> bool:
     Read ONCE per run, in run_loop's pre-flight (that value is passed to every
     decision inside the run), and once per step in run_campaign.process_once."""
     return _strict_orchestrator_flag(
-        "verdict_routing_retired",
-        requires=(("decide_next", _decide_next_enabled),
-                  ("profit_bars_every_backtest", _profit_bars_every_backtest_enabled)),
+        "verdict_routing_retired", cfg=cfg,
+        requires=(("decide_next", lambda: _flag_dep(_decide_next_enabled, cfg)),
+                  ("profit_bars_every_backtest",
+                   lambda: _flag_dep(_profit_bars_every_backtest_enabled, cfg))),
         why=("with verdict routing retired, only decide_next picks the next run, and only "
              "the per-backtest profit-bars check grades a run against "
              "config/profitability_bars.yaml. Enable them together."))
@@ -3747,7 +3725,7 @@ _RESIDUAL_IC_ARTIFACT = "residual_ic.yaml"
 _CODE_CRITERION_META_KEYS = ("basis", "card_overridable", "requires_flag", "ratified")
 
 
-def _composition_runs_enabled() -> bool:
+def _composition_runs_enabled(cfg: dict | None = None) -> bool:
     """False when the key, the section or the config file is absent. A non-bool
     value raises. Requires, loudly (S1_FINDINGS.md "Flag design"):
       * orchestrator.decide_next.enabled (hence regroup_record,
@@ -3761,11 +3739,13 @@ def _composition_runs_enabled() -> bool:
         without the latter a composition run could reach refine/pivot
         routing, which must never be fed."""
     return _strict_orchestrator_flag(
-        "composition_runs",
-        requires=(("decide_next", _decide_next_enabled),
-                  ("variant_loop", _variant_loop_enabled),
-                  ("profit_bars_every_backtest", _profit_bars_every_backtest_enabled),
-                  ("verdict_routing_retired", _verdict_routing_retired_enabled)),
+        "composition_runs", cfg=cfg,
+        requires=(("decide_next", lambda: _flag_dep(_decide_next_enabled, cfg)),
+                  ("variant_loop", lambda: _flag_dep(_variant_loop_enabled, cfg)),
+                  ("profit_bars_every_backtest",
+                   lambda: _flag_dep(_profit_bars_every_backtest_enabled, cfg)),
+                  ("verdict_routing_retired",
+                   lambda: _flag_dep(_verdict_routing_retired_enabled, cfg))),
         why=("the residual-IC criterion is written at 1a from the criterion menu, computed "
              "per variant in the variant loop, recorded by regroup_record, and a composition "
              "run must never reach retired refine/pivot routing. Enable them together."))
@@ -6548,18 +6528,14 @@ def _derive_variant_id(variant, index: int) -> str:
     return f"str_{index}_{digest}"
 
 
-def _variant_selection_record_enabled() -> bool:
+def _variant_selection_record_enabled(cfg: dict | None = None) -> bool:
     """False when the key, the section, or the config file is absent -- same
     silence-is-never-a-green-light rule as every other orchestrator.<name>.
     enabled flag in this module (_exclusion_digest_input_enabled,
     _stale_input_path_fix_enabled, _variant_anti_adjacency_gate_enabled). Reads via
     ROOT so the test sandbox (tests/conftest.py's autouse guard) can seed its
     own value without touching the real repository."""
-    path = ROOT / "config" / "campaign_config.yaml"
-    if not path.exists():
-        return False
-    with open(path, encoding="utf-8") as f:
-        cfg = yaml.safe_load(f) or {}
+    cfg = _orchestrator_config(cfg)
     return _strict_orchestrator_flag("variant_selection_record", cfg=cfg)  # E-061 C1.5: strict
 
 
@@ -6745,17 +6721,13 @@ def _record_variant_selection(run_dir: Path) -> None:
 #     one check per variant that protocol_execution would run.
 # ---------------------------------------------------------------------------
 
-def _variant_anti_adjacency_gate_enabled() -> bool:
+def _variant_anti_adjacency_gate_enabled(cfg: dict | None = None) -> bool:
     """False (no behavior change) when the key, the section, or the config
     file is absent -- same silence-is-never-a-green-light rule as the other
     orchestrator.<name>.enabled flags in this module
     (_exclusion_digest_input_enabled, _stale_input_path_fix_enabled,
     _variant_selection_record_enabled)."""
-    path = ROOT / "config" / "campaign_config.yaml"
-    if not path.exists():
-        return False
-    with open(path, encoding="utf-8") as f:
-        cfg = yaml.safe_load(f) or {}
+    cfg = _orchestrator_config(cfg)
     return _strict_orchestrator_flag("variant_anti_adjacency_gate", cfg=cfg)  # E-061 C1.5: strict
 
 
