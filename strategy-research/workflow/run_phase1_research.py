@@ -1314,6 +1314,7 @@ def _validation_protocol_args(validation_path: Path) -> list:
 
 
 import protocol_refusal as _protocol_refusal  # noqa: E402  (tools/: one definition)
+import holdout_policy as _holdout_policy  # noqa: E402  (tools/: CUL-339, the ONE strict holdout_range parser)
 
 
 class _RefusedBeforeAnyBacktest(RuntimeError):
@@ -7819,22 +7820,44 @@ def _load_holdout_range(policy_path=None) -> tuple:
     down, alongside the holdout_consumed_by writer); tests/conftest.py
     redirects it into a per-test sandbox, so it is deliberately read at call
     time rather than captured here.
+
+    CUL-339: parsed by tools/holdout_policy.py, the ONE strict parser. Stricter
+    than before on exactly the shapes the old `str(...)` let through: both ends
+    must be strict YYYY-MM-DD days (no timestamp, tz offset or other format),
+    end >= start, and an unparseable YAML file is a HoldoutBoundaryBreach too
+    (it used to escape as yaml.YAMLError).
     """
     p = Path(policy_path) if policy_path else _DATA_POLICY_PATH
     try:
-        policy = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
-    except OSError as exc:
+        return _holdout_policy.load_holdout_range(p)
+    except _holdout_policy.HoldoutPolicyError as exc:
         raise HoldoutBoundaryBreach(
-            f"cannot read the campaign data policy at {p}: {exc}. Refusing to "
-            "generate windows without knowing where the holdout starts."
+            f"{exc}. Refusing to generate windows against an unknown seal."
         ) from exc
-    hr = policy.get("holdout_range")
-    if not isinstance(hr, (list, tuple)) or len(hr) != 2 or not all(hr):
-        raise HoldoutBoundaryBreach(
-            f"{p} has no usable holdout_range (got {hr!r}). Refusing to generate "
-            "windows against an unknown seal."
-        )
-    return str(hr[0]), str(hr[1])
+
+
+def _generated_protocol_holdout_block(proto_constraint: dict) -> dict:
+    """CUL-339 review fix: the `holdout` block a generated protocol carries --
+    always the policy's holdout_range. A pre-registered override
+    (machine_constraints.protocol.holdout) is accepted only when it names
+    exactly that range (strict days); any disagreement is refused HERE, at
+    generation, instead of being written and only refused later by
+    `run_protocol.py --holdout`. An explicit null is treated as absent. Shared
+    by generation and run_campaign._expected_generated_protocol so both raise
+    at the same place."""
+    policy_start, policy_end = _load_holdout_range()
+    override = proto_constraint.get("holdout")
+    if override is not None:
+        agrees = (isinstance(override, dict)
+                  and set(override) <= {"start", "end"}
+                  and _holdout_policy.iso_day(override.get("start")) == policy_start
+                  and _holdout_policy.iso_day(override.get("end")) == policy_end)
+        if not agrees:
+            raise HoldoutBoundaryBreach(
+                f"machine_constraints.protocol.holdout {override!r} disagrees with "
+                f"campaign_data_policy.yaml holdout_range [{policy_start}, {policy_end}]. "
+                f"The holdout range has ONE home (the policy); remove the override.")
+    return {"start": policy_start, "end": policy_end}
 
 
 def _assert_windows_clear_of_holdout(windows: list, holdout_start: str,
@@ -7939,15 +7962,13 @@ def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: d
     windows = _generate_monthly_windows(start, end)
     # The seal has ONE home. Defaulting to a literal here was a second copy of
     # holdout_range that nothing kept in sync with the policy file, in the very
-    # function whose windows have to be checked against it.
-    policy_start, policy_end = _load_holdout_range()
+    # function whose windows have to be checked against it. CUL-339: an
+    # override that disagrees with the policy is refused at generation.
     protocol_obj = {
         "symbols": symbols,
         "timeframe": timeframe,
         "windows": windows,
-        "holdout": proto_constraint.get(
-            "holdout", {"start": policy_start, "end": policy_end}
-        ),
+        "holdout": _generated_protocol_holdout_block(proto_constraint),
         "promotion": _require_pre_registered_promotion(proto_constraint, run_id),
     }
     with open(out_path, "w", encoding="utf-8") as f:

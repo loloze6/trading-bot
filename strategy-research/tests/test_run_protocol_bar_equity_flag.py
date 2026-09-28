@@ -96,6 +96,13 @@ def run_main(monkeypatch, tmp_path):
         stub = _RecordingRunBacktest(sandbox)
         monkeypatch.setattr(rp, "run_backtest", stub)
         monkeypatch.setattr(rp, "_RESULTS_ROOT", str(tmp_path / "results"))
+        # CUL-339: --holdout takes its range ONLY from the policy's holdout_range and
+        # refuses a disagreeing protocol block, so sandbox a policy that agrees with
+        # this test's synthetic block (also the walk-forward guard's upper bound).
+        _policy = tmp_path / "campaign_data_policy.yaml"
+        _policy.write_text('holdout_range: ["2022-02-01", "2022-02-02"]\n'
+                           'holdout_consumed_by: []\n', encoding="utf-8")
+        monkeypatch.setattr(rp, "_DATA_POLICY_PATH", _policy)
 
         protocol_extra = {}
         if holdout:
@@ -106,7 +113,7 @@ def run_main(monkeypatch, tmp_path):
         argv = ["run_protocol.py", str(config_path), str(protocol_path),
                 "--out-dir", str(tmp_path / "out")]
         if holdout:
-            argv += ["--holdout", "--i-understand"]
+            argv += ["--holdout", "--i-understand", "--hypothesis-id", "H-FLAG-TEST"]
         monkeypatch.setattr(sys, "argv", argv)
         rp.main()
         return stub.calls

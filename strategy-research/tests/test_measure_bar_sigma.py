@@ -247,7 +247,25 @@ def test_module_cannot_reach_the_recorded_capture():
     assert imported <= {
         "__future__", "argparse", "math", "os", "statistics", "pathlib",
         "typing", "pandas",
+        # CUL-339: the ONE holdout_range parser. Its own imports are pinned
+        # just below, so the transitive reach stays stdlib + yaml (a parser).
+        "holdout_policy",
     }, f"unexpected imports in measure_bar_sigma.py: {imported}"
+
+    hp_path = Path(mbs.__file__).with_name("holdout_policy.py")
+    hp_tree = ast.parse(hp_path.read_text(encoding="utf-8"))
+    hp_imported: set[str] = set()
+    for node in ast.walk(hp_tree):
+        if isinstance(node, ast.Import):
+            hp_imported.update(a.name.split(".")[0] for a in node.names)
+        elif isinstance(node, ast.ImportFrom):
+            assert node.level == 0, "holdout_policy.py must not relative-import a sibling"
+            hp_imported.add(node.module.split(".")[0])
+    assert hp_imported <= {"__future__", "re", "datetime", "pathlib", "yaml"}, (
+        f"unexpected imports in holdout_policy.py: {hp_imported}")
+    hp_src = hp_path.read_text(encoding="utf-8")
+    for path_fragment in ("recorded_reserved", "holdout_sealed", "kraken_ws_v2"):
+        assert f'"{path_fragment}"' not in hp_src and f"'{path_fragment}'" not in hp_src
 
     src = open(mbs.__file__, encoding="utf-8").read()
     for path_fragment in ("recorded_reserved", "holdout_sealed", "kraken_ws_v2"):

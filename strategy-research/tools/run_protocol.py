@@ -16,9 +16,10 @@ import argparse
 import statistics
 import re
 import collections
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
+from typing import NoReturn
 
 _HERE = os.path.dirname(os.path.abspath(__file__))   # strategy-research/tools/
 _SR   = os.path.dirname(_HERE)                        # strategy-research/
@@ -1345,12 +1346,20 @@ def _assemble_pooled_symbol_records(rows: list, runs_root) -> tuple:
     return records, expected_step, all_have_timestamp
 
 
+#: CUL-339: the campaign data policy -- the single source of truth for
+#: holdout_range. Read at CALL time (never captured at import) so a test can
+#: point it at a sandboxed copy with monkeypatch.
+_DATA_POLICY_PATH = Path(_SR) / "config" / "campaign_data_policy.yaml"
+
+
 def _load_campaign_data_policy() -> dict:
     """Thin delegator (E-061 C1.6/C1.7 second-round code-review fix, dedup)
     to the ONE shared implementation, tools/protocol_resolution.py::
     load_campaign_data_policy -- see that function's own docstring. Kept as
-    a module-level name here so this module's own callers are unchanged."""
-    return _protocol_resolution.load_campaign_data_policy(Path(_SR) / "config" / "campaign_data_policy.yaml")
+    a module-level name here so this module's own callers are unchanged.
+    CUL-339: passes _DATA_POLICY_PATH (read at call time) so a test can
+    sandbox the policy with monkeypatch."""
+    return _protocol_resolution.load_campaign_data_policy(Path(_DATA_POLICY_PATH))
 
 
 def _era_id_for_timestamp(ts, eras: list) -> str:
@@ -1796,12 +1805,134 @@ def diagnostics_only_hypothesis_verdict(results: list,
 from protocol_refusal import EXIT_NO_DATA_TOUCHED, NO_DATA_TOUCHED_TOKEN  # noqa: E402
 
 
-def _refuse_before_any_backtest(reason: str) -> None:
+def _refuse_before_any_backtest(reason: str) -> NoReturn:
     """Exit EXIT_NO_DATA_TOUCHED with NO_DATA_TOUCHED_TOKEN opening stderr's line."""
     sys.stderr.flush()
     print(f"{NO_DATA_TOUCHED_TOKEN}: {reason} -- refusing to run any backtest.",
           file=sys.stderr)
     sys.exit(EXIT_NO_DATA_TOUCHED)
+
+
+import holdout_policy as _holdout_policy  # noqa: E402  (CUL-339: the ONE strict policy/day parser)
+
+
+def _load_policy_or_refuse() -> dict:
+    """The campaign data policy, or a refusal before any backtest (missing,
+    unreadable, unparseable or not a mapping). Deny by default."""
+    try:
+        return _holdout_policy.load_policy(_DATA_POLICY_PATH)
+    except _holdout_policy.HoldoutPolicyError as exc:
+        _refuse_before_any_backtest(str(exc))
+
+
+def _policy_holdout_range(policy: dict) -> tuple[str, str]:
+    """CUL-339: (start, end) of the policy's holdout_range, both inclusive
+    "YYYY-MM-DD" days. The policy is the ONLY source of the sealed range --
+    never a protocol's own `holdout` block, and never the wall clock. A
+    malformed range, an open (null/empty) end, or an end before the start
+    refuses before any backtest (exit EXIT_NO_DATA_TOUCHED)."""
+    try:
+        return _holdout_policy.holdout_range_of(policy, f"{_DATA_POLICY_PATH} holdout_range")
+    except _holdout_policy.HoldoutPolicyError as exc:
+        _refuse_before_any_backtest(str(exc))
+
+
+def _protocol_holdout_block(protocol: dict) -> dict | None:
+    """The protocol's own `holdout` block, validated as a mapping: None when
+    absent or null (treated identically), a refusal when it is anything but a
+    {start, end} mapping. The ONE reader of that block in this module."""
+    block = protocol.get("holdout")
+    if block is None:
+        return None
+    if not isinstance(block, dict):
+        _refuse_before_any_backtest(f"the protocol's holdout block {block!r} is not a "
+                                    f"{{start, end}} mapping")
+    return block
+
+
+def _resolve_holdout_window(protocol: dict, policy: dict) -> tuple[str, str]:
+    """CUL-339: the window `--holdout` backtests. It is the policy's
+    holdout_range and nothing else. A protocol with no `holdout` block (absent
+    or null) uses it as-is; a protocol whose block disagrees with it on either
+    end -- including an `end: null`, which used to mean "today" and scored the
+    whole sealed window plus post-holdout data -- is refused before any fetch.
+    The block is never used to widen, narrow or shift the range."""
+    start, end = _policy_holdout_range(policy)
+    block = _protocol_holdout_block(protocol)
+    if block is None:
+        return start, end
+    p_start, p_end = block.get("start"), block.get("end")
+    if (_holdout_policy.iso_day(p_start) != start
+            or _holdout_policy.iso_day(p_end) != end):
+        _refuse_before_any_backtest(
+            f"the protocol's holdout block {{start: {p_start!r}, end: {p_end!r}}} disagrees "
+            f"with campaign_data_policy.yaml holdout_range [{start}, {end}]. --holdout takes "
+            f"its range ONLY from the policy; fix or remove the protocol's block")
+    return start, end
+
+
+def _training_holdout_start(protocol: dict, policy: dict) -> str:
+    """CUL-339: the upper bound every walk-forward window (and its warmup
+    prefetch) must stay strictly before -- min(protocol holdout start, policy
+    holdout start), so a protocol's own block can only make the guard STRICTER
+    than the policy, never looser. Only the policy's START is validated here:
+    training never reads the sealed range's end, so an open or undecided end
+    must not block it (config/README.md). A protocol with no block (or a block
+    with no start) gets the policy start; a present but malformed start is
+    refused."""
+    try:
+        policy_start = _holdout_policy.holdout_start_of(
+            policy, f"{_DATA_POLICY_PATH} holdout_range")
+    except _holdout_policy.HoldoutPolicyError as exc:
+        _refuse_before_any_backtest(str(exc))
+    block = _protocol_holdout_block(protocol)
+    raw = None if block is None else block.get("start")
+    if raw is None:
+        return policy_start
+    p_start = _holdout_policy.iso_day(raw)
+    if p_start is None:
+        _refuse_before_any_backtest(f"the protocol's holdout start {raw!r} is not a "
+                                    f"YYYY-MM-DD day")
+    return min(p_start, policy_start)
+
+
+def _preflight_training_windows(protocol: dict, holdout_start: str) -> None:
+    """CUL-339 review fix: EVERY walk-forward window's test.start AND test.end
+    must be a strict YYYY-MM-DD day, start <= end, and end strictly before
+    `holdout_start` (inclusive-by-day engine semantics) -- all checked before
+    any output directory, snapshot or backtest, so one bad window can no
+    longer let earlier windows spend data first. An explicit refusal, never an
+    `assert` (which `python -O` strips)."""
+    try:
+        _holdout_policy.check_windows_before(protocol.get("windows"), holdout_start)
+    except _holdout_policy.HoldoutPolicyError as exc:
+        _refuse_before_any_backtest(str(exc))
+
+
+def _refuse_if_holdout_consumed(policy: dict, hypothesis_id) -> None:
+    """CUL-339 review fix (A6.1 single-use): --holdout needs the hypothesis id
+    it spends the seal for, and refuses -- before any fetch -- when that id is
+    already in the policy's holdout_consumed_by. Neither the protocol nor the
+    strategy config carries a hypothesis id, so it comes from --hypothesis-id
+    (the operator copies it from holdout_decision_record / hypothesis_card.yaml).
+    Exact match, as the orchestrator's own check. This module never WRITES
+    holdout_consumed_by; the orchestrator's record step does."""
+    if not isinstance(hypothesis_id, str) or not hypothesis_id.strip():
+        _refuse_before_any_backtest(
+            "--holdout requires --hypothesis-id <id> (the hypothesis this spend is for) so "
+            "a hypothesis already in holdout_consumed_by can be refused")
+    if hypothesis_id != hypothesis_id.strip():
+        # exact match below: padding would make a consumed id look unspent
+        _refuse_before_any_backtest(f"--hypothesis-id {hypothesis_id!r} has surrounding "
+                                    f"whitespace")
+    try:
+        consumed = _holdout_policy.consumed_hypothesis_ids(policy)
+    except _holdout_policy.HoldoutPolicyError as exc:
+        _refuse_before_any_backtest(f"{_DATA_POLICY_PATH}: {exc}")
+    if hypothesis_id in consumed:
+        _refuse_before_any_backtest(
+            f"hypothesis {hypothesis_id!r} is already in {_DATA_POLICY_PATH} "
+            f"holdout_consumed_by -- the holdout is single-use per hypothesis (A6.1)")
 
 
 # The dry run's synthetic input: two windows of one symbol, every field the
@@ -1948,6 +2079,11 @@ def main():
     parser.add_argument("protocol_path", help="Path to protocol JSON spec")
     parser.add_argument("--holdout",      action="store_true")
     parser.add_argument("--i-understand", action="store_true", dest="i_understand")
+    parser.add_argument("--hypothesis-id", default=None, dest="hypothesis_id",
+                        help="Required with --holdout (and only with it): the hypothesis "
+                             "this holdout spend is for. Refused before any fetch when it "
+                             "is already in campaign_data_policy.yaml holdout_consumed_by "
+                             "(CUL-339). Never written by this tool.")
     parser.add_argument("--validation-protocol", default=None,
                         help="Path to validation_protocol.yaml for hypothesis-specific verdict")
     parser.add_argument("--diagnostics-only", action="store_true", dest="diagnostics_only",
@@ -2019,6 +2155,20 @@ def main():
 
     with open(args.protocol_path, encoding="utf-8") as f:
         protocol = json.load(f)
+
+    # CUL-339: resolve the holdout boundary from campaign_data_policy.yaml NOW,
+    # and pre-flight everything that depends on it, before any output
+    # directory, snapshot or data fetch. Every check below refuses
+    # (EXIT_NO_DATA_TOUCHED) rather than asserting.
+    if args.hypothesis_id is not None and not args.holdout:
+        _refuse_before_any_backtest("--hypothesis-id is only meaningful with --holdout")
+    policy = _load_policy_or_refuse()
+    if args.holdout:
+        holdout_window = _resolve_holdout_window(protocol, policy)
+        _refuse_if_holdout_consumed(policy, args.hypothesis_id)
+    _holdout_start = _training_holdout_start(protocol, policy)
+    if not args.holdout:
+        _preflight_training_windows(protocol, _holdout_start)
 
     # CUL-165 / GH#79: read the config bytes once and hash those bytes, so the
     # protocol-level stamp certifies the exact bytes every run_backtest() below
@@ -2100,9 +2250,12 @@ def main():
     # HOLDOUT MODE
     # ------------------------------------------------------------------
     if args.holdout:
-        h = protocol["holdout"]
-        start = h["start"]
-        end   = h["end"] if h["end"] is not None else date.today().isoformat()
+        # CUL-339: the policy's holdout_range, resolved (and cross-checked
+        # against the protocol's own block) before out_dir was created above.
+        # It used to be read from protocol["holdout"], with `end: null` meaning
+        # date.today() -- a block of {start: <validation year>, end: null}
+        # would have scored validation, the whole seal and post-holdout data.
+        start, end = holdout_window
 
         _runs_root = str(out_dir / "results") if args.out_dir else None
         holdout_results = {}
@@ -2172,29 +2325,22 @@ def main():
     # is checked against it below, both directly (this loop, general protocol
     # sanity: no training window may reach into holdout) and inside run_backtest
     # itself (the prefetch's computed fetch_start must stay before it too).
-    _holdout_start = protocol.get("holdout", {}).get("start")
+    # CUL-339: _holdout_start is resolved right after the protocol is loaded --
+    # min(protocol holdout start, policy holdout start), never None, so the
+    # guard can no longer be looser than the policy or silently absent -- and
+    # EVERY window was pre-flighted against it there (_preflight_training_windows:
+    # strict days, start <= end, end STRICTLY before it), before out_dir existed.
+    # Strictly less than, not <=: `end` reads as an exclusive bound (the next
+    # window starts on the same date) but run_backtest passes it to
+    # load_data(end_date=end), which yields every bar of the end DAY through
+    # 23:00, so end == holdout_start would materialise 24 holdout bars -- see
+    # campaign_data_policy.yaml: holdout_contaminated_runs.
 
     for symbol in symbols:
         for window in protocol["windows"]:
             label     = window["label"]
             start     = window["test"]["start"]
             end       = window["test"]["end"]
-            if _holdout_start is not None:
-                # STRICTLY less than, not <=. `end` reads as an exclusive bound
-                # (the next window starts on the same date) but it is not one:
-                # run_backtest passes it to load_data(end_date=end), which
-                # yields every bar of the end DAY through 23:00. So end ==
-                # holdout_start materialises 24 holdout bars. The <= form let
-                # exactly that through -- see campaign_data_policy.yaml:
-                # holdout_contaminated_runs, whose declared range ends at
-                # day 1 of the seal, 23:00.
-                assert end < _holdout_start, (
-                    f"Window {label} ({symbol}) ends {end}, at or past holdout_start="
-                    f"{_holdout_start} -- a training window must never reach into the "
-                    f"holdout range. NB `end` is INCLUSIVE-BY-DAY at the engine, so an "
-                    f"end equal to holdout_start still materialises that whole day's "
-                    f"bars. Fix the protocol's windows before proceeding."
-                )
             print(f"  {symbol}  window={label}  {start} to {end} ...")
             # 2026-09-02 (E-041): bar_equity=True -- see the holdout call site
             # above for the full declaration; same change, same proof.
