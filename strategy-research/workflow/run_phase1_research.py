@@ -13410,6 +13410,7 @@ def run_loop(run_id: str):
                     # exactly as before.
                     _conf_index = ((load_yaml(_variants_dir / "index.yaml") or {}).get("variants")
                                    or {}) if (_variants_dir / "index.yaml").exists() else {}
+                    _conf_source = None
                     if _variants_dir.exists():
                         for _vdir in sorted(p for p in _variants_dir.iterdir() if p.is_dir()):
                             _vpr_path = _vdir / "protocol_result.yaml"
@@ -13419,8 +13420,10 @@ def run_loop(run_id: str):
                             _pr = load_yaml(_vpr_path) or {}
                             _vproto = _variant_protocol_path(RUN_DIR, _conf_index.get(_variant_id))
                             if _vproto is not None:
+                                if _conf_source is None:  # resolved once per run
+                                    _conf_source = _resolve_protocol_path(RUN_DIR, run_id)
                                 _violations = _per_coin_conformance(
-                                    _pr, _constraints, _vproto, _resolve_protocol_path(RUN_DIR, run_id))
+                                    _pr, _constraints, _vproto, _conf_source)
                             else:
                                 _protocol_obj = {}
                                 _protocol_path_str = _pr.get("protocol_file")
