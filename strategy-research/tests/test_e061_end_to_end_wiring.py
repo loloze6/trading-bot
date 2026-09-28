@@ -80,8 +80,8 @@ Finding -> test (see each marker's reason for the pinned failure):
   A7 (C1.6)  test_a7_era_id_handles_the_open_ended_last_era
   A8 (C1.5)  test_a8_flag_misconfiguration_refused_before_any_llm_call[*] (fixed, no marker)
   A5 (pin)   test_a5_one_variant_failing_validate_config_pins_the_pause
-  B2 / A3 §3.4 (C2.2)
-             test_b2_category_reports_carry_trade_and_bar_slices
+  B2 / A3 §3.4 (C2.2, E-061 C2 S2d)
+             test_b2_category_reports_carry_trade_and_bar_slices          (fixed, no marker)
   B4 / D-015 (C2.4, E-061 C2 S2a)
              test_c2_4_one_crashed_variant_never_validates           (fixed, no marker)
   A9 -- the joined-up path (A3 §5 items 7-9):
@@ -1564,15 +1564,15 @@ def _unavailable_slices(node, path="") -> list:
     return out
 
 
-@pytest.mark.xfail(strict=True, raises=PinnedFailure, reason=(
-    "E-061 C2.2 (B2; A3 §3.4 / top finding 8). Pinned on master: build_reports reads "
-    "RUN_DIR/trade_diagnostics.json and RUN_DIR/results/<w>/bars.csv, while the variant "
-    "loop writes them under RUN_DIR/variants/<id>/ -- trade_efficiency's per_window/"
-    "per_regime/per_symbol ('no trade_diagnostics.json found alongside this run'), "
-    "regime_power's hindsight_lag ('bars.csv missing') and component_attribution ('no "
-    "debug_info.components.*.* columns found in any window's bars.csv') come out "
-    "{unavailable: true} with no error."))
 def test_b2_category_reports_carry_trade_and_bar_slices(harness):
+    """FIXED by E-061 C2 S2d (was strict-xfail on master: build_reports read
+    RUN_DIR/trade_diagnostics.json and RUN_DIR/results/<w>/bars.csv, while the
+    variant loop writes them under RUN_DIR/variants/<id>/ -- every slice came
+    out {unavailable: true} with no error). build_reports now reads each
+    variant's OWN artifacts/variants/<vid>/protocol_result.yaml,
+    variants/<vid>/trade_diagnostics.json and variants/<vid>/results/<w>/
+    bars.csv (`_variant_sources`), so no trade/bar slice is unavailable for
+    a missing source under the variant loop."""
     h = harness.build()
     run_dir = _stage_at_protocol_execution(h, validation_protocol=True)
     asyncio.run(rpr.run_tool_worker("protocol_execution", "run_001"))
@@ -1580,6 +1580,14 @@ def test_b2_category_reports_carry_trade_and_bar_slices(harness):
                for cat in ("trade_efficiency", "regime_power", "component_attribution")}
     assert all(reports.values()), sorted(p.name for p in (run_dir / "artifacts").iterdir())
     bad = {cat: _unavailable_slices(doc) for cat, doc in reports.items()}
-    if any(bad.values()):
-        raise PinnedFailure(f"B2 (C2.2): slices unavailable for a missing trade/bar source: "
-                            f"{ {c: [p for p, _ in v] for c, v in bad.items()} }")
+    assert not any(bad.values()), (
+        f"slices unavailable for a missing trade/bar source: "
+        f"{ {c: [p for p, _ in v] for c, v in bad.items()} }")
+    # E-061 C2 S2d shape check: every reader-facing report is schema_version 2
+    # with a `variants` map holding each of the three graded variants
+    # (asset/base/design, per this test's own fixture) -- not the pre-S2d
+    # bare `slices` shape.
+    for cat, doc in reports.items():
+        assert doc.get("schema_version") == 2, f"{cat}.yaml: expected schema_version 2, got {doc!r}"
+        assert set(doc.get("variants") or {}) == {"asset", "base", "design"}, \
+            f"{cat}.yaml: expected all 3 graded variants, got {sorted(doc.get('variants') or {})}"

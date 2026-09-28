@@ -26,24 +26,58 @@ specific field in this report. You propose; you do not decide the route.
 `campaign_state.yaml`, no `fragment_patterns.yaml`.
 
 ## Report shape (`trade_efficiency.yaml`)
+
+**E-061 C2 S2d ("experts see every variant," D-003): every graded variant of this idea gets its
+own `slices` under `variants.<vid>` -- no separate base-only top-level `slices` (G8). `kind`/
+`symbol` are `null` until E-061 C2 S2b lands.**
+
 ```yaml
 category: trade_efficiency
-slices:
-  overall:      # {source, ...verbatim trade_diagnostics_summary fields} OR unavailable
-  per_window:   # {window_label: [trade_dict, ...]}  -- grouped from trade_diagnostics.json's
-                # own `trades` list by each trade's `window` field, OR unavailable when
-                # trade_diagnostics.json is absent/empty (only the overall pre-aggregate
-                # summary exists in that case).
-  per_symbol:   # {symbol: [trade_dict, ...]} -- same trades, grouped by `symbol`
-  per_regime:   # {regime_label: [trade_dict, ...]} -- same trades, grouped by `regime_at_entry`
+source_run_id: <run_id>
+generated_at: <UTC ISO timestamp>
+schema_version: 2
+variants:
+  base:
+    kind: base | null
+    symbol: <SYMBOL> | null
+    status: validated
+    slices:
+      overall:      # {source, ...verbatim trade_diagnostics_summary fields} OR unavailable
+      per_window:   # {window_label: {n, <numeric field>: {mean, median, p10, p90}, ...}} --
+                    # G7 COMPACTED AGGREGATE (E-061 C2 S2d) over that variant's own
+                    # trade_diagnostics.json `trades` list grouped by each trade's `window`
+                    # field, OR unavailable when that variant's trade_diagnostics.json is
+                    # absent/empty (only the overall pre-aggregate summary exists then).
+      per_symbol:   # {symbol: {n, <numeric field>: {...}}} -- same trades, grouped by `symbol`
+      per_regime:   # {regime_label: {n, <numeric field>: {...}}} -- same trades, grouped by
+                    # `regime_at_entry`
+  design_1: {kind: design | null, symbol: ..., status: validated, slices: {...same shape...}}
+  asset_1:  {kind: asset  | null, symbol: ..., status: validated, slices: {...same shape...}}
+failed_variants:      # {<vid>: reason} -- E-061 C2 S2a (D-015). Never a `variants` entry.
+untested_variants:    # {<vid>: reason} -- card D. Also never a `variants` entry.
 ```
-`slices.overall` carries whatever `trade_diagnostics_summary` held in `protocol_result.yaml`
--- per verdict-interpreter's own citations this typically includes `exit_efficiency_median`,
-`entry_efficiency_median`, `pnl_concentration.pct_pnl_from_worst_decile_trades`,
+`variants.<vid>.slices.overall` carries whatever `trade_diagnostics_summary` held in that
+variant's own `protocol_result.yaml` -- per verdict-interpreter's own citations this typically
+includes `exit_efficiency_median`, `entry_efficiency_median`,
+`pnl_concentration.pct_pnl_from_worst_decile_trades`,
 `exit_reason_breakdown.{signal_flip_pct,stop_loss_pct}`, `stop_loss_recovery_rate`, and
 `fee_reduction_metrics.{combine_nearby_trades,exit_later,enter_earlier,trade_less_often}`
-sub-objects -- exact field set is per-run. `slices.per_window`/`per_symbol`/`per_regime` are
-raw individual trade records (not pre-aggregated) when `trade_diagnostics.json` exists.
+sub-objects -- exact field set is per-run. `variants.<vid>.slices.per_window`/`per_symbol`/
+`per_regime` are **n/mean/median/p10/p90 aggregates over that variant's individual trade
+records (G7 compaction), not the raw records themselves** -- `n` is the real trade count for
+that group; a field's `mean`/`median`/`p10`/`p90` are real order statistics over the group's
+trades, never a fabricated figure.
+
+**Every rule and score below reads `variants.base.slices...`** -- `base` is the variant whose
+config a `patch` proposal actually changes (decide_next resolves patches against the source
+base config, one coin per variant, D-016). A `design`/`asset` variant's own `slices` are read
+only for the cross-variant check immediately below, never as a substitute base for a rule.
+
+**Cross-variant check (E-061 C2 S2d, D-016, one coin per variant):** before scoring, compare
+`variants.base.slices` against every `variants.design_*.slices` and `variants.asset_*.slices`
+present. A result that holds on `base` AND every `design` variant but NOT on an `asset` variant
+is coin-specific evidence, not a general execution-quality property -- cite both variants in
+`evidence` and lower `confidence_real` accordingly rather than generalizing.
 
 ## Required outputs
 - `artifacts/proposals/trade_efficiency.yaml`: a YAML list of 0+ proposal objects conforming
@@ -92,8 +126,8 @@ non-snake_case `feed`, an extra key), which stops the pipeline.
 ```yaml
 # GOOD
 evidence:
-  - "slices.overall.exit_efficiency_median=0.44 (aggregate) but
-     slices.overall.pnl_concentration.pct_pnl_from_worst_decile_trades=123% -- worst-decile
+  - "variants.base.slices.overall.exit_efficiency_median=0.44 (aggregate) but
+     variants.base.slices.overall.pnl_concentration.pct_pnl_from_worst_decile_trades=123% -- worst-decile
      trades dominate total PnL despite a positive-looking aggregate (aggregate-median caveat)."
 
 # BAD
@@ -102,12 +136,12 @@ evidence:
 ```
 
 ## Rules (carried forward from verdict-interpreter/SKILL.md's STEP 03 Trade Attribution and
-IMPROVEMENT 10 Fee-reduction autopsy, adapted to read from `slices.overall`/grouped
-`slices.per_window`/`per_symbol`/`per_regime` trade lists instead of `trade_diagnostics.json`
+IMPROVEMENT 10 Fee-reduction autopsy, adapted to read from `variants.base.slices.overall`/grouped
+`variants.base.slices.per_window`/`per_symbol`/`per_regime` trade lists instead of `trade_diagnostics.json`
 directly)
 
 **Trade attribution decision table (STEP 03) — apply first matching pattern to
-`slices.overall`'s fields:**
+`variants.base.slices.overall`'s fields:**
 
 | Pattern | `primary_weakness` |
 |---|---|
@@ -130,7 +164,7 @@ never a `new_block` that discards the underlying signal component. That is an
 execution-level fix, not a signal-quality one.
 
 **Fee-reduction autopsy (IMPROVEMENT 10) — pick `candidate_system` from
-`slices.overall.fee_reduction_metrics` when present:**
+`variants.base.slices.overall.fee_reduction_metrics` when present:**
 
 | Metric stands out | `candidate_system` |
 |---|---|
@@ -149,18 +183,18 @@ deviation from "no problem" and say so.
 
 | Score | `confidence_real` | `distance_to_profitable` | `mechanism_plausibility` |
 |---|---|---|---|
-| 0 | `slices.overall` is unavailable, or `slices.per_window`/`per_symbol`/`per_regime` all unavailable (no `trade_diagnostics.json`) leaving only a pre-aggregated summary with no per-trade evidence to cite. | Trade-attribution pattern shows `none_healthy` -- no identified weakness to close a gap on. | The attribution pattern fires on a single window's trade group only, with no corroboration from `per_symbol`/`per_regime` grouping of the same trades. |
-| 1 | `slices.overall` populated but `slices.per_window` groups mostly have < 5 trades each. | `primary_weakness` identified but `distance` unclear -- e.g. `entry_efficiency_median` just past -0.10, no magnitude context. | Pattern recurs in 2 trade groups (e.g. 2 windows) with no other field corroborating. |
-| 2 | `slices.overall` populated, `slices.per_window`/`per_symbol` show the same `primary_weakness`-supporting pattern in 2+ groups. | `primary_weakness` clearly identified, magnitude moderate (e.g. `pct_pnl_from_worst_decile_trades` in the 80-110% range). | Pattern recurs across 3+ groups AND at least one `fee_reduction_metrics` sub-field corroborates the same direction. |
+| 0 | `variants.base.slices.overall` is unavailable, or `variants.base.slices.per_window`/`per_symbol`/`per_regime` all unavailable (no `trade_diagnostics.json`) leaving only a pre-aggregated summary with no per-trade evidence to cite. | Trade-attribution pattern shows `none_healthy` -- no identified weakness to close a gap on. | The attribution pattern fires on a single window's trade group only, with no corroboration from `per_symbol`/`per_regime` grouping of the same trades. |
+| 1 | `variants.base.slices.overall` populated but `variants.base.slices.per_window` groups mostly have < 5 trades each. | `primary_weakness` identified but `distance` unclear -- e.g. `entry_efficiency_median` just past -0.10, no magnitude context. | Pattern recurs in 2 trade groups (e.g. 2 windows) with no other field corroborating. |
+| 2 | `variants.base.slices.overall` populated, `variants.base.slices.per_window`/`per_symbol` show the same `primary_weakness`-supporting pattern in 2+ groups. | `primary_weakness` clearly identified, magnitude moderate (e.g. `pct_pnl_from_worst_decile_trades` in the 80-110% range). | Pattern recurs across 3+ groups AND at least one `fee_reduction_metrics` sub-field corroborates the same direction. |
 | 3 | Trade-attribution pattern holds consistently across `per_window`, `per_symbol`, AND `per_regime` groupings of the same underlying trades. | Metric is close to flipping the attribution table's threshold the other way (e.g. `stop_loss_recovery_rate` well above 0.50, clearly indicating stops-too-tight rather than a marginal call). | Fee-reduction candidate and trade-attribution `primary_weakness` point to the SAME execution mechanism (e.g. both indicate exit timing), giving a coherent causal story, not two unrelated coincidences. |
 
 ## Checklist
-- Apply the trade-attribution table to `slices.overall` first; only escalate to per-group
+- Apply the trade-attribution table to `variants.base.slices.overall` first; only escalate to per-group
   evidence (`per_window`/`per_symbol`/`per_regime`) for corroboration, never to override the
   aggregate pattern with a cherry-picked group.
 - Check `pnl_concentration.pct_pnl_from_worst_decile_trades` before ever writing
   `none_healthy` on the strength of a positive `exit_efficiency_median` alone.
-- Every `evidence` entry cites a `slices.*` field path from THIS report.
+- Every `evidence` entry cites a `variants.base.slices.*` field path from THIS report.
 
 ## Forbidden
 - Do not read or cite any other category's `reports/*.yaml`, `verdict_interpretation.yaml`,

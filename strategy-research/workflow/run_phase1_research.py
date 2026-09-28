@@ -1914,8 +1914,29 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 if _br_tools_path not in sys.path:
                     sys.path.insert(0, _br_tools_path)
                 import build_reports as _br
-                _reports = _br.build_reports(RUN_DIR, write=True)
-                print(f"✅ [E-046a] artifacts/reports/*.yaml written: {sorted(_reports.keys())}")
+                # E-061 C2 S2d (G8, D-003 "experts see every variant"): every GRADED
+                # variant gets its own {kind, symbol, status} row -- kind/symbol read
+                # from index.yaml only when present (E-061 C2 S2b adds them; this stage
+                # never invents them). failed_variants/untested_variants are passed
+                # through unchanged (already {vid: reason}, same shape the grid uses)
+                # so every reader sees every variant of the idea, graded or not.
+                _variant_report_meta = {
+                    _vid: {
+                        "kind": (variants_idx.get(_vid) or {}).get("kind"),
+                        "symbol": (variants_idx.get(_vid) or {}).get("symbol"),
+                        "status": "validated",
+                    }
+                    for _vid in per_variant_summaries
+                }
+                _reports = _br.build_reports(
+                    RUN_DIR, write=True, variants=_variant_report_meta,
+                    failed_variants=failed_variants or None,
+                    untested_variants=untested_variants or None)
+                print(f"✅ [E-046a] artifacts/reports/*.yaml written: {sorted(_reports.keys())} "
+                      f"(variants: {sorted(_variant_report_meta)}"
+                      + (f", failed: {sorted(failed_variants)}" if failed_variants else "")
+                      + (f", untested: {sorted(untested_variants)}" if untested_variants else "")
+                      + ")")
             except Exception as _reports_err:
                 print(f"⚠️  [E-046a] category report build raised {type(_reports_err).__name__}: "
                       f"{_reports_err} -- at least one variant's backtest already succeeded; "
