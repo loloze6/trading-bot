@@ -365,6 +365,7 @@ class Harness:
         self.extra_variant: dict | None = None
         self.bad_variant: str | None = None
         self.crash_variant: str | None = None  # run_protocol.py crashes for it (C2.4)
+        self.gate_declines: set = set()  # the Layer-2 data gate declines these (C2 S2b H1)
         self.reader_proposals = True
 
     def violation(self, text: str) -> None:
@@ -700,15 +701,22 @@ class Harness:
         out = Path(argv[argv.index("--out-dir") + 1])
         out.mkdir(parents=True, exist_ok=True)
         proto = json.loads(Path(argv[3]).read_text(encoding="utf-8"))
+        # C2 S2b H1: a declined variant's first window has no data at the source
+        # (the real tool's decline: exit 2, outcome decline, a reason per window)
+        decline = out.parent.name in self.gate_declines
+        first = proto["windows"][0]["label"]
         doc = {"schema_version": 1, "checked_at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
                "exchange": "binance", "timeframe": proto["timeframe"], "symbols": proto["symbols"],
-               "gap_tolerance": 0.02, "outcome": "validate", "reasons": [],
-               "windows": [{"symbol": s, "label": w["label"], "outcome": "validate",
-                            "missing_fraction": 0.0} for s in proto["symbols"]
-                           for w in proto["windows"]],
+               "gap_tolerance": 0.02, "outcome": "decline" if decline else "validate",
+               "reasons": ([f"{proto['symbols'][0]} {first}: no bars before the coin's listing"]
+                           if decline else []),
+               "windows": [{"symbol": s, "label": w["label"],
+                            "outcome": "decline" if decline and w["label"] == first else "validate",
+                            "missing_fraction": 1.0 if decline and w["label"] == first else 0.0}
+                           for s in proto["symbols"] for w in proto["windows"]],
                "aux_feeds": []}
         (out / "data_availability_gate.yaml").write_text(yaml.safe_dump(doc), encoding="utf-8")
-        return self._done(0)
+        return self._done(2 if decline else 0)
 
     def _regime_detector(self, argv):
         rpt = yaml.safe_load((_SR / "regime_detector_report.yaml").read_text(encoding="utf-8"))
@@ -1220,8 +1228,10 @@ def test_c2_4_one_crashed_variant_never_validates(harness):
 @pytest.mark.slow
 def test_c2_s2b_partial_coverage_asset_is_untested_and_blocks_nothing(harness):
     """The sandbox's Layer-1 audit gives the asset coin (here a Binance-listed
-    XRPUSDT) an earliest date inside the protocol: by the Layer-1 precheck it
-    covers 3 of the 6 windows (50%, one era) -- below D-042's 60% / 2 eras. 5a
+    XRPUSDT) an earliest date inside the protocol's 4th window: that window
+    straddles the listing (review fix H2), so the coin covers 2 of the 6 windows
+    (33%) -- below D-042's 60% of the windows (its 2-era condition was dropped,
+    D-045). 5a
     marks it not_tested (insufficient_coverage), no data is touched for it, and
     the run is NOT blocked: base and design are gated and backtested, the data
     gate's floor counts the skip like a repeat, and the grid lists it in
@@ -1253,8 +1263,8 @@ def test_c2_s2b_partial_coverage_asset_is_untested_and_blocks_nothing(harness):
     assert st["pending_stage"] == "completed_inconclusive" and st["status"] == "completed"
     asset = h.art(r1, "variants/index.yaml")["variants"]["asset"]
     assert asset["status"] == "not_tested"
-    assert asset["reason"].startswith("insufficient_coverage:") and "3/6" in asset["reason"]
-    assert asset["coverage"]["windows_run"] == list(WINDOW_LABELS[3:])
+    assert asset["reason"].startswith("insufficient_coverage:") and "2/6" in asset["reason"]
+    assert asset["coverage"]["windows_run"] == list(WINDOW_LABELS[4:])
     assert not (h.run_dir(r1) / "artifacts" / "variants" / "asset" / "protocol.json").exists()
     for script in ("validate_config.py", "data_availability_gate.py", "run_protocol.py"):
         assert len(h.calls_to(script)) == 2, script  # base + design only
@@ -1271,6 +1281,53 @@ def test_c2_s2b_partial_coverage_asset_is_untested_and_blocks_nothing(harness):
     assert e["idea_status"] == "inconclusive"
     assert e["variants"]["asset"]["status"] == "not_tested"
     assert e["registry"] == {"skipped": "not_validated"}
+    assert isinstance(keep_going, bool)
+    _assert_holdout_untouched(h)
+
+
+@pytest.mark.slow
+def test_c2_s2b_layer2_declined_asset_blocks_nothing(harness):
+    """Review fix H1 (D-042): the asset coin (Kraken XRPUSD -- no per-coin Layer-1
+    listing date, so 5a admits it on every window) is declined by the REAL Layer-2
+    data gate (its first window has no bars). That decline is a non-blocking
+    coverage skip: the run is neither paused nor parked, base and design are
+    backtested, no look is spent on the asset, and with every graded cell passing
+    the idea ends inconclusive, not validated, and registers no block."""
+    h = harness.build()
+    h.gate_declines = {"asset"}
+    for vid in ("base", "design", "asset"):
+        h.profiles[vid] = {"sharpe": 0.3, "edge": 1.5, "trades": 40}
+    h.register_brief()
+    r1 = "run_001"
+    keep_going, exc = _drive(h)
+    _pin_joined(h, exc, r1)
+    st = h.state(r1)
+    assert st.get("last_error") is None, st.get("last_error")
+    assert not (st.get("flags") or {}).get("variant_gate_insufficient")
+    assert st["pending_stage"] == "completed_inconclusive" and st["status"] == "completed"
+    asset = h.art(r1, "variants/index.yaml")["variants"]["asset"]
+    assert asset["status"] == "not_tested" and asset["coverage"]["fraction"] == 1.0
+    assert asset["reason"].startswith("insufficient_coverage: layer2 data_availability_gate "
+                                      "outcome=decline")
+    assert len(h.calls_to("data_availability_gate.py")) == 3
+    assert len(h.calls_to("run_protocol.py")) == 2  # base + design only
+    grid = h.art(r1, "grid_evaluation.yaml")
+    assert sorted(grid["variants"]) == ["base", "design"]
+    assert list(grid["untested_variants"]) == ["asset"]
+    assert grid["untested_variants"]["asset"].startswith("insufficient_coverage: layer2")
+    for crit, row in grid["grid"].items():
+        assert row["base"]["result"] == row["design"]["result"] == "PASS", (crit, row)
+    rows = sorted(r["trial_id"] for r in h.trial_rows() if r["trial_id"].startswith(f"{r1}:"))
+    assert rows == [f"{r1}:base", f"{r1}:design"]  # no trial row for the declined asset
+    memory = yaml.safe_load(rpr._campaign_memory_path().read_text(encoding="utf-8"))
+    e = memory["runs"][r1]
+    assert e["idea_status"] == "inconclusive"
+    assert e["variants"]["asset"]["status"] == "not_tested"
+    assert e["registry"] == {"skipped": "not_validated"}
+    # M3: a per-coin run's memory entry names the run protocol (the key the repeat
+    # gate builds), not the variant protocol.json the bridge file mirrors
+    assert e["protocol_ref"] == h.art(r1, "variant_anti_adjacency_result.yaml")["protocol_ref"]
+    assert not e["protocol_ref"].endswith("protocol.json"), e["protocol_ref"]
     assert isinstance(keep_going, bool)
     _assert_holdout_untouched(h)
 

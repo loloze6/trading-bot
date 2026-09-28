@@ -433,13 +433,21 @@ configs, argv and trial rows). One module, `tools/variant_coin.py`.
   S2c's.
 - **Venue symbol (added):** a Kraken coin backtests under its venue name read from its
   `cache_key` (XRPUSDT -> XRPUSD), which is what the Layer-1 audit and the Kraken cache use.
-- **D-042 coverage:** Layer-1 precheck only (no network). A window's era = the era of its test
-  start. Full coverage runs every window; partial runs on the covered windows only at
-  `D042_MIN_WINDOW_COVERAGE = 0.60` and `D042_MIN_ERAS = 2` (named constants). Below either it is
-  not_tested `insufficient_coverage: ...`: the data-gate floor and the park kind treat it like a
-  repeat skip, and the grid lists it in `untested_variants` (idea at best inconclusive). The
-  windows a variant ran on are its `protocol.json` windows (+ `coverage.windows_run`) for E-062
-  S2b's normalisation.
+- **D-042 coverage:** Layer-1 precheck only (no network), plus a stricter listing rule (review
+  fix H2): a window counts only when the coin's Layer-1 earliest date is on or before its test
+  start (a window straddling the listing is not covered). Full coverage runs every window;
+  partial runs on the covered windows only at `D042_MIN_WINDOW_COVERAGE = 0.60`. The former
+  `D042_MIN_ERAS = 2` condition was dropped by the operator on 2026-09-28 (D-045); the eras a
+  coin covers (a window's era = the era of its test-period midpoint) stay recorded in
+  `coverage.eras` as information only. Below the share it is not_tested
+  `insufficient_coverage: ...`; so is an asset the Layer-2 data gate declines / refines
+  (`insufficient_coverage: layer2 ...`, review fix H1). The data-gate floor and the park kind
+  treat both like a repeat skip, and the grid lists them in `untested_variants` (idea at best
+  inconclusive). The windows a variant ran on are its `protocol.json` windows (+
+  `coverage.windows_run`) for E-062 S2b's normalisation; until then a partial-coverage variant
+  is graded but caps the grid at inconclusive and never passes the profit bars (review fix M1,
+  temporary). 5a records each protocol.json's sha256 (`protocol_sha256`), re-checked before the
+  backtest (review fix M2).
 - **Consumers:** data gate and `run_protocol.py` get the variant's protocol; its trial rows carry
   `symbols`; the repeat gate keys on the variant's coin (timeframe/windows stay the run
   protocol's, as a memory entry keys every variant on one protocol_ref); per-coin conformance

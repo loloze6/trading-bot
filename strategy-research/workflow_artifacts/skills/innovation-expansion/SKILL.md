@@ -266,8 +266,9 @@ or `asset`. `base` and `design` run on the base coin (the run protocol's first s
 code sets it, and a different one is refused). An `asset` variant has an EMPTY
 patch and a `symbol` from `config/coin_universe.yaml` in a category different from the base coin's. Prefer a coin
 whose data covers the protocol's windows: one that covers only part of them runs on the windows it covers only if
-that is at least 60% of the windows and at least 2 eras (D-042); otherwise the variant is not run and the idea can
-at best be inconclusive.
+that is at least 60% of the windows (D-042; its former 2-era condition was dropped, D-045); otherwise the variant
+is not run and the idea can at best be inconclusive. A variant that runs on only part of the windows is graded,
+but until its time-dependent bars are normalised (E-062 S2b) it cannot make the idea validated.
 
 Each `patch` entry is `{path, value}`, `path` a JSON Pointer (RFC 6901) string starting with `/`, e.g.
 `/strategies/regimes/unknown/components/0/params/period`. **The patch's target path's PARENT must already exist

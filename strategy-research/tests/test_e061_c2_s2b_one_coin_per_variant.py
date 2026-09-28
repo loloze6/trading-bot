@@ -5,8 +5,8 @@ D-016, D-042) and Linear CUL-342 items 1-2.
 Covers:
   1. tools/variant_coin.py: per-coin mode, the venue symbol, base/design on the
      base coin, the asset coin (other category, empty patch), D-042's coverage
-     rule on the Layer-1 precheck (full, partial >= 60% and >= 2 eras, below
-     the share, one era only), the derivation check.
+     rule on the Layer-1 precheck (full, partial >= 60% of the windows -- the
+     2-era condition dropped, D-045 -- below the share), the derivation check.
   2. 5a (run_tool_worker backtest_specification) under variant_loop writes one
      protocol.json per variant + index kind/symbol/protocol_path/coverage; a
      coverage-skipped asset is not_tested and never blocks the others.
@@ -28,6 +28,7 @@ network, no market data, no backtest. Every window date here is before 2023.
 """
 import asyncio
 import copy
+import datetime
 import json
 import random
 import shutil
@@ -151,39 +152,88 @@ def test_asset_full_coverage_on_the_real_layer1_runs_every_window_on_its_venue()
 
 
 def test_asset_partial_coverage_runs_on_the_covered_windows_d042():
-    windows = _months("2019-06", 13)  # spans the 2019-09-10 era boundary
-    universe, layer1 = _synthetic("2019-08-15T00:00:00Z")
+    # 2019-03 .. 2020-03: the windows up to 2019-08 have their midpoint in the
+    # pre-2019-09-10 era, the rest in the next (eras: recorded, not a gate).
+    windows = _months("2019-03", 13)
+    universe, layer1 = _synthetic("2019-05-15T00:00:00Z")  # listed mid-window
     source = _source(windows)
     res = vc.resolve_variant(_asset(), **_ctx(source, universe, layer1))
     assert res["ok"], res
     cov = res["coverage"]
-    assert cov["windows_total"] == 13 and len(cov["windows_run"]) == 11
-    assert cov["windows_run"][0] == "2019-08" and [u["label"] for u in cov["uncovered"]] == [
-        "2019-06", "2019-07"]
+    assert cov["windows_total"] == 13 and len(cov["windows_run"]) == 10
+    # review fix H2: 2019-05 ends after the listing (the precheck alone accepts
+    # it) but starts before it -- it straddles the listing, so it is not covered
+    assert cov["windows_run"][0] == "2019-06" and [u["label"] for u in cov["uncovered"]] == [
+        "2019-03", "2019-04", "2019-05"]
+    assert "straddles the listing" in cov["uncovered"][2]["reason"]
+    assert dag.layer1_price_precheck(layer1, "binance", "XRPUSDT", "1h",
+                                     datetime.datetime(2019, 5, 1),
+                                     datetime.datetime(2019, 6, 1))[0] is True
     assert len(cov["eras"]) == 2 and cov["fraction"] >= vc.D042_MIN_WINDOW_COVERAGE
     assert [w["label"] for w in res["protocol"]["windows"]] == cov["windows_run"]
     assert res["protocol"]["symbols"] == ["XRPUSDT"] and "exchange" not in res["protocol"]
     assert vc.check_variant_protocol(res["protocol"], source) == []
 
 
+def test_a_window_on_the_listing_date_counts_and_a_coin_without_a_date_keeps_the_precheck():
+    """H2's boundary: earliest == test.start is covered. A coin the Layer-1 audit
+    gives no date (every Kraken coin) keeps the precheck's own reading."""
+    universe, layer1 = _synthetic("2019-05-01T00:00:00Z")
+    cov = vc.window_coverage(_source(_months("2019-03", 4)), exchange="binance", symbol="XRPUSDT",
+                             layer1=layer1, precheck=dag.layer1_price_precheck, era_of=_era_of)
+    assert cov["windows_run"] == ["2019-05", "2019-06"]
+    assert vc.layer1_earliest(REAL_LAYER1, "kraken", "XRPUSD") is None
+    assert vc.layer1_earliest(layer1, "binance", "XRPUSDT") == "2019-05-01T00:00:00Z"
+
+
+def test_a_windows_era_is_the_era_of_its_midpoint():
+    """A window starting just before the 2019-09-10 boundary whose midpoint is
+    past it counts in the later era only (the start would have said the earlier)."""
+    eras_seen = []
+
+    def era_of(ts):
+        eras_seen.append(ts)
+        return _era_of(ts)
+    window = [{"label": "w", "test": {"start": "2019-09-01", "end": "2019-10-01"}}]
+    cov = vc.window_coverage(_source(window), exchange="binance", symbol="BTCUSDT",
+                             layer1=REAL_LAYER1, precheck=dag.layer1_price_precheck, era_of=era_of)
+    assert eras_seen == ["2019-09-16T00:00:00"]
+    assert cov["eras"] == [_era_of("2019-09-16")] != [_era_of("2019-09-01")]
+
+
 def test_asset_below_the_window_share_is_not_run():
     universe, layer1 = _synthetic("2020-02-15T00:00:00Z")
     res = vc.resolve_variant(_asset(), **_ctx(_source(_months("2019-06", 13)), universe, layer1))
     assert res["ok"] is False and res["reason"].startswith(vc.COVERAGE_REASON_PREFIX)
-    assert "5/13" in res["reason"] and len(res["coverage"]["windows_run"]) == 5
+    # 2020-02 straddles the listing (H2): 2020-03 .. 2020-06 only
+    assert "4/13" in res["reason"] and len(res["coverage"]["windows_run"]) == 4
 
 
-def test_asset_above_the_share_but_one_era_is_not_run():
+def test_asset_at_the_share_in_one_era_runs_d045():
+    """D-042's 2-era condition was dropped by the operator on 2026-09-28 (D-045):
+    a coin covering >= 60% of the windows runs even when every covered window
+    sits in one policy era. The eras stay recorded in `coverage` as information."""
     universe, layer1 = _synthetic("2021-04-15T00:00:00Z")
     res = vc.resolve_variant(_asset(), **_ctx(_source(_months("2021-01", 10)), universe, layer1))
-    assert res["coverage"]["fraction"] >= vc.D042_MIN_WINDOW_COVERAGE
-    assert len(res["coverage"]["eras"]) == 1
+    assert res["coverage"]["windows_run"] == [f"2021-{m:02d}" for m in range(5, 11)]
+    assert res["coverage"]["fraction"] == 0.6 and len(res["coverage"]["eras"]) == 1
+    assert res["ok"] is True, res
+    assert [w["label"] for w in res["protocol"]["windows"]] == res["coverage"]["windows_run"]
+
+
+def test_below_the_share_is_refused_whatever_the_eras():
+    """5/9 (56%) across windows in two eras: the share alone decides."""
+    universe, layer1 = _synthetic("2019-07-01T00:00:00Z")
+    res = vc.resolve_variant(_asset(), **_ctx(_source(_months("2019-03", 9)), universe, layer1))
+    assert len(res["coverage"]["windows_run"]) == 5 and len(res["coverage"]["eras"]) == 2
     assert res["ok"] is False and res["reason"].startswith(vc.COVERAGE_REASON_PREFIX)
 
 
 def test_thresholds_are_named_constants_cited_to_d042():
-    assert (vc.D042_MIN_WINDOW_COVERAGE, vc.D042_MIN_ERAS) == (0.60, 2)
-    assert "D-042" in Path(vc.__file__).read_text(encoding="utf-8")
+    assert vc.D042_MIN_WINDOW_COVERAGE == 0.60
+    assert not hasattr(vc, "D042_MIN_ERAS")  # dropped, D-045
+    text = Path(vc.__file__).read_text(encoding="utf-8")
+    assert "D-042" in text and "D-045" in text
 
 
 @pytest.mark.parametrize("entry,needle", [
@@ -282,7 +332,10 @@ def test_5a_writes_one_protocol_per_variant_under_the_loop(monkeypatch):
         e = index[vid]
         assert e["status"] == "validated" and e["kind"] == vid and e["symbol"] == coin
         assert e["protocol_path"] == f"artifacts/variants/{vid}/protocol.json"
-        proto = json.loads((run_dir / e["protocol_path"]).read_text(encoding="utf-8"))
+        raw = (run_dir / e["protocol_path"]).read_bytes()
+        assert e["protocol_sha256"] == vc.protocol_sha256(raw)  # review fix M2
+        assert vc.verify_variant_protocol(e, raw, source) == []
+        proto = json.loads(raw.decode("utf-8"))
         assert proto["symbols"] == venue and proto["windows"] == source["windows"]
         assert {k: v for k, v in proto.items() if k not in ("symbols", "exchange")} == \
             {k: v for k, v in source.items() if k != "symbols"}
@@ -340,16 +393,25 @@ def test_flag_off_and_legacy_patches_write_byte_identical_indexes(monkeypatch):
 # 4. The data gate and run_protocol.py receive the variant's own protocol
 # ---------------------------------------------------------------------------
 
-def _stage_index(run_id, *, per_coin: bool, monkeypatch) -> tuple:
-    """A run after 5a: three validated variants, per-coin (protocol.json each)
-    or legacy (no protocol_path)."""
+def _stage_index(run_id, *, per_coin: bool, monkeypatch, windows=None, universe=None,
+                 layer1=None) -> tuple:
+    """A run after 5a: three validated variants, per-coin (protocol.json each,
+    its sha256 and, for the asset, its coverage -- as 5a writes them) or legacy
+    (no protocol_path). `universe`/`layer1`: a synthetic coin world (the asset
+    coin then runs on the windows it covers)."""
     run_dir = _minimal_run(rpr.ROOT, run_id)
     arts = run_dir / "artifacts"
-    source_path = _run_protocol_file(monkeypatch, _months("2022-01", 6))
+    source_path = _run_protocol_file(monkeypatch, windows or _months("2022-01", 6))
     source = json.loads(source_path.read_text(encoding="utf-8"))
+    _copy_coin_configs()  # protocol_execution re-runs the asset's coverage (M2)
+    if universe is not None:
+        rpr.save_yaml(rpr.ROOT / "config" / "coin_universe.yaml", universe)
+        rpr.save_yaml(rpr.ROOT / "config" / "venue_data_capability.yaml", layer1)
     index = {}
-    coins = {"base": "BTCUSDT", "design": "BTCUSDT", "asset": "XRPUSD"}
-    for vid in coins:
+    entries = {"base": {"variant_id": "base", "kind": "base", "patch": []},
+               "design": {"variant_id": "design", "kind": "design", "patch": DESIGN_PATCH},
+               "asset": _asset()}
+    for vid, entry in entries.items():
         cfg = rpr._apply_json_pointer_patch(_BASE_CONFIG, DESIGN_PATCH if vid == "design" else [])
         (arts / "variants" / vid).mkdir(parents=True, exist_ok=True)
         (arts / "variants" / vid / "strategy_config.json").write_text(json.dumps(cfg, indent=2),
@@ -357,17 +419,25 @@ def _stage_index(run_id, *, per_coin: bool, monkeypatch) -> tuple:
         index[vid] = {"status": "validated",
                       "config_path": f"artifacts/variants/{vid}/strategy_config.json"}
         if per_coin:
-            proto = vc.variant_protocol(source, symbol=coins[vid],
-                                        exchange="kraken" if vid == "asset" else None)
-            (arts / "variants" / vid / "protocol.json").write_text(json.dumps(proto, indent=2),
-                                                                   encoding="utf-8")
-            index[vid].update({"kind": vid, "symbol": "XRPUSDT" if vid == "asset" else "BTCUSDT",
-                               "protocol_path": f"artifacts/variants/{vid}/protocol.json"})
+            # exactly what 5a writes (the same resolver, bytes and sha256)
+            res = vc.resolve_variant(entry, **_ctx(source, *((universe, layer1) if universe
+                                                             else ())))
+            assert res["ok"], res
+            raw = json.dumps(res["protocol"], indent=2).encode("utf-8")
+            (arts / "variants" / vid / "protocol.json").write_bytes(raw)
+            index[vid].update({"kind": vid, "symbol": res["symbol"],
+                               **({"coverage": res["coverage"]} if res["coverage"] else {}),
+                               "protocol_path": f"artifacts/variants/{vid}/protocol.json",
+                               "protocol_sha256": vc.protocol_sha256(raw)})
     rpr.save_yaml(arts / "variants" / "index.yaml", {"variants": index})
     return run_dir, source_path
 
 
-def _tool_stub(monkeypatch, calls):
+def _tool_stub(monkeypatch, calls, gate_outcomes=None):
+    """`gate_outcomes`: {variant_id: decline | refine} for the data gate (every
+    other variant validates), with the real tool's exit codes (2 / 3)."""
+    codes = {"validate": 0, "decline": 2, "refine": 3}
+
     def _run(cmd, *a, **k):
         argv = [str(c) for c in cmd]
         calls.append(argv)
@@ -375,8 +445,16 @@ def _tool_stub(monkeypatch, calls):
         out.mkdir(parents=True, exist_ok=True)
         proto = json.loads(Path(argv[3]).read_text(encoding="utf-8"))
         if Path(argv[1]).name == "data_availability_gate.py":
+            outcome = (gate_outcomes or {}).get(out.parent.name, "validate")
+            reasons = [] if outcome == "validate" else [
+                f"{proto['symbols'][0]} window {proto['windows'][0]['label']}: no data before "
+                f"its listing"]
             (out / "data_availability_gate.yaml").write_text(
-                yaml.safe_dump({"outcome": "validate", "reasons": []}), encoding="utf-8")
+                yaml.safe_dump({"outcome": outcome, "reasons": reasons}), encoding="utf-8")
+
+            class _Gate:
+                returncode, stdout, stderr = codes[outcome], "", ""
+            return _Gate()
         else:
             results = [{"symbol": s, "window": w["label"], "run_id": f"{s}_{w['label']}",
                         "core": {"trade_count": 20, "sharpe": 0.1}}
@@ -682,3 +760,308 @@ def test_data_gate_floor_counts_a_coverage_skip_like_a_repeat():
     assert not rpr._is_coverage_skip(other) and not rpr._is_coverage_skip(
         {"status": "validated", "reason": cov["reason"]})
     assert rpr._variant_park_kind({"a": cov, "b": rep}) == (None, [])
+
+
+# ---------------------------------------------------------------------------
+# 9. Review fixes H1, M1, M2, M3 and the tidy items
+# ---------------------------------------------------------------------------
+
+def _pe_ran(calls) -> set:
+    return {Path(a[a.index("--out-dir") + 1]).name for a in calls
+            if Path(a[1]).name == "run_protocol.py"}
+
+
+def _run_trial_ids(run_id) -> list:
+    return sorted(r["trial_id"] for r in rpr.load_campaign_state().get("trial_sharpes") or []
+                  if r["trial_id"].startswith(f"{run_id}:"))
+
+
+@pytest.mark.parametrize("outcome", ["decline", "refine"])
+def test_h1_layer2_decline_of_an_asset_is_non_blocking(monkeypatch, outcome):
+    """A per-coin asset the Layer-2 gate declines / refines is a coverage skip:
+    not_tested with the layer2 prefix, ignored by the floor and the park kind;
+    base and design still run; no trial row and no backtest for the asset."""
+    _set_flags(config_direct_authoring=True, variant_loop=True)
+    run_dir, _ = _stage_index(f"run_97{outcome[0]}", per_coin=True, monkeypatch=monkeypatch)
+    calls: list = []
+    _tool_stub(monkeypatch, calls, gate_outcomes={"asset": outcome})
+    asyncio.run(rpr.run_tool_worker("data_availability_gate", run_dir.name))
+    idx = rpr.load_yaml(run_dir / "artifacts" / "variants" / "index.yaml")["variants"]
+    a = idx["asset"]
+    assert a["status"] == "not_tested"
+    assert a["reason"].startswith(vc.LAYER2_COVERAGE_REASON_PREFIX)
+    assert a["reason"].startswith(vc.COVERAGE_REASON_PREFIX) and f"outcome={outcome}" in a["reason"]
+    assert rpr._is_coverage_skip(a)
+    assert idx["base"]["status"] == idx["design"]["status"] == "validated"
+    assert rpr._variant_park_kind(idx, run_dir / "artifacts") == (None, [])
+    asyncio.run(rpr.run_tool_worker("protocol_execution", run_dir.name))
+    assert _pe_ran(calls) == {"base", "design"}
+    assert _run_trial_ids(run_dir.name) == [f"{run_dir.name}:base", f"{run_dir.name}:design"]
+
+
+@pytest.mark.parametrize("per_coin,vid", [(True, "base"), (True, "design"), (False, "asset")])
+def test_h1_a_base_or_design_or_legacy_decline_stays_blocking(monkeypatch, per_coin, vid):
+    _set_flags(config_direct_authoring=True, variant_loop=True)
+    run_dir, _ = _stage_index(f"run_97{int(per_coin)}{vid[0]}", per_coin=per_coin,
+                              monkeypatch=monkeypatch)
+    _tool_stub(monkeypatch, [], gate_outcomes={vid: "decline"})
+    asyncio.run(rpr.run_tool_worker("data_availability_gate", run_dir.name))
+    v = rpr.load_yaml(run_dir / "artifacts" / "variants" / "index.yaml")["variants"][vid]
+    assert v["status"] == "not_tested"
+    assert v["reason"].startswith("data_availability_gate outcome=decline")
+    assert not rpr._is_coverage_skip(v)
+
+
+def _partial_asset_world():
+    """13 windows 2019-03 .. 2020-03, XRPUSDT (binance, synthetic) listed
+    2019-05-15: it runs on 10 of them -- a partial-coverage asset."""
+    return _months("2019-03", 13), *_synthetic("2019-05-15T00:00:00Z")
+
+
+def test_m2_verify_variant_protocol_catches_each_tamper():
+    windows, universe, layer1 = _partial_asset_world()
+    source = _source(windows)
+    res = vc.resolve_variant(_asset(), **_ctx(source, universe, layer1))
+    raw = json.dumps(res["protocol"], indent=2).encode("utf-8")
+    entry = {"kind": "asset", "coverage": res["coverage"], "protocol_sha256": vc.protocol_sha256(raw)}
+
+    def recheck(cov):
+        return vc.window_coverage(source, exchange=cov["exchange"], symbol=cov["venue_symbol"],
+                                  layer1=layer1, precheck=dag.layer1_price_precheck, era_of=_era_of)
+    assert vc.verify_variant_protocol(entry, raw, source, recheck=recheck) == []
+    # a byte edit: the sha no longer matches
+    assert any("sha256" in p for p in vc.verify_variant_protocol(
+        entry, raw.replace(b'"XRPUSDT"', b'"XRPUSDT" '), source))
+    # drop a window, and forge the sha AND the index's windows_run to match: the
+    # fresh coverage re-run still says 10 windows, not 9
+    forged = {**res["protocol"], "windows": res["protocol"]["windows"][1:]}
+    raw2 = json.dumps(forged, indent=2).encode("utf-8")
+    entry2 = {**entry, "protocol_sha256": vc.protocol_sha256(raw2),
+              "coverage": {**entry["coverage"], "windows_run": entry["coverage"]["windows_run"][1:]}}
+    probs = vc.verify_variant_protocol(entry2, raw2, source, recheck=recheck)
+    assert probs and "fresh coverage" in probs[0]
+    # a base / design that is not on every run-protocol window, even with a matching sha
+    base = vc.variant_protocol(source, symbol="BTCUSDT", windows_run=["2019-04", "2019-05"])
+    raw3 = json.dumps(base, indent=2).encode("utf-8")
+    probs = vc.verify_variant_protocol({"kind": "design", "protocol_sha256": vc.protocol_sha256(raw3)},
+                                       raw3, source)
+    assert probs == [f"a design variant runs every window of the run protocol; its windows "
+                     f"{['2019-04', '2019-05']} are not the run protocol's"]
+    # no recorded sha at all
+    assert "no protocol_sha256" in vc.verify_variant_protocol({"kind": "base"}, raw3, source)[0]
+
+
+def test_m2_a_protocol_that_drops_a_window_is_refused_before_any_backtest(monkeypatch):
+    """A hand-edited design protocol.json (one window dropped) is refused by
+    protocol_execution before its backtest: no run_protocol.py call, no trial
+    row, a `refused:` failed variant; the others run. The conformance check
+    names the same problems."""
+    _set_flags(config_direct_authoring=True, variant_loop=True)
+    run_dir, source_path = _stage_index("run_980", per_coin=True, monkeypatch=monkeypatch)
+    arts = run_dir / "artifacts"
+    entry = rpr.load_yaml(arts / "variants" / "index.yaml")["variants"]["design"]
+    p = arts / "variants" / "design" / "protocol.json"
+    proto = json.loads(p.read_text(encoding="utf-8"))
+    proto["windows"] = proto["windows"][1:]
+    p.write_text(json.dumps(proto, indent=2), encoding="utf-8")
+    calls: list = []
+    _tool_stub(monkeypatch, calls)
+    asyncio.run(rpr.run_tool_worker("protocol_execution", run_dir.name))
+    assert _pe_ran(calls) == {"base", "asset"}
+    assert _run_trial_ids(run_dir.name) == [f"{run_dir.name}:asset", f"{run_dir.name}:base"]
+    d = rpr.load_yaml(arts / "variants" / "index.yaml")["variants"]["design"]
+    assert d["status"] == "not_tested" and d["failed_attempt"].startswith("refused:")
+    assert "sha256" in d["reason"] and "not the run protocol's" in d["reason"]
+    violations = rpr._per_coin_conformance(
+        {"protocol_file": str(p), "results": []}, {"protocol": {"symbols": ["BTCUSDT", "ETHUSDT"]}},
+        p, source_path, entry)
+    assert any("sha256" in v for v in violations)
+    assert any("not the run protocol's" in v for v in violations)
+
+
+def test_m2_conformance_passes_the_file_5a_wrote(monkeypatch):
+    _set_flags(config_direct_authoring=True, variant_loop=True)
+    run_dir, source_path = _stage_index("run_981", per_coin=True, monkeypatch=monkeypatch)
+    index = rpr.load_yaml(run_dir / "artifacts" / "variants" / "index.yaml")["variants"]
+    for vid, entry in index.items():
+        p = run_dir / entry["protocol_path"]
+        assert rpr._per_coin_conformance(
+            {"protocol_file": str(p), "results": []},
+            {"protocol": {"symbols": ["BTCUSDT", "ETHUSDT"]}}, p, source_path, entry) == [], vid
+
+
+def test_m1_partial_coverage_variant_runs_and_is_marked_partial(monkeypatch):
+    """The asset runs on its 10 covered windows (graded), yet the grid can at best
+    be inconclusive -- the index marks it partial, and the grid carries it."""
+    _set_flags(config_direct_authoring=True, variant_loop=True)
+    windows, universe, layer1 = _partial_asset_world()
+    run_dir, _ = _stage_index("run_982", per_coin=True, monkeypatch=monkeypatch, windows=windows,
+                              universe=universe, layer1=layer1)
+    index = rpr.load_yaml(run_dir / "artifacts" / "variants" / "index.yaml")["variants"]
+    assert vc.is_partial_coverage(index["asset"]) and not vc.is_partial_coverage(index["base"])
+    calls: list = []
+    _tool_stub(monkeypatch, calls)
+    asyncio.run(rpr.run_tool_worker("protocol_execution", run_dir.name))
+    assert _pe_ran(calls) == {"asset", "base", "design"}
+    part = rpr._partial_coverage_variants(index, ["asset", "base", "design"])
+    assert list(part) == ["asset"] and "10/13" in part["asset"] and "E-062 S2b" in part["asset"]
+
+
+def test_m1_grid_partial_coverage_caps_at_inconclusive_and_a_fail_still_refutes():
+    from test_grid_evaluation import _protocol_result, _windows_for_reducer, _menu_shaped_pre_reg
+    import verdict_criteria_evaluator as vce
+    crit = {"id": "c1", "metric": "net_return_pct", "source": "window", "reducer": "median",
+            "comparator": ">", "threshold": 0.0, "floor": {"min_windows": 1}}
+    pre = _menu_shaped_pre_reg([crit])
+    good = _protocol_result(_windows_for_reducer([1.0, 2.0, 3.0]))
+    bad = _protocol_result(_windows_for_reducer([-1.0, -2.0, -3.0]))
+    whole = vce.evaluate_grid({"base": good, "asset": good}, pre, {}, {})
+    assert whole["idea_status"] == "validated"
+    partial = {"asset": "partial coverage: ran on 10/13 run-protocol windows (D-042)"}
+    capped = vce.evaluate_grid({"base": good, "asset": good}, pre, {}, {},
+                               partial_coverage_variants=partial)
+    assert capped["idea_status"] == "inconclusive" and capped["grid"] == whole["grid"]
+    assert capped["partial_coverage_variants"] == partial and "E-062 S2b" in capped["reason"]
+    refuted = vce.evaluate_grid({"base": bad, "asset": good}, pre, {}, {},
+                                partial_coverage_variants=partial)
+    assert refuted["idea_status"] == "refuted"
+    for kw in ({}, {"partial_coverage_variants": None}, {"partial_coverage_variants": {}}):
+        assert yaml.safe_dump(vce.evaluate_grid({"base": good}, pre, {}, {}, **kw)) == \
+            yaml.safe_dump(vce.evaluate_grid({"base": good}, pre, {}, {}))
+    with pytest.raises(ValueError, match="not graded columns"):
+        vce.evaluate_grid({"base": good}, pre, {}, {}, partial_coverage_variants=partial)
+
+
+def test_m1_partial_coverage_variant_never_passes_the_profit_bars():
+    """base FAILs its bars; design would PASS every bar but ran on partial
+    coverage: its time-dependent bars read NOT_EVALUABLE, it is not `passing`,
+    and the branch-3 stop (profit_bars_reached) is never raised."""
+    import test_profit_bars_every_backtest as tpb
+    tpb._set_orchestrator({**tpb.FULL_ON, **tpb.VARIANT_LOOP_ON})
+    tpb._write_bars()
+    run_dir = tpb._variant_run({"base": False, "design": True})
+    arts = run_dir / "artifacts"
+    ev_full = rpr._evaluate_profit_bars_every_backtest(run_dir, tpb.RUN_ID)
+    assert ev_full["passing"] == ["design"]  # on full coverage it passes
+    index = rpr.load_yaml(arts / "variants" / "index.yaml")
+    index["variants"]["design"]["coverage"] = {"windows_run": ["w1"], "windows_total": 2}
+    rpr.save_yaml(arts / "variants" / "index.yaml", index)
+    ev = rpr._evaluate_profit_bars_every_backtest(run_dir, tpb.RUN_ID)
+    d = ev["variants"]["design"]
+    assert d["result"] == "FAIL" and ev["passing"] == [] and ev["result"] == "FAIL"
+    assert "1/2" in d["partial_coverage"]
+    by_name = {b["name"]: b for b in d["bars"]}
+    for name in vc.D042_TIME_DEPENDENT_BARS:
+        assert by_name[name]["result"] == "NOT_EVALUABLE" and "E-062 S2b" in by_name[name][
+            "not_evaluable_reason"]
+        assert by_name[name]["actual"] == {b["name"]: b for b in ev_full["variants"]["design"][
+            "bars"]}[name]["actual"]  # the raw value is kept
+    assert {b["result"] for n, b in by_name.items()
+            if n not in vc.D042_TIME_DEPENDENT_BARS} == {"PASS"}
+    assert rpr._profit_bars_stop_route(run_dir, tpb.RUN_ID) is None
+    assert not (rpr.load_yaml(run_dir / "pipeline_state.yaml").get("flags") or {}).get(
+        "profit_bars_reached")
+    # the memory reads the capped result consistently
+    block = cm.profit_bars_block(run_dir, tpb.RUN_ID, {
+        "base": {"status": "tested"}, "design": {"status": "tested"},
+        "broken": {"status": "failed"}, "asset": {"status": "not_tested"}})
+    assert block["passing"] == [] and block["variants"]["design"]["result"] == "FAIL"
+
+
+def test_m1_promote_path_bars_are_capped_when_the_bridge_is_a_partial_variant():
+    """Legacy promote path (_evaluate_profit_bars): if the bridge
+    protocol_result.yaml mirrors a partial-coverage per-coin variant (base and
+    design failed), its time-dependent bars are capped too -- no PASS, so no
+    profit_bars_reached. Without a per-coin index the evaluation is unchanged."""
+    import test_profit_bars_every_backtest as tpb
+    tpb._set_orchestrator({**tpb.FULL_ON, **tpb.VARIANT_LOOP_ON})
+    tpb._write_bars()
+    run_dir = tpb._variant_run({"base": False, "design": True})
+    arts = run_dir / "artifacts"
+    bridge = rpr.load_yaml(arts / "variants" / "design" / "protocol_result.yaml")
+    vproto = arts / "variants" / "design" / "protocol.json"
+    vproto.write_text("{}", encoding="utf-8")
+    bridge["protocol_file"] = str(vproto)
+    rpr.save_yaml(arts / "protocol_result.yaml", bridge)
+    rpr.save_yaml(arts / "promotion_audit.yaml", {"raw_median_sharpe": 1.4,
+                                                  "deflated_sharpe_ratio": 0.99})
+    before = rpr._evaluate_profit_bars(run_dir, tpb.RUN_ID, portfolio_basis=True)
+    assert before["result"] == "PASS"  # the index has no per-coin entry yet
+    index = rpr.load_yaml(arts / "variants" / "index.yaml")
+    index["variants"]["design"].update({
+        "protocol_path": "artifacts/variants/design/protocol.json",
+        "coverage": {"windows_run": ["w1"], "windows_total": 2}})
+    rpr.save_yaml(arts / "variants" / "index.yaml", index)
+    after = rpr._evaluate_profit_bars(run_dir, tpb.RUN_ID, portfolio_basis=True)
+    assert after["result"] == "FAIL"
+    capped = {b["name"]: b["result"] for b in after["bars"]}
+    assert all(capped[n] == "NOT_EVALUABLE" for n in vc.D042_TIME_DEPENDENT_BARS)
+    assert [b for b in before["bars"] if b["name"] not in vc.D042_TIME_DEPENDENT_BARS] == \
+        [b for b in after["bars"] if b["name"] not in vc.D042_TIME_DEPENDENT_BARS]
+
+
+def test_m1_memory_refuses_a_validated_grid_with_a_partial_variant():
+    import test_e058_s2a_regroup_record as t58
+    t58._set_orchestrator(t58.ALL_ON)
+    run_dir = t58._seed(idea_status="validated", variant_loop=True)
+    grid = rpr.load_yaml(run_dir / "artifacts" / "grid_evaluation.yaml")
+    grid["partial_coverage_variants"] = {"design": "partial coverage: 1/2"}
+    rpr.save_yaml(run_dir / "artifacts" / "grid_evaluation.yaml", grid)
+    with pytest.raises(cm.CampaignMemoryError, match="partial_coverage_variants"):
+        rpr._run_regroup_record_stage(t58.RUN_ID, run_dir)
+
+
+def test_m3_a_per_coin_memory_entry_records_the_run_protocol(monkeypatch):
+    """protocol_result.yaml (the bridge) mirrors one variant's own protocol.json;
+    a per-coin run's memory entry names the RUN protocol instead -- the key the
+    repeat gate builds. Without a per-coin index nothing changes."""
+    import test_e058_s2a_regroup_record as t58
+    t58._set_orchestrator(t58.ALL_ON)
+    run_dir = t58._seed(idea_status="refuted", variant_loop=True)
+    arts = run_dir / "artifacts"
+    kw = dict(trial_sharpes=rpr.load_campaign_state()["trial_sharpes"],
+              categories=rpr._reader_categories(), protocol_root=rpr.ROOT, recorded_at="t")
+    legacy = cm.build_memory_entry(run_dir, t58.RUN_ID, **kw)
+    assert legacy["protocol_ref"] == "protocols/p.json"  # unchanged without a per-coin index
+    index = rpr.load_yaml(arts / "variants" / "index.yaml")
+    for vid in ("base", "design"):
+        index["variants"][vid]["protocol_path"] = f"artifacts/variants/{vid}/protocol.json"
+    rpr.save_yaml(arts / "variants" / "index.yaml", index)
+    bridge = rpr.load_yaml(arts / "protocol_result.yaml")
+    bridge["protocol_file"] = str(arts / "variants" / "asset" / "protocol.json")  # partial asset
+    rpr.save_yaml(arts / "protocol_result.yaml", bridge)
+    with pytest.raises(cm.CampaignMemoryError, match="run_protocol_file"):
+        cm.build_memory_entry(run_dir, t58.RUN_ID, **kw)
+    run_proto = rpr.ROOT / "protocols" / "run_m3.json"
+    monkeypatch.setattr(rpr, "_resolve_protocol_path", lambda rd, rid: run_proto)
+    rpr._run_regroup_record_stage(t58.RUN_ID, run_dir)
+    assert t58._memory()["runs"][t58.RUN_ID]["protocol_ref"] == "protocols/run_m3.json"
+
+
+def test_repeat_gate_refuses_only_the_variant_with_a_broken_protocol():
+    """Tidy: a missing / malformed protocol.json refuses THAT variant (not_tested,
+    variant_coin: reason, never a repeat skip); the other is still checked."""
+    import test_e036_s2a_exact_match_gate as t36
+    cfg = t36._config()
+    t36._prior_run_in_memory("run_050", cfg, protocol_name="run_050_generated.json",
+                             symbols=["XRPUSD"], variant_loop=True)
+    run_dir = t36._config_direct_candidate("run_062", {"base": cfg, "asset": cfg},
+                                           "run_062_generated.json")
+    source = json.loads((rpr.ROOT / "protocols" / "run_062_generated.json").read_text("utf-8"))
+    arts = run_dir / "artifacts"
+    index = rpr.load_yaml(arts / "variants" / "index.yaml")["variants"]
+    (arts / "variants" / "base" / "protocol.json").write_text(
+        json.dumps(vc.variant_protocol(source, symbol="BTCUSDT")), encoding="utf-8")
+    for vid in ("base", "asset"):  # asset's protocol.json is never written
+        index[vid].update({"kind": vid, "protocol_path": f"artifacts/variants/{vid}/protocol.json"})
+    rpr.save_yaml(arts / "variants" / "index.yaml", {"variants": index})
+    t36._set_flags(**t36._CD_ON)
+    assert rpr._gate_config_direct_variants(run_dir, "run_062") is None
+    after = rpr.load_yaml(arts / "variants" / "index.yaml")["variants"]
+    assert after["asset"]["status"] == "not_tested"
+    assert after["asset"]["reason"].startswith(vc.COIN_REASON_PREFIX)
+    assert not rpr._is_repeat_skip(after["asset"]) and not rpr._is_coverage_skip(after["asset"])
+    assert after["base"]["status"] == "validated"
+    res = rpr.load_yaml(arts / "variant_anti_adjacency_result.yaml")
+    assert res["refused"] == ["asset"] and res["repeats"] == []
+    assert res["variants"]["base"]["route"] == "admit"

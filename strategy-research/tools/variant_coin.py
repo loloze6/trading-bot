@@ -17,19 +17,38 @@ read that file unchanged (G1).
     category than the base coin (G3). D-042 (supersedes G3's full-coverage
     rule, resolves G13): the variant runs on the windows its coin covers --
     judged by the existing Layer-1 precheck (data_availability_gate.
-    layer1_price_precheck, no network, no market data) -- when it covers at
-    least D042_MIN_WINDOW_COVERAGE of the protocol's windows AND at least
-    D042_MIN_ERAS eras of config/campaign_data_policy.yaml. Below that it is
-    not run: `not_tested` with a reason starting COVERAGE_REASON_PREFIX, which
-    the variant loop treats like a repeat skip (never a data or engineering
+    layer1_price_precheck, no network, no market data) plus a stricter
+    listing-date rule of this module (a window counts only when the coin's
+    Layer-1 earliest date is on or before the window's test.start, so a
+    window straddling the listing is not covered) -- when it covers at
+    least D042_MIN_WINDOW_COVERAGE of the protocol's windows. D-042's second
+    condition (at least 2 eras) was dropped by the operator on 2026-09-28
+    (D-045): the policy's eras are cut by data-feed availability, not market
+    phase, and robustness across eras stays with the sign_consistent_by_era
+    criterion. The eras a coin covers are still recorded in `coverage.eras`
+    (information only, never a gate; a window's era is the era of its test
+    period's midpoint). Below the share it is not run:
+    `not_tested` with a reason starting COVERAGE_REASON_PREFIX, which the
+    variant loop treats like a repeat skip (never a data or engineering
     shortfall, never blocking the idea or the other variants); the grid then
     lists it in `untested_variants`, so the idea is at best INCONCLUSIVE.
-    Full coverage needs no threshold (it is not partial).
+    Full coverage needs no threshold (it is not partial). The Layer-2 data
+    gate's decline / refine of an asset variant is non-blocking the same way
+    (LAYER2_COVERAGE_REASON_PREFIX, run_phase1_research's per-variant gate).
 
 Not here (E-062 S2b): normalising the time-dependent profit bars (trade
 minimum per year, drawdown scaled to the period) for a variant that ran on
 fewer windows. The windows a variant ran on are recorded for it: its
 protocol.json `windows` and, for an asset coin, the index entry's `coverage`.
+TEMPORARY until then (D-042; lifted by E-062 S2b): a partial-coverage variant
+(is_partial_coverage) is graded, but it caps the grid at inconclusive (never
+`validated`) and its time-dependent bars (D042_TIME_DEPENDENT_BARS) read
+NOT_EVALUABLE, so it can never pass the profit bars (never
+`profit_bars_reached`).
+
+5a records each variant protocol.json's sha256 in index.yaml
+(`protocol_sha256`); verify_variant_protocol re-checks the file against it and
+against its derivation before any backtest.
 
 No lookahead: the only inputs are the protocol file, coin_universe.yaml, the
 Layer-1 venue audit (config/venue_data_capability.yaml, structural venue facts)
@@ -42,20 +61,31 @@ time, so this module does not import it).
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import re
 from pathlib import Path
 
 # D-042 (engineering/DECISION_LOG.md, 2026-09-28): an asset variant on partial
 # coverage runs only if its coin covers at least this share of the protocol's
-# windows AND at least this many policy eras. Below either, it is not run.
+# windows; below it, it is not run. (D-042's former second condition, at least
+# 2 policy eras, was dropped by the operator on 2026-09-28 -- D-045.)
 D042_MIN_WINDOW_COVERAGE = 0.60
-D042_MIN_ERAS = 2
 
 VARIANT_KINDS = ("base", "design", "asset")
 VARIANT_PROTOCOL_FILENAME = "protocol.json"
 # index.yaml `reason` prefix of an asset variant skipped for coverage (D-042).
 COVERAGE_REASON_PREFIX = "insufficient_coverage:"
+# The same skip when it is the Layer-2 data gate (a real data touch) that
+# declines / refines an asset variant -- e.g. a Kraken coin, which has no
+# per-coin Layer-1 listing date, lacking data in its pre-listing windows. It
+# starts with COVERAGE_REASON_PREFIX, so it is read exactly like a 5a skip.
+LAYER2_COVERAGE_REASON_PREFIX = f"{COVERAGE_REASON_PREFIX} layer2"
+# D-042's time-dependent profit bars (config/profitability_bars.yaml names):
+# the trade minimum and the drawdown limit, which E-062 S2b normalises to the
+# period a variant ran on. Until then they read NOT_EVALUABLE for a
+# partial-coverage variant (TEMPORARY, D-042; lifted by E-062 S2b).
+D042_TIME_DEPENDENT_BARS = ("trade_count_min", "max_drawdown_pct_max")
 # index.yaml `reason` prefix of a per-coin entry refused by 5a's coin checks.
 COIN_REASON_PREFIX = "variant_coin:"
 # era_id_for_timestamp's value outside every declared era: never counted.
@@ -128,29 +158,66 @@ def _window_bounds(window: dict) -> tuple:
     return start, end
 
 
+def _window_label(window: dict):
+    """A window's label, else its test start (the one fallback, everywhere)."""
+    return window.get("label", _window_bounds(window)[0])
+
+
+def _naive_utc(ts):
+    """A pandas Timestamp, tz-naive UTC (a tz-aware one converted first)."""
+    import pandas as pd
+    t = pd.Timestamp(ts)
+    return t.tz_convert("UTC").tz_localize(None) if t.tzinfo is not None else t
+
+
+def layer1_earliest(layer1: dict, exchange: str, symbol: str):
+    """The coin's Layer-1 earliest OHLCV date (venue_data_capability.yaml
+    venues.<exchange>.spot.symbols.earliest_ohlcv_utc.<symbol>), or None when
+    the audit records none for it (every Kraken coin today: Kraken publishes no
+    per-coin listing date -- only a venue-wide earliest_possible_utc)."""
+    spot = ((((layer1 or {}).get("venues") or {}).get(exchange) or {}).get("spot") or {})
+    earliest = ((spot.get("symbols") or {}).get("earliest_ohlcv_utc") or {})
+    value = earliest.get(symbol) if isinstance(earliest, dict) else None
+    return value if isinstance(value, str) and value else None
+
+
 def window_coverage(protocol: dict, *, exchange: str, symbol: str, layer1: dict,
                     precheck, era_of) -> dict:
-    """Which protocol windows `symbol` on `exchange` could cover, by the
-    Layer-1 precheck alone. `precheck(layer1, exchange, symbol, timeframe,
-    start_dt, end_dt) -> (ok, reason)` is data_availability_gate.
-    layer1_price_precheck; `era_of(date_str) -> era_id`. A window's era is the
-    era of its test start. Returns {windows_total, windows_run (labels, in
+    """Which protocol windows `symbol` on `exchange` could cover. `precheck(
+    layer1, exchange, symbol, timeframe, start_dt, end_dt) -> (ok, reason)` is
+    data_availability_gate.layer1_price_precheck; `era_of(ts) -> era_id`.
+
+    A window counts only when the precheck passes AND -- this module's own,
+    stricter listing rule (D-042) -- the coin's Layer-1 earliest date
+    (layer1_earliest) is on or before the window's test.start: the precheck
+    alone accepts a window that merely ends after the listing, i.e. one that
+    straddles it and would run on a part-empty window. A coin with no Layer-1
+    date keeps the precheck's reading. A window's era is the era of its test
+    period's MIDPOINT (so a window just past an era boundary is not counted in
+    the era it barely touches). Returns {windows_total, windows_run (labels, in
     protocol order), fraction, eras (sorted, era_unmapped excluded),
     uncovered: [{label, reason}]}."""
-    import pandas as pd  # the precheck's own timestamp parsing
     windows = protocol.get("windows")
     if not isinstance(windows, list) or not windows:
         raise VariantCoinError("the run protocol has no `windows` list")
     timeframe = protocol.get("timeframe", "1h")  # run_protocol's own default
+    earliest = layer1_earliest(layer1, exchange, symbol)
+    earliest_ts = _naive_utc(earliest) if earliest is not None else None
     run, uncovered, eras = [], [], set()
     for w in windows:
         start, end = _window_bounds(w)
+        start_ts, end_ts = _naive_utc(start), _naive_utc(end)
         ok, reason = precheck(layer1, exchange, symbol, timeframe,
-                              pd.Timestamp(start).to_pydatetime(), pd.Timestamp(end).to_pydatetime())
-        label = w.get("label", start)
+                              start_ts.to_pydatetime(), end_ts.to_pydatetime())
+        if ok and earliest_ts is not None and earliest_ts > start_ts:
+            ok, reason = False, (
+                f"window test.start {start} is before {symbol}'s Layer-1 earliest OHLCV date "
+                f"{earliest} on {exchange}: the window straddles the listing, so part of it has "
+                f"no data -- D-042 counts a window only when the coin exists for all of it")
+        label = _window_label(w)
         if ok:
             run.append(label)
-            era = era_of(start)
+            era = era_of((start_ts + (end_ts - start_ts) / 2).isoformat())
             if era != _UNMAPPED_ERA:
                 eras.add(era)
         else:
@@ -162,17 +229,19 @@ def window_coverage(protocol: dict, *, exchange: str, symbol: str, layer1: dict,
 
 def coverage_decision(coverage: dict) -> str | None:
     """None when the asset variant may run (full coverage, or D-042's
-    partial-coverage floor met); else the not-run reason."""
+    partial-coverage window share met); else the not-run reason. The eras it
+    covers are never a gate (D-042's 2-era condition dropped by the operator
+    2026-09-28, D-045) -- they appear in the reason as information only."""
     if coverage["windows_run"] and len(coverage["windows_run"]) == coverage["windows_total"]:
         return None
     n, total = len(coverage["windows_run"]), coverage["windows_total"]
-    if coverage["fraction"] >= D042_MIN_WINDOW_COVERAGE and len(coverage["eras"]) >= D042_MIN_ERAS:
+    if n and coverage["fraction"] >= D042_MIN_WINDOW_COVERAGE:
         return None
     return (f"{COVERAGE_REASON_PREFIX} the coin covers {n}/{total} protocol windows "
-            f"({coverage['fraction']:.0%}) in {len(coverage['eras'])} era(s) {coverage['eras']} by the "
-            f"Layer-1 precheck -- D-042 runs a partial-coverage asset variant only at >= "
-            f"{D042_MIN_WINDOW_COVERAGE:.0%} of the windows and >= {D042_MIN_ERAS} eras; not run, "
-            f"the idea is at best inconclusive")
+            f"({coverage['fraction']:.0%}; era(s) {coverage.get('eras')}) by the Layer-1 precheck "
+            f"and the listing date -- D-042 runs a partial-coverage asset variant only at >= "
+            f"{D042_MIN_WINDOW_COVERAGE:.0%} of the windows; not run, the idea is at best "
+            f"inconclusive")
 
 
 def variant_protocol(source: dict, *, symbol: str, exchange: str | None = None,
@@ -186,8 +255,108 @@ def variant_protocol(source: dict, *, symbol: str, exchange: str | None = None,
         out["exchange"] = exchange
     if windows_run is not None:
         keep = set(windows_run)
-        out["windows"] = [w for w in out["windows"] if w.get("label", _window_bounds(w)[0]) in keep]
+        out["windows"] = [w for w in out["windows"] if _window_label(w) in keep]
     return out
+
+
+def protocol_sha256(raw: bytes) -> str:
+    """The sha256 5a records in index.yaml (`protocol_sha256`) for the exact
+    bytes of a variant's protocol.json."""
+    return hashlib.sha256(raw).hexdigest()
+
+
+def is_partial_coverage(entry) -> bool:
+    """True for a per-coin index entry whose coin ran on FEWER windows than
+    the run protocol has (D-042 partial coverage: `coverage.windows_run`
+    shorter than `coverage.windows_total`). A malformed coverage raises: a
+    decision about grading must never read a broken record as "full".
+
+    TEMPORARY consumer rule (D-042; lifted by E-062 S2b, which normalises the
+    time-dependent bars): such a variant is graded, but it caps the grid at
+    inconclusive and never passes the profit bars."""
+    cov = entry.get("coverage") if isinstance(entry, dict) else None
+    if cov is None:
+        return False
+    run, total = (cov.get("windows_run"), cov.get("windows_total")) if isinstance(cov, dict) \
+        else (None, None)
+    if not (isinstance(run, list) and isinstance(total, int) and not isinstance(total, bool)
+            and 0 < len(run) <= total):
+        raise VariantCoinError(f"index coverage {cov!r} has no usable windows_run / windows_total")
+    return len(run) < total
+
+
+def verify_variant_protocol(entry: dict, raw: bytes, source: dict, *, recheck=None) -> list:
+    """Why a per-coin variant's protocol.json (its exact bytes `raw`) is not
+    the file 5a wrote for index entry `entry` from run protocol `source`
+    (empty = it is). Checked before any backtest (run_phase1_research's
+    protocol_execution loop refuses the variant otherwise: no data touched, no
+    trial row) and again by the conformance check:
+      * the bytes' sha256 equals the index's `protocol_sha256`;
+      * check_variant_protocol (one coin, every other key equal, windows a
+        subsequence of the run protocol's);
+      * base / design: symbols == [the base coin] and windows == the run
+        protocol's windows EXACTLY (they never run on partial coverage);
+      * asset: the window labels == the index's `coverage.windows_run`, the
+        symbol == its `coverage.venue_symbol`, and D-042's decision on that
+        recorded coverage admits it; with `recheck` (cov -> a freshly computed
+        window_coverage for the same coin), the decision re-run on the fresh
+        coverage admits it too and yields the same windows."""
+    problems = []
+    sha = entry.get("protocol_sha256")
+    if not (isinstance(sha, str) and sha):
+        problems.append("index.yaml records no protocol_sha256 for it (5a writes one for every "
+                        "per-coin variant)")
+    elif protocol_sha256(raw) != sha:
+        problems.append("its protocol.json sha256 differs from the protocol_sha256 5a recorded in "
+                        "index.yaml -- the file changed after 5a wrote it")
+    try:
+        variant = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError) as exc:
+        return problems + [f"its protocol.json is not valid JSON ({exc})"]
+    if not isinstance(variant, dict):
+        return problems + ["its protocol.json is not a JSON object"]
+    problems += check_variant_protocol(variant, source)
+    try:
+        labels = [_window_label(w) for w in variant.get("windows") or []]
+    except (VariantCoinError, AttributeError) as exc:
+        return problems + [f"its windows are malformed ({exc})"]
+    kind = entry.get("kind")
+    if kind in ("base", "design"):
+        base = base_coin(source)
+        if variant.get("symbols") != [base]:
+            problems.append(f"a {kind} variant runs on the base coin {base!r}, not "
+                            f"{variant.get('symbols')!r}")
+        if variant.get("windows") != source.get("windows"):
+            problems.append(f"a {kind} variant runs every window of the run protocol; its "
+                            f"windows {labels} are not the run protocol's")
+    elif kind == "asset":
+        cov = entry.get("coverage")
+        if not isinstance(cov, dict):
+            return problems + ["an asset variant's index entry has no coverage record"]
+        if labels != cov.get("windows_run"):
+            problems.append(f"its windows {labels} are not the index's coverage.windows_run "
+                            f"{cov.get('windows_run')!r}")
+        if variant.get("symbols") != [cov.get("venue_symbol")]:
+            problems.append(f"its symbols {variant.get('symbols')!r} are not the index's "
+                            f"coverage.venue_symbol {cov.get('venue_symbol')!r}")
+        try:
+            decided = coverage_decision(cov)
+        except (KeyError, TypeError) as exc:
+            return problems + [f"its index coverage is malformed ({type(exc).__name__}: {exc})"]
+        if decided is not None:
+            problems.append(f"D-042's decision on its recorded coverage does not admit it: {decided}")
+        if recheck is not None:
+            fresh = recheck(cov)
+            again = coverage_decision(fresh)
+            if again is not None:
+                problems.append(f"D-042's decision re-run on a fresh coverage does not admit it: "
+                                f"{again}")
+            elif fresh["windows_run"] != cov.get("windows_run"):
+                problems.append(f"a fresh coverage covers windows {fresh['windows_run']}, not the "
+                                f"recorded {cov.get('windows_run')!r}")
+    else:
+        problems.append(f"index kind {kind!r} is not one of {VARIANT_KINDS}")
+    return problems
 
 
 def check_variant_protocol(variant: dict, source: dict) -> list:

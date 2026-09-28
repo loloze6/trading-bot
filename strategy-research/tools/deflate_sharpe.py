@@ -154,8 +154,11 @@ def deduplicate_trials(records: list[dict]) -> tuple[list[dict], int]:
     `symbols`, so an asset variant with the base's exact config on another coin
     stays its own trial (card D). A row without the field keys (hash, None,
     source) -- the same partition as the former (hash, source): every existing
-    ledger dedupes exactly as before. A present but malformed `symbols` raises.
-    Lockstep with run_phase1_research._dedupe_trials.
+    ledger dedupes exactly as before. So a legacy row without `symbols` and a
+    per-coin row for the same config (same hash, same source) count as TWO
+    trials, never one -- the conservative direction for the DSR (N can only be
+    over-counted, never under-counted). A present but malformed `symbols`
+    raises. Lockstep with run_phase1_research._dedupe_trials.
 
     Returns (deduped_list, n_removed).
     """

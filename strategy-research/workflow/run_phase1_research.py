@@ -1493,6 +1493,17 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 # string "validate" now marks the variant not_tested.
                 reasons = gate_result.get("reasons", [])
                 reason = f"data_availability_gate outcome={outcome}: " + "; ".join(reasons[:10])
+                if (outcome in ("decline", "refine") and _vproto is not None
+                        and vinfo.get("kind") == "asset"):
+                    # Review fix H1 (D-042): a per-coin ASSET variant the Layer-2
+                    # gate declines / refines (e.g. a late-listed coin with no
+                    # Layer-1 date, missing its pre-listing windows) is skipped
+                    # exactly like 5a's coverage skip -- it never blocks the idea
+                    # or the other variants (_is_coverage_skip). No backtest ran,
+                    # so no trial row. Base and design: unchanged below.
+                    reason = f"{_variant_coin_module().LAYER2_COVERAGE_REASON_PREFIX} {reason}"
+                    print(f"⚠️  data_availability_gate: asset variant '{variant_id}' "
+                          f"{outcome} -- not_tested, non-blocking (D-042).")
                 variants_idx[variant_id] = {**vinfo, "status": "not_tested", "reason": reason}
                 data_requests.append({
                     "variant_id": variant_id, "outcome": outcome,
@@ -1629,6 +1640,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
                       else _vce_prefixes.FAILED_VARIANT_BACKTEST_FAILED)
             failed_variants[vid] = f"{prefix} {why}"
 
+        _coin_ctx_cache: dict = {}  # E-061 C2 S2b M2: 5a's coin context, built once if needed
+
         for variant_id in sorted(validated):
             vinfo = validated[variant_id]
             trial_id = f"{run_id}:{variant_id}"
@@ -1657,21 +1670,28 @@ async def run_tool_worker(stage_name: str, run_id: str):
             variant_config_path = RUN_DIR / _config_path_val
             # E-061 C2 S2b (G1, G6): a per-coin variant runs its OWN protocol, and
             # its trial rows carry its coin so the DSR dedupe never merges it
-            # with a same-config variant on another coin. An unreadable one is
-            # refused before any backtest (no data touched, no trial row).
+            # with a same-config variant on another coin. Review fix M2: the
+            # protocol must be exactly the file 5a wrote (sha256, windows,
+            # coverage re-run -- _per_coin_protocol_check); an unreadable or
+            # non-conforming one is refused before any backtest (no data
+            # touched, no trial row).
             _vproto = _variant_protocol_path(RUN_DIR, vinfo)
             _trial_kw: dict = {}
             if _vproto is not None:
                 try:
-                    _vp_syms = _variant_coin_module().load_protocol_file(_vproto).get("symbols")
+                    _vp_problems, _vp_syms = _per_coin_protocol_check(
+                        RUN_DIR, run_id, vinfo, _vproto, protocol_path, _coin_ctx_cache)
+                    if _vp_problems:
+                        raise ValueError("; ".join(_vp_problems))
                     if not (isinstance(_vp_syms, list) and len(_vp_syms) == 1
                             and isinstance(_vp_syms[0], str) and _vp_syms[0]):
                         raise ValueError(f"symbols {_vp_syms!r} is not exactly one coin")
                     _trial_kw = {"symbols": list(_vp_syms)}
                 except Exception as _vp_err:
                     refused_variants[variant_id] = (
-                        f"its protocol {vinfo['protocol_path']!r} is unreadable "
-                        f"({type(_vp_err).__name__}: {_vp_err}) -- refused before any backtest")
+                        f"its protocol {vinfo['protocol_path']!r} is unreadable or not the file "
+                        f"5a wrote ({type(_vp_err).__name__}: {_vp_err}) -- refused before any "
+                        f"backtest")
                     print(f"⚠️  protocol_execution: variant '{variant_id}' "
                           f"{refused_variants[variant_id]}; continuing with remaining variants.")
                     _variant_failed(variant_id, refused_variants[variant_id], refused=True)
@@ -1810,6 +1830,9 @@ async def run_tool_worker(stage_name: str, run_id: str):
             _vid: str((_v or {}).get("reason") or f"index status {(_v or {}).get('status')!r}")
             for _vid, _v in variants_idx.items()
             if _vid not in per_variant_summaries and _vid not in failed_variants}
+        # Review fix M1 (TEMPORARY, D-042; lifted by E-062 S2b): a graded variant
+        # that ran on partial coverage caps the grid at inconclusive.
+        partial_coverage_variants = _partial_coverage_variants(variants_idx, per_variant_summaries)
 
         if not per_variant_summaries:
             raise RuntimeError(
@@ -1898,7 +1921,9 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     # byte-identical grid.
                     _failed_kw = {**({"failed_variants": failed_variants} if failed_variants else {}),
                                   **({"untested_variants": untested_variants}
-                                     if untested_variants else {})}
+                                     if untested_variants else {}),
+                                  **({"partial_coverage_variants": partial_coverage_variants}
+                                     if partial_coverage_variants else {})}
                     # E-060 S2: under composition_runs the grid reads copies carrying
                     # the residual IC; off, it reads per_variant_summaries unchanged.
                     if _composition_runs_enabled():
@@ -2414,10 +2439,15 @@ async def run_tool_worker(stage_name: str, run_id: str):
             if _coin_proto is not None:
                 # G1: the variant's own protocol -- what the data gate,
                 # run_protocol.py, the repeat gate and the residual IC read.
+                # Review fix M2: its sha256 is recorded, so the pre-backtest
+                # check (variant_coin.verify_variant_protocol) can tell the
+                # exact file 5a wrote from a later edit.
                 _vproto_path = variant_dir / _variant_coin_module().VARIANT_PROTOCOL_FILENAME
-                _vproto_path.write_text(json.dumps(_coin_proto, indent=2), encoding="utf-8")
+                _vproto_bytes = json.dumps(_coin_proto, indent=2).encode("utf-8")
+                _vproto_path.write_bytes(_vproto_bytes)
                 index[variant_id].update(
-                    {**_coin_keys, "protocol_path": _vproto_path.relative_to(RUN_DIR).as_posix()})
+                    {**_coin_keys, "protocol_path": _vproto_path.relative_to(RUN_DIR).as_posix(),
+                     "protocol_sha256": _variant_coin_module().protocol_sha256(_vproto_bytes)})
             if variant_id == "base":
                 with open(ARTIFACTS / "candidate_strategy_config.json", "w", encoding="utf-8") as f:
                     json.dump(variant_config, f, indent=2)
@@ -4517,7 +4547,9 @@ def _is_repeat_skip(v) -> bool:
 def _is_coverage_skip(v) -> bool:
     """E-061 C2 S2b (D-042): True for an asset variant 5a did not run because
     its coin covers too few windows / eras (not_tested, reason
-    "insufficient_coverage: ..."). Like a repeat skip it is never a data or
+    "insufficient_coverage: ..."), or -- review fix H1 -- a per-coin asset
+    variant the Layer-2 data gate declined / refined (reason
+    "insufficient_coverage: layer2 ..."). Like a repeat skip it is never a data or
     engineering shortfall -- D-042: it must not block the idea or the other
     variants -- so the data gate's floor and _variant_park_kind leave it out;
     the grid lists it in untested_variants (the idea is at best inconclusive)."""
@@ -6590,6 +6622,11 @@ def _run_regroup_record_stage(run_id: str, run_dir: Path,
             # (written after protocol_execution) fill `profit_bars`; flag off
             # keeps null + "not evaluated before regroup".
             profit_bars_evaluated=profit_bars_evaluated,
+            # E-061 C2 S2b review fix M3: a per-coin run records the RUN protocol
+            # as protocol_ref (the key the repeat gate builds); not passed
+            # otherwise, so every other entry is unchanged.
+            **({"run_protocol_file": _resolve_protocol_path(run_dir, run_id)}
+               if cm.per_coin_index(run_dir) else {}),
         )
         # E-058 S2b, in this order so a failure leaves nothing half-recorded
         # that a re-run cannot redo: registry (append-only; conflict raises
@@ -7225,7 +7262,7 @@ def _gate_config_direct_variants(run_dir: Path, run_id: str) -> str | None:
         return None
 
     ctx = _repeat_gate_context(run_dir, run_id)
-    results, repeats = {}, []
+    results, repeats, refused = {}, [], []
     for vid in checked:
         info = variants[vid]
         if loop_on:
@@ -7235,12 +7272,28 @@ def _gate_config_direct_variants(run_dir: Path, run_id: str) -> str | None:
             config_path = run_dir / info["config_path"]
         else:
             config_path = artifacts / "candidate_strategy_config.json"
-        # E-061 C2 S2b: a per-coin variant is keyed on its own coin (G1).
+        # E-061 C2 S2b: a per-coin variant is keyed on its own coin (G1). A
+        # missing or malformed protocol.json refuses THAT variant only
+        # (not_tested, never a repeat skip); the others are still checked.
         _vproto = _variant_protocol_path(run_dir, info) if loop_on else None
-        res = _check_variant_repeat(
-            ctx, config_path, run_id,
-            **({"symbols": _variant_coin_module().load_protocol_file(_vproto)["symbols"]}
-               if _vproto is not None else {}))
+        _sym_kw: dict = {}
+        if _vproto is not None:
+            try:
+                _vsyms = _variant_coin_module().load_protocol_file(_vproto).get("symbols")
+                if not (isinstance(_vsyms, list) and _vsyms
+                        and all(isinstance(s, str) and s for s in _vsyms)):
+                    raise ValueError(f"symbols {_vsyms!r} is not a non-empty list of coins")
+                _sym_kw = {"symbols": _vsyms}
+            except Exception as _vp_err:
+                why = (f"{_variant_coin_module().COIN_REASON_PREFIX} its protocol "
+                       f"{info.get('protocol_path')!r} is missing or malformed "
+                       f"({type(_vp_err).__name__}: {_vp_err}) -- the repeat gate cannot key it")
+                variants[vid] = {**info, "status": "not_tested", "reason": why}
+                results[vid] = {"route": "not_checked", "reason": why}
+                refused.append(vid)
+                print(f"⚠️  [E-036 S2a] variant '{vid}' NOT TESTED: {why}")
+                continue
+        res = _check_variant_repeat(ctx, config_path, run_id, **_sym_kw)
         results[vid] = res
         if res["route"] == "refuse":
             refs = [f"{m['run_id']}:{m['variant_id']}" for m in res["matched"]]
@@ -7259,10 +7312,11 @@ def _gate_config_direct_variants(run_dir: Path, run_id: str) -> str | None:
         "protocol_warnings": ctx["protocol_warnings"],
         "checked": checked,
         "repeats": repeats,
+        **({"refused": refused} if refused else {}),  # E-061 C2 S2b: only when any
         "run_end": NO_NEW_HYPOTHESIS_STAGE if all_repeat else None,
         "variants": results,
     })
-    if repeats:
+    if repeats or refused:
         save_yaml(index_path, {**index_doc, "variants": variants})
     if all_repeat:
         print(f"\n🔁 [E-036 S2a] every variant {run_id} would test is an exact repeat of a "
@@ -8716,7 +8770,7 @@ def _check_protocol_execution_conformance(protocol_result: dict, constraints: di
 
 
 def _per_coin_conformance(protocol_result: dict, constraints: dict, variant_protocol: Path,
-                          source_protocol: Path) -> list:
+                          source_protocol: Path, index_entry: dict | None = None) -> list:
     """E-061 C2 S2b: the conformance check for a per-coin variant, which by
     design runs its OWN protocol (one coin, and for an asset coin on partial
     coverage fewer windows, D-042) -- so the pre-registered symbols / range /
@@ -8726,7 +8780,13 @@ def _per_coin_conformance(protocol_result: dict, constraints: dict, variant_prot
       * the executed protocol_file IS the variant's protocol.json;
       * that file is a faithful derivation of the run protocol
         (variant_coin.check_variant_protocol: one coin, every other key equal,
-        windows a subsequence).
+        windows a subsequence);
+      * review fix M2, with `index_entry` (its artifacts/variants/index.yaml
+        entry; run_loop passes it): the file is exactly the one 5a wrote
+        (variant_coin.verify_variant_protocol: protocol_sha256, base/design on
+        every run-protocol window, asset on exactly coverage.windows_run and
+        admitted by D-042's decision on that coverage). The fresh Layer-1
+        coverage re-run is protocol_execution's, before the backtest.
     The episode-significance checks read the variant's own protocol_result."""
     vc = _variant_coin_module()
     source_obj = vc.load_protocol_file(source_protocol)
@@ -8742,6 +8802,10 @@ def _per_coin_conformance(protocol_result: dict, constraints: dict, variant_prot
             executed_path.resolve() != Path(variant_protocol).resolve():
         violations.append(f"per-coin variant ran protocol {executed!r}, not its own "
                           f"{Path(variant_protocol).as_posix()!r} (written by 5a)")
+    elif index_entry is not None:
+        # verify_variant_protocol runs check_variant_protocol itself.
+        violations += [f"per-coin variant protocol: {p}" for p in vc.verify_variant_protocol(
+            index_entry, Path(variant_protocol).read_bytes(), source_obj)]
     else:
         violations += [f"per-coin variant protocol: {p}" for p in vc.check_variant_protocol(
             vc.load_protocol_file(variant_protocol), source_obj)]
@@ -10295,7 +10359,10 @@ def _dedupe_trials(valid_trials: list) -> tuple[list, int]:
     `symbols`, so an asset variant with the base's exact config (same hash) on
     another coin stays its own trial (card D). A row without the field keys
     (hash, None, source) -- the same partition as the former (hash, source), so
-    every existing ledger dedupes exactly as before. A present but malformed
+    every existing ledger dedupes exactly as before. So a legacy row without
+    `symbols` and a per-coin row for the same config (same hash, same source)
+    count as TWO trials, never one -- the conservative direction for the DSR
+    (N can only be over-counted, never under-counted). A present but malformed
     `symbols` raises."""
     reproduces_by_key: dict = {}
     for t in valid_trials:
@@ -10974,6 +11041,14 @@ def _evaluate_profit_bars(run_dir: Path, run_id: str, portfolio_basis: bool = Fa
         # daily return, byte-identical to before.
         portfolio=(_portfolio_profit_metrics(run_dir, pr) if portfolio_basis else None),
     )
+    # E-061 C2 S2b review fix M1 (TEMPORARY, D-042; lifted by E-062 S2b): when
+    # the bridge file mirrors a variant graded on partial coverage (base and
+    # design both failed), its time-dependent bars are capped here too, so this
+    # promote-path check never raises profit_bars_reached on it. None for every
+    # run without a per-coin index: the evaluation is unchanged.
+    _partial = _bridge_partial_coverage(run_dir, pr)
+    if _partial is not None:
+        results, overall, reasons = _cap_partial_coverage_bars(results, _partial)
 
     evaluation = {
         "run_id": run_id,
@@ -11151,6 +11226,12 @@ def _profit_bars_backtest_candidates(run_dir: Path, run_id: str) -> dict:
             elif vid in columns:
                 out[vid] = _tested(vid, f"{run_id}:{vid}",
                                    f"artifacts/variants/{vid}/protocol_result.yaml")
+                # Review fix M1 (TEMPORARY, D-042; lifted by E-062 S2b): a
+                # variant graded on partial coverage never passes the bars --
+                # the key is present only for such a variant.
+                _partial = _partial_coverage_variants(variants, [vid])
+                if _partial:
+                    out[vid]["partial_coverage"] = _partial[vid]
             elif info.get("status") == "validated":
                 out[vid] = {"kind": kind, "trial_id": None, "protocol_result_ref": None,
                             "protocol_result": None, "result": "NOT_TESTED",
@@ -11321,6 +11402,56 @@ def _grade_profit_bars_protocol_result(run_dir: Path, pr: dict, pr_ref: str, bar
     )
 
 
+def _bridge_partial_coverage(run_dir: Path, pr: dict) -> str | None:
+    """Review fix M1: the partial-coverage reason (_partial_coverage_variants)
+    of the per-coin variant whose own protocol.json the bridge file
+    artifacts/protocol_result.yaml (`pr`) was run on, else None -- always None
+    without a per-coin index (no index entry carries a protocol_path)."""
+    index_path = Path(run_dir) / "artifacts" / "variants" / "index.yaml"
+    executed = (pr or {}).get("protocol_file")
+    if not executed or not index_path.exists():
+        return None
+    variants = (load_yaml(index_path) or {}).get("variants")
+    if not isinstance(variants, dict):
+        return None
+    exe = Path(executed)
+    exe = exe if exe.is_absolute() or exe.exists() else ROOT / exe
+    for vid, info in variants.items():
+        vproto = _variant_protocol_path(run_dir, info)
+        if vproto is not None and vproto.resolve() == exe.resolve():
+            return _partial_coverage_variants(variants, [vid]).get(vid)
+    return None
+
+
+def _cap_partial_coverage_bars(results: list, reason: str) -> tuple:
+    """Review fix M1 (E-061 C2 S2b). TEMPORARY, D-042 -- lifted by E-062 S2b,
+    which normalises the time-dependent bars to the period a variant ran on:
+    a variant graded on partial coverage has its time-dependent bars
+    (variant_coin.D042_TIME_DEPENDENT_BARS: the trade minimum and the drawdown
+    limit, both judged on fewer windows than the run protocol's) read
+    NOT_EVALUABLE -- `actual` kept, `not_evaluable_reason` set -- so it can never
+    PASS every bar and never raises profit_bars_reached. Returns (results,
+    overall, reasons) in _grade_profit_bars' shape. A bars list without one of
+    those bars raises (the cap must never silently not apply)."""
+    names = _variant_coin_module().D042_TIME_DEPENDENT_BARS
+    missing = sorted(set(names) - {r.get("name") for r in results})
+    if missing:
+        raise ProfitabilityBarsSchemaError(
+            f"partial-coverage cap (D-042): the graded bars lack {missing}, so the "
+            f"time-dependent bars cannot be held NOT_EVALUABLE -- refusing to grade.")
+    capped = [({**r, "result": "NOT_EVALUABLE",
+                "not_evaluable_reason": (f"{reason} -- {r['name']} is time-dependent (D-042, "
+                                         f"temporary until E-062 S2b)")}
+               if r.get("name") in names else r) for r in results]
+    overall = "PASS" if {r["result"] for r in capped} == {"PASS"} else "FAIL"
+    reasons = [
+        f"{r['name']}: {r['result']} (threshold={r['threshold']!r}, actual={r['actual']!r})"
+        + (f" -- {r['not_evaluable_reason']}" if r.get("not_evaluable_reason") else "")
+        for r in capped if r["result"] != "PASS"
+    ]
+    return capped, overall, reasons
+
+
 def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
                                          record_bars_sha: bool = False) -> dict:
     """Grade every tested variant of THIS attempt (see
@@ -11360,6 +11491,11 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
             continue
         results, overall, reasons = _grade_profit_bars_protocol_result(
             run_dir, cand["protocol_result"], cand["protocol_result_ref"], bars, dsr_ctx)
+        if cand.get("partial_coverage"):
+            # Review fix M1 (TEMPORARY, D-042; lifted by E-062 S2b).
+            results, overall, reasons = _cap_partial_coverage_bars(
+                results, cand["partial_coverage"])
+            entry["partial_coverage"] = cand["partial_coverage"]
         variants[cid] = {**entry, "result": overall, "reason": None,
                          "bars": results, "reasons": reasons}
 
@@ -12476,6 +12612,54 @@ def _variant_protocol_path(run_dir: Path, vinfo) -> Path | None:
     return (Path(run_dir) / rel) if rel else None
 
 
+def _per_coin_protocol_check(run_dir: Path, run_id: str, vinfo: dict, vproto: Path,
+                             source_path, ctx_cache: dict) -> tuple:
+    """Review fix M2 (E-061 C2 S2b): (problems, symbols) for a per-coin
+    variant's protocol.json, checked by protocol_execution BEFORE its backtest
+    -- variant_coin.verify_variant_protocol against the run protocol
+    `source_path`: the index's protocol_sha256, the exact windows (base /
+    design: every run-protocol window; asset: coverage.windows_run), and for an
+    asset coin D-042's coverage decision re-run on a FRESH Layer-1 coverage
+    (5a's own context, _variant_coin_context, built once into `ctx_cache`).
+    symbols is the file's `symbols` when there is no problem, else None. An
+    unreadable input raises (the caller refuses the variant)."""
+    vc = _variant_coin_module()
+    raw = Path(vproto).read_bytes()
+    source = vc.load_protocol_file(source_path)
+    recheck = None
+    if vinfo.get("kind") == "asset":
+        if "ctx" not in ctx_cache:
+            ctx_cache["ctx"] = _variant_coin_context(run_dir, run_id)
+        ctx = ctx_cache["ctx"]
+
+        def recheck(cov):
+            return vc.window_coverage(source, exchange=cov["exchange"], symbol=cov["venue_symbol"],
+                                      layer1=ctx["layer1"], precheck=ctx["precheck"],
+                                      era_of=ctx["era_of"])
+    problems = vc.verify_variant_protocol(vinfo, raw, source, recheck=recheck)
+    return problems, (None if problems else json.loads(raw.decode("utf-8")).get("symbols"))
+
+
+def _partial_coverage_variants(variants_idx: dict, graded) -> dict:
+    """Review fix M1 (E-061 C2 S2b). TEMPORARY, D-042 -- lifted by E-062 S2b,
+    which normalises the time-dependent bars to the period a variant ran on:
+    {variant_id: reason} for every GRADED variant (`graded`: its ids) that ran on
+    partial coverage (variant_coin.is_partial_coverage: fewer windows than the
+    run protocol). The grid still grades it, but it caps the idea at
+    inconclusive (verdict_criteria_evaluator.evaluate_grid
+    partial_coverage_variants). {} when none: the grid call is unchanged."""
+    vc = _variant_coin_module()
+    out = {}
+    for vid in sorted(graded):
+        info = (variants_idx or {}).get(vid)
+        if isinstance(info, dict) and vc.is_partial_coverage(info):
+            cov = info["coverage"]
+            out[vid] = (f"partial coverage: ran on {len(cov['windows_run'])}/"
+                        f"{cov['windows_total']} run-protocol windows (D-042); its time-dependent "
+                        f"bars are not normalised until E-062 S2b")
+    return out
+
+
 def _variant_coin_context(run_dir: Path, run_id: str) -> dict:
     """The inputs 5a's per-coin checks (variant_coin.resolve_variant) share
     across one run's variants: the run protocol (the SAME resolver the data gate
@@ -13423,7 +13607,8 @@ def run_loop(run_id: str):
                                 if _conf_source is None:  # resolved once per run
                                     _conf_source = _resolve_protocol_path(RUN_DIR, run_id)
                                 _violations = _per_coin_conformance(
-                                    _pr, _constraints, _vproto, _conf_source)
+                                    _pr, _constraints, _vproto, _conf_source,
+                                    _conf_index.get(_variant_id))
                             else:
                                 _protocol_obj = {}
                                 _protocol_path_str = _pr.get("protocol_file")
