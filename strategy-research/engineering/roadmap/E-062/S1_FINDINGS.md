@@ -378,3 +378,19 @@ recommendation, BIG ones are parked. Recorded by the orchestrator:
 - **Sequencing:** S2a (pure functions) may run now in parallel with C1; S2b after C1.1 lands
   (and ideally after C2.1); the operator must sign the bars file before C4 (sha changes at merge
   and at signature).
+
+### Amendments during S2a (orchestrator, 2026-09-28 night, under the operator's standing instruction)
+
+Code review of S2a found that two accepted G1 details were flattering; replaced by
+conservative rules (built in `tools/portfolio_whole_test.py`):
+- A day missing where two windows join, or a window's tail/head missing for SOME coins only
+  (coins disagree), is **missing data → NOT_EVALUABLE**, listing the (window, coin, day) cells —
+  not a flat gap (G1 said "treat as a gap", which would drop real P&L).
+- The engine's **systematic** shortfall — every coin's last recorded bar 1–3 days before
+  `test.end` (measured on run_054/057/059), identical across coins — is a **protocol gap**: flat
+  for strategy and buy-and-hold, excluded from coverage, at most 5 days per window
+  (`MAX_ENGINE_TAIL_DAYS`). Checked on run_054/057/059: all evaluable, coverage 0.967–0.995.
+- Gaps are classified against the protocol's nominal `test.start`/`test.end` (never a manifest
+  prefetch start); coverage is measured over the nominal span.
+- Edge/cost bar: floor counts non-forced trades; ratio = min(all trades, non-forced trades);
+  unrounded ratio at the gate. `cost_paid` follows the run's actual fee flags.
