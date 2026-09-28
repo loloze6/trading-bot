@@ -416,6 +416,52 @@ Only in the variant-loop branch with `grid_evaluation` on. Flag off: one column,
   trial_id; a refused one null; the graded survivors of an inconclusive idea are still graded
   (D-021).
 
+### S2b built (2026-09-28, branch `feat/c2-s2b-one-coin-per-variant`)
+
+C2.1 as recommended (G1, G2, G3 as amended by D-042, G4, G5, G6), all behind
+`orchestrator.variant_loop` (which needs `config_direct_authoring`), and only when
+`variant_patches.yaml` declares `kind`/`symbol` (a legacy file, the loop off and composition
+runs are byte-identical; `tests/test_e061_c2_s2b_one_coin_per_variant.py` proves the index,
+configs, argv and trial rows). One module, `tools/variant_coin.py`.
+
+- **5a** writes `artifacts/variants/<id>/protocol.json` (the run protocol with `symbols: [coin]`,
+  and the coin's `exchange` for an asset coin) and index `kind`/`symbol`/`protocol_path` (+
+  `coverage` for an asset coin); `campaign_memory._INDEX_KEYS` accepts them. base/design default
+  to the base coin; per entry, 5a refuses (not_tested, `variant_coin:` reason) an unknown kind, a
+  base that is not `base`/empty, an empty design patch, a non-empty asset patch, an asset coin
+  outside `coin_universe.yaml` or in the base coin's category. Count checks and the retry stay
+  S2c's.
+- **Venue symbol (added):** a Kraken coin backtests under its venue name read from its
+  `cache_key` (XRPUSDT -> XRPUSD), which is what the Layer-1 audit and the Kraken cache use.
+- **D-042 coverage:** Layer-1 precheck only (no network). A window's era = the era of its test
+  start. Full coverage runs every window; partial runs on the covered windows only at
+  `D042_MIN_WINDOW_COVERAGE = 0.60` and `D042_MIN_ERAS = 2` (named constants). Below either it is
+  not_tested `insufficient_coverage: ...`: the data-gate floor and the park kind treat it like a
+  repeat skip, and the grid lists it in `untested_variants` (idea at best inconclusive). The
+  windows a variant ran on are its `protocol.json` windows (+ `coverage.windows_run`) for E-062
+  S2b's normalisation.
+- **Consumers:** data gate and `run_protocol.py` get the variant's protocol; its trial rows carry
+  `symbols`; the repeat gate keys on the variant's coin (timeframe/windows stay the run
+  protocol's, as a memory entry keys every variant on one protocol_ref); per-coin conformance
+  checks the run protocol against the pre-registration and the variant's file against its
+  derivation; residual IC runs one composite per coin group (`composite.cache_dirs`, read by
+  `tools/composition.py`).
+- **G6:** both dedupe paths key `(forecast_hash, sorted symbols or None, source)`; a row
+  without `symbols` keys as before (byte-identical on the committed ledger and on random legacy
+  ledgers, both paths).
+- **CUL-342 item 1:** config-direct with the loop off now passes the index's other variants as
+  `untested_variants` (the idea is at best inconclusive) rather than refusing the flag pair at
+  pre-flight -- it closes the hole for every entry point (not only `run_campaign`), and
+  config-direct alone stays a supported, tested mode (C5.6). **Item 2:** a belt check in
+  `campaign_memory.build_memory_entry` refuses `validated` with failed/untested variants, a
+  non-tested variant, or a single column while the index lists other variants.
+- **Known limits:** `config/venue_data_capability.yaml` has no per-symbol Kraken start date, so
+  every Kraken coin reads full coverage and its real gaps surface at the Layer-2 data gate (which
+  declines the variant whole, as today): the partial-coverage path only bites for coins with a
+  Layer-1 date until that audit gains Kraken dates. A single-era protocol can never run a partial
+  asset (the 2-era floor). The Step-2 injected context (base coin, windows, earliest date per
+  coin) is not built; Step 2 still sees only `coin_universe.yaml`.
+
 ---
 
 ## C2.5 — Variant shape (card D; review A5)
