@@ -1798,6 +1798,74 @@ def diagnostics_only_hypothesis_verdict(results: list,
     }
 
 
+# C5.6 (D-043): --legacy-verdict-retired, passed by run_tool_worker only when a
+# protocol's promotion block decides nothing (config_direct_authoring AND
+# verdict_routing_retired: the grid and the profit bars decide, the legacy
+# verdict_interpreter route is retired). The top-level promote/kill/refine
+# verdict is then recorded as null with this reason and no promotion block is
+# read. Without the flag the verdict is computed from the protocol's block, and
+# a protocol whose block is missing, empty or lacks one of the four keys the
+# verdict reads (LEGACY_VERDICT_PROMOTION_KEYS) is refused before any backtest
+# (it used to raise KeyError after every window had run).
+LEGACY_VERDICT_PROMOTION_KEYS = ("median_sharpe_gt", "max_abs_drawdown_pct_lt",
+                                 "min_trade_count_gte", "kill_median_sharpe_lt")
+LEGACY_VERDICT_RETIRED_REASON = (
+    "legacy promote/kill/refine verdict not computed (--legacy-verdict-retired: "
+    "config_direct_authoring + verdict_routing_retired -- the grid and the profit bars "
+    "decide, C5.6 / D-043)")
+
+
+def legacy_top_level_verdict(per_symbol: dict, symbols: list, promo: dict) -> tuple:
+    """(verdict, verdict_reason): the legacy top-level promote/kill/refine verdict
+    from the protocol's `promotion` block. The reason cites that block's own
+    thresholds (C5.6 review fix 7: it used to print the abolished generic
+    numbers >0 / <30 / >=20 / <-1 whatever the protocol registered)."""
+    def _promote(s):
+        p = per_symbol[s]
+        if p["median_sharpe"] is None:
+            return False
+        return (p["median_sharpe"]        >  promo["median_sharpe_gt"]
+                and p["max_abs_drawdown_pct"] <  promo["max_abs_drawdown_pct_lt"]
+                and p["min_trade_count"]       >= promo["min_trade_count_gte"])
+
+    def _kill(s):
+        p = per_symbol[s]
+        if p["median_sharpe"] is None:
+            return False
+        return p["median_sharpe"] < promo["kill_median_sharpe_lt"]
+
+    if all(_promote(s) for s in symbols):
+        parts = [f"{s}: median_sharpe={per_symbol[s]['median_sharpe']:.3f}"
+                 f">{promo['median_sharpe_gt']}"
+                 f" max_dd={per_symbol[s]['max_abs_drawdown_pct']:.1f}%"
+                 f"<{promo['max_abs_drawdown_pct_lt']}"
+                 f" min_trades={per_symbol[s]['min_trade_count']}"
+                 f">={promo['min_trade_count_gte']}"
+                 for s in symbols]
+        return "promote", "; ".join(parts)
+    if all(_kill(s) for s in symbols):
+        parts = [f"{s}: median_sharpe={per_symbol[s]['median_sharpe']:.3f}"
+                 f"<{promo['kill_median_sharpe_lt']}" for s in symbols]
+        return "kill", "every symbol below the kill threshold: " + ", ".join(parts)
+    parts = []
+    for s in symbols:
+        p = per_symbol[s]
+        fails = []
+        if p["median_sharpe"] is None:
+            fails.append("median_sharpe=null (all windows sparse)")
+        elif p["median_sharpe"] <= promo["median_sharpe_gt"]:
+            fails.append(f"median_sharpe={p['median_sharpe']:.3f}<={promo['median_sharpe_gt']}")
+        if p["max_abs_drawdown_pct"] >= promo["max_abs_drawdown_pct_lt"]:
+            fails.append(f"max_dd={p['max_abs_drawdown_pct']:.1f}%"
+                         f">={promo['max_abs_drawdown_pct_lt']}")
+        if p["min_trade_count"] < promo["min_trade_count_gte"]:
+            fails.append(f"min_trades={p['min_trade_count']}<{promo['min_trade_count_gte']}")
+        if fails:
+            parts.append(f"{s}: " + ", ".join(fails))
+    return "refine", ("; ".join(parts) if parts
+                      else "mixed — not all pass promote, not all fail at kill")
+
+
 # E-061 C1.3: a refusal BEFORE any window ran -- no market data was touched, so
 # the orchestrator records no trial row for it (an engineering failure, not a
 # spent look). The exit code and the stderr token live in tools/protocol_refusal.py,
@@ -2092,6 +2160,14 @@ def main():
                              "set and no verdict. Without it (and without "
                              "--validation-protocol) hypothesis_verdict stays null. Mutually "
                              "exclusive with --validation-protocol.")
+    parser.add_argument("--legacy-verdict-retired", action="store_true",
+                        dest="legacy_verdict_retired",
+                        help="C5.6 (D-043): record the legacy top-level promote/kill/refine "
+                             "verdict as null (LEGACY_VERDICT_RETIRED_REASON) and read no "
+                             "`promotion` block. Passed by run_tool_worker only under "
+                             "orchestrator.config_direct_authoring + verdict_routing_retired. "
+                             "Without it a protocol whose promotion block is missing, empty "
+                             "or partial is refused before any backtest.")
     parser.add_argument("--out-dir", default=None,
                         help="Override output directory (default: results/protocols/<run_id>)")
     parser.add_argument("--cost-product", default="spot", choices=["spot", "perp"],
@@ -2169,6 +2245,23 @@ def main():
     _holdout_start = _training_holdout_start(protocol, policy)
     if not args.holdout:
         _preflight_training_windows(protocol, _holdout_start)
+
+    # C5.6 (D-043): the legacy top-level verdict needs the protocol's promotion
+    # block. Without --legacy-verdict-retired a missing, null, empty or partial
+    # block used to crash (KeyError/TypeError) AFTER every window -- and every
+    # holdout window -- had been spent; it is refused here instead, before any
+    # fetch.
+    _promo_block = protocol.get("promotion") if isinstance(protocol, dict) else None
+    if not args.legacy_verdict_retired and not (
+            isinstance(_promo_block, dict)
+            and all(k in _promo_block for k in LEGACY_VERDICT_PROMOTION_KEYS)):
+        _refuse_before_any_backtest(
+            f"{args.protocol_path}: its `promotion` block is missing, empty or lacks one of "
+            f"{list(LEGACY_VERDICT_PROMOTION_KEYS)} (got {_promo_block!r}), which the legacy "
+            f"top-level promote/kill/refine verdict needs. Under "
+            f"orchestrator.config_direct_authoring + verdict_routing_retired pass "
+            f"--legacy-verdict-retired (run_tool_worker does; so must a by-hand --holdout "
+            f"run); otherwise use a protocol with pre-registered thresholds (C5.6, D-043)")
 
     # CUL-165 / GH#79: read the config bytes once and hash those bytes, so the
     # protocol-level stamp certifies the exact bytes every run_backtest() below
@@ -2427,7 +2520,9 @@ def main():
               f"({len(all_trade_records)} trades)")
 
     # Per-symbol summary (A3.4: median_sharpe excludes null-sharpe sparse windows)
-    promo = protocol["promotion"]
+    # C5.6: a missing/empty/partial block was refused before any backtest,
+    # unless run_tool_worker said the legacy verdict is retired (none is read).
+    promo = None if args.legacy_verdict_retired else protocol["promotion"]
     per_symbol = {}
     for symbol in symbols:
         rows    = [r for r in results if r["symbol"] == symbol]
@@ -2450,48 +2545,10 @@ def main():
             "zero_trade_slot_pct":  sym_zero_pct,  # A3.4
         }
 
-    def _promote(s):
-        p = per_symbol[s]
-        if p["median_sharpe"] is None:
-            return False
-        return (p["median_sharpe"]        >  promo["median_sharpe_gt"]
-                and p["max_abs_drawdown_pct"] <  promo["max_abs_drawdown_pct_lt"]
-                and p["min_trade_count"]       >= promo["min_trade_count_gte"])
-
-    def _kill(s):
-        p = per_symbol[s]
-        if p["median_sharpe"] is None:
-            return False
-        return p["median_sharpe"] < promo["kill_median_sharpe_lt"]
-
-    if all(_promote(s) for s in symbols):
-        verdict = "promote"
-        parts = [f"{s}: median_sharpe={per_symbol[s]['median_sharpe']:.3f}>0"
-                 f" max_dd={per_symbol[s]['max_abs_drawdown_pct']:.1f}%<30"
-                 f" min_trades={per_symbol[s]['min_trade_count']}>=20"
-                 for s in symbols]
-        verdict_reason = "; ".join(parts)
-    elif all(_kill(s) for s in symbols):
-        verdict = "kill"
-        parts = [f"{s}: median_sharpe={per_symbol[s]['median_sharpe']:.3f}<-1" for s in symbols]
-        verdict_reason = "both symbols below kill threshold: " + ", ".join(parts)
+    if args.legacy_verdict_retired:
+        verdict, verdict_reason = None, LEGACY_VERDICT_RETIRED_REASON
     else:
-        verdict = "refine"
-        parts = []
-        for s in symbols:
-            p = per_symbol[s]
-            fails = []
-            if p["median_sharpe"] is None:
-                fails.append("median_sharpe=null (all windows sparse)")
-            elif p["median_sharpe"] <= promo["median_sharpe_gt"]:
-                fails.append(f"median_sharpe={p['median_sharpe']:.3f}<=0")
-            if p["max_abs_drawdown_pct"] >= promo["max_abs_drawdown_pct_lt"]:
-                fails.append(f"max_dd={p['max_abs_drawdown_pct']:.1f}%>=30")
-            if p["min_trade_count"] < promo["min_trade_count_gte"]:
-                fails.append(f"min_trades={p['min_trade_count']}<20")
-            if fails:
-                parts.append(f"{s}: " + ", ".join(fails))
-        verdict_reason = "; ".join(parts) if parts else "mixed — not all pass promote, not all fail at kill"
+        verdict, verdict_reason = legacy_top_level_verdict(per_symbol, symbols, promo)
 
     # 2026-07-09: compute the extended (bootstrap-fallback-resolved) per-symbol
     # summary BEFORE the cross-check, so the check reports whether the

@@ -244,10 +244,14 @@ def check_protocol_outside_holdout(protocol: dict, holdout_range: tuple, *,
 
 def subprocess_runner(python_exe) -> callable:
     """The default runner: tools/run_protocol.py in NORMAL mode (never
-    --holdout, no --validation-protocol) into `out_dir`."""
+    --holdout, no --validation-protocol) into `out_dir`. Always
+    --legacy-verdict-retired (C5.6, D-043): the composite exists only under
+    orchestrator.composition_runs, which requires config_direct_authoring and
+    verdict_routing_retired, so the run's protocol may carry no promotion
+    block, and nothing reads the composite's legacy verdict."""
     def _run(config_path: Path, protocol_path: Path, out_dir: Path) -> None:
         cmd = [str(python_exe), str(_RUN_PROTOCOL), str(config_path), str(protocol_path),
-               "--out-dir", str(out_dir)]
+               "--legacy-verdict-retired", "--out-dir", str(out_dir)]
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode != 0:
             raise CompositeError(f"composite protocol run failed (exit {result.returncode}):\n"

@@ -1313,6 +1313,17 @@ def _validation_protocol_args(validation_path: Path) -> list:
     return ["--diagnostics-only"]
 
 
+def _legacy_verdict_args() -> list:
+    """C5.6 (D-043) review fix 2: `--legacy-verdict-retired` when a protocol's
+    promotion block decides nothing (_promotion_retired_enabled:
+    config_direct_authoring AND verdict_routing_retired) -- run_protocol.py
+    then records its legacy top-level verdict as null and reads no promotion
+    block. Otherwise nothing is added: run_protocol.py computes that verdict
+    from the protocol's block, and refuses a missing/empty/partial block
+    before any backtest."""
+    return ["--legacy-verdict-retired"] if _promotion_retired_enabled() else []
+
+
 import protocol_refusal as _protocol_refusal  # noqa: E402  (tools/: one definition)
 import holdout_policy as _holdout_policy  # noqa: E402  (tools/: CUL-339, the ONE strict holdout_range parser)
 
@@ -1582,6 +1593,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
 
         protocol_path = _resolve_protocol_path(RUN_DIR, run_id)
         validation_path = ARTIFACTS / "validation_protocol.yaml"
+        legacy_verdict_args = _legacy_verdict_args()  # C5.6: read once, every variant
         base_variant_id = _json_pointer_module().base_variant_id(validated)  # "base", else sorted()[0]
 
         per_variant_summaries: dict = {}
@@ -1642,6 +1654,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 str(TBOT_PYTHON), str(ROOT / "tools" / "run_protocol.py"),
                 str(variant_config_path), str(protocol_path),
                 *_validation_protocol_args(validation_path),
+                *legacy_verdict_args,
                 "--out-dir", str(variant_run_dir),
             ]
             print(f"--- protocol_execution: variant '{variant_id}' ---")
@@ -1929,6 +1942,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
             str(TBOT_PYTHON), str(ROOT / "tools" / "run_protocol.py"),
             str(config_path), str(protocol_path),
             *_validation_protocol_args(validation_path),
+            *_legacy_verdict_args(),
             "--out-dir", str(RUN_DIR),
         ]
         _windows_before = _window_results(RUN_DIR)
@@ -8010,11 +8024,18 @@ def _generate_monthly_windows(start: str, end: str, holdout_range=None) -> list:
     return windows
 
 
-def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: dict) -> Path | None:
+def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: dict, *,
+                                      promotion_retired=False) -> Path | None:
     """
     Idempotent: generates runs/{run_id}'s dedicated protocol JSON + run_context.yaml
     override from machine_constraints.protocol, if present and not already done.
     Returns the generated protocol path, or None if no protocol constraint exists.
+
+    C5.6 `promotion_retired` (see _generated_protocol_promotion): a bool, or a
+    zero-argument reader called only when a protocol is actually generated
+    (run_loop passes _promotion_retired_enabled, so an already-generated run
+    reads no config here). The default False is the flag-off generator,
+    exactly as before: no config read, G7 first.
     """
     proto_constraint = constraints.get("protocol")
     if not proto_constraint:
@@ -8044,7 +8065,11 @@ def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: d
         "timeframe": timeframe,
         "windows": windows,
         "holdout": _generated_protocol_holdout_block(proto_constraint),
-        "promotion": _require_pre_registered_promotion(proto_constraint, run_id),
+        # C5.6 (D-043): G7 unless the promotion block is retired, then no key.
+        **_generated_protocol_promotion(
+            proto_constraint, run_id,
+            promotion_retired=(promotion_retired() if callable(promotion_retired)
+                               else promotion_retired)),
     }
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(protocol_obj, f, indent=2)
@@ -8180,6 +8205,52 @@ def _require_pre_registered_promotion(proto_constraint: dict, run_id: str) -> di
             f"mapping) to the brief's machine_constraints, then re-run."
         )
     return promotion
+
+
+def _promotion_retired_enabled(cfg: dict | None = None) -> bool:
+    """C5.6 (D-043): True when a protocol's `promotion` block decides nothing --
+    orchestrator.config_direct_authoring.enabled AND
+    orchestrator.verdict_routing_retired.enabled. Under both, the legacy
+    verdict_interpreter route and tools/run_protocol.py's top-level
+    promote/kill/refine verdict are retired (the grid and the profit bars
+    decide), so G7 is skipped, a generated protocol carries no block and
+    run_protocol.py is told not to compute that verdict. config_direct alone
+    is NOT enough: with verdict routing still live G7 stays required.
+
+    Not a flag of its own -- the conjunction of two flag readers, each read
+    strictly (verdict_routing_retired only when config_direct_authoring is on).
+    run_campaign's pre-flight derives the same value from its single parsed
+    reading (run_campaign._promotion_retired_from) instead of calling this."""
+    return (_flag_dep(_config_direct_authoring_enabled, cfg)
+            and _flag_dep(_verdict_routing_retired_enabled, cfg))
+
+
+def _generated_protocol_promotion(proto_constraint: dict, run_id: str, *,
+                                  promotion_retired: bool) -> dict:
+    """C5.6 (D-043): the `promotion` entry of a generated protocol, as a dict to
+    splice into it. The ONE place both the generator
+    (_ensure_protocol_from_constraints) and run_campaign's pre-flight
+    (_expected_generated_protocol) decide it, so the two cannot drift.
+    Reads no config: `promotion_retired` is the caller's own reading of
+    _promotion_retired_enabled (review fixes 5/6).
+
+    promotion_retired False (flag off, or config_direct_authoring with verdict
+    routing still live): {"promotion": <block>} through G7
+    (_require_pre_registered_promotion), which refuses a brief with none --
+    exactly as before, with no I/O before G7.
+
+    promotion_retired True: nothing reads a protocol's promotion block, so the
+    generated protocol carries NO `promotion` key -- whatever the brief
+    pre-registered is dropped (never copied, never substituted); registration
+    already refused an abolished generic or present-but-empty block, and any
+    other block is ignored with a logged note."""
+    if promotion_retired:
+        if "promotion" in proto_constraint:
+            print(f"ℹ️  [C5.6] {run_id}: machine_constraints.protocol.promotion is ignored and "
+                  f"not copied into the generated protocol -- under config_direct_authoring + "
+                  f"verdict_routing_retired nothing reads it (D-043).")
+        return {}
+    return {"promotion": _require_pre_registered_promotion(proto_constraint, run_id)}
 
 
 
@@ -12383,7 +12454,9 @@ def run_loop(run_id: str):
                 f"run_campaign.py's materialization-time lint; a direct/hand-edited "
                 f"invocation bypassed it. Refusing to silently pick one."
             )
-        _ensure_protocol_from_constraints(RUN_DIR, run_id, _machine_constraints)
+        # C5.6: the flags are read only if a protocol is actually generated now.
+        _ensure_protocol_from_constraints(RUN_DIR, run_id, _machine_constraints,
+                                          promotion_retired=_promotion_retired_enabled)
         _ensure_protocol_ref_pinned(RUN_DIR, run_id, _machine_constraints)
 
     # E-046a Slice 5b-ii-B: resolve the specialist_readers flag ONCE per run_loop,

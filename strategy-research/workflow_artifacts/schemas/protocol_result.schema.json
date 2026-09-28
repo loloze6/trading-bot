@@ -8,7 +8,7 @@
     "protocol_run_id":    { "type": "string" },
     "config_sha256":      { "type": "string" },
     "protocol_file":      { "type": "string" },
-    "verdict":            { "type": "string", "enum": ["promote", "refine", "kill"] },
+    "verdict":            { "type": ["string", "null"], "enum": ["promote", "refine", "kill", null], "description": "Legacy top-level verdict from the protocol's `promotion` block. null (with verdict_reason saying why) when the protocol has no promotion block -- a config-direct run's generated protocol needs none (C5.6 / D-043); nothing under config_direct_authoring reads this field." },
     "verdict_reason":     { "type": "string" },
     "results": {
       "type": "array",

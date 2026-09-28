@@ -233,10 +233,16 @@ flags:
       is safe to turn on." Explicit `enabled: false` in
       config/campaign_config.yaml still disables it and reproduces the old
       env-var-unset behavior byte-identically (tests/test_e054_stage_
-      wiring.py's explicit-off case). The "refine -> variant not tested"
-      behavior change (replacing today's loop pause) is deferred to a later
-      slice that does not exist yet; until then a "refine" outcome still
-      pauses for a human exactly as before.
+      wiring.py's explicit-off case). Without `orchestrator.variant_loop.enabled`,
+      a "refine" outcome still pauses for a human exactly as before. CORRECTED
+      2026-09-28: this entry previously said the "refine -> variant not
+      tested" behavior change was "deferred to a later slice that does not
+      exist yet" -- that slice (E-033.1 Slice 4b) landed 2026-09-22 (PR #188)
+      and is present in this checkout: under `orchestrator.variant_loop.enabled`,
+      a per-variant refine/decline outcome marks that one variant
+      `not_tested` in `artifacts/variants/index.yaml` (siblings undisturbed)
+      instead of pausing the whole run. See `variant_loop`'s own register
+      entry for why that flag is still off.
 
   - name: config_direct_authoring
     kind: orchestrator_config
@@ -271,7 +277,7 @@ flags:
     reader: run_phase1_research._variant_loop_enabled
     owner: Jeremy
     state: off_incomplete
-    blocked_on: "E-033.1 slice 4b (data-availability-gate per-variant loop, conformance-check per-variant restructure, _write_promotion_audit's relationship to per-variant results -- none of which this sub-slice builds)"
+    blocked_on: "CORRECTED 2026-09-28: E-033.1 slice 4b (per-variant data-availability gate, per-variant conformance restructure, _write_promotion_audit's per-variant relationship) landed 2026-09-22 (PR #188) -- it is built and unit-tested, not the blocker anymore. The real remaining blocker is config_direct_authoring's own: an end-to-end proof against a real LLM authoring pass (no API/venv budget in this build environment)."
     criterion: >
       Landed 2026-09-22 (E-033.1 Slice 4a, delivery_plan_v26.md Slice 4,
       sub-slice 1 of 2: "loop restructure + trial accounting"). Off by
@@ -286,16 +292,22 @@ flags:
       VALIDATED variant in artifacts/variants/index.yaml (not just the
       single base config), records one trial per variant
       (trial_id=f"{run_id}:{variant_id}"), and builds a real N-column
-      {variant_id: protocol_result} dict for evaluate_grid. Held
-      off_incomplete because this sub-slice deliberately does NOT build the
-      per-variant data-availability gate, the per-variant conformance-check
-      restructure (a separate call site in run_loop, not this one), or
-      _write_promotion_audit's per-variant relationship -- those are E-033.1
-      Slice 4b, per this slice's own S1_FINDINGS.md split recommendation.
-      Real end-to-end proof also blocked on the same missing-venv/LLM-budget
-      constraint Slice 4a's own dispatch flagged (test suite exercises this
-      via mocked subprocess, following test_e056_config_direct_authoring.py's
-      precedent -- no resolvable trading-bot venv in this build environment).
+      {variant_id: protocol_result} dict for evaluate_grid.
+      CORRECTED 2026-09-28 (re-verified directly against run_phase1_research.py
+      and tests/test_e033_slice4b_gate_conformance_promotion.py): this entry
+      previously said the per-variant data-availability gate, the per-variant
+      conformance-check restructure and _write_promotion_audit's per-variant
+      relationship were deliberately NOT built by this sub-slice and were
+      deferred to E-033.1 Slice 4b. Slice 4b landed 2026-09-22 (PR #188,
+      "feat(E-033.1 Slice 4b): per-variant data gate + conformance +
+      promotion audit wiring", 17/17 tests) and is present in this checkout
+      (run_tool_worker's data_availability_gate per-variant loop, the
+      per-variant conformance restructure in run_loop, and
+      _write_promotion_audit's existential-OR per-variant evaluation). It is
+      still off_incomplete: variant_loop remains hard-dependent on
+      config_direct_authoring, which itself still needs an end-to-end proof
+      against a real LLM authoring pass (no API/venv budget in this build
+      environment -- see that flag's own entry).
 
   - name: specialist_readers
     kind: orchestrator_config
