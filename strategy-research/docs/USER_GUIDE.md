@@ -3008,6 +3008,50 @@ and status `queued` (never auto-picked).
 - **A picked card whose file is missing** pauses its entry
   (`paused:queued_card_missing`) before any run dir is created.
 
+**Launch pre-flight and the stage-exception pause (E-061 C1.4 / C1.5).** Every
+refusal below is a classified pause -- `paused:<reason>` on the entry, a `HALT`
+line naming the culprit, a `halt_history` record when a run exists, and
+`process_once` returning False -- never a crashed campaign process that a
+restart re-crashes, and never after an LLM call. `docs/RUNBOOK.md` §3 has one
+row per reason with its resolution.
+
+1. **Flags, on every step, before anything launches** (`_flag_preflight_refusal`,
+   read only): every `orchestrator.<name>.enabled` and
+   `halt_policy.quarantine_enabled` must be a real YAML boolean (a quoted
+   `"false"` or a null is refused, every offending key named), and every flag
+   dependency must hold -- each strict reader's own chain, plus the edges once
+   enforced only after spend (A3 §1): `variant_loop` → `config_direct_authoring`,
+   `composition_runs` → `decide_next` + `variant_loop` +
+   `profit_bars_every_backtest` + `verdict_routing_retired`, and
+   `variant_anti_adjacency_gate` → `regroup_record` while
+   `campaign_memory.yaml` does not exist (→ `variant_selection_record` on the
+   legacy path). Refused: `paused:flag_misconfiguration`, before `setup_run`
+   for a fresh entry. `--resume` re-runs the check. The strict readers now
+   include the seven that used plain `bool()` (`grid_evaluation`,
+   `category_reports`, `profit_bars_file`, `exclusion_digest_input`,
+   `stale_input_path_fix`, `variant_selection_record`,
+   `variant_anti_adjacency_gate`) and `schedulability_block`; an unquoted
+   boolean or a missing key reads exactly as before. `register` reads
+   `decide_next`'s own value only, so a misconfigured prerequisite is refused
+   here, not by a crash at registration.
+2. **The pre-registered protocol, before `run_loop`** (`_protocol_preflight_refusal`,
+   read only): while the run still has its backtest ahead, a
+   `machine_constraints.protocol_ref` pin (or a `machine_constraints.protocol`'s
+   own `promotion` block) must pass the D-3 guard
+   (`tools/protocol_resolution.assert_promotion_ratified`) -- previously first
+   checked at 5a, after 1a/1b/2. Refused:
+   `paused:protocol_promotion_unratified`, the run `paused_for_human` with the
+   protocol file named in `last_error`.
+3. **An exception escaping `run_loop`** (or the check in 2): the run
+   `paused_for_human` with `last_error: "<Type>: <message>"` and
+   `flags.stage_exception: true`, the entry `paused:stage_exception`.
+   `KeyboardInterrupt`/`SystemExit` pass through. Exceptions after `run_loop`
+   returned (the DONE branch's decide-next) still propagate: that path is
+   retryable by design.
+
+With a valid flag set and a ratified (or no pre-registered) protocol, 1 and 2
+are read only and the step is unchanged.
+
 ### `tools/fragment_patterns.py` — Ideation-Only Fragment Diagnostics
 
 Computes `fragment_patterns.yaml` from a completed [run](#g-run)'s `trades.json`/`bars.csv`:

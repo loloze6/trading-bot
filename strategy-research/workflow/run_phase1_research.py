@@ -2478,6 +2478,26 @@ _TRIED_IDEAS_REASON = (
 )
 
 
+def _strict_flag_value(name: str, value) -> bool:
+    """E-061 C1.5 (DELIVERY_REVIEW.md A8): the value of orchestrator.<name>.enabled,
+    refused unless it is a real YAML boolean. The seven readers that used plain
+    bool() (grid_evaluation, category_reports, profit_bars_file,
+    exclusion_digest_input, stale_input_path_fix, variant_selection_record,
+    variant_anti_adjacency_gate) read a quoted "false" as ON and `enabled:` (null)
+    as off; they now raise with the same message as the strict readers
+    (_strict_orchestrator_flag). A missing key still reads as each reader's
+    default -- only a present, non-bool value is refused. run_campaign's launch
+    pre-flight checks every flag before any LLM call, so a campaign pauses on
+    this instead of crashing mid-run."""
+    if not isinstance(value, bool):
+        raise ValueError(
+            f"orchestrator.{name}.enabled={value!r} is not a real boolean "
+            f"(got {type(value).__name__}) -- write an unquoted `true` or `false` in "
+            f"config/campaign_config.yaml, not a quoted string or null."
+        )
+    return value
+
+
 # E-046b S2 (the grid, engineering_roadmap.html card C). Off-by-default flag,
 # same shape as _exclusion_digest_input_enabled() below. See
 # config/campaign_config.yaml's orchestrator.grid_evaluation.enabled comment
@@ -2496,7 +2516,7 @@ def _grid_evaluation_enabled() -> bool:
     with open(path, encoding="utf-8") as f:
         cfg = yaml.safe_load(f) or {}
     grid_cfg = ((cfg.get("orchestrator") or {}).get("grid_evaluation") or {})
-    return bool(grid_cfg.get("enabled", False))
+    return _strict_flag_value("grid_evaluation", grid_cfg.get("enabled", False))
 
 
 # E-046a Slice 5a (delivery_plan_v26.md, "Slice 5 -- Reports and readers").
@@ -2515,7 +2535,7 @@ def _category_reports_enabled() -> bool:
     with open(path, encoding="utf-8") as f:
         cfg = yaml.safe_load(f) or {}
     cr_cfg = ((cfg.get("orchestrator") or {}).get("category_reports") or {})
-    return bool(cr_cfg.get("enabled", False))
+    return _strict_flag_value("category_reports", cr_cfg.get("enabled", False))
 
 
 # delivery_plan_v26.md 0.2 (item 2) -- config/profitability_bars.yaml and the
@@ -2536,7 +2556,7 @@ def _profit_bars_file_enabled() -> bool:
     with open(path, encoding="utf-8") as f:
         cfg = yaml.safe_load(f) or {}
     pbf_cfg = ((cfg.get("orchestrator") or {}).get("profit_bars_file") or {})
-    return bool(pbf_cfg.get("enabled", False))
+    return _strict_flag_value("profit_bars_file", pbf_cfg.get("enabled", False))
 
 
 # Branch 3 on every backtest (operator-approved 2026-09-24; delivery_plan_v26.md
@@ -2758,7 +2778,7 @@ def _exclusion_digest_input_enabled() -> bool:
     with open(path, encoding="utf-8") as f:
         cfg = yaml.safe_load(f) or {}
     digest_cfg = ((cfg.get("orchestrator") or {}).get("exclusion_digest_input") or {})
-    return bool(digest_cfg.get("enabled", False))
+    return _strict_flag_value("exclusion_digest_input", digest_cfg.get("enabled", False))
 
 
 def _apply_exclusion_digest_input(stage_name: str, handoff: dict, run_dir: Path) -> None:
@@ -2860,7 +2880,7 @@ def _stale_input_path_fix_enabled() -> bool:
     with open(path, encoding="utf-8") as f:
         cfg = yaml.safe_load(f) or {}
     fix_cfg = ((cfg.get("orchestrator") or {}).get("stale_input_path_fix") or {})
-    return bool(fix_cfg.get("enabled", False))
+    return _strict_flag_value("stale_input_path_fix", fix_cfg.get("enabled", False))
 
 
 def _apply_stale_input_path_fix(stage_name: str, handoff: dict) -> None:
@@ -6559,7 +6579,7 @@ def _variant_selection_record_enabled() -> bool:
     with open(path, encoding="utf-8") as f:
         cfg = yaml.safe_load(f) or {}
     section = ((cfg.get("orchestrator") or {}).get("variant_selection_record") or {})
-    return bool(section.get("enabled", False))
+    return _strict_flag_value("variant_selection_record", section.get("enabled", False))
 
 
 _INSTRUMENT_SINGLE_ASSET_KEYS = ("asset", "symbol", "instrument", "target_market")
@@ -6756,7 +6776,7 @@ def _variant_anti_adjacency_gate_enabled() -> bool:
     with open(path, encoding="utf-8") as f:
         cfg = yaml.safe_load(f) or {}
     section = ((cfg.get("orchestrator") or {}).get("variant_anti_adjacency_gate") or {})
-    return bool(section.get("enabled", False))
+    return _strict_flag_value("variant_anti_adjacency_gate", section.get("enabled", False))
 
 
 _CAMPAIGN_MEMORY_REL = "campaign_record/campaign_memory.yaml"
