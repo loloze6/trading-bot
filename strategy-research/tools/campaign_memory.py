@@ -91,7 +91,8 @@ RETIRED_FIELDS = frozenset({
     "findings_carryover", "circuit_breaker",
 })
 
-_CELL_KEYS = ("result", "value", "threshold", "n_windows", "n_trades", "reason")
+# not_graded (E-061 C2 S2a, D-015): the cell of a crashed variant's column.
+_CELL_KEYS = ("result", "value", "threshold", "n_windows", "n_trades", "reason", "not_graded")
 _CELL_RESULTS = ("PASS", "FAIL", "INCONCLUSIVE")
 _TRIAL_SOURCES = ("backtest", "backtest_failed")
 _IDEA_STATUSES = ("validated", "refuted", "inconclusive")
@@ -237,17 +238,47 @@ def _check_index_entry(vid, info, index_path: Path) -> None:
         raise CampaignMemoryError(f"{index_path}: variants.{vid} is validated but has no config_path")
 
 
-def _variants_block(run_dir: Path, run_id: str, grid_variants: list, trials: dict) -> dict:
+def _grid_failed_variants(grid_doc: dict, grid_variants: list, path: Path) -> dict:
+    """The grid's `failed_variants` (E-061 C2 S2a, D-015): {} when absent (every
+    grid written before S2a, and every grid without a crashed variant). Each must
+    be one of the grid's columns with a string reason, and every cell of that
+    column must be a not_graded INCONCLUSIVE -- a crashed column carrying a
+    graded result would be a corrupt grid."""
+    failed = grid_doc.get("failed_variants")
+    if failed is None:
+        return {}
+    if not isinstance(failed, dict) or not failed:
+        raise CampaignMemoryError(f"{path}: failed_variants must be a non-empty mapping when "
+                                  f"present, got {failed!r}")
+    for vid, reason in failed.items():
+        if vid not in grid_variants or not isinstance(reason, str) or not reason:
+            raise CampaignMemoryError(f"{path}: failed_variants.{vid} must be a grid column with "
+                                      f"a string reason ({reason!r})")
+        for crit, row in (grid_doc.get("grid") or {}).items():
+            cell = row.get(vid) if isinstance(row, dict) else None
+            if not isinstance(cell, dict) or cell.get("not_graded") is not True \
+                    or cell.get("result") != "INCONCLUSIVE":
+                raise CampaignMemoryError(f"{path}: grid.{crit}.{vid} of the failed variant "
+                                          f"{vid!r} is not a not_graded INCONCLUSIVE cell ({cell!r})")
+    return dict(failed)
+
+
+def _variants_block(run_dir: Path, run_id: str, grid_variants: list, trials: dict,
+                    failed_variants: dict | None = None) -> dict:
     """Two grid-column shapes, told apart by the grid's own columns:
       * variant loop (columns are index.yaml variant ids): every index entry
-        -- tested (a grid column; must be `validated` in the index), failed
-        (validated, no column: its backtest failed), or not_tested.
+        -- tested (a grid column not in the grid's failed_variants; must be
+        `validated` in the index), failed (validated, and either a column in
+        failed_variants (E-061 C2 S2a, D-015) or no column at all: its
+        backtest failed), or not_tested (including a failed_variants column
+        whose index status is not_tested: refused before any backtest).
       * single column named after run_id (variant loop off -- including
         config-direct authoring, which writes index.yaml but backtests only
         the base config): from artifacts/protocol_result.yaml.
     Any index status or entry shape outside the known set raises."""
     arts = run_dir / "artifacts"
     index_path = arts / "variants" / "index.yaml"
+    failed_variants = failed_variants or {}
     out = {}
     index = None
     if index_path.exists():
@@ -263,7 +294,7 @@ def _variants_block(run_dir: Path, run_id: str, grid_variants: list, trials: dic
         for vid in sorted(index):
             info = index[vid]
             tid = f"{run_id}:{vid}"
-            if vid in grid_variants:
+            if vid in grid_variants and vid not in failed_variants:
                 if info["status"] != "validated":
                     raise CampaignMemoryError(
                         f"{index_path}: grid column {vid!r} has index status {info['status']!r} "
@@ -274,7 +305,9 @@ def _variants_block(run_dir: Path, run_id: str, grid_variants: list, trials: dic
                 shape = _protocol_shape(_load_mapping(vpr_path, f"variant {vid}'s backtest result"),
                                         str(vpr_path))
             elif info["status"] == "validated":
-                status, reason = "failed", "validated but produced no grid column (backtest failed)"
+                status = "failed"
+                reason = (failed_variants[vid] if vid in failed_variants
+                          else "validated but produced no grid column (backtest failed)")
                 failed_row = (trials.get(tid) or {}).get("backtest_failed")
                 trial_id = tid if failed_row is not None else None
                 fh = failed_row.get("forecast_hash") if failed_row is not None else None
