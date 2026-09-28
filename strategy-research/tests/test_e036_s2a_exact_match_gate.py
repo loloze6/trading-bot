@@ -756,11 +756,14 @@ class _StopAtProtocolExecution(Exception):
 
 def _data_gate_run(monkeypatch, run_id, variants: dict, retired: bool):
     import test_e059_6c_s2c_parked_states as ps
-    from test_e033_slice4b_gate_conformance_promotion import _minimal_run_at
+    from test_e033_slice4b_gate_conformance_promotion import (_minimal_run_at,
+                                                              _play_seeded_stage)
 
     async def _invoke(stage_name, rid, retry_context=None):
         if stage_name == "protocol_execution":
             raise _StopAtProtocolExecution("reached protocol_execution")
+        # E-061 C1.2: the seeded gate outputs, as written by this attempt.
+        _play_seeded_stage(rpr.ROOT / "runs" / rid, stage_name)
     monkeypatch.setattr(rpr, "async_invoke_agent", _invoke)
     monkeypatch.setattr(rpr, "_check_specialist_readers_preflight", lambda run_dir: None)
     cfg = {"config_direct_authoring": {"enabled": True}, "variant_loop": {"enabled": True}}

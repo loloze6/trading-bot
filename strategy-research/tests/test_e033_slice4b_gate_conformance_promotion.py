@@ -36,6 +36,7 @@ Sandboxing: relies on tests/conftest.py's autouse _sandbox_by_default fixture
 precedent as test_e033_slice4a_variant_loop.py / test_k3_protocol_pinning.py.
 """
 import asyncio
+import shutil
 import sys
 from pathlib import Path
 
@@ -75,8 +76,35 @@ async def _noop_invoke(stage_name, run_id, retry_context=None):
     tests. Same established precedent as test_anti_adjacency_retry_policy.py's
     own _noop_invoke: stub the stage-execution step out entirely so the
     pre-seeded artifacts stand as-is and only the routing decision is
-    exercised."""
-    return
+    exercised.
+
+    E-061 C1.2: under config-direct, run_loop clears a stage's outputs at the
+    attempt's start and requires them after it; the pre-seeded artifacts stand
+    in for the stage's own writes (_play_seeded_stage)."""
+    _play_seeded_stage(rpr.ROOT / "runs" / run_id, stage_name)
+
+
+def _play_seeded_stage(run_dir: Path, stage_name: str) -> None:
+    """E-061 C1.2: complete a pre-seeded stage the way the real one would have
+    written it. run_loop moved the stage's outputs aside at the attempt's start
+    (RUN_DIR/.previous_attempts/<stage>_attempt_<n>/); the seeds are the
+    stage's own writes, so they are put back. The variant-loop gate also
+    leaves a validate gate file for every variant still validated after it (a
+    seed listing such a variant without one gets it here)."""
+    attempts = sorted((run_dir / ".previous_attempts").glob(f"{stage_name}_attempt_*"),
+                      key=lambda p: int(p.name.rsplit("_", 1)[1]))
+    if attempts:
+        for src in attempts[-1].rglob("*"):
+            dest = run_dir / "artifacts" / src.relative_to(attempts[-1])
+            if src.is_file() and not dest.exists():
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(src), str(dest))
+    index_path = run_dir / "artifacts" / "variants" / "index.yaml"
+    if stage_name == "data_availability_gate" and index_path.exists():
+        for vid, v in ((rpr.load_yaml(index_path) or {}).get("variants") or {}).items():
+            gate = run_dir / "artifacts" / "variants" / vid / "data_availability_gate.yaml"
+            if isinstance(v, dict) and v.get("status") == "validated" and not gate.exists():
+                rpr.save_yaml(gate, {"outcome": "validate", "reasons": []})
 
 
 def _write_handoff(run_dir: Path, name: str) -> None:
@@ -410,6 +438,16 @@ def _write_conformance_fixture(run_dir: Path, run_id: str, violating_variant: st
         vid: {"status": "validated", "config_path": f"artifacts/variants/{vid}/strategy_config.json"}
         for vid in ("base", "design_v2", "asset_v2")
     }})
+    _write_bridge_result(run_dir)
+
+
+def _write_bridge_result(run_dir: Path) -> None:
+    """E-061 C1.2: under config-direct protocol_execution's handoff checks
+    artifacts/protocol_result.yaml, the Decision-B bridge copy of the base
+    variant's result the real variant loop always writes when any variant
+    succeeds. The stubbed stage writes nothing, so seed it here."""
+    shutil.copyfile(run_dir / "artifacts" / "variants" / "base" / "protocol_result.yaml",
+                    run_dir / "artifacts" / "protocol_result.yaml")
 
 
 def test_run_loop_protocol_execution_conformance_invalidates_only_violating_variant(monkeypatch):
@@ -462,6 +500,7 @@ def test_run_loop_protocol_execution_conformance_all_variants_violate_reports_al
         vid: {"status": "validated", "config_path": f"artifacts/variants/{vid}/strategy_config.json"}
         for vid in ("base", "design_v2", "asset_v2")
     }})
+    _write_bridge_result(run_dir)
     campaign = rpr.load_campaign_state()
     campaign["trial_sharpes"] = [
         {"trial_id": f"run_981:{vid}", "source": "backtest", "sharpe": 0.1}

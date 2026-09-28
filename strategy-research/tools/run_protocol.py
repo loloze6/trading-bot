@@ -7,6 +7,7 @@ CLI (run from repo root or strategy-research/):
 """
 import sys
 import contextlib
+import copy
 import os
 import csv
 import json
@@ -32,6 +33,7 @@ from core.launcher import run_backtest, parse_interval_seconds
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 from workflow_artifact_validation import validate_workflow_artifact  # noqa: E402  (CUL-11 sibling helper)
+import cost_helpers as _cost_helpers  # noqa: E402  (E-062 S2a: one shared commission / edge-to-cost definition)
 
 # CUL-213: the emoji status prints in this module (incl. the load-bearing
 # ⚠️⚠️⚠️ [CROSS-CHECK] DISAGREEMENT line) crash on a Windows cp1252 console
@@ -256,67 +258,12 @@ def _load_cost_model() -> dict | None:
         return None
 
 
-def _commission_rate_for_symbol(symbol: str, cost_model: dict | None, product: str = "spot") -> float | None:
-    """
-    2026-07-20 (Dispatch H): convert cost_model.yaml's fee_rate_bps[symbol] (a
-    ONE-WAY taker fee in bps, per that file's own header) into launcher.run_backtest's
-    commission_rate (a per-side fraction, e.g. 0.0005 for 5bps). Straight bps->fraction
-    conversion (/10000), NOT a round-trip conversion: portfolio_info.py's
-    update_local_balance applies commission_rate exactly twice per round trip for BOTH
-    LONG (once at 'LONG' open, once at 'REDUCE_LONG'/'CLOSE') and SHORT (once at
-    'SHORT' open, once at 'REDUCE_SHORT'/'CLOSE') -- confirmed symmetric by direct code
-    read and cross-checked against real trades.json records (entry_commission +
-    exit_commission = total_commission on both LONG and SHORT trades in run_018). So a
-    single per-event fraction of fee_bps/10000 reproduces a round-trip cost of
-    fee_bps*2, matching cost_model.yaml's own round_trip_cost_bps = 2*taker_fee+...
-    convention -- no *2 or /2 here, that would double- or half-charge.
-
-    product: 'spot' (default, reads the top-level fee_rate_bps -- unchanged existing
-        behavior) or 'perp' (reads the additive cost_model['perp']['fee_rate_bps']
-        block instead). NOT a general default switch: callers must opt into 'perp'
-        explicitly per invocation (see main()'s --cost-product flag) so unrelated
-        spot/default runs are never silently re-costed at perp rates.
-
-    Returns None (defer to the engine's own DEFAULT_COMMISSION_RATE) if no cost model
-    is loaded, the requested product block is absent, or the symbol has neither a
-    specific nor a 'default' fee_rate_bps entry.
-    """
-    if not cost_model:
-        return None
-    if product == "perp":
-        fees = cost_model.get("perp", {}).get("fee_rate_bps", {})
-    else:
-        fees = cost_model.get("fee_rate_bps", {})
-    rate_bps = fees.get(symbol)
-    if rate_bps is None:
-        rate_bps = fees.get("default")
-    if rate_bps is None:
-        return None
-    return float(rate_bps) / 10000.0
-
-
-def _resolve_commission_rate(
-    symbol: str, cost_model: dict | None, commission_bps: float | None, product: str
-) -> float | None:
-    """
-    2026-07-20 (Dispatch L): --commission-bps, when set, takes precedence over
-    --cost-product for every symbol -- an explicit, flat one-way-per-leg rate for
-    controlled fee-isolation experiments, independent of cost_model.yaml (useful
-    when neither the 'spot' nor 'perp' block happens to supply the exact rate an
-    experiment needs, e.g. the historical DEFAULT_COMMISSION_RATE of 10bps, which
-    is neither cost_model.yaml's spot 7.5bps nor its perp 5bps). Same conversion
-    as _commission_rate_for_symbol (fee_bps / 10000, one-way-per-side, no
-    double-charge -- see that function's docstring for the full rationale; the
-    engine applies commission_rate exactly twice per round trip for both LONG and
-    SHORT, so no extra *2/  /2 factor here either).
-
-    commission_bps absent (None): falls through unchanged to
-    _commission_rate_for_symbol(..., product=product) -- byte-identical to
-    pre-existing (pre-Dispatch-L) behavior.
-    """
-    if commission_bps is not None:
-        return float(commission_bps) / 10000.0
-    return _commission_rate_for_symbol(symbol, cost_model, product=product)
+# E-062 S2a (code review finding 3): the commission lookup moved, verbatim, to
+# tools/cost_helpers.py so tools/portfolio_whole_test.py's buy-and-hold uses the
+# SAME definition without importing this module (which imports core.launcher).
+# The old names stay as aliases; behaviour is unchanged.
+_commission_rate_for_symbol = _cost_helpers.commission_rate_for_symbol
+_resolve_commission_rate = _cost_helpers.resolve_commission_rate
 
 
 def _ts_normalize(ts: str) -> str:
@@ -586,11 +533,28 @@ def _infer_exit_reason(
     return "signal_flip"  # default (allocation dropped below rebalance threshold)
 
 
-def _cost_paid_bps(trade: dict, cost_model: dict | None) -> float:
+def _cost_paid_bps(trade: dict, cost_model: dict | None,
+                   commission_bps: float | None = None, product: str = "spot") -> float:
     """
     A3.2: per-trade round-trip cost in bps.
     Uses config/cost_model.yaml when available; falls back to actual commission data.
+
+    E-062 S2a (second-round review finding 6): the one-way fee is resolved by
+    the SAME function that sets the engine's commission_rate
+    (cost_helpers.resolve_fee_bps with the run's --commission-bps /
+    --cost-product), so cost_paid is the fee actually charged. With the default
+    flags (None, "spot") and a symbol or 'default' entry in fee_rate_bps this is
+    the value the lookup below always returned. Differences: a --commission-bps
+    or --cost-product perp run now reports its real fee (it used to report the
+    spot table's), and a symbol whose table entry is 0 now reports 0 (the old
+    `or` fell through to 'default'). When nothing resolves, the legacy lookup
+    below runs unchanged.
     """
+    if cost_model or commission_bps is not None:
+        fee_bps = _cost_helpers.resolve_fee_bps(
+            trade.get("symbol", ""), cost_model, commission_bps, product)
+        if fee_bps is not None:
+            return round(fee_bps * 2, 2)  # round-trip = 2 legs
     if cost_model:
         symbol = trade.get("symbol", "")
         fees = cost_model.get("fee_rate_bps", {})
@@ -607,10 +571,14 @@ def _compute_trade_records_for_window(
     window: str,
     window_end: str,
     cost_model: dict | None,
+    commission_bps: float | None = None,
+    cost_product: str = "spot",
 ) -> list:
     """
     Compute per-trade diagnostic records for one backtest window.
     Returns empty list if no trades or missing data files.
+    commission_bps / cost_product: the run's --commission-bps / --cost-product,
+    so each record's cost_paid is the fee the engine charged (_cost_paid_bps).
     """
     trades = _load_trades(run_dir)
     if not trades:
@@ -663,7 +631,7 @@ def _compute_trade_records_for_window(
         exit_eff  = _compute_exit_efficiency(side, entry_price, exit_price, holding_bars)
         post_5, post_20 = _compute_post_exit_returns(side, exit_price, bars, exit_idx)
         exit_reason = _infer_exit_reason(side, exit_forecast, bars, exit_idx, window_end)
-        cost_bps = _cost_paid_bps(trade, cost_model)
+        cost_bps = _cost_paid_bps(trade, cost_model, commission_bps, cost_product)
 
         # E-016 (fee-reduction autopsy): per-trade halves of the enter_earlier/
         # exit_later metrics, plus entry_price/exit_price/entry_idx/exit_idx --
@@ -1107,18 +1075,10 @@ def _aggregate_trade_diagnostics(
     # the payload that it happened. Both now come from the exact same
     # filtered set, so the ratio is always a like-for-like comparison over
     # the trades that actually have a measured cost.
-    _records_with_cost = [r for r in all_records if r.get("cost_paid") is not None]
-    gross_edge_bps_values = [r["realized_return"] * 100 for r in _records_with_cost]
-    cost_bps_values = [r["cost_paid"] for r in _records_with_cost]
-    mean_gross_edge_bps = statistics.mean(gross_edge_bps_values) if gross_edge_bps_values else None
-    mean_cost_bps = statistics.mean(cost_bps_values) if cost_bps_values else None
-    # Zero cost -> null, not inf/nan (matches this file's existing
-    # zero-denominator convention, e.g. pnl_concentration/loss_conc above).
-    realized_edge_to_cost_ratio = (
-        round(mean_gross_edge_bps / mean_cost_bps, 4)
-        if mean_gross_edge_bps is not None and mean_cost_bps not in (None, 0)
-        else None
-    )
+    # E-062 S2a (code review finding 6): the computation moved, verbatim, to
+    # tools/cost_helpers.realized_edge_to_cost_ratio (one definition, shared with
+    # tools/portfolio_whole_test.pooled_edge_to_cost_ratio); output unchanged.
+    realized_edge_to_cost_ratio = _cost_helpers.realized_edge_to_cost_ratio(all_records)
     cost_components_measured = _compute_cost_basis(all_records)
 
     return {
@@ -1703,6 +1663,31 @@ def evaluate_against_decision_rules(
     untested = [r for r in criteria_results if r['result'] in _NOT_REALLY_EVALUATED]
     fail_n   = sum(1 for r in tested if r['result'] == 'FAIL')
 
+    diagnostics = _build_diagnostics(results, criteria_results, trade_diagnostics_summary)
+
+    return {
+        'verdict':          verdict,
+        'criteria_results': criteria_results,
+        'verdict_reason':   f"{fail_n} of {len(tested)} evaluable criteria FAIL; "
+                            f"{len(untested)} UNTESTED",
+        'diagnostics':      diagnostics,
+    }
+
+
+# E-061 C1.3 review fix 3: the one criteria-derived diagnostic, when there is
+# no rule set to derive it from (diagnostics-only mode).
+WIN_RATE_VS_SHARPE_NO_RULES = "N/A (no rule set)"
+
+
+def _build_diagnostics(results: list, criteria_results: list | None,
+                       trade_diagnostics_summary: dict | None) -> dict:
+    """The hypothesis_verdict.diagnostics block (moved verbatim out of
+    evaluate_against_decision_rules, E-061 C1.3, so the diagnostics-only mode
+    computes it without evaluating any criterion). Everything here derives from
+    the per-window `results` and the trade-diagnostics summary, except
+    `win_rate_vs_sharpe`, which reads the evaluated criteria: with
+    `criteria_results=None` (no rule set) it is WIN_RATE_VS_SHARPE_NO_RULES,
+    never the "both PASS or N/A" an empty evaluation would print."""
     # Diagnostics block — evidence for altitude decision by verdict_interpreter
     gross_pnls  = [r["core"].get("gross_pnl")                for r in results if r["core"].get("gross_pnl")                is not None]
     cost_drags  = [r["core"].get("cost_drag_pct")            for r in results if r["core"].get("cost_drag_pct")            is not None]
@@ -1741,11 +1726,13 @@ def evaluate_against_decision_rules(
             if not stats.get("informative", True) and regime not in uninformative:
                 uninformative.append(regime)
 
-    wr_rows     = [row for row in criteria_results if row.get("field") == "median_win_rate"]
-    sharpe_rows = [row for row in criteria_results if row.get("field") == "median_sharpe"]
+    wr_rows     = [row for row in criteria_results or [] if row.get("field") == "median_win_rate"]
+    sharpe_rows = [row for row in criteria_results or [] if row.get("field") == "median_sharpe"]
     wr_pass     = bool(wr_rows)     and all(r["result"] == "PASS" for r in wr_rows)
     sharpe_fail = bool(sharpe_rows) and any(r["result"] == "FAIL" for r in sharpe_rows)
-    if wr_pass and sharpe_fail:
+    if criteria_results is None:
+        wr_vs_sharpe = WIN_RATE_VS_SHARPE_NO_RULES
+    elif wr_pass and sharpe_fail:
         wr_vs_sharpe = "win_rate PASS + sharpe FAIL"
     elif not wr_pass and sharpe_fail:
         wr_vs_sharpe = "both FAIL"
@@ -1782,13 +1769,90 @@ def evaluate_against_decision_rules(
         # verdict-interpreter/SKILL.md's fee-reduction autopsy rule).
         diagnostics["fee_reduction_metrics"] = trade_diagnostics_summary.get("fee_reduction_metrics")
 
+    return diagnostics
+
+
+# E-061 C1.3 (G14, C2_S1_FINDINGS.md Decision): --diagnostics-only, passed by
+# the orchestrator only under orchestrator.config_direct_authoring (which never
+# writes validation_protocol.yaml). Without the flag and without
+# --validation-protocol, hypothesis_verdict stays null exactly as before.
+DIAGNOSTICS_ONLY_VERDICT_REASON = (
+    "--diagnostics-only: no validation protocol, no rule set -- diagnostics only, no verdict")
+
+
+def diagnostics_only_hypothesis_verdict(results: list,
+                                        trade_diagnostics_summary: dict | None = None) -> dict:
+    """E-061 C1.3 (G14): hypothesis_verdict under --diagnostics-only. The
+    diagnostics block (cost drag, gross PnL, forecast/return correlation,
+    below_floor_pct, per-trade expectancy, ...) is the one
+    evaluate_against_decision_rules writes (same _build_diagnostics), so its
+    readers (build_reports' overall slices, the trial row's expectancy /
+    statistic_valid, the profitability reader) keep their inputs. No rule set:
+    `verdict` None, `criteria_results` empty, win_rate_vs_sharpe
+    WIN_RATE_VS_SHARPE_NO_RULES. Evaluates no criterion, so it does not build
+    the extended (per-symbol, bootstrap) summary a second time."""
     return {
-        'verdict':          verdict,
-        'criteria_results': criteria_results,
-        'verdict_reason':   f"{fail_n} of {len(tested)} evaluable criteria FAIL; "
-                            f"{len(untested)} UNTESTED",
-        'diagnostics':      diagnostics,
+        'verdict':          None,
+        'criteria_results': [],
+        'verdict_reason':   DIAGNOSTICS_ONLY_VERDICT_REASON,
+        'diagnostics':      _build_diagnostics(results, None, trade_diagnostics_summary),
     }
+
+
+# E-061 C1.3: a refusal BEFORE any window ran -- no market data was touched, so
+# the orchestrator records no trial row for it (an engineering failure, not a
+# spent look). The exit code and the stderr token live in tools/protocol_refusal.py,
+# shared with the orchestrator.
+from protocol_refusal import EXIT_NO_DATA_TOUCHED, NO_DATA_TOUCHED_TOKEN  # noqa: E402
+
+
+def _refuse_before_any_backtest(reason: str) -> None:
+    """Exit EXIT_NO_DATA_TOUCHED with NO_DATA_TOUCHED_TOKEN opening stderr's line."""
+    sys.stderr.flush()
+    print(f"{NO_DATA_TOUCHED_TOKEN}: {reason} -- refusing to run any backtest.",
+          file=sys.stderr)
+    sys.exit(EXIT_NO_DATA_TOUCHED)
+
+
+# The dry run's synthetic input: two windows of one symbol, every field the
+# rule evaluator reads. Only the validation protocol's SHAPE is under test.
+_DRY_RUN_PER_SYMBOL = {"DRYRUN": {"median_sharpe": 0.1, "max_abs_drawdown_pct": 5.0,
+                                  "min_trade_count": 20, "zero_trade_slot_pct": 0.0}}
+_DRY_RUN_RESULTS = [
+    {"symbol": "DRYRUN", "window": f"w{i}", "run_id": f"dry_{i}", "per_regime": {},
+     "regime_validity": {}, "data_quality": None, "component_errors": None,
+     "core": {"trade_count": 20, "sharpe": 0.1, "net_return_pct": 1.0, "win_rate": 0.5,
+              "max_drawdown_pct": -5.0, "forecast_return_corr": 0.01,
+              "forecast_return_corr_pvalue": 0.5, "gross_pnl": 1.0, "cost_drag_pct": 10.0,
+              "avg_trade_duration_bars": 5}}
+    for i in (1, 2)]
+
+
+def _load_validation_protocol(path, timeframe: str = "1h") -> dict:
+    """E-061 C1.3: read --validation-protocol and DRY-RUN the rule evaluator on
+    it BEFORE any backtest (it used to be opened only after every window had
+    run). The refusal is exactly "would evaluate_against_decision_rules crash on
+    this document": a missing, unreadable (incl. undecodable), unparseable file,
+    or one the evaluator raises on (run_003's `decision_rules: {approve: [...]}`,
+    `approve_if_all_met: null`, an empty or non-mapping document) exits
+    EXIT_NO_DATA_TOUCHED with NO_DATA_TOUCHED_TOKEN. A document the evaluator
+    accepts -- even one with zero rules, like run_018's rules nested under
+    `variants` -- proceeds exactly as before."""
+    import yaml
+    try:
+        with open(path, encoding="utf-8") as f:
+            doc = yaml.safe_load(f)
+    except (OSError, ValueError, yaml.YAMLError) as exc:  # ValueError: UnicodeDecodeError
+        _refuse_before_any_backtest(f"--validation-protocol {str(path)!r} cannot be read "
+                                    f"({type(exc).__name__}: {exc})")
+    try:
+        evaluate_against_decision_rules(
+            copy.deepcopy(_DRY_RUN_PER_SYMBOL), copy.deepcopy(_DRY_RUN_RESULTS),
+            copy.deepcopy(doc), None, runs_root=None, timeframe=timeframe)
+    except Exception as exc:
+        _refuse_before_any_backtest(f"--validation-protocol {str(path)!r}: the rule evaluator "
+                                    f"cannot evaluate it ({type(exc).__name__}: {exc})")
+    return doc
 
 
 def _cross_check_prescreen_vs_backtest(out_dir: Path, results: list, extended: dict | None = None) -> dict | None:
@@ -1896,6 +1960,12 @@ def main():
     parser.add_argument("--i-understand", action="store_true", dest="i_understand")
     parser.add_argument("--validation-protocol", default=None,
                         help="Path to validation_protocol.yaml for hypothesis-specific verdict")
+    parser.add_argument("--diagnostics-only", action="store_true", dest="diagnostics_only",
+                        help="E-061 C1.3: no validation protocol (config-direct authoring) -- "
+                             "write hypothesis_verdict as the diagnostics block with no rule "
+                             "set and no verdict. Without it (and without "
+                             "--validation-protocol) hypothesis_verdict stays null. Mutually "
+                             "exclusive with --validation-protocol.")
     parser.add_argument("--out-dir", default=None,
                         help="Override output directory (default: results/protocols/<run_id>)")
     parser.add_argument("--cost-product", default="spot", choices=["spot", "perp"],
@@ -1942,6 +2012,15 @@ def main():
         print("ERROR: --holdout requires --i-understand (and vice versa). Pass both or neither.",
               file=sys.stderr)
         sys.exit(1)
+
+    # E-061 C1.3: read the validation protocol now, before any data is spent.
+    # Holdout mode never reads it (unchanged).
+    if args.diagnostics_only and args.validation_protocol:
+        _refuse_before_any_backtest("--diagnostics-only and --validation-protocol are "
+                                    "mutually exclusive")
+    validation_protocol = None
+    if args.validation_protocol and not args.holdout:
+        validation_protocol = _load_validation_protocol(args.validation_protocol)
 
     if args.commission_bps is not None:
         print(f"[cost-override] --commission-bps={args.commission_bps} -> "
@@ -2173,7 +2252,8 @@ def main():
 
             # Step 03: compute trade diagnostics while run directory is available
             trade_records = _compute_trade_records_for_window(
-                rd, symbol, label, end, cost_model
+                rd, symbol, label, end, cost_model,
+                commission_bps=args.commission_bps, cost_product=args.cost_product,
             )
             all_trade_records.extend(trade_records)
 
@@ -2286,14 +2366,18 @@ def main():
     cross_check = _cross_check_prescreen_vs_backtest(out_dir, results, extended_for_cross_check)
 
     hypothesis_verdict = None
-    if args.validation_protocol:
-        import yaml
-        with open(args.validation_protocol, encoding="utf-8") as f:
-            vp = yaml.safe_load(f)
+    if validation_protocol is not None:
+        # Parsed and shape-checked before the windows ran (_load_validation_protocol).
         hypothesis_verdict = evaluate_against_decision_rules(
-            per_symbol, results, vp, trade_diagnostics_summary or None,
+            per_symbol, results, validation_protocol, trade_diagnostics_summary or None,
             runs_root=_runs_root, timeframe=protocol_timeframe,
         )
+    elif args.diagnostics_only:
+        # E-061 C1.3 (G14): config-direct authoring -> the diagnostics block,
+        # no rule set, no verdict.
+        hypothesis_verdict = diagnostics_only_hypothesis_verdict(
+            results, trade_diagnostics_summary or None)
+    if hypothesis_verdict is not None:
         print(f"Hypothesis verdict : {hypothesis_verdict['verdict']}")
         print(f"Reason             : {hypothesis_verdict['verdict_reason']}")
 

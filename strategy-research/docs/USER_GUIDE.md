@@ -590,7 +590,17 @@ optionally [`tried_ideas.yaml`](#tried_ideasyaml-per-run) (same rule as
 stage 2's item 5).
 
 **Stage output:** `expanded_hypothesis_card.yaml`, `innovation_notes.yaml`
-(including a self-reported `diversity_audit` block).
+(including a self-reported `diversity_audit` block). Config-direct flow
+(`orchestrator.config_direct_authoring.enabled`): also `variant_patches.yaml`,
+a checked deliverable since E-061 C1.2 (`::_config_direct_step2_deliverables`,
+added in memory only — to the prompt's handoff and to run_loop's check, never to
+the run's handoff file, so a flag-off resume does not require it). It must be
+written by this attempt: a previous attempt's file is moved to
+`runs/<run_id>/.previous_attempts/innovation_expansion_attempt_<n>/` when the attempt
+starts (`::_clear_config_direct_attempt_outputs`) and the file must exist after it
+(`::_check_config_direct_attempt_outputs`), so a step 2 that omits it, or leaves a
+previous attempt's file, fails here, not at 5a. The stage input then also carries
+`backtest_spec.yaml` (stage 15's base config).
 
 **Features / logic in place**
 
@@ -742,6 +752,16 @@ actually execute.
 **Stage output:** `candidate_strategy_config.json`, `decision.yaml`,
 `variant_selection.yaml`.
 
+**Config-direct flow (tool stage, E-061 C1.2).** The stage loads
+`handoffs/config_direct_backtest_specification.yaml` instead, rewritten by code
+from the current flags at every stage entry (`::_config_direct_handoff_path`):
+**input** `backtest_spec.yaml` (stage 15's base config) and `variant_patches.yaml`
+(stage 3), no `validation_protocol.yaml` (stage 4 is never reached);
+**output** `variants/index.yaml` (checked: the previous one is moved to
+`.previous_attempts/` when the attempt starts, so it must be this attempt's), one
+`variants/<variant_id>/strategy_config.json` per variant, and
+`candidate_strategy_config.json` when the `base` variant validates.
+
 **Features / logic in place**
 
 **1. Exactly two known statuses; anything else pauses.**
@@ -846,6 +866,22 @@ resolved protocol JSON (symbols/timeframe/windows).
 (`validate`/`refine`/`decline`), `reasons`, and full per-window/per-feed
 detail.
 
+**Config-direct flow (E-061 C1.2).** Handoff
+`handoffs/config_direct_data_availability_gate.yaml`, rewritten by code from the
+current flags at every stage entry (the legacy
+`backtest_spec_to_data_availability_gate.yaml` is written only on the legacy 5a
+branch). With `orchestrator.variant_loop.enabled`: **input** `variants/index.yaml`;
+the gate runs once per validated variant and writes
+`variants/<variant_id>/data_availability_gate.yaml`, marking a
+refine/decline/crashed variant `not_tested`. **Checked outputs**: every
+variant's previous gate file is moved to `.previous_attempts/` when the attempt
+starts (`::_clear_config_direct_attempt_outputs`); after it, the gate file of every
+variant still `validated` must exist (`::_check_config_direct_attempt_outputs`; a
+variant whose gate crashed is `not_tested`, so not required; a gate that writes
+nothing fails the stage). The index is the stage's input, rewritten in place, so it
+is not cleared. Never `artifacts/data_availability_gate.yaml`.
+Without the variant loop: the input/output above.
+
 **Routes / outcomes**
 
 | `data_availability_gate.yaml`'s `outcome` | Next |
@@ -875,9 +911,9 @@ record what happened.
 
 | What | Where it comes from | Required? |
 |---|---|---|
-| `candidate_strategy_config.json` | stage 6 | yes |
+| `candidate_strategy_config.json` | stage 6 | yes (variant loop: `variants/index.yaml` and each validated variant's config instead) |
 | protocol JSON | `_resolve_protocol_path()` | yes |
-| `validation_protocol.yaml` | stage 4 | yes |
+| `validation_protocol.yaml` | stage 4 | legacy flow: yes. Config-direct flow: no — stage 4 never runs, so it is passed to `run_protocol.py` only when it exists, else `--diagnostics-only` (E-061 C1.3, `::_validation_protocol_args`); handoff `handoffs/config_direct_protocol_execution.yaml`, rewritten from the current flags at every stage entry (E-061 C1.2) |
 | `pre_registration.yaml` | the registered `pass_rule` | yes for the C7 evaluation |
 | `research_brief.yaml` | stage 1 | yes since C7-EXT (funding-modelling precondition) |
 
@@ -900,7 +936,41 @@ record what happened.
 **1. Run the walk-forward backtest.**
 `run_protocol.py` with config, protocol and validation protocol
 (`run_phase1_research.py::run_tool_worker`). Produces per-window metrics including
-per-trade expectancy (A3.4).
+per-trade expectancy (A3.4). E-061 C1.3:
+- A `--validation-protocol` that is passed is read, and the rule evaluator is
+  dry-run on it with a small synthetic summary, before any window runs
+  (`run_protocol.py::_load_validation_protocol`; it used to be opened only after
+  every window had run). It is refused exactly when that would fail: a missing,
+  unreadable (incl. not UTF-8), unparseable file, or one the evaluator raises on
+  (e.g. run_003's `decision_rules: {approve: [...]}`, `approve_if_all_met: null`, an
+  empty or non-mapping document) → exit **3** with `[run_protocol] NO DATA TOUCHED`
+  opening the first line of stderr. A document the evaluator accepts — even with
+  zero rules, like run_018's rules nested under `variants` — runs exactly as before.
+  Measured on the 49 `runs/*/artifacts/validation_protocol.yaml` in this checkout: 45
+  proceed, 4 are refused (run_003's shape; run_004–006 do not parse).
+- The orchestrator records a refusal with **no trial row** only when all three hold:
+  exit 3, the token opening stderr's first line (`tools/protocol_refusal.py`), and
+  no window result written under the call's `--out-dir` by that call
+  (`::_refused_before_any_backtest`). In the variant loop the refused variant is
+  marked `not_tested` (reason: refused before any backtest) and the loop continues
+  with the others; in the single-config branch the stage fails. Anything else is a
+  real backtest failure and still records its `backtest_failed` row.
+- `--diagnostics-only` (passed by the orchestrator only under config-direct, when
+  there is no validation protocol): `hypothesis_verdict` is the diagnostics block —
+  cost drag, gross PnL, forecast/return correlation, `below_floor_pct`, per-trade
+  expectancy, … — with `verdict: null`, `criteria_results: []`, and
+  `win_rate_vs_sharpe: "N/A (no rule set)"`
+  (`run_protocol.py::diagnostics_only_hypothesis_verdict`, G14), so the category
+  reports and the trial row keep their inputs. For the trial row this is a change:
+  on master a config-direct run's variants recorded only a `backtest_failed` row
+  (the missing `validation_protocol.yaml` made `run_protocol.py` exit 1 after every
+  window ran); now each records a full `backtest` row. Compared with a row built
+  from `hypothesis_verdict: null` (`below_floor_pct` 0, `expectancy_bps` None), a
+  sparse strategy (more than 50% of windows under 5 trades) moves from
+  `statistic_valid: sharpe` — or `neither` when `median_sharpe` is None — to
+  `expectancy`, with the per-trade mean as `expectancy_bps`.
+- With neither flag (a manual call, `composite_cache`), `hypothesis_verdict` stays
+  `null`, byte-identical to before.
 
 **2. C7 pass-rule evaluation — the machine verdict, and the decision authority.**
 `verdict_criteria_evaluator.evaluate_pass_rule_criteria()` scores the summary
@@ -2025,7 +2095,7 @@ prints that the SKILL may need a new status case and pauses
 | `results` | Per-window, per-symbol raw metrics (`net_return_pct`, `sharpe`, `max_drawdown_pct`, `trade_count`, `win_rate`, `fees_paid`, …) — one entry per `{symbol, window}` pair actually run. Each entry also carries `core` (that window's real `metrics.json` core block verbatim, including `forecast_return_corr_pvalue_block_adjusted`/`forecast_return_corr_n_eff`/`forecast_return_corr_all_bars`), `per_regime`, `regime_validity`, `data_quality` — that window's gap-detection block (`null` unless the run used `gap_detection=True`, which defaults to `False`) — and `component_errors` — `{count, samples}`, F5b's own exception counters off the strategy object for that window, always present (a healthy run reports an explicit `count: 0`, never a fabricated absence). | list | `run_011`: 24 entries (2 symbols × 12 windows) |
 | `per_symbol_summary` | Per-symbol aggregation across windows: `median_sharpe` (the primary promotion gate — see basis note below), `max_abs_drawdown_pct`, `min_trade_count`. | dict keyed by symbol | `run_011`: `{BTCUSDT: {median_sharpe: -5.019, …}, ETHUSDT: {median_sharpe: -2.604, …}}` |
 | `verdict` | Preliminary verdict from the tool itself, ahead of the LLM verdict-interpreter's own read. | `promote` · `kill` · `refine` | `kill` |
-| `hypothesis_verdict` | The evaluated pre-registered criteria: each one's requirement, actual value, PASS/FAIL/UNTESTED, and a rolled-up `verdict_reason`. This is what `verdict_interpreter` actually reads. | dict: `{verdict, criteria_results: [...], verdict_reason}` | `run_011`: 4 of 6 evaluable criteria FAIL, 3 UNTESTED |
+| `hypothesis_verdict` | The evaluated pre-registered criteria: each one's requirement, actual value, PASS/FAIL/UNTESTED, and a rolled-up `verdict_reason`. This is what `verdict_interpreter` actually reads. | dict: `{verdict, criteria_results: [...], verdict_reason, diagnostics}`; under `--diagnostics-only` (config-direct, E-061 C1.3): `verdict: null`, `criteria_results: []`, `diagnostics` still computed; `null` with neither flag | `run_011`: 4 of 6 evaluable criteria FAIL, 3 UNTESTED |
 | `protocol_file` | Bare filename of the protocol this run executed — the pre-registration conformance check compares this against `pre_registration.yaml`'s pinned `machine_constraints.protocol_ref`. | filename | `funding_mr_4h_retest_v1.json` |
 | `episode_blocked_significance_by_symbol` | Per-symbol A8.5.1a significance method label — the conformance check (`_check_protocol_execution_conformance`) compares each symbol's label against `is_a851a_method()` (`episode_significance.py::is_a851a_method`) when `machine_constraints.significance_methodology: episode_blocked_a851a` is pre-registered; any symbol failing that check is a conformance violation. | dict keyed by symbol | `{BTCUSDT: episode_blocked_a851a, ETHUSDT: block_6_dense_fallback}` |
 
@@ -2415,6 +2485,18 @@ Handoffs are the formal interface contract between stages. Each stage reads its 
 | `constraints` | Hard rules the stage must not violate |
 | `deliverables` | Artifacts the stage must produce |
 | `assigned_engine` | Which engine runs this stage: `claude`, `gemini`, or `tool` |
+
+**Config-direct authoring (E-061 C1.2).** Under
+`orchestrator.config_direct_authoring.enabled`, `backtest_specification`,
+`data_availability_gate`, `protocol_execution` and `verdict_interpreter` load
+`handoffs/config_direct_<stage>.yaml` instead of their legacy handoffs (which
+require `validation_protocol.yaml`, never written in that flow). These are
+rewritten by code from the current flags at every stage entry
+(`run_phase1_research.py::_config_direct_handoff_path`, the one place that decides
+it, used by `run_loop` and `async_invoke_agent`), never by `setup_run`;
+flag-off runs never get them. `verdict_interpreter`'s is the legacy template minus
+`validation_protocol.yaml`; it is reached under config-direct only with
+`specialist_readers` off, which is outside the target flag set.
 
 ---
 
