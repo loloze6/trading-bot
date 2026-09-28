@@ -103,8 +103,9 @@ all (every tool call went to the stubs).
 
 C1.2 + C1.3 landed (fix/e061-c1-2-3-config-direct-handoffs): A1, A2, A5 and the
 two joined-up tests pass and their markers are gone; Harness._run_protocol now
-mirrors the tool's new behaviour (validation protocol opened first; without one,
-the diagnostics block with an empty rule set).
+mirrors the tool's new behaviour (a validation protocol is checked before any
+window runs; --diagnostics-only, passed under config-direct when there is none,
+writes the diagnostics block with no rule set).
 """
 from __future__ import annotations
 
@@ -697,27 +698,38 @@ class Harness:
         return {**base, **self.profiles.get(vid, {})}
 
     def _run_protocol(self, argv):
-        """tools/run_protocol.py's order of work (E-061 C1.3): --validation-protocol,
-        when passed, is opened FIRST (_load_validation_protocol: a missing file
-        exits 1 before any window runs); then every window's backtest files, then
-        trade_diagnostics.json, then protocol_summary.json. Without the flag the
-        tool writes the diagnostics block with an empty rule set and no verdict
-        (diagnostics_only_hypothesis_verdict, G14) -- the stub calls that very
-        function, so its output is the real tool's shape."""
-        import run_protocol as rp  # the tool's own config digest and diagnostics
+        """tools/run_protocol.py's order of work (E-061 C1.3): --validation-protocol
+        and --diagnostics-only together, or a --validation-protocol file that is
+        missing, unparseable, empty, not a mapping or without evaluable
+        decision_rules, are refused FIRST, before any window runs (the tool's own
+        _load_validation_protocol, called here; exit EXIT_NO_DATA_TOUCHED with
+        NO_DATA_TOUCHED_TOKEN). Then every window's backtest files,
+        trade_diagnostics.json and protocol_summary.json, whose hypothesis_verdict
+        is the tool's own: evaluate_against_decision_rules on the parsed file
+        with --validation-protocol, diagnostics_only_hypothesis_verdict with
+        --diagnostics-only (G14), null with neither."""
+        import run_protocol as rp  # the tool's own config digest, loader and evaluators
         config_path, protocol_path = Path(argv[2]), Path(argv[3])
         out = Path(argv[argv.index("--out-dir") + 1])
         vid = out.name
         run_id = out.parent.parent.name
         prof = self.profile(vid)
         proto = json.loads(protocol_path.read_text(encoding="utf-8"))
-        vp = None
-        if "--validation-protocol" in argv:
-            vp = Path(argv[argv.index("--validation-protocol") + 1])
-            if not vp.exists():  # the real tool: refused before any window ran
-                return self._done(1, stderr=f"ERROR: --validation-protocol '{vp}' cannot be "
-                                            f"read (FileNotFoundError) -- refusing to run any "
-                                            f"backtest.")
+        diagnostics_only = "--diagnostics-only" in argv
+        vp_doc = None
+        if "--validation-protocol" in argv or diagnostics_only:
+            import contextlib
+            import io
+            err = io.StringIO()
+            try:
+                with contextlib.redirect_stderr(err):
+                    if "--validation-protocol" in argv and diagnostics_only:
+                        rp._refuse_before_any_backtest("mutually exclusive flags")
+                    if not diagnostics_only:
+                        vp_doc = rp._load_validation_protocol(
+                            argv[argv.index("--validation-protocol") + 1])
+            except SystemExit as exc:  # the real tool: refused before any window ran
+                return self._done(exc.code, stderr=err.getvalue())
         results, trades = [], []
         seed = int(nov.forecast_hash_of_config([run_id, vid])[:8], 16)
         for k, symbol in enumerate(proto["symbols"]):
@@ -746,13 +758,13 @@ class Harness:
         per_symbol = {s: {"median_sharpe": prof["sharpe"], "max_abs_drawdown_pct": 3.0,
                           "min_trade_count": prof["trades"], "zero_trade_slot_pct": 0.0}
                       for s in proto["symbols"]}
-        if vp is not None:
-            hypothesis_verdict = {"verdict": "refine", "verdict_reason": "stub decision rules",
-                                  "diagnostics": {}}
-        else:
-            hypothesis_verdict = rp.diagnostics_only_hypothesis_verdict(
-                per_symbol, results, tds, runs_root=str(out / "results"),
+        hypothesis_verdict = None
+        if vp_doc is not None:
+            hypothesis_verdict = rp.evaluate_against_decision_rules(
+                per_symbol, results, vp_doc, tds, runs_root=str(out / "results"),
                 timeframe=proto["timeframe"])
+        elif diagnostics_only:
+            hypothesis_verdict = rp.diagnostics_only_hypothesis_verdict(results, tds)
         summary = {
             "protocol_run_id": f"{run_id}_{vid}",
             "config_sha256": rp._config_sha(config_path)[0],
@@ -1131,10 +1143,11 @@ def _stage_at_protocol_execution(h: Harness, run_id: str = "run_001",
 
 
 def test_a2_protocol_execution_never_passes_a_missing_validation_protocol(harness):
-    """E-061 C1.3 took both halves: run_tool_worker passes --validation-protocol only
-    when the file exists (the argv pin below), and run_protocol.py -- mirrored by
-    Harness._run_protocol -- opens a passed file before any window runs and, with no
-    file, writes the diagnostics block with an empty rule set (G14)."""
+    """E-061 C1.3 took both halves: under config-direct run_tool_worker passes
+    --validation-protocol only when the file exists (the argv pin below), else
+    --diagnostics-only; run_protocol.py -- mirrored by Harness._run_protocol --
+    checks a passed file before any window runs and, under --diagnostics-only,
+    writes the diagnostics block with no rule set and no verdict (G14)."""
     h = harness.build()
     run_dir = _stage_at_protocol_execution(h)
     err = None

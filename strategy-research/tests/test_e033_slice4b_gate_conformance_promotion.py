@@ -36,6 +36,7 @@ Sandboxing: relies on tests/conftest.py's autouse _sandbox_by_default fixture
 precedent as test_e033_slice4a_variant_loop.py / test_k3_protocol_pinning.py.
 """
 import asyncio
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -76,8 +77,29 @@ async def _noop_invoke(stage_name, run_id, retry_context=None):
     tests. Same established precedent as test_anti_adjacency_retry_policy.py's
     own _noop_invoke: stub the stage-execution step out entirely so the
     pre-seeded artifacts stand as-is and only the routing decision is
-    exercised."""
-    return
+    exercised.
+
+    E-061 C1.2 (review fix 5): under config-direct, run_loop requires the
+    stage's outputs to be written by THIS attempt; the pre-seeded artifacts
+    stand in for the stage's own writes (_play_seeded_stage)."""
+    _play_seeded_stage(rpr.ROOT / "runs" / run_id, stage_name)
+
+
+def _play_seeded_stage(run_dir: Path, stage_name: str) -> None:
+    """E-061 C1.2: complete a pre-seeded stage the way the real one would have
+    written it -- the variant-loop gate leaves a validate gate file for every
+    variant still validated after it (a seed that lists such a variant without
+    one gets it here) -- and re-stamp every artifact as written by this
+    attempt."""
+    index_path = run_dir / "artifacts" / "variants" / "index.yaml"
+    if stage_name == "data_availability_gate" and index_path.exists():
+        for vid, v in ((rpr.load_yaml(index_path) or {}).get("variants") or {}).items():
+            gate = run_dir / "artifacts" / "variants" / vid / "data_availability_gate.yaml"
+            if isinstance(v, dict) and v.get("status") == "validated" and not gate.exists():
+                rpr.save_yaml(gate, {"outcome": "validate", "reasons": []})
+    for path in (run_dir / "artifacts").rglob("*"):
+        if path.is_file():
+            os.utime(path, None)
 
 
 def _write_handoff(run_dir: Path, name: str) -> None:
