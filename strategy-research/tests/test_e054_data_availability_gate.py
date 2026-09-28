@@ -403,6 +403,80 @@ def test_layer1_price_precheck_kraken_confirmed_symbol_after_launch_still_passes
     assert ok is True, reason
 
 
+def test_layer1_price_precheck_kraken_per_coin_earliest_date_declines_earlier_window():
+    """fix/layer1-per-coin-start-dates: a confirmed Kraken symbol with a
+    per-coin earliest_ohlcv_utc entry (populated by
+    tools/refresh_coin_start_dates.py from the coin's own local cache) must
+    decline a window ending before that date, even though the interval is
+    otherwise reachable and the venue-wide 2013 floor alone would have
+    passed it -- e.g. real SUIUSD data starts 2023-05-03, not 2013."""
+    layer1 = {
+        "venues": {"kraken": {"spot": {
+            "symbols": {
+                "confirmed_universe": ["SUIUSD"],
+                "earliest_possible_utc": "2013-09-01T00:00:00Z",
+                "earliest_ohlcv_utc": {"SUIUSD": "2023-05-03T00:00:00Z"},
+            },
+            "timeframes": {"live_rest_api": {"intervals_minutes": [60], "history_depth_candles": 720}},
+        }}},
+    }
+    now = datetime.datetime(2026, 9, 28)
+    ok, reason = dag.layer1_price_precheck(
+        layer1, "kraken", "SUIUSD", "1h",
+        datetime.datetime(2020, 1, 1), datetime.datetime(2020, 2, 1),
+        now=now,
+    )
+    assert ok is False
+    assert "SUIUSD" in reason
+    assert "2023-05-03" in reason
+
+
+def test_layer1_price_precheck_kraken_per_coin_earliest_date_passes_window_after_it():
+    """Regression: the new gate must not over-trigger -- a window fully after
+    the per-coin date still passes (subject to the existing 720-candle cap,
+    avoided here via a recent window)."""
+    layer1 = {
+        "venues": {"kraken": {"spot": {
+            "symbols": {
+                "confirmed_universe": ["SUIUSD"],
+                "earliest_ohlcv_utc": {"SUIUSD": "2023-05-03T00:00:00Z"},
+            },
+            "timeframes": {"live_rest_api": {"intervals_minutes": [60], "history_depth_candles": 720}},
+        }}},
+    }
+    now = datetime.datetime(2026, 9, 28)
+    recent_start = now - datetime.timedelta(hours=100)
+    ok, reason = dag.layer1_price_precheck(
+        layer1, "kraken", "SUIUSD", "1h",
+        recent_start, now,
+        now=now,
+    )
+    assert ok is True, reason
+
+
+def test_layer1_price_precheck_kraken_missing_per_coin_date_does_not_decline_by_default():
+    """UNLIKE Binance's earliest_ohlcv_utc gate, a Kraken symbol with no
+    per-coin entry must not decline by default from this gate alone -- only
+    a PRESENT entry that the window predates declines. This is the existing
+    fixture shape every other Kraken test in this file already relies on
+    (none declare earliest_ohlcv_utc), pinned explicitly so a future change
+    can't silently flip this policy."""
+    layer1 = {
+        "venues": {"kraken": {"spot": {
+            "symbols": {"confirmed_universe": ["BTCUSD"]},
+            "timeframes": {"live_rest_api": {"intervals_minutes": [60], "history_depth_candles": 720}},
+        }}},
+    }
+    now = datetime.datetime(2026, 9, 28)
+    recent_start = now - datetime.timedelta(hours=100)
+    ok, reason = dag.layer1_price_precheck(
+        layer1, "kraken", "BTCUSD", "1h",
+        recent_start, now,
+        now=now,
+    )
+    assert ok is True, reason
+
+
 def test_layer1_price_precheck_unreachable_timeframe_with_no_finer_available_still_declines():
     """Regression: the genuinely-impossible case (no direct match, no finer
     interval to aggregate from) must still decline -- this is the existing

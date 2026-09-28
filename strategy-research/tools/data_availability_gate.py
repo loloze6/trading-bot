@@ -223,6 +223,19 @@ def layer1_price_precheck(layer1: dict, exchange: str, symbol: str, timeframe: s
     Returns (ok, reason). ok=False means "decline this window without
     touching real data" -- a structural impossibility Layer 2 doesn't need
     to spend a fetch confirming.
+
+    DECLARED BEHAVIOUR CHANGE (fix/layer1-per-coin-start-dates, 2026-09-28):
+    Kraken symbols now also have a per-coin `earliest_ohlcv_utc` gate,
+    populated for the 19-pair confirmed_universe by
+    tools/refresh_coin_start_dates.py from each coin's own local cache's
+    first row (mirroring binance.spot's existing per-coin gate below, though
+    -- unlike Binance -- an absent entry does not decline by default; see the
+    inline comment at the gate itself for why). Before this, a Kraken window
+    was checked only against the venue-WIDE 2013-09-01 floor
+    (`earliest_possible_utc`), so a coin whose OWN data starts much later
+    (e.g. SUIUSD: 2023-05-03) passed Layer 1 for any window back to 2013 and
+    deferred the decline to a real Layer 2 fetch. Some early windows for
+    populated coins now decline at Layer 1 (no network) instead.
     """
     venues = layer1.get("venues") or {}
     venue_block = (venues.get(exchange) or {}).get("spot")
@@ -262,6 +275,37 @@ def layer1_price_precheck(layer1: dict, exchange: str, symbol: str, timeframe: s
                     f"public launch ({earliest_possible_dt}) -- impossible on "
                     f"this venue for ANY symbol or mechanism, not just gappy in "
                     f"our cache."
+                )
+
+        # Per-coin gate (fix/layer1-per-coin-start-dates, 2026-09-28): uses
+        # the SAME field name/shape as binance.spot's earliest_ohlcv_utc gate
+        # below (populated for the 19-pair confirmed_universe by
+        # tools/refresh_coin_start_dates.py, from each coin's own local
+        # kraken_<SYM>_1h.csv first row). Before this, a confirmed Kraken
+        # symbol with no per-coin date looked available all the way back to
+        # the venue-WIDE 2013-09-01 floor above regardless of when that
+        # specific coin's own data (or the coin itself) actually begins --
+        # e.g. SUIUSD's real cache starts 2023-05-03, not 2013.
+        #
+        # UNLIKE binance's gate, a MISSING entry here does NOT decline by
+        # default -- only a PRESENT entry that the window predates does.
+        # Binance's stricter "decline if unconfirmed" policy is deliberately
+        # not mirrored here yet: doing so would decline every Kraken symbol
+        # this tool hasn't been run for (including this module's own existing
+        # fixture-based tests, none of which declare this field), for no
+        # additional data-availability information over what
+        # confirmed_universe/earliest_possible_utc above already enforce.
+        # Populate earliest_ohlcv_utc for a symbol to get the tighter bound.
+        earliest_ohlcv = symbols_block.get("earliest_ohlcv_utc") or {}
+        earliest_ohlcv_str = earliest_ohlcv.get(symbol)
+        if earliest_ohlcv_str:
+            earliest_ohlcv_dt = pd.Timestamp(earliest_ohlcv_str).to_pydatetime().replace(tzinfo=None)
+            if window_end < earliest_ohlcv_dt:
+                return False, (
+                    f"window end {window_end} is entirely before {symbol}'s confirmed "
+                    f"earliest OHLCV date {earliest_ohlcv_dt} on {exchange} (per-coin "
+                    f"earliest_ohlcv_utc, venue_data_capability.yaml) -- impossible at "
+                    f"the source, not just gappy in cache."
                 )
 
         live_rest = timeframes.get("live_rest_api") or {}
