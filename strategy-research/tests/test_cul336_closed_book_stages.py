@@ -189,14 +189,15 @@ _SKIP_DIRS = {"venv", ".venv", "site-packages", "node_modules", "__pycache__", "
 
 
 def test_no_other_python_file_imports_the_agent_sdk():
-    """A new SDK user elsewhere would not go through the helper. Imports only:
-    tests and docs may name the SDK in text; this test file imports it to
-    inspect the helper's output and is excluded by name."""
+    """A new SDK user elsewhere would not go through the helper. Imports only,
+    production code only: test files may import the SDK to stub or inspect it
+    (e.g. the E-061 end-to-end test stubs `query` with real SDK message types),
+    so every file under a `tests` directory is excluded."""
     importers = []
     for sub in ("strategy-research", "trading-bot"):
         for py in (REPO_ROOT / sub).rglob("*.py"):
             rel = py.relative_to(REPO_ROOT)
-            if _SKIP_DIRS.intersection(rel.parts) or py.resolve() == Path(__file__).resolve():
+            if _SKIP_DIRS.intersection(rel.parts) or "tests" in rel.parts:
                 continue
             text = py.read_text(encoding="utf-8", errors="replace")
             if "claude_agent_sdk" not in text:
