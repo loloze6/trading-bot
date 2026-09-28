@@ -43,7 +43,7 @@ variants:
   base:
     kind: base | null
     symbol: <SYMBOL> | null
-    status: validated
+    status: graded          # "backtested and graded," never a pass/fail verdict (that's the grid's job)
     slices:
       overall:
         detector_health:  # re-projection of strategy-research/regime_detector_report.yaml
@@ -59,11 +59,12 @@ variants:
                     #   median_lag_bars, reason} OR unavailable when bars.csv is missing for that window.
       per_regime:   # {regime_label: [{symbol, window, per_regime, regime_validity}, ...]}
       per_symbol:   # {symbol: [same shape as per_window entries]}
-  design_1: {kind: design | null, symbol: ..., status: validated, slices: {...same shape...}}
-  asset_1:  {kind: asset  | null, symbol: ..., status: validated, slices: {...same shape...}}
+  design_1: {kind: design | null, symbol: ..., status: graded, slices: {...same shape...}}
+  asset_1:  {kind: asset  | null, symbol: ..., status: graded, slices: {...same shape...}}
 failed_variants:      # {<vid>: reason} -- E-061 C2 S2a (D-015). Never a `variants` entry.
 untested_variants:    # {<vid>: reason} -- card D. Also never a `variants` entry.
 ```
+A variant's row may also carry `coverage: "partial, windows run N of M"` (E-061 C2 S2b/S2d, D-042) when it graded on fewer windows than the run protocol -- absent entirely when its coverage is full.
 `hindsight_lag` is [NEW COMPUTATION] per `build_reports.py`'s own docstring -- a lag-only
 measure (bar-distance between a live regime transition and the nearest hindsight-optimal-
 direction transition), never a correctness claim. A positive `median_lag_bars` is expected

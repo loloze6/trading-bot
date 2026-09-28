@@ -50,7 +50,7 @@ variants:
   base:                          # always present when any variant of this idea graded this run
     kind: base | null            # null until E-061 C2 S2b
     symbol: <SYMBOL> | null      # null until E-061 C2 S2b
-    status: validated
+    status: graded          # "backtested and graded," never a pass/fail verdict (that's the grid's job)
     slices:
       overall:      # {source, diagnostics: {...verbatim hypothesis_verdict.diagnostics}, verdict, verdict_reason}
                     # OR {unavailable: true, reason: "..."} when THIS VARIANT's protocol_result.yaml
@@ -58,8 +58,8 @@ variants:
       per_window:   # [{symbol, window, run_id, core: {...}}, ...] one entry per walk-forward window
       per_regime:   # {regime_label: [{symbol, window, ...per_regime block fields}, ...]}
       per_symbol:   # {symbol: [{window, run_id, ...core block fields}, ...]}
-  design_1: {kind: design | null, symbol: ..., status: validated, slices: {...same shape...}}
-  asset_1:  {kind: asset  | null, symbol: ..., status: validated, slices: {...same shape...}}
+  design_1: {kind: design | null, symbol: ..., status: graded, slices: {...same shape...}}
+  asset_1:  {kind: asset  | null, symbol: ..., status: graded, slices: {...same shape...}}
 failed_variants:      # {<vid>: reason} -- E-061 C2 S2a (D-015): a variant of this idea that was
                       # validated going into the backtest but produced no graded result this run
                       # (a crash, or refused before any backtest touched data). NEVER a `variants`
@@ -68,6 +68,7 @@ untested_variants:    # {<vid>: reason} -- another variant of this idea with no 
                       # THIS run (skipped as an exact repeat, declined by the data gate, refused
                       # by config validation). Also never a `variants` entry.
 ```
+A variant's row may also carry `coverage: "partial, windows run N of M"` (E-061 C2 S2b/S2d, D-042) when it graded on fewer windows than the run protocol -- absent entirely when its coverage is full.
 `variants.<vid>.slices.overall.diagnostics` carries whatever `hypothesis_verdict.diagnostics`
 held in that variant's own `protocol_result.yaml` -- typically includes `median_cost_drag_pct`,
 `median_gross_pnl`, `win_rate_vs_sharpe`, `median_forecast_return_corr` among others (the

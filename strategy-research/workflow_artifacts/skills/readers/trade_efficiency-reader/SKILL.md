@@ -40,7 +40,7 @@ variants:
   base:
     kind: base | null
     symbol: <SYMBOL> | null
-    status: validated
+    status: graded          # "backtested and graded," never a pass/fail verdict (that's the grid's job)
     slices:
       overall:      # {source, ...verbatim trade_diagnostics_summary fields} OR unavailable
       per_window:   # {window_label: {n, <numeric field>: {mean, median, p10, p90}, ...}} --
@@ -51,11 +51,12 @@ variants:
       per_symbol:   # {symbol: {n, <numeric field>: {...}}} -- same trades, grouped by `symbol`
       per_regime:   # {regime_label: {n, <numeric field>: {...}}} -- same trades, grouped by
                     # `regime_at_entry`
-  design_1: {kind: design | null, symbol: ..., status: validated, slices: {...same shape...}}
-  asset_1:  {kind: asset  | null, symbol: ..., status: validated, slices: {...same shape...}}
+  design_1: {kind: design | null, symbol: ..., status: graded, slices: {...same shape...}}
+  asset_1:  {kind: asset  | null, symbol: ..., status: graded, slices: {...same shape...}}
 failed_variants:      # {<vid>: reason} -- E-061 C2 S2a (D-015). Never a `variants` entry.
 untested_variants:    # {<vid>: reason} -- card D. Also never a `variants` entry.
 ```
+A variant's row may also carry `coverage: "partial, windows run N of M"` (E-061 C2 S2b/S2d, D-042) when it graded on fewer windows than the run protocol -- absent entirely when its coverage is full.
 `variants.<vid>.slices.overall` carries whatever `trade_diagnostics_summary` held in that
 variant's own `protocol_result.yaml` -- per verdict-interpreter's own citations this typically
 includes `exit_efficiency_median`, `entry_efficiency_median`,

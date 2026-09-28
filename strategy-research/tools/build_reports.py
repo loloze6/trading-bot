@@ -852,6 +852,7 @@ def build_reports(run_dir: Path | str, write: bool = True, *,
         schema_version: 2
         variants:
           <vid>: {kind: <str|None>, symbol: <str|None>, status: <str>,
+                  coverage: <str>,  # only present when the caller's vinfo carries one
                   slices: {overall, per_window, per_regime, per_symbol}}
           ...
         failed_variants: {<vid>: <reason>}       # only when failed_variants given
@@ -859,14 +860,19 @@ def build_reports(run_dir: Path | str, write: bool = True, *,
 
     `kind`/`symbol` are read from each `variants[vid]` entry when present and
     left `None` otherwise (E-061 C2 S2b adds those fields to
-    artifacts/variants/index.yaml; this function never invents them). There
-    is no separate top-level `slices` for a "base" variant -- G8's own
-    token-saving call -- every variant, including base, lives under
-    `variants.<vid>.slices`. `failed_variants`/`untested_variants` are never
-    columns: they carry only the reason string a reader can cite, exactly
-    mirroring `verdict_criteria_evaluator.evaluate_grid`'s own top-level keys
-    of the same name, so a reader that already understands grid_evaluation.yaml
-    reads these the same way.
+    artifacts/variants/index.yaml; this function never invents them). `status`
+    defaults to `"graded"` when the caller's vinfo doesn't carry one --
+    meaning only "this variant was backtested and graded," never a verdict
+    (readers must not read it as "this variant passed"). `coverage` is a
+    plain passthrough, present only when `vinfo` carries one (E-061 C2 S2b's
+    D-042 partial-coverage marker, e.g. `"partial, windows run 2 of 4"`) --
+    this function never computes it. There is no separate top-level `slices`
+    for a "base" variant -- G8's own token-saving call -- every variant,
+    including base, lives under `variants.<vid>.slices`. `failed_variants`/
+    `untested_variants` are never columns: they carry only the reason string
+    a reader can cite, exactly mirroring `verdict_criteria_evaluator.evaluate_grid`'s
+    own top-level keys of the same name, so a reader that already understands
+    grid_evaluation.yaml reads these the same way.
 
     Every built report is checked against REPORT_CHAR_BUDGET before being
     returned or written (both branches) -- see that constant's own comment.
@@ -903,7 +909,9 @@ def build_reports(run_dir: Path | str, write: bool = True, *,
                 variant_blocks[vid] = {
                     "kind": (vinfo or {}).get("kind"),
                     "symbol": (vinfo or {}).get("symbol"),
-                    "status": (vinfo or {}).get("status", "validated"),
+                    "status": (vinfo or {}).get("status", "graded"),
+                    **({"coverage": vinfo["coverage"]}
+                       if isinstance(vinfo, dict) and vinfo.get("coverage") else {}),
                     "slices": built["slices"],
                 }
             report = {

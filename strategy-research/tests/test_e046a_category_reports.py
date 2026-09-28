@@ -544,8 +544,8 @@ def test_build_reports_variants_populates_every_variant_with_its_own_symbol(tmp_
     reports = br.build_reports(
         run_dir, write=False,
         variants={
-            "base": {"kind": "base", "symbol": "BTCUSDT", "status": "validated"},
-            "design_1": {"kind": "design", "symbol": "BTCUSDT", "status": "validated"},
+            "base": {"kind": "base", "symbol": "BTCUSDT", "status": "graded"},
+            "design_1": {"kind": "design", "symbol": "BTCUSDT", "status": "graded"},
         },
         failed_variants={"crashed_1": "backtest_failed: injected"},
         untested_variants={"asset_1": "skipped as an exact REPEAT"},
@@ -573,9 +573,45 @@ def test_build_reports_variants_falls_back_gracefully_when_symbol_absent(tmp_pat
     _write_variant_protocol_result(run_dir, "base", symbol="BTCUSDT", window="2020-01",
                                     run_id_suffix="w1")
 
-    reports = br.build_reports(run_dir, write=False, variants={"base": {"status": "validated"}})
+    reports = br.build_reports(run_dir, write=False, variants={"base": {"status": "graded"}})
     assert reports["profitability"]["variants"]["base"]["kind"] is None
     assert reports["profitability"]["variants"]["base"]["symbol"] is None
+
+
+def test_build_reports_variants_status_defaults_to_graded_not_validated(tmp_path):
+    """C2 S2d review fix: a reader must never read a variant's report-row `status`
+    as a pass/fail verdict -- that authority is the grid's alone. When the caller's
+    vinfo carries no `status` key at all, build_reports must default to "graded"
+    ("backtested and graded"), never the old "validated" label."""
+    run_dir = tmp_path / "run_variant_status_default"
+    _write_variant_protocol_result(run_dir, "base", symbol="BTCUSDT", window="2020-01",
+                                    run_id_suffix="w1")
+
+    reports = br.build_reports(run_dir, write=False, variants={"base": {"kind": "base"}})
+    assert reports["profitability"]["variants"]["base"]["status"] == "graded"
+
+
+def test_build_reports_variants_passes_through_coverage_when_given(tmp_path):
+    """E-061 C2 S2b's D-042 partial-coverage marker is a plain passthrough on a
+    variant's report row -- present only when the caller's vinfo carries one,
+    never computed or invented by build_reports itself."""
+    run_dir = tmp_path / "run_variant_coverage"
+    _write_variant_protocol_result(run_dir, "base", symbol="BTCUSDT", window="2020-01",
+                                    run_id_suffix="w1")
+    _write_variant_protocol_result(run_dir, "asset_1", symbol="ETHUSDT", window="2020-01",
+                                    run_id_suffix="w1")
+
+    reports = br.build_reports(
+        run_dir, write=False,
+        variants={
+            "base": {"kind": "base", "symbol": "BTCUSDT"},
+            "asset_1": {"kind": "asset", "symbol": "ETHUSDT",
+                        "coverage": "partial, windows run 2 of 4"},
+        },
+    )
+    assert "coverage" not in reports["profitability"]["variants"]["base"]
+    assert reports["profitability"]["variants"]["asset_1"]["coverage"] == \
+        "partial, windows run 2 of 4"
 
 
 def test_build_reports_variants_rejects_empty_dict(tmp_path):

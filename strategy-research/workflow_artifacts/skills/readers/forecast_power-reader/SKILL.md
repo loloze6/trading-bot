@@ -41,7 +41,7 @@ variants:
   base:
     kind: base | null
     symbol: <SYMBOL> | null
-    status: validated
+    status: graded          # "backtested and graded," never a pass/fail verdict (that's the grid's job)
     slices:
       overall:      # {median_forecast_return_corr, median_forecast_return_corr_source,
                     #  prescreen_backtest_cross_check} -- any subset present, or unavailable when
@@ -51,11 +51,12 @@ variants:
       per_regime:   # {regime_label: [{symbol, window, ...regime_validity block fields incl. n_bars,
                     #  forward_return_mean}, ...]}
       per_symbol:   # {symbol: [{window, forecast_return_corr, forecast_return_corr_pvalue}, ...]}
-  design_1: {kind: design | null, symbol: ..., status: validated, slices: {...same shape...}}
-  asset_1:  {kind: asset  | null, symbol: ..., status: validated, slices: {...same shape...}}
+  design_1: {kind: design | null, symbol: ..., status: graded, slices: {...same shape...}}
+  asset_1:  {kind: asset  | null, symbol: ..., status: graded, slices: {...same shape...}}
 failed_variants:      # {<vid>: reason} -- E-061 C2 S2a (D-015). Never a `variants` entry.
 untested_variants:    # {<vid>: reason} -- card D. Also never a `variants` entry.
 ```
+A variant's row may also carry `coverage: "partial, windows run N of M"` (E-061 C2 S2b/S2d, D-042) when it graded on fewer windows than the run protocol -- absent entirely when its coverage is full.
 
 **Every rule and score below reads `variants.base.slices...`** -- `base` is the variant whose
 config a `patch` proposal actually changes (decide_next resolves patches against the source

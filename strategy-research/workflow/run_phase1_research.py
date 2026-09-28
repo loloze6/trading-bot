@@ -1982,11 +1982,27 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 # never invents them). failed_variants/untested_variants are passed
                 # through unchanged (already {vid: reason}, same shape the grid uses)
                 # so every reader sees every variant of the idea, graded or not.
+                # `status` is "graded", not "validated" (review fix, C2 S2d fix round):
+                # it means only "this variant was backtested and graded" -- a reader
+                # must never take it as a pass/fail verdict, which comes from the grid.
+                # `coverage` is a plain passthrough of the M1/D-042 partial-coverage
+                # marker already computed above (partial_coverage_variants) -- no new
+                # logic here, present only for a variant that actually ran partial.
+                def _variant_coverage_note(_vid):
+                    if _vid not in partial_coverage_variants:
+                        return None
+                    _cov = (variants_idx.get(_vid) or {}).get("coverage") or {}
+                    _run, _total = _cov.get("windows_run"), _cov.get("windows_total")
+                    if _run is None or _total is None:
+                        return "partial"
+                    return f"partial, windows run {len(_run)} of {_total}"
                 _variant_report_meta = {
                     _vid: {
                         "kind": (variants_idx.get(_vid) or {}).get("kind"),
                         "symbol": (variants_idx.get(_vid) or {}).get("symbol"),
-                        "status": "validated",
+                        "status": "graded",
+                        **({"coverage": _variant_coverage_note(_vid)}
+                           if _vid in partial_coverage_variants else {}),
                     }
                     for _vid in per_variant_summaries
                 }

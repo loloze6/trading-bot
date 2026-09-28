@@ -54,7 +54,7 @@ variants:
   base:
     kind: base | null
     symbol: <SYMBOL> | null
-    status: validated
+    status: graded          # "backtested and graded," never a pass/fail verdict (that's the grid's job)
     slices:
       overall:
         components_discovered: [<name>, ...]   # sorted list of component names found in ANY
@@ -71,11 +71,12 @@ variants:
                     # FIX, 2026-09-21), pooled across every window sharing that regime label.
       per_symbol:   # {symbol: {component: {n, <metric>: {...}}, ...}} -- pooled across every
                     # window sharing that symbol.
-  design_1: {kind: design | null, symbol: ..., status: validated, slices: {...same shape...}}
-  asset_1:  {kind: asset  | null, symbol: ..., status: validated, slices: {...same shape...}}
+  design_1: {kind: design | null, symbol: ..., status: graded, slices: {...same shape...}}
+  asset_1:  {kind: asset  | null, symbol: ..., status: graded, slices: {...same shape...}}
 failed_variants:      # {<vid>: reason} -- E-061 C2 S2a (D-015). Never a `variants` entry.
 untested_variants:    # {<vid>: reason} -- card D. Also never a `variants` entry.
 ```
+A variant's row may also carry `coverage: "partial, windows run N of M"` (E-061 C2 S2b/S2d, D-042) when it graded on fewer windows than the run protocol -- absent entirely when its coverage is full.
 Each aggregate's `n` is the real count of (bar, component) records pooled into that group; a
 field's `mean`/`median`/`p10`/`p90` are real order statistics over that group's per-bar values
 (whatever metric columns that component's `debug_info.components.<name>.*` emitted -- field
