@@ -1976,8 +1976,45 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 if _br_tools_path not in sys.path:
                     sys.path.insert(0, _br_tools_path)
                 import build_reports as _br
-                _reports = _br.build_reports(RUN_DIR, write=True)
-                print(f"✅ [E-046a] artifacts/reports/*.yaml written: {sorted(_reports.keys())}")
+                # E-061 C2 S2d (G8, D-003 "experts see every variant"): every GRADED
+                # variant gets its own {kind, symbol, status} row -- kind/symbol read
+                # from index.yaml only when present (E-061 C2 S2b adds them; this stage
+                # never invents them). failed_variants/untested_variants are passed
+                # through unchanged (already {vid: reason}, same shape the grid uses)
+                # so every reader sees every variant of the idea, graded or not.
+                # `status` is "graded", not "validated" (review fix, C2 S2d fix round):
+                # it means only "this variant was backtested and graded" -- a reader
+                # must never take it as a pass/fail verdict, which comes from the grid.
+                # `coverage` is a plain passthrough of the M1/D-042 partial-coverage
+                # marker already computed above (partial_coverage_variants) -- no new
+                # logic here, present only for a variant that actually ran partial.
+                def _variant_coverage_note(_vid):
+                    if _vid not in partial_coverage_variants:
+                        return None
+                    _cov = (variants_idx.get(_vid) or {}).get("coverage") or {}
+                    _run, _total = _cov.get("windows_run"), _cov.get("windows_total")
+                    if _run is None or _total is None:
+                        return "partial"
+                    return f"partial, windows run {len(_run)} of {_total}"
+                _variant_report_meta = {
+                    _vid: {
+                        "kind": (variants_idx.get(_vid) or {}).get("kind"),
+                        "symbol": (variants_idx.get(_vid) or {}).get("symbol"),
+                        "status": "graded",
+                        **({"coverage": _variant_coverage_note(_vid)}
+                           if _vid in partial_coverage_variants else {}),
+                    }
+                    for _vid in per_variant_summaries
+                }
+                _reports = _br.build_reports(
+                    RUN_DIR, write=True, variants=_variant_report_meta,
+                    failed_variants=failed_variants or None,
+                    untested_variants=untested_variants or None)
+                print(f"✅ [E-046a] artifacts/reports/*.yaml written: {sorted(_reports.keys())} "
+                      f"(variants: {sorted(_variant_report_meta)}"
+                      + (f", failed: {sorted(failed_variants)}" if failed_variants else "")
+                      + (f", untested: {sorted(untested_variants)}" if untested_variants else "")
+                      + ")")
             except Exception as _reports_err:
                 print(f"⚠️  [E-046a] category report build raised {type(_reports_err).__name__}: "
                       f"{_reports_err} -- at least one variant's backtest already succeeded; "

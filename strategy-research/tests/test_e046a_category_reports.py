@@ -10,6 +10,12 @@ Three things this file proves, per the dispatch brief:
      source field EXACTLY -- not just "has the right shape." Uses the real
      run_059 corpus as the fixture (98 windows, both symbols, a real
      trade_diagnostics.json, hypothesis_verdict.diagnostics block, etc).
+     EXCEPTION (E-061 C2 S2d, G7): trade_efficiency's and
+     component_attribution's per_window/per_regime/per_symbol slices are
+     n/mean/median/p10/p90 aggregates over the source records, not the raw
+     records themselves -- those two tests independently recompute the same
+     statistic from the untouched source and assert the report's aggregate
+     equals it, rather than asserting record-for-record equality.
 
   2. A slice that legitimately can't be populated
      (test_unavailable_slice_is_explicit_not_fabricated): a synthetic run
@@ -27,6 +33,8 @@ Three things this file proves, per the dispatch brief:
 """
 from __future__ import annotations
 
+import json
+import statistics
 import sys
 from pathlib import Path
 
@@ -110,7 +118,13 @@ def test_reprojection_trade_efficiency_summary_equals_source(run_059_sources, ru
         assert overall[key] == value
 
 
-def test_reprojection_trade_efficiency_per_window_trades_equal_source(run_059_sources, run_059_reports):
+def test_reprojection_trade_efficiency_per_window_is_g7_aggregate_of_source(run_059_sources, run_059_reports):
+    """E-061 C2 S2d (G7): per_window is now {window: {n, <field>: {mean,
+    median, p10, p90}, ...}}, not {window: [raw trade dicts]} -- asserts the
+    report's aggregate for one numeric field equals an INDEPENDENTLY
+    computed statistic over the same untouched source trades (real
+    re-projection of a real record count and real order statistics, not a
+    fabricated figure)."""
     td = run_059_sources["trade_diagnostics"]
     source_trades_by_window: dict[str, list[dict]] = {}
     for trade in td["trades"]:
@@ -118,8 +132,12 @@ def test_reprojection_trade_efficiency_per_window_trades_equal_source(run_059_so
 
     per_window = run_059_reports["trade_efficiency"]["slices"]["per_window"]
     assert set(per_window.keys()) == set(source_trades_by_window.keys())
-    for window, trades in per_window.items():
-        assert trades == source_trades_by_window[window]
+    for window, agg in per_window.items():
+        source_trades = source_trades_by_window[window]
+        assert agg["n"] == len(source_trades)
+        values = sorted(t["realized_return"] for t in source_trades)
+        assert agg["realized_return"]["mean"] == pytest.approx(statistics.fmean(values))
+        assert agg["realized_return"]["median"] == pytest.approx(statistics.median(values))
 
 
 def test_reprojection_forecast_power_corr_equals_source(run_059_sources, run_059_reports):
@@ -159,27 +177,39 @@ def test_reprojection_regime_power_detector_health_equals_source(run_059_sources
         assert health["per_symbol_per_timeframe"] == rdr.get("per_symbol_per_timeframe")
 
 
-def test_reprojection_component_attribution_cell_equals_bars_csv(run_059_sources, run_059_reports):
-    """Spot-checks real bars.csv cells against the component_attribution
-    report for the first window that has component columns -- proves the
-    per-bar values are copied, not recomputed."""
+def test_reprojection_component_attribution_per_symbol_is_g7_aggregate_of_bars_csv(
+        run_059_sources, run_059_reports):
+    """E-061 C2 S2d (G7): per_symbol is now {symbol: {component: {n, <metric>:
+    {mean, median, p10, p90}, ...}}}, not {symbol: [raw per-bar-per-component
+    records]} -- spot-checks the aggregate for the first window/component
+    pair with component columns against an INDEPENDENTLY computed statistic
+    over the same untouched bars.csv rows."""
     bars_by_window = run_059_sources["bars_by_window"]
-    first_key, first_bars = next(
+    (symbol, window), first_bars = next(
         (k, v) for k, v in bars_by_window.items() if v and any(
             col.startswith(br._COMPONENT_COLUMN_PREFIX) for col in v[0]))
-    symbol, window = first_key
-    per_symbol = run_059_reports["component_attribution"]["slices"]["per_symbol"]
-    records = [r for r in per_symbol[symbol] if r["window"] == window]
-
     components = br._parse_component_columns(list(first_bars[0].keys()))
-    expected_count = len(first_bars) * len(components)
-    assert len(records) == expected_count
-
     first_component = next(iter(components))
     first_metric, first_col = next(iter(components[first_component].items()))
-    matching = [r for r in records if r["component"] == first_component and r["timestamp"] == first_bars[0]["timestamp"]]
-    assert len(matching) == 1
-    assert matching[0][first_metric] == first_bars[0][first_col]
+
+    # Aggregation for per_symbol pools every window for that symbol -- rebuild
+    # the same pool independently from the raw source, across every window
+    # sharing this symbol, not just `window`.
+    pooled_values = []
+    for (s, w), bars in bars_by_window.items():
+        if s != symbol or not bars:
+            continue
+        cols = br._parse_component_columns(list(bars[0].keys()))
+        if first_component not in cols or first_metric not in cols[first_component]:
+            continue
+        col = cols[first_component][first_metric]
+        pooled_values += [float(row[col]) for row in bars if row.get(col) not in (None, "")]
+
+    per_symbol = run_059_reports["component_attribution"]["slices"]["per_symbol"]
+    agg = per_symbol[symbol][first_component]
+    assert agg["n"] >= len(first_bars), "expected at least this window's rows pooled in"
+    assert agg[first_metric]["mean"] == pytest.approx(statistics.fmean(sorted(pooled_values)))
+    assert agg[first_metric]["median"] == pytest.approx(statistics.median(sorted(pooled_values)))
 
 
 def test_hindsight_lag_is_the_only_new_computation_and_matches_real_finding(run_059_sources, run_059_reports):
@@ -477,3 +507,161 @@ def test_component_attribution_per_regime_excludes_blank_trailing_row():
         f"blank-regime trailing row must not appear as a per_regime key: {sorted(per_regime)}"
     )
     assert "trending" in per_regime
+
+
+# ---------------------------------------------------------------------------
+# E-061 C2 S2d -- per-variant reports (G7 compaction budget guard, G8 shape,
+# B2/A3 §3.4: a variant's report reads ITS OWN variants/<vid>/ sources).
+# ---------------------------------------------------------------------------
+
+def _write_variant_protocol_result(run_dir: Path, variant_id: str, *, symbol: str, window: str,
+                                    run_id_suffix: str) -> None:
+    variant_artifacts = run_dir / "artifacts" / "variants" / variant_id
+    variant_artifacts.mkdir(parents=True, exist_ok=True)
+    protocol_result = {
+        "results": [
+            {"symbol": symbol, "window": window, "run_id": f"{variant_id}_{run_id_suffix}",
+             "core": {"net_return_pct": 1.0, "sharpe": 0.4}},
+        ],
+    }
+    with open(variant_artifacts / "protocol_result.yaml", "w", encoding="utf-8") as f:
+        yaml.safe_dump(protocol_result, f)
+
+
+def test_build_reports_variants_populates_every_variant_with_its_own_symbol(tmp_path):
+    """G8/D-003 ("experts see every variant"): variants={base, design_1}
+    builds a schema_version: 2 report whose `variants` map carries each
+    variant's own kind/symbol/status and its own slices (built from that
+    variant's own artifacts/variants/<vid>/ sources, not the run-level ones);
+    failed_variants/untested_variants are carried as their own top-level rows,
+    never as graded columns."""
+    run_dir = tmp_path / "run_variant_build"
+    _write_variant_protocol_result(run_dir, "base", symbol="BTCUSDT", window="2020-01",
+                                    run_id_suffix="w1")
+    _write_variant_protocol_result(run_dir, "design_1", symbol="BTCUSDT", window="2020-01",
+                                    run_id_suffix="w1")
+
+    reports = br.build_reports(
+        run_dir, write=False,
+        variants={
+            "base": {"kind": "base", "symbol": "BTCUSDT", "status": "graded"},
+            "design_1": {"kind": "design", "symbol": "BTCUSDT", "status": "graded"},
+        },
+        failed_variants={"crashed_1": "backtest_failed: injected"},
+        untested_variants={"asset_1": "skipped as an exact REPEAT"},
+    )
+
+    for category in br.REPORT_CATEGORIES:
+        report = reports[category]
+        assert report["schema_version"] == 2
+        assert set(report["variants"]) == {"base", "design_1"}
+        assert report["variants"]["base"]["kind"] == "base"
+        assert report["variants"]["base"]["symbol"] == "BTCUSDT"
+        assert report["variants"]["design_1"]["kind"] == "design"
+        assert "slices" in report["variants"]["base"]
+        assert "slices" not in report, "no separate base-only top-level slices (G8)"
+        assert report["failed_variants"] == {"crashed_1": "backtest_failed: injected"}
+        assert report["untested_variants"] == {"asset_1": "skipped as an exact REPEAT"}
+
+
+def test_build_reports_variants_falls_back_gracefully_when_symbol_absent(tmp_path):
+    """S2b (a sibling slice) is what adds kind/symbol to index.yaml -- until
+    it lands, a caller may pass variant entries without those keys at all;
+    this must never raise or invent a value (dispatch instruction: read
+    symbol/kind when present, fall back gracefully, never add the field)."""
+    run_dir = tmp_path / "run_variant_no_symbol"
+    _write_variant_protocol_result(run_dir, "base", symbol="BTCUSDT", window="2020-01",
+                                    run_id_suffix="w1")
+
+    reports = br.build_reports(run_dir, write=False, variants={"base": {"status": "graded"}})
+    assert reports["profitability"]["variants"]["base"]["kind"] is None
+    assert reports["profitability"]["variants"]["base"]["symbol"] is None
+
+
+def test_build_reports_variants_status_defaults_to_graded_not_validated(tmp_path):
+    """C2 S2d review fix: a reader must never read a variant's report-row `status`
+    as a pass/fail verdict -- that authority is the grid's alone. When the caller's
+    vinfo carries no `status` key at all, build_reports must default to "graded"
+    ("backtested and graded"), never the old "validated" label."""
+    run_dir = tmp_path / "run_variant_status_default"
+    _write_variant_protocol_result(run_dir, "base", symbol="BTCUSDT", window="2020-01",
+                                    run_id_suffix="w1")
+
+    reports = br.build_reports(run_dir, write=False, variants={"base": {"kind": "base"}})
+    assert reports["profitability"]["variants"]["base"]["status"] == "graded"
+
+
+def test_build_reports_variants_passes_through_coverage_when_given(tmp_path):
+    """E-061 C2 S2b's D-042 partial-coverage marker is a plain passthrough on a
+    variant's report row -- present only when the caller's vinfo carries one,
+    never computed or invented by build_reports itself."""
+    run_dir = tmp_path / "run_variant_coverage"
+    _write_variant_protocol_result(run_dir, "base", symbol="BTCUSDT", window="2020-01",
+                                    run_id_suffix="w1")
+    _write_variant_protocol_result(run_dir, "asset_1", symbol="ETHUSDT", window="2020-01",
+                                    run_id_suffix="w1")
+
+    reports = br.build_reports(
+        run_dir, write=False,
+        variants={
+            "base": {"kind": "base", "symbol": "BTCUSDT"},
+            "asset_1": {"kind": "asset", "symbol": "ETHUSDT",
+                        "coverage": "partial, windows run 2 of 4"},
+        },
+    )
+    assert "coverage" not in reports["profitability"]["variants"]["base"]
+    assert reports["profitability"]["variants"]["asset_1"]["coverage"] == \
+        "partial, windows run 2 of 4"
+
+
+def test_build_reports_variants_rejects_empty_dict(tmp_path):
+    run_dir = tmp_path / "run_variant_empty"
+    _write_variant_protocol_result(run_dir, "base", symbol="BTCUSDT", window="2020-01",
+                                    run_id_suffix="w1")
+    with pytest.raises(ValueError):
+        br.build_reports(run_dir, write=False, variants={})
+
+
+def test_build_reports_variant_reads_its_own_trade_and_bar_sources(tmp_path):
+    """The B2/A3 §3.4 finding this slice fixes: a variant's report must be
+    built from ITS OWN variants/<vid>/trade_diagnostics.json (and
+    variants/<vid>/results/<w>/bars.csv), not the run-level paths that are
+    never written under the variant loop."""
+    run_dir = tmp_path / "run_variant_sources"
+    _write_variant_protocol_result(run_dir, "base", symbol="BTCUSDT", window="2020-01",
+                                    run_id_suffix="w1")
+    variant_run_dir = run_dir / "variants" / "base"
+    variant_run_dir.mkdir(parents=True, exist_ok=True)
+    trades = [{"trade_id": "t1", "symbol": "BTCUSDT", "window": "2020-01",
+               "regime_at_entry": "trending", "realized_return": 1.5}]
+    with open(variant_run_dir / "trade_diagnostics.json", "w", encoding="utf-8") as f:
+        json.dump({"trades": trades}, f)
+
+    reports = br.build_reports(run_dir, write=False,
+                                variants={"base": {"kind": "base", "symbol": "BTCUSDT"}})
+    per_window = reports["trade_efficiency"]["variants"]["base"]["slices"]["per_window"]
+    assert per_window["2020-01"]["n"] == 1
+    assert per_window["2020-01"]["realized_return"]["mean"] == pytest.approx(1.5)
+
+
+def test_report_char_budget_guard_raises_on_oversized_report(tmp_path, monkeypatch):
+    """G7's fail-loud budget guard: a report whose serialized size exceeds
+    REPORT_CHAR_BUDGET must raise, never silently truncate or write."""
+    run_dir = tmp_path / "run_budget"
+    _write_variant_protocol_result(run_dir, "base", symbol="BTCUSDT", window="2020-01",
+                                    run_id_suffix="w1")
+    monkeypatch.setattr(br, "REPORT_CHAR_BUDGET", 10)
+    with pytest.raises(ValueError, match="REPORT_CHAR_BUDGET"):
+        br.build_reports(run_dir, write=False)
+
+
+def test_report_char_budget_guard_does_not_fire_on_run_059(run_059_sources):
+    """The tracked run_059 fixture (98 windows, both symbols, a real
+    trade_diagnostics.json) stays under REPORT_CHAR_BUDGET for every report,
+    single-run mode -- proves G7's compaction actually brought the two
+    previously-huge reports (trade_efficiency, component_attribution) back
+    under budget, not just that the guard exists."""
+    for name, builder in br.BUILDERS.items():
+        report = builder(run_059_sources)
+        size = len(yaml.safe_dump(report, sort_keys=False, allow_unicode=True))
+        assert size <= br.REPORT_CHAR_BUDGET, f"{name}.yaml is {size} chars, over budget"
