@@ -1758,13 +1758,15 @@ def resume_paused_entry(queue: dict) -> bool:
         # E-061 (third-round review fix 5): the failed launch is recorded on the
         # entry (launch_failed_run_id, launch_exception_detail), never in
         # run_ids, and its run dir is marked abandoned_launch. The entry was put
-        # back as it was before the launch, so --resume relaunches it: `ready`
-        # when it has no run yet (a fresh brief or a queued card), `in_progress`
-        # when it has a lineage (a refinement brief; its parent stays the last
-        # run). Fix the cause first -- the same failure pauses it again.
+        # back as it was before the launch, so --resume relaunches it with the
+        # status it had then (launch_prior_status, fourth-round review fix 4 --
+        # never a second in_progress lineage); an entry recorded before that
+        # field existed falls back to ready / in_progress by whether it has runs.
+        # Fix the cause first -- the same failure pauses it again.
         failed = entry.pop("launch_failed_run_id", None)
         entry.pop("launch_exception_detail", None)
-        entry["status"] = "in_progress" if entry.get("run_ids") else "ready"
+        prior = entry.pop("launch_prior_status", None)
+        entry["status"] = prior or ("in_progress" if entry.get("run_ids") else "ready")
         _save_queue(queue)
         _log(f"RESUME {entry['id']}: launch_exception -- relaunching as {entry['status']} "
              f"(the failed launch {failed or '(no run id allocated)'} stays "
@@ -1798,13 +1800,21 @@ def resume_paused_entry(queue: dict) -> bool:
         # complete the resolution. An exception from resume_pipeline itself is a
         # classified stage_exception pause, never a raw traceback with the entry
         # left in_progress.
-        resolution = orch.load_yaml(resolution_path) or {}
-        flag_values = {}
-        if isinstance(resolution, dict) and resolution.get("status") == "resolved_proceed":
-            try:
-                flag_values, refusal = _flag_preflight()
-                if refusal is not None:
-                    refusal = f"{FLAG_PREFLIGHT_HALT}: {refusal}"
+        # Fourth-round review fixes 7-8: the flag values are read for every
+        # resolution (a non-proceed resume still writes schedulability.yaml if
+        # it ends in a pause), and the resolution file itself is parsed inside
+        # the classified handling -- a malformed one is refused like any other
+        # pre-flight failure, the entry staying paused:data_block_hitl.
+        flag_values, flag_refusal = _flag_preflight()
+        try:
+            resolution = orch.load_yaml(resolution_path)
+            if not isinstance(resolution, dict):
+                raise ValueError(f"{resolution_path.name} is not a mapping "
+                                 f"(got {type(resolution).__name__})")
+            refusal = None
+            if resolution.get("status") == "resolved_proceed":
+                if flag_refusal is not None:
+                    refusal = f"{FLAG_PREFLIGHT_HALT}: {flag_refusal}"
                 else:
                     refusal, regeneration = _protocol_preflight(run_dir, run_id,
                                                                 ignore_pending=True)
@@ -1812,25 +1822,28 @@ def resume_paused_entry(queue: dict) -> bool:
                         refusal = f"{PROTOCOL_PREFLIGHT_HALT}: {refusal}"
                     elif regeneration is not None:
                         _regenerate_protocol(run_id, regeneration)
-            except Exception as exc:
-                traceback.print_exc()
-                detail = (f"the data_block_hitl --resume pre-flight raised "
-                          f"{type(exc).__name__}: {exc}")
-                try:
-                    orch.update_state(path=run_dir, last_error=detail)
-                    _append_halt_history(run_dir, orch.load_yaml(run_dir / "pipeline_state.yaml")
-                                         or {}, "data_block_hitl", detail)
-                except Exception as state_exc:
-                    detail += (f" [{run_id}: pipeline_state.yaml could not be updated "
-                               f"({type(state_exc).__name__}: {state_exc})]")
-                _log(f"HALT — data_block_hitl: {detail}. {entry['id']} / {run_id} stays "
-                     f"paused:data_block_hitl; fix it and retry --resume. See RUNBOOK.md §3.")
-                return False
-            if refusal:
-                print(f"--resume refused for {entry['id']} / {run_id} before resume_pipeline: "
-                      f"{refusal}. See RUNBOOK.md §3; fix it, then retry --resume.")
-                _log(f"RESUME REFUSED {entry['id']} / {run_id} (data_block_hitl): {refusal}")
-                return False
+        except Exception as exc:
+            traceback.print_exc()
+            detail = (f"the data_block_hitl --resume pre-flight raised "
+                      f"{type(exc).__name__}: {exc}")
+            try:
+                orch.update_state(path=run_dir, last_error=detail)
+                _append_halt_history(run_dir, orch.load_yaml(run_dir / "pipeline_state.yaml")
+                                     or {}, "data_block_hitl", detail)
+            except Exception as state_exc:
+                detail += (f" [{run_id}: pipeline_state.yaml could not be updated "
+                           f"({type(state_exc).__name__}: {state_exc})]")
+            print(f"--resume refused for {entry['id']} / {run_id}: {detail}. See RUNBOOK.md "
+                  f"§3; fix it, then retry --resume.")
+            _log(f"RESUME REFUSED {entry['id']} / {run_id} (data_block_hitl): {detail}")
+            _log(f"HALT — data_block_hitl: {detail}. {entry['id']} / {run_id} stays "
+                 f"paused:data_block_hitl; fix it and retry --resume. See RUNBOOK.md §3.")
+            return False
+        if refusal:
+            print(f"--resume refused for {entry['id']} / {run_id} before resume_pipeline: "
+                  f"{refusal}. See RUNBOOK.md §3; fix it, then retry --resume.")
+            _log(f"RESUME REFUSED {entry['id']} / {run_id} (data_block_hitl): {refusal}")
+            return False
         _clear_run_halt_flags(run_dir)
         entry["status"] = "in_progress"
         _save_queue(queue)
@@ -2762,6 +2775,16 @@ def _flag_preflight() -> tuple:
     def _note(text):
         if text not in problems:
             problems.append(text)
+    # Fourth-round review fix 6: a flag section that is not a mapping (e.g.
+    # `data_availability_gate: false`) would read as absent -- its default --
+    # through every reader's `(section or {})`. Refused, named.
+    for name in list(readers) + ["halt_policy"]:
+        section = orch_cfg.get(name)
+        if section is not None and not isinstance(section, dict):
+            key = "quarantine_enabled" if name == "halt_policy" else "enabled"
+            _note(f"orchestrator.{name} is not a mapping (got {type(section).__name__} "
+                  f"{section!r}) -- write `{name}: {{{key}: true}}` or `{{{key}: false}}` "
+                  f"in config/campaign_config.yaml")
     for name, reader in readers.items():
         try:
             values[name] = reader(cfg)
@@ -3073,6 +3096,7 @@ def _halt_launch_exception(queue: dict, entry: dict, before: dict, created: list
                       f"{type(mark_exc).__name__}: {mark_exc}]")
     entry["launch_failed_run_id"] = run_id
     entry["launch_exception_detail"] = detail
+    entry["launch_prior_status"] = before.get("status")  # restored by --resume
     if run_id is not None:
         detail = f"{detail} (launching {run_id}, now {ABANDONED_LAUNCH_STATUS})"
     return _halt_retired_routing(queue, entry, recorded, LAUNCH_EXCEPTION_HALT, detail,
@@ -3109,6 +3133,58 @@ def _record_run_loop_children(queue: dict, entry: dict, run_id: str, before_spli
             queue = _load_queue()
             entry = next(e for e in queue["queue"] if e.get("id") == entry["id"])
     return queue, entry, split_child_ids
+
+
+def _reapply_split_children(queue: dict, entry: dict, run_id: str, before_splits: list) -> None:
+    """Fourth-round review fix 3: after the bookkeeping failed and the queue was
+    re-read from disk, add each split sibling that is still missing (best
+    effort, idempotent -- an existing `<entry>__split_<child>` is left alone),
+    each addition logged. The caller's pause saves the queue."""
+    try:
+        new_events = _snapshot_hypothesis_splits()[len(before_splits):]
+    except Exception as e:
+        _log(f"SPLIT {entry['id']}: could not re-read hypothesis_splits to re-apply sibling "
+             f"entries ({type(e).__name__}: {e}); check campaign_state.yaml by hand.")
+        return
+    existing = {e.get("id") for e in queue.get("queue") or [] if isinstance(e, dict)}
+    for ev in new_events:
+        for child_id in ev.get("children", []):
+            if f"{entry['id']}__split_{child_id}" in existing:
+                continue
+            try:
+                _add_queue_entry_for_split_child(queue, entry, ev.get("parent_run", run_id),
+                                                 child_id)
+                existing.add(f"{entry['id']}__split_{child_id}")
+                _log(f"SPLIT {entry['id']}: sibling {child_id} re-applied after the failed "
+                     f"bookkeeping (its own queue entry).")
+            except Exception as e:
+                _log(f"SPLIT {entry['id']}: sibling {child_id} could NOT be re-applied "
+                     f"({type(e).__name__}: {e}); add its queue entry by hand.")
+
+
+def _halt_detached_entry(entry_id: str, run_id: str, run_dir: Path, detail: str,
+                         schedulability_enabled: bool) -> bool:
+    """Fourth-round review fix 3: the paused entry is gone from the re-read queue
+    file. The run is still marked (flags.stage_exception), but the queue file is
+    left exactly as re-read -- a detached entry is never saved back into it."""
+    record = run_id
+    try:
+        orch.update_state(path=run_dir, status="paused_for_human", last_error=detail,
+                          flags={STAGE_EXCEPTION_HALT: True})
+        _append_halt_history(run_dir, orch.load_yaml(run_dir / "pipeline_state.yaml") or {},
+                             STAGE_EXCEPTION_HALT, detail)
+    except Exception as state_exc:
+        record = None
+        detail += (f" [{run_id}: pipeline_state.yaml could not be updated "
+                   f"({type(state_exc).__name__}: {state_exc}); no halt_history]")
+    _log(f"HALT — {STAGE_EXCEPTION_HALT}: {detail}. QUEUE ENTRY {entry_id} IS NOT IN "
+         f"config/campaign_queue.yaml after re-reading it -- the queue file was left as "
+         f"re-read (nothing saved over it). Restore the entry by hand (run "
+         f"{record or run_id}). See RUNBOOK.md §3.")
+    _write_loop_health()
+    if schedulability_enabled:
+        _write_schedulability()
+    return False
 
 
 _LAUNCH_ACTIONS = ("refinement_brief", "fresh_launch", "queued_card")
@@ -3188,8 +3264,18 @@ def _run_after_preflight(queue: dict, entry: dict, run_id: str, before_splits: l
         except Exception as book_exc:
             detail += (f" [the split / queued-card bookkeeping after it also failed: "
                        f"{type(book_exc).__name__}: {book_exc}]")
+            # Fourth-round review fix 3: the queue file is the truth (the failed
+            # bookkeeping may have registered entries there). Re-read it, re-apply
+            # the split-sibling entries idempotently, and never save an entry that
+            # is no longer in it.
             queue = _load_queue()
-            entry = next((e for e in queue["queue"] if e.get("id") == entry["id"]), entry)
+            found = next((e for e in queue.get("queue") or []
+                          if isinstance(e, dict) and e.get("id") == entry["id"]), None)
+            if found is None:
+                return _halt_detached_entry(entry["id"], run_id, run_dir, detail,
+                                            schedulability_enabled)
+            entry = found
+            _reapply_split_children(queue, entry, run_id, before_splits)
         return _halt_run(queue, entry, run_id, run_dir, STAGE_EXCEPTION_HALT, detail,
                          schedulability_enabled)
     if refusal is not None:

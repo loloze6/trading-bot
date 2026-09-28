@@ -3044,41 +3044,52 @@ row per reason with its resolution.
    `tools/protocol_resolution.resolve_protocol_path` selects from
    `run_context.yaml` or a claimed `campaign_state.last_escalation` (no state
    write), must pass the D-3 guard (`assert_promotion_ratified`) -- previously
-   first checked at 5a, after 1a/1b/2. A generated protocol
-   (`machine_constraints.protocol`, `_generated_protocol_plan`) must be
-   generatable from `pre_registration.yaml` (refused otherwise, before anything
-   is touched); once data may have been spent on the run (a trial row, any
-   `protocol_result*`, or `protocol_execution` ever entered) any difference
-   from the generated file is refused and nothing is regenerated; before any
-   spend only a `promotion`-only difference is regenerated
+   first checked at 5a, after 1a/1b/2. For a generated protocol
+   (`machine_constraints.protocol`, `_generated_protocol_plan`) spend is
+   checked FIRST: once data may have been spent on the run (a trial row, any
+   `protocol_result*`, or `protocol_execution` ever entered) the expected
+   protocol is never rebuilt and nothing is regenerated -- only the existing
+   generated file gets the D-3 check (a missing one is refused; after
+   `protocol_execution` completed nothing is checked). Before any spend it
+   must be generatable from `pre_registration.yaml`
+   (`_expected_generated_protocol` raises exactly where generation raises;
+   refused otherwise, before anything is touched), and only a
+   `promotion`-only difference from the file is regenerated
    (`_regenerate_protocol`: temp file + `os.replace`, the fields logged) -- a
    `windows` / `symbols` / `timeframe` / `holdout` difference is refused.
    Refused: `paused:protocol_promotion_unratified`, the run `paused_for_human`
    with the reason in `last_error`.
 3. **An exception escaping `run_loop`** (or the step in 2): the split /
    queued-card bookkeeping runs (if it fails too, the queue is re-read from
-   disk before the pause is saved), then the run is `paused_for_human` with
+   disk, missing split siblings are re-added, and a paused entry no longer in
+   the file is never saved back), then the run is `paused_for_human` with
    `last_error: "<Type>: <message>"` and `flags.stage_exception: true`, the
    entry `paused:stage_exception`. **An exception while launching** (the
    brief, `setup_run`, the materialization and its lints, the brief context,
    the queued card): `paused:launch_exception`; the entry is restored to its
-   pre-launch state and records `launch_failed_run_id` (or null) and
-   `launch_exception_detail`; a run dir already created is marked
-   `status: abandoned_launch` (known to `reconcile_orphans`, never added to
-   `run_ids`); `--resume` relaunches the entry. `KeyboardInterrupt` /
-   `SystemExit` pass through. Exceptions after `run_loop` returned (the DONE
-   branch's decide-next) still propagate: that path is retryable by design.
-4. **Classification and `--resume`**: the three run flags
-   (`stage_exception`, `protocol_promotion_unratified`, `launch_exception`)
-   rank above the artifact-based reasons in `_classify_human_pause` (a fresh
-   halt wins over an old artifact), and a successful `--resume` clears them (a
-   stale one never masks a later holdout step). The `data_block_hitl` resume
-   reads `human_resolution.yaml` first: anything but `resolved_proceed` only
-   closes the run (no pre-flight). `resolved_proceed` runs 1 and 2 (and a
-   pre-spend regeneration) before `resume_pipeline`; a refusal -- or an
-   exception in them -- keeps the entry `paused:data_block_hitl` (the error in
+   pre-launch state and records `launch_failed_run_id` (or null),
+   `launch_exception_detail` and `launch_prior_status`; a run dir already
+   created is marked `status: abandoned_launch` (known to `reconcile_orphans`,
+   skipped by every `runs/run_*` knowledge scanner -- the exclusion digest, the
+   near-miss scoreboard, the replay repeat gate -- never added to `run_ids`);
+   `--resume` relaunches the entry with its pre-launch status.
+   `KeyboardInterrupt` / `SystemExit` pass through. Exceptions after
+   `run_loop` returned (the DONE branch's decide-next) still propagate: that
+   path is retryable by design.
+4. **Classification and un-pausing**: the three run flags (`stage_exception`,
+   `protocol_promotion_unratified`, `launch_exception`) rank above the
+   artifact-based reasons in `_classify_human_pause` (a fresh halt wins over an
+   old artifact), and every un-pause path (`--resume`, `--unpark`,
+   `resume_pipeline`) clears them (a stale one never masks a later holdout
+   step). The `data_block_hitl` resume reads `human_resolution.yaml` first,
+   inside the classified handling (a malformed file keeps the entry
+   `paused:data_block_hitl`): anything but `resolved_proceed` only closes the
+   run (no pre-flight). `resolved_proceed` runs 1 and 2 (and a pre-spend
+   regeneration) before `resume_pipeline`; a refusal -- or an exception in
+   them -- keeps the entry `paused:data_block_hitl` (the error in
    `last_error`, a HALT line), and an exception from `resume_pipeline` itself
-   is a `stage_exception` pause.
+   is a `stage_exception` pause (schedulability.yaml still written when its
+   block is on).
 
 With a valid flag set and a ratified (or no pre-registered) protocol, 1 and 2
 are read only and the step is unchanged (the one write is regenerating, before

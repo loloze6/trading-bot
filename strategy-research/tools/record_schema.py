@@ -238,6 +238,9 @@ QUEUE_ENTRY_SCHEMA = {
     # Removed again by the --resume that relaunches the entry.
     "launch_failed_run_id": TEXT,
     "launch_exception_detail": TEXT,
+    # Fourth-round review fix 4: the entry's status before the failed launch,
+    # restored by that --resume (never a second in_progress lineage).
+    "launch_prior_status": QUEUE_STATUS,
 }
 
 # Dated correction families. A correction gets its own dated field so the prior
