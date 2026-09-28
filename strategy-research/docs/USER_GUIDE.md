@@ -3015,8 +3015,10 @@ line naming the culprit, a `halt_history` record when a run exists, and
 restart re-crashes, and never after an LLM call. `docs/RUNBOOK.md` §3 has one
 row per reason with its resolution.
 
-1. **Flags, on every step, before anything launches** (`_flag_preflight_refusal`,
-   read only): every `orchestrator.<name>.enabled` and
+1. **Flags, on every step, before anything launches** (`_flag_preflight`, read
+   only; the config parsed once and checked in memory against `_FLAG_RULES`
+   with the readers' own check, `_strict_orchestrator_flag` -- a test drives
+   the rules and the readers over the same configs): every `orchestrator.<name>.enabled` and
    `halt_policy.quarantine_enabled` must be a real YAML boolean (a quoted
    `"false"` or a null is refused, every offending key named), and every flag
    dependency must hold -- each strict reader's own chain, plus the edges once
@@ -3034,23 +3036,37 @@ row per reason with its resolution.
    boolean or a missing key reads exactly as before. `register` reads
    `decide_next`'s own value only, so a misconfigured prerequisite is refused
    here, not by a crash at registration.
-2. **The pre-registered protocol, before `run_loop`** (`_protocol_preflight_refusal`,
-   read only): while the run still has its backtest ahead, a
-   `machine_constraints.protocol_ref` pin (or a `machine_constraints.protocol`'s
-   own `promotion` block) must pass the D-3 guard
-   (`tools/protocol_resolution.assert_promotion_ratified`) -- previously first
-   checked at 5a, after 1a/1b/2. Refused:
+2. **The protocol the run will execute, before `run_loop`**
+   (`_protocol_preflight_refusal`, read only): while the run still has its
+   backtest ahead, a `machine_constraints.protocol_ref` pin, a
+   `machine_constraints.protocol`'s own `promotion` block, or -- with neither
+   -- the protocol `tools/protocol_resolution.resolve_protocol_path` selects
+   from `run_context.yaml` or a claimed `campaign_state.last_escalation`
+   (no state write) must pass the D-3 guard (`assert_promotion_ratified`) --
+   previously first checked at 5a, after 1a/1b/2. Refused:
    `paused:protocol_promotion_unratified`, the run `paused_for_human` with the
-   protocol file named in `last_error`.
-3. **An exception escaping `run_loop`** (or the check in 2): the run
-   `paused_for_human` with `last_error: "<Type>: <message>"` and
-   `flags.stage_exception: true`, the entry `paused:stage_exception`.
+   protocol file named in `last_error`. A generated protocol file whose
+   promotion block no longer matches `pre_registration.yaml` is regenerated
+   before `run_loop` (`_refresh_generated_protocol`).
+3. **An exception escaping `run_loop`** (or the step in 2): the split /
+   queued-card bookkeeping runs, then the run is `paused_for_human` with
+   `last_error: "<Type>: <message>"` and `flags.stage_exception: true`, the
+   entry `paused:stage_exception`. **An exception while launching** (setup_run,
+   the brief materialization and its lints, the brief context, the queued
+   card): `paused:launch_exception`, the run dir already created recorded on
+   the entry and paused (no orphan, no new run id on restart).
    `KeyboardInterrupt`/`SystemExit` pass through. Exceptions after `run_loop`
    returned (the DONE branch's decide-next) still propagate: that path is
    retryable by design.
+4. **`--resume`**: a successful resume clears `flags.stage_exception` /
+   `protocol_promotion_unratified` / `launch_exception`, and those flags rank
+   below every other reason in `_classify_human_pause`. The `data_block_hitl`
+   resume (`resume_pipeline`, straight into `run_loop`) runs 1 and 2 first and
+   classifies an exception as in 3.
 
 With a valid flag set and a ratified (or no pre-registered) protocol, 1 and 2
-are read only and the step is unchanged.
+are read only and the step is unchanged (the one write is regenerating a
+generated protocol file that no longer matches its pre-registration).
 
 ### `tools/fragment_patterns.py` — Ideation-Only Fragment Diagnostics
 

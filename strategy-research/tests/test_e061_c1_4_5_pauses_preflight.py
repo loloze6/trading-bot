@@ -311,8 +311,8 @@ def test_flag_refusal_pauses_a_fresh_entry_before_setup_run(monkeypatch, run_loo
     assert camp.process_once() is False
     assert _entries()[0]["status"] == "paused:flag_misconfiguration"
     assert not (_root() / "runs").exists() or not list((_root() / "runs").iterdir())
-    assert "HALT — flag_misconfiguration: not a real boolean: " \
-           "orchestrator.grid_evaluation.enabled='false'" in _log_text()
+    assert "HALT — flag_misconfiguration: orchestrator.grid_evaluation.enabled='false' is not " \
+           "a real boolean" in _log_text()
     assert run_loop_calls == []
 
     # --resume re-checks the config: refused while it is still wrong ...
@@ -423,3 +423,308 @@ def test_register_reads_decide_next_itself_not_its_prerequisites(monkeypatch):
     _write_config({"decide_next": {"enabled": "true"}})
     with pytest.raises(ValueError, match="not a real boolean"):
         camp._register_from_cli(Path("b.md"), 1, "n")
+
+
+# ===========================================================================
+# Code-review fixes (the second commit)
+# ===========================================================================
+
+# ---- fix 1: stale halt flags ----------------------------------------------
+
+def test_resume_clears_the_stale_run_halt_flags():
+    run_dir = _scaffold(status="active",
+                        flags={"stage_exception": True, "protocol_promotion_unratified": True,
+                               "launch_exception": True, "profit_bars_reached": True})
+    _queue([_entry(status="paused:stage_exception")])
+    assert camp.resume_paused_entry(camp._load_queue()) is True
+    flags = _state()["flags"]
+    assert flags["stage_exception"] is False
+    assert flags["protocol_promotion_unratified"] is False
+    assert flags["launch_exception"] is False
+    assert flags["profit_bars_reached"] is True  # not ours: untouched
+    assert run_dir.exists()
+
+
+@pytest.mark.parametrize("flag", ["stage_exception", "protocol_promotion_unratified",
+                                  "launch_exception"])
+def test_a_stale_halt_flag_never_masks_the_holdout_step(flag):
+    """The reviewer's scenario: the operator reset only `status` after a
+    stage_exception (flag left true), the run later reaches the promote path."""
+    run_dir = _scaffold(status="paused_for_human", flags={flag: True})
+    (run_dir / "artifacts" / "promotion_audit.yaml").write_text("x: 1\n", encoding="utf-8")
+    assert camp._classify_human_pause(run_dir, _state()) == "provisional_promote_awaiting_holdout"
+    (run_dir / "artifacts" / "holdout_result.yaml").write_text("status: pending\n",
+                                                              encoding="utf-8")
+    assert camp._classify_human_pause(run_dir, _state()) == \
+        "provisional_promote_holdout_inconclusive"
+    # and alone, it still reads as itself
+    other = _scaffold("run_002", status="paused_for_human", flags={flag: True})
+    assert camp._classify_human_pause(other, _state("run_002")) == flag
+
+
+# ---- fix 2: bookkeeping after an exception ---------------------------------
+
+def test_a_split_recorded_before_the_exception_still_gets_its_queue_entry(monkeypatch):
+    _scaffold()
+    _scaffold("run_002")  # the sibling run_loop scaffolded before raising
+    _queue([_entry()])
+
+    def _split_then_raise(run_id):
+        state = rpr.load_campaign_state()
+        state["hypothesis_splits"] = [{"parent_run": RUN, "children": ["run_002"]}]
+        rpr._save_campaign_state(state)
+        raise RuntimeError("after the split")
+    monkeypatch.setattr(rpr, "run_loop", _split_then_raise)
+    assert camp.process_once() is False
+    entries = {e["id"]: e for e in _entries()}
+    assert entries[ENTRY]["status"] == "paused:stage_exception"
+    sibling = entries[f"{ENTRY}__split_run_002"]
+    assert sibling["run_ids"] == ["run_002"] and sibling["status"] == "in_progress"
+    assert "SPLIT" in _log_text()
+
+
+# ---- fix 3: run_context / claimed-escalation protocols ---------------------
+
+def test_a_claimed_escalation_protocol_is_refused_before_run_loop(run_loop_calls):
+    """Flag-off legacy: an escalation child resolves its protocol from
+    campaign_state.last_escalation -- refused before 1a, with no state write by
+    the resolver (on_stale_escalation=None)."""
+    proto = _protocol("escalation_generic.json", dict(rpr._GENERIC_PROMOTION))
+    state = rpr.load_campaign_state()
+    state["last_escalation"] = {"protocol_path": str(proto), "claimed_by_run": RUN}
+    rpr._save_campaign_state(state)
+    _scaffold()  # no machine_constraints, no run_context: the B10 fallback
+    _queue([_entry()])
+    assert camp.process_once() is False
+    assert run_loop_calls == []
+    assert _entries()[0]["status"] == "paused:protocol_promotion_unratified"
+    st = _state()
+    assert "campaign_state.last_escalation" in st["last_error"]
+    assert "escalation_generic.json" in st["last_error"] and "ratified_by" in st["last_error"]
+    assert "stale_escalation_unclaimed" not in (st.get("flags") or {})
+
+
+def test_an_unclaimed_escalation_is_left_to_run_loop(run_loop_calls):
+    proto = _protocol("escalation_generic.json", dict(rpr._GENERIC_PROMOTION))
+    state = rpr.load_campaign_state()
+    state["last_escalation"] = {"protocol_path": str(proto), "claimed_by_run": "run_999"}
+    rpr._save_campaign_state(state)
+    run_dir = _scaffold()
+    assert camp._protocol_preflight_refusal(run_dir, RUN) is None
+
+
+def test_a_run_context_protocol_is_refused_before_run_loop():
+    _protocol("forced_generic.json", dict(rpr._GENERIC_PROMOTION))
+    run_dir = _scaffold()
+    (run_dir / "artifacts" / "run_context.yaml").write_text(
+        yaml.safe_dump({"run_type": "forced_diagnostic", "protocol": "forced_generic.json"}),
+        encoding="utf-8")
+    refusal = camp._protocol_preflight_refusal(run_dir, RUN)
+    assert refusal and "run_context.yaml" in refusal and "forced_generic.json" in refusal
+
+
+# ---- fix 4: the data_block_hitl --resume path ------------------------------
+
+def _stage_hitl():
+    run_dir = _scaffold(status="paused_for_human", pending_stage="human_pause")
+    (run_dir / "artifacts" / "human_resolution.yaml").write_text(
+        "status: resolved_proceed\n", encoding="utf-8")
+    _queue([_entry(status="paused:data_block_hitl")])
+    return run_dir
+
+
+def test_hitl_resume_refuses_a_flag_misconfiguration_before_resume_pipeline(monkeypatch):
+    _stage_hitl()
+    monkeypatch.setattr(rpr, "resume_pipeline", lambda run_id: pytest.fail("resumed"))
+    _write_config({"grid_evaluation": {"enabled": "false"}})
+    assert camp.resume_paused_entry(camp._load_queue()) is False
+    assert _entries()[0]["status"] == "paused:data_block_hitl"
+    assert "RESUME REFUSED" in _log_text() and "grid_evaluation" in _log_text()
+
+
+def test_hitl_resume_refuses_an_unratified_protocol_before_resume_pipeline(monkeypatch):
+    run_dir = _stage_hitl()
+    _protocol("generic.json", dict(rpr._GENERIC_PROMOTION))
+    (run_dir / "artifacts" / "pre_registration.yaml").write_text(
+        yaml.safe_dump({"machine_constraints": {"protocol_ref": "protocols/generic.json"}}),
+        encoding="utf-8")
+    monkeypatch.setattr(rpr, "resume_pipeline", lambda run_id: pytest.fail("resumed"))
+    assert camp.resume_paused_entry(camp._load_queue()) is False
+    assert _entries()[0]["status"] == "paused:data_block_hitl"
+    assert "protocol_promotion_unratified" in _log_text()
+
+
+def test_hitl_resume_exception_is_a_classified_pause(monkeypatch):
+    _stage_hitl()
+
+    def _boom(run_id):
+        raise RuntimeError("resume_pipeline blew up")
+    monkeypatch.setattr(rpr, "resume_pipeline", _boom)
+    assert camp.resume_paused_entry(camp._load_queue()) is False
+    assert _entries()[0]["status"] == "paused:stage_exception"
+    st = _state()
+    assert st["flags"]["stage_exception"] is True
+    assert st["last_error"] == "RuntimeError: resume_pipeline blew up"
+    assert "HALT — stage_exception" in _log_text()
+
+
+# ---- fix 5: a stale generated protocol is regenerated ----------------------
+
+def _generated_constraints(promotion):
+    return {"protocol": {"symbols": ["BTCUSDT"], "timeframe": "1h", "start": "2022-01-01",
+                         "end": "2022-03-01", "promotion": promotion}}
+
+
+def test_fixing_pre_registration_regenerates_the_generated_protocol(monkeypatch):
+    generic = dict(rpr._GENERIC_PROMOTION)
+    run_dir = _scaffold(constraints=_generated_constraints(generic))
+    # the file generated earlier from the generic block, before the fix
+    gen_path = _protocol(f"{RUN}_generated.json", generic)
+    _queue([_entry()])
+    calls = []
+    monkeypatch.setattr(rpr, "run_loop", lambda run_id: calls.append(run_id))
+    assert camp.process_once() is False
+    assert calls == []
+    assert _entries()[0]["status"] == "paused:protocol_promotion_unratified"
+
+    # the RUNBOOK fix: real thresholds in pre_registration, reset, --resume
+    (run_dir / "artifacts" / "pre_registration.yaml").write_text(
+        yaml.safe_dump({"machine_constraints": _generated_constraints(_NON_GENERIC)}),
+        encoding="utf-8")
+    rpr.update_state(path=run_dir, status="active", last_error=None)
+    assert camp.resume_paused_entry(camp._load_queue()) is True
+    assert _state()["flags"]["protocol_promotion_unratified"] is False
+
+    class _Reached(BaseException):
+        pass
+
+    def _reach(run_id):
+        raise _Reached(run_id)
+    monkeypatch.setattr(rpr, "run_loop", _reach)
+    with pytest.raises(_Reached):
+        camp.process_once()
+    assert json.loads(gen_path.read_text(encoding="utf-8"))["promotion"] == _NON_GENERIC
+    assert "regenerated" in _log_text()
+
+
+# ---- fix 6: an exception while launching -----------------------------------
+
+def _write_brief(name="brief_c14.md") -> str:
+    front = {"strategy_domain": "crypto_directional", "market_universe": "BTCUSDT",
+             "timeframe": "1h", "research_goal": "wiring", "venue": "binance",
+             "product": "perp",
+             "machine_constraints": {"protocol_ref": "protocols/ok.json"}}
+    (_root() / "briefs").mkdir(exist_ok=True)
+    (_root() / "briefs" / name).write_text(
+        "---\n" + yaml.safe_dump(front, sort_keys=False) + "---\n\nbrief\n", encoding="utf-8")
+    return f"briefs/{name}"
+
+
+def test_a_b11_lint_failure_at_launch_is_a_classified_pause_without_orphans(monkeypatch,
+                                                                         run_loop_calls):
+    entry = _entry(status="ready", run_ids=())
+    entry["brief_path"] = _write_brief()
+    _queue([entry])
+    monkeypatch.setattr(rpr, "_lint_pass_rule_total_mapping",
+                        lambda pre_registration: (["injected B11 violation"], []))
+    assert camp.process_once() is False
+    runs = sorted(p.name for p in (_root() / "runs").iterdir())
+    assert runs == [RUN]
+    e = _entries()[0]
+    assert e["status"] == "paused:launch_exception" and e["run_ids"] == [RUN]
+    st = _state()
+    assert st["status"] == "paused_for_human" and st["flags"]["launch_exception"] is True
+    assert "B11" in st["last_error"] and st["halt_history"][-1]["reason"] == "launch_exception"
+    assert "HALT — launch_exception: ValueError" in _log_text()
+    assert run_loop_calls == []
+
+    # a restart allocates nothing and runs nothing; --resume refuses in place
+    assert camp.process_once() is False
+    assert sorted(p.name for p in (_root() / "runs").iterdir()) == [RUN]
+    assert camp.resume_paused_entry(camp._load_queue()) is False
+
+
+# ---- fix 7: the protocol refusal's state write is guarded ------------------
+
+def test_protocol_refusal_with_an_unwritable_state_still_halts(run_loop_calls):
+    _protocol("generic.json", dict(rpr._GENERIC_PROMOTION))
+    run_dir = _scaffold(constraints={"protocol_ref": "protocols/generic.json"})
+    (run_dir / "pipeline_state.yaml").write_text("", encoding="utf-8")
+    _queue([_entry()])
+    assert camp.process_once() is False
+    assert _entries()[0]["status"] == "paused:protocol_promotion_unratified"
+    log = _log_text()
+    assert "HALT — protocol_promotion_unratified" in log
+    assert f"{RUN}: pipeline_state.yaml could not be updated" in log
+    assert run_loop_calls == []
+
+
+# ---- fix 8: one strict check ----------------------------------------------
+
+def test_the_duplicate_strict_helper_is_gone():
+    assert not hasattr(rpr, "_strict_flag_value")
+    _write_config({"grid_evaluation": {"enabled": "false"}})
+    with pytest.raises(ValueError) as a:
+        rpr._grid_evaluation_enabled()
+    with pytest.raises(ValueError) as b:
+        rpr._strict_orchestrator_flag("grid_evaluation")
+    assert str(a.value) == str(b.value)
+
+
+# ---- fix 9: in-memory rules == readers ------------------------------------
+
+def test_the_rule_table_and_the_readers_name_the_same_flags():
+    assert [n for n, _, _ in camp._FLAG_RULES] == list(camp._flag_readers())
+
+
+def _readers_verdict():
+    values = {}
+    for name, reader in camp._flag_readers().items():
+        try:
+            values[name] = reader()
+        except (ValueError, AttributeError):
+            return None
+    return values
+
+
+def test_in_memory_rules_agree_with_the_readers_on_every_flag():
+    import random
+    names = [n for n, _, _ in camp._FLAG_RULES]
+    choices = ("absent", True, False, "false", None)
+    rng = random.Random(1561)
+    configs = [{}]
+    for name in names:  # each flag alone, every value
+        for v in choices[1:]:
+            configs.append({name: v})
+    for name in names:  # each flag on with everything else on
+        configs.append({n: (n != name) for n in names})
+    for _ in range(400):  # random mixes, weighted to real booleans
+        configs.append({n: rng.choice((True, True, False, False, "absent", "false", None))
+                        for n in names})
+    for assignment in configs:
+        orch_cfg = {n: {"enabled": v} for n, v in assignment.items() if v != "absent"}
+        _write_config(orch_cfg)
+        by_readers = _readers_verdict()
+        values, refusal = camp._flag_rules_check({"orchestrator": orch_cfg})
+        assert (refusal is None) == (by_readers is not None), (assignment, refusal)
+        if by_readers is not None:
+            assert {n: values[n] for n in names} == by_readers, assignment
+
+
+# ---- fix 10: schedulability still written ---------------------------------
+
+def test_schedulability_is_written_while_another_flag_is_refused(run_loop_calls):
+    _queue([_entry(status="ready", run_ids=())])
+    _write_config({"schedulability_block": {"enabled": True},
+                   "grid_evaluation": {"enabled": "false"}})
+    path = _root() / "campaign_record" / "schedulability.yaml"
+    assert not path.exists()
+    assert camp.process_once() is False
+    assert path.exists()
+    assert _entries()[0]["status"] == "paused:flag_misconfiguration"
+    # its own value invalid: not written
+    path.unlink()
+    _queue([_entry(status="ready", run_ids=())])
+    _write_config({"schedulability_block": {"enabled": "true"}})
+    assert camp.process_once() is False
+    assert not path.exists()
