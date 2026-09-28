@@ -172,10 +172,14 @@ def _card(run_dir, criteria, hid="FOO__profitability-run_061-1"):
 
 
 @pytest.mark.parametrize("criterion,match", [
-    ({"id": "realized_edge_to_cost_ratio", "threshold": 0.01}, "does not let a card set"),
-    ({"id": "realized_edge_to_cost_ratio", "comparator": ">="}, "does not let a card set"),
-    ({"id": "sign_consistent_by_era", "null_handling": "fails_threshold"}, "does not let a card set"),
-    ({"id": "sign_consistent_by_era", "notes": "x"}, "does not let a card set"),
+    # C5.1: message text now comes from the shared
+    # verdict_criteria_evaluator.menu_criterion_overrides_violations (also
+    # used by run_campaign.py's registration-time lint) -- "does not let a
+    # criterion override", not the old card-only "does not let a card set".
+    ({"id": "realized_edge_to_cost_ratio", "threshold": 0.01}, "does not let a criterion override"),
+    ({"id": "realized_edge_to_cost_ratio", "comparator": ">="}, "does not let a criterion override"),
+    ({"id": "sign_consistent_by_era", "null_handling": "fails_threshold"}, "does not let a criterion override"),
+    ({"id": "sign_consistent_by_era", "notes": "x"}, "does not let a criterion override"),
 ])
 def test_card_overrides_and_stray_keys_are_refused(campaign_root, criterion, match):
     run_dir = _candidate_run(campaign_root)

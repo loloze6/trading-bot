@@ -6111,8 +6111,11 @@ def _pass_rule_from_card(card: dict, menu: dict, where: str) -> dict:
     """{criteria: [...]} from a card's id-only criteria, resolved with the
     grid's own merge (verdict_criteria_evaluator.resolve_criteria_against_menu).
     A card item may carry only `id` plus the fields its menu entry lists under
-    `card_overridable`; anything else (a stray key, or an override of metric /
-    comparator / threshold / null_handling the menu does not allow) raises."""
+    `card_overridable`; anything else (a stray key, an override of metric /
+    comparator / threshold / null_handling the menu does not allow, a
+    threshold override on a scale_free: false entry, or a floor override that
+    lowers/drops the menu's sample floor -- verdict_criteria_evaluator.
+    menu_criterion_overrides_violations, C5.1) raises."""
     _tools = str(Path(__file__).parent.parent / "tools")
     if _tools not in sys.path:
         sys.path.insert(0, _tools)
@@ -6131,11 +6134,10 @@ def _pass_rule_from_card(card: dict, menu: dict, where: str) -> dict:
             raise ValueError(f"{where}: criteria[{i}] id={cid!r} is not a live entry of "
                              f"config/criterion_menu.yaml ({sorted(menu_by_id)}) -- 1a picks from the "
                              f"menu only.")
-        allowed = {"id"} | set(menu_by_id[cid].get("card_overridable") or [])
-        refused = sorted(set(c) - allowed)
-        if refused:
-            raise ValueError(f"{where}: criteria[{i}] ({cid}) carries {refused}, which the menu does "
-                             f"not let a card set (allowed: {sorted(allowed)}). Refusing before 1b.")
+        violations = _vce.menu_criterion_overrides_violations(c, menu_by_id[cid])
+        if violations:
+            raise ValueError(f"{where}: criteria[{i}] ({cid}) " + "; ".join(violations)
+                             + ". Refusing before 1b.")
     resolved = _vce.resolve_criteria_against_menu(raw, menu)
     for crit in resolved:
         for key in _MENU_META_KEYS:
@@ -8886,11 +8888,23 @@ def _lint_pass_rule_total_mapping(pre_registration: dict) -> tuple:
                 violations.append(f"branch {branch!r}: lineage_routing={lr!r} is missing or "
                                    f"not one of {_VALID_LINEAGE_ROUTINGS} (no discretion opt-in present)")
 
+    # C5.1 (D-013): a menu-referencing criterion (carries `id`, no
+    # `metric_basis`) is checked by verdict_criteria_evaluator.
+    # lint_menu_shaped_pass_rule instead -- this loop's checks assume the
+    # legacy K2/C7 schema (metric_basis mandatory, comparator always
+    # present), which several menu reducers (e.g. sign_consistent_by_era)
+    # never carry, and would otherwise false-positive on them.
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import verdict_criteria_evaluator as _vce
     # C7/C8: every criterion states its metric, comparator, and metric_basis
     # (bar_level/episode_level -- never fragment_level, per the standing
     # metric-basis rule); a per-symbol (sparse-eligible) criterion also needs
     # a null_handling policy or the only possible runtime outcome is SPEC_ERROR.
     for criterion in criteria:
+        if _vce.is_menu_referencing_criterion(criterion):
+            continue
         cid = criterion.get("id", "<unnamed>")
         if not criterion.get("metric"):
             violations.append(f"criterion {cid!r}: missing 'metric'")
