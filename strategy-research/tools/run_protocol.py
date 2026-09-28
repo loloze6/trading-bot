@@ -1345,17 +1345,11 @@ def _assemble_pooled_symbol_records(rows: list, runs_root) -> tuple:
 
 
 def _load_campaign_data_policy() -> dict:
-    """Local copy (E-039 step 5, 2026-09-12): prescreen_signal.py's own
-    identically-named function is being removed along with that file. This
-    is a small, strategy-research-specific config reader (not general
-    statistics), so it lives here directly rather than in
-    trading-bot/performance/signal_statistics.py."""
-    import yaml
-    p = Path(_SR) / "config" / "campaign_data_policy.yaml"
-    if not p.exists():
-        return {}
-    with open(p, encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+    """Thin delegator (E-061 C1.6/C1.7 second-round code-review fix, dedup)
+    to the ONE shared implementation, tools/protocol_resolution.py::
+    load_campaign_data_policy -- see that function's own docstring. Kept as
+    a module-level name here so this module's own callers are unchanged."""
+    return _protocol_resolution.load_campaign_data_policy(Path(_SR) / "config" / "campaign_data_policy.yaml")
 
 
 def _era_id_for_timestamp(ts, eras: list) -> str:

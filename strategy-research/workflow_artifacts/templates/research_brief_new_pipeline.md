@@ -1,9 +1,21 @@
 ---
 # ============================================================================
-# research_brief_new_pipeline.yaml -- first-run brief template for the "new
+# research_brief_new_pipeline.md -- first-run brief template for the "new
 # pipeline" (E-061 C1.7; config_direct_authoring / strategy_config_authoring,
 # the config-direct path this delivery plan brought up -- see
 # engineering/review_2026-09-27/A3_all_flags_on.md §1's target v26 flag set).
+#
+# RELATIONSHIP TO workflow_artifacts/templates/research_brief.yaml (moved
+# here, second-round code review): that file is the general-shape template
+# for the LEGACY (validation-gate) pipeline's research_brief.yaml artifact --
+# it has no `machine_constraints`/`criteria_from` and is filled in by the
+# `hypothesis_generation` stage, not copied verbatim by an operator. THIS
+# file is a frontmatter .md, the format `register_hypothesis`'s CLI actually
+# reads (run_campaign.py::_parse_brief_frontmatter: '---'-delimited YAML,
+# then Markdown prose) -- it lives beside research_brief.yaml because both
+# are "the shape of a research_brief", not because they're interchangeable;
+# an operator starting a NEW pipeline brief copies THIS one, never
+# research_brief.yaml directly.
 #
 # HOW TO USE
 # ----------
@@ -14,17 +26,31 @@
 #    "Start a campaign on the new pipeline").
 # 2. Replace every "<FILL IN...>" placeholder below with your idea.
 #    Registration REFUSES a copy that still carries the placeholder sentinel
-#    in any required field (run_campaign.py::_parse_brief_frontmatter, code
-#    review fix) -- the raw template cannot be registered by accident. Every
-#    field run_campaign.py::REFRAME_BRIEF_REQUIRED_KEYS requires
+#    ANYWHERE in the frontmatter -- not just the top-level fields named
+#    below, also inside machine_constraints (run_campaign.py::
+#    _parse_brief_frontmatter, code review fix; the raw template cannot be
+#    registered by accident, whatever field the placeholder is left in).
+#    Every field run_campaign.py::REFRAME_BRIEF_REQUIRED_KEYS requires
 #    (strategy_domain, market_universe, timeframe, research_goal, venue,
 #    product) must also be non-placeholder and non-empty.
 # 3. If your idea needs a DIFFERENT universe or bar size than the default
 #    below (BTCUSDT+ETHUSDT, 1h), change market_universe/timeframe AND
-#    machine_constraints.protocol.symbols/timeframe TOGETHER -- registration
-#    cross-checks the two and refuses a mismatch (same review fix; see the
-#    comment on machine_constraints below).
-# 4. Register it: `python workflow/run_campaign.py register --brief
+#    machine_constraints.protocol.symbols/timeframe TOGETHER. Under
+#    orchestrator.config_direct_authoring.enabled, registration cross-checks
+#    the two (by bar-size SECONDS and by base-asset-normalized symbol -- BTC
+#    == BTCUSDT -- so "60m"/"1h" and "BTC, ETH"/"BTCUSDT, ETHUSDT" both agree)
+#    and refuses a real mismatch; `venue` has no protocol-side counterpart
+#    (no protocol file carries a venue/exchange field) and is not
+#    cross-checked. This check, and the promotion-required check in step 4,
+#    run ONLY at registration, and ONLY under config_direct_authoring -- a
+#    launch/resume re-parsing an already-registered brief does not re-run
+#    them (same review fix).
+# 4. Fill in `machine_constraints.protocol.promotion` with YOUR pre-registered
+#    thresholds (see the long comment below) -- under config_direct_authoring,
+#    registration now REFUSES a generate-path brief with no promotion block
+#    at all (code review fix; previously this was caught only at launch, by
+#    run_phase1_research.py's own G7 gate).
+# 5. Register it: `python workflow/run_campaign.py register --brief
 #    briefs/<your_brief_name>.md --priority <n> --notes "<n>"` (RUNBOOK.md
 #    §1a-bis has the pre-launch checks to run before spending any LLM
 #    budget). `brief_status` is NOT set here -- see the note below.
@@ -51,11 +77,15 @@
 #   * diagnostic_btceth_4h.json's 11 windows sit ENTIRELY inside 2024
 #     (one era: era_2024_burned) -- sign_consistent_by_era would pass
 #     trivially, one era can never demonstrate era-stability;
-#   * its own `holdout` block is {start: 2025-01-01, end: null}. run_protocol.py
-#     --holdout resolves a null end as "today" (a separately reported,
-#     unfixed finding -- see FORK/RUNBOOK notes), so that block SPANS the
-#     sealed window (campaign_data_policy.yaml's own holdout_range) if anyone
-#     ever runs --holdout against it -- the opposite of "safe";
+#   * its own `holdout` block is {start: 2025-01-01, end: null}.
+#     tools/run_protocol.py's --holdout mode (~L1988-1991) reads the range
+#     from the PROTOCOL's own holdout block, not campaign_data_policy.yaml's
+#     holdout_range, and resolves a null end as "today" -- so that block
+#     SPANS the sealed window if anyone ever runs --holdout against it, the
+#     opposite of "safe" (filed as Linear CUL-339, not yet fixed -- unrelated
+#     to whether this template's OWN generated protocol is safe, since it
+#     omits `holdout` entirely and so inherits the policy's real range; see
+#     below);
 #   * it passes tools/protocol_resolution.py's D-3 check
 #     (assert_promotion_ratified) only because min_trade_count_gte was
 #     lowered from the abolished generic default's 20 to 10 -- median_sharpe_gt
@@ -67,7 +97,7 @@
 # consistent with campaign_data_policy.yaml's holdout_range or none; D-3
 # clean on a REAL registered threshold, not a technicality) found none that
 # cleanly qualifies on all five -- see the E-061 C1.6+C1.7 code-review commit
-# message for the full 13-row table. So this template GENERATES its own
+# messages for the full 13-row table. So this template GENERATES its own
 # protocol via machine_constraints.protocol (the OTHER, pre-existing
 # mechanism run_phase1_research.py::_ensure_protocol_from_constraints
 # provides -- see its own docstring, and K3/G7 in that file for how a
@@ -76,29 +106,27 @@
 #   * symbols/timeframe: BTCUSDT + ETHUSDT at 1h -- both have full
 #     ohlcv/fear_greed coverage from 2018-02-01 and funding_rate from
 #     2019-09/11 (config/campaign_data_policy.yaml backward_extension);
-#   * start/end: 2018-02-01 .. 2025-12-31 -- generates ~95 monthly windows
+#   * start/end: 2018-02-01 .. 2025-12-31 -- generates 95 monthly windows
 #     (matching protocols/run_048_generated.json's own start/end, which used
-#     the identical range) genuinely spanning FOUR real eras with substantive
-#     coverage in each: era_2018_pre_funding (2018-02 to 2019-09, ~19 months),
-#     era_2019_2023_full_feed (2019-09 to 2023-12, ~52 months),
-#     era_2024_burned (all 11 months), era_2024_2025_walk_forward_extension
-#     (all 13 months) -- not a one-day boundary artifact;
+#     the identical range), measured (not estimated) against
+#     tools/protocol_resolution.py::era_id_for_timestamp on this checkout:
+#     20 windows in era_2018_pre_funding, 51 in era_2019_2023_full_feed,
+#     11 in era_2024_burned (its full 11 calendar months), 13 in
+#     era_2024_2025_walk_forward_extension (its full 13 calendar months) --
+#     genuinely spanning FOUR real eras with substantive per-era coverage,
+#     not a one-day boundary artifact;
 #   * holdout: deliberately OMITTED -- _ensure_protocol_from_constraints
 #     defaults it to campaign_data_policy.yaml's own holdout_range when
 #     absent, which is the one value that cannot silently drift out of sync
-#     with the policy;
-#   * promotion: deliberately OMITTED. `_require_pre_registered_promotion`
-#     (G7) REFUSES to generate a protocol with no promotion block rather than
-#     substituting the abolished generic default -- this is the fail-loud
-#     behaviour the D-3 gate exists to guarantee, and inventing numbers here
-#     on your behalf would violate CLAUDE.fork.md's "no thresholds after
-#     seeing data -- ever" rule just as much as picking them after a backtest
-#     would. Add your own real, pre-registered
-#     {median_sharpe_gt, max_abs_drawdown_pct_lt, min_trade_count_gte,
-#     kill_median_sharpe_lt} under machine_constraints.protocol.promotion
-#     BEFORE your first real launch -- until you do, run_phase1_research.py
-#     raises a clear UngatedProtocolError naming exactly this, rather than
-#     silently running against invented thresholds.
+#     with the policy (and sidesteps CUL-339 above entirely, since there is
+#     no protocol-local holdout block for --holdout to misread);
+#   * promotion: NOT pre-filled -- see step 4 above and the registration-time
+#     refusal it now triggers (code review fix) if left commented out.
+#     `_require_pre_registered_promotion` (G7) ALSO refuses to generate a
+#     protocol with no promotion block at launch, rather than substituting
+#     the abolished generic default -- inventing numbers here on your behalf
+#     would violate CLAUDE.fork.md's "no thresholds after seeing data --
+#     ever" rule just as much as picking them after a backtest would.
 #
 # WHY brief_status IS NOT SET HERE (code-review correction)
 # -------------------------------------------------------------
@@ -139,7 +167,8 @@ machine_constraints:
     end: "2025-12-31"
     # holdout: intentionally omitted -- defaults to campaign_data_policy.yaml's
     #   own holdout_range (see the long comment above).
-    # promotion: REQUIRED before this brief can launch -- see the long comment
+    # promotion: REQUIRED before this brief can register under
+    #   config_direct_authoring (code review fix) -- see the long comment
     #   above. Uncomment and fill in with YOUR pre-registered thresholds:
     # promotion:
     #   median_sharpe_gt: <FILL IN>

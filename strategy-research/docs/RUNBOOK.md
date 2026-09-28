@@ -338,8 +338,10 @@ as it ships is explicitly marked DRAFT — every number is a placeholder
 invented to exercise the loader, `ratified_by`/`ratified_at` are both `null`,
 and the loader (`run_phase1_research._load_profitability_bars`) does **not**
 check ratification status itself; a PASS against unratified placeholder bars
-still raises the real `profit_bars_reached` holdout stop (RUNBOOK §0b point 4
-and delivery_plan_v26_continuation.md C5.7/C3 both name this gap). **E-062
+still raises the real `profit_bars_reached` holdout stop (§3's own
+`profit_bars_reached` row says so directly — "Do not treat
+`config/profitability_bars.yaml`'s shipped thresholds as ratified" — and
+delivery_plan_v26_continuation.md C5.7/C3 both name this gap). **E-062
 ("Profit bars v2", delivery_plan_v26_continuation.md C3) is expected to
 replace these numbers before they mean anything** — check whether E-062 has
 landed before you ratify. If it hasn't, either wait for it, or explicitly
@@ -350,34 +352,50 @@ notes) — never leave them `null` while `profit_bars_file`/
 verdict.
 
 **3. Register the first brief from the C1.7 template.** Copy
-`config/templates/research_brief_new_pipeline.yaml` to
-`briefs/<your_brief_name>.md` and replace every `<FILL IN...>` placeholder —
-the template's own header comment explains each field, including why
-`criteria_from: hypothesis_generation` is pre-filled, and why
-`machine_constraints.protocol` GENERATES a fresh protocol (multi-era windows,
-2018-02-01..2025-12-31, holdout defaulted from `campaign_data_policy.yaml`)
-rather than pinning an existing `protocols/*.json` file — a full check of all
-13 existing files against (in train+validation range; spans ≥3 real eras
-with substantive, not boundary-sliver, coverage; never touches the sealed
-window; a holdout block consistent with the policy or none; D-3-clean on a
-real registered threshold, not a lowered-count technicality) found none that
-qualifies on all five; see the E-061 C1.6+C1.7 code-review commit for the
-full table. **You must add your own pre-registered `promotion` thresholds
-under `machine_constraints.protocol` before this brief can launch** — the
-template deliberately does not invent them (no thresholds after seeing data),
-and `run_phase1_research.py`'s G7 gate (`_require_pre_registered_promotion`)
-refuses to generate the protocol without them, loudly, rather than
-substituting a default.
+`workflow_artifacts/templates/research_brief_new_pipeline.md` (a frontmatter
+.md, not a bare .yaml — the format `register_hypothesis` actually reads;
+lives beside `research_brief.yaml`, the OTHER template in that directory, for
+the legacy validation-gate pipeline's own artifact shape — see the new
+template's own header for how the two relate) to `briefs/<your_brief_name>.md`
+and replace every `<FILL IN...>` placeholder — the template's own header
+comment explains each field, including why `criteria_from:
+hypothesis_generation` is pre-filled, and why `machine_constraints.protocol`
+GENERATES a fresh protocol (multi-era windows, 2018-02-01..2025-12-31, holdout
+defaulted from `campaign_data_policy.yaml`) rather than pinning an existing
+`protocols/*.json` file — a full check of all 13 existing files against (in
+train+validation range; spans ≥3 real eras with substantive, not
+boundary-sliver, coverage; never touches the sealed window; a holdout block
+consistent with the policy or none; D-3-clean on a real registered threshold,
+not a lowered-count technicality) found none that qualifies on all five; see
+the E-061 C1.6+C1.7 code-review commit for the full table. **You must add your
+own pre-registered `promotion` thresholds under `machine_constraints.protocol`
+before this brief can even REGISTER** — the template deliberately does not
+invent them (no thresholds after seeing data); under
+`orchestrator.config_direct_authoring.enabled`, registration itself now
+refuses a generate-path brief with no `promotion` block (code-review fix), and
+`run_phase1_research.py`'s G7 gate (`_require_pre_registered_promotion`)
+refuses again at launch as a second, independent backstop, in case
+config_direct_authoring was off at registration time and got turned on later.
 
-A code-review pass on this template also added two registration-time checks
-(`run_campaign._parse_brief_frontmatter`): a copy that still carries the
-`<FILL IN` placeholder sentinel in a required field is refused outright, and
+A code-review pass on this template also added registration-time-ONLY checks
+(`run_campaign.register_hypothesis`, gated by
+`orchestrator.config_direct_authoring.enabled` — flag off, or a launch/resume
+re-parsing an already-registered brief, runs neither): a copy that still
+carries the `<FILL IN` placeholder sentinel ANYWHERE in the frontmatter
+(including nested inside `machine_constraints`) is refused outright, and
 `market_universe`/`timeframe` are cross-checked against whatever protocol
-`machine_constraints` names — a mismatch (e.g. you changed `market_universe`
-but not `machine_constraints.protocol.symbols`) is refused with a clear
-message rather than silently backtesting against a universe the brief never
-declared. `venue` has no protocol-side counterpart (no protocol file carries
-a venue/exchange field) and is not cross-checked.
+`machine_constraints` names — compared by bar-size SECONDS (`"60m"` and
+`"1h"` agree) and by base-asset-normalized symbol (`BTC` and `BTCUSDT` agree,
+this repo's existing convention — see
+`trading-bot/execution/portfolio_info.py`'s own `symbol.replace('USDT', '')`).
+A real mismatch (e.g. you changed `market_universe` but not
+`machine_constraints.protocol.symbols`) is refused with a clear message
+rather than silently backtesting against a universe the brief never declared.
+`venue` has no protocol-side counterpart (no protocol file carries a
+venue/exchange field) and is not cross-checked. Every one of these checks
+raises only `ValueError` — a malformed `machine_constraints` shape (e.g.
+`protocol` set to a bare string) is wrapped into a clean "REGISTER REFUSED"
+message rather than crashing with a raw traceback.
 
 Then register it exactly as any other brief (§1a-bis's four checks still
 apply — run its check-all-four snippet before spending any LLM budget):

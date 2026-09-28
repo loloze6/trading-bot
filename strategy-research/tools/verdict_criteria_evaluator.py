@@ -1075,17 +1075,11 @@ def _era_id_for_timestamp(ts, eras: list) -> str:
 
 
 def _load_campaign_data_policy_eras() -> list:
-    """Local copy of run_protocol.py::_load_campaign_data_policy, scoped to
-    just the `eras` list this module needs -- same "small,
-    strategy-research-specific config reader, not general statistics"
-    rationale that function's own docstring gives for not centralizing it."""
-    import yaml as _yaml
-    path = Path(__file__).resolve().parent.parent / "config" / "campaign_data_policy.yaml"
-    if not path.exists():
-        return []
-    with open(path, encoding="utf-8") as f:
-        doc = _yaml.safe_load(f) or {}
-    return doc.get("eras") or []
+    """Thin delegator (E-061 C1.6/C1.7 second-round code-review fix, dedup)
+    to the ONE shared implementation, tools/protocol_resolution.py::
+    load_policy_eras -- see that function's own docstring. Kept as a
+    module-level name here so this module's own callers are unchanged."""
+    return _protocol_resolution.load_policy_eras()
 
 
 def _window_label_to_timestamp(window_label):

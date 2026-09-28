@@ -1,30 +1,51 @@
 """
 E-061 C1.7 -- the first-run kit (delivery_plan_v26_continuation.md C1.7; review
-finding A6), plus the E-061 C1.6+C1.7 code-review fixes to it. Docs + a
-template + two small registration-time guards in run_campaign.py -- no engine
+finding A6), plus two rounds of code-review fixes to it. Docs + a template +
+a handful of registration-time guards in run_campaign.py -- no engine
 (run_phase1_research.py) code changed.
 
 CODE-REVIEW HISTORY (why this file no longer matches its first version):
+
+Round 1:
   1. Protocol choice was wrong. The first template pinned
      protocols/diagnostic_btceth_4h.json via machine_constraints.protocol_ref
      and called it "safe"/"already-vetted"/covering "every non-holdout era".
      None of that survived a full check of all 13 protocols/*.json files
-     against five criteria (train+validation only; >=3 real eras with
-     substantive coverage; never touch the sealed window; a holdout block
-     consistent with the policy or none; D-3-clean on a real threshold, not a
-     lowered-count technicality) -- none qualifies on all five. The template
-     now GENERATES its own protocol via machine_constraints.protocol instead
-     (run_phase1_research.py::_ensure_protocol_from_constraints), which
-     satisfies all five by construction: the generator itself enforces
-     holdout-clearance and refuses (G7) to substitute a promotion default.
-  2. brief_status: open was removed from the template (it was never read
-     there -- decide_next sets it on the QUEUE ENTRY, not the brief file).
-  3. Two new registration-time guards were added to
-     run_campaign._parse_brief_frontmatter: a raw, unfilled copy of the
-     template (still carrying "<FILL IN" in a required field) is refused, and
-     market_universe/timeframe are cross-checked against whatever protocol
-     machine_constraints names (protocol_ref's own file, or protocol's own
-     inline symbols/timeframe) -- a mismatch is refused with a clear message.
+     against five criteria -- the template now GENERATES its own protocol via
+     machine_constraints.protocol instead.
+  2. brief_status: open was removed from the template.
+  3. Registration-time guards were added to run_campaign._parse_brief_frontmatter:
+     an unfilled placeholder is refused, and market_universe/timeframe were
+     cross-checked against the named protocol.
+
+Round 2 (this file's current shape):
+  4. The placeholder scan now covers the WHOLE frontmatter tree (recurses
+     into dicts, not just lists) -- a `<FILL IN` left inside
+     machine_constraints.protocol.promotion is caught too.
+  5. Under orchestrator.config_direct_authoring.enabled, registration now ALSO
+     refuses a generate-path brief with no `promotion` block at all
+     (previously only caught at LAUNCH by G7).
+  6. The universe/timeframe cross-check MOVED: it is no longer inside
+     _parse_brief_frontmatter (which runs on every re-parse -- materialization,
+     dry-run, resume); it is now registration-ONLY
+     (run_campaign._lint_new_pipeline_registration, called from
+     register_hypothesis), and gated by config_direct_authoring, exactly like
+     the promotion check. Flag off -> register behaviour is byte-identical to
+     before both checks existed, except the placeholder-scan refusal (which
+     is NOT flag-gated).
+  7. Timeframe comparison is now by SECONDS (tools/timeframe.py::
+     timeframe_seconds), and the generate path's omitted timeframe defaults
+     to "1h" -- the same literal default _ensure_protocol_from_constraints
+     itself uses. Symbol comparison normalizes base-asset vs full-pair naming
+     (BTC == BTCUSDT, this repo's own trading-bot/execution/portfolio_info.py
+     convention).
+  8. The lint now raises ONLY ValueError -- a malformed machine_constraints
+     shape (e.g. `protocol` set to a bare string) is wrapped into a clean
+     message instead of escaping as a raw AttributeError. Reads a pinned
+     protocol_ref file with json.load, not yaml.safe_load.
+  9. The template moved: workflow_artifacts/templates/research_brief_new_pipeline.md
+     (a frontmatter .md, next to the existing research_brief.yaml template),
+     not config/templates/research_brief_new_pipeline.yaml.
 
 Fixture pattern (campaign_root) reused verbatim from
 tests/test_halt_quarantine_policy.py, the same hermetic setup
@@ -50,7 +71,7 @@ import protocol_resolution as protres  # noqa: E402
 
 from test_halt_quarantine_policy import campaign_root  # noqa: E402,F401
 
-_TEMPLATE_PATH = _SR / "config" / "templates" / "research_brief_new_pipeline.yaml"
+_TEMPLATE_PATH = _SR / "workflow_artifacts" / "templates" / "research_brief_new_pipeline.md"
 _FRONTMATTER_RE = re.compile(r"\A---\s*\n(.*?\n)---\s*\n", re.DOTALL)
 
 # All 13 protocols/*.json files as of this commit, for the exhaustive D-3
@@ -77,6 +98,18 @@ _PLACEHOLDER_TEXT = {
   step 1a via criteria_from below.)>""", "Testing momentum on BTC/ETH."),
 }
 
+_COMMENTED_PROMOTION_BLOCK = """    # promotion:
+    #   median_sharpe_gt: <FILL IN>
+    #   max_abs_drawdown_pct_lt: <FILL IN>
+    #   min_trade_count_gte: <FILL IN>
+    #   kill_median_sharpe_lt: <FILL IN>"""
+
+_REAL_PROMOTION_BLOCK = """    promotion:
+      median_sharpe_gt: 0.5
+      max_abs_drawdown_pct_lt: 30
+      min_trade_count_gte: 10
+      kill_median_sharpe_lt: -1"""
+
 
 def _frontmatter_block(text: str) -> str:
     m = _FRONTMATTER_RE.match(text)
@@ -85,10 +118,13 @@ def _frontmatter_block(text: str) -> str:
 
 
 def _filled_template_text() -> str:
-    """The template with every placeholder replaced -- what an operator's
-    actually-registrable brief looks like. market_universe/timeframe are
-    already concrete in the template (matching machine_constraints.protocol
-    exactly), so only the four prose placeholders need filling.
+    """The template with every prose placeholder replaced -- what an
+    operator's brief looks like BEFORE they add a promotion block.
+    market_universe/timeframe are already concrete in the template (matching
+    machine_constraints.protocol exactly), so only the four prose
+    placeholders need filling; `promotion` stays commented out (the
+    deliberate default -- see test_raw_template_and_no_promotion_is_refused_
+    under_config_direct_authoring).
 
     Only the FRONTMATTER (parsed) data is checked for a remaining sentinel --
     the header comment block legitimately uses the literal string "<FILL IN"
@@ -106,13 +142,42 @@ def _filled_template_text() -> str:
     return text
 
 
+def _filled_template_text_with_promotion() -> str:
+    """`_filled_template_text` plus a real, uncommented promotion block --
+    what an operator's brief looks like once fully ready to register under
+    config_direct_authoring."""
+    text = _filled_template_text()
+    assert _COMMENTED_PROMOTION_BLOCK in text, "fixture drift: commented promotion block not found"
+    return text.replace(_COMMENTED_PROMOTION_BLOCK, _REAL_PROMOTION_BLOCK)
+
+
+def _enable_config_direct_authoring(root: Path) -> None:
+    config_dir = root / "config"
+    config_dir.mkdir(exist_ok=True)
+    (config_dir / "campaign_config.yaml").write_text(
+        yaml.safe_dump({"orchestrator": {"config_direct_authoring": {"enabled": True}}}),
+        encoding="utf-8",
+    )
+
+
+def _register(root: Path, name: str, text: str) -> int:
+    briefs_dir = root / "briefs"
+    briefs_dir.mkdir(exist_ok=True)
+    brief_path = briefs_dir / f"{name}.md"
+    brief_path.write_text(text, encoding="utf-8")
+    return camp.register_hypothesis(brief_path, priority=1, notes="n")
+
+
 def test_template_file_exists_and_is_well_formed():
     assert _TEMPLATE_PATH.exists(), _TEMPLATE_PATH
+    assert _TEMPLATE_PATH.parent == _SR / "workflow_artifacts" / "templates"
+    assert (_TEMPLATE_PATH.parent / "research_brief.yaml").exists(), \
+        "the new-pipeline template must live beside the legacy research_brief.yaml template"
+
     text = _TEMPLATE_PATH.read_text(encoding="utf-8")
     data = yaml.safe_load(_frontmatter_block(text))
 
-    # brief_status is NOT set here (code-review fix 3) -- it belongs on the
-    # queue entry, not the brief.
+    # brief_status is NOT set here -- it belongs on the queue entry, not the brief.
     assert "brief_status" not in data
 
     assert data["criteria_from"] == orch.PASS_RULE_PENDING_AT_1A == "hypothesis_generation"
@@ -126,8 +191,8 @@ def test_template_file_exists_and_is_well_formed():
     assert "promotion" not in proto, "promotion must never be invented on the operator's behalf"
 
     # market_universe/timeframe are pre-filled to EXACTLY match the generated
-    # protocol (code-review fix 5's cross-check would otherwise refuse this
-    # template's own default at registration).
+    # protocol (the cross-check would otherwise refuse this template's own
+    # default under config_direct_authoring).
     assert data["market_universe"] == proto["symbols"]
     assert data["timeframe"] == proto["timeframe"]
 
@@ -147,12 +212,11 @@ def test_all_13_protocols_surveyed_against_the_five_criteria_none_qualifies():
     This is why the template generates its own protocol instead of pinning
     one. Regression-proofs the claim in the template's own comment against
     the actual files, rather than trusting prose."""
-    import yaml as _yaml
-    policy = _yaml.safe_load((_SR / "config" / "campaign_data_policy.yaml").read_text(encoding="utf-8"))
+    policy = protres.load_campaign_data_policy(_SR / "config" / "campaign_data_policy.yaml")
     holdout_range = policy["holdout_range"]
 
     def qualifies(name: str) -> bool:
-        proto = _yaml.safe_load((_SR / "protocols" / f"{name}.json").read_text(encoding="utf-8"))
+        proto = yaml.safe_load((_SR / "protocols" / f"{name}.json").read_text(encoding="utf-8"))
         wins = proto.get("windows", [])
         starts = [w.get("test", w).get("start") for w in wins]
         ends = [w.get("test", w).get("end") for w in wins]
@@ -196,6 +260,24 @@ def test_all_13_protocols_surveyed_against_the_five_criteria_none_qualifies():
     )
 
 
+def test_generated_protocol_era_coverage_matches_the_template_comment():
+    """Re-measures (not trusts) the exact per-era window counts the
+    template's own header comment quotes: 95 monthly windows total, 20 in
+    era_2018_pre_funding, 51 in era_2019_2023_full_feed, 11 in
+    era_2024_burned, 13 in era_2024_2025_walk_forward_extension."""
+    policy = protres.load_campaign_data_policy(_SR / "config" / "campaign_data_policy.yaml")
+    windows = orch._generate_monthly_windows(
+        "2018-02-01", "2025-12-31", holdout_range=tuple(policy["holdout_range"]))
+    assert len(windows) == 95
+    eras = policy["eras"]
+    from collections import Counter
+    counts = Counter(protres.era_id_for_timestamp(w["test"]["start"], eras) for w in windows)
+    assert counts["era_2018_pre_funding"] == 20
+    assert counts["era_2019_2023_full_feed"] == 51
+    assert counts["era_2024_burned"] == 11
+    assert counts["era_2024_2025_walk_forward_extension"] == 13
+
+
 def test_machine_constraints_passes_the_k3_protocol_selection_lint():
     data = yaml.safe_load(_frontmatter_block(_TEMPLATE_PATH.read_text(encoding="utf-8")))
     violations = orch._lint_machine_constraints_protocol_selection(
@@ -205,7 +287,8 @@ def test_machine_constraints_passes_the_k3_protocol_selection_lint():
 
 
 # ---------------------------------------------------------------------------
-# Code-review fix 4: the raw template must be REFUSED at registration.
+# The raw template must be REFUSED at registration (placeholder scan; not
+# flag-gated -- applies regardless of config_direct_authoring).
 # ---------------------------------------------------------------------------
 
 def test_raw_template_is_refused_by_parse_brief_frontmatter():
@@ -217,119 +300,178 @@ def test_raw_template_registration_is_refused(campaign_root):
     """Through the real register path this time, not just the parser
     directly -- register_hypothesis must return nonzero (REGISTER REFUSED),
     never raise past the caller, and must not append a queue entry."""
-    briefs_dir = campaign_root["root"] / "briefs"
-    briefs_dir.mkdir(exist_ok=True)
-    brief_path = briefs_dir / "raw_template.md"
-    brief_path.write_text(_TEMPLATE_PATH.read_text(encoding="utf-8"), encoding="utf-8")
-
-    rc = camp.register_hypothesis(brief_path, priority=1, notes="should be refused")
+    rc = _register(campaign_root["root"], "raw_template", _TEMPLATE_PATH.read_text(encoding="utf-8"))
     assert rc == 1
-
     queue = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))
     assert queue["queue"] == []
 
 
-def test_filled_copy_registers_through_the_real_register_path(campaign_root):
-    """Copies the template with every placeholder replaced into a briefs/*.md
-    file inside the hermetic sandbox and registers it via
-    run_campaign.register_hypothesis -- the same function _register_from_cli
-    (the `register` sub-command) and RUNBOOK.md's new section both call.
-    Never touches the real strategy-research/config/campaign_queue.yaml
-    (campaign_root monkeypatches camp.ROOT/camp.QUEUE_PATH to a tmp_path)."""
-    root = campaign_root["root"]
-    briefs_dir = root / "briefs"
-    briefs_dir.mkdir(exist_ok=True)
-    brief_path = briefs_dir / "my_first_new_pipeline_idea.md"
-    brief_path.write_text(_filled_template_text(), encoding="utf-8")
+def test_placeholder_inside_machine_constraints_is_refused(tmp_path):
+    """Whole-tree scan: a `<FILL IN` left inside a NESTED dict (the
+    promotion block, once uncommented but not filled in) is refused just
+    like one in a top-level field. Independent of config_direct_authoring --
+    the placeholder scan is never flag-gated (no campaign_config.yaml exists
+    in this tmp_path at all)."""
+    text = _filled_template_text().replace(_COMMENTED_PROMOTION_BLOCK, """    promotion:
+      median_sharpe_gt: <FILL IN>
+      max_abs_drawdown_pct_lt: 30
+      min_trade_count_gte: 10
+      kill_median_sharpe_lt: -1""")
+    brief_path = tmp_path / "b.md"
+    brief_path.write_text(text, encoding="utf-8")
+    with pytest.raises(ValueError, match="placeholder sentinel") as excinfo:
+        camp._parse_brief_frontmatter(brief_path)
+    assert "promotion" in str(excinfo.value)
 
-    rc = camp.register_hypothesis(brief_path, priority=1, notes="first new-pipeline brief")
+
+# ---------------------------------------------------------------------------
+# Flag-off byte-identity: filled copy (promotion still commented out)
+# registers with NEITHER new check running, exactly as before both existed.
+# ---------------------------------------------------------------------------
+
+def test_filled_copy_with_no_promotion_registers_when_flag_is_off(campaign_root):
+    """DECLARED BEHAVIOUR: with orchestrator.config_direct_authoring off (the
+    sandbox default -- no campaign_config.yaml at all), a brief with NO
+    promotion block registers successfully -- the promotion-required check
+    and the universe/timeframe cross-check both no-op entirely. This is the
+    'flag off: register behaviour byte-identical except placeholder
+    refusal' declaration from the second-round code review."""
+    assert orch._config_direct_authoring_enabled() is False
+    rc = _register(campaign_root["root"], "my_first_new_pipeline_idea", _filled_template_text())
     assert rc == 0
-
     queue = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))
     entries = queue["queue"]
     assert len(entries) == 1
-    entry = entries[0]
-    assert entry["id"] == "my_first_new_pipeline_idea"
-    assert entry["status"] == "ready"
-    assert entry["brief_path"].replace("\\", "/") == "briefs/my_first_new_pipeline_idea.md"
+    assert entries[0]["id"] == "my_first_new_pipeline_idea"
 
-    # Confirm _parse_brief_frontmatter (what registration and materialization
-    # both actually read) round-trips the filled fields, unmutated.
-    parsed = camp._parse_brief_frontmatter(brief_path)
+    parsed = camp._parse_brief_frontmatter(campaign_root["root"] / "briefs" / "my_first_new_pipeline_idea.md")
     assert parsed["criteria_from"] == "hypothesis_generation"
-    assert parsed["machine_constraints"]["protocol"]["symbols"] == ["BTCUSDT", "ETHUSDT"]
+    assert "promotion" not in parsed["machine_constraints"]["protocol"]
     assert parsed["strategy_domain"] == "momentum"
 
 
-def test_register_from_cli_path_also_accepts_a_filled_copy(campaign_root):
+def test_register_from_cli_path_also_accepts_a_filled_copy_flag_off(campaign_root):
     """_register_from_cli is the literal `register` sub-command RUNBOOK.md's
     new section tells an operator to invoke. Runs it under decide_next OFF
-    (the default -- see A3 §1's flag table) to match a fresh clone's actual
-    starting state."""
+    (the default) to match a fresh clone's actual starting state."""
     briefs_dir = campaign_root["root"] / "briefs"
     briefs_dir.mkdir(exist_ok=True)
     brief_path = briefs_dir / "my_first_new_pipeline_idea.md"
     brief_path.write_text(_filled_template_text(), encoding="utf-8")
 
-    assert orch._decide_next_enabled() is False  # sandbox has no campaign_config.yaml -> off
+    assert orch._decide_next_enabled() is False
     rc = camp._register_from_cli(brief_path, 1, "n")
     assert rc == 0
 
     queue = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))
     entry = queue["queue"][0]
-    # decide_next off -> exactly the call made before E-059 S2b (no brief_status
-    # override; register_hypothesis's own default is untouched by _register_from_cli).
     assert "brief_status" not in entry
 
 
-# ---------------------------------------------------------------------------
-# Code-review fix 5: market_universe/timeframe vs. the protocol cross-check.
-# ---------------------------------------------------------------------------
-
-def test_mismatched_market_universe_is_refused():
+def test_mismatched_universe_flag_off_is_not_checked(campaign_root):
+    """Flag off -> the cross-check is never even attempted, so a genuine
+    universe mismatch passes registration silently. This is the deliberate
+    'not at every launch re-parse'/'only under config_direct_authoring'
+    scoping, not an oversight."""
     text = _filled_template_text().replace(
         "market_universe: [BTCUSDT, ETHUSDT]", "market_universe: [SOLUSDT]")
-    tmp = _SR / "tests" / "_scratch_mismatched_universe.md"
-    tmp.write_text(text, encoding="utf-8")
-    try:
-        with pytest.raises(ValueError, match="does not match"):
-            camp._parse_brief_frontmatter(tmp)
-    finally:
-        tmp.unlink()
+    rc = _register(campaign_root["root"], "mismatch_flag_off", text)
+    assert rc == 0
 
 
-def test_mismatched_timeframe_is_refused():
-    text = _filled_template_text().replace('timeframe: "1h"\n', 'timeframe: "4h"\n', 1)
-    tmp = _SR / "tests" / "_scratch_mismatched_timeframe.md"
-    tmp.write_text(text, encoding="utf-8")
-    try:
-        with pytest.raises(ValueError, match="does not match"):
-            camp._parse_brief_frontmatter(tmp)
-    finally:
-        tmp.unlink()
+# ---------------------------------------------------------------------------
+# config_direct_authoring ON: promotion-required + universe/timeframe
+# cross-check, both registration-only.
+# ---------------------------------------------------------------------------
+
+def test_generate_protocol_with_no_promotion_is_refused_under_config_direct_authoring(campaign_root):
+    root = campaign_root["root"]
+    _enable_config_direct_authoring(root)
+    assert orch._config_direct_authoring_enabled() is True
+    rc = _register(root, "no_promotion", _filled_template_text())
+    assert rc == 1
+    queue = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))
+    assert queue["queue"] == []
 
 
-def test_matching_universe_and_timeframe_pass_the_cross_check():
-    text = _filled_template_text()
-    tmp = _SR / "tests" / "_scratch_matching.md"
-    tmp.write_text(text, encoding="utf-8")
-    try:
-        camp._parse_brief_frontmatter(tmp)  # must not raise
-    finally:
-        tmp.unlink()
+def test_fully_filled_brief_with_promotion_registers_under_config_direct_authoring(campaign_root):
+    root = campaign_root["root"]
+    _enable_config_direct_authoring(root)
+    rc = _register(root, "fully_filled", _filled_template_text_with_promotion())
+    assert rc == 0
+    queue = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))
+    assert len(queue["queue"]) == 1
 
 
-def test_protocol_ref_pin_cross_check_reads_the_pinned_file(tmp_path, monkeypatch):
+def test_mismatched_market_universe_is_refused_under_flag(campaign_root):
+    root = campaign_root["root"]
+    _enable_config_direct_authoring(root)
+    text = _filled_template_text_with_promotion().replace(
+        "market_universe: [BTCUSDT, ETHUSDT]", "market_universe: [SOLUSDT]")
+    rc = _register(root, "mismatch", text)
+    assert rc == 1
+    queue = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))
+    assert queue["queue"] == []
+
+
+def test_mismatched_timeframe_is_refused_under_flag(campaign_root):
+    root = campaign_root["root"]
+    _enable_config_direct_authoring(root)
+    text = _filled_template_text_with_promotion().replace('timeframe: "1h"\n', 'timeframe: "4h"\n', 1)
+    rc = _register(root, "mismatch_tf", text)
+    assert rc == 1
+
+
+def test_60m_and_1h_compare_equal_by_seconds(campaign_root):
+    root = campaign_root["root"]
+    _enable_config_direct_authoring(root)
+    text = _filled_template_text_with_promotion().replace('timeframe: "1h"\n', 'timeframe: "60m"\n', 1)
+    rc = _register(root, "sixty_min", text)
+    assert rc == 0
+
+
+def test_bare_base_asset_names_compare_equal_to_full_pairs(campaign_root):
+    root = campaign_root["root"]
+    _enable_config_direct_authoring(root)
+    text = _filled_template_text_with_promotion().replace(
+        "market_universe: [BTCUSDT, ETHUSDT]", "market_universe: BTC, ETH")
+    rc = _register(root, "bare_symbols", text)
+    assert rc == 0
+
+
+def test_malformed_protocol_string_is_refused_cleanly(campaign_root):
+    """K3/Q1-style drift: `protocol` (generate) set to a bare string instead
+    of a dict (an operator confusing it with `protocol_ref`). Must be a
+    clean REGISTER REFUSED, never a raw AttributeError escaping to the
+    caller."""
+    root = campaign_root["root"]
+    _enable_config_direct_authoring(root)
+    brief = ("---\nstrategy_domain: c\nmarket_universe: [BTCUSDT]\ntimeframe: 1h\n"
+             "research_goal: g\nvenue: kraken\nproduct: spot\n"
+             "machine_constraints:\n  protocol: protocols/x.json\n---\nprose\n")
+    rc = _register(root, "malformed", brief)
+    assert rc == 1
+    queue = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))
+    assert queue["queue"] == []
+
+
+def test_protocol_ref_pin_cross_check_reads_the_pinned_file_as_json(tmp_path, monkeypatch):
     """The cross-check also covers the protocol_ref (pin) shape, not only
-    protocol (generate) -- reads the pinned file's own symbols/timeframe."""
+    protocol (generate) -- reads the pinned file with json.load."""
     (tmp_path / "protocols").mkdir()
     (tmp_path / "protocols" / "p.json").write_text(
         '{"symbols": ["BTCUSDT"], "timeframe": "1h", "windows": []}', encoding="utf-8")
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "campaign_config.yaml").write_text(
+        yaml.safe_dump({"orchestrator": {"config_direct_authoring": {"enabled": True}}}),
+        encoding="utf-8")
     monkeypatch.setattr(camp, "ROOT", tmp_path)
+    monkeypatch.setattr(orch, "ROOT", tmp_path)
     brief = ("---\nstrategy_domain: c\nmarket_universe: [ETHUSDT]\ntimeframe: 1h\n"
              "research_goal: g\nvenue: kraken\nproduct: spot\n"
              "machine_constraints:\n  protocol_ref: protocols/p.json\n---\nprose\n")
     tmp_brief = tmp_path / "b.md"
     tmp_brief.write_text(brief, encoding="utf-8")
+    data = camp._parse_brief_frontmatter(tmp_brief)
     with pytest.raises(ValueError, match="does not match"):
-        camp._parse_brief_frontmatter(tmp_brief)
+        camp._lint_new_pipeline_registration(tmp_brief, data)
