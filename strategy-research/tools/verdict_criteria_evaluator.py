@@ -1074,11 +1074,20 @@ def _era_id_for_timestamp(ts, eras: list) -> str:
     TypeError the moment a timestamp reaches that far without matching an
     earlier era (`str <= None` is unorderable in Python 3). Here, `hi is
     None` is treated as +inf -- any date >= lo matches -- and `hi` is never
-    compared to `d` directly when it is None."""
+    compared to `d` directly when it is None. `lo is None` is handled
+    symmetrically as -inf (E-061 C1.6, matching run_protocol.py's fix, kept
+    identical across both copies even though no current era declares a null
+    lower bound)."""
     import pandas as pd
     d = pd.Timestamp(ts).strftime("%Y-%m-%d")
     for era in eras:
         lo, hi = era["range"]
+        if lo is None and hi is None:
+            return era["era_id"]
+        if lo is None:
+            if d <= hi:
+                return era["era_id"]
+            continue
         if hi is None:
             if lo <= d:
                 return era["era_id"]

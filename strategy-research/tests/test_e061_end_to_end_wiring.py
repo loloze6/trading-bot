@@ -1285,10 +1285,6 @@ def test_a8_flag_misconfiguration_refused_before_any_llm_call(harness, case):
 # A7: the open-ended last era
 # ---------------------------------------------------------------------------
 
-@pytest.mark.xfail(strict=True, raises=PinnedFailure, reason=(
-    "E-061 C1.6 (A7). Pinned on master: tools/run_protocol.py::_era_id_for_timestamp "
-    "compares `lo <= d <= hi` with hi=None for era_2026_h2_forward_recorded -> TypeError: "
-    "'<=' not supported between instances of 'str' and 'NoneType'."))
 def test_a7_era_id_handles_the_open_ended_last_era():
     import run_protocol as rp
     eras = yaml.safe_load((_SR / "config" / "campaign_data_policy.yaml")

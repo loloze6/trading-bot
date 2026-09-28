@@ -1403,11 +1403,32 @@ def _era_id_for_timestamp(ts, eras: list) -> str:
     _era_id_for_timestamp -- A8.5.1a: map a bar timestamp to its era_id per
     campaign_data_policy.yaml's `eras` list. Returns 'era_unmapped' if the
     timestamp falls outside every declared era (should not happen for
-    in-policy data, but must not crash)."""
+    in-policy data, but must not crash).
+
+    FIXED (E-061 C1.6): campaign_data_policy.yaml's last era
+    (era_2026_h2_forward_recorded) has an open-ended upper bound,
+    `range: [2026-07-26, null]`. The original `lo <= d <= hi` raised
+    TypeError the moment a timestamp reached that far without matching an
+    earlier era (`str <= None` is unorderable in Python 3). `hi is None` is
+    now treated as +inf (any date >= lo matches) and `lo is None` is treated
+    as -inf (any date <= hi matches) symmetrically -- `hi`/`lo` are never
+    compared to `d` directly when None. Mirrors
+    verdict_criteria_evaluator.py::_era_id_for_timestamp, which already
+    carried this fix proactively."""
     import pandas as pd
     d = pd.Timestamp(ts).strftime("%Y-%m-%d")
     for era in eras:
         lo, hi = era["range"]
+        if lo is None and hi is None:
+            return era["era_id"]
+        if lo is None:
+            if d <= hi:
+                return era["era_id"]
+            continue
+        if hi is None:
+            if lo <= d:
+                return era["era_id"]
+            continue
         if lo <= d <= hi:
             return era["era_id"]
     return "era_unmapped"
