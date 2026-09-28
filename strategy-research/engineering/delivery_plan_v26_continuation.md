@@ -91,7 +91,9 @@ the readers), then S2a–S2e.
 **Done when:** each item has its tests, C1.1 extended (per-coin variants, per-variant reports),
 flag-off byte-identical. **Run budget:** none here (C4 proves it).
 
-## C3 — Profit bars v2 (E-062, new epic; decisions D-034..D-039)
+## C3 — Profit bars v2 (E-062, new epic; decisions D-034..D-039, D-041, D-042)
+
+**Amended 2026-09-28 (D-041, D-042):** S2b also unifies scoring — the Sharpe bar, the deflated-Sharpe score and the trial ledger all use the whole-test daily Sharpe (no separate sparse path; legacy trial rows recomputed from saved results where possible) — and normalises the time-dependent bars for partial-coverage variants (trades per year + absolute floor; drawdown limit scaled to period length).
 
 Short S1 (how walk-forward windows chain into one curve: are they contiguous, overlapping,
 gapped; what "whole test" means per protocol), then S2.
@@ -129,11 +131,15 @@ and E-060 S5 (regime blocks).
 | C5.3 ⚑ | Composite configs: keep code-written, or let 1b design them (card F); `target_instrument_set` read or dropped. | C6 |
 | C5.4 ⚑ | Reader patches re-graded on the same windows that prompted them: fresh windows or accept with DSR + holdout as the guard. | C7 |
 | C5.5 ⚑ | Revisit two accepted defaults: residual-IC composite backtest without a trial row; the campaign-review "reframe" brief placed ahead of reader candidates unscored. | C8 |
-| C5.6 | Retire the per-protocol promotion blocks and `assert_promotion_ratified` (file the missing ticket). | C9 |
+| C5.6 | **Moved before C4 (D-043):** drop the promotion-threshold requirement for config-direct runs now; full retirement of promotion blocks goes to the post-C4 clean-up epic. | C9 |
 | C5.7 | Missing schemas (`grid_evaluation`, `idea_status`, `variant_patches`); score provenance (model id from the call, not self-reported). | C11, C12 |
 | C5.8 | Stop feeding the legacy promote/kill/refine label to readers; retire base-only `pass_rule_evaluation.yaml` under the flags. | C13 |
 | C5.9 | CUL-335 (holdout consume ledger) — before the first real holdout spend. | — |
 | C5.10 | E-035 external dispatch — parked epic. | — |
+
+## C7 — Legacy clean-up epic (after C4, D-043)
+
+After the two real runs work: make the new pipeline the default (declared change); then an inventory of legacy code (S1) and its removal in tested steps — old routing, verdict_interpreter, validation stage, escalation, families, promotion blocks; legacy re-readers last.
 
 ## C6 — Close-out (Sonnet, alongside)
 
