@@ -359,6 +359,7 @@ def test_protocol_execution_variant_loop_grid_receives_three_column_dict(monkeyp
 
     def _spy_evaluate_grid(protocol_results_by_variant, *a, **kw):
         captured["dict"] = protocol_results_by_variant
+        captured["kw"] = kw
         return {"result": "INCONCLUSIVE", "idea_status": "inconclusive", "reason": "test spy"}
 
     monkeypatch.setattr(vce_mod, "evaluate_grid", _spy_evaluate_grid)
@@ -368,6 +369,12 @@ def test_protocol_execution_variant_loop_grid_receives_three_column_dict(monkeyp
         monkeypatch.setattr(vce_mod, "evaluate_grid", real_evaluate_grid)
 
     assert set(captured["dict"].keys()) == {"base", "design_v2", "asset_v2"}
+    # E-061 C2 S2a: no variant failed -> no failed_variants keyword. The index's
+    # not_pursued variant (5a: manifest paths unresolved) has no graded column in
+    # this run, so it is passed as untested_variants (card D: the idea is then at
+    # best inconclusive).
+    assert "failed_variants" not in captured["kw"]
+    assert captured["kw"]["untested_variants"] == {"not_pursued": "manifest paths unresolved: [x]"}
     assert (run_dir / "artifacts" / "grid_evaluation.yaml").exists()
     assert (run_dir / "artifacts" / "idea_status.yaml").exists()
 

@@ -82,6 +82,8 @@ Finding -> test (see each marker's reason for the pinned failure):
   A5 (pin)   test_a5_one_variant_failing_validate_config_pins_the_pause
   B2 / A3 §3.4 (C2.2)
              test_b2_category_reports_carry_trade_and_bar_slices
+  B4 / D-015 (C2.4, E-061 C2 S2a)
+             test_c2_4_one_crashed_variant_never_validates           (fixed, no marker)
   A9 -- the joined-up path (A3 §5 items 7-9):
              test_end_to_end_two_runs_with_the_real_run_setup
              test_profit_bars_stop_then_holdout_continue_then_resume
@@ -352,6 +354,7 @@ class Harness:
         self.profiles: dict = {}           # metric profile per variant id
         self.extra_variant: dict | None = None
         self.bad_variant: str | None = None
+        self.crash_variant: str | None = None  # run_protocol.py crashes for it (C2.4)
         self.reader_proposals = True
 
     def violation(self, text: str) -> None:
@@ -754,6 +757,11 @@ class Harness:
                 wrid = f"{run_id}_{vid}_{symbol}_{w['label']}"
                 _write_window(out / "results" / wrid, w["test"]["start"], prof,
                               seed=seed + 100 * k + j)
+                if vid == self.crash_variant:
+                    # A technical crash after the first window touched data: a plain
+                    # non-zero exit, never the no-data-touched refusal.
+                    return self._done(1, stderr="Traceback (most recent call last):\n"
+                                                "RuntimeError: E-061 C2.4 injected crash\n")
                 results.append({
                     "symbol": symbol, "window": w["label"], "run_id": wrid,
                     "core": {"trade_count": prof["trades"], "sharpe": prof["sharpe"],
@@ -1071,6 +1079,66 @@ def test_profit_bars_stop_then_holdout_continue_then_resume(harness):
     # the resume re-entered regroup_record: no backtest re-ran, no LLM stage re-ran
     assert len(h.calls_to("run_protocol.py")) == n_backtests
     assert [s for s, r in h.llm_calls if r == r1] == list(STAGE_AGENTS)
+    _assert_holdout_untouched(h)
+
+
+# ---------------------------------------------------------------------------
+# C2.4 (E-061 C2 S2a, D-015): one of three variants crashes -> never validated
+# ---------------------------------------------------------------------------
+
+@pytest.mark.slow
+def test_c2_4_one_crashed_variant_never_validates(harness):
+    """Every variant's profile clears every grid criterion (edge 1.5 >> the cost
+    ratio floor): with all three backtests succeeding this run ends
+    completed_validated (measured once with this profile when the test was
+    written). `asset`'s backtest crashes after touching data, so the two
+    survivors alone would validate -- the idea must end inconclusive, register no
+    block, and still count three trial rows (one backtest_failed)."""
+    h = harness.build()
+    for vid in ("base", "design", "asset"):
+        h.profiles[vid] = {"sharpe": 0.3, "edge": 1.5, "trades": 40}
+    h.crash_variant = "asset"
+    h.register_brief()
+    r1 = "run_001"
+    keep_going, exc = _drive(h)
+    _pin_joined(h, exc, r1)
+    st = h.state(r1)
+    assert st.get("last_error") is None, st.get("last_error")
+    assert st["pending_stage"] == "completed_inconclusive" and st["status"] == "completed"
+    assert h.entry(BRIEF_ID)["outcome"] == "inconclusive"
+    assert len(h.calls_to("run_protocol.py")) == 3
+
+    grid = h.art(r1, "grid_evaluation.yaml")
+    assert grid["idea_status"] == "inconclusive"
+    # graded columns only; the crashed variant is in failed_variants, never a column
+    assert sorted(grid["variants"]) == ["base", "design"]
+    assert list(grid["failed_variants"]) == ["asset"]
+    assert grid["failed_variants"]["asset"].startswith("backtest_failed:")
+    assert "non-zero exit" in grid["failed_variants"]["asset"]
+    for crit, row in grid["grid"].items():
+        assert "asset" not in row
+        # the survivors alone would have validated: every graded cell PASSes
+        assert row["base"]["result"] == row["design"]["result"] == "PASS", (crit, row)
+    assert h.art(r1, "idea_status.yaml")["idea_status"] == "inconclusive"
+
+    rows = {r["trial_id"]: r["source"] for r in h.trial_rows()
+            if r["trial_id"].startswith(f"{r1}:")}
+    assert rows == {f"{r1}:asset": "backtest_failed", f"{r1}:base": "backtest",
+                    f"{r1}:design": "backtest"}
+
+    pbe = h.art(r1, "profit_bars_evaluation.yaml")
+    assert pbe["variants"]["asset"]["result"] == "NOT_TESTED" and "asset" not in pbe["passing"]
+    assert pbe["variants"]["asset"]["trial_id"] == f"{r1}:asset"  # its backtest_failed row
+    memory = yaml.safe_load(rpr._campaign_memory_path().read_text(encoding="utf-8"))
+    e = memory["runs"][r1]
+    assert e["idea_status"] == "inconclusive"
+    assert e["variants"]["asset"]["status"] == "failed"
+    assert {e["variants"][v]["status"] for v in ("base", "design")} == {"tested"}
+    assert e["registry"] == {"skipped": "not_validated"}
+    reg = rpr._block_registry_path()
+    assert not reg.exists() or not (yaml.safe_load(reg.read_text(encoding="utf-8")) or {}).get(
+        "blocks"), "an idea with a crashed variant registered a block"
+    assert isinstance(keep_going, bool)
     _assert_holdout_untouched(h)
 
 

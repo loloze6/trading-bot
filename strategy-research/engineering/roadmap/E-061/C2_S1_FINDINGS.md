@@ -396,6 +396,26 @@ Only in the variant-loop branch with `grid_evaluation` on. Flag off: one column,
 - **C1.1 extension:** the stubbed `run_protocol` exits non-zero for the asset variant → run ends
   `completed_inconclusive`, a `backtest_failed` row exists for `run:asset`, no registry entry.
 
+### S2a review amendments (2026-09-28)
+
+- **No failed column.** The grid's `variants`/`grid` hold graded columns only; a failed variant is
+  listed only in top-level `failed_variants` {vid: reason}, reason prefixed `refused:` (no data
+  touched, no trial row) or `backtest_failed:` (a spent look). The rollup counts a non-empty
+  `failed_variants` as INCONCLUSIVE (a genuine FAIL still refutes, D-014). No `not_graded` cell, no
+  memory `_CELL_KEYS`/schema change, no `block_registry.py` guard. One validator
+  (`vce.check_failed_variants` / `grid_failed_variants`) serves the evaluator, branch 3 and memory.
+- **Re-runs.** protocol_execution persists each attempt's failure as index.yaml `failed_attempt`
+  and carries it into every later attempt's `failed_variants` unless that attempt re-runs the
+  variant successfully.
+- **Whole idea in one run (card D).** Every other index variant without a graded column in this
+  run (REPEAT skip, data-gate decline, 5a refusal) is listed in top-level `untested_variants`; the
+  idea is then at best INCONCLUSIVE. Until S2b adds a variant `kind`, this is "every variant of
+  the idea", not "one per kind".
+- A base whose trial write failed never feeds the singular `protocol_result.yaml`, C7 or the
+  reports. Branch 3: a crashed variant's `NOT_TESTED` entry carries its `backtest_failed`
+  trial_id; a refused one null; the graded survivors of an inconclusive idea are still graded
+  (D-021).
+
 ---
 
 ## C2.5 — Variant shape (card D; review A5)
