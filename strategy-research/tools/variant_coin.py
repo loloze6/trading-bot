@@ -46,6 +46,12 @@ TEMPORARY until then (D-042; lifted by E-062 S2b): a partial-coverage variant
 NOT_EVALUABLE, so it can never pass the profit bars (never
 `profit_bars_reached`).
 
+E-062 S2b-3a (D-047, S2B3_FINDINGS.md Q3/Q4/Q6): the PURE normalisation
+helpers exist -- coverage_fraction, normalised_trade_minimum,
+scaled_drawdown_limit, era_count_shortfall -- but NOTHING calls them yet (the
+wiring under orchestrator.profit_bars_v2 is S2b-3b), so the TEMPORARY rule
+above still holds unchanged.
+
 5a records each variant protocol.json's sha256 in index.yaml
 (`protocol_sha256`); verify_variant_protocol re-checks the file against it and
 against its derivation before any backtest.
@@ -67,7 +73,10 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import math
+import numbers
 import re
+from fractions import Fraction
 from pathlib import Path
 
 # D-042 (engineering/DECISION_LOG.md, 2026-09-28): an asset variant on partial
@@ -295,6 +304,167 @@ def is_partial_coverage(entry) -> bool:
             and 0 < len(run) <= total):
         raise VariantCoinError(f"index coverage {cov!r} has no usable windows_run / windows_total")
     return len(run) < total
+
+
+# ---------------------------------------------------------------------------
+# E-062 S2b-3a (DECISION_LOG D-047, implementing D-042; S2B3_FINDINGS.md Q3,
+# Q4, Q6 and G1/G2/G5/G7). PURE: nothing calls these yet (S2b-3b wires them
+# under orchestrator.profit_bars_v2). No market data, no result, no file I/O.
+# ---------------------------------------------------------------------------
+
+# D-047 (4): sign_consistent_by_era needs at least this many REPRESENTED eras
+# to be graded; fewer -> INCONCLUSIVE (it cannot fail on one era).
+D047_MIN_REPRESENTED_ERAS = 2
+# The INCONCLUSIVE reason's prefix for that case (S2B3_FINDINGS.md Q6).
+SINGLE_ERA_REASON_PREFIX = "single_era:"
+# normalised_trade_minimum reads a float f as the exact covered/full day ratio
+# it was computed from (coverage_fraction): the closest fraction whose
+# denominator is at most this many days. Two distinct such fractions differ by
+# at least 1e-12, a float's rounding error is ~1e-16, so the ratio is recovered
+# exactly for any protocol shorter than 10^6 days (~2700 years) -- and ceil is
+# not fooled by binary rounding (100 * 0.07 == 7.000000000000001 in floats).
+_MAX_DAY_DENOMINATOR = 10 ** 6
+
+
+def _nominal_day_ordinals(protocol: dict, what: str) -> set:
+    """Ordinals of every nominal calendar day inside any of `protocol`'s
+    windows' test.start..test.end, INCLUSIVE (the engine's end is inclusive
+    by day), as a set -- so a one-day junction shared by two consecutive
+    windows (end == next start) is counted once. The windows are parsed by
+    portfolio_whole_test.window_bounds_from_protocol, the ONE parser the
+    whole-test chain uses (YYYY-MM-DD only, labels present and unique, end
+    not before start; ValueError otherwise)."""
+    import portfolio_whole_test as _pwt  # tools/ sibling, pure; imported lazily
+    try:
+        bounds = _pwt.window_bounds_from_protocol(protocol)
+    except ValueError as exc:
+        raise VariantCoinError(f"{what}: {exc}") from None
+    out: set = set()
+    for start, end in bounds.values():
+        out.update(range(start.toordinal(), end.toordinal() + 1))
+    return out
+
+
+def coverage_days(run_protocol: dict, variant_protocol: dict) -> tuple:
+    """(covered_days, full_days) for D-047's f (S2B3_FINDINGS.md G1): the
+    number of nominal calendar days in the union of the variant protocol's
+    windows, and in the union of the run protocol's. From the protocol files
+    only -- no market data, no engine edge days.
+
+    Raises VariantCoinError when either protocol has no usable windows, or
+    when the variant's windows are not a SUBSEQUENCE of the run protocol's
+    (the same window dicts, in the same order -- check_variant_protocol's
+    rule, the only shape 5a writes): f would then not be a share of the run
+    protocol's period."""
+    for what, proto in (("run protocol", run_protocol), ("variant protocol", variant_protocol)):
+        if not isinstance(proto, dict):
+            raise VariantCoinError(f"the {what} must be a mapping, not {type(proto).__name__}")
+    full = _nominal_day_ordinals(run_protocol, "run protocol")
+    covered = _nominal_day_ordinals(variant_protocol, "variant protocol")
+    it = iter(run_protocol["windows"])
+    if not all(any(w == s for s in it) for w in variant_protocol["windows"]):
+        raise VariantCoinError("the variant protocol's windows are not a subsequence of the run "
+                               "protocol's (same window dicts, same order): its coverage is not "
+                               "a share of the run protocol's period")
+    if not covered <= full:  # implied by the subsequence; kept as a belt
+        raise VariantCoinError("the variant protocol's days are not inside the run protocol's")
+    return len(covered), len(full)
+
+
+def coverage_fraction(run_protocol: dict, variant_protocol: dict) -> float:
+    """D-047's f = the variant's nominal calendar days / the run protocol's
+    (coverage_days: the union of each protocol's windows' test.start..test.end
+    inclusive, a one-day junction counted once, non-contiguous windows
+    allowed). In (0, 1]; exactly 1.0 when the variant covers every day of the
+    run protocol. Raises as coverage_days does."""
+    covered, full = coverage_days(run_protocol, variant_protocol)
+    if covered == full:
+        return 1.0
+    return covered / full
+
+
+def _check_fraction(f) -> Fraction:
+    """f as an exact Fraction, after checking 0 < f <= 1 (a bool, NaN or
+    infinity raises). A float is read as the day ratio it came from
+    (_MAX_DAY_DENOMINATOR)."""
+    if isinstance(f, bool) or not isinstance(f, numbers.Real):
+        raise VariantCoinError(f"coverage fraction {f!r} is not a real number")
+    if isinstance(f, float) and not math.isfinite(f):
+        raise VariantCoinError(f"coverage fraction {f!r} is not finite")
+    if not 0 < f <= 1:
+        raise VariantCoinError(f"coverage fraction {f!r} is not in (0, 1]")
+    exact = Fraction(f)
+    if isinstance(f, float):
+        exact = exact.limit_denominator(_MAX_DAY_DENOMINATOR)
+    if not 0 < exact <= 1:  # a float within 1e-12 of 0 recovered as 0
+        raise VariantCoinError(f"coverage fraction {f!r} is not in (0, 1]")
+    return exact
+
+
+def _positive_int(value, what: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise VariantCoinError(f"{what} {value!r} is not an int >= 1")
+    return value
+
+
+def normalised_trade_minimum(base: int, f, floor: int) -> int:
+    """D-047 (1)/(2): the trade minimum for a variant covering the share f of
+    the run protocol's period = max(ceil(base * f), floor) -- CEIL, never
+    round (a partial variant never needs fewer trades than its pro-rata
+    share). f == 1 returns `base` unchanged (G7: a full-coverage row stays
+    byte-identical). Raises when f is not in (0, 1], when base / floor are
+    not ints >= 1, or when floor > base (a partial variant would then need
+    MORE trades than a full one: a misconfiguration, never silently
+    graded)."""
+    base = _positive_int(base, "trade minimum base")
+    floor = _positive_int(floor, "trade minimum floor")
+    if floor > base:
+        raise VariantCoinError(f"trade minimum floor {floor} is above the base {base}")
+    exact = _check_fraction(f)
+    if exact == 1:
+        return base
+    return max(math.ceil(base * exact), floor)
+
+
+def scaled_drawdown_limit(limit, f) -> float:
+    """D-047 (3): the max-drawdown limit for a variant covering the share f of
+    the run protocol's period = limit * sqrt(f) (S2B3_FINDINGS.md Q4: neutral
+    on the zero-edge null, conservative for a real edge). f == 1 returns
+    `limit` unchanged (G7). Raises when f is not in (0, 1] or the limit is not
+    a finite positive number."""
+    if isinstance(limit, bool) or not isinstance(limit, numbers.Real) \
+            or not math.isfinite(limit) or limit <= 0:
+        raise VariantCoinError(f"drawdown limit {limit!r} is not a finite positive number")
+    exact = _check_fraction(f)
+    if exact == 1:
+        return limit
+    return float(limit) * math.sqrt(exact)
+
+
+def era_count_shortfall(era_ids) -> str | None:
+    """D-047 (4): None when at least D047_MIN_REPRESENTED_ERAS distinct eras
+    are represented, else the INCONCLUSIVE reason (starting
+    SINGLE_ERA_REASON_PREFIX; `none` when no era is represented).
+
+    Takes the era ids ALREADY ASSIGNED by the caller, deliberately: there is
+    ONE era-assignment rule for this criterion, the grid reducer's own
+    (verdict_criteria_evaluator._reduce_sign_consistent_by_era: a window's
+    era is the era of its label read as the first day of its month,
+    `era_unmapped` excluded) -- the S2b-3b caller passes that reducer's
+    represented eras. window_coverage's midpoint rule (coverage.eras) is
+    information only and must not be passed here (S2B3_FINDINGS.md X5).
+    `era_unmapped` is excluded here too (never an era)."""
+    if isinstance(era_ids, (str, bytes)):
+        raise VariantCoinError(f"era ids must be a collection of era_id strings, not {era_ids!r}")
+    ids = set()
+    for era in era_ids:
+        if not (isinstance(era, str) and era):
+            raise VariantCoinError(f"era id {era!r} is not a non-empty string")
+        if era != _UNMAPPED_ERA:
+            ids.add(era)
+    if len(ids) >= D047_MIN_REPRESENTED_ERAS:
+        return None
+    return f"{SINGLE_ERA_REASON_PREFIX} {', '.join(sorted(ids)) or 'none'}"
 
 
 def verify_variant_protocol(entry: dict, raw: bytes, source: dict, *, recheck=None) -> list:
