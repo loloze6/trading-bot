@@ -317,12 +317,15 @@ def test_unquoted_yaml_date_in_ratified_at_is_accepted(raw, iso):
         assert rpr._load_profitability_bars(path, v2=v2)["ratified_at"] == iso
 
 
-def test_committed_bars_file_has_the_d039_values_and_no_signature():
+def test_committed_bars_file_has_the_d039_values_and_the_signature():
     real = SR_ROOT / "config" / "profitability_bars.yaml"
+    skip = {"target_instrument_set", "ratified_by", "ratified_at"}
     for v2 in (False, True):
         doc = rpr._load_profitability_bars(real, v2=v2)
-        assert {k: doc[k] for k in V2_BARS if k != "target_instrument_set"} == \
-            {k: v for k, v in V2_BARS.items() if k != "target_instrument_set"}
+        assert {k: doc[k] for k in V2_BARS if k not in skip} == \
+            {k: v for k, v in V2_BARS.items() if k not in skip}
+        # Signed by the operator 2026-09-29 (E-062 SIGNING_CHECKLIST.md).
+        assert doc["ratified_by"] and str(doc["ratified_at"]) == "2026-09-29"
     header = real.read_text(encoding="utf-8")
     for basis in EXPECTED_BASIS.values():
         assert f"basis: {basis}\n" in header, basis
@@ -335,7 +338,7 @@ def test_committed_menu_has_the_d039_values():
     assert (cost["comparator"], cost["threshold"], cost["floor"]["min_trades"]) == (">", 2.2, 100)
     ric = next(c for c in menu["code_added_criteria"] if c["id"] == "residual_ic")
     assert (ric["threshold"], ric["max_p_value"], ric["floor"]["min_n_eff"], ric["ratified"]) \
-        == (0.02, 0.05, 30, False)
+        == (0.02, 0.05, 30, True)  # ratified by the operator 2026-09-29
 
 
 # ---------------------------------------------------------------------------

@@ -894,8 +894,9 @@ def test_v2_loader_refuses_a_floor_above_the_cost_floor():
         rpr._load_profitability_bars(path, v2=True)
 
 
-def test_committed_bars_file_carries_the_floor_60_unsigned():
+def test_committed_bars_file_carries_the_floor_60_signed():
     real = SR_ROOT / "config" / "profitability_bars.yaml"
     doc = rpr._load_profitability_bars(real, v2=True)
     assert doc["trade_count_min_floor"] == 60
-    assert doc["ratified_by"] is None and doc["ratified_at"] is None
+    # Signed by the operator 2026-09-29 (E-062 SIGNING_CHECKLIST.md).
+    assert doc["ratified_by"] and str(doc["ratified_at"]) == "2026-09-29"
