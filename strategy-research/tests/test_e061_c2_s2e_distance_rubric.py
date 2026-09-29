@@ -186,11 +186,22 @@ def test_no_manifest_leaves_the_type_unknown_with_a_reason(tmp_path):
     assert s["blocks"][0]["relation_to_this_run"] is None
 
 
-def test_manifest_that_does_not_resolve_raises(tmp_path):
+def test_unreadable_manifest_is_a_reason_not_a_raise(tmp_path):
+    """The summary is advisory: a manifest that does not resolve in the base config (5a and
+    block_registry.build_block own that check and still raise on it) leaves the type unknown
+    with the reason written into the artifact the readers see."""
     bad = copy.deepcopy(MANIFEST)
     bad["block"]["config_paths"] = ["/strategies/regimes/nope/components/0"]
-    with pytest.raises(br.BlockRegistryError, match="do not resolve"):
-        br.registry_summary(_doc(), _run(tmp_path, manifest=bad))
+    this = br.registry_summary(_doc(_block("H-1:run_001")), _run(tmp_path, manifest=bad))["this_run"]
+    assert this["block_type"] is None and this["type_already_registered"] is None
+    assert this["reason"].startswith("block_type_unreadable:") and "do not resolve" in this["reason"]
+
+
+def test_malformed_registry_still_raises(tmp_path):
+    reg = tmp_path / "block_registry.yaml"
+    reg.write_text("schema_version: 1\nrevision: 0\nblocks: nope\n", encoding="utf-8")
+    with pytest.raises(br.BlockRegistryError):
+        br.load_registry(reg)
 
 
 def test_single_column_run_reads_candidate_strategy_config(tmp_path):

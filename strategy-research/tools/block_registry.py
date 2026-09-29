@@ -440,9 +440,19 @@ def _load_optional_mapping(path: Path, what: str) -> dict | None:
 def _this_run_block_type(run_dir: Path, timeframe_category):
     """(block type | None, reason | None) of the run's own block: its manifest's
     kind and the component classes inside the manifest's config paths, read from
-    the tested base config. Nothing to read (no manifest -- a composition run or
-    another flow -- or no validated variant) is a reason, not an error; a
-    manifest that does not resolve against the config raises."""
+    the tested base config. Nothing readable -- no manifest (a composition run or
+    another flow), no validated variant, or a manifest / config that does not
+    parse or resolve -- is a REASON in the summary, never a raise: this input is
+    advisory, and the checks that own those files (5a, regroup_record's
+    block_registry.build_block) still fail loud on them. The readers see the
+    reason and score the block type as "cannot be placed"."""
+    try:
+        return _read_this_run_block_type(run_dir, timeframe_category)
+    except BlockRegistryError as exc:
+        return None, f"block_type_unreadable: {exc}"
+
+
+def _read_this_run_block_type(run_dir: Path, timeframe_category):
     manifest = load_manifest(run_dir)
     if manifest is None:
         return None, "no_block_manifest"
