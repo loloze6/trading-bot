@@ -117,6 +117,14 @@ program, a Gemini call and a holdout_sealed argv -- each swallowed by the caller
 all failed the test at teardown. In the joined-up runs no real subprocess ran at
 all (every tool call went to the stubs).
 
+E-062 S2b-4 (last block of this file): the profit_bars_v2 chain through the same
+harness -- test_e062_v2_whole_test_dsr_normalised_partial_variant_and_single_era,
+test_e062_v2_spend_rederives_the_partial_thresholds_from_the_frozen_protocol,
+test_e062_v2_retest_with_the_same_coverage_is_a_repeat,
+test_e062_v2_retest_with_wider_coverage_is_a_new_trial. They use two opt-in stub
+shapes (Harness.full_span_windows, Harness.dense_trades), off by default, so
+every scenario above writes byte-identical data.
+
 C1.2 + C1.3 landed (fix/e061-c1-2-3-config-direct-handoffs): A1, A2, A5 and the
 two joined-up tests pass and their markers are gone; Harness._run_protocol now
 mirrors the tool's new behaviour (a validation protocol is checked before any
@@ -128,12 +136,16 @@ from __future__ import annotations
 import asyncio
 import copy
 import datetime as _dt
+import hashlib
 import json
+import math
 import random
 import re
 import shutil
+import statistics
 import subprocess as _subprocess_mod
 import sys
+from fractions import Fraction
 from pathlib import Path
 
 import pytest
@@ -148,6 +160,7 @@ import run_phase1_research as rpr  # noqa: E402
 import run_campaign as camp  # noqa: E402
 import setup_run as sr  # noqa: E402
 import novelty as nov  # noqa: E402
+import portfolio_whole_test as pwt  # noqa: E402
 
 from claude_agent_sdk import AssistantMessage, ResultMessage, TextBlock  # noqa: E402
 
@@ -374,6 +387,19 @@ class Harness:
         # variants; once the list is empty, Step 2 answers the normal shape.
         self.stage2_mutations: list = []
         self.reader_proposals = True
+        # E-062 S2b-4: two opt-in stub shapes the v2 (whole-test) bars need, both
+        # off by default so every earlier scenario writes byte-identical data.
+        #   full_span_windows -- each (coin, window) backtest records daily bars from
+        #     its nominal test.start through the day BEFORE test.end (the engine's
+        #     usual one-day tail shortfall), not the 8-day fixture: the chained
+        #     whole-test curve needs the 0.9 coverage of the nominal span. Its
+        #     portfolio_states.csv also gets the engine's `close` column (the v2
+        #     buy-and-hold bar reads it).
+        #   dense_trades -- trade_diagnostics.json holds core.trade_count records per
+        #     (coin, window) (the v2 trade-count bar refuses a file whose record count
+        #     differs from core.trade_count), not the fixed 3.
+        self.full_span_windows = False
+        self.dense_trades = False
 
     def violation(self, text: str) -> None:
         self.violations.append(text)
@@ -786,7 +812,9 @@ class Harness:
             for j, w in enumerate(proto["windows"]):
                 wrid = f"{run_id}_{vid}_{symbol}_{w['label']}"
                 _write_window(out / "results" / wrid, w["test"]["start"], prof,
-                              seed=seed + 100 * k + j)
+                              seed=seed + 100 * k + j,
+                              **({"days": _window_span_days(w), "with_close": True}
+                                 if self.full_span_windows else {}))
                 if vid == self.crash_variant:
                     # A technical crash after the first window touched data: a plain
                     # non-zero exit, never the no-data-touched refusal.
@@ -802,7 +830,9 @@ class Harness:
                     "regime_validity": {"trending": {"valid": True},
                                         "mean_reversion": {"valid": True}},
                 })
-                trades += [_trade_record(symbol, w, t) for t in range(3)]
+                trades += ([_dense_trade_record(symbol, w, t) for t in range(prof["trades"])]
+                           if self.dense_trades
+                           else [_trade_record(symbol, w, t) for t in range(3)])
         assert all(tuple(t) == TRADE_RECORD_KEYS for t in trades)
         tds = {"realized_edge_to_cost_ratio": prof["edge"],
                "per_trade_expectancy_bps": {"mean": 3.0, "se": 1.0, "t_stat": 3.0,
@@ -853,21 +883,46 @@ def _trade_record(symbol: str, window: dict, t: int) -> dict:
         100.0, 100.05, 10 + t, 13 + t, 0.1, False, 0.05, True)))
 
 
-def _write_window(res_dir: Path, start: str, prof: dict, *, seed: int) -> None:
-    """portfolio_states.csv + bars.csv for one (coin, window), fixture data."""
+def _dense_trade_record(symbol: str, window: dict, t: int) -> dict:
+    """E-062 S2b-4: trade number t of a window, for a window holding more than 3
+    trades: _trade_record's record with its own id and times (one trade per 4
+    hours from the window's start; a 3-hour hold) -- same keys, same order."""
+    rec = _trade_record(symbol, window, t % 3)
+    t0 = _dt.datetime.fromisoformat(window["test"]["start"]) + _dt.timedelta(hours=4 * t)
+    rec["trade_id"] = f"{symbol}-{window['label']}-{t}"
+    rec["entry_time"] = t0.isoformat()
+    rec["exit_time"] = (t0 + _dt.timedelta(hours=3)).isoformat()
+    return rec
+
+
+def _window_span_days(window: dict) -> int:
+    """Days of recorded data for a full-span window: test.start through the day
+    before test.end (the engine's one-day tail shortfall; chain_windows treats up
+    to MAX_ENGINE_TAIL_DAYS as flat)."""
+    start = _dt.date.fromisoformat(window["test"]["start"])
+    end = _dt.date.fromisoformat(window["test"]["end"])
+    return (end - start).days - 1
+
+
+def _write_window(res_dir: Path, start: str, prof: dict, *, seed: int,
+                  days: int = DAYS_PER_WINDOW, with_close: bool = False) -> None:
+    """portfolio_states.csv + bars.csv for one (coin, window), fixture data.
+    `with_close` (E-062 S2b-4): also a `close` column in portfolio_states.csv, as
+    the engine's record_state writes it (the v2 buy-and-hold bar reads it); the
+    random stream is the same either way."""
     rng = random.Random(seed)
     res_dir.mkdir(parents=True, exist_ok=True)
     t0 = _dt.datetime.fromisoformat(start)
     eq, close = 10000.0, 100.0
     drift = prof["drift_per_day"] / 24.0
-    pl = ["timestamp,regime,postRebalance_total_value"]
+    pl = ["timestamp,regime,postRebalance_total_value" + (",close" if with_close else "")]
     bl = ["timestamp,close,forecast,regime,debug_info.components.rsi.value"]
-    for i in range(DAYS_PER_WINDOW * 24):
+    for i in range(days * 24):
         ts = (t0 + _dt.timedelta(hours=i)).isoformat()
         regime = "NOT_READY" if i < 5 else ("trending" if (i // 48) % 2 else "mean_reversion")
         eq *= 1.0 + drift + rng.gauss(0.0, prof["noise"] / 5.0)
         f = rng.gauss(0.0, 1.0)
-        pl.append(f"{ts},{regime},{eq:.6f}")
+        pl.append(f"{ts},{regime},{eq:.6f}" + (f",{close:.6f}" if with_close else ""))
         bl.append(f"{ts},{close:.6f},{f:.6f},{regime},{50 + 10 * f:.4f}")
         close *= 1.0 + 0.001 * f + rng.gauss(0.0, 0.002)
     (res_dir / "portfolio_states.csv").write_text("\n".join(pl) + "\n", encoding="utf-8")
@@ -2000,4 +2055,331 @@ def test_c2_3_run_2_readers_see_run_1s_validated_block_with_this_run_as_its_neig
         assert "--- CONTENT OF artifacts/registry_summary.yaml ---" in p
         assert block_id in p and "same_classes_timeframe_unknown" in p
         assert "idea_status" in p
+    _assert_holdout_untouched(h)
+
+
+# ---------------------------------------------------------------------------
+# E-062 S2b-4: the profit-bars-v2 chain, end to end (D-034..D-048)
+# ---------------------------------------------------------------------------
+
+V2_FLAGS = {**TARGET_FLAGS, "profit_bars_v2": True}
+
+
+def _partial_asset_coin(h: Harness, first_full_window: int) -> None:
+    """Make the asset coin (a Binance-listed XRPUSDT here, as in the C2 S2b test)
+    cover the run protocol's windows from index `first_full_window` on: its Layer-1
+    earliest date falls in the middle of the window BEFORE that one, and a window
+    counts only when the earliest date is on or before its test start."""
+    universe = yaml.safe_load((h.root / "config" / "coin_universe.yaml").read_text(encoding="utf-8"))
+    for cat in universe["categories"].values():
+        for coin in cat.get("coins") or []:
+            if coin["symbol"] == ASSET_COIN:
+                coin.pop("exchange", None)
+                coin.pop("cache_key", None)
+    (h.root / "config" / "coin_universe.yaml").write_text(yaml.safe_dump(universe),
+                                                          encoding="utf-8")
+    layer1_path = h.root / "config" / "venue_data_capability.yaml"
+    layer1 = yaml.safe_load(layer1_path.read_text(encoding="utf-8"))
+    layer1["venues"]["binance"]["spot"]["symbols"]["earliest_ohlcv_utc"][ASSET_COIN] = (
+        f"{WINDOW_LABELS[first_full_window - 1]}-15T00:00:00Z")
+    layer1_path.write_text(yaml.safe_dump(layer1), encoding="utf-8")
+
+
+def _v2_harness(harness, *, first_full_window: int | None = 2) -> Harness:
+    """A sandbox with profit_bars_v2 on, full-span window data and dense trade
+    records, a 30-row legacy trial ledger (no whole_test block: N large, K small)
+    and, when `first_full_window` is not None, a partial-coverage asset coin."""
+    h = harness.build(flags=V2_FLAGS)
+    h.full_span_windows = True
+    h.dense_trades = True
+    _seed_trial_ledger()
+    if first_full_window is not None:
+        _partial_asset_coin(h, first_full_window)
+    for vid in ("base", "design", "asset"):
+        h.profiles[vid] = {"sharpe": 0.3, "edge": 3.0, "trades": 20}
+    return h
+
+
+def _norm_z(n: int) -> float:
+    """Z(N) of D-046 (the expected maximum of N null Sharpes), from the
+    Euler-Mascheroni form: (1-g) * Phi^-1(1-1/N) + g * Phi^-1(1-1/(e*N))."""
+    g, nd = 0.5772156649015329, statistics.NormalDist()
+    return (1 - g) * nd.inv_cdf(1 - 1 / n) + g * nd.inv_cdf(1 - 1 / (math.e * n))
+
+
+def _bar(variant_entry: dict, name: str) -> dict:
+    (row,) = [b for b in variant_entry["bars"] if b["name"] == name]
+    return row
+
+
+def _sha256_of(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _full_days(first: str, last: str) -> int:
+    """Calendar days first..last INCLUSIVE (D-047's f counts nominal days, a
+    one-day junction once) -- computed here from the protocol's dates, not read
+    back from the code under test."""
+    return (_dt.date.fromisoformat(last) - _dt.date.fromisoformat(first)).days + 1
+
+
+# The sandbox protocol's six monthly windows run 2022-01-01 .. 2022-07-01; the
+# asset coin of the tests below covers the last four (2022-03-01 .. 2022-07-01).
+_FULL_DAYS = _full_days("2022-01-01", "2022-07-01")
+_PARTIAL_DAYS = _full_days("2022-03-01", "2022-07-01")
+
+
+def _run_v2_first_run(harness, *, first_full_window: int | None = 2):
+    h = _v2_harness(harness, first_full_window=first_full_window)
+    h.register_brief()
+    r1 = "run_001"
+    keep_going, exc = _drive(h)
+    _pin_joined(h, exc, r1)
+    st = h.state(r1)
+    assert st.get("last_error") is None, st.get("last_error")
+    assert st["pending_stage"] == "completed_inconclusive" and st["status"] == "completed"
+    assert isinstance(keep_going, bool)
+    return h, r1, h.art(r1, "profit_bars_evaluation.yaml")
+
+
+@pytest.mark.slow
+def test_e062_v2_whole_test_dsr_normalised_partial_variant_and_single_era(harness):
+    """profit_bars_v2 through the real pipeline (D-034..D-047): three variants on
+    one run -- base and design on every window, asset on 4 of the 6 (its coin
+    listed mid-February). Checked against values computed HERE, not read back:
+
+      * every variant's deflated-Sharpe row is the whole-test DSR of D-046 on the
+        pure-luck spread: N = 33 counted trials (30 legacy rows + this run's 3),
+        K = 3 same-basis Sharpes < dsr_min_same_basis_trials (10), so
+        SR0 = sigma_null * Z(N) with sigma_null = 1/sqrt(T-1); the evaluation's
+        dsr_basis records sharpe_basis, n_same_basis and basis_overlay absent;
+      * the asset variant's trade minimum, cost-ratio trade floor and drawdown
+        limit are its D-047 normalisation of the bars file's values; base and
+        design (full coverage) carry neither a normalisation nor a partial mark;
+      * 5a froze the run protocol (artifacts/variants/run_protocol.json), and
+        every per-coin index entry records its sha256;
+      * sign_consistent_by_era on a single-era protocol reads INCONCLUSIVE with a
+        nonzero median (the D-047 era rule), not PASS as under v1.
+
+    The buy-and-hold row reads NOT_EVALUABLE here (the stub writes no
+    manifest.json, so its slippage is unknown) and is not asserted."""
+    h, r1, pbe = _run_v2_first_run(harness)
+    bars = yaml.safe_load((h.root / "config" / "profitability_bars.yaml").read_text(encoding="utf-8"))
+    assert bars["dsr_min_same_basis_trials"] == 10
+    basis = pwt.WHOLE_TEST_BASIS
+
+    # -- the evaluation records what it was graded on
+    assert pbe["bars_definitions"] == "v2"
+    assert pbe["dsr_basis"] == {
+        "n_dsr_total": 33, "n_trials": 33, "sharpe_basis": basis, "n_same_basis": 3,
+        "min_same_basis": 10,
+        "basis_overlay": {"present": False, "sha256": None}}
+    assert sorted(pbe["variants"]) == ["asset", "base", "design"]
+    rows = {r["trial_id"]: r for r in h.trial_rows() if r["trial_id"].startswith(f"{r1}:")}
+    assert sorted(rows) == [f"{r1}:asset", f"{r1}:base", f"{r1}:design"]
+    for row in rows.values():  # P1 wrote the whole-test block on the ledger row
+        assert row["whole_test"]["basis"] == basis and row["whole_test"]["status"] == "ok"
+    assert all("whole_test" not in r for r in h.trial_rows() if r["trial_id"].startswith("run_9"))
+
+    # -- the DSR row: Bailey & Lopez de Prado 2014 on the pure-luck benchmark
+    nd = statistics.NormalDist()
+    for vid, entry in pbe["variants"].items():
+        row = _bar(entry, "deflated_sharpe_threshold")
+        assert row["basis"] == "deflated_sharpe_whole_test_daily_on_campaign_trial_ledger"
+        d, block = row["detail"], rows[f"{r1}:{vid}"]["whole_test"]
+        assert (d["status"], d["K"], d["N"], d["min_same_basis"]) == ("ok", 3, 33, 10)
+        assert d["sigma_source"] == "null" and d["sigma_cross"] is None
+        sigma_null = 1 / math.sqrt(d["T"] - 1)
+        assert d["sigma_null"] == pytest.approx(sigma_null, rel=1e-12)
+        assert d["z_expected_max"] == pytest.approx(_norm_z(33), rel=1e-9)
+        assert d["sr0"] == pytest.approx(sigma_null * _norm_z(33), rel=1e-9)
+        sr = block["sr_daily"]
+        want = nd.cdf((sr - d["sr0"]) * math.sqrt(d["T"] - 1)
+                      / math.sqrt(1 - block["skew"] * sr + (block["kurtosis"] - 1) / 4 * sr ** 2))
+        assert row["actual"] == pytest.approx(want, rel=1e-9)
+        assert row["result"] == ("PASS" if want >= 0.95 else "FAIL")
+
+    # -- full coverage: the bars file's own numbers, no normalisation record
+    for vid in ("base", "design"):
+        entry = pbe["variants"][vid]
+        assert "partial_coverage" not in entry
+        assert _bar(entry, "trade_count_min")["threshold"] == 100
+        assert _bar(entry, "max_drawdown_pct_max")["threshold"] == 20.0
+        assert _bar(entry, "cost_edge_ratio_min")["detail"]["min_trades"] == 100
+        assert all("normalisation" not in (b.get("detail") or {}) for b in entry["bars"])
+
+    # -- partial coverage: D-047's f = covered days / full days, exact
+    asset = pbe["variants"]["asset"]
+    assert asset["partial_coverage"].startswith("partial coverage: ran on 4/6")
+    f = Fraction(_PARTIAL_DAYS, _FULL_DAYS)
+    want_norm = {"covered_days": _PARTIAL_DAYS, "full_days": _FULL_DAYS, "f": float(f)}
+    trade_floor = max(math.ceil(100 * f), bars["trade_count_min_floor"])
+    assert trade_floor == 68 > bars["trade_count_min_floor"] == 60  # the ceil, not the floor, binds
+    tc, dd, ce = (_bar(asset, n) for n in ("trade_count_min", "max_drawdown_pct_max",
+                                            "cost_edge_ratio_min"))
+    assert tc["threshold"] == trade_floor and ce["detail"]["min_trades"] == trade_floor
+    assert dd["threshold"] == pytest.approx(20.0 * math.sqrt(f), rel=1e-12)
+    for row, base, floor in ((tc, 100, 60), (dd, 20.0, None), (ce, 100, 60)):
+        norm = row["detail"]["normalisation"]
+        assert {k: norm[k] for k in want_norm} == want_norm
+        assert (norm["base"], norm["floor"]) == (base, floor)
+    assert ce["threshold"] == 2.2  # the ratio itself is never scaled
+    assert (_bar(asset, "sharpe_min")["threshold"], _bar(asset, "avg_daily_return_min")["threshold"]
+            ) == (1.0, 0.0005)
+    assert "normalisation" not in _bar(asset, "sharpe_min").get("detail", {})
+    # 20 trades x 4 windows = 80 >= 68, though 80 < the un-normalised 100
+    assert tc["actual"] == 80 and tc["result"] == "PASS"
+
+    # -- 5a froze the run protocol; every per-coin entry names its sha256
+    arts = h.run_dir(r1) / "artifacts"
+    frozen = arts / "variants" / "run_protocol.json"
+    assert frozen.read_bytes() == (h.root / "protocols" / PROTOCOL_NAME).read_bytes()
+    index = h.art(r1, "variants/index.yaml")["variants"]
+    assert {v["run_protocol_sha256"] for v in index.values()} == {_sha256_of(frozen)}
+
+    # -- single era: INCONCLUSIVE with a nonzero median, under v2 only
+    grid = h.art(r1, "grid_evaluation.yaml")["grid"]["sign_consistent_by_era"]
+    for vid in ("base", "design"):
+        cell = grid[vid]
+        assert cell["result"] == "INCONCLUSIVE" and cell["reason"].startswith("single_era:")
+        (era_median,) = cell["detail"]["era_medians"].values()
+        assert era_median != 0
+    assert h.art(r1, "grid_evaluation.yaml")["idea_status"] == "inconclusive"
+    _assert_holdout_untouched(h)
+
+
+@pytest.mark.slow
+def test_e062_v2_spend_rederives_the_partial_thresholds_from_the_frozen_protocol(harness):
+    """The spend side of D-047, on the run the test above builds: the guards a
+    `spend` decision meets before the seal (holdout_decision.yaml is NOT written
+    and no holdout path is touched -- the functions are called directly).
+
+      * the graded evaluation re-derives cleanly, for the partial and a full
+        variant alike;
+      * a partial variant graded on the full-coverage threshold is refused
+        `bars_changed`;
+      * with the frozen run protocol gone the partial variant is refused
+        `normalisation_unverifiable` (fail closed), never re-resolving
+        protocols/*.json;
+      * an evaluation whose dsr_basis is not the current whole-test basis is
+        refused `dsr_fails_current_ledger` (`grade again`)."""
+    h, r1, pbe = _run_v2_first_run(harness)
+    run_dir = h.run_dir(r1)
+    bars = rpr._evaluation_under_current_bars(pbe)  # same bytes, same definitions
+    rpr._normalisation_at_spend(run_dir, r1, "asset", pbe["variants"]["asset"], bars)
+    rpr._normalisation_at_spend(run_dir, r1, "base", pbe["variants"]["base"], bars)
+
+    forged = copy.deepcopy(pbe["variants"]["asset"])
+    _bar(forged, "trade_count_min")["threshold"] = 100
+    with pytest.raises(rpr.HoldoutUnlockRefused) as refused:
+        rpr._normalisation_at_spend(run_dir, r1, "asset", forged, bars)
+    assert refused.value.code == "bars_changed" and "trade_count_min" in refused.value.detail
+
+    old_basis = copy.deepcopy(pbe)
+    old_basis["dsr_basis"].pop("sharpe_basis")
+    with pytest.raises(rpr.HoldoutUnlockRefused) as refused:
+        rpr._dsr_on_current_ledger(run_dir, "asset", pbe["variants"]["asset"], bars, old_basis)
+    assert refused.value.code == "dsr_fails_current_ledger" and "grade again" in refused.value.detail
+
+    (run_dir / "artifacts" / "variants" / "run_protocol.json").unlink()
+    with pytest.raises(rpr.HoldoutUnlockRefused) as refused:
+        rpr._normalisation_at_spend(run_dir, r1, "asset", pbe["variants"]["asset"], bars)
+    assert refused.value.code == "normalisation_unverifiable"
+    assert "run_protocol.json" in refused.value.detail
+    _assert_holdout_untouched(h)
+
+
+SECOND_BRIEF_ID = "E062_retest_brief"
+
+
+def _retest_run(h: Harness, r1: str) -> str:
+    """Run 2 = the operator re-registers the same brief after run 1: the stub
+    authors the same card, the same base config and the same three variants, so
+    every variant's repeat key is run 1's (same config, same coin, same protocol)
+    -- except where the coin's window fingerprint changed. Returns the new run."""
+    brief = h.root / "briefs" / f"{SECOND_BRIEF_ID}.md"
+    brief.write_text(_brief_text(f"protocols/{PROTOCOL_NAME}"), encoding="utf-8")
+    assert camp._register_from_cli(brief, 1, "E-062 S2b-4 retest") == 0
+    assert h.entry(SECOND_BRIEF_ID)["status"] == "ready"
+    keep_going, exc = _drive(h)
+    r2 = h.entry(SECOND_BRIEF_ID)["run_ids"][0]
+    assert r2 == "run_002"
+    _pin_joined(h, exc, r2)
+    assert h.state(r2).get("last_error") is None, h.state(r2).get("last_error")
+    assert isinstance(keep_going, bool)
+    return r2
+
+
+def _rows_of(h: Harness, run_id: str) -> list:
+    return [r for r in h.trial_rows() if r["trial_id"].startswith(f"{run_id}:")]
+
+
+@pytest.mark.slow
+def test_e062_v2_retest_with_the_same_coverage_is_a_repeat(harness):
+    """D-047 (5), same coverage: the same idea is run again, the asset coin's
+    coverage unchanged (4 of 6 windows). The repeat key carries the partial
+    variant's own window fingerprint and it matches run 1's, so ALL THREE
+    variants are exact repeats: no backtest, no trial row, N stays 33, and the
+    run ends completed_no_new_hypothesis."""
+    h, r1, _pbe1 = _run_v2_first_run(harness)
+    n_before = len(rpr._dedupe_trials(h.trial_rows())[0])
+    assert n_before == 33
+    rows1 = {r["trial_id"]: r for r in _rows_of(h, r1)}
+    assert rows1[f"{r1}:asset"]["windows_sha256"]  # a partial variant's fingerprint, on its row
+    assert "windows_sha256" not in rows1[f"{r1}:base"]  # full coverage: key and row unchanged
+    n_backtests = len(h.calls_to("run_protocol.py"))
+    r2 = _retest_run(h, r1)
+
+    st2 = h.state(r2)
+    assert st2["pending_stage"] == rpr.NO_NEW_HYPOTHESIS_STAGE, st2["pending_stage"]
+    gate = h.art(r2, "variant_anti_adjacency_result.yaml")
+    assert sorted(gate["repeats"]) == ["asset", "base", "design"] and gate["run_end"]
+    index2 = h.art(r2, "variants/index.yaml")["variants"]
+    for vid in ("asset", "base", "design"):
+        assert index2[vid]["status"] == "not_tested"
+        assert f"{r1}:{vid}" in index2[vid]["reason"], index2[vid]["reason"]
+    assert _rows_of(h, r2) == []
+    assert len(h.calls_to("run_protocol.py")) == n_backtests  # nothing was backtested
+    assert len(rpr._dedupe_trials(h.trial_rows())[0]) == n_before
+    _assert_holdout_untouched(h)
+
+
+@pytest.mark.slow
+def test_e062_v2_retest_with_wider_coverage_is_a_new_trial(harness):
+    """D-047 (5), wider coverage: between the runs the asset coin's data reaches
+    back one more window (5 of 6). The base and design variants (full coverage,
+    unchanged keys) are still repeats, but the asset variant has another window
+    fingerprint: it is NOT a repeat. It runs, its trial row survives the DSR
+    dedupe next to run 1's asset row (same forecast_hash and coin, other
+    windows_sha256) and N grows by one (33 -> 34), which the run's own
+    profit_bars_evaluation records. It is graded on its 5-window normalisation."""
+    h, r1, _pbe1 = _run_v2_first_run(harness)
+    rows1 = {r["trial_id"]: r for r in _rows_of(h, r1)}
+    _partial_asset_coin(h, 1)  # earliest date now mid-January: windows Feb..Jun
+    r2 = _retest_run(h, r1)
+
+    st2 = h.state(r2)
+    assert st2["pending_stage"] != rpr.NO_NEW_HYPOTHESIS_STAGE
+    gate = h.art(r2, "variant_anti_adjacency_result.yaml")
+    assert sorted(gate["repeats"]) == ["base", "design"] and gate["run_end"] is None
+    index2 = h.art(r2, "variants/index.yaml")["variants"]
+    assert index2["asset"]["status"] != "not_tested", index2["asset"]
+    assert index2["asset"]["coverage"]["windows_run"] == list(WINDOW_LABELS[1:])
+    rows2 = {r["trial_id"]: r for r in _rows_of(h, r2)}
+    assert sorted(rows2) == [f"{r2}:asset"]
+    retest, first = rows2[f"{r2}:asset"], rows1[f"{r1}:asset"]
+    assert (retest["forecast_hash"], retest["symbols"]) == (first["forecast_hash"],
+                                                             first["symbols"])
+    assert retest["windows_sha256"] != first["windows_sha256"]
+    kept = {r["trial_id"] for r in rpr._dedupe_trials(h.trial_rows())[0]}
+    assert {f"{r1}:asset", f"{r2}:asset"} <= kept  # neither collapsed onto the other
+    assert len(kept) == 34
+    pbe2 = h.art(r2, "profit_bars_evaluation.yaml")
+    assert pbe2["dsr_basis"]["n_dsr_total"] == 34
+    days = _full_days("2022-02-01", "2022-07-01")
+    f = Fraction(days, _FULL_DAYS)
+    tc = _bar(pbe2["variants"]["asset"], "trade_count_min")
+    assert tc["threshold"] == max(math.ceil(100 * f), 60) == 83
+    assert tc["detail"]["normalisation"]["covered_days"] == days
+    assert tc["actual"] == 100 and tc["result"] == "PASS"  # 20 trades x 5 windows
     _assert_holdout_untouched(h)
