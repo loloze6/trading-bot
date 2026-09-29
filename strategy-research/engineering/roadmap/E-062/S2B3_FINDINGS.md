@@ -265,3 +265,9 @@ flag-off and stay. 3c: the dedupe lockstep tests gain cases, no expected value c
 - SMALL guesses as recommended. Split 3a (pure) -> 3b (wiring) -> 3c (repeat key + dedupe), each reviewed and merged.
 - **X6** (bars-file sha depends on line endings: CRLF f96ce688... on this Windows checkout vs LF 4a75ed66...,
   verified by the orchestrator) -> separate ticket, before any cross-machine holdout spend.
+
+### S2b-3a built
+
+- `tools/variant_coin.py` (commit `2237c546`): `coverage_days` / `coverage_fraction` (G1; windows parsed by `pwt.window_bounds_from_protocol`; not-a-subsequence raises), `normalised_trade_minimum` (max(⌈base·f⌉, floor); a float f is read as its day ratio, so float noise cannot bump the ceil; floor > base raises), `scaled_drawdown_limit` (limit·√f), `era_count_shortfall` (< 2 eras → `single_era: <eras|none>`). Nothing calls them (3b wires them).
+- Era rule: `era_count_shortfall` takes era ids already assigned by the grid reducer (`vce._reduce_sign_consistent_by_era`: window label → first day of its month, `era_unmapped` excluded); it assigns none itself, so X5's midpoint rule (`coverage.eras`) stays information only. 3b passes the reducer's `by_era` keys.
+- `tests/test_e062_s2b3a_normalisation.py`: 70 tests; every Q3/Q4 table row reproduced from the committed protocols (run_053 58/96 → 1767/2922 days, f 0.6047, 61 trades, 15.55; 77/96 → 0.8025, 81, 17.92; the other five rows too).
