@@ -1966,6 +1966,10 @@ def test_c2_3_run_2_readers_see_run_1s_validated_block_with_this_run_as_its_neig
     assert s1["this_run"]["block_type"]["component_classes"] == [
         BASE_CONFIG["strategies"]["regimes"]["unknown"]["components"][0]["class"]]
     assert s1["this_run"]["type_already_registered"] is False
+    # run 1 is validated: its own block is registered only AFTER its readers, so the
+    # summary carries the status (the SKILLs score a patch on a validated run as 0)
+    assert s1["this_run"]["idea_status"] == "validated"
+    assert s1["registry"]["n_forecast_blocks"] == 0
     r1_prompts = [p for s, r, p in h.prompts if s == "specialist_readers" and r == r1]
     assert len(r1_prompts) == len(rpr._reader_categories())
     assert all("registry_summary.yaml" in p for p in r1_prompts)
@@ -1982,7 +1986,11 @@ def test_c2_3_run_2_readers_see_run_1s_validated_block_with_this_run_as_its_neig
     assert s2["registry"]["n_blocks"] == 1
     (row,) = s2["blocks"]
     assert row["block_id"] == block_id and row["validated_by_run"] == r1
-    assert row["relation_to_this_run"] == "same_type"       # this run marked as its neighbour
+    # this run marked as its neighbour; composition_runs is off, so neither block records a
+    # timeframe category and the match is the assumed one, under its own name
+    assert row["relation_to_this_run"] == "same_classes_timeframe_unknown"
+    assert s2["registry"]["n_forecast_blocks"] == 1
+    assert s2["this_run"]["idea_status"] == h.art(r2, "idea_status.yaml")["idea_status"]
     assert s2["this_run"]["neighbour_block_ids"] == [block_id]
     assert s2["this_run"]["type_already_registered"] is True
     assert s2["this_run"]["patches_registered_block"] == block_id
@@ -1990,5 +1998,6 @@ def test_c2_3_run_2_readers_see_run_1s_validated_block_with_this_run_as_its_neig
     assert len(r2_prompts) == len(rpr._reader_categories())
     for p in r2_prompts:
         assert "--- CONTENT OF artifacts/registry_summary.yaml ---" in p
-        assert block_id in p and "same_type" in p
+        assert block_id in p and "same_classes_timeframe_unknown" in p
+        assert "idea_status" in p
     _assert_holdout_untouched(h)

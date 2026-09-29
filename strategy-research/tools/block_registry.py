@@ -368,6 +368,12 @@ REGISTRY_SUMMARY_ARTIFACT = "registry_summary.yaml"
 REGISTRY_SUMMARY_SCHEMA_VERSION = 1
 GROUP_BY_TYPE_ABOVE = 50  # more registered blocks than this -> one row per block TYPE
 _GROUP_ID_SAMPLE = 5
+# The relation names a block can carry to this run's block type (the SKILLs cite
+# exactly these; a test pins both directions). None = not the same set of classes.
+RELATIONS = ("same_type", "same_classes_timeframe_unknown",
+             "same_classes_different_timeframe_category", "same_classes_different_kind",
+             "same_classes_different_kind_and_timeframe_category")
+_SAME_TYPE_RELATIONS = ("same_type", "same_classes_timeframe_unknown")
 
 
 def _fragment_component_classes(fragment) -> list:
@@ -390,23 +396,25 @@ def _fragment_component_classes(fragment) -> list:
     return sorted(found)
 
 
-def _categories_match(a, b) -> bool:
-    """An unrecorded timeframe category (None: registered, or run, without
-    orchestrator.composition_runs) is not evidence of a different one -- it
-    matches anything, so an unknown never makes a block look further from the
-    registry than it may be."""
-    return a is None or b is None or a == b
-
-
 def _relation(this: dict, other: dict):
-    """None when the two share no component classes (or either has none);
-    otherwise how the block relates to this run's block type."""
-    if not this["component_classes"] or this["component_classes"] != other["component_classes"]:
+    """None when the two do not have the same set of component classes;
+    otherwise how the block relates to this run's block type. G9 defines the type
+    as (kind, sorted classes, timeframe category), so two EMPTY class sets are the
+    same set like any other (a regime block whose config paths hold no component
+    mapping, e.g. /regime_detector/rules, is still a comparable type).
+    A timeframe category that is unrecorded on either side (registered, or run,
+    without orchestrator.composition_runs) is not evidence of a different one, so
+    a same-kind block with an unknown category is `same_classes_timeframe_unknown`:
+    an ASSUMED same type (never further from the registry than it may be),
+    distinguishable from a verified `same_type`."""
+    if this["component_classes"] != other["component_classes"]:
         return None
     same_kind = this["kind"] == other["kind"]
-    same_tf = _categories_match(this["timeframe_category"], other["timeframe_category"])
+    tf_a, tf_b = this["timeframe_category"], other["timeframe_category"]
+    tf_unknown = tf_a is None or tf_b is None
+    same_tf = tf_unknown or tf_a == tf_b
     if same_kind and same_tf:
-        return "same_type"
+        return "same_classes_timeframe_unknown" if tf_unknown else "same_type"
     if same_kind:
         return "same_classes_different_timeframe_category"
     if same_tf:
@@ -530,11 +538,15 @@ def _correlations(run_dir: Path) -> dict:
             "max_abs": max(abs(v) for v in numbers) if numbers else None}
 
 
-def registry_summary(doc: dict, run_dir: Path) -> dict:
+def registry_summary(doc: dict, run_dir: Path, idea_status: str | None = None) -> dict:
     """The artifact artifacts/registry_summary.yaml (G9). `doc` is
     load_registry()'s document. Deterministic (no clock), so a resume rewrites
     the same bytes. Blocks this run itself registered are left out: the summary
-    is what EARLIER runs validated."""
+    is what EARLIER runs validated.
+    `idea_status` is this run's own grid status (idea_status.yaml, passed in by the
+    caller so this stays pure): regroup_record registers a validated run's block
+    only AFTER the readers, so the summary cannot list it yet -- the readers get
+    the status instead (`this_run.idea_status`)."""
     run_dir = Path(run_dir)
     run_id = run_dir.name
     blocks = [b for b in doc["blocks"] if b["validated_by_run"] != run_id]
@@ -554,15 +566,22 @@ def registry_summary(doc: dict, run_dir: Path) -> dict:
             # null when this run's own block type is unknown (see this_run.reason)
             "relation_to_this_run": _relation(this_type, btype) if this_type else None,
         })
+    neighbours = [r["block_id"] for r in rows if r["relation_to_this_run"]]
     out = {
         "schema_version": REGISTRY_SUMMARY_SCHEMA_VERSION, "run_id": run_id,
         "registry": {"n_blocks": len(rows), "revision": doc["revision"],
+                     "n_forecast_blocks": sum(1 for r in rows if r["kind"] == "forecast"),
                      "grouping": "by_type" if len(rows) > GROUP_BY_TYPE_ABOVE else "none"},
         "this_run": {
+            "idea_status": idea_status,
             "block_type": this_type, "reason": reason,
-            "type_already_registered": (any(r["relation_to_this_run"] == "same_type" for r in rows)
-                                        if this_type else None),
-            "neighbour_block_ids": [r["block_id"] for r in rows if r["relation_to_this_run"]],
+            # an assumed match (same_classes_timeframe_unknown) counts: the conservative reading
+            "type_already_registered": (any(r["relation_to_this_run"] in _SAME_TYPE_RELATIONS
+                                            for r in rows) if this_type else None),
+            # capped once the summary is grouped; n_neighbour_blocks is always the full count
+            "neighbour_block_ids": (neighbours if len(rows) <= GROUP_BY_TYPE_ABOVE
+                                    else neighbours[:_GROUP_ID_SAMPLE]),
+            "n_neighbour_blocks": len(neighbours),
             "patches_registered_block": _patched_registered_block(run_dir, blocks),
             "correlation_to_composite": {
                 "status": corr["status"], "composite_kind": corr["composite_kind"],

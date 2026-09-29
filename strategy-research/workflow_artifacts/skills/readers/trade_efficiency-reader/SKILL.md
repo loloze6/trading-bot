@@ -185,10 +185,10 @@ deviation from "no problem" and say so.
 
 | Score | `confidence_real` | `distance_to_profitable` (card I / D-017: how far is this block from what the registry already holds? -- NOT closeness to a rule threshold; see "Distance to profitable" below) | `mechanism_plausibility` |
 |---|---|---|---|
-| 0 | `variants.base.slices.overall` is unavailable, or `variants.base.slices.per_window`/`per_symbol`/`per_regime` all unavailable (no `trade_diagnostics.json`) leaving only a pre-aggregated summary with no per-trade evidence to cite. | A patch on an idea that is itself a registered block (`registry_summary.yaml` `this_run.patches_registered_block` is set), or the same block type as a registered one (`this_run.type_already_registered` is true / a `relation_to_this_run: same_type` row). | The attribution pattern fires on a single window's trade group only, with no corroboration from `per_symbol`/`per_regime` grouping of the same trades. |
+| 0 | `variants.base.slices.overall` is unavailable, or `variants.base.slices.per_window`/`per_symbol`/`per_regime` all unavailable (no `trade_diagnostics.json`) leaving only a pre-aggregated summary with no per-trade evidence to cite. | A `patch` (never a `new_block` sketch) on an idea that is itself a registered block (`registry_summary.yaml` `this_run.patches_registered_block` is set), or a `patch` on this run when `this_run.idea_status` is `validated` (this run's own block is registered only after the readers, so the summary cannot list it yet), or the same block type as a registered one (`this_run.type_already_registered` is true / a `relation_to_this_run` of `same_type` or `same_classes_timeframe_unknown` row -- the latter is an assumed match: a timeframe category is unrecorded on one side). | The attribution pattern fires on a single window's trade group only, with no corroboration from `per_symbol`/`per_regime` grouping of the same trades. |
 | 1 | `variants.base.slices.overall` populated but `variants.base.slices.per_window` groups mostly have < 5 trades each. | Same component classes as a registered block but a different timeframe category or kind (`relation_to_this_run` is `same_classes_different_timeframe_category`, `same_classes_different_kind` or `same_classes_different_kind_and_timeframe_category`), OR this run's measured `|correlation to the composite|` is >= 0.6 (`this_run.correlation_to_composite.max_abs`). | Pattern recurs in 2 trade groups (e.g. 2 windows) with no other field corroborating. |
-| 2 | `variants.base.slices.overall` populated, `variants.base.slices.per_window`/`per_symbol` show the same `primary_weakness`-supporting pattern in 2+ groups. | The block type is not in the registry, and `max_abs` is 0.3-0.6 or cannot be measured (`status` `not_measurable` or `skipped: ...`, or `this_run.block_type` is null) -- every `new_block` sketch lands here unless row 0 or 1 applies. | Pattern recurs across 3+ groups AND at least one `fee_reduction_metrics` sub-field corroborates the same direction. |
-| 3 | Trade-attribution pattern holds consistently across `per_window`, `per_symbol`, AND `per_regime` groupings of the same underlying trades. | The block type is not in the registry AND (`max_abs` < 0.3, or no composite exists yet: `status` `no_composite` / `no_residual_ic_artifact`) -- it fills a missing block type with low correlation to the registry. | Fee-reduction candidate and trade-attribution `primary_weakness` point to the SAME execution mechanism (e.g. both indicate exit timing), giving a coherent causal story, not two unrelated coincidences. |
+| 2 | `variants.base.slices.overall` populated, `variants.base.slices.per_window`/`per_symbol` show the same `primary_weakness`-supporting pattern in 2+ groups. | The block type is not in the registry, and `max_abs` is 0.3-0.6 or cannot be measured (`status` `not_measurable` or `skipped: ...`, or `no_residual_ic_artifact` while `registry.n_forecast_blocks` > 0 -- correlation was never computed, so it is not measurable, or `this_run.block_type` is null) -- every `new_block` sketch lands here unless row 0 or 1 applies. | Pattern recurs across 3+ groups AND at least one `fee_reduction_metrics` sub-field corroborates the same direction. |
+| 3 | Trade-attribution pattern holds consistently across `per_window`, `per_symbol`, AND `per_regime` groupings of the same underlying trades. | The block type is not in the registry AND (`max_abs` < 0.3, or no composite exists yet: `status` `no_composite`, or `no_residual_ic_artifact` with `registry.n_forecast_blocks` = 0) -- it fills a missing block type with low correlation to the registry. | Fee-reduction candidate and trade-attribution `primary_weakness` point to the SAME execution mechanism (e.g. both indicate exit timing), giving a coherent causal story, not two unrelated coincidences. |
 
 ### Distance to profitable (card I, D-017)
 
@@ -204,12 +204,28 @@ this category's report and the grid you may read for this score):
 - `this_run.type_already_registered`, `this_run.neighbour_block_ids`,
   `this_run.patches_registered_block` and each `blocks[*].relation_to_this_run` (or, past 50 blocks,
   `groups[*]`) say whether the type is present and which registered blocks neighbour it.
+  `relation_to_this_run` is one of `same_type` (kind, classes and timeframe category all verified equal),
+  `same_classes_timeframe_unknown` (same kind and classes, but a timeframe category is unrecorded on one
+  side: an ASSUMED same type, counted by `type_already_registered` -- say "assumed" in `evidence`),
+  `same_classes_different_timeframe_category`, `same_classes_different_kind`,
+  `same_classes_different_kind_and_timeframe_category`, or null (a different set of component classes;
+  two empty sets count as the same set). Past 50 blocks `this_run.neighbour_block_ids` is capped;
+  `this_run.n_neighbour_blocks` is the full count.
+- `this_run.patches_registered_block` and the `this_run.idea_status` clause of row 0 apply to a `patch`
+  proposal only, never to a `new_block` sketch (a sketch is scored on its own type).
 - `this_run.correlation_to_composite`: use `max_abs` (the largest absolute correlation over the
-  variants -- the conservative reading) when `status` is `measured`; any other `status` means "not
-  measurable" or "no composite yet" as the table says.
-- If `this_run.block_type` is null (see `this_run.reason`) the type cannot be placed: score 2, or 0
-  when `patches_registered_block` is set.
-- Take the LOWEST row whose condition holds. The 0.3 / 0.6 cut-offs are rank-only placeholders:
+  variants -- the conservative reading) when `status` is `measured`. `no_composite` means a residual-IC
+  run found no composite to correlate against. `no_residual_ic_artifact` means the correlation was never
+  computed, NOT that no composite exists: it is row 3 only when `registry.n_forecast_blocks` is 0 (nothing
+  to build a composite from), otherwise "not measurable" (row 2). `not_measurable` and `skipped: ...` are
+  "not measurable".
+- If `this_run.block_type` is null (see `this_run.reason`) the type cannot be placed: score 2, unless a
+  lower row applies (see the precedence rule below).
+- Precedence (a lower score always wins -- conservative): check row 0 first (a `patch` whose
+  `this_run.patches_registered_block` is set, a `patch` with `this_run.idea_status` `validated`, or a
+  same-type / assumed-same-type block), then row 1 (a same-classes neighbour, or `max_abs` >= 0.6), then the
+  null-type default of 2, then rows 2 and 3. So a null `block_type` scores 2 only when no row-0 or row-1
+  condition holds, and never scores 3. The 0.3 / 0.6 cut-offs are rank-only placeholders:
   they order candidates for decide-next and never touch an idea's status or the holdout.
 - Cite the `registry_summary.yaml` field that decided the score as one `evidence` item; every other
   `evidence` item still cites this category's own report. `confidence_real` and
