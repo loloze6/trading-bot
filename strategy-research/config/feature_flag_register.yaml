@@ -576,7 +576,7 @@ flags:
     reader: run_phase1_research._score_provenance_enabled
     owner: Jeremy
     state: off_incomplete
-    blocked_on: "C5.7b-2 (rubric_version closed set, citation record) and C4's first real reader output, which measures what AssistantMessage.model returns for claude-haiku-4-5 (D-048 / C5_7B G10)"
+    blocked_on: "C4's first real reader output, which measures what AssistantMessage.model returns for claude-haiku-4-5 and the citation unresolved rate that decides A+/B (D-048 / C5_7B G10); C5.7b-1 and C5.7b-2 are built"
     criterion: >
       Landed 2026-09-29 (C5.7b-1, D-048; engineering/review_2026-09-27/
       C5_7B_PROVENANCE_S1.md slices S0+S1+S3). Requires specialist_readers; the
@@ -587,9 +587,16 @@ flags:
       (AssistantMessage.model), the self-report kept in the audit log's
       `provenance` block with requested / observed / mismatch (observed differs
       from the requested model) / self_report_differs (informational); never
-      raises or retries. Tested by tests/test_c5_7b1_model_id_stamp.py. Switch
-      on with C4's flag set once C5.7b-2 lands, or earlier if the operator wants
-      the stamp alone.
+      raises or retries. Tested by tests/test_c5_7b1_model_id_stamp.py.
+      C5.7b-2 (slices S2+S4, same flag): a reader proposal's rubric_version must
+      be exactly its category's `<category>-reader-v2` (reader_proposals.
+      READER_RUBRIC_VERSIONS, pinned to the five SKILL files); a violation goes
+      through the reader's existing one-retry-then-raise path. The `provenance`
+      block gains `citations` (resolved / unresolved cited field paths per
+      proposal, resolve_evidence_paths): record only, nothing rejected. A
+      proposals/ file left by a pre-flag attempt (`-v1`) fails a flag-on resume.
+      Tested by tests/test_c5_7b2_rubric_citations.py. Switch on with C4's flag
+      set.
 
   - name: bar_equity
     kind: engine_param

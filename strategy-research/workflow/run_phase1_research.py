@@ -3944,6 +3944,54 @@ def _check_reader_budget(run_dir: Path, category: str) -> None:
             f"({used:,.0f} > {budget:,.0f}).")
 
 
+def _reader_strictness() -> dict:
+    """C5.7b-2 (D-048, S2): load_proposals keyword arguments for the reader
+    stage. Empty while orchestrator.score_provenance is off -- the call is then
+    exactly the pre-change `load_proposals(dir, categories)`. On, the closed
+    per-category rubric_version set is enforced, so an unknown, other-category
+    or `-v1` value is an ordinary ProposalError: one retry with the message
+    appended to the prompt, then the stage raises (run status `failed`)."""
+    return {"strict_provenance": True} if _score_provenance_enabled() else {}
+
+
+def _citation_provenance(category: str, run_dir: Path, body: str) -> dict:
+    """C5.7b-2 (D-048, S4, option A -- record only): for each proposal in a
+    validated reader body, which cited field paths exist in the files the reader
+    received (reports/<category>.yaml, grid_evaluation.yaml, registry_summary.yaml).
+    Returns the audit-log block. Never raises and never gates: any failure is
+    recorded as `error` (whole block) or per proposal, and an unreadable file is
+    listed in `files_unavailable` -- an absent grid or registry summary is a
+    normal condition, not a fault."""
+    try:
+        rp = _reader_proposals_module()
+        arts = run_dir / "artifacts"
+        files, unavailable = {}, []
+        for rel in (f"reports/{category}.yaml", "grid_evaluation.yaml", "registry_summary.yaml"):
+            try:
+                doc = yaml.safe_load((arts / rel).read_text(encoding="utf-8"))
+            except (OSError, yaml.YAMLError):
+                doc = None
+            if isinstance(doc, dict):
+                files[rel] = doc
+            else:
+                unavailable.append(rel)
+        block = {"files_read": sorted(files), "files_unavailable": sorted(unavailable),
+                 "proposals": {}}
+        proposals = yaml.safe_load(body)
+        for i, p in enumerate(proposals if isinstance(proposals, list) else []):
+            if not isinstance(p, dict):
+                continue
+            pid = p.get("proposal_id")
+            pid = pid if isinstance(pid, str) and pid.strip() else f"#{i}"
+            try:
+                block["proposals"][pid] = rp.resolve_evidence_paths(files, p.get("evidence"))
+            except Exception as exc:  # recorded per proposal, never raised
+                block["proposals"][pid] = {"error": f"{type(exc).__name__}: {exc}"}
+        return block
+    except Exception as exc:  # a normal-run condition never raises out of the stage
+        return {"error": f"{type(exc).__name__}: {exc}"}
+
+
 def _validate_reader_output(text: str, category: str, run_dir: Path):
     """Parse one reader response and validate it for its category in a scratch
     directory. Returns (body, None) when valid, (None, error message) when not.
@@ -3957,7 +4005,7 @@ def _validate_reader_output(text: str, category: str, run_dir: Path):
     scratch = Path(tempfile.mkdtemp(prefix=f".reader_{category}_", dir=str(run_dir / "artifacts")))
     try:
         (scratch / f"{category}.yaml").write_text(body, encoding="utf-8")
-        rp.load_proposals(scratch, [category])
+        rp.load_proposals(scratch, [category], **_reader_strictness())
     except rp.ProposalError as exc:
         return None, str(exc).replace(str(scratch), "proposals")
     finally:
@@ -4008,6 +4056,8 @@ def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0
                 # self-report; recorded in the audit log, never a stop or retry.
                 body, record = _stamp_reader_body(body, category, run_dir, meta.get("models"))
                 entry["provenance"].update(record)
+                # S4 (option A): which cited field paths exist; record only.
+                entry["provenance"]["citations"] = _citation_provenance(category, run_dir, body)
                 update_state(path=run_dir, audit_log={key: entry})
                 if record["mismatch"]:
                     print(f"⚠️  score provenance: {category} reader answered by "
@@ -4054,16 +4104,16 @@ def _run_specialist_readers(run_id: str, run_dir: Path, stage_attempt=0) -> dict
     for category in categories:
         dest = proposals_dir / f"{category}.yaml"
         if dest.exists():
-            rp.load_proposals(proposals_dir, categories)
+            rp.load_proposals(proposals_dir, categories, **_reader_strictness())
             print(f"⏭️  proposals/{category}.yaml already present and valid -- reader not re-run.")
             continue
         _check_reader_budget(run_dir, category)
         run_reader_worker(category, run_id, run_dir, stage_attempt)
-        rp.load_proposals(proposals_dir, categories)
+        rp.load_proposals(proposals_dir, categories, **_reader_strictness())
     missing = [c for c in categories if not (proposals_dir / f"{c}.yaml").exists()]
     if missing:
         raise FileNotFoundError(f"specialist_readers finished without proposals for {missing}")
-    return rp.load_proposals(proposals_dir, categories)
+    return rp.load_proposals(proposals_dir, categories, **_reader_strictness())
 
 
 def _check_retune_firewall(run_dir: Path) -> None:

@@ -36,6 +36,21 @@ REQUIRES_FEED_KEYS = frozenset({"feed", "reason"})
 FEED_NAME_RE = re.compile(r"[a-z][a-z0-9_]*")
 
 
+# C5.7b-2 (D-048, S2): the closed `rubric_version` set. A reader's rubric is
+# fully determined by its category, so each category has exactly one accepted
+# value -- the literal its SKILL.md tells the model to write (C2 S2e: all -v2).
+# Enforced only under strict_provenance=True (orchestrator.score_provenance);
+# tests/test_c5_7b2_rubric_citations.py pins this dict to the five SKILL files,
+# so bumping a SKILL to -v3 fails that test until this dict is bumped too.
+READER_RUBRIC_VERSIONS = {
+    "profitability": "profitability-reader-v2",
+    "forecast_power": "forecast_power-reader-v2",
+    "regime_power": "regime_power-reader-v2",
+    "component_attribution": "component_attribution-reader-v2",
+    "trade_efficiency": "trade_efficiency-reader-v2",
+}
+
+
 class ProposalError(ValueError):
     """A proposal file or entry is malformed. Never caught here: a bad reader
     output must stop loudly, never silently count as 'no proposals'."""
@@ -54,7 +69,7 @@ def _non_empty_str(value) -> bool:
     return isinstance(value, str) and bool(value.strip())
 
 
-def _check_proposal(p, cat: str, where: str) -> None:
+def _check_proposal(p, cat: str, where: str, strict_provenance: bool = False) -> None:
     if not isinstance(p, dict):
         raise ProposalError(f"{where}: proposal is not a mapping")
     extra = sorted(set(p) - _PROPOSAL_KEYS)
@@ -63,6 +78,14 @@ def _check_proposal(p, cat: str, where: str) -> None:
     for key in ("model_id", "rubric_version"):
         if not _non_empty_str(p.get(key)):
             raise ProposalError(f"{where}: {key} must be a non-empty string")
+    if strict_provenance:
+        expected = READER_RUBRIC_VERSIONS.get(cat)
+        if expected is None:
+            raise ProposalError(f"{where}: no closed rubric_version is defined for category "
+                                f"'{cat}' (known: {sorted(READER_RUBRIC_VERSIONS)})")
+        if p["rubric_version"] != expected:
+            raise ProposalError(f"{where}: rubric_version={p['rubric_version']!r} is not the "
+                                f"'{cat}' reader's rubric; write exactly {expected!r}")
     pid = p.get("proposal_id")
     if not isinstance(pid, str) or not pid.startswith(f"{cat}-") or not _PROPOSAL_ID_RE.match(pid):
         raise ProposalError(f"{where}: proposal_id={pid!r} must match <category>-<run_id>-<n> "
@@ -122,13 +145,17 @@ def check_scores(scores, where: str) -> None:
             raise ProposalError(f"{where}: scores.{key}={v!r} is not an integer in 0..3")
 
 
-def load_proposals(proposals_dir: Path, categories: list) -> dict:
+def load_proposals(proposals_dir: Path, categories: list, strict_provenance: bool = False) -> dict:
     """{category: [proposal, ...]} for every category. A missing file and `[]`
     both mean "no proposals" (an honest reader output). Everything else that
     is not a well-formed list of proposals raises ProposalError, including an
     empty/null file, a non-list document, a duplicate or foreign-category
     proposal_id, and an unexpected *.yaml/*.yml in the directory (a mis-named
-    file would otherwise be silently skipped). OS/editor litter is ignored."""
+    file would otherwise be silently skipped). OS/editor litter is ignored.
+
+    `strict_provenance` (C5.7b-2, default False so every existing caller and
+    `-v1` fixture is unchanged): also require each proposal's `rubric_version`
+    to be exactly READER_RUBRIC_VERSIONS[category]."""
     proposals_dir = Path(proposals_dir)
     if proposals_dir.exists():
         expected = {f"{c}.yaml" for c in categories}
@@ -150,9 +177,121 @@ def load_proposals(proposals_dir: Path, categories: list) -> dict:
                                 f"got {type(data).__name__}")
         seen = set()
         for n, p in enumerate(data):
-            _check_proposal(p, cat, f"{path}[{n}]")
+            _check_proposal(p, cat, f"{path}[{n}]", strict_provenance)
             if p["proposal_id"] in seen:
                 raise ProposalError(f"{path}[{n}]: duplicate proposal_id {p['proposal_id']!r}")
             seen.add(p["proposal_id"])
         out[cat] = data
     return out
+
+
+# ---------------------------------------------------------------------------
+# C5.7b-2 (D-048, S4): record-only citation resolution.
+#
+# Each `evidence` item is supposed to cite a field path from the files the
+# reader received (its category report, grid_evaluation.yaml,
+# the registry summary -- the E-061 C2 S2e artifact, named only in
+# block_registry.py / run_phase1_research.py by that test's pin). resolve_evidence_paths() MEASURES how many of those
+# paths exist. It is pure, never rejects, and only reports; whether to gate on
+# it (A+) or add per-score attribution (B) is decided after C4's first real
+# reader output gives a measured unresolved rate (D-048). It reads no file and
+# no market data: it walks documents it is handed.
+# ---------------------------------------------------------------------------
+
+# Roots the SKILLs cite even when the file they live in is absent; a rooted path
+# into an absent file is UNRESOLVED (measured), not ignored. The top-level keys
+# of every file actually received are roots too.
+CITATION_ROOTS = frozenset({"variants", "this_run", "registry", "blocks", "groups"})
+_CITE_BRACKETS = r"(?:\[[^\]\s]*\])*"
+_CITE_TOKEN_RE = re.compile(
+    rf"(?<![\w.\]\[/])[A-Za-z_][A-Za-z0-9_]*{_CITE_BRACKETS}"
+    rf"(?:\.[A-Za-z0-9_]+{_CITE_BRACKETS})+")
+_CITE_STEP_RE = re.compile(rf"\.?([A-Za-z0-9_]+)({_CITE_BRACKETS})")
+
+
+def _cite_steps(token: str) -> list:
+    """[(key, [bracket contents...]), ...] for one path token."""
+    return [(m.group(1), re.findall(r"\[([^\]\s]*)\]", m.group(2)))
+            for m in _CITE_STEP_RE.finditer(token)]
+
+
+def _cite_get(node, key: str):
+    """(found, value) for a mapping key, tolerating non-string YAML keys."""
+    if not isinstance(node, dict):
+        return False, None
+    if key in node:
+        return True, node[key]
+    for k, v in node.items():
+        if str(k) == key:
+            return True, v
+    return False, None
+
+
+def _cite_walk(node, steps: list) -> bool:
+    if not steps:
+        return True
+    key, brackets = steps[0]
+    found, value = _cite_get(node, key)
+    return found and _cite_walk_brackets(value, brackets, steps[1:])
+
+
+def _cite_walk_brackets(node, brackets: list, rest: list) -> bool:
+    """`[*]` and `[]` mean "some element" (the list must exist; with a path
+    after it, at least one element must resolve it); `[n]` is that index; any
+    other bracket is a mapping key. A name that cannot be resolved is False."""
+    if not brackets:
+        return _cite_walk(node, rest)
+    b, more = brackets[0], brackets[1:]
+    if b in ("*", ""):
+        if not isinstance(node, list):
+            return False
+        if not more and not rest:
+            return True
+        return any(_cite_walk_brackets(el, more, rest) for el in node)
+    if b.isdigit():
+        i = int(b)
+        if not isinstance(node, list) or i >= len(node):
+            return False
+        return _cite_walk_brackets(node[i], more, rest)
+    found, value = _cite_get(node, b)
+    return found and _cite_walk_brackets(value, more, rest)
+
+
+def resolve_evidence_paths(received_files: dict, evidence: list) -> dict:
+    """Which field paths cited in one proposal's `evidence` exist in the files
+    the reader received.
+
+    `received_files`: {file name: parsed document}; a document that is absent or
+    not a mapping (`None`) is an unavailable file. `evidence`: the proposal's
+    evidence strings.
+
+    Path tokens are dotted names rooted at a known root (CITATION_ROOTS, or a
+    top-level key of a received file), e.g.
+    `variants.base.slices.per_symbol.BTCUSDT[*].core.cost_drag_pct`. `[*]` / `[]`
+    match any list element, `[n]` an index, and a trailing `=value` (or any
+    prose after the path) is dropped -- the value is NOT compared. Returns
+    {"resolved": [...], "unresolved": [...], "no_path_items": n}: each distinct
+    token once, in first-seen order, as written; no_path_items counts evidence
+    items with no rooted path token at all. Never rejects; a malformed argument
+    (not a list / not a mapping) raises TypeError for the caller to record."""
+    if not isinstance(received_files, dict):
+        raise TypeError("received_files must be a mapping of file name -> document")
+    if not isinstance(evidence, list):
+        raise TypeError("evidence must be a list of strings")
+    docs = [d for d in received_files.values() if isinstance(d, dict)]
+    roots = set(CITATION_ROOTS) | {str(k) for d in docs for k in d}
+    resolved, unresolved, seen, no_path = [], [], set(), 0
+    for item in evidence:
+        tokens = ([t for t in _CITE_TOKEN_RE.findall(item) if _cite_steps(t)[0][0] in roots]
+                  if isinstance(item, str) else [])
+        if not tokens:
+            no_path += 1
+            continue
+        for token in tokens:
+            if token in seen:
+                continue
+            seen.add(token)
+            steps = _cite_steps(token)
+            ok = any(_cite_walk(d, steps) for d in docs if _cite_get(d, steps[0][0])[0])
+            (resolved if ok else unresolved).append(token)
+    return {"resolved": resolved, "unresolved": unresolved, "no_path_items": no_path}

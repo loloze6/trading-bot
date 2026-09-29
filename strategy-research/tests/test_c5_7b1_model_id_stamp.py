@@ -69,6 +69,7 @@ def _reader_text(proposals: list) -> str:
 def _one_proposal(model_id="self-reported-model", pid="profitability-run_990-1") -> dict:
     p = _patch(pid)
     p["model_id"] = model_id
+    p["rubric_version"] = "profitability-reader-v2"  # C5.7b-2: the flag-on closed set
     return p
 
 
@@ -242,7 +243,7 @@ def test_stamp_overwrites_the_self_report_and_records_both(monkeypatch):
     (p,) = _loaded(dest)
     assert p["model_id"] == DATED
     # everything else is what the model wrote
-    assert p["rubric_version"] == "profitability-reader-v1"
+    assert p["rubric_version"] == "profitability-reader-v2"
     assert p["scores"] == _one_proposal()["scores"] and p["evidence"] == _one_proposal()["evidence"]
     reader_proposals.load_proposals(dest.parent, [CAT])       # still a valid proposals file
     prov = entry["provenance"]
@@ -371,7 +372,7 @@ def test_decide_next_records_the_stamped_model_id(monkeypatch):
     rec = _decide(_one_source(proposals))
     cand = next(c for c in rec["candidates"] if c["candidate_id"] == "profitability-run_061-1")
     assert cand["scores"]["model_id"] == DATED
-    assert cand["scores"]["rubric_version"] == "profitability-reader-v1"
+    assert cand["scores"]["rubric_version"] == "profitability-reader-v2"
 
 
 # ---------------------------------------------------------------------------
