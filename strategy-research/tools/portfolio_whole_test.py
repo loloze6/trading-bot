@@ -44,6 +44,9 @@ What v2 adds:
     per-window curves, over the protocol's nominal span (G1, G2);
   * whole_test_max_drawdown: drawdown on the chained BAR-level curve (D-034);
   * whole_test_sharpe: Sharpe of the chained daily returns (G3, D-036);
+  * whole_test_sharpe_stats: the same Sharpe per day (not annualised) plus T,
+    skew and raw kurtosis -- the candidate inputs of the whole-test DSR
+    (E-062 S2b-2a, D-046; deflate_sharpe.compute_dsr_whole_test);
   * whole_test_trade_counts: per-coin trade count over the whole test, raw and
     without end_of_window forced closes (G5, D-035);
   * chained_buy_and_hold: strategy vs equal-weight buy-and-hold on the chained
@@ -716,10 +719,11 @@ def whole_test_max_drawdown(chain: dict) -> dict:
 # G3 / D-036: whole-test Sharpe
 # ---------------------------------------------------------------------------
 
-def whole_test_sharpe(daily_returns) -> float:
-    """mean / sample stdev (ddof 1) x sqrt(365), risk-free 0, of the chained
-    daily returns [(date, return)] (chain_windows(...)["daily_returns"]).
-    NOT_EVALUABLE below SHARPE_MIN_DAILY_RETURNS returns or at zero stdev."""
+def _whole_test_sr_daily(daily_returns) -> tuple:
+    """(mean / sample stdev (ddof 1), the checked returns) of the chained daily
+    returns -- the ONE Sharpe computation behind whole_test_sharpe and
+    whole_test_sharpe_stats. NOT_EVALUABLE below SHARPE_MIN_DAILY_RETURNS
+    returns or at zero stdev."""
     rets = [r for _d, r in _check_daily_returns(daily_returns)]
     if len(rets) < SHARPE_MIN_DAILY_RETURNS:
         raise PortfolioNotEvaluable(f"whole-test Sharpe: {len(rets)} daily return(s), fewer "
@@ -728,7 +732,49 @@ def whole_test_sharpe(daily_returns) -> float:
     if sd == 0.0:
         raise PortfolioNotEvaluable(f"whole-test Sharpe: the {len(rets)} daily returns have "
                                     f"zero standard deviation")
-    return statistics.mean(rets) / sd * math.sqrt(SHARPE_DAYS_PER_YEAR)
+    return statistics.mean(rets) / sd, rets
+
+
+def whole_test_sharpe(daily_returns) -> float:
+    """mean / sample stdev (ddof 1) x sqrt(365), risk-free 0, of the chained
+    daily returns [(date, return)] (chain_windows(...)["daily_returns"]).
+    NOT_EVALUABLE below SHARPE_MIN_DAILY_RETURNS returns or at zero stdev."""
+    sr_daily, _rets = _whole_test_sr_daily(daily_returns)
+    return sr_daily * math.sqrt(SHARPE_DAYS_PER_YEAR)
+
+
+# E-062 S2b-2 G2 (D-041): the exact basis tag a ledger `whole_test` block (or a
+# recompute-overlay entry) carries. The DSR's same-basis sample admits a value
+# only on an exact string match, so values on another basis never mix.
+WHOLE_TEST_BASIS = "whole_test_daily_equal_weight_v1"
+
+
+def whole_test_sharpe_stats(daily_returns) -> dict:
+    """The candidate-side inputs of the whole-test DSR (E-062 S2b-2a, D-046):
+
+      sr_daily      mean / sample stdev (ddof 1), NOT annualised -- the same
+                    computation as whole_test_sharpe, so
+                    sr_daily * sqrt(365) == whole_test_sharpe(daily_returns)
+      T             the number of chained daily returns (a multi-day step
+                    counts as one observation)
+      skew          population m3 / m2**1.5
+      kurtosis_raw  population m4 / m2**2, raw (a normal distribution gives 3)
+
+    m_k are the central moments about the mean with denominator T. Same
+    NOT_EVALUABLE / ValueError rules as whole_test_sharpe (m2 > 0 follows from
+    its non-zero stdev)."""
+    sr_daily, rets = _whole_test_sr_daily(daily_returns)
+    n = len(rets)
+    mu = statistics.mean(rets)
+    dev = [r - mu for r in rets]
+    m2 = math.fsum(d * d for d in dev) / n
+    m3 = math.fsum(d * d * d for d in dev) / n
+    m4 = math.fsum(d * d * d * d for d in dev) / n
+    if m2 == 0.0:
+        raise PortfolioNotEvaluable(f"whole-test moments: the {n} daily returns have zero "
+                                    f"second central moment")
+    return {"sr_daily": sr_daily, "T": n, "skew": m3 / m2 ** 1.5,
+            "kurtosis_raw": m4 / (m2 * m2)}
 
 
 # ---------------------------------------------------------------------------

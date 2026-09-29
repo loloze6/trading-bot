@@ -269,3 +269,11 @@ DSR). Only if the `dsr_basis` shape changes flag-on: `tests/test_e060_s3b_compos
 - **G8:** build the recompute tool (dry-run default); the real `--write` waits for the operator's nod.
 - **Split approved:** S2b-2a (pure functions, Opus) -> S2b-2b (flag wiring, Opus) -> S2b-2c (recompute tool, Sonnet), each
   reviewed and merged before the next. Flag `profit_bars_v2` (G6). SMALL guesses as recommended. G13 parked.
+
+### S2b-2a built
+
+Pure functions, not wired (`aef6574f`): `portfolio_whole_test.whole_test_sharpe_stats` (shares one computation with `whole_test_sharpe`; `WHOLE_TEST_BASIS`), and in `tools/deflate_sharpe.py` `compute_dsr_whole_test` (D-046: sigma_null below the floor, max(mean_K, 0) + max(sigma_K, sigma_null) at or above it), `select_same_basis_sample` and `validate_basis_overlay` / `load_basis_overlay`. Legacy DSR functions untouched.
+Tests: `tests/test_e062_s2b2a_dsr_whole_test.py` 44 passed; the existing tests of both modules (18 files) 335 passed; 15 of 15 hand mutations killed.
+Measured with the new function (normal returns, N = 12, K below the floor, DSR = 0.95): annualised hurdle 1.219 at T = 2695, 1.696 at T = 1394 (D-046 records 1.69).
+Guesses (conservative, for review): overlay file shape `{entries: [...]}` keyed (trial_id, source, basis) with an exact key set; an overlay entry for a row absent from the ledger raises (ledger not merged); a native block must carry exactly the Q2 keys; candidate T is checked >= 2 only (the S2a 30-return rule applies where the stats are produced); candidate-in-sample membership is not asserted here (S2b-2b's lockstep assert).
+Round-1 review fixes: the candidate's T and every `ok` same-basis block (native or overlay) must reach `SHARPE_MIN_DAILY_RETURNS` (imported from S2a; candidate below it is NOT_EVALUABLE with a reason, an `ok` block below it raises); an unknown candidate status string raises; candidate moments with raw kurtosis < 1 + skew^2 raise. Tests: 52 passed in the S2b-2a file; 387 passed across it, the S2a tests and every test importing `deflate_sharpe`.
