@@ -1252,10 +1252,19 @@ def _window_core_triples(protocol_result: dict, metric: str, symbol: str | None)
 
 
 def _evaluate_grid_cell_for_symbol(criterion: dict, protocol_result: dict, eras: list,
-                                    symbol: str | None, composition_runs: bool = False) -> dict:
+                                    symbol: str | None, composition_runs: bool = False,
+                                    single_era_inconclusive: bool = False) -> dict:
     """One (criterion, variant[, symbol]) cell -- the mechanical core, no
     symbol_reducer branching (that lives one level up in
-    _evaluate_grid_cell)."""
+    _evaluate_grid_cell).
+
+    single_era_inconclusive (E-062 S2b-3b, D-047 (4); evaluate_grid's keyword,
+    passed only under orchestrator.profit_bars_v2): a sign_consistent_by_era
+    cell whose reducer found fewer than 2 REPRESENTED eras (its own by-era
+    groups, variant_coin.era_count_shortfall) is INCONCLUSIVE `single_era: ...`
+    instead of PASS -- one era cannot disagree with itself. A single era whose
+    median is exactly zero stays FAIL (operator amendment 2026-09-29 to
+    D-047). False: the cell exactly as before."""
     cid = criterion.get("id")
     metric = criterion.get("metric")
     source = criterion.get("source")
@@ -1288,6 +1297,17 @@ def _evaluate_grid_cell_for_symbol(criterion: dict, protocol_result: dict, eras:
             if passed is None:
                 return {"result": "INCONCLUSIVE", "n_windows": n_windows, "n_trades": n_trades,
                         "reason": detail.get("reason"), "detail": detail}
+            if single_era_inconclusive and passed:
+                # D-047 (4): the reducer's OWN era ids (its by-era groups, which
+                # already exclude era_unmapped) -- the one era-assignment rule of
+                # this criterion (S2B3_FINDINGS.md X5). Only a would-be PASS is
+                # turned INCONCLUSIVE (operator amendment 2026-09-29, D-047 note):
+                # a single era with a zero median stays FAIL.
+                import variant_coin as _variant_coin  # tools/ sibling, stdlib-only at import
+                shortfall = _variant_coin.era_count_shortfall(list(detail["era_medians"]))
+                if shortfall is not None:
+                    return {"result": "INCONCLUSIVE", "n_windows": n_windows,
+                            "n_trades": n_trades, "reason": shortfall, "detail": detail}
             return {"result": "PASS" if passed else "FAIL", "n_windows": n_windows,
                     "n_trades": n_trades, "detail": detail}
 
@@ -1490,7 +1510,8 @@ def _dominant_cell_result(results: list) -> str:
 
 
 def _evaluate_grid_cell(criterion: dict, protocol_result: dict, eras: list,
-                        composition_runs: bool = False) -> dict:
+                        composition_runs: bool = False,
+                        single_era_inconclusive: bool = False) -> dict:
     """One (criterion, variant) cell, handling `symbol_reducer`.
 
     `null` (default) and `pooled` are both evaluated with no symbol filter.
@@ -1504,6 +1525,8 @@ def _evaluate_grid_cell(criterion: dict, protocol_result: dict, eras: list,
     symbols are present -- identical to `pooled`. Documented here, not
     silently guessed."""
     symbol_reducer = criterion.get("symbol_reducer")
+    # E-062 S2b-3b: the keyword only when set (flag off, the exact pre-S2b-3b call).
+    _era_kw = {"single_era_inconclusive": True} if single_era_inconclusive else {}
     if symbol_reducer not in (None, "per_symbol_all", "pooled"):
         return {"result": "SPEC_ERROR",
                 "reason": f"criterion {criterion.get('id')!r}: symbol_reducer={symbol_reducer!r} "
@@ -1519,13 +1542,13 @@ def _evaluate_grid_cell(criterion: dict, protocol_result: dict, eras: list,
                     "reason": "symbol_reducer=per_symbol_all but no window in this "
                               "protocol_result carries a symbol field"}
         per_symbol = {sym: _evaluate_grid_cell_for_symbol(criterion, protocol_result, eras, sym,
-                                                          composition_runs)
+                                                          composition_runs, **_era_kw)
                       for sym in symbols}
         return {"result": _dominant_cell_result([c["result"] for c in per_symbol.values()]),
                 "per_symbol": per_symbol}
 
     return _evaluate_grid_cell_for_symbol(criterion, protocol_result, eras, symbol=None,
-                                          composition_runs=composition_runs)
+                                          composition_runs=composition_runs, **_era_kw)
 
 
 def _menu_entries_by_id(menu) -> dict:
@@ -1800,7 +1823,8 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
                    research_brief: dict | None, menu, *, composition_runs: bool = False,
                    profit_bars_grader=None, failed_variants: dict | None = None,
                    untested_variants: dict | None = None,
-                   partial_coverage_variants: dict | None = None) -> dict:
+                   partial_coverage_variants: dict | None = None,
+                   single_era_inconclusive: bool = False) -> dict:
     """
     E-046b S2: the grid (engineering_roadmap.html card C) -- criteria x
     variants, every cell mechanical, unanimity across variants. No LLM
@@ -1858,7 +1882,17 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
     while their time-dependent bars are not normalised to the shorter period,
     they cap the idea at INCONCLUSIVE, like an untested column: never
     `validated`. Carried as top-level `partial_coverage_variants`. None or {}
-    -> byte-identical to the call without it.
+    -> byte-identical to the call without it. E-062 S2b-3b (D-047): under
+    orchestrator.profit_bars_v2 the caller does not pass it -- a partial
+    column's time-dependent profit bars are normalised to its period
+    (branch 3), so it grades like any column; flag off, the cap is unchanged.
+
+    `single_era_inconclusive` (E-062 S2b-3b, D-047 (4); the caller passes True
+    only under orchestrator.profit_bars_v2): every column's
+    sign_consistent_by_era cell with fewer than 2 represented eras that would
+    PASS reads INCONCLUSIVE `single_era: ...` (a zero-median single era stays
+    FAIL, operator amendment 2026-09-29 to D-047). False ->
+    byte-identical to the call without it.
 
     Returns {"result": "GRID_EVALUATED" | "SPEC_ERROR", "criteria": [id, ...],
     "variants": [variant_id, ...], "grid": {criterion_id: {variant_id:
@@ -1916,8 +1950,11 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
             if composition_runs and crit.get("source") == PROFIT_BARS_CRITERION_SOURCE:
                 cell = _evaluate_profit_bars_cell(crit, variant_id, profit_bars_grader)
             else:
+                # the keyword only when set: flag off, the exact pre-S2b-3b call
                 cell = _evaluate_grid_cell(crit, protocol_results_by_variant[variant_id], eras,
-                                           composition_runs=composition_runs)
+                                           composition_runs=composition_runs,
+                                           **({"single_era_inconclusive": True}
+                                              if single_era_inconclusive else {}))
             row[variant_id] = cell
             if cell["result"] == "SPEC_ERROR":
                 spec_errors.append({"criterion_id": cid, "variant_id": variant_id,

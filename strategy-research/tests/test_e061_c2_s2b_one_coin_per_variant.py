@@ -405,6 +405,8 @@ def _stage_index(run_id, *, per_coin: bool, monkeypatch, windows=None, universe=
     arts = run_dir / "artifacts"
     source_path = _run_protocol_file(monkeypatch, windows or _months("2022-01", 6))
     source = json.loads(source_path.read_text(encoding="utf-8"))
+    # E-062 S2b-3b review fix 1: 5a freezes the run protocol in per-coin mode
+    run_sha = rpr._freeze_run_protocol(run_dir, run_id)[1] if per_coin else None
     _copy_coin_configs()  # protocol_execution re-runs the asset's coverage (M2)
     if universe is not None:
         rpr.save_yaml(rpr.ROOT / "config" / "coin_universe.yaml", universe)
@@ -430,7 +432,8 @@ def _stage_index(run_id, *, per_coin: bool, monkeypatch, windows=None, universe=
             index[vid].update({"kind": vid, "symbol": res["symbol"],
                                **({"coverage": res["coverage"]} if res["coverage"] else {}),
                                "protocol_path": f"artifacts/variants/{vid}/protocol.json",
-                               "protocol_sha256": vc.protocol_sha256(raw)})
+                               "protocol_sha256": vc.protocol_sha256(raw),
+                               rpr.RUN_PROTOCOL_SHA_KEY: run_sha})
     rpr.save_yaml(arts / "variants" / "index.yaml", {"variants": index})
     return run_dir, source_path
 

@@ -50,8 +50,8 @@
 #     all tested coins together, EQUALLY WEIGHTED -- for return and drawdown.
 #   * orchestrator.profit_bars_v2.enabled ON too (E-062 S2b-1, D-034..D-039): the
 #     v2 definitions below ("PROFIT BARS V2"); the evaluation records
-#     `bars_definitions: v2`, and the four v2 keys at the bottom of this file are
-#     required.
+#     `bars_definitions: v2`, and the five v2 keys at the bottom of this file are
+#     required (trade_count_min_floor since E-062 S2b-3b).
 #
 # The EQUAL-WEIGHT PORTFOLIO (flag on; run_phase1_research._portfolio_profit_metrics),
 # built separately for each graded variant and for each walk-forward window:
@@ -203,6 +203,24 @@
 #                                  benchmark uses the cross-trial spread instead of
 #                                  sigma_null alone (>= 2). Value 10 per D-046, not
 #                                  yet signed (like the D-039 values above).
+#   trade_count_min_floor      int, v2 only (E-062 S2b-3b, D-047): the absolute
+#                                  floor of a PARTIAL-COVERAGE variant's normalised
+#                                  trade counts (>= 1, <= trade_count_min and
+#                                  cost_edge_min_trades). Value 60 per D-047, not
+#                                  yet signed (like the D-039 values above).
+#
+# PARTIAL COVERAGE (v2 only; E-062 S2b-3b, D-042/D-047): an asset variant whose
+#   coin covers fewer run-protocol windows is graded on its share f = its
+#   windows' nominal calendar days / the run protocol's (one-day junctions once,
+#   an exact fraction): trade_count_min -> max(ceil(trade_count_min * f),
+#   trade_count_min_floor); cost_edge_ratio_min's trade floor -> max(ceil(
+#   cost_edge_min_trades * f), trade_count_min_floor) (the 2.2 ratio unchanged);
+#   max_drawdown_pct_max -> max_drawdown_pct_max * sqrt(f) (code, no key). Every
+#   other bar unchanged. Such a row records the effective `threshold` (for the
+#   cost row, detail.min_trades) and detail.normalisation {covered_days,
+#   full_days, f, base, floor, formula}. A full-coverage variant (f = 1) is
+#   graded exactly as above. Flag off (and on the promote path) a partial
+#   variant's trade and drawdown bars read NOT_EVALUABLE instead (D-042 cap).
 
 sharpe_min: 1.0
 max_drawdown_pct_max: 20.0
@@ -219,3 +237,4 @@ buy_and_hold_excess_return_min: 0.0
 cost_edge_ratio_min: 2.2
 cost_edge_min_trades: 100
 dsr_min_same_basis_trials: 10
+trade_count_min_floor: 60

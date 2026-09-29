@@ -36,21 +36,23 @@ read that file unchanged (G1).
     gate's decline / refine of an asset variant is non-blocking the same way
     (LAYER2_COVERAGE_REASON_PREFIX, run_phase1_research's per-variant gate).
 
-Not here (E-062 S2b): normalising the time-dependent profit bars (trade
-minimum per year, drawdown scaled to the period) for a variant that ran on
-fewer windows. The windows a variant ran on are recorded for it: its
-protocol.json `windows` and, for an asset coin, the index entry's `coverage`.
-TEMPORARY until then (D-042; lifted by E-062 S2b): a partial-coverage variant
-(is_partial_coverage) is graded, but it caps the grid at inconclusive (never
-`validated`) and its time-dependent bars (D042_TIME_DEPENDENT_BARS) read
-NOT_EVALUABLE, so it can never pass the profit bars (never
-`profit_bars_reached`).
+The windows a variant ran on are recorded for it: its protocol.json
+`windows` and, for an asset coin, the index entry's `coverage`. With
+orchestrator.profit_bars_v2 OFF (and always on the legacy promote path, G9)
+a partial-coverage variant (is_partial_coverage) is graded, but it caps the
+grid at inconclusive (never `validated`) and its time-dependent bars
+(D042_TIME_DEPENDENT_BARS) read NOT_EVALUABLE, so it can never pass the
+profit bars (never `profit_bars_reached`) -- review fix M1 (D-042).
 
-E-062 S2b-3a (D-047, S2B3_FINDINGS.md Q3/Q4/Q6): the PURE normalisation
-helpers exist -- coverage_fraction, normalised_trade_minimum,
-scaled_drawdown_limit, era_count_shortfall -- but NOTHING calls them yet (the
-wiring under orchestrator.profit_bars_v2 is S2b-3b), so the TEMPORARY rule
-above still holds unchanged.
+E-062 S2b-3a/3b (D-047, S2B3_FINDINGS.md Q3/Q4/Q6): the PURE normalisation
+helpers -- coverage_days / coverage_fraction, normalised_trade_minimum,
+scaled_drawdown_limit, era_count_shortfall. Under orchestrator.profit_bars_v2
+(S2b-3b wiring, run_phase1_research / verdict_criteria_evaluator) the M1 cap
+above is lifted: a partial-coverage variant is graded on its trade minimum and
+cost-ratio trade floor max(ceil(100 * f), floor 60) and its drawdown limit
+limit * sqrt(f), f its share of the run protocol's calendar days, so it can
+validate the grid and pass the profit bars; and sign_consistent_by_era on fewer
+than 2 represented eras reads INCONCLUSIVE on every variant.
 
 5a records each variant protocol.json's sha256 in index.yaml
 (`protocol_sha256`); verify_variant_protocol re-checks the file against it and
@@ -95,9 +97,10 @@ COVERAGE_REASON_PREFIX = "insufficient_coverage:"
 # starts with COVERAGE_REASON_PREFIX, so it is read exactly like a 5a skip.
 LAYER2_COVERAGE_REASON_PREFIX = f"{COVERAGE_REASON_PREFIX} layer2"
 # D-042's time-dependent profit bars (config/profitability_bars.yaml names):
-# the trade minimum and the drawdown limit, which E-062 S2b normalises to the
-# period a variant ran on. Until then they read NOT_EVALUABLE for a
-# partial-coverage variant (TEMPORARY, D-042; lifted by E-062 S2b).
+# the trade minimum and the drawdown limit. Under profit_bars_v2 E-062 S2b-3b
+# normalises them (and the cost row's trade floor) to the period a variant ran
+# on (D-047); flag off / the legacy promote path, they read NOT_EVALUABLE for a
+# partial-coverage variant (review fix M1, D-042).
 D042_TIME_DEPENDENT_BARS = ("trade_count_min", "max_drawdown_pct_max")
 # index.yaml `reason` prefix of a per-coin entry refused by 5a's coin checks.
 COIN_REASON_PREFIX = "variant_coin:"
@@ -292,9 +295,11 @@ def is_partial_coverage(entry) -> bool:
     shorter than `coverage.windows_total`). A malformed coverage raises: a
     decision about grading must never read a broken record as "full".
 
-    TEMPORARY consumer rule (D-042; lifted by E-062 S2b, which normalises the
-    time-dependent bars): such a variant is graded, but it caps the grid at
-    inconclusive and never passes the profit bars."""
+    Consumer rule (D-042, review fix M1): flag off, such a variant is graded,
+    but it caps the grid at inconclusive and never passes the profit bars;
+    under orchestrator.profit_bars_v2 (E-062 S2b-3b, D-047) its time-dependent
+    bars are normalised instead and the cap is lifted (kept on the legacy
+    promote path)."""
     cov = entry.get("coverage") if isinstance(entry, dict) else None
     if cov is None:
         return False
@@ -308,12 +313,15 @@ def is_partial_coverage(entry) -> bool:
 
 # ---------------------------------------------------------------------------
 # E-062 S2b-3a (DECISION_LOG D-047, implementing D-042; S2B3_FINDINGS.md Q3,
-# Q4, Q6 and G1/G2/G5/G7). PURE: nothing calls these yet (S2b-3b wires them
-# under orchestrator.profit_bars_v2). No market data, no result, no file I/O.
+# Q4, Q6 and G1/G2/G5/G7). PURE; wired by S2b-3b under
+# orchestrator.profit_bars_v2 (run_phase1_research._normalised_profit_bars /
+# _variant_coverage_days, verdict_criteria_evaluator's sign_consistent_by_era
+# cell). No market data, no result, no file I/O.
 # ---------------------------------------------------------------------------
 
 # D-047 (4): sign_consistent_by_era needs at least this many REPRESENTED eras
-# to be graded; fewer -> INCONCLUSIVE (it cannot fail on one era).
+# to be graded; fewer -> INCONCLUSIVE (it cannot fail on one era) -- except a
+# zero-median single era, which stays FAIL (operator amendment 2026-09-29).
 D047_MIN_REPRESENTED_ERAS = 2
 # The INCONCLUSIVE reason's prefix for that case (S2B3_FINDINGS.md Q6).
 SINGLE_ERA_REASON_PREFIX = "single_era:"
