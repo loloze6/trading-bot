@@ -3106,6 +3106,7 @@ def _flag_readers() -> dict:
         "variant_loop": orch._variant_loop_enabled,
         "specialist_readers": orch._specialist_readers_enabled,
         "regroup_record": orch._regroup_record_enabled,
+        "score_provenance": orch._score_provenance_enabled,  # C5.7b-1
         "profit_bars_every_backtest": orch._profit_bars_every_backtest_enabled,
         "profit_bars_v2": orch._profit_bars_v2_enabled,  # E-062 S2b-1
         "decide_next": orch._decide_next_enabled,

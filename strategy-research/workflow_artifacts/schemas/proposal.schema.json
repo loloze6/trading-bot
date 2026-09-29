@@ -107,7 +107,7 @@
     },
     "model_id": {
       "type": "string",
-      "description": "Identifier of the model that authored this proposal (e.g. a Claude model string)."
+      "description": "Identifier of the model that authored this proposal (e.g. a Claude model string). Under orchestrator.score_provenance.enabled (C5.7b-1, D-048) the orchestrator overwrites this with the model the SDK reports actually answered (AssistantMessage.model); several distinct models are sorted and comma-joined. The reader's own value is kept only in the audit log."
     },
     "rubric_version": {
       "type": "string",
