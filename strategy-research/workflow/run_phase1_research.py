@@ -1832,6 +1832,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 # E-062 S2b-3c: the flag is read outside the try (a
                 # misconfiguration raises loudly, never a per-variant refusal).
                 _fp_on = _profit_bars_v2_enabled()
+                _vp_step = "protocol"  # which check refuses, for the message only
                 try:
                     _vp_problems, _vp_syms = _per_coin_protocol_check(
                         RUN_DIR, run_id, vinfo, _vproto, protocol_path, _coin_ctx_cache)
@@ -1849,14 +1850,21 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     # Unmeasurable -> this variant is refused before any
                     # backtest (no data touched, no trial row), like M2.
                     if _fp_on:
+                        _vp_step = "fingerprint"
                         _vfp = _variant_window_fingerprint(RUN_DIR, vinfo)
                         if _vfp is not None:
                             _trial_kw["windows_sha256"] = _vfp
                 except Exception as _vp_err:
+                    # The fingerprint's causes are its own (the frozen run protocol
+                    # missing or altered, the variant protocol's sha, ...): the error
+                    # text names which, so the wording here must not blame the variant
+                    # protocol alone.
+                    _vp_what = (f"its protocol {vinfo['protocol_path']!r} is unreadable or not "
+                                f"the file 5a wrote" if _vp_step == "protocol" else
+                                "its window fingerprint (D-047) cannot be computed")
                     refused_variants[variant_id] = (
-                        f"its protocol {vinfo['protocol_path']!r} is unreadable or not the file "
-                        f"5a wrote ({type(_vp_err).__name__}: {_vp_err}) -- refused before any "
-                        f"backtest")
+                        f"{_vp_what} ({type(_vp_err).__name__}: {_vp_err}) -- refused before "
+                        f"any backtest")
                     print(f"⚠️  protocol_execution: variant '{variant_id}' "
                           f"{refused_variants[variant_id]}; continuing with remaining variants.")
                     _variant_failed(variant_id, refused_variants[variant_id], refused=True)
@@ -12434,7 +12442,8 @@ def _dedup_collapse_target(wctx: dict, row: dict) -> str:
         for r in wctx["rows"]:
             if (isinstance(r, dict) and r is not row and not r.get("invalidated_artifact")
                     and r.get("trial_id") != row.get("trial_id") and _key(r) == _key(row)):
-                return f"trial {r.get('trial_id')!r} (same forecast_hash, coins and source)"
+                return (f"trial {r.get('trial_id')!r} (same forecast_hash, coins, window "
+                        f"fingerprint and source)")
     if row.get("reproduces_trial") is not None:
         return f"trial {row['reproduces_trial']!r} (reproduces_trial)"
     return "another ledger row"
