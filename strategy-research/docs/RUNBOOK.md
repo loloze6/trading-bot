@@ -268,17 +268,11 @@ assume it stops at the next stage boundary.
 
 ### 1e. Start a campaign on the new pipeline (config-direct authoring, E-061 C1.7)
 
-**Requires E-061 C1.2–C1.5 merged to master first.** As of this writing
-they are open branches (`fix/e061-c1-2-3-config-direct-handoffs`,
-`fix/e061-c1-4-5-pauses-preflight`), not yet on `master` — the delivery
-plan's own sequencing (`engineering/delivery_plan_v26_continuation.md`
-"C1 S2a: the wiring test (red), then C1.2–C1.7 until green") makes C1.1
-passing (all of C1.2–C1.7 landed) the gate before the first real run, which
-is continuation step **C4**, not this section by itself. Do not run this
-section's flag set against a `master` that lacks C1.2–C1.5: the config-direct
-handoffs (C1.2/C1.3) and the classified-pause/pre-flight checks (C1.4/C1.5)
-below are exactly what makes a real run survivable rather than crashing the
-campaign process or silently spending LLM budget on a misconfiguration.
+**Status (updated 2026-09-29):** E-061 C1.1–C1.7, C2 and E-062 (profit bars
+v2) are merged, and the bars file is signed (PR #269). The first real use of
+this section is continuation step **C4**; its exact flag set, first brief and
+measurement plan are in `engineering/C4_PREP.md`, which takes precedence over
+this section where they differ.
 
 "The new pipeline" is the `config_direct_authoring` route: the single
 BASE strategy config is authored directly at the `strategy_config_authoring`
@@ -311,12 +305,14 @@ orchestrator:
   category_reports:             {enabled: true}
   specialist_readers:           {enabled: true}
   regroup_record:               {enabled: true}
-  profit_bars_file:             {enabled: true}   # ratify config/profitability_bars.yaml FIRST (code does not check)
+  profit_bars_file:             {enabled: true}   # config/profitability_bars.yaml must be signed (code does not check); signed 2026-09-29
   profit_bars_every_backtest:   {enabled: true}
+  profit_bars_v2:               {enabled: true}   # E-062; requires profit_bars_every_backtest
   decide_next:                  {enabled: true}
   verdict_routing_retired:      {enabled: true}   # DECLARED BEHAVIOUR CHANGE
   variant_anti_adjacency_gate:  {enabled: true}
-  composition_runs:             {enabled: true}   # residual_ic threshold is a placeholder (criterion_menu.yaml ratified: false)
+  composition_runs:             {enabled: true}   # adds the residual_ic criterion (criterion_menu.yaml, ratified 2026-09-29)
+  score_provenance:             {enabled: true}   # D-048/D-049; requires specialist_readers
   halt_policy:
     quarantine_enabled: false                     # leave off (its DONE path also calls decide_next)
 ```
@@ -335,23 +331,20 @@ whole block together regardless, not one flag at a time across separate
 campaign runs — a partially-applied target set is exactly the
 misconfiguration this check exists to catch.
 
-**2. Ratify `config/profitability_bars.yaml` before relying on it.** The file
-as it ships is explicitly marked DRAFT — every number is a placeholder
-invented to exercise the loader, `ratified_by`/`ratified_at` are both `null`,
-and the loader (`run_phase1_research._load_profitability_bars`) does **not**
-check ratification status itself; a PASS against unratified placeholder bars
-still raises the real `profit_bars_reached` holdout stop (§3's own
-`profit_bars_reached` row says so directly — "Do not treat
-`config/profitability_bars.yaml`'s shipped thresholds as ratified" — and
-delivery_plan_v26_continuation.md C5.7/C3 both name this gap). **E-062
-("Profit bars v2", delivery_plan_v26_continuation.md C3) is expected to
-replace these numbers before they mean anything** — check whether E-062 has
-landed before you ratify. If it hasn't, either wait for it, or explicitly
-record that you are ratifying today's placeholder numbers as a deliberate,
-provisional choice (fill in `ratified_by`/`ratified_at` and say so in your
-notes) — never leave them `null` while `profit_bars_file`/
-`profit_bars_every_backtest` are on and treat a resulting stop as a real
-verdict.
+**The same edit must flip `config/feature_flag_register.yaml`.**
+`tests/test_feature_flag_register.py` fails when an entry's `state` disagrees
+with the real `enabled:` value, so each flag switched on also gets
+`state: "on"` there. See `engineering/C4_PREP.md` §2.2–§2.4 for how the switch
+is recorded and what it does to the test suites.
+
+**2. The bars file must be signed before these flags are on.** The loader
+(`run_phase1_research._load_profitability_bars`) does **not** check the
+signature itself; a PASS against unsigned bars would still raise the real
+`profit_bars_reached` holdout stop. The v2 bars (E-062) were signed on
+2026-09-29 (PR #269; both sha256 values in `engineering/roadmap/E-062/
+SIGNING_CHECKLIST.md` §5). Any later edit of the file, comments included,
+changes its sha and is a re-signature. The sha depends on line endings
+(CUL-348): grade and spend on one checkout.
 
 **3. Register the first brief from the C1.7 template.** Copy
 `workflow_artifacts/templates/research_brief_new_pipeline.md` (a frontmatter
