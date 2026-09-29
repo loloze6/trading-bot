@@ -717,6 +717,325 @@ def compute_promotion_audit(
 
 
 # ---------------------------------------------------------------------------
+# E-062 S2b-2a (D-041 / D-046): the whole-test daily DSR -- PURE, not wired
+# ---------------------------------------------------------------------------
+#
+# ONE implementation: S2b-2b's pipeline imports these functions; there is no
+# lockstep twin in run_phase1_research. Everything above this section (the
+# legacy per-window DSR, its sparse path and its CLI) is untouched and stays on
+# the legacy basis until D-043.
+#
+# Basis: a trial's Sharpe is the whole-test daily Sharpe of its chained
+# equal-weight portfolio (tools/portfolio_whole_test.whole_test_sharpe_stats),
+# per day, NOT annualised. It lives on a ledger row as a nested `whole_test`
+# block (S2B2_FINDINGS G1/Q2) or, for a legacy row recomputed later, as an
+# entry of the append-only overlay campaign_record/trial_sharpe_basis_recompute.yaml
+# (G8/Q4). A value enters the same-basis sample only on an EXACT basis-string
+# match with status "ok", so per-window-median and whole-test values never mix.
+
+import numbers  # noqa: E402
+import statistics  # noqa: E402
+from collections.abc import Mapping  # noqa: E402
+
+from portfolio_whole_test import WHOLE_TEST_BASIS  # noqa: E402  (tools/ sibling)
+
+WHOLE_TEST_STATUSES = frozenset({"ok", "not_evaluable", "error"})
+_BLOCK_STAT_KEYS = ("sr_daily", "n_daily_returns", "skew", "kurtosis")
+# The exact key set of a native ledger `whole_test` block (S2B2_FINDINGS Q2) and of
+# an overlay entry (Q4). Exact: an unknown key (e.g. a timestamp) raises.
+_BLOCK_KEYS = frozenset({"basis", "status", "reason", *_BLOCK_STAT_KEYS})
+_OVERLAY_KEYS = _BLOCK_KEYS | {"trial_id", "source", "inputs_sha256", "code_sha256"}
+_HEX = frozenset("0123456789abcdef")
+
+
+def _real(x) -> bool:
+    return isinstance(x, numbers.Real) and not isinstance(x, bool)
+
+
+def _finite(x, what: str) -> float:
+    if not _real(x) or not math.isfinite(float(x)):
+        raise ValueError(f"{what}: {x!r} is not a finite real number")
+    return float(x)
+
+
+def _int_at_least(x, lo: int, what: str) -> int:
+    if isinstance(x, bool) or not isinstance(x, numbers.Integral):
+        raise ValueError(f"{what}: {x!r} is not an integer")
+    if int(x) < lo:
+        raise ValueError(f"{what}: {x!r} is below {lo}")
+    return int(x)
+
+
+def _expected_max_z(n: int) -> float:
+    """Z(N) = (1 - g) Phi^-1(1 - 1/N) + g Phi^-1(1 - 1/(e N)), g = Euler-Mascheroni
+    (BLP 2014 A.6). N >= 2. No clamping: N is a trial count, so both arguments lie
+    in [0.5, 1) for every reachable N."""
+    g = _EULER_MASCHERONI
+    return ((1.0 - g) * _NDIST.inv_cdf(1.0 - 1.0 / n)
+            + g * _NDIST.inv_cdf(1.0 - 1.0 / (math.e * n)))
+
+
+def compute_dsr_whole_test(candidate_stats, same_basis_srs, n_total: int,
+                           min_same_basis: int) -> dict:
+    """Deflated Sharpe Ratio on the whole-test daily basis (D-046).
+
+    candidate_stats: {sr_daily, T, skew, kurtosis_raw} as returned by
+        portfolio_whole_test.whole_test_sharpe_stats. It may carry
+        `status` (default "ok") and `reason`: any status other than "ok" (the
+        candidate's own whole-test block is not_evaluable/error) gives
+        NOT_EVALUABLE, and then the numeric keys are not read.
+    same_basis_srs: the per-day Sharpes of the same-basis sample (K = its
+        length; the candidate's own value included -- see
+        select_same_basis_sample).
+    n_total: N, every counted trial (the existing deduped-valid-row rule;
+        never shrinks). N < K raises (caller bug: every same-basis value is a
+        counted trial).
+    min_same_basis: the floor `dsr_min_same_basis_trials` (>= 2; a parameter
+        here, the config key is S2b-2b's).
+
+    SR0 (the benchmark):
+        K <  floor: SR0 = sigma_null * Z(N)                          (sigma_source "null")
+        K >= floor: SR0 = max(mean_K, 0) + max(sigma_K, sigma_null) * Z(N)
+                    (sigma_source "cross" when sigma_K > sigma_null, else "null")
+      sigma_null = 1 / sqrt(T - 1); sigma_K = sample stdev (ddof 1) of the
+      same-basis values; Z(N) = _expected_max_z(N).
+    DSR = Phi((SR - SR0) sqrt(T - 1) / sqrt(1 - skew SR + ((kurt - 1) / 4) SR^2)),
+      SR = the candidate's sr_daily, skew / raw kurtosis of its daily returns.
+
+    NOT_EVALUABLE (status "not_evaluable", dsr None, reason set) ONLY when:
+    N < 2; the candidate's own block is not "ok"; the denominator's argument is
+    <= 0. A small K is never NOT_EVALUABLE (sigma_null takes over). Malformed
+    input raises ValueError."""
+    n_total = _int_at_least(n_total, 0, "compute_dsr_whole_test: n_total")
+    min_same_basis = _int_at_least(min_same_basis, 2, "compute_dsr_whole_test: min_same_basis")
+    if isinstance(same_basis_srs, (str, bytes, Mapping)):
+        raise ValueError("compute_dsr_whole_test: same_basis_srs must be a sequence of numbers")
+    srs = [_finite(s, f"compute_dsr_whole_test: same_basis_srs[{i}]")
+           for i, s in enumerate(same_basis_srs)]
+    k = len(srs)
+    if n_total < k:
+        raise ValueError(
+            f"compute_dsr_whole_test: n_total={n_total} is smaller than the same-basis "
+            f"sample K={k} -- every same-basis value is itself a counted trial. Caller bug: "
+            f"a too-small N would understate the multiple-testing correction.")
+    if not isinstance(candidate_stats, Mapping):
+        raise ValueError(f"compute_dsr_whole_test: candidate_stats {candidate_stats!r} is not "
+                         f"a mapping")
+
+    out = {"status": "ok", "reason": None, "dsr": None, "sr0": None, "sigma_used": None,
+           "sigma_source": None, "sigma_null": None, "sigma_cross": None,
+           "mean_same_basis": None, "z_expected_max": None, "sr_daily": None,
+           "K": k, "N": n_total, "T": None, "min_same_basis": min_same_basis}
+
+    def _not_evaluable(reason: str) -> dict:
+        out.update(status="not_evaluable", reason=reason, dsr=None)
+        return out
+
+    status = candidate_stats.get("status", "ok")
+    if status != "ok":
+        return _not_evaluable(
+            f"the candidate's own whole-test block is {status!r}, not 'ok'"
+            + (f": {candidate_stats.get('reason')}" if candidate_stats.get("reason") else ""))
+    sr = _finite(candidate_stats.get("sr_daily"), "compute_dsr_whole_test: candidate sr_daily")
+    t = _int_at_least(candidate_stats.get("T"), 2, "compute_dsr_whole_test: candidate T")
+    skew = _finite(candidate_stats.get("skew"), "compute_dsr_whole_test: candidate skew")
+    kurt = _finite(candidate_stats.get("kurtosis_raw"),
+                   "compute_dsr_whole_test: candidate kurtosis_raw")
+    out.update(sr_daily=sr, T=t)
+    if n_total < 2:
+        return _not_evaluable(f"N={n_total} counted trial(s); the multiple-testing "
+                              f"correction needs N >= 2")
+
+    sigma_null = 1.0 / math.sqrt(t - 1)
+    z = _expected_max_z(n_total)
+    out.update(sigma_null=sigma_null, z_expected_max=z)
+    if k < min_same_basis:
+        sigma_used, source, floor_mean = sigma_null, "null", 0.0
+    else:
+        mean_k = statistics.mean(srs)
+        sigma_k = math.sqrt(statistics.variance(srs))
+        out.update(mean_same_basis=mean_k, sigma_cross=sigma_k)
+        if sigma_k > sigma_null:
+            sigma_used, source = sigma_k, "cross"
+        else:
+            sigma_used, source = sigma_null, "null"
+        floor_mean = max(mean_k, 0.0)
+    sr0 = floor_mean + sigma_used * z
+    out.update(sr0=sr0, sigma_used=sigma_used, sigma_source=source)
+
+    denom_arg = 1.0 - skew * sr + ((kurt - 1.0) / 4.0) * sr * sr
+    if not denom_arg > 0.0:
+        return _not_evaluable(f"the DSR denominator's argument 1 - skew*SR + ((kurt-1)/4)*SR^2 "
+                              f"= {denom_arg!r} is not > 0 (skew={skew!r}, kurtosis_raw={kurt!r}, "
+                              f"SR={sr!r})")
+    out["dsr"] = _phi((sr - sr0) * math.sqrt(t - 1) / math.sqrt(denom_arg))
+    return out
+
+
+def _check_sha_tree(value, what: str) -> None:
+    """A mapping whose leaves are lowercase 64-hex sha256 strings (nested mappings allowed,
+    e.g. portfolio_states: {path: sha})."""
+    if not isinstance(value, Mapping) or not value:
+        raise ValueError(f"{what}: {value!r} is not a non-empty mapping")
+    for k, v in value.items():
+        if not isinstance(k, str) or not k:
+            raise ValueError(f"{what}: key {k!r} is not a non-empty string")
+        if isinstance(v, Mapping):
+            _check_sha_tree(v, f"{what}.{k}")
+        elif not (isinstance(v, str) and len(v) == 64 and set(v) <= _HEX):
+            raise ValueError(f"{what}.{k}: {v!r} is not a lowercase sha256 hex digest")
+
+
+def _check_whole_test_block(block, what: str, keys=_BLOCK_KEYS) -> dict:
+    """Validate a `whole_test` block (native, or an overlay entry with keys=_OVERLAY_KEYS):
+    exactly `keys`; basis a non-empty string;
+    status in WHOLE_TEST_STATUSES; status ok -> reason None, finite sr_daily / skew /
+    kurtosis, integer n_daily_returns >= 2; otherwise a non-empty reason. Returns the
+    projection onto the block's own keys (basis, status, reason + the four stats)."""
+    if not isinstance(block, Mapping):
+        raise ValueError(f"{what}: {block!r} is not a mapping")
+    if set(block) != keys:
+        raise ValueError(f"{what}: keys missing {sorted(keys - set(block))}, "
+                         f"unknown {sorted(set(block) - keys)}")
+    basis, status, reason = block.get("basis"), block.get("status"), block.get("reason")
+    if not isinstance(basis, str) or not basis:
+        raise ValueError(f"{what}: basis {basis!r} is not a non-empty string")
+    if status not in WHOLE_TEST_STATUSES:
+        raise ValueError(f"{what}: status {status!r} is not one of {sorted(WHOLE_TEST_STATUSES)}")
+    if status == "ok":
+        if reason is not None:
+            raise ValueError(f"{what}: status ok with a reason {reason!r}")
+        _finite(block.get("sr_daily"), f"{what}: sr_daily")
+        _finite(block.get("skew"), f"{what}: skew")
+        _finite(block.get("kurtosis"), f"{what}: kurtosis")
+        _int_at_least(block.get("n_daily_returns"), 2, f"{what}: n_daily_returns")
+    elif not isinstance(reason, str) or not reason:
+        raise ValueError(f"{what}: status {status!r} without a non-empty reason")
+    return {k: block.get(k) for k in ("basis", "status", "reason", *_BLOCK_STAT_KEYS)}
+
+
+def validate_basis_overlay(data) -> dict:
+    """Validate the recompute overlay's parsed YAML (S2B2_FINDINGS Q4/G8) and index it.
+
+    Shape: None/empty (no overlay yet) or {"entries": [entry, ...]}. Every entry has
+    exactly the keys trial_id, source, basis, status, reason, sr_daily,
+    n_daily_returns, skew, kurtosis, inputs_sha256, code_sha256 -- an unknown key
+    (e.g. a timestamp, which would make two writers' entries differ) raises. The
+    block fields follow _check_whole_test_block; inputs_sha256 / code_sha256 are
+    non-empty mappings of sha256 digests.
+
+    Append-only and deterministic: the same (trial_id, source, basis) twice is kept
+    once when the two entries are canonically equal (both writers appended the same
+    bytes) and raises when they differ. Returns {(trial_id, source, basis): entry}."""
+    if data is None:
+        return {}
+    if not isinstance(data, Mapping) or set(data) - {"entries"}:
+        raise ValueError(f"basis overlay: top level must be a mapping with only 'entries', "
+                         f"got {data!r:.200}")
+    entries = data.get("entries")
+    if entries is None:
+        return {}
+    if not isinstance(entries, list):
+        raise ValueError("basis overlay: 'entries' is not a list")
+    index: dict = {}
+    for i, e in enumerate(entries):
+        what = f"basis overlay entry {i}"
+        _check_whole_test_block(e, what, keys=_OVERLAY_KEYS)
+        for f in ("trial_id", "source"):
+            if not isinstance(e[f], str) or not e[f]:
+                raise ValueError(f"{what}: {f} {e[f]!r} is not a non-empty string")
+        _check_sha_tree(e["inputs_sha256"], f"{what}: inputs_sha256")
+        _check_sha_tree(e["code_sha256"], f"{what}: code_sha256")
+        key = (e["trial_id"], e["source"], e["basis"])
+        if key in index:
+            if not _canonical_equal(dict(index[key]), dict(e)):
+                raise ValueError(f"basis overlay: two different entries for {key}: "
+                                 f"{_row_field_diff(dict(index[key]), dict(e))} -- the overlay "
+                                 f"is append-only with deterministic entries; refused")
+            continue
+        index[key] = copy.deepcopy(dict(e))
+    return index
+
+
+def load_basis_overlay(path) -> dict:
+    """Read-only: parse and validate the overlay file (validate_basis_overlay). A
+    missing file is an empty overlay (nothing has been recomputed yet)."""
+    p = Path(path)
+    if not p.exists():
+        return {}
+    return validate_basis_overlay(_load_yaml(p))
+
+
+def select_same_basis_sample(trial_records, overlay=None, basis: str = WHOLE_TEST_BASIS) -> dict:
+    """The same-basis sample of the whole-test DSR (S2B2_FINDINGS G11) and N.
+
+    Rows: F8b invalidated rows out, then deduplicate_trials -- the SAME deduped
+    valid rows that define N (so N is exactly today's rule and does not depend on
+    the overlay). A deduped row enters the sample when its value on `basis` is
+    status "ok": a native `whole_test` block with that exact basis string, else an
+    overlay entry for (trial_id, source, basis). A row with neither (a legacy row,
+    a prescreen, a backtest_failed, a not_evaluable block) counts in N only. The
+    legacy `sharpe` field is never read. The candidate's own row is in the sample
+    like any other (its block is ok).
+
+    Precedence: native beats overlay; both present for the same basis and
+    different -> ValueError. An overlay entry for a (trial_id, source) absent from
+    the ledger raises (the ledger is behind the overlay: not merged).
+
+    overlay: the dict from validate_basis_overlay / load_basis_overlay (or None).
+    Returns {"srs": [...], "rows": [{trial_id, source, sr_daily, origin}], "K": len,
+    "N": len(deduped valid rows), "basis": basis}."""
+    if not isinstance(basis, str) or not basis:
+        raise ValueError(f"select_same_basis_sample: basis {basis!r} is not a non-empty string")
+    if not isinstance(trial_records, list):
+        raise ValueError("select_same_basis_sample: trial_records must be a list of rows")
+    overlay = overlay or {}
+    for r in trial_records:
+        if not isinstance(r, Mapping):
+            raise ValueError(f"select_same_basis_sample: ledger row {r!r} is not a mapping")
+    ledger_keys = {(r.get("trial_id"), r.get("source")) for r in trial_records}
+    orphans = sorted(str(k) for k in overlay if (k[0], k[1]) not in ledger_keys)
+    if orphans:
+        raise ValueError(f"select_same_basis_sample: overlay entries for rows absent from the "
+                         f"ledger: {orphans} -- the ledger is not merged; refused")
+
+    # Precedence / conflict is checked on EVERY ledger row (a conflict is a data error
+    # whether or not the row survives dedup).
+    for i, r in enumerate(trial_records):
+        if "whole_test" in r:
+            native = _check_whole_test_block(r["whole_test"],
+                                              f"ledger row {i} ({r.get('trial_id')!r}) whole_test")
+            ov = overlay.get((r.get("trial_id"), r.get("source"), native["basis"]))
+            if ov is None:
+                continue
+            ov_block = {k: ov[k] for k in _BLOCK_KEYS}
+            if not _canonical_equal(native, ov_block):
+                raise ValueError(
+                    f"select_same_basis_sample: ledger row ({r.get('trial_id')!r}, "
+                    f"{r.get('source')!r}) has a native whole_test block and an overlay entry "
+                    f"on basis {native['basis']!r} that differ: "
+                    f"{_row_field_diff(native, ov_block)}")
+
+    valid, _n_invalidated = exclude_invalidated_trials(trial_records)
+    deduped, _n_removed = deduplicate_trials(valid)
+    rows = []
+    for r in deduped:
+        tid, src = r.get("trial_id"), r.get("source")
+        block, origin = None, None
+        native = r.get("whole_test")
+        if native is not None and native.get("basis") == basis:
+            block, origin = native, "native"
+        elif (tid, src, basis) in overlay:
+            block, origin = overlay[(tid, src, basis)], "overlay"
+        if block is None or block.get("status") != "ok":
+            continue
+        rows.append({"trial_id": tid, "source": src, "sr_daily": float(block["sr_daily"]),
+                     "origin": origin})
+    return {"srs": [x["sr_daily"] for x in rows], "rows": rows, "K": len(rows),
+            "N": len(deduped), "basis": basis}
+
+
+# ---------------------------------------------------------------------------
 # CLI entry point
 # ---------------------------------------------------------------------------
 
