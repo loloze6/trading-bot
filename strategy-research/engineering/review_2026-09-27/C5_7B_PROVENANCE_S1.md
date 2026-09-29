@@ -121,3 +121,9 @@ Order: S0 → S1 → S2 → S3 independent after S0; S4 after operator decision.
 - G4 mismatch = observed vs requested model; the self-report is informational.
 - Other guesses as recommended. Build in two slices (orchestrator, small-slice rule): **C5.7b-1** = S0 + S1 + S3
   (flag, capture, reader and card model_id stamp); **C5.7b-2** = S2 + S4 (rubric closed set, citation record).
+
+### C5.7b-1 built
+
+S0 + S1 + S3 on branch `feat/c5-7b1-model-id-stamp`, behind `orchestrator.score_provenance.enabled` (default false, strict bool, requires `specialist_readers`; pre-flighted in `run_loop` and `run_campaign._flag_preflight`; registered `off_incomplete`, blocked on C5.7b-2 and C4's first real reader output). Code: `run_phase1_research.py` (`_score_provenance_enabled`, `_note_stream_models`, `_stamp_reader_body`, `_stamp_card_scores_text`; capture in `_invoke_reader_llm` and `run_claude_worker`; stamp in `run_reader_worker` and `run_claude_worker`'s save loop); `proposal.schema.json` gets a `description` edit only. Tests: `tests/test_c5_7b1_model_id_stamp.py` (34); no existing test changed.
+Guesses made: `mismatch` treats the requested id or `<requested>-<suffix>` as a match (G10; the real SDK string is still unmeasured); `ResultMessage.model_usage` keys are recorded as `result_models` (information only, never stamped); a stamped reader body is re-validated and the unstamped body kept if that fails (`stamped: false`, `stamp_error`); card provenance sits under `provenance.cards` of the 1a stage's audit entry; unchanged bodies (self-report already equal, empty list) are written verbatim.
+Still open: the observed string for `claude-haiku-4-5` (measure on C4's first real reader call); S2 and S4 are C5.7b-2.

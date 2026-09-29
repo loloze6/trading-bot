@@ -1033,6 +1033,130 @@ def _usage_token_record(usage: dict) -> dict:
     }
 
 
+# C5.7b-1 (D-048) -- score provenance: which model actually answered.
+# Everything below is reached only under orchestrator.score_provenance.enabled.
+
+def _note_stream_models(message, models: set, result_models: set) -> None:
+    """Collect the model ids one SDK stream message reports: AssistantMessage.model
+    (the model that answered) into `models`, and the keys of a result's
+    `model_usage` (informational -- the CLI can list helper models there) into
+    `result_models`. A message without either (a stub) adds nothing."""
+    if isinstance(message, AssistantMessage):
+        name = getattr(message, "model", None)
+        if isinstance(name, str) and name.strip():
+            models.add(name.strip())
+    usage = getattr(message, "model_usage", None)
+    if isinstance(usage, dict):
+        result_models.update(k.strip() for k in usage if isinstance(k, str) and k.strip())
+
+
+def _base_provenance(models, result_models) -> dict:
+    """The audit-log `provenance` block written with the stage's entry (S0)."""
+    block = {"requested": _CLAUDE_WORKER_MODEL,
+             "observed_models": sorted({m for m in (models or ()) if isinstance(m, str) and m})}
+    extra = sorted({m for m in (result_models or ()) if isinstance(m, str) and m})
+    if extra:
+        block["result_models"] = extra
+    return block
+
+
+def _model_matches_requested(observed: str, requested: str) -> bool:
+    """The requested id itself, or that id plus a `-<suffix>` (a dated snapshot).
+    Whether the SDK returns a dated id for the alias is unmeasured (C5_7B G10)."""
+    return observed == requested or observed.startswith(requested + "-")
+
+
+def _observed_model_facts(models) -> tuple:
+    """(observed, mismatch). observed: the one observed model id, or several
+    sorted and comma-joined (G3); None when nothing was observed. mismatch
+    (D-048): the observed model differs from the REQUESTED one -- several
+    distinct models always count; None when nothing was observed."""
+    names = sorted({m for m in (models or ()) if isinstance(m, str) and m.strip()})
+    if not names:
+        return None, None
+    mismatch = len(names) > 1 or not _model_matches_requested(names[0], _CLAUDE_WORKER_MODEL)
+    return ",".join(names), mismatch
+
+
+def _stamp_model_ids(items, id_key: str, observed) -> tuple:
+    """Set `model_id` to `observed` on every mapping in `items` (a no-op when
+    `observed` is None). Returns (changed, {<id>: <the value it self-reported>})."""
+    changed, self_reported = False, {}
+    for i, item in enumerate(items):
+        if not isinstance(item, dict):
+            continue
+        ident = item.get(id_key)
+        ident = ident if isinstance(ident, str) and ident.strip() else f"#{i}"
+        self_reported[ident] = item.get("model_id")
+        if observed is not None and item.get("model_id") != observed:
+            item["model_id"] = observed
+            changed = True
+    return changed, self_reported
+
+
+def _provenance_record(observed, mismatch, self_reported: dict, stamped: bool,
+                       error: str | None = None) -> dict:
+    """requested / observed / self_reported / mismatch / self_report_differs.
+    `mismatch` compares observed with REQUESTED (D-048); `self_report_differs`
+    is informational only (the SKILL never tells the model its own id)."""
+    record = {
+        "requested": _CLAUDE_WORKER_MODEL,
+        "observed": observed,
+        "self_reported": self_reported,
+        "mismatch": mismatch,
+        "self_report_differs": (None if observed is None
+                                else any(v != observed for v in self_reported.values())),
+        "stamped": stamped,
+    }
+    if error:
+        record["stamp_error"] = error
+    return record
+
+
+def _stamp_reader_body(body: str, category: str, run_dir: Path, models) -> tuple:
+    """A validated reader body with every proposal's `model_id` set to the
+    observed model. Returns (body, provenance record). Never raises: any
+    failure leaves the body exactly as the model wrote it and is recorded. The
+    stamped text is re-validated for its category before it is used."""
+    observed, mismatch = _observed_model_facts(models)
+    self_reported, error = {}, None
+    try:
+        doc = yaml.safe_load(body)
+        if not isinstance(doc, list):
+            raise ValueError("reader body is not a list of proposals")
+        changed, self_reported = _stamp_model_ids(doc, "proposal_id", observed)
+        if changed:
+            new_body = yaml.safe_dump(doc, sort_keys=False, allow_unicode=True)
+            _, verr = _validate_reader_output(f"```yaml\n{new_body}```", category, run_dir)
+            if verr is not None:
+                raise ValueError(f"stamped body failed validation: {verr}")
+            body = new_body
+    except Exception as exc:  # a normal-run condition never raises out of the stage
+        error = f"{type(exc).__name__}: {exc}"
+    stamped = observed is not None and error is None
+    return body, _provenance_record(observed, mismatch, self_reported, stamped, error)
+
+
+def _stamp_card_scores_text(text: str, models) -> tuple:
+    """extra_card_scores.yaml text with every card's `model_id` set to the
+    observed model. Returns (text, provenance record); never raises, and an
+    unparseable or unexpected file is written as the model wrote it."""
+    observed, mismatch = _observed_model_facts(models)
+    self_reported, error = {}, None
+    try:
+        doc = yaml.safe_load(text)
+        cards = doc.get("cards") if isinstance(doc, dict) else None
+        if not isinstance(cards, list):
+            raise ValueError("no `cards` list")
+        changed, self_reported = _stamp_model_ids(cards, "card", observed)
+        if changed:
+            text = yaml.safe_dump(doc, sort_keys=False, allow_unicode=True)
+    except Exception as exc:
+        error = f"{type(exc).__name__}: {exc}"
+    stamped = observed is not None and error is None
+    return text, _provenance_record(observed, mismatch, self_reported, stamped, error)
+
+
 async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_context: str | None = None):
 
     print(f"\n🧠 [AGENT INVOKED] Waking up specialist for: {stage_name}"
@@ -1050,6 +1174,9 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
     exact_usage = {}
     total_cost = 0.0
     num_turns = None
+    # C5.7b-1: the models that answered, collected only under the flag.
+    prov_on = _score_provenance_enabled()
+    prov_models, prov_result_models = set(), set()
 
     # CUL-336: closed-book -- no tools, no settings files, no MCP servers
     # (see _stage_agent_options). The handoff's inputs are the only context.
@@ -1057,6 +1184,8 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
         prompt=full_prompt,
         options=_stage_agent_options()
     ):
+        if prov_on:
+            _note_stream_models(message, prov_models, prov_result_models)
         # Accumulate text content from assistant messages
         if isinstance(message, AssistantMessage):
             for block in message.content:
@@ -1114,6 +1243,9 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
             }
         }
     }
+    if prov_on:
+        log_entry[f"{stage_name}_attempt_{attempt_num}"]["provenance"] = \
+            _base_provenance(prov_models, prov_result_models)
     update_state(path=path, audit_log=log_entry)
 
 
@@ -1129,11 +1261,24 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
         return
 
     saved_files = []
+    card_provenance = None
     for filename, yaml_content in matches:
         dest_path = path / "artifacts" / filename.strip()
+        out_text = yaml_content.strip()
+        if prov_on and filename.strip() == EXTRA_CARD_SCORES_FILE:
+            # S3: the brief-card scores carry the model that answered, not its
+            # self-report. brief-card-v1 is still enforced at decide_next.
+            out_text, card_provenance = _stamp_card_scores_text(out_text, prov_models)
+            if card_provenance["mismatch"]:
+                print(f"⚠️  score provenance: {EXTRA_CARD_SCORES_FILE} answered by "
+                      f"{card_provenance['observed']!r}, requested "
+                      f"{card_provenance['requested']!r} (recorded, not stopped).")
         with open(dest_path, "w", encoding="utf-8") as f:
-            f.write(yaml_content.strip())
+            f.write(out_text)
         saved_files.append(filename.strip())
+    if card_provenance is not None:
+        log_entry[f"{stage_name}_attempt_{attempt_num}"]["provenance"]["cards"] = card_provenance
+        update_state(path=path, audit_log=log_entry)
         
     print(f"✅ [AGENT COMPLETE] Successfully wrote deliverables: {', '.join(saved_files)}")
 
@@ -3421,6 +3566,39 @@ def _specialist_readers_enabled(cfg: dict | None = None) -> bool:
     return value
 
 
+def _score_provenance_enabled(cfg: dict | None = None) -> bool:
+    """C5.7b-1 (D-048; engineering/review_2026-09-27/C5_7B_PROVENANCE_S1.md).
+    False when the key, the section or the config file is absent. A non-bool
+    value raises (a quoted "false" must never read truthy). Requires
+    orchestrator.specialist_readers.enabled (itself requiring grid_evaluation
+    and category_reports): raises, loudly, if this flag is on without it --
+    the reader proposals it stamps exist only under that flag.
+
+    While false: nothing is captured, stamped or recorded -- every reader file,
+    extra_card_scores.yaml and audit-log entry is byte-identical.
+    While true: the model that actually answered (AssistantMessage.model) is
+    stamped over `model_id` on reader proposals and brief-card scores, and the
+    audit-log entry gains a `provenance` block (requested / observed / the
+    self-reported value / mismatch). Nothing raises or retries on a mismatch."""
+    cfg = _orchestrator_config(cfg)
+    sp_cfg = ((cfg.get("orchestrator") or {}).get("score_provenance") or {})
+    value = sp_cfg.get("enabled", False)
+    if not isinstance(value, bool):
+        raise ValueError(
+            f"orchestrator.score_provenance.enabled={value!r} is not a real boolean "
+            f"(got {type(value).__name__}) -- write an unquoted `true` or `false` in "
+            f"config/campaign_config.yaml, not a quoted string or null."
+        )
+    if value and not _flag_dep(_specialist_readers_enabled, cfg):
+        raise ValueError(
+            "orchestrator.score_provenance.enabled=true requires "
+            "orchestrator.specialist_readers.enabled=true as well -- the score "
+            "provenance stamps the reader proposals that only that stage writes "
+            "(and, with them, the brief-card scores read by decide_next). Enable both."
+        )
+    return value
+
+
 _SPECIALIST_READERS_HANDOFF = "protocol_to_specialist_readers.yaml"
 _READER_OUTPUT_BLOCK_RE = re.compile(r"```ya?ml[^\n]*\n(.*?)```", re.DOTALL)
 
@@ -3682,7 +3860,11 @@ async def _invoke_reader_llm(prompt: str) -> tuple:
     Same options helper as run_claude_worker (_stage_agent_options, CUL-336)."""
     agent_output = ""
     usage, total_cost, num_turns = {}, 0.0, None
+    prov_on = _score_provenance_enabled()  # C5.7b-1: capture only under the flag
+    prov_models, prov_result_models = set(), set()
     async for message in query(prompt=prompt, options=_stage_agent_options()):
+        if prov_on:
+            _note_stream_models(message, prov_models, prov_result_models)
         if isinstance(message, AssistantMessage):
             for block in message.content:
                 if isinstance(block, TextBlock):
@@ -3691,7 +3873,11 @@ async def _invoke_reader_llm(prompt: str) -> tuple:
             usage = getattr(message, "usage", {}) or {}
             total_cost = getattr(message, "total_cost_usd", 0.0)
             num_turns = getattr(message, "num_turns", None)
-    return agent_output, {"usage": usage, "cost_usd": total_cost, "num_turns": num_turns}
+    meta = {"usage": usage, "cost_usd": total_cost, "num_turns": num_turns}
+    if prov_on:
+        meta["models"] = sorted(prov_models)
+        meta["result_models"] = sorted(prov_result_models)
+    return agent_output, meta
 
 
 class _ReaderBudgetExceeded(RuntimeError):
@@ -3747,6 +3933,7 @@ def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0
                                       skill_file_name=_reader_skill_dir(category))
     prompt = base_prompt
     dest = run_dir / "artifacts" / "proposals" / f"{category}.yaml"
+    prov_on = _score_provenance_enabled()  # C5.7b-1
     for attempt in range(2):
         if attempt:
             _check_reader_budget(run_dir, category)
@@ -3755,16 +3942,29 @@ def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0
         start = time.time()
         text, meta = asyncio.run(_invoke_reader_llm(prompt))
         key = f"specialist_readers_{category}_attempt_{stage_attempt}" + (f"_retry{attempt}" if attempt else "")
-        update_state(path=run_dir, audit_log={key: {
+        entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "engine": "claude-agent-sdk",
             "execution_time_seconds": round(time.time() - start, 2),
             "cost_usd": meta.get("cost_usd", 0.0),
             "num_turns": meta.get("num_turns"),
             "tokens": _usage_token_record(meta.get("usage") or {}),
-        }})
+        }
+        if prov_on:
+            entry["provenance"] = _base_provenance(meta.get("models"), meta.get("result_models"))
+        update_state(path=run_dir, audit_log={key: entry})
         body, error = _validate_reader_output(text, category, run_dir)
         if error is None:
+            if prov_on:
+                # S1: the proposals carry the model that answered, not its
+                # self-report; recorded in the audit log, never a stop or retry.
+                body, record = _stamp_reader_body(body, category, run_dir, meta.get("models"))
+                entry["provenance"].update(record)
+                update_state(path=run_dir, audit_log={key: entry})
+                if record["mismatch"]:
+                    print(f"⚠️  score provenance: {category} reader answered by "
+                          f"{record['observed']!r}, requested {record['requested']!r} "
+                          f"(recorded, not stopped).")
             dest.parent.mkdir(parents=True, exist_ok=True)
             fd, tmp_name = tempfile.mkstemp(prefix=f".{category}.", suffix=".tmp", dir=str(dest.parent))
             try:
@@ -14104,6 +14304,15 @@ def run_loop(run_id: str):
             _profit_bars_v2_enabled()
     except Exception as e:
         print(f"❌ profit_bars_v2 pre-flight failed: {e}")
+        update_state(path=RUN_DIR, status="failed", last_error=str(e))
+        return
+    # C5.7b-1: score provenance, resolved ONCE the same way (its dependency on
+    # specialist_readers, or a non-bool value, fails the run here, before any spend).
+    try:
+        if _pending_at_start and not _pending_at_start.startswith(_TERMINAL_AT_START):
+            _score_provenance_enabled()
+    except Exception as e:
+        print(f"❌ score_provenance pre-flight failed: {e}")
         update_state(path=RUN_DIR, status="failed", last_error=str(e))
         return
     # Slice 6c S2a: verdict routing retired, resolved ONCE the same way (its
