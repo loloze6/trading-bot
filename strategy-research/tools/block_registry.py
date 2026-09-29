@@ -348,3 +348,266 @@ def record_run(path: Path, run_dir: Path, entry: dict, *, root: Path,
     _append(path, run_id, [block])
     print(f"[E-058] block registry: registered {block['block_id']} ({block['kind']}) -> {path}")
     return {"block_ids": [block["block_id"]]}
+
+
+# ---------------------------------------------------------------------------
+# E-061 C2 S2e (C2_S1_FINDINGS.md G9/G10, D-017): the registry summary the
+# specialist readers see. A PURE READ -- nothing here writes the registry, the
+# memory or any trial row. Called by exactly one place,
+# run_phase1_research._run_specialist_readers_stage, before its first reader
+# (flag: orchestrator.specialist_readers only).
+#
+# Why it cannot leak: it reads only (a) blocks validated by EARLIER runs
+# (campaign_record/block_registry.yaml; this run's own id is excluded), (b) this
+# run's block_manifest.yaml + tested base config, (c) artifacts/residual_ic.yaml
+# when protocol_execution wrote one, (d) this run's research_brief.yaml source
+# (which registered idea a patch came from). Every number in (a) and (c) comes
+# from protocol windows that end before the holdout starts.
+# ---------------------------------------------------------------------------
+REGISTRY_SUMMARY_ARTIFACT = "registry_summary.yaml"
+REGISTRY_SUMMARY_SCHEMA_VERSION = 1
+GROUP_BY_TYPE_ABOVE = 50  # more registered blocks than this -> one row per block TYPE
+_GROUP_ID_SAMPLE = 5
+# The relation names a block can carry to this run's block type (the SKILLs cite
+# exactly these; a test pins both directions). None = not the same set of classes.
+RELATIONS = ("same_type", "same_classes_timeframe_unknown",
+             "same_classes_different_timeframe_category", "same_classes_different_kind",
+             "same_classes_different_kind_and_timeframe_category")
+_SAME_TYPE_RELATIONS = ("same_type", "same_classes_timeframe_unknown")
+
+
+def _fragment_component_classes(fragment) -> list:
+    """Sorted distinct `class` strings of every component-shaped mapping
+    (a dict with a string `class`) anywhere inside a config fragment."""
+    found: set = set()
+
+    def walk(node):
+        if isinstance(node, dict):
+            cls = node.get("class")
+            if isinstance(cls, str) and cls:
+                found.add(cls)
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, list):
+            for v in node:
+                walk(v)
+
+    walk(fragment)
+    return sorted(found)
+
+
+def _relation(this: dict, other: dict):
+    """None when the two do not have the same set of component classes;
+    otherwise how the block relates to this run's block type. G9 defines the type
+    as (kind, sorted classes, timeframe category), so two EMPTY class sets are the
+    same set like any other (a regime block whose config paths hold no component
+    mapping, e.g. /regime_detector/rules, is still a comparable type).
+    A timeframe category that is unrecorded on either side (registered, or run,
+    without orchestrator.composition_runs) is not evidence of a different one, so
+    a same-kind block with an unknown category is `same_classes_timeframe_unknown`:
+    an ASSUMED same type (never further from the registry than it may be),
+    distinguishable from a verified `same_type`."""
+    if this["component_classes"] != other["component_classes"]:
+        return None
+    same_kind = this["kind"] == other["kind"]
+    tf_a, tf_b = this["timeframe_category"], other["timeframe_category"]
+    tf_unknown = tf_a is None or tf_b is None
+    same_tf = tf_unknown or tf_a == tf_b
+    if same_kind and same_tf:
+        return "same_classes_timeframe_unknown" if tf_unknown else "same_type"
+    if same_kind:
+        return "same_classes_different_timeframe_category"
+    if same_tf:
+        return "same_classes_different_kind"
+    return "same_classes_different_kind_and_timeframe_category"
+
+
+def _number(node):
+    v = node.get("value") if isinstance(node, dict) else None
+    return v if isinstance(v, (int, float)) and not isinstance(v, bool) else None
+
+
+def _block_type_of(block: dict) -> dict:
+    return {"kind": block["kind"],
+            "component_classes": _fragment_component_classes(block["config_fragment"]),
+            "timeframe_category": block.get("timeframe_category")}
+
+
+def _load_optional_mapping(path: Path, what: str) -> dict | None:
+    if not path.exists():
+        return None
+    try:
+        doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        raise BlockRegistryError(f"{path}: unparseable YAML ({exc})") from exc
+    if doc is not None and not isinstance(doc, dict):
+        raise BlockRegistryError(f"{path}: {what} is not a mapping")
+    return doc or {}
+
+
+def _this_run_block_type(run_dir: Path, timeframe_category):
+    """(block type | None, reason | None) of the run's own block: its manifest's
+    kind and the component classes inside the manifest's config paths, read from
+    the tested base config. Nothing readable -- no manifest (a composition run or
+    another flow), no validated variant, or a manifest / config that does not
+    parse or resolve -- is a REASON in the summary, never a raise: this input is
+    advisory, and the checks that own those files (5a, regroup_record's
+    block_registry.build_block) still fail loud on them. The readers see the
+    reason and score the block type as "cannot be placed"."""
+    try:
+        return _read_this_run_block_type(run_dir, timeframe_category)
+    except BlockRegistryError as exc:
+        return None, f"block_type_unreadable: {exc}"
+
+
+def _read_this_run_block_type(run_dir: Path, timeframe_category):
+    manifest = load_manifest(run_dir)
+    if manifest is None:
+        return None, "no_block_manifest"
+    arts = Path(run_dir) / "artifacts"
+    index = _load_optional_mapping(arts / "variants" / "index.yaml", "variant index")
+    if index is not None:
+        variants = index.get("variants")
+        validated = [v for v, info in (variants or {}).items()
+                     if isinstance(info, dict) and info.get("status") == "validated"]
+        if not validated:
+            return None, "no_validated_variant"
+        cfg_rel = variants[_jp.base_variant_id(validated)].get("config_path")
+        cfg_path = Path(run_dir) / cfg_rel if cfg_rel else None
+    else:
+        cfg_path = arts / "candidate_strategy_config.json"
+    if cfg_path is None or not cfg_path.exists():
+        return None, "no_base_config"
+    try:
+        config = json.loads(cfg_path.read_text(encoding="utf-8"))
+    except ValueError as exc:
+        raise BlockRegistryError(f"{cfg_path}: unparseable JSON ({exc})") from exc
+    _bm.check_manifest(manifest, config, where=f"{arts / MANIFEST_FILENAME} (base config {cfg_path})",
+                       error_cls=BlockRegistryError)
+    fragment = [_jp.resolve_json_pointer(config, p) for p in manifest["block"]["config_paths"]]
+    return {"kind": manifest["block"]["kind"],
+            "component_classes": _fragment_component_classes(fragment),
+            "timeframe_category": timeframe_category}, None
+
+
+def _patched_registered_block(run_dir: Path, blocks: list):
+    """block_id of the registered block this run's candidate patches, or None:
+    the run's research_brief.yaml names its source (a reader `patch` proposal on
+    an earlier run / hypothesis) and that run or idea registered a block."""
+    brief = _load_optional_mapping(Path(run_dir) / "artifacts" / "research_brief.yaml",
+                                   "research brief") or {}
+    cand = brief.get("candidate")
+    source = cand.get("source") if isinstance(cand, dict) else None
+    if not isinstance(source, dict):
+        return None
+    proposal = source.get("proposal")
+    if not (isinstance(proposal, dict) and proposal.get("kind") == "patch"):
+        return None
+    for b in blocks:
+        if b["validated_by_run"] == source.get("source_run") \
+                or b["hypothesis_id"] == source.get("parent_hypothesis_id"):
+            return b["block_id"]
+    return None
+
+
+def _correlations(run_dir: Path) -> dict:
+    """This run's measured correlation to the composite, per variant, from
+    artifacts/residual_ic.yaml (E-060; the file exists only under
+    orchestrator.composition_runs)."""
+    doc = _load_optional_mapping(Path(run_dir) / "artifacts" / RESIDUAL_IC_ARTIFACT,
+                                 RESIDUAL_IC_ARTIFACT)
+    if doc is None:
+        return {"status": "no_residual_ic_artifact", "timeframe_category": None,
+                "composite_kind": None, "by_variant": {}, "max_abs": None}
+    tfc = doc.get("timeframe_category")
+    tfc = tfc if tfc in ("high", "medium", "low", "daily") else None
+    if doc.get("skipped"):
+        return {"status": f"skipped: {doc['skipped']}", "timeframe_category": tfc,
+                "composite_kind": None, "by_variant": {}, "max_abs": None}
+    kind = (doc.get("composite") or {}).get("kind")
+    by_variant = {vid: d.get("correlation_to_composite")
+                  for vid, d in sorted((doc.get("variants") or {}).items()) if isinstance(d, dict)}
+    numbers = [v for v in by_variant.values()
+               if isinstance(v, (int, float)) and not isinstance(v, bool)]
+    if kind == "none":
+        status = "no_composite"
+    else:
+        status = "measured" if numbers else "not_measurable"
+    return {"status": status, "timeframe_category": tfc, "composite_kind": kind,
+            "by_variant": by_variant,
+            "max_abs": max(abs(v) for v in numbers) if numbers else None}
+
+
+def registry_summary(doc: dict, run_dir: Path, idea_status: str | None = None) -> dict:
+    """The artifact artifacts/registry_summary.yaml (G9). `doc` is
+    load_registry()'s document. Deterministic (no clock), so a resume rewrites
+    the same bytes. Blocks this run itself registered are left out: the summary
+    is what EARLIER runs validated.
+    `idea_status` is this run's own grid status (idea_status.yaml, passed in by the
+    caller so this stays pure): regroup_record registers a validated run's block
+    only AFTER the readers, so the summary cannot list it yet -- the readers get
+    the status instead (`this_run.idea_status`)."""
+    run_dir = Path(run_dir)
+    run_id = run_dir.name
+    blocks = [b for b in doc["blocks"] if b["validated_by_run"] != run_id]
+    corr = _correlations(run_dir)
+    this_type, reason = _this_run_block_type(run_dir, corr["timeframe_category"])
+    rows = []
+    for b in blocks:
+        btype = _block_type_of(b)
+        rows.append({
+            "block_id": b["block_id"], "hypothesis_id": b["hypothesis_id"],
+            "validated_by_run": b["validated_by_run"], "kind": b["kind"],
+            "component_classes": btype["component_classes"], "timeframe": b.get("timeframe"),
+            "timeframe_category": btype["timeframe_category"],
+            "symbols_tested": list(b["symbols_tested"]),
+            "residual_ic": _number(b["residual_ic"]),
+            "correlation_to_composite": _number(b["correlation_to_composite"]),
+            # null when this run's own block type is unknown (see this_run.reason)
+            "relation_to_this_run": _relation(this_type, btype) if this_type else None,
+        })
+    neighbours = [r["block_id"] for r in rows if r["relation_to_this_run"]]
+    out = {
+        "schema_version": REGISTRY_SUMMARY_SCHEMA_VERSION, "run_id": run_id,
+        "registry": {"n_blocks": len(rows), "revision": doc["revision"],
+                     "n_forecast_blocks": sum(1 for r in rows if r["kind"] == "forecast"),
+                     "grouping": "by_type" if len(rows) > GROUP_BY_TYPE_ABOVE else "none"},
+        "this_run": {
+            "idea_status": idea_status,
+            "block_type": this_type, "reason": reason,
+            # an assumed match (same_classes_timeframe_unknown) counts: the conservative reading
+            "type_already_registered": (any(r["relation_to_this_run"] in _SAME_TYPE_RELATIONS
+                                            for r in rows) if this_type else None),
+            # capped once the summary is grouped; n_neighbour_blocks is always the full count
+            "neighbour_block_ids": (neighbours if len(rows) <= GROUP_BY_TYPE_ABOVE
+                                    else neighbours[:_GROUP_ID_SAMPLE]),
+            "n_neighbour_blocks": len(neighbours),
+            "patches_registered_block": _patched_registered_block(run_dir, blocks),
+            "correlation_to_composite": {
+                "status": corr["status"], "composite_kind": corr["composite_kind"],
+                "by_variant": corr["by_variant"], "max_abs": corr["max_abs"]},
+        },
+    }
+    if len(rows) <= GROUP_BY_TYPE_ABOVE:
+        out["blocks"] = rows
+        return out
+    groups: dict = {}
+    for r in rows:
+        key = (r["kind"], tuple(r["component_classes"]), r["timeframe_category"])
+        groups.setdefault(key, []).append(r)
+    out["groups"] = []
+    for (kind, classes, tfc), members in sorted(groups.items(), key=lambda kv: str(kv[0])):
+        ics = [r["residual_ic"] for r in members if r["residual_ic"] is not None]
+        cors = [abs(r["correlation_to_composite"]) for r in members
+                if r["correlation_to_composite"] is not None]
+        out["groups"].append({
+            "block_type": {"kind": kind, "component_classes": list(classes),
+                           "timeframe_category": tfc},
+            "n_blocks": len(members),
+            "block_ids": [r["block_id"] for r in members][:_GROUP_ID_SAMPLE],
+            "symbols_tested": sorted({s for r in members for s in r["symbols_tested"]}),
+            "residual_ic_range": [min(ics), max(ics)] if ics else None,
+            "abs_correlation_to_composite_range": [min(cors), max(cors)] if cors else None,
+            "relation_to_this_run": members[0]["relation_to_this_run"],
+        })
+    return out

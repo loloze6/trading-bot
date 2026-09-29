@@ -79,6 +79,9 @@ def _seed_run(run_id=RUN_ID, idea_status="refuted", errors_count=None, pending="
     arts = run_dir / "artifacts"
     rpr.save_yaml(arts / "protocol_result.yaml", _protocol_result(errors_count))
     rpr.save_yaml(arts / "grid_evaluation.yaml", {"result": "X", "marker": "GRID_MARKER"})
+    # E-061 C2 S2e: the stage writes this before the first reader; tests that call
+    # _run_specialist_readers directly need the stand-in the handoff now requires.
+    rpr.save_yaml(arts / "registry_summary.yaml", {"marker": "REGISTRY_SUMMARY_MARKER"})
     rpr.save_yaml(arts / "hypothesis_card.yaml", {"hypothesis_id": "H-TEST-1"})
     _write_menu_pre_registration(run_dir)
     if idea_status is not None:
@@ -266,6 +269,8 @@ def test_loop_dispatches_five_readers_to_five_skills_and_five_paths(monkeypatch)
         # the real SKILL.md of this category's reader, and only this category's report
         assert f"name: {c}-reader" in prompt
         assert f"REPORT_{c.upper()}" in prompt and "GRID_MARKER" in prompt
+        # E-061 C2 S2e: the registry summary is the one extra input, for every reader
+        assert "REGISTRY_SUMMARY_MARKER" in prompt
         others = [o for o in REPORT_CATEGORIES if o != c]
         assert not any(f"REPORT_{o.upper()}" in prompt for o in others)
         assert "pre_registration" not in prompt.split("YOUR PROVIDED CONTEXT FILES:")[1]

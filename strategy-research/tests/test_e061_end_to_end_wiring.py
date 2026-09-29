@@ -1928,3 +1928,76 @@ def test_b2_category_reports_carry_trade_and_bar_slices(harness):
         assert doc.get("schema_version") == 2, f"{cat}.yaml: expected schema_version 2, got {doc!r}"
         assert set(doc.get("variants") or {}) == {"asset", "base", "design"}, \
             f"{cat}.yaml: expected all 3 graded variants, got {sorted(doc.get('variants') or {})}"
+
+
+# ---------------------------------------------------------------------------
+# C2.3 (E-061 C2 S2e, D-017): the readers see what earlier runs validated
+# ---------------------------------------------------------------------------
+
+@pytest.mark.slow
+def test_c2_3_run_2_readers_see_run_1s_validated_block_with_this_run_as_its_neighbour(harness):
+    """Run 1 validates (every variant's stubbed backtest clears every grid criterion,
+    the same profile test_c2_4 measured as completed_validated) and registers its
+    block. Run 2 is the reader-minted patch on it: the registry summary code writes
+    before run 2's readers lists run 1's block, marks it a same-type neighbour of
+    run 2's own block, names the patch relation, and every run-2 reader prompt
+    carries it. Run 1's own readers saw an empty registry (nothing earlier).
+    composition_runs is off here: with it on, run 2's residual IC would rebuild
+    run 1's block as a composite through real market-data fingerprints
+    (manifest.json per window), which this harness's run_protocol stub does not
+    write -- an E-060 concern, not this slice's. Off, the blocks carry no
+    timeframe category and the summary matches on component classes and kind."""
+    h = harness.build(flags={**TARGET_FLAGS, "composition_runs": False})
+    for vid in ("base", "design", "asset"):
+        h.profiles[vid] = {"sharpe": 0.3, "edge": 3.0, "trades": 40}
+    h.register_brief()
+    r1 = "run_001"
+    keep_going, exc = _drive(h)
+    _pin_joined(h, exc, r1)
+    st1 = h.state(r1)
+    assert st1.get("last_error") is None, st1.get("last_error")
+    assert h.art(r1, "idea_status.yaml")["idea_status"] == "validated"
+    block_id = f"{FIRST_HYPOTHESIS}:{r1}"
+    reg = yaml.safe_load(rpr._block_registry_path().read_text(encoding="utf-8"))
+    assert [b["block_id"] for b in reg["blocks"]] == [block_id]
+    # run 1: an empty registry, this run's own type known
+    s1 = h.art(r1, "registry_summary.yaml")
+    assert s1["registry"]["n_blocks"] == 0 and s1["blocks"] == []
+    assert s1["this_run"]["block_type"]["component_classes"] == [
+        BASE_CONFIG["strategies"]["regimes"]["unknown"]["components"][0]["class"]]
+    assert s1["this_run"]["type_already_registered"] is False
+    # run 1 is validated: its own block is registered only AFTER its readers, so the
+    # summary carries the status (the SKILLs score a patch on a validated run as 0)
+    assert s1["this_run"]["idea_status"] == "validated"
+    assert s1["registry"]["n_forecast_blocks"] == 0
+    r1_prompts = [p for s, r, p in h.prompts if s == "specialist_readers" and r == r1]
+    assert len(r1_prompts) == len(rpr._reader_categories())
+    assert all("registry_summary.yaml" in p for p in r1_prompts)
+    assert not any(block_id in p for p in r1_prompts)
+
+    keep_going, exc = _drive(h)
+    cid = f"profitability-{r1}-1"
+    entry = h.entry(cid)
+    r2 = entry["run_ids"][0]
+    assert r2 == "run_002", (r2, entry)
+    _pin_joined(h, exc, r2)
+    assert h.state(r2).get("last_error") is None, h.state(r2).get("last_error")
+    s2 = h.art(r2, "registry_summary.yaml")
+    assert s2["registry"]["n_blocks"] == 1
+    (row,) = s2["blocks"]
+    assert row["block_id"] == block_id and row["validated_by_run"] == r1
+    # this run marked as its neighbour; composition_runs is off, so neither block records a
+    # timeframe category and the match is the assumed one, under its own name
+    assert row["relation_to_this_run"] == "same_classes_timeframe_unknown"
+    assert s2["registry"]["n_forecast_blocks"] == 1
+    assert s2["this_run"]["idea_status"] == h.art(r2, "idea_status.yaml")["idea_status"]
+    assert s2["this_run"]["neighbour_block_ids"] == [block_id]
+    assert s2["this_run"]["type_already_registered"] is True
+    assert s2["this_run"]["patches_registered_block"] == block_id
+    r2_prompts = [p for s, r, p in h.prompts if s == "specialist_readers" and r == r2]
+    assert len(r2_prompts) == len(rpr._reader_categories())
+    for p in r2_prompts:
+        assert "--- CONTENT OF artifacts/registry_summary.yaml ---" in p
+        assert block_id in p and "same_classes_timeframe_unknown" in p
+        assert "idea_status" in p
+    _assert_holdout_untouched(h)

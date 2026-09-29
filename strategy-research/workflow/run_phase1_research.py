@@ -3592,9 +3592,10 @@ def _idea_hypothesis_id(run_dir: Path) -> str:
 
 def _reader_handoff(category: str, run_id: str, stage_attempt) -> dict:
     """The per-reader handoff, built in memory. Its only inputs are this
-    category's report and the grid -- deliberately none of the stage-wide
+    category's report, the grid and (E-061 C2 S2e) the registry summary code
+    writes before the first reader -- deliberately none of the stage-wide
     unions (B7 pre-registration, exclusion digest, config-direct context):
-    each reader's SKILL.md scopes it to exactly these two files."""
+    each reader's SKILL.md scopes it to exactly these three files."""
     return {
         "handoff_version": 1, "run_id": run_id,
         "from_stage": "protocol_execution", "to_stage": "specialist_readers",
@@ -3607,6 +3608,8 @@ def _reader_handoff(category: str, run_id: str, stage_attempt) -> dict:
         "required_inputs": [
             {"path": f"artifacts/reports/{category}.yaml", "reason": f"the {category} report"},
             {"path": "artifacts/grid_evaluation.yaml", "reason": "the grid's per-criterion result"},
+            {"path": "artifacts/registry_summary.yaml",
+             "reason": "what earlier runs validated (the distance-to-profitable anchors read it)"},
         ],
         "deliverables": [f"proposals/{category}.yaml"],
         "injected_context": {"stage_attempt": str(stage_attempt),
@@ -3814,6 +3817,24 @@ def _check_retune_firewall(run_dir: Path) -> None:
         )
 
 
+def _write_registry_summary(run_dir: Path, idea_status: str | None = None) -> Path:
+    """artifacts/registry_summary.yaml for the readers (E-061 C2 S2e, G9): the
+    pure tools/block_registry.registry_summary over the campaign registry
+    (absent registry = an empty one, exactly as load_registry reads it). A
+    malformed registry or manifest raises -- a summary is never guessed."""
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import block_registry as _br
+    summary = _br.registry_summary(_br.load_registry(_block_registry_path()), run_dir,
+                                   idea_status=idea_status)
+    dest = Path(run_dir) / "artifacts" / _br.REGISTRY_SUMMARY_ARTIFACT
+    save_yaml(dest, summary)
+    print(f"📚 specialist_readers: {_br.REGISTRY_SUMMARY_ARTIFACT} written "
+          f"({summary['registry']['n_blocks']} earlier validated block(s)).")
+    return dest
+
+
 def _run_specialist_readers_stage(run_id: str, run_dir: Path, stage_attempt=0) -> None:
     """Stage body. Engineering errors first: when protocol_result.yaml reports
     component errors the readers are not run at all (the grid they read is
@@ -3827,8 +3848,12 @@ def _run_specialist_readers_stage(run_id: str, run_dir: Path, stage_attempt=0) -
         print("⏭️  specialist_readers: component errors in protocol_result.yaml -- readers not "
               "run (the grid is meaningless); the route pauses for a human.")
         return
-    _load_idea_status(run_dir, run_id)
+    idea = _load_idea_status(run_dir, run_id)
     _check_retune_firewall(run_dir)
+    # E-061 C2 S2e (card I, D-017): what earlier runs validated, written by code
+    # BEFORE the first reader so every reader can score "distance to profitable"
+    # against the registry. This stage is the only caller (tests pin it).
+    _write_registry_summary(run_dir, idea_status=idea["idea_status"])
     proposals = _run_specialist_readers(run_id, run_dir, stage_attempt)
     # E-035 S2c: each feed the validated proposals ask for and do not have
     # becomes a data_requests.yaml row (idempotent per run and feed; nothing
