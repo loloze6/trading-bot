@@ -239,7 +239,8 @@ def test_committed_bars_file_carries_the_floor_and_the_new_basis():
     real = SR_ROOT / "config" / "profitability_bars.yaml"
     assert rpr._load_profitability_bars(real, v2=True)["dsr_min_same_basis_trials"] == 10
     doc = yaml.safe_load(real.read_text(encoding="utf-8"))
-    assert doc["ratified_by"] is None and doc["ratified_at"] is None
+    # Signed by the operator 2026-09-29 (E-062 SIGNING_CHECKLIST.md).
+    assert doc["ratified_by"] and str(doc["ratified_at"]) == "2026-09-29"
     assert f"basis: {DSR_BASIS}\n" in real.read_text(encoding="utf-8")
 
 

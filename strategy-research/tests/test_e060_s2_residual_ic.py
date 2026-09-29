@@ -193,12 +193,12 @@ def _diag(**kw):
 
 
 def test_menu_entry_is_the_operator_placeholder():
-    # E-062 S2b-1: the D-039 values (0.02, one-sided p 0.05, n_eff 30); still
-    # `ratified: false` until the operator signs.
+    # E-062 S2b-1: the D-039 values (0.02, one-sided p 0.05, n_eff 30); ratified
+    # by the operator 2026-09-29 (E-062 SIGNING_CHECKLIST.md).
     crit = _menu_residual_crit()
     assert (crit["comparator"], crit["threshold"], crit["floor"]) == (">", 0.02, {"min_n_eff": 30})
     raw = next(e for e in REAL_MENU["code_added_criteria"] if e["id"] == "residual_ic")
-    assert raw["ratified"] is False
+    assert raw["ratified"] is True
     assert crit["max_p_value"] == 0.05
     assert crit["source"] == "pooled" and crit["statistic"] == "value" and crit["scale_free"]
     assert "residual_ic" not in {c["id"] for c in REAL_MENU["criteria"]}  # never picked by 1a
