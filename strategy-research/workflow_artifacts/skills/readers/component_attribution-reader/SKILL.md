@@ -31,10 +31,11 @@ rule's own justification.
   `strategy-research/tools/build_reports.py::build_component_attribution_report`.)
 - `artifacts/grid_evaluation.yaml` (E-046b/Slice 2, already merged -- **optional**, see
   profitability-reader/SKILL.md's identical note; proceed without it if absent.)
+- `artifacts/registry_summary.yaml` (E-061 C2 S2e -- written by code before the readers run from the campaign's block registry and this run's manifest; read it **only** for `distance_to_profitable`, see "Distance to profitable" below. It is the one extra input allowed beyond this category's report and the grid.)
 
 **Scope boundary.** Same as every other reader in this family: no other category's
 `reports/*.yaml`, no `verdict_interpretation.yaml`, no raw `bars.csv` directly (this report
-already extracted the `debug_info.components.*` columns for you), no `fragment_patterns.yaml`.
+already extracted the `debug_info.components.*` columns for you), no `fragment_patterns.yaml`. The registry itself (`block_registry.yaml`) stays out of scope: `registry_summary.yaml` is its only reader-facing view.
 
 ## Report shape (`component_attribution.yaml`)
 
@@ -107,7 +108,7 @@ both variants in `evidence` and lower `confidence_real` accordingly rather than 
 Same proposal shape as every other reader: `proposal_id: component_attribution-<run_id>-<n>`,
 `kind: patch | new_block`, `patch`/`block`, `evidence`,
 `scores.{confidence_real,distance_to_profitable,mechanism_plausibility}`, `model_id`,
-`rubric_version: "component_attribution-reader-v1"`. `kind: patch` is expected to dominate
+`rubric_version: "component_attribution-reader-v2"`. `kind: patch` is expected to dominate
 here (tuning an existing component's `weight`/`scaling_factor`/threshold per
 `STRATEGY_DESIGN_GUIDE.md`'s "Component variant patterns"); `kind: new_block` applies only
 when the evidence shows an existing component's regime-conditional behavior that NO current
@@ -214,12 +215,37 @@ If none of CA-1/CA-2/CA-3 identify a genuine pattern in this report, do not forc
 
 **Do not free-hand these three scores.**
 
-| Score | `confidence_real` | `distance_to_profitable` | `mechanism_plausibility` |
+| Score | `confidence_real` | `distance_to_profitable` (card I / D-017: how far is this block from what the registry already holds? -- NOT closeness to a rule threshold; see "Distance to profitable" below) | `mechanism_plausibility` |
 |---|---|---|---|
-| 0 | `variants.base.slices.overall` is unavailable (no `debug_info.components.*` columns anywhere), or the pattern rests on a component with constant aggregate output (Rule CA-1) or cross-window inconsistency (Rule CA-3). | No profitability-adjacent framing is possible from this report alone (it carries no PnL/cost fields) -- `distance_to_profitable` can only be inferred indirectly via mechanism plausibility; default to 0 unless a clear regime-divergence pattern (CA-2) suggests a specific, nameable fix. | The divergence/degeneracy appears in exactly one window's aggregate with no corroboration elsewhere. |
-| 1 | Evidence from a single window's `per_window` aggregate only, no `per_regime`/`per_symbol` corroboration of the same component. | A CA-2 divergence exists but the magnitude is marginal (`mean`/`median` differ but not obviously "on" vs "off" between regimes). | Pattern recurs in 2 aggregate groups (windows or regimes) for the same component, no third corroborating grouping. |
-| 2 | `variants.base.slices.per_regime` shows the same divergence pattern for a component across 2+ regime labels' aggregates, consistently. | CA-2 divergence is clear (near-zero/constant `mean`/`median` in one regime, clearly nonzero with a real `p10`-`p90` spread in another) suggesting a plausible, specific `patch` (e.g. zero the component's weight in the inert regime). | Pattern recurs across 3+ aggregate groups (windows/regimes/symbols) for the same component. |
-| 3 | The same component's divergence pattern holds across `per_window`, `per_regime`, AND `per_symbol` aggregates simultaneously, with `components_discovered` confirming consistent presence across all windows (ruling out CA-3). | CA-2 divergence maps directly onto an existing config lever this project's `STRATEGY_DESIGN_GUIDE.md` already documents (e.g. a regime-specific component list, or a documented scaling_factor/weight pattern) -- the fix is a small, well-precedented `patch`, not speculative. | Corroborated across `per_window`, `per_regime`, AND `per_symbol` for the same component, with a stated causal story (e.g. "component X's signal is regime-specific by design intent -- its near-zero aggregate outside trending is consistent, not broken -- so the proposal narrows its weight to the regime where it demonstrably varies"). |
+| 0 | `variants.base.slices.overall` is unavailable (no `debug_info.components.*` columns anywhere), or the pattern rests on a component with constant aggregate output (Rule CA-1) or cross-window inconsistency (Rule CA-3). | A patch on an idea that is itself a registered block (`registry_summary.yaml` `this_run.patches_registered_block` is set), or the same block type as a registered one (`this_run.type_already_registered` is true / a `relation_to_this_run: same_type` row). | The divergence/degeneracy appears in exactly one window's aggregate with no corroboration elsewhere. |
+| 1 | Evidence from a single window's `per_window` aggregate only, no `per_regime`/`per_symbol` corroboration of the same component. | Same component classes as a registered block but a different timeframe category or kind (`relation_to_this_run` is `same_classes_different_timeframe_category`, `same_classes_different_kind` or `same_classes_different_kind_and_timeframe_category`), OR this run's measured `|correlation to the composite|` is >= 0.6 (`this_run.correlation_to_composite.max_abs`). | Pattern recurs in 2 aggregate groups (windows or regimes) for the same component, no third corroborating grouping. |
+| 2 | `variants.base.slices.per_regime` shows the same divergence pattern for a component across 2+ regime labels' aggregates, consistently. | The block type is not in the registry, and `max_abs` is 0.3-0.6 or cannot be measured (`status` `not_measurable` or `skipped: ...`, or `this_run.block_type` is null) -- every `new_block` sketch lands here unless row 0 or 1 applies. | Pattern recurs across 3+ aggregate groups (windows/regimes/symbols) for the same component. |
+| 3 | The same component's divergence pattern holds across `per_window`, `per_regime`, AND `per_symbol` aggregates simultaneously, with `components_discovered` confirming consistent presence across all windows (ruling out CA-3). | The block type is not in the registry AND (`max_abs` < 0.3, or no composite exists yet: `status` `no_composite` / `no_residual_ic_artifact`) -- it fills a missing block type with low correlation to the registry. | Corroborated across `per_window`, `per_regime`, AND `per_symbol` for the same component, with a stated causal story (e.g. "component X's signal is regime-specific by design intent -- its near-zero aggregate outside trending is consistent, not broken -- so the proposal narrows its weight to the regime where it demonstrably varies"). |
+
+### Distance to profitable (card I, D-017)
+
+`distance_to_profitable` no longer measures closeness to a rule threshold. It scores how far the
+proposed block is from what the registry already validated: 3 = fills a missing block type with low
+correlation to the registry; 0 = a neighbour of something already validated. Read
+`artifacts/registry_summary.yaml` (written by code before the readers run; the one input outside
+this category's report and the grid you may read for this score):
+
+- A block *type* is `(kind, sorted component classes, timeframe category)`. For a `patch`, the type
+  is `this_run.block_type` (plus any component class the patch adds); for a `new_block` sketch use
+  the sketch's `kind` and any component classes it names.
+- `this_run.type_already_registered`, `this_run.neighbour_block_ids`,
+  `this_run.patches_registered_block` and each `blocks[*].relation_to_this_run` (or, past 50 blocks,
+  `groups[*]`) say whether the type is present and which registered blocks neighbour it.
+- `this_run.correlation_to_composite`: use `max_abs` (the largest absolute correlation over the
+  variants -- the conservative reading) when `status` is `measured`; any other `status` means "not
+  measurable" or "no composite yet" as the table says.
+- If `this_run.block_type` is null (see `this_run.reason`) the type cannot be placed: score 2, or 0
+  when `patches_registered_block` is set.
+- Take the LOWEST row whose condition holds. The 0.3 / 0.6 cut-offs are rank-only placeholders:
+  they order candidates for decide-next and never touch an idea's status or the holdout.
+- Cite the `registry_summary.yaml` field that decided the score as one `evidence` item; every other
+  `evidence` item still cites this category's own report. `confidence_real` and
+  `mechanism_plausibility` anchors are unchanged.
 
 ## Checklist
 - Confirm variation exists (`p10` != `p90`, Rule CA-1) before proposing any tuning `patch`.
@@ -247,4 +273,4 @@ If none of CA-1/CA-2/CA-3 identify a genuine pattern in this report, do not forc
 
 ## Context rule
 Read only `artifacts/reports/component_attribution.yaml` and, if present,
-`artifacts/grid_evaluation.yaml`. Minimal context.
+`artifacts/grid_evaluation.yaml`, plus `artifacts/registry_summary.yaml` (the one extra input; used only for `distance_to_profitable`). Minimal context.

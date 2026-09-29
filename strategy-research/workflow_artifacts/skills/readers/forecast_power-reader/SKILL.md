@@ -21,10 +21,11 @@ decide the route.
   `strategy-research/tools/build_reports.py::build_forecast_power_report`.)
 - `artifacts/grid_evaluation.yaml` (E-046b/Slice 2, already merged -- **optional**, see
   profitability-reader/SKILL.md's identical note; proceed without it if absent.)
+- `artifacts/registry_summary.yaml` (E-061 C2 S2e -- written by code before the readers run from the campaign's block registry and this run's manifest; read it **only** for `distance_to_profitable`, see "Distance to profitable" below. It is the one extra input allowed beyond this category's report and the grid.)
 
 **Scope boundary.** Same as every other reader in this family: no other category's
 `reports/*.yaml`, no `verdict_interpretation.yaml`, no `protocol_result.yaml` directly, no
-`campaign_state.yaml`, no `fragment_patterns.yaml`.
+`campaign_state.yaml`, no `fragment_patterns.yaml`. The registry itself (`block_registry.yaml`) stays out of scope: `registry_summary.yaml` is its only reader-facing view.
 
 ## Report shape (`forecast_power.yaml`)
 
@@ -77,7 +78,7 @@ is coin-specific evidence, not a general directional-edge property -- cite both 
 Same proposal shape as every other reader: `proposal_id: forecast_power-<run_id>-<n>`,
 `kind: patch | new_block`, `patch`/`block`, `evidence`,
 `scores.{confidence_real,distance_to_profitable,mechanism_plausibility}`, `model_id`,
-`rubric_version: "forecast_power-reader-v1"`.
+`rubric_version: "forecast_power-reader-v2"`.
 
 **Patch item shape (required, `proposal.schema.json`):** every item of a `patch` list is
 exactly `{component_id, field, before, after}` -- `field` is the dotted path of the changed
@@ -169,12 +170,37 @@ If none of Rules 2/3/6 match this report's `variants.base.slices.overall`, do no
 
 **Do not free-hand these three scores.**
 
-| Score | `confidence_real` | `distance_to_profitable` | `mechanism_plausibility` |
+| Score | `confidence_real` | `distance_to_profitable` (card I / D-017: how far is this block from what the registry already holds? -- NOT closeness to a rule threshold; see "Distance to profitable" below) | `mechanism_plausibility` |
 |---|---|---|---|
-| 0 | `variants.base.slices.overall` is unavailable, or the corr's own regime cell has `n_bars` median < 20 per the regime-validity context above. | `median_forecast_return_corr` sign is wrong for the strategy's bet direction with p < 0.10 (clear inversion, Rule 3 territory but proposing the WRONG direction fix) -- or Rule 6's total-null case with no corroborating field anywhere. | Corr crosses the ±0.03 threshold in exactly one `per_window` entry, opposite sign or near-zero in the rest -- a lone spike. |
-| 1 | Evidence from `variants.base.slices.overall` only, no `per_window`/`per_symbol` corroboration in the same direction. | `abs(corr)` between 0.03 and the nearest A8.6 `plausible_ic_upper` anchor floor for this signal's class (dense-OHLCV signals top out at 0.03-0.05 per this project's own empirical ceiling -- a corr just above 0.03 is barely past the no-edge floor, not close to a real ceiling). | Pattern (Rule 2 no-edge or Rule 3 inversion) recurs in 2 `per_window` entries, no `per_regime`/`per_symbol` corroboration. |
-| 2 | `variants.base.slices.per_window` shows the same sign/magnitude-range in the majority of windows. | `abs(corr)` comfortably inside the signal class's `plausible_ic_upper` anchor range (hypothesis-design/SKILL.md A8.6 table) with the correct sign. | Pattern recurs across 3+ `per_window` entries AND `variants.base.slices.per_regime`/`per_symbol` shows the same direction for at least one grouping. |
-| 3 | `variants.base.slices.overall.median_forecast_return_corr` populated AND the same sign holds across the majority of `per_window` AND `per_symbol` entries, with no thin-regime (`n_bars` < 20) cell driving the reading. | Corr already near or above the signal class's own A8.6 anchor ceiling with correct sign -- Rule 3's reversal, if proposed, would put it there. | Corroborated across `per_window`, `per_symbol`, AND `per_regime` simultaneously, with a stated causal story (e.g. "inversion consistent with betting against a mean-reverting signal read as momentum"). |
+| 0 | `variants.base.slices.overall` is unavailable, or the corr's own regime cell has `n_bars` median < 20 per the regime-validity context above. | A patch on an idea that is itself a registered block (`registry_summary.yaml` `this_run.patches_registered_block` is set), or the same block type as a registered one (`this_run.type_already_registered` is true / a `relation_to_this_run: same_type` row). | Corr crosses the ±0.03 threshold in exactly one `per_window` entry, opposite sign or near-zero in the rest -- a lone spike. |
+| 1 | Evidence from `variants.base.slices.overall` only, no `per_window`/`per_symbol` corroboration in the same direction. | Same component classes as a registered block but a different timeframe category or kind (`relation_to_this_run` is `same_classes_different_timeframe_category`, `same_classes_different_kind` or `same_classes_different_kind_and_timeframe_category`), OR this run's measured `|correlation to the composite|` is >= 0.6 (`this_run.correlation_to_composite.max_abs`). | Pattern (Rule 2 no-edge or Rule 3 inversion) recurs in 2 `per_window` entries, no `per_regime`/`per_symbol` corroboration. |
+| 2 | `variants.base.slices.per_window` shows the same sign/magnitude-range in the majority of windows. | The block type is not in the registry, and `max_abs` is 0.3-0.6 or cannot be measured (`status` `not_measurable` or `skipped: ...`, or `this_run.block_type` is null) -- every `new_block` sketch lands here unless row 0 or 1 applies. | Pattern recurs across 3+ `per_window` entries AND `variants.base.slices.per_regime`/`per_symbol` shows the same direction for at least one grouping. |
+| 3 | `variants.base.slices.overall.median_forecast_return_corr` populated AND the same sign holds across the majority of `per_window` AND `per_symbol` entries, with no thin-regime (`n_bars` < 20) cell driving the reading. | The block type is not in the registry AND (`max_abs` < 0.3, or no composite exists yet: `status` `no_composite` / `no_residual_ic_artifact`) -- it fills a missing block type with low correlation to the registry. | Corroborated across `per_window`, `per_symbol`, AND `per_regime` simultaneously, with a stated causal story (e.g. "inversion consistent with betting against a mean-reverting signal read as momentum"). |
+
+### Distance to profitable (card I, D-017)
+
+`distance_to_profitable` no longer measures closeness to a rule threshold. It scores how far the
+proposed block is from what the registry already validated: 3 = fills a missing block type with low
+correlation to the registry; 0 = a neighbour of something already validated. Read
+`artifacts/registry_summary.yaml` (written by code before the readers run; the one input outside
+this category's report and the grid you may read for this score):
+
+- A block *type* is `(kind, sorted component classes, timeframe category)`. For a `patch`, the type
+  is `this_run.block_type` (plus any component class the patch adds); for a `new_block` sketch use
+  the sketch's `kind` and any component classes it names.
+- `this_run.type_already_registered`, `this_run.neighbour_block_ids`,
+  `this_run.patches_registered_block` and each `blocks[*].relation_to_this_run` (or, past 50 blocks,
+  `groups[*]`) say whether the type is present and which registered blocks neighbour it.
+- `this_run.correlation_to_composite`: use `max_abs` (the largest absolute correlation over the
+  variants -- the conservative reading) when `status` is `measured`; any other `status` means "not
+  measurable" or "no composite yet" as the table says.
+- If `this_run.block_type` is null (see `this_run.reason`) the type cannot be placed: score 2, or 0
+  when `patches_registered_block` is set.
+- Take the LOWEST row whose condition holds. The 0.3 / 0.6 cut-offs are rank-only placeholders:
+  they order candidates for decide-next and never touch an idea's status or the holdout.
+- Cite the `registry_summary.yaml` field that decided the score as one `evidence` item; every other
+  `evidence` item still cites this category's own report. `confidence_real` and
+  `mechanism_plausibility` anchors are unchanged.
 
 ## Checklist
 - Check `variants.base.slices.per_regime`'s `n_bars` before trusting any `forward_return_mean`-adjacent
@@ -197,4 +223,4 @@ If none of Rules 2/3/6 match this report's `variants.base.slices.overall`, do no
 
 ## Context rule
 Read only `artifacts/reports/forecast_power.yaml` and, if present,
-`artifacts/grid_evaluation.yaml`. Minimal context.
+`artifacts/grid_evaluation.yaml`, plus `artifacts/registry_summary.yaml` (the one extra input; used only for `distance_to_profitable`). Minimal context.
