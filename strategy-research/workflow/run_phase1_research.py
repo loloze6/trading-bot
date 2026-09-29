@@ -53,6 +53,7 @@ import shutil
 import math
 import statistics
 import hashlib
+from fractions import Fraction
 from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, TextBlock
 from google import genai
 from google.genai import types
@@ -1836,8 +1837,11 @@ async def run_tool_worker(stage_name: str, run_id: str):
             _vid: str((_v or {}).get("reason") or f"index status {(_v or {}).get('status')!r}")
             for _vid, _v in variants_idx.items()
             if _vid not in per_variant_summaries and _vid not in failed_variants}
-        # Review fix M1 (TEMPORARY, D-042; lifted by E-062 S2b): a graded variant
-        # that ran on partial coverage caps the grid at inconclusive.
+        # Review fix M1 (TEMPORARY, D-042): a graded variant that ran on partial
+        # coverage caps the grid at inconclusive -- flag off. E-062 S2b-3b
+        # (D-047): under orchestrator.profit_bars_v2 the cap is lifted (the grid
+        # kwarg below is not passed; branch 3 normalises the variant's
+        # time-dependent bars); the map is still built for the reports' note.
         partial_coverage_variants = _partial_coverage_variants(variants_idx, per_variant_summaries)
 
         if not per_variant_summaries:
@@ -1925,11 +1929,16 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     # no graded column in this attempt. Passed only when non-empty,
                     # so a run where every variant was graded writes a
                     # byte-identical grid.
+                    # E-062 S2b-3b (D-047): under profit_bars_v2 the M1 cap is not
+                    # passed and the single-era rule is (_grid_v2_kw); flag off,
+                    # exactly the pre-S2b-3b call.
+                    _v2_grid_kw = _grid_v2_kw()
                     _failed_kw = {**({"failed_variants": failed_variants} if failed_variants else {}),
                                   **({"untested_variants": untested_variants}
                                      if untested_variants else {}),
                                   **({"partial_coverage_variants": partial_coverage_variants}
-                                     if partial_coverage_variants else {})}
+                                     if partial_coverage_variants and not _v2_grid_kw else {}),
+                                  **_v2_grid_kw}
                     # E-060 S2: under composition_runs the grid reads copies carrying
                     # the residual IC; off, it reads per_variant_summaries unchanged.
                     if _composition_runs_enabled():
@@ -2168,7 +2177,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
                         _menu = load_yaml(_menu_path) if _menu_path.exists() else {}
                         _grid_result = _vce.evaluate_grid(
                             {run_id: summary}, _pre_reg_for_eval or {}, _brief_for_eval, _menu,
-                            **_single_column_untested_kw(ARTIFACTS, run_id))
+                            **_single_column_untested_kw(ARTIFACTS, run_id),
+                            **_grid_v2_kw())  # E-062 S2b-3b: {} flag off
                         _grid_result["evaluated_at"] = datetime.now(timezone.utc).isoformat()
                         save_yaml(ARTIFACTS / "grid_evaluation.yaml", _grid_result)
                         _idea_status_artifact = _build_idea_status_artifact(_grid_result, run_id)
@@ -2918,10 +2928,14 @@ def _profit_bars_v2_enabled(cfg: dict | None = None) -> bool:
     definitions (_grade_profit_bars_v2: whole-test chained drawdown, Sharpe and
     avg daily return, whole-test trade count per coin without end_of_window
     forced closes, beats buy-and-hold after costs, pooled edge/cost ratio with
-    its trade floor); the bars file must carry the four v2 keys
+    its trade floor); the bars file must carry the v2 keys
     (_PROFITABILITY_BARS_V2_SCHEMA); the
     evaluation records `bars_definitions: v2`; a holdout spend refuses
     `bars_changed` when the evaluation's definitions differ from the flag now.
+    E-062 S2b-3b (D-047): a partial-coverage variant's time-dependent bars are
+    normalised instead of capped (_normalised_profit_bars), the grid's M1 cap
+    is not passed, and sign_consistent_by_era on fewer than 2 eras reads
+    INCONCLUSIVE on every column (_grid_v2_kw).
     The legacy promote path (_evaluate_profit_bars) never uses v2."""
     cfg = _orchestrator_config(cfg)
     v2_cfg = ((cfg.get("orchestrator") or {}).get("profit_bars_v2") or {})
@@ -2940,6 +2954,16 @@ def _profit_bars_v2_enabled(cfg: dict | None = None) -> bool:
             "them. Enable both, or neither."
         )
     return value
+
+
+def _grid_v2_kw() -> dict:
+    """E-062 S2b-3b (D-047 (4), S2B3_FINDINGS.md G8/G10): the evaluate_grid
+    keywords orchestrator.profit_bars_v2 adds -- {"single_era_inconclusive":
+    True} under the flag (every column's sign_consistent_by_era cell on fewer
+    than 2 eras reads INCONCLUSIVE), else {} (the grid call byte-identical).
+    Under the flag the variant-loop caller also stops passing the M1
+    partial_coverage_variants cap."""
+    return {"single_era_inconclusive": True} if _profit_bars_v2_enabled() else {}
 
 
 # The `bars_definitions` value a v2 evaluation records (absent = v1).
@@ -2971,6 +2995,11 @@ _PROFITABILITY_BARS_V2_SCHEMA = {
     # E-062 S2b-2b (D-046): the same-basis trial count at which the DSR's
     # benchmark switches from sigma_null to the cross-trial spread. >= 2.
     "dsr_min_same_basis_trials":      (int,),
+    # E-062 S2b-3b (D-047 (1)/(2)): the absolute floor of a partial-coverage
+    # variant's normalised trade minimum and cost-ratio trade floor,
+    # max(ceil(base * f), floor). >= 1 and <= both bases it floors
+    # (trade_count_min, cost_edge_min_trades).
+    "trade_count_min_floor":          (int,),
 }
 
 
@@ -2989,7 +3018,9 @@ def _load_profitability_bars(path: Path | None = None, *, v2: bool = False) -> d
     v2=True (callers pass _profit_bars_v2_enabled()): the
     _PROFITABILITY_BARS_V2_SCHEMA keys are required too,
     cost_edge_min_trades must be >= 1 and dsr_min_same_basis_trials >= 2
-    (E-062 S2b-2b). v2=False: exactly the v1 schema.
+    (E-062 S2b-2b), and trade_count_min_floor >= 1 and <= both trade_count_min
+    and cost_edge_min_trades (E-062 S2b-3b, D-047). v2=False: exactly the v1
+    schema.
 
     ratified_at may be an unquoted YAML date (`ratified_at: 2026-09-30` loads as
     a datetime.date, E-062 S1 G9); it is returned as its ISO string, so every
@@ -3048,6 +3079,16 @@ def _load_profitability_bars(path: Path | None = None, *, v2: bool = False) -> d
             f"{bars_path}'s dsr_min_same_basis_trials={doc['dsr_min_same_basis_trials']!r} must "
             f"be >= 2 (a cross-trial spread needs at least two values)."
         )
+    if v2:
+        # E-062 S2b-3b (D-047): a floor above a base would make a partial
+        # variant need MORE trades than a full one (variant_coin.
+        # normalised_trade_minimum refuses it too) -- refused here, at load.
+        floor = doc["trade_count_min_floor"]
+        bases = {k: doc[k] for k in ("trade_count_min", "cost_edge_min_trades")}
+        if floor < 1 or any(floor > b for b in bases.values()):
+            raise ProfitabilityBarsSchemaError(
+                f"{bars_path}'s trade_count_min_floor={floor!r} must be >= 1 and <= the bases "
+                f"it floors ({bases}).")
 
     return doc
 
@@ -5440,6 +5481,54 @@ def _evaluation_under_current_bars(ev: dict) -> dict:
     return bars
 
 
+def _normalisation_at_spend(run_dir: Path, run_id: str, variant: str, entry: dict,
+                            bars: dict) -> None:
+    """E-062 S2b-3b (D-047; S2B3_FINDINGS.md Q2 site 6): a v2 spend re-derives
+    the spent variant's time-dependent thresholds NOW -- from the bars in place
+    (already checked byte-equal to the graded file) and the variant's coverage
+    (artifacts/variants/index.yaml + its protocol.json vs the run protocol,
+    _variant_coverage_days, the grading's own functions) -- and refuses
+    `bars_changed` unless the evaluation's rows carry exactly them:
+    trade_count_min's and max_drawdown_pct_max's `threshold`,
+    cost_edge_ratio_min's detail.min_trades, and each row's
+    detail.normalisation (absent for a full-coverage variant). So a partial
+    variant can never be spent on a full-coverage threshold, nor a full one on
+    a normalised threshold. Read-only; returns None."""
+    try:
+        index_path = Path(run_dir) / "artifacts" / "variants" / "index.yaml"
+        variants = ((load_yaml(index_path) or {}).get("variants") if index_path.exists()
+                    else None) or {}
+        info = variants.get(variant) if isinstance(variants, dict) else None
+        partial = (_partial_coverage_variants(variants, [variant], v2=True)
+                   if isinstance(info, dict) else {})
+        eff, norm = (_normalised_profit_bars(bars, _variant_coverage_days(run_dir, run_id, info, {}))
+                     if partial else (bars, {}))
+    except Exception as e:  # noqa: BLE001 -- anything not re-derivable refuses (fail closed),
+        # e.g. VariantCoinError, a malformed coverage record, the protocol resolver's own error
+        raise HoldoutUnlockRefused(
+            "bars_changed", f"variant {variant!r}: its partial-coverage thresholds cannot be "
+            f"re-derived now: {type(e).__name__}: {e}")
+    rows = {r.get("name"): r for r in (entry or {}).get("bars") or [] if isinstance(r, dict)}
+    problems = []
+    for name in ("trade_count_min", "max_drawdown_pct_max", "cost_edge_ratio_min"):
+        row = rows.get(name)
+        if not isinstance(row, dict):
+            problems.append(f"{name}: no row")
+            continue
+        detail = row.get("detail") if isinstance(row.get("detail"), dict) else {}
+        graded, want = ((detail.get("min_trades"), eff["cost_edge_min_trades"])
+                        if name == "cost_edge_ratio_min" else (row.get("threshold"), eff[name]))
+        if graded != want:
+            problems.append(f"{name}: graded on {graded!r}, re-derived {want!r}")
+        if detail.get("normalisation") != norm.get(name):
+            problems.append(f"{name}: normalisation {detail.get('normalisation')!r} != "
+                            f"re-derived {norm.get(name)!r}")
+    if problems:
+        raise HoldoutUnlockRefused(
+            "bars_changed", f"variant {variant!r}: the thresholds it passed are not the ones its "
+            f"coverage gives now (D-047): " + "; ".join(problems))
+
+
 def _dsr_on_current_ledger(run_dir: Path, variant: str, entry: dict, bars: dict,
                            ev: dict) -> dict:
     """Review fix 8: the variant's deflated Sharpe, recomputed NOW on the
@@ -5617,6 +5706,10 @@ def _validate_holdout_decision(run_dir: Path, run_id: str, state: dict) -> dict:
                 "operator's attestation that both writers' trial ledgers are merged (no "
                 "holdout touch until they are)")
         bars = _evaluation_under_current_bars(ev)
+        if ev.get("bars_definitions") == PROFIT_BARS_DEFINITIONS_V2:
+            # E-062 S2b-3b (D-047): the thresholds the variant passed are the
+            # ones its coverage gives NOW -- never a silent full-coverage one.
+            _normalisation_at_spend(run_dir, run_id, variant, entry, bars)
         hyp_id = _idea_hypothesis_id(run_dir)  # never a promotion_audit.yaml (fix 8)
         if _holdout_already_spent(hyp_id):
             raise HoldoutUnlockRefused(
@@ -11400,11 +11493,17 @@ def _profit_bars_tested_candidate(run_dir: Path, cid: str, trial_id: str, rel: s
             "protocol_result": pr, "result": None, "reason": None}
 
 
-def _profit_bars_backtest_candidates(run_dir: Path, run_id: str) -> dict:
+def _profit_bars_backtest_candidates(run_dir: Path, run_id: str, *, v2: bool = False) -> dict:
     """The backtests THIS protocol_execution attempt produced, keyed as the grid
     keys its columns: {candidate_id: {kind, trial_id, protocol_result_ref,
     protocol_result, result, reason}}; `result` is None for a gradeable
     candidate, else "NOT_TESTED" or "INVALIDATED".
+
+    A tested variant on partial coverage (D-042) also carries
+    `partial_coverage` (its reason). v2=True (orchestrator.profit_bars_v2,
+    E-062 S2b-3b, D-047): a gradeable one also carries `coverage_days` =
+    (covered, full) nominal calendar days (_variant_coverage_days), from which
+    its time-dependent bars are normalised.
 
     The tested set is the columns of this attempt's grid_evaluation.yaml (the
     flag requires specialist_readers, which deletes the previous attempt's grid at
@@ -11473,6 +11572,7 @@ def _profit_bars_backtest_candidates(run_dir: Path, run_id: str) -> dict:
             raise ValueError(f"profit bars (every backtest): grid column(s) / failed variant(s) "
                              f"{unknown} are not in {index_path}.")
         failed_rows = _backtest_failed_trial_ids() if failed else set()
+        _run_proto_cache: dict = {}  # E-062 S2b-3b: the run protocol, resolved once
         for vid in sorted(variants):
             info = variants[vid] if isinstance(variants[vid], dict) else {}
             if vid in failed:
@@ -11492,12 +11592,17 @@ def _profit_bars_backtest_candidates(run_dir: Path, run_id: str) -> dict:
             elif vid in columns:
                 out[vid] = _tested(vid, f"{run_id}:{vid}",
                                    f"artifacts/variants/{vid}/protocol_result.yaml")
-                # Review fix M1 (TEMPORARY, D-042; lifted by E-062 S2b): a
-                # variant graded on partial coverage never passes the bars --
-                # the key is present only for such a variant.
-                _partial = _partial_coverage_variants(variants, [vid])
+                # Review fix M1 (D-042): a variant graded on partial coverage
+                # never passes the bars -- flag off; the key is present only for
+                # such a variant. E-062 S2b-3b (D-047): under v2 it carries its
+                # coverage in days instead, and its bars are normalised.
+                _partial = _partial_coverage_variants(variants, [vid],
+                                                      **({"v2": True} if v2 else {}))
                 if _partial:
                     out[vid]["partial_coverage"] = _partial[vid]
+                    if v2 and out[vid]["protocol_result"] is not None:
+                        out[vid]["coverage_days"] = _variant_coverage_days(
+                            run_dir, run_id, info, _run_proto_cache)
             elif info.get("status") == "validated":
                 out[vid] = {"kind": kind, "trial_id": None, "protocol_result_ref": None,
                             "protocol_result": None, "result": "NOT_TESTED",
@@ -12329,6 +12434,67 @@ def _cap_partial_coverage_bars(results: list, reason: str) -> tuple:
     return capped, overall, reasons
 
 
+# E-062 S2b-3b (D-047): the v2 rows whose threshold a partial-coverage variant
+# grades on normalised to its period, and the formula each records.
+_D047_NORMALISATION_FORMULAS = {
+    "trade_count_min": "max(ceil(trade_count_min * f), trade_count_min_floor)",
+    "max_drawdown_pct_max": "max_drawdown_pct_max * sqrt(f)",
+    # the row's own 2.2 ratio is unchanged; its trade floor (detail.min_trades) scales
+    "cost_edge_ratio_min": "min_trades = max(ceil(cost_edge_min_trades * f), "
+                           "trade_count_min_floor)",
+}
+
+
+def _normalised_profit_bars(bars: dict, coverage_days) -> tuple:
+    """E-062 S2b-3b (D-047 (1)-(3), S2B3_FINDINGS.md G2/G4/G5/G7): (bars, {row
+    name: normalisation record}) for a variant covering `coverage_days` =
+    (covered, full) nominal calendar days of the run protocol's period, f the
+    EXACT Fraction(covered, full):
+      trade_count_min       -> max(ceil(100 * f), trade_count_min_floor)
+      cost_edge_min_trades  -> max(ceil(100 * f), trade_count_min_floor)
+                               (the floor of the cost_edge_ratio_min row)
+      max_drawdown_pct_max  -> limit * sqrt(f) (a positive percent, compared
+                               `<=` to the positive-percent chained drawdown)
+    every other bar unchanged (G6). The helpers are variant_coin's (S2b-3a);
+    nothing is re-implemented here. f == 1 returns (bars, {}) unchanged (G7).
+    A malformed coverage raises (variant_coin.VariantCoinError)."""
+    vc = _variant_coin_module()
+    covered, full = coverage_days
+    if not all(isinstance(n, int) and not isinstance(n, bool) and n > 0 for n in (covered, full)):
+        raise vc.VariantCoinError(f"coverage days {coverage_days!r} are not two positive ints")
+    f = Fraction(covered, full)
+    if f == 1:
+        return bars, {}
+    floor = bars["trade_count_min_floor"]
+    eff = dict(bars)
+    eff["trade_count_min"] = vc.normalised_trade_minimum(bars["trade_count_min"], f, floor)
+    eff["cost_edge_min_trades"] = vc.normalised_trade_minimum(bars["cost_edge_min_trades"], f,
+                                                              floor)
+    eff["max_drawdown_pct_max"] = vc.scaled_drawdown_limit(bars["max_drawdown_pct_max"], f)
+    common = {"covered_days": covered, "full_days": full, "f": float(f)}
+    norm = {
+        "trade_count_min": {**common, "base": bars["trade_count_min"], "floor": floor},
+        "max_drawdown_pct_max": {**common, "base": bars["max_drawdown_pct_max"], "floor": None},
+        "cost_edge_ratio_min": {**common, "base": bars["cost_edge_min_trades"], "floor": floor},
+    }
+    for name, rec in norm.items():
+        rec["formula"] = _D047_NORMALISATION_FORMULAS[name]
+    return eff, norm
+
+
+def _attach_normalisation(results: list, norm: dict) -> list:
+    """Each normalised row gains `detail.normalisation` (G13); every other row
+    is returned as is. A bars list without a normalised row raises (the
+    normalisation must never silently not apply)."""
+    missing = sorted(set(norm) - {r.get("name") for r in results})
+    if missing:
+        raise ProfitabilityBarsSchemaError(
+            f"partial-coverage normalisation (D-047): the graded bars lack {missing} -- refusing "
+            f"to grade.")
+    return [({**r, "detail": {**(r.get("detail") or {}), "normalisation": dict(norm[r["name"]])}}
+             if r.get("name") in norm else r) for r in results]
+
+
 def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
                                          record_bars_sha: bool = False) -> dict:
     """Grade every tested variant of THIS attempt (see
@@ -12353,7 +12519,14 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
 
     E-062 S2b-1: under orchestrator.profit_bars_v2.enabled every variant is
     graded on the v2 definitions (_grade_profit_bars_protocol_result(v2=True))
-    and the evaluation records `bars_definitions: v2`; flag off, unchanged."""
+    and the evaluation records `bars_definitions: v2`; flag off, unchanged.
+
+    E-062 S2b-3b (D-047): under v2 the M1 cap (_cap_partial_coverage_bars) is
+    lifted -- a partial-coverage variant is graded on normalised
+    time-dependent thresholds (_normalised_profit_bars; each such row records
+    the effective `threshold` / detail.min_trades and detail.normalisation),
+    so it can pass and raise profit_bars_reached. Full-coverage variants are
+    graded exactly as before (G7). Flag off, the cap stays."""
     v2 = _profit_bars_v2_enabled()
     # Flag off: the exact pre-v2 calls (no new keyword reaches a flag-off callee).
     v2_kw = {"v2": True} if v2 else {}
@@ -12362,7 +12535,7 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
     if record_bars_sha and _bars_file_sha256() != bars_sha:
         raise ProfitabilityBarsSchemaError("config/profitability_bars.yaml changed while it was "
                                            "being loaded -- grade again.")
-    candidates = _profit_bars_backtest_candidates(run_dir, run_id)
+    candidates = _profit_bars_backtest_candidates(run_dir, run_id, **v2_kw)
     dsr_ctx = _promotion_dsr_context()
     # E-062 S2b-2b: under v2 the whole-test DSR's inputs, once for every variant.
     wctx = _whole_test_dsr_context(dsr_ctx) if v2 else None
@@ -12375,13 +12548,25 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
             variants[cid] = {**entry, "result": cand["result"], "reason": cand["reason"],
                              "bars": [], "reasons": []}
             continue
+        # E-062 S2b-3b (D-047): under v2 a partial-coverage variant grades on its
+        # normalised thresholds; every other variant on `bars` itself (G7).
+        cand_bars, norm = bars, {}
+        if v2 and cand.get("partial_coverage"):
+            if "coverage_days" not in cand:
+                raise ValueError(f"profit bars (every backtest): partial-coverage variant {cid!r} "
+                                 f"carries no coverage_days -- cannot normalise its bars.")
+            cand_bars, norm = _normalised_profit_bars(bars, cand["coverage_days"])
         results, overall, reasons = _grade_profit_bars_protocol_result(
-            run_dir, cand["protocol_result"], cand["protocol_result_ref"], bars, dsr_ctx,
+            run_dir, cand["protocol_result"], cand["protocol_result_ref"], cand_bars, dsr_ctx,
             **({**v2_kw, "trial_id": cand["trial_id"], "whole_test_ctx": wctx} if v2 else {}))
+        if norm:
+            results = _attach_normalisation(results, norm)
         if cand.get("partial_coverage"):
-            # Review fix M1 (TEMPORARY, D-042; lifted by E-062 S2b).
-            results, overall, reasons = _cap_partial_coverage_bars(
-                results, cand["partial_coverage"])
+            if not v2:
+                # Review fix M1 (D-042): flag off, the cap stays (v1 has no
+                # normalisation: its trade bar is a per-window minimum).
+                results, overall, reasons = _cap_partial_coverage_bars(
+                    results, cand["partial_coverage"])
             entry["partial_coverage"] = cand["partial_coverage"]
         variants[cid] = {**entry, "result": overall, "reason": None,
                          "bars": results, "reasons": reasons}
@@ -13720,14 +13905,16 @@ def _per_coin_protocol_check(run_dir: Path, run_id: str, vinfo: dict, vproto: Pa
     return problems, (None if problems else json.loads(raw.decode("utf-8")).get("symbols"))
 
 
-def _partial_coverage_variants(variants_idx: dict, graded) -> dict:
-    """Review fix M1 (E-061 C2 S2b). TEMPORARY, D-042 -- lifted by E-062 S2b,
-    which normalises the time-dependent bars to the period a variant ran on:
-    {variant_id: reason} for every GRADED variant (`graded`: its ids) that ran on
-    partial coverage (variant_coin.is_partial_coverage: fewer windows than the
-    run protocol). The grid still grades it, but it caps the idea at
-    inconclusive (verdict_criteria_evaluator.evaluate_grid
-    partial_coverage_variants). {} when none: the grid call is unchanged."""
+def _partial_coverage_variants(variants_idx: dict, graded, *, v2: bool = False) -> dict:
+    """Review fix M1 (E-061 C2 S2b, D-042): {variant_id: reason} for every
+    GRADED variant (`graded`: its ids) that ran on partial coverage
+    (variant_coin.is_partial_coverage: fewer windows than the run protocol).
+    Flag off (and on the legacy promote path, G9): the grid still grades it,
+    but it caps the idea at inconclusive (verdict_criteria_evaluator.
+    evaluate_grid partial_coverage_variants) and its time-dependent bars read
+    NOT_EVALUABLE. v2=True (orchestrator.profit_bars_v2, E-062 S2b-3b, D-047):
+    the same map, reason worded for the normalisation that replaces the cap.
+    {} when none: the grid call is unchanged."""
     vc = _variant_coin_module()
     out = {}
     for vid in sorted(graded):
@@ -13735,9 +13922,30 @@ def _partial_coverage_variants(variants_idx: dict, graded) -> dict:
         if isinstance(info, dict) and vc.is_partial_coverage(info):
             cov = info["coverage"]
             out[vid] = (f"partial coverage: ran on {len(cov['windows_run'])}/"
-                        f"{cov['windows_total']} run-protocol windows (D-042); its time-dependent "
-                        f"bars are not normalised until E-062 S2b")
+                        f"{cov['windows_total']} run-protocol windows (D-042); "
+                        + ("its time-dependent bars are normalised to the covered period (D-047)"
+                           if v2 else
+                           "its time-dependent bars are not normalised until E-062 S2b"))
     return out
+
+
+def _variant_coverage_days(run_dir: Path, run_id: str, vinfo: dict, cache: dict) -> tuple:
+    """E-062 S2b-3b (D-047, S2B3_FINDINGS.md G1): (covered, full) nominal
+    calendar days of a per-coin variant's own protocol.json vs the RUN protocol
+    (variant_coin.coverage_days -- the one implementation). The run protocol is
+    the one this run executed (_resolve_protocol_path, as the conformance check
+    resolves it), loaded once into `cache`. From protocol files only: no market
+    data, no result. Raises (an engineering fault, never a per-variant
+    outcome) when the variant has no protocol_path or either file is unusable
+    -- 5a wrote it and protocol_execution verified it before the backtest."""
+    vc = _variant_coin_module()
+    vproto = _variant_protocol_path(run_dir, vinfo)
+    if vproto is None:
+        raise vc.VariantCoinError("a partial-coverage variant has no protocol_path in "
+                                  "artifacts/variants/index.yaml -- its coverage cannot be measured")
+    if "run_protocol" not in cache:
+        cache["run_protocol"] = vc.load_protocol_file(_resolve_protocol_path(run_dir, run_id))
+    return vc.coverage_days(cache["run_protocol"], vc.load_protocol_file(vproto))
 
 
 _COIN_INFO_PRINTED: set = set()

@@ -219,7 +219,7 @@ flags:
     reader: run_phase1_research._profit_bars_v2_enabled
     owner: Jeremy
     state: off_incomplete
-    blocked_on: "E-062 (S2b-2c legacy recompute tool + its operator write, S2b-3 D-042 normalisation, S2b-4 end-to-end test) and the operator's signature (ratified_by / ratified_at) on config/profitability_bars.yaml, including dsr_min_same_basis_trials and the re-signed 0.95 (D-046)"
+    blocked_on: "E-062 (S2b-2c legacy recompute tool + its operator write, S2b-3c repeat key + dedupe fingerprint, S2b-4 end-to-end test) and the operator's signature (ratified_by / ratified_at) on config/profitability_bars.yaml, including dsr_min_same_basis_trials, trade_count_min_floor (D-047) and the re-signed 0.95 (D-046)"
     criterion: >
       Landed 2026-09-29 (E-062 S2b-1, engineering/roadmap/E-062/S1_FINDINGS.md
       Q5/Q7/G8; D-034..D-039). Requires profit_bars_every_backtest; the run
@@ -240,9 +240,20 @@ flags:
       dsr_min_same_basis_trials same-basis values; no sparse branch), dsr_basis
       records sharpe_basis / n_same_basis / min_same_basis / the recompute
       overlay's presence and sha256, and a spend refuses a sharpe_basis
-      mismatch; off, ledger rows and evaluations byte-identical. Tested by
-      tests/test_e062_s2b1_profit_bars_v2.py and
-      tests/test_e062_s2b2b_dsr_wiring.py. Turn on in C4's target flag set
+      mismatch; off, ledger rows and evaluations byte-identical. E-062 S2b-3b
+      (D-042/D-047): on, the D-042 partial-coverage cap (review fix M1) is
+      lifted -- a partial asset variant grades on max(ceil(100 * f), 60) trades,
+      the same for the cost-ratio trade floor, and a 20 * sqrt(f) drawdown
+      limit (f = its share of the run protocol's calendar days; rows record
+      detail.normalisation; full-coverage rows unchanged), the grid is not
+      capped, a spend re-derives the thresholds, and sign_consistent_by_era on
+      fewer than 2 represented eras is INCONCLUSIVE on every variant (a
+      declared behaviour change for base variants on single-era protocols);
+      the bars file needs trade_count_min_floor; the legacy promote path keeps
+      the cap; off, the cap and the grid unchanged. Tested by
+      tests/test_e062_s2b1_profit_bars_v2.py,
+      tests/test_e062_s2b2b_dsr_wiring.py and
+      tests/test_e062_s2b3b_normalisation_wiring.py. Turn on in C4's target flag set
       once the S2b slices land and the operator has signed the bars file.
 
   - name: data_availability_gate

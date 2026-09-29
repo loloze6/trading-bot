@@ -431,7 +431,7 @@ orchestrator:
       # Sharpe and avg daily return on the equal-weight portfolio; trades per coin
       # over the whole test without end_of_window forced closes; beats buy-and-hold
       # after costs; pooled realized edge / cost ratio > cost_edge_ratio_min with a
-      # cost_edge_min_trades floor. The bars file must carry the four v2 keys. The
+      # cost_edge_min_trades floor. The bars file must carry the v2 keys. The
       # evaluation records `bars_definitions: v2`, and a holdout spend refuses
       # `bars_changed` when the evaluation's definitions differ from this flag now.
       # E-062 S2b-2b (D-041/D-046): every backtest's trial-ledger row also carries
@@ -443,9 +443,17 @@ orchestrator:
       # the sparse-trading branch / expectancy t-stat no longer reach branch 3,
       # the grid or the spend. The evaluation's dsr_basis records sharpe_basis,
       # n_same_basis, min_same_basis and the recompute overlay's presence and
-      # sha256; a spend refuses a sharpe_basis mismatch. The temporary D-042
-      # partial-coverage cap still applies (S2b-3). The legacy promote path and
-      # the deflate_sharpe CLI never use v2.
+      # sha256; a spend refuses a sharpe_basis mismatch. E-062 S2b-3b (D-047):
+      # the D-042 partial-coverage cap is lifted -- a partial asset variant is
+      # graded on its trade minimum and cost-ratio trade floor max(ceil(100 * f),
+      # trade_count_min_floor 60) and its drawdown limit 20 * sqrt(f) (f = its
+      # share of the run protocol's calendar days; full-coverage rows unchanged),
+      # the grid no longer caps its idea at inconclusive, a spend re-derives those
+      # thresholds (bars_changed otherwise), and sign_consistent_by_era with fewer
+      # than 2 represented eras reads INCONCLUSIVE on EVERY variant (7 of 13
+      # committed protocols are single-era even for the base). The bars file must
+      # also carry trade_count_min_floor. The legacy promote path keeps the cap
+      # (G9). The legacy promote path and the deflate_sharpe CLI never use v2.
   category_reports:
     enabled: false
       # E-046a Slice 5a (delivery_plan_v26.md, "Slice 5 -- Reports and

@@ -52,7 +52,8 @@ V1_BARS = {"sharpe_min": 1.0, "max_drawdown_pct_max": 20.0, "avg_daily_return_mi
            "ratified_by": None, "ratified_at": None}
 V2_KEYS = {"buy_and_hold_excess_return_min": 0.0, "cost_edge_ratio_min": 2.2,
            "cost_edge_min_trades": 100,
-           "dsr_min_same_basis_trials": 10}  # E-062 S2b-2b (declared change, D-046)
+           "dsr_min_same_basis_trials": 10,  # E-062 S2b-2b (declared change, D-046)
+           "trade_count_min_floor": 60}  # E-062 S2b-3b (declared change, D-047)
 V2_BARS = {**V1_BARS, **V2_KEYS}
 
 ROW_ORDER = ["sharpe_min", "deflated_sharpe_threshold", "max_drawdown_pct_max",
@@ -654,20 +655,28 @@ def test_spend_refused_when_the_flag_does_not_read(section):
     assert "the profit_bars_v2 flag does not read" in exc.value.detail
 
 
-def test_partial_coverage_cap_still_applies_under_v2(monkeypatch):
+def test_partial_coverage_is_normalised_not_capped_under_v2(monkeypatch):
+    """E-062 S2b-3b (declared change, D-047; was
+    test_partial_coverage_cap_still_applies_under_v2): under v2 the M1 cap is
+    replaced by the normalisation -- the time-dependent rows are graded on the
+    covered share's thresholds, never NOT_EVALUABLE for the coverage."""
     run_dir = _v2_run()
     real = rpr._profit_bars_backtest_candidates
 
-    def _with_cap(rd, rid):
-        out = real(rd, rid)
+    def _partial(rd, rid, **kw):
+        out = real(rd, rid, **kw)
         out[RUN_ID]["partial_coverage"] = "graded on partial coverage (test)"
+        out[RUN_ID]["coverage_days"] = (1767, 2922)  # run_053 58/96 (S2B3_FINDINGS Q3)
         return out
-    monkeypatch.setattr(rpr, "_profit_bars_backtest_candidates", _with_cap)
+    monkeypatch.setattr(rpr, "_profit_bars_backtest_candidates", _partial)
     ev = rpr._evaluate_profit_bars_every_backtest(run_dir, RUN_ID)
     rows = {r["name"]: r for r in ev["variants"][RUN_ID]["bars"]}
+    assert rows["trade_count_min"]["threshold"] == 61
+    assert round(rows["max_drawdown_pct_max"]["threshold"], 2) == 15.55
     for name in rpr._variant_coin_module().D042_TIME_DEPENDENT_BARS:
-        assert rows[name]["result"] == "NOT_EVALUABLE"
-    assert ev["passing"] == [] and ev["result"] == "FAIL"
+        assert rows[name]["result"] == "PASS"
+        assert rows[name]["detail"]["normalisation"]["covered_days"] == 1767
+    assert ev["passing"] == [RUN_ID] and ev["result"] == "PASS"
 
 
 # ---------------------------------------------------------------------------
