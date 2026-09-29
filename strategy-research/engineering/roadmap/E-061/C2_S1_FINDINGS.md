@@ -387,6 +387,8 @@ by_variant, max_abs}), then `blocks` rows (each with `relation_to_this_run`) or,
 `tests/test_e061_end_to_end_wiring.py` (composition_runs off there, see its docstring),
 `tests/test_e046a_slice5b_ii_b_readers_stage.py` (`_seed_run` stand-in).
 
+Round-1 review fixes (2026-09-29): (1) two empty component-class sets are the same set (`_relation` no longer returns None for them); (2) `this_run.idea_status` is written from the stage's own `idea_status.yaml` and row 0 of all five SKILLs scores a `patch` on a `validated` run 0 (its block registers only after the readers); (3) `registry.n_forecast_blocks` added, and `no_residual_ic_artifact` is row 3 only when it is 0, else not measurable (row 2); (4) explicit precedence rule replaces "take the LOWEST row" vs the null-type default, row 0's `patches_registered_block` is `patch`-only, `neighbour_block_ids` is capped at 5 once grouped (`this_run.n_neighbour_blocks` keeps the full count), an unrecorded timeframe category is the named relation `same_classes_timeframe_unknown` (an assumed same type, still counted by `type_already_registered`), and a stage-level test pins that a malformed registry raises from `_run_specialist_readers_stage`.
+
 ---
 
 ## C2.4 — A crashed variant can never validate (D-015)
