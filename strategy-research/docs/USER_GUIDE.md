@@ -1647,6 +1647,79 @@ engineering_fault_detail}`.
    `--resume` refuses it first. Every other path to the holdout is refused as
    `holdout_refused_under_retired_routing`. RUNBOOK §3 has the procedure and
    one row per refusal code.
+15. **Profit bars v2: whole-test bars (E-062, D-034..D-047,
+   `orchestrator.profit_bars_v2.enabled`, off by default; requires
+   `profit_bars_every_backtest`).** Same bars file, same seven bar names, but a
+   variant is judged on its whole test at once rather than window by window.
+   Flag off, nothing below applies and the earlier definitions run
+   byte-identically. Each evaluation records `bars_definitions: v2`, and every
+   row records its `basis` and `comparator`. Operator decisions behind it:
+   - **One curve for the whole test (D-034, D-035, D-036).** Each window's
+     equal-weight curve is chained, in window order, into one. Sharpe, average
+     daily return and maximum drawdown are read off that one curve (drawdown on
+     bars, the worst fall over the whole test, not the worst window). Trade
+     count is per coin over the whole test, not counting the forced close at
+     each window's end. Two bars are new: beat equal-weight buy-and-hold after
+     costs (D-037) and realised gross edge over cost above 2.2, i.e. it
+     survives doubled costs (D-038). These numbers are unsigned until the
+     operator signs the bars file (`engineering/roadmap/E-062/SIGNING_CHECKLIST.md`).
+   - **The deflated-Sharpe bar (D-041, D-046).** One scoring mechanism for
+     every strategy, fast or slow: the whole-test daily Sharpe is deflated by
+     N, every counted trial in the campaign ledger (N never shrinks). K is how
+     many of those trials carry a Sharpe on this same whole-test basis (a
+     `whole_test` block on the ledger row, or an entry in the recompute overlay
+     file). With fewer than `dsr_min_same_basis_trials` (10) such trials the
+     luck benchmark is the pure-luck spread, `1/sqrt(T-1)` for T daily returns;
+     from 10 on it is the spread of the K Sharpes themselves. A small K is
+     never "not evaluable", so a variant never has to be run twice just to be
+     graded. The threshold stays 0.95 but means something different under this
+     formula, which is why the operator re-signs it. The evaluation's
+     `dsr_basis` records `sharpe_basis`, `n_same_basis`, `min_same_basis` and
+     `basis_overlay` (`present: false` when no recompute overlay exists).
+   - **A coin with partial coverage (D-042, D-047).** An asset variant whose
+     coin covers fewer than all the run protocol's windows (at least 60% of
+     them, else it is not tested) is graded on its share `f` of the run's
+     calendar days: trade minimum and the cost-ratio bar's trade floor become
+     `max(ceil(100 * f), 60)`, and the drawdown limit becomes `20 * sqrt(f)`, so
+     a shorter period can never pass more easily. The ratio 2.2, Sharpe, DSR,
+     average return and buy-and-hold are unchanged. Such a variant's rows carry
+     the threshold actually used and `detail.normalisation` (covered and full
+     days, `f`, the base and floor, the formula); a full-coverage variant is
+     graded exactly as before. Step 5a freezes the run protocol as
+     `artifacts/variants/run_protocol.json` (its sha256 on every per-coin entry
+     of `variants/index.yaml`); grading and the holdout `spend` read only that
+     copy, and `spend` re-derives the thresholds and refuses if they differ
+     (`bars_changed`) or cannot be re-derived (`normalisation_unverifiable`).
+   - **The era rule (D-047, as amended in the S2b-3b review).** `sign_consistent_by_era`
+     with fewer than two eras represented cannot fail, so it reads
+     INCONCLUSIVE, on every variant including the base (most committed
+     protocols are single-era). A single era whose median is exactly zero stays
+     FAIL.
+   - **A retest on wider coverage is a new trial (D-047).** A partial variant's
+     repeat key and the DSR dedupe key both carry its own window fingerprint
+     (`windows_sha256`). The same coin retested on the same coverage is a
+     repeat (skipped, no trial); on wider coverage it is a new trial and N goes
+     up by one. Full-coverage variants' keys are unchanged.
+   Old trial rows have no `whole_test` block. D-046 (4) plans a recompute tool
+   (S2b-2c: append-only overlay `campaign_record/trial_sharpe_basis_recompute.yaml`,
+   dry run by default, writing it an operator step); **that tool is not in the
+   repository yet**, so no overlay exists and those rows count in N but not in
+   K.
+16. **Score provenance (C5.7b, D-048, `orchestrator.score_provenance.enabled`,
+   off by default; requires `specialist_readers`).** Flag off, nothing changes.
+   On: (a) the `model_id` on reader proposals and brief-card scores is stamped
+   by code from the model that actually answered, and the model's own claim is
+   kept in the audit log's `provenance` block; a `mismatch` means the observed
+   model differs from the one requested, is recorded and never stops the run;
+   (b) a proposal's `rubric_version` must be exactly its category's
+   `<category>-reader-v2` (pinned to the five SKILL files), and an unknown value
+   is rejected through the reader's existing one-retry path; (c) each proposal's
+   cited evidence paths are resolved against the files the reader was given and
+   the resolved and unresolved counts are recorded (record only, nothing is
+   rejected; enforcing it is decided after the first real reader output).
+   **Turning it on adds a stop path:** a reader that writes a wrong
+   `rubric_version` twice in a row fails the run, and a `proposals/` file left
+   by an attempt made before the flag (a `-v1` rubric) fails a flag-on resume.
 
 ---
 

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$comment": "E-034 S2, 2026-08-25. Documentation of intent only -- no schema under workflow_artifacts/schemas/ is loaded or validated by any code, anywhere (grep-verified, see EPIC.md's 2026-08-24 S1-review entry). The actual shape is produced by workflow/run_phase1_research.py's _record_variant_selection(), which is the source of truth; keep this file in sync with that function by hand. Supersedes the one-off, unschemad, wrong-stage `variants_not_pursued` list that appeared exactly once in run_0001/artifacts/innovation_notes.yaml (S1 finding).",
+  "$comment": "E-034 S2, 2026-08-25. Corrected in E-062 S2b-4 (C5.7a leftover): save_yaml checks this artifact against this file by stem (tools/workflow_artifact_validation.py, CUL-11) -- warn-only by default, blocking only under WORKFLOW_ARTIFACT_VALIDATION=raise. It is a contract check, not the source of the shape. The actual shape is produced by workflow/run_phase1_research.py's _record_variant_selection(), which is the source of truth; keep this file in sync with that function by hand. Supersedes the one-off, unschemad, wrong-stage `variants_not_pursued` list that appeared exactly once in run_0001/artifacts/innovation_notes.yaml (S1 finding).",
   "title": "Variants Not Pursued",
   "type": "object",
   "required": ["variants_not_pursued"],

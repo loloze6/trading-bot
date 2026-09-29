@@ -19,13 +19,19 @@ Generate, expand, validate, backtest, analyze, and decide on strategy hypotheses
 - Large outputs must be written to files, not kept inline.
 - After each stage, write a short summary artifact.
 
-> **Schemas are declared but not enforced.** This file previously said
-> *"Validate outputs against schemas before moving to the next stage."* That is
-> false: no schema under `workflow_artifacts/schemas/` is loaded by any code —
-> verified by grep across `workflow/` and `tools/`, where the only hits are
-> source comments. Where enforcement genuinely exists it is written in code at
-> the seam that reads the value. See `docs/USER_GUIDE.md` §3's preamble
-> (corrected 2026-08-27) and E-037 [E037-09](engineering/roadmap/E-037/FINDINGS.md#e037-09).
+> **Schemas are checked at write time, warn-only by default.** This file
+> once said *"Validate outputs against schemas before moving to the next
+> stage"*, and a later correction said no schema was loaded by any code. Neither
+> is right now: `save_yaml` (and the standalone tools that write artifacts) call
+> `tools/workflow_artifact_validation.py`, which checks an artifact against
+> `workflow_artifacts/schemas/<file stem>.schema.json` when one exists. A
+> violation is logged and swallowed (a bug in the check must never crash a write
+> path); only `WORKFLOW_ARTIFACT_VALIDATION=raise` makes it block the write. So a
+> schema is a checked contract, but a warning is not a stop: where a rule must
+> stop a run it is still written in code at the seam that reads the value. See
+> E-037 [E037-09](engineering/roadmap/E-037/FINDINGS.md#e037-09) for the
+> original correction and the C5.7a schemas (`grid_evaluation`, `idea_status`,
+> `variant_patches`, ...).
 
 ## Workflow stages
 
