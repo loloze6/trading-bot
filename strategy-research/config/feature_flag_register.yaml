@@ -89,7 +89,7 @@ flags:
     config_key: orchestrator.variant_anti_adjacency_gate.enabled
     reader: run_phase1_research._variant_anti_adjacency_gate_enabled
     owner: Jeremy
-    state: off_incomplete
+    state: "on"
     blocked_on: "E-036 S2b corpus replay + operator review"
     criterion: >
       Redesigned 2026-09-27 (E-036 S2a, delivery_plan_v26.md slice 8.1;
@@ -116,7 +116,7 @@ flags:
     config_key: orchestrator.grid_evaluation.enabled
     reader: run_phase1_research._grid_evaluation_enabled
     owner: Jeremy
-    state: off_incomplete
+    state: "on"
     blocked_on: E-046b
     criterion: >
       Landed 2026-09-20 (E-046b S2, the grid -- engineering_roadmap.html
@@ -143,7 +143,7 @@ flags:
     config_key: orchestrator.category_reports.enabled
     reader: run_phase1_research._category_reports_enabled
     owner: Jeremy
-    state: off_incomplete
+    state: "on"
     blocked_on: "E-046a slice 5b (specialist readers -- the first real consumer of artifacts/reports/*.yaml)"
     criterion: >
       Landed 2026-09-21 (E-046a S5a, delivery_plan_v26.md "Slice 5 -- Reports
@@ -167,7 +167,7 @@ flags:
     config_key: orchestrator.profit_bars_file.enabled
     reader: run_phase1_research._profit_bars_file_enabled
     owner: Jeremy
-    state: off_incomplete
+    state: "on"
     blocked_on: "item 2 (profit-bars ticket, delivery_plan_v26.md 0.2 / engineering_roadmap.html)"
     criterion: >
       Landed 2026-09-20 (delivery_plan_v26.md 0.2 item 2, the branch-3 stop).
@@ -195,7 +195,7 @@ flags:
     config_key: orchestrator.profit_bars_every_backtest.enabled
     reader: run_phase1_research._profit_bars_every_backtest_enabled
     owner: Jeremy
-    state: off_incomplete
+    state: "on"
     blocked_on: "the profit_bars_file flag above (unratified draft bar values)"
     criterion: >
       Landed 2026-09-24 (branch 3 on every backtest, operator-approved the
@@ -218,7 +218,7 @@ flags:
     config_key: orchestrator.profit_bars_v2.enabled
     reader: run_phase1_research._profit_bars_v2_enabled
     owner: Jeremy
-    state: off_incomplete
+    state: "on"
     blocked_on: "E-062 (S2b-2c legacy recompute tool + its operator write, S2b-3c repeat key + dedupe fingerprint, S2b-4 end-to-end test) and the operator's signature (ratified_by / ratified_at) on config/profitability_bars.yaml, including dsr_min_same_basis_trials, trade_count_min_floor (D-047) and the re-signed 0.95 (D-046)"
     criterion: >
       Landed 2026-09-29 (E-062 S2b-1, engineering/roadmap/E-062/S1_FINDINGS.md
@@ -293,7 +293,7 @@ flags:
     config_key: orchestrator.config_direct_authoring.enabled
     reader: run_phase1_research._config_direct_authoring_enabled
     owner: Jeremy
-    state: off_incomplete
+    state: "on"
     blocked_on: "E-056 slice 4 (end-to-end validation with a real LLM authoring pass -- no API budget in slice 3b's own environment)"
     criterion: >
       Landed 2026-09-21 (E-056 Slice 3b, delivery_plan_v26.md "skills +
@@ -320,7 +320,7 @@ flags:
     config_key: orchestrator.variant_loop.enabled
     reader: run_phase1_research._variant_loop_enabled
     owner: Jeremy
-    state: off_incomplete
+    state: "on"
     blocked_on: "CORRECTED 2026-09-28: E-033.1 slice 4b (per-variant data-availability gate, per-variant conformance restructure, _write_promotion_audit's per-variant relationship) landed 2026-09-22 (PR #188) -- it is built and unit-tested, not the blocker anymore. The real remaining blocker is config_direct_authoring's own: an end-to-end proof against a real LLM authoring pass (no API/venv budget in this build environment)."
     criterion: >
       Landed 2026-09-22 (E-033.1 Slice 4a, delivery_plan_v26.md Slice 4,
@@ -358,7 +358,7 @@ flags:
     config_key: orchestrator.specialist_readers.enabled
     reader: run_phase1_research._specialist_readers_enabled
     owner: Jeremy
-    state: off_incomplete
+    state: "on"
     blocked_on: "E-046a slice 5b run budget (2 real runs read by all five readers -- no API budget in slice 5b-ii-B's own environment)"
     criterion: >
       Landed 2026-09-23 (E-046a Slice 5b-ii-B). Off by default, and
@@ -391,7 +391,7 @@ flags:
     config_key: orchestrator.regroup_record.enabled
     reader: run_phase1_research._regroup_record_enabled
     owner: Jeremy
-    state: off_incomplete
+    state: "on"
     blocked_on: "the specialist_readers run budget it sits behind (no run on disk has idea_status.yaml / grid_evaluation.yaml yet); block_manifest.yaml is written only by stage 1b under config_direct_authoring (E-056 1b block manifest, 2026-09-24), so the registry stays empty without that flag"
     criterion: >
       Landed 2026-09-23 (E-058 S2a, delivery_plan_v26.md slice 6a first
@@ -419,7 +419,7 @@ flags:
     config_key: orchestrator.decide_next.enabled
     reader: run_phase1_research._decide_next_enabled
     owner: Jeremy
-    state: off_incomplete
+    state: "on"
     blocked_on: "the readers' run budget (no run on disk has artifacts/proposals/ or a campaign_memory.yaml entry to decide from), and its prerequisite flags regroup_record + config_direct_authoring, both off_incomplete; then delivery_plan_v26.md slice 6b's two consecutive real runs, the first ending refuted"
     criterion: >
       Landed 2026-09-24 (E-059 S2a, delivery_plan_v26.md slice 6b core;
@@ -459,7 +459,7 @@ flags:
     config_key: orchestrator.verdict_routing_retired.enabled
     reader: run_phase1_research._verdict_routing_retired_enabled
     owner: Jeremy
-    state: off_incomplete
+    state: "on"
     blocked_on: "its prerequisite flags decide_next and profit_bars_every_backtest, both off_incomplete; then the 6b two-run proof re-checked with this flag on, with the before/after artifact diff recorded here (declared behaviour change, delivery_plan_v26.md 0.2)"
     criterion: >
       Landed 2026-09-25 (E-059 S3, delivery_plan_v26.md slice 6c S2a;
@@ -528,7 +528,7 @@ flags:
     config_key: orchestrator.composition_runs.enabled
     reader: run_phase1_research._composition_runs_enabled
     owner: Jeremy
-    state: off_incomplete
+    state: "on"
     blocked_on: "E-060 S4 (the first real composition run needs two blocks validated by real runs) and the operator's ratification of the residual_ic D-039 threshold in config/criterion_menu.yaml; its prerequisite flags (decide_next, variant_loop, profit_bars_every_backtest, verdict_routing_retired) are themselves off"
     criterion: >
       Landed 2026-09-26 (E-060 S2, delivery_plan_v26.md slice 7 item 7.1;
@@ -575,7 +575,7 @@ flags:
     config_key: orchestrator.score_provenance.enabled
     reader: run_phase1_research._score_provenance_enabled
     owner: Jeremy
-    state: off_incomplete
+    state: "on"
     blocked_on: "C4's first real reader output, which measures what AssistantMessage.model returns for claude-haiku-4-5 and the citation unresolved rate that decides A+/B (D-048 / C5_7B G10); C5.7b-1 and C5.7b-2 are built"
     criterion: >
       Landed 2026-09-29 (C5.7b-1, D-048; engineering/review_2026-09-27/

@@ -240,7 +240,7 @@ orchestrator:
       # entry, verbatim). See engineering/roadmap/E-034/artifacts/
       # s1_selection_record.md Task 3 for the full design.
   variant_anti_adjacency_gate:
-    enabled: false
+    enabled: true
       # E-034 S3, REDESIGNED by E-036 S2a (2026-09-27, delivery_plan_v26.md
       # slice 8.1; engineering/roadmap/E-036/S1_FINDINGS_SLICE8.md + operator
       # decision). OFF BY DEFAULT, read at runtime by
@@ -311,7 +311,7 @@ orchestrator:
       # loop_health.yaml, safe to delete. See engineering/roadmap/E-031/
       # EPIC.md's S2 Log entry and artifacts/s1_refill_sources.md Task 2.
   grid_evaluation:
-    enabled: false
+    enabled: true
       # E-046b S2 (the grid, engineering_roadmap.html card C). OFF BY
       # DEFAULT and read at runtime by
       # run_phase1_research._grid_evaluation_enabled() -- same shape as the
@@ -342,7 +342,7 @@ orchestrator:
       # produce real multi-variant, menu-shaped pre_registration.yaml
       # pass_rules) before this is genuinely usable end-to-end.
   profit_bars_file:
-    enabled: false
+    enabled: true
       # delivery_plan_v26.md 0.2 (item 2, "config/profitability_bars.yaml and
       # the branch-3 stop" -- engineering_roadmap.html's "One campaign-wide
       # profitability-bars file, written once by hand"). OFF BY DEFAULT and
@@ -381,7 +381,7 @@ orchestrator:
       # thresholds and a daily-return figure exists somewhere in the pipeline
       # for that one bar to read.
   profit_bars_every_backtest:
-    enabled: false
+    enabled: true
       # Branch 3 on EVERY backtest (operator-approved 2026-09-24; delivery_plan_v26.md
       # target row "8 · profit bars ... one file, every backtest, stop rule"). OFF BY
       # DEFAULT, read by run_phase1_research._profit_bars_every_backtest_enabled().
@@ -415,7 +415,7 @@ orchestrator:
       # evaluation. A malformed bars file fails the run loudly (never a
       # defaulted threshold). Still blocked on ratified bar values.
   profit_bars_v2:
-    enabled: false
+    enabled: true
       # E-062 S2b-1 (engineering/roadmap/E-062/S1_FINDINGS.md Q7/G8; D-034..D-039).
       # OFF BY DEFAULT, read by run_phase1_research._profit_bars_v2_enabled().
       # REQUIRES profit_bars_every_backtest.enabled above (hence profit_bars_file
@@ -456,7 +456,7 @@ orchestrator:
       # also carry trade_count_min_floor. The legacy promote path keeps the cap
       # (G9). The legacy promote path and the deflate_sharpe CLI never use v2.
   category_reports:
-    enabled: false
+    enabled: true
       # E-046a Slice 5a (delivery_plan_v26.md, "Slice 5 -- Reports and
       # readers"). OFF BY DEFAULT and read at runtime by
       # run_phase1_research._category_reports_enabled() -- same shape as
@@ -517,7 +517,7 @@ orchestrator:
       # E-054 landed and to the old env-var-unset default -- proven by
       # tests/test_e054_stage_wiring.py's explicit-off byte-identity test.
   config_direct_authoring:
-    enabled: false
+    enabled: true
       # E-056 Slice 3b (delivery_plan_v26.md, "skills + orchestrator +
       # patches"). OFF BY DEFAULT and read at runtime by
       # run_phase1_research._config_direct_authoring_enabled() -- same shape
@@ -561,7 +561,7 @@ orchestrator:
       # authoring pass (no Gemini/Claude API budget was available to run one
       # in this slice's own environment -- see this slice's final report).
   variant_loop:
-    enabled: false
+    enabled: true
       # E-033.1 Slice 4a (delivery_plan_v26.md Slice 4, sub-slice 1 of 2:
       # "loop restructure + trial accounting"). OFF BY DEFAULT and read at
       # runtime by run_phase1_research._variant_loop_enabled() -- same shape
@@ -600,7 +600,7 @@ orchestrator:
       # stays off_incomplete only because config_direct_authoring, its hard
       # dependency, itself still needs a real end-to-end LLM-authoring proof.
   specialist_readers:
-    enabled: false
+    enabled: true
       # E-046a Slice 5b-ii-B (delivery_plan_v26.md slices 2 and 5;
       # engineering/roadmap/E-046a/S1_FINDINGS_5B_II.md, REALIGNMENT). OFF BY
       # DEFAULT and read at runtime by
@@ -637,7 +637,7 @@ orchestrator:
       # is unit tested with a mocked LLM; no reader has yet run against a real
       # model (no API budget in this slice's environment).
   regroup_record:
-    enabled: false
+    enabled: true
       # E-058 S2a (delivery_plan_v26.md slice 6a, first half;
       # engineering/roadmap/E-058/S1_FINDINGS.md). OFF BY DEFAULT and read at
       # runtime by run_phase1_research._regroup_record_enabled() -- same shape
@@ -665,7 +665,7 @@ orchestrator:
       # to campaign_knowledge_base.yaml, the near-miss scoreboard is rebuilt,
       # and campaign_review gets the memory file as an input.
   score_provenance:
-    enabled: false
+    enabled: true
       # C5.7b-1 (D-048; engineering/review_2026-09-27/C5_7B_PROVENANCE_S1.md,
       # review finding C12). OFF BY DEFAULT, read by
       # run_phase1_research._score_provenance_enabled(). HARD DEPENDENCY: raises
@@ -700,7 +700,7 @@ orchestrator:
       # not yet run; a proposals/ file left by a pre-flag attempt (`-v1`) fails
       # the flag-on resume re-validation.
   decide_next:
-    enabled: false
+    enabled: true
       # E-059 S2a (delivery_plan_v26.md slice 6b, "decide-next and the queue";
       # engineering/roadmap/E-059/S1_FINDINGS_6B.md and its operator decision
       # of 2026-09-24). OFF BY DEFAULT and read by
@@ -750,7 +750,7 @@ orchestrator:
       # loop stops only when no eligible brief is open. Legacy briefs (no brief_status) never trigger R2 and
       # get a one-time "[obsolete] ..." queue-entry title (brief file untouched).
   verdict_routing_retired:
-    enabled: false
+    enabled: true
       # E-059 S3, slice 6c S2a (delivery_plan_v26.md slice 6c;
       # engineering/roadmap/E-059/S1_FINDINGS_6C.md and its operator decision
       # of 2026-09-25). OFF BY DEFAULT and read by
@@ -801,7 +801,7 @@ orchestrator:
       # pauses before its LLM call; a triggered review resumed with this flag
       # off fails loud.
   composition_runs:
-    enabled: false
+    enabled: true
       # E-060 S2 (delivery_plan_v26.md slice 7 item 7.1;
       # engineering/roadmap/E-060/S1_FINDINGS.md + the operator decision of
       # 2026-09-26). OFF BY DEFAULT, read by
