@@ -1,14 +1,19 @@
-# DRAFT -- NOT RATIFIED. Item 2 (delivery_plan_v26.md 0.2 / engineering_roadmap.html
-# "One campaign-wide profitability-bars file, written once by hand").
+# Item 2 (delivery_plan_v26.md 0.2 / engineering_roadmap.html "One campaign-wide
+# profitability-bars file, written once by hand").
 #
-# The values below are PLACEHOLDER / EXAMPLE numbers only, invented to exercise the
-# loader and the branch-3 stop wiring built in this slice. They are NOT an operator
-# sign-off and must NOT be read as production thresholds -- `ratified_by`/`ratified_at`
-# are null below for exactly that reason, and the loader (run_phase1_research.py::
-# _load_profitability_bars) does not check ratification status itself (that is a
-# human-review question, not a schema question); a human must replace these numbers
-# and fill in ratified_by/ratified_at before this file's PASS/FAIL verdicts should be
-# trusted for anything beyond wiring tests.
+# VALUES: D-039 (operator, 2026-09-27; engineering/DECISION_LOG.md), written by
+# E-062 S2b-1 together with the v2 definitions (D-034..D-038) they are meant for.
+# `ratified_by` / `ratified_at` below are the operator's SIGNATURE and are left
+# null until the operator signs (E-062 S1 G9); the loader does not check them
+# (a human-review question, not a schema question). `ratified_at` may be written
+# unquoted (`ratified_at: 2026-10-01`): the loader accepts a YAML date.
+# Signing changes this file's sha256, so an evaluation graded before the
+# signature is not spendable (bars_changed) -- sign before C4.
+#
+# Under the v1 definitions (orchestrator.profit_bars_v2.enabled off) these D-039
+# numbers are graded on the OLD bases -- e.g. trade_count_min 100 as a PER-WINDOW
+# minimum and max_drawdown_pct_max 20 on the worst single window. Those are
+# legacy/test-only paths; the values are meant for v2.
 #
 # Read by (once orchestrator.profit_bars_file.enabled is true):
 #   - branch 3 / Step 8 (run_phase1_research._evaluate_profit_bars, called from the
@@ -35,13 +40,18 @@
 #     on that path; only the legacy `_route_holdout_evaluation` function above remains
 #     un-repointed.
 #
-# Two definitions exist, and every flag-on evaluation row records which one it used
-# in a `basis` key (profit_bars_evaluation.yaml), so the artifact is self-describing:
+# Three definitions exist, and every flag-on evaluation row records which one it
+# used in a `basis` key (profit_bars_evaluation.yaml), so the artifact is
+# self-describing:
 #   * orchestrator.profit_bars_every_backtest.enabled OFF (only profit_bars_file on):
 #     the promote-path definitions, unchanged and byte-identical -- no `basis` key.
 #   * orchestrator.profit_bars_every_backtest.enabled ON (operator decision
 #     2026-09-24): the bars are judged on the portfolio you would actually trade --
 #     all tested coins together, EQUALLY WEIGHTED -- for return and drawdown.
+#   * orchestrator.profit_bars_v2.enabled ON too (E-062 S2b-1, D-034..D-039): the
+#     v2 definitions below ("PROFIT BARS V2"); the evaluation records
+#     `bars_definitions: v2`, and the three v2 keys at the bottom of this file are
+#     required.
 #
 # The EQUAL-WEIGHT PORTFOLIO (flag on; run_phase1_research._portfolio_profit_metrics),
 # built separately for each graded variant and for each walk-forward window:
@@ -123,15 +133,66 @@
 #                                        holdout gate per the roadmap card, consumed by
 #                                        neither in this slice
 #   ratified_by                str|null
-#   ratified_at                str|null (ISO date)
+#   ratified_at                str|null (ISO date; an unquoted YAML date is accepted)
+#
+# PROFIT BARS V2 (orchestrator.profit_bars_v2.enabled; run_phase1_research.
+# _whole_test_profit_metrics / _grade_profit_bars_v2, on the pure functions of
+# tools/portfolio_whole_test.py; definitions in engineering/roadmap/E-062/
+# S1_FINDINGS.md Q1-Q5 and its "Decision" / "Amendments during S2a" sections).
+# Seven rows, same names; each row also records its `comparator`.
+#   WHOLE-TEST CHAIN: each window's equal-weight curve (the common-day rules above,
+#   0.9 floor per window) is chained in the protocol's window order: the earliest
+#   window owns a day and the next window joins at the shared junction day (every
+#   protocol's windows share one day); a protocol gap is linked flat, its days get
+#   no return; the engine's systematic 1-5 day shortfall at a window's edges (every
+#   coin together) is flat and excluded from coverage; a junction day or window
+#   edge missing for SOME coins is missing data -> NOT_EVALUABLE. The chained span
+#   must also reach the 0.9 coverage. The windows' bounds are the protocol file's
+#   nominal test.start/test.end (protocol_result.protocol_file).
+#   sharpe_min                 v2: mean / sample stdev (ddof 1) x sqrt(365), rf 0,
+#                                  of the chained daily returns; NOT_EVALUABLE
+#                                  below 30 returns or at zero stdev. `>=`.
+#                                  basis: portfolio_equal_weight_whole_test_chained_daily_sharpe
+#   deflated_sharpe_threshold  v2: unchanged (trial-ledger basis until E-062 S2b-2). `>=`.
+#                                  basis: deflated_sharpe_on_campaign_trial_ledger
+#   max_drawdown_pct_max       v2: largest peak-to-trough fall of the chained
+#                                  BAR-level curve over the WHOLE test (D-034). `<=`.
+#                                  basis: portfolio_equal_weight_whole_test_chained
+#   trade_count_min            v2: per coin, trades over the whole test WITHOUT
+#                                  the end_of_window forced closes (D-035, G5);
+#                                  actual = the worst coin; the row's `detail`
+#                                  records raw and excluded counts per coin. `>=`.
+#                                  basis: per_coin_total_whole_test_excl_window_closes
+#   avg_daily_return_min       v2: arithmetic mean of the chained daily returns. `>=`.
+#                                  basis: portfolio_equal_weight_whole_test_chained_mean_daily_return
+#   buy_and_hold_excess_return_min
+#                              v2 only (D-037, G6): strategy total return (final
+#                                  chained level - 1) minus equal-weight
+#                                  buy-and-hold's over the same chained days, the
+#                                  latter charged one round trip per coin (fee
+#                                  from config/cost_model.yaml, checked against the
+#                                  trades' cost_paid, + the manifests' slippage).
+#                                  Strict `>`.
+#                                  basis: portfolio_equal_weight_vs_buy_and_hold
+#   cost_edge_ratio_min        v2 only (D-038, G7): pooled realized gross edge /
+#                                  cost ratio, unrounded, the lower of all trades and
+#                                  trades without forced closes. Strict `>`.
+#                                  NOT_EVALUABLE below cost_edge_min_trades
+#                                  non-forced trades or when a trade lacks a cost.
+#                                  basis: pooled_trades_realized_edge_to_cost
+#   cost_edge_min_trades       int, v2 only: the floor of the row above (>= 1).
 
-sharpe_min: 0.5
-max_drawdown_pct_max: 25.0
+sharpe_min: 1.0
+max_drawdown_pct_max: 20.0
 avg_daily_return_min: 0.0005
-trade_count_min: 30
+trade_count_min: 100
 deflated_sharpe_threshold: 0.95
 target_instrument_set:
   - BTCUSDT
   - ETHUSDT
 ratified_by: null
 ratified_at: null
+# v2 keys (required only under orchestrator.profit_bars_v2.enabled):
+buy_and_hold_excess_return_min: 0.0
+cost_edge_ratio_min: 2.2
+cost_edge_min_trades: 100

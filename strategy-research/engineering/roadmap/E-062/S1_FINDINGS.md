@@ -394,3 +394,19 @@ conservative rules (built in `tools/portfolio_whole_test.py`):
   prefetch start); coverage is measured over the nominal span.
 - Edge/cost bar: floor counts non-forced trades; ratio = min(all trades, non-forced trades);
   unrounded ratio at the gate. `cost_paid` follows the run's actual fee flags.
+
+### S2b-1 built (2026-09-29)
+
+Flag `orchestrator.profit_bars_v2.enabled` (default off, strict bool, requires
+`profit_bars_every_backtest`; resolved in run_loop's pre-flight and `run_campaign._flag_preflight`;
+register entry). Loader v2 schema (three new keys, required only under v2) and the unquoted-date
+`ratified_at` fix. `_grade_profit_bars` emits the seven v2 rows (`_grade_profit_bars_v2` on
+`_whole_test_profit_metrics`, which calls the S2a functions). Each row carries `basis` and
+`comparator`, with strict `>` only for buy-and-hold and the cost ratio. The evaluation records
+`bars_definitions: v2`, and `_evaluation_under_current_bars` refuses `bars_changed` when the
+definitions differ. The D-039 values are in `profitability_bars.yaml` / `criterion_menu.yaml`,
+still unsigned. Scope-note substitute: the run does not record `--commission-bps` /
+`--cost-product`, so buy-and-hold's fee is `cost_model.yaml` spot, checked against every
+trade's `cost_paid`. A mismatch reads NOT_EVALUABLE. Tests:
+`tests/test_e062_s2b1_profit_bars_v2.py`. Not in this slice: S2b-2 (D-041), S2b-3 (D-042, the
+M1 cap still applies), S2b-4 (end-to-end test, docs).

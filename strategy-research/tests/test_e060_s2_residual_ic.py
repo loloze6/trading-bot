@@ -193,8 +193,12 @@ def _diag(**kw):
 
 
 def test_menu_entry_is_the_operator_placeholder():
+    # E-062 S2b-1: the D-039 values (0.02, one-sided p 0.05, n_eff 30); still
+    # `ratified: false` until the operator signs.
     crit = _menu_residual_crit()
-    assert (crit["comparator"], crit["threshold"], crit["floor"]) == (">", 0.01, {"min_n_eff": 30})
+    assert (crit["comparator"], crit["threshold"], crit["floor"]) == (">", 0.02, {"min_n_eff": 30})
+    raw = next(e for e in REAL_MENU["code_added_criteria"] if e["id"] == "residual_ic")
+    assert raw["ratified"] is False
     assert crit["max_p_value"] == 0.05
     assert crit["source"] == "pooled" and crit["statistic"] == "value" and crit["scale_free"]
     assert "residual_ic" not in {c["id"] for c in REAL_MENU["criteria"]}  # never picked by 1a
@@ -267,12 +271,13 @@ def test_existing_pooled_cell_shape_unchanged():
     """A pooled criterion without min_n_eff keeps the pre-S2 cell keys."""
     crit = next(c for c in REAL_MENU["criteria"] if c["id"] == "realized_edge_to_cost_ratio")
     pr = {"results": [{"symbol": "BTCUSDT", "window": f"2020-{m:02d}",
-                       "core": {"trade_count": 5}} for m in range(1, 7)],
-          "trade_diagnostics_summary": {"realized_edge_to_cost_ratio": 0.5}}
+                       "core": {"trade_count": 20}} for m in range(1, 7)],
+          "trade_diagnostics_summary": {"realized_edge_to_cost_ratio": 2.5}}
     cell = vce.evaluate_grid({"v": pr}, {"pass_rule": {"criteria": [{"id": crit["id"], "source": "pooled"}]}}, {},
                              REAL_MENU)["grid"][crit["id"]]["v"]
-    assert cell == {"result": "PASS", "value": 0.5, "threshold": 0.3, "comparator": ">",
-                    "n_windows": 6, "n_trades": 30}
+    # E-062 S2b-1: the menu's D-039 values (> 2.2, floor 100 trades).
+    assert cell == {"result": "PASS", "value": 2.5, "threshold": 2.2, "comparator": ">",
+                    "n_windows": 6, "n_trades": 120}
 
 
 def test_a_card_cannot_pick_residual_ic():

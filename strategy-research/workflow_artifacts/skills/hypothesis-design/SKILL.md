@@ -324,7 +324,7 @@ does not apply — proceed exactly as this skill has always worked, do not popul
 The config-direct-authoring flow pre-registers pass/fail criteria HERE, at 1a, instead of deriving them later in
 a separate validation pass. `config/criterion_menu.yaml` is the anchor table — same "pick from this table, don't
 free-hand" discipline as the `plausible_ic_upper` table above (A8.6). As of this slice it has exactly two LIVE
-entries: `realized_edge_to_cost_ratio` (pooled, `>` 0.3, scale-free) and `sign_consistent_by_era` (window,
+entries: `realized_edge_to_cost_ratio` (pooled, `>` 2.2 with a 100-trade floor, D-039, scale-free) and `sign_consistent_by_era` (window,
 sign-consistency-by-era reducer). Two more (`residual_ic`, `gated_beats_ungated`) are commented out, blocked on
 later composition work — do not reference them; a criterion naming an unresolvable id fails at evaluation time,
 not gracefully.

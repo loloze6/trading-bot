@@ -246,7 +246,11 @@ def test_a_1a_rerun_rewrites_the_pass_rule_and_rechecks_the_id(campaign_root):
 # input -- artifacts/tried_ideas.yaml when campaign memory exists, else the
 # legacy exclusion digest; S1_FINDINGS_SLICE8.md operator decision 3). decide_next's addendum is still
 # not in the skill -- this pin keeps guarding that.
-_MASTER_SKILL_SHA256 = "773051a327b81f4b9f6cd616a220e35ad2982cb3a11110df3bac3a2dfa4c545a"
+# RE-PINNED by E-062 S2b-1 (2026-09-29): a DECLARED one-line change -- the
+# realized_edge_to_cost_ratio value quoted in the criterion-menu paragraph goes
+# from "> 0.3" to "> 2.2 with a 100-trade floor" (D-039, config/criterion_menu.yaml).
+# Previous pin: 773051a327b81f4b9f6cd616a220e35ad2982cb3a11110df3bac3a2dfa4c545a.
+_MASTER_SKILL_SHA256 = "51a0d28cdf53ffca012951e38745d38408fe0a9828001ab0007d4b1a185458d3"
 
 
 def test_hypothesis_design_skill_is_byte_identical_to_master():
