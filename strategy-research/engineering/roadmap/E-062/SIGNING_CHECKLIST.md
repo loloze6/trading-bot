@@ -71,3 +71,13 @@ Where the signature goes: flip `ratified: false` to `ratified: true` on the
 2. Write `ratified_by` / `ratified_at` in the bars file and flip `ratified` in the
    menu. Commit both. Record the new LF sha256.
 3. Only then switch the flag set on for the first real run.
+
+## 5. Signed (2026-09-29)
+
+- The operator agreed every value above unchanged ("I agree with the bars, can you ratify it for me"); Claude
+  recorded the signature at that explicit instruction in commit `cdb1d577`: `ratified_by` / `ratified_at: 2026-09-29`
+  in `config/profitability_bars.yaml`, and `ratified: true` on `residual_ic` in `config/criterion_menu.yaml`.
+- sha256 of the signed bars file:
+  - committed LF blob (what git stores; a Mac or Linux checkout): `43de386832865bb5367db32a33f485b838528d995f39c31117b9fa657682cbaa`
+  - this Windows checkout (`core.autocrlf=true`, CRLF on disk -- what the runtime hashes here): `a752a2ebb60bb4ed7e6577fcd9449db1be28dd8767bc571ca3ba86e0f1bcad71`
+- Until CUL-348 lands, grade and spend on the same checkout; C4 on this Windows machine records the CRLF value.
