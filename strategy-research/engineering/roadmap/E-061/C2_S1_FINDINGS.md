@@ -371,6 +371,22 @@ Only under `specialist_readers` (the only path that calls readers). No flag-off 
 - **C1.1 extension:** run 1 validates a block (stubbed grid PASS) → run 2's reader prompts contain
   that block in `registry_summary.yaml` with this run marked as its neighbour.
 
+### S2e built (2026-09-29, branch `feat/e061-c2-s2e-distance-rubric`)
+
+`tools/block_registry.registry_summary(doc, run_dir)` (pure, deterministic, writes nothing) is
+called by `run_phase1_research._write_registry_summary`, which only
+`_run_specialist_readers_stage` calls, before the first reader; `_reader_handoff` lists
+`artifacts/registry_summary.yaml` as a third required input. Shape: `registry` (n_blocks,
+revision, grouping), `this_run` (block_type, reason, type_already_registered,
+neighbour_block_ids, patches_registered_block, correlation_to_composite {status, composite_kind,
+by_variant, max_abs}), then `blocks` rows (each with `relation_to_this_run`) or, past 50 blocks,
+`groups`. This run's own blocks are excluded. All five reader SKILLs carry the G10 anchors and
+`<category>-reader-v2`; `registry_summary.yaml` is their one extra allowed input. Tests:
+`tests/test_e061_c2_s2e_distance_rubric.py` (new), the C1.1 extension
+`test_c2_3_run_2_readers_see_run_1s_validated_block_with_this_run_as_its_neighbour` in
+`tests/test_e061_end_to_end_wiring.py` (composition_runs off there, see its docstring),
+`tests/test_e046a_slice5b_ii_b_readers_stage.py` (`_seed_run` stand-in).
+
 ---
 
 ## C2.4 — A crashed variant can never validate (D-015)
