@@ -252,3 +252,16 @@ flag-off and stay. 3c: the dedupe lockstep tests gain cases, no expected value c
 | G13 | Row shape | effective `threshold` + `detail.normalisation` | SMALL | yes (3b) |
 | G14 | Flag | `profit_bars_v2` for every write; dedupe/novelty reads flag-independent | SMALL | yes |
 | G15 | X6 (line-ending sha) | ticket, outside S2b-3 | SMALL | no |
+
+## Decision (operator, 2026-09-29) — recorded as D-047
+
+- **G3:** floor 60 (`trade_count_min_floor`, signed with the bars file). The operator asked for a time-based
+  minimum ("a trade per day?"); that re-decides D-035 and 1/day would exclude slow strategies, so per the
+  operator's own fallback it is **parked** (calendar-rate minimum, to choose after C4 real trade counts).
+- **G4:** the cost-ratio trade floor scales the same way (100 x f, floor 60).
+- **G5:** drawdown limit x sqrt(f), as recommended.
+- **G10:** fewer than 2 eras -> INCONCLUSIVE on every variant (under profit_bars_v2).
+- **G12:** wider-coverage retest = new trial (window fingerprint in the repeat key and the dedupe key).
+- SMALL guesses as recommended. Split 3a (pure) -> 3b (wiring) -> 3c (repeat key + dedupe), each reviewed and merged.
+- **X6** (bars-file sha depends on line endings: CRLF f96ce688... on this Windows checkout vs LF 4a75ed66...,
+  verified by the orchestrator) -> separate ticket, before any cross-machine holdout spend.
