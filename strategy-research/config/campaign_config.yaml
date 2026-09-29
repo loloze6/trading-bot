@@ -451,7 +451,8 @@ orchestrator:
       # the grid no longer caps its idea at inconclusive, a spend re-derives those
       # thresholds (bars_changed otherwise), and sign_consistent_by_era with fewer
       # than 2 represented eras reads INCONCLUSIVE on EVERY variant (7 of 13
-      # committed protocols are single-era even for the base). The bars file must
+      # committed protocols are single-era even for the base; a zero-median
+      # single era stays FAIL). The bars file must
       # also carry trade_count_min_floor. The legacy promote path keeps the cap
       # (G9). The legacy promote path and the deflate_sharpe CLI never use v2.
   category_reports:

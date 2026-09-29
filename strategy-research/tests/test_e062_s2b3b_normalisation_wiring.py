@@ -21,7 +21,15 @@ Covers:
      flag off unchanged. protocol_execution passes the kwarg and drops the M1
      grid cap only under v2.
   6. Legacy promote path: still capped with v2 on (G9).
-  7. The spend re-derives the normalised thresholds (bars_changed otherwise).
+  7. The spend re-derives the normalised thresholds (bars_changed otherwise)
+     from the evaluation read back from disk, and from 5a's frozen run
+     protocol only: never re-resolving the shared protocol, never writing
+     pipeline_state; normalisation_unverifiable when the frozen copy is
+     missing / altered / predates review fix 1. 7b: 5a freezes it. 7c: the
+     grid's profit-bars grader holds a partial column NOT_EVALUABLE.
+     Review round 1 also: an unmeasurable coverage reads NOT_EVALUABLE
+     `coverage_unmeasurable:` (never raises); a zero-median single era stays
+     FAIL.
   8. The loader: trade_count_min_floor required under v2 (int >= 1, <= both
      bases); the committed bars file carries 60.
 """
@@ -30,6 +38,7 @@ import json
 import math
 import sys
 from datetime import date
+from fractions import Fraction
 from pathlib import Path
 
 import pytest
@@ -93,44 +102,73 @@ def _drawdown_strat(first_label: str, r: float, n: int = 10):
     return strat
 
 
+_REAL_RESOLVE = rpr._resolve_protocol_path  # the real resolver, before any stub
+
+
+def _no_resolve(*_a, **_k):
+    raise AssertionError("grading / the spend must never re-resolve the shared run protocol "
+                         "(review fix 1): they read 5a's frozen copy")
+
+
+def _run_proto_path() -> Path:
+    return rpr.ROOT / "protocols" / "run_053_generated.json"
+
+
 def _partial_run(monkeypatch, *, orchestrator=None, bars=None, trades=61, covered=N_COVERED,
-                 dd=None) -> Path:
+                 dd=None, with_base=False) -> Path:
+    """A per-coin run as 5a leaves it: the asset variant covers the last
+    `covered` of run_053's windows; `with_base` adds a full-coverage BTCUSDT
+    base column. 5a's own _freeze_run_protocol writes the frozen run protocol
+    (review fix 1); afterwards the shared-protocol resolver is a trap."""
     _set_orchestrator(V2_LOOP if orchestrator is None else orchestrator)
     _write_bars(V2_BARS if bars is None else bars)
     _write_cost_model()
     run_dir = _seed(variant_loop=True)
     arts = run_dir / "artifacts"
     source = json.loads(RUN053.read_text(encoding="utf-8"))
-    run_proto = rpr.ROOT / "protocols" / "run_053_generated.json"
+    run_proto = _run_proto_path()
     run_proto.parent.mkdir(parents=True, exist_ok=True)
     run_proto.write_text(json.dumps(source, indent=2), encoding="utf-8")
     monkeypatch.setattr(rpr, "_resolve_protocol_path", lambda rd, rid: run_proto)
+    _, run_sha = rpr._freeze_run_protocol(run_dir, RUN_ID)  # the real 5a helper
     labels = [w["label"] for w in source["windows"]]
     run_labels = labels[len(labels) - covered:]
-    vproto = vc.variant_protocol(source, symbol="SOLUSDT",
-                                 windows_run=run_labels if covered < len(labels) else None)
-    vpath = arts / "variants" / "asset" / vc.VARIANT_PROTOCOL_FILENAME
-    vpath.parent.mkdir(parents=True, exist_ok=True)
-    vpath.write_text(json.dumps(vproto, indent=2), encoding="utf-8")
-    rpr.save_yaml(arts / "variants" / "index.yaml", {"variants": {"asset": {
-        "status": "validated", "config_path": "artifacts/variants/asset/strategy_config.json",
-        "kind": "asset", "symbol": "SOLUSDT",
-        "coverage": {"windows_run": run_labels, "windows_total": len(labels)},
-        "protocol_path": f"artifacts/variants/asset/{vc.VARIANT_PROTOCOL_FILENAME}"}}})
-    rpr.save_yaml(arts / "grid_evaluation.yaml", _grid(["asset"], "validated"))
-    windows = [(w["label"], date.fromisoformat(w["test"]["start"]),
-                date.fromisoformat(w["test"]["end"])) for w in vproto["windows"]]
-    out_dir = run_dir / "variants" / "asset"
-    kw = {"strat": _drawdown_strat(windows[0][0], dd)} if dd is not None else {}
-    pr = _build(out_dir, coins=("SOLUSDT",), windows=windows, n_signal=1, **kw)
-    _add_signal_trades(out_dir, pr, trades - len(windows))
-    pr["protocol_file"] = str(vpath)
-    rpr.save_yaml(arts / "variants" / "asset" / "protocol_result.yaml", pr)
-    rpr.save_yaml(rpr.CAMPAIGN_STATE_PATH, {"campaign_id": "t", "runs": [], "trial_sharpes": [
-        {"trial_id": f"{RUN_ID}:asset", "source": "backtest", "sharpe": 0.3,
-         "forecast_hash": "fh-asset"}]})
+    specs = {"asset": ("SOLUSDT", run_labels if covered < len(labels) else None, trades)}
+    if with_base:
+        specs["base"] = ("BTCUSDT", None, 100)
+    index, prs, rows = {}, {}, []
+    for vid, (coin, wr, n_trades) in specs.items():
+        vproto = vc.variant_protocol(source, symbol=coin, windows_run=wr)
+        vpath = arts / "variants" / vid / vc.VARIANT_PROTOCOL_FILENAME
+        vpath.parent.mkdir(parents=True, exist_ok=True)
+        raw = json.dumps(vproto, indent=2).encode("utf-8")
+        vpath.write_bytes(raw)
+        index[vid] = {
+            "status": "validated", "config_path": f"artifacts/variants/{vid}/strategy_config.json",
+            "kind": vid, "symbol": coin,
+            **({"coverage": {"windows_run": run_labels, "windows_total": len(labels)}}
+               if vid == "asset" else {}),
+            "protocol_path": f"artifacts/variants/{vid}/{vc.VARIANT_PROTOCOL_FILENAME}",
+            "protocol_sha256": vc.protocol_sha256(raw), rpr.RUN_PROTOCOL_SHA_KEY: run_sha}
+        windows = [(w["label"], date.fromisoformat(w["test"]["start"]),
+                    date.fromisoformat(w["test"]["end"])) for w in vproto["windows"]]
+        out_dir = run_dir / "variants" / vid
+        kw = ({"strat": _drawdown_strat(windows[0][0], dd)}
+              if dd is not None and vid == "asset" else {})
+        pr = _build(out_dir, coins=(coin,), windows=windows, n_signal=1, **kw)
+        _add_signal_trades(out_dir, pr, n_trades - len(windows))
+        pr["protocol_file"] = str(vpath)
+        rpr.save_yaml(arts / "variants" / vid / "protocol_result.yaml", pr)
+        prs[f"{RUN_ID}:{vid}"] = pr
+        rows.append({"trial_id": f"{RUN_ID}:{vid}", "source": "backtest", "sharpe": 0.3,
+                     "forecast_hash": f"fh-{vid}"})
+    rpr.save_yaml(arts / "variants" / "index.yaml", {"variants": index})
+    rpr.save_yaml(arts / "grid_evaluation.yaml", _grid(sorted(specs), "validated"))
+    rpr.save_yaml(rpr.CAMPAIGN_STATE_PATH, {"campaign_id": "t", "runs": [],
+                                            "trial_sharpes": rows})
     _seed_dsr_ledger()
-    _attach_whole_test(run_dir, {f"{RUN_ID}:asset": pr})
+    _attach_whole_test(run_dir, prs)
+    monkeypatch.setattr(rpr, "_resolve_protocol_path", _no_resolve)
     return run_dir
 
 
@@ -257,16 +295,81 @@ def test_flag_on_a_partial_variant_without_its_coverage_days_raises(monkeypatch)
         _evaluate(run_dir)
 
 
-def test_flag_on_a_variant_protocol_outside_the_run_protocol_raises(monkeypatch):
-    """Malformed data (the variant's windows no longer a subsequence of the run
-    protocol's) is an engineering fault: it raises, never grades."""
+def _assert_coverage_unmeasurable(ev, match: str, vid="asset") -> None:
+    """Review fix 2: the variant's three normalised rows read NOT_EVALUABLE
+    `coverage_unmeasurable: <reason>`; it never passes."""
+    v = ev["variants"][vid]
+    assert v["result"] == "FAIL" and vid not in ev["passing"]
+    assert match in v["coverage_unmeasurable"]
+    rows = _rows(ev, vid)
+    for name in TIME_ROWS:
+        assert rows[name]["result"] == "NOT_EVALUABLE"
+        assert rows[name]["not_evaluable_reason"].startswith(rpr.COVERAGE_UNMEASURABLE_PREFIX)
+        assert match in rows[name]["not_evaluable_reason"]
+        assert "normalisation" not in (rows[name].get("detail") or {})
+
+
+@pytest.mark.parametrize("resha,match", [(False, "not the file 5a wrote"),
+                                         (True, "not a subsequence")],
+                         ids=["altered_after_5a", "windows_outside_the_run_protocol"])
+def test_flag_on_an_unusable_variant_protocol_reads_coverage_unmeasurable(monkeypatch, resha,
+                                                                          match):
+    """Review fix 2 (was: raises). A variant protocol altered after 5a, or (its
+    sha re-recorded) whose windows are no longer a subsequence of the run
+    protocol's: that variant's normalised rows are NOT_EVALUABLE, grading
+    never raises."""
     run_dir = _partial_run(monkeypatch)
     vpath = run_dir / "artifacts" / "variants" / "asset" / vc.VARIANT_PROTOCOL_FILENAME
     doc = json.loads(vpath.read_text(encoding="utf-8"))
     doc["windows"] = list(reversed(doc["windows"]))
     vpath.write_text(json.dumps(doc), encoding="utf-8")
-    with pytest.raises(vc.VariantCoinError, match="not a subsequence"):
-        _evaluate(run_dir)
+    if resha:
+        ipath = run_dir / "artifacts" / "variants" / "index.yaml"
+        index = rpr.load_yaml(ipath)
+        index["variants"]["asset"]["protocol_sha256"] = vc.protocol_sha256(vpath.read_bytes())
+        rpr.save_yaml(ipath, index)
+    _assert_coverage_unmeasurable(_evaluate(run_dir), match)
+
+
+@pytest.mark.parametrize("damage,match", [
+    ("delete", "unreadable"), ("alter", "not the file 5a froze"),
+    ("pre_fix_index", rpr.RUN_PROTOCOL_SHA_KEY)],
+    ids=["frozen_copy_missing", "frozen_copy_altered", "graded_before_the_frozen_copy"])
+def test_unmeasurable_coverage_holds_only_that_variant(monkeypatch, damage, match):
+    """Review fix 2: the frozen run protocol missing / altered, or an index
+    written before it existed: the partial asset's normalised rows read
+    NOT_EVALUABLE; the full-coverage base grades normally and passes."""
+    run_dir = _partial_run(monkeypatch, with_base=True)
+    _damage_frozen(run_dir, damage)
+    ev = _evaluate(run_dir)
+    _assert_coverage_unmeasurable(ev, match)
+    assert ev["variants"]["base"]["result"] == "PASS" and ev["passing"] == ["base"]
+    assert "coverage_unmeasurable" not in ev["variants"]["base"]
+
+
+def test_unusable_index_coverage_record_reads_coverage_unmeasurable_under_v2(monkeypatch):
+    run_dir = _partial_run(monkeypatch)
+    ipath = run_dir / "artifacts" / "variants" / "index.yaml"
+    index = rpr.load_yaml(ipath)
+    index["variants"]["asset"]["coverage"]["windows_total"] = "96"
+    rpr.save_yaml(ipath, index)
+    _assert_coverage_unmeasurable(_evaluate(run_dir), "no usable windows_run")
+
+
+def _damage_frozen(run_dir: Path, damage: str) -> None:
+    frozen = run_dir / rpr.RUN_PROTOCOL_FROZEN_REL
+    if damage == "delete":
+        frozen.unlink()
+    elif damage == "alter":
+        doc = json.loads(frozen.read_text(encoding="utf-8"))
+        doc["windows"] = doc["windows"][len(doc["windows"]) - N_COVERED:]
+        frozen.write_text(json.dumps(doc, indent=2), encoding="utf-8")
+    else:  # an index 5a wrote before review fix 1: no run_protocol_sha256
+        ipath = run_dir / "artifacts" / "variants" / "index.yaml"
+        index = rpr.load_yaml(ipath)
+        for info in index["variants"].values():
+            info.pop(rpr.RUN_PROTOCOL_SHA_KEY, None)
+        rpr.save_yaml(ipath, index)
 
 
 # ---------------------------------------------------------------------------
@@ -329,11 +432,25 @@ def test_floor_binds_in_the_graded_row(monkeypatch):
     assert rows["cost_edge_ratio_min"]["detail"]["min_trades"] == 60
 
 
-def test_f_is_the_exact_day_fraction_not_a_rounded_float():
-    """ceil(100 * 7/100) must be 7, not 8 (100 * 0.07 == 7.000000000000001)."""
+def test_f_is_the_exact_day_fraction_not_a_rounded_float(monkeypatch):
+    """ceil(100 * 7/100) must be 7, not 8 (100 * 0.07 == 7.000000000000001) --
+    and the wiring hands the helpers an exact fractions.Fraction, not a float
+    (review fix 4: spied on the helpers' own argument)."""
+    seen: list = []
+    for name in ("normalised_trade_minimum", "scaled_drawdown_limit"):
+        real = getattr(vc, name)
+
+        def _spy(*args, _real=real, _name=name):
+            seen.append((_name, args[1]))
+            return _real(*args)
+        monkeypatch.setattr(vc, name, _spy)
     bars = {**V2_BARS, "trade_count_min_floor": 1}
     eff, norm = rpr._normalised_profit_bars(bars, (7, 100))
     assert eff["trade_count_min"] == 7 and norm["trade_count_min"]["covered_days"] == 7
+    assert sorted(n for n, _ in seen) == ["normalised_trade_minimum", "normalised_trade_minimum",
+                                          "scaled_drawdown_limit"]
+    for _, f in seen:
+        assert type(f) is Fraction and f == Fraction(7, 100)
 
 
 # ---------------------------------------------------------------------------
@@ -364,15 +481,22 @@ def test_single_era_base_variant_is_inconclusive_under_v2_only():
                                             single_era_inconclusive=False)) == yaml.safe_dump(off)
 
 
-def test_single_era_zero_median_is_inconclusive_not_fail_under_v2():
-    """D-047 (4) literally: fewer than 2 eras reads INCONCLUSIVE (flag off a
-    zero median FAILs, as before)."""
+def test_single_era_zero_median_stays_fail_under_v2():
+    """D-047 (4) as amended by the operator 2026-09-29 (S2b-3b review): a
+    single era with a zero median stays FAIL under v2 exactly as flag off; only
+    a nonzero single era reads INCONCLUSIVE."""
     pre = _menu_shaped_pre_reg([SCE])
     pr = _protocol_result([_window("BTCUSDT", "2020-01", net_return_pct=1.0),
                            _window("BTCUSDT", "2020-02", net_return_pct=-1.0)])
-    assert vce.evaluate_grid({"v": pr}, pre, {}, {})["grid"]["sce"]["v"]["result"] == "FAIL"
+    off = vce.evaluate_grid({"v": pr}, pre, {}, {})
     on = vce.evaluate_grid({"v": pr}, pre, {}, {}, single_era_inconclusive=True)
-    assert on["grid"]["sce"]["v"]["result"] == "INCONCLUSIVE"
+    assert off["grid"]["sce"]["v"]["result"] == "FAIL"
+    assert on["grid"]["sce"]["v"]["result"] == "FAIL"
+    assert on["grid"] == off["grid"] and on["idea_status"] == off["idea_status"]
+    # the nonzero single era next to it: INCONCLUSIVE `single_era:` under v2
+    nz = vce.evaluate_grid({"v": _one_era_pr()}, pre, {}, {}, single_era_inconclusive=True)
+    assert nz["grid"]["sce"]["v"]["result"] == "INCONCLUSIVE"
+    assert nz["grid"]["sce"]["v"]["reason"].startswith(vc.SINGLE_ERA_REASON_PREFIX)
 
 
 @pytest.mark.parametrize("sign2,expected", [(1.0, "PASS"), (-1.0, "FAIL")])
@@ -494,14 +618,16 @@ def test_legacy_promote_path_keeps_the_cap_with_v2_on():
 
 def _spend_ready(monkeypatch, run_dir) -> dict:
     """The evaluation (bars sha recorded), the raised stop and a spend decision
-    for the partial asset; every spend check after the normalisation's stubbed
-    (they have their own suites)."""
+    for the partial asset; the spend checks outside this slice are stubbed
+    (they have their own suites). Review fix 4: the evaluation is NOT stubbed --
+    the spend reads it back from profit_bars_evaluation.yaml (the real save ->
+    load YAML round trip) before comparing its rows. Returns the evaluation as
+    grading returned it (in memory)."""
     ev = _evaluate(run_dir, record_bars_sha=True)
     stop = ev["generated_at"]
     state = rpr.load_yaml(run_dir / "pipeline_state.yaml")
     state["profit_bars_stop_evaluation"] = stop
     rpr.save_yaml(run_dir / "pipeline_state.yaml", state)
-    monkeypatch.setattr(rpr, "_profit_stop_raised", lambda rd, rid, st: ev)
     monkeypatch.setattr(rpr, "_idea_hypothesis_id", lambda rd: "H-S2B3B")
     monkeypatch.setattr(rpr, "_holdout_already_spent", lambda h: False)
     monkeypatch.setattr(rpr, "_other_pending_spends", lambda rid: [])
@@ -513,6 +639,10 @@ def _spend_ready(monkeypatch, run_dir) -> dict:
     return ev
 
 
+def _saved_evaluation_path(run_dir: Path) -> Path:
+    return run_dir / "artifacts" / "profit_bars_evaluation.yaml"
+
+
 def _validate(run_dir):
     return rpr._validate_holdout_decision(run_dir, RUN_ID,
                                           rpr.load_yaml(run_dir / "pipeline_state.yaml"))
@@ -522,6 +652,10 @@ def test_spend_accepts_the_thresholds_its_coverage_gives(monkeypatch):
     run_dir = _partial_run(monkeypatch)
     ev = _spend_ready(monkeypatch, run_dir)
     assert ev["passing"] == ["asset"]
+    # the spend compares the rows as they come back from disk
+    saved = rpr.load_yaml(_saved_evaluation_path(run_dir))
+    assert _rows(saved)["trade_count_min"]["detail"]["normalisation"] == \
+        _rows(ev)["trade_count_min"]["detail"]["normalisation"]
     record = _validate(run_dir)
     assert record["decision"] == "spend" and record["variant_id"] == "asset"
     assert "normalisation" not in json.dumps(record)  # the record's shape is unchanged
@@ -534,15 +668,19 @@ def test_spend_accepts_the_thresholds_its_coverage_gives(monkeypatch):
     ("trade_count_min", "normalisation", None),             # normalisation dropped
 ])
 def test_spend_refuses_a_silent_full_coverage_threshold(monkeypatch, row, field, value):
+    """The saved evaluation edited on disk (the spend reads it back)."""
     run_dir = _partial_run(monkeypatch)
-    ev = _spend_ready(monkeypatch, run_dir)
-    r = _rows(ev)[row]
+    _spend_ready(monkeypatch, run_dir)
+    path = _saved_evaluation_path(run_dir)
+    saved = rpr.load_yaml(path)
+    r = _rows(saved)[row]
     if field == "threshold":
         r["threshold"] = value
     elif field == "min_trades":
         r["detail"]["min_trades"] = value
     else:
         r["detail"].pop("normalisation")
+    rpr.save_yaml(path, saved)
     with pytest.raises(rpr.HoldoutUnlockRefused) as exc:
         _validate(run_dir)
     assert exc.value.code == "bars_changed" and row in exc.value.detail
@@ -563,18 +701,165 @@ def test_spend_refuses_when_the_coverage_changed_since_grading(monkeypatch):
 
 
 def test_spend_refuses_when_the_coverage_cannot_be_re_derived(monkeypatch):
+    """Review fix 1 (declared): the variant's protocol gone -> the new code
+    normalisation_unverifiable (was bars_changed): the thresholds cannot be
+    re-derived, nothing was shown to have changed."""
     run_dir = _partial_run(monkeypatch)
     _spend_ready(monkeypatch, run_dir)
     (run_dir / "artifacts" / "variants" / "asset" / vc.VARIANT_PROTOCOL_FILENAME).unlink()
     with pytest.raises(rpr.HoldoutUnlockRefused) as exc:
         _validate(run_dir)
-    assert exc.value.code == "bars_changed" and "cannot be re-derived" in exc.value.detail
+    assert exc.value.code == "normalisation_unverifiable"
+    assert "cannot be re-derived" in exc.value.detail
+
+
+def test_spend_ignores_the_shared_protocol_edited_after_grading(monkeypatch):
+    """Review fix 1: the shared protocols/*.json edited after grading (here:
+    cut to the asset's own 58 windows, so a re-resolution would read f == 1
+    and full-coverage thresholds) -- the spend still derives the graded
+    thresholds from 5a's frozen copy and accepts. Pre-fix it re-resolved the
+    shared file and refused."""
+    run_dir = _partial_run(monkeypatch)
+    _spend_ready(monkeypatch, run_dir)
+    shared = _run_proto_path()
+    doc = json.loads(shared.read_text(encoding="utf-8"))
+    doc["windows"] = doc["windows"][len(doc["windows"]) - N_COVERED:]
+    shared.write_text(json.dumps(doc, indent=2), encoding="utf-8")
+    monkeypatch.setattr(rpr, "_resolve_protocol_path", lambda rd, rid: shared)
+    assert _validate(run_dir)["variant_id"] == "asset"
+    # the frozen copy is what grading measured against
+    rows = _rows(rpr.load_yaml(_saved_evaluation_path(run_dir)))
+    assert rows["trade_count_min"]["threshold"] == 61
+    assert rows["trade_count_min"]["detail"]["normalisation"]["full_days"] == FULL_DAYS
+
+
+def test_spend_is_side_effect_free_when_a_later_run_claimed_the_escalation(monkeypatch):
+    """Review fix 1: campaign_state.last_escalation claimed by a LATER run (the
+    real resolver would flag stale_escalation_unclaimed on THIS run's
+    pipeline_state and raise). The spend never calls the resolver: it
+    accepts, and pipeline_state.yaml is byte-for-byte untouched."""
+    run_dir = _partial_run(monkeypatch)
+    _spend_ready(monkeypatch, run_dir)
+    state = rpr.load_yaml(rpr.CAMPAIGN_STATE_PATH)
+    state["last_escalation"] = {"target": "timeframe", "detail": "4h",
+                                "protocol_path": str(_run_proto_path()),
+                                "claimed_by_run": "run_999"}
+    rpr.save_yaml(rpr.CAMPAIGN_STATE_PATH, state)
+    calls: list = []
+
+    def _spy(rd, rid):
+        calls.append(rid)
+        return _REAL_RESOLVE(rd, rid)
+    monkeypatch.setattr(rpr, "_resolve_protocol_path", _spy)
+    ps = run_dir / "pipeline_state.yaml"
+    before = ps.read_bytes()
+    assert _validate(run_dir)["variant_id"] == "asset"
+    assert calls == [] and ps.read_bytes() == before
+    # the scenario is live: the real resolver WOULD have written the flag
+    with pytest.raises(RuntimeError, match="B10"):
+        _REAL_RESOLVE(run_dir, RUN_ID)
+    assert rpr.load_yaml(ps)["flags"]["stale_escalation_unclaimed"] is True
+
+
+@pytest.mark.parametrize("damage", ["delete", "alter", "pre_fix_index"],
+                         ids=["frozen_copy_missing", "frozen_copy_altered",
+                              "graded_before_the_frozen_copy"])
+def test_spend_refuses_normalisation_unverifiable_without_the_frozen_copy(monkeypatch, damage):
+    """Review fix 1: the frozen run protocol missing or altered after grading,
+    or a run graded before it existed (its index records no
+    run_protocol_sha256) -> normalisation_unverifiable, never a silent
+    full-coverage threshold and never bars_changed."""
+    run_dir = _partial_run(monkeypatch)
+    ev = _spend_ready(monkeypatch, run_dir)
+    assert ev["passing"] == ["asset"]
+    _damage_frozen(run_dir, damage)
+    with pytest.raises(rpr.HoldoutUnlockRefused) as exc:
+        _validate(run_dir)
+    assert exc.value.code == "normalisation_unverifiable"
+    assert "cannot be re-derived" in exc.value.detail
 
 
 def test_spend_of_a_full_coverage_variant_passes_the_recheck(monkeypatch):
     run_dir = _partial_run(monkeypatch, covered=96, trades=100)
     _spend_ready(monkeypatch, run_dir)
     assert _validate(run_dir)["variant_id"] == "asset"
+
+
+# ---------------------------------------------------------------------------
+# 7b. Review fix 1 at 5a: the run protocol is resolved once and frozen
+# ---------------------------------------------------------------------------
+
+def test_5a_freezes_the_run_protocol_once_and_records_its_sha(monkeypatch):
+    import test_e061_c2_s2b_one_coin_per_variant as c2
+    c2._set_flags(config_direct_authoring=True, variant_loop=True)
+    c2._copy_coin_configs()
+    source_path = c2._run_protocol_file(monkeypatch, c2._months("2022-01", 6))
+    calls: list = []
+    monkeypatch.setattr(rpr, "_resolve_protocol_path",
+                        lambda rd, rid: (calls.append(rid), source_path)[1])
+    c2._ok_subprocess(monkeypatch)
+    run_dir = c2._run_5a("run_970", c2.PER_COIN_PATCHES)
+    assert calls == ["run_970"]  # resolved ONCE, by the freeze
+    raw = source_path.read_bytes()
+    frozen = run_dir / rpr.RUN_PROTOCOL_FROZEN_REL
+    assert frozen.read_bytes() == raw
+    index = rpr.load_yaml(run_dir / "artifacts" / "variants" / "index.yaml")["variants"]
+    for vid in ("base", "design", "asset"):
+        assert index[vid][rpr.RUN_PROTOCOL_SHA_KEY] == vc.protocol_sha256(raw)
+    # the shared protocol edited after 5a: coverage still reads the frozen copy
+    source_path.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(rpr, "_resolve_protocol_path", _no_resolve)
+    covered, full = rpr._variant_coverage_days(run_dir, "run_970", index["base"])
+    assert covered == full > 0
+
+
+def test_5a_without_per_coin_mode_freezes_nothing(monkeypatch):
+    import test_e061_c2_s2b_one_coin_per_variant as c2
+    c2._set_flags(config_direct_authoring=True, variant_loop=True)
+    c2._run_protocol_file(monkeypatch, c2._months("2022-01", 6))
+    monkeypatch.setattr(rpr, "_freeze_run_protocol", _no_resolve)
+    c2._ok_subprocess(monkeypatch)
+    run_dir = c2._run_5a("run_971", c2._strip_coin(c2.PER_COIN_PATCHES))
+    assert not (run_dir / rpr.RUN_PROTOCOL_FROZEN_REL).exists()
+    index = rpr.load_yaml(run_dir / "artifacts" / "variants" / "index.yaml")["variants"]
+    assert all(rpr.RUN_PROTOCOL_SHA_KEY not in e for e in index.values())
+
+
+# ---------------------------------------------------------------------------
+# 7c. Review fix 4: the grid's profit-bars grader never grades a partial
+#     column on un-normalised bars
+# ---------------------------------------------------------------------------
+
+def test_grid_grader_holds_a_partial_column_not_evaluable_under_v2(monkeypatch):
+    """100 trades and a 17 % drawdown: on the un-normalised bars (limit 20 %)
+    the grid grader would PASS the partial asset (pre-fix); its D-047 rows now
+    read NOT_EVALUABLE and the profit_bars cell INCONCLUSIVE."""
+    run_dir = _partial_run(monkeypatch, trades=100, dd=_r_for(17.0))
+    graded = rpr._profit_bars_grid_grader(run_dir, RUN_ID)("asset")
+    rows = {r["name"]: r for r in graded["bars"]}
+    for name in TIME_ROWS:
+        assert rows[name]["result"] == "NOT_EVALUABLE"
+        assert "does not normalise" in rows[name]["not_evaluable_reason"]
+    assert graded["result"] == "FAIL"
+    cell = vce._evaluate_profit_bars_cell({"id": "pb"}, "asset", lambda vid: graded)
+    assert cell["result"] == "INCONCLUSIVE"
+    # branch 3, which normalises, FAILs it on the scaled 15.55 % limit
+    assert _rows(_evaluate(run_dir))["max_drawdown_pct_max"]["result"] == "FAIL"
+
+
+def test_grid_grader_full_coverage_column_unchanged_under_v2(monkeypatch):
+    run_dir = _partial_run(monkeypatch, covered=96, trades=100)
+    graded = rpr._profit_bars_grid_grader(run_dir, RUN_ID)("asset")
+    assert graded["result"] == "PASS"
+    assert all(r["result"] == "PASS" for r in graded["bars"])
+
+
+def test_grid_grader_flag_off_reads_no_index(monkeypatch):
+    run_dir = _partial_run(monkeypatch, orchestrator=V1_LOOP, bars=V1_BARS)
+    monkeypatch.setattr(rpr, "_hold_rows_not_evaluable", _no_resolve)
+    graded = rpr._profit_bars_grid_grader(run_dir, RUN_ID)("asset")
+    assert all(r.get("not_evaluable_reason") is None or "does not normalise" not in
+               r["not_evaluable_reason"] for r in graded["bars"])
 
 
 # ---------------------------------------------------------------------------

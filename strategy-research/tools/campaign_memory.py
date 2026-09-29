@@ -105,9 +105,12 @@ _INDEX_STATUSES = ("validated", "not_tested")
 # coin per variant): written by 5a under orchestrator.variant_loop for a
 # per-coin variant -- its kind (base | design | asset), its coin_universe.yaml
 # coin, its own protocol file and that file's sha256, and, for an asset coin,
-# the windows that coin covers (D-042).
+# the windows that coin covers (D-042). run_protocol_sha256 (E-062 S2b-3b review
+# fix 1): the sha256 of the run protocol 5a froze (artifacts/variants/
+# run_protocol.json) for that per-coin variant.
 _INDEX_KEYS = frozenset({"status", "reason", "config_path", "report", "failed_attempt",
-                         "kind", "symbol", "protocol_path", "protocol_sha256", "coverage"})
+                         "kind", "symbol", "protocol_path", "protocol_sha256", "coverage",
+                         "run_protocol_sha256"})
 _INDEX_KINDS = ("base", "design", "asset")  # variant_coin.VARIANT_KINDS
 
 MEMORY_LOCK_FILENAME = ".campaign_memory.lock"
@@ -241,7 +244,7 @@ def _check_index_entry(vid, info, index_path: Path) -> None:
         raise CampaignMemoryError(f"{index_path}: variants.{vid}.status={info.get('status')!r} "
                                   f"is not one of {_INDEX_STATUSES}")
     for key in ("config_path", "reason", "failed_attempt", "symbol", "protocol_path",
-                "protocol_sha256"):
+                "protocol_sha256", "run_protocol_sha256"):
         if info.get(key) is not None and not isinstance(info[key], str):
             raise CampaignMemoryError(f"{index_path}: variants.{vid}.{key} is not a string")
     if "kind" in info and info["kind"] not in _INDEX_KINDS:

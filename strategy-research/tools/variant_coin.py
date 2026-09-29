@@ -320,7 +320,8 @@ def is_partial_coverage(entry) -> bool:
 # ---------------------------------------------------------------------------
 
 # D-047 (4): sign_consistent_by_era needs at least this many REPRESENTED eras
-# to be graded; fewer -> INCONCLUSIVE (it cannot fail on one era).
+# to be graded; fewer -> INCONCLUSIVE (it cannot fail on one era) -- except a
+# zero-median single era, which stays FAIL (operator amendment 2026-09-29).
 D047_MIN_REPRESENTED_ERAS = 2
 # The INCONCLUSIVE reason's prefix for that case (S2B3_FINDINGS.md Q6).
 SINGLE_ERA_REASON_PREFIX = "single_era:"

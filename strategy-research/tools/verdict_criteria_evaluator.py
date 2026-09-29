@@ -1262,8 +1262,9 @@ def _evaluate_grid_cell_for_symbol(criterion: dict, protocol_result: dict, eras:
     passed only under orchestrator.profit_bars_v2): a sign_consistent_by_era
     cell whose reducer found fewer than 2 REPRESENTED eras (its own by-era
     groups, variant_coin.era_count_shortfall) is INCONCLUSIVE `single_era: ...`
-    instead of PASS/FAIL -- one era cannot disagree with itself. False: the
-    cell exactly as before."""
+    instead of PASS -- one era cannot disagree with itself. A single era whose
+    median is exactly zero stays FAIL (operator amendment 2026-09-29 to
+    D-047). False: the cell exactly as before."""
     cid = criterion.get("id")
     metric = criterion.get("metric")
     source = criterion.get("source")
@@ -1296,10 +1297,12 @@ def _evaluate_grid_cell_for_symbol(criterion: dict, protocol_result: dict, eras:
             if passed is None:
                 return {"result": "INCONCLUSIVE", "n_windows": n_windows, "n_trades": n_trades,
                         "reason": detail.get("reason"), "detail": detail}
-            if single_era_inconclusive:
+            if single_era_inconclusive and passed:
                 # D-047 (4): the reducer's OWN era ids (its by-era groups, which
                 # already exclude era_unmapped) -- the one era-assignment rule of
-                # this criterion (S2B3_FINDINGS.md X5).
+                # this criterion (S2B3_FINDINGS.md X5). Only a would-be PASS is
+                # turned INCONCLUSIVE (operator amendment 2026-09-29, D-047 note):
+                # a single era with a zero median stays FAIL.
                 import variant_coin as _variant_coin  # tools/ sibling, stdlib-only at import
                 shortfall = _variant_coin.era_count_shortfall(list(detail["era_medians"]))
                 if shortfall is not None:
@@ -1886,8 +1889,9 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
 
     `single_era_inconclusive` (E-062 S2b-3b, D-047 (4); the caller passes True
     only under orchestrator.profit_bars_v2): every column's
-    sign_consistent_by_era cell with fewer than 2 represented eras reads
-    INCONCLUSIVE `single_era: ...` (it cannot fail on one era). False ->
+    sign_consistent_by_era cell with fewer than 2 represented eras that would
+    PASS reads INCONCLUSIVE `single_era: ...` (a zero-median single era stays
+    FAIL, operator amendment 2026-09-29 to D-047). False ->
     byte-identical to the call without it.
 
     Returns {"result": "GRID_EVALUATED" | "SPEC_ERROR", "criteria": [id, ...],
