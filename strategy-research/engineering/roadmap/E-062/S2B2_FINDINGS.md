@@ -255,3 +255,17 @@ DSR). Only if the `dsr_basis` shape changes flag-on: `tests/test_e060_s3b_compos
 | G11 | Which rows enter K | the deduped valid rows (the same dedup as N) with a basis-matched `ok` block; the candidate's own row included | SMALL | yes (2a) |
 | G12 | Comparator of the DSR bar | keep `>=` (X8) | SMALL | no |
 | G13 | Pre-ledger runs 011–039 and the untracked e039 re-runs are outside N | parked; not introduced by D-041 (X7) | **BIG — parked** | no |
+
+## Decision (operator, 2026-09-29) — recorded as D-046
+
+- **G3:** exact BLP 2014 formula (Q3) with SR0 = max(mu_K, 0) + sigma * Z(N). Threshold 0.95 kept, re-signed with the bars file.
+- **G4 (revised after the operator's challenge):** the proposed "NOT_EVALUABLE below 10 same-basis values" is **rejected**. It
+  would fail branch 3 closed and force a rerun of the same variant later (nothing re-grades). Instead, with K the number of
+  same-basis trial Sharpes: K < `dsr_min_same_basis_trials` (10, signed key) gives SR0 = sigma_null * Z(N);
+  K >= 10 gives SR0 = max(mu_K, 0) + max(sigma_K, sigma_null) * Z(N). sigma_null = 1/sqrt(T-1) (null SR = 0, where the
+  skew/kurtosis terms vanish), T = the candidate's daily observations. N = every counted trial, as today. NOT_EVALUABLE stays
+  only for the S2a whole-test rules (under 30 daily returns, zero stdev, missing curve), never for a small K.
+  Measured hurdle (normal returns, DSR > 0.95, N = 12): annualised Sharpe 1.22 at T = 2695, 1.69 at T = 1394.
+- **G8:** build the recompute tool (dry-run default); the real `--write` waits for the operator's nod.
+- **Split approved:** S2b-2a (pure functions, Opus) -> S2b-2b (flag wiring, Opus) -> S2b-2c (recompute tool, Sonnet), each
+  reviewed and merged before the next. Flag `profit_bars_v2` (G6). SMALL guesses as recommended. G13 parked.
