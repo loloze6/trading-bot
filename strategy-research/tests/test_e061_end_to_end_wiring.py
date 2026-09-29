@@ -211,6 +211,17 @@ TARGET_FLAGS = {
     "score_provenance": False,
 }
 
+# C5.8 (D-050): the four legacy route/rationale keys of a window's core
+# (trading-bot/reporting/run_artifact.py build_core), with determine_route's codes.
+STUB_ROUTE_CORE = {
+    "post_backtest_route": "kill_cost_hurdle",
+    "post_backtest_route_rationale": "stub: Fix: wider threshold or longer holding",
+    "post_backtest_route_real": "refine_inverted_ic",
+    "post_backtest_route_real_rationale": "stub: flip polarity",
+}
+_ROUTE_DIAGNOSTICS_KEYS = ("post_backtest_route_real", "post_backtest_route_real_tied",
+                           "cost_dominated_real")
+
 # Real config files the pipeline reads under ROOT (A3 §5 item 2). Never the real
 # campaign_record/, never the real trial ledger, never local_data/.
 _CONFIG_COPIES = ("criterion_menu.yaml", "profitability_bars.yaml", "available_feeds.yaml",
@@ -835,7 +846,11 @@ class Harness:
                     "symbol": symbol, "window": w["label"], "run_id": wrid,
                     "core": {"trade_count": prof["trades"], "sharpe": prof["sharpe"],
                              "net_return_pct": 0.5 + 0.1 * j, "max_drawdown_pct": -3.0,
-                             "forecast_return_corr": 0.02, "forecast_return_corr_pvalue": 0.3},
+                             "forecast_return_corr": 0.02, "forecast_return_corr_pvalue": 0.3,
+                             # C5.8: the legacy cost-check route labels run_artifact.py
+                             # puts in every window's core, so the report strip is
+                             # exercised end to end (never vacuous).
+                             **STUB_ROUTE_CORE},
                     "per_regime": {"trending": {"bars": 96, "net_return_pct": 0.2},
                                    "mean_reversion": {"bars": 96, "net_return_pct": 0.3}},
                     "regime_validity": {"trending": {"valid": True},
@@ -1100,6 +1115,7 @@ def test_end_to_end_two_runs_with_the_real_run_setup(harness):
     for cat in rpr._reader_categories():
         assert h.art(r1, f"reports/{cat}.yaml") is not None, cat
         assert h.art(r1, f"proposals/{cat}.yaml") is not None, cat
+    _assert_legacy_label_retired(h, r1)
     pbe = h.art(r1, "profit_bars_evaluation.yaml")
     assert pbe["scope"] == "every_backtest" and pbe["passing"] == []
     assert sorted(pbe["variants"]) == ["asset", "base", "design"]
@@ -1161,6 +1177,7 @@ def test_end_to_end_two_runs_with_the_real_run_setup(harness):
     assert done2["status"] == "done"
     assert done2["outcome"] == st2["pending_stage"][len("completed_"):]
     assert isinstance(keep_going, bool)
+    _assert_legacy_label_retired(h, r2)
     _assert_holdout_untouched(h)
 
 
@@ -1640,6 +1657,50 @@ def _assert_no_promotion_or_verdict_in_prompts(h: Harness) -> None:
         assert rp.LEGACY_VERDICT_RETIRED_REASON not in prompt, where
         top = re.findall(r"(?m)^(verdict|verdict_reason):", prompt)
         assert top == [], f"{where}: prompt carries a top-level {top}"
+    # C5.8 (C13, D-050): in every READER prompt, the legacy label as a key at ANY
+    # indentation (the profitability report nests it), and the cost-check route
+    # labels. Readers only: the innovation-expansion SKILL's own diversity check
+    # carries an unrelated nested `verdict: "real_diversity"` key (measured).
+    offenders = []
+    for stage, run_id, prompt in h.prompts:
+        if stage != "specialist_readers":
+            continue
+        nested = re.findall(r"(?m)^[ \t]*(?:-[ \t]+)?(verdict|verdict_reason):", prompt)
+        routes = re.findall(r"(?m)^[ \t]*(?:-[ \t]+)?(post_backtest_route\w*|cost_dominated_real):",
+                            prompt)
+        routes += [v for v in STUB_ROUTE_CORE.values() if v in prompt]
+        if nested or routes:
+            offenders.append((stage, run_id, len(nested), sorted(set(nested + routes))))
+    assert offenders == [], f"prompts carrying the legacy label: {offenders}"
+
+
+def _assert_legacy_label_retired(h: Harness, run_id: str) -> None:
+    """C5.8 (C13, D-050) under the target flags: no pass_rule_evaluation.yaml, and
+    reports/profitability.yaml carries no verdict/verdict_reason and no cost-check
+    route label under any variant, while the numbers stay. Not vacuous: every
+    variant's own protocol_result.yaml still carries the labels the strip dropped."""
+    assert h.art(run_id, "pass_rule_evaluation.yaml") is None
+    prof = h.art(run_id, "reports/profitability.yaml")
+    assert prof["schema_version"] == 2 and prof["variants"], run_id
+    for vid, block in prof["variants"].items():
+        source = h.art(run_id, f"variants/{vid}/protocol_result.yaml")
+        assert "verdict" in source["hypothesis_verdict"], vid
+        assert set(_ROUTE_DIAGNOSTICS_KEYS) <= set(source["hypothesis_verdict"]["diagnostics"])
+        assert all(set(STUB_ROUTE_CORE) <= set(r["core"]) for r in source["results"]), vid
+        slices = block["slices"]
+        overall = slices["overall"]
+        assert not overall.get("unavailable"), vid
+        assert "verdict" not in overall and "verdict_reason" not in overall, vid
+        assert not set(_ROUTE_DIAGNOSTICS_KEYS) & set(overall["diagnostics"]), vid
+        assert "median_forecast_return_corr" in overall["diagnostics"], vid
+        assert slices["per_window"], vid
+        for row in slices["per_window"]:
+            assert not set(STUB_ROUTE_CORE) & set(row["core"]), vid
+            assert row["core"]["forecast_return_corr"] == 0.02, vid
+        for rows in slices["per_symbol"].values():
+            for row in rows:
+                assert not set(STUB_ROUTE_CORE) & set(row), vid
+                assert row["forecast_return_corr"] == 0.02, vid
 
 
 def _assert_c5_6_run_completed(h: Harness, r1: str = "run_001") -> None:
@@ -1682,6 +1743,7 @@ def _assert_c5_6_run_completed(h: Harness, r1: str = "run_001") -> None:
     assert sorted(pbe["variants"]) == ["asset", "base", "design"]
     for cat in rpr._reader_categories():
         assert h.art(r1, f"reports/{cat}.yaml") is not None, cat
+    _assert_legacy_label_retired(h, r1)
     memory = yaml.safe_load(rpr._campaign_memory_path().read_text(encoding="utf-8"))
     assert memory["runs"][r1]["idea_status"] == "refuted"
     assert h.art(r1, "decision_record.yaml") is not None
@@ -2488,4 +2550,7 @@ def test_c4_flag_set_v2_plus_score_provenance_end_to_end(harness):
     assert proposal["proposal_id"] == pid
     assert proposal["model_id"] == STUB_MODEL != "stub-reader"
     assert proposal["rubric_version"] == _reader_proposals_mod.READER_RUBRIC_VERSIONS["profitability"]
+    # C5.8 (C13, D-050) under the C4 flag set too
+    _assert_legacy_label_retired(h, r1)
+    _assert_no_promotion_or_verdict_in_prompts(h)
     _assert_holdout_untouched(h)

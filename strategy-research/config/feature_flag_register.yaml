@@ -522,6 +522,11 @@ flags:
       record precedes it and a run carrying it only finishes the record.
       Grid idea_status is never a precondition. Tests:
       tests/test_e059_6c_s2d_holdout_unlock.py (flag-off byte-identity there).
+      C5.8 (C13, D-050): with config_direct_authoring also on, the variant
+      loop does not write pass_rule_evaluation.yaml (a stale one is deleted)
+      and reports/profitability.yaml drops verdict/verdict_reason and the
+      post_backtest_route* / cost_dominated_real labels, numbers kept; trial
+      rows unchanged (tests/test_c5_8_legacy_label_retired.py).
 
   - name: composition_runs
     kind: orchestrator_config
