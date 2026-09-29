@@ -1092,6 +1092,14 @@ def _classify_block_set(base_id: str, registry_hash: str, entries: list,
         return ("fired_before", None,
                 f"attempt {last.get('id')} was inconclusive on {not_eval or 'unknown bars'}: "
                 f"properties of its own data, a re-run would give the same answer")
+    if isinstance(info.get("dsr_basis"), dict) and "sharpe_basis" in info["dsr_basis"]:
+        # E-062 S2b-2b review fix 4: the whole-test DSR (D-046) is never
+        # NOT_EVALUABLE for want of trials -- only on the candidate's own data
+        # (its stats, a dedup collapse, a ledger mismatch) -- so a re-run gives
+        # the same answer; the legacy n_trials rule below does not apply.
+        return ("fired_before", None,
+                f"attempt {last.get('id')} was inconclusive on the whole-test deflated Sharpe "
+                f"({info.get('dsr_basis')}): a property of its own data, not a missing input")
     if _dsr_computable(info.get("dsr_basis")):
         return ("fired_before", None,
                 f"attempt {last.get('id')} was inconclusive although the ledger already had "

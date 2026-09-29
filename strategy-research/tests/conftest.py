@@ -296,6 +296,9 @@ def _sandbox_by_default(request, tmp_path, monkeypatch):
 
     monkeypatch.setattr(_rpr, "ROOT", sandbox)
     monkeypatch.setattr(_rpr, "CAMPAIGN_STATE_PATH", sandbox / "campaign_state.yaml")
+    # E-062 S2b-2b: the recompute overlay's one path constant, next to the ledger.
+    monkeypatch.setattr(_rpr, "TRIAL_SHARPE_BASIS_OVERLAY_PATH",
+                        sandbox / "trial_sharpe_basis_recompute.yaml")
     monkeypatch.setattr(_rpr, "_KB_PATH", sandbox / "campaign_knowledge_base.yaml")
     monkeypatch.setattr(_rpr, "_DATA_POLICY_PATH", sandbox / "config" / "campaign_data_policy.yaml")
 
