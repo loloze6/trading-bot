@@ -160,6 +160,18 @@ def deduplicate_trials(records: list[dict]) -> tuple[list[dict], int]:
     over-counted, never under-counted). A present but malformed `symbols`
     raises. Lockstep with run_phase1_research._dedupe_trials.
 
+    E-062 S2b-3c (D-047 (5), S2B3_FINDINGS.md G12): the key is (forecast_hash,
+    sorted symbols or None, windows_sha256 or None, source). A partial-coverage
+    per-coin variant's row (written under orchestrator.profit_bars_v2) carries
+    its own window fingerprint `windows_sha256`, so a retest of the same config
+    on the same coin with WIDER coverage is a new trial (N + 1, its own DSR, no
+    dedup collapse); the same coverage still collapses. A row without the field
+    keys None -- the same partition as before, so every existing ledger dedupes
+    exactly as before, and a fingerprinted row never collapses onto a row
+    without one (N can only be over-counted). A present but malformed
+    `windows_sha256` (not a 64-char lowercase hex digest) raises. Lockstep with
+    run_phase1_research._dedupe_trials and _dedup_collapse_target.
+
     Returns (deduped_list, n_removed).
     """
     # Pre-pass: index every (trial_id, source) present and the reproduces_trial it
@@ -196,7 +208,15 @@ def deduplicate_trials(records: list[dict]) -> tuple[list[dict], int]:
             coins = tuple(sorted(syms))
         else:
             coins = None
-        key = (fh, coins, rec.get("source"))
+        if "windows_sha256" in rec:
+            wsha = rec["windows_sha256"]
+            if not (isinstance(wsha, str) and len(wsha) == 64
+                    and all(c in "0123456789abcdef" for c in wsha)):
+                raise ValueError(f"trial {rec.get('trial_id')!r}: windows_sha256 {wsha!r} is not "
+                                 f"a sha256 hex digest (E-062 S2b-3c)")
+        else:
+            wsha = None
+        key = (fh, coins, wsha, rec.get("source"))
         if key in seen_keys:
             n_removed += 1
         else:

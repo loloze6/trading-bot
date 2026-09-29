@@ -17,6 +17,14 @@ The exact-match key (card K) is
     which is what tools/run_protocol.py iterates).
   * timeframe and window_set -- read from the PROTOCOL FILE the engine runs
     (protocol_spec): its `timeframe`, and a content hash of its `windows`.
+    E-062 S2b-3c (D-047 (5), S2B3_FINDINGS.md G11): a per-coin variant that
+    ran on FEWER windows than its run protocol (partial coverage) carries its
+    own window fingerprint (`windows_sha256` = windows_fingerprint of its
+    protocol.json `windows`; written only under orchestrator.profit_bars_v2)
+    and is keyed on it instead: "windows:<fingerprint>". Same coverage -> the
+    same key (still a REPEAT); wider or full coverage -> another key (NOVEL).
+    A variant without the field (every full-coverage variant, every entry
+    written before S2b-3c or with the flag off) keys exactly as before.
     Never the raw protocol path: generated protocols are per-run file names
     (protocols/<run_id>_generated.json), so a path would never repeat. When a
     memory entry's protocol file cannot be read (missing, unparseable, no
@@ -71,6 +79,29 @@ def forecast_hash_of_config(config) -> str:
 
 def _canonical_sha(obj) -> str:
     return hashlib.sha256(json.dumps(obj, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+
+
+def windows_fingerprint(windows) -> str:
+    """E-062 S2b-3c (D-047 (5)): THE window fingerprint -- the canonical-JSON
+    sha256 of a protocol's `windows` list, exactly protocol_spec's
+    `windows_sha256`, so a partial variant's fingerprint and a whole
+    protocol's window hash live in one space (the same list, the same value).
+    Raises NoveltyError unless `windows` is a non-empty list."""
+    if not (isinstance(windows, list) and windows):
+        raise NoveltyError(f"a window fingerprint needs a non-empty `windows` list, got "
+                           f"{windows!r:.200}")
+    return _canonical_sha(windows)
+
+
+def check_windows_sha256(value, where: str) -> str:
+    """A recorded `windows_sha256` (memory variant, trial row): a 64-char
+    lowercase hex sha256, else NoveltyError -- a malformed fingerprint must
+    never silently key as "absent"."""
+    if not (isinstance(value, str) and len(value) == 64
+            and all(c in "0123456789abcdef" for c in value)):
+        raise NoveltyError(f"{where}: windows_sha256 {value!r:.100} is not a sha256 hex digest "
+                           f"(E-062 S2b-3c)")
+    return value
 
 
 def normalize_timeframe(tf):
@@ -152,16 +183,25 @@ def protocol_specs(root: Path, memory: dict, extra_refs=(), warnings=None) -> di
     return specs
 
 
-def novelty_key(forecast_hash, symbols, entry: dict, specs: dict) -> tuple:
+def novelty_key(forecast_hash, symbols, entry: dict, specs: dict, *,
+                windows_sha256=None) -> tuple:
     """Card K's exact key: (config hash, symbols, timeframe, window set).
     Symbols come from the measured variant (protocol_result), the timeframe
     and window set from the protocol file the engine ran (the memory entry's
     own `timeframe` is copied from the LLM-written card, so it is only the
-    fallback when the protocol file cannot be read, normalised)."""
+    fallback when the protocol file cannot be read, normalised).
+
+    `windows_sha256` (E-062 S2b-3c, G11): a partial-coverage variant's own
+    window fingerprint; it replaces the protocol's window hash (the timeframe
+    stays the protocol's). None: the key is byte-identical to before. An
+    unresolved protocol stays "unresolved:<ref>" even with a fingerprint --
+    such an entry can never match (the safe direction)."""
     ref = normalize_ref(entry.get("protocol_ref"))
     spec = specs.get(ref) if ref else None
     if spec:
         timeframe, window_set = spec["timeframe"], f"windows:{spec['windows_sha256']}"
+        if windows_sha256 is not None:
+            window_set = f"windows:{check_windows_sha256(windows_sha256, 'novelty key')}"
     else:
         timeframe, window_set = normalize_timeframe(entry.get("timeframe")), f"unresolved:{ref}"
     return (forecast_hash, tuple(sorted(symbols or [])), timeframe, window_set)
@@ -199,7 +239,10 @@ def match_index(memory: dict, specs: dict, *, exclude_run_id=None) -> dict:
     for run_id, vid, entry, v in _tested_variants(memory):
         if exclude_run_id is not None and run_id == exclude_run_id:
             continue
-        key = novelty_key(v["forecast_hash"], v.get("symbols"), entry, specs)
+        # E-062 S2b-3c: a partial variant's own window fingerprint when its
+        # entry records one -- read whatever the flag (absent: as before).
+        key = novelty_key(v["forecast_hash"], v.get("symbols"), entry, specs,
+                          windows_sha256=v.get("windows_sha256"))
         index.setdefault(key, []).append({"run_id": run_id, "variant_id": vid})
     return index
 

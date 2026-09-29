@@ -364,7 +364,7 @@ def layer1_kb_check(candidate_hid: str, candidate_timeframe: str,
 # ---------------------------------------------------------------------------
 
 def candidate_key(forecast_hash: str, symbols, protocol_ref, specs: dict,
-                  card_timeframe=None) -> tuple:
+                  card_timeframe=None, windows_sha256=None) -> tuple:
     """The candidate's exact-match key, built with the SAME function the
     memory side uses (novelty.novelty_key): `forecast_hash` the canonical
     hash of the config file the backtest will run
@@ -375,9 +375,13 @@ def candidate_key(forecast_hash: str, symbols, protocol_ref, specs: dict,
     strategy-research/, campaign_memory.protocol_ref_of), `card_timeframe`
     only the unresolved-protocol fallback. The caller must have put the
     candidate's protocol in `specs` strictly (novelty.protocol_spec(...,
-    strict=True)), so a candidate key is never "unresolved"."""
+    strict=True)), so a candidate key is never "unresolved".
+    `windows_sha256` (E-062 S2b-3c, G11): a partial-coverage variant's own
+    window fingerprint (the run protocol's window hash otherwise); None ->
+    the key is byte-identical to before."""
     return _nov.novelty_key(forecast_hash, sorted(set(symbols or [])),
-                            {"protocol_ref": protocol_ref, "timeframe": card_timeframe}, specs)
+                            {"protocol_ref": protocol_ref, "timeframe": card_timeframe}, specs,
+                            windows_sha256=windows_sha256)
 
 
 def layer2_digest_check(key: tuple, index: dict) -> GateResult:
