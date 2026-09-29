@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "C5.7a (DELIVERY_REVIEW.md C11). Written by workflow/run_phase1_research.py::_build_idea_status_artifact and saved through save_yaml (artifacts/idea_status.yaml), which checks it against this file by stem -- warn-only by default, blocking only under WORKFLOW_ARTIFACT_VALIDATION=raise (tools/workflow_artifact_validation.py, the same hook as every schema in this directory). Only orchestrator.grid_evaluation.enabled writes it. Every field is code-written from the grid (never LLM-authored), so this schema is closed (additionalProperties: false). The three (result, hypothesis_verdict, lineage_routing) triples are _GRID_IDEA_STATUS_ROUTING verbatim and are pinned to their idea_status below; a grid whose idea_status is None (SPEC_ERROR) never reaches this artifact (the builder raises). The only permissive field is `reason`, which the builder copies with .get() and may therefore be null.",
+  "title": "runs/<run>/artifacts/idea_status.yaml",
+  "description": "The grid's idea-level status for one run, in the shape pass_rule_evaluation.yaml uses when it carries a binding verdict. The single source of the idea's status (validated / refuted / inconclusive).",
+  "type": "object",
+  "required": ["run_id", "idea_status", "result", "hypothesis_verdict", "lineage_routing",
+               "grid_evaluation_ref", "reason"],
+  "additionalProperties": false,
+  "properties": {
+    "run_id": { "type": "string", "minLength": 1 },
+    "idea_status": { "enum": ["validated", "refuted", "inconclusive"] },
+    "result": { "enum": ["PASS", "FAIL", "INCONCLUSIVE"] },
+    "hypothesis_verdict": { "enum": ["promote", "kill", "human_pause"] },
+    "lineage_routing": { "enum": ["terminate", "inconclusive_grid", null] },
+    "grid_evaluation_ref": {
+      "type": "string",
+      "pattern": "^runs/.+/artifacts/grid_evaluation\\.yaml$",
+      "description": "runs/<run_id>/artifacts/grid_evaluation.yaml -- the grid this status was rolled up from."
+    },
+    "reason": { "type": ["string", "null"] }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "idea_status": { "const": "validated" } }, "required": ["idea_status"] },
+      "then": { "properties": { "result": { "const": "PASS" },
+                                "hypothesis_verdict": { "const": "promote" },
+                                "lineage_routing": { "const": null } } }
+    },
+    {
+      "if": { "properties": { "idea_status": { "const": "refuted" } }, "required": ["idea_status"] },
+      "then": { "properties": { "result": { "const": "FAIL" },
+                                "hypothesis_verdict": { "const": "kill" },
+                                "lineage_routing": { "const": "terminate" } } }
+    },
+    {
+      "if": { "properties": { "idea_status": { "const": "inconclusive" } }, "required": ["idea_status"] },
+      "then": { "properties": { "result": { "const": "INCONCLUSIVE" },
+                                "hypothesis_verdict": { "const": "human_pause" },
+                                "lineage_routing": { "const": "inconclusive_grid" } } }
+    }
+  ]
+}

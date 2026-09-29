@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "C5.7a (DELIVERY_REVIEW.md C11). artifacts/variant_patches.yaml is written by the innovation_expansion stage agent (config_direct_authoring flow; workflow_artifacts/skills/innovation-expansion/SKILL.md IMPROVEMENT 07) or, for a composition run, by code (tools/composition.py::variant_patches_from_manifest via run_phase1_research._composition_variant_patches -> save_yaml). It is checked against this file by stem (tools/workflow_artifact_validation.py) on both the write (save_yaml) and the read (load_yaml, e.g. the backtest_specification tool stage and the variant-shape check) -- warn-only by default, blocking only under WORKFLOW_ARTIFACT_VALIDATION=raise. What the code enforces at run time is copied here: `variants` non-empty (run_tool_worker backtest_specification); each entry a mapping with a `variant_id` that is a safe bare identifier and unique (5a raises; unique-ness is asserted in tests, JSON Schema cannot state it on a key of an array item); each patch op a mapping with a `path` (a JSON Pointer string starting with '/', tools/json_pointer.py::split_json_pointer) and a `value` key (apply_json_pointer_patch); `kind` one of base/design/asset and `symbol` ONE coin string (tools/variant_coin.py VARIANT_KINDS; a `symbols` key or a list-valued `symbol` is a multi-coin variant that check_variant_shape refuses, G4). Permissive on purpose, each because the code genuinely varies: (1) `patch` may be missing or null -- every reader does `entry.get('patch') or []`; (2) `kind`/`symbol` are optional -- a legacy (coin-less) file is accepted (variant_coin.per_coin_mode) and `symbol` may be omitted on base/design (code fills the base coin), `symbol` may be null (resolve_variant); (3) top-level and entry keys the code never reads are allowed (the LLM adds rationale-like fields; the composition writer adds generated_by / composition_registry_hash instead of base_config_ref); (4) `value` is any JSON value. The per-coin shape rules (exactly one base, >=1 design, 1-2 asset, asset coin from another category, empty patch on base/asset) depend on the run protocol and coin_universe.yaml, so they stay in tools/variant_coin.check_variant_shape, not here.",
+  "title": "runs/<run>/artifacts/variant_patches.yaml",
+  "description": "Structured, machine-appliable diffs (JSON-Pointer set operations) against the base config strategy_config_authoring wrote, one entry per variant.",
+  "type": "object",
+  "required": ["variants"],
+  "properties": {
+    "base_config_ref": { "type": "string", "description": "Where the base config this patches against lives (artifacts/backtest_spec.yaml). LLM-written files carry it; the code-written composition file does not." },
+    "generated_by": { "type": "string", "description": "Composition (code-written) files only." },
+    "composition_registry_hash": { "type": "string", "description": "Composition (code-written) files only." },
+    "variants": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/variant" }
+    }
+  },
+  "definitions": {
+    "variant": {
+      "type": "object",
+      "required": ["variant_id"],
+      "not": { "required": ["symbols"] },
+      "properties": {
+        "variant_id": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+        "kind": { "enum": ["base", "design", "asset"] },
+        "symbol": { "type": ["string", "null"], "minLength": 1 },
+        "patch": {
+          "type": ["array", "null"],
+          "items": { "$ref": "#/definitions/patch_op" }
+        },
+        "rationale": { "type": "string" }
+      }
+    },
+    "patch_op": {
+      "type": "object",
+      "required": ["path", "value"],
+      "properties": {
+        "path": { "type": "string", "pattern": "^/.+" },
+        "value": {}
+      }
+    }
+  }
+}
