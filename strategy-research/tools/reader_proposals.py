@@ -190,7 +190,8 @@ def load_proposals(proposals_dir: Path, categories: list, strict_provenance: boo
 #
 # Each `evidence` item is supposed to cite a field path from the files the
 # reader received (its category report, grid_evaluation.yaml,
-# registry_summary.yaml). resolve_evidence_paths() MEASURES how many of those
+# the registry summary -- the E-061 C2 S2e artifact, named only in
+# block_registry.py / run_phase1_research.py by that test's pin). resolve_evidence_paths() MEASURES how many of those
 # paths exist. It is pure, never rejects, and only reports; whether to gate on
 # it (A+) or add per-score attribution (B) is decided after C4's first real
 # reader output gives a measured unresolved rate (D-048). It reads no file and
