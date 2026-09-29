@@ -737,7 +737,7 @@ import numbers  # noqa: E402
 import statistics  # noqa: E402
 from collections.abc import Mapping  # noqa: E402
 
-from portfolio_whole_test import WHOLE_TEST_BASIS  # noqa: E402  (tools/ sibling)
+from portfolio_whole_test import SHARPE_MIN_DAILY_RETURNS, WHOLE_TEST_BASIS  # noqa: E402  (tools/ sibling)
 
 WHOLE_TEST_STATUSES = frozenset({"ok", "not_evaluable", "error"})
 _BLOCK_STAT_KEYS = ("sr_daily", "n_daily_returns", "skew", "kurtosis")
@@ -803,7 +803,8 @@ def compute_dsr_whole_test(candidate_stats, same_basis_srs, n_total: int,
       SR = the candidate's sr_daily, skew / raw kurtosis of its daily returns.
 
     NOT_EVALUABLE (status "not_evaluable", dsr None, reason set) ONLY when:
-    N < 2; the candidate's own block is not "ok"; the denominator's argument is
+    N < 2; the candidate's own block is not "ok"; the candidate's T is below
+    SHARPE_MIN_DAILY_RETURNS; the denominator's argument is
     <= 0. A small K is never NOT_EVALUABLE (sigma_null takes over). Malformed
     input raises ValueError."""
     n_total = _int_at_least(n_total, 0, "compute_dsr_whole_test: n_total")
@@ -832,16 +833,27 @@ def compute_dsr_whole_test(candidate_stats, same_basis_srs, n_total: int,
         return out
 
     status = candidate_stats.get("status", "ok")
+    if status not in WHOLE_TEST_STATUSES:
+        raise ValueError(f"compute_dsr_whole_test: candidate status {status!r} is not one of "
+                         f"{sorted(WHOLE_TEST_STATUSES)}")
     if status != "ok":
         return _not_evaluable(
             f"the candidate's own whole-test block is {status!r}, not 'ok'"
             + (f": {candidate_stats.get('reason')}" if candidate_stats.get("reason") else ""))
     sr = _finite(candidate_stats.get("sr_daily"), "compute_dsr_whole_test: candidate sr_daily")
-    t = _int_at_least(candidate_stats.get("T"), 2, "compute_dsr_whole_test: candidate T")
+    t = _int_at_least(candidate_stats.get("T"), 0, "compute_dsr_whole_test: candidate T")
     skew = _finite(candidate_stats.get("skew"), "compute_dsr_whole_test: candidate skew")
     kurt = _finite(candidate_stats.get("kurtosis_raw"),
                    "compute_dsr_whole_test: candidate kurtosis_raw")
+    # Raw kurtosis >= 1 + skew^2 for ANY real distribution (Pearson); a pair below it is
+    # impossible and would shrink the denominator, inflating the DSR.
+    if kurt < 1.0 + skew * skew - 1e-9 * (1.0 + skew * skew):
+        raise ValueError(f"compute_dsr_whole_test: candidate moments are impossible: "
+                         f"kurtosis_raw={kurt!r} < 1 + skew^2 = {1.0 + skew * skew!r}")
     out.update(sr_daily=sr, T=t)
+    if t < SHARPE_MIN_DAILY_RETURNS:
+        return _not_evaluable(f"the candidate's T={t} daily returns is below "
+                              f"SHARPE_MIN_DAILY_RETURNS={SHARPE_MIN_DAILY_RETURNS}")
     if n_total < 2:
         return _not_evaluable(f"N={n_total} counted trial(s); the multiple-testing "
                               f"correction needs N >= 2")
@@ -890,7 +902,7 @@ def _check_whole_test_block(block, what: str, keys=_BLOCK_KEYS) -> dict:
     """Validate a `whole_test` block (native, or an overlay entry with keys=_OVERLAY_KEYS):
     exactly `keys`; basis a non-empty string;
     status in WHOLE_TEST_STATUSES; status ok -> reason None, finite sr_daily / skew /
-    kurtosis, integer n_daily_returns >= 2; otherwise a non-empty reason. Returns the
+    kurtosis, integer n_daily_returns >= SHARPE_MIN_DAILY_RETURNS; otherwise a non-empty reason. Returns the
     projection onto the block's own keys (basis, status, reason + the four stats)."""
     if not isinstance(block, Mapping):
         raise ValueError(f"{what}: {block!r} is not a mapping")
@@ -908,7 +920,8 @@ def _check_whole_test_block(block, what: str, keys=_BLOCK_KEYS) -> dict:
         _finite(block.get("sr_daily"), f"{what}: sr_daily")
         _finite(block.get("skew"), f"{what}: skew")
         _finite(block.get("kurtosis"), f"{what}: kurtosis")
-        _int_at_least(block.get("n_daily_returns"), 2, f"{what}: n_daily_returns")
+        _int_at_least(block.get("n_daily_returns"), SHARPE_MIN_DAILY_RETURNS,
+                      f"{what}: n_daily_returns")
     elif not isinstance(reason, str) or not reason:
         raise ValueError(f"{what}: status {status!r} without a non-empty reason")
     return {k: block.get(k) for k in ("basis", "status", "reason", *_BLOCK_STAT_KEYS)}

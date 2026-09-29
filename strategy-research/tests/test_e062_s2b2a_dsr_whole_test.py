@@ -206,10 +206,27 @@ def test_candidate_block_not_ok_is_not_evaluable():
 
 
 def test_non_positive_denominator_is_not_evaluable():
-    # 1 - 4 x 0.5 + ((1 - 1)/4) x 0.25 = -1
-    r = ds.compute_dsr_whole_test({"sr_daily": 0.5, "T": 100, "skew": 4.0, "kurtosis_raw": 1.0},
+    # valid moments (kurt = 1 + skew^2): the argument is (1 - skew*SR/2)^2 = 0 at SR = 0.5
+    r = ds.compute_dsr_whole_test({"sr_daily": 0.5, "T": 100, "skew": 4.0, "kurtosis_raw": 17.0},
                                   [], 12, 10)
     assert r["status"] == "not_evaluable" and r["dsr"] is None and "denominator" in r["reason"]
+
+
+def test_candidate_t_below_the_s2a_floor_is_not_evaluable():
+    for t in (0, 1, 3, pw.SHARPE_MIN_DAILY_RETURNS - 1):
+        r = ds.compute_dsr_whole_test({"sr_daily": 3.0, "T": t, "skew": 0.0, "kurtosis_raw": 3.0},
+                                      [], 12, 10)
+        assert r["status"] == "not_evaluable" and r["dsr"] is None, t
+        assert "SHARPE_MIN_DAILY_RETURNS" in r["reason"]
+    r = ds.compute_dsr_whole_test({"sr_daily": 3.0, "T": pw.SHARPE_MIN_DAILY_RETURNS,
+                                   "skew": 0.0, "kurtosis_raw": 3.0}, [], 12, 10)
+    assert r["status"] == "ok" and r["dsr"] is not None
+
+
+def test_kurtosis_equal_to_one_plus_skew_squared_is_accepted():
+    r = ds.compute_dsr_whole_test({"sr_daily": 0.1, "T": 100, "skew": 2.0, "kurtosis_raw": 5.0},
+                                  [], 12, 10)
+    assert r["status"] == "ok"
 
 
 @pytest.mark.parametrize("kwargs", [
@@ -219,7 +236,11 @@ def test_non_positive_denominator_is_not_evaluable():
     {"same_basis_srs": [0.1, float("nan")]},
     {"same_basis_srs": [0.1, True]},
     {"candidate_stats": {**CAND, "sr_daily": float("inf")}},
-    {"candidate_stats": {**CAND, "T": 1}},
+    {"candidate_stats": {**CAND, "T": 1.5}},
+    {"candidate_stats": {**CAND, "T": -1}},
+    {"candidate_stats": {**CAND, "status": "OK"}},
+    {"candidate_stats": {**CAND, "status": None}},
+    {"candidate_stats": {**CAND, "skew": 4.0, "kurtosis_raw": 1.0}},   # kurt < 1 + skew^2
     {"candidate_stats": {k: v for k, v in CAND.items() if k != "skew"}},
     {"candidate_stats": None},
 ])
@@ -359,6 +380,7 @@ def test_overlay_identical_duplicate_kept_once_and_differing_duplicate_raises():
     lambda e: e.update(inputs_sha256={"protocol_result": "not-a-sha"}),
     lambda e: e.update(trial_id=""),
     lambda e: e.update(n_daily_returns=True),
+    lambda e: e.update(n_daily_returns=pw.SHARPE_MIN_DAILY_RETURNS - 1),
 ])
 def test_overlay_entry_validation_refuses(mutate):
     e = _entry("run_054", "backtest", 0.0512)
@@ -392,3 +414,11 @@ def test_load_basis_overlay_reads_a_file_and_a_missing_file_is_empty(tmp_path):
     got = ds.load_basis_overlay(p)
     assert got == {("run_054", "backtest", BASIS): e}
     assert p.read_bytes() == before  # read-only
+
+
+def test_ok_native_block_below_the_s2a_floor_raises():
+    blk = {**_block(0.05), "n_daily_returns": pw.SHARPE_MIN_DAILY_RETURNS - 1}
+    with pytest.raises(ValueError, match="n_daily_returns"):
+        ds.select_same_basis_sample([_row("run_1", whole_test=blk)])
+    blk["n_daily_returns"] = pw.SHARPE_MIN_DAILY_RETURNS
+    assert ds.select_same_basis_sample([_row("run_1", whole_test=blk)])["K"] == 1
