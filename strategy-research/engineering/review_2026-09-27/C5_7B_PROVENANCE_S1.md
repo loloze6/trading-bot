@@ -114,3 +114,10 @@ Order: S0 → S1 → S2 → S3 independent after S0; S4 after operator decision.
 | G10 | Real dated-id string from the SDK matches "starts with requested" | SMALL if true | No; verify on the first real reader call *(unmeasured)*; if false, normalise (strip date suffix) |
 | G11 | Re-dumping the stamped YAML with `safe_dump(sort_keys=False)` is acceptable (comments/format lost, semantics same; only `load_proposals` reads the file) | SMALL | No |
 | G12 | Gemini path out of scope (no live score path) | none | No |
+
+## Decision (operator, 2026-09-29) — recorded as D-048
+
+- G9 citations: **option A** (record-only); A+ / B decided after C4's first real reader output.
+- G4 mismatch = observed vs requested model; the self-report is informational.
+- Other guesses as recommended. Build in two slices (orchestrator, small-slice rule): **C5.7b-1** = S0 + S1 + S3
+  (flag, capture, reader and card model_id stamp); **C5.7b-2** = S2 + S4 (rubric closed set, citation record).
