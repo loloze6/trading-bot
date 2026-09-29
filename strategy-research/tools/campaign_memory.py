@@ -234,6 +234,23 @@ def _tested_trial(trials: dict, tid: str, vid: str) -> tuple:
     return tid, fh
 
 
+def _windows_field(row, where: str) -> dict:
+    """E-062 S2b-3c (D-047 (5), S2B3_FINDINGS.md G11): {"windows_sha256": ...}
+    copied from a variant's trial row when the row carries it (a partial-
+    coverage per-coin variant graded under orchestrator.profit_bars_v2), else
+    {} -- the memory variant then has exactly its pre-S2b-3c keys. Copied, never
+    recomputed (the same rule as forecast_hash): the repeat key
+    (novelty.match_index) then reads the fingerprint the DSR dedupe counted.
+    A malformed value raises."""
+    if not isinstance(row, dict) or "windows_sha256" not in row:
+        return {}
+    import novelty as _nov  # tools/ sibling: THE fingerprint check
+    try:
+        return {"windows_sha256": _nov.check_windows_sha256(row["windows_sha256"], where)}
+    except _nov.NoveltyError as exc:
+        raise CampaignMemoryError(str(exc)) from exc
+
+
 def _check_index_entry(vid, info, index_path: Path) -> None:
     if not isinstance(info, dict):
         raise CampaignMemoryError(f"{index_path}: variants.{vid} is not a mapping ({info!r})")
@@ -306,6 +323,7 @@ def _variants_block(run_dir: Path, run_id: str, grid_variants: list, trials: dic
             tid = f"{run_id}:{vid}"
             failed_reason = failed_variants.get(vid)
             refused = failed_reason is not None and failed_reason.startswith(refused_prefix)
+            wfield: dict = {}  # E-062 S2b-3c: the trial row's window fingerprint, if any
             if vid in grid_variants:
                 if info["status"] != "validated":
                     raise CampaignMemoryError(
@@ -313,6 +331,8 @@ def _variants_block(run_dir: Path, run_id: str, grid_variants: list, trials: dic
                         f"-- only a validated variant can have been backtested")
                 status, reason = "tested", None
                 trial_id, fh = _tested_trial(trials, tid, vid)
+                wfield = _windows_field((trials.get(tid) or {}).get("backtest"),
+                                        f"trial row {tid!r} (backtest)")
                 vpr_path = arts / "variants" / vid / "protocol_result.yaml"
                 shape = _protocol_shape(_load_mapping(vpr_path, f"variant {vid}'s backtest result"),
                                         str(vpr_path))
@@ -324,6 +344,7 @@ def _variants_block(run_dir: Path, run_id: str, grid_variants: list, trials: dic
                 failed_row = (trials.get(tid) or {}).get("backtest_failed")
                 trial_id = tid if failed_row is not None else None
                 fh = failed_row.get("forecast_hash") if failed_row is not None else None
+                wfield = _windows_field(failed_row, f"trial row {tid!r} (backtest_failed)")
                 shape = {"symbols": [], "n_windows": 0}
             else:
                 status, reason = "not_tested", (failed_reason if refused else info.get("reason"))
@@ -337,6 +358,7 @@ def _variants_block(run_dir: Path, run_id: str, grid_variants: list, trials: dic
                 "forecast_hash": fh,
                 "symbols": shape["symbols"], "n_windows": shape["n_windows"],
                 "trial_id": trial_id,
+                **wfield,
             }
         return out
     if failed_variants:

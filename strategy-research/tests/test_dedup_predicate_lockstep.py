@@ -234,3 +234,79 @@ def test_the_real_pipeline_site_still_emits_the_same_key_set():
         assert f'"{key}"' in block, (
             f"pipeline excluded-counts dict no longer carries {key!r} (#48 F3)"
         )
+
+
+# --------------------------------------------------------------------------
+# E-062 S2b-3c (D-047 (5)) -- EVERY dedupe copy agrees on mixed rows.
+#
+# Declared extension (S2b-3c): the dedupe key gained the optional window
+# fingerprint `windows_sha256` next to `symbols`. The copies it must stay in
+# lockstep across -- run on the REAL code, not a transcription:
+#   deflate_sharpe.deduplicate_trials (and through it select_same_basis_sample's
+#   N and compute_promotion_audit's total_hypotheses_tested),
+#   run_phase1_research._dedupe_trials (and through it _promotion_dsr_context's
+#   n_dsr_total, cross-checked by _whole_test_dsr_context), and
+#   run_phase1_research._dedup_collapse_target's key (the dedup_collapse reason
+#   must name the row the dedupe actually collapsed onto).
+# --------------------------------------------------------------------------
+
+def _mixed_rows(seed: int) -> list:
+    import random
+    rng = random.Random(seed)
+    fps = ["a" * 64, "b" * 64, "c" * 64]
+    rows = []
+    for i in range(60):
+        r = {"trial_id": f"t{i}", "source": rng.choice(["backtest", "backtest_failed"]),
+             "statistic_valid": "sharpe", "sharpe": round(rng.uniform(-1, 1), 3),
+             "forecast_hash": rng.choice(["h1", "h2", None])}
+        if rng.random() < 0.6:
+            r["symbols"] = [rng.choice(["BTCUSDT", "XRPUSD"])]
+        if rng.random() < 0.5:
+            r["windows_sha256"] = rng.choice(fps)
+        rows.append(r)
+    return rows
+
+
+@pytest.mark.parametrize("seed", range(6))
+def test_every_dedupe_copy_agrees_on_rows_with_and_without_the_window_fingerprint(seed):
+    sys.path.insert(0, str(_SR / "workflow"))
+    import run_phase1_research as rpr
+    from deflate_sharpe import compute_promotion_audit, select_same_basis_sample
+
+    rows = _mixed_rows(seed)
+    lib_kept, lib_removed = deduplicate_trials(rows)
+    pipe_kept, pipe_removed = rpr._dedupe_trials(rows)
+    assert lib_kept == pipe_kept and lib_removed == pipe_removed
+    n = len(lib_kept)
+    assert select_same_basis_sample(rows)["N"] == n
+    assert compute_promotion_audit(hypothesis_id="h", candidate_sr=0.1,
+                                   campaign_state={"trial_sharpes": rows},
+                                   n_trades=100)["total_hypotheses_tested"] == n
+    rpr.save_yaml(rpr.CAMPAIGN_STATE_PATH, {"campaign_id": "t", "runs": [], "trial_sharpes": rows})
+    assert rpr._promotion_dsr_context()["n_dsr_total"] == n
+    assert rpr._whole_test_dsr_context()["n_dsr_total"] == n  # raises if its sample N differs
+
+    # _dedup_collapse_target's key: every collapsed row names the FIRST kept row
+    # with its full key (hash, coins, fingerprint, source) -- never another.
+    kept_ids = {id(r) for r in lib_kept}
+    wctx = {"rows": rows}
+    for r in rows:
+        if id(r) in kept_ids:
+            continue
+        first = next(k for k in lib_kept
+                     if k.get("forecast_hash") == r.get("forecast_hash")
+                     and k.get("source") == r.get("source")
+                     and sorted(k.get("symbols") or []) == sorted(r.get("symbols") or [])
+                     and ("symbols" in k) == ("symbols" in r)
+                     and k.get("windows_sha256") == r.get("windows_sha256"))
+        assert rpr._dedup_collapse_target(wctx, r) == (
+            f"trial {first['trial_id']!r} (same forecast_hash, coins and source)")
+
+
+def test_the_fingerprint_changes_n_only_where_it_is_present():
+    """Stripping every fingerprint gives the pre-S2b-3c partition; the
+    fingerprinted ledger can only count MORE trials (N never shrinks)."""
+    for seed in range(6):
+        rows = _mixed_rows(seed)
+        stripped = [{k: v for k, v in r.items() if k != "windows_sha256"} for r in rows]
+        assert len(deduplicate_trials(rows)[0]) >= len(deduplicate_trials(stripped)[0])

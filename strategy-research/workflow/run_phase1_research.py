@@ -1829,6 +1829,9 @@ async def run_tool_worker(stage_name: str, run_id: str):
             _vproto = _variant_protocol_path(RUN_DIR, vinfo)
             _trial_kw: dict = {}
             if _vproto is not None:
+                # E-062 S2b-3c: the flag is read outside the try (a
+                # misconfiguration raises loudly, never a per-variant refusal).
+                _fp_on = _profit_bars_v2_enabled()
                 try:
                     _vp_problems, _vp_syms = _per_coin_protocol_check(
                         RUN_DIR, run_id, vinfo, _vproto, protocol_path, _coin_ctx_cache)
@@ -1838,6 +1841,17 @@ async def run_tool_worker(stage_name: str, run_id: str):
                             and isinstance(_vp_syms[0], str) and _vp_syms[0]):
                         raise ValueError(f"symbols {_vp_syms!r} is not exactly one coin")
                     _trial_kw = {"symbols": list(_vp_syms)}
+                    # E-062 S2b-3c (D-047 (5), G12): a partial-coverage variant's
+                    # rows (backtest and backtest_failed) carry its own window
+                    # fingerprint, so a wider-coverage retest of the same config
+                    # on the same coin is its own trial in the DSR dedupe.
+                    # Flag-on only; None (full coverage): the rows unchanged.
+                    # Unmeasurable -> this variant is refused before any
+                    # backtest (no data touched, no trial row), like M2.
+                    if _fp_on:
+                        _vfp = _variant_window_fingerprint(RUN_DIR, vinfo)
+                        if _vfp is not None:
+                            _trial_kw["windows_sha256"] = _vfp
                 except Exception as _vp_err:
                     refused_variants[variant_id] = (
                         f"its protocol {vinfo['protocol_path']!r} is unreadable or not the file "
@@ -7721,7 +7735,7 @@ def _repeat_gate_context(run_dir: Path, run_id: str) -> dict:
 
 
 def _check_variant_repeat(ctx: dict, config_path: Path, run_id: str,
-                          symbols: list | None = None) -> dict:
+                          symbols: list | None = None, windows_sha256: str | None = None) -> dict:
     """One variant's gate result (a plain dict): the key from the config file
     the backtest will run, hashed by _compute_forecast_hash -- the function
     its trial row's forecast_hash comes from -- and the shared context.
@@ -7730,13 +7744,20 @@ def _check_variant_repeat(ctx: dict, config_path: Path, run_id: str,
     `symbols`), replacing the run protocol's. The timeframe and window set stay
     the run protocol's: a variant's protocol is derived from it, and a memory
     entry keys every variant on the entry's one protocol_ref. None: the run
-    protocol's symbols, exactly as before."""
+    protocol's symbols, exactly as before.
+
+    `windows_sha256` (E-062 S2b-3c, D-047 (5), G11): a partial-coverage
+    variant's own window fingerprint (_variant_window_fingerprint, passed only
+    under orchestrator.profit_bars_v2), replacing the run protocol's window
+    hash: a retest with the same coverage is still a REPEAT, a wider (or full)
+    one is NOVEL. None: the run protocol's window set, exactly as before."""
     import campaign_memory as _cm_mod  # tools/ sibling: the path-relativising rule
     import novelty as _nov  # tools/ sibling: the recorded key shape (key_dict)
     aag = ctx["aag"]
     forecast_hash = _compute_forecast_hash(Path(config_path))
     key = aag.candidate_key(forecast_hash, ctx["symbols"] if symbols is None else sorted(set(symbols)),
-                            ctx["protocol_ref"], ctx["specs"], card_timeframe=ctx["card_timeframe"])
+                            ctx["protocol_ref"], ctx["specs"], card_timeframe=ctx["card_timeframe"],
+                            windows_sha256=windows_sha256)
     result = aag.layer2_digest_check(key, ctx["index"])
     result["layer1_advisory"] = ctx["layer1_advisory"]
     return {**dict(result),
@@ -7895,12 +7916,21 @@ def _gate_config_direct_variants(run_dir: Path, run_id: str) -> str | None:
         _vproto = _variant_protocol_path(run_dir, info) if loop_on else None
         _sym_kw: dict = {}
         if _vproto is not None:
+            # E-062 S2b-3c (D-047 (5)): flag read outside the try -- a
+            # misconfiguration raises loudly, it is never a per-variant refusal.
+            _fp_on = _profit_bars_v2_enabled()
             try:
                 _vsyms = _variant_coin_module().load_protocol_file(_vproto).get("symbols")
                 if not (isinstance(_vsyms, list) and _vsyms
                         and all(isinstance(s, str) and s for s in _vsyms)):
                     raise ValueError(f"symbols {_vsyms!r} is not a non-empty list of coins")
                 _sym_kw = {"symbols": _vsyms}
+                # E-062 S2b-3c: a partial-coverage variant is keyed on its own
+                # window fingerprint, flag-on only (None: the key unchanged).
+                if _fp_on:
+                    _vfp = _variant_window_fingerprint(run_dir, info)
+                    if _vfp is not None:
+                        _sym_kw["windows_sha256"] = _vfp
             except Exception as _vp_err:
                 why = (f"{_variant_coin_module().COIN_REASON_PREFIX} its protocol "
                        f"{info.get('protocol_path')!r} is missing or malformed "
@@ -10242,8 +10272,25 @@ def _trial_symbols_field(symbols) -> dict:
     return {"symbols": sorted(symbols)}
 
 
+def _trial_windows_field(windows_sha256) -> dict:
+    """E-062 S2b-3c (D-047 (5), G12): {"windows_sha256": fingerprint} for a
+    trial row of a partial-coverage per-coin variant written under
+    orchestrator.profit_bars_v2 (_variant_window_fingerprint), else {} --
+    every other row keeps exactly its keys. The DSR dedupe keys on it when
+    present, so a wider-coverage retest is its own trial. A malformed value
+    raises (never written as a key the dedupe would then refuse)."""
+    if windows_sha256 is None:
+        return {}
+    if not (isinstance(windows_sha256, str) and len(windows_sha256) == 64
+            and all(c in "0123456789abcdef" for c in windows_sha256)):
+        raise ValueError(f"trial windows_sha256 must be a sha256 hex digest, got "
+                         f"{windows_sha256!r}")
+    return {"windows_sha256": windows_sha256}
+
+
 def _record_backtest_trial(run_id: str, summary: dict, config_path: Path, trial_id: str | None = None,
-                           symbols: list | None = None, whole_test: dict | None = None):
+                           symbols: list | None = None, whole_test: dict | None = None,
+                           windows_sha256: str | None = None):
     """
     A6.2: record a completed full-backtest as a trial in campaign_state.trial_sharpes.
     Appends {trial_id, source, sharpe, expectancy_bps, n_trades, statistic_valid}.
@@ -10275,9 +10322,15 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path, trial_
     carries the nested `whole_test` block (_whole_test_ledger_block). None: no
     such key, the row is byte-identical to before. The legacy fields above are
     written unchanged either way (they feed only the legacy readers).
+
+    `windows_sha256` (E-062 S2b-3c, D-047 (5)): passed only under
+    orchestrator.profit_bars_v2 for a partial-coverage per-coin variant -- the
+    row then carries its window fingerprint (_trial_windows_field). None: no
+    such key, the row is byte-identical to before.
     """
     effective_trial_id = trial_id if trial_id is not None else run_id
     symbols_field = _trial_symbols_field(symbols)
+    windows_field = _trial_windows_field(windows_sha256)
     state  = load_campaign_state()
     trials = state.setdefault("trial_sharpes", [])
 
@@ -10340,6 +10393,7 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path, trial_
         "below_floor_pct": below_floor,
         "forecast_hash":   _compute_forecast_hash(config_path),
         **symbols_field,
+        **windows_field,
     }
     # CUL-233: carry an explicit reproduces_trial back-reference into the ledger
     # row so deduplicate_trials can collapse a re-execution onto its original in
@@ -10360,10 +10414,12 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path, trial_
 
 
 def _record_failed_backtest_trial(run_id: str, config_path: Path, reason: str, trial_id: str | None = None,
-                                  symbols: list | None = None):
+                                  symbols: list | None = None, windows_sha256: str | None = None):
     """
     `symbols` (E-061 C2 S2b, G6): as in _record_backtest_trial -- only the
     variant loop's per-coin variants pass it; None keeps the row unchanged.
+    `windows_sha256` (E-062 S2b-3c): likewise, a partial-coverage variant's
+    window fingerprint under orchestrator.profit_bars_v2; None: unchanged.
 
 
     `trial_id` param added 2026-09-22 (E-033.1 Slice 4a): optional, defaults
@@ -10411,6 +10467,7 @@ def _record_failed_backtest_trial(run_id: str, config_path: Path, reason: str, t
     """
     effective_trial_id = trial_id if trial_id is not None else run_id
     symbols_field = _trial_symbols_field(symbols)
+    windows_field = _trial_windows_field(windows_sha256)
     try:
         forecast_hash = _compute_forecast_hash(config_path)
     except Exception:
@@ -10436,6 +10493,7 @@ def _record_failed_backtest_trial(run_id: str, config_path: Path, reason: str, t
         "forecast_hash":   forecast_hash,
         "error":           reason,
         **symbols_field,
+        **windows_field,
     })
     _save_campaign_state(state)
     print(f"⚙️  H4: failed-backtest trial recorded (run={run_id}, reason={reason})")
@@ -11002,7 +11060,16 @@ def _dedupe_trials(valid_trials: list) -> tuple[list, int]:
     `symbols` and a per-coin row for the same config (same hash, same source)
     count as TWO trials, never one -- the conservative direction for the DSR
     (N can only be over-counted, never under-counted). A present but malformed
-    `symbols` raises."""
+    `symbols` raises.
+
+    E-062 S2b-3c (D-047 (5), G12): the key is (forecast_hash, sorted symbols or
+    None, windows_sha256 or None, source). A partial-coverage per-coin
+    variant's row (flag-on) carries its own window fingerprint, so a wider-
+    coverage retest of the same config on the same coin is its own trial (N + 1,
+    its own DSR); the same coverage still collapses. A row without the field
+    keys None -- every existing ledger dedupes exactly as before. A present but
+    malformed `windows_sha256` raises. Lockstep with deflate_sharpe.
+    deduplicate_trials and _dedup_collapse_target."""
     reproduces_by_key: dict = {}
     for t in valid_trials:
         reproduces_by_key[(t.get("trial_id"), t.get("source"))] = t.get("reproduces_trial")
@@ -11029,7 +11096,15 @@ def _dedupe_trials(valid_trials: list) -> tuple[list, int]:
             coins = tuple(sorted(syms))
         else:
             coins = None
-        key = (fh, coins, t.get("source"))
+        if "windows_sha256" in t:
+            wsha = t["windows_sha256"]
+            if not (isinstance(wsha, str) and len(wsha) == 64
+                    and all(c in "0123456789abcdef" for c in wsha)):
+                raise ValueError(f"trial {t.get('trial_id')!r}: windows_sha256 {wsha!r} is not a "
+                                 f"sha256 hex digest (E-062 S2b-3c)")
+        else:
+            wsha = None
+        key = (fh, coins, wsha, t.get("source"))
         if key in seen_keys:
             n_dedup_removed += 1
         else:
@@ -12346,12 +12421,15 @@ _WHOLE_TEST_BLOCK_STATS = (("sr_daily", "sr_daily"), ("n_daily_returns", "T"),
 def _dedup_collapse_target(wctx: dict, row: dict) -> str:
     """Which earlier ledger row `row` (the candidate's own backtest row) was
     deduplicated onto, for the NOT_EVALUABLE reason: the first other valid row
-    with its (forecast_hash, sorted symbols or None, source) key, else its
-    reproduces_trial reference, else a generic phrase."""
+    with its (forecast_hash, sorted symbols or None, windows_sha256 or None,
+    source) key -- the dedupe key of _dedupe_trials / deduplicate_trials
+    (E-062 S2b-3c adds the window fingerprint) -- else its reproduces_trial
+    reference, else a generic phrase."""
     def _key(r):
         syms = r.get("symbols")
         return (r.get("forecast_hash"),
-                tuple(sorted(syms)) if isinstance(syms, list) else None, r.get("source"))
+                tuple(sorted(syms)) if isinstance(syms, list) else None,
+                r.get("windows_sha256"), r.get("source"))
     if row.get("forecast_hash") is not None:
         for r in wctx["rows"]:
             if (isinstance(r, dict) and r is not row and not r.get("invalidated_artifact")
@@ -14362,6 +14440,54 @@ def _variant_coverage_days(run_dir: Path, run_id: str, vinfo: dict) -> tuple:
         raise vc.VariantCoinError(f"its protocol {vinfo.get('protocol_path')!r} is not the file 5a "
                                   f"wrote (sha256 differs from protocol_sha256)")
     return vc.coverage_days(run_protocol, _protocol_from_bytes(raw, str(vproto)))
+
+
+def _variant_window_fingerprint(run_dir: Path, vinfo: dict) -> str | None:
+    """E-062 S2b-3c (D-047 (5), S2B3_FINDINGS.md G11/G12): a per-coin
+    variant's own window fingerprint, or None when it runs on its run
+    protocol's windows.
+
+    None (its repeat key and trial rows byte-identical to before): not a
+    partial-coverage variant (variant_coin.is_partial_coverage false -- no
+    per-coin coverage, or every run-protocol window covered). Otherwise
+    novelty.windows_fingerprint of the `windows` of its protocol.json -- the
+    exact file 5a wrote (its bytes checked against `protocol_sha256`) -- and
+    that fingerprint must differ from the frozen run protocol's window hash
+    (_frozen_run_protocol, sha256-verified; G11: present only when the windows
+    differ). From protocol files only: no market data, no result, no write.
+
+    Raises VariantCoinError (a malformed coverage, a missing or altered file,
+    a partial variant whose windows equal the run protocol's): the callers --
+    the repeat gate and protocol_execution -- refuse THAT variant before any
+    backtest (no data touched, no trial row), never guess a key."""
+    vc = _variant_coin_module()
+    if not vc.is_partial_coverage(vinfo):
+        return None
+    import novelty as _nov  # tools/ sibling: THE window fingerprint
+    vproto = _variant_protocol_path(run_dir, vinfo)
+    if vproto is None:
+        raise vc.VariantCoinError("a partial-coverage variant has no protocol_path in "
+                                  "artifacts/variants/index.yaml -- its window fingerprint "
+                                  "cannot be computed")
+    try:
+        raw = vproto.read_bytes()
+    except OSError as e:
+        raise vc.VariantCoinError(f"its protocol {vinfo.get('protocol_path')!r} is unreadable "
+                                  f"({type(e).__name__}: {e})") from None
+    if vc.protocol_sha256(raw) != vinfo.get("protocol_sha256"):
+        raise vc.VariantCoinError(f"its protocol {vinfo.get('protocol_path')!r} is not the file 5a "
+                                  f"wrote (sha256 differs from protocol_sha256)")
+    run_protocol = _frozen_run_protocol(run_dir, vinfo)
+    try:
+        own = _nov.windows_fingerprint(_protocol_from_bytes(raw, str(vproto)).get("windows"))
+        run = _nov.windows_fingerprint(run_protocol.get("windows"))
+    except _nov.NoveltyError as e:
+        raise vc.VariantCoinError(f"window fingerprint: {e}") from None
+    if own == run:
+        raise vc.VariantCoinError(
+            f"its index coverage is partial but its protocol {vinfo.get('protocol_path')!r} has "
+            f"exactly the run protocol's windows -- the two records disagree")
+    return own
 
 
 _COIN_INFO_PRINTED: set = set()

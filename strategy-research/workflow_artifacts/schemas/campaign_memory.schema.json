@@ -90,7 +90,9 @@
               "symbols": { "type": "array", "items": { "type": "string" } },
               "n_windows": { "type": "integer", "minimum": 0, "description": "Distinct walk-forward windows (not symbol x window rows)." },
               "trial_id": { "$ref": "#/$defs/nullable_string",
-                            "description": "Read-only cross-link to campaign_state.trial_sharpes." }
+                            "description": "Read-only cross-link to campaign_state.trial_sharpes." },
+              "windows_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$",
+                                  "description": "E-062 S2b-3c (D-047 (5)): OPTIONAL. A partial-coverage per-coin variant's own window fingerprint (tools/novelty.windows_fingerprint of its protocol.json windows), copied from its trial row, which carries it only when written under orchestrator.profit_bars_v2. The repeat key (tools/novelty.novelty_key) uses it in place of the protocol's window hash. Absent: the variant keys on the protocol's windows, exactly as before." }
             }
           }
         },
