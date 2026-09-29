@@ -287,6 +287,11 @@ def test_an_unmeasurable_fingerprint_refuses_only_that_variant_before_any_backte
     assert c2._run_trial_ids(run_dir.name) == [f"{run_dir.name}:base", f"{run_dir.name}:design"]
     a = rpr.load_yaml(arts / "variants" / "index.yaml")["variants"]["asset"]
     assert a["status"] == "not_tested" and a["failed_attempt"].startswith("refused:")
+    # S2b-4 (CUL-350 item 3): the refusal names the fingerprint, and no longer
+    # blames the variant protocol ("unreadable or not the file 5a wrote") for a
+    # missing frozen run protocol.
+    assert "window fingerprint" in a["failed_attempt"]
+    assert "unreadable or not the file 5a wrote" not in a["failed_attempt"]
 
 
 # ---------------------------------------------------------------------------

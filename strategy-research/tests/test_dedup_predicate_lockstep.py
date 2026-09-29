@@ -300,7 +300,8 @@ def test_every_dedupe_copy_agrees_on_rows_with_and_without_the_window_fingerprin
                      and ("symbols" in k) == ("symbols" in r)
                      and k.get("windows_sha256") == r.get("windows_sha256"))
         assert rpr._dedup_collapse_target(wctx, r) == (
-            f"trial {first['trial_id']!r} (same forecast_hash, coins and source)")
+            f"trial {first['trial_id']!r} (same forecast_hash, coins, window fingerprint "
+            f"and source)")
 
 
 def test_the_fingerprint_changes_n_only_where_it_is_present():
