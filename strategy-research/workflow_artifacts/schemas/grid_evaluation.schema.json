@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "C5.7a (DELIVERY_REVIEW.md C11). Written by workflow/run_phase1_research.py (two sites, both `save_yaml(ARTIFACTS / 'grid_evaluation.yaml', ...)`: the N-column variant-loop grid and the flag-off single-column grid) from tools/verdict_criteria_evaluator.py::evaluate_grid plus the caller's `evaluated_at`. save_yaml checks it against this file by stem (tools/workflow_artifact_validation.py) -- warn-only by default, blocking only under WORKFLOW_ARTIFACT_VALIDATION=raise. Only orchestrator.grid_evaluation.enabled writes it. Code-written end to end, so the top level, the cells and the bar rows are closed (additionalProperties: false); the key sets are exactly what evaluate_grid / _evaluate_grid_cell_for_symbol / _evaluate_residual_ic_cell / _evaluate_profit_bars_cell / _grade_profit_bars(_v2) emit. Permissive on purpose, each because the code genuinely varies: (1) which keys a cell carries depends on its path (window/pooled, sign_consistent_by_era, residual_ic, profit_bars, per_symbol_all roll-up, floor/None INCONCLUSIVE, SPEC_ERROR), so every cell key except `result` is optional; (2) `value`/`threshold`/`actual` are number-or-null (a fully_explained residual_ic FAIL and an unevaluable bar carry null; sign_consistent_by_era cells carry neither); (3) the residual_ic pass-through fields (n_eff, p_value_one_sided, composite, fully_explained, max_p_value) are copied from an externally computed mapping and are left untyped; (4) `weight_schedule` is copied from the composition manifest and left untyped; (5) a bar row's `detail` is a free mapping. Cross-field rules that JSON Schema can state are stated (SPEC_ERROR <-> idea_status null; refused:/backtest_failed: prefixes); the rules that need the whole grid (idea_status rolled up from the cells, grid keys equal to criteria x variants, no variant both graded and failed/untested) are asserted in tests/test_c5_7a_schemas.py, not here.",
+  "title": "runs/<run>/artifacts/grid_evaluation.yaml",
+  "description": "The grid: criteria x graded variants, every cell mechanical, plus the idea-level status rolled up from the cells (any genuine FAIL refutes; else any INCONCLUSIVE cell, or any variant without a graded result, is inconclusive; else validated).",
+  "type": "object",
+  "required": ["result", "criteria", "variants", "grid", "idea_status", "reason", "evaluated_at"],
+  "additionalProperties": false,
+  "properties": {
+    "result": { "enum": ["GRID_EVALUATED", "SPEC_ERROR"] },
+    "criteria": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Criterion ids, in pass_rule order."
+    },
+    "variants": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 },
+      "description": "GRADED columns only (variant ids; the run id for the flag-off single-column grid). A failed / untested variant is never a column."
+    },
+    "grid": {
+      "type": "object", "minProperties": 1,
+      "additionalProperties": {
+        "type": "object", "minProperties": 1,
+        "additionalProperties": { "$ref": "#/definitions/cell" }
+      },
+      "description": "{criterion_id: {variant_id: cell}}."
+    },
+    "idea_status": { "enum": ["validated", "refuted", "inconclusive", null] },
+    "reason": { "type": "string", "minLength": 1 },
+    "evaluated_at": { "type": "string", "minLength": 1 },
+    "failed_variants": {
+      "type": "object", "minProperties": 1,
+      "additionalProperties": { "type": "string", "pattern": "^(refused:|backtest_failed:)" },
+      "description": "E-061 C2 S2a (D-015). Present only when non-empty. {variant_id: reason}; `refused:` = refused before any backtest (no trial row), `backtest_failed:` = a spent look."
+    },
+    "untested_variants": {
+      "type": "object", "minProperties": 1,
+      "additionalProperties": { "type": "string", "minLength": 1 },
+      "description": "E-061 C2 S2a (card D). Present only when non-empty. {variant_id: reason} for variants of the idea with no graded column in this run."
+    },
+    "partial_coverage_variants": {
+      "type": "object", "minProperties": 1,
+      "additionalProperties": { "type": "string", "minLength": 1 },
+      "description": "E-061 C2 S2b (D-042, temporary). Present only when non-empty. {variant_id: reason} for GRADED columns that ran on fewer windows than the run protocol."
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "result": { "const": "SPEC_ERROR" } }, "required": ["result"] },
+      "then": { "properties": { "idea_status": { "const": null } } },
+      "else": { "properties": { "idea_status": { "enum": ["validated", "refuted", "inconclusive"] } } }
+    }
+  ],
+  "definitions": {
+    "cell": {
+      "type": "object",
+      "required": ["result"],
+      "additionalProperties": false,
+      "properties": {
+        "result": { "enum": ["PASS", "FAIL", "INCONCLUSIVE", "SPEC_ERROR"] },
+        "reason": { "type": ["string", "null"] },
+        "n_windows": { "type": "integer", "minimum": 0 },
+        "n_trades": { "type": "number", "minimum": 0 },
+        "value": { "type": ["number", "null"] },
+        "threshold": { "type": ["number", "null"] },
+        "comparator": { "enum": [">=", ">", "<=", "<", "=="] },
+        "detail": { "type": "object", "description": "sign_consistent_by_era only: {era_medians, era_signs, reason?}." },
+        "per_symbol": {
+          "type": "object", "minProperties": 1,
+          "additionalProperties": { "$ref": "#/definitions/leaf_cell" },
+          "description": "symbol_reducer=per_symbol_all roll-up only: {symbol: cell}; the cell's result is the dominant one (SPEC_ERROR > FAIL > INCONCLUSIVE > PASS)."
+        },
+        "source": { "const": "profit_bars", "description": "profit_bars cells only (composition_runs)." },
+        "bars": { "type": "array", "items": { "$ref": "#/definitions/bar_row" } },
+        "weight_schedule": {},
+        "n_eff": {},
+        "p_value_one_sided": {},
+        "max_p_value": {},
+        "composite": {},
+        "fully_explained": {}
+      }
+    },
+    "leaf_cell": {
+      "allOf": [ { "$ref": "#/definitions/cell" }, { "not": { "required": ["per_symbol"] } } ]
+    },
+    "bar_row": {
+      "type": "object",
+      "required": ["name", "threshold", "actual", "result"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "threshold": { "type": "number" },
+        "actual": { "type": ["number", "null"] },
+        "result": { "enum": ["PASS", "FAIL", "NOT_EVALUABLE"] },
+        "basis": { "type": "string" },
+        "comparator": { "enum": [">=", ">", "<="], "description": "v2 rows only." },
+        "note": { "type": "string" },
+        "detail": { "type": "object" },
+        "not_evaluable_reason": { "type": ["string", "null"] }
+      }
+    }
+  }
+}
