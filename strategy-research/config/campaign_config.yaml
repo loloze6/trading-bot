@@ -431,12 +431,21 @@ orchestrator:
       # Sharpe and avg daily return on the equal-weight portfolio; trades per coin
       # over the whole test without end_of_window forced closes; beats buy-and-hold
       # after costs; pooled realized edge / cost ratio > cost_edge_ratio_min with a
-      # cost_edge_min_trades floor. The bars file must carry the three v2 keys. The
+      # cost_edge_min_trades floor. The bars file must carry the four v2 keys. The
       # evaluation records `bars_definitions: v2`, and a holdout spend refuses
       # `bars_changed` when the evaluation's definitions differ from this flag now.
-      # The DSR bar keeps its trial-ledger basis (D-041 is E-062 S2b-2); the
-      # temporary D-042 partial-coverage cap still applies (S2b-3). The legacy
-      # promote path never uses v2.
+      # E-062 S2b-2b (D-041/D-046): every backtest's trial-ledger row also carries
+      # a `whole_test` block (its whole-test daily Sharpe, T, skew, kurtosis; a
+      # failure is recorded in the block, the row is still written), and the DSR
+      # bar is the Bailey & Lopez de Prado 2014 DSR of the whole-test daily Sharpe
+      # (basis deflated_sharpe_whole_test_daily_on_campaign_trial_ledger; below
+      # dsr_min_same_basis_trials same-basis values the benchmark is sigma_null);
+      # the sparse-trading branch / expectancy t-stat no longer reach branch 3,
+      # the grid or the spend. The evaluation's dsr_basis records sharpe_basis,
+      # n_same_basis, min_same_basis and the recompute overlay's presence and
+      # sha256; a spend refuses a sharpe_basis mismatch. The temporary D-042
+      # partial-coverage cap still applies (S2b-3). The legacy promote path and
+      # the deflate_sharpe CLI never use v2.
   category_reports:
     enabled: false
       # E-046a Slice 5a (delivery_plan_v26.md, "Slice 5 -- Reports and

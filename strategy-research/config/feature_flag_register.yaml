@@ -219,7 +219,7 @@ flags:
     reader: run_phase1_research._profit_bars_v2_enabled
     owner: Jeremy
     state: off_incomplete
-    blocked_on: "E-062 (S2b-2 one scoring for the DSR / trial ledger, S2b-3 D-042 normalisation, S2b-4 end-to-end test) and the operator's signature (ratified_by / ratified_at) on config/profitability_bars.yaml"
+    blocked_on: "E-062 (S2b-2c legacy recompute tool + its operator write, S2b-3 D-042 normalisation, S2b-4 end-to-end test) and the operator's signature (ratified_by / ratified_at) on config/profitability_bars.yaml, including dsr_min_same_basis_trials and the re-signed 0.95 (D-046)"
     criterion: >
       Landed 2026-09-29 (E-062 S2b-1, engineering/roadmap/E-062/S1_FINDINGS.md
       Q5/Q7/G8; D-034..D-039). Requires profit_bars_every_backtest; the run
@@ -232,10 +232,17 @@ flags:
       drawdown, whole-test daily Sharpe, whole-test mean daily return, trades
       per coin without end_of_window forced closes, beats buy-and-hold after
       costs (strict >), pooled realized edge / cost ratio (strict >, with the
-      cost_edge_min_trades floor), and the DSR on its unchanged ledger basis;
-      each row records its basis; the evaluation records bars_definitions: v2
-      and a spend under other definitions is refused (bars_changed). Tested by
-      tests/test_e062_s2b1_profit_bars_v2.py. Turn on in C4's target flag set
+      cost_edge_min_trades floor), and the DSR; each row records its basis;
+      the evaluation records bars_definitions: v2 and a spend under other
+      definitions is refused (bars_changed). E-062 S2b-2b (D-041/D-046): on,
+      every backtest's ledger row carries a `whole_test` block, the DSR is the
+      exact BLP 2014 form on the whole-test daily Sharpe (sigma_null below
+      dsr_min_same_basis_trials same-basis values; no sparse branch), dsr_basis
+      records sharpe_basis / n_same_basis / min_same_basis / the recompute
+      overlay's presence and sha256, and a spend refuses a sharpe_basis
+      mismatch; off, ledger rows and evaluations byte-identical. Tested by
+      tests/test_e062_s2b1_profit_bars_v2.py and
+      tests/test_e062_s2b2b_dsr_wiring.py. Turn on in C4's target flag set
       once the S2b slices land and the operator has signed the bars file.
 
   - name: data_availability_gate

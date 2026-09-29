@@ -86,6 +86,11 @@ except Exception:  # helper unimportable -> validation is a no-op, never break t
 
 ROOT = Path(".")
 CAMPAIGN_STATE_PATH = ROOT / "campaign_record" / "campaign_state.yaml"
+# E-062 S2b-2b (D-041/D-046; S2B2_FINDINGS Q4/G8): the append-only overlay of
+# legacy trial Sharpes recomputed on the whole-test basis. Read ONLY through
+# this constant, by _load_trial_sharpe_basis_overlay (flag-on
+# orchestrator.profit_bars_v2 only); its presence and sha256 are recorded.
+TRIAL_SHARPE_BASIS_OVERLAY_PATH = ROOT / "campaign_record" / "trial_sharpe_basis_recompute.yaml"
 
 # E-054 Layer 2 (2026-09-11): data-availability gate. Originally shipped
 # off-by-default via an env var. delivery_plan_v26.md s:0.4 item 14
@@ -1776,7 +1781,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 continue
 
             try:
-                _record_backtest_trial(run_id, summary, variant_config_path, trial_id=trial_id, **_trial_kw)
+                _record_backtest_trial(run_id, summary, variant_config_path, trial_id=trial_id, **_trial_kw,
+                                       **_whole_test_trial_kw(RUN_DIR, summary))
             except Exception as _write_err:
                 try:
                     _record_failed_backtest_trial(
@@ -2241,7 +2247,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
         # also fails — degrade to a loud log and re-raise the ORIGINAL error, never mask it with
         # the recovery's own.
         try:
-            _record_backtest_trial(run_id, summary, config_path)
+            _record_backtest_trial(run_id, summary, config_path,
+                                   **_whole_test_trial_kw(RUN_DIR, summary))
         except Exception as _write_err:
             try:
                 _record_failed_backtest_trial(
@@ -2960,6 +2967,9 @@ _PROFITABILITY_BARS_V2_SCHEMA = {
     "buy_and_hold_excess_return_min": (int, float),
     "cost_edge_ratio_min":            (int, float),
     "cost_edge_min_trades":           (int,),
+    # E-062 S2b-2b (D-046): the same-basis trial count at which the DSR's
+    # benchmark switches from sigma_null to the cross-trial spread. >= 2.
+    "dsr_min_same_basis_trials":      (int,),
 }
 
 
@@ -2975,9 +2985,10 @@ def _load_profitability_bars(path: Path | None = None, *, v2: bool = False) -> d
     unparseable/empty file -- never silently defaults a threshold. `path` is
     overridable for tests; defaults to ROOT / "config" / "profitability_bars.yaml".
 
-    v2=True (callers pass _profit_bars_v2_enabled()): the three
-    _PROFITABILITY_BARS_V2_SCHEMA keys are required too, and
-    cost_edge_min_trades must be >= 1. v2=False: exactly the v1 schema.
+    v2=True (callers pass _profit_bars_v2_enabled()): the
+    _PROFITABILITY_BARS_V2_SCHEMA keys are required too,
+    cost_edge_min_trades must be >= 1 and dsr_min_same_basis_trials >= 2
+    (E-062 S2b-2b). v2=False: exactly the v1 schema.
 
     ratified_at may be an unquoted YAML date (`ratified_at: 2026-09-30` loads as
     a datetime.date, E-062 S1 G9); it is returned as its ISO string, so every
@@ -3030,6 +3041,11 @@ def _load_profitability_bars(path: Path | None = None, *, v2: bool = False) -> d
     if v2 and doc["cost_edge_min_trades"] < 1:
         raise ProfitabilityBarsSchemaError(
             f"{bars_path}'s cost_edge_min_trades={doc['cost_edge_min_trades']!r} must be >= 1."
+        )
+    if v2 and doc["dsr_min_same_basis_trials"] < 2:
+        raise ProfitabilityBarsSchemaError(
+            f"{bars_path}'s dsr_min_same_basis_trials={doc['dsr_min_same_basis_trials']!r} must "
+            f"be >= 2 (a cross-trial spread needs at least two values)."
         )
 
     return doc
@@ -4569,6 +4585,7 @@ def _profit_bars_grid_grader(run_dir: Path, run_id: str):
     v2_kw = {"v2": True} if v2 else {}
     bars = _load_profitability_bars(**v2_kw)
     dsr_ctx = _promotion_dsr_context()
+    wctx = _whole_test_dsr_context(dsr_ctx) if v2 else None  # E-062 S2b-2b
     invalidated = _invalidated_trial_ids()
     kind = "composite" if _composition_mode(Path(run_dir)) else "variant"
     man_path = Path(run_dir) / "artifacts" / _COMPOSITION_MANIFEST_FILE
@@ -4584,7 +4601,7 @@ def _profit_bars_grid_grader(run_dir: Path, run_id: str):
             return {"result": cand["result"], "bars": [], "reasons": [cand["reason"]], **extra}
         results, overall, reasons = _grade_profit_bars_protocol_result(
             Path(run_dir), cand["protocol_result"], cand["protocol_result_ref"], bars, dsr_ctx,
-            **v2_kw)
+            **({**v2_kw, "trial_id": cand["trial_id"], "whole_test_ctx": wctx} if v2 else {}))
         return {"result": overall, "bars": results, "reasons": reasons, **extra}
     return grade
 
@@ -5432,6 +5449,13 @@ def _dsr_on_current_ledger(run_dir: Path, variant: str, entry: dict, bars: dict,
     if entry.get("trial_id") in _invalidated_trial_ids():
         raise HoldoutUnlockRefused("dsr_fails_current_ledger",
                                    f"trial {entry.get('trial_id')!r} is now invalidated_artifact")
+    try:
+        v2_now = _profit_bars_v2_enabled()
+    except Exception as e:  # noqa: BLE001 -- an unreadable flag refuses the spend
+        raise HoldoutUnlockRefused("dsr_fails_current_ledger",
+                                   f"the profit_bars_v2 flag does not read: {type(e).__name__}: {e}")
+    if v2_now:
+        return _dsr_on_current_ledger_v2(run_dir, variant, entry, bars, ev)
     rel = entry.get("protocol_result_ref")
     try:
         pr = load_yaml(run_dir / rel) if rel else None
@@ -5450,6 +5474,49 @@ def _dsr_on_current_ledger(run_dir: Path, variant: str, entry: dict, bars: dict,
             f"grading {basis})")
     return {"deflated_sharpe_ratio": dsr, "n_dsr_total": ctx["n_dsr_total"],
             "n_trials": ctx["n_trials"], "n_dsr_total_at_grading": basis}
+
+
+def _dsr_on_current_ledger_v2(run_dir: Path, variant: str, entry: dict, bars: dict,
+                              ev: dict) -> dict:
+    """E-062 S2b-2b (S2B2_FINDINGS Q5/G7): _dsr_on_current_ledger under
+    orchestrator.profit_bars_v2.enabled. Refuses dsr_fails_current_ledger when
+    the evaluation's dsr_basis.sharpe_basis is absent or not the current
+    whole-test basis (e.g. an evaluation graded by S2b-1 code, on the legacy
+    ledger basis, with the flag on). Otherwise the whole-test DSR is
+    recomputed NOW (_whole_test_dsr_context / _whole_test_dsr_candidate, the
+    same functions branch 3 graded with) and must still clear
+    deflated_sharpe_threshold (>=, the bar's comparator). A small K is never a
+    refusal on its own (D-046: sigma_null)."""
+    basis = ev.get("dsr_basis") or {}
+    want = _portfolio_whole_test_module().WHOLE_TEST_BASIS
+    if basis.get("sharpe_basis") != want:
+        raise HoldoutUnlockRefused(
+            "dsr_fails_current_ledger", f"variant {variant!r}: the evaluation's deflated Sharpe "
+            f"was graded on sharpe_basis {basis.get('sharpe_basis')!r}, not the current "
+            f"{want!r} -- grade again")
+    rel = entry.get("protocol_result_ref")
+    try:
+        pr = load_yaml(run_dir / rel) if rel else None
+        if not isinstance(pr, dict):
+            raise ValueError(f"no readable protocol_result at {rel!r}")
+        wctx = _whole_test_dsr_context()
+        res = _whole_test_dsr_candidate(wctx, run_dir, pr, entry.get("trial_id"),
+                                        bars["dsr_min_same_basis_trials"])
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        raise HoldoutUnlockRefused("dsr_fails_current_ledger",
+                                   f"the deflated Sharpe cannot be reproduced: {e}")
+    dsr, threshold = res["dsr"], bars["deflated_sharpe_threshold"]
+    if not isinstance(dsr, (int, float)) or not math.isfinite(dsr) or dsr < threshold:
+        raise HoldoutUnlockRefused(
+            "dsr_fails_current_ledger", f"variant {variant!r}: whole-test deflated Sharpe on the "
+            f"current ledger is {dsr!r} (threshold {threshold}; ledger N now {res['N']}, K "
+            f"{res['K']}, at grading N {basis.get('n_dsr_total')}, K "
+            f"{basis.get('n_same_basis')}){': ' + res['reason'] if res['reason'] else ''}")
+    return {"deflated_sharpe_ratio": dsr, "n_dsr_total": wctx["n_dsr_total"],
+            "n_trials": wctx["n_trials"], "n_dsr_total_at_grading": basis.get("n_dsr_total"),
+            "sharpe_basis": want, "n_same_basis": res["K"],
+            "n_same_basis_at_grading": basis.get("n_same_basis"),
+            "basis_overlay": dict(wctx["basis_overlay"])}
 
 
 _FINISHED_PREFIXES = ("completed", "rejected", "failed_validation")
@@ -9793,7 +9860,7 @@ def _trial_symbols_field(symbols) -> dict:
 
 
 def _record_backtest_trial(run_id: str, summary: dict, config_path: Path, trial_id: str | None = None,
-                           symbols: list | None = None):
+                           symbols: list | None = None, whole_test: dict | None = None):
     """
     A6.2: record a completed full-backtest as a trial in campaign_state.trial_sharpes.
     Appends {trial_id, source, sharpe, expectancy_bps, n_trades, statistic_valid}.
@@ -9819,6 +9886,12 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path, trial_
     `symbols` (E-061 C2 S2b, G6): passed only by the variant loop for a
     per-coin variant -- the row then carries `symbols` (_trial_symbols_field).
     None: no such key, the row is byte-identical to before.
+
+    `whole_test` (E-062 S2b-2b, S2B2_FINDINGS G1/G10): passed only under
+    orchestrator.profit_bars_v2.enabled (_whole_test_trial_kw) -- the row then
+    carries the nested `whole_test` block (_whole_test_ledger_block). None: no
+    such key, the row is byte-identical to before. The legacy fields above are
+    written unchanged either way (they feed only the legacy readers).
     """
     effective_trial_id = trial_id if trial_id is not None else run_id
     symbols_field = _trial_symbols_field(symbols)
@@ -9895,6 +9968,8 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path, trial_
     reproduces_trial = summary.get("reproduces_trial") or diag.get("reproduces_trial")
     if reproduces_trial is not None:
         trial_entry["reproduces_trial"] = reproduces_trial
+    if whole_test is not None:  # E-062 S2b-2b: flag-on only
+        trial_entry["whole_test"] = whole_test
     trials.append(trial_entry)
     _save_campaign_state(state)
     print(f"⚙️  A6.2: backtest trial recorded (sharpe={median_sharpe}, "
@@ -11582,7 +11657,9 @@ def _portfolio_profit_metrics(run_dir: Path, pr: dict) -> dict:
 # One `basis` per v2 row (config/profitability_bars.yaml's header documents each).
 _BASIS_V2 = {
     "sharpe_min": "portfolio_equal_weight_whole_test_chained_daily_sharpe",
-    "deflated_sharpe_threshold": "deflated_sharpe_on_campaign_trial_ledger",
+    # E-062 S2b-2b (D-041/D-046): the whole-test daily DSR; the v1 rows keep the
+    # legacy per-window ledger basis.
+    "deflated_sharpe_threshold": "deflated_sharpe_whole_test_daily_on_campaign_trial_ledger",
     "max_drawdown_pct_max": "portfolio_equal_weight_whole_test_chained",
     "trade_count_min": "per_coin_total_whole_test_excl_window_closes",
     "avg_daily_return_min": "portfolio_equal_weight_whole_test_chained_mean_daily_return",
@@ -11733,6 +11810,198 @@ def _v2_charged_fees(coins: list, records: list | None) -> dict:
     return out
 
 
+# ---------------------------------------------------------------------------
+# E-062 S2b-2b -- the whole-test DSR wiring (D-041/D-046; S2B2_FINDINGS Q1 P1,
+# C1-C6, Q2, Q5, Q6, G1/G6/G7/G10/G11/G12). Flag-on only
+# (orchestrator.profit_bars_v2.enabled). The math is S2b-2a's, imported:
+# portfolio_whole_test.whole_test_sharpe_stats and deflate_sharpe's
+# compute_dsr_whole_test / select_same_basis_sample / validate_basis_overlay.
+# Nothing here re-implements a formula. The legacy per-window DSR, its sparse
+# branch (expectancy t-stat), the legacy promote path and the deflate_sharpe
+# CLI are untouched (D-043 removes them). No lookahead: the inputs are the
+# candidate's own test-window equity files and the trial ledger as it stands.
+# ---------------------------------------------------------------------------
+
+def _deflate_sharpe_module():
+    import deflate_sharpe  # tools/ sibling (on sys.path); imported only under v2
+    return deflate_sharpe
+
+
+def _whole_test_chain(run_dir: Path, pr: dict) -> tuple:
+    """(chain, coins): the candidate's chained whole-test equal-weight portfolio
+    (chain_windows over the protocol's nominal window bounds). The ONE place
+    the chain is built, for the bar rows (_whole_test_profit_metrics), the
+    ledger block (_whole_test_ledger_block) and the DSR's candidate stats, so
+    the ledger's Sharpe and the bar's Sharpe cannot come from two chains.
+    Raises PortfolioNotEvaluable / ValueError as chain_windows does."""
+    pwt = _portfolio_whole_test_module()
+    windows, coins = _pd.load_windows(run_dir, pr)
+    bounds = _v2_protocol_window_bounds(pr, windows)
+    return pwt.chain_windows(windows, coins, bounds), coins
+
+
+def _whole_test_candidate_stats(run_dir: Path, pr: dict) -> dict:
+    """whole_test_sharpe_stats of the candidate's chain: {sr_daily, T, skew,
+    kurtosis_raw}. PortfolioNotEvaluable under the S2a rules (a missing
+    curve, fewer than 30 daily returns, zero stdev); any other error raises."""
+    chain, _coins = _whole_test_chain(run_dir, pr)
+    return _portfolio_whole_test_module().whole_test_sharpe_stats(chain["daily_returns"])
+
+
+def _whole_test_ledger_block(run_dir: Path, pr: dict) -> dict:
+    """The `whole_test` block of a backtest's ledger row (S2B2_FINDINGS Q2/G1):
+    {basis, status, reason, sr_daily, n_daily_returns, skew, kurtosis}.
+    NEVER raises (G10): a PortfolioNotEvaluable is status not_evaluable, any
+    other error status error, each with its reason, and the stats None -- the
+    row is still written, so N counts the trial (K does not). Grading
+    recomputes the stats and fails loud on any difference."""
+    pwt = _portfolio_whole_test_module()  # outside the try: the basis tag is never missing
+    block = {"basis": pwt.WHOLE_TEST_BASIS, "status": "ok", "reason": None, "sr_daily": None,
+             "n_daily_returns": None, "skew": None, "kurtosis": None}
+    try:
+        st = _whole_test_candidate_stats(run_dir, pr)
+    except _pd.PortfolioNotEvaluable as exc:
+        block.update(status="not_evaluable", reason=f"whole-test Sharpe NOT_EVALUABLE: {exc}")
+        return block
+    except Exception as exc:  # noqa: BLE001 -- G10: recorded on the row, never raised here
+        block.update(status="error", reason=f"{type(exc).__name__}: {exc}")
+        return block
+    block.update(sr_daily=st["sr_daily"], n_daily_returns=st["T"], skew=st["skew"],
+                 kurtosis=st["kurtosis_raw"])
+    return block
+
+
+def _whole_test_trial_kw(run_dir: Path, summary: dict) -> dict:
+    """The extra keyword of _record_backtest_trial: {"whole_test": block} under
+    orchestrator.profit_bars_v2.enabled, else {} (the row byte-identical)."""
+    if not _profit_bars_v2_enabled():
+        return {}
+    return {"whole_test": _whole_test_ledger_block(run_dir, summary)}
+
+
+def _load_trial_sharpe_basis_overlay() -> tuple:
+    """(overlay index, record): the recompute overlay read through the ONE path
+    constant TRIAL_SHARPE_BASIS_OVERLAY_PATH, parsed and validated by
+    deflate_sharpe.validate_basis_overlay from the same bytes that are hashed.
+    record = {"present": bool, "sha256": hex or None}: an absent file is
+    recorded as absent (an empty overlay), never silently. A malformed
+    overlay raises."""
+    ds = _deflate_sharpe_module()
+    path = TRIAL_SHARPE_BASIS_OVERLAY_PATH
+    if not path.is_file():
+        return {}, {"present": False, "sha256": None}
+    raw = path.read_bytes()
+    index = ds.validate_basis_overlay(yaml.safe_load(raw.decode("utf-8")))
+    return index, {"present": True, "sha256": hashlib.sha256(raw).hexdigest()}
+
+
+def _whole_test_dsr_context(legacy_ctx: dict | None = None) -> dict:
+    """The campaign-wide inputs of the whole-test DSR, computed once per
+    evaluation: N (the legacy context's n_dsr_total -- the unchanged rule,
+    every deduped valid row), the same-basis sample (select_same_basis_sample
+    on the ledger rows and the overlay; K = its size) and the overlay record.
+    The sample's own N must equal the pipeline's n_dsr_total (the lockstep
+    twins _dedupe_trials / deduplicate_trials): a difference raises."""
+    legacy_ctx = legacy_ctx if legacy_ctx is not None else _promotion_dsr_context()
+    ds, basis = _deflate_sharpe_module(), _portfolio_whole_test_module().WHOLE_TEST_BASIS
+    rows = legacy_ctx["campaign"].get("trial_sharpes") or []
+    overlay, overlay_record = _load_trial_sharpe_basis_overlay()
+    sample = ds.select_same_basis_sample(rows, overlay, basis=basis)
+    if sample["N"] != legacy_ctx["n_dsr_total"]:
+        raise ValueError(f"whole-test DSR: the same-basis sample counts N={sample['N']} deduped "
+                         f"valid rows, the pipeline counts n_dsr_total="
+                         f"{legacy_ctx['n_dsr_total']} -- the two dedup implementations disagree")
+    return {"rows": rows, "sample": sample, "n_dsr_total": legacy_ctx["n_dsr_total"],
+            "n_trials": legacy_ctx["n_trials"], "sharpe_basis": basis,
+            "basis_overlay": overlay_record}
+
+
+def _whole_test_dsr_basis(wctx: dict, min_same_basis: int) -> dict:
+    """The v2 evaluation's `dsr_basis` (G7): the legacy counts plus
+    sharpe_basis, n_same_basis (K), min_same_basis and the overlay record."""
+    return {"n_dsr_total": wctx["n_dsr_total"], "n_trials": wctx["n_trials"],
+            "sharpe_basis": wctx["sharpe_basis"], "n_same_basis": wctx["sample"]["K"],
+            "min_same_basis": min_same_basis, "basis_overlay": dict(wctx["basis_overlay"])}
+
+
+# (ledger block key, whole_test_sharpe_stats key)
+_WHOLE_TEST_BLOCK_STATS = (("sr_daily", "sr_daily"), ("n_daily_returns", "T"),
+                           ("skew", "skew"), ("kurtosis", "kurtosis_raw"))
+
+
+def _whole_test_dsr_candidate(wctx: dict, run_dir: Path, pr: dict, trial_id: str,
+                              min_same_basis: int) -> dict:
+    """compute_dsr_whole_test's result for ONE candidate (D-046). The
+    candidate's stats are recomputed from its own artifacts and checked, in
+    lockstep, against its own ledger row (trial_id, source backtest):
+      * the row must exist once, not be invalidated, and carry a `whole_test`
+        block on the current basis;
+      * block ok: its four stats must equal the recomputed ones exactly, and
+        the row must be in the same-basis sample (review item b: a dedup that
+        collapsed it onto another row would silently drop it from K);
+      * block not_evaluable: the recompute must be NOT_EVALUABLE too (the DSR
+        is then NOT_EVALUABLE with that reason);
+      * block error (G10): raises -- grading fails loud;
+      * any other difference raises.
+    A small K is never NOT_EVALUABLE (sigma_null below the floor, D-046)."""
+    ds = _deflate_sharpe_module()
+    own = [r for r in wctx["rows"] if isinstance(r, dict) and r.get("trial_id") == trial_id
+           and r.get("source") == "backtest"]
+    if len(own) != 1:
+        raise ValueError(f"whole-test DSR: trial {trial_id!r} has {len(own)} backtest row(s) in "
+                         f"the trial ledger, not exactly 1")
+    row = own[0]
+    if row.get("invalidated_artifact"):
+        raise ValueError(f"whole-test DSR: trial {trial_id!r} is invalidated_artifact")
+    block = row.get("whole_test")
+    if not isinstance(block, dict) or block.get("basis") != wctx["sharpe_basis"]:
+        raise ValueError(f"whole-test DSR: trial {trial_id!r}'s ledger row has no whole_test block "
+                         f"on basis {wctx['sharpe_basis']!r} (got {block!r:.200}) -- written with "
+                         f"orchestrator.profit_bars_v2 off?")
+    if block.get("status") == "error":
+        raise ValueError(f"whole-test DSR: trial {trial_id!r}'s ledger whole_test block is "
+                         f"status error ({block.get('reason')}) -- grading refuses (G10)")
+    try:
+        stats = _whole_test_candidate_stats(run_dir, pr)
+        graded_status, graded_reason = "ok", None
+    except _pd.PortfolioNotEvaluable as exc:
+        stats, graded_status = None, "not_evaluable"
+        graded_reason = f"whole-test Sharpe NOT_EVALUABLE: {exc}"
+    if block.get("status") != graded_status:
+        raise ValueError(f"whole-test DSR: trial {trial_id!r}'s ledger whole_test block is status "
+                         f"{block.get('status')!r}, the recomputed one {graded_status!r} "
+                         f"({graded_reason}) -- ledger and artifacts disagree")
+    if graded_status != "ok":
+        candidate = {"status": "not_evaluable", "reason": graded_reason}
+    else:
+        diff = {k: (block.get(k), stats[s]) for k, s in _WHOLE_TEST_BLOCK_STATS
+                if block.get(k) != stats[s]}
+        if diff:
+            raise ValueError(f"whole-test DSR: trial {trial_id!r}'s ledger whole_test values "
+                             f"differ from the recomputed ones (ledger, graded): {diff}")
+        if not any(x["trial_id"] == trial_id and x["source"] == "backtest"
+                   for x in wctx["sample"]["rows"]):
+            raise ValueError(f"whole-test DSR: trial {trial_id!r} has an ok whole_test block but "
+                             f"is not in the same-basis sample -- deduplication collapsed it onto "
+                             f"another ledger row (same forecast_hash, coins and source), which "
+                             f"would silently remove it from K; refused")
+        candidate = {"status": "ok", **stats}
+    return ds.compute_dsr_whole_test(candidate, wctx["sample"]["srs"], wctx["n_dsr_total"],
+                                     min_same_basis)
+
+
+def _whole_test_dsr_note(pr_ref: str, res: dict) -> str:
+    """The v2 DSR row's note: the counts always, the benchmark when computed."""
+    base = (f"{pr_ref}: deflated Sharpe (Bailey & Lopez de Prado 2014, D-046) of the whole-test "
+            f"daily Sharpe on the campaign trial ledger; N={res['N']} counted trial(s), "
+            f"K={res['K']} same-basis value(s) (floor {res['min_same_basis']})")
+    if res["dsr"] is None:
+        return f"{base}; NOT_EVALUABLE: {res['reason']}"
+    return (f"{base}; SR={res['sr_daily']!r}/day over T={res['T']} daily returns, "
+            f"SR0={res['sr0']!r} (sigma {res['sigma_source']} {res['sigma_used']!r} x "
+            f"Z(N) {res['z_expected_max']!r})")
+
+
 def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
     """The v2 actual value of every row except the DSR, for ONE candidate:
     {bar name: {"actual": value or None, "note": str, "not_evaluable_reason":
@@ -11803,9 +12072,7 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
     # -- the chained whole-test portfolio --------------------------------------
     chain = chain_reason = None
     try:
-        windows, coins = _pd.load_windows(run_dir, pr)
-        bounds = _v2_protocol_window_bounds(pr, windows)
-        chain = pwt.chain_windows(windows, coins, bounds)
+        chain, coins = _whole_test_chain(run_dir, pr)
     except _pd.PortfolioNotEvaluable as exc:
         chain_reason = f"whole-test portfolio NOT_EVALUABLE: {exc}"
     if chain is None:
@@ -11866,22 +12133,24 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
     return out
 
 
-def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict) -> tuple:
+def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
+                          dsr_detail: dict | None = None, dsr_reason: str | None = None) -> tuple:
     """The v2 bar rows (E-062 S2b-1): (results, overall, reasons) in
     _grade_profit_bars' shape. Seven rows, in this order, each keeping its bars
     file name and carrying `basis` (_BASIS_V2), `comparator` (_COMPARATOR_V2),
     `note`, `detail` and -- when NOT_EVALUABLE -- `not_evaluable_reason`:
-    sharpe_min, deflated_sharpe_threshold (its ledger basis unchanged, G4 --
-    D-041 is S2b-2), max_drawdown_pct_max, trade_count_min,
+    sharpe_min, deflated_sharpe_threshold (the whole-test daily DSR, E-062
+    S2b-2b / D-046), max_drawdown_pct_max, trade_count_min,
     avg_daily_return_min, buy_and_hold_excess_return_min, cost_edge_ratio_min.
     `metrics` is _whole_test_profit_metrics(...). overall is PASS only when every
-    row is PASS."""
+    row is PASS. `dsr_detail` / `dsr_reason`: compute_dsr_whole_test's result
+    and its NOT_EVALUABLE reason (E-062 S2b-2b)."""
     rows = {**metrics,
             "deflated_sharpe_threshold": {
-                "actual": dsr, "note": dsr_note, "detail": {},
+                "actual": dsr, "note": dsr_note, "detail": dict(dsr_detail or {}),
                 "not_evaluable_reason": (None if dsr is not None else
-                                         "no deflated Sharpe (sparse-trading or "
-                                         "insufficient-trials path)")}}
+                                         "no deflated Sharpe" + (f": {dsr_reason}"
+                                                                 if dsr_reason else ""))}}
     results = []
     for name in ("sharpe_min", "deflated_sharpe_threshold", "max_drawdown_pct_max",
                  "trade_count_min", "avg_daily_return_min", "buy_and_hold_excess_return_min",
@@ -11917,7 +12186,9 @@ def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict) -> t
 
 
 def _grade_profit_bars_protocol_result(run_dir: Path, pr: dict, pr_ref: str, bars: dict,
-                                       dsr_ctx: dict, *, v2: bool = False) -> tuple:
+                                       dsr_ctx: dict, *, v2: bool = False,
+                                       trial_id: str | None = None,
+                                       whole_test_ctx: dict | None = None) -> tuple:
     """Branch 3's grading of ONE tested backtest (a variant, or a composite's
     variant): Sharpe and DSR from the promotion audit's evaluator on its own
     protocol_result, trade count from its per_symbol_summary, drawdown and avg
@@ -11927,19 +12198,19 @@ def _grade_profit_bars_protocol_result(run_dir: Path, pr: dict, pr_ref: str, bar
     (_profit_bars_grid_grader): the two cannot disagree on the same inputs.
 
     v2=True (orchestrator.profit_bars_v2.enabled, E-062 S2b-1): the v2 rows
-    (_grade_profit_bars_v2 on _whole_test_profit_metrics); the DSR keeps its
-    ledger basis. v2=False: exactly as before."""
-    raw_median_sr, _sparse, _passes, _e_max, dsr_result = dsr_ctx["dsr_candidate"](pr)
+    (_grade_profit_bars_v2 on _whole_test_profit_metrics). E-062 S2b-2b: the
+    DSR is the whole-test daily DSR (_whole_test_dsr_candidate on
+    `whole_test_ctx`, the candidate's own ledger row `trial_id`); the legacy
+    evaluator, its sparse branch and expectancy t-stat are not called (Q6).
+    v2=False: exactly as before."""
     if v2:
-        return _grade_profit_bars(
-            bars, sharpe=None, sharpe_note="",
-            dsr=dsr_result.get("deflated_sharpe_ratio"),
-            dsr_note=(f"{pr_ref}: deflated Sharpe on the campaign trial ledger (the promotion "
-                      f"audit's rule, per-window Sharpe basis unchanged until E-062 S2b-2; None "
-                      f"on the sparse-trading or insufficient-trials path)"),
-            pss=pr.get("per_symbol_summary") or {},
-            v2=_whole_test_profit_metrics(run_dir, pr, bars),
-        )
+        res = _whole_test_dsr_candidate(whole_test_ctx, run_dir, pr, trial_id,
+                                        bars["dsr_min_same_basis_trials"])
+        return _grade_profit_bars_v2(
+            bars, dsr=res["dsr"], dsr_note=_whole_test_dsr_note(pr_ref, res),
+            metrics=_whole_test_profit_metrics(run_dir, pr, bars),
+            dsr_detail=res, dsr_reason=res["reason"])
+    raw_median_sr, _sparse, _passes, _e_max, dsr_result = dsr_ctx["dsr_candidate"](pr)
     return _grade_profit_bars(
         bars,
         sharpe=raw_median_sr,
@@ -12039,6 +12310,8 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
                                            "being loaded -- grade again.")
     candidates = _profit_bars_backtest_candidates(run_dir, run_id)
     dsr_ctx = _promotion_dsr_context()
+    # E-062 S2b-2b: under v2 the whole-test DSR's inputs, once for every variant.
+    wctx = _whole_test_dsr_context(dsr_ctx) if v2 else None
 
     variants: dict = {}
     for cid, cand in candidates.items():
@@ -12050,7 +12323,7 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
             continue
         results, overall, reasons = _grade_profit_bars_protocol_result(
             run_dir, cand["protocol_result"], cand["protocol_result_ref"], bars, dsr_ctx,
-            **v2_kw)
+            **({**v2_kw, "trial_id": cand["trial_id"], "whole_test_ctx": wctx} if v2 else {}))
         if cand.get("partial_coverage"):
             # Review fix M1 (TEMPORARY, D-042; lifted by E-062 S2b).
             results, overall, reasons = _cap_partial_coverage_bars(
@@ -12069,7 +12342,10 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
         **({"bars_definitions": PROFIT_BARS_DEFINITIONS_V2} if v2 else {}),
         "bars_ratified_by": bars["ratified_by"],
         "bars_ratified_at": bars["ratified_at"],
-        "dsr_basis": {"n_dsr_total": dsr_ctx["n_dsr_total"], "n_trials": dsr_ctx["n_trials"]},
+        # E-062 S2b-2b: under v2 also sharpe_basis, n_same_basis, min_same_basis
+        # and the overlay's presence / sha256 (G7); flag off, unchanged.
+        "dsr_basis": (_whole_test_dsr_basis(wctx, bars["dsr_min_same_basis_trials"]) if v2 else
+                      {"n_dsr_total": dsr_ctx["n_dsr_total"], "n_trials": dsr_ctx["n_trials"]}),
         # Per-variant shape. Composites (slice 7) would add their own graded
         # entries -- see _profit_bars_backtest_candidates' seam note.
         "variants": variants,

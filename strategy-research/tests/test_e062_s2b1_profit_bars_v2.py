@@ -51,7 +51,8 @@ V1_BARS = {"sharpe_min": 1.0, "max_drawdown_pct_max": 20.0, "avg_daily_return_mi
            "target_instrument_set": ["BTCUSDT", "ETHUSDT"],
            "ratified_by": None, "ratified_at": None}
 V2_KEYS = {"buy_and_hold_excess_return_min": 0.0, "cost_edge_ratio_min": 2.2,
-           "cost_edge_min_trades": 100}
+           "cost_edge_min_trades": 100,
+           "dsr_min_same_basis_trials": 10}  # E-062 S2b-2b (declared change, D-046)
 V2_BARS = {**V1_BARS, **V2_KEYS}
 
 ROW_ORDER = ["sharpe_min", "deflated_sharpe_threshold", "max_drawdown_pct_max",
@@ -59,7 +60,8 @@ ROW_ORDER = ["sharpe_min", "deflated_sharpe_threshold", "max_drawdown_pct_max",
              "cost_edge_ratio_min"]
 EXPECTED_BASIS = {
     "sharpe_min": "portfolio_equal_weight_whole_test_chained_daily_sharpe",
-    "deflated_sharpe_threshold": "deflated_sharpe_on_campaign_trial_ledger",
+    # E-062 S2b-2b (declared change): the whole-test daily DSR's basis.
+    "deflated_sharpe_threshold": "deflated_sharpe_whole_test_daily_on_campaign_trial_ledger",
     "max_drawdown_pct_max": "portfolio_equal_weight_whole_test_chained",
     "trade_count_min": "per_coin_total_whole_test_excl_window_closes",
     "avg_daily_return_min": "portfolio_equal_weight_whole_test_chained_mean_daily_return",
@@ -192,7 +194,19 @@ def _v2_run(**build) -> Path:
     pr = _build(run_dir, **build)
     rpr.save_yaml(run_dir / "artifacts" / "protocol_result.yaml", pr)
     _seed_dsr_ledger()
+    _attach_whole_test(run_dir, {RUN_ID: pr})
     return run_dir
+
+
+def _attach_whole_test(run_dir: Path, prs: dict) -> None:
+    """E-062 S2b-2b (declared change): under v2 the DSR reads the candidate's own
+    ledger row's `whole_test` block, which the pipeline writes at protocol_execution
+    (_whole_test_ledger_block) -- the seeded rows get it the same way."""
+    state = rpr.load_yaml(rpr.CAMPAIGN_STATE_PATH)
+    for row in state["trial_sharpes"]:
+        if row.get("source") == "backtest" and row.get("trial_id") in prs:
+            row["whole_test"] = rpr._whole_test_ledger_block(run_dir, prs[row["trial_id"]])
+    rpr.save_yaml(rpr.CAMPAIGN_STATE_PATH, state)
 
 
 def _pbe(run_dir: Path) -> dict:
@@ -530,9 +544,10 @@ def test_m1_one_variant_head_hole_does_not_abort_the_other_variants():
     rpr.save_yaml(arts / "variants" / "index.yaml", {"variants": {
         v: {"status": "validated", "config_path": f"artifacts/variants/{v}/strategy_config.json"}
         for v in vids}})
+    prs = {}
     for v in vids:
-        rpr.save_yaml(arts / "variants" / v / "protocol_result.yaml",
-                      _build(run_dir / "variants" / v, head=3 if v == "design" else 0))
+        prs[f"{RUN_ID}:{v}"] = _build(run_dir / "variants" / v, head=3 if v == "design" else 0)
+        rpr.save_yaml(arts / "variants" / v / "protocol_result.yaml", prs[f"{RUN_ID}:{v}"])
     grid = _grid(vids, "refuted")
     rpr.save_yaml(arts / "grid_evaluation.yaml", grid)
     rpr.save_yaml(arts / "idea_status.yaml", rpr._build_idea_status_artifact(grid, RUN_ID))
@@ -540,6 +555,7 @@ def test_m1_one_variant_head_hole_does_not_abort_the_other_variants():
         {"trial_id": f"{RUN_ID}:{v}", "source": "backtest", "sharpe": 0.3,
          "forecast_hash": f"fh-{v}"} for v in vids]})
     _seed_dsr_ledger()
+    _attach_whole_test(run_dir, prs)
     ev = rpr._evaluate_profit_bars_every_backtest(run_dir, RUN_ID)
     assert ev == _pbe(run_dir) and ev["bars_definitions"] == "v2"
     design = {r["name"]: r for r in ev["variants"]["design"]["bars"]}
