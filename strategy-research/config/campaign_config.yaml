@@ -678,8 +678,18 @@ orchestrator:
       # calls) and self_report_differs (informational). Nothing raises, retries
       # or stops on a mismatch. No observed model (a stub, an empty stream)
       # leaves the field as self-reported and records observed: null.
-      # rubric_version and citations are C5.7b-2 (not built here). Flipping the
-      # flag mid-run only affects readers not yet run.
+      # C5.7b-2 (also under this flag): a reader proposal's `rubric_version` must
+      # be exactly its category's `<category>-reader-v2` (a closed set, pinned to
+      # the reader SKILL files by tests/test_c5_7b2_rubric_citations.py); an
+      # unknown, other-category or `-v1` value goes through the reader's existing
+      # retry (one retry with the message appended, then the stage raises and the
+      # run ends `failed`). The audit-log `provenance.citations` block records,
+      # per proposal, which cited field paths exist in the files the reader
+      # received (resolved / unresolved / no_path_items); RECORD ONLY -- a
+      # citation never rejects, retries or raises (D-048; A+/B decided after C4's
+      # first real reader output). Flipping the flag mid-run only affects readers
+      # not yet run; a proposals/ file left by a pre-flag attempt (`-v1`) fails
+      # the flag-on resume re-validation.
   decide_next:
     enabled: false
       # E-059 S2a (delivery_plan_v26.md slice 6b, "decide-next and the queue";
