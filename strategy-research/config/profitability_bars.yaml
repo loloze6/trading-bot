@@ -50,7 +50,7 @@
 #     all tested coins together, EQUALLY WEIGHTED -- for return and drawdown.
 #   * orchestrator.profit_bars_v2.enabled ON too (E-062 S2b-1, D-034..D-039): the
 #     v2 definitions below ("PROFIT BARS V2"); the evaluation records
-#     `bars_definitions: v2`, and the three v2 keys at the bottom of this file are
+#     `bars_definitions: v2`, and the four v2 keys at the bottom of this file are
 #     required.
 #
 # The EQUAL-WEIGHT PORTFOLIO (flag on; run_phase1_research._portfolio_profit_metrics),
@@ -153,8 +153,25 @@
 #                                  of the chained daily returns; NOT_EVALUABLE
 #                                  below 30 returns or at zero stdev. `>=`.
 #                                  basis: portfolio_equal_weight_whole_test_chained_daily_sharpe
-#   deflated_sharpe_threshold  v2: unchanged (trial-ledger basis until E-062 S2b-2). `>=`.
-#                                  basis: deflated_sharpe_on_campaign_trial_ledger
+#   deflated_sharpe_threshold  v2 (E-062 S2b-2b, D-041/D-046): the Bailey & Lopez
+#                                  de Prado 2014 DSR of the candidate's whole-test
+#                                  daily Sharpe (mean / sample stdev of the chained
+#                                  daily returns, per day, not annualised; T, skew
+#                                  and raw kurtosis of those returns). N = every
+#                                  counted trial of the campaign ledger (unchanged
+#                                  rule). K = the ledger's deduped valid rows whose
+#                                  `whole_test` block (or recompute-overlay entry,
+#                                  campaign_record/trial_sharpe_basis_recompute.yaml)
+#                                  is ok on this basis, the candidate included.
+#                                  Benchmark: K < dsr_min_same_basis_trials ->
+#                                  SR0 = sigma_null * Z(N), sigma_null = 1/sqrt(T-1);
+#                                  otherwise SR0 = max(mean_K, 0) + max(sigma_K,
+#                                  sigma_null) * Z(N). NOT_EVALUABLE only under the
+#                                  whole-test Sharpe rules above or N < 2, never for
+#                                  a small K. No sparse-trading branch. `>=`. The
+#                                  0.95 means something else under this formula:
+#                                  the operator re-signs it with this file (D-046).
+#                                  basis: deflated_sharpe_whole_test_daily_on_campaign_trial_ledger
 #   max_drawdown_pct_max       v2: largest peak-to-trough fall of the chained
 #                                  BAR-level curve over the WHOLE test (D-034). `<=`.
 #                                  basis: portfolio_equal_weight_whole_test_chained
@@ -181,6 +198,11 @@
 #                                  non-forced trades or when a trade lacks a cost.
 #                                  basis: pooled_trades_realized_edge_to_cost
 #   cost_edge_min_trades       int, v2 only: the floor of the row above (>= 1).
+#   dsr_min_same_basis_trials  int, v2 only (E-062 S2b-2b, D-046): the number of
+#                                  same-basis trial Sharpes (K) from which the DSR's
+#                                  benchmark uses the cross-trial spread instead of
+#                                  sigma_null alone (>= 2). Value 10 per D-046, not
+#                                  yet signed (like the D-039 values above).
 
 sharpe_min: 1.0
 max_drawdown_pct_max: 20.0
@@ -196,3 +218,4 @@ ratified_at: null
 buy_and_hold_excess_return_min: 0.0
 cost_edge_ratio_min: 2.2
 cost_edge_min_trades: 100
+dsr_min_same_basis_trials: 10
