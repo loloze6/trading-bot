@@ -570,6 +570,27 @@ flags:
       composite is accepted with its composition manifest (7.5). Tests:
       tests/test_e060_s3b_composition_wiring.py (flag-off identity there).
 
+  - name: score_provenance
+    kind: orchestrator_config
+    config_key: orchestrator.score_provenance.enabled
+    reader: run_phase1_research._score_provenance_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "C5.7b-2 (rubric_version closed set, citation record) and C4's first real reader output, which measures what AssistantMessage.model returns for claude-haiku-4-5 (D-048 / C5_7B G10)"
+    criterion: >
+      Landed 2026-09-29 (C5.7b-1, D-048; engineering/review_2026-09-27/
+      C5_7B_PROVENANCE_S1.md slices S0+S1+S3). Requires specialist_readers; the
+      run fails pre-flight otherwise, and a non-bool value is refused. Off:
+      byte-identical -- no capture, reader files, extra_card_scores.yaml and
+      audit-log entries unchanged. On: model_id on reader proposals and
+      brief-card scores is stamped by code with the model that answered
+      (AssistantMessage.model), the self-report kept in the audit log's
+      `provenance` block with requested / observed / mismatch (observed differs
+      from the requested model) / self_report_differs (informational); never
+      raises or retries. Tested by tests/test_c5_7b1_model_id_stamp.py. Switch
+      on with C4's flag set once C5.7b-2 lands, or earlier if the operator wants
+      the stamp alone.
+
   - name: bar_equity
     kind: engine_param
     engine_default_files:

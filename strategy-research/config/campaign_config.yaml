@@ -664,6 +664,31 @@ orchestrator:
       # (append-only), every non-fault run adds one legacy_schema: false entry
       # to campaign_knowledge_base.yaml, the near-miss scoreboard is rebuilt,
       # and campaign_review gets the memory file as an input.
+  score_provenance:
+    enabled: false
+      # C5.7b-1 (D-048; engineering/review_2026-09-27/C5_7B_PROVENANCE_S1.md,
+      # review finding C12). OFF BY DEFAULT, read by
+      # run_phase1_research._score_provenance_enabled(). HARD DEPENDENCY: raises
+      # (strict bool; on without specialist_readers) in run_loop's pre-flight
+      # and run_campaign's launch pre-flight, before any spend.
+      #
+      # While false: nothing is captured, stamped or recorded -- reader
+      # proposal files, extra_card_scores.yaml and every audit-log entry are
+      # byte-identical (tests/test_c5_7b1_model_id_stamp.py).
+      #
+      # While true: the model that actually answered (AssistantMessage.model)
+      # is captured on each reader call and each Claude stage call. The reader
+      # proposals' and the brief-card scores' `model_id` is STAMPED by code with
+      # that observed id (several distinct models: sorted, comma-joined); the
+      # model's own self-report is kept only in the audit log. The stage's
+      # audit-log entry gains a `provenance` block: requested, observed
+      # (observed_models), self_reported, mismatch (the observed model differs
+      # from the REQUESTED one -- not from the self-report, which differs on most
+      # calls) and self_report_differs (informational). Nothing raises, retries
+      # or stops on a mismatch. No observed model (a stub, an empty stream)
+      # leaves the field as self-reported and records observed: null.
+      # rubric_version and citations are C5.7b-2 (not built here). Flipping the
+      # flag mid-run only affects readers not yet run.
   decide_next:
     enabled: false
       # E-059 S2a (delivery_plan_v26.md slice 6b, "decide-next and the queue";
