@@ -882,7 +882,10 @@ def _stage_campaign(campaign_root):
     run_dir = _write_fresh_scaffold(campaign_root["runs_dir"], "run_061", status="completed",
                                     pending_stage="completed_refuted")
     (run_dir / "artifacts" / "idea_status.yaml").write_text(yaml.safe_dump(
-        {"run_id": "run_061", "idea_status": "refuted", "result": "FAIL", "reason": "r"}),
+        # C5.7a: the full shape _build_idea_status_artifact writes (schema-checked on load)
+        {"run_id": "run_061", "idea_status": "refuted", "result": "FAIL",
+         "hypothesis_verdict": "kill", "lineage_routing": "terminate",
+         "grid_evaluation_ref": "runs/run_061/artifacts/grid_evaluation.yaml", "reason": "r"}),
         encoding="utf-8")
     _save_queue_entries(campaign_root["queue_path"], [_entry("run_061")])
     _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_061"], trial_sharpes=[])

@@ -1,0 +1,1299 @@
+[
+ {
+  "stem": "variant_patches",
+  "source": "tests/test_e056_1b_block_manifest.py::test_5a_and_registry_agree[forecast]",
+  "doc": {
+   "variants": [
+    {
+     "variant_id": "base",
+     "patch": [],
+     "rationale": "base"
+    }
+   ]
+  }
+ },
+ {
+  "stem": "variant_patches",
+  "source": "tests/test_e056_config_direct_authoring.py::test_run_tool_worker_backtest_specification_all_variants_pass",
+  "doc": {
+   "base_config_ref": "artifacts/backtest_spec.yaml",
+   "variants": [
+    {
+     "variant_id": "base",
+     "patch": [],
+     "rationale": "base"
+    },
+    {
+     "variant_id": "design_v2",
+     "patch": [
+      {
+       "path": "/strategies/regimes/unknown/components/0/params/period",
+       "value": 21
+      }
+     ],
+     "rationale": "longer period"
+    }
+   ]
+  }
+ },
+ {
+  "stem": "grid_evaluation",
+  "source": "tests/test_e060_s2_residual_ic.py::test_protocol_execution_flag_off_writes_nothing_new",
+  "doc": {
+   "result": "GRID_EVALUATED",
+   "criteria": [
+    "realized_edge_to_cost_ratio"
+   ],
+   "variants": [
+    "base",
+    "other"
+   ],
+   "grid": {
+    "realized_edge_to_cost_ratio": {
+     "base": {
+      "result": "INCONCLUSIVE",
+      "n_windows": 1,
+      "n_trades": 10,
+      "reason": "n_windows=1 < floor.min_windows=5"
+     },
+     "other": {
+      "result": "INCONCLUSIVE",
+      "n_windows": 1,
+      "n_trades": 10,
+      "reason": "n_windows=1 < floor.min_windows=5"
+     }
+    }
+   },
+   "idea_status": "inconclusive",
+   "reason": "no criterion FAILed, but at least one cell lacked sufficient data to judge",
+   "evaluated_at": "<evaluated_at placeholder>"
+  }
+ },
+ {
+  "stem": "idea_status",
+  "source": "tests/test_e060_s2_residual_ic.py::test_protocol_execution_flag_off_writes_nothing_new",
+  "doc": {
+   "run_id": "run_770",
+   "idea_status": "inconclusive",
+   "result": "INCONCLUSIVE",
+   "hypothesis_verdict": "human_pause",
+   "lineage_routing": "inconclusive_grid",
+   "grid_evaluation_ref": "runs/run_770/artifacts/grid_evaluation.yaml",
+   "reason": "no criterion FAILed, but at least one cell lacked sufficient data to judge"
+  }
+ },
+ {
+  "stem": "grid_evaluation",
+  "source": "tests/test_e060_s2_residual_ic.py::test_protocol_execution_flag_on_grades_residual_ic_without_touching_saved_results",
+  "doc": {
+   "result": "GRID_EVALUATED",
+   "criteria": [
+    "realized_edge_to_cost_ratio",
+    "residual_ic"
+   ],
+   "variants": [
+    "base",
+    "other"
+   ],
+   "grid": {
+    "realized_edge_to_cost_ratio": {
+     "base": {
+      "result": "INCONCLUSIVE",
+      "n_windows": 1,
+      "n_trades": 10,
+      "reason": "n_windows=1 < floor.min_windows=5"
+     },
+     "other": {
+      "result": "INCONCLUSIVE",
+      "n_windows": 1,
+      "n_trades": 10,
+      "reason": "n_windows=1 < floor.min_windows=5"
+     }
+    },
+    "residual_ic": {
+     "base": {
+      "result": "FAIL",
+      "value": -0.014214,
+      "threshold": 0.02,
+      "comparator": ">",
+      "n_windows": 1,
+      "n_trades": 10,
+      "n_eff": 37,
+      "p_value_one_sided": 0.533027,
+      "max_p_value": 0.05,
+      "composite": "none",
+      "fully_explained": false
+     },
+     "other": {
+      "result": "FAIL",
+      "value": 0.00423,
+      "threshold": 0.02,
+      "comparator": ">",
+      "n_windows": 1,
+      "n_trades": 10,
+      "n_eff": 37,
+      "p_value_one_sided": 0.490161,
+      "max_p_value": 0.05,
+      "composite": "none",
+      "fully_explained": false
+     }
+    }
+   },
+   "idea_status": "refuted",
+   "reason": "at least one criterion FAILed with sufficient data on at least one variant",
+   "evaluated_at": "<evaluated_at placeholder>"
+  }
+ },
+ {
+  "stem": "idea_status",
+  "source": "tests/test_e060_s2_residual_ic.py::test_protocol_execution_flag_on_grades_residual_ic_without_touching_saved_results",
+  "doc": {
+   "run_id": "run_771",
+   "idea_status": "refuted",
+   "result": "FAIL",
+   "hypothesis_verdict": "kill",
+   "lineage_routing": "terminate",
+   "grid_evaluation_ref": "runs/run_771/artifacts/grid_evaluation.yaml",
+   "reason": "at least one criterion FAILed with sufficient data on at least one variant"
+  }
+ },
+ {
+  "stem": "variant_patches",
+  "source": "tests/test_e060_s3b_composition_wiring.py::test_end_to_end_registry_change_to_graded_composite",
+  "doc": {
+   "generated_by": "tools/composition.py (E-060 S3b, code-written -- no LLM)",
+   "composition_registry_hash": "bfaee37f546d6e0a",
+   "variants": [
+    {
+     "variant_id": "base",
+     "patch": [
+      {
+       "path": "/strategies/regimes/unknown/blocks/0/weight",
+       "value": 0.5
+      },
+      {
+       "path": "/strategies/regimes/unknown/blocks/1/weight",
+       "value": 0.5
+      }
+     ],
+     "rationale": "composition scheme equal (code-written, E-060 S3b)"
+    },
+    {
+     "variant_id": "vol_scaled",
+     "patch": [
+      {
+       "path": "/strategies/regimes/unknown/blocks/0/weight",
+       "value": 0.5
+      },
+      {
+       "path": "/strategies/regimes/unknown/blocks/1/weight",
+       "value": 0.5
+      },
+      {
+       "path": "/strategies/regimes/unknown/weight_schedule",
+       "value": [
+        {
+         "from": "2020-01-01",
+         "weights": {
+          "b0": 0.5,
+          "b1": 0.5
+         }
+        },
+        {
+         "from": "2020-05-01",
+         "weights": {
+          "b0": 0.4980729055434398,
+          "b1": 0.5019270944565601
+         }
+        }
+       ]
+      }
+     ],
+     "rationale": "composition scheme vol_scaled (code-written, E-060 S3b)"
+    },
+    {
+     "variant_id": "ic_weighted",
+     "patch": [
+      {
+       "path": "/strategies/regimes/unknown/blocks/0/weight",
+       "value": 0.5
+      },
+      {
+       "path": "/strategies/regimes/unknown/blocks/1/weight",
+       "value": 0.5
+      },
+      {
+       "path": "/strategies/regimes/unknown/weight_schedule",
+       "value": [
+        {
+         "from": "2020-01-01",
+         "weights": {
+          "b0": 0.5,
+          "b1": 0.5
+         }
+        },
+        {
+         "from": "2020-05-01",
+         "weights": {
+          "b0": 0.4972064097538716,
+          "b1": 0.5027935902461285
+         }
+        }
+       ]
+      }
+     ],
+     "rationale": "composition scheme ic_weighted (code-written, E-060 S3b)"
+    }
+   ]
+  }
+ },
+ {
+  "stem": "grid_evaluation",
+  "source": "tests/test_e060_s3b_composition_wiring.py::test_end_to_end_registry_change_to_graded_composite",
+  "doc": {
+   "result": "GRID_EVALUATED",
+   "criteria": [
+    "profit_bars"
+   ],
+   "variants": [
+    "base",
+    "ic_weighted",
+    "vol_scaled"
+   ],
+   "grid": {
+    "profit_bars": {
+     "base": {
+      "result": "FAIL",
+      "source": "profit_bars",
+      "bars": [
+       {
+        "name": "sharpe_min",
+        "threshold": 1.0,
+        "actual": 0.1,
+        "result": "FAIL",
+        "basis": "median_of_coin_median_sharpes",
+        "note": "artifacts/variants/base/protocol_result.yaml: median of per_symbol_summary[*].median_sharpe (the promotion audit's raw_median_sharpe rule)"
+       },
+       {
+        "name": "deflated_sharpe_threshold",
+        "threshold": 0.95,
+        "actual": null,
+        "result": "NOT_EVALUABLE",
+        "basis": "deflated_sharpe_on_campaign_trial_ledger",
+        "note": "artifacts/variants/base/protocol_result.yaml: deflated Sharpe on the campaign trial ledger (the promotion audit's rule; None on the sparse-trading or insufficient-trials path, where no DSR is computed at all)"
+       },
+       {
+        "name": "max_drawdown_pct_max",
+        "threshold": 20.0,
+        "actual": 6.431496,
+        "result": "PASS",
+        "basis": "portfolio_equal_weight_worst_window",
+        "note": "largest peak-to-trough drawdown of the combined portfolio on its 937 common bar(s), within one window (worst WINDOW '2020-01', not the worst coin); equal-weight portfolio of 2 coin(s) ['BTCUSDT', 'ETHUSDT'], each normalized to 1.0 at its close on the first common day of each window (postRebalance_total_value, post-warmup), over 1 window(s); days: 40 in the union of the coins' days = 40 common + 0 dropped by the intersection (coverage floor 0.9 per window); 40 common = 1 first day(s) + 39 daily return(s) + 0 multi-day step(s) across a gap, not counted"
+       },
+       {
+        "name": "trade_count_min",
+        "threshold": 100,
+        "actual": 40,
+        "result": "FAIL",
+        "basis": "worst_coin",
+        "note": "protocol_result.yaml.per_symbol_summary[*].min_trade_count, worst symbol"
+       },
+       {
+        "name": "avg_daily_return_min",
+        "threshold": 0.0005,
+        "actual": -0.00050009,
+        "result": "FAIL",
+        "basis": "portfolio_equal_weight",
+        "note": "arithmetic mean of the portfolio's 39 daily simple return(s) (last bar per UTC day, consecutive common days only), pooled across windows; equal-weight portfolio of 2 coin(s) ['BTCUSDT', 'ETHUSDT'], each normalized to 1.0 at its close on the first common day of each window (postRebalance_total_value, post-warmup), over 1 window(s); days: 40 in the union of the coins' days = 40 common + 0 dropped by the intersection (coverage floor 0.9 per window); 40 common = 1 first day(s) + 39 daily return(s) + 0 multi-day step(s) across a gap, not counted"
+       }
+      ],
+      "reason": "sharpe_min: FAIL (threshold=1.0, actual=0.1); deflated_sharpe_threshold: NOT_EVALUABLE (threshold=0.95, actual=None); trade_count_min: FAIL (threshold=100, actual=40); avg_daily_return_min: FAIL (threshold=0.0005, actual=-0.00050009)",
+      "weight_schedule": []
+     },
+     "ic_weighted": {
+      "result": "FAIL",
+      "source": "profit_bars",
+      "bars": [
+       {
+        "name": "sharpe_min",
+        "threshold": 1.0,
+        "actual": 0.1,
+        "result": "FAIL",
+        "basis": "median_of_coin_median_sharpes",
+        "note": "artifacts/variants/ic_weighted/protocol_result.yaml: median of per_symbol_summary[*].median_sharpe (the promotion audit's raw_median_sharpe rule)"
+       },
+       {
+        "name": "deflated_sharpe_threshold",
+        "threshold": 0.95,
+        "actual": null,
+        "result": "NOT_EVALUABLE",
+        "basis": "deflated_sharpe_on_campaign_trial_ledger",
+        "note": "artifacts/variants/ic_weighted/protocol_result.yaml: deflated Sharpe on the campaign trial ledger (the promotion audit's rule; None on the sparse-trading or insufficient-trials path, where no DSR is computed at all)"
+       },
+       {
+        "name": "max_drawdown_pct_max",
+        "threshold": 20.0,
+        "actual": 2.892931,
+        "result": "PASS",
+        "basis": "portfolio_equal_weight_worst_window",
+        "note": "largest peak-to-trough drawdown of the combined portfolio on its 937 common bar(s), within one window (worst WINDOW '2020-01', not the worst coin); equal-weight portfolio of 2 coin(s) ['BTCUSDT', 'ETHUSDT'], each normalized to 1.0 at its close on the first common day of each window (postRebalance_total_value, post-warmup), over 1 window(s); days: 40 in the union of the coins' days = 40 common + 0 dropped by the intersection (coverage floor 0.9 per window); 40 common = 1 first day(s) + 39 daily return(s) + 0 multi-day step(s) across a gap, not counted"
+       },
+       {
+        "name": "trade_count_min",
+        "threshold": 100,
+        "actual": 40,
+        "result": "FAIL",
+        "basis": "worst_coin",
+        "note": "protocol_result.yaml.per_symbol_summary[*].min_trade_count, worst symbol"
+       },
+       {
+        "name": "avg_daily_return_min",
+        "threshold": 0.0005,
+        "actual": 0.00218382,
+        "result": "PASS",
+        "basis": "portfolio_equal_weight",
+        "note": "arithmetic mean of the portfolio's 39 daily simple return(s) (last bar per UTC day, consecutive common days only), pooled across windows; equal-weight portfolio of 2 coin(s) ['BTCUSDT', 'ETHUSDT'], each normalized to 1.0 at its close on the first common day of each window (postRebalance_total_value, post-warmup), over 1 window(s); days: 40 in the union of the coins' days = 40 common + 0 dropped by the intersection (coverage floor 0.9 per window); 40 common = 1 first day(s) + 39 daily return(s) + 0 multi-day step(s) across a gap, not counted"
+       }
+      ],
+      "reason": "sharpe_min: FAIL (threshold=1.0, actual=0.1); deflated_sharpe_threshold: NOT_EVALUABLE (threshold=0.95, actual=None); trade_count_min: FAIL (threshold=100, actual=40)",
+      "weight_schedule": [
+       {
+        "from": "2020-01-01",
+        "weights": {
+         "H-0:run_900": 0.5,
+         "H-1:run_901": 0.5
+        },
+        "basis": {
+         "estimated": false,
+         "reason": "no usable residual IC before 2020-01-01: {'H-0:run_900': 'no bar before 2020-01-01', 'H-1:run_901': 'no bar before 2020-01-01'} -- equal weights"
+        }
+       },
+       {
+        "from": "2020-05-01",
+        "weights": {
+         "H-0:run_900": 0.4972064097538716,
+         "H-1:run_901": 0.5027935902461285
+        },
+        "basis": {
+         "estimated": true,
+         "data_before": "2020-05-01",
+         "residual_ic": {
+          "H-0:run_900": 0.679888,
+          "H-1:run_901": 0.687528
+         },
+         "n_eff": {
+          "H-0:run_900": 156,
+          "H-1:run_901": 156
+         }
+        }
+       }
+      ]
+     },
+     "vol_scaled": {
+      "result": "FAIL",
+      "source": "profit_bars",
+      "bars": [
+       {
+        "name": "sharpe_min",
+        "threshold": 1.0,
+        "actual": 0.1,
+        "result": "FAIL",
+        "basis": "median_of_coin_median_sharpes",
+        "note": "artifacts/variants/vol_scaled/protocol_result.yaml: median of per_symbol_summary[*].median_sharpe (the promotion audit's raw_median_sharpe rule)"
+       },
+       {
+        "name": "deflated_sharpe_threshold",
+        "threshold": 0.95,
+        "actual": null,
+        "result": "NOT_EVALUABLE",
+        "basis": "deflated_sharpe_on_campaign_trial_ledger",
+        "note": "artifacts/variants/vol_scaled/protocol_result.yaml: deflated Sharpe on the campaign trial ledger (the promotion audit's rule; None on the sparse-trading or insufficient-trials path, where no DSR is computed at all)"
+       },
+       {
+        "name": "max_drawdown_pct_max",
+        "threshold": 20.0,
+        "actual": 4.286465,
+        "result": "PASS",
+        "basis": "portfolio_equal_weight_worst_window",
+        "note": "largest peak-to-trough drawdown of the combined portfolio on its 937 common bar(s), within one window (worst WINDOW '2020-01', not the worst coin); equal-weight portfolio of 2 coin(s) ['BTCUSDT', 'ETHUSDT'], each normalized to 1.0 at its close on the first common day of each window (postRebalance_total_value, post-warmup), over 1 window(s); days: 40 in the union of the coins' days = 40 common + 0 dropped by the intersection (coverage floor 0.9 per window); 40 common = 1 first day(s) + 39 daily return(s) + 0 multi-day step(s) across a gap, not counted"
+       },
+       {
+        "name": "trade_count_min",
+        "threshold": 100,
+        "actual": 40,
+        "result": "FAIL",
+        "basis": "worst_coin",
+        "note": "protocol_result.yaml.per_symbol_summary[*].min_trade_count, worst symbol"
+       },
+       {
+        "name": "avg_daily_return_min",
+        "threshold": 0.0005,
+        "actual": -0.00055345,
+        "result": "FAIL",
+        "basis": "portfolio_equal_weight",
+        "note": "arithmetic mean of the portfolio's 39 daily simple return(s) (last bar per UTC day, consecutive common days only), pooled across windows; equal-weight portfolio of 2 coin(s) ['BTCUSDT', 'ETHUSDT'], each normalized to 1.0 at its close on the first common day of each window (postRebalance_total_value, post-warmup), over 1 window(s); days: 40 in the union of the coins' days = 40 common + 0 dropped by the intersection (coverage floor 0.9 per window); 40 common = 1 first day(s) + 39 daily return(s) + 0 multi-day step(s) across a gap, not counted"
+       }
+      ],
+      "reason": "sharpe_min: FAIL (threshold=1.0, actual=0.1); deflated_sharpe_threshold: NOT_EVALUABLE (threshold=0.95, actual=None); trade_count_min: FAIL (threshold=100, actual=40); avg_daily_return_min: FAIL (threshold=0.0005, actual=-0.00055345)",
+      "weight_schedule": [
+       {
+        "from": "2020-01-01",
+        "weights": {
+         "H-0:run_900": 0.5,
+         "H-1:run_901": 0.5
+        },
+        "basis": {
+         "estimated": false,
+         "reason": "fewer than 30 stand-alone daily returns before 2020-01-01: {'H-0:run_900': 0, 'H-1:run_901': 0} -- equal weights"
+        }
+       },
+       {
+        "from": "2020-05-01",
+        "weights": {
+         "H-0:run_900": 0.4980729055434398,
+         "H-1:run_901": 0.5019270944565601
+        },
+        "basis": {
+         "estimated": true,
+         "data_before": "2020-05-01",
+         "n_daily_returns": {
+          "H-0:run_900": 78,
+          "H-1:run_901": 78
+         }
+        }
+       }
+      ]
+     }
+    }
+   },
+   "idea_status": "refuted",
+   "reason": "at least one criterion FAILed with sufficient data on at least one variant",
+   "evaluated_at": "<evaluated_at placeholder>"
+  }
+ },
+ {
+  "stem": "grid_evaluation",
+  "source": "tests/test_e061_c2_s2a_crashed_variant.py::test_variant_loop_records_the_crashed_variant_in_failed_variants_only",
+  "doc": {
+   "result": "GRID_EVALUATED",
+   "criteria": [
+    "c1"
+   ],
+   "variants": [
+    "asset_v2",
+    "base"
+   ],
+   "grid": {
+    "c1": {
+     "asset_v2": {
+      "result": "PASS",
+      "value": 1.0,
+      "threshold": 0.0,
+      "comparator": ">",
+      "n_windows": 3,
+      "n_trades": 30
+     },
+     "base": {
+      "result": "PASS",
+      "value": 1.0,
+      "threshold": 0.0,
+      "comparator": ">",
+      "n_windows": 3,
+      "n_trades": 30
+     }
+    }
+   },
+   "idea_status": "inconclusive",
+   "reason": "every criterion PASSed on every graded variant, but not every variant was graded; variant(s) ['design_v2'] failed their backtest (a backtest_failed trial row counts the look) -- a variant without a graded result never validates an idea (D-015)",
+   "failed_variants": {
+    "design_v2": "backtest_failed: run_protocol.py non-zero exit (1)"
+   },
+   "evaluated_at": "<evaluated_at placeholder>"
+  }
+ },
+ {
+  "stem": "grid_evaluation",
+  "source": "tests/test_e061_c2_s2a_crashed_variant.py::test_variant_loop_keeps_a_refusal_apart_from_a_crash",
+  "doc": {
+   "result": "GRID_EVALUATED",
+   "criteria": [
+    "c1"
+   ],
+   "variants": [
+    "base"
+   ],
+   "grid": {
+    "c1": {
+     "base": {
+      "result": "PASS",
+      "value": 1.0,
+      "threshold": 0.0,
+      "comparator": ">",
+      "n_windows": 3,
+      "n_trades": 30
+     }
+    }
+   },
+   "idea_status": "inconclusive",
+   "reason": "every criterion PASSed on every graded variant, but not every variant was graded; variant(s) ['asset_v2'] were refused before any backtest (no data touched, no trial row); variant(s) ['design_v2'] failed their backtest (a backtest_failed trial row counts the look) -- a variant without a graded result never validates an idea (D-015)",
+   "failed_variants": {
+    "asset_v2": "refused: run_protocol.py refused before any backtest (no data touched): [run_protocol] NO DATA TOUCHED: x -- refusing.",
+    "design_v2": "backtest_failed: run_protocol.py non-zero exit (1)"
+   },
+   "evaluated_at": "<evaluated_at placeholder>"
+  }
+ },
+ {
+  "stem": "grid_evaluation",
+  "source": "tests/test_e061_c2_s2a_crashed_variant.py::test_variant_loop_without_a_failure_validates_and_writes_no_extra_key",
+  "doc": {
+   "result": "GRID_EVALUATED",
+   "criteria": [
+    "c1"
+   ],
+   "variants": [
+    "asset_v2",
+    "base",
+    "design_v2"
+   ],
+   "grid": {
+    "c1": {
+     "asset_v2": {
+      "result": "PASS",
+      "value": 1.0,
+      "threshold": 0.0,
+      "comparator": ">",
+      "n_windows": 3,
+      "n_trades": 30
+     },
+     "base": {
+      "result": "PASS",
+      "value": 1.0,
+      "threshold": 0.0,
+      "comparator": ">",
+      "n_windows": 3,
+      "n_trades": 30
+     },
+     "design_v2": {
+      "result": "PASS",
+      "value": 1.0,
+      "threshold": 0.0,
+      "comparator": ">",
+      "n_windows": 3,
+      "n_trades": 30
+     }
+    }
+   },
+   "idea_status": "validated",
+   "reason": "every criterion PASSed on every variant",
+   "evaluated_at": "<evaluated_at placeholder>"
+  }
+ },
+ {
+  "stem": "idea_status",
+  "source": "tests/test_e061_c2_s2a_crashed_variant.py::test_variant_loop_without_a_failure_validates_and_writes_no_extra_key",
+  "doc": {
+   "run_id": "run_942",
+   "idea_status": "validated",
+   "result": "PASS",
+   "hypothesis_verdict": "promote",
+   "lineage_routing": null,
+   "grid_evaluation_ref": "runs/run_942/artifacts/grid_evaluation.yaml",
+   "reason": "every criterion PASSed on every variant"
+  }
+ },
+ {
+  "stem": "grid_evaluation",
+  "source": "tests/test_e061_c2_s2a_crashed_variant.py::test_rerun_keeps_a_variant_refused_on_an_earlier_attempt",
+  "doc": {
+   "result": "GRID_EVALUATED",
+   "criteria": [
+    "c1"
+   ],
+   "variants": [
+    "base",
+    "design_v2"
+   ],
+   "grid": {
+    "c1": {
+     "base": {
+      "result": "PASS",
+      "value": 1.0,
+      "threshold": 0.0,
+      "comparator": ">",
+      "n_windows": 3,
+      "n_trades": 30
+     },
+     "design_v2": {
+      "result": "PASS",
+      "value": 1.0,
+      "threshold": 0.0,
+      "comparator": ">",
+      "n_windows": 3,
+      "n_trades": 30
+     }
+    }
+   },
+   "idea_status": "inconclusive",
+   "reason": "every criterion PASSed on every graded variant, but not every variant was graded; variant(s) ['asset_v2'] were refused before any backtest (no data touched, no trial row) -- a variant without a graded result never validates an idea (D-015)",
+   "failed_variants": {
+    "asset_v2": "refused: run_protocol.py refused before any backtest (no data touched): [run_protocol] NO DATA TOUCHED: x -- refusing."
+   },
+   "evaluated_at": "<evaluated_at placeholder>"
+  }
+ },
+ {
+  "stem": "grid_evaluation",
+  "source": "tests/test_e061_c2_s2a_crashed_variant.py::test_repeat_skipped_variants_keep_the_idea_inconclusive",
+  "doc": {
+   "result": "GRID_EVALUATED",
+   "criteria": [
+    "c1"
+   ],
+   "variants": [
+    "asset_v2"
+   ],
+   "grid": {
+    "c1": {
+     "asset_v2": {
+      "result": "PASS",
+      "value": 1.0,
+      "threshold": 0.0,
+      "comparator": ">",
+      "n_windows": 3,
+      "n_trades": 30
+     }
+    }
+   },
+   "idea_status": "inconclusive",
+   "reason": "every criterion PASSed on every graded variant, but not every variant was graded; variant(s) ['base', 'design_v2'] have no graded result in this run -- an idea validates only when all its variants are graded in one run (card D)",
+   "untested_variants": {
+    "base": "repeat: exact match of tested run_946:base",
+    "design_v2": "repeat: exact match of tested run_946:design_v2"
+   },
+   "evaluated_at": "<evaluated_at placeholder>"
+  }
+ },
+ {
+  "stem": "grid_evaluation",
+  "source": "tests/test_e061_c2_s2a_crashed_variant.py::test_a_base_whose_trial_write_failed_never_feeds_the_singular_artifacts",
+  "doc": {
+   "result": "GRID_EVALUATED",
+   "criteria": [
+    "c1"
+   ],
+   "variants": [
+    "asset_v2",
+    "design_v2"
+   ],
+   "grid": {
+    "c1": {
+     "asset_v2": {
+      "result": "PASS",
+      "value": 1.0,
+      "threshold": 0.0,
+      "comparator": ">",
+      "n_windows": 3,
+      "n_trades": 30
+     },
+     "design_v2": {
+      "result": "PASS",
+      "value": 1.0,
+      "threshold": 0.0,
+      "comparator": ">",
+      "n_windows": 3,
+      "n_trades": 30
+     }
+    }
+   },
+   "idea_status": "inconclusive",
+   "reason": "every criterion PASSed on every graded variant, but not every variant was graded; variant(s) ['base'] failed their backtest (a backtest_failed trial row counts the look) -- a variant without a graded result never validates an idea (D-015)",
+   "failed_variants": {
+    "base": "backtest_failed: the backtest completed but its trial write raised OSError"
+   },
+   "evaluated_at": "<evaluated_at placeholder>"
+  }
+ },
+ {
+  "stem": "variant_patches",
+  "source": "tests/test_e061_c2_s2b_one_coin_per_variant.py::test_5a_writes_one_protocol_per_variant_under_the_loop",
+  "doc": {
+   "base_config_ref": "artifacts/backtest_spec.yaml",
+   "variants": [
+    {
+     "variant_id": "base",
+     "kind": "base",
+     "symbol": "BTCUSDT",
+     "patch": [],
+     "rationale": "b"
+    },
+    {
+     "variant_id": "design",
+     "kind": "design",
+     "symbol": "BTCUSDT",
+     "patch": [
+      {
+       "path": "/strategies/regimes/unknown/components/0/params/period",
+       "value": 21
+      }
+     ],
+     "rationale": "d"
+    },
+    {
+     "variant_id": "asset",
+     "kind": "asset",
+     "symbol": "XRPUSDT",
+     "patch": [],
+     "rationale": "a"
+    }
+   ]
+  }
+ },
+ {
+  "stem": "grid_evaluation",
+  "source": "tests/test_e061_end_to_end_wiring.py::test_end_to_end_two_runs_with_the_real_run_setup",
+  "doc": {
+   "result": "GRID_EVALUATED",
+   "criteria": [
+    "realized_edge_to_cost_ratio",
+    "sign_consistent_by_era",
+    "residual_ic"
+   ],
+   "variants": [
+    "asset",
+    "base",
+    "design"
+   ],
+   "grid": {
+    "realized_edge_to_cost_ratio": {
+     "asset": {
+      "result": "FAIL",
+      "value": 0.1,
+      "threshold": 2.2,
+      "comparator": ">",
+      "n_windows": 6,
+      "n_trades": 120
+     },
+     "base": {
+      "result": "FAIL",
+      "value": 0.1,
+      "threshold": 2.2,
+      "comparator": ">",
+      "n_windows": 6,
+      "n_trades": 120
+     },
+     "design": {
+      "result": "FAIL",
+      "value": 0.1,
+      "threshold": 2.2,
+      "comparator": ">",
+      "n_windows": 6,
+      "n_trades": 120
+     }
+    },
+    "sign_consistent_by_era": {
+     "asset": {
+      "result": "PASS",
+      "n_windows": 6,
+      "n_trades": 120,
+      "detail": {
+       "era_medians": {
+        "era_2019_2023_full_feed": 0.75
+       },
+       "era_signs": {
+        "era_2019_2023_full_feed": 1
+       }
+      }
+     },
+     "base": {
+      "result": "PASS",
+      "n_windows": 6,
+      "n_trades": 120,
+      "detail": {
+       "era_medians": {
+        "era_2019_2023_full_feed": 0.75
+       },
+       "era_signs": {
+        "era_2019_2023_full_feed": 1
+       }
+      }
+     },
+     "design": {
+      "result": "PASS",
+      "n_windows": 6,
+      "n_trades": 120,
+      "detail": {
+       "era_medians": {
+        "era_2019_2023_full_feed": 0.75
+       },
+       "era_signs": {
+        "era_2019_2023_full_feed": 1
+       }
+      }
+     }
+    },
+    "residual_ic": {
+     "asset": {
+      "result": "PASS",
+      "value": 0.440899,
+      "threshold": 0.02,
+      "comparator": ">",
+      "n_windows": 6,
+      "n_trades": 120,
+      "n_eff": 42,
+      "p_value_one_sided": 0.002949,
+      "max_p_value": 0.05,
+      "composite": "none",
+      "fully_explained": false
+     },
+     "base": {
+      "result": "PASS",
+      "value": 0.467145,
+      "threshold": 0.02,
+      "comparator": ">",
+      "n_windows": 6,
+      "n_trades": 120,
+      "n_eff": 42,
+      "p_value_one_sided": 0.001765,
+      "max_p_value": 0.05,
+      "composite": "none",
+      "fully_explained": false
+     },
+     "design": {
+      "result": "PASS",
+      "value": 0.446742,
+      "threshold": 0.02,
+      "comparator": ">",
+      "n_windows": 6,
+      "n_trades": 120,
+      "n_eff": 42,
+      "p_value_one_sided": 0.002636,
+      "max_p_value": 0.05,
+      "composite": "none",
+      "fully_explained": false
+     }
+    }
+   },
+   "idea_status": "refuted",
+   "reason": "at least one criterion FAILed with sufficient data on at least one variant",
+   "evaluated_at": "<evaluated_at placeholder>"
+  }
+ },
+ {
+  "stem": "grid_evaluation",
+  "source": "tests/test_e061_end_to_end_wiring.py::test_end_to_end_two_runs_with_the_real_run_setup",
+  "doc": {
+   "result": "GRID_EVALUATED",
+   "criteria": [
+    "realized_edge_to_cost_ratio",
+    "sign_consistent_by_era",
+    "residual_ic"
+   ],
+   "variants": [
+    "asset",
+    "base",
+    "design"
+   ],
+   "grid": {
+    "realized_edge_to_cost_ratio": {
+     "asset": {
+      "result": "FAIL",
+      "value": 0.1,
+      "threshold": 2.2,
+      "comparator": ">",
+      "n_windows": 6,
+      "n_trades": 120
+     },
+     "base": {
+      "result": "FAIL",
+      "value": 0.1,
+      "threshold": 2.2,
+      "comparator": ">",
+      "n_windows": 6,
+      "n_trades": 120
+     },
+     "design": {
+      "result": "FAIL",
+      "value": 0.1,
+      "threshold": 2.2,
+      "comparator": ">",
+      "n_windows": 6,
+      "n_trades": 120
+     }
+    },
+    "sign_consistent_by_era": {
+     "asset": {
+      "result": "PASS",
+      "n_windows": 6,
+      "n_trades": 120,
+      "detail": {
+       "era_medians": {
+        "era_2019_2023_full_feed": 0.75
+       },
+       "era_signs": {
+        "era_2019_2023_full_feed": 1
+       }
+      }
+     },
+     "base": {
+      "result": "PASS",
+      "n_windows": 6,
+      "n_trades": 120,
+      "detail": {
+       "era_medians": {
+        "era_2019_2023_full_feed": 0.75
+       },
+       "era_signs": {
+        "era_2019_2023_full_feed": 1
+       }
+      }
+     },
+     "design": {
+      "result": "PASS",
+      "n_windows": 6,
+      "n_trades": 120,
+      "detail": {
+       "era_medians": {
+        "era_2019_2023_full_feed": 0.75
+       },
+       "era_signs": {
+        "era_2019_2023_full_feed": 1
+       }
+      }
+     }
+    },
+    "residual_ic": {
+     "asset": {
+      "result": "PASS",
+      "value": 0.449454,
+      "threshold": 0.02,
+      "comparator": ">",
+      "n_windows": 6,
+      "n_trades": 120,
+      "n_eff": 42,
+      "p_value_one_sided": 0.002501,
+      "max_p_value": 0.05,
+      "composite": "none",
+      "fully_explained": false
+     },
+     "base": {
+      "result": "PASS",
+      "value": 0.427491,
+      "threshold": 0.02,
+      "comparator": ">",
+      "n_windows": 6,
+      "n_trades": 120,
+      "n_eff": 42,
+      "p_value_one_sided": 0.003796,
+      "max_p_value": 0.05,
+      "composite": "none",
+      "fully_explained": false
+     },
+     "design": {
+      "result": "PASS",
+      "value": 0.402659,
+      "threshold": 0.02,
+      "comparator": ">",
+      "n_windows": 6,
+      "n_trades": 120,
+      "n_eff": 42,
+      "p_value_one_sided": 0.005959,
+      "max_p_value": 0.05,
+      "composite": "none",
+      "fully_explained": false
+     }
+    }
+   },
+   "idea_status": "refuted",
+   "reason": "at least one criterion FAILed with sufficient data on at least one variant; variant(s) ['repeat_of_run1_design'] have no graded result in this run -- an idea validates only when all its variants are graded in one run (card D)",
+   "untested_variants": {
+    "repeat_of_run1_design": "repeat: exact match of tested variant(s) ['run_001:design'] in campaign_record/campaign_memory.yaml"
+   },
+   "evaluated_at": "<evaluated_at placeholder>"
+  }
+ },
+ {
+  "stem": "grid_evaluation",
+  "source": "tests/test_e061_end_to_end_wiring.py::test_c2_4_one_crashed_variant_never_validates",
+  "doc": {
+   "result": "GRID_EVALUATED",
+   "criteria": [
+    "realized_edge_to_cost_ratio",
+    "sign_consistent_by_era",
+    "residual_ic"
+   ],
+   "variants": [
+    "base",
+    "design"
+   ],
+   "grid": {
+    "realized_edge_to_cost_ratio": {
+     "base": {
+      "result": "PASS",
+      "value": 3.0,
+      "threshold": 2.2,
+      "comparator": ">",
+      "n_windows": 6,
+      "n_trades": 240
+     },
+     "design": {
+      "result": "PASS",
+      "value": 3.0,
+      "threshold": 2.2,
+      "comparator": ">",
+      "n_windows": 6,
+      "n_trades": 240
+     }
+    },
+    "sign_consistent_by_era": {
+     "base": {
+      "result": "PASS",
+      "n_windows": 6,
+      "n_trades": 240,
+      "detail": {
+       "era_medians": {
+        "era_2019_2023_full_feed": 0.75
+       },
+       "era_signs": {
+        "era_2019_2023_full_feed": 1
+       }
+      }
+     },
+     "design": {
+      "result": "PASS",
+      "n_windows": 6,
+      "n_trades": 240,
+      "detail": {
+       "era_medians": {
+        "era_2019_2023_full_feed": 0.75
+       },
+       "era_signs": {
+        "era_2019_2023_full_feed": 1
+       }
+      }
+     }
+    },
+    "residual_ic": {
+     "base": {
+      "result": "PASS",
+      "value": 0.467145,
+      "threshold": 0.02,
+      "comparator": ">",
+      "n_windows": 6,
+      "n_trades": 240,
+      "n_eff": 42,
+      "p_value_one_sided": 0.001765,
+      "max_p_value": 0.05,
+      "composite": "none",
+      "fully_explained": false
+     },
+     "design": {
+      "result": "PASS",
+      "value": 0.446742,
+      "threshold": 0.02,
+      "comparator": ">",
+      "n_windows": 6,
+      "n_trades": 240,
+      "n_eff": 42,
+      "p_value_one_sided": 0.002636,
+      "max_p_value": 0.05,
+      "composite": "none",
+      "fully_explained": false
+     }
+    }
+   },
+   "idea_status": "inconclusive",
+   "reason": "every criterion PASSed on every graded variant, but not every variant was graded; variant(s) ['asset'] failed their backtest (a backtest_failed trial row counts the look) -- a variant without a graded result never validates an idea (D-015)",
+   "failed_variants": {
+    "asset": "backtest_failed: run_protocol.py non-zero exit (1)"
+   },
+   "evaluated_at": "<evaluated_at placeholder>"
+  }
+ },
+ {
+  "stem": "grid_evaluation",
+  "source": "tests/test_e061_end_to_end_wiring.py::test_c2_s2b_partial_coverage_asset_is_untested_and_blocks_nothing",
+  "doc": {
+   "result": "GRID_EVALUATED",
+   "criteria": [
+    "realized_edge_to_cost_ratio",
+    "sign_consistent_by_era",
+    "residual_ic"
+   ],
+   "variants": [
+    "base",
+    "design"
+   ],
+   "grid": {
+    "realized_edge_to_cost_ratio": {
+     "base": {
+      "result": "PASS",
+      "value": 3.0,
+      "threshold": 2.2,
+      "comparator": ">",
+      "n_windows": 6,
+      "n_trades": 240
+     },
+     "design": {
+      "result": "PASS",
+      "value": 3.0,
+      "threshold": 2.2,
+      "comparator": ">",
+      "n_windows": 6,
+      "n_trades": 240
+     }
+    },
+    "sign_consistent_by_era": {
+     "base": {
+      "result": "PASS",
+      "n_windows": 6,
+      "n_trades": 240,
+      "detail": {
+       "era_medians": {
+        "era_2019_2023_full_feed": 0.75
+       },
+       "era_signs": {
+        "era_2019_2023_full_feed": 1
+       }
+      }
+     },
+     "design": {
+      "result": "PASS",
+      "n_windows": 6,
+      "n_trades": 240,
+      "detail": {
+       "era_medians": {
+        "era_2019_2023_full_feed": 0.75
+       },
+       "era_signs": {
+        "era_2019_2023_full_feed": 1
+       }
+      }
+     }
+    },
+    "residual_ic": {
+     "base": {
+      "result": "PASS",
+      "value": 0.467145,
+      "threshold": 0.02,
+      "comparator": ">",
+      "n_windows": 6,
+      "n_trades": 240,
+      "n_eff": 42,
+      "p_value_one_sided": 0.001765,
+      "max_p_value": 0.05,
+      "composite": "none",
+      "fully_explained": false
+     },
+     "design": {
+      "result": "PASS",
+      "value": 0.446742,
+      "threshold": 0.02,
+      "comparator": ">",
+      "n_windows": 6,
+      "n_trades": 240,
+      "n_eff": 42,
+      "p_value_one_sided": 0.002636,
+      "max_p_value": 0.05,
+      "composite": "none",
+      "fully_explained": false
+     }
+    }
+   },
+   "idea_status": "inconclusive",
+   "reason": "every criterion PASSed on every graded variant, but not every variant was graded; variant(s) ['asset'] have no graded result in this run -- an idea validates only when all its variants are graded in one run (card D)",
+   "untested_variants": {
+    "asset": "insufficient_coverage: the coin covers 2/6 protocol windows (33%; era(s) ['era_2019_2023_full_feed']) by the Layer-1 precheck and the listing date -- D-042 runs a partial-coverage asset variant only at >= 60% of the windows; not run, the idea is at best inconclusive"
+   },
+   "evaluated_at": "<evaluated_at placeholder>"
+  }
+ },
+ {
+  "stem": "grid_evaluation",
+  "source": "tests/test_e061_end_to_end_wiring.py::test_c2_3_run_2_readers_see_run_1s_validated_block_with_this_run_as_its_neighbour",
+  "doc": {
+   "result": "GRID_EVALUATED",
+   "criteria": [
+    "realized_edge_to_cost_ratio",
+    "sign_consistent_by_era"
+   ],
+   "variants": [
+    "asset",
+    "base",
+    "design"
+   ],
+   "grid": {
+    "realized_edge_to_cost_ratio": {
+     "asset": {
+      "result": "PASS",
+      "value": 3.0,
+      "threshold": 2.2,
+      "comparator": ">",
+      "n_windows": 6,
+      "n_trades": 240
+     },
+     "base": {
+      "result": "PASS",
+      "value": 3.0,
+      "threshold": 2.2,
+      "comparator": ">",
+      "n_windows": 6,
+      "n_trades": 240
+     },
+     "design": {
+      "result": "PASS",
+      "value": 3.0,
+      "threshold": 2.2,
+      "comparator": ">",
+      "n_windows": 6,
+      "n_trades": 240
+     }
+    },
+    "sign_consistent_by_era": {
+     "asset": {
+      "result": "PASS",
+      "n_windows": 6,
+      "n_trades": 240,
+      "detail": {
+       "era_medians": {
+        "era_2019_2023_full_feed": 0.75
+       },
+       "era_signs": {
+        "era_2019_2023_full_feed": 1
+       }
+      }
+     },
+     "base": {
+      "result": "PASS",
+      "n_windows": 6,
+      "n_trades": 240,
+      "detail": {
+       "era_medians": {
+        "era_2019_2023_full_feed": 0.75
+       },
+       "era_signs": {
+        "era_2019_2023_full_feed": 1
+       }
+      }
+     },
+     "design": {
+      "result": "PASS",
+      "n_windows": 6,
+      "n_trades": 240,
+      "detail": {
+       "era_medians": {
+        "era_2019_2023_full_feed": 0.75
+       },
+       "era_signs": {
+        "era_2019_2023_full_feed": 1
+       }
+      }
+     }
+    }
+   },
+   "idea_status": "validated",
+   "reason": "every criterion PASSed on every variant",
+   "evaluated_at": "<evaluated_at placeholder>"
+  }
+ }
+]

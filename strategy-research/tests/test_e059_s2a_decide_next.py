@@ -702,9 +702,13 @@ def _stage_flag_on_source(campaign_root, proposals, idea_status="refuted"):
     run_dir = _write_fresh_scaffold(campaign_root["runs_dir"], "run_061",
                                     status="rejected", pending_stage="completed_rejected")
     arts = run_dir / "artifacts"
+    # C5.7a: the full shape _build_idea_status_artifact writes (idea_status.schema.json
+    # is checked on every load_yaml, blocking under WORKFLOW_ARTIFACT_VALIDATION=raise).
+    _result, _verdict, _routing = rpr._GRID_IDEA_STATUS_ROUTING[idea_status]
     (arts / "idea_status.yaml").write_text(yaml.safe_dump({
-        "run_id": "run_061", "idea_status": idea_status,
-        "result": {"refuted": "FAIL", "validated": "PASS"}.get(idea_status, "INCONCLUSIVE"),
+        "run_id": "run_061", "idea_status": idea_status, "result": _result,
+        "hypothesis_verdict": _verdict, "lineage_routing": _routing,
+        "grid_evaluation_ref": "runs/run_061/artifacts/grid_evaluation.yaml",
         "reason": "r"}), encoding="utf-8")
     (arts / "proposals").mkdir()
     (arts / "proposals" / "profitability.yaml").write_text(yaml.safe_dump(proposals),
