@@ -2918,7 +2918,8 @@ def _profit_bars_v2_enabled(cfg: dict | None = None) -> bool:
     definitions (_grade_profit_bars_v2: whole-test chained drawdown, Sharpe and
     avg daily return, whole-test trade count per coin without end_of_window
     forced closes, beats buy-and-hold after costs, pooled edge/cost ratio with
-    its trade floor); the bars file must carry the three v2 keys; the
+    its trade floor); the bars file must carry the four v2 keys
+    (_PROFITABILITY_BARS_V2_SCHEMA); the
     evaluation records `bars_definitions: v2`; a holdout spend refuses
     `bars_changed` when the evaluation's definitions differ from the flag now.
     The legacy promote path (_evaluate_profit_bars) never uses v2."""
@@ -5502,7 +5503,8 @@ def _dsr_on_current_ledger_v2(run_dir: Path, variant: str, entry: dict, bars: di
         wctx = _whole_test_dsr_context()
         res = _whole_test_dsr_candidate(wctx, run_dir, pr, entry.get("trial_id"),
                                         bars["dsr_min_same_basis_trials"])
-    except (OSError, ValueError, KeyError, TypeError) as e:
+    except (OSError, ValueError, KeyError, TypeError, yaml.YAMLError) as e:
+        # yaml.YAMLError: a malformed basis overlay (_load_trial_sharpe_basis_overlay).
         raise HoldoutUnlockRefused("dsr_fails_current_ledger",
                                    f"the deflated Sharpe cannot be reproduced: {e}")
     dsr, threshold = res["dsr"], bars["deflated_sharpe_threshold"]
@@ -11929,22 +11931,63 @@ _WHOLE_TEST_BLOCK_STATS = (("sr_daily", "sr_daily"), ("n_daily_returns", "T"),
                            ("skew", "skew"), ("kurtosis", "kurtosis_raw"))
 
 
+def _dedup_collapse_target(wctx: dict, row: dict) -> str:
+    """Which earlier ledger row `row` (the candidate's own backtest row) was
+    deduplicated onto, for the NOT_EVALUABLE reason: the first other valid row
+    with its (forecast_hash, sorted symbols or None, source) key, else its
+    reproduces_trial reference, else a generic phrase."""
+    def _key(r):
+        syms = r.get("symbols")
+        return (r.get("forecast_hash"),
+                tuple(sorted(syms)) if isinstance(syms, list) else None, r.get("source"))
+    if row.get("forecast_hash") is not None:
+        for r in wctx["rows"]:
+            if (isinstance(r, dict) and r is not row and not r.get("invalidated_artifact")
+                    and r.get("trial_id") != row.get("trial_id") and _key(r) == _key(row)):
+                return f"trial {r.get('trial_id')!r} (same forecast_hash, coins and source)"
+    if row.get("reproduces_trial") is not None:
+        return f"trial {row['reproduces_trial']!r} (reproduces_trial)"
+    return "another ledger row"
+
+
+def _dsr_not_evaluable(wctx: dict, min_same_basis: int, status: str, reason: str) -> dict:
+    """compute_dsr_whole_test's NOT_EVALUABLE result for a candidate whose own
+    row cannot be graded (status / reason passed as its `candidate_stats`), with
+    the same K / N / floor as every other variant of the run."""
+    return _deflate_sharpe_module().compute_dsr_whole_test(
+        {"status": status, "reason": reason}, wctx["sample"]["srs"], wctx["n_dsr_total"],
+        min_same_basis)
+
+
 def _whole_test_dsr_candidate(wctx: dict, run_dir: Path, pr: dict, trial_id: str,
                               min_same_basis: int) -> dict:
     """compute_dsr_whole_test's result for ONE candidate (D-046). The
     candidate's stats are recomputed from its own artifacts and checked, in
-    lockstep, against its own ledger row (trial_id, source backtest):
-      * the row must exist once, not be invalidated, and carry a `whole_test`
-        block on the current basis;
-      * block ok: its four stats must equal the recomputed ones exactly, and
-        the row must be in the same-basis sample (review item b: a dedup that
-        collapsed it onto another row would silently drop it from K);
-      * block not_evaluable: the recompute must be NOT_EVALUABLE too (the DSR
-        is then NOT_EVALUABLE with that reason);
-      * block error (G10): raises -- grading fails loud;
-      * any other difference raises.
+    lockstep, against its own ledger row (trial_id, source backtest).
+
+    Malformed data raises (a real defect, never a defaulted number): the row
+    must exist exactly once, not be invalidated, and carry a well-formed
+    `whole_test` block on the current basis (an ok block carries all four
+    stats).
+
+    A condition a NORMAL run can hit never raises out of grading (a raise
+    fails the stage, and every --resume would re-spend and hit it again): it
+    makes THIS candidate's DSR NOT_EVALUABLE with a specific reason -- never a
+    number, never a drop from K, never a change to another variant:
+      * block error (G10, e.g. a transient OSError when P1 read the CSV): the
+        block's own reason;
+      * block not_evaluable: the recompute must be NOT_EVALUABLE too, else
+        `ledger_stats_mismatch` (the status differs); otherwise the DSR is
+        NOT_EVALUABLE with the recomputed reason;
+      * block ok: the recompute must equal its four stats exactly, else
+        `ledger_stats_mismatch` naming the differing fields (code or data
+        changed between a crash and the resume); and the row must be in the
+        same-basis sample, else `dedup_collapse: <earlier trial>` (review item
+        b: the dedup collapsed it onto another row -- a retest of the same
+        config on another protocol, or two canonically identical variants --
+        so it is not in K, and no DSR is graded against a sample that
+        silently lacks it).
     A small K is never NOT_EVALUABLE (sigma_null below the floor, D-046)."""
-    ds = _deflate_sharpe_module()
     own = [r for r in wctx["rows"] if isinstance(r, dict) and r.get("trial_id") == trial_id
            and r.get("source") == "backtest"]
     if len(own) != 1:
@@ -11959,8 +12002,14 @@ def _whole_test_dsr_candidate(wctx: dict, run_dir: Path, pr: dict, trial_id: str
                          f"on basis {wctx['sharpe_basis']!r} (got {block!r:.200}) -- written with "
                          f"orchestrator.profit_bars_v2 off?")
     if block.get("status") == "error":
-        raise ValueError(f"whole-test DSR: trial {trial_id!r}'s ledger whole_test block is "
-                         f"status error ({block.get('reason')}) -- grading refuses (G10)")
+        return _dsr_not_evaluable(wctx, min_same_basis, "error",
+                                  f"the ledger whole_test block is status error "
+                                  f"({block.get('reason')})")
+    if block.get("status") == "ok":
+        missing = [k for k, _s in _WHOLE_TEST_BLOCK_STATS if k not in block]
+        if missing:
+            raise ValueError(f"whole-test DSR: trial {trial_id!r}'s ok whole_test block lacks "
+                             f"{missing}")
     try:
         stats = _whole_test_candidate_stats(run_dir, pr)
         graded_status, graded_reason = "ok", None
@@ -11968,26 +12017,31 @@ def _whole_test_dsr_candidate(wctx: dict, run_dir: Path, pr: dict, trial_id: str
         stats, graded_status = None, "not_evaluable"
         graded_reason = f"whole-test Sharpe NOT_EVALUABLE: {exc}"
     if block.get("status") != graded_status:
-        raise ValueError(f"whole-test DSR: trial {trial_id!r}'s ledger whole_test block is status "
-                         f"{block.get('status')!r}, the recomputed one {graded_status!r} "
-                         f"({graded_reason}) -- ledger and artifacts disagree")
+        return _dsr_not_evaluable(
+            wctx, min_same_basis, "not_evaluable",
+            f"ledger_stats_mismatch: the ledger whole_test block is status "
+            f"{block.get('status')!r}, the recomputed one {graded_status!r} "
+            f"({graded_reason}); differing field(s): ['status']")
     if graded_status != "ok":
         candidate = {"status": "not_evaluable", "reason": graded_reason}
     else:
         diff = {k: (block.get(k), stats[s]) for k, s in _WHOLE_TEST_BLOCK_STATS
                 if block.get(k) != stats[s]}
         if diff:
-            raise ValueError(f"whole-test DSR: trial {trial_id!r}'s ledger whole_test values "
-                             f"differ from the recomputed ones (ledger, graded): {diff}")
+            return _dsr_not_evaluable(
+                wctx, min_same_basis, "not_evaluable",
+                f"ledger_stats_mismatch: the ledger whole_test values differ from the "
+                f"recomputed ones in {sorted(diff)} (ledger, graded): {diff}")
         if not any(x["trial_id"] == trial_id and x["source"] == "backtest"
                    for x in wctx["sample"]["rows"]):
-            raise ValueError(f"whole-test DSR: trial {trial_id!r} has an ok whole_test block but "
-                             f"is not in the same-basis sample -- deduplication collapsed it onto "
-                             f"another ledger row (same forecast_hash, coins and source), which "
-                             f"would silently remove it from K; refused")
+            return _dsr_not_evaluable(
+                wctx, min_same_basis, "not_evaluable",
+                f"dedup_collapse: the row was deduplicated onto "
+                f"{_dedup_collapse_target(wctx, row)} and so is not in the same-basis sample; "
+                f"grading it would drop it from K")
         candidate = {"status": "ok", **stats}
-    return ds.compute_dsr_whole_test(candidate, wctx["sample"]["srs"], wctx["n_dsr_total"],
-                                     min_same_basis)
+    return _deflate_sharpe_module().compute_dsr_whole_test(
+        candidate, wctx["sample"]["srs"], wctx["n_dsr_total"], min_same_basis)
 
 
 def _whole_test_dsr_note(pr_ref: str, res: dict) -> str:

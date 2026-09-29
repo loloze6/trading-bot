@@ -394,11 +394,36 @@ def test_malformed_overlay_fails_loud_under_v2_and_is_never_read_flag_off():
 # 5. Review item (b): lockstep of the candidate's own row
 # ---------------------------------------------------------------------------
 
-def test_candidate_ledger_value_differing_from_the_graded_value_raises():
+def _assert_dsr_not_evaluable(ev, needle: str, cid=RUN_ID) -> dict:
+    """The candidate's DSR row reads NOT_EVALUABLE with `needle` in its reason,
+    never a number; its OTHER bars are still graded (the stage does not fail)."""
+    row = _dsr_row(ev, cid)
+    assert row["result"] == "NOT_EVALUABLE" and row["actual"] is None, row
+    assert needle in row["not_evaluable_reason"], row["not_evaluable_reason"]
+    assert row["detail"]["dsr"] is None and row["detail"]["status"] == "not_evaluable"
+    return row
+
+
+def test_candidate_ledger_value_differing_from_the_graded_value_is_not_evaluable():
     run_dir = _v2_run()
     _edit_rows(lambda rows: _own_in(rows)["whole_test"].update(
         sr_daily=_own_in(rows)["whole_test"]["sr_daily"] + 1e-12))
-    with pytest.raises(ValueError, match="differ from the recomputed ones"):
+    ev = _evaluate(run_dir)  # a resume after code/data changed: must not raise
+    _assert_dsr_not_evaluable(ev, "ledger_stats_mismatch")
+    assert "['sr_daily']" in _dsr_row(ev)["not_evaluable_reason"]
+    assert _rows(ev)["sharpe_min"]["actual"] is not None  # the other bars are graded
+
+
+def test_matching_ledger_stats_still_grade_in_lockstep():
+    run_dir = _v2_run()
+    row = _dsr_row(_evaluate(run_dir))
+    assert row["result"] != "NOT_EVALUABLE" and isinstance(row["actual"], float)
+
+
+def test_malformed_ledger_block_still_raises():
+    run_dir = _v2_run()
+    _edit_rows(lambda rows: _own_in(rows)["whole_test"].pop("skew"))
+    with pytest.raises(ValueError):
         _evaluate(run_dir)
 
 
@@ -413,36 +438,110 @@ def test_candidate_row_without_a_block_raises():
         _evaluate(run_dir)
 
 
-def test_candidate_status_mismatch_raises():
+def test_candidate_status_mismatch_is_not_evaluable():
     run_dir = _v2_run()
     _edit_rows(lambda rows: _own_in(rows).update(whole_test={
         "basis": pwt.WHOLE_TEST_BASIS, "status": "not_evaluable", "reason": "x",
         "sr_daily": None, "n_daily_returns": None, "skew": None, "kurtosis": None}))
-    with pytest.raises(ValueError, match="ledger and artifacts disagree"):
-        _evaluate(run_dir)
+    ev = _evaluate(run_dir)
+    _assert_dsr_not_evaluable(ev, "ledger_stats_mismatch")
+    assert "['status']" in _dsr_row(ev)["not_evaluable_reason"]
 
 
-def test_candidate_error_block_fails_grading_loud():
+def test_candidate_error_block_is_not_evaluable_with_the_blocks_reason():
+    """A transient OSError when P1 read the CSV: the ledger row says error. A
+    normal run can hit it -- it must not raise out of grading (every --resume
+    would re-spend and hit it again)."""
     run_dir = _v2_run()
     _edit_rows(lambda rows: _own_in(rows).update(whole_test={
         "basis": pwt.WHOLE_TEST_BASIS, "status": "error", "reason": "OSError: gone",
         "sr_daily": None, "n_daily_returns": None, "skew": None, "kurtosis": None}))
-    with pytest.raises(ValueError, match=r"status error \(OSError: gone\)"):
-        _evaluate(run_dir)
+    ev = _evaluate(run_dir)
+    _assert_dsr_not_evaluable(ev, "OSError: gone")
+    assert _rows(ev)["sharpe_min"]["actual"] is not None
+    assert ev["dsr_basis"]["n_same_basis"] == 0  # the errored row is not in K ...
+    assert ev["dsr_basis"]["n_dsr_total"] == rpr._promotion_dsr_context()["n_dsr_total"]  # ... N is
 
 
-def test_dedup_collapse_onto_an_earlier_blockless_row_raises_not_drops_from_k():
+def test_dedup_collapse_onto_an_earlier_blockless_row_is_not_evaluable_and_named():
     """An earlier backtest row with the candidate's forecast_hash and source
-    (no block) survives dedup; the candidate's own row collapses onto it. The
-    sample would silently lose the candidate from K -- refused instead."""
+    (no block) survives dedup; the candidate's own row collapses onto it (a
+    retest of the same config on another protocol). Its DSR reads NOT_EVALUABLE
+    naming the earlier trial -- not a raise, and not a DSR graded on a sample
+    that silently lacks the candidate."""
     run_dir = _v2_run()
     _edit_rows(lambda rows: rows.insert(0, {
         "trial_id": "run_100", "source": "backtest", "statistic_valid": "sharpe",
         "sharpe": 0.2, "forecast_hash": _own_in(rows)["forecast_hash"]}))
     wctx = rpr._whole_test_dsr_context()
     assert all(x["trial_id"] != RUN_ID for x in wctx["sample"]["rows"])  # the silent drop
-    with pytest.raises(ValueError, match="deduplication collapsed it onto another ledger row"):
-        _evaluate(run_dir)
+    ev = _evaluate(run_dir)
+    row = _assert_dsr_not_evaluable(ev, "dedup_collapse")
+    assert "'run_100'" in row["not_evaluable_reason"]
+    assert _rows(ev)["sharpe_min"]["actual"] is not None
+
+
+def test_dedup_collapse_onto_an_earlier_ok_block_row_is_not_evaluable_and_k_unchanged():
+    """The earlier row carries an ok block, so it IS in the sample (K counts it
+    once); the candidate is not. NOT_EVALUABLE, K/N as the ledger says."""
+    run_dir = _v2_run()
+    fh = _own_in(_state()["trial_sharpes"])["forecast_hash"]
+    _edit_rows(lambda rows: rows.insert(0, {
+        "trial_id": "run_100", "source": "backtest", "statistic_valid": "sharpe",
+        "sharpe": 0.2, "forecast_hash": fh, "whole_test": _block(0.04)}))
+    ev = _evaluate(run_dir)
+    row = _assert_dsr_not_evaluable(ev, "dedup_collapse")
+    assert "'run_100'" in row["not_evaluable_reason"]
+    assert row["detail"]["K"] == ev["dsr_basis"]["n_same_basis"] == 1
+    assert row["detail"]["N"] == ev["dsr_basis"]["n_dsr_total"]
+
+
+def _two_variant_run() -> Path:
+    """Two graded per-coin variants (base, design) of one run, each with its own
+    ledger row (trial ids `<run>:base`, `<run>:design`) and whole_test block."""
+    from test_profit_bars_every_backtest import VARIANT_LOOP_ON
+    _set_orchestrator({**V2_ON, **VARIANT_LOOP_ON})
+    _write_bars(V2_BARS)
+    _write_cost_model()
+    run_dir = _seed(variant_loop=True)
+    arts = run_dir / "artifacts"
+    vids = ["base", "design"]
+    rpr.save_yaml(arts / "variants" / "index.yaml", {"variants": {
+        v: {"status": "validated", "config_path": f"artifacts/variants/{v}/strategy_config.json"}
+        for v in vids}})
+    prs = {}
+    for v in vids:
+        prs[f"{RUN_ID}:{v}"] = _build(run_dir / "variants" / v)
+        rpr.save_yaml(arts / "variants" / v / "protocol_result.yaml", prs[f"{RUN_ID}:{v}"])
+    rpr.save_yaml(rpr.CAMPAIGN_STATE_PATH, {"campaign_id": "t", "runs": [], "trial_sharpes": [
+        {"trial_id": f"{RUN_ID}:{v}", "source": "backtest", "sharpe": 0.3,
+         "forecast_hash": f"fh-{v}"} for v in vids]})
+    _seed_dsr_ledger()
+    _attach_whole_test(run_dir, prs)
+    return run_dir
+
+
+def test_one_variants_dsr_not_evaluable_leaves_the_other_variants_graded_normally():
+    """Two canonically identical variants (same forecast_hash): the later one
+    collapses onto the earlier under dedup. ITS DSR is NOT_EVALUABLE naming the
+    earlier trial; the other variant is graded exactly as it is without the
+    collision, and the stage does not raise."""
+    run_dir = _two_variant_run()
+    clean = _evaluate(run_dir)
+    assert _dsr_row(clean, "base")["result"] != "NOT_EVALUABLE"
+    assert _dsr_row(clean, "design")["result"] != "NOT_EVALUABLE"
+
+    _edit_rows(lambda rows: _own_in(rows, f"{RUN_ID}:design").update(
+        forecast_hash=_own_in(rows, f"{RUN_ID}:base")["forecast_hash"]))
+    ev = _evaluate(run_dir)
+    row = _assert_dsr_not_evaluable(ev, "dedup_collapse", "design")
+    assert f"'{RUN_ID}:base'" in row["not_evaluable_reason"]
+    base = _dsr_row(ev, "base")
+    assert base["result"] != "NOT_EVALUABLE" and isinstance(base["actual"], float)
+    assert base["detail"]["K"] == 1 and ev["dsr_basis"]["n_same_basis"] == 1
+    # the surviving variant's other bars are untouched by the collision
+    assert {k: v for k, v in _rows(ev, "base").items() if k != "deflated_sharpe_threshold"} == {
+        k: v for k, v in _rows(clean, "base").items() if k != "deflated_sharpe_threshold"}
 
 
 def test_not_evaluable_candidate_reads_not_evaluable_in_lockstep(tmp_path):
@@ -498,6 +597,19 @@ def test_spend_refuses_a_dsr_under_the_threshold_and_a_broken_lockstep():
     _edit_rows(lambda rows: _own_in(rows)["whole_test"].update(skew=0.5))
     with pytest.raises(rpr.HoldoutUnlockRefused) as exc:
         rpr._dsr_on_current_ledger(run_dir, RUN_ID, _entry(ev), bars, ev)
+    # a moved ledger row is a NOT_EVALUABLE DSR (no number), refused with its reason
+    assert exc.value.code == "dsr_fails_current_ledger"
+    assert "ledger_stats_mismatch" in exc.value.detail
+
+
+def test_spend_turns_a_malformed_yaml_overlay_into_the_classified_refusal():
+    run_dir = _v2_run()
+    ev = _evaluate(run_dir, record_bars_sha=True)
+    bars = rpr._evaluation_under_current_bars(ev)
+    rpr.TRIAL_SHARPE_BASIS_OVERLAY_PATH.write_text("entries: [unclosed\n  - {", encoding="utf-8")
+    with pytest.raises(rpr.HoldoutUnlockRefused) as exc:
+        rpr._dsr_on_current_ledger(run_dir, RUN_ID, _entry(ev), bars, ev)
+    assert exc.value.code == "dsr_fails_current_ledger"
     assert "cannot be reproduced" in exc.value.detail
 
 
@@ -522,6 +634,29 @@ def test_dsr_not_evaluable_only_with_the_candidates_own_sharpe_so_r1_does_not_re
     (status, _eid, _why), not_eval = _classify(ev, {"n_dsr_total": 50, "n_trials": 50})
     assert {"deflated_sharpe_threshold", "sharpe_min"} <= set(not_eval)
     assert status == "fired_before"
+
+
+def test_whole_test_dsr_only_not_evaluable_is_fired_before_not_a_missing_input():
+    """Review fix 4: a whole-test evaluation (dsr_basis carries sharpe_basis)
+    that is inconclusive on the DSR alone (here a dedup collapse) is
+    `fired_before` whatever the legacy n_trials count says -- the legacy
+    _dsr_computable rule (n_trials >= 2 at grading, ledger now has more) must
+    not re-fire it."""
+    run_dir = _v2_run()
+    _edit_rows(lambda rows: rows.insert(0, {
+        "trial_id": "run_100", "source": "backtest", "statistic_valid": "sharpe",
+        "sharpe": 0.2, "forecast_hash": _own_in(rows)["forecast_hash"]}))
+    ev = _evaluate(run_dir)
+    assert _dsr_row(ev)["result"] == "NOT_EVALUABLE"
+    ev["dsr_basis"] = {**ev["dsr_basis"], "n_trials": 1}  # the legacy count below its floor
+    (status, _eid, why), not_eval = _classify(ev, {"n_dsr_total": 50, "n_trials": 50})
+    assert not_eval == ["deflated_sharpe_threshold"]
+    assert status == "fired_before" and "whole-test" in why
+    # the legacy basis (no sharpe_basis) is unchanged: it re-fires when the ledger grew
+    legacy = {k: v for k, v in ev["dsr_basis"].items() if k != "sharpe_basis"}
+    (status, _eid, _why), _ = _classify({**ev, "dsr_basis": legacy},
+                                        {"n_dsr_total": 50, "n_trials": 50})
+    assert status == "eligible"
 
 
 def test_small_k_never_makes_the_dsr_not_evaluable():
