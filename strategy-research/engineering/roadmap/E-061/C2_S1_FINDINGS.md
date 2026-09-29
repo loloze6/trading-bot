@@ -371,6 +371,24 @@ Only under `specialist_readers` (the only path that calls readers). No flag-off 
 - **C1.1 extension:** run 1 validates a block (stubbed grid PASS) → run 2's reader prompts contain
   that block in `registry_summary.yaml` with this run marked as its neighbour.
 
+### S2e built (2026-09-29, branch `feat/e061-c2-s2e-distance-rubric`)
+
+`tools/block_registry.registry_summary(doc, run_dir)` (pure, deterministic, writes nothing) is
+called by `run_phase1_research._write_registry_summary`, which only
+`_run_specialist_readers_stage` calls, before the first reader; `_reader_handoff` lists
+`artifacts/registry_summary.yaml` as a third required input. Shape: `registry` (n_blocks,
+revision, grouping), `this_run` (block_type, reason, type_already_registered,
+neighbour_block_ids, patches_registered_block, correlation_to_composite {status, composite_kind,
+by_variant, max_abs}), then `blocks` rows (each with `relation_to_this_run`) or, past 50 blocks,
+`groups`. This run's own blocks are excluded. All five reader SKILLs carry the G10 anchors and
+`<category>-reader-v2`; `registry_summary.yaml` is their one extra allowed input. Tests:
+`tests/test_e061_c2_s2e_distance_rubric.py` (new), the C1.1 extension
+`test_c2_3_run_2_readers_see_run_1s_validated_block_with_this_run_as_its_neighbour` in
+`tests/test_e061_end_to_end_wiring.py` (composition_runs off there, see its docstring),
+`tests/test_e046a_slice5b_ii_b_readers_stage.py` (`_seed_run` stand-in).
+
+Round-1 review fixes (2026-09-29): (1) two empty component-class sets are the same set (`_relation` no longer returns None for them); (2) `this_run.idea_status` is written from the stage's own `idea_status.yaml` and row 0 of all five SKILLs scores a `patch` on a `validated` run 0 (its block registers only after the readers); (3) `registry.n_forecast_blocks` added, and `no_residual_ic_artifact` is row 3 only when it is 0, else not measurable (row 2); (4) explicit precedence rule replaces "take the LOWEST row" vs the null-type default, row 0's `patches_registered_block` is `patch`-only, `neighbour_block_ids` is capped at 5 once grouped (`this_run.n_neighbour_blocks` keeps the full count), an unrecorded timeframe category is the named relation `same_classes_timeframe_unknown` (an assumed same type, still counted by `type_already_registered`), and a stage-level test pins that a malformed registry raises from `_run_specialist_readers_stage`.
+
 ---
 
 ## C2.4 — A crashed variant can never validate (D-015)

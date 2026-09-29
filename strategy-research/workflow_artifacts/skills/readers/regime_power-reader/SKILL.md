@@ -21,12 +21,13 @@ You propose; you do not decide the route.
   `strategy-research/tools/build_reports.py::build_regime_power_report`.)
 - `artifacts/grid_evaluation.yaml` (E-046b/Slice 2, already merged -- **optional**, see
   profitability-reader/SKILL.md's identical note; proceed without it if absent.)
+- `artifacts/registry_summary.yaml` (E-061 C2 S2e -- written by code before the readers run from the campaign's block registry and this run's manifest; read it **only** for `distance_to_profitable`, see "Distance to profitable" below. It is the one extra input allowed beyond this category's report and the grid.)
 
 **Scope boundary.** Same as every other reader in this family: no other category's
 `reports/*.yaml`, no `verdict_interpretation.yaml`, no `regime_audit_decision.yaml`, no
 `regime_detector_report.yaml` directly (a summarized, re-projected form of it is already
 inside `variants.base.slices.overall.detector_health` -- read it there), no
-`fragment_patterns.yaml`.
+`fragment_patterns.yaml`. The registry itself (`block_registry.yaml`) stays out of scope: `registry_summary.yaml` is its only reader-facing view.
 
 ## Report shape (`regime_power.yaml`)
 
@@ -108,7 +109,7 @@ different reader's evidence, not this one's.
 Same proposal shape as every other reader: `proposal_id: regime_power-<run_id>-<n>`,
 `kind: patch | new_block`, `patch`/`block`, `evidence`,
 `scores.{confidence_real,distance_to_profitable,mechanism_plausibility}`, `model_id`,
-`rubric_version: "regime_power-reader-v1"`.
+`rubric_version: "regime_power-reader-v2"`.
 
 **Patch item shape (required, `proposal.schema.json`):** every item of a `patch` list is
 exactly `{component_id, field, before, after}` -- `field` is the dotted path of the changed
@@ -194,12 +195,53 @@ force a proposal.
 
 **Do not free-hand these three scores.**
 
-| Score | `confidence_real` | `distance_to_profitable` | `mechanism_plausibility` |
+| Score | `confidence_real` | `distance_to_profitable` (card I / D-017: how far is this block from what the registry already holds? -- NOT closeness to a rule threshold; see "Distance to profitable" below) | `mechanism_plausibility` |
 |---|---|---|---|
-| 0 | `variants.base.slices.overall.detector_health` is unavailable, or the regime cell's median `n_bars` < 20 (Rule 4's own sample floor). | `detector_health`/`hindsight_lag` shows no informative signal at all (e.g. zero live transitions per `hindsight_lag.reason`, a "constant single-label window"). | The uninformative-regime or lag pattern appears in exactly one `per_window`/`per_regime` cell. |
-| 1 | Evidence from `variants.base.slices.overall` only, `detector_health.config_source` does not clearly match this run's own config (mismatch noted per the report-shape note above). | `median_lag_bars` or `forward_return_mean` marginally off from a healthy reading, no clear magnitude framing. | Pattern recurs in 2 `per_window` entries, no `per_regime`/`per_symbol` corroboration. |
-| 2 | `variants.base.slices.per_window`/`per_regime` show the median `n_bars` >= 20 AND the same near-zero-return or lag pattern in 2+ windows. | `median_lag_bars` clearly elevated (well above the detector's typical bar-count-to-transition ratio implied by `live_transition_count`/`hindsight_transition_count`) or `forward_return_mean` clearly near zero with a reliable sample. | Pattern recurs across 3+ `per_window`/`per_regime` cells AND `detector_health` (if present) is consistent with the same conclusion (e.g. low confidence + high lag together). |
-| 3 | `variants.base.slices.overall.detector_health` populated with a matching `config_source` AND the pattern holds across the majority of `per_window` AND `per_regime` entries with `n_bars` >= 20 throughout. | Both `hindsight_lag.median_lag_bars` and the relevant `regime_validity` fields point unambiguously to the same fix direction (e.g. consistently high lag AND a reliable near-zero `forward_return_mean`). | Corroborated across `per_window`, `per_regime`, AND `detector_health` simultaneously, with a stated causal story tying the regime definition (not the underlying signal) to the observed pattern. |
+| 0 | `variants.base.slices.overall.detector_health` is unavailable, or the regime cell's median `n_bars` < 20 (Rule 4's own sample floor). | A `patch` (never a `new_block` sketch) on an idea that is itself a registered block (`registry_summary.yaml` `this_run.patches_registered_block` is set), or a `patch` on this run when `this_run.idea_status` is `validated` (this run's own block is registered only after the readers, so the summary cannot list it yet), or the same block type as a registered one (`this_run.type_already_registered` is true / a `relation_to_this_run` of `same_type` or `same_classes_timeframe_unknown` row -- the latter is an assumed match: a timeframe category is unrecorded on one side). | The uninformative-regime or lag pattern appears in exactly one `per_window`/`per_regime` cell. |
+| 1 | Evidence from `variants.base.slices.overall` only, `detector_health.config_source` does not clearly match this run's own config (mismatch noted per the report-shape note above). | Same component classes as a registered block but a different timeframe category or kind (`relation_to_this_run` is `same_classes_different_timeframe_category`, `same_classes_different_kind` or `same_classes_different_kind_and_timeframe_category`), OR this run's measured `|correlation to the composite|` is >= 0.6 (`this_run.correlation_to_composite.max_abs`). | Pattern recurs in 2 `per_window` entries, no `per_regime`/`per_symbol` corroboration. |
+| 2 | `variants.base.slices.per_window`/`per_regime` show the median `n_bars` >= 20 AND the same near-zero-return or lag pattern in 2+ windows. | The block type is not in the registry, and `max_abs` is 0.3-0.6 or cannot be measured (`status` `not_measurable` or `skipped: ...`, or `no_residual_ic_artifact` while `registry.n_forecast_blocks` > 0 -- correlation was never computed, so it is not measurable, or `this_run.block_type` is null) -- every `new_block` sketch lands here unless row 0 or 1 applies. | Pattern recurs across 3+ `per_window`/`per_regime` cells AND `detector_health` (if present) is consistent with the same conclusion (e.g. low confidence + high lag together). |
+| 3 | `variants.base.slices.overall.detector_health` populated with a matching `config_source` AND the pattern holds across the majority of `per_window` AND `per_regime` entries with `n_bars` >= 20 throughout. | The block type is not in the registry AND (`max_abs` < 0.3, or no composite exists yet: `status` `no_composite`, or `no_residual_ic_artifact` with `registry.n_forecast_blocks` = 0) -- it fills a missing block type with low correlation to the registry. | Corroborated across `per_window`, `per_regime`, AND `detector_health` simultaneously, with a stated causal story tying the regime definition (not the underlying signal) to the observed pattern. |
+
+### Distance to profitable (card I, D-017)
+
+`distance_to_profitable` no longer measures closeness to a rule threshold. It scores how far the
+proposed block is from what the registry already validated: 3 = fills a missing block type with low
+correlation to the registry; 0 = a neighbour of something already validated. Read
+`artifacts/registry_summary.yaml` (written by code before the readers run; the one input outside
+this category's report and the grid you may read for this score):
+
+- A block *type* is `(kind, sorted component classes, timeframe category)`. For a `patch`, the type
+  is `this_run.block_type` (plus any component class the patch adds); for a `new_block` sketch use
+  the sketch's `kind` and any component classes it names.
+- `this_run.type_already_registered`, `this_run.neighbour_block_ids`,
+  `this_run.patches_registered_block` and each `blocks[*].relation_to_this_run` (or, past 50 blocks,
+  `groups[*]`) say whether the type is present and which registered blocks neighbour it.
+  `relation_to_this_run` is one of `same_type` (kind, classes and timeframe category all verified equal),
+  `same_classes_timeframe_unknown` (same kind and classes, but a timeframe category is unrecorded on one
+  side: an ASSUMED same type, counted by `type_already_registered` -- say "assumed" in `evidence`),
+  `same_classes_different_timeframe_category`, `same_classes_different_kind`,
+  `same_classes_different_kind_and_timeframe_category`, or null (a different set of component classes;
+  two empty sets count as the same set). Past 50 blocks `this_run.neighbour_block_ids` is capped;
+  `this_run.n_neighbour_blocks` is the full count.
+- `this_run.patches_registered_block` and the `this_run.idea_status` clause of row 0 apply to a `patch`
+  proposal only, never to a `new_block` sketch (a sketch is scored on its own type).
+- `this_run.correlation_to_composite`: use `max_abs` (the largest absolute correlation over the
+  variants -- the conservative reading) when `status` is `measured`. `no_composite` means a residual-IC
+  run found no composite to correlate against. `no_residual_ic_artifact` means the correlation was never
+  computed, NOT that no composite exists: it is row 3 only when `registry.n_forecast_blocks` is 0 (nothing
+  to build a composite from), otherwise "not measurable" (row 2). `not_measurable` and `skipped: ...` are
+  "not measurable".
+- If `this_run.block_type` is null (see `this_run.reason`) the type cannot be placed: score 2, unless a
+  lower row applies (see the precedence rule below).
+- Precedence (a lower score always wins -- conservative): check row 0 first (a `patch` whose
+  `this_run.patches_registered_block` is set, a `patch` with `this_run.idea_status` `validated`, or a
+  same-type / assumed-same-type block), then row 1 (a same-classes neighbour, or `max_abs` >= 0.6), then the
+  null-type default of 2, then rows 2 and 3. So a null `block_type` scores 2 only when no row-0 or row-1
+  condition holds, and never scores 3. The 0.3 / 0.6 cut-offs are rank-only placeholders:
+  they order candidates for decide-next and never touch an idea's status or the holdout.
+- Cite the `registry_summary.yaml` field that decided the score as one `evidence` item; every other
+  `evidence` item still cites this category's own report. `confidence_real` and
+  `mechanism_plausibility` anchors are unchanged.
 
 ## Checklist
 - Always check `regime_validity.n_bars` before treating any `forward_return_mean` reading as
@@ -226,4 +268,4 @@ force a proposal.
 
 ## Context rule
 Read only `artifacts/reports/regime_power.yaml` and, if present,
-`artifacts/grid_evaluation.yaml`. Minimal context.
+`artifacts/grid_evaluation.yaml`, plus `artifacts/registry_summary.yaml` (the one extra input; used only for `distance_to_profitable`). Minimal context.
