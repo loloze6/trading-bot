@@ -273,6 +273,8 @@ BLOCK_MANIFEST = {
 RSI_PERIOD = "/strategies/regimes/unknown/components/0/params/period"
 ER_PERIOD = "/regime_detector/components/0/params/period"
 BAD_OP = "/strategies/regimes/unknown/components/0/transforms/2/op"
+RSI_CLASS = "/strategies/regimes/unknown/components/0/class"   # D-053 class-swap test
+EMA_CLASS = "strategies.strategy_components.EMASpreadComponent"
 DESIGN_PERIOD_STEP = 7   # the design variant: a slower RSI, period + 7
 ASSET_ER_PERIOD = 48
 # E-061 C2 S2b (D-016): the asset variant is the base config on a coin from
@@ -1906,6 +1908,11 @@ def _break_design(variants: list) -> list:
              if v["variant_id"] == "design" else v) for v in variants]
 
 
+def _swap_design_class(variants: list) -> list:
+    return [({**v, "patch": [{"path": RSI_CLASS, "value": EMA_CLASS}]}
+             if v["variant_id"] == "design" else v) for v in variants]
+
+
 def _step2_prompts(h: Harness, run_id: str) -> list:
     return [p for s, r, p in h.prompts if s == "innovation_expansion" and r == run_id]
 
@@ -1978,6 +1985,25 @@ def test_c2_5_config_error_retries_once_then_the_run_proceeds(harness):
                                   "not in TRANSFORM_OPS_REGISTRY")
     assert len(h.calls_to("validate_config.py")) == 6  # 5a ran twice
     assert len(h.calls_to("data_availability_gate.py")) == 3  # the gate saw only the good output
+    assert isinstance(keep_going, bool)
+
+
+@pytest.mark.slow
+def test_d053_class_swap_retries_step2_once_then_the_run_proceeds(harness):
+    """D-053: the first output's design variant replaces the component class;
+    5a refuses it before validate_config (forecast rule violations), Step 2 is
+    sent back once with the D-053 message, the second output is valid and the
+    run completes."""
+    h = harness.build()
+    h.stage2_mutations = [_swap_design_class]
+    h.register_brief()
+    r1 = "run_001"
+    keep_going, exc = _drive(h)
+    _pin_joined(h, exc, r1)
+    _assert_retried_run_completed(h, r1, rpr.VARIANT_CONFIG_ERROR_FLAG, "D-053:")
+    assert len(h.calls_to("validate_config.py")) == 5  # the refused design never reached it
+    refusals = h.art(r1, "forecast_rule_refusals.yaml")["refusals"]
+    assert [(r["stage"], r["variant_id"]) for r in refusals] == [("backtest_specification", "design")]
     assert isinstance(keep_going, bool)
 
 

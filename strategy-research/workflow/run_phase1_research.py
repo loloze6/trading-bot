@@ -14035,6 +14035,7 @@ def _block_manifest_error(path: Path):
 FORECAST_RULE_VIOLATION_FLAG = "forecast_rule_violation"
 FORECAST_RULE_REASON = "forecast rule violations (D-051/D-053)"
 _FORECAST_RULE_CHECK = "forecast_rules"
+_BLOCK_MANIFEST_CHECK = "block_manifest"
 _FORECAST_RULE_REFUSALS_FILE = "forecast_rule_refusals.yaml"
 
 
@@ -14044,7 +14045,12 @@ def _record_forecast_rule_refusal(run_dir: Path, stage: str, variant_id: str,
     a retry or a 5a rebuild never erases an earlier refusal)."""
     path = Path(run_dir) / "artifacts" / _FORECAST_RULE_REFUSALS_FILE
     doc = (load_yaml(path) or {}) if path.exists() else {}
-    refusals = list(doc.get("refusals") or []) if isinstance(doc, dict) else []
+    refusals = doc.get("refusals", []) if isinstance(doc, dict) else None
+    if not isinstance(refusals, list):
+        # never overwrite a record we cannot read: that would lose refusals
+        raise RuntimeError(f"{path} is not a {{refusals: [...]}} mapping -- refusing to "
+                           f"overwrite it; fix or move it, then resume")
+    refusals = list(refusals)
     entry = {"at": datetime.now(timezone.utc).isoformat(), "stage": stage,
              "variant_id": variant_id, "violations": list(messages)}
     if attempt is not None:
@@ -14096,7 +14102,10 @@ def _route_block_manifest_check(path: Path) -> str:
                                       attempt=attempts)
     if error is None and not rule_msgs:
         if attempts:
-            update_state(path=path, **{_BLOCK_MANIFEST_RETRY_STATE_KEY: {"attempts": 0, "last_error": None}})
+            # last_check cleared too: update_state MERGES this dict, so a stale
+            # "forecast_rules" would otherwise label a later manifest retry
+            update_state(path=path, **{_BLOCK_MANIFEST_RETRY_STATE_KEY: {
+                "attempts": 0, "last_error": None, "last_check": None}})
         return "innovation_expansion"
     if error is None:
         rule_error = "; ".join(rule_msgs)
@@ -14107,7 +14116,8 @@ def _route_block_manifest_check(path: Path) -> str:
                          **{_BLOCK_MANIFEST_RETRY_STATE_KEY: {
                              "attempts": attempts, "last_check": _FORECAST_RULE_CHECK,
                              "last_error": rule_error}})
-            why = ("a decide_next pass-through config (1b cannot change it)" if pass_through
+            why = ("a decide_next pass-through config (1b must copy it verbatim, so a 1b "
+                   "retry cannot change it)" if pass_through
                    else f"still refused after {attempts} retry")
             print(f"\n⏸️  PIPELINE PAUSED ({FORECAST_RULE_VIOLATION_FLAG}): 1b's base config "
                   f"breaks D-051 -- {why}: {rule_error}. See artifacts/"
@@ -14127,7 +14137,7 @@ def _route_block_manifest_check(path: Path) -> str:
             f"strategy_config_authoring: block_manifest.yaml still invalid after "
             f"{attempts} retry -- {error}")
     update_state(path=path, **{_BLOCK_MANIFEST_RETRY_STATE_KEY: {
-        "attempts": attempts + 1, "last_error": error}})
+        "attempts": attempts + 1, "last_check": _BLOCK_MANIFEST_CHECK, "last_error": error}})
     print(f"🔁 [E-056 1b] block_manifest.yaml invalid -- retrying strategy_config_authoring "
           f"once with the error: {error}")
     return "strategy_config_authoring"

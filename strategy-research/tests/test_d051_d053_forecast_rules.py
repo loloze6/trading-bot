@@ -283,9 +283,106 @@ def test_post_1b_manifest_error_keeps_its_own_path_and_carries_the_rule_error():
     assert rpr.determine_post_strategy_config_authoring_route(run_dir) == "strategy_config_authoring"
     retry = rpr.load_yaml(run_dir / "pipeline_state.yaml")["block_manifest_retry"]
     assert "is missing" in retry["last_error"] and "also: D-051" in retry["last_error"]
-    assert "last_check" not in retry
+    assert retry["last_check"] == "block_manifest"
     with pytest.raises(RuntimeError, match="still invalid"):
         rpr.determine_post_strategy_config_authoring_route(run_dir)
+
+
+def test_a_manifest_error_after_a_rules_pause_and_reset_is_labelled_a_manifest_error():
+    """Review F1: update_state MERGES block_manifest_retry, so every write sets
+    last_check. Sequence: two rule refusals (pause), the RUNBOOK reset
+    (attempts 0), then 1b fixes the config but drops the manifest -- the retry
+    must carry block_manifest_error, not a D-051 message."""
+    _set_orchestrator({"config_direct_authoring": {"enabled": True}})
+    run_dir = _authored_1b("run_907", ON_OFF_BASE)
+    assert rpr.determine_post_strategy_config_authoring_route(run_dir) == "strategy_config_authoring"
+    assert rpr.determine_post_strategy_config_authoring_route(run_dir) == "human_pause"
+    rpr.update_state(path=run_dir, status="active", flags={"forecast_rule_violation": False},
+                     block_manifest_retry={"attempts": 0})
+    rpr.save_yaml(run_dir / "artifacts" / "backtest_spec.yaml",
+                  {"status": "spec_ready", "config": CONFIG, "config_rationale": ["x"],
+                   "component_gap": None})
+    (run_dir / "artifacts" / "block_manifest.yaml").unlink()
+    assert rpr.determine_post_strategy_config_authoring_route(run_dir) == "strategy_config_authoring"
+    retry = rpr.load_yaml(run_dir / "pipeline_state.yaml")["block_manifest_retry"]
+    assert retry["last_check"] == "block_manifest" and "is missing" in retry["last_error"]
+    handoff = {"required_inputs": []}
+    rpr._apply_block_manifest_retry_context("strategy_config_authoring", handoff, run_dir)
+    assert "is missing" in handoff["injected_context"]["block_manifest_error"]
+    assert "forecast_rule_error" not in handoff["injected_context"]
+
+
+def test_a_success_reset_clears_last_check():
+    run_dir = _authored_1b("run_908", ON_OFF_BASE)
+    assert rpr.determine_post_strategy_config_authoring_route(run_dir) == "strategy_config_authoring"
+    rpr.save_yaml(run_dir / "artifacts" / "backtest_spec.yaml",
+                  {"status": "spec_ready", "config": CONFIG, "config_rationale": ["x"],
+                   "component_gap": None})
+    assert rpr.determine_post_strategy_config_authoring_route(run_dir) == "innovation_expansion"
+    assert rpr.load_yaml(run_dir / "pipeline_state.yaml")["block_manifest_retry"] == {
+        "attempts": 0, "last_error": None, "last_check": None}
+
+
+def test_a_manifest_error_on_the_rules_retry_fails_loud():
+    """The D-051 retry spends the one 1b retry the manifest also uses (operator:
+    reuse the manifest retry path): a bad manifest on that retry raises."""
+    run_dir = _authored_1b("run_909", ON_OFF_BASE)
+    assert rpr.determine_post_strategy_config_authoring_route(run_dir) == "strategy_config_authoring"
+    rpr.save_yaml(run_dir / "artifacts" / "backtest_spec.yaml",
+                  {"status": "spec_ready", "config": CONFIG, "config_rationale": ["x"],
+                   "component_gap": None})
+    (run_dir / "artifacts" / "block_manifest.yaml").unlink()
+    with pytest.raises(RuntimeError, match="still invalid"):
+        rpr.determine_post_strategy_config_authoring_route(run_dir)
+
+
+@pytest.mark.parametrize("content", ["- a list\n", "refusals: not-a-list\n"])
+def test_an_unreadable_refusal_record_is_never_overwritten(content):
+    """Review F6: a record that is not {refusals: [...]} raises instead of being
+    replaced (that would lose earlier refusals)."""
+    run_dir = _authored_1b("run_920", ON_OFF_BASE)
+    record = run_dir / "artifacts" / "forecast_rule_refusals.yaml"
+    record.write_text(content, encoding="utf-8")
+    with pytest.raises(RuntimeError, match="refusing to overwrite"):
+        rpr.determine_post_strategy_config_authoring_route(run_dir)
+    assert record.read_text(encoding="utf-8") == content
+
+
+def test_run_loop_sends_a_refused_base_back_to_1b_then_pauses(monkeypatch):
+    """run_loop really re-enters strategy_config_authoring with the D-051 error
+    in its handoff, then pauses (not fails) on a second refusal --
+    innovation_expansion is never invoked."""
+    import shutil
+    _set_orchestrator({"config_direct_authoring": {"enabled": True}})
+    run_dir = _authored_1b("run_921", ON_OFF_BASE)
+    state = rpr.load_yaml(run_dir / "pipeline_state.yaml")
+    state["pending_stage"] = "strategy_config_authoring"
+    rpr.save_yaml(run_dir / "pipeline_state.yaml", state)
+    handoff_name = "hypothesis_to_strategy_config_authoring.yaml"
+    (run_dir / "handoffs").mkdir(exist_ok=True)
+    shutil.copy(SR_ROOT / "workflow_artifacts" / "templates" / "handoffs" / handoff_name,
+                run_dir / "handoffs" / handoff_name)
+    (run_dir / "artifacts" / "hypothesis_card.yaml").write_text("hypothesis_id: H-1\n",
+                                                                encoding="utf-8")
+    docs = rpr.ROOT / "docs"
+    docs.mkdir(parents=True, exist_ok=True)
+    (docs / "COMPONENT_CATALOG.md").write_text("catalogue\n", encoding="utf-8")
+    (docs / "STRATEGY_DESIGN_GUIDE.md").write_text("guide\n", encoding="utf-8")
+    seen = []
+
+    async def _fake_invoke(stage_name, run_id, retry_context=None):
+        handoff = rpr.load_yaml(run_dir / "handoffs" / handoff_name)
+        rpr._apply_block_manifest_retry_context(stage_name, handoff, run_dir)
+        seen.append((stage_name, (handoff.get("injected_context") or {}).get("forecast_rule_error")))
+
+    monkeypatch.setattr(rpr, "async_invoke_agent", _fake_invoke)
+    rpr.run_loop("run_921")
+    assert [s for s, _ in seen] == ["strategy_config_authoring", "strategy_config_authoring"]
+    assert seen[0][1] is None and "SmaTrendLongOnlyComponent" in seen[1][1]
+    final = rpr.load_yaml(run_dir / "pipeline_state.yaml")
+    assert final["status"] == "paused_for_human"
+    assert final["pending_stage"] == "strategy_config_authoring"
+    assert final["flags"]["forecast_rule_violation"] is True
 
 
 def test_run_campaign_classifies_the_pause(tmp_path):
