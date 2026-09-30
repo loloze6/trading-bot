@@ -126,7 +126,8 @@ config load rather than deep inside a `DataManager` construction).
 feed which regime, how they combine into a forecast, what counts as
 "trending" vs. "chop." Changing trading logic normally means editing this
 file, not writing Python (§1). For a field-by-field guide to writing one,
-see [`STRATEGY_CONFIG_REFERENCE.md`](STRATEGY_CONFIG_REFERENCE.md).
+see [`STRATEGY_DESIGN_GUIDE.md`](../../strategy-research/docs/STRATEGY_DESIGN_GUIDE.md) and
+[`COMPONENT_CATALOG.md`](../../strategy-research/docs/COMPONENT_CATALOG.md).
 
 Loaded directly by `AdvancedStrategy.__init__` (`strategies/main_strategy.py`)
 — **not** through `ConfigManager` at all, and not automatically re-validated

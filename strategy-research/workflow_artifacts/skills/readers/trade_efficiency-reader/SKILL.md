@@ -247,7 +247,7 @@ this category's report and the grid you may read for this score):
 - Do not propose discarding the underlying signal component when `primary_weakness` is
   `entry`/`exit`/`holding_sizing` -- these are execution-level, not signal-quality, findings.
 - Do not invent component classes, transform ops, or regime names absent from
-  `STRATEGY_DESIGN_GUIDE.md`.
+  `COMPONENT_CATALOG.md`.
 - Do not emit a proposal with empty `evidence`.
 
 ## Context rule

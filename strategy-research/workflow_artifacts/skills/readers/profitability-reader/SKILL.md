@@ -107,14 +107,14 @@ Each proposal:
 ```yaml
 proposal_id: profitability-<run_id>-<n>          # n increments per proposal in this file
 kind: patch | new_block
-patch: [...]        # kind: patch only -- a Component variant pattern (STRATEGY_DESIGN_GUIDE.md
-                     # "Component variant patterns", e.g. scaling_factor sign flip,
-                     # atr_multiplier/threshold_filter min_abs widen/narrow) as a before/after
+patch: [...]        # kind: patch only -- a variant pattern (COMPONENT_CATALOG.md
+                     # "Variant patterns", e.g. scaling_factor sign flip,
+                     # atr_multiplier or a component period lengthened/shortened) as a before/after
                      # component-spec diff. Do not invent a component class or transform op
-                     # absent from STRATEGY_DESIGN_GUIDE.md's catalog (§4).
+                     # absent from COMPONENT_CATALOG.md.
 block: {...}         # kind: new_block only -- a block_manifest.yaml-shaped sketch
-                     # (STRATEGY_DESIGN_GUIDE.md §7c: kind/config_paths/scaffolding/rationale).
-                     # §7c is built: stage 1b writes a run's real block_manifest.yaml. This
+                     # (STRATEGY_DESIGN_GUIDE.md "Manifest contract": kind/config_paths/scaffolding/rationale).
+                     # The manifest contract is built: stage 1b writes a run's real block_manifest.yaml. This
                      # field is only a sketch IN that vocabulary for a human/5b-ii reviewer --
                      # you are not writing block_manifest.yaml, and no code registers it.
 evidence: [...]      # each item traceable to a field in THIS report -- see format rule below
@@ -186,8 +186,10 @@ the signal earns gross PnL but per-trade fees consume it. `cost_drag_pct = total
 a patch that only changes sizing/leverage on the strength of this rule alone**; it cannot move
 this ratio by construction. Two candidate causes, distinguishable if `variants.base.slices.per_window`
 carries a forecast-magnitude-shaped field: (a) low-conviction trade dilution -- propose a
-`patch` raising `threshold_filter.min_abs` to cut low-conviction entries; (b) short trade
-duration -- if raising `min_abs` was already proposed in a prior run for this dimension
+`patch` slowing the signal (a longer component period, or a larger `ema` `span`) to cut
+low-conviction entries -- never a `threshold_filter` dead zone, which is not allowed on a
+component in `strategies`; (b) short trade
+duration -- if slowing the signal was already proposed in a prior run for this dimension
 (you cannot see `campaign_state.yaml` to confirm this; note the ambiguity in `evidence`
 instead of asserting it), propose a `patch` switching to a less-frequent entry rule (wider
 bands / higher min_score) rather than changing the signal family. Do NOT propose a `patch`
@@ -266,8 +268,7 @@ this category's report and the grid you may read for this score):
   before concluding no proposal is possible.
 - Every `evidence` entry cites a field path under `variants.base.slices.*` in THIS report -- never a number
   you cannot point to in `profitability.yaml`.
-- Every `patch` uses only components/transform ops in `STRATEGY_DESIGN_GUIDE.md`'s catalog
-  (§4) -- no invented names.
+- Every `patch` uses only components/transform ops in `COMPONENT_CATALOG.md` -- no invented names.
 - Do not write `hypothesis_verdict`, `lineage_routing`, `status`, or any promote/kill/refine/
   pivot/escalate word as a decision -- you propose, you do not route.
 
@@ -283,7 +284,7 @@ this category's report and the grid you may read for this score):
 - Do not propose a sizing/leverage-only patch to fix a cost_drag_pct problem (Rule 1) --
   mathematically invariant to sizing, see Rule 1 above.
 - Do not invent component classes, transform ops, or regime names absent from
-  `STRATEGY_DESIGN_GUIDE.md`.
+  `COMPONENT_CATALOG.md`.
 - Do not emit a proposal with empty `evidence`.
 
 ## Context rule

@@ -13,12 +13,10 @@ required_inputs:
   - path: artifacts/validation_protocol.yaml
     reason: falsification criteria and sample-split decisions that constrain the config
 optional_inputs:
-  - path: ../../../trading-bot/DOC/STRATEGY_CONFIG_REFERENCE.md
-    reason: authoritative list of available components, transforms, regimes, parameters
-  - path: ../../docs/WORKFLOW_CAPABILITIES.md
-    reason: confirms which signal variants are achievable via config vs require new code
+  - path: ../../docs/COMPONENT_CATALOG.md
+    reason: the inventory of every available component and exactly what each outputs, plus the names of the transform ops, regimes and rule operators
 constraints:
-  - Use only components/transforms/regimes in STRATEGY_CONFIG_REFERENCE.md.
+  - Use only components/transforms/regimes in COMPONENT_CATALOG.md.
   - History-based transform ops precede scalar ops.
   - Do not loosen thresholds or sample-split choices fixed by validation.
 deliverables:

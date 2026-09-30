@@ -20,21 +20,17 @@ flow) is what turns it into variants, expressed as patches against the config th
 ## Required inputs
 - `hypothesis_card.yaml` (the base hypothesis — NOT `expanded_hypothesis_card.yaml`; no variant menu exists at
   this point in the config-direct-authoring flow)
-- `STRATEGY_DESIGN_GUIDE.md` (`strategy-research/docs/STRATEGY_DESIGN_GUIDE.md` — the authoritative list of
-  every available component, transform op, regime, and parameter for THIS flow. Sections 1-6 are carried over
-  near-verbatim from `trading-bot/DOC/STRATEGY_CONFIG_REFERENCE.md`, which remains the code-owned reference and
-  is authoritative if the two ever disagree — see the design guide's own provenance note. Section 7 is new,
-  config-direct-authoring-specific content: §7a (instrument-set field) is PROPOSED, NOT BUILT; §7b
-  (component-class existence, `validate_config.py` VIOLATION V12) and §7c (the `block_manifest.yaml` contract
-  you write, see Output requirements) are built and live.)
+- `STRATEGY_DESIGN_GUIDE.md` (`strategy-research/docs/STRATEGY_DESIGN_GUIDE.md` — how to design a config for THIS
+  flow: how a config becomes a trade, the graded-forecast rule, every key and option, the transform ops, how to
+  compose a signal, what the config cannot express, the validator rules, and the `block_manifest.yaml` contract
+  you write, see Output requirements.)
+- `COMPONENT_CATALOG.md` (`strategy-research/docs/COMPONENT_CATALOG.md` — the inventory of every available
+  component and exactly what each outputs: formula, range and sign, graded or on/off, warmup, data needs.)
 - `DATA_AVAILABILITY.md` (`strategy-research/docs/DATA_AVAILABILITY.md` — short, forced-read:
   what OHLCV timeframes/aux feeds are actually available, the exact-cache-missing fallback
   rule, and the bar-count/signal-shape checks to run before emitting a config for a new or
   changed timeframe. Read in full whenever the hypothesis's timeframe, symbol, or venue
   differs from what a prior config in this campaign already used.)
-- `WORKFLOW_CAPABILITIES.md` (optional — read before emitting any config to confirm the
-  required signal variant is achievable without new code. If not achievable, emit
-  component_gap immediately rather than inventing a component class name.)
 - `findings_carryover.yaml` (if present): read `parameter_bracket` field.
   If present, the config MUST use the midpoint value for the bracketed dimension.
   Do not use any other value. Print: "BRACKET DETECTED: {dimension} midpoint = {midpoint}"
@@ -44,7 +40,7 @@ flow) is what turns it into variants, expressed as patches against the config th
 - `backtest_spec.yaml`   (same artifact name and shape `backtest-engineering` uses, minus `selected_variant_id`
   — see IMPROVEMENT 01's removal note below)
 - `decision.yaml`        (conforms to workflow_artifacts/schemas/decision.schema.json)
-- `block_manifest.yaml`  (only when status is spec_ready; STRATEGY_DESIGN_GUIDE.md §7c — see below)
+- `block_manifest.yaml`  (only when status is spec_ready; STRATEGY_DESIGN_GUIDE.md 'Manifest contract' — see below)
 
 ## Output requirements
 `backtest_spec.yaml`:
@@ -53,7 +49,8 @@ flow) is what turns it into variants, expressed as patches against the config th
 - `config_rationale`: list mapping each hypothesis claim to one concrete config choice.
 - `component_gap`: null when spec_ready; else {needed, kind, description}.
 The embedded `config` must:
-- Use ONLY components, transform ops, and regimes listed in STRATEGY_DESIGN_GUIDE.md. No invented names.
+- Use ONLY components listed in COMPONENT_CATALOG.md, and transform ops and regimes listed in
+  STRATEGY_DESIGN_GUIDE.md. No invented names.
 - Put history-based transform ops before scalar ops.
 - Set explicit `lookback` on any component using ratio_to_mean / percentile / zscore.
 - If `research_brief.yaml` contains a `significance_methodology` field (e.g. P1b's
@@ -66,7 +63,7 @@ The embedded `config` must:
 
 `block_manifest.yaml` (next to `backtest_spec.yaml`; write it only when status is spec_ready). It says which
 part of the config you just wrote IS the hypothesis's block and which part is scaffolding. Exact shape, every key
-required, no other key (STRATEGY_DESIGN_GUIDE.md §7c):
+required, no other key (STRATEGY_DESIGN_GUIDE.md 'Manifest contract'):
 ```yaml
 block:
   kind: forecast            # forecast | regime -- nothing else
@@ -123,12 +120,41 @@ If a stated rationale conflicts with an identity in quant-fundamentals,
 quant-fundamentals is authoritative — note the conflict rather than silently following
 the original rationale.
 
+## Design rules for this stage (D-051, O-7)
+
+Read `STRATEGY_DESIGN_GUIDE.md` and `COMPONENT_CATALOG.md` in full before choosing a component; both are required
+inputs, not references.
+
+**Graded components only (D-051, hard rule).** A component marked **on/off** in the catalogue's "Kind" column must
+not appear in `strategies` (the guide's "The design principle" lists them). An on/off condition is expressed with a
+graded component; where the idea needs the condition itself, build it the way the guide describes (a regime rule
+or veto that selects a regime holding a graded component) or declare it as a deviation (below). A constant
+component is only an offset inside a composition with a graded one. The dead-zone transforms `threshold_filter`
+and `volume_filter` must not be used on a component in `strategies` (they make the position jump from 0 to the
+threshold); a "strong enough" or "volume above average" condition goes in the regime detector. Interim: while
+the hypothesis stage still receives cards without regime conditions (until D-052 lands), an on/off condition the
+card does not carry as a regime is declared as a deviation, not built as a regime.
+
+**Fidelity (O-7): build the signal the card describes, or say what differs.** In `config_rationale`, map EACH
+clause of the card's `signal_concept` to the config element that implements it (one entry per clause:
+`hypothesis_claim` = the clause, `config_choice` = the config path and what it does). A clause you did not or could
+not build as written (an exit, a stop, a time-based hold, position state, sizing other than forecast / 10, an
+on/off rule restated as a graded measure) gets its own entry whose `config_choice` starts with `DEVIATION:` and
+says what was built instead, or that nothing was. Never silently build a different signal, and never leave a
+clause unmapped.
+
+**`component_gap` only after compositions are ruled out.** Before reporting `component_gap`, try compositions of the
+existing components: several components averaged, negative weights, offsets, sign flips, `clip` (the guide's
+"Composing a signal"). The `rationale` in `decision.yaml` and, if you report it, its `blocking_issues` must list the
+compositions you tried and why each fails.
+
 ## Checklist
 - In config_rationale, show how the signal concept becomes component + transform pipeline.
 - Pick regime mode the hypothesis needs; default threshold_rules. One active regime is fine for a first test.
 - Keep the config minimal.
-- If ANY required indicator/transform/regime is absent from the reference, status=component_gap; do not
-  fabricate a config around the missing piece.
+- If ANY required indicator/transform/regime is absent from the catalogue AND no composition of existing
+  components builds it (Design rules above), status=component_gap; do not fabricate a config around the missing
+  piece.
 - transforms list must not be empty for directional signal components. If no normalization
   is intended, include {"op": "identity"} explicitly to confirm intent.
 - scaling_factor and transform pipeline interact: if using ratio_to_mean + scale,
@@ -141,14 +167,15 @@ the original rationale.
   per window and destroys cost_drag. `validate_config.py` VIOLATION V9 enforces this
   for all three names (trending/mean_reversion/chop), not just trending.
   **This restriction does NOT apply to the fully-ungated pattern** (regime_detector.rules=[]
-  AND regime_detector.components=[]) — see "Ungated hypotheses" below; that is a
-  different, separately-canonical case with its own rule.
-- Include all regime rules from STRATEGY_DESIGN_GUIDE.md's worked example as the
-  baseline, then modify only what the hypothesis requires. Do not omit regimes not
-  explicitly mentioned in the brief — omitting trending/chop means those bars fall to
+  AND regime_detector.components=[]) — see "Ungated hypotheses" below; there any of the
+  four names is accepted (`"unknown"` by convention).
+- Write every regime rule against a measure from the "Regime measures" rows of COMPONENT_CATALOG.md (its
+  range and sign say where a threshold can sit), then modify only what the hypothesis requires. Do not omit
+  regimes not explicitly mentioned in the brief — omitting trending/chop means those bars fall to
   default_regime behavior.
 - Write `block_manifest.yaml` for every spec_ready config (see Output requirements). Do not invent a
-  symbol/timeframe/instrument-set config field (§7a) — proposed, not built.
+  symbol/timeframe/instrument-set config field — the config has none (STRATEGY_DESIGN_GUIDE.md
+  'What the config cannot express').
 
 ## Ungated hypotheses (post-A2.3) — THE canonical pattern
 
@@ -182,44 +209,15 @@ reasoning about it (see `trading-bot/tests/test_ungated_config_pattern.py`):**
   falls straight through to `default_regime` on every single bar, unconditionally.
   No dummy component, no always-true rule — those add moving parts for zero benefit
   and are what produced the invented-name failure.
-- **`default_regime` MUST be `"unknown"` here — not "any of the four, pick one."**
-  Empirically confirmed: `main_strategy.is_ready()` gates on
-  `strategy_engine.is_ready(self.regime_engine.current_regime)`, read BEFORE
-  `classify()` has run for the current bar — so on the very first ready-candidate bar,
-  `current_regime` is still its class-initial default, `MarketRegime.UNKNOWN`, no matter
-  what the config's real target is. `ConfigDrivenStrategyEngine.is_ready()` returns True
-  UNCONDITIONALLY when the queried regime key isn't registered in its `_components` dict
-  — which is exactly what happens whenever the real signal sits under any key OTHER than
-  `"unknown"` (since `"unknown"` would then be null and never registered). The result:
-  for `default_regime` in `{mean_reversion, chop, trending}`, the very first forecast is
-  computed ONE BAR EARLY, from whatever partial history has accumulated (as little as 2
-  bars), silently ignoring the configured `warmup` for that one bar.
-  `default_regime="unknown"` is the one choice where this check is non-vacuous (the real
-  block is registered under `"unknown"` itself), so it alone respects the configured
-  warmup on every bar including the first. `mean_reversion`/`chop`/`trending` are
-  otherwise mutually interchangeable (a pure, inert label choice among themselves) — but
-  all three share this same one-bar defect that `"unknown"` alone avoids.
-- **Known precedent, re-examined**: run_042 (H-041-C) shipped `default_regime:
-  "mean_reversion"` with this exact empty-rules/components pattern. It carries the same
-  mechanical defect (confirmed directly by instrumentation — it reports "ready" one bar
-  before its own per-regime history reaches the configured warmup). It does not show up
-  in run_042's own numbers for two independent, incidental reasons: its real `warmup=3`
-  is so low the gap doesn't matter, AND `FearGreedContrarianComponent` only ever fires on
-  UTC-midnight boundary bars, which the defect's fixed bar index doesn't happen to land
-  on in that run. Neither is a safety property — do not read run_042 as proof that
-  `mean_reversion` is an acceptable choice; the numeric near-miss was luck, not design.
-  Use `"unknown"` for all new ungated configs.
+- **`default_regime`: any of the four names is accepted here; use `"unknown"` by convention.** With no rules
+  and no components every bar resolves to `default_regime`, so it is a label, not a gate: what matters is that
+  `strategies.regimes[default_regime]` holds the real signal (next bullet). All four labels give the same
+  forecasts from the first ready bar on (`trading-bot/tests/test_ungated_config_pattern.py`,
+  `test_pattern_a_all_four_regime_labels_now_agree`).
 - `validate_config.py` VIOLATION V10 enforces the concrete authoring mistake this pattern
   invites: if `regime_detector.components=[]` and `rules=[]`, `strategies.regimes
   [default_regime]` must not be null — that combination is silently dead (forecasts 0.0
   forever) with no error anywhere else to catch it.
-- The underlying `main_strategy.is_ready()` one-bar defect itself is NOT fixed by this
-  rule — it is a pre-existing, systemic effect on the very first ready bar of ANY
-  strategy config (gated or ungated), invisible in aggregate metrics because it touches
-  exactly one bar out of thousands. Using `default_regime="unknown"` sidesteps it for
-  new ungated configs; it does not repair the engine. Flag for separate follow-up if you
-  encounter it elsewhere — do not attempt to fix engine readiness semantics as a rider on
-  an unrelated backtest_spec.
 
 ## Replication guard
 If `run_context.yaml` is present and contains `run_type: replication_diagnostic`:
@@ -231,7 +229,7 @@ If `run_context.yaml` is present and contains `run_type: replication_diagnostic`
 - Any deviation from source_run parameters is a critical failure of this stage.
 
 ## Forbidden
-- Do not invent component classes, transform ops, or regime names absent from STRATEGY_CONFIG_REFERENCE.md.
+- Do not invent component classes, transform ops, or regime names absent from COMPONENT_CATALOG.md.
 - Do not write Python or modify the engine.
 - Do not emit more than one config.
 - Do not loosen any threshold or sample-split decision validation already fixed.
@@ -240,17 +238,17 @@ If `run_context.yaml` is present and contains `run_type: replication_diagnostic`
 - NEVER set default_regime to "trending", "mean_reversion", or "chop" in threshold_rules
   or score_product mode WHILE regime_detector.rules is non-empty. This is a critical
   config bug: it disables the regime gate and trades every bar. validate_config.py will
-  reject it as VIOLATION V9. Use "unknown" only.
+  reject it as VIOLATION V9. Use "unknown" whenever rules is non-empty.
   (For a fully-ungated config — rules=[] AND components=[] — this restriction does not
-  apply; see "Ungated hypotheses" above. Even there, use "unknown" as default_regime —
-  it is the only choice that avoids a separate one-bar warmup-bypass defect, not because
-  the other three are schema-forbidden.)
+  apply; see "Ungated hypotheses" above: any of the four names is accepted there, `"unknown"`
+  by convention, as long as it points at a regime that holds the signal.)
 - Do not set default_regime to a regime that maps to null in the strategies block.
 - Do not set any regime to {"components": []} (empty components list).
   If a regime should produce no trades, set it to null.
 - Do not invent component class names. If you are unsure whether a variant is possible,
-  read WORKFLOW_CAPABILITIES.md "Common confusion" section first. The answer is almost
+  read the component's row and the "Variant patterns" section of COMPONENT_CATALOG.md first. The answer is almost
   always "yes, achievable via a config parameter."
 
 ## Context rule
-Read only the hypothesis artifacts and the design guide (STRATEGY_DESIGN_GUIDE.md). Minimal context.
+Read only the hypothesis artifacts, the design guide (STRATEGY_DESIGN_GUIDE.md) and the component catalogue
+(COMPONENT_CATALOG.md). Minimal context.

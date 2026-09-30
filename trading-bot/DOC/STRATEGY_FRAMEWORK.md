@@ -1,6 +1,6 @@
 # STRATEGY_FRAMEWORK.md
 Purpose: minimal mental model of the config-driven strategy framework. Read this first.
-For config edits → STRATEGY_CONFIG_REFERENCE.md. For new components/transforms → STRATEGY_EXTENDING.md.
+For config edits → `strategy-research/docs/STRATEGY_DESIGN_GUIDE.md` (how to design a config) and `strategy-research/docs/COMPONENT_CATALOG.md` (every component and what it outputs). For new components/transforms → STRATEGY_EXTENDING.md.
 
 ## File map
 | File | Role |

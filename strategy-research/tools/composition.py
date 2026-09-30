@@ -32,7 +32,7 @@ timeframe-less block is excluded loudly and regime blocks never enter):
      source engine's deque length), its source timing (required_bars,
      warmup, buffer length) and its source regime_detector as its own gate --
      a gated block abstains outside its validated regime(s). The composite's
-     own detector is the trivial ungated pattern (§7e) that routes every bar
+     own detector is the trivial ungated pattern (design guide, 'Ungated') that routes every bar
      to the combiner. Each block's FINAL forecast is standardised at
      combination time on its own past active values only (operator decision
      1), capped +-20, then weighted;
@@ -80,10 +80,10 @@ SCHEMES = ("equal", "vol_scaled", "ic_weighted")
 # Variant id per scheme. `base` = equal weight: composite_cache reads the base
 # variant's config as "the current composite" (S1 guess 4).
 VARIANT_BY_SCHEME = {"equal": "base", "vol_scaled": "vol_scaled", "ic_weighted": "ic_weighted"}
-COMPOSITE_REGIME = "unknown"  # the ungated pattern's regime (§7e)
+COMPOSITE_REGIME = "unknown"  # the ungated pattern's regime (design guide, 'Ungated')
 # Block standardisation (engine key block_standardisation). target 10 = the
 # forecast scale's target average absolute value (operator decision 1; design
-# guide §5 "≈ average signal = 10"); window 500 = the design guide's
+# guide 'Worked examples' "an average signal is 10"); window 500 = the design guide's
 # ratio_to_mean normalisation window ("legacy parity: 500"); min_periods 30 =
 # registry.TRANSFORM_MIN_PERIODS["ratio_to_mean"].
 STANDARDISATION = {"target": 10.0, "window": 500, "min_periods": 30}

@@ -518,8 +518,8 @@ post-validation/post-expansion to pre-expansion.
 |---|---|---|
 | `hypothesis_card.yaml` | stage 2 | yes |
 | `STRATEGY_DESIGN_GUIDE.md` | `strategy-research/docs/` | yes |
+| `COMPONENT_CATALOG.md` | `strategy-research/docs/` | yes |
 | `DATA_AVAILABILITY.md` | `strategy-research/docs/` | optional, forced-read on a new timeframe/symbol/venue |
-| `WORKFLOW_CAPABILITIES.md` | `strategy-research/docs/` | optional |
 | `quant-fundamentals/SKILL.md` | `workflow_artifacts/skills/`, added by code (CUL-336) | yes |
 
 **Stage output**
@@ -545,7 +545,7 @@ confirming no rule was silently dropped).
 Which part of the base config IS the hypothesis's block, as opposed to
 scaffolding: `{block: {kind: forecast|regime, config_paths: [JSON pointers]},
 scaffolding: [JSON pointers], rationale}` — contract in
-`STRATEGY_DESIGN_GUIDE.md` §7c, schema
+`STRATEGY_DESIGN_GUIDE.md` ("Manifest contract"), schema
 `workflow_artifacts/schemas/block_manifest.schema.json`, one implementation in
 `tools/block_manifest.py`. A stale manifest is deleted when this stage
 starts. Right after it, `determine_post_strategy_config_authoring_route`
@@ -2144,7 +2144,7 @@ A simple gate [artifact](#g-artifact) confirming whether the backtest_spec is va
 | Field | Definition — what it means | Values / range (meaning of each) | Example (`run_060`, 2026-08-27) |
 |---|---|---|---|
 | `status` | Whether a runnable spec was produced. Two words that route the run — and anything unrecognised pauses it. | `spec_ready` (→ stage 8 protocol_execution) · `component_gap` (→ [human pause](#g-human-pause); the engine lacks a piece) · **any other value** (→ human pause, deliberately fail-closed) | `spec_ready` |
-| `rationale` | Why, naming the component or the gap. | prose | *"FundingRateMeanReversionComponent exists in STRATEGY_CONFIG_REFERENCE.md with full threshold=0.0 continuous-forecast support"* |
+| `rationale` | Why, naming the component or the gap. | prose | *"FundingRateMeanReversionComponent exists in COMPONENT_CATALOG.md with full threshold=0.0 continuous-forecast support"* |
 | `blocking_issues` | What is missing, when there is a gap. | list | `[]` |
 | `stage` | Which stage wrote it. | string | `backtest_specification` |
 
@@ -2975,7 +2975,7 @@ The skill is explicitly forbidden from approving a hypothesis that has no falsif
 ### `backtest-engineering`
 
 **Goal:** Translate an approved, validated hypothesis into a `strategy_config` JSON that the trading-bot can execute verbatim.  
-**Why it exists:** The hypothesis exists in conceptual form (thesis, signal formula, regime gate). The backtest engine needs exact parameters: lookback windows, thresholds, [component](#g-component) weights, regime definitions. This skill handles that translation, validates the output against `STRATEGY_CONFIG_REFERENCE.md`, and flags any component that doesn't yet exist in the bot.
+**Why it exists:** The hypothesis exists in conceptual form (thesis, signal formula, regime gate). The backtest engine needs exact parameters: lookback windows, thresholds, [component](#g-component) weights, regime definitions. This skill handles that translation, validates the output against `COMPONENT_CATALOG.md`, and flags any component that doesn't yet exist in the bot.
 
 The skill is forbidden from:
 - Bypassing regime gates.
@@ -2995,7 +2995,7 @@ top, e.g. sparse-trader gates, prescreen-kill routing, regime attribution):
 
 | Rule # | Condition | Prescribed action |
 |---|---|---|
-| 1 | Cost drag dominates (`cost_drag_pct > 80%`, `gross_pnl > 0`) | Raise `threshold_filter` to reduce trade frequency |
+| 1 | Cost drag dominates (`cost_drag_pct > 80%`, `gross_pnl > 0`) | Slow the signal (longer component period) to reduce trade frequency; a `threshold_filter` dead zone is not allowed in `strategies` |
 | 2 | Signal has no directional edge (`\|median_forecast_return_corr\| < 0.03`) | Pivot to a structurally different signal |
 | 3 | Signal is inverted (`median_forecast_return_corr < -0.03`, significant) | Pivot to the reverse signal (cheap — same component, reversed logic) |
 | 4 | Regime is uninformative | Pivot to a different regime definition (after ruling out a sample-size issue) |

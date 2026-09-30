@@ -1,6 +1,6 @@
 """
 E-056 1b block manifest: stage 1b (strategy_config_authoring) writes
-artifacts/block_manifest.yaml; STRATEGY_DESIGN_GUIDE.md §7c is built.
+artifacts/block_manifest.yaml; STRATEGY_DESIGN_GUIDE.md's 'Manifest contract' is built.
 
 Covers:
   1. the schema file and tools/block_manifest.py agree (kind enum, keys, and
@@ -47,7 +47,7 @@ HANDOFF_1B = SR_ROOT / "workflow_artifacts" / "templates" / "handoffs" / \
     "hypothesis_to_strategy_config_authoring.yaml"
 DESIGN_GUIDE = SR_ROOT / "docs" / "STRATEGY_DESIGN_GUIDE.md"
 
-# Ungated base config (STRATEGY_DESIGN_GUIDE.md §7e) with one real component.
+# Ungated base config (STRATEGY_DESIGN_GUIDE.md 'Ungated' pattern) with one real component.
 CONFIG = {
     "regime_detector": {"mode": "threshold_rules", "components": [], "rules": [],
                         "default_regime": "unknown"},
@@ -249,7 +249,7 @@ def test_load_manifest_file_is_strict(tmp_path):
 
 @pytest.mark.parametrize("path", [SKILL_1B, DESIGN_GUIDE], ids=["skill_1b", "design_guide"])
 def test_documented_examples_are_valid(path):
-    """The example manifest in the 1b skill and in §7c passes the real check
+    """The example manifest in the 1b skill and in the guide's 'Manifest contract' passes the real check
     against the ungated base config."""
     text = path.read_text(encoding="utf-8")
     start = text.index("```yaml\nblock:")
@@ -423,6 +423,7 @@ def test_route_loop_back_to_1b_is_driven_by_run_loop(monkeypatch):
     (run_dir / "artifacts" / "hypothesis_card.yaml").write_text("hypothesis_id: H-1\n", encoding="utf-8")
     docs = rpr.ROOT / "docs"
     docs.mkdir(parents=True, exist_ok=True)
+    (docs / "COMPONENT_CATALOG.md").write_text("catalogue\n", encoding="utf-8")
     (docs / "STRATEGY_DESIGN_GUIDE.md").write_text("guide\n", encoding="utf-8")
     seen = []
 
@@ -485,7 +486,7 @@ def test_reader_skills_and_proposal_schema_no_longer_call_7c_unbuilt():
         assert not any(s in text for s in stale), skill
     schema = (SCHEMAS / "proposal.schema.json").read_text(encoding="utf-8")
     assert not any(s in schema for s in stale)
-    assert "§7c is built" in schema
+    assert "the manifest contract is built" in schema
 
 
 def _card_errors(card: dict) -> list:

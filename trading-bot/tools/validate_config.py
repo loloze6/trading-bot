@@ -303,7 +303,7 @@ def validate(config: dict) -> List[str]:
     # which reference these by 'id', not by their own 'class') and
     # strategies.regimes.*.components[] (the per-regime forecast ensemble).
     # score-mode/score_product-mode regime_detector.regimes.*.components[] entries
-    # have no 'class' of their own -- see STRATEGY_CONFIG_REFERENCE.md sec 1 -- so
+    # have no 'class' of their own -- see STRATEGY_DESIGN_GUIDE.md 'Regime detector' -- so
     # there is nothing to check there.
     def _check_component_class(loc: str, comp: dict) -> None:
         class_path = comp.get("class")

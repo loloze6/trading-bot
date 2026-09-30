@@ -157,6 +157,29 @@ The innovation-expansion rule "at least one non-price_volume_only variant per fa
 
 ---
 
+## Graded signal concept (D-051, hard rule)
+
+`signal_concept` must describe a GRADED forecast. The bot turns a forecast in [-20, +20] into a position
+(allocation = forecast / 10), so the position follows the size of the signal. State, in `signal_concept`:
+1. the quantity the signal measures (for example "where the close sits inside its 20-day high-low range"),
+2. how that quantity is scaled into [-20, +20] (for example "-20 at the bottom of the range, +20 at the top,
+   linear in between"),
+3. that position size follows it: a stronger signal is a bigger position, a zero signal is flat.
+
+An on/off rule is not acceptable as written: "long when X crosses Y", "long above the 20-day high, short below the
+20-day low", "enter on the signal, exit on the opposite signal". Restate it as its graded counterpart and say in
+`signal_concept` that you did so and how the graded version differs from the rule as first conceived. Do not write
+the on/off rule and leave the conversion to a later stage.
+
+**Name what the strategy config cannot express.** The config describes one forecast per bar and nothing else. If
+the idea also needs an exit rule, a stop or take-profit, a time-based hold, anything that depends on the current
+position (entry price, bars held, profit and loss), or sizing other than forecast / 10 (volatility targeting, a
+cap, Kelly), say so in `signal_concept`, one line per item ("Not expressible in the config: stop at 2 ATR"), so
+the config-writing stage can declare it as a deviation instead of dropping it silently or inventing it. Do not
+leave such a part out to make the idea look simpler.
+
+---
+
 ## POST-A2.3 — No regime-gating (standing policy)
 
 **No hypothesis produced by this skill may be regime-gated.**
@@ -402,6 +425,10 @@ IMPROVEMENT 01/04/07 above; a partial pass-through is a silent gap-filling trap,
 - Set `power_parameters.plausible_ic_upper` from the A8.6 anchor table above by signal
   class — do not free-hand it.
 - Populate `edge_source` fully before writing `signal_concept`.
+- Write `signal_concept` as a graded forecast: the quantity, how it is scaled into [-20, +20], and that position
+  size follows it; restate any on/off rule as its graded counterpart and say so. Name every part of the idea the
+  config cannot express (exits, stops, time-based holds, position state, sizing other than forecast / 10).
+  (Graded signal concept section)
 - Check: does `specific_mechanism` name a measurable proxy in an available feed? If not, revise or route to `feed_wishlist.yaml`.
 - Check: is `evidence_type` available? If not, add `requires_new_feed` and route to feed_wishlist.
 - Check: is the hypothesis ungated? Any regime condition → reformulate or route to detector_wishlist.
@@ -420,6 +447,9 @@ IMPROVEMENT 01/04/07 above; a partial pass-through is a silent gap-filling trap,
 ## Forbidden
 - Do not write `signal_concept` before `edge_source` is complete.
 - Do not write `signal_concept` before indicator library lookup is complete. (Improvement 04)
+- Do not write an on/off rule as the `signal_concept` ("long when X crosses Y"); restate it as its graded
+  counterpart and say so. Do not leave out a part of the idea the config cannot express. (Graded signal concept
+  section)
 - Do not use vague mechanistic claims ("smart money", "key levels", "institutions") without a named measurable proxy.
 - Do not propose a hypothesis with `evidence_type` outside `available_feeds.yaml.available` as a run-queue candidate — route it to feed_wishlist instead.
 - Do not produce regime-gated hypotheses for the run queue (post-A2.3).
