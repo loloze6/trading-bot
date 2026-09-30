@@ -1518,6 +1518,12 @@ def _classify_human_pause(run_dir: Path, state: dict) -> str:
         return "variant_shape_invalid"
     if flags.get("variant_config_error"):
         return "variant_config_error"
+    # D-051: set by run_phase1_research._route_block_manifest_check when 1b's
+    # base config still breaks the graded-forecast rule after its one retry (or
+    # at once for a decide_next pass-through config 1b cannot change). Stops
+    # before Step 2; a human decides; never quarantine-safe.
+    if flags.get("forecast_rule_violation"):
+        return "forecast_rule_violation"
     # E-033.1 Slice 4b (2026-09-22): set by run_phase1_research's
     # data_availability_gate elif-branch in run_loop when, after the
     # per-variant data-availability gate has run, fewer than 3 variants
@@ -1850,6 +1856,9 @@ _PAUSE_FLAG_TO_REASON = (
     # variant_gate_insufficient in _classify_human_pause.
     ("variant_shape_invalid", "variant_shape_invalid"),
     ("variant_config_error", "variant_config_error"),
+    # D-051. Mirrors _classify_human_pause's branch for this flag, which sits
+    # immediately after variant_config_error there.
+    ("forecast_rule_violation", "forecast_rule_violation"),
     # E-033.1 Slice 4b. Mirrors _classify_human_pause's branch for this flag,
     # which sits immediately after variant_config_error (E-061 C2 S2c) in
     # that function's own order -- see this flag's comment there.

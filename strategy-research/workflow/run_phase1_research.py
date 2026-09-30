@@ -2584,6 +2584,10 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 and _variant_coin_module().per_coin_mode(patches_doc["variants"])):
             _run_proto_src, _run_proto_sha = _freeze_run_protocol(RUN_DIR, run_id)
             _coin_ctx = _variant_coin_context(RUN_DIR, run_id, source=_run_proto_src)
+        # D-051: the on/off classes, read once from the catalogue's Kind column
+        # (raises when the catalogue cannot be read -- never an empty set).
+        _fr = _forecast_rules_module()
+        _fr_on_off = _fr.on_off_classes()
 
         for variant in patches_doc["variants"]:
             variant_id = variant.get("variant_id") if isinstance(variant, dict) else None
@@ -2645,6 +2649,24 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 index[variant_id] = {"status": "not_tested", "reason": reason}
                 component_requests.append({"variant_id": variant_id, "reason": reason})
                 print(f"⚠️  [E-056 Slice3b] variant '{variant_id}' NOT TESTED: {reason}")
+                continue
+
+            # D-051 / D-053 (tools/forecast_rules.py): checked on the config AFTER
+            # the patch is applied, every variant, composition runs included. A
+            # refusal is a config error like the ones above: _variant_config_errors
+            # sends a variant's back to Step 2 once, and a `base` refusal (1b's
+            # config, already checked right after 1b) pauses.
+            _fr_msgs = (_fr.strategies_violations(variant_config, _fr_on_off)
+                        + _fr.class_mismatch(base_config, variant_config))
+            if _fr_msgs:
+                reason = FORECAST_RULE_REASON
+                report = "\n".join(_fr_msgs)
+                index[variant_id] = {"status": "not_tested", "reason": reason, "report": report}
+                component_requests.append({"variant_id": variant_id, "reason": reason,
+                                           "report": report})
+                _record_forecast_rule_refusal(RUN_DIR, "backtest_specification", variant_id,
+                                              _fr_msgs)
+                print(f"⚠️  [D-051/D-053] variant '{variant_id}' NOT TESTED: {report}")
                 continue
 
             _coin_keys: dict = {}
@@ -14005,23 +14027,117 @@ def _block_manifest_error(path: Path):
     return None
 
 
+# D-051 (tools/forecast_rules.py): 1b's base config is checked right after 1b,
+# with the manifest, and shares its one retry. A base that still breaks the rule
+# after the retry pauses the run with this flag (never a raise: a design
+# refusal, not an engineering fault). Every refusal, here and in 5a, is
+# appended to artifacts/forecast_rule_refusals.yaml.
+FORECAST_RULE_VIOLATION_FLAG = "forecast_rule_violation"
+FORECAST_RULE_REASON = "forecast rule violations (D-051/D-053)"
+_FORECAST_RULE_CHECK = "forecast_rules"
+_BLOCK_MANIFEST_CHECK = "block_manifest"
+_FORECAST_RULE_REFUSALS_FILE = "forecast_rule_refusals.yaml"
+
+
+def _record_forecast_rule_refusal(run_dir: Path, stage: str, variant_id: str,
+                                  messages: list, attempt: int | None = None) -> None:
+    """Append one refusal to artifacts/forecast_rule_refusals.yaml (append-only:
+    a retry or a 5a rebuild never erases an earlier refusal)."""
+    path = Path(run_dir) / "artifacts" / _FORECAST_RULE_REFUSALS_FILE
+    doc = (load_yaml(path) or {}) if path.exists() else {}
+    refusals = doc.get("refusals", []) if isinstance(doc, dict) else None
+    if not isinstance(refusals, list):
+        # never overwrite a record we cannot read: that would lose refusals
+        raise RuntimeError(f"{path} is not a {{refusals: [...]}} mapping -- refusing to "
+                           f"overwrite it; fix or move it, then resume")
+    refusals = list(refusals)
+    entry = {"at": datetime.now(timezone.utc).isoformat(), "stage": stage,
+             "variant_id": variant_id, "violations": list(messages)}
+    if attempt is not None:
+        entry["attempt"] = attempt
+    refusals.append(entry)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    save_yaml(path, {"refusals": refusals})
+
+
+def _base_forecast_rule_violations(path: Path) -> list:
+    """D-051 messages for the base config in artifacts/backtest_spec.yaml
+    (the config after any decide_next patch: decide_next hashes the patched
+    config and 1b copies it through). No config mapping: [] -- the manifest
+    check reports that."""
+    spec_path = path / "artifacts" / "backtest_spec.yaml"
+    spec = load_yaml(spec_path) if spec_path.exists() else None
+    config = spec.get("config") if isinstance(spec, dict) else None
+    if not isinstance(config, dict):
+        return []
+    fr = _forecast_rules_module()
+    return fr.strategies_violations(config, fr.on_off_classes())
+
+
+def _is_pass_through_candidate(artifacts: Path) -> bool:
+    """True for a decide_next patch candidate whose config 1b must copy through
+    verbatim (research_brief.yaml candidate.source.expected_config_sha256, see
+    _check_pass_through_config_hash): 1b cannot change that config, so a retry
+    of 1b cannot fix a rule it breaks."""
+    brief_path = Path(artifacts) / "research_brief.yaml"
+    brief = (load_yaml(brief_path) or {}) if brief_path.exists() else {}
+    candidate = brief.get("candidate") if isinstance(brief, dict) else None
+    source = candidate.get("source") if isinstance(candidate, dict) else None
+    return isinstance(source, dict) and bool(source.get("expected_config_sha256"))
+
+
 def _route_block_manifest_check(path: Path) -> str:
-    """spec_ready from 1b: innovation_expansion when the manifest is valid;
-    otherwise back to strategy_config_authoring ONCE with the error (carried by
-    _apply_block_manifest_retry_context); a second failure raises."""
+    """spec_ready from 1b: innovation_expansion when the manifest is valid and
+    the base config passes D-051; otherwise back to strategy_config_authoring
+    ONCE with the error (carried by _apply_block_manifest_retry_context). A
+    second manifest failure raises; a second D-051 failure (manifest valid)
+    pauses with FORECAST_RULE_VIOLATION_FLAG -- at once, without the retry,
+    for a decide_next pass-through config 1b cannot change."""
     error = _block_manifest_error(path)
+    rule_msgs = _base_forecast_rule_violations(path)
     state = load_yaml(path / "pipeline_state.yaml") or {}
     attempts = (state.get(_BLOCK_MANIFEST_RETRY_STATE_KEY) or {}).get("attempts", 0)
-    if error is None:
+    if rule_msgs:
+        _record_forecast_rule_refusal(path, "strategy_config_authoring", "base", rule_msgs,
+                                      attempt=attempts)
+    if error is None and not rule_msgs:
         if attempts:
-            update_state(path=path, **{_BLOCK_MANIFEST_RETRY_STATE_KEY: {"attempts": 0, "last_error": None}})
+            # last_check cleared too: update_state MERGES this dict, so a stale
+            # "forecast_rules" would otherwise label a later manifest retry
+            update_state(path=path, **{_BLOCK_MANIFEST_RETRY_STATE_KEY: {
+                "attempts": 0, "last_error": None, "last_check": None}})
         return "innovation_expansion"
+    if error is None:
+        rule_error = "; ".join(rule_msgs)
+        pass_through = _is_pass_through_candidate(path / "artifacts")
+        if pass_through or attempts >= _BLOCK_MANIFEST_RETRY_MAX:
+            update_state(path=path, status="paused_for_human",
+                         flags={FORECAST_RULE_VIOLATION_FLAG: True},
+                         **{_BLOCK_MANIFEST_RETRY_STATE_KEY: {
+                             "attempts": attempts, "last_check": _FORECAST_RULE_CHECK,
+                             "last_error": rule_error}})
+            why = ("a decide_next pass-through config (1b must copy it verbatim, so a 1b "
+                   "retry cannot change it)" if pass_through
+                   else f"still refused after {attempts} retry")
+            print(f"\n⏸️  PIPELINE PAUSED ({FORECAST_RULE_VIOLATION_FLAG}): 1b's base config "
+                  f"breaks D-051 -- {why}: {rule_error}. See artifacts/"
+                  f"{_FORECAST_RULE_REFUSALS_FILE} (docs/RUNBOOK.md §3, "
+                  f"{FORECAST_RULE_VIOLATION_FLAG}).")
+            return "human_pause"
+        update_state(path=path, **{_BLOCK_MANIFEST_RETRY_STATE_KEY: {
+            "attempts": attempts + 1, "last_check": _FORECAST_RULE_CHECK,
+            "last_error": rule_error}})
+        print(f"🔁 [D-051] base config refused -- retrying strategy_config_authoring once "
+              f"with the error: {rule_error}")
+        return "strategy_config_authoring"
+    if rule_msgs:
+        error = f"{error}; also: " + "; ".join(rule_msgs)
     if attempts >= _BLOCK_MANIFEST_RETRY_MAX:
         raise RuntimeError(
             f"strategy_config_authoring: block_manifest.yaml still invalid after "
             f"{attempts} retry -- {error}")
     update_state(path=path, **{_BLOCK_MANIFEST_RETRY_STATE_KEY: {
-        "attempts": attempts + 1, "last_error": error}})
+        "attempts": attempts + 1, "last_check": _BLOCK_MANIFEST_CHECK, "last_error": error}})
     print(f"🔁 [E-056 1b] block_manifest.yaml invalid -- retrying strategy_config_authoring "
           f"once with the error: {error}")
     return "strategy_config_authoring"
@@ -14039,6 +14155,17 @@ def _apply_block_manifest_retry_context(stage_name: str, handoff: dict, run_dir:
     if not retry.get("attempts") or not retry.get("last_error"):
         return
     handoff.setdefault("injected_context", {})
+    if retry.get("last_check") == _FORECAST_RULE_CHECK:
+        handoff["injected_context"]["forecast_rule_error"] = (
+            f"Retry {retry['attempts']}/{_BLOCK_MANIFEST_RETRY_MAX}. Your previous base config "
+            f"(backtest_spec.yaml) was refused by the graded-forecast rule (D-051): "
+            f"{retry['last_error']}. Re-emit backtest_spec.yaml, decision.yaml and "
+            f"block_manifest.yaml with every component in `strategies` graded "
+            f"(COMPONENT_CATALOG.md, Kind 'graded') and no threshold_filter or volume_filter "
+            f"in `strategies`; an on/off condition goes in the regime detector "
+            f"(STRATEGY_DESIGN_GUIDE.md). Answer component_gap only if no composition of "
+            f"existing graded components expresses the idea.")
+        return
     handoff["injected_context"]["block_manifest_error"] = (
         f"Retry {retry['attempts']}/{_BLOCK_MANIFEST_RETRY_MAX}. Your previous "
         f"block_manifest.yaml was rejected: {retry['last_error']}. Re-emit backtest_spec.yaml, "
@@ -14325,6 +14452,14 @@ def _variant_coin_module():
     _json_pointer_module()  # puts tools/ on sys.path
     import variant_coin as _vc
     return _vc
+
+
+def _forecast_rules_module():
+    """tools/forecast_rules.py (the D-051 / D-053 config checks), imported
+    lazily like the other tools/ siblings."""
+    _json_pointer_module()  # puts tools/ on sys.path
+    import forecast_rules as _fr
+    return _fr
 
 
 def _single_column_untested_kw(artifacts: Path, run_id: str) -> dict:
