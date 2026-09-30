@@ -93,6 +93,11 @@ For each proposed variant in `expanded_variants`, identify its `indicator_librar
 - Variants span ≥2 different `data_requirements`, OR
 - One variant has a materially different `edge_source_compatibility` set (e.g., structural vs behavioral).
 
+**Config-direct flow exception (D-053):** in the config-direct flow (signaled by `artifacts/backtest_spec.yaml`)
+`design` variants are exempt from this rejection: a design variant changes one parameter or transform and never adds
+or replaces a component, so it stays in the base's category by construction. The `asset` variant carries the
+diversity.
+
 ### Diversity field in `expanded_hypothesis_card.yaml`
 
 Each variant in `expanded_variants` must include:
@@ -327,7 +332,8 @@ patch form.
 - Prefer variants that fit the current strategy/regime/component framework.
 - Check `research_brief.yaml` constraints field first. If variant count is constrained, honor it before applying expansion logic.
 - Ensure at least one variant uses `evidence_type != price_volume_only` (use funding_open_interest if no other non-price feed applies).
-- **Improvement 04: run diversity test against indicator_library.yaml; reject cosmetic expansions.**
+- **Improvement 04: run diversity test against indicator_library.yaml; reject cosmetic expansions.** (Config-direct
+  flow: `design` variants are exempt, the `asset` variant carries the diversity; D-053.)
 - Populate `library_category`, `data_requirements`, `diversity_axis` on every variant.
 - Write `diversity_audit` section in `innovation_notes.yaml`.
 - If `artifacts/tried_ideas.yaml` or `campaign_record/exclusion_digest.yaml` is present
@@ -351,7 +357,9 @@ patch form.
 - Do not propose ideas that require rebuilding execution, portfolio, or backtest infrastructure unless explicitly requested.
 - Do NOT include regime-gated variants in the run queue (`expanded_variants`). They go in `regime_specific_variants` with `status: detector_wishlist_pending`.
 - If `research_brief.yaml` contains "one variant only", "single variant", or "no variants" in its `constraints` field, do NOT expand into multiple variants. Pass the base hypothesis through to a single variant (V1 only) matching the brief's signal_concept exactly. Expansion is only appropriate when the brief does not constrain variant count.
-- **Improvement 04: Do NOT accept an expansion where all variants share the same library `category` AND `data_requirements`. This is cosmetic diversity — redo it.**
+- **Improvement 04: Do NOT accept an expansion where all variants share the same library `category` AND `data_requirements`. This is cosmetic diversity — redo it.** (Config-direct flow: `design` variants are exempt from this, since a design
+  variant changes one parameter or transform and never adds or replaces a component; the `asset` variant carries the
+  diversity; D-053.)
 - Do not re-run an idea already tested on the same coins and timeframe (per
   `artifacts/tried_ideas.yaml` or the legacy exclusion digest, whichever is in context)
   under a materially unchanged mechanism. (Improvement 05)

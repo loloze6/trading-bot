@@ -109,7 +109,7 @@ proposal_id: profitability-<run_id>-<n>          # n increments per proposal in 
 kind: patch | new_block
 patch: [...]        # kind: patch only -- a variant pattern (COMPONENT_CATALOG.md
                      # "Variant patterns", e.g. scaling_factor sign flip,
-                     # atr_multiplier/threshold_filter min_abs widen/narrow) as a before/after
+                     # atr_multiplier or a component period lengthened/shortened) as a before/after
                      # component-spec diff. Do not invent a component class or transform op
                      # absent from COMPONENT_CATALOG.md.
 block: {...}         # kind: new_block only -- a block_manifest.yaml-shaped sketch
@@ -186,8 +186,10 @@ the signal earns gross PnL but per-trade fees consume it. `cost_drag_pct = total
 a patch that only changes sizing/leverage on the strength of this rule alone**; it cannot move
 this ratio by construction. Two candidate causes, distinguishable if `variants.base.slices.per_window`
 carries a forecast-magnitude-shaped field: (a) low-conviction trade dilution -- propose a
-`patch` raising `threshold_filter.min_abs` to cut low-conviction entries; (b) short trade
-duration -- if raising `min_abs` was already proposed in a prior run for this dimension
+`patch` slowing the signal (a longer component period, or a larger `ema` `span`) to cut
+low-conviction entries -- never a `threshold_filter` dead zone, which is not allowed on a
+component in `strategies`; (b) short trade
+duration -- if slowing the signal was already proposed in a prior run for this dimension
 (you cannot see `campaign_state.yaml` to confirm this; note the ambiguity in `evidence`
 instead of asserting it), propose a `patch` switching to a less-frequent entry rule (wider
 bands / higher min_score) rather than changing the signal family. Do NOT propose a `patch`

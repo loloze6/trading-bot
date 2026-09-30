@@ -2,8 +2,7 @@
 
 How to design a strategy config (`strategy_config.json`) for the backtest engine without reading code: how a config
 becomes a trade, every key and option, how components combine, and what the config cannot express. Read together
-with `COMPONENT_CATALOG.md`, the inventory of every component and exactly what each outputs. Every complete example
-config below is executed and checked by a test.
+with `COMPONENT_CATALOG.md`, the inventory of every component and exactly what each outputs.
 
 ## How a config becomes a trade
 
@@ -26,7 +25,7 @@ On every completed candle, for one symbol, the engine does this:
 4. **The allocation.** `allocation = forecast / 10`: the target position as a fraction of equity. Forecast +10 is
    100 percent long, +20 is 200 percent long, -20 is 200 percent short. The allocation is linear in the forecast.
 5. **The rebalance.** The bot trades toward the target allocation, filling at that bar's close. The risk layer sits
-   outside the strategy config (`trading-bot/config.json`, `risk_management.controls`): it rejects a rebalance whose
+   outside the strategy config: it rejects a rebalance whose
    size `abs(target - actual allocation)` is below `min_allocation_change` (default 0.2, that is 2 forecast points)
    or above 4.0. The key `strategies.min_allocation_change` overrides the minimum for this strategy.
 
@@ -43,12 +42,19 @@ of the signal: a stronger signal, a bigger position; a weaker one, a smaller pos
   classes must not appear in `strategies`: `SmaTrendLongOnlyComponent`, `GatedSmaTrendLongOnlyComponent`,
   `FundingRateMeanReversionComponent`, `FearGreedContrarianComponent`, `MacdHistogramCrossoverComponent`,
   `WhaleLargeTradeImbalanceComponent`, `VolumeExpansionHedgeComponent`. They are the rows marked **on/off** in the
-  "Kind" column of `COMPONENT_CATALOG.md`. A config that uses one will be refused at the backtest-specification
-  step; design as if that check were already live.
+  "Kind" column of `COMPONENT_CATALOG.md`. A config that uses one will be refused once that check ships; do not
+  use them.
+- **No dead zones.** The transforms `threshold_filter` and `volume_filter` must not be used on a component in
+  `strategies`: they zero the forecast below a threshold, so the position jumps from 0 to the threshold
+  (`min_abs: 15` gives 0 or 15..20), which is on/off at the edge. A condition such as "volume above its average"
+  or "signal strong enough" belongs in the regime detector (a rule or veto), where both ops remain allowed in
+  vetoes. A graded dead zone that starts from 0 does not exist yet.
 - **An on/off condition is a regime.** If the idea is "when X happens, take this kind of position", X belongs in the
   regime detector (a rule on a regime measure, or a veto), the regime it selects gets a GRADED component in
   `strategies.regimes`, and the other regimes are `null` (flat). The regime decides when the idea is active; the
-  graded component decides how much and in which direction.
+  graded component decides how much and in which direction. Interim: while the hypothesis stage still receives
+  cards without regime conditions (until D-052 lands), an on/off condition the card does not carry as a regime is
+  declared as a deviation, not built as a regime.
 - **Constant.** `BuyAndHoldStrategy` (constant +10) is an offset only: use it inside a composition with a graded
   component (see "Composing a signal"), never as the signal.
 - **A rule stated as a threshold becomes a graded measure.** "Long above the 20-day high, short below the 20-day
@@ -58,12 +64,6 @@ of the signal: a stronger signal, a bigger position; a weaker one, a smaller pos
 
 How to tell: run the component mentally over a year of bars. If its output takes two or three distinct values
 (0 and a level, or -level, 0, +level), it is on/off. If it takes a continuum of values, it is graded.
-
-- **No dead zones in `strategies` (D-051).** The transforms `threshold_filter` and `volume_filter` must not be used
-  on a component in `strategies`: they zero the forecast below a threshold, so the position jumps from 0 to the
-  threshold (`min_abs: 15` gives 0 or 15..20) -- on/off at the edge. A condition such as "volume above its
-  average" or "signal strong enough" belongs in the regime detector (a rule or veto). A graded dead zone that
-  starts from 0 does not exist yet (ticket CUL-354). Both ops remain allowed in the regime detector's vetoes.
 
 ## Config shape
 
@@ -86,7 +86,7 @@ Keys of `strategies`:
 | Key | Required | Meaning |
 |---|---|---|
 | `regimes` | yes | regime name to forecast config, or `null` (flat). A regime that is absent behaves like `null`; list all four for clarity |
-| `min_allocation_change` | no | non-negative number; overrides the risk layer's minimum rebalance size for this strategy (default 0.2, from `trading-bot/config.json`) |
+| `min_allocation_change` | no | non-negative number; overrides the risk layer's minimum rebalance size for this strategy (default 0.2) |
 | `warmup` | no | accepted and IGNORED: the strategy overrides it with its own computed `required_bars`. Existing configs carry `"warmup": 51` harmlessly |
 
 **Unknown keys are silently ignored** at every level: an extra top-level key, an extra key in a component spec,
@@ -207,14 +207,9 @@ detector is fully ungated (no components, no rules), `default_regime` may be any
 forecasts 0.0 on every bar forever (validator V10). This guide uses `"unknown"` by convention.
 
 ### Limits of the detector, stated plainly
-- Only four regime names exist: `trending`, `mean_reversion`, `chop`, `unknown` (the `MarketRegime` enum,
-  `strategies/strategy_base.py:40`). A new name needs code; the validator rejects any other name.
 - An unknown `mode` string silently runs `score` mode.
 - An unknown rule `op` silently evaluates to false (the rule never matches).
 - A rule that names a component with no history yet evaluates to false.
-- Rules and vetoes share one operator set. Vetoes and score entries apply `transforms`; rules compare raw values
-  and carry no `consecutive_bars`.
-- In the two score modes `default_regime` is never read; a bar that fails the gate is `unknown`.
 - The four names are only labels: a rule can map any condition to any of them, and at most four distinct regimes
   can exist at once.
 
@@ -236,7 +231,7 @@ forecasts 0.0 on every bar forever (validator V10). This guide uses `"unknown"` 
 | `class` | dotted path | required | `strategies.strategy_components.<ClassName>`, a class from `COMPONENT_CATALOG.md` |
 | `params` | dict | `{}` | passed to the component constructor; unknown or misspelt keys are silently ignored and the default is used |
 | `weight` | number | required | ensemble weight. May be NEGATIVE (it subtracts the component); only the regime's total must be greater than 0 (validator V8) |
-| `lookback` | int | derived | size of the component's history. Defaults to the larger of the component's warmup and its transforms' minimum periods. Set it explicitly with `ratio_to_mean`, `percentile` or `zscore`: it is the statistic's window (production uses 500). An explicit value must be at least the largest minimum period of the component's ops (validator V6; the strategy refuses to start otherwise) |
+| `lookback` | int | derived | size of the component's history. If omitted it is the same for every component in `strategies`: the largest, over all components of all regimes, of (the larger of that component's warmup and its transforms' minimum periods), or 50 when there is no component. It is not computed per component. Set it explicitly with `ratio_to_mean`, `percentile` or `zscore`: it is the statistic's window (production uses 500). An explicit value must be at least the largest minimum period of the component's ops (validator V6; the strategy refuses to start otherwise) |
 | `history_transforms` | list of steps | `[]` | applied once when the raw value is stored, so the history holds transformed values. Use it for per-bar normalisation such as `vol_normalize` |
 | `transforms` | list of steps | required | the pipeline run at every forecast. Always present: the validator does not check that the key exists, but without it the strategy raises an error on every bar and the run trades nothing. Write `[]` for none |
 
@@ -247,7 +242,9 @@ A transform step is `{"op": "<name>", "params": {...}}`. See "Transform ops".
   its history once the component itself is ready.
 - A forecast needs at least 2 history entries for every component of the regime, else the forecast is 0.0.
 - The strategy is ready, and emits forecasts, only when the bar window holds `required_bars` bars AND the detector
-  is ready AND every component of the classified regime has stored `min(required_bars, its history length)` values.
+  is ready AND every component of the classified regime has stored at least `min(required_bars, S)` values, where
+  `S` is the smallest history size (`lookback`) of any component in `strategies`, in any regime. One component with
+  a short explicit `lookback` therefore lowers the warmup of the whole config.
   Measured on synthetic bars: `RSIPullbackComponent(14)` with `identity` forecasts from bar 29; the same component
   with `ratio_to_mean` from bar 38; `SmaTrendLongOnlyComponent(100)` from bar 201. Before readiness the forecast is
   0.0 and nothing trades.
@@ -255,30 +252,11 @@ A transform step is `{"op": "<name>", "params": {...}}`. See "Transform ops".
   the weighted sum NaN); a NaN is never turned into "flat". The catalogue's "Data & NaN" column says which
   components can produce one.
 
-### Block combiner (opt-in; written by the composition tooling)
-A regime may carry `blocks` together with `block_standardisation` (both or neither; validator V13). This combines
-validated pieces of other configs. It is produced by `strategy-research/tools/composition.py`; a design should not
-hand-write it, but a config that contains it is valid:
-```json
-"unknown": {
-  "components": [ ... each with "lookback" equal to its source config's history length ... ],
-  "blocks": [{"id": "b0", "weight": 0.5, "components": ["b0__sig"],
-              "source": {"required_bars": 150, "warmup": 150, "buffer_bars": 250,
-                         "regime_detector": { ...the source config's detector... },
-                         "parts": {"trending": ["b0__sig"]}}}],
-  "block_standardisation": {"target": 10.0, "window": 500, "min_periods": 30}
-}
-```
-Every component belongs to exactly one block. A block runs under its own source detector on the last `buffer_bars`
-bars; in a regime that is not one of its `parts` it abstains (0). Each block's forecast is standardised against its
-own past: `clip(target x value / mean(abs(past active values over window)), -20, +20)`, 0 until `min_periods` past
-values exist. The regime forecast is the weight-normalised sum of the block values, clipped to +/-20.
-
-**`weight_schedule`** (valid only with the block combiner): per-date block weights,
-`[{"from": "YYYY-MM-DD", "weights": {"<block id>": <number > 0>, ...}}, ...]`. The `from` dates are strictly
-increasing, and every entry weights exactly the blocks of the regime. On a bar whose UTC date is on or after an
-entry's `from`, the last such entry's weights replace the blocks' own `weight`; before the first entry the blocks'
-own weights apply. The bar's `timestamp` column must exist or the forecast fails loudly.
+### Block combiner and `weight_schedule` (written by the composition tooling, not hand-designed)
+- `blocks` with `block_standardisation` (both or neither; validator V13): a regime built from validated pieces of
+  other configs, each standardised against its own past. A config that contains them is valid.
+- `weight_schedule` (only alongside `blocks`): per-date block weights that replace the blocks' own weights from each
+  `from` date on.
 
 ## Transform ops
 
@@ -302,7 +280,7 @@ come first (validator V5 rejects a history op after a scalar or data-aware op). 
 | op | params (default) | output |
 |---|---|---|
 | `scale` | `factor` (1.0) | v x factor |
-| `threshold_filter` | `min_abs` (0.0) | v if abs(v) >= `min_abs`, else 0.0 (dead-zone: the forecast jumps from 0 to `min_abs` at the threshold). **Not allowed in `strategies` (D-051)** |
+| `threshold_filter` | `min_abs` (0.0) | v if abs(v) >= `min_abs`, else 0.0 (dead-zone: the forecast jumps from 0 to `min_abs` at the threshold). **Not allowed in `strategies`** |
 | `clip` | `min` (no lower bound), `max` (no upper bound) | v limited to `[min, max]` |
 | `sigmoid` | none | 1 / (1 + exp(-v)), between 0 and 1 (0.5 at v = 0) |
 | `negate` | none | -v |
@@ -314,7 +292,7 @@ come first (validator V5 rejects a history op after a scalar or data-aware op). 
 | `vol_normalize` | none | v / (`stddev_24` x close). Unguarded: NaN propagates by design. Meant for `history_transforms` |
 | `vol_adjusted` | none | v / (`stddev_24` x close), or v unchanged if the denominator is invalid. Read-time use only; do not use it to normalise history |
 | `price_normalized` | none | v / close (v unchanged if close is invalid) |
-| `volume_filter` | `period` (20) | v if the latest volume >= its `period`-bar mean, else 0.0 (dead-zone on volume). **Not allowed in `strategies` (D-051)** |
+| `volume_filter` | `period` (20) | v if the latest volume >= its `period`-bar mean, else 0.0 (dead-zone on volume). **Not allowed in `strategies`** |
 
 **Ordering rule.** In one list, history ops first, then scalar and data-aware ops (V5). `history_transforms` and
 `transforms` are separate lists, each checked on its own.
@@ -335,7 +313,7 @@ long-only unless re-centred.
 ## Composing a signal
 
 Before concluding that a component is missing (`component_gap`), try compositions of the existing components. The
-mechanics below are all graded (D-051) and each example is tested. All examples use the ungated pattern; the four
+mechanics below are all graded. All examples use the ungated pattern; the four
 regime keys are shown once in full, the same way in every example.
 
 **The weighted mean.** The forecast is `sum(weight_i x value_i) / sum(weights)`. Adding a component changes the
@@ -389,9 +367,15 @@ the long trend is up and the last few bars have not already run ahead of it.
 ```
 
 **A constant offset to centre a one-sided signal.** `BuyAndHoldStrategy` is the constant +10. With `scale` it is
-any constant. A one-sided graded signal (for example `RSIPullbackComponent` with `long_only: true`, 0 to +20) can be
-centred into a signed one by subtracting a constant. Below the two values are sized so that the weighted mean is
-exactly `rsi - 10`: long when RSI is low enough, short when it is high, graded in between.
+any constant. A one-sided graded signal can be centred into a signed one by subtracting a constant. A percentile
+rank is one-sided and graded: the `percentile` op returns where the latest value sits inside its own history, above
+0 up to 1. Below, the EMA spread's rank is scaled to (0, 20] and the offset is -10, so the forecast is
+`20 x rank - 10`: about -10 when the spread is at the bottom of its recent history, +10 at the top, graded in
+between. The two pipelines are sized (x40 and -20, averaged by equal weights) to make the weighted mean exactly that.
+
+The input must be graded ACROSS its range: check that it does not sit at its boundary value on many bars.
+`RSIPullbackComponent` with `long_only: true` is exactly 0 on every bar where RSI >= 50 (about half of them), so
+centred it would be a constant -10 (100 percent short) on all of those bars: not a graded signal.
 
 <!-- example: centre_one_sided_signal -->
 ```json
@@ -399,9 +383,10 @@ exactly `rsi - 10`: long when RSI is low enough, short when it is high, graded i
   "regime_detector": {"mode": "threshold_rules", "components": [], "rules": [], "default_regime": "unknown"},
   "strategies": {"regimes": {
     "unknown": {"components": [
-      {"id": "rsi", "class": "strategies.strategy_components.RSIPullbackComponent",
-       "params": {"period": 14, "scaling_factor": 0.4, "long_only": true},
-       "weight": 1.0, "transforms": [{"op": "identity"}, {"op": "scale", "params": {"factor": 2.0}}]},
+      {"id": "rank", "class": "strategies.strategy_components.EMASpreadComponent",
+       "params": {"fast_period": 12, "slow_period": 26},
+       "weight": 1.0, "lookback": 500,
+       "transforms": [{"op": "percentile"}, {"op": "scale", "params": {"factor": 40.0}}]},
       {"id": "offset", "class": "strategies.strategy_components.BuyAndHoldStrategy",
        "params": {},
        "weight": 1.0, "transforms": [{"op": "scale", "params": {"factor": -2.0}}]}
@@ -411,8 +396,9 @@ exactly `rsi - 10`: long when RSI is low enough, short when it is high, graded i
 }
 ```
 
-**Sign flip.** To reverse a signal's direction, append `negate` (or give the component a negative
-`scaling_factor`; the two are identical for the components that have one). Below, a Donchian range position
+**Sign flip.** To reverse a signal's direction, append `negate`. For a class that uses `scaling_factor`, a negative
+`scaling_factor` does the same; `PriceEvolutionOnPeriodComponent`, `MomentumDivergenceComponent` and
+`VolatilityFromStdDevComponent` ignore it, and `EMADiff` has none. Below, a Donchian range position
 flipped: short near the top of the 20-bar range, long near the bottom (a mean-reversion reading).
 
 <!-- example: sign_flip_negate -->
@@ -463,7 +449,7 @@ The config describes a forecast per bar. It has no key for:
   smoothing history; `MacdHistogramCrossoverComponent` and `GatedSmaTrendLongOnlyComponent` remember prior bars);
   nothing else does.
 - **Sizing other than `forecast / 10`.** There is no volatility-targeting, Kelly, leverage or cap key. The
-  risk controls live in `trading-bot/config.json`, not in the strategy config. (A signal can be divided by recent
+  risk controls are not in the strategy config. (A signal can be divided by recent
   volatility with a data-aware transform such as `vol_adjusted`; that changes the forecast, and the allocation is
   still forecast / 10.)
 - **Per-symbol settings.** The config has no per-symbol section; a component sees only its own symbol's bars and
@@ -517,10 +503,10 @@ block path is not tested.
 ## Worked examples
 
 ### The production mean_reversion component
-This is the component `trading-bot/strategy_config.json` runs (under `strategies.regimes.mean_reversion`; the
-production detector gates it with efficiency-ratio and variance-ratio rules). **It predates D-051 and is not a
-pattern for a new config:** its last transform, `threshold_filter`, is a dead zone, no longer allowed in
-`strategies`. It is shown because it is what production runs and it illustrates the transform chain:
+This is the component `trading-bot/strategy_config.json` runs under `strategies.regimes.mean_reversion` (the
+production detector gates it with efficiency-ratio and variance-ratio rules), shown WITHOUT its last transform:
+production additionally applies a `threshold_filter` dead zone (`min_abs: 15`), which is not allowed in a new
+config. It illustrates the transform chain:
 ```json
 {"id": "rsi", "class": "strategies.strategy_components.RSIPullbackComponent",
  "params": {"period": 14, "scaling_factor": 0.4, "long_only": true},
@@ -528,13 +514,11 @@ pattern for a new config:** its last transform, `threshold_filter`, is a dead zo
  "history_transforms": [{"op": "vol_normalize"}],
  "transforms": [
    {"op": "ratio_to_mean"},
-   {"op": "scale", "params": {"factor": 10.0}},
-   {"op": "threshold_filter", "params": {"min_abs": 15.0}}
+   {"op": "scale", "params": {"factor": 10.0}}
  ]}
 ```
 Reads as: store vol-normalised pullback scores (500 deep); current value divided by the mean absolute value of
-that history (so an average signal is 1); times 10 (an average signal is 10); drop any forecast below 15 in
-absolute value (a signal 1.5 times stronger than average); the regime clips to +/-20.
+that history (so an average signal is 1); times 10 (an average signal is 10); the regime clips to +/-20.
 
 ### A graded, ungated example: normalised trend
 One graded trend component, normalised so that its average absolute forecast is about 10 whatever the asset's
@@ -561,25 +545,18 @@ Reads as: store the EMA spread (500 deep); divide the latest value by the mean a
 
 ## Checklist and validator rules
 
-Before emitting a config:
+Before emitting a config (the validator's rules are in the table below; these are the checks it cannot make):
 
 1. Component ids are unique within a regime; veto ids exist in the detector's `components` (the engine raises at
-   startup otherwise). A rule condition that names a missing id silently evaluates to false; validator V2 catches it.
-2. Transform pipelines: history ops first, then scalar and data-aware ops.
-3. Normalisation against per-bar state (volatility, price) goes in `history_transforms`, never at read time.
-4. Set `lookback` explicitly on any component that uses `ratio_to_mean`, `percentile` or `zscore`; it must be at
-   least the op's minimum period.
-5. Every component in `strategies` is graded (D-051). On/off conditions are regimes.
-6. Weights are numeric and each regime's total is above 0. A regime that should be flat is `null`, never
-   `{"components": []}` (V8 rejects it).
-7. Only the four regime names appear anywhere.
-8. `strategies.warmup` does nothing; do not tune it.
-9. Every class comes from the catalogue; every `params` key is spelt as in the catalogue (a typo is silently
-   ignored); no invented op, regime name or rule operator.
-10. The regime that holds the components is the one the detector will actually select; in the ungated pattern
-    `default_regime` names a non-null regime (V10).
+   startup otherwise).
+2. Normalisation against per-bar state (volatility, price) goes in `history_transforms`, never at read time.
+3. Set `lookback` explicitly on any component that uses `ratio_to_mean`, `percentile` or `zscore`.
+4. Every component in `strategies` is graded and carries no dead-zone op. On/off conditions are regimes.
+5. Every class comes from the catalogue; every `params` key is spelt as in the catalogue (a typo is silently
+   ignored); `strategies.warmup` does nothing, do not tune it.
+6. The regime that holds the components is the one the detector will actually select.
 
-Validator rules (`trading-bot/tools/validate_config.py`; the strategy refuses to start on any violation):
+Validator rules (the strategy refuses to start on any violation):
 
 | Rule | Checks |
 |---|---|

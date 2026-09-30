@@ -131,7 +131,9 @@ graded component; where the idea needs the condition itself, build it the way th
 or veto that selects a regime holding a graded component) or declare it as a deviation (below). A constant
 component is only an offset inside a composition with a graded one. The dead-zone transforms `threshold_filter`
 and `volume_filter` must not be used on a component in `strategies` (they make the position jump from 0 to the
-threshold); a "strong enough" or "volume above average" condition goes in the regime detector.
+threshold); a "strong enough" or "volume above average" condition goes in the regime detector. Interim: while
+the hypothesis stage still receives cards without regime conditions (until D-052 lands), an on/off condition the
+card does not carry as a regime is declared as a deviation, not built as a regime.
 
 **Fidelity (O-7): build the signal the card describes, or say what differs.** In `config_rationale`, map EACH
 clause of the card's `signal_concept` to the config element that implements it (one entry per clause:
@@ -167,9 +169,9 @@ compositions you tried and why each fails.
   **This restriction does NOT apply to the fully-ungated pattern** (regime_detector.rules=[]
   AND regime_detector.components=[]) — see "Ungated hypotheses" below; there any of the
   four names is accepted (`"unknown"` by convention).
-- Include all regime rules from STRATEGY_DESIGN_GUIDE.md's worked example as the
-  baseline, then modify only what the hypothesis requires. Do not omit regimes not
-  explicitly mentioned in the brief — omitting trending/chop means those bars fall to
+- Write every regime rule against a measure from the "Regime measures" rows of COMPONENT_CATALOG.md (its
+  range and sign say where a threshold can sit), then modify only what the hypothesis requires. Do not omit
+  regimes not explicitly mentioned in the brief — omitting trending/chop means those bars fall to
   default_regime behavior.
 - Write `block_manifest.yaml` for every spec_ready config (see Output requirements). Do not invent a
   symbol/timeframe/instrument-set config field — the config has none (STRATEGY_DESIGN_GUIDE.md

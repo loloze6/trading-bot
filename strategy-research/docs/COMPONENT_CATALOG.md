@@ -60,7 +60,7 @@ Columns: class, params (defaults), exact output, range & sign, kind, units, warm
 |---|---|---|---|---|---|---|---|---|
 | `PriceEvolutionComponent` | `period` (20), `scaling_factor` (2.0) | (close[-1] - close[-(period+1)]) / close[-(period+1)] x 100 x `sf` | unbounded, signed, positive when price rose over the last `period` bars; at the defaults a 10 percent rise gives +20 | graded | percent x `sf` | `period + 1` (21) | closes. NaN only if close[-1] or close[-(period+1)] is NaN | momentum over one horizon; stateless |
 | `PriceEvolutionOnPeriodComponent` | `comparison_period` (20), `scaling_factor` (20, unused) | (close[-1] - close[-(comparison_period+1)]) / close[-(comparison_period+1)] x 100 | unbounded, signed, positive when price rose | graded | percent | `comparison_period + 1` (21) | closes. NaN only if one of the two closes used is NaN | `scaling_factor` is read but never used: the output is `PriceEvolutionComponent` with `sf` = 1. Scale it with a `scale` transform |
-| `RSIPullbackComponent` | `period` (14), `scaling_factor` (0.4), `long_only` (false), `entry_threshold` (0.0, no effect through a config) | (50 - RSI) x `sf`, RSI being the Wilder-style RSI (EWM alpha 1/`period`, adjust=False, of gains and losses over the bar window) | -50 x `sf` to +50 x `sf` (-20 to +20 at the default); positive when RSI is below 50, negative when above: contrarian | graded | RSI points x `sf` | `period + 1` (15) | closes. Flat prices (no gain and no loss) give NaN. Interior NaN closes are skipped by the EWM and the value carries through them | `long_only: true` clamps the output at 0, so it is positive whenever RSI < 50 (about half the bars) and 0 otherwise: continuous, not "only buys dips". `entry_threshold` does nothing in a config; use a `threshold_filter` transform. A negative `sf` turns it into a trend-following (momentum) signal |
+| `RSIPullbackComponent` | `period` (14), `scaling_factor` (0.4), `long_only` (false), `entry_threshold` (0.0, no effect through a config) | (50 - RSI) x `sf`, RSI being the Wilder-style RSI (EWM alpha 1/`period`, adjust=False, of gains and losses over the bar window) | -50 x `sf` to +50 x `sf` (-20 to +20 at the default); positive when RSI is below 50, negative when above: contrarian | graded | RSI points x `sf` | `period + 1` (15) | closes. Flat prices (no gain and no loss) give NaN. Interior NaN closes are skipped by the EWM and the value carries through them | `long_only: true` clamps the output at 0, so it is positive whenever RSI < 50 (about half the bars) and 0 otherwise: continuous, not "only buys dips". `entry_threshold` does nothing in a config. A negative `sf` turns it into a trend-following (momentum) signal |
 | `EMASpreadComponent` | `fast_period` (9), `slow_period` (21), `scaling_factor` (5.0) | (EMA_fast - EMA_slow) / EMA_slow x 100 x `sf`, EMAs with `span` = period, adjust=False, over the bar window | unbounded, signed, positive when the fast EMA is above the slow one | graded | percent x `sf` | `slow_period` (21) | closes. Interior NaN closes are skipped by the EWM | a continuous signed spread, not a crossover event; there is no check that `fast_period` < `slow_period` |
 | `EMADiff` | `ST_EMA_period` (12), `LT_EMA_period` (26) | EMA_ST(close) - EMA_LT(close), pandas `ewm(span=...)` with its default adjust=True | unbounded, signed, positive when the short EMA is above the long one | graded | price units (quote currency) | `LT_EMA_period` (26) | closes. Interior NaN closes are skipped by the EWM | the MACD line in price units: its size scales with the asset's price, so it is not comparable across assets. No `scaling_factor`. Divide by the close with a `price_normalized` transform to make it scale-free |
 | `MacroTrendFilterComponent` | `period` (200), `scaling_factor` (2.0) | (close - EMA_period) / EMA_period x 100 x `sf`, EMA with `span` = `period`, adjust=False | unbounded, signed, positive when the close is above its long EMA | graded | percent x `sf` | `period` (200) | closes. Interior NaN closes are skipped by the EWM; NaN if the latest close is NaN | the long-horizon trend reading; a signed graded signal (percent distance), not a filter that switches anything off |
@@ -77,7 +77,7 @@ Columns: class, params (defaults), exact output, range & sign, kind, units, warm
 | Class | params (defaults) | Exact output | Range & sign | Kind | Units | Warmup | Data & NaN | Notes |
 |---|---|---|---|---|---|---|---|---|
 | `PriceOverextensionHedgeComponent` | `period` (21), `scaling_factor` (2.0) | -z x `sf`, z = (close - EMA_period) / rolling std of the closes over `period` (z = 0 if that std is 0); EMA has `span` = `period`, adjust=False | unbounded, signed; contrarian: negative when the close is above its EMA, positive when below | graded | z-score x `sf` | `period` (21) | closes. A NaN close in the window makes the rolling std NaN, which reads as "not above 0": the output is 0.0 for `period` bars | a mean-reversion reading of the distance from the EMA; a negative `sf` turns it into trend-following. The name "hedge" describes the intended role, not a different mechanism |
-| `VolumeExpansionHedgeComponent` | `vol_period` (24), `scaling_factor` (20.0) | only on UP bars (close above the previous close) whose volume is BELOW its `vol_period` average (the average includes the current bar): -(1 - volume / average) x `sf`; on every other bar 0 | -`sf` (exclusive) to 0; never positive; zero on most bars | on/off | forecast units | `vol_period + 1` (25) | volume and close. If the average volume is 0 or NaN the comparison is false: 0.0 | the name is misleading: it fires on LOW-volume up-moves (a weak-volume rally), not on a volume expansion, and it can only push the forecast down. It sits at 0 and steps to a level when the condition fires |
+| `VolumeExpansionHedgeComponent` | `vol_period` (24), `scaling_factor` (20.0) | only on UP bars (close above the previous close) whose volume is BELOW its `vol_period` average (the average includes the current bar): -(1 - volume / average) x `sf`; on every other bar 0 | -`sf` to 0; never positive; zero on most bars (-`sf` is reached only at zero volume) | on/off | forecast units | `vol_period + 1` (25) | volume and close. If the average volume is 0 or NaN the comparison is false: 0.0 | the name is misleading: it fires on LOW-volume up-moves (a weak-volume rally), not on a volume expansion, and it can only push the forecast down. It sits at 0 and steps to a level when the condition fires |
 | `VolatilityFromStdDevComponent` | `vol_period` (20), `scaling_factor` (1.0, unused) | population standard deviation (ddof 0) of the last `vol_period - 1` one-bar returns (close change divided by the current close), times 100 | 0 and up, unbounded; never negative; no direction | graded | percent | `vol_period` (20) | closes. A NaN close gives NaN for `vol_period` bars | `scaling_factor` is read but never used. Always non-negative, so as a forecast it is a long position that grows with volatility; its natural use is as a regime input (a rule such as "volatility above a level"). Its level depends on the timeframe |
 
 ### Feed-based components (non-OHLCV data)
@@ -92,25 +92,24 @@ Columns: class, params (defaults), exact output, range & sign, kind, units, warm
 
 ## Variant patterns (graded use)
 
-What a parameter change does, for the graded components. Each line is true of the code above.
-
-- `DonchianBreakoutComponent`: `scaling_factor` +20 is "high in the range = long" (trend-following); -20 is "high in the range = short" (mean reversion). `period` sets how many closes define the range. It is not a breakout detector.
-- `KeltnerBreakoutComponent`: `scaling_factor` +20 is trend-following (price above the EMA = long); -20 flips the sign on every bar. `atr_multiplier` rescales the magnitude and moves where the +/-1.2 clip binds; `ema_period` moves the centre line.
-- `RSIPullbackComponent`: default is contrarian (oversold = long). A negative `scaling_factor` makes it momentum (RSI above 50 = long). `long_only: true` clamps the output at 0. `period` sets the RSI smoothing.
-- `EMASpreadComponent`: positive `scaling_factor` is trend-following; negative is contrarian. `fast_period` and `slow_period` set the horizon.
-- `PriceEvolutionComponent` / `PriceEvolutionOnPeriodComponent` / `MacroTrendFilterComponent`: positive is trend-following; a sign flip (`negate`, or a negative `scaling_factor` where the class has one) makes each a contrarian signal. The period sets the horizon.
-- `PriceOverextensionHedgeComponent`: default is contrarian (far above the EMA = short); a negative `scaling_factor` makes it trend-following.
-- `EMADiff`: signed price-unit MACD line; a sign flip with `negate`. Normalise by price first (`price_normalized`) when the signal has to be comparable across assets.
-- Magnitude in general: `scaling_factor` multiplies the output; it does not change when the sign changes. Under the `ratio_to_mean`, `zscore` and `percentile` transforms a component's `scaling_factor` cancels and only its sign survives (see the design guide, "Transform ops").
+- **Default direction.** Trend-following at a positive `scaling_factor`: `EMASpreadComponent`, `PriceEvolutionComponent`,
+  `PriceEvolutionOnPeriodComponent`, `MacroTrendFilterComponent`, `DonchianBreakoutComponent`,
+  `KeltnerBreakoutComponent`, `EMADiff`. Contrarian by default: `RSIPullbackComponent`,
+  `PriceOverextensionHedgeComponent`.
+- **Reversing a direction.** The `negate` transform reverses any graded component. A negative `scaling_factor` works only
+  on the classes that use it: it is ignored by `PriceEvolutionOnPeriodComponent`, `MomentumDivergenceComponent` and
+  `VolatilityFromStdDevComponent`, and `EMADiff` has none.
+- **Magnitude.** `scaling_factor` multiplies the output; it does not change when the sign changes. Under the
+  `ratio_to_mean`, `zscore` and `percentile` transforms a component's `scaling_factor` cancels and only its sign
+  survives (see the design guide, "Transform ops").
 
 ## Feeds (non-OHLCV data)
 
 A component that reads a column which is not in the plain OHLCV bars declares it in a class attribute,
 `consumes_feeds`. The engine collects those declarations across the whole config (every regime, active or not)
-into the list of feeds the run needs, and the backtest refuses to start if a required feed is not registered
-(`core/backtester.py`, the required-feeds check; the collection is in `strategies/strategy_engine.py`). The
-launcher registers every entry of `FEED_REGISTRY` on every backtest (`core/launcher.py`), so these columns are on
-the bars whether or not a component reads them:
+into the list of feeds the run needs, and the backtest refuses to start if a required feed is not registered. Every
+registered feed is merged onto the bars of every backtest, so these columns are on the bars whether or not a
+component reads them (unless the run explicitly drops a feed; that is a run option, not a config key):
 
 | Feed name | Column it adds | How it is merged |
 |---|---|---|
@@ -120,14 +119,13 @@ the bars whether or not a component reads them:
 Consumers: `FundingRateMeanReversionComponent` reads `funding_rate`; `FearGreedContrarianComponent` reads
 `fear_greed`. Both are on/off (see the kind column), so neither can be a forecast source.
 
-The whale-footprint columns are RESERVED, not in `FEED_REGISTRY`: a caller must opt in by name, and the campaign
+The whale-footprint columns are RESERVED, not merged by default: a caller must opt in by name, and the campaign
 data policy must carry a committed designation for the window, otherwise loading them raises `ReservedDataError`.
 `WhaleLargeTradeImbalanceComponent` needs two of them, `whale_lt_imbalance` and `whale_attested`, and abstains
 (NaN) when either is missing.
 
 The top-level `aux_feeds` key of a strategy config is NOT what gives a component its data: the engine ignores it.
-It is read only by research tools (`data_availability_gate.py`, `decide_next.py`, `composition.py`): listing a
-feed there makes the pipeline's data-availability gate check that feed's coverage of the test windows and lets
+It is read only by the research tooling: listing a feed there makes the pipeline's data-availability gate check that feed's coverage of the test windows and lets
 the campaign tools know which feeds a config depends on. An entry is a feed name, for example
 `"aux_feeds": ["fear_greed"]`, or a mapping with a `name` key. A config that uses a feed-based component should
 list its feed there.

@@ -109,6 +109,12 @@ def _assert_both_signs(v: np.ndarray) -> None:
     assert (v > 0).any() and (v < 0).any()
 
 
+def _max_share_at_one_value(v: np.ndarray) -> float:
+    """Largest fraction of bars sitting on any single (rounded) value: a graded signal has no mass point."""
+    _, counts = np.unique(np.round(v, 8), return_counts=True)
+    return counts.max() / len(v)
+
+
 # ---------------------------------------------------------------------------
 # Example extraction
 # ---------------------------------------------------------------------------
@@ -127,6 +133,7 @@ EXPECTED_EXAMPLES = {
     "two_trend_horizons", "subtract_short_term_run_up", "centre_one_sided_signal",
     "sign_flip_negate", "long_only_from_signed", "normalised_trend",
 }
+MAX_SHARE_AT_ONE_VALUE = 0.05
 
 
 def test_every_expected_example_is_in_the_guide_and_nothing_unexpected():
@@ -166,16 +173,21 @@ def _prop_subtract_short_term_run_up(cfg):
 
 def _prop_centre_one_sided_signal(cfg):
     comps = _components(cfg)
-    rsi = _forecasts(_alone(comps["rsi"], transforms=[{"op": "identity"}]))
-    assert min(rsi.values()) >= 0.0  # the long-only signal is one-sided
+    rank = _forecasts(_alone(comps["rank"], transforms=[{"op": "percentile"},
+                                                        {"op": "scale", "params": {"factor": 20.0}}]))
+    rank_vals = _values(rank)
+    assert rank_vals.min() > 0.0 and rank_vals.max() <= 20.0 + 1e-9  # one-sided: (0, 20]
+    # graded across the whole range: no bar share piles up on a boundary (or any other single) value
+    assert _max_share_at_one_value(rank_vals) <= MAX_SHARE_AT_ONE_VALUE
     combined = _forecasts(cfg)
     assert combined
     for t, v in combined.items():
-        assert v == pytest.approx(rsi[t] - 10.0, abs=1e-9)
+        assert v == pytest.approx(rank[t] - 10.0, abs=1e-9)
     vals = _values(combined)
     assert vals.min() >= -10.0 - 1e-9 and vals.max() <= 10.0 + 1e-9
     _assert_graded(vals)
     _assert_both_signs(vals)
+    assert _max_share_at_one_value(vals) <= MAX_SHARE_AT_ONE_VALUE
 
 
 def _prop_sign_flip_negate(cfg):
@@ -251,14 +263,21 @@ def test_example_property_holds_on_synthetic_bars(name):
 # Other examples and claims in the guide
 # ---------------------------------------------------------------------------
 
-def test_production_component_snippet_matches_strategy_config_json():
+def test_production_component_snippet_matches_strategy_config_json_without_its_dead_zone():
+    """The guide shows the production component WITHOUT its last transform (the threshold_filter dead zone, no
+    longer allowed in `strategies`) and says so."""
     text = GUIDE_PATH.read_text(encoding="utf-8")
     head = text.index("### The production mean_reversion component")
     m = re.search(r"```json\n(.*?)\n```", text[head:], re.DOTALL)
     snippet = json.loads(m.group(1))
-    prod = json.loads((TRADING_BOT / "strategy_config.json").read_text(encoding="utf-8"))
-    assert snippet == prod["strategies"]["regimes"]["mean_reversion"]["components"][0]
+    prod = copy.deepcopy(json.loads((TRADING_BOT / "strategy_config.json").read_text(encoding="utf-8"))
+                         ["strategies"]["regimes"]["mean_reversion"]["components"][0])
+    dropped = prod["transforms"].pop()
+    assert dropped["op"] == "threshold_filter"
+    assert snippet == prod
+    assert not any(step["op"] in ("threshold_filter", "volume_filter") for step in snippet["transforms"])
     assert _vc.validate(_ungated([copy.deepcopy(snippet)])) == []
+    assert "threshold_filter" in text[head:head + text[head:].index("```json")]  # the prose names the omitted step
 
 
 def _score_product_detector() -> dict:
@@ -361,6 +380,32 @@ def test_empty_components_regime_is_v8_and_negative_weights_are_allowed():
     assert any("V8" in v for v in _vc.validate(neg))
 
 
+def test_default_lookback_is_engine_wide_and_warmup_is_capped_by_the_smallest_history():
+    """The guide's `lookback` row and readiness bullet: an omitted lookback is the maximum over ALL components of all
+    regimes (50 with none), and the warmup is capped by the smallest history size of any component."""
+    def ema(cid, fast, slow, **extra):
+        c = {"id": cid, "class": COMP + "EMASpreadComponent",
+             "params": {"fast_period": fast, "slow_period": slow}, "weight": 1.0,
+             "transforms": [{"op": "identity"}]}
+        c.update(extra)
+        return c
+
+    def cfg(trending, chop):
+        return {"regimes": {"trending": {"components": trending}, "chop": {"components": chop},
+                            "mean_reversion": None, "unknown": None}}
+
+    eng = ConfigDrivenStrategyEngine(cfg([ema("a", 12, 26)], [ema("b", 50, 200)]))
+    assert eng.lookback == 200                                  # the other regime's component sets it
+    assert eng._history["trending"]["a"].maxlen == 200          # not its own warmup (26)
+    eng.set_warmup(150)
+    assert eng._warmup == 150                                   # min(required_bars, smallest history)
+    short = ConfigDrivenStrategyEngine(cfg([ema("a", 12, 26, lookback=40)], [ema("b", 50, 200)]))
+    assert short._history["trending"]["a"].maxlen == 40 and short._history["chop"]["b"].maxlen == 200
+    short.set_warmup(150)
+    assert short._warmup == 40                                  # one short history lowers the whole config's warmup
+    assert ConfigDrivenStrategyEngine({"regimes": {}}).lookback == 50
+
+
 def test_lookback_below_op_minimum_is_v6():
     cfg = _ungated([{"id": "a", "class": COMP + "PriceEvolutionComponent", "params": {}, "weight": 1.0,
                      "lookback": 10, "transforms": [{"op": "percentile"}]}])
@@ -425,7 +470,27 @@ def test_ungated_pattern_is_ready_on_the_same_bar_whatever_default_regime_names(
 def test_missing_transforms_key_raises_on_every_bar_and_passes_the_validator(tmp_path):
     comp = _rsi([{"op": "identity"}])
     del comp["transforms"]
-    strategy = _strategy(tmp_path, _ungated([comp]))
+    cfg = _ungated([comp])
+    assert _vc.validate(copy.deepcopy(cfg)) == []
+    strategy = _strategy(tmp_path, cfg)
     assert _first_ready_bar(strategy) is not None
-    with pytest.raises(Exception):
-        strategy.generate_signals()
+    # the real cause: the forecast reads `transforms` from the component spec. (Asserted on the forecast call, not
+    # on generate_signals(), whose except-handler currently fails for an unrelated reason: CUL-353.)
+    with pytest.raises(KeyError, match="transforms"):
+        strategy.generate_forecast()
+
+
+def test_centring_a_boundary_heavy_input_is_not_graded():
+    """The guide's warning: RSIPullbackComponent(long_only) is exactly 0 on every bar with RSI >= 50, so centred
+    by a -10 offset it sits at a constant -10 on all of those bars."""
+    cfg = _ungated([
+        {"id": "rsi", "class": COMP + "RSIPullbackComponent",
+         "params": {"period": 14, "scaling_factor": 0.4, "long_only": True},
+         "weight": 1.0, "transforms": [{"op": "identity"}, {"op": "scale", "params": {"factor": 2.0}}]},
+        {"id": "offset", "class": COMP + "BuyAndHoldStrategy", "params": {},
+         "weight": 1.0, "transforms": [{"op": "scale", "params": {"factor": -2.0}}]},
+    ])
+    vals = _values(_forecasts(cfg))
+    assert np.isclose(vals.min(), -10.0)
+    assert (np.isclose(vals, -10.0)).mean() > 0.30
+    assert _max_share_at_one_value(vals) > 0.30

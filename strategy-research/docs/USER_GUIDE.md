@@ -2995,7 +2995,7 @@ top, e.g. sparse-trader gates, prescreen-kill routing, regime attribution):
 
 | Rule # | Condition | Prescribed action |
 |---|---|---|
-| 1 | Cost drag dominates (`cost_drag_pct > 80%`, `gross_pnl > 0`) | Raise `threshold_filter` to reduce trade frequency |
+| 1 | Cost drag dominates (`cost_drag_pct > 80%`, `gross_pnl > 0`) | Slow the signal (longer component period) to reduce trade frequency; a `threshold_filter` dead zone is not allowed in `strategies` |
 | 2 | Signal has no directional edge (`\|median_forecast_return_corr\| < 0.03`) | Pivot to a structurally different signal |
 | 3 | Signal is inverted (`median_forecast_return_corr < -0.03`, significant) | Pivot to the reverse signal (cheap — same component, reversed logic) |
 | 4 | Regime is uninformative | Pivot to a different regime definition (after ruling out a sample-size issue) |
