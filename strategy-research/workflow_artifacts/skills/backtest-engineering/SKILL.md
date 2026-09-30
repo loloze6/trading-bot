@@ -138,11 +138,11 @@ the original rationale.
   per window and destroys cost_drag. `validate_config.py` VIOLATION V9 enforces this
   for all three names (trending/mean_reversion/chop), not just trending.
   **This restriction does NOT apply to the fully-ungated pattern** (regime_detector.rules=[]
-  AND regime_detector.components=[]) — see "Ungated hypotheses" below; that is a
-  different, separately-canonical case with its own rule.
-- Include all regime rules from STRATEGY_DESIGN_GUIDE.md's worked example as the
-  baseline, then modify only what the hypothesis requires. Do not omit regimes not
-  explicitly mentioned in the brief — omitting trending/chop means those bars fall to
+  AND regime_detector.components=[]) — see "Ungated hypotheses" below; there any of the
+  four names is accepted (`"unknown"` by convention).
+- Write every regime rule against a measure from the "Regime measures" rows of COMPONENT_CATALOG.md (its
+  range and sign say where a threshold can sit), then modify only what the hypothesis requires. Do not omit
+  regimes not explicitly mentioned in the brief — omitting trending/chop means those bars fall to
   default_regime behavior.
 
 ## Ungated hypotheses (post-A2.3) — THE canonical pattern
@@ -177,44 +177,15 @@ reasoning about it (see `trading-bot/tests/test_ungated_config_pattern.py`):**
   falls straight through to `default_regime` on every single bar, unconditionally.
   No dummy component, no always-true rule — those add moving parts for zero benefit
   and are what produced the invented-name failure.
-- **`default_regime` MUST be `"unknown"` here — not "any of the four, pick one."**
-  Empirically confirmed: `main_strategy.is_ready()` gates on
-  `strategy_engine.is_ready(self.regime_engine.current_regime)`, read BEFORE
-  `classify()` has run for the current bar — so on the very first ready-candidate bar,
-  `current_regime` is still its class-initial default, `MarketRegime.UNKNOWN`, no matter
-  what the config's real target is. `ConfigDrivenStrategyEngine.is_ready()` returns True
-  UNCONDITIONALLY when the queried regime key isn't registered in its `_components` dict
-  — which is exactly what happens whenever the real signal sits under any key OTHER than
-  `"unknown"` (since `"unknown"` would then be null and never registered). The result:
-  for `default_regime` in `{mean_reversion, chop, trending}`, the very first forecast is
-  computed ONE BAR EARLY, from whatever partial history has accumulated (as little as 2
-  bars), silently ignoring the configured `warmup` for that one bar.
-  `default_regime="unknown"` is the one choice where this check is non-vacuous (the real
-  block is registered under `"unknown"` itself), so it alone respects the configured
-  warmup on every bar including the first. `mean_reversion`/`chop`/`trending` are
-  otherwise mutually interchangeable (a pure, inert label choice among themselves) — but
-  all three share this same one-bar defect that `"unknown"` alone avoids.
-- **Known precedent, re-examined**: run_042 (H-041-C) shipped `default_regime:
-  "mean_reversion"` with this exact empty-rules/components pattern. It carries the same
-  mechanical defect (confirmed directly by instrumentation — it reports "ready" one bar
-  before its own per-regime history reaches the configured warmup). It does not show up
-  in run_042's own numbers for two independent, incidental reasons: its real `warmup=3`
-  is so low the gap doesn't matter, AND `FearGreedContrarianComponent` only ever fires on
-  UTC-midnight boundary bars, which the defect's fixed bar index doesn't happen to land
-  on in that run. Neither is a safety property — do not read run_042 as proof that
-  `mean_reversion` is an acceptable choice; the numeric near-miss was luck, not design.
-  Use `"unknown"` for all new ungated configs.
+- **`default_regime`: any of the four names is accepted here; use `"unknown"` by convention.** With no rules
+  and no components every bar resolves to `default_regime`, so it is a label, not a gate: what matters is that
+  `strategies.regimes[default_regime]` holds the real signal (next bullet). All four labels give the same
+  forecasts from the first ready bar on (`trading-bot/tests/test_ungated_config_pattern.py`,
+  `test_pattern_a_all_four_regime_labels_now_agree`).
 - `validate_config.py` VIOLATION V10 enforces the concrete authoring mistake this pattern
   invites: if `regime_detector.components=[]` and `rules=[]`, `strategies.regimes
   [default_regime]` must not be null — that combination is silently dead (forecasts 0.0
   forever) with no error anywhere else to catch it.
-- The underlying `main_strategy.is_ready()` one-bar defect itself is NOT fixed by this
-  rule — it is a pre-existing, systemic effect on the very first ready bar of ANY
-  strategy config (gated or ungated), invisible in aggregate metrics because it touches
-  exactly one bar out of thousands. Using `default_regime="unknown"` sidesteps it for
-  new ungated configs; it does not repair the engine. Flag for separate follow-up if you
-  encounter it elsewhere — do not attempt to fix engine readiness semantics as a rider on
-  an unrelated backtest_spec.
 
 ## Replication guard
 If `run_context.yaml` is present and contains `run_type: replication_diagnostic`:
@@ -235,11 +206,10 @@ If `run_context.yaml` is present and contains `run_type: replication_diagnostic`
 - NEVER set default_regime to "trending", "mean_reversion", or "chop" in threshold_rules
   or score_product mode WHILE regime_detector.rules is non-empty. This is a critical
   config bug: it disables the regime gate and trades every bar. validate_config.py will
-  reject it as VIOLATION V9. Use "unknown" only.
+  reject it as VIOLATION V9. Use "unknown" whenever rules is non-empty.
   (For a fully-ungated config — rules=[] AND components=[] — this restriction does not
-  apply; see "Ungated hypotheses" above. Even there, use "unknown" as default_regime —
-  it is the only choice that avoids a separate one-bar warmup-bypass defect, not because
-  the other three are schema-forbidden.)
+  apply; see "Ungated hypotheses" above: any of the four names is accepted there, `"unknown"`
+  by convention, as long as it points at a regime that holds the signal.)
 - Do not set default_regime to a regime that maps to null in the strategies block.
 - Do not set any regime to {"components": []} (empty components list).
   If a regime should produce no trades, set it to null.

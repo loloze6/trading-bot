@@ -250,7 +250,13 @@ def test_a_1a_rerun_rewrites_the_pass_rule_and_rechecks_the_id(campaign_root):
 # realized_edge_to_cost_ratio value quoted in the criterion-menu paragraph goes
 # from "> 0.3" to "> 2.2 with a 100-trade floor" (D-039, config/criterion_menu.yaml).
 # Previous pin: 773051a327b81f4b9f6cd616a220e35ad2982cb3a11110df3bac3a2dfa4c545a.
-_MASTER_SKILL_SHA256 = "51a0d28cdf53ffca012951e38745d38408fe0a9828001ab0007d4b1a185458d3"
+# RE-PINNED by D-051 (2026-09-30, branch docs/design-guide-rewrite): a DECLARED change -- a new
+# "Graded signal concept" section (signal_concept must describe a graded forecast; on/off rules are
+# restated as their graded counterpart; parts the config cannot express are named), plus one
+# Checklist bullet and one Forbidden bullet. It changes hypothesis_generation's prompt on every path,
+# flag or no flag. Nothing about the decide_next addendum or regime gating changed.
+# Previous pin: 51a0d28cdf53ffca012951e38745d38408fe0a9828001ab0007d4b1a185458d3.
+_MASTER_SKILL_SHA256 = "82a3524caa89c54613a7262ae9d9d6a51b8f02e5d413eb0953948beafdfabedc"
 
 
 def test_hypothesis_design_skill_is_byte_identical_to_master():

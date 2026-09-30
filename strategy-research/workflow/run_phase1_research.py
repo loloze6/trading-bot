@@ -7439,6 +7439,23 @@ def _apply_config_direct_authoring_context(stage_name: str, handoff: dict, run_d
             "E-056 Slice 3b IMPROVEMENT 07: strategy_config_authoring's base config -- "
             "variant_patches.yaml's patches are diffs against this file's 'config' field.",
         )
+        # O-4 (D-053): step 2 writes patches against the base config and must not invent
+        # component or parameter names, so it gets the same design guide and component
+        # catalogue the authoring stage has. Flag-on only (this function returns early
+        # when the flag is off); not in _CLOSED_BOOK_STAGE_INPUTS, which runs with no flag,
+        # and not in a handoff template (test_e056_1b_block_manifest forbids the guide there).
+        _add(
+            "../../docs/STRATEGY_DESIGN_GUIDE.md",
+            "O-4: how a config is shaped (keys, regimes, transforms, composition, what the config "
+            "cannot express) -- a design variant's patch path must exist in the base config and "
+            "must keep the idea (D-053).",
+        )
+        _add(
+            "../../docs/COMPONENT_CATALOG.md",
+            "O-4: every component's exact output, kind (graded or on/off), parameters and variant "
+            "patterns -- a design variant changes one parameter or transform of the component(s) "
+            "under test and never adds an on/off component (D-053, D-051).",
+        )
         # E-061 C1.2: variant_patches.yaml is a deliverable of step 2 in this flow
         # (in memory only -- the run's handoff file is never rewritten with it).
         deliverables = handoff.setdefault("deliverables", [])
