@@ -1,57 +1,147 @@
 # STRATEGY_DESIGN_GUIDE.md
 
-**Provenance.** Sections 1-6 below are carried over near-verbatim from
-`trading-bot/DOC/STRATEGY_CONFIG_REFERENCE.md` (that file is NOT deleted,
-rewritten, or retired by this document — it remains the code-owned reference;
-this file is additive, built for E-056 S2 Slice 3a per
-`strategy-research/engineering/roadmap/E-056/S2_FINDINGS.md` §6/§9). Where the
-two disagree in the future, `STRATEGY_CONFIG_REFERENCE.md` is authoritative —
-it is read directly by `backtest-engineering/SKILL.md` and lives next to the
-engine code it documents (`regime_engine.py`, `strategy_engine.py`,
-`registry.py`). Re-sync this file with it if either drifts.
+How to design a strategy config (`strategy_config.json`) for the backtest engine without reading code: how a config
+becomes a trade, every key and option, how components combine, and what the config cannot express. Read together
+with `COMPONENT_CATALOG.md`, the inventory of every component and exactly what each outputs. Every complete example
+config below is executed and checked by a test.
 
-Section 7 (below) is genuinely new content: an instrument-set proposal
-(§7a, PROPOSED, NOT BUILT), the component-existence check (§7b, built), the
-`block_manifest.yaml` contract (§7c, built 2026-09-24), and vocabulary /
-authoring callouts. Read each subsection's own banner before treating it as
-current behavior.
+## How a config becomes a trade
 
-Purpose: edit `strategy_config.json` without reading code. Every key, every
-option — plus, in §7, what a future config-direct-authoring path (Slice 3b,
-not yet built) is expected to add.
+On every completed candle, for one symbol, the engine does this:
 
-## Top-level shape
+1. **The window.** The strategy receives the last `required_bars + 100` bars of that symbol (`required_bars` is the
+   largest warmup among the detector's and the strategies' components, and at least 24). Columns: `timestamp`,
+   `open`, `high`, `low`, `close`, `volume`, `stddev_24` (24-bar rolling standard deviation of the close), plus one
+   column per data feed (`funding_rate`, `fear_greed`, ...). The strategy does NOT see its position, PnL, balance,
+   entry price, costs or any other symbol.
+2. **The regime.** The regime detector computes its components' values from the window and classifies the bar into
+   one regime: `trending`, `mean_reversion`, `chop` or `unknown`.
+3. **The regime's components.** Each component of that regime outputs a raw value, which is appended to its own
+   history (after `history_transforms`). Each component's `transforms` pipeline then turns its history into one
+   number, and the numbers are averaged by weight:
+
+   `forecast = sum( weight_i / sum(weights) x pipeline_i(history_i) )`, clipped to `[-20, +20]`.
+
+   A regime set to `null` has forecast 0.0 (flat).
+4. **The allocation.** `allocation = forecast / 10`: the target position as a fraction of equity. Forecast +10 is
+   100 percent long, +20 is 200 percent long, -20 is 200 percent short. The allocation is linear in the forecast.
+5. **The rebalance.** The bot trades toward the target allocation, filling at that bar's close. The risk layer sits
+   outside the strategy config (`trading-bot/config.json`, `risk_management.controls`): it rejects a rebalance whose
+   size `abs(target - actual allocation)` is below `min_allocation_change` (default 0.2, that is 2 forecast points)
+   or above 4.0. The key `strategies.min_allocation_change` overrides the minimum for this strategy.
+
+The forecast is 0.0 until the strategy is ready (see "The forecast for each regime").
+
+## The design principle
+
+**Hard rule (D-051): every forecast must be graded.** Position size must follow signal strength. The allocation is
+the forecast divided by 10, so a component that feeds the forecast must output a value that grows with the strength
+of the signal: a stronger signal, a bigger position; a weaker one, a smaller position.
+
+- **Refused as forecast sources (on/off).** A component that sits at 0 and jumps to a level when a condition
+  fires, or that only takes a few fixed values, does not give a position that follows signal strength. These
+  classes must not appear in `strategies`: `SmaTrendLongOnlyComponent`, `GatedSmaTrendLongOnlyComponent`,
+  `FundingRateMeanReversionComponent`, `FearGreedContrarianComponent`, `MacdHistogramCrossoverComponent`,
+  `WhaleLargeTradeImbalanceComponent`, `VolumeExpansionHedgeComponent`. They are the rows marked **on/off** in the
+  "Kind" column of `COMPONENT_CATALOG.md`. A config that uses one will be refused at the backtest-specification
+  step; design as if that check were already live.
+- **An on/off condition is a regime.** If the idea is "when X happens, take this kind of position", X belongs in the
+  regime detector (a rule on a regime measure, or a veto), the regime it selects gets a GRADED component in
+  `strategies.regimes`, and the other regimes are `null` (flat). The regime decides when the idea is active; the
+  graded component decides how much and in which direction.
+- **Constant.** `BuyAndHoldStrategy` (constant +10) is an offset only: use it inside a composition with a graded
+  component (see "Composing a signal"), never as the signal.
+- **A rule stated as a threshold becomes a graded measure.** "Long above the 20-day high, short below the 20-day
+  low" has a graded counterpart: where the close sits inside its recent range (`DonchianBreakoutComponent`:
+  continuous, -`sf` at the bottom of the range, +`sf` at the top). State the difference from the idea as written
+  as a deviation; do not pretend the threshold rule was built.
+
+How to tell: run the component mentally over a year of bars. If its output takes two or three distinct values
+(0 and a level, or -level, 0, +level), it is on/off. If it takes a continuum of values, it is graded. A dead-zone
+transform (`threshold_filter`, `volume_filter`) on a graded signal keeps the signal graded above the threshold but
+makes the forecast jump from 0 to the threshold at that point.
+
+## Config shape
+
 ```json
 {
-  "regime_detector": { ... },   // → ConfigDrivenRegimeEngine
-  "strategies":      { ... },   // → ConfigDrivenStrategyEngine
-  "aux_feeds":       [ ... ]    // optional — non-OHLCV columns to merge onto the bar
-                                //   DataFrame before any component sees it. See §4a.
+  "regime_detector": { ... },
+  "strategies":      { ... },
+  "aux_feeds":       [ ... ]
 }
 ```
 
-## 1. `regime_detector`
+| Top-level key | Required | Meaning |
+|---|---|---|
+| `regime_detector` | yes | classifies each bar into a regime (next section) |
+| `strategies` | yes | what to forecast in each regime (section "The forecast for each regime") |
+| `aux_feeds` | no | names of data feeds the config depends on. The engine ignores it; the research tools read it (data-availability check). A config that uses a feed-based component should list that component's feed, for example `["fear_greed"]`. See the feeds section of `COMPONENT_CATALOG.md` |
+
+Keys of `strategies`:
+
+| Key | Required | Meaning |
+|---|---|---|
+| `regimes` | yes | regime name to forecast config, or `null` (flat). A regime that is absent behaves like `null`; list all four for clarity |
+| `min_allocation_change` | no | non-negative number; overrides the risk layer's minimum rebalance size for this strategy (default 0.2, from `trading-bot/config.json`) |
+| `warmup` | no | accepted and IGNORED: the strategy overrides it with its own computed `required_bars`. Existing configs carry `"warmup": 51` harmlessly |
+
+**Unknown keys are silently ignored** at every level: an extra top-level key, an extra key in a component spec,
+and a misspelt key inside `params` all pass validation and do nothing (for `params`, the default is used instead).
+Check every key and every param name against this guide and the catalogue. (The pipeline may carry a few top-level
+keys of its own for its tools, for example `significance_methodology` when a brief requires it; the engine does not
+read them.)
+
+## Regime detector
+
+Decides, on each bar, which of the four regimes is active.
+
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `mode` | `"threshold_rules"` \| `"score"` \| `"score_product"` | `threshold_rules` | Classification algorithm |
-| `components` | list | required | Indicator components (see §Component spec) shared by rules/vetoes/scores |
-| `vetoes` | list | `[]` | Evaluated FIRST every bar, both modes. First veto whose rules all pass for `consecutive_bars` bars forces its `result` regime |
-| `rules` | list | `[]` | threshold_rules mode only. Priority-ordered; first match wins |
-| `default_regime` | regime name | `"unknown"` | threshold_rules fallback when no rule matches |
-| `regimes` | dict | `{}` | score mode only: per-regime weighted transformed components |
-| `min_score` | float | 0.35 | score mode: winner must reach this |
-| `min_margin` | float | 0.05 | score mode: winner−runner-up must reach this; else UNKNOWN |
+| `mode` | `"threshold_rules"`, `"score"` or `"score_product"` | `threshold_rules` | classification algorithm |
+| `components` | list | required (may be `[]`) | the measurements the rules, vetoes and scores use (component spec: `id`, `class`, `params`) |
+| `vetoes` | list | `[]` | evaluated FIRST every bar, in every mode |
+| `rules` | list | `[]` | `threshold_rules` mode only: priority-ordered, first match wins |
+| `default_regime` | regime name | `"unknown"` | `threshold_rules`: the regime when no rule matches (and the regime of every bar in the ungated pattern). No effect in the two score modes |
+| `regimes` | dict | `{}` | score modes only: per-regime scoring components |
+| `min_score` | float | 0.35 | score modes: the winner must reach this |
+| `min_margin` | float | 0.05 | score modes: winner minus runner-up must reach this, else `unknown` |
 
-Score mode: each regime's score = Σ(weight × transformed value)/Σweights — a weight-normalized average. Absolute weight magnitudes are irrelevant (only ratios matter); to hit `min_score`, adjust transform output scales, not weights.
+The detector's components need only `id`, `class` and `params`. `weight`, `lookback` and `history_transforms` on
+`regime_detector.components` are ignored. Use the catalogue's regime measures (`RSquaredRegimeComponent`,
+`EfficiencyRatioRegimeComponent`, `VolatilityPercentileRegimeComponent`, `VarianceRatioComponent`, and the signed
+`ADXDirectionalComponent` with range -1 to +1) for thresholds: their scale does not depend on the asset. Any other
+component can be referenced too, but its scale is asset- and timeframe-dependent.
 
-Regime names (must map to `MarketRegime`): `trending`, `mean_reversion`, `chop`, `unknown`. Adding a new name requires code (enum + `_REGIME_MAP`) → STRATEGY_EXTENDING.md §C.
+### Veto
+```json
+{"id": "vol", "transforms": [{"op": "identity"}],
+ "rules": [{"op": "gte", "value": 0.90}],
+ "consecutive_bars": 2, "result": "chop"}
+```
+`id` must be a declared detector component (the engine raises at startup otherwise). The `transforms` key is
+required. `rules` are ANDed against the TRANSFORMED value. The first veto (in list order) whose rules all pass for
+`consecutive_bars` bars in a row (default 1) forces its `result` regime for that bar, in every mode; the streak
+resets to 0 on any bar the veto does not fire.
 
-### Mode algorithms (vetoes run first in BOTH modes)
-**`threshold_rules`** (default): per bar, take each component's latest RAW value; walk `rules` top-down; first rule whose `any_of` matches wins; no match → `default_regime`. Deterministic if/else — use when regime boundaries are absolute thresholds (current production mode).
+### Rule (threshold_rules mode)
+```json
+{"regime": "trending", "any_of": [
+  [{"id": "er", "op": "gte", "value": 0.25}, {"id": "vr", "op": "gte", "value": 1.10}],
+  [{"id": "er", "op": "gte", "value": 0.30}, {"id": "vr", "op": "between", "low": 0.90, "high": 1.10}]
+]}
+```
+Per bar, the detector walks `rules` top to bottom and the first rule that matches wins; no match gives
+`default_regime`. `any_of` is an OR of condition sets; each set is an AND of conditions. Conditions compare the
+RAW latest value of the component: rules apply no transforms. Operators: `gte`, `gt`, `lte`, `lt`, and `between`
+(with `low` and `high`, inclusive). Write `gte`, not `>=`.
 
-**`score`**: per bar, for each entry in `regime_detector.regimes`, compute score = weight-normalized average of TRANSFORMED component values; winner = argmax. Winner must satisfy `score ≥ min_score` AND `(score − runner-up) ≥ min_margin`, else regime = `unknown`. Use when regimes compete on relative evidence rather than hard cutoffs. Readiness is stricter: every component history must be FULL (= lookback), vs ≥ 1 entry for threshold_rules. Config shape:
-
-**`score_product`**: per bar, for each regime compute score = Π (transformed_value / divisor) across components; winner = argmax. Same `min_score` / `min_margin` gating as `score` mode. Use when the hypothesis is a PRODUCT of regime indicators (e.g. ER × VR/2.0 ≥ threshold). Each component in `regimes[r].components` accepts an optional `"divisor"` key (default 1.0) to normalize its scale contribution. **Single-regime pattern:** define only the target regime (e.g. `"trending"`); with one regime, margin = 1.0 always, so only `min_score` governs firing. Outside the threshold, returns `unknown`. Does NOT support inversion (fire when score < threshold) or SMA smoothing of the score — those require engine extension. Config shape:
+### Score mode
+Each regime in `regime_detector.regimes` scores the bar: `score = sum(weight x transformed value) / sum(weights)`,
+a weight-normalised average (only weight ratios matter; to reach `min_score`, change the transform output scales,
+not the weights). The winner is the highest score, and it must reach `min_score` and lead the runner-up by
+`min_margin`, else the bar is `unknown`. Entries reference declared detector components by `id`. Use transforms
+whose outputs are comparable across regimes (the 0-to-1 percentile ops are the safe choice). Readiness is stricter
+than in `threshold_rules`: every detector component's history must be full.
 ```json
 "regimes": {
   "trending": {"components": [
@@ -63,9 +153,12 @@ Regime names (must map to `MarketRegime`): `trending`, `mean_reversion`, `chop`,
   ]}
 }
 ```
-Entries reference declared `components` by `id` (same shared histories as rules/vetoes); transform output scales must be comparable across regimes for argmax to be meaningful (percentile-family ops, all 0–1, are the safe choice).
 
-`score_product` mode example (ER × VR/2.0 ≥ 0.4 → trending):
+### Score-product mode
+Each regime scores the bar as a product: `score = product( transformed value / divisor )` over its components
+(`divisor` optional, default 1.0). Same `min_score` and `min_margin` gate. Use it when the idea is a product of
+measures. With one regime defined, the margin is always 1.0 and only `min_score` decides. It cannot express
+"fire when the score is below a threshold" or smooth the score.
 ```json
 "regime_detector": {
   "mode": "score_product",
@@ -84,236 +177,344 @@ Entries reference declared `components` by `id` (same shared histories as rules/
   "default_regime": "unknown"
 }
 ```
-With ER=0.5, VR=2.0 → product = 0.5 × 1.0 = 0.5 (≥ 0.4: fires). With ER=0.6, VR=0.8 → product = 0.6 × 0.4 = 0.24 (< 0.4: returns unknown).
+With ER = 0.5 and VR = 2.0 the product is 0.5 x 1.0 = 0.5, at or above 0.4: `trending`. With ER = 0.6 and
+VR = 0.8 it is 0.6 x 0.4 = 0.24: `unknown`.
 
-### Veto entry
+### Ungated: a strategy with no regime condition
+When the signal should be active on every bar, leave the detector empty and put the real components under one
+regime name; every bar then resolves to `default_regime`:
 ```json
-{"id": "vol", "transforms": [{"op": "identity"}],
- "rules": [{"op": "gte", "value": 0.90}],
- "consecutive_bars": 2, "result": "chop"}
+"regime_detector": {
+  "mode": "threshold_rules",
+  "components": [],
+  "rules": [],
+  "default_regime": "unknown"
+},
+"strategies": {
+  "regimes": {
+    "unknown": { "components": [ /* the real signal */ ] },
+    "trending": null, "mean_reversion": null, "chop": null
+  }
+}
 ```
-`id` must reference a declared component (validated at startup). `rules` are ANDed against the transformed value.
+Do not invent a dummy always-true rule with an invented regime name (validator V7 rejects the name). When the
+detector is fully ungated (no components, no rules), `default_regime` may be any of the four names, as long as
+`strategies.regimes[default_regime]` holds the components: pointing it at a `null` regime is a config that
+forecasts 0.0 on every bar forever (validator V10). This guide uses `"unknown"` by convention.
 
-### Rule entry (threshold_rules)
-```json
-{"regime": "trending", "any_of": [
-  [{"id": "er", "op": "gte", "value": 0.25}, {"id": "vr", "op": "gte", "value": 1.10}],
-  [{"id": "er", "op": "gte", "value": 0.30}, {"id": "vr", "op": "between", "low": 0.90, "high": 1.10}]
-]}
-```
-`any_of` = OR of condition-sets; each set = AND of conditions on RAW (untransformed) latest component values.
-Comparison ops: `gte`, `gt`, `lte`, `lt`, `between` (`low`/`high`, inclusive).
+### Limits of the detector, stated plainly
+- Only four regime names exist: `trending`, `mean_reversion`, `chop`, `unknown` (the `MarketRegime` enum,
+  `strategies/strategy_base.py:40`). A new name needs code; the validator rejects any other name.
+- An unknown `mode` string silently runs `score` mode.
+- An unknown rule `op` silently evaluates to false (the rule never matches).
+- A rule that names a component with no history yet evaluates to false.
+- Rules and vetoes share one operator set. Vetoes and score entries apply `transforms`; rules compare raw values
+  and carry no `consecutive_bars`.
+- In the two score modes `default_regime` is never read; a bar that fails the gate is `unknown`.
+- The four names are only labels: a rule can map any condition to any of them, and at most four distinct regimes
+  can exist at once.
 
-**Comparator-vocabulary divergence (see §7d for the full callout):**
-`regime_detector.rules`/`vetoes` use `gte`/`gt`/`lte`/`lt`/`between` — a
-DIFFERENT vocabulary from `strategy-research/tools/verdict_criteria_evaluator.py`'s
-`_VALID_COMPARATORS` (`>=`, `>`, `<=`, `<`, `==`), used for campaign
-pass/fail criteria, not config rules. They are not interchangeable strings —
-do not copy one vocabulary into the other's field.
+## The forecast for each regime
 
-## 2. `strategies`
-| Key | Type | Default | Meaning |
-|---|---|---|---|
-| `warmup` | int | engine lookback | Min HISTORY DEQUE entries per active-regime component before forecasts are emitted. Unit is deque appends, NOT bars: appends start only once the component's own `is_ready()` fires, so first possible forecast ≈ max(required_bars, component required periods + warmup). Capped at smallest deque size. Legacy-parity value: 51 |
-| `min_allocation_change` | float | none (falls back to `config.json`'s 0.2) | **Not a strategy-engine setting** — overrides `RiskManager`'s `min_allocation_change.threshold` control (`risk/risk_manager.py`) for THIS strategy's runs only. A rebalance is rejected whenever `abs(target_allocation − actual_allocation) < min_allocation_change`. This is the same gate `config.json`'s `risk_management.controls.min_allocation_change.threshold` has always set globally (default 0.2, live since before this key existed) — setting it here just makes that floor tunable per strategy instead of fixed for every strategy in one file. Omit to keep the global 0.2. See `known_divergences.md` §1 for the history. |
-| `regimes` | dict | required | regime name → forecast config, or `null` = stay flat (forecast 0.0) |
+`strategies.regimes.<name>` is either `null` (forecast 0.0, flat) or an object with `components`:
 
-### Per-regime forecast config
 ```json
 "mean_reversion": {
-  "components": [ <component spec>, ... ]   // ensemble: Σ (weight/Σweights) × pipeline(value); result clipped ±20
+  "components": [ <component spec>, ... ]
 }
 ```
 
-**Block combiner (E-060 S3a, opt-in; written only by code under `orchestrator.composition_runs`).**
-A regime may add `blocks` + `block_standardisation` (both or neither; `validate_config.py`
-VIOLATION V13, the same check the engine runs at construction):
+### Component spec
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `id` | string | required | unique within the regime |
+| `class` | dotted path | required | `strategies.strategy_components.<ClassName>`, a class from `COMPONENT_CATALOG.md` |
+| `params` | dict | `{}` | passed to the component constructor; unknown or misspelt keys are silently ignored and the default is used |
+| `weight` | number | required | ensemble weight. May be NEGATIVE (it subtracts the component); only the regime's total must be greater than 0 (validator V8) |
+| `lookback` | int | derived | size of the component's history. Defaults to the larger of the component's warmup and its transforms' minimum periods. Set it explicitly with `ratio_to_mean`, `percentile` or `zscore`: it is the statistic's window (production uses 500). An explicit value must be at least the largest minimum period of the component's ops (validator V6; the strategy refuses to start otherwise) |
+| `history_transforms` | list of steps | `[]` | applied once when the raw value is stored, so the history holds transformed values. Use it for per-bar normalisation such as `vol_normalize` |
+| `transforms` | list of steps | required | the pipeline run at every forecast. Always present: the validator does not check that the key exists, but without it the strategy raises an error on every bar and the run trades nothing. Write `[]` for none |
+
+A transform step is `{"op": "<name>", "params": {...}}`. See "Transform ops".
+
+### What the engine does with a spec
+- Every component of every regime is updated on every bar, whichever regime is active. Its raw value is appended to
+  its history once the component itself is ready.
+- A forecast needs at least 2 history entries for every component of the regime, else the forecast is 0.0.
+- The strategy is ready, and emits forecasts, only when the bar window holds `required_bars` bars AND the detector
+  is ready AND every component of the classified regime has stored `min(required_bars, its history length)` values.
+  Measured on synthetic bars: `RSIPullbackComponent(14)` with `identity` forecasts from bar 29; the same component
+  with `ratio_to_mean` from bar 38; `SmaTrendLongOnlyComponent(100)` from bar 201. Before readiness the forecast is
+  0.0 and nothing trades.
+- If any component value or pipeline result is NaN, the regime forecast is NaN for that bar (a NaN component makes
+  the weighted sum NaN); a NaN is never turned into "flat". The catalogue's "Data & NaN" column says which
+  components can produce one.
+
+### Block combiner (opt-in; written by the composition tooling)
+A regime may carry `blocks` together with `block_standardisation` (both or neither; validator V13). This combines
+validated pieces of other configs. It is produced by `strategy-research/tools/composition.py`; a design should not
+hand-write it, but a config that contains it is valid:
 ```json
 "unknown": {
-  "components": [ ... each with "lookback" pinned to its source engine's deque length ... ],
+  "components": [ ... each with "lookback" equal to its source config's history length ... ],
   "blocks": [{"id": "b0", "weight": 0.5, "components": ["b0__sig"],
               "source": {"required_bars": 150, "warmup": 150, "buffer_bars": 250,
                          "regime_detector": { ...the source config's detector... },
-                         "parts": {"trending": ["b0__sig"]}}}, ...],
+                         "parts": {"trending": ["b0__sig"]}}}],
   "block_standardisation": {"target": 10.0, "window": 500, "min_periods": 30}
 }
 ```
-Every component belongs to exactly one block. Each block runs as it was validated: its
-components and its own gate (the source `regime_detector`, its own
-`ConfigDrivenRegimeEngine`) see the last `buffer_bars` bars; on a bar its gate classifies
-into regime r, its final forecast is part r (weights normalised within the part, clipped
-±20); in any other regime, or before its source would be ready, it abstains (0, nothing
-recorded). The regime forecast is Σ (W_b/ΣW) × clip(target × v_t / mean(|v| over the
-block's last `window` PAST active values), ±20), clipped ±20: scale-only, past values only,
-0 until `min_periods` past active values exist. `get_required_periods()` includes each
-block's `required_bars + warmup + min_periods`. A non-finite block value raises
-(`BlockCombinerError`). A regime without these keys is computed exactly as before.
+Every component belongs to exactly one block. A block runs under its own source detector on the last `buffer_bars`
+bars; in a regime that is not one of its `parts` it abstains (0). Each block's forecast is standardised against its
+own past: `clip(target x value / mean(abs(past active values over window)), -20, +20)`, 0 until `min_periods` past
+values exist. The regime forecast is the weight-normalised sum of the block values, clipped to +/-20.
 
-### Component spec (both engines)
-| Key | Type | Default | Meaning |
-|---|---|---|---|
-| `id` | str | required | Unique key; referenced by rules/vetoes (regime engine) |
-| `class` | dotted path | required | e.g. `strategies.strategy_components.RSIPullbackComponent`; validated at startup (and, since Slice 3a, at `validate_config.py` time too — see §7b) |
-| `params` | dict | `{}` | Passed to component constructor (see catalog). WARNING: keys are NOT validated — a typo'd key is silently ignored and the default is used. Double-check spelling against the catalog |
-| `weight` | float | required (strategy engine) | Ensemble weight, normalized by sum |
-| `lookback` | int | engine lookback | History deque size. REQUIRED in practice when using `ratio_to_mean`-style normalization (sets the normalization window; legacy parity: 500). WARNING: an explicit override is NOT validated against the transforms' min periods — `"lookback": 10` with `percentile` (min 50) silently runs a 10-sample percentile (the warmup cap lowers warmup to 10, no error). Always set override ≥ the largest min-period of the component's ops |
-| `history_transforms` | list of steps | `[]` | Applied once at append time; defines what the deque stores. Use for per-bar-state normalization (`vol_normalize`) |
-| `transforms` | list of steps | required (strategy engine; vetoes; score mode) | Pipeline run at every forecast |
+**`weight_schedule`** (valid only with the block combiner): per-date block weights,
+`[{"from": "YYYY-MM-DD", "weights": {"<block id>": <number > 0>, ...}}, ...]`. The `from` dates are strictly
+increasing, and every entry weights exactly the blocks of the regime. On a bar whose UTC date is on or after an
+entry's `from`, the last such entry's weights replace the blocks' own `weight`; before the first entry the blocks'
+own weights apply. The bar's `timestamp` column must exist or the forecast fails loudly.
 
-Transform step: `{"op": "<name>", "params": {...}}`.
+## Transform ops
 
-## 3. Transform ops (`TRANSFORM_OPS_REGISTRY`)
-Order rule: history-based ops recompute from history and DISCARD the accumulated value → place them first.
+Fifteen ops. A pipeline is applied in order, seeded with the latest raw value of the component's history.
 
-### History-based (ignore accumulated value)
-| op | params | output |
+**History ops** recompute from the component's stored history and DISCARD the value accumulated so far, so they must
+come first (validator V5 rejects a history op after a scalar or data-aware op). `identity` is one of them:
+`[scale, identity]` throws the scale away.
+
+| op | params (default) | output |
 |---|---|---|
-| `identity` | — | latest raw value |
-| `percentile` | — | rank of latest in history, 0–1 |
-| `negate_percentile` | — | 1 − percentile |
-| `zscore` | — | (latest − mean)/std; 0 if std≈0 |
-| `ratio_to_mean` | — | latest / mean(\|history\|); NaN entries skipped; 0 if mean≈0 |
-| `ema` | `span` (10) | EWM of history |
+| `identity` | none | the latest stored value |
+| `percentile` | none | rank of the latest value within the history, above 0 up to 1 |
+| `negate_percentile` | none | 1 minus `percentile`, 0 up to below 1 |
+| `zscore` | none | (latest - mean) / std of the history (sample std); 0 if std is about 0 |
+| `ratio_to_mean` | none | latest / mean(abs(history)); NaN entries are skipped; 0 if the mean is about 0 |
+| `ema` | `span` (10) | exponentially weighted mean of the history, span limited to the history length |
 
-### Scalar (operate on accumulated value)
-| op | params | output |
+**Scalar ops** act on the accumulated value.
+
+| op | params (default) | output |
 |---|---|---|
-| `scale` | `factor` (1.0) | v × factor |
-| `threshold_filter` | `min_abs` (0.0) | v if \|v\| ≥ min_abs else 0.0 |
-| `clip` | `min`, `max` | clipped v |
-| `sigmoid` | — | 1/(1+e^−v) |
-| `negate` | — | −v |
+| `scale` | `factor` (1.0) | v x factor |
+| `threshold_filter` | `min_abs` (0.0) | v if abs(v) >= `min_abs`, else 0.0 (dead-zone: the forecast jumps from 0 to `min_abs` at the threshold) |
+| `clip` | `min` (no lower bound), `max` (no upper bound) | v limited to `[min, max]` |
+| `sigmoid` | none | 1 / (1 + exp(-v)), between 0 and 1 (0.5 at v = 0) |
+| `negate` | none | -v |
 
-### Data-aware (read current OHLCV window)
-| op | params | output | notes |
-|---|---|---|---|
-| `vol_normalize` | — | v / (stddev_24 × close) | NO guard; NaN propagates by design. Intended for `history_transforms` |
-| `vol_adjusted` | — | v / (stddev_24 × close), guarded (returns v if denom invalid) | read-time use only; do NOT use for history normalization |
-| `price_normalized` | — | v / close, guarded | |
-| `volume_filter` | `period` (20) | v if volume ≥ rolling mean else 0.0 | |
+**Data-aware ops** read the current bar window.
 
-Every op MUST have a `TRANSFORM_MIN_PERIODS` entry (startup KeyError otherwise). Current minimums: percentile/negate_percentile 50, zscore/ratio_to_mean 30, ema 3×span, all others 1.
+| op | params (default) | output |
+|---|---|---|
+| `vol_normalize` | none | v / (`stddev_24` x close). Unguarded: NaN propagates by design. Meant for `history_transforms` |
+| `vol_adjusted` | none | v / (`stddev_24` x close), or v unchanged if the denominator is invalid. Read-time use only; do not use it to normalise history |
+| `price_normalized` | none | v / close (v unchanged if close is invalid) |
+| `volume_filter` | `period` (20) | v if the latest volume >= its `period`-bar mean, else 0.0 (dead-zone on volume) |
 
-## 4. Component catalog (`strategies.strategy_components.*`)
-All expose `raw_value()`; usable in both engines. `params` defaults in parentheses. "Req" = `get_required_periods()`.
+**Ordering rule.** In one list, history ops first, then scalar and data-aware ops (V5). `history_transforms` and
+`transforms` are separate lists, each checked on its own.
 
-**Component count is 24 today**, mechanically checked, not hand-counted —
-`tests/test_design_guide_in_sync.py` (§8 below) fails the suite if this
-catalog and `strategies/strategy_components.py` ever drift apart.
+**Minimum periods (V6).** Each history op needs enough history to be reliable: `percentile` and `negate_percentile`
+50, `zscore` and `ratio_to_mean` 30, `ema` 3 x `span`, all others 1. The default `lookback` already covers this; an
+explicit `lookback` below the largest minimum fails validation.
 
-### Regime indicators (bounded outputs, good for rules)
-| Class | params | Output scale | Req |
-|---|---|---|---|
-| `EfficiencyRatioRegimeComponent` | period(24), smooth_period(5) | 0–1 smoothed ER | period+1 |
-| `VarianceRatioComponent` | k(5), window(100) | ~0.5–1.5; >1.10 trend, <0.90 mean-rev | window+k |
-| `VolatilityPercentileRegimeComponent` | vol_period(20), lookback_period(100), smooth_period(5) | 0–1 vol rank | lookback+vol |
-| `RSquaredRegimeComponent` | period(48) | 0–1 trend linearity | period |
-| `ADXDirectionalComponent` | period(24) | −1..+1 DI-ratio | period+1 |
+**`scaling_factor` cancels under normalisation.** Under `ratio_to_mean`, `zscore` and `percentile` the component's
+own `scaling_factor` has no effect on the forecast (the statistic divides it out, or ranks it away): only its sign
+survives. To size the forecast, put a `scale` op after the normalisation (for example `ratio_to_mean` then `scale`
+10 gives an average absolute forecast of about 10). Where a component ignores `scaling_factor` altogether, the
+catalogue says so.
 
-### Directional alpha (forecast-scale outputs)
-| Class | params | Output | Req |
-|---|---|---|---|
-| `RSIPullbackComponent` | period(14), scaling_factor(0.4), long_only(false) | (50−RSI)×sf; long_only clamps ≥0. NOTE: `entry_threshold` param exists but is DEAD in config path — use `threshold_filter` transform | period+1 |
-| `PriceEvolutionComponent` | period(20), scaling_factor(2.0) | pct-change × sf | period+1 |
-| `PriceEvolutionOnPeriodComponent` | comparison_period(20), scaling_factor(20) | pct-change (sf unused in calc — verify before relying) | period+1 |
-| `EMASpreadComponent` | fast_period(9), slow_period(21), scaling_factor(5.0) | EMA spread % × sf | slow |
-| `EMADiff` | ST_EMA_period(12), LT_EMA_period(26) | absolute EMA gap (price units) | LT |
-| `MacroTrendFilterComponent` | period(200), scaling_factor(2.0) | long-horizon trend | period |
-| `DonchianBreakoutComponent` | period(48), scaling_factor(20.0) | breakout position | period |
-| `KeltnerBreakoutComponent` | ema_period(20), atr_period(20), atr_multiplier(1.5), scaling_factor(20.0) | channel breakout | max(ema,atr)+1 |
-| `MomentumDivergenceComponent` | short_period(5), long_period(20), scaling_factor(1.5) | short×long trend alignment | long |
-| `MacdHistogramCrossoverComponent` | fast_period(12), slow_period(26), signal_period(9), scaling_factor(10.0) | ±sf event-pulse the bar the MACD histogram (MACD line − signal line) crosses zero (bullish/bearish); 0 all other bars — stateful, not a transform | slow+signal |
-| `SmaTrendLongOnlyComponent` | lookback_L(100), scaling_factor(10.0) | sf if prior bar's close > SMA(lookback_L), else 0 — long-only (never negative), one-bar lag on both close and SMA (see class docstring: engine has no next-open fill, this is the closest approximation) | L+1 |
-| `GatedSmaTrendLongOnlyComponent` | lookback_L(100), scaling_factor(10.0), er_period(20), gate_threshold(0.30) |sf if in position, else 0. SMA(L) long-only trend entry-latched by raw Kaufman ER(er_period) $\ge$ gate_threshold evaluated strictly at transition. One-bar lag on indicators | max(L+1, er_period+2) |
-| `BuyAndHoldStrategy` | — | constant +10 | 0 |
+**Percentile and sigmoid outputs are one-sided** (0 to 1). They suit regime scores; as a forecast they would be
+long-only unless re-centred.
 
-### Hedges / filters
-| Class | params | Output | Req |
-|---|---|---|---|
-| `PriceOverextensionHedgeComponent` | period(21), scaling_factor(2.0) | contrarian z-score vs EMA | period |
-| `VolumeExpansionHedgeComponent` | vol_period(24), scaling_factor(20.0) | volume-expansion hedge | vol+1 |
-| `VolatilityFromStdDevComponent` | vol_period(20), scaling_factor(1.0) | returns stdev % | vol_period |
+## Composing a signal
 
-### Structural / sentiment alpha (non-OHLCV — REQUIRE `aux_feeds`, see §4a)
-| Class | params | Output | Req |
-|---|---|---|---|
-| `FundingRateMeanReversionComponent` | threshold(0.001), scaling_factor(10.0) | −sign(funding_rate)×sf at 8h settlement bars (UTC hour%8==0); 0 elsewhere. `threshold=0.0` fires at EVERY settlement bar regardless of magnitude (continuous variant) instead of only extremes | 2 |
-| `FearGreedContrarianComponent` | fear_threshold(25.0), greed_threshold(75.0), scaling_factor(10.0) | +sf if prior day's F&G < fear_threshold, −sf if > greed_threshold, else 0; fires only at UTC-midnight boundary bars | 2 |
-| `WhaleLargeTradeImbalanceComponent` | persistence_bars(3), min_abs_imbalance(0.5), scaling_factor(10.0) | mean(`whale_lt_imbalance`)×sf when the imbalance holds ONE sign with \|LTI\| ≥ min_abs_imbalance across `persistence_bars` consecutive fully-attested bars (continuation — sign NOT inverted); **NaN (abstain)** if any bar in that window is unattested, unmeasured, or the aux columns are absent; 0.0 only when the whole window was measured and was not sustainedly imbalanced | persistence_bars |
+Before concluding that a component is missing (`component_gap`), try compositions of the existing components. The
+mechanics below are all graded (D-051) and each example is tested. All examples use the ungated pattern; the four
+regime keys are shown once in full, the same way in every example.
 
-All three force `standardized_forecast: false` internally (constructor default override) —
-do not add a `standardized_forecast: true` param expecting it to take effect.
+**The weighted mean.** The forecast is `sum(weight_i x value_i) / sum(weights)`. Adding a component changes the
+scale of the result: two components with weight 1 each average their values. To keep a signal's magnitude while
+combining, size the pipelines with `scale` or choose weights accordingly. A component that is 0 for part of the run
+dilutes the other one there.
 
-**`WhaleLargeTradeImbalanceComponent` emits NaN, and that is deliberate** — read its
-docstring before configuring it. NaN is ABSTENTION ("this bar measured nothing"), which
-the framework supports (`STRATEGY_FRAMEWORK.md` invariant 1: NaN appends are legal;
-never inject 0.0 placeholders). NaN propagates through `apply_transform_pipeline` to the
-whole per-regime ensemble sum, so an abstained bar yields a NaN forecast for the regime,
-not a partial one from the remaining components. Configure it **alone in its regime**
-unless you intend that. Requires BOTH `whale_lt_imbalance` and `whale_attested` (see §4a).
+**Combining horizons.** Two components of the same kind at different horizons average into one smoother, slower
+signal. The forecast is exactly the weighted mean of what each would forecast alone (as long as neither is clipped
+at +/-20 on its own, which is why the slower spread, whose percent distance is larger, gets the smaller
+`scaling_factor`).
 
-#### §4a. `aux_feeds` (top-level config key)
-Required whenever a component reads a column that isn't in the raw OHLCV bar DataFrame.
-Recognized values today: `"funding_rate"` (merges a `funding_rate` column, backward
-as-of join — `FundingRateMeanReversionComponent` requires this), `"fear_greed"`
-(merges a `fear_greed` column, **with a +1 day shift already applied** for point-in-time
-correctness per A8.4 — `FearGreedContrarianComponent` requires this).
-
-**This `"aux_feeds"` config key is consumed by `prescreen_signal.py::_merge_aux_feeds()`
-only** (the prescreen/signal-extraction path). It is DENY BY DEFAULT (dispatch W14 step
-2): any name outside `{"funding_rate", "fear_greed"}` raises `UnrecognizedAuxFeedError`
-naming the feed, rather than silently proceeding without the column — the prior
-silent-drop behavior documented here before W14 was a real bug, not a documented
-tolerance. The live/backtest `DataManager` path does not read this config key at all —
-it is driven by explicit `register_feed()` calls (or, for a full backtest, by
-`FEED_REGISTRY` membership passed as `extra_feeds` in `core/launcher.py`), and is
-separately deny-by-default via the `window_seconds` causality declaration
-(`data/ADDING_A_FEED.md` step 2).
+<!-- example: two_trend_horizons -->
 ```json
-"aux_feeds": ["fear_greed"]
+{
+  "regime_detector": {"mode": "threshold_rules", "components": [], "rules": [], "default_regime": "unknown"},
+  "strategies": {"regimes": {
+    "unknown": {"components": [
+      {"id": "fast", "class": "strategies.strategy_components.EMASpreadComponent",
+       "params": {"fast_period": 12, "slow_period": 26, "scaling_factor": 5.0},
+       "weight": 1.0, "transforms": [{"op": "identity"}]},
+      {"id": "slow", "class": "strategies.strategy_components.EMASpreadComponent",
+       "params": {"fast_period": 50, "slow_period": 200, "scaling_factor": 1.0},
+       "weight": 1.0, "transforms": [{"op": "identity"}]}
+    ]},
+    "trending": null, "mean_reversion": null, "chop": null
+  }}
+}
 ```
-**Whale-footprint feeds are RESERVED and are not in `FEED_REGISTRY`.** The six names in
-`data/feed_registry.py::WHALE_FOOTPRINT_FEEDS` live in `RESERVED_FEED_REGISTRY`; a caller
-opts in by name and `campaign_data_policy.yaml` still has to carry a committed
-designation or construction raises `ReservedDataError`. `WhaleLargeTradeImbalanceComponent`
-needs two of them — `"whale_lt_imbalance"` and `"whale_attested"` — and abstains (NaN)
-rather than firing if either column is missing. Note also that
-`prescreen_signal.py::_merge_aux_feeds()` still knows only `funding_rate` and
-`fear_greed` — it now REFUSES a whale feed name rather than silently dropping it, but it
-still cannot DELIVER one; the `DataManager.register_feed()` path can.
-A hypothesis needing funding rate or Fear & Greed is achievable via config ALONE
-(existing components + `aux_feeds`) — this is NOT a component_gap. See run_041
-(`H-041-A`, `strategy-research/runs/run_041/`) and run_042 (`H-041-C`,
-`strategy-research/runs/run_042/artifacts/candidate_strategy_config.json`) for
-working reference configs.
 
-### Component variant patterns
+**Subtracting a signal (negative weight).** A negative weight subtracts a component; the regime's total weight must
+stay above 0. Weights 2 and -1 give `2 x a - b` (before the final clip to +/-20). Below: a 50-bar trend minus the 10-bar run-up, which is long when
+the long trend is up and the last few bars have not already run ahead of it.
 
-**`KeltnerBreakoutComponent` — Variants via config (no new component needed):**
-- Upper-band long breakout (momentum): `scaling_factor: +20.0` (default)
-- Lower-band short/mean-reversion: `scaling_factor: -20.0` — inverts the signal;
-  fires when price breaks BELOW the lower band. Use in trending regime with a negative
-  forecast expectation, or in mean_reversion regime expecting bounce.
-- Wider channels (fewer signals, higher conviction): increase `atr_multiplier` (e.g. 2.0)
-- Tighter channels (more signals, lower conviction): decrease `atr_multiplier` (e.g. 1.0)
+<!-- example: subtract_short_term_run_up -->
+```json
+{
+  "regime_detector": {"mode": "threshold_rules", "components": [], "rules": [], "default_regime": "unknown"},
+  "strategies": {"regimes": {
+    "unknown": {"components": [
+      {"id": "trend", "class": "strategies.strategy_components.PriceEvolutionComponent",
+       "params": {"period": 50, "scaling_factor": 0.5},
+       "weight": 2.0, "transforms": [{"op": "identity"}]},
+      {"id": "run_up", "class": "strategies.strategy_components.PriceEvolutionComponent",
+       "params": {"period": 10, "scaling_factor": 0.5},
+       "weight": -1.0, "transforms": [{"op": "identity"}]}
+    ]},
+    "trending": null, "mean_reversion": null, "chop": null
+  }}
+}
+```
 
-**`RSIPullbackComponent` — Variants via config (no new component needed):**
-- Long-only mean-reversion: `long_only: true` (clamps forecast ≥ 0; only buys dips)
-- Bidirectional: `long_only: false` (default) — fires on both overbought shorts and oversold longs
-- Signal magnitude: adjust `scaling_factor` (higher = stronger raw signal before normalization)
+**A constant offset to centre a one-sided signal.** `BuyAndHoldStrategy` is the constant +10. With `scale` it is
+any constant. A one-sided graded signal (for example `RSIPullbackComponent` with `long_only: true`, 0 to +20) can be
+centred into a signed one by subtracting a constant. Below the two values are sized so that the weighted mean is
+exactly `rsi - 10`: long when RSI is low enough, short when it is high, graded in between.
 
-**`EMASpreadComponent` — Variants via config (no new component needed):**
-- Momentum (long when fast > slow): `scaling_factor: +5.0` (default)
-- Inverse momentum (short when fast > slow): `scaling_factor: -5.0` — inverts signal direction
-- Faster/slower crossover: adjust `fast_period` and `slow_period`
+<!-- example: centre_one_sided_signal -->
+```json
+{
+  "regime_detector": {"mode": "threshold_rules", "components": [], "rules": [], "default_regime": "unknown"},
+  "strategies": {"regimes": {
+    "unknown": {"components": [
+      {"id": "rsi", "class": "strategies.strategy_components.RSIPullbackComponent",
+       "params": {"period": 14, "scaling_factor": 0.4, "long_only": true},
+       "weight": 1.0, "transforms": [{"op": "identity"}, {"op": "scale", "params": {"factor": 2.0}}]},
+      {"id": "offset", "class": "strategies.strategy_components.BuyAndHoldStrategy",
+       "params": {},
+       "weight": 1.0, "transforms": [{"op": "scale", "params": {"factor": -2.0}}]}
+    ]},
+    "trending": null, "mean_reversion": null, "chop": null
+  }}
+}
+```
 
-**`DonchianBreakoutComponent` — Variants via config (no new component needed):**
-- Upper-band breakout (long momentum): `scaling_factor: +20.0` (default)
-- Lower-band breakdown (short): `scaling_factor: -20.0` — inverts the signal
-- Wider channel (fewer, higher-conviction breaks): increase `period` (e.g. 96)
-- Tighter channel (more frequent signals): decrease `period` (e.g. 24)
+**Sign flip.** To reverse a signal's direction, append `negate` (or give the component a negative
+`scaling_factor`; the two are identical for the components that have one). Below, a Donchian range position
+flipped: short near the top of the 20-bar range, long near the bottom (a mean-reversion reading).
 
-## 5. Worked example (current production mean_reversion)
+<!-- example: sign_flip_negate -->
+```json
+{
+  "regime_detector": {"mode": "threshold_rules", "components": [], "rules": [], "default_regime": "unknown"},
+  "strategies": {"regimes": {
+    "unknown": {"components": [
+      {"id": "range", "class": "strategies.strategy_components.DonchianBreakoutComponent",
+       "params": {"period": 20, "scaling_factor": 20.0},
+       "weight": 1.0, "transforms": [{"op": "identity"}, {"op": "negate"}]}
+    ]},
+    "trending": null, "mean_reversion": null, "chop": null
+  }}
+}
+```
+
+**Long-only from a signed component.** `clip` with `min: 0` removes the short side and keeps the long side graded.
+
+<!-- example: long_only_from_signed -->
+```json
+{
+  "regime_detector": {"mode": "threshold_rules", "components": [], "rules": [], "default_regime": "unknown"},
+  "strategies": {"regimes": {
+    "unknown": {"components": [
+      {"id": "trend", "class": "strategies.strategy_components.PriceEvolutionComponent",
+       "params": {"period": 30, "scaling_factor": 1.0},
+       "weight": 1.0, "transforms": [{"op": "identity"}, {"op": "clip", "params": {"min": 0.0}}]}
+    ]},
+    "trending": null, "mean_reversion": null, "chop": null
+  }}
+}
+```
+
+More combinations the config supports: different components in different regimes; a regime detector built from
+any detector components with vetoes, rules or scores; per-component `history_transforms` and `lookback`; negative
+weights on any component; the same class twice with different params (as above). A condition that switches an idea
+on and off is a regime, not a component (see "The design principle").
+
+## What the config cannot express
+
+The config describes a forecast per bar. It has no key for:
+
+- **Exits, stops, take-profit, trailing stops, time-based holds.** Position management is not configurable: the bot
+  simply moves the allocation toward `forecast / 10` whenever the risk layer allows.
+- **Position state.** A strategy cannot see its position, entry price, PnL or bars held. Only a few components keep
+  their own internal state (`EfficiencyRatioRegimeComponent` and `VolatilityPercentileRegimeComponent` keep a
+  smoothing history; `MacdHistogramCrossoverComponent` and `GatedSmaTrendLongOnlyComponent` remember prior bars);
+  nothing else does.
+- **Sizing other than `forecast / 10`.** There is no volatility-targeting, Kelly, leverage or cap key. The
+  risk controls live in `trading-bot/config.json`, not in the strategy config. (A signal can be divided by recent
+  volatility with a data-aware transform such as `vol_adjusted`; that changes the forecast, and the allocation is
+  still forecast / 10.)
+- **Per-symbol settings.** The config has no per-symbol section; a component sees only its own symbol's bars and
+  feed columns.
+- **Symbols, timeframe and date windows.** They belong to the run protocol, not the config (no instrument,
+  timeframe or symbol key exists; see `DATA_AVAILABILITY.md` for what data exists per timeframe).
+- **New regime names, new transform ops, new indicators, new comparison operators.** These need code.
+- **Transforms or `consecutive_bars` on regime rules.** Only vetoes and score entries carry transforms; rules
+  compare raw values.
+
+What to do when an idea hits one of these limits: express the idea as a graded forecast that comes closest; state
+the part that cannot be expressed as a deviation from the idea; and report `component_gap` only when a graded
+component is genuinely missing after trying the compositions above. Examples of a genuine gap: a graded forecast
+that follows a feed's level (the funding, sentiment and whale components are all on/off), or an indicator that is
+not in the catalogue at all.
+
+## Manifest contract
+
+When stage 1b finishes with status `spec_ready`, it writes `artifacts/block_manifest.yaml` next to
+`backtest_spec.yaml`. The manifest says which part of the config IS the hypothesis's block, as opposed to
+scaffolding, so the block can be stored on its own.
+
+```yaml
+block:
+  kind: forecast                 # forecast | regime -- the only two block kinds
+  config_paths:                  # non-empty; JSON pointers into the config
+    - /strategies/regimes/unknown/components/0
+scaffolding:                     # may be []; config the idea needs but that is not the idea
+  - /regime_detector
+rationale: the RSI pullback component is the hypothesis; the ungated detector only runs it
+```
+
+Rules (every one enforced by code):
+
+1. Exactly the keys `block` (with exactly `kind` and `config_paths`), `scaffolding` and `rationale`, no others.
+   `rationale` is a non-empty string.
+2. `kind` is `forecast` or `regime`. A `forecast` block has at least one `config_paths` entry inside a named regime
+   (`/strategies/regimes/<name>` or deeper; the bare `/strategies/regimes` names no regime); a `regime` block has at
+   least one at or under `/regime_detector`.
+3. Every pointer (block and scaffolding) is an RFC 6901 JSON pointer into the strategy config itself
+   (`/strategies/...`, not `/config/strategies/...`) and resolves in the config. Pointers are distinct.
+4. No pointer lies inside another's subtree: not two block paths, not a block path and a scaffolding path, not two
+   scaffolding paths. Each piece of config is listed once, as block or scaffolding.
+5. No coin, symbol, timeframe or instrument field (a validated block is usable on any coin), and no
+   `hypothesis_id`.
+
+The orchestrator checks the manifest right after stage 1b: a missing or invalid manifest sends 1b back once with
+the error; a second failure stops the run. A variant may change scaffolding, but a variant whose patch removes a
+block path is not tested.
+
+## Worked examples
+
+### The production mean_reversion component
+This is the component `trading-bot/strategy_config.json` runs (under `strategies.regimes.mean_reversion`; the
+production detector gates it with efficiency-ratio and variance-ratio rules):
 ```json
 {"id": "rsi", "class": "strategies.strategy_components.RSIPullbackComponent",
  "params": {"period": 14, "scaling_factor": 0.4, "long_only": true},
@@ -325,250 +526,67 @@ working reference configs.
    {"op": "threshold_filter", "params": {"min_abs": 15.0}}
  ]}
 ```
-Reads as: store vol-normalized pullback scores (500 deep) → current / mean(|history|) → ×10 (≈ "average signal = 10") → drop |forecast| < 15 → ensemble clip ±20. Threshold 15 on this scale ≈ "1.5× stronger than average signal".
+Reads as: store vol-normalised pullback scores (500 deep); current value divided by the mean absolute value of
+that history (so an average signal is 1); times 10 (an average signal is 10); drop any forecast below 15 in
+absolute value (a signal 1.5 times stronger than average); the regime clips to +/-20.
 
-## 6. Edit checklist
-1. Component ids unique; veto/rule ids exist in `components` (startup error otherwise).
-2. Pipeline order: history-based ops first, then scalar/data-aware.
-3. Normalization vs per-bar market state (vol, price) → `history_transforms`, never read-time.
-4. Set `"lookback"` explicitly on any component using `ratio_to_mean`/`percentile`/`zscore` — it IS the statistic's window.
-5. After change, check startup log `StrategyEngine: lookback=X, warmup=Y` — warmup must equal config value, not a capped surprise.
-6. Re-run backtest; diff `results/regime_debug.csv` and per-bar forecasts against the previous run before trusting performance numbers.
-7. Pick the regime mode and gate pattern the hypothesis actually needs; default
-   `threshold_rules`, one active regime is fine for a first test. If the
-   hypothesis has no regime condition at all, use the ungated pattern in §7e
-   rather than inventing a dummy always-true rule (see §7e for why the latter
-   fails validation).
-8. `default_regime` must be `"unknown"` in `threshold_rules` mode whenever
-   `regime_detector.rules` is non-empty — a real gate exists there, and
-   pointing `default_regime` at `trending`/`mean_reversion`/`chop` in that
-   case bypasses it (every bar that fails every rule still gets classified
-   as that regime and traded). `validate_config.py` VIOLATION V9 enforces
-   this for all three names, not just `trending`. **CODE-REVIEW CORRECTION
-   (2026-09-21):** in `score_product` mode, `default_regime` has NO
-   behavioral effect at all — `_classify_score_product`
-   (`regime_engine.py:205-224`) never reads it; a gate-fail there is
-   hardcoded to `MarketRegime.UNKNOWN` regardless of the configured value.
-   V9 currently applies the same restriction to `score_product` mode
-   anyway (a pre-existing over-strictness in `validate_config.py`, not
-   introduced by this slice and out of scope to change here) — so V9 may
-   reject a `score_product` config for a bypass that cannot actually occur
-   in that mode. Do not read V9 passing/failing as evidence about
-   `score_product`'s real gate behavior. This restriction does NOT apply to
-   the fully-ungated pattern (§7e) — there is no gate there to bypass.
-9. Do not invent component classes, transform ops, or regime names absent from
-   this guide's catalog (§4) — `validate_config.py` VIOLATION V12 (§7b) now
-   catches an invented `class` value mechanically, but do not rely on the
-   validator to find authoring mistakes a human/LLM author should have
-   avoided in the first place.
+### A graded, ungated example: normalised trend
+One graded trend component, normalised so that its average absolute forecast is about 10 whatever the asset's
+price level or volatility, with no regime condition.
 
-## 7. Design-guide-only content (new for E-056 Slice 3a)
-
-Everything above this line is the carried-over reference (§0 provenance
-note). Everything below is new: §7a is a proposed, unbuilt schema addition;
-§7b is NOT a proposal — it is built and live (validate_config.py
-VIOLATION V12, shipped in this same slice); §7c is built and live (the
-manifest contract, E-056 1b block-manifest ticket, 2026-09-24); §7d is a vocabulary callout;
-§7e is authoring guidance folded from `backtest-engineering/SKILL.md`'s
-Checklist/Forbidden sections (§6.7-9 above).
-
-### CODE-REVIEW FIX (2026-09-21)
-
-This section's numbering was reshuffled after an adversarial review caught
-two real defects in the original draft: (1) this guide's own §6 item 8
-claimed `default_regime` creates a gate-bypass risk in `score_product` mode
-identical to `threshold_rules` mode — false. `_classify_score_product`
-(`trading-bot/strategies/regime_engine.py:205-224`) never reads
-`self._default_regime` at all; its gate-fail path is hardcoded to
-`MarketRegime.UNKNOWN` regardless of the configured value, confirmed by
-grep showing `_default_regime` is read only at `regime_engine.py:70` (the
-assignment) and `:153` (inside `_classify_threshold_rules`, a different
-method). `validate_config.py`'s pre-existing V9 check (unmodified by this
-slice) DOES apply the same restriction to `score_product` mode regardless —
-that is a separate, pre-existing over-strictness in production code this
-slice did not introduce and is out of scope to fix here; flagged as a
-follow-up, not silently corrected mid-docs-change. (2) three cross-references
-in the original draft pointed readers to "§7b" for V12 documentation while
-§7b's actual heading was the unrelated manifest-contract proposal — a real
-section that documented V12 never existed. Fixed by inserting §7b below as
-V12's own section and renumbering everything after it.
-
-### §7a. Instrument-set / symbol / timeframe field — PROPOSED, NOT BUILT
-
-**This does not exist in the config schema today.** The top-level shape in
-"Top-level shape" above (`regime_detector`, `strategies`, `aux_feeds`) has no
-symbol, timeframe, or instrument-set key anywhere. There is currently no way
-to declare, inside `strategy_config.json` itself, which symbol(s) or
-timeframe a config targets — that information lives elsewhere today (backtest
-harness arguments, run-level metadata), not in the strategy config object.
-
-E-056 S1 flagged this as the single largest real gap in the existing
-reference documentation, and this guide's own characterization session
-(`S2_FINDINGS.md` §6) independently confirmed it, finding no counter-evidence.
-
-**Open question, deliberately not resolved here:** whether this field would
-live as a new top-level sibling of `regime_detector`/`strategies`/`aux_feeds`,
-or somewhere else. (Not in the §7c block manifest: since that contract was
-built, 2026-09-24, it forbids any coin/instrument field — a validated block
-is usable on any coin.) This depends on composition work (Slice 7) that is
-not built yet. Do not invent a resolution
-to this question when authoring configs — it is unresolved by design, not by
-omission.
-
-**Not enforced by `validate_config.py`.** No V-check reads or requires this
-field, because it does not exist yet.
-
-### §7b. Component-class existence check (`validate_config.py` VIOLATION V12) — BUILT, LIVE
-
-Unlike §7a, this is not a proposal — it shipped in this same slice
-(E-056 Slice 3a). Every `class` value in `regime_detector.components[]` and
-`strategies.regimes.*.components[]` is now checked, at `validate_config.py`
-time, against `strategies.strategy_components` via
-`strategies.registry._load_class` (the exact function the live engine calls
-at startup — V12 reuses it rather than re-implementing dotted-path
-resolution, so V12 fails on exactly the set of configs the engine would
-already refuse to start on, no more, no less).
-
-**Before this check:** an invented or typo'd `class` value passed
-`validate_config.py` silently and only failed much later, at engine startup
-— after a full backtest had already been launched and its data fetched.
-**After this check:** the same mistake is caught at validation time, before
-any backtest runs.
-
-Verified against the full real corpus (every `candidate_strategy_config.json`
-under `strategy-research/runs/run_*/`): zero currently-passing real configs
-newly fail under V12 — this check only adds a new failure mode for configs
-that were already broken and would have failed at startup regardless. Shipped
-unconditionally, no flag, on exactly that empirical basis.
-
-### §7c. The manifest contract (`block_manifest.yaml`) — BUILT, LIVE (config-direct-authoring flow)
-
-Built 2026-09-24 (E-056 1b block-manifest ticket; was "PROPOSED, NOT
-BUILT"). Stage 1b (`strategy_config_authoring`, only under
-`orchestrator.config_direct_authoring.enabled`) writes
-`artifacts/block_manifest.yaml` next to `backtest_spec.yaml` whenever its
-status is `spec_ready`. It says which part of the base config IS the
-hypothesis's block, as opposed to scaffolding — so the block registry can
-store the block alone, without a second LLM pass re-deriving the boundary.
-
-```yaml
-block:
-  kind: forecast                 # forecast | regime -- the only two block kinds
-  config_paths:                  # non-empty; JSON pointers into the base config
-    - /strategies/regimes/unknown/components/0
-scaffolding:                     # may be []; config the idea needs but that is not the idea
-  - /strategies/warmup
-  - /regime_detector
-rationale: the RSI pullback component is the hypothesis; the ungated detector and warmup only run it
-```
-
-Rules (every one enforced by code):
-
-1. Exactly the keys `block` (with exactly `kind`, `config_paths`),
-   `scaffolding` and `rationale` — no others. `rationale` is a non-empty
-   string.
-2. `kind` is `forecast` or `regime`. A `forecast` block has at least one
-   `config_paths` entry inside a named regime (`/strategies/regimes/<name>`
-   or deeper — the bare `/strategies/regimes` names no regime); a `regime`
-   block has at least one at or under `/regime_detector`. This is read off
-   the same `regime_assignment` the registry stores for the block.
-3. Every pointer (block and scaffolding) is an RFC 6901 JSON pointer into the
-   strategy config itself (`/strategies/...`, not `/config/strategies/...`)
-   and resolves in the base config. Pointers are distinct.
-4. No pointer lies inside another's subtree — not two block paths, not a
-   block path and a scaffolding path, not two scaffolding paths. Each config
-   piece is listed once, as block or scaffolding.
-5. No coin, symbol, timeframe or instrument field (a validated block is usable
-   on any coin), and no `hypothesis_id` (the run already carries the idea's
-   identity).
-
-**Who checks it.** One implementation, `strategy-research/tools/block_manifest.py`,
-used everywhere it is read:
-
-- right after 1b (`determine_post_strategy_config_authoring_route`), against
-  `backtest_spec.yaml`'s config, before `innovation_expansion` runs: a
-  missing or invalid manifest sends 1b back ONCE with the error in its
-  handoff; a second failure stops the run. A stale manifest is deleted when
-  1b starts, so a pass never inherits an earlier one;
-- the tool-only `backtest_specification` stage (5a) re-checks it against 1b's
-  base config before building any variant (backstop; stops the run). Per
-  variant, only BLOCK paths must resolve — a variant may change scaffolding;
-  one whose patch removes a block path is marked `not_tested`
-  (`manifest paths unresolved`);
-- `tools/block_registry.py` checks it again against the tested base config
-  when a validated run registers its block (`config_fragment` = the values at
-  `block.config_paths`).
-
-`workflow_artifacts/schemas/block_manifest.schema.json` documents the same
-shape (rules 1-3's shape part); `tests/test_e056_1b_block_manifest.py` keeps
-schema and code in agreement. A pass-through candidate's `manifest` field
-(hypothesis-design IMPROVEMENT 08) is written through verbatim and checked the
-same way; `hypothesis_card.schema.json`'s `manifest` field `$ref`s the
-manifest schema, so a malformed one is also caught at the card.
-
-### §7d. Comparator-vocabulary divergence
-
-`regime_detector.rules`/`vetoes` (§1/§2 above) use the comparator vocabulary
-`gte`/`gt`/`lte`/`lt`/`between`. A separate, unrelated vocabulary exists in
-`strategy-research/tools/verdict_criteria_evaluator.py`'s `_VALID_COMPARATORS`
-tuple: `>=`, `>`, `<=`, `<`, `==` — used for campaign-level pass/fail
-criteria evaluation (`pass_rule`/criterion checks against
-`config/criterion_menu.yaml`), a completely different config surface from
-`strategy_config.json`'s own regime rules.
-
-**These two vocabularies are not interchangeable.** A rule written with `">="`
-in `regime_detector.rules` is not a recognized op there (only `gte` is); a
-criterion written with `"gte"` in a `pass_rule`/criterion spec is not in
-`_VALID_COMPARATORS` (only `">="` is). Confirmed independently by this
-session and by E-056/E-046b S1 (`S2_FINDINGS.md` §6 item 3,
-`S1_FINDINGS.md` line 243, `verdict_criteria_evaluator.py:52`). Check which
-config surface you are authoring for before picking a comparator string.
-
-### §7e. Ungated hypotheses — the canonical no-regime pattern
-
-Folded from `backtest-engineering/SKILL.md`'s "Ungated hypotheses" section
-(current authoring guidance, unchanged by this guide — see that skill file
-for the full, current-authority version if this guide and the skill ever
-diverge). Most hypotheses in the current campaign have no regime condition at
-all (the signal should be active every bar). Building this with a dummy
-always-true rule and an invented regime name is what caused run_043's first
-blocker (2026-07-04) — `VIOLATION V7` rejected the invented name, but the
-correct pattern avoids needing one:
-
+<!-- example: normalised_trend -->
 ```json
-"regime_detector": {
-  "mode": "threshold_rules",
-  "components": [],
-  "rules": [],
-  "default_regime": "unknown"
-},
-"strategies": {
-  "warmup": 51,
-  "regimes": {
-    "unknown": { "components": [ /* the real signal */ ] },
+{
+  "regime_detector": {"mode": "threshold_rules", "components": [], "rules": [], "default_regime": "unknown"},
+  "strategies": {"regimes": {
+    "unknown": {"components": [
+      {"id": "trend", "class": "strategies.strategy_components.EMASpreadComponent",
+       "params": {"fast_period": 12, "slow_period": 26},
+       "weight": 1.0, "lookback": 500,
+       "transforms": [{"op": "ratio_to_mean"}, {"op": "scale", "params": {"factor": 10.0}}]}
+    ]},
     "trending": null, "mean_reversion": null, "chop": null
-  }
+  }}
 }
 ```
+Reads as: store the EMA spread (500 deep); divide the latest value by the mean absolute value of that history; times
+10. The forecast is signed, continuous, and its average absolute value is about 10 (the component's
+`scaling_factor` is irrelevant here: it cancels).
 
-`default_regime` MUST be `"unknown"` in this pattern specifically (not any of
-the four interchangeably) — `main_strategy.is_ready()` reads
-`current_regime` before `classify()` runs for the current bar, so on the
-first ready-candidate bar `current_regime` is still `MarketRegime.UNKNOWN`
-regardless of the configured target; only `default_regime="unknown"` avoids
-a one-bar early, under-warmed forecast. See
-`backtest-engineering/SKILL.md` "Ungated hypotheses" and
-`trading-bot/tests/test_ungated_config_pattern.py` for the full empirical
-verification this pattern is built on. `validate_config.py` VIOLATION V10
-enforces the concrete authoring mistake this pattern invites (a fully-ungated
-detector pointing `default_regime` at a null `strategies.regimes` entry).
+## Checklist and validator rules
 
-## 8. Design-guide-catalog sync test
+Before emitting a config:
 
-`strategy-research/tests/test_design_guide_in_sync.py` mechanically compares
-this file's §4 component catalog against
-`grep -c "^class.*SubStrategyComponent" trading-bot/strategies/strategy_components.py`
-and the actual class names found — not a hardcoded count — so this guide
-cannot silently drift out of step the way `STRATEGY_CONFIG_REFERENCE.md`
-itself could (nothing enforced that file's catalog stayed in sync before this
-test existed).
+1. Component ids are unique within a regime; veto ids exist in the detector's `components` (the engine raises at
+   startup otherwise). A rule condition that names a missing id silently evaluates to false; validator V2 catches it.
+2. Transform pipelines: history ops first, then scalar and data-aware ops.
+3. Normalisation against per-bar state (volatility, price) goes in `history_transforms`, never at read time.
+4. Set `lookback` explicitly on any component that uses `ratio_to_mean`, `percentile` or `zscore`; it must be at
+   least the op's minimum period.
+5. Every component in `strategies` is graded (D-051). On/off conditions are regimes.
+6. Weights are numeric and each regime's total is above 0. A regime that should be flat is `null`, never
+   `{"components": []}` (V8 rejects it).
+7. Only the four regime names appear anywhere.
+8. `strategies.warmup` does nothing; do not tune it.
+9. Every class comes from the catalogue; every `params` key is spelt as in the catalogue (a typo is silently
+   ignored); no invented op, regime name or rule operator.
+10. The regime that holds the components is the one the detector will actually select; in the ungated pattern
+    `default_regime` names a non-null regime (V10).
+
+Validator rules (`trading-bot/tools/validate_config.py`; the strategy refuses to start on any violation):
+
+| Rule | Checks |
+|---|---|
+| V1 | `regime_detector` and `strategies` exist; each `strategies.regimes.<name>` is an object or `null` |
+| V2 | every veto id, rule-condition id and score-entry id is declared in `regime_detector.components` |
+| V3 | every op in a `transforms` or `history_transforms` list exists in the op registry |
+| V4 | every op has a minimum-period entry (internal consistency of the registry) |
+| V5 | in one list, no history op comes after a scalar or data-aware op |
+| V6 | an explicit `lookback` is at least the largest minimum period of the component's ops |
+| V7 | every regime name used (rule `regime`, veto `result`, `default_regime`, keys of `regimes`) is one of the four |
+| V8 | each strategy component has a numeric `weight`, and each non-null regime's total weight is above 0 |
+| V9 | in `threshold_rules` and `score_product` mode with non-empty `rules`, `default_regime` is not `trending`, `mean_reversion` or `chop` |
+| V10 | a fully ungated detector (no components, no rules) does not point `default_regime` at a null or missing regime |
+| V11 | `strategies.min_allocation_change`, when present, is a non-negative number |
+| V12 | every `class` path in the detector and in the strategies imports to a class (it does not check that the class is a component, or that `params` are right) |
+| V13 | the block combiner keys (`blocks`, `block_standardisation`, `weight_schedule`) have the exact shape above |

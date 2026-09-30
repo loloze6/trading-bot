@@ -1,31 +1,30 @@
 """
-E-056 S2 Slice 3a: sync guard for strategy-research/docs/STRATEGY_DESIGN_GUIDE.md's
-§4 component catalog against the real component classes in
+Sync guard for strategy-research/docs/COMPONENT_CATALOG.md against the real component classes in
 trading-bot/strategies/strategy_components.py.
 
-This is a REAL sync check (re-derives both sides mechanically at test time),
-not a hardcoded count -- the same class of drift that could have silently hit
-trading-bot/DOC/STRATEGY_CONFIG_REFERENCE.md (nothing enforced its catalog stayed
-in sync with the code) must not recur for the new design guide.
+This is a REAL sync check (re-derives both sides mechanically at test time), not a hardcoded count: nothing else
+enforces that the catalogue stays in step with the code.
 
-Two things are checked:
-1. The class-name SET in the guide's §4 catalog tables equals the class-name
-   SET found by grepping `^class.*SubStrategyComponent` in
-   strategy_components.py -- add/remove/rename a component on either side and
-   this test fails, naming exactly what's out of sync.
-2. The catalog's own count matches `len()` of that grepped set (redundant
-   with #1 for a well-formed table, but catches an accidentally-duplicated
-   row that #1's set-equality would silently absorb).
+Checked:
+1. The class-name SET in the catalogue's rows (between the CATALOG:START / CATALOG:END markers) equals the class-name
+   SET found by matching `^class X(SubStrategyComponent):` in strategy_components.py -- add, remove or rename a
+   component on either side and this test fails, naming exactly what is out of sync.
+2. The row count matches the class count (catches a duplicated row that set equality would absorb).
+3. Every row carries a kind from the four the catalogue defines (graded, on/off, constant, regime measure).
 """
 import re
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent.parent
-DESIGN_GUIDE_PATH = REPO_ROOT / "strategy-research" / "docs" / "STRATEGY_DESIGN_GUIDE.md"
+CATALOG_PATH = REPO_ROOT / "strategy-research" / "docs" / "COMPONENT_CATALOG.md"
 STRATEGY_COMPONENTS_PATH = REPO_ROOT / "trading-bot" / "strategies" / "strategy_components.py"
 
+START_MARKER = "<!-- CATALOG:START -->"
+END_MARKER = "<!-- CATALOG:END -->"
+KINDS = ("graded", "on/off", "constant", "regime measure")
+
 _CLASS_DEF_RE = re.compile(r"^class\s+(\w+)\(SubStrategyComponent\):", re.MULTILINE)
-# Catalog table rows look like: | `EfficiencyRatioRegimeComponent` | period(24)... |
+# Catalogue rows start with a backticked class name: | `RSIPullbackComponent` | ...
 _CATALOG_ROW_RE = re.compile(r"^\|\s*`(\w+)`\s*\|", re.MULTILINE)
 
 
@@ -34,80 +33,100 @@ def _real_component_classes() -> set:
     return set(_CLASS_DEF_RE.findall(src))
 
 
-def _guide_catalog_section() -> str:
-    """Isolate §4 (the component catalog) from the rest of the guide, so a
-    class name mentioned in prose elsewhere (worked example, variant
-    patterns) can't accidentally satisfy the sync check without being a real
-    catalog row."""
-    text = DESIGN_GUIDE_PATH.read_text(encoding="utf-8")
-    start = text.index("## 4. Component catalog")
-    end = text.index("### Component variant patterns")
-    assert start < end, "expected §4 catalog to precede 'Component variant patterns'"
+def _catalog_section() -> str:
+    """Only the marked catalogue tables, so a class name mentioned in prose or in the feeds table cannot satisfy the
+    sync check without being a real catalogue row."""
+    text = CATALOG_PATH.read_text(encoding="utf-8")
+    start = text.index(START_MARKER)
+    end = text.index(END_MARKER)
+    assert start < end, "CATALOG:START must precede CATALOG:END"
     return text[start:end]
 
 
-def _guide_catalog_classes() -> list:
-    return _CATALOG_ROW_RE.findall(_guide_catalog_section())
+def _catalog_classes() -> list:
+    return _CATALOG_ROW_RE.findall(_catalog_section())
+
+
+def _catalog_rows() -> list:
+    return [line for line in _catalog_section().splitlines() if _CATALOG_ROW_RE.match(line)]
 
 
 def test_strategy_components_file_exists():
-    assert STRATEGY_COMPONENTS_PATH.exists(), (
-        f"expected {STRATEGY_COMPONENTS_PATH} to exist"
-    )
+    assert STRATEGY_COMPONENTS_PATH.exists(), f"expected {STRATEGY_COMPONENTS_PATH} to exist"
 
 
-def test_design_guide_exists():
-    assert DESIGN_GUIDE_PATH.exists(), f"expected {DESIGN_GUIDE_PATH} to exist"
+def test_catalog_exists():
+    assert CATALOG_PATH.exists(), f"expected {CATALOG_PATH} to exist"
 
 
 def test_component_count_is_24_today():
-    """Non-regression pin on the count this guide's own header text and
-    CLAUDE.fork.md both cite, re-derived mechanically (not trusted from
-    either doc)."""
+    """Non-regression pin on the count, re-derived mechanically."""
     real = _real_component_classes()
     assert len(real) == 24, (
-        f"grep-equivalent count of '^class.*SubStrategyComponent' in "
-        f"{STRATEGY_COMPONENTS_PATH} is {len(real)}, expected 24 "
-        f"(strategies.strategy_components.py). If this legitimately changed, "
-        f"update STRATEGY_DESIGN_GUIDE.md §4 AND CLAUDE.fork.md's component-count "
-        f"note in the same change."
+        f"'^class X(SubStrategyComponent):' count in {STRATEGY_COMPONENTS_PATH} is {len(real)}, expected 24. If this "
+        f"legitimately changed, update COMPONENT_CATALOG.md (and its '24 classes' sentence) in the same change."
     )
 
 
-def test_design_guide_catalog_matches_real_component_classes():
+def test_catalog_matches_real_component_classes():
     real = _real_component_classes()
-    guide_list = _guide_catalog_classes()
-    guide_set = set(guide_list)
-
-    missing_from_guide = real - guide_set
-    extra_in_guide = guide_set - real
-
-    assert not missing_from_guide, (
-        f"STRATEGY_DESIGN_GUIDE.md §4 is missing component class(es) present in "
-        f"{STRATEGY_COMPONENTS_PATH}: {sorted(missing_from_guide)}"
+    listed = set(_catalog_classes())
+    missing_from_catalog = real - listed
+    extra_in_catalog = listed - real
+    assert not missing_from_catalog, (
+        f"COMPONENT_CATALOG.md is missing component class(es) present in {STRATEGY_COMPONENTS_PATH}: "
+        f"{sorted(missing_from_catalog)}"
     )
-    assert not extra_in_guide, (
-        f"STRATEGY_DESIGN_GUIDE.md §4 lists component class(es) that no longer "
-        f"exist (or never existed) in {STRATEGY_COMPONENTS_PATH}: "
-        f"{sorted(extra_in_guide)}"
+    assert not extra_in_catalog, (
+        f"COMPONENT_CATALOG.md lists component class(es) that no longer exist (or never existed) in "
+        f"{STRATEGY_COMPONENTS_PATH}: {sorted(extra_in_catalog)}"
     )
 
 
-def test_design_guide_catalog_has_no_duplicate_rows():
-    guide_list = _guide_catalog_classes()
-    duplicates = {name for name in guide_list if guide_list.count(name) > 1}
-    assert not duplicates, (
-        f"STRATEGY_DESIGN_GUIDE.md §4 lists the same component class more than "
-        f"once: {sorted(duplicates)}"
-    )
+def test_catalog_has_no_duplicate_rows():
+    listed = _catalog_classes()
+    duplicates = {name for name in listed if listed.count(name) > 1}
+    assert not duplicates, f"COMPONENT_CATALOG.md lists the same component class more than once: {sorted(duplicates)}"
 
 
-def test_design_guide_catalog_count_matches_real_count():
+def test_catalog_row_count_matches_real_count():
     real = _real_component_classes()
-    guide_list = _guide_catalog_classes()
-    assert len(guide_list) == len(real), (
-        f"STRATEGY_DESIGN_GUIDE.md §4 lists {len(guide_list)} component rows, "
-        f"but {STRATEGY_COMPONENTS_PATH} defines {len(real)} component classes. "
-        f"(Individual name mismatches, if any, are reported by "
-        f"test_design_guide_catalog_matches_real_component_classes.)"
+    listed = _catalog_classes()
+    assert len(listed) == len(real), (
+        f"COMPONENT_CATALOG.md has {len(listed)} component rows, but {STRATEGY_COMPONENTS_PATH} defines "
+        f"{len(real)} component classes. (Individual name mismatches are reported by "
+        f"test_catalog_matches_real_component_classes.)"
     )
+
+
+def test_every_row_has_one_of_the_four_kinds():
+    bad = []
+    for row in _catalog_rows():
+        cells = [c.strip() for c in row.strip().strip("|").split("|")]
+        name, kind = cells[0].strip("`"), cells[4]
+        if kind not in KINDS:
+            bad.append((name, kind))
+    assert not bad, f"rows whose Kind cell is not one of {KINDS}: {bad}"
+
+
+def test_kinds_are_the_ones_decided_in_d051():
+    """D-051: these seven are on/off, BuyAndHoldStrategy is constant, these four are regime measures (ADXDirectional
+    is a bounded signed measure and is listed as a regime measure too); every other class is graded."""
+    on_off = {"SmaTrendLongOnlyComponent", "GatedSmaTrendLongOnlyComponent", "FundingRateMeanReversionComponent",
+              "FearGreedContrarianComponent", "MacdHistogramCrossoverComponent", "WhaleLargeTradeImbalanceComponent",
+              "VolumeExpansionHedgeComponent"}
+    measures = {"RSquaredRegimeComponent", "EfficiencyRatioRegimeComponent", "VolatilityPercentileRegimeComponent",
+                "VarianceRatioComponent", "ADXDirectionalComponent"}
+    got = {}
+    for row in _catalog_rows():
+        cells = [c.strip() for c in row.strip().strip("|").split("|")]
+        got[cells[0].strip("`")] = cells[4]
+    for name, kind in got.items():
+        if name in on_off:
+            assert kind == "on/off", name
+        elif name == "BuyAndHoldStrategy":
+            assert kind == "constant", name
+        elif name in measures:
+            assert kind == "regime measure", name
+        else:
+            assert kind == "graded", (name, kind)
