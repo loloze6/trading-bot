@@ -7,13 +7,13 @@ decision (DECISION_LOG) or a ticket.
 
 | # | Seen | Observation | Status |
 |---|---|---|---|
-| O-1 | C4 run_061, 2026-09-30 | "Long-only" trend component | open |
-| O-2 | C4 run_061 → run_062, 2026-09-30 | Stage 2 sending the brief back to stage 1 | open |
-| O-3 | C4 run_062, 2026-09-30 | Step 1a declaring the brief exhausted on a cost argument | open |
-| O-4 | C4 run_063, 2026-09-30 | Step 2 inventing a component class name | open |
-| O-5 | C4 run_063, 2026-09-30 | Asset variants evicted instead of re-windowed; the "at least 2 variants" rule | open |
-| O-6 | C4 run_063, 2026-09-30 | Park reason says "component" when most failures were data | open |
-| O-7 | C4 run_063, 2026-09-30 | A threshold (breakout) idea in a linear-forecast design | open |
+| O-1 | C4 run_061, 2026-09-30 | "Long-only" trend component | found: design gap (decision) |
+| O-2 | C4 run_061 → run_062, 2026-09-30 | Stage 2 sending the brief back to stage 1 | found: working as intended (card M); prompt gap |
+| O-3 | C4 run_062, 2026-09-30 | Step 1a declaring the brief exhausted on a cost argument | found: exhaustion as intended; cost veto a design gap (decision) |
+| O-4 | C4 run_063, 2026-09-30 | Step 2 inventing a component class name | found: bug (missing input), fix |
+| O-5 | C4 run_063, 2026-09-30 | Asset variants evicted instead of re-windowed; the "at least 2 variants" rule | found: SOL as intended; XRP a design gap (decision) |
+| O-6 | C4 run_063, 2026-09-30 | Park reason says "component" when most failures were data | found: reporting bug, fix |
+| O-7 | C4 run_063, 2026-09-30 | A threshold (breakout) idea in a linear-forecast design | found: doc bug + fidelity gap (fix); forecast rule (decision) |
 
 ---
 
@@ -37,7 +37,34 @@ whether a sign-symmetric SMA trend component exists under another name; whether 
 about the transform pipeline is true (`strategies/registry.py`, e.g. negate/scale); and how
 1b builds its catalogue (STRATEGY_DESIGN_GUIDE.md vs the component registry).
 
-**Finding:** —
+**Finding (2026-09-30 investigation, read-only):** **design gap -- decision for the operator.**
+
+- Long-only is deliberate, not a bug. `SmaTrendLongOnlyComponent`
+  (`strategy_components.py:942`) was written for the P4_ts_trend brief ("spot-only, no
+  shorts"). It outputs `scaling_factor` when the prior close is above SMA(L), else 0, and
+  never goes negative (`:994-998`). The design guide says the same
+  (`STRATEGY_DESIGN_GUIDE.md:226`). Apart from the regime and volatility measures, the
+  one-sided signal components are the two SMA long-only classes and
+  `VolumeExpansionHedge` (never positive). Every other component is signed.
+- No sign-symmetric **SMA** trend component exists. Signed price-vs-average components do:
+  `MacroTrendFilterComponent` (price vs EMA of any period), `EMASpreadComponent`,
+  `EMADiff` and `PriceEvolution`. The card fixed "SMA(50)", and 1b refused the EMA
+  alternatives ("Hypothesis specifically requires SMA(50)").
+- 1b's claim about transforms is **true**. The registry has `negate`, `scale` and `clip` but
+  no offset op, so a {0, +sf} output cannot become {-sf, +sf} (`registry.py:51-84`). The
+  reverse works: `clip` with `min: 0` makes any signed component long-only.
+- 1b's catalogue is `docs/STRATEGY_DESIGN_GUIDE.md`, a required handoff input described as
+  the "authoritative list". It lists all 24 classes, and a test keeps it in sync. So 1b had
+  the right catalogue and read it correctly.
+- The operator's model ("every indicator gives a signed forecast") fits the framework, but
+  it is not written down as a rule anywhere.
+
+**Recommended answer:**
+1. Record the rule: *a component emits a signed forecast; a direction restriction such as
+   long-only is a config choice made with `clip min: 0`, not a property of the component.*
+2. Add one new signed `SmaTrendComponent` (+sf above the prior-bar SMA, -sf below), with a
+   guide row and tests. The existing long-only classes stay untouched, so no baseline
+   changes. This is the component run_061's parked card is waiting for.
 
 ## O-2. Is "stage 2 sends the brief back to stage 1 for another idea" part of the design?
 
@@ -55,7 +82,27 @@ S2b; delivery plan slice 6b); whether step 1a on run_061 was offered the multi-c
 (`hypothesis_card_<n>.yaml` + `extra_card_scores.yaml` → `queued_hypotheses.yaml`) and why it
 wrote one card; and whether R2 is the intended top-up when the backlog is empty or a leftover.
 
-**Finding:** —
+**Finding (2026-09-30 investigation, read-only):** **working as intended (card M); small
+prompt gap.**
+
+- There is no route from stage 2 back to stage 1. run_061 parked at 1b, which left the
+  queue empty. Decide-next's rule R2 then asked the still-open brief for another idea.
+  That is card M as written: "Before declaring the queue empty, Step 10 re-reads open
+  briefs and asks 1a for more" (`engineering_roadmap.html:436`, also `:929`).
+- The code is `tools/decide_next.py` `_r2` (`:1499`). It stops after 2 empty R2 calls per
+  brief (`BRIEF_MAX_CONSECUTIVE_EMPTY_R2`, `:163`). A parked owner stays eligible for R2.
+- The backlog the operator expected is the queue itself. Card M lets 1a write several
+  cards: one runs and the rest are queued. On run_061, 1a was offered that path
+  (`BRIEF_HYPOTHESES.md` §1, `request: first_launch`), but nothing asks it for more than one:
+  - the handoff template says "a single, testable ... hypothesis";
+  - the hypothesis-design SKILL says "Create one explicit, testable strategy hypothesis"
+    (`SKILL.md:9`) and "acceptable to produce ONE" (`:182`);
+  - the addendum is neutral ("One card, or several").
+- The C4 brief was itself a single idea (idea A). The result was one card, then an R2 call
+  that found there was nothing else (about $0.34 over two attempts).
+
+**Recommended answer:** on `first_launch`, ask 1a for up to 3 distinct cards when the brief
+supports them (addendum wording only). Keep R2 as the empty-queue fallback.
 
 ## O-3. What does step 1a (brief → hypothesis) see, and why did it declare the brief exhausted?
 
@@ -81,7 +128,60 @@ brief gave an idea on run_061 and "exhausted" on run_062; and whether a pre-back
 by 1a is intended (hypothesis-design SKILL: `plausibility: implausible` → do not queue) or
 too strong.
 
-**Finding:** —
+**Finding (2026-09-30 investigation, read-only):** the exhaustion verdict is **working as
+intended**; the pre-backtest cost veto is a **design gap -- decision for the operator**.
+
+- **Inputs.** Both runs got the same inputs except one field.
+  - Handoff `research_brief_to_hypothesis.yaml`:
+    - `research_brief.yaml` (775 B): BTC/ETH 1h, multi-week momentum with inverse-vol
+      sizing. It contains no numbers.
+    - `available_feeds.yaml`, `indicator_library.yaml`.
+    - Optional: `run_context.yaml` (63 B, only `run_type`), `feed_wishlist.yaml`,
+      `campaign_knowledge_base.yaml` (~97 KB: per-mechanism IC results, `coverage_matrix`,
+      `exhausted_mechanisms`).
+  - Added by code: `exclusion_digest.yaml` (~7 KB), `criterion_menu.yaml` (~10 KB),
+    `cost_model.yaml` (~17 KB), and `BRIEF_HYPOTHESES.md` + `brief_hypotheses_context.yaml`.
+  - The one difference: on run_062 the context says `request: more_hypotheses` and
+    `already_produced: [C4_VOL_MANAGED_TREND_MOMENTUM_V1]`.
+  - These are live campaign files, not per-run snapshots, and prompts are not saved. The
+    exact bytes 1a saw cannot be proven afterwards; the sizes above are today's.
+- **Where the numbers come from.**
+  - 34 bps = 2 x 17 bps: the BTCUSDT round trip in `cost_model.yaml` times the safety factor
+    of 2 (SKILL `:364`). run_061's own card already wrote 34 bps with
+    `plausibility: marginal`.
+  - EMA -0.021 and MACD -0.015 are real knowledge-base rows (1h BTC, `ic_all_bars`).
+- **The cost argument is wrong on its own terms.**
+  - It assumed a 10-bar hold ("required IC = 0.34 / (50 sigma x sqrt(10)) ~ 0.215") for a
+    brief about multi-week holds.
+  - Its own formula at a 2-week hold (336 bars) gives a required IC of about 34 / (50 x
+    sqrt(336)) ~ 0.04. That sits inside the 0.05-0.08 range it called plausible.
+  - It also said the knowledge base's `exhausted_mechanisms` list covers EMA/MACD
+    trend-following. That list has six ids (Keltner x3, RSI x2, ER detector) and no
+    EMA/MACD/SMA entry.
+- **Why the same brief gave an idea, then "exhausted".**
+  - The cost-veto text is attempt 1, which was never accepted (it failed to parse; fixed in
+    PR #277).
+  - The accepted retry gives a different reason. The first card already covers the brief's
+    mechanism; alternatives repeat price-only technicals with IC at or below zero in the
+    knowledge base; gating is forbidden (A2.3).
+  - That is what `BRIEF_HYPOTHESES.md` §3 asks for when no distinct idea is left, and the
+    brief was one narrow idea. Same verdict, two different arguments: model variance.
+  - The first card was not lost. It is parked `waiting_for_component` (O-1).
+- **Is the veto intended?**
+  - The hard rule (hypothesis-design `SKILL.md:369-372`, `implausible` -> do not queue) was
+    moved to 1a from the retired validation stage (quant-validation Improvement 09).
+  - Card E says cost survival is measured from a backtest's trade records. Card I puts
+    mechanism plausibility into a ranking score.
+  - A hard veto from the model's own arithmetic, before any backtest, conflicts with both.
+    Here it was wrong.
+
+**Recommended answer:**
+1. Keep `cost_feasibility` on the card as information and as an input to card I's
+   plausibility score.
+2. Remove the hard "do not queue" veto at 1a. Cost survival is judged from the backtest
+   (card E, profit bars).
+3. Separately, save each stage's input files with their sha256 in the run folder, so a
+   question like this one can be answered from the artifacts.
 
 ## O-4. Step 2 used a component class that does not exist
 
@@ -98,7 +198,31 @@ name.
 **To check:** which catalogue step 2 receives (STRATEGY_DESIGN_GUIDE.md, the component
 registry, or none), and whether the class name comes from the prompt or is invented.
 
-**Finding:** —
+**Finding (2026-09-30 investigation, read-only):** **bug (missing input) -- fix.**
+
+- Step 2 (`innovation_expansion`) writes config patches, including component swaps and
+  additions. Its SKILL says "Reference the base config's actual shape
+  (STRATEGY_DESIGN_GUIDE.md) before writing a path" (`innovation-expansion/SKILL.md:278`).
+  But the stage is not given the design guide.
+- Its inputs are `research_brief`, `hypothesis_card`, `available_feeds.yaml` and
+  `indicator_library.yaml` from the handoff. Code adds `coin_universe.yaml`
+  (`run_phase1_research.py:2829-2833`), `backtest_spec.yaml` and the exclusion digest.
+  Stages are closed-book (no tools), so it could not open the guide.
+- The only Fear & Greed reference it had is `indicator_library.yaml`'s entry
+  `fear_greed_index_contrarian`, which gives an id but no class name.
+- "FearGreedComponent" appears nowhere in the repo before run_063. The model invented the
+  class name, its params (`buy_threshold`, `sell_threshold`, `action: gate`) and its
+  behaviour (a pass-through gate). The real `FearGreedContrarianComponent` takes fear/greed
+  thresholds and emits a contrarian +/-sf signal; it cannot gate.
+- Step 5a caught it correctly (validator V12), so card K's "every component class exists"
+  check works. But the invented class was then filed as a component request (card J), which
+  asks the operator to build something that should not exist.
+
+**Recommended fix:**
+1. Add `docs/STRATEGY_DESIGN_GUIDE.md` to `_CLOSED_BOOK_STAGE_INPUTS["innovation_expansion"]`.
+   This is the same catalogue 1b already gets.
+2. Optional: when a V12 missing class has a close real name, put that near-match in the
+   component request, so it reads as a naming error rather than a build request.
 
 ## O-5. Why were the SOL and XRP variants evicted instead of re-windowed? Is "at least 2 variants" right?
 
@@ -119,7 +243,50 @@ how that interacts with D-047 (a wider retest is a new trial) and the same-windo
 the grid; why step 2 picked coins whose data it could have checked in advance
 (`coin_universe.yaml`, per-coin start dates).
 
-**Finding:** —
+**Finding (2026-09-30 investigation, read-only):** **SOL: working as intended (D-042).
+XRP: design gap, a decision for the operator. The "at least 2" floor did not cause this
+park.**
+
+- **The park was not caused by SOL or XRP.** Coverage skips do not count toward the floor.
+  - `_variant_floor` (`run_phase1_research.py:14739-14748`) sets min_needed = min(3,
+    variants - skips) = min(3, 4 - 2) = 2.
+  - Only `base` was left, because the design variant failed (O-4).
+  - With a loadable design variant, the run would have gone on to the backtest with base +
+    design, both on BTC.
+- **Is "at least 2" right?** Today the floor can be met with no asset variant at all, so the
+  "two separate tests" can be two setups on the same coin. The guard sits elsewhere: a
+  skipped asset variant caps the idea at INCONCLUSIVE (`tools/variant_coin.py:28-36`). Such
+  a run gathers evidence but cannot reach the profit bars.
+- **SOL.**
+  - Its cache starts 2021-06-17 (`coin_universe.yaml:39`) and the protocol starts 2018-02,
+    so it covers 54 of 95 monthly windows (57%, below 60%).
+  - It **was** re-windowed: `window_coverage` keeps only the covered windows. It was then
+    refused by the D-042 floor, which is correct under D-042.
+  - Step 2 had the start date only as free text, and misquoted it in its own rationale as
+    "2023-05-03". The skill asks for at least 60% coverage (SKILL `:267-271`), but step 2
+    has no computed table.
+  - Full-coverage coins in other categories exist, e.g. XRP, ZEC, XMR.
+- **XRP.**
+  - It covers 95/95 windows at Layer 1. The Layer-2 gate found one bad month (2022-05: 2
+    of 31 daily bars missing, 6.5%, above the 5% tolerance) and returned `refine`.
+  - The gate module defines `refine` as "a variant can be narrowed around (drop a bad
+    window ...)" (`tools/data_availability_gate.py:8-9`). The variant loop never narrows:
+    any outcome other than `validate` marks the whole variant not_tested
+    (`run_phase1_research.py:1643-1670`).
+  - Dropping that one window would leave 94/95 (99%). `variant_protocol(windows_run=)`
+    already supports a window subset.
+  - D-047(5) only makes a *later, wider* retest a new trial. A first test on 94 windows is
+    simply the variant's first trial.
+
+**Recommended answers:**
+1. On a Layer-2 `refine` of an asset variant, drop the declined windows and re-apply the
+   60% floor (behind a flag, with tests).
+2. Give step 2 a code-computed per-coin coverage table for the run's protocol (windows
+   covered out of the total).
+3. Keep SOL refused unless D-042 is re-decided.
+4. Do not make the floor require a tested asset variant. The INCONCLUSIVE cap already stops
+   promotion, and blocking would stop BTC runs whenever the second coin lacks data, which
+   is the reason D-042 exists.
 
 ## O-6. The park reason says "component" when two of three failures were data
 
@@ -133,7 +300,22 @@ component vs fix data); a mixed failure reported as one kind points the wrong wa
 **To check:** how the park reason is chosen when variants fail for different reasons, and
 whether it should list every reason.
 
-**Finding:** —
+**Finding (2026-09-30 investigation, read-only):** **small reporting bug -- fix.**
+
+- The park kind is right. `_variant_park_kind` (`run_phase1_research.py:5100-5133`) ignores
+  coverage skips, because SOL and XRP are non-blocking under D-042. That leaves one blocker,
+  the missing class, so the entry parks as `waiting_for_component`.
+- The message is misleading:
+  - "1/4" counts all 4 variants, while "need >= 2" already leaves out the 2 skips.
+  - It does not name either skip.
+  - Only `artifacts/variants/index.yaml` lists all three reasons. `data_requests.yaml` has
+    XRP only, and SOL is in no request file.
+- Combined with O-4, the one reason shown sends the operator to build a class that should
+  not exist.
+
+**Recommended fix:** the park reason and the decision record list every not-tested variant
+as blocking or non-blocking, with its reason. They also say that the idea is capped at
+INCONCLUSIVE while asset skips remain.
 
 ## O-7. A breakout rule ("long above the 20-day high, short below the 20-day low") in a linear-forecast design
 
@@ -152,4 +334,70 @@ close's position inside the N-bar range, which is continuous, not a threshold) a
 the tested config matches the card; and whether step 1a is told to express ideas as linear
 forecasts.
 
-**Finding:** —
+**Finding (2026-09-30 investigation, read-only):** **doc bug + fidelity gap (fix), and a
+design rule (decision for the operator).**
+
+- **The framework does not require continuous components.**
+  - The forecast is the weighted mean of the components, clipped to [-20, +20], and
+    allocation = forecast / 10 (`DOC/STRATEGY_FRAMEWORK.md:29-32`). So allocation is linear
+    in the forecast.
+  - Several existing components are discrete. `FundingRateMeanReversion`,
+    `FearGreedContrarian` and `MacdHistogramCrossover` output {-sf, 0, +sf};
+    `SmaTrendLongOnly` outputs {0, +sf}.
+  - An on/off breakout therefore maps cleanly to a discrete forecast. What the pipeline
+    cannot express is position state: the card's 5-7-day time exit, its ATR x 2 stop, and
+    "fixed notional, no pyramiding".
+- **No document tells 1a to write the idea as a forecast.** `signal_concept` is free text
+  (`hypothesis_card.schema.json:95-98`), and the hypothesis-design SKILL has no such rule.
+- **1b did not build the card.**
+  - `DonchianBreakoutComponent` (`strategy_components.py:422-434`) outputs where today's
+    close sits in the range of the last 20 closes *including today*: (2*pos - 1)*sf.
+  - That output is continuous and non-zero on almost every bar. It never "breaks out",
+    because the close is always inside its own window. It is a stochastic-style
+    oscillator, not a breakout rule.
+  - 1b's rationale claims it fires on about 10% of bars. The base config was a different
+    strategy from the card, with no exits, and nothing checks the card against the config.
+- **The design guide misleads.**
+  - It calls the output "breakout position" (`STRATEGY_DESIGN_GUIDE.md:222`).
+  - It lists "Lower-band breakdown (short): scaling_factor -20" and "Wider channel (fewer,
+    higher-conviction breaks)" (`:310-314`). The first only inverts the oscillator. The
+    second is false: the output is never sparse.
+  - 1b follows this guide (card K), so the guide's error became a config error.
+
+**Recommended:**
+1. Fix: correct the Donchian rows in the guide.
+2. Decision: add a hypothesis-design rule: *write `signal_concept` as a forecast in
+   [-20, +20], continuous or discrete, and name any exit the forecast cannot express.*
+3. Decision: add a 1b rule: *map each clause of `signal_concept` to a config element, or
+   list it as a declared deviation, or return `component_gap`.*
+4. A true breakout component is a separate build. It would be latched: +sf after a close
+   above the previous N-bar high, until a close below the previous N-bar low. The latch
+   needs no position state.
+
+---
+
+## Recommendation: how C4 reaches its first backtest (2026-09-30 investigation)
+
+Fix O-4 first. It alone parked run_063: with the design guide given to step 2, the
+variant set would have met the floor (base + a loadable design variant) and reached the
+backtest.
+
+Next, correct the Donchian rows in the guide (O-7). Otherwise 1b and step 2 keep treating
+a channel-position oscillator as a breakout rule, and the backtest measures something other
+than the card.
+
+Then add the latched Donchian breakout component (O-7 item 4). With a correct guide, 1b
+should otherwise report `component_gap` for this brief's breakout card. Optionally add
+the per-coin coverage table for step 2 (O-5), so the asset variant is a full-coverage
+coin.
+
+Each fix is a small, separate PR with no engine change and no baseline change. After
+that, run the Donchian brief once as a fresh entry. Before choosing between that and
+`--unpark C4_donchian_daily_trend`, check whether unpark reuses run_063's saved variant set,
+which still names the invented class. Also decide what happens to the queued
+`C4_donchian_daily_trend__more_1`: it asks 1a for a *second* Donchian idea, not a re-run.
+
+Building the signed SMA component (O-1) and unparking `C4_vol_managed_trend` is the other
+path. It is the weaker spend: a textbook moving-average signal on BTC/ETH 1h is the lane
+this project's own kill-map lists as dead. The O-3 veto change and XRP narrowing (O-5) can
+follow C4; neither blocks the first backtest.
