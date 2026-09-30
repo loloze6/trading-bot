@@ -683,6 +683,7 @@ class DataManager:
             fetcher        = FearGreedFetcher('2024-01-01', '2024-12-31', localStorage=True),
             window_seconds = 0,  # published instantaneously — no forward window
             agg            = 'last',
+            fill           = 'carry_forward',  # a level: keep the last value (CUL-355)
         )
         dm.register_feed(
             name           = 'funding_rate',
@@ -690,6 +691,7 @@ class DataManager:
                                          symbols=['BTCUSDT'], localStorage=True),
             window_seconds = 0,  # published instantaneously — no forward window
             agg            = 'last',
+            fill           = 'carry_forward',  # a level: keep the last value (CUL-355)
         )
 
         # load_data() and initialize() handle pre-merging automatically.

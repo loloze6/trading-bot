@@ -132,9 +132,14 @@ FEED_WINDOW_SECONDS.update({name: _WHALE_BAR_SECONDS for name in WHALE_FOOTPRINT
 #     'carry_forward' -- the last known value, for as long as no new reading
 #                        arrives. For a LEVEL that stays true until it changes
 #                        (the funding rate, the fear & greed index).
-#     'none'          -- left empty (NaN). For a per-bar COUNT of what happened
-#                        in that bar (the whale features: an empty bar means
-#                        'nothing measured', never the previous bar's count).
+#     'none'          -- left empty (NaN) BETWEEN readings. For a per-bar COUNT
+#                        of what happened in that bar (the whale features: an
+#                        empty bar means 'nothing measured', never the previous
+#                        bar's count). Pre-existing, unchanged: bars AFTER the
+#                        feed's final reading still repeat that reading (the
+#                        backward as-of join), whatever the fill.
+#   With 'carry_forward' a gap in the middle of the feed (a missing print)
+#   is filled with the last value too -- no age limit (operator 2026-09-30).
 # ---------------------------------------------------------------------------
 FEED_AGG = {'funding_rate': 'last', 'fear_greed': 'last'}
 FEED_AGG.update({name: 'last' for name in WHALE_FOOTPRINT_FEEDS})

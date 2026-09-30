@@ -196,3 +196,104 @@ def test_backtester_passes_the_declared_agg_and_fill():
                      extra_feeds={"fear_greed": factory, "funding_rate": factory})
     assert dm._agg_fill == {"fear_greed": ("last", "carry_forward"),
                             "funding_rate": ("last", "carry_forward")}
+
+
+# ---------------------------------------------------------------------------
+# Red-team review additions: gaps inside the feed, finer fetch, jitter,
+# missing prints, and what the existing components do at a gap
+# ---------------------------------------------------------------------------
+
+def _enrichment(feed: pd.DataFrame, col: str, fill: str, interval_seconds: int,
+                fetch_interval_seconds=None, days: int = 10) -> pd.DataFrame:
+    step = fetch_interval_seconds or interval_seconds
+    ts = pd.date_range(PRICE_START, periods=days * 86400 // step, freq=f"{step}s")
+    price = pd.DataFrame({"timestamp": ts, "open": 100.0, "high": 100.0, "low": 100.0,
+                          "close": 100.0, "volume": 1.0})
+    kw = {"fetch_interval_seconds": fetch_interval_seconds} if fetch_interval_seconds else {}
+    dm = DataManager(symbols=[SYMBOL], interval_seconds=interval_seconds, mode="backtest", **kw)
+    dm.register_feed(col, _StubFetcher(feed), window_seconds=0, agg="last", fill=fill)
+    dm.historical_data[SYMBOL] = price
+    dm.initialize()
+    return dm._enrichment_data[SYMBOL].sort_values("timestamp").reset_index(drop=True)
+
+
+def _assert_latest_before_close(enriched, feed, col, interval_seconds):
+    """At every candle start (on the interval grid), the value is the latest
+    reading made before that candle closes; NaN before the first reading."""
+    grid = enriched[(enriched["timestamp"] - PRICE_START).dt.total_seconds() % interval_seconds == 0]
+    assert len(grid)
+    for _, row in grid.iterrows():
+        expected = _latest_reading_before_close(feed, col, row["timestamp"], interval_seconds)
+        if math.isnan(expected):
+            assert pd.isna(row[col]), row["timestamp"]
+        else:
+            assert float(row[col]) == pytest.approx(expected), (row["timestamp"], row[col], expected)
+
+
+def _funding_with_gap() -> pd.DataFrame:
+    """8h prints with a 3-day hole in the middle (a missing stretch of the
+    feed, not its end)."""
+    ts = list(pd.date_range(FEED_START, periods=6, freq="8h")) + \
+        list(pd.date_range(FEED_START + pd.Timedelta(days=5), periods=6, freq="8h"))
+    return pd.DataFrame({"timestamp": ts, "funding_rate": [0.0001 * (i + 1) for i in range(12)]})
+
+
+@pytest.mark.parametrize("interval_seconds", INTERVALS, ids=["1h", "4h", "1d"])
+def test_a_multi_day_gap_inside_the_feed_carries_the_last_value(interval_seconds):
+    """No age limit inside the feed either: through a 3-day hole every bar keeps
+    the last print before the hole (an ffill(limit=...) would leave NaN)."""
+    feed = _funding_with_gap()
+    enriched = _enrichment(feed, "funding_rate", "carry_forward", interval_seconds)
+    _assert_latest_before_close(enriched, feed, "funding_rate", interval_seconds)
+    hole = enriched[(enriched["timestamp"] >= FEED_START + pd.Timedelta(days=2, hours=8))
+                    & (enriched["timestamp"] < FEED_START + pd.Timedelta(days=5))]
+    assert len(hole) and np.allclose(hole["funding_rate"].to_numpy(dtype=float), 0.0006)
+
+
+def test_fetch_finer_than_the_bar():
+    """CUL-250 finer fetch: 4h candles from 1h rows; every candle carries the
+    latest print before it closes, including candles with no print."""
+    feed = _funding()
+    enriched = _enrichment(feed, "funding_rate", "carry_forward", 4 * 3600, fetch_interval_seconds=3600)
+    _assert_latest_before_close(enriched, feed, "funding_rate", 4 * 3600)
+
+
+@pytest.mark.parametrize("jitter", ["3ms", "17min"])
+def test_readings_off_the_grid(jitter):
+    feed = _funding()
+    feed["timestamp"] = feed["timestamp"] + pd.Timedelta(jitter)
+    for interval_seconds in INTERVALS:
+        enriched = _enrichment(feed, "funding_rate", "carry_forward", interval_seconds)
+        _assert_latest_before_close(enriched, feed, "funding_rate", interval_seconds)
+
+
+def test_a_nan_print_is_skipped_and_the_previous_value_carried():
+    """The resample's 'last' skips a NaN reading, so the bar keeps the
+    previous print (the value was never measured, the older one still holds)."""
+    feed = _funding()
+    feed.loc[3, "funding_rate"] = np.nan                       # the 2021-03-03 00:00 print
+    enriched = _enrichment(feed, "funding_rate", "carry_forward", 3600)
+    at = enriched[enriched["timestamp"] == pd.Timestamp("2021-03-03 00:00")]
+    assert at["funding_rate"].iloc[0] == pytest.approx(0.0003)
+
+
+def test_declared_change_the_on_off_funding_component_at_a_missing_settlement():
+    """DECLARED CHANGE (CUL-355, operator: reuse forever). At a settlement bar
+    whose print is missing, FundingRateMeanReversion used to read NaN and
+    abstain (CUL-273 propagate_invalid); with carry_forward it reads the last
+    print and fires on it. The real Binance cache has 2 such settlements
+    before the seal (2022-06, 2023-05); fear & greed has 2 gaps (2018-04,
+    2024-10) with the same effect for FearGreedContrarian."""
+    feed = _funding().drop(index=3).reset_index(drop=True)     # 2021-03-03 00:00 missing
+    bars = {}
+    for fill in ("none", "carry_forward"):
+        e = _enrichment(feed, "funding_rate", fill, 3600)
+        bars[fill] = e.assign(close=100.0)
+    t = pd.Timestamp("2021-03-03 00:00")
+    out = {}
+    for fill, df in bars.items():
+        comp = FundingRateMeanReversionComponent(parameters={"threshold": 0.0})
+        comp.update(df[df["timestamp"] <= t])
+        out[fill] = comp.raw_value()
+    assert math.isnan(out["none"])
+    assert out["carry_forward"] == -10.0                       # -sign(0.0003) x 10
