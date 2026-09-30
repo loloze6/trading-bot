@@ -408,6 +408,64 @@ class MacroTrendFilterComponent(SubStrategyComponent):
     def get_required_periods(self) -> int:
         return self.period
 
+
+class MovingAverageDistanceComponent(SubStrategyComponent):
+    """
+    Percent distance of the close from its moving average, on every bar:
+
+        raw_value = (close[t] - MA[t]) / MA[t] x 100
+
+    MA is the simple average of the last `period` closes (average: "sma") or
+    their EMA (average: "ema", span = period, adjust=False -- the same EMA as
+    MacroTrendFilterComponent, which this replaces for new configs). Graded and
+    signed: positive above the average, negative below. No lag: MA includes
+    bar t's close (the engine decides and fills at the bar's close). No
+    scaling_factor: the config's transforms scale it.
+
+    NaN: an SMA window that holds a NaN close, or a NaN latest close, gives
+    NaN. An unknown `average` or a `period` below 2 raises when the component
+    is built.
+    """
+
+    AVERAGES = ("sma", "ema")
+
+    def __init__(self, name="MovingAverageDistance", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 50))
+        self.average = self.parameters.get("average", "sma")
+        if self.average not in self.AVERAGES:
+            raise ValueError(f"MovingAverageDistanceComponent: average must be one of "
+                             f"{self.AVERAGES}, got {self.average!r}")
+        if self.period < 2:
+            raise ValueError(f"MovingAverageDistanceComponent: period must be >= 2, got {self.period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+
+        if not self.is_ready():
+            return
+
+        close = data['close']
+        if self.average == "sma":
+            ma = float(close.iloc[-self.period:].mean(skipna=False))
+        else:
+            ma = float(close.ewm(span=self.period, adjust=False).mean().iloc[-1])
+        last_close = float(close.iloc[-1])
+
+        self._raw_value = (last_close - ma) / ma * 100.0
+        self.confidence = 1.0
+        self.debug_info = {'moving_average': ma, 'close': last_close}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period
+
+
 class DonchianBreakoutComponent(SubStrategyComponent):
     """
     TRENDING REGIME - Primary Directional Alpha.
@@ -926,6 +984,59 @@ class MacdHistogramCrossoverComponent(SubStrategyComponent):
         }
 
         self._prev_histogram_sign = current_sign
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.slow_period + self.signal_period
+
+
+class MacdHistogramComponent(SubStrategyComponent):
+    """
+    The MACD histogram as a percent of the close, on every bar -- the graded
+    version of MacdHistogramCrossoverComponent (D-051):
+
+        macd      = EMA_fast(close) - EMA_slow(close)
+        signal    = EMA_signal(macd)
+        raw_value = (macd - signal) / close x 100
+
+    Price-free, so comparable across assets. EMAs use span = period,
+    adjust=False, over the bar window the component is given (as the crossover
+    component); the value depends slightly on that window's length. Stateless:
+    no memory of earlier bars. No scaling_factor: the config's transforms
+    scale it.
+
+    No lookahead: every EMA runs over closes up to and including bar t. A NaN
+    latest close gives NaN.
+    """
+
+    def __init__(self, name="MacdHistogram", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.fast_period = int(self.parameters.get("fast_period", 12))
+        self.slow_period = int(self.parameters.get("slow_period", 26))
+        self.signal_period = int(self.parameters.get("signal_period", 9))
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+
+        if not self.is_ready():
+            return
+
+        close = data['close']
+        fast_ema = close.ewm(span=self.fast_period, adjust=False).mean()
+        slow_ema = close.ewm(span=self.slow_period, adjust=False).mean()
+        macd_line = fast_ema - slow_ema
+        signal_line = macd_line.ewm(span=self.signal_period, adjust=False).mean()
+        histogram = float(macd_line.iloc[-1] - signal_line.iloc[-1])
+        last_close = float(close.iloc[-1])
+
+        self._raw_value = histogram / last_close * 100.0
+        self.confidence = 1.0
+        self.debug_info = {'histogram': histogram, 'close': last_close}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()

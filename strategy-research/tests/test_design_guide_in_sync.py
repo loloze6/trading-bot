@@ -69,12 +69,12 @@ def test_catalog_exists():
     assert CATALOG_PATH.exists(), f"expected {CATALOG_PATH} to exist"
 
 
-def test_component_count_is_24_today():
+def test_component_count_is_26_today():
     """Non-regression pin on the count, re-derived mechanically."""
     real = _real_component_classes()
-    assert len(real) == 24, (
-        f"'^class X(SubStrategyComponent):' count in {STRATEGY_COMPONENTS_PATH} is {len(real)}, expected 24. If this "
-        f"legitimately changed, update COMPONENT_CATALOG.md (and its '24 classes' sentence) in the same change."
+    assert len(real) == 26, (
+        f"'^class X(SubStrategyComponent):' count in {STRATEGY_COMPONENTS_PATH} is {len(real)}, expected 26. If this "
+        f"legitimately changed, update COMPONENT_CATALOG.md (and its '26 classes' sentence) in the same change."
     )
 
 
@@ -176,7 +176,12 @@ def _cell_defaults(cell: str) -> dict:
     out = {}
     for key, inner in _PARAM_CELL_RE.findall(cell):
         token = inner.split(",")[0].strip()
-        out[key] = {"true": True, "false": False}.get(token, None) if token in ("true", "false") else float(token)
+        if token in ("true", "false"):
+            out[key] = token == "true"
+        elif len(token) >= 2 and token[0] == token[-1] == '"':  # a text default, e.g. `average` ("sma")
+            out[key] = token[1:-1]
+        else:
+            out[key] = float(token)
     return out
 
 
@@ -229,7 +234,10 @@ def test_params_cell_defaults_match_the_init_defaults_and_list_every_key():
             continue
         for key, cell_value in in_cell.items():
             code_value = in_code[key]
-            same = (cell_value is code_value) if isinstance(code_value, bool) else (
+            if isinstance(code_value, str) or isinstance(cell_value, str):
+                same = cell_value == code_value
+            else:
+                same = (cell_value is code_value) if isinstance(code_value, bool) else (
                 not isinstance(cell_value, bool) and float(cell_value) == float(code_value))
             if not same:
                 bad.append((name, key, "cell", cell_value, "code", code_value))
