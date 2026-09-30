@@ -284,6 +284,7 @@ class AuxFeedConfig:
     column:         str
     window_seconds: float
     agg:            str = "last"          # 'last' | 'mean' | 'sum'
+    fill:           str = "none"          # 'none' | 'carry_forward' (CUL-355)
     live_value:     Optional[float] = None  # updated in live mode by poll thread
     required:       bool = False          # see AuxFeedRequiredError
 
@@ -808,6 +809,7 @@ class DataManager:
         window_seconds: float,
         agg: str = "last",
         required: bool = False,
+        fill: str = "none",
     ) -> None:
         """
         Register an auxiliary data feed.
@@ -840,12 +842,20 @@ class DataManager:
                             _premerge_aux_feeds). Default False preserves
                             prior behavior: binance warns and fills NaN,
                             non-binance raises AuxFeedVenueError.
+            fill:           What a bar with NO new reading gets (CUL-355):
+                              'none'          -- NaN (default; an event /
+                                                 per-bar count feed)
+                              'carry_forward' -- the last known value, for
+                                                 as long as no new reading
+                                                 arrives (a level feed)
 
         Can be called at any time before initialize() (backtest) or
         initiate_start_thread() (live).
         """
         if agg not in ("last", "mean", "sum"):
             raise ValueError(f"agg must be 'last', 'mean', or 'sum' — got '{agg}'")
+        if fill not in ("none", "carry_forward"):
+            raise ValueError(f"fill must be 'none' or 'carry_forward' — got '{fill}'")
         if not isinstance(window_seconds, (int, float)) or isinstance(window_seconds, bool) \
                 or window_seconds < 0:
             raise ValueError(
@@ -855,11 +865,11 @@ class DataManager:
             )
         self._aux_feeds[name] = AuxFeedConfig(
             fetcher=fetcher, column=name, window_seconds=float(window_seconds), agg=agg,
-            required=required,
+            required=required, fill=fill,
         )
         logger.info(
             f"DataManager: registered aux feed '{name}' "
-            f"(agg={agg}, window_seconds={window_seconds})"
+            f"(agg={agg}, fill={fill}, window_seconds={window_seconds})"
         )
 
     # -----------------------------------------------------------------------
@@ -1036,14 +1046,15 @@ class DataManager:
             # rows silently anchored to whichever price row happened to be
             # the candle's FIRST (opening) row -- discarding any aux update
             # that arrived between candle-open and candle-close. Resampling
-            # unconditionally (agg='last' included) fixes this: a bucket with
-            # zero readings still forward-fills via the causality guard below
-            # (unchanged), one reading is a no-op resample (proven
+            # unconditionally (agg='last' included) fixes this. CORRECTED
+            # (CUL-355): a bucket with zero readings does NOT forward-fill by
+            # itself -- the resample turns it into a NaN row, and the
+            # causality guard's merge_asof(backward) then picks that NaN row
+            # (measured: 78% NaN funding_rate on 1h bars). The feed's `fill`
+            # decides it, just below. One reading is a no-op resample (proven
             # byte-identical in test_aux_feed_agg_last_resample.py), and
             # multiple readings correctly collapse to the freshest one via
-            # the feed's own registered agg function -- exactly the "no new
-            # data -> carry previous; one -> use it; multiple -> aggregate"
-            # rule this feature needs regardless of agg type.
+            # the feed's own registered agg function.
             # CUL-255: origin='epoch' pins bucket boundaries to Unix epoch --
             # the same reference CandleBuilder._align() floors against (epoch
             # integer division), not pandas' default 'start_day' (anchors to
@@ -1066,6 +1077,16 @@ class DataManager:
                 .agg({name: feed.agg})
                 .reset_index()
             )
+            # CUL-355: an empty bucket is a NaN row after the resample. A
+            # level feed ('carry_forward') gets the last known value instead,
+            # for as long as no new reading arrives (no age limit, operator
+            # 2026-09-30) -- the pre-751d403e behaviour, when merge_asof ran
+            # on the raw readings. Rows before the first reading stay NaN
+            # (ffill never fills backwards). Causality is unchanged: a filled
+            # row keeps its own bucket start, and its value comes from an
+            # earlier reading. An event feed ('none') keeps the NaN.
+            if feed.fill == "carry_forward":
+                feed_data[name] = feed_data[name].ffill()
             # Resampling buckets raw readings into one row per bar-width
             # bucket, so the resampled row's own window is at least the
             # bucket width regardless of what each raw reading declared —

@@ -114,7 +114,7 @@ class _RecordingDataManager:
     def fetch_historical_data(self, symbol, start_date, end_date, exchange="binance"):
         return pd.DataFrame({"timestamp": [pd.Timestamp("2022-01-01")], "close": [1.0]})
 
-    def register_feed(self, name, fetcher, window_seconds, agg, required=False):
+    def register_feed(self, name, fetcher, window_seconds, agg, required=False, fill="none"):
         self._aux_feeds[name] = fetcher
 
     def initialize(self):
