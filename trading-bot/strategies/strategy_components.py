@@ -408,6 +408,64 @@ class MacroTrendFilterComponent(SubStrategyComponent):
     def get_required_periods(self) -> int:
         return self.period
 
+
+class MovingAverageDistanceComponent(SubStrategyComponent):
+    """
+    Percent distance of the close from its moving average, on every bar:
+
+        raw_value = (close[t] - MA[t]) / MA[t] x 100
+
+    MA is the simple average of the last `period` closes (average: "sma") or
+    their EMA (average: "ema", span = period, adjust=False -- the same EMA as
+    MacroTrendFilterComponent, which this replaces for new configs). Graded and
+    signed: positive above the average, negative below. No lag: MA includes
+    bar t's close (the engine decides and fills at the bar's close). No
+    scaling_factor: the config's transforms scale it.
+
+    NaN: an SMA window that holds a NaN close, or a NaN latest close, gives
+    NaN. An unknown `average` or a `period` below 2 raises when the component
+    is built.
+    """
+
+    AVERAGES = ("sma", "ema")
+
+    def __init__(self, name="MovingAverageDistance", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 50))
+        self.average = self.parameters.get("average", "sma")
+        if self.average not in self.AVERAGES:
+            raise ValueError(f"MovingAverageDistanceComponent: average must be one of "
+                             f"{self.AVERAGES}, got {self.average!r}")
+        if self.period < 2:
+            raise ValueError(f"MovingAverageDistanceComponent: period must be >= 2, got {self.period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+
+        if not self.is_ready():
+            return
+
+        close = data['close']
+        if self.average == "sma":
+            ma = float(close.iloc[-self.period:].mean(skipna=False))
+        else:
+            ma = float(close.ewm(span=self.period, adjust=False).mean().iloc[-1])
+        last_close = float(close.iloc[-1])
+
+        self._raw_value = (last_close - ma) / ma * 100.0
+        self.confidence = 1.0
+        self.debug_info = {'moving_average': ma, 'close': last_close}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period
+
+
 class DonchianBreakoutComponent(SubStrategyComponent):
     """
     TRENDING REGIME - Primary Directional Alpha.
@@ -770,56 +828,6 @@ class FundingRateMeanReversionComponent(SubStrategyComponent):
         return 2
 
 
-class FundingRateGradedComponent(SubStrategyComponent):
-    """
-    Graded sibling of FundingRateMeanReversionComponent (D-051: a forecast
-    component must be graded). Every bar:
-
-        raw_value = -funding_rate x 10000
-
-    i.e. the latest funding print in basis points, sign flipped (contrarian:
-    negative when longs pay). No threshold and no scaling_factor: the value is
-    in natural units and the config's transforms scale it.
-
-    No lookahead: 'funding_rate' is merged onto the bars by a backward as-of
-    join, so bar t carries the latest print at or before its timestamp.
-    A missing column or a NaN print gives NaN (a data gap, never a fabricated
-    0.0 reading).
-    """
-
-    consumes_feeds = ("funding_rate",)
-
-    def __init__(self, name="FundingRateGraded", weight=1.0, parameters=None):
-        params = parameters or {}
-        params.setdefault("standardized_forecast", False)
-        super().__init__(name, weight, params)
-        self._raw_value = 0.0
-
-    def update(self, data: pd.DataFrame):
-        self.data = data
-        self._raw_value = 0.0
-        self.debug_info = {}
-
-        if not self.is_ready():
-            return
-
-        if "funding_rate" not in data.columns:
-            self._raw_value = float('nan')
-            self.debug_info = {'nan_policy': 'propagate_invalid', 'reason': 'funding_rate_column_missing'}
-            return
-
-        funding_rate = float(data["funding_rate"].iloc[-1])
-        self._raw_value = -funding_rate * 10000.0
-        self.confidence = 1.0
-        self.debug_info = {"funding_rate": funding_rate}
-
-    def is_ready(self) -> bool:
-        return self.data is not None and len(self.data) >= 1
-
-    def get_required_periods(self) -> int:
-        return 1
-
-
 # ============================================================================
 # COMPONENT: FEAR & GREED CONTRARIAN  (H-041-C, Improvement 01)
 # edge_source.category: persistent_behavioral_bias
@@ -899,54 +907,6 @@ class FearGreedContrarianComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return 2
-
-
-class FearGreedGradedComponent(SubStrategyComponent):
-    """
-    Graded sibling of FearGreedContrarianComponent (D-051). Every bar:
-
-        raw_value = 50 - fear_greed
-
-    in index points, -50..+50: contrarian, positive in fear (index below 50),
-    negative in greed. No thresholds and no scaling_factor: the config's
-    transforms scale it.
-
-    No lookahead: 'fear_greed' is merged with the feed's +1 day shift, so a bar
-    sees the prior day's published value. A missing column or a NaN value gives
-    NaN (a data gap, never a fabricated 0.0 reading).
-    """
-
-    consumes_feeds = ("fear_greed",)
-
-    def __init__(self, name="FearGreedGraded", weight=1.0, parameters=None):
-        params = parameters or {}
-        params.setdefault("standardized_forecast", False)
-        super().__init__(name, weight, params)
-        self._raw_value = 0.0
-
-    def update(self, data: pd.DataFrame):
-        self.data = data
-        self._raw_value = 0.0
-        self.debug_info = {}
-
-        if not self.is_ready():
-            return
-
-        if "fear_greed" not in data.columns:
-            self._raw_value = float('nan')
-            self.debug_info = {'nan_policy': 'propagate_invalid', 'reason': 'fear_greed_column_missing'}
-            return
-
-        fg = float(data["fear_greed"].iloc[-1])
-        self._raw_value = 50.0 - fg
-        self.confidence = 1.0
-        self.debug_info = {"fear_greed": fg}
-
-    def is_ready(self) -> bool:
-        return self.data is not None and len(self.data) >= 1
-
-    def get_required_periods(self) -> int:
-        return 1
 
 
 # ============================================================================
@@ -1032,31 +992,30 @@ class MacdHistogramCrossoverComponent(SubStrategyComponent):
         return self.slow_period + self.signal_period
 
 
-class MacdHistogramGradedComponent(SubStrategyComponent):
+class MacdHistogramComponent(SubStrategyComponent):
     """
-    Graded sibling of MacdHistogramCrossoverComponent (D-051). Every bar:
+    The MACD histogram as a percent of the close, on every bar -- the graded
+    version of MacdHistogramCrossoverComponent (D-051):
 
         macd      = EMA_fast(close) - EMA_slow(close)
         signal    = EMA_signal(macd)
         raw_value = (macd - signal) / close x 100
 
-    the MACD histogram as a percent of the current close (price-free, so it is
-    comparable across assets). EMAs use span = period, adjust=False, over the
-    bar window the component is given (as the crossover component). Stateless:
-    no memory of earlier bars' signs. No scaling_factor: the config's transforms
+    Price-free, so comparable across assets. EMAs use span = period,
+    adjust=False, over the bar window the component is given (as the crossover
+    component); the value depends slightly on that window's length. Stateless:
+    no memory of earlier bars. No scaling_factor: the config's transforms
     scale it.
 
     No lookahead: every EMA runs over closes up to and including bar t. A NaN
     latest close gives NaN.
     """
 
-    def __init__(self, name="MacdHistogramGraded", weight=1.0, parameters=None):
-        params = parameters or {}
-        params.setdefault("standardized_forecast", False)
-        super().__init__(name, weight, params)
-        self.fast_period = int(params.get("fast_period", 12))
-        self.slow_period = int(params.get("slow_period", 26))
-        self.signal_period = int(params.get("signal_period", 9))
+    def __init__(self, name="MacdHistogram", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.fast_period = int(self.parameters.get("fast_period", 12))
+        self.slow_period = int(self.parameters.get("slow_period", 26))
+        self.signal_period = int(self.parameters.get("signal_period", 9))
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
