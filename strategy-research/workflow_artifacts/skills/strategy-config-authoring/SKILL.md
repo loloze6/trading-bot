@@ -129,7 +129,9 @@ inputs, not references.
 not appear in `strategies` (the guide's "The design principle" lists them). An on/off condition is expressed with a
 graded component; where the idea needs the condition itself, build it the way the guide describes (a regime rule
 or veto that selects a regime holding a graded component) or declare it as a deviation (below). A constant
-component is only an offset inside a composition with a graded one.
+component is only an offset inside a composition with a graded one. The dead-zone transforms `threshold_filter`
+and `volume_filter` must not be used on a component in `strategies` (they make the position jump from 0 to the
+threshold); a "strong enough" or "volume above average" condition goes in the regime detector.
 
 **Fidelity (O-7): build the signal the card describes, or say what differs.** In `config_rationale`, map EACH
 clause of the card's `signal_concept` to the config element that implements it (one entry per clause:

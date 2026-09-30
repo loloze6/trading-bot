@@ -57,9 +57,13 @@ of the signal: a stronger signal, a bigger position; a weaker one, a smaller pos
   as a deviation; do not pretend the threshold rule was built.
 
 How to tell: run the component mentally over a year of bars. If its output takes two or three distinct values
-(0 and a level, or -level, 0, +level), it is on/off. If it takes a continuum of values, it is graded. A dead-zone
-transform (`threshold_filter`, `volume_filter`) on a graded signal keeps the signal graded above the threshold but
-makes the forecast jump from 0 to the threshold at that point.
+(0 and a level, or -level, 0, +level), it is on/off. If it takes a continuum of values, it is graded.
+
+- **No dead zones in `strategies` (D-051).** The transforms `threshold_filter` and `volume_filter` must not be used
+  on a component in `strategies`: they zero the forecast below a threshold, so the position jumps from 0 to the
+  threshold (`min_abs: 15` gives 0 or 15..20) -- on/off at the edge. A condition such as "volume above its
+  average" or "signal strong enough" belongs in the regime detector (a rule or veto). A graded dead zone that
+  starts from 0 does not exist yet (ticket CUL-354). Both ops remain allowed in the regime detector's vetoes.
 
 ## Config shape
 
@@ -298,7 +302,7 @@ come first (validator V5 rejects a history op after a scalar or data-aware op). 
 | op | params (default) | output |
 |---|---|---|
 | `scale` | `factor` (1.0) | v x factor |
-| `threshold_filter` | `min_abs` (0.0) | v if abs(v) >= `min_abs`, else 0.0 (dead-zone: the forecast jumps from 0 to `min_abs` at the threshold) |
+| `threshold_filter` | `min_abs` (0.0) | v if abs(v) >= `min_abs`, else 0.0 (dead-zone: the forecast jumps from 0 to `min_abs` at the threshold). **Not allowed in `strategies` (D-051)** |
 | `clip` | `min` (no lower bound), `max` (no upper bound) | v limited to `[min, max]` |
 | `sigmoid` | none | 1 / (1 + exp(-v)), between 0 and 1 (0.5 at v = 0) |
 | `negate` | none | -v |
@@ -310,7 +314,7 @@ come first (validator V5 rejects a history op after a scalar or data-aware op). 
 | `vol_normalize` | none | v / (`stddev_24` x close). Unguarded: NaN propagates by design. Meant for `history_transforms` |
 | `vol_adjusted` | none | v / (`stddev_24` x close), or v unchanged if the denominator is invalid. Read-time use only; do not use it to normalise history |
 | `price_normalized` | none | v / close (v unchanged if close is invalid) |
-| `volume_filter` | `period` (20) | v if the latest volume >= its `period`-bar mean, else 0.0 (dead-zone on volume) |
+| `volume_filter` | `period` (20) | v if the latest volume >= its `period`-bar mean, else 0.0 (dead-zone on volume). **Not allowed in `strategies` (D-051)** |
 
 **Ordering rule.** In one list, history ops first, then scalar and data-aware ops (V5). `history_transforms` and
 `transforms` are separate lists, each checked on its own.
@@ -514,7 +518,9 @@ block path is not tested.
 
 ### The production mean_reversion component
 This is the component `trading-bot/strategy_config.json` runs (under `strategies.regimes.mean_reversion`; the
-production detector gates it with efficiency-ratio and variance-ratio rules):
+production detector gates it with efficiency-ratio and variance-ratio rules). **It predates D-051 and is not a
+pattern for a new config:** its last transform, `threshold_filter`, is a dead zone, no longer allowed in
+`strategies`. It is shown because it is what production runs and it illustrates the transform chain:
 ```json
 {"id": "rsi", "class": "strategies.strategy_components.RSIPullbackComponent",
  "params": {"period": 14, "scaling_factor": 0.4, "long_only": true},

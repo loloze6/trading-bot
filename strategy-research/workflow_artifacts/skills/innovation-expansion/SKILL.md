@@ -304,7 +304,7 @@ A variant must not introduce an on/off component: every component in `strategies
 be graded (the catalogue's "Kind" column; the guide's "The design principle" lists the on/off ones), apart from a
 constant the base config already uses as an offset. A `design` variant is by construction the same library
 category and data as the base, so IMPROVEMENT 04's "cosmetic diversity" rejection is not a reason to add or
-replace a component in this flow; the `asset` variant carries the diversity (IMPROVEMENT 06).
+replace a component in this flow; the `asset` variant carries the diversity (IMPROVEMENT 06). Nor may it add the dead-zone transforms `threshold_filter` or `volume_filter` to a component in `strategies` (D-051).
 
 ### Relationship to `expanded_hypothesis_card.yaml` and `innovation_notes.yaml`
 
