@@ -142,6 +142,40 @@ def test_unknown_menu_id_is_refused():
     assert v and "not a live entry" in v[0]
 
 
+def test_id_without_metric_basis_and_non_menu_id_is_refused_with_metric_basis_hint():
+    """CUL-343: a legacy criterion that forgot `metric_basis` is read as a menu
+    reference, so it is refused as 'not a live entry' -- still refused, but the
+    message must also point at the real fix (add `metric_basis`)."""
+    v = vce.lint_menu_shaped_pass_rule(
+        {"criteria": [{"id": "a", "metric": "median_sharpe", "comparator": ">",
+                       "threshold": 0.5}]},
+        _REAL_MENU)
+    assert len(v) == 1  # still refused
+    assert "not a live entry" in v[0]
+    assert "legacy (non-menu) criterion" in v[0] and "`metric_basis`" in v[0]
+
+
+@pytest.mark.parametrize("key,value", [("threshold", None), ("floor", None),
+                                       ("metric", None), ("some_unlisted_key", None)])
+def test_none_valued_key_is_not_an_override(key, value):
+    """CUL-343: resolve_criteria_against_menu skips None-valued keys (menu value
+    kept), so the lint must not treat them as overrides either."""
+    crit = {"id": "fake_nonscale_ratio", key: value}
+    assert vce.menu_criterion_overrides_violations(
+        crit, _SYNTH_MENU["criteria"][0]) == []
+    assert vce.lint_menu_shaped_pass_rule({"criteria": [crit]}, _SYNTH_MENU) == []
+    # consistent with the merge: the resolved criterion keeps the menu value
+    resolved = vce.resolve_criteria_against_menu([crit], _SYNTH_MENU)[0]
+    if key in _SYNTH_MENU["criteria"][0]:
+        assert resolved[key] == _SYNTH_MENU["criteria"][0][key]
+
+
+def test_non_none_override_still_refused_alongside_none_keys():
+    crit = {"id": "fake_nonscale_ratio", "floor": None, "threshold": 2.0}
+    v = vce.lint_menu_shaped_pass_rule({"criteria": [crit]}, _SYNTH_MENU)
+    assert v and any("scale_free: false" in x for x in v)
+
+
 def test_scale_free_false_threshold_override_refused():
     crit = {"id": "fake_nonscale_ratio", "threshold": 2.0}
     v = vce.lint_menu_shaped_pass_rule({"criteria": [crit]}, _SYNTH_MENU)
