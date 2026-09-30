@@ -1672,6 +1672,10 @@ def menu_criterion_overrides_violations(criterion: dict, menu_entry: dict) -> li
     always carries every backfilled key, be re-checked without every field
     tripping the allowlist)."""
     violations: list[str] = []
+    # Mirror resolve_criteria_against_menu's merge rule exactly (CUL-343): a
+    # None-valued key is skipped there (the menu value is kept), so it is not an
+    # override here either. `floor: null` / `threshold: null` used to be refused.
+    criterion = {k: v for k, v in criterion.items() if v is not None}
     allowed = {"id"} | set(menu_entry.get("card_overridable") or [])
     refused = sorted(
         key for key in set(criterion) - allowed
@@ -1747,7 +1751,9 @@ def lint_menu_shaped_pass_rule(pass_rule, menu) -> list[str]:
         if entry is None:
             violations.append(
                 f"criteria[{idx}] id={cid!r} is not a live entry of "
-                f"config/criterion_menu.yaml ({sorted(menu_by_id)})"
+                f"config/criterion_menu.yaml ({sorted(menu_by_id)}); if this is a "
+                f"legacy (non-menu) criterion, it must carry `metric_basis` "
+                f"(B11) -- an `id` without `metric_basis` is read as a menu reference"
             )
             continue
         for v in menu_criterion_overrides_violations(criterion, entry):
