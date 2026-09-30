@@ -926,7 +926,7 @@ record what happened.
 | What | Written where | Read by |
 |---|---|---|
 | `protocol_summary.json` → `protocol_result.yaml` | run dir → `artifacts/` | verdict_interpreter |
-| `pass_rule_evaluation.yaml` | `artifacts/` | **verdict_interpreter — REQUIRED input, and the decision authority** |
+| `pass_rule_evaluation.yaml` | `artifacts/` | **verdict_interpreter — REQUIRED input, and the decision authority** — not written by the variant loop under `config_direct_authoring` AND `verdict_routing_retired` (C5.8), where nothing binding reads it |
 | `grid_evaluation.yaml`, `idea_status.yaml` | `artifacts/` | **optional, E-046b S2 (2026-09-20) — only written when `orchestrator.grid_evaluation.enabled` is true (off by default) AND `pre_registration.yaml`'s pass_rule is menu-shaped (criteria carry `source`/`reducer` fields, `config/criterion_menu.yaml`). Additive: `evaluate_pass_rule_criteria`'s own call and `pass_rule_evaluation.yaml`'s write are unaffected either way. `idea_status.yaml` carries `validated`/`refuted`/`inconclusive` plus a `pass_rule_evaluation.yaml`-shaped `result`/`hypothesis_verdict`/`lineage_routing` triple. **CORRECTED 2026-09-28** (re-verified directly against `run_phase1_research.py`): the claim that it is "NOT yet read by any routing call site" is stale — `determine_post_specialist_readers_route` (under `orchestrator.specialist_readers.enabled`) reads it via `_load_idea_status` and drives the whole post-backtest route from it (promote / kill / human-pause), and the DONE branch's decide-next step re-reads it the same way. It still does not override `verdict_interpreter`'s own (stage 11) narrative verdict when that stage runs — the two are separate routing paths, never merged.** |
 | `trade_diagnostics.json` | run dir (or `variants/<id>/` under `orchestrator.variant_loop.enabled`), not `artifacts/` — **CORRECTED 2026-09-28**, `run_protocol.py`'s `--out-dir` argument | verdict_interpreter |
 | a row in `campaign_state.trial_sharpes` | campaign root | DSR accounting |
@@ -982,6 +982,13 @@ function's output is informational only. `evaluator_version: 2` since C7-EXT
 **R3 ruling:** a legacy (string-shaped or absent) `pass_rule` never raises — it
 returns `legacy_not_evaluable` and the LLM's own judgment applies exactly as
 before K2. Every pre-K2 run, including run_057's, is that legacy shape.
+**C5.8 (C13, D-050):** under `config_direct_authoring` AND `verdict_routing_retired`
+(`_promotion_retired_enabled`, the C5.6 condition) the variant loop does not write
+this file at all (every binding reader of it is retired there; a stale one from an
+earlier attempt is deleted), and `reports/profitability.yaml` drops
+`verdict`/`verdict_reason` and the `post_backtest_route*` / `cost_dominated_real`
+labels (`build_reports(legacy_verdict_retired=True)`), keeping every number. Trial
+rows are unchanged; the single-run branch still writes the file.
 
 **3. Every failure path still records the trial (H4-core, issue #28 / E-025).**
 A backtest that touched market data has spent a look, whether or not it
