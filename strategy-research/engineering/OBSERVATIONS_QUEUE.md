@@ -7,7 +7,7 @@ decision (DECISION_LOG) or a ticket.
 
 | # | Seen | Observation | Status |
 |---|---|---|---|
-| O-1 | C4 run_061, 2026-09-30 | "Long-only" trend component | found: design gap (decision) |
+| O-1 | C4 run_061, 2026-09-30 | "Long-only" trend component | found: bug -- component check at the wrong level (1b's gap was false); fix |
 | O-2 | C4 run_061 → run_062, 2026-09-30 | Stage 2 sending the brief back to stage 1 | found: working as intended (card M); prompt gap |
 | O-3 | C4 run_062, 2026-09-30 | Step 1a declaring the brief exhausted on a cost argument | found: exhaustion as intended; cost veto a design gap (decision) |
 | O-4 | C4 run_063, 2026-09-30 | Step 2 inventing a component class name | found: bug (missing input), fix |
@@ -37,34 +37,70 @@ whether a sign-symmetric SMA trend component exists under another name; whether 
 about the transform pipeline is true (`strategies/registry.py`, e.g. negate/scale); and how
 1b builds its catalogue (STRATEGY_DESIGN_GUIDE.md vs the component registry).
 
-**Finding (2026-09-30 investigation, read-only):** **design gap -- decision for the operator.**
+**Finding (2026-09-30 investigation, read-only; corrected the same day after the operator's
+challenge -- the first version accepted 1b's claim and was wrong):** **bug in where the
+component check runs (fix), plus a gap in the design guide.**
 
-- Long-only is deliberate, not a bug. `SmaTrendLongOnlyComponent`
-  (`strategy_components.py:942`) was written for the P4_ts_trend brief ("spot-only, no
-  shorts"). It outputs `scaling_factor` when the prior close is above SMA(L), else 0, and
-  never goes negative (`:994-998`). The design guide says the same
-  (`STRATEGY_DESIGN_GUIDE.md:226`). Apart from the regime and volatility measures, the
-  one-sided signal components are the two SMA long-only classes and
-  `VolumeExpansionHedge` (never positive). Every other component is signed.
-- No sign-symmetric **SMA** trend component exists. Signed price-vs-average components do:
-  `MacroTrendFilterComponent` (price vs EMA of any period), `EMASpreadComponent`,
-  `EMADiff` and `PriceEvolution`. The card fixed "SMA(50)", and 1b refused the EMA
-  alternatives ("Hypothesis specifically requires SMA(50)").
-- 1b's claim about transforms is **true**. The registry has `negate`, `scale` and `clip` but
-  no offset op, so a {0, +sf} output cannot become {-sf, +sf} (`registry.py:51-84`). The
-  reverse works: `clip` with `min: 0` makes any signed component long-only.
-- 1b's catalogue is `docs/STRATEGY_DESIGN_GUIDE.md`, a required handoff input described as
-  the "authoritative list". It lists all 24 classes, and a test keeps it in sync. So 1b had
-  the right catalogue and read it correctly.
-- The operator's model ("every indicator gives a signed forecast") fits the framework, but
-  it is not written down as a rule anywhere.
+- **How a strategy config is built.** Each regime holds a list of component *instances*:
+  `{id, class, params, weight, transforms}`.
+  - The regime's forecast is the weighted mean of the instances' transformed values,
+    clipped to ±20 (`trading-bot/strategies/strategy_engine.py:572-600`).
+  - A weight may be negative. Only the regime's total weight must be > 0 (validator V8,
+    `tools/validate_config.py:259-278`).
+  - So a strategy is designed from a **combination** of instances, not from a single class.
+- **A long/short SMA trend can be built today with no new code.** Two equivalent forms:
+  - **Form A.** `SmaTrendLongOnlyComponent` (`lookback_L: 50`, `scaling_factor: 40`,
+    weight 1) plus `BuyAndHoldStrategy` (a constant +10) with `scale` `factor: -2`
+    (= -20), weight 1. That gives ½·{0, 40} + ½·(-20) = {-10, +10}.
+  - **Form B.** The same SMA class with `scaling_factor: 10` at weight 2, plus
+    `BuyAndHoldStrategy` at weight -1. That also gives {-10, +10}.
+  - Checked on synthetic prices (no market data, no backtest, scratch script not
+    committed): both forms pass the validator with zero violations. The engine's forecast
+    is +10 when the prior close is above the prior SMA(50) and -10 otherwise, on 495 of
+    495 bars.
+- **So run_061's `component_gap` was false.** 1b said the transform pipeline "cannot enable
+  [a] single component instance" to go short. That is true for one instance, but a config
+  is not limited to one instance.
+- **Where the component-existence check runs:**
+  - **Code check, at the right level (the class).** Step 5a runs validator V12 on the
+    written config, which requires every class to load, and the engine loads each class at
+    start. This is what card J describes: a gap is "caught when the config is checked
+    (Step 5a)".
+  - **LLM check, at the wrong level (the "indicator").** The 1b SKILL says "If ANY
+    required indicator/transform/regime is absent from the reference,
+    status=component_gap" (`strategy-config-authoring/SKILL.md:130`).
+    - 1b decides this before any config exists, and the code takes its word:
+      `component_gap` leads straight to a component request and a park
+      (`run_phase1_research.py:14250-14264`).
+    - Nothing checks whether a combination of existing classes would do.
+    - This is the gate that stopped run_061. It asked the operator to build a component
+      that was not needed.
+- **Why 1b missed it.**
+  - The design guide gives the combination formula, calls `BuyAndHoldStrategy` a
+    "constant +10" and says a weight is "normalized by sum". It never says that a weight
+    may be negative or that a constant can serve as an offset, and it gives no
+    composition example.
+  - `WORKFLOW_CAPABILITIES.md` covers "signal direction inverted" (`negate`) but not "turn
+    a one-sided signal into a two-sided one".
+- **About the class itself.** `SmaTrendLongOnlyComponent` is long-only on purpose: the
+  P4 brief says "spot-only, no shorts" (`strategy_components.py:942-998`). No other SMA
+  class exists anywhere in `trading-bot/strategies/`. The standard two-sided SMA signal is
+  available, but as a combination, not as a class.
 
-**Recommended answer:**
-1. Record the rule: *a component emits a signed forecast; a direction restriction such as
-   long-only is a config choice made with `clip min: 0`, not a property of the component.*
-2. Add one new signed `SmaTrendComponent` (+sf above the prior-bar SMA, -sf below), with a
-   guide row and tests. The existing long-only classes stay untouched, so no baseline
-   changes. This is the component run_061's parked card is waiting for.
+**Recommended fix:**
+1. **Guide.** Add a short "composing a signal" section:
+   - weights may be negative (the regime total must stay > 0);
+   - `BuyAndHoldStrategy` plus `scale` is a constant offset;
+   - {0, +sf} becomes {-sf, +sf} as 2·x - sf;
+   - a signed component becomes long-only with `clip` `min: 0`;
+   - include the signed-SMA example above.
+2. **1b SKILL.** Return `component_gap` only when no combination of existing classes,
+   params, weights and transforms can express the signal. The decision must list the
+   combinations it ruled out, and why.
+3. **Code (operator decision).** Do not present a 1b gap as a verified one. Recommended,
+   and the cheapest option: the park record and the component request label it "claimed
+   by step 1b, not checked by code", so the operator reviews it before building anything.
+4. A signed `SmaTrendComponent` class would be a convenience only. It is not needed.
 
 ## O-2. Is "stage 2 sends the brief back to stage 1 for another idea" part of the design?
 
@@ -376,28 +412,33 @@ design rule (decision for the operator).**
 
 ---
 
-## Recommendation: how C4 reaches its first backtest (2026-09-30 investigation)
+## Recommendation: how C4 reaches its first backtest (2026-09-30 investigation; revised after the O-1 correction)
 
-Fix O-4 first. It alone parked run_063: with the design guide given to step 2, the
-variant set would have met the floor (base + a loadable design variant) and reached the
-backtest.
+**Cheapest route: fix O-1 and O-4 first, then unpark run_061's idea.** Both fixes are
+prompt and doc changes, one small PR each:
+- the design guide's "composing a signal" section and the 1b SKILL rule (O-1);
+- the design guide given to step 2 (O-4). Without it, step 2 can invent a design variant
+  again and park the run, as it did on run_063.
 
-Next, correct the Donchian rows in the guide (O-7). Otherwise 1b and step 2 keep treating
-a channel-position oscillator as a breakout rule, and the backtest measures something other
-than the card.
+Then `--unpark C4_vol_managed_trend`. Its park resumes at step 1b
+(`resume_stage="strategy_config_authoring"`, `run_phase1_research.py:14264`), so one 1b
+call re-authors the config with the long/short SMA composition. That reaches the backtest
+with no new component, and it tests the O-1 fix directly.
 
-Then add the latched Donchian breakout component (O-7 item 4). With a correct guide, 1b
-should otherwise report `component_gap` for this brief's breakout card. Optionally add
-the per-coin coverage table for step 2 (O-5), so the asset variant is a full-coverage
-coin.
+**Be honest about the expected outcome.** A textbook moving-average signal on BTC/ETH 1h
+is the lane this project's own kill-map lists as dead, so expect a FAIL. That is still
+useful for C4, whose purpose is to show that real runs reach the backtest, the readers
+and the profit bars. It costs one trial row. Not checked: whether the card's inverse-ATR
+sizing (clipped 50%-200%) can be expressed with the existing `vol_*` transforms. 1b should
+report that as a declared deviation if it cannot.
 
-Each fix is a small, separate PR with no engine change and no baseline change. After
-that, run the Donchian brief once as a fresh entry. Before choosing between that and
-`--unpark C4_donchian_daily_trend`, check whether unpark reuses run_063's saved variant set,
-which still names the invented class. Also decide what happens to the queued
-`C4_donchian_daily_trend__more_1`: it asks 1a for a *second* Donchian idea, not a re-run.
+**The Donchian brief comes next.** First correct the Donchian rows in the guide (O-7).
+Before building a latched breakout component, check whether a combination of existing
+classes can express it (the O-1 lesson); I have not checked this either way.
+- Before choosing between a fresh entry and `--unpark C4_donchian_daily_trend`, check
+  whether unpark reuses run_063's saved variant set, which still names the invented class.
+- Also settle the queued `C4_donchian_daily_trend__more_1`: it asks 1a for a *second*
+  Donchian idea, not a re-run.
 
-Building the signed SMA component (O-1) and unparking `C4_vol_managed_trend` is the other
-path. It is the weaker spend: a textbook moving-average signal on BTC/ETH 1h is the lane
-this project's own kill-map lists as dead. The O-3 veto change and XRP narrowing (O-5) can
-follow C4; neither blocks the first backtest.
+The O-3 veto change, XRP narrowing (O-5) and the park-reason fix (O-6) can follow C4; none
+of them blocks the first backtest.
