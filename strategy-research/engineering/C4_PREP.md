@@ -11,8 +11,8 @@ explicit go. No real LLM call, backtest or trial row was made to write this file
    provenance; both are added here (§2.1).
 3. **Switching the flags also changes what the tests see.** The register test ties each flag's
    declared state to the real config file, so the switch must flip the register too, and some
-   tests read the real config. §2.4 has the (partial) measured effect; one clean suite run is
-   still needed before the go.
+   tests read the real config. §2.4 has the measured effect: a full suite run on the C4 branch was
+   done on 2026-09-30: every remaining failure is explained.
 4. **C4 gives the cost numbers solidly, but only one or zero data points for the patch
    question (C5.4).** Two runs cannot give a rate; §4.3 says what C4 can and cannot tell us.
 
@@ -94,27 +94,27 @@ Rejected alternative: an uncommitted edit on master. The run's config hash would
 but the git SHA would not. It would also leave master's working tree dirty and its suite red
 for the whole of C4.
 
-### 2.4 Measured (partial): what the flip does to the test suites
+### 2.4 Measured: what the flip does to the test suites (complete, 2026-09-30)
 
-Scratch worktree at master `5816dced` with the §2.1 + §2.2 edit applied by script (diff: 14
-`enabled` lines and 14 `state` lines, nothing else). Research suite, all markers, in two
-sequential halves:
+Branch `c4/flag-set` at `ef0b93e9` (master `0baa93ab` + the §2.1/§2.2 flip + the D-050 brief).
+Research suite, all markers, run in the foreground in four quarters, one process at a time:
+**4332 passed, 11 failed, all explained.**
 
-- **Incomplete.** Half 1 was stopped at about 65% by the host when memory ran low. Half 2
-  never ran. A first attempt, two full suites in parallel, died at 13–16% with
-  `Windows fatal exception 0xc000070a` inside `ast.parse` (`test_cul336_closed_book`) on
-  both the flipped and the unflipped tree. That was my error: this machine needs one suite
-  process at a time, in halves (plan rule 11).
-- **What was measured:** 12 failures in the first ~65% of half 1 (half 1 = 83 of 167 test files).
-  - One contiguous block of 6 near 5% matches the known environmental e054/k3 set (a
-    worktree has no venv).
-  - The other 6 are **not yet identified**: pytest prints names only at the end.
-  - The flip is therefore **not test-neutral**, as expected, since tests read the real config.
-- **Still needed before the go:** one flipped-tree run, in halves, one process, while the
-  machine is otherwise idle. List every failure. Re-run each failing test on unflipped
-  master. A test that fails only when flipped is a flags-off assumption (C7 work). A test
-  that fails on both is pre-existing. The C4 go does not need these tests green, but it
-  needs each one explained.
+- **4 are "flag is off in the real config" assertions.** They fail by design once the flags are
+  on, and C7 fixes them when the new pipeline becomes the default:
+  `test_e036_s2a_exact_match_gate::test_register_and_config_keep_the_gate_off`,
+  `test_e046a_category_reports::test_category_reports_real_campaign_config_default_is_off`,
+  `test_e059_6c_s2a_route_retirement::test_flag_is_off_in_the_real_config_and_registered`,
+  `test_e059_s2a_decide_next::test_flag_is_off_in_the_real_config_and_registered`.
+- **6 are environmental:** 3 `test_e054_stage_wiring` + 3 `test_k3_protocol_pinning`, each
+  logging "No runnable trading-bot interpreter", because a worktree has no venv. They pass in
+  the main checkout.
+- **1 is the known zstandard failure** (`tools/recorder/tests/test_shard_reader.py`).
+
+The earlier partial run showed 21 more failures. They came from two harness defects, not from
+the pipeline: a stale `v1` stub reader rubric, and scenarios that inherited unnamed flags from
+the real config. Both were fixed in PR #273, which added a `C4_FLAGS` scenario (v2 bars +
+score provenance) run end to end.
 
 ---
 
