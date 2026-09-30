@@ -1158,6 +1158,19 @@ def _stamp_card_scores_text(text: str, models) -> tuple:
     return text, _provenance_record(observed, mismatch, self_reported, stamped, error)
 
 
+# A stage deliverable is a fenced ```yaml block whose first line names the file:
+# `# <name>.yaml`. The optional `artifacts/` (or `artifacts\`) prefix is accepted
+# because the prompts themselves name deliverables that way (e.g.
+# hypothesis-design/BRIEF_HYPOTHESES.md: "artifacts/brief_status.yaml"); without
+# it such a block was silently dropped (run_062, 2026-09-30: a legitimate
+# brief-exhausted answer was lost and the run halted). Only that one prefix:
+# any other path (`../../campaign_record/...`, `other/x.yaml`) still does not
+# match, so a deliverable can only ever land in this run's artifacts/ directory.
+# Headers without the prefix match exactly as before.
+_DELIVERABLE_BLOCK_RE = re.compile(
+    r"```yaml\s*#\s*(?:artifacts[/\\])?([a-zA-Z0-9_.]+\.yaml)\s*(.*?)```", re.DOTALL)
+
+
 async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_context: str | None = None):
 
     print(f"\n🧠 [AGENT INVOKED] Waking up specialist for: {stage_name}"
@@ -1251,8 +1264,7 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
 
 
     # 6. Parse and Save the Deliverables
-    pattern = r"```yaml\s*#\s*([a-zA-Z0-9_.]+\.yaml)\s*(.*?)```"
-    matches = re.findall(pattern, agent_output, re.DOTALL)
+    matches = _DELIVERABLE_BLOCK_RE.findall(agent_output)
     
     if not matches:
         print("⚠️ Warning: Could not parse standard YAML blocks. Saving raw output for debug.")
