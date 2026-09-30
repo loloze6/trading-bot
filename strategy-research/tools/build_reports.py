@@ -391,6 +391,63 @@ def build_profitability_report(sources: dict) -> dict:
     return _wrap("profitability", overall, per_window, per_regime_out, per_symbol_out)
 
 
+# C5.8 (C13, D-050): the legacy label fields a profitability report re-projects.
+# Under build_reports(legacy_verdict_retired=True) they are dropped, so readers
+# score from the numbers, never from a verdict-shaped word. Every numeric field
+# stays (post_backtest_cost_check(_real), the correlation fields, the
+# diagnostics' median_* figures).
+LEGACY_VERDICT_OVERALL_KEYS = ("verdict", "verdict_reason")
+LEGACY_ROUTE_DIAGNOSTICS_KEYS = ("post_backtest_route_real", "post_backtest_route_real_tied",
+                                 "cost_dominated_real")
+LEGACY_ROUTE_CORE_KEYS = ("post_backtest_route", "post_backtest_route_rationale",
+                          "post_backtest_route_real", "post_backtest_route_real_rationale")
+
+
+def _without(d: dict, keys: tuple) -> dict:
+    return {k: v for k, v in d.items() if k not in keys}
+
+
+def _strip_legacy_verdict_slices(slices: dict) -> dict:
+    out = dict(slices)
+    overall = slices.get("overall")
+    if isinstance(overall, dict) and not overall.get("unavailable"):
+        overall = _without(overall, LEGACY_VERDICT_OVERALL_KEYS)
+        if isinstance(overall.get("diagnostics"), dict):
+            overall["diagnostics"] = _without(overall["diagnostics"], LEGACY_ROUTE_DIAGNOSTICS_KEYS)
+        out["overall"] = overall
+    per_window = slices.get("per_window")
+    if isinstance(per_window, list):
+        out["per_window"] = [
+            {**row, "core": _without(row["core"], LEGACY_ROUTE_CORE_KEYS)}
+            if isinstance(row, dict) and isinstance(row.get("core"), dict) else row
+            for row in per_window]
+    per_symbol = slices.get("per_symbol")
+    if isinstance(per_symbol, dict):  # an {unavailable, reason} block has no list values
+        out["per_symbol"] = {
+            sym: ([_without(r, LEGACY_ROUTE_CORE_KEYS) if isinstance(r, dict) else r for r in rows]
+                  if isinstance(rows, list) else rows)
+            for sym, rows in per_symbol.items()}
+    return out
+
+
+def _strip_legacy_verdict_fields(report: dict) -> dict:
+    """C5.8: a copy of a profitability report, in either shape (single-run
+    `slices`, or schema 2 `variants.<vid>.slices`), without the legacy label:
+    `verdict`/`verdict_reason` in `overall`, the three route keys in
+    `overall.diagnostics`, and the four route/rationale keys in every
+    `per_window[].core` and `per_symbol[<sym>][]` row. Nothing else changes.
+    Pure: the input is never mutated."""
+    out = dict(report)
+    if isinstance(report.get("slices"), dict):
+        out["slices"] = _strip_legacy_verdict_slices(report["slices"])
+    if isinstance(report.get("variants"), dict):
+        out["variants"] = {
+            vid: ({**block, "slices": _strip_legacy_verdict_slices(block["slices"])}
+                  if isinstance(block, dict) and isinstance(block.get("slices"), dict) else block)
+            for vid, block in report["variants"].items()}
+    return out
+
+
 # ---------------------------------------------------------------------------
 # trade_efficiency.yaml
 # ---------------------------------------------------------------------------
@@ -829,7 +886,8 @@ def _variant_sources(run_dir: Path, variant_id: str) -> dict:
 def build_reports(run_dir: Path | str, write: bool = True, *,
                    variants: dict[str, dict] | None = None,
                    failed_variants: dict[str, str] | None = None,
-                   untested_variants: dict[str, str] | None = None) -> dict[str, dict]:
+                   untested_variants: dict[str, str] | None = None,
+                   legacy_verdict_retired: bool = False) -> dict[str, dict]:
     """Build all five category reports for one run directory.
 
     `variants=None` (the default): today's single-run behaviour -- reads the
@@ -876,6 +934,14 @@ def build_reports(run_dir: Path | str, write: bool = True, *,
 
     Every built report is checked against REPORT_CHAR_BUDGET before being
     returned or written (both branches) -- see that constant's own comment.
+
+    `legacy_verdict_retired=True` (C5.8, C13/D-050; passed by the orchestrator's
+    variant loop only under config_direct_authoring AND verdict_routing_retired):
+    the profitability report, in either shape, goes through
+    `_strip_legacy_verdict_fields` -- no `verdict`/`verdict_reason`, no
+    post_backtest_route* / cost_dominated_real label keys; every number stays.
+    The other four reports are unchanged. False (the default): the output is
+    exactly the pre-C5.8 output.
 
     When `write` is True (the default, and what
     workflow/run_phase1_research.py's protocol_execution branch uses), writes
@@ -927,6 +993,9 @@ def build_reports(run_dir: Path | str, write: bool = True, *,
                 report["untested_variants"] = dict(untested_variants)
             _check_report_budget(name, report)
             reports[name] = report
+
+    if legacy_verdict_retired:  # C5.8: only drops keys, so the budget check above still holds
+        reports["profitability"] = _strip_legacy_verdict_fields(reports["profitability"])
 
     if write:
         out_dir = run_dir / "artifacts" / "reports"

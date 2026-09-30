@@ -56,6 +56,9 @@ variants:
       overall:      # {source, diagnostics: {...verbatim hypothesis_verdict.diagnostics}, verdict, verdict_reason}
                     # OR {unavailable: true, reason: "..."} when THIS VARIANT's protocol_result.yaml
                     # has no hypothesis_verdict.diagnostics block for this run.
+                    # verdict/verdict_reason are absent once verdict routing is retired
+                    # (as are the post_backtest_route* / cost_dominated_real labels); an
+                    # idea's status is the grid's.
       per_window:   # [{symbol, window, run_id, core: {...}}, ...] one entry per walk-forward window
       per_regime:   # {regime_label: [{symbol, window, ...per_regime block fields}, ...]}
       per_symbol:   # {symbol: [{window, run_id, ...core block fields}, ...]}

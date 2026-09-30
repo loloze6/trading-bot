@@ -1746,6 +1746,19 @@ async def run_tool_worker(stage_name: str, run_id: str):
         # shape -- only the grid (S1_FINDINGS.md §5/item 8) genuinely needs
         # every variant's result, since cross-variant comparison is its
         # entire purpose.
+        legacy_verdict_args = _legacy_verdict_args()  # C5.6: read once, every variant
+        # C5.8 (C13, D-050): under _promotion_retired_enabled the legacy label is
+        # retired for readers -- pass_rule_evaluation.yaml (C7) is not written below
+        # and the category reports drop the verdict/route fields. A stale file from
+        # an earlier attempt of this run would otherwise survive into this attempt
+        # (same "this attempt's artifacts only" rule as the clears above). Gate off:
+        # nothing is deleted.
+        legacy_label_retired = bool(legacy_verdict_args)
+        _stale_pre = ARTIFACTS / "pass_rule_evaluation.yaml"
+        if legacy_label_retired and _stale_pre.exists():
+            _stale_pre.unlink()
+            print("[C5.8] protocol_execution re-run: cleared previous attempt's "
+                  "pass_rule_evaluation.yaml")
         index = load_yaml(ARTIFACTS / "variants" / "index.yaml") or {}
         variants_idx = index.get("variants", {})
         validated = {vid: v for vid, v in variants_idx.items() if v.get("status") == "validated"}
@@ -1765,7 +1778,6 @@ async def run_tool_worker(stage_name: str, run_id: str):
 
         protocol_path = _resolve_protocol_path(RUN_DIR, run_id)
         validation_path = ARTIFACTS / "validation_protocol.yaml"
-        legacy_verdict_args = _legacy_verdict_args()  # C5.6: read once, every variant
         base_variant_id = _json_pointer_module().base_variant_id(validated)  # "base", else sorted()[0]
 
         per_variant_summaries: dict = {}
@@ -2060,23 +2072,31 @@ async def run_tool_worker(stage_name: str, run_id: str):
         # isolation pattern as the grid/reports blocks: log loudly, never
         # re-raise, never touch the already-recorded trials -- a bug in this
         # write is not evidence the backtest(s) failed.
-        try:
-            _pass_rule_eval = _vce.evaluate_pass_rule_criteria(
-                _rep_summary, _pre_reg_for_eval or {}, _brief_for_eval)
-            _pass_rule_eval["evaluated_at"] = datetime.now(timezone.utc).isoformat()
-            _pass_rule_eval["evaluator_version"] = 2
-            save_yaml(ARTIFACTS / "pass_rule_evaluation.yaml", _pass_rule_eval)
-            _pre_reg_result = _pass_rule_eval.get("result")
-            print(f"✅ [C7] pass_rule_evaluation.yaml written ({_rep_vid!r} variant): "
-                  f"result={_pre_reg_result}")
-        except Exception as _c7_err:
-            print(f"⚠️  [C7] pass_rule_evaluation.yaml raised {type(_c7_err).__name__}: "
-                  f"{_c7_err} -- at least one variant's backtest already succeeded and is "
-                  "already recorded as a trial; pass_rule_evaluation.yaml is simply not "
-                  "written this run. Not re-raised: a C7 bug must never misrecord an "
-                  "already-successful trial as failed, but note this artifact is a "
-                  "REQUIRED input for verdict_interpreter -- this run cannot proceed "
-                  "past that stage until it exists.")
+        # C5.8 (C13): under the gate every binding reader of this file is retired
+        # (C5_8_FINDINGS.md Q2b), so it is not written. Trial rows are unaffected:
+        # every one is already recorded above, and this block never records one.
+        if legacy_label_retired:
+            print("[C5.8] pass_rule_evaluation.yaml not written: the legacy verdict is "
+                  "retired (config_direct_authoring + verdict_routing_retired); the grid "
+                  "and the profit bars decide this run.")
+        else:
+            try:
+                _pass_rule_eval = _vce.evaluate_pass_rule_criteria(
+                    _rep_summary, _pre_reg_for_eval or {}, _brief_for_eval)
+                _pass_rule_eval["evaluated_at"] = datetime.now(timezone.utc).isoformat()
+                _pass_rule_eval["evaluator_version"] = 2
+                save_yaml(ARTIFACTS / "pass_rule_evaluation.yaml", _pass_rule_eval)
+                _pre_reg_result = _pass_rule_eval.get("result")
+                print(f"✅ [C7] pass_rule_evaluation.yaml written ({_rep_vid!r} variant): "
+                      f"result={_pre_reg_result}")
+            except Exception as _c7_err:
+                print(f"⚠️  [C7] pass_rule_evaluation.yaml raised {type(_c7_err).__name__}: "
+                      f"{_c7_err} -- at least one variant's backtest already succeeded and is "
+                      "already recorded as a trial; pass_rule_evaluation.yaml is simply not "
+                      "written this run. Not re-raised: a C7 bug must never misrecord an "
+                      "already-successful trial as failed, but note this artifact is a "
+                      "REQUIRED input for verdict_interpreter -- this run cannot proceed "
+                      "past that stage until it exists.")
 
         # E-046b S2 (the grid). Dispatch step 5 / S1_FINDINGS.md §5 & §8: the
         # grid now receives a real N-column {variant_id: protocol_result}
@@ -2188,10 +2208,13 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     }
                     for _vid in per_variant_summaries
                 }
+                # C5.8 (C13, D-050): passed only under the gate, so the gate-off
+                # call is exactly the pre-C5.8 one.
                 _reports = _br.build_reports(
                     RUN_DIR, write=True, variants=_variant_report_meta,
                     failed_variants=failed_variants or None,
-                    untested_variants=untested_variants or None)
+                    untested_variants=untested_variants or None,
+                    **({"legacy_verdict_retired": True} if legacy_label_retired else {}))
                 print(f"✅ [E-046a] artifacts/reports/*.yaml written: {sorted(_reports.keys())} "
                       f"(variants: {sorted(_variant_report_meta)}"
                       + (f", failed: {sorted(failed_variants)}" if failed_variants else "")

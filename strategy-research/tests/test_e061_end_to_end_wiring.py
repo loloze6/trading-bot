@@ -161,6 +161,7 @@ import run_campaign as camp  # noqa: E402
 import setup_run as sr  # noqa: E402
 import novelty as nov  # noqa: E402
 import portfolio_whole_test as pwt  # noqa: E402
+import reader_proposals as _reader_proposals_mod  # noqa: E402
 
 from claude_agent_sdk import AssistantMessage, ResultMessage, TextBlock  # noqa: E402
 
@@ -169,6 +170,7 @@ jsonschema = pytest.importorskip("jsonschema")
 _REAL_SUBPROCESS_RUN = _subprocess_mod.run
 _REAL_POPEN = _subprocess_mod.Popen
 _STUB_PYTHON = "stub-trading-bot-python"
+STUB_MODEL = "stub-claude"  # AssistantMessage.model of every stubbed stage/reader call
 _SCHEMAS = _SR / "workflow_artifacts" / "schemas"
 _ALLOWED_PROGRAMS = ("git", "git.exe")
 
@@ -201,7 +203,24 @@ TARGET_FLAGS = {
     "verdict_routing_retired": True,
     "variant_anti_adjacency_gate": True,
     "composition_runs": True,
+    # Named explicitly (C4 flag-set follow-up): the flags this set does NOT turn on
+    # are still written, off, so a flip of the real config/campaign_config.yaml
+    # (C4_PREP.md 2.1) cannot leak into the v1 scenarios. The guard test
+    # test_target_flags_name_every_orchestrator_flag keeps this list complete.
+    "profit_bars_v2": False,
+    "score_provenance": False,
 }
+
+# C5.8 (D-050): the four legacy route/rationale keys of a window's core
+# (trading-bot/reporting/run_artifact.py build_core), with determine_route's codes.
+STUB_ROUTE_CORE = {
+    "post_backtest_route": "kill_cost_hurdle",
+    "post_backtest_route_rationale": "stub: Fix: wider threshold or longer holding",
+    "post_backtest_route_real": "refine_inverted_ic",
+    "post_backtest_route_real_rationale": "stub: flip polarity",
+}
+_ROUTE_DIAGNOSTICS_KEYS = ("post_backtest_route_real", "post_backtest_route_real_tied",
+                           "cost_dominated_real")
 
 # Real config files the pipeline reads under ROOT (A3 §5 item 2). Never the real
 # campaign_record/, never the real trial ledger, never local_data/.
@@ -554,7 +573,7 @@ class Harness:
         text = self._answer(stage, run_id, segment)
 
         async def _stream():
-            yield AssistantMessage(content=[TextBlock(text=text)], model="stub-claude")
+            yield AssistantMessage(content=[TextBlock(text=text)], model=STUB_MODEL)
             yield ResultMessage(subtype="success", duration_ms=1, duration_api_ms=1,
                                 is_error=False, num_turns=1, session_id="e061-stub",
                                 total_cost_usd=0.0,
@@ -688,7 +707,10 @@ class Harness:
                              "coins, cost ratio 0.1"],
                 "scores": {"confidence_real": 2, "distance_to_profitable": 1,
                            "mechanism_plausibility": 2},
-                "model_id": "stub-reader", "rubric_version": "profitability-reader-v1"}
+                "model_id": "stub-reader",
+                # The closed set the real reader is held to under score_provenance
+                # (the SKILL files all say v2); read from the module, never a literal.
+                "rubric_version": _reader_proposals_mod.READER_RUBRIC_VERSIONS["profitability"]}
             _schema_check("proposal", proposal)
             body = yaml.safe_dump([proposal], sort_keys=False)
         return f"Here are my proposals.\n```yaml\n{body}```\n"
@@ -824,7 +846,11 @@ class Harness:
                     "symbol": symbol, "window": w["label"], "run_id": wrid,
                     "core": {"trade_count": prof["trades"], "sharpe": prof["sharpe"],
                              "net_return_pct": 0.5 + 0.1 * j, "max_drawdown_pct": -3.0,
-                             "forecast_return_corr": 0.02, "forecast_return_corr_pvalue": 0.3},
+                             "forecast_return_corr": 0.02, "forecast_return_corr_pvalue": 0.3,
+                             # C5.8: the legacy cost-check route labels run_artifact.py
+                             # puts in every window's core, so the report strip is
+                             # exercised end to end (never vacuous).
+                             **STUB_ROUTE_CORE},
                     "per_regime": {"trending": {"bars": 96, "net_return_pct": 0.2},
                                    "mean_reversion": {"bars": 96, "net_return_pct": 0.3}},
                     "regime_validity": {"trending": {"valid": True},
@@ -1089,6 +1115,7 @@ def test_end_to_end_two_runs_with_the_real_run_setup(harness):
     for cat in rpr._reader_categories():
         assert h.art(r1, f"reports/{cat}.yaml") is not None, cat
         assert h.art(r1, f"proposals/{cat}.yaml") is not None, cat
+    _assert_legacy_label_retired(h, r1)
     pbe = h.art(r1, "profit_bars_evaluation.yaml")
     assert pbe["scope"] == "every_backtest" and pbe["passing"] == []
     assert sorted(pbe["variants"]) == ["asset", "base", "design"]
@@ -1150,6 +1177,7 @@ def test_end_to_end_two_runs_with_the_real_run_setup(harness):
     assert done2["status"] == "done"
     assert done2["outcome"] == st2["pending_stage"][len("completed_"):]
     assert isinstance(keep_going, bool)
+    _assert_legacy_label_retired(h, r2)
     _assert_holdout_untouched(h)
 
 
@@ -1629,6 +1657,50 @@ def _assert_no_promotion_or_verdict_in_prompts(h: Harness) -> None:
         assert rp.LEGACY_VERDICT_RETIRED_REASON not in prompt, where
         top = re.findall(r"(?m)^(verdict|verdict_reason):", prompt)
         assert top == [], f"{where}: prompt carries a top-level {top}"
+    # C5.8 (C13, D-050): in every READER prompt, the legacy label as a key at ANY
+    # indentation (the profitability report nests it), and the cost-check route
+    # labels. Readers only: the innovation-expansion SKILL's own diversity check
+    # carries an unrelated nested `verdict: "real_diversity"` key (measured).
+    offenders = []
+    for stage, run_id, prompt in h.prompts:
+        if stage != "specialist_readers":
+            continue
+        nested = re.findall(r"(?m)^[ \t]*(?:-[ \t]+)?(verdict|verdict_reason):", prompt)
+        routes = re.findall(r"(?m)^[ \t]*(?:-[ \t]+)?(post_backtest_route\w*|cost_dominated_real):",
+                            prompt)
+        routes += [v for v in STUB_ROUTE_CORE.values() if v in prompt]
+        if nested or routes:
+            offenders.append((stage, run_id, len(nested), sorted(set(nested + routes))))
+    assert offenders == [], f"prompts carrying the legacy label: {offenders}"
+
+
+def _assert_legacy_label_retired(h: Harness, run_id: str) -> None:
+    """C5.8 (C13, D-050) under the target flags: no pass_rule_evaluation.yaml, and
+    reports/profitability.yaml carries no verdict/verdict_reason and no cost-check
+    route label under any variant, while the numbers stay. Not vacuous: every
+    variant's own protocol_result.yaml still carries the labels the strip dropped."""
+    assert h.art(run_id, "pass_rule_evaluation.yaml") is None
+    prof = h.art(run_id, "reports/profitability.yaml")
+    assert prof["schema_version"] == 2 and prof["variants"], run_id
+    for vid, block in prof["variants"].items():
+        source = h.art(run_id, f"variants/{vid}/protocol_result.yaml")
+        assert "verdict" in source["hypothesis_verdict"], vid
+        assert set(_ROUTE_DIAGNOSTICS_KEYS) <= set(source["hypothesis_verdict"]["diagnostics"])
+        assert all(set(STUB_ROUTE_CORE) <= set(r["core"]) for r in source["results"]), vid
+        slices = block["slices"]
+        overall = slices["overall"]
+        assert not overall.get("unavailable"), vid
+        assert "verdict" not in overall and "verdict_reason" not in overall, vid
+        assert not set(_ROUTE_DIAGNOSTICS_KEYS) & set(overall["diagnostics"]), vid
+        assert "median_forecast_return_corr" in overall["diagnostics"], vid
+        assert slices["per_window"], vid
+        for row in slices["per_window"]:
+            assert not set(STUB_ROUTE_CORE) & set(row["core"]), vid
+            assert row["core"]["forecast_return_corr"] == 0.02, vid
+        for rows in slices["per_symbol"].values():
+            for row in rows:
+                assert not set(STUB_ROUTE_CORE) & set(row), vid
+                assert row["forecast_return_corr"] == 0.02, vid
 
 
 def _assert_c5_6_run_completed(h: Harness, r1: str = "run_001") -> None:
@@ -1671,6 +1743,7 @@ def _assert_c5_6_run_completed(h: Harness, r1: str = "run_001") -> None:
     assert sorted(pbe["variants"]) == ["asset", "base", "design"]
     for cat in rpr._reader_categories():
         assert h.art(r1, f"reports/{cat}.yaml") is not None, cat
+    _assert_legacy_label_retired(h, r1)
     memory = yaml.safe_load(rpr._campaign_memory_path().read_text(encoding="utf-8"))
     assert memory["runs"][r1]["idea_status"] == "refuted"
     assert h.art(r1, "decision_record.yaml") is not None
@@ -2063,6 +2136,9 @@ def test_c2_3_run_2_readers_see_run_1s_validated_block_with_this_run_as_its_neig
 # ---------------------------------------------------------------------------
 
 V2_FLAGS = {**TARGET_FLAGS, "profit_bars_v2": True}
+# The C4 flag set as engineering/C4_PREP.md 2.1 flips it in the real config: the v2
+# bars plus score provenance (D-048), on top of everything TARGET_FLAGS turns on.
+C4_FLAGS = {**V2_FLAGS, "score_provenance": True}
 
 
 def _partial_asset_coin(h: Harness, first_full_window: int) -> None:
@@ -2085,11 +2161,11 @@ def _partial_asset_coin(h: Harness, first_full_window: int) -> None:
     layer1_path.write_text(yaml.safe_dump(layer1), encoding="utf-8")
 
 
-def _v2_harness(harness, *, first_full_window: int | None = 2) -> Harness:
+def _v2_harness(harness, *, first_full_window: int | None = 2, flags=V2_FLAGS) -> Harness:
     """A sandbox with profit_bars_v2 on, full-span window data and dense trade
     records, a 30-row legacy trial ledger (no whole_test block: N large, K small)
     and, when `first_full_window` is not None, a partial-coverage asset coin."""
-    h = harness.build(flags=V2_FLAGS)
+    h = harness.build(flags=flags)
     h.full_span_windows = True
     h.dense_trades = True
     _seed_trial_ledger()
@@ -2129,8 +2205,8 @@ _FULL_DAYS = _full_days("2022-01-01", "2022-07-01")
 _PARTIAL_DAYS = _full_days("2022-03-01", "2022-07-01")
 
 
-def _run_v2_first_run(harness, *, first_full_window: int | None = 2):
-    h = _v2_harness(harness, first_full_window=first_full_window)
+def _run_v2_first_run(harness, *, first_full_window: int | None = 2, flags=V2_FLAGS):
+    h = _v2_harness(harness, first_full_window=first_full_window, flags=flags)
     h.register_brief()
     r1 = "run_001"
     keep_going, exc = _drive(h)
@@ -2382,4 +2458,99 @@ def test_e062_v2_retest_with_wider_coverage_is_a_new_trial(harness):
     assert tc["threshold"] == max(math.ceil(100 * f), 60) == 83
     assert tc["detail"]["normalisation"]["covered_days"] == days
     assert tc["actual"] == 100 and tc["result"] == "PASS"  # 20 trades x 5 windows
+    _assert_holdout_untouched(h)
+
+
+# ---------------------------------------------------------------------------
+# The C4 flag set (engineering/C4_PREP.md 2.1): V2 + score_provenance, end to end
+# ---------------------------------------------------------------------------
+
+def test_target_flags_name_every_orchestrator_flag():
+    """Cheap static control: this harness copies the REAL config/campaign_config.yaml
+    and overrides only the flags named in TARGET_FLAGS, so any orchestrator flag not
+    named here is inherited from the real config -- and silently changes every
+    scenario the day the real config is flipped (measured on branch c4/flag-set:
+    the stub reader's stale v1 rubric and profit_bars_v2 both leaked that way).
+    Every `kind: orchestrator_config` flag in the register, and every
+    `orchestrator.<name>.enabled` block in the real config, must be named."""
+    register = yaml.safe_load(
+        (_SR / "config" / "feature_flag_register.yaml").read_text(encoding="utf-8"))
+    prefix, suffix = "orchestrator.", ".enabled"
+    registered = set()
+    for flag in register["flags"]:
+        if flag["kind"] != "orchestrator_config":
+            continue
+        key = flag["config_key"]
+        assert key.startswith(prefix) and key.endswith(suffix), key
+        registered.add(key[len(prefix):-len(suffix)])
+    assert registered, "the register lists no orchestrator_config flags"
+    cfg = yaml.safe_load((_SR / "config" / "campaign_config.yaml").read_text(encoding="utf-8"))
+    in_config = {name for name, block in cfg["orchestrator"].items()
+                 if isinstance(block, dict) and "enabled" in block}
+    named = set(TARGET_FLAGS)
+    assert registered <= named, f"registered flags not named in TARGET_FLAGS: {sorted(registered - named)}"
+    assert in_config <= named, f"real-config flags not named in TARGET_FLAGS: {sorted(in_config - named)}"
+    assert V2_FLAGS.keys() == C4_FLAGS.keys() == TARGET_FLAGS.keys()
+
+
+@pytest.mark.slow
+def test_c4_flag_set_v2_plus_score_provenance_end_to_end(harness):
+    """The exact C4 flag set (V2 + score_provenance) through the real pipeline, on
+    the same sandbox and first run as the V2 scenario above. Nothing here is read
+    back from the code's own summary of itself:
+
+      * the run reaches the same terminal state as the V2 run (completed,
+        completed_inconclusive; idea_status inconclusive) with the same three
+        variants, whole-test DSR basis and single-era INCONCLUSIVE grid;
+      * every reader audit-log entry carries a `provenance` block with
+        requested, observed and mismatch (the stub answers as STUB_MODEL, which is
+        not the requested worker model, so mismatch is recorded True and the run
+        continues -- D-048: recorded, never a stop);
+      * the profitability reader's entry carries `provenance.citations` with a
+        `proposals` map keyed by the stub proposal's id;
+      * the stored proposal's model_id is the stamped observed model, while the
+        stub's own self-report ("stub-reader") survives only in the audit log."""
+    h, r1, pbe = _run_v2_first_run(harness, flags=C4_FLAGS)
+    st = h.state(r1)
+    assert st["status"] == "completed" and st["pending_stage"] == "completed_inconclusive"
+    assert h.art(r1, "grid_evaluation.yaml")["idea_status"] == "inconclusive"
+    assert pbe["bars_definitions"] == "v2"
+    assert sorted(pbe["variants"]) == ["asset", "base", "design"]
+    assert pbe["dsr_basis"]["n_dsr_total"] == 33 and pbe["dsr_basis"]["n_same_basis"] == 3
+    grid = h.art(r1, "grid_evaluation.yaml")["grid"]["sign_consistent_by_era"]
+    for vid in ("base", "design"):
+        assert grid[vid]["result"] == "INCONCLUSIVE" and grid[vid]["reason"].startswith("single_era:")
+
+    requested = rpr._CLAUDE_WORKER_MODEL
+    assert STUB_MODEL != requested  # else the mismatch assertion below proves nothing
+    audit = st["audit_log"]
+    categories = rpr._reader_categories()
+    assert sorted(c for c, rid in h.reader_calls if rid == r1) == sorted(categories)
+    for category in categories:
+        keys = [k for k in audit if k.startswith(f"specialist_readers_{category}_attempt_")]
+        assert keys, f"no audit entry for the {category} reader"
+        for key in keys:
+            prov = audit[key].get("provenance")
+            assert prov is not None, f"{key} carries no provenance block"
+            assert prov["requested"] == requested
+            assert prov["observed"] == STUB_MODEL
+            assert prov["mismatch"] is True
+            assert "citations" in prov and "proposals" in prov["citations"]
+
+    (prof_key,) = [k for k in audit if k.startswith("specialist_readers_profitability_attempt_")]
+    pid = f"profitability-{r1}-1"
+    prof = audit[prof_key]["provenance"]
+    assert list(prof["citations"]["proposals"]) == [pid]
+    assert prof["self_reported"] == {pid: "stub-reader"}
+    assert prof["stamped"] is True and prof["self_report_differs"] is True
+
+    stored = yaml.safe_load((h.run_dir(r1) / "artifacts" / "proposals" / "profitability.yaml")
+                            .read_text(encoding="utf-8"))
+    (proposal,) = stored
+    assert proposal["proposal_id"] == pid
+    assert proposal["model_id"] == STUB_MODEL != "stub-reader"
+    assert proposal["rubric_version"] == _reader_proposals_mod.READER_RUBRIC_VERSIONS["profitability"]
+    # C5.8 (C13, D-050) under the C4 flag set too
+    _assert_legacy_label_retired(h, r1)
+    _assert_no_promotion_or_verdict_in_prompts(h)
     _assert_holdout_untouched(h)
