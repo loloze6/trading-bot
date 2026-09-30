@@ -770,6 +770,56 @@ class FundingRateMeanReversionComponent(SubStrategyComponent):
         return 2
 
 
+class FundingRateGradedComponent(SubStrategyComponent):
+    """
+    Graded sibling of FundingRateMeanReversionComponent (D-051: a forecast
+    component must be graded). Every bar:
+
+        raw_value = -funding_rate x 10000
+
+    i.e. the latest funding print in basis points, sign flipped (contrarian:
+    negative when longs pay). No threshold and no scaling_factor: the value is
+    in natural units and the config's transforms scale it.
+
+    No lookahead: 'funding_rate' is merged onto the bars by a backward as-of
+    join, so bar t carries the latest print at or before its timestamp.
+    A missing column or a NaN print gives NaN (a data gap, never a fabricated
+    0.0 reading).
+    """
+
+    consumes_feeds = ("funding_rate",)
+
+    def __init__(self, name="FundingRateGraded", weight=1.0, parameters=None):
+        params = parameters or {}
+        params.setdefault("standardized_forecast", False)
+        super().__init__(name, weight, params)
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+
+        if not self.is_ready():
+            return
+
+        if "funding_rate" not in data.columns:
+            self._raw_value = float('nan')
+            self.debug_info = {'nan_policy': 'propagate_invalid', 'reason': 'funding_rate_column_missing'}
+            return
+
+        funding_rate = float(data["funding_rate"].iloc[-1])
+        self._raw_value = -funding_rate * 10000.0
+        self.confidence = 1.0
+        self.debug_info = {"funding_rate": funding_rate}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= 1
+
+    def get_required_periods(self) -> int:
+        return 1
+
+
 # ============================================================================
 # COMPONENT: FEAR & GREED CONTRARIAN  (H-041-C, Improvement 01)
 # edge_source.category: persistent_behavioral_bias
@@ -851,6 +901,54 @@ class FearGreedContrarianComponent(SubStrategyComponent):
         return 2
 
 
+class FearGreedGradedComponent(SubStrategyComponent):
+    """
+    Graded sibling of FearGreedContrarianComponent (D-051). Every bar:
+
+        raw_value = 50 - fear_greed
+
+    in index points, -50..+50: contrarian, positive in fear (index below 50),
+    negative in greed. No thresholds and no scaling_factor: the config's
+    transforms scale it.
+
+    No lookahead: 'fear_greed' is merged with the feed's +1 day shift, so a bar
+    sees the prior day's published value. A missing column or a NaN value gives
+    NaN (a data gap, never a fabricated 0.0 reading).
+    """
+
+    consumes_feeds = ("fear_greed",)
+
+    def __init__(self, name="FearGreedGraded", weight=1.0, parameters=None):
+        params = parameters or {}
+        params.setdefault("standardized_forecast", False)
+        super().__init__(name, weight, params)
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+
+        if not self.is_ready():
+            return
+
+        if "fear_greed" not in data.columns:
+            self._raw_value = float('nan')
+            self.debug_info = {'nan_policy': 'propagate_invalid', 'reason': 'fear_greed_column_missing'}
+            return
+
+        fg = float(data["fear_greed"].iloc[-1])
+        self._raw_value = 50.0 - fg
+        self.confidence = 1.0
+        self.debug_info = {"fear_greed": fg}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= 1
+
+    def get_required_periods(self) -> int:
+        return 1
+
+
 # ============================================================================
 # COMPONENT: MACD HISTOGRAM CROSSOVER  (H-MACD, run_053)
 # edge_source.category: persistent_behavioral_bias
@@ -926,6 +1024,60 @@ class MacdHistogramCrossoverComponent(SubStrategyComponent):
         }
 
         self._prev_histogram_sign = current_sign
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.slow_period + self.signal_period
+
+
+class MacdHistogramGradedComponent(SubStrategyComponent):
+    """
+    Graded sibling of MacdHistogramCrossoverComponent (D-051). Every bar:
+
+        macd      = EMA_fast(close) - EMA_slow(close)
+        signal    = EMA_signal(macd)
+        raw_value = (macd - signal) / close x 100
+
+    the MACD histogram as a percent of the current close (price-free, so it is
+    comparable across assets). EMAs use span = period, adjust=False, over the
+    bar window the component is given (as the crossover component). Stateless:
+    no memory of earlier bars' signs. No scaling_factor: the config's transforms
+    scale it.
+
+    No lookahead: every EMA runs over closes up to and including bar t. A NaN
+    latest close gives NaN.
+    """
+
+    def __init__(self, name="MacdHistogramGraded", weight=1.0, parameters=None):
+        params = parameters or {}
+        params.setdefault("standardized_forecast", False)
+        super().__init__(name, weight, params)
+        self.fast_period = int(params.get("fast_period", 12))
+        self.slow_period = int(params.get("slow_period", 26))
+        self.signal_period = int(params.get("signal_period", 9))
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+
+        if not self.is_ready():
+            return
+
+        close = data['close']
+        fast_ema = close.ewm(span=self.fast_period, adjust=False).mean()
+        slow_ema = close.ewm(span=self.slow_period, adjust=False).mean()
+        macd_line = fast_ema - slow_ema
+        signal_line = macd_line.ewm(span=self.signal_period, adjust=False).mean()
+        histogram = float(macd_line.iloc[-1] - signal_line.iloc[-1])
+        last_close = float(close.iloc[-1])
+
+        self._raw_value = histogram / last_close * 100.0
+        self.confidence = 1.0
+        self.debug_info = {'histogram': histogram, 'close': last_close}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()

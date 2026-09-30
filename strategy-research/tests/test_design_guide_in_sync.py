@@ -69,12 +69,12 @@ def test_catalog_exists():
     assert CATALOG_PATH.exists(), f"expected {CATALOG_PATH} to exist"
 
 
-def test_component_count_is_24_today():
+def test_component_count_is_27_today():
     """Non-regression pin on the count, re-derived mechanically."""
     real = _real_component_classes()
-    assert len(real) == 24, (
-        f"'^class X(SubStrategyComponent):' count in {STRATEGY_COMPONENTS_PATH} is {len(real)}, expected 24. If this "
-        f"legitimately changed, update COMPONENT_CATALOG.md (and its '24 classes' sentence) in the same change."
+    assert len(real) == 27, (
+        f"'^class X(SubStrategyComponent):' count in {STRATEGY_COMPONENTS_PATH} is {len(real)}, expected 27. If this "
+        f"legitimately changed, update COMPONENT_CATALOG.md (and its '27 classes' sentence) in the same change."
     )
 
 

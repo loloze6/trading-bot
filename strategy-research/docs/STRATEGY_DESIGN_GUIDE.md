@@ -44,6 +44,9 @@ of the signal: a stronger signal, a bigger position; a weaker one, a smaller pos
   `WhaleLargeTradeImbalanceComponent`, `VolumeExpansionHedgeComponent`. They are the rows marked **on/off** in the
   "Kind" column of `COMPONENT_CATALOG.md`. A config that uses one will be refused once that check ships; do not
   use them.
+  Graded versions exist for three of them: `FundingRateGradedComponent`, `FearGreedGradedComponent`,
+  `MacdHistogramGradedComponent`. For an SMA-style trend, use `MacroTrendFilterComponent` (percent distance from an
+  EMA, `period` settable); there is no SMA version.
 - **No dead zones.** The transforms `threshold_filter` and `volume_filter` must not be used on a component in
   `strategies`: they zero the forecast below a threshold, so the position jumps from 0 to the threshold
   (`min_abs: 15` gives 0 or 15..20), which is on/off at the edge. A condition such as "volume above its average"
