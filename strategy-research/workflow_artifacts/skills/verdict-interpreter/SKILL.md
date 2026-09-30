@@ -526,7 +526,7 @@ with the EXACT diagnostic values that triggered the rule:
 
 ## Forbidden
 - Do not change more than one hypothesis dimension in proposed_brief.yaml (refine case).
-- Do not recommend new components or transforms not in STRATEGY_CONFIG_REFERENCE.md (refine case).
+- Do not recommend new components or transforms not in COMPONENT_CATALOG.md (refine case).
 - Do not re-run or re-evaluate backtest numbers — accept protocol_result.yaml as truth.
 - Do not promote unless ALL evaluable approve criteria pass.
 - Do not promote if total trade count across all windows is < 15 (provisional floor —

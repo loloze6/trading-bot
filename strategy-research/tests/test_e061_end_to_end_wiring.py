@@ -227,7 +227,7 @@ _ROUTE_DIAGNOSTICS_KEYS = ("post_backtest_route_real", "post_backtest_route_real
 _CONFIG_COPIES = ("criterion_menu.yaml", "profitability_bars.yaml", "available_feeds.yaml",
                   "indicator_library.yaml", "cost_model.yaml", "venue_tradability.yaml",
                   "coin_universe.yaml", "venue_data_capability.yaml")
-_DOC_COPIES = ("STRATEGY_DESIGN_GUIDE.md", "DATA_AVAILABILITY.md", "WORKFLOW_CAPABILITIES.md")
+_DOC_COPIES = ("STRATEGY_DESIGN_GUIDE.md", "COMPONENT_CATALOG.md", "DATA_AVAILABILITY.md")
 
 PROTOCOL_NAME = "e061_wiring_1h.json"
 SYMBOLS = ("BTCUSDT", "ETHUSDT")

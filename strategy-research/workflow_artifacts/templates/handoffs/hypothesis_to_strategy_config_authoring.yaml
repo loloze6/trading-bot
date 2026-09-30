@@ -15,23 +15,24 @@ required_inputs:
   - path: artifacts/hypothesis_card.yaml
     reason: the approved base hypothesis to implement -- no variant menu exists yet in this flow
   - path: ../../docs/STRATEGY_DESIGN_GUIDE.md
-    reason: authoritative list of available components, transforms, regimes, parameters for this flow
+    reason: how to design a config -- keys, regime detector, transforms, composition, what the config cannot express
+  - path: ../../docs/COMPONENT_CATALOG.md
+    reason: the inventory of every available component and exactly what each outputs (kind, range, warmup, data needs)
 optional_inputs:
   - path: ../../docs/DATA_AVAILABILITY.md
     reason: forced-read whenever timeframe/symbol/venue differs from a prior config in this campaign
-  - path: ../../docs/WORKFLOW_CAPABILITIES.md
-    reason: confirms which signal variants are achievable via config vs require new code
   - path: artifacts/findings_carryover.yaml
     reason: if present, parameter_bracket midpoint is mandatory for the bracketed dimension
   - path: artifacts/run_context.yaml
     reason: if present with run_type=replication_diagnostic, output must exactly match source_run
 constraints:
-  - Use only components/transforms/regimes in STRATEGY_DESIGN_GUIDE.md.
+  - Use only components in COMPONENT_CATALOG.md and the transforms/regimes in STRATEGY_DESIGN_GUIDE.md.
   - History-based transform ops precede scalar ops.
   - Do not emit a selected_variant_id -- no variant menu exists at this point in this flow.
   - When spec_ready, write block_manifest.yaml next to backtest_spec.yaml (STRATEGY_DESIGN_GUIDE.md
-    section 7c; the backtest_specification tool stage stops the run if it is missing or invalid).
-  - Do not invent an instrument-set config field -- proposed, not built (STRATEGY_DESIGN_GUIDE.md section 7a).
+    section "Manifest contract"; the backtest_specification tool stage stops the run if it is missing or invalid).
+  - Do not invent an instrument-set config field -- the config has no symbol, timeframe or instrument key
+    (STRATEGY_DESIGN_GUIDE.md section "What the config cannot express").
 deliverables:
   - backtest_spec.yaml
   - decision.yaml

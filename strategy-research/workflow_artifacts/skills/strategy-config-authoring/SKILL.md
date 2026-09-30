@@ -20,21 +20,17 @@ flow) is what turns it into variants, expressed as patches against the config th
 ## Required inputs
 - `hypothesis_card.yaml` (the base hypothesis — NOT `expanded_hypothesis_card.yaml`; no variant menu exists at
   this point in the config-direct-authoring flow)
-- `STRATEGY_DESIGN_GUIDE.md` (`strategy-research/docs/STRATEGY_DESIGN_GUIDE.md` — the authoritative list of
-  every available component, transform op, regime, and parameter for THIS flow. Sections 1-6 are carried over
-  near-verbatim from `trading-bot/DOC/STRATEGY_CONFIG_REFERENCE.md`, which remains the code-owned reference and
-  is authoritative if the two ever disagree — see the design guide's own provenance note. Section 7 is new,
-  config-direct-authoring-specific content: §7a (instrument-set field) is PROPOSED, NOT BUILT; §7b
-  (component-class existence, `validate_config.py` VIOLATION V12) and §7c (the `block_manifest.yaml` contract
-  you write, see Output requirements) are built and live.)
+- `STRATEGY_DESIGN_GUIDE.md` (`strategy-research/docs/STRATEGY_DESIGN_GUIDE.md` — how to design a config for THIS
+  flow: how a config becomes a trade, the graded-forecast rule, every key and option, the transform ops, how to
+  compose a signal, what the config cannot express, the validator rules, and the `block_manifest.yaml` contract
+  you write, see Output requirements.)
+- `COMPONENT_CATALOG.md` (`strategy-research/docs/COMPONENT_CATALOG.md` — the inventory of every available
+  component and exactly what each outputs: formula, range and sign, graded or on/off, warmup, data needs.)
 - `DATA_AVAILABILITY.md` (`strategy-research/docs/DATA_AVAILABILITY.md` — short, forced-read:
   what OHLCV timeframes/aux feeds are actually available, the exact-cache-missing fallback
   rule, and the bar-count/signal-shape checks to run before emitting a config for a new or
   changed timeframe. Read in full whenever the hypothesis's timeframe, symbol, or venue
   differs from what a prior config in this campaign already used.)
-- `WORKFLOW_CAPABILITIES.md` (optional — read before emitting any config to confirm the
-  required signal variant is achievable without new code. If not achievable, emit
-  component_gap immediately rather than inventing a component class name.)
 - `findings_carryover.yaml` (if present): read `parameter_bracket` field.
   If present, the config MUST use the midpoint value for the bracketed dimension.
   Do not use any other value. Print: "BRACKET DETECTED: {dimension} midpoint = {midpoint}"
@@ -44,7 +40,7 @@ flow) is what turns it into variants, expressed as patches against the config th
 - `backtest_spec.yaml`   (same artifact name and shape `backtest-engineering` uses, minus `selected_variant_id`
   — see IMPROVEMENT 01's removal note below)
 - `decision.yaml`        (conforms to workflow_artifacts/schemas/decision.schema.json)
-- `block_manifest.yaml`  (only when status is spec_ready; STRATEGY_DESIGN_GUIDE.md §7c — see below)
+- `block_manifest.yaml`  (only when status is spec_ready; STRATEGY_DESIGN_GUIDE.md 'Manifest contract' — see below)
 
 ## Output requirements
 `backtest_spec.yaml`:
@@ -53,7 +49,8 @@ flow) is what turns it into variants, expressed as patches against the config th
 - `config_rationale`: list mapping each hypothesis claim to one concrete config choice.
 - `component_gap`: null when spec_ready; else {needed, kind, description}.
 The embedded `config` must:
-- Use ONLY components, transform ops, and regimes listed in STRATEGY_DESIGN_GUIDE.md. No invented names.
+- Use ONLY components listed in COMPONENT_CATALOG.md, and transform ops and regimes listed in
+  STRATEGY_DESIGN_GUIDE.md. No invented names.
 - Put history-based transform ops before scalar ops.
 - Set explicit `lookback` on any component using ratio_to_mean / percentile / zscore.
 - If `research_brief.yaml` contains a `significance_methodology` field (e.g. P1b's
@@ -66,7 +63,7 @@ The embedded `config` must:
 
 `block_manifest.yaml` (next to `backtest_spec.yaml`; write it only when status is spec_ready). It says which
 part of the config you just wrote IS the hypothesis's block and which part is scaffolding. Exact shape, every key
-required, no other key (STRATEGY_DESIGN_GUIDE.md §7c):
+required, no other key (STRATEGY_DESIGN_GUIDE.md 'Manifest contract'):
 ```yaml
 block:
   kind: forecast            # forecast | regime -- nothing else
@@ -148,7 +145,8 @@ the original rationale.
   explicitly mentioned in the brief — omitting trending/chop means those bars fall to
   default_regime behavior.
 - Write `block_manifest.yaml` for every spec_ready config (see Output requirements). Do not invent a
-  symbol/timeframe/instrument-set config field (§7a) — proposed, not built.
+  symbol/timeframe/instrument-set config field — the config has none (STRATEGY_DESIGN_GUIDE.md
+  'What the config cannot express').
 
 ## Ungated hypotheses (post-A2.3) — THE canonical pattern
 
@@ -231,7 +229,7 @@ If `run_context.yaml` is present and contains `run_type: replication_diagnostic`
 - Any deviation from source_run parameters is a critical failure of this stage.
 
 ## Forbidden
-- Do not invent component classes, transform ops, or regime names absent from STRATEGY_CONFIG_REFERENCE.md.
+- Do not invent component classes, transform ops, or regime names absent from COMPONENT_CATALOG.md.
 - Do not write Python or modify the engine.
 - Do not emit more than one config.
 - Do not loosen any threshold or sample-split decision validation already fixed.
@@ -249,8 +247,9 @@ If `run_context.yaml` is present and contains `run_type: replication_diagnostic`
 - Do not set any regime to {"components": []} (empty components list).
   If a regime should produce no trades, set it to null.
 - Do not invent component class names. If you are unsure whether a variant is possible,
-  read WORKFLOW_CAPABILITIES.md "Common confusion" section first. The answer is almost
+  read the component's row and the "Variant patterns" section of COMPONENT_CATALOG.md first. The answer is almost
   always "yes, achievable via a config parameter."
 
 ## Context rule
-Read only the hypothesis artifacts and the design guide (STRATEGY_DESIGN_GUIDE.md). Minimal context.
+Read only the hypothesis artifacts, the design guide (STRATEGY_DESIGN_GUIDE.md) and the component catalogue
+(COMPONENT_CATALOG.md). Minimal context.

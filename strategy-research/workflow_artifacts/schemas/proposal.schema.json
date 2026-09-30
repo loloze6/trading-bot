@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$comment": "E-046a Slice 5b-i (readers + reports consumption). Documentation/test-validation only -- no code loads this file at runtime (see strategy-research/CLAUDE.md's 'Schemas are declared but not enforced' note). Shape grounded in S1_FINDINGS.md §7's proposed schema, itself grounded against STRATEGY_DESIGN_GUIDE.md's 'Component variant patterns' section (kind:patch vocabulary) and §7c's block_manifest.yaml contract (kind:new_block vocabulary -- §7c is built since 2026-09-24: stage 1b writes a run's real block_manifest.yaml, checked by tools/block_manifest.py; a reader proposing kind:new_block only sketches IN that vocabulary and writes no manifest). One entry in the list written by a workflow_artifacts/skills/readers/<category>-reader/SKILL.md skill to artifacts/proposals/<category>.yaml.",
+  "$comment": "E-046a Slice 5b-i (readers + reports consumption). Documentation/test-validation only -- no code loads this file at runtime (see strategy-research/CLAUDE.md's 'Schemas are declared but not enforced' note). Shape grounded in S1_FINDINGS.md §7's proposed schema, itself grounded against COMPONENT_CATALOG.md's 'Variant patterns' section (kind:patch vocabulary) and STRATEGY_DESIGN_GUIDE.md's 'Manifest contract' section for block_manifest.yaml (kind:new_block vocabulary -- the manifest contract is built since 2026-09-24: stage 1b writes a run's real block_manifest.yaml, checked by tools/block_manifest.py; a reader proposing kind:new_block only sketches IN that vocabulary and writes no manifest). One entry in the list written by a workflow_artifacts/skills/readers/<category>-reader/SKILL.md skill to artifacts/proposals/<category>.yaml.",
   "title": "proposals/<category>.yaml entry",
   "description": "A single evidence-grounded proposal from one of the 5 specialist readers (profitability, trade_efficiency, forecast_power, regime_power, component_attribution). A reader proposes evidence plus a patch/new_block sketch -- it does NOT decide an idea's status (that is the grid, idea_status.yaml) and never routes. Its scores only rank candidates for the decide-next step (delivery_plan_v26.md slice 6b; E-046a realignment 2026-09-23). Loaded and validated by tools/reader_proposals.py.",
   "type": "object",
@@ -14,12 +14,12 @@
     },
     "kind": {
       "enum": ["patch", "new_block"],
-      "description": "patch: a Component variant pattern (STRATEGY_DESIGN_GUIDE.md 'Component variant patterns') against an existing component. new_block: a block_manifest.yaml-shaped sketch (STRATEGY_DESIGN_GUIDE.md §7c) for a not-yet-existing component/regime block."
+      "description": "patch: a variant pattern (COMPONENT_CATALOG.md 'Variant patterns') against an existing component. new_block: a block_manifest.yaml-shaped sketch (STRATEGY_DESIGN_GUIDE.md 'Manifest contract') for a not-yet-existing component/regime block."
     },
     "patch": {
       "type": "array",
       "minItems": 1,
-      "description": "Required, non-empty, when kind=patch; must be absent when kind=new_block. A before/after component-spec diff in STRATEGY_DESIGN_GUIDE.md's 'Component variant patterns' vocabulary (e.g. a scaling_factor sign flip, an atr_multiplier/threshold_filter adjustment) -- not a raw unstructured diff.",
+      "description": "Required, non-empty, when kind=patch; must be absent when kind=new_block. A before/after component-spec diff in COMPONENT_CATALOG.md's 'Variant patterns' vocabulary (e.g. a scaling_factor sign flip, an atr_multiplier/threshold_filter adjustment) -- not a raw unstructured diff.",
       "items": {
         "type": "object",
         "required": ["component_id", "field", "before", "after"],
@@ -34,7 +34,7 @@
     },
     "block": {
       "type": "object",
-      "description": "Required when kind=new_block; must be absent when kind=patch. A block_manifest.yaml-shaped sketch (STRATEGY_DESIGN_GUIDE.md §7c, built: stage 1b writes the real block_manifest.yaml and tools/block_manifest.py checks it; this proposal field is only a sketch for a human/5b-ii reviewer -- no code registers it as a block).",
+      "description": "Required when kind=new_block; must be absent when kind=patch. A block_manifest.yaml-shaped sketch (STRATEGY_DESIGN_GUIDE.md 'Manifest contract', built: stage 1b writes the real block_manifest.yaml and tools/block_manifest.py checks it; this proposal field is only a sketch for a human/5b-ii reviewer -- no code registers it as a block).",
       "required": ["kind", "config_paths", "rationale"],
       "additionalProperties": false,
       "properties": {

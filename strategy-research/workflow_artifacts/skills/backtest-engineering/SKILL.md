@@ -13,16 +13,13 @@ Translate the approved hypothesis into one valid strategy config (emitted inside
 - `expanded_hypothesis_card.yaml`
 - `innovation_notes.yaml`  (Improvement 02: `asset_diversity_audit` candidate symbols)
 - `validation_protocol.yaml`
-- `STRATEGY_CONFIG_REFERENCE.md`  (trading-bot config reference: the authoritative list of every available
-  component, transform op, regime, and parameter)
+- `COMPONENT_CATALOG.md`  (`strategy-research/docs/COMPONENT_CATALOG.md`: the inventory of every available
+  component and exactly what each outputs, plus the names of every transform op, regime, and rule operator)
 - `DATA_AVAILABILITY.md` (`strategy-research/docs/DATA_AVAILABILITY.md` — short, forced-read:
   what OHLCV timeframes/aux feeds are actually available, the exact-cache-missing fallback
   rule, and the bar-count/signal-shape checks to run before emitting a config for a new or
   changed timeframe. Read in full whenever the hypothesis's timeframe, symbol, or venue
   differs from what a prior config in this campaign already used.)
-- `WORKFLOW_CAPABILITIES.md` (optional — read before emitting any config to confirm the
-  required signal variant is achievable without new code. If not achievable, emit
-  component_gap immediately rather than inventing a component class name.)
 - `findings_carryover.yaml` (if present): read `parameter_bracket` field.
   If present, the config MUST use the midpoint value for the bracketed dimension.
   Do not use any other value. Print: "BRACKET DETECTED: {dimension} midpoint = {midpoint}"
@@ -39,7 +36,7 @@ Translate the approved hypothesis into one valid strategy config (emitted inside
 - `config_rationale`: list mapping each hypothesis claim to one concrete config choice.
 - `component_gap`: null when spec_ready; else {needed, kind, description}.
 The embedded `config` must:
-- Use ONLY components, transform ops, and regimes listed in STRATEGY_CONFIG_REFERENCE.md. No invented names.
+- Use ONLY components, transform ops, and regimes listed in COMPONENT_CATALOG.md. No invented names.
 - Put history-based transform ops before scalar ops.
 - Set explicit `lookback` on any component using ratio_to_mean / percentile / zscore.
 - If `research_brief.yaml` contains a `significance_methodology` field (e.g. P1b's
@@ -143,7 +140,7 @@ the original rationale.
   **This restriction does NOT apply to the fully-ungated pattern** (regime_detector.rules=[]
   AND regime_detector.components=[]) — see "Ungated hypotheses" below; that is a
   different, separately-canonical case with its own rule.
-- Include all regime rules from STRATEGY_CONFIG_REFERENCE.md's worked example as the
+- Include all regime rules from STRATEGY_DESIGN_GUIDE.md's worked example as the
   baseline, then modify only what the hypothesis requires. Do not omit regimes not
   explicitly mentioned in the brief — omitting trending/chop means those bars fall to
   default_regime behavior.
@@ -229,7 +226,7 @@ If `run_context.yaml` is present and contains `run_type: replication_diagnostic`
 - Any deviation from source_run parameters is a critical failure of this stage.
 
 ## Forbidden
-- Do not invent component classes, transform ops, or regime names absent from STRATEGY_CONFIG_REFERENCE.md.
+- Do not invent component classes, transform ops, or regime names absent from COMPONENT_CATALOG.md.
 - Do not write Python or modify the engine.
 - Do not emit more than one config.
 - Do not loosen any threshold or sample-split decision validation already fixed.
@@ -247,7 +244,7 @@ If `run_context.yaml` is present and contains `run_type: replication_diagnostic`
 - Do not set any regime to {"components": []} (empty components list).
   If a regime should produce no trades, set it to null.
 - Do not invent component class names. If you are unsure whether a variant is possible,
-  read WORKFLOW_CAPABILITIES.md "Common confusion" section first. The answer is almost
+  read the component's row and the "Variant patterns" section of COMPONENT_CATALOG.md first. The answer is almost
   always "yes, achievable via a config parameter."
 
 ## Context rule

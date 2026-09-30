@@ -91,7 +91,7 @@ def resolve_json_pointer(config, path):
 
 def manifest_missing_paths(variant_config: dict, manifest) -> list:
     """The manifest-declared block.config_paths (STRATEGY_DESIGN_GUIDE.md
-    §7c) that do NOT resolve in variant_config; [] when the manifest has no
+    'Manifest contract') that do NOT resolve in variant_config; [] when the manifest has no
     block.config_paths list at all. Block paths only: a variant may change
     scaffolding. tools/block_manifest.unresolved_paths adds scaffolding for
     the base-config check."""

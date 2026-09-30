@@ -223,10 +223,18 @@ memory-count trigger, reframe → a `ready` queue entry, terminate → the
 `engineering/roadmap/E-059/S1_FINDINGS_6C.md`.
 
 ### "What can run autonomously vs needs a human?"
-→ **[`docs/WORKFLOW_CAPABILITIES.md`](docs/WORKFLOW_CAPABILITIES.md)** —
-per-stage autonomy boundary within one run.
 → **[`RUNBOOK.md`](RUNBOOK.md) section 3** — which halt conditions are
 mechanically resolved vs. remain human-gated across a whole campaign.
+
+### "How do I design a strategy config? Which components exist and what do they output?"
+→ **[`docs/STRATEGY_DESIGN_GUIDE.md`](docs/STRATEGY_DESIGN_GUIDE.md)** — how to design a config: how
+a config becomes a trade, the graded-forecast rule (D-051), every key and option, transform ops,
+composing a signal, what the config cannot express, the manifest contract, validator rules V1-V13.
+→ **[`docs/COMPONENT_CATALOG.md`](docs/COMPONENT_CATALOG.md)** — one verified row per component
+class (exact output, range and sign, graded or on/off, warmup, data needs, NaN behaviour) and the
+feeds. Both are LLM inputs to the config-authoring stage.
+→ **[`engineering/design_guide_history.md`](engineering/design_guide_history.md)** — provenance,
+review fixes and engineering plumbing moved out of the two docs above (not an LLM input).
 
 ### "What are the pipeline stages / process steps?"
 

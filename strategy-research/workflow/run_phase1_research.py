@@ -2527,7 +2527,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 "tool stage can run."
             )
 
-        # E-056 1b block manifest (STRATEGY_DESIGN_GUIDE.md §7c, built): 1b writes
+        # E-056 1b block manifest (STRATEGY_DESIGN_GUIDE.md, 'Manifest contract', built): 1b writes
         # artifacts/block_manifest.yaml next to the config. Checked here, against the base
         # config, with tools/block_manifest.py -- the exact check tools/block_registry.py
         # runs later -- so a manifest this stage accepts is one the registry accepts.
@@ -2559,7 +2559,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 raise RuntimeError(
                     "run_tool_worker(backtest_specification): artifacts/block_manifest.yaml is "
                     "missing -- strategy_config_authoring must write it next to the base config "
-                    "(STRATEGY_DESIGN_GUIDE.md §7c) when its status is spec_ready."
+                    "(STRATEGY_DESIGN_GUIDE.md, section \"Manifest contract\") when its status is spec_ready."
                 )
             _bm.check_manifest(manifest, base_config, where=str(manifest_path),
                                error_cls=RuntimeError)
@@ -8263,7 +8263,7 @@ def _create_remaining_handoffs(run_id: str, run_dir: Path):
             "deliverables": ["verdict_interpretation.yaml"],
             "constraints": [
                 "Change at most one hypothesis dimension in proposed_brief.yaml (refine case).",
-                "Do not recommend components absent from STRATEGY_CONFIG_REFERENCE.md.",
+                "Do not recommend components absent from COMPONENT_CATALOG.md.",
                 "Accept protocol_result.yaml numbers as truth — do not re-evaluate.",
                 "Populate altitude_justification with the specific diagnostic value used.",
                 "Do not emit both proposed_brief.yaml AND escalation_request.yaml.",
@@ -13981,7 +13981,7 @@ def _block_manifest_error(path: Path):
         manifest = _bm.load_manifest_file(manifest_path)
         if manifest is None:
             return (f"{manifest_path} is missing -- a spec_ready config needs its block manifest "
-                    f"(STRATEGY_DESIGN_GUIDE.md §7c)")
+                    f"(STRATEGY_DESIGN_GUIDE.md, section \"Manifest contract\")")
         _bm.check_manifest(manifest, config, where=str(manifest_path))
     except _bm.BlockManifestError as exc:
         return str(exc)
@@ -14025,7 +14025,7 @@ def _apply_block_manifest_retry_context(stage_name: str, handoff: dict, run_dir:
     handoff["injected_context"]["block_manifest_error"] = (
         f"Retry {retry['attempts']}/{_BLOCK_MANIFEST_RETRY_MAX}. Your previous "
         f"block_manifest.yaml was rejected: {retry['last_error']}. Re-emit backtest_spec.yaml, "
-        f"decision.yaml and a corrected block_manifest.yaml (STRATEGY_DESIGN_GUIDE.md §7c).")
+        f"decision.yaml and a corrected block_manifest.yaml (STRATEGY_DESIGN_GUIDE.md, section \"Manifest contract\").")
 
 
 # E-061 C2 S2c (C2_S1_FINDINGS.md G12, card D; review A5): Step 2's variant
@@ -14295,7 +14295,7 @@ def _json_pointer_module():
 
 def _block_manifest_module():
     """tools/block_manifest.py (E-056 1b block manifest): the one implementation
-    of the STRATEGY_DESIGN_GUIDE.md §7c contract, shared with
+    of the STRATEGY_DESIGN_GUIDE.md 'Manifest contract' section, shared with
     tools/block_registry.py. Imported lazily like the other tools/ siblings."""
     _json_pointer_module()  # puts tools/ on sys.path
     import block_manifest as _bm
@@ -14615,7 +14615,7 @@ def _json_pointer_exists(config, path: str) -> bool:
 
 def _check_manifest_paths(variant_config: dict, manifest: dict) -> list:
     """Returns the manifest-declared block.config_paths (STRATEGY_DESIGN_GUIDE.md
-    §7c) that do NOT resolve in variant_config; [] when the manifest has no
+    'Manifest contract') that do NOT resolve in variant_config; [] when the manifest has no
     block.config_paths list at all. Block paths only -- a variant may change
     scaffolding. The whole manifest is checked against the base config first,
     by tools/block_manifest.check_manifest (after 1b, and again in the

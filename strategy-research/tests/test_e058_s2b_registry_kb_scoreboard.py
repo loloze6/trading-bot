@@ -288,7 +288,7 @@ def test_config_changed_after_backtest_refuses_to_register():
     assert not _registry_path().exists() and not _memory_path().exists()
 
 
-_M = {"scaffolding": [], "rationale": "r"}  # E-056 1b: the full §7c contract
+_M = {"scaffolding": [], "rationale": "r"}  # E-056 1b: the full manifest contract
 
 
 @pytest.mark.parametrize("manifest,match", [
