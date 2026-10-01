@@ -790,6 +790,11 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         SYMBOL at fill time, not upfront. Never used by production callers. See
         tests/test_cost_model.py.
     """
+    if gap_policy is not None and not gap_detection:
+        # CUL-359: refuse before any data is fetched (TradingBot raises the
+        # same error, but only after the data load)
+        raise ValueError("gap_policy requires gap_detection=True -- pass "
+                         "gap_detection=True or omit gap_policy.")
     from data.feed_registry import FEED_REGISTRY
 
     if drop_feeds is None:

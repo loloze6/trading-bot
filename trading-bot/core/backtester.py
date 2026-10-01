@@ -517,6 +517,21 @@ class BacktestEngine:
                 "fetch_interval_seconds": self.data_manager.fetch_interval_seconds,
             }
 
+        # CUL-359: fold the gap rule into run identity when it is on -- a run with
+        # gap detection / tiers and one without gave the same hash but different
+        # results on gapped data (the #54 defect class). Off (gap_detection False)
+        # -> _provenance_config untouched, byte-identical.
+        if self.gap_detection:
+            if "gap_rule" in _provenance_config:
+                raise ValueError(
+                    "strategy config already carries a gap_rule key; provenance "
+                    "fold would silently overwrite it -- resolve the collision explicitly"
+                )
+            _provenance_config = {
+                **_provenance_config,
+                "gap_rule": {"gap_detection": True, "gap_policy": self.gap_policy},
+            }
+
         # E-010 S3 (2026-09-10): fold the effective cost model into run identity
         # -- the CUL-55-class gap this feature itself had left open. Unlike the
         # folds above, this is NOT gated behind an off-by-default flag: a cost
