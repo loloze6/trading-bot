@@ -52,12 +52,23 @@ backtest grid does that.
 Rubric `brief-card-v1` (anchored; a card with no backtest yet usually scores
 `confidence_real` 0-1):
 
-| Score | `confidence_real` (is the effect real?) | `distance_to_profitable` (edge vs cost) | `mechanism_plausibility` (causal story) |
+| Score | `confidence_real` (is the effect real?) | `distance_to_profitable` (card I / D-017: how far is this idea from the validated blocks?) | `mechanism_plausibility` (causal story) |
 |---|---|---|---|
-| 0 | Story only: no cited measurement. | The card's `cost_feasibility` puts the expected edge below the round-trip cost. | No counterparty named; the pattern could be coincidence. |
-| 1 | One cited observation (one prior run, window or published result). | Expected edge above cost, but less than 2x cost. | A mechanism is named, but not who pays or why. |
-| 2 | Cited evidence from 2+ independent sources or prior runs with a consistent sign. | Expected edge 2-4x cost. | A constrained or non-economic actor who pays is named. |
-| 3 | A prior run in this campaign measured this exact effect with a consistent sign across windows (cite it). | Expected edge above 4x cost, from a cited measurement. | Actor named AND a cited reason why the edge is not arbitraged away. |
+| 0 | Story only: no cited measurement. | Same block type as a block in `block_registry.yaml`: same kind, same component classes, same timeframe category (or the block's timeframe category is unrecorded: an assumed match) -- a neighbour of something already validated. | No counterparty named; the pattern could be coincidence. |
+| 1 | One cited observation (one prior run, window or published result). | Same component classes as a registered block, but a different kind or timeframe category. | A mechanism is named, but not who pays or why. |
+| 2 | Cited evidence from 2+ independent sources or prior runs with a consistent sign. | The registry holds a forecast block and this card is not plainly the same classes as any registered block -- including when you cannot tell (correlation to the registry cannot be measured before a backtest). | A constrained or non-economic actor who pays is named. |
+| 3 | A prior run in this campaign measured this exact effect with a consistent sign across windows (cite it). | Nothing is validated yet: `campaign_record/block_registry.yaml` is not in your inputs, or it holds no forecast block (`kind: forecast`). | Actor named AND a cited reason why the edge is not arbitraged away. |
+
+`distance_to_profitable` is the same score the readers give (card I, D-017), read
+from `campaign_record/block_registry.yaml` (an input only when the file exists).
+A block type is (kind, component classes, timeframe category). A card has no config
+yet, so score 0 or 1 only when the card's `signal_concept` plainly uses the same
+component classes as a registered block's `config_fragment` (`class` keys) -- never
+guess class names; when you cannot tell, score 2 (the readers' default for a type they
+cannot place). Timeframe categories: high <= 15min < medium < 1h <= low < 1d <= daily;
+a block with no recorded `timeframe_category` is an assumed match. It is NOT a
+cost estimate: `cost_feasibility` ranks nothing here (O-3, operator 2026-10-01 --
+costs are judged only by the backtest).
 
 ## 3. The brief is exhausted
 
@@ -73,3 +84,9 @@ reason: <one or two sentences: why nothing new is left in this brief>
 The run then ends as `completed_brief_exhausted`, and the queue never asks
 this brief for more hypotheses again. Writing this file next to any card
 stops the run (contradictory output).
+
+Never declare the brief exhausted, and never leave out a card, on a cost,
+breakeven or turnover estimate (`cost_feasibility` included). Costs are judged
+only by the backtest (O-3, operator 2026-10-01): an idea you expect to lose to
+fees is still a card -- say so in its `expected_failure_modes`. "Worth testing"
+means distinct and testable with the available data, nothing more.

@@ -658,8 +658,8 @@ how (E-039 S4, 2026-09-12 — see item 4 below).
 `innovation_expansion_to_validation.yaml`, `pipeline_state.yaml`
 (for the refinement counter), `pre_registration.yaml` if present (the
 pre-registered `sample_split_design.holdout_range`, A6.1 — see below),
-`config/cost_model.yaml` (required, for `cost_feasibility`, added by code —
-CUL-336). `innovation_notes.yaml` and `docs/DATA_AVAILABILITY.md` are added
+`config/cost_model.yaml` (required, for the information-only `cost_feasibility`
+estimate, added by code — CUL-336; since O-3 it never blocks approval). `innovation_notes.yaml` and `docs/DATA_AVAILABILITY.md` are added
 only when the run is already in a refine loop (`artifacts/refinement_notes.yaml`
 exists), keeping a first pass at minimal context. `config/campaign_data_policy.yaml` is deliberately
 not an input: the skill says not to read it directly, and the one field it
@@ -2084,9 +2084,9 @@ Each [run](#g-run) stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-
 |---|---|---|---|
 | `status` | The gate's [verdict](#g-verdict) — the field the router reads to decide the whole run's next step. | `approve` (proceed to spec) · `conditional_approve` (proceed, conditions printed) · `refine` (this same call also produces `refinement_notes.yaml`, bounded) · `reject` (terminal) | `conditional_approve` |
 | `rationale` | Why that verdict, in prose, so the decision can be audited later. | prose | *"Funding-rate mean-reversion mechanism is established (run_059 daily baseline: Sharpe > 0.8 …)"* |
-| `conditions` | Conditions the backtest config must respect. Only meaningful on `conditional_approve`. | list of strings | *"[Prescreen](#g-prescreen) cost gate (Layer 2) must pass: edge_to_cost_ratio >= 2.0 for BOTH BTCUSDT and ETHUSDT"* |
+| `conditions` | Conditions the backtest config must respect. Only meaningful on `conditional_approve`. | list of strings | *"Backtest both BTCUSDT and ETHUSDT on the registered windows"* (a cost or edge-to-cost condition is no longer allowed here: costs are judged only by the backtest, O-3) |
 | `blocking_issues` | What must be fixed before this can proceed. Non-empty normally implies `refine` or `reject`. | list | `[]` |
-| `promotion_path_if_approved` / `..._if_rejected` | Written in advance: what happens on each outcome, so the route is not invented after the result. | prose | *"If walk-forward Sharpe > 0.8 AND max_drawdown < 30% AND cost gate passes, [promote](#g-promote) to holdout_evaluation"* |
+| `promotion_path_if_approved` / `..._if_rejected` | Written in advance: what happens on each outcome, so the route is not invented after the result. | prose | *"If walk-forward Sharpe > 0.8 AND max_drawdown < 30% AND the post-backtest cost bar passes, [promote](#g-promote) to holdout_evaluation"* |
 | `hypothesis_id` / `approval_issued_by` / `approval_timestamp` | Provenance. | string / string / date | `FUNDING_MR_4H_RETEST` / `validation_gate / run_060` / `2026-08-27` |
 
 ⚠️ **`family_status` is an accepted alternative to `status`.** The

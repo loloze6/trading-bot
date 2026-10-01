@@ -263,7 +263,15 @@ def test_a_1a_rerun_rewrites_the_pass_rule_and_rechecks_the_id(campaign_root):
 # matching Checklist / Forbidden bullets are updated. Changes hypothesis_generation's prompt on
 # every path. Nothing about the decide_next addendum changed.
 # Previous pin: 82a3524caa89c54613a7262ae9d9d6a51b8f02e5d413eb0953948beafdfabedc.
-_MASTER_SKILL_SHA256 = "8309787de7bf3036eb6ffc24ac621de6258ea045e0b2873644010129533b5e52"
+# RE-PINNED by O-3 (2026-10-01, branch fix/o3-costs-judged-by-backtest): a DECLARED change --
+# IMPROVEMENT 07's cost-feasibility "Hard rule" (plausibility: implausible -> do not queue / drop)
+# is replaced by "Information only -- never a gate" (costs are judged only by the backtest), plus
+# one Forbidden bullet (no card omitted/dropped/down-ranked, no brief declared exhausted, on a cost
+# estimate). The whole file is hashed and shipped, so hypothesis_generation's prompt changes on every
+# path; the IMPROVEMENT 07 text applies only under config_direct_authoring. The decide_next addendum is
+# still not in the skill (the brief-card rubric lives in BRIEF_HYPOTHESES.md, edited separately).
+# Previous pin: 8309787de7bf3036eb6ffc24ac621de6258ea045e0b2873644010129533b5e52.
+_MASTER_SKILL_SHA256 = "6ac6d3288b315e1dc5cdff00dadaef099f56a3a42a5a8e639abd90adf555e87f"
 
 
 def test_hypothesis_design_skill_is_byte_identical_to_master():

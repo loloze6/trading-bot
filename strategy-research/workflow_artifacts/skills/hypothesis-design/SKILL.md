@@ -387,10 +387,13 @@ cost_feasibility:
   plausibility_rationale: "<must cite the signal class and timeframe>"
 ```
 
-**Hard rule (unchanged from quant-validation's own):** `plausibility: implausible` → do not add this hypothesis
-to the run queue. Route it to `feed_wishlist.yaml` (if a data gap is the fix) or drop it from the queue with the
-reason stated in `rationale` (if no architectural fix is viable). Do not hardcode fee/spread numbers — always
-read from `config/cost_model.yaml`.
+**Information only — never a gate (O-3, operator 2026-10-01: costs are judged ONLY by the backtest).**
+`cost_feasibility` is your estimate, written down so the backtest can be read against it. It is never a reason
+to omit, drop, park or down-rank a hypothesis, nor to declare a brief exhausted — including when
+`plausibility: implausible`. An idea is queued on its mechanism and data; whether it survives costs is measured
+by its backtest (card E profit bars: pooled `realized_edge_to_cost_ratio`, `config/criterion_menu.yaml`). If
+you expect turnover to be the problem, say so in `rationale` and in `expected_failure_modes`, and still write the
+card. Do not hardcode fee/spread numbers — always read from `config/cost_model.yaml`.
 
 **What this relocation does NOT replace:** `quant-validation/SKILL.md`'s other content — `bias_risks`,
 enumerated `failure_modes` (beyond this card's own `expected_failure_modes` field, required regardless of the
@@ -464,6 +467,8 @@ IMPROVEMENT 01/04/07 above; a partial pass-through is a silent gap-filling trap,
   `config/criterion_menu.yaml`'s live entries (Improvement 07). Do not hardcode cost numbers — read
   `config/cost_model.yaml` (Improvement 07). Do not re-derive `edge_source`/`signal_concept`/`criteria` for a
   candidate that already qualifies as a pass-through (Improvement 08) — copy it through instead.
+- Do not omit, drop or down-rank a hypothesis, and do not declare a brief exhausted, on a cost, breakeven or
+  turnover estimate (`cost_feasibility` included). Costs are judged only by the backtest. (Improvement 07, O-3)
 
 ## Context rule
 Read `research_brief.yaml`, `config/available_feeds.yaml`, `feed_wishlist.yaml`, `config/indicator_library.yaml`, and, when present, `artifacts/tried_ideas.yaml` or `campaign_record/exclusion_digest.yaml` and `campaign_record/campaign_knowledge_base.yaml`. Config-direct-authoring flow only: also read `config/criterion_menu.yaml` and `config/cost_model.yaml` (Improvement 07). Do not read other files unless the handoff explicitly requires them.

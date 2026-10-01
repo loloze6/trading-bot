@@ -232,7 +232,8 @@ trade once?" Every gate that kills a strategy for being too expensive gets its
 numbers from here, so changing a value here changes which strategies survive.*
 
 **WHO READS IT (PROD, measured)**
-- `tools/prescreen_signal.py:613` — `_load_cost_model()`, feeds `_round_trip_cost()` (`:644`) and the Layer 2 `_cost_check` (`:665-666`)
+- ~~`tools/prescreen_signal.py`~~ — RETIRED (file removed E-039 step 5, 2026-09-12; its Layer 2 `_cost_check` was a pre-backtest gate, O-3 2026-10-01: costs are judged only by the backtest)
+- `trading-bot/reporting/run_artifact.py` — `_load_cost_model()` / `_round_trip_cost_bps()`, the information-only post-backtest cost check
 - `tools/run_protocol.py:85` — `_load_cost_model()`, consumed by `_cost_paid_bps()` (`:296`) and `_commission_rate_for_symbol()` (`:96`)
 - `workflow/stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/; never drove the pipeline]:80` — declared `required_inputs` of the `signal_prescreen` stage
 - `workflow/run_phase1_research.py:1369` — same requirement, emitted into the stage dispatch as `"../../config/cost_model.yaml"`
