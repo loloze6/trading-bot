@@ -199,8 +199,9 @@ verbatim or a check you can skip your own analysis because of:
 - must NOT change the core research question unless the primary_failure_mode indicates
   the hypothesis itself is wrong (not just the implementation)
 - C9 (K2, 2026-07-13): this content is checked against campaign_knowledge_base.yaml for an
-  exhausted/forbidden family BEFORE the orchestrator scaffolds the next run
-  (`_route_refine`) — do not name a family the KB already marks exhausted with no open
+  banned family BEFORE the orchestrator scaffolds the next run
+  (`_route_refine`) — do not name a family the KB lists as a ban (`exhausted_mechanisms`:
+  evidence_count >= 3 or an operator-approved veto, D-055) with no open
   reactivation_condition; that pauses the pipeline rather than proceeding.
 
 `proposed_brief.yaml` (when lineage_routing = pivot):
@@ -210,8 +211,9 @@ verbatim or a check you can skip your own analysis because of:
 - C9 (K2, 2026-07-13): `_route_pivot` itself does not read proposed_brief.yaml (the next
   run's hypothesis is formalized later, by hypothesis_generation) — but it DOES scan
   `primary_failure_mode`/`config_to_failure_map`/`root_cause`/`findings_carryover.yaml`'s
-  own prose for a KB-exhausted family before scaffolding. Naming an exhausted family
-  (e.g. a Keltner variant) anywhere in that prose pauses the pipeline the same way.
+  own prose for a KB-banned family before scaffolding. Naming a banned family
+  anywhere in that prose pauses the pipeline the same way (D-055: an `exhausted: true`
+  finding below the ban bar is information only and never pauses).
 
 ## REQUIRED OUTPUT — findings_carryover.yaml
 

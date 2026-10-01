@@ -99,7 +99,23 @@ findings:
     is Pareto-blocked detector (see er_detector_unusable below), not calendar seasonality.
 
     '
-  exhausted: true
+  exhausted: false
+  policy_consequence: 'WITHDRAWN 2026-10-01 (D-055): this ban no longer applies. It reached the
+    exhausted_mechanisms list only because its exhausted_basis contained the word
+    ''analytic'' (evidence_count below 3, no approved veto). Kept as history and as
+    information for later runs, never a veto.
+
+    '
+  readjudication_20261001: 'D-055 (operator 2026-10-01): not analytic -- the basis is one IC estimate
+    (ic_active_bars -0.032, p=0.83) on a detector this KB itself judges unusable. The
+    four evidence runs are one measurement: run_017, run_024, run_027 and run_033 give
+    identical results (baseline_v1, 22 monthly windows BTC/ETH 1h: 69 trades, pooled
+    gross -65.9, net -181.7, mean per-window corr +0.282 over the 12 windows with a
+    value, 6 windows with no trade) under config hashes 778d53eb / 7605238e / 18fad381.
+    One config (one Keltner component, TRENDING at ER>=0.50), not a verdict on the
+    mechanism. Withdrawn: exhausted set to false.
+
+    '
   exhausted_basis: 'Analytic: prescreen ic_active_bars = -0.032 (p=0.83) establishes
     no informational content on the TRENDING-labeled bars. Even granting the detector
     perfect regime identification, the signal produces no directional content. Further
@@ -123,7 +139,22 @@ findings:
     forecast_return_corr: -0.171
   protocol_version: baseline_v2
   detector_version: c647ee20
-  exhausted: true
+  exhausted: false
+  policy_consequence: 'WITHDRAWN 2026-10-01 (D-055): this ban no longer applies. It reached the
+    exhausted_mechanisms list only because its exhausted_basis contained the word
+    ''analytic'' (evidence_count below 3, no approved veto). Kept as history and as
+    information for later runs, never a veto.
+
+    '
+  readjudication_20261001: 'D-055 (operator 2026-10-01): not analytic -- ''signal_inversion is direction-fatal''
+    is the label of the result, not a derivation. run_015 (baseline_v1, 22 windows): 67
+    trades, pooled gross +62.2, net -53.2, mean per-window corr -0.26 (12 windows with a
+    value). run_033 is the sign-flipped mean-reversion twin with the OPPOSITE corr sign
+    (mean +0.282), so ''both runs show negative IC'' is false. run_015 may be a
+    config_path-bug first attempt (campaign_state.yaml runs note for run_011-015). One
+    breakout config, not a verdict on the mechanism. Withdrawn: exhausted set to false.
+
+    '
   exhausted_basis: 'Analytic: signal_inversion is direction-fatal. The mechanism claim
     is "breakout → continuation" (positive IC). Both runs show negative IC in the
     same direction, confirmed on the same TRENDING-labeled bars where the full-range
@@ -152,7 +183,22 @@ findings:
     forecast_return_corr_v2: 0.014
   protocol_version: baseline_v1
   detector_version: pre_a22_detector
-  exhausted: true
+  exhausted: false
+  policy_consequence: 'WITHDRAWN 2026-10-01 (D-055): this ban no longer applies. It reached the
+    exhausted_mechanisms list only because its exhausted_basis contained the word
+    ''analytic'' (evidence_count below 3, no approved veto). Kept as history and as
+    information for later runs, never a veto.
+
+    '
+  readjudication_20261001: 'D-055 (operator 2026-10-01): not analytic. The cited 84% is run_028''s median of
+    per-window cost_drag ratios -- two windows, 131.2% and 37.3%, on 3 trades in total
+    (SOLUSDT, pooled gross +7.7, net -0.3; 9 of 11 windows without a trade) -- so it is
+    not decision-grade and not a ''4x barrier''. run_030 (AVAXUSDT): 3,640 trades, pooled
+    gross +479.7, net -1,975.5. Both protocols were declared 4h but ran 1h
+    (engine_provenance_caveat). Fee arithmetic on one turnover profile, not a verdict on
+    the mechanism. Withdrawn: exhausted set to false.
+
+    '
   exhausted_basis: 'Analytic (A5.1): cost_drag=84% on the highest-IC variant (run_028)
     is a 4× structural cost barrier — arithmetic, not parameter-sensitive. No tuning
     reduces round-trip cost at this signal frequency. Terminal low-IC variant (run_030
@@ -297,7 +343,22 @@ findings:
     forecast_return_corr: -0.022
   protocol_version: baseline_v1
   detector_version: pre_a22_detector
-  exhausted: true
+  exhausted: false
+  policy_consequence: 'WITHDRAWN 2026-10-01 (D-055): this ban no longer applies. It reached the
+    exhausted_mechanisms list only because its exhausted_basis contained the word
+    ''analytic'' (evidence_count below 3, no approved veto). Kept as history and as
+    information for later runs, never a veto.
+
+    '
+  readjudication_20261001: 'D-055 (operator 2026-10-01): not analytic, and the evidence is probably not RSI
+    mean-reversion at all. run_011, run_012, run_013 and run_014 all report 831 trades
+    over the same 22 windows under four different config hashes (735d867a / 6014c46a /
+    29fdbffd / 8e385519); campaign_state.yaml notes that run_011-015 first attempts ran
+    the default strategy_config.json (config_path bug). run_014: pooled gross -164.7,
+    net -2,470.4. The outcome above is unverified until a clean re-run (needs an
+    operator go). Withdrawn: exhausted set to false.
+
+    '
   exhausted_basis: 'Analytic: parameter space for RSI mean-reversion was exhaustively
     searched across smooth_period (run_011), er_threshold (run_012), vr_threshold
     (run_013/014). Terminal result at the parameter frontier: corr=-0.022. A5.1 permits
@@ -324,7 +385,23 @@ findings:
     cost_drag_pct: 272.865
   protocol_version: baseline_v1
   detector_version: pre_a22_detector
-  exhausted: true
+  exhausted: false
+  policy_consequence: 'WITHDRAWN 2026-10-01 (D-055): this ban no longer applies. It reached the
+    exhausted_mechanisms list only because its exhausted_basis contained the word
+    ''analytic'' (evidence_count below 3, no approved veto). Kept as history and as
+    information for later runs, never a veto.
+
+    '
+  readjudication_20261001: 'D-055 (operator 2026-10-01): the fact kept is that ONE config lost after costs:
+    run_018 (baseline_v1, 22 monthly windows BTC/ETH 1h, pre-A22 detector) traded 1,345
+    times, pooled gross +1,079.5, pooled costs 3,163.0, net -2,083.5.
+    signal_property.cost_drag_pct 272.865 is the MEDIAN of 22 per-window cost/|gross|
+    ratios; 7 of 22 windows had negative gross and near-zero-gross windows give
+    1,124-2,291%, so that figure is unstable and NOT decision-grade. ''Structurally
+    cost-unviable at this trade frequency'' extrapolated one config''s turnover to the
+    mechanism. Withdrawn: exhausted set to false.
+
+    '
   exhausted_basis: 'Analytic: cost_drag=273% means gross edge is overwhelmed by transaction
     costs by 2.7×. corr=0.018 is also near-zero. Structurally cost-unviable at this
     trade frequency.
@@ -1592,6 +1669,10 @@ coverage_matrix:
     finding_id: keltner_scoremode_no_edge
     outcome: no_edge_observed
     evidence_count: 2
+  - hypothesis_id: keltner_scoremode
+    finding_id: keltner_scoremode_fee_isolation_no_flip
+    outcome: no_edge_observed
+    evidence_count: 2
   - hypothesis_id: rsi_mean_reversion
     finding_id: rsi_mean_reversion_no_edge
     outcome: no_edge_observed
@@ -1611,6 +1692,10 @@ coverage_matrix:
   - hypothesis_id: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED
     finding_id: funding_rate_continuous_mean_reversion_expanded_auto
     outcome: inconclusive
+    evidence_count: 1
+  - hypothesis_id: XS_momentum
+    finding_id: xs_momentum_cost_surviving_but_decaying
+    outcome: ungated_decayed_measurement_no_admissible_verdict
     evidence_count: 1
   structural_forced_flow:
   - hypothesis_id: H-041-A
@@ -1647,29 +1732,4 @@ coverage_matrix:
     finding_id: volume_impulse_continuation_blocked
     outcome: blocked_feed_unavailable
     evidence_count: 0
-exhausted_mechanisms:
-- id: keltner_mean_reversion_no_edge
-  mechanism: Keltner mean-reversion in TRENDING regime (ER>=0.50)
-  outcome: no_edge_observed
-  evidence_count: 1
-  basis: analytic
-- id: keltner_breakout_inverted
-  mechanism: Keltner channel breakout (TRENDING regime, ER>=0.50)
-  outcome: no_edge_observed
-  evidence_count: 2
-  basis: analytic
-- id: keltner_scoremode_no_edge
-  mechanism: Keltner score-mode (composite multi-threshold, TRENDING)
-  outcome: no_edge_observed
-  evidence_count: 2
-  basis: analytic
-- id: rsi_mean_reversion_no_edge
-  mechanism: RSI(14) mean-reversion in low-ER regime
-  outcome: no_edge_observed
-  evidence_count: 1
-  basis: analytic
-- id: rsi_momentum_trending_cost_drag
-  mechanism: RSI momentum in TRENDING regime
-  outcome: no_edge_observed
-  evidence_count: 1
-  basis: analytic
+exhausted_mechanisms: []
