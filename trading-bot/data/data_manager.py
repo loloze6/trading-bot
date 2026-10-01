@@ -44,6 +44,7 @@ import pandas as pd
 import logging
 from typing import Callable, Dict, List, Optional
 import datetime
+import math
 import os
 import numpy as np
 import time
@@ -285,6 +286,7 @@ class AuxFeedConfig:
     window_seconds: float
     agg:            str = "last"          # 'last' | 'mean' | 'sum'
     fill:           str = "none"          # 'none' | 'carry_forward' (CUL-355)
+    delay_seconds:  float = 0.0           # publication delay (CUL-356)
     live_value:     Optional[float] = None  # updated in live mode by poll thread
     required:       bool = False          # see AuxFeedRequiredError
 
@@ -684,6 +686,7 @@ class DataManager:
             window_seconds = 0,  # published instantaneously — no forward window
             agg            = 'last',
             fill           = 'carry_forward',  # a level: keep the last value (CUL-355)
+            delay_seconds  = 86400,  # day D's value visible from D+1 (CUL-356)
         )
         dm.register_feed(
             name           = 'funding_rate',
@@ -812,6 +815,7 @@ class DataManager:
         agg: str = "last",
         required: bool = False,
         fill: str = "none",
+        delay_seconds: float = 0.0,
     ) -> None:
         """
         Register an auxiliary data feed.
@@ -850,6 +854,10 @@ class DataManager:
                               'carry_forward' -- the last known value, for
                                                  as long as no new reading
                                                  arrives (a level feed)
+            delay_seconds:  Publication delay (CUL-356): a reading stamped T
+                            becomes usable only from T + delay_seconds. 0 for
+                            a value known at its own timestamp; 86400 for
+                            fear & greed (day D's value visible from D+1).
 
         Can be called at any time before initialize() (backtest) or
         initiate_start_thread() (live).
@@ -858,6 +866,9 @@ class DataManager:
             raise ValueError(f"agg must be 'last', 'mean', or 'sum' — got '{agg}'")
         if fill not in ("none", "carry_forward"):
             raise ValueError(f"fill must be 'none' or 'carry_forward' — got '{fill}'")
+        if not isinstance(delay_seconds, (int, float)) or isinstance(delay_seconds, bool) \
+                or not math.isfinite(delay_seconds) or delay_seconds < 0:
+            raise ValueError(f"delay_seconds must be a finite non-negative number — got {delay_seconds!r}")
         if not isinstance(window_seconds, (int, float)) or isinstance(window_seconds, bool) \
                 or window_seconds < 0:
             raise ValueError(
@@ -867,11 +878,12 @@ class DataManager:
             )
         self._aux_feeds[name] = AuxFeedConfig(
             fetcher=fetcher, column=name, window_seconds=float(window_seconds), agg=agg,
-            required=required, fill=fill,
+            required=required, fill=fill, delay_seconds=float(delay_seconds),
         )
         logger.info(
             f"DataManager: registered aux feed '{name}' "
-            f"(agg={agg}, fill={fill}, window_seconds={window_seconds})"
+            f"(agg={agg}, fill={fill}, delay_seconds={delay_seconds}, "
+            f"window_seconds={window_seconds})"
         )
 
     # -----------------------------------------------------------------------
@@ -1072,6 +1084,13 @@ class DataManager:
             # boundary that silently drifts out of phase with the candle
             # boundary it is meant to align to. origin='epoch' removes the
             # dependency on the feed's own start time entirely.
+            # CUL-356: a reading stamped T is usable only from T + the feed's
+            # publication delay (fear & greed: 1 day, A8.4). Shifted before
+            # the buckets are cut, so the bucket, the fill and the causality
+            # guard all see the time the value became known.
+            if feed.delay_seconds:
+                feed_data = feed_data.assign(
+                    timestamp=feed_data["timestamp"] + datetime.timedelta(seconds=feed.delay_seconds))
             feed_data = (
                 feed_data
                 .set_index("timestamp")
@@ -1378,9 +1397,11 @@ class DataManager:
 
                 if not df.empty and feed.column in df.columns:
                     # Forward-fill to now: take the row with the largest
-                    # timestamp <= current time
+                    # timestamp <= current time minus the feed's publication
+                    # delay (CUL-356: the same rule as the backtest merge)
                     df_sorted = df.sort_values("timestamp")
-                    past = df_sorted[df_sorted["timestamp"] <= pd.Timestamp(now)]
+                    known_by = now - datetime.timedelta(seconds=feed.delay_seconds)
+                    past = df_sorted[df_sorted["timestamp"] <= pd.Timestamp(known_by)]
                     if not past.empty:
                         feed.live_value = float(past[feed.column].iloc[-1])
                         logger.debug(f"Aux feed '{name}': live_value = {feed.live_value}")

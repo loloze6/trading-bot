@@ -306,9 +306,9 @@ gap tracked as CUL-254, not an oversight in this guide.
 
 **Production feed registry.** `data/feed_registry.py::FEED_REGISTRY`
 (`feed_registry.py`) currently registers exactly two feeds,
-`funding_rate` and `fear_greed`, both `window_seconds=0` (instantaneous,
-published *at* their timestamp, no forward window,
-`feed_registry.py::FEED_WINDOW_SECONDS`) — this is why `agg='last'` is correct-by-design
+`funding_rate` and `fear_greed`, both `window_seconds=0` (instantaneous, no forward window,
+`feed_registry.py::FEED_WINDOW_SECONDS`; fear & greed is used one day after its date,
+`FEED_DELAY_SECONDS`, CUL-356) — this is why `agg='last'` is correct-by-design
 for both (confirmed: `FundingRateMeanReversionComponent` only reads at
 settlement boundaries; `fear_greed` prints once daily). A **second**,
 deliberately unmerged registry, `RESERVED_FEED_REGISTRY`

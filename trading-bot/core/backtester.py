@@ -9,7 +9,9 @@ import pandas as pd
 from core.trading_bot import TradingBot
 from data.fetchers import CcxtFetcher
 from data.fetchers import FundingRateFetcher, FearGreedFetcher
-from data.feed_registry import FEED_AGG, FEED_FILL, FEED_WINDOW_SECONDS, build_daily_funding_series
+from data.feed_registry import (
+    FEED_AGG, FEED_DELAY_SECONDS, FEED_FILL, FEED_WINDOW_SECONDS, build_daily_funding_series,
+)
 from data.data_manager import Candle
 from execution.portfolio_info import flatten_dict_columns
 from reporting.run_artifact import (
@@ -247,6 +249,7 @@ class BacktestEngine:
                     window_seconds = FEED_WINDOW_SECONDS[feed_name],
                     agg            = FEED_AGG[feed_name],
                     fill           = FEED_FILL[feed_name],
+                    delay_seconds  = FEED_DELAY_SECONDS[feed_name],
                     required       = feed_name in required_feeds,
                 )
             self.logger.debug(f"Registered feeds before initialize: {list(self.data_manager._aux_feeds.keys())}")

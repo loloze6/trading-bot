@@ -842,7 +842,8 @@ class FearGreedContrarianComponent(SubStrategyComponent):
     fear_greed > greed_threshold (→ short, contrarian against greed).
     Zero on all other bars.
 
-    Requires 'fear_greed' column merged into bar DataFrame by prescreen loader.
+    Requires the 'fear_greed' column, merged onto the bars by DataManager with
+    the feed's one-day publication delay (FEED_DELAY_SECONDS, CUL-356).
     """
 
     consumes_feeds = ("fear_greed",)

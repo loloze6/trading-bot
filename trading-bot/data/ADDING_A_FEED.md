@@ -63,8 +63,12 @@ Two values cover almost every feed:
 
 | `window_seconds` | When | Examples |
 |---|---|---|
-| `0` | Instantaneous observation — the value is fully known AT `timestamp`, using no data after it | Funding rate, Fear & Greed |
+| `0` | Instantaneous observation — the value uses no data after `timestamp` | Funding rate, Fear & Greed |
 | your bar width | The value aggregates a FORWARD window `[timestamp, timestamp + window_seconds)` | Whale-footprint features (`window_seconds == bar_seconds`) |
+
+`window_seconds` says what data a value is built from; WHEN it becomes known is a separate
+declaration, `FEED_DELAY_SECONDS` (CUL-356): funding is known at its settlement (0); fear &
+greed is stamped with its day at 00:00 UTC and only treated as known one day later (86400).
 
 ```python
 data_manager.register_feed(
@@ -113,13 +117,15 @@ bot.load_data(
 ```
 
 The strategy then receives a DataFrame with a `your_feed` column at every
-candle close. No other files need changing beyond the three per-feed
+candle close. No other files need changing beyond the four per-feed
 declarations in `data/feed_registry.py`: `FEED_WINDOW_SECONDS` (Step 2),
+`FEED_DELAY_SECONDS` (CUL-356: how long after its own timestamp a reading
+becomes usable -- 0 when it is known at that instant, 1 day for fear & greed),
 `FEED_AGG` (how several readings inside one bar combine) and `FEED_FILL`
 (CUL-355: what a bar with no new reading gets -- `'carry_forward'` for a level
 that stays true until it changes, like a funding rate or an index; `'none'`
 for a per-bar count of what happened in that bar, like the whale features).
-A feed missing from any of the three is a KeyError at registration.
+A feed missing from any of the four is a KeyError at registration.
 
 ---
 
