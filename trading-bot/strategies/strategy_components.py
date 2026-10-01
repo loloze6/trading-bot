@@ -828,6 +828,58 @@ class FundingRateMeanReversionComponent(SubStrategyComponent):
         return 2
 
 
+class FundingRateComponent(SubStrategyComponent):
+    """
+    Graded version of FundingRateMeanReversionComponent (D-051). Every bar:
+
+        raw_value = -funding_rate x 10000
+
+    the latest funding print in basis points, sign flipped (contrarian:
+    negative when longs pay). No threshold and no scaling_factor: natural
+    units, the config's transforms scale it. The print's size is
+    venue-dependent (Binance prints every 8h; Kraken Futures hourly).
+
+    Data: 'funding_rate', merged by DataManager with fill 'carry_forward'
+    (CUL-355), so every bar carries the latest print known at or before it.
+    No lookahead: a print is never attached before its own timestamp. A
+    missing column, None or NaN gives NaN (a data gap -- never a fabricated
+    0.0, which would read as a real "no funding" print).
+    """
+
+    consumes_feeds = ("funding_rate",)
+
+    def __init__(self, name="FundingRate", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+
+        if not self.is_ready():
+            return
+
+        value = data["funding_rate"].iloc[-1] if "funding_rate" in data.columns else None
+        if value is None or pd.isna(value):
+            self._raw_value = float('nan')
+            self.debug_info = {'nan_policy': 'propagate_invalid', 'reason': 'funding_rate_missing'}
+            return
+
+        funding_rate = float(value)
+        self._raw_value = -funding_rate * 10000.0
+        self.confidence = 1.0
+        self.debug_info = {"funding_rate": funding_rate}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        # 2, not 1: the strategy engine needs 2 history values before it
+        # forecasts, and a component's history buffer is sized from this.
+        return 2
+
+
 # ============================================================================
 # COMPONENT: FEAR & GREED CONTRARIAN  (H-041-C, Improvement 01)
 # edge_source.category: persistent_behavioral_bias
@@ -907,6 +959,55 @@ class FearGreedContrarianComponent(SubStrategyComponent):
         return self.data is not None and len(self.data) >= 2
 
     def get_required_periods(self) -> int:
+        return 2
+
+
+class FearGreedComponent(SubStrategyComponent):
+    """
+    Graded version of FearGreedContrarianComponent (D-051). Every bar:
+
+        raw_value = 50 - fear_greed
+
+    in index points, -50..+50: contrarian, positive in fear (index below 50),
+    negative in greed. No thresholds and no scaling_factor: the config's
+    transforms scale it.
+
+    Data: 'fear_greed', merged by DataManager with fill 'carry_forward'
+    (CUL-355) and a one-day publication delay (CUL-356): every bar of day D
+    carries day D-1's value. A missing column, None or NaN gives NaN (never a
+    fabricated 50, which would read as a real neutral reading).
+    """
+
+    consumes_feeds = ("fear_greed",)
+
+    def __init__(self, name="FearGreed", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+
+        if not self.is_ready():
+            return
+
+        value = data["fear_greed"].iloc[-1] if "fear_greed" in data.columns else None
+        if value is None or pd.isna(value):
+            self._raw_value = float('nan')
+            self.debug_info = {'nan_policy': 'propagate_invalid', 'reason': 'fear_greed_missing'}
+            return
+
+        fg = float(value)
+        self._raw_value = 50.0 - fg
+        self.confidence = 1.0
+        self.debug_info = {"fear_greed": fg}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        # 2, not 1: the strategy engine needs 2 history values before it forecasts.
         return 2
 
 
