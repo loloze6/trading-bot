@@ -106,7 +106,7 @@ def test_threshold_is_ten_times_the_live_rebalance_floor():
 
 @pytest.mark.parametrize("body", [{}, {"risk_management": {"controls": {}}},
                                   {"risk_management": {"controls": {
-                                      "min_allocation_change": {"threshold": 0}}}}])
+                                      "min_allocation_change": {"threshold": -0.1}}}}])
 def test_a_missing_or_bad_floor_fails_loud(tmp_path, body):
     path = tmp_path / "config.json"
     path.write_text(json.dumps(body), encoding="utf-8")
@@ -159,6 +159,7 @@ def test_helper_returns_the_refusal_and_records_every_probe(monkeypatch, tmp_pat
     monkeypatch.setattr(rpr, "_resolve_tbot_python", lambda: Path("stub-python"))
     run_dir = tmp_path / "run_x"
     (run_dir / "artifacts").mkdir(parents=True)
+    (tmp_path / "p.json").write_text("{}", encoding="utf-8")
     fake, calls = _fake_probe({"status": "refuse", "message": "too small"})
     monkeypatch.setattr(rpr.subprocess, "run", fake)
     msgs = rpr._forecast_size_violations(CONFIG, tmp_path / "p.json", run_dir, "st", "base")
@@ -166,7 +167,8 @@ def test_helper_returns_the_refusal_and_records_every_probe(monkeypatch, tmp_pat
     assert calls and "forecast_size_probe.py" in calls[0][1]
     fake_ok, _ = _fake_probe({"status": "ok", "share_tradable": 0.5})
     monkeypatch.setattr(rpr.subprocess, "run", fake_ok)
-    assert rpr._forecast_size_violations(CONFIG, tmp_path / "p.json", run_dir, "st", "v2") == []
+    other = {**CONFIG, "strategies": {**CONFIG["strategies"], "warmup": 99}}  # not cached
+    assert rpr._forecast_size_violations(other, tmp_path / "p.json", run_dir, "st", "v2") == []
     probes = rpr.load_yaml(run_dir / "artifacts" / rpr.FORECAST_SIZE_PROBE_FILE)["probes"]
     assert [(p["variant_id"], p["status"]) for p in probes] == [("base", "refuse"), ("v2", "ok")]
 
@@ -174,6 +176,7 @@ def test_helper_returns_the_refusal_and_records_every_probe(monkeypatch, tmp_pat
 def test_a_crashed_probe_raises(monkeypatch, tmp_path):
     _set_orchestrator({"forecast_size_probe": {"enabled": True}})
     monkeypatch.setattr(rpr, "_resolve_tbot_python", lambda: Path("stub-python"))
+    (tmp_path / "p.json").write_text("{}", encoding="utf-8")
     fake, _ = _fake_probe({}, returncode=1)
     monkeypatch.setattr(rpr.subprocess, "run", fake)
     with pytest.raises(RuntimeError, match="forecast_size_probe failed.*boom"):
@@ -184,9 +187,21 @@ def test_a_crashed_probe_raises(monkeypatch, tmp_path):
 # 4. Wiring: right after 1b, and step 5a
 # ---------------------------------------------------------------------------
 
-def _stub_probe(monkeypatch, refuse_ids: set, seen: list):
+def _validator(monkeypatch, returncode: int = 0):
+    """Stub the validate_config.py subprocess the 1b size check runs first."""
+    class _R:
+        stdout, stderr = "", ""
+    r = _R()
+    r.returncode = returncode
+    monkeypatch.setattr(rpr, "_resolve_tbot_python", lambda: Path("stub-python"))
+    monkeypatch.setattr(rpr.subprocess, "run", lambda *a, **k: r)
+
+
+def _stub_probe(monkeypatch, refuse_ids: set, seen: list, crash_ids: set = frozenset()):
     def fake(config, protocol_path, run_dir, stage, variant_id):
         seen.append((stage, variant_id))
+        if variant_id in crash_ids:
+            raise RuntimeError("forecast_size_probe failed: No historical data")
         return [f"forecast size (D-056): {variant_id} too small"] if variant_id in refuse_ids else []
     monkeypatch.setattr(rpr, "_forecast_size_violations", fake)
     monkeypatch.setattr(rpr, "_resolve_protocol_path", lambda run_dir, run_id: Path("proto.json"))
@@ -196,6 +211,7 @@ def test_post_1b_a_refused_size_goes_back_to_1b(monkeypatch):
     _set_orchestrator({"config_direct_authoring": {"enabled": True},
                        "forecast_size_probe": {"enabled": True}})
     seen = []
+    _validator(monkeypatch)
     _stub_probe(monkeypatch, {"base"}, seen)
     run_dir = _authored_1b("run_960", CONFIG)
     assert rpr.determine_post_strategy_config_authoring_route(run_dir) == "strategy_config_authoring"
@@ -229,3 +245,132 @@ def test_5a_a_refused_size_is_a_config_error_and_others_go_on(monkeypatch):
     assert dict(rpr._variant_config_errors(variants)).keys() == {"tiny"}
     assert sorted(v for s, v in seen) == ["base", "fine", "tiny"]
     assert {s for s, v in seen} == {"backtest_specification"}
+
+
+# ---------------------------------------------------------------------------
+# 5. Review fixes: strategy floor, 1b skip rules, 5a crash, cache, engine call
+# ---------------------------------------------------------------------------
+
+def test_the_strategy_config_floor_overrides_config_json():
+    cfg = {"strategies": {"min_allocation_change": 0.05}}
+    assert fsp.forecast_threshold(strategy_config=cfg) == pytest.approx(0.5)
+
+
+def test_a_zero_strategy_floor_means_any_nonzero_forecast_trades():
+    thr = fsp.forecast_threshold(strategy_config={"strategies": {"min_allocation_change": 0}})
+    assert thr == 0.0
+    assert fsp.assess([0.0] * 99 + [1e-6], thr)["status"] == "ok"
+    assert fsp.assess([0.0] * 100, thr)["status"] == "refuse"
+
+
+def test_a_negative_strategy_floor_fails_loud():
+    with pytest.raises(ValueError, match="non-negative"):
+        fsp.forecast_threshold(strategy_config={"strategies": {"min_allocation_change": -1}})
+
+
+def test_post_1b_skips_the_probe_when_the_config_does_not_validate(monkeypatch):
+    _set_orchestrator({"config_direct_authoring": {"enabled": True},
+                       "forecast_size_probe": {"enabled": True}})
+    seen = []
+    _validator(monkeypatch, returncode=1)
+    _stub_probe(monkeypatch, {"base"}, seen)
+    run_dir = _authored_1b("run_963", CONFIG)
+    assert rpr.determine_post_strategy_config_authoring_route(run_dir) == "innovation_expansion"
+    assert seen == []
+
+
+def test_post_1b_a_probe_that_cannot_run_is_recorded_and_left_to_5a(monkeypatch):
+    _set_orchestrator({"config_direct_authoring": {"enabled": True},
+                       "forecast_size_probe": {"enabled": True}})
+    seen = []
+    _validator(monkeypatch)
+    _stub_probe(monkeypatch, set(), seen, crash_ids={"base"})
+    run_dir = _authored_1b("run_964", CONFIG)
+    assert rpr.determine_post_strategy_config_authoring_route(run_dir) == "innovation_expansion"
+    probes = rpr.load_yaml(run_dir / "artifacts" / rpr.FORECAST_SIZE_PROBE_FILE)["probes"]
+    assert probes[0]["status"] == "error" and "No historical data" in probes[0]["message"]
+
+
+def test_post_1b_a_manifest_error_is_never_probed(monkeypatch):
+    _set_orchestrator({"config_direct_authoring": {"enabled": True},
+                       "forecast_size_probe": {"enabled": True}})
+    seen = []
+    _validator(monkeypatch)
+    _stub_probe(monkeypatch, {"base"}, seen)
+    run_dir = _authored_1b("run_965", CONFIG, manifest=None)
+    rpr.determine_post_strategy_config_authoring_route(run_dir)
+    assert seen == []
+
+
+def test_5a_a_probe_that_cannot_run_marks_only_that_variant(monkeypatch):
+    _set_orchestrator({"forecast_size_probe": {"enabled": True}})
+    seen = []
+    _stub_probe(monkeypatch, set(), seen, crash_ids={"nodata"})
+    variants = _run_5a(monkeypatch, "run_966", CONFIG, [
+        _design("nodata", [{"path": COMP0 + "/params/period", "value": 21}]),
+        _design("fine", [{"path": COMP0 + "/params/period", "value": 30}]),
+    ])
+    assert variants["nodata"]["status"] == "not_tested"
+    assert variants["nodata"]["reason"] == rpr.FORECAST_SIZE_PROBE_ERROR_REASON
+    assert variants["fine"]["status"] == "validated" and variants["base"]["status"] == "validated"
+    assert "nodata" not in dict(rpr._variant_config_errors(variants))  # not a Step 2 fix
+
+
+def test_the_same_config_and_protocol_is_probed_once(monkeypatch, tmp_path):
+    _set_orchestrator({"forecast_size_probe": {"enabled": True}})
+    monkeypatch.setattr(rpr, "_resolve_tbot_python", lambda: Path("stub-python"))
+    run_dir = tmp_path / "run_y"
+    (run_dir / "artifacts").mkdir(parents=True)
+    proto = tmp_path / "p.json"
+    proto.write_text('{"symbols": ["BTCUSDT"]}', encoding="utf-8")
+    fake, calls = _fake_probe({"status": "refuse", "message": "too small"})
+    monkeypatch.setattr(rpr.subprocess, "run", fake)
+    first = rpr._forecast_size_violations(CONFIG, proto, run_dir, "strategy_config_authoring", "base")
+    again = rpr._forecast_size_violations(CONFIG, proto, run_dir, "backtest_specification", "base")
+    assert first == again == ["forecast size (D-056): too small"] and len(calls) == 1
+    proto.write_text('{"symbols": ["ETHUSDT"]}', encoding="utf-8")  # other protocol: new probe
+    rpr._forecast_size_violations(CONFIG, proto, run_dir, "backtest_specification", "base")
+    assert len(calls) == 2
+
+
+HOLDOUT_SENTINEL = "HOLDOUT-START-SENTINEL"  # a marker, never a real date
+
+
+def test_the_engine_call_is_sealed_and_holdout_guarded(monkeypatch, tmp_path):
+    """_run_sample with run_backtest stubbed: holdout_start passed, warmup on,
+    every output under the temp dir, feed caches never written, and only the
+    forecast column is read."""
+    import types
+    calls = []
+
+    def fake_run_backtest(config_path, symbol, start, end, results_root, **kw):
+        calls.append({"symbol": symbol, "start": start, "end": end,
+                      "results_root": results_root, **kw})
+        rd = Path(results_root) / f"r{len(calls)}"
+        rd.mkdir(parents=True)
+        (rd / "bars.csv").write_text("timestamp,forecast,net_pnl\n1,5.0,999\n2,0.0,-999\n",
+                                     encoding="utf-8")
+        return rd
+
+    fake_rp = types.SimpleNamespace(
+        _load_policy_or_refuse=lambda: {"policy": True},
+        _training_holdout_start=lambda protocol, policy: HOLDOUT_SENTINEL,
+        _preflight_training_windows=lambda protocol, hs: calls.append({"preflight": hs}))
+    fake_launcher = types.ModuleType("core.launcher")
+    fake_launcher.run_backtest = fake_run_backtest
+    fake_launcher.parse_interval_seconds = lambda tf: 86400
+    monkeypatch.setitem(sys.modules, "run_protocol", fake_rp)
+    monkeypatch.setitem(sys.modules, "core", types.ModuleType("core"))
+    monkeypatch.setitem(sys.modules, "core.launcher", fake_launcher)
+    protocol = _monthly(2018, 2025)
+    windows = fsp.sample_windows(protocol)
+    forecasts = fsp._run_sample(Path("cfg.json"), protocol, windows, tmp_path)
+    assert forecasts == [5.0, 0.0] * 3
+    runs = [c for c in calls if "symbol" in c]
+    assert calls[0] == {"preflight": HOLDOUT_SENTINEL} and len(runs) == 3
+    for c in runs:
+        assert c["holdout_start"] == HOLDOUT_SENTINEL and c["warmup_prefetch"] is True
+        assert c["feed_local_storage"] is False
+        assert Path(c["runs_root"]) == tmp_path and Path(c["results_root"]) == tmp_path
+        assert Path(c["trades_log_file"]).parent == tmp_path
+        assert c["end"] < fsp.PROBE_CUTOFF and c["exchange"] == "binance"

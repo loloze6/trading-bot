@@ -296,8 +296,8 @@ close in **price units**, so `stddev_24` x close is a price squared (around 1e5 
 
 | op | params (default) | output |
 |---|---|---|
-| `vol_normalize` | none | v / (`stddev_24` x close). Unguarded: NaN propagates by design. Meant for `history_transforms`. The result is tiny (about a millionth of v for BTC): use it only with a `ratio_to_mean` in `transforms`, which cancels that factor |
-| `vol_adjusted` | none | v / (`stddev_24` x close), or v unchanged if the denominator is invalid. Read-time use only; do not use it to normalise history. **Not a volatility scaler on its own**: it shrinks any component's output about a million-fold, so the forecast never trades (C4 run_061, O-10). Only meaningful followed by a rescale |
+| `vol_normalize` | none | v / (`stddev_24` x close). Unguarded: NaN propagates by design. Meant for `history_transforms`. The result is tiny (about 1e-6 to 1e-8 of v for BTC). A `ratio_to_mean` in `transforms` cancels that factor only while the stored values stay above 1e-10 (below that it returns 0), and its output is about 1, so scale it up afterwards (`scale`) to reach a few forecast units |
+| `vol_adjusted` | none | v / (`stddev_24` x close), or v unchanged if the denominator is invalid. Read-time use only; do not use it to normalise history. **Not a volatility scaler on its own**: it shrinks any component's output by about 1e-6 to 1e-8 for BTC, so the forecast never trades (C4 run_061, O-10). Only meaningful followed by a rescale |
 | `price_normalized` | none | v / close (v unchanged if close is invalid). For outputs in **price units** only (e.g. `EMADiff`); on a percent or forecast-unit output it shrinks the forecast by the price |
 | `volume_filter` | `period` (20) | v if the latest volume >= its `period`-bar mean, else 0.0 (dead-zone on volume). **Not allowed in `strategies`** |
 
@@ -465,7 +465,8 @@ The config describes a forecast per bar. It has no key for:
   risk controls are not in the strategy config. There is also no op that divides a signal by its **return**
   volatility: `vol_adjusted` / `vol_normalize` divide by a price squared and, used alone, make the forecast too
   small to ever trade (see the Scale rule above). Vol-managed sizing is a declared deviation unless it can be
-  expressed with `history_transforms: vol_normalize` + `transforms: ratio_to_mean`.
+  expressed with `history_transforms: vol_normalize` + `transforms: ratio_to_mean` + `scale` (mind the 1e-10
+  floor of `ratio_to_mean` on very small outputs).
 - **Per-symbol settings.** The config has no per-symbol section; a component sees only its own symbol's bars and
   feed columns.
 - **Symbols, timeframe and date windows.** They belong to the run protocol, not the config (no instrument,

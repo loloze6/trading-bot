@@ -2588,6 +2588,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
         # (raises when the catalogue cannot be read -- never an empty set).
         _fr = _forecast_rules_module()
         _fr_on_off = _fr.on_off_classes()
+        _run_proto_for_probe = None  # D-056: the run protocol, resolved once if needed
 
         for variant in patches_doc["variants"]:
             variant_id = variant.get("variant_id") if isinstance(variant, dict) else None
@@ -2720,14 +2721,34 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 # Probed on the variant's own coin protocol (per-coin mode) or the
                 # run protocol. A refusal is a config error like D-051/D-053 above
                 # (same reason, so Step 2 gets its one retry; a `base` refusal
-                # pauses: 1b's config).
-                if _coin_proto is not None:
-                    _probe_proto = variant_dir / "forecast_size_probe_protocol.json"
-                    _probe_proto.write_text(json.dumps(_coin_proto, indent=2), encoding="utf-8")
-                else:
-                    _probe_proto = Path(_resolve_protocol_path(RUN_DIR, run_id))
-                _fs_msgs = _forecast_size_violations(variant_config, _probe_proto, RUN_DIR,
-                                                     "backtest_specification", variant_id)
+                # pauses: 1b's config). A probe that cannot run (no data, engine
+                # error) marks only this variant not_tested -- never run-wide.
+                _probe_tmp = None
+                try:
+                    if _coin_proto is not None:
+                        with tempfile.NamedTemporaryFile(
+                                "w", suffix=".json", delete=False, encoding="utf-8") as _tf:
+                            json.dump(_coin_proto, _tf, indent=2)
+                        _probe_tmp = _probe_proto = Path(_tf.name)
+                    else:
+                        if _run_proto_for_probe is None:
+                            _run_proto_for_probe = Path(_resolve_protocol_path(RUN_DIR, run_id))
+                        _probe_proto = _run_proto_for_probe
+                    _fs_msgs = _forecast_size_violations(variant_config, _probe_proto, RUN_DIR,
+                                                         "backtest_specification", variant_id)
+                except RuntimeError as _fs_exc:
+                    _fs_report = str(_fs_exc)[-1500:]
+                    _record_forecast_size_probe(RUN_DIR, "backtest_specification", variant_id,
+                                                {"status": "error", "message": _fs_report})
+                    index[variant_id] = {"status": "not_tested",
+                                         "reason": FORECAST_SIZE_PROBE_ERROR_REASON,
+                                         "report": _fs_report, **_coin_keys}
+                    print(f"⚠️  [D-056] variant '{variant_id}' NOT TESTED: size probe could "
+                          f"not run: {_fs_report}")
+                    continue
+                finally:
+                    if _probe_tmp is not None:
+                        _probe_tmp.unlink(missing_ok=True)
                 if _fs_msgs:
                     reason = FORECAST_RULE_REASON
                     report = "\n".join(_fs_msgs)
@@ -4409,6 +4430,9 @@ def _forecast_size_probe_enabled(cfg: dict | None = None) -> bool:
 
 
 FORECAST_SIZE_PROBE_FILE = "forecast_size_probe.yaml"
+# A probe that could not run (no data, engine error): the variant is not_tested
+# with this reason -- not a config error, so Step 2 is not asked to fix it.
+FORECAST_SIZE_PROBE_ERROR_REASON = "forecast size probe could not run (D-056)"
 
 
 def _record_forecast_size_probe(run_dir: Path, stage: str, variant_id: str,
@@ -4437,6 +4461,21 @@ def _forecast_size_violations(config: dict, protocol_path: Path, run_dir: Path,
     an unmeasured config must not pass silently."""
     if not _forecast_size_probe_enabled():
         return []
+    # Same config on the same protocol bytes -> reuse the recorded verdict
+    # (resumes, the 1b retry, and `base` probed at 1b then again in 5a).
+    key = hashlib.sha256(
+        json.dumps(config, sort_keys=True).encode("utf-8")
+        + b"\0" + Path(protocol_path).read_bytes()).hexdigest()
+    record_path = Path(run_dir) / "artifacts" / FORECAST_SIZE_PROBE_FILE
+    if record_path.exists():
+        doc = load_yaml(record_path) or {}
+        for prior in (doc.get("probes") or []) if isinstance(doc, dict) else []:
+            if (isinstance(prior, dict) and prior.get("key") == key
+                    and prior.get("status") in ("ok", "refuse", "skipped")):
+                print(f"ℹ️  [D-056] {stage}/{variant_id}: same config and protocol already "
+                      f"probed ({prior['status']}) -- reused")
+                return ([f"forecast size (D-056): {prior.get('message')}"]
+                        if prior["status"] == "refuse" else [])
     with tempfile.TemporaryDirectory(prefix="fsp_") as tmp:
         cfg_path = Path(tmp) / "strategy_config.json"
         out_path = Path(tmp) / "forecast_size_probe.json"
@@ -4451,7 +4490,7 @@ def _forecast_size_violations(config: dict, protocol_path: Path, run_dir: Path,
             raise RuntimeError(f"forecast_size_probe failed on {stage}/{variant_id} "
                                f"(exit {result.returncode}): {tail}")
         probe = json.loads(out_path.read_text(encoding="utf-8"))
-    _record_forecast_size_probe(run_dir, stage, variant_id, probe)
+    _record_forecast_size_probe(run_dir, stage, variant_id, {**probe, "key": key})
     if probe.get("status") == "refuse":
         return [f"forecast size (D-056): {probe.get('message')}"]
     return []
@@ -14210,15 +14249,43 @@ def _base_forecast_rule_violations(path: Path) -> list:
     if not isinstance(config, dict):
         return []
     fr = _forecast_rules_module()
-    msgs = fr.strategies_violations(config, fr.on_off_classes())
-    if not msgs and _forecast_size_probe_enabled():
-        # O-10 / D-056: only a config that passes D-051 is probed (a refused
-        # one goes back to 1b anyway). The run's protocol is generated at
-        # run_loop start, before 1b.
+    return fr.strategies_violations(config, fr.on_off_classes())
+
+
+def _base_forecast_size_violations(path: Path) -> list:
+    """O-10 / D-056, right after 1b: the forecast-size probe on the base
+    config -- called only when the manifest is valid and D-051 passes. Probed
+    only if validate_config.py accepts the config: a config that does not load
+    (e.g. a class not built yet) keeps its designed route in 5a (V12 ->
+    component request), never a probe crash here. A probe that cannot run
+    (no data, engine error) is recorded and skipped: 5a probes every variant
+    again and marks a failure there not_tested, so nothing passes unmeasured."""
+    if not _forecast_size_probe_enabled():
+        return []
+    spec_path = path / "artifacts" / "backtest_spec.yaml"
+    spec = load_yaml(spec_path) if spec_path.exists() else None
+    config = spec.get("config") if isinstance(spec, dict) else None
+    if not isinstance(config, dict):
+        return []
+    with tempfile.TemporaryDirectory(prefix="fsp_validate_") as tmp:
+        cfg_path = Path(tmp) / "strategy_config.json"
+        cfg_path.write_text(json.dumps(config, indent=2), encoding="utf-8")
+        validator = Path("..") / "trading-bot" / "tools" / "validate_config.py"
+        checked = subprocess.run([str(_resolve_tbot_python()), str(validator), str(cfg_path)],
+                                 capture_output=True, text=True)
+    if checked.returncode != 0:
+        print("ℹ️  [D-056] base config does not pass validate_config.py yet -- size probe "
+              "left to step 5a")
+        return []
+    try:
         protocol_path = Path(_resolve_protocol_path(path, Path(path).name))
-        msgs = _forecast_size_violations(config, protocol_path, path,
+        return _forecast_size_violations(config, protocol_path, path,
                                          "strategy_config_authoring", "base")
-    return msgs
+    except RuntimeError as exc:
+        _record_forecast_size_probe(path, "strategy_config_authoring", "base",
+                                    {"status": "error", "message": str(exc)[-1500:]})
+        print(f"⚠️  [D-056] size probe could not run after 1b ({exc}) -- step 5a probes again")
+        return []
 
 
 def _is_pass_through_candidate(artifacts: Path) -> bool:
@@ -14242,6 +14309,9 @@ def _route_block_manifest_check(path: Path) -> str:
     for a decide_next pass-through config 1b cannot change."""
     error = _block_manifest_error(path)
     rule_msgs = _base_forecast_rule_violations(path)
+    if error is None and not rule_msgs:
+        # O-10 / D-056 (flag-gated): same route as a D-051 refusal below.
+        rule_msgs = _base_forecast_size_violations(path)
     state = load_yaml(path / "pipeline_state.yaml") or {}
     attempts = (state.get(_BLOCK_MANIFEST_RETRY_STATE_KEY) or {}).get("attempts", 0)
     if rule_msgs:
@@ -14267,7 +14337,7 @@ def _route_block_manifest_check(path: Path) -> str:
                    "retry cannot change it)" if pass_through
                    else f"still refused after {attempts} retry")
             print(f"\n⏸️  PIPELINE PAUSED ({FORECAST_RULE_VIOLATION_FLAG}): 1b's base config "
-                  f"breaks D-051 -- {why}: {rule_error}. See artifacts/"
+                  f"breaks D-051 (or D-056 forecast size) -- {why}: {rule_error}. See artifacts/"
                   f"{_FORECAST_RULE_REFUSALS_FILE} (docs/RUNBOOK.md §3, "
                   f"{FORECAST_RULE_VIOLATION_FLAG}).")
             return "human_pause"
@@ -14391,6 +14461,10 @@ def _variant_config_errors(variants: dict) -> list:
             continue
         reason = str(v.get("reason") or "")
         if reason == "validate_config.py violations" and _v12_missing_classes(v.get("report")):
+            continue
+        if reason == FORECAST_SIZE_PROBE_ERROR_REASON:
+            # D-056: the probe could not run (data / engine), not a config Step 2
+            # can fix -- a lost variant for the floor, like a data-gate loss.
             continue
         report = str(v.get("report") or "").strip()
         if report:

@@ -53,18 +53,27 @@ PROBE_CUTOFF = "2024-01-01"   # a sample window must END strictly before this
 MIN_TRADABLE_SHARE = 0.01     # pre-registered (operator, 2026-10-01)
 
 
-def forecast_threshold(config_json: Path = CONFIG_JSON) -> float:
-    """10 x risk_management.controls.min_allocation_change.threshold. Fail
-    loud when the key is missing: the probe must not guess the floor."""
-    cfg = json.loads(Path(config_json).read_text(encoding="utf-8"))
-    try:
-        floor = cfg["risk_management"]["controls"]["min_allocation_change"]["threshold"]
-    except (KeyError, TypeError) as exc:
-        raise ValueError(f"{config_json}: risk_management.controls.min_allocation_change."
-                         f"threshold is missing -- cannot size the probe") from exc
-    if isinstance(floor, bool) or not isinstance(floor, (int, float)) or floor <= 0:
-        raise ValueError(f"{config_json}: min_allocation_change.threshold={floor!r} is not a "
-                         f"positive number")
+def forecast_threshold(config_json: Path = CONFIG_JSON,
+                       strategy_config: dict | None = None) -> float:
+    """10 x the rebalance floor the engine will actually apply: the strategy
+    config's own `strategies.min_allocation_change` when set (the engine's
+    override, main_strategy.py / launcher.py), else trading-bot/config.json's
+    risk_management.controls.min_allocation_change.threshold. 0 is allowed
+    (every nonzero forecast trades). Fail loud when the floor is missing or
+    not a non-negative number: the probe must not guess it."""
+    override = ((strategy_config or {}).get("strategies") or {}).get("min_allocation_change")
+    if override is not None:
+        floor, where = override, "strategies.min_allocation_change"
+    else:
+        cfg = json.loads(Path(config_json).read_text(encoding="utf-8"))
+        try:
+            floor = cfg["risk_management"]["controls"]["min_allocation_change"]["threshold"]
+        except (KeyError, TypeError) as exc:
+            raise ValueError(f"{config_json}: risk_management.controls.min_allocation_change."
+                             f"threshold is missing -- cannot size the probe") from exc
+        where = f"{config_json}: min_allocation_change.threshold"
+    if isinstance(floor, bool) or not isinstance(floor, (int, float)) or floor < 0:
+        raise ValueError(f"{where}={floor!r} is not a non-negative number")
     return 10.0 * float(floor)
 
 
@@ -95,7 +104,8 @@ def assess(forecasts: list, threshold: float) -> dict:
                             f"never produces a usable forecast")}
     s = sorted(finite)
     pct = lambda q: s[min(n - 1, int(q * (n - 1) + 0.5))]  # noqa: E731
-    share = sum(1 for v in finite if v >= threshold) / n
+    # A zero floor means any nonzero forecast moves the position.
+    share = sum(1 for v in finite if (v >= threshold if threshold > 0 else v > 0)) / n
     out = {"status": "ok" if share >= MIN_TRADABLE_SHARE else "refuse",
            "n_bars": n, "n_nan": n_nan, "threshold": threshold,
            "max_abs": s[-1], "p50_abs": pct(0.5), "p95_abs": pct(0.95),
@@ -130,11 +140,15 @@ def _run_sample(config_path: Path, protocol: dict, windows: list, out_root: Path
     symbol = protocol["symbols"][0]
     forecasts = []
     for w in windows:
+        # Sealed: every output in out_root (a temp dir), and feed reads never
+        # write back to a tracked cache (feed_local_storage=False).
         rd = run_backtest(str(config_path), symbol, w["test"]["start"], w["test"]["end"],
                           str(out_root), runs_root=str(out_root),
                           interval_seconds=interval_seconds, warmup_prefetch=True,
                           holdout_start=holdout_start, exchange=exchange,
-                          drop_feeds=protocol.get("drop_feeds"))
+                          drop_feeds=protocol.get("drop_feeds"),
+                          trades_log_file=str(out_root / f"trades_{w.get('label')}.json"),
+                          feed_local_storage=False)
         bars = pd.read_csv(Path(rd) / "bars.csv", usecols=["forecast"])
         forecasts.extend(bars["forecast"].tolist())
     return forecasts
@@ -146,7 +160,8 @@ def probe(config_path: Path, protocol: dict) -> dict:
         return {"status": "skipped", "message": (
             f"no protocol window ends before {PROBE_CUTOFF} in a training era -- nothing "
             f"safe to probe; the size check is skipped")}
-    threshold = forecast_threshold()
+    threshold = forecast_threshold(
+        strategy_config=json.loads(Path(config_path).read_text(encoding="utf-8")))
     with tempfile.TemporaryDirectory(prefix="forecast_probe_") as tmp:
         forecasts = _run_sample(Path(config_path), protocol, windows, Path(tmp))
     result = assess(forecasts, threshold)
