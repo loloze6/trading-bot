@@ -4709,6 +4709,45 @@ def run_forever(once: bool = False):
 # Dry-run verification (no LLM spend, zero footprint on real campaign state)
 # ---------------------------------------------------------------------------
 
+# Both mean "the wishlist check caught the family": `wishlist_trigger` when its
+# predicate evaluated false, `wishlist_trigger_data_gap` when it has no machine
+# predicate yet (_hard_pause_reason). A predicate that evaluates true does not pause.
+DRY_RUN_WISHLIST_PAUSE_REASONS = ("wishlist_trigger", "wishlist_trigger_data_gap")
+
+
+def _dry_run_wishlist_probe(dry_run_dir: Path) -> str:
+    """The dry run's wishlist self-test. Writes a synthetic reframe naming the
+    first gating (feed) wishlist family into dry_run_dir and checks the
+    campaign detects it. Returns the line to log; raises AssertionError when
+    the family is not detected. D-052: only feed_wishlist names gate, so the
+    probe uses a feed -- whose predicate may be absent (data_gap pause),
+    false (trigger pause) or true (no pause); all three prove detection."""
+    names = _gating_wishlist_names()
+    if not names:
+        return "wishlist-trigger probe skipped: no gating (feed) wishlist entries"
+    probe_family = names[0]
+    review = {
+        "recommendation": "reframe",
+        "recommendation_rationale": f"Testing {probe_family} looks promising now.",
+        "next_research_question": {"strategy_domain": probe_family},
+    }
+    orch.save_yaml(dry_run_dir / "artifacts" / "campaign_review.yaml", review)
+    if _check_wishlist_trigger(review) != probe_family:
+        raise AssertionError(f"synthetic wishlist-trigger recommendation was not detected: "
+                             f"{probe_family!r} not matched")
+    state = orch.load_yaml(dry_run_dir / "pipeline_state.yaml")
+    pause = _hard_pause_reason(dry_run_dir, state)
+    fired = evaluate_wishlist_predicate(probe_family)["result"] == "true"
+    if fired:
+        if pause is not None and pause[0] in DRY_RUN_WISHLIST_PAUSE_REASONS:
+            raise AssertionError(f"wishlist predicate for {probe_family!r} fired, but the run "
+                                 f"still paused: {pause}")
+        return f"wishlist-trigger classification OK: {probe_family!r} detected, predicate fired (no pause)"
+    if pause is None or pause[0] not in DRY_RUN_WISHLIST_PAUSE_REASONS:
+        raise AssertionError(f"synthetic wishlist-trigger recommendation was not detected: {pause}")
+    return f"wishlist-trigger classification OK: detected reason={pause[0]!r} ({pause[1]})"
+
+
 def dry_run_verify():
     _log("=== DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===", dry_run=True)
 
@@ -4788,23 +4827,7 @@ def dry_run_verify():
 
         # Simulate a wishlist-trigger reframe recommendation — proves this check
         # independently of the status-based pause detection above.
-        # D-052: only feed_wishlist names gate now (detector ideas no longer do).
-        names = _gating_wishlist_names()
-        if not names:
-            _log("wishlist-trigger probe skipped: no gating (feed) wishlist entries", dry_run=True)
-        else:
-            probe_family = names[0]
-            cr_path = dry_run_dir / "artifacts" / "campaign_review.yaml"
-            orch.save_yaml(cr_path, {
-                "recommendation": "reframe",
-                "recommendation_rationale": f"Testing {probe_family} looks promising now.",
-                "next_research_question": {"strategy_domain": probe_family},
-            })
-            state = orch.load_yaml(dry_run_dir / "pipeline_state.yaml")
-            pause = _hard_pause_reason(dry_run_dir, state)
-            if pause is None or pause[0] != "wishlist_trigger":
-                raise AssertionError(f"synthetic wishlist-trigger recommendation was not detected: {pause}")
-            _log(f"wishlist-trigger classification OK: detected family={pause[1]!r}", dry_run=True)
+        _log(_dry_run_wishlist_probe(dry_run_dir), dry_run=True)
 
     finally:
         shutil.rmtree(dry_run_dir, ignore_errors=True)
