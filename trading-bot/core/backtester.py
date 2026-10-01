@@ -527,9 +527,14 @@ class BacktestEngine:
                     "strategy config already carries a gap_rule key; provenance "
                     "fold would silently overwrite it -- resolve the collision explicitly"
                 )
+            # the indicator fill (strategy buffer reindex) is a separate switch since
+            # 2026-10-01; folded only when on, so fill-off hashes are unchanged
+            _fill_on = getattr(getattr(self.strategy, "data_buffer", None),
+                               "_ignore_max_bars", None) is not None
             _provenance_config = {
                 **_provenance_config,
-                "gap_rule": {"gap_detection": True, "gap_policy": self.gap_policy},
+                "gap_rule": {"gap_detection": True, "gap_policy": self.gap_policy,
+                             **({"indicator_fill": True} if _fill_on else {})},
             }
 
         # E-010 S3 (2026-09-10): fold the effective cost model into run identity

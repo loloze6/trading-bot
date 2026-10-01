@@ -397,8 +397,12 @@ appending a second row for the same instant (`replace_if_same_bar`,
 Merged (CUL-261, CUL-271, CUL-273/273b; recovery rules fixed by CUL-359).
 
 `TradingBot._check_and_record_gap(symbol, data_time)` runs on every candle
-completion (both live and backtest) when `gap_detection=True` (off by
-default). It compares this candle's timestamp to the immediately preceding
+completion (both live and backtest) when `gap_detection=True`. For backtests it is ON by default since 2026-10-01
+(`run_backtest()` and `main.py simulate`, policy `{"ignore_max_bars": 3,
+"on_large_gap": "flatten"}`, large = the strategy's `required_bars`;
+`gap_detection=False` switches it off); `TradingBot`'s own default (live) stays
+off. The indicator fill (strategy buffer reindex, CUL-273b) is a separate
+switch, `indicator_fill`, OFF by default (turned on later under CUL-361). It compares this candle's timestamp to the immediately preceding
 one for the same symbol; any delta other than exactly one
 `candle_interval_seconds` step is recorded as a gap. When `gap_policy` is
 also set (`{"ignore_max_bars": int, "large_min_bars": int}`),
