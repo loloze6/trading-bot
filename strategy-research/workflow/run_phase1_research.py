@@ -14871,6 +14871,9 @@ def _route_post_config_direct_backtest_specification(run_dir: Path, *,
         if len(remaining) < min_needed:
             reason = (f"only {len(remaining)}/{len(variants)} variant(s) validated at 5a with the "
                       f"data gate off (need >= {min_needed})")
+            _detail = _variant_shortfall_detail(variants)
+            if _detail:
+                reason += f" -- {_detail}"
             kind, classes = (_variant_park_kind(variants, run_dir / "artifacts")
                              if routing_retired else (None, []))
             if kind:
@@ -14886,6 +14889,34 @@ def _route_post_config_direct_backtest_specification(run_dir: Path, *,
                          flags={"variant_gate_insufficient": True})
             return "human_pause"
     return "protocol_execution"
+
+
+def _variant_shortfall_detail(variants_idx: dict) -> str:
+    """O-6 (2026-10-01): every not-tested variant behind a variant-floor park or
+    pause, as blocking or non-blocking, with its reason -- so the record says what
+    the operator has to fix (a class to build vs data to fetch) instead of naming
+    one kind. Non-blocking = a repeat skip or a D-042 coverage skip, which the
+    floor does not count; their presence caps the idea at INCONCLUSIVE."""
+    blocking, nonblocking = [], []
+    for vid, v in sorted((variants_idx or {}).items()):
+        if not isinstance(v, dict) or v.get("status") != "not_tested":
+            continue
+        reason = str(v.get("reason") or "no reason recorded")
+        found = (_v12_missing_classes(v.get("report"))
+                 if reason == "validate_config.py violations" else [])
+        short = f"missing class {', '.join(found)}" if found else reason
+        if len(short) > 160:
+            short = short[:157] + "..."
+        (nonblocking if (_is_repeat_skip(v) or _is_coverage_skip(v)) else blocking).append(
+            f"{vid} ({short})")
+    parts = []
+    if blocking:
+        parts.append("blocking: " + "; ".join(blocking))
+    if nonblocking:
+        parts.append("non-blocking, not counted: " + "; ".join(nonblocking))
+    if any(_is_coverage_skip(v) for v in (variants_idx or {}).values()):
+        parts.append("the idea is capped at INCONCLUSIVE while asset variants stay untested")
+    return " | ".join(parts)
 
 
 def _variant_floor(variants_idx: dict) -> tuple:
@@ -15618,14 +15649,17 @@ def run_loop(run_id: str):
                                 f"validated after the per-variant data-availability gate "
                                 f"(need >= {_min_needed})"
                                 + (f"; missing class(es): {_park_classes}"
-                                   if _park_classes else "")),
+                                   if _park_classes else "")
+                                + (f" -- {_variant_shortfall_detail(variants_idx)}"
+                                   if _variant_shortfall_detail(variants_idx) else "")),
                         request_refs=_refs, resume_stage="backtest_specification",
                         classes=_park_classes)
                     break
                 if len(remaining) < _min_needed:
                     print(f"⏸️  PIPELINE PAUSED: only {len(remaining)}/{len(variants_idx)} "
                           "variant(s) remain validated after the per-variant "
-                          f"data-availability gate (need >= {_min_needed}). See "
+                          f"data-availability gate (need >= {_min_needed}). "
+                          f"{_variant_shortfall_detail(variants_idx)}. See "
                           "artifacts/variants/index.yaml and "
                           "campaign_record/data_requests.yaml.")
                     update_state(path=RUN_DIR, status="paused_for_human",
