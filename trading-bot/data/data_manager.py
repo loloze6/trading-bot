@@ -44,6 +44,7 @@ import pandas as pd
 import logging
 from typing import Callable, Dict, List, Optional
 import datetime
+import math
 import os
 import numpy as np
 import time
@@ -866,8 +867,8 @@ class DataManager:
         if fill not in ("none", "carry_forward"):
             raise ValueError(f"fill must be 'none' or 'carry_forward' — got '{fill}'")
         if not isinstance(delay_seconds, (int, float)) or isinstance(delay_seconds, bool) \
-                or delay_seconds < 0:
-            raise ValueError(f"delay_seconds must be a non-negative number — got {delay_seconds!r}")
+                or not math.isfinite(delay_seconds) or delay_seconds < 0:
+            raise ValueError(f"delay_seconds must be a finite non-negative number — got {delay_seconds!r}")
         if not isinstance(window_seconds, (int, float)) or isinstance(window_seconds, bool) \
                 or window_seconds < 0:
             raise ValueError(
@@ -1396,9 +1397,11 @@ class DataManager:
 
                 if not df.empty and feed.column in df.columns:
                     # Forward-fill to now: take the row with the largest
-                    # timestamp <= current time
+                    # timestamp <= current time minus the feed's publication
+                    # delay (CUL-356: the same rule as the backtest merge)
                     df_sorted = df.sort_values("timestamp")
-                    past = df_sorted[df_sorted["timestamp"] <= pd.Timestamp(now)]
+                    known_by = now - datetime.timedelta(seconds=feed.delay_seconds)
+                    past = df_sorted[df_sorted["timestamp"] <= pd.Timestamp(known_by)]
                     if not past.empty:
                         feed.live_value = float(past[feed.column].iloc[-1])
                         logger.debug(f"Aux feed '{name}': live_value = {feed.live_value}")

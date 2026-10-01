@@ -3,7 +3,7 @@ Regression test for the 2026-07-20 commission_rate parameter on
 core/launcher.py::run_backtest (Dispatch C, commission-rate parameterization).
 
 Reuses the existing warmup_prefetch_reference.json fixture (BTCUSDT,
-2024-01-01 to 2024-01-11, tests/fixtures/warmup_prefetch_check_config.json) as the
+2024-01-01 to 2024-01-16 since CUL-356, tests/fixtures/warmup_prefetch_check_config.json) as the
 golden default-commission-rate run: its captured expected net_pnl/sharpe already
 document what the DEFAULT_COMMISSION_RATE (0.001) path produces, so omitting the
 new parameter must reproduce those numbers exactly.

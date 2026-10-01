@@ -46,7 +46,9 @@ automatically" — is **not** how it works, and never fully was:
 ## 3. Registered aux feeds (pointer only)
 
 - `funding_rate`, `fear_greed` — native `window_seconds=0` (instantaneous),
-  `agg='last'` correct by design for both.
+  `agg='last'` correct by design for both. The engine uses fear & greed one day
+  after its date (`FEED_DELAY_SECONDS`, CUL-356), so this gate's raw-reading
+  coverage of a window is one day ahead of what the backtest attaches.
 - whale-footprint feeds — reserved/opt-in only, native window = one bar
   forward; `agg='last'` would be a latent correctness gap if ever registered
   at a native granularity finer than the consuming strategy's candle interval

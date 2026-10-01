@@ -159,7 +159,15 @@ FEED_FILL.update({name: 'none' for name in WHALE_FOOTPRINT_FEEDS})
 #                 that day 00:00 and its time_until_update pointed at the next
 #                 00:00 UTC, i.e. publication at the start of the day today; past
 #                 years are unverified, so the conservative A8.4 shift stays:
-#                 day D's value is first visible on day D+1's bars.
+#                 day D's value is first visible on day D+1's bars. Before
+#                 CUL-356 the engine never shifted it: on 1h bars 23 of each
+#                 day's 24 bars carried that day's value (the shift lived only
+#                 in the prescreen loader deleted in bef5f3a4).
+#                 Consequences: the feed is fetched from the backtest's start
+#                 date, so the first day of a run has no fear & greed value
+#                 (unless warmup_prefetch reaches back); and the data
+#                 availability gate, which checks raw readings over the test
+#                 window, is one day ahead of what the engine attaches.
 #   whale features: 0 -- their forward window is declared in FEED_WINDOW_SECONDS.
 # ---------------------------------------------------------------------------
 FEED_DELAY_SECONDS = {'funding_rate': 0, 'fear_greed': 86400}

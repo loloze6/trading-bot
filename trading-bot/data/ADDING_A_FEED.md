@@ -63,8 +63,12 @@ Two values cover almost every feed:
 
 | `window_seconds` | When | Examples |
 |---|---|---|
-| `0` | Instantaneous observation — the value is fully known AT `timestamp`, using no data after it | Funding rate, Fear & Greed |
+| `0` | Instantaneous observation — the value uses no data after `timestamp` | Funding rate, Fear & Greed |
 | your bar width | The value aggregates a FORWARD window `[timestamp, timestamp + window_seconds)` | Whale-footprint features (`window_seconds == bar_seconds`) |
+
+`window_seconds` says what data a value is built from; WHEN it becomes known is a separate
+declaration, `FEED_DELAY_SECONDS` (CUL-356): funding is known at its settlement (0); fear &
+greed is stamped with its day at 00:00 UTC and only treated as known one day later (86400).
 
 ```python
 data_manager.register_feed(
