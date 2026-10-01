@@ -1,12 +1,12 @@
 ---
 name: innovation-expansion
-description: Expands a base trading hypothesis into novel but testable variants using alternative data, reverse thinking, and behavioral indicators. Regime-specific variants are routed to detector_wishlist (not the run queue) per A2.3.
+description: Expands a base trading hypothesis into novel but testable variants using alternative data, reverse thinking, and behavioral indicators. A regime-gated variant may enter the run queue if it carries its ungated version as a design variant.
 ---
 
 # Innovation Expansion
 
 ## Mission
-Expand the hypothesis space before strict validation — while keeping only ungated, feed-honest formulations in the run queue.
+Expand the hypothesis space before strict validation — while keeping only feed-honest formulations in the run queue.
 
 ## Required inputs
 - `research_brief.yaml`
@@ -25,11 +25,11 @@ Expand the hypothesis space before strict validation — while keeping only unga
 ## Output requirements
 The expanded artifact must include:
 - base_hypothesis_id
-- expanded_variants          (ungated variants for the run queue — see constraints below)
+- expanded_variants          (variants for the run queue, regime-gated ones included — see the regime section below)
 - alternative_data_candidates
 - reverse_hypothesis
 - behavioral_features
-- regime_specific_variants   (populated but routed to detector_wishlist, NOT the run queue — see POST-A2.3 section)
+- regime_specific_variants   (required field; may be an empty list — regime-gated variants go in `expanded_variants`, see the regime section below)
 
 ---
 
@@ -56,19 +56,15 @@ Do NOT expand into variants whose mechanism cannot be expressed in available fee
 
 ---
 
-## POST-A2.3 — Regime-specific variants are DETECTOR_WISHLIST only
+## Regime-gated variants carry their ungated version
 
-**No variant that is regime-gated enters the run queue.**
+A regime-gated variant ("active only in TRENDING", "valid in RANGING mode") is allowed in the run queue (`expanded_variants`). It must carry its UNGATED version as its design variant: the same config with the regime detector's rules emptied (`"rules": []`), any `vetoes` removed, and `default_regime` set to the regime that holds the strategy, so every bar is in that regime. This is a parameter change; the component classes stay identical. The value of the regime is judged by gated versus ungated, plus the roadmap's regime health checks.
 
-The regime detector for BTC/ETH 1h is `unusable_for_this_symbol_timeframe` (A2.3 standing policy). Any variant whose activation logic requires a regime condition ("active only in TRENDING", "valid in RANGING mode") cannot currently be tested. Such variants:
-1. MUST be recorded in `regime_specific_variants` as documentation (schema compliance), with `status: detector_wishlist_pending` and the reason they require a trusted detector.
-2. MUST NOT be selected as run-queue candidates in `expanded_variants`.
-3. Should suggest an ungated reformulation in `innovation_notes.yaml` (what the ungated version of this idea would be).
+An on/off condition belongs in the regime detector: a graded strategy in the regime it selects, and null (flat) in the others.
 
-**Ungated reformulation strategy:** Before declaring a variant regime-conditional, try to reformulate it as an unconditional signal. Examples:
-- "Works in TRENDING: buy on momentum" → rewrite as "buy on high-velocity directional bars above a volume threshold" (ungated condition)
-- "Works in RANGING: mean-revert at extremes" → rewrite as "RSI extremes over a rolling window regardless of regime" (ungated condition)
-- If no ungated reformulation makes conceptual sense, route to detector_wishlist.
+`regime_specific_variants` stays a required field of the artifact. It may be an empty list. Do not use it to hold back regime-gated variants from the run queue.
+
+The former no-regime-gating rule (A2.3) is deleted (D-052).
 
 ---
 
@@ -92,6 +88,11 @@ For each proposed variant in `expanded_variants`, identify its `indicator_librar
 - Variants span ≥2 different library `category` values, OR
 - Variants span ≥2 different `data_requirements`, OR
 - One variant has a materially different `edge_source_compatibility` set (e.g., structural vs behavioral).
+
+**Config-direct flow exception (D-053):** in the config-direct flow (signaled by `artifacts/backtest_spec.yaml`)
+`design` variants are exempt from this rejection: a design variant changes one parameter or transform and never adds
+or replaces a component, so it stays in the base's category by construction. The `asset` variant carries the
+diversity.
 
 ### Diversity field in `expanded_hypothesis_card.yaml`
 
@@ -275,21 +276,36 @@ Each `patch` entry is `{path, value}`, `path` a JSON Pointer (RFC 6901) string s
 in the base config** — `backtest_specification`'s tool-only branch (which applies these patches) raises loudly
 on a patch targeting a path whose parent doesn't exist; it does not silently create a new nested chain or
 silently no-op. Only the FINAL segment of a path may be new (adding a key that doesn't exist yet under an
-existing parent). Reference the base config's actual shape (STRATEGY_DESIGN_GUIDE.md) before writing a path —
-an invented path segment fails at `backtest_specification` time, not here.
+existing parent). Reference the base config's actual shape (`STRATEGY_DESIGN_GUIDE.md`, and
+`COMPONENT_CATALOG.md` for each component's parameters) before writing a path — both are in your context in this
+flow, and an invented path segment fails at `backtest_specification` time, not here.
 
 **Always include the `base` variant (empty patch) in `variants`** — it is what lets the base config itself
 still get tested, not merely serve as a patch target. Add a "design patch" variant (a variant along the
-signal's own design axis — a parameter, a transform, a component swap) and an "asset" variant (the
-IMPROVEMENT 06 asset-generalizability candidate: `kind: asset`, the base config unchanged — empty patch — on the
-coin named in `symbol`) per the "base + a design patch + an asset coin" shape this slice
+signal's own design axis — a parameter or a transform of the component(s) under test) and an "asset" variant
+(the IMPROVEMENT 06 asset-generalizability candidate: `kind: asset`, the base config unchanged — empty patch —
+on the coin named in `symbol`) per the "base + a design patch + an asset coin" shape this slice
 targets. **Checked by code (E-061 C2 S2c, when your variants carry `kind`/`symbol`): write 3 or 4 variants —
 exactly one `base`, at least one `design`, one or two `asset`, each naming ONE coin (never a `symbols` list: a
 multi-coin, cross-sectional variant is not built).** A fourth variant is a second design or a second asset coin,
 only if genuinely justified (same "quality over volume" discipline IMPROVEMENT 04's diversity test already
-applies) — do not pad the list with cosmetic parameter-only variants. An output that breaks this shape, or whose
-design patch does not apply or fails `validate_config.py`, is sent back to you ONCE with the error in your
-injected context (`variant_shape_error`); a second invalid output pauses the run.
+applies). An output that breaks this shape, or whose design patch does not apply or fails `validate_config.py`,
+is sent back to you ONCE with the error in your injected context (`variant_shape_error`); a second invalid output
+pauses the run.
+
+### A design variant keeps the idea (D-053, D-051)
+
+A `design` variant changes ONE parameter or ONE transform of the component(s) under test. It never adds, removes
+or replaces a component: the signal stays the one the hypothesis card describes, and a "swap" of one component for
+another is not a design variant (a sign flip through `scaling_factor` is a parameter change of the same component
+and is allowed). Find the parameters to vary in the component's row and in the "Variant patterns" section of
+`COMPONENT_CATALOG.md`.
+
+A variant must not introduce an on/off component: every component in `strategies` after the patch is applied must
+be graded (the catalogue's "Kind" column; the guide's "The design principle" lists the on/off ones), apart from a
+constant the base config already uses as an offset. A `design` variant is by construction the same library
+category and data as the base, so IMPROVEMENT 04's "cosmetic diversity" rejection is not a reason to add or
+replace a component in this flow; the `asset` variant carries the diversity (IMPROVEMENT 06). Nor may it add the dead-zone transforms `threshold_filter` or `volume_filter` to a component in `strategies` (D-051).
 
 ### Relationship to `expanded_hypothesis_card.yaml` and `innovation_notes.yaml`
 
@@ -312,7 +328,8 @@ patch form.
 - Prefer variants that fit the current strategy/regime/component framework.
 - Check `research_brief.yaml` constraints field first. If variant count is constrained, honor it before applying expansion logic.
 - Ensure at least one variant uses `evidence_type != price_volume_only` (use funding_open_interest if no other non-price feed applies).
-- **Improvement 04: run diversity test against indicator_library.yaml; reject cosmetic expansions.**
+- **Improvement 04: run diversity test against indicator_library.yaml; reject cosmetic expansions.** (Config-direct
+  flow: `design` variants are exempt, the `asset` variant carries the diversity; D-053.)
 - Populate `library_category`, `data_requirements`, `diversity_axis` on every variant.
 - Write `diversity_audit` section in `innovation_notes.yaml`.
 - If `artifacts/tried_ideas.yaml` or `campaign_record/exclusion_digest.yaml` is present
@@ -334,9 +351,10 @@ patch form.
 - Do not require data from `available_feeds.yaml.unavailable` for run-queue variants — use `requires_new_feed` and feed_wishlist instead.
 - Do not output generic brainstorming prose only.
 - Do not propose ideas that require rebuilding execution, portfolio, or backtest infrastructure unless explicitly requested.
-- Do NOT include regime-gated variants in the run queue (`expanded_variants`). They go in `regime_specific_variants` with `status: detector_wishlist_pending`.
 - If `research_brief.yaml` contains "one variant only", "single variant", or "no variants" in its `constraints` field, do NOT expand into multiple variants. Pass the base hypothesis through to a single variant (V1 only) matching the brief's signal_concept exactly. Expansion is only appropriate when the brief does not constrain variant count.
-- **Improvement 04: Do NOT accept an expansion where all variants share the same library `category` AND `data_requirements`. This is cosmetic diversity — redo it.**
+- **Improvement 04: Do NOT accept an expansion where all variants share the same library `category` AND `data_requirements`. This is cosmetic diversity — redo it.** (Config-direct flow: `design` variants are exempt from this, since a design
+  variant changes one parameter or transform and never adds or replaces a component; the `asset` variant carries the
+  diversity; D-053.)
 - Do not re-run an idea already tested on the same coins and timeframe (per
   `artifacts/tried_ideas.yaml` or the legacy exclusion digest, whichever is in context)
   under a materially unchanged mechanism. (Improvement 05)

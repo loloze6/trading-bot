@@ -43,7 +43,6 @@ constraints:
   - "Must not propose ideas that require replacing the whole existing bot architecture."
   - "Do not write code."
   - "Keep the mechanism explicit and interpretable."
-  - "POST-A2.3: no regime-gated hypotheses in the run queue. Ungated formulations only."
   - >
     DO NOT LAUNCH until the P2 instrument-universe-expansion prerequisite (see below)
     is closed and this queue entry's status is flipped from blocked_on_P2 to ready.

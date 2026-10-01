@@ -135,16 +135,16 @@ IF `abs(variants.base.slices.overall.median_forecast_return_corr) < 0.03` OR its
 p-value): the signal does not predict price direction. Propose a `new_block` for a
 structurally different signal component -- changing this component's *parameters* under this
 rule is not a fix (a `patch` would not address a no-edge finding); if you cannot propose a
-concrete alternative component from `STRATEGY_DESIGN_GUIDE.md`'s catalog, state that in
+concrete alternative component from `COMPONENT_CATALOG.md`, state that in
 `evidence` and emit no proposal rather than a vague `new_block`.
 
 **RULE 3 — Signal is inverted:**
 IF `variants.base.slices.overall.median_forecast_return_corr < -0.03` AND its p-value < 0.10: the signal
 predicts the opposite of what the strategy bets. Propose a `patch` reversing the signal's
-direction (e.g. `scaling_factor` sign flip -- see `STRATEGY_DESIGN_GUIDE.md`'s "Component
-variant patterns" for the exact per-component sign-flip vocabulary, such as
-`KeltnerBreakoutComponent`'s `scaling_factor: -20.0` for lower-band short instead of upper-band
-long). This is a cheap `patch`, same component, reversed logic -- not a `new_block`.
+direction (e.g. `scaling_factor` sign flip -- see `COMPONENT_CATALOG.md`'s "Variant patterns"
+for the per-component sign-flip vocabulary, such as `KeltnerBreakoutComponent`'s
+`scaling_factor: -20.0`, which flips its sign on every bar). This is a cheap `patch`, same
+component, reversed logic -- not a `new_block`.
 
 **RULE 6 — No diagnostic signal (all metrics null):**
 IF `variants.base.slices.overall.median_forecast_return_corr` is null/absent AND no other numeric field is
@@ -234,7 +234,7 @@ this category's report and the grid you may read for this score):
   full regime-uninformative verdict) -- you may cite `variants.base.slices.per_regime` only as
   corroboration for a Rule 2/3/6 finding, never as your own primary rule.
 - Do not invent component classes, transform ops, or regime names absent from
-  `STRATEGY_DESIGN_GUIDE.md`.
+  `COMPONENT_CATALOG.md`.
 - Do not emit a proposal with empty `evidence`.
 
 ## Context rule

@@ -250,7 +250,28 @@ def test_a_1a_rerun_rewrites_the_pass_rule_and_rechecks_the_id(campaign_root):
 # realized_edge_to_cost_ratio value quoted in the criterion-menu paragraph goes
 # from "> 0.3" to "> 2.2 with a 100-trade floor" (D-039, config/criterion_menu.yaml).
 # Previous pin: 773051a327b81f4b9f6cd616a220e35ad2982cb3a11110df3bac3a2dfa4c545a.
-_MASTER_SKILL_SHA256 = "51a0d28cdf53ffca012951e38745d38408fe0a9828001ab0007d4b1a185458d3"
+# RE-PINNED by D-051 (2026-09-30, branch docs/design-guide-rewrite): a DECLARED change -- a new
+# "Graded signal concept" section (signal_concept must describe a graded forecast; on/off rules are
+# restated as their graded counterpart; parts the config cannot express are named), plus one
+# Checklist bullet and one Forbidden bullet. It changes hypothesis_generation's prompt on every path,
+# flag or no flag. Nothing about the decide_next addendum or regime gating changed.
+# Previous pin: 51a0d28cdf53ffca012951e38745d38408fe0a9828001ab0007d4b1a185458d3.
+# RE-PINNED by D-052 (2026-10-01, branch feat/d052-delete-a23): a DECLARED change -- the
+# "POST-A2.3 -- No regime-gating" section is replaced by "Regime-gated ideas carry their
+# ungated version" (a regime-gated card is allowed; its design variant is the ungated config:
+# rules emptied, vetoes removed, default_regime = the regime holding the strategy), and the
+# matching Checklist / Forbidden bullets are updated. Changes hypothesis_generation's prompt on
+# every path. Nothing about the decide_next addendum changed.
+# Previous pin: 82a3524caa89c54613a7262ae9d9d6a51b8f02e5d413eb0953948beafdfabedc.
+# RE-PINNED by O-3 (2026-10-01, branch fix/o3-costs-judged-by-backtest): a DECLARED change --
+# IMPROVEMENT 07's cost-feasibility "Hard rule" (plausibility: implausible -> do not queue / drop)
+# is replaced by "Information only -- never a gate" (costs are judged only by the backtest), plus
+# one Forbidden bullet (no card omitted/dropped/down-ranked, no brief declared exhausted, on a cost
+# estimate). The whole file is hashed and shipped, so hypothesis_generation's prompt changes on every
+# path; the IMPROVEMENT 07 text applies only under config_direct_authoring. The decide_next addendum is
+# still not in the skill (the brief-card rubric lives in BRIEF_HYPOTHESES.md, edited separately).
+# Previous pin: 8309787de7bf3036eb6ffc24ac621de6258ea045e0b2873644010129533b5e52.
+_MASTER_SKILL_SHA256 = "6ac6d3288b315e1dc5cdff00dadaef099f56a3a42a5a8e639abd90adf555e87f"
 
 
 def test_hypothesis_design_skill_is_byte_identical_to_master():

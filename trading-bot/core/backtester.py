@@ -9,7 +9,9 @@ import pandas as pd
 from core.trading_bot import TradingBot
 from data.fetchers import CcxtFetcher
 from data.fetchers import FundingRateFetcher, FearGreedFetcher
-from data.feed_registry import FEED_WINDOW_SECONDS, build_daily_funding_series
+from data.feed_registry import (
+    FEED_AGG, FEED_DELAY_SECONDS, FEED_FILL, FEED_WINDOW_SECONDS, build_daily_funding_series,
+)
 from data.data_manager import Candle
 from execution.portfolio_info import flatten_dict_columns
 from reporting.run_artifact import (
@@ -47,6 +49,21 @@ class FeedRequirementError(RuntimeError):
     """Raised by BacktestEngine.load_data when a strategy's required aux feed
     (AdvancedStrategy.required_feeds) is absent from extra_feeds at registration
     time -- see FORK_CHANGES.md / feed-dependency-safety-architecture.md."""
+
+
+def nan_forecast_block(bot):
+    """CUL-274: the metrics.json "nan_forecast" block -- bars whose NaN forecast
+    was held (no trade) -- or None when there were none, so the key is never
+    written and metrics.json stays byte-identical."""
+    nan_bars = getattr(bot, "nan_forecast_bars", {}) or {}
+    if sum(nan_bars.values()) == 0:
+        return None
+    return {
+        "policy": "hold",
+        "bars": sum(nan_bars.values()),
+        "bars_by_symbol": dict(nan_bars),
+        "samples": list(getattr(bot, "nan_forecast_samples", [])),
+    }
 
 
 class BacktestEngine:
@@ -245,7 +262,9 @@ class BacktestEngine:
                     name           = feed_name,
                     fetcher        = factory(self.symbols, start_date, end_date, data_dir = data_storage_dir, exchange = self.exchange, **feed_opt_out),
                     window_seconds = FEED_WINDOW_SECONDS[feed_name],
-                    agg            = 'last',
+                    agg            = FEED_AGG[feed_name],
+                    fill           = FEED_FILL[feed_name],
+                    delay_seconds  = FEED_DELAY_SECONDS[feed_name],
                     required       = feed_name in required_feeds,
                 )
             self.logger.debug(f"Registered feeds before initialize: {list(self.data_manager._aux_feeds.keys())}")
@@ -498,6 +517,26 @@ class BacktestEngine:
                 "fetch_interval_seconds": self.data_manager.fetch_interval_seconds,
             }
 
+        # CUL-359: fold the gap rule into run identity when it is on -- a run with
+        # gap detection / tiers and one without gave the same hash but different
+        # results on gapped data (the #54 defect class). Off (gap_detection False)
+        # -> _provenance_config untouched, byte-identical.
+        if self.gap_detection:
+            if "gap_rule" in _provenance_config:
+                raise ValueError(
+                    "strategy config already carries a gap_rule key; provenance "
+                    "fold would silently overwrite it -- resolve the collision explicitly"
+                )
+            # the indicator fill (strategy buffer reindex) is a separate switch since
+            # 2026-10-01; folded only when on, so fill-off hashes are unchanged
+            _fill_on = getattr(getattr(self.strategy, "data_buffer", None),
+                               "_ignore_max_bars", None) is not None
+            _provenance_config = {
+                **_provenance_config,
+                "gap_rule": {"gap_detection": True, "gap_policy": self.gap_policy,
+                             **({"indicator_fill": True} if _fill_on else {})},
+            }
+
         # E-010 S3 (2026-09-10): fold the effective cost model into run identity
         # -- the CUL-55-class gap this feature itself had left open. Unlike the
         # folds above, this is NOT gated behind an off-by-default flag: a cost
@@ -626,12 +665,14 @@ class BacktestEngine:
                 "count":   self.strategy.component_error_count,
                 "samples": self.strategy.component_error_samples,
             }
+        nan_forecast_metrics = nan_forecast_block(bot)
         write_metrics_json(
             run_dir, core_metrics, per_regime, forecast_bins, dynamic, regime_validity,
             bar_equity=bar_equity_metrics,
             risk_controls=risk_controls_metrics,
             data_quality=data_quality_metrics,
             component_errors=component_errors_metrics,
+            nan_forecast=nan_forecast_metrics,
         )
 
         # Write bars CSV and forecast distribution

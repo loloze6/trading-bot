@@ -199,8 +199,9 @@ verbatim or a check you can skip your own analysis because of:
 - must NOT change the core research question unless the primary_failure_mode indicates
   the hypothesis itself is wrong (not just the implementation)
 - C9 (K2, 2026-07-13): this content is checked against campaign_knowledge_base.yaml for an
-  exhausted/forbidden family BEFORE the orchestrator scaffolds the next run
-  (`_route_refine`) — do not name a family the KB already marks exhausted with no open
+  banned family BEFORE the orchestrator scaffolds the next run
+  (`_route_refine`) — do not name a family the KB lists as a ban (`exhausted_mechanisms`:
+  evidence_count >= 3 or an operator-approved veto, D-055) with no open
   reactivation_condition; that pauses the pipeline rather than proceeding.
 
 `proposed_brief.yaml` (when lineage_routing = pivot):
@@ -210,8 +211,9 @@ verbatim or a check you can skip your own analysis because of:
 - C9 (K2, 2026-07-13): `_route_pivot` itself does not read proposed_brief.yaml (the next
   run's hypothesis is formalized later, by hypothesis_generation) — but it DOES scan
   `primary_failure_mode`/`config_to_failure_map`/`root_cause`/`findings_carryover.yaml`'s
-  own prose for a KB-exhausted family before scaffolding. Naming an exhausted family
-  (e.g. a Keltner variant) anywhere in that prose pauses the pipeline the same way.
+  own prose for a KB-banned family before scaffolding. Naming a banned family
+  anywhere in that prose pauses the pipeline the same way (D-055: an `exhausted: true`
+  finding below the ban bar is information only and never pauses).
 
 ## REQUIRED OUTPUT — findings_carryover.yaml
 
@@ -315,7 +317,7 @@ root_cause:
 | `already_priced_in` | pivot to a different `edge_source.category` | Do NOT retry price_volume_only variants within the same category |
 | `lag_mismatch_to_regime_persistence` | refine (altitude 1) — adjust lookback/threshold | Parameter problem, not signal problem |
 | `no_informational_content_this_venue` | **Wishlist note only** — record "this mechanism requires a venue with property X" in findings_carryover.yaml notes. Do NOT generate an executable escalation_request until multi-venue infrastructure exists (A1.4). Route as `pivot` to a different mechanism/asset class, not `escalate`. | Until cross-venue feeds exist, "different venue" is not an executable target |
-| `signal_real_but_subscale_vs_costs` | refine — raise `threshold_filter min_abs` (fewer, higher-conviction trades → longer avg holding → better edge/cost ratio). **Do NOT prescribe "lower-fee venue" as an escalation target** — multi-venue execution does not exist (A1.4). If cost hurdle is structurally unbeatable on current venues, route as `pivot` to a different signal class, not `escalate`. | Do NOT pivot signal; direction is correct. Venue prescription is wishlist-only. |
+| `signal_real_but_subscale_vs_costs` | refine — slow the signal (a longer component period, or an `ema` history op with a larger `span`) so it rebalances less often: longer avg holding, better edge/cost ratio. Do NOT raise a `threshold_filter` `min_abs`: dead-zone ops are not allowed on a component in `strategies`; a "strong enough" condition belongs in the regime detector. **Do NOT prescribe "lower-fee venue" as an escalation target** — multi-venue execution does not exist (A1.4). If cost hurdle is structurally unbeatable on current venues, route as `pivot` to a different signal class, not `escalate`. | Do NOT pivot signal; direction is correct. Venue prescription is wishlist-only. |
 | `indicator_incompatible_with_asset_flow` | pivot family entirely; exclude this indicator category for this asset going forward | Feed to campaign_knowledge_base (Improvement 05) |
 | `component_execution_error` | STOP — do not spawn a new run, do not record a trial or KB finding, do not mark the family failed. Human fixes the component/config, then re-runs fresh. | F6: the orchestrator enforces this as an absolute circuit-breaker override — see ORCHESTRATOR NOTE below |
 | `entry_exit_execution_gap` | refine at execution layer only — do NOT discard the signal | Per Improvement 03; altitude 1 only |
@@ -331,9 +333,6 @@ When `root_cause.mechanism_failure = regime_misattribution`:
   regime label in `altitude_justification`.
 - Do NOT escalate or kill on regime_misattribution — regime attribution is an instrumentation
   problem, not a hypothesis-level failure. Fix the measurement before re-evaluating the signal.
-- Per A2.3 standing policy: if the regime auditor confirms the detector is unusable, the 
-  orchestrator will switch to ungated-only generation for this symbol/timeframe. Your verdict
-  should recommend ungated reformulation of the hypothesis.
 
 ### `supporting_evidence` format rule
 
@@ -395,15 +394,18 @@ RULE 1 — Cost drag dominates (trade-level dilution or duration problem):
     Two candidate causes (cannot always be distinguished with current metrics):
     (a) Low-conviction trade dilution: many trades with small |price_return| drag
         down the aggregate. forecast magnitude distribution is the diagnostic.
-        Fix: raise threshold_filter min_abs to cut low-conviction entries.
+        Fix: slow the signal (longer component period, or `ema` with a larger span) to cut
+        low-conviction entries. A `threshold_filter` dead zone is not allowed on a component
+        in `strategies`; a "strong enough" condition belongs in the regime detector.
     (b) Short trade duration: positions close before price moves enough to offset
         fees. avg_trade_duration_bars would be the diagnostic, but this field does
         not yet exist in metrics.json (STEP_02 pending). If cause (b) is suspected
-        (e.g. threshold_filter is already ≥ 15.0 and cost_drag persists), note
+        (e.g. the component period is already long and cost_drag persists), note
         in findings_carryover.yaml that the root cause is provisional — cause (b)
         cannot be ruled out until avg_trade_duration_bars is available.
     Do NOT pivot to a different signal — the signal works.
-    Correct action at altitude 1: raise threshold_filter min_abs.
+    Correct action at altitude 1: slow the signal (longer component period); not a
+    threshold_filter dead zone.
     Correct action at altitude 2 (pivot): keep the same signal; switch to a
     less-frequent entry rule (e.g. wider bands, higher min_score). Do NOT write
     a pivot brief that changes the signal family — that wastes a run.
@@ -526,7 +528,7 @@ with the EXACT diagnostic values that triggered the rule:
 
 ## Forbidden
 - Do not change more than one hypothesis dimension in proposed_brief.yaml (refine case).
-- Do not recommend new components or transforms not in STRATEGY_CONFIG_REFERENCE.md (refine case).
+- Do not recommend new components or transforms not in COMPONENT_CATALOG.md (refine case).
 - Do not re-run or re-evaluate backtest numbers — accept protocol_result.yaml as truth.
 - Do not promote unless ALL evaluable approve criteria pass.
 - Do not promote if total trade count across all windows is < 15 (provisional floor —
@@ -725,7 +727,7 @@ disagreement into `altitude_justification` — it is recorded as an
 informational flag, not a `human_pause`, exactly as any other stage/machine
 disagreement now is.
 
-## A2.3 — IC measurement scope
+## IC measurement scope (A2.1)
 
 ### IC scope for ungated escape (A2.1)
 

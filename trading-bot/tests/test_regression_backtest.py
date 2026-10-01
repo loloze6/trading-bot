@@ -117,7 +117,8 @@ def nondefault_backtest_result(reference):
     # core/backtester.py::_end_of_backtest and _cost_model_provenance_fold
     # above), so the expected hash here must include it too, or this will
     # mismatch the manifest by construction regardless of the mutation above.
-    provenanced = {**mutated, "cost_model": _cost_model_provenance_fold()}
+    provenanced = {**mutated, "cost_model": _cost_model_provenance_fold(),
+                   "gap_rule": _gap_rule_provenance_fold()}
     expected_sha = hashlib.sha256(
         json.dumps(provenanced, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
@@ -153,6 +154,15 @@ def nondefault_backtest_result(reference):
         metrics["_run_dir"] = str(run_dir_path)
         metrics["_expected_sha"] = expected_sha
         yield metrics
+
+
+def _gap_rule_provenance_fold():
+    """Replicate BacktestEngine._end_of_backtest's gap_rule fold (CUL-359): the
+    gap rule is ON by default for run_backtest() since 2026-10-01 (operator,
+    declared change), so every default run's config_sha256 includes it, with
+    the indicator fill off (no indicator_fill key)."""
+    from core.launcher import DEFAULT_GAP_POLICY
+    return {"gap_detection": True, "gap_policy": dict(DEFAULT_GAP_POLICY)}
 
 
 def _cost_model_provenance_fold(exchange="binance", market_type="margin"):
@@ -280,7 +290,8 @@ def test_config_actually_loaded(backtest_result, reference):
     with open(config_path) as f:
         import json as _json
         config_dict = _json.load(f)
-    provenanced = {**config_dict, "cost_model": _cost_model_provenance_fold()}
+    provenanced = {**config_dict, "cost_model": _cost_model_provenance_fold(),
+                   "gap_rule": _gap_rule_provenance_fold()}
     config_content = _json.dumps(provenanced, sort_keys=True, separators=(",", ":"))
     # sort_keys/separators here must stay in lockstep with write_manifest's own
     # canonicalization (reporting/run_artifact.py:68) — they agree by construction

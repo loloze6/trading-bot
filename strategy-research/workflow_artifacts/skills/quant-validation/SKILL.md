@@ -43,7 +43,7 @@ the expanded card and your own blocking issues.
 - failure_modes
 - sample_split_design
 - decision_rules
-- cost_feasibility   ← **REQUIRED (Improvement 09 Layer 1)**
+- cost_feasibility   ← **REQUIRED (Improvement 09, information only — never a gate)**
 
 `validation_decision.yaml` must include:
 - hypothesis_id
@@ -86,7 +86,7 @@ YAML formatting rule — applies to ALL string values in both artifacts:
 - Return approve, conditional_approve, refine, or reject. Use conditional_approve when the hypothesis is sound but one specific, resolvable condition must be honored in the config — include a conditions list in the output.
 - If your own status is `refine`, also produce `refinement_notes.yaml` in this same response (see the output-requirements section above) — do not stop at `validation_decision.yaml` and wait for a later stage; there isn't one.
 - Check whether the idea can be tested through a minimal change to the existing bot architecture.
-- **Complete the `cost_feasibility` block** (Improvement 09 Layer 1 — see section below).
+- **Complete the `cost_feasibility` block** (Improvement 09 — information only, see section below).
 
 ## IMPROVEMENT 06 — Walk-forward design (holdout range is pre-registered, not this stage's job)
 
@@ -147,7 +147,7 @@ Forbidden (never emit these — undefined or unmeasurable in current pipeline):
 - Regime detection lag (no ground-truth regime timestamp recorded)
 - Any metric requiring a second backtest run (e.g. V5 reverse control)
 
-## IMPROVEMENT 09 — Layer 1 Cost Feasibility (required in every validation_protocol.yaml)
+## IMPROVEMENT 09 — Cost Feasibility estimate (information only; required in every validation_protocol.yaml)
 
 Populate this block from `config/cost_model.yaml` (round_trip_cost_bps per symbol):
 
@@ -163,16 +163,14 @@ cost_feasibility:
   plausibility_rationale: "<must cite the signal class and timeframe. Example: '1h mean-reversion with 6–12 bar holds must clear 34 bps/trade gross; established mean-reversion signals on 1h crypto typically achieve 10–30 bps — marginal to implausible'>"
 ```
 
-### Hard rule (mirrors "no falsifiable statement → no approval"):
+### Information only — never a gate (O-3, operator 2026-10-01)
 
-**`plausibility: implausible` → validation status CANNOT be `approve` or `conditional_approve`.**
-
-The blocking issue must be "turnover/cost mismatch". Typical fixes for an implausible verdict:
-- Longer timeframe (reduces round-trip cost per holding period)
-- Tighter regime gating (fewer, higher-conviction trades)
-- Wider holding period assumption (more bars per trade to amortise costs)
-
-If implausible AND no fix is viable within the current architecture: status = `reject`.
+Costs are judged ONLY by the backtest. `cost_feasibility` records your estimate so the backtest can be read
+against it; it is never a reason for `refine`, `reject` or a blocking issue, and `plausibility: implausible`
+does not stop `approve` or `conditional_approve`. Do not write a `conditional_approve` condition that imposes a
+cost or edge-to-cost threshold before the backtest. If you expect turnover to be the problem, name it as a
+failure mode; whether the idea survives costs is measured by its backtest (card E profit bars,
+`realized_edge_to_cost_ratio`).
 
 ### Plausibility rubric:
 
@@ -190,7 +188,7 @@ Note: `config/cost_model.yaml` is the single source of truth for cost numbers. D
 - Do not skip explicit failure modes.
 - Do not rely on narrative confidence.
 - Do not emit decision criteria using metrics outside the Permitted list above.
-- **Do not approve or conditionally approve when `cost_feasibility.plausibility = implausible`.**
+- Do not refine, reject or condition an approval on a cost, breakeven or turnover estimate (`cost_feasibility` included) — costs are judged only by the backtest (O-3).
 - Do not hardcode fee or spread numbers — always read from `config/cost_model.yaml`.
 - On a `refine` verdict: do not redesign the strategy in `refinement_notes.yaml` — plan the fix, don't build it. Do not skip an unresolved `blocking_issues` entry. Do not approve the hypothesis in the same breath as producing a refinement plan — they are mutually exclusive outcomes.
 

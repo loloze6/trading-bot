@@ -368,6 +368,9 @@ _PLURAL_KELTNER_SHAPED_FINDING = {
     "hypothesis_ids": ["keltner_mean_reversion", "keltner_trend_mean_reversion"],
     "outcome": "no_edge_observed",
     "exhausted": True,
+    # D-055: only a ban blocks (evidence_count >= 3 or an approved veto); these C9
+    # tests check matching and the pause, so the fixture is a ban.
+    "evidence_count": 3,
     "reactivation_condition": None,
 }
 

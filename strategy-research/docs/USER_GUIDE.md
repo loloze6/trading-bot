@@ -518,8 +518,8 @@ post-validation/post-expansion to pre-expansion.
 |---|---|---|
 | `hypothesis_card.yaml` | stage 2 | yes |
 | `STRATEGY_DESIGN_GUIDE.md` | `strategy-research/docs/` | yes |
+| `COMPONENT_CATALOG.md` | `strategy-research/docs/` | yes |
 | `DATA_AVAILABILITY.md` | `strategy-research/docs/` | optional, forced-read on a new timeframe/symbol/venue |
-| `WORKFLOW_CAPABILITIES.md` | `strategy-research/docs/` | optional |
 | `quant-fundamentals/SKILL.md` | `workflow_artifacts/skills/`, added by code (CUL-336) | yes |
 
 **Stage output**
@@ -545,7 +545,7 @@ confirming no rule was silently dropped).
 Which part of the base config IS the hypothesis's block, as opposed to
 scaffolding: `{block: {kind: forecast|regime, config_paths: [JSON pointers]},
 scaffolding: [JSON pointers], rationale}` — contract in
-`STRATEGY_DESIGN_GUIDE.md` §7c, schema
+`STRATEGY_DESIGN_GUIDE.md` ("Manifest contract"), schema
 `workflow_artifacts/schemas/block_manifest.schema.json`, one implementation in
 `tools/block_manifest.py`. A stale manifest is deleted when this stage
 starts. Right after it, `determine_post_strategy_config_authoring_route`
@@ -658,8 +658,8 @@ how (E-039 S4, 2026-09-12 — see item 4 below).
 `innovation_expansion_to_validation.yaml`, `pipeline_state.yaml`
 (for the refinement counter), `pre_registration.yaml` if present (the
 pre-registered `sample_split_design.holdout_range`, A6.1 — see below),
-`config/cost_model.yaml` (required, for `cost_feasibility`, added by code —
-CUL-336). `innovation_notes.yaml` and `docs/DATA_AVAILABILITY.md` are added
+`config/cost_model.yaml` (required, for the information-only `cost_feasibility`
+estimate, added by code — CUL-336; since O-3 it never blocks approval). `innovation_notes.yaml` and `docs/DATA_AVAILABILITY.md` are added
 only when the run is already in a refine loop (`artifacts/refinement_notes.yaml`
 exists), keeping a first pass at minimal context. `config/campaign_data_policy.yaml` is deliberately
 not an input: the skill says not to read it directly, and the one field it
@@ -1030,8 +1030,8 @@ This bit twice in one night (2026-09-04):
   of `"core"` in `metrics.json`, not nested inside it — it was being computed,
   written, and then silently dropped here, never reaching `verdict_interpreter`.
   Fixed by CUL-263 (`fix/cul-263-trade-diagnostics-flow`), adding the one line
-  above. `None` when a window ran without `gap_detection` on, present as a key
-  either way.
+  above. `None` when a window ran with `gap_detection=False` (the gap rule is on
+  by default for backtests since 2026-10-01), present as a key either way.
 
 **Separately, at the cross-window pooling step** (`_build_extended_summary`,
 same file), one further statistic is computed that cannot live in a single
@@ -1090,7 +1090,7 @@ handling (`::run_loop`, `::run_loop`).
 **Objective.** Establish whether the regime detector is trustworthy enough for
 its labels to be allowed to condition any metric.
 
-> **What a regime gate is, and why nothing uses one today.**
+> **What a regime gate is, and how a regime idea is judged.**
 > A *regime gate* means a strategy only trades when the market is in a state it
 > likes — trending, say — and sits out otherwise. To do that you need a
 > **detector**: a rule that labels each bar with the current state.
@@ -1099,12 +1099,15 @@ its labels to be allowed to condition any metric.
 > own quality gate**: its labels change under a small parameter nudge, and it
 > cannot hit the required activation band and stay stable at the same time. Its
 > labels are therefore noise wearing a label, and gating on them would add
-> noise rather than selectivity.
+> noise rather than selectivity. That verdict came from one run and says nothing
+> about whether gating improves a strategy, so it is no longer a veto, and the
+> old rule that banned regime-gated hypotheses (A2.3) is deleted (D-052).
 >
-> **So every hypothesis in the queue trades ungated — all the time.** A regime
-> gate becomes permissible again only when both hold: (1) a detector passes the
-> A2.2 quality gate, and (2) an *ungated* edge has already been confirmed and
-> shown to perform differently by regime. Rule A2.3.
+> **A regime-gated idea is allowed.** It carries its ungated version as its
+> design variant: the same config with the regime detector's `rules` emptied
+> (`"rules": []`) and `default_regime` set to the regime that holds the strategy,
+> so every bar is in that regime. The value of the regime is judged by gated
+> versus ungated, plus the roadmap's regime health checks.
 
 **Design rationale.**
 - A detector that flips label under a small parameter nudge produces
@@ -2081,9 +2084,9 @@ Each [run](#g-run) stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-
 |---|---|---|---|
 | `status` | The gate's [verdict](#g-verdict) — the field the router reads to decide the whole run's next step. | `approve` (proceed to spec) · `conditional_approve` (proceed, conditions printed) · `refine` (this same call also produces `refinement_notes.yaml`, bounded) · `reject` (terminal) | `conditional_approve` |
 | `rationale` | Why that verdict, in prose, so the decision can be audited later. | prose | *"Funding-rate mean-reversion mechanism is established (run_059 daily baseline: Sharpe > 0.8 …)"* |
-| `conditions` | Conditions the backtest config must respect. Only meaningful on `conditional_approve`. | list of strings | *"[Prescreen](#g-prescreen) cost gate (Layer 2) must pass: edge_to_cost_ratio >= 2.0 for BOTH BTCUSDT and ETHUSDT"* |
+| `conditions` | Conditions the backtest config must respect. Only meaningful on `conditional_approve`. | list of strings | *"Backtest both BTCUSDT and ETHUSDT on the registered windows"* (a cost or edge-to-cost condition is no longer allowed here: costs are judged only by the backtest, O-3) |
 | `blocking_issues` | What must be fixed before this can proceed. Non-empty normally implies `refine` or `reject`. | list | `[]` |
-| `promotion_path_if_approved` / `..._if_rejected` | Written in advance: what happens on each outcome, so the route is not invented after the result. | prose | *"If walk-forward Sharpe > 0.8 AND max_drawdown < 30% AND cost gate passes, [promote](#g-promote) to holdout_evaluation"* |
+| `promotion_path_if_approved` / `..._if_rejected` | Written in advance: what happens on each outcome, so the route is not invented after the result. | prose | *"If walk-forward Sharpe > 0.8 AND max_drawdown < 30% AND the post-backtest cost bar passes, [promote](#g-promote) to holdout_evaluation"* |
 | `hypothesis_id` / `approval_issued_by` / `approval_timestamp` | Provenance. | string / string / date | `FUNDING_MR_4H_RETEST` / `validation_gate / run_060` / `2026-08-27` |
 
 ⚠️ **`family_status` is an accepted alternative to `status`.** The
@@ -2144,7 +2147,7 @@ A simple gate [artifact](#g-artifact) confirming whether the backtest_spec is va
 | Field | Definition — what it means | Values / range (meaning of each) | Example (`run_060`, 2026-08-27) |
 |---|---|---|---|
 | `status` | Whether a runnable spec was produced. Two words that route the run — and anything unrecognised pauses it. | `spec_ready` (→ stage 8 protocol_execution) · `component_gap` (→ [human pause](#g-human-pause); the engine lacks a piece) · **any other value** (→ human pause, deliberately fail-closed) | `spec_ready` |
-| `rationale` | Why, naming the component or the gap. | prose | *"FundingRateMeanReversionComponent exists in STRATEGY_CONFIG_REFERENCE.md with full threshold=0.0 continuous-forecast support"* |
+| `rationale` | Why, naming the component or the gap. | prose | *"FundingRateMeanReversionComponent exists in COMPONENT_CATALOG.md with full threshold=0.0 continuous-forecast support"* |
 | `blocking_issues` | What is missing, when there is a gap. | list | `[]` |
 | `stage` | Which stage wrote it. | string | `backtest_specification` |
 
@@ -2172,7 +2175,7 @@ prints that the SKILL may need a new status case and pauses
 
 | Field | Definition — what it means | Values / range (meaning of each) | Example |
 |---|---|---|---|
-| `results` | Per-window, per-symbol raw metrics (`net_return_pct`, `sharpe`, `max_drawdown_pct`, `trade_count`, `win_rate`, `fees_paid`, …) — one entry per `{symbol, window}` pair actually run. Each entry also carries `core` (that window's real `metrics.json` core block verbatim, including `forecast_return_corr_pvalue_block_adjusted`/`forecast_return_corr_n_eff`/`forecast_return_corr_all_bars`), `per_regime`, `regime_validity`, `data_quality` — that window's gap-detection block (`null` unless the run used `gap_detection=True`, which defaults to `False`) — and `component_errors` — `{count, samples}`, F5b's own exception counters off the strategy object for that window, always present (a healthy run reports an explicit `count: 0`, never a fabricated absence). | list | `run_011`: 24 entries (2 symbols × 12 windows) |
+| `results` | Per-window, per-symbol raw metrics (`net_return_pct`, `sharpe`, `max_drawdown_pct`, `trade_count`, `win_rate`, `fees_paid`, …) — one entry per `{symbol, window}` pair actually run. Each entry also carries `core` (that window's real `metrics.json` core block verbatim, including `forecast_return_corr_pvalue_block_adjusted`/`forecast_return_corr_n_eff`/`forecast_return_corr_all_bars`), `per_regime`, `regime_validity`, `data_quality` — that window's gap-detection block (`null` only if a run switched the gap rule off with `gap_detection=False`; it is on by default for backtests since 2026-10-01) — and `component_errors` — `{count, samples}`, F5b's own exception counters off the strategy object for that window, always present (a healthy run reports an explicit `count: 0`, never a fabricated absence). | list | `run_011`: 24 entries (2 symbols × 12 windows) |
 | `per_symbol_summary` | Per-symbol aggregation across windows: `median_sharpe` (the primary promotion gate — see basis note below), `max_abs_drawdown_pct`, `min_trade_count`. | dict keyed by symbol | `run_011`: `{BTCUSDT: {median_sharpe: -5.019, …}, ETHUSDT: {median_sharpe: -2.604, …}}` |
 | `verdict` | Preliminary verdict from the tool itself, ahead of the LLM verdict-interpreter's own read. | `promote` · `kill` · `refine` | `kill` |
 | `hypothesis_verdict` | The evaluated pre-registered criteria: each one's requirement, actual value, PASS/FAIL/UNTESTED, and a rolled-up `verdict_reason`. This is what `verdict_interpreter` actually reads. | dict: `{verdict, criteria_results: [...], verdict_reason, diagnostics}`; under `--diagnostics-only` (config-direct, E-061 C1.3): `verdict: null`, `criteria_results: []`, `diagnostics` still computed; `null` with neither flag | `run_011`: 4 of 6 evaluable criteria FAIL, 3 UNTESTED |
@@ -2638,7 +2641,7 @@ replaces both with their real names and nesting depth. See
 | `recommended_action` | The auditor's prose reasoning and next step — under the retune firewall (A2.2: must cite detector-intrinsic criteria only, never PnL/Sharpe; enforced in code by `_validate_retune_firewall`, `run_phase1_research.py::_validate_retune_firewall`, which raises on a violation — the file itself carries no field recording that the check passed). | prose | *"The structural blocker is transition_frequency (~40 transitions/window observed…). Per A2.3 post-unusable policy: record candidate detector families in config/detector_wishlist.yaml…"* |
 | `retune_attempted` / `retune_summary` | Whether a retune grid search ran, and if so its full result: `grid_cells_evaluated`, `grid_dimensions`, the `vr_component` drop decision, `best_directly_implementable` vs. `overall_winner_requires_extension` cells, `max_score_achieved` vs. `max_possible_score`, and a `structural_ceiling` prose explanation when no cell passes. | bool / dict (only present when `retune_attempted` is true) | `true` / 48 cells evaluated, best score 5 of 8 possible |
 | `official_report_after_retune` | The regime detector's own per-symbol metrics (`confidence`, `persistence`, `transitions_pw`, `cc_sens_trending`, `activation`, `in_band`) after the retuned config, kept alongside the pre-retune `regime_detector_report.yaml` for comparison. | dict keyed by `detector_version`/`evaluated_at`/`config` plus one entry per symbol_timeframe | `btcusdt_1h: {confidence: medium, persistence: 12.0, …}` |
-| `a23_policy_applied` / `a23_detector_wishlist` | Whether the A2.3 post-unusable policy fired, and the wishlist file candidate replacement detectors were recorded to. | bool / path | `true` / `config/detector_wishlist.yaml` |
+| `a23_policy_applied` / `a23_detector_wishlist` | Legacy fields, present only in `runs/run_039`'s file: whether the former A2.3 post-unusable policy fired, and where candidate detectors were recorded. The policy is deleted (D-052); nothing writes or reads these fields. | bool / path | `true` / `config/detector_wishlist.yaml` |
 | `ungated_escape_eligible` | A2.1 escape assessment — whether an all-bars (ungated) IC check can substitute for a trustworthy detector. Set directly by the regime-auditor skill, per its own SKILL.md rules. | `true` · `false` · `indeterminate` | `true` |
 | `ungated_escape_rationale` | The prose justification for the `ungated_escape_eligible` value, citing the A2.1 rule it satisfies. | prose | *"IC is within 2 SE of zero — consistent with no edge over all bars. Per A2.1: signal_bad_everywhere may be concluded."* |
 
@@ -2903,8 +2906,8 @@ market_type are not `tradable: true` — **or are undeclared**
 | `config/available_feeds.yaml` | Which data feeds are testable today; constrains `evidence_type` in hypothesis_card |
 | `config/campaign_config.yaml` | Named constants for the orchestrator; drift-guarded by test |
 | `config/indicator_library.yaml` | 15 seeded entries: regime_affinity, crowding_risk, data_requirements per indicator class |
-| `feed_wishlist.yaml` | Feeds needed but not yet available (liquidation_data); argument for each. `trigger_condition.predicate` is mechanically evaluated (see `detector_wishlist.yaml` row below — same mechanism, same file format). |
-| `config/detector_wishlist.yaml` | Detector families to build when an ungated edge exists. Each candidate's `trigger_condition.predicate` is a structured, machine-checkable expression evaluated by `workflow/run_campaign.py::evaluate_wishlist_predicate()` — no longer human-reviewed prose. `status`/`last_evaluated_at`/`last_evaluated_against`/`kb_state_hash`/`evaluation_note` are written ONLY by `evaluate_and_persist_wishlist_predicate()` (single authority — never hand-edit); a persisted `status` is only trustworthy if its `kb_state_hash` matches a fresh `sha256` of `campaign_knowledge_base.yaml`'s current bytes. See `RUNBOOK.md` section 3 and `docs/CONCEALMENT_INSTRUCTION_DOCTRINE.md`. |
+| `feed_wishlist.yaml` | Feeds needed but not yet available (liquidation_data); argument for each. `trigger_condition.predicate` is a structured, machine-checkable expression evaluated by `workflow/run_campaign.py::evaluate_wishlist_predicate()` — no longer human-reviewed prose. `status`/`last_evaluated_at`/`last_evaluated_against`/`kb_state_hash`/`evaluation_note` are written ONLY by `evaluate_and_persist_wishlist_predicate()` (single authority — never hand-edit); a persisted `status` is only trustworthy if its `kb_state_hash` matches a fresh `sha256` of `campaign_knowledge_base.yaml`'s current bytes. See `RUNBOOK.md` section 3 and `docs/CONCEALMENT_INSTRUCTION_DOCTRINE.md`. |
+| `config/detector_wishlist.yaml` | Parked detector ideas (daily-timeframe overlay, ADX threshold, hidden Markov model). A list only: it gates and pauses nothing (D-052). A regime idea goes through the normal path with its ungated design variant. |
 | `campaign_knowledge_base.yaml` | Durable findings store — see the file itself for the current count; this table doesn't track a point-in-time number. |
 | `campaign_record/campaign_memory.yaml` | Per-run memory (E-058 S2a), written only by stage 17 `regroup_record` when `orchestrator.regroup_record.enabled` is on (off by default). One entry per `run_id`; fields in the stage 17 block. No old runs; those live in `campaign_knowledge_base.yaml`. |
 | `campaign_record/data_requests.yaml` | Append-only `{requests: [...]}` intake of the feed-acquisition lane. Two writers, both through `run_phase1_research._append_data_requests`: the data-availability gate's per-variant declines (`stage: data_availability_gate`, `{run_id, stage, variant_id, outcome, reason, reasons}`; idempotent only under `verdict_routing_retired`), and (E-035 S2c) stage 16's `requires_feed` proposals (`stage: specialist_reader`, one row per feed that is not wired: `{run_id, stage, feed, request: acquisition|designation, proposals: [{category, proposal_id, reason}], reason}`, always idempotent on `campaign_review_retired.feed_request_key` = run, stage, feed; the gate's rows keep `request_key` = run, stage, variant, reason). Existing rows are never rewritten. Decide-next records its row count as information; the binding check is its own `requires_feed` feasibility gate. |
@@ -2975,7 +2978,7 @@ The skill is explicitly forbidden from approving a hypothesis that has no falsif
 ### `backtest-engineering`
 
 **Goal:** Translate an approved, validated hypothesis into a `strategy_config` JSON that the trading-bot can execute verbatim.  
-**Why it exists:** The hypothesis exists in conceptual form (thesis, signal formula, regime gate). The backtest engine needs exact parameters: lookback windows, thresholds, [component](#g-component) weights, regime definitions. This skill handles that translation, validates the output against `STRATEGY_CONFIG_REFERENCE.md`, and flags any component that doesn't yet exist in the bot.
+**Why it exists:** The hypothesis exists in conceptual form (thesis, signal formula, regime gate). The backtest engine needs exact parameters: lookback windows, thresholds, [component](#g-component) weights, regime definitions. This skill handles that translation, validates the output against `COMPONENT_CATALOG.md`, and flags any component that doesn't yet exist in the bot.
 
 The skill is forbidden from:
 - Bypassing regime gates.
@@ -2995,7 +2998,7 @@ top, e.g. sparse-trader gates, prescreen-kill routing, regime attribution):
 
 | Rule # | Condition | Prescribed action |
 |---|---|---|
-| 1 | Cost drag dominates (`cost_drag_pct > 80%`, `gross_pnl > 0`) | Raise `threshold_filter` to reduce trade frequency |
+| 1 | Cost drag dominates (`cost_drag_pct > 80%`, `gross_pnl > 0`) | Slow the signal (longer component period) to reduce trade frequency; a `threshold_filter` dead zone is not allowed in `strategies` |
 | 2 | Signal has no directional edge (`\|median_forecast_return_corr\| < 0.03`) | Pivot to a structurally different signal |
 | 3 | Signal is inverted (`median_forecast_return_corr < -0.03`, significant) | Pivot to the reverse signal (cheap — same component, reversed logic) |
 | 4 | Regime is uninformative | Pivot to a different regime definition (after ruling out a sample-size issue) |

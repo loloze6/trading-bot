@@ -27,6 +27,7 @@ Usage:
         fetcher=FundingRateFetcher(...),
         window_seconds=0,  # published instantaneously — no forward window
         agg='last',
+        fill='carry_forward',  # a level: bars without a new print keep the last one (CUL-355)
     )
 """
 

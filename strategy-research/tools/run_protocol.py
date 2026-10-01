@@ -2470,6 +2470,9 @@ def main():
                 # an internal aggregation structure, not the byte-identity-sensitive
                 # artifact metrics.json is.
                 "data_quality":    m.get("data_quality"),
+                # CUL-274: bars whose NaN forecast was held (no strategy trade);
+                # absent from metrics.json (None here) when there were none.
+                "nan_forecast":    m.get("nan_forecast"),
                 # E-039 step 5 follow-up (2026-09-12): same sibling-of-"core" shape
                 # as data_quality above -- metrics.json's component_errors block
                 # (F5b's error count/samples, now wired through by

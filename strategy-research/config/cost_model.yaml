@@ -1,11 +1,16 @@
 # config/cost_model.yaml
 # Single source of truth for fee/spread/cost assumptions.
-# Consumed by: validation gate (Layer 1), prescreen tool (Layer 2),
-#              backtest engine (_cost_paid_bps in run_protocol.py, and -- as of
+# Consumed by: the backtest engine (_cost_paid_bps in run_protocol.py, and -- as of
 #              2026-07-20 -- the actual per-trade commission_rate threaded into
 #              run_backtest() via run_protocol.py's --cost-product flag; see
 #              PERP CALIBRATION block below),
+#              the post-backtest cost check (trading-bot/reporting/run_artifact.py),
 #              and the cost_drag diagnostic rule in verdict-interpreter.
+# Also handed, as information only, to step 1a (cost_feasibility estimate) and to the
+# validation stage. O-3 (operator, 2026-10-01): costs are judged ONLY by the backtest --
+# no estimate built from these numbers may refuse, park, drop or down-rank an idea
+# before it is backtested. The former pre-backtest "Layer 1" (validation) and "Layer 2"
+# (prescreen, removed E-039 step 5) gates are retired.
 #
 # RULE: No fee or spread constant may be hardcoded anywhere else after Improvement 09.
 # Grep audit: search for hardcoded fee constants in tools/ and skills/.
@@ -43,7 +48,7 @@ updated_at: "2026-07-20"
 # HARD RULE (2026-07-04, cost-structure revision)
 # ---------------------------------------------------------------------------
 # verdict_execution_style: taker
-# All gates (Layer 1 validation_gate, Layer 2 prescreen cost_check) and all promotion
+# Every post-backtest pass/fail decision and all promotion
 # evidence (promotion_audit, holdout_result, verdict_interpretation) MUST use the
 # taker cost path (top-level fee_rate_bps / round_trip_cost_bps, equivalently
 # execution_style.taker) — never execution_style.maker. The maker variant is
@@ -53,20 +58,20 @@ updated_at: "2026-07-20"
 # is because maker's fill-rate haircut is an unvalidated assumption (see
 # execution_style.maker below and engineering/improvements/done/design_and_docs/10_maker_execution_assessment.md) — no
 # order-book data exists to calibrate it, so it cannot support a gating decision.
-# A verdict, prescreen result, or promotion audit that reports a pass driven by
+# A verdict or promotion audit that reports a pass driven by
 # execution_style.maker numbers without an accompanying taker-based pass is invalid.
 verdict_execution_style: taker
 
 # Safety factor: required_gross_edge = safety_factor × round_trip_cost
-# A strategy must earn at least 2× its round-trip cost per trade to pass Layer 2.
+# Used AFTER the backtest only (post_backtest_cost_check in run_artifact.py, information).
 safety_factor: 2.0
 
 # One-way taker fee in bps (basis points, 1 bps = 0.01%)
 # Binance spot, Regular/VIP0 tier, BNB discount applied (0.075% per side)
 # NOTE: used by run_protocol.py _cost_paid_bps() as 'fee_rate_bps[symbol]'
 # NOTE: this top-level block is the TAKER path and is what existing code consumes
-# (prescreen_signal.py._load_cost_model / _round_trip_cost, run_protocol.py._cost_paid_bps
-# both read these keys directly at the root). Do not restructure these keys — see
+# (run_artifact.py._load_cost_model / _round_trip_cost_bps, run_protocol.py._cost_paid_bps
+# both read these keys directly at the root; prescreen_signal.py, which also did, was removed). Do not restructure these keys — see
 # execution_style block below for the additive maker variant.
 fee_rate_bps:
   BTCUSDT: 7.5
@@ -186,7 +191,7 @@ perp:
 # EXECUTION STYLE VARIANTS (2026-07-04, cost-structure revision)
 # ---------------------------------------------------------------------------
 # Additive block — NOT yet read by any code path. The top-level keys above remain
-# the only keys prescreen_signal.py and run_protocol.py consume today (taker path).
+# the only keys run_artifact.py and run_protocol.py consume today (taker path).
 # This block is the documented single source for a future maker-path opt-in; wiring
 # it into the engine/backtest is a backlog item (see engineering/improvements/done/design_and_docs/10_maker_execution_assessment.md),
 # out of Phase P research scope per the cost-structure revision instructions.
@@ -251,20 +256,24 @@ execution_style:
     #   default: 0.50*15.5 + 0.50*18.5 = 17.0
     round_trip_cost_bps_blended: {BTCUSDT: 15.86, ETHUSDT: 16.04, SOLUSDT: 17.25, AVAXUSDT: 18.36, default: 17.0}
 
-# Layer 1 reference (validation_gate, declarative LLM check):
+# RETIRED AS GATES (O-3, 2026-10-01). Kept as the definitions behind information-only
+# fields: step 1a's / validation's cost_feasibility estimate, and the post-backtest cost
+# check in run_artifact.py. Neither may refuse, park or drop an idea before its backtest.
+#
+# cost_feasibility estimate (step 1a / validation, LLM, information only):
 #   required_gross_edge_bps_per_trade = safety_factor * round_trip_cost_bps[symbol]
 #   e.g. BTCUSDT: 2.0 * 17.0 = 34.0 bps required gross edge per trade
 #
-# Layer 2 formula (prescreen_signal.py, deterministic):
+# Edge estimate (formerly the prescreen's Layer 2 gate; now computed after the backtest
+# from its own trades, run_artifact.py post_backtest_cost_check, information only):
 #   estimated_gross_edge_bps_per_trade = abs(IC) * sigma_bar_bps * sqrt(avg_holding_bars)
 #   where:
-#     IC             = pooled Spearman IC (all-bars ungated, per prescreen windows)
+#     IC             = Pearson forecast/forward-return correlation on active bars
+#                      (forecast != 0)
 #     sigma_bar_bps  = std dev of 1-bar close returns in bps
-#     avg_holding_bars = 1 / turnover_rate (trades per bar)
+#     avg_holding_bars = the backtest's avg_trade_duration_bars
 #   edge_to_cost_ratio = estimated_gross_edge_bps_per_trade / round_trip_cost_bps
-#   pass = (edge_to_cost_ratio >= safety_factor)
-#
-# A9.1 calibration fixture: Keltner strategy with ungated IC ≈ 0 (regime-gated to ~1%
-# of bars, ungated IC approaches 0) must fail cost_check with edge_to_cost_ratio ≈ 0.
-# A gate that passes the Keltner despite its confirmed -26 to -58 bps/trade expectancy
-# is not calibrated.
+#   (historical: the prescreen passed an idea when edge_to_cost_ratio >= safety_factor;
+#   the A9.1 Keltner calibration fixture belonged to that retired gate.)
+# The binding cost test is card E's pooled realized_edge_to_cost_ratio, measured from the
+# backtest's trades (config/criterion_menu.yaml, config/profitability_bars.yaml).

@@ -1140,6 +1140,23 @@ def _wishlist_family_names() -> list:
     return names
 
 
+def _gating_wishlist_names() -> list:
+    """D-052 (2026-10-01): the wishlist names whose trigger_condition still GATES
+    a campaign_review recommendation -- feed_wishlist.yaml entries only.
+    config/detector_wishlist.yaml stays as a list of parked detector ideas but no
+    longer gates anything: its gate existed only for the deleted A2.3 rule (no
+    regime-gated hypotheses / no replacement detector until an ungated edge).
+    _wishlist_family_names() still lists both files."""
+    names = []
+    fw_path = ROOT / "campaign_record" / "feed_wishlist.yaml"
+    if fw_path.exists():
+        fw = orch.load_yaml(fw_path) or {}
+        for entry in fw.get("wishlist", []):
+            if entry.get("feed_name"):
+                names.append(entry["feed_name"])
+    return names
+
+
 _MISSING = object()
 
 # 2026-07-10: sentinel for a field that predates its own schema (the record was
@@ -1399,7 +1416,8 @@ def _check_wishlist_trigger(review: dict) -> str | None:
         parts.append(nrq if isinstance(nrq, str) else yaml.safe_dump(nrq))
     parts.append(str(review.get("recommendation_rationale", "")))
     text = " ".join(parts).lower()
-    for name in _wishlist_family_names():
+    # D-052: detector-wishlist families no longer gate (see _gating_wishlist_names)
+    for name in _gating_wishlist_names():
         if name.lower() in text or name.lower().replace("_", " ") in text:
             return name
     return None
@@ -1518,6 +1536,12 @@ def _classify_human_pause(run_dir: Path, state: dict) -> str:
         return "variant_shape_invalid"
     if flags.get("variant_config_error"):
         return "variant_config_error"
+    # D-051: set by run_phase1_research._route_block_manifest_check when 1b's
+    # base config still breaks the graded-forecast rule after its one retry (or
+    # at once for a decide_next pass-through config 1b cannot change). Stops
+    # before Step 2; a human decides; never quarantine-safe.
+    if flags.get("forecast_rule_violation"):
+        return "forecast_rule_violation"
     # E-033.1 Slice 4b (2026-09-22): set by run_phase1_research's
     # data_availability_gate elif-branch in run_loop when, after the
     # per-variant data-availability gate has run, fewer than 3 variants
@@ -1850,6 +1874,9 @@ _PAUSE_FLAG_TO_REASON = (
     # variant_gate_insufficient in _classify_human_pause.
     ("variant_shape_invalid", "variant_shape_invalid"),
     ("variant_config_error", "variant_config_error"),
+    # D-051. Mirrors _classify_human_pause's branch for this flag, which sits
+    # immediately after variant_config_error there.
+    ("forecast_rule_violation", "forecast_rule_violation"),
     # E-033.1 Slice 4b. Mirrors _classify_human_pause's branch for this flag,
     # which sits immediately after variant_config_error (E-061 C2 S2c) in
     # that function's own order -- see this flag's comment there.
@@ -4761,19 +4788,23 @@ def dry_run_verify():
 
         # Simulate a wishlist-trigger reframe recommendation — proves this check
         # independently of the status-based pause detection above.
-        names = _wishlist_family_names()
-        probe_family = names[0] if names else "daily_timeframe_er_overlay"
-        cr_path = dry_run_dir / "artifacts" / "campaign_review.yaml"
-        orch.save_yaml(cr_path, {
-            "recommendation": "reframe",
-            "recommendation_rationale": f"Testing {probe_family} looks promising now.",
-            "next_research_question": {"strategy_domain": probe_family},
-        })
-        state = orch.load_yaml(dry_run_dir / "pipeline_state.yaml")
-        pause = _hard_pause_reason(dry_run_dir, state)
-        if pause is None or pause[0] != "wishlist_trigger":
-            raise AssertionError(f"synthetic wishlist-trigger recommendation was not detected: {pause}")
-        _log(f"wishlist-trigger classification OK: detected family={pause[1]!r}", dry_run=True)
+        # D-052: only feed_wishlist names gate now (detector ideas no longer do).
+        names = _gating_wishlist_names()
+        if not names:
+            _log("wishlist-trigger probe skipped: no gating (feed) wishlist entries", dry_run=True)
+        else:
+            probe_family = names[0]
+            cr_path = dry_run_dir / "artifacts" / "campaign_review.yaml"
+            orch.save_yaml(cr_path, {
+                "recommendation": "reframe",
+                "recommendation_rationale": f"Testing {probe_family} looks promising now.",
+                "next_research_question": {"strategy_domain": probe_family},
+            })
+            state = orch.load_yaml(dry_run_dir / "pipeline_state.yaml")
+            pause = _hard_pause_reason(dry_run_dir, state)
+            if pause is None or pause[0] != "wishlist_trigger":
+                raise AssertionError(f"synthetic wishlist-trigger recommendation was not detected: {pause}")
+            _log(f"wishlist-trigger classification OK: detected family={pause[1]!r}", dry_run=True)
 
     finally:
         shutil.rmtree(dry_run_dir, ignore_errors=True)

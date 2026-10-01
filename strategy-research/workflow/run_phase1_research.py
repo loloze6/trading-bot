@@ -2527,7 +2527,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 "tool stage can run."
             )
 
-        # E-056 1b block manifest (STRATEGY_DESIGN_GUIDE.md §7c, built): 1b writes
+        # E-056 1b block manifest (STRATEGY_DESIGN_GUIDE.md, 'Manifest contract', built): 1b writes
         # artifacts/block_manifest.yaml next to the config. Checked here, against the base
         # config, with tools/block_manifest.py -- the exact check tools/block_registry.py
         # runs later -- so a manifest this stage accepts is one the registry accepts.
@@ -2559,7 +2559,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 raise RuntimeError(
                     "run_tool_worker(backtest_specification): artifacts/block_manifest.yaml is "
                     "missing -- strategy_config_authoring must write it next to the base config "
-                    "(STRATEGY_DESIGN_GUIDE.md §7c) when its status is spec_ready."
+                    "(STRATEGY_DESIGN_GUIDE.md, section \"Manifest contract\") when its status is spec_ready."
                 )
             _bm.check_manifest(manifest, base_config, where=str(manifest_path),
                                error_cls=RuntimeError)
@@ -2584,6 +2584,10 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 and _variant_coin_module().per_coin_mode(patches_doc["variants"])):
             _run_proto_src, _run_proto_sha = _freeze_run_protocol(RUN_DIR, run_id)
             _coin_ctx = _variant_coin_context(RUN_DIR, run_id, source=_run_proto_src)
+        # D-051: the on/off classes, read once from the catalogue's Kind column
+        # (raises when the catalogue cannot be read -- never an empty set).
+        _fr = _forecast_rules_module()
+        _fr_on_off = _fr.on_off_classes()
 
         for variant in patches_doc["variants"]:
             variant_id = variant.get("variant_id") if isinstance(variant, dict) else None
@@ -2645,6 +2649,24 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 index[variant_id] = {"status": "not_tested", "reason": reason}
                 component_requests.append({"variant_id": variant_id, "reason": reason})
                 print(f"⚠️  [E-056 Slice3b] variant '{variant_id}' NOT TESTED: {reason}")
+                continue
+
+            # D-051 / D-053 (tools/forecast_rules.py): checked on the config AFTER
+            # the patch is applied, every variant, composition runs included. A
+            # refusal is a config error like the ones above: _variant_config_errors
+            # sends a variant's back to Step 2 once, and a `base` refusal (1b's
+            # config, already checked right after 1b) pauses.
+            _fr_msgs = (_fr.strategies_violations(variant_config, _fr_on_off)
+                        + _fr.class_mismatch(base_config, variant_config))
+            if _fr_msgs:
+                reason = FORECAST_RULE_REASON
+                report = "\n".join(_fr_msgs)
+                index[variant_id] = {"status": "not_tested", "reason": reason, "report": report}
+                component_requests.append({"variant_id": variant_id, "reason": reason,
+                                           "report": report})
+                _record_forecast_rule_refusal(RUN_DIR, "backtest_specification", variant_id,
+                                              _fr_msgs)
+                print(f"⚠️  [D-051/D-053] variant '{variant_id}' NOT TESTED: {report}")
                 continue
 
             _coin_keys: dict = {}
@@ -2835,7 +2857,8 @@ _CLOSED_BOOK_STAGE_INPUTS = {
     "validation": (
         ("../../config/cost_model.yaml", "required",
          "CUL-336: skill Improvement 09 -- populate cost_feasibility from round_trip_cost_bps; "
-         "the single source of truth for cost numbers (implausible blocks approval)."),
+         "the single source of truth for cost numbers (information only: costs are judged only "
+         "by the backtest, O-3)."),
         ("artifacts/innovation_notes.yaml", "refine_only",
          "CUL-336: skill input, needed only on a refine verdict (context for the plan); given "
          "because this run is already in a refine loop."),
@@ -6404,8 +6427,8 @@ def _write_retired_review_handoff(run_dir: Path, run_id: str) -> Path:
     stage still runs. The skill note is added at invoke time
     (_apply_retired_routing_review_context). verdict_interpretation.yaml is
     never an input."""
-    kb_reason = ("A5.1-5.3: the KB of tested mechanisms, power-parked findings and exhausted "
-                 "cells. Read before any recommendation.")
+    kb_reason = ("A5.1-5.3: the KB of tested mechanisms, power-parked findings and bans "
+                 "(exhausted_mechanisms, D-055). Read before any recommendation.")
     if not _KB_PATH.exists():
         kb_reason = ("ABSENT when this review was triggered: the campaign has no knowledge "
                      "base yet. Answer each KB GATE question with 'no KB yet' -- do not invent "
@@ -6437,8 +6460,9 @@ def _write_retired_review_handoff(run_dir: Path, run_id: str) -> Path:
             "an idea_status.",
             "If recommendation is reframe, next_research_question must be a complete "
             "research_brief (see the note in your inputs).",
-            "KB GATE -- answer the three KB questions of the skill (untested cells, exhausted "
-            "cells forbidden, combination candidates) in campaign_review.yaml.",
+            "KB GATE -- answer the three KB questions of the skill (untested cells, banned "
+            "cells -- exhausted_mechanisms only, exact match, D-055 -- combination candidates) "
+            "in campaign_review.yaml.",
         ],
     }
     path = run_dir / "handoffs" / STAGE_CONFIGS["campaign_review"]["handoff"]
@@ -7007,6 +7031,14 @@ def _apply_brief_hypotheses_context(stage_name: str, handoff: dict, run_dir: Pat
              "E-059 S2b: the hypotheses already produced from this brief -- do not repeat them.")):
         if path not in existing:
             required.append({"path": path, "reason": reason})
+    # O-3 / D-017: an extra card's distance_to_profitable is its distance from the
+    # validated blocks, so 1a reads the registry -- only when it exists (no block
+    # validated yet: no file, and the addendum scores every card 3).
+    registry = "../../campaign_record/block_registry.yaml"
+    if registry not in existing and (Path(run_dir) / registry).exists():
+        required.append({"path": registry, "reason": (
+            "O-3 / D-017: the validated blocks -- score each extra card's "
+            "distance_to_profitable against them (BRIEF_HYPOTHESES.md rubric).")})
 
 
 def _queue_extra_hypothesis_cards(run_id: str, run_dir: Path, cards: list) -> bool:
@@ -7438,6 +7470,23 @@ def _apply_config_direct_authoring_context(stage_name: str, handoff: dict, run_d
             "artifacts/backtest_spec.yaml",
             "E-056 Slice 3b IMPROVEMENT 07: strategy_config_authoring's base config -- "
             "variant_patches.yaml's patches are diffs against this file's 'config' field.",
+        )
+        # O-4 (D-053): step 2 writes patches against the base config and must not invent
+        # component or parameter names, so it gets the same design guide and component
+        # catalogue the authoring stage has. Flag-on only (this function returns early
+        # when the flag is off); not in _CLOSED_BOOK_STAGE_INPUTS, which runs with no flag,
+        # and not in a handoff template (test_e056_1b_block_manifest forbids the guide there).
+        _add(
+            "../../docs/STRATEGY_DESIGN_GUIDE.md",
+            "O-4: how a config is shaped (keys, regimes, transforms, composition, what the config "
+            "cannot express) -- a design variant's patch path must exist in the base config and "
+            "must keep the idea (D-053).",
+        )
+        _add(
+            "../../docs/COMPONENT_CATALOG.md",
+            "O-4: every component's exact output, kind (graded or on/off), parameters and variant "
+            "patterns -- a design variant changes one parameter or transform of the component(s) "
+            "under test and never adds an on/off component (D-053, D-051).",
         )
         # E-061 C1.2: variant_patches.yaml is a deliverable of step 2 in this flow
         # (in memory only -- the run's handoff file is never rewritten with it).
@@ -8263,7 +8312,7 @@ def _create_remaining_handoffs(run_id: str, run_dir: Path):
             "deliverables": ["verdict_interpretation.yaml"],
             "constraints": [
                 "Change at most one hypothesis dimension in proposed_brief.yaml (refine case).",
-                "Do not recommend components absent from STRATEGY_CONFIG_REFERENCE.md.",
+                "Do not recommend components absent from COMPONENT_CATALOG.md.",
                 "Accept protocol_result.yaml numbers as truth — do not re-evaluate.",
                 "Populate altitude_justification with the specific diagnostic value used.",
                 "Do not emit both proposed_brief.yaml AND escalation_request.yaml.",
@@ -9644,7 +9693,8 @@ def _check_kb_reactivation_conformance(next_research_question: dict, kb: dict) -
     A5.4 (2026-07-06, F09/run_053 postmortem): before honoring ANY reframe/reactivation
     recommendation from campaign_review, verify it does not target a KB finding whose
     reactivation_condition has already been consumed (reactivation_consumed_by set) or
-    that is flatly exhausted with no open reactivation_condition. Mirrors
+    that is a ban (D-055 _kb_veto_reason: exhausted AND evidence_count >= 3 or an
+    approved veto) with no open reactivation_condition. Mirrors
     _check_prescreen_conformance (F4d) in spirit — a violation here means the campaign
     is about to spend a real trial re-testing an already-answered question, exactly
     what happened live: run_053's campaign_review recommended reframing into
@@ -9697,11 +9747,13 @@ def _check_kb_reactivation_conformance(next_research_question: dict, kb: dict) -
                 f"(outcome={f.get('outcome')}). A genuinely different formulation is a "
                 f"new hypothesis registration, not a reactivation of this entry."
             )
-        elif f.get("exhausted") and not f.get("reactivation_condition"):
+        elif (veto := _kb_veto_reason(f)) and not f.get("reactivation_condition"):
+            # D-055: only a ban (evidence_count >= 3 or an approved veto) blocks;
+            # an exhausted finding below that bar is information only.
             violations.append(
                 f"next_research_question references {hyp_id} (finding {f.get('id')!r}), "
-                f"which is exhausted (outcome={f.get('outcome')}) with no open "
-                f"reactivation_condition."
+                f"which is a ban ({veto}; outcome={f.get('outcome')}) with "
+                f"no open reactivation_condition."
             )
     return violations
 
@@ -10609,11 +10661,44 @@ def _find_kb_entry(findings: list, hyp_id: str) -> dict | None:
     return None
 
 
+# D-055 (operator, 2026-10-01): the three fields of an operator-approved ban. All three
+# must be set; a word in exhausted_basis prose never makes a ban.
+KB_VETO_APPROVAL_FIELDS = ("veto_basis", "veto_approved_by", "veto_approved_on")
+KB_VETO_MIN_EVIDENCE = 3
+
+
+def _kb_veto_reason(f: dict) -> str | None:
+    """D-055: why a KB finding is a ban (a veto on re-proposing it), or None.
+
+    A finding is information by default. It is a ban only when it is
+    `exhausted: true` AND either (a) evidence_count >= 3 post-backtest results,
+    or (b) all of KB_VETO_APPROVAL_FIELDS are set (an explicit, reviewed
+    operator decision). Replaces the A5.1 substring rule (`"analytic" in
+    exhausted_basis`), which matched any prose containing the word -- even
+    "analytically-explained" -- and put five 1-2-run findings on the list."""
+    if not f.get("exhausted"):
+        return None
+    if all(str(f.get(k) or "").strip() for k in KB_VETO_APPROVAL_FIELDS):
+        return "approved"
+    ec = f.get("evidence_count", 0)
+    if isinstance(ec, float) and ec.is_integer():
+        ec = int(ec)
+    if isinstance(ec, bool) or not isinstance(ec, int):
+        # Fail loud: a mistyped count must not silently decide whether a ban exists.
+        raise ValueError(f"KB finding {f.get('id')!r}: evidence_count must be an integer, "
+                         f"got {ec!r}")
+    if ec >= KB_VETO_MIN_EVIDENCE:
+        return "evidence_count"
+    return None
+
+
 def _recompute_kb_views(kb: dict):
     """
     AC2: Recompute derived views after every KB write.
     - coverage_matrix: {edge_source_category: [{hypothesis_id, outcome, evidence_count}]}
-    - exhausted_mechanisms: entries satisfying A5.1 threshold (ec>=3 OR analytic basis)
+    - exhausted_mechanisms: the bans (D-055, _kb_veto_reason): exhausted AND
+      (evidence_count >= 3 OR an operator-approved veto_* field set). Every other
+      finding is information only.
     """
     findings = kb.get("findings", [])
 
@@ -10639,19 +10724,23 @@ def _recompute_kb_views(kb: dict):
         if not f.get("exhausted"):
             continue
         ec = f.get("evidence_count", 0)
-        basis = (f.get("exhausted_basis") or "").lower()
-        is_analytic = "analytic" in basis
-        if ec >= 3 or is_analytic:
+        reason = _kb_veto_reason(f)
+        if reason:
+            hyp_ids = ([f["hypothesis_id"]] if f.get("hypothesis_id")
+                       else list(f.get("hypothesis_ids") or []))
             exhausted.append({
                 "id": f.get("id"),
                 "mechanism": f.get("mechanism"),
+                "hypothesis_ids": hyp_ids,
+                "evidence_runs": list(f.get("evidence_runs") or []),
                 "outcome": f.get("outcome"),
                 "evidence_count": ec,
-                "basis": "analytic" if is_analytic else "empirical",
+                "veto_reason": reason,
             })
         else:
-            print(f"⚠️  A5.1: KB entry '{f.get('id')}' has exhausted=true but "
-                  f"evidence_count={ec} with no analytic basis — omitted from exhausted_mechanisms view")
+            print(f"ℹ️  D-055: KB entry '{f.get('id')}' has exhausted=true but "
+                  f"evidence_count={ec} < {KB_VETO_MIN_EVIDENCE} and no approved veto -- "
+                  f"information only, not in exhausted_mechanisms")
     kb["exhausted_mechanisms"] = exhausted
 
 
@@ -13659,14 +13748,14 @@ def determine_post_verdict_route(path: Path, run_id: str, routing_retired: bool 
     # --- IMPROVEMENT 01: mechanism_failure routing (A1.01) ---
     # regime_misattribution must pause the pipeline before spawning any new run.
     # The instrumentation must be fixed (via regime-auditor) before the signal
-    # can be re-evaluated. Per A2.3: if the auditor confirms detector is unusable,
-    # the orchestrator switches to ungated-only generation.
+    # can be re-evaluated. (The former A2.3 'switch to ungated-only generation'
+    # policy was deleted by D-052; no code ever implemented it.)
     if root_cause.get("mechanism_failure") == "regime_misattribution":
         print("\n⚠️  IMPROVEMENT 01 — root_cause.mechanism_failure = regime_misattribution")
         print("   Regime attribution is an instrumentation problem, not a hypothesis failure.")
         print("   Pipeline paused: consult regime-auditor skill and regime_detector_report.yaml")
-        print("   before spawning the next run. Per A2.3, if the detector remains unusable,")
-        print("   switch to ungated-only hypothesis generation for this symbol/timeframe.")
+        print("   before spawning the next run. If the detector stays unreliable, compare a")
+        print("   regime-gated idea with its ungated design variant (D-052).")
         print("   When resolved, create artifacts/human_resolution.yaml and resume.")
         update_state(path=path, status="paused_for_human",
                      flags={"regime_misattribution_flagged": True})
@@ -13981,30 +14070,124 @@ def _block_manifest_error(path: Path):
         manifest = _bm.load_manifest_file(manifest_path)
         if manifest is None:
             return (f"{manifest_path} is missing -- a spec_ready config needs its block manifest "
-                    f"(STRATEGY_DESIGN_GUIDE.md §7c)")
+                    f"(STRATEGY_DESIGN_GUIDE.md, section \"Manifest contract\")")
         _bm.check_manifest(manifest, config, where=str(manifest_path))
     except _bm.BlockManifestError as exc:
         return str(exc)
     return None
 
 
+# D-051 (tools/forecast_rules.py): 1b's base config is checked right after 1b,
+# with the manifest, and shares its one retry. A base that still breaks the rule
+# after the retry pauses the run with this flag (never a raise: a design
+# refusal, not an engineering fault). Every refusal, here and in 5a, is
+# appended to artifacts/forecast_rule_refusals.yaml.
+FORECAST_RULE_VIOLATION_FLAG = "forecast_rule_violation"
+FORECAST_RULE_REASON = "forecast rule violations (D-051/D-053)"
+_FORECAST_RULE_CHECK = "forecast_rules"
+_BLOCK_MANIFEST_CHECK = "block_manifest"
+_FORECAST_RULE_REFUSALS_FILE = "forecast_rule_refusals.yaml"
+
+
+def _record_forecast_rule_refusal(run_dir: Path, stage: str, variant_id: str,
+                                  messages: list, attempt: int | None = None) -> None:
+    """Append one refusal to artifacts/forecast_rule_refusals.yaml (append-only:
+    a retry or a 5a rebuild never erases an earlier refusal)."""
+    path = Path(run_dir) / "artifacts" / _FORECAST_RULE_REFUSALS_FILE
+    doc = (load_yaml(path) or {}) if path.exists() else {}
+    refusals = doc.get("refusals", []) if isinstance(doc, dict) else None
+    if not isinstance(refusals, list):
+        # never overwrite a record we cannot read: that would lose refusals
+        raise RuntimeError(f"{path} is not a {{refusals: [...]}} mapping -- refusing to "
+                           f"overwrite it; fix or move it, then resume")
+    refusals = list(refusals)
+    entry = {"at": datetime.now(timezone.utc).isoformat(), "stage": stage,
+             "variant_id": variant_id, "violations": list(messages)}
+    if attempt is not None:
+        entry["attempt"] = attempt
+    refusals.append(entry)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    save_yaml(path, {"refusals": refusals})
+
+
+def _base_forecast_rule_violations(path: Path) -> list:
+    """D-051 messages for the base config in artifacts/backtest_spec.yaml
+    (the config after any decide_next patch: decide_next hashes the patched
+    config and 1b copies it through). No config mapping: [] -- the manifest
+    check reports that."""
+    spec_path = path / "artifacts" / "backtest_spec.yaml"
+    spec = load_yaml(spec_path) if spec_path.exists() else None
+    config = spec.get("config") if isinstance(spec, dict) else None
+    if not isinstance(config, dict):
+        return []
+    fr = _forecast_rules_module()
+    return fr.strategies_violations(config, fr.on_off_classes())
+
+
+def _is_pass_through_candidate(artifacts: Path) -> bool:
+    """True for a decide_next patch candidate whose config 1b must copy through
+    verbatim (research_brief.yaml candidate.source.expected_config_sha256, see
+    _check_pass_through_config_hash): 1b cannot change that config, so a retry
+    of 1b cannot fix a rule it breaks."""
+    brief_path = Path(artifacts) / "research_brief.yaml"
+    brief = (load_yaml(brief_path) or {}) if brief_path.exists() else {}
+    candidate = brief.get("candidate") if isinstance(brief, dict) else None
+    source = candidate.get("source") if isinstance(candidate, dict) else None
+    return isinstance(source, dict) and bool(source.get("expected_config_sha256"))
+
+
 def _route_block_manifest_check(path: Path) -> str:
-    """spec_ready from 1b: innovation_expansion when the manifest is valid;
-    otherwise back to strategy_config_authoring ONCE with the error (carried by
-    _apply_block_manifest_retry_context); a second failure raises."""
+    """spec_ready from 1b: innovation_expansion when the manifest is valid and
+    the base config passes D-051; otherwise back to strategy_config_authoring
+    ONCE with the error (carried by _apply_block_manifest_retry_context). A
+    second manifest failure raises; a second D-051 failure (manifest valid)
+    pauses with FORECAST_RULE_VIOLATION_FLAG -- at once, without the retry,
+    for a decide_next pass-through config 1b cannot change."""
     error = _block_manifest_error(path)
+    rule_msgs = _base_forecast_rule_violations(path)
     state = load_yaml(path / "pipeline_state.yaml") or {}
     attempts = (state.get(_BLOCK_MANIFEST_RETRY_STATE_KEY) or {}).get("attempts", 0)
-    if error is None:
+    if rule_msgs:
+        _record_forecast_rule_refusal(path, "strategy_config_authoring", "base", rule_msgs,
+                                      attempt=attempts)
+    if error is None and not rule_msgs:
         if attempts:
-            update_state(path=path, **{_BLOCK_MANIFEST_RETRY_STATE_KEY: {"attempts": 0, "last_error": None}})
+            # last_check cleared too: update_state MERGES this dict, so a stale
+            # "forecast_rules" would otherwise label a later manifest retry
+            update_state(path=path, **{_BLOCK_MANIFEST_RETRY_STATE_KEY: {
+                "attempts": 0, "last_error": None, "last_check": None}})
         return "innovation_expansion"
+    if error is None:
+        rule_error = "; ".join(rule_msgs)
+        pass_through = _is_pass_through_candidate(path / "artifacts")
+        if pass_through or attempts >= _BLOCK_MANIFEST_RETRY_MAX:
+            update_state(path=path, status="paused_for_human",
+                         flags={FORECAST_RULE_VIOLATION_FLAG: True},
+                         **{_BLOCK_MANIFEST_RETRY_STATE_KEY: {
+                             "attempts": attempts, "last_check": _FORECAST_RULE_CHECK,
+                             "last_error": rule_error}})
+            why = ("a decide_next pass-through config (1b must copy it verbatim, so a 1b "
+                   "retry cannot change it)" if pass_through
+                   else f"still refused after {attempts} retry")
+            print(f"\n⏸️  PIPELINE PAUSED ({FORECAST_RULE_VIOLATION_FLAG}): 1b's base config "
+                  f"breaks D-051 -- {why}: {rule_error}. See artifacts/"
+                  f"{_FORECAST_RULE_REFUSALS_FILE} (docs/RUNBOOK.md §3, "
+                  f"{FORECAST_RULE_VIOLATION_FLAG}).")
+            return "human_pause"
+        update_state(path=path, **{_BLOCK_MANIFEST_RETRY_STATE_KEY: {
+            "attempts": attempts + 1, "last_check": _FORECAST_RULE_CHECK,
+            "last_error": rule_error}})
+        print(f"🔁 [D-051] base config refused -- retrying strategy_config_authoring once "
+              f"with the error: {rule_error}")
+        return "strategy_config_authoring"
+    if rule_msgs:
+        error = f"{error}; also: " + "; ".join(rule_msgs)
     if attempts >= _BLOCK_MANIFEST_RETRY_MAX:
         raise RuntimeError(
             f"strategy_config_authoring: block_manifest.yaml still invalid after "
             f"{attempts} retry -- {error}")
     update_state(path=path, **{_BLOCK_MANIFEST_RETRY_STATE_KEY: {
-        "attempts": attempts + 1, "last_error": error}})
+        "attempts": attempts + 1, "last_check": _BLOCK_MANIFEST_CHECK, "last_error": error}})
     print(f"🔁 [E-056 1b] block_manifest.yaml invalid -- retrying strategy_config_authoring "
           f"once with the error: {error}")
     return "strategy_config_authoring"
@@ -14022,10 +14205,21 @@ def _apply_block_manifest_retry_context(stage_name: str, handoff: dict, run_dir:
     if not retry.get("attempts") or not retry.get("last_error"):
         return
     handoff.setdefault("injected_context", {})
+    if retry.get("last_check") == _FORECAST_RULE_CHECK:
+        handoff["injected_context"]["forecast_rule_error"] = (
+            f"Retry {retry['attempts']}/{_BLOCK_MANIFEST_RETRY_MAX}. Your previous base config "
+            f"(backtest_spec.yaml) was refused by the graded-forecast rule (D-051): "
+            f"{retry['last_error']}. Re-emit backtest_spec.yaml, decision.yaml and "
+            f"block_manifest.yaml with every component in `strategies` graded "
+            f"(COMPONENT_CATALOG.md, Kind 'graded') and no threshold_filter or volume_filter "
+            f"in `strategies`; an on/off condition goes in the regime detector "
+            f"(STRATEGY_DESIGN_GUIDE.md). Answer component_gap only if no composition of "
+            f"existing graded components expresses the idea.")
+        return
     handoff["injected_context"]["block_manifest_error"] = (
         f"Retry {retry['attempts']}/{_BLOCK_MANIFEST_RETRY_MAX}. Your previous "
         f"block_manifest.yaml was rejected: {retry['last_error']}. Re-emit backtest_spec.yaml, "
-        f"decision.yaml and a corrected block_manifest.yaml (STRATEGY_DESIGN_GUIDE.md §7c).")
+        f"decision.yaml and a corrected block_manifest.yaml (STRATEGY_DESIGN_GUIDE.md, section \"Manifest contract\").")
 
 
 # E-061 C2 S2c (C2_S1_FINDINGS.md G12, card D; review A5): Step 2's variant
@@ -14295,7 +14489,7 @@ def _json_pointer_module():
 
 def _block_manifest_module():
     """tools/block_manifest.py (E-056 1b block manifest): the one implementation
-    of the STRATEGY_DESIGN_GUIDE.md §7c contract, shared with
+    of the STRATEGY_DESIGN_GUIDE.md 'Manifest contract' section, shared with
     tools/block_registry.py. Imported lazily like the other tools/ siblings."""
     _json_pointer_module()  # puts tools/ on sys.path
     import block_manifest as _bm
@@ -14308,6 +14502,14 @@ def _variant_coin_module():
     _json_pointer_module()  # puts tools/ on sys.path
     import variant_coin as _vc
     return _vc
+
+
+def _forecast_rules_module():
+    """tools/forecast_rules.py (the D-051 / D-053 config checks), imported
+    lazily like the other tools/ siblings."""
+    _json_pointer_module()  # puts tools/ on sys.path
+    import forecast_rules as _fr
+    return _fr
 
 
 def _single_column_untested_kw(artifacts: Path, run_id: str) -> dict:
@@ -14615,7 +14817,7 @@ def _json_pointer_exists(config, path: str) -> bool:
 
 def _check_manifest_paths(variant_config: dict, manifest: dict) -> list:
     """Returns the manifest-declared block.config_paths (STRATEGY_DESIGN_GUIDE.md
-    §7c) that do NOT resolve in variant_config; [] when the manifest has no
+    'Manifest contract') that do NOT resolve in variant_config; [] when the manifest has no
     block.config_paths list at all. Block paths only -- a variant may change
     scaffolding. The whole manifest is checked against the base config first,
     by tools/block_manifest.check_manifest (after 1b, and again in the
@@ -14719,6 +14921,9 @@ def _route_post_config_direct_backtest_specification(run_dir: Path, *,
         if len(remaining) < min_needed:
             reason = (f"only {len(remaining)}/{len(variants)} variant(s) validated at 5a with the "
                       f"data gate off (need >= {min_needed})")
+            _detail = _variant_shortfall_detail(variants)
+            if _detail:
+                reason += f" -- {_detail}"
             kind, classes = (_variant_park_kind(variants, run_dir / "artifacts")
                              if routing_retired else (None, []))
             if kind:
@@ -14734,6 +14939,34 @@ def _route_post_config_direct_backtest_specification(run_dir: Path, *,
                          flags={"variant_gate_insufficient": True})
             return "human_pause"
     return "protocol_execution"
+
+
+def _variant_shortfall_detail(variants_idx: dict) -> str:
+    """O-6 (2026-10-01): every not-tested variant behind a variant-floor park or
+    pause, as blocking or non-blocking, with its reason -- so the record says what
+    the operator has to fix (a class to build vs data to fetch) instead of naming
+    one kind. Non-blocking = a repeat skip or a D-042 coverage skip, which the
+    floor does not count; their presence caps the idea at INCONCLUSIVE."""
+    blocking, nonblocking = [], []
+    for vid, v in sorted((variants_idx or {}).items()):
+        if not isinstance(v, dict) or v.get("status") != "not_tested":
+            continue
+        reason = str(v.get("reason") or "no reason recorded")
+        found = (_v12_missing_classes(v.get("report"))
+                 if reason == "validate_config.py violations" else [])
+        short = f"missing class {', '.join(found)}" if found else reason
+        if len(short) > 160:
+            short = short[:157] + "..."
+        (nonblocking if (_is_repeat_skip(v) or _is_coverage_skip(v)) else blocking).append(
+            f"{vid} ({short})")
+    parts = []
+    if blocking:
+        parts.append("blocking: " + "; ".join(blocking))
+    if nonblocking:
+        parts.append("non-blocking, not counted: " + "; ".join(nonblocking))
+    if any(_is_coverage_skip(v) for v in (variants_idx or {}).values()):
+        parts.append("the idea is capped at INCONCLUSIVE while asset variants stay untested")
+    return " | ".join(parts)
 
 
 def _variant_floor(variants_idx: dict) -> tuple:
@@ -15466,14 +15699,17 @@ def run_loop(run_id: str):
                                 f"validated after the per-variant data-availability gate "
                                 f"(need >= {_min_needed})"
                                 + (f"; missing class(es): {_park_classes}"
-                                   if _park_classes else "")),
+                                   if _park_classes else "")
+                                + (f" -- {_variant_shortfall_detail(variants_idx)}"
+                                   if _variant_shortfall_detail(variants_idx) else "")),
                         request_refs=_refs, resume_stage="backtest_specification",
                         classes=_park_classes)
                     break
                 if len(remaining) < _min_needed:
                     print(f"⏸️  PIPELINE PAUSED: only {len(remaining)}/{len(variants_idx)} "
                           "variant(s) remain validated after the per-variant "
-                          f"data-availability gate (need >= {_min_needed}). See "
+                          f"data-availability gate (need >= {_min_needed}). "
+                          f"{_variant_shortfall_detail(variants_idx)}. See "
                           "artifacts/variants/index.yaml and "
                           "campaign_record/data_requests.yaml.")
                     update_state(path=RUN_DIR, status="paused_for_human",

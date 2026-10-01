@@ -48,7 +48,12 @@ START, END, SYMBOL = "2024-04-01", "2024-05-30", "BTCUSDT"
 # still reproduces one FIXED baseline byte-for-byte (that contract itself is
 # unchanged), just a new one now that cost_model.json's content is part of
 # what's hashed.
-BASELINE_CONFIG_SHA8 = "9f3b09c1"  # committed strategy_config.json + cost_model canonical hash
+# 2026-10-01: rebaselined 9f3b09c1 -> cb9954ac. The gap rule is ON by default for
+# run_backtest() (operator, declared change) and, when on, folded into run
+# provenance as 'gap_rule' (CUL-359) -- this reference window has no gap, so only
+# the identity moves, not the results (see test_regression_backtest.py's
+# _gap_rule_provenance_fold).
+BASELINE_CONFIG_SHA8 = "cb9954ac"  # strategy_config.json + cost_model + gap_rule canonical hash
 
 _NEEDED_CACHES = ("BTCUSDT_1h.csv", "BTCUSDT_funding_8h.csv", "fear_greed_daily.csv")
 _CACHE_SKIP = cache_skip_reason(PROJECT_ROOT / "local_data", _NEEDED_CACHES, START, END)

@@ -263,7 +263,7 @@ this category's report and the grid you may read for this score):
   to this reader yet, writing content that would violate it once wired is exactly what this
   note exists to prevent.
 - Do not invent component classes, transform ops, or regime names absent from
-  `STRATEGY_DESIGN_GUIDE.md`.
+  `COMPONENT_CATALOG.md`.
 - Do not emit a proposal with empty `evidence`.
 
 ## Context rule

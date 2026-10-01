@@ -1,6 +1,6 @@
 """
 artifacts/block_manifest.yaml -- the ONE implementation of the manifest
-contract (docs/STRATEGY_DESIGN_GUIDE.md §7c; E-056 1b block-manifest ticket).
+contract (docs/STRATEGY_DESIGN_GUIDE.md, 'Manifest contract'; E-056 1b block-manifest ticket).
 
 The manifest says which part of a run's base strategy config IS the idea's
 block, as opposed to scaffolding. Stage 1b (strategy_config_authoring,

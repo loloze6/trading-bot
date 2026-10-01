@@ -8,7 +8,7 @@ Written ONLY by the orchestrator's `regroup_record` tool stage
 (orchestrator.regroup_record.enabled, off by default), from the run's memory
 entry (tools/campaign_memory.py) plus two run files:
   * artifacts/block_manifest.yaml -- which part of the config IS the block
-    (STRATEGY_DESIGN_GUIDE.md §7c: {block: {kind, config_paths}, scaffolding,
+    (STRATEGY_DESIGN_GUIDE.md 'Manifest contract': {block: {kind, config_paths}, scaffolding,
     rationale}), checked by tools/block_manifest.py -- the same code the
     orchestrator's 5a stage checks it with (one contract, two readers);
   * the tested base config the manifest's JSON pointers are read from.

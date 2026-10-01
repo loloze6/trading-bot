@@ -157,17 +157,38 @@ The innovation-expansion rule "at least one non-price_volume_only variant per fa
 
 ---
 
-## POST-A2.3 — No regime-gating (standing policy)
+## Graded signal concept (D-051, hard rule)
 
-**No hypothesis produced by this skill may be regime-gated.**
+`signal_concept` must describe a GRADED forecast. The bot turns a forecast in [-20, +20] into a position
+(allocation = forecast / 10), so the position follows the size of the signal. State, in `signal_concept`:
+1. the quantity the signal measures (for example "where the close sits inside its 20-day high-low range"),
+2. how that quantity is scaled into [-20, +20] (for example "-20 at the bottom of the range, +20 at the top,
+   linear in between"),
+3. that position size follows it: a stronger signal is a bigger position, a zero signal is flat.
 
-The regime detector for BTC/ETH 1h is `unusable_for_this_symbol_timeframe` per A2.3. Any hypothesis whose mechanism inherently requires regime conditioning ("only works in trends", "valid in RANGING mode") is currently untestable and must be routed to `config/detector_wishlist.yaml` instead of the run queue.
+An on/off rule is not acceptable as written: "long when X crosses Y", "long above the 20-day high, short below the
+20-day low", "enter on the signal, exit on the opposite signal". Restate it as its graded counterpart and say in
+`signal_concept` that you did so and how the graded version differs from the rule as first conceived. Do not write
+the on/off rule and leave the conversion to a later stage.
 
-**Rule:** If you find yourself writing `target_market` or `signal_concept` with a regime condition ("when TRENDING", "in ranging markets"), stop. Either:
-1. Reformulate as an ungated signal (e.g., "high-velocity directional bars" instead of "TRENDING regime"), or
-2. Acknowledge the hypothesis belongs to the detector wishlist and produce a feed_wishlist entry instead.
+**Name what the strategy config cannot express.** The config describes one forecast per bar and nothing else. If
+the idea also needs an exit rule, a stop or take-profit, a time-based hold, anything that depends on the current
+position (entry price, bars held, profit and loss), or sizing other than forecast / 10 (volatility targeting, a
+cap, Kelly), say so in `signal_concept`, one line per item ("Not expressible in the config: stop at 2 ATR"), so
+the config-writing stage can declare it as a deviation instead of dropping it silently or inventing it. Do not
+leave such a part out to make the idea look simpler.
 
-Ungated formulations only enter the queue.
+---
+
+## Regime-gated ideas carry their ungated version
+
+A regime-gated idea ("only works in trends", "valid in RANGING mode") is allowed in the run queue. It must carry its UNGATED version as its design variant: the same config with the regime detector's rules emptied (`"rules": []`), any `vetoes` removed, and `default_regime` set to the regime that holds the strategy, so every bar is in that regime. This is a parameter change; the component classes stay identical. The value of the regime is judged by gated versus ungated, plus the roadmap's regime health checks.
+
+An on/off condition belongs in the regime detector: a graded strategy in the regime it selects, and null (flat) in the others.
+
+**Rule:** If the mechanism needs a regime condition, write it in `target_market` or `signal_concept` ("when TRENDING", "in ranging markets"), and state in `signal_concept` that the ungated version (regime rules emptied) is the design variant.
+
+The former no-regime-gating rule (A2.3) is deleted (D-052). The old knowledge-base verdict `er_detector_unusable_btc_eth_1h` is withdrawn: it is history, never a veto. The detector wishlist is a list of parked detector ideas; it does not gate anything.
 
 ---
 
@@ -196,7 +217,7 @@ Find the indicator's entry in the library (`id` or nearest `category`). Read `kn
 - If this hypothesis has a stated or implied target regime and the affinity is `unfavorable`:
   - Either: justify explicitly why this run expects an exception (new mechanism, different symbol, materially different edge_source than prior trials).
   - Or: choose a different indicator with `favorable` or `neutral` affinity for the intended regime.
-- If the hypothesis is ungated (no regime condition, as required by A2.3), note the affinity as a prior risk factor in `expected_failure_modes`.
+- If the hypothesis is ungated (no regime condition), note the affinity as a prior risk factor in `expected_failure_modes`.
 
 **Step 2 — Campaign empirical results check**
 Read `campaign_empirical_results` for this indicator category and symbol/timeframe.
@@ -366,10 +387,13 @@ cost_feasibility:
   plausibility_rationale: "<must cite the signal class and timeframe>"
 ```
 
-**Hard rule (unchanged from quant-validation's own):** `plausibility: implausible` → do not add this hypothesis
-to the run queue. Route it to `feed_wishlist.yaml` (if a data gap is the fix) or drop it from the queue with the
-reason stated in `rationale` (if no architectural fix is viable). Do not hardcode fee/spread numbers — always
-read from `config/cost_model.yaml`.
+**Information only — never a gate (O-3, operator 2026-10-01: costs are judged ONLY by the backtest).**
+`cost_feasibility` is your estimate, written down so the backtest can be read against it. It is never a reason
+to omit, drop, park or down-rank a hypothesis, nor to declare a brief exhausted — including when
+`plausibility: implausible`. An idea is queued on its mechanism and data; whether it survives costs is measured
+by its backtest (card E profit bars: pooled `realized_edge_to_cost_ratio`, `config/criterion_menu.yaml`). If
+you expect turnover to be the problem, say so in `rationale` and in `expected_failure_modes`, and still write the
+card. Do not hardcode fee/spread numbers — always read from `config/cost_model.yaml`.
 
 **What this relocation does NOT replace:** `quant-validation/SKILL.md`'s other content — `bias_risks`,
 enumerated `failure_modes` (beyond this card's own `expected_failure_modes` field, required regardless of the
@@ -402,9 +426,13 @@ IMPROVEMENT 01/04/07 above; a partial pass-through is a silent gap-filling trap,
 - Set `power_parameters.plausible_ic_upper` from the A8.6 anchor table above by signal
   class — do not free-hand it.
 - Populate `edge_source` fully before writing `signal_concept`.
+- Write `signal_concept` as a graded forecast: the quantity, how it is scaled into [-20, +20], and that position
+  size follows it; restate any on/off rule as its graded counterpart and say so. Name every part of the idea the
+  config cannot express (exits, stops, time-based holds, position state, sizing other than forecast / 10).
+  (Graded signal concept section)
 - Check: does `specific_mechanism` name a measurable proxy in an available feed? If not, revise or route to `feed_wishlist.yaml`.
 - Check: is `evidence_type` available? If not, add `requires_new_feed` and route to feed_wishlist.
-- Check: is the hypothesis ungated? Any regime condition → reformulate or route to detector_wishlist.
+- Check: if the hypothesis has a regime condition, does `signal_concept` name its ungated version (regime rules emptied) as the design variant?
 - Check: indicator library lookup steps 1–4 complete; `library_lookup` field populated in card.
 - If `artifacts/tried_ideas.yaml` or `campaign_record/exclusion_digest.yaml` is present
   in context: check your candidate against it before finalizing `edge_source`. Prefer
@@ -420,9 +448,11 @@ IMPROVEMENT 01/04/07 above; a partial pass-through is a silent gap-filling trap,
 ## Forbidden
 - Do not write `signal_concept` before `edge_source` is complete.
 - Do not write `signal_concept` before indicator library lookup is complete. (Improvement 04)
+- Do not write an on/off rule as the `signal_concept` ("long when X crosses Y"); restate it as its graded
+  counterpart and say so. Do not leave out a part of the idea the config cannot express. (Graded signal concept
+  section)
 - Do not use vague mechanistic claims ("smart money", "key levels", "institutions") without a named measurable proxy.
 - Do not propose a hypothesis with `evidence_type` outside `available_feeds.yaml.available` as a run-queue candidate — route it to feed_wishlist instead.
-- Do not produce regime-gated hypotheses for the run queue (post-A2.3).
 - Do not write code.
 - Do not propose more than 3 run-queue variants unless explicitly requested.
 - Do not assume unavailable data.
@@ -437,6 +467,8 @@ IMPROVEMENT 01/04/07 above; a partial pass-through is a silent gap-filling trap,
   `config/criterion_menu.yaml`'s live entries (Improvement 07). Do not hardcode cost numbers — read
   `config/cost_model.yaml` (Improvement 07). Do not re-derive `edge_source`/`signal_concept`/`criteria` for a
   candidate that already qualifies as a pass-through (Improvement 08) — copy it through instead.
+- Do not omit, drop or down-rank a hypothesis, and do not declare a brief exhausted, on a cost, breakeven or
+  turnover estimate (`cost_feasibility` included). Costs are judged only by the backtest. (Improvement 07, O-3)
 
 ## Context rule
 Read `research_brief.yaml`, `config/available_feeds.yaml`, `feed_wishlist.yaml`, `config/indicator_library.yaml`, and, when present, `artifacts/tried_ideas.yaml` or `campaign_record/exclusion_digest.yaml` and `campaign_record/campaign_knowledge_base.yaml`. Config-direct-authoring flow only: also read `config/criterion_menu.yaml` and `config/cost_model.yaml` (Improvement 07). Do not read other files unless the handoff explicitly requires them.

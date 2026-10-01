@@ -53,7 +53,8 @@ def test_run_backtest_wires_candle_interval_seconds_unconditionally():
 
 
 def test_run_backtest_wires_ignore_max_bars_from_gap_policy():
-    """gap_detection=True + a gap_policy with ignore_max_bars must reach
+    """indicator_fill=True (since 2026-10-01 its own switch, default False) +
+    gap_detection=True + a gap_policy with ignore_max_bars must reach
     RollingBuffer's constructor as ignore_max_bars, enabling the reindex."""
     from core.launcher import run_backtest
     import inspect
@@ -64,6 +65,45 @@ def test_run_backtest_wires_ignore_max_bars_from_gap_policy():
     assert "candle_interval_seconds=interval" in src
     assert "ignore_max_bars" in src
     assert "gap_policy" in src
+    assert "indicator_fill" in src
+
+
+class _Captured(Exception):
+    pass
+
+
+def _strategy_kwargs_of_run_backtest(monkeypatch, tmp_path, **kwargs):
+    """Run run_backtest up to the strategy's construction and capture its kwargs
+    (a stub AdvancedStrategy raises right after recording them)."""
+    import core.launcher as launcher
+    seen = {}
+
+    def _stub(**kw):
+        seen.update(kw)
+        raise _Captured()
+
+    monkeypatch.setattr(launcher, "AdvancedStrategy", _stub)
+    with pytest.raises(_Captured):
+        launcher.run_backtest(config_path=str(PROJECT_ROOT / "strategy_config.json"),
+                              symbol="BTCUSDT", start="2024-01-01", end="2024-01-02",
+                              results_root=str(tmp_path), **kwargs)
+    return seen
+
+
+def test_the_indicator_fill_is_off_by_default_even_with_the_gap_rule_on(monkeypatch, tmp_path):
+    """Operator 2026-10-01: gap rule on by default, indicator fill off (CUL-361)."""
+    assert _strategy_kwargs_of_run_backtest(monkeypatch, tmp_path)["ignore_max_bars"] is None
+
+
+def test_indicator_fill_true_wires_the_policy_threshold(monkeypatch, tmp_path):
+    kw = _strategy_kwargs_of_run_backtest(monkeypatch, tmp_path, indicator_fill=True)
+    assert kw["ignore_max_bars"] == 3
+
+
+def test_indicator_fill_without_the_gap_rule_is_refused(monkeypatch, tmp_path):
+    with pytest.raises(ValueError, match="indicator_fill needs gap_detection=True"):
+        _strategy_kwargs_of_run_backtest(monkeypatch, tmp_path, indicator_fill=True,
+                                         gap_detection=False)
 
 
 def test_wired_advanced_strategy_reindexes_a_synthetic_gap_end_to_end():

@@ -110,7 +110,7 @@ Same proposal shape as every other reader: `proposal_id: component_attribution-<
 `scores.{confidence_real,distance_to_profitable,mechanism_plausibility}`, `model_id`,
 `rubric_version: "component_attribution-reader-v2"`. `kind: patch` is expected to dominate
 here (tuning an existing component's `weight`/`scaling_factor`/threshold per
-`STRATEGY_DESIGN_GUIDE.md`'s "Component variant patterns"); `kind: new_block` applies only
+`COMPONENT_CATALOG.md`'s "Variant patterns"); `kind: new_block` applies only
 when the evidence shows an existing component's regime-conditional behavior that NO current
 component captures well (see Rule CA-2 below).
 
@@ -186,12 +186,12 @@ range or central tendency across regime labels (e.g. `mean`/`median` clearly awa
 with a wide `p10`-`p90` spread in one regime's group, near-constant/near-zero in another),
 that divergence is evidence-worthy. Propose a `patch` adjusting that component's `weight` or a
 regime-specific parameter if the config already supports per-regime component sets (per
-`STRATEGY_DESIGN_GUIDE.md`'s regime-block pattern: components differ per regime already, per
+`STRATEGY_DESIGN_GUIDE.md`'s "The forecast for each regime": components differ per regime already, per
 `strategies.regimes.<regime>.components`) -- or a `new_block` sketch if the divergence suggests
 a genuinely new, regime-specific component would capture the pattern better than tuning the
 existing one.
 *Justification:* this project's regime-gate architecture already assumes components can
-differ by regime (`STRATEGY_DESIGN_GUIDE.md` §"Ungated hypotheses"/worked example) -- a
+differ by regime (`STRATEGY_DESIGN_GUIDE.md` "Ungated" and "Worked examples") -- a
 component's own aggregate behaving differently across regimes is the most direct
 component-level signal this report can offer that a regime-specific config change is worth
 proposing, without needing any cross-category (profitability/pnl) evidence to justify it.
@@ -284,7 +284,7 @@ this category's report and the grid you may read for this score):
   listed aggregates -- this report performs ONLY n/mean/median/p10/p90 aggregation (G7);
   neither should you invent a finer one silently.
 - Do not invent component classes, transform ops, or regime names absent from
-  `STRATEGY_DESIGN_GUIDE.md`.
+  `COMPONENT_CATALOG.md`.
 - Do not emit a proposal with empty `evidence`.
 
 ## Context rule

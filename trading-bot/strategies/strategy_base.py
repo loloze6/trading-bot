@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional, Tuple
+import datetime
 import pandas as pd
 import logging
 import numpy as np
@@ -474,7 +475,10 @@ class RollingBuffer:
         (CUL-271's "ignore" tier); extending that same leniency to arbitrary
         aux/indicator columns was NOT asked for and is not assumed here.
         """
-        step = pd.Timedelta(seconds=self._candle_interval_seconds)
+        # datetime.timedelta, not pd.Timedelta(seconds=int): the latter emits numpy's
+        # generic-unit DeprecationWarning at construction (backlog 3c) on every bar
+        # while the reindex is on. Same value.
+        step = datetime.timedelta(seconds=self._candle_interval_seconds)
         ts = pd.to_datetime(df["timestamp"])
         full_index = pd.date_range(ts.iloc[0], ts.iloc[-1], freq=step)
         df = df.set_index(pd.DatetimeIndex(ts))
@@ -494,7 +498,11 @@ class RollingBuffer:
             # re-deciding per bar.
             run_id  = (~was_missing).cumsum()
             run_len = was_missing.groupby(run_id).transform("sum")
-            small_gap_mask = was_missing & (run_len < self._ignore_max_bars)
+            # '<=' -- the same boundary as the engine's ignore tier
+            # (TradingBot._classify_gap_tier: bars_missing <= ignore_max_bars).
+            # It was '<', so a gap of exactly ignore_max_bars was 'ignore' for the
+            # engine but NaN rows for the indicators (CUL-359).
+            small_gap_mask = was_missing & (run_len <= self._ignore_max_bars)
             if small_gap_mask.any() and "close" in reindexed.columns:
                 reindexed.loc[small_gap_mask, "close"] = reindexed["close"].ffill()[small_gap_mask]
                 for col in ("open", "high", "low"):

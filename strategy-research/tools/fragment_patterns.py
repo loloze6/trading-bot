@@ -31,7 +31,7 @@ _ACTIVE_THRESHOLD = 1e-6
 
 # Fixed bin edges over the architecture's known forecast scale (raw forecast
 # is normalized/scaled so the mean or target quantile maps to +-10 -- see
-# trading-bot/DOC/STRATEGY_CONFIG_REFERENCE.md). Data-range-derived in the
+# strategy-research/docs/STRATEGY_DESIGN_GUIDE.md). Data-range-derived in the
 # sense that this IS the forecast's designed range, not an arbitrary choice;
 # kept fixed (rather than re-derived per run) so bins are comparable across
 # runs/hypotheses in the same architecture.

@@ -7,6 +7,7 @@ and portfolio rebalancing based on forecast allocations.
 import time
 import datetime
 import logging
+import math
 from typing import Any, Dict, List, Optional, Tuple
 import pandas as pd
 from performance.metrics import EnhancedPerformanceTracker, CompletedTrade
@@ -165,11 +166,16 @@ class TradingBot:
         #     direct-execute bypass pattern PR-2's risk_gate kill-switch uses),
         #     plus AdvancedStrategy.reset_history() (a real segment split -- the
         #     shared data buffer and both engines' component history are cleared).
-        #     After the reset, the EXISTING is_ready()/required_bars gate
-        #     (MainStrategy.generate_signals(), strategy_base.py) already forces
-        #     forecast=0.0/NOT_READY until enough real bars re-accumulate --
-        #     no separate post-large-gap entry block is needed, it falls out of
-        #     the engine's own pre-existing readiness contract for free.
+        #     The forced flatten holds until a full warmup (required_bars) of
+        #     real bars has passed since the gap, then the tier clears and the
+        #     strategy trades again (CUL-359; it used to never clear).
+        #   Recovery (CUL-359): both middle and large clear once
+        #     bars_since_gap >= required_bars, checked before the bar's own
+        #     update (so the tier clears on the (required_bars+1)-th real bar
+        #     after the gap -- one bar conservative, pinned by tests). An
+        #     ignore-tier gap during an active tier counts as one real bar and
+        #     does not cancel it; a middle gap during a large re-warm keeps
+        #     'large' (recorded as the event's active_tier).
         if gap_policy is not None and not gap_detection:
             raise ValueError(
                 "gap_policy requires gap_detection=True -- there is nothing to "
@@ -180,6 +186,10 @@ class TradingBot:
         self.gap_policy = gap_policy
         self._last_candle_time: Dict[str, Any] = {}
         self.gap_events: List[Dict[str, Any]] = []
+        # CUL-274: bars whose forecast was NaN (held, see below), per symbol,
+        # plus the first few as samples. Empty on every run without one.
+        self.nan_forecast_bars: Dict[str, int] = {}
+        self.nan_forecast_samples: List[Dict[str, Any]] = []
         self._bars_since_gap: Dict[str, int] = {}
         self._active_gap_tier: Dict[str, str] = {}
 
@@ -270,7 +280,9 @@ class TradingBot:
         any indicator state.
         """
         ts = pd.Timestamp(data_time)
-        expected_step = pd.Timedelta(seconds=self.candle_interval_seconds)
+        # datetime.timedelta: pd.Timedelta(seconds=int) emits numpy's generic-unit
+        # DeprecationWarning on every bar while gap detection is on. Same value.
+        expected_step = datetime.timedelta(seconds=self.candle_interval_seconds)
         previous = self._last_candle_time.get(symbol)
         self._last_candle_time[symbol] = ts
         if previous is None:
@@ -344,42 +356,45 @@ class TradingBot:
             # detection. gap_policy None (default) -> this whole block is
             # skipped, byte-identical to before gap_policy existed.
             if self.gap_policy is not None:
+                tier = None
                 if gap_detected_this_bar:
                     bars_missing = self._gap_bars_missing(
                         self.gap_events[-1]["actual_delta_seconds"], self.candle_interval_seconds
                     )
                     tier = self._classify_gap_tier(bars_missing)
+                    # CUL-359: the tier and bar count are recorded on the event, so
+                    # data_quality shows what each gap did, not only that it happened.
+                    self.gap_events[-1]["bars_missing"] = bars_missing
+                    self.gap_events[-1]["tier"] = tier
+                if tier is not None and tier != "ignore":
+                    # A middle or large gap (re)starts the recovery window. The more
+                    # severe tier wins: a middle gap during a large gap's re-warm
+                    # keeps 'large' (CUL-359).
+                    active = self._active_gap_tier.get(symbol)
+                    if active == "large" and tier == "middle":
+                        tier = "large"
+                    self.gap_events[-1]["active_tier"] = tier
+                    self._active_gap_tier[symbol] = tier
                     self._bars_since_gap[symbol] = 0
-                    if tier == "ignore":
-                        # No special handling -- the engine only ever sees real
-                        # bars, so trading simply resumes on this bar as normal.
-                        self._active_gap_tier.pop(symbol, None)
-                    else:
-                        self._active_gap_tier[symbol] = tier
-                        self.logger.info(
-                            f"⛔ GAP TIER '{tier}' │ {symbol} │ {bars_missing} bar(s) missing"
-                        )
-                        if tier == "large":
-                            # Segment split now, before this bar's own data is
-                            # added below -- it becomes bar #1 of the fresh
-                            # segment, not blended with pre-gap history.
-                            self.strategy.reset_history()
-                elif symbol in self._bars_since_gap:
-                    self._bars_since_gap[symbol] += 1
-                    active_tier = self._active_gap_tier.get(symbol)
-                    if active_tier == "middle" and self._bars_since_gap[symbol] >= self.strategy.required_bars:
-                        # Recovery window elapsed: real post-gap data has had
-                        # enough bars to flush the contaminated window.
+                    self.logger.info(
+                        f"⛔ GAP TIER '{tier}' │ {symbol} │ {bars_missing} bar(s) missing"
+                    )
+                    if self.gap_events[-1].get("tier") == "large":
+                        # Segment split now, before this bar's own data is
+                        # added below -- it becomes bar #1 of the fresh
+                        # segment, not blended with pre-gap history.
+                        self.strategy.reset_history()
+                elif symbol in self._active_gap_tier:
+                    # A normal bar, or an ignore-tier gap (no special handling: it
+                    # must NOT cancel an active tier -- CUL-359), counts one real
+                    # bar towards the recovery window. After a full warmup of real
+                    # bars both tiers clear: the middle tier's contaminated window
+                    # has flushed, and the large tier's re-warm is over. Before
+                    # CUL-359 the large tier was never cleared, so gap_forced_flat
+                    # kept the symbol flat for the rest of the run.
+                    self._bars_since_gap[symbol] = self._bars_since_gap.get(symbol, 0) + 1
+                    if self._bars_since_gap[symbol] >= self.strategy.required_bars:
                         del self._active_gap_tier[symbol]
-                    elif active_tier == "large":
-                        # No separate recovery bookkeeping needed: reset_history()
-                        # already put is_ready() back to False, and
-                        # MainStrategy.generate_signals() (strategy_base.py)
-                        # already forces forecast=0.0/NOT_READY -> allocation_change
-                        # 0.0 -- new entries are blocked for free until re-warmed.
-                        # Once real is_ready() is True again the tier no longer
-                        # does anything, so it doesn't need explicit clearing.
-                        pass
 
             # 2026-07-07: warmup-only prefetch bars (see BacktestEngine.warmup_cutoff_timestamp)
             # update the strategy's internal history so indicators are primed by the
@@ -427,6 +442,33 @@ class TradingBot:
             
             target_allocation = self.forecast_manager.forecast_to_allocation(signal.forecast)
 
+            # CUL-274: a NaN forecast (a component that could not measure --
+            # CUL-273 propagate_invalid, a 0/0, a feed not started yet) must
+            # never reach an order: abs(NaN) != 0.0 is True and every risk
+            # comparison against NaN is False, so it used to pass straight to
+            # execution. Policy (operator 2026-10-01): HOLD -- the strategy's
+            # own target is the current position, so the strategy makes no new
+            # decision on this bar. The risk controls and gap tiers below still
+            # apply, exactly as on any held bar: a latched kill switch or a large
+            # gap forces flat, and a cap clamp can still trim a position that
+            # drifted above the cap. Counted, sampled and surfaced in
+            # metrics.json ("nan_forecast"); 'NaN -> forced flat' with a context
+            # label on the trade waits for E-029 (CUL-358). Also catches +/-inf
+            # (the production engine clips to +/-20, so only a custom strategy
+            # could produce one). Warmup-cutoff bars return earlier and are not
+            # counted. A run without a non-finite forecast is byte-identical.
+            nan_forecast_bar = not math.isfinite(target_allocation)
+            if nan_forecast_bar:
+                self.nan_forecast_bars[symbol] = self.nan_forecast_bars.get(symbol, 0) + 1
+                if len(self.nan_forecast_samples) < 20:
+                    self.nan_forecast_samples.append({"symbol": symbol, "timestamp": str(data_time)})
+                self.logger.warning(
+                    f"⚠ NaN FORECAST │ {symbol} │ {data_time} │ holding the current "
+                    f"allocation {previous_allocation:+.4f} (no strategy trade; risk "
+                    f"controls and gap tiers still apply)"
+                )
+                target_allocation = previous_allocation
+
             # 2026-08-29 (fix/risk-layer): off-by-default portfolio risk gate.
             # Gate None (default) -> risk_extras stays {} and record_state below adds
             # no columns, so output is byte-identical. Gate set -> the target is
@@ -436,6 +478,10 @@ class TradingBot:
             risk_extras = {}
             if self.risk_gate is not None:
                 target_allocation, risk_extras = self.risk_gate.apply(target_allocation)
+                if nan_forecast_bar:
+                    # the strategy asked for nothing measurable: record that, not
+                    # the held allocation, as the raw (pre-gate) target
+                    risk_extras["risk_target_raw"] = float("nan")
 
             # CUL-271: "large" tier forces flat, composed with the risk gate the
             # same way risk_gate.apply() itself forces flat when latched -- both

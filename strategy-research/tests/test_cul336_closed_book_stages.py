@@ -496,8 +496,6 @@ _WAIVERS = {
         "named as the source of tried_ideas.yaml, which is what is delivered",
     ("hypothesis_generation", "config/campaign_config.yaml"):
         "names the orchestrator flag; the skill says the model cannot read it",
-    ("hypothesis_generation", "config/detector_wishlist.yaml"):
-        "routing target named in prose, not something the stage reads",
     ("innovation_expansion", "campaign_record/campaign_memory.yaml"):
         "named as the source of tried_ideas.yaml, which is what is delivered",
     ("innovation_expansion", "config/campaign_config.yaml"):

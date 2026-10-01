@@ -361,17 +361,32 @@ def gap_on(tmp_path_factory):
     return _run(tmp_path_factory.mktemp("gap_on"), gap_detection=True)
 
 
+@pytest.fixture(scope="module")
+def gap_explicit_default_policy(tmp_path_factory):
+    from core.launcher import DEFAULT_GAP_POLICY
+    return _run(tmp_path_factory.mktemp("gap_default_policy"), gap_detection=True,
+                gap_policy=dict(DEFAULT_GAP_POLICY))
+
+
 @pytest.mark.slow
 @pytest.mark.timeout(180)
 @_needs_cache
-def test_default_omitted_matches_explicit_false_metrics(gap_default, gap_explicit_false):
-    assert (gap_default / "metrics.json").read_text() == (gap_explicit_false / "metrics.json").read_text()
+def test_default_omitted_is_gap_detection_on_with_the_default_policy(gap_default, gap_explicit_default_policy):
+    """DECLARED CHANGE (operator 2026-10-01): the gap rule is ON by default for
+    every run_backtest() call -- omitting both arguments equals passing
+    gap_detection=True and DEFAULT_GAP_POLICY, byte for byte."""
+    import json
+    assert (gap_default / "metrics.json").read_text() == (
+        gap_explicit_default_policy / "metrics.json").read_text()
+    assert "data_quality" in json.loads((gap_default / "metrics.json").read_text())
 
 
 @pytest.mark.slow
 @pytest.mark.timeout(180)
 @_needs_cache
 def test_default_omitted_matches_explicit_false_portfolio_states(gap_default, gap_explicit_false):
+    """This reference window has no gap, so the default (gap rule on) trades
+    exactly like the rule switched off: identical portfolio states."""
     assert (gap_default / "portfolio_states.csv").read_text() == (
         gap_explicit_false / "portfolio_states.csv"
     ).read_text()
@@ -397,4 +412,21 @@ def test_gap_detection_on_adds_data_quality_key_wiring_only(gap_on, gap_explicit
 @_needs_cache
 def test_gap_policy_without_gap_detection_raises_through_run_backtest(tmp_path_factory):
     with pytest.raises(ValueError, match="requires gap_detection=True"):
-        _run(tmp_path_factory.mktemp("gap_bad"), gap_policy={"ignore_max_bars": 2})
+        _run(tmp_path_factory.mktemp("gap_bad"), gap_detection=False,
+             gap_policy={"ignore_max_bars": 2})
+
+
+def test_the_backtest_default_gap_policy():
+    """Option B (operator 2026-10-01): ignore <= 3 missing bars; 'large' left to
+    the strategy's own required_bars; large gaps flatten. run_backtest() and
+    Launcher.simulate() both turn the engine tiers on; neither turns the
+    indicator fill on (simulate's strategy is built without ignore_max_bars)."""
+    import inspect
+    from core import launcher
+    assert launcher.DEFAULT_GAP_POLICY == {"ignore_max_bars": 3, "on_large_gap": "flatten"}
+    params = inspect.signature(launcher.run_backtest).parameters
+    assert params["gap_detection"].default is True
+    assert params["indicator_fill"].default is False
+    sim = inspect.getsource(launcher.Launcher.simulate)
+    assert "gap_detection=True" in sim and "gap_policy=dict(DEFAULT_GAP_POLICY)" in sim
+    assert "ignore_max_bars" not in sim

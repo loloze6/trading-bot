@@ -122,6 +122,64 @@ RESERVED_FEED_REGISTRY = {
 
 FEED_WINDOW_SECONDS.update({name: _WHALE_BAR_SECONDS for name in WHALE_FOOTPRINT_FEEDS})
 
+# ---------------------------------------------------------------------------
+# FEED_AGG / FEED_FILL (CUL-355) -- how each feed is merged onto the bars,
+# declared per feed like FEED_WINDOW_SECONDS (one entry per feed name in both
+# registries; a missing entry is a KeyError at registration: deny by default).
+#   FEED_AGG  -- how several readings inside ONE bar combine ('last' | 'mean' |
+#                'sum', DataManager.register_feed's `agg`).
+#   FEED_FILL -- what a bar with NO new reading gets:
+#     'carry_forward' -- the last known value, for as long as no new reading
+#                        arrives. For a LEVEL that stays true until it changes
+#                        (the funding rate, the fear & greed index).
+#     'none'          -- left empty (NaN) BETWEEN readings. For a per-bar COUNT
+#                        of what happened in that bar (the whale features: an
+#                        empty bar means 'nothing measured', never the previous
+#                        bar's count). Pre-existing, unchanged: bars AFTER the
+#                        feed's final reading still repeat that reading (the
+#                        backward as-of join), whatever the fill.
+#   With 'carry_forward' a gap in the middle of the feed (a missing print)
+#   is filled with the last value too -- no age limit (operator 2026-09-30).
+# ---------------------------------------------------------------------------
+FEED_AGG = {'funding_rate': 'last', 'fear_greed': 'last'}
+FEED_AGG.update({name: 'last' for name in WHALE_FOOTPRINT_FEEDS})
+
+FEED_FILL = {'funding_rate': 'carry_forward', 'fear_greed': 'carry_forward'}
+FEED_FILL.update({name: 'none' for name in WHALE_FOOTPRINT_FEEDS})
+
+# ---------------------------------------------------------------------------
+# FEED_DELAY_SECONDS (CUL-356) -- publication delay: a reading stamped T is
+# usable only from T + delay (DataManager shifts it before the merge). One
+# entry per feed, like the declarations above.
+#   funding_rate: 0 -- the rate is fixed at the settlement it is stamped with.
+#   fear_greed:   1 day (A8.4, runs/run_042/artifacts/feed_alignment_check.yaml)
+#                 -- alternative.me stamps each value with its day at 00:00 UTC
+#                 and its historical publication time is not documented. Checked
+#                 once on 2026-09-30 23:19 UTC: the API's newest value was stamped
+#                 that day 00:00 and its time_until_update pointed at the next
+#                 00:00 UTC, i.e. publication at the start of the day today; past
+#                 years are unverified, so the conservative A8.4 shift stays:
+#                 day D's value is first visible on day D+1's bars. Before
+#                 CUL-356 the engine never shifted it: on 1h bars 23 of each
+#                 day's 24 bars carried that day's value (the shift lived only
+#                 in the prescreen loader deleted in bef5f3a4).
+#                 Consequences: the feed is fetched from the backtest's start
+#                 date, so the first day of a run has no fear & greed value
+#                 (unless warmup_prefetch reaches back); and the data
+#                 availability gate, which checks raw readings over the test
+#                 window, is one day ahead of what the engine attaches.
+#                 Which bar first uses a value known at instant K: the bar that
+#                 STARTS at or after K (the engine-wide convention, the same as a
+#                 funding print stamped on a bar boundary) -- operator choice
+#                 2026-10-01 (option A), over 'the bar that closes at K'. So on
+#                 1h bars day D's value is first used by day D+1's 00:00 bar, and
+#                 on 1d bars by day D+1's bar at its close: one day more cautious
+#                 than A8.4 strictly requires on daily bars.
+#   whale features: 0 -- their forward window is declared in FEED_WINDOW_SECONDS.
+# ---------------------------------------------------------------------------
+FEED_DELAY_SECONDS = {'funding_rate': 0, 'fear_greed': 86400}
+FEED_DELAY_SECONDS.update({name: 0 for name in WHALE_FOOTPRINT_FEEDS})
+
 
 def build_daily_funding_series(symbols, data_dir, start, end):
     """
