@@ -168,6 +168,13 @@ FEED_FILL.update({name: 'none' for name in WHALE_FOOTPRINT_FEEDS})
 #                 (unless warmup_prefetch reaches back); and the data
 #                 availability gate, which checks raw readings over the test
 #                 window, is one day ahead of what the engine attaches.
+#                 Which bar first uses a value known at instant K: the bar that
+#                 STARTS at or after K (the engine-wide convention, the same as a
+#                 funding print stamped on a bar boundary) -- operator choice
+#                 2026-10-01 (option A), over 'the bar that closes at K'. So on
+#                 1h bars day D's value is first used by day D+1's 00:00 bar, and
+#                 on 1d bars by day D+1's bar at its close: one day more cautious
+#                 than A8.4 strictly requires on daily bars.
 #   whale features: 0 -- their forward window is declared in FEED_WINDOW_SECONDS.
 # ---------------------------------------------------------------------------
 FEED_DELAY_SECONDS = {'funding_rate': 0, 'fear_greed': 86400}
