@@ -220,3 +220,24 @@ def test_on_gapped_data_the_rule_acts_and_off_does_not(tmp_path_factory):
     assert (after["allocation_change"].abs() > 0).any()
     # 4. run identity: the two runs no longer share a config hash
     assert off_dir.name.split("_")[-1] != on_dir.name.split("_")[-1]
+
+
+def test_the_indicator_fill_is_part_of_run_identity(tmp_path_factory):
+    """The fill is folded into the gap_rule identity only when on: a fill-on
+    run and a fill-off run never share a config hash."""
+    from strategies.main_strategy import AdvancedStrategy
+    import core.backtester as bt
+    off_dir, _, _ = _run(tmp_path_factory.mktemp("fill_off"), gap_detection=True, gap_policy=POLICY)
+    original = AdvancedStrategy.__init__
+
+    def _with_fill(self, *a, **kw):
+        kw.setdefault("candle_interval_seconds", 3600)
+        kw.setdefault("ignore_max_bars", 3)
+        original(self, *a, **kw)
+
+    try:
+        AdvancedStrategy.__init__ = _with_fill
+        on_dir, _, _ = _run(tmp_path_factory.mktemp("fill_on"), gap_detection=True, gap_policy=POLICY)
+    finally:
+        AdvancedStrategy.__init__ = original
+    assert off_dir.name.split("_")[-1] != on_dir.name.split("_")[-1]
