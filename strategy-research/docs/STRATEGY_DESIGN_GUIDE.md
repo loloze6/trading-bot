@@ -291,14 +291,21 @@ come first (validator V5 rejects a history op after a scalar or data-aware op). 
 | `sigmoid` | none | 1 / (1 + exp(-v)), between 0 and 1 (0.5 at v = 0) |
 | `negate` | none | -v |
 
-**Data-aware ops** read the current bar window.
+**Data-aware ops** read the current bar window. Mind the units: `stddev_24` is the standard deviation of the
+close in **price units**, so `stddev_24` x close is a price squared (around 1e5 to 1e7 for BTC).
 
 | op | params (default) | output |
 |---|---|---|
-| `vol_normalize` | none | v / (`stddev_24` x close). Unguarded: NaN propagates by design. Meant for `history_transforms` |
-| `vol_adjusted` | none | v / (`stddev_24` x close), or v unchanged if the denominator is invalid. Read-time use only; do not use it to normalise history |
-| `price_normalized` | none | v / close (v unchanged if close is invalid) |
+| `vol_normalize` | none | v / (`stddev_24` x close). Unguarded: NaN propagates by design. Meant for `history_transforms`. The result is tiny (about a millionth of v for BTC): use it only with a `ratio_to_mean` in `transforms`, which cancels that factor |
+| `vol_adjusted` | none | v / (`stddev_24` x close), or v unchanged if the denominator is invalid. Read-time use only; do not use it to normalise history. **Not a volatility scaler on its own**: it shrinks any component's output about a million-fold, so the forecast never trades (C4 run_061, O-10). Only meaningful followed by a rescale |
+| `price_normalized` | none | v / close (v unchanged if close is invalid). For outputs in **price units** only (e.g. `EMADiff`); on a percent or forecast-unit output it shrinks the forecast by the price |
 | `volume_filter` | `period` (20) | v if the latest volume >= its `period`-bar mean, else 0.0 (dead-zone on volume). **Not allowed in `strategies`** |
+
+**Scale rule.** The forecast after every transform must typically be a few units: the allocation is
+forecast / 10 and the risk layer ignores allocation changes below 0.2, so from flat a forecast needs
+|forecast| >= 2 to move the position. Check each component's units (COMPONENT_CATALOG.md, Units column) before
+choosing transforms. Under `orchestrator.forecast_size_probe`, a config where fewer than 1% of sample bars reach
+that size is refused before any backtest (D-056).
 
 **Ordering rule.** In one list, history ops first, then scalar and data-aware ops (V5). `history_transforms` and
 `transforms` are separate lists, each checked on its own.
@@ -455,9 +462,10 @@ The config describes a forecast per bar. It has no key for:
   smoothing history; `MacdHistogramCrossoverComponent` and `GatedSmaTrendLongOnlyComponent` remember prior bars);
   nothing else does.
 - **Sizing other than `forecast / 10`.** There is no volatility-targeting, Kelly, leverage or cap key. The
-  risk controls are not in the strategy config. (A signal can be divided by recent
-  volatility with a data-aware transform such as `vol_adjusted`; that changes the forecast, and the allocation is
-  still forecast / 10.)
+  risk controls are not in the strategy config. There is also no op that divides a signal by its **return**
+  volatility: `vol_adjusted` / `vol_normalize` divide by a price squared and, used alone, make the forecast too
+  small to ever trade (see the Scale rule above). Vol-managed sizing is a declared deviation unless it can be
+  expressed with `history_transforms: vol_normalize` + `transforms: ratio_to_mean`.
 - **Per-symbol settings.** The config has no per-symbol section; a component sees only its own symbol's bars and
   feed columns.
 - **Symbols, timeframe and date windows.** They belong to the run protocol, not the config (no instrument,

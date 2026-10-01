@@ -2715,6 +2715,31 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 print(f"⚠️  [E-056 Slice3b] variant '{variant_id}' NOT TESTED: {reason}")
                 continue
 
+            if _forecast_size_probe_enabled():
+                # O-10 / D-056: can this variant's forecast ever move the position?
+                # Probed on the variant's own coin protocol (per-coin mode) or the
+                # run protocol. A refusal is a config error like D-051/D-053 above
+                # (same reason, so Step 2 gets its one retry; a `base` refusal
+                # pauses: 1b's config).
+                if _coin_proto is not None:
+                    _probe_proto = variant_dir / "forecast_size_probe_protocol.json"
+                    _probe_proto.write_text(json.dumps(_coin_proto, indent=2), encoding="utf-8")
+                else:
+                    _probe_proto = Path(_resolve_protocol_path(RUN_DIR, run_id))
+                _fs_msgs = _forecast_size_violations(variant_config, _probe_proto, RUN_DIR,
+                                                     "backtest_specification", variant_id)
+                if _fs_msgs:
+                    reason = FORECAST_RULE_REASON
+                    report = "\n".join(_fs_msgs)
+                    index[variant_id] = {"status": "not_tested", "reason": reason,
+                                         "report": report, **_coin_keys}
+                    component_requests.append({"variant_id": variant_id, "reason": reason,
+                                               "report": report})
+                    _record_forecast_rule_refusal(RUN_DIR, "backtest_specification",
+                                                  variant_id, _fs_msgs)
+                    print(f"⚠️  [D-056] variant '{variant_id}' NOT TESTED: {report}")
+                    continue
+
             index[variant_id] = {
                 "status": "validated",
                 "config_path": str(variant_config_path.relative_to(RUN_DIR)),
@@ -4366,6 +4391,70 @@ def _regroup_record_enabled(cfg: dict | None = None) -> bool:
             "before its route. Enable both (with grid_evaluation and category_reports)."
         )
     return value
+
+
+def _forecast_size_probe_enabled(cfg: dict | None = None) -> bool:
+    """O-10 / D-056: orchestrator.forecast_size_probe.enabled. False when the
+    key, the section or the config file is absent; a non-bool value raises.
+    Off: nothing is run or written (byte-identical)."""
+    cfg = _orchestrator_config(cfg)
+    value = (((cfg.get("orchestrator") or {}).get("forecast_size_probe") or {})
+             .get("enabled", False))
+    if not isinstance(value, bool):
+        raise ValueError(
+            f"orchestrator.forecast_size_probe.enabled={value!r} is not a real boolean "
+            f"(got {type(value).__name__}) -- write an unquoted `true` or `false` in "
+            f"config/campaign_config.yaml, not a quoted string or null.")
+    return value
+
+
+FORECAST_SIZE_PROBE_FILE = "forecast_size_probe.yaml"
+
+
+def _record_forecast_size_probe(run_dir: Path, stage: str, variant_id: str,
+                                result: dict) -> None:
+    """Append one probe result to artifacts/forecast_size_probe.yaml
+    (append-only, like forecast_rule_refusals.yaml): every probe, ok or not,
+    so the operator sees each config's forecast scale before any trial."""
+    path = Path(run_dir) / "artifacts" / FORECAST_SIZE_PROBE_FILE
+    doc = (load_yaml(path) or {}) if path.exists() else {}
+    probes = doc.get("probes", []) if isinstance(doc, dict) else None
+    if not isinstance(probes, list):
+        raise RuntimeError(f"{path} is not a {{probes: [...]}} mapping -- refusing to "
+                           f"overwrite it; fix or move it, then resume")
+    probes = list(probes) + [{"at": datetime.now(timezone.utc).isoformat(), "stage": stage,
+                              "variant_id": variant_id, **result}]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    save_yaml(path, {"probes": probes})
+
+
+def _forecast_size_violations(config: dict, protocol_path: Path, run_dir: Path,
+                              stage: str, variant_id: str) -> list:
+    """O-10 / D-056: tools/forecast_size_probe.py on this config (a subprocess,
+    like run_protocol.py). [] when the flag is off or the forecast can trade;
+    one message when the probe refuses it. Not a trial: only the forecast's
+    size is read (see the tool's docstring). A probe that crashes raises --
+    an unmeasured config must not pass silently."""
+    if not _forecast_size_probe_enabled():
+        return []
+    with tempfile.TemporaryDirectory(prefix="fsp_") as tmp:
+        cfg_path = Path(tmp) / "strategy_config.json"
+        out_path = Path(tmp) / "forecast_size_probe.json"
+        cfg_path.write_text(json.dumps(config, indent=2), encoding="utf-8")
+        result = subprocess.run(
+            [str(_resolve_tbot_python()), str(ROOT / "tools" / "forecast_size_probe.py"),
+             "--config", str(cfg_path), "--protocol", str(protocol_path),
+             "--json-out", str(out_path)],
+            capture_output=True, text=True)
+        if result.returncode != 0 or not out_path.exists():
+            tail = (result.stdout + result.stderr).strip()[-1500:]
+            raise RuntimeError(f"forecast_size_probe failed on {stage}/{variant_id} "
+                               f"(exit {result.returncode}): {tail}")
+        probe = json.loads(out_path.read_text(encoding="utf-8"))
+    _record_forecast_size_probe(run_dir, stage, variant_id, probe)
+    if probe.get("status") == "refuse":
+        return [f"forecast size (D-056): {probe.get('message')}"]
+    return []
 
 
 def _decide_next_enabled(cfg: dict | None = None) -> bool:
@@ -14121,7 +14210,15 @@ def _base_forecast_rule_violations(path: Path) -> list:
     if not isinstance(config, dict):
         return []
     fr = _forecast_rules_module()
-    return fr.strategies_violations(config, fr.on_off_classes())
+    msgs = fr.strategies_violations(config, fr.on_off_classes())
+    if not msgs and _forecast_size_probe_enabled():
+        # O-10 / D-056: only a config that passes D-051 is probed (a refused
+        # one goes back to 1b anyway). The run's protocol is generated at
+        # run_loop start, before 1b.
+        protocol_path = Path(_resolve_protocol_path(path, Path(path).name))
+        msgs = _forecast_size_violations(config, protocol_path, path,
+                                         "strategy_config_authoring", "base")
+    return msgs
 
 
 def _is_pass_through_candidate(artifacts: Path) -> bool:
