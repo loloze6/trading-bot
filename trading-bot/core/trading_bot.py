@@ -166,11 +166,16 @@ class TradingBot:
         #     direct-execute bypass pattern PR-2's risk_gate kill-switch uses),
         #     plus AdvancedStrategy.reset_history() (a real segment split -- the
         #     shared data buffer and both engines' component history are cleared).
-        #     After the reset, the EXISTING is_ready()/required_bars gate
-        #     (MainStrategy.generate_signals(), strategy_base.py) already forces
-        #     forecast=0.0/NOT_READY until enough real bars re-accumulate --
-        #     no separate post-large-gap entry block is needed, it falls out of
-        #     the engine's own pre-existing readiness contract for free.
+        #     The forced flatten holds until a full warmup (required_bars) of
+        #     real bars has passed since the gap, then the tier clears and the
+        #     strategy trades again (CUL-359; it used to never clear).
+        #   Recovery (CUL-359): both middle and large clear once
+        #     bars_since_gap >= required_bars, checked before the bar's own
+        #     update (so the tier clears on the (required_bars+1)-th real bar
+        #     after the gap -- one bar conservative, pinned by tests). An
+        #     ignore-tier gap during an active tier counts as one real bar and
+        #     does not cancel it; a middle gap during a large re-warm keeps
+        #     'large' (recorded as the event's active_tier).
         if gap_policy is not None and not gap_detection:
             raise ValueError(
                 "gap_policy requires gap_detection=True -- there is nothing to "
@@ -368,6 +373,7 @@ class TradingBot:
                     active = self._active_gap_tier.get(symbol)
                     if active == "large" and tier == "middle":
                         tier = "large"
+                    self.gap_events[-1]["active_tier"] = tier
                     self._active_gap_tier[symbol] = tier
                     self._bars_since_gap[symbol] = 0
                     self.logger.info(

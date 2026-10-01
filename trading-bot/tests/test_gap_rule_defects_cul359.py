@@ -53,15 +53,28 @@ def test_large_tier_clears_after_a_full_warmup_and_trading_resumes():
                              gap_policy={"ignore_max_bars": 2, "large_min_bars": 5},
                              timestamps=ts, closes=[100.0] * len(ts))
     _run_bars(bot, len(ts))
-    changes = [c["allocation_change"] for c in tracker.calls]
+    traded = [c["allocation_change"] != 0.0 for c in tracker.calls]
     assert bot._active_gap_tier.get("BTCUSDT") is None
-    assert changes[1:5] == [0.0, 0.0, 0.0, 0.0]          # re-warm: flat (from flat) -> no change
-    assert changes[-1] != 0.0                             # the strategy trades again
+    # bar 0 trades; the gap bar and the next 4 real bars are forced flat
+    # (bars_since_gap 0..4 < required_bars=5); the tier clears on the 5th real
+    # bar after the gap (bars_since_gap == 5) and the strategy trades again.
+    assert traded == [True, False, False, False, False, False, True, True]
 
 
 # ---------------------------------------------------------------------------
 # 3. an ignore gap does not cancel an active tier; severity wins
 # ---------------------------------------------------------------------------
+
+def test_middle_tier_clears_on_the_exact_bar():
+    """Pins the recovery bar (review F2: '>' or '>= R-1' must fail)."""
+    ts = _hours(0, 4, 5, 6, 7, 8, 9, 10)                 # middle (3 missing), then 6 real bars
+    bot, tracker = _make_bot(gap_detection=True,
+                             gap_policy={"ignore_max_bars": 2, "large_min_bars": 50},
+                             timestamps=ts, closes=[100.0] * len(ts))
+    _run_bars(bot, len(ts))
+    assert [c["allocation_change"] != 0.0 for c in tracker.calls] == [
+        True, False, False, False, False, False, True, True]
+
 
 def test_an_ignore_gap_does_not_cancel_an_active_middle_tier():
     ts = _hours(0, 4, 5, 7)                               # middle (3 missing), normal, ignore (1 missing)
@@ -82,6 +95,8 @@ def test_a_middle_gap_during_a_large_rewarm_keeps_large():
     _run_bars(bot, len(ts))
     assert bot._active_gap_tier.get("BTCUSDT") == "large"
     bot.strategy.reset_history.assert_called_once()      # only the large gap splits the segment
+    assert [(e["tier"], e.get("active_tier")) for e in bot.gap_events] == [
+        ("large", "large"), ("middle", "large")]
 
 
 # ---------------------------------------------------------------------------
@@ -151,9 +166,10 @@ _CONFIG = {
 
 
 def _gapped_bars():
-    """90 hourly bars with a 2-bar gap (ignore), a 6-bar gap (middle) and a
-    40-bar gap (large, >= the 24-bar warmup floor)."""
-    offsets = list(range(0, 30)) + list(range(32, 50)) + list(range(56, 80)) + list(range(120, 148))
+    """Hourly bars with a 2-bar gap (ignore), a 6-bar gap (middle) and a
+    40-bar gap (large, >= the 24-bar warmup floor), then 60 bars -- long
+    enough for the real strategy to re-warm and trade again (review F4)."""
+    offsets = list(range(0, 30)) + list(range(32, 50)) + list(range(56, 80)) + list(range(120, 180))
     ts = [T0 + h * H for h in offsets]
     close = [100.0 + 5.0 * math.sin(i / 5.0) + 0.05 * i for i in range(len(ts))]
     return pd.DataFrame({"timestamp": ts, "open": close, "high": [c * 1.001 for c in close],
@@ -199,5 +215,8 @@ def test_on_gapped_data_the_rule_acts_and_off_does_not(tmp_path_factory):
     assert tiers == [(2, "ignore"), (6, "middle"), (40, "large")]
     assert len(off_states) == len(on_states)
     assert not off_states["allocation_change"].equals(on_states["allocation_change"])
+    # 1. after the large gap the real strategy trades again once re-warmed
+    after = on_states[pd.to_datetime(on_states["timestamp"]) >= T0 + 150 * H]
+    assert (after["allocation_change"].abs() > 0).any()
     # 4. run identity: the two runs no longer share a config hash
     assert off_dir.name.split("_")[-1] != on_dir.name.split("_")[-1]
