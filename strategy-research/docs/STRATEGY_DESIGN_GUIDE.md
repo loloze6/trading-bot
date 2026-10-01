@@ -56,9 +56,11 @@ of the signal: a stronger signal, a bigger position; a weaker one, a smaller pos
 - **An on/off condition is a regime.** If the idea is "when X happens, take this kind of position", X belongs in the
   regime detector (a rule on a regime measure, or a veto), the regime it selects gets a GRADED component in
   `strategies.regimes`, and the other regimes are `null` (flat). The regime decides when the idea is active; the
-  graded component decides how much and in which direction. Interim: while the hypothesis stage still receives
-  cards without regime conditions (until D-052 lands), an on/off condition the card does not carry as a regime is
-  declared as a deviation, not built as a regime.
+  graded component decides how much and in which direction. A card may carry a regime condition (regime-gated
+  ideas are allowed, D-052). An on/off condition in a card is expressed as a regime rule, as above, and the idea
+  carries its ungated version as its design variant: the same config with the detector's `rules` emptied
+  (`"rules": []`) and `default_regime` set to the regime that holds the strategy, so every bar is in that regime.
+  That is a parameter change; the component classes stay identical.
 - **Constant.** `BuyAndHoldStrategy` (constant +10) is an offset only: use it inside a composition with a graded
   component (see "Composing a signal"), never as the signal.
 - **A rule stated as a threshold becomes a graded measure.** "Long above the 20-day high, short below the 20-day

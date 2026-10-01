@@ -26,7 +26,7 @@ For each entry in `per_symbol_per_timeframe`, note `confidence` (high / medium /
 | Any has `confidence: low`, OR `confidence: medium` with retune already attempted | `unusable_for_this_symbol_timeframe` |
 
 - `affected_symbols_timeframes`: list any entry not at `high` confidence in the format `SYMBOL_TIMEFRAME` (e.g., `BTCUSDT_1h`).
-- `recommended_action`: specific, actionable text (e.g., "Raise ER threshold to 0.6 and re-run validate_regime_detector.py" or "Switch hypothesis generation for BTCUSDT_1h to ungated-only").
+- `recommended_action`: specific, actionable text (e.g., "Raise ER threshold to 0.6 and re-run validate_regime_detector.py" or "Re-run validate_regime_detector.py after widening the ER window").
 
 ### Step 3 — A2.1 ungated escape check
 Regardless of detector confidence, check whether pooled ungated evidence already establishes `signal_bad_everywhere`:
@@ -71,30 +71,13 @@ evaluated_at: "<ISO timestamp>"
 
 ---
 
-## A2.3 — Post-unusable policy
+## Detector gate and IC scope
 
-Applies whenever `status = unusable_for_this_symbol_timeframe` is issued (including after a completed retune cycle).
-
-### No replacement detector until an ungated edge exists
-
-A replacement detector (ADX, HMM, daily-timeframe overlay, or any other family) is NOT to be built or commissioned until both of the following are true:
-
-1. A confirmed **ungated** edge exists: Improvement 03 trade diagnostics show positive per-trade expectancy without any regime filter.
-2. Those same diagnostics show **regime-dependent** performance: the edge is materially stronger in a particular market state.
-
-Regime gating is an optimization over a working edge. Without a confirmed edge, a new detector adds trial surface with no payoff. When recommending `unusable`, do NOT suggest building a replacement detector as the next action. Instead, record candidate families in `config/detector_wishlist.yaml` — this is a wishlist, not a work queue.
-
-### Preferred first candidate when the trigger fires
-
-When the conditions above are met, the preferred first detector candidate is a **daily-timeframe regime overlay on the 1h strategy**: regime computed from daily bars (daily ER or ADX), then applied as a gate on the 1h strategy. Persistence measured in days clears the intrinsic gates (persistence ≥ 24 daily bars = 24 calendar days, well above the 12-bar minimum). This is a config-level change, not an engine extension.
+The former post-unusable policy (A2.3: no replacement detector until an ungated edge exists, preferred first candidate, per-regime IC suspension) is deleted (D-052). A regime-gated idea is judged by gated versus ungated, not by a ban.
 
 ### Improvement 02 gate is permanent and detector-agnostic
 
 Any future detector, whatever the family, MUST pass `validate_regime_detector.py` (including A2.2 class-conditional sensitivity) and this regime-auditor stage before its labels may condition any metric. The 02 machinery does not need to be rebuilt per detector — it is already detector-agnostic.
-
-### Per-regime IC is suspended
-
-Until a trustworthy detector (confidence: high, confirmed by regime-auditor) is in place, no per-regime-conditioned IC breakdown may be used or cited. Use only `forecast_return_corr_all_bars` (ungated, see below).
 
 ### IC measurement scope for A2.1 ungated escape — CRITICAL
 

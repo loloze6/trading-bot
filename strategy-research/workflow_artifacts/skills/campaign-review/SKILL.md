@@ -71,18 +71,20 @@ no_pattern:
   Recommendation: escalate_instrument or escalate_component to try a genuinely different
   search space.
 
-## Wishlist-gated recommendations (`detector_wishlist.yaml` / `feed_wishlist.yaml`)
+## Wishlist-gated recommendations (`feed_wishlist.yaml`)
 
-Both wishlists exist precisely because their contents are NOT yet actionable — each
-entry there was deliberately deferred behind an explicit trigger condition (e.g.
-`detector_wishlist.yaml`'s `trigger_condition`: build the first candidate only when
-(1) a confirmed ungated edge exists AND (2) Improvement 03 diagnostics show
-regime-dependent performance). Recommending a run that consumes a wishlist candidate
+The feed wishlist exists precisely because its contents are NOT yet actionable — each
+entry there was deliberately deferred behind an explicit trigger condition.
+Recommending a run that consumes a wishlist candidate
 BEFORE its trigger has fired quietly deletes the gate — it turns a deferred idea back
 into a live run queue item without the condition that justified deferring it ever
 having been satisfied.
 
-**Before citing a `detector_wishlist.yaml` or `feed_wishlist.yaml` entry in
+The detector wishlist is different: it is a list of parked detector ideas and gates
+nothing. A regime idea does not need a trigger; it goes through the normal path with
+its ungated design variant (same config, regime rules emptied).
+
+**Before citing a `feed_wishlist.yaml` entry in
 `recommendation_rationale` or `next_research_question`:**
 1. Read that wishlist file's `trigger_condition` (or per-entry trigger) field directly
    — do not infer it from memory or from this skill's summary above.
@@ -102,7 +104,7 @@ having been satisfied.
 3. Check whether the trigger has actually fired, citing the specific campaign_state.yaml
    or campaign_knowledge_base.yaml evidence that would need to exist for it to have
    fired (e.g. a KB finding with `outcome` other than `no_edge_observed`/`inconclusive`/
-   `invalidated_artifact`, showing genuine ungated edge).
+   `invalidated_artifact`, showing the condition the entry names).
 4. If the trigger has NOT fired: do not set `recommendation: reframe` (or any
    recommendation) that converts the wishlist entry into a run. Instead, record it as
    **wishlist support** — a note that this campaign's evidence continues to support
@@ -193,7 +195,7 @@ If a pattern in `fragment_patterns.yaml` motivates a candidate hypothesis:
 ## Checklist
 - Read ALL diagnostics_log entries, not just the latest.
 - If `recommendation_rationale` or `next_research_question` draws on a
-  `detector_wishlist.yaml`/`feed_wishlist.yaml` entry, check and cite its trigger
+  `feed_wishlist.yaml` entry, check and cite its trigger
   condition per the section above BEFORE recommending it as a run.
 - If `next_research_question` names any `hypothesis_id` from `campaign_knowledge_base.yaml`,
   check its `reactivation_consumed_by`/`exhausted` fields per the "Reactivation-gated
@@ -215,12 +217,9 @@ If a pattern in `fragment_patterns.yaml` motivates a candidate hypothesis:
 - Do NOT populate next_research_question when recommendation=continue. Populating it
   on a continue output causes the pipeline to treat it as a reframe and overwrite the
   next run's brief, ignoring the verdict_interpreter's recommendation entirely.
-- Do NOT recommend reframe (or any run) into a `detector_wishlist.yaml` or
-  `feed_wishlist.yaml` family whose trigger_condition has not fired. (2026-07-04:
-  this happened twice in the same campaign — both toward `daily_timeframe_er_overlay`
-  / ADX overlay, per detector_wishlist.yaml `trigger_condition.status: not_triggered`
-  at the time — see campaign_knowledge_base.yaml for the parked record.) Record it as
-  wishlist support instead; see "Wishlist-gated recommendations" above.
+- Do NOT recommend reframe (or any run) into a `feed_wishlist.yaml` family whose
+  trigger_condition has not fired. Record it as wishlist support instead; see
+  "Wishlist-gated recommendations" above.
 - Do NOT recommend reframe (or any run) that reactivates a `campaign_knowledge_base.yaml`
   finding whose `reactivation_consumed_by` is already set, or whose `exhausted: true`
   with no open `reactivation_condition`. (2026-07-06: this happened with `run_053`,

@@ -1090,7 +1090,7 @@ handling (`::run_loop`, `::run_loop`).
 **Objective.** Establish whether the regime detector is trustworthy enough for
 its labels to be allowed to condition any metric.
 
-> **What a regime gate is, and why nothing uses one today.**
+> **What a regime gate is, and how a regime idea is judged.**
 > A *regime gate* means a strategy only trades when the market is in a state it
 > likes — trending, say — and sits out otherwise. To do that you need a
 > **detector**: a rule that labels each bar with the current state.
@@ -1099,12 +1099,15 @@ its labels to be allowed to condition any metric.
 > own quality gate**: its labels change under a small parameter nudge, and it
 > cannot hit the required activation band and stay stable at the same time. Its
 > labels are therefore noise wearing a label, and gating on them would add
-> noise rather than selectivity.
+> noise rather than selectivity. That verdict came from one run and says nothing
+> about whether gating improves a strategy, so it is no longer a veto, and the
+> old rule that banned regime-gated hypotheses (A2.3) is deleted (D-052).
 >
-> **So every hypothesis in the queue trades ungated — all the time.** A regime
-> gate becomes permissible again only when both hold: (1) a detector passes the
-> A2.2 quality gate, and (2) an *ungated* edge has already been confirmed and
-> shown to perform differently by regime. Rule A2.3.
+> **A regime-gated idea is allowed.** It carries its ungated version as its
+> design variant: the same config with the regime detector's `rules` emptied
+> (`"rules": []`) and `default_regime` set to the regime that holds the strategy,
+> so every bar is in that regime. The value of the regime is judged by gated
+> versus ungated, plus the roadmap's regime health checks.
 
 **Design rationale.**
 - A detector that flips label under a small parameter nudge produces
@@ -2638,7 +2641,7 @@ replaces both with their real names and nesting depth. See
 | `recommended_action` | The auditor's prose reasoning and next step — under the retune firewall (A2.2: must cite detector-intrinsic criteria only, never PnL/Sharpe; enforced in code by `_validate_retune_firewall`, `run_phase1_research.py::_validate_retune_firewall`, which raises on a violation — the file itself carries no field recording that the check passed). | prose | *"The structural blocker is transition_frequency (~40 transitions/window observed…). Per A2.3 post-unusable policy: record candidate detector families in config/detector_wishlist.yaml…"* |
 | `retune_attempted` / `retune_summary` | Whether a retune grid search ran, and if so its full result: `grid_cells_evaluated`, `grid_dimensions`, the `vr_component` drop decision, `best_directly_implementable` vs. `overall_winner_requires_extension` cells, `max_score_achieved` vs. `max_possible_score`, and a `structural_ceiling` prose explanation when no cell passes. | bool / dict (only present when `retune_attempted` is true) | `true` / 48 cells evaluated, best score 5 of 8 possible |
 | `official_report_after_retune` | The regime detector's own per-symbol metrics (`confidence`, `persistence`, `transitions_pw`, `cc_sens_trending`, `activation`, `in_band`) after the retuned config, kept alongside the pre-retune `regime_detector_report.yaml` for comparison. | dict keyed by `detector_version`/`evaluated_at`/`config` plus one entry per symbol_timeframe | `btcusdt_1h: {confidence: medium, persistence: 12.0, …}` |
-| `a23_policy_applied` / `a23_detector_wishlist` | Whether the A2.3 post-unusable policy fired, and the wishlist file candidate replacement detectors were recorded to. | bool / path | `true` / `config/detector_wishlist.yaml` |
+| `a23_policy_applied` / `a23_detector_wishlist` | Legacy fields, present only in `runs/run_039`'s file: whether the former A2.3 post-unusable policy fired, and where candidate detectors were recorded. The policy is deleted (D-052); nothing writes or reads these fields. | bool / path | `true` / `config/detector_wishlist.yaml` |
 | `ungated_escape_eligible` | A2.1 escape assessment — whether an all-bars (ungated) IC check can substitute for a trustworthy detector. Set directly by the regime-auditor skill, per its own SKILL.md rules. | `true` · `false` · `indeterminate` | `true` |
 | `ungated_escape_rationale` | The prose justification for the `ungated_escape_eligible` value, citing the A2.1 rule it satisfies. | prose | *"IC is within 2 SE of zero — consistent with no edge over all bars. Per A2.1: signal_bad_everywhere may be concluded."* |
 
@@ -2903,8 +2906,8 @@ market_type are not `tradable: true` — **or are undeclared**
 | `config/available_feeds.yaml` | Which data feeds are testable today; constrains `evidence_type` in hypothesis_card |
 | `config/campaign_config.yaml` | Named constants for the orchestrator; drift-guarded by test |
 | `config/indicator_library.yaml` | 15 seeded entries: regime_affinity, crowding_risk, data_requirements per indicator class |
-| `feed_wishlist.yaml` | Feeds needed but not yet available (liquidation_data); argument for each. `trigger_condition.predicate` is mechanically evaluated (see `detector_wishlist.yaml` row below — same mechanism, same file format). |
-| `config/detector_wishlist.yaml` | Detector families to build when an ungated edge exists. Each candidate's `trigger_condition.predicate` is a structured, machine-checkable expression evaluated by `workflow/run_campaign.py::evaluate_wishlist_predicate()` — no longer human-reviewed prose. `status`/`last_evaluated_at`/`last_evaluated_against`/`kb_state_hash`/`evaluation_note` are written ONLY by `evaluate_and_persist_wishlist_predicate()` (single authority — never hand-edit); a persisted `status` is only trustworthy if its `kb_state_hash` matches a fresh `sha256` of `campaign_knowledge_base.yaml`'s current bytes. See `RUNBOOK.md` section 3 and `docs/CONCEALMENT_INSTRUCTION_DOCTRINE.md`. |
+| `feed_wishlist.yaml` | Feeds needed but not yet available (liquidation_data); argument for each. `trigger_condition.predicate` is a structured, machine-checkable expression evaluated by `workflow/run_campaign.py::evaluate_wishlist_predicate()` — no longer human-reviewed prose. `status`/`last_evaluated_at`/`last_evaluated_against`/`kb_state_hash`/`evaluation_note` are written ONLY by `evaluate_and_persist_wishlist_predicate()` (single authority — never hand-edit); a persisted `status` is only trustworthy if its `kb_state_hash` matches a fresh `sha256` of `campaign_knowledge_base.yaml`'s current bytes. See `RUNBOOK.md` section 3 and `docs/CONCEALMENT_INSTRUCTION_DOCTRINE.md`. |
+| `config/detector_wishlist.yaml` | Parked detector ideas (daily-timeframe overlay, ADX threshold, hidden Markov model). A list only: it gates and pauses nothing (D-052). A regime idea goes through the normal path with its ungated design variant. |
 | `campaign_knowledge_base.yaml` | Durable findings store — see the file itself for the current count; this table doesn't track a point-in-time number. |
 | `campaign_record/campaign_memory.yaml` | Per-run memory (E-058 S2a), written only by stage 17 `regroup_record` when `orchestrator.regroup_record.enabled` is on (off by default). One entry per `run_id`; fields in the stage 17 block. No old runs; those live in `campaign_knowledge_base.yaml`. |
 | `campaign_record/data_requests.yaml` | Append-only `{requests: [...]}` intake of the feed-acquisition lane. Two writers, both through `run_phase1_research._append_data_requests`: the data-availability gate's per-variant declines (`stage: data_availability_gate`, `{run_id, stage, variant_id, outcome, reason, reasons}`; idempotent only under `verdict_routing_retired`), and (E-035 S2c) stage 16's `requires_feed` proposals (`stage: specialist_reader`, one row per feed that is not wired: `{run_id, stage, feed, request: acquisition|designation, proposals: [{category, proposal_id, reason}], reason}`, always idempotent on `campaign_review_retired.feed_request_key` = run, stage, feed; the gate's rows keep `request_key` = run, stage, variant, reason). Existing rows are never rewritten. Decide-next records its row count as information; the binding check is its own `requires_feed` feasibility gate. |
