@@ -16,6 +16,7 @@ decision (DECISION_LOG) or a ticket.
 | O-7 | C4 run_063, 2026-09-30 | A threshold (breakout) idea in a linear-forecast design | found: doc bug + fidelity gap (fix); forecast rule (decision) |
 | O-8 | C4 run_061, 2026-10-01 | Data gate blocks every version over small gaps the backtest already handles | found: design gap; target design ticketed (CUL-367); run_061 continued by override |
 | O-9 | C4 run_061, 2026-10-02 | Nothing before the backtest says which test windows are used, or how long they are | open: to investigate |
+| O-10 | C4 run_061, 2026-10-02 | `base` made 0 trades in 95 windows: the forecast was shrunk ~1,000,000x | found: doc bug + missing fail-loud check; trial invalidated, run stopped |
 
 ---
 
@@ -505,6 +506,45 @@ a too-large data set.
   coins.
 - Show the period in a pre-backtest artifact or log line, so the operator sees it before
   any trial is spent.
+
+
+## O-10. `base` made 0 trades in 95 windows: the forecast was shrunk about a million-fold
+
+**Seen:** after the O-8 override, run_061's `base` variant backtested 95 windows with **0
+trades**. The forecasts were about 1e-5 in size (window 2018-12: |forecast| <= 4.4e-5), so
+every allocation change (~4e-6) failed `min_allocation_change` (0.2) on all 768 bars. Source:
+`runs/run_061/variants/base/results/20261001T215100Z_d947d333/bars.csv` and `metrics.json`.
+
+**Finding (2026-10-02, measured):** **a units bug the documentation steers into, with
+nothing to catch it.**
+- 1b's base config is `MovingAverageDistanceComponent` (sma, period 50, scaling_factor 10),
+  whose output is a percent, followed by `transforms: [{op: vol_adjusted}]`, which it chose
+  to express "vol-managed".
+- `vol_adjusted` computes v / (`stddev_24` x close) (`trading-bot/strategies/registry.py:71-76`).
+  `stddev_24` is the 24-bar rolling standard deviation of the close in price units
+  (`main_strategy.py:82`). The divisor is (dollars x dollars), about 1e5-1e7, so any
+  component's output becomes microscopic.
+- It only works when followed by a rescale that cancels the factor: the documented
+  `history_transforms: vol_normalize` + `ratio_to_mean` pattern. Used alone, the signal
+  never trades.
+- The design guide recommends it alone for this purpose ("a signal can be divided by
+  recent volatility with a data-aware transform such as `vol_adjusted`",
+  `STRATEGY_DESIGN_GUIDE.md` ~459). Its transform table gives the formula but not the
+  resulting scale (`:298-299`).
+- Nothing checks the forecast's size: the validator, step 5a, the data gate and the engine
+  all accept a forecast that can never reach the rebalance threshold. The result looked
+  like an ordinary "0 trades". Had the run finished, the idea would have been graded on
+  a bug.
+
+**Actions (operator, 2026-10-02):**
+1. Run stopped during the `design_sma_21` backtest (same transform). No grid, reader or
+   idea_status was written. `run_061` is paused at protocol_execution.
+2. Trial `run_061:base` marked `invalidated_artifact` with the reason (kept, not deleted;
+   run_044 precedent).
+3. Next: a small PR with (a) the guide and catalog stating each transform's input units
+   and resulting scale, without recommending `vol_adjusted` alone; and (b) a fail-loud
+   check that refuses a forecast that cannot reach the rebalance threshold. Then send
+   run_061 back to step 1b to re-author the config.
 
 ---
 
