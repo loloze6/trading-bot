@@ -14,6 +14,7 @@ decision (DECISION_LOG) or a ticket.
 | O-5 | C4 run_063, 2026-09-30 | Asset variants evicted instead of re-windowed; the "at least 2 variants" rule | found: SOL as intended; XRP a design gap (decision) |
 | O-6 | C4 run_063, 2026-09-30 | Park reason says "component" when most failures were data | found: reporting bug, fix |
 | O-7 | C4 run_063, 2026-09-30 | A threshold (breakout) idea in a linear-forecast design | found: doc bug + fidelity gap (fix); forecast rule (decision) |
+| O-8 | C4 run_061, 2026-10-01 | Data gate blocks every version over small gaps the backtest already handles | found: design gap; target design ticketed (CUL-367); run_061 continued by override |
 
 ---
 
@@ -409,6 +410,60 @@ design rule (decision for the operator).**
 4. A true breakout component is a separate build. It would be latched: +sf after a close
    above the previous N-bar high, until a close below the previous N-bar low. The latch
    needs no position state.
+
+
+## O-8. The data gate blocks every version over small gaps the backtest already handles
+
+**Seen:** run_061 (resumed 2026-10-01 after its component park) paused at the per-variant
+data-availability gate with 0 of 4 variants left (`variant_gate_insufficient`), before any
+backtest. `base` and `design_sma_21` (BTCUSDT 1h) were refused because 21 of 95 monthly
+windows were `refine` (some bars missing, each <= 5%). Source: `c4_run_once.log`,
+`runs/run_061/artifacts/variants/*/data_availability_gate.yaml`.
+
+**Operator's view (2026-10-01):** separate two cases.
+1. **Data quality:** holes inside a window. Accept them while the overall quality of the
+   data set holds (small, or even medium, gaps; a share of the data set, or a better
+   formula).
+2. **Missing window:** a missing interval at a window boundary, including "one bar, then a
+   long gap". That is what `refine` should be for: not evict, but **shrink the window so it
+   starts at the end of the missing interval**.
+
+**Finding (2026-10-01, measured):** **design gap. The current logic does neither.**
+- The gate rates a window by its missing fraction only (0% validate, <= 5% refine, > 5%
+  decline, `tools/data_availability_gate.py:36-40, 462-466`). It does not look at where a
+  gap sits or how long it is.
+- In the variant loop, any outcome other than `validate` marks the variant not_tested
+  (`run_phase1_research.py` ~1659). A `refine` therefore evicts the version; nothing trims.
+- Every one of run_061's 21 flagged BTC windows is case 1: all gaps are interior, 1-33 h
+  each, 121 h in total, about 0.17% of the data set, worst window 4.9%. None touches a
+  window boundary.
+- The backtest has handled such gaps since #288 (gap rule on by default: ignore <= 3 bars,
+  flatten and re-warm after a large gap). So this gate blocks every 1h BTC/ETH idea over
+  the full protocol for gaps the engine already absorbs.
+- Same family as O-5 (an XRP variant evicted on one `refine` window instead of
+  re-windowed). CUL-367 generalises O-5's recommendation 1 from asset variants to every
+  variant.
+
+**Challenge (agreed as the starting point):**
+- A data-set-wide percentage alone can hide one bad window, so keep a per-window ceiling
+  too.
+- "Short" and "long" should be measured against the strategy's warmup, not a fixed
+  percentage.
+- A long *interior* gap behaves like a boundary gap: the engine already flattens and
+  re-warms after it, so the window effectively restarts there.
+- A trimmed window must leave room for the warmup after the gap.
+- Trimming makes per-window metrics noisier. Whole-period metrics (D-034..036) are
+  unaffected.
+- The rule must be mechanical and pre-registered, never applied after seeing results.
+
+**Actions:**
+1. Target design ticketed: **CUL-367** (quality vs missing window; trim instead of
+   evict). Not built yet.
+2. run_061 was continued by a recorded operator override: `base` and `design_sma_21` were
+   marked validated as "interior quality gaps only". `asset_xrpusdt` (one window 6.7%) and
+   `asset_solusdt` (57% coverage) stay not_tested, so the idea stays capped at
+   INCONCLUSIVE. Record: `runs/run_061/artifacts/human_resolution.yaml`, and the variant
+   reasons in `artifacts/variants/index.yaml`.
 
 ---
 
