@@ -145,11 +145,12 @@ the original rationale.
   regimes not explicitly mentioned in the brief — omitting trending/chop means those bars fall to
   default_regime behavior.
 
-## Ungated hypotheses (post-A2.3) — THE canonical pattern
+## Ungated hypotheses — THE canonical pattern
 
-A2.3 standing policy: the BTC/ETH 1h regime detector is unusable, so most hypotheses in
-this campaign are ungated (no regime condition at all — the signal is meant to be active
-on every bar). Building this incorrectly is what caused run_043's first blocker
+An ungated config has no regime condition at all: the signal is meant to be active
+on every bar. Use this pattern for any idea with no regime condition, and to build the
+ungated version of a regime-gated idea (see the last paragraph of this section).
+Building this incorrectly is what caused run_043's first blocker
 (2026-07-04): a dummy always-true rule targeting an invented regime name ("active",
 outside the four-value enum), rejected by VIOLATION V7.
 
@@ -186,6 +187,13 @@ reasoning about it (see `trading-bot/tests/test_ungated_config_pattern.py`):**
   invites: if `regime_detector.components=[]` and `rules=[]`, `strategies.regimes
   [default_regime]` must not be null — that combination is silently dead (forecasts 0.0
   forever) with no error anywhere else to catch it.
+
+**Ungated version of a regime-gated idea.** A regime-gated idea carries its ungated version as its design
+variant. Build it from the gated config by changing only the regime detector: set `rules` to `[]` (and remove
+any `vetoes`), and set `default_regime` to the regime that holds the strategy, so every bar is in that regime.
+Leave the strategy components and their parameters unchanged: this is a parameter change, the component
+classes stay identical. Keeping the detector's `components` keeps the required warmup (`required_bars`) the
+same as in the gated config.
 
 ## Replication guard
 If `run_context.yaml` is present and contains `run_type: replication_diagnostic`:

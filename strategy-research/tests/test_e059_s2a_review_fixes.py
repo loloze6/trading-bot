@@ -256,7 +256,14 @@ def test_a_1a_rerun_rewrites_the_pass_rule_and_rechecks_the_id(campaign_root):
 # Checklist bullet and one Forbidden bullet. It changes hypothesis_generation's prompt on every path,
 # flag or no flag. Nothing about the decide_next addendum or regime gating changed.
 # Previous pin: 51a0d28cdf53ffca012951e38745d38408fe0a9828001ab0007d4b1a185458d3.
-_MASTER_SKILL_SHA256 = "82a3524caa89c54613a7262ae9d9d6a51b8f02e5d413eb0953948beafdfabedc"
+# RE-PINNED by D-052 (2026-10-01, branch feat/d052-delete-a23): a DECLARED change -- the
+# "POST-A2.3 -- No regime-gating" section is replaced by "Regime-gated ideas carry their
+# ungated version" (a regime-gated card is allowed; its design variant is the ungated config:
+# rules emptied, vetoes removed, default_regime = the regime holding the strategy), and the
+# matching Checklist / Forbidden bullets are updated. Changes hypothesis_generation's prompt on
+# every path. Nothing about the decide_next addendum changed.
+# Previous pin: 82a3524caa89c54613a7262ae9d9d6a51b8f02e5d413eb0953948beafdfabedc.
+_MASTER_SKILL_SHA256 = "8309787de7bf3036eb6ffc24ac621de6258ea045e0b2873644010129533b5e52"
 
 
 def test_hypothesis_design_skill_is_byte_identical_to_master():

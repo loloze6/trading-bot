@@ -48,7 +48,7 @@ everywhere else SKILL.md stands.
   them: the new idea's criteria are chosen at step 1a from
   `config/criterion_menu.yaml` (never inherited from this run), and its
   protocol is pinned to this run's.
-- It is a NEW question: the wishlist and KB-reactivation rules of SKILL.md
+- It is a NEW question: the feed-wishlist and KB-reactivation rules of SKILL.md
   still apply, and the orchestrator still checks both.
 
 ## Rules for terminate

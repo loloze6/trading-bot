@@ -331,9 +331,6 @@ When `root_cause.mechanism_failure = regime_misattribution`:
   regime label in `altitude_justification`.
 - Do NOT escalate or kill on regime_misattribution — regime attribution is an instrumentation
   problem, not a hypothesis-level failure. Fix the measurement before re-evaluating the signal.
-- Per A2.3 standing policy: if the regime auditor confirms the detector is unusable, the 
-  orchestrator will switch to ungated-only generation for this symbol/timeframe. Your verdict
-  should recommend ungated reformulation of the hypothesis.
 
 ### `supporting_evidence` format rule
 
@@ -728,7 +725,7 @@ disagreement into `altitude_justification` — it is recorded as an
 informational flag, not a `human_pause`, exactly as any other stage/machine
 disagreement now is.
 
-## A2.3 — IC measurement scope
+## IC measurement scope (A2.1)
 
 ### IC scope for ungated escape (A2.1)
 

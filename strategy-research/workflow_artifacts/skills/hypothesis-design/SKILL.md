@@ -180,17 +180,15 @@ leave such a part out to make the idea look simpler.
 
 ---
 
-## POST-A2.3 — No regime-gating (standing policy)
+## Regime-gated ideas carry their ungated version
 
-**No hypothesis produced by this skill may be regime-gated.**
+A regime-gated idea ("only works in trends", "valid in RANGING mode") is allowed in the run queue. It must carry its UNGATED version as its design variant: the same config with the regime detector's rules emptied (`"rules": []`), any `vetoes` removed, and `default_regime` set to the regime that holds the strategy, so every bar is in that regime. This is a parameter change; the component classes stay identical. The value of the regime is judged by gated versus ungated, plus the roadmap's regime health checks.
 
-The regime detector for BTC/ETH 1h is `unusable_for_this_symbol_timeframe` per A2.3. Any hypothesis whose mechanism inherently requires regime conditioning ("only works in trends", "valid in RANGING mode") is currently untestable and must be routed to `config/detector_wishlist.yaml` instead of the run queue.
+An on/off condition belongs in the regime detector: a graded strategy in the regime it selects, and null (flat) in the others.
 
-**Rule:** If you find yourself writing `target_market` or `signal_concept` with a regime condition ("when TRENDING", "in ranging markets"), stop. Either:
-1. Reformulate as an ungated signal (e.g., "high-velocity directional bars" instead of "TRENDING regime"), or
-2. Acknowledge the hypothesis belongs to the detector wishlist and produce a feed_wishlist entry instead.
+**Rule:** If the mechanism needs a regime condition, write it in `target_market` or `signal_concept` ("when TRENDING", "in ranging markets"), and state in `signal_concept` that the ungated version (regime rules emptied) is the design variant.
 
-Ungated formulations only enter the queue.
+The former no-regime-gating rule (A2.3) is deleted (D-052). The old knowledge-base verdict `er_detector_unusable_btc_eth_1h` is withdrawn: it is history, never a veto. The detector wishlist is a list of parked detector ideas; it does not gate anything.
 
 ---
 
@@ -219,7 +217,7 @@ Find the indicator's entry in the library (`id` or nearest `category`). Read `kn
 - If this hypothesis has a stated or implied target regime and the affinity is `unfavorable`:
   - Either: justify explicitly why this run expects an exception (new mechanism, different symbol, materially different edge_source than prior trials).
   - Or: choose a different indicator with `favorable` or `neutral` affinity for the intended regime.
-- If the hypothesis is ungated (no regime condition, as required by A2.3), note the affinity as a prior risk factor in `expected_failure_modes`.
+- If the hypothesis is ungated (no regime condition), note the affinity as a prior risk factor in `expected_failure_modes`.
 
 **Step 2 — Campaign empirical results check**
 Read `campaign_empirical_results` for this indicator category and symbol/timeframe.
@@ -431,7 +429,7 @@ IMPROVEMENT 01/04/07 above; a partial pass-through is a silent gap-filling trap,
   (Graded signal concept section)
 - Check: does `specific_mechanism` name a measurable proxy in an available feed? If not, revise or route to `feed_wishlist.yaml`.
 - Check: is `evidence_type` available? If not, add `requires_new_feed` and route to feed_wishlist.
-- Check: is the hypothesis ungated? Any regime condition → reformulate or route to detector_wishlist.
+- Check: if the hypothesis has a regime condition, does `signal_concept` name its ungated version (regime rules emptied) as the design variant?
 - Check: indicator library lookup steps 1–4 complete; `library_lookup` field populated in card.
 - If `artifacts/tried_ideas.yaml` or `campaign_record/exclusion_digest.yaml` is present
   in context: check your candidate against it before finalizing `edge_source`. Prefer
@@ -452,7 +450,6 @@ IMPROVEMENT 01/04/07 above; a partial pass-through is a silent gap-filling trap,
   section)
 - Do not use vague mechanistic claims ("smart money", "key levels", "institutions") without a named measurable proxy.
 - Do not propose a hypothesis with `evidence_type` outside `available_feeds.yaml.available` as a run-queue candidate — route it to feed_wishlist instead.
-- Do not produce regime-gated hypotheses for the run queue (post-A2.3).
 - Do not write code.
 - Do not propose more than 3 run-queue variants unless explicitly requested.
 - Do not assume unavailable data.

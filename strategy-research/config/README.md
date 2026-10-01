@@ -258,23 +258,18 @@ the next stage run.
 
 ## detector_wishlist.yaml
 
-**PURPOSE** — Candidate regime-detector families noted for later, each with a
-machine-checkable trigger condition.
-*In plain terms: a wishlist, not a work queue. Nothing here gets built until its
-trigger fires — and the trigger is evaluated by code, not by someone reading prose
-and deciding it feels true.*
+**PURPOSE** — Candidate regime-detector families, kept as parked ideas.
+*In plain terms: a list of ideas. It gates and pauses nothing (D-052). A regime idea
+goes through the normal path and carries its ungated version as its design variant.*
 
-**WHO READS IT (PROD, measured)**
-- `workflow/run_campaign.py:500`, `:549`, `:707` — `dw_path`; `:674-689` document the single-authority contract and the `kb_state_hash` it persists
-
-**HOW IT IS CONSUMED** — Read at campaign start when evaluating wishlist predicates.
+**WHO READS IT** — No stage is routed to it and no stage waits on it. It is read by
+people.
 
 **KEY PARAMETERS**
-- `trigger_condition.predicate` — structured, not prose: `source`, `all_of[]` with `field` / `op` / `value` (`:6-12`).
-- Evaluation outcomes (`:13-16`): `true` → build it; `false` → rejected, campaign review must produce a non-wishlist question; `missing_field` → **pause**, the knowledge base doesn't yet record what the predicate needs.
-- ⚠️ `status`, `last_evaluated_at`, `last_evaluated_against`, `kb_state_hash`, `evaluation_note` are written **only** by the evaluator. As of the note at `:24-27`, `adx_threshold` and `hidden_markov_model` still carry the original hand-authored, unverified status and must not be trusted until re-evaluated.
+- One entry per detector family (`daily_timeframe_er_overlay`, `adx_threshold`, `hidden_markov_model`).
+- The `trigger_condition` fields in the file are history from the earlier wishlist policy. They do not decide whether a regime idea may run.
 
-**STATUS** — live. Partly tooling-written — see the warning above and §b.
+**STATUS** — parked ideas. Hand-edited.
 
 ---
 

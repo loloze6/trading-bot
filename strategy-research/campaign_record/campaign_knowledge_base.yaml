@@ -581,10 +581,18 @@ findings:
     '
   protocol_version: baseline_v2
   detector_version: c647ee20
-  policy_consequence: 'Per A2.3 post-unusable policy: no replacement detector built
-    until an ungated edge exists with regime-dependent performance in Improvement
-    03 diagnostics. Candidate detector families in config/detector_wishlist.yaml.
-    Preferred first candidate: daily-timeframe regime overlay on 1h strategies.
+  policy_consequence: 'WITHDRAWN 2026-10-01 (D-052): this verdict no longer drives
+    any policy. It was the basis of the former A2.3 rule (no regime-gated hypotheses;
+    no replacement detector until an ungated edge exists), which D-052 deleted. Kept
+    as history, never a veto.
+
+    '
+  readjudication_20261001: 'D-052 (operator 2026-09-30): the verdict rests on one
+    analytic run judging the label against its own activation/stability thresholds;
+    it says nothing about whether gating improves a strategy, so it cannot justify
+    a ban on regimes. Withdrawn: exhausted set to false so it leaves the
+    exhausted_mechanisms view (never a veto). A regime-gated idea now carries its
+    ungated version as its design variant.
 
     '
   closes_ac4: true
@@ -592,7 +600,7 @@ findings:
     to be recorded. This entry, in the permanent KB, serves as the durable record.
 
     '
-  exhausted: true
+  exhausted: false
 - id: ema_spread_trend_continuation_v1_auto
   mechanism: EMA(9/21) spread trend continuation, BTC/ETH 1h, ungated (persistent_behavioral_bias)
   hypothesis_id: EMA_SPREAD_TREND_CONTINUATION_V1
@@ -1663,10 +1671,5 @@ exhausted_mechanisms:
 - id: rsi_momentum_trending_cost_drag
   mechanism: RSI momentum in TRENDING regime
   outcome: no_edge_observed
-  evidence_count: 1
-  basis: analytic
-- id: er_detector_unusable_btc_eth_1h
-  mechanism: ER-threshold single-indicator stateless regime detector on BTC/ETH 1h
-  outcome: unusable_for_this_symbol_timeframe
   evidence_count: 1
   basis: analytic

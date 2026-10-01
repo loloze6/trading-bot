@@ -13698,14 +13698,14 @@ def determine_post_verdict_route(path: Path, run_id: str, routing_retired: bool 
     # --- IMPROVEMENT 01: mechanism_failure routing (A1.01) ---
     # regime_misattribution must pause the pipeline before spawning any new run.
     # The instrumentation must be fixed (via regime-auditor) before the signal
-    # can be re-evaluated. Per A2.3: if the auditor confirms detector is unusable,
-    # the orchestrator switches to ungated-only generation.
+    # can be re-evaluated. (The former A2.3 'switch to ungated-only generation'
+    # policy was deleted by D-052; no code ever implemented it.)
     if root_cause.get("mechanism_failure") == "regime_misattribution":
         print("\n⚠️  IMPROVEMENT 01 — root_cause.mechanism_failure = regime_misattribution")
         print("   Regime attribution is an instrumentation problem, not a hypothesis failure.")
         print("   Pipeline paused: consult regime-auditor skill and regime_detector_report.yaml")
-        print("   before spawning the next run. Per A2.3, if the detector remains unusable,")
-        print("   switch to ungated-only hypothesis generation for this symbol/timeframe.")
+        print("   before spawning the next run. If the detector stays unreliable, compare a")
+        print("   regime-gated idea with its ungated design variant (D-052).")
         print("   When resolved, create artifacts/human_resolution.yaml and resume.")
         update_state(path=path, status="paused_for_human",
                      flags={"regime_misattribution_flagged": True})

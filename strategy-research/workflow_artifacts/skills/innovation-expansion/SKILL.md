@@ -1,12 +1,12 @@
 ---
 name: innovation-expansion
-description: Expands a base trading hypothesis into novel but testable variants using alternative data, reverse thinking, and behavioral indicators. Regime-specific variants are routed to detector_wishlist (not the run queue) per A2.3.
+description: Expands a base trading hypothesis into novel but testable variants using alternative data, reverse thinking, and behavioral indicators. A regime-gated variant may enter the run queue if it carries its ungated version as a design variant.
 ---
 
 # Innovation Expansion
 
 ## Mission
-Expand the hypothesis space before strict validation — while keeping only ungated, feed-honest formulations in the run queue.
+Expand the hypothesis space before strict validation — while keeping only feed-honest formulations in the run queue.
 
 ## Required inputs
 - `research_brief.yaml`
@@ -25,11 +25,11 @@ Expand the hypothesis space before strict validation — while keeping only unga
 ## Output requirements
 The expanded artifact must include:
 - base_hypothesis_id
-- expanded_variants          (ungated variants for the run queue — see constraints below)
+- expanded_variants          (variants for the run queue, regime-gated ones included — see the regime section below)
 - alternative_data_candidates
 - reverse_hypothesis
 - behavioral_features
-- regime_specific_variants   (populated but routed to detector_wishlist, NOT the run queue — see POST-A2.3 section)
+- regime_specific_variants   (required field; may be an empty list — regime-gated variants go in `expanded_variants`, see the regime section below)
 
 ---
 
@@ -56,19 +56,15 @@ Do NOT expand into variants whose mechanism cannot be expressed in available fee
 
 ---
 
-## POST-A2.3 — Regime-specific variants are DETECTOR_WISHLIST only
+## Regime-gated variants carry their ungated version
 
-**No variant that is regime-gated enters the run queue.**
+A regime-gated variant ("active only in TRENDING", "valid in RANGING mode") is allowed in the run queue (`expanded_variants`). It must carry its UNGATED version as its design variant: the same config with the regime detector's rules emptied (`"rules": []`), any `vetoes` removed, and `default_regime` set to the regime that holds the strategy, so every bar is in that regime. This is a parameter change; the component classes stay identical. The value of the regime is judged by gated versus ungated, plus the roadmap's regime health checks.
 
-The regime detector for BTC/ETH 1h is `unusable_for_this_symbol_timeframe` (A2.3 standing policy). Any variant whose activation logic requires a regime condition ("active only in TRENDING", "valid in RANGING mode") cannot currently be tested. Such variants:
-1. MUST be recorded in `regime_specific_variants` as documentation (schema compliance), with `status: detector_wishlist_pending` and the reason they require a trusted detector.
-2. MUST NOT be selected as run-queue candidates in `expanded_variants`.
-3. Should suggest an ungated reformulation in `innovation_notes.yaml` (what the ungated version of this idea would be).
+An on/off condition belongs in the regime detector: a graded strategy in the regime it selects, and null (flat) in the others.
 
-**Ungated reformulation strategy:** Before declaring a variant regime-conditional, try to reformulate it as an unconditional signal. Examples:
-- "Works in TRENDING: buy on momentum" → rewrite as "buy on high-velocity directional bars above a volume threshold" (ungated condition)
-- "Works in RANGING: mean-revert at extremes" → rewrite as "RSI extremes over a rolling window regardless of regime" (ungated condition)
-- If no ungated reformulation makes conceptual sense, route to detector_wishlist.
+`regime_specific_variants` stays a required field of the artifact. It may be an empty list. Do not use it to hold back regime-gated variants from the run queue.
+
+The former no-regime-gating rule (A2.3) is deleted (D-052).
 
 ---
 
@@ -355,7 +351,6 @@ patch form.
 - Do not require data from `available_feeds.yaml.unavailable` for run-queue variants — use `requires_new_feed` and feed_wishlist instead.
 - Do not output generic brainstorming prose only.
 - Do not propose ideas that require rebuilding execution, portfolio, or backtest infrastructure unless explicitly requested.
-- Do NOT include regime-gated variants in the run queue (`expanded_variants`). They go in `regime_specific_variants` with `status: detector_wishlist_pending`.
 - If `research_brief.yaml` contains "one variant only", "single variant", or "no variants" in its `constraints` field, do NOT expand into multiple variants. Pass the base hypothesis through to a single variant (V1 only) matching the brief's signal_concept exactly. Expansion is only appropriate when the brief does not constrain variant count.
 - **Improvement 04: Do NOT accept an expansion where all variants share the same library `category` AND `data_requirements`. This is cosmetic diversity — redo it.** (Config-direct flow: `design` variants are exempt from this, since a design
   variant changes one parameter or transform and never adds or replaces a component; the `asset` variant carries the

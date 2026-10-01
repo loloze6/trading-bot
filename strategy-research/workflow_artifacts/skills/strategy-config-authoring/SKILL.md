@@ -131,9 +131,11 @@ graded component; where the idea needs the condition itself, build it the way th
 or veto that selects a regime holding a graded component) or declare it as a deviation (below). A constant
 component is only an offset inside a composition with a graded one. The dead-zone transforms `threshold_filter`
 and `volume_filter` must not be used on a component in `strategies` (they make the position jump from 0 to the
-threshold); a "strong enough" or "volume above average" condition goes in the regime detector. Interim: while
-the hypothesis stage still receives cards without regime conditions (until D-052 lands), an on/off condition the
-card does not carry as a regime is declared as a deviation, not built as a regime.
+threshold); a "strong enough" or "volume above average" condition goes in the regime detector. A card may
+carry a regime condition (regime-gated ideas are allowed, D-052). An on/off condition in a card is expressed as a
+regime rule, as the guide describes, and the idea carries its ungated version as its design variant: the same
+config with the detector's `rules` emptied (`"rules": []`) and `default_regime` set to the regime that holds the
+strategy, so every bar is in that regime. That is a parameter change; the component classes stay identical.
 
 **Fidelity (O-7): build the signal the card describes, or say what differs.** In `config_rationale`, map EACH
 clause of the card's `signal_concept` to the config element that implements it (one entry per clause:
@@ -177,11 +179,12 @@ compositions you tried and why each fails.
   symbol/timeframe/instrument-set config field — the config has none (STRATEGY_DESIGN_GUIDE.md
   'What the config cannot express').
 
-## Ungated hypotheses (post-A2.3) — THE canonical pattern
+## Ungated hypotheses — THE canonical pattern
 
-A2.3 standing policy: the BTC/ETH 1h regime detector is unusable, so most hypotheses in
-this campaign are ungated (no regime condition at all — the signal is meant to be active
-on every bar). Building this incorrectly is what caused run_043's first blocker
+An ungated config has no regime condition at all: the signal is meant to be active
+on every bar. Use this pattern for any idea with no regime condition, and to build the
+ungated version of a regime-gated idea (see the last paragraph of this section).
+Building this incorrectly is what caused run_043's first blocker
 (2026-07-04): a dummy always-true rule targeting an invented regime name ("active",
 outside the four-value enum), rejected by VIOLATION V7.
 
@@ -218,6 +221,13 @@ reasoning about it (see `trading-bot/tests/test_ungated_config_pattern.py`):**
   invites: if `regime_detector.components=[]` and `rules=[]`, `strategies.regimes
   [default_regime]` must not be null — that combination is silently dead (forecasts 0.0
   forever) with no error anywhere else to catch it.
+
+**Ungated version of a regime-gated idea.** A regime-gated idea carries its ungated version as its design
+variant. Build it from the gated config by changing only the regime detector: set `rules` to `[]` (and remove
+any `vetoes`), and set `default_regime` to the regime that holds the strategy, so every bar is in that regime.
+Leave the strategy components and their parameters unchanged: this is a parameter change, the component
+classes stay identical. Keeping the detector's `components` keeps the required warmup (`required_bars`) the
+same as in the gated config.
 
 ## Replication guard
 If `run_context.yaml` is present and contains `run_type: replication_diagnostic`:
