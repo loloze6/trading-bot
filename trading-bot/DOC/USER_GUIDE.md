@@ -392,14 +392,9 @@ post-close numbers onto the same bar's already-recorded row rather than
 appending a second row for the same instant (`replace_if_same_bar`,
 `execution/portfolio_info.py`).
 
-### 4.1 Gap detection and gap-response tiers — **pending merge**
+### 4.1 Gap detection and gap-response tiers
 
-Verified on branch `fix/cul-273b-reindex-wiring-and-standardization-nan`
-(commits `45020746` CUL-261, `badd45ef` CUL-271, `5923aaa4`/`81802278`
-CUL-273/273b), **not present on this guide's base checkout** — grepping this
-worktree for `gap_detection`/`gap_policy`/`_check_and_record_gap` returns
-nothing. Described here because it is real, tested, and directly relevant to
-how the engine is meant to behave once merged:
+Merged (CUL-261, CUL-271, CUL-273/273b; recovery rules fixed by CUL-359).
 
 `TradingBot._check_and_record_gap(symbol, data_time)` runs on every candle
 completion (both live and backtest) when `gap_detection=True` (off by
@@ -425,6 +420,16 @@ also set (`{"ignore_max_bars": int, "large_min_bars": int}`),
   re-warms from scratch on real post-gap bars. No separate re-entry block is
   needed afterward: the ordinary `is_ready()`/`required_bars` gate already
   forces `forecast=0.0`/`NOT_READY` until enough real bars re-accumulate.
+
+Recovery (CUL-359): the middle and large tiers both clear once
+`bars_since_gap >= strategy.required_bars` real bars have passed (checked
+before the bar's own update, so on the `required_bars + 1`-th real bar after
+the gap). Before CUL-359 the large tier never cleared and kept the symbol
+flat for the rest of the run. An ignore-tier gap during an active tier counts
+as one real bar and does not cancel it; a middle gap during a large re-warm
+keeps `large`. Each `data_quality` event records `bars_missing`, `tier` (as
+classified) and, for middle/large gaps, `active_tier` (after that rule). When
+gap detection is on, the gap settings are part of run identity.
 
 Worked example (from the branch): `candle_interval_seconds=3600`,
 `ignore_max_bars=2`, `large_min_bars=24`. A gap of 5 missing hourly bars is
@@ -736,9 +741,9 @@ the same direct-execute path the end-of-run force-close uses
 (`trading_bot.py::TradingBot._process_symbol_candle_completion`) — otherwise the `0.2` min-Δ band would block a
 small residual position from ever fully flattening.
 
-### 8.3 Gap-response tiers as a third layer — pending merge
+### 8.3 Gap-response tiers as a third layer
 
-See §4.1. Once merged, the "middle" tier blocks new entries and the "large"
+See §4.1. The "middle" tier blocks new entries and the "large"
 tier forces an immediate flatten composed the same way the `PortfolioRiskGate`
 latch is — both act on `target_allocation` before `allocation_change` is
 derived, so whichever fires, the delta is computed consistently
