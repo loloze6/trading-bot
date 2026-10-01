@@ -73,7 +73,7 @@ class _RecordingDM:
             _assert_no_sealed_rows(self._ohlcv_frame, symbol)
         return self._ohlcv_frame
 
-    def register_feed(self, name, fetcher, window_seconds, agg, required, fill="none"):
+    def register_feed(self, name, fetcher, window_seconds, agg, required, fill="none", delay_seconds=0.0):
         self.events.append(f"register_feed:{name}")
 
     def initialize(self):

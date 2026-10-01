@@ -30,6 +30,7 @@ Usage:
         window_seconds=0,     # published instantaneously — no forward window
         agg='last',           # take the last reading within each candle window
         fill='carry_forward', # a level: bars without a new reading keep the last one (CUL-355)
+        delay_seconds=86400,  # day D's value is visible from day D+1 (CUL-356, A8.4)
     )
 """
 
