@@ -46,7 +46,8 @@ of the signal: a stronger signal, a bigger position; a weaker one, a smaller pos
   use them.
   Graded versions: for a moving-average trend (above/below an SMA or EMA) use `MovingAverageDistanceComponent`
   (`average` "sma" or "ema", `period` settable; a `clip` with `min` 0 keeps it long-only); for the MACD crossover
-  use `MacdHistogramComponent`. The funding and Fear & Greed classes have no graded version yet.
+  use `MacdHistogramComponent`; for funding use `FundingRateComponent` (bps, contrarian); for Fear & Greed use
+  `FearGreedComponent` (50 - index, contrarian).
 - **No dead zones.** The transforms `threshold_filter` and `volume_filter` must not be used on a component in
   `strategies`: they zero the forecast below a threshold, so the position jumps from 0 to the threshold
   (`min_abs: 15` gives 0 or 15..20), which is on/off at the edge. A condition such as "volume above its average"
