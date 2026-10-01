@@ -315,6 +315,10 @@ python power_check.py --hypothesis-card path/to/hypothesis_card.yaml
 
 ## prescreen_signal.py
 
+**RETIRED** — the file was removed (E-039 step 5, 2026-09-12) and its
+`prescreen_result.schema.json` deleted (O-3, 2026-10-01). Kept below as history; no
+idea is stopped on a cost estimate before its backtest.
+
 **PURPOSE** — The cheap gate before a full walk-forward backtest: feeds bars into
 the signal layer only (no portfolio simulation), computes information coefficient,
 significance, and the Layer-2 cost hurdle.
@@ -337,10 +341,10 @@ python strategy-research/tools/prescreen_signal.py <config_path> <protocol_path>
 **KEY PARAMETERS**
 - `config_path` / `protocol_path` — the candidate strategy and the windows to screen it on.
 - `--run-id`, `--out-dir` — artifact labelling and destination; the orchestrator sets both.
-- Route out (`:13-14`): `proceed_to_backtest` requires **both** a significant IC and a passing cost check. Otherwise `kill_no_ic` / `refine_inverted_ic` / `kill_cost_hurdle`.
+- Route out (`:13-14`): `proceed_to_backtest` requires **both** a significant IC and a passing cost check. Otherwise `kill_no_ic` / `refine_inverted_ic` / `kill_cost_hurdle`. (Historical.)
 - It evaluates IC on **active bars**, not all bars (`:16-18`) — a sparse signal's all-bar IC collapses toward zero from tie mass at forecast=0.
 
-**STATUS** — live.
+**STATUS** — retired (see top of this section).
 
 ---
 
