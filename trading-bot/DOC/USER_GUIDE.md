@@ -842,9 +842,12 @@ Files written (`reporting/run_artifact.py`, `trading-bot/DOC/RUN_ARTIFACT.md`
   passed a non-`None` `drop_feeds` (`core/backtester.py::BacktestEngine._end_of_backtest`).
 - **`metrics.json`** (`write_metrics_json`, `run_artifact.py`) —
   `core` (§11), `per_regime`, `forecast_bins`, `dynamic` (per-component
-  per-regime mean/std), plus optional `regime_validity`, `bar_equity`, and
-  `risk_controls` blocks, each present only when the corresponding
-  off-by-default feature is enabled for that run.
+  per-regime mean/std), plus optional `regime_validity`, `bar_equity`,
+  `risk_controls` and `data_quality` blocks, each present only when the
+  corresponding off-by-default feature is enabled for that run;
+  `component_errors` whenever a real strategy ran; and `nan_forecast`
+  (CUL-274) only when at least one bar's forecast was NaN or infinite --
+  those bars hold the current position (`policy: hold`).
 - **`trades.json`** — one record per `CompletedTrade.to_dict()`
   (`run_artifact.py::write_trades_json`; fields listed in §11).
 - **`bars.csv`** — the full per-bar `portfolio_state_tracker` frame, rounded

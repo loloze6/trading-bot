@@ -436,20 +436,26 @@ class TradingBot:
             # CUL-273 propagate_invalid, a 0/0, a feed not started yet) must
             # never reach an order: abs(NaN) != 0.0 is True and every risk
             # comparison against NaN is False, so it used to pass straight to
-            # execution. Policy (operator 2026-10-01): HOLD -- the target is the
-            # current position, so no trade happens on this bar; the risk gate
-            # and the gap tiers below still apply (a kill switch or a large gap
-            # can still force flat). Counted, sampled and surfaced in
-            # metrics.json ("nan_forecast"); 'NaN -> forced flat' with a
-            # context label on the trade waits for E-029. A run without a NaN
-            # forecast is byte-identical.
-            if math.isnan(target_allocation):
+            # execution. Policy (operator 2026-10-01): HOLD -- the strategy's
+            # own target is the current position, so the strategy makes no new
+            # decision on this bar. The risk controls and gap tiers below still
+            # apply, exactly as on any held bar: a latched kill switch or a large
+            # gap forces flat, and a cap clamp can still trim a position that
+            # drifted above the cap. Counted, sampled and surfaced in
+            # metrics.json ("nan_forecast"); 'NaN -> forced flat' with a context
+            # label on the trade waits for E-029 (CUL-358). Also catches +/-inf
+            # (the production engine clips to +/-20, so only a custom strategy
+            # could produce one). Warmup-cutoff bars return earlier and are not
+            # counted. A run without a non-finite forecast is byte-identical.
+            nan_forecast_bar = not math.isfinite(target_allocation)
+            if nan_forecast_bar:
                 self.nan_forecast_bars[symbol] = self.nan_forecast_bars.get(symbol, 0) + 1
                 if len(self.nan_forecast_samples) < 20:
                     self.nan_forecast_samples.append({"symbol": symbol, "timestamp": str(data_time)})
                 self.logger.warning(
                     f"⚠ NaN FORECAST │ {symbol} │ {data_time} │ holding the current "
-                    f"allocation {previous_allocation:+.4f} (no trade on this bar)"
+                    f"allocation {previous_allocation:+.4f} (no strategy trade; risk "
+                    f"controls and gap tiers still apply)"
                 )
                 target_allocation = previous_allocation
 
@@ -462,6 +468,10 @@ class TradingBot:
             risk_extras = {}
             if self.risk_gate is not None:
                 target_allocation, risk_extras = self.risk_gate.apply(target_allocation)
+                if nan_forecast_bar:
+                    # the strategy asked for nothing measurable: record that, not
+                    # the held allocation, as the raw (pre-gate) target
+                    risk_extras["risk_target_raw"] = float("nan")
 
             # CUL-271: "large" tier forces flat, composed with the risk gate the
             # same way risk_gate.apply() itself forces flat when latched -- both

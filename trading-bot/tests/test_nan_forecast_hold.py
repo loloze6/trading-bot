@@ -115,3 +115,107 @@ def test_backtester_block_from_the_bot_counters():
     assert nan_forecast_block(bot) == {
         "policy": "hold", "bars": 1, "bars_by_symbol": {"BTCUSDT": 1},
         "samples": [{"symbol": "BTCUSDT", "timestamp": "2024-04-01 00:00:00"}]}
+
+
+# ---------------------------------------------------------------------------
+# Review additions
+# ---------------------------------------------------------------------------
+
+def test_the_recorded_row_on_a_nan_bar():
+    bot, _, tracker = _nan_bot(0.5)
+    _drive(bot, "2024-04-01 00:00:00", equity=100.0)
+    row = tracker.rows[0]
+    assert math.isnan(row["signal"].forecast)                 # the strategy's NaN, kept
+    assert row["allocation_change"] == 0.0
+    assert row["approved_rebalance"] is None
+    assert row["previous_allocation"] == 0.5
+
+
+def test_a_cap_only_gate_no_longer_crashes_on_a_nan_bar():
+    """Before CUL-274 PortfolioRiskGate.apply raised on a NaN target, so the bar
+    was dropped (no row). Now the held target is within the cap: no trade, the
+    row is recorded, and the raw target says NaN, not the held allocation."""
+    gate = PortfolioRiskGate({"absolute_allocation_cap": {"cap": 1.0}})
+    bot, execn, tracker = _nan_bot(0.5, gate=gate)
+    _drive(bot, "2024-04-01 00:00:00", equity=100.0)
+    assert execn.calls == [] and len(tracker.rows) == 1
+    assert math.isnan(tracker.rows[0]["risk_target_raw"])
+
+
+def test_the_cap_still_trims_a_drifted_position_on_a_nan_bar():
+    """A held position above the cap is trimmed, exactly as on any held bar:
+    the risk control still applies (documented policy, not the strategy's
+    trade). The recorded raw target is NaN."""
+    gate = PortfolioRiskGate({"absolute_allocation_cap": {"cap": 0.5}})
+    bot, execn, tracker = _nan_bot(0.8, gate=gate)
+    _drive(bot, "2024-04-01 00:00:00", equity=100.0)
+    assert [(c["target_allocation"], c["allocation_change"]) for c in execn.calls] == [
+        (0.5, pytest.approx(-0.3))]
+    assert math.isnan(tracker.rows[0]["risk_target_raw"])
+    assert bot.nan_forecast_bars == {"BTCUSDT": 1}
+
+
+@pytest.mark.parametrize("forecast", [float("inf"), float("-inf")])
+def test_an_infinite_forecast_is_held_like_nan(forecast):
+    bot, execn, _ = _nan_bot(0.5, forecast=forecast)
+    _drive(bot, "2024-04-01 00:00:00", equity=100.0)
+    assert execn.calls == [] and bot.nan_forecast_bars == {"BTCUSDT": 1}
+
+
+# ---------------------------------------------------------------------------
+# End to end through BacktestEngine: a component that always reports NaN
+# (the real engine, synthetic bars, no caches) -- proves the backtester wires
+# the block into metrics.json and that a healthy run has no key.
+# ---------------------------------------------------------------------------
+
+from strategies.strategy_base import SubStrategyComponent  # noqa: E402
+
+
+class _AlwaysNaNComponent(SubStrategyComponent):
+    def __init__(self, name="always_nan", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self._raw_value = float("nan")
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = float("nan")
+
+    def is_ready(self):
+        return True
+
+    def get_required_periods(self):
+        return 0
+
+
+def _config(cls_path):
+    return {
+        "regime_detector": {"mode": "threshold_rules", "components": [], "rules": [],
+                            "default_regime": "unknown"},
+        "strategies": {"warmup": 3, "regimes": {
+            "unknown": {"components": [{
+                "id": "c", "class": cls_path, "weight": 1.0, "lookback": 24,
+                "transforms": [{"op": "identity"}], "params": {}}]},
+            "trending": None, "mean_reversion": None, "chop": None}},
+        "aux_feeds": [],
+    }
+
+
+def test_a_nan_strategy_backtest_reports_the_block_and_never_trades(tmp_path_factory, monkeypatch):
+    """60 bars: the strategy is ready after 24 (AdvancedStrategy's floor), so
+    its NaN forecasts reach the guard on the bars after that."""
+    import tests.test_component_error_surfacing_into_metrics as harness
+    original = harness._synthetic_bars
+    monkeypatch.setattr(harness, "_synthetic_bars", lambda n=60: original(60))
+    from tests.test_component_error_surfacing_into_metrics import _run_and_read_metrics
+    metrics = _run_and_read_metrics(_config("tests.test_nan_forecast_hold._AlwaysNaNComponent"),
+                                    tmp_path_factory.mktemp("nan"))
+    block = metrics["nan_forecast"]
+    assert block["policy"] == "hold" and block["bars"] > 0
+    assert block["bars_by_symbol"] == {"BTCUSDT": block["bars"]}
+    assert metrics["core"]["trade_count"] == 0
+
+
+def test_a_healthy_backtest_has_no_nan_block(tmp_path_factory):
+    from tests.test_component_error_surfacing_into_metrics import _HEALTHY_CONFIG, _run_and_read_metrics
+    metrics = _run_and_read_metrics(_HEALTHY_CONFIG, tmp_path_factory.mktemp("healthy"))
+    assert "nan_forecast" not in metrics
