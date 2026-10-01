@@ -2740,8 +2740,15 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     _fs_report = str(_fs_exc)[-1500:]
                     _record_forecast_size_probe(RUN_DIR, "backtest_specification", variant_id,
                                                 {"status": "error", "message": _fs_report})
-                    index[variant_id] = {"status": "not_tested",
-                                         "reason": FORECAST_SIZE_PROBE_ERROR_REASON,
+                    _fs_reason = FORECAST_SIZE_PROBE_ERROR_REASON
+                    if _coin_keys.get("kind") == "asset":
+                        # D-042 (as the data gate's review fix H1): a per-coin ASSET
+                        # variant whose coin cannot be run (no data, no cost model
+                        # for its venue) is a coverage skip -- it never blocks the
+                        # idea or lowers the floor for the other variants.
+                        _fs_reason = (f"{_variant_coin_module().LAYER2_COVERAGE_REASON_PREFIX} "
+                                      f"{FORECAST_SIZE_PROBE_ERROR_REASON}")
+                    index[variant_id] = {"status": "not_tested", "reason": _fs_reason,
                                          "report": _fs_report, **_coin_keys}
                     print(f"⚠️  [D-056] variant '{variant_id}' NOT TESTED: size probe could "
                           f"not run: {_fs_report}")
