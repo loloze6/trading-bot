@@ -125,9 +125,11 @@ mechanism to be worth re-testing — it is a CONDITIONAL gate, not a standing in
 Once a run actually satisfies that condition and reaches a verdict, the condition is
 CONSUMED: the orchestrator stamps `reactivation_consumed_by: <run_id>` and clears
 `reactivation_condition` to null on that finding (see `_write_kb_findings_entry`'s F09
-hook). A finding with `reactivation_consumed_by` already set, or `exhausted: true` with
-no open `reactivation_condition`, is CLOSED — proposing to reactivate it again is not a
-new test, it is repeating a question that has already been answered.
+hook). A finding with `reactivation_consumed_by` already set, or a BAN (listed in
+`exhausted_mechanisms`: `exhausted: true` with evidence_count >= 3 or an operator-approved
+`veto_*` field, D-055) with no open `reactivation_condition`, is CLOSED — proposing to
+reactivate it again is not a new test, it is repeating a question that has already been
+answered. An `exhausted: true` finding that is NOT listed there is information only.
 
 **2026-07-06 incident this section exists to prevent:** `run_053`'s `campaign_review`
 recommended `reframe` into reactivating both H-041-A (funding-rate mean-reversion) and
@@ -140,8 +142,9 @@ as your only check; it exists as a backstop, not a substitute for reading the KB
 
 **Before citing any `campaign_knowledge_base.yaml` finding's `hypothesis_id` in
 `recommendation_rationale` or `next_research_question`:**
-1. Read that finding's `reactivation_consumed_by` and `exhausted` fields directly.
-2. If `reactivation_consumed_by` is set, or `exhausted: true` with `reactivation_condition: null`:
+1. Read that finding's `reactivation_consumed_by` field, and whether its id is listed in
+   `exhausted_mechanisms` (the bans, D-055).
+2. If `reactivation_consumed_by` is set, or it is listed as a ban with `reactivation_condition: null`:
    do not recommend reactivating it. State the terminal result instead (outcome,
    `exhausted_basis`, which run closed it) and, if a genuinely different formulation
    exists (different evidence_type, timeframe, mechanism, or an explicitly
@@ -198,7 +201,7 @@ If a pattern in `fragment_patterns.yaml` motivates a candidate hypothesis:
   `feed_wishlist.yaml` entry, check and cite its trigger
   condition per the section above BEFORE recommending it as a run.
 - If `next_research_question` names any `hypothesis_id` from `campaign_knowledge_base.yaml`,
-  check its `reactivation_consumed_by`/`exhausted` fields per the "Reactivation-gated
+  check its `reactivation_consumed_by` field and the `exhausted_mechanisms` bans per the "Reactivation-gated
   recommendations" section above BEFORE recommending it as a run.
 - Compute the trend in forecast_return_corr across runs: improving / stable / worsening.
 - Compute the trend in cost_drag_pct: falling / stable / rising.
@@ -221,8 +224,8 @@ If a pattern in `fragment_patterns.yaml` motivates a candidate hypothesis:
   trigger_condition has not fired. Record it as wishlist support instead; see
   "Wishlist-gated recommendations" above.
 - Do NOT recommend reframe (or any run) that reactivates a `campaign_knowledge_base.yaml`
-  finding whose `reactivation_consumed_by` is already set, or whose `exhausted: true`
-  with no open `reactivation_condition`. (2026-07-06: this happened with `run_053`,
+  finding whose `reactivation_consumed_by` is already set, or that is a ban (listed in
+  `exhausted_mechanisms`, D-055) with no open `reactivation_condition`. (2026-07-06: this happened with `run_053`,
   proposing to reactivate both H-041-A and H-041-C after P1b had already closed both —
   see "Reactivation-gated recommendations" above.) State the terminal result and, if
   warranted, propose a NEW hypothesis registration instead.

@@ -83,7 +83,9 @@ def test_recompute_kb_views_is_deterministic(temp_kb):
     kb = {
         "findings": [
             {"id": "a", "hypothesis_id": "H1", "outcome": "no_edge_observed",
-             "evidence_count": 1, "exhausted": True, "exhausted_basis": "analytic"},
+             # D-055: a ban needs evidence_count >= 3 (the word "analytic" no longer
+             # counts), so the view stays non-empty and its determinism is still tested.
+             "evidence_count": 3, "exhausted": True, "exhausted_basis": "analytic"},
             {"id": "b", "hypothesis_id": "H2", "outcome": "inconclusive", "evidence_count": 1},
         ]
     }
@@ -95,6 +97,7 @@ def test_recompute_kb_views_is_deterministic(temp_kb):
     second_coverage = yaml.safe_dump(kb["coverage_matrix"], sort_keys=True)
     second_exhausted = yaml.safe_dump(kb["exhausted_mechanisms"], sort_keys=True)
 
+    assert [e["id"] for e in kb["exhausted_mechanisms"]] == ["a"]
     assert first_coverage == second_coverage
     assert first_exhausted == second_exhausted
 

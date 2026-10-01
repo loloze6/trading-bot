@@ -198,6 +198,9 @@ KB_FINDING_SCHEMA = {
     "exhausted": FLAG, "exhausted_basis": TEXT,
     "reactivation_condition": TEXT, "reactivation_consumed_by": TEXT,
     "blocked_by_feed": TEXT, "research_only": FLAG, "closes_ac4": FLAG,
+    # D-055: an operator-approved ban -- all three set, or the finding is information
+    # only below evidence_count 3 (run_phase1_research._kb_veto_reason).
+    "veto_basis": TEXT, "veto_approved_by": TEXT, "veto_approved_on": TEXT,
     # E-058 S2b: `false` on entries written by tools/grid_kb_writer.py (the
     # grid's idea_status as `outcome`). An entry WITHOUT `legacy_schema: false`
     # is legacy when read (delivery_plan_v26.md §3).

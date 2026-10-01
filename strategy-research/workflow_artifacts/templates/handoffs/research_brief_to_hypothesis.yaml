@@ -17,8 +17,8 @@ optional_inputs:
     reason: "A1.2: append new feed requests here if a hypothesis requires an unavailable feed."
   - path: "../../campaign_knowledge_base.yaml"
     reason: >
-      A5.1: read coverage_matrix and exhausted_mechanisms before proposing a hypothesis.
-      Provides context on what has been tested and what mechanisms are closed.
+      A5.1 / D-055: read coverage_matrix and exhausted_mechanisms before proposing a hypothesis.
+      Provides context on what has been tested; exhausted_mechanisms lists the only bans.
       If present, load the relevant slice (matching edge_source.category and timeframe).
 constraints:
   - "Must not propose ideas that require replacing the whole existing bot architecture."
@@ -28,18 +28,20 @@ constraints:
   - "A1.3 anti-confabulation: specific_mechanism must name a measurable proxy in an available feed."
   - "TOKEN LIMIT: Do not write conversational filler. Keep all rationale strictly mathematical and limit text descriptions to under 100 words per section."
   - >
-    KB EXHAUSTED-CHECK (A5.1): if campaign_knowledge_base.yaml is present, check
-    exhausted_mechanisms BEFORE proposing. Must not propose any mechanism whose id
-    appears in that list. If the proposed mechanism overlaps with a KB entry that has
-    outcome=no_edge_observed and exhausted=true, state why the new formulation differs
-    structurally (different evidence_type, timeframe, or venue) — or choose a different
-    mechanism.
+    KB BAN-CHECK (A5.1, D-055): if campaign_knowledge_base.yaml is present, check
+    exhausted_mechanisms BEFORE proposing. Exact match only: a listed ban blocks ONLY re-proposing the same hypothesis id, or the same mechanism
+    with the same config (same component classes, parameters, timeframe and symbols as
+    the ban's evidence_runs). A different config of that mechanism is allowed; say what
+    differs. Every other KB finding (exhausted: true or not) is information, never a ban (D-055).
+    If the proposed idea is close to a tested finding, cite it as context and state
+    what this formulation changes.
   - >
     POWER PRE-REGISTRATION (A8.6): populate power_parameters in hypothesis_card.yaml —
     activation_rate (fraction of bars where signal fires), plausible_ic_upper (literature
     upper bound for this signal class), n_bars (bars in test window), n_symbols,
-    is_market_wide (true if signal is a single index like F&G). This block is used by
-    the automated power check before the prescreen runs.
+    is_market_wide (true if signal is a single index like F&G). No automated check acts
+    on it before the backtest (E-039 removed the power pre-flight and the prescreen); it
+    is information for reading the backtest.
 deliverables:
   - "hypothesis_card.yaml"
 assigned_engine: "claude"

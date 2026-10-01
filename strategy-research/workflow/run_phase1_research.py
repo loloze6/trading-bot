@@ -6427,8 +6427,8 @@ def _write_retired_review_handoff(run_dir: Path, run_id: str) -> Path:
     stage still runs. The skill note is added at invoke time
     (_apply_retired_routing_review_context). verdict_interpretation.yaml is
     never an input."""
-    kb_reason = ("A5.1-5.3: the KB of tested mechanisms, power-parked findings and exhausted "
-                 "cells. Read before any recommendation.")
+    kb_reason = ("A5.1-5.3: the KB of tested mechanisms, power-parked findings and bans "
+                 "(exhausted_mechanisms, D-055). Read before any recommendation.")
     if not _KB_PATH.exists():
         kb_reason = ("ABSENT when this review was triggered: the campaign has no knowledge "
                      "base yet. Answer each KB GATE question with 'no KB yet' -- do not invent "
@@ -6460,8 +6460,9 @@ def _write_retired_review_handoff(run_dir: Path, run_id: str) -> Path:
             "an idea_status.",
             "If recommendation is reframe, next_research_question must be a complete "
             "research_brief (see the note in your inputs).",
-            "KB GATE -- answer the three KB questions of the skill (untested cells, exhausted "
-            "cells forbidden, combination candidates) in campaign_review.yaml.",
+            "KB GATE -- answer the three KB questions of the skill (untested cells, banned "
+            "cells -- exhausted_mechanisms only, exact match, D-055 -- combination candidates) "
+            "in campaign_review.yaml.",
         ],
     }
     path = run_dir / "handoffs" / STAGE_CONFIGS["campaign_review"]["handoff"]
@@ -9692,7 +9693,8 @@ def _check_kb_reactivation_conformance(next_research_question: dict, kb: dict) -
     A5.4 (2026-07-06, F09/run_053 postmortem): before honoring ANY reframe/reactivation
     recommendation from campaign_review, verify it does not target a KB finding whose
     reactivation_condition has already been consumed (reactivation_consumed_by set) or
-    that is flatly exhausted with no open reactivation_condition. Mirrors
+    that is a ban (D-055 _kb_veto_reason: exhausted AND evidence_count >= 3 or an
+    approved veto) with no open reactivation_condition. Mirrors
     _check_prescreen_conformance (F4d) in spirit — a violation here means the campaign
     is about to spend a real trial re-testing an already-answered question, exactly
     what happened live: run_053's campaign_review recommended reframing into
@@ -9745,11 +9747,13 @@ def _check_kb_reactivation_conformance(next_research_question: dict, kb: dict) -
                 f"(outcome={f.get('outcome')}). A genuinely different formulation is a "
                 f"new hypothesis registration, not a reactivation of this entry."
             )
-        elif f.get("exhausted") and not f.get("reactivation_condition"):
+        elif (veto := _kb_veto_reason(f)) and not f.get("reactivation_condition"):
+            # D-055: only a ban (evidence_count >= 3 or an approved veto) blocks;
+            # an exhausted finding below that bar is information only.
             violations.append(
                 f"next_research_question references {hyp_id} (finding {f.get('id')!r}), "
-                f"which is exhausted (outcome={f.get('outcome')}) with no open "
-                f"reactivation_condition."
+                f"which is a ban ({veto}; outcome={f.get('outcome')}) with "
+                f"no open reactivation_condition."
             )
     return violations
 
@@ -10657,11 +10661,44 @@ def _find_kb_entry(findings: list, hyp_id: str) -> dict | None:
     return None
 
 
+# D-055 (operator, 2026-10-01): the three fields of an operator-approved ban. All three
+# must be set; a word in exhausted_basis prose never makes a ban.
+KB_VETO_APPROVAL_FIELDS = ("veto_basis", "veto_approved_by", "veto_approved_on")
+KB_VETO_MIN_EVIDENCE = 3
+
+
+def _kb_veto_reason(f: dict) -> str | None:
+    """D-055: why a KB finding is a ban (a veto on re-proposing it), or None.
+
+    A finding is information by default. It is a ban only when it is
+    `exhausted: true` AND either (a) evidence_count >= 3 post-backtest results,
+    or (b) all of KB_VETO_APPROVAL_FIELDS are set (an explicit, reviewed
+    operator decision). Replaces the A5.1 substring rule (`"analytic" in
+    exhausted_basis`), which matched any prose containing the word -- even
+    "analytically-explained" -- and put five 1-2-run findings on the list."""
+    if not f.get("exhausted"):
+        return None
+    if all(str(f.get(k) or "").strip() for k in KB_VETO_APPROVAL_FIELDS):
+        return "approved"
+    ec = f.get("evidence_count", 0)
+    if isinstance(ec, float) and ec.is_integer():
+        ec = int(ec)
+    if isinstance(ec, bool) or not isinstance(ec, int):
+        # Fail loud: a mistyped count must not silently decide whether a ban exists.
+        raise ValueError(f"KB finding {f.get('id')!r}: evidence_count must be an integer, "
+                         f"got {ec!r}")
+    if ec >= KB_VETO_MIN_EVIDENCE:
+        return "evidence_count"
+    return None
+
+
 def _recompute_kb_views(kb: dict):
     """
     AC2: Recompute derived views after every KB write.
     - coverage_matrix: {edge_source_category: [{hypothesis_id, outcome, evidence_count}]}
-    - exhausted_mechanisms: entries satisfying A5.1 threshold (ec>=3 OR analytic basis)
+    - exhausted_mechanisms: the bans (D-055, _kb_veto_reason): exhausted AND
+      (evidence_count >= 3 OR an operator-approved veto_* field set). Every other
+      finding is information only.
     """
     findings = kb.get("findings", [])
 
@@ -10687,19 +10724,23 @@ def _recompute_kb_views(kb: dict):
         if not f.get("exhausted"):
             continue
         ec = f.get("evidence_count", 0)
-        basis = (f.get("exhausted_basis") or "").lower()
-        is_analytic = "analytic" in basis
-        if ec >= 3 or is_analytic:
+        reason = _kb_veto_reason(f)
+        if reason:
+            hyp_ids = ([f["hypothesis_id"]] if f.get("hypothesis_id")
+                       else list(f.get("hypothesis_ids") or []))
             exhausted.append({
                 "id": f.get("id"),
                 "mechanism": f.get("mechanism"),
+                "hypothesis_ids": hyp_ids,
+                "evidence_runs": list(f.get("evidence_runs") or []),
                 "outcome": f.get("outcome"),
                 "evidence_count": ec,
-                "basis": "analytic" if is_analytic else "empirical",
+                "veto_reason": reason,
             })
         else:
-            print(f"⚠️  A5.1: KB entry '{f.get('id')}' has exhausted=true but "
-                  f"evidence_count={ec} with no analytic basis — omitted from exhausted_mechanisms view")
+            print(f"ℹ️  D-055: KB entry '{f.get('id')}' has exhausted=true but "
+                  f"evidence_count={ec} < {KB_VETO_MIN_EVIDENCE} and no approved veto -- "
+                  f"information only, not in exhausted_mechanisms")
     kb["exhausted_mechanisms"] = exhausted
 
 
