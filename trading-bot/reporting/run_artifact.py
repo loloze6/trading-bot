@@ -156,6 +156,7 @@ def write_metrics_json(
     risk_controls: Optional[dict] = None,
     data_quality: Optional[dict] = None,
     component_errors: Optional[dict] = None,
+    nan_forecast: Optional[dict] = None,
 ) -> None:
     payload = {
         "core": {
@@ -180,6 +181,10 @@ def write_metrics_json(
         payload["data_quality"] = data_quality
     if component_errors is not None:
         payload["component_errors"] = component_errors
+    # CUL-274: only when at least one bar had a NaN forecast (held) -- the key
+    # is never written otherwise, so every run without one is byte-identical.
+    if nan_forecast is not None:
+        payload["nan_forecast"] = nan_forecast
     (run_dir / "metrics.json").write_text(json.dumps(payload, indent=2, default=str))
 
 
