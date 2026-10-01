@@ -15,6 +15,7 @@ decision (DECISION_LOG) or a ticket.
 | O-6 | C4 run_063, 2026-09-30 | Park reason says "component" when most failures were data | found: reporting bug, fix |
 | O-7 | C4 run_063, 2026-09-30 | A threshold (breakout) idea in a linear-forecast design | found: doc bug + fidelity gap (fix); forecast rule (decision) |
 | O-8 | C4 run_061, 2026-10-01 | Data gate blocks every version over small gaps the backtest already handles | found: design gap; target design ticketed (CUL-367); run_061 continued by override |
+| O-9 | C4 run_061, 2026-10-02 | Nothing before the backtest says which test windows are used, or how long they are | open: to investigate |
 
 ---
 
@@ -426,7 +427,8 @@ windows were `refine` (some bars missing, each <= 5%). Source: `c4_run_once.log`
    formula).
 2. **Missing window:** a missing interval at a window boundary, including "one bar, then a
    long gap". That is what `refine` should be for: not evict, but **shrink the window so it
-   starts at the end of the missing interval**.
+   starts at the end of the missing interval** -- down to a **minimum tested window
+   length**; below that minimum the window is dropped (operator, 2026-10-02).
 
 **Finding (2026-10-01, measured):** **design gap. The current logic does neither.**
 - The gate rates a window by its missing fraction only (0% validate, <= 5% refine, > 5%
@@ -451,7 +453,9 @@ windows were `refine` (some bars missing, each <= 5%). Source: `c4_run_once.log`
   percentage.
 - A long *interior* gap behaves like a boundary gap: the engine already flattens and
   re-warms after it, so the window effectively restarts there.
-- A trimmed window must leave room for the warmup after the gap.
+- A trimmed window must leave room for the warmup after the gap, and keep at least the
+  minimum tested window length (to be set: e.g. a share of the window's bars, or a number
+  of bars tied to the strategy's horizon); below it the window is dropped.
 - Trimming makes per-window metrics noisier. Whole-period metrics (D-034..036) are
   unaffected.
 - The rule must be mechanical and pre-registered, never applied after seeing results.
@@ -464,6 +468,43 @@ windows were `refine` (some bars missing, each <= 5%). Source: `c4_run_once.log`
    `asset_solusdt` (57% coverage) stay not_tested, so the idea stays capped at
    INCONCLUSIVE. Record: `runs/run_061/artifacts/human_resolution.yaml`, and the variant
    reasons in `artifacts/variants/index.yaml`.
+
+
+## O-9. Nothing before the backtest says which test windows are used, or how long they are
+
+**Seen:** run_061's pre-backtest steps (1a, 1b, step 2, 5a, data gate) produced no
+statement about the test period. The windows appear only in a generated file,
+`protocols/run_061_generated.json`: 1h bars, **95 monthly windows from 2018-02 to 2025-12**,
+about 69,000 bars per coin, for every variant.
+
+**Operator's view (2026-10-02):** we should see how the tested window is selected and how
+long it is. It should be limited, dynamically or statically, so a backtest does not run on
+a too-large data set.
+
+**Facts so far (not yet a finding):**
+- The protocol comes from `machine_constraints.protocol` in the run's pre-registration
+  (`_ensure_protocol_from_constraints`, `run_phase1_research.py` ~8925-8950), which comes
+  from the brief's frontmatter. `briefs/C4_vol_managed_trend.md:27-31` (branch c4/flag-set) sets start
+  2018-02-01, end 2025-12-31 and timeframe 1h; its own comment says the protocol block is
+  copied from the template.
+- So the period is fixed by hand in the brief and cut into monthly windows. No stage
+  chooses it, checks it against the idea's horizon, or reports it.
+
+**To check:**
+- Who may set or change the period: brief author, 1a, 1b, step 2; and whether any
+  skill or handoff tells them about it.
+- Window length vs the idea's horizon: monthly windows on 1h bars vs an SMA(50) trend;
+  a daily idea on monthly windows.
+- A cap or rule: a static maximum number of bars or windows, or a dynamic one derived
+  from timeframe, holding period and the required trade count (D-035: >= 100 trades per
+  coin). Weigh this against the era-stability bar (2018-20 / 2021-22 / 2023-25), which
+  needs the long history.
+- How the train (2018-2023) / validate (2024-2025) split is applied inside these 95
+  windows.
+- Cost: backtest time per variant at 69,000 bars, and how it scales with variants and
+  coins.
+- Show the period in a pre-backtest artifact or log line, so the operator sees it before
+  any trial is spent.
 
 ---
 
