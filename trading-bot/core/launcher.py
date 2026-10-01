@@ -418,6 +418,8 @@ class Launcher:
             strategy=strategy,
             execution_handler=stack.execution_handler,
             logger=self.logger,
+            gap_detection=True,
+            gap_policy=dict(DEFAULT_GAP_POLICY),
             portfolio_info=stack.portfolio_info,
             portfolio_state_tracker=stack.portfolio_state_tracker,
             forecast_manager=stack.forecast_manager,
@@ -584,6 +586,23 @@ class Launcher:
 # Standalone callable used by run_protocol.py
 # ---------------------------------------------------------------------------
 
+# Gap rule ON by default for every backtest (operator 2026-10-01, option B).
+# A missing stretch of candles is classified by bars actually missed:
+#   ignore (<= 3)            -- nothing special (most are no-trade hours on
+#                               Kraken 1h, which omits candles without trades);
+#   middle (4 .. warmup - 1) -- keep any position, block a NEW entry until a
+#                               full warmup of real bars has passed;
+#   large  (>= warmup)       -- force flat, restart the strategy's warmup, and
+#                               trade again once re-warmed (CUL-359).
+# 'large_min_bars' is left out on purpose: the engine then uses the strategy's
+# own required_bars (TradingBot._classify_gap_tier). Pass gap_detection=False to
+# switch the rule off, or your own gap_policy dict. The indicator fill (the
+# strategy buffer's reindex) is a SEPARATE switch, indicator_fill, OFF by default
+# (operator 2026-10-01; turning it on is E-029 / CUL-361).
+DEFAULT_GAP_POLICY = {"ignore_max_bars": 3, "on_large_gap": "flatten"}
+_USE_DEFAULT_GAP_POLICY = object()
+
+
 def run_backtest(config_path: str, symbol: str, start: str, end: str, results_root: str,
                  runs_root: str = None, interval_seconds: int = None,
                  warmup_prefetch: bool = False, holdout_start: str = None,
@@ -594,8 +613,9 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
                  risk_controls: dict | None = None,
                  feed_local_storage: bool = True,
                  fetch_interval_seconds: int | None = None,
-                 gap_detection: bool = False,
-                 gap_policy: dict | None = None,
+                 gap_detection: bool = True,
+                 gap_policy=_USE_DEFAULT_GAP_POLICY,
+                 indicator_fill: bool = False,
                  market_type: str | None = None,
                  cost_model_override: dict | None = None):
     """Wire and run a single-symbol backtest; return the run_dir Path.
@@ -743,10 +763,11 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         pipeline that surfaces gap detection as structured, countable data rather
         than a console warning -- prescreen_signal.py's own gap-aware statistics
         (the #50/CUL-15 family) were the only prior instance, and only reached the
-        prescreen kill path, never a real backtest. Default False: the check is
-        never called, self.gap_events stays empty and unread, metrics.json is
-        byte-identical to before this parameter existed. See
-        tests/test_gap_detection_bit_identical.py.
+        prescreen kill path, never a real backtest. DEFAULT True since
+        2026-10-01 (operator; declared change): metrics.json always carries the
+        "data_quality" block. False switches the check off entirely (the
+        pre-2026-10-01 behaviour, still pinned by
+        tests/test_gap_detection_bit_identical.py).
     gap_policy: further, independent opt-in on top of gap_detection (raises if
         set without it) -- CUL-271, replaces the earlier single-bar
         suppress_allocation_after_gap. `{"ignore_max_bars": int,
@@ -758,8 +779,10 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         large_min_bars, default the strategy's own required_bars) forces an
         immediate flatten AND resets the strategy's accumulated history (a real
         segment split), after which the engine's own pre-existing readiness gate
-        naturally withholds new entries until re-warmed. None (default):
-        byte-identical, same contract as gap_detection above. See
+        naturally withholds new entries until re-warmed. Omitted (default):
+        DEFAULT_GAP_POLICY when gap_detection is True, None when it is False.
+        None explicitly with gap_detection=True: gaps are recorded but no tier
+        acts. See
         core/trading_bot.py's constructor docstring for why a per-indicator
         variant was investigated and rejected (Step 1/2 of the design spec).
     market_type: second axis (alongside `exchange`) into config/cost_model.json's
@@ -790,6 +813,8 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         SYMBOL at fill time, not upfront. Never used by production callers. See
         tests/test_cost_model.py.
     """
+    if gap_policy is _USE_DEFAULT_GAP_POLICY:
+        gap_policy = dict(DEFAULT_GAP_POLICY) if gap_detection else None
     if gap_policy is not None and not gap_detection:
         # CUL-359: refuse before any data is fetched (TradingBot raises the
         # same error, but only after the data load)
@@ -882,7 +907,15 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
     # (reindex off, byte-identical to before this wiring existed) when
     # gap_policy is absent -- matches RollingBuffer's own "both required, or
     # neither" contract.
-    _reindex_ignore_max_bars = (gap_policy or {}).get("ignore_max_bars") if gap_detection else None
+    # 2026-10-01: the indicator fill has its own switch (indicator_fill, default
+    # False) -- it is no longer turned on by any gap_policy carrying
+    # ignore_max_bars, so switching the gap rule on by default does not switch
+    # the fill on (operator decision; CUL-361 turns it on later).
+    if indicator_fill and not (gap_detection and gap_policy):
+        raise ValueError("indicator_fill needs gap_detection=True and a gap_policy "
+                         "with ignore_max_bars (its threshold).")
+    _reindex_ignore_max_bars = (
+        gap_policy.get("ignore_max_bars") if indicator_fill else None)
     strategy = AdvancedStrategy(
         config_path=config_path,
         candle_interval_seconds=interval,

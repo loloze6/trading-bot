@@ -28,7 +28,11 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 START, END, SYMBOL = "2024-04-01", "2024-05-30", "BTCUSDT"
-BASELINE_CONFIG_SHA8 = "5ccbec42"  # committed strategy_config.json canonical hash
+# 2026-10-01: rebaselined 5ccbec42 -> cb9954ac. This pin was missed by the E-010 S3
+# rebaseline (2026-09-10, cost model folded into provenance: 5ccbec42 -> 9f3b09c1,
+# done in test_risk_layer_bit_identical.py), which is why this test failed on
+# master; the gap rule fold (on by default, CUL-359) then moves it to cb9954ac.
+BASELINE_CONFIG_SHA8 = "cb9954ac"  # strategy_config.json + cost_model + gap_rule canonical hash
 
 _NEEDED_CACHES = ("BTCUSDT_1h.csv", "BTCUSDT_funding_8h.csv", "fear_greed_daily.csv")
 _CACHE_SKIP = cache_skip_reason(PROJECT_ROOT / "local_data", _NEEDED_CACHES, START, END)

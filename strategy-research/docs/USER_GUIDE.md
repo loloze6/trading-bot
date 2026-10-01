@@ -1030,8 +1030,8 @@ This bit twice in one night (2026-09-04):
   of `"core"` in `metrics.json`, not nested inside it — it was being computed,
   written, and then silently dropped here, never reaching `verdict_interpreter`.
   Fixed by CUL-263 (`fix/cul-263-trade-diagnostics-flow`), adding the one line
-  above. `None` when a window ran without `gap_detection` on, present as a key
-  either way.
+  above. `None` when a window ran with `gap_detection=False` (the gap rule is on
+  by default for backtests since 2026-10-01), present as a key either way.
 
 **Separately, at the cross-window pooling step** (`_build_extended_summary`,
 same file), one further statistic is computed that cannot live in a single
@@ -2172,7 +2172,7 @@ prints that the SKILL may need a new status case and pauses
 
 | Field | Definition — what it means | Values / range (meaning of each) | Example |
 |---|---|---|---|
-| `results` | Per-window, per-symbol raw metrics (`net_return_pct`, `sharpe`, `max_drawdown_pct`, `trade_count`, `win_rate`, `fees_paid`, …) — one entry per `{symbol, window}` pair actually run. Each entry also carries `core` (that window's real `metrics.json` core block verbatim, including `forecast_return_corr_pvalue_block_adjusted`/`forecast_return_corr_n_eff`/`forecast_return_corr_all_bars`), `per_regime`, `regime_validity`, `data_quality` — that window's gap-detection block (`null` unless the run used `gap_detection=True`, which defaults to `False`) — and `component_errors` — `{count, samples}`, F5b's own exception counters off the strategy object for that window, always present (a healthy run reports an explicit `count: 0`, never a fabricated absence). | list | `run_011`: 24 entries (2 symbols × 12 windows) |
+| `results` | Per-window, per-symbol raw metrics (`net_return_pct`, `sharpe`, `max_drawdown_pct`, `trade_count`, `win_rate`, `fees_paid`, …) — one entry per `{symbol, window}` pair actually run. Each entry also carries `core` (that window's real `metrics.json` core block verbatim, including `forecast_return_corr_pvalue_block_adjusted`/`forecast_return_corr_n_eff`/`forecast_return_corr_all_bars`), `per_regime`, `regime_validity`, `data_quality` — that window's gap-detection block (`null` only if a run switched the gap rule off with `gap_detection=False`; it is on by default for backtests since 2026-10-01) — and `component_errors` — `{count, samples}`, F5b's own exception counters off the strategy object for that window, always present (a healthy run reports an explicit `count: 0`, never a fabricated absence). | list | `run_011`: 24 entries (2 symbols × 12 windows) |
 | `per_symbol_summary` | Per-symbol aggregation across windows: `median_sharpe` (the primary promotion gate — see basis note below), `max_abs_drawdown_pct`, `min_trade_count`. | dict keyed by symbol | `run_011`: `{BTCUSDT: {median_sharpe: -5.019, …}, ETHUSDT: {median_sharpe: -2.604, …}}` |
 | `verdict` | Preliminary verdict from the tool itself, ahead of the LLM verdict-interpreter's own read. | `promote` · `kill` · `refine` | `kill` |
 | `hypothesis_verdict` | The evaluated pre-registered criteria: each one's requirement, actual value, PASS/FAIL/UNTESTED, and a rolled-up `verdict_reason`. This is what `verdict_interpreter` actually reads. | dict: `{verdict, criteria_results: [...], verdict_reason, diagnostics}`; under `--diagnostics-only` (config-direct, E-061 C1.3): `verdict: null`, `criteria_results: []`, `diagnostics` still computed; `null` with neither flag | `run_011`: 4 of 6 evaluable criteria FAIL, 3 UNTESTED |
