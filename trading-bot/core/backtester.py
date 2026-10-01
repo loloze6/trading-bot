@@ -51,6 +51,21 @@ class FeedRequirementError(RuntimeError):
     time -- see FORK_CHANGES.md / feed-dependency-safety-architecture.md."""
 
 
+def nan_forecast_block(bot):
+    """CUL-274: the metrics.json "nan_forecast" block -- bars whose NaN forecast
+    was held (no trade) -- or None when there were none, so the key is never
+    written and metrics.json stays byte-identical."""
+    nan_bars = getattr(bot, "nan_forecast_bars", {}) or {}
+    if sum(nan_bars.values()) == 0:
+        return None
+    return {
+        "policy": "hold",
+        "bars": sum(nan_bars.values()),
+        "bars_by_symbol": dict(nan_bars),
+        "samples": list(getattr(bot, "nan_forecast_samples", [])),
+    }
+
+
 class BacktestEngine:
     def __init__(self,
                  data_manager =None,
@@ -630,12 +645,14 @@ class BacktestEngine:
                 "count":   self.strategy.component_error_count,
                 "samples": self.strategy.component_error_samples,
             }
+        nan_forecast_metrics = nan_forecast_block(bot)
         write_metrics_json(
             run_dir, core_metrics, per_regime, forecast_bins, dynamic, regime_validity,
             bar_equity=bar_equity_metrics,
             risk_controls=risk_controls_metrics,
             data_quality=data_quality_metrics,
             component_errors=component_errors_metrics,
+            nan_forecast=nan_forecast_metrics,
         )
 
         # Write bars CSV and forecast distribution

@@ -7,6 +7,7 @@ and portfolio rebalancing based on forecast allocations.
 import time
 import datetime
 import logging
+import math
 from typing import Any, Dict, List, Optional, Tuple
 import pandas as pd
 from performance.metrics import EnhancedPerformanceTracker, CompletedTrade
@@ -180,6 +181,10 @@ class TradingBot:
         self.gap_policy = gap_policy
         self._last_candle_time: Dict[str, Any] = {}
         self.gap_events: List[Dict[str, Any]] = []
+        # CUL-274: bars whose forecast was NaN (held, see below), per symbol,
+        # plus the first few as samples. Empty on every run without one.
+        self.nan_forecast_bars: Dict[str, int] = {}
+        self.nan_forecast_samples: List[Dict[str, Any]] = []
         self._bars_since_gap: Dict[str, int] = {}
         self._active_gap_tier: Dict[str, str] = {}
 
@@ -427,6 +432,33 @@ class TradingBot:
             
             target_allocation = self.forecast_manager.forecast_to_allocation(signal.forecast)
 
+            # CUL-274: a NaN forecast (a component that could not measure --
+            # CUL-273 propagate_invalid, a 0/0, a feed not started yet) must
+            # never reach an order: abs(NaN) != 0.0 is True and every risk
+            # comparison against NaN is False, so it used to pass straight to
+            # execution. Policy (operator 2026-10-01): HOLD -- the strategy's
+            # own target is the current position, so the strategy makes no new
+            # decision on this bar. The risk controls and gap tiers below still
+            # apply, exactly as on any held bar: a latched kill switch or a large
+            # gap forces flat, and a cap clamp can still trim a position that
+            # drifted above the cap. Counted, sampled and surfaced in
+            # metrics.json ("nan_forecast"); 'NaN -> forced flat' with a context
+            # label on the trade waits for E-029 (CUL-358). Also catches +/-inf
+            # (the production engine clips to +/-20, so only a custom strategy
+            # could produce one). Warmup-cutoff bars return earlier and are not
+            # counted. A run without a non-finite forecast is byte-identical.
+            nan_forecast_bar = not math.isfinite(target_allocation)
+            if nan_forecast_bar:
+                self.nan_forecast_bars[symbol] = self.nan_forecast_bars.get(symbol, 0) + 1
+                if len(self.nan_forecast_samples) < 20:
+                    self.nan_forecast_samples.append({"symbol": symbol, "timestamp": str(data_time)})
+                self.logger.warning(
+                    f"⚠ NaN FORECAST │ {symbol} │ {data_time} │ holding the current "
+                    f"allocation {previous_allocation:+.4f} (no strategy trade; risk "
+                    f"controls and gap tiers still apply)"
+                )
+                target_allocation = previous_allocation
+
             # 2026-08-29 (fix/risk-layer): off-by-default portfolio risk gate.
             # Gate None (default) -> risk_extras stays {} and record_state below adds
             # no columns, so output is byte-identical. Gate set -> the target is
@@ -436,6 +468,10 @@ class TradingBot:
             risk_extras = {}
             if self.risk_gate is not None:
                 target_allocation, risk_extras = self.risk_gate.apply(target_allocation)
+                if nan_forecast_bar:
+                    # the strategy asked for nothing measurable: record that, not
+                    # the held allocation, as the raw (pre-gate) target
+                    risk_extras["risk_target_raw"] = float("nan")
 
             # CUL-271: "large" tier forces flat, composed with the risk gate the
             # same way risk_gate.apply() itself forces flat when latched -- both
