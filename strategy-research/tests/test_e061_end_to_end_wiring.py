@@ -209,6 +209,8 @@ TARGET_FLAGS = {
     # test_target_flags_name_every_orchestrator_flag keeps this list complete.
     "profit_bars_v2": False,
     "score_provenance": False,
+    # D-056: runs the real engine on real data; this harness feeds stub configs.
+    "forecast_size_probe": False,
 }
 
 # C5.8 (D-050): the four legacy route/rationale keys of a window's core

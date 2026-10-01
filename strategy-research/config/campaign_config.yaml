@@ -825,6 +825,22 @@ orchestrator:
       # S3 (composition brief writer, 1b composition mode) extends this flag;
       # S3a's tools/composition.py (weights, variant configs,
       # compositions.yaml) refuses to write unless given this flag's True.
+  forecast_size_probe:
+    enabled: false
+      # O-10 / D-056 (2026-10-02). OFF BY DEFAULT, read by
+      # run_phase1_research._forecast_size_probe_enabled(). While false:
+      # nothing is run or written (byte-identical).
+      #
+      # While true (config-direct flow): right after 1b (base config, with
+      # 1b's one retry, then the forecast_rule_violation pause) and in step 5a
+      # (every variant, refused with the D-051/D-053 reason so Step 2 gets its
+      # one retry), tools/forecast_size_probe.py runs the real engine on one
+      # training window per era (ending before 2024-01-01) and reads ONLY the
+      # forecast column. A config is refused when < 1% of sample bars reach
+      # |forecast| >= 10 x min_allocation_change (trading-bot/config.json),
+      # or when every forecast is NaN. Not a trial: no PnL, trade or metric is
+      # read. Every probe is recorded in artifacts/forecast_size_probe.yaml.
+      # Adds about 50 s per probed config.
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------

@@ -3140,6 +3140,7 @@ def _flag_readers() -> dict:
         "verdict_routing_retired": orch._verdict_routing_retired_enabled,
         "composition_runs": orch._composition_runs_enabled,
         "variant_anti_adjacency_gate": orch._variant_anti_adjacency_gate_enabled,
+        "forecast_size_probe": orch._forecast_size_probe_enabled,  # D-056
         "schedulability_block": _schedulability_block_enabled,
     }
 
