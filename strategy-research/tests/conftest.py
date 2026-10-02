@@ -305,3 +305,20 @@ def _sandbox_by_default(request, tmp_path, monkeypatch):
     monkeypatch.setattr(_setup_run, "ROOT", sandbox)
 
     return sandbox
+
+
+# D-063: every specialist reader is required to receive the two design docs step
+# 2 also gets, resolved run-relative as ROOT/docs/. A test that drives the full
+# loop THROUGH the reader stage opts in (pytestmark usefixtures) to get verbatim
+# copies of the real files in its sandbox -- opt-in, not autouse, so the other
+# ~4,400 tests do not each copy ~65 KB into tmp (temp dirs once filled the disk).
+_READER_DOCS = ("COMPONENT_CATALOG.md", "STRATEGY_DESIGN_GUIDE.md")
+
+
+@pytest.fixture
+def reader_docs(_sandbox_by_default):
+    docs = Path(_sandbox_by_default) / "docs"
+    docs.mkdir(parents=True, exist_ok=True)
+    for name in _READER_DOCS:
+        shutil.copyfile(Path(__file__).parent.parent / "docs" / name, docs / name)
+    return docs

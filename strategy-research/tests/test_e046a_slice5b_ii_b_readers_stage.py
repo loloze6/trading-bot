@@ -83,6 +83,15 @@ def _seed_run(run_id=RUN_ID, idea_status="refuted", errors_count=None, pending="
     # _run_specialist_readers directly need the stand-in the handoff now requires.
     rpr.save_yaml(arts / "registry_summary.yaml", {"marker": "REGISTRY_SUMMARY_MARKER"})
     rpr.save_yaml(arts / "hypothesis_card.yaml", {"hypothesis_id": "H-TEST-1"})
+    # Reader inputs: this run's base config and the two design docs step 2 also
+    # gets (resolved run-relative as ../../docs/, i.e. under the sandbox ROOT).
+    (arts / "candidate_strategy_config.json").write_text('{"marker": "CONFIG_MARKER"}\n',
+                                                         encoding="utf-8")
+    for doc in ("COMPONENT_CATALOG.md", "STRATEGY_DESIGN_GUIDE.md"):
+        path = rpr.ROOT / "docs" / doc
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if not path.exists():
+            path.write_text(f"{doc} stub\n", encoding="utf-8")
     _write_menu_pre_registration(run_dir)
     if idea_status is not None:
         rpr.save_yaml(arts / "idea_status.yaml",

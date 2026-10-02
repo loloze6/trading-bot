@@ -360,6 +360,9 @@ def test_every_reader_handoff_lists_the_registry_summary_last():
     for cat in REPORT_CATEGORIES:
         req = [r["path"] for r in rpr._reader_handoff(cat, "run_001", 0)["required_inputs"]]
         assert req == [f"artifacts/reports/{cat}.yaml", "artifacts/grid_evaluation.yaml",
+                       "artifacts/hypothesis_card.yaml",
+                       "artifacts/candidate_strategy_config.json",
+                       "../../docs/COMPONENT_CATALOG.md", "../../docs/STRATEGY_DESIGN_GUIDE.md",
                        "artifacts/registry_summary.yaml"]
 
 

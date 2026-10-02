@@ -10,7 +10,7 @@ description: Reads artifacts/reports/profitability.yaml (Slice 5a) plus artifact
 # Profitability Reader
 
 ## Mission
-Read this run's own `profitability.yaml` report (nothing else) and propose zero or more
+Read this run's own `profitability.yaml` report (with the inputs listed below) and propose zero or more
 concrete config changes (a `patch` against an existing component, or a `new_block` sketch)
 that would plausibly move this hypothesis's cost/PnL profile toward profitable, each backed
 by evidence cited to a specific field in this report. You propose; you do not decide the
@@ -24,7 +24,12 @@ route.
   written when `orchestrator.grid_evaluation.enabled` is on AND this run's pre_registration
   pass_rule is menu-shaped. If absent from your context, proceed without it; do not treat its
   absence as a report defect.)
-- `artifacts/registry_summary.yaml` (E-061 C2 S2e -- written by code before the readers run from the campaign's block registry and this run's manifest; read it **only** for `distance_to_profitable`, see "Distance to profitable" below. It is the one extra input allowed beyond this category's report and the grid.)
+- **What was tested and what exists** (so you never invent a component or a setting -- run_065/run_066 readers did, because they had never seen the config):
+  - `artifacts/hypothesis_card.yaml` -- the idea this run tested: its claim, signal and assumptions. Read your report as evidence about THIS claim.
+  - `artifacts/block_manifest.yaml` (**optional**, absent on a composition run) -- which config paths are the tested block and which are scaffolding.
+  - this run's base config (`artifacts/variants/<base>/strategy_config.json`, or `artifacts/candidate_strategy_config.json` without the variant loop) -- the real component ids and settings. A `patch`'s `component_id` is a component's `id` in this file, its `field` a path that exists inside that component, and `before` its current value; any other patch is refused when decide-next resolves it (`patch_unresolvable`).
+  - `docs/COMPONENT_CATALOG.md` and `docs/STRATEGY_DESIGN_GUIDE.md` -- the same two documents step 2 gets: every component's settings and outputs, and what a config can and cannot express. A change the config cannot express (e.g. a stop-loss, or acting on a bar before it closes) is not a `patch`.
+- `artifacts/registry_summary.yaml` (E-061 C2 S2e -- written by code before the readers run from the campaign's block registry and this run's manifest; read it **only** for `distance_to_profitable`, see "Distance to profitable" below.)
 
 **Scope boundary.** You do not receive, and must not seek out, any of: the other 4 categories'
 `reports/*.yaml`, `verdict_interpretation.yaml`, `protocol_result.yaml` directly,

@@ -29,6 +29,9 @@ import sys
 from pathlib import Path
 
 import pytest
+
+# D-063: these tests drive the loop through the reader stage, which reads the two design docs.
+pytestmark = pytest.mark.usefixtures("reader_docs")
 import yaml
 
 SR_ROOT = Path(__file__).parent.parent
