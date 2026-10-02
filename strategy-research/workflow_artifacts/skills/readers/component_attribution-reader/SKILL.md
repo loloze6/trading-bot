@@ -117,7 +117,7 @@ component captures well (see Rule CA-2 below).
 **Patch item shape (required, `proposal.schema.json`):** every item of a `patch` list is
 exactly `{component_id, field, before, after}` -- `field` is the dotted path of the changed
 parameter inside that component (e.g. `transforms[2].params.min_abs`). `tools/reader_proposals.py` rejects a patch item
-without it, which stops the pipeline. A `new_block`'s `block.config_paths` must list at least one path.
+without it, which stops the pipeline. **New-block shape (required, CUL-380):** a `new_block`'s `block` is exactly `{kind: forecast|regime, config_paths: [at least one JSON-pointer string], scaffolding: [optional], rationale: "<what the new block is and why it should help>"}`. `rationale` is the idea itself: if decide-next picks this proposal, it becomes the next run's research goal. A proposal missing any of this is dropped (the run continues, the drop is recorded).
 
 ### `requires_feed` (optional -- only when this report shows the need)
 Either `kind` may carry ONE extra field saying the proposal needs a data feed:

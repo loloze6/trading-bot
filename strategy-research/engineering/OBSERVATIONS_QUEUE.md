@@ -22,6 +22,9 @@ decision (DECISION_LOG) or a ticket.
 | O-13 | PR #295 review, 2026-10-02 | The size check deliberately passes two "zero" cases: a zero rebalance floor, and an all-zero forecast | recorded (by design, #295); no action |
 | O-14 | D-057 work, 2026-10-02 | A Binance run takes its fee from the spot schedule but its slippage and market check from the margin entry | parked (operator, 2026-10-02): no Binance research going forward, Kraken is the target venue |
 | O-15 | CUL-369 work, 2026-10-02 | The whole-test chain never counts a window's first day (its anchor), so each window's entry-day P&L is left out | parked (operator, 2026-10-02): the entry it leaves out is a monthly-restart artifact, not a real cost; real issue moved to O-9 |
+| O-16 | C4 run_065, 2026-10-02 | The grid tested linear IC over all days, while the claim was continuation over 1-5 days after a breakout | open: design gap, symptom of O-18 |
+| O-17 | C4 run_065, 2026-10-02 | A malformed reader proposal (advisory branch 2) halted the run before branch 1's verdict was recorded | fixed: D-061 (CUL-380), proposals dropped and recorded |
+| O-18 | Operator, 2026-10-02 | A run should prove a written finding (claim, test, rationale), not only score a block | open: design discussion, then an epic |
 
 ---
 
@@ -799,6 +802,91 @@ changes the whole-test definition (E-062), so it needs its own decision. Not par
 
 The underlying issue is testing slow strategies in one-month pieces at all. That is moved
 to O-9.
+
+
+## O-16. run_065's test did not test run_065's claim
+
+**Seen:** run_065, C4 Donchian 1d on Kraken, 2026-10-02.
+- **The claim.** Step 1a's thesis was specific: *"a close above the 80th percentile of the
+  range triggers herding-driven continuation over bars 1-5 after the breakout"*.
+- **The test.** The pre-registered criteria came from the criterion menu, which has only four
+  entries (edge-to-cost, residual IC, era sign consistency, profit bars). The grid judged
+  linear residual IC of the forecast against the next return over **all** days.
+- **The result.** Residual IC FAILed on every variant (-0.024 / -0.037 / +0.038 not
+  significant), while edge-to-cost PASSed (9-44), so the idea is refuted.
+
+**Why it matters:**
+- The verdict answers "is this forecast linearly predictive on average?", not "do the 1-5 days
+  after a breakout behave differently from ordinary days?".
+- For trend ideas, which often earn from a few large moves rather than steady prediction, a
+  linear correlation can miss the very thing claimed.
+- The grid applied exactly what 1a pre-registered, so this is a design gap, not a bug.
+
+**Next:** open. This is a symptom of O-18.
+
+
+## O-17. An advisory branch could stop the record of the decisive one
+
+**Seen:** run_065, 2026-10-02.
+- **What failed.** A specialist reader (branch 2, which only proposes next ideas) returned a
+  malformed proposal twice, and the run halted.
+- **What it blocked.** `regroup_record` runs after the readers, so the grid's verdict
+  (branch 1: refuted) was not written to campaign memory or the knowledge base.
+
+**Fixed 2026-10-02 (D-061, CUL-380):** an invalid reader proposal is now dropped and
+recorded, and the run continues to regroup_record. Every reader prompt also states the
+`new_block` shape, and every refusal quotes it.
+
+**Still true:** memory is written only after branch 2. Any other failure inside the
+readers stage (budget, an exception) would still delay the record of branch 1.
+
+
+## O-18. What a run should produce: a proven finding, not only a scored block
+
+**Operator, 2026-10-02 (open, being thought through).**
+
+**The framing.**
+- The goal is a profitable strategy. The path is accumulating **proven findings** about the
+  market that can later be combined into one.
+- A run should prove or disprove ONE finding, stated in plain words, with:
+  - **the claim**;
+  - **the scientific test**: what is measured, against which baseline, and what it looks like
+    if the claim is false;
+  - **the rationale**: why this test proves this claim;
+  - **the verdict**, stored as reusable knowledge whatever happens to the strategy it came from.
+- A block is one way to implement or use a finding. Today the unit of research is "a block,
+  scored for profitability".
+
+**Kinds of finding** (★ = the operator's examples; the rest proposed for discussion):
+
+| Question | Kind | Example |
+|---|---|---|
+| What state is the market in? | Regime classifier ★ | "RSI 200 identifies trending regimes" |
+| | Regime transition / early warning ★ | "X warns that a trend is ending" |
+| What comes next? | Direction forecast (the only kind tested today) | "Breakout -> continuation over 1-5 days" |
+| | Volatility / risk forecast | "Funding spikes precede volatility bursts" |
+| | Event / tail behaviour | "Liquidation cascades follow pattern Y" |
+| When do tools work? | Conditional behaviour ★ | "MACD fails outside trends" |
+| | Horizon / decay | "This effect lasts ~3 days, then fades" |
+| | Calendar / time effects | "Weekend or funding-hour moves differ" |
+| How do pieces relate? | Redundancy / added information | "A adds nothing once B is known" |
+| | Lead-lag / cross-asset | "BTC leads altcoins by N hours" |
+| | Data-feed value | "Fear & Greed carries information beyond price" |
+| Cost and generality | Cost / turnover | "The edge survives only below K trades a month" |
+| | Robustness / generality | "Holds across eras and coins" |
+
+**Who designs the test** (operator leaning towards the first option):
+1. **Agent proposes.** The agent writes the claim and proposes the test, plus a **review
+   sub-step** that checks it against a fixed checklist: it measures this claim, it can fail,
+   it has a baseline, the threshold is set before data, the sample is big enough.
+2. **Template library.** A vetted test template per kind of finding, the agent filling in the
+   parameters only. Stricter, because the agent cannot design a test that looks scientific but
+   cannot fail; more limited.
+
+A hybrid is possible: the agent proposes, reuses a template where one fits, and the review
+sub-step checks the rest.
+
+**Status:** design discussion first, then an epic. Nothing built.
 
 ---
 

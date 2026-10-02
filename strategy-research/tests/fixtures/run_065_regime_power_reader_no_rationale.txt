@@ -1,0 +1,23 @@
+```yaml
+- proposal_id: regime_power-run_065-1
+  kind: new_block
+  block:
+    kind: regime
+    config_paths:
+      - "regime.activation_threshold_band.min"
+      - "regime.activation_threshold_band.max"
+      - "regime.aggregation_mode"
+  evidence:
+    - "variants.base.slices.per_window: all 6 windows (2022-01, 2022-05, 2022-09, 2023-01, 2023-05, 2023-09) show live_transition_count=0 with hindsight_lag.reason stating 'detector emitted zero live regime transitions... constant single-label window'"
+    - "variants.base.slices.per_regime[unknown]: across all 6 windows, n_bars=119-122 (exceeding Rule 4 sample floor of 20) yet forward_return_mean ranges -0.00707 to +0.01525, indicating near-zero predictive signal despite large sample"
+    - "variants.base.slices.overall.detector_health.per_symbol_per_timeframe[0].metrics: activation=0.0% (fails target band [10%,40%]), parameter_sensitivity=0.0, trending_activation_rate=0.0, zero_trade_slot_pct=1.0; known_weak_periods span entire 2024-01 to 2025-12 range; confidence=medium"
+    - "Regime definition mechanism: variants.base.slices.overall.detector_health shows activation=0.0% combined with per_window zero-transition counts indicate regime activation thresholds are too restrictive, preventing regime from switching labels; this explains near-zero forward returns across all windows (regime cannot segment market conditions)"
+    - "Cross-variant consistency (D-016): design variant donchian_period_14_reactive and asset variant donchian_solusdt_crossasset both exhibit identical zero-transition pattern, confirming regime uninformativeness is structural to definition rather than variant-specific"
+    - "registry_summary.yaml: type_already_registered=false, correlation_to_composite.status=no_composite, registry.n_blocks=0, indicating regime block type fills a missing detection mechanism"
+  scores:
+    confidence_real: 1
+    distance_to_profitable: 3
+    mechanism_plausibility: 3
+  model_id: regime_power-reader-v2
+  rubric_version: "regime_power-reader-v2"
+```
