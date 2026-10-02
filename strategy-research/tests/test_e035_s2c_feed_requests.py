@@ -305,15 +305,19 @@ def test_stage_writes_nothing_on_component_errors(monkeypatch):
     assert not _requests_path().exists()
 
 
-def test_a_malformed_requires_feed_stops_before_any_row(monkeypatch):
+def test_a_malformed_requires_feed_never_becomes_a_row(monkeypatch):
+    """CUL-380 (D-061): the malformed proposal is dropped and recorded instead
+    of stopping the run -- and, as before, no data_requests row is written."""
     _set_orchestrator(ALL_ON)
     monkeypatch.chdir(_SR)
     run_dir = _seed_run()
     bad = _with_feed(_proposal("profitability"), {"feed": "Open Interest", "reason": "r"})
     monkeypatch.setattr(rpr, "_invoke_reader_llm", _fake_llm({"profitability": _reader_output(bad)}))
-    with pytest.raises(rp.ProposalError, match="requires_feed"):
-        rpr._run_specialist_readers_stage(RUN_ID, run_dir)
+    rpr._run_specialist_readers_stage(RUN_ID, run_dir)
     assert not _requests_path().exists()
+    audit = rpr.load_yaml(run_dir / "pipeline_state.yaml")["audit_log"]
+    [drop] = audit["specialist_readers_profitability_attempt_0_retry1"]["dropped_proposals"]
+    assert "requires_feed" in drop["error"]
 
 
 def test_flag_off_the_stage_never_runs_so_nothing_is_written():

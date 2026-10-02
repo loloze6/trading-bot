@@ -165,6 +165,22 @@ one gate among several.
 > documenting the pipeline somewhere new. Reviewed/corrected 2026-08-24
 > (E-033); the full stage review is E-033 S1.
 
+**The three branches after a backtest** (terms used throughout this guide;
+defined in `engineering/roadmap_review_2026-09-16.md` and roadmap card H).
+On the new pipeline, every backtest's results feed three branches:
+
+- **Branch 1, pass/fail:** the grid (`grid_evaluation.yaml` → `idea_status.yaml`)
+  judges the idea on its pre-registered criteria. It is the only branch that
+  decides the idea's status.
+- **Branch 2, specialist patterns:** five category reports and their readers
+  (stage 16). They propose next ideas and decide nothing. Since D-061 a
+  malformed proposal is dropped and recorded, never a stop.
+- **Branch 3, campaign-wide bar:** the profit bars, checked on every backtest.
+  Passing them is the only way to the holdout (D-021).
+
+`regroup_record` (stage 17) then writes all three into campaign memory before
+anything decides what comes next.
+
 ### 2.1 Stage Map
 
 Steps and links only. **Every gate, threshold, amendment code and caveat that
@@ -1358,9 +1374,16 @@ feed that is not wired, one row per such feed in
    validates each reader's single fenced YAML block for its category, then
    moves it into `proposals/<category>.yaml` (temp file + `os.replace`);
    `run_claude_worker`'s shared filename regex is not used or changed. An
-   invalid output gets one retry with the error in the prompt; a second
-   failure is saved as `debug_specialist_readers_<category>_raw_output.txt`
-   (never at the final path) and stops the run.
+   invalid output gets one retry with the error in the prompt. After a second
+   failure the raw answer is saved as
+   `debug_specialist_readers_<category>_raw_output.txt`, and the run does
+   **not** stop (D-061, CUL-380). Each proposal is re-validated on its own;
+   the valid ones go to the final path, and the invalid ones are dropped and
+   listed with their error in the audit log (`dropped_proposals`). An invalid
+   proposal never reaches the final path. A `new_block`'s `block` is exactly
+   `{kind: forecast|regime, config_paths, scaffolding (optional), rationale}`.
+   `rationale` is required: it becomes the next idea's research goal if
+   decide-next picks the proposal.
 2. **Retune firewall** (`_validate_retune_firewall`) runs at stage entry,
    before any reader call (and on every resume).
 3. **Everything comes from this attempt.** Under the flag `protocol_execution`

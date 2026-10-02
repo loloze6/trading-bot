@@ -27,6 +27,14 @@ _PROPOSAL_KEYS = frozenset(
      "requires_feed"})
 _PATCH_ITEM_KEYS = frozenset({"component_id", "field", "before", "after"})
 _BLOCK_KEYS = frozenset({"kind", "config_paths", "scaffolding", "rationale"})
+# CUL-380: the one statement of a new_block's shape -- quoted in every refusal
+# and by every reader SKILL.md. `rationale` is required: when decide-next picks
+# a new_block it becomes the next idea's research goal (decide_next: "Test a new
+# <kind> block ...: <rationale>"); a sketch without it is an empty idea.
+NEW_BLOCK_SHAPE = (
+    "Required shape: block: {kind: forecast|regime, config_paths: [non-empty list of "
+    "JSON-pointer strings], scaffolding: [optional list], rationale: \"<string: what the "
+    "new block is and why it should help>\"} -- exactly these keys.")
 _PROPOSAL_ID_RE = re.compile(r"^[a-z_]+-.+-[0-9]+$")
 # E-035 S2c: the optional `requires_feed` field, orthogonal to `kind`.
 REQUIRES_FEED_KEYS = frozenset({"feed", "reason"})
@@ -102,15 +110,20 @@ def _check_proposal(p, cat: str, where: str, strict_provenance: bool = False) ->
                                     f"{{component_id, field, before, after}} with non-empty "
                                     f"component_id and field")
     elif kind == "new_block":
+        # CUL-380: every refusal states the WHOLE required shape, so one retry
+        # can fix every field at once (run_065: the retry fixed `kind`, then
+        # failed on the missing `rationale`).
         blk = p.get("block")
         if not isinstance(blk, dict) or "patch" in p or blk.get("kind") not in ("forecast", "regime"):
             raise ProposalError(f"{where}: kind=new_block requires a `block` mapping with kind "
-                                f"forecast|regime, and no `patch`")
+                                f"forecast|regime, and no `patch`. {NEW_BLOCK_SHAPE}")
         if sorted(set(blk) - _BLOCK_KEYS) or not isinstance(blk.get("rationale"), str):
-            raise ProposalError(f"{where}: block must carry a string rationale and no undeclared field")
+            raise ProposalError(f"{where}: block must carry a string rationale and no undeclared "
+                                f"field. {NEW_BLOCK_SHAPE}")
         paths = blk.get("config_paths")
         if not isinstance(paths, list) or not paths or not all(_non_empty_str(x) for x in paths):
-            raise ProposalError(f"{where}: block.config_paths must be a non-empty list of strings")
+            raise ProposalError(f"{where}: block.config_paths must be a non-empty list of strings. "
+                                f"{NEW_BLOCK_SHAPE}")
     else:
         raise ProposalError(f"{where}: kind={kind!r} not in ['patch', 'new_block']")
     ev = p.get("evidence")

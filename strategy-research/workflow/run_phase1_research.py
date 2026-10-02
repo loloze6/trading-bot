@@ -4220,15 +4220,49 @@ def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0
     (reader_proposals) BEFORE it reaches the final path, via a temp file and
     os.replace, so a bad output can never sit at the final path and block a
     resume. An invalid output gets exactly one retry with the validation
-    error appended to the prompt (same bound as _invoke_agent_with_yaml_retry);
-    if that also fails, the raw output is saved as
-    debug_specialist_readers_<category>_raw_output.txt and this raises."""
+    error appended to the prompt (same bound as _invoke_agent_with_yaml_retry).
+    CUL-380 (run_065, 2026-10-02): if that also fails, the raw output is saved
+    as debug_specialist_readers_<category>_raw_output.txt and the run does NOT
+    stop. Readers only propose next ideas; one malformed proposal must not
+    block the run, nor the recording of the grid's verdict that follows. Each
+    proposal is re-validated on its own (_salvage_reader_output): the valid
+    ones are kept, the invalid ones are dropped and listed with their errors
+    in the audit log (`dropped_proposals`). A dropped proposal is never
+    repaired or guessed at."""
     handoff = _reader_handoff(category, run_id, stage_attempt)
     base_prompt = _build_stage_prompt("specialist_readers", handoff, run_dir,
                                       skill_file_name=_reader_skill_dir(category))
     prompt = base_prompt
     dest = run_dir / "artifacts" / "proposals" / f"{category}.yaml"
     prov_on = _score_provenance_enabled()  # C5.7b-1
+
+    def _accept(body, entry, key, meta):
+        """Write a validated body to the final path (provenance stamped first)."""
+        if prov_on:
+            # S1: the proposals carry the model that answered, not its
+            # self-report; recorded in the audit log, never a stop or retry.
+            body, record = _stamp_reader_body(body, category, run_dir, meta.get("models"))
+            entry["provenance"].update(record)
+            # S4 (option A): which cited field paths exist; record only.
+            entry["provenance"]["citations"] = _citation_provenance(category, run_dir, body)
+            update_state(path=run_dir, audit_log={key: entry})
+            if record["mismatch"]:
+                print(f"⚠️  score provenance: {category} reader answered by "
+                      f"{record['observed']!r}, requested {record['requested']!r} "
+                      f"(recorded, not stopped).")
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        fd, tmp_name = tempfile.mkstemp(prefix=f".{category}.", suffix=".tmp", dir=str(dest.parent))
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                f.write(body)
+            os.replace(tmp_name, dest)
+        except BaseException:
+            with contextlib.suppress(OSError):
+                os.unlink(tmp_name)
+            raise
+        print(f"✅ [READER COMPLETE] {category} -> {dest.relative_to(run_dir).as_posix()}")
+        return dest
+
     for attempt in range(2):
         if attempt:
             _check_reader_budget(run_dir, category)
@@ -4250,30 +4284,7 @@ def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0
         update_state(path=run_dir, audit_log={key: entry})
         body, error = _validate_reader_output(text, category, run_dir)
         if error is None:
-            if prov_on:
-                # S1: the proposals carry the model that answered, not its
-                # self-report; recorded in the audit log, never a stop or retry.
-                body, record = _stamp_reader_body(body, category, run_dir, meta.get("models"))
-                entry["provenance"].update(record)
-                # S4 (option A): which cited field paths exist; record only.
-                entry["provenance"]["citations"] = _citation_provenance(category, run_dir, body)
-                update_state(path=run_dir, audit_log={key: entry})
-                if record["mismatch"]:
-                    print(f"⚠️  score provenance: {category} reader answered by "
-                          f"{record['observed']!r}, requested {record['requested']!r} "
-                          f"(recorded, not stopped).")
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            fd, tmp_name = tempfile.mkstemp(prefix=f".{category}.", suffix=".tmp", dir=str(dest.parent))
-            try:
-                with os.fdopen(fd, "w", encoding="utf-8") as f:
-                    f.write(body)
-                os.replace(tmp_name, dest)
-            except BaseException:
-                with contextlib.suppress(OSError):
-                    os.unlink(tmp_name)
-                raise
-            print(f"✅ [READER COMPLETE] {category} -> {dest.relative_to(run_dir).as_posix()}")
-            return dest
+            return _accept(body, entry, key, meta)
         if attempt == 0:
             print(f"⚠️  {category} reader output invalid -- retrying once with the error: {error}")
             prompt = base_prompt + (
@@ -4282,9 +4293,49 @@ def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0
                 "list of proposals (`[]` for none).\n")
     debug_path = run_dir / "artifacts" / f"debug_specialist_readers_{category}_raw_output.txt"
     debug_path.write_text(text or "", encoding="utf-8")
-    raise _reader_proposals_module().ProposalError(
-        f"{category} reader output invalid after one retry: {error} "
-        f"Raw output saved to {debug_path}.")
+    body, dropped = _salvage_reader_output(text, category, run_dir)
+    entry["dropped_proposals"] = dropped
+    update_state(path=run_dir, audit_log={key: entry})
+    print(f"⚠️  {category} reader output invalid after one retry: {error} -- kept the valid "
+          f"proposals, dropped {len(dropped)} (listed in the audit log under {key}); the run "
+          f"continues. Raw output saved to {debug_path}.")
+    return _accept(body, entry, key, meta)
+
+
+def _salvage_reader_output(text: str, category: str, run_dir: Path) -> tuple:
+    """CUL-380: (body, dropped) from a reader answer that failed validation even
+    after its retry. Each proposal is validated on its own, exactly as a whole
+    answer is (_validate_reader_output); the valid ones form the body, the
+    invalid ones are listed as {index, proposal_id, error}. An answer that
+    cannot be read as one YAML list at all gives `[]` and one dropped entry
+    (index None). The body always passes _validate_reader_output."""
+    blocks = _READER_OUTPUT_BLOCK_RE.findall(text or "")
+    if len(blocks) != 1:
+        return "[]\n", [{"index": None, "proposal_id": None,
+                         "error": f"{len(blocks)} fenced YAML block(s); exactly one is required"}]
+    try:
+        items = yaml.safe_load(blocks[0])
+    except yaml.YAMLError as exc:
+        return "[]\n", [{"index": None, "proposal_id": None, "error": f"not YAML: {exc}"}]
+    if not isinstance(items, list):
+        return "[]\n", [{"index": None, "proposal_id": None,
+                         "error": f"not a YAML list (got {type(items).__name__})"}]
+    kept, dropped = [], []
+    for i, item in enumerate(items):
+        one = "```yaml\n" + yaml.safe_dump([item], sort_keys=False, allow_unicode=True) + "```"
+        _body, err = _validate_reader_output(one, category, run_dir)
+        if err is None:
+            kept.append(item)
+        else:
+            dropped.append({"index": i,
+                            "proposal_id": item.get("proposal_id") if isinstance(item, dict) else None,
+                            "error": err})
+    body = yaml.safe_dump(kept, sort_keys=False, allow_unicode=True) if kept else "[]\n"
+    final, err = _validate_reader_output("```yaml\n" + body + "```", category, run_dir)
+    if err is not None:  # kept proposals that only fail together (e.g. duplicate ids)
+        dropped += [{"index": None, "proposal_id": None, "error": f"kept set refused: {err}"}]
+        return "[]\n", dropped
+    return final, dropped
 
 
 def _run_specialist_readers(run_id: str, run_dir: Path, stage_attempt=0) -> dict:
