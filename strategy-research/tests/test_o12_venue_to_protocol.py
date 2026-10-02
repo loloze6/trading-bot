@@ -408,3 +408,40 @@ def test_m3_the_check_runs_where_the_protocol_is_first_resolved(monkeypatch, tmp
     monkeypatch.setattr(rpr, "load_campaign_state", lambda: {})
     with pytest.raises(RuntimeError, match=r"\[O-12\]"):
         rpr._resolve_protocol_path(run_dir, RUN)
+
+
+# ---------------------------------------------------------------------------
+# 6. The post-backtest conformance check compares coins, not spellings
+# ---------------------------------------------------------------------------
+
+def _conformance(protocol_obj):
+    constraints = {"protocol": {"symbols": ["BTCUSDT", "ETHUSDT"], "start": "2022-01-01",
+                                "end": "2022-02-28"}}
+    return rpr._check_protocol_execution_conformance({}, constraints, protocol_obj)
+
+
+def _kraken_protocol(symbols=("BTCUSDT", "ETHUSDT")):
+    keys = vr.protocol_keys({"venue": "kraken", "product": "perp"}, list(symbols))
+    windows = [{"label": "2022-01", "test": {"start": "2022-01-01", "end": "2022-01-31"}},
+               {"label": "2022-02", "test": {"start": "2022-02-01", "end": "2022-02-28"}}]
+    return {**keys, "timeframe": "1h", "windows": windows}
+
+
+def test_a_venue_protocol_in_its_own_naming_conforms():
+    """The pre-registration says BTCUSDT/ETHUSDT; the Kraken protocol runs
+    BTCUSD/ETHUSD -- the same coins. Without this the check fires after the
+    backtests, invalidates the trials and pauses the run."""
+    proto = _kraken_protocol()
+    assert proto["symbols"] == ["BTCUSD", "ETHUSD"]
+    assert _conformance(proto) == []
+
+
+def test_a_venue_protocol_with_a_different_coin_still_violates():
+    proto = _kraken_protocol(("BTCUSDT", "SOLUSDT"))
+    assert any("symbols" in v for v in _conformance(proto))
+
+
+def test_without_a_venue_the_comparison_stays_exact():
+    proto = {k: v for k, v in _kraken_protocol().items()
+             if k not in ("exchange", "market_type", "venue", "drop_feeds")}
+    assert any("symbols" in v for v in _conformance(proto))  # BTCUSD is not BTCUSDT here

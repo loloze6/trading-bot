@@ -690,6 +690,10 @@ The safety review's blocker and majors were fixed before merge:
   say `perp` first. Whether to edit them in place or register new briefs is open: past
   trials on these briefs ran on Binance.
 - Binance runs: see O-14.
+- **Fixed 2026-10-02 (CUL-373):** the post-backtest conformance check compared the
+  pre-registered BTCUSDT with the venue protocol's BTCUSD. It would have invalidated every
+  Kraken run's trials after its backtests. It now compares base assets on a venue protocol.
+  Missed by D-057's tests and review: nothing drove a run through that check.
 
 
 ## O-13. The size check deliberately passes two "zero" cases
