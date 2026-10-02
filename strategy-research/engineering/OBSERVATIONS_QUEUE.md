@@ -20,8 +20,8 @@ decision (DECISION_LOG) or a ticket.
 | O-11 | C4 run_064, 2026-10-02 | The first C4 backtests ran, then grading stopped on two engineering faults | found: bugs, ticketed (CUL-369, CUL-370, CUL-368); queued-card pass_rule fixed (#296); CUL-368 partly fixed (#298); CUL-369 fixed (D-058, past results not re-scored) |
 | O-12 | C4 run_064, 2026-10-02 | The brief's venue/product never reaches the backtest (data, fees, slippage) | fixed: D-057 (#298) -- the brief's venue reaches the protocol; remaining gaps listed; C4 briefs must say `perp` before relaunch |
 | O-13 | PR #295 review, 2026-10-02 | The size check deliberately passes two "zero" cases: a zero rebalance floor, and an all-zero forecast | recorded (by design, #295); no action |
-| O-14 | D-057 work, 2026-10-02 | A Binance run takes its fee from the spot schedule but its slippage and market check from the margin entry | open: declared fix planned (own PR) |
-| O-15 | CUL-369 work, 2026-10-02 | The whole-test chain never counts a window's first day (its anchor), so each window's entry-day P&L is left out | open: needs a decision (E-062 definition) |
+| O-14 | D-057 work, 2026-10-02 | A Binance run takes its fee from the spot schedule but its slippage and market check from the margin entry | parked (operator, 2026-10-02): no Binance research going forward, Kraken is the target venue |
+| O-15 | CUL-369 work, 2026-10-02 | The whole-test chain never counts a window's first day (its anchor), so each window's entry-day P&L is left out | parked (operator, 2026-10-02): the entry it leaves out is a monthly-restart artifact, not a real cost; real issue moved to O-9 |
 
 ---
 
@@ -511,6 +511,13 @@ a too-large data set.
   coins.
 - Show the period in a pre-backtest artifact or log line, so the operator sees it before
   any trial is spent.
+- **Added 2026-10-02 (from O-15, parked): monthly restarts distort slow strategies.**
+  - **Entries:** every window starts flat with fresh money, so a slow strategy re-opens
+    its position at each window start, about 95 artificial entries over the test.
+  - **Not yet checked:** whether the engine also closes the position at each window's
+    end, which would add artificial exits too.
+  - **Possible directions:** carry the position across windows, or test in one continuous
+    run and split the results by window afterwards.
 
 
 ## O-10. `base` made 0 trades in 95 windows: the forecast was shrunk about a million-fold
@@ -739,6 +746,12 @@ research models (spot or margin), make that one entry the source of both fee and
 re-pin the tests that assert 7.5 bps, and state the before/after on a reference run. No
 re-scoring of past results unless the operator asks.
 
+**Parked (operator, 2026-10-02):** no more time on Binance cost modelling. Research
+moves to Kraken, the venue the team will trade on (the operator notes regulation limits
+Binance use in France; not verified here). Kraken runs take both fee and slippage from
+one `cost_model.json` entry (D-057), so this mix does not affect them. Reopen only if a
+Binance run is ever needed again.
+
 
 ## O-15. The whole-test chain never counts a window's first day
 
@@ -756,9 +769,22 @@ day's close, which includes opening the position and its entry cost.
 entry cost, is not in the chain. For a strategy that re-enters at every window start, that
 leaves out one entry cost per window.
 
-**Next:** open. Possible fix: anchor each window at its starting equity (before its first
-bar) instead of its first close, so the first day's return is counted. That changes the
-whole-test definition (E-062), so it needs its own decision. Not part of CUL-369.
+**Next (superseded):** open. Possible fix: anchor each window at its starting equity (before
+its first bar) instead of its first close, so the first day's return is counted. That
+changes the whole-test definition (E-062), so it needs its own decision. Not part of CUL-369.
+
+**Parked (operator, 2026-10-02).** The fix above would add the wrong thing:
+- **The entry is a test artifact.** Each monthly window starts flat with fresh money, so
+  the strategy opens a position on day 1 of every window: about 95 entries over the test.
+  A strategy running live opens once and holds across months; it never pays those
+  monthly entries. Counting them would penalise the strategy for how it is tested, not
+  for how it trades. That weighs most on slow strategies, such as C4's (~100 trades per
+  coin over the whole test).
+- **The only real gain is one daily return in ~30 added to the whole-test Sharpe.** That
+  makes it slightly more precise; it does not remove a bias.
+
+The underlying issue is testing slow strategies in one-month pieces at all. That is moved
+to O-9.
 
 ---
 
