@@ -1705,10 +1705,9 @@ def _assert_legacy_label_retired(h: Harness, run_id: str) -> None:
         for row in slices["per_window"]:
             assert not set(STUB_ROUTE_CORE) & set(row["core"]), vid
             assert row["core"]["forecast_return_corr"] == 0.02, vid
-        for rows in slices["per_symbol"].values():
+        for rows in slices["per_symbol"].values():  # CUL-370: an index, no core copy
             for row in rows:
-                assert not set(STUB_ROUTE_CORE) & set(row), vid
-                assert row["forecast_return_corr"] == 0.02, vid
+                assert set(row) == {"window", "run_id"}, vid
 
 
 def _assert_c5_6_run_completed(h: Harness, r1: str = "run_001") -> None:

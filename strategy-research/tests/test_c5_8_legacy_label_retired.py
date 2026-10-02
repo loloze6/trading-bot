@@ -263,9 +263,8 @@ def test_gate_on_skips_c7_clears_a_stale_file_strips_the_report_and_keeps_every_
         for row in slices["per_window"]:
             assert not set(CORE_ROUTE_KEYS) & set(row["core"]), vid
             assert row["core"]["post_backtest_cost_check_real"] == _COST_CHECK
-        for row in slices["per_symbol"]["BTCUSDT"]:
-            assert not set(CORE_ROUTE_KEYS) & set(row), vid
-            assert row["forecast_return_corr"] == 0.02
+        for row in slices["per_symbol"]["BTCUSDT"]:  # CUL-370: an index, no core copy
+            assert set(row) == {"window", "run_id"}, vid
     # the per-variant protocol results themselves are untouched
     source = rpr.load_yaml(run_dir / "artifacts" / "variants" / "base" / "protocol_result.yaml")
     assert source["hypothesis_verdict"]["verdict"] == "kill"
@@ -357,10 +356,7 @@ def _expected_stripped(report: dict) -> dict:
         for row in s["per_window"]:
             for k in CORE_ROUTE_KEYS:
                 del row["core"][k]
-        for rows in s["per_symbol"].values():
-            for row in rows:
-                for k in CORE_ROUTE_KEYS:
-                    del row[k]
+        # CUL-370: per_symbol rows are {window, run_id} -- no core keys to drop
     return r
 
 
