@@ -74,10 +74,22 @@ need the marker: it queries a family name guaranteed absent from either a
 real or an empty wishlist file, so `missing_field` is the correct result
 either way -- confirmed by it passing unmarked under this guard.
 """
+import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+# Parallel runs (pytest-xdist, `-n 8`): every worker process would otherwise let
+# numpy/BLAS start one thread per core, so 8 workers x 8 threads fight over 8
+# cores (measured 2026-10-03: the slowest tests ran 5-7x slower in parallel than
+# alone). One thread per worker. Set before anything imports numpy; only in a
+# worker (xdist sets PYTEST_XDIST_WORKER), so a serial run is unchanged; an
+# explicit value in the environment still wins.
+if os.environ.get("PYTEST_XDIST_WORKER"):
+    for _var in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
+                 "NUMEXPR_NUM_THREADS"):
+        os.environ.setdefault(_var, "1")
 
 import pytest
 from _net_guard import install_network_block, register_network_marker
