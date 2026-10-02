@@ -293,8 +293,8 @@ def test_fix10_reader_uses_shared_model_and_token_helper(monkeypatch):
                              "usage": {"input_tokens": 3, "cache_read_input_tokens": 7}})()
     monkeypatch.setattr(rpr, "ClaudeAgentOptions", _Opts)
     monkeypatch.setattr(rpr, "query", _query)
-    with pytest.raises(reader_proposals.ProposalError):  # no text -> no fenced block
-        rpr.run_reader_worker("profitability", RUN_ID, run_dir)
+    # no text -> no fenced block, twice; CUL-380: recorded as dropped, no raise
+    rpr.run_reader_worker("profitability", RUN_ID, run_dir)
     assert seen == ["sentinel-model", "sentinel-model"]
     audit = rpr.load_yaml(run_dir / "pipeline_state.yaml")["audit_log"]
     assert audit["specialist_readers_profitability_attempt_0"]["tokens"] == \

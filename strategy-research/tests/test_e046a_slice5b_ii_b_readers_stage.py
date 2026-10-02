@@ -318,7 +318,14 @@ def test_resume_revalidates_existing_files_without_rerunning(monkeypatch):
 # 4. Fail-loud reader output
 # ---------------------------------------------------------------------------
 
-def test_malformed_proposal_fails_loud(monkeypatch):
+def _dropped(run_dir, category="profitability"):
+    audit = rpr.load_yaml(run_dir / "pipeline_state.yaml")["audit_log"]
+    return audit[f"specialist_readers_{category}_attempt_0_retry1"]["dropped_proposals"]
+
+
+def test_malformed_proposal_is_dropped_loudly_after_one_retry(monkeypatch):
+    """CUL-380: still refused and recorded, never kept -- but the run goes on
+    (before: the run halted)."""
     _set_orchestrator(ALL_ON)
     monkeypatch.chdir(SR_ROOT)
     run_dir = _seed_run()
@@ -327,28 +334,27 @@ def test_malformed_proposal_fails_loud(monkeypatch):
     calls = []
     monkeypatch.setattr(rpr, "_invoke_reader_llm", _fake_llm(
         {"profitability": "```yaml\n" + yaml.safe_dump([bad]) + "```"}, calls))
-    with pytest.raises(reader_proposals.ProposalError, match="confidence_real"):
-        rpr._run_specialist_readers(RUN_ID, run_dir)
+    result = rpr._run_specialist_readers(RUN_ID, run_dir)
     # one bounded retry, with the validation error in the second prompt
-    assert [c for c, _ in calls] == ["profitability", "profitability"]
+    assert [c for c, _ in calls if c == "profitability"] == ["profitability", "profitability"]
     assert "FAILED VALIDATION" in calls[1][1] and "confidence_real" in calls[1][1]
-    # code-review fix 3: the bad output never reaches the final path
-    assert not (run_dir / "artifacts" / "proposals" / "profitability.yaml").exists()
+    # code-review fix 3 still holds: the bad proposal never reaches the final path
+    assert result["profitability"] == []
+    assert rpr.load_yaml(run_dir / "artifacts" / "proposals" / "profitability.yaml") == []
     assert (run_dir / "artifacts" / "debug_specialist_readers_profitability_raw_output.txt").exists()
+    [drop] = _dropped(run_dir)
+    assert drop["index"] == 0 and "confidence_real" in drop["error"]
 
 
-def test_bad_output_does_not_block_resume_and_retry_can_succeed(monkeypatch):
-    """code-review fix 3: after a failed reader, a resume re-runs it (nothing
-    stuck at the final path); a first invalid then valid answer succeeds."""
+def test_a_retry_can_succeed(monkeypatch):
+    """code-review fix 3: a first invalid then valid answer succeeds, with no
+    drop recorded. (CUL-380: a reader that fails twice no longer stops the run,
+    so there is no failed attempt left to resume from.)"""
     _set_orchestrator(ALL_ON)
     monkeypatch.chdir(SR_ROOT)
     run_dir = _seed_run()
     bad = _proposal("profitability")
     bad["scores"]["confidence_real"] = 5
-    monkeypatch.setattr(rpr, "_invoke_reader_llm", _fake_llm(
-        {"profitability": "```yaml\n" + yaml.safe_dump([bad]) + "```"}))
-    with pytest.raises(reader_proposals.ProposalError):
-        rpr._run_specialist_readers(RUN_ID, run_dir)
     answers = iter(["```yaml\n" + yaml.safe_dump([bad]) + "```", "```yaml\n[]\n```"])
     calls = []
     good = _fake_llm(calls=calls)
@@ -361,10 +367,14 @@ def test_bad_output_does_not_block_resume_and_retry_can_succeed(monkeypatch):
     result = rpr._run_specialist_readers(RUN_ID, run_dir)
     assert result["profitability"] == []
     assert len(calls) == 4
+    audit = rpr.load_yaml(run_dir / "pipeline_state.yaml")["audit_log"]
+    assert "dropped_proposals" not in audit["specialist_readers_profitability_attempt_0_retry1"]
 
 
-def test_reader_that_routes_fails_loud(monkeypatch):
-    """A reader emitting routing vocabulary as a field is rejected, not ignored."""
+def test_a_reader_that_routes_is_refused_and_recorded(monkeypatch):
+    """A reader emitting routing vocabulary as a field is rejected, not ignored:
+    the proposal never reaches the proposals file and the refusal is recorded
+    (CUL-380: dropped, the run goes on)."""
     _set_orchestrator(ALL_ON)
     monkeypatch.chdir(SR_ROOT)
     run_dir = _seed_run()
@@ -372,22 +382,42 @@ def test_reader_that_routes_fails_loud(monkeypatch):
     bad["hypothesis_verdict"] = "promote"
     monkeypatch.setattr(rpr, "_invoke_reader_llm", _fake_llm(
         {"profitability": "```yaml\n" + yaml.safe_dump([bad]) + "```"}))
-    with pytest.raises(reader_proposals.ProposalError, match="undeclared field"):
-        rpr._run_specialist_readers(RUN_ID, run_dir)
+    result = rpr._run_specialist_readers(RUN_ID, run_dir)
+    assert result["profitability"] == []
+    assert "hypothesis_verdict" not in (run_dir / "artifacts" / "proposals" / "profitability.yaml"
+                                        ).read_text(encoding="utf-8")
+    [drop] = _dropped(run_dir)
+    assert "undeclared field" in drop["error"]
+
+
+def test_a_valid_proposal_next_to_an_invalid_one_is_kept(monkeypatch):
+    _set_orchestrator(ALL_ON)
+    monkeypatch.chdir(SR_ROOT)
+    run_dir = _seed_run()
+    good, bad = _proposal("profitability"), _proposal("profitability")
+    bad["scores"]["confidence_real"] = 5
+    bad["proposal_id"] = good["proposal_id"][:-1] + "9"
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _fake_llm(
+        {"profitability": "```yaml\n" + yaml.safe_dump([good, bad]) + "```"}))
+    result = rpr._run_specialist_readers(RUN_ID, run_dir)
+    assert [p["proposal_id"] for p in result["profitability"]] == [good["proposal_id"]]
+    [drop] = _dropped(run_dir)
+    assert drop["index"] == 1 and drop["proposal_id"] == bad["proposal_id"]
 
 
 @pytest.mark.parametrize("text", ["no fenced block at all", "```yaml\n[]\n```\n```yaml\n[]\n```"])
-def test_zero_or_several_blocks_fail_loud(monkeypatch, text):
+def test_zero_or_several_blocks_give_no_proposals_and_a_record(monkeypatch, text):
     _set_orchestrator(ALL_ON)
     monkeypatch.chdir(SR_ROOT)
     run_dir = _seed_run()
     calls = []
     monkeypatch.setattr(rpr, "_invoke_reader_llm", _fake_llm({"profitability": text}, calls))
-    with pytest.raises(reader_proposals.ProposalError, match="exactly one is required"):
-        rpr._run_specialist_readers(RUN_ID, run_dir)
-    assert len(calls) == 2
+    result = rpr._run_specialist_readers(RUN_ID, run_dir)
+    assert len([c for c, _ in calls if c == "profitability"]) == 2
+    assert result["profitability"] == []
     assert (run_dir / "artifacts" / "debug_specialist_readers_profitability_raw_output.txt").exists()
-    assert not (run_dir / "artifacts" / "proposals" / "profitability.yaml").exists()
+    [drop] = _dropped(run_dir)
+    assert drop["index"] is None and "exactly one is required" in drop["error"]
 
 
 def test_malformed_file_already_on_disk_fails_loud_not_regenerated(monkeypatch):

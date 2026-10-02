@@ -239,15 +239,18 @@ def test_flag_on_a_v1_reader_output_is_retried_and_the_message_reaches_the_reade
 
 
 @pytest.mark.parametrize("bad", ["made-up-v2", "forecast_power-reader-v2", "profitability-reader-v1"])
-def test_flag_on_a_second_rubric_failure_raises_and_leaves_no_proposals_file(monkeypatch, bad):
+def test_flag_on_a_second_rubric_failure_drops_the_proposal_and_records_it(monkeypatch, bad):
+    """CUL-380: the wrong-rubric proposal never reaches the proposals file and
+    the refusal is recorded; the run is no longer stopped."""
     calls = []
     text = _reader_text([_proposal(rubric=bad)])
-    with pytest.raises(rp.ProposalError, match="reader output invalid after one retry.*rubric_version"):
-        _run_reader(monkeypatch, _seq_llm([text, text], calls))
-    assert len(calls) == 2                                   # exactly one retry, then stop
+    _, dest, audit = _run_reader(monkeypatch, _seq_llm([text, text], calls))
+    assert len(calls) == 2                                   # exactly one retry
+    assert _loaded(dest) == []
     run_dir = rpr.ROOT / "runs" / RUN_ID
-    assert not (run_dir / "artifacts" / "proposals" / f"{CAT}.yaml").exists()
     assert (run_dir / "artifacts" / f"debug_specialist_readers_{CAT}_raw_output.txt").exists()
+    [drop] = audit[f"specialist_readers_{CAT}_attempt_0_retry1"]["dropped_proposals"]
+    assert "rubric_version" in drop["error"]
 
 
 def test_flag_off_the_same_v1_output_is_accepted_first_time(monkeypatch):
