@@ -603,6 +603,11 @@ and the window overlap inflates pooled totals by about 3%.
    run before spend. Filled by hand for run_064; fixed and merged (#296).
 5. Step 2 once wrote only 1 of its 3 files (16k output tokens, 1 turn). A single retry wrote
    all three. The raw answer is not kept when some files parse, so the cause is unknown.
+   *Update 2026-10-02 (CUL-379):* now automatic. A stage that writes some but not all of
+   its deliverables (any stage but 1a), or whose answer has no readable block at all
+   (any stage), is retried once with a format reminder; a second miss still stops for a
+   human. The trigger was run_065's step 1a, which named its file on the line above the
+   YAML fence instead of inside it; that form is now read too.
 
 **State:** run_064 is halted at protocol_execution (status failed). Its two trial rows are
 recorded. Nothing runs on its own. Grading needs CUL-369 (and CUL-370) first.

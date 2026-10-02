@@ -1,0 +1,75 @@
+# hypothesis_card.yaml
+```yaml
+hypothesis_id: C4_donchian_daily_trend
+thesis: "Daily Donchian channel breakout (close position in recent N-day high-low range) predicts 2-5 day continuation as trend-chasing participants extend positions, earning return after costs on daily timeframe where execution friction slows arbitrage."
+
+rationale: "Brief requests testing whether 'slow channel-breakout trend signal on daily bars, long when close sits near top of N-day high-low range, short when near bottom' earns return after fees. Edge mechanism: slow-reacting participants chase breakouts after consolidation, creating continuation before mean-reversion. Two constraints: (1) All price-only technical signals tested in this campaign (RSI, Keltner, EMA, MACD) showed zero IC at 1h on BTC/ETH (range -0.050 to -0.014). Daily differs in timeframe compression only, not mechanism. (2) Donchian breakout is universally known; edge persistence requires behavioral recurrence despite knowledge. Brief acknowledges 2022-2023 window insufficient ('design as if for full history'); diagnostic value tests whether timeframe shift reveals edge vs replicating no-edge finding."
+
+edge_source:
+  category: persistent_behavioral_bias
+  specific_mechanism: "When close sits in top/bottom quintile of N-day (10-20 bar) high-low range, market consensus signals breakout; slow-reacting participants (retail algos, discretionary traders) chase entry for 1-3 trading days, generating continuation pressure before mean-reversion. Mechanism: anchoring to range extremes as support/resistance, plus herding cascade as one participant's entry triggers recognition by others."
+  why_not_arbitraged: "Daily execution carries overnight holding cost (~17 bps round-trip per trade per cost_model.yaml) and slippage that slow fast arbitrage. Retail-dominated daily algorithms operate on bar-close timings (hours), not intraday, limiting arb window. Behavioral bias recurs due to structural incentives (YoY performance metrics, momentum-chasing algo rules) despite being known. Capacity-limited: mega-fund full arbitrage would require billions in daily pairs, saturating available liquidity."
+  evidence_type: price_volume_only
+  measurable_proxy: "Close position within recent N-day high-low range, normalized [-1, +1]: (close - low_N) / (high_N - low_N) * 2 - 1. Mechanism predicts positive correlation between this proxy and next-N-day forward log returns (close near high → upward returns; close near low → downward returns). Observable: forecast_return_corr on 2-5 day holding windows, tested separately for long/short sides to confirm directional prediction."
+
+signal_concept: "Graded forecast, [-20, +20] scale. Signal = 2 × (close - low_15d) / (high_15d - low_15d) - 1, scaled to integers; at close=low, signal=-20 (short 200%); at close=high, signal=+20 (long 200%); midrange ≈ 0 (flat). Position size = signal/10. Converts discrete breakout rule to continuous grading: stronger signal (deeper into range extreme) → larger position. Ungated (no regime condition). Activation ~15% of daily bars to meet 100-trade minimum over window. Departure from config: (1) No stop rules registered (assumes 2-5 bar holding window, then re-evaluation); (2) Signal fires only at daily bar close, position held through day without re-evaluation on intraday bars (not expressible in standard config)."
+
+target_market: "BTC/ETH perpetuals, Kraken venue. Diagnostic window 2022-2023 (six 4-month windows) per brief; full-history design for 2018+ window."
+
+timeframe: "1d"
+
+assumptions:
+  - "Close position in N-day high-low range is recognized proxy for breakout consensus; participants trade it."
+  - "Momentum-chasing and herding persist despite Donchian being universally taught; recurrence is structural (incentive systems, algo rules)."
+  - "2-5 day window sufficient for continuation to manifest before mean-reversion."
+  - "Perp funding and overnight cost < 50% of estimated price edge (assumed edge 20-35 bps, cost ~10 bps)."
+  - "15-day lookback window for high-low range is optimal; parameter sensitivity not tested."
+
+expected_failure_modes:
+  - "High crowding, textbook pattern: Donchian breakout (oldest technical rule, taught universally) is competed away by first trade. Prior campaign result: all price-only technicals (RSI, Keltner-1h, EMA, MACD) returned ic in [-0.050, -0.014], zero directional content. Daily differs in bar compression only, not mechanism. Expected outcome: zero IC or signal_inversion."
+  - "Mechanism-ambiguous proxy: close near range high consistent with (a) herding continuation (claim), (b) mean-reversion regime (opposite), (c) liquidation cascade (unavailable feed). Without liquidation_data, signal mixes opposite mechanisms; net IC ambiguous or zero."
+  - "Cost-dominated kill: 15% activation, 2-5 bar hold, 17.0 bps round-trip cost → required 34 bps gross edge. Textbook breakout patterns net 5-10 bps. Risk: cost_drag > 100%, net return negative."
+  - "Window underpowered: 2022-2023 = ~300 trading days/symbol at 15% activation = 45 events/symbol, 90 total, n_eff ≈ 30-40. Minimum detectable IC ≈ 0.22-0.25, above plausible_ic_upper=0.04. No era-stability defensible. Full-history (2018+) retest needed for power."
+  - "Daily forward-fill staleness bias: if signal forward-filled to intraday bars, creates artificial within-day autocorrelation (24 bars/day same forecast value) confounding IC. Mitigation: fire only at daily close, inherit position intraday without re-evaluation (not expressible in config)."
+
+library_lookup:
+  indicator_id: "donchian_channel_not_in_library"
+  regime_affinity_for_target: "favorable"
+  affinity_justification: "Donchian (high-low breakout) is trend-following, favorable in trending regime per category. Nearest library match: keltner_channel_trend (favorable trend affinity). Keltner at 1h showed ic_active_bars=-0.032 on TRENDING bars (run_039), zero content despite favorable affinity. Donchian differs (pure range vs ATR bands) but both are textbook breakout patterns. No prior campaign Donchian result. Crowding risk: high per A8.6 table (dense_ohlcv_high_crowding = 0.03-0.05 plausible_ic_upper). Trend affinity verdict depends on mechanism being real; prior results suggest false."
+  prior_campaign_failures:
+    - run_id: "run_015"
+      mechanism_tried: "Keltner breakout trend (TRENDING)"
+      result: "signal_inversion"
+    - run_id: "run_033"
+      mechanism_tried: "Keltner mean-reversion (TRENDING)"
+      result: "negative IC"
+    - run_id: "run_043"
+      mechanism_tried: "EMA(9/21) crossover"
+      result: "ic=-0.021, no edge"
+    - run_id: "run_053"
+      mechanism_tried: "MACD histogram"
+      result: "ic=-0.014, ic_active=-0.050, no edge"
+  crowding_risk: high
+  crowding_deviation_justification: "Donchian is textbook, oldest breakout rule (documented since 1970s), universally taught. Library rates keltner_channel_trend at medium crowding, but Donchian competes with higher crowding than Keltner (Keltner is a variant; Donchian is the canonical rule). No deviation justified. High crowding aligns with prior price-only signal pattern (all zero IC). Research continues because brief explicitly requests daily-timeframe test for diagnostic value."
+
+criteria:
+  - id: realized_edge_to_cost_ratio
+
+cost_feasibility:
+  assumed_round_trip_cost_bps: 17.0
+  expected_holding_bars:
+    min: 2
+    max: 5
+  expected_trades_per_window: 16
+  required_gross_edge_bps_per_trade: 34.0
+  plausibility: marginal
+  plausibility_rationale: "Dense daily signal, ~15% activation (required to reach 100-trade floor over 10-month window). Holding 2-5 bars. Round-trip 17.0 bps requires 2× safety factor = 34 bps gross edge per trade. Plausible_ic_upper=0.04 (dense_ohlcv_high_crowding from A8.6). Estimated gross edge: 0.04 IC × 10 bps daily vol × sqrt(3 bars) ≈ 17 bps (rough, speculative). Below required 34 bps by ~2×. Risk of cost-drag > 100% high. Prior textbook patterns show zero or negative IC. Marginal plausibility only."
+
+power_parameters:
+  activation_rate: 0.15
+  plausible_ic_upper: 0.04
+  n_bars: 300
+  n_symbols: 2
+  is_market_wide: false
+  power_note: "Dense OHLCV, high crowding (textbook breakout). Plausible_ic_upper 0.04 from A8.6 table (dense_ohlcv_high_crowding=0.03-0.05). Activation 0.15 needed for 100+ trades over 300-bar window. n_eff (24-bar blocks, 6 eras, cross-symbol rho=0.82) ≈ 30-40. Minimum detectable IC at p<0.10 ≈ 0.22-0.25, above plausible upper. A priori underpowered on 2022-2023 window. Brief specifies diagnostic scope ('design as if for full history'). Full-history 2018+ retest: n_eff ≈ 200+, sufficient to detect plausible 0.03-0.05 IC. Reactivation path: extend window to 2018+."
+```
