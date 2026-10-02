@@ -9035,27 +9035,51 @@ def _assert_windows_clear_of_holdout(windows: list, holdout_start: str,
                 )
 
 
-def _generate_monthly_windows(start: str, end: str, holdout_range=None) -> list:
-    """[start, end] chunked into calendar-month windows, matching baseline_v1.json's
-    schema: [{"label": "YYYY-MM", "test": {"start": ..., "end": ...}}, ...].
+WINDOW_MONTHS_ALLOWED = (1, 2, 3, 4, 6, 12)  # divisors of 12: no tile crosses a year
+
+
+def _generate_monthly_windows(start: str, end: str, holdout_range=None, *,
+                              window_months: int = 1) -> list:
+    """[start, end] chunked into calendar windows of `window_months` months
+    each, matching baseline_v1.json's schema:
+    [{"label": "YYYY-MM", "test": {"start": ..., "end": ...}}, ...] (label =
+    the window's first month).
 
     CUL-369 (D-058): `end` -- the request's and every tile's -- is the LAST
     INCLUDED DAY, the engine's own convention (load_data yields every bar of the
-    end day). Each tile ends on its month's last day and the next starts the day
-    after, so no day is backtested twice; the last tile ends on the requested
-    `end` (an `end` on the 1st of a month gives a one-day last tile -- that day
-    was asked for). Before CUL-369 a tile ended on the next month's 1st, which
-    the engine also backtested, so that day was counted in two windows.
+    end day). Each tile ends on its last month's last day and the next starts
+    the day after, so no day is backtested twice; the last tile ends on the
+    requested `end`. An `end` on the 1st of a month is refused (below). Before
+    CUL-369 a tile ended on the next month's 1st, which the engine also
+    backtested, so that day was counted in two windows.
+
+    `window_months` (machine_constraints.protocol.window_months; default 1 =
+    monthly, byte-identical to before): one of WINDOW_MONTHS_ALLOWED, and
+    `start` must fall on a window boundary of the calendar year (e.g. Jan, May
+    or Sep for 4), so tiles never cross a year -- and so never an era boundary
+    set on a year. Fewer, longer windows mean fewer artificial restarts (each
+    window starts flat and closes at its end, O-9) and smaller reports
+    (CUL-370).
 
     Raises HoldoutBoundaryBreach if any generated tile would reach the sealed
     holdout -- see `_assert_windows_clear_of_holdout`. `holdout_range`
     overrides the policy file (tests only)."""
     from datetime import date as _date, timedelta as _timedelta
+    if isinstance(window_months, bool) or window_months not in WINDOW_MONTHS_ALLOWED:
+        raise ValueError(f"machine_constraints.protocol window_months={window_months!r} must be "
+                         f"one of {WINDOW_MONTHS_ALLOWED} (a divisor of 12)")
     y, m = int(start[:4]), int(start[5:7])
+    if (m - 1) % window_months:
+        raise ValueError(
+            f"machine_constraints.protocol start={start!r} with window_months={window_months}: "
+            f"windows must start on a calendar boundary (months "
+            f"{[1 + k * window_months for k in range(12 // window_months)]}) so none crosses a "
+            f"year -- move `start` to one of those months")
     end_y, end_m = int(end[:4]), int(end[5:7])
     windows = []
     while (y, m) <= (end_y, end_m):
-        ny, nm = (y + 1, 1) if m == 12 else (y, m + 1)
+        ny, nm = divmod((y * 12 + m - 1) + window_months, 12)
+        nm += 1
         window_start = f"{y:04d}-{m:02d}-01"
         window_end = min((_date(ny, nm, 1) - _timedelta(days=1)).isoformat(), end[:10])
         windows.append({"label": f"{y:04d}-{m:02d}", "test": {"start": window_start, "end": window_end}})
@@ -9107,7 +9131,8 @@ def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: d
     start = min(per_symbol_start.values()) if per_symbol_start else proto_constraint["start"]
     end = proto_constraint["end"]
 
-    windows = _generate_monthly_windows(start, end)
+    windows = _generate_monthly_windows(
+        start, end, window_months=proto_constraint.get("window_months", 1))
     # The seal has ONE home. Defaulting to a literal here was a second copy of
     # holdout_range that nothing kept in sync with the policy file, in the very
     # function whose windows have to be checked against it. CUL-339: an

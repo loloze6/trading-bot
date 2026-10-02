@@ -15,7 +15,7 @@ decision (DECISION_LOG) or a ticket.
 | O-6 | C4 run_063, 2026-09-30 | Park reason says "component" when most failures were data | found: reporting bug, fix |
 | O-7 | C4 run_063, 2026-09-30 | A threshold (breakout) idea in a linear-forecast design | found: doc bug + fidelity gap (fix); forecast rule (decision) |
 | O-8 | C4 run_061, 2026-10-01 | Data gate blocks every version over small gaps the backtest already handles | found: design gap; target design ticketed (CUL-367); run_061 continued by override |
-| O-9 | C4 run_061, 2026-10-02 | Nothing before the backtest says which test windows are used, or how long they are | open: to investigate |
+| O-9 | C4 run_061, 2026-10-02 | Nothing before the backtest says which test windows are used, or how long they are | partly addressed: D-059 window_months + RUNBOOK 1f; automatic check parked (CUL-372); continuous testing open |
 | O-10 | C4 run_061, 2026-10-02 | `base` made 0 trades in 95 windows: the forecast was shrunk ~1,000,000x | found: doc bug + missing fail-loud check; trial invalidated, run stopped |
 | O-11 | C4 run_064, 2026-10-02 | The first C4 backtests ran, then grading stopped on two engineering faults | found: bugs, ticketed (CUL-369, CUL-370, CUL-368); queued-card pass_rule fixed (#296); CUL-368 partly fixed (#298); CUL-369 fixed (D-058, past results not re-scored) |
 | O-12 | C4 run_064, 2026-10-02 | The brief's venue/product never reaches the backtest (data, fees, slippage) | fixed: D-057 (#298) -- the brief's venue reaches the protocol; remaining gaps listed; C4 briefs must say `perp` before relaunch |
@@ -514,8 +514,13 @@ a too-large data set.
 - **Added 2026-10-02 (from O-15, parked): monthly restarts distort slow strategies.**
   - **Entries:** every window starts flat with fresh money, so a slow strategy re-opens
     its position at each window start, about 95 artificial entries over the test.
-  - **Not yet checked:** whether the engine also closes the position at each window's
-    end, which would add artificial exits too.
+  - **Exits, confirmed 2026-10-02:** the engine also force-closes any open position on
+    each window's last bar (`_close_all_positions_at_end`); run_protocol labels these
+    exits `end_of_window` (`_classify_exit_reason`). On run_054 (6-month windows) about
+    14% of exits were such forced closes. So monthly windows add an artificial entry
+    AND exit per window.
+  - **First step, done:** D-059 lets a brief choose fewer, longer windows
+    (`window_months`); RUNBOOK 1f.
   - **Possible directions:** carry the position across windows, or test in one continuous
     run and split the results by window afterwards.
 
