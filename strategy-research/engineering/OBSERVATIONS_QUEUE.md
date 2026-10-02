@@ -17,6 +17,7 @@ decision (DECISION_LOG) or a ticket.
 | O-8 | C4 run_061, 2026-10-01 | Data gate blocks every version over small gaps the backtest already handles | found: design gap; target design ticketed (CUL-367); run_061 continued by override |
 | O-9 | C4 run_061, 2026-10-02 | Nothing before the backtest says which test windows are used, or how long they are | open: to investigate |
 | O-10 | C4 run_061, 2026-10-02 | `base` made 0 trades in 95 windows: the forecast was shrunk ~1,000,000x | found: doc bug + missing fail-loud check; trial invalidated, run stopped |
+| O-11 | C4 run_064, 2026-10-02 | The first C4 backtests ran, then grading stopped on two engineering faults | found: bugs, ticketed (CUL-369, CUL-370, CUL-368); queued-card pass_rule bug fixed (PR) |
 
 ---
 
@@ -545,6 +546,46 @@ nothing to catch it.**
    and resulting scale, without recommending `vol_adjusted` alone; and (b) a fail-loud
    check that refuses a forecast that cannot reach the rebalance threshold. Then send
    run_061 back to step 1b to re-author the config.
+
+
+## O-11. The first C4 backtests ran, then grading stopped on two engineering faults
+
+**Seen:** run_064 relaunched run_061's card past step 1a (new run id, so its trials count: the
+trial recorder skips a repeated trial_id). Step 1b re-authored the config with the corrected
+guide (`vol_normalize` history + `ratio_to_mean` + `scale` 10); the D-056 size probe passed it
+(88% of sample bars tradable). Two variants were backtested on 95 monthly BTCUSDT 1h windows,
+then protocol_execution halted before grading.
+
+**Measured results (trials, counted in N):**
+
+| variant | trades | pooled gross | pooled net | median Sharpe |
+|---|---|---|---|---|
+| `base` (scale 10) | 32,648 | -1,354.1 | -12,172.7 | -2.879 |
+| `V1_conservative_scale` (scale 5) | 20,513 | -726.6 | -6,098.8 | -2.605 |
+
+Negative before costs; the vol-normalised signal changes size every bar, so it rebalances
+several times a day and costs dominate. These figures are not graded: see the faults below,
+and the window overlap inflates pooled totals by about 3%.
+
+**Engineering faults found on the way (each its own ticket or PR):**
+1. **Windows overlap by one day (CUL-369, Urgent).** Each window's backtest includes the
+   whole end day (2018-03 window: 2018-03-01 00:00 to 2018-04-01 23:00, 768 bars). The next
+   window starts on that day, so it is counted twice and the grid's time-ordered fit refuses
+   the data (`RecordOrderError`). This likely affects every past monthly-window run.
+2. **Category report over its size budget (CUL-370).** `profitability.yaml` would be 716,645
+   characters (budget 400,000) on 95 windows x 2 variants: a per-window grouping grows
+   unbounded. Same root as O-9: nothing caps the protocol length.
+3. **No Kraken asset variant can be backtested (CUL-368).** `cost_model.json` has no
+   (kraken, margin) entry and run_protocol passes no market_type. The D-056 probe caught it
+   on `asset_aaveusdt` before spend; it is now a D-042 coverage skip.
+4. **A queued-card launch got no pass_rule** (the first one ever): it skips 1a, so
+   `_write_pass_rule_from_card` never ran and the specialist_readers pre-flight refused the
+   run before spend. Filled by hand for run_064; fixed in branch `fix/queued-card-pass-rule`.
+5. Step 2 once wrote only 1 of its 3 files (16k output tokens, 1 turn). A single retry wrote
+   all three. The raw answer is not kept when some files parse, so the cause is unknown.
+
+**State:** run_064 is halted at protocol_execution (status failed). Its two trial rows are
+recorded. Nothing runs on its own. Grading needs CUL-369 (and CUL-370) first.
 
 ---
 
