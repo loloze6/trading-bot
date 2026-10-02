@@ -19,6 +19,7 @@ decision (DECISION_LOG) or a ticket.
 | O-10 | C4 run_061, 2026-10-02 | `base` made 0 trades in 95 windows: the forecast was shrunk ~1,000,000x | found: doc bug + missing fail-loud check; trial invalidated, run stopped |
 | O-11 | C4 run_064, 2026-10-02 | The first C4 backtests ran, then grading stopped on two engineering faults | found: bugs, ticketed (CUL-369, CUL-370, CUL-368); queued-card pass_rule bug fixed (PR) |
 | O-12 | C4 run_064, 2026-10-02 | The brief's venue/product never reaches the backtest (data, fees, slippage) | found: deferred design (CUL-46, E-014); C4 venue = Kraken futures (operator); Phase A planned |
+| O-13 | PR #295 review, 2026-10-02 | The size check deliberately passes two "zero" cases: a zero rebalance floor, and an all-zero forecast | recorded (by design, #295); no action |
 
 ---
 
@@ -621,6 +622,33 @@ never built.**
 **Next:** Phase A of the wiring. Map every place that decides exchange, market, fee and
 slippage, plus which caches exist per venue/market (Kraken futures OHLCV and funding for
 BTC/ETH). Then STOP for the operator's nod. No C4 backtest until it is in.
+
+
+## O-13. The size check deliberately passes two "zero" cases
+
+**Context:** PR #295 (D-056, forecast-size probe), reworked 2026-10-02 to bug-only on invented
+data. Recorded at the operator's request so the behaviour is not mistaken for a gap later.
+
+**1. A zero rebalance floor.** A strategy config may set its own
+`strategies.min_allocation_change` (the engine uses it instead of config.json's 0.2). At 0,
+every nonzero forecast moves the position, so no size can be a bug. The probe's threshold is
+then 0 and it never refuses on size, only on an all-NaN forecast. Pinned by
+`tests/test_d056_forecast_size_probe.py::test_a_zero_strategy_floor_means_any_nonzero_forecast_trades`
+(a 1e-9 forecast passes at floor 0). A negative floor fails loud
+(`test_a_negative_strategy_floor_fails_loud`).
+
+**2. An all-zero forecast.** If the forecast is exactly 0 on every bar of the invented series,
+the probe passes it with a note ("silent"), never a refusal. A rare-event strategy can be
+silent on any sample, and how often a strategy trades is the backtest's question, not the
+probe's (operator, 2026-10-02). Pinned by
+`test_a_forecast_silent_on_every_bar_passes_with_a_note`; the mutation that refuses it is caught.
+
+**What the probe still refuses:** every forecast NaN, or a nonzero forecast whose largest
+magnitude stays below 1/100 of 10 x the floor (a units/scale bug; run_061 was 9e-7 vs 2.0).
+
+**Consequence to keep in mind:** a config whose forecast is silent because of a bug (e.g. a
+regime that never activates on any data) passes the probe. The backtest shows it as 0 trades
+and the readers must report it as such, not as a market result.
 
 ---
 
