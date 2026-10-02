@@ -14,7 +14,7 @@ decision (DECISION_LOG) or a ticket.
 | O-5 | C4 run_063, 2026-09-30 | Asset variants evicted instead of re-windowed; the "at least 2 variants" rule | found: SOL as intended; XRP a design gap (decision) |
 | O-6 | C4 run_063, 2026-09-30 | Park reason says "component" when most failures were data | found: reporting bug, fix |
 | O-7 | C4 run_063, 2026-09-30 | A threshold (breakout) idea in a linear-forecast design | found: doc bug + fidelity gap (fix); forecast rule (decision) |
-| O-8 | C4 run_061, 2026-10-01 | Data gate blocks every version over small gaps the backtest already handles | found: design gap; target design ticketed (CUL-367); run_061 continued by override |
+| O-8 | C4 run_061, 2026-10-01 | Data gate blocks every version over small gaps the backtest already handles | found: design gap; target design ticketed (CUL-367); run_061 continued by override; gaps <= 3 bars no longer pause (D-060, CUL-374) |
 | O-9 | C4 run_061, 2026-10-02 | Nothing before the backtest says which test windows are used, or how long they are | partly addressed: D-059 window_months + RUNBOOK 1f; automatic check parked (CUL-372); continuous testing open |
 | O-10 | C4 run_061, 2026-10-02 | `base` made 0 trades in 95 windows: the forecast was shrunk ~1,000,000x | found: doc bug + missing fail-loud check; trial invalidated, run stopped |
 | O-11 | C4 run_064, 2026-10-02 | The first C4 backtests ran, then grading stopped on two engineering faults | found: bugs, ticketed (CUL-369, CUL-370, CUL-368); queued-card pass_rule fixed (#296); CUL-368 partly fixed (#298); CUL-369 fixed (D-058, past results not re-scored) |
