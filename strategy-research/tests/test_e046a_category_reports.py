@@ -92,20 +92,18 @@ def test_reprojection_profitability_per_window_core_equals_source(run_059_source
 
 
 def test_reprojection_profitability_per_symbol_is_exact_regrouping(run_059_sources, run_059_reports):
-    """Every (symbol, window) core block in the per_symbol slice must equal
-    the corresponding source entry's core block exactly -- proves the
-    per_symbol slice is a pure regroup, not a recomputed aggregate."""
+    """CUL-370: the per_symbol slice is an INDEX of each symbol's windows
+    ({window, run_id}), a pure regroup of the source results -- every result
+    exactly once, under its own symbol, with no second copy of `core` (that
+    lives in per_window only; the duplicate doubled the report)."""
     pr = run_059_sources["protocol_result"]
-    by_symbol_window = {(r["symbol"], r["window"]): r["core"] for r in pr["results"]}
+    by_symbol_window = {(r["symbol"], r["window"]): r["run_id"] for r in pr["results"]}
     per_symbol = run_059_reports["profitability"]["slices"]["per_symbol"]
     seen = 0
     for symbol, entries in per_symbol.items():
         for entry in entries:
-            source_core = by_symbol_window[(symbol, entry["window"])]
-            # entry is source_core's fields spread alongside window/run_id --
-            # every key that also exists in source_core must match exactly.
-            for key, value in source_core.items():
-                assert entry[key] == value
+            assert set(entry) == {"window", "run_id"}
+            assert by_symbol_window[(symbol, entry["window"])] == entry["run_id"]
             seen += 1
     assert seen == len(pr["results"])
 
@@ -665,3 +663,13 @@ def test_report_char_budget_guard_does_not_fire_on_run_059(run_059_sources):
         report = builder(run_059_sources)
         size = len(yaml.safe_dump(report, sort_keys=False, allow_unicode=True))
         assert size <= br.REPORT_CHAR_BUDGET, f"{name}.yaml is {size} chars, over budget"
+
+
+def test_cul370_per_symbol_is_a_small_index_not_a_second_copy(run_059_reports):
+    """CUL-370: the per_symbol slice carries no core block, so it stays a small
+    fraction of per_window (the duplicate made it as large, doubling the report
+    -- run_064's profitability.yaml was 716,645 chars)."""
+    import yaml as _yaml
+    slices = run_059_reports["profitability"]["slices"]
+    size = lambda x: len(_yaml.safe_dump(x, sort_keys=False))  # noqa: E731
+    assert size(slices["per_symbol"]) * 5 < size(slices["per_window"])  # ~1/9.5 measured; ~1/1 before

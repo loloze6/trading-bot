@@ -392,6 +392,21 @@ def layer1_price_precheck(layer1: dict, exchange: str, symbol: str, timeframe: s
 # Layer 2 -- real per-window / per-feed data touch
 # ---------------------------------------------------------------------------
 
+def _measure_end(window_end) -> datetime.datetime:
+    """CUL-369 (D-058): the exclusive bound to MEASURE a window to. `test.end`
+    is the LAST INCLUDED DAY -- the engine loads every bar of a date-only end
+    (base_fetcher._inclusive_end) -- so the window is measured to the next
+    midnight and a gap on its last day counts as missing (before CUL-369 the
+    gate stopped at the end day's midnight and never looked at that day). Like
+    the engine (base_fetcher._inclusive_end: `ts == ts.normalize()`), any
+    midnight end counts as the whole day; an end with another time of day is
+    taken literally."""
+    ts = pd.Timestamp(window_end)
+    if ts == ts.normalize():
+        ts = ts + pd.Timedelta(days=1)
+    return ts.to_pydatetime()
+
+
 def _expected_bar_count(start: datetime.datetime, end: datetime.datetime, interval_seconds: int) -> int:
     total_seconds = (end - start).total_seconds()
     return max(int(total_seconds // interval_seconds), 0)
@@ -543,7 +558,7 @@ def check_price_window(symbol: str, exchange: str, timeframe: str,
             f"function directly with a bad timeframe is a real bug, fail loud."
         )
     start_dt = pd.Timestamp(window_start).to_pydatetime()
-    end_dt = pd.Timestamp(window_end).to_pydatetime()
+    end_dt = _measure_end(window_end)  # CUL-369: through the end day's last bar
 
     if fetch_interval_seconds == "AMBIENT":
         fetch_interval_seconds = _read_ambient_fetch_interval_seconds()
@@ -613,7 +628,7 @@ def check_aux_feed_window(feed_name: str, exchange: str, symbols: list,
 
     data_dir = os.path.join(_TBOT, "local_data")
     start_dt = pd.Timestamp(window_start).to_pydatetime()
-    end_dt = pd.Timestamp(window_end).to_pydatetime()
+    end_dt = _measure_end(window_end)  # CUL-369: through the end day's last bar
 
     if feed_name in _VENUE_LESS_FEED_NAMES:
         try:

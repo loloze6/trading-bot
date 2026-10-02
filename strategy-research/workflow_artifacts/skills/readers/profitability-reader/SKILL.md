@@ -61,7 +61,8 @@ variants:
                     # idea's status is the grid's.
       per_window:   # [{symbol, window, run_id, core: {...}}, ...] one entry per walk-forward window
       per_regime:   # {regime_label: [{symbol, window, ...per_regime block fields}, ...]}
-      per_symbol:   # {symbol: [{window, run_id, ...core block fields}, ...]}
+      per_symbol:   # {symbol: [{window, run_id}, ...]} -- an index of each symbol's windows; the
+                    # core block fields are in per_window (filter per_window by `symbol`)
   design_1: {kind: design | null, symbol: ..., status: graded, slices: {...same shape...}}
   asset_1:  {kind: asset  | null, symbol: ..., status: graded, slices: {...same shape...}}
 failed_variants:      # {<vid>: reason} -- E-061 C2 S2a (D-015): a variant of this idea that was
@@ -167,7 +168,7 @@ Must cite a specific field path from `profitability.yaml`'s own `slices`, not a 
 evidence:
   - "variants.base.slices.overall.diagnostics.median_cost_drag_pct=142.82, median_gross_pnl=+21.94 -- gross
      PnL positive but fees consume it (Rule 1 shape)."
-  - "variants.base.slices.per_symbol.BTCUSDT[*].core.cost_drag_pct all > 100% across 4/5 windows."
+  - "variants.base.slices.per_window[*].core.cost_drag_pct all > 100% across 4/5 BTCUSDT windows."
 
 # BAD -- restates a conclusion without citing a field
 evidence:

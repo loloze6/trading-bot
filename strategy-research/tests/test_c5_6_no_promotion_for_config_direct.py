@@ -63,7 +63,7 @@ _RETIRED_FLAGS = {name: {"enabled": True} for name in (
 
 def _constraints(promotion="absent", **over) -> dict:
     proto = {"symbols": ["BTCUSDT"], "timeframe": "1h", "start": "2022-01-01",
-             "end": "2022-03-01"}
+             "end": "2022-02-28"}
     if promotion != "absent":
         proto["promotion"] = promotion
     proto.update(over)
@@ -198,7 +198,7 @@ def test_flag_off_generated_protocol_is_unchanged_key_for_key_and_in_order(monke
     assert written["promotion"] == _NON_GENERIC
     expected_bytes = json.dumps({
         "symbols": ["BTCUSDT"], "timeframe": "1h",
-        "windows": rpr._generate_monthly_windows("2022-01-01", "2022-03-01"),
+        "windows": rpr._generate_monthly_windows("2022-01-01", "2022-02-28"),
         "holdout": rpr._generated_protocol_holdout_block(constraints["protocol"]),
         "promotion": _NON_GENERIC}, indent=2)
     assert path.read_text(encoding="utf-8") == expected_bytes

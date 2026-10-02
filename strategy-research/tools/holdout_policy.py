@@ -178,3 +178,24 @@ def check_windows_before(windows, holdout_start: str) -> None:
                 f"INCLUSIVE-BY-DAY at the engine, so an end equal to holdout_start still "
                 f"materialises that whole day's bars. Fix the protocol's windows before "
                 f"proceeding.")
+
+
+def windows_overlap(windows) -> str | None:
+    """CUL-369 (D-058): why these windows share a day, or None. `test.end` is
+    the LAST INCLUDED DAY (the engine loads every bar of it), so two windows
+    whose day ranges [start, end] intersect backtest those days twice -- the
+    pooled records double-count them and the grid's time-ordered fit refuses
+    them. Compared on YYYY-MM-DD in start order. A malformed window is skipped
+    here: check_windows_before refuses it (run_protocol calls both)."""
+    spans = sorted((days["start"], days["end"], w.get("label", "?"))
+                   for w in (windows if isinstance(windows, list) else [])
+                   if isinstance(w, dict) and isinstance(w.get("test"), dict)
+                   for days in [{e: iso_day(w["test"].get(e)) for e in ("start", "end")}]
+                   if days["start"] and days["end"])
+    for (s1, e1, l1), (s2, e2, l2) in zip(spans, spans[1:]):
+        if s2 <= e1:
+            return (f"windows {l1!r} [{s1}..{e1}] and {l2!r} [{s2}..{e2}] share day(s) "
+                    f"{s2}..{min(e1, e2)}: test.end is the LAST INCLUDED DAY (the engine loads "
+                    f"every bar of it), so those days would be backtested twice (CUL-369, D-058). "
+                    f"End each window the day before the next one starts.")
+    return None

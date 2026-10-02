@@ -389,7 +389,7 @@ def test_ratified_or_non_generic_pinned_protocol_passes(monkeypatch, promotion, 
 
 def test_generated_protocol_with_a_generic_promotion_is_refused_before_generation():
     run_dir = _scaffold(constraints={"protocol": {"symbols": ["BTCUSDT"], "start": "2022-01-01",
-                                                  "end": "2022-03-01",
+                                                  "end": "2022-02-28",
                                                   "promotion": dict(rpr._GENERIC_PROMOTION)}})
     refusal = camp._protocol_preflight_refusal(run_dir, RUN, promotion_retired=False)
     assert refusal and "G7/D-3" in refusal and f"{RUN}_generated.json" in refusal
@@ -698,7 +698,7 @@ def test_an_unresolvable_resolution_closes_the_run_despite_any_preflight_problem
 
 def _generated_constraints(promotion, **over):
     proto = {"symbols": ["BTCUSDT"], "timeframe": "1h", "start": "2022-01-01",
-             "end": "2022-03-01", "promotion": promotion}
+             "end": "2022-02-28", "promotion": promotion}
     proto.update(over)
     return {"protocol": proto}
 
@@ -832,7 +832,7 @@ def test_real_generated_run_shapes_under_the_hitl_resume(tmp_path, monkeypatch, 
     assert (_SR / "protocols" / f"{run_id}_generated.json").read_bytes() == before
 
 
-@pytest.mark.parametrize("change,field", [({"end": "2022-04-01"}, "windows"),
+@pytest.mark.parametrize("change,field", [({"end": "2022-03-31"}, "windows"),
                                           ({"symbols": ["ETHUSDT"]}, "symbols"),
                                           ({"timeframe": "4h"}, "timeframe")])
 def test_a_non_promotion_change_before_spend_is_refused(monkeypatch, change, field):

@@ -119,7 +119,8 @@ REPORT = {
     "category": CAT,
     "variants": {"base": {"slices": {
         "overall": {"diagnostics": {"median_cost_drag_pct": 142.82, "median_gross_pnl": 21.94}},
-        "per_window": [{"core": {"sharpe": 0.1}}, {"core": {"sharpe": -0.2}}],
+        "per_window": [{"core": {"sharpe": 0.1, "cost_drag_pct": 120.0}},
+                       {"core": {"sharpe": -0.2, "cost_drag_pct": 90.0}}],
         "per_regime": {"trending": {"core": {"sharpe": 0.3}}},
         "per_symbol": {"BTCUSDT": [{"core": {"cost_drag_pct": 120.0}}, {"core": {"cost_drag_pct": 90.0}}]},
     }}},
@@ -352,7 +353,7 @@ def test_the_profitability_good_example_by_hand():
     res = _resolve(good)
     assert res["resolved"] == [
         "variants.base.slices.overall.diagnostics.median_cost_drag_pct",
-        "variants.base.slices.per_symbol.BTCUSDT[*].core.cost_drag_pct",
+        "variants.base.slices.per_window[*].core.cost_drag_pct",  # CUL-370: core in per_window only
     ]
     assert res["unresolved"] == [] and res["no_path_items"] == 0
     assert _resolve(bad) == {"resolved": [], "unresolved": [], "no_path_items": 1}

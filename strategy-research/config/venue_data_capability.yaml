@@ -469,6 +469,17 @@ venues:
         (spot kraken has no funding endpoint at all, per that file's own
         comment) — never for price/OHLCV; this codebase has no price fetcher
         targeting krakenfutures directly.
+      price_proxy:
+        # O-12 (operator, 2026-10-02): a brief on Kraken futures/perp is
+        # backtested on Kraken SPOT prices (the local kraken_<BASE>USD caches)
+        # with Kraken FUTURES costs (trading-bot/config/cost_model.json
+        # kraken.futures). Read by tools/venue_resolver.py, which writes the
+        # proxy and its label into the run protocol; every result carries
+        # price_proxy: true and funding_modelled: false. Remove this block
+        # once a real Kraken futures price history is wired (CUL-287 / CUL-46).
+        source: spot
+        label: "Kraken spot prices as a proxy for Kraken futures; funding not modelled"
+        basis: "operator decision 2026-10-02 (O-12, option A)"
       symbols:
         pattern: "PI_<BASE><QUOTE> / PF_<BASE><QUOTE> Kraken Futures market codes (e.g. PI_XBTUSD), distinct from spot's plain <BASE>USD naming."
         unconfirmed: "No per-symbol Kraken Futures listing date was probed this session."

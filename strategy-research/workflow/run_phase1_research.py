@@ -2718,11 +2718,13 @@ async def run_tool_worker(stage_name: str, run_id: str):
 
             if _forecast_size_probe_enabled():
                 # O-10 / D-056: can this variant's forecast ever move the position?
-                # Probed on the variant's own coin protocol (per-coin mode) or the
-                # run protocol. A refusal is a config error like D-051/D-053 above
-                # (same reason, so Step 2 gets its one retry; a `base` refusal
-                # pauses: 1b's config). A probe that cannot run (no data, engine
-                # error) marks only this variant not_tested -- never run-wide.
+                # The probe runs on invented data and reads the protocol (the
+                # variant's own coin protocol in per-coin mode, else the run
+                # protocol) for its timeframe only. A refusal is a config error like
+                # D-051/D-053 above (same reason, so Step 2 gets its one retry; a
+                # `base` refusal pauses: 1b's config). A probe that cannot run (an
+                # engine or config error) marks only this variant not_tested --
+                # never run-wide.
                 _probe_tmp = None
                 try:
                     if _coin_proto is not None:
@@ -2743,9 +2745,9 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     _fs_reason = FORECAST_SIZE_PROBE_ERROR_REASON
                     if _coin_keys.get("kind") == "asset":
                         # D-042 (as the data gate's review fix H1): a per-coin ASSET
-                        # variant whose coin cannot be run (no data, no cost model
-                        # for its venue) is a coverage skip -- it never blocks the
-                        # idea or lowers the floor for the other variants.
+                        # variant the probe cannot run (an engine or config error)
+                        # is a coverage skip -- it never blocks the idea or lowers
+                        # the floor for the other variants.
                         _fs_reason = (f"{_variant_coin_module().LAYER2_COVERAGE_REASON_PREFIX} "
                                       f"{FORECAST_SIZE_PROBE_ERROR_REASON}")
                     index[variant_id] = {"status": "not_tested", "reason": _fs_reason,
@@ -4437,7 +4439,7 @@ def _forecast_size_probe_enabled(cfg: dict | None = None) -> bool:
 
 
 FORECAST_SIZE_PROBE_FILE = "forecast_size_probe.yaml"
-# A probe that could not run (no data, engine error): the variant is not_tested
+# A probe that could not run (engine or config error): the variant is not_tested
 # with this reason -- not a config error, so Step 2 is not asked to fix it.
 FORECAST_SIZE_PROBE_ERROR_REASON = "forecast size probe could not run (D-056)"
 
@@ -4470,9 +4472,13 @@ def _forecast_size_violations(config: dict, protocol_path: Path, run_dir: Path,
         return []
     # Same config on the same protocol bytes -> reuse the recorded verdict
     # (resumes, the 1b retry, and `base` probed at 1b then again in 5a).
+    # The tool's own bytes are in the key: a new rule (or seed) never reuses a
+    # verdict the previous rule recorded.
     key = hashlib.sha256(
         json.dumps(config, sort_keys=True).encode("utf-8")
-        + b"\0" + Path(protocol_path).read_bytes()).hexdigest()
+        + b"\0" + Path(protocol_path).read_bytes()
+        + b"\0" + (Path(__file__).resolve().parent.parent / "tools"
+                   / "forecast_size_probe.py").read_bytes()).hexdigest()
     record_path = Path(run_dir) / "artifacts" / FORECAST_SIZE_PROBE_FILE
     if record_path.exists():
         doc = load_yaml(record_path) or {}
@@ -8992,8 +8998,10 @@ def _assert_windows_clear_of_holdout(windows: list, holdout_start: str,
 
     THE OFF-BY-ONE THIS EXISTS TO KILL
     ----------------------------------
-    `test.end` looks exclusive — the generator emits the FIRST OF THE NEXT
-    MONTH and the next window starts on the same date. It is not exclusive at
+    (History: until CUL-369 the generator emitted the FIRST OF THE NEXT MONTH
+    as `test.end`; it now emits the month's last day -- `end` is the last
+    included day everywhere, D-058. The guard below is unchanged.)
+    `test.end` looked exclusive -- the next window started on the same date. It is not exclusive at
     the engine. `run_protocol` hands `end` straight to `launcher.run_backtest`,
     which passes it to `load_data(end_date=end)`, and that yields every bar of
     the end DAY, through 23:00. So a tile written as
@@ -9027,36 +9035,68 @@ def _assert_windows_clear_of_holdout(windows: list, holdout_start: str,
                 )
 
 
-def _generate_monthly_windows(start: str, end: str, holdout_range=None) -> list:
-    """[start, end) chunked into calendar-month windows, matching baseline_v1.json's
-    schema: [{"label": "YYYY-MM", "test": {"start": ..., "end": ...}}, ...].
+WINDOW_MONTHS_ALLOWED = (1, 2, 3, 4, 6, 12)  # divisors of 12: no tile crosses a year
+
+
+def _generate_monthly_windows(start: str, end: str, holdout_range=None, *,
+                              window_months: int = 1) -> list:
+    """[start, end] chunked into calendar windows of `window_months` months
+    each, matching baseline_v1.json's schema:
+    [{"label": "YYYY-MM", "test": {"start": ..., "end": ...}}, ...] (label =
+    the window's first month).
+
+    CUL-369 (D-058): `end` -- the request's and every tile's -- is the LAST
+    INCLUDED DAY, the engine's own convention (load_data yields every bar of the
+    end day). Each tile ends on its last month's last day and the next starts
+    the day after, so no day is backtested twice; the last tile ends on the
+    requested `end`. An `end` on the 1st of a month is refused (below). Before
+    CUL-369 a tile ended on the next month's 1st, which the engine also
+    backtested, so that day was counted in two windows.
+
+    `window_months` (machine_constraints.protocol.window_months; default 1 =
+    monthly, byte-identical to before): one of WINDOW_MONTHS_ALLOWED, and
+    `start` must fall on a window boundary of the calendar year (e.g. Jan, May
+    or Sep for 4), so tiles never cross a year -- and so never an era boundary
+    set on a year. Fewer, longer windows mean fewer artificial restarts (each
+    window starts flat and closes at its end, O-9) and smaller reports
+    (CUL-370).
 
     Raises HoldoutBoundaryBreach if any generated tile would reach the sealed
-    holdout — see `_assert_windows_clear_of_holdout` for why `end` is not the
-    exclusive bound it looks like. `holdout_range` overrides the policy file
-    (tests only)."""
-    from datetime import date as _date
+    holdout -- see `_assert_windows_clear_of_holdout`. `holdout_range`
+    overrides the policy file (tests only)."""
+    from datetime import date as _date, timedelta as _timedelta
+    if isinstance(window_months, bool) or window_months not in WINDOW_MONTHS_ALLOWED:
+        raise ValueError(f"machine_constraints.protocol window_months={window_months!r} must be "
+                         f"one of {WINDOW_MONTHS_ALLOWED} (a divisor of 12)")
     y, m = int(start[:4]), int(start[5:7])
+    if (m - 1) % window_months:
+        raise ValueError(
+            f"machine_constraints.protocol start={start!r} with window_months={window_months}: "
+            f"windows must start on a calendar boundary (months "
+            f"{[1 + k * window_months for k in range(12 // window_months)]}) so none crosses a "
+            f"year -- move `start` to one of those months")
     end_y, end_m = int(end[:4]), int(end[5:7])
     windows = []
-    while (y, m) < (end_y, end_m) or (y == end_y and m == end_m and end[8:10] != "01"):
-        if (y, m) > (end_y, end_m):
-            break
+    while (y, m) <= (end_y, end_m):
+        ny, nm = divmod((y * 12 + m - 1) + window_months, 12)
+        nm += 1
         window_start = f"{y:04d}-{m:02d}-01"
-        if m == 12:
-            ny, nm = y + 1, 1
-        else:
-            ny, nm = y, m + 1
-        window_end = f"{ny:04d}-{nm:02d}-01"
-        if window_end > end:
-            window_end = end
+        window_end = min((_date(ny, nm, 1) - _timedelta(days=1)).isoformat(), end[:10])
         windows.append({"label": f"{y:04d}-{m:02d}", "test": {"start": window_start, "end": window_end}})
-        if window_end >= end:
-            break
         y, m = ny, nm
 
     hs, he = holdout_range if holdout_range else _load_holdout_range()
     _assert_windows_clear_of_holdout(windows, hs, he)
+    if end[8:10] == "01" and start[:7] != end[:7]:
+        # Checked after the holdout guard, so a sweep up to the seal's first day
+        # still reports the breach. Before D-058 an `end` on the 1st meant "up to
+        # the end of the previous month"; now it would be a one-day last window
+        # (the whole-test chain needs >= 2 common days per window) -- refuse the
+        # ambiguous form rather than guess (CUL-369 review finding 1).
+        raise ValueError(
+            f"machine_constraints.protocol end={end!r} is the 1st of a month: since D-058 "
+            f"(CUL-369) `end` is the LAST INCLUDED DAY, so this asks for a one-day last "
+            f"window. Write the previous day (the month's last day) instead.")
     return windows
 
 
@@ -9091,13 +9131,21 @@ def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: d
     start = min(per_symbol_start.values()) if per_symbol_start else proto_constraint["start"]
     end = proto_constraint["end"]
 
-    windows = _generate_monthly_windows(start, end)
+    windows = _generate_monthly_windows(
+        start, end, window_months=proto_constraint.get("window_months", 1))
     # The seal has ONE home. Defaulting to a literal here was a second copy of
     # holdout_range that nothing kept in sync with the policy file, in the very
     # function whose windows have to be checked against it. CUL-339: an
     # override that disagrees with the policy is refused at generation.
+    # O-12: the brief's (venue, product) -> exchange, market_type, venue labels
+    # and the price source's symbol names (tools/venue_resolver.py). Nothing for
+    # the default venue (byte-identical); any other venue must resolve fully or
+    # this raises -- at run start, before any LLM call (replaces CUL-183's
+    # separate registration gate).
+    symbols, venue_keys = _generated_protocol_venue_keys(run_dir, symbols)
     protocol_obj = {
         "symbols": symbols,
+        **venue_keys,
         "timeframe": timeframe,
         "windows": windows,
         "holdout": _generated_protocol_holdout_block(proto_constraint),
@@ -9474,6 +9522,10 @@ def _resolve_protocol_path(run_dir: Path, run_id: str) -> Path:
                   f"({result}) -- this run ({run_id}) is its claimed "
                   f"consumer. Fragile: prefer machine_constraints.protocol_ref on "
                   f"this run's own pre_registration.yaml instead.")
+        _proto_file = Path(result)
+        if not _proto_file.is_absolute() and not _proto_file.exists():
+            _proto_file = ROOT / _proto_file
+        _assert_protocol_matches_brief_venue(run_dir, _proto_file)  # O-12 review M3
         return result
     except _SharedUngatedProtocolError as e:
         # Re-wrap as THIS module's own UngatedProtocolError so existing
@@ -12539,18 +12591,28 @@ def _v2_manifest_slippage(run_dir: Path, pr: dict, coins: list) -> dict:
     return out
 
 
-def _v2_charged_fees(coins: list, records: list | None) -> dict:
+def _v2_charged_fees(coins: list, records: list | None, venue: dict | None = None) -> dict:
     """{coin: one-way commission bps} the strategy was charged: cost_model.yaml's
     spot fee_rate_bps (the pipeline never passes --commission-bps /
     --cost-product, and the run does not record them), CHECKED against every
     trade record's cost_paid (= 2 x the fee actually charged,
     run_protocol._cost_paid_bps): a record that disagrees means the run was
-    charged another fee -> PortfolioNotEvaluable, never a guessed fee."""
+    charged another fee -> PortfolioNotEvaluable, never a guessed fee.
+    O-12: a venue run records the fee it was charged (protocol_result
+    `venue.fee_bps`, from trading-bot/config/cost_model.json); that recorded
+    fee is used instead, under the same cost_paid check."""
     pwt = _portfolio_whole_test_module()
-    path = ROOT / "config" / "cost_model.yaml"
-    cost_model = (yaml.safe_load(path.read_text(encoding="utf-8")) if path.is_file() else None)
     out = {}
+    if isinstance(venue, dict) and venue.get("fee_bps") is not None:
+        out = {c: float(venue["fee_bps"]) for c in coins}
+        source = f"{venue.get('exchange')} {venue.get('market_type')}, cost_model.json"
+    else:
+        path = ROOT / "config" / "cost_model.yaml"
+        cost_model = (yaml.safe_load(path.read_text(encoding="utf-8")) if path.is_file() else None)
+        source = "cost_model.yaml spot"
     for c in coins:
+        if c in out:
+            continue
         try:
             out[c] = pwt.charged_fee_bps(c, cost_model, None, "spot")
         except ValueError as exc:
@@ -12560,7 +12622,7 @@ def _v2_charged_fees(coins: list, records: list | None) -> dict:
         if sym in out and cost is not None and abs(float(cost) - round(out[sym] * 2, 2)) > 1e-9:
             raise _pd.PortfolioNotEvaluable(
                 f"a {sym} trade record paid cost_paid={cost!r} bps round trip, not 2 x "
-                f"{out[sym]} (cost_model.yaml spot): the run was charged another commission "
+                f"{out[sym]} ({source}): the run was charged another commission "
                 f"(--commission-bps / --cost-product are not recorded), so buy-and-hold's "
                 f"cost is unknown")
     return out
@@ -12928,7 +12990,7 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
             path = _pd.find_window_equity_file(run_dir, r["run_id"])
             close_windows.setdefault(r["window"], {})[r["symbol"]] = pwt.window_close_bars(path)
         slip = _v2_manifest_slippage(run_dir, pr, coins)
-        fees = _v2_charged_fees(coins, records)
+        fees = _v2_charged_fees(coins, records, pr.get("venue"))
         bh = pwt.chained_buy_and_hold(chain, close_windows, fees, slip)
         _row("buy_and_hold_excess_return_min", bh["excess_return"],
              note=(f"strategy total return {bh['strategy_total_return']:.6f} minus equal-weight "
@@ -14265,7 +14327,7 @@ def _base_forecast_size_violations(path: Path) -> list:
     only if validate_config.py accepts the config: a config that does not load
     (e.g. a class not built yet) keeps its designed route in 5a (V12 ->
     component request), never a probe crash here. A probe that cannot run
-    (no data, engine error) is recorded and skipped: 5a probes every variant
+    (engine or config error) is recorded and skipped: 5a probes every variant
     again and marks a failure there not_tested, so nothing passes unmeasured."""
     if not _forecast_size_probe_enabled():
         return []
@@ -14688,6 +14750,60 @@ def _forecast_rules_module():
     _json_pointer_module()  # puts tools/ on sys.path
     import forecast_rules as _fr
     return _fr
+
+
+def _venue_resolver_module():
+    """tools/venue_resolver.py (O-12: brief venue/product -> protocol keys),
+    imported lazily like the other tools/ siblings."""
+    _json_pointer_module()  # puts tools/ on sys.path
+    import venue_resolver as _vr
+    return _vr
+
+
+def _run_brief(run_dir) -> dict:
+    """artifacts/research_brief.yaml as a dict ({} when absent or not a mapping)."""
+    path = Path(run_dir) / "artifacts" / "research_brief.yaml"
+    brief = (load_yaml(path) or {}) if path.exists() else {}
+    return brief if isinstance(brief, dict) else {}
+
+
+def _generated_protocol_venue_keys(run_dir, symbols) -> tuple:
+    """(symbols, venue_keys) for a generated protocol (O-12): the brief's
+    (venue, product) through tools/venue_resolver.protocol_keys. The default
+    venue gives (symbols unchanged, {}) -- byte-identical. Shared by
+    _ensure_protocol_from_constraints and run_campaign's pre-flight rebuild
+    (_expected_generated_protocol), so the two cannot drift."""
+    brief = _run_brief(run_dir)
+    venue_keys = _venue_resolver_module().protocol_keys(brief, list(symbols))
+    if not venue_keys:
+        product = str(brief.get("product") or "").strip().lower()
+        if product not in ("", "spot"):
+            print(f"ℹ️  [O-12] brief product {product!r} on the default venue: backtested with "
+                  f"Binance spot data and costs, as before D-057 (no venue keys written)")
+        return symbols, {}
+    return venue_keys.pop("symbols"), venue_keys
+
+
+def _assert_protocol_matches_brief_venue(run_dir, protocol_path) -> None:
+    """O-12 review M3: the protocol a run executes must model the brief's
+    venue. A brief naming a non-default venue run on a protocol without that
+    exchange/market_type (a protocol_ref pin, a hypothesis-split child, a
+    refine brief, a fallback protocol) raises -- never a silent Binance run.
+    The default venue checks nothing (byte-identical)."""
+    brief = _run_brief(run_dir)
+    resolved = _venue_resolver_module().resolve(brief.get("venue"), brief.get("product"))
+    if resolved is None:
+        return
+    with open(protocol_path, "r", encoding="utf-8") as f:
+        protocol = json.load(f)
+    got = {k: protocol.get(k) for k in ("exchange", "market_type")}
+    want = {k: resolved[k] for k in ("exchange", "market_type")}
+    if got != want:
+        raise RuntimeError(
+            f"[O-12] the brief declares venue {brief.get('venue')!r} / product "
+            f"{brief.get('product')!r} -> {want}, but the protocol this run would execute "
+            f"({protocol_path}) models {got}. Only a protocol generated from this brief's "
+            f"machine_constraints.protocol carries the venue -- refusing to backtest another venue.")
 
 
 def _single_column_untested_kw(artifacts: Path, run_id: str) -> dict:

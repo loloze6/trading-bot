@@ -382,10 +382,14 @@ def build_profitability_report(sources: dict) -> dict:
     per_regime_out = dict(per_regime) if per_regime else _unavailable(
         "no result entry in protocol_result.yaml carried a per_regime block.")
 
+    # CUL-370: an INDEX of each symbol's windows, not a second copy of `core`.
+    # per_window already carries every core block with its symbol; repeating
+    # it here doubled the report (716,645 chars on 95 windows x 2 variants,
+    # over REPORT_CHAR_BUDGET). Group per_window by `symbol` for a per-symbol
+    # view.
     per_symbol: dict[str, list[dict]] = defaultdict(list)
     for r in results:
-        per_symbol[r.get("symbol")].append(
-            {"window": r.get("window"), "run_id": r.get("run_id"), **(r.get("core") or {})})
+        per_symbol[r.get("symbol")].append({"window": r.get("window"), "run_id": r.get("run_id")})
     per_symbol_out = dict(per_symbol)
 
     return _wrap("profitability", overall, per_window, per_regime_out, per_symbol_out)
@@ -847,9 +851,16 @@ BUILDERS: dict[str, Callable[[dict], dict]] = {
 # truncate. Generous over any real report measured so far (C2_S1_FINDINGS.md's
 # own table showed up to ~440K chars for an UNCOMPACTED trade_efficiency
 # report and ~1.7M for UNCOMPACTED component_attribution; G7's aggregation
-# brings both down by orders of magnitude, and profitability/forecast_power/
-# regime_power's per-window rows stay well under this even pooling every
-# variant of a run).
+# brings both down by orders of magnitude). CORRECTED 2026-10-02 (CUL-370):
+# profitability/forecast_power/regime_power list one row per window, so they
+# grow linearly with windows x variants and do NOT always stay under this:
+# run_064's profitability.yaml was 716,645 chars on 95 monthly windows x 2
+# variants, ~40% of it a duplicate of each `core` block in per_symbol (now an
+# index). Measured on run_064's two variants (190 window-variants): the slices
+# went from 647,950 to 386,366 chars, ~2.0K per window-variant -- so run_064
+# itself (slices + ~69K of the rest of the report) would still be ~455K, over
+# budget. Long protocols are bounded by choosing fewer, longer windows
+# (RUNBOOK); the per-window layout itself is for the report review epic.
 REPORT_CHAR_BUDGET = 400_000
 
 
