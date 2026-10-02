@@ -1182,11 +1182,16 @@ def test_cost_paid_through_the_trade_records_with_commission_bps(tmp_path):
 
 def test_run_protocol_passes_the_runs_fee_flags_to_the_trade_records():
     """Static check of the one call site in main(): the run's own
-    --commission-bps / --cost-product reach cost_paid."""
+    --commission-bps / --cost-product reach cost_paid. O-12 (D-057): the call
+    passes the local `commission_bps`, which IS args.commission_bps unless a
+    venue protocol fills an absent flag from cost_model.json (the same fee the
+    engine is charged; tests/test_o12_venue_to_protocol.py pins both cases)."""
     src = (SR_ROOT / "tools" / "run_protocol.py").read_text(encoding="utf-8")
     assert src.count("_compute_trade_records_for_window(") == 2  # the def + one call
     assert src.count("= _compute_trade_records_for_window(\n") == 1
-    assert "commission_bps=args.commission_bps, cost_product=args.cost_product," in src
+    assert "commission_bps=commission_bps, cost_product=args.cost_product," in src
+    assert src.count("    commission_bps = args.commission_bps\n") == 1
+    assert "if market_type is not None and commission_bps is None:" in src
 
 
 def _pin_records(kind: str) -> list:

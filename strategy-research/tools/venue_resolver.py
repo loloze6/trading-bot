@@ -32,6 +32,11 @@ Rules:
         "spot", CUL-287).
   * one vocabulary alias, here only: product "perp" (venue_tradability.yaml)
     == market_type "futures" (cost_model.json, venue_data_capability.yaml).
+  * funding is not modelled on any non-default venue: the protocol drops the
+    `funding_rate` aux feed (`drop_feeds`), so a backtest never fetches funding
+    mid-run from the funding venue (feed_registry routes kraken ->
+    krakenfutures); a config that needs the feed is refused by the
+    backtester's own V1 check (FeedRequirementError).
 
 Kraken futures (operator decision O-12, option A): Kraken SPOT prices as a
 labelled proxy, Kraken FUTURES fees and slippage, funding not modelled.
@@ -64,7 +69,8 @@ def base_asset(symbol: str) -> str:
     """BTCUSDT / BTCUSD / XBTUSD -> BTC."""
     base = str(symbol).upper()
     for quote in _QUOTE_SUFFIXES:
-        if base.endswith(quote) and len(base) > len(quote):
+        # a base of at least 2 characters: "BUSD" is a coin, not "B" + "USD"
+        if base.endswith(quote) and len(base) - len(quote) >= 2:
             base = base[:-len(quote)]
             break
     return _BASE_ALIASES.get(base, base)
@@ -125,6 +131,7 @@ def resolve(venue, product, *, layer1: dict | None = None) -> dict | None:
     return {
         "exchange": venue,
         "market_type": market_type,
+        "drop_feeds": ["funding_rate"],  # funding_modelled False (module docstring)
         "venue": {"venue": venue, "product": product, "market_type": market_type,
                   "price_source": f"{venue}.{price_market}", "price_proxy": price_proxy,
                   "funding_modelled": False,

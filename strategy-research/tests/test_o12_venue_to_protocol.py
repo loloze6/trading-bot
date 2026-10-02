@@ -244,3 +244,167 @@ def test_a_venue_protocol_uses_the_market_and_the_cost_model_json_fee(monkeypatc
     assert calls[0]["commission_rate"] == pytest.approx(5.0 / 10000)  # cost_model.json kraken/futures
     assert result["venue"]["fee_bps"] == 5.0 and result["venue"]["price_proxy"] is True
     assert result["venue"]["exchange"] == "kraken"
+
+
+# ---------------------------------------------------------------------------
+# 5. Review fixes (Opus review of d782cfe2)
+# ---------------------------------------------------------------------------
+
+import run_campaign as camp  # noqa: E402
+
+
+def _generate_in(brief: dict):
+    run_dir = _scaffold(constraints=_constraints())
+    rpr.save_yaml(run_dir / "artifacts" / "research_brief.yaml", brief)
+    path = rpr._ensure_protocol_from_constraints(run_dir, RUN, _constraints())
+    return run_dir, path, json.loads(path.read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize("brief", [{"venue": "kraken", "product": "perp"},
+                                   {"venue": "binance", "product": "perp"}])
+def test_b1_the_preflight_rebuild_matches_generation(brief):
+    """B1: the pre-flight rebuilds the protocol through the same venue helper,
+    so a re-entered Kraken run is neither refused nor regenerated without its
+    venue."""
+    run_dir, path, written = _generate_in(brief)
+    expected = camp._expected_generated_protocol(_constraints()["protocol"], RUN,
+                                                 promotion_retired=False, run_dir=run_dir)
+    assert expected == written
+    assert camp._generated_protocol_plan(run_dir, RUN, _constraints()["protocol"], {},
+                                         promotion_retired=False) == (None, None)
+
+
+def test_b1_a_protocol_that_lost_its_venue_is_refused_not_regenerated():
+    run_dir, path, written = _generate_in({"venue": "kraken", "product": "perp"})
+    stripped = {k: v for k, v in written.items()
+                if k not in ("exchange", "market_type", "venue", "drop_feeds")}
+    path.write_text(json.dumps(stripped), encoding="utf-8")
+    refusal, regen = camp._generated_protocol_plan(run_dir, RUN, _constraints()["protocol"], {},
+                                                   promotion_retired=False)
+    assert regen is None and "exchange" in refusal and "venue" in refusal
+
+
+def test_m1_a_venue_protocol_drops_the_funding_feed(monkeypatch, tmp_path):
+    keys = vr.protocol_keys({"venue": "kraken", "product": "perp"}, ["BTCUSDT"])
+    assert keys["drop_feeds"] == ["funding_rate"]
+    calls, _ = _run_protocol(monkeypatch, tmp_path, **keys)
+    assert calls and all(c["drop_feeds"] == ["funding_rate"] for c in calls)
+
+
+def test_m1_a_protocol_without_a_venue_drops_nothing(monkeypatch, tmp_path):
+    calls, _ = _run_protocol(monkeypatch, tmp_path)
+    assert all(c["drop_feeds"] is None for c in calls)
+
+
+def test_m4_trade_diagnostics_get_the_venue_fee(monkeypatch, tmp_path):
+    seen = []
+    real = rp._compute_trade_records_for_window
+    monkeypatch.setattr(rp, "_compute_trade_records_for_window",
+                        lambda *a, **kw: seen.append(kw["commission_bps"]) or real(*a, **kw))
+    keys = vr.protocol_keys({"venue": "kraken", "product": "perp"}, ["BTCUSDT"])
+    _run_protocol(monkeypatch, tmp_path, **keys)
+    assert seen and all(bps == 5.0 for bps in seen)
+
+
+_KRAKEN_PR_VENUE = {"exchange": "kraken", "market_type": "futures", "fee_bps": 5.0}
+
+
+def test_m2_profit_bars_v2_use_the_recorded_venue_fee():
+    fees = rpr._v2_charged_fees(["BTCUSD"], [{"symbol": "BTCUSD", "cost_paid": 10.0}],
+                                _KRAKEN_PR_VENUE)
+    assert fees == {"BTCUSD": 5.0}
+
+
+def test_m2_a_record_charged_another_fee_is_still_refused():
+    with pytest.raises(rpr._pd.PortfolioNotEvaluable, match="kraken futures, cost_model.json"):
+        rpr._v2_charged_fees(["BTCUSD"], [{"symbol": "BTCUSD", "cost_paid": 15.0}],
+                             _KRAKEN_PR_VENUE)
+
+
+def _outcome(fn):
+    try:
+        return ("ok", fn())
+    except Exception as exc:  # noqa: BLE001 -- the comparison is the point
+        return (type(exc).__name__, str(exc))
+
+
+@pytest.mark.parametrize("coin", ["BTCUSDT", "ETHUSDT"])
+def test_m2_no_venue_keeps_the_yaml_spot_path(coin):
+    """No venue block: the same outcome (fee or refusal) as the pre-O-12 call."""
+    assert (_outcome(lambda: rpr._v2_charged_fees([coin], [], None))
+            == _outcome(lambda: rpr._v2_charged_fees([coin], [])))
+
+
+def _protocol_file(tmp_path, doc):
+    p = tmp_path / "p.json"
+    p.write_text(json.dumps(doc), encoding="utf-8")
+    return p
+
+
+def test_m3_a_kraken_brief_on_a_binance_protocol_is_refused(tmp_path):
+    run_dir = _scaffold(constraints=_constraints())
+    rpr.save_yaml(run_dir / "artifacts" / "research_brief.yaml",
+                  {"venue": "kraken", "product": "perp"})
+    with pytest.raises(RuntimeError, match=r"\[O-12\]"):
+        rpr._assert_protocol_matches_brief_venue(
+            run_dir, _protocol_file(tmp_path, {"symbols": ["BTCUSDT"]}))
+
+
+def test_m3_matching_or_default_venue_passes(tmp_path):
+    run_dir = _scaffold(constraints=_constraints())
+    keys = vr.protocol_keys({"venue": "kraken", "product": "perp"}, ["BTCUSDT"])
+    rpr.save_yaml(run_dir / "artifacts" / "research_brief.yaml",
+                  {"venue": "kraken", "product": "perp"})
+    rpr._assert_protocol_matches_brief_venue(run_dir, _protocol_file(tmp_path, keys))
+    rpr.save_yaml(run_dir / "artifacts" / "research_brief.yaml",
+                  {"venue": "binance", "product": "perp"})
+    rpr._assert_protocol_matches_brief_venue(run_dir, _protocol_file(tmp_path, {"symbols": ["X"]}))
+
+
+@pytest.mark.parametrize("kind,patch", [("base", []), ("design", [{"op": "replace"}])])
+def test_m4_base_and_design_accept_the_coin_in_binance_naming(kind, patch):
+    import data_availability_gate as dag
+    universe = yaml.safe_load((_SR / "config" / "coin_universe.yaml").read_text(encoding="utf-8"))
+    vid = "base" if kind == "base" else "d1"
+    res = vc.resolve_variant({"variant_id": vid, "kind": kind, "symbol": "BTCUSDT", "patch": patch},
+                             source=_venue_source(), universe=universe, layer1=dag.load_layer1(),
+                             precheck=dag.layer1_price_precheck, era_of=lambda ts: "era")
+    assert res["ok"], res
+    assert res["symbol"] == "BTCUSD" and res["protocol"]["symbols"] == ["BTCUSD"]
+
+
+def test_m4_without_a_venue_the_symbol_must_still_match_exactly():
+    import data_availability_gate as dag
+    universe = yaml.safe_load((_SR / "config" / "coin_universe.yaml").read_text(encoding="utf-8"))
+    source = {k: v for k, v in _venue_source().items()
+              if k not in ("exchange", "market_type", "venue", "drop_feeds")}
+    res = vc.resolve_variant({"variant_id": "base", "kind": "base", "symbol": "BTCUSDT", "patch": []},
+                             source=source, universe=universe, layer1=dag.load_layer1(),
+                             precheck=dag.layer1_price_precheck, era_of=lambda ts: "era")
+    assert res["ok"] is False
+
+
+@pytest.mark.parametrize("sym,base", [("BUSD", "BUSD"), ("LUSD", "LUSD"), ("BUSDUSDT", "BUSD"),
+                                      ("XBTUSD", "BTC"), ("OPUSDT", "OP")])
+def test_nit_base_asset_keeps_at_least_two_characters(sym, base):
+    assert vr.base_asset(sym) == base
+
+
+def test_nit_an_ambiguous_base_asset_match_raises():
+    universe = {"categories": {"a": {"coins": [{"symbol": "BTCUSDT"}, {"symbol": "BTCUSDC"}]}}}
+    with pytest.raises(vc.VariantCoinError, match="ambiguous"):
+        vc.coin_entry(universe, "BTCUSD")
+
+
+def test_m3_the_check_runs_where_the_protocol_is_first_resolved(monkeypatch, tmp_path):
+    """_resolve_protocol_path (5a, the data gate, protocol_execution) refuses a
+    Kraken brief whatever branch picked the protocol (here: a pin)."""
+    import protocol_resolution
+    run_dir = _scaffold(constraints=_constraints())
+    rpr.save_yaml(run_dir / "artifacts" / "research_brief.yaml",
+                  {"venue": "kraken", "product": "perp"})
+    pinned = _protocol_file(tmp_path, {"symbols": ["BTCUSDT"]})
+    monkeypatch.setattr(protocol_resolution, "resolve_protocol_path", lambda **kw: pinned)
+    monkeypatch.setattr(rpr, "load_campaign_state", lambda: {})
+    with pytest.raises(RuntimeError, match=r"\[O-12\]"):
+        rpr._resolve_protocol_path(run_dir, RUN)
