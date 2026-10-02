@@ -39,9 +39,10 @@
 #    orchestrator.config_direct_authoring.enabled, registration cross-checks
 #    the two (by bar-size SECONDS and by base-asset-normalized symbol -- BTC
 #    == BTCUSDT -- so "60m"/"1h" and "BTC, ETH"/"BTCUSDT, ETHUSDT" both agree)
-#    and refuses a real mismatch; `venue` has no protocol-side counterpart
-#    (no protocol file carries a venue/exchange field) and is not
-#    cross-checked. This check, and the promotion check in step 4, run ONLY
+#    and refuses a real mismatch. `venue`/`product` are not cross-checked
+#    here: since D-057 (O-12) the GENERATED protocol carries them --
+#    exchange, market_type and the venue's own symbol names, written from
+#    the brief at protocol creation (tools/venue_resolver.py). This check, and the promotion check in step 4, run ONLY
 #    at registration, and ONLY under config_direct_authoring -- a
 #    launch/resume re-parsing an already-registered brief does not re-run
 #    them (same review fix).
@@ -176,7 +177,12 @@ machine_constraints:
     symbols: [BTCUSDT, ETHUSDT]
     timeframe: "1h"
     start: "2018-02-01"
+    # end: the LAST INCLUDED DAY (D-058); never the 1st of a month
     end: "2025-12-31"
+    # window_months: 1      # optional, 1/2/3/4/6/12 (default 1 = monthly). Fewer,
+    #   longer windows mean fewer artificial restarts and smaller reports; with
+    #   N > 1, `start` must be on a boundary of the year (Jan/May/Sep for 4,
+    #   Jan/Jul for 6). How to choose: RUNBOOK.md section 1f.
     # holdout: intentionally omitted -- defaults to campaign_data_policy.yaml's
     #   own holdout_range (see the long comment above).
     # promotion: intentionally omitted -- not needed under

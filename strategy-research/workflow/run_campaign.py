@@ -3287,7 +3287,8 @@ def _expected_generated_protocol(generated: dict, run_id: str, *,
     symbols = generated["symbols"]
     per_symbol_start = generated.get("per_symbol_start") or {}
     start = min(per_symbol_start.values()) if per_symbol_start else generated["start"]
-    windows = orch._generate_monthly_windows(start, generated["end"])
+    windows = orch._generate_monthly_windows(start, generated["end"],
+                                             window_months=generated.get("window_months", 1))
     venue_keys: dict = {}
     if run_dir is not None:
         symbols, venue_keys = orch._generated_protocol_venue_keys(run_dir, symbols)

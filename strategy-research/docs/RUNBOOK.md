@@ -460,6 +460,44 @@ the new pipeline changes how a run is interrupted or resumed: a kill takes
 effect wherever `run_loop()` currently is, and re-invoking `run_campaign.py`
 later re-enters the same stage from scratch.
 
+### 1f. Choosing a brief's test period and windows (operator rule, 2026-10-02)
+
+`machine_constraints.protocol` decides how much history a brief tests (`start`,
+`end`) and how it is cut into windows (`window_months`). Decide both on
+purpose, before any trial is spent (O-9).
+
+**Mechanics (enforced by code):**
+- `end` is the LAST INCLUDED DAY (D-058). Write `2023-12-31`, never `2024-01-01`:
+  an `end` on the 1st of a month is refused.
+- `window_months` is one of 1, 2, 3, 4, 6, 12 (default 1 = monthly). `start`
+  must fall on a window boundary of the year (Jan / May / Sep for 4), so no
+  window crosses a year, and so never an era boundary set on a year.
+- Windows never share a day (run_protocol and the launch pre-flight refuse it).
+
+**Why fewer, longer windows.**
+- **Fewer artificial trades.** Every window starts flat with fresh money and closes
+  its position at its end. A slow strategy tested monthly pays an artificial entry
+  and exit every month that it would never pay live.
+- **Smaller reports.** Per-window reports grow with windows x variants; a
+  profitability row is ~2.0K chars per window-variant (measured, CUL-370) against a
+  400K-char budget.
+
+**Limits (DRAFT, operator to confirm; automatic check parked):**
+- **Window length:** 3-12 months (`window_months` 3, 4, 6 or 12), long enough
+  for the strategy to trade several times in each window (below 5 trades a
+  window's Sharpe is null).
+- **Number of windows:** 5-40. The floor is real: the step-1a criteria
+  `realized_edge_to_cost_ratio` and `sign_consistent_by_era` need at least 5
+  windows (`config/criterion_menu.yaml` `floor.min_windows`). Below that they
+  are not evaluable.
+- **Total period:** at least 2 years, inside train/validation, never the holdout.
+  An edge verdict needs the eras (2018-20 / 2021-22 / 2023-25); a shorter period
+  is for workflow tests only. Say so in the brief.
+
+**Example, end-to-end workflow run (C4, 2026-10-02):**
+`start: "2022-01-01"`, `end: "2023-12-31"`, `window_months: 4` gives 6 windows
+(Jan-Apr / May-Aug / Sep-Dec of each year).
+
 ---
 
 ## 2. Check status
