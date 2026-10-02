@@ -46,10 +46,14 @@ def _proto(*spans) -> dict:
     ("run_053_generated", 58, 1767, 2922, 0.6047, 61, 15.55),
     ("run_053_generated", 68, 2071, 2922, 0.7088, 71, 16.84),
     ("run_053_generated", 77, 2345, 2922, 0.8025, 81, 17.92),
-    ("h041c_v2_backext", 43, 1310, 2161, 0.6062, 61, 15.57),
-    ("funding_mr_4h_retest_v1", 30, 915, 1493, 0.6129, 62, 15.66),
-    ("ts_trend_daily_v1", 9, 1645, 2741, 0.6001, 61, 15.49),
-    ("baseline_v1", 7, 215, 336, 0.6399, 64, 16.00),
+    # CUL-369 (D-058): these four protocols were migrated to end = last included
+    # day, so each loses the one day its last window ran past its month. The
+    # S2b-3a findings' values were (1310, 2161, .6062, 61, 15.57), (915, 1493,
+    # .6129, 62, 15.66), (1645, 2741, .6001, 61, 15.49), (215, 336, .6399, 64, 16.00).
+    ("h041c_v2_backext", 43, 1309, 2160, 0.6060, 61, 15.57),
+    ("funding_mr_4h_retest_v1", 30, 914, 1492, 0.6126, 62, 15.65),
+    ("ts_trend_daily_v1", 9, 1644, 2740, 0.6000, 60, 15.49),
+    ("baseline_v1", 7, 214, 335, 0.6388, 64, 15.99),
 ])
 def test_findings_table_values(name, k, covered, full, f4, trades, dd):
     src = _load(name)

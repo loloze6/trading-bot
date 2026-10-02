@@ -92,12 +92,17 @@ def test_a_sweep_ending_the_day_before_the_seal_is_allowed():
 
 
 def test_the_preexisting_generator_contract_is_unchanged():
-    """Contiguous, monotonic, no overshoot -- the property the F4d test pinned."""
+    """Contiguous, monotonic, no overshoot -- the property the F4d test pinned.
+    CUL-369 (D-058): contiguous now means the next window starts the day AFTER
+    `end` (the last included day); the old `end == next start` shared a day."""
+    from datetime import date, timedelta
     windows = rpr._generate_monthly_windows("2019-09-10", "2025-12-31")
     assert windows[0]["test"]["start"] == "2019-09-01"
+    assert windows[0]["test"]["end"] == "2019-09-30"
     assert windows[-1]["test"]["end"] == "2025-12-31"
     for a, b in zip(windows, windows[1:]):
-        assert a["test"]["end"] == b["test"]["start"]
+        assert (date.fromisoformat(a["test"]["end"]) + timedelta(days=1)
+                == date.fromisoformat(b["test"]["start"]))
 
 
 # ---------------------------------------------------------------------------
@@ -114,8 +119,10 @@ def test_the_boundary_comes_from_the_policy_file_not_from_code():
     assert "2020-03-01" in str(exc.value)
 
     # ...and the same request is fine against a seal that is out of the way.
+    # CUL-369 (D-058): `end` is the last included day (an end on the 1st is
+    # refused, tests/test_cul369_window_overlap.py), so five months end 05-31.
     windows = rpr._generate_monthly_windows(
-        "2020-01-01", "2020-06-01", holdout_range=("2021-01-01", "2021-06-30")
+        "2020-01-01", "2020-05-31", holdout_range=("2021-01-01", "2021-06-30")
     )
     assert len(windows) == 5
 

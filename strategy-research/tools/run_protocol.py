@@ -1882,6 +1882,7 @@ def _refuse_before_any_backtest(reason: str) -> NoReturn:
 
 
 import holdout_policy as _holdout_policy  # noqa: E402  (CUL-339: the ONE strict policy/day parser)
+windows_overlap = _holdout_policy.windows_overlap  # CUL-369 (D-058); re-exported
 
 
 def _load_policy_or_refuse() -> dict:
@@ -1975,6 +1976,9 @@ def _preflight_training_windows(protocol: dict, holdout_start: str) -> None:
         _holdout_policy.check_windows_before(protocol.get("windows"), holdout_start)
     except _holdout_policy.HoldoutPolicyError as exc:
         _refuse_before_any_backtest(str(exc))
+    overlap = windows_overlap(protocol.get("windows"))
+    if overlap:
+        _refuse_before_any_backtest(overlap)
 
 
 def _refuse_if_holdout_consumed(policy: dict, hypothesis_id) -> None:

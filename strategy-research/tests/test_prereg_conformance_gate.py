@@ -72,9 +72,13 @@ def test_generate_monthly_windows_covers_full_range_without_overshoot():
     windows = rpr._generate_monthly_windows("2019-09-10", "2025-12-31")
     assert windows[0]["test"]["start"] == "2019-09-01"
     assert windows[-1]["test"]["end"] == "2025-12-31"
-    # Every window must be non-overlapping and monotonically increasing.
+    # Every window must be non-overlapping and monotonically increasing. CUL-369
+    # (D-058): `end` is the last included day, so the next window starts the day
+    # after (the old `end == next start` form backtested that day twice).
+    from datetime import date, timedelta
     for a, b in zip(windows, windows[1:]):
-        assert a["test"]["end"] == b["test"]["start"]
+        assert (date.fromisoformat(a["test"]["end"]) + timedelta(days=1)
+                == date.fromisoformat(b["test"]["start"]))
 
 
 def test_conformance_gate_catches_the_real_run_047_protocol_mismatch():

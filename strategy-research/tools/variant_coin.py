@@ -354,7 +354,8 @@ def _nominal_day_ordinals(protocol: dict, what: str) -> set:
     """Ordinals of every nominal calendar day inside any of `protocol`'s
     windows' test.start..test.end, INCLUSIVE (the engine's end is inclusive
     by day), as a set -- so a one-day junction shared by two consecutive
-    windows (end == next start) is counted once. The windows are parsed by
+    windows (end == next start, the pre-CUL-369 layout of past protocols) is
+    counted once; since D-058 windows share no day. The windows are parsed by
     portfolio_whole_test.window_bounds_from_protocol, the ONE parser the
     whole-test chain uses (YYYY-MM-DD only, labels present and unique, end
     not before start; ValueError otherwise)."""

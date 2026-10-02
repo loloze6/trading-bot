@@ -8998,8 +8998,10 @@ def _assert_windows_clear_of_holdout(windows: list, holdout_start: str,
 
     THE OFF-BY-ONE THIS EXISTS TO KILL
     ----------------------------------
-    `test.end` looks exclusive — the generator emits the FIRST OF THE NEXT
-    MONTH and the next window starts on the same date. It is not exclusive at
+    (History: until CUL-369 the generator emitted the FIRST OF THE NEXT MONTH
+    as `test.end`; it now emits the month's last day -- `end` is the last
+    included day everywhere, D-058. The guard below is unchanged.)
+    `test.end` looked exclusive -- the next window started on the same date. It is not exclusive at
     the engine. `run_protocol` hands `end` straight to `launcher.run_backtest`,
     which passes it to `load_data(end_date=end)`, and that yields every bar of
     the end DAY, through 23:00. So a tile written as
@@ -9034,35 +9036,43 @@ def _assert_windows_clear_of_holdout(windows: list, holdout_start: str,
 
 
 def _generate_monthly_windows(start: str, end: str, holdout_range=None) -> list:
-    """[start, end) chunked into calendar-month windows, matching baseline_v1.json's
+    """[start, end] chunked into calendar-month windows, matching baseline_v1.json's
     schema: [{"label": "YYYY-MM", "test": {"start": ..., "end": ...}}, ...].
 
+    CUL-369 (D-058): `end` -- the request's and every tile's -- is the LAST
+    INCLUDED DAY, the engine's own convention (load_data yields every bar of the
+    end day). Each tile ends on its month's last day and the next starts the day
+    after, so no day is backtested twice; the last tile ends on the requested
+    `end` (an `end` on the 1st of a month gives a one-day last tile -- that day
+    was asked for). Before CUL-369 a tile ended on the next month's 1st, which
+    the engine also backtested, so that day was counted in two windows.
+
     Raises HoldoutBoundaryBreach if any generated tile would reach the sealed
-    holdout — see `_assert_windows_clear_of_holdout` for why `end` is not the
-    exclusive bound it looks like. `holdout_range` overrides the policy file
-    (tests only)."""
-    from datetime import date as _date
+    holdout -- see `_assert_windows_clear_of_holdout`. `holdout_range`
+    overrides the policy file (tests only)."""
+    from datetime import date as _date, timedelta as _timedelta
     y, m = int(start[:4]), int(start[5:7])
     end_y, end_m = int(end[:4]), int(end[5:7])
     windows = []
-    while (y, m) < (end_y, end_m) or (y == end_y and m == end_m and end[8:10] != "01"):
-        if (y, m) > (end_y, end_m):
-            break
+    while (y, m) <= (end_y, end_m):
+        ny, nm = (y + 1, 1) if m == 12 else (y, m + 1)
         window_start = f"{y:04d}-{m:02d}-01"
-        if m == 12:
-            ny, nm = y + 1, 1
-        else:
-            ny, nm = y, m + 1
-        window_end = f"{ny:04d}-{nm:02d}-01"
-        if window_end > end:
-            window_end = end
+        window_end = min((_date(ny, nm, 1) - _timedelta(days=1)).isoformat(), end[:10])
         windows.append({"label": f"{y:04d}-{m:02d}", "test": {"start": window_start, "end": window_end}})
-        if window_end >= end:
-            break
         y, m = ny, nm
 
     hs, he = holdout_range if holdout_range else _load_holdout_range()
     _assert_windows_clear_of_holdout(windows, hs, he)
+    if end[8:10] == "01" and start[:7] != end[:7]:
+        # Checked after the holdout guard, so a sweep up to the seal's first day
+        # still reports the breach. Before D-058 an `end` on the 1st meant "up to
+        # the end of the previous month"; now it would be a one-day last window
+        # (the whole-test chain needs >= 2 common days per window) -- refuse the
+        # ambiguous form rather than guess (CUL-369 review finding 1).
+        raise ValueError(
+            f"machine_constraints.protocol end={end!r} is the 1st of a month: since D-058 "
+            f"(CUL-369) `end` is the LAST INCLUDED DAY, so this asks for a one-day last "
+            f"window. Write the previous day (the month's last day) instead.")
     return windows
 
 

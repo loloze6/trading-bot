@@ -107,7 +107,7 @@ def test_the_alias_lives_in_one_place_and_matches_the_vocabularies():
 
 def _constraints():
     return {"protocol": {"symbols": ["BTCUSDT", "ETHUSDT"], "timeframe": "1h",
-                         "start": "2022-01-01", "end": "2022-03-01", "promotion": _NON_GENERIC}}
+                         "start": "2022-01-01", "end": "2022-02-28", "promotion": _NON_GENERIC}}
 
 
 def _generate(brief: dict):

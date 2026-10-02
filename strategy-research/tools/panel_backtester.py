@@ -238,6 +238,9 @@ def _close_episode(df: pd.DataFrame, entry_i: int, exit_i: int, V: float, rate: 
 # ---------------------------------------------------------------------------
 
 # run_054 semi-annual windows (from protocols/ts_trend_daily_v1.json)
+# HISTORICAL: ts_trend_daily_v1's windows as run_054 ran them, in the pre-D-058
+# form (end == next start, a shared day -- CUL-369). Kept as-is to reproduce
+# run_054; the committed protocol file now ends each window the day before.
 _TS_WINDOWS = [
     ("2018-04", "2018-04-01", "2018-10-01"), ("2018-10", "2018-10-01", "2019-04-01"),
     ("2019-04", "2019-04-01", "2019-10-01"), ("2019-10", "2019-10-01", "2020-04-01"),

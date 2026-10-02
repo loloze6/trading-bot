@@ -85,6 +85,7 @@ import verdict_criteria_evaluator as vce  # noqa: E402  (G6, see _save_queue)
 import campaign_review_retired as crr  # noqa: E402  (slice 6c S2b: shared with the orchestrator)
 import composition_names as _composition_names  # noqa: E402  (E-060 S3b: shared names)
 import protocol_resolution  # noqa: E402  (E-061 C1.5: the D-3 guard, checked at launch)
+import holdout_policy  # noqa: E402  (CUL-369: windows_overlap, checked at launch)
 import abandoned_launch  # noqa: E402  (E-061 C1.4: the abandoned-launch marker, one source)
 from setup_run import setup_run  # noqa: E402
 from timeframe import timeframe_seconds  # noqa: E402  (E-061 C1.7 second-round: shared bar-size arithmetic)
@@ -3311,6 +3312,18 @@ def _generated_field(doc: dict, key: str):
     return (value or None) if key == "promotion" else value
 
 
+def _windows_overlap_in(path: Path) -> str | None:
+    """CUL-369 (D-058): run_protocol's shared-day refusal for the protocol at
+    `path`, read here so the pre-flight refuses before any LLM call instead of
+    5a / protocol_execution refusing after 1a/1b/2 spent. None when the file is
+    missing or unreadable (other checks own those)."""
+    try:
+        doc = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return holdout_policy.windows_overlap(doc.get("windows")) if isinstance(doc, dict) else None
+
+
 def _generated_protocol_plan(run_dir: Path, run_id: str, generated: dict, state: dict, *,
                              promotion_retired: bool) -> tuple:
     """(refusal, regeneration) for a machine_constraints.protocol run.
@@ -3353,6 +3366,13 @@ def _generated_protocol_plan(run_dir: Path, run_id: str, generated: dict, state:
             protocol_resolution.assert_promotion_ratified(path)
         except protocol_resolution.UngatedProtocolError as e:
             return f"{where}: {e}", None
+        overlap = _windows_overlap_in(path)
+        if overlap:
+            return (f"{where}: {path.name} was generated before D-058 (CUL-369) and its "
+                    f"windows share a day ({overlap}). Data may already have been spent on it "
+                    f"({'; '.join(spent)}), so it is never regenerated, and run_protocol refuses "
+                    f"it: this run cannot resume. Relaunch the idea under a new run id (the "
+                    f"trials it recorded stay counted)"), None
         return None, None
     try:
         expected = _expected_generated_protocol(generated, run_id,
@@ -3376,6 +3396,13 @@ def _generated_protocol_plan(run_dir: Path, run_id: str, generated: dict, state:
         current = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as e:
         return f"{where}: {path.name} cannot be read ({type(e).__name__}: {e})", None
+    overlap = _windows_overlap_in(path)
+    if overlap:
+        return (f"{where}: {path.name} was generated before D-058 (CUL-369): its windows "
+                f"share a day ({overlap}). pre_registration.yaml did not change -- the "
+                f"generator did -- and no data has been spent on this run yet. Delete "
+                f"{path.name}; run_loop regenerates it from the same pre_registration.yaml "
+                f"with day-disjoint windows"), None
     differing = [k for k in _GENERATED_PROTOCOL_FIELDS
                  if not isinstance(current, dict)
                  or _generated_field(current, k) != _generated_field(expected, k)]
@@ -3436,6 +3463,10 @@ def _protocol_preflight(run_dir: Path, run_id: str, *, promotion_retired: bool,
             protocol_resolution.assert_promotion_ratified(path)
         except protocol_resolution.UngatedProtocolError as e:
             return f"machine_constraints.protocol_ref={ref!r}: {e}", None
+        overlap = _windows_overlap_in(path)
+        if overlap:
+            return (f"machine_constraints.protocol_ref={ref!r}: {overlap} run_protocol refuses "
+                    f"it (CUL-369) -- pin a protocol whose windows are day-disjoint"), None
         return None, None
     run_ctx = run_dir / "artifacts" / "run_context.yaml"
     campaign = orch.load_campaign_state()
@@ -3443,16 +3474,22 @@ def _protocol_preflight(run_dir: Path, run_id: str, *, promotion_retired: bool,
     claimed = bool(last.get("protocol_path")) and last.get("claimed_by_run") == run_id
     if not (run_ctx.exists() or claimed):
         return None, None
+    source = "run_context.yaml" if run_ctx.exists() else \
+        f"campaign_state.last_escalation (claimed by {run_id})"
     try:
-        protocol_resolution.resolve_protocol_path(
+        resolved = protocol_resolution.resolve_protocol_path(
             run_dir=run_dir, run_id=run_id, protocols_root=orch.ROOT / "protocols",
             campaign_state=campaign, on_stale_escalation=None)
     except protocol_resolution.UngatedProtocolError as e:
-        source = "run_context.yaml" if run_ctx.exists() else \
-            f"campaign_state.last_escalation (claimed by {run_id})"
         return f"the protocol resolved from {source}: {e}", None
     except RuntimeError:
         return None, None  # B10 / malformed pin: _resolve_protocol_path raises it, as before
+    resolved = Path(resolved)
+    overlap = _windows_overlap_in(resolved if resolved.is_absolute() or resolved.exists()
+                                  else orch.ROOT / resolved)
+    if overlap:
+        return (f"the protocol resolved from {source} ({resolved.name}): {overlap} "
+                f"run_protocol refuses it (CUL-369)"), None
     return None, None
 
 
