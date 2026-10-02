@@ -390,3 +390,49 @@ def test_the_same_config_and_protocol_is_probed_once(monkeypatch, tmp_path):
     proto.write_text('{"symbols": ["ETHUSDT"]}', encoding="utf-8")  # other protocol: new probe
     rpr._forecast_size_violations(CONFIG, proto, run_dir, "backtest_specification", "base")
     assert len(calls) == 2
+
+
+# ---------------------------------------------------------------------------
+# 6. Coin price level and the cap check (operator, 2026-10-02)
+# ---------------------------------------------------------------------------
+
+def test_every_universe_coin_has_a_price_level():
+    import yaml
+    u = yaml.safe_load((SR_ROOT / "config" / "coin_universe.yaml").read_text(encoding="utf-8"))
+    symbols = [c["symbol"] for cat in u["categories"].values() for c in cat["coins"]]
+    assert symbols and all(fsp.price_level(s) > 0 for s in symbols)
+
+
+@pytest.mark.parametrize("symbol,level", [("BTCUSDT", 30000.0), ("XBTUSD", 30000.0),
+                                          ("XRPUSD", 0.5), ("ethusdt", 2000.0)])
+def test_the_price_level_reads_the_base_asset(symbol, level):
+    assert fsp.price_level(symbol) == level
+
+
+def test_an_unknown_coin_fails_loud():
+    with pytest.raises(ValueError, match="PRICE_LEVELS"):
+        fsp.price_level("FOOUSDT")
+
+
+def test_a_forecast_pinned_at_the_cap_on_every_active_bar_is_refused():
+    out = fsp.assess([20.0, -20.0] * 60 + [0.0] * 500, 2.0)
+    assert out["status"] == "refuse" and "cap" in out["message"]
+
+
+def test_the_cap_check_needs_enough_active_bars_and_spares_a_graded_signal():
+    assert fsp.assess([20.0] * 99 + [0.0] * 500, 2.0)["status"] == "ok"
+    assert fsp.assess([20.0] * 300 + [19.5], 2.0)["status"] == "ok"
+
+
+def test_the_cap_rule_is_persistence_only(tmp_path):
+    """Operator, 2026-10-02: the large-side bug is a forecast pinned at the cap
+    ALL the time. vol_adjusted on XRP's level (0.5) sits at the cap on most bars
+    but drops below it where price crosses its average, so it is NOT refused --
+    the backtest judges it. The same config at BTC's level is refused on the
+    small side. Both are probed at their own coin's price level."""
+    xrp = fsp.probe(_cfg_file(tmp_path, [{"op": "vol_adjusted"}]),
+                    {"timeframe": "1h", "symbols": ["XRPUSD"]})
+    assert xrp["status"] == "ok" and xrp["price_level"] == 0.5 and xrp["max_abs"] == 20.0
+    btc = fsp.probe(_cfg_file(tmp_path, [{"op": "vol_adjusted"}]),
+                    {"timeframe": "1h", "symbols": ["BTCUSDT"]})
+    assert btc["status"] == "refuse" and btc["price_level"] == 30000.0

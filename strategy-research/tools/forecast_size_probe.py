@@ -16,18 +16,22 @@ forecast that is broken in SIZE:
   * the forecast is nonzero somewhere but its LARGEST magnitude stays below
     BUG_FACTOR x the size a forecast needs to move the position from flat
     (10 x min_allocation_change; forecast / 10 is the allocation) -- a
-    units/scale mistake, orders of magnitude off (run_061: 7e-6 vs 2.0).
+    units/scale mistake, orders of magnitude off (run_061: 7e-6 vs 2.0), or
+  * the forecast sits at the +/-20 cap on EVERY active bar (at least
+    MIN_ACTIVE_BARS_FOR_CAP_CHECK of them) -- the same mistake in the other
+    direction (always a full position, whatever the signal).
 A forecast that is exactly 0 on every bar passes: a rare-event strategy can
 be silent on any sample.
 
 INVENTED DATA ONLY (operator, 2026-10-02): no real market bar is ever read.
 The strategy (the real AdvancedStrategy, fed bar by bar as the engine feeds
-it) runs on a synthetic series with a fixed seed: a geometric random walk at
-a crypto-like price level and volatility (constants below, not fitted to any
-real period), plus synthetic values for every live aux feed (funding_rate,
-fear_greed). Timestamps are an invented calendar (year 2000). A scale bug
-depends on the price level and the units, not on what the market did, so it
-shows on invented data; nothing about real market behaviour is measured.
+it) runs on a synthetic series with a fixed seed: a geometric random walk
+starting at the protocol coin's rough price LEVEL (PRICE_LEVELS, hand-set
+round orders of magnitude -- a units bug depends on the level, so a cheap coin
+is probed at its own scale) with a crypto-like volatility, plus synthetic
+values for every live aux feed (funding_rate, fear_greed). Timestamps are an
+invented calendar (year 2000). Nothing about real market behaviour is
+measured.
 Not a trial: no data, PnL, trade or metric of any real market is touched.
 
 Used by run_phase1_research under orchestrator.forecast_size_probe.enabled
@@ -57,10 +61,44 @@ CONFIG_JSON = _TBOT / "config.json"
 # |forecast| is below 1/100 of the size needed to trade -- a bug, not a style.
 BUG_FACTOR = 0.01
 
+# The engine clips every forecast to [-20, +20] (strategy_engine.py, strategy_base.py).
+# A forecast stuck at the cap on every active bar is the opposite scale bug
+# (e.g. vol_adjusted on a cheap coin): always a full position, whatever the signal.
+FORECAST_CAP = 20.0
+MIN_ACTIVE_BARS_FOR_CAP_CHECK = 100
+
 # Invented series (fixed; never fitted to a real period).
 SYNTH_SEED = 20261002
 SYNTH_BARS = 2000             # scored bars, after 2 x required_bars of warmup
-START_PRICE = 30000.0         # crypto-like level (a scale bug depends on it)
+START_PRICE = 30000.0         # BTC-like level, used when the protocol names no symbol
+# The invented series starts at the coin's rough price LEVEL (operator, 2026-10-02):
+# a units bug depends on the price level, so a cheap coin must be probed at its own
+# scale. Hand-set round orders of magnitude, NOT read from any market data; one per
+# coin of config/coin_universe.yaml (a test keeps them in sync). Unknown coin: fails
+# loud -- add its order of magnitude here.
+PRICE_LEVELS = {
+    "BTC": 30000.0, "ETH": 2000.0, "SOL": 100.0, "AVAX": 30.0, "DOT": 5.0, "UNI": 10.0,
+    "AAVE": 100.0, "LINK": 15.0, "XRP": 0.5, "XLM": 0.1, "DOGE": 0.1, "SHIB": 0.00002,
+    "ADA": 0.5, "SUI": 1.0, "ZEC": 50.0, "XMR": 150.0, "LTC": 100.0, "ONDO": 1.0,
+    "NEAR": 5.0, "TAO": 300.0, "TRX": 0.1, "INJ": 20.0,
+}
+_QUOTE_SUFFIXES = ("USDT", "USDC", "BUSD", "USD", "EUR")
+_BASE_ALIASES = {"XBT": "BTC"}
+
+
+def price_level(symbol: str) -> float:
+    """The invented series' starting price for a protocol symbol (BTCUSDT,
+    XRPUSD, XBTUSD ...): its base asset's order of magnitude."""
+    base = str(symbol).upper()
+    for quote in _QUOTE_SUFFIXES:
+        if base.endswith(quote) and len(base) > len(quote):
+            base = base[:-len(quote)]
+            break
+    base = _BASE_ALIASES.get(base, base)
+    if base not in PRICE_LEVELS:
+        raise ValueError(f"no price level for {symbol!r} (base {base!r}) in "
+                         f"forecast_size_probe.PRICE_LEVELS -- add its order of magnitude")
+    return PRICE_LEVELS[base]
 HOURLY_VOL = 0.007            # per-bar log-return std at 1h, scaled by sqrt(interval)
 SYNTH_START = "2000-01-01"    # invented calendar, far from any real or sealed date
 _TIMEFRAME_SECONDS = {"1m": 60, "5m": 300, "15m": 900, "30m": 1800, "1h": 3600,
@@ -108,6 +146,15 @@ def assess(forecasts: list, threshold: float) -> dict:
     if max_abs == 0:
         out["note"] = ("silent: every forecast is exactly 0 on the invented series -- not a "
                        "refusal (a rare-event strategy can be silent on any sample)")
+    elif (len(active := [v for v in finite if v > 0]) >= MIN_ACTIVE_BARS_FOR_CAP_CHECK
+          and min(active) >= FORECAST_CAP * (1 - 1e-9)):
+        out["status"] = "refuse"
+        out["message"] = (
+            f"forecast broken in size: it sits at the +/-{FORECAST_CAP:g} cap on every one of its "
+            f"{len(active)} active bars on the invented series -- always a full position, "
+            f"whatever the signal: a units/scale mistake in the other direction (e.g. "
+            f"vol_adjusted on a low-priced coin, or a raw price-unit output with a large "
+            f"scale). Rescale so a typical signal is a few forecast units")
     elif threshold > 0 and max_abs < BUG_FACTOR * threshold:
         out["status"] = "refuse"
         out["message"] = (
@@ -120,15 +167,16 @@ def assess(forecasts: list, threshold: float) -> dict:
     return out
 
 
-def synthetic_bars(n: int, interval_seconds: int, seed: int = SYNTH_SEED):
+def synthetic_bars(n: int, interval_seconds: int, seed: int = SYNTH_SEED,
+                   start_price: float = START_PRICE):
     """The invented series: OHLCV + every live aux feed column, as the engine's
-    get_data_history rows carry them. Deterministic for a seed."""
+    get_data_history rows carry them. Deterministic for a seed and start price."""
     import numpy as np
     import pandas as pd
     rng = np.random.default_rng(seed)
     vol = HOURLY_VOL * math.sqrt(interval_seconds / 3600.0)
-    close = START_PRICE * np.exp(np.cumsum(rng.normal(0.0, vol, n)))
-    open_ = np.concatenate(([START_PRICE], close[:-1]))
+    close = start_price * np.exp(np.cumsum(rng.normal(0.0, vol, n)))
+    open_ = np.concatenate(([start_price], close[:-1]))
     wick = np.abs(rng.normal(0.0, vol / 2.0, n))
     ts = pd.date_range(SYNTH_START, periods=int(n), freq=f"{int(interval_seconds)}s")
     # funding: an 8h print carried forward; fear & greed: a daily 0..100 walk carried forward
@@ -145,14 +193,16 @@ def synthetic_bars(n: int, interval_seconds: int, seed: int = SYNTH_SEED):
     })
 
 
-def _forecasts_on_invented_series(config_path: Path, interval_seconds: int) -> list:
+def _forecasts_on_invented_series(config_path: Path, interval_seconds: int,
+                                  start_price: float = START_PRICE) -> list:
     """The real AdvancedStrategy, fed bar by bar exactly as TradingBot feeds it
     (strategy.update(one-row frame) then generate_signals())."""
     if str(_TBOT) not in sys.path:
         sys.path.insert(0, str(_TBOT))
     from strategies.main_strategy import AdvancedStrategy  # noqa: E402
     strategy = AdvancedStrategy(str(config_path))
-    bars = synthetic_bars(2 * strategy.required_bars + SYNTH_BARS, interval_seconds)
+    bars = synthetic_bars(2 * strategy.required_bars + SYNTH_BARS, interval_seconds,
+                          start_price=start_price)
     warmup = 2 * strategy.required_bars
     forecasts = []
     for i in range(len(bars)):
@@ -168,11 +218,15 @@ def probe(config_path: Path, protocol: dict) -> dict:
     if timeframe not in _TIMEFRAME_SECONDS:
         raise ValueError(f"protocol timeframe {timeframe!r} is not one of "
                          f"{sorted(_TIMEFRAME_SECONDS)}")
+    symbols = protocol.get("symbols") or []
+    level = price_level(symbols[0]) if symbols else START_PRICE
     threshold = forecast_threshold(
         strategy_config=json.loads(Path(config_path).read_text(encoding="utf-8")))
     result = assess(_forecasts_on_invented_series(Path(config_path),
-                                                  _TIMEFRAME_SECONDS[timeframe]), threshold)
-    result.update({"data": "invented", "seed": SYNTH_SEED, "timeframe": timeframe})
+                                                  _TIMEFRAME_SECONDS[timeframe], level),
+                    threshold)
+    result.update({"data": "invented", "seed": SYNTH_SEED, "timeframe": timeframe,
+                   "symbol": symbols[0] if symbols else None, "price_level": level})
     return result
 
 

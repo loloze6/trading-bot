@@ -835,10 +835,11 @@ orchestrator:
       # 1b's one retry, then the forecast_rule_violation pause) and in step 5a
       # (every variant, refused with the D-051/D-053 reason so Step 2 gets its
       # one retry), tools/forecast_size_probe.py runs the real strategy code
-      # on INVENTED data only (fixed-seed synthetic prices and feeds, invented
-      # calendar; no real market bar is read) and refuses only a forecast
-      # BROKEN IN SIZE: largest |forecast| below 1/100 of 10 x
-      # min_allocation_change, or every forecast NaN. Bug detection only: a
+      # on INVENTED data only (fixed-seed synthetic prices at the coin's rough
+      # price level and feeds, invented calendar; no real market bar is read)
+      # and refuses only a forecast BROKEN IN SIZE: largest |forecast| below
+      # 1/100 of 10 x min_allocation_change, pinned at the +/-20 cap on EVERY
+      # active bar, or every forecast NaN. Bug detection only: a
       # quiet or silent strategy passes -- how often it trades is the
       # backtest's question. Every probe is recorded in
       # artifacts/forecast_size_probe.yaml. Adds a few seconds per config.

@@ -305,8 +305,8 @@ close in **price units**, so `stddev_24` x close is a price squared (around 1e5 
 forecast / 10 and the risk layer ignores allocation changes below 0.2, so from flat a forecast needs
 |forecast| >= 2 to move the position. Check each component's units (COMPONENT_CATALOG.md, Units column) before
 choosing transforms. Under `orchestrator.forecast_size_probe`, a config whose largest forecast stays below 1/100 of
-that size (a units bug) is refused before any backtest (D-056); how often a strategy trades is judged only by the
-backtest.
+that size, or whose forecast sits at the +/-20 cap on every active bar (a units bug, either way), is refused before
+any backtest (D-056); how often a strategy trades is judged only by the backtest.
 
 **Ordering rule.** In one list, history ops first, then scalar and data-aware ops (V5). `history_transforms` and
 `transforms` are separate lists, each checked on its own.
