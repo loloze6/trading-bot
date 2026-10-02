@@ -3141,6 +3141,7 @@ def _flag_readers() -> dict:
         "verdict_routing_retired": orch._verdict_routing_retired_enabled,
         "composition_runs": orch._composition_runs_enabled,
         "variant_anti_adjacency_gate": orch._variant_anti_adjacency_gate_enabled,
+        "forecast_size_probe": orch._forecast_size_probe_enabled,  # D-056
         "schedulability_block": _schedulability_block_enabled,
     }
 
@@ -4588,6 +4589,12 @@ def _launch_queued_card(entry: dict, run_id: str) -> None:
            else "innovation_expansion")
     orch.update_state(path=run_dir, pending_stage=nxt, current_stage="hypothesis_generation",
                       completed_stages=["hypothesis_generation"], status="active")
+    # The run skips 1a, so do what 1a's completion does: write pre_registration's
+    # pass_rule from this card's criteria (a criteria_from-1a brief; no-op
+    # otherwise) and run the specialist_readers pre-flight. Without it the
+    # pass_rule stays null and run_loop's pre-flight refuses the run (found on
+    # C4 run_064, the first queued-card launch, 2026-10-02). Raises before spend.
+    orch._write_pass_rule_from_card(run_dir, run_id, orch._specialist_readers_enabled())
 
 
 def _enqueue_queued_hypotheses(entry: dict, run_id: str) -> bool:

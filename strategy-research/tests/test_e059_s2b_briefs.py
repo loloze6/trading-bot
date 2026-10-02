@@ -268,6 +268,43 @@ def test_picked_card_skips_authoring(campaign_root, monkeypatch, config_direct, 
     assert not (root / "runs" / "run_001" / "artifacts" / "brief_hypotheses_context.yaml").exists()
 
 
+def test_picked_card_of_a_criteria_from_1a_brief_gets_its_pass_rule(campaign_root, monkeypatch):
+    """C4 run_064 (2026-10-02, the first real queued-card launch): a brief whose
+    criteria are written at 1a (`criteria_from: hypothesis_generation`) got NO
+    pass_rule because the queued card skips 1a, so run_loop's specialist_readers
+    pre-flight refused the run. The launch now writes it from the saved card,
+    as 1a's completion does."""
+    root = campaign_root["root"]
+    _write_flags(root, **{**_ALL_ON, "decide_next": False})
+    _protocol(root)
+    (root / "config").mkdir(exist_ok=True)
+    (root / "config" / "criterion_menu.yaml").write_bytes(
+        (_SR / "config" / "criterion_menu.yaml").read_bytes())
+    brief = _brief(root)
+    brief.write_text(_BRIEF.replace("research_goal: g\n",
+                                    "research_goal: g\ncriteria_from: hypothesis_generation\n"),
+                     encoding="utf-8")
+    card = root / "campaign_record" / "queued_cards" / "run_001" / "hypothesis_card_2.yaml"
+    card.parent.mkdir(parents=True)
+    card.write_text(yaml.safe_dump({"hypothesis_id": "H2",
+                                    "criteria": [{"id": "realized_edge_to_cost_ratio"}]}),
+                    encoding="utf-8")
+    _save_queue_entries(campaign_root["queue_path"], [_card_entry("OWNER__h2", status="ready")])
+    _write_campaign_state(campaign_root["campaign_state_path"], runs=[])
+    seen = {}
+
+    def fake_run_loop(run_id):
+        seen["pre"] = rpr.load_yaml(root / "runs" / run_id / "artifacts" / "pre_registration.yaml")
+        rpr.update_state(path=root / "runs" / run_id, status="paused_for_human",
+                         pending_stage="human_pause")
+    monkeypatch.setattr(rpr, "run_loop", fake_run_loop)
+    camp.process_once()
+    rule = seen["pre"]["pass_rule"]
+    assert [c["id"] for c in rule["criteria"]][0] == "realized_edge_to_cost_ratio"
+    assert all(c.get("source") for c in rule["criteria"])  # menu-shaped, not ids only
+    assert seen["pre"]["pass_rule_source_ref"] == "runs/run_001/artifacts/hypothesis_card.yaml#criteria"
+
+
 # ---------------------------------------------------------------------------
 # decide(): extra cards ranked by their 1a scores; R2; stop
 # ---------------------------------------------------------------------------

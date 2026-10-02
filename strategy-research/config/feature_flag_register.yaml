@@ -603,6 +603,24 @@ flags:
       Tested by tests/test_c5_7b2_rubric_citations.py. Switch on with C4's flag
       set.
 
+  - name: forecast_size_probe
+    kind: orchestrator_config
+    config_key: orchestrator.forecast_size_probe.enabled
+    reader: run_phase1_research._forecast_size_probe_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "C4's flag set (switched on there first; on master after a C4 run has used it -- O-10 / D-056)"
+    criterion: >
+      Landed 2026-10-02 (O-10, D-056). Off: byte-identical, nothing run or
+      written. On: after 1b and in step 5a, tools/forecast_size_probe.py runs
+      the real strategy code on invented data only and refuses only a
+      forecast broken in size (largest |forecast| below 1/100 of 10 x
+      min_allocation_change, pinned at the +/-20 cap on every active bar, or
+      all NaN; invented prices at the coin's rough level) -- bug detection, never a
+      judgement on how often a strategy trades. No real market data is read.
+      A probe that crashes raises. Tested by
+      tests/test_d056_forecast_size_probe.py.
+
   - name: bar_equity
     kind: engine_param
     engine_default_files:

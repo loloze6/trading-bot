@@ -825,6 +825,24 @@ orchestrator:
       # S3 (composition brief writer, 1b composition mode) extends this flag;
       # S3a's tools/composition.py (weights, variant configs,
       # compositions.yaml) refuses to write unless given this flag's True.
+  forecast_size_probe:
+    enabled: false
+      # O-10 / D-056 (2026-10-02). OFF BY DEFAULT, read by
+      # run_phase1_research._forecast_size_probe_enabled(). While false:
+      # nothing is run or written (byte-identical).
+      #
+      # While true (config-direct flow): right after 1b (base config, with
+      # 1b's one retry, then the forecast_rule_violation pause) and in step 5a
+      # (every variant, refused with the D-051/D-053 reason so Step 2 gets its
+      # one retry), tools/forecast_size_probe.py runs the real strategy code
+      # on INVENTED data only (fixed-seed synthetic prices at the coin's rough
+      # price level and feeds, invented calendar; no real market bar is read)
+      # and refuses only a forecast BROKEN IN SIZE: largest |forecast| below
+      # 1/100 of 10 x min_allocation_change, pinned at the +/-20 cap on EVERY
+      # active bar, or every forecast NaN. Bug detection only: a
+      # quiet or silent strategy passes -- how often it trades is the
+      # backtest's question. Every probe is recorded in
+      # artifacts/forecast_size_probe.yaml. Adds a few seconds per config.
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------

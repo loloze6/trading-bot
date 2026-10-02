@@ -14,6 +14,12 @@ decision (DECISION_LOG) or a ticket.
 | O-5 | C4 run_063, 2026-09-30 | Asset variants evicted instead of re-windowed; the "at least 2 variants" rule | found: SOL as intended; XRP a design gap (decision) |
 | O-6 | C4 run_063, 2026-09-30 | Park reason says "component" when most failures were data | found: reporting bug, fix |
 | O-7 | C4 run_063, 2026-09-30 | A threshold (breakout) idea in a linear-forecast design | found: doc bug + fidelity gap (fix); forecast rule (decision) |
+| O-8 | C4 run_061, 2026-10-01 | Data gate blocks every version over small gaps the backtest already handles | found: design gap; target design ticketed (CUL-367); run_061 continued by override |
+| O-9 | C4 run_061, 2026-10-02 | Nothing before the backtest says which test windows are used, or how long they are | open: to investigate |
+| O-10 | C4 run_061, 2026-10-02 | `base` made 0 trades in 95 windows: the forecast was shrunk ~1,000,000x | found: doc bug + missing fail-loud check; trial invalidated, run stopped |
+| O-11 | C4 run_064, 2026-10-02 | The first C4 backtests ran, then grading stopped on two engineering faults | found: bugs, ticketed (CUL-369, CUL-370, CUL-368); queued-card pass_rule bug fixed (PR) |
+| O-12 | C4 run_064, 2026-10-02 | The brief's venue/product never reaches the backtest (data, fees, slippage) | found: deferred design (CUL-46, E-014); C4 venue = Kraken futures (operator); Phase A planned |
+| O-13 | PR #295 review, 2026-10-02 | The size check deliberately passes two "zero" cases: a zero rebalance floor, and an all-zero forecast | recorded (by design, #295); no action |
 
 ---
 
@@ -409,6 +415,240 @@ design rule (decision for the operator).**
 4. A true breakout component is a separate build. It would be latched: +sf after a close
    above the previous N-bar high, until a close below the previous N-bar low. The latch
    needs no position state.
+
+
+## O-8. The data gate blocks every version over small gaps the backtest already handles
+
+**Seen:** run_061 (resumed 2026-10-01 after its component park) paused at the per-variant
+data-availability gate with 0 of 4 variants left (`variant_gate_insufficient`), before any
+backtest. `base` and `design_sma_21` (BTCUSDT 1h) were refused because 21 of 95 monthly
+windows were `refine` (some bars missing, each <= 5%). Source: `c4_run_once.log`,
+`runs/run_061/artifacts/variants/*/data_availability_gate.yaml`.
+
+**Operator's view (2026-10-01):** separate two cases.
+1. **Data quality:** holes inside a window. Accept them while the overall quality of the
+   data set holds (small, or even medium, gaps; a share of the data set, or a better
+   formula).
+2. **Missing window:** a missing interval at a window boundary, including "one bar, then a
+   long gap". That is what `refine` should be for: not evict, but **shrink the window so it
+   starts at the end of the missing interval** -- down to a **minimum tested window
+   length**; below that minimum the window is dropped (operator, 2026-10-02).
+
+**Finding (2026-10-01, measured):** **design gap. The current logic does neither.**
+- The gate rates a window by its missing fraction only (0% validate, <= 5% refine, > 5%
+  decline, `tools/data_availability_gate.py:36-40, 462-466`). It does not look at where a
+  gap sits or how long it is.
+- In the variant loop, any outcome other than `validate` marks the variant not_tested
+  (`run_phase1_research.py` ~1659). A `refine` therefore evicts the version; nothing trims.
+- Every one of run_061's 21 flagged BTC windows is case 1: all gaps are interior, 1-33 h
+  each, 121 h in total, about 0.17% of the data set, worst window 4.9%. None touches a
+  window boundary.
+- The backtest has handled such gaps since #288 (gap rule on by default: ignore <= 3 bars,
+  flatten and re-warm after a large gap). So this gate blocks every 1h BTC/ETH idea over
+  the full protocol for gaps the engine already absorbs.
+- Same family as O-5 (an XRP variant evicted on one `refine` window instead of
+  re-windowed). CUL-367 generalises O-5's recommendation 1 from asset variants to every
+  variant.
+
+**Challenge (agreed as the starting point):**
+- A data-set-wide percentage alone can hide one bad window, so keep a per-window ceiling
+  too.
+- "Short" and "long" should be measured against the strategy's warmup, not a fixed
+  percentage.
+- A long *interior* gap behaves like a boundary gap: the engine already flattens and
+  re-warms after it, so the window effectively restarts there.
+- A trimmed window must leave room for the warmup after the gap, and keep at least the
+  minimum tested window length (to be set: e.g. a share of the window's bars, or a number
+  of bars tied to the strategy's horizon); below it the window is dropped.
+- Trimming makes per-window metrics noisier. Whole-period metrics (D-034..036) are
+  unaffected.
+- The rule must be mechanical and pre-registered, never applied after seeing results.
+
+**Actions:**
+1. Target design ticketed: **CUL-367** (quality vs missing window; trim instead of
+   evict). Not built yet.
+2. run_061 was continued by a recorded operator override: `base` and `design_sma_21` were
+   marked validated as "interior quality gaps only". `asset_xrpusdt` (one window 6.7%) and
+   `asset_solusdt` (57% coverage) stay not_tested, so the idea stays capped at
+   INCONCLUSIVE. Record: `runs/run_061/artifacts/human_resolution.yaml`, and the variant
+   reasons in `artifacts/variants/index.yaml`.
+
+
+## O-9. Nothing before the backtest says which test windows are used, or how long they are
+
+**Seen:** run_061's pre-backtest steps (1a, 1b, step 2, 5a, data gate) produced no
+statement about the test period. The windows appear only in a generated file,
+`protocols/run_061_generated.json`: 1h bars, **95 monthly windows from 2018-02 to 2025-12**,
+about 69,000 bars per coin, for every variant.
+
+**Operator's view (2026-10-02):** we should see how the tested window is selected and how
+long it is. It should be limited, dynamically or statically, so a backtest does not run on
+a too-large data set.
+
+**Facts so far (not yet a finding):**
+- The protocol comes from `machine_constraints.protocol` in the run's pre-registration
+  (`_ensure_protocol_from_constraints`, `run_phase1_research.py` ~8925-8950), which comes
+  from the brief's frontmatter. `briefs/C4_vol_managed_trend.md:27-31` (branch c4/flag-set) sets start
+  2018-02-01, end 2025-12-31 and timeframe 1h; its own comment says the protocol block is
+  copied from the template.
+- So the period is fixed by hand in the brief and cut into monthly windows. No stage
+  chooses it, checks it against the idea's horizon, or reports it.
+
+**To check:**
+- Who may set or change the period: brief author, 1a, 1b, step 2; and whether any
+  skill or handoff tells them about it.
+- Window length vs the idea's horizon: monthly windows on 1h bars vs an SMA(50) trend;
+  a daily idea on monthly windows.
+- A cap or rule: a static maximum number of bars or windows, or a dynamic one derived
+  from timeframe, holding period and the required trade count (D-035: >= 100 trades per
+  coin). Weigh this against the era-stability bar (2018-20 / 2021-22 / 2023-25), which
+  needs the long history.
+- How the train (2018-2023) / validate (2024-2025) split is applied inside these 95
+  windows.
+- Cost: backtest time per variant at 69,000 bars, and how it scales with variants and
+  coins.
+- Show the period in a pre-backtest artifact or log line, so the operator sees it before
+  any trial is spent.
+
+
+## O-10. `base` made 0 trades in 95 windows: the forecast was shrunk about a million-fold
+
+**Seen:** after the O-8 override, run_061's `base` variant backtested 95 windows with **0
+trades**. The forecasts were about 1e-5 in size (window 2018-12: |forecast| <= 4.4e-5), so
+every allocation change (~4e-6) failed `min_allocation_change` (0.2) on all 768 bars. Source:
+`runs/run_061/variants/base/results/20261001T215100Z_d947d333/bars.csv` and `metrics.json`.
+
+**Finding (2026-10-02, measured):** **a units bug the documentation steers into, with
+nothing to catch it.**
+- 1b's base config is `MovingAverageDistanceComponent` (sma, period 50, scaling_factor 10),
+  whose output is a percent, followed by `transforms: [{op: vol_adjusted}]`, which it chose
+  to express "vol-managed".
+- `vol_adjusted` computes v / (`stddev_24` x close) (`trading-bot/strategies/registry.py:71-76`).
+  `stddev_24` is the 24-bar rolling standard deviation of the close in price units
+  (`main_strategy.py:82`). The divisor is (dollars x dollars), about 1e5-1e7, so any
+  component's output becomes microscopic.
+- It only works when followed by a rescale that cancels the factor: the documented
+  `history_transforms: vol_normalize` + `ratio_to_mean` pattern. Used alone, the signal
+  never trades.
+- The design guide recommends it alone for this purpose ("a signal can be divided by
+  recent volatility with a data-aware transform such as `vol_adjusted`",
+  `STRATEGY_DESIGN_GUIDE.md` ~459). Its transform table gives the formula but not the
+  resulting scale (`:298-299`).
+- Nothing checks the forecast's size: the validator, step 5a, the data gate and the engine
+  all accept a forecast that can never reach the rebalance threshold. The result looked
+  like an ordinary "0 trades". Had the run finished, the idea would have been graded on
+  a bug.
+
+**Actions (operator, 2026-10-02):**
+1. Run stopped during the `design_sma_21` backtest (same transform). No grid, reader or
+   idea_status was written. `run_061` is paused at protocol_execution.
+2. Trial `run_061:base` marked `invalidated_artifact` with the reason (kept, not deleted;
+   run_044 precedent).
+3. Next: a small PR with (a) the guide and catalog stating each transform's input units
+   and resulting scale, without recommending `vol_adjusted` alone; and (b) a fail-loud
+   check that refuses a forecast that cannot reach the rebalance threshold. Then send
+   run_061 back to step 1b to re-author the config.
+
+
+## O-11. The first C4 backtests ran, then grading stopped on two engineering faults
+
+**Seen:** run_064 relaunched run_061's card past step 1a (new run id, so its trials count: the
+trial recorder skips a repeated trial_id). Step 1b re-authored the config with the corrected
+guide (`vol_normalize` history + `ratio_to_mean` + `scale` 10); the D-056 size probe passed it
+(88% of sample bars tradable). Two variants were backtested on 95 monthly BTCUSDT 1h windows,
+then protocol_execution halted before grading.
+
+**Measured results (trials, counted in N):**
+
+| variant | trades | pooled gross | pooled net | median Sharpe |
+|---|---|---|---|---|
+| `base` (scale 10) | 32,648 | -1,354.1 | -12,172.7 | -2.879 |
+| `V1_conservative_scale` (scale 5) | 20,513 | -726.6 | -6,098.8 | -2.605 |
+
+Negative before costs; the vol-normalised signal changes size every bar, so it rebalances
+several times a day and costs dominate. These figures are not graded: see the faults below,
+and the window overlap inflates pooled totals by about 3%.
+
+**Engineering faults found on the way (each its own ticket or PR):**
+1. **Windows overlap by one day (CUL-369, Urgent).** Each window's backtest includes the
+   whole end day (2018-03 window: 2018-03-01 00:00 to 2018-04-01 23:00, 768 bars). The next
+   window starts on that day, so it is counted twice and the grid's time-ordered fit refuses
+   the data (`RecordOrderError`). This likely affects every past monthly-window run.
+2. **Category report over its size budget (CUL-370).** `profitability.yaml` would be 716,645
+   characters (budget 400,000) on 95 windows x 2 variants: a per-window grouping grows
+   unbounded. Same root as O-9: nothing caps the protocol length.
+3. **No Kraken asset variant can be backtested (CUL-368).** `cost_model.json` has no
+   (kraken, margin) entry and run_protocol passes no market_type. The D-056 probe caught it
+   on `asset_aaveusdt` before spend; it is now a D-042 coverage skip.
+4. **A queued-card launch got no pass_rule** (the first one ever): it skips 1a, so
+   `_write_pass_rule_from_card` never ran and the specialist_readers pre-flight refused the
+   run before spend. Filled by hand for run_064; fixed in branch `fix/queued-card-pass-rule`.
+5. Step 2 once wrote only 1 of its 3 files (16k output tokens, 1 turn). A single retry wrote
+   all three. The raw answer is not kept when some files parse, so the cause is unknown.
+
+**State:** run_064 is halted at protocol_execution (status failed). Its two trial rows are
+recorded. Nothing runs on its own. Grading needs CUL-369 (and CUL-370) first.
+
+
+## O-12. The brief's venue/product never reaches the backtest
+
+**Seen:** the C4 brief declares `venue: kraken`, `product: spot`. run_064's backtests nevertheless
+ran on **Binance** BTCUSDT data, with the **spot** fee from `config/cost_model.yaml` (7.5 bps
+per side) and **Binance margin** slippage from `trading-bot/config/cost_model.json` (1 bps).
+The Kraken asset variant (AAVE) crashed on a missing (kraken, margin) cost entry (CUL-368).
+
+**Operator's view (2026-10-02):** the venue is declared in the brief, and C4 should model
+**Kraken futures**. The operator remembered a feature that takes the declared venue, checks
+its costs and data, and applies them to the backtest.
+
+**Finding (2026-10-02, read in code and Linear):** **that feature was designed but deferred,
+never built.**
+- **E-015** (Completed): venue + product are required at registration. A non-tradable product
+  is flagged `research_only`, and the holdout refuses research-only ideas. It never touches
+  data or costs.
+- **E-014** (Completed): tradability and the data-availability declaration. Its child
+  **CUL-46, "Venue/Exchange model -- deferred design epic (joint design with Jeremy)"**, is
+  the wiring itself, and it is still Backlog. CUL-287 (the data fetcher hard-codes `spot`) is
+  part of the same gap.
+- In code, `run_campaign.py:465-469` says it outright: *"venue has NO protocol-side
+  counterpart"*. `venue`/`product` feed only the tradability check (`:768-773`).
+- Each piece decides on its own:
+  - Data: the protocol's `exchange` field, absent, so Binance (run_protocol "Option Y").
+    Non-Binance coins in per-coin variants go to Kraken.
+  - Fee: run_protocol's `--cost-product`, never passed, so `spot`.
+  - Slippage and the (exchange, market) existence check: the engine's `market_type`, never
+    passed, so config.json's `margin`.
+
+**Next:** Phase A of the wiring. Map every place that decides exchange, market, fee and
+slippage, plus which caches exist per venue/market (Kraken futures OHLCV and funding for
+BTC/ETH). Then STOP for the operator's nod. No C4 backtest until it is in.
+
+
+## O-13. The size check deliberately passes two "zero" cases
+
+**Context:** PR #295 (D-056, forecast-size probe), reworked 2026-10-02 to bug-only on invented
+data. Recorded at the operator's request so the behaviour is not mistaken for a gap later.
+
+**1. A zero rebalance floor.** A strategy config may set its own
+`strategies.min_allocation_change` (the engine uses it instead of config.json's 0.2). At 0,
+every nonzero forecast moves the position, so no size can be a bug. The probe's threshold is
+then 0 and it never refuses on size, only on an all-NaN forecast. Pinned by
+`tests/test_d056_forecast_size_probe.py::test_a_zero_strategy_floor_means_any_nonzero_forecast_trades`
+(a 1e-9 forecast passes at floor 0). A negative floor fails loud
+(`test_a_negative_strategy_floor_fails_loud`).
+
+**2. An all-zero forecast.** If the forecast is exactly 0 on every bar of the invented series,
+the probe passes it with a note ("silent"), never a refusal. A rare-event strategy can be
+silent on any sample, and how often a strategy trades is the backtest's question, not the
+probe's (operator, 2026-10-02). Pinned by
+`test_a_forecast_silent_on_every_bar_passes_with_a_note`; the mutation that refuses it is caught.
+
+**What the probe still refuses:** every forecast NaN, or a nonzero forecast whose largest
+magnitude stays below 1/100 of 10 x the floor (a units/scale bug; run_061 was 9e-7 vs 2.0).
+
+**Consequence to keep in mind:** a config whose forecast is silent because of a bug (e.g. a
+regime that never activates on any data) passes the probe. The backtest shows it as 0 trades
+and the readers must report it as such, not as a market result.
 
 ---
 

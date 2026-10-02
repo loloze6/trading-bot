@@ -1070,3 +1070,30 @@ def test_repeat_gate_refuses_only_the_variant_with_a_broken_protocol():
     res = rpr.load_yaml(arts / "variant_anti_adjacency_result.yaml")
     assert res["refused"] == ["asset"] and res["repeats"] == []
     assert res["variants"]["base"]["route"] == "admit"
+
+
+def test_d056_a_probe_that_cannot_run_on_an_asset_is_a_coverage_skip(monkeypatch):
+    """C4 run_064 (2026-10-02): the D-056 size probe could not run the AAVE asset
+    variant (no cost model for its venue). Like the data gate's H1, an asset whose
+    coin cannot be run is a D-042 coverage skip -- it must not raise the floor for
+    base and design; a base/design probe failure stays a plain not_tested."""
+    _set_flags(config_direct_authoring=True, variant_loop=True, forecast_size_probe=True)
+    _copy_coin_configs()
+    _run_protocol_file(monkeypatch, _months("2022-01", 6))
+    _ok_subprocess(monkeypatch)
+
+    def fake_probe(config, protocol_path, run_dir, stage, variant_id):
+        if variant_id in ("asset", "design"):
+            raise RuntimeError("forecast_size_probe failed: UnknownCostModelError")
+        return []
+    monkeypatch.setattr(rpr, "_forecast_size_violations", fake_probe)
+    run_dir = _run_5a("run_909", PER_COIN_PATCHES)
+    index = rpr.load_yaml(run_dir / "artifacts" / "variants" / "index.yaml")["variants"]
+    a, d = index["asset"], index["design"]
+    assert a["status"] == "not_tested" and rpr._is_coverage_skip(a)
+    assert a["reason"].startswith(vc.LAYER2_COVERAGE_REASON_PREFIX)
+    assert d["status"] == "not_tested" and not rpr._is_coverage_skip(d)
+    assert d["reason"] == rpr.FORECAST_SIZE_PROBE_ERROR_REASON
+    assert index["base"]["status"] == "validated"
+    remaining, min_needed = rpr._variant_floor(index)
+    assert min_needed == 2  # the asset no longer counts against the floor
