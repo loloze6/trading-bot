@@ -17,9 +17,10 @@ decision (DECISION_LOG) or a ticket.
 | O-8 | C4 run_061, 2026-10-01 | Data gate blocks every version over small gaps the backtest already handles | found: design gap; target design ticketed (CUL-367); run_061 continued by override |
 | O-9 | C4 run_061, 2026-10-02 | Nothing before the backtest says which test windows are used, or how long they are | open: to investigate |
 | O-10 | C4 run_061, 2026-10-02 | `base` made 0 trades in 95 windows: the forecast was shrunk ~1,000,000x | found: doc bug + missing fail-loud check; trial invalidated, run stopped |
-| O-11 | C4 run_064, 2026-10-02 | The first C4 backtests ran, then grading stopped on two engineering faults | found: bugs, ticketed (CUL-369, CUL-370, CUL-368); queued-card pass_rule bug fixed (PR) |
-| O-12 | C4 run_064, 2026-10-02 | The brief's venue/product never reaches the backtest (data, fees, slippage) | found: deferred design (CUL-46, E-014); C4 venue = Kraken futures (operator); Phase A planned |
+| O-11 | C4 run_064, 2026-10-02 | The first C4 backtests ran, then grading stopped on two engineering faults | found: bugs, ticketed (CUL-369, CUL-370, CUL-368); queued-card pass_rule fixed (#296); CUL-368 partly fixed (#298) |
+| O-12 | C4 run_064, 2026-10-02 | The brief's venue/product never reaches the backtest (data, fees, slippage) | fixed: D-057 (#298) -- the brief's venue reaches the protocol; remaining gaps listed; C4 briefs must say `perp` before relaunch |
 | O-13 | PR #295 review, 2026-10-02 | The size check deliberately passes two "zero" cases: a zero rebalance floor, and an all-zero forecast | recorded (by design, #295); no action |
+| O-14 | D-057 work, 2026-10-02 | A Binance run takes its fee from the spot schedule but its slippage and market check from the margin entry | open: declared fix planned (own PR) |
 
 ---
 
@@ -580,9 +581,13 @@ and the window overlap inflates pooled totals by about 3%.
 3. **No Kraken asset variant can be backtested (CUL-368).** `cost_model.json` has no
    (kraken, margin) entry and run_protocol passes no market_type. The D-056 probe caught it
    on `asset_aaveusdt` before spend; it is now a D-042 coverage skip.
+   *Update 2026-10-02:* partly fixed by D-057 (#298). On a run whose brief names Kraken
+   futures, asset variants are priced on (kraken, futures), which has a cost entry. Still
+   open: on a Binance run, a Kraken-only coin (XRP, AAVE) still resolves to (kraken, margin),
+   which has none.
 4. **A queued-card launch got no pass_rule** (the first one ever): it skips 1a, so
    `_write_pass_rule_from_card` never ran and the specialist_readers pre-flight refused the
-   run before spend. Filled by hand for run_064; fixed in branch `fix/queued-card-pass-rule`.
+   run before spend. Filled by hand for run_064; fixed and merged (#296).
 5. Step 2 once wrote only 1 of its 3 files (16k output tokens, 1 turn). A single retry wrote
    all three. The raw answer is not kept when some files parse, so the cause is unknown.
 
@@ -619,9 +624,43 @@ never built.**
   - Slippage and the (exchange, market) existence check: the engine's `market_type`, never
     passed, so config.json's `margin`.
 
-**Next:** Phase A of the wiring. Map every place that decides exchange, market, fee and
-slippage, plus which caches exist per venue/market (Kraken futures OHLCV and funding for
+**Next (superseded):** Phase A of the wiring. Map every place that decides exchange, market,
+fee and slippage, plus which caches exist per venue/market (Kraken futures OHLCV and funding for
 BTC/ETH). Then STOP for the operator's nod. No C4 backtest until it is in.
+
+**Resolution (2026-10-02, D-057, PR #298 merged):** the brief's (venue, product) now reaches
+the backtest. `tools/venue_resolver.py` turns it into protocol keys at protocol creation:
+`exchange`, `market_type`, a `venue` label block, and the coins in the price source's naming
+(Kraken spot: `BTCUSD`). run_protocol passes the market to the engine. The fee comes from
+`trading-bot/config/cost_model.json` for a venue run, and every result records what was
+modelled. Operator decisions:
+- **Kraken futures = option A.** Kraken SPOT prices are a declared proxy
+  (`venue_data_capability.yaml` `kraken.futures.price_proxy`), with Kraken FUTURES fee
+  (5 bps) and slippage.
+- **Binance (or no venue): nothing written, byte-identical.**
+- **No separate registration gate (CUL-183).** A venue that cannot be resolved fails loud
+  at run start, before any LLM call.
+
+The safety review's blocker and majors were fixed before merge:
+- the pre-flight rebuild keeps the venue;
+- the funding feed is dropped;
+- grading uses the recorded fee;
+- a protocol that does not match the brief's venue is refused.
+
+**Remaining gaps (known, not fixed here):**
+- **Funding is not modelled** for Kraken futures. The result label says so, and the
+  `funding_rate` feed is dropped, so a config that needs it is refused.
+- **CUL-368** is half fixed (see O-11 item 3).
+- **A Kraken brief now refuses any protocol without its venue.** That covers a
+  protocol_ref pin, a hypothesis-split child, a refine brief and the fallback. These used to
+  run silently on Binance; now they stop with an `[O-12]` error. A split child of a Kraken
+  brief therefore cannot run until split children inherit the generated protocol.
+- **Both C4 briefs still declare `product: spot`** (`briefs/C4_vol_managed_trend.md`,
+  `briefs/C4_donchian_daily_trend.md`). There is no (kraken, spot) cost entry, so their next
+  launch will stop at protocol creation. The operator chose Kraken futures; the briefs must
+  say `perp` first. Whether to edit them in place or register new briefs is open: past
+  trials on these briefs ran on Binance.
+- Binance runs: see O-14.
 
 
 ## O-13. The size check deliberately passes two "zero" cases
@@ -643,12 +682,45 @@ silent on any sample, and how often a strategy trades is the backtest's question
 probe's (operator, 2026-10-02). Pinned by
 `test_a_forecast_silent_on_every_bar_passes_with_a_note`; the mutation that refuses it is caught.
 
-**What the probe still refuses:** every forecast NaN, or a nonzero forecast whose largest
-magnitude stays below 1/100 of 10 x the floor (a units/scale bug; run_061 was 9e-7 vs 2.0).
+**What the probe still refuses:**
+- every forecast is NaN;
+- a nonzero forecast whose largest magnitude stays below 1/100 of 10 x the floor (a
+  units/scale bug; run_061 was 9e-7 vs 2.0);
+- a forecast that sits at the +/-20 cap on every one of its nonzero bars, with at least 100
+  such bars (`MIN_ACTIVE_BARS_FOR_CAP_CHECK`). This is the same mistake in the other
+  direction: the signal is scaled so large it is always clipped, so it carries no size
+  information. The operator framed it as persistence above the cap, not frequency.
+
+The probe runs at each coin's own price level (`PRICE_LEVELS`), so a price-unit bug shows up
+at the coin's real scale.
 
 **Consequence to keep in mind:** a config whose forecast is silent because of a bug (e.g. a
 regime that never activates on any data) passes the probe. The backtest shows it as 0 trades
 and the readers must report it as such, not as a market result.
+
+
+## O-14. A Binance run mixes the spot fee with margin slippage
+
+**Seen (2026-10-02, while building D-057):** a run with no venue (every Binance run so far) is
+charged:
+- its **fee** from `strategy-research/config/cost_model.yaml`, Binance **spot** schedule,
+  7.5 bps per side (run_protocol `--cost-product`, never passed, so `spot`);
+- its **slippage** and the engine's (exchange, market) existence check from
+  `trading-bot/config/cost_model.json`, Binance **margin** (the engine's default
+  `market_type`). That entry's own fee is 10 bps and is not used.
+
+`cost_model.yaml`'s header calls it the "single source of truth" for fees, while E-010 made
+`cost_model.json` the single cost source -- and the research path never moved its fee over. So every past Binance result
+modelled one market's fee with another market's slippage.
+
+**Why it matters:** it is a cost assumption no-one chose. Moving Binance runs to the json fee
+(10 bps) raises the modelled cost of every Binance trade and changes every Binance result, so
+it invalidates baselines.
+
+**Next:** its own declared PR (deferred from D-057 on purpose). Decide which market Binance
+research models (spot or margin), make that one entry the source of both fee and slippage,
+re-pin the tests that assert 7.5 bps, and state the before/after on a reference run. No
+re-scoring of past results unless the operator asks.
 
 ---
 
