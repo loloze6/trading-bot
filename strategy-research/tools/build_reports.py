@@ -51,12 +51,13 @@ by-existing-key with no arithmetic) of a field that already exists in one of:
     under artifacts/ -- confirmed against the real run_054/057/059 corpus)
   - <run_dir>/results/<window_run_id>/bars.csv  (one per protocol_result.yaml
     results[] entry, keyed by that entry's own `run_id` field)
-  - strategy-research/regime_detector_report.yaml (CAMPAIGN-LEVEL, not a
-    per-run artifact -- written by tools/validate_regime_detector.py at the
-    strategy-research root; may not correspond to the exact config of the
-    run being reported on here, which is why _detector_health() below
-    carries the source file's own config_source field through verbatim so a
-    reader can judge that for itself)
+CUL-381 (2026-10-02): every source is THIS run's own output. The campaign-
+level strategy-research/regime_detector_report.yaml is NOT read: it is
+written by tools/validate_regime_detector.py on its own fixed coins,
+timeframe and period, so on run_065/run_066 it was run_064's file (another
+venue, period and, for run_065, timeframe), and the regime reader cited it as
+this run's detector failing. The regime_power report no longer carries a
+`detector_health` block.
 
 ...with exactly TWO exceptions, both scoped and both approved before being
 written:
@@ -318,11 +319,6 @@ def load_run_sources(run_dir: Path, *, protocol_result_path: Path | None = None,
     td_path = trade_diagnostics_path if trade_diagnostics_path is not None \
         else run_dir / "trade_diagnostics.json"
     trade_diagnostics = _load_json(td_path)
-    # regime_detector_report.yaml is CAMPAIGN-LEVEL (strategy-research root),
-    # not per-run -- run_dir is .../strategy-research/runs/<run_id>, so its
-    # parent.parent is strategy-research/.
-    sr_root = run_dir.parent.parent
-    regime_detector_report = _load_yaml(sr_root / "regime_detector_report.yaml")
 
     bars_root = variant_run_dir if variant_run_dir is not None else run_dir
     bars_by_window: dict[tuple, list[dict] | None] = {}
@@ -337,7 +333,6 @@ def load_run_sources(run_dir: Path, *, protocol_result_path: Path | None = None,
         "run_dir": run_dir,
         "protocol_result": protocol_result,
         "trade_diagnostics": trade_diagnostics,
-        "regime_detector_report": regime_detector_report,
         "bars_by_window": bars_by_window,
     }
 
@@ -634,10 +629,7 @@ def _compute_hindsight_lag(bars: list[dict]) -> dict:
                 "detector emitted zero live regime transitions in this window "
                 "(excluding the trailing blank-regime row and 'unknown' "
                 "warmup/gate-closed bars -- see _transition_indices' "
-                "docstring) -- a constant single-label "
-                "window. Consistent with E-040 S1_FINDINGS.md / "
-                "regime_detector_report.yaml's measured persistence spanning "
-                "entire evaluated ranges for this detector."
+                "docstring) -- a constant single-label window."
             ),
         }
 
@@ -661,40 +653,22 @@ def _compute_hindsight_lag(bars: list[dict]) -> dict:
     }
 
 
-def _detector_health(sources: dict) -> dict:
-    rdr = sources["regime_detector_report"]
-    if not rdr:
-        return _unavailable(
-            "strategy-research/regime_detector_report.yaml does not exist in this "
-            "checkout -- it is a single campaign-level file written by "
-            "tools/validate_regime_detector.py, not a per-run artifact."
-        )
-    return {
-        "source": "strategy-research/regime_detector_report.yaml (campaign-level, "
-                   "re-projected verbatim -- NOT necessarily generated from this "
-                   "run's own config; see config_source below)",
-        "detector_version": rdr.get("detector_version"),
-        "evaluated_at": rdr.get("evaluated_at"),
-        "data_range": rdr.get("data_range"),
-        "config_source": rdr.get("config_source"),
-        "per_symbol_per_timeframe": rdr.get("per_symbol_per_timeframe"),
-    }
-
-
 def build_regime_power_report(sources: dict) -> dict:
     pr = sources["protocol_result"]
     results = pr.get("results") or []
     bars_by_window = sources["bars_by_window"]
 
     overall = {
-        "detector_health": _detector_health(sources),
         "note": (
             "E-040's decided regime-power checks (EPICS.md) rank three items: "
             "(a) does using the regime label beat ignoring it, (b) a "
             "hindsight-lag comparison measuring LAG not correctness, (c) "
             "detector health numbers. delivery_plan_v26.md's Slice 5a text "
             "names only (b) and (c) as this slice's inherited scope -- (a) is "
-            "intentionally NOT computed or claimed anywhere in this report."
+            "intentionally NOT computed or claimed anywhere in this report. "
+            "(c) is not in this report either (CUL-381): no detector health "
+            "is produced from this run's own backtest, and the campaign-level "
+            "file belonged to another run."
         ),
     }
 

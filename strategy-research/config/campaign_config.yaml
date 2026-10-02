@@ -473,8 +473,8 @@ orchestrator:
       # While true: after the grid-evaluation block, ALSO calls
       # tools/build_reports.py::build_reports(RUN_DIR, write=True), which
       # re-projects protocol_result.yaml / trade_diagnostics.json /
-      # each window's bars.csv / the campaign-level
-      # regime_detector_report.yaml into the five files above -- one
+      # each window's bars.csv (this run's own output only; CUL-381 removed
+      # the campaign-level regime_detector_report.yaml) into the five files above -- one
       # category x slice (overall/per_window/per_regime/per_symbol) each.
       # Zero new computation except regime_power's hindsight-lag comparison
       # (E-040's decided regime-power checks, items b+c only per this
