@@ -613,11 +613,11 @@ flags:
     criterion: >
       Landed 2026-10-02 (O-10, D-056). Off: byte-identical, nothing run or
       written. On: after 1b and in step 5a, tools/forecast_size_probe.py runs
-      the real engine on one training window per era (ending before
-      2024-01-01) and refuses a config whose forecast can almost never reach
-      the rebalance floor (< 1% of bars with |forecast| >= 10 x
-      min_allocation_change) or is all NaN. Not a trial: only the forecast's
-      size is read. A probe that crashes raises. Tested by
+      the real strategy code on invented data only and refuses only a
+      forecast broken in size (largest |forecast| below 1/100 of 10 x
+      min_allocation_change, or all NaN) -- bug detection, never a
+      judgement on how often a strategy trades. No real market data is read.
+      A probe that crashes raises. Tested by
       tests/test_d056_forecast_size_probe.py.
 
   - name: bar_equity

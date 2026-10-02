@@ -4,15 +4,16 @@ wiring (orchestrator.forecast_size_probe.enabled, off by default).
 
 C4 run_061: `vol_adjusted` on a percent-unit component shrank the forecast to
 ~1e-5, so the variant made 0 trades in 95 windows and nothing flagged it. The
-probe refuses a config whose forecast can almost never reach the rebalance
-floor, right after 1b and in step 5a.
+probe refuses a config whose forecast is BROKEN IN SIZE (largest |forecast|
+below 1/100 of the size needed to trade, or all NaN) -- bug detection only,
+never a judgement on how often a strategy trades -- and it runs the real
+strategy code on INVENTED data only (operator, 2026-10-02).
 
-Covers: the pure size verdict; the sample never reaching 2024; the threshold
-read from trading-bot/config.json (fail loud when missing); the flag (off =
-nothing run); the subprocess helper (refusal message, record, crash raises);
-the post-1b route (refusal -> back to 1b) and step 5a (refused variant ->
-not_tested with the D-051/D-053 reason, so the existing retry applies).
-No backtest here: the real-engine check is the manual smoke recorded in the PR.
+Covers: the bug-only verdict (quiet and silent strategies pass); the invented
+series (deterministic, every live feed, invented calendar, no real data read);
+the run_061 bug refused on invented data with the real strategy code; the
+threshold (config.json and the strategy override); the flag (off = nothing
+run); the subprocess helper; the post-1b route and step 5a.
 tests/conftest.py sandboxes rpr.ROOT.
 """
 import json
@@ -35,19 +36,31 @@ from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E40
 
 
 # ---------------------------------------------------------------------------
-# 1. The pure verdict
+# 1. The pure verdict: bug-only (operator, 2026-10-02)
 # ---------------------------------------------------------------------------
 
 def test_a_microscopic_forecast_is_refused():
     out = fsp.assess([4e-5, -3e-5, 1e-6] * 500, threshold=2.0)
-    assert out["status"] == "refuse" and out["share_tradable"] == 0.0
-    assert "too small to ever trade" in out["message"] and "vol_adjusted" in out["message"]
+    assert out["status"] == "refuse"
+    assert "broken in size" in out["message"] and "vol_adjusted" in out["message"]
 
 
 def test_a_normal_forecast_passes():
     out = fsp.assess([0.5, -3.0, 12.0, -20.0, 1.0] * 100, threshold=2.0)
-    assert out["status"] == "ok" and out["share_tradable"] == pytest.approx(0.6)
-    assert out["max_abs"] == 20.0
+    assert out["status"] == "ok" and out["max_abs"] == 20.0
+
+
+def test_a_quiet_strategy_passes_however_rarely_it_could_trade():
+    """Bug-only: one bar of normal size in 10,000 is enough -- how often a
+    strategy trades is the backtest's question, not the probe's."""
+    assert fsp.assess([0.0] * 9999 + [2.5], 2.0)["status"] == "ok"
+    # small forecasts most of the time, never reaching 2.0, still pass above 1/100
+    assert fsp.assess([0.03] * 5000, 2.0)["status"] == "ok"
+
+
+def test_a_forecast_silent_on_every_bar_passes_with_a_note():
+    out = fsp.assess([0.0] * 3000, 2.0)
+    assert out["status"] == "ok" and "silent" in out["note"]
 
 
 def test_every_forecast_nan_is_refused():
@@ -55,47 +68,72 @@ def test_every_forecast_nan_is_refused():
     assert out["status"] == "refuse" and out["n_bars"] == 0 and "NaN" in out["message"]
 
 
-def test_the_one_percent_boundary():
-    at = [2.0] * 1 + [0.0] * 99           # exactly 1% -> ok
-    below = [2.0] * 1 + [0.0] * 100       # < 1% -> refuse
-    assert fsp.assess(at, 2.0)["status"] == "ok"
-    assert fsp.assess(below, 2.0)["status"] == "refuse"
+def test_the_bug_limit_is_one_hundredth_of_the_trading_size():
+    assert fsp.BUG_FACTOR == 0.01
+    assert fsp.assess([0.0199] * 10, 2.0)["status"] == "refuse"
+    assert fsp.assess([0.02] * 10, 2.0)["status"] == "ok"
 
 
-def test_nan_bars_are_counted_but_not_in_the_share():
+def test_nan_bars_are_counted_apart():
     out = fsp.assess([5.0, math.nan, 0.0], 2.0)
-    assert out["n_nan"] == 1 and out["n_bars"] == 2 and out["share_tradable"] == 0.5
+    assert out["n_nan"] == 1 and out["n_bars"] == 2 and out["share_nonzero"] == 0.5
 
 
 # ---------------------------------------------------------------------------
-# 2. Sample and threshold
+# 2. Invented data and threshold
 # ---------------------------------------------------------------------------
 
-def _monthly(first_year: int, last_year: int) -> dict:
-    windows = []
-    for y in range(first_year, last_year + 1):
-        for m in range(1, 13):
-            ny, nm = (y + 1, 1) if m == 12 else (y, m + 1)
-            windows.append({"label": f"{y}-{m:02d}",
-                            "test": {"start": f"{y}-{m:02d}-01", "end": f"{ny}-{nm:02d}-01"}})
-    return {"symbols": ["BTCUSDT"], "timeframe": "1h", "windows": windows}
+def test_the_invented_series_is_deterministic_and_carries_every_live_feed():
+    a = fsp.synthetic_bars(500, 3600)
+    b = fsp.synthetic_bars(500, 3600)
+    assert a.equals(b)
+    sys.path.insert(0, str(SR_ROOT.parent / "trading-bot"))
+    from data.feed_registry import FEED_REGISTRY
+    assert set(FEED_REGISTRY) <= set(a.columns)
+    assert {"timestamp", "open", "high", "low", "close", "volume"} <= set(a.columns)
+    assert a[list(FEED_REGISTRY)].notna().all().all()
+    assert (a["high"] >= a[["open", "close"]].max(axis=1)).all()
+    assert (a["low"] <= a[["open", "close"]].min(axis=1)).all()
 
 
-def test_one_window_per_training_era_never_reaching_2024():
-    picked = fsp.sample_windows(_monthly(2018, 2025))
-    assert [w["label"] for w in picked] == ["2018-01", "2021-01", "2023-01"]
-    assert all(w["test"]["end"] < fsp.PROBE_CUTOFF for w in picked)
+def test_the_invented_calendar_is_far_from_any_real_date():
+    ts = fsp.synthetic_bars(3000, 86400)["timestamp"]
+    assert ts.min().year == 2000 and ts.max().year < 2010
 
 
-def test_the_last_2023_window_is_excluded_because_it_ends_on_the_cutoff():
-    proto = {"symbols": ["X"], "windows": [
-        {"label": "2023-12", "test": {"start": "2023-12-01", "end": "2024-01-01"}}]}
-    assert fsp.sample_windows(proto) == []
+def test_no_real_data_is_read(monkeypatch):
+    """The probe never loads a cache or calls the engine's data path."""
+    import pandas as pd
+    monkeypatch.setattr(pd, "read_csv", lambda *a, **k: pytest.fail("read_csv called"))
+    cfg = SR_ROOT.parent / "trading-bot" / "strategy_config.json"
+    out = fsp.probe(cfg, {"timeframe": "1h"})
+    assert out["data"] == "invented" and out["status"] in ("ok", "refuse")
 
 
-def test_a_validation_only_protocol_is_skipped_not_refused():
-    out = fsp.probe(Path("unused.json"), _monthly(2024, 2025))
-    assert out["status"] == "skipped" and "2024-01-01" in out["message"]
+def test_an_unknown_timeframe_fails_loud():
+    with pytest.raises(ValueError, match="timeframe"):
+        fsp.probe(Path("unused.json"), {"timeframe": "7m"})
+
+
+def _cfg_file(tmp_path, transforms):
+    import copy
+    cfg = copy.deepcopy(CONFIG)
+    comp = cfg["strategies"]["regimes"]["unknown"]["components"][0]
+    comp.update({"class": "strategies.strategy_components.MovingAverageDistanceComponent",
+                 "params": {"average": "sma", "period": 50}, "transforms": transforms})
+    path = tmp_path / "cfg.json"
+    path.write_text(json.dumps(cfg), encoding="utf-8")
+    return path
+
+
+def test_the_run_061_units_bug_is_refused_on_invented_data(tmp_path):
+    """The real strategy code on the invented series: a percent signal followed
+    by vol_adjusted alone is refused; the same signal plainly scaled is not."""
+    bad = fsp.probe(_cfg_file(tmp_path, [{"op": "vol_adjusted"}]), {"timeframe": "1h"})
+    assert bad["status"] == "refuse" and bad["max_abs"] < 0.02
+    good = fsp.probe(_cfg_file(tmp_path, [{"op": "scale", "params": {"factor": 5.0}}]),
+                     {"timeframe": "1h"})
+    assert good["status"] == "ok" and good["max_abs"] >= 2.0
 
 
 def test_threshold_is_ten_times_the_live_rebalance_floor():
@@ -260,7 +298,7 @@ def test_a_zero_strategy_floor_means_any_nonzero_forecast_trades():
     thr = fsp.forecast_threshold(strategy_config={"strategies": {"min_allocation_change": 0}})
     assert thr == 0.0
     assert fsp.assess([0.0] * 99 + [1e-6], thr)["status"] == "ok"
-    assert fsp.assess([0.0] * 100, thr)["status"] == "refuse"
+    assert fsp.assess([1e-9] * 100, thr)["status"] == "ok"  # no size bug can exist at floor 0
 
 
 def test_a_negative_strategy_floor_fails_loud():
@@ -331,46 +369,3 @@ def test_the_same_config_and_protocol_is_probed_once(monkeypatch, tmp_path):
     proto.write_text('{"symbols": ["ETHUSDT"]}', encoding="utf-8")  # other protocol: new probe
     rpr._forecast_size_violations(CONFIG, proto, run_dir, "backtest_specification", "base")
     assert len(calls) == 2
-
-
-HOLDOUT_SENTINEL = "HOLDOUT-START-SENTINEL"  # a marker, never a real date
-
-
-def test_the_engine_call_is_sealed_and_holdout_guarded(monkeypatch, tmp_path):
-    """_run_sample with run_backtest stubbed: holdout_start passed, warmup on,
-    every output under the temp dir, feed caches never written, and only the
-    forecast column is read."""
-    import types
-    calls = []
-
-    def fake_run_backtest(config_path, symbol, start, end, results_root, **kw):
-        calls.append({"symbol": symbol, "start": start, "end": end,
-                      "results_root": results_root, **kw})
-        rd = Path(results_root) / f"r{len(calls)}"
-        rd.mkdir(parents=True)
-        (rd / "bars.csv").write_text("timestamp,forecast,net_pnl\n1,5.0,999\n2,0.0,-999\n",
-                                     encoding="utf-8")
-        return rd
-
-    fake_rp = types.SimpleNamespace(
-        _load_policy_or_refuse=lambda: {"policy": True},
-        _training_holdout_start=lambda protocol, policy: HOLDOUT_SENTINEL,
-        _preflight_training_windows=lambda protocol, hs: calls.append({"preflight": hs}))
-    fake_launcher = types.ModuleType("core.launcher")
-    fake_launcher.run_backtest = fake_run_backtest
-    fake_launcher.parse_interval_seconds = lambda tf: 86400
-    monkeypatch.setitem(sys.modules, "run_protocol", fake_rp)
-    monkeypatch.setitem(sys.modules, "core", types.ModuleType("core"))
-    monkeypatch.setitem(sys.modules, "core.launcher", fake_launcher)
-    protocol = _monthly(2018, 2025)
-    windows = fsp.sample_windows(protocol)
-    forecasts = fsp._run_sample(Path("cfg.json"), protocol, windows, tmp_path)
-    assert forecasts == [5.0, 0.0] * 3
-    runs = [c for c in calls if "symbol" in c]
-    assert calls[0] == {"preflight": HOLDOUT_SENTINEL} and len(runs) == 3
-    for c in runs:
-        assert c["holdout_start"] == HOLDOUT_SENTINEL and c["warmup_prefetch"] is True
-        assert c["feed_local_storage"] is False
-        assert Path(c["runs_root"]) == tmp_path and Path(c["results_root"]) == tmp_path
-        assert Path(c["trades_log_file"]).parent == tmp_path
-        assert c["end"] < fsp.PROBE_CUTOFF and c["exchange"] == "binance"

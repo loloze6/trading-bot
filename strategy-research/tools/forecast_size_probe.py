@@ -1,5 +1,5 @@
 """
-forecast_size_probe -- can this config's forecast ever move the position? (O-10, D-056)
+forecast_size_probe -- is this config's forecast broken in size? (O-10, D-056)
 
 C4 run_061 (2026-10-01): step 1b followed a MovingAverageDistanceComponent
 (percent output) with the `vol_adjusted` transform, which divides by
@@ -8,30 +8,37 @@ allocation change failed min_allocation_change, and the variant made 0 trades
 in 95 windows. The validator, step 5a, the data gate and the engine all
 accepted it; the result looked like an ordinary "0 trades".
 
-This tool runs the REAL engine (trading-bot run_backtest -- the same data
-merge, aux feeds, gap rule and warmup prefetch run_protocol.py uses) on a few
-training-era windows of the run's own protocol and reads ONLY the `forecast`
-column of bars.csv. It refuses a config when fewer than MIN_TRADABLE_SHARE of
-the bars have |forecast| >= 10 x min_allocation_change (the size a forecast
-needs, from flat, to pass the risk layer's rebalance floor; forecast / 10 is
-the allocation), or when every forecast is NaN.
+BUG DETECTION ONLY (operator, 2026-10-02). How often a strategy trades is the
+backtest's question, never this tool's: a deliberately quiet strategy (rare
+events, small forecasts most of the time) must pass. The tool refuses only a
+forecast that is broken in SIZE:
+  * every forecast is NaN, or
+  * the forecast is nonzero somewhere but its LARGEST magnitude stays below
+    BUG_FACTOR x the size a forecast needs to move the position from flat
+    (10 x min_allocation_change; forecast / 10 is the allocation) -- a
+    units/scale mistake, orders of magnitude off (run_061: 7e-6 vs 2.0).
+A forecast that is exactly 0 on every bar passes: a rare-event strategy can
+be silent on any sample.
 
-Not a trial (D-056): no PnL, trade, return or metric is read or recorded --
-only the forecast's size. Why it cannot leak: the sample is limited to windows
-that END before PROBE_CUTOFF (2024-01-01, the start of the validation era), so
-no validation or holdout bar is ever loaded, and the holdout guard is
-run_protocol.py's own (_training_holdout_start + _preflight_training_windows).
-The check is about scale, never about direction or performance.
+INVENTED DATA ONLY (operator, 2026-10-02): no real market bar is ever read.
+The strategy (the real AdvancedStrategy, fed bar by bar as the engine feeds
+it) runs on a synthetic series with a fixed seed: a geometric random walk at
+a crypto-like price level and volatility (constants below, not fitted to any
+real period), plus synthetic values for every live aux feed (funding_rate,
+fear_greed). Timestamps are an invented calendar (year 2000). A scale bug
+depends on the price level and the units, not on what the market did, so it
+shows on invented data; nothing about real market behaviour is measured.
+Not a trial: no data, PnL, trade or metric of any real market is touched.
 
 Used by run_phase1_research under orchestrator.forecast_size_probe.enabled
 (off by default): after 1b on the base config and in step 5a on every
-variant. Run as a subprocess (like run_protocol.py), so engine state never
-leaks into the orchestrator.
+variant. Run as a subprocess, so strategy state never leaks into the
+orchestrator.
 
 CLI:  python forecast_size_probe.py --config <cfg.json> --protocol <protocol.json>
                                     --json-out <result.json>
-Exit 0 with the assessment written (status "ok", "refuse" or "skipped");
-non-zero only on an engineering failure.
+The protocol is read only for its timeframe. Exit 0 with the assessment
+written (status "ok" or "refuse"); non-zero only on an engineering failure.
 """
 from __future__ import annotations
 
@@ -39,18 +46,25 @@ import argparse
 import json
 import math
 import sys
-import tempfile
 from pathlib import Path
 
 _HERE = Path(__file__).resolve().parent
 _REPO = _HERE.parent.parent
-CONFIG_JSON = _REPO / "trading-bot" / "config.json"
+_TBOT = _REPO / "trading-bot"
+CONFIG_JSON = _TBOT / "config.json"
 
-# Training eras (CLAUDE.fork.md era-stability bar). One sample window per era.
-ERAS = (("2018-01-01", "2021-01-01"), ("2021-01-01", "2023-01-01"),
-        ("2023-01-01", "2024-01-01"))
-PROBE_CUTOFF = "2024-01-01"   # a sample window must END strictly before this
-MIN_TRADABLE_SHARE = 0.01     # pre-registered (operator, 2026-10-01)
+# Pre-registered (operator, 2026-10-02): refuse only when the largest
+# |forecast| is below 1/100 of the size needed to trade -- a bug, not a style.
+BUG_FACTOR = 0.01
+
+# Invented series (fixed; never fitted to a real period).
+SYNTH_SEED = 20261002
+SYNTH_BARS = 2000             # scored bars, after 2 x required_bars of warmup
+START_PRICE = 30000.0         # crypto-like level (a scale bug depends on it)
+HOURLY_VOL = 0.007            # per-bar log-return std at 1h, scaled by sqrt(interval)
+SYNTH_START = "2000-01-01"    # invented calendar, far from any real or sealed date
+_TIMEFRAME_SECONDS = {"1m": 60, "5m": 300, "15m": 900, "30m": 1800, "1h": 3600,
+                      "2h": 7200, "4h": 14400, "6h": 21600, "12h": 43200, "1d": 86400}
 
 
 def forecast_threshold(config_json: Path = CONFIG_JSON,
@@ -77,96 +91,88 @@ def forecast_threshold(config_json: Path = CONFIG_JSON,
     return 10.0 * float(floor)
 
 
-def sample_windows(protocol: dict) -> list:
-    """The first protocol window of each training era that ends strictly
-    before PROBE_CUTOFF. Window dates are ISO strings (lexical = chronological)."""
-    picked = []
-    for era_start, era_end in ERAS:
-        limit = min(era_end, PROBE_CUTOFF)
-        for w in protocol.get("windows") or []:
-            test = w.get("test") or {}
-            start, end = str(test.get("start", "")), str(test.get("end", ""))
-            if start >= era_start and end < limit and start < end:
-                picked.append(w)
-                break
-    return picked
-
-
 def assess(forecasts: list, threshold: float) -> dict:
-    """Pure: the size verdict for one config. `forecasts` = every bar's
-    forecast across the sample windows (NaN allowed)."""
+    """Pure: the size verdict. Refuses only all-NaN, or a nonzero forecast
+    whose largest magnitude is below BUG_FACTOR x threshold."""
     finite = [abs(float(f)) for f in forecasts
               if f is not None and isinstance(f, (int, float)) and math.isfinite(f)]
     n, n_nan = len(finite), len(forecasts) - len(finite)
     if n == 0:
         return {"status": "refuse", "n_bars": 0, "n_nan": n_nan, "threshold": threshold,
-                "message": (f"every forecast is NaN or missing ({n_nan} bars): the config "
-                            f"never produces a usable forecast")}
-    s = sorted(finite)
-    pct = lambda q: s[min(n - 1, int(q * (n - 1) + 0.5))]  # noqa: E731
-    # A zero floor means any nonzero forecast moves the position.
-    share = sum(1 for v in finite if (v >= threshold if threshold > 0 else v > 0)) / n
-    out = {"status": "ok" if share >= MIN_TRADABLE_SHARE else "refuse",
-           "n_bars": n, "n_nan": n_nan, "threshold": threshold,
-           "max_abs": s[-1], "p50_abs": pct(0.5), "p95_abs": pct(0.95),
-           "share_tradable": share}
-    if out["status"] == "refuse":
+                "message": (f"every forecast is NaN or missing ({n_nan} bars) on the invented "
+                            f"series: the config never produces a usable forecast")}
+    max_abs = max(finite)
+    out = {"status": "ok", "n_bars": n, "n_nan": n_nan, "threshold": threshold,
+           "bug_limit": BUG_FACTOR * threshold, "max_abs": max_abs,
+           "share_nonzero": sum(1 for v in finite if v > 0) / n}
+    if max_abs == 0:
+        out["note"] = ("silent: every forecast is exactly 0 on the invented series -- not a "
+                       "refusal (a rare-event strategy can be silent on any sample)")
+    elif threshold > 0 and max_abs < BUG_FACTOR * threshold:
+        out["status"] = "refuse"
         out["message"] = (
-            f"forecast too small to ever trade: only {share:.2%} of {n} sample bars reach "
-            f"|forecast| >= {threshold:g} (10 x min_allocation_change; needed: "
-            f">= {MIN_TRADABLE_SHARE:.0%}); max |forecast| {s[-1]:.3g}, median {pct(0.5):.3g}. "
-            f"Likely a units/scale mistake -- e.g. vol_adjusted or vol_normalize used in "
-            f"`transforms` without a ratio_to_mean rescale (they divide by stddev_24 x close, "
-            f"~price^2), or price_normalized on a percent output. Rescale so a typical "
-            f"signal is a few forecast units (forecast / 10 is the allocation)")
+            f"forecast broken in size: its largest |forecast| on the invented series is "
+            f"{max_abs:.3g}, below 1/{int(1 / BUG_FACTOR)} of the {threshold:g} needed to move "
+            f"the position (10 x min_allocation_change) -- a units/scale mistake, e.g. "
+            f"vol_adjusted or vol_normalize used in `transforms` without a ratio_to_mean "
+            f"rescale (they divide by stddev_24 x close, ~price^2), or price_normalized on a "
+            f"percent output. Rescale so a typical signal is a few forecast units")
     return out
 
 
-def _run_sample(config_path: Path, protocol: dict, windows: list, out_root: Path) -> list:
-    """Real engine on the sample windows; returns the forecast column only."""
+def synthetic_bars(n: int, interval_seconds: int, seed: int = SYNTH_SEED):
+    """The invented series: OHLCV + every live aux feed column, as the engine's
+    get_data_history rows carry them. Deterministic for a seed."""
+    import numpy as np
     import pandas as pd
-    sys.path.insert(0, str(_HERE))
-    import run_protocol as rp  # noqa: E402 -- also puts trading-bot on sys.path
-    from core.launcher import run_backtest, parse_interval_seconds  # noqa: E402
+    rng = np.random.default_rng(seed)
+    vol = HOURLY_VOL * math.sqrt(interval_seconds / 3600.0)
+    close = START_PRICE * np.exp(np.cumsum(rng.normal(0.0, vol, n)))
+    open_ = np.concatenate(([START_PRICE], close[:-1]))
+    wick = np.abs(rng.normal(0.0, vol / 2.0, n))
+    ts = pd.date_range(SYNTH_START, periods=int(n), freq=f"{int(interval_seconds)}s")
+    # funding: an 8h print carried forward; fear & greed: a daily 0..100 walk carried forward
+    hours = (np.arange(n) * interval_seconds) // 3600
+    funding_prints = rng.normal(1e-4, 2e-4, int(hours[-1] // 8) + 1)
+    fg_daily = np.clip(50 + np.cumsum(rng.normal(0, 4, int(hours[-1] // 24) + 1)), 0, 100).round()
+    return pd.DataFrame({
+        "timestamp": ts, "open": open_,
+        "high": np.maximum(open_, close) * (1 + wick),
+        "low": np.minimum(open_, close) * (1 - wick),
+        "close": close, "volume": rng.lognormal(6.0, 0.5, n),
+        "funding_rate": funding_prints[hours // 8],
+        "fear_greed": fg_daily[hours // 24],
+    })
 
-    policy = rp._load_policy_or_refuse()
-    holdout_start = rp._training_holdout_start(protocol, policy)
-    rp._preflight_training_windows({**protocol, "windows": windows}, holdout_start)
-    exchange = protocol.get("exchange")
-    if exchange is None:
-        exchange = "binance"
-    timeframe = protocol.get("timeframe", "1h")
-    interval_seconds = parse_interval_seconds(timeframe) if timeframe != "1h" else None
-    symbol = protocol["symbols"][0]
+
+def _forecasts_on_invented_series(config_path: Path, interval_seconds: int) -> list:
+    """The real AdvancedStrategy, fed bar by bar exactly as TradingBot feeds it
+    (strategy.update(one-row frame) then generate_signals())."""
+    if str(_TBOT) not in sys.path:
+        sys.path.insert(0, str(_TBOT))
+    from strategies.main_strategy import AdvancedStrategy  # noqa: E402
+    strategy = AdvancedStrategy(str(config_path))
+    bars = synthetic_bars(2 * strategy.required_bars + SYNTH_BARS, interval_seconds)
+    warmup = 2 * strategy.required_bars
     forecasts = []
-    for w in windows:
-        # Sealed: every output in out_root (a temp dir), and feed reads never
-        # write back to a tracked cache (feed_local_storage=False).
-        rd = run_backtest(str(config_path), symbol, w["test"]["start"], w["test"]["end"],
-                          str(out_root), runs_root=str(out_root),
-                          interval_seconds=interval_seconds, warmup_prefetch=True,
-                          holdout_start=holdout_start, exchange=exchange,
-                          drop_feeds=protocol.get("drop_feeds"),
-                          trades_log_file=str(out_root / f"trades_{w.get('label')}.json"),
-                          feed_local_storage=False)
-        bars = pd.read_csv(Path(rd) / "bars.csv", usecols=["forecast"])
-        forecasts.extend(bars["forecast"].tolist())
+    for i in range(len(bars)):
+        strategy.update(bars.iloc[i:i + 1])
+        signal = strategy.generate_signals()
+        if i >= warmup:
+            forecasts.append(signal.forecast)
     return forecasts
 
 
 def probe(config_path: Path, protocol: dict) -> dict:
-    windows = sample_windows(protocol)
-    if not windows:
-        return {"status": "skipped", "message": (
-            f"no protocol window ends before {PROBE_CUTOFF} in a training era -- nothing "
-            f"safe to probe; the size check is skipped")}
+    timeframe = str(protocol.get("timeframe", "1h"))
+    if timeframe not in _TIMEFRAME_SECONDS:
+        raise ValueError(f"protocol timeframe {timeframe!r} is not one of "
+                         f"{sorted(_TIMEFRAME_SECONDS)}")
     threshold = forecast_threshold(
         strategy_config=json.loads(Path(config_path).read_text(encoding="utf-8")))
-    with tempfile.TemporaryDirectory(prefix="forecast_probe_") as tmp:
-        forecasts = _run_sample(Path(config_path), protocol, windows, Path(tmp))
-    result = assess(forecasts, threshold)
-    result["symbol"] = protocol["symbols"][0]
-    result["windows"] = [w.get("label") for w in windows]
+    result = assess(_forecasts_on_invented_series(Path(config_path),
+                                                  _TIMEFRAME_SECONDS[timeframe]), threshold)
+    result.update({"data": "invented", "seed": SYNTH_SEED, "timeframe": timeframe})
     return result
 
 

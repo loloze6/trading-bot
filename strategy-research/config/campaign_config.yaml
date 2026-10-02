@@ -834,13 +834,14 @@ orchestrator:
       # While true (config-direct flow): right after 1b (base config, with
       # 1b's one retry, then the forecast_rule_violation pause) and in step 5a
       # (every variant, refused with the D-051/D-053 reason so Step 2 gets its
-      # one retry), tools/forecast_size_probe.py runs the real engine on one
-      # training window per era (ending before 2024-01-01) and reads ONLY the
-      # forecast column. A config is refused when < 1% of sample bars reach
-      # |forecast| >= 10 x min_allocation_change (trading-bot/config.json),
-      # or when every forecast is NaN. Not a trial: no PnL, trade or metric is
-      # read. Every probe is recorded in artifacts/forecast_size_probe.yaml.
-      # Adds about 50 s per probed config.
+      # one retry), tools/forecast_size_probe.py runs the real strategy code
+      # on INVENTED data only (fixed-seed synthetic prices and feeds, invented
+      # calendar; no real market bar is read) and refuses only a forecast
+      # BROKEN IN SIZE: largest |forecast| below 1/100 of 10 x
+      # min_allocation_change, or every forecast NaN. Bug detection only: a
+      # quiet or silent strategy passes -- how often it trades is the
+      # backtest's question. Every probe is recorded in
+      # artifacts/forecast_size_probe.yaml. Adds a few seconds per config.
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------
