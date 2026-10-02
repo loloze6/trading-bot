@@ -148,11 +148,21 @@ def base_coin(protocol: dict) -> str:
 
 
 def coin_entry(universe: dict, symbol: str):
-    """(category, entry) for `symbol` in coin_universe.yaml, or (None, None)."""
-    for category, block in ((universe or {}).get("categories") or {}).items():
-        for coin in (block or {}).get("coins") or []:
-            if isinstance(coin, dict) and coin.get("symbol") == symbol:
-                return category, coin
+    """(category, entry) for `symbol` in coin_universe.yaml, or (None, None).
+    An exact match first; else (O-12) the coin with the same BASE ASSET, so a
+    run protocol written in a venue's own naming (Kraken spot BTCUSD, from
+    tools/venue_resolver.py) still finds BTCUSDT's entry and category."""
+    coins = [(category, coin)
+             for category, block in ((universe or {}).get("categories") or {}).items()
+             for coin in (block or {}).get("coins") or [] if isinstance(coin, dict)]
+    for category, coin in coins:
+        if coin.get("symbol") == symbol:
+            return category, coin
+    import venue_resolver as _vr  # tools/ sibling
+    base = _vr.base_asset(symbol)
+    for category, coin in coins:
+        if isinstance(coin.get("symbol"), str) and _vr.base_asset(coin["symbol"]) == base:
+            return category, coin
     return None, None
 
 
@@ -620,6 +630,17 @@ def resolve_variant(entry: dict, *, source: dict, universe: dict, layer1: dict,
                       f"uses a coin from a different category (card D)")
     exchange = coin.get("exchange") if isinstance(coin.get("exchange"), str) else None
     vsym = venue_symbol(coin)
+    if isinstance(source.get("venue"), dict):
+        # O-12: the brief declared a venue -- every coin of the run is priced and
+        # costed there, not on the coin's own default venue. A coin with no
+        # symbol on that venue's price source is a D-042 coverage skip.
+        import venue_resolver as _vr  # tools/ sibling
+        exchange = source.get("exchange")
+        try:
+            vsym = _vr.venue_symbol(coin["symbol"], source, layer1=layer1)
+        except _vr.VenueResolutionError as exc:
+            return {**out, "ok": False, "reason": f"{COVERAGE_REASON_PREFIX} {exc}",
+                    "coverage": None}
     resolved_exchange = exchange or source.get("exchange") or "binance"  # dag.resolve_exchange order
     coverage = window_coverage(source, exchange=resolved_exchange, symbol=vsym, layer1=layer1,
                                precheck=precheck, era_of=era_of)

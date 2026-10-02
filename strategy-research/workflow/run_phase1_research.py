@@ -8961,8 +8961,20 @@ def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: d
     # holdout_range that nothing kept in sync with the policy file, in the very
     # function whose windows have to be checked against it. CUL-339: an
     # override that disagrees with the policy is refused at generation.
+    # O-12: the brief's (venue, product) -> exchange, market_type, venue labels
+    # and the price source's symbol names (tools/venue_resolver.py). Nothing for
+    # the default venue (byte-identical); any other venue must resolve fully or
+    # this raises -- at run start, before any LLM call (replaces CUL-183's
+    # separate registration gate).
+    brief_path = run_dir / "artifacts" / "research_brief.yaml"
+    brief = (load_yaml(brief_path) or {}) if brief_path.exists() else {}
+    venue_keys = _venue_resolver_module().protocol_keys(
+        brief if isinstance(brief, dict) else {}, list(symbols))
+    if venue_keys:
+        symbols = venue_keys.pop("symbols")
     protocol_obj = {
         "symbols": symbols,
+        **venue_keys,
         "timeframe": timeframe,
         "windows": windows,
         "holdout": _generated_protocol_holdout_block(proto_constraint),
@@ -14510,6 +14522,14 @@ def _forecast_rules_module():
     _json_pointer_module()  # puts tools/ on sys.path
     import forecast_rules as _fr
     return _fr
+
+
+def _venue_resolver_module():
+    """tools/venue_resolver.py (O-12: brief venue/product -> protocol keys),
+    imported lazily like the other tools/ siblings."""
+    _json_pointer_module()  # puts tools/ on sys.path
+    import venue_resolver as _vr
+    return _vr
 
 
 def _single_column_untested_kw(artifacts: Path, run_id: str) -> dict:
