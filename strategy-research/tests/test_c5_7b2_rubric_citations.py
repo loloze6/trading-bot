@@ -47,6 +47,10 @@ REQUESTED = rpr._CLAUDE_WORKER_MODEL
 SKILL_DIR = SR_ROOT / "workflow_artifacts" / "skills" / "readers"
 CATEGORIES = ["profitability", "forecast_power", "regime_power", "component_attribution",
               "trade_efficiency"]
+# Independent pin of each SKILL's rubric literal. regime_power is -v3 since CUL-381
+# removed detector_health from its report and its scoring rows.
+EXPECTED_RUBRIC = {c: f"{c}-reader-v2" for c in CATEGORIES}
+EXPECTED_RUBRIC["regime_power"] = "regime_power-reader-v3"
 
 
 @pytest.fixture(autouse=True)
@@ -155,7 +159,7 @@ def test_the_closed_set_covers_exactly_the_reader_categories():
 def test_the_rubric_literal_in_each_skill_file_is_the_constant(cat):
     """Each SKILL carries exactly one rubric_version literal; the constant is it."""
     literals = re.findall(r'rubric_version:\s*"([^"]+)"', _skill_text(cat))
-    assert literals == [f"{cat}-reader-v2"], literals
+    assert literals == [EXPECTED_RUBRIC[cat]], literals
     assert rp.READER_RUBRIC_VERSIONS[cat] == literals[0]
 
 
@@ -187,7 +191,7 @@ def test_default_accepts_what_strict_rejects(tmp_path, value):
 @pytest.mark.parametrize("cat", CATEGORIES)
 def test_strict_accepts_each_categorys_own_v2(tmp_path, cat):
     d = _write(tmp_path, cat, [_proposal(cat=cat)])
-    assert rp.load_proposals(d, [cat], strict_provenance=True)[cat][0]["rubric_version"] == f"{cat}-reader-v2"
+    assert rp.load_proposals(d, [cat], strict_provenance=True)[cat][0]["rubric_version"] == EXPECTED_RUBRIC[cat]
 
 
 def test_strict_rejects_an_unlisted_category(tmp_path):

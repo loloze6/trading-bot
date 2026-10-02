@@ -1393,9 +1393,10 @@ feed that is not wired, one row per such feed in
    before any reader call (and on every resume).
 3. **Everything comes from this attempt.** Under the flag `protocol_execution`
    deletes `idea_status.yaml`, `grid_evaluation.yaml`, `reports/` and
-   `proposals/` on entry, refreshes `regime_detector_report.yaml` before the
-   reports are built, and fails (after its trial rows are recorded) if the
-   grid or the reports cannot be produced. `run_loop` also refuses to start
+   `proposals/` on entry, builds the reports from this run's own output only
+   (CUL-381: never the campaign-level `regime_detector_report.yaml`), and
+   fails (after its trial rows are recorded) if the grid or the reports
+   cannot be produced. `run_loop` also refuses to start
    a flag-on run whose `pre_registration.yaml` pass_rule is not menu-shaped.
    A token budget exceeded between readers ends the run as
    `rejected_budget_exceeded`, like the loop-top check.
