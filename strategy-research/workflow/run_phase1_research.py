@@ -9617,6 +9617,15 @@ def _check_protocol_execution_conformance(protocol_result: dict, constraints: di
     if proto_constraint:
         expected_symbols = set(proto_constraint.get("symbols", []))
         actual_symbols = set(protocol_obj.get("symbols", []))
+        if isinstance(protocol_obj.get("venue"), dict):
+            # O-12 (D-057): a venue protocol names the coins in its price
+            # source's own naming (Kraken spot BTCUSD for the pre-registered
+            # BTCUSDT) -- the same coins, compared by base asset. Exact
+            # comparison here would flag every venue run after its backtests
+            # and invalidate its trials.
+            _base = _venue_resolver_module().base_asset
+            expected_symbols = {_base(s) for s in expected_symbols}
+            actual_symbols = {_base(s) for s in actual_symbols}
         if expected_symbols and expected_symbols != actual_symbols:
             violations.append(
                 f"protocol symbols {sorted(actual_symbols)} != pre-registered {sorted(expected_symbols)}"
