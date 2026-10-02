@@ -465,7 +465,9 @@ _SKILLS = SR_ROOT / "workflow_artifacts" / "skills" / "readers"
 @pytest.mark.parametrize("cat", REPORT_CATEGORIES)
 def test_reader_skill_carries_the_card_i_anchors_and_the_extra_input(cat):
     text = (_SKILLS / f"{cat}-reader" / "SKILL.md").read_text(encoding="utf-8")
-    assert f'{cat}-reader-v2' in text and f"{cat}-reader-v1" not in text
+    # CUL-381: regime_power is -v3 (its scoring rows no longer use detector health)
+    current = "v3" if cat == "regime_power" else "v2"
+    assert f'{cat}-reader-{current}' in text and f"{cat}-reader-v1" not in text
     assert "artifacts/registry_summary.yaml" in text
     context_rule = text.split("## Context rule")[1]
     assert "registry_summary.yaml" in context_rule

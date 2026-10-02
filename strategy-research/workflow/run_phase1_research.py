@@ -2248,8 +2248,6 @@ async def run_tool_worker(stage_name: str, run_id: str):
 
         if _category_reports_enabled():
             try:
-                if _sr_on:
-                    _refresh_regime_detector_report_for_readers(run_id, RUN_DIR)
                 _br_tools_path = str(Path(__file__).parent.parent / "tools")
                 if _br_tools_path not in sys.path:
                     sys.path.insert(0, _br_tools_path)
@@ -2471,14 +2469,12 @@ async def run_tool_worker(stage_name: str, run_id: str):
             # isolation pattern: category reports are a pure re-projection of
             # artifacts that already exist once the backtest above succeeded
             # (protocol_result.yaml/summary, trade_diagnostics.json,
-            # bars.csv, and the campaign-level regime_detector_report.yaml),
+            # bars.csv -- this run's own output only, CUL-381),
             # so a bug in report-building must never turn an already-
             # successful trial into a recorded failure -- its own try/except,
             # logs loudly, never re-raises.
             if _category_reports_enabled():
                 try:
-                    if _sr_on:
-                        _refresh_regime_detector_report_for_readers(run_id, RUN_DIR)
                     _br_tools_path = str(Path(__file__).parent.parent / "tools")
                     if _br_tools_path not in sys.path:
                         sys.path.insert(0, _br_tools_path)
@@ -3885,18 +3881,6 @@ def _raise_specialist_readers_prereq_errors(errors: list) -> None:
         raise RuntimeError(
             "orchestrator.specialist_readers.enabled requires the grid and the category "
             "reports, and protocol_execution could not produce them: " + "; ".join(errors))
-
-
-def _refresh_regime_detector_report_for_readers(run_id: str, run_dir: Path) -> None:
-    """_ensure_regime_detector_report used to run only from the
-    verdict_interpreter branch, which is unreached under the flag. Run it
-    before build_reports so regime_power.yaml is built from a fresh detector
-    report; if one cannot be produced, fail rather than build from a stale or
-    missing one."""
-    if _ensure_regime_detector_report(run_id, run_dir) is None:
-        raise RuntimeError("regime_detector_report.yaml could not be produced or refreshed "
-                           "(see the message above) -- refusing to build regime_power.yaml "
-                           "from a stale or missing detector report")
 
 
 def _check_specialist_readers_preflight(run_dir: Path) -> None:
