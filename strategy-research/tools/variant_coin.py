@@ -148,12 +148,28 @@ def base_coin(protocol: dict) -> str:
 
 
 def coin_entry(universe: dict, symbol: str):
-    """(category, entry) for `symbol` in coin_universe.yaml, or (None, None)."""
-    for category, block in ((universe or {}).get("categories") or {}).items():
-        for coin in (block or {}).get("coins") or []:
-            if isinstance(coin, dict) and coin.get("symbol") == symbol:
-                return category, coin
-    return None, None
+    """(category, entry) for `symbol` in coin_universe.yaml, or (None, None).
+    An exact match first; else (O-12) the coin with the same BASE ASSET, so a
+    run protocol written in a venue's own naming (Kraken spot BTCUSD, from
+    tools/venue_resolver.py) still finds BTCUSDT's entry and category."""
+    coins = [(category, coin)
+             for category, block in ((universe or {}).get("categories") or {}).items()
+             for coin in (block or {}).get("coins") or [] if isinstance(coin, dict)]
+    for category, coin in coins:
+        if coin.get("symbol") == symbol:
+            return category, coin
+    base = _vr_base_asset(symbol)
+    matches = [(category, coin) for category, coin in coins
+               if isinstance(coin.get("symbol"), str) and _vr_base_asset(coin["symbol"]) == base]
+    if len(matches) > 1:
+        raise VariantCoinError(f"{symbol!r} matches {len(matches)} coin_universe.yaml entries by "
+                               f"base asset {base!r} -- ambiguous")
+    return matches[0] if matches else (None, None)
+
+
+def _vr_base_asset(symbol) -> str:
+    import venue_resolver as _vr  # tools/ sibling
+    return _vr.base_asset(symbol)
 
 
 def venue_symbol(coin: dict) -> str:
@@ -597,7 +613,11 @@ def resolve_variant(entry: dict, *, source: dict, universe: dict, layer1: dict,
             return refuse("the kind-base variant must be variant_id 'base' with an empty patch")
         if kind == "design" and not patch:
             return refuse("a design variant changes the config: its patch must not be empty")
-        if symbol is not None and symbol != base:
+        # O-12: on a venue protocol the base coin is in the venue's naming
+        # (BTCUSD); a variant naming the same coin as BTCUSDT is the same coin.
+        same = (symbol == base or (isinstance(source.get("venue"), dict)
+                                   and _vr_base_asset(symbol) == _vr_base_asset(base)))
+        if symbol is not None and not same:
             return refuse(f"a {kind} variant runs on the base coin {base!r} (the run protocol's "
                           f"symbols[0], G2), not {symbol!r}")
         out["symbol"] = base
@@ -620,6 +640,17 @@ def resolve_variant(entry: dict, *, source: dict, universe: dict, layer1: dict,
                       f"uses a coin from a different category (card D)")
     exchange = coin.get("exchange") if isinstance(coin.get("exchange"), str) else None
     vsym = venue_symbol(coin)
+    if isinstance(source.get("venue"), dict):
+        # O-12: the brief declared a venue -- every coin of the run is priced and
+        # costed there, not on the coin's own default venue. A coin with no
+        # symbol on that venue's price source is a D-042 coverage skip.
+        import venue_resolver as _vr  # tools/ sibling
+        exchange = source.get("exchange")
+        try:
+            vsym = _vr.venue_symbol(coin["symbol"], source, layer1=layer1)
+        except _vr.VenueResolutionError as exc:
+            return {**out, "ok": False, "reason": f"{COVERAGE_REASON_PREFIX} {exc}",
+                    "coverage": None}
     resolved_exchange = exchange or source.get("exchange") or "binance"  # dag.resolve_exchange order
     coverage = window_coverage(source, exchange=resolved_exchange, symbol=vsym, layer1=layer1,
                                precheck=precheck, era_of=era_of)

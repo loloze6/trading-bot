@@ -462,11 +462,12 @@ def _lint_brief_protocol_agreement(brief_path: Path, data: dict) -> None:
     omits timeframe is compared against what will actually generate, not
     silently skipped.
 
-    venue has NO protocol-side counterpart and is deliberately not
-    cross-checked: no protocols/*.json file carries a venue/exchange field --
-    `symbols` like "BTCUSDT" is this repo's Binance-shaped OHLCV cache key,
-    entirely independent of the Kraken venue naming config/
-    venue_tradability.yaml's brief.venue/brief.product use.
+    venue is not cross-checked here: machine_constraints.protocol carries
+    no venue. Since O-12 (D-057) the GENERATED protocol does -- exchange,
+    market_type, venue labels and the venue's symbol names, written from
+    brief.venue/brief.product by tools/venue_resolver.py at generation, and
+    checked against the brief again where the protocol is first used
+    (_assert_protocol_matches_brief_venue).
 
     Raises ONLY ValueError -- the caller wraps any other exception type this
     function or its JSON read might raise (malformed machine_constraints
@@ -3239,7 +3240,10 @@ def _promotion_retired_from(values: dict, refusal: str | None) -> bool:
 
 _PREFLIGHT_TERMINAL_PREFIXES = ("completed", "rejected", "human_pause", "failed_validation")
 # The fields a generated protocol is built from (_ensure_protocol_from_constraints).
-_GENERATED_PROTOCOL_FIELDS = ("symbols", "timeframe", "windows", "holdout", "promotion")
+# O-12: exchange/market_type/venue/drop_feeds exist only for a non-default
+# brief venue (absent on both sides otherwise: the comparison is unchanged).
+_GENERATED_PROTOCOL_FIELDS = ("symbols", "timeframe", "windows", "holdout", "promotion",
+                              "exchange", "market_type", "venue", "drop_feeds")
 
 
 def _data_spend_evidence(run_dir: Path, run_id: str, state: dict) -> list:
@@ -3267,7 +3271,7 @@ def _data_spend_evidence(run_dir: Path, run_id: str, state: dict) -> list:
 
 
 def _expected_generated_protocol(generated: dict, run_id: str, *,
-                                 promotion_retired: bool) -> dict:
+                                 promotion_retired: bool, run_dir: Path | None = None) -> dict:
     """The protocol _ensure_protocol_from_constraints would write from these
     machine_constraints.protocol, field for field: same order, same helpers,
     and it raises exactly where generation raises (fourth-round review fix 5 --
@@ -3276,13 +3280,19 @@ def _expected_generated_protocol(generated: dict, run_id: str, *,
     with the policy (CUL-339), no promotion block (unless `promotion_retired`
     -- the pre-flight's reading of config_direct_authoring AND
     verdict_routing_retired -- when the key is always absent, C5.6).
-    An empty symbols list is accepted, as generation accepts it."""
+    An empty symbols list is accepted, as generation accepts it.
+    O-12: `run_dir` given -> the brief's venue keys and venue symbol names
+    through the same helper generation uses (None: no brief, no venue keys)."""
     symbols = generated["symbols"]
     per_symbol_start = generated.get("per_symbol_start") or {}
     start = min(per_symbol_start.values()) if per_symbol_start else generated["start"]
     windows = orch._generate_monthly_windows(start, generated["end"])
+    venue_keys: dict = {}
+    if run_dir is not None:
+        symbols, venue_keys = orch._generated_protocol_venue_keys(run_dir, symbols)
     return {
         "symbols": symbols,
+        **venue_keys,
         "timeframe": generated.get("timeframe", "1h"),
         "windows": windows,
         "holdout": orch._generated_protocol_holdout_block(generated),
@@ -3346,7 +3356,8 @@ def _generated_protocol_plan(run_dir: Path, run_id: str, generated: dict, state:
         return None, None
     try:
         expected = _expected_generated_protocol(generated, run_id,
-                                                promotion_retired=promotion_retired)
+                                                promotion_retired=promotion_retired,
+                                                run_dir=run_dir)
     except Exception as e:
         return (f"{where}: pre_registration.yaml's machine_constraints.protocol cannot generate "
                 f"a protocol ({type(e).__name__}: {e}) -- fix it before this run spends "

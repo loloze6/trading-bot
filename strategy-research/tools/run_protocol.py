@@ -2302,6 +2302,23 @@ def main():
         drop_feeds = [name.strip() for name in args.drop_feeds.split(",") if name.strip()]
     else:
         drop_feeds = protocol.get("drop_feeds")
+    # O-12: a protocol whose brief declared a venue (tools/venue_resolver.py
+    # wrote `venue` + `market_type`) is priced from trading-bot/config/
+    # cost_model.json for its (exchange, market_type) -- E-010's single cost
+    # source -- for BOTH the engine's commission and the trade diagnostics'
+    # cost (the cost-survival criterion reads those). --commission-bps still
+    # wins when given. No venue block: market_type None and the pre-existing
+    # cost_model.yaml product fee, byte-identical.
+    market_type = protocol.get("market_type") if isinstance(protocol.get("venue"), dict) else None
+    commission_bps = args.commission_bps
+    if market_type is not None and commission_bps is None:
+        from config.cost_model import resolve_cost_model
+        commission_bps = float(resolve_cost_model(exchange, market_type)[0])
+        print(f"[venue] {protocol['venue'].get('venue')}/{protocol['venue'].get('product')}: "
+              f"exchange={exchange!r} market_type={market_type!r} fee={commission_bps} bps "
+              f"(cost_model.json); price_source={protocol['venue'].get('price_source')!r} "
+              f"price_proxy={protocol['venue'].get('price_proxy')} funding_modelled="
+              f"{protocol['venue'].get('funding_modelled')}")
     # Protocol-level timeframe (default "1h" preserves exact prior behavior —
     # run_backtest's own interval_seconds=None default falls back identically
     # to the pre-existing global-config-derived interval).
@@ -2369,8 +2386,9 @@ def main():
                               runs_root=_runs_root, interval_seconds=interval_seconds,
                               warmup_prefetch=True, bar_equity=True,
                               commission_rate=_resolve_commission_rate(
-                                  symbol, cost_model, args.commission_bps, args.cost_product),
-                              exchange=exchange, drop_feeds=drop_feeds)
+                                  symbol, cost_model, commission_bps, args.cost_product),
+                              exchange=exchange, drop_feeds=drop_feeds,
+                              **({"market_type": market_type} if market_type is not None else {}))
             with open(rd / "metrics.json", encoding="utf-8") as f:
                 m = json.load(f)
             holdout_results[symbol] = {"run_id": rd.name, "core": m["core"]}
@@ -2441,8 +2459,9 @@ def main():
                               runs_root=_runs_root, interval_seconds=interval_seconds,
                               warmup_prefetch=True, bar_equity=True, holdout_start=_holdout_start,
                               commission_rate=_resolve_commission_rate(
-                                  symbol, cost_model, args.commission_bps, args.cost_product),
-                              exchange=exchange, drop_feeds=drop_feeds)
+                                  symbol, cost_model, commission_bps, args.cost_product),
+                              exchange=exchange, drop_feeds=drop_feeds,
+                              **({"market_type": market_type} if market_type is not None else {}))
             with open(rd / "metrics.json", encoding="utf-8") as f:
                 m = json.load(f)
             core = m["core"]
@@ -2485,7 +2504,7 @@ def main():
             # Step 03: compute trade diagnostics while run directory is available
             trade_records = _compute_trade_records_for_window(
                 rd, symbol, label, end, cost_model,
-                commission_bps=args.commission_bps, cost_product=args.cost_product,
+                commission_bps=commission_bps, cost_product=args.cost_product,
             )
             all_trade_records.extend(trade_records)
 
@@ -2581,6 +2600,9 @@ def main():
         "protocol_run_id":        run_id,
         "config_sha256":          config_sha256,
         "protocol_file":          args.protocol_path,
+        # O-12: what this run modelled (only when the brief declared a venue)
+        **({"venue": {**protocol["venue"], "exchange": exchange, "fee_bps": commission_bps}}
+           if market_type is not None else {}),
         "results":                results,
         "per_symbol_summary":     per_symbol,
         "verdict":                verdict,

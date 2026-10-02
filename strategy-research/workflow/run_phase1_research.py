@@ -9102,8 +9102,15 @@ def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: d
     # holdout_range that nothing kept in sync with the policy file, in the very
     # function whose windows have to be checked against it. CUL-339: an
     # override that disagrees with the policy is refused at generation.
+    # O-12: the brief's (venue, product) -> exchange, market_type, venue labels
+    # and the price source's symbol names (tools/venue_resolver.py). Nothing for
+    # the default venue (byte-identical); any other venue must resolve fully or
+    # this raises -- at run start, before any LLM call (replaces CUL-183's
+    # separate registration gate).
+    symbols, venue_keys = _generated_protocol_venue_keys(run_dir, symbols)
     protocol_obj = {
         "symbols": symbols,
+        **venue_keys,
         "timeframe": timeframe,
         "windows": windows,
         "holdout": _generated_protocol_holdout_block(proto_constraint),
@@ -9480,6 +9487,10 @@ def _resolve_protocol_path(run_dir: Path, run_id: str) -> Path:
                   f"({result}) -- this run ({run_id}) is its claimed "
                   f"consumer. Fragile: prefer machine_constraints.protocol_ref on "
                   f"this run's own pre_registration.yaml instead.")
+        _proto_file = Path(result)
+        if not _proto_file.is_absolute() and not _proto_file.exists():
+            _proto_file = ROOT / _proto_file
+        _assert_protocol_matches_brief_venue(run_dir, _proto_file)  # O-12 review M3
         return result
     except _SharedUngatedProtocolError as e:
         # Re-wrap as THIS module's own UngatedProtocolError so existing
@@ -12545,18 +12556,28 @@ def _v2_manifest_slippage(run_dir: Path, pr: dict, coins: list) -> dict:
     return out
 
 
-def _v2_charged_fees(coins: list, records: list | None) -> dict:
+def _v2_charged_fees(coins: list, records: list | None, venue: dict | None = None) -> dict:
     """{coin: one-way commission bps} the strategy was charged: cost_model.yaml's
     spot fee_rate_bps (the pipeline never passes --commission-bps /
     --cost-product, and the run does not record them), CHECKED against every
     trade record's cost_paid (= 2 x the fee actually charged,
     run_protocol._cost_paid_bps): a record that disagrees means the run was
-    charged another fee -> PortfolioNotEvaluable, never a guessed fee."""
+    charged another fee -> PortfolioNotEvaluable, never a guessed fee.
+    O-12: a venue run records the fee it was charged (protocol_result
+    `venue.fee_bps`, from trading-bot/config/cost_model.json); that recorded
+    fee is used instead, under the same cost_paid check."""
     pwt = _portfolio_whole_test_module()
-    path = ROOT / "config" / "cost_model.yaml"
-    cost_model = (yaml.safe_load(path.read_text(encoding="utf-8")) if path.is_file() else None)
     out = {}
+    if isinstance(venue, dict) and venue.get("fee_bps") is not None:
+        out = {c: float(venue["fee_bps"]) for c in coins}
+        source = f"{venue.get('exchange')} {venue.get('market_type')}, cost_model.json"
+    else:
+        path = ROOT / "config" / "cost_model.yaml"
+        cost_model = (yaml.safe_load(path.read_text(encoding="utf-8")) if path.is_file() else None)
+        source = "cost_model.yaml spot"
     for c in coins:
+        if c in out:
+            continue
         try:
             out[c] = pwt.charged_fee_bps(c, cost_model, None, "spot")
         except ValueError as exc:
@@ -12566,7 +12587,7 @@ def _v2_charged_fees(coins: list, records: list | None) -> dict:
         if sym in out and cost is not None and abs(float(cost) - round(out[sym] * 2, 2)) > 1e-9:
             raise _pd.PortfolioNotEvaluable(
                 f"a {sym} trade record paid cost_paid={cost!r} bps round trip, not 2 x "
-                f"{out[sym]} (cost_model.yaml spot): the run was charged another commission "
+                f"{out[sym]} ({source}): the run was charged another commission "
                 f"(--commission-bps / --cost-product are not recorded), so buy-and-hold's "
                 f"cost is unknown")
     return out
@@ -12934,7 +12955,7 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
             path = _pd.find_window_equity_file(run_dir, r["run_id"])
             close_windows.setdefault(r["window"], {})[r["symbol"]] = pwt.window_close_bars(path)
         slip = _v2_manifest_slippage(run_dir, pr, coins)
-        fees = _v2_charged_fees(coins, records)
+        fees = _v2_charged_fees(coins, records, pr.get("venue"))
         bh = pwt.chained_buy_and_hold(chain, close_windows, fees, slip)
         _row("buy_and_hold_excess_return_min", bh["excess_return"],
              note=(f"strategy total return {bh['strategy_total_return']:.6f} minus equal-weight "
@@ -14694,6 +14715,60 @@ def _forecast_rules_module():
     _json_pointer_module()  # puts tools/ on sys.path
     import forecast_rules as _fr
     return _fr
+
+
+def _venue_resolver_module():
+    """tools/venue_resolver.py (O-12: brief venue/product -> protocol keys),
+    imported lazily like the other tools/ siblings."""
+    _json_pointer_module()  # puts tools/ on sys.path
+    import venue_resolver as _vr
+    return _vr
+
+
+def _run_brief(run_dir) -> dict:
+    """artifacts/research_brief.yaml as a dict ({} when absent or not a mapping)."""
+    path = Path(run_dir) / "artifacts" / "research_brief.yaml"
+    brief = (load_yaml(path) or {}) if path.exists() else {}
+    return brief if isinstance(brief, dict) else {}
+
+
+def _generated_protocol_venue_keys(run_dir, symbols) -> tuple:
+    """(symbols, venue_keys) for a generated protocol (O-12): the brief's
+    (venue, product) through tools/venue_resolver.protocol_keys. The default
+    venue gives (symbols unchanged, {}) -- byte-identical. Shared by
+    _ensure_protocol_from_constraints and run_campaign's pre-flight rebuild
+    (_expected_generated_protocol), so the two cannot drift."""
+    brief = _run_brief(run_dir)
+    venue_keys = _venue_resolver_module().protocol_keys(brief, list(symbols))
+    if not venue_keys:
+        product = str(brief.get("product") or "").strip().lower()
+        if product not in ("", "spot"):
+            print(f"ℹ️  [O-12] brief product {product!r} on the default venue: backtested with "
+                  f"Binance spot data and costs, as before D-057 (no venue keys written)")
+        return symbols, {}
+    return venue_keys.pop("symbols"), venue_keys
+
+
+def _assert_protocol_matches_brief_venue(run_dir, protocol_path) -> None:
+    """O-12 review M3: the protocol a run executes must model the brief's
+    venue. A brief naming a non-default venue run on a protocol without that
+    exchange/market_type (a protocol_ref pin, a hypothesis-split child, a
+    refine brief, a fallback protocol) raises -- never a silent Binance run.
+    The default venue checks nothing (byte-identical)."""
+    brief = _run_brief(run_dir)
+    resolved = _venue_resolver_module().resolve(brief.get("venue"), brief.get("product"))
+    if resolved is None:
+        return
+    with open(protocol_path, "r", encoding="utf-8") as f:
+        protocol = json.load(f)
+    got = {k: protocol.get(k) for k in ("exchange", "market_type")}
+    want = {k: resolved[k] for k in ("exchange", "market_type")}
+    if got != want:
+        raise RuntimeError(
+            f"[O-12] the brief declares venue {brief.get('venue')!r} / product "
+            f"{brief.get('product')!r} -> {want}, but the protocol this run would execute "
+            f"({protocol_path}) models {got}. Only a protocol generated from this brief's "
+            f"machine_constraints.protocol carries the venue -- refusing to backtest another venue.")
 
 
 def _single_column_untested_kw(artifacts: Path, run_id: str) -> dict:
