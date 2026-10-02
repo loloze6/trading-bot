@@ -679,6 +679,25 @@ def _build_yaml_retry_context(err: "UnrepairableYAMLError") -> str:
 
 
 
+def _build_missing_deliverables_retry_context(expected_outputs: list, no_blocks: bool) -> str:
+    """CUL-379: the retry prompt block when deliverables are missing -- which
+    files, and the one block format the parser reads."""
+    missing = [Path(p).name for p in expected_outputs if not Path(p).exists()]
+    what = ("contained no deliverable block the orchestrator could read"
+            if no_blocks else "did not include every deliverable")
+    return "\n".join([
+        f"Format problem, not YAML syntax: your answer {what}.",
+        f"Missing: {', '.join(missing)}",
+        "Write each deliverable as ONE fenced block whose FIRST line inside the "
+        "fence is its file name, exactly like this:",
+        "```yaml",
+        "# <file_name>.yaml",
+        "<content>",
+        "```",
+        "Nothing between ```yaml and the '# <file_name>.yaml' line; one block per file.",
+    ])
+
+
 # SDK result-misclassification rider (2026-07-16, run_054+run_058 prior art;
 # claude_agent_sdk==0.2.82 installed in this venv, verified against its own
 # source this session, not assumed): the SDK's query loop
@@ -717,9 +736,10 @@ def _invoke_agent_with_yaml_retry(current_stage: str, run_id: str, run_dir: Path
     """
     retry_ctx = None
     for attempt in range(2):
+        outcome = None
         for sdk_attempt in range(2):
             try:
-                asyncio.run(async_invoke_agent(current_stage, run_id, retry_context=retry_ctx))
+                outcome = asyncio.run(async_invoke_agent(current_stage, run_id, retry_context=retry_ctx))
                 break
             except Exception as sdk_err:
                 if sdk_attempt == 0 and str(sdk_err) == _SDK_ERROR_RESULT_SUCCESS_MSG:
@@ -741,6 +761,24 @@ def _invoke_agent_with_yaml_retry(current_stage: str, run_id: str, run_dir: Path
                 retry_ctx = _build_yaml_retry_context(err)
                 continue
             raise  # retry ALSO failed — fail to human as before, unchanged
+        except FileNotFoundError as err:
+            # CUL-379: a deliverable is missing. Retry once when the answer held
+            # no readable deliverable block at all (any stage; run_065), or when
+            # it wrote some deliverables but not all -- except in step 1a, where
+            # a missing hypothesis_card.yaml is also how a multi-card split or an
+            # exhausted brief (brief_status.yaml) reaches its caller's handler.
+            no_blocks = isinstance(outcome, dict) and bool(outcome.get("no_blocks"))
+            partial = (isinstance(outcome, dict) and bool(outcome.get("saved"))
+                       and current_stage != "hypothesis_generation")
+            if attempt == 0 and (no_blocks or partial):
+                retry_count = state.get("format_retry_count", 0) + 1
+                update_state(path=run_dir, format_retry_count=retry_count)
+                what = "no readable deliverable block" if no_blocks else "some deliverables missing"
+                print(f"⚠️ [CUL-379] {current_stage}: {what} on first attempt — retrying once "
+                      f"with a format reminder (format_retry_count={retry_count}). {err}")
+                retry_ctx = _build_missing_deliverables_retry_context(expected_outputs, no_blocks)
+                continue
+            raise
 
 
 # F4c (2026-07-05, run_047 budget investigation): relative cost weights per
@@ -1170,6 +1208,31 @@ def _stamp_card_scores_text(text: str, models) -> tuple:
 _DELIVERABLE_BLOCK_RE = re.compile(
     r"```yaml\s*#\s*(?:artifacts[/\\])?([a-zA-Z0-9_.]+\.yaml)\s*(.*?)```", re.DOTALL)
 
+# CUL-379 (run_065, 2026-10-02): step 1a wrote a valid hypothesis_card.yaml but
+# put its `# hypothesis_card.yaml` line just ABOVE the fence instead of inside
+# it. Nothing matched, the answer was dropped, and the run halted on a missing
+# file. A name comment on the line immediately before a ```yaml fence is now
+# accepted too -- same name rule (bare, or the one `artifacts/` prefix), only
+# for a fence that does not already name its own file.
+_DELIVERABLE_NAME_BEFORE_FENCE_RE = re.compile(
+    r"^[ \t]*#[ \t]*(?:artifacts[/\\])?(?P<name>[a-zA-Z0-9_.]+\.yaml)[ \t]*\r?\n"
+    r"(?P<fence>```yaml)[ \t]*\r?\n(?P<body>.*?)```", re.DOTALL | re.MULTILINE)
+
+
+def _find_deliverable_blocks(text: str) -> list:
+    """[(file name, body)] in answer order: every fence that names its own file
+    (_DELIVERABLE_BLOCK_RE, unchanged), plus every other fence named on the line
+    just above it (_DELIVERABLE_NAME_BEFORE_FENCE_RE)."""
+    inside = list(_DELIVERABLE_BLOCK_RE.finditer(text))
+    spans = [m.span() for m in inside]
+    found = [(m.start(), m.group(1), m.group(2)) for m in inside]
+    for m in _DELIVERABLE_NAME_BEFORE_FENCE_RE.finditer(text):
+        fence_at = m.start("fence")
+        if any(s <= fence_at < e for s, e in spans):
+            continue
+        found.append((fence_at, m.group("name"), m.group("body")))
+    return [(name, body) for _at, name, body in sorted(found, key=lambda f: f[0])]
+
 
 async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_context: str | None = None):
 
@@ -1264,14 +1327,14 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
 
 
     # 6. Parse and Save the Deliverables
-    matches = _DELIVERABLE_BLOCK_RE.findall(agent_output)
+    matches = _find_deliverable_blocks(agent_output)
     
     if not matches:
         print("⚠️ Warning: Could not parse standard YAML blocks. Saving raw output for debug.")
         debug_path = path / "artifacts" / f"debug_{stage_name}_raw_output.txt"
         with open(debug_path, "w", encoding="utf-8") as f:
             f.write(agent_output)
-        return
+        return {"no_blocks": True}  # CUL-379: _invoke_agent_with_yaml_retry retries once
 
     saved_files = []
     card_provenance = None
@@ -1294,6 +1357,7 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
         update_state(path=path, audit_log=log_entry)
         
     print(f"✅ [AGENT COMPLETE] Successfully wrote deliverables: {', '.join(saved_files)}")
+    return {"saved": saved_files}
 
 
 

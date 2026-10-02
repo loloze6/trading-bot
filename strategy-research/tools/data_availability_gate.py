@@ -474,6 +474,41 @@ def _missing_fraction(df: pd.DataFrame, start: datetime.datetime, end: datetime.
     return max(min(missing_bars / expected, 1.0), 0.0)
 
 
+def _missing_runs(df: pd.DataFrame, start: datetime.datetime, end: datetime.datetime,
+                  interval_seconds: int) -> list | None:
+    """CUL-374: each stretch of missing bars in [start, end] as {after, bars},
+    measured exactly as _missing_fraction counts them (leading shortfall,
+    internal steps, trailing shortfall; the same noise floor). `after` is the
+    last present bar before the stretch (None for a leading one). None when
+    nothing is present at all (the whole window is missing)."""
+    if df.empty:
+        return None
+    ts = pd.to_datetime(df["timestamp"]).sort_values()
+    ts = ts[(ts >= pd.Timestamp(start)) & (ts <= pd.Timestamp(end))]
+    if ts.empty:
+        return None
+    eps = _TIMESTAMP_NOISE_EPSILON_SECONDS
+    runs = []
+    lead_gap = (ts.iloc[0] - pd.Timestamp(start)).total_seconds()
+    if lead_gap > eps:
+        runs.append({"after": None, "bars": lead_gap / interval_seconds})
+    prev = ts.iloc[:-1].tolist()
+    for before, d_seconds in zip(prev, ts.diff().dropna().dt.total_seconds()):
+        if d_seconds > interval_seconds + eps:
+            runs.append({"after": str(before), "bars": (d_seconds - interval_seconds) / interval_seconds})
+    trail_gap = (pd.Timestamp(end) - ts.iloc[-1]).total_seconds()
+    if trail_gap > interval_seconds + eps:
+        runs.append({"after": str(ts.iloc[-1]), "bars": (trail_gap - interval_seconds) / interval_seconds})
+    return runs
+
+
+def _engine_ignore_max_bars() -> int:
+    """The engine's own "ignore" tier for missing bars (CUL-374): the ONE
+    source is trading-bot core/launcher.py DEFAULT_GAP_POLICY, never a copy."""
+    from core.launcher import DEFAULT_GAP_POLICY  # noqa: E402  (trading-bot on sys.path above)
+    return int(DEFAULT_GAP_POLICY["ignore_max_bars"])
+
+
 def classify_missing_fraction(fraction: float, gap_tolerance: float = _DEFAULT_GAP_TOLERANCE) -> str:
     if fraction <= 0.0:
         return "validate"
@@ -583,6 +618,20 @@ def check_price_window(symbol: str, exchange: str, timeframe: str,
     native_interval_seconds = dm.fetch_interval_seconds
     frac = _missing_fraction(df, start_dt, end_dt, native_interval_seconds)
     outcome = classify_missing_fraction(frac, gap_tolerance)
+    if outcome == "refine":
+        # CUL-374: within tolerance AND every stretch of missing bars no longer
+        # than the engine's own "ignore" tier (on Kraken 1h these are mostly
+        # hours with no trades, where the exchange writes no candle) -> the
+        # backtest treats them as nothing, so the gate does too. Longer gaps,
+        # or more than the tolerance in total, are judged as before.
+        runs = _missing_runs(df, start_dt, end_dt, native_interval_seconds) or []
+        limit = _engine_ignore_max_bars()
+        if runs and all(r["bars"] <= limit + 1e-9 for r in runs):
+            return {"outcome": "validate", "missing_fraction": frac, "rows": len(df),
+                    "small_gaps": [{"after": r["after"], "bars": round(r["bars"], 3)} for r in runs],
+                    "reason": (f"available: {len(runs)} small gap(s) of at most {limit} bar(s) "
+                               f"({frac:.3%} of expected bars), which the engine's gap rule "
+                               f"ignores (DEFAULT_GAP_POLICY ignore_max_bars={limit})")}
     reason = (
         "fully available" if outcome == "validate" else
         f"{frac:.1%} of expected bars missing (<= {gap_tolerance:.0%} tolerance)" if outcome == "refine" else
