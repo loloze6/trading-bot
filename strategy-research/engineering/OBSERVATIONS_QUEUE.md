@@ -18,6 +18,7 @@ decision (DECISION_LOG) or a ticket.
 | O-9 | C4 run_061, 2026-10-02 | Nothing before the backtest says which test windows are used, or how long they are | open: to investigate |
 | O-10 | C4 run_061, 2026-10-02 | `base` made 0 trades in 95 windows: the forecast was shrunk ~1,000,000x | found: doc bug + missing fail-loud check; trial invalidated, run stopped |
 | O-11 | C4 run_064, 2026-10-02 | The first C4 backtests ran, then grading stopped on two engineering faults | found: bugs, ticketed (CUL-369, CUL-370, CUL-368); queued-card pass_rule bug fixed (PR) |
+| O-12 | C4 run_064, 2026-10-02 | The brief's venue/product never reaches the backtest (data, fees, slippage) | found: deferred design (CUL-46, E-014); C4 venue = Kraken futures (operator); Phase A planned |
 
 ---
 
@@ -586,6 +587,40 @@ and the window overlap inflates pooled totals by about 3%.
 
 **State:** run_064 is halted at protocol_execution (status failed). Its two trial rows are
 recorded. Nothing runs on its own. Grading needs CUL-369 (and CUL-370) first.
+
+
+## O-12. The brief's venue/product never reaches the backtest
+
+**Seen:** the C4 brief declares `venue: kraken`, `product: spot`. run_064's backtests nevertheless
+ran on **Binance** BTCUSDT data, with the **spot** fee from `config/cost_model.yaml` (7.5 bps
+per side) and **Binance margin** slippage from `trading-bot/config/cost_model.json` (1 bps).
+The Kraken asset variant (AAVE) crashed on a missing (kraken, margin) cost entry (CUL-368).
+
+**Operator's view (2026-10-02):** the venue is declared in the brief, and C4 should model
+**Kraken futures**. The operator remembered a feature that takes the declared venue, checks
+its costs and data, and applies them to the backtest.
+
+**Finding (2026-10-02, read in code and Linear):** **that feature was designed but deferred,
+never built.**
+- **E-015** (Completed): venue + product are required at registration. A non-tradable product
+  is flagged `research_only`, and the holdout refuses research-only ideas. It never touches
+  data or costs.
+- **E-014** (Completed): tradability and the data-availability declaration. Its child
+  **CUL-46, "Venue/Exchange model -- deferred design epic (joint design with Jeremy)"**, is
+  the wiring itself, and it is still Backlog. CUL-287 (the data fetcher hard-codes `spot`) is
+  part of the same gap.
+- In code, `run_campaign.py:465-469` says it outright: *"venue has NO protocol-side
+  counterpart"*. `venue`/`product` feed only the tradability check (`:768-773`).
+- Each piece decides on its own:
+  - Data: the protocol's `exchange` field, absent, so Binance (run_protocol "Option Y").
+    Non-Binance coins in per-coin variants go to Kraken.
+  - Fee: run_protocol's `--cost-product`, never passed, so `spot`.
+  - Slippage and the (exchange, market) existence check: the engine's `market_type`, never
+    passed, so config.json's `margin`.
+
+**Next:** Phase A of the wiring. Map every place that decides exchange, market, fee and
+slippage, plus which caches exist per venue/market (Kraken futures OHLCV and funding for
+BTC/ETH). Then STOP for the operator's nod. No C4 backtest until it is in.
 
 ---
 
