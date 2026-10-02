@@ -2718,11 +2718,13 @@ async def run_tool_worker(stage_name: str, run_id: str):
 
             if _forecast_size_probe_enabled():
                 # O-10 / D-056: can this variant's forecast ever move the position?
-                # Probed on the variant's own coin protocol (per-coin mode) or the
-                # run protocol. A refusal is a config error like D-051/D-053 above
-                # (same reason, so Step 2 gets its one retry; a `base` refusal
-                # pauses: 1b's config). A probe that cannot run (no data, engine
-                # error) marks only this variant not_tested -- never run-wide.
+                # The probe runs on invented data and reads the protocol (the
+                # variant's own coin protocol in per-coin mode, else the run
+                # protocol) for its timeframe only. A refusal is a config error like
+                # D-051/D-053 above (same reason, so Step 2 gets its one retry; a
+                # `base` refusal pauses: 1b's config). A probe that cannot run (an
+                # engine or config error) marks only this variant not_tested --
+                # never run-wide.
                 _probe_tmp = None
                 try:
                     if _coin_proto is not None:
@@ -2743,9 +2745,9 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     _fs_reason = FORECAST_SIZE_PROBE_ERROR_REASON
                     if _coin_keys.get("kind") == "asset":
                         # D-042 (as the data gate's review fix H1): a per-coin ASSET
-                        # variant whose coin cannot be run (no data, no cost model
-                        # for its venue) is a coverage skip -- it never blocks the
-                        # idea or lowers the floor for the other variants.
+                        # variant the probe cannot run (an engine or config error)
+                        # is a coverage skip -- it never blocks the idea or lowers
+                        # the floor for the other variants.
                         _fs_reason = (f"{_variant_coin_module().LAYER2_COVERAGE_REASON_PREFIX} "
                                       f"{FORECAST_SIZE_PROBE_ERROR_REASON}")
                     index[variant_id] = {"status": "not_tested", "reason": _fs_reason,
@@ -4437,7 +4439,7 @@ def _forecast_size_probe_enabled(cfg: dict | None = None) -> bool:
 
 
 FORECAST_SIZE_PROBE_FILE = "forecast_size_probe.yaml"
-# A probe that could not run (no data, engine error): the variant is not_tested
+# A probe that could not run (engine or config error): the variant is not_tested
 # with this reason -- not a config error, so Step 2 is not asked to fix it.
 FORECAST_SIZE_PROBE_ERROR_REASON = "forecast size probe could not run (D-056)"
 
@@ -4470,9 +4472,13 @@ def _forecast_size_violations(config: dict, protocol_path: Path, run_dir: Path,
         return []
     # Same config on the same protocol bytes -> reuse the recorded verdict
     # (resumes, the 1b retry, and `base` probed at 1b then again in 5a).
+    # The tool's own bytes are in the key: a new rule (or seed) never reuses a
+    # verdict the previous rule recorded.
     key = hashlib.sha256(
         json.dumps(config, sort_keys=True).encode("utf-8")
-        + b"\0" + Path(protocol_path).read_bytes()).hexdigest()
+        + b"\0" + Path(protocol_path).read_bytes()
+        + b"\0" + (Path(__file__).resolve().parent.parent / "tools"
+                   / "forecast_size_probe.py").read_bytes()).hexdigest()
     record_path = Path(run_dir) / "artifacts" / FORECAST_SIZE_PROBE_FILE
     if record_path.exists():
         doc = load_yaml(record_path) or {}
@@ -14265,7 +14271,7 @@ def _base_forecast_size_violations(path: Path) -> list:
     only if validate_config.py accepts the config: a config that does not load
     (e.g. a class not built yet) keeps its designed route in 5a (V12 ->
     component request), never a probe crash here. A probe that cannot run
-    (no data, engine error) is recorded and skipped: 5a probes every variant
+    (engine or config error) is recorded and skipped: 5a probes every variant
     again and marks a failure there not_tested, so nothing passes unmeasured."""
     if not _forecast_size_probe_enabled():
         return []

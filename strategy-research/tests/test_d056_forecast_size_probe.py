@@ -101,13 +101,34 @@ def test_the_invented_calendar_is_far_from_any_real_date():
     assert ts.min().year == 2000 and ts.max().year < 2010
 
 
-def test_no_real_data_is_read(monkeypatch):
-    """The probe never loads a cache or calls the engine's data path."""
-    import pandas as pd
-    monkeypatch.setattr(pd, "read_csv", lambda *a, **k: pytest.fail("read_csv called"))
+_OPENED: list = []
+_RECORDING = [False]
+
+
+def _audit(event, args):
+    if _RECORDING[0] and event == "open" and args and isinstance(args[0], (str, bytes, Path)):
+        _OPENED.append(str(args[0]))
+
+
+sys.addaudithook(_audit)  # audit hooks cannot be removed; it records only while flagged
+
+
+def test_no_real_data_is_read():
+    """Every file the probe opens (audit hook, so open()/pandas/pyarrow are all
+    seen): only the strategy config and trading-bot/config.json -- never a
+    cache, never local_data. The engine's data modules are never imported."""
     cfg = SR_ROOT.parent / "trading-bot" / "strategy_config.json"
-    out = fsp.probe(cfg, {"timeframe": "1h"})
+    _OPENED.clear()
+    _RECORDING[0] = True
+    try:
+        out = fsp.probe(cfg, {"timeframe": "1h"})
+    finally:
+        _RECORDING[0] = False
     assert out["data"] == "invented" and out["status"] in ("ok", "refuse")
+    data_files = [p for p in _OPENED if not p.endswith((".py", ".pyc", ".pyd", ".dll", ".so"))
+                  and "site-packages" not in p and "__pycache__" not in p]
+    assert all("local_data" not in p for p in _OPENED), _OPENED
+    assert {Path(p).name for p in data_files} <= {"strategy_config.json", "config.json"}, data_files
 
 
 def test_an_unknown_timeframe_fails_loud():
