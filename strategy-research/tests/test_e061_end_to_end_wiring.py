@@ -326,8 +326,9 @@ def _protocol(promotion="default") -> dict:
     for label in WINDOW_LABELS:
         y, m = int(label[:4]), int(label[5:])
         ny, nm = (y + 1, 1) if m == 12 else (y, m + 1)
-        windows.append({"label": label, "test": {"start": f"{label}-01",
-                                                 "end": f"{ny:04d}-{nm:02d}-01"}})
+        # CUL-369 (D-058): end = the month's last day (the last included day)
+        last_day = (_dt.date(ny, nm, 1) - _dt.timedelta(days=1)).isoformat()
+        windows.append({"label": label, "test": {"start": f"{label}-01", "end": last_day}})
     proto = {"symbols": list(SYMBOLS), "timeframe": "1h", "windows": windows,
              "holdout": {"start": hs, "end": he},
              "_note": "E-061 C1.1 wiring-test protocol (sandbox only)."}
@@ -1641,7 +1642,8 @@ def _generated_constraints(promotion="absent") -> dict:
     y, m = int(last[:4]), int(last[5:])
     ny, nm = (y + 1, 1) if m == 12 else (y, m + 1)
     proto = {"symbols": list(SYMBOLS), "timeframe": "1h", "start": f"{first}-01",
-             "end": f"{ny:04d}-{nm:02d}-01"}
+             # CUL-369 (D-058): `end` is the last included day
+             "end": (_dt.date(ny, nm, 1) - _dt.timedelta(days=1)).isoformat()}
     if promotion != "absent":
         proto["promotion"] = promotion
     return {"protocol": proto}
@@ -2229,10 +2231,11 @@ def _full_days(first: str, last: str) -> int:
     return (_dt.date.fromisoformat(last) - _dt.date.fromisoformat(first)).days + 1
 
 
-# The sandbox protocol's six monthly windows run 2022-01-01 .. 2022-07-01; the
-# asset coin of the tests below covers the last four (2022-03-01 .. 2022-07-01).
-_FULL_DAYS = _full_days("2022-01-01", "2022-07-01")
-_PARTIAL_DAYS = _full_days("2022-03-01", "2022-07-01")
+# The sandbox protocol's six monthly windows run 2022-01-01 .. 2022-06-30 (D-058:
+# end is the last included day); the asset coin of the tests below covers the
+# last four (2022-03-01 .. 2022-06-30).
+_FULL_DAYS = _full_days("2022-01-01", "2022-06-30")
+_PARTIAL_DAYS = _full_days("2022-03-01", "2022-06-30")
 
 
 def _run_v2_first_run(harness, *, first_full_window: int | None = 2, flags=V2_FLAGS):
@@ -2482,7 +2485,7 @@ def test_e062_v2_retest_with_wider_coverage_is_a_new_trial(harness):
     assert len(kept) == 34
     pbe2 = h.art(r2, "profit_bars_evaluation.yaml")
     assert pbe2["dsr_basis"]["n_dsr_total"] == 34
-    days = _full_days("2022-02-01", "2022-07-01")
+    days = _full_days("2022-02-01", "2022-06-30")
     f = Fraction(days, _FULL_DAYS)
     tc = _bar(pbe2["variants"]["asset"], "trade_count_min")
     assert tc["threshold"] == max(math.ceil(100 * f), 60) == 83

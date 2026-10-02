@@ -17,10 +17,11 @@ decision (DECISION_LOG) or a ticket.
 | O-8 | C4 run_061, 2026-10-01 | Data gate blocks every version over small gaps the backtest already handles | found: design gap; target design ticketed (CUL-367); run_061 continued by override |
 | O-9 | C4 run_061, 2026-10-02 | Nothing before the backtest says which test windows are used, or how long they are | open: to investigate |
 | O-10 | C4 run_061, 2026-10-02 | `base` made 0 trades in 95 windows: the forecast was shrunk ~1,000,000x | found: doc bug + missing fail-loud check; trial invalidated, run stopped |
-| O-11 | C4 run_064, 2026-10-02 | The first C4 backtests ran, then grading stopped on two engineering faults | found: bugs, ticketed (CUL-369, CUL-370, CUL-368); queued-card pass_rule fixed (#296); CUL-368 partly fixed (#298) |
+| O-11 | C4 run_064, 2026-10-02 | The first C4 backtests ran, then grading stopped on two engineering faults | found: bugs, ticketed (CUL-369, CUL-370, CUL-368); queued-card pass_rule fixed (#296); CUL-368 partly fixed (#298); CUL-369 fixed (D-058, past results not re-scored) |
 | O-12 | C4 run_064, 2026-10-02 | The brief's venue/product never reaches the backtest (data, fees, slippage) | fixed: D-057 (#298) -- the brief's venue reaches the protocol; remaining gaps listed; C4 briefs must say `perp` before relaunch |
 | O-13 | PR #295 review, 2026-10-02 | The size check deliberately passes two "zero" cases: a zero rebalance floor, and an all-zero forecast | recorded (by design, #295); no action |
 | O-14 | D-057 work, 2026-10-02 | A Binance run takes its fee from the spot schedule but its slippage and market check from the margin entry | open: declared fix planned (own PR) |
+| O-15 | CUL-369 work, 2026-10-02 | The whole-test chain never counts a window's first day (its anchor), so each window's entry-day P&L is left out | open: needs a decision (E-062 definition) |
 
 ---
 
@@ -594,6 +595,22 @@ and the window overlap inflates pooled totals by about 3%.
 **State:** run_064 is halted at protocol_execution (status failed). Its two trial rows are
 recorded. Nothing runs on its own. Grading needs CUL-369 (and CUL-370) first.
 
+**Dated note (2026-10-02), CUL-369 fixed by D-058:**
+- **The convention now:** `test.end` is the last included day everywhere, and windows no
+  longer share a day.
+- **Past monthly-window results are NOT re-scored** (operator decision). Every run whose
+  protocol wrote `end` as the next window's start backtested that day twice. Its pooled
+  totals, trade counts and pooled IC double-count about 1 day in 30 (~3%), and must be
+  read with that in mind:
+  - the 10 hand-made protocols before their migration;
+  - every `run_0xx_generated.json`.
+- **Runs holding a pre-D-058 generated protocol** (at the time: run_061, run_063, run_064).
+  The launch pre-flight now refuses them with the right remedy:
+  - **no data spent yet** (run_063): delete `run_063_generated.json`; it regenerates from
+    the unchanged pre_registration.yaml;
+  - **data already spent** (run_061, run_064): the run cannot resume; relaunch the idea
+    under a new run id. Their recorded trials stay counted.
+
 
 ## O-12. The brief's venue/product never reaches the backtest
 
@@ -721,6 +738,27 @@ it invalidates baselines.
 research models (spot or margin), make that one entry the source of both fee and slippage,
 re-pin the tests that assert 7.5 bps, and state the before/after on a reference run. No
 re-scoring of past results unless the operator asks.
+
+
+## O-15. The whole-test chain never counts a window's first day
+
+**Seen (2026-10-02, while fixing CUL-369):** `portfolio_whole_test.chain_windows` normalises
+each window at its close on its first common day (the anchor, the v1 per-window definition).
+The window's own return for that day is never counted: the move from its first bar to that
+day's close, which includes opening the position and its entry cost.
+- **Before CUL-369** windows shared a day, and the previous window's backtest supplied that
+  day's return (a "junction").
+- **Now** windows are back to back, and each boundary is a flat link with no return. So
+  one daily return per window boundary is missing from the whole-test Sharpe, and coverage
+  dips about 1 day in 30 (monthly: ~0.97, above the 0.9 floor).
+
+**Why it may matter:** in both layouts, the window's own first-day P&L, including its
+entry cost, is not in the chain. For a strategy that re-enters at every window start, that
+leaves out one entry cost per window.
+
+**Next:** open. Possible fix: anchor each window at its starting equity (before its first
+bar) instead of its first close, so the first day's return is counted. That changes the
+whole-test definition (E-062), so it needs its own decision. Not part of CUL-369.
 
 ---
 

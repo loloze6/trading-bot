@@ -398,13 +398,33 @@ def test_duplicate_nominal_start_raises():
 
 def test_window_bounds_from_the_protocol_json():
     """The real committed baseline_v1 protocol: 11 monthly windows, label ->
-    (test.start, test.end), each end equal to the next start (one-day overlap,
-    end inclusive by day)."""
+    (test.start, test.end), end inclusive by day. CUL-369 (D-058): each window
+    ends the day before the next starts (no shared day; before CUL-369 every
+    end equalled the next start, a one-day overlap)."""
     b = pw.load_protocol_window_bounds(SR_ROOT / "protocols" / "baseline_v1.json")
     assert len(b) == 11
-    assert b["2024-01"] == (date(2024, 1, 1), date(2024, 2, 1))
+    assert b["2024-01"] == (date(2024, 1, 1), date(2024, 1, 31))
     spans = sorted(b.values())
-    assert all(spans[i][1] == spans[i + 1][0] for i in range(len(spans) - 1))
+    assert all(spans[i][1] + timedelta(days=1) == spans[i + 1][0]
+               for i in range(len(spans) - 1))
+
+
+def test_adjacent_windows_chain_as_a_zero_day_link():
+    """CUL-369 (D-058): windows that end the day before the next starts. Each
+    boundary is a flat link with NO gap day (nothing is missing); the next
+    window's first day is its anchor, so it carries no daily return -- one
+    return fewer per boundary than the old one-day-overlap layout, and the
+    coverage reflects it (27 returns + 1 over 30 nominal days)."""
+    wins = {}
+    for k in range(3):
+        a = [100.0 * (1.0 + 0.01 * ((i * 7 + k) % 5 - 2)) * (1.0 + 0.003 * i) for i in range(10)]
+        wins[f"w{k}"] = {"X": _bars(10 * k, a)}
+    ch = _chain(wins, ["X"], _bnd(w0=(0, 9), w1=(10, 19), w2=(20, 29)))
+    assert [s["kind"] for s in ch["segments"]] == ["first", "gap", "gap"]
+    assert ch["n_gap_days"] == 0 and ch["n_gap_links"] == 2
+    assert len(ch["daily_returns"]) == 27
+    assert ch["coverage"] == 28 / 30
+    assert ch["first_day"] == _day(0) and ch["last_day"] == _day(29)
 
 
 @pytest.mark.parametrize("protocol,frag", [
