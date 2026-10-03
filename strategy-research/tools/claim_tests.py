@@ -126,7 +126,13 @@ FLOOR_UNITS = ("min_events", "min_windows", "min_eras", "min_blocks")
 CONSISTENCY_UNITS = ("window", "era")
 SIGNIFICANCE_METHOD = "block_permutation_v1"          # method B (amendment 3, 4B)
 A851A_METHOD = "a851a_episode_v1"                      # method A: existing A8.5.1a, unchanged
-SIGNIFICANCE_METHODS = (SIGNIFICANCE_METHOD, A851A_METHOD)
+# Amendment 4: A8.5.1a with its episode gap expressed in TIME, as its own
+# pre-registration states it ("48 bars @ 1h ~= 2 days"): 2 days / bar step,
+# i.e. 2 bars daily, 48 bars hourly (unchanged). Every other rule unchanged.
+A851A_TIMEGAP_METHOD = "a851a_episode_timegap_v1"
+A851A_GAP_SECONDS = 2 * 86400
+A851A_METHODS = (A851A_METHOD, A851A_TIMEGAP_METHOD)
+SIGNIFICANCE_METHODS = (SIGNIFICANCE_METHOD, A851A_METHOD, A851A_TIMEGAP_METHOD)
 DEFAULT_SIGNIFICANCE = {"method": SIGNIFICANCE_METHOD, "n_resamples": 1000, "seed": 20261003}
 A851A_SEED = 20261003
 # The calibration gate (amendment 3, section 5). A calibration summary unlocks a
@@ -768,13 +774,13 @@ def check_spec(spec: TestSpec) -> list[str]:
                           or c["min_same_sign"] < 1):
         e.append(f"consistency: needs unit in {list(CONSISTENCY_UNITS)} and min_same_sign >= 1")
     s = spec.significance
-    if isinstance(s, dict) and s == {"method": A851A_METHOD}:
+    if isinstance(s, dict) and set(s) == {"method"} and s["method"] in A851A_METHODS:
         pass
     elif (not isinstance(s, dict) or set(s) != {"method", "n_resamples", "seed"}
             or s.get("method") != SIGNIFICANCE_METHOD
             or not isinstance(s.get("n_resamples"), int) or s["n_resamples"] < 99
             or not isinstance(s.get("seed"), int)):
-        e.append(f"significance: {{method: {A851A_METHOD}}} or {{method: {SIGNIFICANCE_METHOD}, "
+        e.append(f"significance: {{method: one of {list(A851A_METHODS)}}} or {{method: {SIGNIFICANCE_METHOD}, "
                  f"n_resamples >= 99, seed: int}} (earlier methods were retired, amendments 1-3)")
     return e
 
@@ -861,7 +867,17 @@ def _blocks(active_by_window: list, per: list, h: int) -> int:
         for act, p in zip(active_by_window, per)))
 
 
-def _a851a_horizon(per, h):
+def a851a_gap_bars(method: str, step: int) -> int:
+    """A8.5.1a's episode gap in bars: the configured bar count (method A, as
+    the pipeline passes it) or 2 days of bars (amendment 4)."""
+    if method == A851A_TIMEGAP_METHOD:
+        if A851A_GAP_SECONDS % step:
+            raise ValueError(f"2 days is not a whole number of {step}s bars")
+        return A851A_GAP_SECONDS // step
+    return A851A_SETTINGS["gap_bars"]
+
+
+def _a851a_horizon(per, h, method=A851A_METHOD):
     """Method A (`a851a_episode_v1`, amendment 3 section 4A): the existing
     tools/episode_significance.compute_a851a_significance, unchanged, fed the
     way tools/run_protocol._a851a_episode_significance feeds it. Its statistic
@@ -890,7 +906,7 @@ def _a851a_horizon(per, h):
     step = per[0]["w"].step
     cfg = A851A_SETTINGS
     res = es.compute_a851a_significance(
-        records, era_of=era_of, gap_bars=cfg["gap_bars"],
+        records, era_of=era_of, gap_bars=a851a_gap_bars(method, step),
         density_fallback_pct=cfg["density_fallback_pct"],
         min_n_episodes=cfg["min_n_episodes"], block_size=bars_per_day(_TF[_cadence(step)]),
         n_resamples=cfg["n_resamples"], seed=A851A_SEED,
@@ -973,12 +989,13 @@ def run_test(windows: list[Window], spec: TestSpec, eras: list | None = None,
 
     # The values judged: the spec's statistic (method B) or A8.5.1a's own (method A).
     judged = {}
-    if method == "a851a_episode_v1":
+    if method in A851A_METHODS:
         for p in per:
             p["eras_list"] = eras
         result["verdict_statistic"] = "a851a pooled rank IC among event bars (claimed: > 0)"
+        result["a851a_gap_bars"] = a851a_gap_bars(method, windows[0].step)
         for h in horizons:
-            a = _a851a_horizon(per, h)
+            a = _a851a_horizon(per, h, method)
             out_h[h]["a851a"] = a
             judged[h] = (a["pooled_ic"], a["p_value"], a["p_value_opposite"], a["per_window"])
     else:
@@ -1148,7 +1165,10 @@ def calibration_for(calibrations: list[dict], spec: TestSpec, windows: list[Wind
 
 
 def grade_claim_file(run_dir: Path, spec_path: Path, cache_path_for, eras: list | None = None,
-                     calibration_files=None) -> dict:
+                     calibration_files=None, method_override: str | None = None) -> dict:
+    """`method_override`: an A8.5.1a-family method named by a committed
+    amendment, applied to every test without editing the pre-registered spec
+    (the spec file and its sha256 stay as fixed; spec_hash records the method)."""
     import yaml
     raw = Path(spec_path).read_bytes()
     doc = yaml.safe_load(raw.decode("utf-8"))
@@ -1156,6 +1176,10 @@ def grade_claim_file(run_dir: Path, spec_path: Path, cache_path_for, eras: list 
     if problems:
         raise ValueError(f"{spec_path}: " + "; ".join(problems))
     tests = [(t["name"], TestSpec.from_dict(t)) for t in doc["tests"]]
+    if method_override is not None:
+        if method_override not in A851A_METHODS:
+            raise ValueError(f"method override must be one of {list(A851A_METHODS)}")
+        tests = [(n, replace(t, significance={"method": method_override})) for n, t in tests]
     calibrations = passed_calibrations(calibration_files)
     for name, s in tests:
         errs = check_spec(s)
@@ -1182,6 +1206,7 @@ def grade_claim_file(run_dir: Path, spec_path: Path, cache_path_for, eras: list 
     return {"claim_id": doc.get("claim_id"), "statement": doc.get("statement"),
             "spec_file": str(spec_path), "spec_file_sha256": hashlib.sha256(raw).hexdigest(),
             "spec_hashes": {name: spec_hash(s) for name, s in tests},
+            "method_override": method_override,
             "n_tests_run": len(tests), "run_dir": str(run_dir),
             "graded_variants": graded, "not_graded_variants": not_graded,
             "variants": variants, "bars_used": bars_used,
@@ -1198,6 +1223,8 @@ def main(argv=None) -> int:
     ap.add_argument("--cache-dir", required=True, type=Path,
                     help="read-only data cache with the warm-up rows (never the holdout store)")
     ap.add_argument("--cache-pattern", default="kraken_{symbol}_{tf}.csv")
+    ap.add_argument("--method", default=None, choices=list(A851A_METHODS),
+                    help="significance method named by a committed amendment (overrides the spec)")
     ap.add_argument("--calibration", action="append", type=Path, default=[],
                     help="calibration result file(s); a verdict needs one with all_pass: true "
                          "for the spec's method")
@@ -1208,7 +1235,7 @@ def main(argv=None) -> int:
         raise SystemExit("refusing to read the holdout store")
     import yaml
     result = grade_claim_file(a.run, a.spec, cache_resolver(a.cache_dir, a.cache_pattern),
-                              calibration_files=a.calibration)
+                              calibration_files=a.calibration, method_override=a.method)
     a.out.parent.mkdir(parents=True, exist_ok=True)
     with open(a.out, "w", encoding="utf-8") as f:
         yaml.safe_dump(result, f, sort_keys=False, allow_unicode=True)
