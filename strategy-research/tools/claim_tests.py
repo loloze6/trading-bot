@@ -68,6 +68,8 @@ drawing chunks WITH replacement. Two candidates remain:
     recomputed on the REAL path must equal the saved forecast
     (FORECAST_TOLERANCE), else stop. Regime selectors are refused.
   The method used is the one that passed tools/claim_tests_calibration.py.
+  The gate is ONE-SIDED (amendment 5): flattering (above the ceiling) fails;
+  too strict (below the floor) passes, reported as "conservative".
 
 VERDICT (amendment 3, section 3), floor met at every horizon:
   refuted       at any horizon, the opposite-direction effect is itself
@@ -135,10 +137,13 @@ A851A_METHODS = (A851A_METHOD, A851A_TIMEGAP_METHOD)
 SIGNIFICANCE_METHODS = (SIGNIFICANCE_METHOD, A851A_METHOD, A851A_TIMEGAP_METHOD)
 DEFAULT_SIGNIFICANCE = {"method": SIGNIFICANCE_METHOD, "n_resamples": 1000, "seed": 20261003}
 A851A_SEED = 20261003
-# The calibration gate (amendment 3, section 5). A calibration summary unlocks a
-# verdict only if it carries exactly this gate, all its rows, and a scope that
-# matches the graded variant (method, signal, cadence, statistic).
-CALIBRATION_GATE = {"alpha": 0.05, "pass_range": [0.025, 0.075], "max_share_undefined": 0.05}
+# The calibration gate (amendment 3, section 5; ONE-SIDED since amendment 5).
+# A calibration summary unlocks a verdict only if it carries exactly this gate,
+# all its rows, and a scope that matches the graded variant (method, signal,
+# cadence, statistic). Above the ceiling (flattering) is a fail; below the
+# floor (too strict) is a pass with a "conservative" warning.
+CALIBRATION_GATE = {"alpha": 0.05, "ceiling": 0.075, "floor_warning": 0.025,
+                    "max_share_undefined": 0.05, "rule": "one_sided"}
 CALIBRATION_ROWS = 8
 CALIBRATION_N_SIMS = 400
 _TF = {"daily": "1d", "hourly": "1h"}
@@ -1134,22 +1139,40 @@ def cache_resolver(cache_dir: Path, pattern: str):
     return lambda symbol, cadence: Path(cache_dir) / pattern.format(symbol=symbol, tf=tf[cadence])
 
 
+def judge_calibration_row(row: dict, gate: dict = CALIBRATION_GATE) -> tuple[bool, list]:
+    """Amendment 5: (passes, conservative horizons) for one gate row. Fails if
+    any horizon has undefined p above the limit or a share of p < alpha above
+    the ceiling (flattering); horizons below the floor are a warning only."""
+    shares = row.get("share_p_below_0_05_of_defined") or {}
+    und = row.get("share_undefined") or {}
+    ok = bool(shares) and set(shares) == set(und) and all(
+        und[h] is not None and und[h] <= gate["max_share_undefined"]
+        and shares[h] is not None and shares[h] <= gate["ceiling"] for h in shares)
+    conservative = sorted(h for h, v in shares.items()
+                          if v is not None and v < gate["floor_warning"])
+    return ok, conservative
+
+
 def passed_calibrations(paths) -> list[dict]:
     """The calibration summaries that really passed: all_pass, the exact gate,
-    every row present and passing, a scope and a code hash. Anything else is
-    ignored (operator rule 3: no verdict without a passed gate)."""
+    every row present and passing (re-judged here from its numbers, not taken
+    from its flag), a scope and a code hash. Anything else is ignored
+    (operator rule 3: no verdict without a passed gate). Each kept summary
+    carries `conservative`: {row: horizons below the floor} (amendment 5)."""
     import yaml
     out = []
     for p in paths or []:
         doc = yaml.safe_load(Path(p).read_text(encoding="utf-8")) or {}
         rows = doc.get("rows") or []
+        judged = [judge_calibration_row(r) for r in rows]
         if (doc.get("all_pass") is True and doc.get("method") in SIGNIFICANCE_METHODS
                 and doc.get("gate") == CALIBRATION_GATE and len(rows) == CALIBRATION_ROWS
                 and len({r.get("row") for r in rows}) == CALIBRATION_ROWS
                 and all(r.get("pass") is True and r.get("n_sims") == CALIBRATION_N_SIMS
-                        for r in rows)
+                        and ok for r, (ok, _) in zip(rows, judged))
                 and isinstance(doc.get("scope"), dict) and doc.get("code_sha256")):
-            out.append(dict(doc, file=str(p)))
+            cons = {r["row"]: c for r, (_, c) in zip(rows, judged) if c}
+            out.append(dict(doc, file=str(p), conservative=cons))
     return out
 
 
@@ -1202,6 +1225,13 @@ def grade_claim_file(run_dir: Path, spec_path: Path, cache_path_for, eras: list 
                for name, s in tests}
         for name in res:
             res[name]["calibration_file"] = used[name]["file"] if used[name] else None
+            # Amendment 5: a gate passed with cells below the floor is reported
+            # "conservative" next to every verdict it unlocks.
+            res[name]["calibration_status"] = (
+                None if used[name] is None
+                else "conservative" if used[name]["conservative"] else "pass")
+            res[name]["calibration_conservative_cells"] = (
+                used[name]["conservative"] if used[name] else None)
         graded_here = all(used[name] is not None for name in res)
         variants[vid] = {"symbols": sorted({w.symbol for w in windows}),
                          "signal": windows[0].signal,
