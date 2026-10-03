@@ -129,6 +129,11 @@ A851A_METHOD = "a851a_episode_v1"                      # method A: existing A8.5
 SIGNIFICANCE_METHODS = (SIGNIFICANCE_METHOD, A851A_METHOD)
 DEFAULT_SIGNIFICANCE = {"method": SIGNIFICANCE_METHOD, "n_resamples": 1000, "seed": 20261003}
 A851A_SEED = 20261003
+# The calibration gate (amendment 3, section 5). A calibration summary unlocks a
+# verdict only if it carries exactly this gate, all its rows, and a scope that
+# matches the graded variant (method, signal, cadence, statistic).
+CALIBRATION_GATE = {"alpha": 0.05, "pass_range": [0.025, 0.075], "max_share_undefined": 0.05}
+CALIBRATION_ROWS = 8
 _TF = {"daily": "1d", "hourly": "1h"}
 NOT_RECOMPUTABLE_SELECTORS = ("regime", "regime_change")
 PLACEBO_SEED = 20261003       # the placebo baseline's random dates (a baseline, not a p-value)
@@ -1060,9 +1065,10 @@ def _num(v):
 
 def combine(statuses: list[str]) -> str:
     """D-014: refuted dominates inconclusive; supported only if all supported.
-    No verdict at all (`method_not_calibrated`) dominates everything."""
+    No verdict at all (`method_not_calibrated`) dominates everything, and
+    nothing graded is `not_graded`, never a verdict-shaped status."""
     if not statuses:
-        return "inconclusive"
+        return "not_graded"
     if "method_not_calibrated" in statuses:
         return "method_not_calibrated"
     if "refuted" in statuses:
@@ -1110,16 +1116,35 @@ def cache_resolver(cache_dir: Path, pattern: str):
     return lambda symbol, cadence: Path(cache_dir) / pattern.format(symbol=symbol, tf=tf[cadence])
 
 
-def calibrated_methods(paths) -> dict:
-    """{method: calibration file} for every calibration result whose gate
-    passed (`all_pass: true`). Operator rule 3: no verdict without one."""
+def passed_calibrations(paths) -> list[dict]:
+    """The calibration summaries that really passed: all_pass, the exact gate,
+    every row present and passing, a scope and a code hash. Anything else is
+    ignored (operator rule 3: no verdict without a passed gate)."""
     import yaml
-    out = {}
+    out = []
     for p in paths or []:
         doc = yaml.safe_load(Path(p).read_text(encoding="utf-8")) or {}
-        if doc.get("all_pass") is True and doc.get("method") in SIGNIFICANCE_METHODS:
-            out[doc["method"]] = str(p)
+        rows = doc.get("rows") or []
+        if (doc.get("all_pass") is True and doc.get("method") in SIGNIFICANCE_METHODS
+                and doc.get("gate") == CALIBRATION_GATE and len(rows) == CALIBRATION_ROWS
+                and all(r.get("pass") is True for r in rows)
+                and isinstance(doc.get("scope"), dict) and doc.get("code_sha256")):
+            out.append(dict(doc, file=str(p)))
     return out
+
+
+def calibration_for(calibrations: list[dict], spec: TestSpec, windows: list[Window]):
+    """The passed calibration that covers THIS test on THIS variant, or None:
+    same method, same signal (class and parameters), same cadence, same
+    statistic. A Donchian(20) daily gate does not unlock Donchian(14) or hourly."""
+    signal = windows[0].signal
+    cadence = _cadence(windows[0].step)
+    for c in calibrations:
+        sc = c["scope"]
+        if (c["method"] == spec.significance["method"] and sc.get("signal") == signal
+                and sc.get("cadence") == cadence and sc.get("statistic") == spec.statistic):
+            return c
+    return None
 
 
 def grade_claim_file(run_dir: Path, spec_path: Path, cache_path_for, eras: list | None = None,
@@ -1131,7 +1156,7 @@ def grade_claim_file(run_dir: Path, spec_path: Path, cache_path_for, eras: list 
     if problems:
         raise ValueError(f"{spec_path}: " + "; ".join(problems))
     tests = [(t["name"], TestSpec.from_dict(t)) for t in doc["tests"]]
-    calibrated = calibrated_methods(calibration_files)
+    calibrations = passed_calibrations(calibration_files)
     for name, s in tests:
         errs = check_spec(s)
         if errs:
@@ -1145,8 +1170,11 @@ def grade_claim_file(run_dir: Path, spec_path: Path, cache_path_for, eras: list 
         windows = load_variant_bars(run_dir, vid, cache_path_for)
         bars_used += [{"variant": vid, "window": w.label, "path": w.source,
                        "bars": int(len(w.ts)), "sha256": w.sha256} for w in windows]
-        res = {name: run_test(windows, s, eras, calibrated=s.significance["method"] in calibrated)
+        used = {name: calibration_for(calibrations, s, windows) for name, s in tests}
+        res = {name: run_test(windows, s, eras, calibrated=used[name] is not None)
                for name, s in tests}
+        for name in res:
+            res[name]["calibration_file"] = used[name]["file"] if used[name] else None
         variants[vid] = {"symbols": sorted({w.symbol for w in windows}),
                          "signal": windows[0].signal,
                          "windows": [w.label for w in windows], "tests": res,
@@ -1158,7 +1186,7 @@ def grade_claim_file(run_dir: Path, spec_path: Path, cache_path_for, eras: list 
             "graded_variants": graded, "not_graded_variants": not_graded,
             "variants": variants, "bars_used": bars_used,
             "claim_status": combine([v["claim_status"] for v in variants.values()]),
-            "calibration": calibrated,
+            "calibrations_passed": [c["file"] for c in calibrations],
             "exercised_on_real_runs": sorted(EXERCISED_ON_REAL_RUNS)}
 
 

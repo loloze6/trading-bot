@@ -70,8 +70,11 @@ recomputed on the real prices matches the saved forecast within 5e-7 on all
 **Setup** (pre-registered, amendment 3 section 5):
 - Simulated prices with no edge: iid, and a "switching" model with long calm
   and wild spells.
-- The real Donchian(20) signal, on run_065's layout: 6 abutting windows x 120
-  daily bars.
+- The real Donchian(20) signal, on run_065's layout: 6 windows x 120 daily
+  bars. Their timestamps abut; each window is its own independent price path
+  with its own warm-up.
+- No eras are passed. All dates fall in one era, as run_065's do; the review
+  checked that episode counts are identical with an era list.
 - 400 simulations per cell.
 - **Pass:** "no answer" in at most 5% of simulations, AND the share of
   p < 0.05 within [0.025, 0.075] at every horizon. Target 0.05.
@@ -95,8 +98,8 @@ summary per method).
 **Why no answer:** its episode gap is 48 *bars*
 (`config/campaign_config.yaml`, "48 bars @ 1h ~= 2 days"). On daily bars that
 is 48 *days*.
-- The breakout days of 6 abutting 120-day windows merge into 3-5 episodes,
-  below its own minimum of 8.
+- The breakout days of 6 abutting 120-day windows merge into 1-5 episodes
+  (the review measured 1-4 over 40 simulations), below its own minimum of 8.
 - So the method declines by its own rule. It is not broken; it does not fit
   this layout.
 - It also measures a different quantity: the rank IC between forecast and
@@ -120,8 +123,22 @@ is 48 *days*.
 - B never flatters: the highest value is 0.058.
 - It is slightly too strict in 4 rows. The lowest value is 0.022, that is 9
   rejections in 400 against a floor of 10.
-- Under the pre-registered rule, that is a fail. No exception was made after
-  seeing it.
+- Its average across all 40 cells is 0.036, so it really is somewhat
+  conservative. Suspected reason (not a bug): the order inside each 5-bar block
+  is kept from the real path, so the fakes stay a little correlated with the
+  real data.
+- **Context for the method decision** (final review): the gate counts
+  p < 0.05 with N = 199 fakes. With that N, p moves in steps of 1/200, so even
+  a perfectly valid method rejects at most 9/200 = 0.045 of the time, not 0.05.
+  At the grade's N = 1,000 the ceiling is 0.04995. The gate therefore measured
+  B under a slightly stricter rule than the grade would apply. Under a valid
+  test, the chance of 9 or fewer rejections in 400 is 0.014 at a true rate of
+  0.045, against 0.004 at 0.05.
+- Under the pre-registered rule, it is still a fail. No exception was made
+  after seeing it; this context is for the operator's decision on the method.
+- Values are the tool's 3-decimal printout; the exact shares are in the YAML
+  files. 0.0375 prints as 0.037 and 0.0275 as 0.028, a floating-point rounding
+  quirk.
 
 ### The methods tried before amendment 3 (all retired)
 
@@ -135,8 +152,15 @@ is 48 *days*.
 
 - `run_test(windows, spec, eras, calibrated)` always reports effect sizes: per
   horizon, per window and per era, plus the sample counts.
-- A verdict appears only when `calibrated=True`. The CLI sets it only from a
-  calibration file with `all_pass: true` for the spec's method.
+- A verdict appears only when `calibrated=True`. The CLI sets it only when a
+  calibration summary passes every check:
+  - `all_pass` is true, with the exact gate and all 8 rows passing;
+  - it carries a code hash;
+  - its scope matches the test exactly: method, signal class and parameters,
+    bar size, and statistic.
+  - So a Donchian(20) daily gate does not unlock `donchian_period_14_reactive`
+    (Donchian 14) or any hourly run.
+  - A run with nothing graded is `not_graded`, never a verdict-shaped status.
 - **Verdict rule** (amendment 3), with the floor met at every horizon:
   - **refuted** when the opposite-direction effect is itself significant;
   - **supported** when the effect is the right way with p < 0.05 at every
@@ -150,9 +174,9 @@ is 48 *days*.
   - outcomes are matched by timestamp within a window;
   - the warm-up reader stops at the window start and refuses a holdout path,
     checked on the final file path.
-- **Tests:** 69 in `tests/test_e068_claim_tests.py` (targeted, run locally
-  together with `test_a851a_episode_bootstrap.py` and
-  `test_campaign_config_sync.py`: 85 passed; CI runs the full suite).
+- **Tests:** 70 in `tests/test_e068_claim_tests.py`, all passing (targeted,
+  run locally; earlier also run together with `test_a851a_episode_bootstrap.py`
+  and `test_campaign_config_sync.py`; CI runs the full suite).
   - Every block has a planted-effect case and a no-effect case.
   - Every selector has a lookahead test.
   - The vectorized signals equal the components' `update()`.
@@ -175,8 +199,9 @@ is 48 *days*.
    - (a) A8.5.1a with a daily episode gap, for example 2 days instead of 48
      bars. That changes a pre-registered project setting (CUL-265 uses 48 for
      every timeframe).
-   - (b) Method B with more simulations or a re-stated gate. The 4 failures sit
-     1 rejection under the floor.
+   - (b) Method B with a re-stated gate. The 4 failures sit 1 rejection under
+     the floor. Any re-stated gate should calibrate at the grade's N (1,000),
+     or count p <= alpha at N = 199 (see the context above).
    - (c) A standard method from the literature for event studies with
      overlapping returns.
 2. **`block_adjusted_pvalue` and the live `residual_ic` criterion.** The
@@ -207,3 +232,13 @@ is 48 *days*.
 7. `bc4e67f4` the amendment-3 code and the gate results.
 
 Each amendment was committed before any result it governs.
+
+**Audit-trail caveat (final review):** the amendment-3 method code and its gate
+results were committed together, in `bc4e67f4`, 15 minutes after the amendment.
+No commit proves the code was frozen before its results, and those result
+files carry no code hash. Calibration results now record a `code_sha256` of the
+two files that produce them, and a summary refuses to mix code versions.
+
+**Also for the method decision:** the run_065 spec names no `significance`
+method, so it defaults to B (N = 1,000, seed 20261003). Choosing A, or a
+re-stated B, needs a written amendment naming the method before any grade.

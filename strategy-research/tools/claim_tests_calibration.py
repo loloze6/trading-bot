@@ -7,8 +7,14 @@ one-sided p < 0.05 must be about 0.05 in each direction.
 
   Signal   DonchianBreakoutComponent(period=20), daily, via claim_tests.SIGNALS
            (vectorized copy, proven equal to update() by a test); clip +-20.
-  Layout   6 contiguous windows x 120 daily bars (as run_065's windows abut),
-           + 30 warm-up bars from the same simulated path.
+  Layout   6 windows x 120 daily bars whose TIMESTAMPS abut (as run_065's
+           do); each window is its own independent price path with its own
+           30 warm-up bars. No eras are passed (all dates fall in one era, as
+           run_065's do).
+  Note     rejection is counted as p < 0.05 with N = 199 fakes, so a valid
+           method's expected share is at most 9/200 = 0.045 (at the grade's
+           N = 1000 it is 0.04995): this gate is slightly stricter than the
+           grade (final review, 2026-10-03).
   Prices   zero mean, no edge: `iid` normal (sd 0.035); `switching` two-state
            volatility (calm sd 0.02, wild sd 0.06, switch prob 0.01 per bar,
            ~100-bar spells). Intrabar high/low scale with the bar's own sd.
@@ -43,9 +49,9 @@ if _HERE not in sys.path:
 import claim_tests as ct  # noqa: E402
 
 SEED = 20261003
-GATE = (0.025, 0.075)
-MAX_UNDEFINED = 0.05
-ALPHA = 0.05
+GATE = tuple(ct.CALIBRATION_GATE["pass_range"])
+MAX_UNDEFINED = ct.CALIBRATION_GATE["max_share_undefined"]
+ALPHA = ct.CALIBRATION_GATE["alpha"]
 N_SIMS = 400
 N_NULL = 199
 T0 = 1577836800            # 2020-01-01 UTC, synthetic timestamps only
@@ -127,16 +133,30 @@ def run_cell(method: str, model: str, side: str, n_sims: int = N_SIMS) -> dict:
         rows.append({"row": f"{model}_{side}_{d}", "n_sims": n_sims,
                      "share_p_below_0_05_of_defined": share, "share_undefined": und,
                      "pass": ok})
-    return {"method": method, "model": model, "side": side, "rows": rows}
+    return {"method": method, "model": model, "side": side, "rows": rows,
+            "code_sha256": code_sha256()}
+
+
+def code_sha256() -> str:
+    """Hash of the two files that produce a calibration result."""
+    import hashlib
+    h = hashlib.sha256()
+    for f in (ct.__file__, __file__):
+        h.update(Path(f).read_bytes())
+    return h.hexdigest()
 
 
 def summarize(method: str, cell_docs: list) -> dict:
-    rows = [r for c in cell_docs if c["method"] == method for r in c["rows"]]
-    expected = len(MODELS) * len(SIDES) * 2
-    return {"method": method, "gate": {"alpha": ALPHA, "pass_range": list(GATE),
-                                       "max_share_undefined": MAX_UNDEFINED},
-            "seed": SEED, "rows": rows,
-            "all_pass": len(rows) == expected and all(r["pass"] for r in rows)}
+    cells = [c for c in cell_docs if c["method"] == method]
+    rows = [r for c in cells for r in c["rows"]]
+    hashes = {c.get("code_sha256") for c in cells}
+    code = hashes.pop() if len(hashes) == 1 else None      # all cells from one code version
+    return {"method": method, "gate": dict(ct.CALIBRATION_GATE), "seed": SEED,
+            "scope": {"signal": DONCHIAN, "cadence": "daily", "statistic": "mean_diff",
+                      "selector": "event", "n_null": N_NULL, "n_sims": N_SIMS},
+            "code_sha256": code, "rows": rows,
+            "all_pass": (len(rows) == ct.CALIBRATION_ROWS and code is not None
+                         and all(r["pass"] for r in rows))}
 
 
 def main(argv=None) -> int:

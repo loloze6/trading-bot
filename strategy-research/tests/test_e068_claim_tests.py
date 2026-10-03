@@ -315,18 +315,33 @@ def test_opposite_p_equals_the_opposite_spec_p():
 
 
 def test_fake_worlds_permute_whole_blocks_without_replacement():
-    w = make_windows(42, n=200, n_windows=1)[0]
+    w = make_windows(42, n=203, n_windows=1)[0]       # 203 = 40 blocks of 5 + a short one
     f = ct.fake_window(w, np.random.default_rng(1))
     prev = np.r_[w.warm["close"][-1], w.close[:-1]]
     real = np.log(w.close / prev)
     fprev = np.r_[w.warm["close"][-1], f.close[:-1]]
     fake = np.log(f.close / fprev)
+    n = 203
     src = np.array([int(np.argmin(np.abs(real - u))) for u in fake])   # units are distinct
-    assert sorted(src) == list(range(200))           # each real unit used exactly once
-    B = ct.BLOCK_BARS["daily"]
-    for k in range(0, 200 - B, B):
-        assert all((src[k + i + 1] - src[k + i]) % 200 == 1 for i in range(B - 1)), k
-    assert any((src[k + B] - src[k + B - 1]) % 200 != 1 for k in range(0, 200 - B, B))
+    assert sorted(src) == list(range(n))             # each real unit used exactly once
+    # Blocks: runs of consecutive real units; exactly one run is the short block.
+    runs, cur = [], 1
+    for i in range(1, n):
+        if (src[i] - src[i - 1]) % n == 1:
+            cur += 1
+        else:
+            runs.append(cur)
+            cur = 1
+    runs.append(cur)
+    assert sum(runs) == n and max(runs) <= 2 * ct.BLOCK_BARS["daily"]
+    # The random phase: block starts are not all multiples of 5 across draws.
+    starts = set()
+    for seed in range(10):
+        g = ct.fake_window(w, np.random.default_rng(seed))
+        gprev = np.r_[w.warm["close"][-1], g.close[:-1]]
+        first = int(np.argmin(np.abs(real - np.log(g.close / gprev)[0])))
+        starts.add(first % ct.BLOCK_BARS["daily"])
+    assert len(starts) > 1
 
 
 def test_verdict_rule_amendment_3():
@@ -691,9 +706,9 @@ def test_cli_end_to_end_and_refusals(tmp_path):
     doc = yaml.safe_load(out.read_text())
     assert doc["n_tests_run"] == 1 and doc["not_graded_variants"] == ["broken"]
     assert doc["variants"]["base"]["tests"]["t"]["status"] == "method_not_calibrated"
-    assert doc["claim_status"] == "method_not_calibrated" and doc["calibration"] == {}
+    assert doc["claim_status"] == "method_not_calibrated" and doc["calibrations_passed"] == []
     calib = tmp_path / "calib.yaml"
-    calib.write_text(yaml.safe_dump({"method": ct.SIGNIFICANCE_METHOD, "all_pass": True}))
+    calib.write_text(yaml.safe_dump(passed_summary(DON, "rank_ic")))
     assert ct.main(args + ["--out", str(out), "--calibration", str(calib)]) == 0
     doc = yaml.safe_load(out.read_text())
     assert doc["variants"]["base"]["tests"]["t"]["status"] == "inconclusive"   # floor not met
@@ -711,7 +726,7 @@ def test_combine_fail_dominates():
     assert ct.combine(["supported", "inconclusive", "refuted"]) == "refuted"
     assert ct.combine(["supported", "inconclusive"]) == "inconclusive"
     assert ct.combine(["supported", "supported"]) == "supported"
-    assert ct.combine([]) == "inconclusive"
+    assert ct.combine([]) == "not_graded"
 
 
 # --- calibration tool -----------------------------------------------------------------------
@@ -725,9 +740,33 @@ def test_calibration_tool_runs_cells_and_summarizes(tmp_path):
     assert summ["all_pass"] is False                     # 4 of 8 rows only: never a pass
     assert summ["gate"] == {"alpha": 0.05, "pass_range": [0.025, 0.075],
                             "max_share_undefined": 0.05}
+    assert summ["scope"]["signal"] == cal.DONCHIAN and summ["scope"]["cadence"] == "daily"
+    assert summ["code_sha256"] == cal.code_sha256() and len(summ["code_sha256"]) == 64
+    mixed = [dict(cells[0], code_sha256="a" * 64), cells[1]]
+    assert cal.summarize(ct.SIGNIFICANCE_METHOD, mixed)["code_sha256"] is None
     w = cal.simulate_windows(np.random.default_rng(0), "switching")
     assert ct.forecast_check(w[0]) == 0.0 and len(w[0].warm["close"]) == 30
     assert all(w[i + 1].ts[0] - w[i].ts[-1] == DAY for i in range(5))   # windows abut
+
+
+def test_a851a_has_too_few_episodes_on_the_run065_layout_for_the_right_reason():
+    """A8.5.1a's no-answer on the gate layout is its own episode rule (gap_bars
+    = 48 bars = 48 days on daily data), not a feeding bug: the episode count is
+    below 8 with and without eras, and an hourly-scale gap would give many."""
+    import episode_significance as es
+    ws = cal.simulate_windows(np.random.default_rng(3), "iid")
+    s = cal.cell_spec(ct.A851A_METHOD, "upper", 0)
+    per = ct._prepare(ws, s, [1], np.random.default_rng(0))
+    for p in per:
+        p["eras_list"] = None
+    a = ct._a851a_horizon(per, 1)
+    assert a["method_label"] == "episode_bootstrap_insufficient_n" and a["n_episodes"] < 8
+    for p in per:
+        p["eras_list"] = [{"era_id": "one", "range": ["2019-01-01", "2025-12-31"]}]
+    assert ct._a851a_horizon(per, 1)["n_episodes"] == a["n_episodes"]
+    act = np.concatenate([p["mask"] for p in per])
+    recs = [{"active": bool(x)} for x in act]
+    assert len(es.identify_episodes(recs, gap_bars=2)) >= 8
 
 
 def test_calibration_counts_undefined_honestly():
@@ -751,12 +790,43 @@ def test_uncalibrated_method_gives_effect_sizes_and_no_verdict():
     assert ct.combine(["refuted", "method_not_calibrated"]) == "method_not_calibrated"
 
 
-def test_calibrated_methods_needs_a_passed_gate(tmp_path):
-    ok, bad = tmp_path / "ok.yaml", tmp_path / "bad.yaml"
-    ok.write_text(yaml.safe_dump({"method": ct.SIGNIFICANCE_METHOD, "all_pass": True}))
-    bad.write_text(yaml.safe_dump({"method": ct.A851A_METHOD, "all_pass": False}))
-    assert ct.calibrated_methods([ok, bad]) == {ct.SIGNIFICANCE_METHOD: str(ok)}
-    assert ct.calibrated_methods([]) == {}
+def passed_summary(signal, statistic, method=None, **over):
+    doc = {"method": method or ct.SIGNIFICANCE_METHOD, "gate": dict(ct.CALIBRATION_GATE),
+           "scope": {"signal": signal, "cadence": "daily", "statistic": statistic},
+           "code_sha256": "f" * 64, "all_pass": True,
+           "rows": [{"row": f"r{i}", "pass": True} for i in range(ct.CALIBRATION_ROWS)]}
+    doc.update(over)
+    return doc
+
+
+def test_calibration_lock_needs_a_full_passed_gate_for_this_exact_test(tmp_path):
+    ws = make_windows(53, n=60, n_windows=1)
+    s = spec(EVENT)
+    files = {}
+    cases = {
+        "good": passed_summary(DON, "mean_diff"),
+        "two_keys": {"method": ct.SIGNIFICANCE_METHOD, "all_pass": True},
+        "failed": passed_summary(DON, "mean_diff", all_pass=False),
+        "row_failed": passed_summary(DON, "mean_diff", rows=[{"pass": False}] * 8),
+        "few_rows": passed_summary(DON, "mean_diff", rows=[{"pass": True}] * 4),
+        "other_gate": passed_summary(DON, "mean_diff", gate={**ct.CALIBRATION_GATE, "alpha": 0.1}),
+        "no_hash": passed_summary(DON, "mean_diff", code_sha256=None),
+    }
+    for k, doc in cases.items():
+        files[k] = tmp_path / f"{k}.yaml"
+        files[k].write_text(yaml.safe_dump(doc))
+    passed = ct.passed_calibrations(list(files.values()))
+    assert [c["file"] for c in passed] == [str(files["good"])]
+    assert ct.calibration_for(passed, s, ws)["file"] == str(files["good"])
+    other_signal = {**DON, "params": {**DON["params"], "period": 14}}
+    for doc in (passed_summary(other_signal, "mean_diff"), passed_summary(DON, "hit_rate"),
+                passed_summary(DON, "mean_diff", method=ct.A851A_METHOD),
+                {**passed_summary(DON, "mean_diff"), "scope": {"signal": DON, "cadence": "hourly",
+                                                             "statistic": "mean_diff"}}):
+        only = tmp_path / "only.yaml"
+        only.write_text(yaml.safe_dump(doc))
+        assert ct.calibration_for(ct.passed_calibrations([only]), s, ws) is None, doc
+    assert ct.passed_calibrations([]) == []
 
 
 # --- method A: the existing A8.5.1a, fed unchanged ------------------------------------------
