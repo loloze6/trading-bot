@@ -1,12 +1,16 @@
 # Re-grade of run_065: not graded, no significance method passed calibration
 
-E-068 slice 1 · CUL-386 · 2026-10-03 · branch `feat/cul-386-claim-tests`
+E-068 slice 1 · CUL-386 · 2026-10-03 · branches `feat/cul-386-claim-tests`
+(PR #315, merged) and `feat/cul-386-a851a-daily-gap` (amendment 4)
 
-## The answer in four lines
+## The answer in five lines
 
-- **Verdict: none. Method not calibrated.** Neither candidate method passed
-  the pre-registered calibration gate, so run_065 was **not graded** (operator
-  rule 3: no verdict without a passed gate, and never a best guess).
+- **Verdict: none. Method not calibrated.** Three candidate methods were
+  tried, and none passed the pre-registered calibration gate. run_065 was
+  **not graded** (operator rule 3: no verdict without a passed gate, and never
+  a best guess). The third was the operator's one bounded try (amendment 4):
+  A8.5.1a with its gap in time. **The method search is now stopped**
+  (operator).
 - **N tests run: 0** of 2 pre-registered for run_065 (`upper_breakout`,
   `lower_breakout`). run_066's test is moved to CUL-387.
 - **run_065's effect sizes were NOT computed either.** Seeing them before the
@@ -14,6 +18,9 @@ E-068 slice 1 · CUL-386 · 2026-10-03 · branch `feat/cul-386-claim-tests`
   frozen by their sha256 below instead.
 - The tool ships: `tools/claim_tests.py` (17 blocks, effect sizes, verdict only
   with a passed gate) and `tools/claim_tests_calibration.py` (the gate).
+- **One gate is needed per method x signal (with its parameters) x
+  timeframe.** It is not needed per coin, because the gate uses simulated
+  prices.
 
 ## Operator rules (written into the tool's docstring too)
 
@@ -140,6 +147,67 @@ is 48 *days*.
   files. 0.0375 prints as 0.037 and 0.0275 as 0.028, a floating-point rounding
   quirk.
 
+### Amendment 4, the bounded try: `a851a_episode_timegap_v1` (A8.5.1a with gap = 2 days)
+
+**What it was:**
+- The existing A8.5.1a with only its episode gap expressed in time, as its
+  pre-registration states it ("48 bars @ 1h ≈ 2 days"). On daily bars the gap
+  is 2 bars instead of 48. Everything else is unchanged.
+- The amendment (`regrade_specs/AMENDMENT_4.md`), the method code (`4bf18c6b`)
+  and the review notes (`AMENDMENT_4_NOTES.md`) were each committed before any
+  gate result.
+- The gate results carry `code_sha256` `de156087…`, which was checked equal to
+  the method code at `4bf18c6b`.
+- The gate is unchanged, run once per signal that traded:
+  - Donchian(20): variants `base` and `donchian_solusdt_crossasset`;
+  - Donchian(14): variant `donchian_period_14_reactive`.
+
+**Results** (share of p < 0.05 at h = 1..5; **bold** = outside [0.025, 0.075]):
+
+Donchian(20), `calibration_a4/summary_timegap_p20.yaml`, **FAIL**:
+
+| Row (model, side, direction) | h = 1, 2, 3, 4, 5 | No answer | Result |
+|---|---|---|---|
+| iid, lower, claimed | 0.0575 0.0475 0.0525 0.0400 0.0400 | 0% | pass |
+| iid, lower, opposite | **0.0875** **0.0925** **0.0950** **0.0775** **0.1150** | 0% | FAIL |
+| iid, upper, claimed | 0.0400 0.0625 0.0625 0.0325 0.0375 | 0% | pass |
+| iid, upper, opposite | 0.0600 0.0475 0.0675 0.0650 0.0650 | 0% | pass |
+| switching, lower, claimed | 0.0400 0.0300 **0.0225** **0.0200** 0.0250 | 0% | FAIL |
+| switching, lower, opposite | **0.0800** 0.0750 0.0675 **0.1000** **0.0800** | 0% | FAIL |
+| switching, upper, claimed | 0.0400 0.0400 0.0300 0.0350 0.0300 | 0% | pass |
+| switching, upper, opposite | **0.0875** **0.0800** **0.0825** **0.0900** **0.1075** | 0% | FAIL |
+
+Donchian(14), `calibration_a4/summary_timegap_p14.yaml`, **FAIL**:
+
+| Row (model, side, direction) | h = 1, 2, 3, 4, 5 | No answer | Result |
+|---|---|---|---|
+| iid, lower, claimed | 0.0475 0.0325 0.0350 0.0325 0.0300 | 0% | pass |
+| iid, lower, opposite | 0.0575 **0.0775** **0.0875** **0.1175** **0.1250** | 0% | FAIL |
+| iid, upper, claimed | 0.0500 0.0425 0.0275 0.0350 0.0325 | 0% | pass |
+| iid, upper, opposite | 0.0625 **0.0900** **0.1000** **0.0925** **0.0850** | 0% | FAIL |
+| switching, lower, claimed | 0.0400 0.0450 0.0525 0.0525 0.0325 | 0% | pass |
+| switching, lower, opposite | 0.0600 **0.0800** **0.0875** **0.0900** **0.0875** | 0% | FAIL |
+| switching, upper, claimed | 0.0300 0.0450 0.0400 0.0400 0.0400 | 0% | pass |
+| switching, upper, opposite | 0.0550 0.0650 0.0650 0.0650 0.0700 | 0% | pass |
+
+**Reading it:**
+- **The 2-day gap fixes the "no answer" problem:** 0% undefined, and roughly
+  19-41 episodes per simulation (the review's small probes, not the gate run).
+- **But the method flatters in the opposite direction:** up to 0.125 false
+  edges against a 0.075 ceiling, in 6 of the 8 opposite-direction rows. The
+  error grows with the horizon (h = 1 is mostly fine; h = 3-5 is not).
+- This matches the review's warning (AMENDMENT_4_NOTES.md, point 2):
+  - the forward returns (3-5 days) are longer than the 2-day gap, so
+    neighbouring episodes share return days;
+  - the episode bootstrap then treats them as independent and is
+    overconfident;
+  - suspected, not measured: a small finite-sample bias may also push the
+    null IC slightly negative, which falls on the opposite side.
+- One claimed-direction row is slightly too strict (Donchian(20), switching,
+  lower: 0.020-0.025).
+- **Decision (operator's rule): not graded, no other method tried.** The tool
+  keeps reporting effect sizes only.
+
 ### The methods tried before amendment 3 (all retired)
 
 | Method | Evidence | Result |
@@ -194,16 +262,11 @@ is 48 *days*.
 
 ## Open questions
 
-1. **Which method for run_065?** This is for the operator. Options seen today,
-   none recommended over the others without new evidence:
-   - (a) A8.5.1a with a daily episode gap, for example 2 days instead of 48
-     bars. That changes a pre-registered project setting (CUL-265 uses 48 for
-     every timeframe).
-   - (b) Method B with a re-stated gate. The 4 failures sit 1 rejection under
-     the floor. Any re-stated gate should calibrate at the grade's N (1,000),
-     or count p <= alpha at N = 199 (see the context above).
-   - (c) A standard method from the literature for event studies with
-     overlapping returns.
+1. **Method for run_065: closed for now.** Option (a), A8.5.1a with a daily
+   gap, was tried as amendment 4 and failed: it flatters at horizons longer
+   than its gap. The operator stopped the method search after this bounded
+   try. Not tried: (b) method B with a gate re-stated at the grade's N, and
+   (c) a standard event-study method for overlapping returns.
 2. **`block_adjusted_pvalue` and the live `residual_ic` criterion.** The
    function `signal_statistics.block_adjusted_pvalue` is what the live
    residual_ic grid criterion uses (`tools/residual_ic.py`, block = bars per
@@ -213,10 +276,25 @@ is 48 *days*.
    - The block size differs from residual_ic's, so this is evidence about the
      family, not a measurement of residual_ic itself.
    - The operator is opening a ticket to calibrate residual_ic.
-3. **A8.5.1a on daily runs in the pipeline.** `tools/run_protocol.py` passes
-   gap_bars = 48 to A8.5.1a for every timeframe. On daily runs that probably
-   leaves too few episodes to give any p-value. This has not been measured on
-   real runs here.
+3. **A8.5.1a on daily runs in the pipeline (CUL-388).**
+   `tools/run_protocol.py` passes gap_bars = 48 to A8.5.1a for every
+   timeframe. On run_065's daily layout that gave no p-value in 100% of
+   simulations.
+   - With a 2-day gap it does give answers, but it flatters at horizons longer
+     than the gap (up to 0.125).
+   - So A8.5.1a is not calibrated for daily data with multi-day horizons
+     either way.
+   - Whether the pipeline's daily runs ever use horizons longer than 1 bar has
+     not been measured here.
+5. **Gate cost when the claim test is wired in (slice 2-3).** The lock needs
+   one passed gate per method x signal (with its parameters) x timeframe,
+   about 1 hour each with A8.5.1a. It is not needed per coin, because the gate
+   uses simulated prices. A coin with very different behaviour (e.g. bigger
+   jumps) is not specifically tested.
+   - A new timeframe also needs code support: the tool accepts daily and
+     hourly bars only.
+   - Possible ways to bound the cost: calibrate per signal family, or make the
+     gate cheaper.
 4. **run_066** (CUL-387): the Keltner signal recomputed with 500 warm-up bars
    does not match the traded one (0.007-0.39 on a ±20 scale). The engine's
    history rules were deliberately not copied into the tool.
@@ -230,6 +308,16 @@ is 48 *days*.
 5. `1b600061` the bootstrap method.
 6. `4bf8b326` amendment 3.
 7. `bc4e67f4` the amendment-3 code and the gate results.
+
+8. `f6b44bc2` amendment 4.
+9. `4bf18c6b` the amendment-4 method code (before its gate).
+10. `e5ab927c` its tests.
+11. `1feff947` the review notes (before any gate result).
+12. `5813689b` the gate results and the review fixes:
+    - uncalibrated variants are not graded and mask nothing;
+    - N tests run counts each graded variant;
+    - the lock requires 8 distinct rows of 400 simulations.
+    These were applied after the cells finished, so the code hash stays true.
 
 Each amendment was committed before any result it governs.
 
