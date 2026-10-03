@@ -540,9 +540,10 @@ def test_the_citation_block_is_recorded_under_the_flag(monkeypatch):
     _, dest, audit = _run_reader(monkeypatch, _seq_llm([text]), report=REPORT,
                                  registry=REGISTRY, grid=GRID)
     cit = _entry(audit)["provenance"]["citations"]
-    assert cit["files_read"] == ["grid_evaluation.yaml", "registry_summary.yaml",
+    assert cit["files_read"] == ["candidate_strategy_config.json", "grid_evaluation.yaml",
+                                 "hypothesis_card.yaml", "registry_summary.yaml",
                                  f"reports/{CAT}.yaml"]
-    assert cit["files_unavailable"] == []
+    assert cit["files_unavailable"] == ["block_manifest.yaml"]  # optional; _seed_run has none
     assert cit["proposals"] == {f"{CAT}-run_990-1": {
         "resolved": ["variants.base.slices.overall.diagnostics.median_cost_drag_pct",
                      "variants.base.slices.per_symbol.BTCUSDT[*].core.cost_drag_pct",
@@ -573,7 +574,9 @@ def test_an_absent_grid_and_an_unparseable_registry_are_listed_not_fatal(tmp_pat
     (arts / "registry_summary.yaml").write_text("a: [unclosed\n", encoding="utf-8")
     body = yaml.safe_dump([_proposal(evidence=["this_run.idea_status", "marker.x"])])
     cit = rpr._citation_provenance(CAT, tmp_path, body)
-    assert cit["files_unavailable"] == ["grid_evaluation.yaml", "registry_summary.yaml"]
+    assert cit["files_unavailable"] == ["block_manifest.yaml", "candidate_strategy_config.json",
+                                        "grid_evaluation.yaml", "hypothesis_card.yaml",
+                                        "registry_summary.yaml"]
     assert cit["files_read"] == [f"reports/{CAT}.yaml"]
     (rec,) = cit["proposals"].values()
     assert rec == {"resolved": ["marker.x"], "unresolved": ["this_run.idea_status"],
@@ -603,8 +606,9 @@ def test_a_body_that_is_not_a_list_records_no_proposals(tmp_path):
     (tmp_path / "artifacts").mkdir()
     block = rpr._citation_provenance(CAT, tmp_path, "just: a mapping\n")
     assert block["proposals"] == {} and block["files_read"] == []
-    assert block["files_unavailable"] == ["grid_evaluation.yaml", "registry_summary.yaml",
-                                          f"reports/{CAT}.yaml"]
+    assert block["files_unavailable"] == ["block_manifest.yaml", "candidate_strategy_config.json",
+                                          "grid_evaluation.yaml", "hypothesis_card.yaml",
+                                          "registry_summary.yaml", f"reports/{CAT}.yaml"]
 
 
 # ---------------------------------------------------------------------------

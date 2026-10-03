@@ -1353,8 +1353,13 @@ mechanical). Readers only propose; their scores rank the next candidate in the
 later decide-next step (delivery_plan_v26.md slice 6b). Keeping them out of the
 route means an LLM can never soften or harden a verdict.
 
-**Stage input (per reader):** `artifacts/reports/<category>.yaml` and
-`artifacts/grid_evaluation.yaml` — nothing else (no pre-registration, no other
+**Stage input (per reader):** `artifacts/reports/<category>.yaml`,
+`artifacts/grid_evaluation.yaml`, and (D-063) what was claimed and what really
+exists: `artifacts/hypothesis_card.yaml`, this run's base config (the base
+variant's `strategy_config.json`, else `candidate_strategy_config.json`),
+`docs/COMPONENT_CATALOG.md` and `docs/STRATEGY_DESIGN_GUIDE.md` (the two docs
+step 2 gets), `artifacts/block_manifest.yaml` when present, then
+`artifacts/registry_summary.yaml`. Nothing else (no pre-registration, no other
 category's report, no regime-audit decision).
 
 **Stage output:** `artifacts/proposals/<category>.yaml` × 5 (a YAML list, `[]`

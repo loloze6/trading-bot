@@ -4016,12 +4016,35 @@ def _idea_hypothesis_id(run_dir: Path) -> str:
     return hyp_id
 
 
-def _reader_handoff(category: str, run_id: str, stage_attempt) -> dict:
-    """The per-reader handoff, built in memory. Its only inputs are this
-    category's report, the grid and (E-061 C2 S2e) the registry summary code
-    writes before the first reader -- deliberately none of the stage-wide
-    unions (B7 pre-registration, exclusion digest, config-direct context):
-    each reader's SKILL.md scopes it to exactly these three files."""
+def _reader_base_config_rel(run_dir: Path | None) -> str:
+    """The run-relative path of the config a reader's `patch` is resolved
+    against: the base variant's strategy_config.json when the variant loop
+    wrote artifacts/variants/index.yaml, else candidate_strategy_config.json --
+    the same base decide_next.resolve_patch reads (via campaign_memory's
+    config_ref)."""
+    default = "artifacts/candidate_strategy_config.json"
+    index_path = Path(run_dir) / "artifacts" / "variants" / "index.yaml" if run_dir else None
+    if index_path is None or not index_path.exists():
+        return default
+    variants = (load_yaml(index_path) or {}).get("variants") or {}
+    if not variants:
+        return default
+    vid = _json_pointer_module().base_variant_id(variants)
+    rel = (variants.get(vid) or {}).get("config_path")
+    # index.yaml stores Windows separators (artifacts\variants\...); normalise on every OS
+    return str(rel).replace("\\", "/") if rel else f"artifacts/variants/{vid}/strategy_config.json"
+
+
+def _reader_handoff(category: str, run_id: str, stage_attempt, run_dir: Path | None = None) -> dict:
+    """The per-reader handoff, built in memory. Its inputs are this category's
+    report, the grid, and -- so a reader knows what was claimed and which
+    components and settings really exist, and does not invent them -- the
+    idea (hypothesis_card.yaml), the block (block_manifest.yaml, optional: a
+    composition run or a flag-off authoring run has none), this run's base
+    config, and the same design guide and component catalogue step 2 gets
+    (O-4, D-053); then (E-061 C2 S2e) the registry summary code writes before
+    the first reader, last. Deliberately none of the stage-wide unions (B7
+    pre-registration, exclusion digest, config-direct context)."""
     return {
         "handoff_version": 1, "run_id": run_id,
         "from_stage": "protocol_execution", "to_stage": "specialist_readers",
@@ -4034,8 +4057,23 @@ def _reader_handoff(category: str, run_id: str, stage_attempt) -> dict:
         "required_inputs": [
             {"path": f"artifacts/reports/{category}.yaml", "reason": f"the {category} report"},
             {"path": "artifacts/grid_evaluation.yaml", "reason": "the grid's per-criterion result"},
+            {"path": "artifacts/hypothesis_card.yaml",
+             "reason": "the idea this run tested: its claim, signal and assumptions"},
+            {"path": _reader_base_config_rel(run_dir),
+             "reason": "this run's base config: the real component ids and settings a "
+                       "`patch` must name (component_id is the config's `id`)"},
+            {"path": "../../docs/COMPONENT_CATALOG.md",
+             "reason": "every component's exact output, kind and settings -- never propose "
+                       "a component or setting that is not here"},
+            {"path": "../../docs/STRATEGY_DESIGN_GUIDE.md",
+             "reason": "how a config is shaped and what it cannot express"},
             {"path": "artifacts/registry_summary.yaml",
              "reason": "what earlier runs validated (the distance-to-profitable anchors read it)"},
+        ],
+        "optional_inputs": [
+            {"path": "artifacts/block_manifest.yaml",
+             "reason": "which config paths are the tested block and which are scaffolding "
+                       "(absent on a composition run)"},
         ],
         "deliverables": [f"proposals/{category}.yaml"],
         "injected_context": {"stage_attempt": str(stage_attempt),
@@ -4149,7 +4187,10 @@ def _citation_provenance(category: str, run_dir: Path, body: str) -> dict:
         rp = _reader_proposals_module()
         arts = run_dir / "artifacts"
         files, unavailable = {}, []
-        for rel in (f"reports/{category}.yaml", "grid_evaluation.yaml", "registry_summary.yaml"):
+        config_rel = _reader_base_config_rel(run_dir)
+        config_rel = config_rel[len("artifacts/"):] if config_rel.startswith("artifacts/") else config_rel
+        for rel in (f"reports/{category}.yaml", "grid_evaluation.yaml", "registry_summary.yaml",
+                    "hypothesis_card.yaml", "block_manifest.yaml", config_rel):
             try:
                 doc = yaml.safe_load((arts / rel).read_text(encoding="utf-8"))
             except (OSError, yaml.YAMLError):
@@ -4213,7 +4254,7 @@ def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0
     ones are kept, the invalid ones are dropped and listed with their errors
     in the audit log (`dropped_proposals`). A dropped proposal is never
     repaired or guessed at."""
-    handoff = _reader_handoff(category, run_id, stage_attempt)
+    handoff = _reader_handoff(category, run_id, stage_attempt, run_dir)
     base_prompt = _build_stage_prompt("specialist_readers", handoff, run_dir,
                                       skill_file_name=_reader_skill_dir(category))
     prompt = base_prompt

@@ -548,9 +548,11 @@ def test_manifest_files_are_read_only_by_the_flag_on_stage():
     """The CONTENT of the 1b skill, its handoff and the design guide enters
     only the strategy_config_authoring prompt (routed to only under
     orchestrator.config_direct_authoring; test_e056_config_direct_authoring.py
-    covers the routing). Other skills -- innovation-expansion and the five
-    reader skills -- do NAME the design guide in their own text, but no other
-    handoff lists it as an input and workers run closed-book (tools=[],
+    covers the routing) and, since the reader-inputs change, the five reader
+    prompts (orchestrator.specialist_readers only; _reader_handoff lists the
+    guide so readers stop inventing settings). Other skills -- e.g.
+    innovation-expansion -- do NAME the design guide in their own text, but no
+    other handoff template lists it as an input and workers run closed-book (tools=[],
     setting_sources=[] -- CUL-336; before it, allowed_tools=[] alone left the
     CLI's default tools on), so they never receive its content (proven
     prompt-by-prompt below)."""
@@ -633,7 +635,10 @@ def test_flag_off_prompts_do_not_depend_on_the_changed_files(tmp_path, monkeypat
         p.write_text("constraints: []\n" if p.suffix == ".yaml" else "BLANKED\n", encoding="utf-8")
     after = _prompts(sr, run_dir, flag_off)
     assert after == before
-    assert _reader_prompts(run_dir) == readers_before  # code-review fix 5
+    # code-review fix 5 pinned the readers as independent of these files; the
+    # reader-inputs change makes them read the design guide on purpose
+    # (flag-on stage only -- every flag-off prompt above is unchanged).
+    assert _reader_prompts(run_dir) != readers_before
     # the harness does see a dependency where there is one
     assert _prompts(sr, run_dir, ["strategy_config_authoring"]) != on_before
 
