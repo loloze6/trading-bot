@@ -37,7 +37,7 @@ empty — when that file is absent from your context; this skill produces exactl
 9-field card above in that case, unchanged.
 
 Claim-test flow only (signaled by `workflow_artifacts/skills/hypothesis-design/CLAIM_TESTS.md`
-being present in your context — see IMPROVEMENT 09 below) additionally requires, when not a
+being present in your context — see IMPROVEMENT 10 below) additionally requires, when not a
 pass-through candidate: `claim` (the idea's claim, its kind and its test). Absent entirely
 when that file is absent from your context.
 
@@ -423,7 +423,7 @@ re-authoring one — see that skill's own required-inputs note. A candidate miss
 (`config`, `manifest`, `criteria`, `source`) is NOT a pass-through candidate — author it normally through
 IMPROVEMENT 01/04/07 above; a partial pass-through is a silent gap-filling trap, not a shortcut.
 
-## IMPROVEMENT 09 — The claim block (claim-test flow only, E-068 slice 2)
+## IMPROVEMENT 10 — The claim block (claim-test flow only, E-068 slice 2; numbered 10 because the composition pass-through is called IMPROVEMENT 09 in run_phase1_research)
 
 **Optional, signaled by input presence.** `workflow_artifacts/skills/hypothesis-design/CLAIM_TESTS.md` is added
 to your required inputs ONLY when `orchestrator.claim_tests.enabled` is true (you cannot read that flag: check
@@ -471,7 +471,7 @@ step runs; if it is refused, you get one retry with the error.
 - **Config-direct-authoring flow only:** pick `criteria` from `config/criterion_menu.yaml`'s live entries only
   (IMPROVEMENT 07); populate `cost_feasibility` from `config/cost_model.yaml` (IMPROVEMENT 07); check for a
   pass-through candidate (IMPROVEMENT 08) before authoring from scratch.
-- **Claim-test flow only** (CLAIM_TESTS.md in context): write the `claim` block (IMPROVEMENT 09); every test uses
+- **Claim-test flow only** (CLAIM_TESTS.md in context): write the `claim` block (IMPROVEMENT 10); every test uses
   only CLAIM_TESTS.md's blocks; `tests: none` with `missing_block` when the slots cannot express it.
 
 ## Forbidden

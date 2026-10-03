@@ -85,6 +85,16 @@ def _text(v) -> bool:
     return isinstance(v, str) and bool(v.strip())
 
 
+def _baseline_selector(test: dict):
+    """The baseline's own selector -- read only for `other_selector`, the one
+    baseline that has one (a stray `selector` on another baseline is ignored
+    by the engine, so it must not change the verdict flag either)."""
+    base = test.get("baseline")
+    if isinstance(base, dict) and base.get("kind") == "other_selector":
+        return base.get("selector")
+    return None
+
+
 def _regime_selector_paths(test: dict) -> list:
     """(where, kind) for every selector of this test that is a regime selector,
     with `where` named exactly as claim_tests.check_spec names it."""
@@ -92,8 +102,7 @@ def _regime_selector_paths(test: dict) -> list:
     sel = test.get("selector")
     if isinstance(sel, dict) and sel.get("kind") in ct.NOT_RECOMPUTABLE_SELECTORS:
         out.append(("selector", sel["kind"]))
-    base = test.get("baseline")
-    sub = base.get("selector") if isinstance(base, dict) else None
+    sub = _baseline_selector(test)
     if isinstance(sub, dict) and sub.get("kind") in ct.NOT_RECOMPUTABLE_SELECTORS:
         out.append(("baseline.selector", sub["kind"]))
     return out
@@ -130,13 +139,15 @@ def _check_test(test, where: str) -> tuple:
     # own message prefix: if its wording changes, the refusal stays (fail
     # loud) and tests/test_e068_s2_claim_card.py fails.
     allowed = tuple(f"{w}: {k} cannot be graded under " for w, k in regime)
-    errs = [e for e in ct.check_spec(spec) if not (allowed and e.startswith(allowed))]
-    if errs:
-        return [f"{where}: {e}" for e in errs], None, False
     try:
+        # an LLM slip (a list where a scalar belongs, an int where a list
+        # belongs) can make check_spec itself raise: a refusal, never a crash
+        errs = [e for e in ct.check_spec(spec) if not (allowed and e.startswith(allowed))]
+        if errs:
+            return [f"{where}: {e}" for e in errs], None, False
         h = ct.spec_hash(spec)
-    except TypeError as exc:
-        return [f"{where}: {exc}"], None, False
+    except (TypeError, ValueError, AttributeError, KeyError) as exc:
+        return [f"{where}: malformed test ({type(exc).__name__}: {exc})"], None, False
     return [], h, not regime
 
 
@@ -188,7 +199,9 @@ def check_claim(claim, criteria_ids=()) -> ClaimCheck:
                  f"missing_block), or omit it and use criteria_refs")
         return res
     names = [t.get("name") for t in tests if isinstance(t, dict)]
-    if len(set(names)) != len(names):
+    if any(not isinstance(n, str) for n in names):
+        e.append("claim.tests: every test name must be a string")
+    elif len(set(names)) != len(names):
         e.append("claim.tests: every test needs a unique name")
     for i, t in enumerate(tests):
         errs, h, possible = _check_test(t, f"claim.tests[{i}]")
@@ -223,10 +236,7 @@ def _selector_columns(sel) -> set:
 def signal_columns(test: dict) -> set:
     """The block-produced columns a test reads: `forecast` (a selector field,
     or rank_ic, which correlates the forecast) and/or `regime`."""
-    cols = _selector_columns(test.get("selector"))
-    base = test.get("baseline")
-    if isinstance(base, dict):
-        cols |= _selector_columns(base.get("selector"))
+    cols = _selector_columns(test.get("selector")) | _selector_columns(_baseline_selector(test))
     if test.get("statistic") == "rank_ic":
         cols.add("forecast")
     return cols

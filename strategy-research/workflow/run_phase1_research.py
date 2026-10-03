@@ -14665,7 +14665,9 @@ def _claim_card_module():
 def _apply_claim_tests_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
     """hypothesis_generation under claim_tests: CLAIM_TESTS.md (the slot menu)
     as a required input -- its presence is what switches on hypothesis-design's
-    claim section -- and, on the claim retry, the previous check's errors.
+    claim section -- and, on the claim retry, the previous check's errors plus
+    an audit-log key of its own (`<stage_attempt>_claim_retry<n>`), so the
+    retry's cost never overwrites the first call's in the token budget.
     Flag off or another stage: no-op, the handoff is never mutated."""
     if stage_name != "hypothesis_generation" or not _claim_tests_enabled():
         return
@@ -14678,21 +14680,35 @@ def _apply_claim_tests_context(stage_name: str, handoff: dict, run_dir: Path) ->
     state = (load_yaml(state_path) or {}) if state_path.exists() else {}
     retry = state.get(CLAIM_RETRY_STATE_KEY) or {}
     if retry.get("attempts") and retry.get("last_error"):
-        handoff.setdefault("injected_context", {})["claim_check_error"] = (
+        ctx = handoff.setdefault("injected_context", {})
+        ctx["claim_check_error"] = (
             f"Retry {retry['attempts']}/{_CLAIM_RETRY_MAX}. Your previous hypothesis_card.yaml "
             f"`claim` block was refused by the code check: {retry['last_error']}. Re-emit "
             f"hypothesis_card.yaml with a corrected `claim` block (CLAIM_TESTS.md). If the "
             f"slots cannot express the test, write `tests: none` with `missing_block`.")
+        ctx["stage_attempt"] = f"{ctx.get('stage_attempt', '0')}_claim_retry{retry['attempts']}"
 
 
-def _claim_check_exempt(card) -> str | None:
-    """Why a card carries no 1a-written claim (DESIGN D6), else None."""
-    if not isinstance(card, dict):
-        return None
-    if card.get("pass_through") is True:
-        return "pass_through card (config, manifest and criteria authored upstream)"
-    if "composition" in card:
+def _claim_check_exempt(run_dir: Path, card) -> str | None:
+    """Why a card carries no 1a-written claim (DESIGN D6), else None. Decided
+    from the run's inputs, never from a field the card writes about itself
+    (review fix 5): a composition run (research_brief candidate.composition),
+    or a pass-through card whose brief really supplies the config, manifest,
+    criteria and source (hypothesis-design IMPROVEMENT 08) or a decide_next
+    pass-through config."""
+    artifacts = Path(run_dir) / "artifacts"
+    if _composition_candidate(run_dir) is not None:
         return "composition run (its card is written by code)"
+    if isinstance(card, dict) and card.get("pass_through") is True:
+        brief_path = artifacts / "research_brief.yaml"
+        brief = (load_yaml(brief_path) or {}) if brief_path.exists() else {}
+        sources = [brief] + ([brief["candidate"]] if isinstance(brief, dict)
+                             and isinstance(brief.get("candidate"), dict) else [])
+        supplied = any(isinstance(s, dict) and all(s.get(k) for k in
+                                                   ("config", "manifest", "criteria", "source"))
+                       for s in sources)
+        if supplied or _is_pass_through_candidate(artifacts):
+            return "pass_through card (config, manifest and criteria authored upstream)"
     return None
 
 
@@ -14706,52 +14722,84 @@ def _record_claim_check(run_dir: Path, entry: dict) -> None:
     save_yaml(path, {"attempts": attempts})
 
 
-def _claim_check_once(run_dir: Path, attempt: int):
+def _claim_check_once(run_dir: Path, attempt, stage: str = "hypothesis_generation"):
     """(ClaimCheck or None when exempt) for the run's hypothesis_card.yaml."""
     cc = _claim_card_module()
     card_path = Path(run_dir) / "artifacts" / "hypothesis_card.yaml"
     card = load_yaml(card_path) if card_path.exists() else None
-    exempt = _claim_check_exempt(card)
+    exempt = _claim_check_exempt(run_dir, card)
     if exempt:
-        _record_claim_check(run_dir, {"attempt": attempt, "exempt": exempt})
+        _record_claim_check(run_dir, {"attempt": attempt, "stage": stage, "exempt": exempt})
         return None
     res = cc.check_claim((card or {}).get("claim") if isinstance(card, dict) else None,
                          cc.card_criteria_ids(card or {}))
-    _record_claim_check(run_dir, {"attempt": attempt, **res.record()})
+    _record_claim_check(run_dir, {"attempt": attempt, "stage": stage, **res.record()})
     return res
 
 
-def _check_claim_after_1a(run_id: str, run_dir: Path, expected_outputs: list, state: dict) -> bool:
+def _set_aside_1a_outputs(run_dir: Path, tag: str) -> None:
+    """Under claim_tests, before a 1a LLM call (the first one, the claim retry,
+    or 1a re-run after an unpark): move 1a's earlier outputs to
+    RUN_DIR/.previous_attempts/hypothesis_generation_<tag>/, so only what THIS
+    call writes can satisfy ensure_files and the claim check (review fix 2).
+    queued_hypotheses.yaml moves only while its cards are not yet enqueued.
+    Kept, not deleted."""
+    arts = Path(run_dir) / "artifacts"
+    names = ["hypothesis_card.yaml", EXTRA_CARD_SCORES_FILE, BRIEF_STATUS_FILE]
+    names += sorted(p.name for p in arts.glob("hypothesis_card_*.yaml"))
+    queued = arts / _decide_next_tools().QUEUED_HYPOTHESES_FILE
+    if queued.exists() and not (load_yaml(queued) or {}).get("enqueued"):
+        names.append(queued.name)
+    dest_root = Path(run_dir) / _PREVIOUS_ATTEMPTS_DIR / f"hypothesis_generation_{tag}"
+    for name in names:
+        src = arts / name
+        if src.exists():
+            dest_root.mkdir(parents=True, exist_ok=True)
+            dest = dest_root / name
+            if dest.exists():
+                dest.unlink()
+            shutil.move(str(src), str(dest))
+
+
+def _check_claim_after_1a(run_id: str, run_dir: Path, expected_outputs: list, state: dict,
+                          split: bool = False) -> bool:
     """Right after 1a (run_loop), before any spend. Flag off: False, nothing
     read. Returns True when the claim says `tests: none` (run_loop then parks
     the run); False when the claim passed or the card is exempt. A refused
-    claim re-runs 1a once with the error; refused again: RuntimeError."""
+    claim re-runs 1a once with the error (1a's earlier outputs set aside; a
+    multi-card answer is split/queued exactly as run_loop does); refused
+    again, or a resume after the retry already ran: RuntimeError."""
     if not _claim_tests_enabled():
         return False
     state_path = Path(run_dir) / "pipeline_state.yaml"
     prior = (((load_yaml(state_path) or {}) if state_path.exists() else {})
              .get(CLAIM_RETRY_STATE_KEY) or {}).get("attempts") or 0
     res = _claim_check_once(run_dir, prior)
-    if res is not None and res.errors and prior >= _CLAIM_RETRY_MAX:
-        # a resume after the retry already ran (e.g. a crash): no second retry
-        raise RuntimeError(f"hypothesis_generation: the claim block is still invalid after "
-                           f"{prior} retry -- {'; '.join(res.errors)} (see "
-                           f"artifacts/{_CLAIM_CHECK_FILE})")
-    if prior and (res is None or not res.errors):
-        update_state(path=run_dir, **{CLAIM_RETRY_STATE_KEY: {"attempts": 0, "last_error": None}})
     if res is not None and res.errors:
         error = "; ".join(res.errors)
-        update_state(path=run_dir, **{CLAIM_RETRY_STATE_KEY: {"attempts": 1, "last_error": error}})
+        if prior >= _CLAIM_RETRY_MAX:
+            # the retry already ran (here, or before a crash/resume): no second one
+            update_state(path=run_dir, **{CLAIM_RETRY_STATE_KEY: {"attempts": prior,
+                                                                  "last_error": error}})
+            raise RuntimeError(f"hypothesis_generation: the claim block is still invalid after "
+                               f"{prior} retry -- {error} (see artifacts/{_CLAIM_CHECK_FILE})")
+        update_state(path=run_dir, **{CLAIM_RETRY_STATE_KEY: {"attempts": prior + 1,
+                                                              "last_error": error}})
         print(f"🔁 [E-068] hypothesis_card.yaml claim refused -- retrying step 1a once with "
               f"the error: {error}")
-        _invoke_agent_with_yaml_retry("hypothesis_generation", run_id, run_dir,
-                                      expected_outputs, state)
-        _brief_single_card_check(run_dir)
-        res = _claim_check_once(run_dir, 1)
-        if res is not None and res.errors:
-            raise RuntimeError(f"hypothesis_generation: the claim block is still invalid after "
-                               f"{_CLAIM_RETRY_MAX} retry -- {'; '.join(res.errors)} (see "
-                               f"artifacts/{_CLAIM_CHECK_FILE})")
+        _set_aside_1a_outputs(run_dir, f"claim_retry{prior + 1}")
+        split = False
+        try:
+            _invoke_agent_with_yaml_retry("hypothesis_generation", run_id, run_dir,
+                                          expected_outputs, state)
+        except FileNotFoundError:
+            if not _handle_hypothesis_generation_multi_card_split(run_id, run_dir):
+                raise
+            split = True
+        if not split:
+            _brief_single_card_check(run_dir)
+        return _check_claim_after_1a(run_id, run_dir, expected_outputs, state, split)
+    if prior:
         update_state(path=run_dir, **{CLAIM_RETRY_STATE_KEY: {"attempts": 0, "last_error": None}})
     if res is None:
         return False
@@ -14761,29 +14809,59 @@ def _check_claim_after_1a(run_id: str, run_dir: Path, expected_outputs: list, st
     return res.parked
 
 
-def _park_for_missing_test(path: Path, run_id: str, routing_retired: bool) -> str:
-    """`tests: none` at 1a: one campaign_record/test_requests.yaml row (no
-    duplicate on a re-run), then a park (waiting_for_test, resumed at 1a once
-    the block exists) under verdict_routing_retired, else a human pause --
-    the same split as 1b's component_gap."""
+def _claim_gate_before_1b(run_dir: Path, run_id: str, routing_retired: bool):
+    """Under claim_tests, as strategy_config_authoring is about to run: a run
+    whose own 1a check did not pass here -- a queued extra card launched
+    straight at 1b (run_campaign._launch_queued_card), or a run resumed past 1a
+    -- gets the same check, once, without a retry (its 1a ran in another run).
+    Returns None to proceed, or the route ("human_pause") after a park.
+    Refused: RuntimeError, before any spend. Flag off: None, nothing read."""
+    if not _claim_tests_enabled():
+        return None
+    doc_path = Path(run_dir) / "artifacts" / _CLAIM_CHECK_FILE
+    attempts = ((load_yaml(doc_path) or {}).get("attempts") or []) if doc_path.exists() else []
+    last = attempts[-1] if attempts and isinstance(attempts[-1], dict) else None
+    if last is not None and (last.get("exempt") or (not last.get("errors")
+                                                    and not last.get("parked"))):
+        return None
+    res = _claim_check_once(run_dir, "pre_1b", stage="strategy_config_authoring")
+    if res is None:
+        return None
+    if res.errors:
+        raise RuntimeError(f"strategy_config_authoring: this run's hypothesis_card.yaml claim "
+                           f"block is invalid and its step 1a ran elsewhere (no retry) -- "
+                           f"{'; '.join(res.errors)} (see artifacts/{_CLAIM_CHECK_FILE})")
+    if res.parked:
+        return _park_for_missing_test(run_dir, run_id, routing_retired,
+                                      stage="strategy_config_authoring")
+    return None
+
+
+def _park_for_missing_test(path: Path, run_id: str, routing_retired: bool,
+                           stage: str = "hypothesis_generation") -> str:
+    """`tests: none`: one campaign_record/test_requests.yaml row (no duplicate
+    on a re-run), then a park (waiting_for_test, resumed at `stage` once the
+    block exists: 1a re-runs; for a queued card, the gate before 1b re-checks
+    the card) under verdict_routing_retired, else a human pause -- the same
+    split as 1b's component_gap (no flag: classified like it)."""
     cc = _claim_card_module()
     card = load_yaml(path / "artifacts" / "hypothesis_card.yaml") or {}
     claim = card.get("claim") or {}
     missing = str(claim.get("missing_block")).strip()
     cc.append_test_requests(ROOT, [{
-        "run_id": run_id, "stage": "hypothesis_generation",
+        "run_id": run_id, "stage": stage,
         "hypothesis_id": card.get("hypothesis_id"), "claim_kind": claim.get("kind"),
         "statement": claim.get("statement"), "missing_block": missing}])
     if routing_retired:
-        return _park_run(path, kind="test", stage="hypothesis_generation",
+        return _park_run(path, kind="test", stage=stage,
                          reason=f"claim test needs a missing building block: {missing}",
                          request_refs=[f"runs/{run_id}/artifacts/hypothesis_card.yaml",
                                        cc.TEST_REQUESTS_REL],
-                         resume_stage="hypothesis_generation")
+                         resume_stage=stage)
     update_state(path=path, status="paused_for_human")
     print(f"\n⏸️ MISSING TEST BLOCK: the claim's test needs a building block that does not "
           f"exist ({missing}). See {cc.TEST_REQUESTS_REL}; add the block to "
-          f"tools/claim_tests.py, then resume (step 1a re-runs).")
+          f"tools/claim_tests.py, then resume ({stage} re-runs).")
     return "human_pause"
 
 
@@ -14798,7 +14876,7 @@ def _record_claim_match(path: Path) -> None:
     try:
         cc = _claim_card_module()
         card = load_yaml(Path(path) / "artifacts" / "hypothesis_card.yaml") or {}
-        exempt = _claim_check_exempt(card)
+        exempt = _claim_check_exempt(Path(path), card)
         if exempt:
             save_yaml(out, {"status": "exempt", "reason": exempt})
             return
@@ -16086,6 +16164,11 @@ def run_loop(run_id: str):
             # E-060 S3b: a composition run's 1a / 1b / step 2 are code, never an
             # LLM call (only under orchestrator.composition_runs; raises when a
             # composition brief meets the flag off).
+            # E-068 slice 2: a run whose own 1a check did not pass (a queued card
+            # launched at 1b) is checked before 1b spends. Flag off: None.
+            if (current_stage == "strategy_config_authoring" and not _skip_agent
+                    and _claim_gate_before_1b(RUN_DIR, run_id, _vrr_flag) == "human_pause"):
+                break
             _comp_mode = (current_stage in _COMPOSITION_CODE_STAGES
                           and _composition_mode(RUN_DIR))
             if current_stage == "specialist_readers":
@@ -16103,6 +16186,9 @@ def run_loop(run_id: str):
             elif not _skip_agent:
                 if current_stage == "hypothesis_generation":
                     _split = False
+                    if _claim_tests_enabled():
+                        # E-068 slice 2: only what this 1a call writes can be checked.
+                        _set_aside_1a_outputs(RUN_DIR, f"attempt_{_this_stage_attempt}")
                     try:
                         _invoke_agent_with_yaml_retry(current_stage, run_id, RUN_DIR, expected_outputs, state)
                     except FileNotFoundError:
@@ -16121,13 +16207,16 @@ def run_loop(run_id: str):
                         _brief_exhausted_signal(RUN_DIR)
                         if not _split:
                             _brief_single_card_check(RUN_DIR)
-                        # E-068 slice 2: the claim block, before any spend (one 1a
-                        # retry inside). Flag off: False, nothing read.
-                        _claim_park = _check_claim_after_1a(run_id, RUN_DIR,
-                                                            expected_outputs, state)
                         # E-059 S2b review fix 1: a card this brief already produced
                         # ends the run before 1b (no-op for any other run).
                         _brief_no_new = _brief_card_is_repeat(RUN_DIR)
+                        if not _brief_no_new and _claim_tests_enabled():
+                            # E-068 slice 2: the claim block, before any spend (one
+                            # 1a retry inside); a retry's card is checked for a repeat.
+                            _claim_park = _check_claim_after_1a(run_id, RUN_DIR, expected_outputs,
+                                                                state, split=_split)
+                            _brief_no_new = _brief_card_is_repeat(RUN_DIR)
+                            _claim_park = _claim_park and not _brief_no_new
                         if not _brief_no_new:
                             # E-059 S2a (operator decision 2): no-op unless pre_registration.yaml
                             # is pending at 1a; raises (-> status failed) before any spend.

@@ -106,7 +106,7 @@ continues normally, and the measured effect is kept.
 | kind | parameters | the other bars |
 |---|---|---|
 | `complement` | none | all bars not selected |
-| `placebo` | optional `n_draws` (default 20) | the same selection moved to other dates; the default when the claim has no natural comparison |
+| `placebo` | optional `n_draws` (default 20) | the same selection moved to other dates; the fair choice when the claim has no natural comparison |
 | `other_selector` | `selector`: any selector above | the bars that selector picks (minus the selected ones) |
 
 With `statistic: rank_ic` there is no baseline: write `baseline: null` or leave it out.
@@ -155,7 +155,7 @@ claim refuted. Until a significance method is calibrated, only effect sizes are 
 | `conditional_behaviour` | `regime` or `event` + `fwd_return` + `complement` + `mean_diff`, or + `rank_ic` |
 | `horizon_decay` | `event` + `fwd_return` over several horizons + `complement` + `decay_curve` |
 | `calendar_effect` | `calendar` + `fwd_volatility` + `complement` + `mean_diff` |
-| `redundancy` | `criteria_refs` (residual IC, when your criteria list has it) |
+| `redundancy` | `tests: none` (missing: an outcome measured against the current composite). Residual IC is added by code, never a card criterion, so `criteria_refs` cannot name it |
 | `lead_lag` | `tests: none` (missing outcome `fwd_return_of(other_symbol, h)`) |
 | `data_feed_value` | `criteria_refs`, or a test on the feed-built forecast |
 | `cost_turnover` | `criteria_refs: [realized_edge_to_cost_ratio]` |

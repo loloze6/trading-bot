@@ -141,6 +141,30 @@ def test_one_to_three_tests_with_unique_names():
                for e in cc.check_claim(_claim(tests=[UPPER, dict(UPPER)])).errors)
 
 
+@pytest.mark.parametrize("patch", [
+    {"selector": {"kind": "calendar", "weekdays": 5}},
+    {"statistic": ["mean_diff"]},
+    {"name": ["x"]},
+    {"selector": {"kind": ["all"]}},
+    {"outcome": {"kind": "fwd_return", "horizons": [[1]]}},
+    {"floor": [100]},
+], ids=["weekdays_int", "statistic_list", "name_list", "kind_list", "nested_horizons",
+        "floor_list"])
+def test_malformed_values_are_refused_never_raised(patch):
+    """review fix 3: LLM slips that make check_spec itself raise become errors
+    (so 1a gets its retry), never an exception."""
+    res = cc.check_claim(_claim(tests=[dict(UPPER, **patch)]))
+    assert res.errors and not res.parked
+
+
+def test_stray_selector_on_another_baseline_is_ignored():
+    """review fix 10: only other_selector has a selector."""
+    t = dict(UPPER, baseline={"kind": "complement", "selector": {"kind": "regime", "value": "t"}})
+    res = cc.check_claim(_claim(tests=[t]))
+    assert res.errors == [] and res.tests[0]["verdict_possible"] is True
+    assert cc.signal_columns(t) == {"forecast"}
+
+
 def test_rank_ic_without_baseline_is_valid():
     assert cc.check_claim(_claim(kind="direction_forecast", tests=[IC])).errors == []
     assert cc.check_claim(_claim(tests=[dict(IC, baseline=None)])).errors == []
@@ -341,7 +365,7 @@ def test_claim_tests_md_lists_exactly_the_engine_blocks_and_kinds():
 
 def test_skill_section_is_keyed_on_the_guide_and_the_guide_path_resolves():
     skill = SKILL_1A.read_text(encoding="utf-8")
-    assert "IMPROVEMENT 09" in skill and "CLAIM_TESTS.md" in skill
+    assert "IMPROVEMENT 10" in skill and "CLAIM_TESTS.md" in skill
     run_dir = SR_ROOT / "runs" / "run_x"
     assert (run_dir / rpr.CLAIM_TESTS_GUIDE).resolve() == GUIDE.resolve()
 
@@ -391,7 +415,11 @@ def test_flag_off_touches_nothing(orch, monkeypatch):
                         lambda *a, **k: pytest.fail("no re-invoke with the flag off"))
     assert rpr._check_claim_after_1a("run_900", run_dir, [], {}) is False
     rpr._record_claim_match(run_dir)
+    assert rpr._claim_gate_before_1b(run_dir, "run_900", True) is None
     assert sorted(p.name for p in (run_dir / "artifacts").iterdir()) == before
+    state = rpr.load_yaml(run_dir / "pipeline_state.yaml")
+    assert state["claim_check_retry"] == {"attempts": 1, "last_error": "x"}   # untouched
+    assert state["status"] == "active" and not (run_dir / ".previous_attempts").exists()
 
 
 def test_flag_off_post_1b_route_writes_no_match_file():
@@ -463,6 +491,65 @@ def test_bad_claim_twice_fails_the_run(monkeypatch):
     _fake_1a(monkeypatch, run_dir, [_claim(tests=[dict(UPPER, alpha=0.2)])])
     with pytest.raises(RuntimeError, match="still invalid after 1 retry.*fixed by code"):
         rpr._check_claim_after_1a("run_912", run_dir, [], {})
+    # review fix 9: the recorded error is the latest one
+    retry = rpr.load_yaml(run_dir / "pipeline_state.yaml")["claim_check_retry"]
+    assert "fixed by code" in retry["last_error"] and "claim.kind" not in retry["last_error"]
+
+
+def test_retry_sets_aside_the_old_card_and_has_its_own_audit_key(monkeypatch):
+    _set_orchestrator(ON)
+    run_dir = _card_run("run_918", claim=_claim(kind="vibes"))
+    seen = []
+
+    def _invoke(stage, run_id, rdir, expected, state):
+        # the stale card is gone before the retry's 1a call
+        seen.append((rdir / "artifacts" / "hypothesis_card.yaml").exists())
+        handoff = {"required_inputs": [], "injected_context": {"stage_attempt": "1"}}
+        rpr._apply_claim_tests_context(stage, handoff, rdir)
+        seen.append(handoff["injected_context"]["stage_attempt"])
+        rpr.save_yaml(rdir / "artifacts" / "hypothesis_card.yaml", dict(CARD, claim=_claim()))
+
+    monkeypatch.setattr(rpr, "_invoke_agent_with_yaml_retry", _invoke)
+    assert rpr._check_claim_after_1a("run_918", run_dir, [], {}) is False
+    assert seen == [False, "1_claim_retry1"]
+    kept = (run_dir / ".previous_attempts" / "hypothesis_generation_claim_retry1"
+            / "hypothesis_card.yaml")
+    assert rpr.load_yaml(kept)["claim"]["kind"] == "vibes"
+
+
+def test_retry_answer_with_several_cards_is_split_not_refused(monkeypatch):
+    """review fix 1: a multi-card retry answer goes through the split handler,
+    and the single-card check is skipped for it, as run_loop does."""
+    _set_orchestrator(ON)
+    run_dir = _card_run("run_919", claim=_claim(kind="vibes"))
+
+    def _invoke(*a, **k):
+        raise FileNotFoundError("hypothesis_card.yaml")
+
+    def _split(run_id, rdir):
+        rpr.save_yaml(rdir / "artifacts" / "hypothesis_card.yaml", dict(CARD, claim=_claim()))
+        return True
+
+    monkeypatch.setattr(rpr, "_invoke_agent_with_yaml_retry", _invoke)
+    monkeypatch.setattr(rpr, "_handle_hypothesis_generation_multi_card_split", _split)
+    monkeypatch.setattr(rpr, "_brief_single_card_check",
+                        lambda rdir: pytest.fail("single-card check after a split"))
+    assert rpr._check_claim_after_1a("run_919", run_dir, [], {}) is False
+
+
+def test_set_aside_moves_1a_outputs_but_not_enqueued_cards():
+    run_dir = _card_run("run_922", claim=_claim())
+    arts = run_dir / "artifacts"
+    rpr.save_yaml(arts / "hypothesis_card_2.yaml", {"x": 1})
+    rpr.save_yaml(arts / "queued_hypotheses.yaml", {"enqueued": True})
+    rpr._set_aside_1a_outputs(run_dir, "t")
+    assert not (arts / "hypothesis_card.yaml").exists()
+    assert not (arts / "hypothesis_card_2.yaml").exists()
+    assert (arts / "queued_hypotheses.yaml").exists()
+    rpr.save_yaml(arts / "queued_hypotheses.yaml", {"enqueued": False})
+    rpr._set_aside_1a_outputs(run_dir, "u")
+    assert (run_dir / ".previous_attempts" / "hypothesis_generation_u"
+            / "queued_hypotheses.yaml").exists()
 
 
 def test_a_resume_after_the_retry_does_not_retry_again(monkeypatch):
@@ -494,14 +581,29 @@ def test_regime_claim_is_not_parked(monkeypatch):
     assert not (rpr.ROOT / cc.TEST_REQUESTS_REL).exists()
 
 
-@pytest.mark.parametrize("extra,why", [({"pass_through": True}, "pass_through"),
-                                       ({"composition": {"registry_hash": "h"}}, "composition")])
-def test_exempt_cards(monkeypatch, extra, why):
+@pytest.mark.parametrize("brief,why", [
+    ({"config": {"a": 1}, "manifest": {"b": 1}, "criteria": [{"id": "x"}], "source": "op"},
+     "pass_through"),
+    ({"candidate": {"composition": {"registry_hash": "h"}}}, "composition"),
+], ids=["pass_through", "composition"])
+def test_exempt_cards_are_decided_by_the_runs_inputs(monkeypatch, brief, why):
     _set_orchestrator(ON)
-    run_dir = _card_run("run_916", **extra)
+    run_dir = _card_run("run_916", pass_through=True)
+    rpr.save_yaml(run_dir / "artifacts" / "research_brief.yaml", brief)
     _fake_1a(monkeypatch, run_dir, [])
     assert rpr._check_claim_after_1a("run_916", run_dir, [], {}) is False
     assert why in rpr.load_yaml(run_dir / "artifacts" / "claim_check.yaml")["attempts"][0]["exempt"]
+
+
+def test_a_card_cannot_exempt_itself(monkeypatch):
+    """review fix 5: `pass_through: true` written by 1a without a brief that
+    supplies the four fields is checked like any card."""
+    _set_orchestrator(ON)
+    run_dir = _card_run("run_917", pass_through=True)
+    rpr.save_yaml(run_dir / "artifacts" / "research_brief.yaml", {"research_goal": "x"})
+    calls = _fake_1a(monkeypatch, run_dir, [_claim()])
+    assert rpr._check_claim_after_1a("run_917", run_dir, [], {}) is False
+    assert len(calls) == 1 and "claim` mapping is required" in calls[0]
 
 
 def test_park_under_retired_routing_writes_marker_and_one_request():
@@ -651,3 +753,60 @@ def test_run_loop_flag_off_never_checks_a_claim(monkeypatch):
     assert [s for s, _ in seen] == ["hypothesis_generation", "strategy_config_authoring"]
     assert not (run_dir / "artifacts" / "claim_check.yaml").exists()
     assert not (rpr.ROOT / cc.TEST_REQUESTS_REL).exists()
+
+
+# --- review fixes: the gate before 1b (queued cards), repeat before claim ---
+
+def test_gate_before_1b_checks_a_queued_card_once():
+    _set_orchestrator(ON)
+    run_dir = _card_run("run_950", claim=_claim(kind="vibes"))   # no 1a ran in this run
+    with pytest.raises(RuntimeError, match="its step 1a ran elsewhere"):
+        rpr._claim_gate_before_1b(run_dir, "run_950", True)
+    rpr.save_yaml(run_dir / "artifacts" / "hypothesis_card.yaml", dict(CARD, claim=_claim()))
+    assert rpr._claim_gate_before_1b(run_dir, "run_950", True) is None
+    n = len(rpr.load_yaml(run_dir / "artifacts" / "claim_check.yaml")["attempts"])
+    assert rpr._claim_gate_before_1b(run_dir, "run_950", True) is None       # passed: not again
+    assert len(rpr.load_yaml(run_dir / "artifacts" / "claim_check.yaml")["attempts"]) == n
+
+
+def test_gate_before_1b_parks_a_queued_tests_none_card_at_1b():
+    _set_orchestrator(ON)
+    run_dir = _card_run("run_951", claim=_claim(kind="lead_lag", tests="none", missing_block="mb"))
+    assert rpr._claim_gate_before_1b(run_dir, "run_951", True) == "human_pause"
+    marker = rpr.load_yaml(run_dir / "pipeline_state.yaml")[rpr.PARKED_KEY]
+    assert marker["kind"] == "test" and marker["resume_stage"] == "strategy_config_authoring"
+    row = rpr.load_yaml(rpr.ROOT / cc.TEST_REQUESTS_REL)["requests"][0]
+    assert row["stage"] == "strategy_config_authoring"
+
+
+def test_gate_before_1b_skips_a_run_whose_1a_check_passed(monkeypatch):
+    _set_orchestrator(ON)
+    run_dir = _card_run("run_952", claim=_claim())
+    _fake_1a(monkeypatch, run_dir, [])
+    rpr._check_claim_after_1a("run_952", run_dir, [], {})
+    monkeypatch.setattr(rpr, "_claim_check_once", lambda *a, **k: pytest.fail("checked twice"))
+    assert rpr._claim_gate_before_1b(run_dir, "run_952", True) is None
+
+
+def test_run_loop_queued_card_is_checked_before_1b_spends(monkeypatch):
+    _set_orchestrator(ON)
+    run_dir = _loop_run("run_953")
+    rpr.update_state(path=run_dir, pending_stage="strategy_config_authoring")
+    rpr.save_yaml(run_dir / "artifacts" / "hypothesis_card.yaml",
+                  dict(CARD, claim=_claim(kind="lead_lag", tests="none", missing_block="mb")))
+    seen = _fake_agent(monkeypatch, run_dir, [])
+    rpr.run_loop("run_953")
+    assert seen == []                                            # 1b never called
+    assert rpr.load_yaml(run_dir / "pipeline_state.yaml")["status"] == "paused_for_human"
+
+
+def test_run_loop_repeat_card_ends_the_run_without_a_claim_retry(monkeypatch):
+    """review fix 6: a repeated card ends completed_no_new_hypothesis; its bad
+    claim spends no retry."""
+    _set_orchestrator(ON)
+    run_dir = _loop_run("run_954")
+    seen = _fake_agent(monkeypatch, run_dir, [_claim(kind="vibes")])
+    monkeypatch.setattr(rpr, "_brief_card_is_repeat", lambda rdir: True)
+    rpr.run_loop("run_954")
+    assert [s for s, _ in seen] == ["hypothesis_generation"]
+    assert not (run_dir / "artifacts" / "claim_check.yaml").exists()
