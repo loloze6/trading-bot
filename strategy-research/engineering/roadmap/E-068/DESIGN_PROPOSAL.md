@@ -129,6 +129,37 @@ The v1 blocks, together with the existing criteria, cover 11 of the 13 kinds. Th
 the three criterion types card B.2 listed and never built: IC, correlation and
 regime-conditional effect.
 
+### 2.3 Who writes what, and how the two parts are matched (operator, 2026-10-03)
+
+The claim test and the building block are **two different things that are linked**:
+
+- **The block** is the piece of bot config that *produces* a signal, for example
+  `DonchianBreakoutComponent(period=20)`. **Step 1b** writes it, because it knows the config
+  and the design guide. It writes the strategy config and `block_manifest.yaml`: the kind
+  (forecast or regime), the config paths that are the idea, and the scaffolding. So **1b
+  decides "is it a block, and what kind"**.
+- **The test** *measures* that signal's output after the backtest. **Step 1a** writes it as a
+  filled-in form (section 3), never as a program. 1a also states the claim's `kind`, which
+  says whether the idea *could* be a block: a direction forecast is a forecast-block
+  candidate, a regime classifier is a regime-block candidate, and a calendar effect is a
+  finding only.
+- **The link:** the test reads the column the block produces: `forecast`, or `regime` for a
+  regime block. It never contains the block's code.
+- **Downstream, everything is mechanical.** Branch 1 reads the test; the registry reads the
+  manifest.
+
+**Match check, a warning, not a stop.** Before any spend, code compares 1a's test with 1b's
+manifest:
+
+| The test reads | The block must be |
+|---|---|
+| `forecast` | a forecast block |
+| `regime` / a regime change | a regime block |
+| a calendar or other non-signal field | nothing (a finding only) |
+
+A mismatch is logged and recorded in the run. It never stops the run: if they disagree, the
+test simply measures the whole strategy's signal instead of the block's.
+
 ---
 
 ## 3. The test engine: four slots, small building blocks
@@ -215,6 +246,23 @@ easy to find a "significant" result by chance. Three protections:
 2. Every graded test is **counted**, and findings report "best of N tests tried" per kind.
 3. `placebo` is offered as the default baseline whenever the claim has no natural comparison.
 
+### 3.1 The calibration gate: one-sided (operator, 2026-10-03)
+
+Before any true/false verdict is trusted, the method is run on **fake prices with no edge**.
+There the right answer is known: no edge. A trustworthy method says "edge found" only about
+5% of the time, by chance.
+
+- **Never flatter (mandatory).** At or below the ceiling, 7.5%. A method that says "true"
+  too often would store false findings, which later combinations would build on.
+- **Too strict is a warning, not a fail.** Below the floor, 2.5%, the method misses some
+  real effects but never invents any. It is reported as "conservative".
+- **When no method passes,** the run still completes. The claim test reports effect sizes
+  and "verdict: method not calibrated". Nothing is ever blocked.
+- **History.** On run_065's type of claim, the shuffle method failed only the floor (it was
+  too strict; its highest false-edge rate was 5.8%). The other methods flattered or never
+  answered (REGRADE_run065.md). The one-sided rule was decided before any claim result was
+  seen, as Amendment 5.
+
 ---
 
 ## 4. How step 1a writes it, and how the test is checked
@@ -281,7 +329,10 @@ finding:
   "what we know" view.
 - **Reuse.** A finding is information, never a ban (D-055). Only the same `spec_hash` on the
   same scope counts as a repeat; this extends today's novelty key.
-- **Combination is already built (E-060) and E-068 plugs into it.** E-060 registers validated
+- **Combination is its own epic: E-071** (operator, 2026-10-03; it was slice 6). E-071 holds
+  the design: code assembly for the simple case, AI assembly by step 1b inside code-checked
+  fences for regime-plus-forecast composites (CUL-382, CUL-385). The context below stays as
+  background. **Combination is already built (E-060) and E-068 plugs into it.** E-060 registers validated
   blocks (`block_registry.record_run`, only when `idea_status == validated`), and a registry
   change triggers a composition run (rule R1) that combines them. Regime blocks are tested
   there as "gated beats ungated, and the label passes health checks". The missing link today:
@@ -293,7 +344,7 @@ finding:
   - a **supported regime-classifier claim** (its composed test, section 3) is the label health
     check E-060 asks for. It makes the regime block eligible for the next composition run,
     where E-060's gated-vs-ungated test decides whether it is kept;
-  - this is its own slice (section 8), so a regime idea runs end to end:
+  - this is now E-071, so a regime idea runs end to end:
     claim, then finding, then registry, then composition.
 
 ---
@@ -391,14 +442,17 @@ P-CUL-77).
 
 **Slices** (each its own PR, two-phase):
 
-1. **Test engine:** `claim_tests.py` with the four slots and the v1 blocks; `check_spec`,
-   `run_test`, `spec_hash`; then the offline re-grade of run_065 and run_066.
-2. **Step 1a claim block:** the schema, the code checks, and the `test_requests.yaml` park.
+1. **Test engine** -- DONE (PRs #315, #316; D-064). `claim_tests.py` (17 blocks) and the
+   calibration gate `claim_tests_calibration.py`. run_065 was not graded: no method passed the
+   two-sided gate (REGRADE_run065.md). run_066 moved to CUL-387.
+1b. **Amendment 5:** the calibration gate becomes one-sided (section 3.1); then grade run_065
+   with the shuffle method.
+2. **Step 1a claim block:** the schema, the code checks, the 1a/1b match warning
+   (section 2.3), and the `test_requests.yaml` park.
 3. **Grid:** the `claim_test` criterion and `claim_status`.
 4. **Findings:** the finding record and the findings summary.
 5. **Readers:** v3 output and the short SKILL.
-6. **Findings into the existing combination (E-060):** registry entries carry their finding; a
-   supported regime-classifier claim makes the regime block eligible for composition.
+6. **Combination:** moved to its own epic, **E-071**.
 7. **Review call** (record mode).
 8. **New building blocks:** only when a test request needs them.
 
@@ -455,7 +509,17 @@ None. All decisions are recorded in section 11.
   usable block?). The second is what the registry binds on later.
 - **Five readers kept,** each with its own focus, on today's model. Per-stage models are
   parked: E-069.
-- **Combination stays in E-068's scope** as the connection to E-060's registry and
-  composition (section 5, slice 6), so the loop works end to end.
+- **Combination is its own epic, E-071** (it was slice 6): code assembly for the simple case,
+  AI assembly by step 1b inside code-checked fences. A block may be left out only with a
+  stated reason.
 - **Review call starts in `record` mode:** it stores its comments and blocks nothing;
   `gate` only if the record shows real catches the code checks miss.
+- **Who writes what** (section 2.3): 1a writes the claim, its kind and its test; 1b writes
+  the block (config plus manifest) and decides "is it a block, and what kind". A 1a/1b
+  mismatch is a warning, never a stop.
+- **The calibration gate is one-sided** (section 3.1): flattering is forbidden; too strict is
+  a reported warning. Decided before any claim result was seen.
+- **Scope note:** decisions faster than daily are the aim. Short-horizon claims, such as hours
+  on 1h data, give enough separate events. Long-horizon daily claims are accepted as rarely
+  gradable on the data a backtest uses. Events on different coins count as separate unless
+  they fall in the same time slot.
