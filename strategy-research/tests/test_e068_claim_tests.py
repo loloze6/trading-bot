@@ -27,7 +27,7 @@ from performance.signal_statistics import spearman_correlation  # noqa: E402
 T0 = 1577836800          # 2020-01-01 00:00 UTC
 DAY = 86400
 HOUR = 3600
-FAST = {"method": "bootstrap_null_v1", "n_resamples": 99, "seed": 7}
+FAST = {"method": "block_permutation_v1", "n_resamples": 99, "seed": 7}
 DON = {"class": "DonchianBreakoutComponent", "params": {"period": 10, "scaling_factor": 20.0}}
 WARM = 30
 
@@ -78,8 +78,13 @@ def spec(selector, outcome=None, baseline=None, statistic="mean_diff", direction
                        significance=dict(FAST))
 
 
+def rt(windows, s, eras=None):
+    """run_test with a calibrated method (the gate itself is tested separately)."""
+    return ct.run_test(windows, s, eras, calibrated=True)
+
+
 def status(windows, s, eras=None):
-    return ct.run_test(windows, s, eras)["status"]
+    return rt(windows, s, eras)["status"]
 
 
 # Planted effects are REVERSALS (a rebound after a low signal, a fall after a
@@ -131,7 +136,7 @@ def test_regime_selectors_select_the_planted_bars_but_cannot_be_graded():
     assert np.array_equal(m, expected)
     for sel in ({"kind": "regime", "value": "trend"}, {"kind": "regime_change", "to": "trend"}):
         with pytest.raises(ValueError, match="cannot be graded"):
-            ct.run_test([w], spec(sel))
+            rt([w], spec(sel))
 
 
 # --- outcomes ---------------------------------------------------------------------
@@ -209,16 +214,16 @@ def test_statistic_hit_rate_planted_and_null():
 def test_statistic_decay_curve_planted_and_null():
     s = spec(EVENT, statistic="decay_curve",
              outcome={"kind": "fwd_return", "horizons": [1, 2, 3]})
-    res = ct.run_test(make_windows(13, plant=LOW_FC(0.02)), s)
+    res = rt(make_windows(13, plant=LOW_FC(0.02)), s)
     assert res["status"] == "supported" and res["peak_horizon"] in (1, 2, 3)
     assert status(make_windows(13, plant=LOW_FC(0.0)), s) != "supported"
 
 
 def test_direction_less_detects_a_planted_drop():
-    res = ct.run_test(make_windows(14, plant=HIGH_FC(-0.02)), spec(EVENT_HIGH, direction="less"))
+    res = rt(make_windows(14, plant=HIGH_FC(-0.02)), spec(EVENT_HIGH, direction="less"))
     assert res["status"] == "supported"
     assert res["horizons"][1]["value"] < 0 < res["horizons"][1]["oriented"]
-    up = ct.run_test(make_windows(14, plant=HIGH_FC(-0.02)), spec(EVENT_HIGH, direction="greater"))
+    up = rt(make_windows(14, plant=HIGH_FC(-0.02)), spec(EVENT_HIGH, direction="greater"))
     assert up["status"] == "refuted"
     assert up["horizons"][1]["p_value_opposite"] < 0.05
 
@@ -234,7 +239,7 @@ def test_rank_average_matches_signal_statistics_spearman():
 
 def test_null_p_values_are_spread_sanely_over_seeds():
     """No edge: p should be roughly uniform (the full gate is the calibration)."""
-    ps = [ct.run_test(make_windows(100 + k, n=200, n_windows=3), spec(EVENT))
+    ps = [rt(make_windows(100 + k, n=200, n_windows=3), spec(EVENT))
           ["horizons"][1]["p_value"] for k in range(20)]
     assert 0.3 < float(np.mean(ps)) < 0.7
     assert sum(p < 0.05 for p in ps) <= 4
@@ -267,22 +272,22 @@ def test_forecast_check_stops_a_grade_when_the_saved_forecast_differs():
     assert ct.forecast_check(ws[0]) == 0.0
     ws[1].forecast[50] += 0.5
     with pytest.raises(ValueError, match="recomputed forecast differs"):
-        ct.run_test(ws, spec(EVENT))
+        rt(ws, spec(EVENT))
 
 
 def test_null_needs_signal_and_warmup():
     w = make_windows(18, n_windows=1)[0]
     w.warm = None
     with pytest.raises(ValueError, match="needs the window's signal and warm-up"):
-        ct.run_test([w], spec(EVENT))
+        rt([w], spec(EVENT))
 
 
 def test_every_horizon_must_pass():
     # +2% on bar t+1, then -2% on bar t+2: h=1 gains 2%, h=2 nets about 0.
     ws = make_windows(19, plant=lambda t, fc, ts: ([0.02, -0.02] if fc <= -8 else 0.0, 1.0))
-    one = ct.run_test(ws, spec(EVENT, outcome={"kind": "fwd_return", "horizons": [1]}))
+    one = rt(ws, spec(EVENT, outcome={"kind": "fwd_return", "horizons": [1]}))
     assert one["status"] == "supported"
-    both = ct.run_test(ws, spec(EVENT, outcome={"kind": "fwd_return", "horizons": [1, 2]}))
+    both = rt(ws, spec(EVENT, outcome={"kind": "fwd_return", "horizons": [1, 2]}))
     assert both["horizons"][1]["p_value"] < 0.05
     assert both["horizons"][2]["p_value"] >= 0.05
     assert both["status"] != "supported"
@@ -292,7 +297,7 @@ def test_every_horizon_must_pass():
 def test_a_weak_later_horizon_makes_it_inconclusive():
     # +2% then -1.7%: h=1 strong; h=2 still the right way (+0.3%) but weak.
     ws = make_windows(40, plant=lambda t, fc, ts: ([0.02, -0.017] if fc <= -8 else 0.0, 1.0))
-    res = ct.run_test(ws, spec(EVENT, outcome={"kind": "fwd_return", "horizons": [1, 2]}))
+    res = rt(ws, spec(EVENT, outcome={"kind": "fwd_return", "horizons": [1, 2]}))
     h = res["horizons"]
     assert h[1]["p_value"] < 0.05 and h[2]["oriented"] > 0 and h[2]["p_value"] >= 0.05
     assert res["status"] == "inconclusive"
@@ -303,13 +308,13 @@ def test_opposite_p_equals_the_opposite_spec_p():
     ws = make_windows(41)                  # no effect: the real value sits inside the null
     for stat in ("mean_diff", "rank_ic", "hit_rate"):
         sel = {"kind": "all"} if stat == "rank_ic" else EVENT
-        g = ct.run_test(ws, spec(sel, statistic=stat, direction="greater"))["horizons"][1]
-        lo = ct.run_test(ws, spec(sel, statistic=stat, direction="less"))["horizons"][1]
+        g = rt(ws, spec(sel, statistic=stat, direction="greater"))["horizons"][1]
+        lo = rt(ws, spec(sel, statistic=stat, direction="less"))["horizons"][1]
         assert 0.05 < g["p_value"] < 0.95, (stat, g["p_value"])
         assert g["p_value_opposite"] == lo["p_value"] and lo["p_value_opposite"] == g["p_value"]
 
 
-def test_fake_worlds_redraw_whole_blocks():
+def test_fake_worlds_permute_whole_blocks_without_replacement():
     w = make_windows(42, n=200, n_windows=1)[0]
     f = ct.fake_window(w, np.random.default_rng(1))
     prev = np.r_[w.warm["close"][-1], w.close[:-1]]
@@ -317,25 +322,32 @@ def test_fake_worlds_redraw_whole_blocks():
     fprev = np.r_[w.warm["close"][-1], f.close[:-1]]
     fake = np.log(f.close / fprev)
     src = np.array([int(np.argmin(np.abs(real - u))) for u in fake])   # units are distinct
+    assert sorted(src) == list(range(200))           # each real unit used exactly once
     B = ct.BLOCK_BARS["daily"]
     for k in range(0, 200 - B, B):
         assert all((src[k + i + 1] - src[k + i]) % 200 == 1 for i in range(B - 1)), k
     assert any((src[k + B] - src[k + B - 1]) % 200 != 1 for k in range(0, 200 - B, B))
 
 
-def test_verdict_rule_amendment_1():
-    """refuted = wrong direction; supported = right direction, p < alpha everywhere."""
-    wrong = ct.run_test(make_windows(20, plant=HIGH_FC(-0.02)), spec(EVENT_HIGH))
-    assert wrong["status"] == "refuted" and "wrong direction" in wrong["reasons"][0]
-    good = ct.run_test(make_windows(20, plant=LOW_FC(0.02)), spec(EVENT))
+def test_verdict_rule_amendment_3():
+    """refuted only when the wrong-way effect is itself significant; a weak
+    wrong-way wobble is inconclusive; supported = right way, p < alpha everywhere."""
+    wrong = rt(make_windows(20, plant=HIGH_FC(-0.02)), spec(EVENT_HIGH))
+    assert wrong["status"] == "refuted" and "opposite direction" in wrong["reasons"][0]
+    wobble = rt(make_windows(20, plant=HIGH_FC(-0.0005)), spec(EVENT_HIGH))
+    h = wobble["horizons"][1]
+    assert h["oriented"] < 0 and h["p_value_opposite"] >= 0.05
+    assert wobble["status"] == "inconclusive"
+    assert "wrong direction or zero, not significant" in wobble["reasons"][0]
+    good = rt(make_windows(20, plant=LOW_FC(0.02)), spec(EVENT))
     assert good["status"] == "supported" and good["reasons"] == []
 
 
 def test_right_direction_not_significant_is_inconclusive():
     ws = make_windows(21, plant=LOW_FC(0.02))
-    res = ct.run_test(ws, ct.TestSpec(**{**spec(EVENT).__dict__, "alpha": 0.0101}))
+    res = rt(ws, ct.TestSpec(**{**spec(EVENT).__dict__, "alpha": 0.0101}))
     assert res["status"] == "supported"     # p = 0.01 with 99 fakes and no fake beats it
-    res = ct.run_test(ws, ct.TestSpec(**{**spec(EVENT).__dict__, "alpha": 0.01}))
+    res = rt(ws, ct.TestSpec(**{**spec(EVENT).__dict__, "alpha": 0.01}))
     assert res["status"] == "inconclusive"
     assert res["reasons"][0].startswith("h=1: right direction, p")
 
@@ -386,7 +398,7 @@ def test_check_spec_refuses_a_future_field():
             errs = ct.check_spec(spec(sel))
             assert any("not a bar-t field" in e for e in errs), (field, errs)
             with pytest.raises(ValueError, match="bar-t field"):
-                ct.run_test(make_windows(0, n_windows=1), spec(sel))
+                rt(make_windows(0, n_windows=1), spec(sel))
 
 
 # --- timestamp matching, inside a window only ---------------------------------------------
@@ -397,7 +409,7 @@ def test_outcomes_never_cross_a_window_boundary():
         assert np.all(np.isnan(fn(a, 5)[-5:]))
     s = spec({"kind": "all"}, statistic="rank_ic",
              outcome={"kind": "fwd_return", "horizons": [5]}, floor={"min_events": 1})
-    assert ct.run_test([a, b], s)["horizons"][5]["n_events"] == 2 * (100 - 5)
+    assert rt([a, b], s)["horizons"][5]["n_events"] == 2 * (100 - 5)
 
 
 def test_outcomes_match_by_timestamp_across_a_missing_bar():
@@ -423,26 +435,26 @@ ERAS = [{"era_id": "e1", "range": ["2020-01-01", "2020-12-31"]},
 @pytest.mark.parametrize("floor", [{"min_events": 10**6}, {"min_windows": 7},
                                    {"min_blocks": 10**5}, {"min_eras": 3}])
 def test_floor_gives_inconclusive(floor):
-    res = ct.run_test(make_windows(26, plant=LOW_FC(0.03)), spec(EVENT, floor=floor), ERAS)
+    res = rt(make_windows(26, plant=LOW_FC(0.03)), spec(EVENT, floor=floor), ERAS)
     assert res["status"] == "inconclusive"
     assert any("floor" in r for r in res["reasons"])
 
 
 def test_eras_needed_but_missing_raises():
     with pytest.raises(ValueError, match="needs eras"):
-        ct.run_test(make_windows(0, n_windows=1), spec(EVENT, floor={"min_eras": 1}))
+        rt(make_windows(0, n_windows=1), spec(EVENT, floor={"min_eras": 1}))
 
 
 def test_window_consistency_rule():
     ws = make_windows(27, plant=LOW_FC(0.02))
     ok = spec(EVENT, consistency={"unit": "window", "min_same_sign": 4})
     assert status(ws, ok) == "supported"
-    res = ct.run_test(ws, spec(EVENT, consistency={"unit": "window", "min_same_sign": 5}))
+    res = rt(ws, spec(EVENT, consistency={"unit": "window", "min_same_sign": 5}))
     assert res["status"] == "inconclusive" and "same sign in 4 windows" in res["reasons"][0]
 
 
 def test_per_era_values_reported():
-    res = ct.run_test(make_windows(28, plant=LOW_FC(0.02)), spec(EVENT), ERAS)
+    res = rt(make_windows(28, plant=LOW_FC(0.02)), spec(EVENT), ERAS)
     assert set(res["horizons"][1]["per_era"]) <= {"e1", "e2"}
     assert res["horizons"][1]["n_eras_with_events"] == 2
 
@@ -475,6 +487,12 @@ def test_check_spec_rejects_bad_slots():
         ct.TestSpec(EVENT, {"kind": "fwd_return", "horizons": [1]}, {"kind": "complement"},
                     "mean_diff", "greater", {"min_events": 1},
                     significance={"method": "block_analytic_v1"}),
+        ct.TestSpec(EVENT, {"kind": "fwd_return", "horizons": [1]}, {"kind": "complement"},
+                    "mean_diff", "greater", {"min_events": 1},
+                    significance={"method": "bootstrap_null_v1", "n_resamples": 999, "seed": 1}),
+        ct.TestSpec(EVENT, {"kind": "fwd_return", "horizons": [1]}, {"kind": "complement"},
+                    "mean_diff", "greater", {"min_events": 1},
+                    significance={"method": "a851a_episode_v1", "seed": 3}),
     ]
     for s in bad:
         assert ct.check_spec(s), s
@@ -672,7 +690,13 @@ def test_cli_end_to_end_and_refusals(tmp_path):
     assert ct.main(args + ["--out", str(out)]) == 0
     doc = yaml.safe_load(out.read_text())
     assert doc["n_tests_run"] == 1 and doc["not_graded_variants"] == ["broken"]
-    assert doc["variants"]["base"]["tests"]["t"]["status"] == "inconclusive"
+    assert doc["variants"]["base"]["tests"]["t"]["status"] == "method_not_calibrated"
+    assert doc["claim_status"] == "method_not_calibrated" and doc["calibration"] == {}
+    calib = tmp_path / "calib.yaml"
+    calib.write_text(yaml.safe_dump({"method": ct.SIGNIFICANCE_METHOD, "all_pass": True}))
+    assert ct.main(args + ["--out", str(out), "--calibration", str(calib)]) == 0
+    doc = yaml.safe_load(out.read_text())
+    assert doc["variants"]["base"]["tests"]["t"]["status"] == "inconclusive"   # floor not met
     assert len(doc["bars_used"]) == 2 and all(len(b["sha256"]) == 64 for b in doc["bars_used"])
     with pytest.raises(SystemExit, match="inside the run"):
         ct.main(args + ["--out", str(run / "x.yaml")])
@@ -692,10 +716,115 @@ def test_combine_fail_dominates():
 
 # --- calibration tool -----------------------------------------------------------------------
 
-def test_calibration_tool_runs_and_reports_both_directions():
-    res = cal.run_calibration(2, only="daily_donchian_iid_fc>=12")
-    assert [r["cell"] for r in res["cells"]] == ["daily_donchian_iid_fc>=12_greater",
-                                                  "daily_donchian_iid_fc>=12_less"]
-    assert res["method"] == ct.SIGNIFICANCE_METHOD and res["gate"]["pass_range"] == [0.025, 0.075]
-    w = cal.simulate_windows(np.random.default_rng(0), cal.DAILY, "garch", cal.DONCHIAN)[0]
-    assert ct.forecast_check(w) == 0.0 and len(w.warm["close"]) == ct.WARMUP_BARS["daily"]
+def test_calibration_tool_runs_cells_and_summarizes(tmp_path):
+    cells = [cal.run_cell(ct.SIGNIFICANCE_METHOD, "switching", side, n_sims=2)
+             for side in ("upper", "lower")]
+    assert [r["row"] for r in cells[0]["rows"]] == ["switching_upper_claimed",
+                                                    "switching_upper_opposite"]
+    summ = cal.summarize(ct.SIGNIFICANCE_METHOD, cells)
+    assert summ["all_pass"] is False                     # 4 of 8 rows only: never a pass
+    assert summ["gate"] == {"alpha": 0.05, "pass_range": [0.025, 0.075],
+                            "max_share_undefined": 0.05}
+    w = cal.simulate_windows(np.random.default_rng(0), "switching")
+    assert ct.forecast_check(w[0]) == 0.0 and len(w[0].warm["close"]) == 30
+    assert all(w[i + 1].ts[0] - w[i].ts[-1] == DAY for i in range(5))   # windows abut
+
+
+def test_calibration_counts_undefined_honestly():
+    """A8.5.1a on run_065's daily layout: too few episodes, so no p at all --
+    counted as undefined (and failing), never as 'no false edge'."""
+    c = cal.run_cell(ct.A851A_METHOD, "iid", "upper", n_sims=2)
+    for r in c["rows"]:
+        assert r["share_undefined"][1] == 1.0
+        assert r["share_p_below_0_05_of_defined"][1] is None and r["pass"] is False
+
+
+# --- operator rule 3: no verdict without a passed gate --------------------------------------
+
+def test_uncalibrated_method_gives_effect_sizes_and_no_verdict():
+    res = ct.run_test(make_windows(50, plant=LOW_FC(0.02)), spec(EVENT))
+    assert res["status"] == "method_not_calibrated"
+    assert "verdict: method not calibrated" in res["reasons"][0]
+    h = res["horizons"][1]
+    assert h["value"] > 0 and h["p_value"] is None and h["p_value_opposite"] is None
+    assert ct.combine(["supported", "method_not_calibrated"]) == "method_not_calibrated"
+    assert ct.combine(["refuted", "method_not_calibrated"]) == "method_not_calibrated"
+
+
+def test_calibrated_methods_needs_a_passed_gate(tmp_path):
+    ok, bad = tmp_path / "ok.yaml", tmp_path / "bad.yaml"
+    ok.write_text(yaml.safe_dump({"method": ct.SIGNIFICANCE_METHOD, "all_pass": True}))
+    bad.write_text(yaml.safe_dump({"method": ct.A851A_METHOD, "all_pass": False}))
+    assert ct.calibrated_methods([ok, bad]) == {ct.SIGNIFICANCE_METHOD: str(ok)}
+    assert ct.calibrated_methods([]) == {}
+
+
+# --- method A: the existing A8.5.1a, fed unchanged ------------------------------------------
+
+def test_a851a_wrapper_equals_a_direct_call_of_the_existing_method():
+    import episode_significance as es
+    n = 1200
+    rng = np.random.default_rng(51)
+    fc = np.zeros(n)
+    fc[np.arange(30, n - 10, 70)] = 15.0              # isolated events: 17 episodes
+    fc[np.arange(31, n - 10, 70)] = 18.0
+    close = 100 * np.exp(np.cumsum(rng.normal(0, 0.02, n)))
+    ts = (T0 + np.arange(n) * DAY).astype(np.int64)
+    w = ct.Window("SYN", "w0", ts, close, fc, np.array(["x"] * n, dtype=object), DAY)
+    s = spec({"kind": "event", "field": "forecast", "op": ">=", "value": 12})
+    s = ct.TestSpec(**{**s.__dict__, "significance": {"method": ct.A851A_METHOD},
+                       "outcome": {"kind": "fwd_return", "horizons": [3]}})
+    a = rt([w], s)["horizons"][3]["a851a"]
+    y = ct.out_fwd_return(w, 3)
+    ok = np.isfinite(y)
+    recs = [{"forecast": float(fc[t]), "next_return_bps": float(y[t]) * 1e4,
+             "active": bool(fc[t] >= 12), "symbol": "SYN",
+             "timestamp": pd.Timestamp(int(ts[t]), unit="s")} for t in np.nonzero(ok)[0]]
+    direct = es.compute_a851a_significance(
+        recs, era_of=None, gap_bars=48, density_fallback_pct=50.0, min_n_episodes=8,
+        block_size=1, n_resamples=2000, seed=ct.A851A_SEED, expected_step=pd.Timedelta(DAY, unit="s"))
+    assert a["method_label"] == direct["method"] == "episode_block_bootstrap"
+    assert a["n_episodes"] == direct["n_episodes"] == 17
+    assert a["pooled_ic"] == direct["pooled_ic"]
+    p2 = direct["p_value"]
+    assert a["p_value"] == pytest.approx(p2 / 2 if direct["pooled_ic"] > 0 else 1 - p2 / 2)
+    assert a["p_value"] + a["p_value_opposite"] == pytest.approx(1.0)
+
+
+def test_a851a_settings_are_the_existing_ones():
+    import episode_significance as es
+    assert ct.A851A_SETTINGS == {"gap_bars": es._DEFAULT_GAP_BARS,
+                                 "density_fallback_pct": es._DEFAULT_DENSITY_FALLBACK_PCT,
+                                 "min_n_episodes": es._MIN_N_EPISODES,
+                                 "n_resamples": es._DEFAULT_N_RESAMPLES}
+
+
+# --- small fixes ------------------------------------------------------------------------------
+
+def test_holdout_guard_checks_the_final_cache_path(tmp_path):
+    sealed = tmp_path / "local_data" / "holdout_sealed"
+    sealed.mkdir(parents=True)
+    _write_cache(sealed / "x.csv", T0, 40, DAY)
+    with pytest.raises(ValueError, match="holdout store"):
+        ct.read_warmup(sealed / "x.csv", T0 + 35 * DAY, DAY, 10)
+    sneaky = ct.cache_resolver(tmp_path / "local_data" / "other", "../holdout_sealed/x.csv")
+    with pytest.raises(ValueError, match="holdout store"):
+        ct.read_warmup(sneaky("SYN", "daily"), T0 + 35 * DAY, DAY, 10)
+
+
+def test_variant_signal_refuses_settings_it_does_not_copy(tmp_path):
+    ws = make_windows(52, n=60, n_windows=1)
+    run = _write_run(tmp_path, ws, DON)
+    p = run / "artifacts" / "variants" / "base" / "strategy_config.json"
+    good = json.loads(p.read_text())
+    assert ct.variant_signal(run, "base") == DON
+    for bad in (dict(good, buffer_bars=50),
+                dict(good, regime_detector={"rules": [{"x": 1}], "components": []}),
+                {**good, "strategies": {**good["strategies"], "history_transforms": []}}):
+        p.write_text(json.dumps(bad))
+        with pytest.raises(ValueError, match="settings the null does not copy"):
+            ct.variant_signal(run, "base")
+    regs = good["strategies"]["regimes"]
+    p.write_text(json.dumps({"strategies": {"regimes": {**regs, "trending": regs["unknown"]}}}))
+    with pytest.raises(ValueError, match="2 non-null regimes"):
+        ct.variant_signal(run, "base")

@@ -42,28 +42,39 @@ WHY THIS CANNOT LEAK (no lookahead):
   - Warm-up rows are read from the cache only BEFORE a window's first bar; the
     reader stops at that timestamp, so no later row is ever parsed.
 
-SIGNIFICANCE (`bootstrap_null_v1`, amendment 2). Two earlier methods were
-retired after the calibration gate: a circular shift of the signal (invalid for
-price-derived signals: a backward shift pairs a bar with a signal computed from
-its own future) and a block-adjusted analytic p (0.000-0.090 on no-edge prices).
-  The null is a world with no edge, rebuilt from each window's own bars:
-  units (log return, log high/close, log low/close) are redrawn in circular
-  blocks of B bars (5 daily, 24 hourly); a path is rebuilt from the last real
-  close before the window; the signal is RECOMPUTED on real warm-up + fake
-  window with the variant's own component (SIGNALS: vectorized copies of
-  update(), proven equal by a test); selectors, baselines and outcomes are then
-  recomputed on the fake window. One-sided
-      p = (1 + #{fake >= real}) / (1 + N)
-  on the claim-oriented statistic. Before grading, the signal recomputed on
-  the REAL path must equal the saved forecast (FORECAST_TOLERANCE), else stop.
-  Regime selectors are refused: their labels cannot be recomputed.
+OPERATOR RULES (2026-10-03, the lesson of the deleted signal prescreen, E-039):
+  1. The claim test only ever runs AFTER a completed backtest, on its saved
+     bars. It never gates, skips or kills a backtest.
+  2. claim_status is INFORMATION ONLY. It never changes idea_status, never
+     routes, never bans (D-055).
+  3. No verdict without a passed calibration gate: run_test(calibrated=False)
+     returns effect sizes and status `method_not_calibrated`, never a guess.
+  4. Existing or standard methods first; new statistics code kept minimal.
 
-VERDICT (amendment 1, section C), floor met at every horizon:
-  refuted       wrong direction or zero at any horizon
-  inconclusive  right direction but p >= alpha somewhere, window-sign rule not
-                met, or a statistic undefined (or below the floor)
+SIGNIFICANCE (amendment 3). Retired after failing the calibration gate: a
+circular shift of the signal, a block-adjusted analytic p, and a bootstrap
+drawing chunks WITH replacement. Two candidates remain:
+  A `a851a_episode_v1` -- the existing tools/episode_significance.py
+    (A8.5.1a), unchanged. Its statistic is the pooled rank IC of forecast vs
+    forward return AMONG THE EVENT BARS (claimed: > 0), not the spec's own.
+  B `block_permutation_v1` -- a world with no edge rebuilt from each window's
+    own bar units (log return, log high/close, log low/close): rotated by a
+    random phase, cut into blocks of B bars (5 daily, 24 hourly), blocks put
+    in random order WITHOUT replacement; path rebuilt from the last real close
+    before the window; the signal RECOMPUTED on real warm-up + fake window with
+    the variant's own component (SIGNALS: vectorized copies of update(),
+    proven equal by a test); selectors, baselines and outcomes recomputed.
+    One-sided p = (1 + #{fake >= real}) / (1 + N). Before grading, the signal
+    recomputed on the REAL path must equal the saved forecast
+    (FORECAST_TOLERANCE), else stop. Regime selectors are refused.
+  The method used is the one that passed tools/claim_tests_calibration.py.
+
+VERDICT (amendment 3, section 3), floor met at every horizon:
+  refuted       at any horizon, the opposite-direction effect is itself
+                significant (p_value_opposite < alpha)
   supported     right direction and p < alpha at every horizon, sign rule met
-  A weak but true finding must not be stored as false.
+  inconclusive  everything else (a non-significant wrong-way wobble included)
+  A weak result, either way, is not stored as a fact.
 
 FLOORS name their unit: min_events, min_windows, min_eras, min_blocks. Below
 any floor, at any horizon, the result is `inconclusive`, never a pass.
@@ -93,6 +104,14 @@ for _p in (_HERE, _TBOT):
         sys.path.insert(0, _p)
 
 from performance.signal_statistics import gap_aware_active_block_count  # noqa: E402
+import episode_significance as _es  # noqa: E402
+
+# A8.5.1a's own settings (kept in sync with config/campaign_config.yaml
+# episode_significance by tests/test_campaign_config_sync.py).
+A851A_SETTINGS = {"gap_bars": _es._DEFAULT_GAP_BARS,
+                  "density_fallback_pct": _es._DEFAULT_DENSITY_FALLBACK_PCT,
+                  "min_n_episodes": _es._MIN_N_EPISODES,
+                  "n_resamples": _es._DEFAULT_N_RESAMPLES}
 
 # Which blocks have been run on real backtest output (the run_065/run_066
 # re-grade, E-068 slice 1). Every other block is tested on synthetic data only.
@@ -105,14 +124,19 @@ BAR_T_FIELDS = ("forecast", "close")          # numeric fields a selector may re
 DIRECTIONS = ("greater", "less")
 FLOOR_UNITS = ("min_events", "min_windows", "min_eras", "min_blocks")
 CONSISTENCY_UNITS = ("window", "era")
-SIGNIFICANCE_METHOD = "bootstrap_null_v1"
+SIGNIFICANCE_METHOD = "block_permutation_v1"          # method B (amendment 3, 4B)
+A851A_METHOD = "a851a_episode_v1"                      # method A: existing A8.5.1a, unchanged
+SIGNIFICANCE_METHODS = (SIGNIFICANCE_METHOD, A851A_METHOD)
 DEFAULT_SIGNIFICANCE = {"method": SIGNIFICANCE_METHOD, "n_resamples": 1000, "seed": 20261003}
+A851A_SEED = 20261003
+_TF = {"daily": "1d", "hourly": "1h"}
 NOT_RECOMPUTABLE_SELECTORS = ("regime", "regime_change")
 PLACEBO_SEED = 20261003       # the placebo baseline's random dates (a baseline, not a p-value)
 DAY = 86400
 WARMUP_BARS = {"daily": 30, "hourly": 500}
 BLOCK_BARS = {"daily": 5, "hourly": 24}
 FORECAST_CLIP = 20.0
+HOLDOUT_DIR_NAME = "holdout_sealed"
 _OPS = {">=": np.greater_equal, ">": np.greater, "<=": np.less_equal,
         "<": np.less, "==": np.equal}
 
@@ -265,6 +289,8 @@ def read_warmup(cache_path: Path, first_ts: int, step: int, n_bars: int) -> dict
     reader stops at the first row at or after `first_ts`, so no later row is
     parsed). They must end exactly one step before the window and be gap-free."""
     import pandas as pd
+    if HOLDOUT_DIR_NAME in Path(cache_path).resolve().parts:
+        raise ValueError(f"refusing to read the holdout store: {cache_path}")
     keep: deque = deque(maxlen=n_bars)
     with open(cache_path, newline="", encoding="utf-8") as f:
         reader = csv.reader(f)
@@ -299,8 +325,30 @@ def variant_signal(run_dir: Path, vid: str) -> dict:
     identity transform and weight 1, whose class has a vectorized copy."""
     path = Path(run_dir) / "artifacts" / "variants" / vid / "strategy_config.json"
     cfg = json.loads(path.read_text(encoding="utf-8"))
-    regimes = (cfg.get("strategies") or cfg)["regimes"]
-    comps = [c for r in regimes.values() if r for c in r.get("components") or []]
+    # Refuse any setting the null would not copy (amendment 3, section 7).
+    problems = []
+    top_extra = set(cfg) - {"regime_detector", "strategies"}
+    if top_extra:
+        problems.append(f"top-level keys {sorted(top_extra)}")
+    rd = cfg.get("regime_detector") or {}
+    if rd.get("components") or rd.get("rules"):
+        problems.append("a gated regime detector (components or rules)")
+    if set(cfg.get("strategies") or {}) - {"regimes"}:
+        problems.append("strategies keys other than regimes")
+    regimes = (cfg.get("strategies") or {}).get("regimes") or {}
+    live = [r for r in regimes.values() if r]
+    if len(live) != 1:
+        problems.append(f"{len(live)} non-null regimes (need exactly 1)")
+    for r in live:
+        if set(r) - {"components"}:
+            problems.append(f"regime keys {sorted(set(r) - {'components'})}")
+        for c in r.get("components") or []:
+            extra = set(c) - {"id", "class", "params", "weight", "transforms"}
+            if extra:
+                problems.append(f"component keys {sorted(extra)}")
+    if problems:
+        raise ValueError(f"{path}: settings the null does not copy: " + "; ".join(problems))
+    comps = [c for r in live for c in r.get("components") or []]
     if len(comps) != 1:
         raise ValueError(f"{path}: {len(comps)} components; the null needs exactly one")
     c = comps[0]
@@ -715,12 +763,14 @@ def check_spec(spec: TestSpec) -> list[str]:
                           or c["min_same_sign"] < 1):
         e.append(f"consistency: needs unit in {list(CONSISTENCY_UNITS)} and min_same_sign >= 1")
     s = spec.significance
-    if (not isinstance(s, dict) or set(s) != {"method", "n_resamples", "seed"}
+    if isinstance(s, dict) and s == {"method": A851A_METHOD}:
+        pass
+    elif (not isinstance(s, dict) or set(s) != {"method", "n_resamples", "seed"}
             or s.get("method") != SIGNIFICANCE_METHOD
             or not isinstance(s.get("n_resamples"), int) or s["n_resamples"] < 99
             or not isinstance(s.get("seed"), int)):
-        e.append(f"significance: method {SIGNIFICANCE_METHOD} (earlier methods failed the "
-                 f"calibration gate, amendments 1-2), n_resamples >= 99, int seed")
+        e.append(f"significance: {{method: {A851A_METHOD}}} or {{method: {SIGNIFICANCE_METHOD}, "
+                 f"n_resamples >= 99, seed: int}} (earlier methods were retired, amendments 1-3)")
     return e
 
 
@@ -744,16 +794,20 @@ def forecast_check(w: Window) -> float:
 
 
 def fake_window(w: Window, rng) -> Window:
-    """One draw of the null: the window's own bar units redrawn in circular
-    blocks, a path rebuilt from the last real close before the window, and the
-    signal recomputed on real warm-up + fake window. Timestamps are kept."""
+    """One draw of the null (method B, amendment 3 section 4B): the window's
+    own bar units, rotated by a random phase, cut into consecutive blocks of B
+    bars and put in random order -- WITHOUT replacement, each unit used exactly
+    once, like the real window. A path is rebuilt from the last real close
+    before the window and the signal recomputed on real warm-up + fake window.
+    Timestamps are kept."""
     n = len(w.ts)
     B = BLOCK_BARS[_cadence(w.step)]
     prev = np.r_[w.warm["close"][-1], w.close[:-1]]
     r = np.log(w.close / prev)
     lh, ll = np.log(w.high / w.close), np.log(w.low / w.close)
-    starts = rng.integers(0, n, size=-(-n // B))
-    idx = ((starts[:, None] + np.arange(B)[None, :]) % n).ravel()[:n]
+    rotated = (int(rng.integers(0, n)) + np.arange(n)) % n
+    blocks = [rotated[k:k + B] for k in range(0, n, B)]
+    idx = np.concatenate([blocks[i] for i in rng.permutation(len(blocks))])
     close = w.warm["close"][-1] * np.exp(np.cumsum(r[idx]))
     high, low = close * np.exp(lh[idx]), close * np.exp(ll[idx])
     fc = compute_signal(w.signal, *_full_path(w, close, high, low))[-n:]
@@ -802,36 +856,78 @@ def _blocks(active_by_window: list, per: list, h: int) -> int:
         for act, p in zip(active_by_window, per)))
 
 
-def run_test(windows: list[Window], spec: TestSpec, eras: list | None = None) -> dict:
-    """Grade one test on one variant's windows. Returns a plain dict:
-    status (supported | refuted | inconclusive), reasons, and per horizon the
-    raw and claim-oriented value, one-sided p (and the opposite direction's p),
-    sample counts, per-window and per-era values, and the forecast check."""
+def _a851a_horizon(per, h):
+    """Method A (`a851a_episode_v1`, amendment 3 section 4A): the existing
+    tools/episode_significance.compute_a851a_significance, unchanged, fed the
+    way tools/run_protocol._a851a_episode_significance feeds it. Its statistic
+    is the pooled rank IC of forecast vs forward return AMONG THE EVENT BARS
+    (not the spec's statistic). Claimed direction: IC > 0."""
+    import pandas as pd
+    import episode_significance as es
+    from timeframe import bars_per_day
+    eras = per[0]["eras_list"]
+    records = []
+    for p in per:
+        w, y = p["w"], p["ys"][h]
+        for t in range(len(w.ts)):
+            if not np.isfinite(y[t]) or not np.isfinite(w.forecast[t]):
+                continue
+            records.append({"forecast": float(w.forecast[t]),
+                            "next_return_bps": float(y[t]) * 1e4,
+                            "active": bool(p["mask"][t]), "symbol": w.symbol,
+                            "timestamp": pd.Timestamp(int(w.ts[t]), unit="s")})
+    era_of = None
+    if eras is not None:
+        from protocol_resolution import era_id_for_timestamp
+
+        def era_of(i, _r=records):
+            return (_r[i]["symbol"], era_id_for_timestamp(_r[i]["timestamp"], eras))
+    step = per[0]["w"].step
+    cfg = A851A_SETTINGS
+    res = es.compute_a851a_significance(
+        records, era_of=era_of, gap_bars=cfg["gap_bars"],
+        density_fallback_pct=cfg["density_fallback_pct"],
+        min_n_episodes=cfg["min_n_episodes"], block_size=bars_per_day(_TF[_cadence(step)]),
+        n_resamples=cfg["n_resamples"], seed=A851A_SEED,
+        expected_step=pd.Timedelta(step, unit="s"))
+    ic, p2 = res.get("pooled_ic"), res.get("p_value")
+    out = {"method_label": res.get("method"), "pooled_ic": ic, "n_episodes": res.get("n_episodes"),
+           "density_pct": res.get("density_pct"), "p_value": None, "p_value_opposite": None}
+    if ic is not None and p2 is not None:
+        right = ic > 0
+        out["p_value"] = float(p2 / 2 if right else 1 - p2 / 2)
+        out["p_value_opposite"] = float(1 - p2 / 2 if right else p2 / 2)
+    out["per_window"] = {}
+    for p in per:
+        sel = p["mask"] & np.isfinite(p["ys"][h]) & np.isfinite(p["w"].forecast)
+        v = spearman(p["w"].forecast[sel], p["ys"][h][sel])
+        out["per_window"][p["w"].label] = {"value": _num(v), "oriented": _num(v)}
+    return out
+
+
+def run_test(windows: list[Window], spec: TestSpec, eras: list | None = None,
+             calibrated: bool = False) -> dict:
+    """Grade one test on one variant's windows.
+
+    Always reports effect sizes (the spec's statistic per horizon, per window
+    and per era, and the sample counts). A verdict (supported | refuted |
+    inconclusive) is given ONLY when `calibrated` is True, i.e. the method has
+    a passed calibration gate (operator rule 3); otherwise the status is
+    `method_not_calibrated` and no p-value is computed."""
     errors = check_spec(spec)
     if errors:
         raise ValueError("invalid spec: " + "; ".join(errors))
     needs_eras = "min_eras" in spec.floor or (spec.consistency or {}).get("unit") == "era"
     if needs_eras and eras is None:
         raise ValueError("this spec needs eras (min_eras or era consistency); pass eras")
-    for w in windows:
-        if w.signal is None or w.warm is None:
-            raise ValueError(f"{w.label}: the null needs the window's signal and warm-up rows")
-    checks = {}
-    for w in windows:
-        diff = forecast_check(w)
-        checks[w.label] = diff
-        if not diff <= FORECAST_TOLERANCE[w.signal["class"]]:
-            raise ValueError(f"{w.label}: recomputed forecast differs from the saved one by "
-                             f"{diff:.3g} (> {FORECAST_TOLERANCE[w.signal['class']]}); "
-                             f"the null would not test the strategy that ran")
+    method = spec.significance["method"]
     horizons = sorted(spec.outcome["horizons"])
-    sig = spec.significance
     base_rng = np.random.default_rng(int((spec.baseline or {}).get("seed", PLACEBO_SEED)))
     stat = STATISTICS[spec.statistic]
     opposite = "less" if spec.direction == "greater" else "greater"
 
     per = _prepare(windows, spec, horizons, base_rng, eras)
-    out_h, reasons = {}, []
+    out_h = {}
     for h in horizons:
         y, m, wr, fc = _pooled(per, h)
         raw, oriented = stat(y, m, wr, fc, spec.direction)
@@ -858,35 +954,71 @@ def run_test(windows: list[Window], spec: TestSpec, eras: list | None = None) ->
                     "n_blocks": _blocks(events, per, h), "n_eras_with_events": n_eras,
                     "per_window": per_window, "per_era": per_era}
 
-    # The null: N fake worlds with no edge.
-    rng = np.random.default_rng(sig["seed"])
-    n_res = sig["n_resamples"]
-    null = {d: {h: np.full(n_res, np.nan) for h in horizons} for d in (spec.direction, opposite)}
-    for r in range(n_res):
-        fper = _prepare([fake_window(w, rng) for w in windows], spec, horizons, base_rng)
-        for h in horizons:
-            pooled = _pooled(fper, h)
-            o = stat(*pooled, spec.direction)[1]
-            null[spec.direction][h][r] = o
-            # The opposite direction is the sign flip, except for hit_rate,
-            # whose hit definition itself depends on the direction.
-            null[opposite][h][r] = (stat(*pooled, opposite)[1]
-                                    if spec.statistic == "hit_rate" else -o)
-    for h in horizons:
-        for d, key, okey in ((spec.direction, "p_value", "oriented"),
-                             (opposite, "p_value_opposite", "oriented_opposite")):
-            obs = out_h[h][okey]
-            nd = null[d][h][np.isfinite(null[d][h])]
-            if obs is not None and len(nd):
-                out_h[h][key] = float((1 + np.sum(nd >= obs)) / (1 + len(nd)))
-        out_h[h]["n_null"] = int(np.isfinite(null[spec.direction][h]).sum())
-        if out_h[h]["n_null"] < n_res:
-            reasons.append(f"warning h={h}: {n_res - out_h[h]['n_null']} of {n_res} "
-                           f"fake worlds gave an undefined statistic (dropped)")
-    warnings = list(reasons)
-    reasons = []
+    result = {"spec_hash": spec_hash(spec), "status": None, "reasons": [], "warnings": [],
+              "statistic": spec.statistic, "direction": spec.direction,
+              "significance": dict(spec.significance), "horizons": out_h}
+    if spec.statistic == "decay_curve":
+        vals = {h: out_h[h]["oriented"] for h in horizons if out_h[h]["oriented"] is not None}
+        result["peak_horizon"] = max(vals, key=vals.get) if vals else None
+    if not calibrated:
+        result["status"] = "method_not_calibrated"
+        result["reasons"] = [f"verdict: method not calibrated (no passed calibration gate "
+                             f"for {method}); effect sizes only"]
+        return result
 
-    # Floors (every horizon), then the verdict (amendment 1, section C).
+    # The values judged: the spec's statistic (method B) or A8.5.1a's own (method A).
+    judged = {}
+    if method == "a851a_episode_v1":
+        for p in per:
+            p["eras_list"] = eras
+        result["verdict_statistic"] = "a851a pooled rank IC among event bars (claimed: > 0)"
+        for h in horizons:
+            a = _a851a_horizon(per, h)
+            out_h[h]["a851a"] = a
+            judged[h] = (a["pooled_ic"], a["p_value"], a["p_value_opposite"], a["per_window"])
+    else:
+        result["verdict_statistic"] = f"{spec.statistic} ({spec.direction})"
+        checks = {}
+        for w in windows:
+            if w.signal is None or w.warm is None:
+                raise ValueError(f"{w.label}: the null needs the window's signal and warm-up rows")
+            diff = forecast_check(w)
+            checks[w.label] = diff
+            if not diff <= FORECAST_TOLERANCE[w.signal["class"]]:
+                raise ValueError(f"{w.label}: recomputed forecast differs from the saved one by "
+                                 f"{diff:.3g} (> {FORECAST_TOLERANCE[w.signal['class']]}); "
+                                 f"the null would not test the strategy that ran")
+        result["forecast_check_max_abs_diff"] = checks
+        rng = np.random.default_rng(spec.significance["seed"])
+        n_res = spec.significance["n_resamples"]
+        null = {d: {h: np.full(n_res, np.nan) for h in horizons}
+                for d in (spec.direction, opposite)}
+        for r in range(n_res):
+            fper = _prepare([fake_window(w, rng) for w in windows], spec, horizons, base_rng)
+            for h in horizons:
+                pooled = _pooled(fper, h)
+                o = stat(*pooled, spec.direction)[1]
+                null[spec.direction][h][r] = o
+                # The opposite direction is the sign flip, except for hit_rate,
+                # whose hit definition itself depends on the direction.
+                null[opposite][h][r] = (stat(*pooled, opposite)[1]
+                                        if spec.statistic == "hit_rate" else -o)
+        for h in horizons:
+            for d, key, okey in ((spec.direction, "p_value", "oriented"),
+                                 (opposite, "p_value_opposite", "oriented_opposite")):
+                obs = out_h[h][okey]
+                nd = null[d][h][np.isfinite(null[d][h])]
+                if obs is not None and len(nd):
+                    out_h[h][key] = float((1 + np.sum(nd >= obs)) / (1 + len(nd)))
+            out_h[h]["n_null"] = int(np.isfinite(null[spec.direction][h]).sum())
+            if out_h[h]["n_null"] < n_res:
+                result["warnings"].append(f"h={h}: {n_res - out_h[h]['n_null']} of {n_res} fake "
+                                          f"worlds gave an undefined statistic (dropped)")
+            judged[h] = (out_h[h]["oriented"], out_h[h]["p_value"], out_h[h]["p_value_opposite"],
+                         out_h[h]["per_window"])
+
+    # Floors (every horizon), then the verdict (amendment 3, section 3).
+    reasons = []
     floor_key = {"min_events": "n_events", "min_windows": "n_windows_with_events",
                  "min_blocks": "n_blocks", "min_eras": "n_eras_with_events"}
     for unit, need in spec.floor.items():
@@ -899,30 +1031,26 @@ def run_test(windows: list[Window], spec: TestSpec, eras: list | None = None) ->
     else:
         wrong, weak = [], []
         for h in horizons:
-            o, pv = out_h[h]["oriented"], out_h[h]["p_value"]
-            if o is None or pv is None:
-                weak.append(f"h={h}: statistic undefined")
+            o, pv, pv_opp, pw = judged[h]
+            if pv_opp is not None and pv_opp < spec.alpha:
+                wrong.append(f"h={h}: significant in the opposite direction "
+                             f"(p_opposite {pv_opp:.4g} < {spec.alpha})")
+            elif o is None or pv is None:
+                weak.append(f"h={h}: statistic or p undefined")
             elif o <= 0:
-                wrong.append(f"h={h}: wrong direction or zero (oriented {o:.6g})")
+                weak.append(f"h={h}: wrong direction or zero, not significant (value {o:.6g})")
             elif pv >= spec.alpha:
                 weak.append(f"h={h}: right direction, p {pv:.4g} >= {spec.alpha}")
             if spec.consistency:
                 unit = spec.consistency["unit"]
-                vals = out_h[h]["per_window" if unit == "window" else "per_era"].values()
+                vals = (pw if unit == "window" else out_h[h]["per_era"]).values()
                 same = sum(1 for v in vals if v["oriented"] is not None and v["oriented"] > 0)
                 if same < spec.consistency["min_same_sign"]:
                     weak.append(f"h={h}: same sign in {same} {unit}s "
                                 f"(need {spec.consistency['min_same_sign']})")
         reasons = wrong + weak
         status = "refuted" if wrong else ("inconclusive" if weak else "supported")
-
-    result = {"spec_hash": spec_hash(spec), "status": status, "reasons": reasons,
-              "warnings": warnings, "statistic": spec.statistic,
-              "direction": spec.direction, "significance": dict(sig),
-              "forecast_check_max_abs_diff": checks, "horizons": out_h}
-    if spec.statistic == "decay_curve":
-        vals = {h: out_h[h]["oriented"] for h in horizons if out_h[h]["oriented"] is not None}
-        result["peak_horizon"] = max(vals, key=vals.get) if vals else None
+    result["status"], result["reasons"] = status, reasons
     return result
 
 
@@ -931,9 +1059,12 @@ def _num(v):
 
 
 def combine(statuses: list[str]) -> str:
-    """D-014: refuted dominates inconclusive; supported only if all supported."""
+    """D-014: refuted dominates inconclusive; supported only if all supported.
+    No verdict at all (`method_not_calibrated`) dominates everything."""
     if not statuses:
         return "inconclusive"
+    if "method_not_calibrated" in statuses:
+        return "method_not_calibrated"
     if "refuted" in statuses:
         return "refuted"
     if "inconclusive" in statuses:
@@ -979,7 +1110,20 @@ def cache_resolver(cache_dir: Path, pattern: str):
     return lambda symbol, cadence: Path(cache_dir) / pattern.format(symbol=symbol, tf=tf[cadence])
 
 
-def grade_claim_file(run_dir: Path, spec_path: Path, cache_path_for, eras: list | None = None) -> dict:
+def calibrated_methods(paths) -> dict:
+    """{method: calibration file} for every calibration result whose gate
+    passed (`all_pass: true`). Operator rule 3: no verdict without one."""
+    import yaml
+    out = {}
+    for p in paths or []:
+        doc = yaml.safe_load(Path(p).read_text(encoding="utf-8")) or {}
+        if doc.get("all_pass") is True and doc.get("method") in SIGNIFICANCE_METHODS:
+            out[doc["method"]] = str(p)
+    return out
+
+
+def grade_claim_file(run_dir: Path, spec_path: Path, cache_path_for, eras: list | None = None,
+                     calibration_files=None) -> dict:
     import yaml
     raw = Path(spec_path).read_bytes()
     doc = yaml.safe_load(raw.decode("utf-8"))
@@ -987,6 +1131,7 @@ def grade_claim_file(run_dir: Path, spec_path: Path, cache_path_for, eras: list 
     if problems:
         raise ValueError(f"{spec_path}: " + "; ".join(problems))
     tests = [(t["name"], TestSpec.from_dict(t)) for t in doc["tests"]]
+    calibrated = calibrated_methods(calibration_files)
     for name, s in tests:
         errs = check_spec(s)
         if errs:
@@ -1000,7 +1145,8 @@ def grade_claim_file(run_dir: Path, spec_path: Path, cache_path_for, eras: list 
         windows = load_variant_bars(run_dir, vid, cache_path_for)
         bars_used += [{"variant": vid, "window": w.label, "path": w.source,
                        "bars": int(len(w.ts)), "sha256": w.sha256} for w in windows]
-        res = {name: run_test(windows, s, eras) for name, s in tests}
+        res = {name: run_test(windows, s, eras, calibrated=s.significance["method"] in calibrated)
+               for name, s in tests}
         variants[vid] = {"symbols": sorted({w.symbol for w in windows}),
                          "signal": windows[0].signal,
                          "windows": [w.label for w in windows], "tests": res,
@@ -1012,6 +1158,7 @@ def grade_claim_file(run_dir: Path, spec_path: Path, cache_path_for, eras: list 
             "graded_variants": graded, "not_graded_variants": not_graded,
             "variants": variants, "bars_used": bars_used,
             "claim_status": combine([v["claim_status"] for v in variants.values()]),
+            "calibration": calibrated,
             "exercised_on_real_runs": sorted(EXERCISED_ON_REAL_RUNS)}
 
 
@@ -1023,13 +1170,17 @@ def main(argv=None) -> int:
     ap.add_argument("--cache-dir", required=True, type=Path,
                     help="read-only data cache with the warm-up rows (never the holdout store)")
     ap.add_argument("--cache-pattern", default="kraken_{symbol}_{tf}.csv")
+    ap.add_argument("--calibration", action="append", type=Path, default=[],
+                    help="calibration result file(s); a verdict needs one with all_pass: true "
+                         "for the spec's method")
     a = ap.parse_args(argv)
     if a.run.resolve() in a.out.resolve().parents:
         raise SystemExit("refusing to write inside the run directory")
-    if "holdout_sealed" in Path(a.cache_dir).resolve().parts:
+    if HOLDOUT_DIR_NAME in Path(a.cache_dir).resolve().parts:
         raise SystemExit("refusing to read the holdout store")
     import yaml
-    result = grade_claim_file(a.run, a.spec, cache_resolver(a.cache_dir, a.cache_pattern))
+    result = grade_claim_file(a.run, a.spec, cache_resolver(a.cache_dir, a.cache_pattern),
+                              calibration_files=a.calibration)
     a.out.parent.mkdir(parents=True, exist_ok=True)
     with open(a.out, "w", encoding="utf-8") as f:
         yaml.safe_dump(result, f, sort_keys=False, allow_unicode=True)
