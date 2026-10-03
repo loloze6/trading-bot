@@ -271,7 +271,14 @@ def test_a_1a_rerun_rewrites_the_pass_rule_and_rechecks_the_id(campaign_root):
 # path; the IMPROVEMENT 07 text applies only under config_direct_authoring. The decide_next addendum is
 # still not in the skill (the brief-card rubric lives in BRIEF_HYPOTHESES.md, edited separately).
 # Previous pin: 8309787de7bf3036eb6ffc24ac621de6258ea045e0b2873644010129533b5e52.
-_MASTER_SKILL_SHA256 = "6ac6d3288b315e1dc5cdff00dadaef099f56a3a42a5a8e639abd90adf555e87f"
+# RE-PINNED by E-068 slice 2 (2026-10-03, CUL-389, branch feat/e068-s2-claim-card): a DECLARED
+# change -- IMPROVEMENT 10 "The claim block" (applies only when CLAIM_TESTS.md is in context, i.e.
+# under orchestrator.claim_tests.enabled), one Output-requirements paragraph, one Checklist bullet,
+# one Forbidden bullet and one Context-rule sentence. The whole file is shipped, so
+# hypothesis_generation's prompt text changes on every path; with the flag off the new text tells
+# the model to skip the section. Nothing about the decide_next addendum changed.
+# Previous pin: 6ac6d3288b315e1dc5cdff00dadaef099f56a3a42a5a8e639abd90adf555e87f.
+_MASTER_SKILL_SHA256 = "c3f5714bd3769d35858dfa7117af4c4c78e05005906739574a07ef54285bfcbe"
 
 
 def test_hypothesis_design_skill_is_byte_identical_to_master():
