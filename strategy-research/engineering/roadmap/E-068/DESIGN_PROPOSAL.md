@@ -202,11 +202,13 @@ so combine it". Today that case reads only "refuted".
 
 **How the library grows: on demand, never in advance.**
 
-- An idea whose test the slots cannot express is **parked**, not stopped. A `test_request` names
-  the missing building block (for example "outcome `fwd_return_of(other_symbol)`") and goes to
-  `campaign_record/test_requests.yaml`. This is card J's park-don't-stop pattern.
-- A person adds that one small function, the idea is un-parked, and every later idea can use
-  the block too. One block multiplies coverage.
+- An idea whose test the slots cannot express is **recorded, not parked and not stopped**
+  (operator, 2026-10-03, slice 2: a claim is information only). A `test_request` names the
+  missing building block (for example "outcome `fwd_return_of(other_symbol)`") and goes to
+  `campaign_record/test_requests.yaml`; the run continues without a claim test, and the gap is
+  counted (`claim_test_status.yaml`, `claim_test_coverage.yaml`, the campaign summary).
+- A person adds that one small function, and every later idea can use the block too. One
+  block multiplies coverage.
 
 **The catch: freedom means more chances of a lucky pass.** Hundreds of combinations make it
 easy to find a "significant" result by chance. Three protections:
@@ -230,9 +232,13 @@ easy to find a "significant" result by chance. Three protections:
 
 1. **Code (always, before any spend).** `check_spec`: known blocks, parameters in range,
    bar-*t* selectors only, horizon shorter than a window, floor present, `pass_if` and
-   `fail_if` present. On failure, 1a gets one retry with the error, as every stage has today.
-2. **`test: none`.** The idea is parked and a `test_request` is appended (section 3). The agent
-   never free-hands a graded test.
+   `fail_if` present. On failure, 1a gets one retry with the error, as every stage has today
+   (shared with the power check: a `min_events` floor above bars / longest horizon x coins).
+   **A claim is information only** (operator, 2026-10-03): whatever remains after that retry
+   -- no claim, an invalid one -- is recorded as a gap and the run continues; nothing here ever
+   stops, parks or reroutes a run.
+2. **`test: none`.** A `test_request` is appended (section 3) and recorded; the run continues
+   without a claim test. The agent never free-hands a graded test.
 3. **Review call** (optional, one LLM call, flag `claim_test_review.mode`). It runs a fixed
    O-18 checklist:
    - Does the test measure *this* claim?
@@ -393,7 +399,8 @@ P-CUL-77).
 
 1. **Test engine:** `claim_tests.py` with the four slots and the v1 blocks; `check_spec`,
    `run_test`, `spec_hash`; then the offline re-grade of run_065 and run_066.
-2. **Step 1a claim block:** the schema, the code checks, and the `test_requests.yaml` park.
+2. **Step 1a claim block:** the schema, the code checks, and the `test_requests.yaml` record
+   (information only: no stop, no park).
 3. **Grid:** the `claim_test` criterion and `claim_status`.
 4. **Findings:** the finding record and the findings summary.
 5. **Readers:** v3 output and the short SKILL.

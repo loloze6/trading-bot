@@ -82,10 +82,6 @@ rationale: one or two sentences -- which hypothesis claim each block path implem
   with the error, a second stops the run.
 - No symbol/coin/timeframe field and no hypothesis id — a validated block is usable on any coin, and the run
   already carries its `hypothesis_id`.
-- If `hypothesis_card.yaml` carries a `claim` block (E-068, claim-test flow only), its `kind` and tests are
-  step 1a's view of what the idea could be. **You decide** whether the idea is a block, and of which kind, from
-  the config you write; do not bend the config or the manifest to match the claim. The orchestrator compares the
-  two after this stage and records any mismatch as a warning; it never sends you back for it.
 
 `decision.yaml`:
 - stage: "strategy_config_authoring"

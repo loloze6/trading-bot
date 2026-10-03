@@ -701,9 +701,8 @@ def test_flag_off_quarantine_is_unchanged(campaign_root, monkeypatch):
 # ---------------------------------------------------------------------------
 
 def test_parked_statuses_are_valid_queue_statuses():
-    assert rpr.PARK_KINDS == ("component", "data", "test")
-    assert camp.PARKED_STATUSES == ("paused:waiting_for_component", "paused:waiting_for_data",
-                                    "paused:waiting_for_test")
+    assert rpr.PARK_KINDS == ("component", "data")
+    assert camp.PARKED_STATUSES == ("paused:waiting_for_component", "paused:waiting_for_data")
     for status in camp.PARKED_STATUSES:
         assert rs._QUEUE_STATUS_RE.match(status)
         rs.validate_queue_entry({"id": "x", "status": status,

@@ -26,11 +26,13 @@ defaults); the agent may not write them -- fewer knobs, fewer lucky passes.
 Regime selectors (claim_tests.NOT_RECOMPUTABLE_SELECTORS) are accepted as
 EFFECT-SIZE ONLY (operator, 2026-10-03, CUL-391): every other slot is checked
 with check_spec's own rules, and the test is marked verdict_possible: false
-with REGIME_REASON. Such a claim is never parked. `verdict_possible: true`
+with REGIME_REASON. `verdict_possible: true`
 means only that no rule of this file excludes a verdict; a verdict still
 needs a calibrated significance method (claim_tests operator rule 3).
 
-Only `tests: none` parks (a genuinely missing building block).
+A claim is INFORMATION ONLY: no check here ever stops, parks or reroutes a run.
+`tests: none` (a genuinely missing building block) is recorded as a test
+request; a missing or invalid claim is recorded as a gap (claim_test_status.yaml).
 """
 from __future__ import annotations
 
@@ -72,12 +74,12 @@ TEST_REQUESTS_REL = "campaign_record/test_requests.yaml"
 @dataclass
 class ClaimCheck:
     errors: list = field(default_factory=list)     # non-empty -> 1a retry
-    parked: bool = False                            # tests: none
+    tests_none: bool = False                        # tests: none (a missing block)
     missing_block: str | None = None
     tests: list = field(default_factory=list)       # per test: name, spec_hash, verdict_possible, reason
 
     def record(self) -> dict:
-        return {"errors": list(self.errors), "parked": self.parked,
+        return {"errors": list(self.errors), "tests_none": self.tests_none,
                 "missing_block": self.missing_block, "tests": list(self.tests)}
 
 
@@ -187,7 +189,7 @@ def check_claim(claim, criteria_ids=()) -> ClaimCheck:
             e.append("claim.missing_block: required with tests: none -- name the missing "
                      "building block (CLAIM_TESTS.md)")
         if not e:
-            res.parked = True
+            res.tests_none = True
             res.missing_block = claim["missing_block"].strip()
         return res
     if "missing_block" in claim:
@@ -330,22 +332,93 @@ def power_warnings(claim: dict, total_bars: int, n_coins: int) -> list:
 
 
 # ---------------------------------------------------------------------------
-# Park: campaign_record/test_requests.yaml (card J pattern)
+# test_requests.yaml (card J pattern) and the coverage record -- information
+# only: neither ever stops, parks or reroutes a run.
 # ---------------------------------------------------------------------------
 
+COVERAGE_REL = "campaign_record/claim_test_coverage.yaml"
+# Why a run has no usable claim test (claim_test_status.yaml `reason`).
+GAP_REASONS = ("no_claim", "invalid_claim", "tests_none", "criteria_refs_only",
+               "exempt", "check_error")
+
+
 def test_request_key(rec: dict) -> tuple:
-    return (rec.get("run_id"), rec.get("missing_block"))
+    return (rec.get("run_id"), rec.get("hypothesis_id"), rec.get("missing_block"))
 
 
 test_request_key.__test__ = False  # not a pytest test
 
 
 def append_test_requests(root: Path, rows: list) -> int:
-    """Append-only, locked, idempotent per (run_id, missing_block): a re-run
-    of the park adds no duplicate row. Same appender as data/component
-    requests (tools/campaign_review_retired.append_requests)."""
+    """Append-only, locked, idempotent per (run_id, hypothesis_id,
+    missing_block): a re-run adds no duplicate row. Same appender as
+    data/component requests (tools/campaign_review_retired.append_requests)."""
     import campaign_review_retired as crr
     return crr.append_requests(Path(root) / TEST_REQUESTS_REL, rows, key=test_request_key)
 
 
 append_test_requests.__test__ = False
+
+
+def status_of(res, exempt: str | None, power: list) -> dict:
+    """The run's claim-test status from its card's check: usable (at least one
+    valid slot test) or the gap reason. Information only."""
+    if exempt:
+        return {"usable": False, "reason": "exempt", "detail": exempt}
+    if res is None:
+        return {"usable": False, "reason": "check_error", "detail": "no result"}
+    if res.errors:
+        missing = any("a `claim` mapping is required" in e for e in res.errors)
+        return {"usable": False, "reason": "no_claim" if missing else "invalid_claim",
+                "detail": "; ".join(res.errors)}
+    if res.tests_none:
+        return {"usable": False, "reason": "tests_none", "detail": res.missing_block}
+    if not res.tests:
+        return {"usable": False, "reason": "criteria_refs_only",
+                "detail": "the claim is tested only by the card's own menu criteria"}
+    out = {"usable": True, "reason": None, "detail": None, "tests": list(res.tests)}
+    if power:
+        out["power_warnings"] = list(power)
+    return out
+
+
+def record_coverage(root: Path, run_id: str, status: dict) -> None:
+    """campaign_record/claim_test_coverage.yaml {runs: {run_id: {...}}}: the
+    run's latest claim-test status, so the campaign summary can count the runs
+    without a usable claim test and why. Locked, atomic, one row per run."""
+    import campaign_memory as cm
+    import campaign_review_retired as crr
+    path = Path(root) / COVERAGE_REL
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with crr._lock(path, path.name):
+        doc = crr._load_mapping(path, {})
+        runs = doc.get("runs") if isinstance(doc.get("runs"), dict) else {}
+        runs[run_id] = {"usable": bool(status.get("usable")), "reason": status.get("reason"),
+                        "power_warning": bool(status.get("power_warnings"))}
+        cm._atomic_write(path, {**doc, "runs": runs})
+
+
+def coverage_summary_lines(root: Path) -> list:
+    """Campaign-summary lines; [] when the coverage file does not exist (so a
+    summary is unchanged until a claim-test run has been checked)."""
+    path = Path(root) / COVERAGE_REL
+    if not path.exists():
+        return []
+    import yaml
+    doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    runs = doc.get("runs") if isinstance(doc, dict) and isinstance(doc.get("runs"), dict) else {}
+    usable = sorted(r for r, v in runs.items() if isinstance(v, dict) and v.get("usable"))
+    gaps = {}
+    for r, v in sorted(runs.items()):
+        if isinstance(v, dict) and not v.get("usable"):
+            gaps.setdefault(str(v.get("reason")), []).append(r)
+    floor = sorted(r for r, v in runs.items() if isinstance(v, dict) and v.get("power_warning"))
+    lines = ["", "## Claim tests (E-068, information only)", "",
+             f"- Runs with a usable claim test: {len(usable)}",
+             f"- Runs without one: {sum(len(v) for v in gaps.values())}"]
+    for reason, rs in sorted(gaps.items()):
+        lines.append(f"  - {reason}: {len(rs)} ({', '.join(rs)})")
+    if floor:
+        lines.append(f"- Runs whose floor cannot be reached (power warning): {len(floor)} "
+                     f"({', '.join(floor)})")
+    return lines

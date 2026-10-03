@@ -1,10 +1,20 @@
 # CLAIM_TESTS.md: the claim block and its test slots (E-068)
 
 You are reading this file because `orchestrator.claim_tests.enabled` is on. It is added to
-step 1a's inputs only under that flag. When it is present, `hypothesis_card.yaml` MUST carry
-a `claim` block as described here. Code (`tools/claim_card.py`) checks the block before any
-other step runs. If the check fails, you get one retry with the error; if the retry fails too,
-the run fails.
+step 1a's inputs only under that flag, and it adds one field to what your skill asks for:
+
+- **Every card you write carries a `claim` block**, described here: `hypothesis_card.yaml`,
+  and, when you write several cards, every `hypothesis_card_<n>.yaml` too (an extra card is
+  launched later without coming back to you, so it must carry its own claim).
+- **Exception:** a pass-through card (your skill's IMPROVEMENT 08) is copied through as
+  supplied; it needs no `claim`.
+- Put `claim` after the card's other fields. It changes nothing else your skill asks for.
+
+Code (`tools/claim_card.py`) checks every card's claim before any other step runs. If a claim
+is refused, or its floor cannot be reached (section 2, Floor and consistency), you get one
+retry with the error. A claim is information only: whatever remains after that retry is
+recorded and the run continues -- but a card without a usable claim test teaches the campaign
+nothing about its claim.
 
 The block list below is kept equal to `tools/claim_tests.py` by a test. Use only what is listed
 here. Do not invent blocks, fields or parameters.
@@ -66,8 +76,8 @@ building block:
   missing_block: "outcome fwd_return_of(other_symbol, h): BTC's return predicting SOL's"
 ```
 
-The idea is then parked, not stopped. A test request is recorded, and the idea runs once a
-person has added the block.
+A test request is recorded (`campaign_record/test_requests.yaml`) and the run continues
+without a claim test; a person can add the block for later ideas.
 
 ## 2. The four slots
 
