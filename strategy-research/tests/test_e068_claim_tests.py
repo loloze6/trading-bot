@@ -740,8 +740,8 @@ def test_calibration_tool_runs_cells_and_summarizes(tmp_path):
                                                     "switching_upper_opposite"]
     summ = cal.summarize(ct.SIGNIFICANCE_METHOD, cells)
     assert summ["all_pass"] is False                     # 4 of 8 rows only: never a pass
-    assert summ["gate"] == {"alpha": 0.05, "pass_range": [0.025, 0.075],
-                            "max_share_undefined": 0.05}
+    assert summ["gate"] == {"alpha": 0.05, "ceiling": 0.075, "floor_warning": 0.025,
+                            "max_share_undefined": 0.05, "rule": "one_sided"}
     assert summ["scope"]["signal"] == cal.DONCHIAN and summ["scope"]["cadence"] == "daily"
     assert summ["code_sha256"] == cal.code_sha256() and len(summ["code_sha256"]) == 64
     mixed = [dict(cells[0], code_sha256="a" * 64), cells[1]]
@@ -792,12 +792,17 @@ def test_uncalibrated_method_gives_effect_sizes_and_no_verdict():
     assert ct.combine(["refuted", "method_not_calibrated"]) == "method_not_calibrated"
 
 
+def gate_row(name, shares=None, undefined=0.0, ok=True, n_sims=ct.CALIBRATION_N_SIMS):
+    shares = shares or {h: 0.05 for h in range(1, 6)}
+    return {"row": name, "pass": ok, "n_sims": n_sims, "share_p_below_0_05_of_defined": shares,
+            "share_undefined": {h: undefined for h in shares}}
+
+
 def passed_summary(signal, statistic, method=None, **over):
     doc = {"method": method or ct.SIGNIFICANCE_METHOD, "gate": dict(ct.CALIBRATION_GATE),
            "scope": {"signal": signal, "cadence": "daily", "statistic": statistic},
            "code_sha256": "f" * 64, "all_pass": True,
-           "rows": [{"row": f"r{i}", "pass": True, "n_sims": ct.CALIBRATION_N_SIMS}
-                    for i in range(ct.CALIBRATION_ROWS)]}
+           "rows": [gate_row(f"r{i}") for i in range(ct.CALIBRATION_ROWS)]}
     doc.update(over)
     return doc
 
@@ -813,9 +818,8 @@ def test_calibration_lock_needs_a_full_passed_gate_for_this_exact_test(tmp_path)
         "row_failed": passed_summary(DON, "mean_diff", rows=[{"pass": False}] * 8),
         "few_rows": passed_summary(DON, "mean_diff", rows=[{"pass": True}] * 4),
         "short_gate": passed_summary(DON, "mean_diff", rows=[
-            {"row": f"r{i}", "pass": True, "n_sims": 5} for i in range(8)]),
-        "copied_rows": passed_summary(DON, "mean_diff", rows=[
-            {"row": "same", "pass": True, "n_sims": 400}] * 8),
+            gate_row(f"r{i}", n_sims=5) for i in range(8)]),
+        "copied_rows": passed_summary(DON, "mean_diff", rows=[gate_row("same")] * 8),
         "other_gate": passed_summary(DON, "mean_diff", gate={**ct.CALIBRATION_GATE, "alpha": 0.1}),
         "no_hash": passed_summary(DON, "mean_diff", code_sha256=None),
     }
@@ -834,6 +838,138 @@ def test_calibration_lock_needs_a_full_passed_gate_for_this_exact_test(tmp_path)
         only.write_text(yaml.safe_dump(doc))
         assert ct.calibration_for(ct.passed_calibrations([only]), s, ws) is None, doc
     assert ct.passed_calibrations([]) == []
+
+
+# --- amendment 5: the gate is one-sided ---------------------------------------------------
+
+def test_one_sided_row_rule_fails_flattering_and_warns_on_too_strict():
+    j = ct.judge_calibration_row
+    assert j(gate_row("x")) == (True, [])
+    def h(**v):
+        return {k: v.get(f"h{k}", 0.05) for k in range(1, 6)}
+    assert j(gate_row("x", h(h1=0.075))) == (True, [])                      # ceiling inclusive
+    assert j(gate_row("x", h(h1=0.0751)))[0] is False                       # flattering: fail
+    assert j(gate_row("x", h(h1=0.025, h2=0.0225, h3=0.0))) == (True, [2, 3])  # too strict: warn
+    assert j(gate_row("x", undefined=0.06))[0] is False                    # no answer: fail
+    assert j(gate_row("x", h(h1=None)))[0] is False
+    assert j(gate_row("x", {1: 0.05}))[0] is False                         # horizons 1-5 only
+    assert j({"row": "x"})[0] is False                                      # no numbers: fail
+    bad = gate_row("x")
+    bad["share_undefined"] = {1: 0.0}                                       # horizons disagree
+    assert j(bad)[0] is False
+
+
+def test_lock_rejudges_rows_and_refuses_the_old_two_sided_gate(tmp_path):
+    ws = make_windows(54, n=60, n_windows=1)
+    s = spec(EVENT)
+    cases = {
+        # the row flag says pass, its numbers flatter: the lock trusts the numbers
+        "flag_lies": passed_summary(DON, "mean_diff", rows=[
+            gate_row(f"r{i}", {**{k: 0.05 for k in range(1, 6)}, 1: 0.08}) for i in range(8)]),
+        "one_horizon": passed_summary(DON, "mean_diff", rows=[
+            gate_row(f"r{i}", {1: 0.05}) for i in range(8)]),
+        "old_gate": passed_summary(DON, "mean_diff", gate={
+            "alpha": 0.05, "pass_range": [0.025, 0.075], "max_share_undefined": 0.05}),
+        "strict": passed_summary(DON, "mean_diff", rows=[
+            gate_row(f"r{i}", {**{k: 0.04 for k in range(1, 6)}, 1: 0.02 if i < 2 else 0.05})
+            for i in range(8)]),
+    }
+    files = []
+    for k, doc in cases.items():
+        files.append(tmp_path / f"{k}.yaml")
+        files[-1].write_text(yaml.safe_dump(doc))
+    passed = ct.passed_calibrations(files)
+    assert [Path(c["file"]).stem for c in passed] == ["strict"]
+    assert passed[0]["conservative"] == {"r0": [1], "r1": [1]}
+    assert ct.calibration_for(passed, s, ws) is passed[0]
+    with pytest.raises(ValueError, match="more than one"):          # no choosing the label
+        ct.calibration_for(passed + [dict(passed[0], file="twin")], s, ws)
+    longer = spec(EVENT, outcome={"kind": "fwd_return", "horizons": [1, 6]})
+    assert ct.calibration_for(passed, longer, ws) is None           # beyond the gate's horizons
+
+
+def test_grade_reports_conservative_next_to_the_verdict(tmp_path):
+    ws = make_windows(55, n=80, n_windows=2)
+    run = _write_run(tmp_path, ws, DON)
+    cdir = _write_cache_for(tmp_path, ws)
+    sp = tmp_path / "spec.yaml"
+    sp.write_text(yaml.safe_dump({"claim_id": "c", "source_run": "run_x", "tests": [
+        {"name": "t", "selector": {"kind": "all"},
+         "outcome": {"kind": "fwd_return", "horizons": [1]}, "baseline": None,
+         "statistic": "rank_ic", "direction": "greater", "floor": {"min_events": 10**6},
+         "significance": dict(FAST)}]}))
+    res = ct.cache_resolver(cdir, "kraken_{symbol}_{tf}.csv")
+    for rows, status in (([gate_row(f"r{i}") for i in range(8)], "pass"),
+                         ([gate_row("r0", {**{k: 0.05 for k in range(1, 6)}, 1: 0.01})]
+                          + [gate_row(f"r{i}") for i in range(1, 8)],
+                          "conservative")):
+        calib = tmp_path / f"calib_{status}.yaml"
+        calib.write_text(yaml.safe_dump(passed_summary(DON, "rank_ic", rows=rows)))
+        t = ct.grade_claim_file(run, sp, res, calibration_files=[calib])["variants"]["base"]["tests"]["t"]
+        assert t["status"] == "inconclusive" and t["calibration_status"] == status
+        assert t["calibration_conservative_cells"] == ({} if status == "pass" else {"r0": [1]})
+    t = ct.grade_claim_file(run, sp, res, calibration_files=[])["variants"]["base"]["tests"]["t"]
+    assert t["calibration_status"] is None and t["calibration_conservative_cells"] is None
+
+
+E068 = Path(__file__).resolve().parents[1] / "engineering" / "roadmap" / "E-068"
+
+
+def _cells(folder, prefix):
+    return [yaml.safe_load(p.read_text(encoding="utf-8"))
+            for p in sorted((E068 / folder).glob(f"{prefix}*.yaml"))]
+
+
+def test_reevaluate_the_committed_shuffle_cells_under_the_one_sided_rule():
+    """The existing method-B gate cells (amendment 3, no re-run) pass the
+    one-sided rule; the four too-strict cells are the ones reported."""
+    cells = _cells("calibration", "cell_block_permutation_v1_")
+    assert len(cells) == 4 and not any(c.get("code_sha256") for c in cells)
+    res = cal.reevaluate(ct.SIGNIFICANCE_METHOD, cells, {"f": "0" * 64}, "REF", "e" * 64)
+    assert res["all_pass"] is True and res["code_sha256"] == "e" * 64
+    assert res["scope"]["signal"] == cal.donchian(20) and res["reevaluated"]["rerun"] is False
+    assert res["conservative"] == {"iid_lower_opposite": [1], "iid_upper_claimed": [2],
+                                   "switching_lower_opposite": [4],
+                                   "switching_upper_opposite": [2]}
+    assert max(v for r in res["rows"] for v in r["share_p_below_0_05_of_defined"].values()) \
+        <= ct.CALIBRATION_GATE["ceiling"]
+    with pytest.raises(ValueError, match="own code hash"):
+        cal.reevaluate(ct.SIGNIFICANCE_METHOD, [dict(cells[0], code_sha256="a" * 64)],
+                       {}, "REF", "e" * 64)
+    with pytest.raises(ValueError, match="Donchian"):
+        cal.reevaluate(ct.SIGNIFICANCE_METHOD, [dict(cells[0], signal=cal.donchian(14))],
+                       {}, "REF", "e" * 64)
+
+
+def test_reevaluate_cli_reads_the_committed_cells_and_hashes_git_bytes(tmp_path):
+    """bc4e67f4 produced the B cells; the CLI re-judges exactly those bytes."""
+    import subprocess
+    try:
+        subprocess.run(["git", "-C", str(cal.REPO_ROOT), "cat-file", "-e", "bc4e67f4"], check=True,
+                       capture_output=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pytest.skip("history not available (shallow clone)")
+    paths = sorted((E068 / "calibration").glob("cell_block_permutation_v1_*.yaml"))
+    out = tmp_path / "s.yaml"
+    assert cal.main(["reevaluate", "--method", ct.SIGNIFICANCE_METHOD, "--code-ref", "bc4e67f4",
+                     "--out", str(out)] + [str(p) for p in paths]) == 0
+    doc = yaml.safe_load(out.read_text())
+    assert doc["all_pass"] is True and doc["code_sha256"] == cal.code_sha256_at("bc4e67f4")
+    assert len(doc["reevaluated"]["cell_files_sha256"]) == 4
+    edited = tmp_path / "x"
+    with pytest.raises(ValueError):                                 # outside the repo: refused
+        cal.committed_cells([edited], "bc4e67f4")
+
+
+def test_one_sided_rule_does_not_rescue_the_other_methods():
+    for folder, prefix in (("calibration", "cell_a851a_episode_v1_"),
+                           ("calibration_a4", "cell_timegap_p20_"),
+                           ("calibration_a4", "cell_timegap_p14_")):
+        cells = _cells(folder, prefix)
+        assert len(cells) == 4
+        method = cells[0]["method"]
+        stamped = [dict(c, code_sha256="e" * 64) for c in cells]
+        assert cal.summarize(method, stamped)["all_pass"] is False, prefix
 
 
 # --- method A: the existing A8.5.1a, fed unchanged ------------------------------------------

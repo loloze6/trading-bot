@@ -1,26 +1,149 @@
-# Re-grade of run_065: not graded, no significance method passed calibration
+# Re-grade of run_065: inconclusive (BTCUSD and SOLUSD, Donchian 20); Donchian 14 not graded
 
-E-068 slice 1 · CUL-386 · 2026-10-03 · branches `feat/cul-386-claim-tests`
-(PR #315, merged) and `feat/cul-386-a851a-daily-gap` (amendment 4)
+E-068 slice 1 and 1b · CUL-386 · 2026-10-03 · branches `feat/cul-386-claim-tests`
+(PR #315, merged), `feat/cul-386-a851a-daily-gap` (PR #316, merged, amendment 4)
+and `feat/e068-s1b-one-sided-gate` (amendment 5 and the grade)
 
-## The answer in five lines
+## The answer in six lines
 
-- **Verdict: none. Method not calibrated.** Three candidate methods were
-  tried, and none passed the pre-registered calibration gate. run_065 was
-  **not graded** (operator rule 3: no verdict without a passed gate, and never
-  a best guess). The third was the operator's one bounded try (amendment 4):
-  A8.5.1a with its gap in time. **The method search is now stopped**
-  (operator).
-- **N tests run: 0** of 2 pre-registered for run_065 (`upper_breakout`,
-  `lower_breakout`). run_066's test is moved to CUL-387.
-- **run_065's effect sizes were NOT computed either.** Seeing them before the
-  method is chosen would contaminate the pre-registered test. The inputs are
-  frozen by their sha256 below instead.
-- The tool ships: `tools/claim_tests.py` (17 blocks, effect sizes, verdict only
-  with a passed gate) and `tools/claim_tests_calibration.py` (the gate).
-- **One gate is needed per method x signal (with its parameters) x
-  timeframe.** It is not needed per coin, because the gate uses simulated
-  prices.
+- **Verdict: inconclusive.** run_065's claim ("after a close in the top 20% of
+  its range, the next 1-5 days are higher than other days; after the bottom
+  20%, lower") is neither supported nor refuted on the variants graded.
+- **Method:** the shuffle method (B, `block_permutation_v1`, chunks without
+  replacement), which passes the calibration gate once the gate is one-sided
+  (amendment 5, operator 2026-10-03). Its gate status is **"conservative"**:
+  4 of its 40 gate values sit slightly below the 2.5% floor (lowest 2.25%),
+  none above the 7.5% ceiling (highest 5.75%).
+- **N tests run: 4** = 2 pre-registered tests (`upper_breakout`,
+  `lower_breakout`) x 2 graded variants. None is supported, so there is no
+  "best of N" winner to deflate.
+- **Scope:** BTCUSD (`base`) and SOLUSD (`donchian_solusdt_crossasset`),
+  Donchian(20), daily, 6 windows 2022-01 to 2023-09. **No ETH** (the card said
+  "BTC/ETH"; no ETH variant exists).
+- **Not graded:** `donchian_period_14_reactive` (BTCUSD, Donchian 14). The
+  shuffle method's gate was never run on Donchian(14), and this slice does not
+  run gates. `xrp_payment` belongs to run_066 (CUL-387).
+- `claim_status` is **information only**: it never changes `idea_status`,
+  never routes, never bans (D-055). Nothing in the pipeline reads it.
+
+## Amendment 5 and the grade (slice 1b)
+
+### What changed and why (operator decision, 2026-10-03)
+
+- **The gate became one-sided** (`regrade_specs/AMENDMENT_5.md`):
+  - more than 7.5% false edges on no-edge prices (the method flatters) is a
+    **fail, mandatory**;
+  - fewer than 2.5% (too strict) is a **pass with a warning, "conservative"**.
+- **Reason:** a flattering method stores false findings that later
+  combinations build on; a too-strict one only misses some real effects and
+  never invents one.
+- **Disclosed:** the rule was decided after the shuffle method's gate numbers
+  were published, and before any run_065 claim result was computed or seen.
+- **The gate itself was not re-run or changed.** The existing shuffle-method
+  cells (produced by commit `bc4e67f4`) were re-judged under the new rule:
+  `calibration_a5/summary_block_permutation_v1_onesided.yaml`. It records the
+  hash of the producing code and of each cell, both read from git at
+  `bc4e67f4`, and the cells were checked equal to their committed version.
+- The other methods are not rescued: A never answers, amendment 4's timegap
+  version and the retired analytic method break the ceiling.
+
+### Calibration status per signal
+
+| Signal (run_065 variants) | Shuffle-method gate | Status |
+|---|---|---|
+| Donchian(20), daily (`base`, `donchian_solusdt_crossasset`) | 8 of 8 rows pass the ceiling; highest 0.0575 | **pass, conservative** |
+| Donchian(14), daily (`donchian_period_14_reactive`) | never run | **not calibrated: not graded** |
+
+Conservative cells (share of p < 0.05 below 0.025; target 0.05):
+
+| Row (model, side, direction) | Horizon | Share |
+|---|---|---|
+| iid, lower, opposite | 1 day | 0.0225 |
+| iid, upper, claimed | 2 days | 0.0225 |
+| switching, lower, opposite | 4 days | 0.0225 |
+| switching, upper, opposite | 2 days | 0.0225 |
+
+Reading it: on no-edge data the method says "edge" a bit less than 5% of the
+time in these cells (9 in 400 instead of about 20). So an "inconclusive" here
+is somewhat weaker evidence of "no effect" than it would be with an exactly
+sized test. A "supported" would not be weakened.
+
+### The grade (pre-registered spec unchanged; B with 1,000 fakes, seed 20261003)
+
+Output: `calibration_a5/grade_run065.yaml`. Checks before grading: all 18
+bars.csv match the sha256 frozen below; the signal recomputed on the real
+prices matches the traded forecast within 5e-7 on every window.
+
+Effect = mean forward return after the event days minus on all other days
+(1.0 = 100%). For `lower_breakout` the claimed sign is negative. "Windows" =
+windows (of 6) where the effect has the claimed sign; the rule needs 4.
+
+**`base`, BTCUSD, Donchian(20): inconclusive**
+
+| Test | h (days) | Effect | p | p wrong way | Events | Windows right way |
+|---|---|---|---|---|---|---|
+| upper | 1 | +0.0015 | 0.535 | 0.466 | 241 | 3 |
+| upper | 2 | +0.0025 | 0.612 | 0.389 | 241 | 2 |
+| upper | 3 | +0.0023 | 0.686 | 0.315 | 241 | 3 |
+| upper | 4 | +0.0012 | 0.755 | 0.246 | 241 | 2 |
+| upper | 5 | +0.0018 | 0.749 | 0.252 | 241 | 2 |
+| lower | 1 | -0.0005 | 0.552 | 0.449 | 239 | 3 |
+| lower | 2 | -0.0016 | 0.516 | 0.485 | 236 | 2 |
+| lower | 3 | -0.0030 | 0.458 | 0.543 | 234 | 2 |
+| lower | 4 | -0.0021 | 0.546 | 0.455 | 231 | 2 |
+| lower | 5 | +0.0008 | 0.673 | 0.328 | 227 | 2 |
+
+Nothing near significance either way, and the sign flips between windows. On
+BTC, the breakout days look like any other days.
+
+**`donchian_solusdt_crossasset`, SOLUSD, Donchian(20): inconclusive**
+
+| Test | h (days) | Effect | p | p wrong way | Events | Windows right way |
+|---|---|---|---|---|---|---|
+| upper | 1 | +0.0134 | **0.019** | 0.982 | 172 | 5 |
+| upper | 2 | +0.0238 | **0.038** | 0.963 | 172 | 5 |
+| upper | 3 | +0.0355 | **0.038** | 0.963 | 172 | 4 |
+| upper | 4 | +0.0434 | 0.060 | 0.941 | 172 | 4 |
+| upper | 5 | +0.0527 | 0.057 | 0.944 | 172 | 4 |
+| lower | 1 | -0.0068 | 0.314 | 0.687 | 256 | 4 |
+| lower | 2 | -0.0158 | 0.178 | 0.823 | 252 | 4 |
+| lower | 3 | -0.0227 | 0.164 | 0.837 | 249 | 4 |
+| lower | 4 | -0.0299 | 0.149 | 0.852 | 245 | 3 |
+| lower | 5 | -0.0320 | 0.212 | 0.789 | 241 | 2 |
+
+- **upper_breakout on SOL is the closest to a finding, and it is still
+  inconclusive.** p < 0.05 at 1-3 days, 0.057-0.060 at 4-5 days; the
+  pre-registered rule needs p < 0.05 at every horizon. No exception is made
+  after seeing it.
+- **Do not read it as a near miss worth chasing.** 4 tests x 5 horizons were
+  looked at; the smallest p, 0.019, would not survive any correction for that
+  many looks (e.g. 0.05 / 20 = 0.0025). The horizons overlap, so they are not
+  20 independent looks, but they are more than one.
+- Size: SOL days after an upper breakout returned about 1.3% more over the next
+  day than other days (5.3% over 5 days) in 2022-23. SOL moved several percent
+  a day in that period, so this is within its normal noise, which is what the
+  p-value says.
+- lower_breakout on SOL has the claimed sign at every horizon but p 0.15-0.31.
+
+**`donchian_period_14_reactive`, BTCUSD, Donchian(14): not graded.** The tool
+still printed its effect sizes (it always does; amendment 4 section 4): small,
+sign-flipping, like `base`. No p-value, no verdict. Note: these effect sizes
+are now seen, so any later Donchian(14) gate run would be decided after seeing
+them. **Operator decision (2026-10-03): no Donchian(14) gate will be run.** The
+decision would no longer be blind, and the re-grade has served its purpose.
+This variant stays "not graded".
+
+**Combined** (pre-registered: supported only if both tests are; refuted
+dominates across variants): `base` inconclusive, `donchian_solusdt_crossasset`
+inconclusive, so **run_065: inconclusive.**
+
+### Blocks exercised on real runs
+
+This grade is the first real-data use of `selector:event`,
+`outcome:fwd_return`, `baseline:complement` and `statistic:mean_diff`, with
+method B. `EXERCISED_ON_REAL_RUNS` in the tool also lists `selector:all` and
+`statistic:rank_ic`; those were for run_066's test (CUL-387) and are still
+synthetic-only. The constant was not edited in this slice.
 
 ## Operator rules (written into the tool's docstring too)
 
@@ -72,7 +195,7 @@ removed on 2026-09-12.
 recomputed on the real prices matches the saved forecast within 5e-7 on all
 18 windows. That is the 6-decimal rounding of bars.csv.
 
-## Calibration gate: both methods failed
+## Calibration gate history (before amendment 5: under the two-sided rule, no method passed)
 
 **Setup** (pre-registered, amendment 3 section 5):
 - Simulated prices with no edge: iid, and a "switching" model with long calm
@@ -262,11 +385,11 @@ Donchian(14), `calibration_a4/summary_timegap_p14.yaml`, **FAIL**:
 
 ## Open questions
 
-1. **Method for run_065: closed for now.** Option (a), A8.5.1a with a daily
-   gap, was tried as amendment 4 and failed: it flatters at horizons longer
-   than its gap. The operator stopped the method search after this bounded
-   try. Not tried: (b) method B with a gate re-stated at the grade's N, and
-   (c) a standard event-study method for overlapping returns.
+1. **Method for run_065: closed.** Amendment 5 made the gate one-sided and
+   method B passed for Donchian(20); run_065 is graded (inconclusive).
+   `donchian_period_14_reactive` stays **not graded**: the operator decided
+   (2026-10-03) not to run B's gate on Donchian(14). Its effect sizes are
+   already seen, so that run would no longer be blind.
 2. **`block_adjusted_pvalue` and the live `residual_ic` criterion.** The
    function `signal_statistics.block_adjusted_pvalue` is what the live
    residual_ic grid criterion uses (`tools/residual_ic.py`, block = bars per
@@ -295,6 +418,11 @@ Donchian(14), `calibration_a4/summary_timegap_p14.yaml`, **FAIL**:
      hourly bars only.
    - Possible ways to bound the cost: calibrate per signal family, or make the
      gate cheaper.
+   - **Open question for slice 3 (operator, 2026-10-03).** One calibration is
+     needed per method x signal x timeframe, about an hour each. Slice 3's
+     phase A must propose how calibrations are **stored and reused across
+     runs**. When no calibration exists for a test, the status is
+     **"verdict pending"**, not a failure; effect sizes are still reported.
 4. **run_066** (CUL-387): the Keltner signal recomputed with 500 warm-up bars
    does not match the traded one (0.007-0.39 on a ±20 scale). The engine's
    history rules were deliberately not copied into the tool.
@@ -330,3 +458,12 @@ two files that produce them, and a summary refuses to mix code versions.
 **Also for the method decision:** the run_065 spec names no `significance`
 method, so it defaults to B (N = 1,000, seed 20261003). Choosing A, or a
 re-stated B, needs a written amendment naming the method before any grade.
+
+**Slice 1b (amendment 5), in order:**
+
+13. `f7a3b3ae` amendment 5 (before any code or result).
+14. `073bdd4c` its code and tests.
+15. `9dff57f3` the review notes and review fixes (before any result).
+16. `7f1acad5` method B's gate re-evaluated under the one-sided rule (no
+    re-run).
+17. The grade and this report.
