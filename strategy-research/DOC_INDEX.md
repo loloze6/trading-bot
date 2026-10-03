@@ -36,6 +36,11 @@ derived its own task queue from this; engineering work now tracks separately in
 → **[`RUNBOOK.md`](RUNBOOK.md)** — launch/status/resume/stop commands, the
 hard-pause table (section 3), the block on background/`nohup` mode (grounds: ledger P0 kernel — see
 engineering/improvements/done/IMPROVEMENTS_DONE_20260712.md).
+Short operator one-pagers (C6.3): [`docs/OPERATOR_START_CAMPAIGN.md`](docs/OPERATOR_START_CAMPAIGN.md)
+(start a campaign on the new pipeline) and
+[`docs/OPERATOR_UNLOCK_HOLDOUT.md`](docs/OPERATOR_UNLOCK_HOLDOUT.md) (unlock the holdout).
+What plan v26 delivered and what C4's two real runs showed:
+[`engineering/POST_COMPLETION_plan_v26.md`](engineering/POST_COMPLETION_plan_v26.md).
 
 ### "What is this system / what does artifact X mean?"
 → **[`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)** — pipeline stage map, every artifact's

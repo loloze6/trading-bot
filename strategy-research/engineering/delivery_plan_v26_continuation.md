@@ -7,6 +7,10 @@ slices 0–8 are built behind flags (see `review_2026-09-27/DELIVERY_REVIEW.md`)
 C1…, D) refer to `review_2026-09-27/DELIVERY_REVIEW.md`; the walk-through detail is in
 `review_2026-09-27/A3_all_flags_on.md`.
 
+**CLOSED 2026-10-03.** C0–C3 done; C4 done with caveats; C5 and C6 partly done, the rest
+superseded or moved (status line under each section). Real-run evidence and what broke:
+`POST_COMPLETION_plan_v26.md`. Open work now lives in E-066, E-067, E-068 and E-070 (C7).
+
 ## In plain words
 
 Plan v26 built every piece, each switched off and tested alone. The review showed that with
@@ -51,6 +55,8 @@ header, docs move with code). Added, from what the review taught us:
 
 ## C0 — Machine ready (no design; small)
 
+**Status: done** (C0.1 = CUL-336, PR #235).
+
 | # | Item | Evidence | Done when |
 |---|---|---|---|
 | C0.1 | Merge CUL-336 (closed-book stage agents) after its review fixes — incl. switching off the CLI auto-memory the stage agents still load, and restoring legacy stages' cross-run inputs. | branch `fix/cul-336-closed-book-stages` | merged |
@@ -58,6 +64,8 @@ header, docs move with code). Added, from what the review taught us:
 | C0.3 | Claude calls go through the Claude CLI logged in with the operator's account (no API key; credentials present; runs count against the account's usage limits); `GEMINI_API_KEY` is set. Verify one real stage call still authenticates after CUL-336 (neutral cwd, no settings). | A3 §3.6 | one real stage call works |
 
 ## C1 — One full run works (E-061, new epic: "Run the new pipeline end to end")
+
+**Status: done** (PRs #238, #241–#243; C1.1 green).
 
 **S1 is not needed:** A3 already characterized it. **S2a first, test before fixes:**
 
@@ -77,6 +85,8 @@ Variant-count handling (A5) moves to C2.5 because it depends on one-coin-per-var
 
 ## C2 — Vision fixes (decisions already taken: D-003, D-014, D-015, D-016, D-017)
 
+**Status: done** (PRs #237, #248, #251–#253, #256). Follow-ups CUL-344/345/347 moved to their epics.
+
 One S1 for the whole slice (it touches stage 2, the protocol runner, the grid, the reports and
 the readers), then S2a–S2e.
 
@@ -92,6 +102,8 @@ the readers), then S2a–S2e.
 flag-off byte-identical. **Run budget:** none here (C4 proves it).
 
 ## C3 — Profit bars v2 (E-062, new epic; decisions D-034..D-039, D-041, D-042)
+
+**Status: done** (PRs #236, #240, #254–#259, #261, #265–#267, #269; bars signed 2026-09-29, PR #269). Follow-ups CUL-346/348/349/350 moved to E-067.
 
 **Amended 2026-09-28 (D-041, D-042):** S2b also unifies scoring — the Sharpe bar, the deflated-Sharpe score and the trial ledger all use the whole-test daily Sharpe (no separate sparse path; legacy trial rows recomputed from saved results where possible) — and normalises the time-dependent bars for partial-coverage variants (trades per year + absolute floor; drawdown limit scaled to period length).
 
@@ -112,6 +124,10 @@ The bars file's sha256 changes, so any earlier evaluation is not spendable (by d
 
 ## C4 — Two real runs (operator go needed)
 
+**Status: done with caveats.** run_065 (Donchian daily, Kraken perp) resumed twice by hand after
+CUL-379 and CUL-380; run_066 (vol-managed trend, Kraken perp) hands-off. Both `refuted`.
+C4.4 report: `POST_COMPLETION_plan_v26.md`.
+
 | # | Item |
 |---|---|
 | C4.1 | Pre-conditions: C0–C3 merged; C1.1 green with the C2/C3 extensions; operator has signed the bars file. |
@@ -123,6 +139,10 @@ Deferred until blocks exist: E-060 S4 (first real composition run, needs two val
 and E-060 S5 (regime blocks).
 
 ## C5 — Remaining gaps (own tickets; ⚑ = needs an operator decision in its S1)
+
+**Status: partly done.** Done: C5.1, C5.6, C5.7, C5.8. **C5.2 superseded by E-068**
+(composable claim tests). C5.3, C5.4, C5.5 moved to backlog decision tickets. C5.9 (CUL-335)
+moved to E-067. C5.10 (E-035) stays parked.
 
 | # | Item | Review id |
 |---|---|---|
@@ -139,9 +159,16 @@ and E-060 S5 (regime blocks).
 
 ## C7 — Legacy clean-up epic (after C4, D-043)
 
+**Status: moved** to the parked epic E-070 · Legacy clean-up (C7).
+
 After the two real runs work: make the new pipeline the default (declared change); then an inventory of legacy code (S1) and its removal in tested steps — old routing, verdict_interpreter, validation stage, escalation, families, promotion blocks; legacy re-readers last.
 
 ## C6 — Close-out (Sonnet, alongside)
+
+**Status: done, two items deferred.** C6.1, C6.2 done. C6.3: two of three one-pagers written
+(`docs/OPERATOR_START_CAMPAIGN.md`, `docs/OPERATOR_UNLOCK_HOLDOUT.md`); "read a run's results"
+deferred until after E-068 (the readers change). **C6.4 (roadmap v28) deferred until after
+E-068.** C6.5 = `POST_COMPLETION_plan_v26.md`.
 
 | # | Item |
 |---|---|
@@ -154,6 +181,8 @@ After the two real runs work: make the new pipeline the default (declared change
 ---
 
 ## Dispatch order
+
+**Status: superseded** (plan closed 2026-10-03).
 
 1. Now: C0.1 (review in progress), C0.2, C6.1 (Linear) — independent.
 2. C1 S2a: the wiring test (red), then C1.2–C1.7 until green.
