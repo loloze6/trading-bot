@@ -7,9 +7,11 @@ Checks whether an idea's CLAIM is true on the bars a backtest already saved
     On these bars (SELECTOR), what happens next (OUTCOME) is different from
     these other bars (BASELINE), measured like this (STATISTIC).
 
-Pure tool: nothing in the campaign calls it yet (slices 2-3 wire it), so every
-run is unchanged. It reads bars.csv (plus read-only warm-up rows from the data
-cache) and writes one YAML file; it never writes into a run directory.
+In the campaign (flag orchestrator.claim_tests.enabled), slice 2 uses
+check_spec/spec_hash and slice 3 (tools/claim_measure.py) uses effect_sizes
+only: no p-value or verdict is ever computed inside a run (CUL-394). The CLI
+reads bars.csv (plus read-only warm-up rows from the data cache) and writes one
+YAML file; it never writes into a run directory.
 
 Blocks (v1, 17):
   selectors   all, event, regime, regime_change, calendar, quantile
@@ -949,6 +951,29 @@ def run_test(windows: list[Window], spec: TestSpec, eras: list | None = None,
     if needs_eras and eras is None:
         raise ValueError("this spec needs eras (min_eras or era consistency); pass eras")
     method = spec.significance["method"]
+    per, out_h, horizons, base_rng = effect_sizes(windows, spec, eras)
+
+    result = {"spec_hash": spec_hash(spec), "status": None, "reasons": [], "warnings": [],
+              "statistic": spec.statistic, "direction": spec.direction,
+              "significance": dict(spec.significance), "horizons": out_h}
+    if spec.statistic == "decay_curve":
+        vals = {h: out_h[h]["oriented"] for h in horizons if out_h[h]["oriented"] is not None}
+        result["peak_horizon"] = max(vals, key=vals.get) if vals else None
+    if not calibrated:
+        result["status"] = "method_not_calibrated"
+        result["reasons"] = [f"verdict: method not calibrated (no passed calibration gate "
+                             f"for {method}); effect sizes only"]
+        return result
+    return _graded(result, per, out_h, horizons, base_rng, windows, spec, eras)
+
+
+def effect_sizes(windows: list[Window], spec: TestSpec, eras: list | None = None):
+    """The effect-size half of run_test: (per-window prepared data, per-horizon
+    effect sizes, sorted horizons, the placebo rng in its post-baseline state).
+    No check_spec here (the caller checks the spec; E-068 slice 3 measures
+    regime-selector tests too, which check_spec refuses for a verdict), no
+    p-value, no verdict. Reads only the given windows: selectors read bar t,
+    outcomes are timestamp-matched inside one window."""
     horizons = sorted(spec.outcome["horizons"])
     base_rng = np.random.default_rng(int((spec.baseline or {}).get("seed", PLACEBO_SEED)))
     stat = STATISTICS[spec.statistic]
@@ -981,19 +1006,14 @@ def run_test(windows: list[Window], spec: TestSpec, eras: list | None = None,
                     "n_windows_with_events": int(sum(bool(ev.any()) for ev in events)),
                     "n_blocks": _blocks(events, per, h), "n_eras_with_events": n_eras,
                     "per_window": per_window, "per_era": per_era}
+    return per, out_h, horizons, base_rng
 
-    result = {"spec_hash": spec_hash(spec), "status": None, "reasons": [], "warnings": [],
-              "statistic": spec.statistic, "direction": spec.direction,
-              "significance": dict(spec.significance), "horizons": out_h}
-    if spec.statistic == "decay_curve":
-        vals = {h: out_h[h]["oriented"] for h in horizons if out_h[h]["oriented"] is not None}
-        result["peak_horizon"] = max(vals, key=vals.get) if vals else None
-    if not calibrated:
-        result["status"] = "method_not_calibrated"
-        result["reasons"] = [f"verdict: method not calibrated (no passed calibration gate "
-                             f"for {method}); effect sizes only"]
-        return result
 
+def _graded(result, per, out_h, horizons, base_rng, windows, spec, eras) -> dict:
+    """The verdict half of run_test (calibrated only): p-values, floors, verdict."""
+    method = spec.significance["method"]
+    stat = STATISTICS[spec.statistic]
+    opposite = "less" if spec.direction == "greater" else "greater"
     # The values judged: the spec's statistic (method B) or A8.5.1a's own (method A).
     judged = {}
     if method in A851A_METHODS:
@@ -1177,18 +1197,43 @@ def passed_calibrations(paths) -> list[dict]:
     return out
 
 
+def _selector_matches(scope_selector, selector: dict) -> bool:
+    """A gate's selector scope: a kind (the gates written so far state only
+    `event`) or a whole selector mapping. Anything else matches nothing."""
+    if isinstance(scope_selector, str):
+        return isinstance(selector, dict) and selector.get("kind") == scope_selector
+    if isinstance(scope_selector, dict):
+        return scope_selector == selector
+    return False
+
+
+def _n_fakes(spec: TestSpec):
+    """How many fake worlds a grade of this spec draws: the spec's own
+    n_resamples (method B) or A8.5.1a's fixed resample count."""
+    if spec.significance.get("method") in A851A_METHODS:
+        return A851A_SETTINGS["n_resamples"]
+    return spec.significance.get("n_resamples")
+
+
 def calibration_for(calibrations: list[dict], spec: TestSpec, windows: list[Window]):
     """The passed calibration that covers THIS test on THIS variant, or None:
     same method, same signal (class and parameters), same cadence, same
     statistic, and the spec's horizons within the gate's. A Donchian(20) daily
     gate does not unlock Donchian(14) or hourly. Two passed summaries for the
-    same scope are refused: which one labels the grade must not be a choice."""
+    same scope are refused: which one labels the grade must not be a choice.
+
+    E-068 slice 3 (CUL-393): the outcome kind, the selector and the number of
+    fakes must match too (a scope that does not state one matches nothing).
+    The rest of the scope (baseline, alpha, layout, code hash) is CUL-394."""
     signal = windows[0].signal
     cadence = _cadence(windows[0].step)
     found = [c for c in calibrations
              if c["method"] == spec.significance["method"] and c["scope"].get("signal") == signal
              and c["scope"].get("cadence") == cadence
              and c["scope"].get("statistic") == spec.statistic
+             and c["scope"].get("outcome") == spec.outcome.get("kind")
+             and _selector_matches(c["scope"].get("selector"), spec.selector)
+             and c["scope"].get("n_null") == _n_fakes(spec)
              and set(spec.outcome.get("horizons") or []) <= set(CALIBRATION_HORIZONS)]
     if len(found) > 1:
         raise ValueError("more than one passed calibration covers this test: "

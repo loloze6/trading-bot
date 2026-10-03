@@ -2687,12 +2687,62 @@ def test_e068_claim_tests_on_multi_card_then_queued_card_both_complete(harness):
     assert status2["usable"] is False and status2["reason"] == "no_claim"
     assert status2["stage"] == "strategy_config_authoring"
 
+    # E-068 slice 3: after the backtests, run 1's claim test was MEASURED on every
+    # graded variant's saved bars (effect sizes only); run 2 has no claim to measure.
+    measured1 = h.art(r1, "claim_status.yaml")
+    assert measured1["claim_status"] == "measured" and measured1["information_only"] is True
+    assert measured1["n_tests_measured"] == len(measured1["variants"]) >= 1
+    for vid in measured1["variants"]:
+        vdoc = h.art(r1, f"variants/{vid}/claim_test.yaml")
+        test = vdoc["tests"]["oversold_rebound"]
+        assert vdoc["status"] == test["status"] == "measured"
+        assert test["label"] == "measured, not proven" and 6 in test["horizons"]
+        assert "p_value" not in yaml.safe_dump(vdoc)
+    assert h.art(r2, "claim_status.yaml")["reason"] == "no_claim"
     coverage = yaml.safe_load((h.root / "campaign_record" / "claim_test_coverage.yaml")
                               .read_text(encoding="utf-8"))["runs"]
     assert coverage[r1]["usable"] is True and coverage[r2]["reason"] == "no_claim"
+    assert coverage[r1]["measured"]["n_tests_measured"] == measured1["n_tests_measured"]
     summary = (h.root / "campaign_record" / "campaign_summary.md").read_text(encoding="utf-8")
     assert "## Claim tests" in summary and f"no_claim: 1 ({r2})" in summary
+    assert (f"- Claim tests measured after the backtests (effect sizes, measured, not proven): "
+            f"{measured1['n_tests_measured']} test(s) in 1 run(s) ({r1})") in summary
     for run_id in (r1, r2):
         assert not h.state(run_id).get(rpr.PARKED_KEY)
+    _assert_holdout_untouched(h)
+
+
+@pytest.mark.slow
+def test_e068_claim_measurement_error_never_stops_the_run(harness, monkeypatch):
+    """E-068 slice 3: a bug inside the measurement after the backtests is
+    recorded (not_measured, reason error) and the run completes as without it."""
+    import claim_measure as cm
+
+    def boom(*a, **k):
+        raise RuntimeError("injected measurement bug")
+
+    monkeypatch.setattr(cm, "measure_variant", boom)
+    h = harness.build(flags=CLAIM_ON_FLAGS)
+    h.register_brief()
+    h.reader_proposals = False
+    single = h.card_docs
+
+    def with_claim(run_dir):
+        docs = single(run_dir)
+        docs["hypothesis_card.yaml"] = {**docs["hypothesis_card.yaml"],
+                                        "claim": copy.deepcopy(E2E_CLAIM)}
+        return docs
+
+    h.card_docs = with_claim
+    keep_going, exc = _drive(h)
+    if exc is not None:
+        raise exc
+    st = h.state("run_001")
+    assert st.get("last_error") is None, st.get("last_error")
+    assert st["status"] == "completed", st["pending_stage"]
+    doc = h.art("run_001", "claim_status.yaml")
+    assert doc["claim_status"] == "not_measured" and doc["reason"] == "error"
+    assert "injected measurement bug" in doc["detail"]
+    assert h.art("run_001", "idea_status.yaml")             # the grid ran as usual
     _assert_holdout_untouched(h)
 

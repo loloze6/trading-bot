@@ -628,7 +628,7 @@ flags:
     reader: run_phase1_research._claim_tests_enabled
     owner: Jeremy
     state: off_incomplete
-    blocked_on: "E-068 slices 3-5 (the grid grades the claim test, findings, readers v3) and a calibrated significance method (REGRADE_run065.md); no campaign runs until slices 1-3 are built and reviewed"
+    blocked_on: "E-068 slices 4-5 (findings, readers v3); automatic claim verdicts parked in CUL-394; no campaign runs until slices 1-3 are built and reviewed"
     criterion: >
       Landed 2026-10-03 (E-068 slice 2, CUL-389). Off: byte-identical --
       nothing read or written, no prompt changed (both SKILL.md files equal
@@ -644,6 +644,13 @@ flags:
       queued cards launched at 1b are checked there, warn-only; a 1a/1b
       mismatch is a warning in artifacts/claim_match.yaml.
       Tested by tests/test_e068_s2_claim_card.py.
+      Slice 3 (2026-10-04, CUL-393, D-067): after protocol_execution the
+      card's tests are MEASURED on every graded variant's saved bars.csv
+      (tools/claim_measure.py; effect sizes, "measured, not proven"):
+      artifacts/variants/<vid>/claim_test.yaml, artifacts/claim_status.yaml,
+      a `measured` row in claim_test_coverage.yaml and one summary line. No
+      p-value, no verdict, not a grid criterion; errors recorded, never
+      raised. Tested by tests/test_e068_s3_claim_measure.py.
 
   - name: bar_equity
     kind: engine_param

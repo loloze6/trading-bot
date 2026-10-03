@@ -709,7 +709,7 @@ def test_cli_end_to_end_and_refusals(tmp_path):
     assert doc["variants"]["base"]["tests"]["t"]["status"] == "method_not_calibrated"
     assert doc["claim_status"] == "method_not_calibrated" and doc["calibrations_passed"] == []
     calib = tmp_path / "calib.yaml"
-    calib.write_text(yaml.safe_dump(passed_summary(DON, "rank_ic")))
+    calib.write_text(yaml.safe_dump(passed_summary(DON, "rank_ic", selector="all")))
     assert ct.main(args + ["--out", str(out), "--calibration", str(calib)]) == 0
     doc = yaml.safe_load(out.read_text())
     assert doc["variants"]["base"]["tests"]["t"]["status"] == "inconclusive"   # floor not met
@@ -798,9 +798,15 @@ def gate_row(name, shares=None, undefined=0.0, ok=True, n_sims=ct.CALIBRATION_N_
             "share_undefined": {h: undefined for h in shares}}
 
 
-def passed_summary(signal, statistic, method=None, **over):
-    doc = {"method": method or ct.SIGNIFICANCE_METHOD, "gate": dict(ct.CALIBRATION_GATE),
-           "scope": {"signal": signal, "cadence": "daily", "statistic": statistic},
+def passed_summary(signal, statistic, method=None, selector="event", outcome="fwd_return",
+                   n_null=None, **over):
+    method = method or ct.SIGNIFICANCE_METHOD
+    if n_null is None:
+        n_null = (ct.A851A_SETTINGS["n_resamples"] if method in ct.A851A_METHODS
+                  else FAST["n_resamples"])
+    doc = {"method": method, "gate": dict(ct.CALIBRATION_GATE),
+           "scope": {"signal": signal, "cadence": "daily", "statistic": statistic,
+                     "selector": selector, "outcome": outcome, "n_null": n_null},
            "code_sha256": "f" * 64, "all_pass": True,
            "rows": [gate_row(f"r{i}") for i in range(ct.CALIBRATION_ROWS)]}
     doc.update(over)
@@ -832,8 +838,8 @@ def test_calibration_lock_needs_a_full_passed_gate_for_this_exact_test(tmp_path)
     other_signal = {**DON, "params": {**DON["params"], "period": 14}}
     for doc in (passed_summary(other_signal, "mean_diff"), passed_summary(DON, "hit_rate"),
                 passed_summary(DON, "mean_diff", method=ct.A851A_METHOD),
-                {**passed_summary(DON, "mean_diff"), "scope": {"signal": DON, "cadence": "hourly",
-                                                             "statistic": "mean_diff"}}):
+                {**passed_summary(DON, "mean_diff"),
+                 "scope": {**passed_summary(DON, "mean_diff")["scope"], "cadence": "hourly"}}):
         only = tmp_path / "only.yaml"
         only.write_text(yaml.safe_dump(doc))
         assert ct.calibration_for(ct.passed_calibrations([only]), s, ws) is None, doc
@@ -904,7 +910,7 @@ def test_grade_reports_conservative_next_to_the_verdict(tmp_path):
                           + [gate_row(f"r{i}") for i in range(1, 8)],
                           "conservative")):
         calib = tmp_path / f"calib_{status}.yaml"
-        calib.write_text(yaml.safe_dump(passed_summary(DON, "rank_ic", rows=rows)))
+        calib.write_text(yaml.safe_dump(passed_summary(DON, "rank_ic", selector="all", rows=rows)))
         t = ct.grade_claim_file(run, sp, res, calibration_files=[calib])["variants"]["base"]["tests"]["t"]
         assert t["status"] == "inconclusive" and t["calibration_status"] == status
         assert t["calibration_conservative_cells"] == ({} if status == "pass" else {"r0": [1]})

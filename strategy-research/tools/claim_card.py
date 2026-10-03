@@ -414,7 +414,9 @@ def coverage_summary_lines(root: Path) -> list:
     usable = sorted(r for r, v in runs.items() if isinstance(v, dict) and v.get("usable"))
     gaps = {}
     for r, v in sorted(runs.items()):
-        if isinstance(v, dict) and not v.get("usable"):
+        # a row holding only a slice-3 measurement (its card check never
+        # recorded) is not a card gap
+        if isinstance(v, dict) and "usable" in v and not v.get("usable"):
             gaps.setdefault(str(v.get("reason")), []).append(r)
     floor = sorted(r for r, v in runs.items() if isinstance(v, dict) and v.get("power_warning"))
     lines = ["", "## Claim tests (E-068, information only)", "",
@@ -425,4 +427,15 @@ def coverage_summary_lines(root: Path) -> list:
     if floor:
         lines.append(f"- Runs whose floor cannot be reached (power warning): {len(floor)} "
                      f"({', '.join(floor)})")
+    # E-068 slice 3 (CUL-393): the measurements after the backtests (absent
+    # until a run has been measured, so the lines above are unchanged until then).
+    measured = {r: v["measured"] for r, v in sorted(runs.items())
+                if isinstance(v, dict) and isinstance(v.get("measured"), dict)}
+    if measured:
+        n_tests = sum(int(m.get("n_tests_measured") or 0) for m in measured.values())
+        done = [r for r, m in measured.items() if m.get("claim_status") == "measured"]
+        lines.append(f"- Claim tests measured after the backtests (effect sizes, measured, "
+                     f"not proven): {n_tests} test(s) in {len(done)} run(s)"
+                     + (f" ({', '.join(done)})" if done else "")
+                     + f"; runs not measured: {len(measured) - len(done)}")
     return lines

@@ -180,7 +180,8 @@ def summarize(method: str, cell_docs: list) -> dict:
     code = hashes.pop() if len(hashes) == 1 else None      # all cells from one code version
     return {"method": method, "gate": dict(ct.CALIBRATION_GATE), "seed": SEED,
             "scope": {"signal": signal, "cadence": "daily", "statistic": "mean_diff",
-                      "selector": "event", "n_null": N_NULL, "n_sims": N_SIMS},
+                      "selector": "event", "outcome": "fwd_return",
+                      "n_null": N_NULL, "n_sims": N_SIMS},
             "code_sha256": code, "rows": rows,
             "conservative": {r["row"]: r["conservative_horizons"] for r in rows
                              if r["conservative_horizons"]},

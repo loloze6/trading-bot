@@ -26,6 +26,24 @@ and `feat/e068-s1b-one-sided-gate` (amendment 5 and the grade)
 - `claim_status` is **information only**: it never changes `idea_status`,
   never routes, never bans (D-055). Nothing in the pipeline reads it.
 
+## Note added 2026-10-04 (E-068 slice 3, CUL-393): the grade stays as the historical record
+
+- **The published grade drew 1,000 fakes per test; the gate that unlocked it
+  was run with 199** (`calibration_a5/summary_block_permutation_v1_onesided.yaml`,
+  `n_null: 199`). The gate summary also states no outcome kind.
+- Slice 3 makes the offline tool's lock (`claim_tests.calibration_for`) also
+  compare the outcome kind, the selector and the number of fakes. Under that
+  rule this summary no longer unlocks the run_065 spec: re-running the CLI
+  today reads "method not calibrated" (checked by
+  `tests/test_e068_s3_claim_measure.py::test_the_published_run065_gate_no_longer_unlocks_its_1000_fakes_grade`).
+- **The grade is not re-run and not edited.** `calibration_a5/grade_run065.yaml`
+  and the tables below stay as the historical record of what was computed on
+  2026-10-03, with this mismatch disclosed. The finding itself ("inconclusive",
+  N tests run = 4) is unchanged by the note: the disclosed effect of the
+  mismatch is at most ~0.005 in the false-edge rate (amendment 5 section 4).
+- Automatic verdicts, with a calibration matched exactly (number of fakes
+  included), are parked in CUL-394.
+
 ## Amendment 5 and the grade (slice 1b)
 
 ### What changed and why (operator decision, 2026-10-03)

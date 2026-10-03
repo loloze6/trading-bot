@@ -865,7 +865,14 @@ orchestrator:
       # A queued card launched at 1b is checked there, warn-only. Regime-
       # selector tests are effect-size only (verdict_possible: false). After
       # 1b, a 1a/1b mismatch is a warning in artifacts/claim_match.yaml.
-      # Nothing is graded yet (slice 3).
+      # E-068 slice 3 (CUL-393, D-067): after protocol_execution, every test
+      # of the run's own card is MEASURED on each graded variant's saved
+      # bars.csv (tools/claim_measure.py): effect sizes and window signs per
+      # coin, "measured, not proven" -> artifacts/variants/<vid>/
+      # claim_test.yaml, artifacts/claim_status.yaml (measured / not_measured
+      # with a reason), counted in claim_test_coverage.yaml. No p-value, no
+      # verdict (CUL-394); not a grid criterion; any error is recorded and
+      # the run continues.
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------
