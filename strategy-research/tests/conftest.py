@@ -80,8 +80,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-# Parallel runs (pytest-xdist, `-n 8`): every worker process would otherwise let
-# numpy/BLAS start one thread per core, so 8 workers x 8 threads fight over 8
+# Parallel runs (pytest-xdist, `-n 4` -- see CLAUDE.md): every worker process would otherwise
+# let numpy/BLAS start one thread per core, so N workers x 8 threads fight over 8
 # cores (measured 2026-10-03: the slowest tests ran 5-7x slower in parallel than
 # alone). One thread per worker. Set before anything imports numpy; only in a
 # worker (xdist sets PYTEST_XDIST_WORKER), so a serial run is unchanged; an
@@ -329,6 +329,9 @@ _READER_DOCS = ("COMPONENT_CATALOG.md", "STRATEGY_DESIGN_GUIDE.md")
 
 @pytest.fixture
 def reader_docs(_sandbox_by_default):
+    assert _sandbox_by_default is not None, (
+        "reader_docs needs the default sandbox; a real_repo_readonly test reads the real "
+        "docs/ already and must not use this fixture")
     docs = Path(_sandbox_by_default) / "docs"
     docs.mkdir(parents=True, exist_ok=True)
     for name in _READER_DOCS:
