@@ -145,6 +145,7 @@ A851A_SEED = 20261003
 CALIBRATION_GATE = {"alpha": 0.05, "ceiling": 0.075, "floor_warning": 0.025,
                     "max_share_undefined": 0.05, "rule": "one_sided"}
 CALIBRATION_ROWS = 8
+CALIBRATION_HORIZONS = (1, 2, 3, 4, 5)   # every gate row must cover exactly these
 CALIBRATION_N_SIMS = 400
 _TF = {"daily": "1d", "hourly": "1h"}
 NOT_RECOMPUTABLE_SELECTORS = ("regime", "regime_change")
@@ -1145,7 +1146,7 @@ def judge_calibration_row(row: dict, gate: dict = CALIBRATION_GATE) -> tuple[boo
     the ceiling (flattering); horizons below the floor are a warning only."""
     shares = row.get("share_p_below_0_05_of_defined") or {}
     und = row.get("share_undefined") or {}
-    ok = bool(shares) and set(shares) == set(und) and all(
+    ok = set(shares) == set(und) == set(CALIBRATION_HORIZONS) and all(
         und[h] is not None and und[h] <= gate["max_share_undefined"]
         and shares[h] is not None and shares[h] <= gate["ceiling"] for h in shares)
     conservative = sorted(h for h, v in shares.items()
@@ -1179,15 +1180,20 @@ def passed_calibrations(paths) -> list[dict]:
 def calibration_for(calibrations: list[dict], spec: TestSpec, windows: list[Window]):
     """The passed calibration that covers THIS test on THIS variant, or None:
     same method, same signal (class and parameters), same cadence, same
-    statistic. A Donchian(20) daily gate does not unlock Donchian(14) or hourly."""
+    statistic, and the spec's horizons within the gate's. A Donchian(20) daily
+    gate does not unlock Donchian(14) or hourly. Two passed summaries for the
+    same scope are refused: which one labels the grade must not be a choice."""
     signal = windows[0].signal
     cadence = _cadence(windows[0].step)
-    for c in calibrations:
-        sc = c["scope"]
-        if (c["method"] == spec.significance["method"] and sc.get("signal") == signal
-                and sc.get("cadence") == cadence and sc.get("statistic") == spec.statistic):
-            return c
-    return None
+    found = [c for c in calibrations
+             if c["method"] == spec.significance["method"] and c["scope"].get("signal") == signal
+             and c["scope"].get("cadence") == cadence
+             and c["scope"].get("statistic") == spec.statistic
+             and set(spec.outcome.get("horizons") or []) <= set(CALIBRATION_HORIZONS)]
+    if len(found) > 1:
+        raise ValueError("more than one passed calibration covers this test: "
+                         + ", ".join(c["file"] for c in found))
+    return found[0] if found else None
 
 
 def grade_claim_file(run_dir: Path, spec_path: Path, cache_path_for, eras: list | None = None,

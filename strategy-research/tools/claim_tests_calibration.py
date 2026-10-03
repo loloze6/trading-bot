@@ -193,30 +193,60 @@ CODE_FILES = ("strategy-research/tools/claim_tests.py",
               "strategy-research/tools/claim_tests_calibration.py")
 
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def git_blob(ref: str, repo_path: str) -> bytes:
+    """A file's bytes as git stores them at REF (LF; independent of the
+    checkout's line endings, so a hash of them is reproducible anywhere)."""
+    import subprocess
+    return subprocess.run(["git", "-C", str(REPO_ROOT), "show", f"{ref}:{repo_path}"],
+                          check=True, capture_output=True).stdout
+
+
 def code_sha256_at(ref: str) -> str:
     """code_sha256() of the two producing files as committed at git REF (same
-    order; the bytes git stores)."""
+    order; git's stored bytes -- the amendment-4 hashes match this form)."""
     import hashlib
-    import subprocess
-    root = Path(__file__).resolve().parents[2]
     h = hashlib.sha256()
     for f in CODE_FILES:
-        h.update(subprocess.run(["git", "-C", str(root), "show", f"{ref}:{f}"],
-                                check=True, capture_output=True).stdout)
+        h.update(git_blob(ref, f))
     return h.hexdigest()
+
+
+def committed_cells(paths: list, ref: str) -> tuple[list, dict]:
+    """(cell docs, {repo path: sha256 of git's stored bytes}) for cell files
+    committed at REF. Refused if a working file differs from its blob at REF
+    (line endings aside): the cells re-evaluated must be the cells produced."""
+    import hashlib
+    import yaml
+    docs, shas = [], {}
+    for p in paths:
+        rel = Path(p).resolve().relative_to(REPO_ROOT).as_posix()
+        blob = git_blob(ref, rel)
+        if Path(p).read_bytes().replace(b"\r\n", b"\n") != blob.replace(b"\r\n", b"\n"):
+            raise ValueError(f"{rel} differs from its committed version at {ref}")
+        docs.append(yaml.safe_load(blob.decode("utf-8")))
+        shas[rel] = hashlib.sha256(blob).hexdigest()
+    return docs, shas
 
 
 def reevaluate(method: str, cell_docs: list, cell_sha256: dict, code_ref: str,
                code_hash: str) -> dict:
     """Amendment 5 section 4: existing cells re-judged under the current rule,
-    NOT re-run. Only for cells that predate per-cell code hashes; the hash of
-    their producing code (read from git at `code_ref`) is recorded with it."""
+    NOT re-run. Only for cells that predate per-cell code hashes and the
+    per-cell signal field (so they ran the then-only signal, Donchian(20));
+    the hash of their producing code (read from git at `code_ref`) is
+    recorded with it."""
     if any(c.get("code_sha256") for c in cell_docs):
         raise ValueError("these cells carry their own code hash; use `summarize`")
+    if any(c.get("signal", DONCHIAN) != DONCHIAN for c in cell_docs):
+        raise ValueError("pre-hash cells can only be the Donchian(20) gate")
     res = summarize(method, [dict(c, code_sha256=code_hash) for c in cell_docs])
     res["reevaluated"] = {"rule": "amendment 5 (one-sided)", "rerun": False,
                           "code_ref": code_ref,
                           "code_sha256_source": f"git blobs of {list(CODE_FILES)} at {code_ref}",
+                          "cell_files_sha256_source": f"git blobs at {code_ref}",
                           "cell_files_sha256": dict(cell_sha256)}
     return res
 
@@ -247,11 +277,8 @@ def main(argv=None) -> int:
     elif a.cmd == "summarize":
         res = summarize(a.method, [yaml.safe_load(p.read_text(encoding="utf-8")) for p in a.cells])
     else:
-        import hashlib
-        raw = {p.as_posix(): p.read_bytes() for p in a.cells}
-        res = reevaluate(a.method, [yaml.safe_load(b.decode("utf-8")) for b in raw.values()],
-                         {k: hashlib.sha256(b).hexdigest() for k, b in raw.items()},
-                         a.code_ref, code_sha256_at(a.code_ref))
+        docs, shas = committed_cells(a.cells, a.code_ref)
+        res = reevaluate(a.method, docs, shas, a.code_ref, code_sha256_at(a.code_ref))
     a.out.parent.mkdir(parents=True, exist_ok=True)
     with open(a.out, "w", encoding="utf-8") as f:
         yaml.safe_dump(res, f, sort_keys=False)
