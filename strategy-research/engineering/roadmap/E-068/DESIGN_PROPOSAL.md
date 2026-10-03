@@ -281,8 +281,20 @@ finding:
   "what we know" view.
 - **Reuse.** A finding is information, never a ban (D-055). Only the same `spec_hash` on the
   same scope counts as a repeat; this extends today's novelty key.
-- **Combination** (for example "label X marks trends" plus "Y works in trends") is a later
-  epic. E-068 only makes findings storable and queryable.
+- **Combination is already built (E-060) and E-068 plugs into it.** E-060 registers validated
+  blocks (`block_registry.record_run`, only when `idea_status == validated`), and a registry
+  change triggers a composition run (rule R1) that combines them. Regime blocks are tested
+  there as "gated beats ungated, and the label passes health checks". The missing link today:
+  a regime idea can never reach the registry. decide-next refuses it
+  (`regime_block_needs_composition`, `decide_next.py:1405`), and nothing can prove a label
+  standalone. E-068 closes that loop with no new combination engine:
+  - a registry entry carries its finding (`statement`, `kind`, `claim_status`), so a composite
+    knows what each block claims;
+  - a **supported regime-classifier claim** (its composed test, section 3) is the label health
+    check E-060 asks for. It makes the regime block eligible for the next composition run,
+    where E-060's gated-vs-ungated test decides whether it is kept;
+  - this is its own slice (section 8), so a regime idea runs end to end:
+    claim, then finding, then registry, then composition.
 
 ---
 
@@ -323,12 +335,15 @@ Branch 1, the grid, is the only judge of the claim. Readers are branch 2.
 - **The SKILL is rewritten short:** "Read the claim. Read the grid's result and the evidence.
   Explain the result. List what else you noticed, each with a test composed from the slots."
 
-**One reader or five?** (operator decision 4)
+**Five readers, kept** (operator, 2026-10-03). Each reader keeps its own focus (profitability,
+forecast power, regime power, component attribution, trade efficiency); combining them would
+blur that focus. The table below is kept for the record.
+
 
 | Option | Pros | Cons |
 |---|---|---|
 | A. Five lenses (today) | No card change; small prompts | No reader sees the whole picture; five SKILLs to sync |
-| **B. One reader, all five reports** (recommended) | Sees cross-report patterns; one SKILL; simpler | A target change to cards H/I; one prompt of ~45k tokens of reports |
+| B. One reader, all five reports (rejected) | Sees cross-report patterns; one SKILL; simpler | A target change to cards H/I; one prompt of ~45k tokens of reports |
 | C. Five extractors + one synthesizer | Quality where it matters | Most code; two layers |
 
 ---
@@ -350,9 +365,11 @@ Opus 5.5 $4 / $20; Fable 5.1 $10 / $50.
 | 1 x Fable 5.1, combined | ~$1.6 |
 
 These are estimates. Thinking cannot be turned off on Sonnet or Opus 5.5 (effort is the
-control), so output length varies; the first run measures it. A per-stage
-`orchestrator.specialist_readers.model` setting replaces the single `_CLAUDE_WORKER_MODEL` for
-readers.
+control), so output length varies.
+
+**Decided (operator, 2026-10-03): readers stay on today's model** for E-068. A per-stage model
+setting is parked as its own epic, **E-069 · Each AI step can use its own model** (Linear
+P-CUL-77).
 
 ---
 
@@ -364,7 +381,6 @@ readers.
 | `orchestrator.claim_test_review.mode` (`off`, `record`, `gate`) | optional review call | claim_tests |
 | `orchestrator.findings.enabled` | regroup writes `finding`; findings summary; novelty key gets `spec_hash` | claim_tests, regroup_record |
 | `orchestrator.reader_findings.enabled` | reader output v3; decide-next takes side findings | claim_tests, specialist_readers |
-| `orchestrator.specialist_readers.mode` / `.model` | reader shape and model (sections 6-7) | specialist_readers |
 
 - **Flags off:** byte-identical, proven per flag by a test.
 - **Old runs** are not back-filled. run_065 and run_066 are re-graded **offline** as the first
@@ -381,7 +397,8 @@ readers.
 3. **Grid:** the `claim_test` criterion and `claim_status`.
 4. **Findings:** the finding record and the findings summary.
 5. **Readers:** v3 output and the short SKILL.
-6. **Reader mode and model.**
+6. **Findings into the existing combination (E-060):** registry entries carry their finding; a
+   supported regime-classifier claim makes the regime block eligible for composition.
 7. **Review call** (record mode).
 8. **New building blocks:** only when a test request needs them.
 
@@ -393,7 +410,7 @@ readers.
 
 | Today | Becomes |
 |---|---|
-| Reader rule sets inherited from verdict-interpreter, in five long SKILLs | One short "explain the result, propose findings with tests" SKILL |
+| Reader rule sets inherited from verdict-interpreter, in five long SKILLs | Five short SKILLs (one focus each): "explain the result, propose findings with tests" |
 | Reader output: config edits only | Explanation, side findings with tests, optional checked patch |
 | Ideas judged only by four generic tests | Their own composed claim test, plus the menu tests (two statuses) |
 | "What we learned" = idea status | A finding record |
@@ -422,11 +439,8 @@ readers.
 
 ## 10. Decisions still needed
 
-1. **Review call:** start in `record` mode and promote to `gate` on evidence? Recommended.
-2. **Two statuses** (`claim_status` next to `idea_status`)? Recommended.
-3. **Readers:** one combined reader (option B)? Recommended.
-4. **Reader model:** Opus 5.5 if combined (~$0.65 per run, estimate)? Recommended.
-5. **Combining findings:** a later epic, not E-068? Recommended.
+1. **Review call:** should the extra AI check of 1a's test only *record* its comments at first
+   (`record`), or *block* the idea from the start (`gate`)? Recommended: record first.
 
 ---
 
@@ -438,3 +452,9 @@ readers.
 - **The test library is composable** (section 3): four slots, about 15 small code-defined
   blocks, grown on demand through parked test requests, never written by the agent, and not
   enlarged in anticipation.
+- **Two statuses, both kept:** `claim_status` (is the claim true?) and `idea_status` (is it a
+  usable block?). The second is what the registry binds on later.
+- **Five readers kept,** each with its own focus, on today's model. Per-stage models are
+  parked: E-069.
+- **Combination stays in E-068's scope** as the connection to E-060's registry and
+  composition (section 5, slice 6), so the loop works end to end.
