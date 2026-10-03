@@ -15137,7 +15137,10 @@ def _claim_measure_paths(run_dir: Path) -> list:
 # its protocol_result.yaml was written after that: a stale file from an earlier
 # attempt whose backtest failed this time is never measured or counted.
 _CLAIM_MEASURE_ATTEMPT_START: dict = {}
-_ATTEMPT_MTIME_SLACK_NS = 1_000_000_000      # coarse filesystem timestamps
+# Coarse filesystem timestamps. Hole, accepted: a retry starting < 1 s after an
+# earlier attempt wrote a result that then fails would read it as fresh;
+# backtests take minutes.
+_ATTEMPT_MTIME_SLACK_NS = 1_000_000_000
 
 
 def _safe_print(message: str) -> None:
@@ -15195,19 +15198,29 @@ def _claim_measure_variants(run_dir: Path, run_id: str) -> tuple:
     """(variants to measure, {variant: not-measured reason}) of THIS attempt:
     a variant with a protocol_result.yaml written since the attempt started
     (artifacts/variants/<vid>/; none with the variant loop off). Older files
-    are `stale_result` (an earlier attempt's backtest); a variant whose trial
-    row was invalidated by the conformance check is `invalidated`."""
+    are `stale_result` (an earlier attempt's backtest); a variant this attempt
+    recorded as failed (index.yaml `failed_attempt`, e.g. its trial write
+    raised after its result was saved) is `backtest_failed`; a variant whose
+    trial row was invalidated by the conformance check is `invalidated`.
+    Without a recorded attempt start nothing is measured (`no_attempt_start`,
+    fail closed)."""
     import claim_tests as _ct
     vroot = run_dir / "artifacts" / "variants"
     if not vroot.is_dir():
         return [], {}
     start = _CLAIM_MEASURE_ATTEMPT_START.get(str(Path(run_dir).resolve()))
     invalidated = _invalidated_trial_ids()
+    index = (load_yaml(vroot / "index.yaml") or {}) if (vroot / "index.yaml").exists() else {}
+    index = index.get("variants") if isinstance(index.get("variants"), dict) else {}
     keep, skipped = [], {}
     for vid in _ct.graded_variants(run_dir)[0]:
         mtime = (vroot / vid / "protocol_result.yaml").stat().st_mtime_ns
-        if start is not None and mtime < start - _ATTEMPT_MTIME_SLACK_NS:
+        if start is None:
+            skipped[vid] = "no_attempt_start"
+        elif mtime < start - _ATTEMPT_MTIME_SLACK_NS:
             skipped[vid] = "stale_result"
+        elif isinstance(index.get(vid), dict) and index[vid].get("failed_attempt"):
+            skipped[vid] = "backtest_failed"
         elif f"{run_id}:{vid}" in invalidated:
             skipped[vid] = "invalidated"
         else:

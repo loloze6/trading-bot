@@ -436,7 +436,9 @@ def coverage_summary_lines(root: Path) -> list:
     measured = {r: v["measured"] for r, v in sorted(runs.items())
                 if isinstance(v, dict) and isinstance(v.get("measured"), dict)}
     if measured:
-        n_tests = sum(int(m.get("n_tests_measured") or 0) for m in measured.values())
+        # every test ever measured (looks accumulate across a run's attempts)
+        n_tests = sum(int(m.get("n_looks", m.get("n_tests_measured")) or 0)
+                      for m in measured.values())
         done = [r for r, m in measured.items() if m.get("claim_status") == "measured"]
         lines.append(f"- Claim tests measured after the backtests (effect sizes, measured, "
                      f"not proven): {n_tests} test(s) in {len(done)} run(s)"

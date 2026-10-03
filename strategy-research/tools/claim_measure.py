@@ -310,8 +310,19 @@ def record_measured(root: Path, run_id: str, doc: dict) -> None:
         cov = crr._load_mapping(path, {})
         runs = cov.get("runs") if isinstance(cov.get("runs"), dict) else {}
         row = runs.get(run_id) if isinstance(runs.get(run_id), dict) else {}
+        prev = row.get("measured") if isinstance(row.get("measured"), dict) else {}
+        # every (variant, test, spec_hash) ever measured in this run: a look taken
+        # in an earlier attempt stays counted even if a later attempt does not
+        # measure that variant again (best-of-N counts looks, not survivors)
+        looks = {(lk.get("variant"), lk.get("test"), lk.get("spec_hash"))
+                 for lk in prev.get("looks") or [] if isinstance(lk, dict)}
+        looks |= {(t.get("variant"), t.get("test"), t.get("spec_hash"))
+                  for t in doc.get("tests") or [] if t.get("status") == MEASURED}
         row["measured"] = {"claim_status": doc.get("claim_status"), "reason": doc.get("reason"),
                            "n_tests_measured": int(doc.get("n_tests_measured") or 0),
-                           "tests": list(doc.get("tests") or [])}
+                           "tests": list(doc.get("tests") or []),
+                           "looks": [{"variant": v, "test": t, "spec_hash": h}
+                                     for v, t, h in sorted(looks, key=lambda x: tuple(map(str, x)))],
+                           "n_looks": len(looks)}
         runs[run_id] = row
         cm._atomic_write(path, {**cov, "runs": runs})

@@ -334,6 +334,9 @@ def _fixture_run(run_id: str, claim=None, variants=None) -> Path:
                   dict(CARD, **({"claim": claim} if claim is not None else {})))
     rpr.save_yaml(run_dir / "artifacts" / "idea_status.yaml", {"idea_status": "refuted"})
     rpr.save_yaml(run_dir / "artifacts" / "grid_evaluation.yaml", {"result": "FAIL"})
+    # the attempt "started" before the fixture's results were written (in a run,
+    # _clear_claim_measure_files records it at protocol_execution entry)
+    rpr._CLAIM_MEASURE_ATTEMPT_START[str(run_dir.resolve())] = 0
     return run_dir
 
 
@@ -478,6 +481,55 @@ def test_only_this_attempts_variants_are_measured(monkeypatch):
     assert st["variants"]["bad"]["reason"] == "invalidated"
     assert st["n_tests_measured"] == 1 and {c["variant"] for c in st["tests"]} == {"fresh"}
     assert not (run_dir / "artifacts" / "variants" / "old" / "claim_test.yaml").exists()
+
+
+def test_without_an_attempt_start_nothing_is_measured():
+    _set_orchestrator(ON)
+    run_dir = _fixture_run("run_969", claim=_claim([UP]))
+    del rpr._CLAIM_MEASURE_ATTEMPT_START[str(run_dir.resolve())]
+    rpr._measure_claim_tests_after_backtests(run_dir, "run_969")
+    st = rpr.load_yaml(run_dir / "artifacts" / "claim_status.yaml")
+    assert st["claim_status"] == "not_measured" and st["n_tests_measured"] == 0
+    assert st["variants"]["base"]["reason"] == "no_attempt_start"
+
+
+def test_a_variant_this_attempt_recorded_as_failed_is_not_measured():
+    _set_orchestrator(ON)
+    run_dir = _fixture_run("run_970", claim=_claim([UP]),
+                           variants={"ok": _planted(21, n_windows=2),
+                                     "failed": _planted(22, n_windows=2)})
+    rpr.save_yaml(run_dir / "artifacts" / "variants" / "index.yaml", {"variants": {
+        "ok": {"status": "validated"},
+        "failed": {"status": "validated", "failed_attempt": "backtest_failed: trial write"}}})
+    rpr._measure_claim_tests_after_backtests(run_dir, "run_970")
+    st = rpr.load_yaml(run_dir / "artifacts" / "claim_status.yaml")
+    assert st["variants"]["ok"]["status"] == "measured"
+    assert st["variants"]["failed"]["reason"] == "backtest_failed"
+    assert {c["variant"] for c in st["tests"]} == {"ok"}
+
+
+def test_looks_from_an_earlier_attempt_stay_counted():
+    """Attempt 1 measures A and B; attempt 2 measures A only (B failed this
+    time): B's looks were taken and stay counted (round-2 review S1)."""
+    import os
+    _set_orchestrator(ON)
+    run_dir = _fixture_run("run_971", claim=_claim([UP]),
+                           variants={"A": _planted(23, n_windows=2),
+                                     "B": _planted(24, n_windows=2)})
+    rpr._measure_claim_tests_after_backtests(run_dir, "run_971")
+    rpr._clear_claim_measure_files(run_dir)                       # attempt 2 starts
+    b = run_dir / "artifacts" / "variants" / "B" / "protocol_result.yaml"
+    stamp = b.stat().st_mtime_ns - 10 * 10**9
+    os.utime(b, ns=(stamp, stamp))
+    a = run_dir / "artifacts" / "variants" / "A" / "protocol_result.yaml"
+    a.write_bytes(a.read_bytes())
+    rpr._measure_claim_tests_after_backtests(run_dir, "run_971")
+    st = rpr.load_yaml(run_dir / "artifacts" / "claim_status.yaml")
+    assert st["n_tests_measured"] == 1 and st["variants"]["B"]["reason"] == "stale_result"
+    m = rpr.load_yaml(rpr.ROOT / cc.COVERAGE_REL)["runs"]["run_971"]["measured"]
+    assert m["n_tests_measured"] == 1 and m["n_looks"] == 2
+    assert {lk["variant"] for lk in m["looks"]} == {"A", "B"}
+    assert "2 test(s) in 1 run(s)" in "\n".join(cc.coverage_summary_lines(rpr.ROOT))
 
 
 def test_slice_2s_coverage_writer_keeps_the_measured_count(tmp_path):
