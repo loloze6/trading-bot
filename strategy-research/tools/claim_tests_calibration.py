@@ -59,7 +59,13 @@ DONCHIAN = {"class": "DonchianBreakoutComponent", "params": {"period": 20, "scal
 DAILY = {"n": 120, "warmup": ct.WARMUP_BARS["daily"], "step": 86400, "windows": 6}
 MODELS = ("iid", "switching")
 SIDES = {"upper": (">=", 12), "lower": ("<=", -12)}
-METHODS = (ct.A851A_METHOD, ct.SIGNIFICANCE_METHOD)
+METHODS = (ct.A851A_METHOD, ct.SIGNIFICANCE_METHOD, ct.A851A_TIMEGAP_METHOD)
+PERIODS = (20, 14)          # run_065's two signals; the identical gate runs once per signal
+
+
+def donchian(period: int) -> dict:
+    return {"class": "DonchianBreakoutComponent",
+            "params": {"period": period, "scaling_factor": 20.0}}
 HORIZONS = [1, 2, 3, 4, 5]
 
 
@@ -98,7 +104,7 @@ def simulate_windows(rng, model: str, signal: dict = DONCHIAN, cfg: dict = DAILY
 
 def cell_spec(method: str, side: str, seed: int) -> ct.TestSpec:
     op, value = SIDES[side]
-    sig = ({"method": method} if method == ct.A851A_METHOD
+    sig = ({"method": method} if method in ct.A851A_METHODS
            else {"method": method, "n_resamples": N_NULL, "seed": seed})
     return ct.TestSpec(selector={"kind": "event", "field": "forecast", "op": op, "value": value},
                        outcome={"kind": "fwd_return", "horizons": HORIZONS},
@@ -107,14 +113,19 @@ def cell_spec(method: str, side: str, seed: int) -> ct.TestSpec:
                        floor={"min_events": 1}, significance=sig)
 
 
-def run_cell(method: str, model: str, side: str, n_sims: int = N_SIMS) -> dict:
-    """One (method, model, side) cell; both directions from the same sims."""
-    idx = METHODS.index(method) * 100 + MODELS.index(model) * 10 + list(SIDES).index(side)
+def run_cell(method: str, model: str, side: str, n_sims: int = N_SIMS, period: int = 20) -> dict:
+    """One (method, model, side) cell; both directions from the same sims.
+    For the two older methods, period-20 seeds equal the earlier gate runs';
+    a new method gets new seed indices."""
+    idx = (METHODS.index(method) * 100 + MODELS.index(model) * 10 + list(SIDES).index(side)
+           + (0 if period == 20 else 1000 * period))
+    signal = donchian(period)
     rng = np.random.default_rng([SEED, idx])
     rej = {d: {h: 0 for h in HORIZONS} for d in ("claimed", "opposite")}
     undefined = {h: 0 for h in HORIZONS}
     for k in range(n_sims):
-        res = ct.run_test(simulate_windows(rng, model), cell_spec(method, side, k), calibrated=True)
+        res = ct.run_test(simulate_windows(rng, model, signal), cell_spec(method, side, k),
+                          calibrated=True)
         for h in HORIZONS:
             hr = res["horizons"][h]
             src = hr.get("a851a", hr)
@@ -133,7 +144,7 @@ def run_cell(method: str, model: str, side: str, n_sims: int = N_SIMS) -> dict:
         rows.append({"row": f"{model}_{side}_{d}", "n_sims": n_sims,
                      "share_p_below_0_05_of_defined": share, "share_undefined": und,
                      "pass": ok})
-    return {"method": method, "model": model, "side": side, "rows": rows,
+    return {"method": method, "model": model, "side": side, "signal": signal, "rows": rows,
             "code_sha256": code_sha256()}
 
 
@@ -149,13 +160,18 @@ def code_sha256() -> str:
 def summarize(method: str, cell_docs: list) -> dict:
     cells = [c for c in cell_docs if c["method"] == method]
     rows = [r for c in cells for r in c["rows"]]
+    full = (len({r["row"] for r in rows}) == ct.CALIBRATION_ROWS
+            and all(r.get("n_sims") == N_SIMS for r in rows))
+    signals = [c.get("signal", DONCHIAN) for c in cells]
+    signal = signals[0] if signals and all(x == signals[0] for x in signals) else None
     hashes = {c.get("code_sha256") for c in cells}
     code = hashes.pop() if len(hashes) == 1 else None      # all cells from one code version
     return {"method": method, "gate": dict(ct.CALIBRATION_GATE), "seed": SEED,
-            "scope": {"signal": DONCHIAN, "cadence": "daily", "statistic": "mean_diff",
+            "scope": {"signal": signal, "cadence": "daily", "statistic": "mean_diff",
                       "selector": "event", "n_null": N_NULL, "n_sims": N_SIMS},
             "code_sha256": code, "rows": rows,
             "all_pass": (len(rows) == ct.CALIBRATION_ROWS and code is not None
+                         and signal is not None and full
                          and all(r["pass"] for r in rows))}
 
 
@@ -168,6 +184,7 @@ def main(argv=None) -> int:
     c.add_argument("--model", choices=MODELS, required=True)
     c.add_argument("--side", choices=list(SIDES), required=True)
     c.add_argument("--n-sims", type=int, default=N_SIMS)
+    c.add_argument("--period", type=int, choices=PERIODS, default=20)
     c.add_argument("--out", type=Path, required=True)
     s = sub.add_parser("summarize")
     s.add_argument("--method", choices=METHODS, required=True)
@@ -175,7 +192,7 @@ def main(argv=None) -> int:
     s.add_argument("cells", nargs="+", type=Path)
     a = ap.parse_args(argv)
     if a.cmd == "cell":
-        res = run_cell(a.method, a.model, a.side, a.n_sims)
+        res = run_cell(a.method, a.model, a.side, a.n_sims, a.period)
     else:
         res = summarize(a.method, [yaml.safe_load(p.read_text(encoding="utf-8")) for p in a.cells])
     a.out.parent.mkdir(parents=True, exist_ok=True)

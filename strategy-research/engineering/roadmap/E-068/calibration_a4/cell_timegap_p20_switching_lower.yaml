@@ -1,0 +1,40 @@
+method: a851a_episode_timegap_v1
+model: switching
+side: lower
+signal:
+  class: DonchianBreakoutComponent
+  params:
+    period: 20
+    scaling_factor: 20.0
+rows:
+- row: switching_lower_claimed
+  n_sims: 400
+  share_p_below_0_05_of_defined:
+    1: 0.04
+    2: 0.03
+    3: 0.0225
+    4: 0.02
+    5: 0.025
+  share_undefined:
+    1: 0.0
+    2: 0.0
+    3: 0.0
+    4: 0.0
+    5: 0.0
+  pass: false
+- row: switching_lower_opposite
+  n_sims: 400
+  share_p_below_0_05_of_defined:
+    1: 0.08
+    2: 0.075
+    3: 0.0675
+    4: 0.1
+    5: 0.08
+  share_undefined:
+    1: 0.0
+    2: 0.0
+    3: 0.0
+    4: 0.0
+    5: 0.0
+  pass: false
+code_sha256: de1560871ad4f8fb4eafc8a98314bed04bb13ba6851343dbc449b8e7b70211e3

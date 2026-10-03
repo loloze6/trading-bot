@@ -704,7 +704,8 @@ def test_cli_end_to_end_and_refusals(tmp_path):
     args = ["--run", str(run), "--spec", str(sp), "--cache-dir", str(cdir)]
     assert ct.main(args + ["--out", str(out)]) == 0
     doc = yaml.safe_load(out.read_text())
-    assert doc["n_tests_run"] == 1 and doc["not_graded_variants"] == ["broken"]
+    assert doc["n_tests_run"] == 0                       # nothing graded without a gate
+    assert doc["not_graded_variants"] == ["broken", "base (no passed calibration for its signal)"]
     assert doc["variants"]["base"]["tests"]["t"]["status"] == "method_not_calibrated"
     assert doc["claim_status"] == "method_not_calibrated" and doc["calibrations_passed"] == []
     calib = tmp_path / "calib.yaml"
@@ -712,6 +713,7 @@ def test_cli_end_to_end_and_refusals(tmp_path):
     assert ct.main(args + ["--out", str(out), "--calibration", str(calib)]) == 0
     doc = yaml.safe_load(out.read_text())
     assert doc["variants"]["base"]["tests"]["t"]["status"] == "inconclusive"   # floor not met
+    assert doc["n_tests_run"] == 1 and doc["graded_variants"] == ["base"]
     assert len(doc["bars_used"]) == 2 and all(len(b["sha256"]) == 64 for b in doc["bars_used"])
     with pytest.raises(SystemExit, match="inside the run"):
         ct.main(args + ["--out", str(run / "x.yaml")])
@@ -794,7 +796,8 @@ def passed_summary(signal, statistic, method=None, **over):
     doc = {"method": method or ct.SIGNIFICANCE_METHOD, "gate": dict(ct.CALIBRATION_GATE),
            "scope": {"signal": signal, "cadence": "daily", "statistic": statistic},
            "code_sha256": "f" * 64, "all_pass": True,
-           "rows": [{"row": f"r{i}", "pass": True} for i in range(ct.CALIBRATION_ROWS)]}
+           "rows": [{"row": f"r{i}", "pass": True, "n_sims": ct.CALIBRATION_N_SIMS}
+                    for i in range(ct.CALIBRATION_ROWS)]}
     doc.update(over)
     return doc
 
@@ -809,6 +812,10 @@ def test_calibration_lock_needs_a_full_passed_gate_for_this_exact_test(tmp_path)
         "failed": passed_summary(DON, "mean_diff", all_pass=False),
         "row_failed": passed_summary(DON, "mean_diff", rows=[{"pass": False}] * 8),
         "few_rows": passed_summary(DON, "mean_diff", rows=[{"pass": True}] * 4),
+        "short_gate": passed_summary(DON, "mean_diff", rows=[
+            {"row": f"r{i}", "pass": True, "n_sims": 5} for i in range(8)]),
+        "copied_rows": passed_summary(DON, "mean_diff", rows=[
+            {"row": "same", "pass": True, "n_sims": 400}] * 8),
         "other_gate": passed_summary(DON, "mean_diff", gate={**ct.CALIBRATION_GATE, "alpha": 0.1}),
         "no_hash": passed_summary(DON, "mean_diff", code_sha256=None),
     }
@@ -898,3 +905,146 @@ def test_variant_signal_refuses_settings_it_does_not_copy(tmp_path):
     p.write_text(json.dumps({"strategies": {"regimes": {**regs, "trending": regs["unknown"]}}}))
     with pytest.raises(ValueError, match="2 non-null regimes"):
         ct.variant_signal(run, "base")
+
+
+# --- amendment 4: A8.5.1a with its episode gap in time (2 days) -----------------------------
+
+def test_timegap_is_two_days_of_bars():
+    assert ct.a851a_gap_bars(ct.A851A_TIMEGAP_METHOD, DAY) == 2
+    assert ct.a851a_gap_bars(ct.A851A_TIMEGAP_METHOD, HOUR) == 48      # hourly unchanged
+    assert ct.a851a_gap_bars(ct.A851A_METHOD, DAY) == 48               # the old method: bars
+    with pytest.raises(ValueError, match="whole number"):
+        ct.a851a_gap_bars(ct.A851A_TIMEGAP_METHOD, 7 * 3600)
+    assert ct.check_spec(ct.TestSpec(**{**spec(EVENT).__dict__,
+                                        "significance": {"method": ct.A851A_TIMEGAP_METHOD}})) == []
+
+
+def test_timegap_wrapper_equals_a_direct_call_with_a_2_bar_gap():
+    import episode_significance as es
+    ws = cal.simulate_windows(np.random.default_rng(7), "iid")
+    s = ct.TestSpec(**{**cal.cell_spec(ct.A851A_TIMEGAP_METHOD, "upper", 0).__dict__,
+                       "outcome": {"kind": "fwd_return", "horizons": [2]}})
+    res = rt(ws, s)
+    a = res["horizons"][2]["a851a"]
+    assert res["a851a_gap_bars"] == 2
+    recs = []
+    for w in ws:
+        y = ct.out_fwd_return(w, 2)
+        for t in np.nonzero(np.isfinite(y))[0]:
+            recs.append({"forecast": float(w.forecast[t]), "next_return_bps": float(y[t]) * 1e4,
+                         "active": bool(w.forecast[t] >= 12), "symbol": "SIM",
+                         "timestamp": pd.Timestamp(int(w.ts[t]), unit="s")})
+    direct = es.compute_a851a_significance(
+        recs, era_of=None, gap_bars=2, density_fallback_pct=50.0, min_n_episodes=8,
+        block_size=1, n_resamples=2000, seed=ct.A851A_SEED,
+        expected_step=pd.Timedelta(DAY, unit="s"))
+    assert a["method_label"] == direct["method"] == "episode_block_bootstrap"
+    assert a["n_episodes"] == direct["n_episodes"] >= 8
+    assert a["pooled_ic"] == direct["pooled_ic"]
+    p2 = direct["p_value"]
+    assert a["p_value"] == pytest.approx(p2 / 2 if direct["pooled_ic"] > 0 else 1 - p2 / 2)
+
+
+def test_method_override_applies_the_amendment_method_without_editing_the_spec(tmp_path):
+    ws = make_windows(54, n=80, n_windows=2)
+    run = _write_run(tmp_path, ws, DON)
+    cdir = _write_cache_for(tmp_path, ws)
+    sp = tmp_path / "spec.yaml"
+    sp.write_text(yaml.safe_dump({"claim_id": "c", "source_run": "run_x", "tests": [
+        {"name": "t", "selector": EVENT, "outcome": {"kind": "fwd_return", "horizons": [1]},
+         "baseline": {"kind": "complement"}, "statistic": "mean_diff", "direction": "greater",
+         "floor": {"min_events": 1}}]}))
+    res = ct.cache_resolver(cdir, "kraken_{symbol}_{tf}.csv")
+    doc = ct.grade_claim_file(run, sp, res, method_override=ct.A851A_TIMEGAP_METHOD)
+    t = doc["variants"]["base"]["tests"]["t"]
+    assert t["significance"] == {"method": ct.A851A_TIMEGAP_METHOD}
+    assert doc["method_override"] == ct.A851A_TIMEGAP_METHOD
+    assert t["status"] == "method_not_calibrated"          # no calibration file given
+    with pytest.raises(ValueError, match="method override"):
+        ct.grade_claim_file(run, sp, res, method_override=ct.SIGNIFICANCE_METHOD)
+
+
+def test_calibration_runs_per_signal_and_never_mixes_them():
+    c20 = cal.run_cell(ct.A851A_TIMEGAP_METHOD, "iid", "upper", n_sims=1, period=20)
+    c14 = cal.run_cell(ct.A851A_TIMEGAP_METHOD, "iid", "lower", n_sims=1, period=14)
+    assert c20["signal"] == cal.DONCHIAN and c14["signal"]["params"]["period"] == 14
+    assert cal.summarize(ct.A851A_TIMEGAP_METHOD, [c20, c14])["scope"]["signal"] is None
+    assert cal.summarize(ct.A851A_TIMEGAP_METHOD, [c14])["scope"]["signal"] == cal.donchian(14)
+
+
+def test_variant_without_a_gate_for_its_signal_is_not_graded_and_masks_nothing(tmp_path):
+    """Amendment 4 section 4: with a passed gate for Donchian(10) only, a
+    Donchian(14) variant is listed as not graded; the claim status and
+    N tests run come from the graded variant alone."""
+    ws = make_windows(55, n=80, n_windows=2)
+    run = _write_run(tmp_path, ws, DON)
+    other = run / "artifacts" / "variants" / "p14"
+    other.mkdir(parents=True)
+    cfg = json.loads((run / "artifacts" / "variants" / "base" / "strategy_config.json").read_text())
+    cfg["strategies"]["regimes"]["unknown"]["components"][0]["params"]["period"] = 14
+    (other / "strategy_config.json").write_text(json.dumps(cfg))
+    (other / "protocol_result.yaml").write_text(
+        (run / "artifacts" / "variants" / "base" / "protocol_result.yaml").read_text())
+    import shutil
+    shutil.copytree(run / "variants" / "base", run / "variants" / "p14")
+    cdir = _write_cache_for(tmp_path, ws)
+    sp = tmp_path / "spec.yaml"
+    sp.write_text(yaml.safe_dump({"claim_id": "c", "source_run": "run_x", "tests": [
+        {"name": n, "selector": EVENT, "outcome": {"kind": "fwd_return", "horizons": [1]},
+         "baseline": {"kind": "complement"}, "statistic": "mean_diff", "direction": "greater",
+         "floor": {"min_events": 10**6}} for n in ("a", "b")]}))
+    calib = tmp_path / "calib.yaml"
+    calib.write_text(yaml.safe_dump(passed_summary(DON, "mean_diff",
+                                                   method=ct.A851A_TIMEGAP_METHOD)))
+    res = ct.cache_resolver(cdir, "kraken_{symbol}_{tf}.csv")
+    doc = ct.grade_claim_file(run, sp, res, calibration_files=[calib],
+                              method_override=ct.A851A_TIMEGAP_METHOD)
+    assert doc["graded_variants"] == ["base"]
+    assert doc["not_graded_variants"] == ["broken", "p14 (no passed calibration for its signal)"]
+    assert doc["variants"]["p14"]["claim_status"] == "method_not_calibrated"
+    assert doc["claim_status"] == doc["variants"]["base"]["claim_status"] == "inconclusive"
+    assert doc["n_tests_run"] == 2                         # 2 tests x 1 graded variant
+    none = ct.grade_claim_file(run, sp, res, calibration_files=[],
+                               method_override=ct.A851A_TIMEGAP_METHOD)
+    assert none["claim_status"] == "method_not_calibrated" and none["n_tests_run"] == 0
+
+
+def test_timegap_equals_the_old_method_on_hourly_bars():
+    rng = np.random.default_rng(56)
+    n = 600
+    fc = np.zeros(n)
+    fc[np.arange(20, n - 30, 60)] = 15.0
+    fc[np.arange(21, n - 30, 60)] = 18.0
+    close = 100 * np.exp(np.cumsum(rng.normal(0, 0.01, n)))
+    w = ct.Window("SYN", "w0", (T0 + np.arange(n) * HOUR).astype(np.int64), close, fc,
+                  np.array(["x"] * n, dtype=object), HOUR)
+    sel = {"kind": "event", "field": "forecast", "op": ">=", "value": 12}
+    outs = []
+    for m in (ct.A851A_METHOD, ct.A851A_TIMEGAP_METHOD):
+        s = ct.TestSpec(**{**spec(sel).__dict__, "significance": {"method": m},
+                           "outcome": {"kind": "fwd_return", "horizons": [3]}})
+        outs.append(rt([w], s)["horizons"][3]["a851a"])
+    assert outs[0] == outs[1]
+
+
+def test_a851a_refutes_only_a_significant_negative_ic():
+    """Within the events, a stronger forecast is followed by a LOWER return:
+    the IC is significantly negative, so the claim (IC > 0) is refuted."""
+    rng = np.random.default_rng(57)
+    n = 1500
+    fc = np.zeros(n)
+    idx = np.arange(30, n - 10, 30)
+    fc[idx] = rng.uniform(12, 20, len(idx))
+    r = rng.normal(0, 0.01, n)
+    r[idx + 1] -= (fc[idx] - 12) * 0.01
+    close = 100 * np.exp(np.cumsum(r))
+    w = ct.Window("SYN", "w0", (T0 + np.arange(n) * DAY).astype(np.int64), close, fc,
+                  np.array(["x"] * n, dtype=object), DAY)
+    sel = {"kind": "event", "field": "forecast", "op": ">=", "value": 12}
+    s = ct.TestSpec(**{**spec(sel).__dict__, "significance": {"method": ct.A851A_TIMEGAP_METHOD},
+                       "floor": {"min_events": 10}})
+    res = rt([w], s)
+    a = res["horizons"][1]["a851a"]
+    assert a["pooled_ic"] < 0 and a["p_value_opposite"] < 0.05
+    assert res["status"] == "refuted"
+
