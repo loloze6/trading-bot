@@ -129,7 +129,9 @@ BTC, the breakout days look like any other days.
 still printed its effect sizes (it always does; amendment 4 section 4): small,
 sign-flipping, like `base`. No p-value, no verdict. Note: these effect sizes
 are now seen, so any later Donchian(14) gate run would be decided after seeing
-them.
+them. **Operator decision (2026-10-03): no Donchian(14) gate will be run.** The
+decision would no longer be blind, and the re-grade has served its purpose.
+This variant stays "not graded".
 
 **Combined** (pre-registered: supported only if both tests are; refuted
 dominates across variants): `base` inconclusive, `donchian_solusdt_crossasset`
@@ -385,9 +387,9 @@ Donchian(14), `calibration_a4/summary_timegap_p14.yaml`, **FAIL**:
 
 1. **Method for run_065: closed.** Amendment 5 made the gate one-sided and
    method B passed for Donchian(20); run_065 is graded (inconclusive).
-   Open: running B's unchanged gate once on Donchian(14) would let
-   `donchian_period_14_reactive` be graded. Its effect sizes are now seen
-   (above), so that decision is no longer blind.
+   `donchian_period_14_reactive` stays **not graded**: the operator decided
+   (2026-10-03) not to run B's gate on Donchian(14). Its effect sizes are
+   already seen, so that run would no longer be blind.
 2. **`block_adjusted_pvalue` and the live `residual_ic` criterion.** The
    function `signal_statistics.block_adjusted_pvalue` is what the live
    residual_ic grid criterion uses (`tools/residual_ic.py`, block = bars per
@@ -416,6 +418,11 @@ Donchian(14), `calibration_a4/summary_timegap_p14.yaml`, **FAIL**:
      hourly bars only.
    - Possible ways to bound the cost: calibrate per signal family, or make the
      gate cheaper.
+   - **Open question for slice 3 (operator, 2026-10-03).** One calibration is
+     needed per method x signal x timeframe, about an hour each. Slice 3's
+     phase A must propose how calibrations are **stored and reused across
+     runs**. When no calibration exists for a test, the status is
+     **"verdict pending"**, not a failure; effect sizes are still reported.
 4. **run_066** (CUL-387): the Keltner signal recomputed with 500 warm-up bars
    does not match the traded one (0.007-0.39 on a ±20 scale). The engine's
    history rules were deliberately not copied into the tool.
