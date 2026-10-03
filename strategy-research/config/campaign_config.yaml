@@ -843,6 +843,26 @@ orchestrator:
       # quiet or silent strategy passes -- how often it trades is the
       # backtest's question. Every probe is recorded in
       # artifacts/forecast_size_probe.yaml. Adds a few seconds per config.
+  claim_tests:
+    enabled: false
+      # E-068 slice 2 (CUL-389, engineering/roadmap/E-068/DESIGN_PROPOSAL.md
+      # sections 2, 2.3 and 4). OFF BY DEFAULT, read by
+      # run_phase1_research._claim_tests_enabled(). HARD DEPENDENCY: raises if
+      # true while config_direct_authoring.enabled is false/absent. While
+      # false: nothing is read or written (byte-identical).
+      #
+      # While true: step 1a gets workflow_artifacts/skills/hypothesis-design/
+      # CLAIM_TESTS.md and writes a `claim` block in hypothesis_card.yaml (a
+      # statement, its kind, 1-3 tests composed from the four slots and/or
+      # criteria_refs, pass_if/fail_if, rationale), or `tests: none` with
+      # missing_block. Code (tools/claim_card.py) checks it before 1b: a bad
+      # claim gets one 1a retry, then the run fails; `tests: none` parks the
+      # run (waiting_for_test) and appends campaign_record/test_requests.yaml.
+      # A regime-selector test is accepted as effect-size only
+      # (verdict_possible: false). After 1b, the tests are compared with
+      # block_manifest.yaml: a mismatch is a warning in
+      # artifacts/claim_match.yaml, never a stop. Nothing is graded yet
+      # (slice 3).
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------

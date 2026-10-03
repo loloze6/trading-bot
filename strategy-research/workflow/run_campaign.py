@@ -3143,6 +3143,7 @@ def _flag_readers() -> dict:
         "composition_runs": orch._composition_runs_enabled,
         "variant_anti_adjacency_gate": orch._variant_anti_adjacency_gate_enabled,
         "forecast_size_probe": orch._forecast_size_probe_enabled,  # D-056
+        "claim_tests": orch._claim_tests_enabled,  # E-068 slice 2
         "schedulability_block": _schedulability_block_enabled,
     }
 

@@ -481,6 +481,7 @@ _FLAG_GATED_INPUTS = {
         rpr._TRIED_IDEAS_RELATIVE_PATH, rpr._EXCLUSION_DIGEST_RELATIVE_PATH,  # exclusion digest
         *[v for v in rpr._STALE_INPUT_PATH_FIXES["hypothesis_generation"].values()],  # stale-path fix (on)
         "../../config/criterion_menu.yaml", "../../config/cost_model.yaml",  # config-direct authoring
+        rpr.CLAIM_TESTS_GUIDE,  # E-068 slice 2 (claim_tests)
     },
     "innovation_expansion": {
         rpr._TRIED_IDEAS_RELATIVE_PATH, rpr._EXCLUSION_DIGEST_RELATIVE_PATH,

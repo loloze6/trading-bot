@@ -211,6 +211,8 @@ TARGET_FLAGS = {
     "score_provenance": False,
     # D-056: runs the real engine on real data; this harness feeds stub configs.
     "forecast_size_probe": False,
+    # E-068 slice 2: the stub cards carry no claim block.
+    "claim_tests": False,
 }
 
 # C5.8 (D-050): the four legacy route/rationale keys of a window's core

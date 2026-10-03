@@ -214,10 +214,57 @@
       "$ref": "block_manifest.schema.json",
       "description": "E-056 Slice 3b IMPROVEMENT 08 (pass_through candidates only): the block manifest, copied verbatim alongside config, then written by 1b as artifacts/block_manifest.yaml. Same fix as config above. E-056 1b block manifest (code-review fix 7): $ref's the block_manifest schema so a malformed pass-through manifest is caught at the card (shape only; resolution against the config is checked in code after 1b)."
     },
+    "claim": {
+      "type": "object",
+      "description": "E-068 slice 2 (CUL-389, orchestrator.claim_tests.enabled only; absent otherwise): the idea's claim and the test that could prove it false, composed from the slots in workflow_artifacts/skills/hypothesis-design/CLAIM_TESTS.md. The enforcing code is tools/claim_card.check_claim (slot rules: tools/claim_tests.check_spec); this schema documents the shape and tests/test_e068_s2_claim_card.py keeps the two in agreement.",
+      "required": ["statement", "kind", "pass_if", "fail_if", "rationale"],
+      "additionalProperties": false,
+      "properties": {
+        "statement": { "type": "string", "minLength": 1, "description": "The claim in plain words a new joiner can read." },
+        "kind": {
+          "enum": ["regime_classifier", "regime_transition", "direction_forecast", "volatility_forecast",
+                   "event_behaviour", "conditional_behaviour", "horizon_decay", "calendar_effect",
+                   "redundancy", "lead_lag", "data_feed_value", "cost_turnover", "robustness"],
+          "description": "Which question the claim answers (O-18's closed list). It says whether the idea could be a block; step 1b's block_manifest.yaml decides whether it is one, and of which kind."
+        },
+        "tests": {
+          "description": "1 to 3 tests composed from the four slots (the claim is supported only if every test passes), or the string \"none\" with missing_block. May be omitted only when criteria_refs is given.",
+          "oneOf": [
+            { "const": "none" },
+            { "type": "array", "minItems": 1, "maxItems": 3, "items": { "$ref": "#/$defs/claim_test" } }
+          ]
+        },
+        "criteria_refs": {
+          "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" },
+          "description": "Ids of criteria in this card's own `criteria` list that test the claim (cost, redundancy, robustness kinds)."
+        },
+        "missing_block": { "type": "string", "minLength": 1, "description": "With tests: none only: the building block the slots lack. The idea is parked and a row goes to campaign_record/test_requests.yaml." },
+        "pass_if": { "type": "string", "minLength": 1, "description": "Plain words restating the code's verdict rule. Decides nothing." },
+        "fail_if": { "type": "string", "minLength": 1, "description": "Plain words restating the code's verdict rule. Decides nothing." },
+        "rationale": { "type": "string", "minLength": 1, "description": "Why these tests answer this claim." }
+      }
+    },
     "source": {
       "type": "string",
       "description": "E-056 Slice 3b IMPROVEMENT 08 (pass_through candidates only): names where the pass-through config/manifest/criteria originated (a human operator, or a prior campaign artifact). Same fix as config above."
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "claim_test": {
+      "type": "object",
+      "required": ["name", "selector", "outcome", "statistic", "direction", "floor"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "selector": { "type": "object", "required": ["kind"] },
+        "outcome": { "type": "object", "required": ["kind", "horizons"] },
+        "baseline": { "type": ["object", "null"] },
+        "statistic": { "enum": ["mean_diff", "rank_ic", "hit_rate", "decay_curve"] },
+        "direction": { "enum": ["greater", "less"] },
+        "floor": { "type": "object", "minProperties": 1 },
+        "consistency": { "type": "object" }
+      }
+    }
+  }
 }

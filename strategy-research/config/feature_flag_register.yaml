@@ -622,6 +622,22 @@ flags:
       A probe that crashes raises. Tested by
       tests/test_d056_forecast_size_probe.py.
 
+  - name: claim_tests
+    kind: orchestrator_config
+    config_key: orchestrator.claim_tests.enabled
+    reader: run_phase1_research._claim_tests_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "E-068 slices 3-5 (the grid grades the claim test, findings, readers v3) and a calibrated significance method (REGRADE_run065.md); no campaign runs until slices 1-3 are built and reviewed"
+    criterion: >
+      Landed 2026-10-03 (E-068 slice 2, CUL-389). Off: byte-identical,
+      nothing read or written. On (requires config_direct_authoring): step 1a
+      writes a `claim` block in hypothesis_card.yaml; tools/claim_card.py
+      checks it before 1b (one 1a retry, then the run fails); `tests: none`
+      parks the run and appends campaign_record/test_requests.yaml; after 1b
+      a 1a/1b mismatch is recorded as a warning in artifacts/claim_match.yaml.
+      Tested by tests/test_e068_s2_claim_card.py.
+
   - name: bar_equity
     kind: engine_param
     engine_default_files:

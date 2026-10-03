@@ -36,6 +36,11 @@ directly) additionally requires, when not a pass-through candidate (IMPROVEMENT 
 empty — when that file is absent from your context; this skill produces exactly the
 9-field card above in that case, unchanged.
 
+Claim-test flow only (signaled by `workflow_artifacts/skills/hypothesis-design/CLAIM_TESTS.md`
+being present in your context — see IMPROVEMENT 09 below) additionally requires, when not a
+pass-through candidate: `claim` (the idea's claim, its kind and its test). Absent entirely
+when that file is absent from your context.
+
 ---
 
 ## IMPROVEMENT 01 — Edge-Source Declaration (A1.1–A1.3)
@@ -418,6 +423,28 @@ re-authoring one — see that skill's own required-inputs note. A candidate miss
 (`config`, `manifest`, `criteria`, `source`) is NOT a pass-through candidate — author it normally through
 IMPROVEMENT 01/04/07 above; a partial pass-through is a silent gap-filling trap, not a shortcut.
 
+## IMPROVEMENT 09 — The claim block (claim-test flow only, E-068 slice 2)
+
+**Optional, signaled by input presence.** `workflow_artifacts/skills/hypothesis-design/CLAIM_TESTS.md` is added
+to your required inputs ONLY when `orchestrator.claim_tests.enabled` is true (you cannot read that flag: check
+for the file in your context). **If it is absent, skip this section and write no `claim`.** If it is present,
+and the card is not a pass-through candidate (IMPROVEMENT 08), add a `claim` block to `hypothesis_card.yaml`
+exactly as CLAIM_TESTS.md describes:
+
+- `statement`: the idea's claim in plain words;
+- `kind`: which question it answers, from CLAIM_TESTS.md section 4 (closed list). The kind says whether the idea
+  *could* be a block; step 1b decides whether it is one, and of which kind;
+- `tests`: 1 to 3 tests composed only from CLAIM_TESTS.md's slots (selector, outcome, baseline, statistic, plus
+  direction and floor). This is a filled-in form, not code. The claim is supported only if every test passes;
+- `criteria_refs` instead of, or in addition to, `tests`, when a criterion in this card's own `criteria` list is the
+  claim's test (cost, redundancy, robustness kinds);
+- `pass_if` / `fail_if`: the code's verdict rule restated in plain words for this claim (they decide nothing);
+- `rationale`: why these tests answer this claim.
+
+If the slots cannot express the claim's test, write `tests: none` and name the missing building block in
+`missing_block`. Never force a test that does not measure the claim. Code checks the block before any other
+step runs; if it is refused, you get one retry with the error.
+
 ---
 
 ## Checklist
@@ -444,6 +471,8 @@ IMPROVEMENT 01/04/07 above; a partial pass-through is a silent gap-filling trap,
 - **Config-direct-authoring flow only:** pick `criteria` from `config/criterion_menu.yaml`'s live entries only
   (IMPROVEMENT 07); populate `cost_feasibility` from `config/cost_model.yaml` (IMPROVEMENT 07); check for a
   pass-through candidate (IMPROVEMENT 08) before authoring from scratch.
+- **Claim-test flow only** (CLAIM_TESTS.md in context): write the `claim` block (IMPROVEMENT 09); every test uses
+  only CLAIM_TESTS.md's blocks; `tests: none` with `missing_block` when the slots cannot express it.
 
 ## Forbidden
 - Do not write `signal_concept` before `edge_source` is complete.
@@ -469,6 +498,9 @@ IMPROVEMENT 01/04/07 above; a partial pass-through is a silent gap-filling trap,
   candidate that already qualifies as a pass-through (Improvement 08) — copy it through instead.
 - Do not omit, drop or down-rank a hypothesis, and do not declare a brief exhausted, on a cost, breakeven or
   turnover estimate (`cost_feasibility` included). Costs are judged only by the backtest. (Improvement 07, O-3)
+- **Claim-test flow only:** do not invent a selector, outcome, baseline, statistic or parameter outside
+  CLAIM_TESTS.md; do not write `alpha` or `significance` (code sets them); do not write a pass rule of your own
+  in `pass_if`/`fail_if` (they restate the code's rule). (Improvement 09)
 
 ## Context rule
-Read `research_brief.yaml`, `config/available_feeds.yaml`, `feed_wishlist.yaml`, `config/indicator_library.yaml`, and, when present, `artifacts/tried_ideas.yaml` or `campaign_record/exclusion_digest.yaml` and `campaign_record/campaign_knowledge_base.yaml`. Config-direct-authoring flow only: also read `config/criterion_menu.yaml` and `config/cost_model.yaml` (Improvement 07). Do not read other files unless the handoff explicitly requires them.
+Read `research_brief.yaml`, `config/available_feeds.yaml`, `feed_wishlist.yaml`, `config/indicator_library.yaml`, and, when present, `artifacts/tried_ideas.yaml` or `campaign_record/exclusion_digest.yaml` and `campaign_record/campaign_knowledge_base.yaml`. Config-direct-authoring flow only: also read `config/criterion_menu.yaml` and `config/cost_model.yaml` (Improvement 07). Claim-test flow only: also read `workflow_artifacts/skills/hypothesis-design/CLAIM_TESTS.md` (Improvement 09). Do not read other files unless the handoff explicitly requires them.
