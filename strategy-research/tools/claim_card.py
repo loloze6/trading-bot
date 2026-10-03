@@ -405,7 +405,11 @@ def coverage_summary_lines(root: Path) -> list:
     if not path.exists():
         return []
     import yaml
-    doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    try:
+        doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except (yaml.YAMLError, OSError, UnicodeDecodeError) as exc:   # never break the summary
+        return ["", "## Claim tests (E-068, information only)", "",
+                f"- {COVERAGE_REL} is unreadable ({type(exc).__name__}); fix or remove it."]
     runs = doc.get("runs") if isinstance(doc, dict) and isinstance(doc.get("runs"), dict) else {}
     usable = sorted(r for r, v in runs.items() if isinstance(v, dict) and v.get("usable"))
     gaps = {}

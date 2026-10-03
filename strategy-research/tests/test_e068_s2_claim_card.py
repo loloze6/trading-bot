@@ -673,6 +673,7 @@ def test_retry_answer_with_several_cards_is_split(monkeypatch):
         return True
 
     monkeypatch.setattr(rpr, "_invoke_agent_with_yaml_retry", _invoke)
+    monkeypatch.setattr(rpr, "_decide_next_enabled", lambda *a: True)    # the queue path
     monkeypatch.setattr(rpr, "_handle_hypothesis_generation_multi_card_split", _split)
     monkeypatch.setattr(rpr, "_brief_single_card_check",
                         lambda rdir: pytest.fail("single-card check after a split"))
@@ -680,21 +681,125 @@ def test_retry_answer_with_several_cards_is_split(monkeypatch):
     assert _status(run_dir)["usable"] is True
 
 
+def test_a_legacy_split_answer_on_the_retry_is_undone(monkeypatch):
+    """review 2 #8: decide_next off, the retry answers several cards: the legacy
+    split (new sibling runs) is never repeated -- the retry is undone."""
+    _set_orchestrator(ON)
+    run_dir = _card_run("run_929", claim=_claim(kind="vibes"))
+
+    def _invoke(*a, **k):
+        raise FileNotFoundError("hypothesis_card.yaml")
+
+    monkeypatch.setattr(rpr, "_invoke_agent_with_yaml_retry", _invoke)
+    monkeypatch.setattr(rpr, "_handle_hypothesis_generation_multi_card_split",
+                        lambda *a: pytest.fail("legacy split repeated by the retry"))
+    rpr._check_claim_after_1a("run_929", run_dir, [], {})
+    assert rpr.load_yaml(run_dir / "artifacts" / "hypothesis_card.yaml")["claim"]["kind"] == "vibes"
+    assert _status(run_dir)["reason"] == "invalid_claim"
+
+
+def test_a_retry_card_next_to_an_exhausted_signal_is_undone(monkeypatch):
+    """review 2 #8: a card plus brief_status.yaml (exhausted) is contradictory."""
+    _set_orchestrator(ON)
+    run_dir = _card_run("run_930b", claim=_claim(kind="vibes"))
+
+    def _invoke(stage, run_id, rdir, expected, state):
+        rpr.save_yaml(rdir / "artifacts" / "hypothesis_card.yaml", dict(CARD, claim=_claim()))
+
+    monkeypatch.setattr(rpr, "_invoke_agent_with_yaml_retry", _invoke)
+
+    def _contradiction(rdir):
+        raise ValueError("exhausted next to a card")
+
+    monkeypatch.setattr(rpr, "_brief_exhausted_signal", _contradiction)
+    rpr._check_claim_after_1a("run_930b", run_dir, [], {})
+    assert rpr.load_yaml(run_dir / "artifacts" / "hypothesis_card.yaml")["claim"]["kind"] == "vibes"
+
+
 def test_set_aside_and_restore():
     run_dir = _card_run("run_923", claim=_claim())
     arts = run_dir / "artifacts"
     rpr.save_yaml(arts / "hypothesis_card_2.yaml", {"x": 1})
+    rpr.save_yaml(arts / "brief_repeat.yaml", {"stale": True})
     rpr.save_yaml(arts / "queued_hypotheses.yaml", {"enqueued": True})
-    rpr._set_aside_1a_outputs(run_dir, "t")
-    assert not (arts / "hypothesis_card.yaml").exists()
-    assert not (arts / "hypothesis_card_2.yaml").exists()
+    names = rpr._set_aside_1a_outputs(run_dir, "t")
+    assert set(names) == {"hypothesis_card.yaml", "hypothesis_card_2.yaml", "brief_repeat.yaml"}
     assert (arts / "queued_hypotheses.yaml").exists()              # enqueued: stays
     rpr.save_yaml(arts / "hypothesis_card.yaml", {"retry": True})
-    rpr._restore_1a_outputs(run_dir, "t")
+    rpr._restore_1a_outputs(run_dir, "t", names)
     assert rpr.load_yaml(arts / "hypothesis_card.yaml")["claim"] == _claim()
     assert rpr.load_yaml(arts / "hypothesis_card_2.yaml") == {"x": 1}
     assert (run_dir / ".previous_attempts" / "hypothesis_generation_t_failed"
             / "hypothesis_card.yaml").exists()
+
+
+def test_a_reused_tag_never_mixes_two_attempts():
+    """review 2 #3: the set-aside folder is emptied first, and restore moves back
+    only what this call set aside."""
+    run_dir = _card_run("run_923b", claim=_claim())
+    arts = run_dir / "artifacts"
+    rpr.save_yaml(arts / "hypothesis_card_2.yaml", {"old": True})
+    rpr._set_aside_1a_outputs(run_dir, "claim_retry1")              # an earlier attempt
+    rpr.save_yaml(arts / "hypothesis_card.yaml", dict(CARD, claim=_claim(kind="vibes")))
+    names = rpr._set_aside_1a_outputs(run_dir, "claim_retry1")      # this attempt
+    assert names == ["hypothesis_card.yaml"]
+    folder = run_dir / ".previous_attempts" / "hypothesis_generation_claim_retry1"
+    assert sorted(p.name for p in folder.iterdir()) == ["hypothesis_card.yaml"]   # emptied first
+    rpr.save_yaml(folder / "stray.yaml", {"x": 1})                  # not set aside by this call
+    rpr._restore_1a_outputs(run_dir, "claim_retry1", names)
+    assert not (arts / "hypothesis_card_2.yaml").exists()           # the stale card stays away
+    assert not (arts / "stray.yaml").exists()                       # only `names` come back
+
+
+def test_a_failed_retry_restores_the_runs_queued_card_copies(monkeypatch):
+    """review 2 #2: the retry's split rewrites campaign_record/queued_cards/<run>/;
+    undoing the retry brings the first copies back, so every card_ref resolves."""
+    _set_orchestrator(ON)
+    run_dir = _card_run("run_931b", claim=_claim(kind="vibes"))
+    qdir = rpr.ROOT / "campaign_record" / "queued_cards" / "run_931b"
+    qdir.mkdir(parents=True)
+    rpr.save_yaml(qdir / "hypothesis_card_2.yaml", {"first": True})
+    rpr.save_yaml(run_dir / "artifacts" / "queued_hypotheses.yaml",
+                  {"enqueued": False, "cards": [{"card_ref":
+                   "campaign_record/queued_cards/run_931b/hypothesis_card_2.yaml"}]})
+    monkeypatch.setattr(rpr, "_decide_next_enabled", lambda *a: True)
+
+    def _invoke(*a, **k):
+        raise FileNotFoundError("hypothesis_card.yaml")
+
+    def _split(run_id, rdir):                 # rewrites the copies, then the retry fails
+        shutil.rmtree(qdir)
+        rpr.save_yaml(rdir / "artifacts" / "hypothesis_card.yaml", dict(CARD, claim=_claim()))
+        return True
+
+    monkeypatch.setattr(rpr, "_invoke_agent_with_yaml_retry", _invoke)
+    monkeypatch.setattr(rpr, "_handle_hypothesis_generation_multi_card_split", _split)
+    monkeypatch.setattr(rpr, "_brief_card_is_repeat", lambda rdir: True)
+    rpr._check_claim_after_1a("run_931b", run_dir, [], {})
+    assert rpr.load_yaml(qdir / "hypothesis_card_2.yaml") == {"first": True}
+    assert rpr.load_yaml(run_dir / "artifacts" / "queued_hypotheses.yaml")["enqueued"] is False
+
+
+def test_the_safety_net_never_raises_on_a_broken_coverage_file(monkeypatch):
+    """review 2 #1: a coverage file that is not a mapping makes record_coverage
+    raise; the claim check and the gate still never raise."""
+    _set_orchestrator(ON)
+    path = rpr.ROOT / cc.COVERAGE_REL
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("- a list\n", encoding="utf-8")
+    run_dir = _card_run("run_932b", claim=_claim())
+    _fake_1a(monkeypatch, run_dir, [])
+    assert rpr._check_claim_after_1a("run_932b", run_dir, [], {}) is None
+    assert _status(run_dir)["reason"] == "check_error"
+    run_dir2 = _card_run("run_933b", claim=_claim())
+    assert rpr._claim_gate_before_1b(run_dir2, "run_933b") is None
+
+
+def test_summary_survives_an_unreadable_coverage_file(tmp_path):
+    path = tmp_path / cc.COVERAGE_REL
+    path.parent.mkdir(parents=True)
+    path.write_text("runs: [unclosed\n", encoding="utf-8")
+    assert "unreadable" in "\n".join(cc.coverage_summary_lines(tmp_path))
 
 
 # --- (3) every card 1a wrote is checked ---------------------------------------
@@ -1055,8 +1160,13 @@ def test_power_warning_then_an_invalid_retry_continues_with_a_warning(monkeypatc
     calls = _fake_1a(monkeypatch, run_dir, [_claim(kind="vibes", tests=[REACHABLE])])
     assert rpr._check_claim_after_1a("run_962", run_dir, [], {}) is None
     assert len(calls) == 1 and "cannot reach their floor" in calls[0]
+    # review 2 #4: the retry left the card worse (usable -> invalid), so it is
+    # undone: the first claim is kept with its power warning
     st = _status(run_dir)
-    assert st["usable"] is False and st["reason"] == "invalid_claim"
+    assert st["usable"] is True and st["power_warnings"][0]["bound"] == 11
+    assert rpr.load_yaml(run_dir / "artifacts" / "hypothesis_card.yaml")["claim"]["tests"] == [LOW]
+    rec = rpr.load_yaml(run_dir / "artifacts" / "claim_check.yaml")["attempts"]
+    assert any(a.get("retry_undone") == "worse than the first answer" for a in rec)
     assert rpr.load_yaml(run_dir / "pipeline_state.yaml")["status"] == "active"
 
 

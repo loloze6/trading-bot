@@ -14840,45 +14840,64 @@ def _claim_power_check(run_dir: Path, run_id: str, attempt, stage: str, card: di
     return warnings
 
 
-def _set_aside_1a_outputs(run_dir: Path, tag: str) -> None:
+def _set_aside_1a_outputs(run_dir: Path, tag: str, run_id: str | None = None) -> list:
     """Under claim_tests, before a 1a LLM call (the first one, or the claim
     retry): move 1a's earlier outputs to
-    RUN_DIR/.previous_attempts/hypothesis_generation_<tag>/, so only what THIS
-    call writes can satisfy ensure_files and the claim check.
-    queued_hypotheses.yaml moves only while its cards are not yet enqueued.
-    Kept, not deleted (_restore_1a_outputs brings them back)."""
+    RUN_DIR/.previous_attempts/hypothesis_generation_<tag>/ (emptied first, so
+    a reused tag never mixes two attempts), so only what THIS call writes can
+    satisfy ensure_files and the claim check. queued_hypotheses.yaml moves only
+    while its cards are not yet enqueued; with run_id, the run's queued card
+    copies (campaign_record/queued_cards/<run_id>/) are snapshotted too, since
+    a retry's split rewrites them. Returns the names moved; kept, not deleted
+    (_restore_1a_outputs brings exactly these back)."""
     arts = Path(run_dir) / "artifacts"
-    names = ["hypothesis_card.yaml", EXTRA_CARD_SCORES_FILE, BRIEF_STATUS_FILE]
+    names = ["hypothesis_card.yaml", EXTRA_CARD_SCORES_FILE, BRIEF_STATUS_FILE,
+             "brief_repeat.yaml"]
     names += sorted(p.name for p in arts.glob("hypothesis_card_*.yaml"))
     queued = arts / _decide_next_tools().QUEUED_HYPOTHESES_FILE
     if queued.exists() and not (load_yaml(queued) or {}).get("enqueued"):
         names.append(queued.name)
     dest_root = Path(run_dir) / _PREVIOUS_ATTEMPTS_DIR / f"hypothesis_generation_{tag}"
+    if dest_root.exists():
+        shutil.rmtree(dest_root)
+    moved = []
     for name in names:
         src = arts / name
         if src.exists():
             dest_root.mkdir(parents=True, exist_ok=True)
-            dest = dest_root / name
-            if dest.exists():
-                dest.unlink()
-            shutil.move(str(src), str(dest))
+            shutil.move(str(src), str(dest_root / name))
+            moved.append(name)
+    if run_id is not None:
+        qdir = ROOT / _decide_next_tools().QUEUED_CARDS_DIR / run_id
+        if qdir.exists():
+            dest_root.mkdir(parents=True, exist_ok=True)
+            shutil.copytree(qdir, dest_root / "_queued_cards")
+    return moved
 
 
-def _restore_1a_outputs(run_dir: Path, tag: str) -> None:
-    """A claim retry that produced nothing usable: its own outputs are set
-    aside as `<tag>_failed`, and the first attempt's outputs come back."""
-    _set_aside_1a_outputs(run_dir, f"{tag}_failed")
+def _restore_1a_outputs(run_dir: Path, tag: str, names: list, run_id: str | None = None) -> None:
+    """Undo a claim retry: its own outputs are set aside as `<tag>_failed`, and
+    exactly the first attempt's `names` come back -- plus, with run_id, the
+    run's queued card copies as they were (removed if there were none)."""
+    _set_aside_1a_outputs(run_dir, f"{tag}_failed", run_id)
     src_root = Path(run_dir) / _PREVIOUS_ATTEMPTS_DIR / f"hypothesis_generation_{tag}"
     arts = Path(run_dir) / "artifacts"
-    for p in sorted(src_root.glob("*")) if src_root.exists() else []:
-        shutil.move(str(p), str(arts / p.name))
+    for name in names:
+        if (src_root / name).exists():
+            shutil.move(str(src_root / name), str(arts / name))
+    if run_id is not None:
+        qdir = ROOT / _decide_next_tools().QUEUED_CARDS_DIR / run_id
+        if qdir.exists():
+            shutil.rmtree(qdir)
+        if (src_root / "_queued_cards").exists():
+            shutil.copytree(src_root / "_queued_cards", qdir)
 
 
 def _finish_claim_status(run_dir: Path, run_id: str, results: dict, stage: str) -> None:
     """Information only: this run's claim-test status (its own card) in
     artifacts/claim_test_status.yaml and campaign_record/claim_test_coverage.yaml;
     a test_requests.yaml row for every card that says `tests: none`; warnings
-    printed. Never raises, never routes."""
+    printed. Never routes (its caller turns any exception into check_error)."""
     cc = _claim_card_module()
     rows = []
     for name, (res, _ex, _pw) in results.items():
@@ -14889,17 +14908,15 @@ def _finish_claim_status(run_dir: Path, run_id: str, results: dict, stage: str) 
                          "hypothesis_id": card.get("hypothesis_id"),
                          "claim_kind": claim.get("kind"), "statement": claim.get("statement"),
                          "missing_block": res.missing_block})
-    if rows:
-        cc.append_test_requests(ROOT, rows)
-    own = results.get("hypothesis_card.yaml")
-    status = (cc.status_of(*own) if own is not None
-              else {"usable": False, "reason": "no_claim", "detail": "no hypothesis_card.yaml"})
+    status = _own_claim_status(results)
     others = {n: cc.status_of(*r)["reason"] for n, r in results.items()
               if n != "hypothesis_card.yaml" and not cc.status_of(*r)["usable"]}
     if others:
         status["other_cards_without_a_usable_claim_test"] = others
     save_yaml(Path(run_dir) / "artifacts" / _CLAIM_STATUS_FILE,
               {"run_id": run_id, "stage": stage, **status})
+    if rows:
+        cc.append_test_requests(ROOT, rows)
     cc.record_coverage(ROOT, run_id, status)
     if not status["usable"]:
         print(f"⚠️  [E-068] {run_id} has no usable claim test ({status['reason']}: "
@@ -14915,16 +14932,25 @@ def _finish_claim_status(run_dir: Path, run_id: str, results: dict, stage: str) 
         print(f"⚠️  [E-068] {name}: no usable claim test ({reason}); recorded.")
 
 
+def _own_claim_status(results: dict) -> dict:
+    """The run's own card's status (claim_card.status_of)."""
+    own = results.get("hypothesis_card.yaml")
+    if own is None:
+        return {"usable": False, "reason": "no_claim", "detail": "no hypothesis_card.yaml"}
+    return _claim_card_module().status_of(*own)
+
+
 def _check_claim_after_1a(run_id: str, run_dir: Path, expected_outputs: list, state: dict,
                           split: bool = False) -> None:
     """Right after 1a (run_loop), before any spend; information only -- it never
     stops, parks or reroutes a run. Flag off: nothing read or written. Every
     card 1a wrote is checked (claim, then power). A refused claim, or a floor
-    no event count can reach, gets 1a's ONE retry (1a's earlier outputs set
-    aside; a multi-card answer split or queued as run_loop does -- except the
-    legacy split, which is never repeated: no retry then). A retry that
-    produces nothing usable is undone (the first outputs come back). Whatever
-    remains is recorded as this run's claim-test status and the run continues."""
+    no event count can reach, gets 1a's ONE retry (1a's earlier outputs and the
+    run's queued card copies set aside; a multi-card answer queued as run_loop
+    does -- never the legacy split: no retry then). The retry is undone when it
+    produces nothing usable, or when it leaves this run's own card worse
+    (usable before, not after). Whatever remains is recorded as this run's
+    claim-test status and the run continues."""
     if not _claim_tests_enabled():
         return
     try:
@@ -14941,12 +14967,25 @@ def _check_claim_after_1a(run_id: str, run_dir: Path, expected_outputs: list, st
             check, message = ("claim", "; ".join(errors)) if errors else ("power", "; ".join(power))
             print(f"🔁 [E-068] {'claim refused' if errors else 'claim floor unreachable'} -- "
                   f"retrying step 1a once: {message}")
-            if _retry_1a_for_claim(run_id, run_dir, expected_outputs, state, prior, message,
-                                   check):
-                return _check_claim_after_1a(run_id, run_dir, expected_outputs, state)
-            results = _claim_check_cards(run_dir, run_id, f"{prior + 1}_undone",
-                                         "hypothesis_generation")
-        if prior or (errors or power):
+            first_usable = _own_claim_status(results)["usable"]
+            tag, names = _retry_1a_for_claim(run_id, run_dir, expected_outputs, state, prior,
+                                             message, check)
+            if names is not None:                       # the retry wrote card(s)
+                retried = _claim_check_cards(run_dir, run_id, prior + 1, "hypothesis_generation")
+                if first_usable and not _own_claim_status(retried)["usable"]:
+                    print("⚠️  [E-068] the claim retry left this run's card worse than the first "
+                          "answer; the first answer is kept.")
+                    _append_claim_record(run_dir, _CLAIM_CHECK_FILE, "attempts", {
+                        "attempt": prior + 1, "stage": "hypothesis_generation",
+                        "retry_undone": "worse than the first answer"})
+                    _restore_1a_outputs(run_dir, tag, names, run_id)
+                    retried = _claim_check_cards(run_dir, run_id, f"{prior + 1}_undone",
+                                                 "hypothesis_generation")
+                results = retried
+            else:
+                results = _claim_check_cards(run_dir, run_id, f"{prior + 1}_undone",
+                                             "hypothesis_generation")
+        if prior or errors or power:
             update_state(path=run_dir, **{CLAIM_RETRY_STATE_KEY: {
                 "attempts": 0, "last_error": None, "last_check": None}})
         _finish_claim_status(run_dir, run_id, results, "hypothesis_generation")
@@ -14955,50 +14994,58 @@ def _check_claim_after_1a(run_id: str, run_dir: Path, expected_outputs: list, st
 
 
 def _record_claim_check_error(run_dir: Path, run_id: str, stage: str, exc: Exception) -> None:
+    """The safety net: record check_error wherever it can; it never raises."""
     status = {"usable": False, "reason": "check_error", "detail": f"{type(exc).__name__}: {exc}"}
-    try:
-        save_yaml(Path(run_dir) / "artifacts" / _CLAIM_STATUS_FILE,
-                  {"run_id": run_id, "stage": stage, **status})
-        _claim_card_module().record_coverage(ROOT, run_id, status)
-    finally:
-        print(f"⚠️  [E-068] the claim check could not run ({status['detail']}); recorded, "
-              f"the run continues.")
+    for what, write in (
+            ("artifacts/" + _CLAIM_STATUS_FILE, lambda: save_yaml(
+                Path(run_dir) / "artifacts" / _CLAIM_STATUS_FILE,
+                {"run_id": run_id, "stage": stage, **status})),
+            ("the coverage record", lambda: _claim_card_module().record_coverage(
+                ROOT, run_id, status))):
+        try:
+            write()
+        except Exception as inner:  # never raise from the net itself
+            print(f"⚠️  [E-068] could not write {what} ({type(inner).__name__}: {inner}).")
+    print(f"⚠️  [E-068] the claim check could not run ({status['detail']}); the run continues.")
 
 
 def _retry_1a_for_claim(run_id: str, run_dir: Path, expected_outputs: list, state: dict,
-                        prior: int, error: str, check: str) -> bool:
-    """1a's one retry. True: the retry wrote card(s) (then checked again by the
-    caller); False: it produced nothing usable (no card, an exhausted brief, a
-    repeat, any error) -- its outputs are set aside and the first attempt's are
-    restored, so the run continues with the first card."""
+                        prior: int, error: str, check: str) -> tuple:
+    """1a's one retry. Returns (tag, names): names (the first attempt's outputs
+    set aside under tag) when the retry wrote usable card(s), so the caller can
+    still undo it; (tag, None) when it produced nothing usable (no card, an
+    exhausted brief, a repeat, a legacy split, any error) -- then its outputs
+    are already set aside and the first attempt's restored."""
     tag = f"claim_retry{prior + 1}"
     update_state(path=run_dir, **{CLAIM_RETRY_STATE_KEY: {
         "attempts": prior + 1, "last_error": error, "last_check": check}})
-    _set_aside_1a_outputs(run_dir, tag)
+    names = _set_aside_1a_outputs(run_dir, tag, run_id)
     try:
         split = False
         try:
             _invoke_agent_with_yaml_retry("hypothesis_generation", run_id, run_dir,
                                           expected_outputs, state)
         except FileNotFoundError:
+            if not _decide_next_enabled():
+                raise ValueError("the retry wrote several cards; the legacy split is never "
+                                 "repeated by a claim retry (CUL-392)")
             if not _handle_hypothesis_generation_multi_card_split(run_id, run_dir):
                 raise
             split = True
+        _brief_exhausted_signal(run_dir)
         if not split:
             _brief_single_card_check(run_dir)
         if _brief_card_is_repeat(run_dir):
             raise ValueError("the retry's card repeats a hypothesis this brief already produced")
-        return True
+        return tag, names
     except Exception as exc:
         print(f"⚠️  [E-068] the claim retry produced nothing usable ({type(exc).__name__}: "
               f"{exc}); the first attempt's output is kept and the run continues.")
         _append_claim_record(run_dir, _CLAIM_CHECK_FILE, "attempts", {
             "attempt": prior + 1, "stage": "hypothesis_generation",
             "retry_undone": f"{type(exc).__name__}: {exc}"})
-        _restore_1a_outputs(run_dir, tag)
-        update_state(path=run_dir, **{CLAIM_RETRY_STATE_KEY: {
-            "attempts": prior + 1, "last_error": error, "last_check": check}})
-        return False
+        _restore_1a_outputs(run_dir, tag, names, run_id)
+        return tag, None
 
 
 def _claim_gate_before_1b(run_dir: Path, run_id: str) -> None:
