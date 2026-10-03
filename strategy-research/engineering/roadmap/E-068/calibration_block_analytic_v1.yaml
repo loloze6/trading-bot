@@ -1,0 +1,173 @@
+gate:
+  alpha: 0.05
+  pass_range:
+  - 0.025
+  - 0.075
+method: block_analytic_v1
+seed: 20261003
+cells:
+- cell: daily_donchian_iid_fc>=12_greater
+  n_sims: 400
+  share_p_below_0_05:
+    1: 0.03
+    2: 0.025
+    3: 0.0125
+    4: 0.0075
+    5: 0.005
+  undefined:
+    1: 0
+    2: 0
+    3: 0
+    4: 0
+    5: 0
+  pass: false
+- cell: daily_donchian_iid_fc>=12_less
+  n_sims: 400
+  share_p_below_0_05:
+    1: 0.0625
+    2: 0.0475
+    3: 0.04
+    4: 0.0325
+    5: 0.0275
+  undefined:
+    1: 0
+    2: 0
+    3: 0
+    4: 0
+    5: 0
+  pass: true
+- cell: daily_donchian_iid_fc<=-12_greater
+  n_sims: 400
+  share_p_below_0_05:
+    1: 0.0575
+    2: 0.0325
+    3: 0.02
+    4: 0.01
+    5: 0.0125
+  undefined:
+    1: 0
+    2: 0
+    3: 0
+    4: 0
+    5: 0
+  pass: false
+- cell: daily_donchian_iid_fc<=-12_less
+  n_sims: 400
+  share_p_below_0_05:
+    1: 0.0325
+    2: 0.0275
+    3: 0.0275
+    4: 0.025
+    5: 0.02
+  undefined:
+    1: 0
+    2: 0
+    3: 0
+    4: 0
+    5: 0
+  pass: false
+- cell: hourly_keltner_iid_rank_ic_greater
+  n_sims: 400
+  share_p_below_0_05:
+    72: 0.0
+    168: 0.0
+    336: 0.0
+  undefined:
+    72: 0
+    168: 0
+    336: 0
+  pass: false
+- cell: hourly_keltner_iid_rank_ic_less
+  n_sims: 400
+  share_p_below_0_05:
+    72: 0.0
+    168: 0.0
+    336: 0.0
+  undefined:
+    72: 0
+    168: 0
+    336: 0
+  pass: false
+- cell: daily_donchian_garch_fc>=12_greater
+  n_sims: 400
+  share_p_below_0_05:
+    1: 0.035
+    2: 0.02
+    3: 0.0225
+    4: 0.0175
+    5: 0.0125
+  undefined:
+    1: 0
+    2: 0
+    3: 0
+    4: 0
+    5: 0
+  pass: false
+- cell: daily_donchian_garch_fc>=12_less
+  n_sims: 400
+  share_p_below_0_05:
+    1: 0.0625
+    2: 0.0375
+    3: 0.025
+    4: 0.0225
+    5: 0.025
+  undefined:
+    1: 0
+    2: 0
+    3: 0
+    4: 0
+    5: 0
+  pass: false
+- cell: daily_donchian_garch_fc<=-12_greater
+  n_sims: 400
+  share_p_below_0_05:
+    1: 0.09
+    2: 0.0675
+    3: 0.0475
+    4: 0.05
+    5: 0.0425
+  undefined:
+    1: 0
+    2: 0
+    3: 0
+    4: 0
+    5: 0
+  pass: false
+- cell: daily_donchian_garch_fc<=-12_less
+  n_sims: 400
+  share_p_below_0_05:
+    1: 0.045
+    2: 0.0275
+    3: 0.02
+    4: 0.015
+    5: 0.005
+  undefined:
+    1: 0
+    2: 0
+    3: 0
+    4: 0
+    5: 0
+  pass: false
+- cell: hourly_keltner_garch_rank_ic_greater
+  n_sims: 400
+  share_p_below_0_05:
+    72: 0.0
+    168: 0.0
+    336: 0.0
+  undefined:
+    72: 0
+    168: 0
+    336: 0
+  pass: false
+- cell: hourly_keltner_garch_rank_ic_less
+  n_sims: 400
+  share_p_below_0_05:
+    72: 0.0
+    168: 0.0
+    336: 0.0
+  undefined:
+    72: 0
+    168: 0
+    336: 0
+  pass: false
+all_pass: false
