@@ -15019,16 +15019,19 @@ def _retry_1a_for_claim(run_id: str, run_dir: Path, expected_outputs: list, stat
     tag = f"claim_retry{prior + 1}"
     update_state(path=run_dir, **{CLAIM_RETRY_STATE_KEY: {
         "attempts": prior + 1, "last_error": error, "last_check": check}})
-    names = _set_aside_1a_outputs(run_dir, tag, run_id)
+    names = None
     try:
+        names = _set_aside_1a_outputs(run_dir, tag, run_id)
         split = False
         try:
             _invoke_agent_with_yaml_retry("hypothesis_generation", run_id, run_dir,
                                           expected_outputs, state)
         except FileNotFoundError:
             if not _decide_next_enabled():
+                several = len(list((Path(run_dir) / "artifacts").glob("hypothesis_card_*.yaml")))
                 raise ValueError("the retry wrote several cards; the legacy split is never "
-                                 "repeated by a claim retry (CUL-392)")
+                                 "repeated by a claim retry (CUL-392)" if several >= 2
+                                 else "the retry wrote no hypothesis_card.yaml")
             if not _handle_hypothesis_generation_multi_card_split(run_id, run_dir):
                 raise
             split = True
@@ -15044,7 +15047,15 @@ def _retry_1a_for_claim(run_id: str, run_dir: Path, expected_outputs: list, stat
         _append_claim_record(run_dir, _CLAIM_CHECK_FILE, "attempts", {
             "attempt": prior + 1, "stage": "hypothesis_generation",
             "retry_undone": f"{type(exc).__name__}: {exc}"})
-        _restore_1a_outputs(run_dir, tag, names, run_id)
+        if names is None:
+            # the set-aside itself failed: its folder was emptied first, so everything
+            # in it was moved by this call -- move it back
+            folder = Path(run_dir) / _PREVIOUS_ATTEMPTS_DIR / f"hypothesis_generation_{tag}"
+            names = sorted(p.name for p in folder.glob("*") if p.is_file()) if folder.exists() else []
+        try:
+            _restore_1a_outputs(run_dir, tag, names, run_id)
+        except Exception as inner:  # recorded by the caller as check_error, never raised further
+            raise RuntimeError(f"could not undo the claim retry: {inner}") from inner
         return tag, None
 
 
@@ -16387,7 +16398,12 @@ def run_loop(run_id: str):
                     _split = False
                     if _claim_tests_enabled():
                         # E-068 slice 2: only what this 1a call writes can be checked.
-                        _set_aside_1a_outputs(RUN_DIR, f"attempt_{_this_stage_attempt}")
+                        # Information only: a failing move never stops the stage.
+                        try:
+                            _set_aside_1a_outputs(RUN_DIR, f"attempt_{_this_stage_attempt}")
+                        except Exception as _sa_exc:
+                            print(f"⚠️  [E-068] could not set 1a's earlier outputs aside "
+                                  f"({_sa_exc}); 1a runs anyway.")
                     try:
                         _invoke_agent_with_yaml_retry(current_stage, run_id, RUN_DIR, expected_outputs, state)
                     except FileNotFoundError:

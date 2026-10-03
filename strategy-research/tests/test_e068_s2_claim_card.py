@@ -1253,3 +1253,89 @@ def test_test_requests_of_two_cards_with_the_same_missing_block_are_both_kept(tm
     row = {"run_id": "run_1", "stage": "hypothesis_generation", "missing_block": "x"}
     assert cc.append_test_requests(tmp_path, [dict(row, hypothesis_id="H-1"),
                                               dict(row, hypothesis_id="H-2")]) == 2
+
+
+def test_a_worse_retry_after_two_splits_restores_the_first_queue(monkeypatch):
+    """Both answers split; the retry is worse, so it is undone: the first
+    queued_hypotheses.yaml comes back and every card_ref resolves to the
+    first answer's copies."""
+    _set_orchestrator(ON)
+    run_dir = _card_run("run_934", claim=_claim(tests=[LOW]))           # usable, power warning
+    _protocol("run_934")
+    qdir = rpr.ROOT / "campaign_record" / "queued_cards" / "run_934"
+    qdir.mkdir(parents=True)
+    rpr.save_yaml(qdir / "hypothesis_card_2.yaml", {"first": True})
+    ref = "campaign_record/queued_cards/run_934/hypothesis_card_2.yaml"
+    rpr.save_yaml(run_dir / "artifacts" / "queued_hypotheses.yaml",
+                  {"enqueued": False, "cards": [{"card_ref": ref}], "attempt": "first"})
+    monkeypatch.setattr(rpr, "_decide_next_enabled", lambda *a: True)
+
+    def _invoke(*a, **k):
+        raise FileNotFoundError("hypothesis_card.yaml")
+
+    def _split(run_id, rdir):                                          # the retry's own split
+        shutil.rmtree(qdir)
+        qdir.mkdir()
+        rpr.save_yaml(qdir / "hypothesis_card_2.yaml", {"retry": True})
+        rpr.save_yaml(rdir / "artifacts" / "queued_hypotheses.yaml",
+                      {"enqueued": False, "cards": [{"card_ref": ref}], "attempt": "retry"})
+        rpr.save_yaml(rdir / "artifacts" / "hypothesis_card.yaml",
+                      dict(CARD, claim=_claim(kind="vibes")))           # worse: invalid
+        return True
+
+    monkeypatch.setattr(rpr, "_invoke_agent_with_yaml_retry", _invoke)
+    monkeypatch.setattr(rpr, "_handle_hypothesis_generation_multi_card_split", _split)
+    rpr._check_claim_after_1a("run_934", run_dir, [], {})
+    queue = rpr.load_yaml(run_dir / "artifacts" / "queued_hypotheses.yaml")
+    assert queue["attempt"] == "first"
+    assert rpr.load_yaml(rpr.ROOT / queue["cards"][0]["card_ref"]) == {"first": True}
+    assert _status(run_dir)["usable"] is True
+
+
+def test_a_failing_set_aside_on_the_retry_is_undone_and_never_raises(monkeypatch):
+    _set_orchestrator(ON)
+    run_dir = _card_run("run_935", claim=_claim(kind="vibes"))
+    real = rpr._set_aside_1a_outputs
+    calls = []
+
+    def _flaky(rdir, tag, run_id=None):
+        calls.append(tag)
+        if len(calls) == 1:                    # the retry's set-aside: move, then fail
+            real(rdir, tag)
+            raise OSError("locked file")
+        return real(rdir, tag, run_id)
+
+    monkeypatch.setattr(rpr, "_set_aside_1a_outputs", _flaky)
+    monkeypatch.setattr(rpr, "_invoke_agent_with_yaml_retry",
+                        lambda *a, **k: pytest.fail("1a re-invoked after a failed set-aside"))
+    assert rpr._check_claim_after_1a("run_935", run_dir, [], {}) is None
+    assert rpr.load_yaml(run_dir / "artifacts" / "hypothesis_card.yaml")["claim"]["kind"] == "vibes"
+    assert _status(run_dir)["reason"] == "invalid_claim"
+
+
+def test_legacy_undo_message_says_what_happened(monkeypatch):
+    _set_orchestrator(ON)
+    run_dir = _card_run("run_936", claim=_claim(kind="vibes"))
+
+    def _invoke(*a, **k):
+        raise FileNotFoundError("hypothesis_card.yaml")
+
+    monkeypatch.setattr(rpr, "_invoke_agent_with_yaml_retry", _invoke)
+    rpr._check_claim_after_1a("run_936", run_dir, [], {})
+    rec = rpr.load_yaml(run_dir / "artifacts" / "claim_check.yaml")["attempts"]
+    undone = [a["retry_undone"] for a in rec if "retry_undone" in a]
+    assert undone and "wrote no hypothesis_card.yaml" in undone[0]
+
+
+def test_run_loop_first_set_aside_failure_never_stops_1a(monkeypatch):
+    _set_orchestrator(ON)
+    run_dir = _loop_run("run_955")
+
+    def _boom(*a, **k):
+        raise OSError("locked")
+
+    monkeypatch.setattr(rpr, "_set_aside_1a_outputs", _boom)
+    seen = _fake_agent(monkeypatch, run_dir, [_claim()])
+    rpr.run_loop("run_955")
+    assert [s for s, _ in seen] == ["hypothesis_generation", "strategy_config_authoring"]
+
