@@ -115,7 +115,8 @@ def cell_spec(method: str, side: str, seed: int) -> ct.TestSpec:
 
 def run_cell(method: str, model: str, side: str, n_sims: int = N_SIMS, period: int = 20) -> dict:
     """One (method, model, side) cell; both directions from the same sims.
-    Seeds for period 20 are those of the earlier gate runs."""
+    For the two older methods, period-20 seeds equal the earlier gate runs';
+    a new method gets new seed indices."""
     idx = (METHODS.index(method) * 100 + MODELS.index(model) * 10 + list(SIDES).index(side)
            + (0 if period == 20 else 1000 * period))
     signal = donchian(period)
@@ -159,6 +160,8 @@ def code_sha256() -> str:
 def summarize(method: str, cell_docs: list) -> dict:
     cells = [c for c in cell_docs if c["method"] == method]
     rows = [r for c in cells for r in c["rows"]]
+    full = (len({r["row"] for r in rows}) == ct.CALIBRATION_ROWS
+            and all(r.get("n_sims") == N_SIMS for r in rows))
     signals = [c.get("signal", DONCHIAN) for c in cells]
     signal = signals[0] if signals and all(x == signals[0] for x in signals) else None
     hashes = {c.get("code_sha256") for c in cells}
@@ -168,7 +171,7 @@ def summarize(method: str, cell_docs: list) -> dict:
                       "selector": "event", "n_null": N_NULL, "n_sims": N_SIMS},
             "code_sha256": code, "rows": rows,
             "all_pass": (len(rows) == ct.CALIBRATION_ROWS and code is not None
-                         and signal is not None
+                         and signal is not None and full
                          and all(r["pass"] for r in rows))}
 
 

@@ -140,6 +140,7 @@ A851A_SEED = 20261003
 # matches the graded variant (method, signal, cadence, statistic).
 CALIBRATION_GATE = {"alpha": 0.05, "pass_range": [0.025, 0.075], "max_share_undefined": 0.05}
 CALIBRATION_ROWS = 8
+CALIBRATION_N_SIMS = 400
 _TF = {"daily": "1d", "hourly": "1h"}
 NOT_RECOMPUTABLE_SELECTORS = ("regime", "regime_change")
 PLACEBO_SEED = 20261003       # the placebo baseline's random dates (a baseline, not a p-value)
@@ -1144,7 +1145,9 @@ def passed_calibrations(paths) -> list[dict]:
         rows = doc.get("rows") or []
         if (doc.get("all_pass") is True and doc.get("method") in SIGNIFICANCE_METHODS
                 and doc.get("gate") == CALIBRATION_GATE and len(rows) == CALIBRATION_ROWS
-                and all(r.get("pass") is True for r in rows)
+                and len({r.get("row") for r in rows}) == CALIBRATION_ROWS
+                and all(r.get("pass") is True and r.get("n_sims") == CALIBRATION_N_SIMS
+                        for r in rows)
                 and isinstance(doc.get("scope"), dict) and doc.get("code_sha256")):
             out.append(dict(doc, file=str(p)))
     return out
@@ -1199,18 +1202,27 @@ def grade_claim_file(run_dir: Path, spec_path: Path, cache_path_for, eras: list 
                for name, s in tests}
         for name in res:
             res[name]["calibration_file"] = used[name]["file"] if used[name] else None
+        graded_here = all(used[name] is not None for name in res)
         variants[vid] = {"symbols": sorted({w.symbol for w in windows}),
                          "signal": windows[0].signal,
                          "windows": [w.label for w in windows], "tests": res,
-                         "claim_status": combine([r["status"] for r in res.values()])}
+                         "claim_status": combine([r["status"] for r in res.values()]),
+                         "graded": graded_here}
+    # Amendment 4 section 4: a variant without a passed gate for its signal is
+    # NOT graded; it is listed, and it does not mask the graded variants.
+    graded_ok = [v for v, d in variants.items() if d["graded"]]
+    no_gate = [v for v, d in variants.items() if not d["graded"]]
     return {"claim_id": doc.get("claim_id"), "statement": doc.get("statement"),
             "spec_file": str(spec_path), "spec_file_sha256": hashlib.sha256(raw).hexdigest(),
             "spec_hashes": {name: spec_hash(s) for name, s in tests},
             "method_override": method_override,
-            "n_tests_run": len(tests), "run_dir": str(run_dir),
-            "graded_variants": graded, "not_graded_variants": not_graded,
+            "n_tests_run": len(tests) * len(graded_ok), "run_dir": str(run_dir),
+            "graded_variants": graded_ok,
+            "not_graded_variants": not_graded + [f"{v} (no passed calibration for its signal)"
+                                                 for v in no_gate],
             "variants": variants, "bars_used": bars_used,
-            "claim_status": combine([v["claim_status"] for v in variants.values()]),
+            "claim_status": (combine([variants[v]["claim_status"] for v in graded_ok])
+                             if graded_ok else "method_not_calibrated"),
             "calibrations_passed": [c["file"] for c in calibrations],
             "exercised_on_real_runs": sorted(EXERCISED_ON_REAL_RUNS)}
 

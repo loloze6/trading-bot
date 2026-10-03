@@ -1,0 +1,142 @@
+method: a851a_episode_timegap_v1
+gate:
+  alpha: 0.05
+  pass_range:
+  - 0.025
+  - 0.075
+  max_share_undefined: 0.05
+seed: 20261003
+scope:
+  signal:
+    class: DonchianBreakoutComponent
+    params:
+      period: 20
+      scaling_factor: 20.0
+  cadence: daily
+  statistic: mean_diff
+  selector: event
+  n_null: 199
+  n_sims: 400
+code_sha256: de1560871ad4f8fb4eafc8a98314bed04bb13ba6851343dbc449b8e7b70211e3
+rows:
+- row: iid_lower_claimed
+  n_sims: 400
+  share_p_below_0_05_of_defined:
+    1: 0.0575
+    2: 0.0475
+    3: 0.0525
+    4: 0.04
+    5: 0.04
+  share_undefined:
+    1: 0.0
+    2: 0.0
+    3: 0.0
+    4: 0.0
+    5: 0.0
+  pass: true
+- row: iid_lower_opposite
+  n_sims: 400
+  share_p_below_0_05_of_defined:
+    1: 0.0875
+    2: 0.0925
+    3: 0.095
+    4: 0.0775
+    5: 0.115
+  share_undefined:
+    1: 0.0
+    2: 0.0
+    3: 0.0
+    4: 0.0
+    5: 0.0
+  pass: false
+- row: iid_upper_claimed
+  n_sims: 400
+  share_p_below_0_05_of_defined:
+    1: 0.04
+    2: 0.0625
+    3: 0.0625
+    4: 0.0325
+    5: 0.0375
+  share_undefined:
+    1: 0.0
+    2: 0.0
+    3: 0.0
+    4: 0.0
+    5: 0.0
+  pass: true
+- row: iid_upper_opposite
+  n_sims: 400
+  share_p_below_0_05_of_defined:
+    1: 0.06
+    2: 0.0475
+    3: 0.0675
+    4: 0.065
+    5: 0.065
+  share_undefined:
+    1: 0.0
+    2: 0.0
+    3: 0.0
+    4: 0.0
+    5: 0.0
+  pass: true
+- row: switching_lower_claimed
+  n_sims: 400
+  share_p_below_0_05_of_defined:
+    1: 0.04
+    2: 0.03
+    3: 0.0225
+    4: 0.02
+    5: 0.025
+  share_undefined:
+    1: 0.0
+    2: 0.0
+    3: 0.0
+    4: 0.0
+    5: 0.0
+  pass: false
+- row: switching_lower_opposite
+  n_sims: 400
+  share_p_below_0_05_of_defined:
+    1: 0.08
+    2: 0.075
+    3: 0.0675
+    4: 0.1
+    5: 0.08
+  share_undefined:
+    1: 0.0
+    2: 0.0
+    3: 0.0
+    4: 0.0
+    5: 0.0
+  pass: false
+- row: switching_upper_claimed
+  n_sims: 400
+  share_p_below_0_05_of_defined:
+    1: 0.04
+    2: 0.04
+    3: 0.03
+    4: 0.035
+    5: 0.03
+  share_undefined:
+    1: 0.0
+    2: 0.0
+    3: 0.0
+    4: 0.0
+    5: 0.0
+  pass: true
+- row: switching_upper_opposite
+  n_sims: 400
+  share_p_below_0_05_of_defined:
+    1: 0.0875
+    2: 0.08
+    3: 0.0825
+    4: 0.09
+    5: 0.1075
+  share_undefined:
+    1: 0.0
+    2: 0.0
+    3: 0.0
+    4: 0.0
+    5: 0.0
+  pass: false
+all_pass: false
