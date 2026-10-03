@@ -1,16 +1,19 @@
-"""E-068 slice 1 (CUL-386): tools/claim_tests.py.
+"""E-068 slice 1 (CUL-386): tools/claim_tests.py (+ the calibration tool).
 
 Every block: a planted effect is detected, and no effect is not. Every
 selector: changing any future bar never changes today's selection. Plus the
 floor -> inconclusive, future-field refusal, timestamp matching inside a window
-only, the shift range, spec_hash stability, and the bars.csv loader/CLI.
-Synthetic data only (2020 dates); no market data is read.
+only, the null (fake worlds with the signal recomputed), the forecast check,
+the warm-up reader, spec_hash stability, the claim-file checks and the CLI.
+Synthetic data only (2020-2023 dates); no market data is read.
 """
 import csv
+import json
 import sys
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 import yaml
 
@@ -18,44 +21,49 @@ SR_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SR_ROOT / "tools"))
 
 import claim_tests as ct  # noqa: E402
+import claim_tests_calibration as cal  # noqa: E402
 from performance.signal_statistics import spearman_correlation  # noqa: E402
 
 T0 = 1577836800          # 2020-01-01 00:00 UTC
+DAY = 86400
 HOUR = 3600
-FAST = {"method": "circular_shift_v1", "n_resamples": 199, "seed": 7}
+FAST = {"method": "bootstrap_null_v1", "n_resamples": 99, "seed": 7}
+DON = {"class": "DonchianBreakoutComponent", "params": {"period": 10, "scaling_factor": 20.0}}
+WARM = 30
 
 
-def make_windows(seed=0, n=500, n_windows=6, effect=0.0, sel_fn=None, vol_effect=0.0,
-                 drift_effect=0.0, ic_beta=0.0, h=1, step=HOUR):
-    """Synthetic windows. forecast ~ AR(1); regime in blocks. The planted effect
-    acts on the bars AFTER a bar selected by sel_fn(window_fields) -> bool mask."""
+def make_windows(seed=0, n=300, n_windows=4, plant=None, h=1, sd=0.02):
+    """Daily synthetic windows whose forecast is the REAL Donchian(10) of the
+    price, computed bar by bar, so the null can recompute it. `plant(t, fc, ts)`
+    returns (drift added to returns t+1..t+h, vol multiplier for them)."""
     rng = np.random.default_rng(seed)
     out = []
     for wi in range(n_windows):
-        ts = T0 + (wi * (n + 50) + np.arange(n)) * step
-        fc = np.zeros(n)
-        for t in range(1, n):
-            fc[t] = 0.7 * fc[t - 1] + rng.normal(0, 7)
-        fc = np.clip(fc, -20, 20)
-        reg = np.empty(n, dtype=object)
-        t = 0
-        while t < n:
-            L = int(rng.integers(5, 30))
-            reg[t:t + L] = rng.choice(["trend", "range"])
-            t += L
-        fields = {"ts": ts, "forecast": fc, "regime": reg}
-        sel = sel_fn(fields) if sel_fn is not None else np.zeros(n, dtype=bool)
-        r = rng.normal(0, 0.01, n)
-        scale = np.ones(n)
-        for t in np.nonzero(sel)[0]:
-            if t + 1 < n:
-                r[t + 1] += effect
-            r[t + 1:t + 1 + h] += drift_effect
-            scale[t + 1:t + 1 + h] = 1 + vol_effect
-        r = r * scale
-        r[1:] += ic_beta * fc[:-1] * 0.001
-        close = 100 * np.exp(np.cumsum(r))
-        out.append(ct.Window("SYN", f"w{wi}", ts.astype(np.int64), close, fc, reg, step))
+        m = n + WARM
+        ts_all = (T0 + (wi * (m + 5) + np.arange(m)) * DAY).astype(np.int64)
+        close = np.empty(m)
+        close[0] = 100.0
+        r = rng.normal(0.0, sd, m)
+        drift, scale = np.zeros(m), np.ones(m)
+        for t in range(m - 1):
+            if plant is not None and t >= 9:      # the effect of bar t's signal, first ...
+                win = close[t - 9:t + 1]
+                hi, lo = win.max(), win.min()
+                fc_t = ((0.5 if hi == lo else (close[t] - lo) / (hi - lo)) * 2 - 1) * 20
+                d, v = plant(t, fc_t, ts_all[t])
+                if isinstance(d, list):               # one drift per lag 1, 2, ...
+                    drift[t + 1:t + 1 + len(d)] += np.array(d)[:max(0, m - t - 1)]
+                else:
+                    drift[t + 1:t + 1 + h] += d
+                scale[t + 1:t + 1 + h] *= v
+            close[t + 1] = close[t] * np.exp(r[t + 1] * scale[t + 1] + drift[t + 1])  # ... then t+1
+        high, low = close * 1.002, close * 0.998
+        fc = ct.compute_signal(DON, high, low, close)
+        warm = {"ts": ts_all[:WARM], "close": close[:WARM], "high": high[:WARM],
+                "low": low[:WARM]}
+        reg = np.where(np.arange(n) % 20 < 10, "trend", "range").astype(object)
+        out.append(ct.Window("SYN", f"w{wi}", ts_all[WARM:], close[WARM:], fc[WARM:], reg, DAY,
+                             high=high[WARM:], low=low[WARM:], warm=warm, signal=DON))
     return out
 
 
@@ -74,93 +82,76 @@ def status(windows, s, eras=None):
     return ct.run_test(windows, s, eras)["status"]
 
 
-# --- selectors: planted effect detected, none not detected -----------------
-
-EVENT = {"kind": "event", "field": "forecast", "op": ">=", "value": 8}
-SELECTOR_CASES = [
-    (EVENT, lambda f: f["forecast"] >= 8),
-    ({"kind": "all"}, None),
-    ({"kind": "regime", "value": "trend"}, lambda f: f["regime"] == "trend"),
-    ({"kind": "regime_change", "to": "trend"},
-     lambda f: np.r_[False, (f["regime"][1:] == "trend") & (f["regime"][:-1] != "trend")]),
-    ({"kind": "calendar", "hours": [0, 1, 2, 3, 4, 5]},
-     lambda f: ((f["ts"] % 86400) // 3600) < 6),
-]
+# Planted effects are REVERSALS (a rebound after a low signal, a fall after a
+# high one): a momentum plant makes the price run away until nearly every bar
+# is selected.
+EVENT = {"kind": "event", "field": "forecast", "op": "<=", "value": -8}
+EVENT_HIGH = {"kind": "event", "field": "forecast", "op": ">=", "value": 8}
+LOW_FC = lambda e: (lambda t, fc, ts: (e if fc <= -8 else 0.0, 1.0))  # noqa: E731
+HIGH_FC = lambda e: (lambda t, fc, ts: (e if fc >= 8 else 0.0, 1.0))  # noqa: E731
 
 
-@pytest.mark.parametrize("sel,fn", [c for c in SELECTOR_CASES if c[1] is not None],
-                         ids=lambda x: x["kind"] if isinstance(x, dict) else "")
-def test_selector_planted_and_null(sel, fn):
-    s = spec(sel, floor={"min_events": 10})
-    assert status(make_windows(1, effect=0.01, sel_fn=fn), s) == "supported"
-    assert status(make_windows(1, effect=0.0, sel_fn=fn), s) != "supported"
+def planted_and_null(s, plant_on, plant_off, seed, h=1):
+    """Detects the planted effect; with no effect, at most 1 of 5 seeds is a
+    chance 'supported' (the false-positive rate itself is the calibration's job)."""
+    assert status(make_windows(seed, plant=plant_on, h=h), s) == "supported"
+    hits = sum(status(make_windows(seed + 1000 * k, plant=plant_off, h=h), s) == "supported"
+               for k in range(5))
+    assert hits <= 1, hits
+
+
+# --- selectors ------------------------------------------------------------------
+
+def test_selector_event_planted_and_null():
+    planted_and_null(spec(EVENT), LOW_FC(0.02), LOW_FC(0.0), 1)
+
+
+def test_selector_all_rank_ic_planted_and_null():
+    s = spec({"kind": "all"}, statistic="rank_ic", floor={"min_blocks": 30})
+    ic = lambda b: (lambda t, fc, ts: (b * fc / 20, 1.0))  # noqa: E731
+    planted_and_null(s, ic(0.01), ic(0.0), 2)
+
+
+def test_selector_calendar_planted_and_null():
+    monday = lambda e: (lambda t, fc, ts: (e if ((ts // DAY) + 3) % 7 == 0 else 0.0, 1.0))  # noqa: E731
+    planted_and_null(spec({"kind": "calendar", "weekdays": [0]}), monday(0.03), monday(0.0), 3)
 
 
 def test_selector_quantile_planted_and_null():
-    sel = {"kind": "quantile", "field": "forecast", "side": "top", "q": 0.2, "lookback": 50}
-
-    def fn(f):
-        x, out = f["forecast"], np.zeros(len(f["forecast"]), dtype=bool)
-        for t in range(50, len(x)):
-            out[t] = x[t] >= np.quantile(x[t - 50:t], 0.8)
-        return out
-    s = spec(sel)
-    assert status(make_windows(2, effect=0.01, sel_fn=fn), s) == "supported"
-    assert status(make_windows(2, effect=0.0, sel_fn=fn), s) != "supported"
+    sel = {"kind": "quantile", "field": "forecast", "side": "bottom", "q": 0.2, "lookback": 30}
+    planted_and_null(spec(sel), LOW_FC(0.02), LOW_FC(0.0), 4)
 
 
-def test_selector_all_with_rank_ic_planted_and_null():
-    s = spec({"kind": "all"}, statistic="rank_ic", floor={"min_blocks": 30})
-    assert status(make_windows(3, ic_beta=1.0), s) == "supported"
-    assert status(make_windows(3, ic_beta=0.0), s) != "supported"
+def test_regime_selectors_select_the_planted_bars_but_cannot_be_graded():
+    w = make_windows(5, n_windows=1)[0]
+    m, v = ct.sel_regime(w, {"kind": "regime", "value": "trend"})
+    assert np.array_equal(m, w.regime == "trend") and v.all()
+    m, v = ct.sel_regime_change(w, {"kind": "regime_change", "to": "trend"})
+    expected = np.r_[False, (w.regime[1:] == "trend") & (w.regime[:-1] != "trend")]
+    assert np.array_equal(m, expected)
+    for sel in ({"kind": "regime", "value": "trend"}, {"kind": "regime_change", "to": "trend"}):
+        with pytest.raises(ValueError, match="cannot be graded"):
+            ct.run_test([w], spec(sel))
 
 
-# --- outcomes ----------------------------------------------------------------
+# --- outcomes ---------------------------------------------------------------------
 
 def test_outcome_fwd_volatility_planted_and_null():
-    fn = lambda f: f["forecast"] >= 8  # noqa: E731
+    vol = lambda v: (lambda t, fc, ts: (0.0, v if fc <= -8 else 1.0))  # noqa: E731
     s = spec(EVENT, outcome={"kind": "fwd_volatility", "horizons": [5]})
-    assert status(make_windows(4, vol_effect=2.0, sel_fn=fn, h=5), s) == "supported"
-    assert status(make_windows(4, vol_effect=0.0, sel_fn=fn, h=5), s) != "supported"
+    planted_and_null(s, vol(3.0), vol(1.0), 6, h=5)
 
 
 def test_outcome_fwd_max_drawdown_planted_and_null():
-    fn = lambda f: f["forecast"] >= 8  # noqa: E731
-    s = spec(EVENT, outcome={"kind": "fwd_max_drawdown", "horizons": [5]}, direction="less")
-    assert status(make_windows(5, drift_effect=-0.006, sel_fn=fn, h=5), s) == "supported"
-    assert status(make_windows(5, drift_effect=0.0, sel_fn=fn, h=5), s) != "supported"
-
-
-def _trend_windows(ends: bool, seed=6, n_blocks=60, h=3):
-    """Blocks: an up leg of random length >= h, then h bars that go down (trend
-    ends; the turn is marked forecast=1) or keep rising (continues;
-    forecast=-1). Kinds and lengths are random: a strictly periodic layout
-    would let whole-period shifts copy the effect."""
-    rng = np.random.default_rng(seed)
-    out = []
-    for wi in range(4):
-        r, fc = [], []
-        for b in range(n_blocks):
-            kind_a = rng.random() < 0.5
-            down = kind_a and ends
-            up_len = int(rng.integers(h, h + 4))
-            r += list(0.01 + rng.normal(0, 0.002, up_len))
-            r += list((-0.01 if down else 0.01) + rng.normal(0, 0.002, h))
-            f = np.zeros(up_len + h)
-            f[up_len - 1] = 1 if kind_a else -1
-            fc += list(f)
-        n = len(r)
-        ts = T0 + (wi * (n + 10) + np.arange(n)) * HOUR
-        out.append(ct.Window("SYN", f"t{wi}", ts.astype(np.int64), 100 * np.exp(np.cumsum(r)),
-                             np.array(fc, float), np.array(["x"] * n, dtype=object), HOUR))
-    return out
+    s = spec(EVENT_HIGH, outcome={"kind": "fwd_max_drawdown", "horizons": [5]}, direction="less")
+    planted_and_null(s, HIGH_FC(-0.01), HIGH_FC(0.0), 7, h=5)
 
 
 def test_outcome_trend_ends_planted_and_null():
-    s = spec({"kind": "event", "field": "forecast", "op": ">=", "value": 1},
-             outcome={"kind": "trend_ends", "horizons": [3]}, floor={"min_events": 50})
-    assert status(_trend_windows(True), s) == "supported"
-    assert status(_trend_windows(False), s) != "supported"
+    # At the top of the range the trailing return is up; a planted fall makes
+    # the trend end more often there than elsewhere.
+    s = spec(EVENT_HIGH, outcome={"kind": "trend_ends", "horizons": [3]})
+    planted_and_null(s, HIGH_FC(-0.015), HIGH_FC(0.0), 8, h=3)
 
 
 def test_outcome_definitions_exact():
@@ -176,61 +167,64 @@ def test_outcome_definitions_exact():
     assert te[3] == 0.0                   # past 121/110>0, fwd 130/121>0 -> continues
 
 
-# --- baselines ---------------------------------------------------------------
+# --- baselines ----------------------------------------------------------------------
 
 def test_baseline_placebo_planted_and_null():
-    fn = lambda f: f["forecast"] >= 8  # noqa: E731
-    s = spec(EVENT, baseline={"kind": "placebo", "n_draws": 10})
-    assert status(make_windows(8, effect=0.01, sel_fn=fn), s) == "supported"
-    assert status(make_windows(8, effect=0.0, sel_fn=fn), s) != "supported"
+    planted_and_null(spec(EVENT, baseline={"kind": "placebo", "n_draws": 10}),
+                     LOW_FC(0.02), LOW_FC(0.0), 9)
 
 
 def test_baseline_other_selector_planted_and_null():
-    fn = lambda f: f["forecast"] >= 8  # noqa: E731
     other = {"kind": "other_selector",
-             "selector": {"kind": "event", "field": "forecast", "op": "<=", "value": -8}}
-    s = spec(EVENT, baseline=other)
-    assert status(make_windows(9, effect=0.01, sel_fn=fn), s) == "supported"
-    assert status(make_windows(9, effect=0.0, sel_fn=fn), s) != "supported"
+             "selector": {"kind": "event", "field": "forecast", "op": ">=", "value": 8}}
+    planted_and_null(spec(EVENT, baseline=other), LOW_FC(0.02), LOW_FC(0.0), 10)
 
 
 def test_baseline_complement_is_valid_and_not_selected():
-    w = make_windows(10, n_windows=1)[0]
+    w = make_windows(11, n_windows=1)[0]
     mask, valid = ct.sel_event(w, EVENT)
     wref = ct.base_complement(w, mask, valid, {}, 1, None)
     assert np.array_equal(wref > 0, valid & ~mask)
 
 
-# --- statistics --------------------------------------------------------------
+def test_placebo_shifts_skip_whole_calendar_periods():
+    assert ct._calendar_period({"kind": "calendar", "hours": [1]}, HOUR) == 24
+    assert ct._calendar_period({"kind": "calendar", "weekdays": [5]}, HOUR) == 168
+    assert ct._calendar_period({"kind": "calendar", "weekdays": [5]}, DAY) == 7
+    assert ct._calendar_period(EVENT, HOUR) is None
+    k = ct._shift_offsets(500, 1, np.random.default_rng(0), 5000, period=24)
+    assert not np.any(k % 24 == 0) and k.min() >= 2
+    k = ct._shift_offsets(120, 5, np.random.default_rng(0), 5000)
+    assert k.min() == 6 and k.max() == 114
+    with pytest.raises(ValueError, match="too short"):
+        ct._shift_offsets(11, 5, np.random.default_rng(0), 1)
+
+
+# --- statistics -------------------------------------------------------------------------
 
 def test_statistic_hit_rate_planted_and_null():
-    fn = lambda f: f["forecast"] >= 8  # noqa: E731
-    s = spec(EVENT, statistic="hit_rate")
-    assert status(make_windows(11, effect=0.01, sel_fn=fn), s) == "supported"
-    assert status(make_windows(11, effect=0.0, sel_fn=fn), s) != "supported"
+    planted_and_null(spec(EVENT, statistic="hit_rate"), LOW_FC(0.02), LOW_FC(0.0), 12)
 
 
 def test_statistic_decay_curve_planted_and_null():
-    fn = lambda f: f["forecast"] >= 8  # noqa: E731
     s = spec(EVENT, statistic="decay_curve",
              outcome={"kind": "fwd_return", "horizons": [1, 2, 3]})
-    res = ct.run_test(make_windows(12, effect=0.01, sel_fn=fn), s)
+    res = ct.run_test(make_windows(13, plant=LOW_FC(0.02)), s)
     assert res["status"] == "supported" and res["peak_horizon"] in (1, 2, 3)
-    assert status(make_windows(12, effect=0.0, sel_fn=fn), s) != "supported"
+    assert status(make_windows(13, plant=LOW_FC(0.0)), s) != "supported"
 
 
 def test_direction_less_detects_a_planted_drop():
-    fn = lambda f: f["forecast"] >= 8  # noqa: E731
-    s = spec(EVENT, direction="less")
-    res = ct.run_test(make_windows(13, effect=-0.01, sel_fn=fn), s)
+    res = ct.run_test(make_windows(14, plant=HIGH_FC(-0.02)), spec(EVENT_HIGH, direction="less"))
     assert res["status"] == "supported"
     assert res["horizons"][1]["value"] < 0 < res["horizons"][1]["oriented"]
-    s_up = spec(EVENT, direction="greater")
-    assert status(make_windows(13, effect=-0.01, sel_fn=fn), s_up) == "refuted"
+    up = ct.run_test(make_windows(14, plant=HIGH_FC(-0.02)), spec(EVENT_HIGH, direction="greater"))
+    assert up["status"] == "refuted"
+    assert up["horizons"][1]["p_value_opposite"] < 0.05
 
 
 def test_rank_average_matches_signal_statistics_spearman():
-    rng = np.random.default_rng(14)
+    rng = np.random.default_rng(15)
     for _ in range(20):
         x = rng.integers(0, 8, 60).astype(float)          # many ties
         y = rng.normal(size=60) + 0.3 * x
@@ -239,15 +233,114 @@ def test_rank_average_matches_signal_statistics_spearman():
 
 
 def test_null_p_values_are_spread_sanely_over_seeds():
-    fn = lambda f: f["forecast"] >= 8  # noqa: E731
-    s = spec(EVENT)
-    ps = [ct.run_test(make_windows(100 + k, n=300, n_windows=4, sel_fn=fn), s)
-          ["horizons"][1]["p_value"] for k in range(30)]
+    """No edge: p should be roughly uniform (the full gate is the calibration)."""
+    ps = [ct.run_test(make_windows(100 + k, n=200, n_windows=3), spec(EVENT))
+          ["horizons"][1]["p_value"] for k in range(20)]
     assert 0.3 < float(np.mean(ps)) < 0.7
-    assert sum(p < 0.05 for p in ps) <= 5
+    assert sum(p < 0.05 for p in ps) <= 4
 
 
-# --- no lookahead --------------------------------------------------------------
+# --- the null --------------------------------------------------------------------------
+
+def test_fake_window_rebuilds_from_real_units_and_recomputes_the_signal():
+    w = make_windows(16, n_windows=1)[0]
+    f = ct.fake_window(w, np.random.default_rng(0))
+    assert np.array_equal(f.ts, w.ts) and f.step == w.step
+    prev = np.r_[w.warm["close"][-1], w.close[:-1]]
+    real_units = np.round(np.log(w.close / prev), 12)
+    fprev = np.r_[w.warm["close"][-1], f.close[:-1]]
+    assert set(np.round(np.log(f.close / fprev), 12)) <= set(real_units)
+    expected = ct.compute_signal(DON, *ct._full_path(w, f.close, f.high, f.low))[-len(w.ts):]
+    assert np.allclose(f.forecast, expected, equal_nan=True)
+    assert not np.allclose(f.close, w.close)
+
+
+def test_fake_windows_use_blocks_of_the_cadence():
+    assert ct.BLOCK_BARS == {"daily": 5, "hourly": 24}
+    assert ct.WARMUP_BARS == {"daily": 30, "hourly": 500}
+    with pytest.raises(ValueError, match="unsupported bar step"):
+        ct._cadence(900)
+
+
+def test_forecast_check_stops_a_grade_when_the_saved_forecast_differs():
+    ws = make_windows(17, n_windows=2)
+    assert ct.forecast_check(ws[0]) == 0.0
+    ws[1].forecast[50] += 0.5
+    with pytest.raises(ValueError, match="recomputed forecast differs"):
+        ct.run_test(ws, spec(EVENT))
+
+
+def test_null_needs_signal_and_warmup():
+    w = make_windows(18, n_windows=1)[0]
+    w.warm = None
+    with pytest.raises(ValueError, match="needs the window's signal and warm-up"):
+        ct.run_test([w], spec(EVENT))
+
+
+def test_every_horizon_must_pass():
+    # +2% on bar t+1, then -2% on bar t+2: h=1 gains 2%, h=2 nets about 0.
+    ws = make_windows(19, plant=lambda t, fc, ts: ([0.02, -0.02] if fc <= -8 else 0.0, 1.0))
+    one = ct.run_test(ws, spec(EVENT, outcome={"kind": "fwd_return", "horizons": [1]}))
+    assert one["status"] == "supported"
+    both = ct.run_test(ws, spec(EVENT, outcome={"kind": "fwd_return", "horizons": [1, 2]}))
+    assert both["horizons"][1]["p_value"] < 0.05
+    assert both["horizons"][2]["p_value"] >= 0.05
+    assert both["status"] != "supported"
+    assert both["reasons"] and all(r.startswith("h=2") for r in both["reasons"])
+
+
+def test_a_weak_later_horizon_makes_it_inconclusive():
+    # +2% then -1.7%: h=1 strong; h=2 still the right way (+0.3%) but weak.
+    ws = make_windows(40, plant=lambda t, fc, ts: ([0.02, -0.017] if fc <= -8 else 0.0, 1.0))
+    res = ct.run_test(ws, spec(EVENT, outcome={"kind": "fwd_return", "horizons": [1, 2]}))
+    h = res["horizons"]
+    assert h[1]["p_value"] < 0.05 and h[2]["oriented"] > 0 and h[2]["p_value"] >= 0.05
+    assert res["status"] == "inconclusive"
+    assert res["reasons"] == [r for r in res["reasons"] if r.startswith("h=2: right direction")]
+
+
+def test_opposite_p_equals_the_opposite_spec_p():
+    ws = make_windows(41)                  # no effect: the real value sits inside the null
+    for stat in ("mean_diff", "rank_ic", "hit_rate"):
+        sel = {"kind": "all"} if stat == "rank_ic" else EVENT
+        g = ct.run_test(ws, spec(sel, statistic=stat, direction="greater"))["horizons"][1]
+        lo = ct.run_test(ws, spec(sel, statistic=stat, direction="less"))["horizons"][1]
+        assert 0.05 < g["p_value"] < 0.95, (stat, g["p_value"])
+        assert g["p_value_opposite"] == lo["p_value"] and lo["p_value_opposite"] == g["p_value"]
+
+
+def test_fake_worlds_redraw_whole_blocks():
+    w = make_windows(42, n=200, n_windows=1)[0]
+    f = ct.fake_window(w, np.random.default_rng(1))
+    prev = np.r_[w.warm["close"][-1], w.close[:-1]]
+    real = np.log(w.close / prev)
+    fprev = np.r_[w.warm["close"][-1], f.close[:-1]]
+    fake = np.log(f.close / fprev)
+    src = np.array([int(np.argmin(np.abs(real - u))) for u in fake])   # units are distinct
+    B = ct.BLOCK_BARS["daily"]
+    for k in range(0, 200 - B, B):
+        assert all((src[k + i + 1] - src[k + i]) % 200 == 1 for i in range(B - 1)), k
+    assert any((src[k + B] - src[k + B - 1]) % 200 != 1 for k in range(0, 200 - B, B))
+
+
+def test_verdict_rule_amendment_1():
+    """refuted = wrong direction; supported = right direction, p < alpha everywhere."""
+    wrong = ct.run_test(make_windows(20, plant=HIGH_FC(-0.02)), spec(EVENT_HIGH))
+    assert wrong["status"] == "refuted" and "wrong direction" in wrong["reasons"][0]
+    good = ct.run_test(make_windows(20, plant=LOW_FC(0.02)), spec(EVENT))
+    assert good["status"] == "supported" and good["reasons"] == []
+
+
+def test_right_direction_not_significant_is_inconclusive():
+    ws = make_windows(21, plant=LOW_FC(0.02))
+    res = ct.run_test(ws, ct.TestSpec(**{**spec(EVENT).__dict__, "alpha": 0.0101}))
+    assert res["status"] == "supported"     # p = 0.01 with 99 fakes and no fake beats it
+    res = ct.run_test(ws, ct.TestSpec(**{**spec(EVENT).__dict__, "alpha": 0.01}))
+    assert res["status"] == "inconclusive"
+    assert res["reasons"][0].startswith("h=1: right direction, p")
+
+
+# --- no lookahead ------------------------------------------------------------------------
 
 LOOKAHEAD_SELECTORS = [
     EVENT, {"kind": "event", "field": "close", "op": ">", "value": 100},
@@ -261,22 +354,23 @@ LOOKAHEAD_SELECTORS = [
 
 @pytest.mark.parametrize("sel", LOOKAHEAD_SELECTORS, ids=lambda s: s["kind"])
 def test_selector_never_reads_the_future(sel):
-    w = make_windows(20, n_windows=1)[0]
+    w = make_windows(22, n_windows=1)[0]
     mask, valid = ct.SELECTORS[sel["kind"]](w, sel)
-    rng = np.random.default_rng(21)
-    for t in (40, 150, 333, len(w.ts) - 2):
+    rng = np.random.default_rng(23)
+    for t in (40, 150, 233, len(w.ts) - 2):
+        k = len(w.ts) - t - 1
         fut = ct.Window(w.symbol, w.window, w.ts.copy(), w.close.copy(), w.forecast.copy(),
                         w.regime.copy(), w.step)
-        fut.close[t + 1:] = rng.uniform(1, 1000, len(fut.close) - t - 1)
-        fut.forecast[t + 1:] = rng.uniform(-20, 20, len(fut.close) - t - 1)
-        fut.regime[t + 1:] = rng.choice(["trend", "range", "z"], len(fut.close) - t - 1)
+        fut.close[t + 1:] = rng.uniform(1, 1000, k)
+        fut.forecast[t + 1:] = rng.uniform(-20, 20, k)
+        fut.regime[t + 1:] = rng.choice(["trend", "range", "z"], k)
         m2, v2 = ct.SELECTORS[sel["kind"]](fut, sel)
         assert np.array_equal(mask[:t + 1], m2[:t + 1]), t
         assert np.array_equal(valid[:t + 1], v2[:t + 1]), t
 
 
 def test_quantile_is_trailing_not_whole_sample():
-    w = make_windows(22, n_windows=1)[0]
+    w = make_windows(24, n_windows=1)[0]
     sel = {"kind": "quantile", "field": "forecast", "side": "top", "q": 0.2, "lookback": 30}
     mask, valid = ct.sel_quantile(w, sel)
     assert not valid[:30].any() and valid[30:].all()
@@ -295,18 +389,15 @@ def test_check_spec_refuses_a_future_field():
                 ct.run_test(make_windows(0, n_windows=1), spec(sel))
 
 
-# --- timestamp matching, inside a window only ----------------------------------
+# --- timestamp matching, inside a window only ---------------------------------------------
 
 def test_outcomes_never_cross_a_window_boundary():
-    a, b = make_windows(23, n=100, n_windows=2)
-    b = ct.Window("SYN", "b", a.ts + 100 * HOUR, b.close, b.forecast, b.regime, HOUR)
+    a, b = make_windows(25, n=100, n_windows=2)
     for fn in ct.OUTCOMES.values():
-        y = fn(a, 5)
-        assert np.all(np.isnan(y[-5:]))
+        assert np.all(np.isnan(fn(a, 5)[-5:]))
     s = spec({"kind": "all"}, statistic="rank_ic",
              outcome={"kind": "fwd_return", "horizons": [5]}, floor={"min_events": 1})
-    res = ct.run_test([a, b], s)
-    assert res["horizons"][5]["n_events"] == 2 * (100 - 5)
+    assert ct.run_test([a, b], s)["horizons"][5]["n_events"] == 2 * (100 - 5)
 
 
 def test_outcomes_match_by_timestamp_across_a_missing_bar():
@@ -323,56 +414,16 @@ def test_outcomes_match_by_timestamp_across_a_missing_bar():
     assert np.isnan(ct.out_trend_ends(w, 2)[4])    # 05:00 - 2h = 03:00 missing
 
 
-# --- the shift ------------------------------------------------------------------
+# --- floors and consistency ---------------------------------------------------------------
 
-def test_shift_offsets_are_longer_than_the_longest_horizon():
-    k = ct._shift_offsets(120, 5, np.random.default_rng(0), 5000)
-    assert k.min() == 6 and k.max() == 114
-    with pytest.raises(ValueError, match="too short"):
-        ct._shift_offsets(11, 5, np.random.default_rng(0), 1)
-
-
-def test_calendar_shifts_skip_whole_periods():
-    assert ct._calendar_period({"kind": "calendar", "hours": [1]}, HOUR) == 24
-    assert ct._calendar_period({"kind": "calendar", "weekdays": [5]}, HOUR) == 168
-    assert ct._calendar_period({"kind": "calendar", "weekdays": [5]}, 86400) == 7
-    assert ct._calendar_period(EVENT, HOUR) is None
-    k = ct._shift_offsets(500, 1, np.random.default_rng(0), 5000, period=24)
-    assert not np.any(k % 24 == 0) and k.min() >= 2
-
-
-def test_rank_ic_shift_moves_the_forecast_not_the_mask():
-    """With selector=all the mask is all True; the p-value must still be
-    meaningful, so the forecast itself is shifted. A strong IC -> small p."""
-    s = spec({"kind": "all"}, statistic="rank_ic", floor={"min_events": 10})
-    res = ct.run_test(make_windows(24, ic_beta=1.0), s)
-    assert res["horizons"][1]["p_value"] < 0.01
-    assert res["horizons"][1]["n_placebo"] == FAST["n_resamples"]
-
-
-def test_every_horizon_must_pass():
-    fn = lambda f: f["forecast"] >= 8  # noqa: E731
-    # +2% on bar t+1 and -1% on each of t+1, t+2: h=1 gains 1%, h=2 nets 0.
-    ws = make_windows(25, effect=0.02, drift_effect=-0.01, h=2, sel_fn=fn)
-    res = ct.run_test(ws, spec(EVENT, outcome={"kind": "fwd_return", "horizons": [1, 2]}))
-    assert res["horizons"][1]["p_value"] < 0.05
-    assert res["horizons"][2]["p_value"] >= 0.05
-    assert res["status"] == "refuted" and res["reasons"][0].startswith("h=2")
-    one = ct.run_test(ws, spec(EVENT, outcome={"kind": "fwd_return", "horizons": [1]}))
-    assert one["status"] == "supported"
-
-
-# --- floors and consistency -------------------------------------------------------
-
-ERAS = [{"era_id": "e1", "range": ["2020-01-01", "2020-01-31"]},
-        {"era_id": "e2", "range": ["2020-02-01", "2020-12-31"]}]
+ERAS = [{"era_id": "e1", "range": ["2020-01-01", "2020-12-31"]},
+        {"era_id": "e2", "range": ["2021-01-01", "2023-12-31"]}]
 
 
 @pytest.mark.parametrize("floor", [{"min_events": 10**6}, {"min_windows": 7},
                                    {"min_blocks": 10**5}, {"min_eras": 3}])
 def test_floor_gives_inconclusive(floor):
-    fn = lambda f: f["forecast"] >= 8  # noqa: E731
-    res = ct.run_test(make_windows(26, effect=0.02, sel_fn=fn), spec(EVENT, floor=floor), ERAS)
+    res = ct.run_test(make_windows(26, plant=LOW_FC(0.03)), spec(EVENT, floor=floor), ERAS)
     assert res["status"] == "inconclusive"
     assert any("floor" in r for r in res["reasons"])
 
@@ -383,27 +434,24 @@ def test_eras_needed_but_missing_raises():
 
 
 def test_window_consistency_rule():
-    fn = lambda f: f["forecast"] >= 8  # noqa: E731
-    ws = make_windows(27, effect=0.01, sel_fn=fn)
-    ok = spec(EVENT, consistency={"unit": "window", "min_same_sign": 6})
+    ws = make_windows(27, plant=LOW_FC(0.02))
+    ok = spec(EVENT, consistency={"unit": "window", "min_same_sign": 4})
     assert status(ws, ok) == "supported"
-    too_many = spec(EVENT, consistency={"unit": "window", "min_same_sign": 7})
-    res = ct.run_test(ws, too_many)
-    assert res["status"] == "refuted" and "same sign in 6 windows" in res["reasons"][0]
+    res = ct.run_test(ws, spec(EVENT, consistency={"unit": "window", "min_same_sign": 5}))
+    assert res["status"] == "inconclusive" and "same sign in 4 windows" in res["reasons"][0]
 
 
 def test_per_era_values_reported():
-    fn = lambda f: f["forecast"] >= 8  # noqa: E731
-    res = ct.run_test(make_windows(28, effect=0.01, sel_fn=fn), spec(EVENT), ERAS)
+    res = ct.run_test(make_windows(28, plant=LOW_FC(0.02)), spec(EVENT), ERAS)
     assert set(res["horizons"][1]["per_era"]) <= {"e1", "e2"}
-    assert res["horizons"][1]["n_eras_with_events"] >= 1
+    assert res["horizons"][1]["n_eras_with_events"] == 2
 
 
-# --- spec ---------------------------------------------------------------------------
+# --- spec -----------------------------------------------------------------------------------
 
 def test_spec_hash_stable_and_order_independent():
     a = spec(EVENT, outcome={"kind": "fwd_return", "horizons": [1, 2, 3]})
-    b = spec({"value": 8.0, "op": ">=", "field": "forecast", "kind": "event"},
+    b = spec({"value": -8.0, "op": "<=", "field": "forecast", "kind": "event"},
              outcome={"horizons": [3, 1, 2], "kind": "fwd_return"})
     assert ct.spec_hash(a) == ct.spec_hash(b) == ct.spec_hash(a)
     assert len(ct.spec_hash(a)) == 64
@@ -423,7 +471,10 @@ def test_check_spec_rejects_bad_slots():
         spec(EVENT, consistency={"unit": "year", "min_same_sign": 2}),
         ct.TestSpec(EVENT, {"kind": "fwd_return", "horizons": [1]}, {"kind": "complement"},
                     "mean_diff", "greater", {"min_events": 1},
-                    significance={"method": "bootstrap", "n_resamples": 10, "seed": 1}),
+                    significance={"method": "circular_shift_v1", "n_resamples": 999, "seed": 1}),
+        ct.TestSpec(EVENT, {"kind": "fwd_return", "horizons": [1]}, {"kind": "complement"},
+                    "mean_diff", "greater", {"min_events": 1},
+                    significance={"method": "block_analytic_v1"}),
     ]
     for s in bad:
         assert ct.check_spec(s), s
@@ -447,63 +498,189 @@ def test_pre_registered_regrade_specs_are_valid():
     assert len(files) == 2
     n = 0
     for f in files:
-        for t in yaml.safe_load(f.read_text(encoding="utf-8"))["tests"]:
+        doc = yaml.safe_load(f.read_text(encoding="utf-8"))
+        assert ct.check_claim_file(doc, Path(doc["source_run"])) == []
+        for t in doc["tests"]:
             assert ct.check_spec(ct.TestSpec.from_dict(t)) == [], (f.name, t["name"])
             n += 1
     assert n == 3
 
 
-# --- loader and CLI -------------------------------------------------------------------
+def test_check_claim_file_refuses_rules_it_would_ignore():
+    base = {"claim_id": "c", "source_run": "run_x", "tests": [{"name": "a"}]}
+    assert ct.check_claim_file(base, Path("run_x")) == []
+    assert ct.check_claim_file({**base, "combine": "any_supported"}, Path("run_x"))
+    assert ct.check_claim_file({**base, "across_variants": "average"}, Path("run_x"))
+    assert ct.check_claim_file(base, Path("run_y"))
+    assert ct.check_claim_file({**base, "pass_if": "x"}, Path("run_x"))
+    assert ct.check_claim_file({**base, "tests": [{"name": "a"}, {"name": "a"}]}, Path("run_x"))
 
-def _write_run(root: Path, n=60):
+
+# --- signals: the vectorized copies equal the components' update() --------------------------
+
+@pytest.mark.parametrize("cls,params", [
+    ("DonchianBreakoutComponent", {"period": 20, "scaling_factor": 20.0}),
+    ("DonchianBreakoutComponent", {"period": 14, "scaling_factor": 20.0}),
+    ("KeltnerBreakoutComponent", {"ema_period": 20, "atr_period": 20, "atr_multiplier": 2.0,
+                                  "scaling_factor": 20.0}),
+    ("KeltnerBreakoutComponent", {"ema_period": 26, "atr_period": 20, "atr_multiplier": 2.0,
+                                  "scaling_factor": 20.0}),
+])
+def test_vectorized_signal_equals_component_update(cls, params):
+    from strategies import strategy_components as sc
+    rng = np.random.default_rng(29)
+    n = 90
+    c = 100 * np.exp(np.cumsum(rng.normal(0, .02, n)))
+    o = np.r_[100, c[:-1]]
+    h, lo = np.maximum(o, c) * 1.004, np.minimum(o, c) * 0.996
+    df = pd.DataFrame({"open": o, "high": h, "low": lo, "close": c, "volume": 1.0})
+    comp = getattr(sc, cls)(parameters=dict(params))
+    got = []
+    for t in range(n):
+        comp.update(df.iloc[:t + 1])
+        got.append(comp._raw_value if comp.is_ready() else np.nan)
+    vec = ct.SIGNALS[cls](h, lo, c, **params)
+    assert np.array_equal(np.isnan(np.array(got, float)), np.isnan(vec))
+    assert np.nanmax(np.abs(np.array(got, float) - vec)) < 1e-9
+
+
+# --- loader, warm-up reader and CLI ---------------------------------------------------------
+
+def _write_cache(path: Path, start_ts: int, n: int, step: int, garbage_after: int | None = None):
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        wr = csv.writer(f)
+        wr.writerow(["timestamp", "open", "high", "low", "close", "volume"])
+        for i in range(n):
+            t = start_ts + i * step
+            if garbage_after is not None and t >= garbage_after:
+                wr.writerow(["NOT-A-DATE", "x", "x", "x", "x", "x"])
+                continue
+            s = pd.Timestamp(t, unit="s").strftime("%Y-%m-%d %H:%M:%S")
+            c = 100 + (i % 7)
+            wr.writerow([s, c, c + 1, c - 1, c, 1])
+
+
+def test_read_warmup_stops_at_the_window_and_checks_gaps(tmp_path):
+    p = tmp_path / "c.csv"
+    first = T0 + 40 * DAY
+    # The row AT `first` must be read to know where to stop; every row after it
+    # is unparseable, so reaching any of them would raise.
+    _write_cache(p, T0, 60, DAY, garbage_after=first + DAY)
+    wu = ct.read_warmup(p, first, DAY, 30)
+    assert len(wu["close"]) == 30 and wu["ts"][-1] == first - DAY
+    with pytest.raises(ValueError, match="only 40 warm-up rows"):
+        ct.read_warmup(p, first, DAY, 41)
+    holed = tmp_path / "holed.csv"
+    _write_cache(holed, T0, 20, DAY)
+    with open(holed, "a", newline="", encoding="utf-8") as f:   # day 20 missing
+        csv.writer(f).writerow([pd.Timestamp(T0 + 21 * DAY, unit="s").strftime("%Y-%m-%d"),
+                                1, 2, 0, 1, 1])
+    with pytest.raises(ValueError, match="gap-free"):
+        ct.read_warmup(holed, T0 + 22 * DAY, DAY, 10)
+
+
+def _write_run(root: Path, windows: list, signal: dict, extra_component=False):
     run = root / "run_x"
-    for vid, ok in (("base", True), ("broken", False)):
+    for vid in ("base", "broken"):
         (run / "artifacts" / "variants" / vid).mkdir(parents=True)
+    comps = [{"id": "c", "class": "strategies.strategy_components." + signal["class"],
+              "params": signal["params"], "weight": 1.0, "transforms": [{"op": "identity"}]}]
+    if extra_component:
+        comps.append(dict(comps[0], id="d"))
+    (run / "artifacts" / "variants" / "base" / "strategy_config.json").write_text(
+        json.dumps({"strategies": {"regimes": {"unknown": {"components": comps}}}}))
     results = []
-    for i, win in enumerate(("2020-01", "2020-05")):
-        rid = f"r{i}"
-        d = run / "variants" / "base" / "results" / rid
+    for i, w in enumerate(windows):
+        d = run / "variants" / "base" / "results" / f"r{i}"
         d.mkdir(parents=True)
         with open(d / "bars.csv", "w", newline="", encoding="utf-8") as f:
             wr = csv.writer(f)
-            wr.writerow(["timestamp", "close", "forecast", "regime", "extra"])
-            for t in range(n):
-                ts = np.datetime64(T0 + (i * 200 + t) * 86400, "s").astype(str).replace("T", " ")
-                wr.writerow([ts, 100 + t, (t % 41) - 20, "unknown", 1])
-        results.append({"symbol": "BTCUSD", "window": win, "run_id": rid})
+            wr.writerow(["timestamp", "high", "low", "close", "forecast", "regime"])
+            for t in range(len(w.ts)):
+                wr.writerow([pd.Timestamp(int(w.ts[t]), unit="s").strftime("%Y-%m-%d %H:%M:%S"),
+                             repr(float(w.high[t])), repr(float(w.low[t])), repr(float(w.close[t])),
+                             repr(float(w.forecast[t])), "unknown"])
+        results.append({"symbol": "SYNUSD", "window": w.window, "run_id": f"r{i}"})
     with open(run / "artifacts" / "variants" / "base" / "protocol_result.yaml", "w") as f:
         yaml.safe_dump({"results": results}, f)
     return run
 
 
-def test_loader_mapping_and_not_graded(tmp_path):
-    run = _write_run(tmp_path)
+def _write_cache_for(root: Path, windows: list) -> Path:
+    cdir = root / "cache"
+    cdir.mkdir()
+    with open(cdir / "kraken_SYNUSD_1d.csv", "w", newline="", encoding="utf-8") as f:
+        wr = csv.writer(f)
+        wr.writerow(["timestamp", "open", "high", "low", "close", "volume"])
+        for w in windows:
+            for t in range(len(w.warm["ts"])):
+                wr.writerow([pd.Timestamp(int(w.warm["ts"][t]), unit="s").strftime("%Y-%m-%d"),
+                             0, repr(float(w.warm["high"][t])), repr(float(w.warm["low"][t])),
+                             repr(float(w.warm["close"][t])), 1])
+            for t in range(len(w.ts)):
+                wr.writerow([pd.Timestamp(int(w.ts[t]), unit="s").strftime("%Y-%m-%d"),
+                             0, repr(float(w.high[t])), repr(float(w.low[t])), repr(float(w.close[t])), 1])
+    return cdir
+
+
+def test_loader_attaches_signal_and_warmup(tmp_path):
+    ws = make_windows(30, n=80, n_windows=2)
+    run = _write_run(tmp_path, ws, DON)
+    cdir = _write_cache_for(tmp_path, ws)
     graded, not_graded = ct.graded_variants(run)
     assert graded == ["base"] and not_graded == ["broken"]
-    ws = ct.load_variant_bars(run, "base")
-    assert [w.label for w in ws] == ["BTCUSD/2020-01", "BTCUSD/2020-05"]
-    assert ws[0].step == 86400 and len(ws[0].ts) == 60 and len(ws[0].sha256) == 64
+    got = ct.load_variant_bars(run, "base", ct.cache_resolver(cdir, "kraken_{symbol}_{tf}.csv"))
+    assert [w.label for w in got] == ["SYNUSD/w0", "SYNUSD/w1"]
+    assert got[0].signal == DON and len(got[0].warm["close"]) == ct.WARMUP_BARS["daily"]
+    assert np.allclose(got[0].warm["close"], ws[0].warm["close"])
+    assert ct.forecast_check(got[0]) < 1e-9 and len(got[0].sha256) == 64
     (run / "variants" / "base" / "results" / "r1" / "bars.csv").unlink()
     with pytest.raises(FileNotFoundError):
         ct.load_variant_bars(run, "base")
 
 
-def test_cli_end_to_end_and_refuses_to_write_into_the_run(tmp_path):
-    run = _write_run(tmp_path)
+def test_variant_signal_refuses_what_it_cannot_recompute(tmp_path):
+    ws = make_windows(31, n=60, n_windows=1)
+    run = _write_run(tmp_path, ws, DON, extra_component=True)
+    with pytest.raises(ValueError, match="2 components"):
+        ct.variant_signal(run, "base")
+    p = run / "artifacts" / "variants" / "base" / "strategy_config.json"
+    cfg = json.loads(p.read_text())
+    comps = cfg["strategies"]["regimes"]["unknown"]["components"]
+    cfg["strategies"]["regimes"]["unknown"]["components"] = [dict(comps[0], transforms=[{"op": "tanh"}])]
+    p.write_text(json.dumps(cfg))
+    with pytest.raises(ValueError, match="identity"):
+        ct.variant_signal(run, "base")
+    cfg["strategies"]["regimes"]["unknown"]["components"] = [dict(comps[0], **{"class": "a.B"})]
+    p.write_text(json.dumps(cfg))
+    with pytest.raises(ValueError, match="no vectorized copy"):
+        ct.variant_signal(run, "base")
+
+
+def test_cli_end_to_end_and_refusals(tmp_path):
+    ws = make_windows(32, n=80, n_windows=2)
+    run = _write_run(tmp_path, ws, DON)
+    cdir = _write_cache_for(tmp_path, ws)
     sp = tmp_path / "spec.yaml"
-    sp.write_text(yaml.safe_dump({"claim_id": "c", "tests": [
+    sp.write_text(yaml.safe_dump({"claim_id": "c", "source_run": "run_x", "tests": [
         {"name": "t", "selector": {"kind": "all"},
          "outcome": {"kind": "fwd_return", "horizons": [1]}, "baseline": None,
          "statistic": "rank_ic", "direction": "greater", "floor": {"min_events": 10**6},
          "significance": dict(FAST)}]}))
     out = tmp_path / "out" / "r.yaml"
-    assert ct.main(["--run", str(run), "--spec", str(sp), "--out", str(out)]) == 0
+    args = ["--run", str(run), "--spec", str(sp), "--cache-dir", str(cdir)]
+    assert ct.main(args + ["--out", str(out)]) == 0
     doc = yaml.safe_load(out.read_text())
     assert doc["n_tests_run"] == 1 and doc["not_graded_variants"] == ["broken"]
     assert doc["variants"]["base"]["tests"]["t"]["status"] == "inconclusive"
     assert len(doc["bars_used"]) == 2 and all(len(b["sha256"]) == 64 for b in doc["bars_used"])
     with pytest.raises(SystemExit, match="inside the run"):
-        ct.main(["--run", str(run), "--spec", str(sp), "--out", str(run / "x.yaml")])
+        ct.main(args + ["--out", str(run / "x.yaml")])
+    sealed = tmp_path / "holdout_sealed"
+    sealed.mkdir()
+    with pytest.raises(SystemExit, match="holdout"):
+        ct.main(["--run", str(run), "--spec", str(sp), "--cache-dir", str(sealed),
+                 "--out", str(out)])
 
 
 def test_combine_fail_dominates():
@@ -511,3 +688,14 @@ def test_combine_fail_dominates():
     assert ct.combine(["supported", "inconclusive"]) == "inconclusive"
     assert ct.combine(["supported", "supported"]) == "supported"
     assert ct.combine([]) == "inconclusive"
+
+
+# --- calibration tool -----------------------------------------------------------------------
+
+def test_calibration_tool_runs_and_reports_both_directions():
+    res = cal.run_calibration(2, only="daily_donchian_iid_fc>=12")
+    assert [r["cell"] for r in res["cells"]] == ["daily_donchian_iid_fc>=12_greater",
+                                                  "daily_donchian_iid_fc>=12_less"]
+    assert res["method"] == ct.SIGNIFICANCE_METHOD and res["gate"]["pass_range"] == [0.025, 0.075]
+    w = cal.simulate_windows(np.random.default_rng(0), cal.DAILY, "garch", cal.DONCHIAN)[0]
+    assert ct.forecast_check(w) == 0.0 and len(w.warm["close"]) == ct.WARMUP_BARS["daily"]
