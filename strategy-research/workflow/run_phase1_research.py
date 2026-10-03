@@ -15131,30 +15131,59 @@ def _claim_measure_paths(run_dir: Path) -> list:
     return [arts / "claim_status.yaml"] + sorted(arts.glob("variants/*/claim_test.yaml"))
 
 
+# When THIS process started the run's current protocol_execution attempt
+# (time.time_ns(), set by _clear_claim_measure_files at the attempt's entry; the
+# tool worker and run_loop run in one process). A variant is measured only if
+# its protocol_result.yaml was written after that: a stale file from an earlier
+# attempt whose backtest failed this time is never measured or counted.
+_CLAIM_MEASURE_ATTEMPT_START: dict = {}
+_ATTEMPT_MTIME_SLACK_NS = 1_000_000_000      # coarse filesystem timestamps
+
+
+def _safe_print(message: str) -> None:
+    try:
+        print(message)
+    except Exception:  # noqa: BLE001 -- not even a console error escapes
+        pass
+
+
+def _claim_flag_or_none():
+    """The flag, or None when reading it raised (information only: a broken
+    config is reported by the stages that own it, never by this slice)."""
+    try:
+        return _claim_tests_enabled()
+    except Exception as exc:  # noqa: BLE001
+        _safe_print(f"⚠️  [E-068] claim measurement skipped: the flag could not be read "
+                    f"({type(exc).__name__}: {exc}).")
+        return None
+
+
 def _clear_claim_measure_files(run_dir: Path) -> None:
     """At protocol_execution entry (flag on): the measurement must come from
-    THIS attempt's bars. Never raises (a file that cannot be removed is
+    THIS attempt's bars. Records the attempt's start; deletes the previous
+    attempt's files. Never raises (a file that cannot be removed is
     overwritten by this attempt's measurement anyway). Flag off: no-op."""
-    if not _claim_tests_enabled():
+    if not _claim_flag_or_none():
         return
     try:
+        _CLAIM_MEASURE_ATTEMPT_START[str(Path(run_dir).resolve())] = time.time_ns()
         for p in _claim_measure_paths(run_dir):
             if p.exists():
                 p.unlink()
-                print(f"🧹 [E-068] protocol_execution re-run: cleared previous attempt's "
-                      f"{p.relative_to(Path(run_dir) / 'artifacts').as_posix()}")
+                _safe_print(f"🧹 [E-068] protocol_execution re-run: cleared previous attempt's "
+                            f"{p.relative_to(Path(run_dir) / 'artifacts').as_posix()}")
     except Exception as exc:  # noqa: BLE001 -- information only
-        print(f"⚠️  [E-068] could not clear the previous claim measurement ({exc}); "
-              f"this attempt's measurement overwrites it.")
+        _safe_print(f"⚠️  [E-068] could not clear the previous claim measurement ({exc}); "
+                    f"this attempt's measurement overwrites it.")
 
 
 def _measure_claim_tests_after_backtests(run_dir: Path, run_id: str) -> None:
     """After protocol_execution (run_loop, flag on). Writes
-    artifacts/variants/<vid>/claim_test.yaml per graded variant, then
-    artifacts/claim_status.yaml, and counts every test in
+    artifacts/variants/<vid>/claim_test.yaml per variant backtested in this
+    attempt, then artifacts/claim_status.yaml, and counts every test in
     campaign_record/claim_test_coverage.yaml. Never raises, never routes.
-    Flag off: no-op, nothing read."""
-    if not _claim_tests_enabled():
+    Flag off: no-op."""
+    if not _claim_flag_or_none():
         return
     try:
         _measure_claim_tests(Path(run_dir), run_id)
@@ -15162,10 +15191,33 @@ def _measure_claim_tests_after_backtests(run_dir: Path, run_id: str) -> None:
         _record_claim_measure_error(Path(run_dir), run_id, exc)
 
 
+def _claim_measure_variants(run_dir: Path, run_id: str) -> tuple:
+    """(variants to measure, {variant: not-measured reason}) of THIS attempt:
+    a variant with a protocol_result.yaml written since the attempt started
+    (artifacts/variants/<vid>/; none with the variant loop off). Older files
+    are `stale_result` (an earlier attempt's backtest); a variant whose trial
+    row was invalidated by the conformance check is `invalidated`."""
+    import claim_tests as _ct
+    vroot = run_dir / "artifacts" / "variants"
+    if not vroot.is_dir():
+        return [], {}
+    start = _CLAIM_MEASURE_ATTEMPT_START.get(str(Path(run_dir).resolve()))
+    invalidated = _invalidated_trial_ids()
+    keep, skipped = [], {}
+    for vid in _ct.graded_variants(run_dir)[0]:
+        mtime = (vroot / vid / "protocol_result.yaml").stat().st_mtime_ns
+        if start is not None and mtime < start - _ATTEMPT_MTIME_SLACK_NS:
+            skipped[vid] = "stale_result"
+        elif f"{run_id}:{vid}" in invalidated:
+            skipped[vid] = "invalidated"
+        else:
+            keep.append(vid)
+    return keep, skipped
+
+
 def _measure_claim_tests(run_dir: Path, run_id: str) -> None:
     cc = _claim_card_module()
     cm = _claim_measure_module()
-    import claim_tests as _ct
     import protocol_resolution as _pres
     card_path = run_dir / "artifacts" / "hypothesis_card.yaml"
     card = load_yaml(card_path) if card_path.exists() else None
@@ -15174,27 +15226,38 @@ def _measure_claim_tests(run_dir: Path, run_id: str) -> None:
         card.get("claim") if isinstance(card, dict) else None,
         cc.card_criteria_ids(card if isinstance(card, dict) else {}))
     card_status = cc.status_of(res, exempt, [])
-    variants = {}
+    variants, skipped = {}, {}
     if card_status["usable"]:
         names = {t["name"] for t in card_status["tests"]}
         tests = [t for t in card["claim"]["tests"] if t.get("name") in names]
         holdout_start = _load_holdout_range()[0]
         eras = _pres.load_policy_eras(_DATA_POLICY_PATH)
-        vroot = run_dir / "artifacts" / "variants"
-        graded = _ct.graded_variants(run_dir)[0] if vroot.is_dir() else []
+        graded, skipped = _claim_measure_variants(run_dir, run_id)
         for vid in graded:
             doc = cm.measure_variant(run_dir, vid, tests, eras, holdout_start)
-            save_yaml(vroot / vid / cm.VARIANT_FILE, doc)
+            save_yaml(run_dir / "artifacts" / "variants" / vid / cm.VARIANT_FILE, doc)
             variants[vid] = doc
-    doc = cm.run_doc(run_id, card_status, variants)
+    doc = cm.run_doc(run_id, card_status, variants, skipped)
     save_yaml(run_dir / "artifacts" / cm.RUN_FILE, doc)
-    cm.record_measured(ROOT, run_id, doc)
+    # From here the run's measurement is written: a failure to count it is
+    # recorded NEXT to it, never replaces it.
+    try:
+        cm.record_measured(ROOT, run_id, doc)
+    except Exception as exc:  # noqa: BLE001 -- information only
+        doc["coverage_error"] = f"{type(exc).__name__}: {exc}"
+        try:
+            save_yaml(run_dir / "artifacts" / cm.RUN_FILE, doc)
+        except Exception:  # noqa: BLE001
+            pass
+        _safe_print(f"⚠️  [E-068] could not count the claim measurement in "
+                    f"{cc.COVERAGE_REL} ({doc['coverage_error']}); recorded in "
+                    f"artifacts/{cm.RUN_FILE}.")
     if doc["claim_status"] == cm.MEASURED:
-        print(f"📏 [E-068] {run_id}: {doc['n_tests_measured']} claim test(s) measured "
-              f"(effect sizes, {cm.LABEL}) -> artifacts/{cm.RUN_FILE}")
+        _safe_print(f"📏 [E-068] {run_id}: {doc['n_tests_measured']} claim test(s) measured "
+                    f"(effect sizes, {cm.LABEL}) -> artifacts/{cm.RUN_FILE}")
     else:
-        print(f"ℹ️  [E-068] {run_id}: claim tests not measured ({doc['reason']}: "
-              f"{doc['detail']}); recorded, the run continues.")
+        _safe_print(f"ℹ️  [E-068] {run_id}: claim tests not measured ({doc['reason']}: "
+                    f"{doc['detail']}); recorded, the run continues.")
 
 
 def _record_claim_measure_error(run_dir: Path, run_id: str, exc: Exception) -> None:
@@ -15204,8 +15267,8 @@ def _record_claim_measure_error(run_dir: Path, run_id: str, exc: Exception) -> N
         cm = _claim_measure_module()
         doc = cm.error_doc(run_id, exc)
     except Exception as inner:  # noqa: BLE001
-        print(f"⚠️  [E-068] claim measurement failed ({type(exc).__name__}: {exc}) and "
-              f"could not be recorded ({type(inner).__name__}: {inner}); the run continues.")
+        _safe_print(f"⚠️  [E-068] claim measurement failed and could not be recorded "
+                    f"({type(inner).__name__}); the run continues.")
         return
     for what, write in (
             ("artifacts/claim_status.yaml", lambda: save_yaml(
@@ -15214,12 +15277,9 @@ def _record_claim_measure_error(run_dir: Path, run_id: str, exc: Exception) -> N
         try:
             write()
         except Exception as inner:  # noqa: BLE001 -- never raise from the net itself
-            print(f"⚠️  [E-068] could not write {what} ({type(inner).__name__}: {inner}).")
-    try:
-        print(f"⚠️  [E-068] the claim measurement could not run ({doc['detail']}); recorded, "
-              f"the run continues.")
-    except Exception:  # noqa: BLE001 -- not even a console error escapes the net
-        pass
+            _safe_print(f"⚠️  [E-068] could not write {what} ({type(inner).__name__}: {inner}).")
+    _safe_print(f"⚠️  [E-068] the claim measurement could not run ({doc['detail']}); recorded, "
+                f"the run continues.")
 
 
 # E-061 C2 S2c (C2_S1_FINDINGS.md G12, card D; review A5): Step 2's variant

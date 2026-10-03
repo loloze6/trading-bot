@@ -393,8 +393,12 @@ def record_coverage(root: Path, run_id: str, status: dict) -> None:
     with crr._lock(path, path.name):
         doc = crr._load_mapping(path, {})
         runs = doc.get("runs") if isinstance(doc.get("runs"), dict) else {}
+        old = runs.get(run_id) if isinstance(runs.get(run_id), dict) else {}
         runs[run_id] = {"usable": bool(status.get("usable")), "reason": status.get("reason"),
-                        "power_warning": bool(status.get("power_warnings"))}
+                        "power_warning": bool(status.get("power_warnings")),
+                        # slice 3's count of measured tests is kept: those looks
+                        # were taken, whatever the card check says later
+                        **({"measured": old["measured"]} if "measured" in old else {})}
         cm._atomic_write(path, {**doc, "runs": runs})
 
 

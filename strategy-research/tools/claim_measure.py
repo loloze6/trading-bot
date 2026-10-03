@@ -55,8 +55,11 @@ VARIANT_FILE = "claim_test.yaml"          # artifacts/variants/<vid>/claim_test.
 RUN_FILE = "claim_status.yaml"            # artifacts/claim_status.yaml
 # Why something was not measured: the card's gap (claim_card.GAP_REASONS), or
 BARS_MISSING = "bars_missing"
+HOLDOUT = "holdout"                       # a bar at or after the holdout start: refused
 ERROR = "error"
 NO_VARIANTS = "no_graded_variants"
+# set by the caller for variants it does not measure (this attempt's set):
+# "stale_result" (an earlier attempt's protocol_result.yaml), "invalidated"
 _FLOOR_KEY = {"min_events": "n_events", "min_windows": "n_windows_with_events",
               "min_blocks": "n_blocks", "min_eras": "n_eras_with_events"}
 
@@ -195,12 +198,11 @@ def measure_variant(run_dir: Path, vid: str, tests: list, eras, holdout_start: s
     try:
         windows = ct.load_variant_bars(Path(run_dir), vid)
         check_before_holdout(windows, holdout_start)
-    except FileNotFoundError as exc:
-        return {**doc, "status": NOT_MEASURED, "reason": BARS_MISSING, "detail": _error(exc),
-                "tests": {}}
     except Exception as exc:  # noqa: BLE001 -- information only: recorded, never raised
-        return {**doc, "status": NOT_MEASURED, "reason": ERROR, "detail": _error(exc),
-                "tests": {}}
+        reason = (BARS_MISSING if isinstance(exc, FileNotFoundError)
+                  else HOLDOUT if isinstance(exc, HoldoutOverlap) else ERROR)
+        return {**doc, "status": NOT_MEASURED, "reason": reason, "detail": _error(exc),
+                "tests": unmeasured_tests(tests, reason)}
     root = Path(run_dir).resolve()
     doc.update({"symbols": sorted({w.symbol for w in windows}),
                 "windows": [w.label for w in windows],
@@ -223,6 +225,22 @@ def measure_variant(run_dir: Path, vid: str, tests: list, eras, holdout_start: s
     return doc
 
 
+def unmeasured_tests(tests: list, reason: str) -> dict:
+    """Every test of a variant that could not be measured, so it is still
+    listed and counted."""
+    out = {}
+    for t in tests:
+        name = str(t.get("name") if isinstance(t, dict) else None)
+        spec_hash = None
+        try:
+            spec_hash = test_spec(t)[1]
+        except Exception:  # noqa: BLE001 -- an invalid test keeps spec_hash None
+            pass
+        out[name] = {"name": name, "status": NOT_MEASURED, "reason": reason,
+                     "spec_hash": spec_hash}
+    return out
+
+
 def _rel(path: str, root: Path) -> str:
     try:
         return Path(path).resolve().relative_to(root).as_posix()
@@ -230,10 +248,13 @@ def _rel(path: str, root: Path) -> str:
         return str(path)
 
 
-def run_doc(run_id: str, card_status: dict, variants: dict) -> dict:
+def run_doc(run_id: str, card_status: dict, variants: dict, skipped: dict | None = None) -> dict:
     """artifacts/claim_status.yaml: the run's measurement status, next to (never
     inside) idea_status.yaml. `card_status`: claim_card.status_of of the run's
-    own card. `variants`: {vid: measure_variant(...)}."""
+    own card. `variants`: {vid: measure_variant(...)}. `skipped`: {vid: reason}
+    for variants this attempt does not measure (listed, never counted as
+    measured)."""
+    skipped = dict(skipped or {})
     counted = [{"variant": vid, "test": name, "spec_hash": r.get("spec_hash"),
                 "status": r["status"]}
                for vid, v in variants.items() for name, r in (v.get("tests") or {}).items()]
@@ -242,21 +263,26 @@ def run_doc(run_id: str, card_status: dict, variants: dict) -> dict:
     if not card_status.get("usable"):
         status, reason, detail = NOT_MEASURED, card_status.get("reason"), card_status.get("detail")
     elif not variants:
-        status, reason, detail = NOT_MEASURED, NO_VARIANTS, "no variant has a protocol_result.yaml"
+        status, reason = NOT_MEASURED, NO_VARIANTS
+        detail = ("no variant was backtested in this attempt"
+                  + (f" (skipped: {skipped})" if skipped else
+                     " (none under artifacts/variants/: the variant loop is off or every "
+                     "backtest failed)"))
     elif n_measured:
         status, reason, detail = MEASURED, None, None
     else:
         reasons = {v.get("reason") for v in variants.values()}
         status = NOT_MEASURED
-        reason = BARS_MISSING if reasons == {BARS_MISSING} else ERROR
+        reason = reasons.pop() if len(reasons) == 1 else ERROR
         detail = "; ".join(f"{vid}: {v.get('detail')}" for vid, v in variants.items())
+    rows = {vid: {"status": v["status"], "reason": v.get("reason"),
+                  "file": f"variants/{vid}/{VARIANT_FILE}"} for vid, v in variants.items()}
+    rows.update({vid: {"status": NOT_MEASURED, "reason": r, "file": None}
+                 for vid, r in skipped.items()})
     doc.update({"claim_status": status, "reason": reason, "detail": detail,
                 "n_tests_measured": n_measured,
                 "n_tests_not_measured": len(counted) - n_measured,
-                "variants": {vid: {"status": v["status"], "reason": v.get("reason"),
-                                   "file": f"variants/{vid}/{VARIANT_FILE}"}
-                             for vid, v in variants.items()},
-                "tests": counted})
+                "variants": rows, "tests": counted})
     return doc
 
 

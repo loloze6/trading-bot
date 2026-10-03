@@ -277,7 +277,10 @@ class Window:
 def _parse_ts(values: list[str]) -> np.ndarray:
     import pandas as pd
     parsed = pd.to_datetime(pd.Series(values), utc=True)
-    return (parsed.astype("int64") // 10**9).to_numpy(dtype=np.int64)
+    # whole seconds since the epoch, whatever time unit pandas stores (E-068
+    # slice 3 review: astype("int64") // 10**9 assumed nanoseconds)
+    seconds = (parsed - pd.Timestamp(0, tz="UTC")).dt.total_seconds().to_numpy()
+    return np.floor(seconds).astype(np.int64)
 
 
 def _float(v) -> float:
@@ -1198,12 +1201,15 @@ def passed_calibrations(paths) -> list[dict]:
 
 
 def _selector_matches(scope_selector, selector: dict) -> bool:
-    """A gate's selector scope: a kind (the gates written so far state only
-    `event`) or a whole selector mapping. Anything else matches nothing."""
-    if isinstance(scope_selector, str):
-        return isinstance(selector, dict) and selector.get("kind") == scope_selector
+    """A gate's selector scope: the exact selector it simulated, or the list of
+    them (one per gate side). A bare kind (`event`, what the gates written
+    before slice 3 state) matches nothing: those gates only ever simulated
+    `forecast` thresholds, so a kind would also unlock a `close` threshold
+    the gate never ran (slice 3 review)."""
     if isinstance(scope_selector, dict):
         return scope_selector == selector
+    if isinstance(scope_selector, list):
+        return any(isinstance(s, dict) and s == selector for s in scope_selector)
     return False
 
 

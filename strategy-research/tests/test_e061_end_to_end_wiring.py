@@ -2744,5 +2744,7 @@ def test_e068_claim_measurement_error_never_stops_the_run(harness, monkeypatch):
     assert doc["claim_status"] == "not_measured" and doc["reason"] == "error"
     assert "injected measurement bug" in doc["detail"]
     assert h.art("run_001", "idea_status.yaml")             # the grid ran as usual
+    done = st["completed_stages"]                           # the run went on past the bug
+    assert "protocol_execution" in done and done[-1] != "protocol_execution", done
     _assert_holdout_untouched(h)
 

@@ -214,10 +214,23 @@ def test_a_bar_at_the_holdout_start_is_never_measured(tmp_path):
     run = _run_with_variants(tmp_path / "runs", "run_x", {"base": ws})
     last = pd.Timestamp(int(ws[-1].ts[-1]), unit="s").strftime("%Y-%m-%d")
     doc = cm.measure_variant(run, "base", [UP], None, last)        # the last bar's own day
-    assert doc["status"] == cm.NOT_MEASURED and doc["reason"] == cm.ERROR
-    assert "holdout" in doc["detail"] and doc["tests"] == {}
+    assert doc["status"] == cm.NOT_MEASURED and doc["reason"] == cm.HOLDOUT
+    assert "holdout" in doc["detail"]
+    assert doc["tests"]["high_forecast"]["status"] == cm.NOT_MEASURED     # listed, counted
+    assert "horizons" not in doc["tests"]["high_forecast"]                # nothing computed
     day_after = (pd.Timestamp(last) + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
     assert cm.measure_variant(run, "base", [UP], None, day_after)["status"] == cm.MEASURED
+
+
+def test_timestamps_parse_to_utc_seconds_whatever_the_format(tmp_path):
+    for i, (a, b) in enumerate((("2020-01-01 00:00:00", "2020-01-01 01:00:00"),
+                                ("2020-01-01T00:00:00+00:00", "2020-01-01T01:00:00+00:00"),
+                                ("2020-01-01T01:00:00+01:00", "2020-01-01T02:00:00+01:00"))):
+        p = tmp_path / f"bars{i}.csv"
+        p.write_text(f"timestamp,close,forecast,regime\n{a},1,0,x\n{b},1,0,x\n",
+                     encoding="utf-8")
+        w = ct.read_bars_csv(p, "S", "w")
+        assert list(w.ts) == [1577836800, 1577840400] and w.step == 3600, a
 
 
 # ---------------------------------------------------------------------------
@@ -387,7 +400,7 @@ def _boom(*a, **k):
 
 @pytest.mark.parametrize("target", [
     "card_read", "check_claim", "holdout_range", "eras", "graded_variants", "load_bars",
-    "effect_sizes", "variant_write", "run_doc", "coverage_write"])
+    "effect_sizes", "variant_write", "run_doc", "attempt_set"])
 def test_an_error_at_each_step_never_escapes(target, monkeypatch):
     _set_orchestrator(ON)
     run_dir = _fixture_run("run_963", claim=_claim([UP]))
@@ -404,7 +417,7 @@ def test_an_error_at_each_step_never_escapes(target, monkeypatch):
         "variant_write": (rpr, "save_yaml", lambda p, d, *a, **k: _boom()
                           if Path(p).name == cm.VARIANT_FILE else real_save(p, d, *a, **k)),
         "run_doc": (cm, "run_doc", _boom),
-        "coverage_write": (cm, "record_measured", _boom),
+        "attempt_set": (rpr, "_invalidated_trial_ids", _boom),
     }
     mod, name, fn = patches[target]
     monkeypatch.setattr(mod, name, fn)
@@ -414,6 +427,77 @@ def test_an_error_at_each_step_never_escapes(target, monkeypatch):
             (run_dir / "artifacts" / "claim_status.yaml").read_text(encoding="utf-8"))
     assert st["claim_status"] == "not_measured" and st["reason"] == "error"
     assert "injected" in st["detail"]
+
+
+def test_a_counting_failure_is_recorded_next_to_the_measurement(monkeypatch):
+    """The run's measurement is already written: a coverage failure never
+    replaces it with an error document (review finding 5)."""
+    _set_orchestrator(ON)
+    run_dir = _fixture_run("run_966", claim=_claim([UP]))
+    monkeypatch.setattr(cm, "record_measured", _boom)
+    rpr._measure_claim_tests_after_backtests(run_dir, "run_966")
+    st = rpr.load_yaml(run_dir / "artifacts" / "claim_status.yaml")
+    assert st["claim_status"] == "measured" and st["n_tests_measured"] == 1
+    assert "injected" in st["coverage_error"]
+
+
+def test_a_broken_flag_value_never_escapes(monkeypatch):
+    _set_orchestrator({"config_direct_authoring": {"enabled": True},
+                       "claim_tests": {"enabled": "yes"}})
+    run_dir = _fixture_run("run_967", claim=_claim([UP]))
+    with pytest.raises(ValueError):
+        rpr._claim_tests_enabled()                 # slice 2's reader still fails loud ...
+    rpr._clear_claim_measure_files(run_dir)        # ... these never do
+    rpr._measure_claim_tests_after_backtests(run_dir, "run_967")
+    assert not (run_dir / "artifacts" / "claim_status.yaml").exists()
+
+
+def test_only_this_attempts_variants_are_measured(monkeypatch):
+    """A protocol_result.yaml older than the attempt (an earlier attempt's
+    backtest, failed this time) is stale_result; a conformance-invalidated
+    trial is invalidated. Neither is measured nor counted as measured."""
+    import os
+    _set_orchestrator(ON)
+    run_dir = _fixture_run("run_968", claim=_claim([UP]),
+                           variants={"fresh": _planted(18, n_windows=2),
+                                     "old": _planted(19, n_windows=2),
+                                     "bad": _planted(20, n_windows=2)})
+    old = run_dir / "artifacts" / "variants" / "old" / "protocol_result.yaml"
+    rpr._clear_claim_measure_files(run_dir)                    # the attempt starts now
+    stamp = old.stat().st_mtime_ns - 10 * 10**9                 # written 10 s before it
+    os.utime(old, ns=(stamp, stamp))
+    for vid in ("fresh", "bad"):                                # this attempt's backtests
+        p = run_dir / "artifacts" / "variants" / vid / "protocol_result.yaml"
+        p.write_bytes(p.read_bytes())
+    monkeypatch.setattr(rpr, "_invalidated_trial_ids", lambda: {"run_968:bad"})
+    rpr._measure_claim_tests_after_backtests(run_dir, "run_968")
+    st = rpr.load_yaml(run_dir / "artifacts" / "claim_status.yaml")
+    assert st["variants"]["fresh"]["status"] == "measured"
+    assert st["variants"]["old"] == {"status": "not_measured", "reason": "stale_result",
+                                     "file": None}
+    assert st["variants"]["bad"]["reason"] == "invalidated"
+    assert st["n_tests_measured"] == 1 and {c["variant"] for c in st["tests"]} == {"fresh"}
+    assert not (run_dir / "artifacts" / "variants" / "old" / "claim_test.yaml").exists()
+
+
+def test_slice_2s_coverage_writer_keeps_the_measured_count(tmp_path):
+    cm.record_measured(tmp_path, "run_1", cm.run_doc("run_1", {"usable": True}, {
+        "a": {"status": "measured", "tests": {"t": {"status": "measured", "spec_hash": "h"}}}}))
+    cc.record_coverage(tmp_path, "run_1", {"usable": True, "reason": None})
+    row = yaml.safe_load((tmp_path / cc.COVERAGE_REL).read_text(encoding="utf-8"))["runs"]["run_1"]
+    assert row["usable"] is True and row["measured"]["n_tests_measured"] == 1
+
+
+def test_gate_summaries_state_their_exact_selectors_and_fakes():
+    import claim_tests_calibration as cal
+    cells = [{"method": m, "side": s, "rows": []} for m in (ct.SIGNIFICANCE_METHOD,)
+             for s in ("upper", "lower")]
+    scope = cal.summarize(ct.SIGNIFICANCE_METHOD, cells)["scope"]
+    assert scope["selector"] == [cal.cell_spec(ct.SIGNIFICANCE_METHOD, s, 0).selector
+                                 for s in ("lower", "upper")]
+    assert scope["n_null"] == cal.N_NULL and scope["outcome"] == "fwd_return"
+    a = cal.summarize(ct.A851A_METHOD, [dict(c, method=ct.A851A_METHOD) for c in cells])
+    assert a["scope"]["n_null"] == ct.A851A_SETTINGS["n_resamples"]
 
 
 def test_the_safety_net_itself_never_raises(monkeypatch):
@@ -469,25 +553,27 @@ def test_calibration_lock_compares_outcome_selector_and_number_of_fakes(tmp_path
         p.write_text(yaml.safe_dump(passed_summary(DON, "mean_diff", **kw)))
         return ct.calibration_for(ct.passed_calibrations([p]), s, ws)
 
-    assert found() is not None
+    assert found() is not None                               # helper default: [EVENT], spec's N
     assert found(outcome="fwd_max_drawdown") is None
     assert found(outcome=None) is None                       # unstated: matches nothing
-    assert found(selector="regime") is None
-    assert found(selector=None) is None
+    assert found(selector="event") is None                   # a bare kind matches nothing
     assert found(selector=dict(EVENT)) is not None           # a whole selector, equal
     assert found(selector=dict(EVENT, value=-12)) is None    # a whole selector, other value
+    assert found(selector=[dict(EVENT, value=-12), dict(EVENT)]) is not None   # one of the sides
+    assert found(selector=[dict(EVENT, value=-12)]) is None  # other threshold
+    assert found(selector=[dict(EVENT, field="close")]) is None   # other field
+    assert found(selector=[]) is None
     assert found(n_null=FAST["n_resamples"] + 1) is None
-    assert found(n_null=None) is not None                    # helper default = the spec's N
 
 
-def test_the_published_run065_gate_no_longer_unlocks_its_1000_fakes_grade():
+def test_the_published_run065_gate_no_longer_unlocks_its_1000_fakes_grade(tmp_path):
     """REGRADE_run065.md: the grade drew 1,000 fakes, the gate 199 (and stated
     no outcome kind). Under the stricter lock it would read 'not calibrated'."""
     e068 = SR_ROOT / "engineering" / "roadmap" / "E-068"
     summary = e068 / "calibration_a5" / "summary_block_permutation_v1_onesided.yaml"
-    doc = yaml.safe_load((e068 / "regrade_specs" / "run_065_breakout_continuation.yaml")
-                         .read_text(encoding="utf-8"))
-    t = ct.TestSpec.from_dict(doc["tests"][0])
+    spec_doc = yaml.safe_load((e068 / "regrade_specs" / "run_065_breakout_continuation.yaml")
+                              .read_text(encoding="utf-8"))
+    t = ct.TestSpec.from_dict(spec_doc["tests"][0])
     assert t.significance["n_resamples"] == 1000
     passed = ct.passed_calibrations([summary])
     assert len(passed) == 1 and passed[0]["scope"]["n_null"] == 199
@@ -495,3 +581,12 @@ def test_the_published_run065_gate_no_longer_unlocks_its_1000_fakes_grade():
     for w in ws:
         w.signal = passed[0]["scope"]["signal"]
     assert ct.calibration_for(passed, t, ws) is None
+    # The number of fakes alone refuses it: the same summary with its outcome
+    # and exact selectors stated is still refused at 199, accepted at 1,000.
+    for n_null, unlocked in ((199, False), (1000, True)):
+        doc = yaml.safe_load(summary.read_text(encoding="utf-8"))
+        doc["scope"].update(outcome="fwd_return", n_null=n_null,
+                            selector=[x["selector"] for x in spec_doc["tests"]])
+        p = tmp_path / f"s{n_null}.yaml"
+        p.write_text(yaml.safe_dump(doc), encoding="utf-8")
+        assert (ct.calibration_for(ct.passed_calibrations([p]), t, ws) is not None) is unlocked
