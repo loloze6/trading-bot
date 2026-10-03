@@ -256,5 +256,9 @@ this category's report and the grid you may read for this score):
 - Do not emit a proposal with empty `evidence`.
 
 ## Context rule
-Read only `artifacts/reports/trade_efficiency.yaml` and, if present,
-`artifacts/grid_evaluation.yaml`, plus `artifacts/registry_summary.yaml` (the one extra input; used only for `distance_to_profitable`). Minimal context.
+Read only the inputs listed under "Required inputs": `artifacts/reports/trade_efficiency.yaml`,
+`artifacts/grid_evaluation.yaml` (if present), `artifacts/hypothesis_card.yaml`, this run's base
+config (`strategy_config.json`), `docs/COMPONENT_CATALOG.md`, `docs/STRATEGY_DESIGN_GUIDE.md`,
+`artifacts/block_manifest.yaml` (if present), and `artifacts/registry_summary.yaml` (used only for
+`distance_to_profitable`). Every component id and setting you name must come from the base config
+and the catalogue. Nothing else (minimal context).

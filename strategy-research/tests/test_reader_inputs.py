@@ -45,8 +45,16 @@ def _paths(handoff: dict, key: str) -> list:
     return [r["path"] for r in handoff.get(key) or []]
 
 
-def _write_index(run_dir: Path, variants: dict) -> None:
+def _write_index(run_dir: Path, variants: dict, create_configs: bool = True) -> None:
+    """index.yaml plus (by default) each variant's config file, as 5a writes them."""
     rpr.save_yaml(run_dir / "artifacts" / "variants" / "index.yaml", {"variants": variants})
+    if create_configs:
+        for vid, info in variants.items():
+            rel = (info or {}).get("config_path") or f"artifacts/variants/{vid}/strategy_config.json"
+            path = run_dir / str(rel).replace("\\", "/")
+            path.parent.mkdir(parents=True, exist_ok=True)
+            if not path.exists():
+                path.write_text('{"marker": "%s"}\n' % vid, encoding="utf-8")
 
 
 def _prompt(run_dir: Path, category: str = CAT) -> str:
@@ -195,3 +203,21 @@ def test_every_reader_skill_lists_the_new_inputs(cat):
                  "COMPONENT_CATALOG.md", "STRATEGY_DESIGN_GUIDE.md", "registry_summary.yaml"):
         assert name in required, (cat, name)
     assert "(nothing else)" not in text
+    # review 2026-10-03: the closing Context rule must not tell the reader to read
+    # only report + grid + registry summary (it contradicted the new inputs).
+    rule = text.split("## Context rule")[1].split("\n## ")[0]
+    for name in ("hypothesis_card.yaml", "block_manifest.yaml", "strategy_config.json",
+                 "COMPONENT_CATALOG.md", "STRATEGY_DESIGN_GUIDE.md", "registry_summary.yaml"):
+        assert name in rule, (cat, name)
+    assert "the one extra input" not in rule
+
+
+def test_a_base_refused_before_its_config_was_written_falls_back_to_the_candidate(tmp_path):
+    """review 2026-10-03: base not_tested with no config file on disk -> the readers
+    get candidate_strategy_config.json instead of stopping on a missing input."""
+    run_dir = tmp_path / "runs" / RUN_ID
+    _write_index(run_dir, {"base": {"status": "not_tested"},
+                           "design_1": {"config_path": "artifacts/variants/design_1/strategy_config.json"}},
+                 create_configs=False)
+    assert not (run_dir / "artifacts/variants/base/strategy_config.json").exists()
+    assert rpr._reader_base_config_rel(run_dir) == "artifacts/candidate_strategy_config.json"

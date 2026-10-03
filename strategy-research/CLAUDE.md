@@ -100,9 +100,10 @@ Two caveats the guide explains in full:
 - Prefer YAML/JSON artifacts over prose.
 
 ## Running the tests (operator decision 2026-10-03: the full suite is too slow to run after every edit)
-- Always from `strategy-research/`: `../venv/Scripts/python.exe -m pytest ...` (the workflow resolves `../venv` from the CWD).
+- Interpreter: `../venv/Scripts/python.exe` on Windows (`../.venv/bin/python` on Mac/Linux); run strategy-research tests from `strategy-research/` (the workflow resolves the venv from the CWD).
 - **While developing:** run only the test files the change touches (and their direct neighbours). Seconds to a minute.
-- **The full suite is CI's job.** Every push runs it on Ubuntu and Windows (`.github/workflows/tests.yml` -> `run_tests.py`, ~8 / ~14 min). Push, then read `gh pr checks <n>`; fix what CI reports. Do not also run it locally before every push.
-- **Locally, only when CI cannot be used** (or a large refactor): `../venv/Scripts/python.exe -m pytest tests -q -n 4` (pytest-xdist). Measured 2026-10-03: serial ~20 min; `-n 4` 12.2 min, 0 failures; `-n 8` 15.6 min with 2 crashed workers (memory, 16 GB machine) -- use 4, not 8.
+- **CI runs the FAST suite on every push** (Ubuntu + Windows, `.github/workflows/tests.yml` -> `run_tests.py`, ~8 / ~14 min): trading-bot and strategy-research, including `tools/recorder/tests/`, with `-m "not slow"`. Push, then read `gh pr checks <n>`; fix what CI reports. Do not also run it locally before every push.
+- **Slow tests never run in CI.** They are marked `slow` (live market data, network). Run them on purpose when a change touches data fetching or the regression backtests: `python run_tests.py --slow` from the repo root.
+- **Locally, the same fast suite as CI** (only when CI cannot be used, or for a large refactor), from the repo root: `venv/Scripts/python.exe run_tests.py -- -q -n 4`. Use 4 workers, not 8 (measured 2026-10-03 on strategy-research `tests/`: serial ~20 min; `-n 4` 12.2 min, 0 failures; `-n 8` 15.6 min with 2 crashed workers -- memory, 16 GB machine).
 - Never re-run a full suite for a test-only or doc-only follow-up fix; re-run the touched files and say so in the PR.
 - One test process at a time on this machine.

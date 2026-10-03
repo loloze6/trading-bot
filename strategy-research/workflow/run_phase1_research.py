@@ -4032,7 +4032,12 @@ def _reader_base_config_rel(run_dir: Path | None) -> str:
     vid = _json_pointer_module().base_variant_id(variants)
     rel = (variants.get(vid) or {}).get("config_path")
     # index.yaml stores Windows separators (artifacts\variants\...); normalise on every OS
-    return str(rel).replace("\\", "/") if rel else f"artifacts/variants/{vid}/strategy_config.json"
+    rel = str(rel).replace("\\", "/") if rel else f"artifacts/variants/{vid}/strategy_config.json"
+    # A base refused before its config was written (e.g. a coin refusal) has no file;
+    # the candidate config is the same base config 1b wrote, so a reader is never
+    # stopped for it (review 2026-10-03). decide_next still refuses patches on an
+    # untested base (source_base_variant_not_tested).
+    return rel if (Path(run_dir) / rel).exists() else default
 
 
 def _reader_handoff(category: str, run_id: str, stage_attempt, run_dir: Path | None = None) -> dict:
