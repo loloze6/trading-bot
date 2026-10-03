@@ -98,3 +98,11 @@ Two caveats the guide explains in full:
 - Default to minimal context.
 - Maximum required reads per stage: 3 files unless explicitly justified.
 - Prefer YAML/JSON artifacts over prose.
+
+## Running the tests (operator decision 2026-10-03: the full suite is too slow to run after every edit)
+- Always from `strategy-research/`: `../venv/Scripts/python.exe -m pytest ...` (the workflow resolves `../venv` from the CWD).
+- **While developing:** run only the test files the change touches (and their direct neighbours). Seconds to a minute.
+- **The full suite is CI's job.** Every push runs it on Ubuntu and Windows (`.github/workflows/tests.yml` -> `run_tests.py`, ~8 / ~14 min). Push, then read `gh pr checks <n>`; fix what CI reports. Do not also run it locally before every push.
+- **Locally, only when CI cannot be used** (or a large refactor): `../venv/Scripts/python.exe -m pytest tests -q -n 4` (pytest-xdist). Measured 2026-10-03: serial ~20 min; `-n 4` 12.2 min, 0 failures; `-n 8` 15.6 min with 2 crashed workers (memory, 16 GB machine) -- use 4, not 8.
+- Never re-run a full suite for a test-only or doc-only follow-up fix; re-run the touched files and say so in the PR.
+- One test process at a time on this machine.
