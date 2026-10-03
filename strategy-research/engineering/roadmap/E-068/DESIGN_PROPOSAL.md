@@ -439,8 +439,7 @@ P-CUL-77).
 
 ## 10. Decisions still needed
 
-1. **Review call:** should the extra AI check of 1a's test only *record* its comments at first
-   (`record`), or *block* the idea from the start (`gate`)? Recommended: record first.
+None. All decisions are recorded in section 11.
 
 ---
 
@@ -458,3 +457,5 @@ P-CUL-77).
   parked: E-069.
 - **Combination stays in E-068's scope** as the connection to E-060's registry and
   composition (section 5, slice 6), so the loop works end to end.
+- **Review call starts in `record` mode:** it stores its comments and blocks nothing;
+  `gate` only if the record shows real catches the code checks miss.
