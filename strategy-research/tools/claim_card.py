@@ -278,6 +278,58 @@ def match_check(claim: dict, manifest_kind) -> list:
 
 
 # ---------------------------------------------------------------------------
+# Power warning (operator, 2026-10-03): can the floor be reached at all?
+# ---------------------------------------------------------------------------
+
+_TF_UNIT = {"m": 60, "h": 3600, "d": 86400, "w": 7 * 86400}
+
+
+def timeframe_seconds(tf) -> int | None:
+    """'15m' -> 900, '1h' -> 3600, '4h' -> 14400, '1d' -> 86400; None if unknown."""
+    if not isinstance(tf, str) or len(tf) < 2 or tf[-1] not in _TF_UNIT or not tf[:-1].isdigit():
+        return None
+    return int(tf[:-1]) * _TF_UNIT[tf[-1]]
+
+
+def window_bars(windows: list, step: int) -> int:
+    """Bars in the test windows: each window's days (end inclusive, the
+    engine's convention) times bars per day."""
+    from datetime import date
+    total = 0
+    for w in windows:
+        t = w.get("test") if isinstance(w, dict) else None
+        if not isinstance(t, dict):
+            raise ValueError(f"window {w!r} has no test.start/test.end")
+        days = (date.fromisoformat(str(t["end"])[:10])
+                - date.fromisoformat(str(t["start"])[:10])).days + 1
+        total += days * 86400 // step
+    return total
+
+
+def power_warnings(claim: dict, total_bars: int, n_coins: int) -> list:
+    """For every test with a min_events floor: the upper bound of separate
+    events = (bars in the test windows // the longest horizon) x coins. One
+    dict per test whose bound is below its floor (empty: every floor is
+    reachable). An upper bound: the selector picks fewer bars, never more."""
+    out = []
+    tests = claim.get("tests") if isinstance(claim, dict) else None
+    for t in tests if isinstance(tests, list) else []:
+        floor = (t.get("floor") or {}).get("min_events") if isinstance(t, dict) else None
+        hs = ((t.get("outcome") or {}).get("horizons") or []) if isinstance(t, dict) else []
+        if not isinstance(floor, int) or not hs:
+            continue
+        h_max = max(hs)
+        bound = (total_bars // h_max) * n_coins
+        if bound < floor:
+            out.append({"test": t.get("name"), "bound": bound, "floor": floor,
+                        "bars": total_bars, "longest_horizon": h_max, "coins": n_coins,
+                        "message": (f"test {t.get('name')!r}: at most {bound} separate events "
+                                    f"are possible, the floor is {floor}: shorten the horizon "
+                                    f"or widen the data")})
+    return out
+
+
+# ---------------------------------------------------------------------------
 # Park: campaign_record/test_requests.yaml (card J pattern)
 # ---------------------------------------------------------------------------
 

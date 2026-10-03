@@ -769,14 +769,16 @@ def test_gate_before_1b_checks_a_queued_card_once():
     assert len(rpr.load_yaml(run_dir / "artifacts" / "claim_check.yaml")["attempts"]) == n
 
 
-def test_gate_before_1b_parks_a_queued_tests_none_card_at_1b():
+def test_gate_before_1b_refuses_a_queued_tests_none_card_but_records_the_request():
+    """review round 2 #1: a queued card cannot be re-authored, so a park could
+    never clear -- the request is recorded and the run refused, never parked."""
     _set_orchestrator(ON)
     run_dir = _card_run("run_951", claim=_claim(kind="lead_lag", tests="none", missing_block="mb"))
-    assert rpr._claim_gate_before_1b(run_dir, "run_951", True) == "human_pause"
-    marker = rpr.load_yaml(run_dir / "pipeline_state.yaml")[rpr.PARKED_KEY]
-    assert marker["kind"] == "test" and marker["resume_stage"] == "strategy_config_authoring"
+    with pytest.raises(RuntimeError, match="cannot be re-authored"):
+        rpr._claim_gate_before_1b(run_dir, "run_951", True)
+    assert not rpr.load_yaml(run_dir / "pipeline_state.yaml").get(rpr.PARKED_KEY)
     row = rpr.load_yaml(rpr.ROOT / cc.TEST_REQUESTS_REL)["requests"][0]
-    assert row["stage"] == "strategy_config_authoring"
+    assert row["stage"] == "strategy_config_authoring" and row["missing_block"] == "mb"
 
 
 def test_gate_before_1b_skips_a_run_whose_1a_check_passed(monkeypatch):
@@ -797,7 +799,8 @@ def test_run_loop_queued_card_is_checked_before_1b_spends(monkeypatch):
     seen = _fake_agent(monkeypatch, run_dir, [])
     rpr.run_loop("run_953")
     assert seen == []                                            # 1b never called
-    assert rpr.load_yaml(run_dir / "pipeline_state.yaml")["status"] == "paused_for_human"
+    final = rpr.load_yaml(run_dir / "pipeline_state.yaml")
+    assert final["status"] == "failed" and "cannot be re-authored" in final["last_error"]
 
 
 def test_run_loop_repeat_card_ends_the_run_without_a_claim_retry(monkeypatch):
@@ -810,3 +813,170 @@ def test_run_loop_repeat_card_ends_the_run_without_a_claim_retry(monkeypatch):
     rpr.run_loop("run_954")
     assert [s for s, _ in seen] == ["hypothesis_generation"]
     assert not (run_dir / "artifacts" / "claim_check.yaml").exists()
+
+
+# ---------------------------------------------------------------------------
+# 6. power warning (operator, 2026-10-03): can the floor be reached at all?
+# ---------------------------------------------------------------------------
+
+DAILY_2M = [{"label": "2022-01", "test": {"start": "2022-01-01", "end": "2022-01-31"}},
+            {"label": "2022-02", "test": {"start": "2022-02-01", "end": "2022-02-28"}}]
+
+
+def test_timeframe_seconds():
+    assert cc.timeframe_seconds("15m") == 900
+    assert cc.timeframe_seconds("1h") == 3600
+    assert cc.timeframe_seconds("4h") == 14400
+    assert cc.timeframe_seconds("1d") == 86400
+    assert cc.timeframe_seconds("1x") is None and cc.timeframe_seconds("h") is None
+    assert cc.timeframe_seconds(None) is None
+
+
+def test_window_bars_counts_the_end_day():
+    assert cc.window_bars(DAILY_2M, 86400) == 31 + 28
+    assert cc.window_bars(DAILY_2M[:1], 3600) == 31 * 24
+    with pytest.raises(ValueError):
+        cc.window_bars([{"label": "x"}], 86400)
+
+
+def test_power_bound_is_bars_over_longest_horizon_times_coins():
+    claim = _claim(tests=[dict(UPPER, floor={"min_events": 100})])   # horizons 1..5
+    w = cc.power_warnings(claim, 59, 1)                                # 59 // 5 * 1 = 11
+    assert len(w) == 1 and w[0]["bound"] == 11 and w[0]["floor"] == 100
+    assert w[0]["message"] == ("test 'upper_breakout': at most 11 separate events are possible, "
+                               "the floor is 100: shorten the horizon or widen the data")
+    assert cc.power_warnings(claim, 59, 9)[0]["bound"] == 99           # x coins
+    assert cc.power_warnings(claim, 500, 1) == []                      # 100 == floor: reachable
+    assert cc.power_warnings(claim, 499, 1)[0]["bound"] == 99
+    # no min_events floor, or criteria_refs only: nothing to bound
+    assert cc.power_warnings(_claim(tests=[dict(UPPER, floor={"min_windows": 4})]), 1, 1) == []
+    assert cc.power_warnings(_claim(tests=None, criteria_refs=["x"]), 1, 1) == []
+
+
+def _protocol(run_id, windows=DAILY_2M, symbols=("BTCUSD",), tf="1d"):
+    d = rpr.ROOT / "protocols"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / f"{run_id}_generated.json").write_text(json.dumps(
+        {"symbols": list(symbols), "timeframe": tf, "windows": windows}), encoding="utf-8")
+
+
+LOW = dict(UPPER, floor={"min_events": 100})       # bound 11 on DAILY_2M, one coin
+REACHABLE = dict(UPPER, floor={"min_events": 10})
+
+
+def test_power_shortfall_retries_1a_once_with_the_message(monkeypatch):
+    _set_orchestrator(ON)
+    run_dir = _card_run("run_960", claim=_claim(tests=[LOW]))
+    _protocol("run_960")
+    calls = _fake_1a(monkeypatch, run_dir, [_claim(tests=[REACHABLE])])
+    assert rpr._check_claim_after_1a("run_960", run_dir, [], {}) is False
+    assert len(calls) == 1 and "cannot reach their floor" in calls[0]
+    assert "at most 11 separate events are possible, the floor is 100: shorten the horizon " \
+           "or widen the data" in calls[0]
+    checks = rpr.load_yaml(run_dir / "artifacts" / "claim_power.yaml")["checks"]
+    assert [c["status"] for c in checks] == ["below_floor", "ok"]
+    assert checks[0]["bars"] == 59 and checks[0]["coins"] == 1
+
+
+def test_power_shortfall_after_the_retry_is_recorded_and_never_stops(monkeypatch, capsys):
+    _set_orchestrator(ON)
+    run_dir = _card_run("run_961", claim=_claim(tests=[LOW]))
+    _protocol("run_961")
+    calls = _fake_1a(monkeypatch, run_dir, [_claim(tests=[LOW])])
+    assert rpr._check_claim_after_1a("run_961", run_dir, [], {}) is False   # no raise
+    assert len(calls) == 1                                                   # one retry only
+    checks = rpr.load_yaml(run_dir / "artifacts" / "claim_power.yaml")["checks"]
+    assert [c["status"] for c in checks] == ["below_floor", "below_floor"]
+    assert "power warning" in capsys.readouterr().out
+    assert rpr.load_yaml(run_dir / "pipeline_state.yaml")["claim_check_retry"]["attempts"] == 0
+
+
+def test_power_and_claim_share_one_retry(monkeypatch):
+    _set_orchestrator(ON)
+    run_dir = _card_run("run_962", claim=_claim(kind="vibes", tests=[LOW]))
+    _protocol("run_962")
+    calls = _fake_1a(monkeypatch, run_dir, [_claim(tests=[LOW])])
+    assert rpr._check_claim_after_1a("run_962", run_dir, [], {}) is False
+    assert len(calls) == 1 and "claim.kind" in calls[0]                 # spent on the claim
+
+
+def test_power_check_is_skipped_without_a_readable_protocol(monkeypatch):
+    _set_orchestrator(ON)
+    run_dir = _card_run("run_963", claim=_claim(tests=[LOW]))
+    calls = _fake_1a(monkeypatch, run_dir, [])
+    assert rpr._check_claim_after_1a("run_963", run_dir, [], {}) is False
+    assert calls == []
+    check = rpr.load_yaml(run_dir / "artifacts" / "claim_power.yaml")["checks"][0]
+    assert check["status"] == "skipped" and "no protocol readable" in check["reason"]
+
+
+def test_power_inputs_from_protocol_ref_and_from_constraints():
+    run_dir = _card_run("run_964")
+    d = rpr.ROOT / "protocols"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "pinned.json").write_text(json.dumps({"symbols": ["A", "B"], "timeframe": "4h",
+                                               "windows": DAILY_2M}), encoding="utf-8")
+    rpr.save_yaml(run_dir / "artifacts" / "pre_registration.yaml",
+                  {"machine_constraints": {"protocol_ref": "protocols/pinned.json"}})
+    windows, symbols, tf, _ = rpr._claim_power_inputs(run_dir, "run_964")
+    assert symbols == ["A", "B"] and tf == "4h" and windows == DAILY_2M
+    rpr.save_yaml(run_dir / "artifacts" / "pre_registration.yaml", {"machine_constraints": {
+        "protocol": {"symbols": ["A"], "timeframe": "1d", "start": "2022-01-01",
+                     "end": "2022-02-28", "window_months": 1}}})
+    windows, symbols, tf, _ = rpr._claim_power_inputs(run_dir, "run_964")
+    assert cc.window_bars(windows, 86400) == 59 and symbols == ["A"]
+
+
+def test_gate_before_1b_records_a_power_warning_and_proceeds():
+    _set_orchestrator(ON)
+    run_dir = _card_run("run_965", claim=_claim(tests=[LOW]))
+    _protocol("run_965")
+    assert rpr._claim_gate_before_1b(run_dir, "run_965", True) is None
+    check = rpr.load_yaml(run_dir / "artifacts" / "claim_power.yaml")["checks"][0]
+    assert check["status"] == "below_floor" and check["stage"] == "strategy_config_authoring"
+
+
+def test_run_loop_power_shortfall_twice_still_reaches_1b(monkeypatch):
+    _set_orchestrator(ON)
+    run_dir = _loop_run("run_966")
+    _protocol("run_966")
+    seen = _fake_agent(monkeypatch, run_dir, [_claim(tests=[LOW]), _claim(tests=[LOW])])
+    rpr.run_loop("run_966")
+    assert [s for s, _ in seen] == ["hypothesis_generation", "hypothesis_generation",
+                                    "strategy_config_authoring"]
+    assert "separate events" in seen[1][1]
+
+
+def test_flag_off_writes_no_power_file(monkeypatch):
+    _set_orchestrator({"config_direct_authoring": {"enabled": True}})
+    run_dir = _card_run("run_967", claim=_claim(tests=[LOW]))
+    _protocol("run_967")
+    assert rpr._check_claim_after_1a("run_967", run_dir, [], {}) is False
+    assert not (run_dir / "artifacts" / "claim_power.yaml").exists()
+
+
+def test_retry_does_not_repeat_the_legacy_split(monkeypatch):
+    """review round 2 #2: with decide_next off, a multi-card retry answer would
+    scaffold a second set of 1b-skipping siblings (CUL-392): refused instead."""
+    _set_orchestrator(ON)
+    run_dir = _card_run("run_970", claim=_claim(kind="vibes"))
+
+    def _invoke(stage, run_id, rdir, expected, state):
+        rpr.save_yaml(rdir / "artifacts" / "hypothesis_card_1.yaml", dict(CARD, claim=_claim()))
+        rpr.save_yaml(rdir / "artifacts" / "hypothesis_card_2.yaml", dict(CARD, claim=_claim()))
+        raise FileNotFoundError("hypothesis_card.yaml")
+
+    monkeypatch.setattr(rpr, "_invoke_agent_with_yaml_retry", _invoke)
+    monkeypatch.setattr(rpr, "_handle_hypothesis_generation_multi_card_split",
+                        lambda *a: pytest.fail("legacy split repeated on a retry"))
+    with pytest.raises(RuntimeError, match="not repeated on a retry"):
+        rpr._check_claim_after_1a("run_970", run_dir, [], {})
+
+
+def test_a_repeat_card_from_the_retry_ends_no_new_not_failed(monkeypatch):
+    """review round 2 #4: the retry's card is checked for a repeat before its claim."""
+    _set_orchestrator(ON)
+    run_dir = _card_run("run_971", claim=_claim(kind="vibes"))
+    _fake_1a(monkeypatch, run_dir, [_claim(kind="vibes")])
+    monkeypatch.setattr(rpr, "_brief_card_is_repeat", lambda rdir: True)
+    assert rpr._check_claim_after_1a("run_971", run_dir, [], {}) is False

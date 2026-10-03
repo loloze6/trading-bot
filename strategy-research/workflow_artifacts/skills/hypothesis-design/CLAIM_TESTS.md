@@ -131,6 +131,11 @@ With `statistic: rank_ic` there is no baseline: write `baseline: null` or leave 
   effect must point the claimed way in at least that many windows or eras.
 - Pick floors the windows can reach: an event that fires twice a month will not reach 100
   events in six one-month windows.
+- **Code checks that `min_events` is reachable at all**: at most (bars in the test windows /
+  the longest horizon) x coins separate events exist. Below the floor you get one retry
+  with the message "at most N separate events are possible, the floor is M: shorten the
+  horizon or widen the data"; if it is still below, a warning is recorded and the run
+  continues (the result will then be inconclusive).
 
 ## 3. The verdict rule (fixed in code; restate it in `pass_if` / `fail_if`)
 

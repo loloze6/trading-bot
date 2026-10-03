@@ -14681,11 +14681,18 @@ def _apply_claim_tests_context(stage_name: str, handoff: dict, run_dir: Path) ->
     retry = state.get(CLAIM_RETRY_STATE_KEY) or {}
     if retry.get("attempts") and retry.get("last_error"):
         ctx = handoff.setdefault("injected_context", {})
-        ctx["claim_check_error"] = (
-            f"Retry {retry['attempts']}/{_CLAIM_RETRY_MAX}. Your previous hypothesis_card.yaml "
-            f"`claim` block was refused by the code check: {retry['last_error']}. Re-emit "
-            f"hypothesis_card.yaml with a corrected `claim` block (CLAIM_TESTS.md). If the "
-            f"slots cannot express the test, write `tests: none` with `missing_block`.")
+        if retry.get("last_check") == "power":
+            ctx["claim_check_error"] = (
+                f"Retry {retry['attempts']}/{_CLAIM_RETRY_MAX}. Your previous claim's tests "
+                f"cannot reach their floor on this run's data: {retry['last_error']}. Re-emit "
+                f"hypothesis_card.yaml with a `claim` whose floor is reachable (CLAIM_TESTS.md, "
+                f"Floor and consistency). If it still is not, the run continues with a warning.")
+        else:
+            ctx["claim_check_error"] = (
+                f"Retry {retry['attempts']}/{_CLAIM_RETRY_MAX}. Your previous hypothesis_card.yaml "
+                f"`claim` block was refused by the code check: {retry['last_error']}. Re-emit "
+                f"hypothesis_card.yaml with a corrected `claim` block (CLAIM_TESTS.md). If the "
+                f"slots cannot express the test, write `tests: none` with `missing_block`.")
         ctx["stage_attempt"] = f"{ctx.get('stage_attempt', '0')}_claim_retry{retry['attempts']}"
 
 
@@ -14737,6 +14744,72 @@ def _claim_check_once(run_dir: Path, attempt, stage: str = "hypothesis_generatio
     return res
 
 
+_CLAIM_POWER_FILE = "claim_power.yaml"
+
+
+def _claim_power_inputs(run_dir: Path, run_id: str):
+    """(windows, symbols, timeframe, source) of the protocol this run will
+    test on, read only (nothing resolved, generated or flagged): the run's
+    generated protocol, else machine_constraints.protocol_ref's file, else
+    machine_constraints.protocol's start..end. (None, reason) when none can be
+    read -- the power check is then skipped and recorded, never guessed."""
+    candidates = [ROOT / "protocols" / f"{run_id}_generated.json"]
+    pre_path = Path(run_dir) / "artifacts" / "pre_registration.yaml"
+    pre = (load_yaml(pre_path) or {}) if pre_path.exists() else {}
+    mc = (pre.get("machine_constraints") or {}) if isinstance(pre, dict) else {}
+    ref = mc.get("protocol_ref") if isinstance(mc, dict) else None
+    if isinstance(ref, str) and ref:
+        candidates.append(ROOT / ref)
+    for path in candidates:
+        if path.exists() and path.suffix == ".json":
+            doc = json.loads(path.read_text(encoding="utf-8"))
+            return (doc.get("windows") or [], doc.get("symbols") or [],
+                    doc.get("timeframe", "1h"), str(path.as_posix()))
+    proto = mc.get("protocol") if isinstance(mc, dict) else None
+    if isinstance(proto, dict) and proto.get("end") and (proto.get("start")
+                                                         or proto.get("per_symbol_start")):
+        start = (min(proto["per_symbol_start"].values()) if proto.get("per_symbol_start")
+                 else proto["start"])
+        return ([{"test": {"start": str(start), "end": str(proto["end"])}}],
+                proto.get("symbols") or [], proto.get("timeframe", "1h"),
+                "pre_registration.yaml machine_constraints.protocol")
+    return None, "no protocol readable at this point (no generated file, protocol_ref or constraints)"
+
+
+def _claim_power_check(run_dir: Path, run_id: str, attempt, stage: str) -> list:
+    """The power warnings for the run's claim (claim_card.power_warnings), each
+    check appended to artifacts/claim_power.yaml. Never raises on content: a
+    protocol that cannot be read or parsed is recorded as skipped."""
+    cc = _claim_card_module()
+    card_path = Path(run_dir) / "artifacts" / "hypothesis_card.yaml"
+    card = (load_yaml(card_path) or {}) if card_path.exists() else {}
+    entry = {"at": datetime.now(timezone.utc).isoformat(), "attempt": attempt, "stage": stage}
+    warnings = []
+    try:
+        found = _claim_power_inputs(run_dir, run_id)
+        windows, symbols, tf, source = found if len(found) == 4 else (None, None, None, found[1])
+    except Exception as exc:  # unreadable protocol: skipped, recorded
+        windows, symbols, tf, source = None, None, None, f"{type(exc).__name__}: {exc}"
+    step = cc.timeframe_seconds(tf) if windows is not None else None
+    if windows is None or step is None or not symbols:
+        entry.update({"status": "skipped",
+                      "reason": source if windows is None else f"timeframe {tf!r} / symbols {symbols!r}"})
+    else:
+        try:
+            bars = cc.window_bars(windows, step)
+            warnings = cc.power_warnings(card.get("claim") or {}, bars, len(symbols))
+            entry.update({"status": "below_floor" if warnings else "ok", "source": source,
+                          "bars": bars, "coins": len(symbols), "timeframe": tf,
+                          "warnings": warnings})
+        except (ValueError, KeyError, TypeError) as exc:
+            entry.update({"status": "skipped", "reason": f"{type(exc).__name__}: {exc}"})
+    path = Path(run_dir) / "artifacts" / _CLAIM_POWER_FILE
+    doc = (load_yaml(path) or {}) if path.exists() else {}
+    checks = doc.get("checks") if isinstance(doc, dict) and isinstance(doc.get("checks"), list) else []
+    save_yaml(path, {"checks": checks + [entry]})
+    return warnings
+
+
 def _set_aside_1a_outputs(run_dir: Path, tag: str) -> None:
     """Under claim_tests, before a 1a LLM call (the first one, the claim retry,
     or 1a re-run after an unpark): move 1a's earlier outputs to
@@ -14783,24 +14856,23 @@ def _check_claim_after_1a(run_id: str, run_dir: Path, expected_outputs: list, st
                                                                   "last_error": error}})
             raise RuntimeError(f"hypothesis_generation: the claim block is still invalid after "
                                f"{prior} retry -- {error} (see artifacts/{_CLAIM_CHECK_FILE})")
-        update_state(path=run_dir, **{CLAIM_RETRY_STATE_KEY: {"attempts": prior + 1,
-                                                              "last_error": error}})
         print(f"🔁 [E-068] hypothesis_card.yaml claim refused -- retrying step 1a once with "
               f"the error: {error}")
-        _set_aside_1a_outputs(run_dir, f"claim_retry{prior + 1}")
-        split = False
-        try:
-            _invoke_agent_with_yaml_retry("hypothesis_generation", run_id, run_dir,
-                                          expected_outputs, state)
-        except FileNotFoundError:
-            if not _handle_hypothesis_generation_multi_card_split(run_id, run_dir):
-                raise
-            split = True
-        if not split:
-            _brief_single_card_check(run_dir)
-        return _check_claim_after_1a(run_id, run_dir, expected_outputs, state, split)
+        return _retry_1a_for_claim(run_id, run_dir, expected_outputs, state, prior, error, "claim")
+    if res is not None and not res.parked:
+        # Power warning (operator, 2026-10-03): shares 1a's one retry; never a stop.
+        power = _claim_power_check(run_dir, run_id, prior, "hypothesis_generation")
+        if power:
+            message = "; ".join(w["message"] for w in power)
+            if prior < _CLAIM_RETRY_MAX:
+                print(f"🔁 [E-068] claim floor unreachable -- retrying step 1a once: {message}")
+                return _retry_1a_for_claim(run_id, run_dir, expected_outputs, state, prior,
+                                           message, "power")
+            print(f"⚠️  [E-068] power warning (recorded in artifacts/{_CLAIM_POWER_FILE}, the "
+                  f"run continues): {message}")
     if prior:
-        update_state(path=run_dir, **{CLAIM_RETRY_STATE_KEY: {"attempts": 0, "last_error": None}})
+        update_state(path=run_dir, **{CLAIM_RETRY_STATE_KEY: {"attempts": 0, "last_error": None,
+                                                              "last_check": None}})
     if res is None:
         return False
     for t in res.tests:
@@ -14809,13 +14881,44 @@ def _check_claim_after_1a(run_id: str, run_dir: Path, expected_outputs: list, st
     return res.parked
 
 
+def _retry_1a_for_claim(run_id: str, run_dir: Path, expected_outputs: list, state: dict,
+                        prior: int, error: str, check: str) -> bool:
+    """1a's one retry (claim refused, or its floor unreachable): the error in
+    the next handoff, 1a's earlier outputs set aside, a multi-card answer split
+    or queued as run_loop does; then the check again."""
+    update_state(path=run_dir, **{CLAIM_RETRY_STATE_KEY: {
+        "attempts": prior + 1, "last_error": error, "last_check": check}})
+    _set_aside_1a_outputs(run_dir, f"claim_retry{prior + 1}")
+    split = False
+    try:
+        _invoke_agent_with_yaml_retry("hypothesis_generation", run_id, run_dir,
+                                      expected_outputs, state)
+    except FileNotFoundError:
+        if not _decide_next_enabled() and list((Path(run_dir) / "artifacts")
+                                               .glob("hypothesis_card_*.yaml")):
+            # the legacy split scaffolds sibling runs that skip 1b (CUL-392): a
+            # retry must not scaffold a second set of them
+            raise RuntimeError("hypothesis_generation: the claim retry wrote several cards; "
+                               "the legacy split is not repeated on a retry (CUL-392). "
+                               "Fails before any spend.")
+        if not _handle_hypothesis_generation_multi_card_split(run_id, run_dir):
+            raise
+        split = True
+    if not split:
+        _brief_single_card_check(run_dir)
+    if _brief_card_is_repeat(run_dir):
+        return False  # run_loop's own repeat check then ends the run no-new
+    return _check_claim_after_1a(run_id, run_dir, expected_outputs, state, split)
+
+
 def _claim_gate_before_1b(run_dir: Path, run_id: str, routing_retired: bool):
     """Under claim_tests, as strategy_config_authoring is about to run: a run
     whose own 1a check did not pass here -- a queued extra card launched
     straight at 1b (run_campaign._launch_queued_card), or a run resumed past 1a
     -- gets the same check, once, without a retry (its 1a ran in another run).
-    Returns None to proceed, or the route ("human_pause") after a park.
-    Refused: RuntimeError, before any spend. Flag off: None, nothing read."""
+    Returns None to proceed. Refused, or `tests: none` (a queued card cannot
+    be re-authored, so a park could never clear; the test request is still
+    recorded): RuntimeError, before any spend. Flag off: None, nothing read."""
     if not _claim_tests_enabled():
         return None
     doc_path = Path(run_dir) / "artifacts" / _CLAIM_CHECK_FILE
@@ -14832,8 +14935,23 @@ def _claim_gate_before_1b(run_dir: Path, run_id: str, routing_retired: bool):
                            f"block is invalid and its step 1a ran elsewhere (no retry) -- "
                            f"{'; '.join(res.errors)} (see artifacts/{_CLAIM_CHECK_FILE})")
     if res.parked:
-        return _park_for_missing_test(run_dir, run_id, routing_retired,
-                                      stage="strategy_config_authoring")
+        # No step re-authors a queued card, so a park here could never clear:
+        # record the request, then refuse (mark the entry superseded).
+        cc = _claim_card_module()
+        card = load_yaml(Path(run_dir) / "artifacts" / "hypothesis_card.yaml") or {}
+        claim = card.get("claim") or {}
+        cc.append_test_requests(ROOT, [{
+            "run_id": run_id, "stage": "strategy_config_authoring",
+            "hypothesis_id": card.get("hypothesis_id"), "claim_kind": claim.get("kind"),
+            "statement": claim.get("statement"), "missing_block": res.missing_block}])
+        raise RuntimeError(f"strategy_config_authoring: this queued card's claim needs a missing "
+                           f"building block ({res.missing_block}); a queued card cannot be "
+                           f"re-authored, so it is not parked. The request is in "
+                           f"{cc.TEST_REQUESTS_REL}; mark the entry superseded.")
+    power = _claim_power_check(run_dir, run_id, "pre_1b", "strategy_config_authoring")
+    if power:
+        print(f"⚠️  [E-068] power warning (recorded in artifacts/{_CLAIM_POWER_FILE}, the run "
+              f"continues): " + "; ".join(w["message"] for w in power))
     return None
 
 

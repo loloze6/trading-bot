@@ -500,7 +500,7 @@ step runs; if it is refused, you get one retry with the error.
   turnover estimate (`cost_feasibility` included). Costs are judged only by the backtest. (Improvement 07, O-3)
 - **Claim-test flow only:** do not invent a selector, outcome, baseline, statistic or parameter outside
   CLAIM_TESTS.md; do not write `alpha` or `significance` (code sets them); do not write a pass rule of your own
-  in `pass_if`/`fail_if` (they restate the code's rule). (Improvement 09)
+  in `pass_if`/`fail_if` (they restate the code's rule). (Improvement 10)
 
 ## Context rule
-Read `research_brief.yaml`, `config/available_feeds.yaml`, `feed_wishlist.yaml`, `config/indicator_library.yaml`, and, when present, `artifacts/tried_ideas.yaml` or `campaign_record/exclusion_digest.yaml` and `campaign_record/campaign_knowledge_base.yaml`. Config-direct-authoring flow only: also read `config/criterion_menu.yaml` and `config/cost_model.yaml` (Improvement 07). Claim-test flow only: also read `workflow_artifacts/skills/hypothesis-design/CLAIM_TESTS.md` (Improvement 09). Do not read other files unless the handoff explicitly requires them.
+Read `research_brief.yaml`, `config/available_feeds.yaml`, `feed_wishlist.yaml`, `config/indicator_library.yaml`, and, when present, `artifacts/tried_ideas.yaml` or `campaign_record/exclusion_digest.yaml` and `campaign_record/campaign_knowledge_base.yaml`. Config-direct-authoring flow only: also read `config/criterion_menu.yaml` and `config/cost_model.yaml` (Improvement 07). Claim-test flow only: also read `workflow_artifacts/skills/hypothesis-design/CLAIM_TESTS.md` (Improvement 10). Do not read other files unless the handoff explicitly requires them.

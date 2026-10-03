@@ -635,7 +635,11 @@ flags:
       writes a `claim` block in hypothesis_card.yaml; tools/claim_card.py
       checks it before 1b (one 1a retry, then the run fails); `tests: none`
       parks the run and appends campaign_record/test_requests.yaml; after 1b
-      a 1a/1b mismatch is recorded as a warning in artifacts/claim_match.yaml.
+      a 1a/1b mismatch is recorded as a warning in artifacts/claim_match.yaml;
+      a floor no event count can reach (bars / longest horizon x coins) gets the
+      same one 1a retry, then a warning in artifacts/claim_power.yaml. Before
+      switching on: supersede queued cards written before the flag (no claim,
+      so they fail the gate before 1b).
       Tested by tests/test_e068_s2_claim_card.py.
 
   - name: bar_equity
