@@ -898,3 +898,69 @@ def test_variant_signal_refuses_settings_it_does_not_copy(tmp_path):
     p.write_text(json.dumps({"strategies": {"regimes": {**regs, "trending": regs["unknown"]}}}))
     with pytest.raises(ValueError, match="2 non-null regimes"):
         ct.variant_signal(run, "base")
+
+
+# --- amendment 4: A8.5.1a with its episode gap in time (2 days) -----------------------------
+
+def test_timegap_is_two_days_of_bars():
+    assert ct.a851a_gap_bars(ct.A851A_TIMEGAP_METHOD, DAY) == 2
+    assert ct.a851a_gap_bars(ct.A851A_TIMEGAP_METHOD, HOUR) == 48      # hourly unchanged
+    assert ct.a851a_gap_bars(ct.A851A_METHOD, DAY) == 48               # the old method: bars
+    with pytest.raises(ValueError, match="whole number"):
+        ct.a851a_gap_bars(ct.A851A_TIMEGAP_METHOD, 7 * 3600)
+    assert ct.check_spec(ct.TestSpec(**{**spec(EVENT).__dict__,
+                                        "significance": {"method": ct.A851A_TIMEGAP_METHOD}})) == []
+
+
+def test_timegap_wrapper_equals_a_direct_call_with_a_2_bar_gap():
+    import episode_significance as es
+    ws = cal.simulate_windows(np.random.default_rng(7), "iid")
+    s = ct.TestSpec(**{**cal.cell_spec(ct.A851A_TIMEGAP_METHOD, "upper", 0).__dict__,
+                       "outcome": {"kind": "fwd_return", "horizons": [2]}})
+    res = rt(ws, s)
+    a = res["horizons"][2]["a851a"]
+    assert res["a851a_gap_bars"] == 2
+    recs = []
+    for w in ws:
+        y = ct.out_fwd_return(w, 2)
+        for t in np.nonzero(np.isfinite(y))[0]:
+            recs.append({"forecast": float(w.forecast[t]), "next_return_bps": float(y[t]) * 1e4,
+                         "active": bool(w.forecast[t] >= 12), "symbol": "SIM",
+                         "timestamp": pd.Timestamp(int(w.ts[t]), unit="s")})
+    direct = es.compute_a851a_significance(
+        recs, era_of=None, gap_bars=2, density_fallback_pct=50.0, min_n_episodes=8,
+        block_size=1, n_resamples=2000, seed=ct.A851A_SEED,
+        expected_step=pd.Timedelta(DAY, unit="s"))
+    assert a["method_label"] == direct["method"] == "episode_block_bootstrap"
+    assert a["n_episodes"] == direct["n_episodes"] >= 8
+    assert a["pooled_ic"] == direct["pooled_ic"]
+    p2 = direct["p_value"]
+    assert a["p_value"] == pytest.approx(p2 / 2 if direct["pooled_ic"] > 0 else 1 - p2 / 2)
+
+
+def test_method_override_applies_the_amendment_method_without_editing_the_spec(tmp_path):
+    ws = make_windows(54, n=80, n_windows=2)
+    run = _write_run(tmp_path, ws, DON)
+    cdir = _write_cache_for(tmp_path, ws)
+    sp = tmp_path / "spec.yaml"
+    sp.write_text(yaml.safe_dump({"claim_id": "c", "source_run": "run_x", "tests": [
+        {"name": "t", "selector": EVENT, "outcome": {"kind": "fwd_return", "horizons": [1]},
+         "baseline": {"kind": "complement"}, "statistic": "mean_diff", "direction": "greater",
+         "floor": {"min_events": 1}}]}))
+    res = ct.cache_resolver(cdir, "kraken_{symbol}_{tf}.csv")
+    doc = ct.grade_claim_file(run, sp, res, method_override=ct.A851A_TIMEGAP_METHOD)
+    t = doc["variants"]["base"]["tests"]["t"]
+    assert t["significance"] == {"method": ct.A851A_TIMEGAP_METHOD}
+    assert doc["method_override"] == ct.A851A_TIMEGAP_METHOD
+    assert t["status"] == "method_not_calibrated"          # no calibration file given
+    with pytest.raises(ValueError, match="method override"):
+        ct.grade_claim_file(run, sp, res, method_override=ct.SIGNIFICANCE_METHOD)
+
+
+def test_calibration_runs_per_signal_and_never_mixes_them():
+    c20 = cal.run_cell(ct.A851A_TIMEGAP_METHOD, "iid", "upper", n_sims=1, period=20)
+    c14 = cal.run_cell(ct.A851A_TIMEGAP_METHOD, "iid", "lower", n_sims=1, period=14)
+    assert c20["signal"] == cal.DONCHIAN and c14["signal"]["params"]["period"] == 14
+    assert cal.summarize(ct.A851A_TIMEGAP_METHOD, [c20, c14])["scope"]["signal"] is None
+    assert cal.summarize(ct.A851A_TIMEGAP_METHOD, [c14])["scope"]["signal"] == cal.donchian(14)
+
