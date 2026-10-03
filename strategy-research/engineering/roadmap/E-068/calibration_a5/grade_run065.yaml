@@ -1,0 +1,1348 @@
+claim_id: run_065_breakout_continuation
+statement: 'After a daily close in the top 20% of its range, returns over the next
+  1 to 5 days are higher than on other days; after a close in the bottom 20%, they
+  are lower. (Card: "BTC/ETH"; graded variants hold BTCUSD and SOLUSD only.)
+
+  '
+spec_file: engineering\roadmap\E-068\regrade_specs\run_065_breakout_continuation.yaml
+spec_file_sha256: f556704861eb4018b5730f1b157e0371de2c42e70232da9f344d607d95e82079
+spec_hashes:
+  upper_breakout: d04228fa731731381e968e6b87fee3f258aaef3fe59bf1d1fa3bb226309a7861
+  lower_breakout: 9f18bf1fc46888bca8b7d522771844e12fe126d3840257b8d66c6d9ea2bbd0bf
+method_override: null
+n_tests_run: 4
+run_dir: C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\runs\run_065
+graded_variants:
+- base
+- donchian_solusdt_crossasset
+not_graded_variants:
+- donchian_period_14_reactive (no passed calibration for its signal)
+variants:
+  base:
+    symbols:
+    - BTCUSD
+    signal:
+      class: DonchianBreakoutComponent
+      params:
+        period: 20
+        scaling_factor: 20.0
+    windows:
+    - BTCUSD/2022-01
+    - BTCUSD/2022-05
+    - BTCUSD/2022-09
+    - BTCUSD/2023-01
+    - BTCUSD/2023-05
+    - BTCUSD/2023-09
+    tests:
+      upper_breakout:
+        spec_hash: d04228fa731731381e968e6b87fee3f258aaef3fe59bf1d1fa3bb226309a7861
+        status: inconclusive
+        reasons:
+        - 'h=1: right direction, p 0.5355 >= 0.05'
+        - 'h=1: same sign in 3 windows (need 4)'
+        - 'h=2: right direction, p 0.6124 >= 0.05'
+        - 'h=2: same sign in 2 windows (need 4)'
+        - 'h=3: right direction, p 0.6863 >= 0.05'
+        - 'h=3: same sign in 3 windows (need 4)'
+        - 'h=4: right direction, p 0.7552 >= 0.05'
+        - 'h=4: same sign in 2 windows (need 4)'
+        - 'h=5: right direction, p 0.7493 >= 0.05'
+        - 'h=5: same sign in 2 windows (need 4)'
+        warnings: []
+        statistic: mean_diff
+        direction: greater
+        significance:
+          method: block_permutation_v1
+          n_resamples: 1000
+          seed: 20261003
+        horizons:
+          1:
+            value: 0.0015040524398799394
+            oriented: 0.0015040524398799394
+            oriented_opposite: -0.0015040524398799394
+            p_value: 0.5354645354645354
+            p_value_opposite: 0.46553446553446554
+            n_events: 241
+            n_windows_with_events: 6
+            n_blocks: 241
+            n_eras_with_events: 1
+            per_window:
+              BTCUSD/2022-01:
+                value: 0.0012173962855088572
+                oriented: 0.0012173962855088572
+              BTCUSD/2022-05:
+                value: -0.0023545605733712805
+                oriented: -0.0023545605733712805
+              BTCUSD/2022-09:
+                value: -0.003681289378936036
+                oriented: -0.003681289378936036
+              BTCUSD/2023-01:
+                value: 0.0011661089842838826
+                oriented: 0.0011661089842838826
+              BTCUSD/2023-05:
+                value: 0.003682482850053584
+                oriented: 0.003682482850053584
+              BTCUSD/2023-09:
+                value: -0.004369253296760916
+                oriented: -0.004369253296760916
+            per_era:
+              era_2019_2023_full_feed:
+                value: 0.0015040524398799394
+                oriented: 0.0015040524398799394
+            n_null: 1000
+          2:
+            value: 0.0025146834665024194
+            oriented: 0.0025146834665024194
+            oriented_opposite: -0.0025146834665024194
+            p_value: 0.6123876123876124
+            p_value_opposite: 0.3886113886113886
+            n_events: 241
+            n_windows_with_events: 6
+            n_blocks: 120
+            n_eras_with_events: 1
+            per_window:
+              BTCUSD/2022-01:
+                value: -0.0058099177542835076
+                oriented: -0.0058099177542835076
+              BTCUSD/2022-05:
+                value: -0.002634448138034033
+                oriented: -0.002634448138034033
+              BTCUSD/2022-09:
+                value: -0.014470450293001605
+                oriented: -0.014470450293001605
+              BTCUSD/2023-01:
+                value: 0.0024042028461822296
+                oriented: 0.0024042028461822296
+              BTCUSD/2023-05:
+                value: 0.007214468971981402
+                oriented: 0.007214468971981402
+              BTCUSD/2023-09:
+                value: -0.0019605350345013395
+                oriented: -0.0019605350345013395
+            per_era:
+              era_2019_2023_full_feed:
+                value: 0.0025146834665024194
+                oriented: 0.0025146834665024194
+            n_null: 1000
+          3:
+            value: 0.002296100702525756
+            oriented: 0.002296100702525756
+            oriented_opposite: -0.002296100702525756
+            p_value: 0.6863136863136863
+            p_value_opposite: 0.3146853146853147
+            n_events: 241
+            n_windows_with_events: 6
+            n_blocks: 78
+            n_eras_with_events: 1
+            per_window:
+              BTCUSD/2022-01:
+                value: -0.010879465605966835
+                oriented: -0.010879465605966835
+              BTCUSD/2022-05:
+                value: -0.008131836371158427
+                oriented: -0.008131836371158427
+              BTCUSD/2022-09:
+                value: -0.027583863172922836
+                oriented: -0.027583863172922836
+              BTCUSD/2023-01:
+                value: 0.0009415328327116775
+                oriented: 0.0009415328327116775
+              BTCUSD/2023-05:
+                value: 0.007135603352540705
+                oriented: 0.007135603352540705
+              BTCUSD/2023-09:
+                value: 0.002660004683118595
+                oriented: 0.002660004683118595
+            per_era:
+              era_2019_2023_full_feed:
+                value: 0.002296100702525756
+                oriented: 0.002296100702525756
+            n_null: 1000
+          4:
+            value: 0.0012047619273389053
+            oriented: 0.0012047619273389053
+            oriented_opposite: -0.0012047619273389053
+            p_value: 0.7552447552447552
+            p_value_opposite: 0.24575424575424576
+            n_events: 241
+            n_windows_with_events: 6
+            n_blocks: 58
+            n_eras_with_events: 1
+            per_window:
+              BTCUSD/2022-01:
+                value: -0.01971790830452802
+                oriented: -0.01971790830452802
+              BTCUSD/2022-05:
+                value: -0.018340040736786672
+                oriented: -0.018340040736786672
+              BTCUSD/2022-09:
+                value: -0.03638013426175798
+                oriented: -0.03638013426175798
+              BTCUSD/2023-01:
+                value: -0.0008286624691187586
+                oriented: -0.0008286624691187586
+              BTCUSD/2023-05:
+                value: 0.008507685731797669
+                oriented: 0.008507685731797669
+              BTCUSD/2023-09:
+                value: 0.0033976722882621616
+                oriented: 0.0033976722882621616
+            per_era:
+              era_2019_2023_full_feed:
+                value: 0.0012047619273389053
+                oriented: 0.0012047619273389053
+            n_null: 1000
+          5:
+            value: 0.001824106733049385
+            oriented: 0.001824106733049385
+            oriented_opposite: -0.001824106733049385
+            p_value: 0.7492507492507493
+            p_value_opposite: 0.2517482517482518
+            n_events: 241
+            n_windows_with_events: 6
+            n_blocks: 47
+            n_eras_with_events: 1
+            per_window:
+              BTCUSD/2022-01:
+                value: -0.02484432499087728
+                oriented: -0.02484432499087728
+              BTCUSD/2022-05:
+                value: -0.01722876622122394
+                oriented: -0.01722876622122394
+              BTCUSD/2022-09:
+                value: -0.040655050779277196
+                oriented: -0.040655050779277196
+              BTCUSD/2023-01:
+                value: -0.007099738598674757
+                oriented: -0.007099738598674757
+              BTCUSD/2023-05:
+                value: 0.010645812258020951
+                oriented: 0.010645812258020951
+              BTCUSD/2023-09:
+                value: 0.0034442646257061907
+                oriented: 0.0034442646257061907
+            per_era:
+              era_2019_2023_full_feed:
+                value: 0.001824106733049385
+                oriented: 0.001824106733049385
+            n_null: 1000
+        verdict_statistic: mean_diff (greater)
+        forecast_check_max_abs_diff:
+          BTCUSD/2022-01: 4.980585774916335e-07
+          BTCUSD/2022-05: 4.6954154164779993e-07
+          BTCUSD/2022-09: 4.854229249673381e-07
+          BTCUSD/2023-01: 4.8302750599305e-07
+          BTCUSD/2023-05: 4.9725625128616e-07
+          BTCUSD/2023-09: 4.992635744827112e-07
+        calibration_file: engineering\roadmap\E-068\calibration_a5\summary_block_permutation_v1_onesided.yaml
+        calibration_status: conservative
+        calibration_conservative_cells: &id001
+          iid_lower_opposite:
+          - 1
+          iid_upper_claimed:
+          - 2
+          switching_lower_opposite:
+          - 4
+          switching_upper_opposite:
+          - 2
+      lower_breakout:
+        spec_hash: 9f18bf1fc46888bca8b7d522771844e12fe126d3840257b8d66c6d9ea2bbd0bf
+        status: inconclusive
+        reasons:
+        - 'h=1: right direction, p 0.5524 >= 0.05'
+        - 'h=1: same sign in 3 windows (need 4)'
+        - 'h=2: right direction, p 0.5165 >= 0.05'
+        - 'h=2: same sign in 2 windows (need 4)'
+        - 'h=3: right direction, p 0.4575 >= 0.05'
+        - 'h=3: same sign in 2 windows (need 4)'
+        - 'h=4: right direction, p 0.5465 >= 0.05'
+        - 'h=4: same sign in 2 windows (need 4)'
+        - 'h=5: wrong direction or zero, not significant (value -0.00077446)'
+        - 'h=5: same sign in 2 windows (need 4)'
+        warnings: []
+        statistic: mean_diff
+        direction: less
+        significance:
+          method: block_permutation_v1
+          n_resamples: 1000
+          seed: 20261003
+        horizons:
+          1:
+            value: -0.0004939689608714547
+            oriented: 0.0004939689608714547
+            oriented_opposite: -0.0004939689608714547
+            p_value: 0.5524475524475524
+            p_value_opposite: 0.4485514485514486
+            n_events: 239
+            n_windows_with_events: 6
+            n_blocks: 239
+            n_eras_with_events: 1
+            per_window:
+              BTCUSD/2022-01:
+                value: 0.00614400848514281
+                oriented: -0.00614400848514281
+              BTCUSD/2022-05:
+                value: -0.002031881245966469
+                oriented: 0.002031881245966469
+              BTCUSD/2022-09:
+                value: 0.006984903158615512
+                oriented: -0.006984903158615512
+              BTCUSD/2023-01:
+                value: -0.004946758002217146
+                oriented: 0.004946758002217146
+              BTCUSD/2023-05:
+                value: 0.0019676062751192614
+                oriented: -0.0019676062751192614
+              BTCUSD/2023-09:
+                value: -0.003098140144023823
+                oriented: 0.003098140144023823
+            per_era:
+              era_2019_2023_full_feed:
+                value: -0.0004939689608714547
+                oriented: 0.0004939689608714547
+            n_null: 1000
+          2:
+            value: -0.0015590103888497206
+            oriented: 0.0015590103888497206
+            oriented_opposite: -0.0015590103888497206
+            p_value: 0.5164835164835165
+            p_value_opposite: 0.48451548451548454
+            n_events: 236
+            n_windows_with_events: 6
+            n_blocks: 117
+            n_eras_with_events: 1
+            per_window:
+              BTCUSD/2022-01:
+                value: 0.007730744882272458
+                oriented: -0.007730744882272458
+              BTCUSD/2022-05:
+                value: -0.010884720010774111
+                oriented: 0.010884720010774111
+              BTCUSD/2022-09:
+                value: 0.016904805415709816
+                oriented: -0.016904805415709816
+              BTCUSD/2023-01:
+                value: 0.004558410495881897
+                oriented: -0.004558410495881897
+              BTCUSD/2023-05:
+                value: 0.0008715191444960426
+                oriented: -0.0008715191444960426
+              BTCUSD/2023-09:
+                value: -0.006154785044244832
+                oriented: 0.006154785044244832
+            per_era:
+              era_2019_2023_full_feed:
+                value: -0.0015590103888497206
+                oriented: 0.0015590103888497206
+            n_null: 1000
+          3:
+            value: -0.00297885241838074
+            oriented: 0.00297885241838074
+            oriented_opposite: -0.00297885241838074
+            p_value: 0.45754245754245754
+            p_value_opposite: 0.5434565434565435
+            n_events: 234
+            n_windows_with_events: 6
+            n_blocks: 77
+            n_eras_with_events: 1
+            per_window:
+              BTCUSD/2022-01:
+                value: 0.003442552528733683
+                oriented: -0.003442552528733683
+              BTCUSD/2022-05:
+                value: -0.011398464489781537
+                oriented: 0.011398464489781537
+              BTCUSD/2022-09:
+                value: 0.02002830922201844
+                oriented: -0.02002830922201844
+              BTCUSD/2023-01:
+                value: 0.013438278061534996
+                oriented: -0.013438278061534996
+              BTCUSD/2023-05:
+                value: 0.000776634940177845
+                oriented: -0.000776634940177845
+              BTCUSD/2023-09:
+                value: -0.008238155760543441
+                oriented: 0.008238155760543441
+            per_era:
+              era_2019_2023_full_feed:
+                value: -0.00297885241838074
+                oriented: 0.00297885241838074
+            n_null: 1000
+          4:
+            value: -0.0021350548148020678
+            oriented: 0.0021350548148020678
+            oriented_opposite: -0.0021350548148020678
+            p_value: 0.5464535464535465
+            p_value_opposite: 0.45454545454545453
+            n_events: 231
+            n_windows_with_events: 6
+            n_blocks: 56
+            n_eras_with_events: 1
+            per_window:
+              BTCUSD/2022-01:
+                value: 0.0012627367144032605
+                oriented: -0.0012627367144032605
+              BTCUSD/2022-05:
+                value: -0.012199674789538383
+                oriented: 0.012199674789538383
+              BTCUSD/2022-09:
+                value: 0.029287416007288833
+                oriented: -0.029287416007288833
+              BTCUSD/2023-01:
+                value: 0.02389190064328497
+                oriented: -0.02389190064328497
+              BTCUSD/2023-05:
+                value: 0.004237105852991897
+                oriented: -0.004237105852991897
+              BTCUSD/2023-09:
+                value: -0.007110520358123876
+                oriented: 0.007110520358123876
+            per_era:
+              era_2019_2023_full_feed:
+                value: -0.0021350548148020678
+                oriented: 0.0021350548148020678
+            n_null: 1000
+          5:
+            value: 0.0007744603708217856
+            oriented: -0.0007744603708217856
+            oriented_opposite: 0.0007744603708217856
+            p_value: 0.6733266733266733
+            p_value_opposite: 0.3276723276723277
+            n_events: 227
+            n_windows_with_events: 6
+            n_blocks: 44
+            n_eras_with_events: 1
+            per_window:
+              BTCUSD/2022-01:
+                value: 0.00564300327181182
+                oriented: -0.00564300327181182
+              BTCUSD/2022-05:
+                value: -0.006537861975965554
+                oriented: 0.006537861975965554
+              BTCUSD/2022-09:
+                value: 0.03474371468398732
+                oriented: -0.03474371468398732
+              BTCUSD/2023-01:
+                value: 0.036765919669087
+                oriented: -0.036765919669087
+              BTCUSD/2023-05:
+                value: 0.009091203676648736
+                oriented: -0.009091203676648736
+              BTCUSD/2023-09:
+                value: -0.01204024898660394
+                oriented: 0.01204024898660394
+            per_era:
+              era_2019_2023_full_feed:
+                value: 0.0007744603708217856
+                oriented: -0.0007744603708217856
+            n_null: 1000
+        verdict_statistic: mean_diff (less)
+        forecast_check_max_abs_diff:
+          BTCUSD/2022-01: 4.980585774916335e-07
+          BTCUSD/2022-05: 4.6954154164779993e-07
+          BTCUSD/2022-09: 4.854229249673381e-07
+          BTCUSD/2023-01: 4.8302750599305e-07
+          BTCUSD/2023-05: 4.9725625128616e-07
+          BTCUSD/2023-09: 4.992635744827112e-07
+        calibration_file: engineering\roadmap\E-068\calibration_a5\summary_block_permutation_v1_onesided.yaml
+        calibration_status: conservative
+        calibration_conservative_cells: *id001
+    claim_status: inconclusive
+    graded: true
+  donchian_period_14_reactive:
+    symbols:
+    - BTCUSD
+    signal:
+      class: DonchianBreakoutComponent
+      params:
+        period: 14
+        scaling_factor: 20.0
+    windows:
+    - BTCUSD/2022-01
+    - BTCUSD/2022-05
+    - BTCUSD/2022-09
+    - BTCUSD/2023-01
+    - BTCUSD/2023-05
+    - BTCUSD/2023-09
+    tests:
+      upper_breakout:
+        spec_hash: d04228fa731731381e968e6b87fee3f258aaef3fe59bf1d1fa3bb226309a7861
+        status: method_not_calibrated
+        reasons:
+        - 'verdict: method not calibrated (no passed calibration gate for block_permutation_v1);
+          effect sizes only'
+        warnings: []
+        statistic: mean_diff
+        direction: greater
+        significance:
+          method: block_permutation_v1
+          n_resamples: 1000
+          seed: 20261003
+        horizons:
+          1:
+            value: 0.0011334842172336609
+            oriented: 0.0011334842172336609
+            oriented_opposite: -0.0011334842172336609
+            p_value: null
+            p_value_opposite: null
+            n_events: 227
+            n_windows_with_events: 6
+            n_blocks: 227
+            n_eras_with_events: 1
+            per_window:
+              BTCUSD/2022-01:
+                value: -0.0008340724065073416
+                oriented: -0.0008340724065073416
+              BTCUSD/2022-05:
+                value: -0.0017172012309428107
+                oriented: -0.0017172012309428107
+              BTCUSD/2022-09:
+                value: -0.0028162234912514125
+                oriented: -0.0028162234912514125
+              BTCUSD/2023-01:
+                value: 0.0013189950823803889
+                oriented: 0.0013189950823803889
+              BTCUSD/2023-05:
+                value: 0.0037991847709798517
+                oriented: 0.0037991847709798517
+              BTCUSD/2023-09:
+                value: -0.005127940427431539
+                oriented: -0.005127940427431539
+            per_era:
+              era_2019_2023_full_feed:
+                value: 0.0011334842172336609
+                oriented: 0.0011334842172336609
+          2:
+            value: 0.0025059711498770995
+            oriented: 0.0025059711498770995
+            oriented_opposite: -0.0025059711498770995
+            p_value: null
+            p_value_opposite: null
+            n_events: 227
+            n_windows_with_events: 6
+            n_blocks: 112
+            n_eras_with_events: 1
+            per_window:
+              BTCUSD/2022-01:
+                value: -0.008968953814633371
+                oriented: -0.008968953814633371
+              BTCUSD/2022-05:
+                value: -0.002284453443272336
+                oriented: -0.002284453443272336
+              BTCUSD/2022-09:
+                value: -0.011425056053818106
+                oriented: -0.011425056053818106
+              BTCUSD/2023-01:
+                value: 0.006065078298551791
+                oriented: 0.006065078298551791
+              BTCUSD/2023-05:
+                value: 0.007749896486266656
+                oriented: 0.007749896486266656
+              BTCUSD/2023-09:
+                value: -0.0038451331546870858
+                oriented: -0.0038451331546870858
+            per_era:
+              era_2019_2023_full_feed:
+                value: 0.0025059711498770995
+                oriented: 0.0025059711498770995
+          3:
+            value: 0.002243602707829217
+            oriented: 0.002243602707829217
+            oriented_opposite: -0.002243602707829217
+            p_value: null
+            p_value_opposite: null
+            n_events: 227
+            n_windows_with_events: 6
+            n_blocks: 73
+            n_eras_with_events: 1
+            per_window:
+              BTCUSD/2022-01:
+                value: -0.0121925024069156
+                oriented: -0.0121925024069156
+              BTCUSD/2022-05:
+                value: -0.009625078379070973
+                oriented: -0.009625078379070973
+              BTCUSD/2022-09:
+                value: -0.02412895693799717
+                oriented: -0.02412895693799717
+              BTCUSD/2023-01:
+                value: 0.008203994309390823
+                oriented: 0.008203994309390823
+              BTCUSD/2023-05:
+                value: 0.0032432874573931885
+                oriented: 0.0032432874573931885
+              BTCUSD/2023-09:
+                value: 0.0007159318631095209
+                oriented: 0.0007159318631095209
+            per_era:
+              era_2019_2023_full_feed:
+                value: 0.002243602707829217
+                oriented: 0.002243602707829217
+          4:
+            value: 0.0009929605039439569
+            oriented: 0.0009929605039439569
+            oriented_opposite: -0.0009929605039439569
+            p_value: null
+            p_value_opposite: null
+            n_events: 227
+            n_windows_with_events: 6
+            n_blocks: 54
+            n_eras_with_events: 1
+            per_window:
+              BTCUSD/2022-01:
+                value: -0.016514156449090496
+                oriented: -0.016514156449090496
+              BTCUSD/2022-05:
+                value: -0.021260784014380446
+                oriented: -0.021260784014380446
+              BTCUSD/2022-09:
+                value: -0.03446254472904901
+                oriented: -0.03446254472904901
+              BTCUSD/2023-01:
+                value: 0.008801957554633283
+                oriented: 0.008801957554633283
+              BTCUSD/2023-05:
+                value: 0.004006795041594063
+                oriented: 0.004006795041594063
+              BTCUSD/2023-09:
+                value: -0.000995546580597497
+                oriented: -0.000995546580597497
+            per_era:
+              era_2019_2023_full_feed:
+                value: 0.0009929605039439569
+                oriented: 0.0009929605039439569
+          5:
+            value: 0.0016345712230268125
+            oriented: 0.0016345712230268125
+            oriented_opposite: -0.0016345712230268125
+            p_value: null
+            p_value_opposite: null
+            n_events: 226
+            n_windows_with_events: 6
+            n_blocks: 43
+            n_eras_with_events: 1
+            per_window:
+              BTCUSD/2022-01:
+                value: -0.01880191804269832
+                oriented: -0.01880191804269832
+              BTCUSD/2022-05:
+                value: -0.023337503120285402
+                oriented: -0.023337503120285402
+              BTCUSD/2022-09:
+                value: -0.038119858343396804
+                oriented: -0.038119858343396804
+              BTCUSD/2023-01:
+                value: 0.005362820695850257
+                oriented: 0.005362820695850257
+              BTCUSD/2023-05:
+                value: 0.002465572461810642
+                oriented: 0.002465572461810642
+              BTCUSD/2023-09:
+                value: 0.0008214053676146964
+                oriented: 0.0008214053676146964
+            per_era:
+              era_2019_2023_full_feed:
+                value: 0.0016345712230268125
+                oriented: 0.0016345712230268125
+        calibration_file: null
+        calibration_status: null
+        calibration_conservative_cells: null
+      lower_breakout:
+        spec_hash: 9f18bf1fc46888bca8b7d522771844e12fe126d3840257b8d66c6d9ea2bbd0bf
+        status: method_not_calibrated
+        reasons:
+        - 'verdict: method not calibrated (no passed calibration gate for block_permutation_v1);
+          effect sizes only'
+        warnings: []
+        statistic: mean_diff
+        direction: less
+        significance:
+          method: block_permutation_v1
+          n_resamples: 1000
+          seed: 20261003
+        horizons:
+          1:
+            value: -0.0009407617198654804
+            oriented: 0.0009407617198654804
+            oriented_opposite: -0.0009407617198654804
+            p_value: null
+            p_value_opposite: null
+            n_events: 228
+            n_windows_with_events: 6
+            n_blocks: 228
+            n_eras_with_events: 1
+            per_window:
+              BTCUSD/2022-01:
+                value: 0.0024674481844718607
+                oriented: -0.0024674481844718607
+              BTCUSD/2022-05:
+                value: -0.0016791580747374914
+                oriented: 0.0016791580747374914
+              BTCUSD/2022-09:
+                value: 0.0022464527027538854
+                oriented: -0.0022464527027538854
+              BTCUSD/2023-01:
+                value: -0.005476136159612498
+                oriented: 0.005476136159612498
+              BTCUSD/2023-05:
+                value: 0.0016633088022963648
+                oriented: -0.0016633088022963648
+              BTCUSD/2023-09:
+                value: 0.0037164879646186103
+                oriented: -0.0037164879646186103
+            per_era:
+              era_2019_2023_full_feed:
+                value: -0.0009407617198654804
+                oriented: 0.0009407617198654804
+          2:
+            value: -0.001775781493216868
+            oriented: 0.001775781493216868
+            oriented_opposite: -0.001775781493216868
+            p_value: null
+            p_value_opposite: null
+            n_events: 226
+            n_windows_with_events: 6
+            n_blocks: 112
+            n_eras_with_events: 1
+            per_window:
+              BTCUSD/2022-01:
+                value: 0.0008538002491025351
+                oriented: -0.0008538002491025351
+              BTCUSD/2022-05:
+                value: -0.00911731162170978
+                oriented: 0.00911731162170978
+              BTCUSD/2022-09:
+                value: 0.014324780141081529
+                oriented: -0.014324780141081529
+              BTCUSD/2023-01:
+                value: 0.001659173703274449
+                oriented: -0.001659173703274449
+              BTCUSD/2023-05:
+                value: -0.0012292966433755665
+                oriented: 0.0012292966433755665
+              BTCUSD/2023-09:
+                value: 0.004481867527687823
+                oriented: -0.004481867527687823
+            per_era:
+              era_2019_2023_full_feed:
+                value: -0.001775781493216868
+                oriented: 0.001775781493216868
+          3:
+            value: -0.0019871100517511726
+            oriented: 0.0019871100517511726
+            oriented_opposite: -0.0019871100517511726
+            p_value: null
+            p_value_opposite: null
+            n_events: 225
+            n_windows_with_events: 6
+            n_blocks: 73
+            n_eras_with_events: 1
+            per_window:
+              BTCUSD/2022-01:
+                value: 0.0013222984972418236
+                oriented: -0.0013222984972418236
+              BTCUSD/2022-05:
+                value: -0.008394443404199658
+                oriented: 0.008394443404199658
+              BTCUSD/2022-09:
+                value: 0.016062771977897065
+                oriented: -0.016062771977897065
+              BTCUSD/2023-01:
+                value: 0.0040033361902727885
+                oriented: -0.0040033361902727885
+              BTCUSD/2023-05:
+                value: -0.0009478864570529439
+                oriented: 0.0009478864570529439
+              BTCUSD/2023-09:
+                value: 0.007502249792500524
+                oriented: -0.007502249792500524
+            per_era:
+              era_2019_2023_full_feed:
+                value: -0.0019871100517511726
+                oriented: 0.0019871100517511726
+          4:
+            value: -0.0006562711082844076
+            oriented: 0.0006562711082844076
+            oriented_opposite: -0.0006562711082844076
+            p_value: null
+            p_value_opposite: null
+            n_events: 222
+            n_windows_with_events: 6
+            n_blocks: 53
+            n_eras_with_events: 1
+            per_window:
+              BTCUSD/2022-01:
+                value: -0.0005312092505662452
+                oriented: 0.0005312092505662452
+              BTCUSD/2022-05:
+                value: -0.009443375167583349
+                oriented: 0.009443375167583349
+              BTCUSD/2022-09:
+                value: 0.0234208845291075
+                oriented: -0.0234208845291075
+              BTCUSD/2023-01:
+                value: 0.012977474734720055
+                oriented: -0.012977474734720055
+              BTCUSD/2023-05:
+                value: 0.001921374926007205
+                oriented: -0.001921374926007205
+              BTCUSD/2023-09:
+                value: 0.012563170040845114
+                oriented: -0.012563170040845114
+            per_era:
+              era_2019_2023_full_feed:
+                value: -0.0006562711082844076
+                oriented: 0.0006562711082844076
+          5:
+            value: 0.0022854853590343607
+            oriented: -0.0022854853590343607
+            oriented_opposite: 0.0022854853590343607
+            p_value: null
+            p_value_opposite: null
+            n_events: 218
+            n_windows_with_events: 6
+            n_blocks: 42
+            n_eras_with_events: 1
+            per_window:
+              BTCUSD/2022-01:
+                value: 0.005890875369720692
+                oriented: -0.005890875369720692
+              BTCUSD/2022-05:
+                value: -0.00741219755171876
+                oriented: 0.00741219755171876
+              BTCUSD/2022-09:
+                value: 0.029323663723930127
+                oriented: -0.029323663723930127
+              BTCUSD/2023-01:
+                value: 0.0249132867731762
+                oriented: -0.0249132867731762
+              BTCUSD/2023-05:
+                value: 0.004055936671761382
+                oriented: -0.004055936671761382
+              BTCUSD/2023-09:
+                value: 0.011772214041218181
+                oriented: -0.011772214041218181
+            per_era:
+              era_2019_2023_full_feed:
+                value: 0.0022854853590343607
+                oriented: -0.0022854853590343607
+        calibration_file: null
+        calibration_status: null
+        calibration_conservative_cells: null
+    claim_status: method_not_calibrated
+    graded: false
+  donchian_solusdt_crossasset:
+    symbols:
+    - SOLUSD
+    signal:
+      class: DonchianBreakoutComponent
+      params:
+        period: 20
+        scaling_factor: 20.0
+    windows:
+    - SOLUSD/2022-01
+    - SOLUSD/2022-05
+    - SOLUSD/2022-09
+    - SOLUSD/2023-01
+    - SOLUSD/2023-05
+    - SOLUSD/2023-09
+    tests:
+      upper_breakout:
+        spec_hash: d04228fa731731381e968e6b87fee3f258aaef3fe59bf1d1fa3bb226309a7861
+        status: inconclusive
+        reasons:
+        - 'h=4: right direction, p 0.05994 >= 0.05'
+        - 'h=5: right direction, p 0.05694 >= 0.05'
+        warnings: []
+        statistic: mean_diff
+        direction: greater
+        significance:
+          method: block_permutation_v1
+          n_resamples: 1000
+          seed: 20261003
+        horizons:
+          1:
+            value: 0.013386992637814458
+            oriented: 0.013386992637814458
+            oriented_opposite: -0.013386992637814458
+            p_value: 0.01898101898101898
+            p_value_opposite: 0.9820179820179821
+            n_events: 172
+            n_windows_with_events: 6
+            n_blocks: 172
+            n_eras_with_events: 1
+            per_window:
+              SOLUSD/2022-01:
+                value: 0.024769610444018198
+                oriented: 0.024769610444018198
+              SOLUSD/2022-05:
+                value: 0.0012929546066981264
+                oriented: 0.0012929546066981264
+              SOLUSD/2022-09:
+                value: -0.00789766207030584
+                oriented: -0.00789766207030584
+              SOLUSD/2023-01:
+                value: 0.004420853699348974
+                oriented: 0.004420853699348974
+              SOLUSD/2023-05:
+                value: 0.009576356545814457
+                oriented: 0.009576356545814457
+              SOLUSD/2023-09:
+                value: 0.010932389580237702
+                oriented: 0.010932389580237702
+            per_era:
+              era_2019_2023_full_feed:
+                value: 0.013386992637814458
+                oriented: 0.013386992637814458
+            n_null: 1000
+          2:
+            value: 0.02375951112169685
+            oriented: 0.02375951112169685
+            oriented_opposite: -0.02375951112169685
+            p_value: 0.03796203796203796
+            p_value_opposite: 0.9630369630369631
+            n_events: 172
+            n_windows_with_events: 6
+            n_blocks: 86
+            n_eras_with_events: 1
+            per_window:
+              SOLUSD/2022-01:
+                value: 0.032418983772958765
+                oriented: 0.032418983772958765
+              SOLUSD/2022-05:
+                value: 0.01318087555770696
+                oriented: 0.01318087555770696
+              SOLUSD/2022-09:
+                value: -0.03542862627719948
+                oriented: -0.03542862627719948
+              SOLUSD/2023-01:
+                value: 0.005487170837611402
+                oriented: 0.005487170837611402
+              SOLUSD/2023-05:
+                value: 0.023649774425227803
+                oriented: 0.023649774425227803
+              SOLUSD/2023-09:
+                value: 0.019105570583540125
+                oriented: 0.019105570583540125
+            per_era:
+              era_2019_2023_full_feed:
+                value: 0.02375951112169685
+                oriented: 0.02375951112169685
+            n_null: 1000
+          3:
+            value: 0.03549318665971695
+            oriented: 0.03549318665971695
+            oriented_opposite: -0.03549318665971695
+            p_value: 0.03796203796203796
+            p_value_opposite: 0.9630369630369631
+            n_events: 172
+            n_windows_with_events: 6
+            n_blocks: 54
+            n_eras_with_events: 1
+            per_window:
+              SOLUSD/2022-01:
+                value: 0.053873897350279226
+                oriented: 0.053873897350279226
+              SOLUSD/2022-05:
+                value: -0.00747523271679585
+                oriented: -0.00747523271679585
+              SOLUSD/2022-09:
+                value: -0.05437180182280905
+                oriented: -0.05437180182280905
+              SOLUSD/2023-01:
+                value: 0.015278665951876835
+                oriented: 0.015278665951876835
+              SOLUSD/2023-05:
+                value: 0.02659893384212082
+                oriented: 0.02659893384212082
+              SOLUSD/2023-09:
+                value: 0.03820328820518363
+                oriented: 0.03820328820518363
+            per_era:
+              era_2019_2023_full_feed:
+                value: 0.03549318665971695
+                oriented: 0.03549318665971695
+            n_null: 1000
+          4:
+            value: 0.043405501064458125
+            oriented: 0.043405501064458125
+            oriented_opposite: -0.043405501064458125
+            p_value: 0.059940059940059943
+            p_value_opposite: 0.9410589410589411
+            n_events: 172
+            n_windows_with_events: 6
+            n_blocks: 41
+            n_eras_with_events: 1
+            per_window:
+              SOLUSD/2022-01:
+                value: 0.06547592697036897
+                oriented: 0.06547592697036897
+              SOLUSD/2022-05:
+                value: -0.04150636361913361
+                oriented: -0.04150636361913361
+              SOLUSD/2022-09:
+                value: -0.07308341804271956
+                oriented: -0.07308341804271956
+              SOLUSD/2023-01:
+                value: 0.02244831881714966
+                oriented: 0.02244831881714966
+              SOLUSD/2023-05:
+                value: 0.032918459899679425
+                oriented: 0.032918459899679425
+              SOLUSD/2023-09:
+                value: 0.049440218591899794
+                oriented: 0.049440218591899794
+            per_era:
+              era_2019_2023_full_feed:
+                value: 0.043405501064458125
+                oriented: 0.043405501064458125
+            n_null: 1000
+          5:
+            value: 0.05270558786818419
+            oriented: 0.05270558786818419
+            oriented_opposite: -0.05270558786818419
+            p_value: 0.056943056943056944
+            p_value_opposite: 0.9440559440559441
+            n_events: 172
+            n_windows_with_events: 6
+            n_blocks: 31
+            n_eras_with_events: 1
+            per_window:
+              SOLUSD/2022-01:
+                value: 0.07890201907879044
+                oriented: 0.07890201907879044
+              SOLUSD/2022-05:
+                value: -0.05955674967645008
+                oriented: -0.05955674967645008
+              SOLUSD/2022-09:
+                value: -0.08748315868564345
+                oriented: -0.08748315868564345
+              SOLUSD/2023-01:
+                value: 0.028869220283742742
+                oriented: 0.028869220283742742
+              SOLUSD/2023-05:
+                value: 0.03902446086101719
+                oriented: 0.03902446086101719
+              SOLUSD/2023-09:
+                value: 0.058898101890455995
+                oriented: 0.058898101890455995
+            per_era:
+              era_2019_2023_full_feed:
+                value: 0.05270558786818419
+                oriented: 0.05270558786818419
+            n_null: 1000
+        verdict_statistic: mean_diff (greater)
+        forecast_check_max_abs_diff:
+          SOLUSD/2022-01: 4.988001425232369e-07
+          SOLUSD/2022-05: 4.985337254126421e-07
+          SOLUSD/2022-09: 4.964028894605121e-07
+          SOLUSD/2023-01: 4.933586366107079e-07
+          SOLUSD/2023-05: 4.936708766223319e-07
+          SOLUSD/2023-09: 4.957789652149103e-07
+        calibration_file: engineering\roadmap\E-068\calibration_a5\summary_block_permutation_v1_onesided.yaml
+        calibration_status: conservative
+        calibration_conservative_cells: *id001
+      lower_breakout:
+        spec_hash: 9f18bf1fc46888bca8b7d522771844e12fe126d3840257b8d66c6d9ea2bbd0bf
+        status: inconclusive
+        reasons:
+        - 'h=1: right direction, p 0.3137 >= 0.05'
+        - 'h=2: right direction, p 0.1778 >= 0.05'
+        - 'h=3: right direction, p 0.1638 >= 0.05'
+        - 'h=4: right direction, p 0.1489 >= 0.05'
+        - 'h=4: same sign in 3 windows (need 4)'
+        - 'h=5: right direction, p 0.2118 >= 0.05'
+        - 'h=5: same sign in 2 windows (need 4)'
+        warnings: []
+        statistic: mean_diff
+        direction: less
+        significance:
+          method: block_permutation_v1
+          n_resamples: 1000
+          seed: 20261003
+        horizons:
+          1:
+            value: -0.0068313356658216105
+            oriented: 0.0068313356658216105
+            oriented_opposite: -0.0068313356658216105
+            p_value: 0.31368631368631367
+            p_value_opposite: 0.6873126873126874
+            n_events: 256
+            n_windows_with_events: 6
+            n_blocks: 256
+            n_eras_with_events: 1
+            per_window:
+              SOLUSD/2022-01:
+                value: 0.007154313279485989
+                oriented: -0.007154313279485989
+              SOLUSD/2022-05:
+                value: 0.0028432752863049634
+                oriented: -0.0028432752863049634
+              SOLUSD/2022-09:
+                value: -0.004345633980339671
+                oriented: 0.004345633980339671
+              SOLUSD/2023-01:
+                value: -0.002113263055023726
+                oriented: 0.002113263055023726
+              SOLUSD/2023-05:
+                value: -0.004374860405483462
+                oriented: 0.004374860405483462
+              SOLUSD/2023-09:
+                value: -0.014001970827192399
+                oriented: 0.014001970827192399
+            per_era:
+              era_2019_2023_full_feed:
+                value: -0.0068313356658216105
+                oriented: 0.0068313356658216105
+            n_null: 1000
+          2:
+            value: -0.015769801086256058
+            oriented: 0.015769801086256058
+            oriented_opposite: -0.015769801086256058
+            p_value: 0.17782217782217782
+            p_value_opposite: 0.8231768231768232
+            n_events: 252
+            n_windows_with_events: 6
+            n_blocks: 123
+            n_eras_with_events: 1
+            per_window:
+              SOLUSD/2022-01:
+                value: 0.005384321444426428
+                oriented: -0.005384321444426428
+              SOLUSD/2022-05:
+                value: -0.009116811418187269
+                oriented: 0.009116811418187269
+              SOLUSD/2022-09:
+                value: -0.00855368734685304
+                oriented: 0.00855368734685304
+              SOLUSD/2023-01:
+                value: 0.019730702344631805
+                oriented: -0.019730702344631805
+              SOLUSD/2023-05:
+                value: -0.007808144673126312
+                oriented: 0.007808144673126312
+              SOLUSD/2023-09:
+                value: -0.03309943382778291
+                oriented: 0.03309943382778291
+            per_era:
+              era_2019_2023_full_feed:
+                value: -0.015769801086256058
+                oriented: 0.015769801086256058
+            n_null: 1000
+          3:
+            value: -0.0227293194570235
+            oriented: 0.0227293194570235
+            oriented_opposite: -0.0227293194570235
+            p_value: 0.16383616383616384
+            p_value_opposite: 0.8371628371628371
+            n_events: 249
+            n_windows_with_events: 6
+            n_blocks: 80
+            n_eras_with_events: 1
+            per_window:
+              SOLUSD/2022-01:
+                value: -0.00011610116306693709
+                oriented: 0.00011610116306693709
+              SOLUSD/2022-05:
+                value: -0.01838962407748332
+                oriented: 0.01838962407748332
+              SOLUSD/2022-09:
+                value: 0.00012731038792427804
+                oriented: -0.00012731038792427804
+              SOLUSD/2023-01:
+                value: 0.024224990576852
+                oriented: -0.024224990576852
+              SOLUSD/2023-05:
+                value: -0.008427073857699207
+                oriented: 0.008427073857699207
+              SOLUSD/2023-09:
+                value: -0.0451391827223992
+                oriented: 0.0451391827223992
+            per_era:
+              era_2019_2023_full_feed:
+                value: -0.0227293194570235
+                oriented: 0.0227293194570235
+            n_null: 1000
+          4:
+            value: -0.02985601274532338
+            oriented: 0.02985601274532338
+            oriented_opposite: -0.02985601274532338
+            p_value: 0.14885114885114886
+            p_value_opposite: 0.8521478521478522
+            n_events: 245
+            n_windows_with_events: 6
+            n_blocks: 59
+            n_eras_with_events: 1
+            per_window:
+              SOLUSD/2022-01:
+                value: 0.0012137723364951756
+                oriented: -0.0012137723364951756
+              SOLUSD/2022-05:
+                value: -0.03452799337846277
+                oriented: 0.03452799337846277
+              SOLUSD/2022-09:
+                value: 0.0030244982980829234
+                oriented: -0.0030244982980829234
+              SOLUSD/2023-01:
+                value: 0.03138289724601356
+                oriented: -0.03138289724601356
+              SOLUSD/2023-05:
+                value: -0.0034310684353046775
+                oriented: 0.0034310684353046775
+              SOLUSD/2023-09:
+                value: -0.06312712634393688
+                oriented: 0.06312712634393688
+            per_era:
+              era_2019_2023_full_feed:
+                value: -0.02985601274532338
+                oriented: 0.02985601274532338
+            n_null: 1000
+          5:
+            value: -0.03197708845775667
+            oriented: 0.03197708845775667
+            oriented_opposite: -0.03197708845775667
+            p_value: 0.21178821178821178
+            p_value_opposite: 0.7892107892107892
+            n_events: 241
+            n_windows_with_events: 6
+            n_blocks: 46
+            n_eras_with_events: 1
+            per_window:
+              SOLUSD/2022-01:
+                value: 0.010387797707770366
+                oriented: -0.010387797707770366
+              SOLUSD/2022-05:
+                value: -0.04096078006263253
+                oriented: 0.04096078006263253
+              SOLUSD/2022-09:
+                value: 0.017123038448856452
+                oriented: -0.017123038448856452
+              SOLUSD/2023-01:
+                value: 0.03137806521694271
+                oriented: -0.03137806521694271
+              SOLUSD/2023-05:
+                value: 0.001969986825135741
+                oriented: -0.001969986825135741
+              SOLUSD/2023-09:
+                value: -0.08009104978515022
+                oriented: 0.08009104978515022
+            per_era:
+              era_2019_2023_full_feed:
+                value: -0.03197708845775667
+                oriented: 0.03197708845775667
+            n_null: 1000
+        verdict_statistic: mean_diff (less)
+        forecast_check_max_abs_diff:
+          SOLUSD/2022-01: 4.988001425232369e-07
+          SOLUSD/2022-05: 4.985337254126421e-07
+          SOLUSD/2022-09: 4.964028894605121e-07
+          SOLUSD/2023-01: 4.933586366107079e-07
+          SOLUSD/2023-05: 4.936708766223319e-07
+          SOLUSD/2023-09: 4.957789652149103e-07
+        calibration_file: engineering\roadmap\E-068\calibration_a5\summary_block_permutation_v1_onesided.yaml
+        calibration_status: conservative
+        calibration_conservative_cells: *id001
+    claim_status: inconclusive
+    graded: true
+bars_used:
+- variant: base
+  window: BTCUSD/2022-01
+  path: C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\runs\run_065\variants\base\results\20261002T164130Z_1f4decf7\bars.csv
+  bars: 120
+  sha256: 984bbf142f5919e236541d47cea12d831ad2ee6dbfa3b1b452111eb2e4d4cfb9
+- variant: base
+  window: BTCUSD/2022-05
+  path: C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\runs\run_065\variants\base\results\20261002T164134Z_1f4decf7\bars.csv
+  bars: 123
+  sha256: eb12507f04f186e1d415fe63b30334a69362bd3edb09120d5e20eb16a94fca3d
+- variant: base
+  window: BTCUSD/2022-09
+  path: C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\runs\run_065\variants\base\results\20261002T164137Z_1f4decf7\bars.csv
+  bars: 122
+  sha256: 6b5fdecdc9f5ce9fc30a9c650bbeacef3f331a54b1fb4fa8c5d7f554c797d6bd
+- variant: base
+  window: BTCUSD/2023-01
+  path: C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\runs\run_065\variants\base\results\20261002T164139Z_1f4decf7\bars.csv
+  bars: 120
+  sha256: 6a29d1327a04986cafd8cbe62ee527e0c4da28dafc32b3de702b568fc08b0339
+- variant: base
+  window: BTCUSD/2023-05
+  path: C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\runs\run_065\variants\base\results\20261002T164142Z_1f4decf7\bars.csv
+  bars: 123
+  sha256: 69410cbad0b7c8fec6f184d15a5a593a4798fd386cf648f0d5519f7bee1050b4
+- variant: base
+  window: BTCUSD/2023-09
+  path: C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\runs\run_065\variants\base\results\20261002T164145Z_1f4decf7\bars.csv
+  bars: 122
+  sha256: 7ba64afbb29f3d188e97582002768dd6642cf5f26261ca976102632b3f436aa2
+- variant: donchian_period_14_reactive
+  window: BTCUSD/2022-01
+  path: C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\runs\run_065\variants\donchian_period_14_reactive\results\20261002T164154Z_00ab1b3a\bars.csv
+  bars: 120
+  sha256: b74076f81bed241113e621ed9aa02af7f5523a65146204b74e1a3caa2be0ae6a
+- variant: donchian_period_14_reactive
+  window: BTCUSD/2022-05
+  path: C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\runs\run_065\variants\donchian_period_14_reactive\results\20261002T164157Z_00ab1b3a\bars.csv
+  bars: 123
+  sha256: 9f9113cf5d6d094504556d01be1b27e75576f33ba196ec4ded4324d6a59340df
+- variant: donchian_period_14_reactive
+  window: BTCUSD/2022-09
+  path: C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\runs\run_065\variants\donchian_period_14_reactive\results\20261002T164200Z_00ab1b3a\bars.csv
+  bars: 122
+  sha256: a2d7028b101546e2a20d5f059e0746fa3b14d517e2e887a7558624c4c4984c1a
+- variant: donchian_period_14_reactive
+  window: BTCUSD/2023-01
+  path: C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\runs\run_065\variants\donchian_period_14_reactive\results\20261002T164203Z_00ab1b3a\bars.csv
+  bars: 120
+  sha256: 15c3bf31c92d314d11cf6f59cdbb13f51c12be0783180c0fd063823bc333ecae
+- variant: donchian_period_14_reactive
+  window: BTCUSD/2023-05
+  path: C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\runs\run_065\variants\donchian_period_14_reactive\results\20261002T164206Z_00ab1b3a\bars.csv
+  bars: 123
+  sha256: 991589351deeee912eb5341c56d4e767efeeecd8c4994d9a8e49d68e71ff26ef
+- variant: donchian_period_14_reactive
+  window: BTCUSD/2023-09
+  path: C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\runs\run_065\variants\donchian_period_14_reactive\results\20261002T164209Z_00ab1b3a\bars.csv
+  bars: 122
+  sha256: 20191ef23fada3b306b29cfd758a69d03c19d680eabe5c97e638f575f1184783
+- variant: donchian_solusdt_crossasset
+  window: SOLUSD/2022-01
+  path: C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\runs\run_065\variants\donchian_solusdt_crossasset\results\20261002T164218Z_1f4decf7\bars.csv
+  bars: 120
+  sha256: ebe872b1c32efbb74a6e585b75d1acd661a1fe312aa71fb58606b17304e2e2fb
+- variant: donchian_solusdt_crossasset
+  window: SOLUSD/2022-05
+  path: C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\runs\run_065\variants\donchian_solusdt_crossasset\results\20261002T164221Z_1f4decf7\bars.csv
+  bars: 123
+  sha256: cb3caefc71db479383d9ab413ce30082c0006752aa3f357633c422352b71f4bc
+- variant: donchian_solusdt_crossasset
+  window: SOLUSD/2022-09
+  path: C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\runs\run_065\variants\donchian_solusdt_crossasset\results\20261002T164223Z_1f4decf7\bars.csv
+  bars: 122
+  sha256: 214ea557b9d12f765fa66e2e40f255c94ca324a4bec0899242377dd3eca51a20
+- variant: donchian_solusdt_crossasset
+  window: SOLUSD/2023-01
+  path: C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\runs\run_065\variants\donchian_solusdt_crossasset\results\20261002T164226Z_1f4decf7\bars.csv
+  bars: 120
+  sha256: 8a836b48a9fbdb3e0e5ddce6db63578091df64dd3d87b9047f54f2604d4665b9
+- variant: donchian_solusdt_crossasset
+  window: SOLUSD/2023-05
+  path: C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\runs\run_065\variants\donchian_solusdt_crossasset\results\20261002T164230Z_1f4decf7\bars.csv
+  bars: 123
+  sha256: 3470f2ab290b3a16b524bd24ee9e28ba0284d780e6ce3119ae3e3d3de94b075f
+- variant: donchian_solusdt_crossasset
+  window: SOLUSD/2023-09
+  path: C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\runs\run_065\variants\donchian_solusdt_crossasset\results\20261002T164233Z_1f4decf7\bars.csv
+  bars: 122
+  sha256: 90212c444dc2f854d75beb7427532c25e599a48aae9b67bf6e84f455b6de456c
+claim_status: inconclusive
+calibrations_passed:
+- engineering\roadmap\E-068\calibration_a5\summary_block_permutation_v1_onesided.yaml
+exercised_on_real_runs:
+- baseline:complement
+- outcome:fwd_return
+- selector:all
+- selector:event
+- statistic:mean_diff
+- statistic:rank_ic

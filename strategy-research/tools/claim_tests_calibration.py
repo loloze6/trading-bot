@@ -24,13 +24,20 @@ one-sided p < 0.05 must be about 0.05 in each direction.
   Methods  a851a_episode_v1 (existing A8.5.1a, its own 2000 resamples) and
            block_permutation_v1 (N = 199 fakes per simulation).
   Pass     per row: undefined p in <= 5% of simulations, AND among defined p
-           the share below 0.05 within [0.025, 0.075] at every horizon. A
-           method passes if all 8 rows pass. Undefined p are counted and
-           reported, never hidden as "no rejection".
+           the share below 0.05 at most 0.075 (the ceiling) at every horizon.
+           ONE-SIDED since amendment 5: a share below 0.025 (the floor) is a
+           pass with a "conservative" warning, listed per row. A method passes
+           if all 8 rows pass. Undefined p are counted and reported, never
+           hidden as "no rejection". (Amendment 3's two-sided band failed the
+           floor too.)
 
 Each (method, model, side) cell runs as its own job and writes its own file:
     python tools/claim_tests_calibration.py cell --method M --model X --side S --out F
     python tools/claim_tests_calibration.py summarize --method M --out F CELL_FILES...
+Cells written before per-cell code hashes (amendment 3's, commit bc4e67f4) are
+re-judged under the current rule, without re-running, by
+    python tools/claim_tests_calibration.py reevaluate --method M --code-ref REF --out F CELLS...
+which records the hash of the producing code read from git at REF.
 Synthetic data only; no market data is read.
 """
 from __future__ import annotations
@@ -49,8 +56,6 @@ if _HERE not in sys.path:
 import claim_tests as ct  # noqa: E402
 
 SEED = 20261003
-GATE = tuple(ct.CALIBRATION_GATE["pass_range"])
-MAX_UNDEFINED = ct.CALIBRATION_GATE["max_share_undefined"]
 ALPHA = ct.CALIBRATION_GATE["alpha"]
 N_SIMS = 400
 N_NULL = 199
@@ -139,11 +144,9 @@ def run_cell(method: str, model: str, side: str, n_sims: int = N_SIMS, period: i
         share = {h: (rej[d][h] / (n_sims - undefined[h]) if n_sims > undefined[h] else None)
                  for h in HORIZONS}
         und = {h: undefined[h] / n_sims for h in HORIZONS}
-        ok = all(und[h] <= MAX_UNDEFINED and share[h] is not None
-                 and GATE[0] <= share[h] <= GATE[1] for h in HORIZONS)
-        rows.append({"row": f"{model}_{side}_{d}", "n_sims": n_sims,
-                     "share_p_below_0_05_of_defined": share, "share_undefined": und,
-                     "pass": ok})
+        rows.append(_rejudged({"row": f"{model}_{side}_{d}", "n_sims": n_sims,
+                               "share_p_below_0_05_of_defined": share,
+                               "share_undefined": und}))
     return {"method": method, "model": model, "side": side, "signal": signal, "rows": rows,
             "code_sha256": code_sha256()}
 
@@ -157,9 +160,18 @@ def code_sha256() -> str:
     return h.hexdigest()
 
 
+def _rejudged(row: dict) -> dict:
+    """A gate row judged under the CURRENT rule (amendment 5, one-sided),
+    whatever rule wrote its `pass` flag."""
+    keep = {k: row[k] for k in ("row", "n_sims", "share_p_below_0_05_of_defined",
+                                "share_undefined")}
+    ok, cons = ct.judge_calibration_row(keep)
+    return dict(keep, conservative_horizons=cons, **{"pass": ok})
+
+
 def summarize(method: str, cell_docs: list) -> dict:
     cells = [c for c in cell_docs if c["method"] == method]
-    rows = [r for c in cells for r in c["rows"]]
+    rows = [_rejudged(r) for c in cells for r in c["rows"]]
     full = (len({r["row"] for r in rows}) == ct.CALIBRATION_ROWS
             and all(r.get("n_sims") == N_SIMS for r in rows))
     signals = [c.get("signal", DONCHIAN) for c in cells]
@@ -170,9 +182,73 @@ def summarize(method: str, cell_docs: list) -> dict:
             "scope": {"signal": signal, "cadence": "daily", "statistic": "mean_diff",
                       "selector": "event", "n_null": N_NULL, "n_sims": N_SIMS},
             "code_sha256": code, "rows": rows,
+            "conservative": {r["row"]: r["conservative_horizons"] for r in rows
+                             if r["conservative_horizons"]},
             "all_pass": (len(rows) == ct.CALIBRATION_ROWS and code is not None
                          and signal is not None and full
                          and all(r["pass"] for r in rows))}
+
+
+CODE_FILES = ("strategy-research/tools/claim_tests.py",
+              "strategy-research/tools/claim_tests_calibration.py")
+
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def git_blob(ref: str, repo_path: str) -> bytes:
+    """A file's bytes as git stores them at REF (LF; independent of the
+    checkout's line endings, so a hash of them is reproducible anywhere)."""
+    import subprocess
+    return subprocess.run(["git", "-C", str(REPO_ROOT), "show", f"{ref}:{repo_path}"],
+                          check=True, capture_output=True).stdout
+
+
+def code_sha256_at(ref: str) -> str:
+    """code_sha256() of the two producing files as committed at git REF (same
+    order; git's stored bytes -- the amendment-4 hashes match this form)."""
+    import hashlib
+    h = hashlib.sha256()
+    for f in CODE_FILES:
+        h.update(git_blob(ref, f))
+    return h.hexdigest()
+
+
+def committed_cells(paths: list, ref: str) -> tuple[list, dict]:
+    """(cell docs, {repo path: sha256 of git's stored bytes}) for cell files
+    committed at REF. Refused if a working file differs from its blob at REF
+    (line endings aside): the cells re-evaluated must be the cells produced."""
+    import hashlib
+    import yaml
+    docs, shas = [], {}
+    for p in paths:
+        rel = Path(p).resolve().relative_to(REPO_ROOT).as_posix()
+        blob = git_blob(ref, rel)
+        if Path(p).read_bytes().replace(b"\r\n", b"\n") != blob.replace(b"\r\n", b"\n"):
+            raise ValueError(f"{rel} differs from its committed version at {ref}")
+        docs.append(yaml.safe_load(blob.decode("utf-8")))
+        shas[rel] = hashlib.sha256(blob).hexdigest()
+    return docs, shas
+
+
+def reevaluate(method: str, cell_docs: list, cell_sha256: dict, code_ref: str,
+               code_hash: str) -> dict:
+    """Amendment 5 section 4: existing cells re-judged under the current rule,
+    NOT re-run. Only for cells that predate per-cell code hashes and the
+    per-cell signal field (so they ran the then-only signal, Donchian(20));
+    the hash of their producing code (read from git at `code_ref`) is
+    recorded with it."""
+    if any(c.get("code_sha256") for c in cell_docs):
+        raise ValueError("these cells carry their own code hash; use `summarize`")
+    if any(c.get("signal", DONCHIAN) != DONCHIAN for c in cell_docs):
+        raise ValueError("pre-hash cells can only be the Donchian(20) gate")
+    res = summarize(method, [dict(c, code_sha256=code_hash) for c in cell_docs])
+    res["reevaluated"] = {"rule": "amendment 5 (one-sided)", "rerun": False,
+                          "code_ref": code_ref,
+                          "code_sha256_source": f"git blobs of {list(CODE_FILES)} at {code_ref}",
+                          "cell_files_sha256_source": f"git blobs at {code_ref}",
+                          "cell_files_sha256": dict(cell_sha256)}
+    return res
 
 
 def main(argv=None) -> int:
@@ -190,11 +266,19 @@ def main(argv=None) -> int:
     s.add_argument("--method", choices=METHODS, required=True)
     s.add_argument("--out", type=Path, required=True)
     s.add_argument("cells", nargs="+", type=Path)
+    r = sub.add_parser("reevaluate")
+    r.add_argument("--method", choices=METHODS, required=True)
+    r.add_argument("--code-ref", required=True, help="git commit that produced the cells")
+    r.add_argument("--out", type=Path, required=True)
+    r.add_argument("cells", nargs="+", type=Path)
     a = ap.parse_args(argv)
     if a.cmd == "cell":
         res = run_cell(a.method, a.model, a.side, a.n_sims, a.period)
-    else:
+    elif a.cmd == "summarize":
         res = summarize(a.method, [yaml.safe_load(p.read_text(encoding="utf-8")) for p in a.cells])
+    else:
+        docs, shas = committed_cells(a.cells, a.code_ref)
+        res = reevaluate(a.method, docs, shas, a.code_ref, code_sha256_at(a.code_ref))
     a.out.parent.mkdir(parents=True, exist_ok=True)
     with open(a.out, "w", encoding="utf-8") as f:
         yaml.safe_dump(res, f, sort_keys=False)
@@ -203,7 +287,9 @@ def main(argv=None) -> int:
               + " ".join(f"h{h}={v:.3f}" if v is not None else f"h{h}=n/a"
                          for h, v in r["share_p_below_0_05_of_defined"].items())
               + f"  undefined_max={max(r['share_undefined'].values()):.2f}", flush=True)
-    if a.cmd == "summarize":
+    if a.cmd != "cell":
+        for row, hs in res["conservative"].items():
+            print(f"CONSERVATIVE  {row}  horizons {hs}")
         print("ALL PASS" if res["all_pass"] else "GATE FAILED")
     return 0
 

@@ -233,11 +233,13 @@ so combine it". Today that case reads only "refuted".
 
 **How the library grows: on demand, never in advance.**
 
-- An idea whose test the slots cannot express is **parked**, not stopped. A `test_request` names
-  the missing building block (for example "outcome `fwd_return_of(other_symbol)`") and goes to
-  `campaign_record/test_requests.yaml`. This is card J's park-don't-stop pattern.
-- A person adds that one small function, the idea is un-parked, and every later idea can use
-  the block too. One block multiplies coverage.
+- An idea whose test the slots cannot express is **recorded, not parked and not stopped**
+  (operator, 2026-10-03, slice 2: a claim is information only). A `test_request` names the
+  missing building block (for example "outcome `fwd_return_of(other_symbol)`") and goes to
+  `campaign_record/test_requests.yaml`; the run continues without a claim test, and the gap is
+  counted (`claim_test_status.yaml`, `claim_test_coverage.yaml`, the campaign summary).
+- A person adds that one small function, and every later idea can use the block too. One
+  block multiplies coverage.
 
 **The catch: freedom means more chances of a lucky pass.** Hundreds of combinations make it
 easy to find a "significant" result by chance. Three protections:
@@ -278,9 +280,13 @@ There the right answer is known: no edge. A trustworthy method says "edge found"
 
 1. **Code (always, before any spend).** `check_spec`: known blocks, parameters in range,
    bar-*t* selectors only, horizon shorter than a window, floor present, `pass_if` and
-   `fail_if` present. On failure, 1a gets one retry with the error, as every stage has today.
-2. **`test: none`.** The idea is parked and a `test_request` is appended (section 3). The agent
-   never free-hands a graded test.
+   `fail_if` present. On failure, 1a gets one retry with the error, as every stage has today
+   (shared with the power check: a `min_events` floor above bars / longest horizon x coins).
+   **A claim is information only** (operator, 2026-10-03): whatever remains after that retry
+   -- no claim, an invalid one -- is recorded as a gap and the run continues; nothing here ever
+   stops, parks or reroutes a run.
+2. **`test: none`.** A `test_request` is appended (section 3) and recorded; the run continues
+   without a claim test. The agent never free-hands a graded test.
 3. **Review call** (optional, one LLM call, flag `claim_test_review.mode`). It runs a fixed
    O-18 checklist:
    - Does the test measure *this* claim?
@@ -443,12 +449,14 @@ P-CUL-77).
 **Slices** (each its own PR, two-phase):
 
 1. **Test engine** -- DONE (PRs #315, #316; D-064). `claim_tests.py` (17 blocks) and the
-   calibration gate `claim_tests_calibration.py`. run_065 was not graded: no method passed the
-   two-sided gate (REGRADE_run065.md). run_066 moved to CUL-387.
-1b. **Amendment 5:** the calibration gate becomes one-sided (section 3.1); then grade run_065
-   with the shuffle method.
-2. **Step 1a claim block:** the schema, the code checks, the 1a/1b match warning
-   (section 2.3), and the `test_requests.yaml` park.
+   calibration gate `claim_tests_calibration.py`. No method passed the two-sided gate, so
+   run_065 was not graded at that point. run_066 moved to CUL-387.
+1b. **Amendment 5** -- DONE (PR #318; D-065). The calibration gate is one-sided
+   (section 3.1). run_065 graded with the shuffle method: **inconclusive** on BTCUSD and
+   SOLUSD (REGRADE_run065.md); the Donchian(14) variant is not graded.
+2. **Step 1a claim block** -- DONE (PR #319; D-066), behind `orchestrator.claim_tests.enabled`.
+   The schema, the code checks, the power warning, the 1a/1b match warning (section 2.3),
+   and the `test_requests.yaml` record (information only: no stop, no park).
 3. **Grid:** the `claim_test` criterion and `claim_status`.
 4. **Findings:** the finding record and the findings summary.
 5. **Readers:** v3 output and the short SKILL.
@@ -503,7 +511,7 @@ None. All decisions are recorded in section 11.
   grid's result and propose new findings, each with a next test (section 6; the earlier
   `claim_reading: supports | contradicts` field is removed).
 - **The test library is composable** (section 3): four slots, about 15 small code-defined
-  blocks, grown on demand through parked test requests, never written by the agent, and not
+  blocks, grown on demand through recorded test requests, never written by the agent, and not
   enlarged in anticipation.
 - **Two statuses, both kept:** `claim_status` (is the claim true?) and `idea_status` (is it a
   usable block?). The second is what the registry binds on later.
