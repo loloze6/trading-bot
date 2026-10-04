@@ -12,6 +12,7 @@ run_067 (2026-10-04), two step-1a stops on a real run:
 
 The LLM call is mocked; these test the plumbing, not the model.
 """
+import os
 import sys
 from pathlib import Path
 
@@ -160,7 +161,9 @@ def test_a_stale_numbered_card_is_never_adopted(tmp_path, monkeypatch):
 def test_a_stale_numbered_card_rewritten_by_this_call_is_adopted(tmp_path, monkeypatch):
     run_dir = _make_run_dir(tmp_path)
     arts = run_dir / "artifacts"
-    (arts / "hypothesis_card_2.yaml").write_text(BROKEN, encoding="utf-8")
+    stale = arts / "hypothesis_card_2.yaml"
+    stale.write_text(BROKEN, encoding="utf-8")
+    os.utime(stale, ns=(stale.stat().st_atime_ns, stale.stat().st_mtime_ns - 10**10))
     _run(monkeypatch, run_dir, "hypothesis_generation", [{"hypothesis_card_2.yaml": GOOD}])
     assert (arts / "hypothesis_card.yaml").read_text(encoding="utf-8") == GOOD
 
@@ -184,9 +187,11 @@ def test_a_second_f4b_retry_keeps_the_first_set_aside_copy(tmp_path, monkeypatch
     writes = [{"innovation_notes.yaml": BROKEN}, {"innovation_notes.yaml": GOOD},
               {"innovation_notes.yaml": "second: [broken\n"}, {"innovation_notes.yaml": GOOD}]
     monkeypatch.setattr(rpr, "async_invoke_agent", _fake_agent(calls, writes))
-    for count in (0, 1):
+    stale_state = {"yaml_retry_count": 0}      # one stage-entry dict shared by two calls
+    for _ in range(2):
         rpr._invoke_agent_with_yaml_retry("innovation_expansion", "test_run", run_dir,
-                                          [arts / "innovation_notes.yaml"], {"yaml_retry_count": count})
+                                          [arts / "innovation_notes.yaml"], stale_state)
+    assert rpr.load_yaml(run_dir / "pipeline_state.yaml")["yaml_retry_count"] == 2
     prev = run_dir / ".previous_attempts"
     assert (prev / "innovation_expansion_yaml_retry1" / "innovation_notes.yaml").read_text(
         encoding="utf-8") == BROKEN

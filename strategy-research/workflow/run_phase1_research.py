@@ -801,7 +801,10 @@ def _invoke_agent_with_yaml_retry(current_stage: str, run_id: str, run_dir: Path
             return
         except UnrepairableYAMLError as err:
             if attempt == 0:
-                retry_count = state.get("yaml_retry_count", 0) + 1
+                # Read from the file: `state` is the stage-entry snapshot, shared by
+                # two 1a calls (the claim retry), so it can be one retry behind.
+                on_disk = load_yaml(Path(run_dir) / "pipeline_state.yaml") or {}
+                retry_count = on_disk.get("yaml_retry_count", state.get("yaml_retry_count", 0)) + 1
                 update_state(path=run_dir, yaml_retry_count=retry_count)
                 print(f"⚠️ [F4b] {current_stage}: unrepairable YAML on first attempt — "
                       f"retrying once with error context appended "
