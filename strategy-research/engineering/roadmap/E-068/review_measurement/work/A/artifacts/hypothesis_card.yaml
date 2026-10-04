@@ -1,0 +1,169 @@
+hypothesis_id: VOL_MANAGED_MOMENTUM_BTCETH_KRAKEN_PERP
+thesis: Multi-week time-series momentum with position size scaled inversely to recent
+  realized volatility, tested on BTC and ETH at the highest-liquidity execution venue.
+rationale: The prior test (run_066) on SOL and XRP with vol-managed momentum was refuted.
+  However, BTC/ETH on Kraken perp offer superior microstructure (tighter spreads,
+  deeper liquidity, lower execution costs) compared to the pairs tested in run_066.
+  Time-series momentum is a documented persistent factor in liquid crypto assets;
+  volatility scaling is a proven risk-management technique. The mechanism is sound;
+  the venue/coin combination may yield better cost economics. Testing on the intended
+  venue and assets (per brief specification) is distinct from the SOL/XRP test.
+edge_source:
+  category: persistent_behavioral_bias
+  specific_mechanism: Large institutions and traders accumulate and reduce positions
+    over multi-week periods; this creates self-reinforcing price trends as feedback
+    loops build. Volatility scaling reduces position size during crash regimes, cutting
+    the largest drawdowns while retaining directional edge during normal trending
+    periods.
+  why_not_arbitraged: Multi-week momentum flows cannot be arbitraged away at 1h granularity
+    without compounding costs. Retail and quant algorithms operating on 1h frequencies
+    cannot replicate position-flow strategies. Additionally, the volatility-scaling
+    overlay requires live calculation of rolling realized volatility with proper lag
+    (1-bar stale, not look-ahead), adding implementation friction.
+  evidence_type: price_volume_only
+  measurable_proxy: Close position within its 20-day high-low range (0 at low, 100
+    at high, linearly scaled to [-20, +20] forecast). Realized volatility measured
+    as 20-day log-return standard deviation. Signal output is the base momentum forecast
+    scaled inversely by realized volatility, capped at ±20 to prevent infinite leverage.
+signal_concept: The signal measures price position within its recent 20-day high-low
+  range, scaling from -20 (at the low) to +20 (at the high). This momentum forecast
+  is then scaled inversely to realized volatility; a forecast of +20 in a low-volatility
+  regime becomes a large +20 position, while the same +20 forecast in a high-volatility
+  regime becomes a smaller position scaled by (1 / realized_volatility). Position
+  size follows the forecast every bar; a forecast of 0 (price at midpoint) means flat
+  or reduce position. This is a continuous, graded signal; every bar receives a scaled
+  forecast in [-20, +20], and position = forecast / 10. Exits occur when the momentum
+  forecast decays (close moves toward midpoint) or when volatility spikes enough to
+  scale the position near-zero. The signal does NOT use discrete on/off entry/exit
+  rules; all sizing is dynamic and forecast-driven.
+target_market: BTC/ETH perpetual on Kraken, 1h timeframe. Expected holding periods
+  range from 1-60 bars (4 hours to 60 hours) depending on momentum strength and volatility
+  regime, with a target average of 10-20 bars per position.
+timeframe: 1h
+assumptions:
+- Realized volatility is a valid proxy for forward volatility and is useful for ex-ante
+  risk sizing (this is not always true during regime shifts).
+- Multi-week momentum originates from gradual institutional position flows, not from
+  learned algos or pure technical trading (mechanism assumption; may be false if flows
+  are already captured by faster traders).
+- Volatility is calculated on closes up to bar t-1 with a 1-bar lag to prevent look-ahead
+  bias; this lag does not materially reduce signal quality.
+- Structural forced flows (funding cascades, liquidations) on Kraken perp are not
+  so strong as to overwhelm trend-following persistence.
+- Transaction costs (taker 5 bps base on Kraken perp plus spread/slippage approximately
+  5-10 bps round-trip) remain manageable relative to gross edge; frequent vol-scaling
+  adjustments do not cause excessive churn.
+expected_failure_modes:
+- 'Realized volatility is mean-reverting and highly autocorrelated. Low-volatility
+  regimes flip to high-vol regimes without warning, causing position size to shrink
+  just as momentum accelerates. Net effect: vol scaling adds noise and cost without
+  improving risk-adjusted returns.'
+- The multi-week momentum factor, if it exists, is already arbitraged away on BTC/ETH
+  (the most-watched, most-crowded crypto pairs), making the gross edge even smaller
+  than on SOL/XRP. If run_066 failed due to the mechanism being sub-scale versus costs,
+  the same failure occurs here; different coins do not rescue a mechanism that is
+  structurally too-weak to overcome taker fees.
+- Volatility scaling introduces a convexity trap. In sideways or choppy markets with
+  realized volatility in the 15-30 annualized range, the signal size oscillates rapidly
+  (not clearly trending, not clearly flat), causing frequent position adjustments
+  and compounding transaction costs. Cost drag from churn may exceed any vol-management
+  benefit.
+- 'The inverse-volatility scaling 1/realized_vol is mechanically aggressive. If the
+  true edge is sub-linear in leverage, then 1/vol scaling is excessive. Position size
+  grows unboundedly as vol approaches zero, creating tail risk. Expected impact: moderate
+  drawdown risk in low-vol regimes if a sudden shock occurs.'
+claim:
+  statement: After multi-week price trends (close near the top of its 20-day high-low
+    range and volatility is below median), returns over the next 1 to 10 days are
+    higher than on other days, and this effect is consistent across BTC and ETH.
+  kind: conditional_behaviour
+  tests:
+  - name: vol_managed_continuation
+    selector:
+      kind: event
+      field: forecast
+      op: '>='
+      value: 10
+    outcome:
+      kind: fwd_return
+      horizons:
+      - 1
+      - 2
+      - 5
+      - 10
+    baseline:
+      kind: complement
+    statistic: mean_diff
+    direction: greater
+    floor:
+      min_events: 80
+      min_windows: 4
+    consistency:
+      unit: window
+      min_same_sign: 4
+  pass_if: At every horizon, high-momentum high-forecast bars outperform complementary
+    bars in terms of mean forward return, and the effect points the same direction
+    in at least 4 separate monthly windows, with at least 80 such high-forecast events.
+  fail_if: At any horizon, high-momentum high-forecast bars significantly underperform
+    (lower returns), refuting the mechanism.
+  rationale: If multi-week momentum and volatility-scaling produce an edge, high-forecast
+    bars (momentum signal firing, vol scaling active) should show positive forward
+    returns. Consistency check ensures the effect is not era-dependent or driven by
+    a single bull-run window. Horizons 1-10 days match the expected 5-40 bar holding
+    periods.
+criteria:
+- id: realized_edge_to_cost_ratio
+library_lookup:
+  indicator_id: moving_average_crossover
+  regime_affinity_for_target: unfavorable
+  affinity_justification: 'Moving_average_crossover and price-range momentum are in
+    the same signal family with unfavorable regime affinity on BTC/ETH 1h. Run_043
+    tested EMA spread continuation and found ic_all_bars=-0.021 (not significant).
+    Run_053 tested MACD and found ic_active_bars=-0.050 (negative). This reflects
+    the campaign''s pattern: price-only trending indicators lack edge on BTC/ETH 1h.
+    This hypothesis adds vol-scaling (position-sizing adjustment, not mechanism change).
+    Proceeding because the brief explicitly requests vol-managed momentum, and vol-scaling
+    may reduce drawdown even if trend IC is marginal.'
+  prior_campaign_failures:
+  - run_id: run_043
+    mechanism: ema_spread_trend_continuation_v1_auto
+    outcome: no_edge_observed
+  - run_id: run_053
+    mechanism: macd_trend_continuation_extended_2018_2025_auto
+    outcome: no_edge_observed
+  - run_id: run_066
+    mechanism: VOL_MANAGED_TIME_SERIES_MOMENTUM
+    coins:
+    - BTCUSD
+    - SOLUSD
+    outcome: refuted
+  crowding_risk: high
+  crowding_deviation_justification: Price-range momentum has inherently high crowding
+    risk (library entry moving_average_crossover). The vol-scaling component is a
+    refinement to position sizing, not a mechanism that reduces crowding pressure.
+    Proceeding on BTC/ETH (highest-crowding pair) because the brief explicitly specifies
+    this pair and mechanism, and the empirical question of whether vol-scaling provides
+    any edge on the intended venue and coins justifies a test.
+cost_feasibility:
+  assumed_round_trip_cost_bps: 10.0
+  expected_holding_bars:
+    min: 1
+    max: 60
+  expected_trades_per_window: 40
+  required_gross_edge_bps_per_trade: 20.0
+  plausibility: marginal
+  plausibility_rationale: 'Kraken perp taker round-trip cost is 10 bps (5 bps per
+    leg per cost_model.yaml). Over 40 trades per 4-month window, strategy needs approximately
+    20 bps gross edge per trade. At dense price-only momentum signal class (crowding_risk
+    high), plausible_ic_upper is 0.03-0.05 per A8.6 table. With such marginal IC and
+    10-bar average holding period, estimated gross edge is approximately 0.04 times
+    100 times sqrt(10) equals approximately 12.6 bps, below 20 bps required. Verdict:
+    marginal, with cost as material risk. Vol-scaling may improve by 5-10 bps through
+    risk reduction.'
+power_parameters:
+  activation_rate: 0.95
+  plausible_ic_upper: 0.04
+  n_bars: 960
+  n_symbols: 2
+  is_market_wide: false
+pass_through: false

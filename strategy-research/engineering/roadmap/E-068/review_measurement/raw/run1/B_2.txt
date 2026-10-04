@@ -1,0 +1,11 @@
+```yaml
+# claim_review.yaml
+tests:
+  sparse_high_conviction_continuation:
+    measures_statement: false
+    quantity: "mean forward returns over the next 1h, 2h, and 4h on bars where the forecast is non-zero, compared to all other bars"
+    horizon_units_ok: true
+    direction_baseline_ok: true
+    issues:
+      - "selects on the forecast's non-zero status rather than on the three technical conditions the claim specifies (EMA(9) > EMA(21), volume > 20-bar median, body fraction > 0.6); block manifest does not confirm this synthetic forecast encodes these exact conditions"
+```

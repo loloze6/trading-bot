@@ -16,6 +16,7 @@ together.
 """
 from __future__ import annotations
 
+import difflib
 import re
 from pathlib import Path
 
@@ -196,6 +197,79 @@ def load_proposals(proposals_dir: Path, categories: list, strict_provenance: boo
             seen.add(p["proposal_id"])
         out[cat] = data
     return out
+
+
+# ---------------------------------------------------------------------------
+# E-068 PR 4 (D-071): component class names a reader wrote that do not exist.
+#
+# run_070's regime_power reader proposed "VarianceRatioRegimeComponent"; the
+# real class is VarianceRatioComponent. A WARNING ONLY: decide_next records it
+# on the candidate (`warnings`) and run_campaign prints it; nothing is refused,
+# ranked or excluded on it, and nothing is ever written into proposals/
+# (load_proposals refuses unexpected YAML there).
+# ---------------------------------------------------------------------------
+
+# A class-like word ending in "Component". A bare "Component" never matches
+# (it needs at least one capital letter before the suffix).
+COMPONENT_CLASS_NAME_RE = re.compile(r"\b[A-Z][A-Za-z0-9]*Component\b")
+# Provenance fields: never prose about the strategy, never scanned.
+_CLASS_SCAN_SKIP_KEYS = frozenset({"proposal_id", "model_id", "rubric_version"})
+# The base classes in trading-bot/strategies/strategy_base.py whose names match
+# COMPONENT_CLASS_NAME_RE: real names, never a typo
+# (tests/test_e068_4_approval_cap_warnings.py pins this set to that file).
+BASE_COMPONENT_CLASS_NAMES = frozenset({"SubStrategyComponent"})
+# difflib.get_close_matches' own default cutoff.
+_SUGGESTION_CUTOFF = 0.6
+
+
+def _string_leaves(node):
+    if isinstance(node, str):
+        yield node
+    elif isinstance(node, dict):
+        for value in node.values():
+            yield from _string_leaves(value)
+    elif isinstance(node, list):
+        for value in node:
+            yield from _string_leaves(value)
+
+
+def unknown_class_names(proposal, known, card_text=None) -> dict:
+    """Component class names in `proposal` that are not real classes. Pure.
+
+    Scans every string leaf of the proposal except proposal_id, model_id and
+    rubric_version for COMPONENT_CLASS_NAME_RE. `known`: the known component
+    classes (dotted paths, e.g. decide_next.known_component_classes, or bare
+    names); BASE_COMPONENT_CLASS_NAMES are always known. `card_text`: the raw
+    text of the run's hypothesis_card.yaml, or None -- a name the card itself
+    uses is the reader quoting the card, so it is reported under
+    `quoted_from_card`, not as unknown.
+
+    Returns {"unknown": [{"name", "suggestion"}], "quoted_from_card": [name]},
+    each name once, in first-seen order. `suggestion` is the nearest known
+    class name (difflib), or None when nothing is close."""
+    known_names = {str(k).rpartition(".")[2] for k in (known or [])}
+    real = known_names | BASE_COMPONENT_CLASS_NAMES
+    found = []
+    if isinstance(proposal, dict):
+        for key, value in proposal.items():
+            if key in _CLASS_SCAN_SKIP_KEYS:
+                continue
+            for leaf in _string_leaves(value):
+                for name in COMPONENT_CLASS_NAME_RE.findall(leaf):
+                    if name not in found:
+                        found.append(name)
+    on_card = set(COMPONENT_CLASS_NAME_RE.findall(card_text)) if isinstance(card_text, str) else set()
+    unknown, quoted = [], []
+    for name in found:
+        if name in real:
+            continue
+        if name in on_card:
+            quoted.append(name)
+            continue
+        close = difflib.get_close_matches(name, sorted(known_names), n=1,
+                                          cutoff=_SUGGESTION_CUTOFF)
+        unknown.append({"name": name, "suggestion": close[0] if close else None})
+    return {"unknown": unknown, "quoted_from_card": quoted}
 
 
 # ---------------------------------------------------------------------------

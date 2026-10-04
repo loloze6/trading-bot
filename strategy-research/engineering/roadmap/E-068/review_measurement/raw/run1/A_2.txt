@@ -1,0 +1,12 @@
+```yaml
+# claim_review.yaml
+tests:
+  vol_managed_continuation:
+    measures_statement: false
+    quantity: "Mean forward return over 1, 2, 5, 10 hours on bars where forecast >= 10 versus complement bars"
+    horizon_units_ok: false
+    direction_baseline_ok: true
+    issues:
+      - "Selects on forecast >= 10, not on close position in 20-day range and volatility below median the statement names"
+      - "Horizons span 1 to 10 hours, not 1 to 10 days as the statement specifies"
+```

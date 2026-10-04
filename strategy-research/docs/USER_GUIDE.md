@@ -1924,7 +1924,7 @@ The orchestrator detects search-space exhaustion and forces an altitude climb au
 | Same hypothesis family appears 2× in `failed_families` | Force [escalate (altitude 3)](#g-escalate). ⚠️ This row previously read "pivoted 2× with identical root cause"; the code counts family occurrences in `failed_families` and does **not** compare root causes. |
 | Same instrument/timeframe escalated 2× with no improvement | Force terminate or campaign_review |
 | Refinement budget exhausted (`max_refinements_after_validation`, default 2) | Reject hypothesis |
-| Run token budget exceeded — **1,500,000 weighted units** by default | Halt run, preserve state. ⚠️ This row previously said "300,000 tokens". That is the **superseded** `token_budget_per_run`, which `campaign_config.yaml` marks *"no longer read by the loop"* (F4c, 2026-07-05). The live key is `token_budget_per_run_weighted_units`, read at runtime by `run_phase1_research.py::_load_token_budget` — **5× larger, and in weighted units rather than raw tokens**. |
+| Run token budget exceeded — **1,800,000 weighted units** by default (raised from 1,500,000 by D-071, 2026-10-04: run_070 used 1,212,255 weighted units = 80.8% of the old budget; 1.8M leaves about 30% headroom) | Halt run, preserve state. ⚠️ This row previously said "300,000 tokens". That is the **superseded** `token_budget_per_run`, which `campaign_config.yaml` marks *"no longer read by the loop"* (F4c, 2026-07-05). The live key is `token_budget_per_run_weighted_units`, read at runtime by `run_phase1_research.py::_load_token_budget` — **5× larger, and in weighted units rather than raw tokens**. |
 
 #### After campaign_review
 

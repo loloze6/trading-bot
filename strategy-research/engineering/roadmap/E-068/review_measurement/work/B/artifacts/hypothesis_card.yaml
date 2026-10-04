@@ -1,0 +1,51 @@
+hypothesis_id: SPARSE_HIGH_CONVICTION_EMA_TREND_1H
+timeframe: 1h
+claim:
+  statement: 'When a 1h bar has EMA(9) > EMA(21), volume > 20-bar median, and body
+    fraction > 0.6 (high-conviction institutional bar), the next 1–4 hours are more
+    likely to extend in that direction than on days when these conditions don''t all
+    align.
+
+    '
+  kind: conditional_behaviour
+  tests:
+  - name: sparse_high_conviction_continuation
+    selector:
+      kind: event
+      field: forecast
+      op: '!='
+      value: 0
+    outcome:
+      kind: fwd_return
+      horizons:
+      - 1
+      - 2
+      - 4
+    baseline:
+      kind: complement
+    statistic: mean_diff
+    direction: greater
+    floor:
+      min_events: 50
+      min_windows: 4
+    consistency:
+      unit: window
+      min_same_sign: 4
+  pass_if: 'At every horizon (1h, 2h, 4h ahead), bars where the sparse high-conviction
+    signal fires (all three gates aligned) have significantly higher mean forward
+    returns than the baseline (all other bars), and the effect is consistent in sign
+    across at least 4 of the 6 windows.
+
+    '
+  fail_if: 'At any horizon, the signal bars significantly underperform the baseline,
+    indicating the mechanism predicts mean-reversion, not continuation.
+
+    '
+  rationale: 'If high-conviction bars signal true institutional participation, forward
+    returns on those bars should exceed the average bar. The test isolates the rare
+    moments (gate-confirmed consensus: EMA + volume + body all aligned) and checks
+    for a measurable advantage. Sparse activation (~50 events per window per symbol,
+    ~0.3% of all bars) means each event is a genuine market consensus point. Consistency
+    across 4+ of the 6 brief windows defends against era-specific luck. At least 50
+    events per window threshold keeps the test grounded in sufficient sample despite
+    sparsity.'

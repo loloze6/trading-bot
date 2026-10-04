@@ -1041,7 +1041,8 @@ def test_the_preflight_calls_every_real_reader_on_one_parse(monkeypatch):
     _write_config(_flags(_CHAIN))
     seen = {}
     for name, reader in camp._flag_readers().items():
-        module = camp if name == "schedulability_block" else rpr
+        # E-068 PR 4: operator_approval's reader lives in run_campaign too.
+        module = camp if name in ("schedulability_block", "operator_approval") else rpr
 
         def _spy(cfg=None, _name=name, _reader=reader):
             seen.setdefault(_name, set()).add(id(cfg) if cfg is not None else None)

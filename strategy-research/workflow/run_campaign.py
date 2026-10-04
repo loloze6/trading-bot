@@ -139,6 +139,12 @@ _LEGACY_MINTING_ROUTERS = ("_route_refine", "_route_pivot", "_route_escalate")
 # --unpark restores one. Written only under orchestrator.verdict_routing_retired.
 PARKED_STATUS_PREFIX = "paused:waiting_for_"
 PARKED_STATUSES = tuple(f"{PARKED_STATUS_PREFIX}{k}" for k in orch.PARK_KINDS)
+# E-068 PR 4 (D-071, CUL-399): orchestrator.operator_approval. While on, every
+# entry the agent creates or would flip `ready` gets this status instead (a
+# `blocked_on_.+` QUEUE_STATUS shape; _select_entry never picks it); only
+# --approve <id> sets it ready. decide_next.OPERATOR_APPROVAL_STATUS mirrors it
+# (a test pins the two).
+OPERATOR_APPROVAL_STATUS = "blocked_on_operator_approval"
 # E-068 slice 2: the claim-test coverage record (tools/claim_card.COVERAGE_REL;
 # equal by a test, so the summary needs no heavy import to know it is absent).
 CLAIM_COVERAGE_REL = "campaign_record/claim_test_coverage.yaml"
@@ -909,8 +915,9 @@ def _materialize_run(run_id: str, brief: dict, *, promotion_retired: bool = Fals
 # caller cannot use it to write `status`/`outcome` or any other field.
 _REGISTER_EXTRA_KEYS = frozenset({"origin", "proposal_ref", "card_ref", "decision_ref",
                                   "brief_status", "parked_reason"})
-# E-059 S2b: the statuses a registration may start in.
-_REGISTER_STATUSES = ("ready", "queued")
+# E-059 S2b: the statuses a registration may start in. E-068 PR 4 (D-071): an
+# agent entry registered under orchestrator.operator_approval starts held.
+_REGISTER_STATUSES = ("ready", "queued", OPERATOR_APPROVAL_STATUS)
 
 
 def register_hypothesis(brief_path: Path, priority: int, notes: str, *,
@@ -2392,6 +2399,46 @@ def _unpark_entry(entry_id: str) -> bool:
         campaign_lock.release(lock_path)
 
 
+def _approve_entry(entry_id: str) -> bool:
+    """--approve <entry_id> (E-068 PR 4, D-071, CUL-399): the operator's
+    approval of one entry orchestrator.operator_approval held. Under the
+    campaign lock (the single-writer rule), refuses anything whose status is
+    not exactly OPERATOR_APPROVAL_STATUS; otherwise sets it `ready` (priority
+    kept), logs APPROVE, and regenerates the summary and loop health like
+    --unpark. Works whether or not the flag is still on (an entry held before
+    the operator switched it off must stay approvable). The scheduler runs it by
+    its own rule; nothing is minted and decide-next is not called."""
+    lock_path = campaign_lock.lock_path_for(orch.CAMPAIGN_STATE_PATH)
+    try:
+        campaign_lock.acquire(lock_path)
+    except campaign_lock.CampaignLockHeld as exc:
+        print(f"--approve refused: {exc}")
+        return False
+    try:
+        queue = _load_queue()  # re-read under the lock
+        entry = next((e for e in queue.get("queue") or []
+                      if isinstance(e, dict) and e.get("id") == entry_id), None)
+        if entry is None:
+            print(f"--approve refused: no queue entry {entry_id!r}.")
+            return False
+        status = str(entry.get("status") or "")
+        if status != OPERATOR_APPROVAL_STATUS:
+            print(f"--approve refused: {entry_id} is {status!r}, not {OPERATOR_APPROVAL_STATUS!r}. "
+                  f"A parked entry uses --unpark, a campaign pause --resume.")
+            return False
+        entry["status"] = "ready"
+        _save_queue(queue)
+        _regenerate_summary(queue)
+        _log(f"APPROVE {entry_id}: approved by the operator; entry ready "
+             f"(priority {entry.get('priority')}).")
+        _write_loop_health()
+        if _schedulability_block_enabled():
+            _write_schedulability()
+        return True
+    finally:
+        campaign_lock.release(lock_path)
+
+
 # ---------------------------------------------------------------------------
 # Observability: campaign_log.md (append-only) and campaign_summary.md (regenerated)
 # ---------------------------------------------------------------------------
@@ -2600,6 +2647,15 @@ def _regenerate_summary(queue: dict, dry_run: bool = False):
             refs = ", ".join(marker.get("request_refs") or []) or "-"
             why = " ".join(str(e.get("parked_reason") or "-").split()).replace("|", "/")
             lines.append(f"| {e['id']} | {e['status']} | {run_id} | {why} | {refs} |")
+    # E-068 PR 4 (D-071): entries held by orchestrator.operator_approval. Only
+    # when one exists, so a summary without one is unchanged.
+    awaiting = [e for e in queue["queue"] if e.get("status") == OPERATOR_APPROVAL_STATUS]
+    if awaiting:
+        lines += ["", "## Awaiting operator approval (approve with --approve <id>)", "",
+                  "| id | origin | priority | brief |", "|---|---|---|---|"]
+        for e in awaiting:
+            lines.append(f"| {e['id']} | {e.get('origin') or '-'} | {e.get('priority')} | "
+                         f"{e.get('brief_path') or '-'} |")
     lines += _summary_closed_brief_lines(queue)
     # E-068 slice 2: runs without a usable claim test, and why. Only when
     # campaign_record/claim_test_coverage.yaml exists (written only under
@@ -2882,6 +2938,36 @@ def _schedulability_block_enabled(cfg: dict | None = None) -> bool:
             cfg = yaml.safe_load(f) or {}
     # E-061 C1.5: strict, the one check every orchestrator.<name>.enabled reader uses.
     return orch._strict_orchestrator_flag("schedulability_block", cfg=cfg)
+
+
+def _operator_approval_enabled(cfg: dict | None = None) -> bool:
+    """E-068 PR 4 (D-071, CUL-399): orchestrator.operator_approval.enabled.
+    False when the key, the section or the config file is absent; a non-bool
+    raises; true requires orchestrator.decide_next.enabled (every entry it
+    holds is one decide-next's apply step, or the campaign-review reframe under
+    verdict_routing_retired, creates) AND orchestrator.verdict_routing_retired.
+    enabled (review: without it the legacy refine/pivot/escalate routing mints
+    continuation runs that would run unapproved), checked by the launch
+    pre-flight (_flag_readers). Read at APPLY time, here in run_campaign;
+    tools/decide_next.py stays pure and never reads it."""
+    return orch._strict_orchestrator_flag(
+        "operator_approval", cfg=cfg,
+        requires=(("decide_next", lambda: orch._flag_dep(orch._decide_next_enabled, cfg)),
+                  ("verdict_routing_retired",
+                   lambda: orch._flag_dep(orch._verdict_routing_retired_enabled, cfg))),
+        why=("approval mode holds the entries decide-next creates or flips ready; without "
+             "decide_next there is nothing to hold, and without verdict_routing_retired the "
+             "legacy routing mints continuation runs no approval holds. Enable them together."))
+
+
+def _approval_status(enabled: bool) -> str:
+    """The status an agent-created (or agent-flipped) entry gets."""
+    return OPERATOR_APPROVAL_STATUS if enabled else "ready"
+
+
+def _log_awaiting_approval(ids) -> None:
+    for eid in ids:
+        _log(f"awaiting operator approval: {eid} (run_campaign.py --approve {eid})")
 
 
 # Statuses that are NOT "blocked" for schedulability purposes. `ready` and
@@ -3178,6 +3264,7 @@ def _flag_readers() -> dict:
         "forecast_size_probe": orch._forecast_size_probe_enabled,  # D-056
         "claim_tests": orch._claim_tests_enabled,  # E-068 slice 2
         "schedulability_block": _schedulability_block_enabled,
+        "operator_approval": _operator_approval_enabled,  # E-068 PR 4 (D-071)
     }
 
 
@@ -3844,7 +3931,8 @@ def process_once() -> bool:
             _log(f"HALT — {FLAG_PREFLIGHT_HALT}: {flag_refusal}. No ready or in_progress entry "
                  f"to pause; fix config/campaign_config.yaml before launching. See RUNBOOK.md §3.")
             return False
-        _log("Queue exhausted — no ready or in_progress entries remain." + _parked_note(queue))
+        _log("Queue exhausted — no ready or in_progress entries remain." + _parked_note(queue)
+             + _approval_note(queue))
         return False
     if flag_refusal is not None:
         # Before setup_run: a fresh entry gets no run (--resume re-checks the
@@ -4216,6 +4304,17 @@ def _apply_idea_status_outcome(entry: dict, run_id: str, legacy_outcome) -> None
 QUEUE_EXHAUSTED_WITH_OPEN_BRIEFS = "queue_exhausted_with_open_briefs"  # RUNBOOK §3 row
 
 
+def _approval_note(queue: dict) -> str:
+    """E-068 PR 4 (D-071): appended to the "Queue exhausted" line when entries
+    await the operator's approval. Empty when none does -- always, flag off."""
+    held = [e.get("id") for e in (queue.get("queue") or [])
+            if isinstance(e, dict) and e.get("status") == OPERATOR_APPROVAL_STATUS]
+    if not held:
+        return ""
+    return (f" Awaiting operator approval: {held} -- approve with --approve <id> "
+            f"(RUNBOOK.md §4 Approval mode).")
+
+
 def _parked_note(queue: dict) -> str:
     """Slice 6c S2c (guess 13): appended to the loop's stop lines ("Queue
     exhausted" and a decide-next stop) when parked entries remain, naming them
@@ -4338,17 +4437,30 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
             r1_failures.append(_record_r1_failure(record, err, entry, run_id, decision_ref))
             inputs, record = _decide()
     picked, stop = record.get("picked") or {}, record.get("stop")
+    # E-068 PR 4 (D-071, CUL-399): approval mode, applied HERE (decide_next is
+    # pure): every entry this decision creates or flips ready is held instead,
+    # and the record says so (picked.status, r2 enqueued/awaiting_approval).
+    approval = _operator_approval_enabled()
+    new_status = _approval_status(approval)
+    held = []
+    if approval and (picked.get("candidate_id") or picked.get("r2_request")
+                     or picked.get("composition")):
+        record["picked"]["status"] = OPERATOR_APPROVAL_STATUS
 
     if picked.get("candidate_id") and picked.get("card_ref"):
         # E-059 S2b: the top candidate is a brief's waiting extra card.
         cid = picked["queue_entry_id"]
-        updates.setdefault(cid, {}).update({"status": "ready", "decision_ref": decision_ref})
+        updates.setdefault(cid, {}).update({"status": new_status, "decision_ref": decision_ref})
+        held += [cid] if approval else []
         msg = (f"DECIDE after {entry['id']} ({run_id}): picked extra card {cid} "
-               f"(queued -> ready, card={picked['card_ref']}). Record: {decision_ref}")
+               f"(queued -> {new_status}, card={picked['card_ref']}). Record: {decision_ref}")
     elif picked.get("r2_request"):
-        msg = _apply_r2(record, final_queue, decision_ref, updates, entry, run_id)
+        msg = _apply_r2(record, final_queue, decision_ref, updates, entry, run_id,
+                        approval=approval)
+        held += list(record["rules"]["r2"].get("awaiting_approval") or [])
     elif picked.get("composition"):
-        msg = _register_r1(record, prepared, decision_ref, entry, run_id)
+        msg = _register_r1(record, prepared, decision_ref, entry, run_id, status=new_status)
+        held += [picked["composition"]] if approval else []
     elif picked.get("candidate_id"):
         cid = picked["queue_entry_id"]
         rel, text = dn.candidate_brief(record, inputs, decision_ref=decision_ref)
@@ -4368,19 +4480,20 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
                 f"(rank {cand['rank']}; see decision_ref)",
                 entry_id=cid, source="agent", relation=None,
                 extra={"origin": dn.ORIGIN_READER, "proposal_ref": cand["proposal_ref"],
-                       "decision_ref": decision_ref})
+                       "decision_ref": decision_ref}, status=new_status)
             if rc != 0:
                 raise RuntimeError(f"decide_next: registering {cid!r} was refused (see the "
                                    f"REGISTER line above)")
         except BaseException:
             brief_path.unlink(missing_ok=True)  # never leave a brief with no queue entry
             raise
+        held += [cid] if approval else []
         msg = (f"DECIDE after {entry['id']} ({run_id}): picked {picked['candidate_id']} "
-               f"-> queue entry {cid} (ready). Record: {decision_ref}")
+               f"-> queue entry {cid} ({new_status}). Record: {decision_ref}")
     elif stop:
         msg = (f"DECIDE stop after {entry['id']} ({run_id}): {stop['reason']} -- "
                f"{stop.get('detail')}. Record: {decision_ref}. See RUNBOOK.md §3."
-               + _parked_note(final_queue))
+               + _parked_note(final_queue) + _approval_note(final_queue))
     else:
         nxt = picked.get("operator_entry") or picked.get("queue_entry_id")
         msg = (f"DECIDE after {entry['id']} ({run_id}): the scheduler runs {nxt} next "
@@ -4388,6 +4501,14 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
                f"Record: {decision_ref}")
     if r1_failures:  # E-060 S3b review fix 2 (composition_runs only)
         msg = f"{msg} [paused {len(r1_failures)} composition(s) that could not be prepared]"
+    # E-068 PR 4 (D-071): a reader named a component class that does not exist.
+    # Warning only; nothing is logged when no candidate carries one.
+    for c in record.get("candidates") or []:
+        for w in c.get("warnings") or []:
+            _log(f"WARNING {c['candidate_id']}: reader names unknown component class "
+                 f"{w['name']}" + (f" (nearest real class: {w['suggestion']})"
+                                   if w.get("suggestion") else "")
+                 + f" -- warning only, see {decision_ref}")
 
     orch.save_yaml(ROOT / decision_ref, record)
     disk_queue = _load_queue()
@@ -4399,6 +4520,7 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
     items[idx] = entry
     _apply_updates(items, updates)
     _save_queue(disk_queue)
+    _log_awaiting_approval(held)
     return disk_queue, entry, stop is None, msg
 
 
@@ -4474,12 +4596,21 @@ def _brief_updates(queue: dict, entry: dict) -> dict:
 
 
 def _apply_r2(record: dict, final_queue: dict, decision_ref: str, updates: dict,
-              entry: dict, run_id: str) -> str:
+              entry: dict, run_id: str, *, approval: bool = False) -> str:
     """Register R2's new requests (origin brief, on the owner's brief file,
     priority 999, no relation), all `ready`, and flip every reused waiting
-    request to ready. Refuses a colliding id before any write."""
+    request to ready. Refuses a colliding id before any write.
+
+    E-068 PR 4 (D-071): under orchestrator.operator_approval (`approval`) every
+    one of them is held (OPERATOR_APPROVAL_STATUS) instead, and the record says
+    so: each enqueued row's status, and r2.awaiting_approval."""
     import decide_next as dn
     r2 = record["rules"]["r2"]
+    status = _approval_status(approval)
+    if approval:
+        for q in r2["enqueued"]:
+            q["status"] = status
+        r2["awaiting_approval"] = list(r2["ready"])
     by_id = {e.get("id"): e for e in final_queue.get("queue") or [] if isinstance(e, dict)}
     on_disk = {e.get("id") for e in _load_queue().get("queue") or [] if isinstance(e, dict)}
     clash = [q["entry_id"] for q in r2["enqueued"] if q["entry_id"] in on_disk]
@@ -4498,7 +4629,11 @@ def _apply_r2(record: dict, final_queue: dict, decision_ref: str, updates: dict,
     new_ids = {q["entry_id"] for q in r2["enqueued"]}
     for rid in r2["ready"]:  # code-review fix 3: every waiting request becomes schedulable
         if rid not in new_ids:
-            updates.setdefault(rid, {}).update({"status": "ready", "decision_ref": decision_ref})
+            updates.setdefault(rid, {}).update({"status": status, "decision_ref": decision_ref})
+    if approval:
+        return (f"DECIDE after {entry['id']} ({run_id}): R2 -- {len(r2['eligible_briefs'])} "
+                f"eligible open brief(s); awaiting operator approval: {r2['ready']} "
+                f"({len(new_ids)} new). Record: {decision_ref}")
     return (f"DECIDE after {entry['id']} ({run_id}): R2 -- {len(r2['eligible_briefs'])} eligible "
             f"open brief(s); ready: {r2['ready']} ({len(new_ids)} new); the scheduler runs "
             f"{record['picked']['queue_entry_id']} first. Record: {decision_ref}")
@@ -4611,9 +4746,10 @@ def _record_r1_failure(record: dict, err: Exception, entry: dict, run_id: str,
 
 
 def _register_r1(record: dict, prepared: dict, decision_ref: str, entry: dict,
-                 run_id: str) -> str:
+                 run_id: str, *, status: str = "ready") -> str:
     """Write the brief and register the queue entry (origin composition, R1's
-    priority; the brief is removed again if the registration is refused)."""
+    priority; the brief is removed again if the registration is refused).
+    `status`: `ready`, or OPERATOR_APPROVAL_STATUS under approval mode (D-071)."""
     import decide_next as dn
     picked = record["picked"]
     eid = picked["composition"]
@@ -4635,7 +4771,7 @@ def _register_r1(record: dict, prepared: dict, decision_ref: str, entry: dict,
             f"{picked['timeframe']} (code-written variants {out_dir.relative_to(ROOT).as_posix()}; "
             f"see decision_ref)",
             entry_id=eid, source="agent", relation=None,
-            extra={"origin": dn.ORIGIN_COMPOSITION, "decision_ref": decision_ref})
+            extra={"origin": dn.ORIGIN_COMPOSITION, "decision_ref": decision_ref}, status=status)
         if rc != 0:
             raise RuntimeError(f"decide_next R1: registering {eid!r} was refused")
     except BaseException:
@@ -4643,7 +4779,7 @@ def _register_r1(record: dict, prepared: dict, decision_ref: str, entry: dict,
             brief_path.unlink(missing_ok=True)  # never leave a brief with no queue entry
         raise
     return (f"DECIDE after {entry['id']} ({run_id}): R1 -- composition {eid} of "
-            f"{[b['block_id'] for b in blocks]} on {picked['timeframe']} (ready, priority "
+            f"{[b['block_id'] for b in blocks]} on {picked['timeframe']} ({status}, priority "
             f"{picked['priority']}; variants + manifest written by code). Record: {decision_ref}")
 
 
@@ -4784,15 +4920,19 @@ def _register_campaign_review_reframe(entry: dict, run_id: str, state: dict) -> 
     new_id = brief_path.stem
     if any(isinstance(e, dict) and e.get("id") == new_id for e in _load_queue().get("queue") or []):
         return False
+    # E-068 PR 4 (D-071): held under orchestrator.operator_approval.
+    approval = _operator_approval_enabled()
+    status = _approval_status(approval)
     rc = register_hypothesis(
         brief_path, dn.AGENT_PRIORITY,
         f"Reframe from {run_id}'s campaign review (runs/{run_id}/artifacts/campaign_review.yaml)",
         entry_id=new_id, source="agent", relation=None,
-        extra={"origin": orch.CAMPAIGN_REVIEW_ORIGIN}, status="ready")
+        extra={"origin": orch.CAMPAIGN_REVIEW_ORIGIN}, status=status)
     if rc != 0:
         raise RuntimeError(f"registering {new_id!r} was refused (see the REGISTER line above)")
     _log(f"REFRAME {entry['id']} ({run_id}): campaign review's brief registered as {new_id} "
-         f"(ready, origin {orch.CAMPAIGN_REVIEW_ORIGIN}, brief={rel}); decide-next picks the next run.")
+         f"({status}, origin {orch.CAMPAIGN_REVIEW_ORIGIN}, brief={rel}); decide-next picks the next run.")
+    _log_awaiting_approval([new_id] if approval else [])
     return True
 
 
@@ -4967,6 +5107,10 @@ if __name__ == "__main__":
     parser.add_argument("--unpark", metavar="ENTRY_ID",
                         help="Slice 6c S2c: restore a parked entry (paused:waiting_for_component|"
                              "data) once the component or data exists; sets it ready, then exits.")
+    parser.add_argument("--approve", metavar="ENTRY_ID",
+                        help="E-068 PR 4 (D-071): approve an entry held by "
+                             "orchestrator.operator_approval (blocked_on_operator_approval); "
+                             "sets it ready, then exits.")
     subparsers = parser.add_subparsers(dest="command")
     register_parser = subparsers.add_parser(
         "register",
@@ -4997,6 +5141,10 @@ if __name__ == "__main__":
         # Takes and releases the campaign lock itself (refused while a campaign
         # runs); relaunch afterwards to continue the queue.
         sys.exit(0 if _unpark_entry(args.unpark) else 1)
+
+    if args.approve:
+        # Like --unpark: takes the campaign lock itself; relaunch to continue.
+        sys.exit(0 if _approve_entry(args.approve) else 1)
 
     if args.resume:
         if not resume_paused_entry(_load_queue()):
