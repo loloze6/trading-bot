@@ -7,7 +7,7 @@ run_067 (2026-10-04), two step-1a stops on a real run:
    is one card (`_adopt_lone_numbered_card`, step 1a only).
 2. F4b: the YAML-repair retry wrote a different file name, and the check re-read
    the first attempt's broken file, so the retry could never succeed. Fix: the
-   broken file is moved to .previous_attempts/<stage>_yaml_retry/ before the
+   broken file is moved to .previous_attempts/<stage>_yaml_retry<n>/ before the
    retry (`_set_aside_unrepairable`).
 
 The LLM call is mocked; these test the plumbing, not the model.
@@ -66,7 +66,7 @@ def test_run_067_reproduction_retry_writes_numbered_card(tmp_path, monkeypatch):
     assert calls["n"] == 2
     assert yaml.safe_load((arts / "hypothesis_card.yaml").read_text(encoding="utf-8"))["fixed"] is True
     assert not (arts / "hypothesis_card_2.yaml").exists()
-    kept = run_dir / ".previous_attempts" / "hypothesis_generation_yaml_retry" / "hypothesis_card.yaml"
+    kept = run_dir / ".previous_attempts" / "hypothesis_generation_yaml_retry1" / "hypothesis_card.yaml"
     assert kept.read_text(encoding="utf-8") == BROKEN
 
 
@@ -117,7 +117,7 @@ def test_f4b_sets_the_broken_file_aside_on_any_stage(tmp_path, monkeypatch):
                  expected="innovation_notes.yaml")
     assert calls["n"] == 2
     assert (arts / "innovation_notes.yaml").read_text(encoding="utf-8") == GOOD
-    kept = run_dir / ".previous_attempts" / "innovation_expansion_yaml_retry" / "innovation_notes.yaml"
+    kept = run_dir / ".previous_attempts" / "innovation_expansion_yaml_retry1" / "innovation_notes.yaml"
     assert kept.read_text(encoding="utf-8") == BROKEN
 
 
@@ -142,3 +142,53 @@ def test_failed_set_aside_never_stops_the_retry(tmp_path, monkeypatch):
                  expected="innovation_notes.yaml")
     assert calls["n"] == 2
     assert (arts / "innovation_notes.yaml").read_text(encoding="utf-8") == GOOD
+
+
+def test_a_stale_numbered_card_is_never_adopted(tmp_path, monkeypatch):
+    """review round 1: a lone hypothesis_card_2.yaml left by an earlier attempt
+    (claim_tests off: nothing is set aside on a resume) and a new answer that
+    writes no card -> still the loud missing-card stop, never a silent adoption."""
+    run_dir = _make_run_dir(tmp_path)
+    arts = run_dir / "artifacts"
+    (arts / "hypothesis_card_2.yaml").write_text(GOOD, encoding="utf-8")
+    with pytest.raises(FileNotFoundError):
+        _run(monkeypatch, run_dir, "hypothesis_generation", [{}, {}])
+    assert (arts / "hypothesis_card_2.yaml").exists()
+    assert not (arts / "hypothesis_card.yaml").exists()
+
+
+def test_a_stale_numbered_card_rewritten_by_this_call_is_adopted(tmp_path, monkeypatch):
+    run_dir = _make_run_dir(tmp_path)
+    arts = run_dir / "artifacts"
+    (arts / "hypothesis_card_2.yaml").write_text(BROKEN, encoding="utf-8")
+    _run(monkeypatch, run_dir, "hypothesis_generation", [{"hypothesis_card_2.yaml": GOOD}])
+    assert (arts / "hypothesis_card.yaml").read_text(encoding="utf-8") == GOOD
+
+
+def test_a_lone_broken_numbered_card_gets_the_f4b_retry(tmp_path, monkeypatch):
+    run_dir = _make_run_dir(tmp_path)
+    arts = run_dir / "artifacts"
+    calls = _run(monkeypatch, run_dir, "hypothesis_generation",
+                 [{"hypothesis_card_2.yaml": BROKEN}, {"hypothesis_card_2.yaml": GOOD}])
+    assert calls["n"] == 2 and calls["retry_contexts"][1] is not None
+    assert (arts / "hypothesis_card.yaml").read_text(encoding="utf-8") == GOOD
+    kept = run_dir / ".previous_attempts" / "hypothesis_generation_yaml_retry1" / "hypothesis_card.yaml"
+    assert kept.read_text(encoding="utf-8") == BROKEN
+
+
+def test_a_second_f4b_retry_keeps_the_first_set_aside_copy(tmp_path, monkeypatch):
+    """review round 1 nit: shutil.move overwrites; each retry has its own folder."""
+    run_dir = _make_run_dir(tmp_path)
+    arts = run_dir / "artifacts"
+    calls = {"n": 0, "retry_contexts": [], "arts": arts}
+    writes = [{"innovation_notes.yaml": BROKEN}, {"innovation_notes.yaml": GOOD},
+              {"innovation_notes.yaml": "second: [broken\n"}, {"innovation_notes.yaml": GOOD}]
+    monkeypatch.setattr(rpr, "async_invoke_agent", _fake_agent(calls, writes))
+    for count in (0, 1):
+        rpr._invoke_agent_with_yaml_retry("innovation_expansion", "test_run", run_dir,
+                                          [arts / "innovation_notes.yaml"], {"yaml_retry_count": count})
+    prev = run_dir / ".previous_attempts"
+    assert (prev / "innovation_expansion_yaml_retry1" / "innovation_notes.yaml").read_text(
+        encoding="utf-8") == BROKEN
+    assert (prev / "innovation_expansion_yaml_retry2" / "innovation_notes.yaml").read_text(
+        encoding="utf-8") == "second: [broken\n"

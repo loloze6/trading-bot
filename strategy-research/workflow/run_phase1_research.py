@@ -724,31 +724,44 @@ def _build_missing_deliverables_retry_context(expected_outputs: list, no_blocks:
 _SDK_ERROR_RESULT_SUCCESS_MSG = "Claude Code returned an error result: success"
 
 
-def _adopt_lone_numbered_card(run_dir: Path) -> None:
+def _numbered_cards_snapshot(run_dir: Path) -> dict:
+    """{name: mtime_ns} of the numbered cards on disk, taken before a 1a call."""
+    arts = Path(run_dir) / "artifacts"
+    return {p.name: p.stat().st_mtime_ns for p in arts.glob("hypothesis_card_*.yaml")}
+
+
+def _adopt_lone_numbered_card(run_dir: Path, before: dict) -> None:
     """run_067 (2026-10-04): step 1a wrote ONE card but named it
     hypothesis_card_2.yaml, the name BRIEF_HYPOTHESES.md gives the first of
     several cards; the split handler needs two or more, so the run stopped on a
     missing hypothesis_card.yaml. One numbered card is one card: it becomes
     hypothesis_card.yaml, exactly as the first card in name order would. No-op
-    when hypothesis_card.yaml exists or there are 0 or 2+ numbered cards."""
+    when hypothesis_card.yaml exists, when there are 0 or 2+ numbered cards, or
+    when the lone card was not written by this call (`before`, the snapshot
+    taken before it: a stale card left by an earlier attempt is never adopted
+    silently -- the run still stops on the missing card)."""
     arts = Path(run_dir) / "artifacts"
     target = arts / "hypothesis_card.yaml"
     cards = sorted(arts.glob("hypothesis_card_*.yaml"))
     if target.exists() or len(cards) != 1:
+        return
+    if before.get(cards[0].name) == cards[0].stat().st_mtime_ns:
         return
     shutil.move(str(cards[0]), str(target))
     print(f"⚠️ [1a] step 1a wrote a single card named {cards[0].name}; "
           f"it is used as hypothesis_card.yaml (one numbered card is one card).")
 
 
-def _set_aside_unrepairable(run_dir: Path, stage: str, path: Path) -> None:
+def _set_aside_unrepairable(run_dir: Path, stage: str, path: Path, retry_count: int) -> None:
     """F4b retry: move the first attempt's unparseable file to
-    RUN_DIR/.previous_attempts/<stage>_yaml_retry/ before the retry, so the
-    retry is judged on its own output. Before this (run_067), a retry that
-    wrote a different file name was re-checked against the stale broken file
-    and failed. A failed move only prints: the retry runs as before."""
+    RUN_DIR/.previous_attempts/<stage>_yaml_retry<retry_count>/ before the
+    retry, so the retry is judged on its own output. Before this (run_067), a
+    retry that wrote a different file name was re-checked against the stale
+    broken file and failed. If the retry fails too, the broken first answer is
+    in that folder, not in artifacts/. A failed move only prints: the retry
+    runs as before."""
     try:
-        dest = Path(run_dir) / _PREVIOUS_ATTEMPTS_DIR / f"{stage}_yaml_retry"
+        dest = Path(run_dir) / _PREVIOUS_ATTEMPTS_DIR / f"{stage}_yaml_retry{retry_count}"
         dest.mkdir(parents=True, exist_ok=True)
         shutil.move(str(path), str(dest / Path(path).name))
     except Exception as exc:
@@ -768,6 +781,8 @@ def _invoke_agent_with_yaml_retry(current_stage: str, run_id: str, run_dir: Path
     retry_ctx = None
     for attempt in range(2):
         outcome = None
+        before = (_numbered_cards_snapshot(run_dir)
+                  if current_stage == "hypothesis_generation" else {})
         for sdk_attempt in range(2):
             try:
                 outcome = asyncio.run(async_invoke_agent(current_stage, run_id, retry_context=retry_ctx))
@@ -780,7 +795,7 @@ def _invoke_agent_with_yaml_retry(current_stage: str, run_id: str, run_dir: Path
                     continue
                 raise  # any other message, or a second occurrence — unchanged
         if current_stage == "hypothesis_generation":
-            _adopt_lone_numbered_card(run_dir)
+            _adopt_lone_numbered_card(run_dir, before)
         try:
             ensure_files(expected_outputs)
             return
@@ -792,7 +807,7 @@ def _invoke_agent_with_yaml_retry(current_stage: str, run_id: str, run_dir: Path
                       f"retrying once with error context appended "
                       f"(yaml_retry_count={retry_count}).\n    {err}")
                 retry_ctx = _build_yaml_retry_context(err)
-                _set_aside_unrepairable(run_dir, current_stage, err.path)
+                _set_aside_unrepairable(run_dir, current_stage, err.path, retry_count)
                 continue
             raise  # retry ALSO failed — fail to human as before, unchanged
         except FileNotFoundError as err:
