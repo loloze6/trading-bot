@@ -2945,14 +2945,19 @@ def _operator_approval_enabled(cfg: dict | None = None) -> bool:
     False when the key, the section or the config file is absent; a non-bool
     raises; true requires orchestrator.decide_next.enabled (every entry it
     holds is one decide-next's apply step, or the campaign-review reframe under
-    verdict_routing_retired -- itself requiring decide_next -- creates), checked
-    by the launch pre-flight (_flag_readers). Read at APPLY time, here in
-    run_campaign; tools/decide_next.py stays pure and never reads it."""
+    verdict_routing_retired, creates) AND orchestrator.verdict_routing_retired.
+    enabled (review: without it the legacy refine/pivot/escalate routing mints
+    continuation runs that would run unapproved), checked by the launch
+    pre-flight (_flag_readers). Read at APPLY time, here in run_campaign;
+    tools/decide_next.py stays pure and never reads it."""
     return orch._strict_orchestrator_flag(
         "operator_approval", cfg=cfg,
-        requires=(("decide_next", lambda: orch._flag_dep(orch._decide_next_enabled, cfg)),),
+        requires=(("decide_next", lambda: orch._flag_dep(orch._decide_next_enabled, cfg)),
+                  ("verdict_routing_retired",
+                   lambda: orch._flag_dep(orch._verdict_routing_retired_enabled, cfg))),
         why=("approval mode holds the entries decide-next creates or flips ready; without "
-             "decide_next there is nothing to hold. Enable them together."))
+             "decide_next there is nothing to hold, and without verdict_routing_retired the "
+             "legacy routing mints continuation runs no approval holds. Enable them together."))
 
 
 def _approval_status(enabled: bool) -> str:
@@ -4488,7 +4493,7 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
     elif stop:
         msg = (f"DECIDE stop after {entry['id']} ({run_id}): {stop['reason']} -- "
                f"{stop.get('detail')}. Record: {decision_ref}. See RUNBOOK.md §3."
-               + _parked_note(final_queue))
+               + _parked_note(final_queue) + _approval_note(final_queue))
     else:
         nxt = picked.get("operator_entry") or picked.get("queue_entry_id")
         msg = (f"DECIDE after {entry['id']} ({run_id}): the scheduler runs {nxt} next "

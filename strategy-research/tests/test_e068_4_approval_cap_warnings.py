@@ -52,7 +52,9 @@ FIXTURE = _SR / "tests" / "fixtures" / "run_070_regime_power_reader_unknown_clas
 SCHEMA = json.loads((_SR / "workflow_artifacts" / "schemas" /
                      "decision_record.schema.json").read_text(encoding="utf-8"))
 HELD = "blocked_on_operator_approval"
-APPROVAL_ON = {**_ALL_ON, "operator_approval": True}
+# operator_approval requires decide_next AND verdict_routing_retired (review round 1).
+APPROVAL_ON = {**_ALL_ON, "profit_bars_file": True, "profit_bars_every_backtest": True,
+               "verdict_routing_retired": True, "operator_approval": True}
 
 
 def _valid(record):
@@ -356,6 +358,10 @@ def test_flag_reader(campaign_root):
     _write_flags(root, operator_approval=True)
     with pytest.raises(ValueError, match="requires orchestrator.decide_next.enabled=true"):
         camp._operator_approval_enabled()
+    _write_flags(root, **{**APPROVAL_ON, "verdict_routing_retired": False})
+    with pytest.raises(ValueError,
+                       match="requires orchestrator.verdict_routing_retired.enabled=true"):
+        camp._operator_approval_enabled()
     _write_flags(root, **APPROVAL_ON)
     assert camp._operator_approval_enabled() is True
 
@@ -364,6 +370,10 @@ def test_the_launch_preflight_refuses_approval_without_decide_next(campaign_root
     _write_flags(campaign_root["root"], operator_approval=True)
     values, refusal = camp._flag_preflight()
     assert refusal and "orchestrator.operator_approval.enabled=true requires" in refusal
+    _write_flags(campaign_root["root"], **{**APPROVAL_ON, "verdict_routing_retired": False})
+    values, refusal = camp._flag_preflight()
+    assert refusal and ("orchestrator.operator_approval.enabled=true requires "
+                        "orchestrator.verdict_routing_retired.enabled=true") in refusal
     _write_flags(campaign_root["root"], **APPROVAL_ON)
     values, refusal = camp._flag_preflight()
     assert refusal is None and values["operator_approval"] is True
@@ -513,7 +523,7 @@ def test_campaign_review_reframe(campaign_root, monkeypatch, approval):
     monkeypatch.setattr(rpr, "run_loop", lambda run_id: None)
     run_dir, rel = _finished_reframe_run(campaign_root)
     if approval:
-        _write_flags(campaign_root["root"], **FLAT_ON, operator_approval=True)
+        _write_flags(campaign_root["root"], **APPROVAL_ON)
     entry = camp._load_queue()["queue"][0]
     assert camp._register_campaign_review_reframe(entry, "run_061", _state(run_dir)) is True
     new = camp._load_queue()["queue"][1]
@@ -626,3 +636,85 @@ def test_token_budget_is_1_8_million():
     cfg = yaml.safe_load((_SR / "config" / "campaign_config.yaml").read_text(encoding="utf-8"))
     assert cfg["orchestrator"]["token_budget_per_run_weighted_units"] == 1800000
     assert rpr._load_token_budget() == 1800000.0
+
+
+# ===========================================================================
+# Review round 1
+# ===========================================================================
+
+def _card(eid, owner, status, run="run_001"):
+    return {"id": eid, "brief_path": f"briefs/{owner}.md", "status": status, "priority": 999,
+            "origin": "brief", "card_ref": f"campaign_record/queued_cards/{run}/hypothesis_card_2.yaml"}
+
+
+def test_stop_line_names_held_entries(campaign_root, monkeypatch):
+    """Fix 1: a decide-next stop names entries awaiting approval."""
+    monkeypatch.setattr(rpr, "run_loop", lambda run_id: None)
+    root = campaign_root["root"]
+    _stage_flag_on_source(campaign_root, [_sketch("profitability-run_061-1", kind="regime")])
+    _write_flags(root, **APPROVAL_ON)
+    queue = _queue(campaign_root)
+    queue.append({"id": "HELD_ONE", "brief_path": "b.md", "status": HELD, "priority": 999,
+                  "source": "agent", "notes": "n", "run_ids": [], "origin": "reader"})
+    _save_queue_entries(campaign_root["queue_path"], queue)
+    assert camp.process_once() is False
+    line = next(l for l in _log(root).splitlines() if "DECIDE stop after" in l)
+    assert line.endswith("Awaiting operator approval: ['HELD_ONE'] -- approve with --approve <id> "
+                         "(RUNBOOK.md §4 Approval mode).")
+
+
+@pytest.mark.parametrize("status,held", [(HELD, True), ("blocked_on_e068", True),
+                                         ("blocked_on_component:Foo", False),
+                                         ("queued", False), ("ready", False)])
+def test_a_held_extra_card_holds_its_brief(status, held):
+    """Fix 2: an operator-held card is an unrun idea of the brief; R2 waits."""
+    entries = [_owner("B"), _card("B__h2", "B", status)]
+    out = dn._r2(entries, select=True)
+    if held:
+        assert out["held_briefs"] == ["B"] and out["enqueued"] == [] and out["ready"] == []
+    else:
+        assert out["held_briefs"] == []
+
+
+def test_a_held_card_of_another_brief_does_not_hold_this_one():
+    entries = [_owner("B"), _owner("C", priority=2), _card("C__h2", "C", HELD)]
+    out = dn._r2(entries, select=True)
+    assert out["held_briefs"] == ["C"] and out["ready"] == ["B__more_1"]
+
+
+def test_quarantined_cards_count_toward_the_cap():
+    """Fix 5: owner + 1 request + 1 card = 3 -> capped."""
+    owner = {**_owner("B"), "status": Q, "run_ids": ["run_001"]}
+    entries = [owner, _req("B", 1, Q), _card("B__h2", "B", Q)]
+    assert dn.component_quarantines(owner, entries) == ["B", "B__more_1", "B__h2"]
+    assert dn._r2(entries, select=True)["quarantine_capped_briefs"] == ["B"]
+    entries[2]["status"] = "queued"
+    assert "quarantine_capped_briefs" not in dn._r2(entries, select=True)
+
+
+def test_a_reopen_marker_drops_cards_written_before_it():
+    owner = {**_owner("B"), "status": Q, "run_ids": ["run_001"]}
+    req1 = {**_req("B", 1, Q), "run_ids": ["run_002"]}
+    req2 = {**_req("B", 2, Q), "run_ids": ["run_003"]}
+    entries = [owner, req1, req2, _card("B__h2", "B", Q, run="run_001"),
+               _card("B__h3", "B", Q, run="run_003"), _card("B__h4", "B", Q, run="run_999")]
+    assert len(dn.component_quarantines(owner, entries)) == 6   # no marker: every card
+    owner[dn.REOPENED_AFTER_KEY] = "B__more_1"
+    # only B__more_2 and the card its run wrote count; an unclaimed card does not
+    assert dn.component_quarantines(owner, entries) == ["B__more_2", "B__h3"]
+
+
+def test_a_brief_held_and_capped_is_listed_once_as_held():
+    entries = [_owner("B")] + [_req("B", i, Q) for i in (1, 2, 3)] + [_req("B", 4, HELD)]
+    out = dn._r2(entries, select=True)
+    assert out["held_briefs"] == ["B"] and "quarantine_capped_briefs" not in out
+    rec = _decide(_empty_inputs(entries))
+    assert rec["stop"]["detail"].count("B") == 1 and "capped" not in rec["stop"]["detail"]
+
+
+def test_docs_carry_the_round_1_fixes():
+    guide = (_SR / "docs" / "USER_GUIDE.md").read_text(encoding="utf-8")
+    assert "**1,800,000 weighted units** by default" in guide
+    runbook = (_SR / "docs" / "RUNBOOK.md").read_text(encoding="utf-8")
+    assert "counts as an EMPTY answer in the" in runbook
+    assert "resets the O-20 exhausted-answer count" in runbook

@@ -881,7 +881,10 @@ orchestrator:
     enabled: false
       # E-068 PR 4 (D-071, CUL-399). OFF BY DEFAULT, read by
       # run_campaign._operator_approval_enabled(). HARD DEPENDENCY: refused by
-      # the launch pre-flight if true while decide_next.enabled is false/absent.
+      # the launch pre-flight if true while decide_next.enabled or
+      # verdict_routing_retired.enabled is false/absent (without the latter the
+      # legacy refine/pivot/escalate routing mints continuation runs that no
+      # approval holds).
       # While false: byte-identical (every entry is created exactly as before).
       #
       # While true: every queue entry the AGENT creates or flips to `ready` is
@@ -890,8 +893,9 @@ orchestrator:
       # waiting requests, R1's composition, and the campaign-review reframe.
       # Applied at apply time in run_campaign (tools/decide_next.py stays pure);
       # the decision record says so (picked.status, r2 enqueued status and
-      # awaiting_approval). The held entry counts as an operator hold (it holds
-      # its brief; R2 never re-mints behind it) and is never auto-picked. The
+      # awaiting_approval). The held entry counts as an operator hold (a held R2
+      # request or extra card holds its brief: R2 never mints behind it) and is
+      # never auto-picked. The
       # operator approves one with `run_campaign.py --approve <id>` (sets it
       # ready). Operator actions (`register`, --unpark, --resume) are unchanged.
 # ---------------------------------------------------------------------------

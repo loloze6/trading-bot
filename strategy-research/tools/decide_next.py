@@ -905,9 +905,14 @@ def r2_held_owner(owner: dict, entries: list) -> bool:
     """CUL-398: True when the owner entry itself, or any R2 request on
     `owner`'s brief, carries an operator hold. R2 then neither flips a request
     ready nor mints a new one for that brief: the operator's hold holds the
-    brief, not only the one entry (review S3a: an owner hold is listed too)."""
+    brief, not only the one entry (review S3a: an owner hold is listed too).
+    E-068 PR 4 review (D-071): an operator-held EXTRA CARD of the brief holds it
+    too -- e.g. a card waiting in blocked_on_operator_approval is an unrun idea
+    of that brief, so R2 must not ask for more behind it. A component-
+    quarantined card does not (D-069)."""
     return r2_request_operator_held(owner) or any(
-        is_r2_request(e) and r2_request_operator_held(e) and brief_owner(e, entries) is owner
+        (is_r2_request(e) or is_card_entry(e)) and r2_request_operator_held(e)
+        and brief_owner(e, entries) is owner
         for e in entries)
 
 
@@ -923,14 +928,31 @@ def r2_eligible_owner(entry: dict) -> bool:
                  or not status.startswith(_R2_INELIGIBLE_OWNER_STATUS_PREFIXES)))
 
 
+def _card_producer_id(card: dict, entries: list):
+    """The id of the queue entry whose run wrote `card` (its card_ref's run is
+    in that entry's run_ids), or None when no entry claims the run."""
+    try:
+        run = _card_source_run(card.get("card_ref"))
+    except DecideNextError:
+        return None
+    return next((e.get("id") for e in entries
+                 if run in (e.get("run_ids") or []) and not is_card_entry(e)), None)
+
+
 def component_quarantines(owner: dict, entries: list) -> list:
     """E-068 PR 4 (D-071, review S3b of PR 3a): the ids of the entries on
     `owner`'s brief that are under R9's automatic component quarantine
-    (`blocked_on_component:<name>`) -- the owner's own entry and its R2
-    requests, counted after the operator's reopen marker (_requests_since_reopen),
-    so a reopen resets the count. A released entry no longer counts."""
+    (`blocked_on_component:<name>`) -- the owner's own entry, its R2 requests
+    and (review follow-up) its extra cards, which are new ideas of the brief
+    too. Counted after the operator's reopen marker (_requests_since_reopen),
+    so a reopen resets the count; with a marker, a card counts only when the
+    entry that wrote it (_card_producer_id) still counts. A released entry no
+    longer counts."""
     mine, owner_counts = _requests_since_reopen(owner, entries)
-    return [e["id"] for e in ([owner] if owner_counts else []) + mine
+    counted = {e["id"] for e in mine} | ({owner["id"]} if owner_counts else set())
+    cards = [e for e in entries if is_card_entry(e) and brief_owner(e, entries) is owner
+             and (not owner.get(REOPENED_AFTER_KEY) or _card_producer_id(e, entries) in counted)]
+    return [e["id"] for e in ([owner] if owner_counts else []) + mine + cards
             if str(e.get("status") or "").startswith(COMPONENT_QUARANTINE_PREFIX)]
 
 
@@ -1666,7 +1688,9 @@ def _r2(entries: list, *, select: bool) -> dict:
     spent = {e["id"]: consecutive_empty_r2(e, entries) for e in open_owners}
     spent = {k: v for k, v in spent.items() if len(v) >= BRIEF_MAX_CONSECUTIVE_EMPTY_R2}
     held = sorted(e["id"] for e in open_owners if r2_held_owner(e, entries))
-    capped = sorted(e["id"] for e in open_owners if r2_quarantine_capped(e, entries))
+    # a brief both held and capped is listed once, as held (review nit)
+    capped = sorted(e["id"] for e in open_owners
+                    if e["id"] not in held and r2_quarantine_capped(e, entries))
     eligible = [e for e in open_owners
                 if r2_eligible_owner(e) and e["id"] not in spent and e["id"] not in held
                 and e["id"] not in capped]
