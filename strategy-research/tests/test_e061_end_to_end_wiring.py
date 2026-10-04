@@ -213,8 +213,6 @@ TARGET_FLAGS = {
     "forecast_size_probe": False,
     # E-068 slice 2: the stub cards carry no claim block.
     "claim_tests": False,
-    # E-068 3b: needs claim_tests.
-    "claim_test_review": False,
 }
 
 # C5.8 (D-050): the four legacy route/rationale keys of a window's core

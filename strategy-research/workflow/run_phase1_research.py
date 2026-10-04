@@ -4858,39 +4858,6 @@ def _claim_tests_enabled(cfg: dict | None = None) -> bool:
     return value
 
 
-CLAIM_TEST_REVIEW_MODES = ("record", "revise")
-
-
-def _claim_test_review_mode(cfg: dict | None = None) -> str | None:
-    """E-068 3b: orchestrator.claim_test_review -> None (off, the default: the
-    key, the section or the file absent, or enabled false), else its mode:
-    "record" (the review is written to artifacts/claim_review.yaml only) or
-    "revise" (its issues also join the ONE claim revision after 1b). A non-bool
-    `enabled` or an unknown mode raises; so does enabled without
-    orchestrator.claim_tests.enabled (the review reads the claim 1a writes only
-    under that flag). Information only either way: never a stop or a route."""
-    cfg = _orchestrator_config(cfg)
-    rv_cfg = ((cfg.get("orchestrator") or {}).get("claim_test_review") or {})
-    value = rv_cfg.get("enabled", False)
-    if not isinstance(value, bool):
-        raise ValueError(
-            f"orchestrator.claim_test_review.enabled={value!r} is not a real boolean "
-            f"(got {type(value).__name__}) -- write an unquoted `true` or `false` in "
-            f"config/campaign_config.yaml, not a quoted string or null."
-        )
-    mode = rv_cfg.get("mode", "record")
-    if mode not in CLAIM_TEST_REVIEW_MODES:
-        raise ValueError(f"orchestrator.claim_test_review.mode={mode!r} is not one of "
-                         f"{list(CLAIM_TEST_REVIEW_MODES)}")
-    if value and not _flag_dep(_claim_tests_enabled, cfg):
-        raise ValueError(
-            "orchestrator.claim_test_review.enabled=true requires "
-            "orchestrator.claim_tests.enabled=true as well -- the review reads the "
-            "`claim` block step 1a writes only under that flag. Enable them together."
-        )
-    return mode if value else None
-
-
 # ---------------------------------------------------------------------------
 # E-059 S3 / slice 6c S2a -- verdict routing retired (delivery_plan_v26.md slice
 # 6c; engineering/roadmap/E-059/S1_FINDINGS_6C.md and its operator decision of
@@ -15397,28 +15364,21 @@ def _record_claim_match(path: Path) -> None:
 # variant measured the same. Right after 1b's manifest is accepted (the route to
 # innovation_expansion; composition runs never reach it), code checks whether
 # ANY test reads the block's output (claim_card.block_visibility). When none
-# does -- and, with orchestrator.claim_test_review in `revise` mode, when the
-# closed-book review found a test measuring another quantity -- ONE small LLM
-# call may re-emit the card's `claim` block, once per run (state key
-# `claim_revision`, written before the call). The answer is accepted only if
-# code passes it (claim_card.check_claim + the power bound) and its `statement`
-# and `kind` are unchanged; it is then spliced into the run's card (and its
-# numbered twin), never into campaign_record/queued_cards/. Whatever happens is
-# written to artifacts/claim_revision.yaml and the run continues.
+# does, ONE small LLM call may re-emit the card's `claim` block, once per run
+# (state key `claim_revision`, written before the call). The answer is accepted
+# only if code passes it (claim_card.check_claim + the power bound) and its
+# `statement` and `kind` are unchanged; it is then spliced into the run's card
+# (and its numbered twin), never into campaign_record/queued_cards/. Whatever
+# happens is written to artifacts/claim_revision.yaml and the run continues.
+# (An LLM review of the tests' quantities and units was measured offline and
+# failed its gate -- engineering/roadmap/E-068/review_measurement/; parked,
+# CUL-397. Nothing here calls it.)
 CLAIM_REVISION_STATE_KEY = "claim_revision"
 _CLAIM_REVISION_FILE = "claim_revision.yaml"
-_CLAIM_REVIEW_FILE = "claim_review.yaml"
-CLAIM_REVISION_SKILL = "claim-revision"      # flag-on-only inputs; never in _SKILL_MAP
-CLAIM_REVIEW_SKILL = "claim-review"
+CLAIM_REVISION_SKILL = "claim-revision"      # flag-on-only input; never in _SKILL_MAP
 CLAIM_REVISION_AUDIT_KEY = "claim_revision_attempt_0"
-CLAIM_REVIEW_AUDIT_KEY = "claim_review_attempt_0"
 CLAIM_BLIND_MESSAGE = ("your tests cannot see the block: base and variants would "
                        "measure the same")
-# The review's closed per-test keys and their types (validated by code).
-CLAIM_REVIEW_TEST_KEYS = {"measures_statement": bool, "quantity": str,
-                          "horizon_units_ok": bool, "direction_baseline_ok": bool,
-                          "issues": list}
-_CLAIM_REVIEW_FLAGS = ("measures_statement", "horizon_units_ok", "direction_baseline_ok")
 _CLAIM_LOCKED_KEYS = ("statement", "kind")
 # The real guide (not ROOT-relative: a sandboxed ROOT holds no skills).
 _CLAIM_GUIDE_SOURCE = (Path(__file__).resolve().parent.parent / "workflow_artifacts" / "skills"
@@ -15464,123 +15424,6 @@ def _claim_llm_call(run_dir: Path, prompt: str, audit_key: str) -> str:
         entry["models"] = meta.get("models")
     update_state(path=Path(run_dir), audit_log={audit_key: entry})
     return text or ""
-
-
-def _claim_test_names(claim) -> list | None:
-    """The claim's test names when it has a list of named tests, else None."""
-    tests = claim.get("tests") if isinstance(claim, dict) else None
-    if not isinstance(tests, list) or not tests:
-        return None
-    names = [t.get("name") if isinstance(t, dict) else None for t in tests]
-    if any(not isinstance(n, str) or not n.strip() for n in names) or len(set(names)) != len(names):
-        return None
-    return names
-
-
-def _claim_review_prompt(run_dir: Path, card: dict) -> str:
-    """The review's prompt (also used verbatim by
-    engineering/roadmap/E-068/review_measurement/measure_review.py). Inputs:
-    the card's statement, timeframe and claim (in the handoff), the block
-    manifest and CLAIM_TESTS.md. Closed-book."""
-    handoff = {
-        "stage": "claim_review",
-        "objective": ("For each test of the card's claim, check that it measures exactly the "
-                      "quantity the claim's statement names, in its unit and over its span, "
-                      "in the claimed direction against a fair baseline. Do not judge "
-                      "whether the claim is true, and do not rewrite it."),
-        "required_inputs": [
-            {"path": _claim_manifest_rel(),
-             "reason": "the block step 1b built from this idea (its kind)"},
-            {"path": _claim_guide_rel(run_dir),
-             "reason": "what every slot measures: selector fields, outcomes, horizons in bars"}],
-        "deliverables": [_CLAIM_REVIEW_FILE],
-        "injected_context": {"card": {"hypothesis_id": card.get("hypothesis_id"),
-                                      "timeframe": card.get("timeframe"),
-                                      "claim": card.get("claim")}},
-    }
-    return _build_stage_prompt("claim_review", handoff, Path(run_dir),
-                               skill_file_name=CLAIM_REVIEW_SKILL)
-
-
-def _validate_claim_review(text: str, names: list) -> tuple:
-    """(per-test rows, None) when the answer is exactly one fenced YAML block
-    `{tests: {<every test name>: {closed keys}}}`, else (None, error)."""
-    blocks = _READER_OUTPUT_BLOCK_RE.findall(text or "")
-    if len(blocks) != 1:
-        return None, f"{len(blocks)} fenced YAML block(s); exactly one is required"
-    try:
-        doc = yaml.safe_load(blocks[0])
-    except yaml.YAMLError as exc:
-        return None, f"not YAML: {exc}"
-    if not isinstance(doc, dict) or set(doc) != {"tests"} or not isinstance(doc["tests"], dict):
-        return None, "the block must be a mapping with exactly one key, `tests`, a mapping"
-    rows = doc["tests"]
-    if set(rows) != set(names):
-        return None, f"tests {sorted(map(str, rows))} != the claim's tests {sorted(names)}"
-    for name, row in rows.items():
-        if not isinstance(row, dict) or set(row) != set(CLAIM_REVIEW_TEST_KEYS):
-            return None, (f"test {name!r}: keys must be exactly "
-                          f"{sorted(CLAIM_REVIEW_TEST_KEYS)}")
-        for key, typ in CLAIM_REVIEW_TEST_KEYS.items():
-            if not isinstance(row[key], typ):
-                return None, f"test {name!r}: {key} must be a {typ.__name__}"
-        if not row["quantity"].strip():
-            return None, f"test {name!r}: quantity must be a non-empty string"
-        if any(not isinstance(i, str) for i in row["issues"]):
-            return None, f"test {name!r}: issues must be a list of strings"
-    return rows, None
-
-
-def _claim_review_issues(rows: dict) -> list:
-    """One line per test the review flagged (any check false)."""
-    out = []
-    for name, row in rows.items():
-        failed = [k for k in _CLAIM_REVIEW_FLAGS if row.get(k) is False]
-        if failed:
-            detail = "; ".join(row.get("issues") or []) or ", ".join(f"{k}: false" for k in failed)
-            out.append(f"test {name!r} ({', '.join(failed)} false): {detail}")
-    return out
-
-
-def _run_claim_review(run_dir: Path, run_id: str, card: dict, mode: str) -> dict:
-    """orchestrator.claim_test_review: one closed-book call (once per run),
-    written to artifacts/claim_review.yaml. An invalid answer is recorded as
-    review_error, never retried. Never raises (an error is recorded)."""
-    out = Path(run_dir) / "artifacts" / _CLAIM_REVIEW_FILE
-    record = {"run_id": run_id, "mode": mode}
-    try:
-        names = _claim_test_names(card.get("claim"))
-        state = load_yaml(Path(run_dir) / "pipeline_state.yaml") or {}
-        within, used, budget = _claim_llm_budget(run_dir)
-        if names is None:
-            record.update(status="not_applicable",
-                          reason="the claim has no list of named tests to review")
-        elif (state.get(CLAIM_REVISION_STATE_KEY) or {}).get("review_called"):
-            record.update(status="skipped",
-                          reason="the review was already called in this run (once per run)")
-        elif not within:
-            record.update(status="skipped_budget",
-                          reason=f"weighted token budget spent ({used:,.0f} > {budget:,.0f})")
-        else:
-            update_state(path=Path(run_dir), **{CLAIM_REVISION_STATE_KEY: {
-                "review_called": True, "review_at": datetime.now(timezone.utc).isoformat()}})
-            text = _claim_llm_call(run_dir, _claim_review_prompt(run_dir, card),
-                                   CLAIM_REVIEW_AUDIT_KEY)
-            rows, error = _validate_claim_review(text, names)
-            if error is not None:
-                record.update(status="review_error", error=error, raw_output=text)
-            else:
-                record.update(status="reviewed", tests=rows,
-                              found_issues=_claim_review_issues(rows))
-    except Exception as exc:  # noqa: BLE001 -- information only
-        record.update(status="error", error=f"{type(exc).__name__}: {exc}")
-    try:
-        save_yaml(out, record)
-    except Exception as exc:  # noqa: BLE001
-        _safe_print(f"⚠️  [E-068] could not write artifacts/{_CLAIM_REVIEW_FILE} ({exc}).")
-    if record.get("found_issues"):
-        _safe_print(f"⚠️  [E-068] claim review ({mode}): " + " | ".join(record["found_issues"]))
-    return record
 
 
 def _claim_revision_prompt(run_dir: Path, message: str) -> str:
@@ -15669,16 +15512,8 @@ def _claim_revision_body(run_dir: Path, run_id: str) -> dict:
     claim = card.get("claim")
     before = cc.block_visibility(claim, kind)
     record = {"manifest_kind": kind, "claim_before": claim, "visibility_before": before}
-    mode = _claim_test_review_mode()
-    comments = []
-    if mode is not None:
-        review = _run_claim_review(run_dir, run_id, card, mode)
-        record["review"] = {"mode": mode, "status": review.get("status"),
-                            "found_issues": review.get("found_issues") or []}
-        if mode == "revise" and review.get("status") == "reviewed":
-            comments = list(review.get("found_issues") or [])
     unchanged = {"claim_after": claim, "visibility_after": before}
-    if before != cc.VISIBILITY_BLIND and not comments:
+    if before != cc.VISIBILITY_BLIND:
         return {**record, "status": "not_needed", **unchanged}
     state = load_yaml(run_dir / "pipeline_state.yaml") or {}
     if (state.get(CLAIM_REVISION_STATE_KEY) or {}).get("revision_called"):
@@ -15690,10 +15525,7 @@ def _claim_revision_body(run_dir: Path, run_id: str) -> dict:
         return {**record, "status": "skipped_budget",
                 "reason": f"weighted token budget spent ({used:,.0f} > {budget:,.0f})",
                 **unchanged}
-    parts = [CLAIM_BLIND_MESSAGE] if before == cc.VISIBILITY_BLIND else []
-    if comments:
-        parts.append("a review of your tests found: " + " | ".join(comments))
-    message = "; ".join(parts)
+    message = CLAIM_BLIND_MESSAGE
     record["message"] = message
     # written BEFORE the call: a resume never calls twice
     update_state(path=run_dir, **{CLAIM_REVISION_STATE_KEY: {
@@ -15726,7 +15558,7 @@ def _claim_revision_body(run_dir: Path, run_id: str) -> dict:
 
 def _claim_revision_after_1b(run_dir: Path, run_id: str) -> None:
     """After 1b's manifest is accepted (run_loop, route innovation_expansion):
-    the optional review, then at most ONE claim revision per run. Always writes
+    the block-visibility check, then at most ONE claim revision per run. Always writes
     artifacts/claim_revision.yaml (flag on). Never raises, never routes: the
     run continues in every case. Flag off: no-op, nothing read or written."""
     if not _claim_flag_or_none():
@@ -15750,20 +15582,21 @@ def _claim_revision_after_1b(run_dir: Path, run_id: str) -> None:
 
 
 def _clear_claim_revision_files(stage_name: str, run_dir: Path) -> None:
-    """At 1a/1b entry (flag on): artifacts/claim_revision.yaml and
-    claim_review.yaml describe one 1b pass; a new pass starts without them
-    (as protocol_execution clears slice 3's files). The once-per-run state
-    key is kept. Never raises. Flag off or another stage: no-op."""
+    """At 1a/1b entry (flag on): artifacts/claim_revision.yaml describes one
+    1b pass; a new pass starts without it (as protocol_execution clears slice
+    3's files). The once-per-run state key is kept, so a later pass records
+    `skipped` instead of calling again. Never raises. Flag off or another
+    stage: no-op."""
     if stage_name not in ("hypothesis_generation", "strategy_config_authoring"):
         return
     if not _claim_flag_or_none():
         return
     try:
-        for name in (_CLAIM_REVISION_FILE, _CLAIM_REVIEW_FILE):
-            p = Path(run_dir) / "artifacts" / name
-            if p.exists():
-                p.unlink()
-                _safe_print(f"🧹 [E-068] {stage_name} re-run: cleared previous artifacts/{name}")
+        p = Path(run_dir) / "artifacts" / _CLAIM_REVISION_FILE
+        if p.exists():
+            p.unlink()
+            _safe_print(f"🧹 [E-068] {stage_name} re-run: cleared previous "
+                        f"artifacts/{_CLAIM_REVISION_FILE}")
     except Exception as exc:  # noqa: BLE001 -- information only
         _safe_print(f"⚠️  [E-068] could not clear the previous claim revision ({exc}).")
 
