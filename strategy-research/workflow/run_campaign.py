@@ -4391,8 +4391,13 @@ def _apply_updates(items: list, updates: dict) -> None:
 
 def _brief_updates(queue: dict, entry: dict) -> dict:
     """{entry_id: {field: value}} to write with this decision:
-      * the brief's owner flips to `brief_status: exhausted` when the finished
-        run ended completed_brief_exhausted (step 1a said so; nothing else does);
+      * O-20 (operator, 2026-10-04): when the finished run ended
+        completed_brief_exhausted, the owner records its trailing run of
+        consecutive "exhausted" answers (`brief_exhausted_answers`); it flips to
+        `brief_status: exhausted` only at decide_next.BRIEF_EXHAUSTED_ANSWERS_TO_CLOSE
+        (= 2) of them, with brief_status_reason `two_exhausted_answers`. A single
+        answer leaves the brief open. Any other finished entry refreshes a stale
+        record (a card resets the run);
       * operator decision 7: every legacy brief (no brief_status) not yet
         tagged gets `title: "[obsolete] <brief heading or id>"` -- once (an
         entry already carrying the marker is skipped), on the QUEUE ENTRY
@@ -4402,24 +4407,41 @@ def _brief_updates(queue: dict, entry: dict) -> dict:
         yielded no new, eligible card (repeat, quarantine, failure/pause,
         superseded) flips to exhausted with brief_status_reason
         `no_new_hypothesis`.
+    Every close also writes `brief_status_rule`, one sentence naming the rule
+    and the entries that closed the brief, so the operator can see it and
+    reopen (set `brief_status: open` and `brief_reopened_after: <last entry id>`).
     None of these changes a status the scheduler picks by."""
     import decide_next as dn
     items = [e for e in queue.get("queue") or [] if isinstance(e, dict)]
     updates: dict = {}
-    if entry.get("outcome") == dn.BRIEF_EXHAUSTED_OUTCOME:
-        owner = dn.brief_owner(entry, items)
-        if owner is not None:
-            updates.setdefault(owner["id"], {}).update(
-                {"brief_status": dn.BRIEF_EXHAUSTED, "brief_status_reason": "step_1a_reported"})
+    owner = dn.brief_owner(entry, items)   # None for a reader candidate or a legacy brief
+    if owner is not None and owner.get("brief_status") == dn.BRIEF_OPEN:
+        answers = dn.consecutive_exhausted(owner, items)
+        if answers or owner.get("brief_exhausted_answers"):
+            updates.setdefault(owner["id"], {})["brief_exhausted_answers"] = answers
+        if len(answers) >= dn.BRIEF_EXHAUSTED_ANSWERS_TO_CLOSE:
+            rule = (f"two consecutive step-1a 'exhausted' answers "
+                    f"({', '.join(answers)}; limit {dn.BRIEF_EXHAUSTED_ANSWERS_TO_CLOSE})")
+            updates[owner["id"]].update({"brief_status": dn.BRIEF_EXHAUSTED,
+                                         "brief_status_reason": dn.EXHAUSTED_ANSWERS_REASON,
+                                         "brief_status_rule": rule})
+            _log(f"BRIEF-EXHAUSTED {owner['id']}: {rule}.")
+        elif entry.get("outcome") == dn.BRIEF_EXHAUSTED_OUTCOME:
+            _log(f"BRIEF-EXHAUSTED-ONCE {owner['id']}: step 1a said exhausted on "
+                 f"{entry['id']} ({len(answers)} of {dn.BRIEF_EXHAUSTED_ANSWERS_TO_CLOSE} "
+                 f"consecutive answers); the brief stays open (O-20).")
     for e in items:
-        if e.get("brief_status") == dn.BRIEF_OPEN and e["id"] not in updates:
+        closing = updates.get(e["id"], {}).get("brief_status") == dn.BRIEF_EXHAUSTED
+        if e.get("brief_status") == dn.BRIEF_OPEN and not closing:
             streak = dn.consecutive_empty_r2(e, items)
             if len(streak) >= dn.BRIEF_MAX_CONSECUTIVE_EMPTY_R2:
-                updates[e["id"]] = {"brief_status": dn.BRIEF_EXHAUSTED,
-                                    "brief_status_reason": dn.AUTO_EXHAUSTED_REASON}
-                _log(f"BRIEF-EXHAUSTED {e['id']}: {len(streak)} consecutive R2 requests "
-                     f"{streak} yielded no new hypothesis (limit "
-                     f"{dn.BRIEF_MAX_CONSECUTIVE_EMPTY_R2}).")
+                rule = (f"empty-R2 streak: {len(streak)} consecutive R2 requests with no new "
+                        f"card ({', '.join(streak)}; limit {dn.BRIEF_MAX_CONSECUTIVE_EMPTY_R2})")
+                updates.setdefault(e["id"], {}).update(
+                    {"brief_status": dn.BRIEF_EXHAUSTED,
+                     "brief_status_reason": dn.AUTO_EXHAUSTED_REASON,
+                     "brief_status_rule": rule})
+                _log(f"BRIEF-EXHAUSTED {e['id']}: {rule}.")
     for e in items:
         if dn.needs_obsolete_tag(e):
             updates.setdefault(e["id"], {})["title"] = dn.obsolete_title(

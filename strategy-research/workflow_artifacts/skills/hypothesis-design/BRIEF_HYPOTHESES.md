@@ -81,9 +81,9 @@ brief_status: exhausted
 reason: <one or two sentences: why nothing new is left in this brief>
 ```
 
-The run then ends as `completed_brief_exhausted`, and the queue never asks
-this brief for more hypotheses again. Writing this file next to any card
-stops the run (contradictory output).
+The run then ends as `completed_brief_exhausted`. The brief closes only when
+two consecutive runs say so independently (O-20); until then the queue may ask
+again. Writing this file next to any card stops the run (contradictory output).
 
 Never declare the brief exhausted, and never leave out a card, on a cost,
 breakeven or turnover estimate (`cost_feasibility` included). Costs are judged

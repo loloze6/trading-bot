@@ -91,7 +91,8 @@ What this module deliberately does NOT do:
     composition's reader patches are accepted with its composition manifest
     as their source (7.5).
   * decide a brief is exhausted. Only step 1a says so (brief_status.yaml ->
-    the run's completed_brief_exhausted outcome); the caller flips the owner.
+    the run's completed_brief_exhausted outcome); the caller flips the owner
+    after two consecutive such answers (consecutive_exhausted, O-20).
   * write trial rows, touch the holdout, or write any file. The caller writes
     (including the one-time "[obsolete]" title on legacy briefs).
 
@@ -162,6 +163,21 @@ NO_NEW_HYPOTHESIS_OUTCOME = "completed_no_new_hypothesis"
 # a brief more tries, never set it below 1.
 BRIEF_MAX_CONSECUTIVE_EMPTY_R2 = 2
 AUTO_EXHAUSTED_REASON = "no_new_hypothesis"
+# O-20 (operator, 2026-10-04): step 1a's "exhausted" closes a brief only after this
+# many CONSECUTIVE independent answers -- one per queue entry (the owner's own run,
+# then its R2 requests); a retry or resume inside one run is never a second answer.
+# A single one is recorded on the owner (`brief_exhausted_answers`) and the brief
+# stays open. run_067 + run_069: 4 of 6 step-1a calls on one brief proposed new
+# ideas, so one "exhausted" draw is not evidence that nothing is left.
+BRIEF_EXHAUSTED_ANSWERS_TO_CLOSE = 2
+EXHAUSTED_ANSWERS_REASON = "two_exhausted_answers"
+# O-20: the operator's reopen marker on an owner entry -- the id of the last entry
+# (an R2 request, or the owner's own id) whose answers no longer count. Both the
+# exhausted-answer count and the empty-R2 streak start after it, so a reopened brief
+# is not closed again by the history that closed it.
+REOPENED_AFTER_KEY = "brief_reopened_after"
+# Finished queue outcomes that carry no answer from step 1a (the run broke).
+_NO_ANSWER_OUTCOMES = frozenset({"quarantined_engineering_failure"})
 # Statuses in which an R2 request is still outstanding (not yet run to the end).
 _OUTSTANDING_STATUSES = ("queued", "ready", "in_progress")
 # CUL-398: a held request (operator hold or component quarantine). Outstanding
@@ -805,12 +821,53 @@ def r2_request_yielded(entry: dict) -> bool | None:
     return False
 
 
+def _requests_since_reopen(owner: dict, entries: list) -> tuple:
+    """(R2 requests on `owner`'s brief in request-number order, whether the
+    owner's own run still counts), honouring the operator's reopen marker
+    (REOPENED_AFTER_KEY). A marker naming neither the owner nor one of its
+    requests raises: a typo must not silently count the whole history."""
+    mine = sorted((e for e in entries if is_r2_request(e) and brief_owner(e, entries) is owner),
+                  key=lambda e: _request_number(e, owner["id"]))
+    cut = owner.get(REOPENED_AFTER_KEY)
+    if not cut:
+        return mine, True
+    if cut == owner["id"]:
+        return mine, False
+    n = _request_number({"id": cut}, owner["id"])
+    if n == 0:
+        raise DecideNextError(f"{owner['id']}: {REOPENED_AFTER_KEY}={cut!r} names neither the "
+                              f"owner nor one of its {owner['id']}__more_<n> requests")
+    return [e for e in mine if _request_number(e, owner["id"]) > n], False
+
+
+def consecutive_exhausted(owner: dict, entries: list) -> list:
+    """O-20: the ids of the trailing run of step-1a "exhausted" answers on
+    `owner`'s brief -- the owner's own run first, then its R2 requests in
+    request-number order, after any reopen marker. One answer per queue entry.
+    A finished entry with any other outcome (a card, a repeat included) resets
+    the run; an entry that gave no answer (not finished, held, parked, failed,
+    superseded, quarantined) neither counts nor resets it."""
+    mine, owner_counts = _requests_since_reopen(owner, entries)
+    run = []
+    for e in ([owner] if owner_counts else []) + mine:
+        if str(e.get("status") or "") != "done":
+            continue
+        outcome = e.get("outcome")
+        if outcome == BRIEF_EXHAUSTED_OUTCOME:
+            run.append(e["id"])
+        elif outcome is None or outcome in _NO_ANSWER_OUTCOMES:
+            continue
+        else:
+            run = []
+    return run
+
+
 def consecutive_empty_r2(owner: dict, entries: list) -> list:
     """The ids of the trailing run of finished R2 requests on `owner`'s brief
     that yielded no new, eligible card (request-number order; outstanding
-    requests neither count nor break the run)."""
-    mine = sorted((e for e in entries if is_r2_request(e) and brief_owner(e, entries) is owner),
-                  key=lambda e: _request_number(e, owner["id"]))
+    requests neither count nor break the run; only requests after the
+    operator's reopen marker count, O-20)."""
+    mine, _owner_counts = _requests_since_reopen(owner, entries)
     streak = []
     for e in mine:
         yielded = r2_request_yielded(e)
