@@ -296,18 +296,29 @@ There the right answer is known: no edge. A trustworthy method says "edge found"
    stops, parks or reroutes a run.
 2. **`test: none`.** A `test_request` is appended (section 3) and recorded; the run continues
    without a claim test. The agent never free-hands a graded test.
-3. **Review call** (optional, one LLM call, flag `claim_test_review.mode`). It runs a fixed
-   O-18 checklist:
-   - Does the test measure *this* claim?
-   - Can it fail?
-   - Is the baseline fair?
-   - Is the threshold set before any data?
-   - Is the floor reachable with these windows?
+3. **Block visibility (code, after 1b; 3b, D-070).** Once 1b's manifest is accepted, code
+   checks that at least one test reads the block's own output (`forecast` for a forecast
+   block, `regime` / `regime_change` for a regime block). When none does, base and variants
+   measure the same thing (run_070: both tests selected on the close's level). The result is
+   recorded in `claim_match.yaml` (`block_visibility`: ok / blind / not_applicable), and a
+   blind claim gets **one** revision call per run that may only re-emit the `claim` block
+   (`claim-revision/SKILL.md`, flag-on-only). It is accepted only if code passes it with the
+   same `statement` and `kind`; otherwise the original stays. Recorded in
+   `claim_revision.yaml`; the run continues in every case.
+4. **Review call** (optional, one LLM call, flag `claim_test_review`, modes `off` / `record`
+   / `revise`). It checks each test against the claim: the quantity measured is the quantity
+   stated, the horizon units (bars x timeframe) cover the stated span, direction and baseline
+   match. Whether a test sees the block is code's job (item 3).
+   - **`off`** (the default): no call.
+   - **`record`**: store the result, change nothing.
+   - **`revise`**: its issues join item 3's single revision (one revision per run; the revised
+     claim is re-checked by code only, never reviewed again).
 
-   It returns `ok` or a list of issues.
-   - **`record` mode** (the default): store the result, block nothing.
-   - **`gate` mode**: 1a gets one revision; if the issues remain, the idea is parked with the
-     reason.
+   A claim never parks or stops a run (D-066, D-067): no mode blocks anything.
+   **Parked (CUL-397).** Built in 3b and measured offline before shipping
+   (`review_measurement/`): it caught the units mismatch (2 of 2) and left the units control
+   alone (2 of 2), but missed run_070's price-level-for-a-move test (0 of 2), so it failed its
+   pre-registered gate and was removed. The flag does not exist in `campaign_config.yaml`.
 
 **This must not become the deleted `validation` stage.** That stage was "pressure-test the
 design: approve / refine (budget two) / reject", deleted on 2026-09-18 (engineering_roadmap.html:600).
@@ -315,7 +326,7 @@ The review checks only the **test against the claim**:
 
 - never the idea, the config or the design;
 - at most one round;
-- it can park, never reject;
+- it never parks, stops or reroutes a run;
 - record-only until a few runs show it catches problems the code checks miss.
 
 ---
@@ -444,7 +455,7 @@ P-CUL-77).
 | Flag (all off by default) | Does | Requires |
 |---|---|---|
 | `orchestrator.claim_tests.enabled` | 1a writes `claim`; `check_spec`; after the backtests the claim's tests are measured (effect sizes, `claim_status` measured / not_measured; not a grid criterion) | config_direct_authoring |
-| `orchestrator.claim_test_review.mode` (`off`, `record`, `gate`) | optional review call | claim_tests |
+| `orchestrator.claim_test_review` (`off`, `record`, `revise`) -- **parked, CUL-397** (failed its offline gate in 3b; not in `campaign_config.yaml`) | optional review call; never parks or stops a run | claim_tests |
 | `orchestrator.findings.enabled` | regroup writes `finding`; findings summary; novelty key gets `spec_hash` | claim_tests, regroup_record |
 | `orchestrator.reader_findings.enabled` | reader output v3; decide-next takes side findings | claim_tests, specialist_readers |
 
@@ -471,10 +482,14 @@ P-CUL-77).
    each graded variant's saved bars ("measured, not proven"); a separate grader, not a grid
    criterion. **Automatic verdicts parked** (CUL-394): calibration store and matching,
    calibration requests, the 1,000-fakes gate, a time budget, staleness checks.
+3b. **Tests that can see the block** (D-070), behind `orchestrator.claim_tests.enabled`: the
+   `past_return` selector field (the move that ended at bar t, `bars: n`), the
+   block-visibility check after 1b and one claim revision per run (section 4 item 3), the
+   guide's up-front rules. The review call was measured and parked (CUL-397).
 4. **Findings:** the finding record and the findings summary.
 5. **Readers:** v3 output and the short SKILL.
 6. **Combination:** moved to its own epic, **E-071**.
-7. **Review call** (record mode).
+7. **Review call** -- parked (CUL-397): built and measured in 3b, failed its gate.
 8. **New building blocks:** only when a test request needs them.
 
 ---

@@ -254,6 +254,32 @@ def expected_block(columns: set):
     return None
 
 
+# E-068 3b: can the claim's tests SEE the block 1b built? run_070 measured its
+# base and a design variant identically: both tests selected on price level, so
+# changing the block could not change what they measured.
+VISIBILITY_OK = "ok"
+VISIBILITY_BLIND = "blind"
+VISIBILITY_NOT_APPLICABLE = "not_applicable"
+_BLOCK_COLUMN = {"forecast": "forecast", "regime": "regime"}
+
+
+def block_visibility(claim, manifest_kind) -> str:
+    """"ok" when ANY test reads the block's own output (`forecast` for a
+    forecast block -- a selector field or rank_ic -- `regime` for a regime
+    block: a regime or regime_change selector); "blind" when no test does, so
+    base and variants would measure the same; "not_applicable" when there is
+    nothing to compare (no claim, tests: none, criteria_refs only, no manifest
+    or a manifest kind with no column). Pure; exempt cards are the caller's
+    (they are not_applicable). Information only."""
+    column = _BLOCK_COLUMN.get(manifest_kind) if isinstance(manifest_kind, str) else None
+    tests = claim.get("tests") if isinstance(claim, dict) else None
+    if column is None or not isinstance(tests, list) or not tests:
+        return VISIBILITY_NOT_APPLICABLE
+    if any(isinstance(t, dict) and column in signal_columns(t) for t in tests):
+        return VISIBILITY_OK
+    return VISIBILITY_BLIND
+
+
 def match_check(claim: dict, manifest_kind) -> list:
     """Warnings (dicts) comparing 1a's claim with 1b's manifest kind. Empty
     when they agree. Never raises on content: this is information only."""

@@ -1,0 +1,220 @@
+hypothesis_id: HOURLY_SHOCK_REVERSAL_MEAN_REVERSION_1H_BTC_ETH
+thesis: 'Large intra-hour price moves on BTC/ETH perpetuals trigger liquidation cascades
+  that overshoot; the subsequent mean-reversion (1-12 hours) is exploitable after
+  accounting for forced-flow friction.
+
+  '
+rationale: 'Forced liquidations execute mechanically at any price, pushing price beyond
+  where voluntary traders would trade. Once forced sellers/buyers exhaust, unforced
+  traders'' bid-ask reversion pushes price back toward equilibrium over 1-12 hours.
+  Unlike behavioral mean-reversion signals (RSI, Keltner), which arbitrage away because
+  they are known and fire frequently, forced-flow reversals concentrate in high-friction
+  (wide spread) periods, where liquidity provision is dangerous. Edge persists due
+  to execution cost, not secrecy.
+
+  '
+edge_source:
+  category: structural_forced_flow
+  specific_mechanism: 'When 1h absolute price move exceeds ~2× the 20-bar ATR, cascading
+    liquidations and stop orders execute mechanically regardless of price; forced
+    margin calls drive price to extremes. Once forced positions close, unforced traders''
+    mean-reversion pressure pushes price back toward pre-shock levels over subsequent
+    1-12 hours, especially when spreads normalize.
+
+    '
+  why_not_arbitraged: 'Reversal opportunity concentrates in high-volatility hours
+    with widest spreads (1.5-3 bps vs. normal 0.5-1 bps) and thinnest liquidity. Arbitraging
+    the reversal requires providing liquidity into forced-flow windows (adverse selection)
+    or acting on high-latency signals. Retail algorithms avoid these windows (unfavorable
+    cost-to-time ratio); professional market makers face tail-risk from cascades extending
+    beyond holding periods.
+
+    '
+  evidence_type: price_volume_only
+  measurable_proxy: '1-hour absolute return scaled by 20-bar ATR magnitude (|close[t]
+    - close[t-1]| / ATR[t-20:t]); bars in top/bottom 10% of rolling distribution are
+    predicted to be followed by partial mean-reversion over hours 1-12. Mechanism
+    predicts: after extreme up-closes (top 10%) lower subsequent returns; after extreme
+    down-closes (bottom 10%) higher subsequent returns.
+
+    '
+signal_concept: 'Graded continuous forecast, not on/off. At each 1h bar, compute shock
+  magnitude: shock = -(close[t] - close[t-1]) / ATR[20-bar]. Scale linearly into [-20,
+  +20]: forecast = sign(shock) × min(|shock| × scale_factor, 20), where scale_factor
+  maps typical shock magnitudes (|shock| > 1.5) to |forecast| > 10. Position size
+  = forecast / 10, giving -2% to +2% allocation range. After up shock: forecast negative
+  (short, expecting reversal down). After down shock: forecast positive (long, expecting
+  reversal up). Forecast magnitude scales with shock intensity. Every bar receives
+  a forecast. NOT expressed in config: no hard stops or take-profit rules (signal-driven
+  sizing handles exits implicitly); no liquidation-detection trigger (price/volume
+  proxy only); no regime gating (every bar treated identically).
+
+  '
+target_market: BTCUSDT, ETHUSDT on Kraken perp 1h
+timeframe: 1h
+assumptions:
+- Kraken perp forced-liquidation cascades follow similar patterns to 2022-2023 Binance
+  proxy data despite venue differences
+- 20-bar ATR adequately captures volatility scale relevant to forced-flow overshoot
+- Liquidation cascades and stop-order exhaustion occur within 12 hours of shock
+- Reversal pressure is continuous (not discrete events like funding settlements only)
+- Transaction costs match model assumptions (perp 10 bps round-trip, spread, slippage)
+- Large moves are forced-flow-driven, not information-driven (otherwise no reversal)
+expected_failure_modes:
+- 'Momentum dominance: forced flows create self-reinforcing momentum instead of exhaustion.
+  Large moves continue; strategy suffers systematic losses.'
+- 'Cost barrier: reversal magnitudes (typically 20-50 bps over 1-12h) may be smaller
+  than round-trip costs (10 bps perp taker), leaving negative expected value.'
+- 'Era dependence: 2022-2023 was high-leverage, high-volatility. Lower leverage/vol
+  in future regimes weakens forced-flow mechanics.'
+- 'Microstructure shift: Kraken liquidity or spread behavior may differ materially
+  from Binance proxy; historical pattern fails to transfer.'
+- 'Look-ahead bias in shock selection: full-window percentile (top/bottom 10%) introduces
+  slight forward bias; real-time rolling percentile underperforms.'
+library_lookup:
+  indicator_id: bollinger_bands
+  regime_affinity_for_target: neutral_ungated_but_unfavorable_context
+  affinity_justification: 'Hypothesis is ungated; it fires on every extreme close
+    regardless of regime. Library entry bollinger_bands shows unfavorable affinity
+    in trending regimes (bands expand, mean-reversion fails). Large moves triggering
+    this shock-reversal hypothesis often occur in trending, creating a headwind. However,
+    edge_source (structural_forced_flow) differs fundamentally from library''s behavioral_bias
+    assumption for Bollinger mean-reversion. Prior no_edge_observed results (keltner_mean_reversion,
+    rsi_mean_reversion) were behavioral price patterns; this is structural forced-flow.
+    Mechanism difference justifies fresh test despite surface pattern similarity (extreme
+    closes → reversal).
+
+    '
+  prior_campaign_failures:
+  - run_id: run_014
+    hypothesis_id: rsi_mean_reversion
+    mechanism_tried: RSI(14) mean-reversion in low-ER regime
+    outcome: no_edge_observed; ic=-0.022
+  - run_id: run_017
+    hypothesis_id: keltner_mean_reversion
+    mechanism_tried: Keltner channel mean-reversion in TRENDING (ER>=0.50)
+    outcome: no_edge_observed; ic_active_bars=-0.032
+  mechanism_difference: 'Prior failures were behavioral signals (RSI oversold, Keltner
+    band touch) assumed to mark crowd-driven reversion. Both were universally taught,
+    arbitraged away. This hypothesis claims structural forced-flow reversion (liquidation
+    cascades), same observable (extreme closes reversed) but different causal chain.
+    Structural mechanism activates only on rare high-friction events, creating less
+    universal arbitrage pressure. Re-proposal justified on this distinct mechanism.
+
+    '
+  crowding_risk: medium
+  crowding_deviation_justification: 'Shock-response strategies are less universally
+    taught than classical oscillators (RSI, Bollinger), hence lower crowding than
+    behavioral signals'' high. However, forced-flow reversion is known to practitioners.
+    Advantage comes from high-friction-window execution cost, not signal novelty.
+    Medium crowding reflects recognizable pattern but real execution friction barrier.
+
+    '
+criteria:
+- id: realized_edge_to_cost_ratio
+- id: sign_consistent_by_era
+cost_feasibility:
+  assumed_round_trip_cost_bps: 10.0
+  expected_holding_bars:
+    min: 1
+    max: 12
+  expected_trades_per_window: 576
+  required_gross_edge_bps_per_trade: 20.0
+  plausibility: marginal
+  plausibility_rationale: 'At ~20% signal activation (top+bottom 10% extreme closes),
+    ~4-month window (2880 bars) yields ~576 trades per window. Each trade must clear
+    20 bps gross to survive 2× round-trip cost. Reversal edge after extremes is real
+    (structural mechanism) but typically 20-50 bps, leaving thin margin. Survival
+    depends on forced-flow reversals being systematically larger than behavioral mean-reversion
+    (plausible due to overshoot) and actual holding times shorter than max 12h. Marginal,
+    not implausible; backtest will measure.
+
+    '
+power_parameters:
+  activation_rate: 0.2
+  plausible_ic_upper: 0.06
+  plausible_ic_rationale: 'Signal is dense-OHLCV-with-sparse-event-gating (20% activation
+    filtered by shock severity). A8.6 table row: "Dense OHLCV, lower crowding"—plausible_ic_upper
+    0.05-0.08 range. Shock-response is less crowded than classical oscillators but
+    has no special data advantage vs. peer reversal strategies. Anchor at 0.06 reflects
+    medium crowding.
+
+    '
+  n_bars: 17520
+  n_symbols: 2
+  is_market_wide: false
+claim:
+  statement: 'Unusually large 1-hour moves on BTC/ETH are followed by partial mean-reversion
+    within 1-12 hours. After extreme-high closes (top 10%), subsequent returns are
+    lower than baseline; after extreme-low closes (bottom 10%), subsequent returns
+    are higher. Reversal is largest in first hours and fades over the 12-hour horizon.
+
+    '
+  kind: event_behaviour
+  tests:
+  - name: high_close_shock_reversion
+    selector:
+      kind: quantile
+      field: close
+      side: top
+      q: 0.1
+      lookback: 100
+    outcome:
+      kind: fwd_return
+      horizons:
+      - 1
+      - 2
+      - 4
+      - 6
+      - 12
+    baseline:
+      kind: complement
+    statistic: decay_curve
+    direction: less
+    floor:
+      min_events: 50
+      min_windows: 4
+    consistency:
+      unit: window
+      min_same_sign: 3
+  - name: low_close_shock_reversion
+    selector:
+      kind: quantile
+      field: close
+      side: bottom
+      q: 0.1
+      lookback: 100
+    outcome:
+      kind: fwd_return
+      horizons:
+      - 1
+      - 2
+      - 4
+      - 6
+      - 12
+    baseline:
+      kind: complement
+    statistic: decay_curve
+    direction: greater
+    floor:
+      min_events: 50
+      min_windows: 4
+    consistency:
+      unit: window
+      min_same_sign: 3
+  pass_if: 'At every horizon, top-10% closes followed by forward returns significantly
+    lower than baseline, and bottom-10% closes followed by returns significantly higher.
+    Reversal effect decays across horizons (1h to 12h). Both directional tests show
+    consistent sign across at least 3 windows.
+
+    '
+  fail_if: 'At any horizon, either direction shows opposite pattern with significance
+    (top-10% followed by higher returns, or bottom-10% by lower returns), falsifying
+    reversion.
+
+    '
+  rationale: 'Forced-flow cascades cause overshoot. Mechanism predicts asymmetric
+    mean-reversion: up-shocks corrected by down-moves, down-shocks by up-moves. Two
+    directional tests together verify full mechanism. Consistency across windows rules
+    out single-window noise. Decay across horizons (strongest 1h, fading 12h) matches
+    forced-flow exhaustion taking several hours.'

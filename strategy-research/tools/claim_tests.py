@@ -36,6 +36,11 @@ Block definitions (fixed in tasks/todo.md before any code):
 WHY THIS CANNOT LEAK (no lookahead):
   - Selectors read only bar-t fields: `forecast` and `close` at t (BAR_T_FIELDS),
     `regime` at t and t-1, and the timestamp. check_spec refuses any other field.
+  - `past_return` (field, with `bars: n`) is close[t] / close[t-n] - 1: rows
+    t-n .. t only, the move that ENDED at t. It is defined only where the bar
+    stamped ts[t] - n*step is in the SAME window and all n bars are present
+    (row distance exactly n); NaN otherwise, including the first n bars of
+    every window. No warm-up rows, nothing chained across windows.
   - `quantile` compares x[t] with the quantile of the TRAILING `lookback` bars
     t-lookback .. t-1 of the same window -- never a whole-sample quantile.
   - Outcomes are the label (the future); they never feed a selector. They are
@@ -124,7 +129,10 @@ EXERCISED_ON_REAL_RUNS = frozenset({
     "baseline:complement", "statistic:mean_diff", "statistic:rank_ic",
 })
 
-BAR_T_FIELDS = ("forecast", "close")          # numeric fields a selector may read
+# numeric fields a selector may read. `past_return` (E-068 3b) is the move
+# that ENDED at bar t: close[t] / close[t-bars] - 1, with its required `bars`.
+BAR_T_FIELDS = ("forecast", "close", "past_return")
+FIELDS_WITH_BARS = ("past_return",)            # fields that take (and need) `bars: n`
 DIRECTIONS = ("greater", "less")
 FLOOR_UNITS = ("min_events", "min_windows", "min_eras", "min_blocks")
 CONSISTENCY_UNITS = ("window", "era")
@@ -425,8 +433,30 @@ def sel_all(w: Window, p: dict):
     return np.ones(n, dtype=bool), np.ones(n, dtype=bool)
 
 
+def past_return(w: Window, n: int) -> np.ndarray:
+    """close[t] / close[t-n] - 1, defined ONLY where the bar stamped exactly
+    ts[t] - n*step exists in this window AND all n bars in between are present
+    (row distance t - k == n). NaN elsewhere -- the first n bars of every
+    window included: no warm-up rows, nothing chained across windows. Reads
+    rows t-n .. t only (the past)."""
+    k = w.index_at(-int(n))
+    t = np.arange(len(w.ts))
+    ok = (k >= 0) & (t - k == int(n))
+    r = np.full(len(w.ts), np.nan)
+    r[ok] = w.close[ok] / w.close[k[ok]] - 1.0
+    return r
+
+
+def _field_values(w: Window, sel: dict) -> np.ndarray:
+    """The bar-t numbers a selector reads (BAR_T_FIELDS)."""
+    f = sel["field"]
+    if f == "past_return":
+        return past_return(w, int(sel["bars"]))
+    return getattr(w, f).astype(float)
+
+
 def sel_event(w: Window, p: dict):
-    x = getattr(w, p["field"]).astype(float)
+    x = _field_values(w, p)
     valid = np.isfinite(x)
     mask = np.zeros(len(x), dtype=bool)
     mask[valid] = _OPS[p["op"]](x[valid], float(p["value"]))
@@ -470,7 +500,7 @@ def sel_calendar(w: Window, p: dict):
 def sel_quantile(w: Window, p: dict):
     """x[t] against the quantile of the trailing `lookback` bars t-lookback..t-1
     of this window (past only). The first `lookback` bars are not selectable."""
-    x = getattr(w, p["field"]).astype(float)
+    x = _field_values(w, p)
     L, q, top = int(p["lookback"]), float(p["q"]), p["side"] == "top"
     n = len(x)
     mask = np.zeros(n, dtype=bool)
@@ -719,6 +749,13 @@ def _check_selector(s, where: str) -> list[str]:
     if k in ("event", "quantile") and s.get("field") not in BAR_T_FIELDS:
         e.append(f"{where}: field {s.get('field')!r} is not a bar-t field "
                  f"(allowed: {list(BAR_T_FIELDS)}); a selector may not read the future")
+    if k in ("event", "quantile") and s.get("field") in FIELDS_WITH_BARS:
+        b = s.get("bars")
+        if not isinstance(b, int) or isinstance(b, bool) or b < 1:
+            e.append(f"{where}: field {s.get('field')} needs `bars`: an int >= 1 "
+                     f"(the length of the past move, in bars of the card's timeframe)")
+    elif "bars" in s:
+        e.append(f"{where}: `bars` is only allowed with field {list(FIELDS_WITH_BARS)}")
     if k == "event":
         if s.get("op") not in _OPS:
             e.append(f"{where}: op must be one of {list(_OPS)}")

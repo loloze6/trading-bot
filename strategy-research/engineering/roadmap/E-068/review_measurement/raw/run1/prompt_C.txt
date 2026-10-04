@@ -1,3 +1,179 @@
+
+    PERSONA AND RULES:
+    # claim-review: does each test measure what the claim says? (E-068)
+
+You are reading this because `orchestrator.claim_test_review` is on. You review ONE card's
+`claim` block. You do not judge whether the claim is true, you do not rewrite anything,
+and you do not decide anything about the run: your answer is recorded as information.
+
+You receive: the card's `hypothesis_id`, `timeframe` and `claim` (statement, kind, tests),
+the block manifest step 1b wrote, and CLAIM_TESTS.md (what every slot of a test measures).
+
+## The checklist, for every test
+
+1. **The stated quantity.** Read the claim's `statement`. Name the quantity it conditions on
+   (what makes a bar "selected") and the quantity it predicts, in its own words and unit.
+   Examples of different quantities: a price LEVEL (where the close sits) is not a price
+   MOVE (how much the close changed over the last n bars); a strategy's forecast value is
+   not the move it was built from; a volatility is not a return.
+
+2. **The measured quantity.** Read the test's slots exactly as CLAIM_TESTS.md defines them:
+   - selector `field: close` reads the price level at bar t; `field: past_return` with
+     `bars: n` reads the move close[t] / close[t-n] - 1; `field: forecast` reads the block's
+     forecast at bar t; `quantile` compares that field with its own trailing `lookback` bars;
+   - the outcome and its `horizons`, which are counted in BARS of the card's `timeframe`:
+     a horizon of h bars on `1h` bars is h hours, on `1d` bars h days;
+   - the baseline, the statistic and the direction.
+   Write this as `quantity`: one sentence, with the horizons converted to time.
+
+3. **`measures_statement`**: true only if the test selects bars by the quantity the statement
+   conditions on (or by the block's forecast, when the block is built to measure exactly that
+   quantity) AND its outcome is the quantity the statement predicts. A nearby quantity is
+   false: a price level for a move, a move over another number of bars, a volatility for a
+   return.
+
+4. **`horizon_units_ok`**: convert every horizon to time (bars x timeframe). True only if the
+   horizons reach the span the statement names ("within 6 hours", "over the next 3 days",
+   "for two weeks"). If the statement names no span, true. Horizons that convert to another
+   span than the one stated (bars counted in the wrong unit) is false.
+
+5. **`direction_baseline_ok`**: true only if `direction` points the way the statement claims
+   (higher returns: `greater`; lower: `less`) and the baseline is the comparison the statement
+   makes ("than other bars": `complement`; no comparison stated: `placebo` or `rank_ic`).
+
+6. **`issues`**: one short sentence per problem found in steps 3-5, naming the stated and the
+   measured quantity (for example "selects on the forecast's sign, not on the volume spike the
+   statement names"). An empty list when every check is true.
+
+Whether a test reads the block's output at all is checked by code, not by you.
+
+## Output
+
+Exactly ONE fenced YAML block, with exactly one key `tests`, one entry per test of the claim,
+keyed by the test's `name`, each with exactly these five keys:
+
+```yaml
+# claim_review.yaml
+tests:
+  <test name>:
+    measures_statement: true
+    quantity: "<what this test measures, horizons converted to time>"
+    horizon_units_ok: true
+    direction_baseline_ok: true
+    issues: []
+```
+
+`measures_statement`, `horizon_units_ok` and `direction_baseline_ok` are true or false
+(unquoted). Quote every string. No other keys, no other text outside the block. An answer in
+another shape is recorded as a review error and not retried.
+
+
+    YOUR HANDOFF INSTRUCTIONS:
+    stage: claim_review
+objective: For each test of the card's claim, check that it measures exactly the quantity
+  the claim's statement names, in its unit and over its span, in the claimed direction
+  against a fair baseline. Do not judge whether the claim is true, and do not rewrite
+  it.
+required_inputs:
+- path: artifacts/block_manifest.yaml
+  reason: the block step 1b built from this idea (its kind)
+- path: ../../../../../../workflow_artifacts/skills/hypothesis-design/CLAIM_TESTS.md
+  reason: 'what every slot measures: selector fields, outcomes, horizons in bars'
+deliverables:
+- claim_review.yaml
+injected_context:
+  card:
+    hypothesis_id: HOURLY_SHOCK_REVERSAL_MEAN_REVERSION_1H_BTC_ETH
+    timeframe: 1h
+    claim:
+      statement: 'Unusually large 1-hour moves on BTC/ETH are followed by partial
+        mean-reversion within 1-12 hours. After extreme-high closes (top 10%), subsequent
+        returns are lower than baseline; after extreme-low closes (bottom 10%), subsequent
+        returns are higher. Reversal is largest in first hours and fades over the
+        12-hour horizon.
+
+        '
+      kind: event_behaviour
+      tests:
+      - name: high_close_shock_reversion
+        selector:
+          kind: quantile
+          field: close
+          side: top
+          q: 0.1
+          lookback: 100
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 1
+          - 2
+          - 4
+          - 6
+          - 12
+        baseline:
+          kind: complement
+        statistic: decay_curve
+        direction: less
+        floor:
+          min_events: 50
+          min_windows: 4
+        consistency:
+          unit: window
+          min_same_sign: 3
+      - name: low_close_shock_reversion
+        selector:
+          kind: quantile
+          field: close
+          side: bottom
+          q: 0.1
+          lookback: 100
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 1
+          - 2
+          - 4
+          - 6
+          - 12
+        baseline:
+          kind: complement
+        statistic: decay_curve
+        direction: greater
+        floor:
+          min_events: 50
+          min_windows: 4
+        consistency:
+          unit: window
+          min_same_sign: 3
+      pass_if: 'At every horizon, top-10% closes followed by forward returns significantly
+        lower than baseline, and bottom-10% closes followed by returns significantly
+        higher. Reversal effect decays across horizons (1h to 12h). Both directional
+        tests show consistent sign across at least 3 windows.
+
+        '
+      fail_if: 'At any horizon, either direction shows opposite pattern with significance
+        (top-10% followed by higher returns, or bottom-10% by lower returns), falsifying
+        reversion.
+
+        '
+      rationale: 'Forced-flow cascades cause overshoot. Mechanism predicts asymmetric
+        mean-reversion: up-shocks corrected by down-moves, down-shocks by up-moves.
+        Two directional tests together verify full mechanism. Consistency across windows
+        rules out single-window noise. Decay across horizons (strongest 1h, fading
+        12h) matches forced-flow exhaustion taking several hours.'
+
+
+    YOUR PROVIDED CONTEXT FILES:
+    --- CONTENT OF artifacts/block_manifest.yaml ---
+block:
+  kind: forecast
+  config_paths:
+    - /strategies/regimes/unknown/components/0
+scaffolding:
+  - /regime_detector
+rationale: "The shock_reversal component (1-bar price move normalized by zscore, negated for reversal signal) implements the hypothesis block. Ungated regime detector (no components, no rules) is scaffolding required by config structure but not part of the idea itself."
+
+--- CONTENT OF ../../../../../../workflow_artifacts/skills/hypothesis-design/CLAIM_TESTS.md ---
 # CLAIM_TESTS.md: the claim block and its test slots (E-068)
 
 You are reading this file because `orchestrator.claim_tests.enabled` is on. It is added to
@@ -196,3 +372,28 @@ claim refuted. Until a significance method is calibrated, only effect sizes are 
 
 The `kind` says whether the idea could be a block: a forecast kind is a forecast-block
 candidate, a regime kind is a regime-block candidate, and `calendar_effect` is a finding only.
+
+
+    
+    INSTRUCTIONS FOR OUTPUT:
+    Fulfill the objective defined in the handoff. You must generate the exact deliverables requested.
+    Output ONLY valid YAML blocks for your deliverables. Do not output conversational filler.
+
+    YAML FORMATTING RULES (violations will crash the pipeline):
+    - Any string value containing a colon (:) MUST be wrapped in double quotes.
+    - Example bad:  description: Split into windows (0.0-0.15, 0.15-0.25, 0.25+) to verify costs
+    - Example good: description: "Split into windows (0.0-0.15, 0.15-0.25, 0.25+) to verify costs"
+    - When in doubt, quote the entire value.
+    - F4b: keep each list item ("- ...") on a SINGLE physical line. Do NOT wrap a
+      long list item onto a second indented line — a colon appearing on that
+      wrapped continuation line is just as fatal as one on the first line, and
+      is harder to auto-repair. If a value is long, either keep it on one line
+      or use a block scalar (- >) rather than manual line-wrapping.
+
+    You MUST use this exact format for each deliverable so my script can parse it:
+
+    ```yaml
+    # filename.yaml
+    <your yaml content here>
+    ```
+    
