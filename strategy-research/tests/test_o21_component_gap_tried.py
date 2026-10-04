@@ -170,3 +170,28 @@ def test_the_1b_skill_states_the_rule():
         assert needle in rule, needle
     assert "- tried: REQUIRED when status is component_gap" in skill
     assert "- hypothesis_id:" in skill
+
+
+def test_the_retry_message_reaches_1b_through_the_real_invoke_path(monkeypatch):
+    """Mutation check finding: the helper alone was tested, never its call site in
+    async_invoke_agent. Drive the real invoke path with only the worker faked."""
+    import asyncio
+    import shutil
+    from test_d051_d053_forecast_rules import _authored_1b, ON_OFF_BASE
+    from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator
+    _set_orchestrator({"config_direct_authoring": {"enabled": True}})
+    run_dir = _authored_1b("run_964", ON_OFF_BASE)
+    name = "hypothesis_to_strategy_config_authoring.yaml"
+    (run_dir / "handoffs").mkdir(exist_ok=True)
+    shutil.copy(SR_ROOT / "workflow_artifacts" / "templates" / "handoffs" / name,
+                run_dir / "handoffs" / name)
+    rpr.update_state(path=run_dir, **{rpr._COMPONENT_GAP_RETRY_STATE_KEY: {
+        "attempts": 1, "last_error": "component_gap without a `tried` list"}})
+    seen = {}
+
+    async def _worker(stage_name, handoff, path, retry_context=None):
+        seen["ctx"] = (handoff.get("injected_context") or {})
+
+    monkeypatch.setattr(rpr, "run_claude_worker", _worker)
+    asyncio.run(rpr.async_invoke_agent("strategy_config_authoring", "run_964"))
+    assert "without a `tried` list" in seen["ctx"]["component_gap_tried_error"]
