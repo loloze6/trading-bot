@@ -48,6 +48,11 @@ from test_e033_slice4b_gate_conformance_promotion import (  # noqa: E402
     _minimal_run_at, _noop_invoke, _write_handoff)
 from test_k3_protocol_pinning import _minimal_run  # noqa: E402
 
+# O-21 (2026-10-04): a complete component_gap lists the compositions 1b tried,
+# one with the transform pipeline; without it 1b gets one retry first.
+TRIED = [{"config": "PriceEvolutionComponent(period=1) + [zscore, negate]",
+          "fails_on": "needs FooComponent"}]
+
 def _v12_line(cls="FooComponent", loc="strategies.regimes.trend.components[0]",
               module="strategies.strategy_components"):
     """validate_config.py's V12 line, with strategies/registry._load_class's own
@@ -177,7 +182,7 @@ def _gap_run(run_id="run_950") -> Path:
     rpr.save_yaml(run_dir / "artifacts" / "decision.yaml", {
         "hypothesis_id": "H-1", "stage": "strategy_config_authoring", "status": "component_gap",
         "rationale": "needs FooComponent, which does not exist",
-        "blocking_issues": ["engine lacks FooComponent"]})
+        "blocking_issues": ["engine lacks FooComponent"], "tried": TRIED})
     return run_dir
 
 
@@ -196,7 +201,8 @@ def test_1b_component_gap_parks_under_the_flag():
                           .read_text(encoding="utf-8"))["requests"]
     assert reqs == [{"run_id": "run_950", "stage": "strategy_config_authoring", "variant_id": None,
                      "reason": "needs FooComponent, which does not exist",
-                     "blocking_issues": ["engine lacks FooComponent"]}]
+                     "blocking_issues": ["engine lacks FooComponent"],
+                     "tried": TRIED, "tried_warning": None}]
     # the same gap on the same run again (after an unpark) is not appended twice
     rpr.determine_post_strategy_config_authoring_route(run_dir, routing_retired=True)
     assert len(yaml.safe_load((rpr.ROOT / "campaign_record" / "component_requests.yaml")
@@ -392,7 +398,7 @@ def _parking_run_loop(campaign_root, kind="component", ran=None):
         run_dir = campaign_root["runs_dir"] / run_id
         rpr.save_yaml(run_dir / "artifacts" / "decision.yaml", {
             "hypothesis_id": "H-1", "stage": "strategy_config_authoring",
-            "status": "component_gap", "rationale": "needs FooComponent"})
+            "status": "component_gap", "rationale": "needs FooComponent", "tried": TRIED})
         if kind == "component":
             rpr.determine_post_strategy_config_authoring_route(run_dir, routing_retired=True)
         else:
@@ -514,7 +520,7 @@ def test_flag_off_a_pause_stays_a_pause(campaign_root, monkeypatch):
             rd = campaign_root["runs_dir"] / run_id
             rpr.save_yaml(rd / "artifacts" / "decision.yaml",
                           {"hypothesis_id": "H-1", "stage": "strategy_config_authoring",
-                           "status": "component_gap", "rationale": "needs FooComponent"})
+                           "status": "component_gap", "rationale": "needs FooComponent", "tried": TRIED})
             assert rpr.determine_post_strategy_config_authoring_route(rd) == "human_pause"
             if marker:
                 rpr.update_state(path=rd, **{rpr.PARKED_KEY: marker})
@@ -608,6 +614,17 @@ def test_unpark_data_park_needs_no_class_check(campaign_root):
     run_dir = _parked_entry(campaign_root, classes=(), kind="data")
     assert camp._unpark_entry("PARK_ME") is True
     assert _state(run_dir)["status"] == "active"
+    assert rpr._COMPONENT_GAP_RETRY_STATE_KEY not in _state(run_dir)   # nothing added
+
+
+def test_unpark_clears_a_pending_component_gap_retry(campaign_root):
+    """O-21 review S1: the resumed 1b must not get a stale 'refused' message,
+    and its one `tried` retry is owed again."""
+    run_dir = _parked_entry(campaign_root, classes=(), kind="data")
+    rpr.update_state(path=run_dir, **{rpr._COMPONENT_GAP_RETRY_STATE_KEY: {
+        "attempts": 1, "last_error": "component_gap without a `tried` list"}})
+    assert camp._unpark_entry("PARK_ME") is True
+    assert _state(run_dir)[rpr._COMPONENT_GAP_RETRY_STATE_KEY] == {"attempts": 0, "last_error": None}
 
 
 @pytest.mark.parametrize("damage", ["not_parked", "unknown_id", "marker_missing", "kind_mismatch",
@@ -689,7 +706,7 @@ def test_flag_off_quarantine_is_unchanged(campaign_root, monkeypatch):
         rd = campaign_root["runs_dir"] / run_id
         rpr.save_yaml(rd / "artifacts" / "decision.yaml",
                       {"hypothesis_id": "H-1", "stage": "strategy_config_authoring",
-                           "status": "component_gap", "rationale": "needs FooComponent"})
+                           "status": "component_gap", "rationale": "needs FooComponent", "tried": TRIED})
         rpr.determine_post_strategy_config_authoring_route(rd)
     monkeypatch.setattr(rpr, "run_loop", _pause)
     assert camp.process_once() is True

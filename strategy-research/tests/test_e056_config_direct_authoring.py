@@ -354,7 +354,11 @@ def test_determine_post_strategy_config_authoring_route_spec_ready():
 
 def test_determine_post_strategy_config_authoring_route_component_gap():
     run_dir = _minimal_run(rpr.ROOT, "run_811")
-    rpr.save_yaml(run_dir / "artifacts" / "decision.yaml", {"status": "component_gap"})
+    # O-21: a complete gap (with a `tried` list naming a transform) pauses as before;
+    # a bare one gets 1b's one retry first (tests/test_o21_component_gap_tried.py).
+    rpr.save_yaml(run_dir / "artifacts" / "decision.yaml", {
+        "status": "component_gap",
+        "tried": [{"config": "PriceEvolutionComponent(period=1) + [zscore]", "fails_on": "x"}]})
     assert rpr.determine_post_strategy_config_authoring_route(run_dir) == "human_pause"
 
 

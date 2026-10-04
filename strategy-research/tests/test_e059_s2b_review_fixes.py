@@ -254,7 +254,9 @@ def test_card_scores_require_the_brief_card_rubric():
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("status", ["superseded", "paused:unhandled_exception",
-                                    "blocked_on_component:X"])
+                                    "blocked_on_e068"])
+# O-21 review S3a (operator decision (i), 2026-10-04): an owner under R9's automatic
+# blocked_on_component:<name> quarantine stays eligible; an operator hold does not.
 def test_r2_skips_ineligible_owners(status):
     rec = _decide(_empty_inputs([_owner("A", status=status)]))
     assert rec["rules"]["r2"]["fired"] is False and rec["stop"] is not None

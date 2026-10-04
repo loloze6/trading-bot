@@ -1002,9 +1002,12 @@ def _fake_agent(monkeypatch, run_dir, claims):
             n = sum(1 for s, _ in seen if s == stage_name)
             rpr.save_yaml(arts / "hypothesis_card.yaml", dict(CARD, claim=claims[n - 1]))
         else:
+            # O-21: a complete gap (tried, with a transform) so the loop still stops here
             rpr.save_yaml(arts / "decision.yaml", {"stage": stage_name, "status": "component_gap",
                                                    "rationale": "stop here",
-                                                   "blocking_issues": ["x"]})
+                                                   "blocking_issues": ["x"],
+                                                   "tried": [{"config": "X + [zscore]",
+                                                              "fails_on": "x"}]})
             rpr.save_yaml(arts / "backtest_spec.yaml", {"status": "component_gap", "config": {}})
 
     monkeypatch.setattr(rpr, "async_invoke_agent", _invoke)
