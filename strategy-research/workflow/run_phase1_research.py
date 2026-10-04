@@ -15544,9 +15544,18 @@ def _splice_revised_claim(run_dir: Path, new_claim: dict) -> list:
             doc = load_yaml(p)
             doc["claim"] = new_claim
             save_yaml(p, doc)
-    except BaseException:
+    except BaseException as exc:
+        # Review round 2: a restore can fail too (e.g. a Windows sharing
+        # violation); each is attempted, and the names that could not be
+        # restored travel with the original exception so the record never
+        # contradicts the cards on disk.
+        failed = []
         for p, data in originals.items():
-            _atomic_write_bytes(p, data)
+            try:
+                _atomic_write_bytes(p, data)
+            except Exception:  # noqa: BLE001 -- recorded on the exception below
+                failed.append(p.name)
+        exc.restore_failed = failed
         raise
     return [p.name for p in targets]
 
@@ -15653,8 +15662,17 @@ def _claim_revision_call(run_dir, run_id, card, claim, kind, record, unchanged) 
                     **unchanged}
         updated = _splice_revised_claim(run_dir, new)
     except Exception as exc:  # noqa: BLE001 -- the splice is all-or-nothing
-        return {**record, "status": "error", "error": f"{type(exc).__name__}: {exc}",
-                "raw_output": text, **unchanged}
+        out = {**record, "status": "error", "error": f"{type(exc).__name__}: {exc}",
+               "raw_output": text, **unchanged}
+        if getattr(exc, "restore_failed", None):
+            # these cards may hold the revised claim: say so, never claim "unchanged"
+            out["restore_failed"] = exc.restore_failed
+            out["claim_attempted"] = new
+            out.pop("claim_after", None)
+            out.pop("visibility_after", None)
+            out["warning"] = ("the splice failed and these cards could not be restored; they "
+                              "may hold the revised claim: " + ", ".join(exc.restore_failed))
+        return out
     after = cc.block_visibility(new, kind)
     out = {**record, "status": "accepted", "claim_after": new, "visibility_after": after,
            "claim_after_sha256": _claim_sha256(new), "cards_updated": updated}

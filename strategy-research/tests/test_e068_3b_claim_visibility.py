@@ -598,6 +598,33 @@ def test_a_half_splice_is_rolled_back(blind_run, monkeypatch):
                                                                 "hypothesis_card_2.yaml"]
 
 
+def test_a_failed_restore_is_named_and_never_reported_unchanged(blind_run, monkeypatch):
+    """Review round 2: if the restore after a failed splice also fails, the
+    record names the cards that may hold the revised claim and does not
+    present the old claim as `claim_after`."""
+    run_dir = blind_run
+    arts = run_dir / "artifacts"
+    old = rpr.load_yaml(arts / "hypothesis_card.yaml")["claim"]
+    new = _revised(old, FC_Q)
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", FakeLLM(_answer(new)))
+    real_atomic = rpr._atomic_write_bytes
+
+    def _locked(path, data):
+        # the cards are locked by another process: the splice write AND the
+        # restore both fail (save_yaml writes through the same helper)
+        if Path(path).name.startswith("hypothesis_card"):
+            raise PermissionError("sharing violation")
+        return real_atomic(path, data)
+    monkeypatch.setattr(rpr, "_atomic_write_bytes", _locked)
+    rpr._claim_revision_after_1b(run_dir, run_dir.name)
+    monkeypatch.setattr(rpr, "_atomic_write_bytes", real_atomic)
+    doc = _rev(run_dir)
+    assert doc["status"] == "error" and "sharing violation" in doc["error"]
+    assert doc["restore_failed"] == ["hypothesis_card.yaml", "hypothesis_card_1.yaml"]
+    assert "claim_after" not in doc and doc["claim_attempted"] is not None
+    assert "could not be restored" in doc["warning"]
+
+
 def test_a_call_that_raises_records_cost_unknown(blind_run, monkeypatch):
     run_dir = blind_run
     monkeypatch.setattr(rpr, "_invoke_reader_llm", FakeLLM(RuntimeError("sdk down")))
