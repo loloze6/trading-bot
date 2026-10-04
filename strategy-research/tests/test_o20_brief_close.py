@@ -197,3 +197,9 @@ def test_the_regenerated_summary_shows_the_closed_brief_section():
     camp._regenerate_summary(queue)
     text = camp.CAMPAIGN_SUMMARY_PATH.read_text(encoding="utf-8")
     assert "## Closed briefs" in text and "| B | empty-R2 streak: 2 ... |" in text
+
+
+def test_a_brief_closed_before_o20_shows_its_old_reason():
+    queue = {"queue": [_owner(brief_status="exhausted", brief_status_reason="step_1a_reported")]}
+    lines = camp._summary_closed_brief_lines(queue)
+    assert "| B | step_1a_reported (closed before O-20; no rule recorded) |" in lines

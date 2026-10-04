@@ -14773,13 +14773,20 @@ _TRANSFORM_OP_SPELLINGS = (
 )
 
 
-def _clear_component_gap_retry(path: Path) -> None:
-    """O-21 review S1: once 1b answers spec_ready (or the run is unparked), a
-    pending `tried` retry message must not reach a later 1b call."""
+def _clear_component_gap_retry(path: Path, owe_again: bool = False) -> None:
+    """O-21 review S1: once 1b answers spec_ready, a pending `tried` retry
+    message must not reach a later 1b call -- the message is cleared but the
+    count kept, so the run still gets ONE retry (round 2). `owe_again` (only
+    --unpark) also resets the count: the resumed 1b is owed its retry again.
+    No-op when nothing is recorded."""
     state = load_yaml(path / "pipeline_state.yaml") or {}
-    if (state.get(_COMPONENT_GAP_RETRY_STATE_KEY) or {}).get("last_error"):
+    retry = state.get(_COMPONENT_GAP_RETRY_STATE_KEY) or {}
+    if not retry:
+        return
+    attempts = 0 if owe_again else retry.get("attempts", 0)
+    if retry.get("last_error") or retry.get("attempts", 0) != attempts:
         update_state(path=path, **{_COMPONENT_GAP_RETRY_STATE_KEY: {
-            "attempts": 0, "last_error": None}})
+            "attempts": attempts, "last_error": None}})
 
 
 def _component_gap_tried_problem(decision: dict) -> str | None:
@@ -14788,8 +14795,9 @@ def _component_gap_tried_problem(decision: dict) -> str | None:
     tried = decision.get("tried") if isinstance(decision, dict) else None
     if not isinstance(tried, list) or not tried:
         return ("component_gap without a `tried` list: list every composition you tried "
-                "(components with weights, and the transform pipeline) and the card clause each "
-                "fails, as strategy-config-authoring/SKILL.md asks")
+                "(components with weights, and the transform pipeline) under `config`, and the "
+                "card clause each fails under `fails_on`, as strategy-config-authoring/SKILL.md "
+                "asks")
     # Review S2: read only what was TRIED -- an item's `config` (a plain-string item
     # as a whole), never its `fails_on`, where plain words like "scale" or
     # "percentile" are prose -- and accept the common spellings of an op.
@@ -14802,7 +14810,8 @@ def _component_gap_tried_problem(decision: dict) -> str | None:
                 "transform pipeline too (zscore, percentile, ratio_to_mean, vol_normalize, "
                 "negate, scale, clip, ...), e.g. PriceEvolutionComponent(period=1) + zscore "
                 "for a move in units of its usual size; a different yardstick for the same "
-                "quantity is a DEVIATION, not a gap (O-21)")
+                "quantity is a DEVIATION, not a gap (O-21). Put each composition under "
+                "`config`; `fails_on` is not read")
     return None
 
 

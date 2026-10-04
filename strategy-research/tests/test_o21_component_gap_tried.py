@@ -233,3 +233,24 @@ def test_clearing_is_a_no_op_without_a_pending_retry(tmp_path):
                                                  encoding="utf-8")
     rpr._clear_component_gap_retry(run_dir)
     assert rpr.load_yaml(run_dir / "pipeline_state.yaml") == {"status": "active"}
+
+
+def test_the_run_gets_one_retry_even_after_a_spec_ready_in_between(monkeypatch):
+    """Review round 2: spec_ready clears the message but keeps the count, so a
+    later component_gap in the same run is accepted (and recorded), not retried."""
+    run_dir = _gap_run("run_966")
+    assert rpr.determine_post_strategy_config_authoring_route(run_dir) == "strategy_config_authoring"
+    rpr.save_yaml(run_dir / "artifacts" / "decision.yaml", {"status": "spec_ready"})
+    monkeypatch.setattr(rpr, "_route_block_manifest_check", lambda path: "strategy_config_authoring")
+    rpr.determine_post_strategy_config_authoring_route(run_dir)
+    assert rpr.load_yaml(run_dir / "pipeline_state.yaml")[rpr._COMPONENT_GAP_RETRY_STATE_KEY] == \
+        {"attempts": 1, "last_error": None}
+    rpr.save_yaml(run_dir / "artifacts" / "decision.yaml",
+                  {"hypothesis_id": "H-1", "status": "component_gap", "rationale": "again"})
+    assert rpr.determine_post_strategy_config_authoring_route(run_dir) == "human_pause"
+
+
+def test_the_retry_messages_say_where_compositions_go():
+    for tried in (None, [{"config": "Keltner"}]):
+        msg = rpr._component_gap_tried_problem({"tried": tried} if tried else {})
+        assert "`config`" in msg

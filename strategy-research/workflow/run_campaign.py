@@ -2376,7 +2376,7 @@ def _unpark_entry(entry_id: str) -> bool:
                           **{orch.PARKED_KEY: None})
         # O-21 review S1: the resumed 1b starts fresh -- no stale "refused" message,
         # and its one `tried` retry is owed again (no-op when no retry is pending).
-        orch._clear_component_gap_retry(run_dir)
+        orch._clear_component_gap_retry(run_dir, owe_again=True)
         _clear_run_halt_flags(run_dir)  # E-061 fourth-round fix 2: every un-pause path
         entry["status"] = "ready"
         entry.pop("parked_reason", None)
@@ -2533,16 +2533,20 @@ def _total_campaign_spend() -> tuple:
 
 def _summary_closed_brief_lines(queue: dict) -> list:
     """O-20 review N4: why each brief was closed, so the operator can see the
-    rule and reopen. Empty when no owner carries brief_status_rule (written
-    from O-20 on), so a summary without one is unchanged."""
+    rule and reopen. An owner closed before O-20 shows its brief_status_reason
+    (review round 2). Empty when no exhausted owner carries a rule or a reason,
+    so a summary without one is unchanged."""
     closed = [e for e in queue.get("queue") or [] if isinstance(e, dict)
-              and e.get("brief_status") == "exhausted" and e.get("brief_status_rule")]
+              and e.get("brief_status") == "exhausted"
+              and (e.get("brief_status_rule") or e.get("brief_status_reason"))]
     if not closed:
         return []
     lines = ["", "## Closed briefs (reopen: RUNBOOK §3, completed_brief_exhausted)", "",
              "| owner | closed by |", "|---|---|"]
     for e in closed:
-        rule = " ".join(str(e["brief_status_rule"]).split()).replace("|", "/")
+        text = (e.get("brief_status_rule")
+                or f"{e['brief_status_reason']} (closed before O-20; no rule recorded)")
+        rule = " ".join(str(text).split()).replace("|", "/")
         lines.append(f"| {e['id']} | {rule} |")
     return lines
 
