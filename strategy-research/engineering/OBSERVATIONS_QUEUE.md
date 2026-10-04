@@ -26,6 +26,8 @@ decision (DECISION_LOG) or a ticket.
 | O-17 | C4 run_065, 2026-10-02 | A malformed reader proposal (advisory branch 2) halted the run before branch 1's verdict was recorded | fixed: D-061 (CUL-380), proposals dropped and recorded |
 | O-18 | Operator, 2026-10-02 | A run should prove a written finding (claim, test, rationale), not only score a block | open: epic E-068 created, design discussion first |
 | O-19 | C4 run_065, 2026-10-02 | The readers produced no usable next idea: three lenses silent, two proposals wrong in ways they could not see | open: in E-068; stale detector input is bug CUL-381 |
+| O-20 | C4 run_067, 2026-10-04 | Step 1a declared the brief exhausted after three calls on the same inputs had each proposed a different new idea; one call's word closes a brief for good | decided (operator, 2026-10-04): a brief closes only after two consecutive independent "exhausted" answers; build pending (E-068 decisions PR) |
+| O-21 | E-068 run_070, 2026-10-04 | Step 1b parked an idea twice over ATR vs standard-deviation normalisation, although the catalogue can build the move in units of its usual size | decided (operator, 2026-10-04): accept the zscore form; 1b must show no combination expresses the idea before a component_gap; no ATR component; build pending |
 
 ---
 
@@ -926,7 +928,146 @@ before launching.
 **Next:** E-068 (with O-18). The skills are rewritten in the O-18 frame: what the evidence says
 about the claim, side findings each with a next test, and an optional validated config patch.
 
+## O-20. A brief is declared exhausted too quickly
+
+**Seen:** run_067, 2026-10-04. It was the E-068 validation run: an R2 "more ideas" request
+(`C4_vol_managed_trend_kraken_perp__more_1`) on the hourly vol-managed trend brief, with
+`claim_tests` on. Step 1a was called four times on the same inputs. The stops in between were
+bugs, fixed in CUL-395 / PR #321. Three calls proposed three different ideas; the fourth
+declared the brief exhausted.
+- **Call 1** proposed `SPARSE_HIGH_CONVICTION_EMA_TREND_1H`: sparse "high-conviction" 1h bars
+  (EMA(9) > EMA(21), volume above the 20-bar median, candle body > 0.6), claimed to continue
+  over the next 1-4 hours.
+- **Call 2** (the F4b YAML retry) proposed `VOL_MANAGED_MOMENTUM_BTCETH_KRAKEN_PERP`: close near
+  the top of its 20-day range while volatility is below its median. Its claim says "next 1-10
+  days", but the horizons are 1-10 bars (CUL-397).
+- **Call 3** (the first resume) proposed `VOLATILITY_CONTRACTION_MOMENTUM_EXTENSION`: momentum
+  gated by the *direction* of volatility change. Its claim has two tests on 1-12 hour
+  horizons. The file holds a stray `---`, so it is a two-document YAML.
+- **Call 4** (the second resume, kept) wrote no card and `brief_status: exhausted`. Its
+  reason: "the vol-managed momentum mechanism was refuted in run_066; ETH instead of SOL is a
+  parameter variation; the persistent_behavioral_bias family (EMA, MACD, RSI, Keltner) has
+  been repeatedly tested ... No distinct mechanism remains within this brief's scope."
+- Sources:
+  - `runs/run_067/artifacts/brief_status.yaml`;
+  - calls 1-3's cards in `runs/run_067/.previous_attempts/hypothesis_generation_attempt_1/`
+    (calls 1 and 2) and `_attempt_2/` (call 3).
+
+**Why surprising (operator, 2026-10-04):** exhaustion seems to come too quickly, and every
+idea the brief could still produce is then thrown away.
+
+**First look (read-only, from the code):**
+- **Who decides.** One step-1a call, alone. `BRIEF_HYPOTHESES.md` §3: "If the brief has no
+  further hypothesis that is distinct from `already_produced` and worth testing, write NO
+  card and write `artifacts/brief_status.yaml`".
+  - Code checks only the file's shape (`run_phase1_research._brief_exhausted_signal`).
+  - There is no second call and no check of the reason.
+- **What it costs.** At DONE, `run_campaign._brief_updates` sets the brief's owner entry to
+  `brief_status: exhausted` with the reason `step_1a_reported`.
+  - R2 never asks that brief again (`decide_next.r2_eligible_owner`).
+  - Undoing it is a hand edit (RUNBOOK §3). So one model sample closes a brief for good.
+  - A second, code-side path also exists: 2 consecutive R2 requests with no new card
+    (`BRIEF_MAX_CONSECUTIVE_EMPTY_R2 = 2`) mark the brief exhausted automatically.
+- **The reason contradicts the model's own earlier answers.** Calls 1-3 each found a
+  distinct mechanism on the same inputs. "Nothing distinct remains" is therefore one draw,
+  not a property of the brief. It is the same variance O-3 saw on run_062 (one idea, then
+  "exhausted").
+- **The reason uses a family-level argument.**
+  - The ids it cites are real KB entries. `persistent_behavioral_bias` appears 10 times in
+    `campaign_knowledge_base.yaml`.
+  - But D-055 says a KB finding is information, and "a ban blocks only the same hypothesis
+    id, or the same mechanism with the same config".
+  - Exhaustion is not formally a ban, but here it works like a family ban. `BRIEF_HYPOTHESES.md`
+    §3 does not carry D-055's standard.
+  - IMPROVEMENT 05 rule 1 allows the same idea on untested coins or timeframes "with a stated
+    reason to expect a different result". The call treated ETH as "only a parameter variation".
+- **The brief itself narrows the space.** It lists "Already tried ...: RSI, Keltner, plain SMA
+  trend, funding-rate mean reversion", and its domain is one mechanism on two coins.
+- **Related, the same day:** the operator's hold `blocked_on_e068` on
+  `C4_donchian_daily_trend_kraken_perp__more_1` did not hold its brief.
+  - `decide_next.r2_request_yielded` (`tools/decide_next.py:791-792`) counts a request with
+    status `blocked_on_*` as finished and as having yielded a card.
+  - So R2 queued `__more_2` as `ready`, and an unpaced `--resume` launched it (run_068,
+    killed during step 1a by the operator's agent).
+
+**Test B (2026-10-04, run_069):** the operator re-opened the brief and queued one more R2
+request with the same inputs.
+- **Call 1 proposed two new cards** plus scores: `TIME_SERIES_MOMENTUM_UNSCALED` and
+  `TREND_FOLLOWING_MOMENTUM_WITH_VOLATILITY_REGIME_GATING`.
+  - Each file name sat above its code fence, so the parser found no deliverable block.
+  - The answer was saved as `runs/run_069/artifacts/debug_hypothesis_generation_raw_output.txt`
+    and was later overwritten; a copy is in the session's temp folder.
+- **The CUL-379 format retry was asked only to fix the layout.** It answered `exhausted`
+  instead.
+  - Its reason: "Entire price-only momentum class shows zero edge on BTC/ETH 1h (KB: ...).
+    Funding-rate mechanisms forbidden by brief constraints. Volume-based signals blocked by
+    unavailable liquidation feed. No distinct testable mechanism remains in scope."
+  - The brief is exhausted again.
+- **Tally over run_067 + run_069:** six step-1a calls on the same brief and inputs.
+  - Four proposed new ideas, five distinct ideas in all.
+  - Two said exhausted, and both of those were retries or resumes.
+  - So exhaustion is not stable; it is one sample, and the closing call wins.
+- **Two side effects:**
+  - The format retry re-runs the whole stage, so the model can change its answer, not only
+    its format.
+  - Decide-next again queued `C4_donchian_daily_trend_kraken_perp__more_3` as `ready`
+    despite the operator's hold. It was held by hand; `--once` had already stopped.
+
+**To check:**
+- Is exhaustion stable? No (test B above).
+- Options to weigh:
+  - require N independent exhausted answers before closing a brief;
+  - have code check that the reason names the `already_produced` ids and the D-055 standard;
+  - make `exhausted` a soft state that R2 can revisit after new evidence;
+  - put D-055's wording into `BRIEF_HYPOTHESES.md` §3. This is flag-on input only, since the
+    file is read only under `decide_next`.
+
+**Decided (operator, 2026-10-04):**
+- A brief closes only after **two consecutive independent "exhausted" answers**. A single one
+  is recorded, and the brief stays open.
+- Related robustness fixes go in their own PR:
+  - the parser accepts blank lines before the fence;
+  - a retry gets its own first answer back with "change only the layout, keep the content";
+  - the "Missing: hypothesis_card.yaml" message follows the multi-card rule;
+  - CUL-396: one audit key per retry;
+  - CUL-398: a held R2 request counts as outstanding.
+
 ---
+
+## O-21. Step 1b parks over ATR vs standard deviation
+
+**Seen:** run_070, 2026-10-04 (E-068 validation, brief `E068_hourly_shock_reversal_kraken_perp`).
+- Step 1a's signal: `shock = -(close[t] - close[t-1]) / ATR(20)`, scaled to [-20, +20].
+- Step 1b parked `component_gap` twice, the second time after an operator `--unpark`.
+  - Call 1: "No composition of existing components builds it without altering the mechanism."
+  - Call 2: needs a `ShockMagnitudeComponent`.
+- Sources: `runs/run_070/artifacts/parked/park_1/` and `park_2/`, and `decision.yaml`.
+
+**Why surprising:** the catalogue 1b reads already builds the same move, scaled by its usual
+size.
+- `PriceEvolutionComponent(period=1)` gives the 1-bar % change (`COMPONENT_CATALOG.md:81`).
+- The transform pipeline `zscore -> negate -> scale -> clip(+-20)` turns it into "minus the
+  move, in standard deviations" (`:164`).
+- The only difference is the yardstick: the standard deviation of hourly returns instead of
+  the average true range.
+- 1b's first reason ruled out `ratio_to_mean` but never named `zscore`.
+
+**To check:**
+- Is "mechanism fidelity" in the design guide meant to forbid a different normalisation of the
+  same quantity?
+- If yes, a small ATR-normalised one-bar-move component is the honest fix, and the idea waits
+  for it.
+- If no, the guide should say that a close substitute is allowed when the card's mechanism
+  (overshoot relative to typical move size) is unchanged, and the card's `signal_concept` is
+  updated to match.
+- Related (E-068): the same run's claim tests select on the closing price *level*, not on the
+  move (CUL-397).
+
+**Decided (operator, 2026-10-04):**
+- Accept the zscore form. Do not add an ATR component.
+- Step 1b's instructions gain a rule: before declaring `component_gap`, show that no
+  combination of existing components and transforms (weights, offsets, the transform
+  pipeline) expresses the idea, and name what was tried.
 
 ## Recommendation: how C4 reaches its first backtest (2026-09-30 investigation; revised after the O-1 correction)
 
