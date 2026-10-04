@@ -1,0 +1,183 @@
+# hypothesis_card_2.yaml
+
+```yaml
+hypothesis_id: TIME_SERIES_MOMENTUM_UNSCALED
+thesis: "Multi-week time-series momentum without volatility scaling survives round-trip costs and generates positive net return on BTC/ETH 1h, isolating momentum's edge from vol-scaling effects."
+rationale: "Run_066 (VOL_MANAGED_TIME_SERIES_MOMENTUM) tested momentum with inverse-vol position sizing and was refuted. This variant removes the vol damping to test whether the momentum mechanism itself has edge. The campaign KB shows all price-only trend-following mechanisms tested on BTC/ETH 1h (MACD ic=-0.050, EMA ic=-0.021) produced no informational content. However, cost dominance (not signal failure) was the mechanism killer in most cases. Unscaled sizing removes damping and tests raw momentum — if this also fails, it confirms the mechanism class has no edge; if it survives costs differently, it identifies vol-scaling direction as a tuning variable rather than fundamental."
+edge_source:
+  category: persistent_behavioral_bias
+  specific_mechanism: "Multi-week trend continuation: sustained price momentum over 80-100 bars (~3.5 weeks) reflects behavioral momentum persistence and slow-reacting institutional flows. Signal measures this by correlating recent momentum strength (distance from baseline close) with forward 1-5 bar returns, observable as positive rank correlation between momentum and next-bar returns on active bars."
+  why_not_arbitraged: "Trend-following is universally known (high crowding). Arbitrage is capacity-limited: institutional rebalancing into large directional moves is structural (not discretionary), and the momentum window (3.5 weeks) is long enough to persist despite participation. This test explicitly allows costs to dominate the hypothesis judgment; success means the signal survives 34 bps/trade required gross edge even in crowded conditions."
+  evidence_type: price_volume_only
+  measurable_proxy: "Momentum strength: (close[t] - close[t-100]) / close[t-100]. Percentile rank over trailing 200 bars scales to [-20, +20]. Mechanism predicts: positive Spearman rank IC between momentum forecast and forward 1-5 bar returns; positive mean per-trade gross profit before costs."
+  requires_new_feed: null
+
+signal_concept: "Graded momentum forecast on every bar. Lookback=100 bars (4-week baseline); signal = (close[t] - close[t-100]) / close[t-100]. Percentile rank (computed over 200-bar rolling window: 1st percentile → -20, 99th → +20, linear interpolation). Position size = forecast / 10 (so +20 forecast → +2.0x gross notional long, -20 → -2.0x short). Activation rate 100% (signal fires every bar). NO VOLATILITY ADJUSTMENT — every bar executes at the same effective leverage coefficient regardless of realized volatility. This is the ungated ablation of run_066: identical momentum mechanism, uniform sizing instead of inverse-vol sizing, allowing direct isolation of vol-scaling's contribution."
+
+target_market: BTCUSDT, ETHUSDT
+
+timeframe: 1h
+
+assumptions:
+  - Multi-week trend continuation is real (supported by academic literature on momentum in equities and crypto, 3-4 week horizon)
+  - Vol-scaling in run_066 was not value-additive (either neutral or destructive to Sharpe)
+  - Average holding period > 5 bars sufficient to capture momentum reversion without excessive whipsaw
+  - 2022-2023 window contains enough momentum cycles to test (not dominated by single regime)
+
+expected_failure_modes:
+  - "Cost drag dominates: round-trip cost 17.0 bps × high turnover (dense signal) consumes all gross edge; estimated gross ~4-7 bps insufficient to survive"
+  - "2022-2023 is bear market with mean-reversion dominance: momentum signal IC goes negative, contradicting persistent_behavioral_bias thesis"
+  - "Momentum lookback window (100 bars) is mistuned: optimal window differs materially; run_066 may have already found the point-in-parameter-space that works least badly"
+  - "High-vol crash regimes cause open-position losses faster than signal can exit: even positive IC cannot survive 30%+ drawdowns in this window"
+
+power_parameters:
+  activation_rate: 1.0
+  plausible_ic_upper: 0.03
+  n_bars: 2100
+  n_symbols: 2
+  is_market_wide: false
+  power_note: "Dense OHLCV-only trend-following (moving_average_crossover class, high crowding per indicator_library.yaml). Plausible IC ceiling 0.03 from library's empirical baseline: Keltner ic_active=-0.032, RSI corr=-0.022, EMA ic=-0.021 on identical pair/timeframe. Min detectable IC ~0.027 (standard formula 1/sqrt(n_eff) where n_eff = (2100 bars / 24 bar-block size) = 87.5). Activation is 100% (not sparse), allowing IC test to use all bars."
+
+library_lookup:
+  indicator_id: moving_average_crossover
+  regime_affinity_for_target: unfavorable
+  affinity_justification: "Brief constraints: 2022-2023 only (explicitly stated as NOT an edge-test era). This window is bear market / consolidation, not trending. Library affinity for 'trending' is favorable; affinity for 'ranging' is unfavorable. The test regime is known-mismatch by the brief's own design (six 4-month windows, expect not to meet full-history edge bar). This is not a discovered regime limitation but a test-design feature."
+  prior_campaign_failures:
+    - run_id: run_053
+      mechanism_tried: "MACD(12,26,9) histogram zero-crossing, ic_active_bars=-0.050271 (negative, signal wrong direction)"
+    - run_id: run_043
+      mechanism_tried: "EMA(9/21) spread trend continuation, ic_active_bars=-0.021091 (near-zero, no informational content)"
+  crowding_risk: high
+  crowding_deviation_justification: "High crowding is inherent to any price-only trend mechanism; cannot be avoided. Question is not 'find an uncrowded trend signal' (impossible on BTC/ETH 1h) but 'does the signal survive costs at this crowding level.' Prior evidence (MACD -0.05, EMA -0.021) suggests the answer is no. Proposing this variant (SMA-equivalent) rather than a different indicator because (1) the brief explicitly asks for time-series momentum, (2) SMA is the benchmark for momentum measurement, and (3) direct ablation of run_066 is methodologically cleaner than testing a third-party indicator."
+
+criteria:
+  - id: realized_edge_to_cost_ratio
+
+cost_feasibility:
+  assumed_round_trip_cost_bps: 17.0
+  expected_holding_bars:
+    min: 1
+    max: 40
+  expected_trades_per_window: 120
+  required_gross_edge_bps_per_trade: 34.0
+  plausibility: implausible
+  plausibility_rationale: "Dense signal class (high turnover, 120 trades/4-month window) on the most crowded asset pair. Estimated gross edge = IC(0.03) × volatility(5%) × sqrt(avg_hold_15_bars) ≈ 5.8 bps per trade. This is 34 bps / 5.8 bps = 5.9× below the required break-even gross edge. Dense OHLCV trend-following on BTC/ETH is the textbook example of 'already arbitraged' (indicator_library.yaml crowding_risk=high, campaign KB shows consistent zero IC across three separate implementations). The signal is mechanically testable and worth running (per O-3, costs are judged only by backtest), but should be expected to lose to fees rather than to signal quality failure."
+
+claim:
+  statement: "Time-series momentum predicts next-bar returns: bars following strong uptrend over the past 100 bars show higher next-bar returns than bars following downtrends or no trend, measured on all bars."
+  kind: direction_forecast
+  tests:
+    - name: momentum_ic
+      selector: {kind: all}
+      outcome: {kind: fwd_return, horizons: [1, 2, 3, 5]}
+      baseline: null
+      statistic: rank_ic
+      direction: greater
+      floor: {min_events: 200, min_windows: 4}
+      consistency: {unit: window, min_same_sign: 4}
+  pass_if: "Rank correlation between momentum forecast (range -20 to +20) and forward returns is positive and significant at every horizon (1-5 bars), and the sign is consistent across at least 4 of 6 windows."
+  fail_if: "At any horizon, the rank correlation is negative and significant."
+  rationale: "If behavioral momentum and slow flows create directional persistence, then bars with strong recent momentum should lead higher returns over the next 1-5 bars. The IC test directly measures this predictive content. Consistency across windows rules out a single lucky era and confirms the mechanism recurs."
+
+pass_through: false
+```
+
+# hypothesis_card_3.yaml
+
+```yaml
+hypothesis_id: TREND_FOLLOWING_MOMENTUM_WITH_VOLATILITY_REGIME_GATING
+thesis: "Multi-week time-series momentum gated to high-volatility regimes (ON when vol > MA, OFF otherwise) survives costs on BTC/ETH 1h, testing whether vol interaction is gating (structural forced flows) rather than damping (position reduction)."
+rationale: "Run_066 tested vol-managed momentum (inverse-vol position sizing: smaller positions in high-vol) and was refuted. Alternative polarity: high-vol may mark when trend-following works best (forced liquidation cascades) rather than worst. This card tests vol as a regime GATE (enter only in spikes) rather than a position DAMPER. If momentum is invisible in low-vol and strong in high-vol crises, then gating is the correct vol-interaction model. If both gated and ungated fail equally (Card 2), then vol-interaction is irrelevant and the mechanism itself has no edge."
+edge_source:
+  category: structural_forced_flow
+  specific_mechanism: "High-volatility regimes are dominated by forced flows (liquidation cascades, margin calls) that propagate directionally through the order book. Multi-week price momentum becomes MORE predictive (not less) in these windows because directional forcing overwhelms mean-reversion. Low-vol regimes lack mechanical forcing, so momentum reverts. Observable in: rank correlation between momentum signal and forward returns is significantly positive when vol_ratio > 1.1 and near-zero or negative when vol_ratio <= 1.1."
+  why_not_arbitraged: "Forced-flow mechanics (cascade effects during liquidation events) are structural and recur with every leverage cycle. Arbitrage requires access to liquidation data (unavailable per config/available_feeds.yaml), so the mechanism is not openly exploited. Each vol spike produces the pattern anew because participants cannot distinguish organic moves from cascade-driven ones in real time."
+  evidence_type: price_volume_only
+  measurable_proxy: "Volatility ratio: recent_realized_vol[t] / MA(realized_vol, 20 bars). When vol_ratio > 1.1, activation is ON (output momentum signal). When vol_ratio <= 1.1, activation is OFF (output zero, flat position). Mechanism predicts: IC(momentum, fwd_return) > 0 when vol_ratio > 1.1; IC near zero or negative when vol_ratio <= 1.1."
+  requires_new_feed: null
+
+signal_concept: "Gated time-series momentum: fires only during high-volatility regimes. Primary signal: momentum = (close[t] - close[t-100]) / close[t-100], percentile-ranked to [-20, +20] over 200-bar window, identical to Card 2. Secondary gate: vol_ratio = stdev(returns[t-24:t], 1h) / MA(stdev, 20 bars). IF vol_ratio > 1.1 THEN output (momentum / 10) as position size. IF vol_ratio <= 1.1 THEN output 0 (flat). Activation rate ~15% (vol spikes are infrequent). Design variant (ungated): remove vol-ratio gate, output momentum every bar (equivalent to Card 2, TIME_SERIES_MOMENTUM_UNSCALED). Per IMPROVEMENT 06, a regime-gated hypothesis carries its ungated design variant for comparison."
+
+target_market: BTCUSDT, ETHUSDT
+
+timeframe: 1h
+
+assumptions:
+  - Vol spikes correlate with forced flow events, not mean-reversion (opposite of run_066's assumption)
+  - Multi-week momentum persists within forced-flow windows despite higher price volatility
+  - Vol-ratio gate (> 1.1) is sufficiently persistent to generate >50 trades per 4-month window
+  - 2022-2023 contains multiple vol-spike clusters (e.g., market dips, liquidation cascades)
+
+expected_failure_modes:
+  - "Regime gate too sparse: vol_ratio > 1.1 occurs in <5% of bars, producing <50 total trades across 6 windows and insufficient power for IC significance"
+  - "Forced flows are bidirectional: vol spikes trigger both momentum cascades (cascade continues move) AND reversals (panic-driven snap-back) with no a-priori directional bias; mechanism is not clearly directional"
+  - "Vol-spike entries are late: by the time vol_ratio crosses 1.1, the momentum impulse is already exhausted; position enters on the tail of the move"
+  - "Vol-ratio cutoff (1.1) is arbitrary: optimal threshold is unknown; this specific value may miss the best windows or fire on noise"
+
+power_parameters:
+  activation_rate: 0.15
+  plausible_ic_upper: 0.12
+  n_bars: 2100
+  n_symbols: 2
+  is_market_wide: false
+  power_note: "Sparse event-driven signal on structural-forced-flow mechanism (non-price-only in intent, though implemented via price vol proxy). Per A8.6 table, sparse structural mechanisms (funding_rate_extreme) have plausible_ic_upper 0.10-0.20. This uses 0.12 (mid-range). Activation ~15% gives effective n_eff = 2100 * 0.15 / 24 ≈ 13 blocks. Min detectable IC ~0.28 (conservative; well above plausible 0.12), indicating this sample is underpowered for a 0.12 claim. The hypothesis is testable but should expect inconclusive or null result on power grounds alone."
+
+library_lookup:
+  indicator_id: funding_rate_extreme
+  regime_affinity_for_target: neutral
+  affinity_justification: "This mechanism is not a regime-classification hypothesis; it uses vol as a mechanical gate, not a regime detector label. Vol spikes occur in trending, ranging, and transitional regimes indiscriminately. The claim is that spikes CREATE directed flows, not that they signal a pre-existing regime state. Regime affinity is neutral."
+  prior_campaign_failures: []
+  crowding_risk: low
+  crowding_deviation_justification: "Vol-regime gating (trading only in vol spikes) is not a standard technical tool. Most vol adjustments are either ATR-based position sizing (low crowding per library) or inverse-vol damping (not universal). Gating-to-forced-flows is more custom and likely less arbitraged than price-only trend-following."
+
+criteria:
+  - id: realized_edge_to_cost_ratio
+
+cost_feasibility:
+  assumed_round_trip_cost_bps: 17.0
+  expected_holding_bars:
+    min: 3
+    max: 25
+  expected_trades_per_window: 50
+  required_gross_edge_bps_per_trade: 34.0
+  plausibility: marginal
+  plausibility_rationale: "Sparse activation (15% of bars, ~50 trades over 6 four-month windows) with short holding period (3-25 bars) is tight on cost grounds. Estimated gross edge = IC(0.12) × volatility(5%) × sqrt(avg_hold_12_bars) ≈ 20 bps per trade. This falls below the 34 bps required to net-survive 2× cost safety margin, but within the margin of error if IC lands at the high end of the plausible range (0.12). The mechanism is more plausible than Card 2 (structural forced flow vs. already-arbitraged trend), but cost dominance is still the expected gate, not signal quality."
+
+claim:
+  statement: "In high-volatility regimes (when realized volatility exceeds its 20-bar moving average by >10%), multi-week price momentum predicts next-bar returns significantly and in the positive direction; this effect is absent or reversed in low-volatility regimes."
+  kind: conditional_behaviour
+  tests:
+    - name: momentum_in_high_vol_regime
+      selector: {kind: event, field: forecast, op: "!=", value: 0}
+      outcome: {kind: fwd_return, horizons: [1, 2, 3, 5]}
+      baseline: {kind: other_selector, selector: {kind: event, field: forecast, op: "==", value: 0}}
+      statistic: mean_diff
+      direction: greater
+      floor: {min_events: 50, min_windows: 3}
+      consistency: {unit: window, min_same_sign: 3}
+  pass_if: "Mean return on gated-active bars (vol_ratio > 1.1) is significantly higher than on gated-inactive bars (vol_ratio <= 1.1) at every horizon, and the effect is consistent (same sign) across at least 3 of 6 windows."
+  fail_if: "At any horizon, gated-active bars show significantly LOWER returns than gated-inactive bars."
+  rationale: "If forced flows during vol spikes create directional momentum, then momentum should predict returns BETTER in high-vol regimes than in low-vol regimes. The test measures this regime-conditional difference directly. Consistency checks that the pattern is stable across the 2022-2023 window and not a single-era artifact."
+
+pass_through: false
+```
+
+# extra_card_scores.yaml
+
+```yaml
+cards:
+  - card: hypothesis_card_2.yaml
+    scores:
+      confidence_real: 0
+      distance_to_profitable: 1
+      mechanism_plausibility: 1
+    model_id: claude
+    rubric_version: brief-card-v1
+  - card: hypothesis_card_3.yaml
+    scores:
+      confidence_real: 1
+      distance_to_profitable: 1
+      mechanism_plausibility: 2
+    model_id: claude
+    rubric_version: brief-card-v1
+```

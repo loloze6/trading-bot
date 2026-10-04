@@ -84,10 +84,15 @@ rationale: one or two sentences -- which hypothesis claim each block path implem
   already carries its `hypothesis_id`.
 
 `decision.yaml`:
+- hypothesis_id: the card's `hypothesis_id`
 - stage: "strategy_config_authoring"
 - status: same value as backtest_spec.status (spec_ready | component_gap)
 - rationale: one line on why
 - blocking_issues: the missing piece(s) if component_gap, else []
+- tried: REQUIRED when status is component_gap (O-21) -- the compositions you tried, one item each:
+  `{config: <components with their weights, and the transform pipeline, e.g. "PriceEvolutionComponent(period=1)
+  + [zscore, negate, scale(factor=10), clip(-20,20)]">, fails_on: <the card clause it cannot express, and why>}`.
+  At least one item must use the transform pipeline (see "component_gap only after compositions are ruled out").
 
 ## Pass-through candidates (hypothesis-design IMPROVEMENT 08)
 
@@ -146,9 +151,18 @@ says what was built instead, or that nothing was. Never silently build a differe
 clause unmapped.
 
 **`component_gap` only after compositions are ruled out.** Before reporting `component_gap`, try compositions of the
-existing components: several components averaged, negative weights, offsets, sign flips, `clip` (the guide's
-"Composing a signal"). The `rationale` in `decision.yaml` and, if you report it, its `blocking_issues` must list the
-compositions you tried and why each fails.
+existing components: several components averaged, negative weights, offsets, sign flips, AND the transform pipeline
+-- `zscore`, `percentile`, `ratio_to_mean`, `vol_normalize`, `vol_adjusted`, `price_normalized`, `negate`, `scale`,
+`clip`, `ema` (the guide's "Composing a signal"; the catalogue's transform list). List every composition you tried
+in `decision.yaml` `tried`, each with the card clause it fails; at least one must use the transform pipeline.
+- **A different yardstick for the same quantity is a DEVIATION, not a gap (O-21).** Example (run_070): the card
+  wants the 1-bar move divided by 20-bar ATR. `PriceEvolutionComponent(period=1)` is the current bar's move
+  (`close[-1]` is the CURRENT bar, see the catalogue's index note), and `zscore` turns it into "the move in units of
+  its usual size" (standard deviation instead of ATR). Build that and write a `DEVIATION:` entry in
+  `config_rationale` ("normalised by the std of 1-bar returns, not ATR(20)"). Report `component_gap` only when no
+  composition expresses the clause's QUANTITY at all.
+- If your `component_gap` comes without `tried`, or with a `tried` list that names no transform combination, the
+  orchestrator sends you back once with that message.
 
 ## Checklist
 - In config_rationale, show how the signal concept becomes component + transform pipeline.

@@ -106,7 +106,9 @@ def test_no_readable_block_is_retried_once_with_the_format(monkeypatch, tmp_path
         [({"no_blocks": True}, []), ({"saved": ["x"]}, ["hypothesis_card.yaml", "other.yaml"])])
     assert raised is None and len(calls) == 2
     assert calls[0] is None
-    assert "Missing: hypothesis_card.yaml, other.yaml" in calls[1]
+    # run_069 (2026-10-04): step 1a's note follows the multi-card rule instead of
+    # naming hypothesis_card.yaml as missing.
+    assert "Missing:" not in calls[1] and "hypothesis_card_2.yaml" in calls[1]
     assert "```yaml\n# <file_name>.yaml" in calls[1]
     assert rpr.load_yaml(run_dir / "pipeline_state.yaml")["format_retry_count"] == 1
 
@@ -158,8 +160,11 @@ def _worker_outcome(monkeypatch, tmp_path, text):
 
 
 def test_the_worker_reports_an_answer_without_any_block(monkeypatch, tmp_path):
-    assert _worker_outcome(monkeypatch, tmp_path, "No blocks here.") == {"no_blocks": True}
+    # the raw answer travels with the outcome so a retry can show it back (2026-10-04)
+    assert _worker_outcome(monkeypatch, tmp_path, "No blocks here.") == \
+        {"no_blocks": True, "answer": "No blocks here."}
 
 
 def test_the_worker_reports_what_it_saved(monkeypatch, tmp_path):
-    assert _worker_outcome(monkeypatch, tmp_path, RUN_065) == {"saved": ["hypothesis_card.yaml"]}
+    assert _worker_outcome(monkeypatch, tmp_path, RUN_065) == \
+        {"saved": ["hypothesis_card.yaml"], "answer": RUN_065}

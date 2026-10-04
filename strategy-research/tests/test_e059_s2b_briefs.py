@@ -398,37 +398,47 @@ def _stage_done(campaign_root, entries, run_id="run_001", pending="completed_bri
     return root
 
 
-def test_exhausted_request_flips_owner_and_stops_when_none_open(campaign_root, monkeypatch):
+def test_two_exhausted_requests_flip_owner_and_stop_when_none_open(campaign_root, monkeypatch):
+    """O-20 (operator, 2026-10-04): the second consecutive "exhausted" answer
+    closes the brief, with a reason and a rule naming both entries."""
     monkeypatch.setattr(rpr, "run_loop", lambda run_id: None)
     monkeypatch.setenv("WORKFLOW_ARTIFACT_VALIDATION", "raise")
-    req = {**_card_entry("OWNER__more_1", status="in_progress"), "run_ids": ["run_001"]}
-    del req["card_ref"]
-    root = _stage_done(campaign_root, [_owner(), req])
+    first = {**_card_entry("OWNER__more_1", status="done"), "outcome": "completed_brief_exhausted"}
+    req = {**_card_entry("OWNER__more_2", status="in_progress"), "run_ids": ["run_001"]}
+    del first["card_ref"], req["card_ref"]
+    root = _stage_done(campaign_root, [_owner(), first, req])
     _brief(root)
     assert camp.process_once() is False  # the only brief is now exhausted -> stop
-    owner, done = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))["queue"]
+    owner, _first, done = yaml.safe_load(
+        campaign_root["queue_path"].read_text(encoding="utf-8"))["queue"]
     assert done["status"] == "done" and done["outcome"] == "completed_brief_exhausted"
     assert "verdict_status" not in done and "pass_rule_evaluation_ref" not in done
     assert owner["brief_status"] == "exhausted"
+    assert owner["brief_status_reason"] == "two_exhausted_answers"
+    assert "OWNER__more_1, OWNER__more_2" in owner["brief_status_rule"]
+    assert owner["brief_exhausted_answers"] == ["OWNER__more_1", "OWNER__more_2"]
     rec = yaml.safe_load((root / "runs" / "run_001" / "artifacts" / "decision_record.yaml")
                          .read_text(encoding="utf-8"))
     assert rec["stop"]["reason"] == "no_eligible_candidate"
     assert rec["rules"]["r2"]["exhausted_briefs"] == ["OWNER"]
 
 
-def test_owner_own_run_exhausted_flips_itself(campaign_root, monkeypatch):
+def test_one_exhausted_answer_leaves_the_brief_open(campaign_root, monkeypatch):
+    """O-20: the owner's own single "exhausted" answer is recorded; the brief
+    stays open and R2 asks it again (before O-20 it closed at once)."""
     monkeypatch.setattr(rpr, "run_loop", lambda run_id: None)
     root = _stage_done(campaign_root, [_owner(status="in_progress"), _owner("OTHER")])
     _brief(root)
     _brief(root, "OTHER")
-    assert camp.process_once() is True  # OTHER is still open -> R2 asks for more
+    assert camp.process_once() is True
     queue = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))["queue"]
     by = {e["id"]: e for e in queue}
-    assert by["OWNER"]["brief_status"] == "exhausted" and by["OWNER"]["status"] == "done"
+    assert by["OWNER"]["brief_status"] == "open" and by["OWNER"]["status"] == "done"
+    assert by["OWNER"]["brief_exhausted_answers"] == ["OWNER"]
+    assert "brief_status_reason" not in by["OWNER"]
     assert by["OTHER__more_1"]["status"] == "ready" and by["OTHER__more_1"]["origin"] == "brief"
     assert by["OTHER__more_1"]["brief_path"] == "briefs/OTHER.md"
-    assert not any(e["id"].startswith("OWNER__more") for e in queue)
-    assert camp._select_entry(queue)["id"] == "OTHER__more_1"
+    assert by["OWNER__more_1"]["status"] == "ready"
     assert camp._next_action_for_entry(by["OTHER__more_1"]) == "fresh_launch"
 
 

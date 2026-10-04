@@ -232,8 +232,16 @@ QUEUE_ENTRY_SCHEMA = {
     # brief file itself is never edited. Absent on every other entry.
     "title": TEXT,
     # E-059 S2b code-review fix 1: why an owner's brief_status became
-    # exhausted (step_1a_reported | no_new_hypothesis). Owner entries only.
+    # exhausted (two_exhausted_answers | no_new_hypothesis; step_1a_reported on
+    # entries closed before O-20). Owner entries only.
     "brief_status_reason": TEXT,
+    # O-20 (2026-10-04): one sentence naming the rule and the entries that
+    # closed the brief; the trailing run of consecutive step-1a "exhausted"
+    # answers (a single one leaves the brief open); the operator's reopen
+    # marker (the last entry whose answers no longer count). Owner entries only.
+    "brief_status_rule": TEXT,
+    "brief_exhausted_answers": TEXT_LIST,
+    "brief_reopened_after": TEXT,
     # E-061 C1.4 (third-round review fix 5): a launch that raised before
     # run_loop (paused:launch_exception) -- the run id it had allocated (null
     # when it raised before allocating one; that run dir is marked

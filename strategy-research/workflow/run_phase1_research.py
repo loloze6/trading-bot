@@ -678,16 +678,82 @@ def _build_yaml_retry_context(err: "UnrepairableYAMLError") -> str:
     )
 
 
+# A retry is a format repair, not a new answer (run_067/run_069, 2026-10-04: a
+# retry without its first answer re-drew the content -- a different idea, or
+# "exhausted" instead of two cards). The first answer goes back verbatim.
+_PREVIOUS_ANSWER_MAX_CHARS = 60000
 
-def _build_missing_deliverables_retry_context(expected_outputs: list, no_blocks: bool) -> str:
+
+def _is_brief_run(run_dir: Path) -> bool:
+    """A brief run (decide_next on, brief context present) that is not a
+    decide-next candidate: the only 1a run where brief_status.yaml and
+    extra_card_scores.yaml are valid answers. Any error reads as False."""
+    try:
+        return _brief_run_context(run_dir) is not None and _decide_next_candidate(run_dir) is None
+    except Exception:
+        return False
+
+
+def _outcome_answer(outcome):
+    """The raw answer text run_claude_worker returns under `answer`; None for
+    any other engine (tool workers return no answer)."""
+    return outcome.get("answer") if isinstance(outcome, dict) else None
+
+
+def _with_previous_answer(retry_ctx: str, answer) -> str:
+    """retry_ctx plus the model's own first answer, verbatim (capped), when there
+    is one; retry_ctx unchanged otherwise."""
+    if not isinstance(answer, str) or not answer.strip():
+        return retry_ctx
+    truncated = len(answer) > _PREVIOUS_ANSWER_MAX_CHARS
+    text = answer[:_PREVIOUS_ANSWER_MAX_CHARS] if truncated else answer
+    lines = [
+        retry_ctx,
+        "",
+        "Your previous answer, verbatim, between the two markers below. Keep its "
+        "content exactly -- the same files, ideas, values and decisions -- and "
+        "change only the layout so it can be read"
+        + (" (its end was cut; see the note after it)." if truncated else "."),
+        "<<<PREVIOUS ANSWER",
+        text,
+        "PREVIOUS ANSWER>>>",
+    ]
+    if truncated:
+        # operator follow-up (2026-10-04): say so, so the model knows the end is
+        # missing; the note sits outside the verbatim block (review N3)
+        lines.append(f"[... previous answer truncated ...] The answer above was truncated at "
+                     f"{_PREVIOUS_ANSWER_MAX_CHARS:,} characters (it had {len(answer):,}), so "
+                     f"its end is missing: keep everything shown, and complete the rest "
+                     f"consistently with it.")
+    return "\n".join(lines)
+
+
+
+def _build_missing_deliverables_retry_context(expected_outputs: list, no_blocks: bool,
+                                              stage: str | None = None,
+                                              brief_run: bool = False) -> str:
     """CUL-379: the retry prompt block when deliverables are missing -- which
-    files, and the one block format the parser reads."""
+    files, and the one block format the parser reads. Step 1a has no single
+    "missing" file: one card, several numbered cards or an exhausted brief are
+    all valid answers (BRIEF_HYPOTHESES.md), so naming hypothesis_card.yaml as
+    missing contradicted a multi-card answer (run_069, 2026-10-04)."""
     missing = [Path(p).name for p in expected_outputs if not Path(p).exists()]
     what = ("contained no deliverable block the orchestrator could read"
             if no_blocks else "did not include every deliverable")
+    if stage == "hypothesis_generation":
+        # The exhausted shape is valid only on a brief run (review: on a flag-off
+        # or decide-next candidate run, brief_status.yaml fails the run).
+        exhausted = ", OR brief_status.yaml (brief exhausted)" if brief_run else ""
+        scores = " plus extra_card_scores.yaml" if brief_run else ""
+        files_line = ("Files: write the same files your previous answer chose -- "
+                      "hypothesis_card.yaml (one card), OR hypothesis_card_2.yaml, "
+                      f"hypothesis_card_3.yaml, ...{scores} (several cards, no "
+                      f"hypothesis_card.yaml){exhausted} -- plus any other file it wrote.")
+    else:
+        files_line = f"Missing: {', '.join(missing)}"
     return "\n".join([
         f"Format problem, not YAML syntax: your answer {what}.",
-        f"Missing: {', '.join(missing)}",
+        files_line,
         "Write each deliverable as ONE fenced block whose FIRST line inside the "
         "fence is its file name, exactly like this:",
         "```yaml",
@@ -809,7 +875,8 @@ def _invoke_agent_with_yaml_retry(current_stage: str, run_id: str, run_dir: Path
                 print(f"⚠️ [F4b] {current_stage}: unrepairable YAML on first attempt — "
                       f"retrying once with error context appended "
                       f"(yaml_retry_count={retry_count}).\n    {err}")
-                retry_ctx = _build_yaml_retry_context(err)
+                retry_ctx = _with_previous_answer(_build_yaml_retry_context(err),
+                                                  _outcome_answer(outcome))
                 _set_aside_unrepairable(run_dir, current_stage, err.path, retry_count)
                 continue
             raise  # retry ALSO failed — fail to human as before, unchanged
@@ -828,7 +895,11 @@ def _invoke_agent_with_yaml_retry(current_stage: str, run_id: str, run_dir: Path
                 what = "no readable deliverable block" if no_blocks else "some deliverables missing"
                 print(f"⚠️ [CUL-379] {current_stage}: {what} on first attempt — retrying once "
                       f"with a format reminder (format_retry_count={retry_count}). {err}")
-                retry_ctx = _build_missing_deliverables_retry_context(expected_outputs, no_blocks)
+                retry_ctx = _with_previous_answer(
+                    _build_missing_deliverables_retry_context(expected_outputs, no_blocks,
+                                                              current_stage,
+                                                              _is_brief_run(run_dir)),
+                    _outcome_answer(outcome))
                 continue
             raise
 
@@ -1025,11 +1096,11 @@ def _build_stage_prompt(stage_name: str, handoff: dict, path: Path,
     if retry_context:
         full_prompt += f"""
 
-    YOUR PREVIOUS ATTEMPT FAILED TO PARSE AS YAML:
+    YOUR PREVIOUS ANSWER COULD NOT BE READ:
     {retry_context}
 
-    Fix the exact issue described above and regenerate ALL deliverables from
-    scratch, following the YAML FORMATTING RULES precisely this time.
+    Fix only the issue described above, following the YAML FORMATTING RULES
+    precisely, and write every deliverable again in full.
     """
 
     return full_prompt
@@ -1268,6 +1339,10 @@ _DELIVERABLE_BLOCK_RE = re.compile(
 # for a fence that does not already name its own file.
 _DELIVERABLE_NAME_BEFORE_FENCE_RE = re.compile(
     r"^[ \t]*#[ \t]*(?:artifacts[/\\])?(?P<name>[a-zA-Z0-9_.]+\.yaml)[ \t]*\r?\n"
+    # run_069 (2026-10-04): up to 3 blank lines between the name and the fence
+    # (one blank line lost a two-card answer); any other text in between still
+    # does not match.
+    r"(?:[ \t]*\r?\n){0,3}"
     r"(?P<fence>```yaml)[ \t]*\r?\n(?P<body>.*?)```", re.DOTALL | re.MULTILINE)
 
 
@@ -1355,8 +1430,12 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
     # run_loop's own comment at the increment site for why the two happen to
     # coincide on the non-crash path and diverge only on a genuine crash-resume.
     attempt_num = handoff.get('injected_context', {}).get('stage_attempt', '0')
+    # CUL-396: a retry inside _invoke_agent_with_yaml_retry (F4b YAML or CUL-379
+    # format) is a second paid call on the same stage attempt; its own key, so it
+    # no longer overwrites the first call's cost and tokens.
+    audit_key = f"{stage_name}_attempt_{attempt_num}" + ("_retry" if retry_context else "")
     log_entry = {
-        f"{stage_name}_attempt_{attempt_num}": {
+        audit_key: {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "engine": "claude-agent-sdk",
             "execution_time_seconds": execution_time,
@@ -1373,7 +1452,7 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
         }
     }
     if prov_on:
-        log_entry[f"{stage_name}_attempt_{attempt_num}"]["provenance"] = \
+        log_entry[audit_key]["provenance"] = \
             _base_provenance(prov_models, prov_result_models)
     update_state(path=path, audit_log=log_entry)
 
@@ -1386,7 +1465,8 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
         debug_path = path / "artifacts" / f"debug_{stage_name}_raw_output.txt"
         with open(debug_path, "w", encoding="utf-8") as f:
             f.write(agent_output)
-        return {"no_blocks": True}  # CUL-379: _invoke_agent_with_yaml_retry retries once
+        # CUL-379: _invoke_agent_with_yaml_retry retries once, with this answer
+        return {"no_blocks": True, "answer": agent_output}
 
     saved_files = []
     card_provenance = None
@@ -1405,11 +1485,11 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
             f.write(out_text)
         saved_files.append(filename.strip())
     if card_provenance is not None:
-        log_entry[f"{stage_name}_attempt_{attempt_num}"]["provenance"]["cards"] = card_provenance
+        log_entry[audit_key]["provenance"]["cards"] = card_provenance
         update_state(path=path, audit_log=log_entry)
-        
+
     print(f"✅ [AGENT COMPLETE] Successfully wrote deliverables: {', '.join(saved_files)}")
-    return {"saved": saved_files}
+    return {"saved": saved_files, "answer": agent_output}
 
 
 
@@ -8485,6 +8565,8 @@ async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | 
     # strategy_config_authoring under config_direct_authoring only (see helper docstrings).
     _clear_stale_block_manifest(stage_name, RUN_DIR)
     _apply_block_manifest_retry_context(stage_name, handoff, RUN_DIR)
+    # O-21: the component_gap `tried` retry message (strategy_config_authoring only).
+    _apply_component_gap_retry_context(stage_name, handoff, RUN_DIR)
     # E-068 slice 2: 1a's slot menu and claim-retry context, under claim_tests only.
     _apply_claim_tests_context(stage_name, handoff, RUN_DIR)
     # E-061 C2 S2c: Step 2's variant-shape retry context (see helper docstring).
@@ -14666,6 +14748,110 @@ def _route_block_manifest_check(path: Path) -> str:
     return "strategy_config_authoring"
 
 
+# O-21 (operator, 2026-10-04): run_070's 1b parked an idea as component_gap twice
+# although PriceEvolutionComponent(period=1) + zscore expresses it (it misread the
+# component as lagged and never tried the transform pipeline). A component_gap must
+# carry `tried` (decision.yaml): the compositions 1b tried, at least one using the
+# transform pipeline. Missing, or naming no transform: ONE 1b retry with that
+# message, then its answer is accepted and the remaining problem recorded as a
+# warning on the component request. Reached only under config_direct_authoring.
+_COMPONENT_GAP_RETRY_MAX = 1
+_COMPONENT_GAP_RETRY_STATE_KEY = "component_gap_retry"
+# trading-bot/strategies/registry.py TRANSFORM_OPS_REGISTRY minus `identity` (no
+# transformation) and `ema` (also the plain word "EMA" in prose -- "EMA distance"
+# would pass without any transform tried); a test keeps the two in sync.
+_TRANSFORM_OP_NAMES = ("percentile", "negate_percentile", "zscore", "ratio_to_mean",
+                       "scale", "threshold_filter", "clip", "sigmoid", "negate",
+                       "vol_normalize", "vol_adjusted", "price_normalized", "volume_filter")
+_TRANSFORM_OPS_NOT_DETECTED = ("identity", "ema")
+# Review S2: spellings a model writes for an op ("z-score", "vol-normalised").
+_TRANSFORM_OP_SPELLINGS = (
+    (r"\bz[- ]score[sd]?\b", "zscore"),
+    (r"\bvol(?:atility)?[- ]normali[sz](?:e|ed|ation)\b", "vol_normalize"),
+    (r"\bprice[- ]normali[sz](?:e|ed|ation)\b", "price_normalized"),
+    (r"\bratio[- ]to[- ]mean\b", "ratio_to_mean"),
+)
+
+
+def _clear_component_gap_retry(path: Path, owe_again: bool = False) -> None:
+    """O-21 review S1: once 1b answers spec_ready, a pending `tried` retry
+    message must not reach a later 1b call -- the message is cleared but the
+    count kept, so the run still gets ONE retry (round 2). `owe_again` (only
+    --unpark) also resets the count: the resumed 1b is owed its retry again.
+    No-op when nothing is recorded."""
+    state = load_yaml(path / "pipeline_state.yaml") or {}
+    retry = state.get(_COMPONENT_GAP_RETRY_STATE_KEY) or {}
+    if not retry:
+        return
+    attempts = 0 if owe_again else retry.get("attempts", 0)
+    if retry.get("last_error") or retry.get("attempts", 0) != attempts:
+        update_state(path=path, **{_COMPONENT_GAP_RETRY_STATE_KEY: {
+            "attempts": attempts, "last_error": None}})
+
+
+def _component_gap_tried_problem(decision: dict) -> str | None:
+    """None when a component_gap decision lists the compositions 1b tried and at
+    least one names a transform op; else the message for 1b's retry."""
+    tried = decision.get("tried") if isinstance(decision, dict) else None
+    if not isinstance(tried, list) or not tried:
+        return ("component_gap without a `tried` list: list every composition you tried "
+                "(components with weights, and the transform pipeline) under `config`, and the "
+                "card clause each fails under `fails_on`, as strategy-config-authoring/SKILL.md "
+                "asks")
+    # Review S2: read only what was TRIED -- an item's `config` (a plain-string item
+    # as a whole), never its `fails_on`, where plain words like "scale" or
+    # "percentile" are prose -- and accept the common spellings of an op.
+    parts = [item.get("config") if isinstance(item, dict) else item for item in tried]
+    text = " ".join(str(p) for p in parts if p is not None).lower()
+    for pattern, op in _TRANSFORM_OP_SPELLINGS:
+        text = re.sub(pattern, op, text)
+    if not any(re.search(rf"\b{op}\b", text) for op in _TRANSFORM_OP_NAMES):
+        return ("component_gap whose `tried` list names no transform combination: try the "
+                "transform pipeline too (zscore, percentile, ratio_to_mean, vol_normalize, "
+                "negate, scale, clip, ...), e.g. PriceEvolutionComponent(period=1) + zscore "
+                "for a move in units of its usual size; a different yardstick for the same "
+                "quantity is a DEVIATION, not a gap (O-21). Put each composition under "
+                "`config`; `fails_on` is not read")
+    return None
+
+
+def _route_component_gap_tried(path: Path, decision: dict) -> tuple:
+    """(route, warning). route is "strategy_config_authoring" for the one O-21
+    retry, else None (the caller parks or pauses as before); warning is the
+    problem still present after the retry (recorded, never a stop)."""
+    problem = _component_gap_tried_problem(decision)
+    state = load_yaml(path / "pipeline_state.yaml") or {}
+    attempts = (state.get(_COMPONENT_GAP_RETRY_STATE_KEY) or {}).get("attempts", 0)
+    if problem is None:
+        return None, None
+    if attempts < _COMPONENT_GAP_RETRY_MAX:
+        update_state(path=path, **{_COMPONENT_GAP_RETRY_STATE_KEY: {
+            "attempts": attempts + 1, "last_error": problem}})
+        print(f"🔁 [O-21] component_gap refused once -- retrying strategy_config_authoring "
+              f"with: {problem}")
+        return "strategy_config_authoring", None
+    print(f"⚠️  [O-21] component_gap accepted after {attempts} retry, still: {problem} "
+          f"(recorded on the component request).")
+    return None, problem
+
+
+def _apply_component_gap_retry_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
+    """O-21: on the component_gap retry of strategy_config_authoring, put the
+    message into that stage's handoff. Another stage or no retry pending: no-op."""
+    if stage_name != "strategy_config_authoring":
+        return
+    state_path = run_dir / "pipeline_state.yaml"
+    state = (load_yaml(state_path) or {}) if state_path.exists() else {}
+    retry = state.get(_COMPONENT_GAP_RETRY_STATE_KEY) or {}
+    if not retry.get("attempts") or not retry.get("last_error"):
+        return
+    handoff.setdefault("injected_context", {})["component_gap_tried_error"] = (
+        f"Retry {retry['attempts']}/{_COMPONENT_GAP_RETRY_MAX}. Your previous answer was "
+        f"component_gap, refused: {retry['last_error']}. Either build the closest composition "
+        f"(spec_ready, with a DEVIATION entry in config_rationale) or answer component_gap again "
+        f"with a complete `tried` list in decision.yaml.")
+
+
 def _apply_block_manifest_retry_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
     """Under config_direct_authoring, on a manifest retry of
     strategy_config_authoring, put the previous manifest error into that
@@ -15569,17 +15755,24 @@ def determine_post_strategy_config_authoring_route(path: Path, *, routing_retire
     decision = load_yaml(path / "artifacts" / "decision.yaml")
     status = decision.get("status", "").strip().lower()
     if status == "spec_ready":
+        _clear_component_gap_retry(path)  # O-21 review S1: no stale "refused" message
         route = _route_block_manifest_check(path)
         if route == "innovation_expansion":
             _record_claim_match(path)  # E-068 slice 2: a warning only; flag off: no-op
         return route
+    tried_warning = None
+    if status == "component_gap":
+        retry_route, tried_warning = _route_component_gap_tried(path, decision)
+        if retry_route is not None:
+            return retry_route
     if status == "component_gap" and routing_retired:
         run_id = path.name
         reason = str(decision.get("rationale") or "component_gap (no rationale given)")
         _crr.append_component_requests(
             ROOT / _crr.COMPONENT_REQUESTS_REL,
             [{"run_id": run_id, "stage": "strategy_config_authoring", "variant_id": None,
-              "reason": reason, "blocking_issues": decision.get("blocking_issues") or []}],
+              "reason": reason, "blocking_issues": decision.get("blocking_issues") or [],
+              "tried": decision.get("tried") or [], "tried_warning": tried_warning}],
             unless=lambda r: (r.get("run_id") == run_id
                               and r.get("stage") == "strategy_config_authoring"
                               and r.get("reason") == reason))
