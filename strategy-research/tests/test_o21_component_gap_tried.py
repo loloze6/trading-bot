@@ -195,3 +195,41 @@ def test_the_retry_message_reaches_1b_through_the_real_invoke_path(monkeypatch):
     monkeypatch.setattr(rpr, "run_claude_worker", _worker)
     asyncio.run(rpr.async_invoke_agent("strategy_config_authoring", "run_964"))
     assert "without a `tried` list" in seen["ctx"]["component_gap_tried_error"]
+
+
+# ---------------------------------------------------------------------------
+# Review round 1
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("tried,ok", [
+    ([{"config": "PriceEvolutionComponent(period=1) + [z-score]"}], True),     # S2: spelling
+    ([{"config": "PriceEvolution(period=1), vol-normalised"}], True),
+    (["Keltner then Z score"], True),
+    ([{"config": "KeltnerBreakoutComponent", "fails_on": "needs an ATR scale, not a percent"}],
+     False),                                                                    # S2: prose in fails_on
+    ([{"config": "VolumeExpansion", "fails_on": "the 90th percentile of volume"}], False),
+])
+def test_the_tried_check_reads_config_only_and_common_spellings(tried, ok):
+    assert (rpr._component_gap_tried_problem({"tried": tried}) is None) is ok
+
+
+def test_a_spec_ready_answer_clears_a_pending_retry_message(monkeypatch):
+    """S1: after the O-21 retry 1b answers spec_ready; a later 1b call (e.g. a
+    manifest retry) must not carry the stale 'refused' message."""
+    run_dir = _gap_run("run_965")
+    assert rpr.determine_post_strategy_config_authoring_route(run_dir) == "strategy_config_authoring"
+    rpr.save_yaml(run_dir / "artifacts" / "decision.yaml", {"status": "spec_ready"})
+    monkeypatch.setattr(rpr, "_route_block_manifest_check", lambda path: "strategy_config_authoring")
+    rpr.determine_post_strategy_config_authoring_route(run_dir)
+    handoff = {}
+    rpr._apply_component_gap_retry_context("strategy_config_authoring", handoff, run_dir)
+    assert handoff == {}
+
+
+def test_clearing_is_a_no_op_without_a_pending_retry(tmp_path):
+    run_dir = tmp_path / "r"
+    run_dir.mkdir()
+    (run_dir / "pipeline_state.yaml").write_text(yaml.safe_dump({"status": "active"}),
+                                                 encoding="utf-8")
+    rpr._clear_component_gap_retry(run_dir)
+    assert rpr.load_yaml(run_dir / "pipeline_state.yaml") == {"status": "active"}

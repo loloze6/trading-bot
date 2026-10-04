@@ -2374,6 +2374,9 @@ def _unpark_entry(entry_id: str) -> bool:
         resume_stage = marker.get("resume_stage") or state.get("pending_stage")
         orch.update_state(path=run_dir, status="active", pending_stage=resume_stage,
                           **{orch.PARKED_KEY: None})
+        # O-21 review S1: the resumed 1b starts fresh -- no stale "refused" message,
+        # and its one `tried` retry is owed again (no-op when no retry is pending).
+        orch._clear_component_gap_retry(run_dir)
         _clear_run_halt_flags(run_dir)  # E-061 fourth-round fix 2: every un-pause path
         entry["status"] = "ready"
         entry.pop("parked_reason", None)
@@ -2528,6 +2531,22 @@ def _total_campaign_spend() -> tuple:
     return total_weighted, total_usd
 
 
+def _summary_closed_brief_lines(queue: dict) -> list:
+    """O-20 review N4: why each brief was closed, so the operator can see the
+    rule and reopen. Empty when no owner carries brief_status_rule (written
+    from O-20 on), so a summary without one is unchanged."""
+    closed = [e for e in queue.get("queue") or [] if isinstance(e, dict)
+              and e.get("brief_status") == "exhausted" and e.get("brief_status_rule")]
+    if not closed:
+        return []
+    lines = ["", "## Closed briefs (reopen: RUNBOOK §3, completed_brief_exhausted)", "",
+             "| owner | closed by |", "|---|---|"]
+    for e in closed:
+        rule = " ".join(str(e["brief_status_rule"]).split()).replace("|", "/")
+        lines.append(f"| {e['id']} | {rule} |")
+    return lines
+
+
 def _regenerate_summary(queue: dict, dry_run: bool = False):
     campaign = orch.load_campaign_state()
     trials = campaign.get("trial_sharpes", [])
@@ -2577,6 +2596,7 @@ def _regenerate_summary(queue: dict, dry_run: bool = False):
             refs = ", ".join(marker.get("request_refs") or []) or "-"
             why = " ".join(str(e.get("parked_reason") or "-").split()).replace("|", "/")
             lines.append(f"| {e['id']} | {e['status']} | {run_id} | {why} | {refs} |")
+    lines += _summary_closed_brief_lines(queue)
     # E-068 slice 2: runs without a usable claim test, and why. Only when
     # campaign_record/claim_test_coverage.yaml exists (written only under
     # orchestrator.claim_tests), so a summary without one is unchanged.

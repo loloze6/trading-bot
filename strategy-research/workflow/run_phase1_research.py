@@ -705,25 +705,26 @@ def _with_previous_answer(retry_ctx: str, answer) -> str:
     is one; retry_ctx unchanged otherwise."""
     if not isinstance(answer, str) or not answer.strip():
         return retry_ctx
-    text = answer
-    truncated = len(text) > _PREVIOUS_ANSWER_MAX_CHARS
-    if truncated:
-        text = text[:_PREVIOUS_ANSWER_MAX_CHARS] + "\n[... previous answer truncated ...]"
+    truncated = len(answer) > _PREVIOUS_ANSWER_MAX_CHARS
+    text = answer[:_PREVIOUS_ANSWER_MAX_CHARS] if truncated else answer
     lines = [
         retry_ctx,
         "",
         "Your previous answer, verbatim, between the two markers below. Keep its "
         "content exactly -- the same files, ideas, values and decisions -- and "
-        "change only the layout so it can be read.",
+        "change only the layout so it can be read"
+        + (" (its end was cut; see the note after it)." if truncated else "."),
         "<<<PREVIOUS ANSWER",
         text,
         "PREVIOUS ANSWER>>>",
     ]
     if truncated:
-        # operator follow-up (2026-10-04): say so, so the model knows the end is missing
-        lines.append(f"The answer above was truncated at {_PREVIOUS_ANSWER_MAX_CHARS:,} "
-                     f"characters (it had {len(answer):,}), so its end is missing: keep "
-                     f"everything shown, and complete the rest consistently with it.")
+        # operator follow-up (2026-10-04): say so, so the model knows the end is
+        # missing; the note sits outside the verbatim block (review N3)
+        lines.append(f"[... previous answer truncated ...] The answer above was truncated at "
+                     f"{_PREVIOUS_ANSWER_MAX_CHARS:,} characters (it had {len(answer):,}), so "
+                     f"its end is missing: keep everything shown, and complete the rest "
+                     f"consistently with it.")
     return "\n".join(lines)
 
 
@@ -14763,6 +14764,22 @@ _TRANSFORM_OP_NAMES = ("percentile", "negate_percentile", "zscore", "ratio_to_me
                        "scale", "threshold_filter", "clip", "sigmoid", "negate",
                        "vol_normalize", "vol_adjusted", "price_normalized", "volume_filter")
 _TRANSFORM_OPS_NOT_DETECTED = ("identity", "ema")
+# Review S2: spellings a model writes for an op ("z-score", "vol-normalised").
+_TRANSFORM_OP_SPELLINGS = (
+    (r"\bz[- ]score[sd]?\b", "zscore"),
+    (r"\bvol(?:atility)?[- ]normali[sz](?:e|ed|ation)\b", "vol_normalize"),
+    (r"\bprice[- ]normali[sz](?:e|ed|ation)\b", "price_normalized"),
+    (r"\bratio[- ]to[- ]mean\b", "ratio_to_mean"),
+)
+
+
+def _clear_component_gap_retry(path: Path) -> None:
+    """O-21 review S1: once 1b answers spec_ready (or the run is unparked), a
+    pending `tried` retry message must not reach a later 1b call."""
+    state = load_yaml(path / "pipeline_state.yaml") or {}
+    if (state.get(_COMPONENT_GAP_RETRY_STATE_KEY) or {}).get("last_error"):
+        update_state(path=path, **{_COMPONENT_GAP_RETRY_STATE_KEY: {
+            "attempts": 0, "last_error": None}})
 
 
 def _component_gap_tried_problem(decision: dict) -> str | None:
@@ -14773,7 +14790,13 @@ def _component_gap_tried_problem(decision: dict) -> str | None:
         return ("component_gap without a `tried` list: list every composition you tried "
                 "(components with weights, and the transform pipeline) and the card clause each "
                 "fails, as strategy-config-authoring/SKILL.md asks")
-    text = " ".join(str(item) for item in tried).lower()
+    # Review S2: read only what was TRIED -- an item's `config` (a plain-string item
+    # as a whole), never its `fails_on`, where plain words like "scale" or
+    # "percentile" are prose -- and accept the common spellings of an op.
+    parts = [item.get("config") if isinstance(item, dict) else item for item in tried]
+    text = " ".join(str(p) for p in parts if p is not None).lower()
+    for pattern, op in _TRANSFORM_OP_SPELLINGS:
+        text = re.sub(pattern, op, text)
     if not any(re.search(rf"\b{op}\b", text) for op in _TRANSFORM_OP_NAMES):
         return ("component_gap whose `tried` list names no transform combination: try the "
                 "transform pipeline too (zscore, percentile, ratio_to_mean, vol_normalize, "
@@ -15723,6 +15746,7 @@ def determine_post_strategy_config_authoring_route(path: Path, *, routing_retire
     decision = load_yaml(path / "artifacts" / "decision.yaml")
     status = decision.get("status", "").strip().lower()
     if status == "spec_ready":
+        _clear_component_gap_retry(path)  # O-21 review S1: no stale "refused" message
         route = _route_block_manifest_check(path)
         if route == "innovation_expansion":
             _record_claim_match(path)  # E-068 slice 2: a warning only; flag off: no-op

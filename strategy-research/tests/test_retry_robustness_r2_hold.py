@@ -324,3 +324,25 @@ def test_the_stop_line_names_a_held_brief():
     queue[1]["status"] = "done"
     queue[1]["outcome"] = "refuted"
     assert "held" not in (_decide(_empty_inputs(queue))["stop"] or {}).get("detail", "")
+
+
+def test_an_owner_under_component_quarantine_stays_eligible():
+    """O-21 review S3a: decision (i) applies to the owner entry too."""
+    entries = [{**_owner("B"), "status": "blocked_on_component:Foo"}]
+    out = dn._r2(entries, select=True)
+    assert out["held_briefs"] == [] and out["eligible_briefs"] == ["B"]
+    assert out["ready"] == ["B__more_1"]
+
+
+def test_an_operator_hold_on_the_owner_is_listed_as_held():
+    entries = [{**_owner("B"), "status": "blocked_on_e068"}]
+    out = dn._r2(entries, select=True)
+    assert out["held_briefs"] == ["B"] and out["eligible_briefs"] == [] and out["ready"] == []
+
+
+def test_a_truncation_marker_never_sits_inside_the_verbatim_block():
+    """O-21 review N3."""
+    ctx = rpr._with_previous_answer("note", "x" * (rpr._PREVIOUS_ANSWER_MAX_CHARS + 5))
+    block = ctx.split("<<<PREVIOUS ANSWER\n")[1].split("\nPREVIOUS ANSWER>>>")[0]
+    assert block == "x" * rpr._PREVIOUS_ANSWER_MAX_CHARS
+    assert "its end was cut" in ctx.split("<<<PREVIOUS ANSWER")[0]

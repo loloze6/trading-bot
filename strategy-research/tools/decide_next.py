@@ -892,19 +892,24 @@ def r2_request_operator_held(entry: dict) -> bool:
 
 
 def r2_held_owner(owner: dict, entries: list) -> bool:
-    """CUL-398: True when any R2 request on `owner`'s brief carries an operator
-    hold. R2 then neither flips a request ready nor mints a new one for that
-    brief: the operator's hold holds the brief, not only the one entry."""
-    return any(is_r2_request(e) and r2_request_operator_held(e)
-               and brief_owner(e, entries) is owner for e in entries)
+    """CUL-398: True when the owner entry itself, or any R2 request on
+    `owner`'s brief, carries an operator hold. R2 then neither flips a request
+    ready nor mints a new one for that brief: the operator's hold holds the
+    brief, not only the one entry (review S3a: an owner hold is listed too)."""
+    return r2_request_operator_held(owner) or any(
+        is_r2_request(e) and r2_request_operator_held(e) and brief_owner(e, entries) is owner
+        for e in entries)
 
 
 def r2_eligible_owner(entry: dict) -> bool:
     """An open brief whose owner entry is not superseded, paused or blocked
-    (code-review fix 6)."""
+    (code-review fix 6). Like a parked owner, an owner under R9's automatic
+    component quarantine stays eligible (review S3a: only an operator hold
+    freezes a brief, decision (i) of 2026-10-04)."""
     status = str(entry.get("status") or "")
     return (entry.get("brief_status") == BRIEF_OPEN
             and (status.startswith(PARKED_STATUS_PREFIX)
+                 or status.startswith(COMPONENT_QUARANTINE_PREFIX)
                  or not status.startswith(_R2_INELIGIBLE_OWNER_STATUS_PREFIXES)))
 
 

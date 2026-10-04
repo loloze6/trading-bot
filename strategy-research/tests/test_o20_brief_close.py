@@ -176,3 +176,24 @@ def test_the_next_requests_context_carries_no_earlier_reason(monkeypatch):
     assert set(saved) == {"schema_version", "queue_entry", "brief_owner", "brief_path",
                           "request", "already_produced"}
     assert "exhausted" not in str(saved)
+
+
+def test_the_summary_lists_closed_briefs_with_their_rule():
+    """O-20 review N4: the operator sees the rule in campaign_summary.md."""
+    queue = {"queue": [_owner(brief_status="exhausted",
+                              brief_status_rule="two consecutive step-1a 'exhausted' answers (B__more_1, B__more_2; limit 2)")]}
+    lines = camp._summary_closed_brief_lines(queue)
+    assert lines[3] == "| owner | closed by |"
+    assert "| B | two consecutive step-1a 'exhausted' answers (B__more_1, B__more_2; limit 2) |" in lines
+    assert camp._summary_closed_brief_lines({"queue": [_owner()]}) == []
+
+
+def test_the_regenerated_summary_shows_the_closed_brief_section():
+    """Mutation check: the helper must be wired into _regenerate_summary."""
+    queue = {"version": "1.0", "queue": [_owner()]}
+    camp._regenerate_summary(queue)
+    assert "## Closed briefs" not in camp.CAMPAIGN_SUMMARY_PATH.read_text(encoding="utf-8")
+    queue["queue"][0].update(brief_status="exhausted", brief_status_rule="empty-R2 streak: 2 ...")
+    camp._regenerate_summary(queue)
+    text = camp.CAMPAIGN_SUMMARY_PATH.read_text(encoding="utf-8")
+    assert "## Closed briefs" in text and "| B | empty-R2 streak: 2 ... |" in text

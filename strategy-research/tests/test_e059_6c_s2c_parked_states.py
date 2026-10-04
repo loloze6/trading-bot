@@ -614,6 +614,17 @@ def test_unpark_data_park_needs_no_class_check(campaign_root):
     run_dir = _parked_entry(campaign_root, classes=(), kind="data")
     assert camp._unpark_entry("PARK_ME") is True
     assert _state(run_dir)["status"] == "active"
+    assert rpr._COMPONENT_GAP_RETRY_STATE_KEY not in _state(run_dir)   # nothing added
+
+
+def test_unpark_clears_a_pending_component_gap_retry(campaign_root):
+    """O-21 review S1: the resumed 1b must not get a stale 'refused' message,
+    and its one `tried` retry is owed again."""
+    run_dir = _parked_entry(campaign_root, classes=(), kind="data")
+    rpr.update_state(path=run_dir, **{rpr._COMPONENT_GAP_RETRY_STATE_KEY: {
+        "attempts": 1, "last_error": "component_gap without a `tried` list"}})
+    assert camp._unpark_entry("PARK_ME") is True
+    assert _state(run_dir)[rpr._COMPONENT_GAP_RETRY_STATE_KEY] == {"attempts": 0, "last_error": None}
 
 
 @pytest.mark.parametrize("damage", ["not_parked", "unknown_id", "marker_missing", "kind_mismatch",
