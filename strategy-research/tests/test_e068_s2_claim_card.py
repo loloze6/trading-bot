@@ -1339,3 +1339,22 @@ def test_run_loop_first_set_aside_failure_never_stops_1a(monkeypatch):
     rpr.run_loop("run_955")
     assert [s for s, _ in seen] == ["hypothesis_generation", "strategy_config_authoring"]
 
+
+def test_a_lone_numbered_card_from_the_claim_retry_is_kept(monkeypatch):
+    """run_067: 1a answered ONE card named hypothesis_card_2.yaml. Through the
+    real _invoke_agent_with_yaml_retry, the claim retry's lone numbered card is
+    the run's card (it used to be undone as 'no hypothesis_card.yaml')."""
+    _set_orchestrator(ON)
+    run_dir = _card_run("run_970", claim=_claim(kind="vibes"))
+    arts = run_dir / "artifacts"
+
+    async def _agent(stage, run_id, retry_context=None):
+        rpr.save_yaml(arts / "hypothesis_card_2.yaml", dict(CARD, claim=_claim()))
+
+    monkeypatch.setattr(rpr, "async_invoke_agent", _agent)
+    rpr._check_claim_after_1a("run_970", run_dir, [arts / "hypothesis_card.yaml"],
+                              {"yaml_retry_count": 0})
+    assert rpr.load_yaml(arts / "hypothesis_card.yaml")["claim"]["kind"] != "vibes"
+    assert not (arts / "hypothesis_card_2.yaml").exists()
+    assert _status(run_dir)["usable"] is True
+
