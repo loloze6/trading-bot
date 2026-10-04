@@ -393,8 +393,12 @@ def record_coverage(root: Path, run_id: str, status: dict) -> None:
     with crr._lock(path, path.name):
         doc = crr._load_mapping(path, {})
         runs = doc.get("runs") if isinstance(doc.get("runs"), dict) else {}
+        old = runs.get(run_id) if isinstance(runs.get(run_id), dict) else {}
         runs[run_id] = {"usable": bool(status.get("usable")), "reason": status.get("reason"),
-                        "power_warning": bool(status.get("power_warnings"))}
+                        "power_warning": bool(status.get("power_warnings")),
+                        # slice 3's count of measured tests is kept: those looks
+                        # were taken, whatever the card check says later
+                        **({"measured": old["measured"]} if "measured" in old else {})}
         cm._atomic_write(path, {**doc, "runs": runs})
 
 
@@ -414,7 +418,9 @@ def coverage_summary_lines(root: Path) -> list:
     usable = sorted(r for r, v in runs.items() if isinstance(v, dict) and v.get("usable"))
     gaps = {}
     for r, v in sorted(runs.items()):
-        if isinstance(v, dict) and not v.get("usable"):
+        # a row holding only a slice-3 measurement (its card check never
+        # recorded) is not a card gap
+        if isinstance(v, dict) and "usable" in v and not v.get("usable"):
             gaps.setdefault(str(v.get("reason")), []).append(r)
     floor = sorted(r for r, v in runs.items() if isinstance(v, dict) and v.get("power_warning"))
     lines = ["", "## Claim tests (E-068, information only)", "",
@@ -425,4 +431,20 @@ def coverage_summary_lines(root: Path) -> list:
     if floor:
         lines.append(f"- Runs whose floor cannot be reached (power warning): {len(floor)} "
                      f"({', '.join(floor)})")
+    # E-068 slice 3 (CUL-393): the measurements after the backtests (absent
+    # until a run has been measured, so the lines above are unchanged until then).
+    measured = {r: v["measured"] for r, v in sorted(runs.items())
+                if isinstance(v, dict) and isinstance(v.get("measured"), dict)}
+    if measured:
+        # every test ever measured (looks accumulate across a run's attempts);
+        # tests whose selector matched no bars are looks too, shown apart
+        n_tests = sum(int(m.get("n_looks_measured", m.get("n_tests_measured")) or 0)
+                      for m in measured.values())
+        n_empty = sum(int(m.get("n_looks_no_events") or 0) for m in measured.values())
+        done = [r for r, m in measured.items() if m.get("claim_status") == "measured"]
+        lines.append(f"- Claim tests measured after the backtests (effect sizes, measured, "
+                     f"not proven): {n_tests} test(s) in {len(done)} run(s)"
+                     + (f" ({', '.join(done)})" if done else "")
+                     + f"; tests whose selector matched no bars: {n_empty}"
+                     + f"; runs not measured: {len(measured) - len(done)}")
     return lines

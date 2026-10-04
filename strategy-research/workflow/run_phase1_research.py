@@ -1601,6 +1601,10 @@ async def run_tool_worker(stage_name: str, run_id: str):
             _stale_pbe.unlink()
             print(f"🧹 [branch 3] protocol_execution re-run: cleared previous attempt's "
                   f"{_PROFIT_BARS_EVALUATION_FILE}")
+    # E-068 slice 3: the claim measurement must come from THIS attempt too.
+    # Flag off: nothing deleted.
+    if stage_name == "protocol_execution":
+        _clear_claim_measure_files(RUN_DIR)
 
     if stage_name == "data_availability_gate" and _variant_loop_enabled():
         # E-033.1 Slice 4b (delivery_plan_v26.md Slice 4, sub-slice 2 of 2:
@@ -15106,6 +15110,191 @@ def _record_claim_match(path: Path) -> None:
         print(f"⚠️  [E-068] 1a/1b match check could not run ({exc}); recorded, run continues.")
 
 
+# E-068 slice 3 (CUL-393, DESIGN_PROPOSAL.md sections 3 and 8), under
+# orchestrator.claim_tests.enabled only. After protocol_execution, every test of
+# the run's own claim card is MEASURED on each graded variant's saved bars.csv:
+# effect sizes, window signs per coin, a plain description -- "measured, not
+# proven". No p-value, no verdict, no calibration (automatic verdicts: CUL-394).
+# A separate grader, NOT a grid criterion: idea_status.yaml and
+# grid_evaluation.yaml are never read or written here. Information only: any
+# error is recorded and the run continues; nothing routes, stops or parks.
+def _claim_measure_module():
+    _json_pointer_module()  # puts tools/ on sys.path
+    import claim_measure as _cm
+    return _cm
+
+
+def _claim_measure_paths(run_dir: Path) -> list:
+    """This slice's files in a run: artifacts/claim_status.yaml and every
+    artifacts/variants/<vid>/claim_test.yaml."""
+    arts = Path(run_dir) / "artifacts"
+    return [arts / "claim_status.yaml"] + sorted(arts.glob("variants/*/claim_test.yaml"))
+
+
+# When THIS process started the run's current protocol_execution attempt
+# (time.time_ns(), set by _clear_claim_measure_files at the attempt's entry; the
+# tool worker and run_loop run in one process). A variant is measured only if
+# its protocol_result.yaml was written after that: a stale file from an earlier
+# attempt whose backtest failed this time is never measured or counted.
+_CLAIM_MEASURE_ATTEMPT_START: dict = {}
+# Coarse filesystem timestamps. Hole, accepted: a retry starting < 1 s after an
+# earlier attempt wrote a result that then fails would read it as fresh;
+# backtests take minutes.
+_ATTEMPT_MTIME_SLACK_NS = 1_000_000_000
+
+
+def _safe_print(message: str) -> None:
+    try:
+        print(message)
+    except Exception:  # noqa: BLE001 -- not even a console error escapes
+        pass
+
+
+def _claim_flag_or_none():
+    """The flag, or None when reading it raised (information only: a broken
+    config is reported by the stages that own it, never by this slice)."""
+    try:
+        return _claim_tests_enabled()
+    except Exception as exc:  # noqa: BLE001
+        _safe_print(f"⚠️  [E-068] claim measurement skipped: the flag could not be read "
+                    f"({type(exc).__name__}: {exc}).")
+        return None
+
+
+def _clear_claim_measure_files(run_dir: Path) -> None:
+    """At protocol_execution entry (flag on): the measurement must come from
+    THIS attempt's bars. Records the attempt's start; deletes the previous
+    attempt's files. Never raises (a file that cannot be removed is
+    overwritten by this attempt's measurement anyway). Flag off: no-op."""
+    if not _claim_flag_or_none():
+        return
+    try:
+        _CLAIM_MEASURE_ATTEMPT_START[str(Path(run_dir).resolve())] = time.time_ns()
+        for p in _claim_measure_paths(run_dir):
+            if p.exists():
+                p.unlink()
+                _safe_print(f"🧹 [E-068] protocol_execution re-run: cleared previous attempt's "
+                            f"{p.relative_to(Path(run_dir) / 'artifacts').as_posix()}")
+    except Exception as exc:  # noqa: BLE001 -- information only
+        _safe_print(f"⚠️  [E-068] could not clear the previous claim measurement ({exc}); "
+                    f"this attempt's measurement overwrites it.")
+
+
+def _measure_claim_tests_after_backtests(run_dir: Path, run_id: str) -> None:
+    """After protocol_execution (run_loop, flag on). Writes
+    artifacts/variants/<vid>/claim_test.yaml per variant backtested in this
+    attempt, then artifacts/claim_status.yaml, and counts every test in
+    campaign_record/claim_test_coverage.yaml. Never raises, never routes.
+    Flag off: no-op."""
+    if not _claim_flag_or_none():
+        return
+    try:
+        _measure_claim_tests(Path(run_dir), run_id)
+    except Exception as exc:  # noqa: BLE001 -- information only: a bug never stops a run
+        _record_claim_measure_error(Path(run_dir), run_id, exc)
+
+
+def _claim_measure_variants(run_dir: Path, run_id: str) -> tuple:
+    """(variants to measure, {variant: not-measured reason}) of THIS attempt:
+    a variant with a protocol_result.yaml written since the attempt started
+    (artifacts/variants/<vid>/; none with the variant loop off). Older files
+    are `stale_result` (an earlier attempt's backtest); a variant this attempt
+    recorded as failed (index.yaml `failed_attempt`, e.g. its trial write
+    raised after its result was saved) is `backtest_failed`; a variant whose
+    trial row was invalidated by the conformance check is `invalidated`.
+    Without a recorded attempt start nothing is measured (`no_attempt_start`,
+    fail closed)."""
+    import claim_tests as _ct
+    vroot = run_dir / "artifacts" / "variants"
+    if not vroot.is_dir():
+        return [], {}
+    start = _CLAIM_MEASURE_ATTEMPT_START.get(str(Path(run_dir).resolve()))
+    invalidated = _invalidated_trial_ids()
+    index = (load_yaml(vroot / "index.yaml") or {}) if (vroot / "index.yaml").exists() else {}
+    index = index.get("variants") if isinstance(index.get("variants"), dict) else {}
+    keep, skipped = [], {}
+    for vid in _ct.graded_variants(run_dir)[0]:
+        mtime = (vroot / vid / "protocol_result.yaml").stat().st_mtime_ns
+        if start is None:
+            skipped[vid] = "no_attempt_start"
+        elif mtime < start - _ATTEMPT_MTIME_SLACK_NS:
+            skipped[vid] = "stale_result"
+        elif isinstance(index.get(vid), dict) and index[vid].get("failed_attempt"):
+            skipped[vid] = "backtest_failed"
+        elif f"{run_id}:{vid}" in invalidated:
+            skipped[vid] = "invalidated"
+        else:
+            keep.append(vid)
+    return keep, skipped
+
+
+def _measure_claim_tests(run_dir: Path, run_id: str) -> None:
+    cc = _claim_card_module()
+    cm = _claim_measure_module()
+    import protocol_resolution as _pres
+    card_path = run_dir / "artifacts" / "hypothesis_card.yaml"
+    card = load_yaml(card_path) if card_path.exists() else None
+    exempt = _claim_check_exempt(run_dir, card)
+    res = None if exempt else cc.check_claim(
+        card.get("claim") if isinstance(card, dict) else None,
+        cc.card_criteria_ids(card if isinstance(card, dict) else {}))
+    card_status = cc.status_of(res, exempt, [])
+    variants, skipped = {}, {}
+    if card_status["usable"]:
+        names = {t["name"] for t in card_status["tests"]}
+        tests = [t for t in card["claim"]["tests"] if t.get("name") in names]
+        holdout_start = _load_holdout_range()[0]
+        eras = _pres.load_policy_eras(_DATA_POLICY_PATH)
+        graded, skipped = _claim_measure_variants(run_dir, run_id)
+        for vid in graded:
+            doc = cm.measure_variant(run_dir, vid, tests, eras, holdout_start)
+            save_yaml(run_dir / "artifacts" / "variants" / vid / cm.VARIANT_FILE, doc)
+            variants[vid] = doc
+    doc = cm.run_doc(run_id, card_status, variants, skipped)
+    save_yaml(run_dir / "artifacts" / cm.RUN_FILE, doc)
+    # From here the run's measurement is written: a failure to count it is
+    # recorded NEXT to it, never replaces it.
+    try:
+        cm.record_measured(ROOT, run_id, doc)
+    except Exception as exc:  # noqa: BLE001 -- information only
+        doc["coverage_error"] = f"{type(exc).__name__}: {exc}"
+        try:
+            save_yaml(run_dir / "artifacts" / cm.RUN_FILE, doc)
+        except Exception:  # noqa: BLE001
+            pass
+        _safe_print(f"⚠️  [E-068] could not count the claim measurement in "
+                    f"{cc.COVERAGE_REL} ({doc['coverage_error']}); recorded in "
+                    f"artifacts/{cm.RUN_FILE}.")
+    if doc["claim_status"] == cm.MEASURED:
+        _safe_print(f"📏 [E-068] {run_id}: {doc['n_tests_measured']} claim test(s) measured "
+                    f"(effect sizes, {cm.LABEL}) -> artifacts/{cm.RUN_FILE}")
+    else:
+        _safe_print(f"ℹ️  [E-068] {run_id}: claim tests not measured ({doc['reason']}: "
+                    f"{doc['detail']}); recorded, the run continues.")
+
+
+def _record_claim_measure_error(run_dir: Path, run_id: str, exc: Exception) -> None:
+    """The safety net: record `not_measured` (reason error) wherever it can;
+    it never raises."""
+    try:
+        cm = _claim_measure_module()
+        doc = cm.error_doc(run_id, exc)
+    except Exception as inner:  # noqa: BLE001
+        _safe_print(f"⚠️  [E-068] claim measurement failed and could not be recorded "
+                    f"({type(inner).__name__}); the run continues.")
+        return
+    for what, write in (
+            ("artifacts/claim_status.yaml", lambda: save_yaml(
+                Path(run_dir) / "artifacts" / cm.RUN_FILE, doc)),
+            ("the coverage record", lambda: cm.record_measured(ROOT, run_id, doc))):
+        try:
+            write()
+        except Exception as inner:  # noqa: BLE001 -- never raise from the net itself
+            _safe_print(f"⚠️  [E-068] could not write {what} ({type(inner).__name__}: {inner}).")
+    _safe_print(f"⚠️  [E-068] the claim measurement could not run ({doc['detail']}); recorded, "
+                f"the run continues.")
+
+
 # E-061 C2 S2c (C2_S1_FINDINGS.md G12, card D; review A5): Step 2's variant
 # shape. Under config-direct authoring + the variant loop, for a per-coin
 # variant_patches.yaml (S2b's per_coin_mode) and never for a composition run
@@ -16936,6 +17125,13 @@ def run_loop(run_id: str):
             if current_stage == "protocol_execution" and _pbe_flag:
                 _evaluate_profit_bars_every_backtest(
                     RUN_DIR, run_id, **({"record_bars_sha": True} if _vrr_flag else {}))
+
+            # E-068 slice 3 (orchestrator.claim_tests.enabled, off by default): the
+            # claim card's tests MEASURED on this attempt's saved bars (effect sizes,
+            # "measured, not proven"). Information only: never changes next_stage,
+            # never raises; a separate grader, not a grid criterion.
+            if current_stage == "protocol_execution":
+                _measure_claim_tests_after_backtests(RUN_DIR, run_id)
 
             # 6. Mark completed and stage next phase
             completed = state.get("completed_stages", [])

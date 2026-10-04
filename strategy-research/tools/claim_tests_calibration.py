@@ -178,9 +178,16 @@ def summarize(method: str, cell_docs: list) -> dict:
     signal = signals[0] if signals and all(x == signals[0] for x in signals) else None
     hashes = {c.get("code_sha256") for c in cells}
     code = hashes.pop() if len(hashes) == 1 else None      # all cells from one code version
+    # E-068 slice 3: the scope names exactly what the cells simulated -- the
+    # selector of each side (cell_spec) and the fakes the method really draws
+    # (A8.5.1a its own resamples, not N_NULL) -- so the lock can match them.
+    sides = sorted({c["side"] for c in cells if c.get("side") in SIDES})
+    selectors = [cell_spec(method, s, 0).selector for s in sides]
+    n_null = ct.A851A_SETTINGS["n_resamples"] if method in ct.A851A_METHODS else N_NULL
     return {"method": method, "gate": dict(ct.CALIBRATION_GATE), "seed": SEED,
             "scope": {"signal": signal, "cadence": "daily", "statistic": "mean_diff",
-                      "selector": "event", "n_null": N_NULL, "n_sims": N_SIMS},
+                      "selector": selectors, "outcome": "fwd_return",
+                      "n_null": n_null, "n_sims": N_SIMS},
             "code_sha256": code, "rows": rows,
             "conservative": {r["row"]: r["conservative_horizons"] for r in rows
                              if r["conservative_horizons"]},

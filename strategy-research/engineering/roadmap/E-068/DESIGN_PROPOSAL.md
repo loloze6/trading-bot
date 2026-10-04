@@ -212,19 +212,28 @@ def run_test(bars, spec: TestSpec) -> dict:
 def spec_hash(spec: TestSpec) -> str: ...   # identity of a test, for findings and novelty
 ```
 
-- **Output and grading.** The tool writes `artifacts/claim_test.yaml` per variant. This is the
-  artifact-then-grid seam `tools/residual_ic.py` already uses.
-- **Statistics.** Overlapping horizons are autocorrelated, so p-values come from a block
-  bootstrap or an effective sample size (`n_eff`, as residual IC reports). Below the floor, the
-  result is **inconclusive**, never a pass.
-- **The grid** (`tools/verdict_criteria_evaluator.py::evaluate_grid`) grades `claim_test` with
-  today's rules unchanged: every variant, floors, a FAIL dominates INCONCLUSIVE (D-014), no
-  averaging, no AI.
+- **Slice 3 = effect sizes only (operator, 2026-10-04, D-067).** After the backtests, a
+  separate grader (`tools/claim_measure.py`) measures every test of the run's own card on each
+  graded variant's saved `bars.csv` and writes `artifacts/variants/<vid>/claim_test.yaml` and
+  `artifacts/claim_status.yaml`: the effect per horizon, how many windows have the claimed sign
+  (per variant and per coin), and a plain description labelled **"measured, not proven"**.
+  Statuses are `measured` or `not_measured` with a reason; never supported or refuted. It is
+  **not a grid criterion**: idea_status and the grid are unchanged, so a claim result can never
+  change idea_status (D-055, D-066). It works for every signal and timeframe, regime selectors
+  included, because an effect size needs no signal recompute.
+- **Automatic verdicts are parked (CUL-394).** A p-value inside a run needs a calibration that
+  covers exactly the test, signal, timeframe and number of fakes, a store to reuse it across
+  runs, and a staleness check; CUL-394 holds that design and its measurements. Until then the
+  only verdicts are offline (`tools/claim_tests.py` CLI, a passed gate per section 3.1).
+- **Statistics (for those verdicts).** Overlapping horizons are autocorrelated, so p-values
+  come from the shuffle method with the signal recomputed (REGRADE_run065.md). Below the
+  floor, the result is **inconclusive**, never a pass.
 
 **Two statuses, kept separate:**
 
-- **`claim_status`** (supported / refuted / inconclusive) comes **only** from the claim test.
-  It answers "is the claim true on this data?"
+- **`claim_status`** comes **only** from the claim test. It answers "is the claim true on
+  this data?" In slice 3 it reads `measured` / `not_measured` (effect sizes, not proven);
+  supported / refuted / inconclusive arrive only with automatic verdicts (CUL-394).
 - **`idea_status`** stays today's: the menu criteria, graded the same way. It answers "is this
   a usable block?"
 
@@ -434,7 +443,7 @@ P-CUL-77).
 
 | Flag (all off by default) | Does | Requires |
 |---|---|---|
-| `orchestrator.claim_tests.enabled` | 1a writes `claim`; `check_spec`; `claim_tests.py` runs; grid grades `claim_test`; `claim_status` | grid_evaluation, config_direct_authoring |
+| `orchestrator.claim_tests.enabled` | 1a writes `claim`; `check_spec`; after the backtests the claim's tests are measured (effect sizes, `claim_status` measured / not_measured; not a grid criterion) | config_direct_authoring |
 | `orchestrator.claim_test_review.mode` (`off`, `record`, `gate`) | optional review call | claim_tests |
 | `orchestrator.findings.enabled` | regroup writes `finding`; findings summary; novelty key gets `spec_hash` | claim_tests, regroup_record |
 | `orchestrator.reader_findings.enabled` | reader output v3; decide-next takes side findings | claim_tests, specialist_readers |
@@ -457,7 +466,11 @@ P-CUL-77).
 2. **Step 1a claim block** -- DONE (PR #319; D-066), behind `orchestrator.claim_tests.enabled`.
    The schema, the code checks, the power warning, the 1a/1b match warning (section 2.3),
    and the `test_requests.yaml` record (information only: no stop, no park).
-3. **Grid:** the `claim_test` criterion and `claim_status`.
+3. **Effect sizes after the backtests** (CUL-393; D-067), behind
+   `orchestrator.claim_tests.enabled`: `tools/claim_measure.py` measures the card's tests on
+   each graded variant's saved bars ("measured, not proven"); a separate grader, not a grid
+   criterion. **Automatic verdicts parked** (CUL-394): calibration store and matching,
+   calibration requests, the 1,000-fakes gate, a time budget, staleness checks.
 4. **Findings:** the finding record and the findings summary.
 5. **Readers:** v3 output and the short SKILL.
 6. **Combination:** moved to its own epic, **E-071**.
