@@ -211,6 +211,8 @@ TARGET_FLAGS = {
     "score_provenance": False,
     # D-056: runs the real engine on real data; this harness feeds stub configs.
     "forecast_size_probe": False,
+    # E-068 slice 2: the stub cards carry no claim block.
+    "claim_tests": False,
 }
 
 # C5.8 (D-050): the four legacy route/rationale keys of a window's core
@@ -2586,3 +2588,165 @@ def test_c4_flag_set_v2_plus_score_provenance_end_to_end(harness):
     _assert_legacy_label_retired(h, r1)
     _assert_no_promotion_or_verdict_in_prompts(h)
     _assert_holdout_untouched(h)
+
+
+# ---------------------------------------------------------------------------
+# E-068 slice 2 (CUL-389): claim_tests ON -- a multi-card 1a whose first card
+# carries a claim and whose extra card carries none, then the queued card's
+# launch. A claim is information only: both runs complete, the gaps are recorded.
+# ---------------------------------------------------------------------------
+
+CLAIM_ON_FLAGS = {**TARGET_FLAGS, "claim_tests": True}
+SECOND_HYPOTHESIS = "H-E061-RSI-PULLBACK-1H-B"
+E2E_CLAIM = {
+    "statement": "After an oversold RSI reading, the next 6 hours return more than other hours.",
+    "kind": "conditional_behaviour",
+    "tests": [{"name": "oversold_rebound",
+               # 1, not 10: the fixture forecast is ~N(0, 1), so >= 10 matched no
+               # bar and slice 3 would rightly read no_events, not measured
+               "selector": {"kind": "event", "field": "forecast", "op": ">=", "value": 1},
+               "outcome": {"kind": "fwd_return", "horizons": [6]},
+               "baseline": {"kind": "complement"}, "statistic": "mean_diff",
+               "direction": "greater", "floor": {"min_events": 10}}],
+    "pass_if": "oversold hours beat other hours significantly at 6 hours",
+    "fail_if": "oversold hours are significantly worse at 6 hours",
+    "rationale": "forced selling overshoots should revert within hours",
+}
+
+
+@pytest.mark.slow
+def test_e068_claim_tests_on_multi_card_then_queued_card_both_complete(harness):
+    h = harness.build(flags=CLAIM_ON_FLAGS)
+    h.register_brief()
+    h.reader_proposals = False      # no reader candidate: decide-next picks the queued card
+    single = h.card_docs
+
+    def multi(run_dir):
+        if run_dir.name != "run_001":
+            return single(run_dir)
+        card = single(run_dir)["hypothesis_card.yaml"]
+        first = {**card, "claim": copy.deepcopy(E2E_CLAIM)}
+        second = {**card, "hypothesis_id": SECOND_HYPOTHESIS}          # no claim
+        scores = {"cards": [{"card": "hypothesis_card_2.yaml", "model_id": STUB_MODEL,
+                             "rubric_version": "brief-card-v1",
+                             "scores": {"confidence_real": 2, "distance_to_profitable": 1,
+                                        "mechanism_plausibility": 2}}]}
+        return {"hypothesis_card_1.yaml": first, "hypothesis_card_2.yaml": second,
+                "extra_card_scores.yaml": scores}
+
+    h.card_docs = multi
+    single_1b = h.docs_1b
+
+    def docs_1b(run_dir):
+        # the queued card is its own idea: a different RSI period, so its run is
+        # not an exact repeat of run 1 (the 5a gate would end it no-new)
+        docs = single_1b(run_dir)
+        card = yaml.safe_load((run_dir / "artifacts" / "hypothesis_card.yaml")
+                              .read_text(encoding="utf-8"))
+        if card["hypothesis_id"] == SECOND_HYPOTHESIS:
+            import json_pointer as jp
+            cfg = docs["backtest_spec.yaml"]["config"]
+            docs["backtest_spec.yaml"]["config"] = jp.apply_json_pointer_patch(
+                cfg, [{"path": RSI_PERIOD, "value": _rsi_period(cfg) + 3}])
+        return docs
+
+    h.docs_1b = docs_1b
+
+    # ---- run 1: the brief run (two cards; the extra one has no claim)
+    keep_going, exc = _drive(h)
+    if exc is not None:
+        raise exc
+    r1 = "run_001"
+    st1 = h.state(r1)
+    assert st1.get("last_error") is None, st1.get("last_error")
+    assert st1["status"] == "completed", st1["pending_stage"]
+    status1 = h.art(r1, "claim_test_status.yaml")
+    assert status1["usable"] is True and status1["stage"] == "hypothesis_generation"
+    assert status1["other_cards_without_a_usable_claim_test"] == {
+        "hypothesis_card_2.yaml": "no_claim"}
+    # the extra card's missing claim spent 1a's one retry, nothing more
+    assert [c for c in h.llm_calls if c == ("hypothesis_generation", r1)] == [
+        ("hypothesis_generation", r1)] * 2
+    queued = [e for e in h.queue() if e.get("card_ref")]
+    assert len(queued) == 1, h.queue()
+
+    # ---- run 2: the queued card launches at 1b; its gate records no_claim, warn-only
+    qid = queued[0]["id"]
+    for _ in range(3):
+        if h.entry(qid).get("status") == "done":
+            break
+        keep_going, exc = _drive(h)
+        if exc is not None:
+            raise exc
+    entry = h.entry(qid)
+    assert entry["status"] == "done", entry
+    r2 = entry["run_ids"][-1]
+    st2 = h.state(r2)
+    assert st2.get("last_error") is None, st2.get("last_error")
+    assert st2["status"] == "completed", st2["pending_stage"]
+    assert ("hypothesis_generation", r2) not in h.llm_calls
+    status2 = h.art(r2, "claim_test_status.yaml")
+    assert status2["usable"] is False and status2["reason"] == "no_claim"
+    assert status2["stage"] == "strategy_config_authoring"
+
+    # E-068 slice 3: after the backtests, run 1's claim test was MEASURED on every
+    # graded variant's saved bars (effect sizes only); run 2 has no claim to measure.
+    measured1 = h.art(r1, "claim_status.yaml")
+    assert measured1["claim_status"] == "measured" and measured1["information_only"] is True
+    assert measured1["n_tests_measured"] == len(measured1["variants"]) >= 1
+    for vid in measured1["variants"]:
+        vdoc = h.art(r1, f"variants/{vid}/claim_test.yaml")
+        test = vdoc["tests"]["oversold_rebound"]
+        assert vdoc["status"] == test["status"] == "measured"
+        assert test["label"] == "measured, not proven" and 6 in test["horizons"]
+        assert "p_value" not in yaml.safe_dump(vdoc)
+    assert h.art(r2, "claim_status.yaml")["reason"] == "no_claim"
+    coverage = yaml.safe_load((h.root / "campaign_record" / "claim_test_coverage.yaml")
+                              .read_text(encoding="utf-8"))["runs"]
+    assert coverage[r1]["usable"] is True and coverage[r2]["reason"] == "no_claim"
+    assert coverage[r1]["measured"]["n_tests_measured"] == measured1["n_tests_measured"]
+    summary = (h.root / "campaign_record" / "campaign_summary.md").read_text(encoding="utf-8")
+    assert "## Claim tests" in summary and f"no_claim: 1 ({r2})" in summary
+    assert (f"- Claim tests measured after the backtests (effect sizes, measured, not proven): "
+            f"{measured1['n_tests_measured']} test(s) in 1 run(s) ({r1})") in summary
+    for run_id in (r1, r2):
+        assert not h.state(run_id).get(rpr.PARKED_KEY)
+    _assert_holdout_untouched(h)
+
+
+@pytest.mark.slow
+def test_e068_claim_measurement_error_never_stops_the_run(harness, monkeypatch):
+    """E-068 slice 3: a bug inside the measurement after the backtests is
+    recorded (not_measured, reason error) and the run completes as without it."""
+    import claim_measure as cm
+
+    def boom(*a, **k):
+        raise RuntimeError("injected measurement bug")
+
+    monkeypatch.setattr(cm, "measure_variant", boom)
+    h = harness.build(flags=CLAIM_ON_FLAGS)
+    h.register_brief()
+    h.reader_proposals = False
+    single = h.card_docs
+
+    def with_claim(run_dir):
+        docs = single(run_dir)
+        docs["hypothesis_card.yaml"] = {**docs["hypothesis_card.yaml"],
+                                        "claim": copy.deepcopy(E2E_CLAIM)}
+        return docs
+
+    h.card_docs = with_claim
+    keep_going, exc = _drive(h)
+    if exc is not None:
+        raise exc
+    st = h.state("run_001")
+    assert st.get("last_error") is None, st.get("last_error")
+    assert st["status"] == "completed", st["pending_stage"]
+    doc = h.art("run_001", "claim_status.yaml")
+    assert doc["claim_status"] == "not_measured" and doc["reason"] == "error"
+    assert "injected measurement bug" in doc["detail"]
+    assert h.art("run_001", "idea_status.yaml")             # the grid ran as usual
+    done = st["completed_stages"]                           # the run went on past the bug
+    assert "protocol_execution" in done and done[-1] != "protocol_execution", done
+    _assert_holdout_untouched(h)
+

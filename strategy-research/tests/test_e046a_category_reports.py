@@ -165,14 +165,13 @@ def test_reprojection_regime_power_per_window_blocks_equal_source(run_059_source
         assert report_entry["regime_validity"] == source_entry.get("regime_validity")
 
 
-def test_reprojection_regime_power_detector_health_equals_source(run_059_sources, run_059_reports):
-    rdr = run_059_sources["regime_detector_report"]
-    health = run_059_reports["regime_power"]["slices"]["overall"]["detector_health"]
-    if rdr is None:
-        assert health.get("unavailable") is True
-    else:
-        assert health["detector_version"] == rdr.get("detector_version")
-        assert health["per_symbol_per_timeframe"] == rdr.get("per_symbol_per_timeframe")
+def test_cul381_regime_power_carries_no_campaign_level_detector_report(run_059_sources,
+                                                                      run_059_reports):
+    """CUL-381: the campaign-level regime_detector_report.yaml is never a source."""
+    assert "regime_detector_report" not in run_059_sources
+    overall = run_059_reports["regime_power"]["slices"]["overall"]
+    assert "detector_health" not in overall
+    assert "regime_detector_report" not in yaml.safe_dump(run_059_reports["regime_power"])
 
 
 def test_reprojection_component_attribution_per_symbol_is_g7_aggregate_of_bars_csv(
@@ -673,3 +672,36 @@ def test_cul370_per_symbol_is_a_small_index_not_a_second_copy(run_059_reports):
     slices = run_059_reports["profitability"]["slices"]
     size = lambda x: len(_yaml.safe_dump(x, sort_keys=False))  # noqa: E731
     assert size(slices["per_symbol"]) * 5 < size(slices["per_window"])  # ~1/9.5 measured; ~1/1 before
+
+
+# ---------------------------------------------------------------------------
+# CUL-381: two runs in sequence -- the second never sees the first's detector report
+# ---------------------------------------------------------------------------
+
+def _cul381_run(sr_root: Path, run_id: str) -> Path:
+    run_dir = sr_root / "runs" / run_id
+    (run_dir / "artifacts").mkdir(parents=True)
+    (run_dir / "artifacts" / "protocol_result.yaml").write_text(yaml.safe_dump(
+        {"results": [{"symbol": "BTCUSD", "window": "w1", "run_id": f"{run_id}_w1",
+                      "per_regime": {"unknown": {"n_bars": 30}}}]}), encoding="utf-8")
+    return run_dir
+
+
+def test_cul381_second_run_never_reads_the_first_runs_detector_report(tmp_path):
+    sr_root = tmp_path / "strategy-research"
+    run_a = _cul381_run(sr_root, "run_A")
+    # what run_A's refresh used to leave behind at the campaign root
+    (sr_root / "regime_detector_report.yaml").write_text(yaml.safe_dump({
+        "detector_version": "deadbeef", "evaluated_at": "2026-10-02T00:00:00+00:00",
+        "data_range": {"start": "2024-01-01", "end": "2025-12-31"},
+        "config_source": "runs/run_A/artifacts/candidate_strategy_config.json",
+        "per_symbol_per_timeframe": [{"symbol": "BTCUSDT", "timeframe": "1h",
+                                      "confidence": "low"}]}), encoding="utf-8")
+    br.build_reports(run_a, write=True)
+    run_b = _cul381_run(sr_root, "run_B")
+    reports = br.build_reports(run_b, write=True)
+    written = (run_b / "artifacts" / "reports" / "regime_power.yaml").read_text(encoding="utf-8")
+    for text in (written, yaml.safe_dump(reports)):
+        assert "detector_health" not in text
+        assert "run_A" not in text
+        assert "deadbeef" not in text

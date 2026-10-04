@@ -993,7 +993,6 @@ def test_end_to_end_registry_change_to_graded_composite(campaign_root, monkeypat
                         field="params.period", before=period, after=period + 2)]),
                 encoding="utf-8")
     monkeypatch.setattr(rpr, "_run_specialist_readers_stage", _readers)
-    monkeypatch.setattr(rpr, "_refresh_regime_detector_report_for_readers", lambda *a: None)
     import build_reports
     # E-061 C2 S2d: the variant-loop call site now also passes
     # variants=/failed_variants=/untested_variants= -- accept and ignore them,

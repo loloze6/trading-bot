@@ -473,8 +473,8 @@ orchestrator:
       # While true: after the grid-evaluation block, ALSO calls
       # tools/build_reports.py::build_reports(RUN_DIR, write=True), which
       # re-projects protocol_result.yaml / trade_diagnostics.json /
-      # each window's bars.csv / the campaign-level
-      # regime_detector_report.yaml into the five files above -- one
+      # each window's bars.csv (this run's own output only; CUL-381 removed
+      # the campaign-level regime_detector_report.yaml) into the five files above -- one
       # category x slice (overall/per_window/per_regime/per_symbol) each.
       # Zero new computation except regime_power's hindsight-lag comparison
       # (E-040's decided regime-power checks, items b+c only per this
@@ -843,6 +843,36 @@ orchestrator:
       # quiet or silent strategy passes -- how often it trades is the
       # backtest's question. Every probe is recorded in
       # artifacts/forecast_size_probe.yaml. Adds a few seconds per config.
+  claim_tests:
+    enabled: false
+      # E-068 slice 2 (CUL-389, engineering/roadmap/E-068/DESIGN_PROPOSAL.md
+      # sections 2, 2.3 and 4). OFF BY DEFAULT, read by
+      # run_phase1_research._claim_tests_enabled(). HARD DEPENDENCY: raises if
+      # true while config_direct_authoring.enabled is false/absent. While
+      # false: nothing is read or written (byte-identical).
+      #
+      # While true (a claim is INFORMATION ONLY: nothing here ever stops,
+      # parks or reroutes a run): step 1a gets workflow_artifacts/skills/
+      # hypothesis-design/CLAIM_TESTS.md (the SKILL files are untouched) and
+      # writes a `claim` block in every card (a statement, its kind, 1-3 tests
+      # composed from the four slots and/or criteria_refs, pass_if/fail_if,
+      # rationale), or `tests: none` with missing_block. tools/claim_card.py
+      # checks every card before 1b: a refused claim or a min_events floor above
+      # (bars / longest horizon) x coins gets 1a's one retry; whatever remains
+      # is recorded (artifacts/claim_test_status.yaml, campaign_record/
+      # claim_test_coverage.yaml, counted in the campaign summary; `tests: none`
+      # also appends campaign_record/test_requests.yaml) and the run continues.
+      # A queued card launched at 1b is checked there, warn-only. Regime-
+      # selector tests are effect-size only (verdict_possible: false). After
+      # 1b, a 1a/1b mismatch is a warning in artifacts/claim_match.yaml.
+      # E-068 slice 3 (CUL-393, D-067): after protocol_execution, every test
+      # of the run's own card is MEASURED on each graded variant's saved
+      # bars.csv (tools/claim_measure.py): effect sizes and window signs per
+      # coin, "measured, not proven" -> artifacts/variants/<vid>/
+      # claim_test.yaml, artifacts/claim_status.yaml (measured / not_measured
+      # with a reason), counted in claim_test_coverage.yaml. No p-value, no
+      # verdict (CUL-394); not a grid criterion; any error is recorded and
+      # the run continues.
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------

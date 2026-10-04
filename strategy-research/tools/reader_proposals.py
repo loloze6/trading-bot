@@ -53,7 +53,7 @@ FEED_NAME_RE = re.compile(r"[a-z][a-z0-9_]*")
 READER_RUBRIC_VERSIONS = {
     "profitability": "profitability-reader-v2",
     "forecast_power": "forecast_power-reader-v2",
-    "regime_power": "regime_power-reader-v2",
+    "regime_power": "regime_power-reader-v3",
     "component_attribution": "component_attribution-reader-v2",
     "trade_efficiency": "trade_efficiency-reader-v2",
 }

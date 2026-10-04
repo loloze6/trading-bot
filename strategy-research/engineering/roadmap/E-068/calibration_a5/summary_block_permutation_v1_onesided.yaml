@@ -1,0 +1,171 @@
+method: block_permutation_v1
+gate:
+  alpha: 0.05
+  ceiling: 0.075
+  floor_warning: 0.025
+  max_share_undefined: 0.05
+  rule: one_sided
+seed: 20261003
+scope:
+  signal:
+    class: DonchianBreakoutComponent
+    params:
+      period: 20
+      scaling_factor: 20.0
+  cadence: daily
+  statistic: mean_diff
+  selector: event
+  n_null: 199
+  n_sims: 400
+code_sha256: 08444b24e52b746fe454f4c62238b93e7f17147c87cb81e2ecad7a2f025c47fe
+rows:
+- row: iid_lower_claimed
+  n_sims: 400
+  share_p_below_0_05_of_defined:
+    1: 0.0425
+    2: 0.0325
+    3: 0.04
+    4: 0.04
+    5: 0.0325
+  share_undefined:
+    1: 0.0
+    2: 0.0
+    3: 0.0
+    4: 0.0
+    5: 0.0
+  conservative_horizons: []
+  pass: true
+- row: iid_lower_opposite
+  n_sims: 400
+  share_p_below_0_05_of_defined:
+    1: 0.0225
+    2: 0.0425
+    3: 0.03
+    4: 0.0375
+    5: 0.04
+  share_undefined:
+    1: 0.0
+    2: 0.0
+    3: 0.0
+    4: 0.0
+    5: 0.0
+  conservative_horizons: &id001
+  - 1
+  pass: true
+- row: iid_upper_claimed
+  n_sims: 400
+  share_p_below_0_05_of_defined:
+    1: 0.025
+    2: 0.0225
+    3: 0.0275
+    4: 0.03
+    5: 0.025
+  share_undefined:
+    1: 0.0
+    2: 0.0
+    3: 0.0
+    4: 0.0
+    5: 0.0
+  conservative_horizons: &id002
+  - 2
+  pass: true
+- row: iid_upper_opposite
+  n_sims: 400
+  share_p_below_0_05_of_defined:
+    1: 0.045
+    2: 0.0325
+    3: 0.045
+    4: 0.045
+    5: 0.0575
+  share_undefined:
+    1: 0.0
+    2: 0.0
+    3: 0.0
+    4: 0.0
+    5: 0.0
+  conservative_horizons: []
+  pass: true
+- row: switching_lower_claimed
+  n_sims: 400
+  share_p_below_0_05_of_defined:
+    1: 0.0525
+    2: 0.05
+    3: 0.045
+    4: 0.05
+    5: 0.055
+  share_undefined:
+    1: 0.0
+    2: 0.0
+    3: 0.0
+    4: 0.0
+    5: 0.0
+  conservative_horizons: []
+  pass: true
+- row: switching_lower_opposite
+  n_sims: 400
+  share_p_below_0_05_of_defined:
+    1: 0.03
+    2: 0.03
+    3: 0.0275
+    4: 0.0225
+    5: 0.0275
+  share_undefined:
+    1: 0.0
+    2: 0.0
+    3: 0.0
+    4: 0.0
+    5: 0.0
+  conservative_horizons: &id003
+  - 4
+  pass: true
+- row: switching_upper_claimed
+  n_sims: 400
+  share_p_below_0_05_of_defined:
+    1: 0.035
+    2: 0.035
+    3: 0.0375
+    4: 0.035
+    5: 0.0425
+  share_undefined:
+    1: 0.0
+    2: 0.0
+    3: 0.0
+    4: 0.0
+    5: 0.0
+  conservative_horizons: []
+  pass: true
+- row: switching_upper_opposite
+  n_sims: 400
+  share_p_below_0_05_of_defined:
+    1: 0.0275
+    2: 0.0225
+    3: 0.0275
+    4: 0.0275
+    5: 0.035
+  share_undefined:
+    1: 0.0
+    2: 0.0
+    3: 0.0
+    4: 0.0
+    5: 0.0
+  conservative_horizons: &id004
+  - 2
+  pass: true
+conservative:
+  iid_lower_opposite: *id001
+  iid_upper_claimed: *id002
+  switching_lower_opposite: *id003
+  switching_upper_opposite: *id004
+all_pass: true
+reevaluated:
+  rule: amendment 5 (one-sided)
+  rerun: false
+  code_ref: bc4e67f4
+  code_sha256_source: git blobs of ['strategy-research/tools/claim_tests.py', 'strategy-research/tools/claim_tests_calibration.py']
+    at bc4e67f4
+  cell_files_sha256_source: git blobs at bc4e67f4
+  cell_files_sha256:
+    strategy-research/engineering/roadmap/E-068/calibration/cell_block_permutation_v1_iid_lower.yaml: d231c21498a6cbb6a5ee83a80fa4517537d2080184290df270eb406735cb333a
+    strategy-research/engineering/roadmap/E-068/calibration/cell_block_permutation_v1_iid_upper.yaml: 2905af9fc911323743aaa20b90aa9e9073b9dee757e5714aff3b574791cb073f
+    strategy-research/engineering/roadmap/E-068/calibration/cell_block_permutation_v1_switching_lower.yaml: bcc67e9b88a480e404e0abd8b263869d65759b9e3ca50b6a177cc4f77ff8d134
+    strategy-research/engineering/roadmap/E-068/calibration/cell_block_permutation_v1_switching_upper.yaml: d7df21e73a67841f8532a5aa243d2b96ed7862db84647f0e355beac44679c9bb

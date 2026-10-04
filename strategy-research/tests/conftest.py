@@ -74,10 +74,22 @@ need the marker: it queries a family name guaranteed absent from either a
 real or an empty wishlist file, so `missing_field` is the correct result
 either way -- confirmed by it passing unmarked under this guard.
 """
+import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+# Parallel runs (pytest-xdist, `-n 4` -- see CLAUDE.md): every worker process would otherwise
+# let numpy/BLAS start one thread per core, so N workers x 8 threads fight over 8
+# cores (measured 2026-10-03: the slowest tests ran 5-7x slower in parallel than
+# alone). One thread per worker. Set before anything imports numpy; only in a
+# worker (xdist sets PYTEST_XDIST_WORKER), so a serial run is unchanged; an
+# explicit value in the environment still wins.
+if os.environ.get("PYTEST_XDIST_WORKER"):
+    for _var in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
+                 "NUMEXPR_NUM_THREADS"):
+        os.environ.setdefault(_var, "1")
 
 import pytest
 from _net_guard import install_network_block, register_network_marker
@@ -305,3 +317,23 @@ def _sandbox_by_default(request, tmp_path, monkeypatch):
     monkeypatch.setattr(_setup_run, "ROOT", sandbox)
 
     return sandbox
+
+
+# D-063: every specialist reader is required to receive the two design docs step
+# 2 also gets, resolved run-relative as ROOT/docs/. A test that drives the full
+# loop THROUGH the reader stage opts in (pytestmark usefixtures) to get verbatim
+# copies of the real files in its sandbox -- opt-in, not autouse, so the other
+# ~4,400 tests do not each copy ~65 KB into tmp (temp dirs once filled the disk).
+_READER_DOCS = ("COMPONENT_CATALOG.md", "STRATEGY_DESIGN_GUIDE.md")
+
+
+@pytest.fixture
+def reader_docs(_sandbox_by_default):
+    assert _sandbox_by_default is not None, (
+        "reader_docs needs the default sandbox; a real_repo_readonly test reads the real "
+        "docs/ already and must not use this fixture")
+    docs = Path(_sandbox_by_default) / "docs"
+    docs.mkdir(parents=True, exist_ok=True)
+    for name in _READER_DOCS:
+        shutil.copyfile(Path(__file__).parent.parent / "docs" / name, docs / name)
+    return docs

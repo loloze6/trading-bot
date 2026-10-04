@@ -6,6 +6,7 @@ Sandboxing: tests/conftest.py's autouse _sandbox_by_default. No LLM, no
 real subprocess.
 """
 import asyncio
+import re
 import sys
 from pathlib import Path
 
@@ -155,19 +156,36 @@ def test_fix2_killed_run_gate_pipeline_proof_holds_with_flag_on(monkeypatch):
     assert result["passed"], result
 
 
-# --- 4. regime detector report refreshed before the reports ------------------
+# --- 4. no campaign-level regime detector report before the reports ----------
+# CUL-381 replaced fix 4's refresh: the readers' reports are built from this
+# run's own output only, so the campaign-level detector report is neither
+# refreshed nor required, and a missing one cannot fail the stage.
 
-def test_fix4_regime_report_refreshed_before_build_reports_under_flag(monkeypatch):
+def test_fix4_cul381_no_regime_report_refresh_under_flag(monkeypatch):
     _set_orchestrator(ALL_ON)
     _protocol_execution_run("run_953", menu_shaped=True)
     _fake_protocol_subprocess(monkeypatch)
     order = []
     _stub_grid_and_reports(monkeypatch, order=order)
     asyncio.run(rpr.run_tool_worker("protocol_execution", "run_953"))
-    assert order == ["regime_report", "build_reports"]
-    monkeypatch.setattr(rpr, "_ensure_regime_detector_report", lambda *a: None)
-    with pytest.raises(RuntimeError, match="regime_detector_report"):
-        asyncio.run(rpr.run_tool_worker("protocol_execution", "run_953"))
+    assert order == ["build_reports"]
+    assert not hasattr(rpr, "_refresh_regime_detector_report_for_readers")
+
+
+def test_fix4_cul381_detector_report_has_one_caller_the_legacy_verdict_interpreter():
+    """Static pin over BOTH report-building sites (single-run and variant loop):
+    the campaign-level detector report is produced only by the legacy
+    verdict_interpreter branch, which the reader flag never reaches."""
+    src = Path(rpr.__file__).read_text(encoding="utf-8")
+    calls = [m.start() for m in re.finditer(r"(?<!def )_ensure_regime_detector_report\(", src)]
+    assert len(calls) == 1, len(calls)
+    # ...and that call sits inside the legacy `verdict_interpreter` branch
+    branch = src.index('            if current_stage == "verdict_interpreter":')
+    next_branch = src.index('            elif current_stage == "regroup_record":', branch)
+    assert branch < calls[0] < next_branch
+    injects = [m.start() for m in
+               re.finditer(r"(?<!def )_inject_regime_context_into_handoff\(", src)]
+    assert len(injects) == 1 and branch < injects[0] < next_branch
 
 
 def test_fix4_flag_off_does_not_refresh_regime_report(monkeypatch):

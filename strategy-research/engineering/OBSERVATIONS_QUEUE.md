@@ -24,7 +24,8 @@ decision (DECISION_LOG) or a ticket.
 | O-15 | CUL-369 work, 2026-10-02 | The whole-test chain never counts a window's first day (its anchor), so each window's entry-day P&L is left out | parked (operator, 2026-10-02): the entry it leaves out is a monthly-restart artifact, not a real cost; real issue moved to O-9 |
 | O-16 | C4 run_065, 2026-10-02 | The grid tested linear IC over all days, while the claim was continuation over 1-5 days after a breakout | open: design gap, symptom of O-18 |
 | O-17 | C4 run_065, 2026-10-02 | A malformed reader proposal (advisory branch 2) halted the run before branch 1's verdict was recorded | fixed: D-061 (CUL-380), proposals dropped and recorded |
-| O-18 | Operator, 2026-10-02 | A run should prove a written finding (claim, test, rationale), not only score a block | open: design discussion, then an epic |
+| O-18 | Operator, 2026-10-02 | A run should prove a written finding (claim, test, rationale), not only score a block | open: epic E-068 created, design discussion first |
+| O-19 | C4 run_065, 2026-10-02 | The readers produced no usable next idea: three lenses silent, two proposals wrong in ways they could not see | open: in E-068; stale detector input is bug CUL-381 |
 
 ---
 
@@ -887,6 +888,43 @@ A hybrid is possible: the agent proposes, reuses a template where one fits, and 
 sub-step checks the rest.
 
 **Status:** design discussion first, then an epic. Nothing built.
+*Update 2026-10-02:* epic **E-068 · Every run produces a proven finding and the next test
+to run** created for O-18 and O-19 together.
+
+
+## O-19. The readers produced no usable next idea
+
+**Seen:** run_065 (C4 Donchian 1d, Kraken), 2026-10-02. This was the first run whose readers
+all completed. Their job is to turn a run's backtest evidence into next ideas.
+
+| Reader | Output | Assessment |
+|---|---|---|
+| forecast_power | nothing | The lens closest to why the idea was refuted (no information in the forecast), and it proposed nothing. |
+| profitability, component_attribution | nothing | Arguably fine: costs were covered, and there was one component. |
+| regime_power | "Redesign the regime detector: stuck on one label" | Wrong diagnosis. The detector was a deliberately ungated scaffold (`block_manifest.yaml` marks it as scaffolding). Its "detector health" evidence came from another run (bug CUL-381). The proposal names no indicator and no claim. |
+| trade_efficiency | "Add a 2% stop: `stop_loss_pct: 0 -> 0.02`" | Not applicable. DonchianBreakoutComponent has only `period` and `scaling_factor`, and the engine has no stop-loss. |
+
+**Causes (from the code):**
+1. **The readers work blind.** Each gets only its category report (built from this run's
+   backtest: protocol_result, trade_diagnostics, bars.csv), `grid_evaluation.yaml` and
+   `registry_summary.yaml` (`_reader_handoff`). It never sees the claim
+   (`hypothesis_card.yaml`), what is block vs scaffolding (`block_manifest.yaml`), or the
+   component settings that really exist.
+2. **Config edits only.** A proposal is a `patch` or a `new_block` sketch. There is no way
+   to state a finding or a next test.
+3. **Skills built to patch, not to learn.** The five reader skills (240-300 lines each) carry
+   the old verdict-interpreter rules ("Rule N fires -> propose this change").
+4. **No feasibility check when a proposal is written.** A patch to a setting that does not
+   exist is only discovered after spend.
+5. **Model.** Every AI stage runs on `claude-haiku-4-5` (`_CLAUDE_WORKER_MODEL`, one
+   constant). A cost/quality trade-off for the operator to weigh.
+
+**Near-term risk:** decide-next ranks reader proposals as next-run candidates. With an empty
+queue it could pick an unusable patch. Keep a ready brief in the queue, or check its pick
+before launching.
+
+**Next:** E-068 (with O-18). The skills are rewritten in the O-18 frame: what the evidence says
+about the claim, side findings each with a next test, and an optional validated config patch.
 
 ---
 

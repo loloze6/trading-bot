@@ -47,6 +47,10 @@ REQUESTED = rpr._CLAUDE_WORKER_MODEL
 SKILL_DIR = SR_ROOT / "workflow_artifacts" / "skills" / "readers"
 CATEGORIES = ["profitability", "forecast_power", "regime_power", "component_attribution",
               "trade_efficiency"]
+# Independent pin of each SKILL's rubric literal. regime_power is -v3 since CUL-381
+# removed detector_health from its report and its scoring rows.
+EXPECTED_RUBRIC = {c: f"{c}-reader-v2" for c in CATEGORIES}
+EXPECTED_RUBRIC["regime_power"] = "regime_power-reader-v3"
 
 
 @pytest.fixture(autouse=True)
@@ -155,7 +159,7 @@ def test_the_closed_set_covers_exactly_the_reader_categories():
 def test_the_rubric_literal_in_each_skill_file_is_the_constant(cat):
     """Each SKILL carries exactly one rubric_version literal; the constant is it."""
     literals = re.findall(r'rubric_version:\s*"([^"]+)"', _skill_text(cat))
-    assert literals == [f"{cat}-reader-v2"], literals
+    assert literals == [EXPECTED_RUBRIC[cat]], literals
     assert rp.READER_RUBRIC_VERSIONS[cat] == literals[0]
 
 
@@ -187,7 +191,7 @@ def test_default_accepts_what_strict_rejects(tmp_path, value):
 @pytest.mark.parametrize("cat", CATEGORIES)
 def test_strict_accepts_each_categorys_own_v2(tmp_path, cat):
     d = _write(tmp_path, cat, [_proposal(cat=cat)])
-    assert rp.load_proposals(d, [cat], strict_provenance=True)[cat][0]["rubric_version"] == f"{cat}-reader-v2"
+    assert rp.load_proposals(d, [cat], strict_provenance=True)[cat][0]["rubric_version"] == EXPECTED_RUBRIC[cat]
 
 
 def test_strict_rejects_an_unlisted_category(tmp_path):
@@ -536,9 +540,10 @@ def test_the_citation_block_is_recorded_under_the_flag(monkeypatch):
     _, dest, audit = _run_reader(monkeypatch, _seq_llm([text]), report=REPORT,
                                  registry=REGISTRY, grid=GRID)
     cit = _entry(audit)["provenance"]["citations"]
-    assert cit["files_read"] == ["grid_evaluation.yaml", "registry_summary.yaml",
+    assert cit["files_read"] == ["candidate_strategy_config.json", "grid_evaluation.yaml",
+                                 "hypothesis_card.yaml", "registry_summary.yaml",
                                  f"reports/{CAT}.yaml"]
-    assert cit["files_unavailable"] == []
+    assert cit["files_unavailable"] == ["block_manifest.yaml"]  # optional; _seed_run has none
     assert cit["proposals"] == {f"{CAT}-run_990-1": {
         "resolved": ["variants.base.slices.overall.diagnostics.median_cost_drag_pct",
                      "variants.base.slices.per_symbol.BTCUSDT[*].core.cost_drag_pct",
@@ -569,7 +574,9 @@ def test_an_absent_grid_and_an_unparseable_registry_are_listed_not_fatal(tmp_pat
     (arts / "registry_summary.yaml").write_text("a: [unclosed\n", encoding="utf-8")
     body = yaml.safe_dump([_proposal(evidence=["this_run.idea_status", "marker.x"])])
     cit = rpr._citation_provenance(CAT, tmp_path, body)
-    assert cit["files_unavailable"] == ["grid_evaluation.yaml", "registry_summary.yaml"]
+    assert cit["files_unavailable"] == ["block_manifest.yaml", "candidate_strategy_config.json",
+                                        "grid_evaluation.yaml", "hypothesis_card.yaml",
+                                        "registry_summary.yaml"]
     assert cit["files_read"] == [f"reports/{CAT}.yaml"]
     (rec,) = cit["proposals"].values()
     assert rec == {"resolved": ["marker.x"], "unresolved": ["this_run.idea_status"],
@@ -599,8 +606,9 @@ def test_a_body_that_is_not_a_list_records_no_proposals(tmp_path):
     (tmp_path / "artifacts").mkdir()
     block = rpr._citation_provenance(CAT, tmp_path, "just: a mapping\n")
     assert block["proposals"] == {} and block["files_read"] == []
-    assert block["files_unavailable"] == ["grid_evaluation.yaml", "registry_summary.yaml",
-                                          f"reports/{CAT}.yaml"]
+    assert block["files_unavailable"] == ["block_manifest.yaml", "candidate_strategy_config.json",
+                                          "grid_evaluation.yaml", "hypothesis_card.yaml",
+                                          "registry_summary.yaml", f"reports/{CAT}.yaml"]
 
 
 # ---------------------------------------------------------------------------

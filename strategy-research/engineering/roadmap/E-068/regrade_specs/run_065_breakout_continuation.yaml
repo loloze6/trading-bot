@@ -1,0 +1,33 @@
+# E-068 slice 1 (CUL-386) -- offline re-grade spec, PRE-REGISTERED.
+# Fixed 2026-10-03, committed before tools/claim_tests.py existed and before
+# any outcome (forward return) of run_065 was computed. Phase A looked only at
+# the bar layout and the forecast column (operator decisions D1/D2, todo.md).
+claim_id: run_065_breakout_continuation
+source_run: run_065
+statement: >
+  After a daily close in the top 20% of its range, returns over the next 1 to 5
+  days are higher than on other days; after a close in the bottom 20%, they are
+  lower. (Card: "BTC/ETH"; graded variants hold BTCUSD and SOLUSD only.)
+# forecast = (2*pos - 1) * 20 (strategy_components.py DonchianBreakout), so
+# forecast >= 12 <=> pos >= 0.8 and forecast <= -12 <=> pos <= 0.2.
+combine: all_supported        # the claim is supported only if every test is
+across_variants: fail_dominates  # refuted on any variant -> refuted; else any inconclusive -> inconclusive
+tests:
+  - name: upper_breakout
+    selector: {kind: event, field: forecast, op: ">=", value: 12}
+    outcome: {kind: fwd_return, horizons: [1, 2, 3, 4, 5]}
+    baseline: {kind: complement}
+    statistic: mean_diff
+    direction: greater
+    alpha: 0.05
+    floor: {min_events: 100, min_windows: 4}
+    consistency: {unit: window, min_same_sign: 4}
+  - name: lower_breakout
+    selector: {kind: event, field: forecast, op: "<=", value: -12}
+    outcome: {kind: fwd_return, horizons: [1, 2, 3, 4, 5]}
+    baseline: {kind: complement}
+    statistic: mean_diff
+    direction: less
+    alpha: 0.05
+    floor: {min_events: 100, min_windows: 4}
+    consistency: {unit: window, min_same_sign: 4}

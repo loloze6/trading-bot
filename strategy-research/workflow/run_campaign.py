@@ -139,6 +139,9 @@ _LEGACY_MINTING_ROUTERS = ("_route_refine", "_route_pivot", "_route_escalate")
 # --unpark restores one. Written only under orchestrator.verdict_routing_retired.
 PARKED_STATUS_PREFIX = "paused:waiting_for_"
 PARKED_STATUSES = tuple(f"{PARKED_STATUS_PREFIX}{k}" for k in orch.PARK_KINDS)
+# E-068 slice 2: the claim-test coverage record (tools/claim_card.COVERAGE_REL;
+# equal by a test, so the summary needs no heavy import to know it is absent).
+CLAIM_COVERAGE_REL = "campaign_record/claim_test_coverage.yaml"
 # E-061 C1.4 (DELIVERY_REVIEW.md A4): an exception that escapes run_loop is a
 # classified pause (RUNBOOK.md §3 row of this name), never a crashed campaign
 # process that a restart re-crashes. The same name is the run's flag.
@@ -2574,6 +2577,12 @@ def _regenerate_summary(queue: dict, dry_run: bool = False):
             refs = ", ".join(marker.get("request_refs") or []) or "-"
             why = " ".join(str(e.get("parked_reason") or "-").split()).replace("|", "/")
             lines.append(f"| {e['id']} | {e['status']} | {run_id} | {why} | {refs} |")
+    # E-068 slice 2: runs without a usable claim test, and why. Only when
+    # campaign_record/claim_test_coverage.yaml exists (written only under
+    # orchestrator.claim_tests), so a summary without one is unchanged.
+    if (ROOT / CLAIM_COVERAGE_REL).exists():
+        import claim_card as _claim_card  # tools/ sibling; heavy, so imported only here
+        lines += _claim_card.coverage_summary_lines(ROOT)
     lines += [
         "",
         "## Scoreboard",
@@ -3143,6 +3152,7 @@ def _flag_readers() -> dict:
         "composition_runs": orch._composition_runs_enabled,
         "variant_anti_adjacency_gate": orch._variant_anti_adjacency_gate_enabled,
         "forecast_size_probe": orch._forecast_size_probe_enabled,  # D-056
+        "claim_tests": orch._claim_tests_enabled,  # E-068 slice 2
         "schedulability_block": _schedulability_block_enabled,
     }
 

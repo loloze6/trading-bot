@@ -1353,8 +1353,13 @@ mechanical). Readers only propose; their scores rank the next candidate in the
 later decide-next step (delivery_plan_v26.md slice 6b). Keeping them out of the
 route means an LLM can never soften or harden a verdict.
 
-**Stage input (per reader):** `artifacts/reports/<category>.yaml` and
-`artifacts/grid_evaluation.yaml` — nothing else (no pre-registration, no other
+**Stage input (per reader):** `artifacts/reports/<category>.yaml`,
+`artifacts/grid_evaluation.yaml`, and (D-063) what was claimed and what really
+exists: `artifacts/hypothesis_card.yaml`, this run's base config (the base
+variant's `strategy_config.json`, else `candidate_strategy_config.json`),
+`docs/COMPONENT_CATALOG.md` and `docs/STRATEGY_DESIGN_GUIDE.md` (the two docs
+step 2 gets), `artifacts/block_manifest.yaml` when present, then
+`artifacts/registry_summary.yaml`. Nothing else (no pre-registration, no other
 category's report, no regime-audit decision).
 
 **Stage output:** `artifacts/proposals/<category>.yaml` × 5 (a YAML list, `[]`
@@ -1388,9 +1393,10 @@ feed that is not wired, one row per such feed in
    before any reader call (and on every resume).
 3. **Everything comes from this attempt.** Under the flag `protocol_execution`
    deletes `idea_status.yaml`, `grid_evaluation.yaml`, `reports/` and
-   `proposals/` on entry, refreshes `regime_detector_report.yaml` before the
-   reports are built, and fails (after its trial rows are recorded) if the
-   grid or the reports cannot be produced. `run_loop` also refuses to start
+   `proposals/` on entry, builds the reports from this run's own output only
+   (CUL-381: never the campaign-level `regime_detector_report.yaml`), and
+   fails (after its trial rows are recorded) if the grid or the reports
+   cannot be produced. `run_loop` also refuses to start
    a flag-on run whose `pre_registration.yaml` pass_rule is not menu-shaped.
    A token budget exceeded between readers ends the run as
    `rejected_budget_exceeded`, like the loop-top check.

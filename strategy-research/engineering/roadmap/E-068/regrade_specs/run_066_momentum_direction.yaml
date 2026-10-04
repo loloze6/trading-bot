@@ -1,0 +1,25 @@
+# E-068 slice 1 (CUL-386) -- offline re-grade spec, PRE-REGISTERED.
+# Fixed 2026-10-03, committed before tools/claim_tests.py existed and before
+# any outcome (forward return) of run_066 was computed (operator decision D3).
+claim_id: run_066_momentum_direction
+source_run: run_066
+statement: >
+  Multi-week time-series momentum carries continuation: on 1h bars, the Keltner
+  momentum forecast ranks the next 3, 7 and 14 days' returns (72/168/336 bars).
+  (Card: "BTC/ETH"; graded variants hold BTCUSD and SOLUSD only.)
+# Not tested here: "cuts crash losses". It needs the drawdown of the sized vs
+# unsized strategy, and vol sizing was not in the config. Recorded as a test
+# request (a missing outcome block), not forced into a block that does not fit.
+# 504 bars (21 days) dropped: ~28 independent blocks, under the floor of 30
+# (estimate: 6 windows x ~2,376 usable bars / 504).
+combine: all_supported
+across_variants: fail_dominates
+tests:
+  - name: momentum_rank_ic
+    selector: {kind: all}
+    outcome: {kind: fwd_return, horizons: [72, 168, 336]}
+    baseline: null            # rank_ic compares nothing: it ranks the forecast against the outcome
+    statistic: rank_ic
+    direction: greater
+    alpha: 0.05
+    floor: {min_blocks: 30}   # non-overlapping horizon-long blocks, gap-aware, at every horizon
