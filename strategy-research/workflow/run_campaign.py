@@ -3177,6 +3177,7 @@ def _flag_readers() -> dict:
         "variant_anti_adjacency_gate": orch._variant_anti_adjacency_gate_enabled,
         "forecast_size_probe": orch._forecast_size_probe_enabled,  # D-056
         "claim_tests": orch._claim_tests_enabled,  # E-068 slice 2
+        "claim_test_review": orch._claim_test_review_mode,  # E-068 3b (None = off)
         "schedulability_block": _schedulability_block_enabled,
     }
 

@@ -873,6 +873,23 @@ orchestrator:
       # with a reason), counted in claim_test_coverage.yaml. No p-value, no
       # verdict (CUL-394); not a grid criterion; any error is recorded and
       # the run continues.
+  claim_test_review:
+    enabled: false
+    mode: record
+      # E-068 3b (D-070, DESIGN_PROPOSAL.md sections 4 and 8). OFF BY DEFAULT,
+      # read by run_phase1_research._claim_test_review_mode(). HARD DEPENDENCY:
+      # raises if true while claim_tests.enabled is false/absent. While false:
+      # no review call, nothing written. mode: record | revise.
+      #
+      # While true (INFORMATION ONLY: a claim never parks or stops a run;
+      # D-066/D-067): after 1b's manifest is accepted, ONE closed-book call
+      # (workflow_artifacts/skills/claim-review/SKILL.md, same model as every
+      # stage) checks each claim test: quantity measured == quantity stated,
+      # horizon units (bars x timeframe) cover the stated span, direction and
+      # baseline. Written to artifacts/claim_review.yaml (audit key
+      # claim_review_attempt_0); an invalid answer is review_error, no retry.
+      # revise: its issues also join the run's ONE claim revision (the revised
+      # claim is re-checked by code only, never reviewed again).
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------

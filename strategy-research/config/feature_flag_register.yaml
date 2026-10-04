@@ -651,6 +651,34 @@ flags:
       a `measured` row in claim_test_coverage.yaml and one summary line. No
       p-value, no verdict, not a grid criterion; errors recorded, never
       raised. Tested by tests/test_e068_s3_claim_measure.py.
+      3b (2026-10-04, D-070): `past_return` selector field (with `bars: n`,
+      the move that ended at bar t; strict, no warm-up rows); the
+      block-visibility check in artifacts/claim_match.yaml; ONE claim
+      revision per run after 1b when no test reads the block's output
+      (workflow_artifacts/skills/claim-revision/SKILL.md, flag-on-only;
+      accepted only if code passes it with statement and kind unchanged;
+      spliced into the run's card and its numbered twin, never the queued
+      copies; artifacts/claim_revision.yaml). Tested by
+      tests/test_e068_3b_past_return.py and
+      tests/test_e068_3b_claim_visibility.py.
+
+  - name: claim_test_review
+    kind: orchestrator_config
+    config_key: orchestrator.claim_test_review.enabled
+    reader: run_phase1_research._claim_test_review_mode
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "E-068 (needs orchestrator.claim_tests on; no campaign runs until slices 1-3 and 3b are reviewed)"
+    criterion: >
+      Landed 2026-10-04 (E-068 3b, D-070). Off: no call, nothing written.
+      On (requires claim_tests; mode record | revise), INFORMATION ONLY:
+      after 1b, one closed-book call (workflow_artifacts/skills/
+      claim-review/SKILL.md, the stages' model) checks each claim test --
+      quantity measured vs stated, horizon units, direction and baseline --
+      into artifacts/claim_review.yaml; in revise mode its issues join the
+      run's one claim revision. Ships only if the offline measurement in
+      engineering/roadmap/E-068/review_measurement/ passes (6 of 6 calls).
+      Tested by tests/test_e068_3b_claim_visibility.py.
 
   - name: bar_equity
     kind: engine_param

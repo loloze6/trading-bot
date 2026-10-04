@@ -1,0 +1,134 @@
+measured_at: '2026-10-04T19:38:25.669229+00:00'
+tag: run1
+model: claude-haiku-4-5
+verdict: FAIL
+total_cost_usd: 0.290781
+calls:
+- case: A
+  call: 1
+  expect: units_flagged
+  pass: true
+  why: horizon_units_ok false on ['vol_managed_continuation']
+  review_error: null
+  flags:
+    vol_managed_continuation:
+      measures_statement: false
+      horizon_units_ok: false
+      direction_baseline_ok: true
+  cost_usd: 0.053455749999999996
+  tokens:
+    input: 10
+    output: 8152
+    cache_read: 0
+    cache_creation: 5471
+    total: 13633
+    weighted: 47608.8
+  num_turns: 1
+- case: A
+  call: 2
+  expect: units_flagged
+  pass: true
+  why: horizon_units_ok false on ['vol_managed_continuation']
+  review_error: null
+  flags:
+    vol_managed_continuation:
+      measures_statement: false
+      horizon_units_ok: false
+      direction_baseline_ok: true
+  cost_usd: 0.039889100000000004
+  tokens:
+    input: 10
+    output: 6697
+    cache_read: 5471
+    cache_creation: 0
+    total: 12178
+    weighted: 34042.1
+  num_turns: 1
+- case: B
+  call: 1
+  expect: units_not_flagged
+  pass: true
+  why: every horizon_units_ok true
+  review_error: null
+  flags:
+    sparse_high_conviction_continuation:
+      measures_statement: true
+      horizon_units_ok: true
+      direction_baseline_ok: true
+  cost_usd: 0.06876175000000001
+  tokens:
+    input: 10
+    output: 11171
+    cache_read: 0
+    cache_creation: 5567
+    total: 16748
+    weighted: 62823.8
+  num_turns: 1
+- case: B
+  call: 2
+  expect: units_not_flagged
+  pass: true
+  why: every horizon_units_ok true
+  review_error: null
+  flags:
+    sparse_high_conviction_continuation:
+      measures_statement: false
+      horizon_units_ok: true
+      direction_baseline_ok: true
+  cost_usd: 0.0400197
+  tokens:
+    input: 10
+    output: 6703
+    cache_read: 5567
+    cache_creation: 0
+    total: 12280
+    weighted: 34081.7
+  num_turns: 1
+- case: C
+  call: 1
+  expect: level_not_move_flagged
+  pass: false
+  why: 'not flagged: [''high_close_shock_reversion'', ''low_close_shock_reversion'']'
+  review_error: null
+  flags:
+    high_close_shock_reversion:
+      measures_statement: true
+      horizon_units_ok: true
+      direction_baseline_ok: true
+    low_close_shock_reversion:
+      measures_statement: true
+      horizon_units_ok: true
+      direction_baseline_ok: true
+  cost_usd: 0.056593500000000005
+  tokens:
+    input: 10
+    output: 8656
+    cache_read: 0
+    cache_creation: 5750
+    total: 14416
+    weighted: 50477.5
+  num_turns: 1
+- case: C
+  call: 2
+  expect: level_not_move_flagged
+  pass: false
+  why: 'not flagged: [''high_close_shock_reversion'', ''low_close_shock_reversion'']'
+  review_error: null
+  flags:
+    high_close_shock_reversion:
+      measures_statement: true
+      horizon_units_ok: true
+      direction_baseline_ok: true
+    low_close_shock_reversion:
+      measures_statement: true
+      horizon_units_ok: true
+      direction_baseline_ok: true
+  cost_usd: 0.032061
+  tokens:
+    input: 10
+    output: 5069
+    cache_read: 5750
+    cache_creation: 0
+    total: 10829
+    weighted: 25930.0
+  num_turns: 1
