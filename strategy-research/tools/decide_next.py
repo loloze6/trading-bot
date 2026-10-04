@@ -165,8 +165,12 @@ AUTO_EXHAUSTED_REASON = "no_new_hypothesis"
 # Statuses in which an R2 request is still outstanding (not yet run to the end).
 _OUTSTANDING_STATUSES = ("queued", "ready", "in_progress")
 # CUL-398: a held request (operator hold or component quarantine). Outstanding
-# for the streak, but never flipped ready by R2, and it holds its whole brief.
+# for the streak and never flipped ready by R2. Only an OPERATOR hold freezes
+# its whole brief (r2_request_operator_held).
 HELD_STATUS_PREFIX = "blocked_on_"
+# R9's automatic quarantine (run_campaign: `blocked_on_component:<name>`): held
+# for the streak, but it does not freeze the brief (operator, 2026-10-04).
+COMPONENT_QUARANTINE_PREFIX = "blocked_on_component:"
 # Queue outcomes of a finished R2 request that produced no new, eligible card.
 _EMPTY_R2_OUTCOMES = frozenset({NO_NEW_HYPOTHESIS_OUTCOME, BRIEF_EXHAUSTED_OUTCOME,
                                 "quarantined_engineering_failure"})
@@ -787,7 +791,7 @@ def r2_request_yielded(entry: dict) -> bool | None:
         return None
     # CUL-398 (2026-10-04): a held request (blocked_on_*, the operator's hold or a
     # component quarantine) has not run to the end: it neither counts nor breaks
-    # the streak, and r2_held_owner keeps R2 off its brief until it is released.
+    # the streak. An operator hold also keeps R2 off its brief (r2_held_owner).
     if r2_request_held(entry):
         return None
     # Slice 6c S2c review fix 1: a parked request (paused:waiting_for_*) tested
@@ -821,12 +825,21 @@ def r2_request_held(entry: dict) -> bool:
     return str(entry.get("status") or "").startswith(HELD_STATUS_PREFIX)
 
 
+def r2_request_operator_held(entry: dict) -> bool:
+    """CUL-398 follow-up (operator, 2026-10-04): an OPERATOR hold -- any
+    blocked_on_* except R9's automatic `blocked_on_component:<name>` quarantine.
+    A quarantined request stays outstanding (r2_request_yielded -> None) but does
+    not freeze its brief: R2 may still ask that brief for other ideas."""
+    return r2_request_held(entry) and not str(entry.get("status") or "").startswith(
+        COMPONENT_QUARANTINE_PREFIX)
+
+
 def r2_held_owner(owner: dict, entries: list) -> bool:
-    """CUL-398: True when any R2 request on `owner`'s brief is held. R2 then
-    neither flips a request ready nor mints a new one for that brief: the
-    operator's hold holds the brief, not only the one entry."""
-    return any(is_r2_request(e) and r2_request_held(e) and brief_owner(e, entries) is owner
-               for e in entries)
+    """CUL-398: True when any R2 request on `owner`'s brief carries an operator
+    hold. R2 then neither flips a request ready nor mints a new one for that
+    brief: the operator's hold holds the brief, not only the one entry."""
+    return any(is_r2_request(e) and r2_request_operator_held(e)
+               and brief_owner(e, entries) is owner for e in entries)
 
 
 def r2_eligible_owner(entry: dict) -> bool:
@@ -1740,9 +1753,8 @@ def decide(inputs: dict, *, now: str, trigger: dict, select_entry=None) -> dict:
                            f"{len(cands)} candidate(s) eligible, and no open brief for R2 "
                            f"({len(r2['exhausted_briefs'])} exhausted, "
                            f"{len(r2['legacy_briefs'])} legacy"
-                           # CUL-398 review: a held brief is still open; name it, since a
-                           # component quarantine (R9) can hold one without the operator.
-                           + (f", {len(r2['held_briefs'])} held by a blocked_on_* request: "
+                           # CUL-398 review: a held brief is still open; name it.
+                           + (f", {len(r2['held_briefs'])} held by an operator hold: "
                               f"{', '.join(r2['held_briefs'])}" if r2.get("held_briefs") else "")
                            + ")")}
 

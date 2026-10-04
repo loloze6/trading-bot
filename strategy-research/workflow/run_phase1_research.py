@@ -706,9 +706,10 @@ def _with_previous_answer(retry_ctx: str, answer) -> str:
     if not isinstance(answer, str) or not answer.strip():
         return retry_ctx
     text = answer
-    if len(text) > _PREVIOUS_ANSWER_MAX_CHARS:
+    truncated = len(text) > _PREVIOUS_ANSWER_MAX_CHARS
+    if truncated:
         text = text[:_PREVIOUS_ANSWER_MAX_CHARS] + "\n[... previous answer truncated ...]"
-    return "\n".join([
+    lines = [
         retry_ctx,
         "",
         "Your previous answer, verbatim, between the two markers below. Keep its "
@@ -717,7 +718,13 @@ def _with_previous_answer(retry_ctx: str, answer) -> str:
         "<<<PREVIOUS ANSWER",
         text,
         "PREVIOUS ANSWER>>>",
-    ])
+    ]
+    if truncated:
+        # operator follow-up (2026-10-04): say so, so the model knows the end is missing
+        lines.append(f"The answer above was truncated at {_PREVIOUS_ANSWER_MAX_CHARS:,} "
+                     f"characters (it had {len(answer):,}), so its end is missing: keep "
+                     f"everything shown, and complete the rest consistently with it.")
+    return "\n".join(lines)
 
 
 
@@ -1091,10 +1098,8 @@ def _build_stage_prompt(stage_name: str, handoff: dict, path: Path,
     YOUR PREVIOUS ANSWER COULD NOT BE READ:
     {retry_context}
 
-    This is a format repair, not a new answer. Keep the content of your previous
-    answer exactly -- the same files, ideas, values and decisions (shown above when
-    it is attached) -- and fix only the issue described above, following the YAML
-    FORMATTING RULES precisely. Write every deliverable again in full.
+    Fix only the issue described above, following the YAML FORMATTING RULES
+    precisely, and write every deliverable again in full.
     """
 
     return full_prompt

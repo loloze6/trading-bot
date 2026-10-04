@@ -165,13 +165,25 @@ def test_an_engine_without_an_answer_gets_the_plain_note(monkeypatch, tmp_path):
     assert "PREVIOUS ANSWER" not in contexts[1]
 
 
-def test_a_huge_first_answer_is_capped():
-    ctx = rpr._with_previous_answer("note", "x" * (rpr._PREVIOUS_ANSWER_MAX_CHARS + 50))
+def test_a_huge_first_answer_is_capped_and_the_retry_says_so():
+    """Operator follow-up (ii): a cut answer is named as cut."""
+    n = rpr._PREVIOUS_ANSWER_MAX_CHARS + 50
+    ctx = rpr._with_previous_answer("note", "x" * n)
     assert "[... previous answer truncated ...]" in ctx
+    assert f"The answer above was truncated at {rpr._PREVIOUS_ANSWER_MAX_CHARS:,} characters" in ctx
+    assert f"(it had {n:,})" in ctx
     assert len(ctx) < rpr._PREVIOUS_ANSWER_MAX_CHARS + 1000
 
 
+def test_a_whole_first_answer_is_not_called_truncated():
+    ctx = rpr._with_previous_answer("note", "x" * rpr._PREVIOUS_ANSWER_MAX_CHARS)
+    assert "truncated" not in ctx
+
+
 def test_the_retry_prompt_asks_for_a_repair_not_a_new_answer(tmp_path, monkeypatch):
+    """Follow-up (ii): the trailer is neutral -- 'keep the content' lives only in
+    the attached-answer block, so a retry with no answer is never told to keep
+    something it cannot see."""
     monkeypatch.chdir(SR_ROOT)
     run_dir = tmp_path / "runs" / "run_p"
     (run_dir / "artifacts").mkdir(parents=True)
@@ -179,8 +191,12 @@ def test_the_retry_prompt_asks_for_a_repair_not_a_new_answer(tmp_path, monkeypat
     plain = rpr._build_stage_prompt("innovation_expansion", handoff, run_dir)
     retry = rpr._build_stage_prompt("innovation_expansion", handoff, run_dir, retry_context="CTX")
     assert retry.startswith(plain)                       # the first call's prompt is unchanged
-    assert "format repair, not a new answer" in retry and "from scratch" not in retry
+    assert "Fix only the issue described above" in retry and "from scratch" not in retry
+    assert "Keep" not in retry[len(plain):] and "shown above" not in retry[len(plain):]
     assert "CTX" in retry and "CTX" not in plain
+    with_answer = rpr._build_stage_prompt("innovation_expansion", handoff, run_dir,
+                                          retry_context=rpr._with_previous_answer("CTX", "A"))
+    assert "Keep its content exactly" in with_answer
 
 
 # ---------------------------------------------------------------------------
@@ -241,14 +257,31 @@ def test_a_held_request_is_outstanding(status):
     assert dn.r2_request_yielded({"status": status}) is None
 
 
-@pytest.mark.parametrize("hold", ["blocked_on_e068", "blocked_on_component:Foo"])
-def test_r2_never_flips_or_mints_past_a_hold(hold):
-    """blocked_on_component:<name> is what R9 (run_campaign) sets automatically
-    on a quarantined entry: it holds the brief too (review)."""
+@pytest.mark.parametrize("hold", ["blocked_on_e068", "blocked_on_operator", "blocked_on_x"])
+def test_r2_never_flips_or_mints_past_an_operator_hold(hold):
     entries = [_owner("B"), _req("B", 1, hold)]
     out = dn._r2(entries, select=True)
     assert out["fired"] is False and out["held_briefs"] == ["B"]
     assert out["eligible_briefs"] == [] and out["enqueued"] == [] and out["ready"] == []
+
+
+def test_a_component_quarantine_does_not_freeze_its_brief():
+    """Operator follow-up (i), 2026-10-04: R9's automatic
+    blocked_on_component:<name> stays outstanding (it is never flipped ready and
+    neither counts nor breaks the streak) but R2 may still ask the brief for
+    other ideas."""
+    entries = [_owner("B"), _req("B", 1, "blocked_on_component:Foo")]
+    assert dn.r2_request_yielded(entries[1]) is None
+    out = dn._r2(entries, select=True)
+    assert out["held_briefs"] == [] and out["eligible_briefs"] == ["B"]
+    assert out["ready"] == ["B__more_2"]                   # a new request, the held one untouched
+    assert entries[1]["status"] == "blocked_on_component:Foo"
+
+
+def test_an_operator_hold_beside_a_quarantine_still_freezes_the_brief():
+    entries = [_owner("B"), _req("B", 1, "blocked_on_component:Foo"),
+               _req("B", 2, "blocked_on_e068")]
+    assert dn._r2(entries, select=True)["held_briefs"] == ["B"]
 
 
 def test_a_hold_on_one_brief_does_not_stop_another():
@@ -284,10 +317,10 @@ def test_the_stop_line_names_a_held_brief():
     """Review: a held brief is still open; the stop detail must say why R2 did
     not ask it, or the operator sees '0 exhausted, 0 legacy' and nothing else."""
     from test_e059_s2b_briefs import _decide, _empty_inputs
-    queue = [_owner("H"), _req("H", 1, "blocked_on_component:Foo")]
+    queue = [_owner("H"), _req("H", 1, "blocked_on_e068")]
     rec = _decide(_empty_inputs(queue))
     assert rec["picked"] is None and rec["stop"]["reason"] == "no_eligible_candidate"
-    assert "1 held by a blocked_on_* request: H" in rec["stop"]["detail"]
+    assert "1 held by an operator hold: H" in rec["stop"]["detail"]
     queue[1]["status"] = "done"
     queue[1]["outcome"] = "refuted"
     assert "held" not in (_decide(_empty_inputs(queue))["stop"] or {}).get("detail", "")
