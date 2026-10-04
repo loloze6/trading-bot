@@ -7,7 +7,100 @@ It had to show three things on real AI output:
 - **(b)** the claim is measured after the backtests (`claim_test.yaml`, `claim_status.yaml`);
 - **(c)** the readers, with their new inputs, stop inventing components and settings.
 
-## Result in one paragraph
+## Update: the final run (run_070 resumed after PR #324, 2026-10-04)
+
+**All three goals are now shown on real output, each with a caveat.** run_070 was unparked
+after PRs #323 and #324 merged (c4/flag-set at `01013c5e`), relaunched with `--once`, and
+ended `completed_refuted`.
+- Every call took 1 turn; `flags.holdout_reserved: false`; no sealed path in any run file.
+- Spend: $1.72 logged for run_070. Since CUL-396 the log includes the retries; the total also
+  covers the two earlier parked 1b calls.
+- Weighted token budget: 1,212,255 of 1,500,000 used (80.8%; 19% headroom).
+- Trial rows `run_070:base`, `:shock_lookback_250`, `:sol_generalization`, `:uni_defi`;
+  `campaign_memory.yaml` has run_070; `decision_record.yaml` exists.
+
+**(a) Claim card: shown** (quoted below). It was valid first time with no power warning. But
+its tests read the closing price LEVEL, not the 1h move the claim states (CUL-397).
+- The 1a/1b match check flagged this on its first real case: `claim_match.yaml` reads
+  `status: mismatch`, "the test does not read this block's output".
+
+**Step 1b after O-21 (PR #324): passed with no retry.**
+- It built `PriceEvolutionComponent(period=1)` + `zscore` + `negate` + `scale(10)`, the form the
+  operator accepted.
+- It wrote a `DEVIATION:` entry, "normalised by the std of 1-bar returns (zscore), not ATR(20)".
+
+**Step 2: two retries, both kept the content.**
+1. The CUL-379 format retry. The first answer wrote only `expanded_hypothesis_card.yaml`. The
+   retry got its first answer back (input 42,213 vs 39,155 cached tokens) and returned all three
+   files in 39 s.
+   - It was logged as `innovation_expansion_attempt_0_retry`, so the first call's cost was kept
+     (CUL-396).
+2. The existing variant-shape retry (`V1_base` must be `base`).
+
+**(b) Measured after the backtests: shown.**
+- `claim_status: measured`: 8 tests (2 tests x 4 variants), 0 not measured, labelled "measured,
+  not proven", no p-value.
+- Effect per horizon (mean forward return on selected bars minus all other bars, in basis
+  points; "sign" = windows with the claimed sign / windows with a value):
+
+| Variant (coin) | Test (claimed direction) | 1h | 2h | 4h | 6h | 12h |
+|---|---|---|---|---|---|---|
+| base (BTC) | top-10% close (lower) | +1.5 (0/6) | +2.6 (1/6) | +5.4 (1/6) | +8.2 (1/6) | +18.2 (2/6) |
+| base (BTC) | bottom-10% close (higher) | -2.1 (0/6) | -3.9 (1/6) | -7.1 (2/6) | -10.9 (3/6) | -17.7 (3/6) |
+| shock_lookback_250 (BTC) | both tests | identical to base | | | | |
+| sol_generalization (SOL) | top-10% close (lower) | +4.7 (1/6) | +10.1 (2/6) | +19.9 (1/6) | +24.9 (2/6) | +40.1 (2/6) |
+| sol_generalization (SOL) | bottom-10% close (higher) | -4.4 (0/6) | -6.7 (0/6) | -13.7 (0/6) | -20.5 (1/6) | -42.6 (1/6) |
+| uni_defi (UNI) | top-10% close (lower) | -5.8 (5/6) | -8.6 (5/6) | -15.4 (6/6) | -21.6 (6/6) | -34.3 (5/6) |
+| uni_defi (UNI) | bottom-10% close (higher) | -1.0 (3/6) | -1.7 (3/6) | -5.2 (2/6) | -6.5 (2/6) | -5.0 (3/6) |
+
+  About 3,100-3,600 events per test.
+- **Reading, measured not proven:**
+  - On BTC and SOL the effect has the opposite sign to the claim: after a close near the
+    100-hour high, returns are higher (continuation), not lower.
+  - On UNI, highs are followed by lower returns, as claimed, but lows are too.
+- **Why base and shock_lookback_250 are identical:** the tests select on the price, which no
+  config change alters, so they cannot see the block. This is the CUL-397 gap made concrete.
+
+**(c) Readers with the new inputs: partly shown.**
+- **trade_efficiency:** one patch, `shock_reversal` / `params.period` 1 -> 2, `before` matches.
+  The component id, the setting and the old value all exist in run_070's base config. In
+  run_066 the same reader invented `keltner_breakout_entry`.
+  - Decide-next ranked it first and queued it as `trade_efficiency-run_070-1` (held by hand,
+    `blocked_on_e068`).
+- **regime_power:** one `new_block`. Its config paths (`/regime_detector/components`,
+  `/regime_detector/rules`, `/strategies/regimes`) all exist, but:
+  - its rationale names `VarianceRatioRegimeComponent`, which does not exist (the real class is
+    `VarianceRatioComponent`). It sits in prose, so no feasibility gate checks it;
+  - it again diagnoses the deliberately ungated detector as "uninformative", the same wrong
+    diagnosis O-19 recorded on run_065.
+- **profitability, forecast_power, component_attribution:** no proposal.
+- **Verdict:** settings and ids in structured fields are now right (1 of 1); a class name in
+  free text is still invented (1 of 2 class names).
+
+**Reader input growth, measured (cache_creation tokens per call, run_066 -> run_070):**
+
+| Reader | run_066 | run_070 | Added |
+|---|---|---|---|
+| profitability | 22,667 | 50,274 | +27,607 |
+| trade_efficiency | 29,958 | 60,523 | +30,565 |
+| forecast_power | 11,246 | 35,479 | +24,233 |
+| regime_power | 18,292 | 39,302 | +21,010 |
+| component_attribution | 14,527 | 39,557 | +25,030 |
+
+Reader cost: $0.437 -> $0.715 (+64%), against the proposal's estimate of ~$0.55.
+
+**New findings from this run:**
+1. **Claim tests that read price cannot see the block** (`base` = `shock_lookback_250`). The
+   PR 3b (CUL-397) review call should flag a claim whose tests ignore the block's output.
+2. **Free-text class names are not checked.** regime_power invented one. A check that every
+   `*Component` name in a proposal exists in the catalogue (warning only) would catch it.
+3. **The O-19 wrong diagnosis repeats:** regime_power treats ungated scaffolding as a defect.
+   `block_manifest.yaml` marks the detector as scaffolding, and the reader still proposes
+   rebuilding it.
+4. **After `--unpark`, use `--once`, not `--resume --once`.** `--resume` finds no paused entry
+   (the entry is `ready`) and does nothing (RUNBOOK §4 already says "relaunch").
+
+## Result in one paragraph (first attempts, before PR #324)
 
 **Only (a) was shown.** Four runs were started (run_067 to run_070). None reached a backtest.
 - run_067 hit two bugs in step 1a's retry path (fixed: CUL-395, PR #321). It then ended with
