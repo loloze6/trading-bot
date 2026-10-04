@@ -90,6 +90,7 @@ def _retry_harness(monkeypatch, tmp_path, stage, answers, expected_names):
 
 def test_a_format_retry_in_step_1a_gets_its_first_answer_and_no_false_missing_file(
         monkeypatch, tmp_path):
+    monkeypatch.setattr(rpr, "_is_brief_run", lambda run_dir: True)
     contexts, raised = _retry_harness(
         monkeypatch, tmp_path, "hypothesis_generation",
         [({"no_blocks": True, "answer": RUN_069}, {}),
@@ -101,6 +102,36 @@ def test_a_format_retry_in_step_1a_gets_its_first_answer_and_no_false_missing_fi
     assert "hypothesis_card_2.yaml" in ctx and "brief_status.yaml" in ctx
     assert "<<<PREVIOUS ANSWER\n" + RUN_069 + "\nPREVIOUS ANSWER>>>" in ctx
     assert "Keep its content exactly" in ctx
+
+
+def test_a_non_brief_step_1a_retry_never_offers_the_exhausted_shape(monkeypatch, tmp_path):
+    """Review: on a flag-off or decide-next candidate run, brief_status.yaml fails
+    the run, so the note must not invite it."""
+    monkeypatch.setattr(rpr, "_is_brief_run", lambda run_dir: False)
+    contexts, _ = _retry_harness(
+        monkeypatch, tmp_path, "hypothesis_generation",
+        [({"no_blocks": True, "answer": "x"}, {}),
+         ({"saved": ["hypothesis_card.yaml"]}, {"hypothesis_card.yaml": "hypothesis_id: H\n"})],
+        ["hypothesis_card.yaml"])
+    ctx = contexts[1]
+    assert "Missing:" not in ctx and "hypothesis_card_2.yaml" in ctx
+    assert "brief_status.yaml" not in ctx and "extra_card_scores.yaml" not in ctx
+
+
+@pytest.mark.parametrize("context,candidate,expected", [
+    (None, None, False), ({"request": "more_hypotheses"}, None, True),
+    ({"request": "more_hypotheses"}, {"criteria_from": "x"}, False)])
+def test_is_brief_run(monkeypatch, tmp_path, context, candidate, expected):
+    monkeypatch.setattr(rpr, "_brief_run_context", lambda run_dir: context)
+    monkeypatch.setattr(rpr, "_decide_next_candidate", lambda run_dir: candidate)
+    assert rpr._is_brief_run(tmp_path) is expected
+
+
+def test_is_brief_run_reads_an_error_as_false(monkeypatch, tmp_path):
+    def boom(run_dir):
+        raise ValueError("bad file")
+    monkeypatch.setattr(rpr, "_brief_run_context", boom)
+    assert rpr._is_brief_run(tmp_path) is False
 
 
 def test_a_format_retry_elsewhere_still_names_the_missing_files(monkeypatch, tmp_path):
@@ -210,8 +241,11 @@ def test_a_held_request_is_outstanding(status):
     assert dn.r2_request_yielded({"status": status}) is None
 
 
-def test_r2_never_flips_or_mints_past_a_hold():
-    entries = [_owner("B"), _req("B", 1, "blocked_on_e068")]
+@pytest.mark.parametrize("hold", ["blocked_on_e068", "blocked_on_component:Foo"])
+def test_r2_never_flips_or_mints_past_a_hold(hold):
+    """blocked_on_component:<name> is what R9 (run_campaign) sets automatically
+    on a quarantined entry: it holds the brief too (review)."""
+    entries = [_owner("B"), _req("B", 1, hold)]
     out = dn._r2(entries, select=True)
     assert out["fired"] is False and out["held_briefs"] == ["B"]
     assert out["eligible_briefs"] == [] and out["enqueued"] == [] and out["ready"] == []
@@ -244,3 +278,16 @@ def test_the_decision_record_schema_accepts_held_briefs():
     r2 = dn._r2([_owner("B"), _req("B", 1, "blocked_on_e068")], select=True)
     jsonschema.validate({k: v for k, v in r2.items() if not k.startswith("_")},
                         schema["properties"]["rules"]["properties"]["r2"])
+
+
+def test_the_stop_line_names_a_held_brief():
+    """Review: a held brief is still open; the stop detail must say why R2 did
+    not ask it, or the operator sees '0 exhausted, 0 legacy' and nothing else."""
+    from test_e059_s2b_briefs import _decide, _empty_inputs
+    queue = [_owner("H"), _req("H", 1, "blocked_on_component:Foo")]
+    rec = _decide(_empty_inputs(queue))
+    assert rec["picked"] is None and rec["stop"]["reason"] == "no_eligible_candidate"
+    assert "1 held by a blocked_on_* request: H" in rec["stop"]["detail"]
+    queue[1]["status"] = "done"
+    queue[1]["outcome"] = "refuted"
+    assert "held" not in (_decide(_empty_inputs(queue))["stop"] or {}).get("detail", "")

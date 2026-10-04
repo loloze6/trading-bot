@@ -684,6 +684,16 @@ def _build_yaml_retry_context(err: "UnrepairableYAMLError") -> str:
 _PREVIOUS_ANSWER_MAX_CHARS = 60000
 
 
+def _is_brief_run(run_dir: Path) -> bool:
+    """A brief run (decide_next on, brief context present) that is not a
+    decide-next candidate: the only 1a run where brief_status.yaml and
+    extra_card_scores.yaml are valid answers. Any error reads as False."""
+    try:
+        return _brief_run_context(run_dir) is not None and _decide_next_candidate(run_dir) is None
+    except Exception:
+        return False
+
+
 def _outcome_answer(outcome):
     """The raw answer text run_claude_worker returns under `answer`; None for
     any other engine (tool workers return no answer)."""
@@ -712,7 +722,8 @@ def _with_previous_answer(retry_ctx: str, answer) -> str:
 
 
 def _build_missing_deliverables_retry_context(expected_outputs: list, no_blocks: bool,
-                                              stage: str | None = None) -> str:
+                                              stage: str | None = None,
+                                              brief_run: bool = False) -> str:
     """CUL-379: the retry prompt block when deliverables are missing -- which
     files, and the one block format the parser reads. Step 1a has no single
     "missing" file: one card, several numbered cards or an exhausted brief are
@@ -722,11 +733,14 @@ def _build_missing_deliverables_retry_context(expected_outputs: list, no_blocks:
     what = ("contained no deliverable block the orchestrator could read"
             if no_blocks else "did not include every deliverable")
     if stage == "hypothesis_generation":
+        # The exhausted shape is valid only on a brief run (review: on a flag-off
+        # or decide-next candidate run, brief_status.yaml fails the run).
+        exhausted = ", OR brief_status.yaml (brief exhausted)" if brief_run else ""
+        scores = " plus extra_card_scores.yaml" if brief_run else ""
         files_line = ("Files: write the same files your previous answer chose -- "
                       "hypothesis_card.yaml (one card), OR hypothesis_card_2.yaml, "
-                      "hypothesis_card_3.yaml, ... plus extra_card_scores.yaml (several "
-                      "cards, no hypothesis_card.yaml), OR brief_status.yaml (brief "
-                      "exhausted) -- plus any other file it wrote.")
+                      f"hypothesis_card_3.yaml, ...{scores} (several cards, no "
+                      f"hypothesis_card.yaml){exhausted} -- plus any other file it wrote.")
     else:
         files_line = f"Missing: {', '.join(missing)}"
     return "\n".join([
@@ -875,7 +889,8 @@ def _invoke_agent_with_yaml_retry(current_stage: str, run_id: str, run_dir: Path
                       f"with a format reminder (format_retry_count={retry_count}). {err}")
                 retry_ctx = _with_previous_answer(
                     _build_missing_deliverables_retry_context(expected_outputs, no_blocks,
-                                                              current_stage),
+                                                              current_stage,
+                                                              _is_brief_run(run_dir)),
                     _outcome_answer(outcome))
                 continue
             raise
@@ -1077,9 +1092,9 @@ def _build_stage_prompt(stage_name: str, handoff: dict, path: Path,
     {retry_context}
 
     This is a format repair, not a new answer. Keep the content of your previous
-    answer exactly -- the same files, ideas, values and decisions -- and fix only
-    the issue described above, following the YAML FORMATTING RULES precisely.
-    Write every deliverable again in full.
+    answer exactly -- the same files, ideas, values and decisions (shown above when
+    it is attached) -- and fix only the issue described above, following the YAML
+    FORMATTING RULES precisely. Write every deliverable again in full.
     """
 
     return full_prompt

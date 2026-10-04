@@ -1739,7 +1739,12 @@ def decide(inputs: dict, *, now: str, trigger: dict, select_entry=None) -> dict:
                 "detail": (f"the scheduler has no in_progress or ready entry to run, 0 of "
                            f"{len(cands)} candidate(s) eligible, and no open brief for R2 "
                            f"({len(r2['exhausted_briefs'])} exhausted, "
-                           f"{len(r2['legacy_briefs'])} legacy)")}
+                           f"{len(r2['legacy_briefs'])} legacy"
+                           # CUL-398 review: a held brief is still open; name it, since a
+                           # component quarantine (R9) can hold one without the operator.
+                           + (f", {len(r2['held_briefs'])} held by a blocked_on_* request: "
+                              f"{', '.join(r2['held_briefs'])}" if r2.get("held_briefs") else "")
+                           + ")")}
 
     revision = inputs.get("registry_revision") or 0
     known = inputs.get("known_classes")
