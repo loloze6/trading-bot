@@ -724,6 +724,37 @@ def _build_missing_deliverables_retry_context(expected_outputs: list, no_blocks:
 _SDK_ERROR_RESULT_SUCCESS_MSG = "Claude Code returned an error result: success"
 
 
+def _adopt_lone_numbered_card(run_dir: Path) -> None:
+    """run_067 (2026-10-04): step 1a wrote ONE card but named it
+    hypothesis_card_2.yaml, the name BRIEF_HYPOTHESES.md gives the first of
+    several cards; the split handler needs two or more, so the run stopped on a
+    missing hypothesis_card.yaml. One numbered card is one card: it becomes
+    hypothesis_card.yaml, exactly as the first card in name order would. No-op
+    when hypothesis_card.yaml exists or there are 0 or 2+ numbered cards."""
+    arts = Path(run_dir) / "artifacts"
+    target = arts / "hypothesis_card.yaml"
+    cards = sorted(arts.glob("hypothesis_card_*.yaml"))
+    if target.exists() or len(cards) != 1:
+        return
+    shutil.move(str(cards[0]), str(target))
+    print(f"⚠️ [1a] step 1a wrote a single card named {cards[0].name}; "
+          f"it is used as hypothesis_card.yaml (one numbered card is one card).")
+
+
+def _set_aside_unrepairable(run_dir: Path, stage: str, path: Path) -> None:
+    """F4b retry: move the first attempt's unparseable file to
+    RUN_DIR/.previous_attempts/<stage>_yaml_retry/ before the retry, so the
+    retry is judged on its own output. Before this (run_067), a retry that
+    wrote a different file name was re-checked against the stale broken file
+    and failed. A failed move only prints: the retry runs as before."""
+    try:
+        dest = Path(run_dir) / _PREVIOUS_ATTEMPTS_DIR / f"{stage}_yaml_retry"
+        dest.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(path), str(dest / Path(path).name))
+    except Exception as exc:
+        print(f"⚠️ [F4b] could not set {Path(path).name} aside ({exc}); retrying anyway.")
+
+
 def _invoke_agent_with_yaml_retry(current_stage: str, run_id: str, run_dir: Path, expected_outputs: list, state: dict):
     """
     F4b (2026-07-05, run_047): invoke the agent for `current_stage`; if its
@@ -748,6 +779,8 @@ def _invoke_agent_with_yaml_retry(current_stage: str, run_id: str, run_dir: Path
                           f"'success' contradiction) — re-invoking once, prompt unchanged.")
                     continue
                 raise  # any other message, or a second occurrence — unchanged
+        if current_stage == "hypothesis_generation":
+            _adopt_lone_numbered_card(run_dir)
         try:
             ensure_files(expected_outputs)
             return
@@ -759,6 +792,7 @@ def _invoke_agent_with_yaml_retry(current_stage: str, run_id: str, run_dir: Path
                       f"retrying once with error context appended "
                       f"(yaml_retry_count={retry_count}).\n    {err}")
                 retry_ctx = _build_yaml_retry_context(err)
+                _set_aside_unrepairable(run_dir, current_stage, err.path)
                 continue
             raise  # retry ALSO failed — fail to human as before, unchanged
         except FileNotFoundError as err:
