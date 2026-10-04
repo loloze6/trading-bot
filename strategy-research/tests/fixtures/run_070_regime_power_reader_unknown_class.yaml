@@ -1,0 +1,40 @@
+- proposal_id: regime_power-run_070-1
+  kind: new_block
+  block:
+    kind: regime
+    config_paths:
+    - /regime_detector/components
+    - /regime_detector/rules
+    scaffolding:
+    - /strategies/regimes
+    rationale: 'Current detector is fully ungated with constant ''unknown'' regime
+      producing zero live transitions and uninformative forward returns (median ≈0.00003
+      across 24 windows, all n_bars >2870). Per Rule 4, this meets criteria for regime
+      uninformativeness with sufficient sample size. Hypothesis library guidance shows
+      poor performance in trending regimes. Proposed: implement threshold_rules regime
+      detector using EfficiencyRatioRegimeComponent and VarianceRatioRegimeComponent
+      to differentiate trending vs mean_reversion conditions, enabling selective strategy
+      activation. This addresses both the uninformative constant regime and library
+      guidance that trending is unfavorable, allowing the shock_reversal strategy
+      to engage selectively in mean_reversion and unknown regimes where the forced-flow
+      mechanism is strongest.'
+  evidence:
+  - 'variants.base.slices.per_window: all 6 windows show hindsight_lag.live_transition_count=0;
+    shock_lookback_250 design variant and sol_generalization, uni_defi asset variants
+    show identical pattern across 24 total windows. Zero live transitions across all
+    variants indicate the constant ''unknown'' regime classification provides no dynamic
+    regime differentiation.'
+  - 'variants.base.slices.per_regime.unknown: forward_return_mean values are -5.208e-05
+    (2022-01), -0.00018073 (2022-05), -5.113e-05 (2022-09), 0.00021396 (2023-01),
+    -3.4e-05 (2023-05), 0.00017337 (2023-09); all magnitudes <0.0003 with median ≈0.00003,
+    n_bars range 2879-2951 (all >>20 Rule 4 threshold). Confirms regime is uninformative
+    despite sufficient sample size.'
+  - 'artifacts/hypothesis_card.yaml library_affinity_for_target: neutral_ungated_but_unfavorable_context,
+    with poor expected performance in trending regimes. Current ungated strategy cannot
+    selectively activate, leaving it exposed across all regime types.'
+  scores:
+    confidence_real: 3
+    distance_to_profitable: 3
+    mechanism_plausibility: 3
+  model_id: claude-haiku-4-5-20251001
+  rubric_version: regime_power-reader-v3
