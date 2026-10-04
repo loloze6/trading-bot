@@ -215,3 +215,24 @@ def test_offline_cli_grades_past_return_as_method_not_calibrated(tmp_path):
     t = doc["variants"]["base"]["tests"]["t"]
     assert t["status"] == "method_not_calibrated"
     assert t["horizons"][1]["n_events"] > 0
+
+
+def test_past_return_inside_the_significance_null():
+    """fake_window rebuilds close; past_return is recomputed from the FAKE path
+    (strict, first n bars NaN), and a graded past_return test runs end to end."""
+    from test_e068_claim_tests import FAST, make_windows
+    ws = make_windows(43, n=120, n_windows=2)
+    n = 3
+    fake = ct.fake_window(ws[0], np.random.default_rng(1))
+    r = ct.past_return(fake, n)
+    assert np.isnan(r[:n]).all() and np.isfinite(r[n:]).all()
+    assert np.allclose(r[n:], fake.close[n:] / fake.close[:-n] - 1.0)
+    assert not np.allclose(r[n:], ct.past_return(ws[0], n)[n:])      # not the real path
+    s = ct.TestSpec(selector={"kind": "event", "field": "past_return", "bars": n,
+                              "op": ">", "value": 0.0},
+                    outcome={"kind": "fwd_return", "horizons": [1]},
+                    baseline={"kind": "complement"}, statistic="mean_diff",
+                    direction="greater", floor={"min_events": 5}, significance=dict(FAST))
+    res = ct.run_test(ws, s, calibrated=True)
+    assert res["status"] in ("supported", "refuted", "inconclusive")
+    assert res["horizons"][1]["p_value"] is not None

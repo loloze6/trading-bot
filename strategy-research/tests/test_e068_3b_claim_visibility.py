@@ -343,7 +343,11 @@ def test_one_call_across_a_resume(blind_run, monkeypatch):
     assert len(fake.prompts) == 1
     doc = _rev(run_dir)
     assert doc["status"] == "skipped" and "one per run" in doc["reason"]
-    assert doc["visibility_before"] == "blind"
+    # the history survives the cleared file: it comes from the state key
+    old = rpr.load_yaml(run_dir / "artifacts" / "hypothesis_card.yaml")["claim"]
+    assert doc["claim_before"] == old and doc["card_holds_revised_claim"] is False
+    assert doc["previous"]["visibility_before"] == "blind"
+    assert doc["previous"]["status"] == "error"
 
 
 def test_a_pending_1a_claim_retry_does_not_block_the_revision(blind_run, monkeypatch):
@@ -515,3 +519,148 @@ def test_run_loop_calls_the_revision_only_on_the_innovation_expansion_route():
     assert 'if next_stage == "innovation_expansion":' in tail
     assert "_claim_revision_after_1b(RUN_DIR, run_id)" in tail
     assert src.count("_claim_revision_after_1b(") == 1
+
+
+
+# ---------------------------------------------------------------------------
+# 6. review fixes: crash-resume history, failures, warnings, nits
+# ---------------------------------------------------------------------------
+
+class _Crash(BaseException):
+    """A process death (not an Exception: nothing in the pipeline catches it)."""
+
+
+def test_crash_after_the_splice_then_resume_keeps_the_history(blind_run, monkeypatch):
+    run_dir = blind_run
+    old = rpr.load_yaml(run_dir / "artifacts" / "hypothesis_card.yaml")["claim"]
+    fake = FakeLLM(_answer(_revised(old, FC_Q)))
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", fake)
+    real = rpr._claim_check_cards
+
+    def _die(*a, **k):
+        raise _Crash()
+    monkeypatch.setattr(rpr, "_claim_check_cards", _die)
+    with pytest.raises(_Crash):
+        rpr._claim_revision_after_1b(run_dir, run_dir.name)
+    assert rpr.load_yaml(run_dir / "artifacts" / "hypothesis_card.yaml")["claim"]["tests"][0][
+        "name"] == "forecast_top"                                       # the splice happened
+    state = _state(run_dir)[rpr.CLAIM_REVISION_STATE_KEY]
+    assert state["claim_before"] == old and len(state["claim_before_sha256"]) == 64
+    monkeypatch.setattr(rpr, "_claim_check_cards", real)
+    # resume: 1b re-runs (clears the file), then the hook again
+    rpr._clear_claim_revision_files("strategy_config_authoring", run_dir)
+    rpr._claim_revision_after_1b(run_dir, run_dir.name)
+    assert len(fake.prompts) == 1
+    doc = _rev(run_dir)
+    assert doc["status"] == "skipped" and doc["claim_before"] == old
+    assert doc["card_holds_revised_claim"] is True
+    assert doc["claim_current"]["tests"][0]["name"] == "forecast_top"
+    assert doc["previous"]["status"] is None                          # no outcome was recorded
+
+
+def test_an_exception_after_the_splice_is_merged_not_lost(blind_run, monkeypatch):
+    run_dir = blind_run
+    old = rpr.load_yaml(run_dir / "artifacts" / "hypothesis_card.yaml")["claim"]
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", FakeLLM(_answer(_revised(old, FC_Q))))
+
+    def _boom(*a, **k):
+        raise KeyError("status writer")
+    monkeypatch.setattr(rpr, "_finish_claim_status", _boom)
+    rpr._claim_revision_after_1b(run_dir, run_dir.name)
+    doc = _rev(run_dir)
+    assert doc["status"] == "accepted" and "after the splice" in doc["error"]
+    assert doc["claim_before"] == old and doc["manifest_kind"] == "forecast"
+    assert doc["message"] == rpr.CLAIM_BLIND_MESSAGE
+    assert _state(run_dir)[rpr.CLAIM_REVISION_STATE_KEY]["status"] == "accepted"
+
+
+def test_a_half_splice_is_rolled_back(blind_run, monkeypatch):
+    run_dir = blind_run
+    arts = run_dir / "artifacts"
+    before = {n: (arts / n).read_bytes() for n in ("hypothesis_card.yaml",
+                                                   "hypothesis_card_1.yaml")}
+    old = rpr.load_yaml(arts / "hypothesis_card.yaml")["claim"]
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", FakeLLM(_answer(_revised(old, FC_Q))))
+    real_save = rpr.save_yaml
+
+    def _save(path, data):
+        if Path(path).name == "hypothesis_card_1.yaml":
+            raise OSError("disk full")
+        return real_save(path, data)
+    monkeypatch.setattr(rpr, "save_yaml", _save)
+    rpr._claim_revision_after_1b(run_dir, run_dir.name)
+    monkeypatch.setattr(rpr, "save_yaml", real_save)
+    assert {n: (arts / n).read_bytes() for n in before} == before        # all or nothing
+    doc = _rev(run_dir)
+    assert doc["status"] == "error" and "disk full" in doc["error"]
+    assert doc["claim_after"] == old
+    assert [p.name for p in rpr._claim_card_paths(run_dir)] == ["hypothesis_card.yaml",
+                                                                "hypothesis_card_2.yaml"]
+
+
+def test_a_call_that_raises_records_cost_unknown(blind_run, monkeypatch):
+    run_dir = blind_run
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", FakeLLM(RuntimeError("sdk down")))
+    rpr._claim_revision_after_1b(run_dir, run_dir.name)
+    doc = _rev(run_dir)
+    assert doc["status"] == "error" and "sdk down" in doc["error"]
+    assert doc["cost"].startswith("unknown")
+    assert doc["claim_before"] and doc["message"] == rpr.CLAIM_BLIND_MESSAGE
+    entry = _state(run_dir)["audit_log"][rpr.CLAIM_REVISION_AUDIT_KEY]
+    assert entry["cost_unknown"] is True and "sdk down" in entry["error"]
+
+
+@pytest.mark.parametrize("answer_kw", [
+    {"tests": "none", "missing_block": "a selector on the z-score of the 1h move"},
+    {"tests": None, "criteria_refs": ["realized_edge_to_cost_ratio"]},
+], ids=["tests_none", "criteria_only"])
+def test_a_revision_that_removes_the_tests_is_warned(blind_run, monkeypatch, answer_kw):
+    run_dir = blind_run
+    arts = run_dir / "artifacts"
+    card = rpr.load_yaml(arts / "hypothesis_card.yaml")
+    card["criteria"] = [{"id": "realized_edge_to_cost_ratio"}]
+    for name in ("hypothesis_card.yaml", "hypothesis_card_1.yaml"):
+        rpr.save_yaml(arts / name, card)
+    old = card["claim"]
+    answer = {k: v for k, v in old.items() if k not in ("statement", "kind", "tests")}
+    answer.update({k: v for k, v in answer_kw.items() if v is not None})
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", FakeLLM(_answer(answer)))
+    rpr._claim_revision_after_1b(run_dir, run_dir.name)
+    doc = _rev(run_dir)
+    assert doc["status"] == "accepted" and doc["visibility_after"] == "not_applicable"
+    assert "removed the measurable tests" in doc["warning"]
+
+
+def test_power_checked_once_and_only_the_own_card_rechecked(blind_run, monkeypatch):
+    run_dir = blind_run
+    proto = rpr.ROOT / "protocols" / f"{run_dir.name}_generated.json"
+    proto.parent.mkdir(parents=True, exist_ok=True)
+    proto.write_text(json.dumps({"windows": [{"test": {"start": "2022-01-01",
+                                                        "end": "2022-03-31"}}],
+                                 "symbols": ["BTCUSDT", "ETHUSDT"], "timeframe": "1h"}))
+    old = rpr.load_yaml(run_dir / "artifacts" / "hypothesis_card.yaml")["claim"]
+    fake = FakeLLM(_answer(_revised(old, FC_Q)))
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", fake)
+    rpr._claim_revision_after_1b(run_dir, run_dir.name)
+    assert _rev(run_dir)["status"] == "accepted"
+    checks = rpr.load_yaml(run_dir / "artifacts" / "claim_power.yaml")["checks"]
+    assert len([c for c in checks if c["attempt"] == "claim_revision"]) == 1
+    attempts = rpr.load_yaml(run_dir / "artifacts" / "claim_check.yaml")["attempts"]
+    assert list(attempts[-1]["cards"]) == ["hypothesis_card.yaml"]
+    # the floor facts reached the prompt: 90 days x 24 bars, 2 coins
+    flat = " ".join(fake.prompts[0].split())
+    assert "bars_in_test_windows: 2160" in flat and "coins: 2" in flat
+    assert _rev(run_dir)["floor_facts"]["bars_in_test_windows"] == 2160
+
+
+def test_a_card_sharing_the_id_but_not_the_content_is_not_a_twin(blind_run, monkeypatch):
+    run_dir = blind_run
+    arts = run_dir / "artifacts"
+    other = dict(CARD, thesis="another idea, same id", claim=_c(CLOSE_Q))
+    rpr.save_yaml(arts / "hypothesis_card_3.yaml", other)
+    before = (arts / "hypothesis_card_3.yaml").read_bytes()
+    old = rpr.load_yaml(arts / "hypothesis_card.yaml")["claim"]
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", FakeLLM(_answer(_revised(old, FC_Q))))
+    rpr._claim_revision_after_1b(run_dir, run_dir.name)
+    assert _rev(run_dir)["cards_updated"] == ["hypothesis_card.yaml", "hypothesis_card_1.yaml"]
+    assert (arts / "hypothesis_card_3.yaml").read_bytes() == before

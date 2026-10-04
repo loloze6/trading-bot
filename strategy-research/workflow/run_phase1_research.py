@@ -14998,13 +14998,18 @@ def _claim_card_paths(run_dir: Path) -> list:
     return paths
 
 
-def _claim_check_cards(run_dir: Path, run_id: str, attempt, stage: str) -> dict:
+def _claim_check_cards(run_dir: Path, run_id: str, attempt, stage: str, *,
+                       own_only: bool = False, known_power: dict | None = None) -> dict:
     """{card file name: (ClaimCheck or None, exempt reason or None, power warnings)}
     for every card 1a wrote; the whole check appended to artifacts/claim_check.yaml.
-    Power: per card, from the run's protocol (artifacts/claim_power.yaml)."""
+    Power: per card, from the run's protocol (artifacts/claim_power.yaml).
+    E-068 3b: own_only checks hypothesis_card.yaml alone; known_power
+    {card name: warnings} reuses a power check already recorded (no second row)."""
     cc = _claim_card_module()
     out = {}
     for path in _claim_card_paths(run_dir):
+        if own_only and path.name != "hypothesis_card.yaml":
+            continue
         card = load_yaml(path)
         exempt = _claim_check_exempt(run_dir, card)
         res = None if exempt else cc.check_claim(
@@ -15012,7 +15017,10 @@ def _claim_check_cards(run_dir: Path, run_id: str, attempt, stage: str) -> dict:
             cc.card_criteria_ids(card or {}))
         power = []
         if res is not None and not res.errors and res.tests:
-            power = _claim_power_check(run_dir, run_id, attempt, stage, card, path.name)
+            if known_power is not None and path.name in known_power:
+                power = list(known_power[path.name])
+            else:
+                power = _claim_power_check(run_dir, run_id, attempt, stage, card, path.name)
         out[path.name] = (res, exempt, power)
     _append_claim_record(run_dir, _CLAIM_CHECK_FILE, "attempts", {
         "attempt": attempt, "stage": stage,
@@ -15408,12 +15416,27 @@ def _claim_llm_budget(run_dir: Path) -> tuple:
     return used <= budget, used, budget
 
 
+class _ClaimLLMCallError(RuntimeError):
+    """The revision call raised: its cost could not be read from the SDK."""
+
+
 def _claim_llm_call(run_dir: Path, prompt: str, audit_key: str) -> str:
     """One closed-book call (_invoke_reader_llm: same model and options as
     every stage), its cost recorded under `audit_key` (counted in the run's
-    weighted token budget). Returns the raw text."""
+    weighted token budget). Returns the raw text. A call that raises still
+    leaves an audit entry, marked cost_unknown (the SDK reported no usage to
+    this process), and raises _ClaimLLMCallError."""
     start = time.time()
-    text, meta = asyncio.run(_invoke_reader_llm(prompt))
+    try:
+        text, meta = asyncio.run(_invoke_reader_llm(prompt))
+    except Exception as exc:
+        update_state(path=Path(run_dir), audit_log={audit_key: {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "engine": "claude-agent-sdk",
+            "execution_time_seconds": round(time.time() - start, 2),
+            "cost_usd": None, "cost_unknown": True,
+            "error": f"{type(exc).__name__}: {exc}"}})
+        raise _ClaimLLMCallError(f"{type(exc).__name__}: {exc}") from exc
     entry = {"timestamp": datetime.now(timezone.utc).isoformat(),
              "engine": "claude-agent-sdk",
              "execution_time_seconds": round(time.time() - start, 2),
@@ -15426,7 +15449,30 @@ def _claim_llm_call(run_dir: Path, prompt: str, audit_key: str) -> str:
     return text or ""
 
 
-def _claim_revision_prompt(run_dir: Path, message: str) -> str:
+def _claim_revision_power_facts(run_dir: Path, run_id: str) -> dict:
+    """What the floor rule needs, from the run's protocol (read only, as the
+    power check reads it): bars in the test windows, coins, and the bound on
+    separate events. Never raises: unknown facts are stated as unknown."""
+    cc = _claim_card_module()
+    try:
+        found = _claim_power_inputs(run_dir, run_id)
+        if len(found) != 4:
+            return {"known": False, "reason": found[1]}
+        windows, symbols, tf, _src = found
+        step = cc.timeframe_seconds(tf)
+        if step is None or not symbols:
+            return {"known": False, "reason": f"timeframe {tf!r} / symbols {symbols!r}"}
+        bars = cc.window_bars(windows, step)
+        return {"known": True, "timeframe": tf, "bars_in_test_windows": bars,
+                "coins": len(symbols),
+                "rule": (f"a min_events floor must be at most (bars_in_test_windows // the "
+                         f"longest horizon) x coins = ({bars} // longest horizon) x "
+                         f"{len(symbols)}")}
+    except Exception as exc:  # noqa: BLE001 -- information only
+        return {"known": False, "reason": f"{type(exc).__name__}: {exc}"}
+
+
+def _claim_revision_prompt(run_dir: Path, message: str, power_facts: dict | None = None) -> str:
     handoff = {
         "stage": "claim_revision",
         "objective": ("Re-emit ONLY the `claim` block of artifacts/hypothesis_card.yaml, "
@@ -15440,7 +15486,8 @@ def _claim_revision_prompt(run_dir: Path, message: str) -> str:
             {"path": _claim_guide_rel(run_dir),
              "reason": "the only blocks a test may be composed from"}],
         "deliverables": ["claim.yaml"],
-        "injected_context": {"claim_revision_request": message},
+        "injected_context": {"claim_revision_request": message,
+                             "floor_facts": power_facts or {"known": False}},
     }
     return _build_stage_prompt("claim_revision", handoff, Path(run_dir),
                                skill_file_name=CLAIM_REVISION_SKILL)
@@ -15472,26 +15519,58 @@ def _parse_claim_revision(text: str, old_claim: dict, criteria_ids) -> tuple:
     return new, None
 
 
+def _claim_sha256(claim) -> str:
+    """Canonical-JSON sha256 of a claim block (keys sorted)."""
+    blob = json.dumps(claim, sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
 def _splice_revised_claim(run_dir: Path, new_claim: dict) -> list:
     """Write the revised claim into artifacts/hypothesis_card.yaml and into its
-    numbered twin (a hypothesis_card_<n>.yaml with the same hypothesis_id, or
-    the same content, left by a split), so _claim_card_paths still sees one
-    card. campaign_record/queued_cards/ is never touched. Returns the names."""
+    numbered twin (a hypothesis_card_<n>.yaml with exactly the same content,
+    left by a split), so _claim_card_paths still sees one card. Another card
+    with the same hypothesis_id but other content is not a twin and is not
+    touched; neither is campaign_record/queued_cards/. All or nothing: if any
+    write fails, every file is restored to its bytes before the splice.
+    Returns the names written."""
     arts = Path(run_dir) / "artifacts"
     main = arts / "hypothesis_card.yaml"
     card = load_yaml(main)
-    hid = card.get("hypothesis_id")
-    targets = [main]
-    for p in sorted(arts.glob("hypothesis_card_*.yaml")):
-        doc = load_yaml(p)
-        if isinstance(doc, dict) and (doc == card or (hid is not None
-                                                      and doc.get("hypothesis_id") == hid)):
-            targets.append(p)
-    for p in targets:
-        doc = load_yaml(p)
-        doc["claim"] = new_claim
-        save_yaml(p, doc)
+    targets = [main] + [p for p in sorted(arts.glob("hypothesis_card_*.yaml"))
+                        if load_yaml(p) == card]
+    originals = {p: p.read_bytes() for p in targets}
+    try:
+        for p in targets:
+            doc = load_yaml(p)
+            doc["claim"] = new_claim
+            save_yaml(p, doc)
+    except BaseException:
+        for p, data in originals.items():
+            _atomic_write_bytes(p, data)
+        raise
     return [p.name for p in targets]
+
+
+def _claim_revision_state(run_dir: Path) -> dict:
+    state = load_yaml(Path(run_dir) / "pipeline_state.yaml") or {}
+    rec = state.get(CLAIM_REVISION_STATE_KEY)
+    return rec if isinstance(rec, dict) else {}
+
+
+def _claim_revision_resumed(card_claim, prior: dict) -> dict:
+    """The record of a later pass in a run whose one revision call already
+    happened: the history comes from the state key (written before the call),
+    so clearing claim_revision.yaml never erases it."""
+    holds_revised = (prior.get("claim_before_sha256") is not None
+                     and _claim_sha256(card_claim) != prior.get("claim_before_sha256"))
+    return {"status": "skipped",
+            "reason": "a claim revision was already called in this run (one per run)",
+            "previous": {k: prior.get(k) for k in ("revision_at", "status", "reason",
+                                                   "manifest_kind", "visibility_before")},
+            "claim_before": prior.get("claim_before"),
+            "claim_before_sha256": prior.get("claim_before_sha256"),
+            "card_holds_revised_claim": holds_revised,
+            "claim_current": card_claim}
 
 
 def _claim_revision_body(run_dir: Path, run_id: str) -> dict:
@@ -15511,15 +15590,17 @@ def _claim_revision_body(run_dir: Path, run_id: str) -> dict:
     kind = ((manifest or {}).get("block") or {}).get("kind")
     claim = card.get("claim")
     before = cc.block_visibility(claim, kind)
-    record = {"manifest_kind": kind, "claim_before": claim, "visibility_before": before}
+    prior = _claim_revision_state(run_dir)
+    if prior.get("revision_called"):
+        # checked before "not needed": after an accepted splice the card's own
+        # claim may see the block, but the history must still be reported
+        return {"manifest_kind": kind, "visibility_now": before,
+                **_claim_revision_resumed(claim, prior)}
+    record = {"manifest_kind": kind, "claim_before": claim,
+              "claim_before_sha256": _claim_sha256(claim), "visibility_before": before}
     unchanged = {"claim_after": claim, "visibility_after": before}
     if before != cc.VISIBILITY_BLIND:
         return {**record, "status": "not_needed", **unchanged}
-    state = load_yaml(run_dir / "pipeline_state.yaml") or {}
-    if (state.get(CLAIM_REVISION_STATE_KEY) or {}).get("revision_called"):
-        return {**record, "status": "skipped",
-                "reason": "a claim revision was already called in this run (one per run)",
-                **unchanged}
     within, used, budget = _claim_llm_budget(run_dir)
     if not within:
         return {**record, "status": "skipped_budget",
@@ -15527,32 +15608,73 @@ def _claim_revision_body(run_dir: Path, run_id: str) -> dict:
                 **unchanged}
     message = CLAIM_BLIND_MESSAGE
     record["message"] = message
-    # written BEFORE the call: a resume never calls twice
+    # written BEFORE the call (with the original claim): a resume never calls
+    # twice and never loses what the card held before
     update_state(path=run_dir, **{CLAIM_REVISION_STATE_KEY: {
-        "revision_called": True, "revision_at": datetime.now(timezone.utc).isoformat()}})
-    text = _claim_llm_call(run_dir, _claim_revision_prompt(run_dir, message),
-                           CLAIM_REVISION_AUDIT_KEY)
-    new, reason = _parse_claim_revision(text, claim if isinstance(claim, dict) else {},
-                                        cc.card_criteria_ids(card))
-    if new is not None:
-        power = _claim_power_check(run_dir, run_id, "claim_revision",
-                                   "strategy_config_authoring", {"claim": new},
-                                   "hypothesis_card.yaml")
-        if power:
-            new, reason = None, "power: " + "; ".join(w["message"] for w in power)
-    if new is None:
-        return {**record, "status": "refused", "reason": reason, "raw_output": text,
+        "revision_called": True, "revision_at": datetime.now(timezone.utc).isoformat(),
+        "manifest_kind": kind, "visibility_before": before, "claim_before": claim,
+        "claim_before_sha256": record["claim_before_sha256"]}})
+    out = _claim_revision_call(run_dir, run_id, card, claim, kind, record, unchanged)
+    try:
+        update_state(path=run_dir, **{CLAIM_REVISION_STATE_KEY: {
+            "status": out.get("status"), "reason": out.get("reason") or out.get("error")}})
+    except Exception as exc:  # noqa: BLE001 -- the outcome is in claim_revision.yaml anyway
+        out.setdefault("error", f"state not updated: {type(exc).__name__}: {exc}")
+    return out
+
+
+def _claim_revision_call(run_dir, run_id, card, claim, kind, record, unchanged) -> dict:
+    """The call and what follows it. Every failure is merged into `record`
+    (built before the call), never raised."""
+    cc = _claim_card_module()
+    try:
+        facts = _claim_revision_power_facts(run_dir, run_id)
+        record["floor_facts"] = facts
+        text = _claim_llm_call(run_dir, _claim_revision_prompt(run_dir, record["message"], facts),
+                               CLAIM_REVISION_AUDIT_KEY)
+    except _ClaimLLMCallError as exc:
+        return {**record, "status": "error", "error": f"the revision call raised: {exc}",
+                "cost": "unknown (the call raised before the SDK reported usage)", **unchanged}
+    except Exception as exc:  # noqa: BLE001
+        return {**record, "status": "error", "error": f"{type(exc).__name__}: {exc}",
                 **unchanged}
-    updated = _splice_revised_claim(run_dir, new)
-    results = _claim_check_cards(run_dir, run_id, "claim_revision", "strategy_config_authoring")
-    _finish_claim_status(run_dir, run_id, results, "strategy_config_authoring")
-    _record_claim_match(run_dir)
+    try:
+        new, reason = _parse_claim_revision(text, claim if isinstance(claim, dict) else {},
+                                            cc.card_criteria_ids(card))
+        power = None
+        if new is not None:
+            power = _claim_power_check(run_dir, run_id, "claim_revision",
+                                       "strategy_config_authoring", {"claim": new},
+                                       "hypothesis_card.yaml")
+            if power:
+                new, reason = None, "power: " + "; ".join(w["message"] for w in power)
+        if new is None:
+            return {**record, "status": "refused", "reason": reason, "raw_output": text,
+                    **unchanged}
+        updated = _splice_revised_claim(run_dir, new)
+    except Exception as exc:  # noqa: BLE001 -- the splice is all-or-nothing
+        return {**record, "status": "error", "error": f"{type(exc).__name__}: {exc}",
+                "raw_output": text, **unchanged}
     after = cc.block_visibility(new, kind)
     out = {**record, "status": "accepted", "claim_after": new, "visibility_after": after,
-           "cards_updated": updated}
+           "claim_after_sha256": _claim_sha256(new), "cards_updated": updated}
     if after == cc.VISIBILITY_BLIND:
         out["warning"] = ("the revised claim passes the code check but its tests still cannot "
                           "see the block; it is kept")
+    elif after != cc.VISIBILITY_OK:
+        out["warning"] = ("the revision removed the measurable tests (tests: none or criteria "
+                          "only); it is kept, and the claim is no longer measured against "
+                          "the block")
+    try:
+        # the run's own card only (as _claim_gate_before_1b), its power check reused
+        results = _claim_check_cards(run_dir, run_id, "claim_revision",
+                                     "strategy_config_authoring", own_only=True,
+                                     known_power={"hypothesis_card.yaml": power or []})
+        _finish_claim_status(run_dir, run_id, results, "strategy_config_authoring")
+        _record_claim_match(run_dir)
+    except Exception as exc:  # noqa: BLE001 -- the splice stands; the checks did not re-run
+        out["error"] = (f"after the splice, the claim checks could not re-run "
+                        f"({type(exc).__name__}: {exc})")
     return out
 
 

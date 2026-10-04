@@ -25,7 +25,8 @@ blocks a test may be composed from.
   quantity (a price level for a move, bars for days).
 - Write `pass_if`, `fail_if` and `rationale` for the new tests. Do not write `alpha` or
   `significance`. Every other rule of CLAIM_TESTS.md applies (1 to 3 tests, unique names,
-  a reachable floor).
+  a reachable floor). `floor_facts` in your handoff gives the bars in the test windows and
+  the coins: a `min_events` floor must be at most (bars // the longest horizon) x coins.
 
 ## Output
 
