@@ -164,6 +164,9 @@ BRIEF_MAX_CONSECUTIVE_EMPTY_R2 = 2
 AUTO_EXHAUSTED_REASON = "no_new_hypothesis"
 # Statuses in which an R2 request is still outstanding (not yet run to the end).
 _OUTSTANDING_STATUSES = ("queued", "ready", "in_progress")
+# CUL-398: a held request (operator hold or component quarantine). Outstanding
+# for the streak, but never flipped ready by R2, and it holds its whole brief.
+HELD_STATUS_PREFIX = "blocked_on_"
 # Queue outcomes of a finished R2 request that produced no new, eligible card.
 _EMPTY_R2_OUTCOMES = frozenset({NO_NEW_HYPOTHESIS_OUTCOME, BRIEF_EXHAUSTED_OUTCOME,
                                 "quarantined_engineering_failure"})
@@ -772,9 +775,9 @@ def _request_number(entry: dict, owner_id: str) -> int:
 
 def r2_request_yielded(entry: dict) -> bool | None:
     """Did a finished R2 request produce a new, eligible card? None while it is
-    still outstanding (queued/ready/in_progress). True when it ran to `done`
-    with any other outcome than the empty ones, or was parked blocked_on_* (its
-    card needed an engine piece: it WAS a new card). False otherwise -- a
+    still outstanding (queued/ready/in_progress) or held (blocked_on_*, CUL-398:
+    it has not run to the end). True when it ran to `done` with any other
+    outcome than the empty ones. False otherwise -- a
     retired-routing park (paused:waiting_for_*) included, since it tested
     nothing:
     completed_no_new_hypothesis, completed_brief_exhausted, a quarantine, a
@@ -782,14 +785,17 @@ def r2_request_yielded(entry: dict) -> bool | None:
     status = str(entry.get("status") or "")
     if status in _OUTSTANDING_STATUSES:
         return None
+    # CUL-398 (2026-10-04): a held request (blocked_on_*, the operator's hold or a
+    # component quarantine) has not run to the end: it neither counts nor breaks
+    # the streak, and r2_held_owner keeps R2 off its brief until it is released.
+    if r2_request_held(entry):
+        return None
     # Slice 6c S2c review fix 1: a parked request (paused:waiting_for_*) tested
     # nothing, so it counts as EMPTY (the `paused:` fall-through below): a brief
     # whose cards keep parking auto-exhausts, and R2 terminates. An unparked
     # card still comes back through the queue (--unpark sets it ready).
     if status.startswith(PARKED_STATUS_PREFIX):
         return False
-    if status.startswith("blocked_on_"):
-        return True
     if status == "done":
         return entry.get("outcome") not in _EMPTY_R2_OUTCOMES
     return False
@@ -808,6 +814,19 @@ def consecutive_empty_r2(owner: dict, entries: list) -> list:
             continue
         streak = [] if yielded else streak + [e["id"]]
     return streak
+
+
+def r2_request_held(entry: dict) -> bool:
+    """CUL-398: an R2 request on hold (`blocked_on_*`)."""
+    return str(entry.get("status") or "").startswith(HELD_STATUS_PREFIX)
+
+
+def r2_held_owner(owner: dict, entries: list) -> bool:
+    """CUL-398: True when any R2 request on `owner`'s brief is held. R2 then
+    neither flips a request ready nor mints a new one for that brief: the
+    operator's hold holds the brief, not only the one entry."""
+    return any(is_r2_request(e) and r2_request_held(e) and brief_owner(e, entries) is owner
+               for e in entries)
 
 
 def r2_eligible_owner(entry: dict) -> bool:
@@ -1508,11 +1527,14 @@ def _r2(entries: list, *, select: bool) -> dict:
                          key=lambda e: (e.get("priority", 999), e.get("id")))
     spent = {e["id"]: consecutive_empty_r2(e, entries) for e in open_owners}
     spent = {k: v for k, v in spent.items() if len(v) >= BRIEF_MAX_CONSECUTIVE_EMPTY_R2}
-    eligible = [e for e in open_owners if r2_eligible_owner(e) and e["id"] not in spent]
+    held = sorted(e["id"] for e in open_owners if r2_held_owner(e, entries))
+    eligible = [e for e in open_owners
+                if r2_eligible_owner(e) and e["id"] not in spent and e["id"] not in held]
     out = {
         "fired": False,
         "open_briefs": [e["id"] for e in open_owners],
         "eligible_briefs": [e["id"] for e in eligible],
+        "held_briefs": held,
         "exhausted_briefs": sorted(e["id"] for e in entries
                                    if e.get("brief_status") == BRIEF_EXHAUSTED),
         "no_new_hypothesis_briefs": sorted(spent),
@@ -1528,7 +1550,8 @@ def _r2(entries: list, *, select: bool) -> dict:
     if not eligible:
         out["reason"] = ("no eligible open brief (exhausted, no new hypothesis after "
                          f"{BRIEF_MAX_CONSECUTIVE_EMPTY_R2} consecutive empty R2 requests, owner "
-                         "superseded/paused/blocked, or legacy -- operator decision 7)")
+                         "superseded/paused/blocked, a request on hold (CUL-398), or legacy "
+                         "-- operator decision 7)")
         return out
     taken = {e.get("id") for e in entries}
     requests = []  # (entry_id, owner_id, new)
@@ -1716,7 +1739,12 @@ def decide(inputs: dict, *, now: str, trigger: dict, select_entry=None) -> dict:
                 "detail": (f"the scheduler has no in_progress or ready entry to run, 0 of "
                            f"{len(cands)} candidate(s) eligible, and no open brief for R2 "
                            f"({len(r2['exhausted_briefs'])} exhausted, "
-                           f"{len(r2['legacy_briefs'])} legacy)")}
+                           f"{len(r2['legacy_briefs'])} legacy"
+                           # CUL-398 review: a held brief is still open; name it, since a
+                           # component quarantine (R9) can hold one without the operator.
+                           + (f", {len(r2['held_briefs'])} held by a blocked_on_* request: "
+                              f"{', '.join(r2['held_briefs'])}" if r2.get("held_briefs") else "")
+                           + ")")}
 
     revision = inputs.get("registry_revision") or 0
     known = inputs.get("known_classes")

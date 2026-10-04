@@ -678,16 +678,74 @@ def _build_yaml_retry_context(err: "UnrepairableYAMLError") -> str:
     )
 
 
+# A retry is a format repair, not a new answer (run_067/run_069, 2026-10-04: a
+# retry without its first answer re-drew the content -- a different idea, or
+# "exhausted" instead of two cards). The first answer goes back verbatim.
+_PREVIOUS_ANSWER_MAX_CHARS = 60000
 
-def _build_missing_deliverables_retry_context(expected_outputs: list, no_blocks: bool) -> str:
+
+def _is_brief_run(run_dir: Path) -> bool:
+    """A brief run (decide_next on, brief context present) that is not a
+    decide-next candidate: the only 1a run where brief_status.yaml and
+    extra_card_scores.yaml are valid answers. Any error reads as False."""
+    try:
+        return _brief_run_context(run_dir) is not None and _decide_next_candidate(run_dir) is None
+    except Exception:
+        return False
+
+
+def _outcome_answer(outcome):
+    """The raw answer text run_claude_worker returns under `answer`; None for
+    any other engine (tool workers return no answer)."""
+    return outcome.get("answer") if isinstance(outcome, dict) else None
+
+
+def _with_previous_answer(retry_ctx: str, answer) -> str:
+    """retry_ctx plus the model's own first answer, verbatim (capped), when there
+    is one; retry_ctx unchanged otherwise."""
+    if not isinstance(answer, str) or not answer.strip():
+        return retry_ctx
+    text = answer
+    if len(text) > _PREVIOUS_ANSWER_MAX_CHARS:
+        text = text[:_PREVIOUS_ANSWER_MAX_CHARS] + "\n[... previous answer truncated ...]"
+    return "\n".join([
+        retry_ctx,
+        "",
+        "Your previous answer, verbatim, between the two markers below. Keep its "
+        "content exactly -- the same files, ideas, values and decisions -- and "
+        "change only the layout so it can be read.",
+        "<<<PREVIOUS ANSWER",
+        text,
+        "PREVIOUS ANSWER>>>",
+    ])
+
+
+
+def _build_missing_deliverables_retry_context(expected_outputs: list, no_blocks: bool,
+                                              stage: str | None = None,
+                                              brief_run: bool = False) -> str:
     """CUL-379: the retry prompt block when deliverables are missing -- which
-    files, and the one block format the parser reads."""
+    files, and the one block format the parser reads. Step 1a has no single
+    "missing" file: one card, several numbered cards or an exhausted brief are
+    all valid answers (BRIEF_HYPOTHESES.md), so naming hypothesis_card.yaml as
+    missing contradicted a multi-card answer (run_069, 2026-10-04)."""
     missing = [Path(p).name for p in expected_outputs if not Path(p).exists()]
     what = ("contained no deliverable block the orchestrator could read"
             if no_blocks else "did not include every deliverable")
+    if stage == "hypothesis_generation":
+        # The exhausted shape is valid only on a brief run (review: on a flag-off
+        # or decide-next candidate run, brief_status.yaml fails the run).
+        exhausted = ", OR brief_status.yaml (brief exhausted)" if brief_run else ""
+        scores = " plus extra_card_scores.yaml" if brief_run else ""
+        files_line = ("Files: write the same files your previous answer chose -- "
+                      "hypothesis_card.yaml (one card), OR hypothesis_card_2.yaml, "
+                      f"hypothesis_card_3.yaml, ...{scores} (several cards, no "
+                      f"hypothesis_card.yaml){exhausted} -- plus any other file it wrote.")
+    else:
+        files_line = f"Missing: {', '.join(missing)}"
     return "\n".join([
         f"Format problem, not YAML syntax: your answer {what}.",
-        f"Missing: {', '.join(missing)}",
+        files_line,
         "Write each deliverable as ONE fenced block whose FIRST line inside the "
         "fence is its file name, exactly like this:",
         "```yaml",
@@ -809,7 +867,8 @@ def _invoke_agent_with_yaml_retry(current_stage: str, run_id: str, run_dir: Path
                 print(f"⚠️ [F4b] {current_stage}: unrepairable YAML on first attempt — "
                       f"retrying once with error context appended "
                       f"(yaml_retry_count={retry_count}).\n    {err}")
-                retry_ctx = _build_yaml_retry_context(err)
+                retry_ctx = _with_previous_answer(_build_yaml_retry_context(err),
+                                                  _outcome_answer(outcome))
                 _set_aside_unrepairable(run_dir, current_stage, err.path, retry_count)
                 continue
             raise  # retry ALSO failed — fail to human as before, unchanged
@@ -828,7 +887,11 @@ def _invoke_agent_with_yaml_retry(current_stage: str, run_id: str, run_dir: Path
                 what = "no readable deliverable block" if no_blocks else "some deliverables missing"
                 print(f"⚠️ [CUL-379] {current_stage}: {what} on first attempt — retrying once "
                       f"with a format reminder (format_retry_count={retry_count}). {err}")
-                retry_ctx = _build_missing_deliverables_retry_context(expected_outputs, no_blocks)
+                retry_ctx = _with_previous_answer(
+                    _build_missing_deliverables_retry_context(expected_outputs, no_blocks,
+                                                              current_stage,
+                                                              _is_brief_run(run_dir)),
+                    _outcome_answer(outcome))
                 continue
             raise
 
@@ -1025,11 +1088,13 @@ def _build_stage_prompt(stage_name: str, handoff: dict, path: Path,
     if retry_context:
         full_prompt += f"""
 
-    YOUR PREVIOUS ATTEMPT FAILED TO PARSE AS YAML:
+    YOUR PREVIOUS ANSWER COULD NOT BE READ:
     {retry_context}
 
-    Fix the exact issue described above and regenerate ALL deliverables from
-    scratch, following the YAML FORMATTING RULES precisely this time.
+    This is a format repair, not a new answer. Keep the content of your previous
+    answer exactly -- the same files, ideas, values and decisions (shown above when
+    it is attached) -- and fix only the issue described above, following the YAML
+    FORMATTING RULES precisely. Write every deliverable again in full.
     """
 
     return full_prompt
@@ -1268,6 +1333,10 @@ _DELIVERABLE_BLOCK_RE = re.compile(
 # for a fence that does not already name its own file.
 _DELIVERABLE_NAME_BEFORE_FENCE_RE = re.compile(
     r"^[ \t]*#[ \t]*(?:artifacts[/\\])?(?P<name>[a-zA-Z0-9_.]+\.yaml)[ \t]*\r?\n"
+    # run_069 (2026-10-04): up to 3 blank lines between the name and the fence
+    # (one blank line lost a two-card answer); any other text in between still
+    # does not match.
+    r"(?:[ \t]*\r?\n){0,3}"
     r"(?P<fence>```yaml)[ \t]*\r?\n(?P<body>.*?)```", re.DOTALL | re.MULTILINE)
 
 
@@ -1355,8 +1424,12 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
     # run_loop's own comment at the increment site for why the two happen to
     # coincide on the non-crash path and diverge only on a genuine crash-resume.
     attempt_num = handoff.get('injected_context', {}).get('stage_attempt', '0')
+    # CUL-396: a retry inside _invoke_agent_with_yaml_retry (F4b YAML or CUL-379
+    # format) is a second paid call on the same stage attempt; its own key, so it
+    # no longer overwrites the first call's cost and tokens.
+    audit_key = f"{stage_name}_attempt_{attempt_num}" + ("_retry" if retry_context else "")
     log_entry = {
-        f"{stage_name}_attempt_{attempt_num}": {
+        audit_key: {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "engine": "claude-agent-sdk",
             "execution_time_seconds": execution_time,
@@ -1373,7 +1446,7 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
         }
     }
     if prov_on:
-        log_entry[f"{stage_name}_attempt_{attempt_num}"]["provenance"] = \
+        log_entry[audit_key]["provenance"] = \
             _base_provenance(prov_models, prov_result_models)
     update_state(path=path, audit_log=log_entry)
 
@@ -1386,7 +1459,8 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
         debug_path = path / "artifacts" / f"debug_{stage_name}_raw_output.txt"
         with open(debug_path, "w", encoding="utf-8") as f:
             f.write(agent_output)
-        return {"no_blocks": True}  # CUL-379: _invoke_agent_with_yaml_retry retries once
+        # CUL-379: _invoke_agent_with_yaml_retry retries once, with this answer
+        return {"no_blocks": True, "answer": agent_output}
 
     saved_files = []
     card_provenance = None
@@ -1405,11 +1479,11 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
             f.write(out_text)
         saved_files.append(filename.strip())
     if card_provenance is not None:
-        log_entry[f"{stage_name}_attempt_{attempt_num}"]["provenance"]["cards"] = card_provenance
+        log_entry[audit_key]["provenance"]["cards"] = card_provenance
         update_state(path=path, audit_log=log_entry)
-        
+
     print(f"✅ [AGENT COMPLETE] Successfully wrote deliverables: {', '.join(saved_files)}")
-    return {"saved": saved_files}
+    return {"saved": saved_files, "answer": agent_output}
 
 
 
