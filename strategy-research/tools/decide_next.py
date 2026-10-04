@@ -187,6 +187,16 @@ HELD_STATUS_PREFIX = "blocked_on_"
 # R9's automatic quarantine (run_campaign: `blocked_on_component:<name>`): held
 # for the streak, but it does not freeze the brief (operator, 2026-10-04).
 COMPONENT_QUARANTINE_PREFIX = "blocked_on_component:"
+# E-068 PR 4 (D-071, review S3b of PR 3a): a quarantine no longer freezes its
+# brief, so a brief whose new ideas keep needing missing components had no
+# per-brief R2 limit. At this many component-quarantined entries (owner + R2
+# requests, after any reopen marker) R2 stops asking it; the brief stays open.
+BRIEF_MAX_COMPONENT_QUARANTINES = 3
+# E-068 PR 4 (D-071, CUL-399): the status run_campaign gives an entry the agent
+# created or would flip ready while orchestrator.operator_approval is on. An
+# OPERATOR hold (not COMPONENT_QUARANTINE_PREFIX): it holds its brief, so R2
+# never re-mints behind it; run_campaign.py --approve <id> sets it ready.
+OPERATOR_APPROVAL_STATUS = "blocked_on_operator_approval"
 # Queue outcomes of a finished R2 request that produced no new, eligible card.
 _EMPTY_R2_OUTCOMES = frozenset({NO_NEW_HYPOTHESIS_OUTCOME, BRIEF_EXHAUSTED_OUTCOME,
                                 "quarantined_engineering_failure"})
@@ -895,9 +905,14 @@ def r2_held_owner(owner: dict, entries: list) -> bool:
     """CUL-398: True when the owner entry itself, or any R2 request on
     `owner`'s brief, carries an operator hold. R2 then neither flips a request
     ready nor mints a new one for that brief: the operator's hold holds the
-    brief, not only the one entry (review S3a: an owner hold is listed too)."""
+    brief, not only the one entry (review S3a: an owner hold is listed too).
+    E-068 PR 4 review (D-071): an operator-held EXTRA CARD of the brief holds it
+    too -- e.g. a card waiting in blocked_on_operator_approval is an unrun idea
+    of that brief, so R2 must not ask for more behind it. A component-
+    quarantined card does not (D-069)."""
     return r2_request_operator_held(owner) or any(
-        is_r2_request(e) and r2_request_operator_held(e) and brief_owner(e, entries) is owner
+        (is_r2_request(e) or is_card_entry(e)) and r2_request_operator_held(e)
+        and brief_owner(e, entries) is owner
         for e in entries)
 
 
@@ -911,6 +926,40 @@ def r2_eligible_owner(entry: dict) -> bool:
             and (status.startswith(PARKED_STATUS_PREFIX)
                  or status.startswith(COMPONENT_QUARANTINE_PREFIX)
                  or not status.startswith(_R2_INELIGIBLE_OWNER_STATUS_PREFIXES)))
+
+
+def _card_producer_id(card: dict, entries: list):
+    """The id of the queue entry whose run wrote `card` (its card_ref's run is
+    in that entry's run_ids), or None when no entry claims the run."""
+    try:
+        run = _card_source_run(card.get("card_ref"))
+    except DecideNextError:
+        return None
+    return next((e.get("id") for e in entries
+                 if run in (e.get("run_ids") or []) and not is_card_entry(e)), None)
+
+
+def component_quarantines(owner: dict, entries: list) -> list:
+    """E-068 PR 4 (D-071, review S3b of PR 3a): the ids of the entries on
+    `owner`'s brief that are under R9's automatic component quarantine
+    (`blocked_on_component:<name>`) -- the owner's own entry, its R2 requests
+    and (review follow-up) its extra cards, which are new ideas of the brief
+    too. Counted after the operator's reopen marker (_requests_since_reopen),
+    so a reopen resets the count; with a marker, a card counts only when the
+    entry that wrote it (_card_producer_id) still counts. A released entry no
+    longer counts."""
+    mine, owner_counts = _requests_since_reopen(owner, entries)
+    counted = {e["id"] for e in mine} | ({owner["id"]} if owner_counts else set())
+    cards = [e for e in entries if is_card_entry(e) and brief_owner(e, entries) is owner
+             and (not owner.get(REOPENED_AFTER_KEY) or _card_producer_id(e, entries) in counted)]
+    return [e["id"] for e in ([owner] if owner_counts else []) + mine + cards
+            if str(e.get("status") or "").startswith(COMPONENT_QUARANTINE_PREFIX)]
+
+
+def r2_quarantine_capped(owner: dict, entries: list) -> bool:
+    """At BRIEF_MAX_COMPONENT_QUARANTINES or more, R2 stops asking the brief
+    (it is not closed: releasing entries makes it eligible again)."""
+    return len(component_quarantines(owner, entries)) >= BRIEF_MAX_COMPONENT_QUARANTINES
 
 
 def _next_request_id(owner_id: str, taken: set) -> str:
@@ -973,6 +1022,10 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
             "pre_registration": _load_yaml_opt(arts / "pre_registration.yaml"),
             "research_brief": _load_yaml_opt(arts / "research_brief.yaml"),
             "card": _load_yaml_opt(arts / "hypothesis_card.yaml"),
+            # E-068 PR 4 (D-071): the card's raw text, so a class name the
+            # reader quoted from the card is not reported as unknown.
+            "card_text": ((arts / "hypothesis_card.yaml").read_text(encoding="utf-8")
+                          if (arts / "hypothesis_card.yaml").exists() else None),
         }
 
     def _count(name):
@@ -1521,7 +1574,7 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
         blk = p.get("block") or {}
         collapse_key = ("new_block", blk.get("kind"),
                         tuple(sorted(blk.get("config_paths") or [])), run_id)
-    return {
+    cand = {
         "_collapse_key": collapse_key,
         "candidate_id": pid,
         "origin": ORIGIN_READER,
@@ -1548,6 +1601,27 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
         },
         "rank": None,
     }
+    warnings = class_name_warnings(p, inputs.get("known_classes"), src.get("card_text"))
+    if warnings:  # E-068 PR 4 (D-071): only when non-empty -- other records unchanged
+        cand["warnings"] = warnings
+    return cand
+
+
+# E-068 PR 4 (D-071): the one warning kind a candidate can carry.
+UNKNOWN_CLASS_WARNING = "unknown_component_class"
+
+
+def class_name_warnings(proposal: dict, known, card_text) -> list:
+    """The candidate's `warnings`: one {kind, name, suggestion} per component
+    class name the proposal writes that is neither a known class
+    (known_component_classes) nor quoted from the run's hypothesis card
+    (reader_proposals.unknown_class_names). WARNING ONLY -- never a reason,
+    never a change of eligibility or rank. [] without a known class set."""
+    if known is None:
+        return []
+    found = _rp.unknown_class_names(proposal, known, card_text)
+    return [{"kind": UNKNOWN_CLASS_WARNING, "name": u["name"], "suggestion": u["suggestion"]}
+            for u in found["unknown"]]
 
 
 def _card_candidate(entry: dict, info: dict, owner) -> dict:
@@ -1590,11 +1664,22 @@ def _card_candidate(entry: dict, info: dict, owner) -> dict:
     }
 
 
+def quarantine_capped_text(capped: list) -> str:
+    """", N capped after 3 component quarantines: <ids>" -- appended to R2's
+    reason and to the decide-next stop detail; empty when nothing is capped."""
+    if not capped:
+        return ""
+    return (f", {len(capped)} capped after {BRIEF_MAX_COMPONENT_QUARANTINES} component "
+            f"quarantines: {', '.join(capped)}")
+
+
 def _r2(entries: list, *, select: bool) -> dict:
     """R2 (S1_FINDINGS_6B.md §4.3). `select` is False when something is
     already scheduled or eligible: the rule is then only recorded. When it
-    fires, EVERY eligible open brief (r2_eligible_owner, and fewer than
-    BRIEF_MAX_CONSECUTIVE_EMPTY_R2 consecutive empty requests) gets a `ready`
+    fires, EVERY eligible open brief (r2_eligible_owner, fewer than
+    BRIEF_MAX_CONSECUTIVE_EMPTY_R2 consecutive empty requests, no operator
+    hold, and fewer than BRIEF_MAX_COMPONENT_QUARANTINES component-quarantined
+    entries -- D-071) gets a `ready`
     request -- its waiting one is flipped ready, or a new `<owner>__more_<n>`
     is minted ready -- so no brief waits behind another (code-review fix 3);
     the scheduler's own priority order then picks among them."""
@@ -1603,8 +1688,12 @@ def _r2(entries: list, *, select: bool) -> dict:
     spent = {e["id"]: consecutive_empty_r2(e, entries) for e in open_owners}
     spent = {k: v for k, v in spent.items() if len(v) >= BRIEF_MAX_CONSECUTIVE_EMPTY_R2}
     held = sorted(e["id"] for e in open_owners if r2_held_owner(e, entries))
+    # a brief both held and capped is listed once, as held (review nit)
+    capped = sorted(e["id"] for e in open_owners
+                    if e["id"] not in held and r2_quarantine_capped(e, entries))
     eligible = [e for e in open_owners
-                if r2_eligible_owner(e) and e["id"] not in spent and e["id"] not in held]
+                if r2_eligible_owner(e) and e["id"] not in spent and e["id"] not in held
+                and e["id"] not in capped]
     out = {
         "fired": False,
         "open_briefs": [e["id"] for e in open_owners],
@@ -1619,6 +1708,8 @@ def _r2(entries: list, *, select: bool) -> dict:
         "ready": [],
         "reason": "",
     }
+    if capped:  # E-068 PR 4 (D-071): only when non-empty -- other records unchanged
+        out["quarantine_capped_briefs"] = capped
     if not select:
         out["reason"] = "not needed: the scheduler has an entry to run, or a candidate is eligible"
         return out
@@ -1626,7 +1717,7 @@ def _r2(entries: list, *, select: bool) -> dict:
         out["reason"] = ("no eligible open brief (exhausted, no new hypothesis after "
                          f"{BRIEF_MAX_CONSECUTIVE_EMPTY_R2} consecutive empty R2 requests, owner "
                          "superseded/paused/blocked, a request on hold (CUL-398), or legacy "
-                         "-- operator decision 7)")
+                         "-- operator decision 7)" + quarantine_capped_text(capped))
         return out
     taken = {e.get("id") for e in entries}
     requests = []  # (entry_id, owner_id, new)
@@ -1818,6 +1909,8 @@ def decide(inputs: dict, *, now: str, trigger: dict, select_entry=None) -> dict:
                            # CUL-398 review: a held brief is still open; name it.
                            + (f", {len(r2['held_briefs'])} held by an operator hold: "
                               f"{', '.join(r2['held_briefs'])}" if r2.get("held_briefs") else "")
+                           # E-068 PR 4 (D-071): a capped brief is still open; name it.
+                           + quarantine_capped_text(r2.get("quarantine_capped_briefs") or [])
                            + ")")}
 
     revision = inputs.get("registry_revision") or 0
