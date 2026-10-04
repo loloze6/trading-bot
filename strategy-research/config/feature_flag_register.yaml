@@ -662,6 +662,30 @@ flags:
       tests/test_e068_3b_past_return.py and
       tests/test_e068_3b_claim_visibility.py.
 
+  - name: operator_approval
+    kind: orchestrator_config
+    config_key: orchestrator.operator_approval.enabled
+    reader: run_campaign._operator_approval_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "decide_next and verdict_routing_retired (both off_incomplete; operator_approval requires them) and the operator's choice to supervise each agent pick before it runs"
+    criterion: >
+      Landed 2026-10-04 (E-068 PR 4, CUL-399, D-071). Off: byte-identical --
+      every entry is created exactly as before. On (requires decide_next and
+      verdict_routing_retired -- without the latter legacy refine/pivot/escalate
+      continuation runs would run unapproved -- checked by the launch
+      pre-flight): every queue entry the agent creates
+      or flips to ready (reader candidate, a brief's extra card, R2's new and
+      waiting requests, R1's composition, the campaign-review reframe) is
+      created/left as blocked_on_operator_approval instead, at apply time in
+      run_campaign (decide_next stays pure); the decision record says so
+      (picked.status, r2 enqueued status and awaiting_approval). It counts as
+      an operator hold (a held R2 request or extra card holds its brief: R2
+      never mints behind it; never auto-picked); the campaign
+      summary lists held entries; `run_campaign.py --approve <id>` sets one
+      ready. register, --unpark and --resume are unchanged. Tested by
+      tests/test_e068_4_approval_cap_warnings.py.
+
   - name: bar_equity
     kind: engine_param
     engine_default_files:
