@@ -103,7 +103,9 @@ def test_single_card_repeat_ends_the_run_no_new_hypothesis(campaign_root, monkey
     ("paused:unhandled_exception", None, True),
     ("superseded", None, True),
     ("done", "refuted", False),
-    ("blocked_on_component:X", None, False),
+    # CUL-398 (operator, 2026-10-04): a held request (blocked_on_*) is outstanding --
+    # it neither counts nor breaks the streak (it used to count as a new card).
+    ("blocked_on_component:X", None, None),
 ])
 def test_consecutive_empty_counts_quarantine_and_failure(status, outcome, empty):
     owner = _owner()
@@ -111,7 +113,8 @@ def test_consecutive_empty_counts_quarantine_and_failure(status, outcome, empty)
             _request("OWNER__more_2", status=status, outcome=outcome),
             _request("OWNER__more_3", status="ready")]  # outstanding: ignored
     streak = dn.consecutive_empty_r2(owner, [owner] + reqs)
-    assert streak == (["OWNER__more_1", "OWNER__more_2"] if empty else [])
+    expected = {True: ["OWNER__more_1", "OWNER__more_2"], False: [], None: ["OWNER__more_1"]}
+    assert streak == expected[empty]
 
 
 def test_r2_stops_when_1a_keeps_repeating_the_same_card(campaign_root, monkeypatch):

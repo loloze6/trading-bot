@@ -91,6 +91,8 @@
             "open_briefs": { "type": "array", "items": { "type": "string" } },
             "eligible_briefs": { "type": "array", "items": { "type": "string" },
                                  "description": "Open briefs whose owner is not superseded/paused/blocked and that are under the empty-R2 limit." },
+            "held_briefs": { "type": "array", "items": { "type": "string" },
+                             "description": "CUL-398: open briefs with an R2 request on hold (blocked_on_*): R2 neither flips nor mints a request for them until the hold is released. Absent in records written before CUL-398." },
             "exhausted_briefs": { "type": "array", "items": { "type": "string" } },
             "no_new_hypothesis_briefs": { "type": "array", "items": { "type": "string" },
                                           "description": "Open briefs at BRIEF_MAX_CONSECUTIVE_EMPTY_R2 consecutive empty R2 requests (the caller marks them exhausted)." },
