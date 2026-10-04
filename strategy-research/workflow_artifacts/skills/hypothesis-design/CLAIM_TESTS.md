@@ -19,6 +19,17 @@ nothing about its claim.
 The block list below is kept equal to `tools/claim_tests.py` by a test. Use only what is listed
 here. Do not invent blocks, fields or parameters.
 
+**Two rules before anything else:**
+
+- **At least one test must read the block's own output**: `forecast` for a forecast block,
+  `regime` / `regime_change` for a regime block. Otherwise the base and every variant of the
+  block measure the same thing, and the test says nothing about the block. For a forecast
+  block prefer `rank_ic` or a `quantile` on `forecast` (a forecast has no fixed scale, so a
+  fixed threshold may never fire).
+- **Never approximate.** A test measures exactly the stated quantity in the stated unit
+  (horizons are bars of the card's timeframe). If no slot does, write `tests: none` and
+  `missing_block`; never substitute a nearby quantity (a price level for a move, bars for days).
+
 ## 1. What to write
 
 ```yaml
@@ -89,11 +100,18 @@ without a claim test; a person can add the block for later ideas.
 | kind | parameters | selects |
 |---|---|---|
 | `all` | none | every bar |
-| `event` | `field`: `forecast` or `close`; `op`: `>=` `>` `<=` `<` `==`; `value`: a number | bars where `field op value` |
-| `quantile` | `field`: `forecast` or `close`; `side`: `top` or `bottom`; `q` in (0, 0.5]; `lookback`: int >= 2 | bars in the top/bottom `q` of the trailing `lookback` bars (past only) |
+| `event` | `field`: `forecast`, `close` or `past_return` (with `bars`); `op`: `>=` `>` `<=` `<` `==`; `value`: a number | bars where `field op value` |
+| `quantile` | `field`: `forecast`, `close` or `past_return` (with `bars`); `side`: `top` or `bottom`; `q` in (0, 0.5]; `lookback`: int >= 2 | bars in the top/bottom `q` of the trailing `lookback` bars (past only) |
 | `calendar` | `weekdays`: list of 0 (Monday) .. 6 and/or `hours`: list of 0 .. 23 (UTC) | bars on those days/hours |
 | `regime` | `value: <label>` or `values: [<labels>]` | bars whose regime label is one of these |
 | `regime_change` | `to: <label>` | bars where the regime label changes to `to` |
+
+Fields: `forecast` is the block's forecast at bar t; `close` is the price LEVEL at bar t;
+`past_return` is the MOVE that ended at bar t, close[t] / close[t - n] - 1, and needs
+`bars: n` (an int >= 1, in bars of the card's timeframe); for example
+`{kind: quantile, field: past_return, bars: 1, side: top, q: 0.1, lookback: 500}` selects the
+largest one-bar rises. `past_return` is empty for the first n bars of each window and
+wherever a bar in between is missing. `bars` is allowed only with `past_return`.
 
 **Regime selectors are effect-size only for now.** No calibrated significance method exists
 for regime labels yet (CUL-391), so such a test reports its effect size and is marked

@@ -363,6 +363,11 @@ def test_claim_tests_md_lists_exactly_the_engine_blocks_and_kinds():
     assert rows <= engine | set(cc.CLAIM_KINDS), sorted(rows - engine - set(cc.CLAIM_KINDS))
     for unit in ct.FLOOR_UNITS:
         assert f"`{unit}`" in text
+    # E-068 3b: every field a selector may read is documented (past_return included)
+    for name in ct.BAR_T_FIELDS:
+        assert f"`{name}`" in text, name
+    for name in ct.FIELDS_WITH_BARS:
+        assert f"`{name}` (with `bars`)" in text, name
 
 
 NOTE_1B = SR_ROOT / "workflow_artifacts" / "skills" / "strategy-config-authoring" / "CLAIM_NOTE.md"
