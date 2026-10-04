@@ -2602,7 +2602,9 @@ E2E_CLAIM = {
     "statement": "After an oversold RSI reading, the next 6 hours return more than other hours.",
     "kind": "conditional_behaviour",
     "tests": [{"name": "oversold_rebound",
-               "selector": {"kind": "event", "field": "forecast", "op": ">=", "value": 10},
+               # 1, not 10: the fixture forecast is ~N(0, 1), so >= 10 matched no
+               # bar and slice 3 would rightly read no_events, not measured
+               "selector": {"kind": "event", "field": "forecast", "op": ">=", "value": 1},
                "outcome": {"kind": "fwd_return", "horizons": [6]},
                "baseline": {"kind": "complement"}, "statistic": "mean_diff",
                "direction": "greater", "floor": {"min_events": 10}}],

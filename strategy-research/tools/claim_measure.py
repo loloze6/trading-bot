@@ -48,6 +48,10 @@ import claim_tests as ct  # noqa: E402
 
 MEASURED = "measured"
 NOT_MEASURED = "not_measured"
+# a test whose selector matched no bar at any horizon: looked at (counted for
+# best-of-N), but no effect exists -- never "measured"
+NO_EVENTS = "no_events"
+NO_EVENTS_REASON = "the selector matched no bars"
 LABEL = "measured, not proven"
 NOTE = ("effect sizes only: no p-value and no verdict (automatic claim verdicts are "
         "parked, CUL-394); information only, it never changes idea_status")
@@ -180,6 +184,14 @@ def measure_test(windows: list, test: dict, eras: list | None) -> dict:
         vals = {h: rows[h]["oriented"] for h in horizons if rows[h]["oriented"] is not None}
         out["peak_horizon"] = max(vals, key=vals.get) if vals else None
     out["description"] = describe(test["name"], spec, rows, floor_not_met)
+    if all(rows[h]["n_events"] == 0 for h in horizons):
+        # nothing was measured: a look taken (counted for best-of-N), never an effect
+        reason = NO_EVENTS_REASON
+        if spec.selector.get("kind") in ct.NOT_RECOMPUTABLE_SELECTORS:
+            labels = sorted({str(r) for w in windows for r in w.regime if r})
+            reason += f"; regime labels present in the bars: {labels if labels else 'none'}"
+        out.update(status=NO_EVENTS, reason=reason)
+        out["description"] = [f"{test['name']}: no events -- {reason}. Nothing was measured."]
     return out
 
 
@@ -217,11 +229,12 @@ def measure_variant(run_dir: Path, vid: str, tests: list, eras, holdout_start: s
             results[str(name)] = {"name": name, "status": NOT_MEASURED, "reason": ERROR,
                                   "detail": _error(exc)}
     measured = any(r["status"] == MEASURED for r in results.values())
+    all_empty = bool(results) and all(r["status"] == NO_EVENTS for r in results.values())
     detail = None if measured else "no test could be measured: " + "; ".join(
-        f"{n}: {r.get('detail')}" for n, r in results.items())
+        f"{n}: {r.get('detail') or r.get('reason')}" for n, r in results.items())
     doc.update({"status": MEASURED if measured else NOT_MEASURED,
-                "reason": None if measured else ERROR, "detail": detail,
-                "tests": results})
+                "reason": None if measured else NO_EVENTS if all_empty else ERROR,
+                "detail": detail, "tests": results})
     return doc
 
 
@@ -279,9 +292,11 @@ def run_doc(run_id: str, card_status: dict, variants: dict, skipped: dict | None
                   "file": f"variants/{vid}/{VARIANT_FILE}"} for vid, v in variants.items()}
     rows.update({vid: {"status": NOT_MEASURED, "reason": r, "file": None}
                  for vid, r in skipped.items()})
+    n_no_events = sum(1 for c in counted if c["status"] == NO_EVENTS)
     doc.update({"claim_status": status, "reason": reason, "detail": detail,
                 "n_tests_measured": n_measured,
-                "n_tests_not_measured": len(counted) - n_measured,
+                "n_tests_no_events": n_no_events,
+                "n_tests_not_measured": len(counted) - n_measured - n_no_events,
                 "variants": rows, "tests": counted})
     return doc
 
@@ -314,15 +329,25 @@ def record_measured(root: Path, run_id: str, doc: dict) -> None:
         # every (variant, test, spec_hash) ever measured in this run: a look taken
         # in an earlier attempt stays counted even if a later attempt does not
         # measure that variant again (best-of-N counts looks, not survivors)
-        looks = {(lk.get("variant"), lk.get("test"), lk.get("spec_hash"))
+        # A no_events test is a look too (it was tried), kept with its status
+        # so the summary shows it apart from the measured ones; the latest
+        # attempt's status wins for the same (variant, test, spec_hash).
+        looks = {(lk.get("variant"), lk.get("test"), lk.get("spec_hash")):
+                 lk.get("status", MEASURED)
                  for lk in prev.get("looks") or [] if isinstance(lk, dict)}
-        looks |= {(t.get("variant"), t.get("test"), t.get("spec_hash"))
-                  for t in doc.get("tests") or [] if t.get("status") == MEASURED}
+        looks.update({(t.get("variant"), t.get("test"), t.get("spec_hash")): t["status"]
+                      for t in doc.get("tests") or []
+                      if t.get("status") in (MEASURED, NO_EVENTS)})
+        statuses = list(looks.values())
         row["measured"] = {"claim_status": doc.get("claim_status"), "reason": doc.get("reason"),
                            "n_tests_measured": int(doc.get("n_tests_measured") or 0),
+                           "n_tests_no_events": int(doc.get("n_tests_no_events") or 0),
                            "tests": list(doc.get("tests") or []),
-                           "looks": [{"variant": v, "test": t, "spec_hash": h}
-                                     for v, t, h in sorted(looks, key=lambda x: tuple(map(str, x)))],
-                           "n_looks": len(looks)}
+                           "looks": [{"variant": v, "test": t, "spec_hash": h, "status": s}
+                                     for (v, t, h), s in sorted(
+                                         looks.items(), key=lambda x: tuple(map(str, x[0])))],
+                           "n_looks": len(looks),
+                           "n_looks_measured": statuses.count(MEASURED),
+                           "n_looks_no_events": statuses.count(NO_EVENTS)}
         runs[run_id] = row
         cm._atomic_write(path, {**cov, "runs": runs})

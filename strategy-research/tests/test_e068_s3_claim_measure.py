@@ -138,6 +138,50 @@ def test_per_coin_rows_split_the_variant():
     assert "  BBBUSD: effect" in "\n".join(cm.measure_test(ws, UP, None)["description"])
 
 
+def test_a_selector_matching_no_bars_is_no_events_never_measured(tmp_path):
+    """A regime selector on bars whose regime is 'unknown' everywhere: its own
+    status and plain reason naming the labels present; not counted as
+    measured; a run of only such tests never reads measured; still a look."""
+    ws = make_windows(25, n=80, n_windows=2)
+    for w in ws:
+        w.regime = np.array(["unknown"] * len(w.ts), dtype=object)
+    res = cm.measure_test(ws, REGIME_T, None)
+    assert res["status"] == cm.NO_EVENTS
+    assert res["reason"] == ("the selector matched no bars; regime labels present in the "
+                             "bars: ['unknown']")
+    assert all(r["n_events"] == 0 for r in res["horizons"].values())
+    run = _run_with_variants(tmp_path / "runs", "run_x", {"base": ws})
+    v = cm.measure_variant(run, "base", [REGIME_T], None, FAR)
+    assert v["status"] == cm.NOT_MEASURED and v["reason"] == cm.NO_EVENTS
+    doc = cm.run_doc("run_1", {"usable": True}, {"base": v})
+    assert doc["claim_status"] == cm.NOT_MEASURED and doc["reason"] == cm.NO_EVENTS
+    assert doc["n_tests_measured"] == 0 and doc["n_tests_no_events"] == 1
+    assert doc["n_tests_not_measured"] == 0
+    both = cm.measure_variant(run, "base", [REGIME_T, dict(UP, name="up")], None, FAR)
+    mixed = cm.run_doc("run_2", {"usable": True}, {"base": both})
+    assert mixed["claim_status"] == cm.MEASURED
+    assert mixed["n_tests_measured"] == 1 and mixed["n_tests_no_events"] == 1
+    cm.record_measured(tmp_path, "run_1", doc)
+    cm.record_measured(tmp_path, "run_2", mixed)
+    m = yaml.safe_load((tmp_path / cc.COVERAGE_REL).read_text(encoding="utf-8"))["runs"]
+    assert m["run_1"]["measured"]["n_looks"] == 1                 # still a look (best of N)
+    assert m["run_1"]["measured"]["n_looks_no_events"] == 1
+    assert m["run_2"]["measured"]["n_looks_measured"] == 1
+    assert cc.coverage_summary_lines(tmp_path)[-1] == (
+        "- Claim tests measured after the backtests (effect sizes, measured, not proven): "
+        "1 test(s) in 1 run(s) (run_2); tests whose selector matched no bars: 2; "
+        "runs not measured: 1")
+
+
+def test_events_at_some_horizons_only_is_still_measured():
+    """no_events means zero events at EVERY horizon: a horizon longer than the
+    windows has none, the short one has some -- measured."""
+    t = dict(UP, outcome={"kind": "fwd_return", "horizons": [1, 500]})
+    res = cm.measure_test(_planted(26, n=80, n_windows=2), t, None)
+    assert res["horizons"][500]["n_events"] == 0 and res["horizons"][1]["n_events"] > 0
+    assert res["status"] == cm.MEASURED
+
+
 def test_regime_selector_and_rank_ic_are_measured():
     ws = make_windows(4, n=120, n_windows=3)
     assert ct.check_spec(cm.test_spec(REGIME_T)[0])          # refused for a verdict ...
@@ -315,7 +359,8 @@ def test_every_test_is_counted_and_recorded_next_to_slice_2s_row(tmp_path):
     after = cc.coverage_summary_lines(tmp_path)
     assert "\n".join(after[:len(before.splitlines())]) == before        # slice 2 lines unchanged
     assert after[-1] == ("- Claim tests measured after the backtests (effect sizes, measured, "
-                         "not proven): 2 test(s) in 1 run(s) (run_1); runs not measured: 0")
+                         "not proven): 2 test(s) in 1 run(s) (run_1); tests whose selector "
+                         "matched no bars: 0; runs not measured: 0")
     cm.record_measured(tmp_path, "run_3", cm.error_doc("run_3", ValueError("x")))
     last = cc.coverage_summary_lines(tmp_path)
     assert last[-1].endswith("runs not measured: 1")
