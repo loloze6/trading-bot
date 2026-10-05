@@ -47,6 +47,7 @@ if _HERE not in sys.path:
 
 import claim_card as cc  # noqa: E402
 import claim_measure as cmeas  # noqa: E402
+import nearest_build as nb  # noqa: E402
 
 FINDING_KEY = "finding"
 SUMMARY_ARTIFACT = "findings_summary.yaml"
@@ -362,6 +363,12 @@ def build_finding(run_dir: Path, run_id: str, entry: dict, *, exempt: str | None
                                         if status_doc is not None else None),
                    "claim_test_refs": refs},
     })
+    # E-068 nearest build (operator 2026-10-05): a run that tested an approximation
+    # says so FIRST. artifacts/deviations.yaml exists only under
+    # orchestrator.nearest_build, so a finding without one is unchanged.
+    block = nb.approximation_block(nb.load_record(arts))
+    if block:
+        finding = {"approximation": block, **finding}
     return finding
 
 
@@ -396,11 +403,15 @@ def _summary_row(run_id: str, f: dict) -> dict:
         tests.append({"name": name, "spec_hash": t.get("spec_hash"),
                       "statistic": t.get("statistic"), "direction": t.get("direction"),
                       "by_variant": by_variant})
-    return {"finding_id": f.get("finding_id"), "run_id": run_id, "kind": f.get("kind"),
-            "status": f.get("status"), "reason": f.get("reason"),
-            "block_visibility": f.get("block_visibility"), "statement": statement,
-            "scope": {k: scope.get(k) for k in ("venue", "timeframe", "symbols", "period")},
-            "tests": tests}
+    row = {"finding_id": f.get("finding_id"), "run_id": run_id, "kind": f.get("kind"),
+           "status": f.get("status"), "reason": f.get("reason"),
+           "block_visibility": f.get("block_visibility"), "statement": statement,
+           "scope": {k: scope.get(k) for k in ("venue", "timeframe", "symbols", "period")},
+           "tests": tests}
+    approx = f.get("approximation")
+    if isinstance(approx, dict):  # E-068 nearest build: only a finding that has one
+        row = {"deviations": approx.get("n_deviations"), **row}
+    return row
 
 
 def _run_order(run_id: str) -> tuple:
