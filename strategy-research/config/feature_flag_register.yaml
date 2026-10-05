@@ -728,11 +728,11 @@ flags:
     reader: run_phase1_research._nearest_build_enabled
     owner: Jeremy
     state: off_incomplete
-    blocked_on: "config_direct_authoring (off_incomplete; nearest_build requires it); the operator switches it on in c4/flag-set for the next E-068 validation run"
+    blocked_on: "config_direct_authoring and claim_tests (off_incomplete; nearest_build requires both); the operator switches it on in c4/flag-set for the next E-068 validation run"
     criterion: >
       Landed 2026-10-05 (E-068, D-075). Off: byte-identical -- 1b's inputs,
       routing, the finding, the readers' digest and decide-next's request count
-      are untouched. On (requires config_direct_authoring): 1b gets
+      are untouched. On (requires config_direct_authoring and claim_tests): 1b gets
       NEAREST_BUILD.md and builds the nearest version instead of parking;
       code writes artifacts/deviations.yaml, a component request per missing
       piece (kind deviation, run_continued: never an --unpark, cap or

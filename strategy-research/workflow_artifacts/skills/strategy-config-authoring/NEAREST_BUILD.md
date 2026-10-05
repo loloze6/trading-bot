@@ -2,7 +2,9 @@
 
 You are reading this note because `orchestrator.nearest_build.enabled` is on; it is added to
 step 1b's inputs only under that flag. Where it differs from your skill's `component_gap` rules,
-this note wins.
+this note wins. In particular it replaces the skill's checklist line "If ANY required
+indicator/transform/regime is absent ... status=component_gap; do not fabricate a config around
+the missing piece": an approximation listed in `deviations` is not a fabrication.
 
 **Build the nearest version.** When a clause of the idea cannot be built exactly from the
 catalogue's components and transforms, build the closest config they allow and answer

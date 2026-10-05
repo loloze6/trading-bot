@@ -33,18 +33,22 @@ REQUEST_KIND = "deviation"
 DEVIATION_PREFIX = "DEVIATION:"
 APPROX_LINE = "this run tested an approximation of the idea: "
 _ITEM_KEYS = ("clause", "built_instead", "missing", "effect")
+# Review round 1: 1b's answer is model-written and lands in campaign memory, the
+# readers' prompts and component_requests.yaml -- bounded here, once.
+MAX_ITEMS = 10
+MAX_CHARS = 300
 
 
 def _text(v) -> str | None:
     if v is None:
         return None
     s = " ".join(str(v).split())
+    if len(s) > MAX_CHARS:
+        s = s[:MAX_CHARS - 3] + "..."
     return s or None
 
 
-def structured_deviations(decision) -> list:
-    """decision.yaml `deviations`, normalised to {clause, built_instead, missing,
-    effect} (strings or None); anything that is not a mapping is kept as a clause."""
+def _deviation_items(decision) -> list:
     raw = decision.get("deviations") if isinstance(decision, dict) else None
     out = []
     for item in raw if isinstance(raw, list) else []:
@@ -55,6 +59,13 @@ def structured_deviations(decision) -> list:
         if any(row.values()):
             out.append(row)
     return out
+
+
+def structured_deviations(decision) -> list:
+    """decision.yaml `deviations`, normalised to {clause, built_instead, missing,
+    effect} (strings or None, each at most MAX_CHARS); anything that is not a
+    mapping is kept as a clause. At most MAX_ITEMS (build_record counts the rest)."""
+    return _deviation_items(decision)[:MAX_ITEMS]
 
 
 def rationale_deviation_lines(backtest_spec) -> list:
@@ -69,7 +80,7 @@ def rationale_deviation_lines(backtest_spec) -> list:
         if choice and choice.upper().startswith(DEVIATION_PREFIX):
             out.append({"clause": _text(entry.get("hypothesis_claim")),
                         "text": _text(choice[len(DEVIATION_PREFIX):])})
-    return out
+    return out[:MAX_ITEMS]
 
 
 def core_lost_problem(decision) -> str | None:
@@ -105,6 +116,9 @@ def build_record(run_id: str, decision, backtest_spec) -> dict:
         state = STATUS_APPROXIMATION if (items or lines) else STATUS_EXACT
     rec = {"schema_version": SCHEMA_VERSION, "run_id": run_id, "status": state,
            "information_only": True, "deviations": items, "config_rationale_lines": lines}
+    dropped = len(_deviation_items(decision)) - len(items)
+    if dropped > 0:
+        rec["deviations_not_listed"] = dropped   # beyond MAX_ITEMS
     if state == STATUS_PARKED:
         rec["core_lost"] = core_lost_of(decision)
         rec["tried"] = (decision or {}).get("tried") or []
@@ -136,7 +150,9 @@ def approximation_block(record) -> dict | None:
                     "missing": None, "effect": None} for ln in lines]
     if not parts:
         return None
-    return {"line": APPROX_LINE + "; ".join(parts), "n_deviations": len(parts),
+    more = record.get("deviations_not_listed") or 0
+    line = APPROX_LINE + "; ".join(parts) + (f"; and {more} more (not listed)" if more else "")
+    return {"line": line, "n_deviations": len(parts) + more,
             "deviations": compact, "ref": f"artifacts/{DEVIATIONS_FILE}"}
 
 

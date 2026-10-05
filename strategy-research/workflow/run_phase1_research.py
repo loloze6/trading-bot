@@ -4027,7 +4027,10 @@ def _nearest_build_enabled(cfg: dict | None = None) -> bool:
     """E-068 (operator, 2026-10-05): step 1b builds the nearest version of an
     idea instead of parking it. False when the key, the section or the config
     file is absent. A non-bool value raises. Requires, loudly,
-    orchestrator.config_direct_authoring.enabled (1b runs only in that flow).
+    orchestrator.config_direct_authoring.enabled (1b runs only in that flow) and
+    orchestrator.claim_tests.enabled (the deviations are carried into the
+    claim's finding and the readers' digest, which exist only under it; the
+    finding is written at regroup_record, so that flag must be on to see it).
 
     While false: byte-identical -- 1b's inputs, its routing, the finding, the
     readers' digest and decide-next's request count are untouched.
@@ -4045,11 +4048,19 @@ def _nearest_build_enabled(cfg: dict | None = None) -> bool:
             f"(got {type(value).__name__}) -- write an unquoted `true` or `false` in "
             f"config/campaign_config.yaml, not a quoted string or null."
         )
-    if value and not _flag_dep(_config_direct_authoring_enabled, cfg):
-        raise ValueError(
-            "orchestrator.nearest_build.enabled=true requires "
-            "orchestrator.config_direct_authoring.enabled=true as well -- step 1b, the "
-            "stage it changes, runs only in the config-direct flow. Enable them together.")
+    if value:
+        missing = [name for name, on in (
+                       ("config_direct_authoring",
+                        _flag_dep(_config_direct_authoring_enabled, cfg)),
+                       ("claim_tests", _flag_dep(_claim_tests_enabled, cfg)))
+                   if not on]
+        if missing:
+            raise ValueError(
+                "orchestrator.nearest_build.enabled=true requires "
+                + " and ".join(f"orchestrator.{m}.enabled=true" for m in missing)
+                + " as well -- step 1b, the stage it changes, runs only in the config-direct "
+                "flow, and the deviations are carried into the claim's finding, which exists "
+                "only under claim_tests. Enable them together.")
     return value
 
 
@@ -15410,10 +15421,13 @@ def _route_component_gap_tried(path: Path, decision: dict) -> tuple:
     retry, else None (the caller parks or pauses as before); warning is the
     problem still present after the retry (recorded, never a stop).
     E-068 nearest build (flag on only): a component_gap must also name
-    `core_lost`; a missing one shares O-21's single retry."""
+    `core_lost`; a missing one shares O-21's single retry, so both problems
+    travel in ONE message (review: never only the first of the two)."""
     problem = _component_gap_tried_problem(decision)
-    if problem is None and _nearest_build_enabled():
-        problem = _nearest_build_module().core_lost_problem(decision)
+    if _nearest_build_enabled():
+        core = _nearest_build_module().core_lost_problem(decision)
+        if core:
+            problem = f"{problem}; and {core}" if problem else core
     state = load_yaml(path / "pipeline_state.yaml") or {}
     attempts = (state.get(_COMPONENT_GAP_RETRY_STATE_KEY) or {}).get("attempts", 0)
     if problem is None:
@@ -15439,11 +15453,17 @@ def _apply_component_gap_retry_context(stage_name: str, handoff: dict, run_dir: 
     retry = state.get(_COMPONENT_GAP_RETRY_STATE_KEY) or {}
     if not retry.get("attempts") or not retry.get("last_error"):
         return
+    if _nearest_build_enabled():  # E-068 nearest build (review): name both fields
+        close = ("Either build the nearest version (spec_ready, each difference in "
+                 "decision.yaml `deviations`) or answer component_gap again with a complete "
+                 "`tried` list and `core_lost` in decision.yaml.")
+    else:
+        close = ("Either build the closest composition (spec_ready, with a DEVIATION entry in "
+                 "config_rationale) or answer component_gap again with a complete `tried` list "
+                 "in decision.yaml.")
     handoff.setdefault("injected_context", {})["component_gap_tried_error"] = (
         f"Retry {retry['attempts']}/{_COMPONENT_GAP_RETRY_MAX}. Your previous answer was "
-        f"component_gap, refused: {retry['last_error']}. Either build the closest composition "
-        f"(spec_ready, with a DEVIATION entry in config_rationale) or answer component_gap again "
-        f"with a complete `tried` list in decision.yaml.")
+        f"component_gap, refused: {retry['last_error']}. {close}")
 
 
 NEAREST_BUILD_NOTE = "../../workflow_artifacts/skills/strategy-config-authoring/NEAREST_BUILD.md"
@@ -15495,7 +15515,8 @@ def _record_nearest_build(path: Path) -> None:
         if rows:
             _crr.append_component_requests(
                 ROOT / _crr.COMPONENT_REQUESTS_REL, rows,
-                key=lambda r: (r.get("run_id"), r.get("kind"), r.get("reason")))
+                key=lambda r: (r.get("run_id"), r.get("kind"), r.get("reason"),
+                               r.get("clause")))
         block = nb.approximation_block(record)
         if block:
             print(f"🧩 [E-068] {block['line']} ({block['n_deviations']} deviation(s); "

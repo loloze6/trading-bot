@@ -1,7 +1,7 @@
 """
 E-068 (operator, 2026-10-05; D-075): step 1b builds the nearest version of an
 idea instead of parking it, behind orchestrator.nearest_build.enabled (off;
-requires config_direct_authoring).
+requires config_direct_authoring and claim_tests).
 
 Operator decisions: a new flag (Q1); structured `deviations` in decision.yaml
 (Q2); deviation request rows stay out of --unpark, the cap and decide-next's
@@ -43,7 +43,7 @@ from test_k3_protocol_pinning import _minimal_run  # noqa: E402
 FIX = SR_ROOT / "tests" / "fixtures" / "e068_nearest_build"
 FIX4 = SR_ROOT / "tests" / "fixtures" / "e068_4" / "run_070"
 CDA = {"config_direct_authoring": {"enabled": True}}
-NB_ON = {**CDA, "nearest_build": {"enabled": True}}
+NB_ON = {**CDA, "claim_tests": {"enabled": True}, "nearest_build": {"enabled": True}}
 TRIED_OK = [{"config": "PriceEvolutionComponent(period=1) + [zscore, scale]",
              "fails_on": "needs the bar's own range"}]
 DEVS = [
@@ -107,6 +107,14 @@ def test_flag_off_by_default_and_in_the_shipped_config():
 def test_flag_on_without_config_direct_authoring_raises():
     _set_orchestrator({"nearest_build": {"enabled": True}})
     with pytest.raises(ValueError, match="config_direct_authoring.enabled=true"):
+        rpr._nearest_build_enabled()
+
+
+def test_flag_on_without_claim_tests_raises():
+    """Review round 1: the deviations go into the claim's finding, which exists
+    only under claim_tests."""
+    _set_orchestrator({**CDA, "nearest_build": {"enabled": True}})
+    with pytest.raises(ValueError, match="claim_tests.enabled=true"):
         rpr._nearest_build_enabled()
 
 
@@ -319,6 +327,60 @@ def test_component_gap_with_core_lost_parks_at_once_and_records_it(capsys):
     rec = _record(run_dir)
     assert rec["status"] == "parked" and rec["core_lost"] == CORE and rec["tried"] == TRIED_OK
     assert "the core is lost" in capsys.readouterr().out
+
+
+def test_one_retry_message_carries_both_missing_fields():
+    """Review round 1: no `tried` AND no `core_lost` -> the single retry names both."""
+    _set_orchestrator(NB_ON)
+    run_dir = _gap_run("run_991", tried=None)
+    assert rpr.determine_post_strategy_config_authoring_route(
+        run_dir, routing_retired=True) == "strategy_config_authoring"
+    err = rpr.load_yaml(run_dir / "pipeline_state.yaml")[rpr._COMPONENT_GAP_RETRY_STATE_KEY][
+        "last_error"]
+    assert "without a `tried` list" in err and "core_lost" in err
+    handoff = {}
+    rpr._apply_component_gap_retry_context("strategy_config_authoring", handoff, run_dir)
+    msg = handoff["injected_context"]["component_gap_tried_error"]
+    assert msg.endswith("answer component_gap again with a complete `tried` list and "
+                        "`core_lost` in decision.yaml.")
+
+
+def test_flag_off_retry_message_is_unchanged():
+    _set_orchestrator(CDA)
+    run_dir = _gap_run("run_992", tried=None)
+    rpr.determine_post_strategy_config_authoring_route(run_dir, routing_retired=True)
+    handoff = {}
+    rpr._apply_component_gap_retry_context("strategy_config_authoring", handoff, run_dir)
+    msg = handoff["injected_context"]["component_gap_tried_error"]
+    assert "core_lost" not in msg and msg.endswith(
+        "Either build the closest composition (spec_ready, with a DEVIATION entry in "
+        "config_rationale) or answer component_gap again with a complete `tried` list in "
+        "decision.yaml.")
+
+
+def test_model_written_deviations_are_bounded():
+    many = [{"clause": f"clause {i} " + "x" * 400, "built_instead": "b", "missing": f"m{i}",
+             "effect": None} for i in range(nb.MAX_ITEMS + 2)]
+    rec = nb.build_record("run_1", {"status": "spec_ready", "deviations": many}, {})
+    assert len(rec["deviations"]) == nb.MAX_ITEMS and rec["deviations_not_listed"] == 2
+    assert all(len(d["clause"]) <= nb.MAX_CHARS for d in rec["deviations"])
+    block = nb.approximation_block(rec)
+    assert block["n_deviations"] == nb.MAX_ITEMS + 2
+    assert block["line"].endswith("; and 2 more (not listed)")
+    assert len(nb.request_rows("run_1", rec)) == nb.MAX_ITEMS
+    lines = nb.rationale_deviation_lines({"config_rationale": [
+        {"hypothesis_claim": str(i), "config_choice": "DEVIATION: x"} for i in range(30)]})
+    assert len(lines) == nb.MAX_ITEMS
+
+
+def test_two_deviations_with_the_same_missing_piece_keep_two_rows():
+    _set_orchestrator(NB_ON)
+    same = [{"clause": "body", "built_instead": "a", "missing": "OHLC", "effect": None},
+            {"clause": "close location", "built_instead": "none", "missing": "OHLC",
+             "effect": None}]
+    run_dir = _spec_ready_run("run_993", deviations=same)
+    rpr.determine_post_strategy_config_authoring_route(run_dir)
+    assert [r["clause"] for r in _requests()] == ["body", "close location"]
 
 
 def test_run_071s_real_answer_is_sent_back_for_the_nearest_build():

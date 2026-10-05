@@ -553,7 +553,8 @@ post-validation/post-expansion to pre-expansion.
 pauses for a human (`determine_post_strategy_config_authoring_route`,
 `run_phase1_research.py`) — the same shape `determine_post_spec_route` uses
 for stage 6, just a different success target.
-Under `orchestrator.nearest_build.enabled` (off by default; D-075), 1b builds
+Under `orchestrator.nearest_build.enabled` (off by default; requires
+`config_direct_authoring` and `claim_tests`; D-075), 1b builds
 the nearest version of an idea instead of parking it: it answers `spec_ready`
 with the closest config the catalogue allows and lists each difference in
 `decision.yaml` `deviations` (clause, built_instead, missing, effect). Code
