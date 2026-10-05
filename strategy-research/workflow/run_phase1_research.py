@@ -4342,14 +4342,17 @@ def _reader_handoff_v3(category: str, run_id: str, stage_attempt, run_dir: Path 
     }
     missing = _reader_v3_missing_inputs(run_dir) if run_dir is not None else []
     for name in missing:
+        # Not listed as an input at all, not even optional: _build_stage_prompt
+        # pastes any listed path that exists, and an older attempt's copy may
+        # still be on disk (review round 2).
         rel = f"artifacts/{name}"
         handoff["required_inputs"] = [r for r in handoff["required_inputs"] if r["path"] != rel]
-        handoff["optional_inputs"].append(
-            {"path": rel,
-             "reason": f"MISSING in this run: it could not be written before the readers "
-                       f"(see artifacts/{_rf.INPUT_GAPS_ARTIFACT}). Read without it; never "
-                       f"guess its content."})
     if missing:
+        handoff["injected_context"]["missing_inputs"] = {
+            f"artifacts/{name}": (f"MISSING in this run: it could not be written before the "
+                                  f"readers (see artifacts/{_rf.INPUT_GAPS_ARTIFACT}). Read "
+                                  f"without it; never guess its content.")
+            for name in missing}
         handoff["objective"] += (f" Missing in this run (read without them): "
                                  f"{', '.join(missing)}.")
     return handoff
@@ -4491,7 +4494,9 @@ def _citation_provenance(category: str, run_dir: Path, body: str) -> dict:
         v3 = _reader_findings_enabled()
         if v3:  # E-068 slice 5: the v3 inputs a reading may cite too
             _rf = _reader_findings_module()
-            rels += (_rf.DIGEST_ARTIFACT, _rf.READER_SUMMARY_ARTIFACT, "claim_status.yaml")
+            gone = set(_reader_v3_missing_inputs(run_dir))  # an older copy is not this run's
+            rels += tuple(n for n in (_rf.DIGEST_ARTIFACT, _rf.READER_SUMMARY_ARTIFACT)
+                          if n not in gone) + ("claim_status.yaml",)
         for rel in rels:
             try:
                 doc = yaml.safe_load((arts / rel).read_text(encoding="utf-8"))

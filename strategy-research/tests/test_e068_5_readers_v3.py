@@ -840,9 +840,11 @@ def test_a_digest_that_raises_is_a_gap_too(monkeypatch):
     gaps = rpr._write_reader_v3_inputs(run_dir, RUN_ID)
     assert gaps == {rf.DIGEST_ARTIFACT: "ValueError: odd claim_status"}
     h = rpr._reader_handoff("trade_efficiency", RUN_ID, 0, run_dir)
-    assert f"artifacts/{rf.DIGEST_ARTIFACT}" not in [r["path"] for r in h["required_inputs"]]
-    missing = [r for r in h["optional_inputs"] if r["path"] == f"artifacts/{rf.DIGEST_ARTIFACT}"]
-    assert len(missing) == 1 and missing[0]["reason"].startswith("MISSING in this run")
+    paths = [r["path"] for r in h["required_inputs"] + h["optional_inputs"]]
+    assert f"artifacts/{rf.DIGEST_ARTIFACT}" not in paths   # not listed as an input at all
+    assert list(h["injected_context"]["missing_inputs"]) == [f"artifacts/{rf.DIGEST_ARTIFACT}"]
+    assert h["injected_context"]["missing_inputs"][f"artifacts/{rf.DIGEST_ARTIFACT}"].startswith(
+        "MISSING in this run")
 
 
 def test_a_later_clean_write_removes_the_gap_record(monkeypatch):
@@ -858,6 +860,7 @@ def test_a_later_clean_write_removes_the_gap_record(monkeypatch):
     assert (arts / rf.DIGEST_ARTIFACT).exists()
     h = rpr._reader_handoff("trade_efficiency", RUN_ID, 0, run_dir)
     assert all("MISSING" not in r["reason"] for r in h["optional_inputs"])
+    assert "missing_inputs" not in h["injected_context"]
 
 
 def test_both_inputs_present_the_handoff_is_the_slice_5_one(monkeypatch):
@@ -892,11 +895,22 @@ def test_an_older_copy_that_cannot_be_removed_is_still_missing(monkeypatch):
     assert "an older copy could not be removed" in gaps[rf.DIGEST_ARTIFACT]
     assert (arts / rf.DIGEST_ARTIFACT).exists()   # still on disk
     h = rpr._reader_handoff("trade_efficiency", RUN_ID, 0, run_dir)
-    assert f"artifacts/{rf.DIGEST_ARTIFACT}" not in [r["path"] for r in h["required_inputs"]]
-    assert f"artifacts/{rf.DIGEST_ARTIFACT}" not in [r["path"] for r in h["optional_inputs"]
-                                                    if "MISSING" not in r["reason"]]
+    assert f"artifacts/{rf.DIGEST_ARTIFACT}" not in [
+        r["path"] for r in h["required_inputs"] + h["optional_inputs"]]
     assert h["objective"].endswith(f"Missing in this run (read without them): "
                                    f"{rf.DIGEST_ARTIFACT}.")
+    # review round 2: the older copy's content must not reach the prompt
+    prompt = rpr._build_stage_prompt("specialist_readers", h, run_dir,
+                                     skill_file_name=rpr._reader_skill_dir("trade_efficiency"))
+    assert f"CONTENT OF artifacts/{rf.DIGEST_ARTIFACT}" not in prompt
+    assert f"CONTENT OF artifacts/{rf.READER_SUMMARY_ARTIFACT}" in prompt
+    assert "MISSING in this run" in prompt
+    # nor be cited as this run's in the provenance record
+    prov = rpr._citation_provenance("trade_efficiency", run_dir,
+                                    yaml.safe_dump(_reading(sides=[]), sort_keys=False))
+    assert "files_read" in prov, prov
+    assert rf.READER_SUMMARY_ARTIFACT in prov["files_read"]
+    assert rf.DIGEST_ARTIFACT not in prov["files_read"]
 
 
 def test_a_reading_written_without_an_input_says_so_after_a_resume(monkeypatch):
