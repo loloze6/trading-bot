@@ -1,0 +1,102 @@
+strategy_domain: short_horizon_reversal
+market_universe:
+- BTCUSDT
+- ETHUSDT
+timeframe: 1h
+venue: kraken
+product: perp
+research_goal: 'Test a change proposed by the trade_efficiency reader after run_070
+  on idea HOURLY_SHOCK_REVERSAL_MEAN_REVERSION_1H_BTC_ETH: shock_reversal.params.period:
+  1 -> 2. Evidence: variants.base.slices.overall.trade_less_often: boundary_recross_rate=0.9926
+  and frequency_vs_volatility_ratio=3696 indicate trading frequency ~3700x higher
+  than volatility regime warrants (expected ratio ~1.0), causing constant whipsawing
+  at entry/exit boundary; variants.base.slices.overall: exit_efficiency_median=-0.0266
+  obscures exit_efficiency_mean=-0.5718; pct_pnl_from_worst_decile_trades=140.65%
+  with signal_flip_pct=99.16% show worst trades held until signal reversal, driven
+  by 1-bar period oscillation crossing position threshold repeatedly before final
+  flip; per_window consistency (all 6 windows 2022-01 through 2023-09): boundary_recross_rate
+  >=0.9926 in every window, exit_efficiency_mean ranges -0.38 to -0.86, confirming
+  high-frequency oscillation pattern is systematic across entire backtest period;
+  Cross-variant: shock_lookback_250 design variant shows boundary_recross_rate=0.9929
+  (nearly identical oscillation), asset variants sol_generalization and uni_defi show
+  degraded exit_efficiency (medians -0.1149 and -0.1183 vs base -0.0266), indicating
+  1-bar period sensitivity harms both base signal and cross-asset generalization'
+candidate:
+  config:
+    regime_detector:
+      mode: threshold_rules
+      components: []
+      rules: []
+      default_regime: unknown
+    strategies:
+      warmup: 51
+      regimes:
+        unknown:
+          components:
+          - id: shock_reversal
+            class: strategies.strategy_components.PriceEvolutionComponent
+            params:
+              period: 2
+              scaling_factor: 1.0
+            weight: 1.0
+            lookback: 500
+            transforms:
+            - op: zscore
+            - op: negate
+            - op: scale
+              params:
+                factor: 10.0
+        trending: null
+        mean_reversion: null
+        chop: null
+    aux_feeds: []
+  manifest:
+    block:
+      kind: forecast
+      config_paths:
+      - /strategies/regimes/unknown/components/0
+    scaffolding:
+    - /regime_detector
+    rationale: The shock_reversal component (1-bar price move normalized by zscore,
+      negated for reversal signal) implements the hypothesis block. Ungated regime
+      detector (no components, no rules) is scaffolding required by config structure
+      but not part of the idea itself.
+  criteria_from: hypothesis_generation
+  source:
+    origin: reader
+    proposal_ref: runs/run_070/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_070-1
+    source_run: run_070
+    parent_hypothesis_id: HOURLY_SHOCK_REVERSAL_MEAN_REVERSION_1H_BTC_ETH
+    hypothesis_id: HOURLY_SHOCK_REVERSAL_MEAN_REVERSION_1H_BTC_ETH__trade_efficiency-run_070-1
+    decision_ref: runs/run_070/artifacts/decision_record.yaml
+    proposal:
+      kind: patch
+      patch:
+      - component_id: shock_reversal
+        field: params.period
+        before: 1
+        after: 2
+      evidence:
+      - 'variants.base.slices.overall.trade_less_often: boundary_recross_rate=0.9926
+        and frequency_vs_volatility_ratio=3696 indicate trading frequency ~3700x higher
+        than volatility regime warrants (expected ratio ~1.0), causing constant whipsawing
+        at entry/exit boundary'
+      - 'variants.base.slices.overall: exit_efficiency_median=-0.0266 obscures exit_efficiency_mean=-0.5718;
+        pct_pnl_from_worst_decile_trades=140.65% with signal_flip_pct=99.16% show
+        worst trades held until signal reversal, driven by 1-bar period oscillation
+        crossing position threshold repeatedly before final flip'
+      - 'per_window consistency (all 6 windows 2022-01 through 2023-09): boundary_recross_rate
+        >=0.9926 in every window, exit_efficiency_mean ranges -0.38 to -0.86, confirming
+        high-frequency oscillation pattern is systematic across entire backtest period'
+      - 'Cross-variant: shock_lookback_250 design variant shows boundary_recross_rate=0.9929
+        (nearly identical oscillation), asset variants sol_generalization and uni_defi
+        show degraded exit_efficiency (medians -0.1149 and -0.1183 vs base -0.0266),
+        indicating 1-bar period sensitivity harms both base signal and cross-asset
+        generalization'
+    resolved_patch:
+    - path: /strategies/regimes/unknown/components/0/params/period
+      value: 2
+    base_config_ref: runs/run_070/artifacts/variants/base/strategy_config.json
+    expected_config_sha256: c4ecc264b16110cd04e9dd7565354e33d2fe96fd43195aaa2a799f50e084d575
+    expected_manifest_sha256: c2fbf51700b8d2b45d0fa42a7caed7dfde1b810095afb63a94c767ffe8f5ea40
+research_only: false

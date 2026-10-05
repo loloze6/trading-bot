@@ -3,7 +3,8 @@ E-059 S2a code-review fixes (review of d0038635..69b684f9). Every test here
 fails on 69b684f9 and passes after the fix commit. Numbering follows the
 review: 1 novelty key, 2 collapse, 3 DONE-branch atomicity, 4 1a pass_rule
 checks, 5 1a re-run, 6 SKILL.md, 7 stop condition, 8 proposal ids, 9 truthful
-record, 10 quarantine path, plus the 5a manifest check.
+record, 10 quarantine path, plus the 5a manifest check (replaced by CUL-405:
+the manifest is written by code, not compared).
 """
 from __future__ import annotations
 
@@ -426,22 +427,135 @@ def test_quarantine_done_path_runs_decide_next(campaign_root, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# 5a: the copied block manifest is checked too
+# 5a, CUL-405 (operator, 2026-10-05): the pass-through manifest is written by
+# code from the brief; the 5a guard keeps the config hash and no longer
+# compares the manifest (run_072: 1b edited its free-text rationale).
 # ---------------------------------------------------------------------------
 
-def test_5a_stops_on_a_drifted_manifest(tmp_path):
+_FIX_405 = Path(__file__).resolve().parent / "fixtures" / "cul_405" / "run_072"
+
+
+def _pass_through_arts(tmp_path, brief_manifest=None, stamp=True):
     cfg = _base_config(min_abs=0.8)
     arts = _stage_5a(tmp_path, cfg, dn.config_sha256(cfg))
     brief = yaml.safe_load((arts / "research_brief.yaml").read_text(encoding="utf-8"))
-    brief["candidate"]["source"]["expected_manifest_sha256"] = dn.config_sha256(_MANIFEST)
+    brief["candidate"]["manifest"] = copy.deepcopy(brief_manifest or _MANIFEST)
+    if stamp:
+        brief["candidate"]["source"]["expected_manifest_sha256"] = dn.config_sha256(_MANIFEST)
     (arts / "research_brief.yaml").write_text(yaml.safe_dump(brief), encoding="utf-8")
+    return arts
+
+
+def _manifest(arts):
+    return yaml.safe_load((arts / "block_manifest.yaml").read_text(encoding="utf-8"))
+
+
+def test_5a_no_longer_compares_the_manifest(tmp_path):
+    arts = _pass_through_arts(tmp_path)
+    edited = copy.deepcopy(_MANIFEST)
+    edited["rationale"] = "the 2-bar funding MR block"            # run_072's kind of edit
+    (arts / "block_manifest.yaml").write_text(yaml.safe_dump(edited), encoding="utf-8")
+    rpr._check_pass_through_config_hash(arts)                      # no raise
+
+
+def test_code_replaces_1bs_manifest_with_the_briefs(tmp_path, capsys):
+    arts = _pass_through_arts(tmp_path)
+    edited = copy.deepcopy(_MANIFEST)
+    edited["rationale"] = "the 2-bar funding MR block"
+    (arts / "block_manifest.yaml").write_text(yaml.safe_dump(edited), encoding="utf-8")
+    assert rpr._write_pass_through_manifest(arts) is True
+    assert _manifest(arts) == _MANIFEST
+    assert "1b's own version was replaced" in capsys.readouterr().out
+
+
+def test_code_writes_the_manifest_when_1b_wrote_none(tmp_path, capsys):
+    arts = _pass_through_arts(tmp_path)
+    assert rpr._write_pass_through_manifest(arts) is True
+    assert _manifest(arts) == _MANIFEST
+    assert "replaced" not in capsys.readouterr().out
+
+
+def test_code_replaces_a_broken_1b_manifest(tmp_path):
+    arts = _pass_through_arts(tmp_path)
+    (arts / "block_manifest.yaml").write_text("block: [unclosed\n", encoding="utf-8")
+    assert rpr._write_pass_through_manifest(arts) is True
+    assert _manifest(arts) == _MANIFEST
+
+
+def test_a_brief_manifest_that_is_not_the_stamped_one_raises(tmp_path):
     drifted = copy.deepcopy(_MANIFEST)
     drifted["block"]["config_paths"] = ["/strategies"]
-    (arts / "block_manifest.yaml").write_text(yaml.safe_dump(drifted), encoding="utf-8")
-    with pytest.raises(RuntimeError, match="block_manifest.yaml"):
-        rpr._check_pass_through_config_hash(arts)
+    arts = _pass_through_arts(tmp_path, brief_manifest=drifted)
+    with pytest.raises(RuntimeError, match="expected_manifest_sha256"):
+        rpr._write_pass_through_manifest(arts)
+    assert not (arts / "block_manifest.yaml").exists()
+
+
+def test_no_manifest_written_for_other_briefs(tmp_path):
+    arts = _stage_5a(tmp_path / "a", _base_config(), None)      # not a decide_next patch
+    assert rpr._write_pass_through_manifest(arts) is False
+    assert not (arts / "block_manifest.yaml").exists()
+    cfg = _base_config(min_abs=0.8)                                # a composition patch:
+    arts = _stage_5a(tmp_path / "b", cfg, dn.config_sha256(cfg))   # config hash, no manifest
+    assert rpr._write_pass_through_manifest(arts) is False
+    assert not (arts / "block_manifest.yaml").exists()
+
+
+def test_spec_ready_writes_the_manifest_before_any_manifest_check(tmp_path, monkeypatch):
+    arts = _pass_through_arts(tmp_path)
+    edited = copy.deepcopy(_MANIFEST)
+    edited["rationale"] = "edited by 1b"
+    (arts / "block_manifest.yaml").write_text(yaml.safe_dump(edited), encoding="utf-8")
+    (arts / "decision.yaml").write_text(yaml.safe_dump({"status": "spec_ready"}),
+                                        encoding="utf-8")
+    seen = []
+    monkeypatch.setattr(rpr, "_clear_component_gap_retry", lambda path: None)
+    monkeypatch.setattr(rpr, "_record_claim_match", lambda path: None)
+    monkeypatch.setattr(rpr, "_route_block_manifest_check",
+                        lambda path: seen.append(_manifest(path / "artifacts")) or "x")
+    assert rpr.determine_post_strategy_config_authoring_route(tmp_path) == "x"
+    assert seen == [_MANIFEST]
+
+
+def test_run_072_now_passes_the_pass_through_check(tmp_path):
+    """The real run_072 files (fixture): 1b's manifest differs from the brief's only
+    in `rationale`; before CUL-405 5a refused the run. Now code writes the
+    brief's manifest and the config guard passes on 1b's real config copy."""
+    arts = tmp_path / "artifacts"
+    arts.mkdir()
+    for name in ("research_brief.yaml", "block_manifest.yaml", "backtest_spec.yaml"):
+        (arts / name).write_bytes((_FIX_405 / name).read_bytes())
+    brief = yaml.safe_load((arts / "research_brief.yaml").read_text(encoding="utf-8"))
+    one_bs = _manifest(arts)
+    assert one_bs != brief["candidate"]["manifest"]
+    assert {k for k in one_bs if one_bs[k] != brief["candidate"]["manifest"].get(k)} == {
+        "rationale"}
+    assert rpr._write_pass_through_manifest(arts) is True
+    source, written = brief["candidate"]["manifest"], _manifest(arts)
+    assert {k: v for k, v in written.items() if k != "rationale"} == {
+        k: v for k, v in source.items() if k != "rationale"}       # block + scaffolding verbatim
+    # review: the source rationale says "1-bar"; code names the patch so it is not a lie
+    assert written["rationale"].startswith(source["rationale"].rstrip())
+    assert ("[Code note: this run's config is the source run's with "
+            "runs/run_070/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_070-1 "
+            "applied (/strategies/regimes/unknown/components/0/params/period=2)") in written[
+        "rationale"]
+    rpr._check_pass_through_config_hash(arts)                      # no raise
+
+
+def test_an_invalid_code_written_manifest_stops_without_a_1b_retry(tmp_path, monkeypatch):
+    """Review: 1b cannot change a code-written manifest, so no retry is spent."""
+    arts = _pass_through_arts(tmp_path)
     (arts / "block_manifest.yaml").write_text(yaml.safe_dump(_MANIFEST), encoding="utf-8")
-    rpr._check_pass_through_config_hash(arts)
+    monkeypatch.setattr(rpr, "_block_manifest_error", lambda path: "a scaffolding path is gone")
+    monkeypatch.setattr(rpr, "_base_forecast_rule_violations", lambda path: [])
+    monkeypatch.setattr(rpr, "load_yaml", lambda p: {} if p.name == "pipeline_state.yaml"
+                        else yaml.safe_load(Path(p).read_text(encoding="utf-8")))
+    calls = []
+    monkeypatch.setattr(rpr, "update_state", lambda **k: calls.append(k))
+    with pytest.raises(RuntimeError, match="no retry spent"):
+        rpr._route_block_manifest_check(tmp_path)
+    assert calls == []
 
 
 def test_candidate_brief_carries_the_expected_manifest_hash(tmp_path):

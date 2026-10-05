@@ -139,6 +139,31 @@ def test_claim_match_records_block_visibility(claim, want, no_revision_call):
     assert doc["block_visibility"] == want
 
 
+@pytest.mark.parametrize("claim,want", [(_claim(), "ok"), (_c(CLOSE_Q), "blind")])
+def test_a_decide_next_patch_card_is_matched_on_the_code_written_manifest(
+        claim, want, monkeypatch, no_revision_call):
+    """CUL-405 + CUL-406 through the real 1b route: 1b edited the manifest's
+    rationale (run_072); code writes the brief's manifest back, and the patch
+    card's own claim gets a real visibility result instead of `exempt`."""
+    if want == "blind":   # a blind claim asks for the one revision: none here
+        monkeypatch.setattr(rpr, "_claim_revision_after_1b", lambda *a, **k: None)
+    _set_orchestrator(ON)
+    run_dir = _authored_1b("run_953", GOOD)
+    arts = run_dir / "artifacts"
+    source_manifest = rpr.load_yaml(arts / "block_manifest.yaml")
+    rpr.save_yaml(arts / "research_brief.yaml", {"candidate": {
+        "manifest": copy.deepcopy(source_manifest),
+        "source": {"expected_config_sha256": "c" * 64,
+                   "expected_manifest_sha256": rpr._canonical_json_sha256(source_manifest)}}})
+    edited = dict(copy.deepcopy(source_manifest), rationale="edited by 1b")
+    rpr.save_yaml(arts / "block_manifest.yaml", edited)
+    rpr.save_yaml(arts / "hypothesis_card.yaml", dict(CARD, claim=claim, pass_through=True))
+    assert rpr.determine_post_strategy_config_authoring_route(run_dir) == "innovation_expansion"
+    assert rpr.load_yaml(arts / "block_manifest.yaml") == source_manifest
+    doc = rpr.load_yaml(arts / "claim_match.yaml")
+    assert doc.get("status") != "exempt" and doc["block_visibility"] == want
+
+
 def test_claim_match_exempt_is_not_applicable(monkeypatch, no_revision_call):
     _set_orchestrator(ON)
     run_dir = _authored_1b("run_951", GOOD)

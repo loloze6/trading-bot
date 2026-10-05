@@ -256,3 +256,171 @@ tests:
 3. **After both PRs, with the operator's go:** `--unpark E068_hourly_shock_reversal_kraken_perp`,
    then `--resume --once`, to finish (b) and (c); this file is then updated. Held entries stay
    held; slices 4 and 5 wait for (b) and (c).
+
+## Final run (2026-10-05): readers v3 switched on, but no run reached the readers
+
+**In short:** two launches, both stopped before any backtest, so no reader ran. Readers v3 is
+therefore still unmeasured on a real run. Spend: $0.832 of the operator's $3 cap. The
+holdout was not touched: `holdout_reserved: false` on both runs, and no sealed path in either
+run folder. Every call took 1 turn. Two new blockers were found (CUL-405, CUL-406).
+
+**Setup**
+- `c4/flag-set` at `54356e88`: master including PR #330, the fix so that a reader input that
+  cannot be written never stops the readers.
+- Flags: the C4 set plus `claim_tests`, `reader_findings` and `operator_approval`, all on and
+  read back through the code's own flag readers. Weighted token budget: 1,800,000 per run.
+- Queue: all 8 `blocked_on_e068` entries converted to `blocked_on_operator_approval`, each with
+  a note; `P4_ts_trend` left as it was. The dry run passed with the real entry ready.
+
+| Run | Entry | Released by | What happened | Spend |
+|---|---|---|---|---|
+| run_071 | `E068_hourly_shock_reversal_kraken_perp__more_1` (R2: more ideas for the hourly brief) | `--approve`, then `--once` | 1a wrote a new idea. 1b parked it as `component_gap`. No backtest. | $0.305 |
+| run_072 | `trade_efficiency-run_070-1` (reader patch, `shock_reversal.params.period` 1 -> 2) | the operator's pre-approved fallback: `--approve`, then `--once` | 1a, 1b and step 2 ran. `backtest_specification` refused the run with "pass-through mismatch". Status `failed`. | $0.527 |
+
+After this, the operator's limit of two launches is reached. No other entry was approved or
+launched.
+
+### (a) The claim card
+
+**run_071, written by 1a: `HOURLY_SHOCK_CONTINUATION_MOMENTUM_1H_BTC_ETH`.** It is a new idea:
+continuation, the opposite of run_070's reversal.
+
+```yaml
+statement: 'After high-conviction directional 1h candles (body_fraction > 70%, close in top or bottom
+  10% of intrabar range), price continues in the same direction over 1-4 hours, indicating
+  herding-driven momentum rather than mean-reversion.'
+kind: conditional_behaviour
+tests:
+- name: continuation_by_conviction
+  selector: {kind: event, field: forecast, op: '>=', value: 12}
+  outcome: {kind: fwd_return, horizons: [1, 2, 3, 4]}
+  baseline: {kind: complement}
+  statistic: mean_diff
+  direction: greater
+  floor: {min_events: 40, min_windows: 3}
+  consistency: {unit: window, min_same_sign: 3}
+```
+
+- **Valid first time:** `claim_check.yaml` has one attempt with `errors: []`;
+  `claim_test_status.yaml` is `usable: true`; `claim_power.yaml` is `ok` (17,520 bars x 2 coins,
+  no warning).
+- **Did the test read the block's signal? Yes.** It selects on the block's own `forecast`.
+  run_070's tests read the price level, so this is the improvement PR #327 aimed for.
+- **But only half the claim is tested.** The statement covers both directions; the test selects
+  only `forecast >= 12`, the up side. Added to CUL-397.
+- **The visibility check and the revision were not triggered.** Both run after 1b, and 1b parked
+  the run. run_071 has no `claim_match.yaml` and no `claim_revision.yaml`.
+
+**run_072, the reader patch:** a "pass-through" card (config, manifest and criteria come from
+upstream). It carries a sensible claim: a `direction_forecast` whose test is the rank IC of
+`forecast != 0` at horizons 1-3, so it reads the block. But every claim step marked it exempt:
+- `claim_check.yaml` and `claim_test_status.yaml` (`usable: false`);
+- `claim_match.yaml` (`exempt`, visibility `not_applicable`);
+- `claim_revision.yaml` (`not_applicable`).
+
+So a reader patch never has its claim measured (CUL-406).
+
+### (b) The claim measurement and the finding in campaign memory
+
+**Not reached.** Neither run backtested anything. There is no `claim_test.yaml`, no
+`claim_status.yaml`, no trial row in `campaign_state.yaml` and no run_071/run_072 entry in
+`campaign_memory.yaml`. That is correct, since nothing was graded. On run_072 the measurement
+would have found no usable test anyway, because the card was exempt (CUL-406).
+
+### (c) The readers
+
+**Not reached in either run.** So none of slice 5's machinery has run on real output yet:
+- the skip rules;
+- the claim digest and the earlier-findings summary;
+- side findings, checked patches and invented-name checks;
+- PR #330's missing-input path.
+
+The one reader-related signal: decide-next, after run_071, warned again about run_070's old
+regime_power proposal ("unknown component class `VarianceRatioRegimeComponent`, nearest real
+class `VarianceRatioComponent`"). That is the PR #326 warning working, but on a v2 proposal,
+and it repeats at every decide-next.
+
+### (d) What decide-next created
+
+**Nothing.**
+- **After run_071:** it stopped with `no_eligible_candidate`.
+  - The 5 candidates were older reader proposals (regime_power from runs 065/066/070,
+    trade_efficiency from runs 065/066); their gates ruled all 5 out.
+  - R2 found no open brief: 3 exhausted, 5 legacy, and 2 held by an operator hold.
+  - It listed the 7 entries awaiting approval.
+- **After run_072:** decide-next did not run (the run halted with `unhandled_exception`).
+
+No entry became `ready` without the operator. The queue now holds:
+- 6 entries `blocked_on_operator_approval`;
+- `E068_..._more_1` as `paused:waiting_for_component`;
+- `trade_efficiency-run_070-1` as `paused:unhandled_exception`;
+- `P4_ts_trend` unchanged.
+
+### (e) Cost and weighted tokens per stage
+
+| Stage | run_070 | run_071 | run_072 |
+|---|---|---|---|
+| 1a hypothesis_generation | $0.207 / 146,348 | $0.200 / 138,296 | $0.228 / 166,242 |
+| 1b strategy_config_authoring | $0.373 / 272,571 (3 calls) | $0.105 / 71,666 | $0.124 / 90,290 |
+| 2 innovation_expansion | $0.427 / 304,922 (3 calls) | not reached | $0.175 / 134,754 |
+| readers | $0.715 / 488,414 | not reached | not reached |
+| **Run total** | **$1.723 / 1,212,255** | **$0.305 / 209,962 (11.7% of 1.8M)** | **$0.527 / 391,286 (21.7%)** |
+
+- **Readers:** no comparison with run_070's $0.715 and 488k is possible yet.
+- **Single calls cost the same as run_070:** a 1b call cost $0.105-0.124 (run_070: about $0.124
+  per call), and a step-2 call cost $0.175 (run_070: about $0.142 per call).
+- **Budget headroom:** both runs were far under 1.8M. A run_072 that reached the readers would
+  have had about 1.41M weighted tokens left for them, roughly 2.9 times run_070's whole reader
+  stage.
+
+### (f) Warning artifacts
+
+- **run_071:**
+  - `claim_power.yaml` is `ok`.
+  - `decision.yaml` is a `component_gap` with a `tried:` list of 3 configurations: Donchian(20),
+    Donchian + PriceEvolution(1), and PriceEvolution(1) + zscore + scale. 1b showed what it
+    tried, as O-21 requires.
+  - **The park is only partly justified (corrected after the operator's review).**
+    - On a 24/7 market, a bar's open is the previous bar's close, or very nearly; this is not yet
+      checked on the cache. So the body (close-open) is about the 1-bar move,
+      `PriceEvolutionComponent(period=1)`.
+    - Normalised by its usual size (zscore), that is exactly the form the operator accepted in
+      O-21 for run_070. 1b's own `tried:` list rejected it as "a different yardstick", which
+      contradicts that decision.
+    - What really cannot be built exactly is the rest: dividing by the current bar's own range
+      (high-low), and "close near the bar's high or low". No component reads the current bar's
+      high and low, except inside ATR smoothing (ADX, Keltner).
+    - A row was added to `component_requests.yaml`.
+    - Finding: 1b's park reason ignores O-21's accepted approximation.
+  - 1a wrote a single `hypothesis_card_2.yaml`; it was used as the card (the PR #321 path).
+  - Schema warning: `hypothesis_card.yaml` has `edge_source.requires_new_feed: false`, but the
+    schema wants a string (CUL-404).
+  - `optional_input never resolved: artifacts/findings_carryover.yaml` (1b).
+- **run_072:**
+  - "run_072 has no usable claim test (exempt: pass_through card)" (CUL-406).
+  - Schema warnings: `hypothesis_card.yaml` has an extra field `nearest_library_analog`;
+    `backtest_spec.yaml` is missing `hypothesis_id` (CUL-404).
+  - `optional_input never resolved`: `findings_carryover.yaml` (1b) and `refinement_notes.yaml`
+    (step 2).
+- **No `reader_input_gaps.yaml`:** the readers were never reached.
+
+### (g) What broke, and tickets
+
+| # | What | Ticket |
+|---|---|---|
+| 1 | **A reader patch cannot reach its backtest.** 1b copied the config exactly but changed one sentence of `block_manifest.yaml`'s free-text `rationale` ("1-bar" became "2-bar"). The pass-through check hashes the whole manifest, prose included, so it refused the run. The diff between the two manifests is that one field. Every patch that changes a number the rationale mentions will fail the same way. | CUL-405 (high; operator decision: hash structure only, or let code write the manifest) |
+| 2 | **Reader-patch cards are exempt from claim tests**, so patch runs, decide-next's most common follow-up, would never produce a claim measurement or a finding. | CUL-406 (high; operator decision) |
+| 3 | run_071's test covers only the up side of a two-sided statement. | CUL-397 (comment added) |
+| 4 | Warn-only schema mismatches on real cards. | CUL-404 (low) |
+| 5 | The `VarianceRatioRegimeComponent` warning repeats at every decide-next for an old proposal. | noted here, no ticket |
+
+### What a next validation run needs
+
+To see the readers, a run must reach a backtest. Either:
+- decide CUL-405 (and ideally CUL-406), then `--unpark` `trade_efficiency-run_070-1` and run
+  `--once`; or
+- approve a 1a idea that the catalogue can build.
+
+run_071 would need a body-fraction component first (OHLC: open, high, low). That is a component
+decision for the operator. The optional "approve a reader side finding" run still needs readers
+v3 to have produced one.

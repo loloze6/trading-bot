@@ -3199,9 +3199,12 @@ addendum `workflow_artifacts/skills/hypothesis-design/DECIDE_NEXT_CANDIDATES.md`
 (flag on only); and after EVERY completion of 1a `_write_pass_rule_from_card`
 rebuilds the pass_rule from the current card's menu criteria (only `id` plus a
 menu entry's `card_overridable` fields; K3 lint; pre-flight). The marker is
-dropped once the run moves past 1a. A patch's resolved config and manifest pass
-through to 1b; 5a stops if either hash differs from
-`candidate.source.expected_config_sha256` / `expected_manifest_sha256`. New
+dropped once the run moves past 1a. A patch's resolved config passes through
+to 1b; 5a stops if its hash differs from `candidate.source.expected_config_sha256`.
+The patch's block manifest is written by code from the brief's `candidate.manifest`
+when 1b answers `spec_ready` (CUL-405, D-074); 1b's own manifest, if any, is
+replaced, so a 1b edit of its free-text `rationale` cannot refuse the run. The
+patch card's claim is checked and measured like any card's (CUL-406). New
 queue fields (closed schema, `tools/record_schema.py`): `origin`,
 `proposal_ref`, `decision_ref`, `card_ref`, `brief_status`, `parked_reason`,
 and status `queued` (never auto-picked).

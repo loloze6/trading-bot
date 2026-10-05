@@ -597,19 +597,57 @@ def test_criteria_only_claim_is_recorded_as_such(monkeypatch):
     assert _status(run_dir)["reason"] == "criteria_refs_only"
 
 
-@pytest.mark.parametrize("brief,why", [
-    ({"config": {"a": 1}, "manifest": {"b": 1}, "criteria": [{"id": "x"}], "source": "op"},
-     "pass_through"),
-    ({"candidate": {"composition": {"registry_hash": "h"}}}, "composition"),
-], ids=["pass_through", "composition"])
-def test_exempt_cards_are_decided_by_the_runs_inputs(monkeypatch, brief, why):
+def test_exempt_cards_are_decided_by_the_runs_inputs(monkeypatch):
+    """Only a composition run is exempt (CUL-406, operator 2026-10-05)."""
     _set_orchestrator(ON)
     run_dir = _card_run("run_918", pass_through=True)
+    rpr.save_yaml(run_dir / "artifacts" / "research_brief.yaml",
+                  {"candidate": {"composition": {"registry_hash": "h"}}})
+    calls = _fake_1a(monkeypatch, run_dir, [])
+    rpr._check_claim_after_1a("run_918", run_dir, [], {})
+    st = _status(run_dir)
+    assert calls == [] and st["reason"] == "exempt" and "composition" in st["detail"]
+
+
+_OPERATOR_PASS_THROUGH = {"config": {"a": 1}, "manifest": {"b": 1}, "criteria": [{"id": "x"}],
+                          "source": "op"}
+_DECIDE_NEXT_PATCH = {"candidate": {"config": {"a": 1}, "manifest": {"b": 1},
+                                    "source": {"expected_config_sha256": "c" * 64,
+                                               "expected_manifest_sha256": "m" * 64}}}
+
+
+@pytest.mark.parametrize("brief", [_OPERATOR_PASS_THROUGH, _DECIDE_NEXT_PATCH],
+                         ids=["operator_pass_through", "decide_next_patch"])
+def test_a_pass_through_card_is_checked_like_any_card(monkeypatch, brief):
+    """CUL-406: no longer exempt. A pass-through card without a claim gets 1a's
+    one retry like any other card; with a valid claim then it is usable."""
+    _set_orchestrator(ON)
+    run_dir = _card_run("run_918", pass_through=True)
+    rpr.save_yaml(run_dir / "artifacts" / "research_brief.yaml", brief)
+    calls = _fake_1a(monkeypatch, run_dir, [_claim()])
+    rpr._check_claim_after_1a("run_918", run_dir, [], {})
+    assert len(calls) == 1 and "claim` mapping is required" in calls[0]
+    assert rpr._claim_check_exempt(run_dir, {"pass_through": True}) is None
+    assert _status(run_dir)["usable"] is True
+
+
+def test_claim_tests_md_asks_a_pass_through_card_for_its_claim():
+    text = (Path(rpr.__file__).resolve().parent.parent / "workflow_artifacts" / "skills"
+            / "hypothesis-design" / "CLAIM_TESTS.md").read_text(encoding="utf-8")
+    assert "needs no `claim`" not in text
+    assert "A pass-through card carries a `claim` too" in text
+
+
+@pytest.mark.parametrize("brief", [_OPERATOR_PASS_THROUGH, _DECIDE_NEXT_PATCH],
+                         ids=["operator_pass_through", "decide_next_patch"])
+def test_a_pass_through_card_with_a_claim_is_usable_at_once(monkeypatch, brief):
+    _set_orchestrator(ON)
+    run_dir = _card_run("run_918", pass_through=True, claim=_claim())
     rpr.save_yaml(run_dir / "artifacts" / "research_brief.yaml", brief)
     calls = _fake_1a(monkeypatch, run_dir, [])
     rpr._check_claim_after_1a("run_918", run_dir, [], {})
     st = _status(run_dir)
-    assert calls == [] and st["reason"] == "exempt" and why in st["detail"]
+    assert calls == [] and st["usable"] is True and st["reason"] is None
 
 
 def test_a_card_cannot_exempt_itself(monkeypatch):
@@ -927,14 +965,15 @@ def test_gate_before_1b_records_and_never_raises(claim, reason):
     assert not rpr.load_yaml(run_dir / "pipeline_state.yaml").get(rpr.PARKED_KEY)
 
 
-def test_gate_before_1b_exempts_a_real_pass_through_card():
+def test_gate_before_1b_checks_a_pass_through_card():
+    """CUL-406: a pass-through card is checked at the gate too (no claim: recorded
+    as no_claim, never raised, never parked)."""
     _set_orchestrator(ON)
     run_dir = _card_run("run_951", pass_through=True)
-    rpr.save_yaml(run_dir / "artifacts" / "research_brief.yaml",
-                  {"config": {"a": 1}, "manifest": {"b": 1}, "criteria": [{"id": "x"}],
-                   "source": "op"})
+    rpr.save_yaml(run_dir / "artifacts" / "research_brief.yaml", _OPERATOR_PASS_THROUGH)
     assert rpr._claim_gate_before_1b(run_dir, "run_951") is None
-    assert _status(run_dir)["reason"] == "exempt"
+    assert _status(run_dir)["reason"] == "no_claim"
+    assert not rpr.load_yaml(run_dir / "pipeline_state.yaml").get(rpr.PARKED_KEY)
 
 
 def test_gate_before_1b_skips_a_run_whose_1a_check_ran(monkeypatch):
