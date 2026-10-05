@@ -4023,6 +4023,42 @@ def _reader_findings_enabled(cfg: dict | None = None) -> bool:
     return value
 
 
+def _nearest_build_enabled(cfg: dict | None = None) -> bool:
+    """E-068 (operator, 2026-10-05): step 1b builds the nearest version of an
+    idea instead of parking it. False when the key, the section or the config
+    file is absent. A non-bool value raises. Requires, loudly,
+    orchestrator.config_direct_authoring.enabled (1b runs only in that flow).
+
+    While false: byte-identical -- 1b's inputs, its routing, the finding, the
+    readers' digest and decide-next's request count are untouched.
+    While true: 1b gets NEAREST_BUILD.md (flag-on-only input; the SKILL is
+    untouched), code records artifacts/deviations.yaml and the deviations'
+    missing pieces as component requests (kind `deviation`), shows the
+    deviations first in the finding and the readers' digest, and a
+    component_gap must name `core_lost` (else O-21's one retry)."""
+    cfg = _orchestrator_config(cfg)
+    nb_cfg = ((cfg.get("orchestrator") or {}).get("nearest_build") or {})
+    value = nb_cfg.get("enabled", False)
+    if not isinstance(value, bool):
+        raise ValueError(
+            f"orchestrator.nearest_build.enabled={value!r} is not a real boolean "
+            f"(got {type(value).__name__}) -- write an unquoted `true` or `false` in "
+            f"config/campaign_config.yaml, not a quoted string or null."
+        )
+    if value and not _flag_dep(_config_direct_authoring_enabled, cfg):
+        raise ValueError(
+            "orchestrator.nearest_build.enabled=true requires "
+            "orchestrator.config_direct_authoring.enabled=true as well -- step 1b, the "
+            "stage it changes, runs only in the config-direct flow. Enable them together.")
+    return value
+
+
+def _nearest_build_module():
+    _json_pointer_module()  # puts tools/ on sys.path
+    import nearest_build as _nb
+    return _nb
+
+
 _SPECIALIST_READERS_HANDOFF = "protocol_to_specialist_readers.yaml"
 _READER_OUTPUT_BLOCK_RE = re.compile(r"```ya?ml[^\n]*\n(.*?)```", re.DOTALL)
 
@@ -9111,6 +9147,9 @@ async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | 
     _apply_block_manifest_retry_context(stage_name, handoff, RUN_DIR)
     # O-21: the component_gap `tried` retry message (strategy_config_authoring only).
     _apply_component_gap_retry_context(stage_name, handoff, RUN_DIR)
+    # E-068 nearest build: no stale deviations record; NEAREST_BUILD.md under the flag only.
+    _clear_stale_deviations(stage_name, RUN_DIR)
+    _apply_nearest_build_context(stage_name, handoff, RUN_DIR)
     # E-068 slice 2: 1a's slot menu and claim-retry context, under claim_tests only.
     _apply_claim_tests_context(stage_name, handoff, RUN_DIR)
     # E-061 C2 S2c: Step 2's variant-shape retry context (see helper docstring).
@@ -15369,8 +15408,12 @@ def _component_gap_tried_problem(decision: dict) -> str | None:
 def _route_component_gap_tried(path: Path, decision: dict) -> tuple:
     """(route, warning). route is "strategy_config_authoring" for the one O-21
     retry, else None (the caller parks or pauses as before); warning is the
-    problem still present after the retry (recorded, never a stop)."""
+    problem still present after the retry (recorded, never a stop).
+    E-068 nearest build (flag on only): a component_gap must also name
+    `core_lost`; a missing one shares O-21's single retry."""
     problem = _component_gap_tried_problem(decision)
+    if problem is None and _nearest_build_enabled():
+        problem = _nearest_build_module().core_lost_problem(decision)
     state = load_yaml(path / "pipeline_state.yaml") or {}
     attempts = (state.get(_COMPONENT_GAP_RETRY_STATE_KEY) or {}).get("attempts", 0)
     if problem is None:
@@ -15401,6 +15444,69 @@ def _apply_component_gap_retry_context(stage_name: str, handoff: dict, run_dir: 
         f"component_gap, refused: {retry['last_error']}. Either build the closest composition "
         f"(spec_ready, with a DEVIATION entry in config_rationale) or answer component_gap again "
         f"with a complete `tried` list in decision.yaml.")
+
+
+NEAREST_BUILD_NOTE = "../../workflow_artifacts/skills/strategy-config-authoring/NEAREST_BUILD.md"
+
+
+def _apply_nearest_build_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
+    """E-068 nearest build: strategy_config_authoring gets NEAREST_BUILD.md, only
+    under orchestrator.nearest_build (another stage or flag off: no-op, the
+    handoff is never mutated, so every flag-off prompt is byte-identical)."""
+    if stage_name != "strategy_config_authoring" or not _nearest_build_enabled():
+        return
+    required = handoff.setdefault("required_inputs", [])
+    if not any(req.get("path") == NEAREST_BUILD_NOTE for req in required):
+        required.append({"path": NEAREST_BUILD_NOTE,
+                         "reason": "E-068: build the nearest version of the idea and list each "
+                                   "difference in decision.yaml `deviations`; component_gap only "
+                                   "with `core_lost`."})
+
+
+def _clear_stale_deviations(stage_name: str, run_dir: Path) -> None:
+    """E-068 nearest build: a new 1b pass starts without an earlier pass's
+    artifacts/deviations.yaml (written only under the flag, so a no-op
+    otherwise)."""
+    if stage_name != "strategy_config_authoring":
+        return
+    stale = Path(run_dir) / "artifacts" / _nearest_build_module().DEVIATIONS_FILE
+    if stale.exists():
+        stale.unlink()
+
+
+def _record_nearest_build(path: Path) -> None:
+    """E-068 nearest build, after 1b's answer is routed (flag on only; off:
+    no-op, nothing read): artifacts/deviations.yaml from decision.yaml and
+    backtest_spec.yaml; on spec_ready, a component-request row (kind
+    `deviation`, the run continues) per deviation that names a missing piece.
+    Information only: never raises, never changes the route."""
+    if not _nearest_build_enabled():
+        return
+    try:
+        nb = _nearest_build_module()
+        arts = Path(path) / "artifacts"
+        decision = load_yaml(arts / "decision.yaml") or {}
+        spec_path = arts / "backtest_spec.yaml"
+        spec = (load_yaml(spec_path) or {}) if spec_path.exists() else {}
+        run_id = Path(path).name
+        record = nb.build_record(run_id, decision, spec)
+        save_yaml(arts / nb.DEVIATIONS_FILE, record)
+        rows = nb.request_rows(run_id, record)
+        if rows:
+            _crr.append_component_requests(
+                ROOT / _crr.COMPONENT_REQUESTS_REL, rows,
+                key=lambda r: (r.get("run_id"), r.get("kind"), r.get("reason")))
+        block = nb.approximation_block(record)
+        if block:
+            print(f"🧩 [E-068] {block['line']} ({block['n_deviations']} deviation(s); "
+                  f"artifacts/{nb.DEVIATIONS_FILE}; {len(rows)} missing piece(s) requested).")
+        elif record["status"] == nb.STATUS_PARKED:
+            core = record.get("core_lost") or {}
+            print(f"🅿️  [E-068] nearest build: the core is lost -- {core.get('clause')!r}: "
+                  f"{core.get('why')!r} (artifacts/{nb.DEVIATIONS_FILE}).")
+    except Exception as exc:  # noqa: BLE001 -- information only
+        print(f"⚠️  [E-068] nearest-build record could not be written ({exc}); the run "
+              f"continues.")
 
 
 def _apply_block_manifest_retry_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
@@ -15950,9 +16056,16 @@ def _record_claim_match(path: Path) -> None:
         warnings = cc.match_check(card.get("claim") or {}, kind)
         # E-068 3b: can ANY test see this block's output? (claim-level)
         visibility = cc.block_visibility(card.get("claim"), kind)
-        save_yaml(out, {"status": "mismatch" if warnings else "match",
-                        "manifest_kind": kind, "warnings": warnings,
-                        "block_visibility": visibility})
+        doc = {"status": "mismatch" if warnings else "match",
+               "manifest_kind": kind, "warnings": warnings,
+               "block_visibility": visibility}
+        if _nearest_build_enabled():  # E-068 nearest build: context only, never a warning
+            nb = _nearest_build_module()
+            block = nb.approximation_block(nb.load_record(Path(path) / "artifacts"))
+            if block:
+                doc["approximation"] = (f"{block['line']} -- the claim's tests measure the "
+                                        f"config as built, not the idea as written")
+        save_yaml(out, doc)
         for w in warnings:
             print(f"⚠️  [E-068] 1a/1b match warning ({w['check']}): {w['meaning']} -- "
                   f"expected {w['expected_block']!r}, manifest {kind!r}. The run continues.")
@@ -16814,6 +16927,7 @@ def determine_post_strategy_config_authoring_route(path: Path, *, routing_retire
         _write_pass_through_manifest(path / "artifacts")  # CUL-405: before any manifest check
         route = _route_block_manifest_check(path)
         if route == "innovation_expansion":
+            _record_nearest_build(path)  # E-068 nearest build; flag off: no-op
             _record_claim_match(path)  # E-068 slice 2: a warning only; flag off: no-op
         return route
     tried_warning = None
@@ -16821,14 +16935,18 @@ def determine_post_strategy_config_authoring_route(path: Path, *, routing_retire
         retry_route, tried_warning = _route_component_gap_tried(path, decision)
         if retry_route is not None:
             return retry_route
+        _record_nearest_build(path)  # E-068: core_lost in the run; flag off: no-op
     if status == "component_gap" and routing_retired:
         run_id = path.name
         reason = str(decision.get("rationale") or "component_gap (no rationale given)")
+        request = {"run_id": run_id, "stage": "strategy_config_authoring", "variant_id": None,
+                   "reason": reason, "blocking_issues": decision.get("blocking_issues") or [],
+                   "tried": decision.get("tried") or [], "tried_warning": tried_warning}
+        if _nearest_build_enabled():  # E-068: the clause that cannot be approximated
+            request["core_lost"] = _nearest_build_module().core_lost_of(decision)
         _crr.append_component_requests(
             ROOT / _crr.COMPONENT_REQUESTS_REL,
-            [{"run_id": run_id, "stage": "strategy_config_authoring", "variant_id": None,
-              "reason": reason, "blocking_issues": decision.get("blocking_issues") or [],
-              "tried": decision.get("tried") or [], "tried_warning": tried_warning}],
+            [request],
             unless=lambda r: (r.get("run_id") == run_id
                               and r.get("stage") == "strategy_config_authoring"
                               and r.get("reason") == reason))

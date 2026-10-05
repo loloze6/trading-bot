@@ -553,6 +553,16 @@ post-validation/post-expansion to pre-expansion.
 pauses for a human (`determine_post_strategy_config_authoring_route`,
 `run_phase1_research.py`) — the same shape `determine_post_spec_route` uses
 for stage 6, just a different success target.
+Under `orchestrator.nearest_build.enabled` (off by default; D-075), 1b builds
+the nearest version of an idea instead of parking it: it answers `spec_ready`
+with the closest config the catalogue allows and lists each difference in
+`decision.yaml` `deviations` (clause, built_instead, missing, effect). Code
+writes `artifacts/deviations.yaml`, adds each missing piece to
+`campaign_record/component_requests.yaml` as a `kind: deviation` row (never
+an `--unpark`, cap or request-count input), and shows the deviations first in
+the finding ("this run tested an approximation of the idea: ..."), the
+findings-summary row and the readers' digest. A `component_gap` must then
+name `core_lost: {clause, why}`, or it gets O-21's one retry.
 **2. Same "Ungated hypotheses" and "Forbidden" rules as `backtest-engineering`.**
 Carried over intact from that skill (E-056 Slice 3b's own pre-registered
 success signal for this rewrite was a byte-diff against the retired content

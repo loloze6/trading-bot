@@ -923,6 +923,26 @@ orchestrator:
       # never auto-picked. The
       # operator approves one with `run_campaign.py --approve <id>` (sets it
       # ready). Operator actions (`register`, --unpark, --resume) are unchanged.
+  nearest_build:
+    enabled: false
+      # E-068 (operator, 2026-10-05; D-075). OFF BY DEFAULT, read by
+      # run_phase1_research._nearest_build_enabled(). HARD DEPENDENCY: raises if
+      # true while config_direct_authoring.enabled is false/absent (step 1b, the
+      # stage it changes, runs only in that flow). While false: byte-identical.
+      #
+      # While true: step 1b builds the NEAREST version of an idea instead of
+      # parking it (workflow_artifacts/skills/strategy-config-authoring/
+      # NEAREST_BUILD.md, a flag-on-only input; the SKILL is untouched): the
+      # closest config the components and transforms allow, spec_ready, each
+      # difference in decision.yaml `deviations` (clause, built_instead,
+      # missing, effect). Code writes artifacts/deviations.yaml, appends each
+      # missing piece to campaign_record/component_requests.yaml as `kind:
+      # deviation, run_continued: true` (never an --unpark, quarantine-cap or
+      # decide-next request-count input), and shows the deviations FIRST in the
+      # finding ("this run tested an approximation of the idea: ..."), the
+      # findings summary row (a deviations count) and the readers' digest. A
+      # component_gap must name `core_lost: {clause, why}` (else O-21's one
+      # retry); it is recorded in deviations.yaml and on the request row.
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------
