@@ -897,6 +897,32 @@ def test_two_readers_with_the_same_tests_collapse():
     assert len(out) == 1 and out[0]["candidate_id"] == "profitability-run_070-1"
 
 
+def test_a_decision_record_with_side_findings_matches_its_schema():
+    jsonschema = pytest.importorskip("jsonschema")
+    schema = json.loads((SR_ROOT / "workflow_artifacts" / "schemas"
+                         / "decision_record.schema.json").read_text(encoding="utf-8"))
+    card = yaml.safe_load((FIX4 / "artifacts" / "hypothesis_card.yaml").read_text(
+        encoding="utf-8"))
+    repeat = _side("trade_efficiency", 1, claim=_claim(tests=[copy.deepcopy(
+        card["claim"]["tests"][0])]))
+    blind = _side("forecast_power", 1, claim=_claim(kind="direction_forecast", field="close"))
+    none = _side("profitability", 1, claim={**_claim(), "tests": "none", "missing_block": "m"})
+    src = _src([{"category": c, "proposal": p} for c, p in
+                (("trade_efficiency", repeat), ("forecast_power", blind), ("profitability", none))])
+    inputs = _inputs(memory={"runs": {"run_070": _memory_entry()}}, runs={"run_070": src})
+    record = dn.decide(inputs, now="2026-10-05T00:00:00Z",
+                       trigger={"after_run": "run_070", "after_entry": "E068",
+                                "idea_status": "refuted"})
+    kinds = sorted((c["candidate_id"], c["eligible"], [w["kind"] for w in c.get("warnings", [])])
+                   for c in record["candidates"])
+    assert kinds == [("forecast_power-run_070-1", True, [rf.WARN_BLIND]),
+                     ("profitability-run_070-1", False, []),
+                     ("trade_efficiency-run_070-1", True, [rf.WARN_REPEAT])]
+    errors = sorted(e.message for e in jsonschema.Draft202012Validator(schema).iter_errors(
+        yaml.safe_load(yaml.safe_dump(record))))
+    assert errors == []
+
+
 def test_the_brief_carries_the_claim_pre_filled():
     p = _side()
     src = _src([{"category": "trade_efficiency", "proposal": p}])
