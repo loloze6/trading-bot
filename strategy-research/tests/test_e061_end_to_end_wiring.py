@@ -217,6 +217,8 @@ TARGET_FLAGS = {
     "operator_approval": False,
     # E-068 slice 5 (D-073): requires claim_tests, which is off here.
     "reader_findings": False,
+    # E-068 nearest build (D-075): off, so the stub 1b answers route as before.
+    "nearest_build": False,
 }
 
 # C5.8 (D-050): the four legacy route/rationale keys of a window's core

@@ -25,8 +25,10 @@ here. Do not invent blocks, fields or parameters.
 - **At least one test must read the block's own output**: `forecast` for a forecast block,
   `regime` / `regime_change` for a regime block. Otherwise the base and every variant of the
   block measure the same thing, and the test says nothing about the block. For a forecast
-  block prefer `rank_ic` or a `quantile` on `forecast` (a forecast has no fixed scale, so a
-  fixed threshold may never fire).
+  block prefer `rank_ic` or a `quantile` on `forecast` (for example the top 10%:
+  `{kind: quantile, field: forecast, side: top, q: 0.1, lookback: 100}`) over an absolute
+  forecast threshold such as `forecast >= 12`: step 1b, not you, chooses the forecast's scale,
+  so a fixed threshold may select almost every bar or never fire.
 - **Never approximate.** A test measures exactly the stated quantity in the stated unit
   (horizons are bars of the card's timeframe). If no slot does, write `tests: none` and
   `missing_block`; never substitute a nearby quantity (a price level for a move, bars for days).
@@ -41,7 +43,7 @@ claim:
   kind: conditional_behaviour        # one of the kinds in section 4
   tests:                             # 1 to 3 tests; the claim is supported only if ALL pass
     - name: upper_breakout           # unique within the claim
-      selector:  {kind: event, field: forecast, op: ">=", value: 12}
+      selector:  {kind: quantile, field: forecast, side: top, q: 0.2, lookback: 100}
       outcome:   {kind: fwd_return, horizons: [1, 2, 3, 4, 5]}
       baseline:  {kind: complement}
       statistic: mean_diff

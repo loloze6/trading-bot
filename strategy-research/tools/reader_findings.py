@@ -163,6 +163,12 @@ def claim_result_digest(run_dir: Path) -> dict:
     out = {"schema_version": DIGEST_SCHEMA_VERSION, "label": cf.LABEL, "note": NOTE,
            "information_only": True}
     try:
+        # E-068 nearest build: a run that tested an approximation says so first
+        # (deviations.yaml exists only under orchestrator.nearest_build).
+        import nearest_build as nb
+        block = nb.approximation_block(nb.load_record(arts))
+        if block:
+            out["approximation"] = block
         card_path = arts / "hypothesis_card.yaml"
         card = (_load(card_path) or {}) if card_path.exists() else {}
         claim = card.get("claim") if isinstance(card, dict) else None
@@ -233,9 +239,11 @@ def reader_findings_summary(memory: dict, run_id: str,
                 "selector": spec.get("selector"), "outcome": spec.get("outcome"),
                 "by_variant": {vid: {"status": v.get("status"), "largest_effect": _largest(v)}
                                for vid, v in sorted((t.get("by_variant") or {}).items())}})
-        rows.append({k: row.get(k) for k in ("finding_id", "run_id", "kind", "status", "reason",
-                                              "block_visibility", "statement", "scope")}
-                    | {"tests": tests})
+        compact = {k: row.get(k) for k in ("finding_id", "run_id", "kind", "status", "reason",
+                                            "block_visibility", "statement", "scope")}
+        if "deviations" in row:  # E-068 nearest build: an approximation, counted first
+            compact = {"deviations": row["deviations"], **compact}
+        rows.append(compact | {"tests": tests})
     return {"schema_version": 1, "run_id": run_id, "excludes_run": run_id, "label": cf.LABEL,
             "note": NOTE, "information_only": True, "n_findings": full["n_findings"],
             "n_listed": len(rows), "by_status": full["by_status"], "by_kind": full["by_kind"],

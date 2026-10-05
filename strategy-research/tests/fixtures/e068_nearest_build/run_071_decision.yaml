@@ -1,0 +1,13 @@
+hypothesis_id: HOURLY_SHOCK_CONTINUATION_MOMENTUM_1H_BTC_ETH
+stage: strategy_config_authoring
+status: component_gap
+rationale: "Body fraction (|close-open|/(high-low)) is required by the hypothesis signal_concept but no available component exposes this intrabar calculation. No composition of existing components can recreate it."
+blocking_issues:
+  - "BodyFractionComponent missing: intrabar body-to-range ratio (|close-open|/(high-low)) required for signal, requires open price access not exposed in COMPONENT_CATALOG.md"
+tried:
+  - config: "DonchianBreakoutComponent(period=20)"
+    fails_on: "Approximates extremeness via 20-bar close range positioning (not intrabar high-low), AND provides no body_fraction measurement. Covers only half the required signal; both components must be present and both are missing or misaligned."
+  - config: "DonchianBreakoutComponent(period=20) + PriceEvolutionComponent(period=1, scaling_factor=1.0)"
+    fails_on: "Donchian normalizes by 20-bar close range; PriceEvolution by prior close; neither normalizes by intrabar high-low. PriceEvolution is a different yardstick for move magnitude. Combined signal lacks the specific body-fraction calculation."
+  - config: "PriceEvolutionComponent(period=1) with [zscore, scale(factor=10.0)]"
+    fails_on: "Measures directional move strength (1-bar return z-score), not body_fraction. Normalizes by 1-bar return volatility, not intrabar body ratio. A different yardstick for conviction; does not express the hypothesis's quantity."

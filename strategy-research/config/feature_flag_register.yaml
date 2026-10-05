@@ -722,6 +722,25 @@ flags:
       ready. register, --unpark and --resume are unchanged. Tested by
       tests/test_e068_4_approval_cap_warnings.py.
 
+  - name: nearest_build
+    kind: orchestrator_config
+    config_key: orchestrator.nearest_build.enabled
+    reader: run_phase1_research._nearest_build_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "config_direct_authoring and claim_tests (off_incomplete; nearest_build requires both); the operator switches it on in c4/flag-set for the next E-068 validation run"
+    criterion: >
+      Landed 2026-10-05 (E-068, D-075). Off: byte-identical -- 1b's inputs,
+      routing, the finding, the readers' digest and decide-next's request count
+      are untouched. On (requires config_direct_authoring and claim_tests): 1b gets
+      NEAREST_BUILD.md and builds the nearest version instead of parking;
+      code writes artifacts/deviations.yaml, a component request per missing
+      piece (kind deviation, run_continued: never an --unpark, cap or
+      request-count input), and shows the deviations first in the finding,
+      the findings summary row and the readers' digest; a component_gap must
+      name core_lost (else O-21's one retry), recorded in the run and on the
+      request row. Tested by tests/test_e068_6_nearest_build.py.
+
   - name: bar_equity
     kind: engine_param
     engine_default_files:

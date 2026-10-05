@@ -973,6 +973,15 @@ def _next_request_id(owner_id: str, taken: set) -> str:
 # Loader
 # ---------------------------------------------------------------------------
 
+def requests_count(doc) -> int:
+    """The rows of a {requests: [...]} file (component or data requests) the
+    decision record counts. E-068 nearest build (operator 2026-10-05): a
+    `kind: deviation` row records a missing piece of a run that continued --
+    never a park -- so it is not counted."""
+    rows = (doc.get("requests") or []) if isinstance(doc, dict) else []
+    return sum(1 for r in rows if not (isinstance(r, dict) and r.get("kind") == "deviation"))
+
+
 def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None,
                 digest=None, composition_runs: bool = False, dsr_basis: dict | None = None,
                 feed_set=None) -> dict:
@@ -1029,8 +1038,7 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
         }
 
     def _count(name):
-        doc = _load_yaml_opt(root / "campaign_record" / name) or {}
-        return len(doc.get("requests") or []) if isinstance(doc, dict) else 0
+        return requests_count(_load_yaml_opt(root / "campaign_record" / name) or {})
 
     # E-036 S2a: the one protocol-spec loop (tools/novelty.protocol_specs). An
     # unreadable memory protocol is None -> that entry keys "unresolved".
