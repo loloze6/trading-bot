@@ -336,25 +336,47 @@ The review checks only the **test against the claim**:
 The regroup step (`_run_regroup_record_stage`, card H: memory is written before any decision)
 writes a **finding** into the run's `campaign_memory.yaml` entry:
 
+**As built in slice 4 (D-072, 2026-10-05)** -- `tools/claim_findings.py`, run_070's values
+abbreviated. There is no p-value and no verdict (CUL-394): the status is the measurement's.
+
 ```yaml
 finding:
-  finding_id: F-run_065-1
-  statement: "After a daily close in the top 20% of its 20-day range, ..."
-  kind: conditional_behaviour
-  test: {spec: {...}, spec_hash: <sha>, engine_version: 1}
-  scope: {venue: kraken, product: perp, symbols: [BTCUSD, ETHUSD], timeframe: 1d,
-          windows_sha: <sha>, period: 2022-01..2023-12}
-  result: {per_variant: {base: {value: ..., p_value: ..., n_events: ...}, ...}, eras: {...}}
-  claim_status: supported | refuted | inconclusive
-  trial_ids: [run_065:base, ...]
-  source: {run_id: run_065, hypothesis_id: ..., parent_finding: null}
+  finding_id: F-run_070-1
+  label: measured, not proven
+  status: measured             # | not_measured | no_events | error, with `reason`
+  reason: null                 # e.g. stale, claim_status_absent, tests_none, bars_missing
+  information_only: true
+  statement: "Unusually large 1-hour moves on BTC/ETH ..."   # verbatim, the card's final claim
+  kind: event_behaviour
+  block_visibility: blind      # ok | blind | not_applicable (recomputed: final claim + manifest kind)
+  manifest_kind: forecast
+  claim_revision: null         # claim_revision.yaml status, if any
+  tests: [{name, spec_hash, statistic, direction, outcome, spec: {selector, outcome, ...}}]
+  scope: {venue: kraken, product: perp, price_proxy: true, funding_modelled: false,
+          timeframe: 1h, symbols: [BTCUSD, SOLUSD, UNIUSD],
+          period: {start: 2022-01-01, end: 2023-12-31},
+          windows_sha256: <novelty.windows_fingerprint>, windows_vary: false}
+  result:
+    per_variant:
+      uni_defi: {status: measured, trial_id: run_070:uni_defi, windows_sha256: <sha>,
+                 tests: {<name>: {status, spec_hash, peak_horizon, floor_not_met,
+                                  horizons: {"1": {effect, n_events, windows_claimed_sign,
+                                                   windows_with_value}}}}}
+  trial_ids: [run_070:base, ...]          # variants whose numbers are attached
+  source: {run_id: run_070, hypothesis_id: ..., claim_status_ref: ..., claim_test_refs: {...}}
 ```
 
+Numbers are attached only when a variant's `claim_test.yaml` was measured on exactly the bars
+its current `protocol_result.yaml` names, the variant is `tested` in the entry and the card's
+spec_hashes match; otherwise `not_measured` with reason `stale`, never old numbers.
+
 - **One place.** The memory entry; regroup is already its only writer. A small code-built
-  **findings summary** (like `registry_summary.yaml`) gives 1a and the readers a compact
-  "what we know" view.
+  **findings summary** (like `registry_summary.yaml`; per run, `artifacts/findings_summary.yaml`)
+  gives 1a and the readers a compact "what we know" view. Slice 4 writes it; no prompt reads it
+  yet (slice 5).
 - **Reuse.** A finding is information, never a ban (D-055). Only the same `spec_hash` on the
-  same scope counts as a repeat; this extends today's novelty key.
+  same scope counts as a repeat; this extends today's novelty key (not built: out of slice
+  4's scope; the summary only lists spec_hashes measured in more than one run).
 - **Combination is its own epic: E-071** (operator, 2026-10-03; it was slice 6). E-071 holds
   the design: code assembly for the simple case, AI assembly by step 1b inside code-checked
   fences for regime-plus-forecast composites (CUL-382, CUL-385). The context below stays as
@@ -456,7 +478,7 @@ P-CUL-77).
 |---|---|---|
 | `orchestrator.claim_tests.enabled` | 1a writes `claim`; `check_spec`; after the backtests the claim's tests are measured (effect sizes, `claim_status` measured / not_measured; not a grid criterion) | config_direct_authoring |
 | `orchestrator.claim_test_review` (`off`, `record`, `revise`) -- **parked, CUL-397** (failed its offline gate in 3b; not in `campaign_config.yaml`) | optional review call; never parks or stops a run | claim_tests |
-| `orchestrator.findings.enabled` | regroup writes `finding`; findings summary; novelty key gets `spec_hash` | claim_tests, regroup_record |
+| ~~`orchestrator.findings.enabled`~~ -- **no separate flag** (operator, 2026-10-05, D-072): slice 4 is part of `orchestrator.claim_tests.enabled` | regroup writes `finding` and `artifacts/findings_summary.yaml` (the novelty key's `spec_hash` is not built) | claim_tests; written only where regroup_record runs |
 | `orchestrator.reader_findings.enabled` | reader output v3; decide-next takes side findings | claim_tests, specialist_readers |
 
 - **Flags off:** byte-identical, proven per flag by a test.
@@ -486,7 +508,9 @@ P-CUL-77).
    `past_return` selector field (the move that ended at bar t, `bars: n`), the
    block-visibility check after 1b and one claim revision per run (section 4 item 3), the
    guide's up-front rules. The review call was measured and parked (CUL-397).
-4. **Findings:** the finding record and the findings summary.
+4. **Findings** (D-072), behind `orchestrator.claim_tests.enabled`: the finding record in the
+   memory entry and the per-run findings summary (section 5). Information only; numbers only
+   when bound to the entry's attempt; no prompt reads the summary yet.
 5. **Readers:** v3 output and the short SKILL.
 6. **Combination:** moved to its own epic, **E-071**.
 7. **Review call** -- parked (CUL-397): built and measured in 3b, failed its gate.

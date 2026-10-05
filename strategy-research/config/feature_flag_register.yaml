@@ -628,7 +628,7 @@ flags:
     reader: run_phase1_research._claim_tests_enabled
     owner: Jeremy
     state: off_incomplete
-    blocked_on: "E-068 slices 4-5 (findings, readers v3); automatic claim verdicts parked in CUL-394; no campaign runs until slices 1-3 are built and reviewed"
+    blocked_on: "E-068 slice 5 (readers v3); automatic claim verdicts parked in CUL-394; no campaign runs until slices 1-3 are built and reviewed"
     criterion: >
       Landed 2026-10-03 (E-068 slice 2, CUL-389). Off: byte-identical --
       nothing read or written, no prompt changed (both SKILL.md files equal
@@ -661,6 +661,14 @@ flags:
       copies; artifacts/claim_revision.yaml). Tested by
       tests/test_e068_3b_past_return.py and
       tests/test_e068_3b_claim_visibility.py.
+      Slice 4 (2026-10-05, D-072): at regroup_record (so it also needs
+      regroup_record on) the memory entry gets `finding`
+      (tools/claim_findings.py: the claim, its tests and spec_hash,
+      block_visibility, scope, effect sizes per variant with sign counts,
+      trial ids; numbers only when bound to the entry's attempt, else
+      not_measured/stale) and the run gets artifacts/findings_summary.yaml.
+      Information only; no prompt reads either yet. Tested by
+      tests/test_e068_4_findings.py.
 
   - name: operator_approval
     kind: orchestrator_config

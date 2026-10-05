@@ -135,7 +135,18 @@
           "description": "null exactly when profit_bars is filled (enforced by build_memory_entry and by the allOf rule on this entry)."
         },
         "kb_entry_id": { "type": ["string", "null"],
-                         "description": "E-058 S2b (tools/grid_kb_writer.py): id of this run's entry in campaign_knowledge_base.yaml (legacy_schema: false); null only when the KB file does not exist (the entry is then skipped with a loud log line, like the legacy writer)." }
+                         "description": "E-058 S2b (tools/grid_kb_writer.py): id of this run's entry in campaign_knowledge_base.yaml (legacy_schema: false); null only when the KB file does not exist (the entry is then skipped with a loud log line, like the legacy writer)." },
+        "finding": {
+          "type": "object",
+          "description": "E-068 slice 4 (tools/claim_findings.py), OPTIONAL: present only when orchestrator.claim_tests.enabled is on. The run's claim, whether its tests see the block, its scope and the measured effect sizes per variant (detail by reference to claim_test.yaml). Information only (D-055): it never bans, routes or stops anything. Deliberately loose below the top level so a finding can never make the memory write fail.",
+          "required": ["finding_id", "label", "status", "information_only"],
+          "properties": {
+            "finding_id": { "type": "string" },
+            "label": { "const": "measured, not proven" },
+            "status": { "enum": ["measured", "not_measured", "no_events", "error"] },
+            "information_only": { "const": true }
+          }
+        }
       },
       "allOf": [
         { "if": { "properties": { "profit_bars": { "type": "null" } } },

@@ -1488,7 +1488,19 @@ proposals: [{category, ref, proposal_ids, count}]   # never scores
 registry: {block_ids: [...]} | {skipped: no_manifest|not_validated}   # E-058 S2b, see item 8
 profit_bars: null, profit_bars_reason: "not evaluated before regroup"
 kb_entry_id: grid_<run_id> | null   # E-058 S2b, see item 9; null only when the KB file is absent
+finding: {...}         # E-068 slice 4, only with orchestrator.claim_tests.enabled (D-072)
 ```
+
+With `orchestrator.claim_tests.enabled` on, a full entry also carries
+`finding` (`tools/claim_findings.py`), added after the registry and KB entry:
+the claim's statement, kind and tests (with `spec_hash`), whether the tests
+can see the block, the scope, the effect sizes per variant with their sign
+counts, the trial ids and the source run (detail by reference to each
+`claim_test.yaml`). Numbers are attached only when the measurement belongs to
+the attempt the entry describes, otherwise `not_measured` / `stale`. The
+stage then writes `artifacts/findings_summary.yaml` (every finding so far,
+deterministic). Information only: an error is recorded (`status: error`) and
+the stage continues; no prompt reads either yet.
 
 A run with component errors gets the fault-only form instead:
 `{run_id, hypothesis_id (null if hypothesis_card.yaml is unreadable), legacy:
