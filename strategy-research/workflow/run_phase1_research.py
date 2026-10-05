@@ -7919,6 +7919,16 @@ def _write_pass_through_manifest(artifacts: Path) -> bool:
             f"{_canonical_json_sha256(manifest)}, not its candidate.source."
             f"expected_manifest_sha256 {expected}; refusing to write a manifest that is not the "
             f"source run's.")
+    patch = (candidate.get("source") or {}).get("resolved_patch")
+    if isinstance(patch, list) and patch and isinstance(manifest.get("rationale"), str):
+        # CUL-405 review: the source rationale describes the source config; say, in
+        # code, that this run's config carries the reader patch on top of it.
+        ops = ", ".join(f"{op.get('path')}={op.get('value')!r}" for op in patch
+                        if isinstance(op, dict))
+        ref = (candidate.get("source") or {}).get("proposal_ref") or "a reader patch"
+        manifest = dict(manifest, rationale=(
+            f"{manifest['rationale'].rstrip()} [Code note: this run's config is the source "
+            f"run's with {ref} applied ({ops}); the text above describes the source config.]"))
     dest = Path(artifacts) / _block_manifest_module().MANIFEST_FILENAME
     try:  # for the log line only: 1b's file may be anything, even broken YAML
         replaced = dest.exists() and load_yaml(dest) != manifest
@@ -15271,6 +15281,13 @@ def _route_block_manifest_check(path: Path) -> str:
         return "strategy_config_authoring"
     if rule_msgs:
         error = f"{error}; also: " + "; ".join(rule_msgs)
+    if _is_pass_through_candidate(path / "artifacts"):
+        # CUL-405 review: code writes a patch's manifest (_write_pass_through_manifest),
+        # so a 1b retry cannot change it -- stop at once instead of spending one.
+        raise RuntimeError(
+            f"strategy_config_authoring: the code-written pass-through block_manifest.yaml "
+            f"(the source run's manifest) is invalid for this patch's config -- {error}. "
+            f"A 1b retry cannot change it; no retry spent.")
     if attempts >= _BLOCK_MANIFEST_RETRY_MAX:
         raise RuntimeError(
             f"strategy_config_authoring: block_manifest.yaml still invalid after "

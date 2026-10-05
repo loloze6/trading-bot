@@ -31,6 +31,7 @@ tested. Write THIS idea's card:
   these right after this stage (and again on every re-run of it). Never copy
   the earlier run's criteria.
 - Kind `patch` (`candidate.config` and `candidate.manifest` present): copy both
-  into the card verbatim and set `pass_through: true`; stage 1b passes them
-  through and stage 5a checks both hashes. Kind `new_block` (no
+  into the card verbatim and set `pass_through: true`; stage 1b passes the
+  config through (stage 5a checks its hash) and code writes the manifest. The
+  card still carries its own `claim`. Kind `new_block` (no
   `candidate.config`): do not set `pass_through`; 1b authors the config.

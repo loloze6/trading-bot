@@ -531,9 +531,31 @@ def test_run_072_now_passes_the_pass_through_check(tmp_path):
     assert {k for k in one_bs if one_bs[k] != brief["candidate"]["manifest"].get(k)} == {
         "rationale"}
     assert rpr._write_pass_through_manifest(arts) is True
-    assert dn.config_sha256(_manifest(arts)) == (
-        brief["candidate"]["source"]["expected_manifest_sha256"])
+    source, written = brief["candidate"]["manifest"], _manifest(arts)
+    assert {k: v for k, v in written.items() if k != "rationale"} == {
+        k: v for k, v in source.items() if k != "rationale"}       # block + scaffolding verbatim
+    # review: the source rationale says "1-bar"; code names the patch so it is not a lie
+    assert written["rationale"].startswith(source["rationale"].rstrip())
+    assert ("[Code note: this run's config is the source run's with "
+            "runs/run_070/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_070-1 "
+            "applied (/strategies/regimes/unknown/components/0/params/period=2)") in written[
+        "rationale"]
     rpr._check_pass_through_config_hash(arts)                      # no raise
+
+
+def test_an_invalid_code_written_manifest_stops_without_a_1b_retry(tmp_path, monkeypatch):
+    """Review: 1b cannot change a code-written manifest, so no retry is spent."""
+    arts = _pass_through_arts(tmp_path)
+    (arts / "block_manifest.yaml").write_text(yaml.safe_dump(_MANIFEST), encoding="utf-8")
+    monkeypatch.setattr(rpr, "_block_manifest_error", lambda path: "a scaffolding path is gone")
+    monkeypatch.setattr(rpr, "_base_forecast_rule_violations", lambda path: [])
+    monkeypatch.setattr(rpr, "load_yaml", lambda p: {} if p.name == "pipeline_state.yaml"
+                        else yaml.safe_load(Path(p).read_text(encoding="utf-8")))
+    calls = []
+    monkeypatch.setattr(rpr, "update_state", lambda **k: calls.append(k))
+    with pytest.raises(RuntimeError, match="no retry spent"):
+        rpr._route_block_manifest_check(tmp_path)
+    assert calls == []
 
 
 def test_candidate_brief_carries_the_expected_manifest_hash(tmp_path):
