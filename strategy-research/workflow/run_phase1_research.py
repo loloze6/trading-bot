@@ -4726,6 +4726,14 @@ def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0
                 print(f"⚠️  score provenance: {category} reader answered by "
                       f"{record['observed']!r}, requested {record['requested']!r} "
                       f"(recorded, not stopped).")
+        if v3:
+            # E-068 slice 5: warnings and test requests BEFORE the file lands --
+            # a resume finds the file and never re-reviews it (review fix 4).
+            # Information only; test-request rows are idempotent on a re-run.
+            review = _review_written_reading(category, run_id, run_dir, body)
+            if review:
+                entry["reading_review"] = review
+                update_state(path=run_dir, audit_log={key: entry})
         dest.parent.mkdir(parents=True, exist_ok=True)
         fd, tmp_name = tempfile.mkstemp(prefix=f".{category}.", suffix=".tmp", dir=str(dest.parent))
         try:
@@ -4737,12 +4745,6 @@ def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0
                 os.unlink(tmp_name)
             raise
         print(f"✅ [READER COMPLETE] {category} -> {dest.relative_to(run_dir).as_posix()}")
-        if v3:
-            # E-068 slice 5: warnings and test requests; information only
-            review = _review_written_reading(category, run_id, run_dir, body)
-            if review:
-                entry["reading_review"] = review
-                update_state(path=run_dir, audit_log={key: entry})
         return dest
 
     for attempt in range(2):
@@ -4873,10 +4875,14 @@ def _skip_reader_by_rule(category: str, run_id: str, run_dir: Path) -> bool:
             return load_yaml(path)
         except (OSError, ValueError, yaml.YAMLError):
             return None
-    skip = rf.skip_rule(category,
-                        manifest=_opt(arts / "block_manifest.yaml"),
-                        base_config=_opt(Path(run_dir) / _reader_base_config_rel(run_dir)),
-                        report=_opt(arts / "reports" / f"{category}.yaml"))
+    try:
+        skip = rf.skip_rule(category,
+                            manifest=_opt(arts / "block_manifest.yaml"),
+                            base_config=_opt(Path(run_dir) / _reader_base_config_rel(run_dir)),
+                            report=_opt(arts / "reports" / f"{category}.yaml"))
+    except Exception as exc:  # noqa: BLE001 -- an odd input means "do not skip"
+        print(f"⚠️  [E-068] {category} skip rule could not be read ({exc}); the reader runs.")
+        skip = None
     if skip is None:
         return False
     dest = arts / "proposals" / f"{category}.yaml"

@@ -1640,7 +1640,7 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
 
 def _cc_kind_block(kind):
     import claim_card as _cc  # tools/ sibling; only side findings need it
-    return _cc.KIND_BLOCK.get(kind)
+    return _cc.KIND_BLOCK.get(kind) if isinstance(kind, str) else None
 
 
 def _side_finding_review(run_id: str, src: dict, p: dict, inputs: dict) -> dict:

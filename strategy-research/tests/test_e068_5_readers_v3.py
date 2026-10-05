@@ -568,6 +568,33 @@ def test_no_skip_when_the_detector_is_a_real_gate_or_components_differ():
     assert rf.skip_rule("component_attribution", report=single) is None   # unknown: no skip
 
 
+@pytest.mark.parametrize("report", [
+    {"variants": {"a": {"slices": ["x"]}}},
+    {"variants": {"a": {"slices": {"overall": "x"}}}},
+    {"variants": {"a": "x"}},
+    {"variants": ["x"]},
+])
+def test_an_odd_report_never_skips_and_never_raises(report):
+    """Review fix 3: odd input means "do not skip"."""
+    assert rf.skip_rule("component_attribution", report=report) is None
+
+
+def test_a_skip_rule_that_raises_lets_the_reader_run(monkeypatch):
+    run_dir = _run070_shaped(monkeypatch)
+
+    def _boom(*a, **k):
+        raise RuntimeError("odd input")
+    monkeypatch.setattr(rf, "skip_rule", _boom)
+    assert rpr._skip_reader_by_rule("regime_power", RUN_ID, run_dir) is False
+
+
+def test_a_hand_edited_skip_record_never_breaks_the_summary(tmp_path):
+    _write(tmp_path / rf.SKIPS_REL, {"runs": {"run_1": ["x"], "run_2": {"regime_power": "x"},
+                                              3: {"component_attribution": {"rule": "r"}}}})
+    lines = rf.skip_summary_lines(tmp_path)
+    assert "- Reader calls skipped: 2 in 3 run(s)" in lines
+
+
 def test_the_stage_skips_two_readers_records_them_and_calls_three(monkeypatch):
     run_dir = _run070_shaped(monkeypatch)
     calls = []
@@ -804,6 +831,31 @@ def test_the_reading_review_records_warnings_and_test_requests(monkeypatch):
     assert [r["missing_block"] for r in reqs["requests"]] == ["funding skew field"]
 
 
+def test_the_review_lands_before_the_file(monkeypatch):
+    """Review fix 4: a crash after the file lands must not lose the review (a
+    resume finds the file and never re-reviews it)."""
+    run_dir = _run070_shaped(monkeypatch)
+    none_claim = {**_claim(), "tests": "none", "missing_block": "funding skew field"}
+    doc = _reading(sides=[{"proposal_id": f"trade_efficiency-{RUN_ID}-1", "claim": none_claim,
+                           "evidence": ["e"], "scores": _scores()}])
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _fake_llm({"trade_efficiency": _fenced(doc)}))
+
+    real_replace = rpr.os.replace
+
+    def _crash(src, dst, *a, **k):   # only the proposals file fails to land
+        if Path(dst).name == "trade_efficiency.yaml" and Path(dst).parent.name == "proposals":
+            raise OSError("disk gone")
+        return real_replace(src, dst, *a, **k)
+    monkeypatch.setattr(rpr.os, "replace", _crash)
+    with pytest.raises(OSError):
+        rpr.run_reader_worker("trade_efficiency", RUN_ID, run_dir)
+    reqs = yaml.safe_load((rpr.ROOT / "campaign_record" / "test_requests.yaml").read_text(
+        encoding="utf-8"))
+    assert [r["missing_block"] for r in reqs["requests"]] == ["funding skew field"]
+    audit = rpr.load_yaml(run_dir / "pipeline_state.yaml")["audit_log"]
+    assert "reading_review" in audit["specialist_readers_trade_efficiency_attempt_0"]
+
+
 # decide-next -------------------------------------------------------------
 
 def _memory_entry() -> dict:
@@ -877,6 +929,7 @@ def test_repeating_the_source_runs_own_claim_is_a_warning():
 @pytest.mark.parametrize("claim,reason", [
     ({**_claim(), "tests": "none", "missing_block": "m"}, "next_test_none"),
     ({**_claim(), "kind": "not_a_kind"}, "next_test_refused"),
+    ({**_claim(), "kind": ["a", "list"]}, "next_test_refused"),   # review fix 5: no crash
     (_claim(kind="regime_classifier"), "regime_block_needs_composition"),
 ])
 def test_ineligible_side_findings(claim, reason):

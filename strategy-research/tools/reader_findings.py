@@ -90,7 +90,8 @@ def skip_rule(category: str, *, manifest=None, base_config=None, report=None):
             return None
         names = {}
         for vid, v in variants.items():
-            overall = ((v.get("slices") or {}).get("overall") or {}) if isinstance(v, dict) else {}
+            slices = v.get("slices") if isinstance(v, dict) else None
+            overall = slices.get("overall") if isinstance(slices, dict) else None
             comps = overall.get("components_discovered") if isinstance(overall, dict) else None
             if not isinstance(comps, list):
                 return None
@@ -353,9 +354,11 @@ def skip_summary_lines(root: Path) -> list:
         return title + [f"- {SKIPS_REL} is unreadable ({type(exc).__name__}); fix or remove it."]
     runs = doc.get("runs") if isinstance(doc, dict) and isinstance(doc.get("runs"), dict) else {}
     by_rule = {}
-    for rid, cats in sorted(runs.items()):
-        for cat, s in sorted((cats or {}).items()):
-            rule = str((s or {}).get("rule"))
+    for rid, cats in sorted(runs.items(), key=lambda kv: str(kv[0])):
+        if not isinstance(cats, dict):        # a hand-edited row never breaks the summary
+            continue
+        for cat, s in sorted(cats.items(), key=lambda kv: str(kv[0])):
+            rule = str(s.get("rule")) if isinstance(s, dict) else "unreadable"
             by_rule.setdefault(rule, []).append(f"{cat} in {rid}")
     n = sum(len(v) for v in by_rule.values())
     lines = title + [f"- Reader calls skipped: {n} in {len(runs)} run(s)"]

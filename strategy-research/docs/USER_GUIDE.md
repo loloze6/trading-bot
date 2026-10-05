@@ -1473,7 +1473,13 @@ feed that is not wired, one row per such feed in
      or is this run's own claim test; a block-kind claim whose tests cannot see
      the block. `tests: none` adds a `test_requests.yaml` row. v2 list files and
      v3 readings load side by side (`load_proposals` flattens a reading into
-     items).
+     items). The v3 shape is enforced in code (`reader_proposals.check_reading`);
+     `proposal.schema.json` describes v2 only.
+   - **Decide-next:** two side findings with the same tests collapse inside ONE
+     decision only. The twin left in `collapsed_sources` is not in the queue, so
+     a later decision can offer it again; once the first one's finding is
+     recorded it carries a `repeats_measured_spec` warning (repeats warn, never
+     refuse, by decision; with approval mode on, the operator sees it).
 
 ---
 
