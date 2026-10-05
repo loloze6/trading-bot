@@ -7792,10 +7792,17 @@ def _run_regroup_record_stage(run_id: str, run_dir: Path,
             **({"composition_run": True} if _comp_on and _composition_mode(run_dir) else {}))
         entry["kb_entry_id"] = _kbw.write_kb_entry(
             _KB_PATH, _kbw.build_kb_entry(entry), root=ROOT, recompute_views=_recompute_kb_views)
+        # E-068 slice 4 (flag on only): the claim's finding, added AFTER the
+        # registry and KB entry so it can change neither. Never raises.
+        claims_on = _claim_flag_or_none()
+        if claims_on:
+            entry[_CLAIM_FINDING_KEY] = _claim_finding(run_dir, run_id, entry)
         cm.upsert_memory(memory_path, entry)
         print(f"📒 [E-058] campaign memory: {run_id} recorded "
               f"(idea_status={entry['idea_status']}) -> {memory_path}")
         _write_near_miss_scoreboard()
+        if claims_on:
+            _write_findings_summary(run_dir, run_id, memory_path)
     return {"entry": entry, "component_errors": errors, "idea": idea}
 
 
@@ -15924,6 +15931,69 @@ def _record_claim_measure_error(run_dir: Path, run_id: str, exc: Exception) -> N
             _safe_print(f"⚠️  [E-068] could not write {what} ({type(inner).__name__}: {inner}).")
     _safe_print(f"⚠️  [E-068] the claim measurement could not run ({doc['detail']}); recorded, "
                 f"the run continues.")
+
+
+# E-068 slice 4 (DESIGN_PROPOSAL.md sections 5 and 8), under
+# orchestrator.claim_tests.enabled only, at regroup_record: the run's finding
+# in its campaign_memory.yaml entry (tools/claim_findings.py) and
+# artifacts/findings_summary.yaml. INFORMATION ONLY (D-055): a finding never
+# bans, routes, stops or parks anything; any error is recorded in the finding
+# (status error) and the run continues. No prompt reads either in this slice.
+_CLAIM_FINDING_KEY = "finding"
+
+
+def _claim_findings_module():
+    _json_pointer_module()  # puts tools/ on sys.path
+    import claim_findings as _cf
+    return _cf
+
+
+def _claim_finding_error(run_id: str, exc: BaseException) -> dict:
+    """The finding when building it failed. Self-contained (the module may be
+    what failed) and unable to raise."""
+    try:
+        detail = f"{type(exc).__name__}: {exc}"[:500]
+    except Exception:  # noqa: BLE001
+        detail = "unprintable error"
+    return {"finding_id": f"F-{run_id}-1", "label": "measured, not proven", "status": "error",
+            "reason": "error", "detail": detail, "information_only": True}
+
+
+def _claim_finding(run_dir: Path, run_id: str, entry: dict) -> dict:
+    """The finding for the memory entry being written. Never raises."""
+    try:
+        cf = _claim_findings_module()
+        card_path = Path(run_dir) / "artifacts" / "hypothesis_card.yaml"
+        card = load_yaml(card_path) if card_path.exists() else None
+        finding = cf.build_finding(Path(run_dir), run_id, entry,
+                                   exempt=_claim_check_exempt(Path(run_dir), card))
+        # upsert_memory refuses a retired field name anywhere in the entry:
+        # that must surface here as an error finding, never as a failed stage
+        retired = _campaign_memory_module()._find_retired(finding)
+        if retired:
+            raise ValueError(f"the finding carries retired field name(s) {retired}")
+        _safe_print(f"🔎 [E-068] {run_id}: finding {finding['finding_id']} recorded "
+                    f"(status {finding['status']}; information only).")
+        return finding
+    except Exception as exc:  # noqa: BLE001 -- information only: recorded, never raised
+        finding = _claim_finding_error(run_id, exc)
+        _safe_print(f"⚠️  [E-068] {run_id}: the finding could not be built "
+                    f"({finding['detail']}); recorded as status error, the run continues.")
+        return finding
+
+
+def _write_findings_summary(run_dir: Path, run_id: str, memory_path: Path) -> None:
+    """artifacts/findings_summary.yaml from the memory just written. A failure
+    is printed and the run continues (it decides nothing)."""
+    try:
+        cf = _claim_findings_module()
+        summary = cf.findings_summary(_campaign_memory_module().load_memory(memory_path), run_id)
+        save_yaml(Path(run_dir) / "artifacts" / cf.SUMMARY_ARTIFACT, summary)
+        _safe_print(f"🗂️  [E-068] {cf.SUMMARY_ARTIFACT} written ({summary['n_findings']} "
+                    f"finding(s)); information only.")
+    except Exception as exc:  # noqa: BLE001 -- information only
+        _safe_print(f"⚠️  [E-068] findings summary NOT written ({type(exc).__name__}: {exc}); "
+                    f"information only, the run continues.")
 
 
 # E-061 C2 S2c (C2_S1_FINDINGS.md G12, card D; review A5): Step 2's variant

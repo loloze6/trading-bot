@@ -1,0 +1,300 @@
+run_id: run_070
+hypothesis_id: HOURLY_SHOCK_REVERSAL_MEAN_REVERSION_1H_BTC_ETH
+legacy: false
+recorded_at: '2026-10-04T18:03:44.218459+00:00'
+idea_status: refuted
+idea_status_reason: at least one criterion FAILed with sufficient data on at least
+  one variant
+idea_status_ref: runs/run_070/artifacts/idea_status.yaml
+engineering_fault: null
+engineering_fault_detail: []
+grid:
+  ref: runs/run_070/artifacts/grid_evaluation.yaml
+  criteria:
+  - realized_edge_to_cost_ratio
+  - sign_consistent_by_era
+  - residual_ic
+  variants:
+  - base
+  - shock_lookback_250
+  - sol_generalization
+  - uni_defi
+  cells:
+    realized_edge_to_cost_ratio:
+      base:
+        result: FAIL
+        value: -1.1814
+        threshold: 2.2
+        n_windows: 6
+        n_trades: 14263
+      shock_lookback_250:
+        result: FAIL
+        value: -1.1835
+        threshold: 2.2
+        n_windows: 6
+        n_trades: 14358
+      sol_generalization:
+        result: FAIL
+        value: -3.2976
+        threshold: 2.2
+        n_windows: 6
+        n_trades: 14782
+      uni_defi:
+        result: FAIL
+        value: -3.1168
+        threshold: 2.2
+        n_windows: 6
+        n_trades: 14889
+    sign_consistent_by_era:
+      base:
+        result: INCONCLUSIVE
+        n_windows: 6
+        n_trades: 14263
+        reason: 'single_era: era_2019_2023_full_feed'
+      shock_lookback_250:
+        result: INCONCLUSIVE
+        n_windows: 6
+        n_trades: 14358
+        reason: 'single_era: era_2019_2023_full_feed'
+      sol_generalization:
+        result: INCONCLUSIVE
+        n_windows: 6
+        n_trades: 14782
+        reason: 'single_era: era_2019_2023_full_feed'
+      uni_defi:
+        result: INCONCLUSIVE
+        n_windows: 6
+        n_trades: 14889
+        reason: 'single_era: era_2019_2023_full_feed'
+    residual_ic:
+      base:
+        result: PASS
+        value: 0.076126
+        threshold: 0.02
+        n_windows: 6
+        n_trades: 14263
+      shock_lookback_250:
+        result: PASS
+        value: 0.076814
+        threshold: 0.02
+        n_windows: 6
+        n_trades: 14358
+      sol_generalization:
+        result: FAIL
+        value: 0.044456
+        threshold: 0.02
+        n_windows: 6
+        n_trades: 14782
+        reason: 'not significant: p_value_one_sided=0.116294 >= max_p_value=0.05'
+      uni_defi:
+        result: FAIL
+        value: 0.046058
+        threshold: 0.02
+        n_windows: 6
+        n_trades: 14889
+        reason: 'not significant: p_value_one_sided=0.114015 >= max_p_value=0.05'
+  counts:
+    PASS: 2
+    FAIL: 6
+    INCONCLUSIVE: 4
+variants:
+  base:
+    status: tested
+    reason: null
+    config_ref: runs/run_070/artifacts/variants/base/strategy_config.json
+    forecast_hash: ebe3ee45b72f7d2056651534fba109be7551a8501fabb7d85161ef0b92faa40d
+    symbols:
+    - BTCUSD
+    n_windows: 6
+    trial_id: run_070:base
+  shock_lookback_250:
+    status: tested
+    reason: null
+    config_ref: runs/run_070/artifacts/variants/shock_lookback_250/strategy_config.json
+    forecast_hash: ed7f6ea9005ec9e8252c43b4c9a7e41d72d37ba3cf714138400738bea083409e
+    symbols:
+    - BTCUSD
+    n_windows: 6
+    trial_id: run_070:shock_lookback_250
+  sol_generalization:
+    status: tested
+    reason: null
+    config_ref: runs/run_070/artifacts/variants/sol_generalization/strategy_config.json
+    forecast_hash: ebe3ee45b72f7d2056651534fba109be7551a8501fabb7d85161ef0b92faa40d
+    symbols:
+    - SOLUSD
+    n_windows: 6
+    trial_id: run_070:sol_generalization
+  uni_defi:
+    status: tested
+    reason: null
+    config_ref: runs/run_070/artifacts/variants/uni_defi/strategy_config.json
+    forecast_hash: ebe3ee45b72f7d2056651534fba109be7551a8501fabb7d85161ef0b92faa40d
+    symbols:
+    - UNIUSD
+    n_windows: 6
+    trial_id: run_070:uni_defi
+trial_ids:
+- run_070:base
+- run_070:shock_lookback_250
+- run_070:sol_generalization
+- run_070:uni_defi
+protocol_ref: protocols/run_070_generated.json
+timeframe: 1h
+proposals:
+- category: profitability
+  ref: runs/run_070/artifacts/proposals/profitability.yaml
+  proposal_ids: []
+  count: 0
+- category: trade_efficiency
+  ref: runs/run_070/artifacts/proposals/trade_efficiency.yaml
+  proposal_ids:
+  - trade_efficiency-run_070-1
+  count: 1
+- category: forecast_power
+  ref: runs/run_070/artifacts/proposals/forecast_power.yaml
+  proposal_ids: []
+  count: 0
+- category: regime_power
+  ref: runs/run_070/artifacts/proposals/regime_power.yaml
+  proposal_ids:
+  - regime_power-run_070-1
+  count: 1
+- category: component_attribution
+  ref: runs/run_070/artifacts/proposals/component_attribution.yaml
+  proposal_ids: []
+  count: 0
+registry:
+  skipped: not_validated
+profit_bars:
+  ref: runs/run_070/artifacts/profit_bars_evaluation.yaml
+  scope: every_backtest
+  result: FAIL
+  passing: []
+  variants:
+    base:
+      result: FAIL
+      bars:
+        sharpe_min:
+          result: FAIL
+          actual: -10.270459166934131
+          threshold: 1.0
+        deflated_sharpe_threshold:
+          result: FAIL
+          actual: 0.0
+          threshold: 0.95
+        max_drawdown_pct_max:
+          result: FAIL
+          actual: 99.99769423212122
+          threshold: 20.0
+        trade_count_min:
+          result: PASS
+          actual: 14143
+          threshold: 100
+        avg_daily_return_min:
+          result: FAIL
+          actual: -0.014270985458715564
+          threshold: 0.0005
+        buy_and_hold_excess_return_min:
+          result: FAIL
+          actual: -0.8972081538879599
+          threshold: 0.0
+        cost_edge_ratio_min:
+          result: FAIL
+          actual: -1.181423473322583
+          threshold: 2.2
+    shock_lookback_250:
+      result: FAIL
+      bars:
+        sharpe_min:
+          result: FAIL
+          actual: -10.549701216011048
+          threshold: 1.0
+        deflated_sharpe_threshold:
+          result: FAIL
+          actual: 0.0
+          threshold: 0.95
+        max_drawdown_pct_max:
+          result: FAIL
+          actual: 99.99808598724773
+          threshold: 20.0
+        trade_count_min:
+          result: PASS
+          actual: 14238
+          threshold: 100
+        avg_daily_return_min:
+          result: FAIL
+          actual: -0.014531331043047675
+          threshold: 0.0005
+        buy_and_hold_excess_return_min:
+          result: FAIL
+          actual: -0.8972120740840437
+          threshold: 0.0
+        cost_edge_ratio_min:
+          result: FAIL
+          actual: -1.183543251149185
+          threshold: 2.2
+    sol_generalization:
+      result: FAIL
+      bars:
+        sharpe_min:
+          result: FAIL
+          actual: -9.254656386169566
+          threshold: 1.0
+        deflated_sharpe_threshold:
+          result: FAIL
+          actual: 0.0
+          threshold: 0.95
+        max_drawdown_pct_max:
+          result: FAIL
+          actual: 99.99999994773654
+          threshold: 20.0
+        trade_count_min:
+          result: PASS
+          actual: 14661
+          threshold: 100
+        avg_daily_return_min:
+          result: FAIL
+          actual: -0.027290524306661176
+          threshold: 0.0005
+        buy_and_hold_excess_return_min:
+          result: FAIL
+          actual: -0.5629005190551851
+          threshold: 0.0
+        cost_edge_ratio_min:
+          result: FAIL
+          actual: -3.297622649167907
+          threshold: 2.2
+    uni_defi:
+      result: FAIL
+      bars:
+        sharpe_min:
+          result: FAIL
+          actual: -11.938267723632103
+          threshold: 1.0
+        deflated_sharpe_threshold:
+          result: FAIL
+          actual: 0.0
+          threshold: 0.95
+        max_drawdown_pct_max:
+          result: FAIL
+          actual: 99.99999991493114
+          threshold: 20.0
+        trade_count_min:
+          result: PASS
+          actual: 14769
+          threshold: 100
+        avg_daily_return_min:
+          result: FAIL
+          actual: -0.02726098667728156
+          threshold: 0.0005
+        buy_and_hold_excess_return_min:
+          result: FAIL
+          actual: -0.39317585074240413
+          threshold: 0.0
+        cost_edge_ratio_min:
+          result: FAIL
+          actual: -3.1192653531044754
+          threshold: 2.2
+profit_bars_reason: null
+kb_entry_id: grid_run_070
