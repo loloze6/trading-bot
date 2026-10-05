@@ -1439,6 +1439,41 @@ feed that is not wired, one row per such feed in
    so a resume, or a re-attempt that asks for the same feed in other words or
    under another proposal id, adds nothing. It changes no status, route or
    queue entry: decide-next gates the candidate (§5 `run_campaign.py`).
+8. **Readers v3** (E-068 slice 5, D-073, `orchestrator.reader_findings.enabled`,
+   off by default; requires `claim_tests` and `specialist_readers`). Off, items
+   1-7 are exactly as above. On:
+   - **SKILLs:** `workflow_artifacts/skills/readers_v3/<category>-reader/SKILL.md`
+     (one focus each, under 3 KB) plus the shared
+     `readers_v3/READING_CONTRACT.md`. The v2 SKILLs are untouched.
+   - **Inputs:** the same report, grid, card, base config, catalogue and registry
+     summary; `hypothesis-design/CLAIM_TESTS.md` instead of the design guide; and,
+     written by code before the first reader, `artifacts/claim_result_digest.yaml`
+     (the claim's tests and each variant's effect sizes from its
+     `claim_test.yaml`, numbers only when measured on this attempt's bars, else
+     `stale`) and `artifacts/findings_summary_for_readers.yaml` (earlier runs'
+     findings from the campaign memory, this run left out, newest 10, compact);
+     `claim_status.yaml` when it exists.
+   - **Skip rules (no model call):** `regime_power` when `block_manifest.yaml`
+     lists `/regime_detector` as scaffolding or the base config's detector has no
+     components and no rules; `component_attribution` when every graded variant
+     has at most one component. The proposals file is then a `skipped` reading
+     with the rule (never `[]`); the memory entry's proposals block carries
+     `skipped`; `campaign_record/reader_skips.yaml` counts it and the campaign
+     summary shows "Readers skipped by a code rule". An answer refused after its
+     retry is recorded the same way (rule `output_refused_after_retry`).
+   - **Output:** `proposals/<category>.yaml` is ONE mapping: `schema_version: 3`,
+     `reading_id`, `model_id`, `rubric_version: <category>-reading-v1`,
+     `explanation`, `evidence`, `side_findings` (0-2, each a full claim block plus
+     evidence and scores) and `patch` (null or one). No verdict field. Where it is
+     written, code checks each side finding with `claim_card.check_claim`,
+     resolves the patch against the base config (`decide_next.resolve_patch`)
+     and refuses a patch under a scaffolding path; a refusal gets the one retry,
+     then each item is kept or dropped on its own. Warnings only, in the audit
+     log (`reading_review`): a test whose `spec_hash` is already in the findings
+     or is this run's own claim test; a block-kind claim whose tests cannot see
+     the block. `tests: none` adds a `test_requests.yaml` row. v2 list files and
+     v3 readings load side by side (`load_proposals` flattens a reading into
+     items).
 
 ---
 

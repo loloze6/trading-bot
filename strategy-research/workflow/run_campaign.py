@@ -2663,6 +2663,11 @@ def _regenerate_summary(queue: dict, dry_run: bool = False):
     if (ROOT / CLAIM_COVERAGE_REL).exists():
         import claim_card as _claim_card  # tools/ sibling; heavy, so imported only here
         lines += _claim_card.coverage_summary_lines(ROOT)
+    # E-068 slice 5: readers skipped by a code rule. Only when
+    # campaign_record/reader_skips.yaml exists (written only under
+    # orchestrator.reader_findings), so a summary without one is unchanged.
+    import reader_findings as _reader_findings  # tools/ sibling
+    lines += _reader_findings.skip_summary_lines(ROOT)
     lines += [
         "",
         "## Scoreboard",

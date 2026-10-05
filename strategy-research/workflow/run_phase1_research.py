@@ -1284,9 +1284,15 @@ def _stamp_reader_body(body: str, category: str, run_dir: Path, models) -> tuple
     self_reported, error = {}, None
     try:
         doc = yaml.safe_load(body)
-        if not isinstance(doc, list):
+        if isinstance(doc, dict) and doc.get("schema_version") == 3 and "skipped" not in doc:
+            # E-068 slice 5: a v3 reading carries one model_id, at its top
+            changed, self_reported = _stamp_model_ids([doc], "reading_id", observed)
+        elif isinstance(doc, dict) and "skipped" in doc:
+            changed = False  # written by code: no model answered it
+        elif not isinstance(doc, list):
             raise ValueError("reader body is not a list of proposals")
-        changed, self_reported = _stamp_model_ids(doc, "proposal_id", observed)
+        else:
+            changed, self_reported = _stamp_model_ids(doc, "proposal_id", observed)
         if changed:
             new_body = yaml.safe_dump(doc, sort_keys=False, allow_unicode=True)
             _, verr = _validate_reader_output(f"```yaml\n{new_body}```", category, run_dir)
@@ -3978,6 +3984,45 @@ def _score_provenance_enabled(cfg: dict | None = None) -> bool:
     return value
 
 
+def _reader_findings_enabled(cfg: dict | None = None) -> bool:
+    """E-068 slice 5 (D-073, CUL-403). False when the key, the section or the
+    config file is absent. A non-bool value raises. Requires, loudly,
+    orchestrator.claim_tests.enabled (the readers read the claim's measured
+    numbers and write side findings as claim blocks) and
+    orchestrator.specialist_readers.enabled (the stage it changes).
+
+    While false: byte-identical -- the v2 reader SKILLs, handoffs, prompts,
+    validation and files are untouched (v3 files already on disk still load).
+    While true: readers v3 (tools/reader_findings.py, tools/reader_proposals.py
+    check_reading): short SKILLs under workflow_artifacts/skills/readers_v3/,
+    CLAIM_TESTS.md instead of the design guide, the run's claim numbers and the
+    earlier findings as inputs, code skip rules, an explanation plus side
+    findings (claim blocks, check_claim) plus an optional patch resolved
+    against the base config when written."""
+    cfg = _orchestrator_config(cfg)
+    rf_cfg = ((cfg.get("orchestrator") or {}).get("reader_findings") or {})
+    value = rf_cfg.get("enabled", False)
+    if not isinstance(value, bool):
+        raise ValueError(
+            f"orchestrator.reader_findings.enabled={value!r} is not a real boolean "
+            f"(got {type(value).__name__}) -- write an unquoted `true` or `false` in "
+            f"config/campaign_config.yaml, not a quoted string or null."
+        )
+    if value:
+        missing = [name for name, on in (
+                       ("claim_tests", _flag_dep(_claim_tests_enabled, cfg)),
+                       ("specialist_readers", _flag_dep(_specialist_readers_enabled, cfg)))
+                   if not on]
+        if missing:
+            raise ValueError(
+                "orchestrator.reader_findings.enabled=true requires "
+                + " and ".join(f"orchestrator.{m}.enabled=true" for m in missing)
+                + " as well -- readers v3 read the claim's measured numbers (claim_tests) "
+                "and change the specialist_readers stage. Enable them together."
+            )
+    return value
+
+
 _SPECIALIST_READERS_HANDOFF = "protocol_to_specialist_readers.yaml"
 _READER_OUTPUT_BLOCK_RE = re.compile(r"```ya?ml[^\n]*\n(.*?)```", re.DOTALL)
 
@@ -4058,7 +4103,11 @@ def _reader_proposals_module():
 
 
 def _reader_skill_dir(category: str) -> str:
-    """Skill directory under workflow_artifacts/skills/ for one category."""
+    """Skill directory under workflow_artifacts/skills/ for one category
+    (E-068 slice 5: the short v3 SKILL under orchestrator.reader_findings;
+    the v2 SKILLs are untouched)."""
+    if _reader_findings_enabled():
+        return f"readers_v3/{category}-reader"
     return f"readers/{category}-reader"
 
 
@@ -4185,7 +4234,11 @@ def _reader_handoff(category: str, run_id: str, stage_attempt, run_dir: Path | N
     config, and the same design guide and component catalogue step 2 gets
     (O-4, D-053); then (E-061 C2 S2e) the registry summary code writes before
     the first reader, last. Deliberately none of the stage-wide unions (B7
-    pre-registration, exclusion digest, config-direct context)."""
+    pre-registration, exclusion digest, config-direct context).
+    E-068 slice 5: under orchestrator.reader_findings the v3 handoff
+    (_reader_handoff_v3); flag off, exactly the dict below."""
+    if _reader_findings_enabled():
+        return _reader_handoff_v3(category, run_id, stage_attempt, run_dir)
     return {
         "handoff_version": 1, "run_id": run_id,
         "from_stage": "protocol_execution", "to_stage": "specialist_readers",
@@ -4220,6 +4273,76 @@ def _reader_handoff(category: str, run_id: str, stage_attempt, run_dir: Path | N
         "injected_context": {"stage_attempt": str(stage_attempt),
                              "feed_names": _reader_feed_vocabulary()},
     }
+
+
+# E-068 slice 5 (D-073): the v3 readers' shared rules and the slot grammar
+# their side findings are written in (the same CLAIM_TESTS.md step 1a gets).
+READER_V3_CONTRACT = "../../workflow_artifacts/skills/readers_v3/READING_CONTRACT.md"
+
+
+def _reader_handoff_v3(category: str, run_id: str, stage_attempt, run_dir: Path | None) -> dict:
+    """The per-reader handoff under orchestrator.reader_findings. Same report,
+    grid, card, base config, catalogue and registry summary as v2; the design
+    guide is replaced by CLAIM_TESTS.md (operator, 2026-10-05: a v3 reader
+    mostly writes tests; its patch is resolved against the real config by
+    code); added: the shared reading contract, this run's measured claim
+    numbers (claim_status.yaml when measured, and the code digest of the
+    variants' claim_test.yaml) and the earlier runs' findings."""
+    _rf = _reader_findings_module()
+    return {
+        "handoff_version": 1, "run_id": run_id,
+        "from_stage": "protocol_execution", "to_stage": "specialist_readers",
+        "reader_category": category,
+        "assigned_engine": "claude",
+        "objective": (f"Read artifacts/reports/{category}.yaml with this run's measured claim "
+                      f"result (artifacts/{_rf.DIGEST_ARTIFACT}) and the grid. Explain the "
+                      f"result, then propose at most "
+                      f"{_reader_proposals_module().MAX_SIDE_FINDINGS} side findings (each a "
+                      f"claim block whose tests are composed from CLAIM_TESTS.md) and at most "
+                      f"one patch. Output ONE YAML mapping (schema_version: 3, "
+                      f"reading_id: {category}-{run_id}) -- it is written to "
+                      f"artifacts/proposals/{category}.yaml."),
+        "required_inputs": [
+            {"path": READER_V3_CONTRACT, "reason": "the reading's exact shape and rules"},
+            {"path": f"artifacts/reports/{category}.yaml", "reason": f"the {category} report"},
+            {"path": "artifacts/grid_evaluation.yaml", "reason": "the grid's per-criterion result"},
+            {"path": "artifacts/hypothesis_card.yaml",
+             "reason": "the idea this run tested: its claim, signal and assumptions"},
+            {"path": f"artifacts/{_rf.DIGEST_ARTIFACT}",
+             "reason": "the claim's tests and their measured effect sizes per variant "
+                       "(measured, not proven; numbers only when bound to this run's bars)"},
+            {"path": _reader_base_config_rel(run_dir),
+             "reason": "this run's base config: the real component ids and settings a "
+                       "`patch` must name (component_id is the config's `id`)"},
+            {"path": "../../docs/COMPONENT_CATALOG.md",
+             "reason": "every component's exact output, kind and settings -- never propose "
+                       "a component or setting that is not here"},
+            {"path": CLAIM_TESTS_GUIDE,
+             "reason": "the only blocks a side finding's tests may be composed from"},
+            {"path": f"artifacts/{_rf.READER_SUMMARY_ARTIFACT}",
+             "reason": "what earlier runs already measured: do not propose a test already "
+                       "listed there"},
+            {"path": "artifacts/registry_summary.yaml",
+             "reason": "what earlier runs validated (the distance-to-profitable anchors read it)"},
+        ],
+        "optional_inputs": [
+            {"path": "artifacts/block_manifest.yaml",
+             "reason": "which config paths are the tested block and which are scaffolding "
+                       "(absent on a composition run)"},
+            {"path": "artifacts/claim_status.yaml",
+             "reason": "the claim measurement's run-level status (absent when nothing was "
+                       "measured)"},
+        ],
+        "deliverables": [f"proposals/{category}.yaml"],
+        "injected_context": {"stage_attempt": str(stage_attempt),
+                             "feed_names": _reader_feed_vocabulary()},
+    }
+
+
+def _reader_findings_module():
+    _json_pointer_module()  # puts tools/ on sys.path
+    import reader_findings as _rf
+    return _rf
 
 
 FEED_WISHLIST_REL = "campaign_record/feed_wishlist.yaml"
@@ -4330,8 +4453,13 @@ def _citation_provenance(category: str, run_dir: Path, body: str) -> dict:
         files, unavailable = {}, []
         config_rel = _reader_base_config_rel(run_dir)
         config_rel = config_rel[len("artifacts/"):] if config_rel.startswith("artifacts/") else config_rel
-        for rel in (f"reports/{category}.yaml", "grid_evaluation.yaml", "registry_summary.yaml",
-                    "hypothesis_card.yaml", "block_manifest.yaml", config_rel):
+        rels = (f"reports/{category}.yaml", "grid_evaluation.yaml", "registry_summary.yaml",
+                "hypothesis_card.yaml", "block_manifest.yaml", config_rel)
+        v3 = _reader_findings_enabled()
+        if v3:  # E-068 slice 5: the v3 inputs a reading may cite too
+            _rf = _reader_findings_module()
+            rels += (_rf.DIGEST_ARTIFACT, _rf.READER_SUMMARY_ARTIFACT, "claim_status.yaml")
+        for rel in rels:
             try:
                 doc = yaml.safe_load((arts / rel).read_text(encoding="utf-8"))
             except (OSError, yaml.YAMLError):
@@ -4343,6 +4471,11 @@ def _citation_provenance(category: str, run_dir: Path, body: str) -> dict:
         block = {"files_read": sorted(files), "files_unavailable": sorted(unavailable),
                  "proposals": {}}
         proposals = yaml.safe_load(body)
+        if v3 and isinstance(proposals, dict):
+            # a v3 reading: its own evidence (keyed by reading_id), then each item's
+            proposals = [] if "skipped" in proposals else (
+                [{"proposal_id": proposals.get("reading_id"), "evidence": proposals.get("evidence")}]
+                + rp.flatten_reading(proposals))
         for i, p in enumerate(proposals if isinstance(proposals, list) else []):
             if not isinstance(p, dict):
                 continue
@@ -4361,6 +4494,8 @@ def _validate_reader_output(text: str, category: str, run_dir: Path):
     """Parse one reader response and validate it for its category in a scratch
     directory. Returns (body, None) when valid, (None, error message) when not.
     Never touches artifacts/proposals/."""
+    if _reader_findings_enabled():  # E-068 slice 5: a v3 reading
+        return _validate_reading_output(text, category, run_dir)
     blocks = _READER_OUTPUT_BLOCK_RE.findall(text or "")
     if len(blocks) != 1:
         return None, (f"{category} reader returned {len(blocks)} fenced YAML block(s); "
@@ -4376,6 +4511,180 @@ def _validate_reader_output(text: str, category: str, run_dir: Path):
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
     return body, None
+
+
+# ---------------------------------------------------------------------------
+# E-068 slice 5 (D-073): v3 readings, under orchestrator.reader_findings only.
+# ---------------------------------------------------------------------------
+
+def _scaffolding_pointers(run_dir: Path) -> list:
+    path = Path(run_dir) / "artifacts" / "block_manifest.yaml"
+    manifest = load_yaml(path) if path.exists() else None
+    scaff = manifest.get("scaffolding") if isinstance(manifest, dict) else None
+    return [p.rstrip("/") for p in scaff or [] if isinstance(p, str) and p.strip("/")]
+
+
+def _reading_content_errors(doc: dict, category: str, run_dir: Path) -> list:
+    """What code checks in a shape-valid reading before it is written: each
+    side finding's claim block (claim_card.check_claim), and the patch
+    resolved against this run's base config (decide_next.resolve_patch, the
+    same check decide-next applies) and never under a scaffolding path of
+    block_manifest.yaml (a deliberately ungated detector is not part of the
+    idea, run_070)."""
+    rf = _reader_findings_module()
+    errors = []
+    for i, s in enumerate(doc.get("side_findings") or []):
+        review = rf.side_finding_review(s, prior={}, own=set(), run_id=Path(run_dir).name)
+        errors += [f"side_findings[{i}]: {e}" for e in review["errors"]]
+    patch = doc.get("patch")
+    if patch is not None:
+        rel = _reader_base_config_rel(run_dir)
+        cfg_path = Path(run_dir) / rel
+        try:
+            base = json.loads(cfg_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            return errors + [f"patch: the base config {rel} cannot be read ({exc})"]
+        ops, _patched, why = _decide_next_tools().resolve_patch(patch, base)
+        if why:
+            errors.append(f"patch: {why} (resolved against {rel}: name a component `id`, a "
+                          f"field inside it and its current value from that file)")
+        else:
+            for op in ops:
+                hit = [s for s in _scaffolding_pointers(run_dir)
+                       if op["path"] == s or op["path"].startswith(s + "/")]
+                if hit:
+                    errors.append(f"patch: {op['path']} is under {hit[0]}, which "
+                                  f"block_manifest.yaml lists as scaffolding (not part of the "
+                                  f"idea) -- do not propose changes there")
+    return errors
+
+
+def _validate_reading_output(text: str, category: str, run_dir: Path):
+    """(body, None) for a valid v3 reading, else (None, message): exactly one
+    fenced YAML block holding one reading for this category and run (shape:
+    reader_proposals.check_reading, from the model, so `skipped` is refused),
+    then _reading_content_errors."""
+    blocks = _READER_OUTPUT_BLOCK_RE.findall(text or "")
+    if len(blocks) != 1:
+        return None, (f"{category} reader returned {len(blocks)} fenced YAML block(s); "
+                      f"exactly one is required.")
+    body = blocks[0].strip() + "\n"
+    rp = _reader_proposals_module()
+    try:
+        doc = yaml.safe_load(body)
+    except yaml.YAMLError as exc:
+        return None, f"{category} reader output is not YAML: {exc}"
+    try:
+        rp.check_reading(doc, category, "reading", from_model=True, **_reader_strictness())
+    except rp.ProposalError as exc:
+        return None, str(exc)
+    expected = f"{category}-{Path(run_dir).name}"
+    if doc["reading_id"] != expected:
+        return None, f"reading: reading_id={doc['reading_id']!r} must be {expected!r}"
+    errors = _reading_content_errors(doc, category, run_dir)
+    if errors:
+        return None, "; ".join(errors)
+    return body, None
+
+
+def _dump_reading(doc: dict) -> str:
+    return yaml.safe_dump(doc, sort_keys=False, allow_unicode=True)
+
+
+def _salvage_reading_output(text: str, category: str, run_dir: Path) -> tuple:
+    """(body, dropped) for a v3 answer refused after its retry. When the
+    reading itself is unusable (no single block, not YAML, or its explanation
+    / evidence / ids / rubric refused), the body is a code-written `skipped`
+    reading with rule output_refused_after_retry -- never an empty reading,
+    which would read as "nothing to propose". Otherwise each side finding and
+    the patch is validated on its own: the valid ones are kept, the others
+    dropped and listed. Nothing is repaired: a missing key is not filled in."""
+    rf = _reader_findings_module()
+    run_id = Path(run_dir).name
+
+    def _refused(error: str) -> tuple:
+        doc = rf.skipped_reading(category, run_id, {
+            "rule": rf.SKIP_OUTPUT_REFUSED,
+            "reason": f"the reader's answer was refused after its retry: {error}"})
+        return _dump_reading(doc), [{"index": None, "proposal_id": None, "error": error}]
+
+    def _check(doc) -> str | None:
+        return _validate_reading_output("```yaml\n" + _dump_reading(doc) + "```",
+                                        category, run_dir)[1]
+
+    blocks = _READER_OUTPUT_BLOCK_RE.findall(text or "")
+    if len(blocks) != 1:
+        return _refused(f"{len(blocks)} fenced YAML block(s); exactly one is required")
+    try:
+        doc = yaml.safe_load(blocks[0])
+    except yaml.YAMLError as exc:
+        return _refused(f"not YAML: {exc}")
+    if not isinstance(doc, dict) or not isinstance(doc.get("side_findings"), list) \
+            or "patch" not in doc:
+        return _refused("not a reading mapping with side_findings and patch")
+    sides, patch = doc["side_findings"], doc["patch"]
+    base = {**doc, "side_findings": [], "patch": None}
+    err = _check(base)
+    if err is not None:
+        return _refused(err)
+    kept, dropped = [], []
+    for i, s in enumerate(sides):
+        err = _check({**base, "side_findings": kept + [s]})
+        if err is None:
+            kept.append(s)
+        else:
+            dropped.append({"index": i, "proposal_id": s.get("proposal_id")
+                            if isinstance(s, dict) else None, "error": err})
+    final = {**base, "side_findings": kept}
+    if patch is not None:
+        err = _check({**final, "patch": patch})
+        if err is None:
+            final["patch"] = patch
+        else:
+            dropped.append({"index": "patch", "proposal_id": patch.get("proposal_id")
+                            if isinstance(patch, dict) else None, "error": err})
+    err = _check(final)
+    if err is not None:  # kept items that only fail together
+        return _refused(f"kept set refused: {err}")
+    return _dump_reading(final), dropped
+
+
+def _review_written_reading(category: str, run_id: str, run_dir: Path, body: str) -> dict:
+    """After a v3 reading is written: per side finding, its spec_hashes and the
+    WARNINGS (a test already in the findings or equal to this run's own claim
+    test; a block-kind claim whose tests cannot see the block), and a
+    test_requests.yaml row for `tests: none`. Information only: never raises,
+    never refuses -- a failure is recorded as `error`."""
+    try:
+        rf = _reader_findings_module()
+        rp = _reader_proposals_module()
+        doc = yaml.safe_load(body)
+        items = [i for i in rp.flatten_reading(doc) if i["kind"] == rp.SIDE_FINDING]
+        if not items:
+            return {}
+        card_path = Path(run_dir) / "artifacts" / "hypothesis_card.yaml"
+        card = (load_yaml(card_path) or {}) if card_path.exists() else {}
+        memory = _campaign_memory_module().load_memory(_campaign_memory_path())
+        prior = rf.prior_spec_hashes(memory, exclude_run=run_id)
+        own = rf.own_spec_hashes(card)
+        out, rows = {}, []
+        for item in items:
+            review = rf.side_finding_review(item, prior=prior, own=own, run_id=run_id)
+            out[item["proposal_id"]] = {k: review[k] for k in ("spec_hashes", "tests_none",
+                                                               "warnings")}
+            if review["tests_none"]:
+                rows.append(rf.test_request_row(run_id, card.get("hypothesis_id"), category,
+                                                item, review))
+            for w in review["warnings"]:
+                print(f"⚠️  [E-068] {category} side finding {item['proposal_id']}: {w['kind']}"
+                      + (f" ({w['spec_hash'][:12]}...)" if w.get("spec_hash") else "")
+                      + " -- recorded, nothing refused.")
+        if rows:
+            _claim_card_module().append_test_requests(ROOT, rows)
+        return out
+    except Exception as exc:  # noqa: BLE001 -- information only
+        print(f"⚠️  [E-068] {category} reading review could not run ({exc}); recorded.")
+        return {"error": f"{type(exc).__name__}: {exc}"}
 
 
 def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0) -> Path:
@@ -4401,6 +4710,7 @@ def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0
     prompt = base_prompt
     dest = run_dir / "artifacts" / "proposals" / f"{category}.yaml"
     prov_on = _score_provenance_enabled()  # C5.7b-1
+    v3 = _reader_findings_enabled()  # E-068 slice 5
 
     def _accept(body, entry, key, meta):
         """Write a validated body to the final path (provenance stamped first)."""
@@ -4427,6 +4737,12 @@ def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0
                 os.unlink(tmp_name)
             raise
         print(f"✅ [READER COMPLETE] {category} -> {dest.relative_to(run_dir).as_posix()}")
+        if v3:
+            # E-068 slice 5: warnings and test requests; information only
+            review = _review_written_reading(category, run_id, run_dir, body)
+            if review:
+                entry["reading_review"] = review
+                update_state(path=run_dir, audit_log={key: entry})
         return dest
 
     for attempt in range(2):
@@ -4455,8 +4771,11 @@ def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0
             print(f"⚠️  {category} reader output invalid -- retrying once with the error: {error}")
             prompt = base_prompt + (
                 "\n\n    YOUR PREVIOUS OUTPUT FAILED VALIDATION:\n    " + error +
-                "\n\n    Fix exactly this and output ONE fenced ```yaml block holding a YAML "
-                "list of proposals (`[]` for none).\n")
+                ("\n\n    Fix exactly this and output ONE fenced ```yaml block holding ONE "
+                 "reading mapping (schema_version: 3; `side_findings: []` and `patch: null` "
+                 "when there is none).\n" if v3 else
+                 "\n\n    Fix exactly this and output ONE fenced ```yaml block holding a YAML "
+                 "list of proposals (`[]` for none).\n"))
     debug_path = run_dir / "artifacts" / f"debug_specialist_readers_{category}_raw_output.txt"
     debug_path.write_text(text or "", encoding="utf-8")
     body, dropped = _salvage_reader_output(text, category, run_dir)
@@ -4475,6 +4794,8 @@ def _salvage_reader_output(text: str, category: str, run_dir: Path) -> tuple:
     invalid ones are listed as {index, proposal_id, error}. An answer that
     cannot be read as one YAML list at all gives `[]` and one dropped entry
     (index None). The body always passes _validate_reader_output."""
+    if _reader_findings_enabled():  # E-068 slice 5: a v3 reading
+        return _salvage_reading_output(text, category, run_dir)
     blocks = _READER_OUTPUT_BLOCK_RE.findall(text or "")
     if len(blocks) != 1:
         return "[]\n", [{"index": None, "proposal_id": None,
@@ -4517,11 +4838,15 @@ def _run_specialist_readers(run_id: str, run_dir: Path, stage_attempt=0) -> dict
     categories = _reader_categories()
     rp = _reader_proposals_module()
     proposals_dir = run_dir / "artifacts" / "proposals"
+    v3 = _reader_findings_enabled()  # E-068 slice 5
     for category in categories:
         dest = proposals_dir / f"{category}.yaml"
         if dest.exists():
             rp.load_proposals(proposals_dir, categories, **_reader_strictness())
             print(f"⏭️  proposals/{category}.yaml already present and valid -- reader not re-run.")
+            continue
+        if v3 and _skip_reader_by_rule(category, run_id, run_dir):
+            rp.load_proposals(proposals_dir, categories, **_reader_strictness())
             continue
         _check_reader_budget(run_dir, category)
         run_reader_worker(category, run_id, run_dir, stage_attempt)
@@ -4530,6 +4855,79 @@ def _run_specialist_readers(run_id: str, run_dir: Path, stage_attempt=0) -> dict
     if missing:
         raise FileNotFoundError(f"specialist_readers finished without proposals for {missing}")
     return rp.load_proposals(proposals_dir, categories, **_reader_strictness())
+
+
+def _skip_reader_by_rule(category: str, run_id: str, run_dir: Path) -> bool:
+    """E-068 slice 5 (operator, 2026-10-05): a reader whose report has nothing
+    to read is not called (reader_findings.skip_rule). Its proposals file is a
+    code-written `skipped` reading with the rule -- never `[]` -- written
+    atomically. Returns True when skipped. An unreadable input means "do not
+    skip" (the reader then runs as usual)."""
+    rf = _reader_findings_module()
+    arts = Path(run_dir) / "artifacts"
+
+    def _opt(path: Path):
+        try:
+            if path.suffix == ".json":
+                return json.loads(path.read_text(encoding="utf-8"))
+            return load_yaml(path)
+        except (OSError, ValueError, yaml.YAMLError):
+            return None
+    skip = rf.skip_rule(category,
+                        manifest=_opt(arts / "block_manifest.yaml"),
+                        base_config=_opt(Path(run_dir) / _reader_base_config_rel(run_dir)),
+                        report=_opt(arts / "reports" / f"{category}.yaml"))
+    if skip is None:
+        return False
+    dest = arts / "proposals" / f"{category}.yaml"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{category}.", suffix=".tmp", dir=str(dest.parent))
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(_dump_reading(rf.skipped_reading(category, run_id, skip)))
+        os.replace(tmp_name, dest)
+    except BaseException:
+        with contextlib.suppress(OSError):
+            os.unlink(tmp_name)
+        raise
+    print(f"⏭️  [E-068] {category} reader skipped by rule {skip['rule']} (no model call): "
+          f"{skip['reason']}")
+    return True
+
+
+def _write_reader_v3_inputs(run_dir: Path, run_id: str) -> None:
+    """E-068 slice 5: before the first v3 reader, this run's measured claim
+    numbers (claim_result_digest.yaml) and the earlier runs' findings
+    (findings_summary_for_readers.yaml, this run left out). Information only:
+    an unreadable memory writes an `error` summary, never a stop."""
+    rf = _reader_findings_module()
+    arts = Path(run_dir) / "artifacts"
+    save_yaml(arts / rf.DIGEST_ARTIFACT, rf.claim_result_digest(run_dir))
+    try:
+        memory = _campaign_memory_module().load_memory(_campaign_memory_path())
+        summary = rf.reader_findings_summary(memory, run_id)
+    except Exception as exc:  # noqa: BLE001 -- information only
+        summary = {"schema_version": 1, "run_id": run_id, "status": "error",
+                   "detail": f"{type(exc).__name__}: {exc}", "findings": []}
+    save_yaml(arts / rf.READER_SUMMARY_ARTIFACT, summary)
+    print(f"📚 [E-068] readers v3: {rf.DIGEST_ARTIFACT} and {rf.READER_SUMMARY_ARTIFACT} "
+          f"written ({len(summary.get('findings') or [])} earlier finding(s) listed).")
+
+
+def _record_reader_skips(run_id: str, run_dir: Path) -> None:
+    """E-068 slice 5: every skipped reading of this run (a rule, or an answer
+    refused after its retry) in campaign_record/reader_skips.yaml, which the
+    campaign summary counts. Information only: never raises."""
+    try:
+        rf = _reader_findings_module()
+        rp = _reader_proposals_module()
+        readings = rp.load_readings(Path(run_dir) / "artifacts" / "proposals",
+                                    _reader_categories())
+        skips = {c: d["skipped"] for c, d in readings.items() if "skipped" in d}
+        if skips or (ROOT / rf.SKIPS_REL).exists():
+            rf.record_skips(ROOT, run_id, skips)
+    except Exception as exc:  # noqa: BLE001
+        print(f"⚠️  [E-068] reader skips could not be recorded ({exc}); the run continues.")
 
 
 def _check_retune_firewall(run_dir: Path) -> None:
@@ -4585,7 +4983,12 @@ def _run_specialist_readers_stage(run_id: str, run_dir: Path, stage_attempt=0) -
     # BEFORE the first reader so every reader can score "distance to profitable"
     # against the registry. This stage is the only caller (tests pin it).
     _write_registry_summary(run_dir, idea_status=idea["idea_status"])
+    v3 = _reader_findings_enabled()  # E-068 slice 5
+    if v3:
+        _write_reader_v3_inputs(run_dir, run_id)
     proposals = _run_specialist_readers(run_id, run_dir, stage_attempt)
+    if v3:
+        _record_reader_skips(run_id, run_dir)
     # E-035 S2c: each feed the validated proposals ask for and do not have
     # becomes a data_requests.yaml row (idempotent per run and feed; nothing
     # written when no proposal carries requires_feed).
@@ -14903,6 +15306,58 @@ def _apply_block_manifest_retry_context(stage_name: str, handoff: dict, run_dir:
 # against block_manifest.yaml (artifacts/claim_match.yaml, a warning).
 CLAIM_TESTS_GUIDE = "../../workflow_artifacts/skills/hypothesis-design/CLAIM_TESTS.md"
 CLAIM_1B_NOTE = "../../workflow_artifacts/skills/strategy-config-authoring/CLAIM_NOTE.md"
+# E-068 slice 5 (D-073): a brief minted from a reader's side finding.
+PREFILLED_CLAIM_NOTE = "../../workflow_artifacts/skills/hypothesis-design/PREFILLED_CLAIM.md"
+_CLAIM_PREFILL_FILE = "claim_prefill.yaml"
+
+
+def _prefilled_claim(run_dir: Path):
+    """research_brief.yaml's candidate.claim (a decide-next brief minted from a
+    reader's side finding), else None. Never raises."""
+    try:
+        cand = _decide_next_candidate(Path(run_dir))
+    except Exception:  # noqa: BLE001 -- an unreadable brief is reported by its owners
+        return None
+    claim = cand.get("claim") if isinstance(cand, dict) else None
+    return claim if isinstance(claim, dict) else None
+
+
+def _check_prefilled_claim(run_dir: Path, run_id: str) -> None:
+    """After 1a, when the brief carries a pre-filled claim: compare the card's
+    claim with it (statement, kind, and the tests' spec_hashes) and write
+    artifacts/claim_prefill.yaml. A change is a WARNING: printed and recorded,
+    the run continues (operator, 2026-10-05). Never raises."""
+    pre = _prefilled_claim(run_dir)
+    if pre is None:
+        return
+    out = Path(run_dir) / "artifacts" / _CLAIM_PREFILL_FILE
+    try:
+        cc = _claim_card_module()
+        card = load_yaml(Path(run_dir) / "artifacts" / "hypothesis_card.yaml") or {}
+        claim = card.get("claim") if isinstance(card, dict) else None
+
+        def _hashes(c):
+            res = cc.check_claim(c)
+            return sorted(t["spec_hash"] for t in res.tests)
+        changed = []
+        if not isinstance(claim, dict):
+            changed.append("the card has no claim")
+        else:
+            for key in ("statement", "kind"):
+                if " ".join(str(claim.get(key)).split()) != " ".join(str(pre.get(key)).split()):
+                    changed.append(key)
+            if _hashes(claim) != _hashes(pre):
+                changed.append("tests (spec_hash)")
+        save_yaml(out, {"run_id": run_id, "status": "changed" if changed else "unchanged",
+                        "changed": changed, "prefilled": pre})
+        if changed:
+            print(f"⚠️  [E-068] {run_id}: step 1a changed the pre-filled claim ({', '.join(changed)}); "
+                  f"recorded in artifacts/{_CLAIM_PREFILL_FILE}. The run continues.")
+    except Exception as exc:  # noqa: BLE001 -- information only
+        with contextlib.suppress(Exception):
+            save_yaml(out, {"run_id": run_id, "status": "error",
+                            "error": f"{type(exc).__name__}: {exc}"})
+        print(f"⚠️  [E-068] pre-filled claim check could not run ({exc}); recorded.")
 CLAIM_RETRY_STATE_KEY = "claim_check_retry"
 _CLAIM_RETRY_MAX = 1
 _CLAIM_CHECK_FILE = "claim_check.yaml"
@@ -14940,6 +15395,13 @@ def _apply_claim_tests_context(stage_name: str, handoff: dict, run_dir: Path) ->
                          "reason": "E-068: REQUIRED reading -- every hypothesis card you write "
                                    "carries a `claim` block, its tests composed only from the "
                                    "blocks in this file."})
+    # E-068 slice 5: a decide-next brief from a reader's side finding carries
+    # its claim pre-filled (research_brief.yaml candidate.claim). Only then.
+    if _prefilled_claim(run_dir) is not None and not any(
+            req.get("path") == PREFILLED_CLAIM_NOTE for req in required):
+        required.append({"path": PREFILLED_CLAIM_NOTE,
+                         "reason": "E-068: this brief's claim is pre-filled "
+                                   "(research_brief.yaml candidate.claim); copy it unchanged."})
     state_path = Path(run_dir) / "pipeline_state.yaml"
     state = (load_yaml(state_path) or {}) if state_path.exists() else {}
     retry = state.get(CLAIM_RETRY_STATE_KEY) or {}
@@ -15250,6 +15712,7 @@ def _check_claim_after_1a(run_id: str, run_dir: Path, expected_outputs: list, st
         _finish_claim_status(run_dir, run_id, results, "hypothesis_generation")
     except Exception as exc:  # information only: a bug here never stops a run
         _record_claim_check_error(run_dir, run_id, "hypothesis_generation", exc)
+    _check_prefilled_claim(run_dir, run_id)  # E-068 slice 5; never raises
 
 
 def _record_claim_check_error(run_dir: Path, run_id: str, stage: str, exc: Exception) -> None:

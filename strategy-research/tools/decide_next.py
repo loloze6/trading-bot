@@ -1546,6 +1546,29 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
         else:
             novelty = {"exact_match": "NOT_EVALUATED", "matched_runs": []}
         feas = "INFEASIBLE" if reasons else "FEASIBLE"
+    elif p["kind"] == _rp.SIDE_FINDING:
+        # E-068 slice 5 (D-073): a reader's side finding is a claim block; its
+        # brief carries that claim pre-filled. No config exists before 1b, so
+        # novelty is not applicable (its tests' spec_hashes are recorded) and
+        # 1b + step 3's data gate decide feasibility, as for a sketch.
+        side_review = _side_finding_review(run_id, src, p, inputs)
+        if side_review["errors"]:
+            reasons.append("next_test_refused: " + "; ".join(side_review["errors"]))
+        elif side_review["tests_none"]:
+            reasons.append(f"next_test_none: missing block {side_review['missing_block']!r} "
+                           f"(recorded as a test request)")
+        if _cc_kind_block((p.get("claim") or {}).get("kind")) == "regime":
+            reasons.append("regime_block_needs_composition: a regime block is validated only "
+                           "as a composition variant (cards A/F, slice 7)")
+        feed_record, feed_reason = requires_feed_gate(p, inputs.get("feed_set"))
+        if feed_reason:
+            reasons.append(feed_reason)
+        novelty = {"exact_match": "NOT_APPLICABLE", "matched_runs": [],
+                   "note": "no config until 1b authors it",
+                   "spec_hashes": list(side_review["spec_hashes"])}
+        feas = "INFEASIBLE" if reasons else "UNKNOWN"
+        if not reasons:
+            reasons.append("config authored at 1b; step 3's data gate stays binding")
     else:
         blk = p.get("block") or {}
         if blk.get("kind") == "regime":
@@ -1570,6 +1593,10 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
         feasibility["requires_feed"] = feed_record
     if p["kind"] == "patch":
         collapse_key = ("patch", key) if key else ("single", pid)
+    elif p["kind"] == _rp.SIDE_FINDING:
+        # two readers proposing the same tests are one candidate
+        hashes = tuple(sorted(novelty.get("spec_hashes") or []))
+        collapse_key = ("side_finding", hashes) if hashes else ("single", pid)
     else:
         blk = p.get("block") or {}
         collapse_key = ("new_block", blk.get("kind"),
@@ -1602,9 +1629,27 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
         "rank": None,
     }
     warnings = class_name_warnings(p, inputs.get("known_classes"), src.get("card_text"))
+    if p["kind"] == _rp.SIDE_FINDING:
+        # E-068 slice 5: a repeated spec_hash or a block-kind claim whose tests
+        # cannot see the block -- WARNINGS ONLY, never a reason or a rank change
+        warnings = warnings + list(side_review["warnings"])
     if warnings:  # E-068 PR 4 (D-071): only when non-empty -- other records unchanged
         cand["warnings"] = warnings
     return cand
+
+
+def _cc_kind_block(kind):
+    import claim_card as _cc  # tools/ sibling; only side findings need it
+    return _cc.KIND_BLOCK.get(kind)
+
+
+def _side_finding_review(run_id: str, src: dict, p: dict, inputs: dict) -> dict:
+    """reader_findings.side_finding_review against the memory's findings
+    (every run but the source run) and the source run's own claim tests."""
+    import reader_findings as _rf  # tools/ sibling; only side findings need it
+    prior = _rf.prior_spec_hashes(inputs.get("memory") or {}, exclude_run=run_id)
+    return _rf.side_finding_review(p, prior=prior, own=_rf.own_spec_hashes(src.get("card")),
+                                   run_id=run_id)
 
 
 # E-068 PR 4 (D-071): the one warning kind a candidate can carry.
@@ -1981,6 +2026,11 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str) -> tuple:
                             for i in p["patch"])
         goal = (f"Test a change proposed by the {category} reader after {run_id} on idea "
                 f"{cand['parent_hypothesis_id']}: {changes}. Evidence: {evidence}")
+    elif p["kind"] == _rp.SIDE_FINDING:
+        statement = " ".join(str((p.get("claim") or {}).get("statement") or "").split())
+        goal = (f"Test a finding the {category} reader noticed after {run_id} on idea "
+                f"{cand['parent_hypothesis_id']}: {statement} Its claim block is pre-filled "
+                f"(candidate.claim). Evidence: {evidence}")
     else:
         blk = p.get("block") or {}
         goal = (f"Test a new {blk.get('kind')} block proposed by the {category} reader after "
@@ -2003,9 +2053,14 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str) -> tuple:
         "hypothesis_id": cand["hypothesis_id"],
         "decision_ref": decision_ref,
         "proposal": {k: copy.deepcopy(p[k])
-                     for k in ("kind", "patch", "block", "evidence", "requires_feed") if k in p},
+                     for k in ("kind", "patch", "block", "claim", "evidence", "requires_feed")
+                     if k in p},
     }
     candidate = {}
+    if p["kind"] == _rp.SIDE_FINDING:
+        # E-068 slice 5: step 1a copies this into the card unchanged
+        # (PREFILLED_CLAIM.md); a change is recorded as a warning.
+        candidate["claim"] = copy.deepcopy(p["claim"])
     if p["kind"] == "patch":
         ops, patched, why = resolve_patch(p, src["base_config"])
         if why:

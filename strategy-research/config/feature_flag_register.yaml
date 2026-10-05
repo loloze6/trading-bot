@@ -670,6 +670,34 @@ flags:
       Information only; no prompt reads either yet. Tested by
       tests/test_e068_4_findings.py.
 
+  - name: reader_findings
+    kind: orchestrator_config
+    config_key: orchestrator.reader_findings.enabled
+    reader: run_phase1_research._reader_findings_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "claim_tests and specialist_readers (reader_findings requires both); the first real run with the flag on measures the v3 readers (cost, skips, side findings)"
+    criterion: >
+      Landed 2026-10-05 (E-068 slice 5, CUL-403, D-073). Off: byte-identical --
+      the v2 reader SKILLs, handoffs, prompts, validation and proposal files
+      are untouched (a v3 file already on disk still loads: v2 and v3
+      coexist). On (requires claim_tests and specialist_readers): readers v3
+      (short SKILLs in workflow_artifacts/skills/readers_v3/ plus
+      READING_CONTRACT.md; CLAIM_TESTS.md replaces the design guide, the
+      catalogue stays; inputs add claim_status.yaml,
+      artifacts/claim_result_digest.yaml and
+      artifacts/findings_summary_for_readers.yaml). Code skip rules
+      (regime_power on a scaffolding or constant detector, component_attribution
+      with at most one component) write a `skipped` reading with the rule,
+      counted in campaign_record/reader_skips.yaml and the campaign summary.
+      One reading per reader: explanation, 0-2 side findings (claim blocks,
+      check_claim), at most one patch (resolved against the base config,
+      never on scaffolding); no verdict field. decide_next takes side
+      findings as candidates with candidate.claim pre-filled (1a gets
+      hypothesis-design/PREFILLED_CLAIM.md; a change is recorded in
+      artifacts/claim_prefill.yaml). Repeated spec_hash and blind block
+      claims are warnings only. Tested by tests/test_e068_5_readers_v3.py.
+
   - name: operator_approval
     kind: orchestrator_config
     config_key: orchestrator.operator_approval.enabled

@@ -109,7 +109,12 @@
               "category": { "type": "string" },
               "ref": { "$ref": "#/$defs/nullable_string" },
               "proposal_ids": { "type": "array", "items": { "type": "string" } },
-              "count": { "type": "integer", "minimum": 0 }
+              "count": { "type": "integer", "minimum": 0 },
+              "skipped": {
+                "type": "object", "required": ["rule", "reason"], "additionalProperties": false,
+                "description": "E-068 slice 5: the reader was not called (a code skip rule) or its answer was refused after its retry; present only then.",
+                "properties": { "rule": { "type": "string" }, "reason": { "type": "string" } }
+              }
             }
           },
           "description": "References only -- scores are never copied (they rank candidates in slice 6b)."
