@@ -1461,7 +1461,9 @@ feed that is not wired, one row per such feed in
      written by code before the first reader, `artifacts/claim_result_digest.yaml`
      (the claim's tests and each variant's effect sizes from its
      `claim_test.yaml`, numbers only when measured on this attempt's bars, else
-     `stale`) and `artifacts/findings_summary_for_readers.yaml` (earlier runs'
+     `stale`; and, CUL-410, `variant_patches`: each variant's id, kind, symbol
+     and exact patch from `variant_patches.yaml`, so a reader never infers a
+     variant's settings from its name) and `artifacts/findings_summary_for_readers.yaml` (earlier runs'
      findings from the campaign memory, this run left out, newest 10, compact);
      `claim_status.yaml` when it exists. If either code-written file cannot be
      written (e.g. an OSError), the stage does not stop: the error is printed and

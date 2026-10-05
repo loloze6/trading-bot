@@ -280,6 +280,25 @@ def block_visibility(claim, manifest_kind) -> str:
     return VISIBILITY_BLIND
 
 
+# CUL-409 (operator, 2026-10-05): when the idea is a block (manifest kind forecast
+# or regime), the claim needs at least one test that reads the block's output --
+# criteria_refs alone (or tests: none) is not enough.
+BLOCK_TEST_GAP_BLIND = "blind"                 # tests exist, none reads the block
+BLOCK_TEST_GAP_NO_TEST = "no_block_test"       # no test at all (criteria only / none)
+
+
+def block_test_gap(claim, manifest_kind) -> str | None:
+    """None when the claim has a test reading the block's output, or when the
+    rule does not apply (no claim mapping, or a manifest kind that is not a
+    block); else BLOCK_TEST_GAP_BLIND or BLOCK_TEST_GAP_NO_TEST. Pure."""
+    if not isinstance(claim, dict) or manifest_kind not in _BLOCK_COLUMN:
+        return None
+    visibility = block_visibility(claim, manifest_kind)
+    if visibility == VISIBILITY_OK:
+        return None
+    return BLOCK_TEST_GAP_BLIND if visibility == VISIBILITY_BLIND else BLOCK_TEST_GAP_NO_TEST
+
+
 def match_check(claim: dict, manifest_kind) -> list:
     """Warnings (dicts) comparing 1a's claim with 1b's manifest kind. Empty
     when they agree. Never raises on content: this is information only."""

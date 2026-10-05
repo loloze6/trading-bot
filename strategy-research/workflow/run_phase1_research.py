@@ -16120,6 +16120,14 @@ CLAIM_REVISION_SKILL = "claim-revision"      # flag-on-only input; never in _SKI
 CLAIM_REVISION_AUDIT_KEY = "claim_revision_attempt_0"
 CLAIM_BLIND_MESSAGE = ("your tests cannot see the block: base and variants would "
                        "measure the same")
+# CUL-409 (operator, 2026-10-05): a block idea's claim needs a test reading the block.
+CLAIM_NO_BLOCK_TEST_MESSAGE = (
+    "the idea is a {kind} block, but your claim has no test that reads the block's output "
+    "(`{column}`): criteria_refs alone are not enough. Add at least one test whose selector "
+    "or statistic reads `{column}` (CLAIM_TESTS.md), keeping the statement and the kind")
+CLAIM_STILL_NO_BLOCK_TEST_WARNING = (
+    "the claim still has no test that reads the block's output (criteria_refs alone are not "
+    "enough, CUL-409); the run continues and the block is not measured by the claim")
 _CLAIM_LOCKED_KEYS = ("statement", "kind")
 # The real guide (not ROOT-relative: a sandboxed ROOT holds no skills).
 _CLAIM_GUIDE_SOURCE = (Path(__file__).resolve().parent.parent / "workflow_artifacts" / "skills"
@@ -16341,14 +16349,21 @@ def _claim_revision_body(run_dir: Path, run_id: str) -> dict:
     record = {"manifest_kind": kind, "claim_before": claim,
               "claim_before_sha256": _claim_sha256(claim), "visibility_before": before}
     unchanged = {"claim_after": claim, "visibility_after": before}
-    if before != cc.VISIBILITY_BLIND:
+    # CUL-409: the revision also fires when a block idea's claim has no test at all
+    # (criteria_refs only, tests: none); a blind claim is the original trigger.
+    gap = cc.block_test_gap(claim, kind)
+    if gap is None:
         return {**record, "status": "not_needed", **unchanged}
+    if gap == cc.BLOCK_TEST_GAP_NO_TEST:
+        record["trigger"] = gap
     within, used, budget = _claim_llm_budget(run_dir)
     if not within:
-        return {**record, "status": "skipped_budget",
-                "reason": f"weighted token budget spent ({used:,.0f} > {budget:,.0f})",
-                **unchanged}
-    message = CLAIM_BLIND_MESSAGE
+        return _no_block_test_warning({**record, "status": "skipped_budget",
+                                       "reason": f"weighted token budget spent ({used:,.0f} > "
+                                                 f"{budget:,.0f})", **unchanged})
+    message = (CLAIM_BLIND_MESSAGE if gap == cc.BLOCK_TEST_GAP_BLIND
+               else CLAIM_NO_BLOCK_TEST_MESSAGE.format(kind=kind,
+                                                       column=cc._BLOCK_COLUMN[kind]))
     record["message"] = message
     # written BEFORE the call (with the original claim): a resume never calls
     # twice and never loses what the card held before
@@ -16362,6 +16377,17 @@ def _claim_revision_body(run_dir: Path, run_id: str) -> dict:
             "status": out.get("status"), "reason": out.get("reason") or out.get("error")}})
     except Exception as exc:  # noqa: BLE001 -- the outcome is in claim_revision.yaml anyway
         out.setdefault("error", f"state not updated: {type(exc).__name__}: {exc}")
+    return _no_block_test_warning(out)
+
+
+def _no_block_test_warning(out: dict) -> dict:
+    """CUL-409: a claim the revision was asked to give a block test, and that
+    still has none (refused, error, budget skip, or an accepted answer without
+    one), carries the warning -- the run continues either way."""
+    if out.get("trigger") == _claim_card_module().BLOCK_TEST_GAP_NO_TEST \
+            and out.get("visibility_after") != _claim_card_module().VISIBILITY_OK \
+            and not out.get("warning"):
+        out["warning"] = CLAIM_STILL_NO_BLOCK_TEST_WARNING
     return out
 
 
@@ -16412,6 +16438,8 @@ def _claim_revision_call(run_dir, run_id, card, claim, kind, record, unchanged) 
     if after == cc.VISIBILITY_BLIND:
         out["warning"] = ("the revised claim passes the code check but its tests still cannot "
                           "see the block; it is kept")
+    elif after != cc.VISIBILITY_OK and record.get("trigger") == cc.BLOCK_TEST_GAP_NO_TEST:
+        out["warning"] = CLAIM_STILL_NO_BLOCK_TEST_WARNING  # CUL-409: none was there before
     elif after != cc.VISIBILITY_OK:
         out["warning"] = ("the revision removed the measurable tests (tests: none or criteria "
                           "only); it is kept, and the claim is no longer measured against "
