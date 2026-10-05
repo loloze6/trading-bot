@@ -4730,6 +4730,10 @@ def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0
             # E-068 slice 5: warnings and test requests BEFORE the file lands --
             # a resume finds the file and never re-reviews it (review fix 4).
             # Information only; test-request rows are idempotent on a re-run.
+            # Accepted trade-off (review round 2): a crash between this review
+            # and os.replace leaves a test-request row for a reading that never
+            # landed; the resumed reader answers again. Over-recording a request
+            # is preferred to losing one.
             review = _review_written_reading(category, run_id, run_dir, body)
             if review:
                 entry["reading_review"] = review
