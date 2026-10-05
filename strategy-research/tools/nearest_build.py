@@ -69,8 +69,12 @@ def structured_deviations(decision) -> list:
 
 
 def rationale_deviation_lines(backtest_spec) -> list:
-    """Every config_rationale entry whose config_choice starts with DEVIATION:
-    (the O-7 fidelity rule), as {clause, text}."""
+    """The config_rationale entries whose config_choice starts with DEVIATION:
+    (the O-7 fidelity rule), as {clause, text}; at most MAX_ITEMS."""
+    return _all_rationale_lines(backtest_spec)[:MAX_ITEMS]
+
+
+def _all_rationale_lines(backtest_spec) -> list:
     rationale = backtest_spec.get("config_rationale") if isinstance(backtest_spec, dict) else None
     out = []
     for entry in rationale if isinstance(rationale, list) else []:
@@ -80,7 +84,7 @@ def rationale_deviation_lines(backtest_spec) -> list:
         if choice and choice.upper().startswith(DEVIATION_PREFIX):
             out.append({"clause": _text(entry.get("hypothesis_claim")),
                         "text": _text(choice[len(DEVIATION_PREFIX):])})
-    return out[:MAX_ITEMS]
+    return out
 
 
 def core_lost_problem(decision) -> str | None:
@@ -116,20 +120,16 @@ def build_record(run_id: str, decision, backtest_spec) -> dict:
         state = STATUS_APPROXIMATION if (items or lines) else STATUS_EXACT
     rec = {"schema_version": SCHEMA_VERSION, "run_id": run_id, "status": state,
            "information_only": True, "deviations": items, "config_rationale_lines": lines}
-    dropped = len(_deviation_items(decision)) - len(items)
+    # Beyond MAX_ITEMS: counted for whichever list the approximation block shows
+    # (the structured items when 1b wrote any, else the DEVIATION: lines).
+    dropped = (len(_deviation_items(decision)) - len(items) if items
+               else len(_all_rationale_lines(backtest_spec)) - len(lines))
     if dropped > 0:
-        rec["deviations_not_listed"] = dropped   # beyond MAX_ITEMS
+        rec["deviations_not_listed"] = dropped
     if state == STATUS_PARKED:
         rec["core_lost"] = core_lost_of(decision)
         rec["tried"] = (decision or {}).get("tried") or []
     return rec
-
-
-def n_deviations(record) -> int:
-    """Structured items when 1b wrote any, else the DEVIATION: lines."""
-    if not isinstance(record, dict):
-        return 0
-    return len(record.get("deviations") or []) or len(record.get("config_rationale_lines") or [])
 
 
 def approximation_block(record) -> dict | None:

@@ -368,9 +368,14 @@ def test_model_written_deviations_are_bounded():
     assert block["n_deviations"] == nb.MAX_ITEMS + 2
     assert block["line"].endswith("; and 2 more (not listed)")
     assert len(nb.request_rows("run_1", rec)) == nb.MAX_ITEMS
-    lines = nb.rationale_deviation_lines({"config_rationale": [
-        {"hypothesis_claim": str(i), "config_choice": "DEVIATION: x"} for i in range(30)]})
-    assert len(lines) == nb.MAX_ITEMS
+    spec = {"config_rationale": [{"hypothesis_claim": str(i), "config_choice": "DEVIATION: x"}
+                                 for i in range(14)]}
+    assert len(nb.rationale_deviation_lines(spec)) == nb.MAX_ITEMS
+    # review round 2: the DEVIATION-lines fallback counts what it drops too
+    rec = nb.build_record("run_1", {"status": "spec_ready"}, spec)
+    assert rec["deviations_not_listed"] == 4
+    block = nb.approximation_block(rec)
+    assert block["n_deviations"] == 14 and block["line"].endswith("; and 4 more (not listed)")
 
 
 def test_two_deviations_with_the_same_missing_piece_keep_two_rows():
