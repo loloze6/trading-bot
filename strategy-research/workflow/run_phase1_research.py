@@ -4340,19 +4340,36 @@ def _reader_handoff_v3(category: str, run_id: str, stage_attempt, run_dir: Path 
         "injected_context": {"stage_attempt": str(stage_attempt),
                              "feed_names": _reader_feed_vocabulary()},
     }
-    if run_dir is not None:
-        for name in (_rf.DIGEST_ARTIFACT, _rf.READER_SUMMARY_ARTIFACT):
-            rel = f"artifacts/{name}"
-            if (Path(run_dir) / rel).exists():
-                continue
-            handoff["required_inputs"] = [r for r in handoff["required_inputs"]
-                                          if r["path"] != rel]
-            handoff["optional_inputs"].append(
-                {"path": rel,
-                 "reason": f"MISSING in this run: it could not be written before the readers "
-                           f"(see artifacts/{_rf.INPUT_GAPS_ARTIFACT}). Read without it; never "
-                           f"guess its content."})
+    missing = _reader_v3_missing_inputs(run_dir) if run_dir is not None else []
+    for name in missing:
+        rel = f"artifacts/{name}"
+        handoff["required_inputs"] = [r for r in handoff["required_inputs"] if r["path"] != rel]
+        handoff["optional_inputs"].append(
+            {"path": rel,
+             "reason": f"MISSING in this run: it could not be written before the readers "
+                       f"(see artifacts/{_rf.INPUT_GAPS_ARTIFACT}). Read without it; never "
+                       f"guess its content."})
+    if missing:
+        handoff["objective"] += (f" Missing in this run (read without them): "
+                                 f"{', '.join(missing)}.")
     return handoff
+
+
+def _reader_v3_missing_inputs(run_dir: Path) -> list:
+    """The code-written v3 reader inputs this run lacks: absent from disk, or
+    named in artifacts/reader_input_gaps.yaml (a file that could not be
+    rewritten AND could not be removed is still on disk with an older
+    attempt's content -- the gap record wins). Never raises: an unreadable
+    gap record counts as naming nothing."""
+    rf = _reader_findings_module()
+    arts = Path(run_dir) / "artifacts"
+    try:
+        doc = yaml.safe_load((arts / rf.INPUT_GAPS_ARTIFACT).read_text(encoding="utf-8"))
+        recorded = set((doc or {}).get("missing") or {})
+    except Exception:  # noqa: BLE001 -- absent (the normal case) or unreadable
+        recorded = set()
+    return [name for name in (rf.DIGEST_ARTIFACT, rf.READER_SUMMARY_ARTIFACT)
+            if name in recorded or not (arts / name).exists()]
 
 
 def _reader_findings_module():
@@ -4727,6 +4744,7 @@ def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0
     dest = run_dir / "artifacts" / "proposals" / f"{category}.yaml"
     prov_on = _score_provenance_enabled()  # C5.7b-1
     v3 = _reader_findings_enabled()  # E-068 slice 5
+    missing_inputs = _reader_v3_missing_inputs(run_dir) if v3 else []
 
     def _accept(body, entry, key, meta):
         """Write a validated body to the final path (provenance stamped first)."""
@@ -4785,6 +4803,8 @@ def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0
         }
         if prov_on:
             entry["provenance"] = _base_provenance(meta.get("models"), meta.get("result_models"))
+        if missing_inputs:  # E-068 slice 5: kept per reading, a resume cannot erase it
+            entry["missing_inputs"] = list(missing_inputs)
         update_state(path=run_dir, audit_log={key: entry})
         body, error = _validate_reader_output(text, category, run_dir)
         if error is None:
@@ -4976,6 +4996,8 @@ def _record_reader_input_gaps(arts: Path, run_id: str, gaps: dict) -> None:
     except Exception as exc:  # noqa: BLE001 -- information only
         print(f"⚠️  [E-068] readers v3: the input gaps could not be recorded ({exc}); the "
               f"readers run anyway.")
+        with contextlib.suppress(Exception):  # never leave an older attempt's record
+            (arts / _reader_findings_module().INPUT_GAPS_ARTIFACT).unlink(missing_ok=True)
 
 
 def _record_reader_skips(run_id: str, run_dir: Path) -> None:

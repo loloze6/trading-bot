@@ -860,6 +860,78 @@ def test_a_later_clean_write_removes_the_gap_record(monkeypatch):
     assert all("MISSING" not in r["reason"] for r in h["optional_inputs"])
 
 
+def test_both_inputs_present_the_handoff_is_the_slice_5_one(monkeypatch):
+    """With both files written, the v3 handoff is exactly slice 5's (order included)."""
+    run_dir = _run070_shaped(monkeypatch)
+    h = rpr._reader_handoff("profitability", RUN_ID, 0, run_dir)
+    assert [r["path"] for r in h["required_inputs"]] == [
+        rpr.READER_V3_CONTRACT, "artifacts/reports/profitability.yaml",
+        "artifacts/grid_evaluation.yaml", "artifacts/hypothesis_card.yaml",
+        f"artifacts/{rf.DIGEST_ARTIFACT}", "artifacts/candidate_strategy_config.json",
+        "../../docs/COMPONENT_CATALOG.md", rpr.CLAIM_TESTS_GUIDE,
+        f"artifacts/{rf.READER_SUMMARY_ARTIFACT}", "artifacts/registry_summary.yaml"]
+    assert [r["path"] for r in h["optional_inputs"]] == ["artifacts/block_manifest.yaml",
+                                                         "artifacts/claim_status.yaml"]
+    assert h["objective"].endswith("written to artifacts/proposals/profitability.yaml.")
+
+
+def test_an_older_copy_that_cannot_be_removed_is_still_missing(monkeypatch):
+    """Review fix: rewrite AND removal fail (a Windows file lock): the older
+    attempt's file stays on disk, and the gap record keeps it out of the prompt."""
+    run_dir = _run070_shaped(monkeypatch)
+    arts = run_dir / "artifacts"
+    _failing_save(monkeypatch, {rf.DIGEST_ARTIFACT}, PermissionError("locked"))
+    real_unlink = Path.unlink
+
+    def _unlink(self, *a, **k):
+        if self.name == rf.DIGEST_ARTIFACT:
+            raise PermissionError("locked")
+        return real_unlink(self, *a, **k)
+    monkeypatch.setattr(Path, "unlink", _unlink)
+    gaps = rpr._write_reader_v3_inputs(run_dir, RUN_ID)
+    assert "an older copy could not be removed" in gaps[rf.DIGEST_ARTIFACT]
+    assert (arts / rf.DIGEST_ARTIFACT).exists()   # still on disk
+    h = rpr._reader_handoff("trade_efficiency", RUN_ID, 0, run_dir)
+    assert f"artifacts/{rf.DIGEST_ARTIFACT}" not in [r["path"] for r in h["required_inputs"]]
+    assert f"artifacts/{rf.DIGEST_ARTIFACT}" not in [r["path"] for r in h["optional_inputs"]
+                                                    if "MISSING" not in r["reason"]]
+    assert h["objective"].endswith(f"Missing in this run (read without them): "
+                                   f"{rf.DIGEST_ARTIFACT}.")
+
+
+def test_a_reading_written_without_an_input_says_so_after_a_resume(monkeypatch):
+    """Review fix: the gap is kept in the reading's own audit entry, so a later
+    clean write (which removes reader_input_gaps.yaml) cannot erase it."""
+    run_dir = _run070_shaped(monkeypatch)
+    real = rpr.save_yaml
+    _failing_save(monkeypatch, {rf.READER_SUMMARY_ARTIFACT})
+    rpr._write_reader_v3_inputs(run_dir, RUN_ID)
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _reading_llm([]))
+    rpr.run_reader_worker("trade_efficiency", RUN_ID, run_dir)
+    monkeypatch.setattr(rpr, "save_yaml", real)
+    assert rpr._write_reader_v3_inputs(run_dir, RUN_ID) == {}   # the resume
+    audit = rpr.load_yaml(run_dir / "pipeline_state.yaml")["audit_log"]
+    assert audit["specialist_readers_trade_efficiency_attempt_0"]["missing_inputs"] == [
+        rf.READER_SUMMARY_ARTIFACT]
+    rpr.run_reader_worker("profitability", RUN_ID, run_dir)   # after the clean write
+    assert "missing_inputs" not in rpr.load_yaml(
+        run_dir / "pipeline_state.yaml")["audit_log"]["specialist_readers_profitability_attempt_0"]
+
+
+def test_a_failed_gap_record_leaves_no_older_record(monkeypatch):
+    run_dir = _run070_shaped(monkeypatch)
+    arts = run_dir / "artifacts"
+    real = rpr.save_yaml
+    _failing_save(monkeypatch, {rf.DIGEST_ARTIFACT})
+    rpr._write_reader_v3_inputs(run_dir, RUN_ID)
+    assert (arts / rf.INPUT_GAPS_ARTIFACT).exists()
+    monkeypatch.setattr(rpr, "save_yaml", real)
+    _failing_save(monkeypatch, {rf.READER_SUMMARY_ARTIFACT, rf.INPUT_GAPS_ARTIFACT})
+    rpr._write_reader_v3_inputs(run_dir, RUN_ID)   # digest fine now; record write fails
+    assert not (arts / rf.INPUT_GAPS_ARTIFACT).exists()
+    assert rpr._reader_v3_missing_inputs(run_dir) == [rf.READER_SUMMARY_ARTIFACT]
+
+
 # ---------------------------------------------------------------------------
 # 8. Side findings: warnings, candidates, the brief
 # ---------------------------------------------------------------------------
