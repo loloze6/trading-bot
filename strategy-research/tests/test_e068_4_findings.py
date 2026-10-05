@@ -22,6 +22,7 @@ Covers:
 """
 import copy
 import json
+import os
 import re
 import shutil
 import sys
@@ -74,6 +75,19 @@ def _edit_yaml(path: Path, fn) -> None:
     doc = yaml.safe_load(path.read_text(encoding="utf-8"))
     fn(doc)
     path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+
+
+def _age(path: Path, seconds: int) -> None:
+    """Make `path` `seconds` older than every other file of the run."""
+    t = 1_000_000_000 - seconds
+    os.utime(path, (t, t))
+
+
+def _fresh(run_dir: Path) -> None:
+    """Every variant's protocol_result.yaml older than the claim files (the
+    order one attempt writes them in)."""
+    for v in VIDS:
+        _age(run_dir / "artifacts" / "variants" / v / "protocol_result.yaml", 100)
 
 
 def _strings(obj, skip=("statement",)):
@@ -138,8 +152,10 @@ def test_numbers_match_validation_run(run070):
     # base and the design variant measure the same (the tests are blind)
     assert pv["base"]["tests"] == pv["shock_lookback_250"]["tests"]
     # copied from claim_test.yaml: the horizon with the largest oriented effect
-    assert pv["base"]["tests"][HIGH]["peak_horizon"] == 1
-    assert pv["uni_defi"]["tests"][HIGH]["peak_horizon"] == 12
+    # a string, the same type as the horizon keys
+    assert pv["base"]["tests"][HIGH]["peak_horizon"] == "1"
+    assert pv["uni_defi"]["tests"][HIGH]["peak_horizon"] == "12"
+    assert "12" in pv["uni_defi"]["tests"][HIGH]["horizons"]
 
 
 def test_detail_stays_by_reference(run070):
@@ -215,9 +231,15 @@ def test_changed_spec_hash_is_stale(run070):
 def test_claim_measure_skip_reason_passes_through(run070):
     _edit_yaml(run070 / "artifacts" / "claim_status.yaml", lambda d: d["variants"].update(
         base={"status": "not_measured", "reason": "stale_result", "file": None}))
+    _fresh(run070)
     rec = _build(run070)["result"]["per_variant"]["base"]
     _assert_no_numbers(rec)
     assert rec["reason"] == "stale_result"
+    # a claim_status.yaml older than the variant's result is not this attempt's
+    _age(run070 / "artifacts" / "claim_status.yaml", 1000)
+    rec = _build(run070)["result"]["per_variant"]["base"]
+    _assert_no_numbers(rec)
+    assert rec["reason"] == "stale" and "stale_result" in rec["detail"]
 
 
 def test_variant_absent_from_claim_status_is_stale(run070):
@@ -245,9 +267,23 @@ def test_no_claim_status_file(run070):
 def test_run_level_gap_reason(run070):
     _edit_yaml(run070 / "artifacts" / "claim_status.yaml", lambda d: d.update(
         claim_status="not_measured", reason="tests_none", variants={}, tests=[]))
+    _fresh(run070)
     f = _build(run070)
     assert (f["status"], f["reason"]) == ("not_measured", "tests_none")
     assert {r["reason"] for r in f["result"]["per_variant"].values()} == {"tests_none"}
+    _age(run070 / "artifacts" / "claim_status.yaml", 1000)
+    f = _build(run070)
+    assert (f["status"], f["reason"]) == ("not_measured", "stale")
+
+
+def test_mixed_reasons_are_not_called_error(run070):
+    entry = _entry(run070)
+    entry["variants"]["base"]["status"] = "not_tested"
+    for v in VIDS[1:]:
+        entry["variants"][v]["status"] = "failed"
+    f = _build(run070, entry=entry)
+    assert (f["status"], f["reason"]) == ("not_measured",
+                                          "mixed: variant_failed, variant_not_tested")
 
 
 def test_no_events(run070):
@@ -263,16 +299,39 @@ def test_no_events(run070):
     assert rec["status"] == "no_events" and "horizons" not in rec["tests"][HIGH]
 
 
-def test_bars_missing_only_when_really_missing(run070):
-    def _missing(d):
+def _unmeasured(run070, reason):
+    def _edit(d):
         d.pop("bars", None)
-        d.update(status="not_measured", reason="bars_missing")
-    _edit_yaml(run070 / "artifacts" / "variants" / "base" / "claim_test.yaml", _missing)
+        d.update(status="not_measured", reason=reason)
+    path = run070 / "artifacts" / "variants" / "base" / "claim_test.yaml"
+    _edit_yaml(path, _edit)
+    return path
+
+
+@pytest.mark.parametrize("reason", ["holdout", "error", "bars_missing"])
+def test_a_refusal_of_this_attempt_keeps_its_reason(run070, reason):
+    _unmeasured(run070, reason)
+    _fresh(run070)
+    rec = _build(run070)["result"]["per_variant"]["base"]
+    _assert_no_numbers(rec)
+    assert rec["reason"] == reason
+
+
+@pytest.mark.parametrize("reason", ["holdout", "error"])
+def test_an_older_refusal_is_stale(run070, reason):
+    _age(_unmeasured(run070, reason), 1000)
+    rec = _build(run070)["result"]["per_variant"]["base"]
+    _assert_no_numbers(rec)
+    assert rec["reason"] == "stale" and reason in rec["detail"]
+
+
+def test_older_bars_missing_only_when_really_missing(run070):
+    _age(_unmeasured(run070, "bars_missing"), 1000)
+    # the fixture holds no bars.csv: they are really missing now
     assert _build(run070)["result"]["per_variant"]["base"]["reason"] == "bars_missing"
-    # every bars file the current protocol_result names exists: not this attempt's
     for rel in cf._expected_bars(run070, "base"):
         (run070 / rel).parent.mkdir(parents=True, exist_ok=True)
-        (run070 / rel).write_text("ts\n", encoding="utf-8")
+        (run070 / rel).write_text("ts", encoding="utf-8")
     assert _build(run070)["result"]["per_variant"]["base"]["reason"] == "stale"
 
 
@@ -364,6 +423,14 @@ def test_summary_is_deterministic_and_ignores_runs_without_a_finding(run070):
     assert a == b and "run_001" not in a
 
 
+def test_summary_tie_on_recorded_at_puts_the_higher_run_first(run070):
+    mem = _memory_with(run070, n=1)
+    for rid in ("run_99", "run_100"):
+        mem["runs"][rid] = {**mem["runs"]["run_070"], "run_id": rid}
+    order = [r["run_id"] for r in cf.findings_summary(mem, "run_100")["findings"]]
+    assert order == ["run_100", "run_99", "run_070"]
+
+
 def test_summary_newest_first_capped_and_repeats_listed(run070):
     mem = _memory_with(run070, n=3)
     mem["runs"]["run_902"]["finding"] = {"finding_id": "F-run_902-1", "status": "error",
@@ -428,6 +495,33 @@ def test_flag_on_writes_finding_and_summary_and_matches_schema(fixed_clock):
     bad["runs"]["run_980"]["finding"]["status"] = "supported"
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(bad, schema)
+
+
+def test_flag_on_measured_run_070_through_the_stage_in_raise_mode(monkeypatch, fixed_clock):
+    """End to end with real numbers: the run_070 fixture inside a seeded run,
+    the memory written with schema validation BLOCKING."""
+    _set_orchestrator(CLAIMS_ON)
+    run_dir = _seed(run_id="run_070", variant_loop=True)
+    shutil.copytree(FIXTURE / "artifacts", run_dir / "artifacts", dirs_exist_ok=True)
+    real = _entry(FIXTURE)
+    monkeypatch.setattr(cm, "build_memory_entry", lambda *a, **k: copy.deepcopy(real))
+    # the memory write validates BLOCKING against the real schema (only that
+    # file: the seeded harness's own minimal artifacts are not schema-complete)
+    jsonschema = pytest.importorskip("jsonschema")
+    schema = json.loads((SR_ROOT / "workflow_artifacts" / "schemas" /
+                         "campaign_memory.schema.json").read_text(encoding="utf-8"))
+    seen = []
+    monkeypatch.setattr(cm, "validate_workflow_artifact",
+                        lambda path, doc: (seen.append(Path(path).name),
+                                           jsonschema.validate(doc, schema)))
+    rpr._run_regroup_record_stage("run_070", run_dir)
+    assert seen == ["campaign_memory.yaml"]     # validated (blocking) when written
+    f = _memory()["runs"]["run_070"]["finding"]
+    assert (f["status"], f["block_visibility"]) == ("measured", "blind")
+    assert f["trial_ids"] == [f"run_070:{v}" for v in VIDS]
+    s = yaml.safe_load((run_dir / "artifacts" / cf.SUMMARY_ARTIFACT).read_text())
+    row = s["findings"][0]["tests"][0]["by_variant"]["uni_defi"]
+    assert row["claimed_sign_windows"]["4"] == "6/6"
 
 
 def test_flag_on_leaves_registry_and_kb_untouched(fixed_clock):

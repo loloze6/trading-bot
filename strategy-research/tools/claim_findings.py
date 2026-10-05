@@ -155,7 +155,8 @@ def _compact_test(t: dict) -> dict:
                                      "windows_with_value": c.get("windows_with_a_value")}
                                for sym, c in coins.items()}
         horizons[str(h)] = row
-    out.update({"peak_horizon": t.get("peak_horizon"),
+    peak = t.get("peak_horizon")
+    out.update({"peak_horizon": None if peak is None else str(peak),  # same type as the keys
                 "floor_not_met": list(t.get("floor_not_met") or []), "horizons": horizons})
     return out
 
@@ -171,37 +172,59 @@ def _bars_really_missing(run_dir: Path, vid: str) -> bool:
     return not expected or any(not (run_dir / p).exists() for p in expected)
 
 
+def _not_older_than_result(run_dir: Path, vid: str, path: Path, missing_ok: bool) -> bool:
+    """For a claim file that carries no bars to compare: it was written by the
+    attempt the entry describes only if it is not older than the variant's
+    current protocol_result.yaml (claim_measure writes after the backtests; a
+    later attempt rewrites protocol_result.yaml). `missing_ok`: no variant
+    protocol_result.yaml at all (variant loop off) counts as consistent."""
+    result = run_dir / "artifacts" / "variants" / vid / "protocol_result.yaml"
+    if not result.exists():
+        return missing_ok
+    return path.exists() and path.stat().st_mtime_ns >= result.stat().st_mtime_ns
+
+
+def _stale(rec: dict, detail: str) -> tuple:
+    return {**rec, "status": NOT_MEASURED, "reason": STALE, "detail": detail}, None
+
+
 def _variant(run_dir: Path, run_id: str, vid: str, ventry: dict, status_row,
              card_hashes: dict, run_reason=None) -> tuple:
     """(per-variant record, claim_test ref or None). Numbers only when bound.
-    `run_reason`: claim_status.yaml's own not-measured reason, if any."""
+    `run_reason`: claim_status.yaml's own not-measured reason, if any. A
+    reason without numbers is passed through only when its file is shown to
+    belong to this attempt; otherwise `stale`."""
     rec = {"trial_id": ventry.get("trial_id")}
     if ventry.get("status") != "tested":
         return {**rec, "status": NOT_MEASURED, "reason": f"variant_{ventry.get('status')}"}, None
+    status_path = run_dir / "artifacts" / cmeas.RUN_FILE
     if not isinstance(status_row, dict):
-        if run_reason:  # nothing was measured in the run (card gap, no graded variants, ...)
+        if run_reason and _not_older_than_result(run_dir, vid, status_path, missing_ok=True):
+            # nothing was measured in the run (card gap, no graded variants, ...)
             return {**rec, "status": NOT_MEASURED, "reason": run_reason}, None
-        return {**rec, "status": NOT_MEASURED, "reason": STALE,
-                "detail": "not in claim_status.yaml: not measured in this attempt"}, None
+        return _stale(rec, "not in claim_status.yaml: not measured in this attempt")
     if not status_row.get("file"):
         # skipped by claim_measure (stale_result, backtest_failed, invalidated, ...)
-        return {**rec, "status": NOT_MEASURED, "reason": status_row.get("reason")}, None
+        if _not_older_than_result(run_dir, vid, status_path, missing_ok=False):
+            return {**rec, "status": NOT_MEASURED, "reason": status_row.get("reason")}, None
+        return _stale(rec, f"claim_status.yaml (its reason: {status_row.get('reason')}) is "
+                           f"older than the variant's protocol_result.yaml")
     rel = f"artifacts/variants/{vid}/{cmeas.VARIANT_FILE}"
     path = run_dir / rel
     if not path.exists():
-        return {**rec, "status": NOT_MEASURED, "reason": STALE,
-                "detail": f"{cmeas.VARIANT_FILE} absent"}, None
+        return _stale(rec, f"{cmeas.VARIANT_FILE} absent")
     doc = _load(path) or {}
     if not doc.get("bars"):
         # never measured (bars unreadable, holdout, error): no numbers to attach
-        if doc.get("reason") == cmeas.BARS_MISSING and _bars_really_missing(run_dir, vid):
-            return {**rec, "status": NOT_MEASURED, "reason": cmeas.BARS_MISSING}, None
-        return {**rec, "status": NOT_MEASURED, "reason": STALE,
-                "detail": f"{cmeas.VARIANT_FILE} names no bars (its reason: "
-                          f"{doc.get('reason')}); not shown to be this attempt's"}, None
+        if _not_older_than_result(run_dir, vid, path, missing_ok=False) or (
+                doc.get("reason") == cmeas.BARS_MISSING and _bars_really_missing(run_dir, vid)):
+            return {**rec, "status": NOT_MEASURED, "reason": doc.get("reason")}, None
+        return _stale(rec, f"{cmeas.VARIANT_FILE} names no bars (its reason: "
+                           f"{doc.get('reason')}) and is older than the variant's "
+                           f"protocol_result.yaml")
     problem = _binding_problem(run_dir, vid, doc, card_hashes)
     if problem:
-        return {**rec, "status": NOT_MEASURED, "reason": STALE, "detail": problem}, None
+        return _stale(rec, problem)
     if doc.get("status") == MEASURED:
         st = MEASURED
     elif doc.get("reason") == NO_EVENTS:
@@ -241,8 +264,10 @@ def _scope(run_dir: Path, vids: list, per_variant: dict) -> dict:
         for w in windows:
             test = w.get("test") if isinstance(w, dict) else None
             if isinstance(test, dict):
-                starts.append(str(test.get("start")))
-                ends.append(str(test.get("end")))
+                if test.get("start") is not None:
+                    starts.append(str(test["start"]))
+                if test.get("end") is not None:
+                    ends.append(str(test["end"]))
         if windows:
             sha = nv.windows_fingerprint(windows)
             per_variant[vid]["windows_sha256"] = sha
@@ -311,14 +336,19 @@ def build_finding(run_dir: Path, run_id: str, entry: dict, *, exempt: str | None
         status, reason = MEASURED, None
     elif statuses:
         status, reason = NO_EVENTS, cmeas.NO_EVENTS_REASON
-    elif status_doc.get("claim_status") != MEASURED and status_doc.get("reason"):
-        status, reason = NOT_MEASURED, status_doc.get("reason")
-    elif any(r.get("reason") == STALE for r in per_variant.values()):
-        status, reason = NOT_MEASURED, STALE
     else:
-        reasons = {r.get("reason") for r in per_variant.values()}
         status = NOT_MEASURED
-        reason = reasons.pop() if len(reasons) == 1 else (status_doc.get("reason") or ERROR)
+        reasons = sorted({str(r.get("reason")) for r in per_variant.values()})
+        if reasons == [STALE]:
+            reason = STALE          # claim_status.yaml itself is not this attempt's
+        elif status_doc.get("claim_status") != MEASURED and status_doc.get("reason"):
+            reason = status_doc.get("reason")
+        elif STALE in reasons:
+            reason = STALE
+        elif len(reasons) == 1:
+            reason = reasons[0]
+        else:                       # `error` is kept for a finding that could not be built
+            reason = "mixed: " + ", ".join(reasons)
     tested = [v for v in sorted(variants) if variants[v].get("status") == "tested"]
     finding.update({
         "status": status, "reason": reason,
@@ -371,6 +401,13 @@ def _summary_row(run_id: str, f: dict) -> dict:
             "tests": tests}
 
 
+def _run_order(run_id: str) -> tuple:
+    digits = len(run_id) - len(run_id.rstrip("0123456789"))
+    if not digits:
+        return (run_id, -1)
+    return (run_id[:-digits], int(run_id[-digits:]))
+
+
 def findings_summary(memory: dict, run_id: str, max_rows: int = SUMMARY_MAX_ROWS) -> dict:
     """artifacts/findings_summary.yaml: every finding in the memory, newest
     first (recorded_at, then run_id), capped at `max_rows` (counts cover all).
@@ -379,7 +416,8 @@ def findings_summary(memory: dict, run_id: str, max_rows: int = SUMMARY_MAX_ROWS
     entries = [(e.get("recorded_at") or "", rid, e[FINDING_KEY])
                for rid, e in (memory.get("runs") or {}).items()
                if isinstance(e, dict) and isinstance(e.get(FINDING_KEY), dict)]
-    entries.sort(key=lambda x: (str(x[0]), str(x[1])), reverse=True)
+    # ties on recorded_at: by the run's number (run_100 after run_99 after run_070)
+    entries.sort(key=lambda x: (str(x[0]), _run_order(str(x[1]))), reverse=True)
     by_status, by_kind, spec_runs = {}, {}, {}
     for _, rid, f in entries:
         by_status[str(f.get("status"))] = by_status.get(str(f.get("status")), 0) + 1
