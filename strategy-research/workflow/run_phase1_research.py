@@ -4287,9 +4287,12 @@ def _reader_handoff_v3(category: str, run_id: str, stage_attempt, run_dir: Path 
     mostly writes tests; its patch is resolved against the real config by
     code); added: the shared reading contract, this run's measured claim
     numbers (claim_status.yaml when measured, and the code digest of the
-    variants' claim_test.yaml) and the earlier runs' findings."""
+    variants' claim_test.yaml) and the earlier runs' findings.
+    One of those two code-written files absent (_write_reader_v3_inputs could
+    not write it) is not a stop: it moves to optional_inputs, named as missing
+    in this run, so the reader runs without it."""
     _rf = _reader_findings_module()
-    return {
+    handoff = {
         "handoff_version": 1, "run_id": run_id,
         "from_stage": "protocol_execution", "to_stage": "specialist_readers",
         "reader_category": category,
@@ -4337,6 +4340,19 @@ def _reader_handoff_v3(category: str, run_id: str, stage_attempt, run_dir: Path 
         "injected_context": {"stage_attempt": str(stage_attempt),
                              "feed_names": _reader_feed_vocabulary()},
     }
+    if run_dir is not None:
+        for name in (_rf.DIGEST_ARTIFACT, _rf.READER_SUMMARY_ARTIFACT):
+            rel = f"artifacts/{name}"
+            if (Path(run_dir) / rel).exists():
+                continue
+            handoff["required_inputs"] = [r for r in handoff["required_inputs"]
+                                          if r["path"] != rel]
+            handoff["optional_inputs"].append(
+                {"path": rel,
+                 "reason": f"MISSING in this run: it could not be written before the readers "
+                           f"(see artifacts/{_rf.INPUT_GAPS_ARTIFACT}). Read without it; never "
+                           f"guess its content."})
+    return handoff
 
 
 def _reader_findings_module():
@@ -4905,23 +4921,61 @@ def _skip_reader_by_rule(category: str, run_id: str, run_dir: Path) -> bool:
     return True
 
 
-def _write_reader_v3_inputs(run_dir: Path, run_id: str) -> None:
+def _write_reader_v3_inputs(run_dir: Path, run_id: str) -> dict:
     """E-068 slice 5: before the first v3 reader, this run's measured claim
     numbers (claim_result_digest.yaml) and the earlier runs' findings
     (findings_summary_for_readers.yaml, this run left out). Information only:
-    an unreadable memory writes an `error` summary, never a stop."""
+    an unreadable memory writes an `error` summary, never a stop.
+    Never stops the stage: a file that cannot be written (an OSError, or any
+    other error) is recorded -- console, and artifacts/reader_input_gaps.yaml
+    best effort -- an older copy of it is removed so it cannot pass as this
+    run's, and the readers run without it (_reader_handoff_v3 then names it
+    as missing). Returns {file name: error} for the files not written."""
     rf = _reader_findings_module()
     arts = Path(run_dir) / "artifacts"
-    save_yaml(arts / rf.DIGEST_ARTIFACT, rf.claim_result_digest(run_dir))
+    gaps = {}
+    try:
+        save_yaml(arts / rf.DIGEST_ARTIFACT, rf.claim_result_digest(run_dir))
+    except Exception as exc:  # noqa: BLE001 -- information only
+        gaps[rf.DIGEST_ARTIFACT] = f"{type(exc).__name__}: {exc}"
     try:
         memory = _campaign_memory_module().load_memory(_campaign_memory_path())
         summary = rf.reader_findings_summary(memory, run_id)
     except Exception as exc:  # noqa: BLE001 -- information only
         summary = {"schema_version": 1, "run_id": run_id, "status": "error",
                    "detail": f"{type(exc).__name__}: {exc}", "findings": []}
-    save_yaml(arts / rf.READER_SUMMARY_ARTIFACT, summary)
-    print(f"📚 [E-068] readers v3: {rf.DIGEST_ARTIFACT} and {rf.READER_SUMMARY_ARTIFACT} "
-          f"written ({len(summary.get('findings') or [])} earlier finding(s) listed).")
+    try:
+        save_yaml(arts / rf.READER_SUMMARY_ARTIFACT, summary)
+    except Exception as exc:  # noqa: BLE001 -- information only
+        gaps[rf.READER_SUMMARY_ARTIFACT] = f"{type(exc).__name__}: {exc}"
+    for name in gaps:
+        try:
+            (arts / name).unlink(missing_ok=True)
+        except OSError as exc:
+            gaps[name] += f" (an older copy could not be removed: {type(exc).__name__}: {exc})"
+        print(f"⚠️  [E-068] readers v3: {name} could not be written ({gaps[name]}); the readers "
+              f"run without it.")
+    _record_reader_input_gaps(arts, run_id, gaps)
+    if not gaps:
+        print(f"📚 [E-068] readers v3: {rf.DIGEST_ARTIFACT} and {rf.READER_SUMMARY_ARTIFACT} "
+              f"written ({len(summary.get('findings') or [])} earlier finding(s) listed).")
+    return gaps
+
+
+def _record_reader_input_gaps(arts: Path, run_id: str, gaps: dict) -> None:
+    """artifacts/reader_input_gaps.yaml: the v3 inputs this stage attempt could
+    not write; no file when there were none (a gap file left by an earlier
+    attempt is removed). Never raises."""
+    try:
+        path = arts / _reader_findings_module().INPUT_GAPS_ARTIFACT
+        if gaps:
+            save_yaml(path, {"schema_version": 1, "run_id": run_id, "missing": dict(gaps),
+                             "effect": "the readers ran without these inputs"})
+        else:
+            path.unlink(missing_ok=True)
+    except Exception as exc:  # noqa: BLE001 -- information only
+        print(f"⚠️  [E-068] readers v3: the input gaps could not be recorded ({exc}); the "
+              f"readers run anyway.")
 
 
 def _record_reader_skips(run_id: str, run_dir: Path) -> None:
