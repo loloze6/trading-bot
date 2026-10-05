@@ -7862,11 +7862,15 @@ def _check_pass_through_config_hash(artifacts: Path) -> None:
     decide_next patch candidate's research_brief.yaml carries
     candidate.source.expected_config_sha256 and expected_manifest_sha256: the
     canonical-JSON hashes (the _compute_forecast_hash rule) of the config
-    decide_next resolved and of the source block manifest. 1b copies both
-    through by prompt; this checks the copies -- backtest_spec.yaml's config,
-    once written variants/base/strategy_config.json, and block_manifest.yaml --
-    and stops loudly on any difference, before any backtest. No expected hash
-    (every brief not written by decide_next, and new_block candidates): no-op."""
+    decide_next resolved and of the source block manifest. 1b copies the config
+    through by prompt; this checks the copies -- backtest_spec.yaml's config and,
+    once written, variants/base/strategy_config.json -- and stops loudly on any
+    difference, before any backtest. No expected config hash (every brief not
+    written by decide_next, and new_block candidates): no-op.
+    CUL-405 (operator, 2026-10-05): the manifest is no longer compared here.
+    Code writes it from the brief (_write_pass_through_manifest), so 1b never
+    authors it, and a 1b edit of its free-text rationale can no longer refuse
+    the run (run_072)."""
     brief_path = Path(artifacts) / "research_brief.yaml"
     if not brief_path.exists():
         return
@@ -7875,29 +7879,56 @@ def _check_pass_through_config_hash(artifacts: Path) -> None:
     if not isinstance(source, dict):
         return
     expected_cfg = source.get("expected_config_sha256")
-    expected_man = source.get("expected_manifest_sha256")
-    if not expected_cfg and not expected_man:
+    if not expected_cfg:
         return
-    bad = {}
-    if expected_cfg:
-        spec = load_yaml(Path(artifacts) / "backtest_spec.yaml") or {}
-        got = {"backtest_spec.yaml config": _canonical_json_sha256(spec.get("config"))}
-        base_cfg = Path(artifacts) / "variants" / "base" / "strategy_config.json"
-        if base_cfg.exists():
-            got["variants/base/strategy_config.json"] = _compute_forecast_hash(base_cfg)
-        bad.update({k: v for k, v in got.items() if v != expected_cfg})
-    if expected_man:
-        man_path = Path(artifacts) / "block_manifest.yaml"
-        man = load_yaml(man_path) if man_path.exists() else None
-        got_man = _canonical_json_sha256(man) if man is not None else None
-        if got_man != expected_man:
-            bad["block_manifest.yaml"] = got_man
+    spec = load_yaml(Path(artifacts) / "backtest_spec.yaml") or {}
+    got = {"backtest_spec.yaml config": _canonical_json_sha256(spec.get("config"))}
+    base_cfg = Path(artifacts) / "variants" / "base" / "strategy_config.json"
+    if base_cfg.exists():
+        got["variants/base/strategy_config.json"] = _compute_forecast_hash(base_cfg)
+    bad = {k: v for k, v in got.items() if v != expected_cfg}
     if bad:
         raise RuntimeError(
             f"run_tool_worker(backtest_specification): pass-through mismatch -- decide_next "
-            f"expected config sha256 {expected_cfg} and manifest sha256 {expected_man} "
-            f"(research_brief.yaml candidate.source) but got {bad}. Stage 1b did not copy the "
-            f"candidate's config/manifest through verbatim; refusing before any backtest.")
+            f"expected config sha256 {expected_cfg} (research_brief.yaml candidate.source) but "
+            f"got {bad}. Stage 1b did not copy the candidate's config through verbatim; "
+            f"refusing before any backtest.")
+
+
+def _write_pass_through_manifest(artifacts: Path) -> bool:
+    """CUL-405 (operator, 2026-10-05): for a decide_next patch candidate
+    (_is_pass_through_candidate), code writes artifacts/block_manifest.yaml
+    from the brief's candidate.manifest -- the source run's manifest, which
+    decide_next copied and hashed (candidate.source.expected_manifest_sha256).
+    1b does not author or edit it: whatever 1b wrote there is replaced. Runs
+    when 1b answers spec_ready, before any check reads the manifest. Returns
+    True when it wrote the file; no-op (False) for every other brief and for a
+    composition patch (no block manifest). A brief whose manifest does not
+    match its own stamped hash raises: it is not the source run's manifest."""
+    if not _is_pass_through_candidate(artifacts):
+        return False
+    brief = load_yaml(Path(artifacts) / "research_brief.yaml") or {}
+    candidate = brief.get("candidate") or {}
+    manifest = candidate.get("manifest")
+    if not isinstance(manifest, dict):
+        return False
+    expected = (candidate.get("source") or {}).get("expected_manifest_sha256")
+    if expected and _canonical_json_sha256(manifest) != expected:
+        raise RuntimeError(
+            f"strategy_config_authoring: research_brief.yaml candidate.manifest hashes to "
+            f"{_canonical_json_sha256(manifest)}, not its candidate.source."
+            f"expected_manifest_sha256 {expected}; refusing to write a manifest that is not the "
+            f"source run's.")
+    dest = Path(artifacts) / _block_manifest_module().MANIFEST_FILENAME
+    try:  # for the log line only: 1b's file may be anything, even broken YAML
+        replaced = dest.exists() and load_yaml(dest) != manifest
+    except Exception:  # noqa: BLE001
+        replaced = True
+    save_yaml(dest, manifest)
+    print(f"📄 [CUL-405] {dest.name} written by code from the brief's candidate.manifest "
+          f"(the source run's manifest)" + ("; 1b's own version was replaced." if replaced
+                                           else "."))
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -15516,23 +15547,13 @@ def _apply_claim_tests_context(stage_name: str, handoff: dict, run_dir: Path) ->
 def _claim_check_exempt(run_dir: Path, card) -> str | None:
     """Why a card carries no 1a-written claim (DESIGN D6), else None. Decided
     from the run's inputs, never from a field the card writes about itself:
-    a composition run (research_brief candidate.composition), or a
-    pass-through card whose brief really supplies the config, manifest,
-    criteria and source (hypothesis-design IMPROVEMENT 08) or a decide_next
-    pass-through config."""
-    artifacts = Path(run_dir) / "artifacts"
+    only a composition run (research_brief candidate.composition).
+    CUL-406 (operator, 2026-10-05): a pass-through card is no longer exempt.
+    Its config and manifest come from upstream, but its claim is its own, so
+    it is checked, powered, matched, measured and stored like any other card's
+    (run_072's patch card carried a usable claim that nothing measured)."""
     if _composition_candidate(run_dir) is not None:
         return "composition run (its card is written by code)"
-    if isinstance(card, dict) and card.get("pass_through") is True:
-        brief_path = artifacts / "research_brief.yaml"
-        brief = (load_yaml(brief_path) or {}) if brief_path.exists() else {}
-        sources = [brief] + ([brief["candidate"]] if isinstance(brief, dict)
-                             and isinstance(brief.get("candidate"), dict) else [])
-        supplied = any(isinstance(s, dict) and all(s.get(k) for k in
-                                                   ("config", "manifest", "criteria", "source"))
-                       for s in sources)
-        if supplied or _is_pass_through_candidate(artifacts):
-            return "pass_through card (config, manifest and criteria authored upstream)"
     return None
 
 
@@ -16773,6 +16794,7 @@ def determine_post_strategy_config_authoring_route(path: Path, *, routing_retire
     status = decision.get("status", "").strip().lower()
     if status == "spec_ready":
         _clear_component_gap_retry(path)  # O-21 review S1: no stale "refused" message
+        _write_pass_through_manifest(path / "artifacts")  # CUL-405: before any manifest check
         route = _route_block_manifest_check(path)
         if route == "innovation_expansion":
             _record_claim_match(path)  # E-068 slice 2: a warning only; flag off: no-op

@@ -6,8 +6,9 @@ step 1a's inputs only under that flag, and it adds one field to what your skill 
 - **Every card you write carries a `claim` block**, described here: `hypothesis_card.yaml`,
   and, when you write several cards, every `hypothesis_card_<n>.yaml` too (an extra card is
   launched later without coming back to you, so it must carry its own claim).
-- **Exception:** a pass-through card (your skill's IMPROVEMENT 08) is copied through as
-  supplied; it needs no `claim`.
+- **A pass-through card carries a `claim` too** (your skill's IMPROVEMENT 08). Its config and
+  manifest are copied through as supplied, but the claim is the card's own: state what the
+  supplied config is expected to show, and test it like any other card's.
 - Put `claim` after the card's other fields. It changes nothing else your skill asks for.
 
 Code (`tools/claim_card.py`) checks every card's claim before any other step runs. If a claim
