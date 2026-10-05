@@ -177,7 +177,9 @@ def _not_older_than_result(run_dir: Path, vid: str, path: Path, missing_ok: bool
     attempt the entry describes only if it is not older than the variant's
     current protocol_result.yaml (claim_measure writes after the backtests; a
     later attempt rewrites protocol_result.yaml). `missing_ok`: no variant
-    protocol_result.yaml at all (variant loop off) counts as consistent."""
+    protocol_result.yaml at all (variant loop off) counts as consistent.
+    Labels only (numbers bind on bars paths, never on file times): in a run
+    folder copied without its timestamps the label may be wrong."""
     result = run_dir / "artifacts" / "variants" / vid / "protocol_result.yaml"
     if not result.exists():
         return missing_ok
