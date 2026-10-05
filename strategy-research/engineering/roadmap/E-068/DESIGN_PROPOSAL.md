@@ -401,6 +401,39 @@ spec_hashes match; otherwise `not_measured` with reason `stale`, never old numbe
 
 Branch 1, the grid, is the only judge of the claim. Readers are branch 2.
 
+**As built in slice 5 (D-073, 2026-10-05; `orchestrator.reader_findings.enabled`).** What
+changed from the sketch below, after run_070's readers:
+- **A side finding is a full claim block** (statement, kind, tests, pass_if, fail_if,
+  rationale), not one `next_test`: `check_claim` runs unchanged where it is written, and the
+  brief's `candidate.claim` is complete. At most 2 per reader (output was 42% of the readers'
+  weighted tokens on run_070).
+- **The file is one reading per reader**, a mapping (`schema_version: 3`): `explanation`,
+  `evidence`, `side_findings`, `patch` (null or one; `reading_id`, `model_id`,
+  `rubric_version: <category>-reading-v1`). `load_proposals` reads v2 lists and v3 readings
+  side by side and flattens a reading into items (`kind: side_finding` | `patch`).
+- **Inputs:** `CLAIM_TESTS.md` replaces the design guide (the catalogue stays). This run's
+  numbers come as `claim_status.yaml` plus a code digest of the variants' `claim_test.yaml`
+  (`claim_result_digest.yaml`, bound to this attempt's bars like slice 4's finding; run_070:
+  ~8 KB instead of 74 KB raw). Earlier findings come as `findings_summary_for_readers.yaml`:
+  slice 4's summary is written at regroup, after the readers, so this one is built before
+  them, without this run, newest 10, compact.
+- **Skip rules (code, no model call):** regime_power when the manifest lists `/regime_detector`
+  as scaffolding or the detector is constant (run_070's ungated detector, the O-19 misreading);
+  component_attribution when every variant has at most one component. A skip is a `skipped`
+  reading with its rule, never `[]`, and is counted in `campaign_record/reader_skips.yaml` and
+  the campaign summary. On run_070 these two readers cost $0.267 of $0.715.
+- **Checked where written:** the patch is resolved against the base config and refused under
+  a scaffolding path; one retry, then items are kept or dropped one by one.
+- **Warnings, never refusals:** a test whose `spec_hash` is already in the findings or is the
+  run's own claim test; a block-kind side finding whose tests cannot see the block. A pure
+  finding (a kind with no block) may read price only.
+- **No hindsight:** the selector grammar cannot act before a bar closes; the trade_efficiency
+  v3 SKILL says `enter_earlier` is hindsight, not a setting (the report itself is unchanged).
+- The v2 SKILLs are untouched (flag-off prompts byte-identical); the v3 SKILLs are separate
+  files under `workflow_artifacts/skills/readers_v3/`.
+
+The sketch as proposed (2026-10-03):
+
 - **Inputs:** already delivered by D-062 and D-063: the claim card, the manifest, the real
   config, the catalogue and the design guide. Added here: all five reports, the grid with the
   claim test result, and the findings summary.
@@ -479,7 +512,7 @@ P-CUL-77).
 | `orchestrator.claim_tests.enabled` | 1a writes `claim`; `check_spec`; after the backtests the claim's tests are measured (effect sizes, `claim_status` measured / not_measured; not a grid criterion) | config_direct_authoring |
 | `orchestrator.claim_test_review` (`off`, `record`, `revise`) -- **parked, CUL-397** (failed its offline gate in 3b; not in `campaign_config.yaml`) | optional review call; never parks or stops a run | claim_tests |
 | ~~`orchestrator.findings.enabled`~~ -- **no separate flag** (operator, 2026-10-05, D-072): slice 4 is part of `orchestrator.claim_tests.enabled` | regroup writes `finding` and `artifacts/findings_summary.yaml` (the novelty key's `spec_hash` is not built) | claim_tests; written only where regroup_record runs |
-| `orchestrator.reader_findings.enabled` | reader output v3; decide-next takes side findings | claim_tests, specialist_readers |
+| `orchestrator.reader_findings.enabled` -- **built, slice 5 (D-073)** | reader output v3; skip rules; decide-next takes side findings | claim_tests, specialist_readers |
 
 - **Flags off:** byte-identical, proven per flag by a test.
 - **Old runs** are not back-filled. run_065 and run_066 are re-graded **offline** as the first
@@ -511,7 +544,10 @@ P-CUL-77).
 4. **Findings** (D-072), behind `orchestrator.claim_tests.enabled`: the finding record in the
    memory entry and the per-run findings summary (section 5). Information only; numbers only
    when bound to the entry's attempt; no prompt reads the summary yet.
-5. **Readers:** v3 output and the short SKILL.
+5. **Readers** (D-073, CUL-403), behind `orchestrator.reader_findings.enabled`: v3 output
+   (explanation, side findings as claim blocks, a checked patch), five short SKILLs, the
+   claim's numbers and the earlier findings as inputs, two code skip rules, side findings as
+   decide-next candidates with the claim pre-filled (section 6, "As built").
 6. **Combination:** moved to its own epic, **E-071**.
 7. **Review call** -- parked (CUL-397): built and measured in 3b, failed its gate.
 8. **New building blocks:** only when a test request needs them.

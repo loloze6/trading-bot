@@ -60,6 +60,38 @@ READER_RUBRIC_VERSIONS = {
 }
 
 
+# ---------------------------------------------------------------------------
+# E-068 slice 5 (D-073): reader output v3, written only under
+# orchestrator.reader_findings.enabled (the flag is read by the orchestrator,
+# never here). A v3 file is a MAPPING -- one reading per reader -- where a v2
+# file is a LIST; load_proposals tells them apart by shape, so old v2 files
+# still load and the two coexist. A v3 reading explains the measured result
+# and proposes: 0..MAX_SIDE_FINDINGS side findings (each a full claim block,
+# checked by claim_card.check_claim where it is written and again by
+# decide_next) and an optional patch. It carries NO verdict: the closed key
+# set below has no field that could say the claim holds or not. Shape only
+# here (no claim_card import): load_proposals is used by decide_next and the
+# campaign memory, which must keep loading a file whose claim a later grammar
+# would refuse -- that refusal is decide_next's, as an ineligibility.
+# ---------------------------------------------------------------------------
+READING_SCHEMA_VERSION = 3
+MAX_SIDE_FINDINGS = 2
+SIDE_FINDING = "side_finding"
+READER_RUBRIC_VERSIONS_V3 = {cat: f"{cat}-reading-v1" for cat in READER_RUBRIC_VERSIONS}
+_READING_KEYS = frozenset({"schema_version", "reading_id", "model_id", "rubric_version",
+                           "explanation", "evidence", "side_findings", "patch"})
+_READING_REQUIRED = ("schema_version", "reading_id", "model_id", "rubric_version",
+                     "explanation", "evidence", "side_findings", "patch")
+_SKIPPED_READING_KEYS = frozenset({"schema_version", "reading_id", "skipped"})
+_SKIP_RECORD_KEYS = frozenset({"rule", "reason"})
+# Written by code only (tools/reader_findings.py); a model writing `skipped`
+# is refused (from_model=True).
+SKIP_RULES = ("regime_detector_scaffolding", "regime_detector_constant",
+              "single_component", "output_refused_after_retry")
+_SIDE_FINDING_KEYS = frozenset({"proposal_id", "claim", "evidence", "scores", "requires_feed"})
+_V3_PATCH_KEYS = frozenset({"proposal_id", "patch", "evidence", "scores", "requires_feed"})
+
+
 class ProposalError(ValueError):
     """A proposal file or entry is malformed. Never caught here: a bad reader
     output must stop loudly, never silently count as 'no proposals'."""
@@ -159,6 +191,155 @@ def check_scores(scores, where: str) -> None:
             raise ProposalError(f"{where}: scores.{key}={v!r} is not an integer in 0..3")
 
 
+def is_reading(doc) -> bool:
+    """True for a v3 reading (a mapping with schema_version 3)."""
+    return isinstance(doc, dict) and doc.get("schema_version") == READING_SCHEMA_VERSION
+
+
+def _check_evidence(ev, where: str) -> None:
+    if not isinstance(ev, list) or not ev or not all(_non_empty_str(e) for e in ev):
+        raise ProposalError(f"{where}: evidence must be a non-empty list of non-empty strings")
+
+
+def _check_item_id(pid, reading_id: str, where: str) -> None:
+    if not (isinstance(pid, str) and pid.startswith(f"{reading_id}-")
+            and pid[len(reading_id) + 1:].isdigit() and _PROPOSAL_ID_RE.match(pid)):
+        raise ProposalError(f"{where}: proposal_id={pid!r} must be '{reading_id}-<n>' "
+                            f"(the reading_id, a dash, a number)")
+
+
+def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
+                  from_model: bool = False) -> None:
+    """Shape check of one v3 reading (the claim INSIDE a side finding is
+    checked by claim_card.check_claim, not here). `from_model`: the text a
+    reader answered -- a `skipped` reading is code's only, so it is refused.
+    Raises ProposalError naming the whole required shape where it can."""
+    if not is_reading(doc):
+        raise ProposalError(f"{where}: a v3 reading must be a mapping with schema_version: "
+                            f"{READING_SCHEMA_VERSION}")
+    rid = doc.get("reading_id")
+    if not (isinstance(rid, str) and rid.startswith(f"{cat}-") and len(rid) > len(cat) + 1):
+        raise ProposalError(f"{where}: reading_id={rid!r} must be '{cat}-<run_id>'")
+    if "skipped" in doc:
+        if from_model:
+            raise ProposalError(f"{where}: `skipped` is written by code only; write a reading "
+                                f"(explanation, evidence, side_findings, patch)")
+        if set(doc) != _SKIPPED_READING_KEYS:
+            raise ProposalError(f"{where}: a skipped reading is exactly "
+                                f"{sorted(_SKIPPED_READING_KEYS)}")
+        skip = doc["skipped"]
+        if (not isinstance(skip, dict) or set(skip) != _SKIP_RECORD_KEYS
+                or skip.get("rule") not in SKIP_RULES or not _non_empty_str(skip.get("reason"))):
+            raise ProposalError(f"{where}: skipped must be {{rule, reason}} with rule in "
+                                f"{list(SKIP_RULES)} and a non-empty reason")
+        return
+    extra = sorted(set(doc) - _READING_KEYS)
+    if extra:
+        raise ProposalError(f"{where}: undeclared field(s) {extra}; a reading has exactly "
+                            f"{sorted(_READING_KEYS)} (readers explain and propose; they never "
+                            f"judge the claim)")
+    missing = [k for k in _READING_REQUIRED if k not in doc]
+    if missing:
+        raise ProposalError(f"{where}: missing {missing}; a reading has exactly "
+                            f"{sorted(_READING_KEYS)} (`side_findings: []` and `patch: null` "
+                            f"when there is none)")
+    for key in ("model_id", "rubric_version"):
+        if not _non_empty_str(doc.get(key)):
+            raise ProposalError(f"{where}: {key} must be a non-empty string")
+    if strict_provenance and doc["rubric_version"] != READER_RUBRIC_VERSIONS_V3.get(cat):
+        raise ProposalError(f"{where}: rubric_version={doc['rubric_version']!r} is not the "
+                            f"'{cat}' reader's v3 rubric; write exactly "
+                            f"{READER_RUBRIC_VERSIONS_V3.get(cat)!r}")
+    if not _non_empty_str(doc.get("explanation")):
+        raise ProposalError(f"{where}: explanation must be a non-empty string")
+    _check_evidence(doc.get("evidence"), where)
+    sides = doc.get("side_findings")
+    if not isinstance(sides, list) or len(sides) > MAX_SIDE_FINDINGS:
+        raise ProposalError(f"{where}: side_findings must be a list of at most "
+                            f"{MAX_SIDE_FINDINGS} (`[]` for none)")
+    seen = set()
+    for i, s in enumerate(sides):
+        w = f"{where}.side_findings[{i}]"
+        if not isinstance(s, dict) or set(s) - _SIDE_FINDING_KEYS \
+                or not {"proposal_id", "claim", "evidence", "scores"} <= set(s):
+            raise ProposalError(f"{w}: a side finding is exactly {{proposal_id, claim, evidence, "
+                                f"scores}} plus an optional requires_feed")
+        _check_item_id(s["proposal_id"], rid, w)
+        if not isinstance(s["claim"], dict):
+            raise ProposalError(f"{w}: claim must be a claim block mapping (CLAIM_TESTS.md)")
+        _check_evidence(s["evidence"], w)
+        check_scores(s["scores"], w)
+        if "requires_feed" in s:
+            _check_requires_feed(s["requires_feed"], w)
+        if s["proposal_id"] in seen:
+            raise ProposalError(f"{w}: duplicate proposal_id {s['proposal_id']!r}")
+        seen.add(s["proposal_id"])
+    patch = doc.get("patch")
+    if patch is not None:
+        w = f"{where}.patch"
+        if not isinstance(patch, dict) or set(patch) - _V3_PATCH_KEYS \
+                or not {"proposal_id", "patch", "evidence", "scores"} <= set(patch):
+            raise ProposalError(f"{w}: patch is null or exactly {{proposal_id, patch, evidence, "
+                                f"scores}} plus an optional requires_feed")
+        _check_item_id(patch["proposal_id"], rid, w)
+        items = patch["patch"]
+        if not isinstance(items, list) or not items:
+            raise ProposalError(f"{w}: patch.patch must be a non-empty list of changes")
+        for k, item in enumerate(items):
+            if not isinstance(item, dict) or set(item) != _PATCH_ITEM_KEYS \
+                    or not _non_empty_str(item["component_id"]) or not _non_empty_str(item["field"]):
+                raise ProposalError(f"{w}.patch[{k}] must be exactly "
+                                    f"{{component_id, field, before, after}} with non-empty "
+                                    f"component_id and field")
+        _check_evidence(patch["evidence"], w)
+        check_scores(patch["scores"], w)
+        if "requires_feed" in patch:
+            _check_requires_feed(patch["requires_feed"], w)
+        if patch["proposal_id"] in seen:
+            raise ProposalError(f"{w}: duplicate proposal_id {patch['proposal_id']!r}")
+
+
+def flatten_reading(doc: dict) -> list:
+    """A checked v3 reading as decide-next items: each side finding as
+    {proposal_id, kind: side_finding, claim, evidence, scores, model_id,
+    rubric_version[, requires_feed]}, then the patch as a v2-shaped
+    `kind: patch` item. A skipped reading has none. The explanation is not an
+    item (it proposes nothing); it stays in the file."""
+    if "skipped" in doc:
+        return []
+    prov = {"model_id": doc["model_id"], "rubric_version": doc["rubric_version"]}
+    out = []
+    for s in doc.get("side_findings") or []:
+        item = {"proposal_id": s["proposal_id"], "kind": SIDE_FINDING, "claim": s["claim"],
+                "evidence": s["evidence"], "scores": s["scores"], **prov}
+        if "requires_feed" in s:
+            item["requires_feed"] = s["requires_feed"]
+        out.append(item)
+    patch = doc.get("patch")
+    if patch is not None:
+        item = {"proposal_id": patch["proposal_id"], "kind": "patch", "patch": patch["patch"],
+                "evidence": patch["evidence"], "scores": patch["scores"], **prov}
+        if "requires_feed" in patch:
+            item["requires_feed"] = patch["requires_feed"]
+        out.append(item)
+    return out
+
+
+def load_readings(proposals_dir: Path, categories: list) -> dict:
+    """{category: v3 reading} for every category whose file is a v3 reading
+    (checked); v2 files and missing files are left out."""
+    out = {}
+    for cat in categories:
+        path = Path(proposals_dir) / f"{cat}.yaml"
+        if not path.exists():
+            continue
+        data = _load_yaml_strict(path)
+        if is_reading(data):
+            check_reading(data, cat, str(path))
+            out[cat] = data
+    return out
+
+
 def load_proposals(proposals_dir: Path, categories: list, strict_provenance: bool = False) -> dict:
     """{category: [proposal, ...]} for every category. A missing file and `[]`
     both mean "no proposals" (an honest reader output). Everything else that
@@ -186,6 +367,11 @@ def load_proposals(proposals_dir: Path, categories: list, strict_provenance: boo
             out[cat] = []
             continue
         data = _load_yaml_strict(path)
+        if is_reading(data):
+            # E-068 slice 5 (D-073): a v3 reading, flattened into items.
+            check_reading(data, cat, str(path), strict_provenance=strict_provenance)
+            out[cat] = flatten_reading(data)
+            continue
         if not isinstance(data, list):
             raise ProposalError(f"{path}: expected a YAML list of proposals (`[]` for none), "
                                 f"got {type(data).__name__}")

@@ -877,6 +877,31 @@ orchestrator:
       # with a reason), counted in claim_test_coverage.yaml. No p-value, no
       # verdict (CUL-394); not a grid criterion; any error is recorded and
       # the run continues.
+  reader_findings:
+    enabled: false
+      # E-068 slice 5 (CUL-403, D-073, DESIGN_PROPOSAL.md sections 6 and 8).
+      # OFF BY DEFAULT, read by run_phase1_research._reader_findings_enabled().
+      # HARD DEPENDENCY: raises if true while claim_tests.enabled or
+      # specialist_readers.enabled is false/absent. While false: byte-
+      # identical (the v2 reader SKILLs, handoffs, prompts and files are
+      # untouched; v3 files already written still load).
+      #
+      # While true: readers v3. Short SKILLs under workflow_artifacts/skills/
+      # readers_v3/ plus READING_CONTRACT.md; CLAIM_TESTS.md replaces the
+      # design guide (the catalogue stays); added inputs: claim_status.yaml,
+      # artifacts/claim_result_digest.yaml (the variants' claim_test.yaml
+      # numbers, bound to this attempt's bars) and artifacts/
+      # findings_summary_for_readers.yaml (earlier runs' findings). Code skips
+      # regime_power when the manifest lists /regime_detector as scaffolding
+      # or the detector is constant, and component_attribution when every
+      # variant has at most one component: a `skipped` reading with its rule
+      # (never `[]`), counted in campaign_record/reader_skips.yaml and the
+      # campaign summary. Each reader writes ONE reading: an explanation,
+      # 0-2 side findings (claim blocks, check_claim) and at most one patch
+      # (resolved against the base config, never on scaffolding). No verdict
+      # field. Decide-next takes a side finding as a candidate whose brief
+      # carries the claim pre-filled; a repeated spec_hash or a block claim
+      # whose tests cannot see the block is a warning, never a refusal.
   operator_approval:
     enabled: false
       # E-068 PR 4 (D-071, CUL-399). OFF BY DEFAULT, read by

@@ -215,6 +215,8 @@ TARGET_FLAGS = {
     "claim_tests": False,
     # D-071 (CUL-399): off, so decide-next's picks stay `ready` as these scenarios expect.
     "operator_approval": False,
+    # E-068 slice 5 (D-073): requires claim_tests, which is off here.
+    "reader_findings": False,
 }
 
 # C5.8 (D-050): the four legacy route/rationale keys of a window's core

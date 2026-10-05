@@ -174,8 +174,8 @@
       "properties": {
         "candidate_id": { "type": "string" },
         "origin": { "enum": ["reader", "brief"] },
-        "kind": { "enum": ["patch", "new_block", "card"],
-                  "description": "card (E-059 S2b): a brief's extra hypothesis whose card 1a already wrote." },
+        "kind": { "enum": ["patch", "new_block", "card", "side_finding"],
+                  "description": "card (E-059 S2b): a brief's extra hypothesis whose card 1a already wrote. side_finding (E-068 slice 5, D-073): a v3 reader's side finding, a claim block pre-filled into the brief." },
         "category": { "type": ["string", "null"] },
         "source_run": { "type": "string" },
         "parent_hypothesis_id": { "type": ["string", "null"] },
@@ -214,6 +214,8 @@
                                  "description": "Binding (operator decision 3): REPEAT makes the candidate ineligible." },
                 "matched_runs": { "type": "array", "items": { "type": "string" } },
                 "note": { "type": "string" },
+                "spec_hashes": { "type": "array", "items": { "type": "string" },
+                                 "description": "E-068 slice 5, kind side_finding only: the spec_hash of each test of its claim (information; a repeat is a warning, never a refusal)." },
                 "digest_advisory": {
                   "type": "object",
                   "description": "LEGACY family-grain exclusion digest lookup (build_exclusion_digest.legacy_family_lookup; the 'neighbour' outcome is legacy). Information only: never refuses.",
@@ -270,12 +272,39 @@
           "type": "array", "minItems": 1,
           "description": "E-068 PR 4 (D-071): present only when non-empty. WARNING ONLY (never a feasibility reason, never a change of eligibility or rank): a component class name the reader wrote that is neither a known class nor quoted from the run's hypothesis card (reader_proposals.unknown_class_names), with the nearest real name.",
           "items": {
-            "type": "object", "required": ["kind", "name", "suggestion"], "additionalProperties": false,
-            "properties": {
-              "kind": { "const": "unknown_component_class" },
-              "name": { "type": "string" },
-              "suggestion": { "type": ["string", "null"] }
-            }
+            "oneOf": [
+              {
+                "type": "object", "required": ["kind", "name", "suggestion"], "additionalProperties": false,
+                "properties": {
+                  "kind": { "const": "unknown_component_class" },
+                  "name": { "type": "string" },
+                  "suggestion": { "type": ["string", "null"] }
+                }
+              },
+              {
+                "type": "object", "required": ["kind", "spec_hash", "own_claim", "runs"],
+                "additionalProperties": false,
+                "description": "E-068 slice 5: a side finding's test with the same spec_hash as a recorded finding (own_claim false) or as the source run's own claim test (own_claim true).",
+                "properties": {
+                  "kind": { "const": "repeats_measured_spec" },
+                  "spec_hash": { "type": "string" },
+                  "own_claim": { "type": "boolean" },
+                  "runs": { "type": "array", "items": {
+                    "type": "object", "required": ["run_id", "status"], "additionalProperties": false,
+                    "properties": { "run_id": { "type": "string" },
+                                    "status": { "type": ["string", "null"] } } } }
+                }
+              },
+              {
+                "type": "object", "required": ["kind", "block_kind", "message"], "additionalProperties": false,
+                "description": "E-068 slice 5: a side finding whose claim kind names a block but no test reads that block's output (CLAIM_TESTS.md's visibility rule).",
+                "properties": {
+                  "kind": { "const": "block_claim_cannot_see_block" },
+                  "block_kind": { "enum": ["forecast", "regime"] },
+                  "message": { "type": "string" }
+                }
+              }
+            ]
           }
         }
       }
