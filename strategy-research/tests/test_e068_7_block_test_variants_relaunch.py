@@ -320,6 +320,34 @@ def test_relaunch_refuses_a_launch_or_preflight_halt(campaign_root, status, caps
     assert _queue(campaign_root)[0]["run_ids"] == ["run_900"]
 
 
+@pytest.mark.parametrize("status", [
+    "paused:refinement_brief_conflicts_with_existing_continuation",
+    "paused:legacy_continuation_under_retired_routing", "paused:idea_status_missing_at_done",
+    "paused:protocol_promotion_unratified", "paused:budget_breaker"])
+def test_relaunch_refuses_halts_where_the_run_did_not_fail(campaign_root, status, capsys):
+    """Review round 2: an allowlist (stage_exception, unhandled_exception)."""
+    _failed_entry(campaign_root, status=status)
+    assert camp._relaunch_entry("P") is False
+    assert "not a failed run" in capsys.readouterr().out
+    assert _queue(campaign_root)[0]["run_ids"] == ["run_900"]
+
+
+@pytest.mark.parametrize("status", ["paused:stage_exception", "paused:unhandled_exception"])
+def test_relaunch_accepts_the_failed_run_halts(campaign_root, status):
+    _failed_entry(campaign_root, status=status)
+    assert camp._relaunch_entry("P") is True
+
+
+def test_relaunch_refuses_an_unconsumed_refinement_brief(campaign_root, capsys):
+    _save_queue_entries(campaign_root["queue_path"], [
+        {"id": "P", "brief_path": "briefs/P.md", "status": "paused:unhandled_exception",
+         "priority": 999, "source": "agent", "notes": "n", "run_ids": ["run_900"],
+         "origin": "reader", "refinement_brief_path": "briefs/R.md"}])
+    _write_campaign_state(campaign_root["campaign_state_path"], runs=[], trial_sharpes=[])
+    assert camp._relaunch_entry("P") is False
+    assert "carries a refinement brief" in capsys.readouterr().out
+
+
 def test_relaunch_refuses_a_lineage(campaign_root, capsys):
     _failed_entry(campaign_root, run_ids=("run_900", "run_901"))
     assert camp._relaunch_entry("P") is False
@@ -330,7 +358,7 @@ def test_relaunch_refuses_a_lineage(campaign_root, capsys):
          "origin": "reader", "refinement_brief_path": "briefs/R.md",
          "refinement_brief_consumed_for": "briefs/R.md"}])
     assert camp._relaunch_entry("P") is False
-    assert "consumed refinement brief" in capsys.readouterr().out
+    assert "refinement brief" in capsys.readouterr().out
 
 
 def test_relaunch_with_a_missing_old_folder_cites_no_readme(campaign_root):

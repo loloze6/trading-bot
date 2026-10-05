@@ -917,7 +917,8 @@ unpark checks.
 
 ### Relaunch a failed entry as a fresh run — `--relaunch` (CUL-408, D-076)
 
-A failed entry (`paused:<reason>`, e.g. `paused:unhandled_exception`) whose run
+A failed entry (`paused:unhandled_exception` or `paused:stage_exception` only --
+the halts where the run itself failed) whose run
 should not be continued (for example, the run failed before the fix that is now
 merged) is started again as a FRESH run. With no campaign running (it takes the
 campaign lock):
@@ -930,9 +931,10 @@ PYTHONUTF8=1 ../venv/Scripts/python.exe workflow/run_campaign.py --once
 It refuses, changing nothing, a park (`paused:waiting_for_*`: use `--unpark`,
 the same run continues), an operator hold (use `--approve`), a launch or flag
 pre-flight halt (`paused:launch_exception`, `paused:flag_misconfiguration`: use
-`--resume`; a failed launch is never in `run_ids`), a lineage of several runs or
-a consumed refinement brief (by hand), any other status, and a paused entry with
-no run (use `--resume`). Otherwise it writes the repo's
+`--resume`; a failed launch is never in `run_ids`), every other halt (routing,
+pre-flight, a refinement conflict: the run did not fail; RUNBOOK §3), an entry
+with a refinement brief or several runs (a lineage: by hand), any other status,
+and a paused entry with no run (use `--resume`). Otherwise it writes the repo's
 orphan convention `runs/<old>/ORPHANED_README.md` (reconcile counts the old run
 as known), clears the entry's `run_ids`, sets it `ready` (priority kept),
 appends a note and logs `RELAUNCH`. The old run's files and any trial rows are

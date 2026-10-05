@@ -2400,6 +2400,8 @@ def _unpark_entry(entry_id: str) -> bool:
 
 
 ORPHANED_README = "ORPHANED_README.md"
+# CUL-408 review round 2: the halts whose run itself failed (an allowlist).
+RELAUNCHABLE_REASONS = (STAGE_EXCEPTION_HALT, "unhandled_exception")
 RELAUNCH_NOTE = (" RELAUNCHED {at} (operator, --relaunch): {old} {why}; run_ids cleared so the "
                  "scheduler starts a fresh run; {record}.")
 
@@ -2438,11 +2440,23 @@ def _relaunch_entry(entry_id: str) -> bool:
             print(f"--relaunch refused: {entry_id} is {status!r}; only a failed entry "
                   f"(paused:<reason>) can be relaunched. An operator hold uses --approve.")
             return False
-        if status in (f"paused:{LAUNCH_EXCEPTION_HALT}", f"paused:{FLAG_PREFLIGHT_HALT}"):
+        reason = status[len("paused:"):]
+        if reason in (LAUNCH_EXCEPTION_HALT, FLAG_PREFLIGHT_HALT):
             # review: a failed LAUNCH is never in run_ids (run_ids[-1] is a healthy
             # earlier run), and a pre-flight halt is the config's problem
             print(f"--relaunch refused: {entry_id} is {status!r}: --resume handles it "
                   f"(RUNBOOK.md §3); relaunching would orphan a run that did not fail.")
+            return False
+        if reason not in RELAUNCHABLE_REASONS:
+            # review round 2: an allowlist -- on every other halt (routing, pre-flight,
+            # a refinement conflict, ...) the run itself did not fail
+            print(f"--relaunch refused: {entry_id} is {status!r}, not a failed run "
+                  f"({', '.join(RELAUNCHABLE_REASONS)}); resolve it as RUNBOOK.md §3 says.")
+            return False
+        if entry.get("refinement_brief_path"):
+            print(f"--relaunch refused: {entry_id} carries a refinement brief "
+                  f"({entry['refinement_brief_path']!r}); its runs form a lineage. Handle it by "
+                  f"hand (RUNBOOK.md §4).")
             return False
         run_ids = list(entry.get("run_ids") or [])
         if not run_ids:
