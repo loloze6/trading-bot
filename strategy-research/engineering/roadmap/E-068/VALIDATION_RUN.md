@@ -424,3 +424,174 @@ To see the readers, a run must reach a backtest. Either:
 run_071 would need a body-fraction component first (OHLC: open, high, low). That is a component
 decision for the operator. The optional "approve a reader side finding" run still needs readers
 v3 to have produced one.
+
+## Run after PRs #331 and #332 (run_073, 2026-10-05): the first run to reach the readers
+
+**In short:** the reader patch `trade_efficiency-run_070-1` (shock period 1 -> 2) ran end to end
+on the fixed code and ended `completed_refuted`. It is the first run of this validation to reach a
+backtest and the v3 readers.
+- **Fixes:** the CUL-405 fix worked (code wrote the manifest), and CUL-406 worked (the patch card's
+  claim was checked, not exempted). But 1a wrote a claim with no tests, so nothing was measured.
+- **Readers:** three readers ran and two were skipped by code rules. Total reader cost was $0.385,
+  against run_070's $0.715.
+- **Spend:** $0.899 (operator cap about $1.5).
+- **Safety:** every call took 1 turn; `holdout_reserved: false`.
+
+**How it was launched**
+- **`--unpark` did not fit.** The operator asked for `--unpark`, but the entry was
+  `paused:unhandled_exception` (run_072 failed), not parked. `--unpark` refuses that
+  (`run_campaign.py:2347`), and `--resume` refuses a run whose status is `failed` (`:2280-2288`).
+  A resume would also have kept run_072's pre-fix `exempt` claim records and 1b's manifest.
+- **Operator's choice: a fresh run.** With no campaign running, and under the campaign lock:
+  - the entry was set back to `ready` with empty `run_ids` (a note in the queue);
+  - run_072 was kept as a record with `runs/run_072/ORPHANED_README.md` (the repo's convention, so
+    reconciliation counts it as known);
+  - then `--dry-run` (PASSED) and `--once`.
+- **Before the launch:** `c4/flag-set` was at `6927afa4` (master with #331 and #332), and the flags
+  were checked through the code's readers (claim_tests, reader_findings, operator_approval,
+  decide_next and config_direct_authoring all on; budget 1.8M).
+
+### (a) The claim card
+
+1a wrote a pass-through card whose claim has **no tests**:
+- `kind: cost_turnover`;
+- `criteria_refs: [realized_edge_to_cost_ratio, sign_consistent_by_era]`;
+- statement: "Shock reversal with period=2 bars reduces false oscillations and improves exit
+  efficiency, enabling realized_edge_to_cost_ratio > 2.2 and sign-consistent profitable returns
+  across market eras (2024, 2025)."
+
+What happened at each check:
+- **CUL-406 worked:** the card was checked, not exempted. But `claim_test_status.yaml` reads
+  `usable: false, reason: criteria_refs_only`: the claim is tested only by the card's own menu
+  criteria.
+- **Visibility check:** `claim_match.yaml` reads `status: match`, `block_visibility:
+  not_applicable` (no test, so nothing to see).
+- **Revision:** `claim_revision.yaml` is `not_needed`. It fires only for a blind claim.
+- **Did the tests read the block's signal?** There were no tests. A criteria-only claim is allowed
+  by CLAIM_TESTS.md, and it is the reason (b) is empty.
+- **Odd detail:** the statement names "eras (2024, 2025)", but the test period is 2022-2023. The
+  grid's `sign_consistent_by_era` reads this run's own windows.
+
+**CUL-405 worked:** "block_manifest.yaml written by code from the brief's candidate.manifest ...
+1b's own version was replaced." The manifest's `rationale` carries the code note naming the patch.
+The 5a config check passed.
+
+### (b) The claim measurement and the finding in campaign memory
+
+- **Not measured:** `claim_status.yaml` reads `claim_status: not_measured, reason:
+  criteria_refs_only`, with 0 tests.
+- **Finding:** `campaign_memory.yaml` has run_073's finding `F-run_073-1`: "measured, not proven",
+  `status: not_measured`, `reason: criteria_refs_only`, statement and kind verbatim,
+  `block_visibility: not_applicable`, `claim_revision: not_needed`.
+- **Scope recorded in the finding:** kraken perp, 1h, `symbols: [BTCUSD]`, 2022-01-01..2023-12-31.
+- **Trial rows:** `run_073:base` and `run_073:design_period_3`. `asset_xrp` was not tested: the
+  data-availability gate said REFINE, which is non-blocking (D-042).
+- **Grid:** `idea_status: refuted`. At least one criterion failed with enough data; median Sharpe
+  -7.22; the profit bars FAILed on both graded variants.
+
+### (c) The readers (v3), each one
+
+Costs, from `cache_creation` and output tokens:
+
+| Reader | Ran? | Cost | Weighted tokens | Input (cache_creation) | Output |
+|---|---|---|---|---|---|
+| profitability | ran | $0.130 | 99,755 | 29,664 | 12,533 |
+| trade_efficiency | ran | $0.167 | 130,874 | 35,267 | 17,356 |
+| forecast_power | ran | $0.088 | 64,884 | 22,879 | 7,255 |
+| regime_power | **skipped**, rule `regime_detector_scaffolding` | $0 | 0 | | |
+| component_attribution | **skipped**, rule `single_component` | $0 | 0 | | |
+
+Both skips are recorded in `campaign_record/reader_skips.yaml` and in the proposals files (never
+`[]`). The digest and the earlier-findings summary were written before the readers (0 earlier
+findings listed), and no input was missing.
+
+**profitability**
+- Explanation: no gross edge. Median gross PnL is -287 bp, and the gross edge per trade is negative
+  in every window (-6.2 to -17.3 bp). The forecast/return correlation is -0.0057. Period 2 lowered
+  `boundary_recross_rate` only from about 0.99 to 0.9487.
+- Side finding 1 (`profitability-run_073-1`, `direction_forecast`): a valid claim block. Its test
+  is the rank IC of the forecast over all bars at 1-4h, so it reads the block. It is a sensible
+  test: the run's own claim had none.
+- Side finding 2 (`profitability-run_073-2`, `cost_turnover`): `tests: none` with a
+  `missing_block` (a premature-exit outcome). That added a test-request row. It is an honest
+  "cannot test with today's blocks".
+- Patch: none.
+
+**trade_efficiency**
+- Explanation: exits are skewed (median +0.058%, mean -0.83%), the expectancy is -6.1 bp per trade,
+  and `realized_edge_to_cost_ratio` is -1.28 to -1.37. It also cites residual IC 0.077
+  (p one-sided 0.019), which is correct (`residual_ic.yaml` base: 0.076977, 0.01937).
+- Side finding 1 (`trade_efficiency-run_073-1`, `direction_forecast`): rank IC of the forecast over
+  all bars at 1h and at 3h. Valid, and it reads the block. It is nearly the same test as
+  profitability's side finding 1 (different horizons, so no collapse).
+- Side finding 2: `tests: none` with a `missing_block` (exit efficiency by trade outcome). That
+  added a test-request row.
+- Patch: none.
+
+**forecast_power**
+- Explanation: no directional information; correlations are near zero, and one window is
+  significant on the design variant.
+- **One invented fact.** It calls the base variant "period=1" and design_period_3 "period=2". The
+  configs say base = 2 and design_period_3 = 3 (`variants/*/strategy_config.json`).
+- No side finding, no patch.
+
+**Invented names:** none in structured fields. No class-name warning came from run_073's readings.
+The `missing_block` texts propose new outcome types; that is what the field is for, not an
+invention passed off as existing.
+
+### (d) What decide-next created
+
+Decide-next picked `profitability-run_073-1` (rank 1), a side-finding candidate whose brief carries
+the claim pre-filled. Its queue entry is **`blocked_on_operator_approval`**.
+- `trade_efficiency-run_073-1` was eligible at rank 2 and not picked.
+- The two `tests: none` findings were ineligible, as designed (D-073).
+- R2 enqueued nothing.
+- It is the only new entry, and it is held. The queue holds 7 `blocked_on_operator_approval`
+  entries in total.
+- The old `VarianceRatioRegimeComponent` warning (run_070's proposal) repeated.
+
+### (e) Cost and weighted tokens per stage
+
+| Stage | run_070 | run_073 |
+|---|---|---|
+| 1a | $0.207 / 146,348 | $0.197 / 135,779 |
+| 1b | $0.373 / 272,571 (3 calls) | $0.126 / 91,228 (1 call) |
+| 2 innovation_expansion | $0.427 / 304,922 (3 calls) | $0.191 / 149,902 (1 call) |
+| readers | **$0.715 / 488,414 (5 calls)** | **$0.385 / 295,513 (3 calls, 2 skipped)** |
+| **Total** | **$1.723 / 1,212,255** | **$0.899 / 672,421** |
+
+- **Readers:** -46% in cost and -39.5% in weighted tokens.
+  - About $0.267 of the saving comes from the two skips; on run_070 those two readers cost $0.157
+    and $0.110.
+  - The three that ran cost $0.385, against $0.448 for the same three on run_070 ($0.127 + $0.214
+    + $0.108).
+- **Input per reader:** 23k-35k `cache_creation` tokens on run_073, against 35k-61k on run_070, so
+  the v3 inputs are smaller.
+- **Output is still large:** 7k-17k tokens per reader.
+- **Budget headroom:** 672,421 of 1,800,000 used, 37.4%, leaving 1.13M.
+
+### (f) Warning artifacts
+
+- `claim_test_status.yaml` / `claim_status.yaml`: `criteria_refs_only`, no measurement.
+- `claim_power.yaml`: not written (no test, so no floor to check).
+- Test-request rows in `campaign_record/test_requests.yaml`: `profitability-run_073-2` and
+  `trade_efficiency-run_073-2` (`tests: none`).
+- `reader_skips.yaml`: regime_power and component_attribution for run_073.
+- data_availability_gate: `asset_xrp` REFINE, so not tested (non-blocking).
+- Decide-next: the repeated `VarianceRatioRegimeComponent` warning (CUL-404 family of noise; it
+  comes from run_070's proposal).
+- Warn-only schema mismatches as before (CUL-404). `optional_input never resolved` for
+  `findings_carryover.yaml` and `refinement_notes.yaml`.
+- No `reader_input_gaps.yaml` (PR #330's path was not needed).
+
+### (g) What broke, or did not work as intended
+
+| # | What | Ticket |
+|---|---|---|
+| 1 | `--unpark` cannot relaunch a run that failed (`paused:unhandled_exception`), and `--resume` refuses a `failed` run. A fresh run needed a hand queue edit (`run_ids` cleared, ORPHANED_README). There is no command for "relaunch this entry fresh". | CUL-408 |
+| 2 | 1a wrote a criteria-only claim for a patch whose idea is a direction forecast, so the run measured nothing. The readers then proposed exactly the missing test (rank IC of the forecast). A patch card could inherit its source run's tests (CUL-406's second option) or be asked for at least one test. | CUL-409 |
+| 3 | The forecast_power reader stated wrong variant periods (base "1", design "2"; really 2 and 3). The v3 handoff has the base config but not the variants' configs or patches. | CUL-410 |
+| 4 | Two near-identical side findings (rank IC of the forecast, different horizons) were not collapsed, so decide-next ranks both. | noted (D-073 collapses equal tests only) |
+| 5 | The claim statement names eras outside the test period (2024, 2025). | noted (information only) |
+
+No fix was made during the run. The nearest-build PR is next.
