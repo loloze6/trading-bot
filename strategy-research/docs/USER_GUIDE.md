@@ -1452,7 +1452,12 @@ feed that is not wired, one row per such feed in
      `claim_test.yaml`, numbers only when measured on this attempt's bars, else
      `stale`) and `artifacts/findings_summary_for_readers.yaml` (earlier runs'
      findings from the campaign memory, this run left out, newest 10, compact);
-     `claim_status.yaml` when it exists.
+     `claim_status.yaml` when it exists. If either code-written file cannot be
+     written (e.g. an OSError), the stage does not stop: the error is printed and
+     listed in `artifacts/reader_input_gaps.yaml`, an older copy is removed when
+     possible (a file named there counts as missing even if it is still on disk),
+     and the readers run without that file: their handoff names it as missing and
+     each reading's audit entry keeps it as `missing_inputs`.
    - **Skip rules (no model call):** `regime_power` when `block_manifest.yaml`
      lists `/regime_detector` as scaffolding or the base config's detector has no
      components and no rules; `component_attribution` when every graded variant

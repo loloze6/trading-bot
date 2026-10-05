@@ -48,6 +48,9 @@ import reader_proposals as rp  # noqa: E402
  SKIP_OUTPUT_REFUSED) = rp.SKIP_RULES
 DIGEST_ARTIFACT = "claim_result_digest.yaml"
 READER_SUMMARY_ARTIFACT = "findings_summary_for_readers.yaml"
+# The two files above that could not be written before the readers ran (the
+# readers then run without them); absent when both were written.
+INPUT_GAPS_ARTIFACT = "reader_input_gaps.yaml"
 READER_SUMMARY_MAX_ROWS = 10
 SKIPS_REL = "campaign_record/reader_skips.yaml"
 WARN_REPEAT = "repeats_measured_spec"

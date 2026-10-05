@@ -769,6 +769,181 @@ def test_v3_inputs_written_before_the_readers(monkeypatch):
     rpr._run_specialist_readers_stage(RUN_ID, run_dir)
     assert seen and all(seen)
     assert (run_dir / "artifacts" / rf.DIGEST_ARTIFACT).exists()
+    assert not (run_dir / "artifacts" / rf.INPUT_GAPS_ARTIFACT).exists()
+
+
+def _failing_save(monkeypatch, names, exc=OSError("disk full")):
+    """save_yaml raises `exc` for the listed artifact file names only."""
+    real = rpr.save_yaml
+
+    def _save(path, data):
+        if Path(path).name in names:
+            raise exc
+        return real(path, data)
+    monkeypatch.setattr(rpr, "save_yaml", _save)
+
+
+def _reading_llm(prompts):
+    async def _llm(prompt):
+        prompts.append(prompt)
+        cat = next(c for c in REPORT_CATEGORIES if f"reader_category: {c}\n" in prompt)
+        return _fenced(_reading(cat, sides=[])), {"usage": {}, "cost_usd": 0.0, "num_turns": 1}
+    return _llm
+
+
+@pytest.mark.parametrize("name", [rf.DIGEST_ARTIFACT, rf.READER_SUMMARY_ARTIFACT])
+def test_an_input_write_error_never_stops_the_readers(name, monkeypatch, capsys):
+    """Operator 2026-10-05: an OSError writing either v3 input is recorded, the
+    readers run without that input, and the gap is named in the run."""
+    run_dir = _run070_shaped(monkeypatch)   # an older copy of both files exists
+    arts = run_dir / "artifacts"
+    _failing_save(monkeypatch, {name})
+    prompts = []
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _reading_llm(prompts))
+    rpr._run_specialist_readers_stage(RUN_ID, run_dir)   # must not raise
+    assert prompts   # the readers ran
+    for c in REPORT_CATEGORIES:
+        assert (arts / "proposals" / f"{c}.yaml").exists()
+    assert not (arts / name).exists()   # the older copy cannot pass as this run's
+    other = ({rf.DIGEST_ARTIFACT, rf.READER_SUMMARY_ARTIFACT} - {name}).pop()
+    assert (arts / other).exists()
+    for p in prompts:
+        assert f"CONTENT OF artifacts/{name}" not in p
+        assert f"CONTENT OF artifacts/{other}" in p
+        assert "MISSING in this run" in p
+    gaps = yaml.safe_load((arts / rf.INPUT_GAPS_ARTIFACT).read_text(encoding="utf-8"))
+    assert gaps["run_id"] == RUN_ID and list(gaps["missing"]) == [name]
+    assert gaps["missing"][name] == "OSError: disk full"
+    assert f"{name} could not be written (OSError: disk full)" in capsys.readouterr().out
+
+
+def test_every_v3_write_failing_still_runs_the_readers(monkeypatch, capsys):
+    """Both inputs and the gap record itself unwritable: the readers still run."""
+    run_dir = _run070_shaped(monkeypatch)
+    names = {rf.DIGEST_ARTIFACT, rf.READER_SUMMARY_ARTIFACT, rf.INPUT_GAPS_ARTIFACT}
+    _failing_save(monkeypatch, names)
+    prompts = []
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _reading_llm(prompts))
+    rpr._run_specialist_readers_stage(RUN_ID, run_dir)
+    assert prompts
+    for n in names:
+        assert not (run_dir / "artifacts" / n).exists()
+    assert "the input gaps could not be recorded" in capsys.readouterr().out
+
+
+def test_a_digest_that_raises_is_a_gap_too(monkeypatch):
+    run_dir = _run070_shaped(monkeypatch)
+
+    def _boom(_run_dir):
+        raise ValueError("odd claim_status")
+    monkeypatch.setattr(rf, "claim_result_digest", _boom)
+    gaps = rpr._write_reader_v3_inputs(run_dir, RUN_ID)
+    assert gaps == {rf.DIGEST_ARTIFACT: "ValueError: odd claim_status"}
+    h = rpr._reader_handoff("trade_efficiency", RUN_ID, 0, run_dir)
+    paths = [r["path"] for r in h["required_inputs"] + h["optional_inputs"]]
+    assert f"artifacts/{rf.DIGEST_ARTIFACT}" not in paths   # not listed as an input at all
+    assert list(h["injected_context"]["missing_inputs"]) == [f"artifacts/{rf.DIGEST_ARTIFACT}"]
+    assert h["injected_context"]["missing_inputs"][f"artifacts/{rf.DIGEST_ARTIFACT}"].startswith(
+        "MISSING in this run")
+
+
+def test_a_later_clean_write_removes_the_gap_record(monkeypatch):
+    run_dir = _run070_shaped(monkeypatch)
+    arts = run_dir / "artifacts"
+    real = rpr.save_yaml
+    _failing_save(monkeypatch, {rf.DIGEST_ARTIFACT})
+    assert rpr._write_reader_v3_inputs(run_dir, RUN_ID)
+    assert (arts / rf.INPUT_GAPS_ARTIFACT).exists()
+    monkeypatch.setattr(rpr, "save_yaml", real)   # e.g. a resume after disk space came back
+    assert rpr._write_reader_v3_inputs(run_dir, RUN_ID) == {}
+    assert not (arts / rf.INPUT_GAPS_ARTIFACT).exists()
+    assert (arts / rf.DIGEST_ARTIFACT).exists()
+    h = rpr._reader_handoff("trade_efficiency", RUN_ID, 0, run_dir)
+    assert all("MISSING" not in r["reason"] for r in h["optional_inputs"])
+    assert "missing_inputs" not in h["injected_context"]
+
+
+def test_both_inputs_present_the_handoff_is_the_slice_5_one(monkeypatch):
+    """With both files written, the v3 handoff is exactly slice 5's (order included)."""
+    run_dir = _run070_shaped(monkeypatch)
+    h = rpr._reader_handoff("profitability", RUN_ID, 0, run_dir)
+    assert [r["path"] for r in h["required_inputs"]] == [
+        rpr.READER_V3_CONTRACT, "artifacts/reports/profitability.yaml",
+        "artifacts/grid_evaluation.yaml", "artifacts/hypothesis_card.yaml",
+        f"artifacts/{rf.DIGEST_ARTIFACT}", "artifacts/candidate_strategy_config.json",
+        "../../docs/COMPONENT_CATALOG.md", rpr.CLAIM_TESTS_GUIDE,
+        f"artifacts/{rf.READER_SUMMARY_ARTIFACT}", "artifacts/registry_summary.yaml"]
+    assert [r["path"] for r in h["optional_inputs"]] == ["artifacts/block_manifest.yaml",
+                                                         "artifacts/claim_status.yaml"]
+    assert h["objective"].endswith("written to artifacts/proposals/profitability.yaml.")
+
+
+def test_an_older_copy_that_cannot_be_removed_is_still_missing(monkeypatch):
+    """Review fix: rewrite AND removal fail (a Windows file lock): the older
+    attempt's file stays on disk, and the gap record keeps it out of the prompt."""
+    run_dir = _run070_shaped(monkeypatch)
+    arts = run_dir / "artifacts"
+    _failing_save(monkeypatch, {rf.DIGEST_ARTIFACT}, PermissionError("locked"))
+    real_unlink = Path.unlink
+
+    def _unlink(self, *a, **k):
+        if self.name == rf.DIGEST_ARTIFACT:
+            raise PermissionError("locked")
+        return real_unlink(self, *a, **k)
+    monkeypatch.setattr(Path, "unlink", _unlink)
+    gaps = rpr._write_reader_v3_inputs(run_dir, RUN_ID)
+    assert "an older copy could not be removed" in gaps[rf.DIGEST_ARTIFACT]
+    assert (arts / rf.DIGEST_ARTIFACT).exists()   # still on disk
+    h = rpr._reader_handoff("trade_efficiency", RUN_ID, 0, run_dir)
+    assert f"artifacts/{rf.DIGEST_ARTIFACT}" not in [
+        r["path"] for r in h["required_inputs"] + h["optional_inputs"]]
+    assert h["objective"].endswith(f"Missing in this run (read without them): "
+                                   f"{rf.DIGEST_ARTIFACT}.")
+    # review round 2: the older copy's content must not reach the prompt
+    prompt = rpr._build_stage_prompt("specialist_readers", h, run_dir,
+                                     skill_file_name=rpr._reader_skill_dir("trade_efficiency"))
+    assert f"CONTENT OF artifacts/{rf.DIGEST_ARTIFACT}" not in prompt
+    assert f"CONTENT OF artifacts/{rf.READER_SUMMARY_ARTIFACT}" in prompt
+    assert "MISSING in this run" in prompt
+    # nor be cited as this run's in the provenance record
+    prov = rpr._citation_provenance("trade_efficiency", run_dir,
+                                    yaml.safe_dump(_reading(sides=[]), sort_keys=False))
+    assert "files_read" in prov, prov
+    assert rf.READER_SUMMARY_ARTIFACT in prov["files_read"]
+    assert rf.DIGEST_ARTIFACT not in prov["files_read"]
+
+
+def test_a_reading_written_without_an_input_says_so_after_a_resume(monkeypatch):
+    """Review fix: the gap is kept in the reading's own audit entry, so a later
+    clean write (which removes reader_input_gaps.yaml) cannot erase it."""
+    run_dir = _run070_shaped(monkeypatch)
+    real = rpr.save_yaml
+    _failing_save(monkeypatch, {rf.READER_SUMMARY_ARTIFACT})
+    rpr._write_reader_v3_inputs(run_dir, RUN_ID)
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _reading_llm([]))
+    rpr.run_reader_worker("trade_efficiency", RUN_ID, run_dir)
+    monkeypatch.setattr(rpr, "save_yaml", real)
+    assert rpr._write_reader_v3_inputs(run_dir, RUN_ID) == {}   # the resume
+    audit = rpr.load_yaml(run_dir / "pipeline_state.yaml")["audit_log"]
+    assert audit["specialist_readers_trade_efficiency_attempt_0"]["missing_inputs"] == [
+        rf.READER_SUMMARY_ARTIFACT]
+    rpr.run_reader_worker("profitability", RUN_ID, run_dir)   # after the clean write
+    assert "missing_inputs" not in rpr.load_yaml(
+        run_dir / "pipeline_state.yaml")["audit_log"]["specialist_readers_profitability_attempt_0"]
+
+
+def test_a_failed_gap_record_leaves_no_older_record(monkeypatch):
+    run_dir = _run070_shaped(monkeypatch)
+    arts = run_dir / "artifacts"
+    real = rpr.save_yaml
+    _failing_save(monkeypatch, {rf.DIGEST_ARTIFACT})
+    rpr._write_reader_v3_inputs(run_dir, RUN_ID)
+    assert (arts / rf.INPUT_GAPS_ARTIFACT).exists()
+    monkeypatch.setattr(rpr, "save_yaml", real)
+    _failing_save(monkeypatch, {rf.READER_SUMMARY_ARTIFACT, rf.INPUT_GAPS_ARTIFACT})
+    rpr._write_reader_v3_inputs(run_dir, RUN_ID)   # digest fine now; record write fails
+    assert not (arts / rf.INPUT_GAPS_ARTIFACT).exists()
+    assert rpr._reader_v3_missing_inputs(run_dir) == [rf.READER_SUMMARY_ARTIFACT]
 
 
 # ---------------------------------------------------------------------------
