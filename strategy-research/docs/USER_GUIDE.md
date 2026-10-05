@@ -1439,6 +1439,47 @@ feed that is not wired, one row per such feed in
    so a resume, or a re-attempt that asks for the same feed in other words or
    under another proposal id, adds nothing. It changes no status, route or
    queue entry: decide-next gates the candidate (§5 `run_campaign.py`).
+8. **Readers v3** (E-068 slice 5, D-073, `orchestrator.reader_findings.enabled`,
+   off by default; requires `claim_tests` and `specialist_readers`). Off, items
+   1-7 are exactly as above. On:
+   - **SKILLs:** `workflow_artifacts/skills/readers_v3/<category>-reader/SKILL.md`
+     (one focus each, under 3 KB) plus the shared
+     `readers_v3/READING_CONTRACT.md`. The v2 SKILLs are untouched.
+   - **Inputs:** the same report, grid, card, base config, catalogue and registry
+     summary; `hypothesis-design/CLAIM_TESTS.md` instead of the design guide; and,
+     written by code before the first reader, `artifacts/claim_result_digest.yaml`
+     (the claim's tests and each variant's effect sizes from its
+     `claim_test.yaml`, numbers only when measured on this attempt's bars, else
+     `stale`) and `artifacts/findings_summary_for_readers.yaml` (earlier runs'
+     findings from the campaign memory, this run left out, newest 10, compact);
+     `claim_status.yaml` when it exists.
+   - **Skip rules (no model call):** `regime_power` when `block_manifest.yaml`
+     lists `/regime_detector` as scaffolding or the base config's detector has no
+     components and no rules; `component_attribution` when every graded variant
+     has at most one component. The proposals file is then a `skipped` reading
+     with the rule (never `[]`); the memory entry's proposals block carries
+     `skipped`; `campaign_record/reader_skips.yaml` counts it and the campaign
+     summary shows "Readers skipped by a code rule". An answer refused after its
+     retry is recorded the same way (rule `output_refused_after_retry`).
+   - **Output:** `proposals/<category>.yaml` is ONE mapping: `schema_version: 3`,
+     `reading_id`, `model_id`, `rubric_version: <category>-reading-v1`,
+     `explanation`, `evidence`, `side_findings` (0-2, each a full claim block plus
+     evidence and scores) and `patch` (null or one). No verdict field. Where it is
+     written, code checks each side finding with `claim_card.check_claim`,
+     resolves the patch against the base config (`decide_next.resolve_patch`)
+     and refuses a patch under a scaffolding path; a refusal gets the one retry,
+     then each item is kept or dropped on its own. Warnings only, in the audit
+     log (`reading_review`): a test whose `spec_hash` is already in the findings
+     or is this run's own claim test; a block-kind claim whose tests cannot see
+     the block. `tests: none` adds a `test_requests.yaml` row. v2 list files and
+     v3 readings load side by side (`load_proposals` flattens a reading into
+     items). The v3 shape is enforced in code (`reader_proposals.check_reading`);
+     `proposal.schema.json` describes v2 only.
+   - **Decide-next:** two side findings with the same tests collapse inside ONE
+     decision only. The twin left in `collapsed_sources` is not in the queue, so
+     a later decision can offer it again; once the first one's finding is
+     recorded it carries a `repeats_measured_spec` warning (repeats warn, never
+     refuse, by decision; with approval mode on, the operator sees it).
 
 ---
 
@@ -1488,7 +1529,19 @@ proposals: [{category, ref, proposal_ids, count}]   # never scores
 registry: {block_ids: [...]} | {skipped: no_manifest|not_validated}   # E-058 S2b, see item 8
 profit_bars: null, profit_bars_reason: "not evaluated before regroup"
 kb_entry_id: grid_<run_id> | null   # E-058 S2b, see item 9; null only when the KB file is absent
+finding: {...}         # E-068 slice 4, only with orchestrator.claim_tests.enabled (D-072)
 ```
+
+With `orchestrator.claim_tests.enabled` on, a full entry also carries
+`finding` (`tools/claim_findings.py`), added after the registry and KB entry:
+the claim's statement, kind and tests (with `spec_hash`), whether the tests
+can see the block, the scope, the effect sizes per variant with their sign
+counts, the trial ids and the source run (detail by reference to each
+`claim_test.yaml`). Numbers are attached only when the measurement belongs to
+the attempt the entry describes, otherwise `not_measured` / `stale`. The
+stage then writes `artifacts/findings_summary.yaml` (every finding so far,
+deterministic). Information only: an error is recorded (`status: error`) and
+the stage continues; no prompt reads either yet.
 
 A run with component errors gets the fault-only form instead:
 `{run_id, hypothesis_id (null if hypothesis_card.yaml is unreadable), legacy:

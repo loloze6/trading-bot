@@ -2663,6 +2663,11 @@ def _regenerate_summary(queue: dict, dry_run: bool = False):
     if (ROOT / CLAIM_COVERAGE_REL).exists():
         import claim_card as _claim_card  # tools/ sibling; heavy, so imported only here
         lines += _claim_card.coverage_summary_lines(ROOT)
+    # E-068 slice 5: readers skipped by a code rule. Only when
+    # campaign_record/reader_skips.yaml exists (written only under
+    # orchestrator.reader_findings), so a summary without one is unchanged.
+    import reader_findings as _reader_findings  # tools/ sibling
+    lines += _reader_findings.skip_summary_lines(ROOT)
     lines += [
         "",
         "## Scoreboard",
@@ -3263,6 +3268,7 @@ def _flag_readers() -> dict:
         "variant_anti_adjacency_gate": orch._variant_anti_adjacency_gate_enabled,
         "forecast_size_probe": orch._forecast_size_probe_enabled,  # D-056
         "claim_tests": orch._claim_tests_enabled,  # E-068 slice 2
+        "reader_findings": orch._reader_findings_enabled,  # E-068 slice 5 (D-073)
         "schedulability_block": _schedulability_block_enabled,
         "operator_approval": _operator_approval_enabled,  # E-068 PR 4 (D-071)
     }

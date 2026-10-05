@@ -389,11 +389,17 @@ def _proposals_block(run_dir: Path, run_id: str, categories) -> list:
     import reader_proposals  # tools/ sibling; imported lazily for the caller's sys.path
     pdir = run_dir / "artifacts" / "proposals"
     loaded = reader_proposals.load_proposals(pdir, list(categories))
+    # E-068 slice 5: a reader skipped by a code rule (or refused after its
+    # retry) says so -- a count of 0 alone would read as "nothing to propose".
+    # Only v3 skipped readings carry the key, so every other entry is unchanged.
+    readings = reader_proposals.load_readings(pdir, list(categories))
     return [{
         "category": cat,
         "ref": _ref(run_id, f"artifacts/proposals/{cat}.yaml") if (pdir / f"{cat}.yaml").exists() else None,
         "proposal_ids": [p["proposal_id"] for p in loaded[cat]],
         "count": len(loaded[cat]),
+        **({"skipped": dict(readings[cat]["skipped"])}
+           if "skipped" in (readings.get(cat) or {}) else {}),
     } for cat in categories]
 
 

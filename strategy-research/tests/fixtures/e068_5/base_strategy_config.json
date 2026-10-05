@@ -1,0 +1,45 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 51,
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "shock_reversal",
+            "class": "strategies.strategy_components.PriceEvolutionComponent",
+            "params": {
+              "period": 1,
+              "scaling_factor": 1.0
+            },
+            "weight": 1.0,
+            "lookback": 500,
+            "transforms": [
+              {
+                "op": "zscore"
+              },
+              {
+                "op": "negate"
+              },
+              {
+                "op": "scale",
+                "params": {
+                  "factor": 10.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    }
+  },
+  "aux_feeds": []
+}
