@@ -928,8 +928,11 @@ PYTHONUTF8=1 ../venv/Scripts/python.exe workflow/run_campaign.py --once
 ```
 
 It refuses, changing nothing, a park (`paused:waiting_for_*`: use `--unpark`,
-the same run continues), an operator hold (use `--approve`), any other status,
-and a paused entry with no run (use `--resume`). Otherwise it writes the repo's
+the same run continues), an operator hold (use `--approve`), a launch or flag
+pre-flight halt (`paused:launch_exception`, `paused:flag_misconfiguration`: use
+`--resume`; a failed launch is never in `run_ids`), a lineage of several runs or
+a consumed refinement brief (by hand), any other status, and a paused entry with
+no run (use `--resume`). Otherwise it writes the repo's
 orphan convention `runs/<old>/ORPHANED_README.md` (reconcile counts the old run
 as known), clears the entry's `run_ids`, sets it `ready` (priority kept),
 appends a note and logs `RELAUNCH`. The old run's files and any trial rows are

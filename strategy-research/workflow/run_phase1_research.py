@@ -16344,8 +16344,13 @@ def _claim_revision_body(run_dir: Path, run_id: str) -> dict:
     if prior.get("revision_called"):
         # checked before "not needed": after an accepted splice the card's own
         # claim may see the block, but the history must still be reported
-        return {"manifest_kind": kind, "visibility_now": before,
-                **_claim_revision_resumed(claim, prior)}
+        resumed = {"manifest_kind": kind, "visibility_now": before,
+                   **_claim_revision_resumed(claim, prior)}
+        if prior.get("trigger") == cc.BLOCK_TEST_GAP_NO_TEST:  # CUL-409 review: keep it
+            resumed["trigger"] = prior["trigger"]
+            if cc.block_test_gap(claim, kind) is not None:
+                resumed["warning"] = CLAIM_STILL_NO_BLOCK_TEST_WARNING
+        return resumed
     record = {"manifest_kind": kind, "claim_before": claim,
               "claim_before_sha256": _claim_sha256(claim), "visibility_before": before}
     unchanged = {"claim_after": claim, "visibility_after": before}
@@ -16370,7 +16375,8 @@ def _claim_revision_body(run_dir: Path, run_id: str) -> dict:
     update_state(path=run_dir, **{CLAIM_REVISION_STATE_KEY: {
         "revision_called": True, "revision_at": datetime.now(timezone.utc).isoformat(),
         "manifest_kind": kind, "visibility_before": before, "claim_before": claim,
-        "claim_before_sha256": record["claim_before_sha256"]}})
+        "claim_before_sha256": record["claim_before_sha256"],
+        **({"trigger": gap} if gap == cc.BLOCK_TEST_GAP_NO_TEST else {})}})
     out = _claim_revision_call(run_dir, run_id, card, claim, kind, record, unchanged)
     try:
         update_state(path=run_dir, **{CLAIM_REVISION_STATE_KEY: {

@@ -2401,14 +2401,15 @@ def _unpark_entry(entry_id: str) -> bool:
 
 ORPHANED_README = "ORPHANED_README.md"
 RELAUNCH_NOTE = (" RELAUNCHED {at} (operator, --relaunch): {old} {why}; run_ids cleared so the "
-                 "scheduler starts a fresh run; {old} kept as a record (runs/{old}/"
-                 + ORPHANED_README + ").")
+                 "scheduler starts a fresh run; {record}.")
 
 
 def _relaunch_entry(entry_id: str) -> bool:
     """--relaunch <entry_id> (CUL-408, operator 2026-10-05): a failed entry
     (`paused:<reason>`, but never a park -- that is --unpark -- nor an operator
-    hold -- that is --approve) starts again as a FRESH run instead of
+    hold -- that is --approve -- nor a launch or flag pre-flight halt -- that is
+    --resume -- nor a lineage of several runs or a consumed refinement brief --
+    that is by hand) starts again as a FRESH run instead of
     continuing its last run (a `ready` entry with run_ids continues that run,
     _next_action_for_entry). Under the campaign lock: writes the repo's orphan
     convention, runs/<old>/ORPHANED_README.md (reconcile then counts the old
@@ -2437,11 +2438,27 @@ def _relaunch_entry(entry_id: str) -> bool:
             print(f"--relaunch refused: {entry_id} is {status!r}; only a failed entry "
                   f"(paused:<reason>) can be relaunched. An operator hold uses --approve.")
             return False
-        old = (entry.get("run_ids") or [None])[-1]
-        if not old:
+        if status in (f"paused:{LAUNCH_EXCEPTION_HALT}", f"paused:{FLAG_PREFLIGHT_HALT}"):
+            # review: a failed LAUNCH is never in run_ids (run_ids[-1] is a healthy
+            # earlier run), and a pre-flight halt is the config's problem
+            print(f"--relaunch refused: {entry_id} is {status!r}: --resume handles it "
+                  f"(RUNBOOK.md §3); relaunching would orphan a run that did not fail.")
+            return False
+        run_ids = list(entry.get("run_ids") or [])
+        if not run_ids:
             print(f"--relaunch refused: {entry_id} is {status!r} but has no run_ids; "
                   f"--resume relaunches a launch that never created a run.")
             return False
+        if len(run_ids) > 1 or entry.get("refinement_brief_consumed_for"):
+            # review: a lineage (refinement or continuation child) -- clearing it
+            # would drop earlier runs and re-run the original brief, not the refinement
+            print(f"--relaunch refused: {entry_id} holds a lineage ({run_ids}"
+                  + (", a consumed refinement brief" if entry.get(
+                      "refinement_brief_consumed_for") else "")
+                  + "); relaunching only its last run would drop the rest. Handle it by "
+                  "hand (RUNBOOK.md §4).")
+            return False
+        old = run_ids[-1]
         old_dir = ROOT / "runs" / old
         why = f"ended {status!r}"
         readme = (f"# {old} -- kept as a record, not continued\n\n"
@@ -2451,16 +2468,19 @@ def _relaunch_entry(entry_id: str) -> bool:
                   f"({datetime.now(timezone.utc).isoformat()}).\n"
                   f"- The entry's `run_ids` was cleared, so the scheduler starts a fresh run; "
                   f"this folder is therefore unreferenced on purpose (CUL-408).\n")
+        record = f"kept as a record (runs/{old}/{ORPHANED_README})"
         if old_dir.is_dir():
             (old_dir / ORPHANED_README).write_text(readme, encoding="utf-8")
+        else:  # review: never cite a README that was not written
+            record = f"its folder runs/{old} does not exist (no record written)"
         entry["status"] = "ready"
         entry["run_ids"] = []
         entry["notes"] = str(entry.get("notes") or "") + RELAUNCH_NOTE.format(
-            at=datetime.now(timezone.utc).strftime("%Y-%m-%d"), old=old, why=why)
+            at=datetime.now(timezone.utc).strftime("%Y-%m-%d"), old=old, why=why,
+            record=record)
         _save_queue(queue)
         _regenerate_summary(queue)
-        _log(f"RELAUNCH {entry_id}: {old} {why}; kept as a record "
-             f"(runs/{old}/{ORPHANED_README}); entry ready for a fresh run "
+        _log(f"RELAUNCH {entry_id}: {old} {why}; {record}; entry ready for a fresh run "
              f"(priority {entry.get('priority')}).")
         _write_loop_health()
         if _schedulability_block_enabled():

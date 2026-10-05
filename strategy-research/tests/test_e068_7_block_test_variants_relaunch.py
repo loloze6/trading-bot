@@ -57,7 +57,7 @@ CRITERIA_ONLY = _claim(kind="cost_turnover", tests=None,
     (_claim(), "forecast", None),                                   # a forecast event test
     (_claim(tests=[copy.deepcopy(CLOSE_Q)]), "forecast", "blind"),  # price level only
     (CRITERIA_ONLY, "forecast", "no_block_test"),
-    (_claim(kind="lead_lag", tests="none", missing_block="mb"), "forecast", "no_block_test"),
+    (_claim(kind="lead_lag", tests="none", missing_block="mb"), "forecast", None),  # exempt
     (CRITERIA_ONLY, "regime", "no_block_test"),
     (CRITERIA_ONLY, None, None),                                    # no manifest
     (CRITERIA_ONLY, "detector", None),                              # not a block kind
@@ -98,6 +98,45 @@ def test_a_criteria_only_claim_gets_the_revision_with_its_own_message(criteria_r
     card = rpr.load_yaml(criteria_run / "artifacts" / "hypothesis_card.yaml")
     assert card["claim"]["criteria_refs"] == ["realized_edge_to_cost_ratio"]  # refs kept
     assert card["claim"]["tests"][0]["name"] == FC_Q["name"]
+    # the claim checks re-ran on the spliced card: it is now usable and measurable
+    status = rpr.load_yaml(criteria_run / "artifacts" / "claim_test_status.yaml")
+    assert status["usable"] is True and status["reason"] is None
+
+
+def test_a_resumed_pass_keeps_the_trigger_and_the_warning(criteria_run, monkeypatch):
+    """Review: a later 1b pass in the same run (one call per run) still says so."""
+    changed = dict(_revised(CRITERIA_ONLY, FC_Q), statement="a different statement")
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", FakeLLM(_answer(changed)))
+    rpr._claim_revision_after_1b(criteria_run, criteria_run.name)   # refused
+    rpr._clear_claim_revision_files("strategy_config_authoring", criteria_run)
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", FakeLLM())       # never called again
+    rpr._claim_revision_after_1b(criteria_run, criteria_run.name)
+    doc = _rev(criteria_run)
+    assert doc["status"] == "skipped" and doc["trigger"] == "no_block_test"
+    assert doc["warning"] == rpr.CLAIM_STILL_NO_BLOCK_TEST_WARNING
+
+
+def test_a_tests_none_claim_is_not_asked_again(criteria_run, monkeypatch):
+    arts = criteria_run / "artifacts"
+    none = _claim(kind="lead_lag", tests="none", missing_block="a lead-lag outcome")
+    rpr.save_yaml(arts / "hypothesis_card.yaml", dict(CARD, claim=none))
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", FakeLLM())
+    rpr._claim_revision_after_1b(criteria_run, criteria_run.name)
+    assert _rev(criteria_run)["status"] == "not_needed"
+
+
+def test_the_finding_names_a_missing_block_test(criteria_run):
+    import claim_findings as cf
+    finding = cf.build_finding(criteria_run, criteria_run.name, {"variants": {}})
+    assert finding["block_test_gap"] == "no_block_test"
+    arts = criteria_run / "artifacts"
+    rpr.save_yaml(arts / "hypothesis_card.yaml", dict(CARD, claim=_claim(tests=[UPPER])))
+    assert "block_test_gap" not in cf.build_finding(criteria_run, criteria_run.name,
+                                                    {"variants": {}})
+    blind = _claim(tests=[copy.deepcopy(CLOSE_Q)])
+    rpr.save_yaml(arts / "hypothesis_card.yaml", dict(CARD, claim=blind))
+    assert "block_test_gap" not in cf.build_finding(criteria_run, criteria_run.name,
+                                                    {"variants": {}})
 
 
 def test_a_refused_revision_keeps_the_claim_with_the_warning(criteria_run, monkeypatch):
@@ -268,6 +307,39 @@ def test_relaunch_refuses_anything_not_failed(campaign_root, status, why, capsys
     assert campaign_root["queue_path"].read_text(encoding="utf-8") == before
     out = capsys.readouterr().out
     assert "--relaunch refused" in out and why in out
+
+
+@pytest.mark.parametrize("status", ["paused:launch_exception", "paused:flag_misconfiguration"])
+def test_relaunch_refuses_a_launch_or_preflight_halt(campaign_root, status, capsys):
+    """Review must-fix: a failed launch is never in run_ids, so run_ids[-1] is a
+    healthy earlier run; --resume handles both halts."""
+    _failed_entry(campaign_root, status=status)
+    assert camp._relaunch_entry("P") is False
+    assert "--resume" in capsys.readouterr().out
+    assert not (campaign_root["root"] / "runs" / "run_900" / camp.ORPHANED_README).exists()
+    assert _queue(campaign_root)[0]["run_ids"] == ["run_900"]
+
+
+def test_relaunch_refuses_a_lineage(campaign_root, capsys):
+    _failed_entry(campaign_root, run_ids=("run_900", "run_901"))
+    assert camp._relaunch_entry("P") is False
+    assert "holds a lineage" in capsys.readouterr().out
+    _save_queue_entries(campaign_root["queue_path"], [
+        {"id": "P", "brief_path": "briefs/P.md", "status": "paused:unhandled_exception",
+         "priority": 999, "source": "agent", "notes": "n", "run_ids": ["run_900"],
+         "origin": "reader", "refinement_brief_path": "briefs/R.md",
+         "refinement_brief_consumed_for": "briefs/R.md"}])
+    assert camp._relaunch_entry("P") is False
+    assert "consumed refinement brief" in capsys.readouterr().out
+
+
+def test_relaunch_with_a_missing_old_folder_cites_no_readme(campaign_root):
+    _failed_entry(campaign_root)
+    (campaign_root["runs_dir"] / "run_900").rmdir()
+    assert camp._relaunch_entry("P") is True
+    (entry,) = _queue(campaign_root)
+    assert "does not exist (no record written)" in entry["notes"]
+    assert camp.ORPHANED_README not in entry["notes"]
 
 
 def test_relaunch_refuses_an_entry_without_runs_an_unknown_id_and_a_held_lock(campaign_root):

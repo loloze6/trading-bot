@@ -154,14 +154,14 @@ def _variant_digest(run_dir: Path, vid: str, row, card_hashes: dict) -> dict:
 
 VARIANT_PATCHES_FILE = "variant_patches.yaml"
 VARIANT_PATCHES_NOTE = ("each variant's exact change to the base config (JSON pointer -> new "
-                        "value); `base` has none. Read a variant's settings here, never infer "
-                        "them from its name.")
+                        "value). Read a variant's settings here, never infer them from its "
+                        "name.")
 
 
 def variant_patches_digest(arts: Path):
     """CUL-410: artifacts/variant_patches.yaml compacted for the readers --
     per variant its id, kind, symbol and patch (no rationale prose) -- or None
-    when the file is absent or unreadable (e.g. a composition run)."""
+    when the file is absent or unreadable."""
     try:
         path = Path(arts) / VARIANT_PATCHES_FILE
         doc = _load(path) if path.exists() else None
