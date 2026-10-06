@@ -2536,7 +2536,13 @@ def _relaunch_entry(entry_id: str) -> bool:
                 # review: never cite a README that was not written -- the note too
                 entry["notes"] = notes + RELAUNCH_NOTE.format(at=at, old=old, why=why,
                                                               record=record)
-                _save_queue(queue)
+                try:
+                    _save_queue(queue)
+                except OSError as exc2:  # the first save stands; say its note is stale
+                    record += (f"; the queue note still cites the README (re-save failed: "
+                               f"{exc2})")
+                    print(f"⚠️  --relaunch: the queue note for {entry_id} still cites "
+                          f"runs/{old}/{ORPHANED_README} ({exc2}).")
         _regenerate_summary(queue)
         _log(f"RELAUNCH {entry_id}: {old} {why}; {record}; entry ready for a fresh run "
              f"(priority {entry.get('priority')}).")

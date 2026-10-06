@@ -169,6 +169,18 @@ def test_the_same_test_from_two_source_runs_never_collapses():
     assert len(dn._collapse([ca, cb])) == 2
 
 
+def test_the_same_test_from_two_composite_runs_never_collapses():
+    """Review round 2: a composite carries no start config; the run keys it."""
+    comp = {"members": []}
+    a = _side("trade_efficiency")
+    b = {**_side("trade_efficiency"), "proposal_id": "trade_efficiency-run_072-1"}
+    cands = [dn._candidate(rid, _memory_entry(), {**_src([p]), "composition_manifest": comp},
+                           "trade_efficiency", p, _inputs(), {})
+             for rid, p in (("run_070", a), ("run_072", b))]
+    assert [c["eligible"] for c in cands] == [True, True]
+    assert len(dn._collapse(cands)) == 2
+
+
 # ---------------------------------------------------------------------------
 # the brief
 # ---------------------------------------------------------------------------
@@ -312,6 +324,24 @@ def test_merge_keeps_1bs_deviation_lines_and_is_idempotent():
     assert nb.merge_start_deviations(once, "run_x", [item]) == once          # no repeat
     assert all(d.get("source") != nb.START_DIFF_SOURCE
                for d in nb.merge_start_deviations(once, "run_x", [])["deviations"])
+
+
+def test_merge_counts_once_and_a_reverted_change_is_exact_again():
+    """Review round 2: the not-listed count never grows on a re-merge, and a
+    record whose only deviations were start items is exact once they are gone."""
+    full = [{"clause": str(i), "source": "x"} for i in range(nb.MAX_ITEMS)]
+    rec = {"status": nb.STATUS_APPROXIMATION, "deviations": full, "deviations_not_listed": 2,
+           "config_rationale_lines": []}
+    start = [{"clause": "s", "source": nb.START_DIFF_SOURCE}] * 3
+    once = nb.merge_start_deviations(rec, "run_x", start)
+    assert once["deviations_not_listed"] == 5
+    assert nb.merge_start_deviations(once, "run_x", start)["deviations_not_listed"] == 5
+    back = nb.merge_start_deviations(once, "run_x", [])
+    assert back["deviations_not_listed"] == 2 and "start_items_not_listed" not in back
+    only = nb.merge_start_deviations(None, "run_x", start[:1])
+    assert only["status"] == nb.STATUS_APPROXIMATION
+    gone = nb.merge_start_deviations(only, "run_x", [])
+    assert gone["status"] == nb.STATUS_EXACT and gone["deviations"] == []
 
 
 def test_merge_caps_the_list_and_keeps_a_park():

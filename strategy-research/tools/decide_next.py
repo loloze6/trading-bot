@@ -1643,7 +1643,9 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
         # candidate (review: keyed on the start config even without a change, so
         # the same test from two source runs never collapses onto one block)
         hashes = tuple(sorted(novelty.get("spec_hashes") or []))
-        start_sha = config_sha256(start["config"]) if start["config"] is not None else None
+        # review round 2: with no start config (a composite source), the run itself
+        start_sha = (config_sha256(start["config"]) if start["config"] is not None
+                     else f"run:{run_id}")
         collapse_key = ("side_finding", hashes, start_sha) if hashes else ("single", pid)
     else:
         blk = p.get("block") or {}

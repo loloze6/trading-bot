@@ -263,11 +263,20 @@ def merge_start_deviations(record, run_id: str, items: list) -> dict:
     rec = dict(record) if isinstance(record, dict) else {
         "schema_version": SCHEMA_VERSION, "run_id": run_id, "status": STATUS_EXACT,
         "information_only": True, "deviations": [], "config_rationale_lines": []}
+    had_start = any(isinstance(i, dict) and i.get("source") == START_DIFF_SOURCE
+                    for i in rec.get("deviations") or []) or "start_items_not_listed" in rec
     have = [i for i in rec.get("deviations") or []
             if not (isinstance(i, dict) and i.get("source") == START_DIFF_SOURCE)]
+    # review round 2: the earlier merge's own count is taken back out first
+    base_more = max(0, (rec.get("deviations_not_listed") or 0)
+                    - (rec.pop("start_items_not_listed", 0) or 0))
     if not items:
-        if have != list(rec.get("deviations") or []):
+        if had_start:
             rec["deviations"] = have
+            _set_not_listed(rec, base_more)
+            if (rec.get("status") == STATUS_APPROXIMATION and not have and not base_more
+                    and not rec.get("config_rationale_lines")):
+                rec["status"] = STATUS_EXACT
         return rec
     if not have:
         have = [{"clause": ln.get("clause"), "built_instead": ln.get("text"), "missing": None,
@@ -276,8 +285,16 @@ def merge_start_deviations(record, run_id: str, items: list) -> dict:
     room = max(0, MAX_ITEMS - len(have))
     rec["deviations"] = have + items[:room]
     dropped = len(items) - min(len(items), room)
+    _set_not_listed(rec, base_more + dropped)
     if dropped:
-        rec["deviations_not_listed"] = (rec.get("deviations_not_listed") or 0) + dropped
+        rec["start_items_not_listed"] = dropped
     if rec.get("status") != STATUS_PARKED:
         rec["status"] = STATUS_APPROXIMATION
     return rec
+
+
+def _set_not_listed(rec: dict, n: int) -> None:
+    if n:
+        rec["deviations_not_listed"] = n
+    else:
+        rec.pop("deviations_not_listed", None)
