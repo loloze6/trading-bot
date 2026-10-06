@@ -88,10 +88,13 @@ def test_a_config_change_is_applied_to_the_source_config():
     assert diff[0]["path"] == start["ops"][0]["path"]
 
 
-def test_a_composite_source_carries_nothing():
+def test_a_composite_source_carries_nothing_and_refuses_a_change():
     src = {**_src(), "composition_manifest": {"members": []}}
-    assert dn.side_finding_start(_changed(), src) == {"config": None, "manifest": None,
-                                                      "ops": [], "reason": None}
+    assert dn.side_finding_start(_side(), src) == {"config": None, "manifest": None,
+                                                   "ops": [], "reason": None}
+    start = dn.side_finding_start(_changed(), src)        # review: never silently dropped
+    assert start["config"] is None
+    assert start["reason"].startswith("config_change_on_composition")
 
 
 @pytest.mark.parametrize("drop", ["base_config", "manifest"])
@@ -152,6 +155,18 @@ def test_same_tests_collapse_only_on_the_same_config():
     out = dn._collapse(cands)
     assert sorted(x["candidate_id"] for x in out) == ["forecast_power-run_070-1",
                                                       "profitability-run_070-1"]
+
+
+def test_the_same_test_from_two_source_runs_never_collapses():
+    """Review: without a change, each finding starts from ITS run's config."""
+    a = _side("trade_efficiency")
+    other = _src([a])
+    other["base_config"] = {**copy.deepcopy(other["base_config"]), "note": "run_072's block"}
+    b = {**_side("trade_efficiency"), "proposal_id": "trade_efficiency-run_072-1"}
+    ca = dn._candidate("run_070", _memory_entry(), _src([a]), "trade_efficiency", a,
+                       _inputs(), {})
+    cb = dn._candidate("run_072", _memory_entry(), other, "trade_efficiency", b, _inputs(), {})
+    assert len(dn._collapse([ca, cb])) == 2
 
 
 # ---------------------------------------------------------------------------
@@ -282,6 +297,23 @@ def test_no_start_config_is_a_no_op_and_a_broken_file_never_raises(monkeypatch, 
     assert "could not be recorded" in capsys.readouterr().out
 
 
+def test_merge_keeps_1bs_deviation_lines_and_is_idempotent():
+    """Review: 1b's DEVIATION: lines stay visible once code adds start items."""
+    line = {"clause": "the idea's exit", "text": "a time stop instead"}
+    rec = {"schema_version": nb.SCHEMA_VERSION, "run_id": "run_x",
+           "status": nb.STATUS_APPROXIMATION, "information_only": True, "deviations": [],
+           "config_rationale_lines": [line]}
+    item = {"clause": "c", "built_instead": "1 -> 2", "missing": None, "effect": "e",
+            "source": nb.START_DIFF_SOURCE}
+    once = nb.merge_start_deviations(rec, "run_x", [item])
+    assert [d["clause"] for d in once["deviations"]] == ["the idea's exit", "c"]
+    block = nb.approximation_block(once)
+    assert "a time stop instead" in block["line"] and "1 -> 2" in block["line"]
+    assert nb.merge_start_deviations(once, "run_x", [item]) == once          # no repeat
+    assert all(d.get("source") != nb.START_DIFF_SOURCE
+               for d in nb.merge_start_deviations(once, "run_x", [])["deviations"])
+
+
 def test_merge_caps_the_list_and_keeps_a_park():
     items = [{"clause": str(i)} for i in range(nb.MAX_ITEMS + 3)]
     rec = nb.merge_start_deviations(None, "run_x", items)
@@ -317,6 +349,11 @@ def test_salvage_drops_a_model_written_patch_and_says_why(monkeypatch):
     kept = yaml.safe_load(kept_body)
     assert "patch" not in kept and len(kept["side_findings"]) == 1
     assert any("stand-alone `patch` is removed" in str(d) for d in dropped)
+
+
+def test_a_model_written_null_patch_is_accepted():
+    """Review: `patch: null` proposes nothing, so it costs no retry."""
+    rp.check_reading({**_reading(), "patch": None}, "trade_efficiency", "w", from_model=True)
 
 
 def test_a_side_finding_with_a_change_flattens_with_it(tmp_path):
@@ -355,7 +392,7 @@ def test_relaunch_refuses_a_run_with_queued_card_entries(campaign_root, capsys):
     campaign_root["queue_path"].write_text(yaml.safe_dump(q), encoding="utf-8")
     assert camp._relaunch_entry("P") is False
     out = capsys.readouterr().out
-    assert "already queued extra card(s) ['P__h2']" in out and "continue run_900" in out
+    assert "already wrote extra card(s) ['P__h2']" in out and "continue run_900" in out
     assert not (campaign_root["root"] / "runs" / "run_900" / camp.ORPHANED_README).exists()
 
 
@@ -399,3 +436,5 @@ def test_a_failed_readme_write_is_reported_after_the_save(campaign_root, monkeyp
     (entry,) = _queue(campaign_root)
     assert entry["status"] == "ready" and entry["run_ids"] == []
     assert "could NOT be written" in capsys.readouterr().out
+    # review: the saved note never cites a README that was not written
+    assert "could NOT be written" in entry["notes"] and "kept as a record" not in entry["notes"]

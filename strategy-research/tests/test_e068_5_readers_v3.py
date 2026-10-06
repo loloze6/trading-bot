@@ -461,8 +461,7 @@ def test_a_model_written_patch_is_refused_with_the_new_shape():
     with pytest.raises(rp.ProposalError, match="config_change"):
         rp.check_reading(_reading(patch=_patch()), "trade_efficiency", "w", from_model=True)
     with pytest.raises(rp.ProposalError, match="the stand-alone `patch` is removed"):
-        rp.check_reading({**_reading(), "patch": None}, "trade_efficiency", "w",
-                         from_model=True)
+        rp.check_reading(_reading(patch=_patch()), "trade_efficiency", "w", from_model=True)
     rp.check_reading(_reading(), "trade_efficiency", "w", from_model=True)   # no patch: fine
 
 

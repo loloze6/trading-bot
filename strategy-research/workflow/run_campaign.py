@@ -2500,9 +2500,9 @@ def _relaunch_entry(entry_id: str) -> bool:
             return False
         queued = _queued_cards_of(queue, entry_id, old)
         if queued:
-            print(f"--relaunch refused: {old} already queued extra card(s) {queued}; a fresh "
-                  f"run's step 1a would queue cards under the same ids, which the queue "
-                  f"refuses. By hand, with the campaign stopped: continue {old} instead (set "
+            print(f"--relaunch refused: {old} already wrote extra card(s) {queued} (queue "
+                  f"entries, or listed in its queued_hypotheses.yaml); a fresh run's step 1a "
+                  f"would write cards under the same ids. By hand, with the campaign stopped: continue {old} instead (set "
                   f"the entry `ready`, run_ids kept), or mark this entry `superseded` and add "
                   f"the card again as a new entry (RUNBOOK.md §4).")
             return False
@@ -2520,9 +2520,9 @@ def _relaunch_entry(entry_id: str) -> bool:
                   else f"its folder runs/{old} does not exist (no record written)")
         entry["status"] = "ready"
         entry["run_ids"] = []
-        entry["notes"] = str(entry.get("notes") or "") + RELAUNCH_NOTE.format(
-            at=datetime.now(timezone.utc).strftime("%Y-%m-%d"), old=old, why=why,
-            record=record)
+        notes = str(entry.get("notes") or "")
+        at = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        entry["notes"] = notes + RELAUNCH_NOTE.format(at=at, old=old, why=why, record=record)
         _save_queue(queue)
         if has_dir:
             # continuation 2: only after the queue save succeeded -- a failed save
@@ -2533,6 +2533,10 @@ def _relaunch_entry(entry_id: str) -> bool:
                 record = (f"its record runs/{old}/{ORPHANED_README} could NOT be written "
                           f"({exc}); reconcile will list {old} as unexpected")
                 print(f"⚠️  --relaunch: {record}.")
+                # review: never cite a README that was not written -- the note too
+                entry["notes"] = notes + RELAUNCH_NOTE.format(at=at, old=old, why=why,
+                                                              record=record)
+                _save_queue(queue)
         _regenerate_summary(queue)
         _log(f"RELAUNCH {entry_id}: {old} {why}; {record}; entry ready for a fresh run "
              f"(priority {entry.get('priority')}).")

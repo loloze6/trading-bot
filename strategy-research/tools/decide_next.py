@@ -1639,9 +1639,12 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
     if p["kind"] == "patch":
         collapse_key = ("patch", key) if key else ("single", pid)
     elif p["kind"] == _rp.SIDE_FINDING:
-        # two readers proposing the same tests (on the same config) are one candidate
+        # two readers proposing the same tests on the same START config are one
+        # candidate (review: keyed on the start config even without a change, so
+        # the same test from two source runs never collapses onto one block)
         hashes = tuple(sorted(novelty.get("spec_hashes") or []))
-        collapse_key = ("side_finding", hashes, resolved_sha) if hashes else ("single", pid)
+        start_sha = config_sha256(start["config"]) if start["config"] is not None else None
+        collapse_key = ("side_finding", hashes, start_sha) if hashes else ("single", pid)
     else:
         blk = p.get("block") or {}
         collapse_key = ("new_block", blk.get("kind"),
@@ -1689,13 +1692,18 @@ def side_finding_start(p: dict, src: dict) -> dict:
     applied (resolve_patch, the patch rules) when it has one -- and the source
     block manifest. {config, manifest, ops, reason}:
       * a composition source: nothing is carried (config None, reason None) --
-        a composite has no block config to start from;
+        a composite has no block config to start from -- and a config_change
+        there is a reason (`config_change_on_composition`, review: never
+        silently dropped);
       * no base config or no block manifest on disk: reason
         `source_config_missing` (the candidate is INFEASIBLE);
       * a config_change that does not resolve: its resolve_patch reason.
     `ops` lists the resolved changes ([] when the finding carries none)."""
     if isinstance(src.get("composition_manifest"), dict):
-        return {"config": None, "manifest": None, "ops": [], "reason": None}
+        return {"config": None, "manifest": None, "ops": [],
+                "reason": ("config_change_on_composition: a composite run has no block config "
+                           "to apply the finding's config change to; propose the claim without "
+                           "it") if p.get("config_change") else None}
     base, manifest = src.get("base_config"), src.get("manifest")
     if not isinstance(base, dict) or not isinstance(manifest, dict):
         return {"config": None, "manifest": None, "ops": [],

@@ -246,9 +246,11 @@ def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
             raise ProposalError(f"{where}: skipped must be {{rule, reason}} with rule in "
                                 f"{list(SKIP_RULES)} and a non-empty reason")
         return
-    if from_model and "patch" in doc:
+    if from_model and doc.get("patch") is not None:
         raise ProposalError(f"{where}: {PATCH_REMOVED_MESSAGE}")
-    extra = sorted(set(doc) - (_READING_KEYS if from_model else _LEGACY_READING_KEYS))
+    # review: a model's `patch: null` proposes nothing -- accepted (no retry spent)
+    allowed = _READING_KEYS | ({"patch"} if "patch" in doc and doc["patch"] is None else set())
+    extra = sorted(set(doc) - (allowed if from_model else _LEGACY_READING_KEYS))
     if extra:
         raise ProposalError(f"{where}: undeclared field(s) {extra}; a reading has exactly "
                             f"{sorted(_READING_KEYS)} (readers explain and propose; they never "

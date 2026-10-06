@@ -255,13 +255,24 @@ def merge_start_deviations(record, run_id: str, items: list) -> dict:
     """deviations.yaml's content with the start-config items added (to an
     existing nearest-build record, or a new one). Items beyond MAX_ITEMS are
     counted in `deviations_not_listed`; an empty `items` list leaves the
-    record as it is (or an `exact` record when there was none)."""
+    record as it is (or an `exact` record when there was none). Idempotent:
+    earlier start items are replaced, never repeated. Review: when 1b wrote
+    only `DEVIATION:` rationale lines, they become items first, so the
+    approximation block (which shows the items when there are any) still
+    shows them."""
     rec = dict(record) if isinstance(record, dict) else {
         "schema_version": SCHEMA_VERSION, "run_id": run_id, "status": STATUS_EXACT,
         "information_only": True, "deviations": [], "config_rationale_lines": []}
+    have = [i for i in rec.get("deviations") or []
+            if not (isinstance(i, dict) and i.get("source") == START_DIFF_SOURCE)]
     if not items:
+        if have != list(rec.get("deviations") or []):
+            rec["deviations"] = have
         return rec
-    have = list(rec.get("deviations") or [])
+    if not have:
+        have = [{"clause": ln.get("clause"), "built_instead": ln.get("text"), "missing": None,
+                 "effect": None, "source": "config_rationale_line"}
+                for ln in rec.get("config_rationale_lines") or [] if isinstance(ln, dict)]
     room = max(0, MAX_ITEMS - len(have))
     rec["deviations"] = have + items[:room]
     dropped = len(items) - min(len(items), room)
