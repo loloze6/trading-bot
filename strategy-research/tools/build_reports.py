@@ -881,6 +881,11 @@ FORECAST_POWER_STATISTIC_LABELS = {
     "forecast_return_corr_pvalue": "t-test p-value of that Pearson correlation",
     "median_forecast_return_corr": ("median over windows of forecast_return_corr (Pearson, "
                                     "active bars, next-bar return)"),
+    # review: present only when the run had a prescreen (tools/run_protocol.py)
+    "prescreen_backtest_cross_check.prescreen_pooled_ic": (
+        "the prescreen's pooled information coefficient (computed by the prescreen, not by "
+        "the claim test); that block compares its SIGN with the backtest's mean "
+        "forecast_return_corr (Pearson, active bars)"),
 }
 
 

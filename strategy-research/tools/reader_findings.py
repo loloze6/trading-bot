@@ -322,9 +322,14 @@ def reader_findings_summary(memory: dict, run_id: str,
         if "deviations" in row:  # E-068 nearest build: an approximation, counted first
             compact = {"deviations": row["deviations"], **compact}
         rows.append(compact | {"tests": tests})
+    # CUL-413 review: an earlier run's effect is labelled like this run's -- one
+    # table for the statistics listed (the rows stay compact)
+    stats = sorted({str(t["statistic"]) for r in rows for t in r["tests"]
+                    if t.get("statistic") is not None})
     return {"schema_version": 1, "run_id": run_id, "excludes_run": run_id, "label": cf.LABEL,
             "note": NOTE, "information_only": True, "n_findings": full["n_findings"],
             "n_listed": len(rows), "by_status": full["by_status"], "by_kind": full["by_kind"],
+            "statistic_labels": {s: statistic_label(s) for s in stats},
             "findings": rows, "same_spec_hash": full["same_spec_hash"]}
 
 

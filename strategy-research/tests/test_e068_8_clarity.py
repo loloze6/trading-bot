@@ -305,6 +305,19 @@ def test_the_digest_labels_every_test_and_every_number(run070):
     assert n == 8      # four variants, two tests each
 
 
+def test_earlier_runs_findings_are_labelled_too(monkeypatch):
+    """Review: the v3 readers' earlier-findings file labels each test's effect."""
+    tests = [{"name": "t", "spec_hash": "h", "statistic": "rank_ic", "direction": "greater",
+              "by_variant": {}}]
+    memory = {"runs": {"run_060": {cf.FINDING_KEY: {"status": "measured", "tests": []}}}}
+    monkeypatch.setattr(cf, "findings_summary", lambda m, r, max_rows=10: {
+        "findings": [{"run_id": "run_060", "tests": tests}], "n_findings": 1,
+        "by_status": {}, "by_kind": {}, "same_spec_hash": []})
+    s = rf.reader_findings_summary(memory, "run_071")
+    assert s["statistic_labels"] == {"rank_ic": rf.STATISTIC_LABELS["rank_ic"]}
+    assert s["findings"][0]["tests"][0]["statistic"] == "rank_ic"
+
+
 def test_forecast_power_labels_only_when_asked(monkeypatch, tmp_path):
     monkeypatch.setattr(br, "load_run_sources", lambda run_dir: {})
     monkeypatch.setattr(br, "BUILDERS", {c: (lambda s, c=c: {"category": c, "slices": {}})
@@ -323,7 +336,9 @@ def test_forecast_power_labels_only_when_asked(monkeypatch, tmp_path):
 def test_forecast_power_labels_say_pearson():
     labels = br.FORECAST_POWER_STATISTIC_LABELS
     assert set(labels) == {"forecast_return_corr", "forecast_return_corr_pvalue",
-                           "median_forecast_return_corr"}
+                           "median_forecast_return_corr",
+                           "prescreen_backtest_cross_check.prescreen_pooled_ic"}
+    assert "not by the claim test" in labels["prescreen_backtest_cross_check.prescreen_pooled_ic"]
     assert "Pearson" in labels["forecast_return_corr"]
     assert "next bar's return" in labels["forecast_return_corr"]
     assert "active bars" in labels["forecast_return_corr"]
