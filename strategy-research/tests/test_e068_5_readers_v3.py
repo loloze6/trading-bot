@@ -666,7 +666,7 @@ def test_v3_handoff_inputs(cat, monkeypatch):
     assert "../../docs/STRATEGY_DESIGN_GUIDE.md" not in req
     assert f"artifacts/{rf.DIGEST_ARTIFACT}" in req and f"artifacts/{rf.READER_SUMMARY_ARTIFACT}" in req
     assert [r["path"] for r in h["optional_inputs"]] == ["artifacts/block_manifest.yaml",
-                                                         "artifacts/claim_status.yaml"]
+                                                         f"artifacts/{rpr._claim_measure_module().RUN_FILE}"]
     assert f"reading_id: {cat}-{RUN_ID}" in h["objective"]
 
 
@@ -716,7 +716,9 @@ def test_digest_reproduces_run_070s_numbers(run070):
     finding = cf.build_finding(run070, "run_070", yaml.safe_load(
         (run070 / "memory_entry.yaml").read_text(encoding="utf-8")))
     for vid, rec in finding["result"]["per_variant"].items():
-        assert d["variants"][vid]["tests"] == rec["tests"]
+        # D-077 (CUL-413): the digest adds each test's statistic_label, nothing else
+        assert {n: {k: v for k, v in t.items() if k != "statistic_label"}
+                for n, t in d["variants"][vid]["tests"].items()} == rec["tests"]
     assert len(yaml.safe_dump(d)) < 12_000   # vs 74 KB for the four raw files
 
 
@@ -874,7 +876,7 @@ def test_both_inputs_present_the_handoff_is_the_slice_5_one(monkeypatch):
         "../../docs/COMPONENT_CATALOG.md", rpr.CLAIM_TESTS_GUIDE,
         f"artifacts/{rf.READER_SUMMARY_ARTIFACT}", "artifacts/registry_summary.yaml"]
     assert [r["path"] for r in h["optional_inputs"]] == ["artifacts/block_manifest.yaml",
-                                                         "artifacts/claim_status.yaml"]
+                                                         f"artifacts/{rpr._claim_measure_module().RUN_FILE}"]
     assert h["objective"].endswith("written to artifacts/proposals/profitability.yaml.")
 
 

@@ -13,7 +13,8 @@ engineering/roadmap/E-068/DESIGN_PROPOSAL.md sections 6 and 8.
     never as an empty proposal list -- and counted in
     campaign_record/reader_skips.yaml (the campaign summary reads it).
   * claim_result_digest -- this run's measured claim numbers for the readers
-    (artifacts/claim_result_digest.yaml): claim_status.yaml's status plus,
+    (artifacts/claim_result_digest.yaml): claim_measurement.yaml's status
+    (an older run's claim_status.yaml, D-077) plus,
     per variant, the compact per-horizon numbers of its claim_test.yaml, and
     only when that file was measured on the bars the variant's current
     protocol_result.yaml names (else `stale`, no numbers) -- the binding of
@@ -59,6 +60,29 @@ REGIME_DETECTOR_POINTER = "/regime_detector"
 DIGEST_SCHEMA_VERSION = 1
 NOTE = ("information only: effect sizes measured on saved bars, no p-value; readers explain "
         "these numbers and propose, they do not grade the claim")
+# CUL-413 (D-077): every number in the digest says which statistic it is, so a
+# reader never mixes the claim test's rank IC with the forecast_power report's
+# Pearson correlation. One label per claim_tests.STATISTICS name (a test pins
+# the key set); horizons are in bars of the run's timeframe.
+STATISTIC_LABELS = {
+    "rank_ic": ("rank IC (Spearman) of the bar-t forecast with the outcome, on the selected "
+                "bars -- the claim test's own statistic; horizons in bars"),
+    "mean_diff": ("mean outcome on the selected bars minus the baseline's mean (a difference "
+                  "of means, not a correlation); horizons in bars"),
+    "hit_rate": ("share of selected bars whose outcome has the claimed sign minus the "
+                 "baseline's share (a difference of rates, not a correlation); horizons in bars"),
+    "decay_curve": ("mean outcome on the selected bars minus the baseline's mean, at each "
+                    "horizon (a difference of means, not a correlation); horizons in bars"),
+}
+STATISTICS_NOTE = ("each test's `effect` is that test's own statistic (its `statistic_label`); "
+                   "none of them is the forecast_power report's forecast_return_corr, which is "
+                   "a Pearson correlation of the forecast with the next bar's return on active "
+                   "bars")
+
+
+def statistic_label(name) -> str:
+    """The digest's label for a claim test's statistic name (unknown: says so)."""
+    return STATISTIC_LABELS.get(str(name), f"{name} (no label: not a known statistic)")
 
 
 def _load(path: Path):
@@ -121,11 +145,17 @@ def skipped_reading(category: str, run_id: str, skip: dict) -> dict:
 # This run's claim numbers for the readers
 # ---------------------------------------------------------------------------
 
-def _variant_digest(run_dir: Path, vid: str, row, card_hashes: dict) -> dict:
+def _variant_digest(run_dir: Path, vid: str, row, card_hashes: dict, *,
+                    run_file: str | None = None, statistics: dict | None = None) -> dict:
+    """One variant's digest. `run_file`: the run file's name as read
+    (claim_measurement.yaml, or an older run's claim_status.yaml);
+    `statistics`: {test name: statistic name} from the card, so each measured
+    test carries its `statistic_label` (CUL-413)."""
     import claim_findings as cf
     import claim_measure as cmeas
     if not isinstance(row, dict):
-        return {"status": cmeas.NOT_MEASURED, "reason": "not in claim_status.yaml"}
+        return {"status": cmeas.NOT_MEASURED,
+                "reason": f"not in {run_file or cmeas.RUN_FILE}"}
     if not row.get("file"):
         return {"status": cmeas.NOT_MEASURED, "reason": row.get("reason")}
     path = run_dir / "artifacts" / "variants" / vid / cmeas.VARIANT_FILE
@@ -147,9 +177,14 @@ def _variant_digest(run_dir: Path, vid: str, row, card_hashes: dict) -> dict:
         status = cmeas.NO_EVENTS
     else:
         return {"status": cmeas.NOT_MEASURED, "reason": doc.get("reason")}
-    return {"status": status,
-            "tests": {str(n): cf._compact_test(t) for n, t in (doc.get("tests") or {}).items()
-                      if isinstance(t, dict)}}
+    tests = {}
+    for n, t in (doc.get("tests") or {}).items():
+        if not isinstance(t, dict):
+            continue
+        tests[str(n)] = cf._compact_test(t)
+        if statistics and str(n) in statistics:
+            tests[str(n)]["statistic_label"] = statistic_label(statistics[str(n)])
+    return {"status": status, "tests": tests}
 
 
 VARIANT_PATCHES_FILE = "variant_patches.yaml"
@@ -216,12 +251,15 @@ def claim_result_digest(run_dir: Path) -> dict:
             "kind": claim.get("kind") if isinstance(claim, dict) else None,
             "block_visibility": cc.block_visibility(claim, kind_m),
             "manifest_kind": kind_m,
+            "statistics_note": STATISTICS_NOTE,
             "tests": [{"name": t["name"], "spec_hash": t["spec_hash"],
-                       "statistic": t["statistic"], "direction": t["direction"],
+                       "statistic": t["statistic"],
+                       "statistic_label": statistic_label(t["statistic"]),
+                       "direction": t["direction"],
                        **{k: t["spec"][k] for k in ("selector", "outcome", "baseline")
                           if k in t["spec"]}} for t in tests],
         })
-        status_path = arts / cmeas.RUN_FILE
+        status_path = cmeas.run_file_path(arts)  # an older run: claim_status.yaml (D-077)
         if not status_path.exists():
             out.update({"claim_status": "absent", "variants": {}})
             return out
@@ -229,7 +267,10 @@ def claim_result_digest(run_dir: Path) -> dict:
         out["claim_status"] = sdoc.get("claim_status")
         out["reason"] = sdoc.get("reason")
         card_hashes = {str(t["name"]): t["spec_hash"] for t in tests}
-        out["variants"] = {str(vid): _variant_digest(run_dir, str(vid), row, card_hashes)
+        stats = {str(t["name"]): t["statistic"] for t in tests}
+        out["variants"] = {str(vid): _variant_digest(run_dir, str(vid), row, card_hashes,
+                                                     run_file=status_path.name,
+                                                     statistics=stats)
                            for vid, row in sorted((sdoc.get("variants") or {}).items())}
     except Exception as exc:  # noqa: BLE001 -- information only
         out.update({"status": "error", "detail": f"{type(exc).__name__}: {exc}"})

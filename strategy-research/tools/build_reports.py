@@ -868,11 +868,28 @@ def _variant_sources(run_dir: Path, variant_id: str) -> dict:
     )
 
 
+# CUL-413 (D-077): what forecast_power's correlations are, written next to them
+# only when build_reports(label_statistics=True) -- the orchestrator passes it
+# under orchestrator.reader_findings only (v3 readers), because v2 readers read
+# this same report and their prompts must not change. Source:
+# trading-bot/reporting/run_artifact.py (pearson_correlation of forecast vs
+# close[t+1]/close[t]-1 on bars with forecast != 0) and tools/run_protocol.py
+# (the median of those per-window values).
+FORECAST_POWER_STATISTIC_LABELS = {
+    "forecast_return_corr": ("Pearson correlation of the forecast with the next bar's return, "
+                             "on active bars (forecast != 0), one value per window"),
+    "forecast_return_corr_pvalue": "t-test p-value of that Pearson correlation",
+    "median_forecast_return_corr": ("median over windows of forecast_return_corr (Pearson, "
+                                    "active bars, next-bar return)"),
+}
+
+
 def build_reports(run_dir: Path | str, write: bool = True, *,
                    variants: dict[str, dict] | None = None,
                    failed_variants: dict[str, str] | None = None,
                    untested_variants: dict[str, str] | None = None,
-                   legacy_verdict_retired: bool = False) -> dict[str, dict]:
+                   legacy_verdict_retired: bool = False,
+                   label_statistics: bool = False) -> dict[str, dict]:
     """Build all five category reports for one run directory.
 
     `variants=None` (the default): today's single-run behaviour -- reads the
@@ -928,6 +945,11 @@ def build_reports(run_dir: Path | str, write: bool = True, *,
     The other four reports are unchanged. False (the default): the output is
     exactly the pre-C5.8 output.
 
+    `label_statistics=True` (CUL-413, D-077; passed by the orchestrator only
+    under orchestrator.reader_findings): the forecast_power report gains one
+    top-level key, `statistic_labels` (FORECAST_POWER_STATISTIC_LABELS: which
+    correlation each field is). False (the default): unchanged output.
+
     When `write` is True (the default, and what
     workflow/run_phase1_research.py's protocol_execution branch uses), writes
     each report to <run_dir>/artifacts/reports/<category>.yaml via the same
@@ -981,6 +1003,10 @@ def build_reports(run_dir: Path | str, write: bool = True, *,
 
     if legacy_verdict_retired:  # C5.8: only drops keys, so the budget check above still holds
         reports["profitability"] = _strip_legacy_verdict_fields(reports["profitability"])
+
+    if label_statistics:  # CUL-413 (D-077): v3 readers only; adds one small key
+        reports["forecast_power"] = {**reports["forecast_power"],
+                                     "statistic_labels": dict(FORECAST_POWER_STATISTIC_LABELS)}
 
     if write:
         out_dir = run_dir / "artifacts" / "reports"
