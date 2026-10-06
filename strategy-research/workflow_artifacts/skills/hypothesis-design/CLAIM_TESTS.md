@@ -24,7 +24,9 @@ here. Do not invent blocks, fields or parameters.
 
 - **At least one test must read the block's own output**: `forecast` for a forecast block,
   `regime` / `regime_change` for a regime block. Otherwise the base and every variant of the
-  block measure the same thing, and the test says nothing about the block. For a forecast
+  block measure the same thing, and the test says nothing about the block. `criteria_refs`
+  alone are not enough when the idea is a block: add such a test (the refs may stay); a claim
+  without one gets one revision request after step 1b. For a forecast
   block prefer `rank_ic` or a `quantile` on `forecast` (for example the top 10%:
   `{kind: quantile, field: forecast, side: top, q: 0.1, lookback: 100}`) over an absolute
   forecast threshold such as `forecast >= 12`: step 1b, not you, chooses the forecast's scale,

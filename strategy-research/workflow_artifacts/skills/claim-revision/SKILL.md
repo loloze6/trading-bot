@@ -18,7 +18,8 @@ blocks a test may be composed from.
   on `field: forecast`, or `statistic: rank_ic` (prefer these two: a forecast has no fixed
   scale, so a quantile or a rank IC is safer than a fixed forecast threshold). For a `regime`
   block: a `regime` or `regime_change` selector. A test that selects on price alone measures
-  the same thing for every variant of the block.
+  the same thing for every variant of the block. A claim with only `criteria_refs` (no tests)
+  needs such a test too: add it, and keep the `criteria_refs` if they still apply.
 - **Never approximate.** A test measures exactly the quantity the statement names, in its
   unit. Horizons are bars of the card's `timeframe` (on `1h` bars, 24 = one day). If no slot
   measures the stated quantity, write `tests: none` with `missing_block`, never a nearby

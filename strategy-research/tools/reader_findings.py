@@ -152,6 +152,37 @@ def _variant_digest(run_dir: Path, vid: str, row, card_hashes: dict) -> dict:
                       if isinstance(t, dict)}}
 
 
+VARIANT_PATCHES_FILE = "variant_patches.yaml"
+VARIANT_PATCHES_NOTE = ("each variant's exact change to the base config (JSON pointer -> new "
+                        "value). Read a variant's settings here, never infer them from its "
+                        "name.")
+
+
+def variant_patches_digest(arts: Path):
+    """CUL-410: artifacts/variant_patches.yaml compacted for the readers --
+    per variant its id, kind, symbol and patch (no rationale prose) -- or None
+    when the file is absent or unreadable."""
+    try:
+        path = Path(arts) / VARIANT_PATCHES_FILE
+        doc = _load(path) if path.exists() else None
+    except Exception:  # noqa: BLE001 -- an unreadable file never spoils the digest
+        return None
+    rows = doc.get("variants") if isinstance(doc, dict) else None
+    if not isinstance(rows, list):
+        return None
+    out = []
+    for v in rows:
+        if not isinstance(v, dict):
+            continue
+        patch = v.get("patch") if isinstance(v.get("patch"), list) else []
+        out.append({"variant_id": v.get("variant_id"), "kind": v.get("kind"),
+                    "symbol": v.get("symbol"),
+                    "patch": [{"path": p.get("path"), "value": p.get("value")}
+                              for p in patch if isinstance(p, dict)]})
+    return {"note": VARIANT_PATCHES_NOTE, "base_config_ref": doc.get("base_config_ref"),
+            "variants": out}
+
+
 def claim_result_digest(run_dir: Path) -> dict:
     """artifacts/claim_result_digest.yaml's content. Never raises: a failure
     is the document's `status: error` (information only)."""
@@ -169,6 +200,12 @@ def claim_result_digest(run_dir: Path) -> dict:
         block = nb.approximation_block(nb.load_record(arts))
         if block:
             out["approximation"] = block
+        # CUL-410: each variant's exact settings, so a reader never guesses them
+        # (run_073: forecast_power stated base period 1 and design period 2;
+        # they were 2 and 3).
+        patches = variant_patches_digest(arts)
+        if patches is not None:
+            out["variant_patches"] = patches
         card_path = arts / "hypothesis_card.yaml"
         card = (_load(card_path) or {}) if card_path.exists() else {}
         claim = card.get("claim") if isinstance(card, dict) else None

@@ -318,6 +318,11 @@ def build_finding(run_dir: Path, run_id: str, entry: dict, *, exempt: str | None
         "claim_revision": rev.get("status") if isinstance(rev, dict) else None,
         "tests": tests,
     }
+    # CUL-409 (review): a block idea whose claim has no test at all says so (a
+    # blind claim already reads block_visibility: blind); only then, so every
+    # other finding is unchanged.
+    if not exempt and cc.block_test_gap(claim, kind_m) == cc.BLOCK_TEST_GAP_NO_TEST:
+        finding["block_test_gap"] = cc.BLOCK_TEST_GAP_NO_TEST
     status_path = arts / cmeas.RUN_FILE
     status_doc = (_load(status_path) or {}) if status_path.exists() else None
     variants = entry.get("variants") if isinstance(entry.get("variants"), dict) else {}

@@ -2399,6 +2399,111 @@ def _unpark_entry(entry_id: str) -> bool:
         campaign_lock.release(lock_path)
 
 
+ORPHANED_README = "ORPHANED_README.md"
+# CUL-408 review round 2: the halts whose run itself failed (an allowlist).
+RELAUNCHABLE_REASONS = (STAGE_EXCEPTION_HALT, "unhandled_exception")
+RELAUNCH_NOTE = (" RELAUNCHED {at} (operator, --relaunch): {old} {why}; run_ids cleared so the "
+                 "scheduler starts a fresh run; {record}.")
+
+
+def _relaunch_entry(entry_id: str) -> bool:
+    """--relaunch <entry_id> (CUL-408, operator 2026-10-05): a failed entry
+    (`paused:<reason>`, but never a park -- that is --unpark -- nor an operator
+    hold -- that is --approve -- nor a launch or flag pre-flight halt -- that is
+    --resume -- nor a lineage of several runs or a consumed refinement brief --
+    that is by hand) starts again as a FRESH run instead of
+    continuing its last run (a `ready` entry with run_ids continues that run,
+    _next_action_for_entry). Under the campaign lock: writes the repo's orphan
+    convention, runs/<old>/ORPHANED_README.md (reconcile then counts the old
+    run as known, never unexpected), clears run_ids, sets the entry `ready`
+    (priority kept), appends a note and logs RELAUNCH. The old run's files and
+    any trial rows stay as they are. Nothing is minted; decide-next is not called."""
+    lock_path = campaign_lock.lock_path_for(orch.CAMPAIGN_STATE_PATH)
+    try:
+        campaign_lock.acquire(lock_path)
+    except campaign_lock.CampaignLockHeld as exc:
+        print(f"--relaunch refused: {exc}")
+        return False
+    try:
+        queue = _load_queue()  # re-read under the lock
+        entry = next((e for e in queue.get("queue") or []
+                      if isinstance(e, dict) and e.get("id") == entry_id), None)
+        if entry is None:
+            print(f"--relaunch refused: no queue entry {entry_id!r}.")
+            return False
+        status = str(entry.get("status") or "")
+        if status.startswith(PARKED_STATUS_PREFIX):
+            print(f"--relaunch refused: {entry_id} is {status!r}, a park: use --unpark once the "
+                  f"component or data exists (the same run then continues).")
+            return False
+        if not status.startswith("paused:"):
+            print(f"--relaunch refused: {entry_id} is {status!r}; only a failed entry "
+                  f"(paused:<reason>) can be relaunched. An operator hold uses --approve.")
+            return False
+        reason = status[len("paused:"):]
+        if reason in (LAUNCH_EXCEPTION_HALT, FLAG_PREFLIGHT_HALT):
+            # review: a failed LAUNCH is never in run_ids (run_ids[-1] is a healthy
+            # earlier run), and a pre-flight halt is the config's problem
+            print(f"--relaunch refused: {entry_id} is {status!r}: --resume handles it "
+                  f"(RUNBOOK.md §3); relaunching would orphan a run that did not fail.")
+            return False
+        if reason not in RELAUNCHABLE_REASONS:
+            # review round 2: an allowlist -- on every other halt (routing, pre-flight,
+            # a refinement conflict, ...) the run itself did not fail
+            print(f"--relaunch refused: {entry_id} is {status!r}, not a failed run "
+                  f"({', '.join(RELAUNCHABLE_REASONS)}); resolve it as RUNBOOK.md §3 says.")
+            return False
+        if entry.get("refinement_brief_path"):
+            print(f"--relaunch refused: {entry_id} carries a refinement brief "
+                  f"({entry['refinement_brief_path']!r}); its runs form a lineage. Handle it by "
+                  f"hand (RUNBOOK.md §4).")
+            return False
+        run_ids = list(entry.get("run_ids") or [])
+        if not run_ids:
+            print(f"--relaunch refused: {entry_id} is {status!r} but has no run_ids; "
+                  f"--resume relaunches a launch that never created a run.")
+            return False
+        if len(run_ids) > 1 or entry.get("refinement_brief_consumed_for"):
+            # review: a lineage (refinement or continuation child) -- clearing it
+            # would drop earlier runs and re-run the original brief, not the refinement
+            print(f"--relaunch refused: {entry_id} holds a lineage ({run_ids}"
+                  + (", a consumed refinement brief" if entry.get(
+                      "refinement_brief_consumed_for") else "")
+                  + "); relaunching only its last run would drop the rest. Handle it by "
+                  "hand (RUNBOOK.md §4).")
+            return False
+        old = run_ids[-1]
+        old_dir = ROOT / "runs" / old
+        why = f"ended {status!r}"
+        readme = (f"# {old} -- kept as a record, not continued\n\n"
+                  f"- Queue entry: `{entry_id}`.\n"
+                  f"- The entry was {status!r} when the operator relaunched it with "
+                  f"`run_campaign.py --relaunch {entry_id}` "
+                  f"({datetime.now(timezone.utc).isoformat()}).\n"
+                  f"- The entry's `run_ids` was cleared, so the scheduler starts a fresh run; "
+                  f"this folder is therefore unreferenced on purpose (CUL-408).\n")
+        record = f"kept as a record (runs/{old}/{ORPHANED_README})"
+        if old_dir.is_dir():
+            (old_dir / ORPHANED_README).write_text(readme, encoding="utf-8")
+        else:  # review: never cite a README that was not written
+            record = f"its folder runs/{old} does not exist (no record written)"
+        entry["status"] = "ready"
+        entry["run_ids"] = []
+        entry["notes"] = str(entry.get("notes") or "") + RELAUNCH_NOTE.format(
+            at=datetime.now(timezone.utc).strftime("%Y-%m-%d"), old=old, why=why,
+            record=record)
+        _save_queue(queue)
+        _regenerate_summary(queue)
+        _log(f"RELAUNCH {entry_id}: {old} {why}; {record}; entry ready for a fresh run "
+             f"(priority {entry.get('priority')}).")
+        _write_loop_health()
+        if _schedulability_block_enabled():
+            _write_schedulability()
+        return True
+    finally:
+        campaign_lock.release(lock_path)
+
+
 def _approve_entry(entry_id: str) -> bool:
     """--approve <entry_id> (E-068 PR 4, D-071, CUL-399): the operator's
     approval of one entry orchestrator.operator_approval held. Under the
@@ -5118,6 +5223,10 @@ if __name__ == "__main__":
                         help="E-068 PR 4 (D-071): approve an entry held by "
                              "orchestrator.operator_approval (blocked_on_operator_approval); "
                              "sets it ready, then exits.")
+    parser.add_argument("--relaunch", metavar="ENTRY_ID",
+                        help="CUL-408: relaunch a failed entry (paused:<reason>, not a park) as "
+                             "a FRESH run: the old run is kept as a record (ORPHANED_README.md), "
+                             "the entry's run_ids is cleared and it is set ready, then exits.")
     subparsers = parser.add_subparsers(dest="command")
     register_parser = subparsers.add_parser(
         "register",
@@ -5152,6 +5261,10 @@ if __name__ == "__main__":
     if args.approve:
         # Like --unpark: takes the campaign lock itself; relaunch to continue.
         sys.exit(0 if _approve_entry(args.approve) else 1)
+
+    if args.relaunch:
+        # Like --unpark: takes the campaign lock itself; launch with --once afterwards.
+        sys.exit(0 if _relaunch_entry(args.relaunch) else 1)
 
     if args.resume:
         if not resume_paused_entry(_load_queue()):
