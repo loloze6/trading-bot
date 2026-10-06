@@ -337,8 +337,10 @@ def test_forecast_power_labels_say_pearson():
     labels = br.FORECAST_POWER_STATISTIC_LABELS
     assert set(labels) == {"forecast_return_corr", "forecast_return_corr_pvalue",
                            "median_forecast_return_corr",
-                           "prescreen_backtest_cross_check.prescreen_pooled_ic"}
-    assert "not by the claim test" in labels["prescreen_backtest_cross_check.prescreen_pooled_ic"]
+                           "prescreen_pooled_ic"}
+    pre = labels["prescreen_pooled_ic"]
+    assert "Spearman" in pre and "not by the claim test" in pre
+    assert "inside prescreen_backtest_cross_check" in pre
     assert "Pearson" in labels["forecast_return_corr"]
     assert "next bar's return" in labels["forecast_return_corr"]
     assert "active bars" in labels["forecast_return_corr"]

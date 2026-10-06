@@ -45,6 +45,8 @@ the run does not have (names: your handoff's `feed_names`).
    say so: the tests could not see the block, so base and variants measure the same.
    A statement about the claim cites the digest's numbers and names the statistic exactly as
    its `statistic_label` says (a rank IC is not the reports' Pearson `forecast_return_corr`).
+   `findings_summary_for_readers.yaml`'s `statistic_labels` and the forecast_power report's
+   `statistic_labels` name the other files' statistics the same way.
 2. **A side finding is something else the evidence shows.** Write its tests exactly as
    CLAIM_TESTS.md tells step 1a: only its blocks, never approximate, `tests: none` plus
    `missing_block` when no block expresses it. Code runs the same check as on step 1a's card.
