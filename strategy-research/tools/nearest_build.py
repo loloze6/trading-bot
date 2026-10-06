@@ -187,3 +187,86 @@ def request_rows(run_id: str, record) -> list:
 
 def is_deviation_row(row) -> bool:
     return isinstance(row, dict) and row.get("kind") == REQUEST_KIND
+
+
+# ---------------------------------------------------------------------------
+# CUL-412 (operator, 2026-10-06): a reader's side finding starts 1b from the
+# source run's config. Code compares what 1b built with that start, so every
+# change is a structured deviation even when 1b does not list it.
+# ---------------------------------------------------------------------------
+START_CONFIG_FILE = "start_config.json"
+START_MANIFEST_FILE = "start_block_manifest.yaml"
+START_DIFF_SOURCE = "code_diff_from_start_config"
+
+
+def _pointer_escape(key) -> str:
+    return str(key).replace("~", "~0").replace("/", "~1")
+
+
+def config_diff(old, new, path: str = "") -> list:
+    """Every leaf that differs between two JSON configs, as {path, before,
+    after} (JSON pointers; `before`/`after` None for an added/removed key). A
+    list whose length changed is one changed leaf (its whole value). Pure."""
+    if isinstance(old, dict) and isinstance(new, dict):
+        out = []
+        for k in sorted(set(old) | set(new), key=str):
+            p = f"{path}/{_pointer_escape(k)}"
+            if k not in old:
+                out.append({"path": p, "before": None, "after": new[k]})
+            elif k not in new:
+                out.append({"path": p, "before": old[k], "after": None})
+            else:
+                out += config_diff(old[k], new[k], p)
+        return out
+    if isinstance(old, list) and isinstance(new, list) and len(old) == len(new):
+        out = []
+        for i, (a, b) in enumerate(zip(old, new)):
+            out += config_diff(a, b, f"{path}/{i}")
+        return out
+    return [] if old == new else [{"path": path or "/", "before": old, "after": new}]
+
+
+def _short(v) -> str:
+    return _text(repr(v)) or "None"
+
+
+def start_deviation_items(start_config, built_config, start_manifest, built_manifest) -> list:
+    """The deviations from the start config, as D-075 items (clause,
+    built_instead, missing: None, effect) tagged `source`: one per changed
+    leaf, plus one when the block manifest's block or scaffolding changed."""
+    effect = ("1b changed the block the claim is about (CUL-412); the claim's tests measure "
+              "the config as built")
+    items = []
+    for d in config_diff(start_config, built_config):
+        items.append({"clause": _text(f"the source config at {d['path']}"),
+                      "built_instead": _text(f"{_short(d['before'])} -> {_short(d['after'])}"),
+                      "missing": None, "effect": effect, "source": START_DIFF_SOURCE})
+    if isinstance(start_manifest, dict) and isinstance(built_manifest, dict):
+        for key in ("block", "scaffolding"):
+            if start_manifest.get(key) != built_manifest.get(key):
+                items.append({"clause": _text(f"the source block manifest's {key}"),
+                              "built_instead": _text(f"{_short(start_manifest.get(key))} -> "
+                                                     f"{_short(built_manifest.get(key))}"),
+                              "missing": None, "effect": effect, "source": START_DIFF_SOURCE})
+    return items
+
+
+def merge_start_deviations(record, run_id: str, items: list) -> dict:
+    """deviations.yaml's content with the start-config items added (to an
+    existing nearest-build record, or a new one). Items beyond MAX_ITEMS are
+    counted in `deviations_not_listed`; an empty `items` list leaves the
+    record as it is (or an `exact` record when there was none)."""
+    rec = dict(record) if isinstance(record, dict) else {
+        "schema_version": SCHEMA_VERSION, "run_id": run_id, "status": STATUS_EXACT,
+        "information_only": True, "deviations": [], "config_rationale_lines": []}
+    if not items:
+        return rec
+    have = list(rec.get("deviations") or [])
+    room = max(0, MAX_ITEMS - len(have))
+    rec["deviations"] = have + items[:room]
+    dropped = len(items) - min(len(items), room)
+    if dropped:
+        rec["deviations_not_listed"] = (rec.get("deviations_not_listed") or 0) + dropped
+    if rec.get("status") != STATUS_PARKED:
+        rec["status"] = STATUS_APPROXIMATION
+    return rec

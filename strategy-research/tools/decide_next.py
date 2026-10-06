@@ -1568,15 +1568,52 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
         if _cc_kind_block((p.get("claim") or {}).get("kind")) == "regime":
             reasons.append("regime_block_needs_composition: a regime block is validated only "
                            "as a composition variant (cards A/F, slice 7)")
+        # CUL-412: the finding starts from the source run's config (and its own
+        # config change, resolved like a patch), so the claim is tested on the
+        # block it is about.
+        start = side_finding_start(p, src)
+        if start["reason"]:
+            reasons.append(start["reason"])
+        elif start["ops"]:
+            config_for_digest = start["config"]
+            resolved_sha = config_sha256(start["config"])
+            missing = _jp.manifest_missing_paths(start["config"], start["manifest"])
+            if missing:
+                reasons.append(f"manifest_unresolved: {missing}")
+            new_classes = _component_classes(start["config"]) - _component_classes(
+                src["base_config"])
+            if new_classes:
+                known = inputs.get("known_classes")
+                unknown = sorted(new_classes - set(known)) if known is not None \
+                    else sorted(new_classes)
+                if unknown:
+                    reasons.append(f"unknown_component_class: {unknown}")
+        elif start["config"] is not None:
+            config_for_digest = start["config"]
+        # unchanged: a side finding's requires_feed is data its TEST needs, so it
+        # waits until the feed is wired whatever the config reads
         feed_record, feed_reason = requires_feed_gate(p, inputs.get("feed_set"))
         if feed_reason:
             reasons.append(feed_reason)
-        novelty = {"exact_match": "NOT_APPLICABLE", "matched_runs": [],
-                   "note": "no config until 1b authors it",
-                   "spec_hashes": list(side_review["spec_hashes"])}
+        if resolved_sha:
+            # a config change: the changed config has a novelty key like a patch's
+            key = novelty_key(resolved_sha, symbols, entry, inputs.get("protocol_specs") or {})
+            matched = list(exact.get(key) or [])
+            novelty = {"exact_match": "REPEAT" if matched else "NOVEL", "matched_runs": matched,
+                       "spec_hashes": list(side_review["spec_hashes"])}
+        elif start["config"] is not None:
+            novelty = {"exact_match": "NOT_APPLICABLE", "matched_runs": [],
+                       "note": "the source run's config, unchanged: a new claim on it",
+                       "spec_hashes": list(side_review["spec_hashes"])}
+        else:
+            novelty = {"exact_match": "NOT_APPLICABLE", "matched_runs": [],
+                       "note": "no config until 1b authors it",
+                       "spec_hashes": list(side_review["spec_hashes"])}
         feas = "INFEASIBLE" if reasons else "UNKNOWN"
         if not reasons:
-            reasons.append("config authored at 1b; step 3's data gate stays binding")
+            reasons.append("starts from the source run's config at 1b; step 3's data gate "
+                           "stays binding" if start["config"] is not None else
+                           "config authored at 1b; step 3's data gate stays binding")
     else:
         blk = p.get("block") or {}
         if blk.get("kind") == "regime":
@@ -1602,9 +1639,9 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
     if p["kind"] == "patch":
         collapse_key = ("patch", key) if key else ("single", pid)
     elif p["kind"] == _rp.SIDE_FINDING:
-        # two readers proposing the same tests are one candidate
+        # two readers proposing the same tests (on the same config) are one candidate
         hashes = tuple(sorted(novelty.get("spec_hashes") or []))
-        collapse_key = ("side_finding", hashes) if hashes else ("single", pid)
+        collapse_key = ("side_finding", hashes, resolved_sha) if hashes else ("single", pid)
     else:
         blk = p.get("block") or {}
         collapse_key = ("new_block", blk.get("kind"),
@@ -1644,6 +1681,35 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
     if warnings:  # E-068 PR 4 (D-071): only when non-empty -- other records unchanged
         cand["warnings"] = warnings
     return cand
+
+
+def side_finding_start(p: dict, src: dict) -> dict:
+    """CUL-412 (operator, 2026-10-06): the config a reader's side finding starts
+    from -- the source run's base config, with the finding's `config_change`
+    applied (resolve_patch, the patch rules) when it has one -- and the source
+    block manifest. {config, manifest, ops, reason}:
+      * a composition source: nothing is carried (config None, reason None) --
+        a composite has no block config to start from;
+      * no base config or no block manifest on disk: reason
+        `source_config_missing` (the candidate is INFEASIBLE);
+      * a config_change that does not resolve: its resolve_patch reason.
+    `ops` lists the resolved changes ([] when the finding carries none)."""
+    if isinstance(src.get("composition_manifest"), dict):
+        return {"config": None, "manifest": None, "ops": [], "reason": None}
+    base, manifest = src.get("base_config"), src.get("manifest")
+    if not isinstance(base, dict) or not isinstance(manifest, dict):
+        return {"config": None, "manifest": None, "ops": [],
+                "reason": ("source_config_missing: a side finding starts from the source "
+                           "run's base config and block manifest (CUL-412), and they are "
+                           "not on disk")}
+    change = p.get("config_change")
+    if not change:
+        return {"config": copy.deepcopy(base), "manifest": copy.deepcopy(manifest),
+                "ops": [], "reason": None}
+    ops, patched, why = resolve_patch({"patch": change}, base)
+    if why:
+        return {"config": None, "manifest": None, "ops": [], "reason": f"config_change: {why}"}
+    return {"config": patched, "manifest": copy.deepcopy(manifest), "ops": ops, "reason": None}
 
 
 def _cc_kind_block(kind):
@@ -2061,7 +2127,8 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str) -> tuple:
         "hypothesis_id": cand["hypothesis_id"],
         "decision_ref": decision_ref,
         "proposal": {k: copy.deepcopy(p[k])
-                     for k in ("kind", "patch", "block", "claim", "evidence", "requires_feed")
+                     for k in ("kind", "patch", "block", "claim", "evidence", "requires_feed",
+                               "config_change")
                      if k in p},
     }
     candidate = {}
@@ -2069,6 +2136,26 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str) -> tuple:
         # E-068 slice 5: step 1a copies this into the card unchanged
         # (PREFILLED_CLAIM.md); a change is recorded as a warning.
         candidate["claim"] = copy.deepcopy(p["claim"])
+        # CUL-412: the block the claim is about -- the source run's base config
+        # (its config change applied) and block manifest. NOT `config`/`manifest`:
+        # those mark a pass-through patch (1a's pass_through, the CUL-405 hash
+        # guard); 1b starts from this one and records any change as a deviation.
+        start = side_finding_start(p, src)
+        if start["reason"]:
+            raise DecideNextError(f"picked side finding {cid!r} has no start config: "
+                                  f"{start['reason']}")
+        if start["config"] is not None:
+            candidate["start_config"] = start["config"]
+            candidate["start_manifest"] = start["manifest"]
+            source["base_config_ref"] = src["base_config_ref"]
+            source["start_config_sha256"] = config_sha256(start["config"])
+            if start["ops"]:
+                source["config_change_ops"] = start["ops"]
+            changes = "".join(f" {op['path']} -> {op['value']!r};" for op in start["ops"])
+            front["research_goal"] += (
+                f" It starts from {run_id}'s base config (candidate.start_config)"
+                + (f" with the finding's config change:{changes}" if changes else "")
+                + " -- the block the claim is about.")
     if p["kind"] == "patch":
         ops, patched, why = resolve_patch(p, src["base_config"])
         if why:

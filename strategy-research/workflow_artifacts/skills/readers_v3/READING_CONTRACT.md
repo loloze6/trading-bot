@@ -27,16 +27,14 @@ side_findings:                           # 0, 1 or 2 -- `[]` when nothing else s
       rationale: "..."
     evidence: ["..."]
     scores: {confidence_real: 0-3, distance_to_profitable: 0-3, mechanism_plausibility: 0-3}
-patch: null                              # or ONE patch:
-#  proposal_id: <reading_id>-<n>
-#  patch: [{component_id: <id in the base config>, field: <path inside it>, before: <current>, after: <new>}]
-#  evidence: ["..."]
-#  scores: {confidence_real: .., distance_to_profitable: .., mechanism_plausibility: ..}
+    # config_change: [{component_id: <id in the base config>, field: <path inside it>,
+    #                  before: <current>, after: <new>}]    # optional, see rule 5
 ```
 
 Exactly these keys. Every `proposal_id` is the `reading_id`, a dash and a number, each used once.
-A side finding or the patch may carry `requires_feed: {feed, reason}` when its test needs data
-the run does not have (names: your handoff's `feed_names`).
+A side finding may carry `requires_feed: {feed, reason}` when its test needs data the run does
+not have (names: your handoff's `feed_names`). There is no stand-alone patch: a change to the
+config is proposed only inside a side finding, with the claim it is expected to show.
 
 ## Rules
 
@@ -55,14 +53,17 @@ the run does not have (names: your handoff's `feed_names`).
    new.
 4. **No hindsight.** A proposal may act only on data at or before a bar's close. "Entering
    earlier" because the move is now known is hindsight, not a setting.
-5. **A patch** names a component `id` that exists in the base config, a `field` inside it, and
-   its current value as `before`. Code resolves it against that file and refuses anything else.
-   Never patch a path `block_manifest.yaml` lists as scaffolding: scaffolding is not part of
-   the idea.
+5. **A config change belongs to a claim.** "Period 1 -> 2" means something only with a reason
+   ("a 2-bar move is less noisy, so the forecast's rank should line up better with the next
+   1-4 hours"), and that reason is the side finding's claim, with a test. Write the change as
+   the side finding's `config_change`: each item names a component `id` that exists in the base
+   config, a `field` inside it, and its current value as `before`. Code resolves it against
+   that file and refuses anything else. Never change a path `block_manifest.yaml` lists as
+   scaffolding: scaffolding is not part of the idea. The next run starts from this run's
+   config with the change applied, so the claim is tested on the same block.
 6. **Never invent** a component class, transform, setting or regime name absent from
    COMPONENT_CATALOG.md, in any field, prose included.
-7. **Nothing worth proposing:** `side_findings: []` and `patch: null`. The explanation is still
-   required.
+7. **Nothing worth proposing:** `side_findings: []`. The explanation is still required.
 
 ## Scores (they only rank candidates; 0-3)
 
@@ -70,7 +71,7 @@ the run does not have (names: your handoff's `feed_names`).
   3 = most windows and every variant.
 - `distance_to_profitable` (read `registry_summary.yaml`; the lower score wins when two apply):
   0 = the same block type as a registered block (`this_run.type_already_registered`, a
-  `same_type` relation), or a patch on a registered block; 1 = the same component classes with
+  `same_type` relation), or a config change on a registered block; 1 = the same component classes with
   another timeframe category or kind, or `this_run.correlation_to_composite.max_abs` >= 0.6;
   2 = a type not in the registry with `max_abs` 0.3-0.6 or not measurable (the default for a
   side finding); 3 = a type not in the registry with `max_abs` < 0.3, or no composite exists.

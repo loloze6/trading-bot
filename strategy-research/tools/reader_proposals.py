@@ -68,7 +68,8 @@ READER_RUBRIC_VERSIONS = {
 # still load and the two coexist. A v3 reading explains the measured result
 # and proposes: 0..MAX_SIDE_FINDINGS side findings (each a full claim block,
 # checked by claim_card.check_claim where it is written and again by
-# decide_next) and an optional patch. It carries NO verdict: the closed key
+# decide_next, optionally carrying the config change to test it with; the
+# stand-alone patch is removed, see below). It carries NO verdict: the closed key
 # set below has no field that could say the claim holds or not. Shape only
 # here (no claim_card import): load_proposals is used by decide_next and the
 # campaign memory, which must keep loading a file whose claim a later grammar
@@ -78,17 +79,29 @@ READING_SCHEMA_VERSION = 3
 MAX_SIDE_FINDINGS = 2
 SIDE_FINDING = "side_finding"
 READER_RUBRIC_VERSIONS_V3 = {cat: f"{cat}-reading-v1" for cat in READER_RUBRIC_VERSIONS}
+# E-068 continuation 2, section 9 item 2 (operator, 2026-10-06): ONE kind of reader
+# proposal. A config change is proposed only inside a side finding (`config_change`,
+# with the claim it tests); the stand-alone `patch` is removed from what a reader
+# writes. A v3 file written before that (runs 070-074) may still hold a `patch` key:
+# it is accepted when LOADING (from_model=False) and flattened as before, never from
+# a model's answer.
 _READING_KEYS = frozenset({"schema_version", "reading_id", "model_id", "rubric_version",
-                           "explanation", "evidence", "side_findings", "patch"})
+                           "explanation", "evidence", "side_findings"})
+_LEGACY_READING_KEYS = _READING_KEYS | {"patch"}
 _READING_REQUIRED = ("schema_version", "reading_id", "model_id", "rubric_version",
-                     "explanation", "evidence", "side_findings", "patch")
+                     "explanation", "evidence", "side_findings")
+PATCH_REMOVED_MESSAGE = (
+    "the stand-alone `patch` is removed: a reader proposes side findings only. To test a "
+    "config change, put it inside a side finding as `config_change: [{component_id, field, "
+    "before, after}]`, with the claim that change is expected to show")
 _SKIPPED_READING_KEYS = frozenset({"schema_version", "reading_id", "skipped"})
 _SKIP_RECORD_KEYS = frozenset({"rule", "reason"})
 # Written by code only (tools/reader_findings.py); a model writing `skipped`
 # is refused (from_model=True).
 SKIP_RULES = ("regime_detector_scaffolding", "regime_detector_constant",
               "single_component", "output_refused_after_retry")
-_SIDE_FINDING_KEYS = frozenset({"proposal_id", "claim", "evidence", "scores", "requires_feed"})
+_SIDE_FINDING_KEYS = frozenset({"proposal_id", "claim", "evidence", "scores", "requires_feed",
+                                "config_change"})
 _V3_PATCH_KEYS = frozenset({"proposal_id", "patch", "evidence", "scores", "requires_feed"})
 
 
@@ -223,7 +236,7 @@ def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
     if "skipped" in doc:
         if from_model:
             raise ProposalError(f"{where}: `skipped` is written by code only; write a reading "
-                                f"(explanation, evidence, side_findings, patch)")
+                                f"(explanation, evidence, side_findings)")
         if set(doc) != _SKIPPED_READING_KEYS:
             raise ProposalError(f"{where}: a skipped reading is exactly "
                                 f"{sorted(_SKIPPED_READING_KEYS)}")
@@ -233,7 +246,9 @@ def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
             raise ProposalError(f"{where}: skipped must be {{rule, reason}} with rule in "
                                 f"{list(SKIP_RULES)} and a non-empty reason")
         return
-    extra = sorted(set(doc) - _READING_KEYS)
+    if from_model and "patch" in doc:
+        raise ProposalError(f"{where}: {PATCH_REMOVED_MESSAGE}")
+    extra = sorted(set(doc) - (_READING_KEYS if from_model else _LEGACY_READING_KEYS))
     if extra:
         raise ProposalError(f"{where}: undeclared field(s) {extra}; a reading has exactly "
                             f"{sorted(_READING_KEYS)} (readers explain and propose; they never "
@@ -241,8 +256,7 @@ def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
     missing = [k for k in _READING_REQUIRED if k not in doc]
     if missing:
         raise ProposalError(f"{where}: missing {missing}; a reading has exactly "
-                            f"{sorted(_READING_KEYS)} (`side_findings: []` and `patch: null` "
-                            f"when there is none)")
+                            f"{sorted(_READING_KEYS)} (`side_findings: []` when there is none)")
     for key in ("model_id", "rubric_version"):
         if not _non_empty_str(doc.get(key)):
             raise ProposalError(f"{where}: {key} must be a non-empty string")
@@ -263,10 +277,13 @@ def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
         if not isinstance(s, dict) or set(s) - _SIDE_FINDING_KEYS \
                 or not {"proposal_id", "claim", "evidence", "scores"} <= set(s):
             raise ProposalError(f"{w}: a side finding is exactly {{proposal_id, claim, evidence, "
-                                f"scores}} plus an optional requires_feed")
+                                f"scores}} plus an optional requires_feed and an optional "
+                                f"config_change")
         _check_item_id(s["proposal_id"], rid, w)
         if not isinstance(s["claim"], dict):
             raise ProposalError(f"{w}: claim must be a claim block mapping (CLAIM_TESTS.md)")
+        if "config_change" in s:
+            _check_change_items(s["config_change"], f"{w}.config_change")
         _check_evidence(s["evidence"], w)
         check_scores(s["scores"], w)
         if "requires_feed" in s:
@@ -299,12 +316,27 @@ def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
             raise ProposalError(f"{w}: duplicate proposal_id {patch['proposal_id']!r}")
 
 
+def _check_change_items(items, where: str) -> None:
+    """A side finding's config_change: a non-empty list of exactly
+    {component_id, field, before, after} (the patch item shape; resolved
+    against the real base config where it is written, and by decide-next)."""
+    if not isinstance(items, list) or not items:
+        raise ProposalError(f"{where}: must be a non-empty list of changes (omit it when the "
+                            f"finding needs no config change)")
+    for k, item in enumerate(items):
+        if not isinstance(item, dict) or set(item) != _PATCH_ITEM_KEYS \
+                or not _non_empty_str(item["component_id"]) or not _non_empty_str(item["field"]):
+            raise ProposalError(f"{where}[{k}] must be exactly {{component_id, field, before, "
+                                f"after}} with non-empty component_id and field")
+
+
 def flatten_reading(doc: dict) -> list:
     """A checked v3 reading as decide-next items: each side finding as
     {proposal_id, kind: side_finding, claim, evidence, scores, model_id,
-    rubric_version[, requires_feed]}, then the patch as a v2-shaped
-    `kind: patch` item. A skipped reading has none. The explanation is not an
-    item (it proposes nothing); it stays in the file."""
+    rubric_version[, requires_feed][, config_change]}; a LEGACY v3 file's
+    patch (written before continuation 2 removed it) as a v2-shaped
+    `kind: patch` item, so old runs load unchanged. A skipped reading has
+    none. The explanation is not an item (it proposes nothing)."""
     if "skipped" in doc:
         return []
     prov = {"model_id": doc["model_id"], "rubric_version": doc["rubric_version"]}
@@ -314,6 +346,8 @@ def flatten_reading(doc: dict) -> list:
                 "evidence": s["evidence"], "scores": s["scores"], **prov}
         if "requires_feed" in s:
             item["requires_feed"] = s["requires_feed"]
+        if "config_change" in s:
+            item["config_change"] = s["config_change"]
         out.append(item)
     patch = doc.get("patch")
     if patch is not None:

@@ -1,6 +1,6 @@
 ---
 name: forecast_power-reader
-description: E-068 slice 5 reader v3 (forecast_power). Reads artifacts/reports/forecast_power.yaml, explains the measured result and proposes side findings (claim blocks) and at most one patch, as one v3 reading. Never judges the claim.
+description: E-068 slice 5 reader v3 (forecast_power). Reads artifacts/reports/forecast_power.yaml, explains the measured result and proposes side findings (claim blocks, each optionally with the config change to test it with), as one v3 reading. Never judges the claim.
 ---
 
 # Forecast Power Reader (v3)

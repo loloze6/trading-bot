@@ -2404,6 +2404,23 @@ ORPHANED_README = "ORPHANED_README.md"
 RELAUNCHABLE_REASONS = (STAGE_EXCEPTION_HALT, "unhandled_exception")
 RELAUNCH_NOTE = (" RELAUNCHED {at} (operator, --relaunch): {old} {why}; run_ids cleared so the "
                  "scheduler starts a fresh run; {record}.")
+SPLIT_CHILD_MARKER = "__split_"   # _add_queue_entry_for_split_child's id shape
+
+
+def _queued_cards_of(queue: dict, entry_id: str, run_id: str) -> list:
+    """The extra cards a run already queued (continuation 2, CUL-408 follow-up):
+    queue entries `<entry_id>__h<n>`, plus the run's own
+    artifacts/queued_hypotheses.yaml when it lists any card. Sorted, unique."""
+    import decide_next as dn
+    found = {e.get("id") for e in queue.get("queue") or []
+             if isinstance(e, dict) and str(e.get("id") or "").startswith(f"{entry_id}__h")}
+    path = ROOT / "runs" / run_id / "artifacts" / dn.QUEUED_HYPOTHESES_FILE
+    if path.exists():
+        doc = orch.load_yaml(path) or {}
+        for card in doc.get("cards") or []:
+            if isinstance(card, dict):
+                found.add(f"{entry_id}__h{card.get('n')}")
+    return sorted(found)
 
 
 def _relaunch_entry(entry_id: str) -> bool:
@@ -2473,6 +2490,22 @@ def _relaunch_entry(entry_id: str) -> bool:
                   "hand (RUNBOOK.md §4).")
             return False
         old = run_ids[-1]
+        if SPLIT_CHILD_MARKER in str(entry_id):
+            # continuation 2 (operator, 2026-10-06): a legacy split child shares its
+            # parent's brief and 1a output; a fresh run would re-run 1a on the brief
+            print(f"--relaunch refused: {entry_id} is a legacy split child (its card came "
+                  f"from the parent run's step 1a, so a fresh run would not get that card). "
+                  f"By hand, with the campaign stopped: continue {old} instead (set the entry "
+                  f"`ready`, run_ids kept), or mark it `superseded` (RUNBOOK.md §4).")
+            return False
+        queued = _queued_cards_of(queue, entry_id, old)
+        if queued:
+            print(f"--relaunch refused: {old} already queued extra card(s) {queued}; a fresh "
+                  f"run's step 1a would queue cards under the same ids, which the queue "
+                  f"refuses. By hand, with the campaign stopped: continue {old} instead (set "
+                  f"the entry `ready`, run_ids kept), or mark this entry `superseded` and add "
+                  f"the card again as a new entry (RUNBOOK.md §4).")
+            return False
         old_dir = ROOT / "runs" / old
         why = f"ended {status!r}"
         readme = (f"# {old} -- kept as a record, not continued\n\n"
@@ -2482,17 +2515,24 @@ def _relaunch_entry(entry_id: str) -> bool:
                   f"({datetime.now(timezone.utc).isoformat()}).\n"
                   f"- The entry's `run_ids` was cleared, so the scheduler starts a fresh run; "
                   f"this folder is therefore unreferenced on purpose (CUL-408).\n")
-        record = f"kept as a record (runs/{old}/{ORPHANED_README})"
-        if old_dir.is_dir():
-            (old_dir / ORPHANED_README).write_text(readme, encoding="utf-8")
-        else:  # review: never cite a README that was not written
-            record = f"its folder runs/{old} does not exist (no record written)"
+        has_dir = old_dir.is_dir()
+        record = (f"kept as a record (runs/{old}/{ORPHANED_README})" if has_dir
+                  else f"its folder runs/{old} does not exist (no record written)")
         entry["status"] = "ready"
         entry["run_ids"] = []
         entry["notes"] = str(entry.get("notes") or "") + RELAUNCH_NOTE.format(
             at=datetime.now(timezone.utc).strftime("%Y-%m-%d"), old=old, why=why,
             record=record)
         _save_queue(queue)
+        if has_dir:
+            # continuation 2: only after the queue save succeeded -- a failed save
+            # must never leave a run marked orphaned while its entry still holds it
+            try:
+                (old_dir / ORPHANED_README).write_text(readme, encoding="utf-8")
+            except OSError as exc:
+                record = (f"its record runs/{old}/{ORPHANED_README} could NOT be written "
+                          f"({exc}); reconcile will list {old} as unexpected")
+                print(f"⚠️  --relaunch: {record}.")
         _regenerate_summary(queue)
         _log(f"RELAUNCH {entry_id}: {old} {why}; {record}; entry ready for a fresh run "
              f"(priority {entry.get('priority')}).")
