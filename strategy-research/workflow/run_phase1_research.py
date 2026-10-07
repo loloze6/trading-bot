@@ -1743,6 +1743,11 @@ async def run_tool_worker(stage_name: str, run_id: str):
     # Flag off: nothing deleted.
     if stage_name == "protocol_execution":
         _clear_claim_measure_files(RUN_DIR)
+    # E-072: the exploration/confirmation split is pre-registered BEFORE the
+    # backtests, and the readers' copies of an earlier attempt are cleared.
+    # Flag off: nothing is read, written or deleted.
+    if stage_name == "protocol_execution" and _explore_confirm_enabled():
+        _prepare_explore_confirm(RUN_DIR, run_id)
 
     if stage_name == "data_availability_gate" and _variant_loop_enabled():
         # E-033.1 Slice 4b (delivery_plan_v26.md Slice 4, sub-slice 2 of 2:
@@ -2444,6 +2449,23 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 if _sr_on:
                     _sr_errors.append(f"category reports raised {type(_reports_err).__name__}: "
                                       f"{_reports_err}")
+
+        # E-072: the readers' copies of the reports and the grid, from the
+        # exploration windows only. A prerequisite of the readers like the
+        # reports themselves: a failure fails protocol_execution (after the
+        # trial rows), never falls back to the all-window files. Flag off: skipped.
+        if _sr_on and not _sr_errors and _explore_confirm_enabled():
+            try:
+                _write_exploration_views(
+                    RUN_DIR, run_id, per_variant_summaries, _variant_report_meta,
+                    pre_registration=_pre_reg_for_eval or {},
+                    failed_variants=failed_variants or None,
+                    untested_variants=untested_variants or None,
+                    legacy_verdict_retired=bool(legacy_label_retired))
+            except Exception as _ec_err:
+                print(f"⚠️  [E-072] exploration copies raised {type(_ec_err).__name__}: {_ec_err}")
+                _sr_errors.append(f"exploration copies (E-072) raised "
+                                  f"{type(_ec_err).__name__}: {_ec_err}")
 
         print(f"✅ protocol_execution (variant loop): {len(per_variant_summaries)}/"
               f"{len(validated)} variant(s) succeeded: {sorted(per_variant_summaries)}")
@@ -4072,6 +4094,55 @@ def _nearest_build_module():
     return _nb
 
 
+def _explore_confirm_enabled(cfg: dict | None = None) -> bool:
+    """E-072 (P-CUL-80): ideas are confirmed on data the proposer never saw.
+    False when the key, the section or the config file is absent. A non-bool
+    value raises. Requires, loudly, orchestrator.reader_findings.enabled (the
+    readers it restricts and the side findings it confirms are v3's) and
+    orchestrator.variant_loop.enabled (the split, the readers' copies and the
+    confirmation read the variants' own protocol files and bars).
+
+    While false: byte-identical -- no split, no artifacts/exploration/, the
+    readers' handoffs and the stage are untouched.
+    While true (tools/explore_confirm.py): the run's protocol windows are split
+    before the backtests (artifacts/explore_confirm.yaml: first half in time
+    order = exploration, the rest = confirmation); the readers see only
+    exploration-window copies of every input carrying a result
+    (artifacts/exploration/: reports, grid, claim digest, earlier findings and
+    registry summary, numbers over all windows withheld); after the readers each
+    side finding is measured on the confirmation windows (a pure finding in this
+    run, a block claim pending until the run built from it measures it):
+    artifacts/confirmation.yaml and campaign_record/confirmations.yaml, which
+    counts every look per confirmation set. Information only."""
+    cfg = _orchestrator_config(cfg)
+    ec_cfg = ((cfg.get("orchestrator") or {}).get("explore_confirm") or {})
+    value = ec_cfg.get("enabled", False)
+    if not isinstance(value, bool):
+        raise ValueError(
+            f"orchestrator.explore_confirm.enabled={value!r} is not a real boolean "
+            f"(got {type(value).__name__}) -- write an unquoted `true` or `false` in "
+            f"config/campaign_config.yaml, not a quoted string or null."
+        )
+    if value:
+        missing = [name for name, on in (
+                       ("reader_findings", _flag_dep(_reader_findings_enabled, cfg)),
+                       ("variant_loop", _flag_dep(_variant_loop_enabled, cfg)))
+                   if not on]
+        if missing:
+            raise ValueError(
+                "orchestrator.explore_confirm.enabled=true requires "
+                + " and ".join(f"orchestrator.{m}.enabled=true" for m in missing)
+                + " as well -- it restricts the v3 readers' inputs and confirms their side "
+                "findings on the variants' own bars. Enable them together.")
+    return value
+
+
+def _explore_confirm_module():
+    _json_pointer_module()  # puts tools/ on sys.path
+    import explore_confirm as _ec
+    return _ec
+
+
 _SPECIALIST_READERS_HANDOFF = "protocol_to_specialist_readers.yaml"
 _READER_OUTPUT_BLOCK_RE = re.compile(r"```ya?ml[^\n]*\n(.*?)```", re.DOTALL)
 
@@ -4391,6 +4462,8 @@ def _reader_handoff_v3(category: str, run_id: str, stage_attempt, run_dir: Path 
         "injected_context": {"stage_attempt": str(stage_attempt),
                              "feed_names": _reader_feed_vocabulary()},
     }
+    if _explore_confirm_enabled():
+        handoff = _explore_confirm_handoff(handoff, category, run_dir)
     missing = _reader_v3_missing_inputs(run_dir) if run_dir is not None else []
     for name in missing:
         # Not listed as an input at all, not even optional: _build_stage_prompt
@@ -4409,6 +4482,51 @@ def _reader_handoff_v3(category: str, run_id: str, stage_attempt, run_dir: Path 
     return handoff
 
 
+# E-072: the flag-on-only rule a reader gets with the exploration copies (the
+# v3 SKILLs and READING_CONTRACT.md are untouched).
+READER_V3_EXPLORATION = "../../workflow_artifacts/skills/readers_v3/EXPLORATION.md"
+
+
+def _explore_confirm_handoff(handoff: dict, category: str, run_dir: Path | None) -> dict:
+    """E-072: the v3 handoff with every input that carries a result replaced
+    by its exploration copy (artifacts/exploration/: report, grid, claim
+    digest, earlier findings, registry summary), the run-level
+    claim_measurement.yaml dropped (its statuses cover every window), and
+    EXPLORATION.md plus the exploration windows added. Raises when the split
+    is missing: the readers never get the all-window files instead."""
+    ec = _explore_confirm_module()
+    rf = _reader_findings_module()
+    if run_dir is None:
+        raise ValueError("orchestrator.explore_confirm: a reader handoff needs its run directory")
+    split = ec.load_split(Path(run_dir) / "artifacts")
+    shown = ec.labels(split["exploration"])
+    swap = {f"artifacts/{n}": f"artifacts/{_exploration_rel(n)}"
+            for n in (f"reports/{category}.yaml", "grid_evaluation.yaml",
+                      rf.DIGEST_ARTIFACT, rf.READER_SUMMARY_ARTIFACT, "registry_summary.yaml")}
+    import copy as _copy
+    out = _copy.deepcopy(handoff)
+    req = []
+    for r in out["required_inputs"]:
+        req.append({**r, "path": swap.get(r["path"], r["path"])})
+        if r["path"] == READER_V3_CONTRACT:
+            req.append({"path": READER_V3_EXPLORATION,
+                        "reason": "you see the exploration windows only; how your side findings "
+                                  "are checked on windows you never saw"})
+    out["required_inputs"] = req
+    measurement = f"artifacts/{_claim_measurement_name(run_dir)}"
+    out["optional_inputs"] = [r for r in out["optional_inputs"] if r["path"] != measurement]
+    for old, new in swap.items():
+        out["objective"] = out["objective"].replace(old, new)
+    out["objective"] += (f" Every result you read comes from the exploration windows {shown} "
+                         f"only; each side finding is measured on the confirmation windows, "
+                         f"which you never see.")
+    out["injected_context"]["explore_confirm"] = {
+        "exploration_windows": shown,
+        "rule": "results on the other windows are withheld; your side findings are checked "
+                "there (EXPLORATION.md)"}
+    return out
+
+
 def _reader_v3_missing_inputs(run_dir: Path) -> list:
     """The code-written v3 reader inputs this run lacks: absent from disk, or
     named in artifacts/reader_input_gaps.yaml (a file that could not be
@@ -4422,8 +4540,19 @@ def _reader_v3_missing_inputs(run_dir: Path) -> list:
         recorded = set((doc or {}).get("missing") or {})
     except Exception:  # noqa: BLE001 -- absent (the normal case) or unreadable
         recorded = set()
-    return [name for name in (rf.DIGEST_ARTIFACT, rf.READER_SUMMARY_ARTIFACT)
+    return [name for name in _reader_v3_input_names()
             if name in recorded or not (arts / name).exists()]
+
+
+def _reader_v3_input_names() -> tuple:
+    """The two code-written v3 reader inputs, relative to artifacts/: the
+    claim digest and the earlier findings -- under orchestrator.explore_confirm
+    (E-072) their exploration copies, else exactly the slice-5 names."""
+    rf = _reader_findings_module()
+    names = (rf.DIGEST_ARTIFACT, rf.READER_SUMMARY_ARTIFACT)
+    if _explore_confirm_enabled():
+        return tuple(_exploration_rel(n) for n in names)
+    return names
 
 
 def _report_statistic_labels_kw() -> dict:
@@ -4567,8 +4696,15 @@ def _citation_provenance(category: str, run_dir: Path, body: str) -> dict:
         if v3:  # E-068 slice 5: the v3 inputs a reading may cite too
             _rf = _reader_findings_module()
             gone = set(_reader_v3_missing_inputs(run_dir))  # an older copy is not this run's
-            rels += tuple(n for n in (_rf.DIGEST_ARTIFACT, _rf.READER_SUMMARY_ARTIFACT)
-                          if n not in gone) + (_claim_measurement_name(run_dir),)
+            if _explore_confirm_enabled():  # E-072: the exploration copies the reader received
+                rels = (tuple(_exploration_rel(r) for r in (
+                            f"reports/{category}.yaml", "grid_evaluation.yaml",
+                            "registry_summary.yaml"))
+                        + ("hypothesis_card.yaml", "block_manifest.yaml", config_rel)
+                        + tuple(n for n in _reader_v3_input_names() if n not in gone))
+            else:
+                rels += tuple(n for n in (_rf.DIGEST_ARTIFACT, _rf.READER_SUMMARY_ARTIFACT)
+                              if n not in gone) + (_claim_measurement_name(run_dir),)
         for rel in rels:
             try:
                 doc = yaml.safe_load((arts / rel).read_text(encoding="utf-8"))
@@ -5058,6 +5194,10 @@ def _write_reader_v3_inputs(run_dir: Path, run_id: str) -> dict:
             gaps[name] += f" (an older copy could not be removed: {type(exc).__name__}: {exc})"
         print(f"⚠️  [E-068] readers v3: {name} could not be written ({gaps[name]}); the readers "
               f"run without it.")
+    if _explore_confirm_enabled():
+        # E-072: the readers read the exploration copies (raises when the
+        # registry copy cannot be written: never the all-window file instead)
+        gaps.update(_write_exploration_reader_inputs(run_dir, run_id))
     _record_reader_input_gaps(arts, run_id, gaps)
     if not gaps:
         print(f"📚 [E-068] readers v3: {rf.DIGEST_ARTIFACT} and {rf.READER_SUMMARY_ARTIFACT} "
@@ -5097,6 +5237,164 @@ def _record_reader_skips(run_id: str, run_dir: Path) -> None:
             rf.record_skips(ROOT, run_id, skips)
     except Exception as exc:  # noqa: BLE001
         print(f"⚠️  [E-068] reader skips could not be recorded ({exc}); the run continues.")
+
+
+# ---------------------------------------------------------------------------
+# E-072 (P-CUL-80): ideas are confirmed on data the proposer never saw, under
+# orchestrator.explore_confirm only (tools/explore_confirm.py).
+# ---------------------------------------------------------------------------
+
+def _exploration_rel(name: str) -> str:
+    """A readers' copy, relative to artifacts/: exploration/<name>."""
+    return f"{_explore_confirm_module().EXPLORATION_DIR}/{name}"
+
+
+def _prepare_explore_confirm(run_dir: Path, run_id: str) -> dict:
+    """At protocol_execution entry, BEFORE any backtest: the pre-registered
+    split (artifacts/explore_confirm.yaml, kept on a re-run) from the run
+    protocol and the variants' own protocol files; the previous attempt's
+    readers' copies and confirmation file are removed (a look already counted
+    in the campaign ledger stays counted). Raises when the windows cannot be
+    split -- nothing has been spent yet."""
+    ec = _explore_confirm_module()
+    arts = Path(run_dir) / "artifacts"
+    split = ec.ensure_split(arts, run_id,
+                            extra_files=[_resolve_protocol_path(Path(run_dir), run_id)])
+    stale = arts / ec.EXPLORATION_DIR
+    if stale.exists():
+        shutil.rmtree(stale)
+    (arts / ec.CONFIRMATION_ARTIFACT).unlink(missing_ok=True)
+    print(f"🔒 [E-072] windows split before the backtests: exploration "
+          f"{ec.labels(split['exploration'])}, confirmation {ec.labels(split['confirmation'])} "
+          f"(artifacts/{ec.SPLIT_ARTIFACT}); the readers see exploration only.")
+    return split
+
+
+def _write_exploration_views(run_dir: Path, run_id: str, pr_by_variant: dict, variant_meta: dict,
+                             *, pre_registration: dict, failed_variants=None,
+                             untested_variants=None, legacy_verdict_retired: bool = False) -> None:
+    """protocol_execution (variant loop), after the reports: the readers'
+    copies of the five category reports and of the grid, from the
+    exploration windows only (artifacts/exploration/). Raises on any failure."""
+    ec = _explore_confirm_module()
+    import build_reports as _br  # tools/ sibling (on sys.path via _explore_confirm_module)
+    arts = Path(run_dir) / "artifacts"
+    split = ec.load_split(arts)
+    shown = ec.labels(split["exploration"])
+    reports = _br.build_reports(
+        run_dir, write=False, variants=variant_meta,
+        failed_variants=failed_variants or None, untested_variants=untested_variants or None,
+        **({"legacy_verdict_retired": True} if legacy_verdict_retired else {}),
+        **_report_statistic_labels_kw(), only_windows=shown)
+    out = arts / ec.EXPLORATION_DIR
+    for name, report in reports.items():
+        _br._write_yaml_atomic(out / "reports" / f"{name}.yaml", report)
+    grid_doc = load_yaml(arts / "grid_evaluation.yaml") if (arts / "grid_evaluation.yaml").exists() \
+        else None
+    if not isinstance(grid_doc, dict):
+        raise FileNotFoundError(f"{arts / 'grid_evaluation.yaml'} is missing or not a mapping -- "
+                                f"no exploration grid can be built from it")
+    menu_path = ROOT / "config" / "criterion_menu.yaml"
+    menu = load_yaml(menu_path) if menu_path.exists() else {}
+    grid = ec.exploration_grid(grid_doc, pr_by_variant, pre_registration, menu, shown,
+                               single_era_inconclusive=bool(_grid_v2_kw()))
+    _br._write_yaml_atomic(out / "grid_evaluation.yaml", grid)
+    print(f"🔒 [E-072] readers' copies written from the exploration windows {shown}: "
+          f"{ec.EXPLORATION_DIR}/reports/*.yaml, {ec.EXPLORATION_DIR}/grid_evaluation.yaml")
+
+
+def _write_exploration_reader_inputs(run_dir: Path, run_id: str) -> dict:
+    """specialist_readers, before the first reader (after _write_reader_v3_inputs):
+    the readers' copies of the claim digest (measured again on the exploration
+    windows), the earlier findings (numbers withheld) and the registry summary
+    (numbers over all windows withheld). The registry copy is required (it
+    raises: the all-window file must never stand in for it); the other two
+    follow _write_reader_v3_inputs' rule -- a file that cannot be written is
+    recorded as a gap and the readers run without it. Returns the gaps."""
+    ec = _explore_confirm_module()
+    rf = _reader_findings_module()
+    import build_reports as _br
+    import protocol_resolution as _pres
+    arts = Path(run_dir) / "artifacts"
+    split = ec.load_split(arts)
+    shown = ec.labels(split["exploration"])
+    out = arts / ec.EXPLORATION_DIR
+    reg = load_yaml(arts / "registry_summary.yaml")
+    if not isinstance(reg, dict):
+        raise FileNotFoundError(f"{arts / 'registry_summary.yaml'} is missing or not a mapping")
+    _br._write_yaml_atomic(out / "registry_summary.yaml", ec.withhold_registry_numbers(reg))
+    gaps = {}
+    digest_rel = _exploration_rel(rf.DIGEST_ARTIFACT)
+    summary_rel = _exploration_rel(rf.READER_SUMMARY_ARTIFACT)
+    try:
+        digest = ec.exploration_digest(run_dir, shown, _pres.load_policy_eras(_DATA_POLICY_PATH),
+                                       _load_holdout_range()[0])
+        _br._write_yaml_atomic(arts / digest_rel, digest)
+    except Exception as exc:  # noqa: BLE001 -- a gap, like _write_reader_v3_inputs
+        gaps[digest_rel] = f"{type(exc).__name__}: {exc}"
+    try:
+        summary = load_yaml(arts / rf.READER_SUMMARY_ARTIFACT)
+        if not isinstance(summary, dict):
+            raise FileNotFoundError(f"{rf.READER_SUMMARY_ARTIFACT} was not written")
+        _br._write_yaml_atomic(arts / summary_rel, ec.withhold_findings_numbers(summary))
+    except Exception as exc:  # noqa: BLE001
+        gaps[summary_rel] = f"{type(exc).__name__}: {exc}"
+    for name in gaps:
+        with contextlib.suppress(OSError):
+            (arts / name).unlink(missing_ok=True)
+        print(f"⚠️  [E-072] {name} could not be written ({gaps[name]}); the readers run without it.")
+    return gaps
+
+
+def _record_confirmations(run_id: str, run_dir: Path) -> None:
+    """specialist_readers, after every reader: each side finding of this run
+    measured on the confirmation windows (or marked pending), and -- when this
+    run was built from a pending side finding -- that finding measured by this
+    run's own claim on this run's confirmation windows. Written to
+    artifacts/confirmation.yaml and campaign_record/confirmations.yaml (looks
+    counted). Information only: never raises, never routes."""
+    try:
+        ec = _explore_confirm_module()
+        rp = _reader_proposals_module()
+        import protocol_resolution as _pres
+        arts = Path(run_dir) / "artifacts"
+        split = ec.load_split(arts)
+        eras = _pres.load_policy_eras(_DATA_POLICY_PATH)
+        holdout_start = _load_holdout_range()[0]
+        graded = sorted(vid for vid in (load_yaml(arts / "grid_evaluation.yaml") or {}).get(
+            "variants") or []) if (arts / "grid_evaluation.yaml").exists() else []
+        base_vid = _json_pointer_module().base_variant_id(graded) if graded else None
+        readings = rp.load_readings(arts / "proposals", _reader_categories())
+        records = ec.confirm_findings(run_dir, run_id, readings, split, base_variant=base_vid,
+                                      eras=eras, holdout_start=holdout_start)
+        resolved = []
+        source = ec.source_finding_id(arts)
+        pending = (ec.load_ledger(ROOT).get("findings") or {}).get(source) if source else None
+        if isinstance(pending, dict) and pending.get("confirmation_sign_retained") == ec.PENDING:
+            resolved = [ec.resolve_pending(run_dir, run_id, pending, split,
+                                           base_variant=base_vid, eras=eras,
+                                           holdout_start=holdout_start)]
+        written = ec.record(ROOT, run_id, records + resolved)
+        save_yaml(arts / ec.CONFIRMATION_ARTIFACT, {
+            "schema_version": ec.SCHEMA_VERSION, "run_id": run_id, "note": ec.LEDGER_NOTE,
+            "bar": ec.HONEST_BAR, "exploration": ec.labels(split["exploration"]),
+            "confirmation": ec.labels(split["confirmation"]),
+            "side_findings": written[:len(records)], "resolved_pending": written[len(records):]})
+        counts = {}
+        for r in written:
+            v = r.get("confirmation_sign_retained")
+            counts[str(v)] = counts.get(str(v), 0) + 1
+        print(f"🔎 [E-072] {run_id}: {len(records)} side finding(s) checked on the confirmation "
+              f"windows {ec.labels(split['confirmation'])}"
+              + (f", {len(resolved)} pending finding resolved" if resolved else "")
+              + f" (sign retained: {counts}); information only, not proven.")
+    except Exception as exc:  # noqa: BLE001 -- information only
+        print(f"⚠️  [E-072] the confirmation could not be recorded ({type(exc).__name__}: {exc}); "
+              f"the run continues.")
+        with contextlib.suppress(Exception):
+            save_yaml(Path(run_dir) / "artifacts" / _explore_confirm_module().CONFIRMATION_ARTIFACT,
+                      {"run_id": run_id, "status": "error",
+                       "detail": f"{type(exc).__name__}: {exc}"})
 
 
 def _check_retune_firewall(run_dir: Path) -> None:
@@ -5158,6 +5456,9 @@ def _run_specialist_readers_stage(run_id: str, run_dir: Path, stage_attempt=0) -
     proposals = _run_specialist_readers(run_id, run_dir, stage_attempt)
     if v3:
         _record_reader_skips(run_id, run_dir)
+        if _explore_confirm_enabled():
+            # E-072: after every reader, so no reader ever sees it
+            _record_confirmations(run_id, run_dir)
     # E-035 S2c: each feed the validated proposals ask for and do not have
     # becomes a data_requests.yaml row (idempotent per run and feed; nothing
     # written when no proposal carries requires_feed).

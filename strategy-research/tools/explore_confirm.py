@@ -1,0 +1,701 @@
+"""E-072: ideas are confirmed on data the proposer never saw.
+
+Under orchestrator.explore_confirm.enabled only (run_phase1_research wires it;
+nothing here reads a flag). Design: engineering/roadmap/E-072/PHASE_A.md.
+
+  * The split, pre-registered before the backtests (artifacts/explore_confirm.yaml):
+    the run's protocol windows in time order, first half = EXPLORATION, second
+    half = CONFIRMATION (rule `chronological_half`; an odd count gives the extra
+    window to confirmation). It never changes inside a run.
+  * The readers see exploration windows only. Code writes their copies under
+    artifacts/exploration/: the category reports (build_reports only_windows),
+    the grid re-reduced on those windows (exploration_grid: window-source
+    criteria only; every pooled criterion and the idea status are withheld),
+    the claim digest measured on those windows (exploration_digest), and the
+    earlier findings and registry summary with their numbers withheld.
+  * After the readers, each side finding is measured on the confirmation
+    windows (confirm_findings): a price-only ("pure") finding in the same run,
+    with claim_measure.measure_test on that run's base variant bars; a block
+    claim (kind forecast/regime), or a pure finding whose config change alters
+    the forecast/regime its tests read, is `pending` until the run built from
+    it measures its own claim on its own confirmation windows
+    (resolve_pending). The result is `confirmation_sign_retained: true | false
+    | pending` (null only when nothing could be measured: no usable test, or an
+    error -- never a guessed sign).
+  * Every confirmation look is counted in campaign_record/confirmations.yaml,
+    per confirmation set: n_looks (tests) and n_comparisons (test x horizon).
+    The honest bar is "the sign held on unseen windows, counted against the
+    looks" -- never "proven".
+
+INFORMATION ONLY: a confirmation never changes idea_status or the grid, never
+routes, stops, parks or ranks anything.
+
+WHY THIS CANNOT LEAK (no lookahead): it reads only a completed run's own saved
+bars.csv (claim_tests.load_variant_bars; the holdout start is refused by
+claim_measure.check_before_holdout) and never a data cache.
+"""
+from __future__ import annotations
+
+import copy
+import json
+import os
+import sys
+from pathlib import Path
+
+import yaml
+
+_HERE = os.path.dirname(os.path.abspath(__file__))
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
+
+SPLIT_ARTIFACT = "explore_confirm.yaml"        # artifacts/, before the backtests
+EXPLORATION_DIR = "exploration"                # artifacts/exploration/: the readers' copies
+CONFIRMATION_ARTIFACT = "confirmation.yaml"    # artifacts/, after the readers
+LEDGER_REL = "campaign_record/confirmations.yaml"
+SCHEMA_VERSION = 1
+RULE = "chronological_half"
+WITHHELD = "withheld"
+WITHHELD_REASON = ("withheld under explore_confirm: computed over every window, including the "
+                   "confirmation windows the readers do not see")
+EARLIER_WITHHELD_REASON = ("withheld under explore_confirm: earlier runs' numbers may come from "
+                           "this run's confirmation windows")
+HONEST_BAR = ("the sign held (or not) on windows the proposer never saw, counted against the "
+              "looks taken on that confirmation set; not proven")
+READER_NOTE = ("exploration windows only: every number in this file comes from the windows "
+               "listed in windows_shown; the confirmation windows and every aggregate over them "
+               "are withheld on purpose")
+
+# routes and statuses of one side finding
+IN_RUN = "in_run"
+PENDING = "pending"
+NOT_MEASURABLE = "not_measurable"
+MEASURED = "measured"
+ERROR = "error"
+
+LEDGER_NOTE = ("information only: each reader side finding measured on confirmation windows "
+               "the proposer never saw; looks counted per confirmation set; not proven")
+
+
+class SplitError(ValueError):
+    """The run's windows cannot be split, or the pre-registered split no longer fits."""
+
+
+def _load_yaml(path: Path):
+    with open(path, encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+# ---------------------------------------------------------------------------
+# The split
+# ---------------------------------------------------------------------------
+
+def _protocol_files(arts: Path) -> list:
+    vroot = Path(arts) / "variants"
+    files = []
+    if (vroot / "run_protocol.json").exists():
+        files.append(vroot / "run_protocol.json")
+    if vroot.is_dir():
+        files += sorted(vroot.glob("*/protocol.json"))
+    return files
+
+
+def protocol_windows(arts: Path, extra_files=()) -> list:
+    """[{label, start, end}] -- every window named by the run's protocol files
+    (`extra_files`, e.g. the resolved run protocol, then
+    artifacts/variants/run_protocol.json and artifacts/variants/<vid>/
+    protocol.json), one row per label, in time order (start, then label).
+    Raises SplitError when there is no protocol file, or when one label has
+    two different date ranges."""
+    files = [Path(p) for p in extra_files if p is not None and Path(p).exists()]
+    files += [p for p in _protocol_files(arts) if p not in files]
+    if not files:
+        raise SplitError(f"no protocol file under {Path(arts) / 'variants'} -- the windows "
+                         f"cannot be split before the backtests")
+    by_label = {}
+    for path in files:
+        doc = json.loads(Path(path).read_text(encoding="utf-8"))
+        for w in (doc or {}).get("windows") or []:
+            if not isinstance(w, dict) or not w.get("label"):
+                continue
+            test = w.get("test") if isinstance(w.get("test"), dict) else {}
+            row = {"label": str(w["label"]), "start": str(test.get("start") or ""),
+                   "end": str(test.get("end") or "")}
+            old = by_label.get(row["label"])
+            if old is not None and old != row:
+                raise SplitError(f"window {row['label']!r} has two date ranges "
+                                 f"({old['start']}..{old['end']} and {row['start']}..{row['end']})")
+            by_label[row["label"]] = row
+    return sorted(by_label.values(), key=lambda r: (r["start"], r["label"]))
+
+
+def split_windows(windows: list) -> dict:
+    """The pre-registered split of `windows` (protocol_windows' rows): the first
+    half in time order is exploration, the rest confirmation. At least two
+    windows, else SplitError."""
+    if len(windows) < 2:
+        raise SplitError(f"{len(windows)} window(s): at least 2 are needed to keep one "
+                         f"confirmation window the readers never see")
+    k = len(windows) // 2
+    return {"rule": RULE, "exploration": [dict(w) for w in windows[:k]],
+            "confirmation": [dict(w) for w in windows[k:]]}
+
+
+def labels(rows: list) -> list:
+    return [r["label"] for r in rows]
+
+
+def ensure_split(arts: Path, run_id: str, extra_files=()) -> dict:
+    """artifacts/explore_confirm.yaml, written once per run BEFORE the
+    backtests; on a re-run the file on disk is kept (it was pre-registered
+    first). Raises SplitError when it cannot be written, or when a window of
+    the current protocol is in neither half of the file on disk."""
+    arts = Path(arts)
+    path = arts / SPLIT_ARTIFACT
+    windows = protocol_windows(arts, extra_files)
+    if path.exists():
+        doc = load_split(arts)
+        known = set(labels(doc["exploration"])) | set(labels(doc["confirmation"]))
+        new = [w["label"] for w in windows if w["label"] not in known]
+        if new:
+            raise SplitError(f"{path}: windows {new} are in neither half of the pre-registered "
+                             f"split -- the protocol changed after the split was written")
+        return doc
+    doc = {"schema_version": SCHEMA_VERSION, "run_id": run_id, **split_windows(windows),
+           "note": ("pre-registered before the backtests: the readers see the exploration "
+                    "windows only; their side findings are measured on the confirmation "
+                    "windows")}
+    import campaign_memory as cm
+    cm._atomic_write(path, doc)
+    return doc
+
+
+def load_split(arts: Path) -> dict:
+    """The run's split, checked. Raises SplitError when absent or malformed --
+    a reader input is never built from a guessed split."""
+    path = Path(arts) / SPLIT_ARTIFACT
+    if not path.exists():
+        raise SplitError(f"{path} is missing -- it is written at protocol_execution entry")
+    doc = _load_yaml(path)
+    ok = isinstance(doc, dict) and all(
+        isinstance(doc.get(k), list) and doc[k]
+        and all(isinstance(r, dict) and r.get("label") for r in doc[k])
+        for k in ("exploration", "confirmation"))
+    if not ok:
+        raise SplitError(f"{path}: needs non-empty exploration and confirmation window lists")
+    if set(labels(doc["exploration"])) & set(labels(doc["confirmation"])):
+        raise SplitError(f"{path}: a window is in both halves")
+    return doc
+
+
+def set_key(rows: list) -> str:
+    """The confirmation set a look spends: its windows and date ranges."""
+    return ",".join(f"{r['label']}[{r.get('start')}..{r.get('end')}]"
+                    for r in sorted(rows, key=lambda r: (str(r.get("start")), r["label"])))
+
+
+def _overlap(a: list, b: list) -> list:
+    """Window pairs whose date ranges overlap (ISO dates compare as strings);
+    a row without dates overlaps a row with the same label."""
+    out = []
+    for x in a:
+        for y in b:
+            if x.get("start") and x.get("end") and y.get("start") and y.get("end"):
+                hit = x["start"] <= y["end"] and y["start"] <= x["end"]
+            else:
+                hit = x["label"] == y["label"]
+            if hit:
+                out.append(f"{y['label']} overlaps {x['label']}")
+    return out
+
+
+# ---------------------------------------------------------------------------
+# The readers' copies (exploration windows only)
+# ---------------------------------------------------------------------------
+
+def restrict_protocol_result(pr: dict, windows) -> dict:
+    """Only the `results` entries of the given windows; every other key of a
+    protocol_result is an aggregate over all windows and is dropped."""
+    keep = set(windows)
+    return {"results": [r for r in (pr or {}).get("results") or []
+                        if isinstance(r, dict) and r.get("window") in keep]}
+
+
+def exploration_grid(grid_doc: dict, pr_by_variant: dict, pre_registration: dict, menu,
+                     windows, *, single_era_inconclusive: bool = False) -> dict:
+    """The grid as the readers see it: every criterion x graded variant of
+    `grid_doc` (the run's grid_evaluation.yaml); a `window`-source criterion
+    re-evaluated by the grid's own cell function on the exploration windows'
+    results only; any other source (pooled, profit bars) WITHHELD, as is the
+    idea status (both read every window). Failed/untested/partial variants'
+    reasons are copied (they are not results)."""
+    import verdict_criteria_evaluator as vce
+    shown = sorted(set(windows))
+    defs = {c.get("id"): c for c in vce._resolve_grid_criteria(pre_registration or {}, menu)}
+    eras = vce._load_campaign_data_policy_eras()
+    kw = {"single_era_inconclusive": True} if single_era_inconclusive else {}
+    grid = {}
+    for cid in grid_doc.get("criteria") or []:
+        crit = defs.get(cid)
+        row = {}
+        for vid in grid_doc.get("variants") or []:
+            if crit is None or crit.get("source") != "window":
+                row[vid] = {"result": WITHHELD, "reason": WITHHELD_REASON}
+            elif vid not in pr_by_variant:
+                row[vid] = {"result": WITHHELD, "reason": "no protocol_result for this variant"}
+            else:
+                row[vid] = vce._evaluate_grid_cell(
+                    crit, restrict_protocol_result(pr_by_variant[vid], shown), eras, **kw)
+        grid[cid] = row
+    out = {"windows_shown": shown, "note": READER_NOTE,
+           "criteria": list(grid_doc.get("criteria") or []),
+           "variants": list(grid_doc.get("variants") or []), "grid": grid,
+           "idea_status": WITHHELD, "idea_status_reason": WITHHELD_REASON}
+    for key in ("failed_variants", "untested_variants", "partial_coverage_variants"):
+        if grid_doc.get(key):
+            out[key] = copy.deepcopy(grid_doc[key])
+    return out
+
+
+def measure_on_windows(run_dir: Path, vid: str, tests: list, windows, eras,
+                       holdout_start: str) -> tuple:
+    """({test name: claim_measure.measure_test result}, [window labels measured])
+    on one variant's saved bars, restricted to `windows`. Raises when the bars
+    cannot be read, a bar reaches the holdout start, or no bar is in `windows`."""
+    import claim_measure as cmeas
+    import claim_tests as ct
+    keep = set(windows)
+    ws = [w for w in ct.load_variant_bars(Path(run_dir), vid) if w.window in keep]
+    if not ws:
+        raise ValueError(f"variant {vid!r} has no bars on the windows {sorted(keep)}")
+    cmeas.check_before_holdout(ws, holdout_start)
+    out = {}
+    for t in tests:
+        name = str(t.get("name")) if isinstance(t, dict) else "None"
+        try:
+            out[name] = cmeas.measure_test(ws, t, eras)
+        except Exception as exc:  # noqa: BLE001 -- recorded per test
+            out[name] = {"name": name, "status": cmeas.NOT_MEASURED, "reason": ERROR,
+                         "detail": f"{type(exc).__name__}: {exc}"}
+    return out, [w.label for w in ws]
+
+
+def exploration_digest(run_dir: Path, windows, eras, holdout_start: str) -> dict:
+    """artifacts/exploration/claim_result_digest.yaml: the claim digest's
+    descriptive part (statement, tests, variant patches, approximation) from
+    reader_findings.claim_result_digest, and per variant its numbers MEASURED
+    AGAIN on the exploration windows only -- for each variant the run-level
+    measurement lists as measured in this attempt (the others keep their
+    reason, without numbers). Never raises: a failure is `status: error`."""
+    import claim_card as cc
+    import claim_findings as cf
+    import claim_measure as cmeas
+    import reader_findings as rf
+    run_dir = Path(run_dir)
+    shown = sorted(set(windows))
+    base = rf.claim_result_digest(run_dir)
+    out = {k: v for k, v in base.items() if k not in ("variants", "claim_status", "reason")}
+    out.update({"windows_shown": shown, "windows_note": READER_NOTE})
+    if base.get("status") == "error":
+        return out
+    try:
+        arts = run_dir / "artifacts"
+        status_path = cmeas.run_file_path(arts)
+        if not status_path.exists():
+            out.update({"claim_status": "absent", "variants": {}})
+            return out
+        sdoc = _load_yaml(status_path) or {}
+        card = _load_yaml(arts / "hypothesis_card.yaml") or {}
+        claim = card.get("claim") if isinstance(card, dict) else None
+        res = cc.check_claim(claim, cc.card_criteria_ids(card if isinstance(card, dict) else {}))
+        names = {t["name"] for t in res.tests}
+        tests = [t for t in (claim or {}).get("tests") or []
+                 if isinstance(t, dict) and t.get("name") in names] \
+            if isinstance(claim, dict) and isinstance(claim.get("tests"), list) else []
+        stats = {str(t["name"]): t.get("statistic") for t in tests}
+        variants = {}
+        for vid, row in sorted((sdoc.get("variants") or {}).items()):
+            vid = str(vid)
+            if not isinstance(row, dict) or not row.get("file") or not tests \
+                    or row.get("status") not in (cmeas.MEASURED, cmeas.NO_EVENTS):
+                variants[vid] = {"status": cmeas.NOT_MEASURED,
+                                 "reason": (row or {}).get("reason") if isinstance(row, dict)
+                                 else "not in the run's measurement"}
+                continue
+            try:
+                results, _measured = measure_on_windows(run_dir, vid, tests, shown, eras,
+                                                        holdout_start)
+            except Exception as exc:  # noqa: BLE001 -- recorded
+                variants[vid] = {"status": cmeas.NOT_MEASURED, "reason": ERROR,
+                                 "detail": f"{type(exc).__name__}: {exc}"}
+                continue
+            compact = {}
+            for n, t in results.items():
+                compact[n] = cf._compact_test(t)
+                if n in stats:
+                    compact[n]["statistic_label"] = rf.statistic_label(stats[n])
+            st = [t.get("status") for t in results.values()]
+            status = (cmeas.MEASURED if cmeas.MEASURED in st
+                      else cmeas.NO_EVENTS if st and all(s == cmeas.NO_EVENTS for s in st)
+                      else cmeas.NOT_MEASURED)
+            variants[vid] = {"status": status, "tests": compact}
+        measured = any(v["status"] == cmeas.MEASURED for v in variants.values())
+        out.update({"claim_status": cmeas.MEASURED if measured else cmeas.NOT_MEASURED,
+                    "reason": None if measured else "nothing measured on the exploration windows",
+                    "variants": variants})
+    except Exception as exc:  # noqa: BLE001 -- information only
+        out.update({"status": "error", "detail": f"{type(exc).__name__}: {exc}"})
+        out.pop("variants", None)
+    return out
+
+
+def withhold_findings_numbers(summary: dict) -> dict:
+    """findings_summary_for_readers with every earlier effect withheld: what
+    was tested (spec, selector, outcome, status, spec_hash) stays, so a
+    reader still does not repeat a test; how it came out does not."""
+    out = copy.deepcopy(summary)
+    for row in out.get("findings") or []:
+        for t in row.get("tests") or [] if isinstance(row, dict) else []:
+            for v in (t.get("by_variant") or {}).values() if isinstance(t, dict) else []:
+                if isinstance(v, dict) and "largest_effect" in v:
+                    v["largest_effect"] = WITHHELD
+    out["numbers"] = {"status": WITHHELD, "reason": EARLIER_WITHHELD_REASON}
+    out["statistic_labels"] = {}
+    return out
+
+
+def withhold_registry_numbers(summary: dict) -> dict:
+    """The registry summary (block_registry) for the readers: this run's idea status and its
+    correlation to the composite (both over every window) and every earlier
+    block's residual IC / correlation are withheld; the block inventory and
+    types stay."""
+    out = copy.deepcopy(summary)
+    this = out.get("this_run")
+    if isinstance(this, dict):
+        if "idea_status" in this:
+            this["idea_status"] = WITHHELD
+        if "correlation_to_composite" in this:
+            this["correlation_to_composite"] = {"status": WITHHELD, "reason": WITHHELD_REASON}
+    for b in out.get("blocks") or []:
+        if isinstance(b, dict):
+            for k in ("residual_ic", "correlation_to_composite"):
+                if k in b:
+                    b[k] = WITHHELD
+    for g in out.get("groups") or []:
+        if isinstance(g, dict):
+            for k in ("residual_ic_range", "abs_correlation_to_composite_range"):
+                if k in g:
+                    g[k] = WITHHELD
+    out["numbers"] = {"status": WITHHELD, "reason": WITHHELD_REASON}
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Confirmation of side findings
+# ---------------------------------------------------------------------------
+
+def finding_route(item: dict) -> tuple:
+    """(route, reason) of one side finding (a flattened reading item)."""
+    import claim_card as cc
+    claim = item.get("claim") if isinstance(item, dict) else None
+    res = cc.check_claim(claim)
+    if res.errors:
+        return NOT_MEASURABLE, "its claim is refused by check_claim: " + "; ".join(res.errors)
+    if res.tests_none:
+        return NOT_MEASURABLE, f"tests: none (missing block {res.missing_block!r})"
+    block = cc.KIND_BLOCK.get(claim.get("kind"))
+    if block in ("forecast", "regime"):
+        return PENDING, (f"a {block} block claim: measured on the confirmation windows of the "
+                         f"run built from it")
+    if item.get("config_change") and any(cc.signal_columns(t) for t in claim["tests"]
+                                         if isinstance(t, dict)):
+        return PENDING, ("its config change alters the forecast/regime its tests read: measured "
+                         "on the confirmation windows of the run built from it")
+    return IN_RUN, "a price-only (pure) finding: measured in this run"
+
+
+def test_sign(result: dict) -> tuple:
+    """(held, reason) of one measure_test result on confirmation windows:
+    held True when at least one horizon has a value and every horizon with a
+    value has the claimed sign (oriented > 0); False when one does not, or
+    when nothing could be measured (no events); None on an error."""
+    import claim_measure as cmeas
+    status = result.get("status")
+    if status == cmeas.NO_EVENTS:
+        return False, "no events on the confirmation windows"
+    if status != cmeas.MEASURED:
+        return None, f"not measured: {result.get('reason')}"
+    vals = {str(h): r.get("oriented") for h, r in (result.get("horizons") or {}).items()}
+    defined = {h: v for h, v in vals.items() if v is not None}
+    if not defined:
+        return False, "no horizon has a value on the confirmation windows"
+    bad = sorted((h for h, v in defined.items() if not v > 0), key=lambda h: float(h))
+    if bad:
+        return False, f"claimed sign not held at horizon(s) {bad}"
+    return True, f"claimed sign held at every horizon with a value ({sorted(defined, key=float)})"
+
+
+test_sign.__test__ = False  # not a pytest test
+
+
+def finding_sign(results: dict) -> tuple:
+    """(retained, reason, per-test) from {test name: measure_test result}:
+    True only when every test held; None when any test errored; else False."""
+    per = {n: test_sign(r) for n, r in results.items()}
+    if not per:
+        return None, "no test", {}
+    if any(h is None for h, _ in per.values()):
+        return None, "a test could not be measured", per
+    if all(h is True for h, _ in per.values()):
+        return True, "every test held its claimed sign", per
+    return False, "; ".join(f"{n}: {why}" for n, (h, why) in sorted(per.items()) if not h), per
+
+
+def _compact_result(r: dict, held) -> dict:
+    out = {"status": r.get("status"), "spec_hash": r.get("spec_hash"),
+           "statistic": r.get("statistic"), "direction": r.get("direction"),
+           "sign_held": held[0], "why": held[1]}
+    if r.get("reason"):
+        out["reason"] = r.get("reason")
+    hz = {}
+    for h, row in (r.get("horizons") or {}).items():
+        hz[str(h)] = {"effect": row.get("value"), "oriented": row.get("oriented"),
+                      "n_events": row.get("n_events"),
+                      "windows_claimed_sign": row.get("windows_with_claimed_sign"),
+                      "windows_with_value": row.get("windows_with_a_value")}
+    if hz:
+        out["horizons"] = hz
+    return out
+
+
+def comparisons_of(results: dict) -> list:
+    """[{test, spec_hash, n_comparisons}] -- one comparison per horizon of a
+    test that was looked at (measured or no events)."""
+    import claim_measure as cmeas
+    out = []
+    for n, r in sorted(results.items()):
+        if r.get("status") in (cmeas.MEASURED, cmeas.NO_EVENTS):
+            out.append({"test": n, "spec_hash": r.get("spec_hash"),
+                        "n_comparisons": max(1, len(r.get("horizons") or {}))})
+    return out
+
+
+def measured_record(results: dict, measured_windows: list, variant: str) -> dict:
+    """The confirmation part of a record once measured."""
+    retained, why, per = finding_sign(results)
+    return {"status": MEASURED if retained is not None else ERROR,
+            "confirmation_sign_retained": retained, "reason": why,
+            "variant": variant, "windows_measured": list(measured_windows),
+            "tests": {n: _compact_result(r, per.get(n, (None, ""))) for n, r in
+                      sorted(results.items())}}
+
+
+def side_finding_items(readings: dict) -> list:
+    """[(category, item)] for every side finding of a run's readings."""
+    import reader_proposals as rp
+    out = []
+    for cat, doc in sorted((readings or {}).items()):
+        if not isinstance(doc, dict) or "skipped" in doc:
+            continue
+        for item in rp.flatten_reading(doc):
+            if item.get("kind") == rp.SIDE_FINDING:
+                out.append((cat, item))
+    return out
+
+
+def confirm_findings(run_dir: Path, run_id: str, readings: dict, split: dict, *,
+                     base_variant: str | None, eras, holdout_start: str) -> list:
+    """One record per side finding of this run's readings: measured in-run on
+    the confirmation windows of the base variant (a pure finding), or pending
+    / not_measurable with its reason. Never raises: an error is a record."""
+    conf = split["confirmation"]
+    conf_labels = labels(conf)
+    records = []
+    for cat, item in side_finding_items(readings):
+        claim = item.get("claim") or {}
+        rec = {"finding_id": item.get("proposal_id"), "category": cat, "source_run": run_id,
+               "kind": claim.get("kind"), "statement": claim.get("statement"),
+               "proposer_saw": [dict(r) for r in split["exploration"]],
+               "confirmation_set": set_key(conf), "bar": HONEST_BAR}
+        try:
+            route, why = finding_route(item)
+            rec["finding_spec_hashes"] = finding_spec_hashes(item)
+        except Exception as exc:  # noqa: BLE001 -- recorded
+            route, why = ERROR, f"{type(exc).__name__}: {exc}"
+        rec["route"] = route
+        if route == PENDING:
+            rec.update({"status": PENDING, "confirmation_sign_retained": PENDING, "reason": why})
+        elif route != IN_RUN:
+            rec.update({"status": route, "confirmation_sign_retained": None, "reason": why})
+        elif base_variant is None:
+            rec.update({"status": ERROR, "confirmation_sign_retained": None,
+                        "reason": "no graded base variant to measure on"})
+        else:
+            try:
+                results, measured = measure_on_windows(run_dir, base_variant, claim["tests"],
+                                                       conf_labels, eras, holdout_start)
+                rec.update(measured_record(results, measured, base_variant))
+                rec["measured_in_run"] = run_id
+                rec["_comparisons"] = comparisons_of(results)
+            except Exception as exc:  # noqa: BLE001 -- recorded
+                rec.update({"status": ERROR, "confirmation_sign_retained": None,
+                            "reason": f"{type(exc).__name__}: {exc}"})
+        records.append(rec)
+    return records
+
+
+def source_finding_id(arts: Path):
+    """The side finding a run was built from (its research_brief.yaml's
+    candidate.source.proposal_ref, after '#'), or None."""
+    path = Path(arts) / "research_brief.yaml"
+    if not path.exists():
+        return None
+    doc = _load_yaml(path) or {}
+    ref = (((doc.get("candidate") or {}).get("source") or {}).get("proposal_ref")
+           if isinstance(doc, dict) else None)
+    if not isinstance(ref, str) or "#" not in ref:
+        return None
+    return ref.split("#", 1)[1] or None
+
+
+def resolve_pending(run_dir: Path, run_id: str, pending: dict, split: dict, *,
+                    base_variant: str | None, eras, holdout_start: str) -> dict:
+    """A pending record, measured by THIS run (built from it): this run's own
+    claim tests (its hypothesis card) on this run's confirmation windows of its
+    base variant. Not measured -- and still pending -- when this run's
+    confirmation windows overlap the windows the proposer saw. Never raises."""
+    import claim_card as cc
+    rec = copy.deepcopy(pending)
+    conf = split["confirmation"]
+    overlap = _overlap(rec.get("proposer_saw") or [], conf)
+    attempt = {"run_id": run_id, "confirmation_set": set_key(conf)}
+    if overlap:
+        attempt["result"] = f"not measured: {overlap} (the proposer saw them)"
+        rec.setdefault("attempts", []).append(attempt)
+        return rec
+    try:
+        card = _load_yaml(Path(run_dir) / "artifacts" / "hypothesis_card.yaml") or {}
+        claim = card.get("claim") if isinstance(card, dict) else None
+        res = cc.check_claim(claim, cc.card_criteria_ids(card if isinstance(card, dict) else {}))
+        names = {t["name"] for t in res.tests}
+        tests = [t for t in (claim or {}).get("tests") or []
+                 if isinstance(t, dict) and t.get("name") in names] \
+            if isinstance(claim, dict) and isinstance(claim.get("tests"), list) else []
+        if res.errors or not tests:
+            attempt["result"] = "not measured: this run's card has no usable claim test"
+            rec.setdefault("attempts", []).append(attempt)
+            return rec
+        if base_variant is None:
+            attempt["result"] = "not measured: no graded base variant"
+            rec.setdefault("attempts", []).append(attempt)
+            return rec
+        results, measured = measure_on_windows(run_dir, base_variant, tests, labels(conf), eras,
+                                               holdout_start)
+    except Exception as exc:  # noqa: BLE001 -- recorded, still pending
+        attempt["result"] = f"not measured: {type(exc).__name__}: {exc}"
+        rec.setdefault("attempts", []).append(attempt)
+        return rec
+    rec.update(measured_record(results, measured, base_variant))
+    rec.update({"measured_in_run": run_id, "confirmation_set": set_key(conf),
+                "_comparisons": comparisons_of(results)})
+    own = {t.get("spec_hash") for t in res.tests}
+    rec["tests_changed_from_finding"] = bool(rec.get("finding_spec_hashes")) and \
+        set(rec.get("finding_spec_hashes") or []) != own
+    attempt["result"] = rec["status"]
+    rec.setdefault("attempts", []).append(attempt)
+    return rec
+
+
+def finding_spec_hashes(item: dict) -> list:
+    import claim_card as cc
+    res = cc.check_claim(item.get("claim") if isinstance(item, dict) else None)
+    return sorted(t["spec_hash"] for t in res.tests if t.get("spec_hash"))
+
+
+# ---------------------------------------------------------------------------
+# The campaign ledger: every finding's latest record, and every look
+# ---------------------------------------------------------------------------
+
+def load_ledger(root: Path) -> dict:
+    path = Path(root) / LEDGER_REL
+    if not path.exists():
+        return {}
+    doc = _load_yaml(path)
+    return doc if isinstance(doc, dict) else {}
+
+
+def record(root: Path, run_id: str, records: list) -> list:
+    """Upsert `records` into campaign_record/confirmations.yaml and count their
+    looks (idempotent per run, finding and spec_hash: a resumed stage never
+    counts a look twice). Returns the records as written, each with its
+    `looks` position on its confirmation set. Locked, atomic."""
+    import campaign_memory as cm
+    import campaign_review_retired as crr
+    path = Path(root) / LEDGER_REL
+    path.parent.mkdir(parents=True, exist_ok=True)
+    written = []
+    with crr._lock(path, path.name):
+        doc = crr._load_mapping(path, {})
+        findings = doc.get("findings") if isinstance(doc.get("findings"), dict) else {}
+        looks = [lk for lk in doc.get("looks") or [] if isinstance(lk, dict)]
+        seen = {(lk.get("run_id"), lk.get("finding_id"), lk.get("spec_hash")) for lk in looks}
+        for rec in records:
+            rec = dict(rec)
+            comps = rec.pop("_comparisons", None) or []
+            for c in comps:
+                key = (run_id, rec.get("finding_id"), c.get("spec_hash"))
+                if key in seen:
+                    continue
+                seen.add(key)
+                looks.append({"run_id": run_id, "finding_id": rec.get("finding_id"),
+                              "test": c.get("test"), "spec_hash": c.get("spec_hash"),
+                              "n_comparisons": int(c.get("n_comparisons") or 1),
+                              "confirmation_set": rec.get("confirmation_set")})
+            if comps:
+                on_set = [lk for lk in looks if lk.get("confirmation_set") == rec.get(
+                    "confirmation_set")]
+                rec["looks"] = {"confirmation_set": rec.get("confirmation_set"),
+                                "n_looks_on_set": len(on_set),
+                                "n_comparisons_on_set": sum(lk["n_comparisons"]
+                                                            for lk in on_set)}
+            fid = rec.get("finding_id")
+            if fid:
+                findings[str(fid)] = rec
+            written.append(rec)
+        by_set = {}
+        for lk in looks:
+            s = by_set.setdefault(str(lk.get("confirmation_set")),
+                                  {"n_looks": 0, "n_comparisons": 0})
+            s["n_looks"] += 1
+            s["n_comparisons"] += int(lk.get("n_comparisons") or 1)
+        cm._atomic_write(path, {"schema_version": SCHEMA_VERSION, "note": LEDGER_NOTE,
+                                "bar": HONEST_BAR, "findings": findings, "looks": looks,
+                                "by_set": dict(sorted(by_set.items()))})
+    return written
+
+
+def summary_lines(root: Path) -> list:
+    """Campaign-summary lines; [] when the ledger does not exist (so a summary
+    is unchanged until the flag has recorded something)."""
+    path = Path(root) / LEDGER_REL
+    if not path.exists():
+        return []
+    title = ["", "## Side findings on unseen windows (E-072; information only, not proven)", ""]
+    try:
+        doc = _load_yaml(path) or {}
+    except (yaml.YAMLError, OSError, UnicodeDecodeError) as exc:
+        return title + [f"- {LEDGER_REL} is unreadable ({type(exc).__name__}); fix or remove it."]
+    findings = doc.get("findings") if isinstance(doc, dict) and isinstance(
+        doc.get("findings"), dict) else {}
+    counts = {}
+    for rec in findings.values():
+        v = rec.get("confirmation_sign_retained") if isinstance(rec, dict) else None
+        key = {True: "held", False: "not held", PENDING: "pending"}.get(v, "not measured")
+        counts[key] = counts.get(key, 0) + 1
+    lines = title + [f"- Side findings: {len(findings)} ("
+                     + ", ".join(f"{k} {counts.get(k, 0)}"
+                                 for k in ("held", "not held", "pending", "not measured")) + ")"]
+    for s, c in sorted((doc.get("by_set") or {}).items()):
+        if isinstance(c, dict):
+            lines.append(f"  - confirmation set {s}: {c.get('n_looks')} look(s), "
+                         f"{c.get('n_comparisons')} comparison(s)")
+    return lines

@@ -1523,6 +1523,43 @@ feed that is not wired, one row per such feed in
      scaffolding) is a structured deviation in `artifacts/deviations.yaml`
      (`source: code_diff_from_start_config`), listed by 1b or not. A composite
      source carries no start config.
+9. **Exploration and confirmation windows** (E-072, D-080,
+   `orchestrator.explore_confirm.enabled`, off by default; requires
+   `reader_findings` and `variant_loop`). Off, items 1-8 are exactly as above.
+   On (`tools/explore_confirm.py`; design and defaults in
+   `engineering/roadmap/E-072/PHASE_A.md`):
+   - **The split:** at protocol_execution entry, before any backtest,
+     `artifacts/explore_confirm.yaml` records the run's protocol windows in
+     time order, first half exploration, the rest confirmation (an odd count
+     gives the extra window to confirmation; fewer than 2 windows stops the run
+     before any spend). A re-run keeps the file.
+   - **What the readers see:** only `artifacts/exploration/` copies of every
+     input that carries a result -- the five reports (cut to the exploration
+     windows; the pooled `overall` slices `withheld`), the grid (window criteria
+     re-evaluated on those windows; pooled criteria and the idea status
+     `withheld`), the claim digest (measured again on those windows), the
+     earlier findings and the registry summary (their numbers `withheld`) --
+     plus `readers_v3/EXPLORATION.md`; `claim_measurement.yaml` is not given.
+     A missing report, grid or registry copy stops the reader; a digest or
+     findings copy that cannot be written is a recorded gap (item 8's rule).
+     Never the all-window file instead. The run's own grid, idea status and
+     routing are unchanged.
+   - **Confirmation, after every reader:** each side finding's tests on the
+     confirmation windows. A pure (price-only) finding is measured in this run
+     on the base variant's bars; a forecast/regime block claim (or a finding
+     whose `config_change` alters what its tests read) is `pending` until the
+     run built from it (its brief's `candidate.source.proposal_ref`) measures
+     its own claim on its own confirmation windows -- not when those overlap
+     the windows the proposer saw. Result: `confirmation_sign_retained: true /
+     false / pending` (true only when every test keeps the claimed sign at every
+     horizon with a value; no events is false; `null` only when nothing could
+     be measured), in `artifacts/confirmation.yaml` and
+     `campaign_record/confirmations.yaml`.
+   - **Looks:** the ledger counts every look per confirmation set (tests and
+     test x horizon comparisons; a resume never counts twice) and the campaign
+     summary shows "Side findings on unseen windows". The bar is "the sign held
+     on unseen windows, counted against the looks", never "proven".
+     Information only: nothing routes, stops, parks or ranks on it.
 
 ---
 
