@@ -230,7 +230,8 @@ def claim_result_digest(run_dir: Path) -> dict:
            "information_only": True}
     try:
         # E-068 nearest build: a run that tested an approximation says so first
-        # (deviations.yaml exists only under orchestrator.nearest_build).
+        # (deviations.yaml exists only under orchestrator.nearest_build or for a
+        # side finding's start config, CUL-412).
         import nearest_build as nb
         block = nb.approximation_block(nb.load_record(arts))
         if block:

@@ -1488,11 +1488,16 @@ feed that is not wired, one row per such feed in
    - **Output:** `proposals/<category>.yaml` is ONE mapping: `schema_version: 3`,
      `reading_id`, `model_id`, `rubric_version: <category>-reading-v1`,
      `explanation`, `evidence`, `side_findings` (0-2, each a full claim block plus
-     evidence and scores) and `patch` (null or one). No verdict field. Where it is
+     evidence and scores, optionally with `config_change`: the
+     `[{component_id, field, before, after}]` change to test the claim with).
+     No verdict field. **One proposal kind (D-078):** the stand-alone `patch` is
+     removed from what a reader writes; a reading carrying one is refused with a
+     message naming `config_change` (salvage drops it). A LEGACY reading with a
+     `patch` still loads and flattens as before. Where it is
      written, code checks each side finding with `claim_card.check_claim`,
-     resolves the patch against the base config (`decide_next.resolve_patch`)
-     and refuses a patch under a scaffolding path; a refusal gets the one retry,
-     then each item is kept or dropped on its own. Warnings only, in the audit
+     resolves its `config_change` against the base config
+     (`decide_next.resolve_patch`) and refuses a change under a scaffolding path;
+     a refusal gets the one retry, then each item is kept or dropped on its own. Warnings only, in the audit
      log (`reading_review`): a test whose `spec_hash` is already in the findings
      or is this run's own claim test; a block-kind claim whose tests cannot see
      the block. `tests: none` adds a `test_requests.yaml` row. v2 list files and
@@ -1504,6 +1509,20 @@ feed that is not wired, one row per such feed in
      a later decision can offer it again; once the first one's finding is
      recorded it carries a `repeats_measured_spec` warning (repeats warn, never
      refuse, by decision; with approval mode on, the operator sees it).
+   - **The start config (CUL-412, D-078):** a side finding starts from the
+     source run's base config and block manifest (its `config_change` applied,
+     when it has one). Decide-next marks it INFEASIBLE when they are not on disk
+     or the change does not resolve; a change gets a novelty key like a patch
+     (NOVEL / REPEAT), an unchanged start is `NOT_APPLICABLE` ("a new claim on
+     it"); same tests collapse only on the same config. The brief carries
+     `candidate.start_config` / `start_manifest` (never `config` / `manifest`,
+     which mark a pass-through) and `source.start_config_sha256`. Step 1b gets
+     them as `artifacts/start_config.json` / `start_block_manifest.yaml` plus
+     `START_FROM_CONFIG.md`; after 1b's manifest is accepted, every difference
+     between what 1b built and the start (config leaves, the manifest's block or
+     scaffolding) is a structured deviation in `artifacts/deviations.yaml`
+     (`source: code_diff_from_start_config`), listed by 1b or not. A composite
+     source carries no start config.
 
 ---
 
