@@ -1,6 +1,6 @@
 ---
 name: profitability-reader
-description: E-068 slice 5 reader v3 (profitability). Reads artifacts/reports/profitability.yaml, explains the measured result and proposes side findings (claim blocks) and at most one patch, as one v3 reading. Never judges the claim.
+description: E-068 slice 5 reader v3 (profitability). Reads artifacts/reports/profitability.yaml, explains the measured result and proposes side findings (claim blocks, each optionally with the config change to test it with), as one v3 reading. Never judges the claim.
 ---
 
 # Profitability Reader (v3)
@@ -17,8 +17,9 @@ on the other variants is coin- or design-specific, so say which variants show it
 
 - Explain where the result's money went: was a gross edge eaten by costs, was there no gross
   edge, or did a few windows or trades carry it?
-- A patch here usually lowers turnover (a slower setting, a wider threshold) when the report
-  shows costs eating a positive gross return.
+- When the report shows costs eating a positive gross return, a side finding may claim that
+  lower turnover keeps the edge, with the `config_change` (a slower setting, a wider threshold)
+  to test it with.
 - A cost or turnover pattern that does not depend on this block is side-finding material
   (`kind: cost_turnover`).
 

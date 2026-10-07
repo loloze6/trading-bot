@@ -1461,9 +1461,17 @@ feed that is not wired, one row per such feed in
      written by code before the first reader, `artifacts/claim_result_digest.yaml`
      (the claim's tests and each variant's effect sizes from its
      `claim_test.yaml`, numbers only when measured on this attempt's bars, else
-     `stale`) and `artifacts/findings_summary_for_readers.yaml` (earlier runs'
+     `stale`; and, CUL-410, `variant_patches`: each variant's id, kind, symbol
+     and exact patch from `variant_patches.yaml`, so a reader never infers a
+     variant's settings from its name) and `artifacts/findings_summary_for_readers.yaml` (earlier runs'
      findings from the campaign memory, this run left out, newest 10, compact);
-     `claim_status.yaml` when it exists. If either code-written file cannot be
+     `claim_measurement.yaml` when it exists (an older run's `claim_status.yaml`,
+     its name before D-077). The digest labels every number with its statistic
+     (`statistic_label`, e.g. rank IC (Spearman) vs a difference of means;
+     CUL-413), and with this flag on the forecast_power report carries
+     `statistic_labels` (its `forecast_return_corr` is a Pearson correlation of
+     the forecast with the next bar's return on active bars). If either
+     code-written file cannot be
      written (e.g. an OSError), the stage does not stop: the error is printed and
      listed in `artifacts/reader_input_gaps.yaml`, an older copy is removed when
      possible (a file named there counts as missing even if it is still on disk),
@@ -1480,11 +1488,16 @@ feed that is not wired, one row per such feed in
    - **Output:** `proposals/<category>.yaml` is ONE mapping: `schema_version: 3`,
      `reading_id`, `model_id`, `rubric_version: <category>-reading-v1`,
      `explanation`, `evidence`, `side_findings` (0-2, each a full claim block plus
-     evidence and scores) and `patch` (null or one). No verdict field. Where it is
+     evidence and scores, optionally with `config_change`: the
+     `[{component_id, field, before, after}]` change to test the claim with).
+     No verdict field. **One proposal kind (D-078):** the stand-alone `patch` is
+     removed from what a reader writes; a reading carrying one is refused with a
+     message naming `config_change` (salvage drops it). A LEGACY reading with a
+     `patch` still loads and flattens as before. Where it is
      written, code checks each side finding with `claim_card.check_claim`,
-     resolves the patch against the base config (`decide_next.resolve_patch`)
-     and refuses a patch under a scaffolding path; a refusal gets the one retry,
-     then each item is kept or dropped on its own. Warnings only, in the audit
+     resolves its `config_change` against the base config
+     (`decide_next.resolve_patch`) and refuses a change under a scaffolding path;
+     a refusal gets the one retry, then each item is kept or dropped on its own. Warnings only, in the audit
      log (`reading_review`): a test whose `spec_hash` is already in the findings
      or is this run's own claim test; a block-kind claim whose tests cannot see
      the block. `tests: none` adds a `test_requests.yaml` row. v2 list files and
@@ -1496,6 +1509,20 @@ feed that is not wired, one row per such feed in
      a later decision can offer it again; once the first one's finding is
      recorded it carries a `repeats_measured_spec` warning (repeats warn, never
      refuse, by decision; with approval mode on, the operator sees it).
+   - **The start config (CUL-412, D-078):** a side finding starts from the
+     source run's base config and block manifest (its `config_change` applied,
+     when it has one). Decide-next marks it INFEASIBLE when they are not on disk
+     or the change does not resolve; a change gets a novelty key like a patch
+     (NOVEL / REPEAT), an unchanged start is `NOT_APPLICABLE` ("a new claim on
+     it"); same tests collapse only on the same config. The brief carries
+     `candidate.start_config` / `start_manifest` (never `config` / `manifest`,
+     which mark a pass-through) and `source.start_config_sha256`. Step 1b gets
+     them as `artifacts/start_config.json` / `start_block_manifest.yaml` plus
+     `START_FROM_CONFIG.md`; after 1b's manifest is accepted, every difference
+     between what 1b built and the start (config leaves, the manifest's block or
+     scaffolding) is a structured deviation in `artifacts/deviations.yaml`
+     (`source: code_diff_from_start_config`), listed by 1b or not. A composite
+     source carries no start config.
 
 ---
 
@@ -1558,6 +1585,19 @@ the attempt the entry describes, otherwise `not_measured` / `stale`. The
 stage then writes `artifacts/findings_summary.yaml` (every finding so far,
 deterministic). Information only: an error is recorded (`status: error`) and
 the stage continues; no prompt reads either yet.
+
+**Claim tests show the number only (D-077).** With `orchestrator.claim_tests`
+on, a claim's tests are checked (`tools/claim_card.py`), measured after the
+backtests (`tools/claim_measure.py` -> `artifacts/claim_measurement.yaml`;
+`claim_status.yaml` before D-077, still read for older runs) and recorded as
+findings; nothing grades the claim. The grading path of `tools/claim_tests.py`
+(its significance methods, its grading rule, the calibration gate with
+`tools/claim_tests_calibration.py`, and its grading CLI) is **PARKED
+(CUL-394)**: kept as code and tested, called by no run, reader or prompt. A few
+internal field names keep the older word (`verdict_possible` in
+`claim_check.yaml` / `claim_test_status.yaml`, the `claim_status` key inside
+the measurement file); they are names only. The real pass/fail is unchanged:
+the profit bars, the count of all attempts, and the holdout.
 
 A run with component errors gets the fault-only form instead:
 `{run_id, hypothesis_id (null if hypothesis_card.yaml is unreadable), legacy:
@@ -3005,7 +3045,7 @@ market_type are not `tradable: true` — **or are undeclared**
 | `config/campaign_config.yaml` | Named constants for the orchestrator; drift-guarded by test |
 | `config/indicator_library.yaml` | 15 seeded entries: regime_affinity, crowding_risk, data_requirements per indicator class |
 | `feed_wishlist.yaml` | Feeds needed but not yet available (liquidation_data); argument for each. `trigger_condition.predicate` is a structured, machine-checkable expression evaluated by `workflow/run_campaign.py::evaluate_wishlist_predicate()` — no longer human-reviewed prose. `status`/`last_evaluated_at`/`last_evaluated_against`/`kb_state_hash`/`evaluation_note` are written ONLY by `evaluate_and_persist_wishlist_predicate()` (single authority — never hand-edit); a persisted `status` is only trustworthy if its `kb_state_hash` matches a fresh `sha256` of `campaign_knowledge_base.yaml`'s current bytes. See `RUNBOOK.md` section 3 and `docs/CONCEALMENT_INSTRUCTION_DOCTRINE.md`. |
-| `config/detector_wishlist.yaml` | Parked detector ideas (daily-timeframe overlay, ADX threshold, hidden Markov model). A list only: it gates and pauses nothing (D-052). A regime idea goes through the normal path with its ungated design variant. |
+| `campaign_record/detector_wishlist.yaml` | (In `config/` before D-077; an older checkout's copy there is still read.) Parked detector ideas (daily-timeframe overlay, ADX threshold, hidden Markov model). A list only: it gates and pauses nothing (D-052). A regime idea goes through the normal path with its ungated design variant. |
 | `campaign_knowledge_base.yaml` | Durable findings store — see the file itself for the current count; this table doesn't track a point-in-time number. |
 | `campaign_record/campaign_memory.yaml` | Per-run memory (E-058 S2a), written only by stage 17 `regroup_record` when `orchestrator.regroup_record.enabled` is on (off by default). One entry per `run_id`; fields in the stage 17 block. No old runs; those live in `campaign_knowledge_base.yaml`. |
 | `campaign_record/data_requests.yaml` | Append-only `{requests: [...]}` intake of the feed-acquisition lane. Two writers, both through `run_phase1_research._append_data_requests`: the data-availability gate's per-variant declines (`stage: data_availability_gate`, `{run_id, stage, variant_id, outcome, reason, reasons}`; idempotent only under `verdict_routing_retired`), and (E-035 S2c) stage 16's `requires_feed` proposals (`stage: specialist_reader`, one row per feed that is not wired: `{run_id, stage, feed, request: acquisition|designation, proposals: [{category, proposal_id, reason}], reason}`, always idempotent on `campaign_review_retired.feed_request_key` = run, stage, feed; the gate's rows keep `request_key` = run, stage, variant, reason). Existing rows are never rewritten. Decide-next records its row count as information; the binding check is its own `requires_feed` feasibility gate. |

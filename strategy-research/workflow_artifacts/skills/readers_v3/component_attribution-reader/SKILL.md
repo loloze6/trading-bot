@@ -1,6 +1,6 @@
 ---
 name: component_attribution-reader
-description: E-068 slice 5 reader v3 (component_attribution). Reads artifacts/reports/component_attribution.yaml, explains the measured result and proposes side findings (claim blocks) and at most one patch, as one v3 reading. Never judges the claim.
+description: E-068 slice 5 reader v3 (component_attribution). Reads artifacts/reports/component_attribution.yaml, explains the measured result and proposes side findings (claim blocks, each optionally with the config change to test it with), as one v3 reading. Never judges the claim.
 ---
 
 # Component Attribution Reader (v3)
@@ -20,8 +20,8 @@ variants show it.
   attribute.
 - A component whose output is constant or near-constant contributes nothing by itself; say so,
   but that alone is not evidence for a change.
-- A component that behaves differently by regime or window is worth explaining; a patch may
-  re-weight or re-set it.
+- A component that behaves differently by regime or window is worth explaining; a side finding
+  may claim what re-weighting or re-setting it would show, with that `config_change`.
 
 Read the other inputs only to explain your report: the claim and its measured numbers
 (`hypothesis_card.yaml`, `claim_result_digest.yaml`), the grid, the base config and the

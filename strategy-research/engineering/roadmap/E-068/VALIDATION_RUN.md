@@ -595,3 +595,249 @@ the claim pre-filled. Its queue entry is **`blocked_on_operator_approval`**.
 | 5 | The claim statement names eras outside the test period (2024, 2025). | noted (information only) |
 
 No fix was made during the run. The nearest-build PR is next.
+
+## Runs after PR #333: the nearest build on run_071, and the pre-filled claim (2026-10-05)
+
+**Setup**
+- `c4/flag-set` at `ee94ce03` (master with #333), with `orchestrator.nearest_build.enabled: true`
+  (register state "on").
+- Every flag read through the code's own readers: claim_tests, reader_findings, nearest_build,
+  operator_approval, decide_next and config_direct_authoring all true. The pre-flight passed and
+  the budget is 1.8M.
+- Two launches, each with no campaign running and a dry run first. Operator cap: about $3.
+
+### Run (1): run_071 resumed (`--unpark E068_hourly_shock_reversal_kraken_perp__more_1`, `--once`)
+
+**In short:** this time 1b built the nearest version instead of parking, and the run went to the
+end: `completed_refuted`, median Sharpe -9.73, profit bars FAIL. The claim was measured and the
+deviations are shown first everywhere.
+- Spend for this launch: $0.893. run_071's total is $1.198 / 891,102 weighted tokens (49.5% of
+  1.8M), including the first launch's $0.305 park.
+- Every call took 1 turn; `holdout_reserved: false`.
+- `--unpark` was accepted: the park marker named no class (`classes: []`). The run resumed at 1b.
+
+**(a) The claim card.** It is unchanged from run_071's first launch (1a ran then).
+- Claim: `conditional_behaviour`; one test `event forecast >= 12`, fwd_return 1-4h, `mean_diff`,
+  `greater`.
+- It reads the block's forecast, so `claim_match.yaml` gives `block_visibility: ok` and
+  `claim_revision.yaml` is `not_needed`.
+- Caveats still true (CUL-397): the absolute threshold depends on 1b's scale (CLAIM_TESTS.md now
+  prefers a quantile, from #333), and only the up side is tested.
+
+**How 1b built the nearest version.** `decision.yaml` reads `status: spec_ready`, with three
+structured deviations:
+
+| Clause | Built instead | Missing (became a request row) |
+|---|---|---|
+| body fraction >= 0.70 | `PriceEvolutionComponent(period=1)` + `ratio_to_mean` + `scale(10)` (the 1-bar close move, normalised) | (close-open)/(high-low) of the current bar |
+| close in the top/bottom 10% of the bar's own range | `DonchianBreakoutComponent(period=20)` + `ratio_to_mean` + `scale(10)` (position in the last 20 bars' range) | close percentile within the current bar's high-low |
+| fixed 4-bar hold | none (forecast regenerated each bar) | position state / time-based exit |
+
+- 1b chose `ratio_to_mean`, not the O-21 `zscore` form.
+- The second deviation uses a 20-bar range instead of the bar's own range. That is a real change
+  of meaning, and it is stated as one in `effect`.
+
+**Where the deviations appear:**
+- `artifacts/deviations.yaml`: `status: approximation`, 3 items, plus the `DEVIATION:` lines.
+- Console: "🧩 [E-068] this run tested an approximation of the idea: body_fraction >= 0.70 ... ->
+  PriceEvolutionComponent(period=1, ...) ...; ... (3 deviation(s) ...)".
+- **The finding** (`campaign_memory.yaml` run_071): `approximation` is its FIRST key, with
+  `n_deviations: 3` and the line.
+- **The findings-summary row:** `deviations: 3` as its first key.
+- **The readers' digest:** `approximation` comes right after the header, before the claim.
+- `claim_match.yaml`: the line, plus "-- the claim's tests measure the config as built, not the
+  idea as written".
+- `component_requests.yaml`: three rows `kind: deviation, run_continued: true` (one per missing
+  piece). Decide-next's request count does not include them.
+
+**(b) The claim measurement and the finding.** `claim_status: measured`, 3 tests measured
+("measured, not proven", no p-value).
+
+| Variant (coin) | 1h | 2h | 3h | 4h | events |
+|---|---|---|---|---|---|
+| base (BTC) | +2.1 bp (4/6) | +3.3 (5/6) | +4.9 (4/6) | +5.9 (4/6) | 1,857 |
+| donchian_faster_10bar (BTC) | +1.4 (5/6) | +3.4 (5/6) | +3.7 (3/6) | +4.7 (4/6) | ~2,053 |
+| solana_smart_contract (SOL) | 0.0 (2/6) | -2.7 (2/6) | +1.5 (2/6) | +3.8 (2/6) | ~1,955 |
+
+The effect is the mean forward return of the selected bars minus all other bars; "4/6" is the
+windows with the claimed sign.
+- **Reading, measured not proven:** on BTC, bars with a high built forecast are followed by a
+  slightly higher return for 1-4h (continuation, as claimed), in most windows. On SOL there is no
+  consistent sign.
+- **This is the built approximation,** not the body-fraction idea: the finding's `approximation`
+  block says so first.
+- **Trading:** the strategy itself lost money (Sharpe -9.7, 14,337 trades on base). The small
+  effect does not pay its costs.
+
+**(c) The readers:**
+
+| Reader | Outcome | Cost | Weighted | Input | Output |
+|---|---|---|---|---|---|
+| profitability | ran | $0.158 | 121,830 | 35,536 | 15,480 |
+| trade_efficiency | ran | $0.186 | 141,859 | 43,643 | 17,459 |
+| forecast_power | ran | $0.109 | 83,731 | 25,329 | 10,412 |
+| component_attribution | ran: 2 components, so not skipped | $0.116 | 83,354 | 32,659 | 8,504 |
+| regime_power | skipped (`regime_detector_scaffolding`) | $0 | | | |
+| **Total** | | **$0.569** | **430,774** | | |
+
+- **profitability:** no gross edge; costs are not the cause. Two side findings, both `tests: none`
+  (test requests, ineligible as candidates). No patch.
+- **trade_efficiency:** entries come after the move is priced in.
+  - Side finding `trade_efficiency-run_071-1`: event `forecast < 6`, mean_diff. Valid, and it reads
+    the block.
+  - Patch `trade_efficiency-run_071-2`: `move_magnitude.params.period` 1 -> 4, resolved against
+    the real config (eligible).
+- **forecast_power:** no information (median correlations -0.008 / -0.012 / +0.002). This time it
+  named the variants correctly (base, design, SOL). The digest does not yet carry
+  `variant_patches` (CUL-410, PR #334, not merged).
+- **component_attribution:** the Donchian component's contribution flips sign between 2022 and
+  2023. Side finding `component_attribution-run_071-1`: `quantile forecast top 0.1`, mean_diff.
+  It follows the new quantile advice.
+- **Invented names:** none. No class-name warning came from run_071's readings.
+
+**(d) Decide-next.** It picked `component_attribution-run_071-1` (side finding, rank 1), held as
+`blocked_on_operator_approval`. Also eligible: `trade_efficiency-run_071-1` (rank 3) and the patch
+`trade_efficiency-run_071-2` (rank 4). The `tests: none` findings were ineligible. Only one new
+entry, and it is held.
+
+**(e) Cost per stage (this launch):**
+
+| Stage | Cost | Weighted |
+|---|---|---|
+| 1b (one call) | $0.142 | ~107k |
+| step 2 | $0.182 | 142,685 |
+| readers | $0.569 | 430,774 |
+| **Launch total** | **$0.893** | |
+
+- The four readers cost more than run_073's three ($0.385) because component_attribution ran.
+  They cost less than run_070's five ($0.715).
+- Headroom: 909k of 1.8M left.
+
+**(f) Warning artifacts:**
+- `deviations.yaml` (approximation) and the `claim_match` approximation line;
+- three deviation request rows;
+- the old `VarianceRatioRegimeComponent` warning (repeats);
+- warn-only schema warnings (CUL-404); no `reader_input_gaps.yaml`.
+
+**(g) What broke:** nothing new.
+- 1b's second deviation changes the meaning of "extreme close" (20-bar range, not the bar's own).
+  It is stated as a deviation, which is the point of the feature, but the run then tests a
+  different idea. Visible, not a bug.
+- The claim's absolute threshold (`forecast >= 12`) was written before the quantile advice
+  existed.
+
+### Run (2): run_074 (`--approve profitability-run_073-1`, `--once`): the pre-filled claim
+
+**In short:** the first run started from a v3 reader's side finding. 1a kept the pre-filled claim
+unchanged, and it was measured: a rank IC of the forecast with forward returns of +0.054 at 1-4h,
+positive in 6/6 windows. But 1b built a different block from the one the claim is about
+(CUL-412), and the readers did not mention the measured number (CUL-413).
+- Outcome: `completed_refuted`, median Sharpe -3.73.
+- Spend: $1.022 / 731,787 weighted tokens (40.7%), including a campaign review the cadence
+  triggered. Every call took 1 turn; `holdout_reserved: false`.
+
+**(a) The claim card.**
+- **1a kept the pre-filled claim:** `claim_prefill.yaml` reads `status: unchanged, changed: []`,
+  and the card's `claim` equals the brief's `candidate.claim` exactly.
+- **The claim:** `direction_forecast`, statement "The shock_reversal forecast at period=2 predicts
+  zero forward returns …". Test `shock_reversal_rank_ic`: `selector all`, fwd_return 1-4h,
+  `rank_ic`, `greater`.
+- **It reads the block:** `block_visibility: ok`, so the revision was `not_needed`.
+  `claim_test_status: usable`.
+- **It contradicts itself:** the statement says "zero" (no effect), but the test is a one-sided
+  "greater than zero". A reader wrote a null claim with a directional test.
+
+**How 1b built it (nearest build).** `deviations.yaml` reads `approximation`, with 2 deviations:
+1. "zscore of close relative to SMA" -> `PriceOverextensionHedgeComponent` (-z, z = (close-EMA) /
+   rolling std);
+2. "smooth to period=2" -> an `ema` transform with span 2.
+
+Neither names a missing piece, so no request row was written (correct).
+
+**Not the block the claim is about (CUL-412).** The side finding was about run_073's
+`shock_reversal` (the 1-bar move zscore). A side-finding brief carries only the claim, not the
+source config, so 1a wrote a new signal concept and 1b built an overextension component. The
+claim's statement still names shock_reversal.
+
+**Where the deviations appear:** the finding's first key is `approximation`
+(`n_deviations: 2`); the digest has the block before the claim; `claim_match.yaml` has the line.
+
+**(b) The claim measurement and the finding.** `claim_status: measured` ("measured, not proven"):
+
+| Variant | 1h | 2h | 3h | 4h | windows with the claimed sign | bars |
+|---|---|---|---|---|---|---|
+| base (BTC) | +0.054 | +0.055 | +0.055 | +0.056 | 6/6 at every horizon | ~17,500 |
+| design_longer_smoothing (ema span 4) | +0.044 | +0.046 | +0.047 | +0.049 | 6/6 | ~17,500 |
+
+- **Reading, measured not proven:** the overextension forecast's ranks line up with the next 1-4
+  hours' return ranks, small but in every window. That is short-term mean reversion on BTC hourly.
+- **The trading result is still a loss:** median Sharpe -3.73; the report's median gross PnL is
+  negative. The edge, if real, does not survive this config's churn and costs.
+- **This is the strongest consistent effect measured so far in E-068.** It needs the gauntlet
+  (costs, plateau, eras, holdout rules) before it means anything.
+- `asset_xrp_generalization` was not tested again (data gate REFINE).
+
+**(c) The readers:**
+
+| Reader | Outcome | Cost | Weighted | Input | Output |
+|---|---|---|---|---|---|
+| profitability | ran | $0.106 | 74,925 | 30,496 | 7,359 |
+| trade_efficiency | ran | $0.124 | 87,251 | 35,937 | 8,464 |
+| forecast_power | ran | $0.116 | 91,664 | 23,715 | 12,402 |
+| regime_power | skipped (`regime_detector_scaffolding`) | $0 | | | |
+| component_attribution | skipped (`single_component`) | $0 | | | |
+| **Total** | | **$0.345** | **253,840** | | |
+
+- **None of the three proposed a side finding or a patch.**
+- profitability: no gross edge (median gross PnL negative).
+- trade_efficiency: entry slippage of about 2.5 bp, and oscillating exits on base.
+- **forecast_power (CUL-413):** "zero directional predictive power … median rank IC -0.0019".
+  That number is the report's Pearson correlation with the next bar's return, not a rank IC. The
+  reader's own digest showed the measured rank IC of +0.054 (6/6 windows), and it did not mention
+  it. Both numbers can be true (fat tails), but the explanation mislabels one and omits the other.
+- All three explanations call the block "the shock_reversal forecast at period=2". The component
+  id in the config is still `shock_reversal`, while its class is now PriceOverextensionHedge
+  (CUL-412).
+- **Invented names:** none flagged.
+
+**(d) Decide-next.** It picked `trade_efficiency-run_073-1` (run_073's other rank-IC side finding),
+held as `blocked_on_operator_approval`. The `tests: none` findings from run_073 were ineligible.
+One new entry, held.
+
+**(e) Cost per stage:**
+
+| Stage | Cost | Weighted |
+|---|---|---|
+| 1a | $0.202 | 139,282 |
+| 1b | $0.128 | 93,988 |
+| step 2 | $0.153 | 112,696 |
+| readers | $0.345 | 253,840 |
+| campaign_review | $0.193 | 131,981 |
+| **Total** | **$1.022** | **731,787** (40.7%) |
+
+- The campaign review was triggered by the cadence: "6 recorded runs since the last completed
+  review". It recommended `continue`, recorded, not routed.
+
+**(f) Warning artifacts:**
+- `deviations.yaml` (approximation) and the claim_match line;
+- the claim's statement/test contradiction (null statement, directional test);
+- the repeated `VarianceRatioRegimeComponent` warning; warn-only schema warnings (CUL-404).
+
+**(g) What broke:** CUL-412 (the side finding tested on a different block) and CUL-413 (the
+reader mislabelled the statistic and ignored the measured claim). No fix during the run.
+
+### Both launches together
+
+- **Spend:** $0.893 + $1.022 = **$1.915** against the operator's ~$3. Two launches, as allowed.
+- **Queue now:** `component_attribution-run_071-1` and `trade_efficiency-run_073-1` are both
+  `blocked_on_operator_approval`; nothing is ready.
+- **What worked:**
+  - **nearest build:** run_071, parked before, now ran with three stated deviations;
+  - **deviations shown first** in the finding, the digest and the summary row;
+  - **the pre-filled claim** kept and measured;
+  - **the quantile advice** was already followed by a reader's side finding (run_071).
+- **What did not:**
+  - side findings lose their source block (CUL-412);
+  - the readers' wording of statistics (CUL-413);
+  - `variant_patches` for the readers is still waiting on PR #334 (CUL-410), and run_071's
+    forecast_power named the variants correctly without it.

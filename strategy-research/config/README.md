@@ -14,7 +14,7 @@ tracked file in `strategy-research/config/` (11 files).
 
 | Read at | Files | What that means for you |
 |---|---|---|
-| **Campaign start** (orchestrator startup / queue selection) | `campaign_queue.yaml`, `campaign_baseline_runs.yaml`, `venue_tradability.yaml`, `detector_wishlist.yaml` | Edit before launching a campaign. `run_campaign.py` resolves these while choosing and materializing the next run. |
+| **Campaign start** (orchestrator startup / queue selection) | `campaign_queue.yaml`, `campaign_baseline_runs.yaml`, `venue_tradability.yaml` (and `campaign_record/detector_wishlist.yaml`, moved out of config/ by D-077) | Edit before launching a campaign. `run_campaign.py` resolves these while choosing and materializing the next run. |
 | **Per run** (once per run, at the stage that needs it) | `campaign_data_policy.yaml`, `campaign_config.yaml`, `available_feeds.yaml`, `indicator_library.yaml` | Read fresh each run. An edit lands on the next run, not the current one. |
 | **Per stage / per call** (re-read at every call site, no caching) | `cost_model.yaml`, `regime_retune_winner.json` | `prescreen_signal.py:613` and `run_protocol.py:85` each call `_load_cost_model()` independently. An edit mid-campaign changes some stages and not others — avoid. |
 | **Per commit** (git hook) | `holdout_gate_exemptions.txt` | Read by `holdout_date_gate.sh:57` on every `git commit`. |
@@ -27,7 +27,7 @@ not be picked up.
 
 | Hand-edited by the operator | Written by tooling — **do not hand-edit** |
 |---|---|
-| `cost_model.yaml` | `detector_wishlist.yaml` — *the `trigger_condition` fields only*: `status`, `last_evaluated_at`, `last_evaluated_against`, `kb_state_hash`, `evaluation_note` are written **only** by `run_campaign.py::evaluate_and_persist_wishlist_predicate()` (`:707`). The rest of an entry is hand-authored. |
+| `cost_model.yaml` | `campaign_record/detector_wishlist.yaml` (moved from config/, D-077) — *the `trigger_condition` fields only*: `status`, `last_evaluated_at`, `last_evaluated_against`, `kb_state_hash`, `evaluation_note` are written **only** by `run_campaign.py::evaluate_and_persist_wishlist_predicate()` (`:707`). The rest of an entry is hand-authored. |
 | `campaign_config.yaml` | `campaign_queue.yaml` — written by `run_campaign._save_queue` (`:74`, `:105-126`) via atomic temp-file replace, and schema-validated on every write. |
 | `campaign_data_policy.yaml` | `regime_retune_winner.json` — output of `retune_regime_detector.py:72`. |
 | `available_feeds.yaml` | |
@@ -38,7 +38,7 @@ not be picked up.
 
 ⚠️ Two traps, both learned the hard way:
 
-- **`detector_wishlist.yaml` has been corrupted by hand-editing before.** A
+- **`detector_wishlist.yaml` (now `campaign_record/`) has been corrupted by hand-editing before.** A
   `status: triggered` value was found in it that no evaluator run had ever
   produced (`:16-27`). Before trusting any persisted status, check that its
   `kb_state_hash` still matches a fresh sha256 of the knowledge base's current
@@ -258,6 +258,8 @@ the next stage run.
 ---
 
 ## detector_wishlist.yaml
+
+**MOVED (D-077)** to `campaign_record/detector_wishlist.yaml`, next to the other request files (the campaign summary's "Requests" section counts it). `run_campaign.py` still reads an older checkout's `config/` copy when `campaign_record/` has none.
 
 **PURPOSE** — Candidate regime-detector families, kept as parked ideas.
 *In plain terms: a list of ideas. It gates and pauses nothing (D-052). A regime idea

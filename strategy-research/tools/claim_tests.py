@@ -1,7 +1,7 @@
 """E-068 slice 1 (CUL-386): the claim test engine.
 
-Checks whether an idea's CLAIM is true on the bars a backtest already saved
-(`bars.csv`). A test is one sentence built from four slots
+Measures an idea's CLAIM on the bars a backtest already saved (`bars.csv`).
+A test is one sentence built from four slots
 (engineering/roadmap/E-068/DESIGN_PROPOSAL.md section 3):
 
     On these bars (SELECTOR), what happens next (OUTCOME) is different from
@@ -12,6 +12,18 @@ check_spec/spec_hash and slice 3 (tools/claim_measure.py) uses effect_sizes
 only: no p-value or verdict is ever computed inside a run (CUL-394). The CLI
 reads bars.csv (plus read-only warm-up rows from the data cache) and writes one
 YAML file; it never writes into a run directory.
+
+PARKED (CUL-394, D-077 -- operator, delivery plan v26 cont. 2 section 9 item 1):
+THE VERDICT PATH. The running pipeline has no verdict on a claim: it shows the
+number only. Everything below that exists to grade a claim -- the significance
+methods (the SIGNIFICANCE section below, SIGNIFICANCE_METHODS, `_graded`, `_a851a_horizon`, `fake_window` and the
+null it builds), the VERDICT rule and `combine`, `run_test(calibrated=True)`,
+the calibration gate (CALIBRATION_GATE, `judge_calibration_row`,
+`passed_calibrations`, `calibration_for`, tools/claim_tests_calibration.py)
+and the grading CLI (`grade_claim_file`, `main`) -- is kept as code and kept
+tested, but no run, reader or document of the running pipeline calls it or
+speaks of its verdict. The real pass/fail is unchanged: the profit bars, the
+count of all attempts, and the holdout. Un-parking is a new operator decision.
 
 Blocks (v1, 17):
   selectors   all, event, regime, regime_change, calendar, quantile

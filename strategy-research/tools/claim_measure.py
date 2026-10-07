@@ -53,10 +53,16 @@ NOT_MEASURED = "not_measured"
 NO_EVENTS = "no_events"
 NO_EVENTS_REASON = "the selector matched no bars"
 LABEL = "measured, not proven"
-NOTE = ("effect sizes only: no p-value and no verdict (automatic claim verdicts are "
-        "parked, CUL-394); information only, it never changes idea_status")
+# D-077: written into every measurement file a reader may see, so it names no
+# verdict (the running pipeline shows the number only).
+NOTE = ("effect sizes only, no p-value: the number is shown, the claim is not graded; "
+        "information only, it never changes idea_status")
 VARIANT_FILE = "claim_test.yaml"          # artifacts/variants/<vid>/claim_test.yaml
-RUN_FILE = "claim_status.yaml"            # artifacts/claim_status.yaml
+RUN_FILE = "claim_measurement.yaml"       # artifacts/claim_measurement.yaml (D-077)
+# The same file's name before D-077. Never written; read only when RUN_FILE is
+# absent (a run measured before the rename), and cleared with it.
+OLD_RUN_FILE = "claim_status.yaml"
+RUN_FILES = (RUN_FILE, OLD_RUN_FILE)
 # Why something was not measured: the card's gap (claim_card.GAP_REASONS), or
 BARS_MISSING = "bars_missing"
 HOLDOUT = "holdout"                       # a bar at or after the holdout start: refused
@@ -66,6 +72,18 @@ NO_VARIANTS = "no_graded_variants"
 # "stale_result" (an earlier attempt's protocol_result.yaml), "invalidated"
 _FLOOR_KEY = {"min_events": "n_events", "min_windows": "n_windows_with_events",
               "min_blocks": "n_blocks", "min_eras": "n_eras_with_events"}
+
+
+def run_file_path(arts) -> Path:
+    """The run's measurement file to READ, in `arts` (a run's artifacts/):
+    claim_measurement.yaml when it exists, else the pre-D-077
+    claim_status.yaml when that exists (an older run), else the new name
+    (absent). Writers use RUN_FILE only."""
+    arts = Path(arts)
+    new, old = arts / RUN_FILE, arts / OLD_RUN_FILE
+    if not new.exists() and old.exists():
+        return old
+    return new
 
 
 class HoldoutOverlap(ValueError):
@@ -262,7 +280,7 @@ def _rel(path: str, root: Path) -> str:
 
 
 def run_doc(run_id: str, card_status: dict, variants: dict, skipped: dict | None = None) -> dict:
-    """artifacts/claim_status.yaml: the run's measurement status, next to (never
+    """artifacts/claim_measurement.yaml: the run's measurement status, next to (never
     inside) idea_status.yaml. `card_status`: claim_card.status_of of the run's
     own card. `variants`: {vid: measure_variant(...)}. `skipped`: {vid: reason}
     for variants this attempt does not measure (listed, never counted as
@@ -302,7 +320,7 @@ def run_doc(run_id: str, card_status: dict, variants: dict, skipped: dict | None
 
 
 def error_doc(run_id: str, exc: BaseException) -> dict:
-    """The safety net's claim_status.yaml: grading itself failed."""
+    """The safety net's claim_measurement.yaml: grading itself failed."""
     return {"run_id": run_id, "label": LABEL, "note": NOTE, "information_only": True,
             "claim_status": NOT_MEASURED, "reason": ERROR, "detail": _error(exc),
             "n_tests_measured": 0, "n_tests_not_measured": 0, "variants": {}, "tests": []}

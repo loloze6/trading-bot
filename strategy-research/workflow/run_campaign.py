@@ -1135,9 +1135,26 @@ def _materialize_refinement_run(child_id: str, brief: dict, brief_path: Path):
 # Wishlist-trigger detection (hard pause condition #3)
 # ---------------------------------------------------------------------------
 
+# D-077: every request file lives in campaign_record/. The detector wishlist
+# moved there from config/; an older checkout's config/ copy is still read
+# when campaign_record/ has none.
+DETECTOR_WISHLIST_REL = "campaign_record/detector_wishlist.yaml"
+OLD_DETECTOR_WISHLIST_REL = "config/detector_wishlist.yaml"
+
+
+def _detector_wishlist_path() -> Path:
+    """The detector wishlist to read AND write back (trigger status): the
+    campaign_record/ one, else an older checkout's config/ one when only that
+    exists, else the campaign_record/ path (absent)."""
+    new, old = ROOT / DETECTOR_WISHLIST_REL, ROOT / OLD_DETECTOR_WISHLIST_REL
+    if not new.exists() and old.exists():
+        return old
+    return new
+
+
 def _wishlist_family_names() -> list:
     names = []
-    dw_path = ROOT / "config" / "detector_wishlist.yaml"
+    dw_path = _detector_wishlist_path()
     if dw_path.exists():
         dw = orch.load_yaml(dw_path) or {}
         for c in dw.get("candidates", []):
@@ -1155,7 +1172,7 @@ def _wishlist_family_names() -> list:
 def _gating_wishlist_names() -> list:
     """D-052 (2026-10-01): the wishlist names whose trigger_condition still GATES
     a campaign_review recommendation -- feed_wishlist.yaml entries only.
-    config/detector_wishlist.yaml stays as a list of parked detector ideas but no
+    campaign_record/detector_wishlist.yaml stays as a list of parked detector ideas but no
     longer gates anything: its gate existed only for the deleted A2.3 rule (no
     regime-gated hypotheses / no replacement detector until an ungated edge).
     _wishlist_family_names() still lists both files."""
@@ -1203,7 +1220,7 @@ def _apply_predicate_op(op: str, actual, value) -> bool:
 def _find_wishlist_entry(family_name: str) -> dict | None:
     """Locate family_name's own entry (with its trigger_condition.predicate) in
     detector_wishlist.yaml or feed_wishlist.yaml."""
-    dw_path = ROOT / "config" / "detector_wishlist.yaml"
+    dw_path = _detector_wishlist_path()
     if dw_path.exists():
         dw = orch.load_yaml(dw_path) or {}
         for c in dw.get("candidates", []):
@@ -1334,7 +1351,7 @@ def evaluate_and_persist_wishlist_predicate(family_name: str) -> dict:
     itself was pure (no side effects) and NO code path ever actually wrote
     these fields back, so an orphaned `status: triggered` sat in the real file
     with no corresponding evaluator run (confirmed: grep across the repo for
-    any writer of config/detector_wishlist.yaml finds none outside test
+    any writer of the detector wishlist finds none outside test
     fixtures' tmp_path sandboxes -- it was hand-authored, violating the file's
     own contract). workflow_artifacts/skills/campaign-review/SKILL.md's wishlist-gate section
     instructs the LLM-authored campaign_review stage to read this status
@@ -1361,7 +1378,7 @@ def evaluate_and_persist_wishlist_predicate(family_name: str) -> dict:
     """
     result = evaluate_wishlist_predicate(family_name)
 
-    dw_path = ROOT / "config" / "detector_wishlist.yaml"
+    dw_path = _detector_wishlist_path()
     fw_path = ROOT / "campaign_record" / "feed_wishlist.yaml"
     target_path = None
     container_key = None
@@ -2399,6 +2416,161 @@ def _unpark_entry(entry_id: str) -> bool:
         campaign_lock.release(lock_path)
 
 
+ORPHANED_README = "ORPHANED_README.md"
+# CUL-408 review round 2: the halts whose run itself failed (an allowlist).
+RELAUNCHABLE_REASONS = (STAGE_EXCEPTION_HALT, "unhandled_exception")
+RELAUNCH_NOTE = (" RELAUNCHED {at} (operator, --relaunch): {old} {why}; run_ids cleared so the "
+                 "scheduler starts a fresh run; {record}.")
+SPLIT_CHILD_MARKER = "__split_"   # _add_queue_entry_for_split_child's id shape
+
+
+def _queued_cards_of(queue: dict, entry_id: str, run_id: str) -> list:
+    """The extra cards a run already queued (continuation 2, CUL-408 follow-up):
+    queue entries `<entry_id>__h<n>`, plus the run's own
+    artifacts/queued_hypotheses.yaml when it lists any card. Sorted, unique."""
+    import decide_next as dn
+    found = {e.get("id") for e in queue.get("queue") or []
+             if isinstance(e, dict) and str(e.get("id") or "").startswith(f"{entry_id}__h")}
+    path = ROOT / "runs" / run_id / "artifacts" / dn.QUEUED_HYPOTHESES_FILE
+    if path.exists():
+        doc = orch.load_yaml(path) or {}
+        for card in doc.get("cards") or []:
+            if isinstance(card, dict):
+                found.add(f"{entry_id}__h{card.get('n')}")
+    return sorted(found)
+
+
+def _relaunch_entry(entry_id: str) -> bool:
+    """--relaunch <entry_id> (CUL-408, operator 2026-10-05): a failed entry
+    (`paused:<reason>`, but never a park -- that is --unpark -- nor an operator
+    hold -- that is --approve -- nor a launch or flag pre-flight halt -- that is
+    --resume -- nor a lineage of several runs or a consumed refinement brief --
+    that is by hand) starts again as a FRESH run instead of
+    continuing its last run (a `ready` entry with run_ids continues that run,
+    _next_action_for_entry). Under the campaign lock: writes the repo's orphan
+    convention, runs/<old>/ORPHANED_README.md (reconcile then counts the old
+    run as known, never unexpected), clears run_ids, sets the entry `ready`
+    (priority kept), appends a note and logs RELAUNCH. The old run's files and
+    any trial rows stay as they are. Nothing is minted; decide-next is not called."""
+    lock_path = campaign_lock.lock_path_for(orch.CAMPAIGN_STATE_PATH)
+    try:
+        campaign_lock.acquire(lock_path)
+    except campaign_lock.CampaignLockHeld as exc:
+        print(f"--relaunch refused: {exc}")
+        return False
+    try:
+        queue = _load_queue()  # re-read under the lock
+        entry = next((e for e in queue.get("queue") or []
+                      if isinstance(e, dict) and e.get("id") == entry_id), None)
+        if entry is None:
+            print(f"--relaunch refused: no queue entry {entry_id!r}.")
+            return False
+        status = str(entry.get("status") or "")
+        if status.startswith(PARKED_STATUS_PREFIX):
+            print(f"--relaunch refused: {entry_id} is {status!r}, a park: use --unpark once the "
+                  f"component or data exists (the same run then continues).")
+            return False
+        if not status.startswith("paused:"):
+            print(f"--relaunch refused: {entry_id} is {status!r}; only a failed entry "
+                  f"(paused:<reason>) can be relaunched. An operator hold uses --approve.")
+            return False
+        reason = status[len("paused:"):]
+        if reason in (LAUNCH_EXCEPTION_HALT, FLAG_PREFLIGHT_HALT):
+            # review: a failed LAUNCH is never in run_ids (run_ids[-1] is a healthy
+            # earlier run), and a pre-flight halt is the config's problem
+            print(f"--relaunch refused: {entry_id} is {status!r}: --resume handles it "
+                  f"(RUNBOOK.md §3); relaunching would orphan a run that did not fail.")
+            return False
+        if reason not in RELAUNCHABLE_REASONS:
+            # review round 2: an allowlist -- on every other halt (routing, pre-flight,
+            # a refinement conflict, ...) the run itself did not fail
+            print(f"--relaunch refused: {entry_id} is {status!r}, not a failed run "
+                  f"({', '.join(RELAUNCHABLE_REASONS)}); resolve it as RUNBOOK.md §3 says.")
+            return False
+        if entry.get("refinement_brief_path"):
+            print(f"--relaunch refused: {entry_id} carries a refinement brief "
+                  f"({entry['refinement_brief_path']!r}); its runs form a lineage. Handle it by "
+                  f"hand (RUNBOOK.md §4).")
+            return False
+        run_ids = list(entry.get("run_ids") or [])
+        if not run_ids:
+            print(f"--relaunch refused: {entry_id} is {status!r} but has no run_ids; "
+                  f"--resume relaunches a launch that never created a run.")
+            return False
+        if len(run_ids) > 1 or entry.get("refinement_brief_consumed_for"):
+            # review: a lineage (refinement or continuation child) -- clearing it
+            # would drop earlier runs and re-run the original brief, not the refinement
+            print(f"--relaunch refused: {entry_id} holds a lineage ({run_ids}"
+                  + (", a consumed refinement brief" if entry.get(
+                      "refinement_brief_consumed_for") else "")
+                  + "); relaunching only its last run would drop the rest. Handle it by "
+                  "hand (RUNBOOK.md §4).")
+            return False
+        old = run_ids[-1]
+        if SPLIT_CHILD_MARKER in str(entry_id):
+            # continuation 2 (operator, 2026-10-06): a legacy split child shares its
+            # parent's brief and 1a output; a fresh run would re-run 1a on the brief
+            print(f"--relaunch refused: {entry_id} is a legacy split child (its card came "
+                  f"from the parent run's step 1a, so a fresh run would not get that card). "
+                  f"By hand, with the campaign stopped: continue {old} instead (set the entry "
+                  f"`ready`, run_ids kept), or mark it `superseded` (RUNBOOK.md §4).")
+            return False
+        queued = _queued_cards_of(queue, entry_id, old)
+        if queued:
+            print(f"--relaunch refused: {old} already wrote extra card(s) {queued} (queue "
+                  f"entries, or listed in its queued_hypotheses.yaml); a fresh run's step 1a "
+                  f"would write cards under the same ids. By hand, with the campaign stopped: continue {old} instead (set "
+                  f"the entry `ready`, run_ids kept), or mark this entry `superseded` and add "
+                  f"the card again as a new entry (RUNBOOK.md §4).")
+            return False
+        old_dir = ROOT / "runs" / old
+        why = f"ended {status!r}"
+        readme = (f"# {old} -- kept as a record, not continued\n\n"
+                  f"- Queue entry: `{entry_id}`.\n"
+                  f"- The entry was {status!r} when the operator relaunched it with "
+                  f"`run_campaign.py --relaunch {entry_id}` "
+                  f"({datetime.now(timezone.utc).isoformat()}).\n"
+                  f"- The entry's `run_ids` was cleared, so the scheduler starts a fresh run; "
+                  f"this folder is therefore unreferenced on purpose (CUL-408).\n")
+        has_dir = old_dir.is_dir()
+        record = (f"kept as a record (runs/{old}/{ORPHANED_README})" if has_dir
+                  else f"its folder runs/{old} does not exist (no record written)")
+        entry["status"] = "ready"
+        entry["run_ids"] = []
+        notes = str(entry.get("notes") or "")
+        at = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        entry["notes"] = notes + RELAUNCH_NOTE.format(at=at, old=old, why=why, record=record)
+        _save_queue(queue)
+        if has_dir:
+            # continuation 2: only after the queue save succeeded -- a failed save
+            # must never leave a run marked orphaned while its entry still holds it
+            try:
+                (old_dir / ORPHANED_README).write_text(readme, encoding="utf-8")
+            except OSError as exc:
+                record = (f"its record runs/{old}/{ORPHANED_README} could NOT be written "
+                          f"({exc}); reconcile will list {old} as unexpected")
+                print(f"⚠️  --relaunch: {record}.")
+                # review: never cite a README that was not written -- the note too
+                entry["notes"] = notes + RELAUNCH_NOTE.format(at=at, old=old, why=why,
+                                                              record=record)
+                try:
+                    _save_queue(queue)
+                except OSError as exc2:  # the first save stands; say its note is stale
+                    record += (f"; the queue note still cites the README (re-save failed: "
+                               f"{exc2})")
+                    print(f"⚠️  --relaunch: the queue note for {entry_id} still cites "
+                          f"runs/{old}/{ORPHANED_README} ({exc2}).")
+        _regenerate_summary(queue)
+        _log(f"RELAUNCH {entry_id}: {old} {why}; {record}; entry ready for a fresh run "
+             f"(priority {entry.get('priority')}).")
+        _write_loop_health()
+        if _schedulability_block_enabled():
+            _write_schedulability()
+        return True
+    finally:
+        campaign_lock.release(lock_path)
+
+
 def _approve_entry(entry_id: str) -> bool:
     """--approve <entry_id> (E-068 PR 4, D-071, CUL-399): the operator's
     approval of one entry orchestrator.operator_approval held. Under the
@@ -2598,6 +2770,75 @@ def _summary_closed_brief_lines(queue: dict) -> list:
     return lines
 
 
+# D-077: the campaign summary's "Requests" section -- every request file in
+# campaign_record/, (file, the key holding its rows). OPEN, read from each
+# file's real writers: component_requests.yaml (campaign_review_retired.
+# append_requests: run_id, stage, variant_id, reason, ...), test_requests.yaml
+# (claim_card.append_test_requests / reader_findings.test_request_row) and
+# data_requests.yaml (run_phase1_research._append_data_requests) are append-only
+# with no status, resolved or closed field; feed_wishlist.yaml and
+# detector_wishlist.yaml entries carry only trigger_condition.status, which says
+# whether a trigger fired, not whether the request was served. So no file
+# records a closed request: every row counts as open. "Newest" is file order
+# (the request files are append-only; the wishlists append by hand).
+SUMMARY_REQUEST_FILES = (
+    ("campaign_record/component_requests.yaml", "requests"),
+    ("campaign_record/test_requests.yaml", "requests"),
+    ("campaign_record/data_requests.yaml", "requests"),
+    ("campaign_record/feed_wishlist.yaml", "wishlist"),
+    (DETECTOR_WISHLIST_REL, "candidates"),
+)
+SUMMARY_REQUEST_NEWEST = 3
+_SUMMARY_REQUEST_LINE_CHARS = 110
+
+
+def _summary_request_row(row) -> str:
+    """One short line for one request row (any of the five shapes)."""
+    if not isinstance(row, dict):
+        return " ".join(str(row).split())[:_SUMMARY_REQUEST_LINE_CHARS]
+    who = next((str(row[k]) for k in ("run_id", "feed_name", "family") if row.get(k)), "-")
+    stage = f" ({row['stage']})" if row.get("stage") else ""
+    what = next((row[k] for k in ("missing_block", "feed", "reason", "priority_rationale",
+                                  "description") if row.get(k)), "")
+    text = f"{who}{stage}: {' '.join(str(what).split())}" if what else f"{who}{stage}"
+    text = text.replace("|", "/")
+    if len(text) > _SUMMARY_REQUEST_LINE_CHARS:
+        text = text[:_SUMMARY_REQUEST_LINE_CHARS - 3] + "..."
+    return text
+
+
+def _summary_request_lines() -> list:
+    """The "Requests" section: per request file that exists, its open rows
+    (every row, see SUMMARY_REQUEST_FILES) and the newest few, one line each.
+    No section at all when none of the files exists, so a summary without one
+    is unchanged. An unreadable file is shown as such, never raised."""
+    found = []
+    for rel, key in SUMMARY_REQUEST_FILES:
+        path = _detector_wishlist_path() if rel == DETECTOR_WISHLIST_REL else ROOT / rel
+        if path.exists():
+            found.append((path, key))
+    if not found:
+        return []
+    lines = ["", "## Requests", "",
+             "Open = every row: none of these files records a closed request. Newest last.", ""]
+    for path, key in found:
+        try:
+            doc = orch.load_yaml(path)
+            if doc is not None and not isinstance(doc, dict):
+                raise ValueError("not a mapping")
+            rows = (doc or {}).get(key)
+            rows = [] if rows is None else rows
+            if not isinstance(rows, list):
+                raise ValueError(f"`{key}` is not a list")
+        except Exception as exc:  # noqa: BLE001 -- a summary never fails on a request file
+            lines.append(f"- `{path.name}`: unreadable ({type(exc).__name__}: {exc})"[:200])
+            continue
+        lines.append(f"- `{path.name}`: {len(rows)} open")
+        for row in rows[-SUMMARY_REQUEST_NEWEST:]:
+            lines.append(f"  - {_summary_request_row(row)}")
+    return lines
+
+
 def _regenerate_summary(queue: dict, dry_run: bool = False):
     campaign = orch.load_campaign_state()
     trials = campaign.get("trial_sharpes", [])
@@ -2668,6 +2909,8 @@ def _regenerate_summary(queue: dict, dry_run: bool = False):
     # orchestrator.reader_findings), so a summary without one is unchanged.
     import reader_findings as _reader_findings  # tools/ sibling
     lines += _reader_findings.skip_summary_lines(ROOT)
+    # D-077: the request files in one place. Only when one exists.
+    lines += _summary_request_lines()
     lines += [
         "",
         "## Scoreboard",
@@ -5118,6 +5361,10 @@ if __name__ == "__main__":
                         help="E-068 PR 4 (D-071): approve an entry held by "
                              "orchestrator.operator_approval (blocked_on_operator_approval); "
                              "sets it ready, then exits.")
+    parser.add_argument("--relaunch", metavar="ENTRY_ID",
+                        help="CUL-408: relaunch a failed entry (paused:<reason>, not a park) as "
+                             "a FRESH run: the old run is kept as a record (ORPHANED_README.md), "
+                             "the entry's run_ids is cleared and it is set ready, then exits.")
     subparsers = parser.add_subparsers(dest="command")
     register_parser = subparsers.add_parser(
         "register",
@@ -5152,6 +5399,10 @@ if __name__ == "__main__":
     if args.approve:
         # Like --unpark: takes the campaign lock itself; relaunch to continue.
         sys.exit(0 if _approve_entry(args.approve) else 1)
+
+    if args.relaunch:
+        # Like --unpark: takes the campaign lock itself; launch with --once afterwards.
+        sys.exit(0 if _relaunch_entry(args.relaunch) else 1)
 
     if args.resume:
         if not resume_paused_entry(_load_queue()):

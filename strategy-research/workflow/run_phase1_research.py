@@ -2430,7 +2430,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     RUN_DIR, write=True, variants=_variant_report_meta,
                     failed_variants=failed_variants or None,
                     untested_variants=untested_variants or None,
-                    **({"legacy_verdict_retired": True} if legacy_label_retired else {}))
+                    **({"legacy_verdict_retired": True} if legacy_label_retired else {}),
+                    **_report_statistic_labels_kw())
                 print(f"✅ [E-046a] artifacts/reports/*.yaml written: {sorted(_reports.keys())} "
                       f"(variants: {sorted(_variant_report_meta)}"
                       + (f", failed: {sorted(failed_variants)}" if failed_variants else "")
@@ -2621,7 +2622,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     if _br_tools_path not in sys.path:
                         sys.path.insert(0, _br_tools_path)
                     import build_reports as _br
-                    _reports = _br.build_reports(RUN_DIR, write=True)
+                    _reports = _br.build_reports(RUN_DIR, write=True,
+                                                 **_report_statistic_labels_kw())
                     print(f"✅ [E-046a] artifacts/reports/*.yaml written: "
                           f"{sorted(_reports.keys())}")
                 except Exception as _reports_err:
@@ -4333,7 +4335,8 @@ def _reader_handoff_v3(category: str, run_id: str, stage_attempt, run_dir: Path 
     guide is replaced by CLAIM_TESTS.md (operator, 2026-10-05: a v3 reader
     mostly writes tests; its patch is resolved against the real config by
     code); added: the shared reading contract, this run's measured claim
-    numbers (claim_status.yaml when measured, and the code digest of the
+    numbers (claim_measurement.yaml when measured -- an older run's
+    claim_status.yaml, D-077 --, and the code digest of the
     variants' claim_test.yaml) and the earlier runs' findings.
     One of those two code-written files absent (_write_reader_v3_inputs could
     not write it) is not a stop: it moves to optional_inputs, named as missing
@@ -4348,8 +4351,9 @@ def _reader_handoff_v3(category: str, run_id: str, stage_attempt, run_dir: Path 
                       f"result (artifacts/{_rf.DIGEST_ARTIFACT}) and the grid. Explain the "
                       f"result, then propose at most "
                       f"{_reader_proposals_module().MAX_SIDE_FINDINGS} side findings (each a "
-                      f"claim block whose tests are composed from CLAIM_TESTS.md) and at most "
-                      f"one patch. Output ONE YAML mapping (schema_version: 3, "
+                      f"claim block whose tests are composed from CLAIM_TESTS.md, optionally "
+                      f"with the config change to test it with). Output ONE YAML mapping "
+                      f"(schema_version: 3, "
                       f"reading_id: {category}-{run_id}) -- it is written to "
                       f"artifacts/proposals/{category}.yaml."),
         "required_inputs": [
@@ -4379,7 +4383,7 @@ def _reader_handoff_v3(category: str, run_id: str, stage_attempt, run_dir: Path 
             {"path": "artifacts/block_manifest.yaml",
              "reason": "which config paths are the tested block and which are scaffolding "
                        "(absent on a composition run)"},
-            {"path": "artifacts/claim_status.yaml",
+            {"path": f"artifacts/{_claim_measurement_name(run_dir)}",
              "reason": "the claim measurement's run-level status (absent when nothing was "
                        "measured)"},
         ],
@@ -4420,6 +4424,27 @@ def _reader_v3_missing_inputs(run_dir: Path) -> list:
         recorded = set()
     return [name for name in (rf.DIGEST_ARTIFACT, rf.READER_SUMMARY_ARTIFACT)
             if name in recorded or not (arts / name).exists()]
+
+
+def _report_statistic_labels_kw() -> dict:
+    """CUL-413 (D-077): build_reports' `label_statistics=True` under
+    orchestrator.reader_findings only (the v3 readers); {} otherwise, so the
+    flag-off call -- and the report every v2 reader reads -- is unchanged. A
+    flag that cannot be read gives {} (the stages that own it report it)."""
+    try:
+        return {"label_statistics": True} if _reader_findings_enabled() else {}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _claim_measurement_name(run_dir: Path | None) -> str:
+    """D-077: the run's claim measurement file name to READ --
+    claim_measurement.yaml, or an older run's claim_status.yaml when only that
+    one exists (claim_measure.run_file_path)."""
+    cm = _claim_measure_module()
+    if run_dir is None:
+        return cm.RUN_FILE
+    return cm.run_file_path(Path(run_dir) / "artifacts").name
 
 
 def _reader_findings_module():
@@ -4543,7 +4568,7 @@ def _citation_provenance(category: str, run_dir: Path, body: str) -> dict:
             _rf = _reader_findings_module()
             gone = set(_reader_v3_missing_inputs(run_dir))  # an older copy is not this run's
             rels += tuple(n for n in (_rf.DIGEST_ARTIFACT, _rf.READER_SUMMARY_ARTIFACT)
-                          if n not in gone) + ("claim_status.yaml",)
+                          if n not in gone) + (_claim_measurement_name(run_dir),)
         for rel in rels:
             try:
                 doc = yaml.safe_load((arts / rel).read_text(encoding="utf-8"))
@@ -4611,36 +4636,43 @@ def _scaffolding_pointers(run_dir: Path) -> list:
 
 def _reading_content_errors(doc: dict, category: str, run_dir: Path) -> list:
     """What code checks in a shape-valid reading before it is written: each
-    side finding's claim block (claim_card.check_claim), and the patch
-    resolved against this run's base config (decide_next.resolve_patch, the
-    same check decide-next applies) and never under a scaffolding path of
-    block_manifest.yaml (a deliberately ungated detector is not part of the
-    idea, run_070)."""
+    side finding's claim block (claim_card.check_claim), and its optional
+    config_change resolved against this run's base config
+    (decide_next.resolve_patch, the same check decide-next applies) and never
+    under a scaffolding path of block_manifest.yaml (a deliberately ungated
+    detector is not part of the idea, run_070). Continuation 2: a reading
+    carries no stand-alone patch (refused by the shape check)."""
     rf = _reader_findings_module()
     errors = []
+    base, base_error = None, None
     for i, s in enumerate(doc.get("side_findings") or []):
         review = rf.side_finding_review(s, prior={}, own=set(), run_id=Path(run_dir).name)
         errors += [f"side_findings[{i}]: {e}" for e in review["errors"]]
-    patch = doc.get("patch")
-    if patch is not None:
+        change = s.get("config_change") if isinstance(s, dict) else None
+        if not change:
+            continue
+        where = f"side_findings[{i}].config_change"
         rel = _reader_base_config_rel(run_dir)
-        cfg_path = Path(run_dir) / rel
-        try:
-            base = json.loads(cfg_path.read_text(encoding="utf-8"))
-        except (OSError, ValueError) as exc:
-            return errors + [f"patch: the base config {rel} cannot be read ({exc})"]
-        ops, _patched, why = _decide_next_tools().resolve_patch(patch, base)
+        if base is None and base_error is None:
+            try:
+                base = json.loads((Path(run_dir) / rel).read_text(encoding="utf-8"))
+            except (OSError, ValueError) as exc:
+                base_error = f"the base config {rel} cannot be read ({exc})"
+        if base_error:
+            errors.append(f"{where}: {base_error}")
+            continue
+        ops, _patched, why = _decide_next_tools().resolve_patch({"patch": change}, base)
         if why:
-            errors.append(f"patch: {why} (resolved against {rel}: name a component `id`, a "
+            errors.append(f"{where}: {why} (resolved against {rel}: name a component `id`, a "
                           f"field inside it and its current value from that file)")
-        else:
-            for op in ops:
-                hit = [s for s in _scaffolding_pointers(run_dir)
-                       if op["path"] == s or op["path"].startswith(s + "/")]
-                if hit:
-                    errors.append(f"patch: {op['path']} is under {hit[0]}, which "
-                                  f"block_manifest.yaml lists as scaffolding (not part of the "
-                                  f"idea) -- do not propose changes there")
+            continue
+        for op in ops:
+            hit = [p for p in _scaffolding_pointers(run_dir)
+                   if op["path"] == p or op["path"].startswith(p + "/")]
+            if hit:
+                errors.append(f"{where}: {op['path']} is under {hit[0]}, which "
+                              f"block_manifest.yaml lists as scaffolding (not part of the "
+                              f"idea) -- do not propose changes there")
     return errors
 
 
@@ -4681,9 +4713,10 @@ def _salvage_reading_output(text: str, category: str, run_dir: Path) -> tuple:
     reading itself is unusable (no single block, not YAML, or its explanation
     / evidence / ids / rubric refused), the body is a code-written `skipped`
     reading with rule output_refused_after_retry -- never an empty reading,
-    which would read as "nothing to propose". Otherwise each side finding and
-    the patch is validated on its own: the valid ones are kept, the others
-    dropped and listed. Nothing is repaired: a missing key is not filled in."""
+    which would read as "nothing to propose". Otherwise each side finding is
+    validated on its own: the valid ones are kept, the others dropped and
+    listed. A stand-alone `patch` (removed in continuation 2) is dropped and
+    listed. Nothing is repaired: a missing key is not filled in."""
     rf = _reader_findings_module()
     run_id = Path(run_dir).name
 
@@ -4704,11 +4737,12 @@ def _salvage_reading_output(text: str, category: str, run_dir: Path) -> tuple:
         doc = yaml.safe_load(blocks[0])
     except yaml.YAMLError as exc:
         return _refused(f"not YAML: {exc}")
-    if not isinstance(doc, dict) or not isinstance(doc.get("side_findings"), list) \
-            or "patch" not in doc:
-        return _refused("not a reading mapping with side_findings and patch")
-    sides, patch = doc["side_findings"], doc["patch"]
-    base = {**doc, "side_findings": [], "patch": None}
+    if not isinstance(doc, dict) or not isinstance(doc.get("side_findings"), list):
+        return _refused("not a reading mapping with side_findings")
+    sides = doc["side_findings"]
+    patch = doc.get("patch")
+    base = {k: v for k, v in doc.items() if k != "patch"}
+    base["side_findings"] = []
     err = _check(base)
     if err is not None:
         return _refused(err)
@@ -4721,13 +4755,10 @@ def _salvage_reading_output(text: str, category: str, run_dir: Path) -> tuple:
             dropped.append({"index": i, "proposal_id": s.get("proposal_id")
                             if isinstance(s, dict) else None, "error": err})
     final = {**base, "side_findings": kept}
-    if patch is not None:
-        err = _check({**final, "patch": patch})
-        if err is None:
-            final["patch"] = patch
-        else:
-            dropped.append({"index": "patch", "proposal_id": patch.get("proposal_id")
-                            if isinstance(patch, dict) else None, "error": err})
+    if patch is not None:  # continuation 2: never kept, always listed
+        dropped.append({"index": "patch", "proposal_id": patch.get("proposal_id")
+                        if isinstance(patch, dict) else None,
+                        "error": _reader_proposals_module().PATCH_REMOVED_MESSAGE})
     err = _check(final)
     if err is not None:  # kept items that only fail together
         return _refused(f"kept set refused: {err}")
@@ -4866,8 +4897,8 @@ def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0
             prompt = base_prompt + (
                 "\n\n    YOUR PREVIOUS OUTPUT FAILED VALIDATION:\n    " + error +
                 ("\n\n    Fix exactly this and output ONE fenced ```yaml block holding ONE "
-                 "reading mapping (schema_version: 3; `side_findings: []` and `patch: null` "
-                 "when there is none).\n" if v3 else
+                 "reading mapping (schema_version: 3; `side_findings: []` when there is "
+                 "none).\n" if v3 else
                  "\n\n    Fix exactly this and output ONE fenced ```yaml block holding a YAML "
                  "list of proposals (`[]` for none).\n"))
     debug_path = run_dir / "artifacts" / f"debug_specialist_readers_{category}_raw_output.txt"
@@ -9161,6 +9192,8 @@ async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | 
     # E-068 nearest build: no stale deviations record; NEAREST_BUILD.md under the flag only.
     _clear_stale_deviations(stage_name, RUN_DIR)
     _apply_nearest_build_context(stage_name, handoff, RUN_DIR)
+    # CUL-412: a reader side finding starts 1b from the source run's config.
+    _apply_start_config_context(stage_name, handoff, RUN_DIR)
     # E-068 slice 2: 1a's slot menu and claim-retry context, under claim_tests only.
     _apply_claim_tests_context(stage_name, handoff, RUN_DIR)
     # E-061 C2 S2c: Step 2's variant-shape retry context (see helper docstring).
@@ -15483,10 +15516,91 @@ def _apply_nearest_build_context(stage_name: str, handoff: dict, run_dir: Path) 
                                    "with `core_lost`."})
 
 
+START_FROM_CONFIG_NOTE = ("../../workflow_artifacts/skills/strategy-config-authoring/"
+                          "START_FROM_CONFIG.md")
+
+
+def _brief_start_config(run_dir: Path):
+    """(start_config, start_manifest) of a reader side-finding brief
+    (research_brief.yaml candidate.start_config / start_manifest, CUL-412),
+    or (None, None) for every other brief."""
+    path = Path(run_dir) / "artifacts" / "research_brief.yaml"
+    brief = (load_yaml(path) or {}) if path.exists() else {}
+    cand = brief.get("candidate") if isinstance(brief, dict) else None
+    if not isinstance(cand, dict) or not isinstance(cand.get("start_config"), dict):
+        return None, None
+    manifest = cand.get("start_manifest")
+    return cand["start_config"], manifest if isinstance(manifest, dict) else None
+
+
+def _apply_start_config_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
+    """CUL-412 (operator, 2026-10-06): for a reader side-finding candidate, 1b
+    starts from the source run's config. Code writes it (and the source block
+    manifest) into the run as artifacts/start_config.json and
+    start_block_manifest.yaml and adds both, with START_FROM_CONFIG.md, to 1b's
+    inputs. Input-driven: only such a brief carries a start config (decide-next
+    writes it, under decide_next), so every other run's handoff is untouched."""
+    if stage_name != "strategy_config_authoring":
+        return
+    start, manifest = _brief_start_config(run_dir)
+    if start is None:
+        return
+    nb = _nearest_build_module()
+    arts = Path(run_dir) / "artifacts"
+    (arts / nb.START_CONFIG_FILE).write_text(json.dumps(start, indent=2), encoding="utf-8")
+    inputs = [(START_FROM_CONFIG_NOTE, "E-068 CUL-412: start from the source run's config; "
+                                       "record every change as a deviation."),
+              (f"artifacts/{nb.START_CONFIG_FILE}",
+               "the block the claim is about: the source run's base config (its config "
+               "change applied); your backtest_spec.yaml config starts from it")]
+    if manifest is not None:
+        save_yaml(arts / nb.START_MANIFEST_FILE, manifest)
+        inputs.append((f"artifacts/{nb.START_MANIFEST_FILE}",
+                       "the source run's block manifest: which part of that config is the block"))
+    required = handoff.setdefault("required_inputs", [])
+    for rel, reason in inputs:
+        if not any(req.get("path") == rel for req in required):
+            required.append({"path": rel, "reason": reason})
+
+
+def _record_start_config_deviations(path: Path) -> None:
+    """CUL-412, after 1b's manifest is accepted: every difference between the
+    config 1b built (backtest_spec.yaml) and artifacts/start_config.json, and
+    between its block manifest and the source one, becomes a structured
+    deviation in artifacts/deviations.yaml (added to 1b's own D-075 items, so a
+    change 1b did not list is still recorded). No start config: no-op.
+    Information only: never raises, never changes the route."""
+    try:
+        nb = _nearest_build_module()
+        arts = Path(path) / "artifacts"
+        start_path = arts / nb.START_CONFIG_FILE
+        if not start_path.exists():
+            return
+        start = json.loads(start_path.read_text(encoding="utf-8"))
+        spec = load_yaml(arts / "backtest_spec.yaml") or {}
+        start_manifest = load_yaml(arts / nb.START_MANIFEST_FILE) \
+            if (arts / nb.START_MANIFEST_FILE).exists() else None
+        built_manifest = load_yaml(arts / "block_manifest.yaml") \
+            if (arts / "block_manifest.yaml").exists() else None
+        items = nb.start_deviation_items(start, spec.get("config"), start_manifest,
+                                         built_manifest)
+        record = nb.merge_start_deviations(nb.load_record(arts), Path(path).name, items)
+        save_yaml(arts / nb.DEVIATIONS_FILE, record)
+        if items:
+            print(f"🧩 [CUL-412] 1b changed the source run's config in {len(items)} place(s); "
+                  f"recorded as deviations in artifacts/{nb.DEVIATIONS_FILE}.")
+        else:
+            print("🧩 [CUL-412] 1b kept the source run's config: the claim is tested on the "
+                  "block it is about.")
+    except Exception as exc:  # noqa: BLE001 -- information only
+        print(f"⚠️  [CUL-412] the start-config comparison could not be recorded ({exc}); the "
+              f"run continues.")
+
+
 def _clear_stale_deviations(stage_name: str, run_dir: Path) -> None:
     """E-068 nearest build: a new 1b pass starts without an earlier pass's
-    artifacts/deviations.yaml (written only under the flag, so a no-op
-    otherwise)."""
+    artifacts/deviations.yaml (written under nearest_build, or for a side
+    finding's start config -- CUL-412 -- so a no-op otherwise)."""
     if stage_name != "strategy_config_authoring":
         return
     stale = Path(run_dir) / "artifacts" / _nearest_build_module().DEVIATIONS_FILE
@@ -16120,6 +16234,14 @@ CLAIM_REVISION_SKILL = "claim-revision"      # flag-on-only input; never in _SKI
 CLAIM_REVISION_AUDIT_KEY = "claim_revision_attempt_0"
 CLAIM_BLIND_MESSAGE = ("your tests cannot see the block: base and variants would "
                        "measure the same")
+# CUL-409 (operator, 2026-10-05): a block idea's claim needs a test reading the block.
+CLAIM_NO_BLOCK_TEST_MESSAGE = (
+    "the idea is a {kind} block, but your claim has no test that reads the block's output "
+    "(`{column}`): criteria_refs alone are not enough. Add at least one test whose selector "
+    "or statistic reads `{column}` (CLAIM_TESTS.md), keeping the statement and the kind")
+CLAIM_STILL_NO_BLOCK_TEST_WARNING = (
+    "the claim still has no test that reads the block's output (criteria_refs alone are not "
+    "enough, CUL-409); the run continues and the block is not measured by the claim")
 _CLAIM_LOCKED_KEYS = ("statement", "kind")
 # The real guide (not ROOT-relative: a sandboxed ROOT holds no skills).
 _CLAIM_GUIDE_SOURCE = (Path(__file__).resolve().parent.parent / "workflow_artifacts" / "skills"
@@ -16336,32 +16458,57 @@ def _claim_revision_body(run_dir: Path, run_id: str) -> dict:
     if prior.get("revision_called"):
         # checked before "not needed": after an accepted splice the card's own
         # claim may see the block, but the history must still be reported
-        return {"manifest_kind": kind, "visibility_now": before,
-                **_claim_revision_resumed(claim, prior)}
+        resumed = {"manifest_kind": kind, "visibility_now": before,
+                   **_claim_revision_resumed(claim, prior)}
+        if prior.get("trigger") == cc.BLOCK_TEST_GAP_NO_TEST:  # CUL-409 review: keep it
+            resumed["trigger"] = prior["trigger"]
+            if cc.block_test_gap(claim, kind) is not None:
+                resumed["warning"] = CLAIM_STILL_NO_BLOCK_TEST_WARNING
+        return resumed
     record = {"manifest_kind": kind, "claim_before": claim,
               "claim_before_sha256": _claim_sha256(claim), "visibility_before": before}
     unchanged = {"claim_after": claim, "visibility_after": before}
-    if before != cc.VISIBILITY_BLIND:
+    # CUL-409: the revision also fires when a block idea's claim has no test at all
+    # (criteria_refs only); a blind claim is the original trigger. `tests: none` is
+    # exempt (claim_card.block_test_gap: 1a's explicit "no slot can test this").
+    gap = cc.block_test_gap(claim, kind)
+    if gap is None:
         return {**record, "status": "not_needed", **unchanged}
+    if gap == cc.BLOCK_TEST_GAP_NO_TEST:
+        record["trigger"] = gap
     within, used, budget = _claim_llm_budget(run_dir)
     if not within:
-        return {**record, "status": "skipped_budget",
-                "reason": f"weighted token budget spent ({used:,.0f} > {budget:,.0f})",
-                **unchanged}
-    message = CLAIM_BLIND_MESSAGE
+        return _no_block_test_warning({**record, "status": "skipped_budget",
+                                       "reason": f"weighted token budget spent ({used:,.0f} > "
+                                                 f"{budget:,.0f})", **unchanged})
+    message = (CLAIM_BLIND_MESSAGE if gap == cc.BLOCK_TEST_GAP_BLIND
+               else CLAIM_NO_BLOCK_TEST_MESSAGE.format(kind=kind,
+                                                       column=cc._BLOCK_COLUMN[kind]))
     record["message"] = message
     # written BEFORE the call (with the original claim): a resume never calls
     # twice and never loses what the card held before
     update_state(path=run_dir, **{CLAIM_REVISION_STATE_KEY: {
         "revision_called": True, "revision_at": datetime.now(timezone.utc).isoformat(),
         "manifest_kind": kind, "visibility_before": before, "claim_before": claim,
-        "claim_before_sha256": record["claim_before_sha256"]}})
+        "claim_before_sha256": record["claim_before_sha256"],
+        **({"trigger": gap} if gap == cc.BLOCK_TEST_GAP_NO_TEST else {})}})
     out = _claim_revision_call(run_dir, run_id, card, claim, kind, record, unchanged)
     try:
         update_state(path=run_dir, **{CLAIM_REVISION_STATE_KEY: {
             "status": out.get("status"), "reason": out.get("reason") or out.get("error")}})
     except Exception as exc:  # noqa: BLE001 -- the outcome is in claim_revision.yaml anyway
         out.setdefault("error", f"state not updated: {type(exc).__name__}: {exc}")
+    return _no_block_test_warning(out)
+
+
+def _no_block_test_warning(out: dict) -> dict:
+    """CUL-409: a claim the revision was asked to give a block test, and that
+    still has none (refused, error, budget skip, or an accepted answer without
+    one), carries the warning -- the run continues either way."""
+    if out.get("trigger") == _claim_card_module().BLOCK_TEST_GAP_NO_TEST \
+            and out.get("visibility_after") != _claim_card_module().VISIBILITY_OK \
+            and not out.get("warning"):
+        out["warning"] = CLAIM_STILL_NO_BLOCK_TEST_WARNING
     return out
 
 
@@ -16412,6 +16559,8 @@ def _claim_revision_call(run_dir, run_id, card, claim, kind, record, unchanged) 
     if after == cc.VISIBILITY_BLIND:
         out["warning"] = ("the revised claim passes the code check but its tests still cannot "
                           "see the block; it is kept")
+    elif after != cc.VISIBILITY_OK and record.get("trigger") == cc.BLOCK_TEST_GAP_NO_TEST:
+        out["warning"] = CLAIM_STILL_NO_BLOCK_TEST_WARNING  # CUL-409: none was there before
     elif after != cc.VISIBILITY_OK:
         out["warning"] = ("the revision removed the measurable tests (tests: none or criteria "
                           "only); it is kept, and the claim is no longer measured against "
@@ -16489,10 +16638,13 @@ def _claim_measure_module():
 
 
 def _claim_measure_paths(run_dir: Path) -> list:
-    """This slice's files in a run: artifacts/claim_status.yaml and every
+    """This slice's files in a run: artifacts/claim_measurement.yaml, an older
+    attempt's artifacts/claim_status.yaml (its name before D-077), and every
     artifacts/variants/<vid>/claim_test.yaml."""
     arts = Path(run_dir) / "artifacts"
-    return [arts / "claim_status.yaml"] + sorted(arts.glob("variants/*/claim_test.yaml"))
+    cm = _claim_measure_module()
+    return ([arts / name for name in cm.RUN_FILES]
+            + sorted(arts.glob(f"variants/*/{cm.VARIANT_FILE}")))
 
 
 # When THIS process started the run's current protocol_execution attempt
@@ -16547,7 +16699,7 @@ def _clear_claim_measure_files(run_dir: Path) -> None:
 def _measure_claim_tests_after_backtests(run_dir: Path, run_id: str) -> None:
     """After protocol_execution (run_loop, flag on). Writes
     artifacts/variants/<vid>/claim_test.yaml per variant backtested in this
-    attempt, then artifacts/claim_status.yaml, and counts every test in
+    attempt, then artifacts/claim_measurement.yaml, and counts every test in
     campaign_record/claim_test_coverage.yaml. Never raises, never routes.
     Flag off: no-op."""
     if not _claim_flag_or_none():
@@ -16648,7 +16800,7 @@ def _record_claim_measure_error(run_dir: Path, run_id: str, exc: Exception) -> N
                     f"({type(inner).__name__}); the run continues.")
         return
     for what, write in (
-            ("artifacts/claim_status.yaml", lambda: save_yaml(
+            (f"artifacts/{cm.RUN_FILE}", lambda: save_yaml(
                 Path(run_dir) / "artifacts" / cm.RUN_FILE, doc)),
             ("the coverage record", lambda: cm.record_measured(ROOT, run_id, doc))):
         try:
@@ -16949,6 +17101,7 @@ def determine_post_strategy_config_authoring_route(path: Path, *, routing_retire
         route = _route_block_manifest_check(path)
         if route == "innovation_expansion":
             _record_nearest_build(path)  # E-068 nearest build; flag off: no-op
+            _record_start_config_deviations(path)  # CUL-412; no start config: no-op
             _record_claim_match(path)  # E-068 slice 2: a warning only; flag off: no-op
         return route
     tried_warning = None

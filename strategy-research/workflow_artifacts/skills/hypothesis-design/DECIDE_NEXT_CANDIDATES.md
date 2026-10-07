@@ -15,8 +15,8 @@ candidate only, the rules below replace IMPROVEMENT 08; everywhere else
 IMPROVEMENT 08 stands unchanged.
 
 The candidate comes from a specialist reader's proposal after an earlier run
-(`candidate.source.proposal`: a patch or a new-block sketch, with its
-evidence). That proposal may be a different idea from the one the earlier run
+(`candidate.source.proposal`: a side finding, a patch from an older run, or a
+new-block sketch, with its evidence). That proposal may be a different idea from the one the earlier run
 tested. Write THIS idea's card:
 
 - `hypothesis_id`: exactly `candidate.source.hypothesis_id` (a new idea linked
@@ -36,3 +36,6 @@ tested. Write THIS idea's card:
   CLAIM_TESTS.md is in your inputs, the card still carries its own `claim`.
   Kind `new_block` (no
   `candidate.config`): do not set `pass_through`; 1b authors the config.
+  Kind `side_finding` (`candidate.claim`, and `candidate.start_config` when the
+  earlier run's config is carried): do not set `pass_through`; PREFILLED_CLAIM.md
+  says how to write the card; 1b starts from `candidate.start_config`.
