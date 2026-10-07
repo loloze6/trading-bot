@@ -43,7 +43,7 @@ claim:
     After a daily close in the top 20% of its 20-day range, returns over the next
     1 to 5 days are higher than on other days.
   kind: conditional_behaviour        # one of the kinds in section 4
-  tests:                             # 1 to 3 tests; the claim is supported only if ALL pass
+  tests:                             # 1 to 3 tests; each one is measured on its own
     - name: upper_breakout           # unique within the claim
       selector:  {kind: quantile, field: forecast, side: top, q: 0.2, lookback: 100}
       outcome:   {kind: fwd_return, horizons: [1, 2, 3, 4, 5]}
@@ -52,19 +52,21 @@ claim:
       direction: greater
       floor:     {min_events: 100, min_windows: 4}
       consistency: {unit: window, min_same_sign: 4}   # optional
-  pass_if: >   # restate the code's rule (section 3) in plain words for THIS claim
-    At every horizon, breakout days beat other days significantly, and the effect points
-    the same way in at least 4 windows, with at least 100 breakout days.
-  fail_if: >
-    At any horizon, breakout days are significantly WORSE than other days.
+  pass_if: >   # what the numbers should show if the claim holds (section 3's terms)
+    At every horizon, breakout days have a higher mean return than other days, the effect
+    points the same way in at least 4 windows, with at least 100 breakout days.
+  fail_if: >   # what numbers would contradict the claim
+    At any horizon, breakout days have a LOWER mean return than other days in most windows.
   rationale: >                       # why these tests answer this claim
     If herding drives continuation after a breakout, the days just after it must beat
     ordinary days over the stated horizon; a linear IC over all days would dilute it.
 ```
 
-- **`alpha` and `significance` are set by code.** Never write them.
-- **`pass_if` / `fail_if` decide nothing.** The verdict rule is fixed in code (section 3).
-  Restate that rule in plain words for your claim; do not invent another one.
+- **Never write `alpha` or `significance`.** A claim carrying either is refused.
+- **`pass_if` / `fail_if` are predictions in words.** They say what the measured numbers
+  should show if the claim holds, and what would contradict it, in section 3's terms (sign,
+  horizons, windows, floor). Code measures and shows the numbers; it never reads these two
+  fields.
 - **Horizons are in bars** of the run's timeframe (1h bars: 24 = one day).
 - **Fix the test now, before any data.** It is stored with its hash and never changed after.
 - **The test reads what the block produces** (`forecast`, or `regime` for a regime block). It
@@ -118,10 +120,8 @@ Fields: `forecast` is the block's forecast at bar t; `close` is the price LEVEL 
 largest one-bar rises. `past_return` is empty for the first n bars of each window and
 wherever a bar in between is missing. `bars` is allowed only with `past_return`.
 
-**Regime selectors are effect-size only for now.** No calibrated significance method exists
-for regime labels yet (CUL-391), so such a test reports its effect size and is marked
-`verdict_possible: false`. Write them anyway when the claim is about a regime: the run
-continues normally, and the measured effect is kept.
+**Regime selectors are measured like any other selector.** Write them when the claim is
+about a regime: the run continues normally, and the measured effect is kept.
 
 ### Outcome: what happens next (the label, computed by code)
 
@@ -150,7 +150,7 @@ With `statistic: rank_ic` there is no baseline: write `baseline: null` or leave 
 |---|---|
 | `mean_diff` | mean outcome on the selected bars minus the baseline's mean |
 | `hit_rate` | share of selected bars whose outcome points the claimed way, minus the baseline's share |
-| `rank_ic` | rank correlation of the bar-t `forecast` with the outcome, on the selected bars |
+| `rank_ic` | rank IC: Spearman rank correlation of the bar-t `forecast` with the outcome, on the selected bars (not the Pearson `forecast_return_corr` of the reports) |
 | `decay_curve` | `mean_diff` at each horizon, reported as a curve (use several horizons) |
 
 `direction`: `greater` (the claim says higher / positive) or `less`.
@@ -158,28 +158,27 @@ With `statistic: rank_ic` there is no baseline: write `baseline: null` or leave 
 ### Floor and consistency
 
 - `floor` (required): at least one of `min_events`, `min_windows`, `min_eras`, `min_blocks`,
-  each an int >= 1. Below any floor the result is inconclusive, never a pass. Use
-  `min_events` for a rare event selector; `min_blocks` only means something for `all`.
-- `consistency` (optional): `{unit: window | era, min_same_sign: <int >= 1>}`, meaning the
-  effect must point the claimed way in at least that many windows or eras.
+  each an int >= 1. A horizon below any floor is shown with that floor in `floor_not_met`.
+  Use `min_events` for a rare event selector; `min_blocks` only means something for `all`.
+- `consistency` (optional): `{unit: window | era, min_same_sign: <int >= 1>}`: the number
+  of windows or eras in which the claim expects the effect to point the claimed way (the
+  measurement counts them).
 - Pick floors the windows can reach: an event that fires twice a month will not reach 100
   events in six one-month windows.
 - **Code checks that `min_events` is reachable at all**: at most (bars in the test windows /
   the longest horizon) x coins separate events exist. Below the floor you get one retry
   with the message "at most N separate events are possible, the floor is M: shorten the
   horizon or widen the data"; if it is still below, a warning is recorded and the run
-  continues (the result will then be inconclusive).
+  continues (the measurement then shows that floor as not met).
 
-## 3. The verdict rule (fixed in code; restate it in `pass_if` / `fail_if`)
+## 3. What code measures and shows (write `pass_if` / `fail_if` in these terms)
 
-The floor must be met at every horizon. Then:
-- **supported**: right direction and significant at every horizon, and the consistency rule is met;
-- **refuted**: at any horizon, the OPPOSITE effect is itself significant;
-- **inconclusive**: everything else, including a non-significant wobble in the wrong
-  direction and anything below the floor.
-
-With several tests, the claim is supported only if every test is. A refuted test makes the
-claim refuted. Until a significance method is calibrated, only effect sizes are reported.
+After the backtests, code measures every test on each variant's saved bars and shows, per
+horizon: the effect (the test's statistic, with its sign), the number of events, how many
+windows (and coins, eras) show the claimed sign, and any floor not met -- labelled
+"measured, not proven". It shows the numbers only: the claim is not graded, and nothing in
+the run depends on them. An idea is judged on the grid (its profit bars), the count of all
+attempts and the holdout.
 
 ## 4. Kinds and tests that fit them
 

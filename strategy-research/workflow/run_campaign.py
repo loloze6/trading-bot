@@ -1135,9 +1135,26 @@ def _materialize_refinement_run(child_id: str, brief: dict, brief_path: Path):
 # Wishlist-trigger detection (hard pause condition #3)
 # ---------------------------------------------------------------------------
 
+# D-077: every request file lives in campaign_record/. The detector wishlist
+# moved there from config/; an older checkout's config/ copy is still read
+# when campaign_record/ has none.
+DETECTOR_WISHLIST_REL = "campaign_record/detector_wishlist.yaml"
+OLD_DETECTOR_WISHLIST_REL = "config/detector_wishlist.yaml"
+
+
+def _detector_wishlist_path() -> Path:
+    """The detector wishlist to read AND write back (trigger status): the
+    campaign_record/ one, else an older checkout's config/ one when only that
+    exists, else the campaign_record/ path (absent)."""
+    new, old = ROOT / DETECTOR_WISHLIST_REL, ROOT / OLD_DETECTOR_WISHLIST_REL
+    if not new.exists() and old.exists():
+        return old
+    return new
+
+
 def _wishlist_family_names() -> list:
     names = []
-    dw_path = ROOT / "config" / "detector_wishlist.yaml"
+    dw_path = _detector_wishlist_path()
     if dw_path.exists():
         dw = orch.load_yaml(dw_path) or {}
         for c in dw.get("candidates", []):
@@ -1155,7 +1172,7 @@ def _wishlist_family_names() -> list:
 def _gating_wishlist_names() -> list:
     """D-052 (2026-10-01): the wishlist names whose trigger_condition still GATES
     a campaign_review recommendation -- feed_wishlist.yaml entries only.
-    config/detector_wishlist.yaml stays as a list of parked detector ideas but no
+    campaign_record/detector_wishlist.yaml stays as a list of parked detector ideas but no
     longer gates anything: its gate existed only for the deleted A2.3 rule (no
     regime-gated hypotheses / no replacement detector until an ungated edge).
     _wishlist_family_names() still lists both files."""
@@ -1203,7 +1220,7 @@ def _apply_predicate_op(op: str, actual, value) -> bool:
 def _find_wishlist_entry(family_name: str) -> dict | None:
     """Locate family_name's own entry (with its trigger_condition.predicate) in
     detector_wishlist.yaml or feed_wishlist.yaml."""
-    dw_path = ROOT / "config" / "detector_wishlist.yaml"
+    dw_path = _detector_wishlist_path()
     if dw_path.exists():
         dw = orch.load_yaml(dw_path) or {}
         for c in dw.get("candidates", []):
@@ -1334,7 +1351,7 @@ def evaluate_and_persist_wishlist_predicate(family_name: str) -> dict:
     itself was pure (no side effects) and NO code path ever actually wrote
     these fields back, so an orphaned `status: triggered` sat in the real file
     with no corresponding evaluator run (confirmed: grep across the repo for
-    any writer of config/detector_wishlist.yaml finds none outside test
+    any writer of the detector wishlist finds none outside test
     fixtures' tmp_path sandboxes -- it was hand-authored, violating the file's
     own contract). workflow_artifacts/skills/campaign-review/SKILL.md's wishlist-gate section
     instructs the LLM-authored campaign_review stage to read this status
@@ -1361,7 +1378,7 @@ def evaluate_and_persist_wishlist_predicate(family_name: str) -> dict:
     """
     result = evaluate_wishlist_predicate(family_name)
 
-    dw_path = ROOT / "config" / "detector_wishlist.yaml"
+    dw_path = _detector_wishlist_path()
     fw_path = ROOT / "campaign_record" / "feed_wishlist.yaml"
     target_path = None
     container_key = None
@@ -2753,6 +2770,75 @@ def _summary_closed_brief_lines(queue: dict) -> list:
     return lines
 
 
+# D-077: the campaign summary's "Requests" section -- every request file in
+# campaign_record/, (file, the key holding its rows). OPEN, read from each
+# file's real writers: component_requests.yaml (campaign_review_retired.
+# append_requests: run_id, stage, variant_id, reason, ...), test_requests.yaml
+# (claim_card.append_test_requests / reader_findings.test_request_row) and
+# data_requests.yaml (run_phase1_research._append_data_requests) are append-only
+# with no status, resolved or closed field; feed_wishlist.yaml and
+# detector_wishlist.yaml entries carry only trigger_condition.status, which says
+# whether a trigger fired, not whether the request was served. So no file
+# records a closed request: every row counts as open. "Newest" is file order
+# (the request files are append-only; the wishlists append by hand).
+SUMMARY_REQUEST_FILES = (
+    ("campaign_record/component_requests.yaml", "requests"),
+    ("campaign_record/test_requests.yaml", "requests"),
+    ("campaign_record/data_requests.yaml", "requests"),
+    ("campaign_record/feed_wishlist.yaml", "wishlist"),
+    (DETECTOR_WISHLIST_REL, "candidates"),
+)
+SUMMARY_REQUEST_NEWEST = 3
+_SUMMARY_REQUEST_LINE_CHARS = 110
+
+
+def _summary_request_row(row) -> str:
+    """One short line for one request row (any of the five shapes)."""
+    if not isinstance(row, dict):
+        return " ".join(str(row).split())[:_SUMMARY_REQUEST_LINE_CHARS]
+    who = next((str(row[k]) for k in ("run_id", "feed_name", "family") if row.get(k)), "-")
+    stage = f" ({row['stage']})" if row.get("stage") else ""
+    what = next((row[k] for k in ("missing_block", "feed", "reason", "priority_rationale",
+                                  "description") if row.get(k)), "")
+    text = f"{who}{stage}: {' '.join(str(what).split())}" if what else f"{who}{stage}"
+    text = text.replace("|", "/")
+    if len(text) > _SUMMARY_REQUEST_LINE_CHARS:
+        text = text[:_SUMMARY_REQUEST_LINE_CHARS - 3] + "..."
+    return text
+
+
+def _summary_request_lines() -> list:
+    """The "Requests" section: per request file that exists, its open rows
+    (every row, see SUMMARY_REQUEST_FILES) and the newest few, one line each.
+    No section at all when none of the files exists, so a summary without one
+    is unchanged. An unreadable file is shown as such, never raised."""
+    found = []
+    for rel, key in SUMMARY_REQUEST_FILES:
+        path = _detector_wishlist_path() if rel == DETECTOR_WISHLIST_REL else ROOT / rel
+        if path.exists():
+            found.append((path, key))
+    if not found:
+        return []
+    lines = ["", "## Requests", "",
+             "Open = every row: none of these files records a closed request. Newest last.", ""]
+    for path, key in found:
+        try:
+            doc = orch.load_yaml(path)
+            if doc is not None and not isinstance(doc, dict):
+                raise ValueError("not a mapping")
+            rows = (doc or {}).get(key)
+            rows = [] if rows is None else rows
+            if not isinstance(rows, list):
+                raise ValueError(f"`{key}` is not a list")
+        except Exception as exc:  # noqa: BLE001 -- a summary never fails on a request file
+            lines.append(f"- `{path.name}`: unreadable ({type(exc).__name__}: {exc})"[:200])
+            continue
+        lines.append(f"- `{path.name}`: {len(rows)} open")
+        for row in rows[-SUMMARY_REQUEST_NEWEST:]:
+            lines.append(f"  - {_summary_request_row(row)}")
+    return lines
+
+
 def _regenerate_summary(queue: dict, dry_run: bool = False):
     campaign = orch.load_campaign_state()
     trials = campaign.get("trial_sharpes", [])
@@ -2823,6 +2909,8 @@ def _regenerate_summary(queue: dict, dry_run: bool = False):
     # orchestrator.reader_findings), so a summary without one is unchanged.
     import reader_findings as _reader_findings  # tools/ sibling
     lines += _reader_findings.skip_summary_lines(ROOT)
+    # D-077: the request files in one place. Only when one exists.
+    lines += _summary_request_lines()
     lines += [
         "",
         "## Scoreboard",

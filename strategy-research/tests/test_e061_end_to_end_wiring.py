@@ -2697,7 +2697,7 @@ def test_e068_claim_tests_on_multi_card_then_queued_card_both_complete(harness):
 
     # E-068 slice 3: after the backtests, run 1's claim test was MEASURED on every
     # graded variant's saved bars (effect sizes only); run 2 has no claim to measure.
-    measured1 = h.art(r1, "claim_status.yaml")
+    measured1 = h.art(r1, rpr._claim_measure_module().RUN_FILE)
     assert measured1["claim_status"] == "measured" and measured1["information_only"] is True
     assert measured1["n_tests_measured"] == len(measured1["variants"]) >= 1
     for vid in measured1["variants"]:
@@ -2706,7 +2706,7 @@ def test_e068_claim_tests_on_multi_card_then_queued_card_both_complete(harness):
         assert vdoc["status"] == test["status"] == "measured"
         assert test["label"] == "measured, not proven" and 6 in test["horizons"]
         assert "p_value" not in yaml.safe_dump(vdoc)
-    assert h.art(r2, "claim_status.yaml")["reason"] == "no_claim"
+    assert h.art(r2, rpr._claim_measure_module().RUN_FILE)["reason"] == "no_claim"
     coverage = yaml.safe_load((h.root / "campaign_record" / "claim_test_coverage.yaml")
                               .read_text(encoding="utf-8"))["runs"]
     assert coverage[r1]["usable"] is True and coverage[r2]["reason"] == "no_claim"
@@ -2748,7 +2748,7 @@ def test_e068_claim_measurement_error_never_stops_the_run(harness, monkeypatch):
     st = h.state("run_001")
     assert st.get("last_error") is None, st.get("last_error")
     assert st["status"] == "completed", st["pending_stage"]
-    doc = h.art("run_001", "claim_status.yaml")
+    doc = h.art("run_001", rpr._claim_measure_module().RUN_FILE)
     assert doc["claim_status"] == "not_measured" and doc["reason"] == "error"
     assert "injected measurement bug" in doc["detail"]
     assert h.art("run_001", "idea_status.yaml")             # the grid ran as usual

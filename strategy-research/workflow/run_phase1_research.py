@@ -2430,7 +2430,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     RUN_DIR, write=True, variants=_variant_report_meta,
                     failed_variants=failed_variants or None,
                     untested_variants=untested_variants or None,
-                    **({"legacy_verdict_retired": True} if legacy_label_retired else {}))
+                    **({"legacy_verdict_retired": True} if legacy_label_retired else {}),
+                    **_report_statistic_labels_kw())
                 print(f"✅ [E-046a] artifacts/reports/*.yaml written: {sorted(_reports.keys())} "
                       f"(variants: {sorted(_variant_report_meta)}"
                       + (f", failed: {sorted(failed_variants)}" if failed_variants else "")
@@ -2621,7 +2622,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     if _br_tools_path not in sys.path:
                         sys.path.insert(0, _br_tools_path)
                     import build_reports as _br
-                    _reports = _br.build_reports(RUN_DIR, write=True)
+                    _reports = _br.build_reports(RUN_DIR, write=True,
+                                                 **_report_statistic_labels_kw())
                     print(f"✅ [E-046a] artifacts/reports/*.yaml written: "
                           f"{sorted(_reports.keys())}")
                 except Exception as _reports_err:
@@ -4333,7 +4335,8 @@ def _reader_handoff_v3(category: str, run_id: str, stage_attempt, run_dir: Path 
     guide is replaced by CLAIM_TESTS.md (operator, 2026-10-05: a v3 reader
     mostly writes tests; its patch is resolved against the real config by
     code); added: the shared reading contract, this run's measured claim
-    numbers (claim_status.yaml when measured, and the code digest of the
+    numbers (claim_measurement.yaml when measured -- an older run's
+    claim_status.yaml, D-077 --, and the code digest of the
     variants' claim_test.yaml) and the earlier runs' findings.
     One of those two code-written files absent (_write_reader_v3_inputs could
     not write it) is not a stop: it moves to optional_inputs, named as missing
@@ -4380,7 +4383,7 @@ def _reader_handoff_v3(category: str, run_id: str, stage_attempt, run_dir: Path 
             {"path": "artifacts/block_manifest.yaml",
              "reason": "which config paths are the tested block and which are scaffolding "
                        "(absent on a composition run)"},
-            {"path": "artifacts/claim_status.yaml",
+            {"path": f"artifacts/{_claim_measurement_name(run_dir)}",
              "reason": "the claim measurement's run-level status (absent when nothing was "
                        "measured)"},
         ],
@@ -4421,6 +4424,27 @@ def _reader_v3_missing_inputs(run_dir: Path) -> list:
         recorded = set()
     return [name for name in (rf.DIGEST_ARTIFACT, rf.READER_SUMMARY_ARTIFACT)
             if name in recorded or not (arts / name).exists()]
+
+
+def _report_statistic_labels_kw() -> dict:
+    """CUL-413 (D-077): build_reports' `label_statistics=True` under
+    orchestrator.reader_findings only (the v3 readers); {} otherwise, so the
+    flag-off call -- and the report every v2 reader reads -- is unchanged. A
+    flag that cannot be read gives {} (the stages that own it report it)."""
+    try:
+        return {"label_statistics": True} if _reader_findings_enabled() else {}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _claim_measurement_name(run_dir: Path | None) -> str:
+    """D-077: the run's claim measurement file name to READ --
+    claim_measurement.yaml, or an older run's claim_status.yaml when only that
+    one exists (claim_measure.run_file_path)."""
+    cm = _claim_measure_module()
+    if run_dir is None:
+        return cm.RUN_FILE
+    return cm.run_file_path(Path(run_dir) / "artifacts").name
 
 
 def _reader_findings_module():
@@ -4544,7 +4568,7 @@ def _citation_provenance(category: str, run_dir: Path, body: str) -> dict:
             _rf = _reader_findings_module()
             gone = set(_reader_v3_missing_inputs(run_dir))  # an older copy is not this run's
             rels += tuple(n for n in (_rf.DIGEST_ARTIFACT, _rf.READER_SUMMARY_ARTIFACT)
-                          if n not in gone) + ("claim_status.yaml",)
+                          if n not in gone) + (_claim_measurement_name(run_dir),)
         for rel in rels:
             try:
                 doc = yaml.safe_load((arts / rel).read_text(encoding="utf-8"))
@@ -16614,10 +16638,13 @@ def _claim_measure_module():
 
 
 def _claim_measure_paths(run_dir: Path) -> list:
-    """This slice's files in a run: artifacts/claim_status.yaml and every
+    """This slice's files in a run: artifacts/claim_measurement.yaml, an older
+    attempt's artifacts/claim_status.yaml (its name before D-077), and every
     artifacts/variants/<vid>/claim_test.yaml."""
     arts = Path(run_dir) / "artifacts"
-    return [arts / "claim_status.yaml"] + sorted(arts.glob("variants/*/claim_test.yaml"))
+    cm = _claim_measure_module()
+    return ([arts / name for name in cm.RUN_FILES]
+            + sorted(arts.glob(f"variants/*/{cm.VARIANT_FILE}")))
 
 
 # When THIS process started the run's current protocol_execution attempt
@@ -16672,7 +16699,7 @@ def _clear_claim_measure_files(run_dir: Path) -> None:
 def _measure_claim_tests_after_backtests(run_dir: Path, run_id: str) -> None:
     """After protocol_execution (run_loop, flag on). Writes
     artifacts/variants/<vid>/claim_test.yaml per variant backtested in this
-    attempt, then artifacts/claim_status.yaml, and counts every test in
+    attempt, then artifacts/claim_measurement.yaml, and counts every test in
     campaign_record/claim_test_coverage.yaml. Never raises, never routes.
     Flag off: no-op."""
     if not _claim_flag_or_none():
@@ -16773,7 +16800,7 @@ def _record_claim_measure_error(run_dir: Path, run_id: str, exc: Exception) -> N
                     f"({type(inner).__name__}); the run continues.")
         return
     for what, write in (
-            ("artifacts/claim_status.yaml", lambda: save_yaml(
+            (f"artifacts/{cm.RUN_FILE}", lambda: save_yaml(
                 Path(run_dir) / "artifacts" / cm.RUN_FILE, doc)),
             ("the coverage record", lambda: cm.record_measured(ROOT, run_id, doc))):
         try:

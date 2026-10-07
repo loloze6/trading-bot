@@ -397,7 +397,7 @@ def _tree(root: Path) -> dict:
 def test_flag_off_reads_and_writes_nothing(orch, monkeypatch):
     _set_orchestrator(orch)
     run_dir = _fixture_run("run_960", claim=_claim([UP]))
-    stale = run_dir / "artifacts" / "claim_status.yaml"
+    stale = run_dir / "artifacts" / cm.RUN_FILE
     stale.write_text("stale\n", encoding="utf-8")
     before = _tree(rpr.ROOT)
     monkeypatch.setattr(rpr, "_claim_measure_module", lambda: pytest.fail("flag off"))
@@ -416,7 +416,7 @@ def test_flag_on_writes_measured_files_and_counts_them():
     rpr._measure_claim_tests_after_backtests(run_dir, "run_961")
     for n, b in keep.items():                                   # never read into the grid
         assert (run_dir / "artifacts" / n).read_bytes() == b
-    st = rpr.load_yaml(run_dir / "artifacts" / "claim_status.yaml")
+    st = rpr.load_yaml(run_dir / "artifacts" / cm.RUN_FILE)
     assert st["claim_status"] == "measured" and st["n_tests_measured"] == 4
     assert st["variants"]["base"]["file"] == "variants/base/claim_test.yaml"
     v = rpr.load_yaml(run_dir / "artifacts" / "variants" / "base" / "claim_test.yaml")
@@ -437,7 +437,7 @@ def test_flag_on_card_gaps_are_not_measured_with_the_reason(claim, reason):
         claim = dict(_claim([UP]), tests="none", missing_block="fwd_return_of")
     run_dir = _fixture_run("run_962", claim=claim)
     rpr._measure_claim_tests_after_backtests(run_dir, "run_962")
-    st = rpr.load_yaml(run_dir / "artifacts" / "claim_status.yaml")
+    st = rpr.load_yaml(run_dir / "artifacts" / cm.RUN_FILE)
     assert st["claim_status"] == "not_measured" and st["reason"] == reason
     assert not list((run_dir / "artifacts" / "variants").glob("*/claim_test.yaml"))
 
@@ -470,9 +470,9 @@ def test_an_error_at_each_step_never_escapes(target, monkeypatch):
     mod, name, fn = patches[target]
     monkeypatch.setattr(mod, name, fn)
     rpr._measure_claim_tests_after_backtests(run_dir, "run_963")       # never raises
-    st = rpr.load_yaml(run_dir / "artifacts" / "claim_status.yaml") \
+    st = rpr.load_yaml(run_dir / "artifacts" / cm.RUN_FILE) \
         if target != "card_read" else yaml.safe_load(
-            (run_dir / "artifacts" / "claim_status.yaml").read_text(encoding="utf-8"))
+            (run_dir / "artifacts" / cm.RUN_FILE).read_text(encoding="utf-8"))
     assert st["claim_status"] == "not_measured" and st["reason"] == "error"
     assert "injected" in st["detail"]
 
@@ -484,7 +484,7 @@ def test_a_counting_failure_is_recorded_next_to_the_measurement(monkeypatch):
     run_dir = _fixture_run("run_966", claim=_claim([UP]))
     monkeypatch.setattr(cm, "record_measured", _boom)
     rpr._measure_claim_tests_after_backtests(run_dir, "run_966")
-    st = rpr.load_yaml(run_dir / "artifacts" / "claim_status.yaml")
+    st = rpr.load_yaml(run_dir / "artifacts" / cm.RUN_FILE)
     assert st["claim_status"] == "measured" and st["n_tests_measured"] == 1
     assert "injected" in st["coverage_error"]
 
@@ -497,7 +497,7 @@ def test_a_broken_flag_value_never_escapes(monkeypatch):
         rpr._claim_tests_enabled()                 # slice 2's reader still fails loud ...
     rpr._clear_claim_measure_files(run_dir)        # ... these never do
     rpr._measure_claim_tests_after_backtests(run_dir, "run_967")
-    assert not (run_dir / "artifacts" / "claim_status.yaml").exists()
+    assert not (run_dir / "artifacts" / cm.RUN_FILE).exists()
 
 
 def test_only_this_attempts_variants_are_measured(monkeypatch):
@@ -519,7 +519,7 @@ def test_only_this_attempts_variants_are_measured(monkeypatch):
         p.write_bytes(p.read_bytes())
     monkeypatch.setattr(rpr, "_invalidated_trial_ids", lambda: {"run_968:bad"})
     rpr._measure_claim_tests_after_backtests(run_dir, "run_968")
-    st = rpr.load_yaml(run_dir / "artifacts" / "claim_status.yaml")
+    st = rpr.load_yaml(run_dir / "artifacts" / cm.RUN_FILE)
     assert st["variants"]["fresh"]["status"] == "measured"
     assert st["variants"]["old"] == {"status": "not_measured", "reason": "stale_result",
                                      "file": None}
@@ -533,7 +533,7 @@ def test_without_an_attempt_start_nothing_is_measured():
     run_dir = _fixture_run("run_969", claim=_claim([UP]))
     del rpr._CLAIM_MEASURE_ATTEMPT_START[str(run_dir.resolve())]
     rpr._measure_claim_tests_after_backtests(run_dir, "run_969")
-    st = rpr.load_yaml(run_dir / "artifacts" / "claim_status.yaml")
+    st = rpr.load_yaml(run_dir / "artifacts" / cm.RUN_FILE)
     assert st["claim_status"] == "not_measured" and st["n_tests_measured"] == 0
     assert st["variants"]["base"]["reason"] == "no_attempt_start"
 
@@ -547,7 +547,7 @@ def test_a_variant_this_attempt_recorded_as_failed_is_not_measured():
         "ok": {"status": "validated"},
         "failed": {"status": "validated", "failed_attempt": "backtest_failed: trial write"}}})
     rpr._measure_claim_tests_after_backtests(run_dir, "run_970")
-    st = rpr.load_yaml(run_dir / "artifacts" / "claim_status.yaml")
+    st = rpr.load_yaml(run_dir / "artifacts" / cm.RUN_FILE)
     assert st["variants"]["ok"]["status"] == "measured"
     assert st["variants"]["failed"]["reason"] == "backtest_failed"
     assert {c["variant"] for c in st["tests"]} == {"ok"}
@@ -569,7 +569,7 @@ def test_looks_from_an_earlier_attempt_stay_counted():
     a = run_dir / "artifacts" / "variants" / "A" / "protocol_result.yaml"
     a.write_bytes(a.read_bytes())
     rpr._measure_claim_tests_after_backtests(run_dir, "run_971")
-    st = rpr.load_yaml(run_dir / "artifacts" / "claim_status.yaml")
+    st = rpr.load_yaml(run_dir / "artifacts" / cm.RUN_FILE)
     assert st["n_tests_measured"] == 1 and st["variants"]["B"]["reason"] == "stale_result"
     m = rpr.load_yaml(rpr.ROOT / cc.COVERAGE_REL)["runs"]["run_971"]["measured"]
     assert m["n_tests_measured"] == 1 and m["n_looks"] == 2
@@ -610,7 +610,7 @@ def test_the_safety_net_itself_never_raises(monkeypatch):
 
 def test_previous_attempt_files_are_cleared_only_with_the_flag_on():
     run_dir = _fixture_run("run_965", claim=_claim([UP]))
-    files = [run_dir / "artifacts" / "claim_status.yaml",
+    files = [run_dir / "artifacts" / cm.RUN_FILE,
              run_dir / "artifacts" / "variants" / "base" / "claim_test.yaml"]
     for p in files:
         p.write_text("stale\n", encoding="utf-8")

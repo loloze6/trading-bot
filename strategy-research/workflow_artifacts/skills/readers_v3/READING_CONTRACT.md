@@ -2,8 +2,8 @@
 
 You read ONE report of a finished run and do two things: **explain** the measured result
 through your report's lens, and **propose** what to test next. You never judge the claim. The
-grid and the claim measurement already measured it; there is no field for a judgement, and you
-never write that the claim is true, false, supported or refuted.
+grid and the claim measurement already measured it; there is no field for a judgement, and
+nothing you write grades the claim: you explain its numbers.
 
 ## Output: one fenced ```yaml block holding one mapping
 
@@ -22,7 +22,7 @@ side_findings:                           # 0, 1 or 2 -- `[]` when nothing else s
       statement: "..."
       kind: <one of CLAIM_TESTS.md's kinds>
       tests: [ ... ]                     # or `tests: none` with `missing_block: "..."`
-      pass_if: "..."
+      pass_if: "..."                     # pass_if / fail_if: what the claim predicts, in words
       fail_if: "..."
       rationale: "..."
     evidence: ["..."]
@@ -41,6 +41,10 @@ config is proposed only inside a side finding, with the claim it is expected to 
 1. **Explain first.** Read `claim_result_digest.yaml` (the claim's tests and their effect sizes
    per variant: measured, not proven) with your report. If its `block_visibility` is `blind`,
    say so: the tests could not see the block, so base and variants measure the same.
+   A statement about the claim cites the digest's numbers and names the statistic exactly as
+   its `statistic_label` says (a rank IC is not the reports' Pearson `forecast_return_corr`).
+   `findings_summary_for_readers.yaml`'s `statistic_labels` and the forecast_power report's
+   `statistic_labels` name the other files' statistics the same way.
 2. **A side finding is something else the evidence shows.** Write its tests exactly as
    CLAIM_TESTS.md tells step 1a: only its blocks, never approximate, `tests: none` plus
    `missing_block` when no block expresses it. Code runs the same check as on step 1a's card.

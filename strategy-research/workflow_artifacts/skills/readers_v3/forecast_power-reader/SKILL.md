@@ -11,8 +11,8 @@ Follow READING_CONTRACT.md (your first input) for the exact output shape and rul
 ## Your focus
 
 Your report, `artifacts/reports/forecast_power.yaml`, measures the directional edge: how the
-forecast relates to forward returns (rank IC, hit rates, decay over horizons), per window, per
-symbol and per variant. Every graded variant has its own `variants.<vid>.slices`; a pattern on
+forecast relates to the next bar's return (`forecast_return_corr`: a Pearson correlation on
+active bars, see the report's `statistic_labels`), per window, per symbol and per variant. Every graded variant has its own `variants.<vid>.slices`; a pattern on
 `base` that does not hold on the other variants is coin- or design-specific, so say which
 variants show it.
 

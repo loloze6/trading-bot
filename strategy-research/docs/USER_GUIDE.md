@@ -1465,7 +1465,13 @@ feed that is not wired, one row per such feed in
      and exact patch from `variant_patches.yaml`, so a reader never infers a
      variant's settings from its name) and `artifacts/findings_summary_for_readers.yaml` (earlier runs'
      findings from the campaign memory, this run left out, newest 10, compact);
-     `claim_status.yaml` when it exists. If either code-written file cannot be
+     `claim_measurement.yaml` when it exists (an older run's `claim_status.yaml`,
+     its name before D-077). The digest labels every number with its statistic
+     (`statistic_label`, e.g. rank IC (Spearman) vs a difference of means;
+     CUL-413), and with this flag on the forecast_power report carries
+     `statistic_labels` (its `forecast_return_corr` is a Pearson correlation of
+     the forecast with the next bar's return on active bars). If either
+     code-written file cannot be
      written (e.g. an OSError), the stage does not stop: the error is printed and
      listed in `artifacts/reader_input_gaps.yaml`, an older copy is removed when
      possible (a file named there counts as missing even if it is still on disk),
@@ -1579,6 +1585,19 @@ the attempt the entry describes, otherwise `not_measured` / `stale`. The
 stage then writes `artifacts/findings_summary.yaml` (every finding so far,
 deterministic). Information only: an error is recorded (`status: error`) and
 the stage continues; no prompt reads either yet.
+
+**Claim tests show the number only (D-077).** With `orchestrator.claim_tests`
+on, a claim's tests are checked (`tools/claim_card.py`), measured after the
+backtests (`tools/claim_measure.py` -> `artifacts/claim_measurement.yaml`;
+`claim_status.yaml` before D-077, still read for older runs) and recorded as
+findings; nothing grades the claim. The grading path of `tools/claim_tests.py`
+(its significance methods, its grading rule, the calibration gate with
+`tools/claim_tests_calibration.py`, and its grading CLI) is **PARKED
+(CUL-394)**: kept as code and tested, called by no run, reader or prompt. A few
+internal field names keep the older word (`verdict_possible` in
+`claim_check.yaml` / `claim_test_status.yaml`, the `claim_status` key inside
+the measurement file); they are names only. The real pass/fail is unchanged:
+the profit bars, the count of all attempts, and the holdout.
 
 A run with component errors gets the fault-only form instead:
 `{run_id, hypothesis_id (null if hypothesis_card.yaml is unreadable), legacy:
@@ -3026,7 +3045,7 @@ market_type are not `tradable: true` — **or are undeclared**
 | `config/campaign_config.yaml` | Named constants for the orchestrator; drift-guarded by test |
 | `config/indicator_library.yaml` | 15 seeded entries: regime_affinity, crowding_risk, data_requirements per indicator class |
 | `feed_wishlist.yaml` | Feeds needed but not yet available (liquidation_data); argument for each. `trigger_condition.predicate` is a structured, machine-checkable expression evaluated by `workflow/run_campaign.py::evaluate_wishlist_predicate()` — no longer human-reviewed prose. `status`/`last_evaluated_at`/`last_evaluated_against`/`kb_state_hash`/`evaluation_note` are written ONLY by `evaluate_and_persist_wishlist_predicate()` (single authority — never hand-edit); a persisted `status` is only trustworthy if its `kb_state_hash` matches a fresh `sha256` of `campaign_knowledge_base.yaml`'s current bytes. See `RUNBOOK.md` section 3 and `docs/CONCEALMENT_INSTRUCTION_DOCTRINE.md`. |
-| `config/detector_wishlist.yaml` | Parked detector ideas (daily-timeframe overlay, ADX threshold, hidden Markov model). A list only: it gates and pauses nothing (D-052). A regime idea goes through the normal path with its ungated design variant. |
+| `campaign_record/detector_wishlist.yaml` | (In `config/` before D-077; an older checkout's copy there is still read.) Parked detector ideas (daily-timeframe overlay, ADX threshold, hidden Markov model). A list only: it gates and pauses nothing (D-052). A regime idea goes through the normal path with its ungated design variant. |
 | `campaign_knowledge_base.yaml` | Durable findings store — see the file itself for the current count; this table doesn't track a point-in-time number. |
 | `campaign_record/campaign_memory.yaml` | Per-run memory (E-058 S2a), written only by stage 17 `regroup_record` when `orchestrator.regroup_record.enabled` is on (off by default). One entry per `run_id`; fields in the stage 17 block. No old runs; those live in `campaign_knowledge_base.yaml`. |
 | `campaign_record/data_requests.yaml` | Append-only `{requests: [...]}` intake of the feed-acquisition lane. Two writers, both through `run_phase1_research._append_data_requests`: the data-availability gate's per-variant declines (`stage: data_availability_gate`, `{run_id, stage, variant_id, outcome, reason, reasons}`; idempotent only under `verdict_routing_retired`), and (E-035 S2c) stage 16's `requires_feed` proposals (`stage: specialist_reader`, one row per feed that is not wired: `{run_id, stage, feed, request: acquisition|designation, proposals: [{category, proposal_id, reason}], reason}`, always idempotent on `campaign_review_retired.feed_request_key` = run, stage, feed; the gate's rows keep `request_key` = run, stage, variant, reason). Existing rows are never rewritten. Decide-next records its row count as information; the binding check is its own `requires_feed` feasibility gate. |

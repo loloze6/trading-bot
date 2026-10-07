@@ -24,7 +24,8 @@ blocks a test may be composed from.
   unit. Horizons are bars of the card's `timeframe` (on `1h` bars, 24 = one day). If no slot
   measures the stated quantity, write `tests: none` with `missing_block`, never a nearby
   quantity (a price level for a move, bars for days).
-- Write `pass_if`, `fail_if` and `rationale` for the new tests. Do not write `alpha` or
+- Write `pass_if`, `fail_if` (what the new tests' numbers should show if the claim holds,
+  and what would contradict it: predictions in words) and `rationale`. Do not write `alpha` or
   `significance`. Every other rule of CLAIM_TESTS.md applies (1 to 3 tests, unique names,
   a reachable floor). `floor_facts` in your handoff gives the bars in the test windows and
   the coins: a `min_events` floor must be at most (bars // the longest horizon) x coins.
@@ -43,5 +44,5 @@ claim:
   rationale: "..."
 ```
 
-Code checks the block (CLAIM_TESTS.md's rules and the floor). If it passes, it replaces the
-card's claim; if not, the original claim is kept. Either way the run continues.
+Code checks the block (CLAIM_TESTS.md's rules and the floor). If the check accepts it, it
+replaces the card's claim; if not, the original claim is kept. Either way the run continues.

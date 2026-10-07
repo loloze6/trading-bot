@@ -194,23 +194,23 @@ def _stale(rec: dict, detail: str) -> tuple:
 def _variant(run_dir: Path, run_id: str, vid: str, ventry: dict, status_row,
              card_hashes: dict, run_reason=None) -> tuple:
     """(per-variant record, claim_test ref or None). Numbers only when bound.
-    `run_reason`: claim_status.yaml's own not-measured reason, if any. A
-    reason without numbers is passed through only when its file is shown to
-    belong to this attempt; otherwise `stale`."""
+    `run_reason`: the run file's (claim_measurement.yaml) own not-measured
+    reason, if any. A reason without numbers is passed through only when its
+    file is shown to belong to this attempt; otherwise `stale`."""
     rec = {"trial_id": ventry.get("trial_id")}
     if ventry.get("status") != "tested":
         return {**rec, "status": NOT_MEASURED, "reason": f"variant_{ventry.get('status')}"}, None
-    status_path = run_dir / "artifacts" / cmeas.RUN_FILE
+    status_path = cmeas.run_file_path(run_dir / "artifacts")
     if not isinstance(status_row, dict):
         if run_reason and _not_older_than_result(run_dir, vid, status_path, missing_ok=True):
             # nothing was measured in the run (card gap, no graded variants, ...)
             return {**rec, "status": NOT_MEASURED, "reason": run_reason}, None
-        return _stale(rec, "not in claim_status.yaml: not measured in this attempt")
+        return _stale(rec, f"not in {status_path.name}: not measured in this attempt")
     if not status_row.get("file"):
         # skipped by claim_measure (stale_result, backtest_failed, invalidated, ...)
         if _not_older_than_result(run_dir, vid, status_path, missing_ok=False):
             return {**rec, "status": NOT_MEASURED, "reason": status_row.get("reason")}, None
-        return _stale(rec, f"claim_status.yaml (its reason: {status_row.get('reason')}) is "
+        return _stale(rec, f"{status_path.name} (its reason: {status_row.get('reason')}) is "
                            f"older than the variant's protocol_result.yaml")
     rel = f"artifacts/variants/{vid}/{cmeas.VARIANT_FILE}"
     path = run_dir / rel
@@ -292,7 +292,7 @@ def _scope(run_dir: Path, vids: list, per_variant: dict) -> dict:
 # ---------------------------------------------------------------------------
 
 def build_finding(run_dir: Path, run_id: str, entry: dict, *, exempt: str | None = None) -> dict:
-    """The run's finding, from its card, block manifest, claim_status.yaml,
+    """The run's finding, from its card, block manifest, claim_measurement.yaml,
     the variants' claim_test.yaml / protocol_result.yaml / protocol.json and
     the memory entry being written (its variants and trial ids). `exempt`:
     the orchestrator's _claim_check_exempt reason (no 1a-written claim).
@@ -323,7 +323,7 @@ def build_finding(run_dir: Path, run_id: str, entry: dict, *, exempt: str | None
     # other finding is unchanged.
     if not exempt and cc.block_test_gap(claim, kind_m) == cc.BLOCK_TEST_GAP_NO_TEST:
         finding["block_test_gap"] = cc.BLOCK_TEST_GAP_NO_TEST
-    status_path = arts / cmeas.RUN_FILE
+    status_path = cmeas.run_file_path(arts)  # an older run: claim_status.yaml (D-077)
     status_doc = (_load(status_path) or {}) if status_path.exists() else None
     variants = entry.get("variants") if isinstance(entry.get("variants"), dict) else {}
     per_variant, refs = {}, {}
@@ -348,7 +348,7 @@ def build_finding(run_dir: Path, run_id: str, entry: dict, *, exempt: str | None
         status = NOT_MEASURED
         reasons = sorted({str(r.get("reason")) for r in per_variant.values()})
         if reasons == [STALE]:
-            reason = STALE          # claim_status.yaml itself is not this attempt's
+            reason = STALE          # the run file itself is not this attempt's
         elif status_doc.get("claim_status") != MEASURED and status_doc.get("reason"):
             reason = status_doc.get("reason")
         elif STALE in reasons:
@@ -364,7 +364,7 @@ def build_finding(run_dir: Path, run_id: str, entry: dict, *, exempt: str | None
         "result": {"per_variant": per_variant},
         "trial_ids": [per_variant[v]["trial_id"] for v in bound if per_variant[v]["trial_id"]],
         "source": {"run_id": run_id, "hypothesis_id": entry.get("hypothesis_id"),
-                   "claim_status_ref": (_ref(run_id, f"artifacts/{cmeas.RUN_FILE}")
+                   "claim_status_ref": (_ref(run_id, f"artifacts/{status_path.name}")
                                         if status_doc is not None else None),
                    "claim_test_refs": refs},
     })
