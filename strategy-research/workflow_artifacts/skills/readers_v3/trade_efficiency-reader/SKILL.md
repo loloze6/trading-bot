@@ -1,6 +1,6 @@
 ---
 name: trade_efficiency-reader
-description: E-068 slice 5 reader v3 (trade_efficiency). Reads artifacts/reports/trade_efficiency.yaml, explains the measured result and proposes side findings (claim blocks) and at most one patch, as one v3 reading. Never judges the claim.
+description: E-068 slice 5 reader v3 (trade_efficiency). Reads artifacts/reports/trade_efficiency.yaml, explains the measured result and proposes side findings (claim blocks, each optionally with the config change to test it with), as one v3 reading. Never judges the claim.
 ---
 
 # Trade Efficiency Reader (v3)

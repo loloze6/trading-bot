@@ -934,10 +934,19 @@ pre-flight halt (`paused:launch_exception`, `paused:flag_misconfiguration`: use
 `--resume`; a failed launch is never in `run_ids`), every other halt (routing,
 pre-flight, a refinement conflict: the run did not fail; RUNBOOK §3), an entry
 with a refinement brief or several runs (a lineage: by hand), any other status,
-and a paused entry with no run (use `--resume`). Otherwise it writes the repo's
-orphan convention `runs/<old>/ORPHANED_README.md` (reconcile counts the old run
-as known), clears the entry's `run_ids`, sets it `ready` (priority kept),
-appends a note and logs `RELAUNCH`. The old run's files and any trial rows are
+and a paused entry with no run (use `--resume`). It also refuses (D-078) a
+legacy split child (`<id>__split_<n>`: its card came from the parent run's
+step 1a, so a fresh run would not get it) and an entry whose run already
+queued extra cards (`<id>__h<n>` entries, or cards listed in the run's
+`artifacts/queued_hypotheses.yaml`: a fresh run's 1a would queue cards under
+the same ids, which the queue refuses). By hand, with the campaign stopped:
+continue the old run instead (set the entry `ready`, `run_ids` kept), or mark
+the entry `superseded` (and, for queued cards, add the card again as a new
+entry). Otherwise it clears the entry's `run_ids`, sets it `ready` (priority
+kept), appends a note, saves the queue, and only then writes the repo's orphan
+convention `runs/<old>/ORPHANED_README.md` (reconcile counts the old run as
+known; if that write fails, the message says so and reconcile will list the run
+as unexpected), and logs `RELAUNCH`. The old run's files and any trial rows are
 left as they are.
 
 ### Approval mode — `--approve` (E-068 PR 4, D-071, CUL-399)

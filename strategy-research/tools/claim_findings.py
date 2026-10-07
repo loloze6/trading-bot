@@ -370,7 +370,8 @@ def build_finding(run_dir: Path, run_id: str, entry: dict, *, exempt: str | None
     })
     # E-068 nearest build (operator 2026-10-05): a run that tested an approximation
     # says so FIRST. artifacts/deviations.yaml exists only under
-    # orchestrator.nearest_build, so a finding without one is unchanged.
+    # orchestrator.nearest_build or for a side finding's start config (CUL-412),
+    # so a finding without one is unchanged.
     block = nb.approximation_block(nb.load_record(arts))
     if block:
         finding = {"approximation": block, **finding}

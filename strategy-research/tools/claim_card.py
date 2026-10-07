@@ -282,9 +282,10 @@ def block_visibility(claim, manifest_kind) -> str:
 
 # CUL-409 (operator, 2026-10-05): when the idea is a block (manifest kind forecast
 # or regime), the claim needs at least one test that reads the block's output --
-# criteria_refs alone (or tests: none) is not enough.
+# criteria_refs alone are not enough. `tests: none` + missing_block is exempt
+# (1a's explicit "no slot can test this", already a test request).
 BLOCK_TEST_GAP_BLIND = "blind"                 # tests exist, none reads the block
-BLOCK_TEST_GAP_NO_TEST = "no_block_test"       # no test at all (criteria only / none)
+BLOCK_TEST_GAP_NO_TEST = "no_block_test"       # no test at all (criteria_refs only)
 
 
 def block_test_gap(claim, manifest_kind) -> str | None:

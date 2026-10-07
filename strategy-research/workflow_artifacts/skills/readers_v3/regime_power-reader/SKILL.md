@@ -1,6 +1,6 @@
 ---
 name: regime_power-reader
-description: E-068 slice 5 reader v3 (regime_power). Reads artifacts/reports/regime_power.yaml, explains the measured result and proposes side findings (claim blocks) and at most one patch, as one v3 reading. Never judges the claim.
+description: E-068 slice 5 reader v3 (regime_power). Reads artifacts/reports/regime_power.yaml, explains the measured result and proposes side findings (claim blocks, each optionally with the config change to test it with), as one v3 reading. Never judges the claim.
 ---
 
 # Regime Power Reader (v3)

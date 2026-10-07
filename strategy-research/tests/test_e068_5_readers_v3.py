@@ -119,10 +119,18 @@ def _reading(cat="trade_efficiency", run_id=RUN_ID, sides=None, patch=None, **ov
            "evidence": ["variants.base.slices.overall.x=1"],
            "side_findings": sides if sides is not None else [
                {"proposal_id": f"{rid}-1", "claim": _claim(),
-                "evidence": ["variants.base.slices.overall.y=2"], "scores": _scores()}],
-           "patch": patch}
+                "evidence": ["variants.base.slices.overall.y=2"], "scores": _scores()}]}
+    if patch is not None:   # a LEGACY v3 file (before continuation 2 removed the patch)
+        doc["patch"] = patch
     doc.update(over)
     return doc
+
+
+def _side_with_change(cat="trade_efficiency", run_id=RUN_ID, n=1, **patch_kw) -> dict:
+    """Continuation 2: a side finding carrying the config change to test it with."""
+    return {"proposal_id": f"{cat}-{run_id}-{n}", "claim": _claim(),
+            "evidence": ["variants.base.slices.overall.y=2"], "scores": _scores(),
+            "config_change": _patch(cat, run_id, **patch_kw)["patch"]}
 
 
 def _patch(cat="trade_efficiency", run_id=RUN_ID, n=2, component="shock_reversal",
@@ -299,7 +307,8 @@ def test_v2_candidate_record_has_no_new_keys():
 # 3. The v3 shape
 # ---------------------------------------------------------------------------
 
-def test_a_reading_loads_and_flattens(tmp_path):
+def test_a_legacy_reading_with_a_patch_still_loads_and_flattens(tmp_path):
+    """Continuation 2: a v3 file written before the patch was removed (runs 070-074)."""
     doc = _reading(patch=_patch())
     _write(tmp_path / "trade_efficiency.yaml", doc)
     items = rp.load_proposals(tmp_path, ["trade_efficiency"])["trade_efficiency"]
@@ -323,7 +332,6 @@ _BAD = [
     ("no explanation", lambda d: d.pop("explanation"), "missing"),
     ("blank explanation", lambda d: d.update(explanation=" "), "explanation"),
     ("empty evidence", lambda d: d.update(evidence=[]), "evidence"),
-    ("no patch key", lambda d: d.pop("patch"), "missing"),
     ("three side findings", lambda d: d.update(side_findings=[
         {"proposal_id": f"{d['reading_id']}-{n}", "claim": _claim(), "evidence": ["e"],
          "scores": _scores()} for n in (1, 2, 3)]), "at most 2"),
@@ -436,35 +444,59 @@ def _validate(run_dir, doc, cat="trade_efficiency"):
     return rpr._validate_reader_output(_fenced(doc), cat, run_dir)
 
 
-def test_run_070s_real_patch_passes_against_its_real_config(monkeypatch):
+def test_run_070s_real_change_passes_against_its_real_config(monkeypatch):
+    """Continuation 2: run_070's real patch, now a side finding's config_change."""
     run_dir = _run070_shaped(monkeypatch)
     real = yaml.safe_load((FIX5 / "trade_efficiency_v2.yaml").read_text(encoding="utf-8"))[0]
-    patch = {k: real[k] for k in ("patch", "evidence", "scores")}
-    body, err = _validate(run_dir, _reading(sides=[], patch={
-        "proposal_id": f"trade_efficiency-{RUN_ID}-1", **patch}))
+    side = {"proposal_id": f"trade_efficiency-{RUN_ID}-1", "claim": _claim(),
+            "evidence": real["evidence"], "scores": real["scores"],
+            "config_change": real["patch"]}
+    body, err = _validate(run_dir, _reading(sides=[side]))
     assert err is None, err
+    assert yaml.safe_load(body)["side_findings"][0]["config_change"] == real["patch"]
+
+
+def test_a_model_written_patch_is_refused_with_the_new_shape():
+    """Continuation 2: the stand-alone patch is removed from what a reader writes."""
+    with pytest.raises(rp.ProposalError, match="config_change"):
+        rp.check_reading(_reading(patch=_patch()), "trade_efficiency", "w", from_model=True)
+    with pytest.raises(rp.ProposalError, match="the stand-alone `patch` is removed"):
+        rp.check_reading(_reading(patch=_patch()), "trade_efficiency", "w", from_model=True)
+    rp.check_reading(_reading(), "trade_efficiency", "w", from_model=True)   # no patch: fine
 
 
 def test_an_invented_component_is_refused(monkeypatch):
     run_dir = _run070_shaped(monkeypatch)
-    _body, err = _validate(run_dir, _reading(patch=_patch(component="keltner_breakout_entry")))
+    _body, err = _validate(run_dir, _reading(sides=[_side_with_change(
+        component="keltner_breakout_entry")]))
     assert err and "patch_unresolvable" in err and "keltner_breakout_entry" in err
+    assert "config_change" in err
 
 
 def test_a_stale_before_is_refused(monkeypatch):
     run_dir = _run070_shaped(monkeypatch)
-    _body, err = _validate(run_dir, _reading(patch=_patch(before=5)))
+    _body, err = _validate(run_dir, _reading(sides=[_side_with_change(before=5)]))
     assert err and "stale_before" in err
 
 
-def test_a_patch_under_scaffolding_is_refused(monkeypatch):
+def test_a_change_under_scaffolding_is_refused(monkeypatch):
     run_dir = _run070_shaped(monkeypatch)
     cfg = json.loads((FIX5 / "base_strategy_config.json").read_text(encoding="utf-8"))
     cfg["regime_detector"]["components"] = [{"id": "er", "class": "x", "params": {"period": 20}}]
     (run_dir / "artifacts" / "candidate_strategy_config.json").write_text(
         json.dumps(cfg), encoding="utf-8")
-    _body, err = _validate(run_dir, _reading(patch=_patch(component="er", before=20, after=30)))
+    _body, err = _validate(run_dir, _reading(sides=[_side_with_change(
+        component="er", before=20, after=30)]))
     assert err and "/regime_detector/components/0/params/period" in err and "scaffolding" in err
+
+
+@pytest.mark.parametrize("change,match", [
+    ([], "non-empty list"), ("x", "non-empty list"),
+    ([{"component_id": "a", "field": "f"}], "component_id, field, before, after")])
+def test_a_malformed_config_change_is_refused(change, match):
+    side = {**_side_with_change(), "config_change": change}
+    with pytest.raises(rp.ProposalError, match=match):
+        rp.check_reading(_reading(sides=[side]), "trade_efficiency", "w", from_model=True)
 
 
 def test_a_side_finding_claim_goes_through_check_claim(monkeypatch):
