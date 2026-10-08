@@ -2371,11 +2371,11 @@ async def run_tool_worker(stage_name: str, run_id: str):
                             composition_runs=True,
                             **({"profit_bars_grader": _profit_bars_grid_grader(RUN_DIR, run_id)}
                                if _composition_mode(RUN_DIR) else {}),
-                            **_failed_kw, **_cost_bar_grid_kw())
+                            **_failed_kw, **_cost_bar_grid_kw(), **_zero_trade_grid_kw())  # CUL-415: {} flag off
                     else:
                         _grid_result = _vce.evaluate_grid(
                             per_variant_summaries, _pre_reg_for_eval or {}, _brief_for_eval, _menu,
-                            **_failed_kw, **_cost_bar_grid_kw())
+                            **_failed_kw, **_cost_bar_grid_kw(), **_zero_trade_grid_kw())  # CUL-415: {} flag off
                     _grid_result["evaluated_at"] = datetime.now(timezone.utc).isoformat()
                     save_yaml(ARTIFACTS / "grid_evaluation.yaml", _grid_result)
                     _idea_status_artifact = _build_idea_status_artifact(_grid_result, run_id)
@@ -2614,7 +2614,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
                             {run_id: summary}, _pre_reg_for_eval or {}, _brief_for_eval, _menu,
                             **_single_column_untested_kw(ARTIFACTS, run_id),
                             **_grid_v2_kw(),  # E-062 S2b-3b: {} flag off
-                            **_cost_bar_grid_kw())  # CUL-414: {} flag off
+                            **_cost_bar_grid_kw(), **_zero_trade_grid_kw())  # CUL-415: {} flag off
                         _grid_result["evaluated_at"] = datetime.now(timezone.utc).isoformat()
                         save_yaml(ARTIFACTS / "grid_evaluation.yaml", _grid_result)
                         _idea_status_artifact = _build_idea_status_artifact(_grid_result, run_id)
@@ -4136,6 +4136,53 @@ def _cost_bar_grid_kw() -> dict:
     orchestrator.cost_bar_all_costs adds ({"cost_bar_all_costs": True}), else
     {} (both calls unchanged)."""
     return {"cost_bar_all_costs": True} if _cost_bar_all_costs_enabled() else {}
+
+
+def _zero_trade_windows_not_computed_enabled(cfg: dict | None = None) -> bool:
+    """CUL-415 (D-084, audit finding A8 in docs/DATA_DICTIONARY.md):
+    orchestrator.zero_trade_windows_not_computed.enabled. False when the key,
+    the section or the config file is absent. A non-bool value raises. Requires,
+    loudly, orchestrator.grid_evaluation.enabled: the flag changes only the
+    grid's window-source cells, so without the grid it would silently do nothing.
+
+    While false: byte-identical -- every evaluate_grid / exploration_grid call is
+    the pre-CUL-415 call (tested).
+    While true: in a window-source criterion whose metric is computed from the
+    window's trades (verdict_criteria_evaluator.ZERO_TRADE_NOT_COMPUTED_FIELDS:
+    net_return_pct, sharpe, max_drawdown_pct, win_rate, ...), a window with
+    core.trade_count == 0 is not computed: its 0.0 placeholder neither votes in
+    the reducer (the sign_consistent_by_era era median, median / mean / min /
+    max / fraction_above) nor counts toward n_windows / floor.min_windows; the
+    cell records the skipped windows in `skipped_windows`. An era the skip
+    leaves with no window makes a sign_consistent_by_era cell INCONCLUSIVE,
+    never PASS (review fix, PR #349): losing an era can turn FAIL into
+    INCONCLUSIVE, never into PASS, so no dependency on profit_bars_v2's
+    single-era rule is needed. A declared output
+    change of grid_evaluation.yaml (and the readers' exploration copy) when a
+    run has a zero-trade window. The engine's metrics.json is unchanged."""
+    cfg = _orchestrator_config(cfg)
+    zt_cfg = ((cfg.get("orchestrator") or {}).get("zero_trade_windows_not_computed") or {})
+    value = zt_cfg.get("enabled", False)
+    if not isinstance(value, bool):
+        raise ValueError(
+            f"orchestrator.zero_trade_windows_not_computed.enabled={value!r} is not a real "
+            f"boolean (got {type(value).__name__}) -- write an unquoted `true` or `false` in "
+            f"config/campaign_config.yaml, not a quoted string or null."
+        )
+    if value and not _flag_dep(_grid_evaluation_enabled, cfg):
+        raise ValueError(
+            "orchestrator.zero_trade_windows_not_computed.enabled=true requires "
+            "orchestrator.grid_evaluation.enabled=true as well -- the flag changes only the "
+            "grid's window-source cells. Enable them together.")
+    return value
+
+
+def _zero_trade_grid_kw() -> dict:
+    """CUL-415: the evaluate_grid / exploration_grid keyword
+    orchestrator.zero_trade_windows_not_computed adds
+    ({"zero_trade_windows_not_computed": True}), else {} (every call unchanged)."""
+    return ({"zero_trade_windows_not_computed": True}
+            if _zero_trade_windows_not_computed_enabled() else {})
 
 
 # E-073 step 1 (D-081): the readers' subset of the field dictionary
@@ -5729,7 +5776,8 @@ def _write_exploration_views(run_dir: Path, run_id: str, pr_by_variant: dict, va
     # the keywords the run's own grid call passes (composition_runs, the v2 era rule)
     grid = ec.exploration_grid(grid_doc, pr_by_variant, pre_registration, menu, shown,
                                single_era_inconclusive=bool(_grid_v2_kw()),
-                               composition_runs=_composition_runs_enabled())
+                               composition_runs=_composition_runs_enabled(),
+                               **_zero_trade_grid_kw())  # CUL-415: {} flag off
     _br._write_yaml_atomic(out / "grid_evaluation.yaml", grid)
     # written LAST: these copies are this attempt's (review round 2, finding 4)
     ec.stamp_copies(arts, [f"reports/{name}.yaml" for name in reports]
