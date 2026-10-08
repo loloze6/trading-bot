@@ -362,12 +362,14 @@ def restrict_protocol_result(pr: dict, windows) -> dict:
 
 def exploration_grid(grid_doc: dict, pr_by_variant: dict, pre_registration: dict, menu,
                      windows, *, single_era_inconclusive: bool = False,
-                     composition_runs: bool = False) -> dict:
+                     composition_runs: bool = False,
+                     zero_trade_windows_not_computed: bool = False) -> dict:
     """The grid as the readers see it: every criterion x graded variant of
     `grid_doc` (the run's grid_evaluation.yaml); a `window`-source criterion
     re-evaluated by the grid's own cell function on the exploration windows'
     results only, with the keywords the run's own grid call passed
-    (`composition_runs`, `single_era_inconclusive`); any other source
+    (`composition_runs`, `single_era_inconclusive`,
+    `zero_trade_windows_not_computed` -- CUL-415, the key only when set); any other source
     (pooled, profit bars) WITHHELD, as is the idea status (both read every
     window). Failed/untested/partial variants' reasons are copied (they are
     not results)."""
@@ -376,7 +378,8 @@ def exploration_grid(grid_doc: dict, pr_by_variant: dict, pre_registration: dict
     defs = {c.get("id"): c for c in vce._resolve_grid_criteria(pre_registration or {}, menu)}
     eras = vce._load_campaign_data_policy_eras()
     kw = {"composition_runs": bool(composition_runs),
-          **({"single_era_inconclusive": True} if single_era_inconclusive else {})}
+          **({"single_era_inconclusive": True} if single_era_inconclusive else {}),
+          **({"zero_trade_windows_not_computed": True} if zero_trade_windows_not_computed else {})}
     grid = {}
     for cid in grid_doc.get("criteria") or []:
         crit = defs.get(cid)

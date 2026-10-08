@@ -718,6 +718,26 @@ flags:
       (full field paths derived from the code that writes each field; the
       subset regenerated).
 
+  - name: zero_trade_windows_not_computed
+    kind: orchestrator_config
+    config_key: orchestrator.zero_trade_windows_not_computed.enabled
+    reader: run_phase1_research._zero_trade_windows_not_computed_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "the operator's decision to switch it on (requires grid_evaluation); a declared output change of grid_evaluation.yaml only when a run has a zero-trade window (none in runs 070-074)"
+    criterion: >
+      Landed 2026-10-08 (CUL-415, D-084; audit finding A8). Off: byte-identical
+      -- every evaluate_grid / exploration_grid call is the pre-CUL-415 call.
+      On (requires grid_evaluation): in a window-source criterion whose metric
+      is computed from the window's trades
+      (verdict_criteria_evaluator.ZERO_TRADE_NOT_COMPUTED_FIELDS), a window
+      with core.trade_count == 0 is not computed: it neither votes in the
+      reducer (the sign_consistent_by_era era median, the scalar reducers) nor
+      counts toward floor.min_windows, and the cell records it in
+      `skipped_windows` (count, windows, reason); too few windows left is
+      INCONCLUSIVE. The engine's metrics.json is unchanged. Tested by
+      tests/test_cul415_zero_trade_windows.py.
+
   - name: operator_approval
     kind: orchestrator_config
     config_key: orchestrator.operator_approval.enabled

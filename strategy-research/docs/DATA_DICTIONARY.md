@@ -483,11 +483,15 @@ variant (`VE:evaluate_grid`, written at `P1:run_tool_worker`). Cells are `PASS`,
 | `grid.<criterion>.<variant>.value` | The reduced (window source) or pooled value of the metric the criterion names (`metric`: the menu's, or the card's override). | metric | `VE:_evaluate_grid_cell_for_symbol` | run |
 | `grid.<criterion>.<variant>.threshold` | The criterion's threshold (the menu's, or the card's override). | metric | `VE:_evaluate_grid_cell_for_symbol` | meta |
 | `grid.<criterion>.<variant>.comparator` | The criterion's comparator (the menu's, or the card's override). | label | `VE:_evaluate_grid_cell_for_symbol` | meta |
-| `grid.<criterion>.<variant>.n_windows` | Windows with a numeric value (window source; a zero-trade window's 0.0 counts, A8) or in scope (pooled). | count | `VE:_evaluate_grid_cell_for_symbol` | run |
+| `grid.<criterion>.<variant>.n_windows` | Windows with a numeric value (window source; a zero-trade window's 0.0 counts, A8, unless `orchestrator.zero_trade_windows_not_computed` skips it) or in scope (pooled). | count | `VE:_evaluate_grid_cell_for_symbol` | run |
 | `grid.<criterion>.<variant>.n_trades` | Summed core.trade_count over those windows. | count | `VE:_evaluate_grid_cell_for_symbol` | run |
 | `grid.<criterion>.<variant>.reason` | Why INCONCLUSIVE / FAIL / SPEC_ERROR. | text | `VE:_evaluate_grid_cell_for_symbol` | meta |
+| `grid.<criterion>.<variant>.skipped_windows` | Only under `orchestrator.zero_trade_windows_not_computed`, on a window-source cell whose metric is computed from trades (`VE:ZERO_TRADE_NOT_COMPUTED_FIELDS`): the windows with `core.trade_count` 0, not computed (A8 fix): they neither vote in the reducer nor count in `n_windows` / `floor.min_windows`. | map | `VE:_zero_trade_windows_cell` | run |
+| `grid.<criterion>.<variant>.skipped_windows.count` | How many windows were skipped (a window whose value is already null is not counted). | count | `VE:_zero_trade_windows_cell` | run |
+| `grid.<criterion>.<variant>.skipped_windows.windows` | Those windows, as `<symbol> <window>`. | list | `VE:_zero_trade_windows_cell` | run |
+| `grid.<criterion>.<variant>.skipped_windows.reason` | Why (`VE:ZERO_TRADE_SKIP_REASON`). | text | `VE:_zero_trade_windows_cell` | meta |
 | `grid.<criterion>.<variant>.detail` | Era reducer detail. | map | `VE:_evaluate_grid_cell_for_symbol` | run |
-| `grid.<criterion>.<variant>.detail.era_medians.<era>` | Median, over the era's windows, of the metric the criterion names (`metric`: the menu's `net_return_pct` by default, or the card's override: the review found run_074's card used `forecast_return_corr`). A zero-trade window's 0.0 in a trade-based core field counts as a value (A8). | metric | `VE:_reduce_sign_consistent_by_era` | run |
+| `grid.<criterion>.<variant>.detail.era_medians.<era>` | Median, over the era's windows, of the metric the criterion names (`metric`: the menu's `net_return_pct` by default, or the card's override: the review found run_074's card used `forecast_return_corr`). A zero-trade window's 0.0 in a trade-based core field counts as a value (A8), unless `orchestrator.zero_trade_windows_not_computed` skips it (`skipped_windows`). | metric | `VE:_reduce_sign_consistent_by_era` | run |
 | `grid.<criterion>.<variant>.detail.reason` | Why the era reducer did not pass: an era median exactly 0, eras disagreeing in sign, or no window with both a value and an era. | text | `VE:_reduce_sign_consistent_by_era` | meta |
 | `grid.<criterion>.<variant>.detail.era_signs.<era>` | Sign of that median (1, -1, 0). | sign | `VE:_reduce_sign_consistent_by_era` | run |
 | `grid.<criterion>.<variant>.per_symbol.<symbol>` | Cell per symbol (symbol_reducer per_symbol_all). | map | `VE:_evaluate_grid_cell` | run |
@@ -700,6 +704,15 @@ the others are labelling or documentation defects.
   (`VE:_evaluate_grid_cell_for_symbol` keeps it, `VE:_reduce_sign_consistent_by_era`
   takes the median) and toward `floor.min_windows` (`n_windows`). Latent in
   run_070 to run_074 (review). Fix: null.
+  **Fixed behind `orchestrator.zero_trade_windows_not_computed`** (CUL-415, D-084;
+  off by default): in a window-source grid criterion whose metric is computed
+  from trades (`VE:ZERO_TRADE_NOT_COMPUTED_FIELDS`), a window with
+  `trade_count` 0 is skipped: no vote, not counted toward `floor.min_windows`,
+  listed in the cell's `skipped_windows` (`VE:_zero_trade_windows_cell`); too
+  few windows left is INCONCLUSIVE. The engine still writes 0.0, and the
+  per-symbol summaries of `run_protocol` (`median_win_rate`,
+  `max_abs_drawdown_pct`, `median_gross_pnl`) still include it: not on the
+  grid's path, left open.
 - **A9. `sharpe`, `max_drawdown_pct` and `net_return_pct` use the trade-exit
   basis** (`PM:EnhancedPerformanceTracker._calculate_standard_metrics`, `PM:EnhancedPerformanceTracker.calculate_max_drawdown`, `PM:EnhancedPerformanceTracker.calculate_sharpe_ratio`): PnL booked on exit dates, open positions not
   marked. The bar-level figures exist (metrics.json `bar_equity`) but no report

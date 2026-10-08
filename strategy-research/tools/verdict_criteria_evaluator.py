@@ -1251,9 +1251,66 @@ def _window_core_triples(protocol_result: dict, metric: str, symbol: str | None)
     return out
 
 
+# CUL-415 (audit finding A8, docs/DATA_DICTIONARY.md): the per-window `core`
+# fields computed only from the window's completed trades
+# (trading-bot reporting/run_artifact.build_core). Without a trade the engine
+# writes 0.0 for most of them (overall.get(..., 0.0), a sum or mean over no
+# trade); under orchestrator.zero_trade_windows_not_computed a window whose
+# core.trade_count is exactly 0 has no value for these in a window-source
+# criterion. Every other field (trade_count itself, the forecast/return
+# correlations, sigma_bar_bps, gap counts) is a bar-level measurement and is
+# read as before.
+ZERO_TRADE_NOT_COMPUTED_FIELDS = frozenset({
+    "net_return_pct", "sharpe", "max_drawdown_pct", "win_rate", "avg_trade_net_pnl",
+    "fees_paid", "gross_pnl", "net_pnl", "cost_drag_pct", "avg_trade_duration_bars",
+    "real_round_trip_cost_bps", "real_gross_edge_bps_per_trade",
+})
+ZERO_TRADE_SKIP_REASON = (
+    "not computed: core.trade_count == 0 and the metric is computed from the window's trades "
+    "(its 0.0 is a placeholder, CUL-415 / A8) -- the window neither votes nor counts toward "
+    "floor.min_windows")
+
+
+def _is_zero_trade_window(entry) -> bool:
+    """core.trade_count is exactly 0 (a real number, not a bool). A missing or
+    null trade_count is unknown, never zero: such a window is kept."""
+    tc = (entry.get("core") or {}).get("trade_count") if isinstance(entry, dict) else None
+    return isinstance(tc, (int, float)) and not isinstance(tc, bool) and tc == 0
+
+
+def _zero_trade_windows_cell(criterion: dict, protocol_result: dict, eras: list,
+                             symbol: str | None, **kw) -> dict:
+    """CUL-415: one window-source cell under orchestrator.zero_trade_windows_not_computed.
+    For a metric in ZERO_TRADE_NOT_COMPUTED_FIELDS, the cell is evaluated, by
+    the unchanged cell function, on the protocol_result without its zero-trade
+    windows, so they neither vote in the reducer nor count in n_windows /
+    floor.min_windows; the cell records them in `skipped_windows` (count,
+    windows, reason), and a floor shortfall's reason names them. Any other
+    metric: the cell exactly as with the flag off."""
+    metric = criterion.get("metric")
+    if metric not in ZERO_TRADE_NOT_COMPUTED_FIELDS:
+        return _evaluate_grid_cell_for_symbol(criterion, protocol_result, eras, symbol, **kw)
+    results = protocol_result.get("results") or []
+    skipped = [
+        (f"{e.get('symbol')} {e.get('window')}" if e.get("symbol") else str(e.get("window")))
+        for e in results
+        if _is_zero_trade_window(e) and (symbol is None or e.get("symbol") == symbol)
+        and _numeric_values([(e.get("core") or {}).get(metric)])
+    ]
+    view = {**protocol_result, "results": [e for e in results if not _is_zero_trade_window(e)]}
+    cell = _evaluate_grid_cell_for_symbol(criterion, view, eras, symbol, **kw)
+    cell["skipped_windows"] = {"count": len(skipped), "windows": skipped,
+                               "reason": ZERO_TRADE_SKIP_REASON}
+    if skipped and cell.get("result") == "INCONCLUSIVE" and cell.get("reason"):
+        cell["reason"] = (f"{cell['reason']} ({len(skipped)} zero-trade window(s) not computed, "
+                          f"see skipped_windows)")
+    return cell
+
+
 def _evaluate_grid_cell_for_symbol(criterion: dict, protocol_result: dict, eras: list,
                                     symbol: str | None, composition_runs: bool = False,
-                                    single_era_inconclusive: bool = False) -> dict:
+                                    single_era_inconclusive: bool = False,
+                                    zero_trade_windows_not_computed: bool = False) -> dict:
     """One (criterion, variant[, symbol]) cell -- the mechanical core, no
     symbol_reducer branching (that lives one level up in
     _evaluate_grid_cell).
@@ -1264,7 +1321,17 @@ def _evaluate_grid_cell_for_symbol(criterion: dict, protocol_result: dict, eras:
     groups, variant_coin.era_count_shortfall) is INCONCLUSIVE `single_era: ...`
     instead of PASS -- one era cannot disagree with itself. A single era whose
     median is exactly zero stays FAIL (operator amendment 2026-09-29 to
-    D-047). False: the cell exactly as before."""
+    D-047). False: the cell exactly as before.
+
+    zero_trade_windows_not_computed (CUL-415, D-084; evaluate_grid's keyword,
+    passed only under orchestrator.zero_trade_windows_not_computed): a
+    window-source cell goes through _zero_trade_windows_cell (zero-trade
+    windows skipped for a trade-based metric). False: the cell exactly as
+    before."""
+    if zero_trade_windows_not_computed and criterion.get("source") == "window":
+        return _zero_trade_windows_cell(criterion, protocol_result, eras, symbol,
+                                        composition_runs=composition_runs,
+                                        single_era_inconclusive=single_era_inconclusive)
     cid = criterion.get("id")
     metric = criterion.get("metric")
     source = criterion.get("source")
@@ -1511,7 +1578,8 @@ def _dominant_cell_result(results: list) -> str:
 
 def _evaluate_grid_cell(criterion: dict, protocol_result: dict, eras: list,
                         composition_runs: bool = False,
-                        single_era_inconclusive: bool = False) -> dict:
+                        single_era_inconclusive: bool = False,
+                        zero_trade_windows_not_computed: bool = False) -> dict:
     """One (criterion, variant) cell, handling `symbol_reducer`.
 
     `null` (default) and `pooled` are both evaluated with no symbol filter.
@@ -1527,6 +1595,9 @@ def _evaluate_grid_cell(criterion: dict, protocol_result: dict, eras: list,
     symbol_reducer = criterion.get("symbol_reducer")
     # E-062 S2b-3b: the keyword only when set (flag off, the exact pre-S2b-3b call).
     _era_kw = {"single_era_inconclusive": True} if single_era_inconclusive else {}
+    # CUL-415: the keyword only when set (flag off, the exact pre-CUL-415 call).
+    if zero_trade_windows_not_computed:
+        _era_kw["zero_trade_windows_not_computed"] = True
     if symbol_reducer not in (None, "per_symbol_all", "pooled"):
         return {"result": "SPEC_ERROR",
                 "reason": f"criterion {criterion.get('id')!r}: symbol_reducer={symbol_reducer!r} "
@@ -1830,7 +1901,8 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
                    profit_bars_grader=None, failed_variants: dict | None = None,
                    untested_variants: dict | None = None,
                    partial_coverage_variants: dict | None = None,
-                   single_era_inconclusive: bool = False) -> dict:
+                   single_era_inconclusive: bool = False,
+                   zero_trade_windows_not_computed: bool = False) -> dict:
     """
     E-046b S2: the grid (engineering_roadmap.html card C) -- criteria x
     variants, every cell mechanical, unanimity across variants. No LLM
@@ -1900,6 +1972,15 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
     FAIL, operator amendment 2026-09-29 to D-047). False ->
     byte-identical to the call without it.
 
+    `zero_trade_windows_not_computed` (CUL-415, D-084; the caller passes True
+    only under orchestrator.zero_trade_windows_not_computed): in every
+    window-source cell whose metric is computed from trades
+    (ZERO_TRADE_NOT_COMPUTED_FIELDS), a window with core.trade_count == 0 is
+    not computed -- it neither votes in the reducer nor counts toward
+    n_windows / floor.min_windows -- and the cell records it in
+    `skipped_windows` (a floor shortfall is INCONCLUSIVE, as any). False ->
+    byte-identical to the call without it.
+
     Returns {"result": "GRID_EVALUATED" | "SPEC_ERROR", "criteria": [id, ...],
     "variants": [variant_id, ...], "grid": {criterion_id: {variant_id:
     cell_dict}}, "idea_status": "validated"|"refuted"|"inconclusive"|None,
@@ -1960,7 +2041,9 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
                 cell = _evaluate_grid_cell(crit, protocol_results_by_variant[variant_id], eras,
                                            composition_runs=composition_runs,
                                            **({"single_era_inconclusive": True}
-                                              if single_era_inconclusive else {}))
+                                              if single_era_inconclusive else {}),
+                                           **({"zero_trade_windows_not_computed": True}
+                                              if zero_trade_windows_not_computed else {}))
             row[variant_id] = cell
             if cell["result"] == "SPEC_ERROR":
                 spec_errors.append({"criterion_id": cid, "variant_id": variant_id,
