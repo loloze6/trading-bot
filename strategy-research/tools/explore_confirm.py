@@ -27,8 +27,17 @@ nothing here reads a flag). Design: engineering/roadmap/E-072/PHASE_A.md.
     The honest bar is "the sign held on unseen windows, counted against the
     looks" -- never "proven".
 
+  * A resolution by the follow-up run is WEAK and recorded so
+    (confirmation_basis: follow_up_run, proposer_exposure, weak: true;
+    not_comparable when its tests differ): step 1a wrote that run's card after
+    reading the all-window knowledge base. The summary counts it apart.
+
 INFORMATION ONLY: a confirmation never changes idea_status or the grid, never
-routes, stops, parks or ranks anything.
+routes, stops, parks or ranks anything; and no failure here stops a run (fewer
+than 2 windows: `not_applicable`, the run proceeds as flag-off; a missing
+readers' copy: the reader is skipped by rule exploration_inputs_unavailable).
+"Never saw" means never saw in this pipeline: the confirmation windows are
+within the reader model's training period.
 
 WHY THIS CANNOT LEAK (no lookahead): it reads only a completed run's own saved
 bars.csv (claim_tests.load_variant_bars; the holdout start is refused by
@@ -74,6 +83,38 @@ ERROR = "error"
 
 LEDGER_NOTE = ("information only: each reader side finding measured on confirmation windows "
                "the proposer never saw; looks counted per confirmation set; not proven")
+
+# the split could not be made (fewer than 2 windows): recorded, and the run
+# proceeds as if the flag were off (PR #340 review, finding 2)
+NOT_APPLICABLE = "not_applicable"
+NOT_APPLICABLE_EFFECT = ("this run proceeds as if orchestrator.explore_confirm were off: the "
+                         "readers read the all-window inputs and no side finding is confirmed")
+
+# how a finding's confirmation was obtained (PR #340 review, finding 1)
+BASIS_IN_RUN = "in_run"              # this run's readers, who saw the exploration copies only
+BASIS_FOLLOW_UP = "follow_up_run"    # the run built from the finding: its card is step 1a's
+PROPOSER_EXPOSURE_1A = "step_1a_saw_all_window_knowledge_base"
+NOT_COMPARABLE = "not_comparable"    # the follow-up run tested other tests than the finding's
+WEAK_BAR = ("WEAK: measured by the run built from this finding, whose card step 1a wrote after "
+            "reading campaign_knowledge_base.yaml (every window, these confirmation windows "
+            "included) -- so not on windows the proposer pipeline never saw; counted against the "
+            "looks taken on that confirmation set; not proven")
+# the fields a follow-up resolution overwrites, kept so a re-run of that
+# follow-up run can measure it again (finding 6)
+_PENDING_STATE_KEYS = ("status", "confirmation_sign_retained", "reason", "confirmation_set", "bar")
+_RESOLUTION_KEYS = ("variant", "windows_measured", "tests", "measured_in_run", "looks",
+                    "tests_changed_from_finding", "confirmation_basis", "proposer_exposure",
+                    "weak", "sign_of_own_tests", "_comparisons")
+
+# The readers' copy of hypothesis_card.yaml (finding 3): a WHITELIST -- the
+# claim's statement, kind and tests, and the signal / component spec. Free
+# text that may quote earlier all-window numbers (thesis, rationale,
+# edge_source, assumptions, failure modes, pass_if/fail_if/rationale of the
+# claim) and numeric evidence (power_parameters, library_lookup,
+# cost_feasibility) are left out.
+READER_CARD_KEYS = ("hypothesis_id", "signal_concept", "target_market", "timeframe",
+                    "composition", "config", "manifest", "criteria")
+READER_CLAIM_KEYS = ("statement", "kind", "tests", "criteria_refs", "missing_block")
 
 
 class SplitError(ValueError):
@@ -147,11 +188,25 @@ def labels(rows: list) -> list:
 def ensure_split(arts: Path, run_id: str, extra_files=()) -> dict:
     """artifacts/explore_confirm.yaml, written once per run BEFORE the
     backtests; on a re-run the file on disk is kept (it was pre-registered
-    first). Raises SplitError when it cannot be written, or when a window of
-    the current protocol is in neither half of the file on disk."""
+    first). Fewer than 2 windows: the file records `status: not_applicable`
+    with the reason, and the run proceeds as if the flag were off (it is
+    kept on a re-run too). Raises SplitError when it cannot be written, or
+    when a window of the current protocol is in neither half of the file on
+    disk."""
+    import campaign_memory as cm
     arts = Path(arts)
     path = arts / SPLIT_ARTIFACT
+    if split_not_applicable(arts):
+        return _load_yaml(path)
     windows = protocol_windows(arts, extra_files)
+    if not path.exists() and len(windows) < 2:
+        doc = {"schema_version": SCHEMA_VERSION, "run_id": run_id, "status": NOT_APPLICABLE,
+               "rule": RULE, "windows": [dict(w) for w in windows],
+               "reason": (f"{len(windows)} window(s): at least 2 are needed to keep one "
+                          f"confirmation window the readers never see"),
+               "effect": NOT_APPLICABLE_EFFECT}
+        cm._atomic_write(path, doc)
+        return doc
     if path.exists():
         doc = load_split(arts)
         known = set(labels(doc["exploration"])) | set(labels(doc["confirmation"]))
@@ -164,18 +219,33 @@ def ensure_split(arts: Path, run_id: str, extra_files=()) -> dict:
            "note": ("pre-registered before the backtests: the readers see the exploration "
                     "windows only; their side findings are measured on the confirmation "
                     "windows")}
-    import campaign_memory as cm
     cm._atomic_write(path, doc)
     return doc
 
 
+def split_not_applicable(arts: Path) -> bool:
+    """True when the run's split file records `status: not_applicable` (fewer
+    than 2 windows): the run then proceeds as if the flag were off. False when
+    the file is absent or unreadable -- the readers are then skipped by rule
+    (never given the all-window files)."""
+    path = Path(arts) / SPLIT_ARTIFACT
+    try:
+        doc = _load_yaml(path) if path.exists() else None
+    except (OSError, ValueError, yaml.YAMLError):
+        return False
+    return isinstance(doc, dict) and doc.get("status") == NOT_APPLICABLE
+
+
 def load_split(arts: Path) -> dict:
-    """The run's split, checked. Raises SplitError when absent or malformed --
-    a reader input is never built from a guessed split."""
+    """The run's split, checked. Raises SplitError when absent, not
+    applicable or malformed -- a reader input is never built from a guessed
+    split."""
     path = Path(arts) / SPLIT_ARTIFACT
     if not path.exists():
         raise SplitError(f"{path} is missing -- it is written at protocol_execution entry")
     doc = _load_yaml(path)
+    if isinstance(doc, dict) and doc.get("status") == NOT_APPLICABLE:
+        raise SplitError(f"{path}: not applicable ({doc.get('reason')})")
     ok = isinstance(doc, dict) and all(
         isinstance(doc.get(k), list) and doc[k]
         and all(isinstance(r, dict) and r.get("label") for r in doc[k])
@@ -221,18 +291,22 @@ def restrict_protocol_result(pr: dict, windows) -> dict:
 
 
 def exploration_grid(grid_doc: dict, pr_by_variant: dict, pre_registration: dict, menu,
-                     windows, *, single_era_inconclusive: bool = False) -> dict:
+                     windows, *, single_era_inconclusive: bool = False,
+                     composition_runs: bool = False) -> dict:
     """The grid as the readers see it: every criterion x graded variant of
     `grid_doc` (the run's grid_evaluation.yaml); a `window`-source criterion
     re-evaluated by the grid's own cell function on the exploration windows'
-    results only; any other source (pooled, profit bars) WITHHELD, as is the
-    idea status (both read every window). Failed/untested/partial variants'
-    reasons are copied (they are not results)."""
+    results only, with the keywords the run's own grid call passed
+    (`composition_runs`, `single_era_inconclusive`); any other source
+    (pooled, profit bars) WITHHELD, as is the idea status (both read every
+    window). Failed/untested/partial variants' reasons are copied (they are
+    not results)."""
     import verdict_criteria_evaluator as vce
     shown = sorted(set(windows))
     defs = {c.get("id"): c for c in vce._resolve_grid_criteria(pre_registration or {}, menu)}
     eras = vce._load_campaign_data_policy_eras()
-    kw = {"single_era_inconclusive": True} if single_era_inconclusive else {}
+    kw = {"composition_runs": bool(composition_runs),
+          **({"single_era_inconclusive": True} if single_era_inconclusive else {})}
     grid = {}
     for cid in grid_doc.get("criteria") or []:
         crit = defs.get(cid)
@@ -350,10 +424,15 @@ def exploration_digest(run_dir: Path, windows, eras, holdout_start: str) -> dict
 
 def withhold_findings_numbers(summary: dict) -> dict:
     """findings_summary_for_readers with every earlier effect withheld: what
-    was tested (spec, selector, outcome, status, spec_hash) stays, so a
-    reader still does not repeat a test; how it came out does not."""
+    was tested (ids, kind, spec, selector, outcome, status, spec_hash) stays,
+    so a reader still does not repeat a test; how it came out does not -- nor
+    the free text of an earlier row (`statement`, `reason`), which may quote
+    an all-window number."""
     out = copy.deepcopy(summary)
     for row in out.get("findings") or []:
+        if isinstance(row, dict):
+            row.pop("statement", None)
+            row.pop("reason", None)
         for t in row.get("tests") or [] if isinstance(row, dict) else []:
             for v in (t.get("by_variant") or {}).values() if isinstance(t, dict) else []:
                 if isinstance(v, dict) and "largest_effect" in v:
@@ -387,6 +466,47 @@ def withhold_registry_numbers(summary: dict) -> dict:
                     g[k] = WITHHELD
     out["numbers"] = {"status": WITHHELD, "reason": WITHHELD_REASON}
     return out
+
+
+def reader_card(card: dict) -> dict:
+    """artifacts/exploration/hypothesis_card.yaml: the card the readers get --
+    READER_CARD_KEYS and the claim's READER_CLAIM_KEYS only (a whitelist).
+    Every other field (free text that may quote an all-window number, numeric
+    evidence) is left out and listed under `withheld_fields`."""
+    if not isinstance(card, dict):
+        raise ValueError("hypothesis_card.yaml is not a mapping -- no readers' copy is built")
+    out = {k: copy.deepcopy(card[k]) for k in READER_CARD_KEYS if k in card}
+    claim = card.get("claim")
+    if isinstance(claim, dict):
+        out["claim"] = {k: copy.deepcopy(claim[k]) for k in READER_CLAIM_KEYS if k in claim}
+    dropped = sorted(k for k in card if k not in READER_CARD_KEYS and k != "claim")
+    dropped += sorted(f"claim.{k}" for k in (claim if isinstance(claim, dict) else {})
+                      if k not in READER_CLAIM_KEYS)
+    out["withheld_fields"] = {"fields": dropped,
+                              "reason": ("withheld under explore_confirm: free text or evidence "
+                                         "that may quote numbers measured over every window")}
+    return out
+
+
+def exploration_inputs_missing(arts: Path, category: str, required: tuple):
+    """None when `category`'s reader has every readers' copy it cannot run
+    without (the split, and each path of `required` under
+    artifacts/exploration/, `{category}` filled in -- the orchestrator's
+    list), else the reason it has not -- the reader is then skipped by rule
+    exploration_inputs_unavailable, never given the all-window files. Never
+    raises."""
+    try:
+        load_split(arts)
+    except Exception as exc:  # noqa: BLE001 -- the reason is recorded
+        return (f"the exploration/confirmation split cannot be read "
+                f"({type(exc).__name__}: {exc})")
+    root = Path(arts) / EXPLORATION_DIR
+    missing = [f"{EXPLORATION_DIR}/{rel.format(category=category)}" for rel in required
+               if not (root / rel.format(category=category)).is_file()]
+    if missing:
+        return (f"the readers' exploration copies {missing} could not be written in this run; "
+                f"the all-window files are never given instead")
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -535,6 +655,7 @@ def confirm_findings(run_dir: Path, run_id: str, readings: dict, split: dict, *,
                                                        conf_labels, eras, holdout_start)
                 rec.update(measured_record(results, measured, base_variant))
                 rec["measured_in_run"] = run_id
+                rec["confirmation_basis"] = BASIS_IN_RUN
                 rec["_comparisons"] = comparisons_of(results)
             except Exception as exc:  # noqa: BLE001 -- recorded
                 rec.update({"status": ERROR, "confirmation_sign_retained": None,
@@ -557,14 +678,48 @@ def source_finding_id(arts: Path):
     return ref.split("#", 1)[1] or None
 
 
+def pending_for(findings: dict, source_id, run_id: str):
+    """The record THIS run (built from finding `source_id`) should resolve,
+    from the ledger's `findings` (read under the ledger's lock), or None: the
+    finding while it is pending, or -- on a resume or re-run of this same run
+    -- the finding this run already resolved, put back to its pending state so
+    it is measured again (artifacts/confirmation.yaml keeps it under
+    resolved_pending; its looks are not counted twice)."""
+    rec = (findings or {}).get(source_id) if source_id else None
+    if not isinstance(rec, dict):
+        return None
+    if rec.get("confirmation_sign_retained") == PENDING:
+        return rec
+    if rec.get("measured_in_run") == run_id and rec.get("confirmation_basis") == BASIS_FOLLOW_UP:
+        out = copy.deepcopy(rec)
+        state = out.pop("pending_state", None)
+        for k in _RESOLUTION_KEYS:
+            out.pop(k, None)
+        out.update(state if isinstance(state, dict) else
+                   {"status": PENDING, "confirmation_sign_retained": PENDING})
+        return out
+    return None
+
+
 def resolve_pending(run_dir: Path, run_id: str, pending: dict, split: dict, *,
                     base_variant: str | None, eras, holdout_start: str) -> dict:
     """A pending record, measured by THIS run (built from it): this run's own
     claim tests (its hypothesis card) on this run's confirmation windows of its
     base variant. Not measured -- and still pending -- when this run's
-    confirmation windows overlap the windows the proposer saw. Never raises."""
+    confirmation windows overlap the windows the proposer saw. Never raises.
+
+    A resolution is recorded as WEAK (PR #340 review, finding 1):
+    `confirmation_basis: follow_up_run`, `proposer_exposure:
+    step_1a_saw_all_window_knowledge_base`, `weak: true` -- this run's card
+    was written by step 1a, which read the all-window knowledge base. When
+    this run's tests differ from the finding's (`tests_changed_from_finding`),
+    the result is `not_comparable`: its own sign is kept as
+    `sign_of_own_tests`, never counted as the finding held or not held. An
+    earlier attempt of this same run is replaced, not appended to."""
     import claim_card as cc
     rec = copy.deepcopy(pending)
+    rec["attempts"] = [a for a in rec.get("attempts") or []
+                       if not (isinstance(a, dict) and a.get("run_id") == run_id)]
     conf = split["confirmation"]
     overlap = _overlap(rec.get("proposer_saw") or [], conf)
     attempt = {"run_id": run_id, "confirmation_set": set_key(conf)}
@@ -594,12 +749,20 @@ def resolve_pending(run_dir: Path, run_id: str, pending: dict, split: dict, *,
         attempt["result"] = f"not measured: {type(exc).__name__}: {exc}"
         rec.setdefault("attempts", []).append(attempt)
         return rec
+    rec.setdefault("pending_state", {k: pending.get(k) for k in _PENDING_STATE_KEYS})
     rec.update(measured_record(results, measured, base_variant))
     rec.update({"measured_in_run": run_id, "confirmation_set": set_key(conf),
-                "_comparisons": comparisons_of(results)})
+                "_comparisons": comparisons_of(results), "confirmation_basis": BASIS_FOLLOW_UP,
+                "proposer_exposure": PROPOSER_EXPOSURE_1A, "weak": True, "bar": WEAK_BAR})
     own = {t.get("spec_hash") for t in res.tests}
     rec["tests_changed_from_finding"] = bool(rec.get("finding_spec_hashes")) and \
         set(rec.get("finding_spec_hashes") or []) != own
+    if rec["tests_changed_from_finding"] and rec.get("confirmation_sign_retained") is not None:
+        rec["sign_of_own_tests"] = rec["confirmation_sign_retained"]
+        rec["confirmation_sign_retained"] = NOT_COMPARABLE
+        rec["reason"] = ("not comparable: the run built from this finding measured other tests "
+                         "(spec_hash differs from the finding's); its own tests' sign is "
+                         "sign_of_own_tests, not this finding's")
     attempt["result"] = rec["status"]
     rec.setdefault("attempts", []).append(attempt)
     return rec
@@ -623,11 +786,25 @@ def load_ledger(root: Path) -> dict:
     return doc if isinstance(doc, dict) else {}
 
 
-def record(root: Path, run_id: str, records: list) -> list:
-    """Upsert `records` into campaign_record/confirmations.yaml and count their
-    looks (idempotent per run, finding and spec_hash: a resumed stage never
-    counts a look twice). Returns the records as written, each with its
-    `looks` position on its confirmation set. Locked, atomic."""
+def record(root: Path, run_id: str, records: list, *, resolve=None) -> list:
+    """Upsert `records` (this run's side findings) into
+    campaign_record/confirmations.yaml and count their looks (idempotent per
+    run, finding and spec_hash: a resumed stage never counts a look twice).
+    Locked, atomic.
+
+    `resolve`: optional callable(findings) -> [resolved records], called
+    UNDER the lock with the ledger's findings (the pending lookup reads the
+    ledger as it is now, not a copy read before the lock); its records are
+    upserted and counted after `records`.
+
+    A re-run of this run REPLACES its own entries: a finding this run proposed
+    in an earlier attempt and not in `records` is removed from `findings`
+    (listed under `superseded`) -- unless another run already measured it.
+    Its looks stay counted: a look measured on a confirmation set was spent,
+    whichever attempt took it.
+
+    Returns the records as written (`records` first, then the resolved ones),
+    each measured one with its `looks` position on its confirmation set."""
     import campaign_memory as cm
     import campaign_review_retired as crr
     path = Path(root) / LEDGER_REL
@@ -637,8 +814,22 @@ def record(root: Path, run_id: str, records: list) -> list:
         doc = crr._load_mapping(path, {})
         findings = doc.get("findings") if isinstance(doc.get("findings"), dict) else {}
         looks = [lk for lk in doc.get("looks") or [] if isinstance(lk, dict)]
+        superseded = [s for s in doc.get("superseded") or [] if isinstance(s, dict)]
         seen = {(lk.get("run_id"), lk.get("finding_id"), lk.get("spec_hash")) for lk in looks}
-        for rec in records:
+        resolved = list(resolve(copy.deepcopy(findings)) or []) if resolve is not None else []
+        own_now = {str(r.get("finding_id")) for r in records if r.get("finding_id")}
+        for fid, old in sorted(findings.items()):
+            if (isinstance(old, dict) and old.get("source_run") == run_id
+                    and str(fid) not in own_now
+                    and old.get("measured_in_run") in (None, run_id)):
+                superseded.append({"run_id": run_id, "finding_id": str(fid),
+                                   "status": old.get("status"),
+                                   "confirmation_sign_retained":
+                                       old.get("confirmation_sign_retained"),
+                                   "note": "an earlier attempt of this run; its looks stay "
+                                           "counted"})
+                del findings[fid]
+        for rec in list(records) + resolved:
             rec = dict(rec)
             comps = rec.pop("_comparisons", None) or []
             for c in comps:
@@ -669,7 +860,8 @@ def record(root: Path, run_id: str, records: list) -> list:
             s["n_comparisons"] += int(lk.get("n_comparisons") or 1)
         cm._atomic_write(path, {"schema_version": SCHEMA_VERSION, "note": LEDGER_NOTE,
                                 "bar": HONEST_BAR, "findings": findings, "looks": looks,
-                                "by_set": dict(sorted(by_set.items()))})
+                                "by_set": dict(sorted(by_set.items())),
+                                **({"superseded": superseded} if superseded else {})})
     return written
 
 
@@ -686,14 +878,31 @@ def summary_lines(root: Path) -> list:
         return title + [f"- {LEDGER_REL} is unreadable ({type(exc).__name__}); fix or remove it."]
     findings = doc.get("findings") if isinstance(doc, dict) and isinstance(
         doc.get("findings"), dict) else {}
-    counts = {}
+    # The clean counts are the in-run measurements (readers who saw the
+    # exploration copies only); a resolution by the run built from a finding
+    # is counted on its own line (weak: step 1a saw the all-window knowledge
+    # base), and a not_comparable one is never held / not held.
+    counts, follow = {}, {}
     for rec in findings.values():
         v = rec.get("confirmation_sign_retained") if isinstance(rec, dict) else None
-        key = {True: "held", False: "not held", PENDING: "pending"}.get(v, "not measured")
+        if isinstance(rec, dict) and rec.get("confirmation_basis") == BASIS_FOLLOW_UP:
+            key = ("held" if v is True else "not held" if v is False
+                   else "not comparable" if v == NOT_COMPARABLE else "not measured")
+            follow[key] = follow.get(key, 0) + 1
+            continue
+        key = ("held" if v is True else "not held" if v is False
+               else "pending" if v == PENDING else "not measured")
         counts[key] = counts.get(key, 0) + 1
+    n_follow = sum(follow.values())
     lines = title + [f"- Side findings: {len(findings)} ("
                      + ", ".join(f"{k} {counts.get(k, 0)}"
-                                 for k in ("held", "not held", "pending", "not measured")) + ")"]
+                                 for k in ("held", "not held", "pending", "not measured"))
+                     + f", resolved by a follow-up run {n_follow})"]
+    if n_follow:
+        lines.append("  - resolved by the run built from them (weak: step 1a, which wrote that "
+                     "run's card, saw the all-window knowledge base): "
+                     + ", ".join(f"{k} {follow.get(k, 0)}" for k in
+                                 ("held", "not held", "not comparable", "not measured")))
     for s, c in sorted((doc.get("by_set") or {}).items()):
         if isinstance(c, dict):
             lines.append(f"  - confirmation set {s}: {c.get('n_looks')} look(s), "

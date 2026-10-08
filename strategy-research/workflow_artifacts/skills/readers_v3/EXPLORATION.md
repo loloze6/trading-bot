@@ -12,7 +12,9 @@ only (listed in `injected_context.explore_confirm.exploration_windows` and in ea
   measures each side finding's tests on the confirmation windows: a price-only finding in
   this run, a forecast or regime block claim in the run built from it. It records whether
   the **claimed sign held** there, counted against how many such looks were taken. That is
-  the bar, not proof.
+  the bar, not proof. The confirmation windows are within your training period, so "never
+  saw" means never saw in this pipeline: do not recall what the market did then; read only
+  what your inputs show.
 - So state the direction you expect (`direction`) and choose tests that would show it on
   any window, not only on the ones you see here. A finding seen in one exploration window
   only is weak; say so in its scores.

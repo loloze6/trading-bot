@@ -1484,7 +1484,9 @@ feed that is not wired, one row per such feed in
      with the rule (never `[]`); the memory entry's proposals block carries
      `skipped`; `campaign_record/reader_skips.yaml` counts it and the campaign
      summary shows "Readers skipped by a code rule". An answer refused after its
-     retry is recorded the same way (rule `output_refused_after_retry`).
+     retry is recorded the same way (rule `output_refused_after_retry`), as is a
+     reader whose E-072 exploration copies are missing (rule
+     `exploration_inputs_unavailable`, item 9).
    - **Output:** `proposals/<category>.yaml` is ONE mapping: `schema_version: 3`,
      `reading_id`, `model_id`, `rubric_version: <category>-reading-v1`,
      `explanation`, `evidence`, `side_findings` (0-2, each a full claim block plus
@@ -1531,19 +1533,25 @@ feed that is not wired, one row per such feed in
    - **The split:** at protocol_execution entry, before any backtest,
      `artifacts/explore_confirm.yaml` records the run's protocol windows in
      time order, first half exploration, the rest confirmation (an odd count
-     gives the extra window to confirmation; fewer than 2 windows stops the run
-     before any spend). A re-run keeps the file.
+     gives the extra window to confirmation). A re-run keeps the file. Nothing
+     here stops a run: fewer than 2 windows records `status: not_applicable`
+     and that run proceeds exactly as with the flag off; any other split
+     failure is logged and the readers are skipped (next bullet).
    - **What the readers see:** only `artifacts/exploration/` copies of every
      input that carries a result -- the five reports (cut to the exploration
      windows; the pooled `overall` slices `withheld`), the grid (window criteria
      re-evaluated on those windows; pooled criteria and the idea status
      `withheld`), the claim digest (measured again on those windows), the
-     earlier findings and the registry summary (their numbers `withheld`) --
-     plus `readers_v3/EXPLORATION.md`; `claim_measurement.yaml` is not given.
-     A missing report, grid or registry copy stops the reader; a digest or
-     findings copy that cannot be written is a recorded gap (item 8's rule).
-     Never the all-window file instead. The run's own grid, idea status and
-     routing are unchanged.
+     earlier findings (numbers, `statement` and `reason` withheld) and the
+     registry summary (numbers `withheld`), and a whitelisted card copy (the
+     claim's statement/kind/tests and the signal spec; free text and numeric
+     evidence left out) -- plus `readers_v3/EXPLORATION.md`;
+     `claim_measurement.yaml` is not given. A split that cannot be read, or a
+     missing report, grid, registry or card copy, skips that reader with the
+     code rule `exploration_inputs_unavailable` (recorded in
+     `reader_skips.yaml`; the run continues); a digest or findings copy that
+     cannot be written is a recorded gap (item 8's rule). Never the all-window
+     file instead. The run's own grid, idea status and routing are unchanged.
    - **Confirmation, after every reader:** each side finding's tests on the
      confirmation windows. A pure (price-only) finding is measured in this run
      on the base variant's bars; a forecast/regime block claim (or a finding
@@ -1554,11 +1562,19 @@ feed that is not wired, one row per such feed in
      false / pending` (true only when every test keeps the claimed sign at every
      horizon with a value; no events is false; `null` only when nothing could
      be measured), in `artifacts/confirmation.yaml` and
-     `campaign_record/confirmations.yaml`.
+     `campaign_record/confirmations.yaml`. A resolution by the follow-up run is
+     WEAK and marked so (`confirmation_basis: follow_up_run`,
+     `proposer_exposure: step_1a_saw_all_window_knowledge_base`, `weak: true`):
+     step 1a wrote that run's card after reading the all-window knowledge base.
+     When its tests differ from the finding's, the result is `not_comparable`.
    - **Looks:** the ledger counts every look per confirmation set (tests and
-     test x horizon comparisons; a resume never counts twice) and the campaign
-     summary shows "Side findings on unseen windows". The bar is "the sign held
-     on unseen windows, counted against the looks", never "proven".
+     test x horizon comparisons; a resume never counts twice; a re-run replaces
+     the run's own findings but its earlier looks stay counted) and the
+     campaign summary shows "Side findings on unseen windows", with follow-up
+     resolutions on their own line, never in the clean held / not-held counts.
+     The bar is "the sign held on unseen windows, counted against the looks",
+     never "proven"; the confirmation windows are within the reader model's
+     training period, so "unseen" means unseen in this pipeline.
      Information only: nothing routes, stops, parks or ranks on it.
 
 ---

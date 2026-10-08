@@ -453,7 +453,8 @@ def test_exploration_copies_carry_no_confirmation_number(monkeypatch):
     names = sorted(p.relative_to(expl_dir).as_posix() for p in expl_dir.rglob("*.yaml"))
     assert names == sorted([f"reports/{c}.yaml" for c in REPORT_CATEGORIES]
                            + ["grid_evaluation.yaml", rf.DIGEST_ARTIFACT,
-                              rf.READER_SUMMARY_ARTIFACT, "registry_summary.yaml"])
+                              rf.READER_SUMMARY_ARTIFACT, "registry_summary.yaml",
+                              "hypothesis_card.yaml"])
     text = _text_of_tree(expl_dir)
     _assert_no_leak(text)
     for label in EXPL:
@@ -797,3 +798,351 @@ def test_readings_without_side_findings_and_an_absent_ledger_load(tmp_path):
                                                    "reading_id": f"regime_power-{RUN_ID}",
                                                    "skipped": {"rule": "r", "reason": "x"}}}) == []
     assert ec.source_finding_id(tmp_path) is None
+
+
+# ---------------------------------------------------------------------------
+# 7. Review fixes (PR #340, independent review at 13a88fac)
+# ---------------------------------------------------------------------------
+
+def _skips(run_dir: Path) -> dict:
+    out = {}
+    for c in REPORT_CATEGORIES:
+        doc = yaml.safe_load((run_dir / "artifacts" / "proposals" / f"{c}.yaml").read_text(
+            encoding="utf-8"))
+        out[c] = (doc or {}).get("skipped")
+    return out
+
+
+def _assert_every_reader_skipped_by_e072_rule(run_dir: Path, prompts: list) -> None:
+    """No reader called; every reading a code-written skip. The fixture has one
+    component, so component_attribution is skipped first by the existing
+    single_component rule; every other reader by the E-072 rule."""
+    assert prompts == []                       # no reader was called
+    expected = {c: rf.SKIP_EXPLORATION_UNAVAILABLE for c in REPORT_CATEGORIES}
+    expected["component_attribution"] = rf.SKIP_SINGLE_COMPONENT
+    got = {c: (skip or {}).get("rule") for c, skip in _skips(run_dir).items()}
+    assert got == expected
+    rec = yaml.safe_load((rpr.ROOT / rf.SKIPS_REL).read_text(encoding="utf-8"))
+    assert {c: s["rule"] for c, s in rec["runs"][run_dir.name].items()} == expected
+
+
+# --- finding 1: a follow-up resolution is weak, counted apart ---------------
+
+def test_in_run_measurements_carry_their_basis(monkeypatch):
+    run_dir = _ec_run(monkeypatch)
+    _protocol_execution_part(run_dir)
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _readings_llm([], _sides()))
+    rpr._run_specialist_readers_stage(RUN_ID, run_dir)
+    pure = next(r for r in _confirmation(run_dir)["side_findings"] if r["route"] == ec.IN_RUN)
+    assert pure["confirmation_basis"] == ec.BASIS_IN_RUN and "weak" not in pure
+
+
+def test_a_follow_up_resolution_is_marked_weak_and_counted_apart(monkeypatch):
+    _seed_pending(monkeypatch)
+    child = _child_run(monkeypatch, "run_991")
+    _protocol_execution_part(child, "run_991")
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _readings_llm([]))
+    rpr._run_specialist_readers_stage("run_991", child)
+    rec = ec.load_ledger(rpr.ROOT)["findings"][f"forecast_power-{RUN_ID}-1"]
+    assert rec["confirmation_basis"] == ec.BASIS_FOLLOW_UP
+    assert rec["proposer_exposure"] == ec.PROPOSER_EXPOSURE_1A and rec["weak"] is True
+    assert rec["bar"] == ec.WEAK_BAR and rec["bar"].startswith("WEAK")
+    assert rec["confirmation_sign_retained"] in (True, False)
+    lines = ec.summary_lines(rpr.ROOT)
+    main = next(x for x in lines if x.startswith("- Side findings:"))
+    # the clean counts hold only run_990's in-run pure finding (reversal: not held)
+    assert "held 0, not held 1, pending 0" in main and "resolved by a follow-up run 1" in main
+    follow = next(x for x in lines if "resolved by the run built from them" in x)
+    assert "weak" in follow
+    held = "held 1, not held 0" if rec["confirmation_sign_retained"] else "held 0, not held 1"
+    assert held in follow
+
+
+def test_a_follow_up_run_with_other_tests_is_not_comparable(monkeypatch):
+    _seed_pending(monkeypatch)
+    other = copy.deepcopy(_block_claim())
+    other["tests"][0]["outcome"]["horizons"] = [1, 2]       # another spec_hash
+    run_dir = _ec_run(monkeypatch, run_id="run_993", card_claim=other)
+    _save(run_dir / "artifacts" / "research_brief.yaml", {"candidate": {"source": {
+        "proposal_ref": f"runs/{RUN_ID}/artifacts/proposals/forecast_power.yaml"
+                        f"#forecast_power-{RUN_ID}-1"}}})
+    _protocol_execution_part(run_dir, "run_993")
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _readings_llm([]))
+    rpr._run_specialist_readers_stage("run_993", run_dir)
+    rec = ec.load_ledger(rpr.ROOT)["findings"][f"forecast_power-{RUN_ID}-1"]
+    assert rec["tests_changed_from_finding"] is True
+    assert rec["confirmation_sign_retained"] == ec.NOT_COMPARABLE
+    assert rec["sign_of_own_tests"] in (True, False) and rec["weak"] is True
+    lines = ec.summary_lines(rpr.ROOT)
+    main = next(x for x in lines if x.startswith("- Side findings:"))
+    assert "held 0, not held 1" in main          # run_990's pure finding only
+    follow = next(x for x in lines if "resolved by the run built from them" in x)
+    assert "held 0, not held 0, not comparable 1" in follow
+
+
+# --- finding 2: E-072 never stops a run --------------------------------------
+
+def test_fewer_than_two_windows_is_not_applicable_and_the_run_proceeds_flag_off(monkeypatch):
+    run_dir = _ec_run(monkeypatch, windows=WINDOWS[:1])
+    split = rpr._prepare_explore_confirm(run_dir, RUN_ID)       # never raises
+    assert split["status"] == ec.NOT_APPLICABLE and "at least 2" in split["reason"]
+    on_disk = yaml.safe_load((run_dir / "artifacts" / ec.SPLIT_ARTIFACT).read_text(
+        encoding="utf-8"))
+    assert on_disk["effect"] == ec.NOT_APPLICABLE_EFFECT
+    assert rpr._explore_confirm_active(run_dir) is False and rpr._explore_confirm_enabled()
+    # kept on a re-run
+    assert rpr._prepare_explore_confirm(run_dir, RUN_ID)["status"] == ec.NOT_APPLICABLE
+    prompts_on = []
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _readings_llm(prompts_on, _sides()))
+    rpr._run_specialist_readers_stage(RUN_ID, run_dir)
+    arts = run_dir / "artifacts"
+    assert not (arts / ec.EXPLORATION_DIR).exists()
+    assert not (arts / ec.CONFIRMATION_ARTIFACT).exists()
+    assert not (rpr.ROOT / ec.LEDGER_REL).exists()
+    shutil.rmtree(arts / "proposals")
+    _set_orchestrator(EC_OFF)
+    prompts_off = []
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _readings_llm(prompts_off, _sides()))
+    rpr._run_specialist_readers_stage(RUN_ID, run_dir)
+    assert prompts_on == prompts_off and prompts_on      # exactly the flag-off readers
+
+
+def test_a_split_failure_at_entry_never_raises_and_the_readers_are_skipped(monkeypatch):
+    run_dir = _ec_run(monkeypatch)
+
+    def _boom(*a, **k):
+        raise ec.SplitError("window 'x' has two date ranges")
+    monkeypatch.setattr(ec, "ensure_split", _boom)
+    assert rpr._prepare_explore_confirm(run_dir, RUN_ID) is None
+    prompts = []
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _readings_llm(prompts, _sides()))
+    rpr._run_specialist_readers_stage(RUN_ID, run_dir)          # returns: the run continues
+    _assert_every_reader_skipped_by_e072_rule(run_dir, prompts)
+    assert "split cannot be read" in _skips(run_dir)["profitability"]["reason"]
+    assert _confirmation(run_dir)["status"] == "error"
+
+
+def test_an_exploration_views_failure_does_not_fail_protocol_execution():
+    """The protocol_execution hook routes a failure to _exploration_views_failed,
+    never into _sr_errors (which fails the stage)."""
+    src = (SR_ROOT / "workflow" / "run_phase1_research.py").read_text(encoding="utf-8")
+    start = src.index("# E-072: the readers' copies of the reports and the grid")
+    end = src.index('print(f"✅ protocol_execution (variant loop)', start)
+    block = src[start:end]
+    assert "_exploration_views_failed(RUN_DIR, _ec_err)" in block
+    assert "_sr_errors.append" not in block and "raise" not in block
+
+
+def test_after_an_exploration_views_failure_the_readers_are_skipped(monkeypatch):
+    run_dir = _ec_run(monkeypatch)
+    _protocol_execution_part(run_dir)                 # a partial set is on disk
+    rpr._exploration_views_failed(run_dir, OSError("disk full"))
+    assert not (run_dir / "artifacts" / ec.EXPLORATION_DIR).exists()
+    prompts = []
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _readings_llm(prompts, _sides()))
+    rpr._run_specialist_readers_stage(RUN_ID, run_dir)
+    _assert_every_reader_skipped_by_e072_rule(run_dir, prompts)
+    assert "never given instead" in _skips(run_dir)["profitability"]["reason"]
+
+
+@pytest.mark.parametrize("which", ["registry_summary.yaml", "hypothesis_card.yaml"])
+def test_a_required_copy_that_cannot_be_written_skips_the_readers(which, monkeypatch):
+    run_dir = _ec_run(monkeypatch)
+    _protocol_execution_part(run_dir)
+    stale = run_dir / "artifacts" / ec.EXPLORATION_DIR / which
+    stale.parent.mkdir(parents=True, exist_ok=True)
+    stale.write_text("older_attempt_copy: {}\n", encoding="utf-8")
+
+    def _boom(*a, **k):
+        raise OSError("disk full")
+    monkeypatch.setattr(ec, {"registry_summary.yaml": "withhold_registry_numbers",
+                             "hypothesis_card.yaml": "reader_card"}[which], _boom)
+    rpr._write_registry_summary(run_dir, idea_status="refuted")
+    rpr._write_reader_v3_inputs(run_dir, RUN_ID)                 # never raises
+    assert not stale.exists()                                    # the older copy is gone
+    prompts = []
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _readings_llm(prompts, _sides()))
+    rpr._run_specialist_readers_stage(RUN_ID, run_dir)
+    _assert_every_reader_skipped_by_e072_rule(run_dir, prompts)
+    assert f"{ec.EXPLORATION_DIR}/{which}" in _skips(run_dir)["profitability"]["reason"]
+
+
+def test_a_run_paused_at_the_readers_when_the_flag_is_turned_on(monkeypatch):
+    """protocol_execution ran with the flag off (no split); the flag is turned
+    on before the resume: every resume skips the readers, none raises."""
+    run_dir = _ec_run(monkeypatch, flags=EC_OFF)
+    _set_orchestrator(EC_ON)
+    for _ in range(2):
+        prompts = []
+        monkeypatch.setattr(rpr, "_invoke_reader_llm", _readings_llm(prompts, _sides()))
+        rpr._run_specialist_readers_stage(RUN_ID, run_dir)
+        _assert_every_reader_skipped_by_e072_rule(run_dir, prompts)
+
+
+def test_the_new_skip_rule_is_a_code_rule_a_model_cannot_write():
+    import reader_proposals as rp
+    assert rf.SKIP_EXPLORATION_UNAVAILABLE == "exploration_inputs_unavailable"
+    assert rf.SKIP_EXPLORATION_UNAVAILABLE in rp.SKIP_RULES
+    doc = rf.skipped_reading("profitability", RUN_ID, {"rule": rf.SKIP_EXPLORATION_UNAVAILABLE,
+                                                       "reason": "copies missing"})
+    with pytest.raises(rp.ProposalError):
+        rp.check_reading(doc, "profitability", "model output", from_model=True)
+
+
+# --- finding 3: free text never carries an all-window number -----------------
+
+def _card_with_numbers() -> dict:
+    claim = {**_pure_claim(), "rationale": "the all-window effect was 919191.5",
+             "pass_if": "above 828282.5", "fail_if": "below 828282.5"}
+    return {"hypothesis_id": "H-TEST-1", "thesis": "it returned 919191.5 on 2023-05",
+            "rationale": "seen at 828282.5 over every window",
+            "edge_source": {"category": "c", "specific_mechanism": "m 919191.5",
+                            "why_not_arbitraged": "w", "evidence_type": "e",
+                            "measurable_proxy": "p"},
+            "assumptions": ["a 919191.5"], "expected_failure_modes": ["f", "g", "h 828282.5"],
+            "power_parameters": {"activation_rate": 828282.5, "plausible_ic_upper": 919191.5},
+            "signal_concept": "sign of the 1-bar return", "timeframe": "1d",
+            "target_market": "BTCUSD", "claim": claim}
+
+
+def test_the_readers_card_is_a_whitelist():
+    out = ec.reader_card(_card_with_numbers())
+    _assert_no_leak(yaml.safe_dump(out))
+    assert out["claim"] == {k: _pure_claim()[k] for k in ("statement", "kind", "tests")}
+    assert out["signal_concept"] == "sign of the 1-bar return"
+    assert out["hypothesis_id"] == "H-TEST-1"
+    assert {"rationale", "thesis", "power_parameters", "claim.rationale",
+            "claim.pass_if"} <= set(out["withheld_fields"]["fields"])
+
+
+def test_the_card_and_earlier_free_text_never_reach_a_reader_prompt(monkeypatch):
+    run_dir = _ec_run(monkeypatch)
+    _save(run_dir / "artifacts" / "hypothesis_card.yaml", _card_with_numbers())
+    _protocol_execution_part(run_dir)
+    prompts = []
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _readings_llm(prompts, _sides()))
+    rpr._run_specialist_readers_stage(RUN_ID, run_dir)
+    assert prompts
+    for p in prompts:
+        _assert_no_leak(p)
+        assert "sign of the 1-bar return" in p          # the signal spec is given
+    h = rpr._reader_handoff("profitability", RUN_ID, 0, run_dir)
+    req = [r["path"] for r in h["required_inputs"]]
+    assert f"artifacts/{ec.EXPLORATION_DIR}/hypothesis_card.yaml" in req
+    assert "artifacts/hypothesis_card.yaml" not in req
+
+
+def test_earlier_findings_statement_and_reason_are_withheld():
+    summary = {"findings": [{"finding_id": "F-run_1-1", "run_id": "run_1", "kind": "k",
+                             "status": "measured", "reason": "seen at 919191.5",
+                             "statement": "returned 828282.5 over every window",
+                             "tests": [{"name": "t", "selector": {"kind": "all"}}]}]}
+    out = ec.withhold_findings_numbers(summary)
+    row = out["findings"][0]
+    assert "statement" not in row and "reason" not in row
+    assert row["finding_id"] == "F-run_1-1" and row["kind"] == "k"
+    assert row["tests"][0]["selector"] == {"kind": "all"}
+    _assert_no_leak(yaml.safe_dump(out))
+
+
+def test_the_docs_say_never_saw_means_in_this_pipeline():
+    for rel in ("workflow_artifacts/skills/readers_v3/EXPLORATION.md",
+                "engineering/roadmap/E-072/PHASE_A.md"):
+        text = (SR_ROOT / rel).read_text(encoding="utf-8")
+        assert "training period" in text and "in this pipeline" in text, rel
+
+
+# --- finding 4: the grid copy uses the real grid call's keywords -------------
+
+def test_the_exploration_grid_passes_composition_runs(monkeypatch):
+    seen = []
+    real = vce._evaluate_grid_cell
+
+    def _spy(*a, **k):
+        seen.append(k.get("composition_runs"))
+        return real(*a, **k)
+    monkeypatch.setattr(vce, "_evaluate_grid_cell", _spy)
+    grid_doc = {"criteria": ["c_win"], "variants": ["base"]}
+    pr = {"results": [{"window": "2022-01", "symbol": "BTCUSD",
+                       "core": {"sharpe": 1.0, "trade_count": 5}}]}
+    ec.exploration_grid(grid_doc, {"base": pr}, PRE_REG, {}, ["2022-01"], composition_runs=True)
+    ec.exploration_grid(grid_doc, {"base": pr}, PRE_REG, {}, ["2022-01"])
+    assert seen == [True, False]
+
+
+def test_the_views_pass_the_runs_composition_flag(monkeypatch):
+    run_dir = _ec_run(monkeypatch)
+    seen = {}
+    real = ec.exploration_grid
+
+    def _spy(*a, **k):
+        seen.update(k)
+        return real(*a, **k)
+    monkeypatch.setattr(ec, "exploration_grid", _spy)
+    monkeypatch.setattr(rpr, "_composition_runs_enabled", lambda *a, **k: True)
+    _protocol_execution_part(run_dir)
+    assert seen["composition_runs"] is True
+
+
+# --- finding 6: ledger hygiene ------------------------------------------------
+
+def test_a_rerun_replaces_the_runs_own_entries_and_keeps_its_looks(monkeypatch):
+    run_dir = _ec_run(monkeypatch)
+    _protocol_execution_part(run_dir)
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _readings_llm([], _sides()))
+    rpr._run_specialist_readers_stage(RUN_ID, run_dir)
+    key = ec.set_key(ec.load_split(run_dir / "artifacts")["confirmation"])
+    assert ec.load_ledger(rpr.ROOT)["by_set"] == {key: {"n_looks": 1, "n_comparisons": 1}}
+    # protocol_execution re-runs; this attempt's readers propose the block claim only
+    _protocol_execution_part(run_dir)
+    shutil.rmtree(run_dir / "artifacts" / "proposals")
+    only_block = {"forecast_power": _sides()["forecast_power"]}
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _readings_llm([], only_block))
+    rpr._run_specialist_readers_stage(RUN_ID, run_dir)
+    ledger = ec.load_ledger(rpr.ROOT)
+    assert set(ledger["findings"]) == {f"forecast_power-{RUN_ID}-1"}
+    assert [s["finding_id"] for s in ledger["superseded"]] == [f"trade_efficiency-{RUN_ID}-1"]
+    # the superseded attempt's look was measured: it stays counted
+    assert ledger["by_set"] == {key: {"n_looks": 1, "n_comparisons": 1}}
+    lines = ec.summary_lines(rpr.ROOT)
+    assert any("Side findings: 1 (" in x and "pending 1" in x for x in lines)
+
+
+def test_a_rerun_never_removes_a_finding_another_run_measured(tmp_path):
+    ec.record(tmp_path, "run_1", [{"finding_id": "a", "source_run": "run_1",
+                                   "confirmation_sign_retained": True,
+                                   "measured_in_run": "run_2"}])
+    ec.record(tmp_path, "run_1", [])
+    assert "a" in ec.load_ledger(tmp_path)["findings"]
+
+
+def test_a_resume_after_resolution_keeps_resolved_pending(monkeypatch):
+    _seed_pending(monkeypatch)
+    child = _child_run(monkeypatch, "run_991")
+    _protocol_execution_part(child, "run_991")
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _readings_llm([]))
+    rpr._run_specialist_readers_stage("run_991", child)
+    first = ec.load_ledger(rpr.ROOT)
+    rpr._run_specialist_readers_stage("run_991", child)          # a resume
+    doc = _confirmation(child)
+    assert [r["finding_id"] for r in doc["resolved_pending"]] == [f"forecast_power-{RUN_ID}-1"]
+    again = ec.load_ledger(rpr.ROOT)
+    rec = again["findings"][f"forecast_power-{RUN_ID}-1"]
+    assert rec["measured_in_run"] == "run_991" and rec["status"] == ec.MEASURED
+    assert [a["run_id"] for a in rec["attempts"]] == ["run_991"]     # replaced, not appended
+    assert again["by_set"] == first["by_set"]                        # no look counted twice
+    assert rec["confirmation_sign_retained"] == \
+        first["findings"][f"forecast_power-{RUN_ID}-1"]["confirmation_sign_retained"]
+    assert rec["pending_state"]["confirmation_sign_retained"] == ec.PENDING
+
+
+def test_the_pending_lookup_reads_the_ledger_under_its_lock(monkeypatch):
+    """The lookup reads the findings ec.record hands it under the lock -- not
+    an unlocked load_ledger copy (here a stale, empty view)."""
+    _seed_pending(monkeypatch)
+    child = _child_run(monkeypatch, "run_991")
+    _protocol_execution_part(child, "run_991")
+    monkeypatch.setattr(ec, "load_ledger", lambda root: {})
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _readings_llm([]))
+    rpr._run_specialist_readers_stage("run_991", child)
+    assert _confirmation(child)["resolved_pending"][0]["measured_in_run"] == "run_991"
