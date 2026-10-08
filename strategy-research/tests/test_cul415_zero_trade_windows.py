@@ -155,6 +155,143 @@ def test_per_symbol_all_records_skips_per_symbol():
 
 
 # ---------------------------------------------------------------------------
+# review fix (PR #349): skipping never removes an era from the vote
+# ---------------------------------------------------------------------------
+
+E2018 = "era_2018_pre_funding"
+LOST_2018 = f"era {E2018}: every window had no trades -- the sign cannot be judged there"
+
+
+def _lost_2018_pr(later=("2021-01", "2022-01", "2024-03", "2025-03")) -> dict:
+    """2018: three zero-trade windows (its only windows); later eras trade, all
+    positive."""
+    return {"results": [_w("2018-03", 0), _w("2018-07", 0), _w("2018-11", 0)]
+            + [_w(m, 10, net_return_pct=1.0 + i) for i, m in enumerate(later)]}
+
+
+def test_review_scenario_1_lost_era_is_inconclusive_not_pass():
+    # 2018 all zero-trade + trading windows in 2021 / 2022 / 2024 / 2025.
+    crit = _era_crit()
+    off = _cell(crit, _lost_2018_pr())
+    assert off["result"] == "FAIL" and off["detail"]["era_medians"][E2018] == 0.0
+    on = _cell(crit, _lost_2018_pr(), **ON)
+    assert on["result"] == "INCONCLUSIVE"
+    assert on["reason"].startswith(LOST_2018)
+    assert "3 zero-trade window(s) not computed" in on["reason"]
+    assert on["skipped_windows"]["eras_left_empty"] == [E2018]
+    assert on["skipped_windows"]["count"] == 3
+    assert E2018 not in on["detail"]["era_medians"]
+
+
+def test_review_scenario_2_single_remaining_era_is_inconclusive_not_pass():
+    # 2018 all zero-trade + 2021-2023 trading, single_era_inconclusive OFF.
+    pr = _lost_2018_pr(later=("2021-01", "2022-01", "2023-01", "2023-06"))
+    off = _cell(_era_crit(), pr)
+    assert off["result"] == "FAIL"
+    on = _cell(_era_crit(), pr, **ON)
+    assert on["result"] == "INCONCLUSIVE"
+    assert on["reason"].startswith(LOST_2018)
+    assert list(on["detail"]["era_medians"]) == ["era_2019_2023_full_feed"]
+    # with the single-era rule as well: still INCONCLUSIVE, the lost era named first
+    both = _cell(_era_crit(), pr, single_era_inconclusive=True, **ON)
+    assert both["result"] == "INCONCLUSIVE"
+    assert both["reason"].startswith(LOST_2018 + "; single_era")
+
+
+def test_every_era_keeps_a_window_behaves_as_before_the_review_fix():
+    cell = _cell(_era_crit(), _era_pr(), **ON)
+    assert cell["result"] == "PASS"
+    assert cell["skipped_windows"]["eras_left_empty"] == []
+    assert "reason" not in cell
+    # the cell is exactly the pre-fix flag-on cell plus the empty eras_left_empty
+    view = {"results": [e for e in _era_pr()["results"] if e["core"]["trade_count"] != 0]}
+    bare = _cell(_era_crit(), view)
+    sk = dict(cell["skipped_windows"])
+    assert sk.pop("eras_left_empty") == []
+    assert {k: v for k, v in cell.items() if k != "skipped_windows"} == bare
+    assert sk == {"count": 2, "windows": ["BTCUSDT 2021-02", "BTCUSDT 2021-03"],
+                  "reason": vce.ZERO_TRADE_SKIP_REASON}
+
+
+def test_lost_era_with_remaining_eras_disagreeing_stays_fail():
+    pr = _lost_2018_pr()
+    pr["results"][-1]["core"]["net_return_pct"] = -5.0  # 2025 era negative
+    off = _cell(_era_crit(), pr)
+    on = _cell(_era_crit(), pr, **ON)
+    assert off["result"] == "FAIL" and on["result"] == "FAIL"
+    assert "disagree in sign" in on["detail"]["reason"]
+    assert on["skipped_windows"]["eras_left_empty"] == [E2018]
+
+
+def test_lost_era_below_floor_names_the_era_first():
+    on = _cell(_era_crit(5), _lost_2018_pr(), **ON)
+    assert on["result"] == "INCONCLUSIVE"
+    assert on["reason"].startswith(LOST_2018 + "; n_windows=4 < floor.min_windows=5")
+
+
+def test_era_not_compared_flag_off_is_not_counted_as_lost():
+    # sharpe is null in a zero-trade window: flag off 2018 is not compared either.
+    pr = {"results": [_w("2018-03", 0, sharpe=None), _w("2021-01", 10, sharpe=1.0),
+                      _w("2025-01", 10, sharpe=2.0)]}
+    crit = {**_era_crit(2), "metric": "sharpe"}
+    off = _cell(crit, pr)
+    on = _cell(crit, pr, **ON)
+    assert off["result"] == on["result"] == "PASS"
+    assert on["skipped_windows"] == {"count": 0, "windows": [], "eras_left_empty": [],
+                                     "reason": vce.ZERO_TRADE_SKIP_REASON}
+
+
+def test_scalar_reducers_carry_no_era_field():
+    pr = {"results": [_w("2018-03", 0), _w("2021-01", 10, win_rate=55.0),
+                      _w("2021-02", 10, win_rate=60.0)]}
+    on = _cell(_scalar_crit("win_rate", "min", ">=", 40.0), pr, **ON)
+    assert on["result"] == "PASS"
+    assert "eras_left_empty" not in on["skipped_windows"]
+
+
+def test_per_symbol_all_lost_era_is_judged_per_symbol():
+    # BTC loses 2018 (only zero-trade windows there); ETH trades in 2018.
+    pr = _lost_2018_pr()
+    pr["results"] += [_w("2018-03", 10, symbol="ETHUSDT", net_return_pct=1.0),
+                      _w("2021-01", 10, symbol="ETHUSDT", net_return_pct=1.0),
+                      _w("2022-01", 10, symbol="ETHUSDT", net_return_pct=1.0),
+                      _w("2025-03", 10, symbol="ETHUSDT", net_return_pct=1.0)]
+    crit = {**_era_crit(), "symbol_reducer": "per_symbol_all"}
+    on = _cell(crit, pr, **ON)
+    assert on["per_symbol"]["BTCUSDT"]["result"] == "INCONCLUSIVE"
+    assert on["per_symbol"]["BTCUSDT"]["skipped_windows"]["eras_left_empty"] == [E2018]
+    assert on["per_symbol"]["ETHUSDT"]["result"] == "PASS"
+    assert on["per_symbol"]["ETHUSDT"]["skipped_windows"]["eras_left_empty"] == []
+    assert on["result"] == "INCONCLUSIVE"
+    # pooled (symbol_reducer null): 2018 keeps ETH's trading window, nothing lost
+    pooled = _cell(_era_crit(), pr, **ON)
+    assert pooled["result"] == "PASS"
+    assert pooled["skipped_windows"]["eras_left_empty"] == []
+
+
+def test_per_symbol_all_symbol_with_only_zero_trade_windows_is_never_pass():
+    pr = _era_pr()
+    pr["results"] += [_w("2021-01", 0, symbol="ETHUSDT"), _w("2025-01", 0, symbol="ETHUSDT")]
+    for crit in ({**_era_crit(2), "symbol_reducer": "per_symbol_all", "floor": {}},
+                 {**_scalar_crit("win_rate", "min", ">=", 0.0), "symbol_reducer": "per_symbol_all",
+                  "floor": {}}):
+        on = _cell(crit, pr, **ON)
+        eth = on["per_symbol"]["ETHUSDT"]
+        assert eth["result"] == "INCONCLUSIVE"
+        assert eth["n_windows"] == 0 and eth["skipped_windows"]["count"] == 2
+        assert on["result"] in ("INCONCLUSIVE", "FAIL")
+
+
+def test_evaluate_grid_lost_era_idea_status_inconclusive_not_validated():
+    pre_reg = {"pass_rule": {"criteria": [_era_crit()]}}
+    off = vce.evaluate_grid({"base": _lost_2018_pr()}, pre_reg, None, None)
+    on = vce.evaluate_grid({"base": _lost_2018_pr()}, pre_reg, None, None, **ON)
+    assert off["idea_status"] == "refuted"
+    assert on["idea_status"] == "inconclusive"
+    assert on["grid"]["sign_consistent_by_era"]["base"]["skipped_windows"]["eras_left_empty"] == [E2018]
+
+
+# ---------------------------------------------------------------------------
 # scalar reducers: drawdown flatters, win_rate penalises
 # ---------------------------------------------------------------------------
 

@@ -935,7 +935,10 @@ orchestrator:
       # median/mean/min/max/fraction_above) nor counts toward
       # floor.min_windows; the cell records the skipped windows in
       # `skipped_windows`. Too few windows left is INCONCLUSIVE, never FAIL.
-      # The engine's metrics.json is unchanged.
+      # An era the skip leaves with no window makes a sign_consistent_by_era
+      # cell INCONCLUSIVE, never PASS (skipped_windows.eras_left_empty; review
+      # fix, PR #349): losing an era can turn FAIL into INCONCLUSIVE, never
+      # into PASS. The engine's metrics.json is unchanged.
   operator_approval:
     enabled: false
       # E-068 PR 4 (D-071, CUL-399). OFF BY DEFAULT, read by

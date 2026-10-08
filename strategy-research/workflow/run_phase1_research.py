@@ -4097,7 +4097,11 @@ def _zero_trade_windows_not_computed_enabled(cfg: dict | None = None) -> bool:
     core.trade_count == 0 is not computed: its 0.0 placeholder neither votes in
     the reducer (the sign_consistent_by_era era median, median / mean / min /
     max / fraction_above) nor counts toward n_windows / floor.min_windows; the
-    cell records the skipped windows in `skipped_windows`. A declared output
+    cell records the skipped windows in `skipped_windows`. An era the skip
+    leaves with no window makes a sign_consistent_by_era cell INCONCLUSIVE,
+    never PASS (review fix, PR #349): losing an era can turn FAIL into
+    INCONCLUSIVE, never into PASS, so no dependency on profit_bars_v2's
+    single-era rule is needed. A declared output
     change of grid_evaluation.yaml (and the readers' exploration copy) when a
     run has a zero-trade window. The engine's metrics.json is unchanged."""
     cfg = _orchestrator_config(cfg)

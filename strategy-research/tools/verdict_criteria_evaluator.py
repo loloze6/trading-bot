@@ -1286,7 +1286,23 @@ def _zero_trade_windows_cell(criterion: dict, protocol_result: dict, eras: list,
     windows, so they neither vote in the reducer nor count in n_windows /
     floor.min_windows; the cell records them in `skipped_windows` (count,
     windows, reason), and a floor shortfall's reason names them. Any other
-    metric: the cell exactly as with the flag off."""
+    metric: the cell exactly as with the flag off.
+
+    Review fix (PR #349): skipping never removes a group from the vote. A
+    sign_consistent_by_era cell compares the eras its windows represent; an
+    era represented before the skip (a numeric value in a recognized era,
+    _reduce_sign_consistent_by_era's own era rule) with no window left after
+    it is recorded in skipped_windows.eras_left_empty, and the cell is then
+    INCONCLUSIVE ("era <e>: every window had no trades -- the sign cannot be
+    judged there"), never PASS. A FAIL the remaining eras already decide (two
+    of them disagree, or one has a zero median) stays FAIL: the lost era
+    cannot change it, and flag off that era's 0.0 median fails the cell too.
+    So losing an era can turn FAIL into INCONCLUSIVE, never into PASS; a PASS
+    always rests on every era the flag-off cell compared. The other grouping,
+    symbol_reducer=per_symbol_all, needs no rule here: _evaluate_grid_cell
+    takes the symbols from the full protocol_result, so a symbol whose windows
+    were all skipped keeps its own cell, with no window -- INCONCLUSIVE (floor
+    or no value), never PASS. The scalar reducers do not group."""
     metric = criterion.get("metric")
     if metric not in ZERO_TRADE_NOT_COMPUTED_FIELDS:
         return _evaluate_grid_cell_for_symbol(criterion, protocol_result, eras, symbol, **kw)
@@ -1301,6 +1317,17 @@ def _zero_trade_windows_cell(criterion: dict, protocol_result: dict, eras: list,
     cell = _evaluate_grid_cell_for_symbol(criterion, view, eras, symbol, **kw)
     cell["skipped_windows"] = {"count": len(skipped), "windows": skipped,
                                "reason": ZERO_TRADE_SKIP_REASON}
+    if criterion.get("reducer") == "sign_consistent_by_era":
+        def _represented(pr):
+            pairs = [(v, w) for v, w, _ in _window_core_triples(pr, metric, symbol)]
+            return set(_reduce_sign_consistent_by_era(pairs, eras)[1]["era_medians"])
+        lost = sorted(_represented(protocol_result) - _represented(view))
+        cell["skipped_windows"]["eras_left_empty"] = lost
+        if lost and cell.get("result") in ("PASS", "INCONCLUSIVE"):
+            cell["result"] = "INCONCLUSIVE"
+            cell["reason"] = "; ".join(
+                [f"era {e}: every window had no trades -- the sign cannot be judged there"
+                 for e in lost] + ([cell["reason"]] if cell.get("reason") else []))
     if skipped and cell.get("result") == "INCONCLUSIVE" and cell.get("reason"):
         cell["reason"] = (f"{cell['reason']} ({len(skipped)} zero-trade window(s) not computed, "
                           f"see skipped_windows)")
@@ -1326,8 +1353,9 @@ def _evaluate_grid_cell_for_symbol(criterion: dict, protocol_result: dict, eras:
     zero_trade_windows_not_computed (CUL-415, D-084; evaluate_grid's keyword,
     passed only under orchestrator.zero_trade_windows_not_computed): a
     window-source cell goes through _zero_trade_windows_cell (zero-trade
-    windows skipped for a trade-based metric). False: the cell exactly as
-    before."""
+    windows skipped for a trade-based metric; an era the skip leaves with no
+    window makes the cell INCONCLUSIVE, never PASS). False: the cell exactly
+    as before."""
     if zero_trade_windows_not_computed and criterion.get("source") == "window":
         return _zero_trade_windows_cell(criterion, protocol_result, eras, symbol,
                                         composition_runs=composition_runs,
@@ -1978,8 +2006,10 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
     (ZERO_TRADE_NOT_COMPUTED_FIELDS), a window with core.trade_count == 0 is
     not computed -- it neither votes in the reducer nor counts toward
     n_windows / floor.min_windows -- and the cell records it in
-    `skipped_windows` (a floor shortfall is INCONCLUSIVE, as any). False ->
-    byte-identical to the call without it.
+    `skipped_windows` (a floor shortfall is INCONCLUSIVE, as any). An era
+    left with no window by the skip makes a sign_consistent_by_era cell
+    INCONCLUSIVE, never PASS (skipped_windows.eras_left_empty;
+    _zero_trade_windows_cell). False -> byte-identical to the call without it.
 
     Returns {"result": "GRID_EVALUATED" | "SPEC_ERROR", "criteria": [id, ...],
     "variants": [variant_id, ...], "grid": {criterion_id: {variant_id:

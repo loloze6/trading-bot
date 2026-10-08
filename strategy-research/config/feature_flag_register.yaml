@@ -735,7 +735,11 @@ flags:
       reducer (the sign_consistent_by_era era median, the scalar reducers) nor
       counts toward floor.min_windows, and the cell records it in
       `skipped_windows` (count, windows, reason); too few windows left is
-      INCONCLUSIVE. The engine's metrics.json is unchanged. Tested by
+      INCONCLUSIVE. An era the skip leaves with no window makes a
+      sign_consistent_by_era cell INCONCLUSIVE, never PASS
+      (skipped_windows.eras_left_empty; review fix, PR #349): losing an era
+      can turn FAIL into INCONCLUSIVE, never into PASS, so no dependency on
+      profit_bars_v2's single-era rule. The engine's metrics.json is unchanged. Tested by
       tests/test_cul415_zero_trade_windows.py.
 
   - name: operator_approval
