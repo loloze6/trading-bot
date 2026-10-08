@@ -615,3 +615,136 @@ is written in E-075's wiring slice, then tried on two saved runs before the pilo
   becoming the v1 profit-chasing again?
 - How do confirmed claims actually combine into a strategy: what does E-071 need from a
   claim's record?
+
+### A1.9 The review of the analyst skill (Fable, 2026-10-08) and the operator's response
+
+The full review is in `roadmap/E-075/ANALYST_SKILL_REVIEW_1.md`. It was read-only and
+verified against the code. Its verdict on draft v2: **the thesis is right and v2 mostly
+follows it**, but four things would make it fail:
+
+1. **Strategy-behaviour claims cannot be tested today.**
+   - The claim tests read only the price bars (`claim_tests.py:407-437`).
+   - There is no trade selector (by exit cause or holding time) and no "after the exit"
+     outcome.
+   - So v2's own example ("closes winners too early in trends") would become `tests: none`.
+   - Fix: one trade-level test family, reusing E-074's trades reader and exit classifier.
+2. **"Economic relevance" was judged by the analyst,** which is v1's profit-chasing in new
+   clothes. The review's fix: a code-computed minimum effect from the cost model, and
+   code-written grades.
+3. **Memory biases the analyst.**
+   - The findings summary shows effects measured where they were found, and "k of 6"
+     counts (`reader_findings.py:285-334`).
+   - That pushes the analyst to restate the grid: run_073's trade-efficiency idea was the
+     run's own residual IC, re-proposed.
+   - Fix: memory shows each claim's statement, kind, fold and status, with numbers only for
+     confirmed claims.
+4. **The combination gap.**
+   - The combiner (`tools/composition.py:9-36`) blends forecast blocks and gates them by
+     regime.
+   - A strategy-behaviour claim (an execution rule) has no slot.
+   - Fix: every claim records how it would combine.
+
+Other points:
+- confirming by sign only lets a null claim "hold" 30-50% of the time on one fold;
+- refuted claims are knowledge;
+- one claim or "no claim", both with the same evidence trail;
+- a market claim could be confirmed on the next backtest's bars of that fold, at zero
+  extra backtests ("piggyback");
+- rank analyst candidates by code-computed effect, not self-scores;
+- the bot has no minimum hold, time stop or stop-loss.
+
+**Step 10: the operator's response (2026-10-08).**
+- **On economic relevance:**
+  > "An effect is an effect, independently from the cost. It should not be mixed. The v3
+  > version adds complexity. I would go even on the other side, deleting the part about
+  > comparing an effect to a cost."
+- **On memory (3):** agreed.
+- **On combination:**
+  > "If it is only an additional field saying how the claim will combine, it is okay. If it
+  > touches the combination logic, I am not sure I agree: the combination logic will be
+  > revisited later, potentially with an LLM step instead of a mechanical one."
+- **On the piggyback confirmation of market claims:**
+  > "Again we redo a post-backtest analysis. The market claims will be integrated into the
+  > agent: it does this market check in its own internal process."
+- **On the order:**
+  > "Stage 2 is very important: put it into stage 1, at least the trade-level test and the
+  > trade-lens skill."
+- **The review was meant to be about the skill only.** Most points sound valid, so the work
+  is done iteratively.
+
+**How these remarks are applied** (the interpretation is to be confirmed by the reviewer and
+the operator):
+- **No cost comparison anywhere in a claim's grading.** A claim's effect is reported as
+  measured. Open point for the reviewer:
+  - without any size rule, a null effect gets the right sign by luck on one fold 30-50% of
+    the time;
+  - the proposed default is a purely statistical rule, still independent of cost:
+    *confirmed* only if the sign holds AND its uncertainty range excludes zero; otherwise
+    *not confirmed*.
+- **Combination:** one record field only, `combines_as` (forecast_block | regime_gate |
+  execution_rule | knowledge_only). The combination logic is not touched.
+- **No piggyback and no separate post-backtest check.**
+  - Every claim, market or strategy, is confirmed only by **the run built from it**, on a
+    fold its lineage has not used. The claim test is measured on that run's own backtest
+    output.
+  - Spotting market patterns stays inside the analyst's reasoning (its tools, on the run it
+    reads).
+  - Consequence: a market claim must come with the strategy (vehicle) that exploits it, so
+    that its own run can test it.
+
+### A1.10 The iterative plan (proposal v2, after Step 10; to be judged by a strong model)
+
+**Stage 1: both lenses, the smallest complete loop.**
+1. **Folds:**
+   - `config/folds.yaml` (A = 2022-2023; B and C split 2018-2021, 2 blocks per year), with
+     a test;
+   - decide-next gives a child the next fold its lineage has not used
+     (`decide_next.py:2129` is the change site);
+   - a config runs on a given fold once (the repeat gate per fold);
+   - the fold is recorded with every run and claim.
+2. **The validation-period guard:** 2024-2025, single-use, in code.
+3. **Trade-level claim tests:**
+   - one test family in `claim_tests`: select trades by a closed list of fields (exit
+     cause, holding bars, side, entry hour, ...);
+   - outcomes: trade net return, return after the exit;
+   - baseline: the other trades;
+   - with a lookahead test.
+
+   It needs reliable exit causes: E-074 phase A's interim exit classifier (from
+   `exit_forecast`) now, E-029 later.
+4. **The analyst's tools:** the fixed query functions over bars and trades, including the
+   E-074 grid as a parameterised tool and `trailing_vol`.
+5. **The analyst skill (v3, simplified)** for both lenses, forecast and trade efficiency:
+   - **objective:** observe, dig in, end with one claim (or "no claim" with what was
+     examined), about market or strategy behaviour;
+   - **claim fields:** statement, kind, evidence (query-log references), why, the vehicle
+     (what the run built from it must run), the test in claim-test slots (bars or trades),
+     the falsifier, `combines_as`;
+   - **no profit or cost judgement** by the analyst.
+6. **Grading by code** on the run built from the claim: confirmed / not confirmed / not
+   measurable (statistical rule as above, no cost). Refuted claims are recorded as
+   knowledge.
+7. **The memory view:** past claims with statement, kind, fold and status; numbers only for
+   confirmed claims.
+8. **Pilot, both lenses:** process checks plus the operator's judgement (D4).
+
+**Stage 2: making the record richer.**
+- E-029 (the trade record carries the decision, replacing the interim classifier);
+- E-027 (why a forecast is zero);
+- analyst candidates ranked by code-computed effect, not self-scores;
+- the output fixes CUL-416 and CUL-417.
+
+**Stage 3: combination and the final checks.**
+- the combination of confirmed claims, using `combines_as`; its logic is to be redesigned
+  then, possibly as an LLM step;
+- then validation, once;
+- then the holdout.
+
+Each stage ends with the operator's decision before the next begins.
+
+**Questions for the strong-model judge:**
+1. Is Stage 1 the smallest loop that can produce a confirmed claim of each kind?
+2. Is the cost-free statistical confirmation rule right, and simple enough?
+3. Does "every claim is confirmed by its own run" (no piggyback) hold up for market claims,
+   whose vehicle must be a strategy exploiting them?
+4. What is missing or over-built, given the operator's preference for simplicity?
