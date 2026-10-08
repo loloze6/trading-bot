@@ -854,7 +854,8 @@ def honest_verdict_count(kb: dict, queue: dict, root=None) -> list:
 
 
 def evaluate_pass_rule_criteria(protocol_result: dict, pre_registration: dict,
-                                research_brief: dict | None = None) -> dict:
+                                research_brief: dict | None = None, *,
+                                cost_bar_all_costs: bool = False) -> dict:
     """
     Evaluates a run's protocol_result.yaml against pre_registration.yaml's
     structured pass_rule (B11/C7 schema). Returns a dict written verbatim
@@ -871,6 +872,15 @@ def evaluate_pass_rule_criteria(protocol_result: dict, pre_registration: dict,
     DOMINATE. They run whether or not a pass_rule exists, and an unmet one
     short-circuits to VERDICT_BLOCKED before any `legacy_not_evaluable` return
     can hand the run to stage discretion.
+
+    `cost_bar_all_costs` (CUL-414, D-082; the caller passes True only under
+    orchestrator.cost_bar_all_costs): a criterion whose metric is
+    `realized_edge_to_cost_ratio` reads `realized_edge_to_cost_ratio_all_costs`
+    instead -- the same remap evaluate_grid applies
+    (_cost_bar_all_costs_criteria), so pass_rule_evaluation.yaml and
+    grid_evaluation.yaml grade the D-038 ratio on one basis. A missing field
+    is a null value (the criterion's null_handling applies), never the
+    fee-only ratio. False -> byte-identical to the call without it.
     """
     precondition_results = evaluate_verdict_preconditions(
         protocol_result, pre_registration, research_brief)
@@ -892,7 +902,8 @@ def evaluate_pass_rule_criteria(protocol_result: dict, pre_registration: dict,
     # Preconditions all MET -- resolve the pass rule exactly as K2 did, then
     # stamp the precondition results onto the artifact so a later reader can
     # see they were checked rather than assume it.
-    result = _resolve_pass_rule(protocol_result, pre_registration)
+    result = _resolve_pass_rule(protocol_result, pre_registration,
+                                **({"cost_bar_all_costs": True} if cost_bar_all_costs else {}))
     result["preconditions"] = precondition_results
     return result
 
@@ -929,10 +940,12 @@ def _find_pass_rule(pre_registration: dict):
     return None
 
 
-def _resolve_pass_rule(protocol_result: dict, pre_registration: dict) -> dict:
+def _resolve_pass_rule(protocol_result: dict, pre_registration: dict, *,
+                       cost_bar_all_costs: bool = False) -> dict:
     """The unchanged K2 pass-rule resolution. Split out by C7-EXT so that G5's
     precondition gate sits strictly in front of every one of its exits --
-    including the `legacy_not_evaluable` ones."""
+    including the `legacy_not_evaluable` ones. cost_bar_all_costs: see
+    evaluate_pass_rule_criteria (CUL-414)."""
     pass_rule = _find_pass_rule(pre_registration)
     if pass_rule is None:
         return {"result": "legacy_not_evaluable",
@@ -975,6 +988,8 @@ def _resolve_pass_rule(protocol_result: dict, pre_registration: dict) -> dict:
                                f"protocol/window set (name-level check only; K3/B3+B10 "
                                f"adds content-hash pinning)")}
 
+    if cost_bar_all_costs:  # CUL-414: the grid's remap
+        criteria = _cost_bar_all_costs_criteria(criteria)
     criteria_results = [_evaluate_one_criterion(c, protocol_result) for c in criteria]
 
     fail_ids = [r["id"] for r in criteria_results if r["result"] == "FAIL"]
@@ -1352,9 +1367,17 @@ def _evaluate_grid_cell_for_symbol(criterion: dict, protocol_result: dict, eras:
         return {"result": "INCONCLUSIVE", "n_windows": n_windows, "n_trades": n_trades,
                 "reason": floor_reason}
     if value is None:
+        # CUL-414: the all-costs ratio is None when any trade lacks its fields
+        # (cost_helpers.edge_to_all_costs_ratio_unrounded fails closed); say how many.
+        _n_missing = ((protocol_result.get("trade_diagnostics_summary") or {})
+                      .get(f"{metric}_missing_trades")
+                      if metric in COST_BAR_ALL_COSTS_METRICS.values() else None)
         return {"result": "INCONCLUSIVE", "n_windows": n_windows, "n_trades": n_trades,
                 "reason": f"pooled metric {metric!r} resolved to None in this protocol_result "
-                          f"(e.g. a pre-CUL-300 artifact for realized_edge_to_cost_ratio)"}
+                          f"(e.g. a pre-CUL-300 artifact for realized_edge_to_cost_ratio)"
+                          + (f"; {_n_missing} trade(s) lack gross_return_before_costs / "
+                             f"cost_paid_all, so the ratio is not computed on a subset"
+                             if _n_missing else "")}
     if comparator not in _VALID_COMPARATORS:
         return {"result": "SPEC_ERROR",
                 "reason": f"criterion {cid!r}: comparator={comparator!r} not one of {_VALID_COMPARATORS}"}
@@ -1826,10 +1849,23 @@ def _failed_variants_reason(failed: dict) -> str:
 
 
 # CUL-414 (D-082): the D-038 cost ratio's all-costs twin, read under
-# evaluate_grid(cost_bar_all_costs=True).
+# evaluate_grid(cost_bar_all_costs=True) and
+# evaluate_pass_rule_criteria(cost_bar_all_costs=True).
 COST_BAR_ALL_COSTS_METRICS = {
     "realized_edge_to_cost_ratio": "realized_edge_to_cost_ratio_all_costs",
 }
+
+
+def _cost_bar_all_costs_criteria(criteria: list) -> list:
+    """CUL-414: the criteria with every metric in COST_BAR_ALL_COSTS_METRICS
+    replaced by its all-costs twin (copies; other criteria returned as they
+    are). One remap for the grid and the legacy pass rule, so
+    grid_evaluation.yaml and pass_rule_evaluation.yaml grade the D-038 ratio on
+    the same basis in one run."""
+    return [{**c, "metric": COST_BAR_ALL_COSTS_METRICS[c["metric"]]}
+            if isinstance(c, dict) and isinstance(c.get("metric"), str)
+            and c["metric"] in COST_BAR_ALL_COSTS_METRICS else c
+            for c in criteria]
 
 
 def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
@@ -1939,10 +1975,7 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
 
     criteria_defs = _resolve_grid_criteria(pre_registration, menu)
     if cost_bar_all_costs:
-        criteria_defs = [{**c, "metric": COST_BAR_ALL_COSTS_METRICS[c.get("metric")]}
-                         if isinstance(c.get("metric"), str)
-                         and c["metric"] in COST_BAR_ALL_COSTS_METRICS else c
-                         for c in criteria_defs]
+        criteria_defs = _cost_bar_all_costs_criteria(criteria_defs)
     if not criteria_defs:
         raise ValueError(
             "pre_registration's pass_rule resolved zero menu-shaped criteria (none of its "

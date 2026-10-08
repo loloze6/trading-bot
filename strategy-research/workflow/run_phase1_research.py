@@ -2307,7 +2307,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
         else:
             try:
                 _pass_rule_eval = _vce.evaluate_pass_rule_criteria(
-                    _rep_summary, _pre_reg_for_eval or {}, _brief_for_eval)
+                    _rep_summary, _pre_reg_for_eval or {}, _brief_for_eval,
+                    **_cost_bar_grid_kw())  # CUL-414: {} flag off, the grid's basis on
                 _pass_rule_eval["evaluated_at"] = datetime.now(timezone.utc).isoformat()
                 _pass_rule_eval["evaluator_version"] = 2
                 save_yaml(ARTIFACTS / "pass_rule_evaluation.yaml", _pass_rule_eval)
@@ -2571,7 +2572,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
             _brief_path = ARTIFACTS / "research_brief.yaml"
             _brief_for_eval = (load_yaml(_brief_path) if _brief_path.exists() else {}) or {}
             _pass_rule_eval = _vce.evaluate_pass_rule_criteria(
-                summary, _pre_reg_for_eval or {}, _brief_for_eval)
+                summary, _pre_reg_for_eval or {}, _brief_for_eval,
+                **_cost_bar_grid_kw())  # CUL-414: {} flag off, the grid's basis on
             _pass_rule_eval["evaluated_at"] = datetime.now(timezone.utc).isoformat()
             _pass_rule_eval["evaluator_version"] = 2  # C7-EXT: G1-G5 preconditions
             save_yaml(ARTIFACTS / "pass_rule_evaluation.yaml", _pass_rule_eval)
@@ -4096,7 +4098,9 @@ def _cost_bar_all_costs_enabled(cfg: dict | None = None) -> bool:
     While true: the D-038 "survives 2x costs" ratio (> 2.2) compares the gross
     edge BEFORE fees and slippage with fees + slippage, both legs, in both of
     its places: the menu criterion realized_edge_to_cost_ratio (evaluate_grid
-    reads realized_edge_to_cost_ratio_all_costs) and profit_bars_v2's
+    reads realized_edge_to_cost_ratio_all_costs; the legacy pass rule,
+    evaluate_pass_rule_criteria, applies the same remap so
+    pass_rule_evaluation.yaml agrees with the grid) and profit_bars_v2's
     cost_edge_ratio_min (pooled_edge_to_cost_ratio(all_costs=True)). A
     declared output change: the bar is stricter (A7 in
     docs/DATA_DICTIONARY.md)."""
@@ -4119,8 +4123,9 @@ def _cost_bar_args() -> list:
 
 
 def _cost_bar_grid_kw() -> dict:
-    """CUL-414: the evaluate_grid keyword orchestrator.cost_bar_all_costs adds
-    ({"cost_bar_all_costs": True}), else {} (the grid call unchanged)."""
+    """CUL-414: the evaluate_grid / evaluate_pass_rule_criteria keyword
+    orchestrator.cost_bar_all_costs adds ({"cost_bar_all_costs": True}), else
+    {} (both calls unchanged)."""
     return {"cost_bar_all_costs": True} if _cost_bar_all_costs_enabled() else {}
 
 

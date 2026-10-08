@@ -152,7 +152,8 @@ Per-trade numbers (the trade_efficiency report aggregates each of them) and the 
 | `summary.fee_reduction_metrics.trade_less_often.boundary_recross_rate` | Mean over windows of the share of forecast crossings of the boundary level repeated within 6 bars. | frac | `RP:_compute_window_fee_reduction_diagnostics`, `RP:_aggregate_fee_reduction_diagnostics` | run |
 | `summary.fee_reduction_metrics.trade_less_often.frequency_vs_volatility_ratio` | Mean over windows of trades per day / stdev of bar returns. | ratio | `RP:_compute_window_fee_reduction_diagnostics`, `RP:_aggregate_fee_reduction_diagnostics` | run |
 | `summary.realized_edge_to_cost_ratio` | Mean realized_return (bps) / mean cost_paid over trades with a cost (A7). | ratio | `RP:_aggregate_trade_diagnostics`, `CH:realized_edge_to_cost_ratio_unrounded` | run |
-| `summary.realized_edge_to_cost_ratio_all_costs` | Only under `orchestrator.cost_bar_all_costs`: mean gross_return_before_costs (bps) / mean cost_paid_all, the D-038 ratio the menu criterion reads under the flag (A7 fix). | ratio | `RP:_aggregate_trade_diagnostics`, `CH:edge_to_all_costs_ratio_unrounded` | run |
+| `summary.realized_edge_to_cost_ratio_all_costs` | Only under `orchestrator.cost_bar_all_costs`: mean gross_return_before_costs (bps) / mean cost_paid_all, the D-038 ratio the menu criterion reads under the flag (A7 fix). Null when any trade lacks either field (never a ratio over a subset). | ratio | `RP:_aggregate_trade_diagnostics`, `CH:edge_to_all_costs_ratio_unrounded` | run |
+| `summary.realized_edge_to_cost_ratio_all_costs_missing_trades` | Only under the same flag: how many trade records lack gross_return_before_costs or cost_paid_all (any > 0 makes the ratio above null). | count | `RP:_aggregate_trade_diagnostics` | run |
 | `summary.cost_components_measured` | Which costs are itemised in the trade records. | map | `RP:_aggregate_trade_diagnostics`, `RP:_compute_cost_basis` | meta |
 | `summary.cost_components_measured.fees` | Every record carries cost_paid. | bool | `RP:_compute_cost_basis` | meta |
 | `summary.cost_components_measured.funding` | Always false: trade records carry no funding (and run_protocol does not model funding). | bool | `RP:_compute_cost_basis` | meta |
@@ -609,8 +610,10 @@ the others are labelling or documentation defects.
   default): run_protocol `--cost-bar-all-costs` adds `gross_return_before_costs`,
   `slippage_paid` and `cost_paid_all` to every trade record
   (`RP:_all_costs_fields`) and `realized_edge_to_cost_ratio_all_costs` to the
-  summary; the menu criterion reads that field (`VE:evaluate_grid`) and
-  `pooled_edge_to_cost_ratio` uses the new fields. The bar is then
+  summary; the menu criterion reads that field (`VE:evaluate_grid`, and the
+  legacy pass rule the same way, `VE:evaluate_pass_rule_criteria`) and
+  `pooled_edge_to_cost_ratio` uses the new fields. If any trade lacks them,
+  neither ratio is computed (never a subset). The bar is then
   gross before all costs / all costs > 2.2: about 33 bps (BTC) / 55 bps
   (SOL, UNI). `cost_paid` and `realized_edge_to_cost_ratio` keep their values.
 - **A8. Trade-based core fields are 0.0, not null, when there are no trades**

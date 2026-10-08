@@ -1198,9 +1198,12 @@ def _aggregate_trade_diagnostics(
         # records' gross_return_before_costs / cost_paid_all
         # (tools/cost_helpers.edge_to_all_costs_ratio). Appended last; flag off
         # the summary is byte-identical. realized_edge_to_cost_ratio and
-        # cost_components_measured keep their values.
+        # cost_components_measured keep their values. Fail closed: None when any
+        # record lacks the fields (never a subset), the count recorded beside it.
         summary["realized_edge_to_cost_ratio_all_costs"] = (
             _cost_helpers.edge_to_all_costs_ratio(all_records))
+        summary["realized_edge_to_cost_ratio_all_costs_missing_trades"] = (
+            _cost_helpers.all_costs_missing_count(all_records))
     return summary
 
 

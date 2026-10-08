@@ -159,18 +159,28 @@ def edge_to_all_costs_ratio_unrounded(records: list) -> float | None:
     fees + slippage, both legs (cost_paid_all, bps). realized_edge_to_cost_ratio
     divides a slippage-net return (fill prices) by fees only (A7).
 
-    Records written by run_protocol --cost-bar-all-costs carry both fields; a
-    record without them (None: its bars could not be matched, or an artifact
-    written without the flag) is left out of numerator AND denominator, the same
-    like-for-like rule as realized_edge_to_cost_ratio_unrounded. Zero mean cost
-    or no record -> None. UNROUNDED: a pass/fail bar compares this value."""
-    kept = [r for r in records
-            if r.get("cost_paid_all") is not None and r.get("gross_return_before_costs") is not None]
-    if not kept:
+    Records written by run_protocol --cost-bar-all-costs carry both fields.
+    FAIL CLOSED (PR #345 review): if ANY record lacks either (None: its bars
+    could not be matched, or an artifact written without the flag) the ratio is
+    not computed -> None, never a ratio over the subset that has them -- the
+    same rule as portfolio_whole_test.pooled_edge_to_cost_ratio(all_costs=True)
+    (NOT_EVALUABLE), so the menu criterion and profit_bars_v2 agree, and the
+    menu criterion's trade floor (core.trade_count, every trade) is never met
+    by a subset. all_costs_missing_count gives the count. Zero mean cost or no
+    record -> None. UNROUNDED: a pass/fail bar compares this value."""
+    if not records or all_costs_missing_count(records):
         return None
-    mean_gross_bps = statistics.mean([r["gross_return_before_costs"] * 100 for r in kept])
-    mean_cost_bps = statistics.mean([r["cost_paid_all"] for r in kept])
+    mean_gross_bps = statistics.mean([r["gross_return_before_costs"] * 100 for r in records])
+    mean_cost_bps = statistics.mean([r["cost_paid_all"] for r in records])
     return mean_gross_bps / mean_cost_bps if mean_cost_bps != 0 else None
+
+
+def all_costs_missing_count(records: list) -> int:
+    """CUL-414: how many records lack cost_paid_all or gross_return_before_costs
+    (either None or absent) -- any such record makes
+    edge_to_all_costs_ratio_unrounded None."""
+    return sum(1 for r in records
+               if r.get("cost_paid_all") is None or r.get("gross_return_before_costs") is None)
 
 
 def edge_to_all_costs_ratio(records: list) -> float | None:

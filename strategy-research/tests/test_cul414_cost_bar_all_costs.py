@@ -140,9 +140,15 @@ def test_ratio_equals_the_hand_computed_value():
     assert ch.edge_to_all_costs_ratio_unrounded([long_btc, short_sol]) \
         == pytest.approx(5.7, rel=1e-6)
     assert ch.edge_to_all_costs_ratio([long_btc]) == round(28 / 15, 4) == 1.8667
-    # a record without the fields is left out of numerator and denominator
+    # PR #345 review: fail closed -- one record without the fields and the
+    # ratio is not computed on the others (never a subset)
     assert ch.edge_to_all_costs_ratio_unrounded(
-        [long_btc, {**short_sol, "cost_paid_all": None}]) == pytest.approx(28 / 15, rel=1e-6)
+        [long_btc, {**short_sol, "cost_paid_all": None}]) is None
+    assert ch.edge_to_all_costs_ratio(
+        [long_btc, {k: v for k, v in short_sol.items() if k != "gross_return_before_costs"}]) is None
+    assert ch.all_costs_missing_count(
+        [long_btc, {**short_sol, "cost_paid_all": None}, {"cost_paid": 10.0}]) == 2
+    assert ch.all_costs_missing_count([long_btc, short_sol]) == 0
     assert ch.edge_to_all_costs_ratio_unrounded([]) is None
     assert ch.edge_to_all_costs_ratio_unrounded([{**long_btc, "cost_paid_all": 0.0}]) is None
 
@@ -238,9 +244,12 @@ def test_trade_records_flag_off_byte_identical_and_flag_on_additive(tmp_path):
     s_on = rp._aggregate_trade_diagnostics(on, results, None, cost_bar_all_costs=True)
     assert json.dumps(s_default) == json.dumps(s_off)
     assert "realized_edge_to_cost_ratio_all_costs" not in s_off
-    assert list(s_on) == list(s_off) + ["realized_edge_to_cost_ratio_all_costs"]
+    assert "realized_edge_to_cost_ratio_all_costs_missing_trades" not in s_off
+    assert list(s_on) == list(s_off) + ["realized_edge_to_cost_ratio_all_costs",
+                                        "realized_edge_to_cost_ratio_all_costs_missing_trades"]
     assert {k: s_on[k] for k in s_off} == s_off  # existing summary values unchanged
     assert s_on["realized_edge_to_cost_ratio_all_costs"] == round(114 / 20, 4) == 5.7
+    assert s_on["realized_edge_to_cost_ratio_all_costs_missing_trades"] == 0
 
 
 def test_run_protocol_cli_passes_the_flag_only_when_given():
@@ -284,6 +293,100 @@ def test_grid_flag_on_without_the_field_is_inconclusive_never_fee_only():
                      cost_bar_all_costs=True)
     assert cell["result"] == "INCONCLUSIVE"
     assert "realized_edge_to_cost_ratio_all_costs" in cell["reason"]
+
+
+# ---------------------------------------------------------------------------
+# PR #345 review fix 1: the legacy pass rule (pass_rule_evaluation.yaml) grades
+# the criterion on the same basis as the grid (grid_evaluation.yaml)
+# ---------------------------------------------------------------------------
+
+LEGACY_PRE_REG = {"pass_rule": {
+    "statement": "PASS iff realized_edge_to_cost_ratio > 2.2",
+    "criteria": [{"id": "cost", "metric": "realized_edge_to_cost_ratio", "comparator": ">",
+                  "threshold": 2.2, "null_handling": "fails_threshold"}],
+    "outcomes": [{"branch": "PASS", "hypothesis_verdict": "promote", "lineage_routing": "terminate"},
+                 {"branch": "FAIL-cost", "hypothesis_verdict": "kill",
+                  "lineage_routing": "terminate"}]}}
+SPOT_BRIEF = {"product": "spot"}
+
+
+def _both_artifacts_pr(summary: dict) -> dict:
+    """A protocol_result both evaluators grade: the four verdict preconditions
+    met (test_c7ext_verdict_gates' fixture) plus the grid's windows."""
+    from test_c7ext_verdict_gates import _complete_protocol_result
+    return _complete_protocol_result(**_protocol_result(summary))
+
+
+def _legacy(pr, **kw):
+    r = vce.evaluate_pass_rule_criteria(pr, LEGACY_PRE_REG, SPOT_BRIEF, **kw)
+    [crit] = r["criteria_results"]
+    return r, crit
+
+
+def test_legacy_pass_rule_and_grid_grade_on_one_basis():
+    pr = _both_artifacts_pr({"realized_edge_to_cost_ratio": 2.299,
+                             "realized_edge_to_cost_ratio_all_costs": 1.8667})
+    # flag off: the legacy result is byte-identical to the call without the keyword
+    r_default, c_default = _legacy(pr)
+    r_off, c_off = _legacy(pr, cost_bar_all_costs=False)
+    assert json.dumps(r_default, default=str) == json.dumps(r_off, default=str)
+    _g, grid_off = _cell(pr)
+    assert c_off["result"] == grid_off["result"] == "PASS"
+    assert c_off["value"] == grid_off["value"] == 2.299
+    # flag on: both read the all-costs ratio and both FAIL
+    r_on, c_on = _legacy(pr, cost_bar_all_costs=True)
+    _g, grid_on = _cell(pr, cost_bar_all_costs=True)
+    assert c_on["result"] == grid_on["result"] == "FAIL"
+    assert c_on["value"] == grid_on["value"] == 1.8667
+    assert r_on["result"] == "FAIL" and r_on["hypothesis_verdict"] == "kill"
+    # the caller's pre-registration is not mutated by the remap
+    assert LEGACY_PRE_REG["pass_rule"]["criteria"][0]["metric"] == "realized_edge_to_cost_ratio"
+
+
+def test_legacy_pass_rule_flag_on_without_the_field_never_reads_fee_only():
+    pr = _both_artifacts_pr({"realized_edge_to_cost_ratio": 9.0})
+    _r, crit = _legacy(pr, cost_bar_all_costs=True)
+    assert crit["result"] == "FAIL" and crit["value"] is None   # null_handling, not 9.0
+    assert "realized_edge_to_cost_ratio_all_costs" in crit["reason"]
+    _r, crit_off = _legacy(pr)
+    assert crit_off["result"] == "PASS" and crit_off["value"] == 9.0
+
+
+# ---------------------------------------------------------------------------
+# PR #345 review fix 2: one trade without the all-costs fields -> neither bar
+# computes the ratio on the others
+# ---------------------------------------------------------------------------
+
+def test_one_trade_missing_a_field_both_bars_refuse_never_a_subset():
+    # 150 trades = the grid fixture's 5 windows x 30; every one would pass
+    # (200 bps / 25 bps = 8.0) if the ratio were computed on a subset.
+    def _rec():  # + the one field _aggregate_trade_diagnostics indexes directly
+        return {**_record("SHORT", 50.0, 49.0, SOL_FEE, SOL_SLIP), "net_portfolio_return_pct": 0.1}
+    recs = [_rec() for _ in range(150)]
+    recs[7] = {**recs[7], "cost_paid_all": None}
+    summary = rp._aggregate_trade_diagnostics(recs, [{"core": {"trade_count": 150}}], None,
+                                              cost_bar_all_costs=True)
+    assert summary["realized_edge_to_cost_ratio_all_costs"] is None
+    assert summary["realized_edge_to_cost_ratio_all_costs_missing_trades"] == 1
+    # the menu criterion: INCONCLUSIVE, with the count, though its floor is met
+    _g, cell = _cell(_protocol_result(summary), cost_bar_all_costs=True)
+    assert cell["result"] == "INCONCLUSIVE" and cell["n_trades"] == 150
+    assert "1 trade(s) lack" in cell["reason"]
+    # profit_bars_v2's pooled ratio: NOT_EVALUABLE, the same count
+    with pytest.raises(pwt.PortfolioNotEvaluable, match="1 of 150"):
+        pwt.pooled_edge_to_cost_ratio(recs, 100, all_costs=True)
+    # the legacy pass rule: a null value (its null_handling), never 8.0
+    _r, crit = _legacy(_both_artifacts_pr(summary), cost_bar_all_costs=True)
+    assert crit["result"] == "FAIL" and crit["value"] is None
+    # with every trade complete, all three agree on 8.0
+    full = [dict(r) for r in recs]
+    full[7] = _rec()
+    s_full = rp._aggregate_trade_diagnostics(full, [{"core": {"trade_count": 150}}], None,
+                                             cost_bar_all_costs=True)
+    assert s_full["realized_edge_to_cost_ratio_all_costs"] == 8.0
+    assert pwt.pooled_edge_to_cost_ratio(full, 100, all_costs=True)["ratio"] \
+        == pytest.approx(8.0)
+    assert _cell(_protocol_result(s_full), cost_bar_all_costs=True)[1]["result"] == "PASS"
 
 
 # ---------------------------------------------------------------------------
@@ -362,7 +465,21 @@ def test_every_run_protocol_call_and_grid_call_carries_the_flag():
     n_calls = src.count('str(ROOT / "tools" / "run_protocol.py")')
     assert n_calls == 2
     assert src.count("*cost_bar_args,") + src.count("*_cost_bar_args(),") == n_calls
-    assert src.count("_vce.evaluate_grid(") == src.count("**_cost_bar_grid_kw()") == 3
+    # PR #345 review: every evaluate_grid AND evaluate_pass_rule_criteria call
+    # (the legacy pass rule) carries **_cost_bar_grid_kw() -- read off the AST.
+    import ast
+    calls = {"evaluate_grid": 0, "evaluate_pass_rule_criteria": 0}
+    for node in ast.walk(ast.parse(src)):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) \
+                and isinstance(node.func.value, ast.Name) and node.func.value.id == "_vce" \
+                and node.func.attr in calls:
+            calls[node.func.attr] += 1
+            assert any(k.arg is None and isinstance(k.value, ast.Call)
+                       and isinstance(k.value.func, ast.Name)
+                       and k.value.func.id == "_cost_bar_grid_kw" and not k.value.args
+                       for k in node.keywords), \
+                f"_vce.{node.func.attr} call at line {node.lineno} lacks **_cost_bar_grid_kw()"
+    assert calls == {"evaluate_grid": 3, "evaluate_pass_rule_criteria": 2}
 
 
 def test_flag_registered_everywhere():
