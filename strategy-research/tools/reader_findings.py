@@ -469,10 +469,11 @@ def skip_summary_lines(root: Path) -> list:
 
 MERGES_ARTIFACT = "side_finding_merges.yaml"
 MERGES_SCHEMA_VERSION = 1
-MERGE_RULE = ("two side findings of this run are ONE finding when their claim tests have the "
-              "same set of spec_hashes (claim_tests) and the same config_change (none, or the "
-              "same items): the same measurement on the same config. A partial overlap, a "
-              "different change or `tests: none` is not merged.")
+MERGE_RULE = ("two side findings of this run are ONE finding when their claims have the same "
+              "kind, their claim tests the same set of spec_hashes (claim_tests) and the same "
+              "config_change (none, or the same items): the same measurement on the same config, "
+              "confirmed the same way. A different kind, a partial overlap, a different change "
+              "or `tests: none` is not merged.")
 MERGE_NOT_AGREEMENT = ("not agreement and not extra evidence: the readers read the same inputs, "
                        "so a second reader proposing the same test is not an independent "
                        "observation; the merged finding is measured, counted and ranked once, "
@@ -480,8 +481,12 @@ MERGE_NOT_AGREEMENT = ("not agreement and not extra evidence: the readers read t
 
 
 def _merge_key(item: dict):
-    """(spec_hashes, canonical config_change) of one flattened side finding,
-    or None when it has no measurable test (refused claim or tests: none)."""
+    """(claim kind, spec_hashes, canonical config_change) of one flattened
+    side finding, or None when it has no measurable test (refused claim or
+    tests: none). The kind is part of the key (review fix 4): the
+    confirmation routes by it (explore_confirm.finding_route: a block kind
+    is PENDING, a pure kind IN_RUN), so the same tests under two kinds are
+    two findings."""
     import json as _json
     import claim_card as cc
     res = cc.check_claim(item.get("claim") if isinstance(item, dict) else None)
@@ -493,7 +498,7 @@ def _merge_key(item: dict):
     if change:
         canon = _json.dumps(sorted((_json.dumps(c, sort_keys=True, default=str)
                                     for c in change), key=str), default=str)
-    return hashes, canon
+    return str(item["claim"].get("kind")), hashes, canon
 
 
 def side_finding_merges(readings: dict) -> list:
@@ -525,7 +530,7 @@ def side_finding_merges(readings: dict) -> list:
         out.append({"finding_id": members[0][1],
                     "finding_ids": [pid for _c, pid in members],
                     "sources": [{"category": c, "finding_id": pid} for c, pid in members],
-                    "spec_hashes": list(key[0]),
+                    "spec_hashes": list(key[1]),
                     "config_change": groups[key]["config_change"]})
     return out
 

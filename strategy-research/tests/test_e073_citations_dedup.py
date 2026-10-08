@@ -88,7 +88,7 @@ def _stub_tbot_python(monkeypatch):
     ("99%", 99.16, True), ("12,830", 12830, True), ("1.2e-05", 0.0000123, True),
     ("0.0576 vs. mean: -0.8288", 0.0576, True),   # the first value after the path
     ("PASS", 0.5, False),                  # a word where the field holds a number
-    ("FAIL", "FAIL", True), ("'FAIL'", "FAIL", True), ("fail", "FAIL", False),
+    ("FAIL", "FAIL", True), ("'FAIL'", "FAIL", True), ("fail", "FAIL", True),
     ("FAILED", "FAIL", False),
     ("rank IC (Spearman) as labelled", "rank IC (Spearman)", True),
     ("rank IC", "rank IC (Spearman)", False),
@@ -649,3 +649,219 @@ def test_flag_off_confirm_findings_is_unchanged_without_merges(monkeypatch):
 def test_the_run_scoped_files_include_the_new_ones():
     assert rf.MERGES_ARTIFACT in rpr._SPECIALIST_READERS_RUN_SCOPED_FILES
     assert rp.CITATION_CHECKS_DIR in rpr._SPECIALIST_READERS_RUN_SCOPED_DIRS
+
+
+# ---------------------------------------------------------------------------
+# 6. Review fixes (PR #346)
+# ---------------------------------------------------------------------------
+
+GRID = {"grid": {"residual_ic": {"base": {"value": 0.076977, "p_value_one_sided": 0.01937},
+                                 "design_period_3": {"value": 0.075277}},
+                 "realized_edge_to_cost_ratio": {"base": {"value": -1.2805}}}}
+
+
+def test_a_shortened_path_stays_missing_and_names_the_real_one():
+    """Fix 1 (run_073: `grid_evaluation.residual_ic...` for `grid.residual_ic...`):
+    suggested, never accepted -- the citation counts as missing."""
+    [bad] = _check(["grid_evaluation.residual_ic.base.value: 0.076977"],
+                   {"grid_evaluation.yaml": GRID})["bad"]
+    assert bad["status"] == rp.CITATION_MISSING
+    assert bad["suggestions"][0] == {"path": "grid.residual_ic.base.value",
+                                     "file": "grid_evaluation.yaml", "value_matches": True,
+                                     "value": 0.076977}
+    assert [s["path"] for s in bad["suggestions"]] == [
+        "grid.residual_ic.base.value", "grid.realized_edge_to_cost_ratio.base.value",
+        "grid.residual_ic.design_period_3.value"]
+    # the suggested path itself is a valid citation
+    assert _check(["grid.residual_ic.base.value: 0.076977"],
+                  {"grid_evaluation.yaml": GRID})["bad"] == []
+
+
+def test_at_most_three_suggestions_the_cited_value_first_none_for_an_invented_key():
+    files = {"g.yaml": {"a": {"value": 1}, "b": {"value": 2}, "c": {"value": 3},
+                        "d": {"value": 4}}}
+    [bad] = _check(["a.x.value=4"], files)["bad"]
+    assert rp.CITATION_MAX_SUGGESTIONS == 3
+    assert [s["path"] for s in bad["suggestions"]] == ["d.value", "a.value", "b.value"]
+    assert [s["value_matches"] for s in bad["suggestions"]] == [True, False, False]
+    [bad] = _check(["a.invented_key=4"], files)["bad"]
+    assert bad["status"] == rp.CITATION_MISSING and bad["suggestions"] == []
+
+
+def test_list_elements_are_suggested_as_any_element():
+    files = {"r.yaml": {"variants": {"base": {"per_window": [{"core": {"corr": -0.0112}},
+                                                            {"core": {"corr": 0.0196}}]}}}}
+    [bad] = _check(["variants.base.per_window[1,2].core.corr = -0.0112"], files)["bad"]
+    assert bad["suggestions"] == [{"path": "variants.base.per_window[*].core.corr",
+                                   "file": "r.yaml", "value_matches": True}]
+
+
+def test_the_retry_line_names_the_suggestions(monkeypatch):
+    run_dir = _cite_run(monkeypatch)
+    prompts = []
+    doc = _cited_reading()
+    doc["evidence"] = ["variants.base.slices.overall.trade_less_often.boundary_recross_rate=0.9487"]
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _llm([_fenced(doc)], prompts))
+    rpr.run_reader_worker(CAT, RUN_ID, run_dir)
+    assert ("is not a field of any file you received; nearest real field(s) with that last "
+            "key: `variants.base.slices.overall.fee_reduction_metrics.trade_less_often."
+            "boundary_recross_rate` (reports/trade_efficiency.yaml, = 0.9487, your value "
+            "matches); `variants.base.slices.overall.boundary_recross_rate` "
+            "(reports/trade_efficiency.yaml, = 0.9487, your value matches)") in prompts[1]
+    [bad] = _checks(run_dir)["items"][f"{CAT}-{RUN_ID}"]["bad"]
+    assert bad["status"] == rp.CITATION_MISSING and len(bad["suggestions"]) == 2
+
+
+TE = {"variants": {"base": {"slices": {"per_window": {
+    "2022-09": {"exit_efficiency": {"mean": -0.7213}}}}}}}
+TE_PATH = "variants.base.slices.per_window.2022-09.exit_efficiency.mean"
+
+
+def test_hyphenated_keys_resolve_in_the_value_check():
+    """Fix 2: trade_efficiency's YYYY-MM per_window keys (was cut to `...per_window.2022`)."""
+    files = {"reports/trade_efficiency.yaml": TE}
+    for ev in (f"{TE_PATH} = -0.72", f"{TE_PATH}=-0.72", f"{TE_PATH}: -0.7213 (worst window)"):
+        assert [(c["path"], c["status"]) for c in _check([ev], files)["citations"]] == [
+            (TE_PATH, rp.CITATION_MATCH)], ev
+    assert _check([f"{TE_PATH} = -0.5"], files)["bad"][0]["status"] == rp.CITATION_MISMATCH
+    # the record-only D-048 resolver is unchanged (recorded under another flag)
+    assert rp.resolve_evidence_paths(files, [TE_PATH])["unresolved"] == [
+        "variants.base.slices.per_window.2022"]
+
+
+def test_a_key_with_spaces_is_cited_in_quoted_brackets():
+    card = {"risks": {"Cost drag spikes >80% at 0.15": {"severity": "high"}}}
+    files = {"hypothesis_card.yaml": card}
+    for ev in ('risks["Cost drag spikes >80% at 0.15"].severity = high',
+               "risks['Cost drag spikes >80% at 0.15'].severity = high"):
+        assert [c["status"] for c in _check([ev], files)["citations"]] == [rp.CITATION_MATCH]
+    [bad] = _check(["risks.severity = high"], files)["bad"]
+    assert bad["suggestions"][0]["path"] == 'risks["Cost drag spikes >80% at 0.15"].severity'
+
+
+def _retry_pair(monkeypatch, first, second):
+    run_dir = _cite_run(monkeypatch)
+    prompts = []
+    monkeypatch.setattr(rpr, "_invoke_reader_llm",
+                        _llm([_fenced(first), _fenced(second)], prompts))
+    dest = rpr.run_reader_worker(CAT, RUN_ID, run_dir)
+    assert len(prompts) == 2
+    return yaml.safe_load(dest.read_text(encoding="utf-8")), _checks(run_dir)
+
+
+@pytest.mark.parametrize("period,ratio,n_retry", [
+    ("2", "0.5", 2),     # more bad citations
+    ("1", "0.5", 1),     # as many (a different one)
+])
+def test_a_retry_without_fewer_bad_citations_keeps_the_first_answer(monkeypatch, period, ratio,
+                                                                   n_retry):
+    """Fix 3: the retry answer replaces the first only with STRICTLY fewer bad
+    citations; both counts are recorded."""
+    first = _cited_reading(period="2")
+    kept, doc = _retry_pair(monkeypatch, first, _cited_reading(period=period, ratio=ratio))
+    assert kept["evidence"] == first["evidence"]
+    assert kept["side_findings"][0]["evidence"] == first["side_findings"][0]["evidence"]
+    assert doc["first_attempt_bad"] == 1 and doc["retry_attempt_bad"] == n_retry
+    assert doc["kept_answer"] == "first" and doc["n_bad"] == 1 and doc["status"] == "flagged"
+
+
+def test_a_retry_with_fewer_bad_citations_is_kept(monkeypatch):
+    second = _cited_reading(period="1")
+    kept, doc = _retry_pair(monkeypatch, _cited_reading(period="2", ratio="0.5"), second)
+    assert kept["side_findings"][0]["evidence"] == second["side_findings"][0]["evidence"]
+    assert doc["first_attempt_bad"] == 2 and doc["retry_attempt_bad"] == 0
+    assert doc["kept_answer"] == "retry" and doc["status"] == "clean"
+
+
+def test_a_retry_whose_check_errors_keeps_the_first_answer(monkeypatch):
+    first = _cited_reading(period="2")
+    real = rp.check_citation_values
+    calls = []
+
+    def _third_call_raises(*a, **k):
+        calls.append(1)
+        if len(calls) == 3:   # the first answer's check is 2 calls (one per item)
+            raise RuntimeError("bug")
+        return real(*a, **k)
+    monkeypatch.setattr(rp, "check_citation_values", _third_call_raises)
+    kept, doc = _retry_pair(monkeypatch, first, _cited_reading(period="1"))
+    assert kept["side_findings"][0]["evidence"] == first["side_findings"][0]["evidence"]
+    assert doc["kept_answer"] == "first" and doc["retry_attempt_bad"] is None
+
+
+def test_the_same_tests_under_two_claim_kinds_are_not_merged():
+    """Fix 4: finding_route routes by kind (a block kind PENDING, a pure kind
+    IN_RUN), so the kind is part of the merge key."""
+    import claim_card as cc
+    block_kind = {**_pure_claim(), "kind": "direction_forecast"}
+    assert not cc.check_claim(block_kind).errors
+    assert ec.finding_route({"claim": block_kind})[0] != ec.finding_route(
+        {"claim": _pure_claim()})[0]
+    assert rf.side_finding_merges(_readings({
+        "trade_efficiency": [_side("trade_efficiency", claim=block_kind)],
+        "forecast_power": [_side("forecast_power")]})) == []
+    assert len(rf.side_finding_merges(_readings({
+        "trade_efficiency": [_side("trade_efficiency", claim=copy.deepcopy(block_kind))],
+        "forecast_power": [_side("forecast_power", claim=block_kind)]}))) == 1
+
+
+@pytest.mark.parametrize("cited,actual,ok", [
+    # fix 5: fewer than 2 significant digits -> the file's value must round to it at 2 decimals
+    ("0", 0.3, False), ("0", 0.4, False), ("0", -0.49, False), ("0", 0.004, True),
+    ("0", -0.005, True), ("0", 0.006, False), ("0.0", 0.004, True),
+    ("0.9", 0.8866, False), ("0.89", 0.8866, True), ("0.05", 0.0537, True),
+    ("0.05", 0.0551, False), ("3", 3, True), ("3", 3.2, False), ("12", 12.4, True),
+    ("5%", 0.0537, False), ("5.4%", 0.0537, True), ("0.0005", 0.00054, True),
+    ("0.0005", 0.0006, False),
+    # fix 6: approx / about / ~ prefixes, k / M suffixes, case-insensitive text, quotes
+    ("approx 0.077", 0.076977, True), ("approximately 0.077", 0.076977, True),
+    ("about 0.077", 0.076977, True), ("~ 0.077", 0.076977, True),
+    ("approx 0.08", 0.0857, False),
+    ("3.3k", 3322.1, True), ("3.4k", 3322.1, False), ("3k", 3322.1, False), ("3K", 3000, True),
+    ("1.2M", 1234567, True), ("1m", 1, True), ("1m", 1000000, False), ("3.3kg", 3.3, True),
+    ("pass", "PASS", True), ("Trending_Up", "trending_up", True), ("trending", "trending_up", False),
+    ("'directional accuracy above chance'",
+     "Directional accuracy above chance on 4 of 6 windows", True),
+    ("'accuracy above'", "Directional accuracy above chance", False),   # under 20 characters
+    ("'accuracy above chance on 9 of 6'", "Directional accuracy above chance on 4 of 6", False),
+])
+def test_the_value_rule_review_fixes(cited, actual, ok):
+    assert rp.value_matches(cited, actual) is ok
+
+
+def test_a_dictionary_relative_path_is_missing_with_the_report_path_suggested():
+    """Fix 5: `summary.` (trade_diagnostics.json, never received), `trades[]` and
+    `slices.` were silently unchecked (no root); now missing, the received
+    report's real path suggested."""
+    report = {"variants": {"base": {"slices": {"overall": {
+        "exit_reason_breakdown": {"signal_flip_pct": 99.16}}}}}}
+    files = {"reports/trade_efficiency.yaml": report}
+    for ev in ("summary.exit_reason_breakdown.signal_flip_pct = 99.16",
+               "slices.overall.exit_reason_breakdown.signal_flip_pct = 99.16"):
+        res = _check([ev], files)
+        [bad] = res["bad"]
+        assert bad["status"] == rp.CITATION_MISSING and res["no_path_items"] == 0
+        assert bad["suggestions"][0]["path"] == (
+            "variants.base.slices.overall.exit_reason_breakdown.signal_flip_pct")
+    assert _check(["trades[*].mae = 0.5"], files)["bad"][0]["status"] == rp.CITATION_MISSING
+    # a received file with that top-level key resolves it as usual
+    assert _check(["summary.n = 3"], {"d.yaml": {"summary": {"n": 3}}})["bad"] == []
+
+
+def test_a_path_is_read_from_the_file_named_else_the_first_file_that_has_it():
+    """Fix 5: `variants` is a top-level key of several received files; the
+    reader's own report (first in the received order) wins."""
+    own = {"variants": {"base": {"n": 5}}}
+    other = {"variants": {"base": {"n": 7, "m": 1}}}
+    files = {"reports/trade_efficiency.yaml": own, "registry_summary.yaml": other}
+    [bad] = _check(["variants.base.n = 7"], files)["bad"]
+    assert bad["status"] == rp.CITATION_MISMATCH
+    assert bad["files"] == ["reports/trade_efficiency.yaml"] and bad["actual"] == [5]
+    assert _check(["variants.base.m = 1"], files)["bad"] == []          # only the other has it
+    assert _check(["registry_summary.variants.base.n = 7"], files)["bad"] == []   # named
+
+
+def test_the_received_files_start_with_the_readers_own_report(monkeypatch):
+    run_dir = _cite_run(monkeypatch)
+    files, _gone = rpr._reader_received_files(CAT, run_dir)
+    assert list(files)[0] == f"reports/{CAT}.yaml"

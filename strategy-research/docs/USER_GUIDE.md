@@ -1491,16 +1491,27 @@ feed that is not wired, one row per such feed in
      cites in `evidence` is checked against the files that reader received
      (under E-072 its exploration copies, never the all-window files). The path
      must exist (rooted at a top-level key, a known root or the file's own name,
-     e.g. `grid_evaluation.grid.residual_ic.base.value`); a number matches when
-     it is the file's value rounded to the digits written (half a unit of the
-     last digit; `%` also matches the value x 100), text exactly. A missing or
-     mis-valued citation gets the reader's one retry, with a code-written list
-     (path, cited value, value in the file) and its own answer; still wrong,
-     the reading is kept and the citation recorded in
+     e.g. `grid_evaluation.grid.residual_ic.base.value`; keys as the file has
+     them, `2022-09` included; a key with spaces as `x["a key"]`), looked up in
+     the file it names, else the first received file that has it (the
+     reader's own report first); dictionary-relative paths (`summary.`,
+     `trades[]`, `slices.`) are missing unless a received file has that root.
+     Only the first value after the path is compared. A number matches when it
+     is the file's value rounded to the digits written (half a unit of the last
+     digit) if 2+ significant digits are written; with fewer (`0`, `0.9`,
+     `3k`) the file's value must also round to it at 2 decimals; `%` also
+     matches the value x 100, `k`/`M` multiply, `approx`/`~` are ignored. Text
+     matches ignoring case (the file's text starts the cited value, or a quote
+     of 20+ characters is part of it). A missing or mis-valued citation gets
+     the reader's one retry, with a code-written list (path, cited value, value
+     in the file; for a missing path up to 3 nearest real paths sharing its
+     last key -- suggested, never accepted) and its own answer; the retry
+     answer replaces the first only with strictly fewer bad citations (both
+     counts recorded); still wrong, the reading is kept and the citation recorded in
      `artifacts/citation_checks/<category>.yaml`, and decide-next shows a
      `citation_mismatch` warning on that side finding. Prose is not checked.
-     Side findings of one run whose tests have the same spec_hashes and the
-     same `config_change` are merged (`artifacts/side_finding_merges.yaml`):
+     Side findings of one run with the same claim kind, the same test
+     spec_hashes and the same `config_change` are merged (`artifacts/side_finding_merges.yaml`):
      one E-072 confirmation record and one look, listing every source; one
      decide-next candidate with the first source's scores (`merged_sources`).
      Readers share their inputs, so a merge is never agreement or extra

@@ -923,10 +923,12 @@ orchestrator:
       # checked against the files the reader received (the exploration copies
       # under explore_confirm): a missing path or a value that is not the
       # file's value as written or rounded gets the reader's ONE retry with a
-      # code-written list; still wrong, the reading is kept and the citation
+      # code-written list (a missing path with the nearest real paths that
+      # share its last key; the retry answer is kept only with strictly fewer
+      # bad citations); still wrong, the reading is kept and the citation
       # recorded in artifacts/citation_checks/<category>.yaml (decide-next: a
       # citation_mismatch warning, never a refusal). Side findings proposing
-      # the same test (same spec_hashes and config change) are merged into one
+      # the same test (same claim kind, spec_hashes and config change) are merged into one
       # (artifacts/side_finding_merges.yaml): measured, counted and ranked
       # once, with the first source's scores -- never as agreement. Later
       # E-073 steps (E-029, E-027) will add to this flag.

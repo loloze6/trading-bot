@@ -620,12 +620,30 @@ def resolve_evidence_paths(received_files: dict, evidence: list) -> dict:
 CITATION_VALUE_RULE = (
     "A citation is a field path from a file the reader received (rooted at a known root, a "
     "top-level key of that file, or the file's own name, e.g. grid_evaluation.grid.<...>) "
-    "followed by `=` or `:` and a value. The path must exist. A number matches when it is the "
-    "file's value rounded to the digits the reader wrote (within half a unit of its last "
-    "digit; a trailing % also matches the value x 100); text, booleans and null match "
-    "exactly (the file's text must start the cited value, case-sensitive). With [*] any "
-    "element may match. A path to a mapping or list, or a path with no value after it, is not "
+    "followed by `=` or `:` and a value. Keys are written as the file has them (2022-09 "
+    "included); a key with spaces or other characters goes in quoted brackets, "
+    "x[\"a key\"]. The path must exist, with every level written out: a shortened path is "
+    "missing even when its last key exists elsewhere (the nearest real paths are suggested). "
+    "Only the first value after the path is checked. A number matches when it is the file's "
+    "value rounded to the digits the reader wrote (within half a unit of its last digit) if "
+    "the reader wrote at least 2 significant digits; with fewer (0, 0.9, 3k), the file's "
+    "value must round to it at 2 decimals as well (a cited 0 matches |x| < 0.005). A trailing "
+    "% also matches the value x 100, a k / M suffix multiplies by 1e3 / 1e6, and approx / "
+    "about / ~ in front is ignored. Text matches ignoring case: the file's text must start "
+    "the cited value, or a cited quote of 20 characters or more must be part of it; booleans "
+    "and null match their words. With [*] any element may match. A path rooted at the file "
+    "named first, else at the first received file that has it (the reader's own report "
+    "first). A path to a mapping or list, or a path with no value after it, is not "
     "value-checked.")
+# The data dictionary's relative roots that are not a received file
+# (docs/DATA_DICTIONARY_READERS.md: `summary.` / `trades[]` of
+# trade_diagnostics.json, which no reader receives, and the report-relative
+# `slices.`): a path rooted there is a citation, MISSING unless a received
+# file has that top-level key -- with the received file's real path suggested
+# (the trade_efficiency report's variants.<v>.slices.overall.* for summary.*).
+CITATION_DICTIONARY_ROOTS = frozenset({"summary", "trades", "slices"})
+CITATION_MAX_SUGGESTIONS = 3
+CITATION_QUOTE_MIN_CHARS = 20
 # artifacts/citation_checks/<category>.yaml: the last check of each reading
 # (run_phase1_research writes it; decide_next reads the flagged side findings)
 CITATION_CHECKS_DIR = "citation_checks"
@@ -637,10 +655,38 @@ CITATION_NOT_A_VALUE = "not_a_value"      # resolved to a mapping or list only
 CITATION_BAD = (CITATION_MISMATCH, CITATION_MISSING)
 _CITE_SEP_RE = re.compile(r"\s*[=:]\s*")
 _CITE_NUMBER_RE = re.compile(
-    r"[~≈]?\s*(?P<num>[-+−]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d*)?(?:[eE][-+]?\d+)?"
-    r"|[-+−]?\.\d+(?:[eE][-+]?\d+)?)(?P<pct>\s*%)?")
+    r"(?:(?:[Aa]pprox(?:imately|\.)?|[Aa]bout)\s*|[~≈]\s*)?"
+    r"(?P<num>[-+−]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d*)?(?:[eE][-+]?\d+)?"
+    r"|[-+−]?\.\d+(?:[eE][-+]?\d+)?)(?P<mult>[kKM](?![A-Za-z0-9_]))?(?P<pct>\s*%)?")
+_CITE_MULT = {"k": 3, "K": 3, "M": 6}
 _CITE_WORD_RE = re.compile(r"[^\s,;()\[\]{}]+")
 _FLOAT_EPS = 1e-9
+# The value check's own tokenizer (review fix 2). A key may hold inner hyphens
+# (trade_efficiency's YYYY-MM per_window keys, the only non-word key character
+# in run_060..run_079's report/grid/config keys); any other key (spaces, dots:
+# LLM-written card keys) is cited in quoted brackets, x["a key"]. The
+# record-only resolver above keeps _CITE_TOKEN_RE unchanged: its output is
+# recorded under another flag (score provenance) and must not move here.
+_CITE_V_KEY = r"[A-Za-z0-9_]+(?:-[A-Za-z0-9_]+)*"
+_CITE_V_BRACKET = r"""\[(?:"[^"\]]*"|'[^'\]]*'|[^\]\s]*)\]"""
+_CITE_VALUE_TOKEN_RE = re.compile(
+    rf"(?<![\w.\]\[/])[A-Za-z_][A-Za-z0-9_]*(?:{_CITE_V_BRACKET})*"
+    rf"(?:\.{_CITE_V_KEY}(?:{_CITE_V_BRACKET})*)+")
+_CITE_VALUE_STEP_RE = re.compile(rf"\.?({_CITE_V_KEY})((?:{_CITE_V_BRACKET})*)")
+_CITE_V_BRACKET_RE = re.compile(r"""\[("[^"\]]*"|'[^'\]]*'|[^\]\s]*)\]""")
+_CITE_V_PLAIN_KEY_RE = re.compile(rf"{_CITE_V_KEY}")
+_CITE_V_ROOT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+
+
+def _cite_value_steps(token: str) -> list:
+    """[(key, [bracket contents...]), ...] for one value-check path token;
+    the quotes of a quoted bracket key are removed."""
+    out = []
+    for m in _CITE_VALUE_STEP_RE.finditer(token):
+        brackets = [b[1:-1] if len(b) >= 2 and b[0] == b[-1] and b[0] in "'\"" else b
+                    for b in _CITE_V_BRACKET_RE.findall(m.group(2))]
+        out.append((m.group(1), brackets))
+    return out
 
 
 def _cite_values(node, steps: list) -> list:
@@ -663,12 +709,10 @@ def _cite_values_brackets(node, brackets: list, rest: list) -> list:
         if not more and not rest:
             return [node]
         return [v for el in node for v in _cite_values_brackets(el, more, rest)]
-    if b.isdigit():
+    if b.isdigit() and isinstance(node, list):
         i = int(b)
-        if not isinstance(node, list) or i >= len(node):
-            return []
-        return _cite_values_brackets(node[i], more, rest)
-    found, value = _cite_get(node, b)
+        return _cite_values_brackets(node[i], more, rest) if i < len(node) else []
+    found, value = _cite_get(node, b)  # a mapping key (quoted, or a digit key of a mapping)
     return _cite_values_brackets(value, more, rest) if found else []
 
 
@@ -721,14 +765,24 @@ def value_matches(cited: str, actual) -> bool:
             dec = Decimal(raw)
         except InvalidOperation:
             return False
+        if m.group("mult"):  # 3.3k = 3.3E+3: the reader's precision scales with it
+            dec = dec.scaleb(_CITE_MULT[m.group("mult")])
+        digits = dec.as_tuple().digits
         tol = 0.5 * 10.0 ** dec.as_tuple().exponent
+        significant = len(digits) - next((i for i, d in enumerate(digits) if d), len(digits))
+        if significant < 2:
+            # 0, 0.9, 3k: too coarse on its own (a cited 0 would match any
+            # |x| < 0.5) -- the file's value must also round to it at 2 decimals
+            tol = min(tol, 0.005)
         value = float(dec)
         candidates = [float(actual)] + ([float(actual) * 100.0] if m.group("pct") else [])
         return any(abs(c - value) <= tol + _FLOAT_EPS * max(1.0, abs(c)) for c in candidates)
-    target = str(actual)
-    body = _strip_quotes(text)
+    target = str(actual).casefold()
+    body = _strip_quotes(text).casefold()
     if body == target:
         return True
+    if len(body) >= CITATION_QUOTE_MIN_CHARS and body in target:
+        return True  # a quote of the file's text
     if not body.startswith(target):
         return False
     nxt = body[len(target):len(target) + 1]
@@ -746,19 +800,119 @@ def _short(value, limit: int = 80):
     return value
 
 
+def _cite_index(docs: dict) -> list:
+    """Every mapping key of every received document, as [{file, path, keys,
+    values}] in file then document order: `path` written the way a citation
+    is (rooted at the file's top-level key, list elements as [*], a key the
+    tokenizer cannot read as x["key"] -- at the top level behind the file
+    stem), `keys` the key names along it, `values` the scalars found there
+    (every element's, for a [*] path)."""
+    index, at = [], {}
+
+    def _entry(rel, path, keys):
+        key = (rel, path)
+        if key not in at:
+            at[key] = {"file": rel, "path": path, "keys": keys, "values": []}
+            index.append(at[key])
+        return at[key]
+
+    def _walk(rel, node, path, keys):
+        if isinstance(node, dict):
+            for k, v in node.items():
+                name = str(k)
+                plain = (_CITE_V_PLAIN_KEY_RE if path else _CITE_V_ROOT_RE).fullmatch(name)
+                step = (f"{path}.{name}" if path else name) if plain else \
+                    f'{path or _file_stem(rel)}["{name}"]'
+                entry = _entry(rel, step, keys + (name,))
+                if not isinstance(v, (dict, list)):
+                    entry["values"].append(v)
+                _walk(rel, v, step, keys + (name,))
+        elif isinstance(node, list):
+            for el in node:
+                if isinstance(el, (dict, list)):
+                    _walk(rel, el, f"{path}[*]", keys)
+                else:
+                    _entry(rel, f"{path}[*]", keys)["values"].append(el)
+
+    for rel, d in docs.items():
+        _walk(rel, d, "", ())
+    return index
+
+
+def _cite_suggestions(index: list, steps: list, cited) -> list:
+    """The nearest real paths for a missing citation (review fix 1): the
+    received fields whose LAST key is the cited path's last key, ranked by
+    (the cited value matches there, trailing keys in common, keys in common
+    -- the file stem counts --, fewest extra levels, file then document
+    order); at most CITATION_MAX_SUGGESTIONS. Generic, no per-field rule;
+    never makes the citation valid -- it stays missing until the reader
+    corrects it. [] when no received field has that last key."""
+    leaf = steps[-1][0]
+    wrote = [k for k, _b in steps]
+    ranked = []
+    for n, e in enumerate(index):
+        if not e["keys"] or e["keys"][-1] != leaf:
+            continue
+        keys = e["keys"]
+        common_tail = 0
+        for a, b in zip(reversed(wrote), reversed(keys)):
+            if a != b:
+                break
+            common_tail += 1
+        shared = len(set(wrote) & (set(keys) | {_file_stem(e["file"])}))
+        value_ok = cited is not None and any(value_matches(cited, v) for v in e["values"])
+        ranked.append(((not value_ok, -common_tail, -shared, abs(len(keys) - len(wrote)), n),
+                       e, value_ok))
+    out = []
+    for _key, e, value_ok in sorted(ranked, key=lambda r: r[0])[:CITATION_MAX_SUGGESTIONS]:
+        s = {"path": e["path"], "file": e["file"], "value_matches": value_ok}
+        distinct = {repr(v): v for v in e["values"]}
+        if len(distinct) == 1:
+            s["value"] = _short(next(iter(distinct.values())))
+        out.append(s)
+    return out
+
+
+def _cite_found(docs: dict, stems: dict, steps: list) -> list:
+    """[(file, value)] at a cited path, from ONE file (review fix 5): the
+    file the path names (its stem as the root) first; else the first
+    received file, in the received order (the reader's own report first),
+    in which the path resolves. [] when none."""
+    found = []
+    if not steps[0][1] and len(steps) > 1:  # the file's own name as the root
+        for rel in stems.get(steps[0][0], ()):
+            found += [(rel, v) for v in _cite_values(docs[rel], steps[1:])]
+    if found:
+        return found
+    for rel, d in docs.items():
+        if _cite_get(d, steps[0][0])[0]:
+            values = _cite_values(d, steps)
+            if values:
+                return [(rel, v) for v in values]
+    return []
+
+
 def check_citation_values(received_files: dict, evidence: list) -> dict:
     """E-073 step 2 (D-083): every cited path in `evidence` checked against
     the value at that path in the files the reader received (the
     CITATION_VALUE_RULE). Pure; reads no file and never rejects.
 
     `received_files`: {file rel path: parsed document}, exactly the files the
-    reader was given (under E-072 the exploration copies). A path is rooted
-    at CITATION_ROOTS, a top-level key of a received file, or a received
-    file's stem (`grid_evaluation.grid.residual_ic.base.value` walks inside
-    grid_evaluation.yaml). Returns {"citations": [{path, cited, status,
-    actual?, files?}], "bad": [...the mismatch / missing ones...],
+    reader was given (under E-072 the exploration copies), IN PREFERENCE
+    ORDER: the reader's own report first (as _reader_received_files builds
+    it). A path is rooted at CITATION_ROOTS, CITATION_DICTIONARY_ROOTS, a
+    top-level key of a received file, or a received file's stem
+    (`grid_evaluation.grid.residual_ic.base.value` walks inside
+    grid_evaluation.yaml); it is looked up in the file it names, else in the
+    first received file where it resolves (_cite_found). Keys may hold inner
+    hyphens or be quoted in brackets (_CITE_VALUE_TOKEN_RE). Only the first
+    value after the path is compared; with [*] any element may match.
+    Returns {"citations": [{path, cited, status, actual?, files?,
+    suggestions?}], "bad": [...the mismatch / missing ones...],
     "no_path_items": n}; each (path, cited value) pair once, in first-seen
-    order. A malformed argument raises TypeError for the caller to record."""
+    order. A missing path carries `suggestions` (_cite_suggestions; [] when
+    nothing has its last key) -- still missing. A malformed argument raises
+    TypeError for the caller to record."""
     if not isinstance(received_files, dict):
         raise TypeError("received_files must be a mapping of file name -> document")
     if not isinstance(evidence, list):
@@ -767,11 +921,12 @@ def check_citation_values(received_files: dict, evidence: list) -> dict:
     stems = {}
     for rel, d in docs.items():
         stems.setdefault(_file_stem(rel), []).append(rel)
-    roots = set(CITATION_ROOTS) | {str(k) for d in docs.values() for k in d} | set(stems)
-    out, seen, no_path = [], set(), 0
+    roots = (set(CITATION_ROOTS) | set(CITATION_DICTIONARY_ROOTS)
+             | {str(k) for d in docs.values() for k in d} | set(stems))
+    out, seen, no_path, index = [], set(), 0, None
     for item in evidence:
-        matches = ([m for m in _CITE_TOKEN_RE.finditer(item)
-                    if _cite_steps(m.group(0))[0][0] in roots]
+        matches = ([m for m in _CITE_VALUE_TOKEN_RE.finditer(item)
+                    if _cite_value_steps(m.group(0))[0][0] in roots]
                    if isinstance(item, str) else [])
         if not matches:
             no_path += 1
@@ -782,17 +937,13 @@ def check_citation_values(received_files: dict, evidence: list) -> dict:
             if (token, cited) in seen:
                 continue
             seen.add((token, cited))
-            steps = _cite_steps(token)
-            found = []  # (rel, value)
-            for rel, d in docs.items():
-                if _cite_get(d, steps[0][0])[0]:
-                    found += [(rel, v) for v in _cite_values(d, steps)]
-                # the file's own name as the root (no brackets on a file name)
-                if rel in stems.get(steps[0][0], ()) and not steps[0][1] and len(steps) > 1:
-                    found += [(rel, v) for v in _cite_values(d, steps[1:])]
+            steps = _cite_value_steps(token)
+            found = _cite_found(docs, stems, steps)  # (rel, value)
             rec = {"path": token, "cited": cited}
             if not found:
                 rec["status"] = CITATION_MISSING
+                index = _cite_index(docs) if index is None else index
+                rec["suggestions"] = _cite_suggestions(index, steps, cited)
             elif cited is None:
                 rec["status"] = CITATION_PATH_ONLY
             else:

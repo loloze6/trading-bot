@@ -4890,7 +4890,17 @@ def _citation_value_check(category: str, run_dir: Path, body: str) -> dict:
 
 def _citation_line(iid: str, bad: dict) -> str:
     if bad.get("status") == _reader_proposals_module().CITATION_MISSING:
-        return f"- {iid}: `{bad['path']}` is not a field of any file you received"
+        line = f"- {iid}: `{bad['path']}` is not a field of any file you received"
+        near = [s for s in bad.get("suggestions") or [] if isinstance(s, dict)]
+        if near:
+            # review fix 1: the nearest real paths with the same last key (code-ranked,
+            # never accepted for the reader: it must cite one exactly or drop the citation)
+            line += "; nearest real field(s) with that last key: " + "; ".join(
+                f"`{s['path']}` ({s['file']}"
+                + (f", = {s['value']!r}" if "value" in s else "")
+                + (", your value matches" if s.get("value_matches") else "") + ")"
+                for s in near)
+        return line
     shown = bad.get("actual")
     shown = shown[0] if isinstance(shown, list) and len(shown) == 1 else shown
     return (f"- {iid}: `{bad['path']}` cited {bad.get('cited')!r}, the file shows {shown!r} "
@@ -5181,7 +5191,8 @@ def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0
             record = {"status": ("error" if "error" in check else
                                  "flagged" if flagged else "clean"),
                       "retried": cite["retried"],
-                      **{k: cite[k] for k in ("first_attempt_bad", "retry_skipped",
+                      **{k: cite[k] for k in ("first_attempt_bad", "retry_attempt_bad",
+                                              "kept_answer", "retry_skipped",
                                               "retry_answer_refused") if k in cite},
                       "flagged": flagged, **check}
             entry["citation_check"] = {k: record[k] for k in
@@ -5268,6 +5279,18 @@ def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0
                           f"mis-valued -- retrying once with the list.")
                     prompt = base_prompt + _citation_retry_note(check, body)
                     continue
+        if error is None and cite.get("first_body") is not None:
+            # review fix 3: the citation retry's answer replaces the first one only
+            # when it has strictly fewer bad citations (a check error is no evidence)
+            retry_check = _citation_value_check(category, run_dir, body)
+            cite["retry_attempt_bad"] = retry_check.get("n_bad")
+            if "error" in retry_check or retry_check["n_bad"] >= cite["first_attempt_bad"]:
+                cite["kept_answer"] = "first"
+                print(f"⚠️  [E-073] {category}: the citation retry did not reduce the bad "
+                      f"citations ({cite['first_attempt_bad']} -> "
+                      f"{retry_check.get('n_bad', 'check error')}); the first answer is kept.")
+                return _accept(cite["first_body"], entry, key, cite["first_meta"])
+            cite["kept_answer"] = "retry"
         if error is None:
             return _accept(body, entry, key, meta)
         if cite_on and attempt == 0:
@@ -5287,6 +5310,7 @@ def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0
         # E-073 step 2: the citation retry's answer failed the shape check -- the
         # first answer (valid, its citations flagged) is kept, never salvaged away
         cite["retry_answer_refused"] = error
+        cite["kept_answer"] = "first"
         print(f"⚠️  [E-073] {category}: the citation retry's answer was refused ({error}); the "
               f"first answer is kept with its citations flagged. Raw retry output saved to "
               f"{debug_path}.")
