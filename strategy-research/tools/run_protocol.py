@@ -567,6 +567,57 @@ def _cost_paid_bps(trade: dict, cost_model: dict | None,
     return round(float(commission_pct) * 100, 2)  # % → bps
 
 
+def _all_costs_fields(side: str, entry_price: float, exit_price: float, bars: list,
+                      entry_idx: int, exit_idx: int, cost_bps: float) -> dict:
+    """
+    CUL-414 (--cost-bar-all-costs, orchestrator.cost_bar_all_costs, D-082): the
+    three per-trade fields the D-038 "survives 2x costs" bar reads under the
+    flag, so its gross edge and its cost are on the same basis (A7).
+
+    The engine's mock fills (trading-bot/execution/execution_handler.py,
+    MockExecutionHandler.open_long_position / open_short_position /
+    close_position) price every leg at the bar's close moved against the trade
+    by the symbol's slippage_bps: a buy at close * (1 + s), a sell at
+    close * (1 - s). So the bar close at the leg's own bar (bars.csv, the bar
+    the trade's entry/exit timestamp names) is the price BEFORE slippage, and
+    entry_price / exit_price are the fills AFTER it.
+
+      gross_return_before_costs (%): the trade's return at those bar closes,
+          same formula as the engine's profit_loss_percent (realized_return)
+          but on the pre-slippage prices -- before fees and slippage.
+      slippage_paid (bps): both legs, each the fill's adverse move from its
+          bar close (buy: fill/close - 1; sell: 1 - fill/close), in bps of
+          that leg's price; signed (a favourable fill would be negative).
+      cost_paid_all (bps): cost_paid (the configured fee, both legs) +
+          slippage_paid.
+
+    All three None when either leg's bar is not found or its close is missing
+    or not positive: the trade then has no measured all-in cost and the bar
+    reads NOT_EVALUABLE rather than a fee-only cost. No lookahead: the closes
+    are the trade's own entry and exit bars, the prices it was filled from.
+    """
+    def _close(idx):
+        if idx is None or idx < 0 or idx >= len(bars):
+            return None
+        c = bars[idx].get("close")
+        return c if c is not None and c > 0 else None
+
+    ref_in, ref_out = _close(entry_idx), _close(exit_idx)
+    if ref_in is None or ref_out is None or not entry_price or not exit_price:
+        return {"gross_return_before_costs": None, "slippage_paid": None, "cost_paid_all": None}
+    if side == "LONG":   # buy to enter, sell to exit
+        gross = (ref_out / ref_in - 1) * 100
+        slip = (entry_price / ref_in - 1) * 1e4 + (1 - exit_price / ref_out) * 1e4
+    else:                # SHORT: sell to enter, buy to cover
+        gross = (1 - ref_out / ref_in) * 100
+        slip = (1 - entry_price / ref_in) * 1e4 + (exit_price / ref_out - 1) * 1e4
+    return {
+        "gross_return_before_costs": round(gross, 6),
+        "slippage_paid":             round(slip, 6),
+        "cost_paid_all":             round(cost_bps + slip, 6),
+    }
+
+
 def _compute_trade_records_for_window(
     run_dir: Path,
     symbol: str,
@@ -575,12 +626,16 @@ def _compute_trade_records_for_window(
     cost_model: dict | None,
     commission_bps: float | None = None,
     cost_product: str = "spot",
+    cost_bar_all_costs: bool = False,
 ) -> list:
     """
     Compute per-trade diagnostic records for one backtest window.
     Returns empty list if no trades or missing data files.
     commission_bps / cost_product: the run's --commission-bps / --cost-product,
     so each record's cost_paid is the fee the engine charged (_cost_paid_bps).
+    cost_bar_all_costs (CUL-414, --cost-bar-all-costs): each record also
+    carries _all_costs_fields' three fields, appended after the existing ones;
+    False (the default) -> the records are byte-identical to before.
     """
     trades = _load_trades(run_dir)
     if not trades:
@@ -647,7 +702,7 @@ def _compute_trade_records_for_window(
         post_exit_drift    = _compute_post_exit_drift(side, exit_price, bars, exit_idx) if exit_idx >= 0 else None
         held_longer_ok     = _compute_held_longer_better(side, exit_price, bars, exit_idx) if exit_idx >= 0 else None
 
-        records.append({
+        record = {
             "trade_id":                trade.get("trade_id", ""),
             "symbol":                  symbol,
             "window":                  window,
@@ -682,7 +737,11 @@ def _compute_trade_records_for_window(
             "entered_earlier_better":  entered_earlier_ok,    # E-016 (enter_earlier, metric b)
             "post_exit_drift_pct":     post_exit_drift,       # E-016 (exit_later, metric a)
             "held_longer_better":      held_longer_ok,        # E-016 (exit_later, metric b)
-        })
+        }
+        if cost_bar_all_costs:  # CUL-414: appended after the existing fields
+            record.update(_all_costs_fields(side, entry_price, exit_price, bars,
+                                            entry_idx, exit_idx, cost_bps))
+        records.append(record)
     return records
 
 
@@ -969,6 +1028,7 @@ def _compute_cost_basis(all_records: list) -> dict:
 
 def _aggregate_trade_diagnostics(
     all_records: list, results: list, all_window_fee_diagnostics: list | None = None,
+    cost_bar_all_costs: bool = False,
 ) -> dict:
     """
     Aggregate per-trade records into the trade_diagnostics_summary block.
@@ -1083,7 +1143,7 @@ def _aggregate_trade_diagnostics(
     realized_edge_to_cost_ratio = _cost_helpers.realized_edge_to_cost_ratio(all_records)
     cost_components_measured = _compute_cost_basis(all_records)
 
-    return {
+    summary = {
         "mae_mfe_ratio_median":    round(statistics.median(mae_mfe_ratios), 4) if mae_mfe_ratios else None,
         "entry_efficiency_median": round(statistics.median(entry_effs),     4) if entry_effs     else None,
         "exit_efficiency_median":  round(statistics.median(exit_effs),       4) if exit_effs      else None,
@@ -1132,6 +1192,16 @@ def _aggregate_trade_diagnostics(
         "realized_edge_to_cost_ratio": realized_edge_to_cost_ratio,
         "cost_components_measured": cost_components_measured,
     }
+    if cost_bar_all_costs:
+        # CUL-414 (--cost-bar-all-costs, D-082): the D-038 ratio with gross edge
+        # BEFORE fees and slippage over fees + slippage (both legs), from the
+        # records' gross_return_before_costs / cost_paid_all
+        # (tools/cost_helpers.edge_to_all_costs_ratio). Appended last; flag off
+        # the summary is byte-identical. realized_edge_to_cost_ratio and
+        # cost_components_measured keep their values.
+        summary["realized_edge_to_cost_ratio_all_costs"] = (
+            _cost_helpers.edge_to_all_costs_ratio(all_records))
+    return summary
 
 
 # ---------------------------------------------------------------------------
@@ -2211,6 +2281,13 @@ def main():
                              "byte-identical to today (same resolution shape as --exchange "
                              "above, but with no forced fallback: None IS the correct "
                              "'drop nothing' value here, not a placeholder needing one).")
+    parser.add_argument("--cost-bar-all-costs", action="store_true", dest="cost_bar_all_costs",
+                        help="CUL-414 (D-082): passed by run_phase1_research only under "
+                             "orchestrator.cost_bar_all_costs. Each trade record also carries "
+                             "gross_return_before_costs, slippage_paid and cost_paid_all, and "
+                             "the summary realized_edge_to_cost_ratio_all_costs (gross edge "
+                             "before fees and slippage / fees + slippage, both legs). Absent: "
+                             "byte-identical output.")
     args = parser.parse_args()
 
     # Holdout gate: require BOTH flags or NEITHER
@@ -2509,6 +2586,7 @@ def main():
             trade_records = _compute_trade_records_for_window(
                 rd, symbol, label, end, cost_model,
                 commission_bps=commission_bps, cost_product=args.cost_product,
+                **({"cost_bar_all_costs": True} if args.cost_bar_all_costs else {}),
             )
             all_trade_records.extend(trade_records)
 
@@ -2527,7 +2605,8 @@ def main():
 
     # Step 03: aggregate trade diagnostics and write trade_diagnostics.json
     trade_diagnostics_summary = _aggregate_trade_diagnostics(
-        all_trade_records, results, all_window_fee_diagnostics
+        all_trade_records, results, all_window_fee_diagnostics,
+        **({"cost_bar_all_costs": True} if args.cost_bar_all_costs else {}),
     )
     if all_trade_records:
         td_payload = {

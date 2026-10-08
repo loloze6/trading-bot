@@ -982,7 +982,7 @@ def chained_buy_and_hold(chain: dict, close_windows: Mapping, fee_bps: Mapping,
 # G7 / D-038: pooled realized edge / cost ratio with its trade floor
 # ---------------------------------------------------------------------------
 
-def pooled_edge_to_cost_ratio(trade_records, min_trades: int) -> dict:
+def pooled_edge_to_cost_ratio(trade_records, min_trades: int, *, all_costs: bool = False) -> dict:
     """The variant's POOLED realized gross edge / cost ratio for the D-038 bar,
     conservative both ways (second-round review finding 2):
 
@@ -1004,7 +1004,17 @@ def pooled_edge_to_cost_ratio(trade_records, min_trades: int) -> dict:
     cost (cost_paid None), when fewer than min_trades non-forced records
     remain, or when either ratio is None (zero mean cost). Raises ValueError
     on a malformed record. Returns {ratio, ratio_all_trades,
-    ratio_excluding_end_of_window, n_trades, n_excluded_end_of_window}."""
+    ratio_excluding_end_of_window, n_trades, n_excluded_end_of_window}.
+
+    all_costs (CUL-414, orchestrator.cost_bar_all_costs, D-082; the caller
+    passes it only under the flag): both ratios are
+    cost_helpers.edge_to_all_costs_ratio_unrounded instead -- gross edge
+    BEFORE fees and slippage (gross_return_before_costs) over fees + slippage,
+    both legs (cost_paid_all), the fields run_protocol --cost-bar-all-costs
+    writes. A record lacking either is "lacks a measured cost"
+    (NOT_EVALUABLE), never a fall back to the fee-only cost. The result also
+    carries cost_basis "fees_and_slippage". False -> exactly the computation
+    above."""
     if not _is_int(min_trades) or min_trades < 1:
         raise ValueError(f"min_trades must be a positive int, got {min_trades!r}")
     if isinstance(trade_records, (str, bytes)) or isinstance(trade_records, Mapping) \
@@ -1020,6 +1030,14 @@ def pooled_edge_to_cost_ratio(trade_records, min_trades: int) -> dict:
         cost = rec.get("cost_paid")
         if cost is not None:
             _nonneg(cost, f"trade record ({sym}, {win}) cost_paid")
+        if all_costs:
+            gb = rec.get("gross_return_before_costs")
+            if gb is not None and (not _is_real(gb) or not math.isfinite(float(gb))):
+                raise ValueError(f"trade record ({sym}, {win}) has gross_return_before_costs "
+                                 f"{gb!r}")
+            ca = rec.get("cost_paid_all")
+            if ca is not None:
+                _nonneg(ca, f"trade record ({sym}, {win}) cost_paid_all")
         records.append(rec)
         if reason == END_OF_WINDOW:
             n_forced += 1
@@ -1029,14 +1047,28 @@ def pooled_edge_to_cost_ratio(trade_records, min_trades: int) -> dict:
     if missing_cost:
         raise PortfolioNotEvaluable(f"edge/cost ratio: {missing_cost} of {len(records)} trade "
                                     f"record(s) lack a measured cost")
+    if all_costs:
+        missing_all = sum(1 for r in records if r.get("cost_paid_all") is None
+                          or r.get("gross_return_before_costs") is None)
+        if missing_all:
+            raise PortfolioNotEvaluable(
+                f"edge/cost ratio (fees + slippage): {missing_all} of {len(records)} trade "
+                f"record(s) lack a measured cost (no cost_paid_all / "
+                f"gross_return_before_costs: run_protocol ran without --cost-bar-all-costs, "
+                f"or a leg's bar was not found)")
     if len(kept) < min_trades:
         raise PortfolioNotEvaluable(f"edge/cost ratio: {len(kept)} trade(s) after excluding "
                                     f"{n_forced} end_of_window forced close(s), fewer than "
                                     f"min_trades={min_trades}")
-    r_all = _ch.realized_edge_to_cost_ratio_unrounded(records)
-    r_kept = _ch.realized_edge_to_cost_ratio_unrounded(kept)
+    ratio_fn = (_ch.edge_to_all_costs_ratio_unrounded if all_costs
+                else _ch.realized_edge_to_cost_ratio_unrounded)
+    r_all = ratio_fn(records)
+    r_kept = ratio_fn(kept)
     if r_all is None or r_kept is None:
         raise PortfolioNotEvaluable("edge/cost ratio: zero mean measured cost")
-    return {"ratio": min(float(r_all), float(r_kept)), "ratio_all_trades": float(r_all),
-            "ratio_excluding_end_of_window": float(r_kept), "n_trades": len(kept),
-            "n_excluded_end_of_window": n_forced}
+    out = {"ratio": min(float(r_all), float(r_kept)), "ratio_all_trades": float(r_all),
+           "ratio_excluding_end_of_window": float(r_kept), "n_trades": len(kept),
+           "n_excluded_end_of_window": n_forced}
+    if all_costs:
+        out["cost_basis"] = "fees_and_slippage"
+    return out

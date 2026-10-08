@@ -1825,12 +1825,20 @@ def _failed_variants_reason(failed: dict) -> str:
     return "; ".join(parts) + " -- a variant without a graded result never validates an idea (D-015)"
 
 
+# CUL-414 (D-082): the D-038 cost ratio's all-costs twin, read under
+# evaluate_grid(cost_bar_all_costs=True).
+COST_BAR_ALL_COSTS_METRICS = {
+    "realized_edge_to_cost_ratio": "realized_edge_to_cost_ratio_all_costs",
+}
+
+
 def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
                    research_brief: dict | None, menu, *, composition_runs: bool = False,
                    profit_bars_grader=None, failed_variants: dict | None = None,
                    untested_variants: dict | None = None,
                    partial_coverage_variants: dict | None = None,
-                   single_era_inconclusive: bool = False) -> dict:
+                   single_era_inconclusive: bool = False,
+                   cost_bar_all_costs: bool = False) -> dict:
     """
     E-046b S2: the grid (engineering_roadmap.html card C) -- criteria x
     variants, every cell mechanical, unanimity across variants. No LLM
@@ -1900,6 +1908,14 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
     FAIL, operator amendment 2026-09-29 to D-047). False ->
     byte-identical to the call without it.
 
+    `cost_bar_all_costs` (CUL-414, D-082; the caller passes True only under
+    orchestrator.cost_bar_all_costs): every resolved criterion whose metric is
+    `realized_edge_to_cost_ratio` reads `realized_edge_to_cost_ratio_all_costs`
+    instead (COST_BAR_ALL_COSTS_METRICS) -- run_protocol --cost-bar-all-costs's
+    gross edge before fees and slippage / fees + slippage, both legs. An
+    artifact without that field reads INCONCLUSIVE (pooled metric None), never
+    the fee-only ratio. False -> byte-identical to the call without it.
+
     Returns {"result": "GRID_EVALUATED" | "SPEC_ERROR", "criteria": [id, ...],
     "variants": [variant_id, ...], "grid": {criterion_id: {variant_id:
     cell_dict}}, "idea_status": "validated"|"refuted"|"inconclusive"|None,
@@ -1922,6 +1938,11 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
                           "protocol_result} dict -- evaluate_grid always needs at least one column")
 
     criteria_defs = _resolve_grid_criteria(pre_registration, menu)
+    if cost_bar_all_costs:
+        criteria_defs = [{**c, "metric": COST_BAR_ALL_COSTS_METRICS[c.get("metric")]}
+                         if isinstance(c.get("metric"), str)
+                         and c["metric"] in COST_BAR_ALL_COSTS_METRICS else c
+                         for c in criteria_defs]
     if not criteria_defs:
         raise ValueError(
             "pre_registration's pass_rule resolved zero menu-shaped criteria (none of its "

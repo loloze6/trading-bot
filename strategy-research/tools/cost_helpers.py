@@ -149,3 +149,34 @@ def realized_edge_to_cost_ratio(records: list) -> float | None:
     carried (round(mean_gross / mean_cost, 4))."""
     raw = realized_edge_to_cost_ratio_unrounded(records)
     return round(raw, 4) if raw is not None else None
+
+
+def edge_to_all_costs_ratio_unrounded(records: list) -> float | None:
+    """CUL-414 (orchestrator.cost_bar_all_costs, D-082): the D-038 "survives 2x
+    costs" ratio with both sides on the same basis -- mean gross edge per trade
+    BEFORE fees and slippage (gross_return_before_costs, % -> bps: the trade's
+    return at the bar closes the fills were priced from) / mean cost per trade,
+    fees + slippage, both legs (cost_paid_all, bps). realized_edge_to_cost_ratio
+    divides a slippage-net return (fill prices) by fees only (A7).
+
+    Records written by run_protocol --cost-bar-all-costs carry both fields; a
+    record without them (None: its bars could not be matched, or an artifact
+    written without the flag) is left out of numerator AND denominator, the same
+    like-for-like rule as realized_edge_to_cost_ratio_unrounded. Zero mean cost
+    or no record -> None. UNROUNDED: a pass/fail bar compares this value."""
+    kept = [r for r in records
+            if r.get("cost_paid_all") is not None and r.get("gross_return_before_costs") is not None]
+    if not kept:
+        return None
+    mean_gross_bps = statistics.mean([r["gross_return_before_costs"] * 100 for r in kept])
+    mean_cost_bps = statistics.mean([r["cost_paid_all"] for r in kept])
+    return mean_gross_bps / mean_cost_bps if mean_cost_bps != 0 else None
+
+
+def edge_to_all_costs_ratio(records: list) -> float | None:
+    """edge_to_all_costs_ratio_unrounded rounded to 4 decimals, as
+    realized_edge_to_cost_ratio is (run_protocol's descriptive summary field
+    realized_edge_to_cost_ratio_all_costs, read by the menu criterion under
+    the flag)."""
+    raw = edge_to_all_costs_ratio_unrounded(records)
+    return round(raw, 4) if raw is not None else None
