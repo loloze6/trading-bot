@@ -290,3 +290,30 @@ Written as `roadmap/E-075/PR5_RUNBOOK.md` in the build PR.
 4. **One query log and budget per lens** (`artifacts/analyst_queries/<lens>.yaml`, 150 each) *(recommended)*, or one shared log with 150 for the run.
 5. **Model and caps:** Sonnet 5.5, 40 turns, $1.50, 15 minutes, one retry *(recommended)*.
 6. **Pilot runner:** not in PR-5; the pilot is run as campaign runs from the runbook *(recommended)*, or a pilot-runner PR after PR-5.
+
+## 11. The operator's decisions (2026-10-08)
+
+1. **Trade-level tests:** a separate PR-5a, before PR-5.
+2. **Lenses → the existing category files**, the other three code-skipped (`replaced_by_analyst`): as proposed.
+3. **Scores: a very simple code-computed score now**, which Stage 2 replaces with a real ranking. Method (proposed here, accepted in advance by the operator):
+   - `confidence_real` (0..3) is the in-run agreement of the claim's own test, read from the `conditional_effect` query whose `spec_hash` equals the test's:
+     - the share of windows with the claimed sign (`windows_claimed_sign / windows_with_value`) at the claim's weakest horizon;
+     - mapping: 1.0 → 3; at least 0.8 → 2; at least 0.6 → 1; less → 0;
+     - with several tests, the lowest one.
+   - `distance_to_profitable` = 1 and `mechanism_plausibility` = 1 for every analyst claim. They are fixed, so there is no profit judgement and no self-score.
+   - decide-next's existing order (`confidence_real`, then `distance_to_profitable`, then cost) then ranks analyst claims by in-run agreement, then by cost.
+   - That number is exploratory. It only ORDERS the candidates; confirmation stays on the child's unseen fold.
+4. **One query log and a 150-comparison budget per lens:** as proposed.
+5. **Model: Haiku**, the existing stage model (`_CLAUDE_WORKER_MODEL`, today `claude-haiku-4-5`), until the epic that lets each step choose its model. Caps unchanged: 40 turns, $1.50, 15 minutes, one retry.
+6. **Pilot:** run by the operator from the runbook, as campaign runs; no pilot runner in PR-5.
+   - The other option was a pilot-runner tool (PHASE_A slice 3). For each saved run it would run both lenses, send each claim through decide-next, backtest the fold-B child and grade it, then write one report. It automates the runbook.
+   - It cannot run in this cloud checkout:
+     - saved runs 064-074 are not here (`runs/` stops at run_060);
+     - there are no model credentials for live sessions;
+     - campaign runs are the operator's.
+
+**Also decided on #356 / #357:**
+- a claim confirmed on any fold reads `confirmed`, and its refutation on another fold stays recorded in `folds`;
+- a merged duplicate may show twice;
+- orientation by hour, weekday or regime costs comparisons;
+- distinct empty-vehicle claims may re-run the same config on the same fold.
