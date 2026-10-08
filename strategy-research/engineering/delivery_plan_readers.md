@@ -208,6 +208,41 @@ Assessment (agreed):
 - So three of the four steps below reuse existing code. Only the draw and the "observed on"
   record are new.
 
+**Step 7: the operator's review of E-073 to E-075 under the new design.**
+> "E-073: I think it is still needed. The agent may observe raw prices internally and need
+> the numbers explained and checked, but we will no longer have the cheap statistical
+> check, so maybe the epic needs revisiting. E-074: the exploration digest is a statistical
+> check; it might be incorporated into the analyst's way of thinking as tools, not exposed
+> and coded outside the agent. And E-075, for me, was to replace the readers: a switch from
+> readers that observe based on metrics and generate a claim, to an analyst (that will be
+> the reader) that applies a set of tools to raw data to observe and propose, then
+> generates the claim."
+
+Assessment (agreed, with one nuance per epic):
+- **E-073 stays, with more weight.**
+  - The data dictionary: an analyst querying raw data must know each column.
+  - The output fixes CUL-414 to CUL-417: they fix the numbers that decide whether a
+    *backtest* passes, whatever the readers become.
+  - E-029 and E-027: a claim like "closes too early in trends" needs the trade record to
+    carry regime_at_exit and the exit cause.
+  - *Nuance:* step 2 (PR #346, citation check against the reports) is transitional, because
+    the analyst's evidence is its own logged query results. Proposed: hold #346 unmerged
+    until the readers' fate is decided; in-run dedup may return for analyst sessions.
+- **E-074 folds into E-075 as analyst tools.**
+  - The code-built digest handed to readers is the pre-chewed statistical check that Step
+    4 dropped.
+  - What survives: its grid as a callable tool (a conditional effect by hour, regime or
+    volatility), and `trailing_vol` (PR #348) as a field those tools use.
+  - The family-wise chance line loses its role as a gate: the protection against chance
+    findings is now the backtest on unseen blocks. Counting the analyst's queries stays as
+    a record.
+- **E-075 replaces the readers.** One step reads the metrics, queries the raw data with
+  tools, reasons about why, then proposes one strategy change into the backlog. Open: one
+  analyst or five lens sessions (cost ≈ $0.7-1.2 per session, estimate, against ≈ $0.39
+  per run for today's five readers), and a pilot redesigned as "analyst vs today's readers"
+  on the same saved runs, each proposal backtested on unseen blocks, with the placebo as a
+  sanity check.
+
 ### A1.2 Before and after, per decision
 
 | # | Before (plan of 2026-10-08 morning, E-072 as built) | After (operator review) |
@@ -218,6 +253,9 @@ Assessment (agreed):
 | 4 | Inside a run: readers see 2022, confirmation on 2023 | **Every run records the windows its results came from. A run built from an idea uses windows the idea was not observed on** |
 | 5 | Step 1a's all-window view made follow-up confirmations "weak" | Moot: the test happens on other windows |
 | 6 | Windows fixed per brief (the same 2022-2023 windows since run_065) | **Windows drawn from a block calendar** (A1.3) |
+| 7 | E-073: dictionary, then citation check + dedup for readers, then E-029/E-027 | **Dictionary, the output fixes (CUL-414..417), E-029/E-027.** Citation check (PR #346) held until the readers' fate is decided |
+| 8 | E-074: a code-built exploration digest given to the readers, with a chance-line gate | **Folded into E-075 as analyst tools.** `trailing_vol` kept; no digest wiring to readers; query counting kept as a record, not a gate |
+| 9 | E-075: a sixth reader (pilot), next to the five readers | **The analyst replaces the readers.** One or five sessions to decide; the pilot compares the analyst with today's readers, every proposal backtested on unseen blocks |
 
 ### A1.3 The proposed window standard
 
@@ -256,11 +294,12 @@ Assessment (agreed):
   - proposed: keep the flag off and retire that code in a later cleanup PR;
   - still useful: the confirmation ledger idea (counting looks), reused to count how often
     each block has been used.
-- **E-073 (dictionary, citations, dedup): unaffected.** The citation check would compare
-  against the full reports, since nothing is hidden any more.
-- **CUL-414 and CUL-415: unaffected.**
-- **E-074 (digest):** computed on all of the run's windows, not on "exploration only". The
-  family-wise chance line stays: hundreds of cells still produce chance hits.
+- **E-073:** the dictionary (merged) and the output fixes (CUL-414, CUL-415, then CUL-416,
+  CUL-417) stay; E-029 and E-027 gain weight. The citation check (PR #346) is held as
+  transitional (Step 7).
+- **E-074:** folded into E-075 as analyst tools (Step 7). `trailing_vol` (PR #348) stays.
+  The digest grid becomes a callable tool, computed on the windows of the run the analyst
+  reads. There is no wiring to readers and no chance-line gate.
 - **E-075 (analyst):**
   - its queries run on the run's own windows, as internal reasoning;
   - its output is a strategy-change proposal into the backlog;
@@ -288,8 +327,15 @@ Assessment (agreed):
    run. Is the analyst's internal reasoning (its queries on the run it reads) a sufficient
    replacement?
 5. **Retire E-072's code, or keep it as an option?**
-6. **What did we miss?** Is there a simpler standard that meets "never test where you
+6. **The analyst replacing the readers (Step 7):**
+   - one analyst, or five lens sessions?
+   - is the redesigned pilot (analyst vs today's readers on saved runs, every proposal
+     backtested on unseen blocks, placebo as a sanity check) sound, and what does it cost
+     in backtests?
+   - should the citation check (PR #346) be dropped, or kept for the analyst's citations of
+     its own query results?
+7. **What did we miss?** Is there a simpler standard that meets "never test where you
    looked" without the data running out so fast?
 
-**Reviewer: please give your opinion on both the reasoning (steps 1-6) and the outcome
+**Reviewer: please give your opinion on both the reasoning (steps 1-7) and the outcome
 (A1.2-A1.5), challenge it fairly, and propose changes.**
