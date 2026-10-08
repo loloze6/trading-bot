@@ -985,7 +985,8 @@ def requests_count(doc) -> int:
 
 def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None,
                 digest=None, composition_runs: bool = False, dsr_basis: dict | None = None,
-                feed_set=None, folds: dict | None = None, fold_data: dict | None = None) -> dict:
+                feed_set=None, folds: dict | None = None, fold_data: dict | None = None,
+                trade_tests: bool = False) -> dict:
     """Everything decide() reads, from disk under `root` (strategy-research/).
     `queue` is the caller's in-memory queue document (after its own write).
     `known_classes` is the known component class set (known_component_classes)
@@ -1008,7 +1009,10 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
     no such key, nothing more is read, and every candidate is as before.
     `fold_data` (with `folds`; run_phase1_research._fold_data_context): {layer1, precheck,
     first_symbol_only} -- what `_fold_data_reason` needs to refuse a child that has no data on
-    its fold. None: that check is skipped."""
+    its fold. None: that check is skipped.
+    `trade_tests` (D-091; the caller passes it only under orchestrator.analyst.enabled): a side
+    finding's claim may use the trade-level test family (inputs["trade_tests"]). Off: no
+    such key, every claim checked as before."""
     root = Path(root)
     mem_path = root / "campaign_record" / "campaign_memory.yaml"
     memory = _cm.load_memory(mem_path)
@@ -1088,6 +1092,8 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
         "component_requests_count": _count("component_requests.yaml"),
         "data_requests_count": _count("data_requests.yaml"),
     }
+    if trade_tests:
+        out["trade_tests"] = True
     if folds is not None:
         out["folds"] = {"doc": copy.deepcopy(folds), "run_ranges": _memory_run_ranges(root, memory),
                         "data": fold_data}
@@ -1899,7 +1905,8 @@ def _side_finding_review(run_id: str, src: dict, p: dict, inputs: dict) -> dict:
     # flag (execution_behaviour) are accepted, as at the reading's own check
     return _rf.side_finding_review(p, prior=prior, own=_rf.own_spec_hashes(src.get("card")),
                                    run_id=run_id,
-                                   **({"folds": True} if inputs.get("folds") is not None else {}))
+                                   **({"folds": True} if inputs.get("folds") is not None else {}),
+                                   **({"trade_tests": True} if inputs.get("trade_tests") else {}))
 
 
 # E-068 PR 4 (D-071): the one warning kind a candidate can carry.

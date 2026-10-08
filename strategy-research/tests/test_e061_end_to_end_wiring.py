@@ -219,6 +219,8 @@ TARGET_FLAGS = {
     "zero_trade_windows_not_computed": False,
     # E-077 PR-1 (D-085): off, so the stub briefs' windows are copied as before.
     "folds": False,
+    # E-075 PR-5a (D-091): off, so the stub claims are checked as before.
+    "analyst": False,
     # E-068 slice 2: the stub cards carry no claim block.
     "claim_tests": False,
     # D-071 (CUL-399): off, so decide-next's picks stay `ready` as these scenarios expect.

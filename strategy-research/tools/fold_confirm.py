@@ -223,17 +223,45 @@ def _finite(v):
     return None if v is None or not math.isfinite(float(v)) else float(v)
 
 
-def measure_on_fold(run_dir: Path, vid: str, tests: list, windows, eras, holdout_start: str):
+def measure_on_fold(run_dir: Path, vid: str, tests: list, windows, eras, holdout_start: str,
+                    *, trade_tests: bool = False):
     """The default measurement of confirm_on_fold: explore_confirm.measure_on_windows (one
     coin: nothing else, exactly as before), and when the windows hold SEVERAL coins, each
     measured test's horizons also carry POOLED_KEY, the coins pooled per window (option C,
     D-089), which grade_test counts instead of the symbol-window cells. Same signature and
-    return shape as measure_on_windows."""
+    return shape as measure_on_windows.
+    `trade_tests` (D-091, orchestrator.analyst.enabled): a test of the trade-level family is
+    measured on the variant's TradeWindows over the same windows (claim_measure.measure_test
+    with the family on), and pooled per window the same way. Off: every test goes through
+    measure_on_windows exactly as before (a trade test is then recorded as an error there)."""
     import claim_measure as cmeas
     import claim_tests as ct
     import explore_confirm as ec
-    results, measured = ec.measure_on_windows(run_dir, vid, tests, windows, eras, holdout_start)
+    trade = ({str(t.get("name")) for t in tests if cmeas._is_trade_test(t)}
+             if trade_tests else set())
+    bar_tests = [t for t in tests if not (isinstance(t, dict) and str(t.get("name")) in trade)]
     keep = set(windows)
+    if bar_tests or not trade:
+        results, measured = ec.measure_on_windows(run_dir, vid, bar_tests, windows, eras,
+                                                  holdout_start)
+    else:
+        results, measured = {}, []
+    tws = []
+    if trade:
+        tws = [tw for tw in ct.load_variant_trade_windows(Path(run_dir), vid) if tw.window in keep]
+        if not tws:
+            raise ValueError(f"variant {vid!r} has no trades or bars on the windows {sorted(keep)}")
+        cmeas.check_before_holdout(tws, holdout_start)
+        for t in tests:
+            name = str(t.get("name")) if isinstance(t, dict) else "None"
+            if name not in trade:
+                continue
+            try:
+                results[name] = cmeas.measure_test(tws, t, eras, True)
+            except Exception as exc:  # noqa: BLE001 -- recorded per test, as measure_on_windows does
+                results[name] = {"name": name, "status": cmeas.NOT_MEASURED, "reason": ec.ERROR,
+                                 "detail": f"{type(exc).__name__}: {exc}"}
+        measured = measured or [tw.label for tw in tws]
     ws = [w for w in ct.load_variant_bars(Path(run_dir), vid) if w.window in keep]
     if len({w.symbol for w in ws}) < 2:
         return results, measured
@@ -242,8 +270,9 @@ def measure_on_fold(run_dir: Path, vid: str, tests: list, windows, eras, holdout
         if res.get("status") != cmeas.MEASURED or name not in by_name:
             continue
         try:
-            spec, _h = cmeas.test_spec(by_name[name])
-            per, _out_h, hz, _rng = ct.effect_sizes(ws, spec, eras)
+            is_trade = name in trade
+            spec, _h = cmeas.test_spec(by_name[name], is_trade)
+            per, _out_h, hz, _rng = ct.effect_sizes(tws if is_trade else ws, spec, eras)
             pooled = {h: pooled_per_window(per, spec, h) for h in hz}
         except Exception as exc:  # noqa: BLE001 -- recorded per test, as measure_on_windows does
             results[name] = {"name": name, "status": cmeas.NOT_MEASURED, "reason": ec.ERROR,
@@ -379,7 +408,7 @@ def _finish(row: dict, status: str, reason: str, **extra) -> dict:
 def confirm_on_fold(run_dir: Path, run_id: str, *, root: Path, folds_doc: dict | None = None,
                     eras, holdout_start: str, vehicle_variant: str | None = None,
                     base_variant: str | None = None, fresh_variants=None,
-                    measure=None, folds_path=None, policy_path=None):
+                    measure=None, folds_path=None, policy_path=None, trade_tests: bool = False):
     """Measure the source claim's tests on the child run `run_id`'s vehicle variant over
     its fold, and return the ledger row (explore_confirm.record_fold_confirmation writes
     it). None when the run was not built from a side finding (nothing to confirm). Never
@@ -389,9 +418,10 @@ def confirm_on_fold(run_dir: Path, run_id: str, *, root: Path, folds_doc: dict |
     `measure(run_dir, variant, tests, window_labels, eras, holdout_start) ->
     ({test name: measure_test-shaped result}, [windows measured])`: default measure_on_fold
     (explore_confirm.measure_on_windows, plus the coins pooled per window when there are
-    several, D-089); a trade-level test family plugs in here later by returning results of
-    the same shape (with POOLED_KEY for several coins), and may take the base variant as a
-    keyword."""
+    several, D-089), which also measures the trade-level family when `trade_tests` is on.
+    `trade_tests` (D-091, orchestrator.analyst.enabled): the source claim and the child's card
+    are checked with the trade-level family, and `measure` gets trade_tests as a keyword (only
+    when on, so a custom hook is called as before)."""
     import claim_card as cc
     import claim_tests as ct
     import explore_confirm as ec
@@ -429,7 +459,8 @@ def confirm_on_fold(run_dir: Path, run_id: str, *, root: Path, folds_doc: dict |
                        "nothing is measured")
     # the source claim and its tests
     claim = item.get("claim")
-    res = cc.check_claim(claim, folds=True)
+    tt = {"trade_tests": True} if trade_tests else {}     # D-091
+    res = cc.check_claim(claim, folds=True, **tt)
     if res.errors:
         return _finish(row, NOT_MEASURABLE, "the source claim is refused by check_claim: "
                        + "; ".join(res.errors))
@@ -448,7 +479,7 @@ def confirm_on_fold(run_dir: Path, run_id: str, *, root: Path, folds_doc: dict |
         card = yaml.safe_load(card_path.read_text(encoding="utf-8")) if card_path.exists() else None
         own = cc.check_claim((card or {}).get("claim") if isinstance(card, dict) else None,
                              cc.card_criteria_ids(card if isinstance(card, dict) else {}),
-                             folds=True)
+                             folds=True, **tt)
         own_hashes = [] if own.errors else _spec_hashes(own)
     except Exception as exc:  # noqa: BLE001 -- recorded
         own_hashes = []
@@ -520,7 +551,7 @@ def confirm_on_fold(run_dir: Path, run_id: str, *, root: Path, folds_doc: dict |
     measure = measure or measure_on_fold
     try:
         results, measured = measure(run_dir, vehicle_vid, tests, [b["label"] for b in block_rows],
-                                    eras, holdout_start)
+                                    eras, holdout_start, **tt)
     except Exception as exc:  # noqa: BLE001 -- recorded
         return _finish(row, NOT_MEASURABLE,
                        f"the bars could not be measured ({type(exc).__name__}: {exc})")

@@ -759,6 +759,24 @@ flags:
       profit_bars_v2's single-era rule. The engine's metrics.json is unchanged. Tested by
       tests/test_cul415_zero_trade_windows.py.
 
+  - name: analyst
+    kind: orchestrator_config
+    config_key: orchestrator.analyst.enabled
+    reader: run_phase1_research._analyst_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "E-075 PR-5 (the analyst stage and its skill, CUL-423); then the operator's smoke session and pilot"
+    criterion: >
+      Landed 2026-10-08 (E-075 PR-5a, CUL-424, D-091), the first part of the analyst's
+      flag. Off: byte-identical. On: the trade-level claim-test family (D-086) reaches
+      the pipeline -- the claim checks at the reading (side_finding_review,
+      reading_structure, side-finding merges), at decide-next (load_inputs trade_tests),
+      at step 1a's card (_claim_check_kw) and in E-072's finding route accept it; the
+      child run measures it (claim_measure.measure_variant trade_tests); fold
+      confirmation checks and measures it on the child's trades
+      (fold_confirm.measure_on_fold, pooled per window across coins as D-089). Tested by
+      tests/test_d091_trade_tests_pipeline.py.
+
   - name: folds
     kind: orchestrator_config
     config_key: orchestrator.folds.enabled

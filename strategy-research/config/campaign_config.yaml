@@ -953,6 +953,17 @@ orchestrator:
       # cell INCONCLUSIVE, never PASS (skipped_windows.eras_left_empty; review
       # fix, PR #349): losing an era can turn FAIL into INCONCLUSIVE, never
       # into PASS. The engine's metrics.json is unchanged.
+  analyst:
+    enabled: false
+      # E-075 PR-5a (D-091). OFF BY DEFAULT, read by run_phase1_research._analyst_enabled().
+      # The analyst's flag; PR-5a is its first part, E-075 PR-5 adds the analyst stage
+      # (two lenses replacing the v3 readers) under the same flag. While false:
+      # byte-identical. While true (PR-5a): the trade-level claim-test family (D-086:
+      # selector `trade`, outcomes trade_net_return / post_exit_return, baseline
+      # other_trades) reaches the pipeline -- the claim checks at the reading, decide-next,
+      # step 1a's card and the side-finding merges accept it; the child run measures it
+      # (claim_measure.measure_variant with trade_tests); fold confirmation checks it and
+      # measures it on the child's trades (tools/fold_confirm.measure_on_fold).
   folds:
     enabled: false
       # E-077 PR-1 (D-085). OFF BY DEFAULT, read by run_phase1_research._folds_enabled().

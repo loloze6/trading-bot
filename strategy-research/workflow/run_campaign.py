@@ -3520,6 +3520,7 @@ def _flag_readers() -> dict:
         "cost_bar_all_costs": orch._cost_bar_all_costs_enabled,  # CUL-414 (D-082)
         "zero_trade_windows_not_computed": orch._zero_trade_windows_not_computed_enabled,  # CUL-415 (D-084)
         "folds": orch._folds_enabled,  # E-077 PR-1 (D-085)
+        "analyst": orch._analyst_enabled,  # E-075 PR-5a (D-091)
         "forecast_size_probe": orch._forecast_size_probe_enabled,  # D-056
         "claim_tests": orch._claim_tests_enabled,  # E-068 slice 2
         "reader_findings": orch._reader_findings_enabled,  # E-068 slice 5 (D-073)
@@ -4733,7 +4734,9 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
             ROOT, final_queue, categories=orch._reader_categories(), known_classes=known,
             digest=digest, feed_set=feeds,
             **({"composition_runs": True, "dsr_basis": _ledger_dsr_basis()} if comp_on else {}),
-            **({"folds": folds_doc, "fold_data": fold_data} if folds_doc is not None else {}))
+            **({"folds": folds_doc, "fold_data": fold_data} if folds_doc is not None else {}),
+            # E-075 PR-5a (D-091): the trade-level family, only under orchestrator.analyst
+            **({"trade_tests": True} if orch._analyst_enabled() else {}))
         mem_entry = (inputs["memory"].get("runs") or {}).get(run_id) or {}
         trigger = {"after_run": run_id, "after_entry": entry["id"],
                    "idea_status": mem_entry.get("idea_status")}
