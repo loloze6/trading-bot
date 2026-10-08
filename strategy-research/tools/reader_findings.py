@@ -374,8 +374,8 @@ def side_finding_review(item: dict, *, prior: dict, own: set, run_id: str,
         (claim_card.KIND_BLOCK) but no test reads that block's output
         (CLAIM_TESTS.md's visibility rule). A kind with no block is a pure
         finding and gets no such warning.
-    `folds` (D-089, orchestrator.folds.enabled): check_claim(folds=True), so a claim of
-    kind execution_behaviour is accepted here too; False: exactly as before."""
+    `folds` (D-089, orchestrator.folds.enabled): check_claim with the folds kinds, so a
+    claim of kind execution_behaviour is accepted here too; off: exactly as before."""
     import claim_card as cc
     claim = item.get("claim") if isinstance(item, dict) else None
     res = cc.check_claim(claim, folds=True) if folds else cc.check_claim(claim)
