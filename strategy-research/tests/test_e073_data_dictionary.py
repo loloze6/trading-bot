@@ -648,6 +648,8 @@ OPAQUE_ALLOWED = {
         "profitability: slices.per_regime.<*>[]": "the window's per_regime block (section 4)",
         "forecast_power: slices.per_regime.<*>[]": "the window's regime_validity block (section 4)",
         "trade_efficiency: slices.overall": "the trade_diagnostics summary (section 2), a parameter",
+        "slices": "_withhold_pooled_overall (E-072) copies the report's slices and replaces only "
+                  "`overall` (walked in each builder)",
     },
     "grid_evaluation.yaml": {
         "grid.<*>.<*>.bars[]": "_hold_rows_not_evaluable copies the graded row "

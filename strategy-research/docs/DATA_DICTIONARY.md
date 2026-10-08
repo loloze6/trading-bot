@@ -376,6 +376,9 @@ are over records, where `n` counts records, numeric or not (A11). A field withou
 | `slices.per_symbol` | Per symbol. | map | `BR:_wrap` | run |
 | `slices.<slice>.unavailable` | The slice could not be built (any report, any slice). | bool | `BR:_unavailable` | meta |
 | `slices.<slice>.reason` | Why. | text | `BR:_unavailable` | meta |
+| `slices.overall.unavailable` | Readers' exploration copy only (E-072, `explore_confirm`): `true` in the profitability, trade_efficiency and forecast_power reports, because their `overall` slice is an aggregate over every window, the confirmation windows included. | bool | `BR:_withhold_pooled_overall`, `BR:_unavailable` | meta |
+| `slices.overall.reason` | Readers' exploration copy only (E-072): why that `overall` slice is withheld (`WINDOWS_WITHHELD_REASON`). | text | `BR:_withhold_pooled_overall`, `BR:_unavailable` | meta |
+| `windows_shown` | Readers' exploration copy only (E-072): the window labels this report was built from; every other window is left out. | list | `BR:build_reports` | meta |
 | `profitability: slices.overall.source` | Where the block comes from. | text | `BR:build_profitability_report` | meta |
 | `profitability: slices.overall.diagnostics` | Section 5. | map | `BR:build_profitability_report` | run |
 | `profitability: slices.overall.verdict` | Legacy verdict (removed when retired). | label | `BR:build_profitability_report` | run |
