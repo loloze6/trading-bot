@@ -110,8 +110,10 @@ def _regime_selector_paths(test: dict) -> list:
     return out
 
 
-def _check_test(test, where: str) -> tuple:
-    """(errors, spec_hash or None, verdict_possible)."""
+def _check_test(test, where: str, trade_tests: bool = False) -> tuple:
+    """(errors, spec_hash or None, verdict_possible). `trade_tests` (E-075
+    PR-3): also accept the gated trade-level family; False by default, when a
+    trade selector, outcome or baseline is refused exactly as before."""
     if not isinstance(test, dict):
         return [f"{where}: a test must be a mapping"], None, False
     errors = []
@@ -144,7 +146,8 @@ def _check_test(test, where: str) -> tuple:
     try:
         # an LLM slip (a list where a scalar belongs, an int where a list
         # belongs) can make check_spec itself raise: a refusal, never a crash
-        errs = [e for e in ct.check_spec(spec) if not (allowed and e.startswith(allowed))]
+        found = ct.check_spec(spec, trade_tests=True) if trade_tests else ct.check_spec(spec)
+        errs = [e for e in found if not (allowed and e.startswith(allowed))]
         if errs:
             return [f"{where}: {e}" for e in errs], None, False
         h = ct.spec_hash(spec)
@@ -153,9 +156,11 @@ def _check_test(test, where: str) -> tuple:
     return [], h, not regime
 
 
-def check_claim(claim, criteria_ids=()) -> ClaimCheck:
+def check_claim(claim, criteria_ids=(), trade_tests: bool = False) -> ClaimCheck:
     """Static checks of 1a's claim block, before any spend. criteria_ids: the
-    ids of the card's own `criteria` list (criteria_refs must name them)."""
+    ids of the card's own `criteria` list (criteria_refs must name them).
+    trade_tests (E-075 PR-3): accept the gated trade-level tests too; no
+    caller in the pipeline passes it yet, so every default result is unchanged."""
     res = ClaimCheck()
     e = res.errors
     if not isinstance(claim, dict):
@@ -206,7 +211,7 @@ def check_claim(claim, criteria_ids=()) -> ClaimCheck:
     elif len(set(names)) != len(names):
         e.append("claim.tests: every test needs a unique name")
     for i, t in enumerate(tests):
-        errs, h, possible = _check_test(t, f"claim.tests[{i}]")
+        errs, h, possible = _check_test(t, f"claim.tests[{i}]", trade_tests)
         e.extend(errs)
         if not errs:
             res.tests.append({"name": t["name"], "spec_hash": h, "verdict_possible": possible,

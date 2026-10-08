@@ -31,6 +31,12 @@ Blocks (v1, 17):
   baselines   complement, placebo, other_selector   (rank_ic takes none)
   statistics  mean_diff, rank_ic, hit_rate, decay_curve
 
+GATED trade-level family (E-075 PR-3, CUL-420; see the "Trade-level tests"
+section below): selector `trade {where: [...]}`, outcomes trade_net_return and
+post_exit_return, baseline other_trades, statistics mean_diff | hit_rate. It is
+not in the lists above, check_spec / check_claim refuse it unless the caller
+passes trade_tests=True, and nothing in the pipeline does yet.
+
 Block definitions (fixed in tasks/todo.md before any code):
   fwd_return(h)        close[t+h] / close[t] - 1
   fwd_volatility(h)    sample std (ddof=1) of the h one-bar log returns in (t, t+h]; h >= 2
@@ -847,16 +853,29 @@ def _check_selector(s, where: str, extra_fields: tuple = ()) -> list[str]:
     return e
 
 
-def check_spec(spec: TestSpec, extra_fields: tuple = ()) -> list[str]:
+def check_spec(spec: TestSpec, extra_fields: tuple = (), trade_tests: bool = False) -> list[str]:
     """Static checks, before any data. Empty list = valid. `extra_fields`
     (E-074): gated bar-t fields this caller accepts on top of BAR_T_FIELDS,
     each from GATED_BAR_T_FIELDS (anything else raises); empty by default,
-    so every default result is unchanged."""
+    so every default result is unchanged. `trade_tests` (E-075 PR-3): accept
+    the gated trade-level family (selector `trade`, outcomes trade_net_return
+    and post_exit_return, baseline other_trades); False by default, when a
+    trade selector, outcome or baseline gets exactly the pre-PR-3 refusal."""
     extra_fields = tuple(extra_fields)
     bad = [f for f in extra_fields if f not in GATED_BAR_T_FIELDS]
     if bad:
         raise ValueError(f"extra_fields {bad} are not gated bar-t fields "
                          f"(known: {list(GATED_BAR_T_FIELDS)})")
+    if trade_tests:
+        is_trade = isinstance(spec.selector, dict) and spec.selector.get("kind") == TRADE_SELECTOR
+        mixed = ((isinstance(spec.outcome, dict) and spec.outcome.get("kind") in TRADE_OUTCOMES)
+                 or (isinstance(spec.baseline, dict)
+                     and spec.baseline.get("kind") in TRADE_BASELINES))
+        if is_trade:
+            return _check_trade_head(spec) + _check_tail(spec)
+        if mixed:
+            return [f"selector: the trade outcomes {list(TRADE_OUTCOMES)} and the baseline "
+                    f"{list(TRADE_BASELINES)} need a selector of kind {TRADE_SELECTOR!r}"]
     e = _check_selector(spec.selector, "selector", extra_fields)
     o = spec.outcome
     if not isinstance(o, dict) or o.get("kind") not in OUTCOMES:
@@ -877,6 +896,13 @@ def check_spec(spec: TestSpec, extra_fields: tuple = ()) -> list[str]:
         e.append(f"baseline: unknown {spec.baseline!r}; known: {sorted(BASELINES)}")
     elif spec.baseline["kind"] == "other_selector":
         e += _check_selector(spec.baseline.get("selector"), "baseline.selector", extra_fields)
+    return e + _check_tail(spec)
+
+
+def _check_tail(spec: TestSpec) -> list[str]:
+    """The checks every test shares, whatever its selector: direction, floor,
+    alpha, consistency, significance (moved verbatim out of check_spec)."""
+    e: list[str] = []
     if spec.direction not in DIRECTIONS:
         e.append(f"direction must be one of {list(DIRECTIONS)}")
     if not isinstance(spec.floor, dict) or not spec.floor:
@@ -904,6 +930,457 @@ def check_spec(spec: TestSpec, extra_fields: tuple = ()) -> list[str]:
         e.append(f"significance: {{method: one of {list(A851A_METHODS)}}} or {{method: {SIGNIFICANCE_METHOD}, "
                  f"n_resamples >= 99, seed: int}} (earlier methods were retired, amendments 1-3)")
     return e
+
+
+# ---------------------------------------------------------------------------
+# Trade-level tests (E-075 PR-3, CUL-420): a GATED family
+#
+# On these TRADES (selector `trade`), what the trade returned or what the
+# market did after its exit (outcome) is different from the OTHER trades
+# (baseline `other_trades`), measured as mean_diff or hit_rate. A "trade" is
+# one LIFO-matched lot of the run's trades.json (docs/DATA_DICTIONARY.md
+# section 2): a partial reduction closes a lot, so several trades can share an
+# entry bar and several can exit on one bar.
+#
+# Gated like E-074's GATED_BAR_T_FIELDS: check_spec / check_claim refuse all of
+# it unless the caller passes trade_tests=True (nothing in the pipeline does
+# yet), with exactly the pre-PR-3 refusal, so every default message, hash and
+# artifact is unchanged. SELECTORS / OUTCOMES / BASELINES / STATISTICS are NOT
+# extended (CLAIM_TESTS.md is pinned equal to them); the family has its own
+# tables below and its guide is workflow_artifacts/skills/hypothesis-design/
+# CLAIM_TESTS_TRADE.md, shown to no prompt in this PR.
+#
+# WHY THIS CANNOT LEAK (no lookahead):
+#   - Entry-time selector fields (side, entry_hour, entry_weekday,
+#     regime_at_entry, entry_forecast) read only the lot's own entry stamp, its
+#     entry-bar row (bar-t, known at that close) and its side.
+#   - The two exit-time DESCRIPTORS (exit_cause, holding_bars) describe what
+#     the strategy did and are known only at the exit bar's close. A claim may
+#     select on them; a rule built on a confirmed claim may act only on the
+#     entry-time fields. exit_cause reads the lot's exit_forecast (exit bar's
+#     close), the exit row's postRebalance_current_allocation (that bar's
+#     fill) and whether the exit bar is the window's last bar (the window's
+#     own length, not a market value).
+#   - Outcomes are the label (the future). post_exit_return(h) reads the
+#     exit bar's close and the close of the bar stamped exactly ts_exit +
+#     h*step in the SAME window; no row later than that is read. It never
+#     feeds a selector. trade_net_return is the lot's own result.
+#   - Nothing is matched across windows; no warm-up rows, no data cache.
+# ---------------------------------------------------------------------------
+
+TRADE_SELECTOR = "trade"
+TRADE_OUTCOMES = ("trade_net_return", "post_exit_return")
+TRADE_BASELINES = ("other_trades",)
+TRADE_STATISTICS = ("mean_diff", "hit_rate")
+# The interim exit classifier (E-074 PHASE_A 4.2), in this order. Replaced by
+# E-029's recorded decision when it exists; run_protocol's own exit_reason is
+# NOT changed (CUL-417 / E-029).
+EXIT_CAUSES = ("end_of_window", "flip", "to_zero", "reduction", "same_sign_flat", "unknown")
+FLAT_EPS = 1e-6                    # |allocation| at or below this is flat (bars.csv has 6 decimals)
+TRADE_SIDES = ("long", "short")
+# the closed field list. Entry-time fields are known at the entry bar's close;
+# the exit-time descriptors only at the exit bar's close.
+TRADE_ENTRY_FIELDS = ("side", "entry_hour", "entry_weekday", "regime_at_entry", "entry_forecast")
+TRADE_EXIT_FIELDS = ("exit_cause", "holding_bars")
+TRADE_FIELDS = TRADE_EXIT_FIELDS + TRADE_ENTRY_FIELDS
+_TRADE_CATEGORICAL = ("exit_cause", "side", "regime_at_entry")
+_TRADE_NUMERIC = ("holding_bars", "entry_hour", "entry_weekday", "entry_forecast")
+_TRADE_RANGE = {"entry_hour": (0, 23), "entry_weekday": (0, 6), "holding_bars": (0, None)}
+TRADE_OPS = ("==", "!=", "in", ">=", ">", "<=", "<")
+_TRADE_CAT_OPS = ("==", "!=", "in")
+MAX_TRADE_CLAUSES = 4
+_CMP = {">=": np.greater_equal, ">": np.greater, "<=": np.less_equal, "<": np.less,
+        "==": np.equal, "!=": np.not_equal}
+
+
+def classify_exit(side_sign: int, exit_forecast, post_alloc, exit_found: bool,
+                  exit_is_last_bar: bool) -> str:
+    """E-074 PHASE_A 4.2 for one lot. `side_sign` +1 (LONG) / -1 (SHORT);
+    `exit_forecast`: the lot's exit forecast (None / NaN: unknown);
+    `post_alloc`: the exit row's postRebalance_current_allocation (None / NaN:
+    unknown); `exit_found`: the exit bar is a row of the window's bars.csv;
+    `exit_is_last_bar`: that row is the window's LAST bar (timestamp equality,
+    never the last calendar day -- run_protocol's date test labels a whole
+    last day end_of_window, E-073 A5 / CUL-417).
+
+      unknown          no exit row in bars.csv
+      end_of_window    the exit bar is the window's last bar
+      unknown          no exit_forecast
+      flip             exit_forecast has the opposite sign to the lot's side
+      to_zero          exit_forecast is exactly 0
+      reduction        same sign, and the position is still open on that side
+                       after the bar (a partial LIFO close by the rebalance)
+      same_sign_flat   same sign, and flat after the bar (a gap large-tier
+                       flatten looks like this; unexplained until E-029)
+      unknown          anything else (allocation missing or on the other side)
+    """
+    if not exit_found:
+        return "unknown"
+    if exit_is_last_bar:
+        return "end_of_window"
+    if exit_forecast is None or not math.isfinite(float(exit_forecast)):
+        return "unknown"
+    s = side_sign * float(exit_forecast)
+    if s < 0:
+        return "flip"
+    if s == 0:
+        return "to_zero"
+    if post_alloc is None or not math.isfinite(float(post_alloc)):
+        return "unknown"
+    a = side_sign * float(post_alloc)
+    if a > FLAT_EPS:
+        return "reduction"
+    if abs(a) <= FLAT_EPS:
+        return "same_sign_flat"
+    return "unknown"
+
+
+@dataclass
+class TradeWindow:
+    """One window's trades (rows of trades.json) beside its bars. Arrays are
+    per trade, in trades.json order; `bars` is the window's Window."""
+    bars: Window
+    entry_ts: np.ndarray        # int64 epoch seconds
+    exit_ts: np.ndarray
+    side: np.ndarray            # object: "long" / "short"
+    exit_cause: np.ndarray      # object, one of EXIT_CAUSES
+    regime_at_entry: np.ndarray  # object (str; "" when absent)
+    entry_forecast: np.ndarray  # float: the entry bar's forecast (bars.csv), NaN if no row
+    entry_idx: np.ndarray       # int64 row in bars (-1: not found)
+    exit_idx: np.ndarray
+    net_return: np.ndarray      # float, a fraction (0.01 = 1%), NaN if missing
+    basis: str = "net_of_fees_and_slippage"
+
+    def __post_init__(self):
+        n = len(self.entry_ts)
+        if not all(len(a) == n for a in (self.exit_ts, self.side, self.exit_cause,
+                                         self.regime_at_entry, self.entry_forecast,
+                                         self.entry_idx, self.exit_idx, self.net_return)):
+            raise ValueError(f"{self.bars.label}: trade column lengths differ")
+
+    @property
+    def symbol(self) -> str:
+        return self.bars.symbol
+
+    @property
+    def window(self) -> str:
+        return self.bars.window
+
+    @property
+    def label(self) -> str:
+        return self.bars.label
+
+    @property
+    def step(self) -> int:
+        return self.bars.step
+
+    @property
+    def ts(self) -> np.ndarray:           # the BARS' stamps (block counts)
+        return self.bars.ts
+
+    @property
+    def n(self) -> int:
+        return len(self.entry_ts)
+
+
+def build_trade_window(bars: Window, trades: list, post_alloc: np.ndarray,
+                       costs: list | None = None) -> TradeWindow:
+    """Trade rows (trades.json dicts) + the window's bars -> a TradeWindow.
+    `post_alloc[i]`: postRebalance_current_allocation of bars row i (NaN where
+    absent). `costs`: this window's trade_diagnostics.json records, used only
+    when they pair one-to-one with `trades` (same trade_id, in order) and every
+    one carries gross_return_before_costs and cost_paid_all (CUL-414, flag
+    --cost-bar-all-costs): then the net return is the all-costs basis, else
+    trades.json's net_profit_loss_percent (after the commission; slippage is
+    already inside the fill prices)."""
+    n = len(trades)
+    ent = _parse_ts([t["entry_time"] for t in trades]) if n else np.zeros(0, dtype=np.int64)
+    ext = _parse_ts([t["exit_time"] for t in trades]) if n else np.zeros(0, dtype=np.int64)
+
+    def rows_of(stamps):
+        idx = np.searchsorted(bars.ts, stamps)
+        ok = idx < len(bars.ts)
+        hit = np.zeros(n, dtype=bool)
+        hit[ok] = bars.ts[idx[ok]] == stamps[ok]
+        return np.where(hit, idx, -1).astype(np.int64)
+
+    ent_i, ext_i = rows_of(ent), rows_of(ext)
+    side = np.empty(n, dtype=object)
+    cause = np.empty(n, dtype=object)
+    regime = np.empty(n, dtype=object)
+    ef = np.full(n, np.nan)
+    ret = np.full(n, np.nan)
+    last_ts = int(bars.ts[-1])
+    for i, t in enumerate(trades):
+        sd = str(t.get("side", "")).upper()
+        if sd not in ("LONG", "SHORT"):
+            raise ValueError(f"{bars.label}: trade {t.get('trade_id')!r} has side "
+                             f"{t.get('side')!r} (LONG or SHORT)")
+        sign = 1 if sd == "LONG" else -1
+        side[i] = sd.lower()
+        regime[i] = str(t.get("entry_regime") or "")
+        if ent_i[i] >= 0:
+            ef[i] = bars.forecast[ent_i[i]]
+        found = bool(ext_i[i] >= 0)
+        cause[i] = classify_exit(sign, t.get("exit_forecast"),
+                                 post_alloc[ext_i[i]] if found else None, found,
+                                 found and int(ext[i]) == last_ts)
+        v = t.get("net_profit_loss_percent")
+        ret[i] = _float(v) / 100.0 if v is not None else np.nan
+    basis = "net_of_fees_and_slippage"
+    if (costs is not None and n and len(costs) == n
+            and all(c.get("trade_id") == t.get("trade_id") for c, t in zip(costs, trades))
+            and all(c.get("gross_return_before_costs") is not None
+                    and c.get("cost_paid_all") is not None for c in costs)):
+        # gross at the bar closes (%) minus fees + slippage of both legs (bps / 100 = %)
+        ret = np.array([(float(c["gross_return_before_costs"]) - float(c["cost_paid_all"]) / 100.0)
+                        / 100.0 for c in costs])
+        basis = "all_costs"
+    return TradeWindow(bars=bars, entry_ts=ent, exit_ts=ext, side=side, exit_cause=cause,
+                       regime_at_entry=regime, entry_forecast=ef, entry_idx=ent_i,
+                       exit_idx=ext_i, net_return=ret, basis=basis)
+
+
+def _read_column(path: Path, name: str, n_rows: int) -> np.ndarray:
+    rows = list(csv.DictReader(Path(path).read_bytes().decode("utf-8").splitlines()))
+    if len(rows) != n_rows:
+        raise ValueError(f"{path}: {len(rows)} rows, expected {n_rows}")
+    return np.array([_float(r.get(name)) for r in rows])
+
+
+def load_variant_trade_windows(run_dir: Path, vid: str) -> list[TradeWindow]:
+    """Same window mapping as load_variant_bars (protocol_result.yaml results[]
+    .run_id -> variants/<vid>/results/<run_id>/), reading each window's
+    trades.json and bars.csv (and the variant's trade_diagnostics.json for the
+    all-costs basis when it has it). A missing bars.csv or trades.json is an
+    error, never an empty window."""
+    import yaml
+    run_dir = Path(run_dir)
+    pr_path = run_dir / "artifacts" / "variants" / vid / "protocol_result.yaml"
+    with open(pr_path, encoding="utf-8") as f:
+        pr = yaml.safe_load(f) or {}
+    diag_path = run_dir / "variants" / vid / "trade_diagnostics.json"
+    diag_by_window: dict = {}
+    if diag_path.exists():
+        for rec in (json.loads(diag_path.read_text(encoding="utf-8")).get("trades") or []):
+            diag_by_window.setdefault(str(rec.get("window")), []).append(rec)
+    out = []
+    for entry in pr.get("results") or []:
+        rid = entry.get("run_id")
+        if not rid:
+            continue
+        rdir = run_dir / "variants" / vid / "results" / str(rid)
+        for name in ("bars.csv", "trades.json"):
+            if not (rdir / name).exists():
+                raise FileNotFoundError(f"{rdir / name} (named by {pr_path})")
+        w = read_bars_csv(rdir / "bars.csv", str(entry.get("symbol")), str(entry.get("window")))
+        trades = json.loads((rdir / "trades.json").read_text(encoding="utf-8"))
+        post = _read_column(rdir / "bars.csv", "postRebalance_current_allocation", len(w.ts))
+        out.append(build_trade_window(w, trades, post, diag_by_window.get(w.window)))
+    if not out:
+        raise ValueError(f"{pr_path}: no results with a run_id")
+    return out
+
+
+def _trade_field(tw: TradeWindow, field_: str):
+    """(values, valid) of one closed field over the window's trades."""
+    n = tw.n
+    if field_ == "exit_cause":
+        return tw.exit_cause, np.ones(n, dtype=bool)
+    if field_ == "side":
+        return tw.side, np.ones(n, dtype=bool)
+    if field_ == "regime_at_entry":
+        return tw.regime_at_entry, np.array([bool(r) for r in tw.regime_at_entry], dtype=bool)
+    if field_ == "holding_bars":
+        return (tw.exit_ts - tw.entry_ts) // tw.step, np.ones(n, dtype=bool)
+    if field_ == "entry_hour":
+        return (tw.entry_ts % DAY) // 3600, np.ones(n, dtype=bool)
+    if field_ == "entry_weekday":
+        return ((tw.entry_ts // DAY) + 3) % 7, np.ones(n, dtype=bool)     # Monday = 0
+    if field_ == "entry_forecast":
+        return tw.entry_forecast, np.isfinite(tw.entry_forecast)
+    raise ValueError(f"unknown trade field {field_!r}")
+
+
+def sel_trade(tw: TradeWindow, p: dict):
+    """(mask, valid) over the window's trades: every `where` clause must hold
+    (AND). A trade whose field is missing is neither selected nor in the
+    baseline."""
+    mask = np.ones(tw.n, dtype=bool)
+    valid = np.ones(tw.n, dtype=bool)
+    for c in p["where"]:
+        vals, ok = _trade_field(tw, c["field"])
+        valid &= ok
+        if c["field"] in _TRADE_CATEGORICAL:
+            if c["op"] == "in":
+                hit = np.array([v in c["value"] for v in vals], dtype=bool)
+            else:
+                eq = np.array([v == c["value"] for v in vals], dtype=bool)
+                hit = eq if c["op"] == "==" else ~eq
+        else:
+            x = np.asarray(vals, dtype=float)
+            hit = np.zeros(tw.n, dtype=bool)
+            fin = ok & np.isfinite(x)
+            if c["op"] == "in":
+                hit[fin] = np.isin(x[fin], [float(v) for v in c["value"]])
+            else:
+                hit[fin] = _CMP[c["op"]](x[fin], float(c["value"]))
+        mask &= hit
+    return mask, valid
+
+
+def trade_outcome(tw: TradeWindow, kind: str, h: int) -> np.ndarray:
+    """Per-trade outcome, NaN where undefined. trade_net_return ignores h.
+    post_exit_return: signed by side (positive = the market kept moving the
+    trade's way), from the exit bar's close to the close of the bar stamped
+    exactly ts_exit + h*step in this window; NaN when that bar does not exist
+    (the window's end) or the exit bar is not a row."""
+    if kind == "trade_net_return":
+        return tw.net_return.copy()
+    y = np.full(tw.n, np.nan)
+    j_all = tw.bars.index_at(h)
+    for i in range(tw.n):
+        e = int(tw.exit_idx[i])
+        if e < 0 or j_all[e] < 0:
+            continue
+        r = tw.bars.close[j_all[e]] / tw.bars.close[e] - 1.0
+        y[i] = r if tw.side[i] == "long" else -r
+    return y
+
+
+def _check_trade_where(sel) -> list[str]:
+    where = "selector"
+    if not isinstance(sel, dict) or set(sel) != {"kind", "where"}:
+        return [f"{where}: a trade selector is exactly {{kind: trade, where: [...]}}"]
+    clauses = sel["where"]
+    if (not isinstance(clauses, list) or not clauses
+            or len(clauses) > MAX_TRADE_CLAUSES):
+        return [f"{where}: where must be a list of 1 to {MAX_TRADE_CLAUSES} clauses "
+                f"{{field, op, value}}, all of which must hold"]
+    e = []
+    for i, c in enumerate(clauses):
+        w = f"{where}.where[{i}]"
+        if not isinstance(c, dict) or set(c) != {"field", "op", "value"}:
+            e.append(f"{w}: a clause is exactly {{field, op, value}}")
+            continue
+        f, op, v = c["field"], c["op"], c["value"]
+        if f not in TRADE_FIELDS:
+            e.append(f"{w}: field {f!r} is not a trade field (allowed: {list(TRADE_FIELDS)}); "
+                     f"a selector may not read anything else")
+            continue
+        allowed_ops = _TRADE_CAT_OPS if f in _TRADE_CATEGORICAL else TRADE_OPS
+        if op not in allowed_ops:
+            e.append(f"{w}: op for {f} must be one of {list(allowed_ops)}")
+            continue
+        if op == "in" and (not isinstance(v, list) or not v or len(set(map(str, v))) != len(v)):
+            e.append(f"{w}: `in` needs a non-empty list of distinct values")
+            continue
+        for x in (v if op == "in" else [v]):
+            if f == "exit_cause" and x not in EXIT_CAUSES:
+                e.append(f"{w}: exit_cause value {x!r} is not one of {list(EXIT_CAUSES)}")
+            elif f == "side" and x not in TRADE_SIDES:
+                e.append(f"{w}: side value {x!r} is not one of {list(TRADE_SIDES)}")
+            elif f == "regime_at_entry" and (not isinstance(x, str) or not x.strip()):
+                e.append(f"{w}: regime_at_entry value must be a non-empty label")
+            elif f in _TRADE_NUMERIC:
+                if not isinstance(x, (int, float)) or isinstance(x, bool) or not math.isfinite(x):
+                    e.append(f"{w}: {f} value must be a number")
+                elif f in _TRADE_RANGE:
+                    lo, hi = _TRADE_RANGE[f]
+                    if x < lo or (hi is not None and x > hi):
+                        e.append(f"{w}: {f} must be in {lo}..{hi}, got {x!r}" if hi is not None
+                                 else f"{w}: {f} must be >= {lo}, got {x!r}")
+    return e
+
+
+def _check_trade_head(spec: TestSpec) -> list[str]:
+    """Selector / outcome / statistic / baseline checks of a trade test."""
+    e = _check_trade_where(spec.selector)
+    o = spec.outcome
+    if not isinstance(o, dict) or o.get("kind") not in TRADE_OUTCOMES:
+        e.append(f"outcome: a trade test needs one of {list(TRADE_OUTCOMES)}, got {o!r}")
+    elif o["kind"] == "trade_net_return":
+        if set(o) != {"kind"}:
+            e.append("outcome: trade_net_return is the lot's own result: no horizons "
+                     "(write {kind: trade_net_return})")
+    else:
+        hs = o.get("horizons")
+        if set(o) - {"kind", "horizons"}:
+            e.append("outcome: post_exit_return takes only `horizons`")
+        elif (not isinstance(hs, list) or not hs or len(set(hs)) != len(hs)
+                or any(not isinstance(h, int) or isinstance(h, bool) or h < 1 for h in hs)):
+            e.append("outcome: horizons must be a non-empty list of distinct ints >= 1")
+    if spec.statistic not in TRADE_STATISTICS:
+        e.append(f"statistic: a trade test needs one of {list(TRADE_STATISTICS)}, "
+                 f"got {spec.statistic!r}")
+    if not isinstance(spec.baseline, dict) or spec.baseline != {"kind": "other_trades"}:
+        e.append(f"baseline: a trade test needs {{kind: other_trades}}, got {spec.baseline!r}")
+    return e
+
+
+def _trade_horizons(spec: TestSpec) -> list:
+    """The outcome's horizons; [0] (the trade's own life) for trade_net_return."""
+    if spec.outcome["kind"] == "trade_net_return":
+        return [0]
+    return sorted(spec.outcome["horizons"])
+
+
+def trade_effect_sizes(windows: list, spec: TestSpec, eras: list | None = None):
+    """effect_sizes for the trade family: the same return shape (per-window
+    prepared data, per-horizon effect sizes, horizons, rng) so claim_measure
+    reads it unchanged. `windows` are TradeWindows. The pooled statistics are
+    the bar statistics applied to per-trade arrays; per-window values are
+    given exactly as for bar tests (the all-but-one-window rule is E-077
+    PR-2's). n_events = selected trades with an outcome; n_blocks counts
+    independent blocks of their entry bars (gap-aware, as for bars). Horizon 0
+    is trade_net_return's: the trade's own life."""
+    horizons = _trade_horizons(spec)
+    stat = STATISTICS[spec.statistic]
+    opposite = "less" if spec.direction == "greater" else "greater"
+    per = []
+    for tw in windows:
+        mask, valid = sel_trade(tw, spec.selector)
+        mask = mask & valid
+        wref = (valid & ~mask).astype(float)
+        ys = {h: trade_outcome(tw, spec.outcome["kind"], h) for h in horizons}
+        era = None
+        if eras is not None:
+            from protocol_resolution import era_id_for_timestamp
+            days = np.datetime_as_string(tw.entry_ts.astype("datetime64[s]"), unit="D")
+            era = np.array([era_id_for_timestamp(str(d), eras) for d in days], dtype=object)
+        per.append({"w": tw, "mask": mask, "wref": wref, "fc": np.full(tw.n, np.nan),
+                    "ys": ys, "era": era})
+    out_h = {}
+    for h in horizons:
+        y, m, wr, fc = _pooled(per, h)
+        raw, oriented = stat(y, m, wr, fc, spec.direction)
+        events = [p["mask"] & np.isfinite(p["ys"][h]) for p in per]
+        active = []
+        for ev, p in zip(events, per):
+            a = np.zeros(len(p["w"].bars.ts), dtype=bool)
+            rows = p["w"].entry_idx[ev]
+            a[rows[rows >= 0]] = True
+            active.append(a)
+        per_window = {}
+        for p in per:
+            r, o = stat(p["ys"][h], p["mask"], p["wref"], p["fc"], spec.direction)
+            per_window[p["w"].label] = {"value": _num(r), "oriented": _num(o)}
+        per_era, n_eras = {}, None
+        if eras is not None:
+            era_all = np.concatenate([p["era"] for p in per])
+            n_eras = len(set(era_all[np.concatenate(events)])) if len(era_all) else 0
+            for e_id in sorted(set(era_all)):
+                sub = era_all == e_id
+                r, o = stat(y[sub], m[sub], wr[sub], fc[sub], spec.direction)
+                per_era[e_id] = {"value": _num(r), "oriented": _num(o)}
+        out_h[h] = {"value": _num(raw), "oriented": _num(oriented),
+                    "oriented_opposite": _num(stat(y, m, wr, fc, opposite)[1]),
+                    "p_value": None, "p_value_opposite": None,
+                    "n_events": int(sum(ev.sum() for ev in events)),
+                    "n_windows_with_events": int(sum(bool(ev.any()) for ev in events)),
+                    "n_blocks": _blocks(active, per, max(h, 1)), "n_eras_with_events": n_eras,
+                    "per_window": per_window, "per_era": per_era}
+    return per, out_h, horizons, np.random.default_rng(PLACEBO_SEED)
 
 
 # ---------------------------------------------------------------------------
@@ -1086,6 +1563,8 @@ def effect_sizes(windows: list[Window], spec: TestSpec, eras: list | None = None
     regime-selector tests too, which check_spec refuses for a verdict), no
     p-value, no verdict. Reads only the given windows: selectors read bar t,
     outcomes are timestamp-matched inside one window."""
+    if isinstance(spec.selector, dict) and spec.selector.get("kind") == TRADE_SELECTOR:
+        return trade_effect_sizes(windows, spec, eras)      # E-075 PR-3: gated family
     horizons = sorted(spec.outcome["horizons"])
     base_rng = np.random.default_rng(int((spec.baseline or {}).get("seed", PLACEBO_SEED)))
     stat = STATISTICS[spec.statistic]

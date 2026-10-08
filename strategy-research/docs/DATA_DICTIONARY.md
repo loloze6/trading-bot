@@ -176,6 +176,21 @@ readers' subset leaves this table out).
 | `trades[].entered_earlier_better` | Previous bar's close was a better price than the fill. | bool | `RP:_compute_trade_records_for_window`, `RP:_compute_entered_earlier_better` | fill |
 | `trades[].held_longer_better` | Next bar's close was a better exit than the fill. | bool | `RP:_compute_trade_records_for_window`, `RP:_compute_held_longer_better` | after |
 <!-- /data-dictionary -->
+
+Trade-level claim tests (E-075 PR-3, gated; `tools/claim_tests.py`, guide
+`workflow_artifacts/skills/hypothesis-design/CLAIM_TESTS_TRADE.md`) do not read the labels
+above. They read each window's `trades.json` and `bars.csv` and derive their own fields: the
+entry-time fields `side`, `entry_hour`, `entry_weekday` (UTC, from `entry_time`),
+`regime_at_entry` (`entry_regime`) and `entry_forecast` (the entry bar's `forecast`, known at
+that close), and the exit-time `holding_bars` and `exit_cause`. `exit_cause` is the interim
+classifier of E-074 phase A 4.2, from the lot's `exit_forecast` and the exit row's
+`postRebalance_current_allocation`; it is `end_of_window` only when the exit bar is the
+window's last bar (not its last calendar day, finding A5), and it does not change
+`exit_reason`. Outcomes: `trade_net_return` (the all-costs basis, `gross_return_before_costs`
+minus `cost_paid_all`, when `trade_diagnostics.json` carries them for every lot of the window;
+else `net_profit_loss_percent` of `trades.json`, after the commission with the slippage already
+in the fill prices) and `post_exit_return` (exit bar's close to the close h bars later, signed
+by side). MAE and MFE are not used (A6).
 <!-- /readers: omit -->
 
 Per-trade numbers (the trade_efficiency report aggregates each of them) and the summary.

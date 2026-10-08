@@ -94,12 +94,20 @@ class HoldoutOverlap(ValueError):
 # One test
 # ---------------------------------------------------------------------------
 
-def test_spec(test: dict):
+def _is_trade_test(test) -> bool:
+    """A test of the gated trade-level family (E-075 PR-3): its selector is `trade`."""
+    return (isinstance(test, dict) and isinstance(test.get("selector"), dict)
+            and test["selector"].get("kind") == ct.TRADE_SELECTOR)
+
+
+def test_spec(test: dict, trade_tests: bool = False):
     """(TestSpec, spec_hash) of one claim-card test, checked exactly as slice 2
     checked it (claim_card._check_test: regime selectors allowed). Raises
-    ValueError on an invalid test."""
+    ValueError on an invalid test. `trade_tests` (E-075 PR-3): also accept the
+    gated trade-level family; False by default (a trade test is then invalid)."""
     name = test.get("name") if isinstance(test, dict) else None
-    errors, h, _possible = cc._check_test(test, f"test {name!r}")
+    errors, h, _possible = (cc._check_test(test, f"test {name!r}", True) if trade_tests
+                            else cc._check_test(test, f"test {name!r}"))
     if errors:
         raise ValueError("; ".join(errors))
     d = {k: test[k] for k in cc.TEST_KEYS - {"name"} if k in test}
@@ -156,11 +164,12 @@ def _fmt(v) -> str:
     return "undefined" if v is None else f"{v:+.4g}"
 
 
-def describe(name: str, spec, horizons: dict, floor_not_met: list) -> list:
-    """Plain lines a person reads next to the numbers."""
+def describe(name: str, spec, horizons: dict, floor_not_met: list, unit: str = "bars") -> list:
+    """Plain lines a person reads next to the numbers. `unit`: "bars", or
+    "trades" for the trade-level family."""
     base = (spec.baseline or {}).get("kind") or "no baseline (a rank correlation)"
     lines = [f"{name}: {LABEL}. {spec.statistic} of {spec.outcome['kind']} on the selected "
-             f"bars against {base}; the claim says {spec.direction}."]
+             f"{unit} against {base}; the claim says {spec.direction}."]
     for h, r in horizons.items():
         lines.append(f"h={h}: effect {_fmt(r['value'])}; claimed sign in "
                      f"{r['windows_with_claimed_sign']} of {r['windows_with_a_value']} windows; "
@@ -175,9 +184,12 @@ def describe(name: str, spec, horizons: dict, floor_not_met: list) -> list:
     return lines
 
 
-def measure_test(windows: list, test: dict, eras: list | None) -> dict:
-    """One claim-card test on one variant's windows: effect sizes only."""
-    spec, h_spec = test_spec(test)
+def measure_test(windows: list, test: dict, eras: list | None, trade_tests: bool = False) -> dict:
+    """One claim-card test on one variant's windows: effect sizes only. A
+    trade-level test (trade_tests=True) takes the variant's TradeWindows
+    (ct.load_variant_trade_windows) instead of its bar Windows."""
+    spec, h_spec = test_spec(test, trade_tests)
+    noun = "trades" if _is_trade_test(test) else "bars"
     per, out_h, horizons, _rng = ct.effect_sizes(windows, spec, eras)
     rows, floor_not_met = {}, []
     for h in horizons:
@@ -201,10 +213,10 @@ def measure_test(windows: list, test: dict, eras: list | None) -> dict:
     if spec.statistic == "decay_curve":
         vals = {h: rows[h]["oriented"] for h in horizons if rows[h]["oriented"] is not None}
         out["peak_horizon"] = max(vals, key=vals.get) if vals else None
-    out["description"] = describe(test["name"], spec, rows, floor_not_met)
+    out["description"] = describe(test["name"], spec, rows, floor_not_met, noun)
     if all(rows[h]["n_events"] == 0 for h in horizons):
         # nothing was measured: a look taken (counted for best-of-N), never an effect
-        reason = NO_EVENTS_REASON
+        reason = NO_EVENTS_REASON if noun == "bars" else "the selector matched no trades"
         if spec.selector.get("kind") in ct.NOT_RECOMPUTABLE_SELECTORS:
             labels = sorted({str(r) for w in windows for r in w.regime if r})
             reason += f"; regime labels present in the bars: {labels if labels else 'none'}"
@@ -221,9 +233,12 @@ def _error(exc: BaseException) -> str:
     return f"{type(exc).__name__}: {exc}"
 
 
-def measure_variant(run_dir: Path, vid: str, tests: list, eras, holdout_start: str) -> dict:
+def measure_variant(run_dir: Path, vid: str, tests: list, eras, holdout_start: str,
+                    trade_tests: bool = False) -> dict:
     """Every test on one graded variant's saved bars. Never raises: a variant
-    whose bars cannot be read, or a test that errors, is recorded."""
+    whose bars cannot be read, or a test that errors, is recorded.
+    `trade_tests` (E-075 PR-3, False by default): also measure the gated
+    trade-level family, on the variant's trades.json + bars.csv."""
     doc = {"variant": vid, "label": LABEL, "note": NOTE}
     try:
         windows = ct.load_variant_bars(Path(run_dir), vid)
@@ -238,11 +253,23 @@ def measure_variant(run_dir: Path, vid: str, tests: list, eras, holdout_start: s
                 "windows": [w.label for w in windows],
                 "bars": [{"window": w.label, "bars": int(len(w.ts)), "sha256": w.sha256,
                           "path": _rel(w.source, root)} for w in windows]})
+    trade_windows, trade_exc = None, None
+    if trade_tests and any(_is_trade_test(t) for t in tests):
+        try:
+            trade_windows = ct.load_variant_trade_windows(Path(run_dir), vid)
+            check_before_holdout(trade_windows, holdout_start)
+        except Exception as exc:  # noqa: BLE001 -- information only: recorded per test below
+            trade_exc = exc
     results = {}
     for t in tests:
         name = t.get("name") if isinstance(t, dict) else None
         try:
-            results[str(name)] = measure_test(windows, t, eras)
+            if trade_tests and _is_trade_test(t):
+                if trade_exc is not None:
+                    raise trade_exc
+                results[str(name)] = measure_test(trade_windows, t, eras, True)
+            else:
+                results[str(name)] = measure_test(windows, t, eras)
         except Exception as exc:  # noqa: BLE001 -- information only
             results[str(name)] = {"name": name, "status": NOT_MEASURED, "reason": ERROR,
                                   "detail": _error(exc)}
