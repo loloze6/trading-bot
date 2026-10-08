@@ -4779,7 +4779,7 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
 
 def _candidate_warning_lines(record: dict, decision_ref: str) -> list:
     """One log line per candidate warning (E-068 PR 4: an unknown component
-    class, unchanged). E-073 step 2 (D-082): a side finding's warnings carry no
+    class, unchanged). E-073 step 2 (D-083): a side finding's warnings carry no
     `name` (a repeated test, a blind block claim, a flagged citation): each
     gets its own line instead of a KeyError."""
     lines = []

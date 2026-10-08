@@ -1036,7 +1036,7 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
             "card_text": ((arts / "hypothesis_card.yaml").read_text(encoding="utf-8")
                           if (arts / "hypothesis_card.yaml").exists() else None),
         }
-        # E-073 step 2 (D-082): written only under orchestrator.observable_backtest;
+        # E-073 step 2 (D-083): written only under orchestrator.observable_backtest;
         # absent files add no key, so every other run's inputs are unchanged.
         runs[run_id].update(_observable_inputs(arts))
 
@@ -1095,7 +1095,7 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
 
 
 def _observable_inputs(arts: Path) -> dict:
-    """E-073 step 2 (D-082): the run's in-run merges (side_finding_merges.yaml)
+    """E-073 step 2 (D-083): the run's in-run merges (side_finding_merges.yaml)
     and its flagged citations (citation_checks/<category>.yaml: {proposal id:
     [bad citations]}), each only when its file exists. Information only: an
     unreadable file counts as absent (a warning is never worth a stop)."""
@@ -1717,7 +1717,7 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
         # cannot see the block -- WARNINGS ONLY, never a reason or a rank change
         warnings = warnings + list(side_review["warnings"])
     if p["kind"] == _rp.SIDE_FINDING and pid in (src.get("citation_flags") or {}):
-        # E-073 step 2 (D-082): kept, flagged -- a WARNING, never a reason or a rank change
+        # E-073 step 2 (D-083): kept, flagged -- a WARNING, never a reason or a rank change
         warnings = warnings + [{"kind": CITATION_WARNING,
                                 "bad": copy.deepcopy(src["citation_flags"][pid])}]
     if warnings:  # E-068 PR 4 (D-071): only when non-empty -- other records unchanged
@@ -1782,7 +1782,7 @@ def _side_finding_review(run_id: str, src: dict, p: dict, inputs: dict) -> dict:
 UNKNOWN_CLASS_WARNING = "unknown_component_class"
 
 
-# E-073 step 2 (D-082): a side finding whose cited value did not match the file
+# E-073 step 2 (D-083): a side finding whose cited value did not match the file
 # its reader read, after the reader's one retry (citation_checks/<category>.yaml)
 CITATION_WARNING = "citation_mismatch"
 MERGE_NOTE = ("in-run duplicates merged (E-073): the same tests proposed by more than one "
@@ -1927,7 +1927,7 @@ def _score_key(c: dict) -> tuple:
 
 
 def _fold_in_run_merges(cands: list) -> list:
-    """E-073 step 2 (D-082): an eligible in-run duplicate (a side finding
+    """E-073 step 2 (D-083): an eligible in-run duplicate (a side finding
     side_finding_merges.yaml lists after its group's primary) is folded into
     that primary when the primary is eligible too: one candidate, the
     PRIMARY's scores (never the higher of the two -- the readers share their

@@ -463,7 +463,7 @@ def skip_summary_lines(root: Path) -> list:
 
 
 # ---------------------------------------------------------------------------
-# E-073 step 2 (D-082): in-run dedup of side findings, under
+# E-073 step 2 (D-083): in-run dedup of side findings, under
 # orchestrator.observable_backtest only (run_phase1_research wires it).
 # ---------------------------------------------------------------------------
 

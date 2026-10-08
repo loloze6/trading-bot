@@ -1487,7 +1487,7 @@ feed that is not wired, one row per such feed in
      `tools/data_dictionary.py` (no `bars.csv` section and no per-trade labels:
      files the readers never receive); a test fails when it is not regenerated.
      Off, the handoff and prompt are byte-identical.
-     Step 2 (D-082), same flag: each `path=value` (or `path: value`) a v3 reading
+     Step 2 (D-083), same flag: each `path=value` (or `path: value`) a v3 reading
      cites in `evidence` is checked against the files that reader received
      (under E-072 its exploration copies, never the all-window files). The path
      must exist (rooted at a top-level key, a known root or the file's own name,

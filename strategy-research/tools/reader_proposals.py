@@ -610,7 +610,7 @@ def resolve_evidence_paths(received_files: dict, evidence: list) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# E-073 step 2 (D-082): value-checked citations, under
+# E-073 step 2 (D-083): value-checked citations, under
 # orchestrator.observable_backtest only (the flag is read by the orchestrator,
 # never here). resolve_evidence_paths above stays record-only and unchanged;
 # check_citation_values also compares the value a reader wrote after a path
@@ -747,7 +747,7 @@ def _short(value, limit: int = 80):
 
 
 def check_citation_values(received_files: dict, evidence: list) -> dict:
-    """E-073 step 2 (D-082): every cited path in `evidence` checked against
+    """E-073 step 2 (D-083): every cited path in `evidence` checked against
     the value at that path in the files the reader received (the
     CITATION_VALUE_RULE). Pure; reads no file and never rejects.
 
