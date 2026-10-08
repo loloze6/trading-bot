@@ -126,11 +126,11 @@ def test_the_orchestrators_reading_review_passes_folds_only_under_the_flag(flag_
 
 
 def _start_sha(child, period):
-    """Write the brief's candidate.source.start_config_sha256 as decide-next would: the
-    source config (CHANGE's component at `period`)."""
+    """Write the brief's candidate.start_config as decide-next would: the source config
+    (CHANGE's component at `period`)."""
     path = child / "artifacts" / "research_brief.yaml"
     brief = yaml.safe_load(path.read_text(encoding="utf-8"))
-    brief["candidate"]["source"]["start_config_sha256"] = dn.config_sha256(base._config(period))
+    brief["candidate"]["start_config"] = base._config(period)
     path.write_text(yaml.safe_dump(brief), encoding="utf-8")
 
 
@@ -156,7 +156,16 @@ def test_an_empty_vehicle_on_a_changed_strategy_is_not_measured(tmp_path):
     root, child = _build(tmp_path / "nosha", claim=_claim(kind="execution_behaviour"),
                          envelope=EMPTY, config_period=1)          # no hash in the brief
     row = _confirm(root, child)
-    assert row["status"] == fc.NOT_MEASURABLE and "start_config_sha256" in row["reason"]
+    assert row["status"] == fc.NOT_MEASURABLE and "candidate.start_config" in row["reason"]
+
+
+def test_an_empty_vehicle_ignores_a_number_retyped_by_1b(tmp_path):
+    """1b writes period 1 where the source had 1.0: the same value (CUL-412's config_diff),
+    so the claim is measured (review round 2 of #357)."""
+    root, child = _build(tmp_path, claim=_claim(kind="execution_behaviour"), envelope=EMPTY,
+                         config_period=1)
+    _start_sha(child, 1.0)
+    assert _confirm(root, child)["status"] == fc.CONFIRMED
 
 
 def test_an_empty_vehicle_without_a_kind_is_refused():
@@ -175,35 +184,25 @@ def _side_item(pid, claim):
             "config_change": [], "vehicle": [], "combines_as": "execution_rule"}
 
 
-@pytest.mark.parametrize("prior_fold,expect", [("B", "REPEAT"), ("C", "NOVEL")])
-def test_an_empty_vehicle_on_a_fold_is_keyed_like_a_config(prior_fold, expect):
-    """Under the folds flag the unchanged source config on the child's fold has a novelty
-    key: a run that already ran it on that fold makes it a REPEAT (review of #357, 3)."""
+def test_an_empty_vehicle_on_a_composition_source_is_infeasible():
+    """A composition source has no block config to re-run: the child could never be
+    measured, so decide-next does not spend a run on it (review round 2 of #357)."""
     import test_e077_folds as tf
-    import research_folds as rfo
     inputs, pid = tf._scenario("run_074", "ROOT", {"run_074": tf.FOLD_A})
     src = inputs["runs"]["run_074"]
+    src["composition_manifest"] = {"members": []}
     src["proposals"] = [{"category": "profitability",
                          "proposal": _side_item(pid, _claim(kind="execution_behaviour"))}]
-    inputs["memory"]["runs"]["run_090"] = tf._memory(
-        "run_090", "OTHER", fh=dn.config_sha256(src["base_config"]), symbols=("BTCUSDT",))
-    inputs["protocol_specs"] = {
-        "protocols/run_074.json": {"timeframe": "1h",
-                                   "windows_sha256": rfo.fold_windows_sha256(tf.DOC, "A")},
-        "protocols/run_090.json": {"timeframe": "1h",
-                                   "windows_sha256": rfo.fold_windows_sha256(tf.DOC, prior_fold)}}
-    inputs["folds"]["run_ranges"]["run_090"] = {"B": tf.FOLD_B, "C": tf.FOLD_C}[prior_fold]
     cand = tf._cand(tf._decide(inputs, "run_074"), pid)
-    assert cand["fold_assignment"]["fold"] == "B"
-    assert cand["gates"]["novelty"]["exact_match"] == expect
-    if expect == "REPEAT":
-        assert cand["gates"]["novelty"]["matched_runs"] == ["run_090"] and not cand["eligible"]
-    # flag off (no inputs["folds"]): not applicable, exactly as before
-    inputs, pid = tf._scenario("run_074", "ROOT", {"run_074": None}, folds=False)
-    inputs["runs"]["run_074"]["proposals"] = [{"category": "profitability", "proposal": _side_item(
-        pid, _claim(kind="event_behaviour"))}]
+    assert not cand["eligible"]
+    assert any("empty_vehicle_needs_a_source_config" in r
+               for r in cand["gates"]["feasibility"]["reasons"])
+    # a finding with no vehicle key at all (a reader's, flag off) is untouched
+    item = _side_item(pid, _claim(kind="event_behaviour"))
+    del item["vehicle"]
+    src["proposals"] = [{"category": "profitability", "proposal": item}]
     cand = tf._cand(tf._decide(inputs, "run_074"), pid)
-    assert cand["gates"]["novelty"]["exact_match"] == "NOT_APPLICABLE"
+    assert not any("empty_vehicle" in r for r in cand["gates"]["feasibility"]["reasons"])
 
 
 def test_identical_execution_behaviour_findings_merge_under_the_flag_only():

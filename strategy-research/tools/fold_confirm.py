@@ -329,22 +329,25 @@ def vehicle_missing(config, vehicle) -> list:
 
 
 def _start_config_changed(arts: Path, vid: str):
-    """None when variant `vid`'s strategy_config.json hashes to the brief's
-    candidate.source.start_config_sha256 (the source config decide-next handed the child),
-    else why not (a mismatch, or either side unreadable). Same hash as decide-next's
-    (decide_next.config_sha256)."""
-    import decide_next as dn
+    """None when variant `vid`'s strategy_config.json has the same values as the config
+    decide-next started the child from (research_brief.yaml candidate.start_config), else
+    why not: the leaves that differ (nearest_build.config_diff, CUL-412's own definition of
+    "1b changed it", so 1 and 1.0 are equal), or either side unreadable / absent."""
+    import nearest_build as nb
     try:
         brief = yaml.safe_load((arts / "research_brief.yaml").read_text(encoding="utf-8")) or {}
-        want = ((brief.get("candidate") or {}).get("source") or {}).get("start_config_sha256")
+        start = (brief.get("candidate") or {}).get("start_config")
         cfg = json.loads((arts / "variants" / vid / "strategy_config.json").read_text(encoding="utf-8"))
     except Exception as exc:  # noqa: BLE001 -- recorded
         return f"the start config or the measured config cannot be read ({type(exc).__name__}: {exc})"
-    if not want:
-        return "the brief carries no candidate.source.start_config_sha256 to compare with"
-    got = dn.config_sha256(cfg)
-    return None if got == want else (f"variant {vid!r} ran config {got[:12]}..., not the source "
-                                     f"config {str(want)[:12]}... the claim is about")
+    if not isinstance(start, dict):
+        return "the brief carries no candidate.start_config to compare with"
+    diff = nb.config_diff(start, cfg)
+    if not diff:
+        return None
+    more = f" (+{len(diff) - 3} more)" if len(diff) > 3 else ""
+    return (f"variant {vid!r} ran another config than the source config the claim is about: "
+            + "; ".join(f"{d['path']}: {d['before']!r} -> {d['after']!r}" for d in diff[:3]) + more)
 
 
 def _spec_hashes(res) -> list:

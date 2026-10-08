@@ -1644,6 +1644,12 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
         start = side_finding_start(p, src)
         if start["reason"]:
             reasons.append(start["reason"])
+        elif "vehicle" in p and p["vehicle"] == [] and start["config"] is None:
+            # D-089: an empty vehicle claims the source run's strategy as it is; a source with
+            # no block config (a composition) has none to re-run, so its child could never be
+            # measured (fold_confirm compares the measured config with candidate.start_config)
+            reasons.append("empty_vehicle_needs_a_source_config: an empty vehicle re-runs the "
+                           "source run's config unchanged, and this source has no block config")
         elif start["ops"]:
             config_for_digest = start["config"]
             resolved_sha = config_sha256(start["config"])
@@ -1660,11 +1666,6 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
                     reasons.append(f"unknown_component_class: {unknown}")
         elif start["config"] is not None:
             config_for_digest = start["config"]
-            if fold_sha:
-                # D-089: under the folds flag a finding with no config change (an empty
-                # vehicle) re-runs the source config on its fold: keyed like a changed
-                # config, so the same config on the same fold is a REPEAT
-                resolved_sha = config_sha256(start["config"])
         # unchanged: a side finding's requires_feed is data its TEST needs, so it
         # waits until the feed is wired whatever the config reads
         feed_record, feed_reason = requires_feed_gate(p, inputs.get("feed_set"))
