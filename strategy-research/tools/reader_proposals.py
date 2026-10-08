@@ -99,7 +99,10 @@ _SKIP_RECORD_KEYS = frozenset({"rule", "reason"})
 # Written by code only (tools/reader_findings.py); a model writing `skipped`
 # is refused (from_model=True).
 SKIP_RULES = ("regime_detector_scaffolding", "regime_detector_constant",
-              "single_component", "output_refused_after_retry")
+              "single_component", "output_refused_after_retry",
+              # E-072 (orchestrator.explore_confirm only): a readers' exploration
+              # copy could not be written -- never the all-window file instead
+              "exploration_inputs_unavailable")
 _SIDE_FINDING_KEYS = frozenset({"proposal_id", "claim", "evidence", "scores", "requires_feed",
                                 "config_change"})
 _V3_PATCH_KEYS = frozenset({"proposal_id", "patch", "evidence", "scores", "requires_feed"})

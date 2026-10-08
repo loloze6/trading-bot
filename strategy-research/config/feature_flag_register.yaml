@@ -761,6 +761,32 @@ flags:
       name core_lost (else O-21's one retry), recorded in the run and on the
       request row. Tested by tests/test_e068_6_nearest_build.py.
 
+  - name: explore_confirm
+    kind: orchestrator_config
+    config_key: orchestrator.explore_confirm.enabled
+    reader: run_phase1_research._explore_confirm_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "reader_findings and variant_loop (explore_confirm requires both); the first real run with the flag on shows the readers' exploration copies and the first confirmation records"
+    criterion: >
+      Landed 2026-10-08 (E-072, P-CUL-80, D-080). Off: byte-identical -- no
+      split, no artifacts/exploration/, the readers' handoffs, prompts and the
+      stage are untouched. On (requires reader_findings and variant_loop): the
+      protocol windows are split before the backtests
+      (artifacts/explore_confirm.yaml: first half in time order = exploration,
+      the rest = confirmation); the readers read only exploration-window
+      copies of every input carrying a result (artifacts/exploration/:
+      reports, grid -- window criteria re-reduced, pooled criteria and the
+      idea status withheld --, the claim digest measured again, earlier
+      findings and registry summary with numbers withheld) plus
+      readers_v3/EXPLORATION.md; after the readers each side finding is
+      measured on the confirmation windows (pure: same run; block claim:
+      pending until the run built from it) and recorded as
+      confirmation_sign_retained true | false | pending in
+      artifacts/confirmation.yaml and campaign_record/confirmations.yaml,
+      which counts the looks per confirmation set (shown in the campaign
+      summary). Information only. Tested by tests/test_e072_explore_confirm.py.
+
   - name: bar_equity
     kind: engine_param
     engine_default_files:
