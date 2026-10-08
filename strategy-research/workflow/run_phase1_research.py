@@ -1970,6 +1970,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
         # every variant's result, since cross-variant comparison is its
         # entire purpose.
         legacy_verdict_args = _legacy_verdict_args()  # C5.6: read once, every variant
+        cost_bar_args = _cost_bar_args()  # CUL-414: read once, every variant ([] flag off)
         # C5.8 (C13, D-050): under _promotion_retired_enabled the legacy label is
         # retired for readers -- pass_rule_evaluation.yaml (C7) is not written below
         # and the category reports drop the verdict/route fields. A stale file from
@@ -2114,6 +2115,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 str(variant_config_path), str(_vproto or protocol_path),
                 *_validation_protocol_args(validation_path),
                 *legacy_verdict_args,
+                *cost_bar_args,
                 "--out-dir", str(variant_run_dir),
             ]
             print(f"--- protocol_execution: variant '{variant_id}' ---")
@@ -2305,7 +2307,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
         else:
             try:
                 _pass_rule_eval = _vce.evaluate_pass_rule_criteria(
-                    _rep_summary, _pre_reg_for_eval or {}, _brief_for_eval)
+                    _rep_summary, _pre_reg_for_eval or {}, _brief_for_eval,
+                    **_cost_bar_grid_kw())  # CUL-414: {} flag off, the grid's basis on
                 _pass_rule_eval["evaluated_at"] = datetime.now(timezone.utc).isoformat()
                 _pass_rule_eval["evaluator_version"] = 2
                 save_yaml(ARTIFACTS / "pass_rule_evaluation.yaml", _pass_rule_eval)
@@ -2368,11 +2371,11 @@ async def run_tool_worker(stage_name: str, run_id: str):
                             composition_runs=True,
                             **({"profit_bars_grader": _profit_bars_grid_grader(RUN_DIR, run_id)}
                                if _composition_mode(RUN_DIR) else {}),
-                            **_failed_kw)
+                            **_failed_kw, **_cost_bar_grid_kw())
                     else:
                         _grid_result = _vce.evaluate_grid(
                             per_variant_summaries, _pre_reg_for_eval or {}, _brief_for_eval, _menu,
-                            **_failed_kw)
+                            **_failed_kw, **_cost_bar_grid_kw())
                     _grid_result["evaluated_at"] = datetime.now(timezone.utc).isoformat()
                     save_yaml(ARTIFACTS / "grid_evaluation.yaml", _grid_result)
                     _idea_status_artifact = _build_idea_status_artifact(_grid_result, run_id)
@@ -2487,6 +2490,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
             str(config_path), str(protocol_path),
             *_validation_protocol_args(validation_path),
             *_legacy_verdict_args(),
+            *_cost_bar_args(),  # CUL-414: [] flag off
             "--out-dir", str(RUN_DIR),
         ]
         _windows_before = _window_results(RUN_DIR)
@@ -2568,7 +2572,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
             _brief_path = ARTIFACTS / "research_brief.yaml"
             _brief_for_eval = (load_yaml(_brief_path) if _brief_path.exists() else {}) or {}
             _pass_rule_eval = _vce.evaluate_pass_rule_criteria(
-                summary, _pre_reg_for_eval or {}, _brief_for_eval)
+                summary, _pre_reg_for_eval or {}, _brief_for_eval,
+                **_cost_bar_grid_kw())  # CUL-414: {} flag off, the grid's basis on
             _pass_rule_eval["evaluated_at"] = datetime.now(timezone.utc).isoformat()
             _pass_rule_eval["evaluator_version"] = 2  # C7-EXT: G1-G5 preconditions
             save_yaml(ARTIFACTS / "pass_rule_evaluation.yaml", _pass_rule_eval)
@@ -2608,7 +2613,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
                         _grid_result = _vce.evaluate_grid(
                             {run_id: summary}, _pre_reg_for_eval or {}, _brief_for_eval, _menu,
                             **_single_column_untested_kw(ARTIFACTS, run_id),
-                            **_grid_v2_kw())  # E-062 S2b-3b: {} flag off
+                            **_grid_v2_kw(),  # E-062 S2b-3b: {} flag off
+                            **_cost_bar_grid_kw())  # CUL-414: {} flag off
                         _grid_result["evaluated_at"] = datetime.now(timezone.utc).isoformat()
                         save_yaml(ARTIFACTS / "grid_evaluation.yaml", _grid_result)
                         _idea_status_artifact = _build_idea_status_artifact(_grid_result, run_id)
@@ -4088,6 +4094,48 @@ def _observable_backtest_enabled(cfg: dict | None = None) -> bool:
             "orchestrator.reader_findings.enabled=true as well -- the data dictionary "
             "is an input of the v3 readers only. Enable them together.")
     return value
+
+
+def _cost_bar_all_costs_enabled(cfg: dict | None = None) -> bool:
+    """CUL-414 (D-082): orchestrator.cost_bar_all_costs.enabled. False when the
+    key, the section or the config file is absent. A non-bool value raises. No
+    dependency: on its own it makes run_protocol write the all-costs fields
+    (--cost-bar-all-costs) and makes whichever D-038 bar runs read them.
+
+    While false: byte-identical -- run_protocol is called with the same
+    arguments, the grid and the profit bars read the same fields (tested).
+    While true: the D-038 "survives 2x costs" ratio (> 2.2) compares the gross
+    edge BEFORE fees and slippage with fees + slippage, both legs, in both of
+    its places: the menu criterion realized_edge_to_cost_ratio (evaluate_grid
+    reads realized_edge_to_cost_ratio_all_costs; the legacy pass rule,
+    evaluate_pass_rule_criteria, applies the same remap so
+    pass_rule_evaluation.yaml agrees with the grid) and profit_bars_v2's
+    cost_edge_ratio_min (pooled_edge_to_cost_ratio(all_costs=True)). A
+    declared output change: the bar is stricter (A7 in
+    docs/DATA_DICTIONARY.md)."""
+    cfg = _orchestrator_config(cfg)
+    cb_cfg = ((cfg.get("orchestrator") or {}).get("cost_bar_all_costs") or {})
+    value = cb_cfg.get("enabled", False)
+    if not isinstance(value, bool):
+        raise ValueError(
+            f"orchestrator.cost_bar_all_costs.enabled={value!r} is not a real boolean "
+            f"(got {type(value).__name__}) -- write an unquoted `true` or `false` in "
+            f"config/campaign_config.yaml, not a quoted string or null."
+        )
+    return value
+
+
+def _cost_bar_args() -> list:
+    """CUL-414: `--cost-bar-all-costs` for run_protocol.py under
+    orchestrator.cost_bar_all_costs, else nothing (the command unchanged)."""
+    return ["--cost-bar-all-costs"] if _cost_bar_all_costs_enabled() else []
+
+
+def _cost_bar_grid_kw() -> dict:
+    """CUL-414: the evaluate_grid / evaluate_pass_rule_criteria keyword
+    orchestrator.cost_bar_all_costs adds ({"cost_bar_all_costs": True}), else
+    {} (both calls unchanged)."""
+    return {"cost_bar_all_costs": True} if _cost_bar_all_costs_enabled() else {}
 
 
 # E-073 step 1 (D-081): the readers' subset of the field dictionary
@@ -7681,6 +7729,29 @@ def _normalisation_at_spend(run_dir: Path, run_id: str, variant: str, entry: dic
             f"coverage gives now (D-047): " + "; ".join(problems))
 
 
+def _cost_basis_at_spend(variant, entry: dict) -> None:
+    """CUL-414 (D-082): a v2 spend refuses `bars_changed` unless the variant's
+    cost_edge_ratio_min row was graded on the cost basis in force now --
+    detail.cost_basis "fees_and_slippage" under orchestrator.cost_bar_all_costs,
+    absent (fees only) without it. So a variant that passed the fee-only ratio
+    cannot be spent after the flag is switched on, nor the reverse. An
+    unreadable flag refuses (fail closed). Flag off and an evaluation graded
+    flag off: nothing changes. Read-only; returns None."""
+    try:
+        want = "fees_and_slippage" if _cost_bar_all_costs_enabled() else None
+    except Exception as e:  # noqa: BLE001 -- any unreadable flag must refuse the spend
+        raise HoldoutUnlockRefused(
+            "bars_changed", f"the cost_bar_all_costs flag does not read: {type(e).__name__}: {e}")
+    rows = {r.get("name"): r for r in (entry or {}).get("bars") or [] if isinstance(r, dict)}
+    detail = (rows.get("cost_edge_ratio_min") or {}).get("detail")
+    graded = detail.get("cost_basis") if isinstance(detail, dict) else None
+    if graded != want:
+        raise HoldoutUnlockRefused(
+            "bars_changed", f"variant {variant!r}: its cost_edge_ratio_min row was graded on cost "
+            f"basis {graded or 'fees only'!r}; orchestrator.cost_bar_all_costs in force now gives "
+            f"{want or 'fees only'!r}")
+
+
 def _dsr_on_current_ledger(run_dir: Path, variant: str, entry: dict, bars: dict,
                            ev: dict) -> dict:
     """Review fix 8: the variant's deflated Sharpe, recomputed NOW on the
@@ -7862,6 +7933,7 @@ def _validate_holdout_decision(run_dir: Path, run_id: str, state: dict) -> dict:
             # E-062 S2b-3b (D-047): the thresholds the variant passed are the
             # ones its coverage gives NOW -- never a silent full-coverage one.
             _normalisation_at_spend(run_dir, run_id, variant, entry, bars)
+            _cost_basis_at_spend(variant, entry)  # CUL-414 (D-082)
         hyp_id = _idea_hypothesis_id(run_dir)  # never a promotion_audit.yaml (fix 8)
         if _holdout_already_spent(hyp_id):
             raise HoldoutUnlockRefused(
@@ -14642,15 +14714,20 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
                                             + count_reason))
     else:
         try:
-            ec = pwt.pooled_edge_to_cost_ratio(records, bars["cost_edge_min_trades"])
+            _all_costs = _cost_bar_all_costs_enabled()  # CUL-414 (D-082)
+            ec = pwt.pooled_edge_to_cost_ratio(records, bars["cost_edge_min_trades"],
+                                               **({"all_costs": True} if _all_costs else {}))
             _row("cost_edge_ratio_min", ec["ratio"],
                  note=(f"min(ratio over all {ec['n_trades'] + ec['n_excluded_end_of_window']} "
                        f"trade(s), ratio without the {ec['n_excluded_end_of_window']} "
                        f"end_of_window forced close(s)), unrounded; floor "
-                       f"{bars['cost_edge_min_trades']} non-forced trades"),
+                       f"{bars['cost_edge_min_trades']} non-forced trades"
+                       + ("; gross edge before fees and slippage / fees + slippage, both legs"
+                          if _all_costs else "")),
                  detail={**{k: ec[k] for k in ("ratio_all_trades", "ratio_excluding_end_of_window",
                                                "n_trades", "n_excluded_end_of_window")},
-                         "min_trades": bars["cost_edge_min_trades"]})
+                         "min_trades": bars["cost_edge_min_trades"],
+                         **({"cost_basis": ec["cost_basis"]} if _all_costs else {})})
         except _pd.PortfolioNotEvaluable as exc:
             _row("cost_edge_ratio_min", reason=f"pooled edge/cost ratio NOT_EVALUABLE: {exc}")
 

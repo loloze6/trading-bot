@@ -804,6 +804,27 @@ flags:
       which counts the looks per confirmation set (shown in the campaign
       summary). Information only. Tested by tests/test_e072_explore_confirm.py.
 
+  - name: cost_bar_all_costs
+    kind: orchestrator_config
+    config_key: orchestrator.cost_bar_all_costs.enabled
+    reader: run_phase1_research._cost_bar_all_costs_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "CUL-414 review and merge; operator decision 2026-10-08: switched on before the next comparison of results (a declared output change)"
+    criterion: >
+      Landed with CUL-414 (D-082, audit finding A7). Off: byte-identical --
+      run_protocol.py's arguments, the trade records, the summary and both
+      D-038 bars are unchanged. On (no dependency): the D-038 "survives 2x
+      costs" ratio (> 2.2) compares the gross edge per trade before fees and
+      slippage (gross_return_before_costs, at the bar closes the fills were
+      priced from) with fees + slippage, both legs (cost_paid_all), in the
+      menu criterion realized_edge_to_cost_ratio (reads
+      realized_edge_to_cost_ratio_all_costs) and in profit_bars_v2's
+      cost_edge_ratio_min (pooled_edge_to_cost_ratio(all_costs=True)). The
+      bar is stricter: about 33 bps of gross edge per trade on BTC and 55 on
+      SOL/UNI at the Kraken perp costs, instead of about 27 and 37. Tested by
+      tests/test_cul414_cost_bar_all_costs.py.
+
   - name: bar_equity
     kind: engine_param
     engine_default_files:
