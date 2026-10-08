@@ -917,8 +917,22 @@ orchestrator:
       # known at the bar's close or only after the fact, plus the audit
       # findings and what is not recorded -- is an extra required input of
       # every v3 reader, with one line in the handoff telling the reader to
-      # look a field up there before citing it. Later E-073 steps (citation
-      # checks, E-029, E-027) will add to this flag.
+      # look a field up there before citing it.
+      #
+      # While true (step 2, D-083): every `path=value` a v3 reading cites is
+      # checked against the files the reader received (the exploration copies
+      # under explore_confirm): a missing path or a value that is not the
+      # file's value as written or rounded gets the reader's ONE retry with a
+      # code-written list (path, cited value, problem -- never a value from the
+      # files; a missing path with up to 3 real paths that end in the same
+      # key); the retry answer is kept only with strictly fewer bad citations
+      # and the same side findings; still wrong, the reading is kept and the citation
+      # recorded in artifacts/citation_checks/<category>.yaml (decide-next: a
+      # citation_mismatch warning, never a refusal). Side findings proposing
+      # the same test (same claim kind, spec_hashes and config change) are merged into one
+      # (artifacts/side_finding_merges.yaml): measured, counted and ranked
+      # once, with the first source's scores -- never as agreement. Later
+      # E-073 steps (E-029, E-027) will add to this flag.
   operator_approval:
     enabled: false
       # E-068 PR 4 (D-071, CUL-399). OFF BY DEFAULT, read by

@@ -1487,6 +1487,41 @@ feed that is not wired, one row per such feed in
      `tools/data_dictionary.py` (no `bars.csv` section and no per-trade labels:
      files the readers never receive); a test fails when it is not regenerated.
      Off, the handoff and prompt are byte-identical.
+     Step 2 (D-083), same flag: each `path=value` (or `path: value`) a v3 reading
+     cites in `evidence` is checked against the files that reader received
+     (under E-072 its exploration copies, never the all-window files). The path
+     must exist (rooted at a top-level key, a known root or the file's own name,
+     e.g. `grid_evaluation.grid.residual_ic.base.value`; keys as the file has
+     them, `2022-09` included -- a hyphenated key the file does not have is
+     cut at its first hyphen; a key with spaces as `x["a key"]`), looked up in
+     the file it names, else the first received file that has it (the
+     reader's own report first). Dictionary-style paths (`summary.`,
+     `trades[]`, `slices.`) are not checked unless a received file has that
+     top-level key. Only the first value after the path is compared. A number
+     matches when the file's value, rounded to the decimals written, is the
+     cited number (half a unit of the last digit); `%` also compares the value
+     x 100 that way; the one exception: a `0` written with fewer than 2
+     decimals matches only |x| < 0.005. A number written any other way (`3k`,
+     `approx 120`, `~0.08`, a word) is not checked (`path_only`), never a
+     mismatch. Text matches when the file's whole text, ignoring case and
+     surrounding spaces, is the cited value (more words may follow); long
+     free text is not a citation target. A missing or mis-valued citation gets
+     the reader's one retry, with a code-written list (the path, the cited
+     value and the problem -- "value does not match the file", or "path not
+     found" with up to 3 real paths that end in the same key, as citable
+     paths; never a value from the files, so the reader must re-read them) and
+     its own answer; the retry answer replaces the first only with strictly
+     fewer bad citations AND the same side findings (count, claim kind,
+     spec_hash set, item kind); both counts and the kept answer are
+     recorded; still wrong, the reading is kept and the citation recorded in
+     `artifacts/citation_checks/<category>.yaml`, and decide-next shows a
+     `citation_mismatch` warning on that side finding. Prose is not checked.
+     Side findings of one run with the same claim kind, the same test
+     spec_hashes and the same `config_change` are merged (`artifacts/side_finding_merges.yaml`):
+     one E-072 confirmation record and one look, listing every source; one
+     decide-next candidate with the first source's scores (`merged_sources`).
+     Readers share their inputs, so a merge is never agreement or extra
+     evidence.
    - **Skip rules (no model call):** `regime_power` when `block_manifest.yaml`
      lists `/regime_detector` as scaffolding or the base config's detector has no
      components and no rules; `component_attribution` when every graded variant
