@@ -67,6 +67,7 @@ RUN_FILES = (RUN_FILE, OLD_RUN_FILE)
 BARS_MISSING = "bars_missing"
 HOLDOUT = "holdout"                       # a bar at or after the holdout start: refused
 ERROR = "error"
+MIXED_BASES = "mixed_return_basis"        # trade_net_return over windows on different return bases
 NO_VARIANTS = "no_graded_variants"
 # set by the caller for variants it does not measure (this attempt's set):
 # "stale_result" (an earlier attempt's protocol_result.yaml), "invalidated"
@@ -190,7 +191,12 @@ def measure_test(windows: list, test: dict, eras: list | None, trade_tests: bool
     (ct.load_variant_trade_windows) instead of its bar Windows."""
     spec, h_spec = test_spec(test, trade_tests)
     noun = "trades" if _is_trade_test(test) else "bars"
-    per, out_h, horizons, _rng = ct.effect_sizes(windows, spec, eras)
+    try:
+        per, out_h, horizons, _rng = ct.effect_sizes(windows, spec, eras)
+    except ct.MixedReturnBasis as exc:
+        # E-075 PR-3 review: not pooled, and not a silent fallback either
+        return {"name": test["name"], "status": NOT_MEASURED, "reason": MIXED_BASES,
+                "detail": _error(exc), "spec_hash": h_spec}
     rows, floor_not_met = {}, []
     for h in horizons:
         r = out_h[h]
@@ -202,6 +208,8 @@ def measure_test(windows: list, test: dict, eras: list | None, trade_tests: bool
                    "n_windows": len(per),
                    "per_coin": _per_coin(per, spec, h),
                    "per_window": r["per_window"], "per_era": r["per_era"]}
+        if "bases" in r:             # trade_net_return: the return basis of the pooled windows
+            rows[h]["bases"] = r["bases"]
         for unit, need in spec.floor.items():
             have = r[_FLOOR_KEY[unit]] or 0
             if have < need:

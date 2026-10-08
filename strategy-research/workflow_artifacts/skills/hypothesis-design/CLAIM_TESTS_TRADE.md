@@ -29,9 +29,25 @@ share an entry bar. Trades never cross windows. The test is measured on the vari
 | statistic `hit_rate` | none | share of selected trades whose outcome points the claimed way, minus the baseline's share |
 
 `direction`, `floor` and `consistency` are as in `CLAIM_TESTS.md`. A floor unit counts trades
-(`min_events`), windows with a selected trade (`min_windows`) or independent blocks of their
-entry bars (`min_blocks`). The result gives the effect pooled over all windows and **each
-window's own value**, as the bar tests do.
+(`min_events`), windows with a selected trade (`min_windows`) or independent blocks
+(`min_blocks`). The result gives the effect pooled over all windows and **each window's own
+value**, as the bar tests do.
+
+What the counts mean, so a floor is not met by one market move counted many times:
+
+- `trade_net_return`: `min_events` counts selected lots; a block is one **stretch of
+  overlapping trades** (trades whose entry-to-exit intervals overlap or touch, per window), so
+  lots opened and closed together are one block.
+- `post_exit_return`: lots that close on the **same bar on the same side** carry the same market
+  move, so they are **one event** (the first of them, in `trades.json` order; the values are
+  identical, so taking one or averaging is the same number), in the selected group and in the
+  baseline alike. Blocks are counted on the **exit** bars, in blocks of `max(h, 1)` bars.
+- `trade_net_return` records the return basis of each window (`all_costs`, or
+  `net_of_fees_and_slippage` when the window has no complete cost record) as
+  `per_window[...].basis` and `bases`. Windows with different bases are **not pooled**: the test
+  is `not_measured` (reason `mixed_return_basis`).
+- A trade test has an effect size and **no p-value, so no verdict**: the claim card marks it
+  `verdict_possible: false`.
 
 ## The closed field list
 

@@ -250,7 +250,9 @@ def test_mean_diff_trade_net_return_by_hand():
     assert h["value"] == pytest.approx(0.01375 - 0.013125) and h["oriented"] == pytest.approx(0.000625)
     assert h["n_events"] == 4 and h["n_windows_with_events"] == 1
     assert h["per_window"] == {"SYN/w0": {"value": pytest.approx(0.000625),
-                                          "oriented": pytest.approx(0.000625)}}
+                                          "oriented": pytest.approx(0.000625),
+                                          "basis": "net_of_fees_and_slippage"}}
+    assert h["bases"] == ["net_of_fees_and_slippage"]
     # direction less flips the oriented sign only
     _, out_l, _, _ = ct.effect_sizes([twin()], spec([eq("exit_cause", "flip")], direction="less"))
     assert out_l[0]["value"] == pytest.approx(0.000625) and out_l[0]["oriented"] == pytest.approx(-0.000625)
@@ -277,16 +279,17 @@ def test_post_exit_return_by_hand_signed_by_side_and_nan_at_the_window_end():
     assert np.isnan(y2[10])                                              # exit bar is not a row
     assert np.isnan(ct.trade_outcome(tw, "post_exit_return", 4)[8])      # 26 + 4 = 30: no such bar
     # a mean_diff over flips vs the rest at h=2 (hand values for the four flips)
-    flips = [0, 1, 3, 9]
+    # t1 exits at bar 5 too (same exit bar and side as t0): the same market move, the same value,
+    # counted ONCE (review fix): the four flips are three events
+    assert y2[1] == y2[0]
+    flips = [0, 3, 9]
     _, out_h, horizons, _ = ct.effect_sizes([tw], spec([eq("exit_cause", "flip")],
                                                        {"kind": "post_exit_return", "horizons": [2]}))
     assert horizons == [2]
     sel = [y2[i] for i in flips]
-    rest = [y2[i] for i in range(12) if i not in flips and np.isfinite(y2[i])]
+    rest = [y2[i] for i in range(12) if i not in (0, 1, 3, 9) and np.isfinite(y2[i])]
     assert out_h[2]["value"] == pytest.approx(np.mean(sel) - np.mean(rest))
-    assert out_h[2]["n_events"] == 4
-    # t1 exits at bar 5 too (same exit bar as t0): the same market move, same side -> same value
-    assert y2[1] == y2[0]
+    assert out_h[2]["n_events"] == 3
 
 
 def test_two_windows_give_per_window_values_and_pooled_numbers():
@@ -304,12 +307,12 @@ def test_two_windows_give_per_window_values_and_pooled_numbers():
     assert h["n_events"] == 7 and h["n_windows_with_events"] == 2
 
 
-def test_partial_reductions_share_an_entry_bar_in_the_block_count():
-    """t1 and t2 enter on bar 3: one active bar, not two. t0 (bar 2) is the other."""
+def test_partial_reductions_that_overlap_are_one_stretch_in_the_block_count():
+    """t0 [2,5], t1 [3,5] and t2 [3,8] overlap: one stretch of trades, not two entry bars."""
     sp = spec([{"field": "entry_hour", "op": "in", "value": [2, 3]}], floor={"min_blocks": 1})
     _, out_h, _, _ = ct.effect_sizes([twin()], sp)
     assert out_h[0]["n_events"] == 3                     # t0, t1, t2
-    assert out_h[0]["n_blocks"] == 2                     # block size 1: entry bars {2, 3}
+    assert out_h[0]["n_blocks"] == 1                     # one overlapping stretch [2, 8]
 
 
 def test_eras_split_by_entry_date_and_no_events_is_all_nan():
@@ -325,7 +328,7 @@ def test_window_without_trades_is_measurable():
     empty = ct.build_trade_window(bars(), [], post_alloc())
     empty_w = ct.build_trade_window(bars(label="w1"), [], post_alloc())
     _, out_h, _, _ = ct.effect_sizes([empty_w, twin()], spec([eq("exit_cause", "flip")]))
-    assert out_h[0]["per_window"]["SYN/w1"] == {"value": None, "oriented": None}
+    assert out_h[0]["per_window"]["SYN/w1"] == {"value": None, "oriented": None, "basis": None}
     assert out_h[0]["per_window"]["SYN/w0"]["value"] == pytest.approx(0.000625)
     assert out_h[0]["n_events"] == 4 and out_h[0]["n_windows_with_events"] == 1
     assert empty.n == 0
@@ -363,7 +366,8 @@ def test_check_spec_accepts_the_family_only_with_trade_tests():
 
 def test_check_claim_accepts_and_refuses():
     ok = cc.check_claim(claim(GOOD_CLAIM_TEST), trade_tests=True)
-    assert ok.errors == [] and ok.tests[0]["name"] == "flip_exits_pay" and ok.tests[0]["verdict_possible"]
+    assert ok.errors == [] and ok.tests[0]["name"] == "flip_exits_pay"
+    assert ok.tests[0]["verdict_possible"] is False and ok.tests[0]["reason"] == cc.TRADE_REASON
     assert ok.tests[0]["spec_hash"] == ct.spec_hash(ct.TestSpec.from_dict(
         {k: v for k, v in GOOD_CLAIM_TEST.items() if k != "name"}))
     off = cc.check_claim(claim(GOOD_CLAIM_TEST))
@@ -729,3 +733,211 @@ def test_claim_measure_reports_no_trades_and_a_missing_trades_file(tmp_path):
     doc2 = cm.measure_variant(run2, "base", [GOOD_CLAIM_TEST], None, "2025-01-01", trade_tests=True)
     assert doc2["tests"][GOOD_CLAIM_TEST["name"]]["status"] == cm.NOT_MEASURED
     assert "trades.json" in doc2["tests"][GOOD_CLAIM_TEST["name"]]["detail"]
+
+
+# ---------------------------------------------------------------------------
+# 8. Review fixes (PR #352)
+# ---------------------------------------------------------------------------
+
+def test_this_pr_is_d086_and_decision_ids_are_unique():
+    """Open PR #351 (E-077 PR-1) already uses D-085: this PR's row is D-086."""
+    log = (SR_ROOT / "engineering" / "DECISION_LOG.md").read_text(encoding="utf-8")
+    ids = re.findall(r"^\| (D-\d+) \|", log, flags=re.M)
+    assert len(ids) == len(set(ids))
+    rows = [ln for ln in log.splitlines() if ln.startswith("| D-086 |")]
+    assert len(rows) == 1 and "trade-level claim-test family" in rows[0]
+    assert "Numbered D-086" in rows[0] and "D-085" in rows[0]
+    assert not [ln for ln in log.splitlines()
+                if ln.startswith("| D-085 |") and "trade-level claim-test family" in ln]
+
+
+def _flips_measure(trades, outcome=None, where=None, windows=None, floor=None):
+    sp = spec(where or [eq("side", "long")], outcome, floor=floor or {"min_events": 1})
+    return ct.effect_sizes(windows or [twin(trades=trades)], sp)[1]
+
+
+# --- 2. n_blocks / n_events count independent samples
+
+def test_trade_net_return_blocks_are_stretches_of_overlapping_trades():
+    """t0..t9 minus none: [2,5] [3,5] [3,8] | [10,12] [11,15] | [16,20] [17,22] [18,29] [20,26]
+    [21,27] -> 3 stretches (the old entry-bar count was 9 distinct entry bars)."""
+    where = [{"field": "exit_cause", "op": "!=", "value": "unknown"}]
+    out = _flips_measure(None, where=where)
+    assert out[0]["n_events"] == 10 and out[0]["n_blocks"] == 3
+
+
+def test_touching_trades_are_one_stretch_and_a_gap_of_one_bar_is_two():
+    a = trade("a", "LONG", 2, 5, 2.0, 1.0)
+    b = trade("b", "LONG", 5, 8, 2.0, 1.0)            # enters on a's exit stamp: overlap
+    c = trade("c", "LONG", 9, 12, 2.0, 1.0)           # enters one bar after b's exit: a new stretch
+    assert _flips_measure([a, b, c])[0]["n_blocks"] == 2
+    assert _flips_measure([a, c])[0]["n_blocks"] == 2
+    assert _flips_measure([a, b])[0]["n_blocks"] == 1
+    # input order is irrelevant
+    assert _flips_measure([c, b, a])[0]["n_blocks"] == 2
+    # a long trade that contains two short ones is one stretch (the stretch ends at the LATEST exit)
+    outer, inner1, inner2 = (trade("o", "LONG", 2, 10, 2.0, 1.0), trade("i1", "LONG", 3, 4, 2.0, 1.0),
+                             trade("i2", "LONG", 6, 8, 2.0, 1.0))
+    assert _flips_measure([outer, inner1, inner2])[0]["n_blocks"] == 1
+
+
+def test_stretches_are_counted_per_window_and_summed():
+    a, c = trade("a", "LONG", 2, 5, 2.0, 1.0), trade("c", "LONG", 9, 12, 2.0, 1.0)
+    w0, w1 = twin(trades=[a, c]), ct.build_trade_window(bars(label="w1"), [a, c], post_alloc())
+    out = _flips_measure(None, windows=[w0, w1])
+    assert out[0]["n_blocks"] == 4 and out[0]["n_events"] == 4
+
+
+def test_post_exit_blocks_are_counted_on_exit_bars():
+    """t1 [3,5] and t2 [3,8] share an entry bar and exit on bars 5 and 8: two exit-bar blocks
+    (the old entry-bar count gave one)."""
+    out = _flips_measure(None, outcome={"kind": "post_exit_return", "horizons": [1]},
+                         where=[eq("entry_hour", 3)])
+    assert out[1]["n_events"] == 2 and out[1]["n_blocks"] == 2
+
+
+def test_post_exit_lots_closing_on_one_bar_on_one_side_are_one_event():
+    """t0 and t1 both close LONG on bar 5 (the same close-to-close move): selected, they are one event."""
+    sel = [{"field": "entry_hour", "op": "in", "value": [2, 3]}]            # t0, t1, t2
+    out = _flips_measure(None, outcome={"kind": "post_exit_return", "horizons": [1]}, where=sel)
+    assert out[1]["n_events"] == 2                                          # bar 5 once, bar 8
+    y = ct.trade_outcome(twin(), "post_exit_return", 1)
+    assert y[0] == y[1]
+    others = [y[i] for i in range(12) if i not in (0, 1, 2) and np.isfinite(y[i])]
+    assert out[1]["value"] == pytest.approx(np.mean([y[0], y[2]]) - np.mean(others))
+
+
+def test_post_exit_dedup_applies_inside_the_baseline_too_and_keeps_the_two_sides_apart():
+    s_ = trade("S", "SHORT", 8, 12, 2.0, 1.0)
+    l1, l2 = trade("L1", "LONG", 2, 5, 2.0, 1.0), trade("L2", "LONG", 3, 5, 2.0, 1.0)
+    l3 = trade("L3", "LONG", 4, 8, 2.0, 1.0)
+    out = _flips_measure([s_, l1, l2, l3], outcome={"kind": "post_exit_return", "horizons": [1]},
+                         where=[eq("side", "short")])
+    y5, y8 = CLOSE[6] / CLOSE[5] - 1, CLOSE[9] / CLOSE[8] - 1
+    ys = -(CLOSE[13] / CLOSE[12] - 1)
+    assert out[1]["value"] == pytest.approx(ys - (y5 + y8) / 2)            # not (2*y5 + y8) / 3
+    # the same exit bar on the other side is a different value: both stay
+    a = trade("a", "LONG", 2, 5, -3.0, 1.0)                                # flip, long
+    b = trade("b", "SHORT", 3, 5, 3.0, 1.0)                                # flip, short
+    out2 = _flips_measure([a, b], outcome={"kind": "post_exit_return", "horizons": [1]},
+                          where=[eq("exit_cause", "flip")])
+    assert out2[1]["n_events"] == 2
+    # two windows are never merged
+    w0, w1 = twin(trades=[a]), ct.build_trade_window(bars(label="w1"), [a], post_alloc())
+    out3 = _flips_measure(None, outcome={"kind": "post_exit_return", "horizons": [1]},
+                          where=[eq("exit_cause", "flip")], windows=[w0, w1])
+    assert out3[1]["n_events"] == 2
+
+
+def test_trade_net_return_keeps_every_lot_as_an_event():
+    """Lots sharing an exit bar have their own net returns: no deduplication for trade_net_return."""
+    out = _flips_measure(None, where=[eq("exit_cause", "flip")])
+    assert out[0]["n_events"] == 4
+
+
+# --- 3. spec_hash does not depend on clause order
+
+def _hspec(where):
+    return spec(where)
+
+
+def test_spec_hash_ignores_the_order_of_where_clauses_and_in_lists():
+    a, b = eq("side", "long"), eq("exit_cause", "flip")
+    assert ct.spec_hash(_hspec([a, b])) == ct.spec_hash(_hspec([b, a]))
+    c3 = {"field": "entry_hour", "op": "in", "value": [3, 4, 9]}
+    c3b = {"field": "entry_hour", "op": "in", "value": [9, 3, 4]}
+    assert ct.spec_hash(_hspec([c3])) == ct.spec_hash(_hspec([c3b]))
+    d1 = {"field": "exit_cause", "op": "in", "value": ["to_zero", "flip"]}
+    d2 = {"field": "exit_cause", "op": "in", "value": ["flip", "to_zero"]}
+    assert ct.spec_hash(_hspec([a, d1, c3])) == ct.spec_hash(_hspec([c3b, d2, a]))
+    # still sensitive to the content
+    assert ct.spec_hash(_hspec([a, b])) != ct.spec_hash(_hspec([a, eq("exit_cause", "to_zero")]))
+    assert ct.spec_hash(_hspec([c3])) != ct.spec_hash(_hspec([{"field": "entry_hour", "op": "in",
+                                                                 "value": [3, 4, 10]}]))
+    assert ct.spec_hash(_hspec([a])) != ct.spec_hash(_hspec([{"field": "side", "op": "!=", "value": "long"}]))
+    # the hash through the claim card agrees
+    t1 = dict(GOOD_CLAIM_TEST, selector={"kind": "trade", "where": [a, b]})
+    t2 = dict(GOOD_CLAIM_TEST, selector={"kind": "trade", "where": [b, a]})
+    r1, r2 = (cc.check_claim(claim(t), trade_tests=True) for t in (t1, t2))
+    assert r1.errors == r2.errors == [] and r1.tests[0]["spec_hash"] == r2.tests[0]["spec_hash"]
+
+
+def test_a_repeated_where_clause_is_refused():
+    a = eq("side", "long")
+    errs = ct.check_spec(_hspec([a, eq("exit_cause", "flip"), dict(a)]), trade_tests=True)
+    assert len(errs) == 1 and "where[2]" in errs[0] and "repeats where[0]" in errs[0]
+    d1 = {"field": "entry_hour", "op": "in", "value": [3, 4]}
+    d2 = {"field": "entry_hour", "op": "in", "value": [4, 3]}       # the same clause, another order
+    assert any("repeats" in e for e in ct.check_spec(_hspec([d1, d2]), trade_tests=True))
+    # different value or op is not a repeat
+    assert ct.check_spec(_hspec([a, eq("side", "short")]), trade_tests=True) == []
+    assert ct.check_spec(_hspec([{"field": "entry_hour", "op": ">=", "value": 3},
+                                 {"field": "entry_hour", "op": "<=", "value": 3}]), trade_tests=True) == []
+    res = cc.check_claim(claim(dict(GOOD_CLAIM_TEST, selector={"kind": "trade", "where": [a, dict(a)]})),
+                         trade_tests=True)
+    assert res.errors and "repeats" in res.errors[0] and res.tests == []
+
+
+# --- 4. a trade test has no verdict
+
+def test_trade_tests_are_effect_size_only_and_bar_tests_are_unchanged():
+    bar = {"name": "bar_ev", "selector": {"kind": "event", "field": "forecast", "op": ">=", "value": 12},
+           "outcome": {"kind": "fwd_return", "horizons": [1]}, "baseline": {"kind": "complement"},
+           "statistic": "mean_diff", "direction": "greater", "floor": {"min_events": 10}}
+    res = cc.check_claim(claim(GOOD_CLAIM_TEST, bar), trade_tests=True)
+    assert res.errors == []
+    by = {t["name"]: t for t in res.tests}
+    assert by["flip_exits_pay"]["verdict_possible"] is False
+    assert by["flip_exits_pay"]["reason"] == cc.TRADE_REASON
+    assert by["bar_ev"]["verdict_possible"] is True and "reason" not in by["bar_ev"]
+    # nothing about a bar test changes with the gate off
+    off = cc.check_claim(claim(bar))
+    assert off.tests == [{"name": "bar_ev", "spec_hash": by["bar_ev"]["spec_hash"],
+                          "verdict_possible": True}]
+    # the pipeline's note for such a test is the "effect-size only" line
+    src = (SR_ROOT / "workflow" / "run_phase1_research.py").read_text(encoding="utf-8")
+    assert 'if not t["verdict_possible"]:' in src and "is effect-size only: {t['reason']}" in src
+
+
+# --- 5. the return basis is recorded, and bases are not pooled
+
+ALL_COSTS = [{"trade_id": t["trade_id"], "gross_return_before_costs": 2.0, "cost_paid_all": 30.0}
+             for t in TRADES]
+
+
+def test_basis_is_recorded_per_window_and_pooled():
+    w0 = twin(costs=ALL_COSTS)
+    w1 = ct.build_trade_window(bars(label="w1"), TRADES, post_alloc(), ALL_COSTS)
+    out = _flips_measure(None, where=[eq("exit_cause", "flip")], windows=[w0, w1])
+    assert out[0]["bases"] == ["all_costs"]
+    assert {k: v["basis"] for k, v in out[0]["per_window"].items()} == {"SYN/w0": "all_costs",
+                                                                       "SYN/w1": "all_costs"}
+    out2 = _flips_measure(None, where=[eq("exit_cause", "flip")])
+    assert out2[0]["bases"] == ["net_of_fees_and_slippage"]
+
+
+def test_windows_with_different_bases_are_not_pooled():
+    w0 = twin(costs=ALL_COSTS)                                              # all_costs
+    w1 = ct.build_trade_window(bars(label="w1"), TRADES, post_alloc())      # fallback
+    sp = spec([eq("exit_cause", "flip")])
+    with pytest.raises(ct.MixedReturnBasis, match="all_costs.*net_of_fees_and_slippage"):
+        ct.effect_sizes([w0, w1], sp)
+    # through claim_measure: not_measured, with its own reason and the windows' bases
+    res = cm.measure_test([w0, w1], dict(GOOD_CLAIM_TEST), None, True)
+    assert res["status"] == cm.NOT_MEASURED and res["reason"] == cm.MIXED_BASES == "mixed_return_basis"
+    assert "SYN/w0" in res["detail"] and "SYN/w1" in res["detail"] and "horizons" not in res
+    # a window without trades has no basis and conflicts with nothing
+    empty = ct.build_trade_window(bars(label="w2"), [], post_alloc())
+    out = ct.effect_sizes([w0, empty], sp)[1]
+    assert out[0]["bases"] == ["all_costs"] and out[0]["per_window"]["SYN/w2"]["basis"] is None
+    # post_exit_return does not use the return basis: mixed windows are fine, nothing recorded
+    pe = spec([eq("exit_cause", "flip")], {"kind": "post_exit_return", "horizons": [1]})
+    out_pe = ct.effect_sizes([w0, w1], pe)[1]
+    assert "bases" not in out_pe[1] and "basis" not in out_pe[1]["per_window"]["SYN/w0"]
+
+
+def test_claim_measure_carries_the_basis_into_its_rows():
+    res = cm.measure_test([twin(costs=ALL_COSTS)], dict(GOOD_CLAIM_TEST), None, True)
+    assert res["status"] == cm.MEASURED
+    assert res["horizons"][0]["bases"] == ["all_costs"]
+    assert res["horizons"][0]["per_window"]["SYN/w0"]["basis"] == "all_costs"

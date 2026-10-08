@@ -26,7 +26,9 @@ defaults); the agent may not write them -- fewer knobs, fewer lucky passes.
 Regime selectors (claim_tests.NOT_RECOMPUTABLE_SELECTORS) are accepted as
 EFFECT-SIZE ONLY (operator, 2026-10-03, CUL-391): every other slot is checked
 with check_spec's own rules, and the test is marked verdict_possible: false
-with REGIME_REASON. `verdict_possible: true`
+with REGIME_REASON. A trade-level test (E-075 PR-3, gated) is always
+verdict_possible: false with TRADE_REASON: run_test refuses it and no p-value
+exists for it. `verdict_possible: true`
 means only that no rule of this file excludes a verdict; a verdict still
 needs a calibrated significance method (claim_tests operator rule 3).
 
@@ -68,6 +70,9 @@ CODE_FIXED_KEYS = ("alpha", "significance")
 MAX_TESTS = 3
 NO_TEST = "none"
 REGIME_REASON = "no calibrated significance method for regime selectors"
+# E-075 PR-3 review: a trade-level test has an effect size and no p-value (the
+# null of claim_tests.run_test is built from bars; E-077 may add one for trades)
+TRADE_REASON = "trade-level tests are effect-size only: no p-value is computed for them"
 TEST_REQUESTS_REL = "campaign_record/test_requests.yaml"
 
 
@@ -153,7 +158,13 @@ def _check_test(test, where: str, trade_tests: bool = False) -> tuple:
         h = ct.spec_hash(spec)
     except (TypeError, ValueError, AttributeError, KeyError) as exc:
         return [f"{where}: malformed test ({type(exc).__name__}: {exc})"], None, False
-    return [], h, not regime
+    return [], h, not regime and not _is_trade_test(test)
+
+
+def _is_trade_test(test) -> bool:
+    """A test of the gated trade-level family (E-075 PR-3): its selector is `trade`."""
+    return (isinstance(test, dict) and isinstance(test.get("selector"), dict)
+            and test["selector"].get("kind") == ct.TRADE_SELECTOR)
 
 
 def check_claim(claim, criteria_ids=(), trade_tests: bool = False) -> ClaimCheck:
@@ -215,7 +226,8 @@ def check_claim(claim, criteria_ids=(), trade_tests: bool = False) -> ClaimCheck
         e.extend(errs)
         if not errs:
             res.tests.append({"name": t["name"], "spec_hash": h, "verdict_possible": possible,
-                              **({} if possible else {"reason": REGIME_REASON})})
+                              **({} if possible else
+                                 {"reason": TRADE_REASON if _is_trade_test(t) else REGIME_REASON})})
     if e:
         res.tests = []
     return res

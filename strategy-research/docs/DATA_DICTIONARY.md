@@ -189,8 +189,9 @@ window's last bar (not its last calendar day, finding A5), and it does not chang
 `exit_reason`. Outcomes: `trade_net_return` (the all-costs basis, `gross_return_before_costs`
 minus `cost_paid_all`, when `trade_diagnostics.json` carries them for every lot of the window;
 else `net_profit_loss_percent` of `trades.json`, after the commission with the slippage already
-in the fill prices) and `post_exit_return` (exit bar's close to the close h bars later, signed
-by side). MAE and MFE are not used (A6).
+in the fill prices; the basis used is recorded per window and windows on different bases are
+not pooled) and `post_exit_return` (exit bar's close to the close h bars later, signed by side;
+lots closing on one bar on one side are one event). MAE and MFE are not used (A6).
 <!-- /readers: omit -->
 
 Per-trade numbers (the trade_efficiency report aggregates each of them) and the summary.

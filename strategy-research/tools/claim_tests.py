@@ -800,8 +800,40 @@ def spec_hash(spec: TestSpec) -> str:
     floats, horizons sorted). Key order and 12 vs 12.0 do not change it."""
     d = asdict(spec)
     d["outcome"] = dict(d["outcome"], horizons=sorted(d["outcome"].get("horizons") or []))
+    sel = d.get("selector")
+    if isinstance(sel, dict) and sel.get("kind") == TRADE_SELECTOR:
+        # E-075 PR-3 review: the order of `where` clauses and of an `in` list is
+        # not part of the test. Only the gated trade selector is touched, so
+        # every pre-PR-3 hash is unchanged.
+        d["selector"] = dict(sel, where=_canon_where(sel.get("where")))
     blob = json.dumps(_canon(d), sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
+def _val_key(v):
+    """A total order over the clause values a trade selector may hold (numbers,
+    strings, lists of them), for canonical ordering only."""
+    if isinstance(v, list):
+        return (3, tuple(sorted(_val_key(x) for x in v)))
+    if isinstance(v, bool):
+        return (1, int(v))
+    if isinstance(v, (int, float)):
+        return (0, float(v))
+    if isinstance(v, str):
+        return (2, v)
+    return (4, repr(v))
+
+
+def _canon_where(where):
+    """`where` clauses sorted by (field, op, value), the values of an `in` list
+    sorted. Anything that is not a list of clause mappings is returned as it
+    came (check_spec refuses it)."""
+    if not isinstance(where, list) or not all(isinstance(c, dict) for c in where):
+        return where
+    fixed = [dict(c, value=sorted(c["value"], key=_val_key)) if isinstance(c.get("value"), list)
+             else dict(c) for c in where]
+    return sorted(fixed, key=lambda c: (str(c.get("field")), str(c.get("op")),
+                                        _val_key(c.get("value"))))
 
 
 def _check_selector(s, where: str, extra_fields: tuple = ()) -> list[str]:
@@ -1290,6 +1322,16 @@ def _check_trade_where(sel) -> list[str]:
                     if x < lo or (hi is not None and x > hi):
                         e.append(f"{w}: {f} must be in {lo}..{hi}, got {x!r}" if hi is not None
                                  else f"{w}: {f} must be >= {lo}, got {x!r}")
+    # the same clause twice (an `in` list in another order is the same clause)
+    first: dict = {}
+    for i, c in enumerate(clauses):
+        if isinstance(c, dict) and set(c) == {"field", "op", "value"}:
+            key = (str(c["field"]), str(c["op"]), _val_key(c["value"]))
+            if key in first:
+                e.append(f"{where}.where[{i}]: repeats where[{first[key]}] (the same field, op "
+                         f"and value); write each condition once")
+            else:
+                first[key] = i
     return e
 
 
@@ -1325,16 +1367,73 @@ def _trade_horizons(spec: TestSpec) -> list:
     return sorted(spec.outcome["horizons"])
 
 
+class MixedReturnBasis(ValueError):
+    """trade_net_return over windows whose lots were measured on different
+    return bases (all_costs vs net_of_fees_and_slippage): pooling them would
+    mix two numbers that differ by the slippage."""
+
+
+def _overlap_stretches(entry_ts: np.ndarray, exit_ts: np.ndarray, ev: np.ndarray) -> int:
+    """Number of stretches of overlapping trades among the selected ones of one
+    window: trades whose [entry, exit] intervals overlap (touching at one stamp
+    counts as overlap) are one stretch."""
+    idx = np.nonzero(ev)[0]
+    if not len(idx):
+        return 0
+    count, end = 0, None
+    for i in idx[np.argsort(entry_ts[idx], kind="stable")]:
+        a, b = int(entry_ts[i]), int(exit_ts[i])
+        if end is None or a > end:
+            count += 1
+            end = b
+        else:
+            end = max(end, b)
+    return count
+
+
+def _one_event_per_exit(tw: "TradeWindow", mask: np.ndarray, wref: np.ndarray):
+    """post_exit_return depends only on the exit bar and the side, so lots that
+    close on the same bar on the same side carry one identical value: the same
+    market move counted once. Within the selected group, and within the
+    baseline group, the FIRST such lot (trades.json order) is kept and the
+    others dropped (taking one and averaging the identical values are the
+    same number)."""
+    m, r = mask.copy(), wref.copy()
+    seen_m, seen_r = set(), set()
+    for i in range(tw.n):
+        key = (int(tw.exit_ts[i]), str(tw.side[i]))
+        if mask[i]:
+            if key in seen_m:
+                m[i] = False
+            seen_m.add(key)
+        elif wref[i] > 0:
+            if key in seen_r:
+                r[i] = 0.0
+            seen_r.add(key)
+    return m, r
+
+
 def trade_effect_sizes(windows: list, spec: TestSpec, eras: list | None = None):
     """effect_sizes for the trade family: the same return shape (per-window
     prepared data, per-horizon effect sizes, horizons, rng) so claim_measure
     reads it unchanged. `windows` are TradeWindows. The pooled statistics are
     the bar statistics applied to per-trade arrays; per-window values are
     given exactly as for bar tests (the all-but-one-window rule is E-077
-    PR-2's). n_events = selected trades with an outcome; n_blocks counts
-    independent blocks of their entry bars (gap-aware, as for bars). Horizon 0
-    is trade_net_return's: the trade's own life."""
+    PR-2's). Horizon 0 is trade_net_return's: the trade's own life.
+    n_events = selected trades with an outcome. For trade_net_return n_blocks
+    is the number of stretches of overlapping selected trades (per window); for
+    post_exit_return the selected lots closing on one bar on one side are one
+    event (_one_event_per_exit) and n_blocks counts blocks of max(h, 1) EXIT
+    bars (gap-aware, as for bars). trade_net_return records each window's
+    return basis and refuses windows with different ones (MixedReturnBasis)."""
     horizons = _trade_horizons(spec)
+    is_net = spec.outcome["kind"] == "trade_net_return"
+    bases = sorted({tw.basis for tw in windows if tw.n})
+    if is_net and len(bases) > 1:
+        by_window = {tw.label: tw.basis for tw in windows if tw.n}
+        raise MixedReturnBasis(
+            f"trade_net_return over windows with different return bases {bases}: "
+            f"{by_window}; pooling them would mix returns with and without the slippage")
     stat = STATISTICS[spec.statistic]
     opposite = "less" if spec.direction == "greater" else "greater"
     per = []
@@ -1342,6 +1441,8 @@ def trade_effect_sizes(windows: list, spec: TestSpec, eras: list | None = None):
         mask, valid = sel_trade(tw, spec.selector)
         mask = mask & valid
         wref = (valid & ~mask).astype(float)
+        if not is_net:
+            mask, wref = _one_event_per_exit(tw, mask, wref)
         ys = {h: trade_outcome(tw, spec.outcome["kind"], h) for h in horizons}
         era = None
         if eras is not None:
@@ -1355,16 +1456,23 @@ def trade_effect_sizes(windows: list, spec: TestSpec, eras: list | None = None):
         y, m, wr, fc = _pooled(per, h)
         raw, oriented = stat(y, m, wr, fc, spec.direction)
         events = [p["mask"] & np.isfinite(p["ys"][h]) for p in per]
-        active = []
-        for ev, p in zip(events, per):
-            a = np.zeros(len(p["w"].bars.ts), dtype=bool)
-            rows = p["w"].entry_idx[ev]
-            a[rows[rows >= 0]] = True
-            active.append(a)
+        if is_net:
+            n_blocks = int(sum(_overlap_stretches(p["w"].entry_ts, p["w"].exit_ts, ev)
+                               for ev, p in zip(events, per)))
+        else:
+            active = []
+            for ev, p in zip(events, per):
+                a = np.zeros(len(p["w"].bars.ts), dtype=bool)
+                rows = p["w"].exit_idx[ev]
+                a[rows[rows >= 0]] = True
+                active.append(a)
+            n_blocks = _blocks(active, per, max(h, 1))
         per_window = {}
         for p in per:
             r, o = stat(p["ys"][h], p["mask"], p["wref"], p["fc"], spec.direction)
             per_window[p["w"].label] = {"value": _num(r), "oriented": _num(o)}
+            if is_net:
+                per_window[p["w"].label]["basis"] = p["w"].basis if p["w"].n else None
         per_era, n_eras = {}, None
         if eras is not None:
             era_all = np.concatenate([p["era"] for p in per])
@@ -1378,8 +1486,10 @@ def trade_effect_sizes(windows: list, spec: TestSpec, eras: list | None = None):
                     "p_value": None, "p_value_opposite": None,
                     "n_events": int(sum(ev.sum() for ev in events)),
                     "n_windows_with_events": int(sum(bool(ev.any()) for ev in events)),
-                    "n_blocks": _blocks(active, per, max(h, 1)), "n_eras_with_events": n_eras,
+                    "n_blocks": n_blocks, "n_eras_with_events": n_eras,
                     "per_window": per_window, "per_era": per_era}
+        if is_net:
+            out_h[h]["bases"] = bases
     return per, out_h, horizons, np.random.default_rng(PLACEBO_SEED)
 
 
