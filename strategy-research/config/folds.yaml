@@ -1,0 +1,44 @@
+# E-077 PR-1 (D-085): the three fixed folds of time windows.
+#
+# A child run of an idea backtests on the NEXT fold its lineage has not used
+# (tools/decide_next.py, only while orchestrator.folds.enabled is true), so an
+# idea is never confirmed on the bars where it was first observed. A line ends
+# after three folds; then comes validation (single-use), then the holdout.
+#
+# Each fold is six exact 4-month calendar blocks in the shape the protocol
+# generator writes (workflow/run_phase1_research.py::_generate_monthly_windows
+# with window_months=4): label = the block's first month, `start` = its first
+# day, `end` = its LAST INCLUDED DAY (D-058: the engine backtests the whole end
+# day). Fold A is exactly the six windows every run since run_065 used
+# (2022-01 .. 2023-09), so those runs ARE fold A -- no special case.
+#
+# B and C split the twelve blocks of 2018-2021, interleaved so each fold has a
+# block in every one of the four years. Nothing here may touch the validation
+# period or the holdout: tools/research_folds.py::load_folds refuses it, and
+# the dates of both come from config/campaign_data_policy.yaml, never from here.
+#
+# Order of use: A, then B, then C.
+version: 1
+order: [A, B, C]
+folds:
+  A:
+    - {label: "2022-01", start: "2022-01-01", end: "2022-04-30"}
+    - {label: "2022-05", start: "2022-05-01", end: "2022-08-31"}
+    - {label: "2022-09", start: "2022-09-01", end: "2022-12-31"}
+    - {label: "2023-01", start: "2023-01-01", end: "2023-04-30"}
+    - {label: "2023-05", start: "2023-05-01", end: "2023-08-31"}
+    - {label: "2023-09", start: "2023-09-01", end: "2023-12-31"}
+  B:
+    - {label: "2018-01", start: "2018-01-01", end: "2018-04-30"}
+    - {label: "2018-09", start: "2018-09-01", end: "2018-12-31"}
+    - {label: "2019-05", start: "2019-05-01", end: "2019-08-31"}
+    - {label: "2020-01", start: "2020-01-01", end: "2020-04-30"}
+    - {label: "2020-09", start: "2020-09-01", end: "2020-12-31"}
+    - {label: "2021-05", start: "2021-05-01", end: "2021-08-31"}
+  C:
+    - {label: "2018-05", start: "2018-05-01", end: "2018-08-31"}
+    - {label: "2019-01", start: "2019-01-01", end: "2019-04-30"}
+    - {label: "2019-09", start: "2019-09-01", end: "2019-12-31"}
+    - {label: "2020-05", start: "2020-05-01", end: "2020-08-31"}
+    - {label: "2021-01", start: "2021-01-01", end: "2021-04-30"}
+    - {label: "2021-09", start: "2021-09-01", end: "2021-12-31"}

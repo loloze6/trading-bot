@@ -3297,6 +3297,29 @@ leaves it `in_progress`, so the next step retries. The record
   `<category>-<source run>-<n>` name that collides with no queue id or brief);
 - else the loop stops (`DECIDE stop`, RUNBOOK §3 last row).
 
+**Folds (E-077 PR-1, D-085, off by default: `orchestrator.folds.enabled`).**
+Off, the child's brief copies the parent's `machine_constraints` (its test
+windows) unchanged, so a child re-tests an idea on the bars where it was
+observed. On, the child gets the windows of the next of three fixed folds
+(`config/folds.yaml`: A = 2022-2023, B and C = interleaved halves of 2018-2021,
+six 4-month blocks each; order A, B, C) that its lineage has not used. The
+lineage is the parent run plus every run named in its memory `hypothesis_id`;
+a fold counts as used when any window of any lineage run overlaps one of its
+blocks (so runs 065-074 are fold A, and a run on other windows has used
+whichever folds it overlaps). The brief's `machine_constraints.protocol` gets
+`fold`, the fold's `start`/`end` and `window_months: 4` (and loses
+`per_symbol_start`); the protocol generator then writes the fold's exact
+windows, and `fold` is recorded in `run_context.yaml`, the memory entry and the
+trial rows. A lineage that used all three, or whose runs' windows cannot be
+read, makes the candidate INFEASIBLE with a reason in the decision record
+(`candidates[].fold_assignment` shows the lineage and the folds each run used);
+the campaign carries on with the other candidates. The same flag makes the
+protocol generator and the launch pre-flight refuse any window overlapping the
+validation period (the data policy's 2024-2025): no validation stage exists
+yet. A config runs once per fold: the repeat gate's key already holds the
+windows fingerprint. Daily-timeframe ideas have too few trades per block and
+will need confirmation on other coins (not built yet).
+
 Under `orchestrator.verdict_routing_retired.enabled` (slice 6c S2a) every run
 ends `completed_<idea_status>`, so this DONE branch runs after every
 validated, refuted and inconclusive idea, and a legacy continuation

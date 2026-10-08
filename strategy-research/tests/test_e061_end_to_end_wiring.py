@@ -217,6 +217,8 @@ TARGET_FLAGS = {
     "cost_bar_all_costs": False,
     # CUL-415 (D-084): off, so the stub grids' window cells read as before.
     "zero_trade_windows_not_computed": False,
+    # E-077 PR-1 (D-085): off, so the stub briefs' windows are copied as before.
+    "folds": False,
     # E-068 slice 2: the stub cards carry no claim block.
     "claim_tests": False,
     # D-071 (CUL-399): off, so decide-next's picks stay `ready` as these scenarios expect.
