@@ -53,6 +53,12 @@ WHY THIS CANNOT LEAK (no lookahead):
     stamped ts[t] - n*step is in the SAME window and all n bars are present
     (row distance exactly n); NaN otherwise, including the first n bars of
     every window. No warm-up rows, nothing chained across windows.
+  - `trailing_vol` (E-074 slice 1, field with `bars: n`, n >= 2; GATED: not in
+    BAR_T_FIELDS, accepted only by check_spec(..., extra_fields=...)) is the
+    sample std (ddof=1) of the n one-bar log returns ending at t: rows
+    t-n .. t only, under exactly the `past_return` rule (bar ts[t] - n*step in
+    the SAME window, row distance exactly n); NaN otherwise, including the
+    first n bars of every window. No warm-up rows (`Window.warm` is never read).
   - `quantile` compares x[t] with the quantile of the TRAILING `lookback` bars
     t-lookback .. t-1 of the same window -- never a whole-sample quantile.
   - Outcomes are the label (the future); they never feed a selector. They are
@@ -145,6 +151,16 @@ EXERCISED_ON_REAL_RUNS = frozenset({
 # that ENDED at bar t: close[t] / close[t-bars] - 1, with its required `bars`.
 BAR_T_FIELDS = ("forecast", "close", "past_return")
 FIELDS_WITH_BARS = ("past_return",)            # fields that take (and need) `bars: n`
+# E-074 slice 1 (engineering/roadmap/E-074/PHASE_A.md 1.3 item 1): bar-t fields
+# that exist but are NOT in BAR_T_FIELDS, so check_spec refuses them by default
+# and every flag-off message, prompt and guide is unchanged. A caller accepts
+# them only by passing them as check_spec(spec, extra_fields=...); the
+# exploration digest (E-074) does, and the readers' exposure is wired behind
+# orchestrator.exploration_digest.enabled (E-074 slice 4). All take `bars: n`.
+GATED_BAR_T_FIELDS = ("trailing_vol",)
+MIN_FIELD_BARS = {"past_return": 1, "trailing_vol": 2}   # ddof=1 needs >= 2 returns
+# PHASE_A table 2.1: the digest's `trailing_vol` length per timeframe.
+TRAILING_VOL_BARS = {"hourly": 24, "daily": 10}
 DIRECTIONS = ("greater", "less")
 FLOOR_UNITS = ("min_events", "min_windows", "min_eras", "min_blocks")
 CONSISTENCY_UNITS = ("window", "era")
@@ -459,11 +475,42 @@ def past_return(w: Window, n: int) -> np.ndarray:
     return r
 
 
+def trailing_vol(w: Window, n: int) -> np.ndarray:
+    """Sample std (ddof=1) of the n one-bar log returns ending at bar t,
+    log(close[i] / close[i-1]) for i = t-n+1 .. t: rows t-n .. t only (the
+    past). Defined ONLY where the bar stamped exactly ts[t] - n*step exists in
+    this window AND all n bars in between are present (row distance t - k ==
+    n), the `past_return` rule. NaN elsewhere -- the first n bars of every
+    window included: no warm-up rows (`w.warm` is never read), nothing chained
+    across windows. n >= 2 (one return has no sample std)."""
+    from numpy.lib.stride_tricks import sliding_window_view
+    n = int(n)
+    if n < MIN_FIELD_BARS["trailing_vol"]:
+        raise ValueError(f"trailing_vol needs bars >= {MIN_FIELD_BARS['trailing_vol']}, got {n}")
+    m = len(w.ts)
+    out = np.full(m, np.nan)
+    if m <= n:
+        return out
+    k = w.index_at(-n)
+    t = np.arange(m)
+    ok = (k >= 0) & (t - k == n)
+    lr = np.log(w.close[1:] / w.close[:-1])          # lr[i-1] = return INTO row i
+    # window j holds the returns into rows j+1 .. j+n, i.e. it ends at row j+n
+    sd = np.std(sliding_window_view(lr, n), axis=1, ddof=1)
+    rows = np.arange(n, m)
+    keep = ok[rows]
+    out[rows[keep]] = sd[keep]
+    return out
+
+
+_FIELD_FUNCS = {"past_return": past_return, "trailing_vol": trailing_vol}
+
+
 def _field_values(w: Window, sel: dict) -> np.ndarray:
-    """The bar-t numbers a selector reads (BAR_T_FIELDS)."""
+    """The bar-t numbers a selector reads (BAR_T_FIELDS, GATED_BAR_T_FIELDS)."""
     f = sel["field"]
-    if f == "past_return":
-        return past_return(w, int(sel["bars"]))
+    if f in _FIELD_FUNCS:
+        return _FIELD_FUNCS[f](w, int(sel["bars"]))
     return getattr(w, f).astype(float)
 
 
@@ -751,23 +798,28 @@ def spec_hash(spec: TestSpec) -> str:
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
 
-def _check_selector(s, where: str) -> list[str]:
+def _check_selector(s, where: str, extra_fields: tuple = ()) -> list[str]:
     if not isinstance(s, dict) or s.get("kind") not in SELECTORS:
         return [f"{where}: unknown selector {s!r}; known: {sorted(SELECTORS)}"]
+    # extra_fields == () (the default): exactly the pre-E-074 fields and messages
+    fields = BAR_T_FIELDS + tuple(extra_fields)
+    with_bars = FIELDS_WITH_BARS + tuple(extra_fields)    # every gated field takes `bars`
     k, e = s["kind"], []
     if k in NOT_RECOMPUTABLE_SELECTORS:
         e.append(f"{where}: {k} cannot be graded under {SIGNIFICANCE_METHOD} (regime labels "
                  f"cannot be recomputed on fake prices); park it as a test request")
-    if k in ("event", "quantile") and s.get("field") not in BAR_T_FIELDS:
+    if k in ("event", "quantile") and s.get("field") not in fields:
         e.append(f"{where}: field {s.get('field')!r} is not a bar-t field "
-                 f"(allowed: {list(BAR_T_FIELDS)}); a selector may not read the future")
-    if k in ("event", "quantile") and s.get("field") in FIELDS_WITH_BARS:
-        b = s.get("bars")
-        if not isinstance(b, int) or isinstance(b, bool) or b < 1:
-            e.append(f"{where}: field {s.get('field')} needs `bars`: an int >= 1 "
-                     f"(the length of the past move, in bars of the card's timeframe)")
+                 f"(allowed: {list(fields)}); a selector may not read the future")
+    if k in ("event", "quantile") and s.get("field") in with_bars:
+        b, lo = s.get("bars"), MIN_FIELD_BARS[s.get("field")]
+        if not isinstance(b, int) or isinstance(b, bool) or b < lo:
+            what = ("the length of the past move" if s.get("field") == "past_return"
+                    else "the number of one-bar returns")
+            e.append(f"{where}: field {s.get('field')} needs `bars`: an int >= {lo} "
+                     f"({what}, in bars of the card's timeframe)")
     elif "bars" in s:
-        e.append(f"{where}: `bars` is only allowed with field {list(FIELDS_WITH_BARS)}")
+        e.append(f"{where}: `bars` is only allowed with field {list(with_bars)}")
     if k == "event":
         if s.get("op") not in _OPS:
             e.append(f"{where}: op must be one of {list(_OPS)}")
@@ -795,9 +847,17 @@ def _check_selector(s, where: str) -> list[str]:
     return e
 
 
-def check_spec(spec: TestSpec) -> list[str]:
-    """Static checks, before any data. Empty list = valid."""
-    e = _check_selector(spec.selector, "selector")
+def check_spec(spec: TestSpec, extra_fields: tuple = ()) -> list[str]:
+    """Static checks, before any data. Empty list = valid. `extra_fields`
+    (E-074): gated bar-t fields this caller accepts on top of BAR_T_FIELDS,
+    each from GATED_BAR_T_FIELDS (anything else raises); empty by default,
+    so every default result is unchanged."""
+    extra_fields = tuple(extra_fields)
+    bad = [f for f in extra_fields if f not in GATED_BAR_T_FIELDS]
+    if bad:
+        raise ValueError(f"extra_fields {bad} are not gated bar-t fields "
+                         f"(known: {list(GATED_BAR_T_FIELDS)})")
+    e = _check_selector(spec.selector, "selector", extra_fields)
     o = spec.outcome
     if not isinstance(o, dict) or o.get("kind") not in OUTCOMES:
         e.append(f"outcome: unknown {o!r}; known: {sorted(OUTCOMES)}")
@@ -816,7 +876,7 @@ def check_spec(spec: TestSpec) -> list[str]:
     elif not isinstance(spec.baseline, dict) or spec.baseline.get("kind") not in BASELINES:
         e.append(f"baseline: unknown {spec.baseline!r}; known: {sorted(BASELINES)}")
     elif spec.baseline["kind"] == "other_selector":
-        e += _check_selector(spec.baseline.get("selector"), "baseline.selector")
+        e += _check_selector(spec.baseline.get("selector"), "baseline.selector", extra_fields)
     if spec.direction not in DIRECTIONS:
         e.append(f"direction must be one of {list(DIRECTIONS)}")
     if not isinstance(spec.floor, dict) or not spec.floor:
