@@ -32,6 +32,13 @@ nothing here reads a flag). Design: engineering/roadmap/E-072/PHASE_A.md.
     not_comparable when its tests differ): step 1a wrote that run's card after
     reading the all-window knowledge base. The summary counts it apart.
 
+  * E-077 PR-2 (D-087), orchestrator.folds.enabled: the in-run route above and the weak
+    follow-up resolution are UNREACHABLE (finding_route(folds=True) has no in_run route;
+    run_phase1_research._record_confirmations never calls pending_for / resolve_pending).
+    tools/fold_confirm.confirm_on_fold measures the claim on the fold of the run built
+    from it, and record_fold_confirmation writes that row under `fold_confirmations`
+    in the same ledger, with the same lock and look counting.
+
 INFORMATION ONLY: a confirmation never changes idea_status or the grid, never
 routes, stops, parks or ranks anything; and no failure here stops a run (fewer
 than 2 windows: `not_applicable`, the run proceeds as flag-off; a missing
@@ -677,15 +684,27 @@ def exploration_inputs_missing(arts: Path, category: str, required: tuple):
 # Confirmation of side findings
 # ---------------------------------------------------------------------------
 
-def finding_route(item: dict) -> tuple:
-    """(route, reason) of one side finding (a flattened reading item)."""
+FOLD_PENDING_REASON = ("measured by the run built from it, on that run's own fold "
+                       "(E-077 confirm_on_fold); never inside the run that inspired it")
+
+
+def finding_route(item: dict, *, folds: bool = False) -> tuple:
+    """(route, reason) of one side finding (a flattened reading item).
+
+    `folds` (E-077 PR-2, orchestrator.folds.enabled): the IN_RUN route does not
+    exist -- a claim is never confirmed inside the run that inspired it -- so a
+    measurable finding (a block claim or a price-only one alike) is PENDING until
+    tools/fold_confirm.confirm_on_fold measures it on its child run's fold. A
+    refused claim and `tests: none` route as before."""
     import claim_card as cc
     claim = item.get("claim") if isinstance(item, dict) else None
-    res = cc.check_claim(claim)
+    res = cc.check_claim(claim, **({"folds": True} if folds else {}))
     if res.errors:
         return NOT_MEASURABLE, "its claim is refused by check_claim: " + "; ".join(res.errors)
     if res.tests_none:
         return NOT_MEASURABLE, f"tests: none (missing block {res.missing_block!r})"
+    if folds:
+        return PENDING, FOLD_PENDING_REASON
     block = cc.KIND_BLOCK.get(claim.get("kind"))
     if block in ("forecast", "regime"):
         return PENDING, (f"a {block} block claim: measured on the confirmation windows of the "
@@ -788,7 +807,7 @@ def side_finding_items(readings: dict) -> list:
 
 def confirm_findings(run_dir: Path, run_id: str, readings: dict, split: dict, *,
                      base_variant: str | None, eras, holdout_start: str,
-                     merges: dict | None = None) -> list:
+                     merges: dict | None = None, folds: bool = False) -> list:
     """One record per side finding of this run's readings: measured in-run on
     the confirmation windows of the base variant (a pure finding), or pending
     / not_measurable with its reason. Never raises: an error is a record.
@@ -798,7 +817,11 @@ def confirm_findings(run_dir: Path, run_id: str, readings: dict, split: dict, *,
     merged duplicate is measured and counted ONCE -- its primary's record
     lists every source (`sources`, `merged_finding_ids`, `merge_note`: not
     agreement), and the other members get no record and no look. None (the
-    default): exactly as before."""
+    default): exactly as before.
+
+    `folds` (E-077 PR-2, orchestrator.folds.enabled): finding_route(folds=True) --
+    no finding is measured in this run; every measurable one is `pending` for the
+    fold of the run built from it (tools/fold_confirm.confirm_on_fold)."""
     conf = split["confirmation"]
     conf_labels = labels(conf)
     records = []
@@ -817,8 +840,8 @@ def confirm_findings(run_dir: Path, run_id: str, readings: dict, split: dict, *,
             rec["merged_finding_ids"] = list(merged["group"]["finding_ids"][1:])
             rec["merge_note"] = _rf.MERGE_NOT_AGREEMENT
         try:
-            route, why = finding_route(item)
-            rec["finding_spec_hashes"] = finding_spec_hashes(item)
+            route, why = finding_route(item, **({"folds": True} if folds else {}))
+            rec["finding_spec_hashes"] = finding_spec_hashes(item, **({"folds": True} if folds else {}))
         except Exception as exc:  # noqa: BLE001 -- recorded
             route, why = ERROR, f"{type(exc).__name__}: {exc}"
         rec["route"] = route
@@ -953,9 +976,10 @@ def resolve_pending(run_dir: Path, run_id: str, pending: dict, split: dict, *,
     return rec
 
 
-def finding_spec_hashes(item: dict) -> list:
+def finding_spec_hashes(item: dict, *, folds: bool = False) -> list:
     import claim_card as cc
-    res = cc.check_claim(item.get("claim") if isinstance(item, dict) else None)
+    res = cc.check_claim(item.get("claim") if isinstance(item, dict) else None,
+                         **({"folds": True} if folds else {}))
     return sorted(t["spec_hash"] for t in res.tests if t.get("spec_hash"))
 
 
@@ -978,6 +1002,39 @@ def _resolved_elsewhere(old, run_id: str) -> bool:
     measured by `run_id` itself, may be replaced."""
     return (isinstance(old, dict) and old.get("confirmation_sign_retained") != PENDING
             and old.get("measured_in_run") not in (None, run_id))
+
+
+def _count_looks(looks: list, seen: set, run_id: str, rec: dict, comps: list) -> None:
+    """Append one look per (run, finding, spec_hash) not seen yet to `looks`
+    (idempotent: a resumed stage never counts a look twice). Shared by record()
+    and record_fold_confirmation()."""
+    for c in comps:
+        key = (run_id, rec.get("finding_id"), c.get("spec_hash"))
+        if key in seen:
+            continue
+        seen.add(key)
+        looks.append({"run_id": run_id, "finding_id": rec.get("finding_id"),
+                      "test": c.get("test"), "spec_hash": c.get("spec_hash"),
+                      "n_comparisons": int(c.get("n_comparisons") or 1),
+                      "confirmation_set": rec.get("confirmation_set")})
+
+
+def _looks_on_set(looks: list, rec: dict) -> dict:
+    """A record's `looks` field: how many looks and comparisons its confirmation set has now."""
+    on_set = [lk for lk in looks if lk.get("confirmation_set") == rec.get("confirmation_set")]
+    return {"confirmation_set": rec.get("confirmation_set"),
+            "n_looks_on_set": len(on_set),
+            "n_comparisons_on_set": sum(lk["n_comparisons"] for lk in on_set)}
+
+
+def _by_set(looks: list) -> dict:
+    by_set = {}
+    for lk in looks:
+        s = by_set.setdefault(str(lk.get("confirmation_set")),
+                              {"n_looks": 0, "n_comparisons": 0})
+        s["n_looks"] += 1
+        s["n_comparisons"] += int(lk.get("n_comparisons") or 1)
+    return dict(sorted(by_set.items()))
 
 
 def record(root: Path, run_id: str, records: list, *, resolve=None) -> list:
@@ -1029,22 +1086,9 @@ def record(root: Path, run_id: str, records: list, *, resolve=None) -> list:
         for rec in list(records) + resolved:
             rec = dict(rec)
             comps = rec.pop("_comparisons", None) or []
-            for c in comps:
-                key = (run_id, rec.get("finding_id"), c.get("spec_hash"))
-                if key in seen:
-                    continue
-                seen.add(key)
-                looks.append({"run_id": run_id, "finding_id": rec.get("finding_id"),
-                              "test": c.get("test"), "spec_hash": c.get("spec_hash"),
-                              "n_comparisons": int(c.get("n_comparisons") or 1),
-                              "confirmation_set": rec.get("confirmation_set")})
+            _count_looks(looks, seen, run_id, rec, comps)
             if comps:
-                on_set = [lk for lk in looks if lk.get("confirmation_set") == rec.get(
-                    "confirmation_set")]
-                rec["looks"] = {"confirmation_set": rec.get("confirmation_set"),
-                                "n_looks_on_set": len(on_set),
-                                "n_comparisons_on_set": sum(lk["n_comparisons"]
-                                                            for lk in on_set)}
+                rec["looks"] = _looks_on_set(looks, rec)
             fid = rec.get("finding_id")
             old = findings.get(str(fid)) if fid else None
             if _resolved_elsewhere(old, run_id):
@@ -1064,17 +1108,80 @@ def record(root: Path, run_id: str, records: list, *, resolve=None) -> list:
             elif fid:
                 findings[str(fid)] = rec
             written.append(rec)
-        by_set = {}
-        for lk in looks:
-            s = by_set.setdefault(str(lk.get("confirmation_set")),
-                                  {"n_looks": 0, "n_comparisons": 0})
-            s["n_looks"] += 1
-            s["n_comparisons"] += int(lk.get("n_comparisons") or 1)
         cm._atomic_write(path, {"schema_version": SCHEMA_VERSION, "note": LEDGER_NOTE,
                                 "bar": HONEST_BAR, "findings": findings, "looks": looks,
-                                "by_set": dict(sorted(by_set.items())),
-                                **({"superseded": superseded} if superseded else {})})
+                                "by_set": _by_set(looks),
+                                **({"superseded": superseded} if superseded else {}),
+                                **_carry_fold_rows(doc)})
     return written
+
+
+# ---------------------------------------------------------------------------
+# E-077 PR-2 (D-087): one row per confirmation on a CHILD RUN's fold
+# ---------------------------------------------------------------------------
+# tools/fold_confirm.confirm_on_fold builds the row; this module owns the file, so
+# the lock, the atomic write and the look counting are the ones above. The rows
+# live under their own top-level key, `fold_confirmations`, keyed
+# "<source finding id>@<child run id>" (one measurement = one row; a resumed or
+# re-run child REPLACES its own row, never adds a second). They are kept apart
+# from `findings` on purpose: record() removes "an earlier attempt of this run's"
+# findings by source_run, and a child run measuring its parent's finding must not
+# be mistaken for that.
+FOLD_ROWS_KEY = "fold_confirmations"
+
+
+def _carry_fold_rows(doc: dict) -> dict:
+    """The ledger's fold rows, carried through record()'s rewrite of the file
+    ({} when there are none, so a ledger without them is written exactly as before)."""
+    rows = doc.get(FOLD_ROWS_KEY)
+    return {FOLD_ROWS_KEY: rows} if isinstance(rows, dict) and rows else {}
+
+
+def fold_row_key(finding_id, run_id) -> str:
+    return f"{finding_id}@{run_id}"
+
+
+def record_fold_confirmation(root: Path, row: dict) -> dict:
+    """Upsert one fold-confirmation row (built by fold_confirm.confirm_on_fold;
+    `run_id` = the child run that measured it, `finding_id` = the claim's side
+    finding) into campaign_record/confirmations.yaml, and count its looks on the
+    fold's confirmation set (`_comparisons`, idempotent per child run, finding and
+    spec_hash). Locked, atomic. Returns the row as written (`_comparisons`
+    removed, `looks` added when it counted any)."""
+    import campaign_memory as cm
+    import campaign_review_retired as crr
+    row = dict(row)
+    run_id, fid = row.get("run_id"), row.get("finding_id")
+    if not run_id or not fid:
+        raise ValueError("a fold-confirmation row needs run_id (the child run) and finding_id")
+    comps = row.pop("_comparisons", None) or []
+    path = Path(root) / LEDGER_REL
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with crr._lock(path, path.name):
+        doc = crr._load_mapping(path, {})
+        findings = doc.get("findings") if isinstance(doc.get("findings"), dict) else {}
+        looks = [lk for lk in doc.get("looks") or [] if isinstance(lk, dict)]
+        superseded = [x for x in doc.get("superseded") or [] if isinstance(x, dict)]
+        rows = doc.get(FOLD_ROWS_KEY) if isinstance(doc.get(FOLD_ROWS_KEY), dict) else {}
+        seen = {(lk.get("run_id"), lk.get("finding_id"), lk.get("spec_hash")) for lk in looks}
+        _count_looks(looks, seen, run_id, row, comps)
+        if comps:
+            row["looks"] = _looks_on_set(looks, row)
+        rows[fold_row_key(fid, run_id)] = row
+        cm._atomic_write(path, {"schema_version": SCHEMA_VERSION, "note": LEDGER_NOTE,
+                                "bar": HONEST_BAR, "findings": findings, "looks": looks,
+                                "by_set": _by_set(looks),
+                                **({"superseded": superseded} if superseded else {}),
+                                FOLD_ROWS_KEY: dict(sorted(rows.items()))})
+    return row
+
+
+def fold_rows(doc) -> list:
+    """The fold rows of a loaded ledger, in key order (a malformed value gives none)."""
+    rows = doc.get(FOLD_ROWS_KEY) if isinstance(doc, dict) else None
+    if not isinstance(rows, dict):
+        return []
+    return [r for _k, r in sorted(rows.items()) if isinstance(r, dict)]
 
 
 def summary_lines(root: Path) -> list:
@@ -1095,6 +1202,12 @@ def summary_lines(root: Path) -> list:
         return title + [f"- {LEDGER_REL} is unreadable (not the confirmations ledger's shape); "
                         f"fix or remove it."]
     findings = doc.get("findings") or {}
+    # E-077 PR-2: a finding a child run measured on its fold is counted in the fold
+    # lines below, not as "pending" here (no fold rows: nothing changes).
+    fold_done = {str(r.get("finding_id")) for r in fold_rows(doc)}
+    findings = {k: v for k, v in findings.items() if str(k) not in fold_done}
+    if fold_done and not findings:
+        return fold_summary_lines(doc)      # only fold rows: no E-072 block to show
     # The clean counts are the in-run measurements (readers who saw the
     # exploration copies only); a resolution by the run built from a finding
     # is counted on its own line (weak: step 1a saw the all-window knowledge
@@ -1123,5 +1236,41 @@ def summary_lines(root: Path) -> list:
     for s, c in sorted((doc.get("by_set") or {}).items()):
         if isinstance(c, dict):
             lines.append(f"  - confirmation set {s}: {c.get('n_looks')} look(s), "
+                         f"{c.get('n_comparisons')} comparison(s)")
+    return lines + fold_summary_lines(doc)
+
+
+FOLD_STATUS_LINES = (("confirmed", "Confirmed"), ("not_confirmed", "Not confirmed"),
+                     ("not_measurable", "Not measurable"), ("not_comparable", "Not comparable"))
+
+
+def fold_summary_lines(doc: dict) -> list:
+    """E-077 PR-2: one line per status of the fold confirmations, labelled with the
+    fold each count comes from; [] when the ledger holds none (a summary without
+    them is unchanged). `not comparable` is shown only when there is one."""
+    rows = fold_rows(doc)
+    if not rows:
+        return []
+    by_status = {}
+    for r in rows:
+        by_status.setdefault(r.get("status"), {}).setdefault(str(r.get("fold")), 0)
+        by_status[r.get("status")][str(r.get("fold"))] += 1
+    lines = ["", "## Claims measured on a child run's fold (E-077; a noise rule, not proof)", "",
+             f"- Claims measured: {len(rows)}. Confirmed = the pooled sign holds at every "
+             f"horizon and the claimed sign holds in all but one window (at least 4 windows): "
+             f"a noise rule, about an 11% chance per fold under a symmetric null; no cost "
+             f"is compared."]
+    for status, label in FOLD_STATUS_LINES:
+        per_fold = by_status.get(status, {})
+        if status == "not_comparable" and not per_fold:
+            continue
+        lines.append(f"- {label}: {sum(per_fold.values())}"
+                     + (" (" + ", ".join(f"fold {f} {n}" for f, n in sorted(per_fold.items())) + ")"
+                        if per_fold else ""))
+    by_set = doc.get("by_set") if isinstance(doc.get("by_set"), dict) else {}
+    for key in sorted({str(r.get("confirmation_set")) for r in rows}):
+        c = by_set.get(key)
+        if isinstance(c, dict):
+            lines.append(f"  - fold windows {key}: {c.get('n_looks')} look(s), "
                          f"{c.get('n_comparisons')} comparison(s)")
     return lines

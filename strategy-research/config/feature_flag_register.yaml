@@ -785,6 +785,15 @@ flags:
       every backtest passes through, refuse any window overlapping the
       validation period (the policy's 2024-2025; no validation stage exists
       yet). Tested by tests/test_e077_folds.py.
+      E-077 PR-2 (CUL-421, D-087), same flag, no new one: a side finding's envelope
+      (`vehicle` -- required from a model, it IS the config change --, `combines_as`,
+      `fold_observed`) is accepted and checked; after a child run's backtests
+      tools/fold_confirm.confirm_on_fold measures the source claim on the child's fold
+      and writes one row (confirmed / not_confirmed / not_measurable / not_comparable;
+      a noise rule, about 11% per fold for a null claim, no cost) to
+      campaign_record/confirmations.yaml `fold_confirmations`; explore_confirm's in-run
+      route and weak follow-up resolution are unreachable. Off: byte-identical. Tested
+      by tests/test_e077_pr2_confirm.py.
 
   - name: operator_approval
     kind: orchestrator_config
