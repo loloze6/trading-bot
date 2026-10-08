@@ -363,7 +363,8 @@ def own_spec_hashes(card) -> set:
     return {t["spec_hash"] for t in cf._tests_of(claim) if t.get("spec_hash")}
 
 
-def side_finding_review(item: dict, *, prior: dict, own: set, run_id: str) -> dict:
+def side_finding_review(item: dict, *, prior: dict, own: set, run_id: str,
+                        folds: bool = False) -> dict:
     """{errors, tests_none, missing_block, spec_hashes, warnings} for one side
     finding. `errors` are check_claim's refusals (the reader's retry, or the
     candidate's ineligibility); `warnings` never refuse anything:
@@ -372,10 +373,12 @@ def side_finding_review(item: dict, *, prior: dict, own: set, run_id: str) -> di
       - block_claim_cannot_see_block: the claim's kind names a block
         (claim_card.KIND_BLOCK) but no test reads that block's output
         (CLAIM_TESTS.md's visibility rule). A kind with no block is a pure
-        finding and gets no such warning."""
+        finding and gets no such warning.
+    `folds` (D-089, orchestrator.folds.enabled): check_claim with the folds kinds, so a
+    claim of kind execution_behaviour is accepted here too; off: exactly as before."""
     import claim_card as cc
     claim = item.get("claim") if isinstance(item, dict) else None
-    res = cc.check_claim(claim)
+    res = cc.check_claim(claim, folds=True) if folds else cc.check_claim(claim)
     out = {"errors": list(res.errors), "tests_none": res.tests_none,
            "missing_block": res.missing_block,
            "spec_hashes": [t["spec_hash"] for t in res.tests], "warnings": []}
@@ -480,7 +483,7 @@ MERGE_NOT_AGREEMENT = ("not agreement and not extra evidence: the readers read t
                        "with its first source's scores")
 
 
-def _merge_key(item: dict):
+def _merge_key(item: dict, folds: bool = False):
     """(claim kind, spec_hashes, canonical config_change) of one flattened
     side finding, or None when it has no measurable test (refused claim or
     tests: none). The kind is part of the key (review fix 4): the
@@ -489,7 +492,9 @@ def _merge_key(item: dict):
     two findings."""
     import json as _json
     import claim_card as cc
-    res = cc.check_claim(item.get("claim") if isinstance(item, dict) else None)
+    claim = item.get("claim") if isinstance(item, dict) else None
+    # D-089: under the folds flag the folds kinds (execution_behaviour) are claims too
+    res = cc.check_claim(claim, folds=True) if folds else cc.check_claim(claim)
     hashes = tuple(sorted({t["spec_hash"] for t in res.tests if t.get("spec_hash")}))
     if res.errors or res.tests_none or not hashes:
         return None
@@ -501,7 +506,7 @@ def _merge_key(item: dict):
     return str(item["claim"].get("kind")), hashes, canon
 
 
-def reading_structure(doc: dict) -> list:
+def reading_structure(doc: dict, folds: bool = False) -> list:
     """What a citation retry must keep (D-083): for each item of a v3 reading
     (rp.flatten_reading), (item kind, claim kind, sorted spec_hashes), sorted
     -- the same number of side findings proposing the same tests the same
@@ -511,13 +516,16 @@ def reading_structure(doc: dict) -> list:
     for item in rp.flatten_reading(doc):
         claim = item.get("claim")
         kind = str(claim.get("kind")) if isinstance(claim, dict) else None
-        tests = cc.check_claim(claim).tests if claim is not None else []
+        if claim is None:
+            tests = []
+        else:      # D-089: folds kinds are claims under the folds flag
+            tests = (cc.check_claim(claim, folds=True) if folds else cc.check_claim(claim)).tests
         out.append((item["kind"], kind,
                     tuple(sorted({t["spec_hash"] for t in tests if t.get("spec_hash")}))))
     return sorted(out, key=repr)
 
 
-def side_finding_merges(readings: dict) -> list:
+def side_finding_merges(readings: dict, folds: bool = False) -> list:
     """The duplicate groups among a run's side findings (MERGE_RULE). Pure.
     `readings`: {category: v3 reading}. Order: categories sorted, then each
     reading's side findings in order (the order explore_confirm measures
@@ -531,7 +539,7 @@ def side_finding_merges(readings: dict) -> list:
         for item in rp.flatten_reading(doc):
             if item.get("kind") != rp.SIDE_FINDING:
                 continue
-            key = _merge_key(item)
+            key = _merge_key(item, folds=True) if folds else _merge_key(item)
             if key is None:
                 continue
             if key not in groups:

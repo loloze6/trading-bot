@@ -1644,6 +1644,12 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
         start = side_finding_start(p, src)
         if start["reason"]:
             reasons.append(start["reason"])
+        elif "vehicle" in p and p["vehicle"] == [] and start["config"] is None:
+            # D-089: an empty vehicle claims the source run's strategy as it is; a source with
+            # no block config (a composition) has none to re-run, so its child could never be
+            # measured (fold_confirm compares the measured config with candidate.start_config)
+            reasons.append("empty_vehicle_needs_a_source_config: an empty vehicle re-runs the "
+                           "source run's config unchanged, and this source has no block config")
         elif start["ops"]:
             config_for_digest = start["config"]
             resolved_sha = config_sha256(start["config"])
@@ -1889,8 +1895,11 @@ def _side_finding_review(run_id: str, src: dict, p: dict, inputs: dict) -> dict:
     (every run but the source run) and the source run's own claim tests."""
     import reader_findings as _rf  # tools/ sibling; only side findings need it
     prior = _rf.prior_spec_hashes(inputs.get("memory") or {}, exclude_run=run_id)
+    # D-089: under orchestrator.folds.enabled (inputs["folds"]) the claim kinds of the folds
+    # flag (execution_behaviour) are accepted, as at the reading's own check
     return _rf.side_finding_review(p, prior=prior, own=_rf.own_spec_hashes(src.get("card")),
-                                   run_id=run_id)
+                                   run_id=run_id,
+                                   **({"folds": True} if inputs.get("folds") is not None else {}))
 
 
 # E-068 PR 4 (D-071): the one warning kind a candidate can carry.

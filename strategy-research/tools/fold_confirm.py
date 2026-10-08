@@ -63,10 +63,13 @@ Why it exists: a claim with no effect points the right way by luck about half th
 put about half of all null claims into the registry as building blocks. With six
 windows, under a symmetric null the chance that at least 5 of 6 share the claimed sign
 is 7/64 = about 11% per fold, and 6 of 6 about 1.6%; a lineage confirmed on two folds is
-near 1%. Windows of one fold share a market phase, so the true chance is somewhat higher,
-and a "window" here is one symbol-window cell of claim_measure's per-window values, so
-with several coins the rule is stricter than the single-coin figure. Every look is
-counted in the ledger. It uses numbers every measurement already has
+near 1%. Windows of one fold share a market phase, so the true chance is somewhat higher.
+SEVERAL COINS (operator, 2026-10-08, option C; D-089): in each window the coins are pooled
+into ONE value first (the test's statistic over every coin's bars or trades of that window,
+exactly as claim_measure pools a coin's windows), then "all but one window" is applied over
+the fold's windows -- so a 3-coin claim faces the same ~11% chance per fold as a one-coin
+claim, not 17 of 18 symbol-window cells. One coin is measured exactly as before (its cells
+ARE its windows). Every look is counted in the ledger. It uses numbers every measurement already has
 (claim_measure.measure_test: the pooled oriented value and the per-window values). The
 EFFECT SIZE and the agreement count (k of n) are recorded for every horizon of every
 claim; NO COST appears anywhere: whether an effect survives costs is judged where a
@@ -106,6 +109,9 @@ SCHEMA_VERSION = 1
 MIN_WINDOWS = 4          # fewer windows with a value than this: not measurable
 WINDOWS_ALLOWED_AGAINST = 1   # the claimed sign may fail in at most this many windows
 
+#: option C (D-089): the per-window values pooled over the coins, beside per_window
+POOLED_KEY = "per_window_coins_pooled"
+
 RULE_NAME = "noise_rule"
 RULE_TEXT = ("NOISE RULE, not a size rule and no cost comparison: confirmed when, at every horizon "
              "with a value, the pooled effect has the claimed sign AND the claimed sign holds in "
@@ -140,7 +146,16 @@ def grade_test(result: dict) -> dict:
         oriented = r.get("oriented")
         if oriented is None:
             continue
-        per_window = {str(w): c.get("oriented") for w, c in (r.get("per_window") or {}).items()}
+        cells = r.get(POOLED_KEY)
+        if cells is None and len(_coins(r.get("per_window"))) > 1:
+            # option C needs the coins pooled per window BEFORE the rule: a measurement that
+            # carries only symbol-window cells cannot be graded (never graded per cell)
+            return {"status": NOT_MEASURABLE,
+                    "reason": (f"several coins {_coins(r.get('per_window'))} but no per-window "
+                               f"value pooled over the coins ({POOLED_KEY}): the noise rule "
+                               f"counts windows, not coin-window cells")}
+        per_window = {str(w): c.get("oriented")
+                      for w, c in (cells if cells is not None else r.get("per_window") or {}).items()}
         vals = [v for v in per_window.values() if v is not None]
         k, n = sum(1 for v in vals if v > 0), len(vals)
         horizons[str(h)] = {"effect": r.get("value"), "oriented": oriented,
@@ -173,6 +188,72 @@ def grade_test(result: dict) -> dict:
                        "at most one window: " + "; ".join(
                            f"h={h} {x['windows_claimed_sign']} of {x['windows_with_value']}"
                            for h, x in horizons.items()))}
+
+
+def _coins(per_window) -> list:
+    """The coins of a measurement's per-window cells (labels "<symbol>/<window>"; the window
+    never holds a "/", so the coin is everything before the LAST one). A label without "/"
+    names no coin."""
+    return sorted({str(k).rsplit("/", 1)[0] for k in (per_window or {}) if "/" in str(k)})
+
+
+def pooled_per_window(per: list, spec, h: int) -> dict:
+    """{window: {value, oriented, n_events, coins}}: option C (D-089). In each window the
+    test's statistic over every coin's events of that window, pooled exactly as
+    claim_measure._per_coin pools one coin's windows (claim_tests._pooled); `per` is
+    claim_tests.effect_sizes' prepared data (bar or trade windows). Pure."""
+    import claim_tests as ct
+    import numpy as np
+    stat = ct.STATISTICS[spec.statistic]
+    out = {}
+    for win in dict.fromkeys(p["w"].window for p in per):
+        sub = [p for p in per if p["w"].window == win]
+        raw, oriented = stat(*ct._pooled(sub, h), spec.direction)
+        events = [p["mask"] & np.isfinite(p["ys"][h]) for p in sub]
+        if spec.statistic == "rank_ic":
+            events = [ev & np.isfinite(p["fc"]) for ev, p in zip(events, sub)]
+        out[str(win)] = {"value": _finite(raw), "oriented": _finite(oriented),
+                         "n_events": int(sum(int(ev.sum()) for ev in events)),
+                         "coins": sorted({p["w"].symbol for p in sub})}
+    return out
+
+
+def _finite(v):
+    import math
+    return None if v is None or not math.isfinite(float(v)) else float(v)
+
+
+def measure_on_fold(run_dir: Path, vid: str, tests: list, windows, eras, holdout_start: str):
+    """The default measurement of confirm_on_fold: explore_confirm.measure_on_windows (one
+    coin: nothing else, exactly as before), and when the windows hold SEVERAL coins, each
+    measured test's horizons also carry POOLED_KEY, the coins pooled per window (option C,
+    D-089), which grade_test counts instead of the symbol-window cells. Same signature and
+    return shape as measure_on_windows."""
+    import claim_measure as cmeas
+    import claim_tests as ct
+    import explore_confirm as ec
+    results, measured = ec.measure_on_windows(run_dir, vid, tests, windows, eras, holdout_start)
+    keep = set(windows)
+    ws = [w for w in ct.load_variant_bars(Path(run_dir), vid) if w.window in keep]
+    if len({w.symbol for w in ws}) < 2:
+        return results, measured
+    by_name = {str(t.get("name")): t for t in tests if isinstance(t, dict)}
+    for name, res in results.items():
+        if res.get("status") != cmeas.MEASURED or name not in by_name:
+            continue
+        try:
+            spec, _h = cmeas.test_spec(by_name[name])
+            per, _out_h, hz, _rng = ct.effect_sizes(ws, spec, eras)
+            pooled = {h: pooled_per_window(per, spec, h) for h in hz}
+        except Exception as exc:  # noqa: BLE001 -- recorded per test, as measure_on_windows does
+            results[name] = {"name": name, "status": cmeas.NOT_MEASURED, "reason": ec.ERROR,
+                             "spec_hash": res.get("spec_hash"),
+                             "detail": f"pooling the coins per window: {type(exc).__name__}: {exc}"}
+            continue
+        for h, cells in pooled.items():
+            if h in res.get("horizons", {}):
+                res["horizons"][h][POOLED_KEY] = cells
+    return results, measured
 
 
 def combine(graded: dict) -> tuple:
@@ -247,6 +328,28 @@ def vehicle_missing(config, vehicle) -> list:
     return missing
 
 
+def _start_config_changed(arts: Path, vid: str):
+    """None when variant `vid`'s strategy_config.json has the same values as the config
+    decide-next started the child from (research_brief.yaml candidate.start_config), else
+    why not: the leaves that differ (nearest_build.config_diff, CUL-412's own definition of
+    "1b changed it", so 1 and 1.0 are equal), or either side unreadable / absent."""
+    import nearest_build as nb
+    try:
+        brief = yaml.safe_load((arts / "research_brief.yaml").read_text(encoding="utf-8")) or {}
+        start = (brief.get("candidate") or {}).get("start_config")
+        cfg = json.loads((arts / "variants" / vid / "strategy_config.json").read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001 -- recorded
+        return f"the start config or the measured config cannot be read ({type(exc).__name__}: {exc})"
+    if not isinstance(start, dict):
+        return "the brief carries no candidate.start_config to compare with"
+    diff = nb.config_diff(start, cfg)
+    if not diff:
+        return None
+    more = f" (+{len(diff) - 3} more)" if len(diff) > 3 else ""
+    return (f"variant {vid!r} ran another config than the source config the claim is about: "
+            + "; ".join(f"{d['path']}: {d['before']!r} -> {d['after']!r}" for d in diff[:3]) + more)
+
+
 def _spec_hashes(res) -> list:
     return sorted(t["spec_hash"] for t in res.tests if t.get("spec_hash"))
 
@@ -284,9 +387,11 @@ def confirm_on_fold(run_dir: Path, run_id: str, *, root: Path, folds_doc: dict |
 
     `fresh_variants`: the variants backtested in THIS attempt (None: every graded one).
     `measure(run_dir, variant, tests, window_labels, eras, holdout_start) ->
-    ({test name: measure_test-shaped result}, [windows measured])`: the generic measurement
-    (explore_confirm.measure_on_windows); a trade-level test family plugs in here later by
-    returning results of the same shape, and may take the base variant as a keyword."""
+    ({test name: measure_test-shaped result}, [windows measured])`: default measure_on_fold
+    (explore_confirm.measure_on_windows, plus the coins pooled per window when there are
+    several, D-089); a trade-level test family plugs in here later by returning results of
+    the same shape (with POOLED_KEY for several coins), and may take the base variant as a
+    keyword."""
     import claim_card as cc
     import claim_tests as ct
     import explore_confirm as ec
@@ -391,6 +496,13 @@ def confirm_on_fold(run_dir: Path, run_id: str, *, root: Path, folds_doc: dict |
     # between decide-next and the backtest) may have changed it, and a claim measured on a
     # strategy without its vehicle is not the claim the run was built for
     vehicle = item.get("vehicle") or item.get("config_change") or []
+    if not vehicle:
+        # D-089 (a): an empty vehicle claims TODAY's strategy, unchanged: the measured config
+        # must be the one decide-next started the child from (candidate.source
+        # .start_config_sha256), else step 1b changed it and this is not the claim's strategy
+        changed = _start_config_changed(arts, vehicle_vid)
+        if changed:
+            return _finish(row, NOT_MEASURABLE, f"strategy_changed_since_the_claim: {changed}")
     if vehicle:
         cfg_path = arts / "variants" / vehicle_vid / "strategy_config.json"
         try:
@@ -405,7 +517,7 @@ def confirm_on_fold(run_dir: Path, run_id: str, *, root: Path, folds_doc: dict |
                            f"vehicle_not_in_measured_config: variant {vehicle_vid!r} does not "
                            f"carry the claim's vehicle: " + "; ".join(missing))
     # the generic measurement, over the fold's windows only
-    measure = measure or ec.measure_on_windows
+    measure = measure or measure_on_fold
     try:
         results, measured = measure(run_dir, vehicle_vid, tests, [b["label"] for b in block_rows],
                                     eras, holdout_start)
@@ -417,6 +529,9 @@ def confirm_on_fold(run_dir: Path, run_id: str, *, root: Path, folds_doc: dict |
     row["tests"] = {n: {"spec_hash": results[n].get("spec_hash"), **g}
                     for n, g in graded_tests.items()}
     row["windows_measured"] = list(measured)
+    if any(POOLED_KEY in (x or {}) for r in results.values()
+           for x in ((r or {}).get("horizons") or {}).values()):
+        row["window_basis"] = "coins_pooled_per_window"      # option C, D-089 (several coins)
     # the numbers every row carries, for any status that measured something
     row["effect"] = {n: {h: x["effect"] for h, x in g.get("horizons", {}).items()}
                      for n, g in graded_tests.items() if g.get("horizons")}
