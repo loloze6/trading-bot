@@ -24,7 +24,11 @@ PR-3 `trade` selector, and it calls claim_tests.effect_sizes with the TestSpec
 built from the slots, so its numbers ARE what claim_measure.measure_test reads
 (equality is tested for every selector / outcome / baseline / statistic
 combination the slots allow). Its result carries the exact `test` block, ready
-to paste into a claim, and whether claim_card accepts it today.
+to paste into a claim, and whether claim_card accepts it with the trade family
+on (`compiles_as_claim`: the analyst's own proposal check, check_claim with
+trade_tests=True; a bar test with the gated `trailing_vol` field is still
+refused there). D-090: "today" in D-088 meant that check, not the pipeline's
+other check_claim calls, which do not pass trade_tests yet.
 
 What it can read (and cannot)
 -----------------------------
@@ -68,7 +72,12 @@ outcome. Feature-only results count 0.
   trade_slice         groups x (aggregates of trade_net_return / post_exit_return
                       whose stat is not `count`)
   event_study         the number of "after" checkpoints returned
-  list_columns, describe, distribution  0
+  describe, distribution  the number of groups when the column is a derived return
+                      or volatility (past_return_<n>, trailing_vol_<n>) grouped by
+                      hour or weekday: past_return_1 at bar t+1 IS fwd_return h=1
+                      at bar t, so its mean by hour is a calendar effect (D-090);
+                      else 0
+  list_columns  0
 A session may spend COMPARISON_BUDGET (150); a call that would count more than
 what is left is refused with "comparison budget spent".
 
@@ -136,6 +145,22 @@ DAY = ct.DAY
 
 ROLE_OF_WHEN = {"close": "feature", "fill": "feature", "exit": "outcome", "after": "outcome",
                 "meta": "label", "run": "never", "end": "never"}
+
+
+# describe / distribution of a derived return or volatility grouped by these labels relate a
+# calendar group to an outcome (past_return_1 at t+1 == fwd_return h=1 at t): counted (D-090)
+_CALENDAR_BY = ("hour", "weekday")
+
+
+def _nonfinite(v) -> bool:
+    """True when a parameter holds a NaN or an infinite number anywhere (JSON allows
+    `NaN` / `Infinity` / 1e999; the log would show None and the test block would not be
+    the one that ran)."""
+    if isinstance(v, dict):
+        return any(_nonfinite(x) for x in v.values())
+    if isinstance(v, (list, tuple)):
+        return any(_nonfinite(x) for x in v)
+    return isinstance(v, float) and not math.isfinite(v)
 
 
 class QueryRefused(Exception):
@@ -292,7 +317,8 @@ class QueryLog:
         return self._cache
 
     def cumulative_comparisons(self) -> int:
-        return int(sum(int(q.get("n_comparisons") or 0) for q in self.entries()
+        # a negative count in a hand-edited log never gives budget back (D-090)
+        return int(sum(max(0, int(q.get("n_comparisons") or 0)) for q in self.entries()
                        if q.get("status") == "ok"))
 
     def append(self, entry: dict) -> dict:
@@ -399,6 +425,8 @@ class QueryEngine:
         try:
             if "unserialisable" in logged_params:
                 raise QueryRefused("parameters must be plain JSON values")
+            if _nonfinite(params):
+                raise QueryRefused("parameters must be finite numbers (no NaN or infinity)")
             result, n = compute()
             result = _py(result)
             size = len(_canon_json(result))
@@ -721,6 +749,7 @@ class QueryEngine:
         self._check_by(by, BY_BARS, windows)
         vals = self._column_values(variant, column)
         groups = self._grouped(windows, by, vals)
+        n = self._calendar_charge(column, by, groups)
         out = {}
         for g, v in groups.items():
             fin = v[np.isfinite(v)]
@@ -732,7 +761,7 @@ class QueryEngine:
             else:
                 cell.update(mean=None, std=None, p10=None, p50=None, p90=None)
             out[g] = cell
-        return {"column": column, "by": by, "groups": out}, 0
+        return {"column": column, "by": by, "groups": out}, n
 
     def _distribution(self, column, by, bins, variant):
         windows = self._bar_windows(variant)
@@ -742,6 +771,7 @@ class QueryEngine:
             raise QueryRefused(f"bins must be an int in {BINS_RANGE[0]}..{BINS_RANGE[1]}")
         vals = self._column_values(variant, column)
         groups = self._grouped(windows, by, vals)
+        n = self._calendar_charge(column, by, groups)
         pooled = np.concatenate([v[np.isfinite(v)] for v in groups.values()])
         if not len(pooled):
             raise QueryRefused(f"column {column!r} has no finite value")
@@ -749,7 +779,15 @@ class QueryEngine:
         counts = {g: np.histogram(v[np.isfinite(v)], bins=edges)[0].tolist()
                   for g, v in groups.items()}
         return {"column": column, "by": by, "bin_edges": [r8(e) for e in edges],
-                "groups": counts}, 0
+                "groups": counts}, n
+
+    def _calendar_charge(self, column, by, groups) -> int:
+        """Comparisons of a describe / distribution call: one per group for a derived return
+        or volatility grouped by hour or weekday (a calendar effect), else 0. Charged here,
+        before any number is computed."""
+        n = len(groups) if (by in _CALENDAR_BY and _DERIVED_RE.fullmatch(column)) else 0
+        self._charge(n)
+        return n
 
     # -- conditional_effect ---------------------------------------------------
 
@@ -1010,6 +1048,9 @@ class QueryEngine:
                     j = int(idx[p][e])
                     if j >= 0:                       # an outcome: what the market did next
                         acc_a[p].append(sign * (b.close[j] / b.close[e] - 1.0))
+        # a missing close gives no value: counted in neither n nor the mean (D-090)
+        acc_b = {p: [x for x in v if math.isfinite(x)] for p, v in acc_b.items()}
+        acc_a = {p: [x for x in v if math.isfinite(x)] for p, v in acc_a.items()}
 
         def cell(v):
             return {"n": len(v), "mean": r8(np.mean(v)) if v else None}

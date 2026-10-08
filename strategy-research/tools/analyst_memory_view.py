@@ -16,10 +16,12 @@ variant, `reader_findings.py` `_largest` and the summary row):
   * no exploratory effect size, no window count, no pending effect;
   * no reason text (the reasons of an unconfirmed claim quote window counts and
     effects: "windows 3 of 6"), only the status;
-  * a claim's free-text statement that is not confirmed has its number literals
-    masked (explore_confirm.mask_numbers, the same rule E-072 applies to every
-    reader copy: run_074's statement quotes "median forecast_return_corr=-0.0057",
-    an exploratory number). The claim's mechanical test spec (selector, outcome,
+  * every claim's free-text statement has its number literals masked
+    (explore_confirm.mask_numbers, the same rule E-072 applies to every reader copy:
+    run_074's statement quotes "median forecast_return_corr=-0.0057", an exploratory
+    number). A confirmed claim's statement too (D-090): it was written on the run
+    that inspired it, so its numbers are exploratory; the confirmed numbers are in
+    `confirmed`. The claim's mechanical test spec (selector, outcome,
     baseline, statistic, direction -- its parameters, not a result) stays readable
     so the analyst can see what was tried.
 
@@ -29,14 +31,21 @@ touches a file but in `load_memory_view`):
     It was measured only in the run that inspired it, so it is `pending` (never
     confirmed there); `not_measurable` when it carries no test at all. Its
     `fold_observed` is the run's `fold` (E-077 PR-1) when it has one.
-  * campaign_record/confirmations.yaml `findings.<id>`: reader / analyst side
-    findings and their confirmation. The status vocabulary is E-077 PR-2's
-    (confirmed | not_confirmed | not_measurable | not_comparable) on a row that
-    carries its `fold`; `not_comparable` is shown as `not_measurable`. A row of the
-    E-072 shape (status `pending`, or measured on an in-run split with
-    `confirmation_sign_retained`) was never confirmed on a fold: it is `pending`
-    (`not_measurable` if E-072 already marked it so). A ledger row replaces the
-    memory claim with the same id.
+  * campaign_record/confirmations.yaml `findings.<id>`: E-072's rows of reader side
+    findings (status `pending`, or measured on an in-run split with
+    `confirmation_sign_retained`). None was ever confirmed on a fold: `pending`
+    (`not_measurable` if E-072 already marked it so).
+  * campaign_record/confirmations.yaml `fold_confirmations.<finding id>@<child run>`
+    (E-077 PR-2, written by explore_confirm.record_fold_confirmation, read with
+    explore_confirm.fold_rows): one row per measurement of a claim on a child run's
+    fold, status confirmed | not_confirmed | not_measurable | not_comparable
+    (`not_comparable` is shown as `not_measurable`). A claim measured on several folds
+    (several rows) gets ONE status, decided by the statuses and never by key order
+    (D-090): `not_confirmed` if any fold refuted it, else `confirmed` if any fold
+    confirmed it, else `not_measurable`; `fold_confirmed` lists the folds that confirmed
+    it, `confirmed` holds the numbers of those rows only, and `folds` lists every
+    measured fold with its status (no number). Fold rows replace the E-072 row of the
+    same finding, and a ledger claim replaces the memory claim with the same id.
 
 The view is a plain dict; PR-5 renders it into the analyst's prompt. Pure: no
 clock, no model call, no side effect.
@@ -66,9 +75,10 @@ MEMORY_REL = "campaign_record/campaign_memory.yaml"
 LEDGER_REL = ec.LEDGER_REL
 STATEMENT_CHARS = 400
 TEST_SPEC_KEYS = ("selector", "outcome", "baseline", "statistic", "direction")
-NOTE = ("earlier claims and what became of them: numbers only for confirmed claims; "
-        "pending, not_confirmed and not_measurable claims carry none (their statement has its "
-        "numbers masked)")
+NOTE = ("earlier claims and what became of them: numbers only for confirmed claims, measured "
+        "on the fold that confirmed them; pending, not_confirmed and not_measurable claims carry "
+        "none; every statement has its numbers masked")
+_FOLD_STATUS_ORDER = (NOT_CONFIRMED, CONFIRMED, NOT_MEASURABLE)   # the first present wins
 
 
 def _run_order(run_id: str) -> tuple:
@@ -76,12 +86,10 @@ def _run_order(run_id: str) -> tuple:
     return (m.group(1), int(m.group(2))) if m else (run_id, -1)
 
 
-def _statement(text, keep_numbers: bool):
+def _statement(text):
     if not isinstance(text, str):
         return None
-    s = " ".join(text.split())
-    if not keep_numbers:
-        s = ec.mask_numbers(s)
+    s = ec.mask_numbers(" ".join(text.split()))
     return s if len(s) <= STATEMENT_CHARS else s[:STATEMENT_CHARS - 3] + "..."
 
 
@@ -135,7 +143,7 @@ def _memory_claims(memory: dict) -> list:
         tests = f.get("tests") or []
         out.append({
             "claim_id": f.get("finding_id") or f"F-{rid}-1", "source_run": str(rid),
-            "statement": _statement(f.get("statement"), keep_numbers=False),
+            "statement": _statement(f.get("statement")),
             "kind": f.get("kind"),
             "fold_observed": entry.get("fold"), "fold_confirmed": None,
             "status": PENDING if tests else NOT_MEASURABLE,
@@ -143,7 +151,13 @@ def _memory_claims(memory: dict) -> list:
     return out
 
 
+def _fold_observed(rec: dict, runs: dict):
+    src = runs.get(rec.get("source_run"))
+    return rec.get("fold_observed") or (src.get("fold") if isinstance(src, dict) else None)
+
+
 def _ledger_claims(ledger: dict, memory: dict | None = None) -> list:
+    """E-072's `findings` rows (never confirmed on a fold: pending / not_measurable)."""
     out = []
     runs = (memory or {}).get("runs") or {}
     findings = (ledger or {}).get("findings") or {}
@@ -151,22 +165,49 @@ def _ledger_claims(ledger: dict, memory: dict | None = None) -> list:
         rec = findings[fid]
         if not isinstance(rec, dict):
             continue
-        status = ledger_status(rec)
-        confirmed = status == CONFIRMED
-        row = {
+        out.append({
             "claim_id": str(rec.get("finding_id") or fid),
             "source_run": rec.get("source_run"),
-            "statement": _statement(rec.get("statement"), keep_numbers=confirmed),
+            "statement": _statement(rec.get("statement")),
             "kind": rec.get("kind"),
-            "fold_observed": rec.get("fold_observed") or (
-                (runs.get(rec.get("source_run")) or {}).get("fold")
-                if isinstance(runs.get(rec.get("source_run")), dict) else None),
-            "fold_confirmed": rec.get("fold") if confirmed else None,
-            "status": status,
+            "fold_observed": _fold_observed(rec, runs),
+            "fold_confirmed": None,
+            "status": NOT_MEASURABLE if ledger_status(rec) == NOT_MEASURABLE else PENDING,
             "tests": [{"spec_hash": h} for h in (rec.get("spec_hashes")
-                                                 or rec.get("finding_spec_hashes") or [])]}
-        if confirmed:
-            row["confirmed"] = _confirmed_numbers(rec)
+                                                 or rec.get("finding_spec_hashes") or [])]})
+    return out
+
+
+def _fold_claims(ledger: dict, memory: dict | None = None) -> list:
+    """E-077 PR-2's `fold_confirmations` rows, one claim per finding id (D-090): the
+    status from every row's status (_FOLD_STATUS_ORDER), never from key order."""
+    runs = (memory or {}).get("runs") or {}
+    by_fid: dict = {}
+    for rec in ec.fold_rows(ledger or {}):
+        if rec.get("finding_id"):
+            by_fid.setdefault(str(rec["finding_id"]), []).append(rec)
+    out = []
+    for fid in sorted(by_fid):
+        recs = sorted(by_fid[fid], key=lambda r: (str(r.get("fold")), _run_order(str(r.get("run_id")))))
+        statuses = [ledger_status(r) for r in recs]
+        status = next((s for s in _FOLD_STATUS_ORDER if s in statuses), NOT_MEASURABLE)
+        first = recs[0]
+        row = {
+            "claim_id": fid,
+            "source_run": first.get("source_run"),
+            "statement": _statement(first.get("statement")),
+            "kind": first.get("kind"),
+            "fold_observed": _fold_observed(first, runs),
+            "fold_confirmed": None,
+            "status": status,
+            "folds": [{"fold": r.get("fold"), "run_id": r.get("run_id"), "status": st}
+                      for r, st in zip(recs, statuses)],
+            "tests": [{"spec_hash": h} for h in sorted({h for r in recs
+                                                        for h in r.get("spec_hashes") or []})]}
+        if status == CONFIRMED:
+            conf = [r for r, st in zip(recs, statuses) if st == CONFIRMED]
+            row["fold_confirmed"] = sorted({str(r.get("fold")) for r in conf})
+            row["confirmed"] = [_confirmed_numbers(r) for r in conf]
         out.append(row)
     return out
 
@@ -175,7 +216,7 @@ def build_memory_view(memory: dict, ledger: dict | None = None) -> dict:
     """The analyst's memory view from the campaign memory and the confirmations
     ledger (both already loaded; either may be empty)."""
     by_id = {c["claim_id"]: c for c in _memory_claims(memory)}
-    for c in _ledger_claims(ledger or {}, memory):
+    for c in _ledger_claims(ledger or {}, memory) + _fold_claims(ledger or {}, memory):
         by_id[c["claim_id"]] = c                       # the ledger knows what became of it
     claims = list(by_id.values())
     counts = {s: sum(1 for c in claims if c["status"] == s) for s in STATUSES}
