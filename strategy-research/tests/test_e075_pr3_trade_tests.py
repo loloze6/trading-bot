@@ -611,7 +611,11 @@ def test_no_prompt_or_stage_wires_the_trade_guide_or_the_trade_gate():
             src = p.read_text(encoding="utf-8")
             if p.name != "claim_tests.py":            # its own header names the guide
                 assert "CLAIM_TESTS_TRADE" not in src, p
-            if p.name not in ("claim_tests.py", "claim_card.py", "claim_measure.py"):
+            # analyst_queries.py (E-075 PR-4, D-088) is the one caller outside the claim
+            # modules: a pure module that nothing imports yet (tests/test_e075_pr4_queries.py
+            # pins that), so no prompt, stage or artifact passes the gate
+            if p.name not in ("claim_tests.py", "claim_card.py", "claim_measure.py",
+                              "analyst_queries.py"):
                 assert "trade_tests" not in src, p
     cfg = (SR_ROOT / "config" / "campaign_config.yaml").read_text(encoding="utf-8")
     reg = (SR_ROOT / "config" / "feature_flag_register.yaml").read_text(encoding="utf-8")
