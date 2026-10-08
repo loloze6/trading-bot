@@ -704,7 +704,7 @@ flags:
     reader: run_phase1_research._observable_backtest_enabled
     owner: Jeremy
     state: off_incomplete
-    blocked_on: "reader_findings (observable_backtest requires it) and E-073's later steps (citation checks, E-029, E-027); the operator switches it on with reader_findings for the next readers run"
+    blocked_on: "reader_findings (observable_backtest requires it) and E-073's later steps (E-029, E-027); the operator switches it on with reader_findings for the next readers run"
     criterion: >
       Landed 2026-10-08 (E-073 step 1, P-CUL-81, D-081). The epic's one flag.
       Off: byte-identical -- the v3 readers' handoffs and prompts are
@@ -717,6 +717,23 @@ flags:
       field up before citing it. Tested by tests/test_e073_data_dictionary.py
       (full field paths derived from the code that writes each field; the
       subset regenerated).
+      Step 2 (2026-10-08, D-083): on, each `path=value` a v3 reading cites is
+      checked against the files the reader received (the exploration copies
+      under explore_confirm; reader_proposals.check_citation_values: a number
+      rounded to the decimals written, within half a unit of its last digit,
+      a 0 with fewer than 2 decimals only |x| < 0.005, any other number form
+      not checked; text the file's whole text, ignoring case); a missing or
+      mis-valued citation gets the reader's one retry with a code-written
+      list (path, cited value, problem -- never a file's value; real paths
+      suggested for a missing one; the retry answer kept only with strictly
+      fewer bad citations and the same side findings), and if still wrong the
+      reading is kept and the citation recorded
+      (artifacts/citation_checks/<category>.yaml; decide-next warning
+      citation_mismatch). Side findings with the same claim kind, tests and config change
+      are merged (artifacts/side_finding_merges.yaml): one confirmation
+      record and look, one decide-next candidate with the first source's
+      scores, never agreement. Off: byte-identical. Tested by
+      tests/test_e073_citations_dedup.py.
 
   - name: operator_approval
     kind: orchestrator_config

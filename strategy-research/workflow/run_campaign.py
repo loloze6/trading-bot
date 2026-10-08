@@ -4761,12 +4761,8 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
         msg = f"{msg} [paused {len(r1_failures)} composition(s) that could not be prepared]"
     # E-068 PR 4 (D-071): a reader named a component class that does not exist.
     # Warning only; nothing is logged when no candidate carries one.
-    for c in record.get("candidates") or []:
-        for w in c.get("warnings") or []:
-            _log(f"WARNING {c['candidate_id']}: reader names unknown component class "
-                 f"{w['name']}" + (f" (nearest real class: {w['suggestion']})"
-                                   if w.get("suggestion") else "")
-                 + f" -- warning only, see {decision_ref}")
+    for line in _candidate_warning_lines(record, decision_ref):
+        _log(line)
 
     orch.save_yaml(ROOT / decision_ref, record)
     disk_queue = _load_queue()
@@ -4780,6 +4776,32 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
     _save_queue(disk_queue)
     _log_awaiting_approval(held)
     return disk_queue, entry, stop is None, msg
+
+
+def _candidate_warning_lines(record: dict, decision_ref: str) -> list:
+    """One log line per candidate warning. An unknown-component-class warning
+    (E-068 PR 4) keeps its text; a side finding's warning (reader_findings:
+    repeats_measured_spec, block_claim_cannot_see_block) carries no `name`, so it
+    is logged by its kind instead of raising KeyError mid-decide. E-073 step 2
+    (D-083): a citation_mismatch warning names how many cited values were
+    still wrong after the reader's one retry."""
+    lines = []
+    for c in record.get("candidates") or []:
+        for w in c.get("warnings") or []:
+            if w.get("kind") == "citation_mismatch":
+                lines.append(f"WARNING {c['candidate_id']}: {len(w.get('bad') or [])} cited "
+                             f"value(s) do not match the file the reader read, after its one "
+                             f"retry (kept, flagged) -- warning only, see {decision_ref}")
+                continue
+            if "name" not in w:
+                lines.append(f"WARNING {c['candidate_id']}: {w.get('kind') or 'warning'}"
+                             f" -- warning only, see {decision_ref}")
+                continue
+            lines.append(f"WARNING {c['candidate_id']}: reader names unknown component class "
+                         f"{w['name']}" + (f" (nearest real class: {w['suggestion']})"
+                                           if w.get("suggestion") else "")
+                         + f" -- warning only, see {decision_ref}")
+    return lines
 
 
 # ---------------------------------------------------------------------------

@@ -460,3 +460,115 @@ def skip_summary_lines(root: Path) -> list:
     for rule, where in sorted(by_rule.items()):
         lines.append(f"  - {rule}: {len(where)} ({', '.join(where)})")
     return lines
+
+
+# ---------------------------------------------------------------------------
+# E-073 step 2 (D-083): in-run dedup of side findings, under
+# orchestrator.observable_backtest only (run_phase1_research wires it).
+# ---------------------------------------------------------------------------
+
+MERGES_ARTIFACT = "side_finding_merges.yaml"
+MERGES_SCHEMA_VERSION = 1
+MERGE_RULE = ("two side findings of this run are ONE finding when their claims have the same "
+              "kind, their claim tests the same set of spec_hashes (claim_tests) and the same "
+              "config_change (none, or the same items): the same measurement on the same config, "
+              "confirmed the same way. A different kind, a partial overlap, a different change "
+              "or `tests: none` is not merged.")
+MERGE_NOT_AGREEMENT = ("not agreement and not extra evidence: the readers read the same inputs, "
+                       "so a second reader proposing the same test is not an independent "
+                       "observation; the merged finding is measured, counted and ranked once, "
+                       "with its first source's scores")
+
+
+def _merge_key(item: dict):
+    """(claim kind, spec_hashes, canonical config_change) of one flattened
+    side finding, or None when it has no measurable test (refused claim or
+    tests: none). The kind is part of the key (review fix 4): the
+    confirmation routes by it (explore_confirm.finding_route: a block kind
+    is PENDING, a pure kind IN_RUN), so the same tests under two kinds are
+    two findings."""
+    import json as _json
+    import claim_card as cc
+    res = cc.check_claim(item.get("claim") if isinstance(item, dict) else None)
+    hashes = tuple(sorted({t["spec_hash"] for t in res.tests if t.get("spec_hash")}))
+    if res.errors or res.tests_none or not hashes:
+        return None
+    change = item.get("config_change")
+    canon = None
+    if change:
+        canon = _json.dumps(sorted((_json.dumps(c, sort_keys=True, default=str)
+                                    for c in change), key=str), default=str)
+    return str(item["claim"].get("kind")), hashes, canon
+
+
+def reading_structure(doc: dict) -> list:
+    """What a citation retry must keep (D-083): for each item of a v3 reading
+    (rp.flatten_reading), (item kind, claim kind, sorted spec_hashes), sorted
+    -- the same number of side findings proposing the same tests the same
+    way. Wording, evidence and scores are not part of it."""
+    import claim_card as cc
+    out = []
+    for item in rp.flatten_reading(doc):
+        claim = item.get("claim")
+        kind = str(claim.get("kind")) if isinstance(claim, dict) else None
+        tests = cc.check_claim(claim).tests if claim is not None else []
+        out.append((item["kind"], kind,
+                    tuple(sorted({t["spec_hash"] for t in tests if t.get("spec_hash")}))))
+    return sorted(out, key=repr)
+
+
+def side_finding_merges(readings: dict) -> list:
+    """The duplicate groups among a run's side findings (MERGE_RULE). Pure.
+    `readings`: {category: v3 reading}. Order: categories sorted, then each
+    reading's side findings in order (the order explore_confirm measures
+    them in); the first member of a group is its primary. Returns
+    [{finding_id, finding_ids, sources: [{category, finding_id}], spec_hashes,
+    config_change}] for groups of two or more only."""
+    groups, order = {}, []
+    for cat, doc in sorted((readings or {}).items()):
+        if not isinstance(doc, dict) or "skipped" in doc:
+            continue
+        for item in rp.flatten_reading(doc):
+            if item.get("kind") != rp.SIDE_FINDING:
+                continue
+            key = _merge_key(item)
+            if key is None:
+                continue
+            if key not in groups:
+                order.append(key)
+                groups[key] = {"items": [], "config_change": item.get("config_change")}
+            groups[key]["items"].append((cat, item["proposal_id"]))
+    out = []
+    for key in order:
+        members = groups[key]["items"]
+        if len(members) < 2:
+            continue
+        out.append({"finding_id": members[0][1],
+                    "finding_ids": [pid for _c, pid in members],
+                    "sources": [{"category": c, "finding_id": pid} for c, pid in members],
+                    "spec_hashes": list(key[1]),
+                    "config_change": groups[key]["config_change"]})
+    return out
+
+
+def merges_doc(run_id: str, merges: list) -> dict:
+    """artifacts/side_finding_merges.yaml (written under the flag, `merged: []`
+    when nothing repeats, so a reader of the run can see the check ran)."""
+    return {"schema_version": MERGES_SCHEMA_VERSION, "run_id": run_id, "rule": MERGE_RULE,
+            "note": MERGE_NOT_AGREEMENT, "merged": list(merges)}
+
+
+def merge_index(doc) -> dict:
+    """{finding_id: {"primary": id, "order": n, "group": group}} for every
+    member of a merge group in a side_finding_merges.yaml document; {} for
+    None or a document of another shape (never raises)."""
+    out = {}
+    groups = doc.get("merged") if isinstance(doc, dict) else None
+    for g in groups if isinstance(groups, list) else []:
+        ids = g.get("finding_ids") if isinstance(g, dict) else None
+        if not isinstance(ids, list) or len(ids) < 2:
+            continue
+        for n, fid in enumerate(ids):
+            if isinstance(fid, str):
+                out[fid] = {"primary": ids[0], "order": n, "group": g}
+    return out

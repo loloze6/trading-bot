@@ -186,6 +186,9 @@
         "brief_owner": { "type": ["string", "null"],
                          "description": "E-059 S2b, kind card only: the entry owning the brief (null for a legacy brief)." },
         "collapsed_sources": { "type": "array", "items": { "type": "string" } },
+        "merged_sources": { "type": "array", "minItems": 2, "items": { "type": "string" },
+                            "description": "E-073 step 2 (D-083), orchestrator.observable_backtest only: the proposal_refs of an in-run duplicate group (side_finding_merges.yaml), primary first. One candidate with the primary's scores: not agreement, not extra evidence." },
+        "merge_note": { "type": "string", "description": "E-073 step 2: present with merged_sources." },
         "scores": {
           "type": "object",
           "required": ["confidence_real", "distance_to_profitable", "mechanism_plausibility",
@@ -302,6 +305,14 @@
                   "kind": { "const": "block_claim_cannot_see_block" },
                   "block_kind": { "enum": ["forecast", "regime"] },
                   "message": { "type": "string" }
+                }
+              },
+              {
+                "type": "object", "required": ["kind", "bad"], "additionalProperties": false,
+                "description": "E-073 step 2 (D-083): a side finding kept but flagged -- a cited path missing, or a cited value that does not match the file its reader read, after the reader's one retry (citation_checks/<category>.yaml).",
+                "properties": {
+                  "kind": { "const": "citation_mismatch" },
+                  "bad": { "type": "array", "minItems": 1, "items": { "type": "object" } }
                 }
               }
             ]
