@@ -759,6 +759,33 @@ flags:
       profit_bars_v2's single-era rule. The engine's metrics.json is unchanged. Tested by
       tests/test_cul415_zero_trade_windows.py.
 
+  - name: folds
+    kind: orchestrator_config
+    config_key: orchestrator.folds.enabled
+    reader: run_phase1_research._folds_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "the operator's decision to switch it on (with decide_next, so children take their next fold); a declared output change only for children that decide-next writes after that"
+    criterion: >
+      Landed 2026-10-08 (E-077 PR-1, CUL-419, D-085). Off: byte-identical --
+      decide-next copies the parent's machine_constraints (windows) into the
+      child's brief as before; the protocol generator accepts what it accepted;
+      no artifact gains a `fold` field. On: (1) a child run of an idea gets the
+      windows of the next fold its lineage has not used (config/folds.yaml, three
+      folds of six exact 4-month blocks; A = 2022-2023, B and C = 2018-2021;
+      order A, B, C; lineage = the source-run chain in the memory entry's
+      hypothesis_id; a fold is used when any lineage window overlaps any of its
+      blocks, so runs 065-074 are fold A); a lineage that used all three is
+      INFEASIBLE (folds_exhausted), never a crash; `fold` is written into the
+      child's machine_constraints.protocol, run_context.yaml, the memory entry
+      and the trial rows; a candidate whose child has no layer-1 data on the
+      chosen fold is INFEASIBLE (fold_<X>_lacks_data); (2) the protocol
+      generator, the launch pre-flight (generated and pinned protocols, and the
+      run_context / last_escalation protocol) and tools/run_protocol.py, which
+      every backtest passes through, refuse any window overlapping the
+      validation period (the policy's 2024-2025; no validation stage exists
+      yet). Tested by tests/test_e077_folds.py.
+
   - name: operator_approval
     kind: orchestrator_config
     config_key: orchestrator.operator_approval.enabled

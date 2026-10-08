@@ -1691,6 +1691,7 @@ def _legacy_verdict_args() -> list:
 
 import protocol_refusal as _protocol_refusal  # noqa: E402  (tools/: one definition)
 import holdout_policy as _holdout_policy  # noqa: E402  (tools/: CUL-339, the ONE strict holdout_range parser)
+import research_folds as _research_folds  # noqa: E402  (tools/: E-077 PR-1, D-085: the fixed folds + the validation guard)
 
 
 class _RefusedBeforeAnyBacktest(RuntimeError):
@@ -4183,6 +4184,41 @@ def _zero_trade_grid_kw() -> dict:
     ({"zero_trade_windows_not_computed": True}), else {} (every call unchanged)."""
     return ({"zero_trade_windows_not_computed": True}
             if _zero_trade_windows_not_computed_enabled() else {})
+
+
+def _folds_enabled(cfg: dict | None = None) -> bool:
+    """E-077 PR-1 (D-085): orchestrator.folds.enabled. False when the key, the
+    section or the config file is absent. A non-bool value raises. No dependency
+    on another flag: the two things it switches are independent and each is
+    useful alone.
+
+    While false: byte-identical -- decide-next copies the parent's windows into
+    the child's brief exactly as before, the protocol generator accepts the same
+    windows it accepted before, and no artifact gains a `fold` field.
+    While true:
+      * decide-next (tools/decide_next.py) gives a child run the windows of the
+        next fold its lineage has not used (config/folds.yaml; three folds of six
+        4-month blocks; A, then B, then C), writes `fold` into the child's
+        machine_constraints.protocol, and refuses (INFEASIBLE, with a reason) a
+        candidate whose lineage has used all three;
+      * any window overlapping the validation period (the data policy's
+        2024-2025) is refused -- by the protocol generator, the launch pre-flight
+        (generated and pinned protocols alike) and tools/run_protocol.py, which
+        every backtest passes through (it reads this flag from the config file) --
+        because no validation stage exists yet; see
+        tools/research_folds.assert_windows_clear_of_validation;
+      * `fold` is recorded in run_context.yaml, the campaign memory entry and
+        the trial rows of a run whose pre-registration carries one."""
+    cfg = _orchestrator_config(cfg)
+    f_cfg = ((cfg.get("orchestrator") or {}).get("folds") or {})
+    value = f_cfg.get("enabled", False)
+    if not isinstance(value, bool):
+        raise ValueError(
+            f"orchestrator.folds.enabled={value!r} is not a real boolean "
+            f"(got {type(value).__name__}) -- write an unquoted `true` or `false` in "
+            f"config/campaign_config.yaml, not a quoted string or null."
+        )
+    return value
 
 
 # E-073 step 1 (D-081): the readers' subset of the field dictionary
@@ -10922,8 +10958,58 @@ def _generate_monthly_windows(start: str, end: str, holdout_range=None, *,
     return windows
 
 
+def _assert_windows_clear_of_validation(windows: list) -> None:
+    """E-077 PR-1 (D-085): refuse any generated window that overlaps the
+    validation period (the data policy's 2024-2025), next to
+    `_assert_windows_clear_of_holdout`. Called only under orchestrator.folds.enabled.
+    No validation stage exists yet, so there is no run for which it is allowed:
+    the message names that future stage. The range is read from the policy at
+    call time (`_DATA_POLICY_PATH`, redirected into the sandbox by the tests);
+    a missing or malformed policy raises, never "no validation period"."""
+    try:
+        validation = _research_folds.load_validation_range(_DATA_POLICY_PATH)
+    except _research_folds.FoldsError as exc:
+        raise _research_folds.ValidationBoundaryBreach(
+            f"{exc}. Refusing to generate windows against an unknown validation period.") from exc
+    _research_folds.assert_windows_clear_of_validation(windows, validation)
+
+
+def _protocol_windows_from_constraints(proto_constraint: dict, start: str, end: str) -> list:
+    """The windows a machine_constraints.protocol generates -- ONE definition,
+    shared by `_ensure_protocol_from_constraints` and run_campaign's pre-flight
+    (`_expected_generated_protocol`), so the two cannot drift.
+
+    No `fold` key (every protocol before E-077): exactly
+    `_generate_monthly_windows(start, end, window_months=...)`, as before.
+    `fold` (written by decide-next under orchestrator.folds.enabled): the fold's
+    six blocks from config/folds.yaml, validated against the data policy
+    (research period only). The validation-period guard is NOT here: it runs
+    after the G7 check, so the flag-off generator's I/O and failure order stay
+    master's (`_enforce_validation_guard`). That guard covers GENERATED protocols
+    only; pinned and resolved ones are covered by run_campaign's pre-flight and, for
+    every protocol, by tools/run_protocol.py."""
+    fold = proto_constraint.get("fold")
+    if fold is None:
+        windows = _generate_monthly_windows(
+            start, end, window_months=proto_constraint.get("window_months", 1))
+    else:
+        _research_folds.check_fold_id(fold)
+        windows = _research_folds.load_fold_windows(
+            fold, path=ROOT / "config" / "folds.yaml", policy_path=_DATA_POLICY_PATH)
+        _assert_windows_clear_of_holdout(windows, *_load_holdout_range())
+    return windows
+
+
+def _enforce_validation_guard(windows: list, folds_enabled) -> None:
+    """The validation-period guard under orchestrator.folds.enabled. `folds_enabled`:
+    a bool, or a zero-argument reader called here (so a flag-off generator that
+    already failed at G7 never reads the config)."""
+    if (folds_enabled() if callable(folds_enabled) else folds_enabled):
+        _assert_windows_clear_of_validation(windows)
+
+
 def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: dict, *,
-                                      promotion_retired=False) -> Path | None:
+                                      promotion_retired=False, folds_enabled=False) -> Path | None:
     """
     Idempotent: generates runs/{run_id}'s dedicated protocol JSON + run_context.yaml
     override from machine_constraints.protocol, if present and not already done.
@@ -10934,6 +11020,10 @@ def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: d
     (run_loop passes _promotion_retired_enabled, so an already-generated run
     reads no config here). The default False is the flag-off generator,
     exactly as before: no config read, G7 first.
+    E-077 PR-1 (D-085) `folds_enabled`: the same bool-or-reader shape for
+    orchestrator.folds.enabled -- on, a window overlapping the validation period
+    is refused (_assert_windows_clear_of_validation); a `fold` key in the
+    constraints always selects that fold's windows (run_context.yaml records it).
     """
     proto_constraint = constraints.get("protocol")
     if not proto_constraint:
@@ -10953,8 +11043,7 @@ def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: d
     start = min(per_symbol_start.values()) if per_symbol_start else proto_constraint["start"]
     end = proto_constraint["end"]
 
-    windows = _generate_monthly_windows(
-        start, end, window_months=proto_constraint.get("window_months", 1))
+    windows = _protocol_windows_from_constraints(proto_constraint, start, end)
     # The seal has ONE home. Defaulting to a literal here was a second copy of
     # holdout_range that nothing kept in sync with the policy file, in the very
     # function whose windows have to be checked against it. CUL-339: an
@@ -10977,6 +11066,8 @@ def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: d
             promotion_retired=(promotion_retired() if callable(promotion_retired)
                                else promotion_retired)),
     }
+    # E-077 PR-1 (D-085): after G7, so the flag-off failure order is master's.
+    _enforce_validation_guard(windows, folds_enabled)
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(protocol_obj, f, indent=2)
     print(f"✅ [F4d] Generated protocol from pre-registered machine_constraints: {out_path}"
@@ -10991,6 +11082,8 @@ def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: d
     # to run_050's first attempt: it picked up run_047's leftover
     # escalation_tf_15m.json because this run_type key was missing).
     run_ctx = {"run_type": "forced_diagnostic", "protocol": out_path.name}
+    if proto_constraint.get("fold") is not None:
+        run_ctx["fold"] = proto_constraint["fold"]  # E-077 PR-1 (D-085): absent for every other run
     run_ctx_path.parent.mkdir(parents=True, exist_ok=True)
     save_yaml(run_ctx_path, run_ctx)
     print(f"✅ [F4d] Wrote run_context.yaml override: run_type=forced_diagnostic, protocol={out_path.name}")
@@ -12401,6 +12494,15 @@ def _trial_windows_field(windows_sha256) -> dict:
     return {"windows_sha256": windows_sha256}
 
 
+def _trial_fold_field(run_id: str) -> dict:
+    """E-077 PR-1 (D-085): {"fold": "A" | "B" | "C"} for a trial row of a run whose
+    pre-registration carries a fold (machine_constraints.protocol.fold, written by
+    decide-next under orchestrator.folds.enabled), else {} -- every other row keeps
+    exactly its keys."""
+    fold = _research_folds.fold_of_run_dir(ROOT / "runs" / run_id)
+    return {} if fold is None else {"fold": fold}
+
+
 def _record_backtest_trial(run_id: str, summary: dict, config_path: Path, trial_id: str | None = None,
                            symbols: list | None = None, whole_test: dict | None = None,
                            windows_sha256: str | None = None):
@@ -12444,6 +12546,7 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path, trial_
     effective_trial_id = trial_id if trial_id is not None else run_id
     symbols_field = _trial_symbols_field(symbols)
     windows_field = _trial_windows_field(windows_sha256)
+    fold_field = _trial_fold_field(run_id)
     state  = load_campaign_state()
     trials = state.setdefault("trial_sharpes", [])
 
@@ -12507,6 +12610,7 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path, trial_
         "forecast_hash":   _compute_forecast_hash(config_path),
         **symbols_field,
         **windows_field,
+        **fold_field,
     }
     # CUL-233: carry an explicit reproduces_trial back-reference into the ledger
     # row so deduplicate_trials can collapse a re-execution onto its original in
@@ -12581,6 +12685,7 @@ def _record_failed_backtest_trial(run_id: str, config_path: Path, reason: str, t
     effective_trial_id = trial_id if trial_id is not None else run_id
     symbols_field = _trial_symbols_field(symbols)
     windows_field = _trial_windows_field(windows_sha256)
+    fold_field = _trial_fold_field(run_id)
     try:
         forecast_hash = _compute_forecast_hash(config_path)
     except Exception:
@@ -12607,6 +12712,7 @@ def _record_failed_backtest_trial(run_id: str, config_path: Path, reason: str, t
         "error":           reason,
         **symbols_field,
         **windows_field,
+        **fold_field,
     })
     _save_campaign_state(state)
     print(f"⚙️  H4: failed-backtest trial recorded (run={run_id}, reason={reason})")
@@ -18409,6 +18515,22 @@ def _variant_coin_context(run_dir: Path, run_id: str, *, source: dict | None = N
             "era_of": lambda ts: _pres.era_id_for_timestamp(ts, eras)}
 
 
+def _fold_data_context() -> dict:
+    """E-077 PR-1 review fix (D-085): what decide-next's fold data check needs
+    (tools/decide_next._fold_data_reason): the Layer-1 venue audit and its precheck
+    (data_availability_gate.layer1_price_precheck -- the same function the data gate and
+    5a's per-coin check use; no network, no market data), and whether the base is backtested
+    on the protocol's first symbol only (the variant loop). A missing audit file raises:
+    the check cannot honestly run without it."""
+    path = ROOT / "config" / "venue_data_capability.yaml"
+    if not path.exists():
+        raise RuntimeError(f"[E-077] config/venue_data_capability.yaml is missing -- decide-next "
+                           f"cannot check that a child has data on its fold without it.")
+    import data_availability_gate as _dag  # tools/ sibling: the Layer-1 precheck
+    return {"layer1": load_yaml(path) or {}, "precheck": _dag.layer1_price_precheck,
+            "first_symbol_only": bool(_variant_loop_enabled())}
+
+
 def _split_json_pointer(path: str) -> list:
     """RFC 6901 tokenization: '/' splits, '~1' -> '/' and '~0' -> '~' unescaped
     per segment. Raises PatchApplicationError on anything that isn't a
@@ -18700,7 +18822,8 @@ def run_loop(run_id: str):
             )
         # C5.6: the flags are read only if a protocol is actually generated now.
         _ensure_protocol_from_constraints(RUN_DIR, run_id, _machine_constraints,
-                                          promotion_retired=_promotion_retired_enabled)
+                                          promotion_retired=_promotion_retired_enabled,
+                                          folds_enabled=_folds_enabled)
         _ensure_protocol_ref_pinned(RUN_DIR, run_id, _machine_constraints)
 
     # E-046a Slice 5b-ii-B: resolve the specialist_readers flag ONCE per run_loop,

@@ -2054,6 +2054,29 @@ def _preflight_training_windows(protocol: dict, holdout_start: str) -> None:
         _refuse_before_any_backtest(overlap)
 
 
+def _refuse_validation_period_windows(protocol: dict) -> None:
+    """E-077 PR-1 (D-085), the choke point: every backtest of a protocol goes through
+    this tool, so under orchestrator.folds.enabled a window overlapping the validation
+    period (the policy's 2024-2025, single-use) is refused here before any output
+    directory or fetch -- whichever way the protocol was chosen (generated, a pinned
+    protocol_ref such as baseline_v2.json, a replication_diagnostic's baseline_v1.json, a
+    last_escalation protocol, or a by-hand call). The same check, and message, as the
+    generator's (tools/research_folds.assert_windows_clear_of_validation).
+
+    Flag off: the config file is read for that one key and nothing else happens (the
+    protocol, the policy and the output are untouched). Not applied to --holdout, whose
+    window comes from the policy, not the protocol. A policy that gives no validation
+    period, or a config that cannot be read, refuses (never "no validation period")."""
+    import research_folds as _research_folds
+    try:
+        if not _research_folds.folds_flag_enabled():
+            return
+        validation = _research_folds.load_validation_range(_DATA_POLICY_PATH)
+        _research_folds.assert_windows_clear_of_validation(protocol.get("windows") or [], validation)
+    except (_research_folds.FoldsError, _research_folds.ValidationBoundaryBreach) as exc:
+        _refuse_before_any_backtest(f"{exc}")
+
+
 def _refuse_if_holdout_consumed(policy: dict, hypothesis_id) -> None:
     """CUL-339 review fix (A6.1 single-use): --holdout needs the hypothesis id
     it spends the seal for, and refuses -- before any fetch -- when that id is
@@ -2329,6 +2352,7 @@ def main():
     _holdout_start = _training_holdout_start(protocol, policy)
     if not args.holdout:
         _preflight_training_windows(protocol, _holdout_start)
+        _refuse_validation_period_windows(protocol)  # E-077 PR-1 (D-085): only under the flag
 
     # C5.6 (D-043): the legacy top-level verdict needs the protocol's promotion
     # block. Without --legacy-verdict-retired a missing, null, empty or partial
