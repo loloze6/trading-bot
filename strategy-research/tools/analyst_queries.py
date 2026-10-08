@@ -784,10 +784,13 @@ class QueryEngine:
                 "groups": counts}, n
 
     def _calendar_charge(self, column, by, groups) -> int:
-        """Comparisons of a describe / distribution call: one per group when grouped by hour,
-        weekday or regime (a calendar or regime effect, whatever the column), else 0.
+        """Comparisons of a describe / distribution call: one per group with a finite value
+        when grouped by hour, weekday or regime (a calendar or regime effect, whatever the
+        column), else 0.
         Charged here, before any number is computed."""
-        n = len(groups) if by in _CALENDAR_BY else 0
+        # a group with no finite value shows no number: not charged (review round 2)
+        n = (sum(1 for v in groups.values() if np.isfinite(v).any())
+             if by in _CALENDAR_BY else 0)
         self._charge(n)
         return n
 

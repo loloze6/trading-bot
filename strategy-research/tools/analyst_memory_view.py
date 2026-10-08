@@ -215,7 +215,7 @@ def _fold_claims(ledger: dict, memory: dict | None = None) -> list:
             "source_run": first_of("source_run"),
             "statement": _statement(first_of("statement")),
             "kind": _kind(first_of("kind")),
-            "fold_observed": _fold_observed(first, runs),
+            "fold_observed": first_of("fold_observed") or _fold_observed(first, runs),
             "fold_confirmed": None,
             "status": status,
             "folds": [{"fold": r.get("fold"), "run_id": r.get("run_id"), "status": st}
@@ -237,7 +237,7 @@ def build_memory_view(memory: dict, ledger: dict | None = None) -> dict:
     for c in _ledger_claims(ledger or {}, memory) + _fold_claims(ledger or {}, memory):
         old = by_id.get(c["claim_id"])
         if old:                                        # keep words a later row lacks
-            for key in ("statement", "kind", "source_run"):
+            for key in ("statement", "kind", "source_run", "fold_observed"):
                 if c.get(key) is None:
                     c[key] = old.get(key)
         by_id[c["claim_id"]] = c                       # the ledger knows what became of it

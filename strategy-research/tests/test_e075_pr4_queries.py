@@ -1220,3 +1220,24 @@ def test_an_unknown_fold_status_is_not_measurable_everywhere(tmp_path):
 def test_a_numpy_nan_parameter_is_refused_too():
     assert aq._nonfinite({"a": [np.float32("nan")]}) and aq._nonfinite(np.float64("inf"))
     assert not aq._nonfinite({"a": [1.0, 2, "x", None]})
+
+
+def test_a_group_without_a_value_is_not_charged(run):
+    eng = engine(run)
+    vals = eng._column_values("base", "close")
+    vals[0][:] = np.nan                    # window w0 of AAA: no close (the cached column)
+    r = eng.describe("close", by="hour")
+    groups = r["result"]["groups"]
+    with_value = sum(1 for g in groups.values() if g["mean"] is not None)
+    assert r["n_comparisons"] == with_value
+    eng._cols[("base", "close")] = [np.full_like(v, np.nan) for v in vals]
+    r = eng.describe("close", by="weekday")
+    assert r["n_comparisons"] == 0 and all(g["mean"] is None for g in r["result"]["groups"].values())
+
+
+def test_fold_observed_comes_from_the_first_row_that_has_it(tmp_path):
+    bare = dict(_same_claim_on("A", "run_90", "not_measurable"), statement=None, kind=None)
+    bare.pop("fold_observed")
+    worded = _same_claim_on("B", "run_91", "not_confirmed")
+    (c,) = amv.build_memory_view({}, _write_ledger(tmp_path, [bare, worded]))["claims"]
+    assert c["fold_observed"] == "A" and worded["fold_observed"] == "A"
