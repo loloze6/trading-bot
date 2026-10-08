@@ -6,19 +6,23 @@ the operator took decisions on it (A1.7).** Sections above the amendment that it
 are marked *superseded*.
 
 > **The current design, in one paragraph (read this first).**
-> - **The goal** is a strategy that is profitable after costs on data it was not designed
->   on, built by combining changes that each held up.
+> - **The thesis:** confirmed claims carry real information about how **the market**
+>   behaves and how **the strategy** behaves in it. Combining confirmed claims leads to a
+>   strategy that is profitable after costs.
 > - **One or more analysts** (two to start: forecast and trade efficiency) replace today's
->   five readers. Each reads one run's results and queries its raw bars and trades through
->   fixed tools. It reasons about where the strategy makes and loses money and why, then
->   proposes **one change to the strategy**.
-> - **A proposal is never confirmed inside the run that inspired it.** There is no in-run
+>   five readers. Each observes one run's backtest results, digs into its raw bars and
+>   trades with fixed tools, and asks why. It ends with **one claim**, a statement about
+>   market or strategy behaviour, together with **how a later backtest would confirm or
+>   refute it**.
+> - **A claim is never confirmed inside the run that inspired it.** There is no in-run
 >   statistical check. Pattern checks are only the analyst's internal reasoning.
-> - **A proposal becomes a candidate in the idea backlog** (decide-next ranks it). If it is
->   picked, it is confirmed only by a **real backtest on a fold of time windows its lineage
->   has not used** (three fixed folds; a line ends after three).
+> - **A claim becomes a candidate in the idea backlog** (decide-next ranks it). If it is
+>   picked, it is confirmed only on the output of a **real backtest on a fold of time
+>   windows its lineage has not used** (three fixed folds; a line ends after three).
+>   Confirmed claims become the building blocks that are combined (E-071).
 > - **After the folds** come validation (2024-2025, single-use) and then the holdout.
-> - **The analyst's instructions** are designed for that one purpose (A1.8).
+> - **The analyst's instructions** are designed for that purpose (A1.8, draft v2, under
+>   review).
 
 It follows E-068, which closed on
 2026-10-06 (`roadmap/E-068/CLOSE_OUT.md`, `delivery_plan_v26_continuation_2.md`). The epics
@@ -303,7 +307,7 @@ Assessment (agreed):
 |---|---|---|
 | 1 | A reader's side finding is measured or becomes a run | A reader proposal becomes a **candidate in the idea backlog**, ranked by decide-next like any other. It is a possible run, not an automatic one (decide-next already does this) |
 | 2 | Price-only claims get an in-run statistical check on the 2023 windows | **No in-run check.** Pattern checks are internal reasoning of the analyst, never a deliverable |
-| 3 | Side findings may be market observations (pure claims) | **A proposal must be a strategy change** (a setting, a block, an exit rule). Market observations stay in its explanation, as the "why" |
+| 3 | Side findings may be market observations (pure claims), measured on the run that inspired them | ~~A proposal must be a strategy change~~ *(revised, Step 9)*: **the output is a claim** about market behaviour or strategy behaviour, with **the test a later backtest on an unused fold must pass**. A strategy change appears only as the vehicle that makes the claim observable |
 | 4 | Inside a run: readers see 2022, confirmation on 2023 | **Every run records the windows its results came from. A run built from an idea uses windows the idea was not observed on** |
 | 5 | Step 1a's all-window view made follow-up confirmations "weak" | Moot: the test happens on other windows |
 | 6 | Windows fixed per brief (the same 2022-2023 windows since run_065) | **Windows from three fixed folds** (A1.3 as amended by A1.7, decision D1; the random draw is parked) |
@@ -486,92 +490,128 @@ The review was read-only and verified against the code. Its main findings:
 - the random draw (parked);
 - the in-run confirmation.
 
-### A1.8 The analyst's instructions, designed for the goal (operator request, 2026-10-08)
+### A1.8 The analyst's instructions (draft v2, under strong-model review)
 
-> Operator: "Make sure the plan has properly structured the analyst's instructions, so that
-> it is the best fit for the objective. Stepping back: the core objective of all our work
-> is to find a profitable strategy. Make sure the skill instructions are designed for the
-> analyst to find claims that fit and reach this purpose."
+**Step 9: how this section got here.**
+- **The operator's request:**
+  > "Make sure the skill instructions are designed for the analyst to find claims that fit
+  > and reach this purpose: the core objective of all our work is to find a profitable
+  > strategy."
+- **Draft v1** made the analyst's objective *"propose the ONE change to this strategy most
+  likely to raise its return after costs on unseen data."*
+- **The operator rejected it:**
+  > "The one change to this strategy is wrong. Let's step back, even totally. An analyst is
+  > there to observe backtest results, possibly use available tools to deep-dive into bars
+  > data, and then at the end generate a claim that will be tested after. This claim aims
+  > to bring a confirmed observation once tested. Our thesis is that the combination of
+  > observed and confirmed claims, which own information on the market and its behaviour,
+  > and on the strategy and its behaviour, will lead to a profitable strategy."
+- **Why v1 was wrong:**
+  - it made the analyst a strategy tuner, so it would chase this run's P&L;
+  - it skipped the step that builds lasting knowledge: a confirmed claim about the market or
+    the strategy, which can be reused and combined.
+- **Profit is the end of the chain, not each analyst's target.** It comes from combining
+  confirmed claims.
 
-This is the design of the analyst's skill (its SKILL text). The exact wording is written in
-E-075's wiring slice. It is then reviewed by a strong model and tried on two saved runs
-before the pilot.
+Draft v2 follows. **It is a proposal for review, not a decision.** The exact SKILL wording
+is written in E-075's wiring slice, then tried on two saved runs before the pilot.
 
-**1. The objective, the first line of the skill:**
-> "Propose the ONE change to this strategy most likely to raise its return after costs on
-> data it has not seen, and that one backtest can test."
+**1. The analyst's objective (the first line of the skill):**
+> "Observe this run's backtest results, dig into its bars and trades with your tools, and
+> end with the ONE claim most worth confirming: a statement about how the market behaves,
+> or how this strategy behaves in the market. A later backtest on data you have not seen
+> must be able to confirm or refute it, and if it holds, it must be a reusable piece of
+> knowledge toward a profitable strategy."
 
-Everything below serves that sentence. A proposal that cannot move after-cost return, or
-that a backtest cannot test, is not a proposal.
+**2. Two kinds of claim:**
+- **Market behaviour.** Example: "after a fall of more than 3% in 24 hours on BTC, the next
+  24 hours return more than the average hour, by more than the round-trip cost."
+- **Strategy behaviour.** Example: "in trending stretches, this strategy closes winning
+  trades too early: trades closed by a signal flip during a trend would have earned more,
+  after costs, if held 24 bars longer."
 
-**2. The working method, in order.** This is the reviewed question list, used as a method,
-not as a form to fill in:
-1. **Where is the money made and lost?** Start from the profit breakdown of the run:
-   - gross edge per trade against cost per trade (the CUL-414 all-costs basis);
-   - P&L by exit cause, holding time, side, coin and window.
+**3. What a claim must carry:**
+1. **The statement and its kind** (market or strategy).
+2. **The observation it came from:** the query-log entries it rests on.
+3. **Why:** the mechanism, such as who is on the other side, or why the strategy behaves
+   this way. Include the second query that the mechanism predicted and that a coincidence
+   would not.
+4. **The confirming test,** written before any backtest:
+   - **what the next backtest must run** so the claim becomes observable. This can be the
+     same strategy, or a variant that isolates the behaviour (e.g. a longer hold). This is
+     the only place a strategy change appears: as the vehicle of the test;
+   - **the measurement on that backtest's output,** in the claim-test slots (selector /
+     outcome / baseline / statistic) over bars.csv and trades;
+   - **what result confirms it, and what refutes it** (the falsifier).
+5. **Its use if confirmed:** what it would let a strategy do (an entry filter, an exit
+   rule, sizing, a regime gate), whether the effect is large enough to matter after costs,
+   and which confirmed claims or blocks it would combine with (E-071).
 
-   Name the biggest lever: cost drag, wrong-side exposure, early or late exits, or a
-   signal with no edge. Profit is the starting point, not a pattern found anywhere.
-2. **Observe** one thing along your lens that explains that lever, from a tool query.
-   Cite it to the query log.
-3. **Ask why:** a mechanism (who is on the other side, or why the effect should persist).
-   Check it with a second query that the mechanism predicts and a coincidence would not.
-4. **Rule out the simple rivals:**
-   - one coin or one window driving everything;
-   - costs;
-   - a data gap;
-   - the strategy's own mechanics (an effect in P&L with no matching effect in forecast vs
-     forward return).
+**4. The working method** (a method, not a form to fill in):
+1. **Observe the results:** where the outcome is made. For the strategy, that is gross
+   edge against costs, and P&L by exit cause, holding time, side, coin and window. For the
+   market, that is what the forecast does and does not predict.
+2. **Dig in with the tools:** follow the most informative surprise, the thing the strategy
+   or the market does that the run's design did not expect.
+3. **Ask why,** and check the mechanism with a second query that it predicts.
+4. **Rule out the simple rivals:** one coin or one window driving everything, costs, a data
+   gap, or the strategy's own mechanics.
+5. **Formulate the claim and its test** (item 3).
+6. **Or stop.** If nothing survives steps 2-4: "no claim", with the reason. That is a
+   valid, counted outcome.
 
-   Use the per-window, per-coin and per-variant slices.
-5. **Turn it into one strategy change** and predict its effect on the backtest: which metric
-   moves, in which direction, and roughly by how much. Write the **falsifier** (the
-   backtest result that would kill it) before any backtest.
-6. **Or stop.** If nothing survives steps 2-4, answer "no proposal" with the reason. That is
-   a valid, counted outcome, not a failure.
+**5. What makes a claim good** (in priority order):
+1. **Informative:** if confirmed, we know something real about the market or the strategy
+   that we did not know.
+2. **Testable on unseen data by a backtest:** the test reads the output of a backtest on an
+   unused fold, never the run that inspired it.
+3. **Economically relevant:** the effect is big enough to matter after costs if exploited.
+4. **Reusable and combinable:** it can serve as a building block with other confirmed
+   claims, rather than only fixing this one strategy.
+5. **New:** memory shows what was claimed and tested before.
+6. **Falsifiable,** with the falsifier written in advance.
 
-**3. What makes a proposal good** (the order is the priority, all for profit):
-1. **It targets the biggest measured lever** from step 1.
-2. **It is cost-aware.** The predicted gain per trade is set against the cost model, and the
-   change prefers higher gross edge per trade or lower turnover. A change that cannot clear
-   the 2x-costs bar (D-038) even if it works is not proposed.
-3. **It can be built** from the component catalogue and existing settings. If a block is
-   missing, it goes to `component_requests.yaml`, not into an invented config.
-4. **It can be combined.** It says which existing block it complements (feeding E-071), and
-   is not a re-tune of the same signal.
-5. **It is new.** Memory shows what was tried, with fold-labelled outcomes. Repeating a
-   tried change, or nudging a parameter of it, is refused (the novelty gate, keyed per
-   fold).
-6. **It is falsifiable,** with the falsifier written in advance.
+**6. What a claim is not:**
+- a parameter nudge presented as a claim;
+- a statement only measurable on the run that inspired it;
+- anything using information after a bar's close (hindsight).
 
-**4. What the analyst receives:**
-- **the full run context:** strategy config, each variant's patch, coins, venue, timeframe,
-  fold windows, and the cost model;
+**7. Inputs:**
+- **the full run context:** strategy config, variant patches, coins, venue, timeframe,
+  fold windows, cost model;
 - **the data dictionary** (E-073);
-- **the tools:** about 6 fixed query functions, including E-074's grid as a parameterised
-  tool and `trailing_vol`;
-- **memory:** earlier tries and their fold-labelled outcomes;
-- **the component catalogue.**
+- **the tools:** about 6 fixed query functions, including E-074's grid and `trailing_vol`;
+- **memory:** earlier claims and their fold-labelled confirmation outcomes;
+- **the component catalogue and the claim-test vocabulary.**
 
-**5. Fixed, generic guard rails** (the same for every lens, nothing case-by-case):
-- no hindsight: features are known at the bar's close;
-- queries run only on the run it reads;
-- every query is logged and counted;
-- one proposal per session;
-- a cost cap per session;
+**8. Fixed, generic guard rails** (the same for every lens):
+- no hindsight;
+- queries only on the run it reads;
+- every query logged and counted;
+- one claim per session;
+- a cost cap;
 - no free code.
 
-**6. The two first lenses** (one objective text each; the rest of the skill is shared):
-- **Forecast:** "Where does the forecast fail to predict returns after costs: by horizon,
-  coin, time of day or volatility? What change to the signal or its use would fix the
-  biggest failure?"
-- **Trade efficiency:** "Where do entries and exits lose money: early or late exits,
-  churning, holding time, cost drag? What change to entry, exit, sizing or turnover would
-  fix the biggest loss?"
+**9. The two first lenses** (one objective text each; the rest is shared):
+- **Forecast:** "What does the forecast tell us, and not tell us, about future returns?
+  Where, when and why does it work or fail?"
+- **Trade efficiency:** "How does the strategy turn forecasts into trades, and where does
+  that conversion gain or lose money: entries, exits, holding time, turnover, costs?"
 
-**7. How we will know the instructions are good:**
-- before the pilot: a strong-model review of the SKILL text, plus a smoke run on two saved
-  runs;
-- in the pilot: the process checks (D4, option a), the share of "no proposal" answers, and
-  the share of proposals that clear the 2x-costs bar in their own backtest. The operator
-  decides.
+**10. How a claim is confirmed.**
+- If decide-next picks the claim, the next run backtests the test's vehicle on a fold the
+  lineage has not used.
+- The claim measurement (the E-068 claim-card machinery) runs on **that** backtest's output.
+- The result is recorded with its fold.
+- A confirmed claim enters the registry as a building block for combination (E-071).
+
+**11. Open points for the reviewer:**
+- Is "one claim per session" right, or should the analyst return up to two of different
+  kinds?
+- Are market claims and strategy claims confirmed the same way, or does a market claim
+  need no strategy vehicle at all? (The fold's bars exist, but bars.csv is only written by
+  a backtest.)
+- How does "economically relevant" get judged before the confirming backtest, without
+  becoming the v1 profit-chasing again?
+- How do confirmed claims actually combine into a strategy: what does E-071 need from a
+  claim's record?
