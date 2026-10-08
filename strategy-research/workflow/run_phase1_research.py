@@ -4226,6 +4226,7 @@ def _analyst_enabled(cfg: dict | None = None) -> bool:
     """E-075 PR-5a (D-091): orchestrator.analyst.enabled. False when the key, the section
     or the config file is absent. A non-bool value raises.
 
+    Requires orchestrator.folds.enabled (refused otherwise, D-091 review).
     While false: byte-identical. While true (PR-5a, the first part of the analyst's flag;
     E-075 PR-5 adds the analyst stage under the same flag): the trade-level claim-test family
     (D-086) reaches the pipeline -- the claim checks at the reading, decide-next, step 1a's
@@ -4241,6 +4242,12 @@ def _analyst_enabled(cfg: dict | None = None) -> bool:
             f"(got {type(value).__name__}) -- write an unquoted `true` or `false` in "
             f"config/campaign_config.yaml, not a quoted string or null."
         )
+    if value and not _flag_dep(_folds_enabled, cfg):
+        raise ValueError(
+            "orchestrator.analyst.enabled=true requires orchestrator.folds.enabled=true as "
+            "well -- an analyst's claim is confirmed only on a fold its lineage has not used "
+            "(E-077), and without folds a trade-level claim would be measured in the run that "
+            "inspired it, which E-072's in-run route cannot do. Enable them together.")
     return value
 
 

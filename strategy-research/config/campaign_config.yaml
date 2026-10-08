@@ -957,7 +957,8 @@ orchestrator:
     enabled: false
       # E-075 PR-5a (D-091). OFF BY DEFAULT, read by run_phase1_research._analyst_enabled().
       # The analyst's flag; PR-5a is its first part, E-075 PR-5 adds the analyst stage
-      # (two lenses replacing the v3 readers) under the same flag. While false:
+      # (two lenses replacing the v3 readers) under the same flag. REQUIRES
+      # orchestrator.folds.enabled (refused otherwise). While false:
       # byte-identical. While true (PR-5a): the trade-level claim-test family (D-086:
       # selector `trade`, outcomes trade_net_return / post_exit_return, baseline
       # other_trades) reaches the pipeline -- the claim checks at the reading, decide-next,

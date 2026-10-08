@@ -1208,7 +1208,12 @@ def load_variant_trade_windows(run_dir: Path, vid: str) -> list[TradeWindow]:
         w = read_bars_csv(rdir / "bars.csv", str(entry.get("symbol")), str(entry.get("window")))
         trades = json.loads((rdir / "trades.json").read_text(encoding="utf-8"))
         post = _read_column(rdir / "bars.csv", "postRebalance_current_allocation", len(w.ts))
-        out.append(build_trade_window(w, trades, post, diag_by_window.get(w.window)))
+        costs = diag_by_window.get(w.window)
+        if costs and len({str(c.get("symbol")) for c in costs if c.get("symbol")}) > 1:
+            # D-091 review: the records of SEVERAL coins share a window name; keep this
+            # coin's (one coin: as before, whatever its symbol's spelling)
+            costs = [c for c in costs if str(c.get("symbol")) == w.symbol] or None
+        out.append(build_trade_window(w, trades, post, costs))
     if not out:
         raise ValueError(f"{pr_path}: no results with a run_id")
     return out

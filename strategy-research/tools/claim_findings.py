@@ -92,7 +92,9 @@ def _tests_of(claim) -> list:
         if not isinstance(t, dict):
             continue
         try:
-            spec_hash = cmeas.test_spec(t)[1]
+            # D-091 review: a trade-level test's hash (the family is only ever in a card
+            # under orchestrator.analyst.enabled; acceptance is check_claim's, earlier)
+            spec_hash = cmeas.test_spec(t, cmeas._is_trade_test(t))[1]
         except Exception:  # noqa: BLE001 -- an invalid test keeps spec_hash None
             spec_hash = None
         outcome = t.get("outcome")

@@ -59,11 +59,20 @@ def _stub_tbot_python(monkeypatch):
 # ---------------------------------------------------------------------------
 
 def test_the_flag_reader():
+    on = {"orchestrator": {"analyst": {"enabled": True}, "folds": {"enabled": True}}}
     assert rpr._analyst_enabled({}) is False
-    assert rpr._analyst_enabled({"orchestrator": {"analyst": {"enabled": True}}}) is True
+    assert rpr._analyst_enabled(on) is True
     for bad in ("true", None, 1):
         with pytest.raises(ValueError, match="orchestrator.analyst.enabled"):
             rpr._analyst_enabled({"orchestrator": {"analyst": {"enabled": bad}}})
+
+
+def test_the_flag_requires_folds():
+    """Review of #358: without folds a trade claim of a plain kind would be routed in-run by
+    E-072 and fail there; the analyst's claims are confirmed on folds only."""
+    with pytest.raises(ValueError, match="requires orchestrator.folds.enabled=true"):
+        rpr._analyst_enabled({"orchestrator": {"analyst": {"enabled": True}}})
+    assert rpr._analyst_enabled({"orchestrator": {"analyst": {"enabled": False}}}) is False
 
 
 @pytest.mark.parametrize("folds,analyst,want", [
@@ -317,3 +326,157 @@ def test_the_orchestrator_passes_the_family_to_fold_confirmation_only_under_the_
     monkeypatch.setattr(rpr, "_claim_measure_variants", lambda *a, **k: ([], {}))
     rpr._confirm_on_fold_after_backtests(tmp_path, "run_x")
     assert seen == [{"trade_tests": True} if on else {}]
+
+
+
+# ---------------------------------------------------------------------------
+# review of #358: the trade claim's hash, the coins' cost records, the untested wiring
+# ---------------------------------------------------------------------------
+
+def test_a_trade_tests_hash_is_recorded_not_none():
+    """claim_findings._tests_of and claim_measure.unmeasured_tests hash a trade test like
+    check_claim does (before: None, so a measured trade claim read as `stale`)."""
+    import claim_findings as cf
+    want = cc_hash = cmeas.test_spec(TRADE_TEST, True)[1]
+    assert cc_hash
+    (row,) = cf._tests_of(_claim())
+    assert row["spec_hash"] == want
+    assert cmeas.unmeasured_tests([TRADE_TEST], "x")["longs_beat_shorts"]["spec_hash"] == want
+    bar = base._claim()["tests"][0]
+    assert cf._tests_of({"tests": [bar]})[0]["spec_hash"] == cmeas.test_spec(bar)[1]
+
+
+def _diag(child, symbols, per_coin):
+    """trade_diagnostics.json of the base variant: every lot of every coin-window with the
+    all-costs fields, carrying `symbol` and `window` as run_protocol writes them."""
+    recs = []
+    for sym in symbols:
+        for block in base.BLOCKS:
+            rid = f"base_{sym}_{block['label']}"
+            trades = json.loads((child / "variants" / "base" / "results" / rid / "trades.json")
+                                .read_text(encoding="utf-8"))
+            for t in trades[:per_coin.get(sym, len(trades))]:
+                recs.append({"trade_id": t["trade_id"], "symbol": sym, "window": block["label"],
+                             "gross_return_before_costs": 1.0, "cost_paid_all": 10.0})
+    (child / "variants" / "base" / "trade_diagnostics.json").write_text(
+        json.dumps({"trades": recs}), encoding="utf-8")
+
+
+def _rename_trades(child, symbols):
+    """Give each coin's lots distinct ids (the fixture reuses ids across coins)."""
+    for sym in symbols:
+        for block in base.BLOCKS:
+            path = child / "variants" / "base" / "results" / f"base_{sym}_{block['label']}" / "trades.json"
+            trades = json.loads(path.read_text(encoding="utf-8"))
+            for t in trades:
+                t["trade_id"] = f"{sym}-{t['trade_id']}"
+            path.write_text(json.dumps(trades), encoding="utf-8")
+
+
+def test_several_coins_keep_their_own_all_costs_records(tmp_path):
+    """Before: the records were grouped by window only, so with two coins a coin-window got
+    both coins' records, the pairing failed and that window fell back to the net basis."""
+    import claim_tests as ct
+    coins = ("BTCUSD", "ETHUSD")
+    root, child = _build_trades(tmp_path, _signs(6), symbols=coins)
+    _rename_trades(child, coins)
+    _diag(child, coins, {})
+    tws = ct.load_variant_trade_windows(child, "base")
+    assert {tw.basis for tw in tws} == {"all_costs"}
+    row = base._confirm(root, child, trade_tests=True)
+    assert row["status"] != fc.NOT_MEASURABLE, row["reason"]
+
+
+def test_one_coins_records_are_used_whatever_their_symbol_spelling(tmp_path):
+    import claim_tests as ct
+    root, child = _build_trades(tmp_path, _signs(6))
+    _diag(child, ("BTCUSD",), {})
+    path = child / "variants" / "base" / "trade_diagnostics.json"
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    for r in doc["trades"]:
+        r["symbol"] = "BTC/USD"                                 # another spelling: one coin
+    path.write_text(json.dumps(doc), encoding="utf-8")
+    assert {tw.basis for tw in ct.load_variant_trade_windows(child, "base")} == {"all_costs"}
+
+
+@pytest.mark.parametrize("on", [False, True])
+def test_the_in_run_record_gets_the_family_only_under_the_flag(on, monkeypatch, tmp_path):
+    seen = []
+
+    class Stop(Exception):
+        pass
+
+    def spy(*a, **kw):
+        seen.append({k: v for k, v in kw.items() if k == "trade_tests"})
+        raise Stop()
+    monkeypatch.setattr(ec, "confirm_findings", spy)
+    monkeypatch.setattr(rpr, "_explore_confirm_module", lambda: ec)
+    monkeypatch.setattr(ec, "load_split", lambda arts: {"exploration": [], "confirmation": []})
+    monkeypatch.setattr(rpr, "_folds_enabled", lambda *a: True)
+    monkeypatch.setattr(rpr, "_analyst_enabled", lambda *a: on)
+    monkeypatch.setattr(rpr, "_load_holdout_range", lambda: (base.HOLDOUT, None))
+    (tmp_path / "artifacts" / "proposals").mkdir(parents=True)
+    try:
+        rpr._record_confirmations("run_x", tmp_path)
+    except Stop:
+        pass
+    assert seen == [{"trade_tests": True} if on else {}]
+
+
+def test_confirm_findings_routes_a_trade_claim_pending_only_with_the_family(tmp_path):
+    doc = {"schema_version": 3, "reading_id": "trade_efficiency-run_x", "model_id": "m",
+           "rubric_version": "trade_efficiency-reading-v1", "explanation": "e",
+           "evidence": ["x=1"],
+           "side_findings": [{"proposal_id": "trade_efficiency-run_x-1", "claim": _claim(),
+                              "evidence": ["x=1"], "scores": base._scores(), **EMPTY}]}
+    split = {"exploration": [], "confirmation": []}
+    kw = dict(base_variant="base", eras=base.ERAS, holdout_start=base.HOLDOUT, folds=True)
+    (rec,) = ec.confirm_findings(tmp_path, "run_x", {"trade_efficiency": doc}, split,
+                                 trade_tests=True, **kw)
+    assert rec["status"] == ec.PENDING and rec["finding_spec_hashes"]
+    (rec,) = ec.confirm_findings(tmp_path, "run_x", {"trade_efficiency": doc}, split, **kw)
+    assert rec["status"] == ec.NOT_MEASURABLE
+
+
+def _analyst_guarded(tree):
+    """Every `trade_tests` keyword, and every dict literal with a "trade_tests" key, sits
+    inside a conditional expression whose test calls *_analyst_enabled()."""
+    parents = {}
+    for node in ast.walk(tree):
+        for child in ast.iter_child_nodes(node):
+            parents[child] = node
+
+    def guarded(node):
+        while node in parents:
+            node = parents[node]
+            if isinstance(node, ast.IfExp) and any(
+                    isinstance(c, ast.Call) and (getattr(c.func, "id", "") == "_analyst_enabled"
+                                                 or getattr(c.func, "attr", "") == "_analyst_enabled")
+                    for c in ast.walk(node.test)):
+                return True
+        return False
+    bad = []
+    for node in ast.walk(tree):
+        hit = ((isinstance(node, ast.keyword) and node.arg == "trade_tests")
+               or (isinstance(node, ast.Dict) and any(isinstance(k, ast.Constant)
+                                                      and k.value == "trade_tests" for k in node.keys)))
+        if hit and not guarded(node):
+            bad.append(ast.unparse(node) if not isinstance(node, ast.keyword) else node.arg)
+    return bad
+
+
+def test_every_orchestrator_trade_tests_sits_behind_the_flag():
+    """Review of #358: a static guard, not a regex. In workflow/ every `trade_tests` keyword
+    or dict key is inside `... if _analyst_enabled() else ...`; and run_campaign's decide-next
+    inputs carry it (the call site the behavioural tests cannot reach)."""
+    for name in ("run_phase1_research.py", "run_campaign.py"):
+        tree = ast.parse((SR_ROOT / "workflow" / name).read_text(encoding="utf-8"))
+        assert _analyst_guarded(tree) == [], name
+    camp = ast.parse((SR_ROOT / "workflow" / "run_campaign.py").read_text(encoding="utf-8"))
+    calls = [n for n in ast.walk(camp) if isinstance(n, ast.Call)
+             and getattr(n.func, "attr", "") == "load_inputs"]
+    assert len(calls) == 1
+    assert "trade_tests" in ast.unparse(calls[0]) and "_analyst_enabled" in ast.unparse(calls[0])
+    # the guard is not vacuous: an unconditional keyword is reported
+    assert _analyst_guarded(ast.parse("f(x, trade_tests=True)")) == ["trade_tests"]
+    assert _analyst_guarded(ast.parse('f(**{"trade_tests": True})')) != []
