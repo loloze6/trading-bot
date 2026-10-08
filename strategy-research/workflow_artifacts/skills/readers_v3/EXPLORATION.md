@@ -8,6 +8,12 @@ only (listed in `injected_context.explore_confirm.exploration_windows` and in ea
   windows (pooled `overall` slices, pooled grid criteria, the idea status, earlier runs'
   effects, registry correlations). A field marked `withheld` is not missing data and is not
   zero. Never guess it, never cite it, never infer it.
+- **`<n>` in free text is a masked number.** The prose an earlier step wrote (the claim
+  statement, the signal concept, the target market, the block manifest's rationale, the
+  approximation lines, earlier findings' statements) may quote a number measured over every
+  window, so every number in it is shown as `<n>`. The words are kept; the exact
+  parameters are in the claim's tests, the manifest's config paths and the base config,
+  which are not masked. Never guess a masked number.
 - **Your side findings are checked on windows you never saw.** After every reader, code
   measures each side finding's tests on the confirmation windows: a price-only finding in
   this run, a forecast or regime block claim in the run built from it. It records whether

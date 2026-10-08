@@ -4503,10 +4503,12 @@ def _explore_confirm_handoff(handoff: dict, category: str, run_dir: Path | None)
         raise ValueError("orchestrator.explore_confirm: a reader handoff needs its run directory")
     split = ec.load_split(Path(run_dir) / "artifacts")
     shown = ec.labels(split["exploration"])
+    # every readers' copy; the AI free text in them is number-masked
+    # (ec.READER_FREE_TEXT, operator decision 14)
     swap = {f"artifacts/{n}": f"artifacts/{_exploration_rel(n)}"
             for n in (f"reports/{category}.yaml", "grid_evaluation.yaml",
                       rf.DIGEST_ARTIFACT, rf.READER_SUMMARY_ARTIFACT, "registry_summary.yaml",
-                      "hypothesis_card.yaml")}
+                      "hypothesis_card.yaml", "block_manifest.yaml")}
     import copy as _copy
     out = _copy.deepcopy(handoff)
     req = []
@@ -4521,7 +4523,16 @@ def _explore_confirm_handoff(handoff: dict, category: str, run_dir: Path | None)
                                   "are checked on windows you never saw"})
     out["required_inputs"] = req
     measurement = f"artifacts/{_claim_measurement_name(run_dir)}"
-    out["optional_inputs"] = [r for r in out["optional_inputs"] if r["path"] != measurement]
+    # an optional copy (the block manifest's) is given only when this attempt
+    # wrote it (ec.current_copies): never an earlier attempt's copy
+    current = ec.current_copies(Path(run_dir) / "artifacts")
+    prefix = f"artifacts/{ec.EXPLORATION_DIR}/"
+    out["optional_inputs"] = [
+        {**r, "path": swap.get(r["path"], r["path"])} for r in out["optional_inputs"]
+        if r["path"] != measurement]
+    out["optional_inputs"] = [r for r in out["optional_inputs"]
+                              if not r["path"].startswith(prefix)
+                              or r["path"][len(prefix):] in current]
     for old, new in swap.items():
         out["objective"] = out["objective"].replace(old, new)
     out["objective"] += (f" Every result you read comes from the exploration windows {shown} "
@@ -4547,8 +4558,14 @@ def _reader_v3_missing_inputs(run_dir: Path) -> list:
         recorded = set((doc or {}).get("missing") or {})
     except Exception:  # noqa: BLE001 -- absent (the normal case) or unreadable
         recorded = set()
-    return [name for name in _reader_v3_input_names(run_dir)
-            if name in recorded or not (arts / name).exists()]
+    names = _reader_v3_input_names(run_dir)
+    if _explore_confirm_active(run_dir):
+        # E-072 (review round 2, finding 4): an exploration copy this attempt
+        # did not stamp is an earlier attempt's -- missing
+        ec = _explore_confirm_module()
+        current = {_exploration_rel(n) for n in ec.current_copies(arts)}
+        recorded |= {n for n in names if n not in current}
+    return [name for name in names if name in recorded or not (arts / name).exists()]
 
 
 def _reader_v3_input_names(run_dir: Path | None = None) -> tuple:
@@ -4707,8 +4724,9 @@ def _citation_provenance(category: str, run_dir: Path, body: str) -> dict:
             if _explore_confirm_active(run_dir):  # E-072: the exploration copies it received
                 rels = (tuple(_exploration_rel(r) for r in (
                             f"reports/{category}.yaml", "grid_evaluation.yaml",
-                            "registry_summary.yaml", "hypothesis_card.yaml"))
-                        + ("block_manifest.yaml", config_rel)
+                            "registry_summary.yaml", "hypothesis_card.yaml",
+                            "block_manifest.yaml"))
+                        + (config_rel,)
                         + tuple(n for n in _reader_v3_input_names(run_dir) if n not in gone))
             else:
                 rels += tuple(n for n in (_rf.DIGEST_ARTIFACT, _rf.READER_SUMMARY_ARTIFACT)
@@ -5323,6 +5341,19 @@ def _prepare_explore_confirm(run_dir: Path, run_id: str) -> dict | None:
     ec = _explore_confirm_module()
     arts = Path(run_dir) / "artifacts"
     try:
+        # review round 2, finding 4: a fresh attempt id first -- a copy this
+        # attempt does not stamp with it counts as missing, even when the
+        # removal below fails
+        ec.new_attempt(arts)
+    except Exception as exc:  # noqa: BLE001 -- never a stop (D-080)
+        with contextlib.suppress(OSError):
+            (arts / ec.ATTEMPT_ARTIFACT).unlink(missing_ok=True)
+        with contextlib.suppress(OSError):
+            (arts / ec.EXPLORATION_DIR / ec.COPIES_STAMP).unlink(missing_ok=True)
+        print(f"⚠️⚠️  [E-072] this attempt's id could NOT be written ({type(exc).__name__}: "
+              f"{exc}); the readers' copies cannot be stamped, so the readers will be skipped "
+              f"by rule exploration_inputs_unavailable.")
+    try:
         stale = arts / ec.EXPLORATION_DIR
         if stale.exists():
             shutil.rmtree(stale)
@@ -5395,6 +5426,9 @@ def _write_exploration_views(run_dir: Path, run_id: str, pr_by_variant: dict, va
                                single_era_inconclusive=bool(_grid_v2_kw()),
                                composition_runs=_composition_runs_enabled())
     _br._write_yaml_atomic(out / "grid_evaluation.yaml", grid)
+    # written LAST: these copies are this attempt's (review round 2, finding 4)
+    ec.stamp_copies(arts, [f"reports/{name}.yaml" for name in reports]
+                    + ["grid_evaluation.yaml"])
     print(f"🔒 [E-072] readers' copies written from the exploration windows {shown}: "
           f"{ec.EXPLORATION_DIR}/reports/*.yaml, {ec.EXPLORATION_DIR}/grid_evaluation.yaml")
 
@@ -5403,8 +5437,10 @@ def _write_exploration_reader_inputs(run_dir: Path, run_id: str) -> dict:
     """specialist_readers, before the first reader (after _write_reader_v3_inputs):
     the readers' copies of the claim digest (measured again on the exploration
     windows), the earlier findings (numbers and free text withheld), the
-    registry summary (numbers over all windows withheld) and the card (its
-    whitelisted claim and signal spec). Never raises (D-061: the readers never
+    registry summary (numbers over all windows withheld), the card (its
+    whitelisted claim and signal spec) and the block manifest (optional) --
+    AI free text number-masked (ec.mask_free_text) -- then stamped as this
+    attempt's copies (ec.stamp_copies). Never raises (D-061: the readers never
     block the record of the grid): the registry and card copies are required
     -- one that cannot be written (or a split that cannot be read) is logged
     loudly, any older copy is removed, and each reader is then skipped by rule
@@ -5425,19 +5461,25 @@ def _write_exploration_reader_inputs(run_dir: Path, run_id: str) -> dict:
               f"reader is skipped by rule exploration_inputs_unavailable.")
         return {}
     shown = ec.labels(split["exploration"])
+    written = []  # stamped LAST as this attempt's copies (review round 2, finding 4)
     for rel, build in (("registry_summary.yaml", ec.withhold_registry_numbers),
-                       ("hypothesis_card.yaml", ec.reader_card)):
+                       ("hypothesis_card.yaml", ec.reader_card),
+                       ("block_manifest.yaml", ec.reader_manifest)):
+        if rel == "block_manifest.yaml" and not (arts / rel).exists():
+            continue  # optional (absent on a composition run): no copy, no skip
         try:
             src = load_yaml(arts / rel)
             if not isinstance(src, dict):
                 raise FileNotFoundError(f"{arts / rel} is missing or not a mapping")
             _br._write_yaml_atomic(out / rel, build(src))
+            written.append(rel)
         except Exception as exc:  # noqa: BLE001 -- required copy: the readers are skipped
             with contextlib.suppress(OSError):
                 (out / rel).unlink(missing_ok=True)
+            effect = ("the readers run without it" if rel == "block_manifest.yaml" else
+                      "every reader is skipped by rule exploration_inputs_unavailable")
             print(f"⚠️⚠️  [E-072] the readers' copy {ec.EXPLORATION_DIR}/{rel} could NOT be "
-                  f"written ({type(exc).__name__}: {exc}); every reader is skipped by rule "
-                  f"exploration_inputs_unavailable (never the all-window file).")
+                  f"written ({type(exc).__name__}: {exc}); {effect} (never the all-window file).")
     gaps = {}
     digest_rel = _exploration_rel(rf.DIGEST_ARTIFACT)
     summary_rel = _exploration_rel(rf.READER_SUMMARY_ARTIFACT)
@@ -5445,6 +5487,7 @@ def _write_exploration_reader_inputs(run_dir: Path, run_id: str) -> dict:
         digest = ec.exploration_digest(run_dir, shown, _pres.load_policy_eras(_DATA_POLICY_PATH),
                                        _load_holdout_range()[0])
         _br._write_yaml_atomic(arts / digest_rel, digest)
+        written.append(rf.DIGEST_ARTIFACT)
     except Exception as exc:  # noqa: BLE001 -- a gap, like _write_reader_v3_inputs
         gaps[digest_rel] = f"{type(exc).__name__}: {exc}"
     try:
@@ -5452,8 +5495,18 @@ def _write_exploration_reader_inputs(run_dir: Path, run_id: str) -> dict:
         if not isinstance(summary, dict):
             raise FileNotFoundError(f"{rf.READER_SUMMARY_ARTIFACT} was not written")
         _br._write_yaml_atomic(arts / summary_rel, ec.withhold_findings_numbers(summary))
+        written.append(rf.READER_SUMMARY_ARTIFACT)
     except Exception as exc:  # noqa: BLE001
         gaps[summary_rel] = f"{type(exc).__name__}: {exc}"
+    try:
+        ec.stamp_copies(arts, written)
+    except Exception as exc:  # noqa: BLE001 -- unstamped copies count as missing
+        print(f"⚠️⚠️  [E-072] the readers' copies {written} could NOT be stamped as this "
+              f"attempt's ({type(exc).__name__}: {exc}); they count as missing (the readers are "
+              f"skipped by rule exploration_inputs_unavailable).")
+        for rel in written:
+            if rel in (rf.DIGEST_ARTIFACT, rf.READER_SUMMARY_ARTIFACT):
+                gaps[_exploration_rel(rel)] = f"not stamped: {type(exc).__name__}: {exc}"
     for name in gaps:
         with contextlib.suppress(OSError):
             (arts / name).unlink(missing_ok=True)

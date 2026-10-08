@@ -48,7 +48,9 @@ from __future__ import annotations
 import copy
 import json
 import os
+import re
 import sys
+import uuid
 from pathlib import Path
 
 import yaml
@@ -111,10 +113,78 @@ _RESOLUTION_KEYS = ("variant", "windows_measured", "tests", "measured_in_run", "
 # text that may quote earlier all-window numbers (thesis, rationale,
 # edge_source, assumptions, failure modes, pass_if/fail_if/rationale of the
 # claim) and numeric evidence (power_parameters, library_lookup,
-# cost_feasibility) are left out.
+# cost_feasibility) are left out. The free text kept is masked (below).
 READER_CARD_KEYS = ("hypothesis_id", "signal_concept", "target_market", "timeframe",
                     "composition", "config", "manifest", "criteria")
 READER_CLAIM_KEYS = ("statement", "kind", "tests", "criteria_refs", "missing_block")
+
+# Operator decision 14 (PR #340 review round 2, finding 1): ONE rule for
+# every free-text field an AI step wrote that reaches a reader -- its number
+# literals (ints, decimals, signed, thousands, percentages, scientific) are
+# replaced by NUMBER_MASK, the words kept (run_074's card: "median
+# forecast_return_corr=-0.0057", an all-window number, in claim.statement).
+# READER_FREE_TEXT lists those fields per readers' copy (artifacts/exploration/
+# <name>), as key paths ("*" = every list item); mask_free_text is the one
+# function that applies it, called by every builder of such a copy. Never
+# masked: the mechanical test specs, component params, the config, window
+# labels, ids -- the parameters stay readable there. The other readers'
+# copies (the category reports, the grid and the block-registry summary) are
+# code-written from results: no AI free text.
+NUMBER_MASK = "<n>"
+_NUMBER_RE = re.compile(
+    r"(?<![\w.])[-+\u2212\u00b1]?"
+    r"(?:\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?|\.\d+)"
+    r"(?:[eE][-+\u2212]?\d+)?%?")
+_DEVIATION_TEXT = ("clause", "built_instead", "missing", "effect")
+READER_FREE_TEXT = {
+    # step 1a (or 1b's pass-through manifest)
+    "hypothesis_card.yaml": (("signal_concept",), ("target_market",), ("claim", "statement"),
+                             ("manifest", "rationale")),
+    # step 1b's block manifest
+    "block_manifest.yaml": (("rationale",),),
+    # the claim statement (1a) and the approximation (1b's deviations)
+    "claim_result_digest.yaml": (("statement",), ("approximation", "line"),
+                                 *(("approximation", "deviations", "*", k)
+                                   for k in _DEVIATION_TEXT)),
+    # earlier runs' claim statements (their 1a)
+    "findings_summary_for_readers.yaml": (("findings", "*", "statement"),),
+}
+
+
+def mask_numbers(value):
+    """`value` with every number literal replaced by NUMBER_MASK: a string
+    keeps its words; a number (not a bool) becomes NUMBER_MASK; lists and
+    mappings are masked item by item; anything else is returned as is."""
+    if isinstance(value, str):
+        return _NUMBER_RE.sub(NUMBER_MASK, value)
+    if isinstance(value, bool) or value is None:
+        return value
+    if isinstance(value, (int, float)):
+        return NUMBER_MASK
+    if isinstance(value, list):
+        return [mask_numbers(v) for v in value]
+    if isinstance(value, dict):
+        return {k: mask_numbers(v) for k, v in value.items()}
+    return value
+
+
+def _mask_at(node, path: tuple):
+    if not path:
+        return mask_numbers(node)
+    head, rest = path[0], path[1:]
+    if head == "*":
+        return [_mask_at(x, rest) for x in node] if isinstance(node, list) else node
+    if isinstance(node, dict) and head in node:
+        node[head] = _mask_at(node[head], rest)
+    return node
+
+
+def mask_free_text(doc, name: str):
+    """`doc` (a readers' copy named `name`, changed in place and returned) with
+    every READER_FREE_TEXT[name] field passed through mask_numbers."""
+    for path in READER_FREE_TEXT[name]:
+        doc = _mask_at(doc, path)
+    return doc
 
 
 class SplitError(ValueError):
@@ -356,7 +426,8 @@ def measure_on_windows(run_dir: Path, vid: str, tests: list, windows, eras,
 def exploration_digest(run_dir: Path, windows, eras, holdout_start: str) -> dict:
     """artifacts/exploration/claim_result_digest.yaml: the claim digest's
     descriptive part (statement, tests, variant patches, approximation) from
-    reader_findings.claim_result_digest, and per variant its numbers MEASURED
+    reader_findings.claim_result_digest -- its AI free text (statement,
+    approximation) with numbers masked (mask_free_text) -- and per variant its numbers MEASURED
     AGAIN on the exploration windows only -- for each variant the run-level
     measurement lists as measured in this attempt (the others keep their
     reason, without numbers). Never raises: a failure is `status: error`."""
@@ -367,7 +438,9 @@ def exploration_digest(run_dir: Path, windows, eras, holdout_start: str) -> dict
     run_dir = Path(run_dir)
     shown = sorted(set(windows))
     base = rf.claim_result_digest(run_dir)
-    out = {k: v for k, v in base.items() if k not in ("variants", "claim_status", "reason")}
+    out = mask_free_text({k: v for k, v in base.items()
+                          if k not in ("variants", "claim_status", "reason")},
+                         "claim_result_digest.yaml")
     out.update({"windows_shown": shown, "windows_note": READER_NOTE})
     if base.get("status") == "error":
         return out
@@ -425,13 +498,13 @@ def exploration_digest(run_dir: Path, windows, eras, holdout_start: str) -> dict
 def withhold_findings_numbers(summary: dict) -> dict:
     """findings_summary_for_readers with every earlier effect withheld: what
     was tested (ids, kind, spec, selector, outcome, status, spec_hash) stays,
-    so a reader still does not repeat a test; how it came out does not -- nor
-    the free text of an earlier row (`statement`, `reason`), which may quote
-    an all-window number."""
+    so a reader still does not repeat a test; how it came out does not: the
+    code-written `reason` (a result) is dropped, and the claim `statement`
+    (1a's free text) has its numbers masked like every AI free text a reader
+    gets (mask_free_text, operator decision 14)."""
     out = copy.deepcopy(summary)
     for row in out.get("findings") or []:
         if isinstance(row, dict):
-            row.pop("statement", None)
             row.pop("reason", None)
         for t in row.get("tests") or [] if isinstance(row, dict) else []:
             for v in (t.get("by_variant") or {}).values() if isinstance(t, dict) else []:
@@ -439,7 +512,7 @@ def withhold_findings_numbers(summary: dict) -> dict:
                     v["largest_effect"] = WITHHELD
     out["numbers"] = {"status": WITHHELD, "reason": EARLIER_WITHHELD_REASON}
     out["statistic_labels"] = {}
-    return out
+    return mask_free_text(out, "findings_summary_for_readers.yaml")
 
 
 def withhold_registry_numbers(summary: dict) -> dict:
@@ -472,7 +545,9 @@ def reader_card(card: dict) -> dict:
     """artifacts/exploration/hypothesis_card.yaml: the card the readers get --
     READER_CARD_KEYS and the claim's READER_CLAIM_KEYS only (a whitelist).
     Every other field (free text that may quote an all-window number, numeric
-    evidence) is left out and listed under `withheld_fields`."""
+    evidence) is left out and listed under `withheld_fields`; the free text
+    kept (signal_concept, target_market, claim.statement, manifest.rationale)
+    has its numbers masked (mask_free_text)."""
     if not isinstance(card, dict):
         raise ValueError("hypothesis_card.yaml is not a mapping -- no readers' copy is built")
     out = {k: copy.deepcopy(card[k]) for k in READER_CARD_KEYS if k in card}
@@ -485,27 +560,113 @@ def reader_card(card: dict) -> dict:
     out["withheld_fields"] = {"fields": dropped,
                               "reason": ("withheld under explore_confirm: free text or evidence "
                                          "that may quote numbers measured over every window")}
-    return out
+    return mask_free_text(out, "hypothesis_card.yaml")
+
+
+def reader_manifest(manifest: dict) -> dict:
+    """artifacts/exploration/block_manifest.yaml: the block manifest the
+    readers get -- the config paths unchanged, the rationale (1b's free text)
+    with its numbers masked (mask_free_text)."""
+    if not isinstance(manifest, dict):
+        raise ValueError("block_manifest.yaml is not a mapping -- no readers' copy is built")
+    return mask_free_text(copy.deepcopy(manifest), "block_manifest.yaml")
+
+
+# ---------------------------------------------------------------------------
+# Which attempt wrote the readers' copies (PR #340 review round 2, finding 4)
+# ---------------------------------------------------------------------------
+# A copy left by an earlier protocol_execution attempt (its removal failed,
+# and so did the removal after a failed rewrite) must never pass as this
+# attempt's. At protocol_execution entry a fresh attempt id is written to
+# artifacts/ATTEMPT_ARTIFACT; after each batch of copies is written,
+# COPIES_STAMP (inside artifacts/exploration/, written LAST) lists them under
+# that id. A copy not listed under the current id counts as missing.
+ATTEMPT_ARTIFACT = "explore_confirm_attempt.yaml"
+COPIES_STAMP = "copies_stamp.yaml"
+
+
+def new_attempt(arts: Path) -> str:
+    """A fresh attempt id in artifacts/ATTEMPT_ARTIFACT (protocol_execution
+    entry). Raises when it cannot be written."""
+    import campaign_memory as cm
+    aid = uuid.uuid4().hex
+    cm._atomic_write(Path(arts) / ATTEMPT_ARTIFACT,
+                     {"schema_version": SCHEMA_VERSION, "attempt_id": aid,
+                      "note": ("this protocol_execution attempt; only the readers' copies "
+                               f"listed under this id in {EXPLORATION_DIR}/{COPIES_STAMP} are "
+                               "current")})
+    return aid
+
+
+def current_attempt(arts: Path):
+    """The current attempt id, or None (absent or unreadable). Never raises."""
+    try:
+        doc = _load_yaml(Path(arts) / ATTEMPT_ARTIFACT)
+    except Exception:  # noqa: BLE001 -- absent or unreadable: no current attempt
+        return None
+    aid = doc.get("attempt_id") if isinstance(doc, dict) else None
+    return aid if isinstance(aid, str) and aid else None
+
+
+def stamp_copies(arts: Path, rels) -> None:
+    """Called LAST, after a batch of readers' copies is written: adds `rels`
+    (relative to artifacts/exploration/) to COPIES_STAMP under the current
+    attempt id (a stamp of another attempt is replaced). Raises when there is
+    no current attempt or the stamp cannot be written -- the copies then
+    count as missing."""
+    import campaign_memory as cm
+    aid = current_attempt(arts)
+    if aid is None:
+        raise ValueError(f"no current attempt id in {Path(arts) / ATTEMPT_ARTIFACT} -- the "
+                         f"readers' copies cannot be told apart from an earlier attempt's")
+    path = Path(arts) / EXPLORATION_DIR / COPIES_STAMP
+    try:
+        doc = _load_yaml(path) if path.exists() else None
+    except (OSError, ValueError, yaml.YAMLError):
+        doc = None
+    files = set(doc.get("files") or []) if isinstance(doc, dict) and \
+        doc.get("attempt_id") == aid else set()
+    cm._atomic_write(path, {"attempt_id": aid, "files": sorted(files | {str(r) for r in rels})})
+
+
+def current_copies(arts: Path) -> set:
+    """The readers' copies (relative to artifacts/exploration/) written by the
+    current attempt; empty when there is no current attempt or no stamp of
+    it. Never raises."""
+    aid = current_attempt(arts)
+    if aid is None:
+        return set()
+    try:
+        doc = _load_yaml(Path(arts) / EXPLORATION_DIR / COPIES_STAMP)
+    except Exception:  # noqa: BLE001 -- absent or unreadable: nothing is current
+        return set()
+    if not isinstance(doc, dict) or doc.get("attempt_id") != aid:
+        return set()
+    return {str(f) for f in doc.get("files") or []}
 
 
 def exploration_inputs_missing(arts: Path, category: str, required: tuple):
     """None when `category`'s reader has every readers' copy it cannot run
     without (the split, and each path of `required` under
     artifacts/exploration/, `{category}` filled in -- the orchestrator's
-    list), else the reason it has not -- the reader is then skipped by rule
-    exploration_inputs_unavailable, never given the all-window files. Never
-    raises."""
+    list -- written by the current attempt: current_copies), else the reason
+    it has not -- the reader is then skipped by rule
+    exploration_inputs_unavailable, never given the all-window files (nor an
+    earlier attempt's copy). Never raises."""
     try:
         load_split(arts)
     except Exception as exc:  # noqa: BLE001 -- the reason is recorded
         return (f"the exploration/confirmation split cannot be read "
                 f"({type(exc).__name__}: {exc})")
     root = Path(arts) / EXPLORATION_DIR
+    current = current_copies(arts)
     missing = [f"{EXPLORATION_DIR}/{rel.format(category=category)}" for rel in required
-               if not (root / rel.format(category=category)).is_file()]
+               if not (root / rel.format(category=category)).is_file()
+               or rel.format(category=category) not in current]
     if missing:
-        return (f"the readers' exploration copies {missing} could not be written in this run; "
-                f"the all-window files are never given instead")
+        return (f"the readers' exploration copies {missing} could not be written in this "
+                f"attempt (absent, or left by an earlier attempt); the all-window files are "
+                f"never given instead")
     return None
 
 
@@ -786,6 +947,15 @@ def load_ledger(root: Path) -> dict:
     return doc if isinstance(doc, dict) else {}
 
 
+def _resolved_elsewhere(old, run_id: str) -> bool:
+    """True when the ledger's record `old` was measured by ANOTHER run than
+    `run_id` (a follow-up run's resolution, or another run's in-run
+    measurement): `run_id` may then not replace it. A pending record, or one
+    measured by `run_id` itself, may be replaced."""
+    return (isinstance(old, dict) and old.get("confirmation_sign_retained") != PENDING
+            and old.get("measured_in_run") not in (None, run_id))
+
+
 def record(root: Path, run_id: str, records: list, *, resolve=None) -> list:
     """Upsert `records` (this run's side findings) into
     campaign_record/confirmations.yaml and count their looks (idempotent per
@@ -801,7 +971,10 @@ def record(root: Path, run_id: str, records: list, *, resolve=None) -> list:
     in an earlier attempt and not in `records` is removed from `findings`
     (listed under `superseded`) -- unless another run already measured it.
     Its looks stay counted: a look measured on a confirmation set was spent,
-    whichever attempt took it.
+    whichever attempt took it. A record another run already measured (a
+    follow-up run's resolution) is never replaced by a re-run of the source
+    run: it is kept, and the re-run's record goes under `superseded`
+    (_resolved_elsewhere).
 
     Returns the records as written (`records` first, then the resolved ones),
     each measured one with its `looks` position on its confirmation set."""
@@ -849,7 +1022,22 @@ def record(root: Path, run_id: str, records: list, *, resolve=None) -> list:
                                 "n_comparisons_on_set": sum(lk["n_comparisons"]
                                                             for lk in on_set)}
             fid = rec.get("finding_id")
-            if fid:
+            old = findings.get(str(fid)) if fid else None
+            if _resolved_elsewhere(old, run_id):
+                # review round 2, finding 2: a re-run of the source run never
+                # overwrites a result another run measured -- that record is
+                # kept, this attempt is listed under `superseded`
+                same = set(old.get("finding_spec_hashes") or []) == set(
+                    rec.get("finding_spec_hashes") or [])
+                superseded.append({
+                    "run_id": run_id, "finding_id": str(fid), "status": rec.get("status"),
+                    "confirmation_sign_retained": rec.get("confirmation_sign_retained"),
+                    "same_spec_hash": same,
+                    "note": (f"a re-run of the source run; the record measured by "
+                             f"{old.get('measured_in_run')} is kept (a re-run replaces only a "
+                             f"pending or same-run record)")})
+                rec["ledger"] = f"not written: already measured by {old.get('measured_in_run')}"
+            elif fid:
                 findings[str(fid)] = rec
             written.append(rec)
         by_set = {}
@@ -876,8 +1064,13 @@ def summary_lines(root: Path) -> list:
         doc = _load_yaml(path) or {}
     except (yaml.YAMLError, OSError, UnicodeDecodeError) as exc:
         return title + [f"- {LEDGER_REL} is unreadable ({type(exc).__name__}); fix or remove it."]
-    findings = doc.get("findings") if isinstance(doc, dict) and isinstance(
-        doc.get("findings"), dict) else {}
+    # review round 2, finding 3: a hand-edited ledger of another shape never
+    # breaks the campaign summary (called on the pause/finish paths)
+    if not isinstance(doc, dict) or any(doc.get(k) is not None and not isinstance(doc[k], dict)
+                                        for k in ("by_set", "findings")):
+        return title + [f"- {LEDGER_REL} is unreadable (not the confirmations ledger's shape); "
+                        f"fix or remove it."]
+    findings = doc.get("findings") or {}
     # The clean counts are the in-run measurements (readers who saw the
     # exploration copies only); a resolution by the run built from a finding
     # is counted on its own line (weak: step 1a saw the all-window knowledge

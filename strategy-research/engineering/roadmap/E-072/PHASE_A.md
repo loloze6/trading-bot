@@ -60,9 +60,9 @@ One module, `tools/explore_confirm.py`; one flag; every orchestrator change sits
    - `claim_result_digest.yaml`: the digest's descriptive part plus each variant's claim
      tests **measured again** on the exploration windows (`claim_measure.measure_test` on
      the variant's bars, cut to those windows).
-   - `findings_summary_for_readers.yaml`: earlier findings with `largest_effect: withheld`
-     and their free text (`statement`, `reason`) dropped (ids, kind and the test spec stay,
-     so a reader still does not repeat a test).
+   - `findings_summary_for_readers.yaml`: earlier findings with `largest_effect: withheld`,
+     their code-written `reason` dropped and their claim `statement` number-masked (ids,
+     kind and the test spec stay, so a reader still does not repeat a test).
    - `registry_summary.yaml`: this run's idea status and correlation, and earlier blocks'
      residual IC / correlation, withheld.
    - `hypothesis_card.yaml` (review fix, finding 3): a WHITELIST copy
@@ -73,6 +73,31 @@ One module, `tools/explore_confirm.py`; one flag; every orchestrator change sits
      library_lookup, cost_feasibility, the claim's pass_if/fail_if/rationale) is left out
      and named under `withheld_fields`: free text that may quote an all-window number, or
      numeric evidence.
+   - `block_manifest.yaml` (review round 2, finding 1; optional, absent on a composition
+     run): the config paths unchanged, the rationale number-masked. The handoff swaps it
+     like every other copy.
+   **One rule for AI free text** (review round 2, finding 1; decision 14): every free-text
+   field an AI step wrote that reaches a reader passes through one function,
+   `explore_confirm.mask_free_text`, which replaces every number literal (ints, decimals,
+   signed, thousands, percentages, scientific) by `<n>` and keeps the words. The fields are
+   listed once, in `explore_confirm.READER_FREE_TEXT`: the card's `signal_concept`,
+   `target_market`, `claim.statement` and `manifest.rationale`; the manifest copy's
+   `rationale`; the digest's `statement`, `approximation.line` and each approximation
+   deviation's `clause`/`built_instead`/`missing`/`effect`; earlier findings' `statement`.
+   The other copies (category reports, grid, registry summary) are code-written from
+   results. Never masked: the mechanical test specs, component params, the config, window
+   labels and ids -- the parameters stay readable there. Real case: run_074's
+   `claim.statement` quoted "median forecast_return_corr=-0.0057", an all-window number;
+   the readers now get "forecast_return_corr=<n>". `EXPLORATION.md` tells the readers what
+   `<n>` means.
+   **Copies of an earlier attempt never pass as current** (review round 2, finding 4): at
+   protocol_execution entry a fresh attempt id is written to
+   `artifacts/explore_confirm_attempt.yaml` (before the old copies are removed); after
+   each batch of copies is written, `exploration/copies_stamp.yaml` (written last) lists
+   them under that id. A copy not listed under the current id counts as missing (a
+   required one skips the reader by rule, a digest/summary copy is a gap, the manifest
+   copy is not given) -- so an earlier attempt's copies left by two failed removals are
+   never read.
    **A failure never stops the run** (review fix, finding 2; D-080, D-061/CUL-380): a
    failure writing the report/grid copies at protocol_execution is logged loudly, the
    partial copies are removed, and protocol_execution goes on; a split that cannot be read,
@@ -133,7 +158,12 @@ One module, `tools/explore_confirm.py`; one flag; every orchestrator change sits
    that resolved a pending finding, that finding is measured again from its pending state
    (kept as `pending_state`), so `artifacts/confirmation.yaml` keeps it under
    `resolved_pending`; the attempt is replaced, not appended, and its look is not counted
-   twice.
+   twice. A re-run of the SOURCE run never overwrites a record another run measured (review
+   round 2, finding 2): a re-run may replace only a pending record or one it measured
+   itself; a follow-up run's resolution is kept and the re-run's record is listed under
+   `superseded` (with `same_spec_hash`). A malformed ledger (top level not a mapping, or
+   `by_set`/`findings` not a mapping) gives one "unreadable" line in the campaign summary
+   (review round 2, finding 3), never an exception on the pause/finish paths.
 
 **What "never saw" means.** The confirmation windows (2023 on the current protocol) are
 within the reader model's training period, so "never saw" means never saw in this pipeline:
@@ -174,9 +204,8 @@ Each was taken with the safe default so the build could continue.
    finding). Alternative: show it, counting it as a look.
 9. **Prose is filtered by whitelist** (changed by the review, finding 3). The readers get a
    card copy with the claim (statement, kind, tests) and the signal/component spec only, and
-   earlier findings without `statement`/`reason`. Kept free text: the claim `statement` and
-   `signal_concept` (1a could still write a number there). Alternative: also ask 1a not to
-   quote numbers (a SKILL change), or drop `statement`/`signal_concept` too.
+   earlier findings without `reason`. The free text that is kept is number-masked
+   (decision 14). Alternative: also ask 1a not to quote numbers (a SKILL change).
 10. **Variant loop required.** The flag requires `variant_loop` (the split and the
     measurement read the variants' protocol files and bars); a non-variant run is refused.
 11. **A follow-up resolution is recorded as weak** (review, finding 1). A block claim is
@@ -206,6 +235,15 @@ Each was taken with the safe default so the build could continue.
     on the shared 2022-2023 protocol, this run's confirmation windows included. Their
     numbers are withheld; their presence is not. Alternative: withhold the block list too
     (the readers then cannot score "distance to profitable" against the registry).
+
+14. **AI free text reaching a reader has its numbers masked** (review round 2, finding 1).
+    Default: one rule, one function (`mask_free_text` over `READER_FREE_TEXT`, section 2
+    item 2): every number literal in a free-text field an AI step wrote becomes `<n>`, the
+    words stay; the mechanical test specs, params, config, window labels and ids are not
+    masked. Earlier findings' `statement` is now masked instead of dropped, so every such
+    field follows the same rule. Alternative: drop those fields from the readers' inputs
+    entirely (the claim statement, signal concept, target market, manifest rationale,
+    approximation lines and earlier statements), leaving only the mechanical spec.
 
 ## 4. Residuals (outside this epic)
 

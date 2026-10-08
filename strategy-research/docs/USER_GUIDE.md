@@ -1542,10 +1542,16 @@ feed that is not wired, one row per such feed in
      windows; the pooled `overall` slices `withheld`), the grid (window criteria
      re-evaluated on those windows; pooled criteria and the idea status
      `withheld`), the claim digest (measured again on those windows), the
-     earlier findings (numbers, `statement` and `reason` withheld) and the
-     registry summary (numbers `withheld`), and a whitelisted card copy (the
-     claim's statement/kind/tests and the signal spec; free text and numeric
-     evidence left out) -- plus `readers_v3/EXPLORATION.md`;
+     earlier findings (numbers and `reason` withheld) and the registry summary
+     (numbers `withheld`), a whitelisted card copy (the claim's
+     statement/kind/tests and the signal spec; free text and numeric evidence
+     left out) and the block manifest -- plus `readers_v3/EXPLORATION.md`.
+     Every AI-written free text kept (card statement, signal concept, target
+     market, manifest rationale, the digest's statement and approximation
+     lines, earlier statements) has its numbers shown as `<n>` (one rule,
+     `explore_confirm.mask_free_text`; the test specs, params and config are not
+     masked). A copy left by an earlier attempt counts as missing (an attempt
+     id stamps each attempt's copies);
      `claim_measurement.yaml` is not given. A split that cannot be read, or a
      missing report, grid, registry or card copy, skips that reader with the
      code rule `exploration_inputs_unavailable` (recorded in
@@ -1569,7 +1575,8 @@ feed that is not wired, one row per such feed in
      When its tests differ from the finding's, the result is `not_comparable`.
    - **Looks:** the ledger counts every look per confirmation set (tests and
      test x horizon comparisons; a resume never counts twice; a re-run replaces
-     the run's own findings but its earlier looks stay counted) and the
+     the run's own findings but its earlier looks stay counted, and never a
+     result another run measured) and the
      campaign summary shows "Side findings on unseen windows", with follow-up
      resolutions on their own line, never in the clean held / not-held counts.
      The bar is "the sign held on unseen windows, counted against the looks",

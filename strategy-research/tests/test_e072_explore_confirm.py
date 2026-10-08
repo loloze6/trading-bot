@@ -451,10 +451,12 @@ def test_exploration_copies_carry_no_confirmation_number(monkeypatch):
     rpr._write_reader_v3_inputs(run_dir, RUN_ID)
     expl_dir = run_dir / "artifacts" / ec.EXPLORATION_DIR
     names = sorted(p.relative_to(expl_dir).as_posix() for p in expl_dir.rglob("*.yaml"))
-    assert names == sorted([f"reports/{c}.yaml" for c in REPORT_CATEGORIES]
-                           + ["grid_evaluation.yaml", rf.DIGEST_ARTIFACT,
-                              rf.READER_SUMMARY_ARTIFACT, "registry_summary.yaml",
-                              "hypothesis_card.yaml"])
+    copies = sorted([f"reports/{c}.yaml" for c in REPORT_CATEGORIES]
+                    + ["grid_evaluation.yaml", rf.DIGEST_ARTIFACT,
+                       rf.READER_SUMMARY_ARTIFACT, "registry_summary.yaml",
+                       "hypothesis_card.yaml"])
+    assert names == sorted(copies + [ec.COPIES_STAMP])
+    assert sorted(ec.current_copies(run_dir / "artifacts")) == copies   # all this attempt's
     text = _text_of_tree(expl_dir)
     _assert_no_leak(text)
     for label in EXPL:
@@ -543,7 +545,8 @@ def test_the_handoff_points_at_the_exploration_copies(cat, monkeypatch):
                 rf.READER_SUMMARY_ARTIFACT, "registry_summary.yaml"):
         assert f"{x}/{rel}" in req and f"artifacts/{rel}" not in req
     assert req.index(rpr.READER_V3_EXPLORATION) == req.index(rpr.READER_V3_CONTRACT) + 1
-    assert [r["path"] for r in h["optional_inputs"]] == ["artifacts/block_manifest.yaml"]
+    # this run has no block_manifest.yaml: no copy, so no optional input
+    assert [r["path"] for r in h["optional_inputs"]] == []
     assert h["injected_context"]["explore_confirm"]["exploration_windows"] == EXPL
     assert f"artifacts/reports/{cat}.yaml" not in h["objective"]
 
@@ -1009,7 +1012,7 @@ def test_the_readers_card_is_a_whitelist():
     out = ec.reader_card(_card_with_numbers())
     _assert_no_leak(yaml.safe_dump(out))
     assert out["claim"] == {k: _pure_claim()[k] for k in ("statement", "kind", "tests")}
-    assert out["signal_concept"] == "sign of the 1-bar return"
+    assert out["signal_concept"] == "sign of the <n>-bar return"     # masked (decision 14)
     assert out["hypothesis_id"] == "H-TEST-1"
     assert {"rationale", "thesis", "power_parameters", "claim.rationale",
             "claim.pass_if"} <= set(out["withheld_fields"]["fields"])
@@ -1025,21 +1028,21 @@ def test_the_card_and_earlier_free_text_never_reach_a_reader_prompt(monkeypatch)
     assert prompts
     for p in prompts:
         _assert_no_leak(p)
-        assert "sign of the 1-bar return" in p          # the signal spec is given
+        assert "sign of the <n>-bar return" in p        # the signal spec is given, masked
     h = rpr._reader_handoff("profitability", RUN_ID, 0, run_dir)
     req = [r["path"] for r in h["required_inputs"]]
     assert f"artifacts/{ec.EXPLORATION_DIR}/hypothesis_card.yaml" in req
     assert "artifacts/hypothesis_card.yaml" not in req
 
 
-def test_earlier_findings_statement_and_reason_are_withheld():
+def test_earlier_findings_reason_is_withheld_and_statement_masked():
     summary = {"findings": [{"finding_id": "F-run_1-1", "run_id": "run_1", "kind": "k",
                              "status": "measured", "reason": "seen at 919191.5",
                              "statement": "returned 828282.5 over every window",
                              "tests": [{"name": "t", "selector": {"kind": "all"}}]}]}
     out = ec.withhold_findings_numbers(summary)
     row = out["findings"][0]
-    assert "statement" not in row and "reason" not in row
+    assert "reason" not in row and row["statement"] == "returned <n> over every window"
     assert row["finding_id"] == "F-run_1-1" and row["kind"] == "k"
     assert row["tests"][0]["selector"] == {"kind": "all"}
     _assert_no_leak(yaml.safe_dump(out))
@@ -1146,3 +1149,236 @@ def test_the_pending_lookup_reads_the_ledger_under_its_lock(monkeypatch):
     monkeypatch.setattr(rpr, "_invoke_reader_llm", _readings_llm([]))
     rpr._run_specialist_readers_stage("run_991", child)
     assert _confirmation(child)["resolved_pending"][0]["measured_in_run"] == "run_991"
+
+
+# ---------------------------------------------------------------------------
+# 8. Review round 2 (PR #340)
+# ---------------------------------------------------------------------------
+
+# --- finding 1: AI free text reaching a reader has its numbers masked ---------
+
+RUN_074_STATEMENT = (  # runs/run_074/artifacts/hypothesis_card.yaml claim.statement, verbatim
+    "The shock_reversal forecast at period=2 predicts zero forward returns (median "
+    "forecast_return_corr=-0.0057, not significant), indicating smoothing reduces oscillation "
+    "but cannot create an edge from a noisy signal.")
+
+
+def test_run_074s_statement_is_masked_and_words_are_kept():
+    assert ec.mask_numbers(RUN_074_STATEMENT) == (
+        "The shock_reversal forecast at period=<n> predicts zero forward returns (median "
+        "forecast_return_corr=<n>, not significant), indicating smoothing reduces oscillation "
+        "but cannot create an edge from a noisy signal.")
+    plain = _pure_claim()["statement"]
+    assert ec.mask_numbers(plain) == plain                      # no number: unchanged
+    assert ec.mask_numbers("IC 1,250 bars, +3.5%, 2e-4, .5 and -12.47") == \
+        "IC <n> bars, <n>, <n>, <n> and <n>"
+    assert ec.mask_numbers("run_070 and rank_ic") == "run_070 and rank_ic"   # identifiers kept
+    assert ec.mask_numbers([0.3, "x 2", True, None]) == ["<n>", "x <n>", True, None]
+
+
+def _manifest() -> dict:
+    return {"block": {"kind": "forecast",
+                      "config_paths": ["/strategies/regimes/unknown/components/0"]},
+            "scaffolding": ["/regime_detector"],
+            "rationale": "the period=2 block measured IC -0.0057 over every window"}
+
+
+def _card_074() -> dict:
+    claim = {**_pure_claim(), "statement": RUN_074_STATEMENT}
+    return {"hypothesis_id": "H-run_070-1", "timeframe": "1d",
+            "signal_concept": "zscore smoothed to period=2, scaled into [-20, +20]",
+            "target_market": "BTCUSD and ETHUSD, 1h bars",
+            "config": {"strategies": {"c1": {"period": 2, "scale": 20.0}}},
+            "manifest": _manifest(), "criteria": [{"id": "c_win", "metric": "sharpe"}],
+            "claim": claim}
+
+
+def test_the_readers_card_masks_its_free_text_and_keeps_the_mechanical_spec():
+    card = _card_074()
+    out = ec.reader_card(card)
+    assert out["claim"]["statement"] == ec.mask_numbers(RUN_074_STATEMENT)
+    assert "-0.0057" not in yaml.safe_dump(out)
+    assert out["signal_concept"] == "zscore smoothed to period=<n>, scaled into [<n>, <n>]"
+    assert out["target_market"] == "BTCUSD and ETHUSD, <n>h bars"
+    assert out["manifest"]["rationale"] == \
+        "the period=<n> block measured IC <n> over every window"
+    # never masked: the mechanical test spec, the config, the manifest paths, ids
+    assert out["claim"]["tests"] == _pure_claim()["tests"]
+    assert out["config"] == card["config"] and out["criteria"] == card["criteria"]
+    assert out["manifest"]["block"] == _manifest()["block"]
+    assert out["hypothesis_id"] == "H-run_070-1" and out["timeframe"] == "1d"
+    assert card["claim"]["statement"] == RUN_074_STATEMENT       # input untouched
+
+
+def test_the_digest_masks_its_statement_and_approximation(monkeypatch, tmp_path):
+    tests = [{"name": "t", "spec_hash": "h1", "statistic": "rank_ic", "direction": "greater",
+              "selector": {"kind": "event", "bars": 3, "value": 0.25}}]
+    base = {"approximation": {"line": "approximated: period 2 -> period 3",
+                              "n_deviations": 1, "ref": "artifacts/deviations.yaml",
+                              "deviations": [{"clause": "IC -0.0057", "built_instead": "EMA 3",
+                                              "missing": "a 2-bar filter", "effect": -0.3}]},
+            "statement": RUN_074_STATEMENT, "tests": tests,
+            "variant_patches": {"base": {"patch": {"period": 2}}},
+            "status": "error", "detail": "stop here"}
+    monkeypatch.setattr(rf, "claim_result_digest", lambda run_dir: copy.deepcopy(base))
+    out = ec.exploration_digest(tmp_path, EXPL, None, "2099-01-01")
+    assert out["statement"] == ec.mask_numbers(RUN_074_STATEMENT)
+    assert out["approximation"]["line"] == "approximated: period <n> -> period <n>"
+    assert out["approximation"]["deviations"] == [{"clause": "IC <n>", "built_instead": "EMA <n>",
+                                                   "missing": "a <n>-bar filter", "effect": "<n>"}]
+    assert out["approximation"]["n_deviations"] == 1                # a count, not free text
+    assert out["tests"] == tests and out["variant_patches"] == base["variant_patches"]
+
+
+def test_every_readers_copy_is_masked_or_code_written(monkeypatch):
+    """Every input the handoff swaps for an exploration copy is either listed
+    in ec.READER_FREE_TEXT (its AI free text masked) or code-written from
+    results (no AI free text)."""
+    code_written = {"reports/{category}.yaml", "grid_evaluation.yaml", "registry_summary.yaml"}
+    assert {rf.DIGEST_ARTIFACT, rf.READER_SUMMARY_ARTIFACT, "hypothesis_card.yaml",
+            "block_manifest.yaml"} == set(ec.READER_FREE_TEXT)
+    run_dir = _ec_run(monkeypatch)
+    _save(run_dir / "artifacts" / "block_manifest.yaml", _manifest())
+    _protocol_execution_part(run_dir)
+    rpr._write_registry_summary(run_dir, idea_status="refuted")
+    rpr._write_reader_v3_inputs(run_dir, RUN_ID)
+    for cat in REPORT_CATEGORIES:
+        h = rpr._reader_handoff(cat, RUN_ID, 0, run_dir)
+        x = f"artifacts/{ec.EXPLORATION_DIR}/"
+        swapped = {r["path"][len(x):] for r in h["required_inputs"] + h["optional_inputs"]
+                   if r["path"].startswith(x)}
+        allowed = set(ec.READER_FREE_TEXT) | {n.format(category=cat) for n in code_written}
+        assert swapped and swapped <= allowed, swapped - allowed
+        assert "block_manifest.yaml" in swapped
+        assert "artifacts/block_manifest.yaml" not in [r["path"] for r in h["optional_inputs"]]
+
+
+def test_the_masked_free_text_and_manifest_reach_the_reader_prompt(monkeypatch):
+    run_dir = _ec_run(monkeypatch)
+    _save(run_dir / "artifacts" / "hypothesis_card.yaml", _card_074())
+    _save(run_dir / "artifacts" / "block_manifest.yaml", _manifest())
+    _protocol_execution_part(run_dir)
+    prompts = []
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _readings_llm(prompts, _sides()))
+    rpr._run_specialist_readers_stage(RUN_ID, run_dir)
+    assert prompts
+    for p in prompts:
+        assert "-0.0057" not in p and "period=2" not in p
+        assert "forecast_return_corr=<n>" in p                         # the words stay
+        assert "the period=<n> block measured IC <n> over every window" in p
+        assert "min_events: 10" in p                                   # the test spec stays
+    copy_ = yaml.safe_load((run_dir / "artifacts" / ec.EXPLORATION_DIR
+                            / "block_manifest.yaml").read_text(encoding="utf-8"))
+    assert copy_["block"] == _manifest()["block"]
+
+
+# --- finding 2: a re-run of the source run never overwrites a resolution ------
+
+def test_a_rerun_of_the_source_run_keeps_the_follow_up_resolution(monkeypatch):
+    fid = f"forecast_power-{RUN_ID}-1"
+    _seed_pending(monkeypatch)                                     # run A: pending
+    child = _child_run(monkeypatch, "run_991")                     # run B resolves it
+    _protocol_execution_part(child, "run_991")
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _readings_llm([]))
+    rpr._run_specialist_readers_stage("run_991", child)
+    resolved = ec.load_ledger(rpr.ROOT)["findings"][fid]
+    assert resolved["measured_in_run"] == "run_991"
+    source = child.parent / RUN_ID                                 # run A re-runs
+    _protocol_execution_part(source)
+    shutil.rmtree(source / "artifacts" / "proposals")
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _readings_llm([], _sides()))
+    rpr._run_specialist_readers_stage(RUN_ID, source)
+    ledger = ec.load_ledger(rpr.ROOT)
+    assert ledger["findings"][fid] == resolved                     # kept, unchanged
+    sup = [s for s in ledger["superseded"] if s["finding_id"] == fid]
+    assert len(sup) == 1 and sup[0]["run_id"] == RUN_ID and sup[0]["same_spec_hash"] is True
+    assert sup[0]["confirmation_sign_retained"] == ec.PENDING
+
+
+def test_a_rerun_replaces_only_a_pending_or_same_run_record(tmp_path):
+    def rec(**kw):
+        return {"finding_id": "f", "source_run": "run_1", "finding_spec_hashes": ["h"], **kw}
+    ec.record(tmp_path, "run_1", [rec(confirmation_sign_retained=ec.PENDING)])
+    ec.record(tmp_path, "run_1", [rec(confirmation_sign_retained=True, measured_in_run="run_1")])
+    assert ec.load_ledger(tmp_path)["findings"]["f"]["confirmation_sign_retained"] is True
+    ec.record(tmp_path, "run_1", [rec(confirmation_sign_retained=False, measured_in_run="run_1")])
+    assert ec.load_ledger(tmp_path)["findings"]["f"]["confirmation_sign_retained"] is False
+    # pending again (a block claim), then resolved by run_2: a re-run of run_1
+    # may not replace that
+    ec.record(tmp_path, "run_1", [rec(confirmation_sign_retained=ec.PENDING)])
+    ec.record(tmp_path, "run_2", [rec(confirmation_sign_retained=True, measured_in_run="run_2")])
+    assert ec.load_ledger(tmp_path)["findings"]["f"]["measured_in_run"] == "run_2"
+    written = ec.record(tmp_path, "run_1", [rec(confirmation_sign_retained=ec.PENDING)])
+    doc = ec.load_ledger(tmp_path)
+    assert doc["findings"]["f"]["measured_in_run"] == "run_2"
+    assert doc["superseded"][-1]["run_id"] == "run_1" and "run_2" in written[0]["ledger"]
+
+
+# --- finding 3: a malformed ledger never breaks the campaign summary ----------
+
+@pytest.mark.parametrize("doc", [[1, 2], {"by_set": []}, {"by_set": ["x"]},
+                                 {"findings": ["x"]}, "just a string"])
+def test_a_malformed_ledger_gives_one_unreadable_line(doc, tmp_path):
+    _save(tmp_path / ec.LEDGER_REL, doc)
+    lines = ec.summary_lines(tmp_path)
+    assert lines[-1].startswith(f"- {ec.LEDGER_REL} is unreadable")
+    assert len([x for x in lines if x.strip()]) == 2                 # the title and that line
+
+
+def test_a_wellformed_ledger_without_by_set_still_summarises(tmp_path):
+    _save(tmp_path / ec.LEDGER_REL, {"findings": {"f": {"confirmation_sign_retained": True}}})
+    assert any("Side findings: 1 (held 1" in x for x in ec.summary_lines(tmp_path))
+
+
+# --- finding 4: an earlier attempt's copies are never read as current ---------
+
+def test_copies_left_by_an_earlier_attempt_count_as_missing(monkeypatch):
+    run_dir = _ec_run(monkeypatch)
+    arts = run_dir / "artifacts"
+    _protocol_execution_part(run_dir)
+    rpr._write_registry_summary(run_dir, idea_status="refuted")
+    rpr._write_reader_v3_inputs(run_dir, RUN_ID)
+    assert ec.exploration_inputs_missing(arts, "profitability",
+                                         rpr._EXPLORATION_REQUIRED_COPIES) is None
+    first = ec.current_attempt(arts)
+
+    def _boom(*a, **k):
+        raise OSError("locked")
+    with monkeypatch.context() as m:        # the next attempt: both removals fail
+        m.setattr(rpr.shutil, "rmtree", _boom)
+        rpr._prepare_explore_confirm(run_dir, RUN_ID)
+        rpr._exploration_views_failed(run_dir, OSError("disk full"))
+    assert (arts / ec.EXPLORATION_DIR / "reports" / "profitability.yaml").exists()   # stale
+    assert ec.current_attempt(arts) not in (None, first)
+    reason = ec.exploration_inputs_missing(arts, "profitability",
+                                           rpr._EXPLORATION_REQUIRED_COPIES)
+    assert reason and "earlier attempt" in reason
+    prompts = []
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _readings_llm(prompts, _sides()))
+    rpr._run_specialist_readers_stage(RUN_ID, run_dir)
+    _assert_every_reader_skipped_by_e072_rule(run_dir, prompts)
+    assert "reports/profitability.yaml" in _skips(run_dir)["profitability"]["reason"]
+
+
+def test_an_unstamped_digest_copy_is_a_gap(monkeypatch):
+    run_dir = _ec_run(monkeypatch)
+    _protocol_execution_part(run_dir)
+    rpr._write_registry_summary(run_dir, idea_status="refuted")
+    rpr._write_reader_v3_inputs(run_dir, RUN_ID)
+    assert rpr._reader_v3_missing_inputs(run_dir) == []
+    ec.new_attempt(run_dir / "artifacts")                 # another attempt began
+    assert set(rpr._reader_v3_missing_inputs(run_dir)) == {
+        f"{ec.EXPLORATION_DIR}/{rf.DIGEST_ARTIFACT}",
+        f"{ec.EXPLORATION_DIR}/{rf.READER_SUMMARY_ARTIFACT}"}
+
+
+def test_without_an_attempt_id_nothing_can_be_stamped(monkeypatch):
+    def _boom(*a, **k):
+        raise OSError("read-only")
+    run_dir = _ec_run(monkeypatch)
+    monkeypatch.setattr(ec, "new_attempt", _boom)
+    rpr._prepare_explore_confirm(run_dir, RUN_ID)        # never raises
+    arts = run_dir / "artifacts"
+    assert ec.current_attempt(arts) is None and ec.current_copies(arts) == set()
+    with pytest.raises(ValueError, match="no current attempt id"):
+        ec.stamp_copies(arts, ["grid_evaluation.yaml"])
