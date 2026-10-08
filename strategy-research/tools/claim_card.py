@@ -51,6 +51,11 @@ CLAIM_KINDS = (
     "regime_classifier", "regime_transition", "direction_forecast", "volatility_forecast",
     "event_behaviour", "conditional_behaviour", "horizon_decay", "calendar_effect",
     "redundancy", "lead_lag", "data_feed_value", "cost_turnover", "robustness",
+    # E-077 PR-2 (D-087): a claim about how the STRATEGY behaves (its exits, its sizing, its
+    # response to a market state) -- every claim an analyst writes is a strategy claim
+    # (delivery_plan_readers.md A1.11, Step 11). A finding only, never a block: absent from
+    # KIND_BLOCK on purpose, so it raises no claim_kind_vs_block_kind warning.
+    "execution_behaviour",
 )
 # 1a's claim kind -> the block kind it could become (section 2.3). None: a
 # finding only, never a block. Kinds absent here say nothing about the block.

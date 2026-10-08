@@ -1744,6 +1744,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
     # Flag off: nothing deleted.
     if stage_name == "protocol_execution":
         _clear_claim_measure_files(RUN_DIR)
+        _clear_fold_confirmation(RUN_DIR)    # E-077 PR-2; no-op unless orchestrator.folds.enabled
     # E-072: the exploration/confirmation split is pre-registered BEFORE the
     # backtests, and the readers' copies of an earlier attempt are cleared.
     # Flag off: nothing is read, written or deleted.
@@ -5133,10 +5134,14 @@ def _reading_content_errors(doc: dict, category: str, run_dir: Path) -> list:
     for i, s in enumerate(doc.get("side_findings") or []):
         review = rf.side_finding_review(s, prior={}, own=set(), run_id=Path(run_dir).name)
         errors += [f"side_findings[{i}]: {e}" for e in review["errors"]]
-        change = s.get("config_change") if isinstance(s, dict) else None
+        # E-077 PR-2 (D-087): under orchestrator.folds.enabled the vehicle IS the config
+        # change (the shape check refuses a finding that carries both)
+        errors += _envelope_content_errors(s, i, run_dir)
+        key = "vehicle" if isinstance(s, dict) and s.get("vehicle") else "config_change"
+        change = s.get(key) if isinstance(s, dict) else None
         if not change:
             continue
-        where = f"side_findings[{i}].config_change"
+        where = f"side_findings[{i}].{key}"
         rel = _reader_base_config_rel(run_dir)
         if base is None and base_error is None:
             try:
@@ -5161,6 +5166,25 @@ def _reading_content_errors(doc: dict, category: str, run_dir: Path) -> list:
     return errors
 
 
+def _envelope_content_errors(s, i: int, run_dir: Path) -> list:
+    """E-077 PR-2 (D-087), only for a side finding that carries `fold_observed`
+    (a model may write it only under orchestrator.folds.enabled): it must name
+    the fold this run itself backtested on when the run has one registered
+    (pre_registration machine_constraints.protocol.fold). A run without a
+    registered fold (every run before the folds flag) has nothing to compare
+    with, so only the shape check applies. [] otherwise."""
+    if not isinstance(s, dict) or "fold_observed" not in s:
+        return []
+    try:
+        own = _research_folds.fold_of_run_dir(run_dir)
+    except _research_folds.FoldsError as exc:
+        return [f"side_findings[{i}].fold_observed: this run's own fold cannot be read ({exc})"]
+    if own is not None and s["fold_observed"] != own:
+        return [f"side_findings[{i}].fold_observed={s['fold_observed']!r}: this run backtested on "
+                f"fold {own}, and a claim is observed on the fold of the run that inspired it"]
+    return []
+
+
 def _validate_reading_output(text: str, category: str, run_dir: Path):
     """(body, None) for a valid v3 reading, else (None, message): exactly one
     fenced YAML block holding one reading for this category and run (shape:
@@ -5177,7 +5201,9 @@ def _validate_reading_output(text: str, category: str, run_dir: Path):
     except yaml.YAMLError as exc:
         return None, f"{category} reader output is not YAML: {exc}"
     try:
-        rp.check_reading(doc, category, "reading", from_model=True, **_reader_strictness())
+        rp.check_reading(doc, category, "reading", from_model=True,
+                         **({"envelope": True} if _folds_enabled() else {}),
+                         **_reader_strictness())
     except rp.ProposalError as exc:
         return None, str(exc)
     expected = f"{category}-{Path(run_dir).name}"
@@ -5951,10 +5977,16 @@ def _record_confirmations(run_id: str, run_dir: Path, merges: dict | None = None
             "variants") or []) if (arts / "grid_evaluation.yaml").exists() else []
         base_vid = _json_pointer_module().base_variant_id(graded) if graded else None
         readings = rp.load_readings(arts / "proposals", _reader_categories())
+        # E-077 PR-2 (D-087): under orchestrator.folds.enabled a claim is never confirmed
+        # inside the run that inspired it (every measurable finding is pending) and the
+        # weak follow-up resolution does not exist: confirm_on_fold measures the claim on
+        # the child run's fold instead (_confirm_on_fold_after_backtests).
+        folds = _folds_enabled()
         records = ec.confirm_findings(run_dir, run_id, readings, split, base_variant=base_vid,
                                       eras=eras, holdout_start=holdout_start,
-                                      **({"merges": merges} if merges is not None else {}))
-        source = ec.source_finding_id(arts)
+                                      **({"merges": merges} if merges is not None else {}),
+                                      **({"folds": True} if folds else {}))
+        source = None if folds else ec.source_finding_id(arts)
 
         def _resolve(findings: dict) -> list:
             # called by ec.record UNDER the ledger lock: the pending lookup reads
@@ -17706,7 +17738,7 @@ def _measure_claim_tests_after_backtests(run_dir: Path, run_id: str) -> None:
         _record_claim_measure_error(Path(run_dir), run_id, exc)
 
 
-def _claim_measure_variants(run_dir: Path, run_id: str) -> tuple:
+def _claim_measure_variants(run_dir: Path, run_id: str, attempt_starts: dict | None = None) -> tuple:
     """(variants to measure, {variant: not-measured reason}) of THIS attempt:
     a variant with a protocol_result.yaml written since the attempt started
     (artifacts/variants/<vid>/; none with the variant loop off). Older files
@@ -17715,12 +17747,15 @@ def _claim_measure_variants(run_dir: Path, run_id: str) -> tuple:
     raised after its result was saved) is `backtest_failed`; a variant whose
     trial row was invalidated by the conformance check is `invalidated`.
     Without a recorded attempt start nothing is measured (`no_attempt_start`,
-    fail closed)."""
+    fail closed). `attempt_starts` (E-077 PR-2): another map of attempt starts
+    (the fold confirmation keeps its own, so it does not need orchestrator.claim_tests);
+    None: the claim measurement's."""
     import claim_tests as _ct
     vroot = run_dir / "artifacts" / "variants"
     if not vroot.is_dir():
         return [], {}
-    start = _CLAIM_MEASURE_ATTEMPT_START.get(str(Path(run_dir).resolve()))
+    start = (_CLAIM_MEASURE_ATTEMPT_START if attempt_starts is None else attempt_starts).get(
+        str(Path(run_dir).resolve()))
     invalidated = _invalidated_trial_ids()
     index = (load_yaml(vroot / "index.yaml") or {}) if (vroot / "index.yaml").exists() else {}
     index = index.get("variants") if isinstance(index.get("variants"), dict) else {}
@@ -17805,6 +17840,74 @@ def _record_claim_measure_error(run_dir: Path, run_id: str, exc: Exception) -> N
             _safe_print(f"⚠️  [E-068] could not write {what} ({type(inner).__name__}: {inner}).")
     _safe_print(f"⚠️  [E-068] the claim measurement could not run ({doc['detail']}); recorded, "
                 f"the run continues.")
+
+
+# E-077 PR-2 (D-087), under orchestrator.folds.enabled only: after a child run's
+# backtests, the claim it was built from is measured on the child's own fold
+# (tools/fold_confirm.confirm_on_fold) and written as ONE row of
+# campaign_record/confirmations.yaml plus artifacts/fold_confirmation.yaml. It
+# replaces explore_confirm's in-run route and its weak follow-up resolution, which
+# are unreachable under the flag. Information only: a row with a status and a
+# reason, never a stop, a route or a change of idea_status; any error is printed
+# and recorded in the artifact, and the run continues. It does not need
+# orchestrator.claim_tests: it keeps its own attempt start for the staleness check.
+_FOLD_CONFIRM_ATTEMPT_START: dict = {}
+
+
+def _fold_confirm_module():
+    _json_pointer_module()  # puts tools/ on sys.path
+    import fold_confirm as _fc
+    return _fc
+
+
+def _clear_fold_confirmation(run_dir: Path) -> None:
+    """At protocol_execution entry (folds flag on): records this attempt's start and
+    deletes the previous attempt's artifacts/fold_confirmation.yaml (its ledger row is
+    replaced by this attempt's row, never added to). Never raises. Flag off: no-op."""
+    try:
+        if not _folds_enabled():
+            return
+        _FOLD_CONFIRM_ATTEMPT_START[str(Path(run_dir).resolve())] = time.time_ns()
+        stale = Path(run_dir) / "artifacts" / _fold_confirm_module().ROW_ARTIFACT
+        if stale.exists():
+            stale.unlink()
+            _safe_print(f"🧹 [E-077] protocol_execution re-run: cleared previous attempt's "
+                        f"{stale.name}")
+    except Exception as exc:  # noqa: BLE001 -- information only
+        _safe_print(f"⚠️  [E-077] could not clear the previous fold confirmation ({exc}).")
+
+
+def _confirm_on_fold_after_backtests(run_dir: Path, run_id: str) -> None:
+    """After protocol_execution (run_loop), folds flag on: confirm_on_fold for a run built
+    from a reader's side finding. Never raises, never routes. Flag off: no-op."""
+    try:
+        if not _folds_enabled():
+            return
+        import protocol_resolution as _pres
+        fc = _fold_confirm_module()
+        ec = _explore_confirm_module()
+        run_dir = Path(run_dir)
+        fresh, _skipped = _claim_measure_variants(run_dir, run_id,
+                                                  attempt_starts=_FOLD_CONFIRM_ATTEMPT_START)
+        row = fc.confirm_on_fold(run_dir, run_id, root=ROOT,
+                                 eras=_pres.load_policy_eras(_DATA_POLICY_PATH),
+                                 holdout_start=_load_holdout_range()[0],
+                                 fresh_variants=fresh,
+                                 folds_path=None, policy_path=_DATA_POLICY_PATH)
+        if row is None:
+            return                       # not built from a side finding: nothing to confirm
+        written = ec.record_fold_confirmation(ROOT, row)
+        save_yaml(run_dir / "artifacts" / fc.ROW_ARTIFACT, written)
+        _safe_print(f"🔎 [E-077] {run_id}: claim {written.get('finding_id')} on fold "
+                    f"{written.get('fold')}: {written.get('status')} -- {written.get('reason')} "
+                    f"(a noise rule, information only, not proven)")
+    except Exception as exc:  # noqa: BLE001 -- information only: a bug never stops a run
+        _safe_print(f"⚠️  [E-077] the fold confirmation could not be recorded "
+                    f"({type(exc).__name__}: {exc}); the run continues.")
+        with contextlib.suppress(Exception):
+            save_yaml(Path(run_dir) / "artifacts" / _fold_confirm_module().ROW_ARTIFACT,
+                      {"run_id": run_id, "status": "error",
+                       "detail": f"{type(exc).__name__}: {exc}"})
 
 
 # E-068 slice 4 (DESIGN_PROPOSAL.md sections 5 and 8), under
@@ -19742,6 +19845,9 @@ def run_loop(run_id: str):
             # never raises; a separate grader, not a grid criterion.
             if current_stage == "protocol_execution":
                 _measure_claim_tests_after_backtests(RUN_DIR, run_id)
+                # E-077 PR-2 (D-087): the claim this run was built from, measured on its
+                # own fold. No-op unless orchestrator.folds.enabled.
+                _confirm_on_fold_after_backtests(RUN_DIR, run_id)
 
             # 6. Mark completed and stage next phase
             completed = state.get("completed_stages", [])

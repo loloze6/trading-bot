@@ -988,6 +988,14 @@ orchestrator:
       #    this guard.)
       #  * `fold` is recorded in run_context.yaml, the campaign memory entry
       #    and the trial rows of a run whose pre-registration carries one.
+      #  * E-077 PR-2 (D-087): a reader's side finding carries `vehicle` (required
+      #    from a model; it is the finding's config change), `combines_as` and
+      #    `fold_observed`; after a child run's backtests the claim it was built
+      #    from is measured on the child's fold (tools/fold_confirm.py) and written
+      #    as one row of campaign_record/confirmations.yaml. A NOISE rule (pooled
+      #    sign at every horizon and the claimed sign in all but one window, at
+      #    least 4 windows), no cost. explore_confirm's in-run route and weak
+      #    follow-up resolution are unreachable while this is true.
   operator_approval:
     enabled: false
       # E-068 PR 4 (D-071, CUL-399). OFF BY DEFAULT, read by

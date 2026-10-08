@@ -2343,7 +2343,9 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str) -> tuple:
         "decision_ref": decision_ref,
         "proposal": {k: copy.deepcopy(p[k])
                      for k in ("kind", "patch", "block", "claim", "evidence", "requires_feed",
-                               "config_change")
+                               "config_change",
+                               # E-077 PR-2 (D-087): the envelope, present only under the folds flag
+                               "vehicle", "combines_as", "fold_observed")
                      if k in p},
     }
     candidate = {}
