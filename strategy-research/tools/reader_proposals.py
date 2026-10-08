@@ -107,6 +107,26 @@ _SIDE_FINDING_KEYS = frozenset({"proposal_id", "claim", "evidence", "scores", "r
                                 "config_change"})
 _V3_PATCH_KEYS = frozenset({"proposal_id", "patch", "evidence", "scores", "requires_feed"})
 
+# E-077 PR-2 (D-087): the ENVELOPE of a side finding under orchestrator.folds.enabled --
+# three keys beside `claim` (never inside it: claim_card.check_claim refuses unknown
+# claim keys, and step 1a copies the claim unchanged).
+#   vehicle        the strategy change the claim's own run backtests: the same
+#                  [{component_id, field, before, after}] list as `config_change`
+#                  (resolved by decide_next.resolve_patch where the reading is checked).
+#                  Required from a model under the flag, because every claim is a
+#                  strategy claim (delivery_plan_readers.md A1.11, Step 11). It IS the
+#                  side finding's config change: flatten_reading hands it to decide-next
+#                  as `config_change`, so the child starts from the source config with it
+#                  applied. A finding carries `vehicle` or `config_change`, never both.
+#   combines_as    how a confirmed claim could be combined, a word from COMBINES_AS,
+#                  written by the analyst and checked here (the combination logic itself
+#                  is not touched).
+#   fold_observed  the fold (A, B or C) of the run that inspired the claim.
+# A model's answer may carry them only under the flag (check_reading(envelope=True));
+# a FILE already written (from_model False) is accepted as it stands.
+COMBINES_AS = ("forecast_block", "regime_gate", "execution_rule", "knowledge_only")
+ENVELOPE_KEYS = frozenset({"vehicle", "combines_as", "fold_observed"})
+
 
 class ProposalError(ValueError):
     """A proposal file or entry is malformed. Never caught here: a bad reader
@@ -225,10 +245,14 @@ def _check_item_id(pid, reading_id: str, where: str) -> None:
 
 
 def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
-                  from_model: bool = False) -> None:
+                  from_model: bool = False, envelope: bool = False) -> None:
     """Shape check of one v3 reading (the claim INSIDE a side finding is
     checked by claim_card.check_claim, not here). `from_model`: the text a
     reader answered -- a `skipped` reading is code's only, so it is refused.
+    `envelope` (E-077 PR-2, orchestrator.folds.enabled): a model's side finding
+    may carry the ENVELOPE_KEYS and MUST carry `vehicle`; without it a model's
+    answer with any of them is refused as before (a file already written is
+    accepted either way).
     Raises ProposalError naming the whole required shape where it can."""
     if not is_reading(doc):
         raise ProposalError(f"{where}: a v3 reading must be a mapping with schema_version: "
@@ -277,9 +301,10 @@ def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
         raise ProposalError(f"{where}: side_findings must be a list of at most "
                             f"{MAX_SIDE_FINDINGS} (`[]` for none)")
     seen = set()
+    side_keys = _SIDE_FINDING_KEYS | (ENVELOPE_KEYS if (envelope or not from_model) else frozenset())
     for i, s in enumerate(sides):
         w = f"{where}.side_findings[{i}]"
-        if not isinstance(s, dict) or set(s) - _SIDE_FINDING_KEYS \
+        if not isinstance(s, dict) or set(s) - side_keys \
                 or not {"proposal_id", "claim", "evidence", "scores"} <= set(s):
             raise ProposalError(f"{w}: a side finding is exactly {{proposal_id, claim, evidence, "
                                 f"scores}} plus an optional requires_feed and an optional "
@@ -289,6 +314,7 @@ def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
             raise ProposalError(f"{w}: claim must be a claim block mapping (CLAIM_TESTS.md)")
         if "config_change" in s:
             _check_change_items(s["config_change"], f"{w}.config_change")
+        _check_envelope(s, w, require_vehicle=envelope and from_model)
         _check_evidence(s["evidence"], w)
         check_scores(s["scores"], w)
         if "requires_feed" in s:
@@ -319,6 +345,32 @@ def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
             _check_requires_feed(patch["requires_feed"], w)
         if patch["proposal_id"] in seen:
             raise ProposalError(f"{w}: duplicate proposal_id {patch['proposal_id']!r}")
+
+
+def _check_envelope(s: dict, where: str, *, require_vehicle: bool) -> None:
+    """The E-077 envelope of one side finding (ENVELOPE_KEYS): `vehicle` is the
+    config-change list (and excludes `config_change`; required when
+    `require_vehicle`), `combines_as` one of COMBINES_AS, `fold_observed` a fold
+    id of config/folds.yaml."""
+    if "vehicle" in s and "config_change" in s:
+        raise ProposalError(f"{where}: write `vehicle` OR `config_change`, not both -- the "
+                            f"vehicle IS the finding's config change")
+    if "vehicle" in s:
+        _check_change_items(s["vehicle"], f"{where}.vehicle")
+    elif require_vehicle:
+        raise ProposalError(
+            f"{where}: `vehicle` is required (orchestrator.folds.enabled): every claim is a "
+            f"strategy claim, and its vehicle is the strategy change its own run backtests -- "
+            f"vehicle: [{{component_id, field, before, after}}], resolved against the run's "
+            f"base config like a config change")
+    if "combines_as" in s and s["combines_as"] not in COMBINES_AS:
+        raise ProposalError(f"{where}.combines_as={s['combines_as']!r} must be one of "
+                            f"{list(COMBINES_AS)}")
+    if "fold_observed" in s:
+        import research_folds as _folds  # tools/ sibling; only a finding with the key needs it
+        if s["fold_observed"] not in _folds.FOLD_ORDER:
+            raise ProposalError(f"{where}.fold_observed={s['fold_observed']!r} must be one of "
+                                f"{list(_folds.FOLD_ORDER)}")
 
 
 def _check_change_items(items, where: str) -> None:
@@ -353,6 +405,12 @@ def flatten_reading(doc: dict) -> list:
             item["requires_feed"] = s["requires_feed"]
         if "config_change" in s:
             item["config_change"] = s["config_change"]
+        # E-077 PR-2: the vehicle IS the config change (decide-next reads config_change);
+        # the three envelope keys travel with the item so the ledger can record them.
+        if "vehicle" in s:
+            item["config_change"] = s["vehicle"]
+        for key in sorted(ENVELOPE_KEYS & set(s)):
+            item[key] = s[key]
         out.append(item)
     patch = doc.get("patch")
     if patch is not None:

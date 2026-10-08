@@ -3330,6 +3330,43 @@ A config runs once per fold: the repeat gate's key already holds the
 windows fingerprint. Daily-timeframe ideas have too few trades per block and
 will need confirmation on other coins (not built yet).
 
+**Claim record and confirmation on the child's fold (E-077 PR-2, D-087, same flag).**
+A side finding may carry three envelope keys beside its `claim` (never inside it):
+`vehicle` (the strategy change its own run backtests, the same
+`[{component_id, field, before, after}]` list as `config_change`, which it replaces),
+`combines_as` (`forecast_block`, `regime_gate`, `execution_rule` or `knowledge_only`)
+and `fold_observed` (A, B or C). A claim's `vehicle` must resolve against the run's
+base config like a config change; the analyst of a later PR writes it. Until then, with
+the flag on, the five current readers produce no side findings: their side findings are
+refused before validation (the reading's explanation is kept, no retry, the audit entry
+records rule `side_findings_need_the_analyst`). The new claim kind is `execution_behaviour`
+(a claim about the strategy itself; a finding only, never a block); only
+`check_claim(folds=True)` accepts it, so with the flag off CLAIM_TESTS.md, the card
+schema and the refusal texts are unchanged (its guide is CLAIM_TESTS_EXECUTION.md,
+shown to no prompt yet). After the child run's
+backtests, code measures the SOURCE claim's tests (found through the child brief's
+`proposal_ref`, identified by `spec_hash`) on the child's base variant, which is the
+vehicle variant because decide-next gives the child the source config with the vehicle
+applied, over the child's fold only, and writes one row to
+`campaign_record/confirmations.yaml` under `fold_confirmations` (and
+`artifacts/fold_confirmation.yaml` in the child): `confirmed`, `not_confirmed`,
+`not_measurable` (no events, fewer than 4 windows with a value, `tests: none`, bars or
+source unreadable, or `vehicle_not_in_measured_config`: the measured variant's own
+strategy config does not carry the vehicle, so step 1b changed it) or `not_comparable` (the child's card carries other tests than the
+claim's; nothing is measured). **The rule is a noise rule, not a size rule, and no cost
+is compared:** confirmed when, at every horizon, the pooled effect has the claimed sign
+and the claimed sign holds in all but at most one window of the fold (at least 4
+windows with a value). Horizons with at least 4 windows are judged first: a refutation
+there is `not_confirmed` even if another horizon is too short to judge. A claim with no effect passes it about 11% of the time per fold
+(six windows; about 1% after two folds); a "window" is one coin's block, so with several
+coins it is stricter. The row records the effect size per horizon, the per-window
+values and the agreement (k of n). Refuted and not-measurable claims stay in the
+ledger. With the flag on, explore_confirm's in-run route and its weak follow-up
+resolution are unreachable (a claim is never confirmed inside the run that inspired
+it); the campaign summary has one line per status, labelled by fold. A claim whose
+kind needs a test the slots cannot express (a trade-level one) is
+`tests: none` and `not_measurable` until that family exists.
+
 Under `orchestrator.verdict_routing_retired.enabled` (slice 6c S2a) every run
 ends `completed_<idea_status>`, so this DONE branch runs after every
 validated, refuted and inconclusive idea, and a legacy continuation
