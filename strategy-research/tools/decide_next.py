@@ -1036,6 +1036,9 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
             "card_text": ((arts / "hypothesis_card.yaml").read_text(encoding="utf-8")
                           if (arts / "hypothesis_card.yaml").exists() else None),
         }
+        # E-073 step 2 (D-083): written only under orchestrator.observable_backtest;
+        # absent files add no key, so every other run's inputs are unchanged.
+        runs[run_id].update(_observable_inputs(arts))
 
     def _count(name):
         return requests_count(_load_yaml_opt(root / "campaign_record" / name) or {})
@@ -1088,6 +1091,36 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
                 src["composition_manifest"] = man
                 src["composition_check"] = _composition_checker(root, registry, man)
         out["composition"] = comp_inputs
+    return out
+
+
+def _observable_inputs(arts: Path) -> dict:
+    """E-073 step 2 (D-083): the run's in-run merges (side_finding_merges.yaml)
+    and its flagged citations (citation_checks/<category>.yaml: {proposal id:
+    [bad citations]}), each only when its file exists. Information only: an
+    unreadable file counts as absent (a warning is never worth a stop)."""
+    import reader_findings as _rf  # tools/ sibling; only E-073 runs need it
+    out = {}
+    merges_path = arts / _rf.MERGES_ARTIFACT
+    if merges_path.exists():
+        try:
+            out["side_finding_merges"] = _rf.merge_index(_load_yaml_opt(merges_path))
+        except (yaml.YAMLError, OSError, UnicodeDecodeError):
+            out["side_finding_merges"] = {}
+    checks_dir = arts / _rp.CITATION_CHECKS_DIR
+    if checks_dir.is_dir():
+        flagged = {}
+        for path in sorted(checks_dir.glob("*.yaml")):
+            try:
+                doc = _load_yaml_opt(path)
+            except (yaml.YAMLError, OSError, UnicodeDecodeError):
+                continue
+            items = doc.get("items") if isinstance(doc, dict) else None
+            for pid, rec in (items.items() if isinstance(items, dict) else []):
+                bad = rec.get("bad") if isinstance(rec, dict) else None
+                if isinstance(bad, list) and bad:
+                    flagged[str(pid)] = bad
+        out["citation_flags"] = flagged
     return out
 
 
@@ -1683,8 +1716,17 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
         # E-068 slice 5: a repeated spec_hash or a block-kind claim whose tests
         # cannot see the block -- WARNINGS ONLY, never a reason or a rank change
         warnings = warnings + list(side_review["warnings"])
+    if p["kind"] == _rp.SIDE_FINDING and pid in (src.get("citation_flags") or {}):
+        # E-073 step 2 (D-083): kept, flagged -- a WARNING, never a reason or a rank change
+        warnings = warnings + [{"kind": CITATION_WARNING,
+                                "bad": copy.deepcopy(src["citation_flags"][pid])}]
     if warnings:  # E-068 PR 4 (D-071): only when non-empty -- other records unchanged
         cand["warnings"] = warnings
+    merged = (src.get("side_finding_merges") or {}).get(pid)         if p["kind"] == _rp.SIDE_FINDING else None
+    if merged:
+        # E-073 step 2: an in-run duplicate (side_finding_merges.yaml) is folded
+        # into its primary by _collapse; the primary's scores are kept
+        cand["_merge"] = {"primary": merged["primary"], "order": merged["order"]}
     return cand
 
 
@@ -1738,6 +1780,14 @@ def _side_finding_review(run_id: str, src: dict, p: dict, inputs: dict) -> dict:
 
 # E-068 PR 4 (D-071): the one warning kind a candidate can carry.
 UNKNOWN_CLASS_WARNING = "unknown_component_class"
+
+
+# E-073 step 2 (D-083): a side finding whose cited value did not match the file
+# its reader read, after the reader's one retry (citation_checks/<category>.yaml)
+CITATION_WARNING = "citation_mismatch"
+MERGE_NOTE = ("in-run duplicates merged (E-073): the same tests proposed by more than one "
+              "reader; not agreement and not extra evidence (the readers share their inputs), "
+              "so this candidate keeps its first source's scores")
 
 
 def class_name_warnings(proposal: dict, known, card_text) -> list:
@@ -1876,12 +1926,35 @@ def _score_key(c: dict) -> tuple:
             c["candidate_id"])
 
 
+def _fold_in_run_merges(cands: list) -> list:
+    """E-073 step 2 (D-083): an eligible in-run duplicate (a side finding
+    side_finding_merges.yaml lists after its group's primary) is folded into
+    that primary when the primary is eligible too: one candidate, the
+    PRIMARY's scores (never the higher of the two -- the readers share their
+    inputs, so a second proposal is not evidence), every source listed under
+    `merged_sources`. A duplicate whose primary is not eligible stays a
+    candidate of its own. No-op when no candidate carries `_merge`."""
+    by_id = {(c.get("source_run"), c["candidate_id"]): c for c in cands}
+    out = []
+    for c in cands:
+        m = c.get("_merge")
+        primary = by_id.get((c.get("source_run"), m["primary"])) if m and m["order"] else None
+        if primary is None:
+            out.append(c)
+            continue
+        primary.setdefault("merged_sources", [primary["proposal_ref"]]).append(c["proposal_ref"])
+        primary["merge_note"] = MERGE_NOTE
+    return out
+
+
 def _collapse(cands: list) -> list:
     """Card I: ELIGIBLE candidates that are the same thing collapse into one,
     keeping the highest score tuple. Called on eligible candidates only, so an
     ineligible duplicate can never shadow an eligible one. Patches: the FULL
     novelty key (config hash + symbols + timeframe + window set). Sketches:
-    identical kind + config_paths from the same source run."""
+    identical kind + config_paths from the same source run.
+    E-073 step 2: in-run merges are folded first (_fold_in_run_merges)."""
+    cands = _fold_in_run_merges(cands)
     groups, order = {}, []
     for c in cands:
         key = c["_collapse_key"]
@@ -1970,6 +2043,7 @@ def decide(inputs: dict, *, now: str, trigger: dict, select_entry=None) -> dict:
     ineligible = sorted((c for c in cands if not c["eligible"]), key=lambda c: c["candidate_id"])
     for c in eligible + ineligible:
         c.pop("_collapse_key", None)
+        c.pop("_merge", None)
 
     operator = _operator_entries(queue)
     scheduled = select_entry([e for e in (queue.get("queue") or []) if isinstance(e, dict)])

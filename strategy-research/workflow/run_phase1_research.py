@@ -1970,6 +1970,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
         # every variant's result, since cross-variant comparison is its
         # entire purpose.
         legacy_verdict_args = _legacy_verdict_args()  # C5.6: read once, every variant
+        cost_bar_args = _cost_bar_args()  # CUL-414: read once, every variant ([] flag off)
         # C5.8 (C13, D-050): under _promotion_retired_enabled the legacy label is
         # retired for readers -- pass_rule_evaluation.yaml (C7) is not written below
         # and the category reports drop the verdict/route fields. A stale file from
@@ -2114,6 +2115,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 str(variant_config_path), str(_vproto or protocol_path),
                 *_validation_protocol_args(validation_path),
                 *legacy_verdict_args,
+                *cost_bar_args,
                 "--out-dir", str(variant_run_dir),
             ]
             print(f"--- protocol_execution: variant '{variant_id}' ---")
@@ -2305,7 +2307,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
         else:
             try:
                 _pass_rule_eval = _vce.evaluate_pass_rule_criteria(
-                    _rep_summary, _pre_reg_for_eval or {}, _brief_for_eval)
+                    _rep_summary, _pre_reg_for_eval or {}, _brief_for_eval,
+                    **_cost_bar_grid_kw())  # CUL-414: {} flag off, the grid's basis on
                 _pass_rule_eval["evaluated_at"] = datetime.now(timezone.utc).isoformat()
                 _pass_rule_eval["evaluator_version"] = 2
                 save_yaml(ARTIFACTS / "pass_rule_evaluation.yaml", _pass_rule_eval)
@@ -2368,11 +2371,11 @@ async def run_tool_worker(stage_name: str, run_id: str):
                             composition_runs=True,
                             **({"profit_bars_grader": _profit_bars_grid_grader(RUN_DIR, run_id)}
                                if _composition_mode(RUN_DIR) else {}),
-                            **_failed_kw, **_zero_trade_grid_kw())  # CUL-415: {} flag off
+                            **_failed_kw, **_cost_bar_grid_kw(), **_zero_trade_grid_kw())  # CUL-415: {} flag off
                     else:
                         _grid_result = _vce.evaluate_grid(
                             per_variant_summaries, _pre_reg_for_eval or {}, _brief_for_eval, _menu,
-                            **_failed_kw, **_zero_trade_grid_kw())  # CUL-415: {} flag off
+                            **_failed_kw, **_cost_bar_grid_kw(), **_zero_trade_grid_kw())  # CUL-415: {} flag off
                     _grid_result["evaluated_at"] = datetime.now(timezone.utc).isoformat()
                     save_yaml(ARTIFACTS / "grid_evaluation.yaml", _grid_result)
                     _idea_status_artifact = _build_idea_status_artifact(_grid_result, run_id)
@@ -2487,6 +2490,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
             str(config_path), str(protocol_path),
             *_validation_protocol_args(validation_path),
             *_legacy_verdict_args(),
+            *_cost_bar_args(),  # CUL-414: [] flag off
             "--out-dir", str(RUN_DIR),
         ]
         _windows_before = _window_results(RUN_DIR)
@@ -2568,7 +2572,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
             _brief_path = ARTIFACTS / "research_brief.yaml"
             _brief_for_eval = (load_yaml(_brief_path) if _brief_path.exists() else {}) or {}
             _pass_rule_eval = _vce.evaluate_pass_rule_criteria(
-                summary, _pre_reg_for_eval or {}, _brief_for_eval)
+                summary, _pre_reg_for_eval or {}, _brief_for_eval,
+                **_cost_bar_grid_kw())  # CUL-414: {} flag off, the grid's basis on
             _pass_rule_eval["evaluated_at"] = datetime.now(timezone.utc).isoformat()
             _pass_rule_eval["evaluator_version"] = 2  # C7-EXT: G1-G5 preconditions
             save_yaml(ARTIFACTS / "pass_rule_evaluation.yaml", _pass_rule_eval)
@@ -2609,7 +2614,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
                             {run_id: summary}, _pre_reg_for_eval or {}, _brief_for_eval, _menu,
                             **_single_column_untested_kw(ARTIFACTS, run_id),
                             **_grid_v2_kw(),  # E-062 S2b-3b: {} flag off
-                            **_zero_trade_grid_kw())  # CUL-415: {} flag off
+                            **_cost_bar_grid_kw(), **_zero_trade_grid_kw())  # CUL-415: {} flag off
                         _grid_result["evaluated_at"] = datetime.now(timezone.utc).isoformat()
                         save_yaml(ARTIFACTS / "grid_evaluation.yaml", _grid_result)
                         _idea_status_artifact = _build_idea_status_artifact(_grid_result, run_id)
@@ -4064,7 +4069,16 @@ def _observable_backtest_enabled(cfg: dict | None = None) -> bool:
     bar's close; without the bars.csv section and the per-trade labels, files
     the readers never receive), generated by tools/data_dictionary.py -- is an
     extra required input of every v3 reader, with one line telling them to use
-    it (_with_data_dictionary)."""
+    it (_with_data_dictionary).
+    While true (step 2, D-083): every `path=value` a v3 reading cites is
+    checked against the files the reader received (under E-072 its
+    exploration copies; reader_proposals.check_citation_values); a missing or
+    mis-valued citation gets the reader's one retry with a code-written list,
+    and if still wrong the reading is kept and the citation recorded in
+    artifacts/citation_checks/<category>.yaml (decide-next: a
+    citation_mismatch warning). Side findings proposing the same test are
+    merged into one (artifacts/side_finding_merges.yaml), measured, counted
+    and ranked once -- never as agreement."""
     cfg = _orchestrator_config(cfg)
     ob_cfg = ((cfg.get("orchestrator") or {}).get("observable_backtest") or {})
     value = ob_cfg.get("enabled", False)
@@ -4080,6 +4094,48 @@ def _observable_backtest_enabled(cfg: dict | None = None) -> bool:
             "orchestrator.reader_findings.enabled=true as well -- the data dictionary "
             "is an input of the v3 readers only. Enable them together.")
     return value
+
+
+def _cost_bar_all_costs_enabled(cfg: dict | None = None) -> bool:
+    """CUL-414 (D-082): orchestrator.cost_bar_all_costs.enabled. False when the
+    key, the section or the config file is absent. A non-bool value raises. No
+    dependency: on its own it makes run_protocol write the all-costs fields
+    (--cost-bar-all-costs) and makes whichever D-038 bar runs read them.
+
+    While false: byte-identical -- run_protocol is called with the same
+    arguments, the grid and the profit bars read the same fields (tested).
+    While true: the D-038 "survives 2x costs" ratio (> 2.2) compares the gross
+    edge BEFORE fees and slippage with fees + slippage, both legs, in both of
+    its places: the menu criterion realized_edge_to_cost_ratio (evaluate_grid
+    reads realized_edge_to_cost_ratio_all_costs; the legacy pass rule,
+    evaluate_pass_rule_criteria, applies the same remap so
+    pass_rule_evaluation.yaml agrees with the grid) and profit_bars_v2's
+    cost_edge_ratio_min (pooled_edge_to_cost_ratio(all_costs=True)). A
+    declared output change: the bar is stricter (A7 in
+    docs/DATA_DICTIONARY.md)."""
+    cfg = _orchestrator_config(cfg)
+    cb_cfg = ((cfg.get("orchestrator") or {}).get("cost_bar_all_costs") or {})
+    value = cb_cfg.get("enabled", False)
+    if not isinstance(value, bool):
+        raise ValueError(
+            f"orchestrator.cost_bar_all_costs.enabled={value!r} is not a real boolean "
+            f"(got {type(value).__name__}) -- write an unquoted `true` or `false` in "
+            f"config/campaign_config.yaml, not a quoted string or null."
+        )
+    return value
+
+
+def _cost_bar_args() -> list:
+    """CUL-414: `--cost-bar-all-costs` for run_protocol.py under
+    orchestrator.cost_bar_all_costs, else nothing (the command unchanged)."""
+    return ["--cost-bar-all-costs"] if _cost_bar_all_costs_enabled() else []
+
+
+def _cost_bar_grid_kw() -> dict:
+    """CUL-414: the evaluate_grid / evaluate_pass_rule_criteria keyword
+    orchestrator.cost_bar_all_costs adds ({"cost_bar_all_costs": True}), else
+    {} (both calls unchanged)."""
+    return {"cost_bar_all_costs": True} if _cost_bar_all_costs_enabled() else {}
 
 
 def _zero_trade_windows_not_computed_enabled(cfg: dict | None = None) -> bool:
@@ -4137,7 +4193,11 @@ DATA_DICTIONARY_LINE = (
     "Before you cite a field, look it up in docs/DATA_DICTIONARY_READERS.md: its meaning, "
     "unit, and when it is known (`after` / `run` = computed with hindsight, never a "
     "signal input). A field it lists under 'Not recorded today' does not exist: "
-    "never infer it.")
+    "never infer it. "
+    # E-073 step 2 (D-083): the citation check, said where the reader cites
+    "Code checks every `path=value` you cite against the file you read: write the path as "
+    "that file has it and the value as it shows it (or rounded), and cite a setting you "
+    "state (a period, a threshold) from the base config by its path.")
 
 
 def _with_data_dictionary(handoff: dict) -> dict:
@@ -4256,8 +4316,11 @@ _READER_OUTPUT_BLOCK_RE = re.compile(r"```ya?ml[^\n]*\n(.*?)```", re.DOTALL)
 
 # Artifacts that must come from the CURRENT protocol_execution attempt under
 # specialist_readers (code-review fix 1). Cleared at protocol_execution entry.
-_SPECIALIST_READERS_RUN_SCOPED_FILES = ("idea_status.yaml", "grid_evaluation.yaml")
-_SPECIALIST_READERS_RUN_SCOPED_DIRS = ("reports", "proposals")
+# E-073 step 2 (D-083): side_finding_merges.yaml and citation_checks/ exist only
+# under orchestrator.observable_backtest; listed so an attempt never inherits them.
+_SPECIALIST_READERS_RUN_SCOPED_FILES = ("idea_status.yaml", "grid_evaluation.yaml",
+                                        "side_finding_merges.yaml")
+_SPECIALIST_READERS_RUN_SCOPED_DIRS = ("reports", "proposals", "citation_checks")
 
 
 def _clear_specialist_readers_artifacts(run_dir: Path) -> None:
@@ -4810,6 +4873,45 @@ def _reader_strictness() -> dict:
     return {"strict_provenance": True} if _score_provenance_enabled() else {}
 
 
+def _reader_received_files(category: str, run_dir: Path) -> tuple:
+    """({artifacts-relative path: parsed document}, [unavailable paths]) -- the
+    citable files a reader received: its report, the grid, the registry
+    summary, the card, the block manifest and the base config; under
+    reader_findings also the claim digest, the earlier findings and the claim
+    measurement; under E-072 the exploration copies instead (never the
+    all-window files). Shared by _citation_provenance (record only) and the
+    E-073 value check. Raises only on a broken flag."""
+    arts = run_dir / "artifacts"
+    files, unavailable = {}, []
+    config_rel = _reader_base_config_rel(run_dir)
+    config_rel = config_rel[len("artifacts/"):] if config_rel.startswith("artifacts/") else config_rel
+    rels = (f"reports/{category}.yaml", "grid_evaluation.yaml", "registry_summary.yaml",
+            "hypothesis_card.yaml", "block_manifest.yaml", config_rel)
+    if _reader_findings_enabled():  # E-068 slice 5: the v3 inputs a reading may cite too
+        _rf = _reader_findings_module()
+        gone = set(_reader_v3_missing_inputs(run_dir))  # an older copy is not this run's
+        if _explore_confirm_active(run_dir):  # E-072: the exploration copies it received
+            rels = (tuple(_exploration_rel(r) for r in (
+                        f"reports/{category}.yaml", "grid_evaluation.yaml",
+                        "registry_summary.yaml", "hypothesis_card.yaml",
+                        "block_manifest.yaml"))
+                    + (config_rel,)
+                    + tuple(n for n in _reader_v3_input_names(run_dir) if n not in gone))
+        else:
+            rels += tuple(n for n in (_rf.DIGEST_ARTIFACT, _rf.READER_SUMMARY_ARTIFACT)
+                          if n not in gone) + (_claim_measurement_name(run_dir),)
+    for rel in rels:
+        try:
+            doc = yaml.safe_load((arts / rel).read_text(encoding="utf-8"))
+        except (OSError, yaml.YAMLError):
+            doc = None
+        if isinstance(doc, dict):
+            files[rel] = doc
+        else:
+            unavailable.append(rel)
+    return files, unavailable
+
+
 def _citation_provenance(category: str, run_dir: Path, body: str) -> dict:
     """C5.7b-2 (D-048, S4, option A -- record only): for each proposal in a
     validated reader body, which cited field paths exist in the files the reader
@@ -4820,35 +4922,8 @@ def _citation_provenance(category: str, run_dir: Path, body: str) -> dict:
     normal condition, not a fault."""
     try:
         rp = _reader_proposals_module()
-        arts = run_dir / "artifacts"
-        files, unavailable = {}, []
-        config_rel = _reader_base_config_rel(run_dir)
-        config_rel = config_rel[len("artifacts/"):] if config_rel.startswith("artifacts/") else config_rel
-        rels = (f"reports/{category}.yaml", "grid_evaluation.yaml", "registry_summary.yaml",
-                "hypothesis_card.yaml", "block_manifest.yaml", config_rel)
         v3 = _reader_findings_enabled()
-        if v3:  # E-068 slice 5: the v3 inputs a reading may cite too
-            _rf = _reader_findings_module()
-            gone = set(_reader_v3_missing_inputs(run_dir))  # an older copy is not this run's
-            if _explore_confirm_active(run_dir):  # E-072: the exploration copies it received
-                rels = (tuple(_exploration_rel(r) for r in (
-                            f"reports/{category}.yaml", "grid_evaluation.yaml",
-                            "registry_summary.yaml", "hypothesis_card.yaml",
-                            "block_manifest.yaml"))
-                        + (config_rel,)
-                        + tuple(n for n in _reader_v3_input_names(run_dir) if n not in gone))
-            else:
-                rels += tuple(n for n in (_rf.DIGEST_ARTIFACT, _rf.READER_SUMMARY_ARTIFACT)
-                              if n not in gone) + (_claim_measurement_name(run_dir),)
-        for rel in rels:
-            try:
-                doc = yaml.safe_load((arts / rel).read_text(encoding="utf-8"))
-            except (OSError, yaml.YAMLError):
-                doc = None
-            if isinstance(doc, dict):
-                files[rel] = doc
-            else:
-                unavailable.append(rel)
+        files, unavailable = _reader_received_files(category, run_dir)
         block = {"files_read": sorted(files), "files_unavailable": sorted(unavailable),
                  "proposals": {}}
         proposals = yaml.safe_load(body)
@@ -4869,6 +4944,109 @@ def _citation_provenance(category: str, run_dir: Path, body: str) -> dict:
         return block
     except Exception as exc:  # a normal-run condition never raises out of the stage
         return {"error": f"{type(exc).__name__}: {exc}"}
+
+
+# ---------------------------------------------------------------------------
+# E-073 step 2 (D-083): value-checked citations, under
+# orchestrator.observable_backtest only (v3 readers). A reading's cited
+# path=value pairs are compared with the files the reader received
+# (reader_proposals.check_citation_values); a missing or mis-valued citation
+# gets the reader's ONE retry with a code-written note; still wrong, the
+# reading is kept and the citation recorded (citation_checks/<category>.yaml),
+# which decide-next shows as a warning. Never a stop.
+# ---------------------------------------------------------------------------
+
+CITATION_RETRY_MAX_LINES = 30
+
+
+def _citation_value_check(category: str, run_dir: Path, body: str) -> dict:
+    """{files_read, items: {item id: {checked, bad}}, n_bad} for a validated v3
+    reading body: the reading's own evidence (keyed by reading_id) and each
+    side finding's. Never raises: a failure is {"error": ...} (no retry, no
+    flag -- an unchecked citation is not a wrong one)."""
+    try:
+        rp = _reader_proposals_module()
+        doc = yaml.safe_load(body)
+        if not isinstance(doc, dict) or "skipped" in doc:
+            return {"files_read": [], "items": {}, "n_bad": 0}
+        files, _unavailable = _reader_received_files(category, run_dir)
+        items = [(doc.get("reading_id"), doc.get("evidence"))] + [
+            (s.get("proposal_id"), s.get("evidence"))
+            for s in doc.get("side_findings") or [] if isinstance(s, dict)]
+        out = {}
+        for iid, evidence in items:
+            res = rp.check_citation_values(files, evidence if isinstance(evidence, list) else [])
+            out[str(iid)] = {"checked": len(res["citations"]), "bad": res["bad"]}
+        return {"files_read": sorted(files), "items": out,
+                "n_bad": sum(len(v["bad"]) for v in out.values())}
+    except Exception as exc:  # noqa: BLE001 -- information only, never a stop
+        return {"error": f"{type(exc).__name__}: {exc}"}
+
+
+def _citation_line(iid: str, bad: dict) -> str:
+    """One retry line: the cited path, the cited value and the problem -- never
+    a value from the files (the reader re-reads its inputs; a shown value
+    could be copied without checking anything)."""
+    line = f"- {iid}: `{bad['path']}` cited {bad.get('cited')!r}: "
+    if bad.get("status") != _reader_proposals_module().CITATION_MISSING:
+        return line + "value does not match the file"
+    near = [f"`{s['path']}`" for s in bad.get("suggestions") or [] if isinstance(s, dict)]
+    return line + "path not found" + ("; nearest real paths: " + ", ".join(near) if near else "")
+
+
+def _citation_retry_note(check: dict, body: str) -> str:
+    """The code-written retry block: each bad citation (path, cited value,
+    problem), the rule, and the reader's own answer verbatim -- a citation
+    fix is a repair, not a new answer (run_067/run_069)."""
+    lines = [_citation_line(iid, b) for iid, rec in check["items"].items() for b in rec["bad"]]
+    more = len(lines) - CITATION_RETRY_MAX_LINES
+    lines = lines[:CITATION_RETRY_MAX_LINES] + ([f"- ... and {more} more"] if more > 0 else [])
+    return ("\n\n    YOUR PREVIOUS OUTPUT CITED FIELDS THAT DO NOT MATCH THE FILES YOU READ "
+            "(checked by code):\n    " + "\n    ".join(lines)
+            + "\n\n    The rule: " + _reader_proposals_module().CITATION_VALUE_RULE
+            + "\n\n    Fix each listed citation -- the exact path and the value as that file "
+              "shows it -- or remove it, and correct any statement that rests on it. Keep "
+              "everything else exactly as it was. Output ONE fenced ```yaml block holding ONE "
+              "reading mapping (schema_version: 3).\n"
+            + "\n    Your previous answer, verbatim:\n<<<PREVIOUS ANSWER\n" + body
+            + "PREVIOUS ANSWER>>>\n")
+
+
+def _same_reading_structure(first: str, retry: str) -> bool:
+    """Whether a citation retry kept the first answer's structure
+    (reader_findings.reading_structure: the same items, kinds, claim kinds
+    and tests). Never raises: a failure is False (the first answer is kept)."""
+    try:
+        rf = _reader_findings_module()
+        return rf.reading_structure(yaml.safe_load(first)) == \
+            rf.reading_structure(yaml.safe_load(retry))
+    except Exception:  # noqa: BLE001 -- unreadable = not shown to be the same
+        return False
+
+
+def _write_citation_check(category: str, run_id: str, run_dir: Path, record: dict) -> None:
+    """artifacts/citation_checks/<category>.yaml, atomically. Never raises."""
+    try:
+        rp = _reader_proposals_module()
+        dest = Path(run_dir) / "artifacts" / rp.CITATION_CHECKS_DIR / f"{category}.yaml"
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        doc = {"schema_version": 1, "run_id": run_id, "category": category,
+               "rule": rp.CITATION_VALUE_RULE, **record,
+               "note": ("kept, not dropped: a flagged side finding is still a candidate; "
+                        "decide-next shows a citation_mismatch warning on it")}
+        fd, tmp_name = tempfile.mkstemp(prefix=f".{category}.", suffix=".tmp",
+                                        dir=str(dest.parent))
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                f.write(yaml.safe_dump(doc, sort_keys=False, allow_unicode=True))
+            os.replace(tmp_name, dest)
+        except BaseException:
+            with contextlib.suppress(OSError):
+                os.unlink(tmp_name)
+            raise
+    except Exception as exc:  # noqa: BLE001 -- information only
+        print(f"⚠️  [E-073] {category}: the citation check could not be written ({exc}); "
+              f"the run continues.")
 
 
 def _validate_reader_output(text: str, category: str, run_dir: Path):
@@ -5099,9 +5277,32 @@ def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0
     prov_on = _score_provenance_enabled()  # C5.7b-1
     v3 = _reader_findings_enabled()  # E-068 slice 5
     missing_inputs = _reader_v3_missing_inputs(run_dir) if v3 else []
+    cite_on = v3 and _observable_backtest_enabled()  # E-073 step 2 (D-083)
+    cite = {"retried": False}  # the citation check's state across the two attempts
 
     def _accept(body, entry, key, meta):
         """Write a validated body to the final path (provenance stamped first)."""
+        if cite_on:
+            # E-073 step 2: the final body's citations, recorded; still wrong
+            # after the one retry = kept and flagged (never dropped, never a stop)
+            check = _citation_value_check(category, run_dir, body)
+            flagged = sorted(i for i, r in (check.get("items") or {}).items() if r["bad"])
+            record = {"status": ("error" if "error" in check else
+                                 "flagged" if flagged else "clean"),
+                      "retried": cite["retried"],
+                      **{k: cite[k] for k in ("first_attempt_bad", "retry_attempt_bad",
+                                              "kept_answer", "retry_skipped",
+                                              "retry_answer_refused") if k in cite},
+                      "flagged": flagged, **check}
+            entry["citation_check"] = {k: record[k] for k in
+                                       ("status", "retried", "flagged", "n_bad", "error")
+                                       if k in record}
+            update_state(path=run_dir, audit_log={key: entry})
+            _write_citation_check(category, run_id, run_dir, record)
+            if flagged:
+                print(f"⚠️  [E-073] {category}: {check['n_bad']} citation(s) still missing or "
+                      f"mis-valued after the retry, in {flagged} -- kept and flagged "
+                      f"(artifacts/citation_checks/{category}.yaml).")
         if prov_on:
             # S1: the proposals carry the model that answered, not its
             # self-report; recorded in the audit log, never a stop or retry.
@@ -5161,8 +5362,41 @@ def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0
             entry["missing_inputs"] = list(missing_inputs)
         update_state(path=run_dir, audit_log={key: entry})
         body, error = _validate_reader_output(text, category, run_dir)
+        if error is None and cite_on and attempt == 0:
+            check = _citation_value_check(category, run_dir, body)
+            if check.get("n_bad"):
+                try:
+                    _check_reader_budget(run_dir, category)
+                except _ReaderBudgetExceeded as exc:  # E-073: a citation retry never stops a run
+                    cite["retry_skipped"] = f"no retry: {exc}"
+                else:
+                    cite.update(retried=True, first_attempt_bad=check["n_bad"],
+                                first_body=body, first_meta=meta)
+                    entry["citation_check"] = {"status": "retry", "n_bad": check["n_bad"]}
+                    update_state(path=run_dir, audit_log={key: entry})
+                    print(f"⚠️  [E-073] {category}: {check['n_bad']} citation(s) missing or "
+                          f"mis-valued -- retrying once with the list.")
+                    prompt = base_prompt + _citation_retry_note(check, body)
+                    continue
+        if error is None and cite.get("first_body") is not None:
+            # the citation retry's answer replaces the first one only when it has
+            # strictly fewer bad citations AND proposes the same side findings
+            # (a check error is no evidence)
+            retry_check = _citation_value_check(category, run_dir, body)
+            cite["retry_attempt_bad"] = retry_check.get("n_bad")
+            if ("error" in retry_check or retry_check["n_bad"] >= cite["first_attempt_bad"]
+                    or not _same_reading_structure(cite["first_body"], body)):
+                cite["kept_answer"] = "first"
+                print(f"⚠️  [E-073] {category}: the citation retry did not reduce the bad "
+                      f"citations ({cite['first_attempt_bad']} -> "
+                      f"{retry_check.get('n_bad', 'check error')}) or changed the side "
+                      f"findings; the first answer is kept.")
+                return _accept(cite["first_body"], entry, key, cite["first_meta"])
+            cite["kept_answer"] = "retry"
         if error is None:
             return _accept(body, entry, key, meta)
+        if cite_on and attempt == 0:
+            cite["retried"] = True  # the one retry is spent on the shape error
         if attempt == 0:
             print(f"⚠️  {category} reader output invalid -- retrying once with the error: {error}")
             prompt = base_prompt + (
@@ -5174,6 +5408,15 @@ def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0
                  "list of proposals (`[]` for none).\n"))
     debug_path = run_dir / "artifacts" / f"debug_specialist_readers_{category}_raw_output.txt"
     debug_path.write_text(text or "", encoding="utf-8")
+    if cite.get("first_body") is not None:
+        # E-073 step 2: the citation retry's answer failed the shape check -- the
+        # first answer (valid, its citations flagged) is kept, never salvaged away
+        cite["retry_answer_refused"] = error
+        cite["kept_answer"] = "first"
+        print(f"⚠️  [E-073] {category}: the citation retry's answer was refused ({error}); the "
+              f"first answer is kept with its citations flagged. Raw retry output saved to "
+              f"{debug_path}.")
+        return _accept(cite["first_body"], entry, key, cite["first_meta"])
     body, dropped = _salvage_reader_output(text, category, run_dir)
     entry["dropped_proposals"] = dropped
     update_state(path=run_dir, audit_log={key: entry})
@@ -5624,13 +5867,42 @@ def _write_exploration_reader_inputs(run_dir: Path, run_id: str) -> dict:
     return gaps
 
 
-def _record_confirmations(run_id: str, run_dir: Path) -> None:
+def _record_side_finding_merges(run_id: str, run_dir: Path) -> dict:
+    """E-073 step 2 (D-083), orchestrator.observable_backtest only: the run's
+    side findings that are the same test (reader_findings.MERGE_RULE), written
+    to artifacts/side_finding_merges.yaml (`merged: []` when none) and returned
+    as reader_findings.merge_index -- what the confirmation and decide-next
+    read, so a merged finding is measured, counted and ranked once (never as
+    agreement). Information only: never raises ({} on an error, recorded)."""
+    rf = _reader_findings_module()
+    path = Path(run_dir) / "artifacts" / rf.MERGES_ARTIFACT
+    try:
+        readings = _reader_proposals_module().load_readings(
+            Path(run_dir) / "artifacts" / "proposals", _reader_categories())
+        doc = rf.merges_doc(run_id, rf.side_finding_merges(readings))
+        save_yaml(path, doc)
+        for g in doc["merged"]:
+            print(f"🔗 [E-073] {run_id}: side findings {g['finding_ids']} propose the same test "
+                  f"-- merged into {g['finding_id']} (one finding; not agreement).")
+        return rf.merge_index(doc)
+    except Exception as exc:  # noqa: BLE001 -- information only
+        print(f"⚠️  [E-073] the in-run merge could not run ({type(exc).__name__}: {exc}); "
+              f"the run continues without it.")
+        with contextlib.suppress(Exception):
+            save_yaml(path, {"run_id": run_id, "status": "error",
+                             "detail": f"{type(exc).__name__}: {exc}", "merged": []})
+        return {}
+
+
+def _record_confirmations(run_id: str, run_dir: Path, merges: dict | None = None) -> None:
     """specialist_readers, after every reader: each side finding of this run
     measured on the confirmation windows (or marked pending), and -- when this
     run was built from a pending side finding -- that finding measured by this
     run's own claim on this run's confirmation windows. Written to
     artifacts/confirmation.yaml and campaign_record/confirmations.yaml (looks
-    counted). Information only: never raises, never routes."""
+    counted). Information only: never raises, never routes.
+    `merges` (E-073 step 2, observable_backtest only): the in-run merge index;
+    a merged duplicate is measured and counted once (None: as before)."""
     try:
         ec = _explore_confirm_module()
         rp = _reader_proposals_module()
@@ -5644,7 +5916,8 @@ def _record_confirmations(run_id: str, run_dir: Path) -> None:
         base_vid = _json_pointer_module().base_variant_id(graded) if graded else None
         readings = rp.load_readings(arts / "proposals", _reader_categories())
         records = ec.confirm_findings(run_dir, run_id, readings, split, base_variant=base_vid,
-                                      eras=eras, holdout_start=holdout_start)
+                                      eras=eras, holdout_start=holdout_start,
+                                      **({"merges": merges} if merges is not None else {}))
         source = ec.source_finding_id(arts)
 
         def _resolve(findings: dict) -> list:
@@ -5739,10 +6012,13 @@ def _run_specialist_readers_stage(run_id: str, run_dir: Path, stage_attempt=0) -
     proposals = _run_specialist_readers(run_id, run_dir, stage_attempt)
     if v3:
         _record_reader_skips(run_id, run_dir)
+        # E-073 step 2 (D-083): in-run duplicates merged before anything counts them
+        merges = _record_side_finding_merges(run_id, run_dir) \
+            if _observable_backtest_enabled() else None
         if _explore_confirm_active(run_dir):
             # E-072: after every reader, so no reader ever sees it (not when the
             # split is not applicable to this run: it then runs as flag-off)
-            _record_confirmations(run_id, run_dir)
+            _record_confirmations(run_id, run_dir, merges=merges)
     # E-035 S2c: each feed the validated proposals ask for and do not have
     # becomes a data_requests.yaml row (idempotent per run and feed; nothing
     # written when no proposal carries requires_feed).
@@ -7501,6 +7777,29 @@ def _normalisation_at_spend(run_dir: Path, run_id: str, variant: str, entry: dic
             f"coverage gives now (D-047): " + "; ".join(problems))
 
 
+def _cost_basis_at_spend(variant, entry: dict) -> None:
+    """CUL-414 (D-082): a v2 spend refuses `bars_changed` unless the variant's
+    cost_edge_ratio_min row was graded on the cost basis in force now --
+    detail.cost_basis "fees_and_slippage" under orchestrator.cost_bar_all_costs,
+    absent (fees only) without it. So a variant that passed the fee-only ratio
+    cannot be spent after the flag is switched on, nor the reverse. An
+    unreadable flag refuses (fail closed). Flag off and an evaluation graded
+    flag off: nothing changes. Read-only; returns None."""
+    try:
+        want = "fees_and_slippage" if _cost_bar_all_costs_enabled() else None
+    except Exception as e:  # noqa: BLE001 -- any unreadable flag must refuse the spend
+        raise HoldoutUnlockRefused(
+            "bars_changed", f"the cost_bar_all_costs flag does not read: {type(e).__name__}: {e}")
+    rows = {r.get("name"): r for r in (entry or {}).get("bars") or [] if isinstance(r, dict)}
+    detail = (rows.get("cost_edge_ratio_min") or {}).get("detail")
+    graded = detail.get("cost_basis") if isinstance(detail, dict) else None
+    if graded != want:
+        raise HoldoutUnlockRefused(
+            "bars_changed", f"variant {variant!r}: its cost_edge_ratio_min row was graded on cost "
+            f"basis {graded or 'fees only'!r}; orchestrator.cost_bar_all_costs in force now gives "
+            f"{want or 'fees only'!r}")
+
+
 def _dsr_on_current_ledger(run_dir: Path, variant: str, entry: dict, bars: dict,
                            ev: dict) -> dict:
     """Review fix 8: the variant's deflated Sharpe, recomputed NOW on the
@@ -7682,6 +7981,7 @@ def _validate_holdout_decision(run_dir: Path, run_id: str, state: dict) -> dict:
             # E-062 S2b-3b (D-047): the thresholds the variant passed are the
             # ones its coverage gives NOW -- never a silent full-coverage one.
             _normalisation_at_spend(run_dir, run_id, variant, entry, bars)
+            _cost_basis_at_spend(variant, entry)  # CUL-414 (D-082)
         hyp_id = _idea_hypothesis_id(run_dir)  # never a promotion_audit.yaml (fix 8)
         if _holdout_already_spent(hyp_id):
             raise HoldoutUnlockRefused(
@@ -14462,15 +14762,20 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
                                             + count_reason))
     else:
         try:
-            ec = pwt.pooled_edge_to_cost_ratio(records, bars["cost_edge_min_trades"])
+            _all_costs = _cost_bar_all_costs_enabled()  # CUL-414 (D-082)
+            ec = pwt.pooled_edge_to_cost_ratio(records, bars["cost_edge_min_trades"],
+                                               **({"all_costs": True} if _all_costs else {}))
             _row("cost_edge_ratio_min", ec["ratio"],
                  note=(f"min(ratio over all {ec['n_trades'] + ec['n_excluded_end_of_window']} "
                        f"trade(s), ratio without the {ec['n_excluded_end_of_window']} "
                        f"end_of_window forced close(s)), unrounded; floor "
-                       f"{bars['cost_edge_min_trades']} non-forced trades"),
+                       f"{bars['cost_edge_min_trades']} non-forced trades"
+                       + ("; gross edge before fees and slippage / fees + slippage, both legs"
+                          if _all_costs else "")),
                  detail={**{k: ec[k] for k in ("ratio_all_trades", "ratio_excluding_end_of_window",
                                                "n_trades", "n_excluded_end_of_window")},
-                         "min_trades": bars["cost_edge_min_trades"]})
+                         "min_trades": bars["cost_edge_min_trades"],
+                         **({"cost_basis": ec["cost_basis"]} if _all_costs else {})})
         except _pd.PortfolioNotEvaluable as exc:
             _row("cost_edge_ratio_min", reason=f"pooled edge/cost ratio NOT_EVALUABLE: {exc}")
 

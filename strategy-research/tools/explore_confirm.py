@@ -787,19 +787,35 @@ def side_finding_items(readings: dict) -> list:
 
 
 def confirm_findings(run_dir: Path, run_id: str, readings: dict, split: dict, *,
-                     base_variant: str | None, eras, holdout_start: str) -> list:
+                     base_variant: str | None, eras, holdout_start: str,
+                     merges: dict | None = None) -> list:
     """One record per side finding of this run's readings: measured in-run on
     the confirmation windows of the base variant (a pure finding), or pending
-    / not_measurable with its reason. Never raises: an error is a record."""
+    / not_measurable with its reason. Never raises: an error is a record.
+
+    `merges` (E-073 step 2, orchestrator.observable_backtest only;
+    reader_findings.merge_index of the run's side_finding_merges.yaml): a
+    merged duplicate is measured and counted ONCE -- its primary's record
+    lists every source (`sources`, `merged_finding_ids`, `merge_note`: not
+    agreement), and the other members get no record and no look. None (the
+    default): exactly as before."""
     conf = split["confirmation"]
     conf_labels = labels(conf)
     records = []
     for cat, item in side_finding_items(readings):
         claim = item.get("claim") or {}
+        merged = (merges or {}).get(item.get("proposal_id"))
+        if merged and merged["order"]:
+            continue  # a merged duplicate: its primary's record is the one measurement
         rec = {"finding_id": item.get("proposal_id"), "category": cat, "source_run": run_id,
                "kind": claim.get("kind"), "statement": claim.get("statement"),
                "proposer_saw": [dict(r) for r in split["exploration"]],
                "confirmation_set": set_key(conf), "bar": HONEST_BAR}
+        if merged:
+            import reader_findings as _rf
+            rec["sources"] = [dict(x) for x in merged["group"].get("sources") or []]
+            rec["merged_finding_ids"] = list(merged["group"]["finding_ids"][1:])
+            rec["merge_note"] = _rf.MERGE_NOT_AGREEMENT
         try:
             route, why = finding_route(item)
             rec["finding_spec_hashes"] = finding_spec_hashes(item)
@@ -850,6 +866,11 @@ def pending_for(findings: dict, source_id, run_id: str):
     it is measured again (artifacts/confirmation.yaml keeps it under
     resolved_pending; its looks are not counted twice)."""
     rec = (findings or {}).get(source_id) if source_id else None
+    if rec is None and source_id:
+        # E-073 step 2: the run may be built from a merged duplicate; its
+        # finding is recorded under the group's primary (merged_finding_ids)
+        rec = next((r for r in (findings or {}).values() if isinstance(r, dict)
+                    and source_id in (r.get("merged_finding_ids") or [])), None)
     if not isinstance(rec, dict):
         return None
     if rec.get("confirmation_sign_retained") == PENDING:

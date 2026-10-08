@@ -917,8 +917,22 @@ orchestrator:
       # known at the bar's close or only after the fact, plus the audit
       # findings and what is not recorded -- is an extra required input of
       # every v3 reader, with one line in the handoff telling the reader to
-      # look a field up there before citing it. Later E-073 steps (citation
-      # checks, E-029, E-027) will add to this flag.
+      # look a field up there before citing it.
+      #
+      # While true (step 2, D-083): every `path=value` a v3 reading cites is
+      # checked against the files the reader received (the exploration copies
+      # under explore_confirm): a missing path or a value that is not the
+      # file's value as written or rounded gets the reader's ONE retry with a
+      # code-written list (path, cited value, problem -- never a value from the
+      # files; a missing path with up to 3 real paths that end in the same
+      # key); the retry answer is kept only with strictly fewer bad citations
+      # and the same side findings; still wrong, the reading is kept and the citation
+      # recorded in artifacts/citation_checks/<category>.yaml (decide-next: a
+      # citation_mismatch warning, never a refusal). Side findings proposing
+      # the same test (same claim kind, spec_hashes and config change) are merged into one
+      # (artifacts/side_finding_merges.yaml): measured, counted and ranked
+      # once, with the first source's scores -- never as agreement. Later
+      # E-073 steps (E-029, E-027) will add to this flag.
   zero_trade_windows_not_computed:
     enabled: false
       # CUL-415 (D-084, audit finding A8 in docs/DATA_DICTIONARY.md). OFF BY
@@ -1012,6 +1026,27 @@ orchestrator:
       # confirmation set; the campaign summary shows the counts. The bar is
       # "the sign held on unseen windows, counted against the looks", never
       # "proven". Nothing here routes, stops, parks or ranks a run.
+  cost_bar_all_costs:
+    enabled: false
+      # CUL-414 (D-082; audit finding A7 in docs/DATA_DICTIONARY.md). OFF BY
+      # DEFAULT, read by run_phase1_research._cost_bar_all_costs_enabled(). No
+      # dependency. While false: byte-identical (run_protocol.py's arguments,
+      # the trade records, the summary and both D-038 bars unchanged).
+      #
+      # While true (a DECLARED OUTPUT CHANGE: the bar gets stricter): the
+      # D-038 "survives 2x costs" ratio (> 2.2) compares the gross edge per
+      # trade BEFORE fees and slippage with the cost per trade = fees +
+      # slippage, both legs, as the engine modelled them for that trade.
+      # Flag off it compares a return already net of slippage (fill prices)
+      # with fees only. run_protocol.py gets --cost-bar-all-costs: each trade
+      # record also carries gross_return_before_costs, slippage_paid and
+      # cost_paid_all (from the fills and the bar closes they were priced
+      # from), the summary realized_edge_to_cost_ratio_all_costs. The menu
+      # criterion realized_edge_to_cost_ratio reads that field (evaluate_grid)
+      # and profit_bars_v2's cost_edge_ratio_min uses
+      # pooled_edge_to_cost_ratio(all_costs=True). Existing fields keep their
+      # values. Operator decision 2026-10-08: switch on before the next
+      # comparison of results.
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------
