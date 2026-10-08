@@ -197,7 +197,6 @@ attempts and the holdout.
 | `data_feed_value` | `criteria_refs`, or a test on the feed-built forecast |
 | `cost_turnover` | `criteria_refs: [realized_edge_to_cost_ratio]` |
 | `robustness` | `criteria_refs: [sign_consistent_by_era]` |
-| `execution_behaviour` | a claim about the strategy itself (E-077). Today a bar test on its own `bars.csv` (`event` or `regime` + `fwd_return` + `complement` + `mean_diff`), or `tests: none` with `missing_block` for what only the trades show (a trade-level test family is a later PR) |
 
 The `kind` says whether the idea could be a block: a forecast kind is a forecast-block
 candidate, a regime kind is a regime-block candidate, and `calendar_effect` is a finding only.

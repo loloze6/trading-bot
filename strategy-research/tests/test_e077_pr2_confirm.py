@@ -4,8 +4,10 @@ fold, behind orchestrator.folds.enabled (off by default; no new flag).
 
 Proven here, all with synthetic inputs (no LLM, no backtest, no market data, no
 cache, no holdout bar; every date is in 2018-2021):
-  1. The claim record: kind `execution_behaviour` is accepted by check_claim (and by
-     the card schema and CLAIM_TESTS.md); the proposal ENVELOPE (`vehicle`,
+  1. The claim record: kind `execution_behaviour` is accepted by check_claim(folds=True)
+     only (flag off: CLAIM_TESTS.md, the card schema and the refusal text are as before);
+     today's readers' side findings are not accepted under the flag (no retry, no vehicle
+     shape echoed); the proposal ENVELOPE (`vehicle`,
      `combines_as`, `fold_observed`) is validated where reader proposals are: a model's
      answer under the flag MUST carry a vehicle, a bad `combines_as` / `fold_observed`
      / a vehicle that does not resolve / both vehicle and config_change are refused; the
@@ -135,7 +137,8 @@ def _bars(path: Path, block: dict, sign: float, seed: int) -> None:
 
 def _build(tmp_path: Path, *, signs=(1.0,) * 6, symbols=("BTCUSD",), bar_windows=None,
            claim=None, card_claim="same", source_claim=True, fold=FOLD, with_bars=True,
-           envelope=None, extra_source=None, protocol_blocks=None, seed0=0) -> tuple:
+           envelope=None, extra_source=None, protocol_blocks=None, seed0=0,
+           config_period=2) -> tuple:
     """(campaign root, child run dir). The source run holds a v3 reading with one side
     finding; the child's brief names it, its card carries `card_claim`, and its base
     variant has bars on `bar_windows` (default: every block) with the planted `signs`."""
@@ -172,7 +175,23 @@ def _build(tmp_path: Path, *, signs=(1.0,) * 6, symbols=("BTCUSD",), bar_windows
                 _bars(root / "runs" / CHILD / "variants" / "base" / "results" / rid / "bars.csv",
                       block, signs[wi % len(signs)], seed0 + 100 * si + wi)
     _save(arts / "variants" / "base" / "protocol_result.yaml", {"results": results})
+    if config_period is not None:       # the strategy config the base variant was backtested on
+        _write_variant_config(arts, "base", config_period)
     return root, root / "runs" / CHILD
+
+
+def _config(period) -> dict:
+    """A strategy config with the component of CHANGE: params.period == `period`."""
+    return {"regime_detector": {"components": []},
+            "strategies": {"regimes": {"trend": {"components": [
+                {"id": "shock_reversal", "class": "ShockReversal",
+                 "params": {"period": period}, "weight": 1.0}]}}}}
+
+
+def _write_variant_config(arts: Path, vid: str, period) -> None:
+    d = arts / "variants" / vid
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "strategy_config.json").write_text(json.dumps(_config(period)), encoding="utf-8")
 
 
 def _confirm(root, child, **kw):
@@ -206,24 +225,47 @@ def _fake(results_by_test: dict):
 # 1. The claim record
 # ---------------------------------------------------------------------------
 
-def test_execution_behaviour_is_a_claim_kind_and_a_finding_only():
-    assert "execution_behaviour" in cc.CLAIM_KINDS
-    res = cc.check_claim(_claim())
+def test_execution_behaviour_is_a_claim_kind_only_under_the_folds_flag():
+    assert "execution_behaviour" not in cc.CLAIM_KINDS             # the original closed list
+    assert cc.FOLDS_CLAIM_KINDS == ("execution_behaviour",)
+    res = cc.check_claim(_claim(), folds=True)
     assert res.errors == [] and len(res.tests) == 1
     none = dict(_claim(), tests="none", missing_block="the trade-level exit-cause family")
-    res = cc.check_claim(none)
+    res = cc.check_claim(none, folds=True)
     assert res.errors == [] and res.tests_none
     assert "execution_behaviour" not in cc.KIND_BLOCK     # never a block: no kind-vs-block warning
-    assert cc.check_claim(_claim(kind="vibes")).errors     # still a closed list
+    assert cc.check_claim(_claim(kind="vibes"), folds=True).errors     # still a closed list
+    # flag off (the default): refused, and the message is exactly the one a made-up kind gets
+    off = cc.check_claim(_claim())
+    assert off.errors == [f"claim.kind: 'execution_behaviour' is not one of {list(cc.CLAIM_KINDS)}"]
+    assert cc.check_claim(_claim(kind="vibes")).errors == [
+        f"claim.kind: 'vibes' is not one of {list(cc.CLAIM_KINDS)}"]
+    assert cc.check_claim(_claim(), folds=False).errors == off.errors
 
 
-def test_the_card_schema_and_the_guide_list_the_new_kind():
+def test_flag_off_every_prompt_input_that_names_the_kinds_is_as_before():
+    """CLAIM_TESTS.md (model input of step 1a and the readers) and the card schema's kind
+    enum do not mention the new kind; its guide is a separate file shown to no prompt."""
     schema = json.loads((SR_ROOT / "workflow_artifacts" / "schemas"
                          / "hypothesis_card.schema.json").read_text(encoding="utf-8"))
     assert tuple(schema["properties"]["claim"]["properties"]["kind"]["enum"]) == cc.CLAIM_KINDS
-    guide = (SR_ROOT / "workflow_artifacts" / "skills" / "hypothesis-design"
-             / "CLAIM_TESTS.md").read_text(encoding="utf-8")
-    assert "| `execution_behaviour` |" in guide
+    skills = SR_ROOT / "workflow_artifacts" / "skills" / "hypothesis-design"
+    assert "execution_behaviour" not in (skills / "CLAIM_TESTS.md").read_text(encoding="utf-8")
+    assert "| `execution_behaviour` |" in (skills / "CLAIM_TESTS_EXECUTION.md").read_text(encoding="utf-8")
+    # no prompt reads the separate guide
+    src = (SR_ROOT / "workflow" / "run_phase1_research.py").read_text(encoding="utf-8")
+    assert "CLAIM_TESTS_EXECUTION" not in src
+
+
+def test_the_folds_flag_reaches_every_claim_check_of_the_orchestrator(monkeypatch):
+    _orch(FOLDS_ON, monkeypatch)
+    assert rpr._claim_check_folds() == {"folds": True}
+    monkeypatch.setattr(rpr, "_folds_enabled", lambda cfg=None: False)
+    assert rpr._claim_check_folds() == {}
+    item = {"claim": _claim()}
+    assert ec.finding_route(item)[0] == ec.NOT_MEASURABLE             # flag off: refused
+    assert ec.finding_route(item, folds=True)[0] == ec.PENDING
+    assert ec.finding_spec_hashes(item) == [] and len(ec.finding_spec_hashes(item, folds=True)) == 1
 
 
 def test_the_envelope_never_sits_inside_the_claim():
@@ -340,6 +382,88 @@ def test_fold_observed_must_match_the_fold_the_run_ran_on(monkeypatch):
                                         "trade_efficiency", run_dir)[1] is None
 
 
+def _answer(sides, *, explanation="x", cat="trade_efficiency") -> str:
+    from test_e068_5_readers_v3 import _fenced
+    rid = f"{cat}-{RUN_ID}"
+    return _fenced({"schema_version": 3, "reading_id": rid, "model_id": "m",
+                    "rubric_version": f"{cat}-reading-v1", "explanation": explanation,
+                    "evidence": ["variants.base.slices.overall.x=1"], "side_findings": sides})
+
+
+def _side(n=1, **envelope) -> dict:
+    from test_e068_5_readers_v3 import _claim as _c, _scores as _s
+    return {"proposal_id": f"trade_efficiency-{RUN_ID}-{n}", "claim": _c(),
+            "evidence": ["variants.base.slices.overall.y=2"], "scores": _s(), **envelope}
+
+
+def _drive_reader(monkeypatch, run_dir, answers):
+    prompts = []
+
+    async def _llm(prompt):
+        prompts.append(prompt)
+        return answers[min(len(prompts), len(answers)) - 1], {"usage": {}, "cost_usd": 0.0,
+                                                               "num_turns": 1}
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _llm)
+    dest = rpr.run_reader_worker("trade_efficiency", RUN_ID, run_dir)
+    return prompts, yaml.safe_load(dest.read_text(encoding="utf-8")), rpr.load_yaml(
+        run_dir / "pipeline_state.yaml")["audit_log"]
+
+
+def test_under_the_flag_todays_readers_side_findings_are_not_accepted_and_not_retried(monkeypatch):
+    from test_e068_5_readers_v3 import _patch
+    change = _patch()["patch"]
+    # with a valid vehicle, without one, and two findings at once: none is accepted, one call
+    for sides in ([_side(vehicle=change, combines_as="execution_rule")], [_side()],
+                  [_side(1, vehicle=change), _side(2)]):
+        run_dir = _orch(FOLDS_ON, monkeypatch)
+        prompts, doc, audit = _drive_reader(monkeypatch, run_dir, [_answer(sides)])
+        assert len(prompts) == 1                                  # no retry
+        assert doc["side_findings"] == [] and doc["explanation"] == "x"   # the reading is kept
+        rec = audit["specialist_readers_trade_efficiency_attempt_0"]["side_findings_refused"]
+        assert rec["rule"] == "side_findings_need_the_analyst" and rec["n"] == len(sides)
+        assert "specialist_readers_trade_efficiency_attempt_0_retry1" not in audit
+
+
+def test_a_retry_answer_with_a_vehicle_is_still_not_accepted_and_the_shape_is_not_echoed(monkeypatch):
+    from test_e068_5_readers_v3 import _patch
+    change = _patch()["patch"]
+    run_dir = _orch(FOLDS_ON, monkeypatch)
+    # first answer: refused for ANOTHER reason (empty explanation), carrying a finding;
+    # the retry answer carries a good vehicle
+    first = _answer([_side()], explanation="")
+    retry = _answer([_side(vehicle=change, combines_as="execution_rule")])
+    prompts, doc, audit = _drive_reader(monkeypatch, run_dir, [first, retry])
+    assert len(prompts) == 2
+    note = prompts[1][len(prompts[0]):]                           # the retry's refusal text
+    assert "explanation" in note
+    for word in ("vehicle", "combines_as", "component_id", "strategy claim"):
+        assert word not in note, word
+    assert doc["side_findings"] == [] and doc["explanation"] == "x"
+    entry = audit["specialist_readers_trade_efficiency_attempt_0_retry1"]
+    assert entry["side_findings_refused"]["rule"] == "side_findings_need_the_analyst"
+    # both answers refused: the salvage keeps no finding either
+    run_dir = _orch(FOLDS_ON, monkeypatch)
+    prompts, doc, _ = _drive_reader(monkeypatch, run_dir,
+                                    [first, _answer([_side(vehicle=change)], explanation="")])
+    assert len(prompts) == 2 and doc.get("side_findings", []) == []
+
+
+def test_flag_off_a_readers_side_findings_are_kept_as_before(monkeypatch):
+    run_dir = _orch({}, monkeypatch)
+    prompts, doc, audit = _drive_reader(monkeypatch, run_dir, [_answer([_side()])])
+    assert len(prompts) == 1 and len(doc["side_findings"]) == 1
+    assert "side_findings_refused" not in audit["specialist_readers_trade_efficiency_attempt_0"]
+    text = _answer([_side()])
+    assert rpr._refuse_side_findings_under_folds(text, "trade_efficiency") == (text, None)
+
+
+def test_the_refusal_only_rewrites_a_parseable_single_block_answer(monkeypatch):
+    _orch(FOLDS_ON, monkeypatch)
+    for text in ("no yaml", "```yaml\nnot: [valid\n```", "```yaml\n- a\n```",
+                 "```yaml\nside_findings: nope\n```", _answer([])):
+        assert rpr._refuse_side_findings_under_folds(text, "trade_efficiency") == (text, None)
+
+
 # ---------------------------------------------------------------------------
 # 2. THE NOISE RULE, on handcrafted measurements (the exact boundary)
 # ---------------------------------------------------------------------------
@@ -393,6 +517,21 @@ def test_fewer_than_four_windows_with_a_value_is_not_measurable():
     assert _grade({1: [POS, POS, POS, POS, None, None]})["status"] == fc.CONFIRMED
     # one horizon too short to grade makes the whole test not measurable
     assert _grade({1: [POS] * 6, 2: [POS] * 3 + [None] * 3})["status"] == fc.NOT_MEASURABLE
+
+
+def test_a_refutation_at_a_judged_horizon_is_not_confirmed_even_if_another_horizon_is_short():
+    g = _grade({1: [NEG] * 6, 24: [POS] * 3 + [None] * 3}, pooled={1: -0.02, 24: 0.02})
+    assert g["status"] == fc.NOT_CONFIRMED and "h=1" in g["reason"] and "h=24" not in g["reason"]
+    # windows fail at h=1 (4 of 6) with a short h=24: still a refutation
+    g = _grade({1: [POS] * 4 + [NEG] * 2, 24: [POS] * 3 + [None] * 3}, pooled={1: 0.01, 24: 0.02})
+    assert g["status"] == fc.NOT_CONFIRMED
+    # every judged horizon holds and one is short: not measurable (cannot confirm)
+    g = _grade({1: [POS] * 6, 24: [POS] * 3 + [None] * 3})
+    assert g["status"] == fc.NOT_MEASURABLE and "fewer than 4" in g["reason"]
+    # a short horizon with the wrong sign is not itself judged
+    g = _grade({1: [POS] * 6, 24: [NEG] * 3 + [None] * 3}, pooled={1: 0.02, 24: -0.02})
+    assert g["status"] == fc.NOT_MEASURABLE
+    assert fc.combine({"t": g})[0] == fc.NOT_MEASURABLE
 
 
 def test_no_events_and_an_error_are_not_measurable_never_confirmed():
@@ -551,6 +690,67 @@ def test_a_child_without_a_fold_or_on_other_windows_is_not_measured(tmp_path):
     root, child = _build(tmp_path / "w", protocol_blocks=other)
     row = _confirm(root, child)
     assert row["status"] == fc.NOT_MEASURABLE and "not exactly fold B" in row["reason"]
+
+
+def test_the_vehicle_must_be_in_the_measured_config(tmp_path):
+    root, child = _build(tmp_path)                       # base config carries period == 2 (the vehicle)
+    assert _confirm(root, child)["status"] == fc.CONFIRMED
+    # step 1b reverted the vehicle (period back to its `before` value): not measurable, named
+    _write_variant_config(child / "artifacts", "base", 1)
+    row = _confirm(root, child)
+    assert row["status"] == fc.NOT_MEASURABLE and "tests" not in row
+    assert row["reason"].startswith("vehicle_not_in_measured_config")
+    assert "shock_reversal.params.period" in row["reason"] and "has 1" in row["reason"]
+    assert len(row["vehicle_missing"]) == 1 and row["vehicle_variant"] == "base"
+    # a missing component, a missing field and an unreadable config are not measurable either
+    cfg = child / "artifacts" / "variants" / "base" / "strategy_config.json"
+    cfg.write_text(json.dumps({"strategies": {"regimes": {}}}), encoding="utf-8")
+    assert "0 components" in _confirm(root, child)["reason"]
+    cfg.write_text(json.dumps(_config(2)).replace('"period": 2', '"other": 2'), encoding="utf-8")
+    assert "does not resolve" in _confirm(root, child)["reason"]
+    cfg.write_text("not json", encoding="utf-8")
+    row = _confirm(root, child)
+    assert row["status"] == fc.NOT_MEASURABLE and "cannot be read" in row["reason"]
+    cfg.unlink()
+    assert _confirm(root, child)["reason"].startswith("vehicle_not_in_measured_config")
+
+
+def test_every_vehicle_change_is_checked_and_all_the_missing_are_listed():
+    two = CHANGE + [{"component_id": "shock_reversal", "field": "params.threshold",
+                     "before": 0.5, "after": 0.9}]
+    assert fc.vehicle_missing(_config(2), CHANGE) == []
+    miss = fc.vehicle_missing(_config(2), two)
+    assert len(miss) == 1 and "params.threshold" in miss[0]
+    assert len(fc.vehicle_missing(_config(1), two)) == 2
+    assert fc.vehicle_missing(_config(2), []) == []                   # an empty vehicle: nothing to check
+
+
+def test_the_vehicle_is_read_from_the_named_vehicle_variant(tmp_path):
+    import shutil
+    root, child = _build(tmp_path)
+    arts = child / "artifacts"
+    # a second graded variant `alt` that carries the vehicle while `base` does not
+    _write_variant_config(arts, "base", 1)
+    shutil.copytree(arts / "variants" / "base", arts / "variants" / "alt")
+    _write_variant_config(arts, "alt", 2)
+    assert _confirm(root, child)["reason"].startswith("vehicle_not_in_measured_config")
+    row = _confirm(root, child, vehicle_variant="alt",
+                   measure=_fake({"up_day_follow": _measured({1: [POS] * 6})}))
+    assert row["status"] == fc.CONFIRMED and row["vehicle_variant"] == "alt"
+
+
+def test_the_orchestrator_passes_the_vehicle_variant_through(tmp_path, monkeypatch):
+    seen = {}
+
+    def _fake_confirm(*a, **kw):
+        seen.update(kw)
+    monkeypatch.setattr(rpr, "_folds_enabled", lambda cfg=None: True)
+    monkeypatch.setattr(fc, "confirm_on_fold", _fake_confirm)
+    monkeypatch.setattr(rpr, "_claim_measure_variants", lambda *a, **k: ([], {}))
+    rpr._confirm_on_fold_after_backtests(tmp_path, "run_x", "alt")
+    assert seen["vehicle_variant"] == "alt"
+    rpr._confirm_on_fold_after_backtests(tmp_path, "run_x")
+    assert seen["vehicle_variant"] is None
 
 
 def test_a_vehicle_variant_that_was_not_backtested_this_attempt_is_not_measured(tmp_path):
@@ -780,7 +980,7 @@ def test_the_stage_is_called_after_the_claim_measurement_in_the_run_loop():
 
 
 def test_routes_in_run_does_not_exist_under_the_folds_flag():
-    pure = {"claim": _claim()}
+    pure = {"claim": _claim(kind="event_behaviour")}
     assert ec.finding_route(pure)[0] == ec.IN_RUN                   # flag off: as before
     assert ec.finding_route(pure, folds=True) == (ec.PENDING, ec.FOLD_PENDING_REASON)
     block = {"claim": dict(_claim(), kind="direction_forecast")}

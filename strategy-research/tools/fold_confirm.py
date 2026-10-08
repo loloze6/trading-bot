@@ -38,7 +38,9 @@ The statuses
   not_confirmed   a test was measured and the rule fails: the claim is refuted on this
                   fold (kept as knowledge).
   not_measurable  no events, an unreadable source or bars, a vehicle variant that was not
-                  backtested, or fewer than MIN_WINDOWS windows with a value (a fold of
+                  backtested, a measured variant whose strategy config does not carry the
+                  vehicle (`vehicle_not_in_measured_config`: step 1b may have changed the
+                  config the child started from), or fewer than MIN_WINDOWS windows with a value (a fold of
                   SOL/UNI has almost no 2018-2021 bars). Kept as knowledge; the look is
                   counted when the selector was actually run.
   not_comparable  the child's card tests (spec_hash) are not the source claim's: the run
@@ -52,6 +54,9 @@ For one test, at EVERY horizon that has a pooled value:
   (2) the claimed sign (oriented > 0) holds in all but at most ONE window of the fold,
       counted among the windows with a value, of which there must be at least
       MIN_WINDOWS (else not_measurable).
+Horizons with at least MIN_WINDOWS windows are judged first: a failure there is
+not_confirmed even when another horizon has too few windows to be judged (that horizon
+makes the test not_measurable only when every judged horizon holds).
 A claim is confirmed only if every one of its tests (at most 3) is confirmed.
 Why it exists: a claim with no effect points the right way by luck about half the time
 (explore_confirm.test_sign needs only a positive pooled value), so "the sign held" would
@@ -75,6 +80,7 @@ period only; never the validation period or the holdout).
 """
 from __future__ import annotations
 
+import json
 import os
 import re
 import sys
@@ -146,18 +152,22 @@ def grade_test(result: dict) -> dict:
     if not horizons:
         return {"status": NOT_MEASURABLE, "reason": "no horizon has a pooled value on the fold",
                 "horizons": horizons}
+    # horizons with enough windows are judged FIRST: a refutation there stands whatever a
+    # thinner horizon could say (a claim refuted 0 of 6 at h=1 is not "unmeasurable" because
+    # h=24 has 3 windows)
+    judged = {h: x for h, x in horizons.items() if x["windows_with_value"] >= MIN_WINDOWS}
+    bad = [f"h={h}: pooled {'held' if x['pooled_sign_held'] else 'NOT held'}, windows "
+           f"{x['windows_claimed_sign']} of {x['windows_with_value']}"
+           for h, x in judged.items() if not (x["pooled_sign_held"] and x["windows_rule_held"])]
+    if bad:
+        return {"status": NOT_CONFIRMED, "horizons": horizons,
+                "reason": "the noise rule fails: " + "; ".join(bad)}
     short = {h: x["windows_with_value"] for h, x in horizons.items()
              if x["windows_with_value"] < MIN_WINDOWS}
     if short:
         return {"status": NOT_MEASURABLE, "horizons": horizons,
                 "reason": (f"fewer than {MIN_WINDOWS} windows with a value at horizon(s) "
                            f"{short} (windows with a value) -- the fold cannot grade this test")}
-    bad = [f"h={h}: pooled {'held' if x['pooled_sign_held'] else 'NOT held'}, windows "
-           f"{x['windows_claimed_sign']} of {x['windows_with_value']}"
-           for h, x in horizons.items() if not (x["pooled_sign_held"] and x["windows_rule_held"])]
-    if bad:
-        return {"status": NOT_CONFIRMED, "horizons": horizons,
-                "reason": "the noise rule fails: " + "; ".join(bad)}
     return {"status": CONFIRMED, "horizons": horizons,
             "reason": ("the pooled sign held at every horizon and the claimed sign held in all but "
                        "at most one window: " + "; ".join(
@@ -210,6 +220,31 @@ def source_item(root: Path, ref: tuple):
             if item.get("proposal_id") == pid:
                 return item
     return None
+
+
+def vehicle_missing(config, vehicle) -> list:
+    """The vehicle changes {component_id, field, before, after} that `config` (a strategy
+    config dict) does not carry: [] when every one is present with its `after` value. Same
+    resolution as decide_next.resolve_patch -- exactly one component with that id, the field
+    inside it -- but the value read must equal `after`, not `before`. Each missing change is
+    a string naming it and what was found. Pure."""
+    import decide_next as dn
+    import json_pointer as jp
+    missing = []
+    for k, item in enumerate(vehicle or []):
+        label = f"vehicle[{k}] {item.get('component_id')}.{item.get('field')} -> {item.get('after')!r}"
+        ptrs = dn._component_pointers(config, item.get("component_id"))
+        if len(ptrs) != 1:
+            missing.append(f"{label}: {len(ptrs)} components with that id in the measured config")
+            continue
+        try:
+            current = jp.resolve_json_pointer(config, ptrs[0] + dn.field_to_pointer_suffix(item.get("field")))
+        except (dn.DecideNextError, jp.JsonPointerError) as exc:
+            missing.append(f"{label}: the field does not resolve in the measured config ({exc})")
+            continue
+        if current != item.get("after"):
+            missing.append(f"{label}: the measured config has {current!r}")
+    return missing
 
 
 def _spec_hashes(res) -> list:
@@ -289,7 +324,7 @@ def confirm_on_fold(run_dir: Path, run_id: str, *, root: Path, folds_doc: dict |
                        "nothing is measured")
     # the source claim and its tests
     claim = item.get("claim")
-    res = cc.check_claim(claim)
+    res = cc.check_claim(claim, folds=True)
     if res.errors:
         return _finish(row, NOT_MEASURABLE, "the source claim is refused by check_claim: "
                        + "; ".join(res.errors))
@@ -307,7 +342,8 @@ def confirm_on_fold(run_dir: Path, run_id: str, *, root: Path, folds_doc: dict |
     try:
         card = yaml.safe_load(card_path.read_text(encoding="utf-8")) if card_path.exists() else None
         own = cc.check_claim((card or {}).get("claim") if isinstance(card, dict) else None,
-                             cc.card_criteria_ids(card if isinstance(card, dict) else {}))
+                             cc.card_criteria_ids(card if isinstance(card, dict) else {}),
+                             folds=True)
         own_hashes = [] if own.errors else _spec_hashes(own)
     except Exception as exc:  # noqa: BLE001 -- recorded
         own_hashes = []
@@ -351,6 +387,23 @@ def confirm_on_fold(run_dir: Path, run_id: str, *, root: Path, folds_doc: dict |
         return _finish(row, NOT_MEASURABLE,
                        f"the vehicle variant {vehicle_vid!r} was not backtested in this attempt "
                        f"(graded now: {sorted(usable)})")
+    # the vehicle must be in the config that was actually measured: step 1b (or anything
+    # between decide-next and the backtest) may have changed it, and a claim measured on a
+    # strategy without its vehicle is not the claim the run was built for
+    vehicle = item.get("vehicle") or item.get("config_change") or []
+    if vehicle:
+        cfg_path = arts / "variants" / vehicle_vid / "strategy_config.json"
+        try:
+            cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+            missing = vehicle_missing(cfg, vehicle)
+        except Exception as exc:  # noqa: BLE001 -- recorded
+            missing = [f"the variant's strategy_config.json cannot be read "
+                       f"({type(exc).__name__}: {exc})"]
+        if missing:
+            row["vehicle_missing"] = missing
+            return _finish(row, NOT_MEASURABLE,
+                           f"vehicle_not_in_measured_config: variant {vehicle_vid!r} does not "
+                           f"carry the claim's vehicle: " + "; ".join(missing))
     # the generic measurement, over the fold's windows only
     measure = measure or ec.measure_on_windows
     try:

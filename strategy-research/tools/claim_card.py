@@ -51,12 +51,16 @@ CLAIM_KINDS = (
     "regime_classifier", "regime_transition", "direction_forecast", "volatility_forecast",
     "event_behaviour", "conditional_behaviour", "horizon_decay", "calendar_effect",
     "redundancy", "lead_lag", "data_feed_value", "cost_turnover", "robustness",
-    # E-077 PR-2 (D-087): a claim about how the STRATEGY behaves (its exits, its sizing, its
-    # response to a market state) -- every claim an analyst writes is a strategy claim
-    # (delivery_plan_readers.md A1.11, Step 11). A finding only, never a block: absent from
-    # KIND_BLOCK on purpose, so it raises no claim_kind_vs_block_kind warning.
-    "execution_behaviour",
 )
+# E-077 PR-2 (D-087), orchestrator.folds.enabled only: a claim about how the STRATEGY
+# behaves (its exits, its sizing, its response to a market state) -- every claim an analyst
+# writes is a strategy claim (delivery_plan_readers.md A1.11, Step 11). Accepted by
+# check_claim only when the caller passes folds=True, so flag off CLAIM_TESTS.md, the card
+# schema's kind enum and check_claim's refusal text are exactly as before. A finding only,
+# never a block: absent from KIND_BLOCK on purpose, so it raises no claim_kind_vs_block_kind
+# warning. Its guide text is workflow_artifacts/skills/hypothesis-design/
+# CLAIM_TESTS_EXECUTION.md (shown to no prompt yet).
+FOLDS_CLAIM_KINDS = ("execution_behaviour",)
 # 1a's claim kind -> the block kind it could become (section 2.3). None: a
 # finding only, never a block. Kinds absent here say nothing about the block.
 KIND_BLOCK = {
@@ -158,9 +162,11 @@ def _check_test(test, where: str) -> tuple:
     return [], h, not regime
 
 
-def check_claim(claim, criteria_ids=()) -> ClaimCheck:
+def check_claim(claim, criteria_ids=(), *, folds: bool = False) -> ClaimCheck:
     """Static checks of 1a's claim block, before any spend. criteria_ids: the
-    ids of the card's own `criteria` list (criteria_refs must name them)."""
+    ids of the card's own `criteria` list (criteria_refs must name them).
+    `folds` (E-077 PR-2, orchestrator.folds.enabled): also accept FOLDS_CLAIM_KINDS;
+    False: exactly the kinds and the message there were before."""
     res = ClaimCheck()
     e = res.errors
     if not isinstance(claim, dict):
@@ -172,8 +178,9 @@ def check_claim(claim, criteria_ids=()) -> ClaimCheck:
     for k in TEXT_KEYS:
         if not _text(claim.get(k)):
             e.append(f"claim.{k}: a non-empty string is required")
-    if claim.get("kind") not in CLAIM_KINDS:
-        e.append(f"claim.kind: {claim.get('kind')!r} is not one of {list(CLAIM_KINDS)}")
+    kinds = CLAIM_KINDS + (FOLDS_CLAIM_KINDS if folds else ())
+    if claim.get("kind") not in kinds:
+        e.append(f"claim.kind: {claim.get('kind')!r} is not one of {list(kinds)}")
     tests = claim.get("tests")
     refs = claim.get("criteria_refs")
     if refs is not None:

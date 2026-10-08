@@ -5219,6 +5219,39 @@ def _dump_reading(doc: dict) -> str:
     return yaml.safe_dump(doc, sort_keys=False, allow_unicode=True)
 
 
+SIDE_FINDINGS_NEED_ANALYST = "side_findings_need_the_analyst"
+
+
+def _refuse_side_findings_under_folds(text: str, category: str) -> tuple:
+    """(text, record) for a v3 reader answer. E-077 PR-2 (D-087), review fix: under
+    orchestrator.folds.enabled a claim needs a vehicle, and only the analyst (PR-5, not
+    built yet) writes one. Until it exists today's readers produce NO side findings: every
+    side finding of a reader's answer is refused here, BEFORE validation, with no retry and
+    without a refusal text that could teach the reader the vehicle shape. The reading's
+    explanation and evidence are kept (the answer is rewritten with `side_findings: []`).
+    `record` is None when nothing was refused, else {rule, n, proposal_ids}. An answer that
+    cannot be parsed, or without a side-finding list, is returned unchanged (the usual
+    validation reports it, and none of its messages names the vehicle). Flag off: unchanged."""
+    if not _folds_enabled():
+        return text, None
+    blocks = _READER_OUTPUT_BLOCK_RE.findall(text or "")
+    if len(blocks) != 1:
+        return text, None
+    try:
+        doc = yaml.safe_load(blocks[0])
+    except yaml.YAMLError:
+        return text, None
+    sides = doc.get("side_findings") if isinstance(doc, dict) else None
+    if not isinstance(sides, list) or not sides:
+        return text, None
+    record = {"rule": SIDE_FINDINGS_NEED_ANALYST, "n": len(sides),
+              "proposal_ids": [s.get("proposal_id") if isinstance(s, dict) else None for s in sides]}
+    print(f"⚠️  [E-077] {category}: {len(sides)} side finding(s) not accepted under "
+          f"orchestrator.folds.enabled ({SIDE_FINDINGS_NEED_ANALYST}); the reading is kept "
+          f"without them, no retry.")
+    return "```yaml\n" + _dump_reading({**doc, "side_findings": []}) + "```", record
+
+
 def _salvage_reading_output(text: str, category: str, run_dir: Path) -> tuple:
     """(body, dropped) for a v3 answer refused after its retry. When the
     reading itself is unusable (no single block, not YAML, or its explanation
@@ -5422,6 +5455,10 @@ def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0
             entry["provenance"] = _base_provenance(meta.get("models"), meta.get("result_models"))
         if missing_inputs:  # E-068 slice 5: kept per reading, a resume cannot erase it
             entry["missing_inputs"] = list(missing_inputs)
+        if v3:  # E-077 PR-2: under the folds flag a reader's side findings are not accepted
+            text, refused = _refuse_side_findings_under_folds(text, category)
+            if refused:
+                entry["side_findings_refused"] = refused
         update_state(path=run_dir, audit_log={key: entry})
         body, error = _validate_reader_output(text, category, run_dir)
         if error is None and cite_on and attempt == 0:
@@ -16745,7 +16782,7 @@ def _check_prefilled_claim(run_dir: Path, run_id: str) -> None:
         claim = card.get("claim") if isinstance(card, dict) else None
 
         def _hashes(c):
-            res = cc.check_claim(c)
+            res = cc.check_claim(c, **_claim_check_folds())
             return sorted(t["spec_hash"] for t in res.tests)
         changed = []
         if not isinstance(claim, dict):
@@ -16830,6 +16867,12 @@ def _apply_claim_tests_context(stage_name: str, handoff: dict, run_dir: Path) ->
         ctx["stage_attempt"] = f"{ctx.get('stage_attempt', '0')}_claim_retry{retry['attempts']}"
 
 
+def _claim_check_folds() -> dict:
+    """check_claim keyword for the E-077 PR-2 claim kind `execution_behaviour`: {"folds":
+    True} under orchestrator.folds.enabled, else {} (every call exactly as before)."""
+    return {"folds": True} if _folds_enabled() else {}
+
+
 def _claim_check_exempt(run_dir: Path, card) -> str | None:
     """Why a card carries no 1a-written claim (DESIGN D6), else None. Decided
     from the run's inputs, never from a field the card writes about itself:
@@ -16881,7 +16924,7 @@ def _claim_check_cards(run_dir: Path, run_id: str, attempt, stage: str, *,
         exempt = _claim_check_exempt(run_dir, card)
         res = None if exempt else cc.check_claim(
             (card or {}).get("claim") if isinstance(card, dict) else None,
-            cc.card_criteria_ids(card or {}))
+            cc.card_criteria_ids(card or {}), **_claim_check_folds())
         power = []
         if res is not None and not res.errors and res.tests:
             if known_power is not None and path.name in known_power:
@@ -17396,7 +17439,7 @@ def _parse_claim_revision(text: str, old_claim: dict, criteria_ids) -> tuple:
             return None, f"claim.{key} was changed; it is locked (statement and kind stay as 1a wrote them)"
     new = {**{k: old_claim.get(k) for k in _CLAIM_LOCKED_KEYS},
            **{k: v for k, v in new.items() if k not in _CLAIM_LOCKED_KEYS}}
-    check = _claim_card_module().check_claim(new, criteria_ids)
+    check = _claim_card_module().check_claim(new, criteria_ids, **_claim_check_folds())
     if check.errors:
         return None, "check_claim: " + "; ".join(check.errors)
     return new, None
@@ -17784,7 +17827,7 @@ def _measure_claim_tests(run_dir: Path, run_id: str) -> None:
     exempt = _claim_check_exempt(run_dir, card)
     res = None if exempt else cc.check_claim(
         card.get("claim") if isinstance(card, dict) else None,
-        cc.card_criteria_ids(card if isinstance(card, dict) else {}))
+        cc.card_criteria_ids(card if isinstance(card, dict) else {}), **_claim_check_folds())
     card_status = cc.status_of(res, exempt, [])
     variants, skipped = {}, {}
     if card_status["usable"]:
@@ -17877,9 +17920,11 @@ def _clear_fold_confirmation(run_dir: Path) -> None:
         _safe_print(f"⚠️  [E-077] could not clear the previous fold confirmation ({exc}).")
 
 
-def _confirm_on_fold_after_backtests(run_dir: Path, run_id: str) -> None:
+def _confirm_on_fold_after_backtests(run_dir: Path, run_id: str, vehicle_variant: str | None = None) -> None:
     """After protocol_execution (run_loop), folds flag on: confirm_on_fold for a run built
-    from a reader's side finding. Never raises, never routes. Flag off: no-op."""
+    from a reader's side finding. Never raises, never routes. Flag off: no-op.
+    `vehicle_variant`: the variant whose strategy config carries the claim's vehicle (None: the
+    base variant, which is where decide-next puts it; a design-variant vehicle names its own)."""
     try:
         if not _folds_enabled():
             return
@@ -17892,7 +17937,7 @@ def _confirm_on_fold_after_backtests(run_dir: Path, run_id: str) -> None:
         row = fc.confirm_on_fold(run_dir, run_id, root=ROOT,
                                  eras=_pres.load_policy_eras(_DATA_POLICY_PATH),
                                  holdout_start=_load_holdout_range()[0],
-                                 fresh_variants=fresh,
+                                 fresh_variants=fresh, vehicle_variant=vehicle_variant,
                                  folds_path=None, policy_path=_DATA_POLICY_PATH)
         if row is None:
             return                       # not built from a side finding: nothing to confirm

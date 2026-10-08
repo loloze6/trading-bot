@@ -698,7 +698,7 @@ def finding_route(item: dict, *, folds: bool = False) -> tuple:
     refused claim and `tests: none` route as before."""
     import claim_card as cc
     claim = item.get("claim") if isinstance(item, dict) else None
-    res = cc.check_claim(claim)
+    res = cc.check_claim(claim, **({"folds": True} if folds else {}))
     if res.errors:
         return NOT_MEASURABLE, "its claim is refused by check_claim: " + "; ".join(res.errors)
     if res.tests_none:
@@ -841,7 +841,7 @@ def confirm_findings(run_dir: Path, run_id: str, readings: dict, split: dict, *,
             rec["merge_note"] = _rf.MERGE_NOT_AGREEMENT
         try:
             route, why = finding_route(item, **({"folds": True} if folds else {}))
-            rec["finding_spec_hashes"] = finding_spec_hashes(item)
+            rec["finding_spec_hashes"] = finding_spec_hashes(item, **({"folds": True} if folds else {}))
         except Exception as exc:  # noqa: BLE001 -- recorded
             route, why = ERROR, f"{type(exc).__name__}: {exc}"
         rec["route"] = route
@@ -976,9 +976,10 @@ def resolve_pending(run_dir: Path, run_id: str, pending: dict, split: dict, *,
     return rec
 
 
-def finding_spec_hashes(item: dict) -> list:
+def finding_spec_hashes(item: dict, *, folds: bool = False) -> list:
     import claim_card as cc
-    res = cc.check_claim(item.get("claim") if isinstance(item, dict) else None)
+    res = cc.check_claim(item.get("claim") if isinstance(item, dict) else None,
+                         **({"folds": True} if folds else {}))
     return sorted(t["spec_hash"] for t in res.tests if t.get("spec_hash"))
 
 
