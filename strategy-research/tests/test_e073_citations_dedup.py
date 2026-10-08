@@ -20,6 +20,10 @@ Sections:
      one decide-next candidate with the first source's scores (never the
      higher -- not agreement); a flagged citation is a warning only.
   5. Flag off (key absent or false): byte-identical.
+  6. The final design after two reviews: the retry note shows paths and the
+     cited value, never a file's value; the retry answer is kept only with
+     fewer bad citations AND the same side findings; one number rule plus the
+     zero exception; whole-text matching; hyphen keys; stem-rooted suggestions.
 
 No LLM: _invoke_reader_llm is replaced wherever it is reached. No backtest, no
 market data.
@@ -82,12 +86,12 @@ def _stub_tbot_python(monkeypatch):
     ("0.0765", 0.077, False),              # more digits than the file: they must hold
     ("2", 3, False),                       # run_073: "period 2" where the config has 3
     ("3", 3, True), ("2.0", 2, True), ("3 bars", 3, True),
-    ("-0.0057", -0.00574, True), ("−0.5", -0.5, True), ("~0.08", 0.077, True),
+    ("-0.0057", -0.00574, True), ("−0.5", -0.5, True), ("~0.08", 0.077, None),
     ("99.16%", 0.9916, True),              # a percent of a fraction
     ("99.16", 0.9916, False),              # without %: never rescaled
     ("99%", 99.16, True), ("12,830", 12830, True), ("1.2e-05", 0.0000123, True),
     ("0.0576 vs. mean: -0.8288", 0.0576, True),   # the first value after the path
-    ("PASS", 0.5, False),                  # a word where the field holds a number
+    ("PASS", 0.5, None),                   # a word where the field holds a number: not checked
     ("FAIL", "FAIL", True), ("'FAIL'", "FAIL", True), ("fail", "FAIL", True),
     ("FAILED", "FAIL", False),
     ("rank IC (Spearman) as labelled", "rank IC (Spearman)", True),
@@ -227,8 +231,8 @@ def test_a_wrong_setting_gets_one_retry_then_is_kept_and_flagged(monkeypatch):
     assert len(prompts) == 2
     note = prompts[1][len(prompts[0]):]
     assert "CITED FIELDS THAT DO NOT MATCH THE FILES YOU READ" in note
-    assert f"- {SIDE_ID}: `{PERIOD}` cited '2', the file shows 1 " \
-           f"(candidate_strategy_config.json)" in note
+    assert f"- {SIDE_ID}: `{PERIOD}` cited '2': value does not match the file\n" in note
+    assert "shows" not in note.split("The rule:")[0]       # no value from the files
     assert rp.CITATION_VALUE_RULE in note
     assert ("<<<PREVIOUS ANSWER\n" + yaml.safe_dump(_cited_reading(period="2"), sort_keys=False)
             + "PREVIOUS ANSWER>>>") in note
@@ -266,7 +270,7 @@ def test_a_missing_path_is_named_in_the_retry(monkeypatch):
     rpr.run_reader_worker(CAT, RUN_ID, run_dir)
     assert len(prompts) == 2
     assert (f"- {CAT}-{RUN_ID}: `variants.base.slices.overall.trade_less_often."
-            f"boundary_recross_rate` is not a field of any file you received") in prompts[1]
+            f"boundary_recross_rate` cited '0.9487': path not found") in prompts[1]
     assert _checks(run_dir)["flagged"] == [f"{CAT}-{RUN_ID}"]
 
 
@@ -652,7 +656,7 @@ def test_the_run_scoped_files_include_the_new_ones():
 
 
 # ---------------------------------------------------------------------------
-# 6. Review fixes (PR #346)
+# 6. Final design after two reviews (PR #346): suggestions, keys, keep rule, kind
 # ---------------------------------------------------------------------------
 
 GRID = {"grid": {"residual_ic": {"base": {"value": 0.076977, "p_value_one_sided": 0.01937},
@@ -661,19 +665,19 @@ GRID = {"grid": {"residual_ic": {"base": {"value": 0.076977, "p_value_one_sided"
 
 
 def test_a_shortened_path_stays_missing_and_names_the_real_one():
-    """Fix 1 (run_073: `grid_evaluation.residual_ic...` for `grid.residual_ic...`):
+    """run_073: `grid_evaluation.residual_ic...` for `grid.residual_ic...`:
     suggested, never accepted -- the citation counts as missing."""
     [bad] = _check(["grid_evaluation.residual_ic.base.value: 0.076977"],
                    {"grid_evaluation.yaml": GRID})["bad"]
     assert bad["status"] == rp.CITATION_MISSING
-    assert bad["suggestions"][0] == {"path": "grid.residual_ic.base.value",
-                                     "file": "grid_evaluation.yaml", "value_matches": True,
-                                     "value": 0.076977}
+    assert bad["suggestions"][0] == {"path": "grid_evaluation.grid.residual_ic.base.value",
+                                     "file": "grid_evaluation.yaml", "value_matches": True}
     assert [s["path"] for s in bad["suggestions"]] == [
-        "grid.residual_ic.base.value", "grid.realized_edge_to_cost_ratio.base.value",
-        "grid.residual_ic.design_period_3.value"]
-    # the suggested path itself is a valid citation
-    assert _check(["grid.residual_ic.base.value: 0.076977"],
+        "grid_evaluation.grid.residual_ic.base.value",
+        "grid_evaluation.grid.realized_edge_to_cost_ratio.base.value",
+        "grid_evaluation.grid.residual_ic.design_period_3.value"]
+    # the suggested path itself is a valid citation, as written
+    assert _check(["grid_evaluation.grid.residual_ic.base.value: 0.076977"],
                   {"grid_evaluation.yaml": GRID})["bad"] == []
 
 
@@ -682,7 +686,7 @@ def test_at_most_three_suggestions_the_cited_value_first_none_for_an_invented_ke
                         "d": {"value": 4}}}
     [bad] = _check(["a.x.value=4"], files)["bad"]
     assert rp.CITATION_MAX_SUGGESTIONS == 3
-    assert [s["path"] for s in bad["suggestions"]] == ["d.value", "a.value", "b.value"]
+    assert [s["path"] for s in bad["suggestions"]] == ["g.d.value", "g.a.value", "g.b.value"]
     assert [s["value_matches"] for s in bad["suggestions"]] == [True, False, False]
     [bad] = _check(["a.invented_key=4"], files)["bad"]
     assert bad["status"] == rp.CITATION_MISSING and bad["suggestions"] == []
@@ -692,24 +696,62 @@ def test_list_elements_are_suggested_as_any_element():
     files = {"r.yaml": {"variants": {"base": {"per_window": [{"core": {"corr": -0.0112}},
                                                             {"core": {"corr": 0.0196}}]}}}}
     [bad] = _check(["variants.base.per_window[1,2].core.corr = -0.0112"], files)["bad"]
-    assert bad["suggestions"] == [{"path": "variants.base.per_window[*].core.corr",
+    assert bad["suggestions"] == [{"path": "r.variants.base.per_window[*].core.corr",
                                    "file": "r.yaml", "value_matches": True}]
 
 
-def test_the_retry_line_names_the_suggestions(monkeypatch):
+def test_every_suggestable_path_resolves_as_written_in_its_own_file():
+    """A suggestion is always citable as written: every received key's path is
+    rooted at its file's stem (a top-level scalar too, and a top-level key two
+    files share), and re-resolves in that file."""
+    files = {"reports/trade_efficiency.yaml": {"idea_status": "refuted", "variants": {"base": {
+                 "per_window": {"2022-09": {"n": 3}}, "risks": {"a key": 1}}}},
+             "grid_evaluation.yaml": {"idea_status": "supported", "variants": {"base": {"n": 7}},
+                                      "blocks": [{"ic": 0.1}, {"ic": 0.2}]}}
+    index = rp._cite_index(files)
+    assert {e["path"] for e in index} >= {
+        "trade_efficiency.idea_status", "grid_evaluation.idea_status",
+        "trade_efficiency.variants.base.per_window.2022-09.n",
+        'trade_efficiency.variants.base.risks["a key"]', "grid_evaluation.blocks[*].ic"}
+    for e in index:
+        value = f" = {e['values'][0]}" if e["values"] else ""
+        [c] = rp.check_citation_values(files, [e["path"] + value])["citations"]
+        assert c["path"] == e["path"], e
+        assert c["status"] == (rp.CITATION_MATCH if value else rp.CITATION_PATH_ONLY), (e, c)
+    [c] = _check(["grid_evaluation.idea_status: supported"], files)["citations"]
+    assert c["status"] == rp.CITATION_MATCH       # the grid's, not the report's
+
+
+def test_the_retry_line_shows_paths_and_never_a_value_from_the_files(monkeypatch):
     run_dir = _cite_run(monkeypatch)
     prompts = []
     doc = _cited_reading()
-    doc["evidence"] = ["variants.base.slices.overall.trade_less_often.boundary_recross_rate=0.9487"]
+    doc["evidence"] = ["variants.base.slices.overall.trade_less_often.boundary_recross_rate=0.5"]
     monkeypatch.setattr(rpr, "_invoke_reader_llm", _llm([_fenced(doc)], prompts))
     rpr.run_reader_worker(CAT, RUN_ID, run_dir)
-    assert ("is not a field of any file you received; nearest real field(s) with that last "
-            "key: `variants.base.slices.overall.fee_reduction_metrics.trade_less_often."
-            "boundary_recross_rate` (reports/trade_efficiency.yaml, = 0.9487, your value "
-            "matches); `variants.base.slices.overall.boundary_recross_rate` "
-            "(reports/trade_efficiency.yaml, = 0.9487, your value matches)") in prompts[1]
+    line = (f"- {CAT}-{RUN_ID}: `variants.base.slices.overall.trade_less_often."
+            f"boundary_recross_rate` cited '0.5': path not found; nearest real paths: "
+            f"`trade_efficiency.variants.base.slices.overall.fee_reduction_metrics."
+            f"trade_less_often.boundary_recross_rate`, "
+            f"`trade_efficiency.variants.base.slices.overall.boundary_recross_rate`\n")
+    assert line in prompts[1]
+    listed = prompts[1][len(prompts[0]):].split("The rule:")[0]
+    assert "0.9487" not in listed                       # the file's value is never shown
     [bad] = _checks(run_dir)["items"][f"{CAT}-{RUN_ID}"]["bad"]
     assert bad["status"] == rp.CITATION_MISSING and len(bad["suggestions"]) == 2
+
+
+@pytest.mark.parametrize("bad,line", [
+    ({"path": "a.b", "cited": "2", "status": "mismatch", "actual": [3], "files": ["f.yaml"]},
+     "- X: `a.b` cited '2': value does not match the file"),
+    ({"path": "a.b", "cited": None, "status": "missing", "suggestions": []},
+     "- X: `a.b` cited None: path not found"),
+    ({"path": "a.b", "cited": "2", "status": "missing",
+      "suggestions": [{"path": "f.a.c.b", "file": "f.yaml", "value_matches": True}]},
+     "- X: `a.b` cited '2': path not found; nearest real paths: `f.a.c.b`"),
+])
+def test_a_retry_line_is_path_cited_value_and_problem(bad, line):
+    assert rpr._citation_line("X", bad) == line
 
 
 TE = {"variants": {"base": {"slices": {"per_window": {
@@ -717,13 +759,21 @@ TE = {"variants": {"base": {"slices": {"per_window": {
 TE_PATH = "variants.base.slices.per_window.2022-09.exit_efficiency.mean"
 
 
-def test_hyphenated_keys_resolve_in_the_value_check():
-    """Fix 2: trade_efficiency's YYYY-MM per_window keys (was cut to `...per_window.2022`)."""
+def test_hyphenated_keys_resolve_and_an_unknown_one_is_cut_at_its_hyphen():
+    """trade_efficiency's YYYY-MM per_window keys resolve; a hyphenated key the
+    file does not have is cut at its first hyphen (the rest is prose)."""
     files = {"reports/trade_efficiency.yaml": TE}
     for ev in (f"{TE_PATH} = -0.72", f"{TE_PATH}=-0.72", f"{TE_PATH}: -0.7213 (worst window)"):
         assert [(c["path"], c["status"]) for c in _check([ev], files)["citations"]] == [
             (TE_PATH, rp.CITATION_MATCH)], ev
     assert _check([f"{TE_PATH} = -0.5"], files)["bad"][0]["status"] == rp.CITATION_MISMATCH
+    # the key exists, a later one does not: missing as written (no cut)
+    typo = "variants.base.slices.per_window.2022-09.exit_eff.mean"
+    assert _check([f"{typo} = -0.72"], files)["bad"][0]["path"] == typo
+    # n_trades-adjusted is not a key: `metrics.n_trades` followed by prose
+    m = {"r.yaml": {"metrics": {"n_trades": 3012}}}
+    assert _check(["metrics.n_trades-adjusted: 3012"], m)["citations"] == [
+        {"path": "metrics.n_trades", "cited": None, "status": rp.CITATION_PATH_ONLY}]
     # the record-only D-048 resolver is unchanged (recorded under another flag)
     assert rp.resolve_evidence_paths(files, [TE_PATH])["unresolved"] == [
         "variants.base.slices.per_window.2022"]
@@ -736,7 +786,21 @@ def test_a_key_with_spaces_is_cited_in_quoted_brackets():
                "risks['Cost drag spikes >80% at 0.15'].severity = high"):
         assert [c["status"] for c in _check([ev], files)["citations"]] == [rp.CITATION_MATCH]
     [bad] = _check(["risks.severity = high"], files)["bad"]
-    assert bad["suggestions"][0]["path"] == 'risks["Cost drag spikes >80% at 0.15"].severity'
+    assert bad["suggestions"][0]["path"] == (
+        'hypothesis_card.risks["Cost drag spikes >80% at 0.15"].severity')
+
+
+def test_dictionary_style_paths_are_not_checked():
+    """`summary.` / `trades[]` (trade_diagnostics.json, never received) and
+    `slices.` are no root of a received file: not a citation (no_path_items),
+    unless a received file has that top-level key."""
+    files = {"reports/trade_efficiency.yaml": {"variants": {"base": {"slices": {"overall": {
+        "exit_reason_breakdown": {"signal_flip_pct": 99.16}}}}}}}
+    res = _check(["summary.exit_reason_breakdown.signal_flip_pct = 1",
+                  "slices.overall.exit_reason_breakdown.signal_flip_pct = 1",
+                  "trades[*].mae = 0.5"], files)
+    assert res["citations"] == [] and res["no_path_items"] == 3
+    assert _check(["summary.n = 3"], {"d.yaml": {"summary": {"n": 3}}})["bad"] == []
 
 
 def _retry_pair(monkeypatch, first, second):
@@ -755,7 +819,7 @@ def _retry_pair(monkeypatch, first, second):
 ])
 def test_a_retry_without_fewer_bad_citations_keeps_the_first_answer(monkeypatch, period, ratio,
                                                                    n_retry):
-    """Fix 3: the retry answer replaces the first only with STRICTLY fewer bad
+    """The retry answer replaces the first only with STRICTLY fewer bad
     citations; both counts are recorded."""
     first = _cited_reading(period="2")
     kept, doc = _retry_pair(monkeypatch, first, _cited_reading(period=period, ratio=ratio))
@@ -765,12 +829,47 @@ def test_a_retry_without_fewer_bad_citations_keeps_the_first_answer(monkeypatch,
     assert doc["kept_answer"] == "first" and doc["n_bad"] == 1 and doc["status"] == "flagged"
 
 
-def test_a_retry_with_fewer_bad_citations_is_kept(monkeypatch):
+def test_a_retry_with_fewer_bad_citations_and_the_same_findings_is_kept(monkeypatch):
     second = _cited_reading(period="1")
+    second["side_findings"][0]["claim"]["statement"] = "Reworded: wording is not structure."
     kept, doc = _retry_pair(monkeypatch, _cited_reading(period="2", ratio="0.5"), second)
     assert kept["side_findings"][0]["evidence"] == second["side_findings"][0]["evidence"]
     assert doc["first_attempt_bad"] == 2 and doc["retry_attempt_bad"] == 0
     assert doc["kept_answer"] == "retry" and doc["status"] == "clean"
+
+
+def _another_test(doc):
+    doc["side_findings"][0]["claim"]["tests"][0]["selector"]["q"] = 0.2
+
+
+def _another_kind(doc):
+    doc["side_findings"][0]["claim"]["kind"] = "direction_forecast"
+
+
+def _one_more_finding(doc):
+    extra = copy.deepcopy(doc["side_findings"][0])
+    extra["proposal_id"] = f"{CAT}-{RUN_ID}-2"
+    doc["side_findings"].append(extra)
+
+
+def _one_finding_less(doc):
+    doc["side_findings"] = []
+
+
+@pytest.mark.parametrize("change", [_another_test, _another_kind, _one_more_finding,
+                                    _one_finding_less])
+def test_a_retry_that_changes_the_side_findings_keeps_the_first_answer(monkeypatch, change):
+    """Fewer bad citations is not enough: the retry must propose the same side
+    findings (count, claim kind, spec_hash set, item kind) as the first."""
+    first = _cited_reading(period="2")
+    second = _cited_reading(period="1")
+    change(second)
+    assert rf.reading_structure(first) != rf.reading_structure(second)
+    kept, doc = _retry_pair(monkeypatch, first, second)
+    assert "retry_answer_refused" not in doc            # a valid answer, refused by the guard
+    assert kept["side_findings"] == first["side_findings"]
+    assert doc["retry_attempt_bad"] < doc["first_attempt_bad"] == 1
+    assert doc["kept_answer"] == "first" and doc["status"] == "flagged"
 
 
 def test_a_retry_whose_check_errors_keeps_the_first_answer(monkeypatch):
@@ -790,7 +889,7 @@ def test_a_retry_whose_check_errors_keeps_the_first_answer(monkeypatch):
 
 
 def test_the_same_tests_under_two_claim_kinds_are_not_merged():
-    """Fix 4: finding_route routes by kind (a block kind PENDING, a pure kind
+    """finding_route routes by kind (a block kind PENDING, a pure kind
     IN_RUN), so the kind is part of the merge key."""
     import claim_card as cc
     block_kind = {**_pure_claim(), "kind": "direction_forecast"}
@@ -806,51 +905,41 @@ def test_the_same_tests_under_two_claim_kinds_are_not_merged():
 
 
 @pytest.mark.parametrize("cited,actual,ok", [
-    # fix 5: fewer than 2 significant digits -> the file's value must round to it at 2 decimals
-    ("0", 0.3, False), ("0", 0.4, False), ("0", -0.49, False), ("0", 0.004, True),
-    ("0", -0.005, True), ("0", 0.006, False), ("0.0", 0.004, True),
-    ("0.9", 0.8866, False), ("0.89", 0.8866, True), ("0.05", 0.0537, True),
-    ("0.05", 0.0551, False), ("3", 3, True), ("3", 3.2, False), ("12", 12.4, True),
-    ("5%", 0.0537, False), ("5.4%", 0.0537, True), ("0.0005", 0.00054, True),
-    ("0.0005", 0.0006, False),
-    # fix 6: approx / about / ~ prefixes, k / M suffixes, case-insensitive text, quotes
-    ("approx 0.077", 0.076977, True), ("approximately 0.077", 0.076977, True),
-    ("about 0.077", 0.076977, True), ("~ 0.077", 0.076977, True),
-    ("approx 0.08", 0.0857, False),
-    ("3.3k", 3322.1, True), ("3.4k", 3322.1, False), ("3k", 3322.1, False), ("3K", 3000, True),
-    ("1.2M", 1234567, True), ("1m", 1, True), ("1m", 1000000, False), ("3.3kg", 3.3, True),
-    ("pass", "PASS", True), ("Trending_Up", "trending_up", True), ("trending", "trending_up", False),
+    # one number rule: rounded to the decimals written (half a unit of the last digit)
+    ("8%", 0.083, True), ("-8%", -0.0791, True), ("5%", 0.054, True), ("2", 2.3, True),
+    ("9", 9.3, True), ("10", 9.6, True), ("5", 5.4, True), ("-1", -0.8288, True),
+    ("0.05", 0.054, True), ("0.5", 0.52, True), ("0.05", 0.056, False), ("2", 2.6, False),
+    ("120 trades over 2022-09", 120, True), ("0.83.", 0.8288, True), ("5%.", 0.05, True),
+    # the one exception: a 0 written with fewer than 2 decimals means |x| < 0.005
+    ("0", 0.3, False), ("0", 0.004, True), ("-0", -0.004, True), ("0", 0.006, False),
+    ("0.0", 0.006, False), ("0.00", 0.004, True), ("0.0", 0.004, True),
+    # not a plain number: not checked (None), never a mismatch
+    ("3k", 3012, None), ("3.3k", 3312, None), ("~3k trades", 2950, None),
+    ("about 120", 120, None), ("approx 0.83", 0.8288, None), ("1M", 1000000, None),
+    ("3.3kg", 3.3, None),
+    # text: the file's whole text, ignoring case and surrounding spaces
+    ("Trending_Up", "TRENDING_UP", True), ("  fail ", "FAIL", True),
+    ("trending", "trending_up", False),
+    ("robust across all windows", "not robust across all windows", False),
+    ("the edge survives costs in every era",
+     "it is false that the edge survives costs in every era", False),
     ("'directional accuracy above chance'",
-     "Directional accuracy above chance on 4 of 6 windows", True),
-    ("'accuracy above'", "Directional accuracy above chance", False),   # under 20 characters
-    ("'accuracy above chance on 9 of 6'", "Directional accuracy above chance on 4 of 6", False),
+     "Directional accuracy above chance on 4 of 6 windows", False),
 ])
-def test_the_value_rule_review_fixes(cited, actual, ok):
+def test_the_value_rule_final_design(cited, actual, ok):
     assert rp.value_matches(cited, actual) is ok
 
 
-def test_a_dictionary_relative_path_is_missing_with_the_report_path_suggested():
-    """Fix 5: `summary.` (trade_diagnostics.json, never received), `trades[]` and
-    `slices.` were silently unchecked (no root); now missing, the received
-    report's real path suggested."""
-    report = {"variants": {"base": {"slices": {"overall": {
-        "exit_reason_breakdown": {"signal_flip_pct": 99.16}}}}}}
-    files = {"reports/trade_efficiency.yaml": report}
-    for ev in ("summary.exit_reason_breakdown.signal_flip_pct = 99.16",
-               "slices.overall.exit_reason_breakdown.signal_flip_pct = 99.16"):
-        res = _check([ev], files)
-        [bad] = res["bad"]
-        assert bad["status"] == rp.CITATION_MISSING and res["no_path_items"] == 0
-        assert bad["suggestions"][0]["path"] == (
-            "variants.base.slices.overall.exit_reason_breakdown.signal_flip_pct")
-    assert _check(["trades[*].mae = 0.5"], files)["bad"][0]["status"] == rp.CITATION_MISSING
-    # a received file with that top-level key resolves it as usual
-    assert _check(["summary.n = 3"], {"d.yaml": {"summary": {"n": 3}}})["bad"] == []
+def test_a_number_written_another_way_is_not_checked_never_a_mismatch():
+    files = {"r.yaml": {"metrics": {"n_trades": 3012, "sharpe": 0.8288}}}
+    res = _check(["metrics.n_trades = 3k", "metrics.sharpe = approx 0.83"], files)
+    assert [c["status"] for c in res["citations"]] == [rp.CITATION_PATH_ONLY] * 2
+    assert res["bad"] == []
 
 
 def test_a_path_is_read_from_the_file_named_else_the_first_file_that_has_it():
-    """Fix 5: `variants` is a top-level key of several received files; the
-    reader's own report (first in the received order) wins."""
+    """`variants` is a top-level key of several received files; the reader's
+    own report (first in the received order) wins."""
     own = {"variants": {"base": {"n": 5}}}
     other = {"variants": {"base": {"n": 7, "m": 1}}}
     files = {"reports/trade_efficiency.yaml": own, "registry_summary.yaml": other}

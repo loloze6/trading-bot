@@ -720,11 +720,13 @@ flags:
       Step 2 (2026-10-08, D-083): on, each `path=value` a v3 reading cites is
       checked against the files the reader received (the exploration copies
       under explore_confirm; reader_proposals.check_citation_values: a number
-      within half a unit of its last written digit when 2+ significant
-      digits are written, else at 2 decimals; text ignoring case); a missing
-      or mis-valued citation gets the reader's one retry with a code-written
-      list (nearest real paths suggested for a missing one; the retry answer
-      kept only with strictly fewer bad citations), and if still wrong the
+      rounded to the decimals written, within half a unit of its last digit,
+      a 0 with fewer than 2 decimals only |x| < 0.005, any other number form
+      not checked; text the file's whole text, ignoring case); a missing or
+      mis-valued citation gets the reader's one retry with a code-written
+      list (path, cited value, problem -- never a file's value; real paths
+      suggested for a missing one; the retry answer kept only with strictly
+      fewer bad citations and the same side findings), and if still wrong the
       reading is kept and the citation recorded
       (artifacts/citation_checks/<category>.yaml; decide-next warning
       citation_mismatch). Side findings with the same claim kind, tests and config change

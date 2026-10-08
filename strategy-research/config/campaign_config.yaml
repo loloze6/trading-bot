@@ -923,9 +923,10 @@ orchestrator:
       # checked against the files the reader received (the exploration copies
       # under explore_confirm): a missing path or a value that is not the
       # file's value as written or rounded gets the reader's ONE retry with a
-      # code-written list (a missing path with the nearest real paths that
-      # share its last key; the retry answer is kept only with strictly fewer
-      # bad citations); still wrong, the reading is kept and the citation
+      # code-written list (path, cited value, problem -- never a value from the
+      # files; a missing path with up to 3 real paths that end in the same
+      # key); the retry answer is kept only with strictly fewer bad citations
+      # and the same side findings; still wrong, the reading is kept and the citation
       # recorded in artifacts/citation_checks/<category>.yaml (decide-next: a
       # citation_mismatch warning, never a refusal). Side findings proposing
       # the same test (same claim kind, spec_hashes and config change) are merged into one

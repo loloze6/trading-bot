@@ -1492,22 +1492,28 @@ feed that is not wired, one row per such feed in
      (under E-072 its exploration copies, never the all-window files). The path
      must exist (rooted at a top-level key, a known root or the file's own name,
      e.g. `grid_evaluation.grid.residual_ic.base.value`; keys as the file has
-     them, `2022-09` included; a key with spaces as `x["a key"]`), looked up in
+     them, `2022-09` included -- a hyphenated key the file does not have is
+     cut at its first hyphen; a key with spaces as `x["a key"]`), looked up in
      the file it names, else the first received file that has it (the
-     reader's own report first); dictionary-relative paths (`summary.`,
-     `trades[]`, `slices.`) are missing unless a received file has that root.
-     Only the first value after the path is compared. A number matches when it
-     is the file's value rounded to the digits written (half a unit of the last
-     digit) if 2+ significant digits are written; with fewer (`0`, `0.9`,
-     `3k`) the file's value must also round to it at 2 decimals; `%` also
-     matches the value x 100, `k`/`M` multiply, `approx`/`~` are ignored. Text
-     matches ignoring case (the file's text starts the cited value, or a quote
-     of 20+ characters is part of it). A missing or mis-valued citation gets
-     the reader's one retry, with a code-written list (path, cited value, value
-     in the file; for a missing path up to 3 nearest real paths sharing its
-     last key -- suggested, never accepted) and its own answer; the retry
-     answer replaces the first only with strictly fewer bad citations (both
-     counts recorded); still wrong, the reading is kept and the citation recorded in
+     reader's own report first). Dictionary-style paths (`summary.`,
+     `trades[]`, `slices.`) are not checked unless a received file has that
+     top-level key. Only the first value after the path is compared. A number
+     matches when the file's value, rounded to the decimals written, is the
+     cited number (half a unit of the last digit); `%` also compares the value
+     x 100 that way; the one exception: a `0` written with fewer than 2
+     decimals matches only |x| < 0.005. A number written any other way (`3k`,
+     `approx 120`, `~0.08`, a word) is not checked (`path_only`), never a
+     mismatch. Text matches when the file's whole text, ignoring case and
+     surrounding spaces, is the cited value (more words may follow); long
+     free text is not a citation target. A missing or mis-valued citation gets
+     the reader's one retry, with a code-written list (the path, the cited
+     value and the problem -- "value does not match the file", or "path not
+     found" with up to 3 real paths that end in the same key, as citable
+     paths; never a value from the files, so the reader must re-read them) and
+     its own answer; the retry answer replaces the first only with strictly
+     fewer bad citations AND the same side findings (count, claim kind,
+     spec_hash set, item kind); both counts and the kept answer are
+     recorded; still wrong, the reading is kept and the citation recorded in
      `artifacts/citation_checks/<category>.yaml`, and decide-next shows a
      `citation_mismatch` warning on that side finding. Prose is not checked.
      Side findings of one run with the same claim kind, the same test

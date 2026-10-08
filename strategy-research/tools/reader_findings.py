@@ -501,6 +501,22 @@ def _merge_key(item: dict):
     return str(item["claim"].get("kind")), hashes, canon
 
 
+def reading_structure(doc: dict) -> list:
+    """What a citation retry must keep (D-083): for each item of a v3 reading
+    (rp.flatten_reading), (item kind, claim kind, sorted spec_hashes), sorted
+    -- the same number of side findings proposing the same tests the same
+    way. Wording, evidence and scores are not part of it."""
+    import claim_card as cc
+    out = []
+    for item in rp.flatten_reading(doc):
+        claim = item.get("claim")
+        kind = str(claim.get("kind")) if isinstance(claim, dict) else None
+        tests = cc.check_claim(claim).tests if claim is not None else []
+        out.append((item["kind"], kind,
+                    tuple(sorted({t["spec_hash"] for t in tests if t.get("spec_hash")}))))
+    return sorted(out, key=repr)
+
+
 def side_finding_merges(readings: dict) -> list:
     """The duplicate groups among a run's side findings (MERGE_RULE). Pure.
     `readings`: {category: v3 reading}. Order: categories sorted, then each
