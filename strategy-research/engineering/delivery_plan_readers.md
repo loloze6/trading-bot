@@ -11,9 +11,10 @@ are marked *superseded*.
 >   strategy that is profitable after costs.
 > - **One or more analysts** (two to start: forecast and trade efficiency) replace today's
 >   five readers. Each observes one run's backtest results, digs into its raw bars and
->   trades with fixed tools, and asks why. It ends with **one claim**, a statement about
->   market or strategy behaviour, together with **how a later backtest would confirm or
->   refute it**.
+>   trades with fixed tools, and asks why. Market observations stay in its reasoning and
+>   are turned into **one strategy claim** (or "no claim"). The claim comes with the
+>   strategy change (the vehicle) that its own run backtests, and **the test that confirms
+>   or refutes it** (A1.11, Step 11).
 > - **A claim is never confirmed inside the run that inspired it.** There is no in-run
 >   statistical check. Pattern checks are only the analyst's internal reasoning.
 > - **A claim becomes a candidate in the idea backlog** (decide-next ranks it). If it is
@@ -21,8 +22,8 @@ are marked *superseded*.
 >   windows its lineage has not used** (three fixed folds; a line ends after three).
 >   Confirmed claims become the building blocks that are combined (E-071).
 > - **After the folds** come validation (2024-2025, single-use) and then the holdout.
-> - **The analyst's instructions** are designed for that purpose (A1.8, draft v2, under
->   review).
+> - **The analyst's instructions** are designed for that purpose (A1.8 draft v2, reviewed;
+>   the final Stage 1 is A1.11).
 
 It follows E-068, which closed on
 2026-10-06 (`roadmap/E-068/CLOSE_OUT.md`, `delivery_plan_v26_continuation_2.md`). The epics
@@ -307,7 +308,7 @@ Assessment (agreed):
 |---|---|---|
 | 1 | A reader's side finding is measured or becomes a run | A reader proposal becomes a **candidate in the idea backlog**, ranked by decide-next like any other. It is a possible run, not an automatic one (decide-next already does this) |
 | 2 | Price-only claims get an in-run statistical check on the 2023 windows | **No in-run check.** Pattern checks are internal reasoning of the analyst, never a deliverable |
-| 3 | Side findings may be market observations (pure claims), measured on the run that inspired them | ~~A proposal must be a strategy change~~ *(revised, Step 9)*: **the output is a claim** about market behaviour or strategy behaviour, with **the test a later backtest on an unused fold must pass**. A strategy change appears only as the vehicle that makes the claim observable |
+| 3 | Side findings may be market observations (pure claims), measured on the run that inspired them | ~~A proposal must be a strategy change~~ *(revised, Steps 9 and 11)*: **the output is one strategy claim** (market observations stay in the analyst's reasoning as its "why"), with **its vehicle** (the strategy change) and **the test its own run, on an unused fold, must pass** |
 | 4 | Inside a run: readers see 2022, confirmation on 2023 | **Every run records the windows its results came from. A run built from an idea uses windows the idea was not observed on** |
 | 5 | Step 1a's all-window view made follow-up confirmations "weak" | Moot: the test happens on other windows |
 | 6 | Windows fixed per brief (the same 2022-2023 windows since run_065) | **Windows from three fixed folds** (A1.3 as amended by A1.7, decision D1; the random draw is parked) |
