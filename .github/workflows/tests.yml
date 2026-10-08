@@ -12,7 +12,9 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
+    # 30, not 20 (operator, 2026-10-08): the Windows job reached 19m28s-19m49s on
+    # PRs #349, #351 and #352, and one run was cancelled at 20m with no test failure.
+    timeout-minutes: 30
     steps:
       # Pinned, not inherited: strategy-research/tools/recorder/.gitattributes documents
       # this repo's Windows expectation as core.autocrlf=true. longpaths is cheap
