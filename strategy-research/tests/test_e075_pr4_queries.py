@@ -1130,20 +1130,23 @@ def test_the_real_confirmations_row_shape_of_e072_is_read_without_error():
 # 9. Post-merge review fixes (D-090)
 # ---------------------------------------------------------------------------
 
-def test_a_derived_return_by_hour_is_a_calendar_effect_and_is_counted(run):
-    """past_return_1 at bar t+1 is fwd_return h=1 at bar t: its mean by hour IS the calendar
-    effect conditional_effect counts, so describe / distribution count one per group."""
+def test_a_grouping_by_hour_weekday_or_regime_is_counted_whatever_the_column(run):
+    """past_return_1 at bar t+1 is fwd_return h=1 at bar t, and the bucket means of a price
+    level differ by the move between the buckets: a mean by hour IS a calendar effect, so
+    describe / distribution count one per group by hour, weekday or regime (D-090)."""
     eng = engine(run)
-    r = eng.describe("past_return_1", by="hour")
-    groups = len(r["result"]["groups"])
-    assert groups > 1 and r["n_comparisons"] == groups
+    for col, by in (("past_return_1", "hour"), ("close", "hour"), ("close", "weekday"),
+                    ("forecast", "regime"), ("total_portfolio_value", "hour")):
+        r = eng.describe(col, by=by)
+        groups = len(r["result"]["groups"])
+        assert groups >= 1 and r["n_comparisons"] == groups, (col, by)
     r = eng.distribution("trailing_vol_24", by="weekday", bins=4)
     assert r["n_comparisons"] == len(r["result"]["groups"])
-    # other groupings, and plain columns by hour, stay free
+    # no grouping, or a grouping by window or coin, stays free
     assert eng.describe("past_return_1", by="window")["n_comparisons"] == 0
+    assert eng.describe("close", by="coin")["n_comparisons"] == 0
     assert eng.describe("past_return_1")["n_comparisons"] == 0
-    assert eng.describe("close", by="hour")["n_comparisons"] == 0
-    assert eng.distribution("forecast", by="weekday")["n_comparisons"] == 0
+    assert eng.distribution("forecast")["n_comparisons"] == 0
 
 
 def test_the_calendar_count_is_charged_before_any_number(run):
@@ -1183,3 +1186,37 @@ def test_event_study_counts_only_checkpoints_with_a_value(tmp_path):
     out = engine(a).event_study([], 3, 3)["result"]
     assert out["after"]["1"] == {"n": 0, "mean": None}
     assert out["after"]["2"]["n"] > 0 and out["after"]["2"]["mean"] is not None
+
+
+def test_a_fold_row_without_words_keeps_the_words_of_the_claim_it_replaces(tmp_path):
+    bare = dict(_same_claim_on("A", "run_90", "not_measurable"), statement=None, kind=None)
+    worded = _same_claim_on("B", "run_91", "not_confirmed")
+    e072 = {worded["finding_id"]: {"finding_id": worded["finding_id"], "status": "pending",
+                                   "statement": "E-072 words", "kind": "event_behaviour"}}
+    (c,) = amv.build_memory_view({}, _write_ledger(tmp_path, [bare, worded], e072))["claims"]
+    assert c["statement"].startswith("After a <n> fall") and c["kind"] == "event_behaviour"
+    (c,) = amv.build_memory_view({}, _write_ledger(tmp_path / "b", [bare], e072))["claims"]
+    assert c["statement"] == "E-<n> words" and c["kind"] == "event_behaviour"
+
+
+def test_free_text_outside_the_statement_carries_no_number(tmp_path):
+    row = dict(_same_claim_on("B", "run_91", "not_confirmed"), kind="edge of 0.31% at h=6",
+               statement="x2 h24 5of6 Sharpe1.2 1_000 Q4 R2 kept words")
+    (c,) = amv.build_memory_view({}, _write_ledger(tmp_path, [row]))["claims"]
+    assert c["kind"] is None                                # not a claim kind: not shown
+    assert not re.search(r"\d", c["statement"]) and "kept words" in c["statement"]
+    memory = _run074_memory()
+    memory["runs"]["run_074"]["finding"]["tests"][0]["name"] = "fc_gt_8_gives_0.31pct_h6"
+    view = amv.build_memory_view(memory, {})
+    assert "0.31" not in json.dumps(view) and "fc_gt_8" not in json.dumps(view)
+
+
+def test_an_unknown_fold_status_is_not_measurable_everywhere(tmp_path):
+    row = _same_claim_on("B", "run_91", "weird")
+    (c,) = amv.build_memory_view({}, _write_ledger(tmp_path, [row]))["claims"]
+    assert c["status"] == "not_measurable" and c["folds"][0]["status"] == "not_measurable"
+
+
+def test_a_numpy_nan_parameter_is_refused_too():
+    assert aq._nonfinite({"a": [np.float32("nan")]}) and aq._nonfinite(np.float64("inf"))
+    assert not aq._nonfinite({"a": [1.0, 2, "x", None]})

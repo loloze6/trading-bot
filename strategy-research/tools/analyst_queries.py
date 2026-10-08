@@ -72,11 +72,12 @@ outcome. Feature-only results count 0.
   trade_slice         groups x (aggregates of trade_net_return / post_exit_return
                       whose stat is not `count`)
   event_study         the number of "after" checkpoints returned
-  describe, distribution  the number of groups when the column is a derived return
-                      or volatility (past_return_<n>, trailing_vol_<n>) grouped by
-                      hour or weekday: past_return_1 at bar t+1 IS fwd_return h=1
-                      at bar t, so its mean by hour is a calendar effect (D-090);
-                      else 0
+  describe, distribution  the number of groups when grouped by hour, weekday or
+                      regime, whatever the column: past_return_1 at bar t+1 IS
+                      fwd_return h=1 at bar t, and the difference of two bucket
+                      means of a price level is the mean move between the buckets,
+                      so a mean by hour is a calendar effect, and by a persistent
+                      regime label nearly a regime effect (D-090); else 0
   list_columns  0
 A session may spend COMPARISON_BUDGET (150); a call that would count more than
 what is left is refused with "comparison budget spent".
@@ -147,9 +148,10 @@ ROLE_OF_WHEN = {"close": "feature", "fill": "feature", "exit": "outcome", "after
                 "meta": "label", "run": "never", "end": "never"}
 
 
-# describe / distribution of a derived return or volatility grouped by these labels relate a
-# calendar group to an outcome (past_return_1 at t+1 == fwd_return h=1 at t): counted (D-090)
-_CALENDAR_BY = ("hour", "weekday")
+# describe / distribution grouped by these labels relate a calendar or regime group to an
+# outcome (past_return_1 at t+1 == fwd_return h=1 at t; a price level's bucket means differ
+# by the move between the buckets): one comparison per group, whatever the column (D-090)
+_CALENDAR_BY = ("hour", "weekday", "regime")
 
 
 def _nonfinite(v) -> bool:
@@ -160,7 +162,7 @@ def _nonfinite(v) -> bool:
         return any(_nonfinite(x) for x in v.values())
     if isinstance(v, (list, tuple)):
         return any(_nonfinite(x) for x in v)
-    return isinstance(v, float) and not math.isfinite(v)
+    return isinstance(v, (float, np.floating)) and not math.isfinite(float(v))
 
 
 class QueryRefused(Exception):
@@ -782,10 +784,10 @@ class QueryEngine:
                 "groups": counts}, n
 
     def _calendar_charge(self, column, by, groups) -> int:
-        """Comparisons of a describe / distribution call: one per group for a derived return
-        or volatility grouped by hour or weekday (a calendar effect), else 0. Charged here,
-        before any number is computed."""
-        n = len(groups) if (by in _CALENDAR_BY and _DERIVED_RE.fullmatch(column)) else 0
+        """Comparisons of a describe / distribution call: one per group when grouped by hour,
+        weekday or regime (a calendar or regime effect, whatever the column), else 0.
+        Charged here, before any number is computed."""
+        n = len(groups) if by in _CALENDAR_BY else 0
         self._charge(n)
         return n
 

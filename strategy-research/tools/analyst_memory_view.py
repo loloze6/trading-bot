@@ -63,6 +63,7 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 
+import claim_card as cc  # noqa: E402  (the closed list of claim kinds)
 import explore_confirm as ec  # noqa: E402  (mask_numbers: the one masking rule)
 
 SCHEMA_VERSION = 1
@@ -79,6 +80,10 @@ NOTE = ("earlier claims and what became of them: numbers only for confirmed clai
         "on the fold that confirmed them; pending, not_confirmed and not_measurable claims carry "
         "none; every statement has its numbers masked")
 _FOLD_STATUS_ORDER = (NOT_CONFIRMED, CONFIRMED, NOT_MEASURABLE)   # the first present wins
+# digits glued to a word character (`x2`, `h24`, `5of6`, `Sharpe1.2`) that mask_numbers'
+# lookbehind leaves: masked here too, in the view only (D-090)
+_GLUED_DIGITS = re.compile(r"\d+(?:[.,_]\d+)*")
+_KINDS = frozenset(cc.CLAIM_KINDS + cc.FOLDS_CLAIM_KINDS)
 
 
 def _run_order(run_id: str) -> tuple:
@@ -89,18 +94,24 @@ def _run_order(run_id: str) -> tuple:
 def _statement(text):
     if not isinstance(text, str):
         return None
-    s = ec.mask_numbers(" ".join(text.split()))
+    s = _GLUED_DIGITS.sub(ec.NUMBER_MASK, ec.mask_numbers(" ".join(text.split())))
     return s if len(s) <= STATEMENT_CHARS else s[:STATEMENT_CHARS - 3] + "..."
 
 
+def _kind(k):
+    """A claim kind from the closed list, else None (a refused claim's kind is free text)."""
+    return k if isinstance(k, str) and k in _KINDS else None
+
+
 def _specs(tests) -> list:
-    """The mechanical spec of each test (no result): name, spec_hash and the slots."""
+    """The mechanical spec of each test (no result): spec_hash and the slots. The test's
+    name is free text (`fc_gt_8_gives_0.31pct_h6`) and is not shown (D-090)."""
     out = []
     for t in tests or []:
         if not isinstance(t, dict):
             continue
         spec = t.get("spec") if isinstance(t.get("spec"), dict) else t
-        row = {"name": t.get("name"), "spec_hash": t.get("spec_hash")}
+        row = {"spec_hash": t.get("spec_hash")}
         row.update({k: spec[k] for k in TEST_SPEC_KEYS if k in spec})
         out.append(row)
     return out
@@ -144,7 +155,7 @@ def _memory_claims(memory: dict) -> list:
         out.append({
             "claim_id": f.get("finding_id") or f"F-{rid}-1", "source_run": str(rid),
             "statement": _statement(f.get("statement")),
-            "kind": f.get("kind"),
+            "kind": _kind(f.get("kind")),
             "fold_observed": entry.get("fold"), "fold_confirmed": None,
             "status": PENDING if tests else NOT_MEASURABLE,
             "tests": _specs(tests)})
@@ -169,7 +180,7 @@ def _ledger_claims(ledger: dict, memory: dict | None = None) -> list:
             "claim_id": str(rec.get("finding_id") or fid),
             "source_run": rec.get("source_run"),
             "statement": _statement(rec.get("statement")),
-            "kind": rec.get("kind"),
+            "kind": _kind(rec.get("kind")),
             "fold_observed": _fold_observed(rec, runs),
             "fold_confirmed": None,
             "status": NOT_MEASURABLE if ledger_status(rec) == NOT_MEASURABLE else PENDING,
@@ -189,14 +200,21 @@ def _fold_claims(ledger: dict, memory: dict | None = None) -> list:
     out = []
     for fid in sorted(by_fid):
         recs = sorted(by_fid[fid], key=lambda r: (str(r.get("fold")), _run_order(str(r.get("run_id")))))
-        statuses = [ledger_status(r) for r in recs]
-        status = next((s for s in _FOLD_STATUS_ORDER if s in statuses), NOT_MEASURABLE)
+        # a fold row's status outside the fold vocabulary is not_measurable, in `folds` too
+        statuses = [st if st in _FOLD_STATUS_ORDER else NOT_MEASURABLE
+                    for st in (ledger_status(r) for r in recs)]
+        status = next(s for s in _FOLD_STATUS_ORDER if s in statuses)
         first = recs[0]
+
+        def first_of(key):
+            # a row built when the source proposal was unreadable has no statement / kind:
+            # the first row that has one gives it (build_memory_view falls back further)
+            return next((r.get(key) for r in recs if r.get(key)), None)
         row = {
             "claim_id": fid,
-            "source_run": first.get("source_run"),
-            "statement": _statement(first.get("statement")),
-            "kind": first.get("kind"),
+            "source_run": first_of("source_run"),
+            "statement": _statement(first_of("statement")),
+            "kind": _kind(first_of("kind")),
             "fold_observed": _fold_observed(first, runs),
             "fold_confirmed": None,
             "status": status,
@@ -217,6 +235,11 @@ def build_memory_view(memory: dict, ledger: dict | None = None) -> dict:
     ledger (both already loaded; either may be empty)."""
     by_id = {c["claim_id"]: c for c in _memory_claims(memory)}
     for c in _ledger_claims(ledger or {}, memory) + _fold_claims(ledger or {}, memory):
+        old = by_id.get(c["claim_id"])
+        if old:                                        # keep words a later row lacks
+            for key in ("statement", "kind", "source_run"):
+                if c.get(key) is None:
+                    c[key] = old.get(key)
         by_id[c["claim_id"]] = c                       # the ledger knows what became of it
     claims = list(by_id.values())
     counts = {s: sum(1 for c in claims if c["status"] == s) for s in STATUSES}
