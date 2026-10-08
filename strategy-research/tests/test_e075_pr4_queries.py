@@ -19,6 +19,7 @@ effect, no window count, numbers for a confirmed claim). Synthetic data only
 (2020 dates); no market data, no model call.
 """
 import builtins
+import copy
 import io
 import itertools
 import json
@@ -903,7 +904,9 @@ def _run074_memory():
         "run_070": {"run_id": "run_070"}}}                       # no finding: not a claim
 
 
-def _ledger():
+def _fold_rows():
+    """Fold rows exactly as fold_confirm.confirm_on_fold builds them (the fields the view
+    reads), for explore_confirm.record_fold_confirmation to write."""
     row_confirmed = {
         "finding_id": "trade_efficiency-run_074-2", "source_run": "run_074", "run_id": "run_080",
         "basis": "child_run", "fold": "B", "kind": "event_behaviour", "status": "confirmed",
@@ -914,19 +917,25 @@ def _ledger():
         "effect": {"t1": {"24": 0.0012}}, "agreement": {"t1": {"24": "5 of 6"}}}
     row_failed = {
         "finding_id": "forecast_power-run_074-1", "source_run": "run_074", "run_id": "run_081",
-        "fold": "B", "kind": "direction_forecast", "status": "not_confirmed",
+        "basis": "child_run", "fold": "B", "kind": "direction_forecast", "status": "not_confirmed",
         "statement": "A forecast above 8 predicts a 0.31% return at h=6.",
         "reason": "the noise rule fails: h=6: pooled held, windows 3 of 6",
         "spec_hashes": ["bbb"],
         "tests": {"t1": {"spec_hash": "bbb", "status": "not_confirmed", "horizons": {
             "6": {"effect": 0.0031, "windows_claimed_sign": 3, "windows_with_value": 6}}}},
         "effect": {"t1": {"6": 0.0031}}, "agreement": {"t1": {"6": "3 of 6"}}}
-    row_short = {"finding_id": "x-run_073-1", "source_run": "run_073", "fold": "C",
-                 "status": "not_measurable", "kind": "conversion",
-                 "statement": "Rebalances smaller than 0.3 lose 14 bps.",
+    row_short = {"finding_id": "x-run_073-1", "source_run": "run_073", "run_id": "run_082",
+                 "basis": "child_run", "fold": "C", "status": "not_measurable",
+                 "kind": "conversion", "statement": "Rebalances smaller than 0.3 lose 14 bps.",
                  "reason": "fewer than 4 windows with a value (windows with a value) 2"}
-    row_nc = {"finding_id": "x-run_073-2", "source_run": "run_073", "status": "not_comparable",
+    row_nc = {"finding_id": "x-run_073-2", "source_run": "run_073", "run_id": "run_083",
+              "basis": "child_run", "fold": "B", "status": "not_comparable",
               "kind": "conversion", "statement": "Claim 7 about 12 bars."}
+    return [row_confirmed, row_failed, row_short, row_nc]
+
+
+def _e072_rows():
+    """E-072 `findings` rows (never confirmed on a fold)."""
     row_legacy_pending = {"finding_id": "old-run_070-1", "source_run": "run_070",
                           "status": "pending", "confirmation_sign_retained": "pending",
                           "kind": "event_behaviour", "statement": "Legacy 5% claim.",
@@ -937,9 +946,25 @@ def _ledger():
                            "tests": {"t": {"status": "measured", "horizons": {
                                "1": {"effect": 0.9, "windows_claimed_sign": 6,
                                      "windows_with_value": 6}}}}}
-    findings = {r["finding_id"]: r for r in (row_confirmed, row_failed, row_short, row_nc,
-                                              row_legacy_pending, row_legacy_measured)}
-    return {"schema_version": 1, "findings": findings, "looks": [{"n_comparisons": 3}]}
+    return {r["finding_id"]: r for r in (row_legacy_pending, row_legacy_measured)}
+
+
+def _write_ledger(root: Path, fold_rows=None, e072=None) -> dict:
+    """campaign_record/confirmations.yaml as the real writers leave it: E-072 rows under
+    `findings`, then each fold row through explore_confirm.record_fold_confirmation (which
+    files it under `fold_confirmations`). Returns the loaded ledger."""
+    import explore_confirm as ec
+    path = root / ec.LEDGER_REL
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(yaml.safe_dump({"schema_version": 1, "findings": dict(e072 or {}),
+                                    "looks": []}), encoding="utf-8")
+    for row in fold_rows or []:
+        ec.record_fold_confirmation(root, copy.deepcopy(row))
+    return yaml.safe_load(path.read_text(encoding="utf-8"))
+
+
+def _ledger(tmp_path):
+    return _write_ledger(tmp_path, _fold_rows(), _e072_rows())
 
 
 def _walk(obj):
@@ -984,15 +1009,21 @@ def test_the_memory_view_of_run_074_shows_no_exploratory_effect_and_no_window_co
     assert [c["claim_id"] for c in view["claims"]] == ["F-run_073-1", "F-run_074-1"]   # run order
 
 
-def test_the_memory_view_with_the_ledger_numbers_only_for_confirmed_claims():
-    view = amv.build_memory_view(_run074_memory(), _ledger())
+def test_the_memory_view_with_the_ledger_numbers_only_for_confirmed_claims(tmp_path):
+    ledger = _ledger(tmp_path)
+    assert set(ledger["fold_confirmations"]) == {
+        "trade_efficiency-run_074-2@run_080", "forecast_power-run_074-1@run_081",
+        "x-run_073-1@run_082", "x-run_073-2@run_083"}           # where the real writer files them
+    view = amv.build_memory_view(_run074_memory(), ledger)
     by = {c["claim_id"]: c for c in view["claims"]}
     conf = by["trade_efficiency-run_074-2"]
-    assert conf["status"] == "confirmed" and conf["fold_confirmed"] == "B"
+    assert conf["status"] == "confirmed" and conf["fold_confirmed"] == ["B"]
     assert conf["fold_observed"] == "A"
-    assert conf["confirmed"] == {"fold": "B", "effect": {"t1": {"24": 0.0012}},
-                                 "agreement": {"t1": {"24": "5 of 6"}}}
-    assert "12 bps" in conf["statement"] and "3%" in conf["statement"]    # verbatim when confirmed
+    assert conf["confirmed"] == [{"fold": "B", "effect": {"t1": {"24": 0.0012}},
+                                  "agreement": {"t1": {"24": "5 of 6"}}}]
+    assert conf["folds"] == [{"fold": "B", "run_id": "run_080", "status": "confirmed"}]
+    # D-090: a confirmed claim's statement is masked too (its numbers are the exploratory ones)
+    assert "12 bps" not in conf["statement"] and "<n>" in conf["statement"]
     # the others: a status and a fold, never a number
     assert by["forecast_power-run_074-1"]["status"] == "not_confirmed"
     assert by["forecast_power-run_074-1"]["fold_confirmed"] is None
@@ -1005,28 +1036,68 @@ def test_the_memory_view_with_the_ledger_numbers_only_for_confirmed_claims():
                                  "pending": 3}
     assert view["n_claims"] == 8
     rest = {k: v for k, v in by.items() if k != "trade_efficiency-run_074-2"}
-    blob = json.dumps(rest)
+    blob = json.dumps(rest) + json.dumps(conf["statement"])
     for leaked in ("0.0031", "3 of 6", "0.9", "windows", "reason", "noise rule", "14 bps",
-                   "0.31%", "0.3 lose", "5%", "9%", "12 bars"):
+                   "0.31%", "0.3 lose", "5%", "9%", "12 bars", "12 bps", "3%"):
         assert leaked not in blob, leaked
     nums = [x for x in _walk(rest) if isinstance(x, float)]
     assert nums == []
     # the confirmed numbers can also come from the row's per-test horizons
-    row = _ledger()
-    del row["findings"]["trade_efficiency-run_074-2"]["effect"]
-    del row["findings"]["trade_efficiency-run_074-2"]["agreement"]
-    c = next(c for c in amv.build_memory_view({}, row)["claims"]
+    rows = _fold_rows()
+    del rows[0]["effect"], rows[0]["agreement"]
+    c = next(c for c in amv.build_memory_view({}, _write_ledger(tmp_path / "b", rows))["claims"]
              if c["claim_id"] == "trade_efficiency-run_074-2")
-    assert c["confirmed"]["effect"] == {"t1": {"24": 0.0012}}
-    assert c["confirmed"]["agreement"] == {"t1": {"24": "5 of 6"}}
+    assert c["confirmed"][0]["effect"] == {"t1": {"24": 0.0012}}
+    assert c["confirmed"][0]["agreement"] == {"t1": {"24": "5 of 6"}}
 
 
-def test_a_ledger_row_replaces_the_memory_claim_with_the_same_id():
+def _same_claim_on(fold, run_id, status, effect=0.0012):
+    row = copy.deepcopy(_fold_rows()[0])
+    row.update(fold=fold, run_id=run_id, status=status, effect={"t1": {"24": effect}})
+    return row
+
+
+@pytest.mark.parametrize("order", [(0, 1), (1, 0)])
+def test_a_claim_measured_on_two_folds_gets_one_status_from_the_statuses(tmp_path, order):
+    """Operator, 2026-10-08 (D-090): confirmed on one fold and refuted on another reads
+    `confirmed`, whatever the key order (run_100 sorts before run_99 as text); the
+    refutation stays recorded in `folds`, and only the confirming fold's numbers show."""
+    rows = [_same_claim_on("B", "run_99", "confirmed"),
+            _same_claim_on("C", "run_100", "not_confirmed", effect=-0.003)]
+    ledger = _write_ledger(tmp_path, [rows[i] for i in order])
+    (c,) = amv.build_memory_view({}, ledger)["claims"]
+    assert c["status"] == "confirmed" and c["fold_confirmed"] == ["B"]
+    assert [x["fold"] for x in c["confirmed"]] == ["B"]
+    assert -0.003 not in [x for x in _walk(c) if isinstance(x, float)]
+    assert c["folds"] == [{"fold": "B", "run_id": "run_99", "status": "confirmed"},
+                          {"fold": "C", "run_id": "run_100", "status": "not_confirmed"}]
+    # refuted with nothing confirmed: not_confirmed, and no number
+    (c,) = amv.build_memory_view({}, _write_ledger(tmp_path / "r", [rows[1]]))["claims"]
+    assert c["status"] == "not_confirmed" and "confirmed" not in c
+    assert not [x for x in _walk(c) if isinstance(x, float)]
+
+
+def test_confirmed_on_one_fold_and_not_measurable_on_another_is_confirmed(tmp_path):
+    rows = [_same_claim_on("C", "run_100", "not_measurable"),
+            _same_claim_on("B", "run_99", "confirmed")]
+    (c,) = amv.build_memory_view({}, _write_ledger(tmp_path, rows))["claims"]
+    assert c["status"] == "confirmed" and c["fold_confirmed"] == ["B"]
+    assert [x["fold"] for x in c["confirmed"]] == ["B"]
+    # confirmed on two folds: both rows' numbers, one entry per fold
+    rows = [_same_claim_on("B", "run_99", "confirmed"),
+            _same_claim_on("C", "run_100", "confirmed", effect=0.002)]
+    (c,) = amv.build_memory_view({}, _write_ledger(tmp_path / "two", rows))["claims"]
+    assert c["fold_confirmed"] == ["B", "C"]
+    assert [x["effect"]["t1"]["24"] for x in c["confirmed"]] == [0.0012, 0.002]
+
+
+def test_a_fold_row_replaces_the_e072_row_and_the_memory_claim_of_the_same_id(tmp_path):
     memory = _run074_memory()
-    ledger = {"findings": {"F-run_074-1": {
-        "finding_id": "F-run_074-1", "source_run": "run_074", "status": "not_confirmed",
-        "fold": "B", "kind": "direction_forecast", "statement": RUN074_STATEMENT}}}
-    view = amv.build_memory_view(memory, ledger)
+    row = dict(_same_claim_on("B", "run_080", "not_confirmed"), finding_id="F-run_074-1",
+               statement=RUN074_STATEMENT)
+    e072 = {"F-run_074-1": {"finding_id": "F-run_074-1", "status": "pending",
+                            "statement": RUN074_STATEMENT}}
+    view = amv.build_memory_view(memory, _write_ledger(tmp_path, [row], e072))
     c = next(c for c in view["claims"] if c["claim_id"] == "F-run_074-1")
     assert c["status"] == "not_confirmed"
     assert "-0.0057" not in c["statement"]
@@ -1039,7 +1110,7 @@ def test_the_view_of_nothing_is_empty_and_the_loader_reads_the_two_files(tmp_pat
     rec = tmp_path / "campaign_record"
     rec.mkdir()
     (rec / "campaign_memory.yaml").write_text(yaml.safe_dump(_run074_memory()), encoding="utf-8")
-    (rec / "confirmations.yaml").write_text(yaml.safe_dump(_ledger()), encoding="utf-8")
+    _write_ledger(tmp_path, _fold_rows(), _e072_rows())
     view = amv.load_memory_view(tmp_path)
     assert view["n_claims"] == 8 and view["by_status"]["confirmed"] == 1
     assert amv.MEMORY_REL == "campaign_record/campaign_memory.yaml"
@@ -1059,3 +1130,120 @@ def test_the_real_confirmations_row_shape_of_e072_is_read_without_error():
     c = view["claims"][0]
     assert c["status"] == "pending" and "confirmed" not in c
     assert json.dumps(c).count("0.01") == 0
+
+
+# ---------------------------------------------------------------------------
+# 9. Post-merge review fixes (D-090)
+# ---------------------------------------------------------------------------
+
+def test_a_grouping_by_hour_weekday_or_regime_is_counted_whatever_the_column(run):
+    """past_return_1 at bar t+1 is fwd_return h=1 at bar t, and the bucket means of a price
+    level differ by the move between the buckets: a mean by hour IS a calendar effect, so
+    describe / distribution count one per group by hour, weekday or regime (D-090)."""
+    eng = engine(run)
+    for col, by in (("past_return_1", "hour"), ("close", "hour"), ("close", "weekday"),
+                    ("forecast", "regime"), ("total_portfolio_value", "hour")):
+        r = eng.describe(col, by=by)
+        groups = len(r["result"]["groups"])
+        assert groups >= 1 and r["n_comparisons"] == groups, (col, by)
+    r = eng.distribution("trailing_vol_24", by="weekday", bins=4)
+    assert r["n_comparisons"] == len(r["result"]["groups"])
+    # no grouping, or a grouping by window or coin, stays free
+    assert eng.describe("past_return_1", by="window")["n_comparisons"] == 0
+    assert eng.describe("close", by="coin")["n_comparisons"] == 0
+    assert eng.describe("past_return_1")["n_comparisons"] == 0
+    assert eng.distribution("forecast")["n_comparisons"] == 0
+
+
+def test_the_calendar_count_is_charged_before_any_number(run):
+    eng = engine(run, comparison_budget=2)
+    r = eng.describe("past_return_1", by="hour")
+    assert r["status"] == "refused" and "comparison budget spent" in r["reason"]
+    assert "result" not in r and log_of(eng)[-1]["status"] == "refused"
+
+
+@pytest.mark.parametrize("bad", [float("inf"), float("-inf"), float("nan")])
+def test_a_non_finite_parameter_is_refused_and_logged(run, bad):
+    eng = engine(run)
+    r = eng.conditional_effect({"kind": "event", "field": "forecast", "op": ">=", "value": bad},
+                               [1])
+    assert r["status"] == "refused" and "finite" in r["reason"]
+    assert r["n_comparisons"] == 0 and log_of(eng)[-1]["status"] == "refused"
+
+
+def test_a_negative_count_in_the_log_gives_no_budget_back(run):
+    eng = engine(run, comparison_budget=3)
+    sel = {"kind": "event", "field": "forecast", "op": ">=", "value": 3.0}
+    assert eng.conditional_effect(sel, [1, 2, 3])["status"] == "ok"            # 3 of 3
+    doc = yaml.safe_load(eng.log.path.read_text(encoding="utf-8"))
+    doc["queries"].append({"id": "q2", "function": "describe", "status": "ok",
+                           "n_comparisons": -1000})
+    eng.log.path.write_text(yaml.safe_dump(doc), encoding="utf-8")
+    r = eng.conditional_effect(sel, [1])
+    assert r["status"] == "refused" and "comparison budget spent" in r["reason"]
+
+
+def test_event_study_counts_only_checkpoints_with_a_value(tmp_path):
+    closes = make_closes()
+    for c in closes.values():
+        for k in range(len(HOLDS)):
+            c[5 + 15 * k + 1] = np.nan                     # the close one bar after each entry
+    a = make_run(tmp_path / "a", closes)
+    out = engine(a).event_study([], 3, 3)["result"]
+    assert out["after"]["1"] == {"n": 0, "mean": None}
+    assert out["after"]["2"]["n"] > 0 and out["after"]["2"]["mean"] is not None
+
+
+def test_a_fold_row_without_words_keeps_the_words_of_the_claim_it_replaces(tmp_path):
+    bare = dict(_same_claim_on("A", "run_90", "not_measurable"), statement=None, kind=None)
+    worded = _same_claim_on("B", "run_91", "not_confirmed")
+    e072 = {worded["finding_id"]: {"finding_id": worded["finding_id"], "status": "pending",
+                                   "statement": "E-072 words", "kind": "event_behaviour"}}
+    (c,) = amv.build_memory_view({}, _write_ledger(tmp_path, [bare, worded], e072))["claims"]
+    assert c["statement"].startswith("After a <n> fall") and c["kind"] == "event_behaviour"
+    (c,) = amv.build_memory_view({}, _write_ledger(tmp_path / "b", [bare], e072))["claims"]
+    assert c["statement"] == "E-<n> words" and c["kind"] == "event_behaviour"
+
+
+def test_free_text_outside_the_statement_carries_no_number(tmp_path):
+    row = dict(_same_claim_on("B", "run_91", "not_confirmed"), kind="edge of 0.31% at h=6",
+               statement="x2 h24 5of6 Sharpe1.2 1_000 Q4 R2 kept words")
+    (c,) = amv.build_memory_view({}, _write_ledger(tmp_path, [row]))["claims"]
+    assert c["kind"] is None                                # not a claim kind: not shown
+    assert not re.search(r"\d", c["statement"]) and "kept words" in c["statement"]
+    memory = _run074_memory()
+    memory["runs"]["run_074"]["finding"]["tests"][0]["name"] = "fc_gt_8_gives_0.31pct_h6"
+    view = amv.build_memory_view(memory, {})
+    assert "0.31" not in json.dumps(view) and "fc_gt_8" not in json.dumps(view)
+
+
+def test_an_unknown_fold_status_is_not_measurable_everywhere(tmp_path):
+    row = _same_claim_on("B", "run_91", "weird")
+    (c,) = amv.build_memory_view({}, _write_ledger(tmp_path, [row]))["claims"]
+    assert c["status"] == "not_measurable" and c["folds"][0]["status"] == "not_measurable"
+
+
+def test_a_numpy_nan_parameter_is_refused_too():
+    assert aq._nonfinite({"a": [np.float32("nan")]}) and aq._nonfinite(np.float64("inf"))
+    assert not aq._nonfinite({"a": [1.0, 2, "x", None]})
+
+
+def test_a_group_without_a_value_is_not_charged(run):
+    eng = engine(run)
+    vals = eng._column_values("base", "close")
+    vals[0][:] = np.nan                    # window w0 of AAA: no close (the cached column)
+    r = eng.describe("close", by="hour")
+    groups = r["result"]["groups"]
+    with_value = sum(1 for g in groups.values() if g["mean"] is not None)
+    assert r["n_comparisons"] == with_value
+    eng._cols[("base", "close")] = [np.full_like(v, np.nan) for v in vals]
+    r = eng.describe("close", by="weekday")
+    assert r["n_comparisons"] == 0 and all(g["mean"] is None for g in r["result"]["groups"].values())
+
+
+def test_fold_observed_comes_from_the_first_row_that_has_it(tmp_path):
+    bare = dict(_same_claim_on("A", "run_90", "not_measurable"), statement=None, kind=None)
+    bare.pop("fold_observed")
+    worded = _same_claim_on("B", "run_91", "not_confirmed")
+    (c,) = amv.build_memory_view({}, _write_ledger(tmp_path, [bare, worded]))["claims"]
+    assert c["fold_observed"] == "A" and worded["fold_observed"] == "A"

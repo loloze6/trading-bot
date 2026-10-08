@@ -126,6 +126,13 @@ _V3_PATCH_KEYS = frozenset({"proposal_id", "patch", "evidence", "scores", "requi
 # a FILE already written (from_model False) is accepted as it stands.
 COMBINES_AS = ("forecast_block", "regime_gate", "execution_rule", "knowledge_only")
 ENVELOPE_KEYS = frozenset({"vehicle", "combines_as", "fold_observed"})
+# D-089 (operator, 2026-10-08, decision a): a claim about TODAY's strategy as it is may change
+# nothing -- `vehicle: []`, the child re-runs the same strategy on the next fold and the
+# strategy's own behaviour there is the test. Only these claim kinds (claim_card's
+# FOLDS_CLAIM_KINDS; not imported, to keep this module free of the claim engine); every
+# other kind still needs a non-empty vehicle. An envelope exists only under
+# orchestrator.folds.enabled, so flag off nothing reaches this.
+EMPTY_VEHICLE_KINDS = ("execution_behaviour",)
 
 
 class ProposalError(ValueError):
@@ -356,13 +363,24 @@ def _check_envelope(s: dict, where: str, *, require_vehicle: bool) -> None:
         raise ProposalError(f"{where}: write `vehicle` OR `config_change`, not both -- the "
                             f"vehicle IS the finding's config change")
     if "vehicle" in s:
-        _check_change_items(s["vehicle"], f"{where}.vehicle")
+        kind = s["claim"].get("kind") if isinstance(s.get("claim"), dict) else None
+        if s["vehicle"] == [] and kind in EMPTY_VEHICLE_KINDS:
+            pass            # D-089 (a): today's strategy, unchanged, re-run on the next fold
+        elif s["vehicle"] == []:
+            raise ProposalError(
+                f"{where}.vehicle: an empty vehicle (the strategy unchanged, re-run on the next "
+                f"fold) is allowed only for a claim of kind {list(EMPTY_VEHICLE_KINDS)}; a claim "
+                f"of kind {kind!r} needs the strategy change its own run backtests -- vehicle: "
+                f"[{{component_id, field, before, after}}]")
+        else:
+            _check_change_items(s["vehicle"], f"{where}.vehicle")
     elif require_vehicle:
         raise ProposalError(
             f"{where}: `vehicle` is required (orchestrator.folds.enabled): every claim is a "
             f"strategy claim, and its vehicle is the strategy change its own run backtests -- "
             f"vehicle: [{{component_id, field, before, after}}], resolved against the run's "
-            f"base config like a config change")
+            f"base config like a config change (`vehicle: []` only for a claim of kind "
+            f"{list(EMPTY_VEHICLE_KINDS)}: today's strategy, unchanged)")
     if "combines_as" in s and s["combines_as"] not in COMBINES_AS:
         raise ProposalError(f"{where}.combines_as={s['combines_as']!r} must be one of "
                             f"{list(COMBINES_AS)}")

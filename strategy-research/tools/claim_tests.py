@@ -1180,6 +1180,11 @@ def _read_column(path: Path, name: str, n_rows: int) -> np.ndarray:
     return np.array([_float(r.get(name)) for r in rows])
 
 
+def _coin_key(symbol) -> str:
+    """A symbol compared across files: letters and digits only, upper case."""
+    return "".join(ch for ch in str(symbol or "") if ch.isalnum()).upper()
+
+
 def load_variant_trade_windows(run_dir: Path, vid: str) -> list[TradeWindow]:
     """Same window mapping as load_variant_bars (protocol_result.yaml results[]
     .run_id -> variants/<vid>/results/<run_id>/), reading each window's
@@ -1208,7 +1213,13 @@ def load_variant_trade_windows(run_dir: Path, vid: str) -> list[TradeWindow]:
         w = read_bars_csv(rdir / "bars.csv", str(entry.get("symbol")), str(entry.get("window")))
         trades = json.loads((rdir / "trades.json").read_text(encoding="utf-8"))
         post = _read_column(rdir / "bars.csv", "postRebalance_current_allocation", len(w.ts))
-        out.append(build_trade_window(w, trades, post, diag_by_window.get(w.window)))
+        costs = diag_by_window.get(w.window)
+        if costs and len({_coin_key(c.get("symbol")) for c in costs if c.get("symbol")}) > 1:
+            # D-091 review: the records of SEVERAL coins share a window name; keep this
+            # coin's, the symbols compared without punctuation or case (BTC/USD == BTCUSD);
+            # one coin: as before, whatever its symbol's spelling
+            costs = [c for c in costs if _coin_key(c.get("symbol")) == _coin_key(w.symbol)] or None
+        out.append(build_trade_window(w, trades, post, costs))
     if not out:
         raise ValueError(f"{pr_path}: no results with a run_id")
     return out

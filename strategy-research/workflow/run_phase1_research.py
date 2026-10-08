@@ -4222,6 +4222,35 @@ def _folds_enabled(cfg: dict | None = None) -> bool:
     return value
 
 
+def _analyst_enabled(cfg: dict | None = None) -> bool:
+    """E-075 PR-5a (D-091): orchestrator.analyst.enabled. False when the key, the section
+    or the config file is absent. A non-bool value raises.
+
+    Requires orchestrator.folds.enabled (refused otherwise, D-091 review).
+    While false: byte-identical. While true (PR-5a, the first part of the analyst's flag;
+    E-075 PR-5 adds the analyst stage under the same flag): the trade-level claim-test family
+    (D-086) reaches the pipeline -- the claim checks at the reading, decide-next, step 1a's
+    card and the merges accept it, the child run measures it (claim_measure.measure_variant
+    with trade_tests), and fold confirmation checks and measures it on the child's trades
+    (tools/fold_confirm, measure_on_fold)."""
+    cfg = _orchestrator_config(cfg)
+    a_cfg = ((cfg.get("orchestrator") or {}).get("analyst") or {})
+    value = a_cfg.get("enabled", False)
+    if not isinstance(value, bool):
+        raise ValueError(
+            f"orchestrator.analyst.enabled={value!r} is not a real boolean "
+            f"(got {type(value).__name__}) -- write an unquoted `true` or `false` in "
+            f"config/campaign_config.yaml, not a quoted string or null."
+        )
+    if value and not _flag_dep(_folds_enabled, cfg):
+        raise ValueError(
+            "orchestrator.analyst.enabled=true requires orchestrator.folds.enabled=true as "
+            "well -- an analyst's claim is confirmed only on a fold its lineage has not used "
+            "(E-077), and without folds a trade-level claim would be measured in the run that "
+            "inspired it, which E-072's in-run route cannot do. Enable them together.")
+    return value
+
+
 # E-073 step 1 (D-081): the readers' subset of the field dictionary
 # (tools/data_dictionary.reader_subset of docs/DATA_DICTIONARY.md; operator
 # default, the full file being the alternative), run-relative like the catalogue.
@@ -5055,8 +5084,8 @@ def _same_reading_structure(first: str, retry: str) -> bool:
     and tests). Never raises: a failure is False (the first answer is kept)."""
     try:
         rf = _reader_findings_module()
-        return rf.reading_structure(yaml.safe_load(first)) == \
-            rf.reading_structure(yaml.safe_load(retry))
+        return rf.reading_structure(yaml.safe_load(first), **_claim_check_kw()) == \
+            rf.reading_structure(yaml.safe_load(retry), **_claim_check_kw())
     except Exception:  # noqa: BLE001 -- unreadable = not shown to be the same
         return False
 
@@ -5132,7 +5161,8 @@ def _reading_content_errors(doc: dict, category: str, run_dir: Path) -> list:
     errors = []
     base, base_error = None, None
     for i, s in enumerate(doc.get("side_findings") or []):
-        review = rf.side_finding_review(s, prior={}, own=set(), run_id=Path(run_dir).name)
+        review = rf.side_finding_review(s, prior={}, own=set(), run_id=Path(run_dir).name,
+                                        **_claim_check_kw())
         errors += [f"side_findings[{i}]: {e}" for e in review["errors"]]
         # E-077 PR-2 (D-087): under orchestrator.folds.enabled the vehicle IS the config
         # change (the shape check refuses a finding that carries both)
@@ -5329,7 +5359,8 @@ def _review_written_reading(category: str, run_id: str, run_dir: Path, body: str
         own = rf.own_spec_hashes(card)
         out, rows = {}, []
         for item in items:
-            review = rf.side_finding_review(item, prior=prior, own=own, run_id=run_id)
+            review = rf.side_finding_review(item, prior=prior, own=own, run_id=run_id,
+                                            **_claim_check_kw())
             out[item["proposal_id"]] = {k: review[k] for k in ("spec_hashes", "tests_none",
                                                                "warnings")}
             if review["tests_none"]:
@@ -5978,7 +6009,7 @@ def _record_side_finding_merges(run_id: str, run_dir: Path) -> dict:
     try:
         readings = _reader_proposals_module().load_readings(
             Path(run_dir) / "artifacts" / "proposals", _reader_categories())
-        doc = rf.merges_doc(run_id, rf.side_finding_merges(readings))
+        doc = rf.merges_doc(run_id, rf.side_finding_merges(readings, **_claim_check_kw()))
         save_yaml(path, doc)
         for g in doc["merged"]:
             print(f"🔗 [E-073] {run_id}: side findings {g['finding_ids']} propose the same test "
@@ -6022,7 +6053,8 @@ def _record_confirmations(run_id: str, run_dir: Path, merges: dict | None = None
         records = ec.confirm_findings(run_dir, run_id, readings, split, base_variant=base_vid,
                                       eras=eras, holdout_start=holdout_start,
                                       **({"merges": merges} if merges is not None else {}),
-                                      **({"folds": True} if folds else {}))
+                                      **({"folds": True} if folds else {}),
+                                      **({"trade_tests": True} if _analyst_enabled() else {}))
         source = None if folds else ec.source_finding_id(arts)
 
         def _resolve(findings: dict) -> list:
@@ -16782,7 +16814,7 @@ def _check_prefilled_claim(run_dir: Path, run_id: str) -> None:
         claim = card.get("claim") if isinstance(card, dict) else None
 
         def _hashes(c):
-            res = cc.check_claim(c, **_claim_check_folds())
+            res = cc.check_claim(c, **_claim_check_kw())
             return sorted(t["spec_hash"] for t in res.tests)
         changed = []
         if not isinstance(claim, dict):
@@ -16867,6 +16899,14 @@ def _apply_claim_tests_context(stage_name: str, handoff: dict, run_dir: Path) ->
         ctx["stage_attempt"] = f"{ctx.get('stage_attempt', '0')}_claim_retry{retry['attempts']}"
 
 
+def _claim_check_kw() -> dict:
+    """check_claim keywords of the pipeline's claim checks: _claim_check_folds() plus, under
+    orchestrator.analyst.enabled (D-091), {"trade_tests": True}, so a claim may use the
+    trade-level test family (claim_tests TRADE_*, D-086). Both off: {} (every call exactly as
+    before)."""
+    return {**_claim_check_folds(), **({"trade_tests": True} if _analyst_enabled() else {})}
+
+
 def _claim_check_folds() -> dict:
     """check_claim keyword for the E-077 PR-2 claim kind `execution_behaviour`: {"folds":
     True} under orchestrator.folds.enabled, else {} (every call exactly as before)."""
@@ -16924,7 +16964,7 @@ def _claim_check_cards(run_dir: Path, run_id: str, attempt, stage: str, *,
         exempt = _claim_check_exempt(run_dir, card)
         res = None if exempt else cc.check_claim(
             (card or {}).get("claim") if isinstance(card, dict) else None,
-            cc.card_criteria_ids(card or {}), **_claim_check_folds())
+            cc.card_criteria_ids(card or {}), **_claim_check_kw())
         power = []
         if res is not None and not res.errors and res.tests:
             if known_power is not None and path.name in known_power:
@@ -17439,7 +17479,7 @@ def _parse_claim_revision(text: str, old_claim: dict, criteria_ids) -> tuple:
             return None, f"claim.{key} was changed; it is locked (statement and kind stay as 1a wrote them)"
     new = {**{k: old_claim.get(k) for k in _CLAIM_LOCKED_KEYS},
            **{k: v for k, v in new.items() if k not in _CLAIM_LOCKED_KEYS}}
-    check = _claim_card_module().check_claim(new, criteria_ids, **_claim_check_folds())
+    check = _claim_card_module().check_claim(new, criteria_ids, **_claim_check_kw())
     if check.errors:
         return None, "check_claim: " + "; ".join(check.errors)
     return new, None
@@ -17827,7 +17867,7 @@ def _measure_claim_tests(run_dir: Path, run_id: str) -> None:
     exempt = _claim_check_exempt(run_dir, card)
     res = None if exempt else cc.check_claim(
         card.get("claim") if isinstance(card, dict) else None,
-        cc.card_criteria_ids(card if isinstance(card, dict) else {}), **_claim_check_folds())
+        cc.card_criteria_ids(card if isinstance(card, dict) else {}), **_claim_check_kw())
     card_status = cc.status_of(res, exempt, [])
     variants, skipped = {}, {}
     if card_status["usable"]:
@@ -17837,7 +17877,8 @@ def _measure_claim_tests(run_dir: Path, run_id: str) -> None:
         eras = _pres.load_policy_eras(_DATA_POLICY_PATH)
         graded, skipped = _claim_measure_variants(run_dir, run_id)
         for vid in graded:
-            doc = cm.measure_variant(run_dir, vid, tests, eras, holdout_start)
+            doc = cm.measure_variant(run_dir, vid, tests, eras, holdout_start,
+                                     **({"trade_tests": True} if _analyst_enabled() else {}))
             save_yaml(run_dir / "artifacts" / "variants" / vid / cm.VARIANT_FILE, doc)
             variants[vid] = doc
     doc = cm.run_doc(run_id, card_status, variants, skipped)
@@ -17938,7 +17979,8 @@ def _confirm_on_fold_after_backtests(run_dir: Path, run_id: str, vehicle_variant
                                  eras=_pres.load_policy_eras(_DATA_POLICY_PATH),
                                  holdout_start=_load_holdout_range()[0],
                                  fresh_variants=fresh, vehicle_variant=vehicle_variant,
-                                 folds_path=None, policy_path=_DATA_POLICY_PATH)
+                                 folds_path=None, policy_path=_DATA_POLICY_PATH,
+                                 **({"trade_tests": True} if _analyst_enabled() else {}))
         if row is None:
             return                       # not built from a side finding: nothing to confirm
         written = ec.record_fold_confirmation(ROOT, row)

@@ -604,22 +604,31 @@ def test_block_lists_and_the_old_guide_are_unchanged():
 
 
 def test_no_prompt_or_stage_wires_the_trade_guide_or_the_trade_gate():
-    """Nothing in the pipeline reads the new guide or passes trade_tests=True: every
-    flag-off (and flag-on) prompt is byte-identical, so no flag is registered."""
+    """No prompt reads the new guide yet, and the pipeline passes trade_tests=True only
+    under orchestrator.analyst.enabled (E-075 PR-5a, D-091; this test pinned "nowhere"
+    before, changed deliberately there): every orchestrator literal sits in an
+    `if _analyst_enabled()` conditional, and the flag is off by default."""
+    import re as _re
+    tools_allowed = ("claim_tests.py", "claim_card.py", "claim_measure.py", "analyst_queries.py",
+                     # D-091: they take a trade_tests keyword, passed only under the flag
+                     "reader_findings.py", "explore_confirm.py", "decide_next.py",
+                     "fold_confirm.py")
     for rel in ("workflow", "tools"):
         for p in (SR_ROOT / rel).glob("*.py"):
             src = p.read_text(encoding="utf-8")
             if p.name != "claim_tests.py":            # its own header names the guide
                 assert "CLAIM_TESTS_TRADE" not in src, p
-            # analyst_queries.py (E-075 PR-4, D-088) is the one caller outside the claim
-            # modules: a pure module that nothing imports yet (tests/test_e075_pr4_queries.py
-            # pins that), so no prompt, stage or artifact passes the gate
-            if p.name not in ("claim_tests.py", "claim_card.py", "claim_measure.py",
-                              "analyst_queries.py"):
+            if rel == "tools" and p.name not in tools_allowed:
                 assert "trade_tests" not in src, p
-    cfg = (SR_ROOT / "config" / "campaign_config.yaml").read_text(encoding="utf-8")
-    reg = (SR_ROOT / "config" / "feature_flag_register.yaml").read_text(encoding="utf-8")
-    assert "analyst" not in cfg and "analyst" not in reg
+            if rel == "workflow" and p.name not in ("run_phase1_research.py", "run_campaign.py"):
+                assert "trade_tests" not in src, p
+            if rel == "workflow":
+                code = "\n".join(l for l in src.splitlines() if not l.strip().startswith("#"))
+                lits = _re.findall(r'\{"trade_tests": True\}( if \w*\.?_analyst_enabled\(\))?', code)
+                in_doc = src.count('{"trade_tests": True}, so a claim may use the')
+                assert sum(1 for g in lits if not g) == in_doc, p     # only a docstring mention
+    cfg = yaml.safe_load((SR_ROOT / "config" / "campaign_config.yaml").read_text(encoding="utf-8"))
+    assert cfg["orchestrator"]["analyst"]["enabled"] is False
 
 
 def test_the_trade_guide_lists_exactly_the_engine_fields_causes_and_blocks():
