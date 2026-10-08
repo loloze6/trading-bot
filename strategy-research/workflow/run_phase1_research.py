@@ -4025,6 +4025,60 @@ def _reader_findings_enabled(cfg: dict | None = None) -> bool:
     return value
 
 
+def _observable_backtest_enabled(cfg: dict | None = None) -> bool:
+    """E-073 (P-CUL-81, D-081): the observable-backtest epic's one flag. False
+    when the key, the section or the config file is absent. A non-bool value
+    raises. Requires, loudly, orchestrator.reader_findings.enabled: step 1 (the
+    data dictionary) changes only the v3 readers' inputs, so without them the
+    flag would silently do nothing.
+
+    While false: byte-identical -- the v3 readers' handoffs and prompts are
+    untouched (tested).
+    While true (step 1): docs/DATA_DICTIONARY.md (what every field the readers
+    read means, its unit, the code that writes it and whether it is known at
+    the bar's close) is an extra required input of every v3 reader, with one
+    line telling them to use it (_with_data_dictionary)."""
+    cfg = _orchestrator_config(cfg)
+    ob_cfg = ((cfg.get("orchestrator") or {}).get("observable_backtest") or {})
+    value = ob_cfg.get("enabled", False)
+    if not isinstance(value, bool):
+        raise ValueError(
+            f"orchestrator.observable_backtest.enabled={value!r} is not a real boolean "
+            f"(got {type(value).__name__}) -- write an unquoted `true` or `false` in "
+            f"config/campaign_config.yaml, not a quoted string or null."
+        )
+    if value and not _flag_dep(_reader_findings_enabled, cfg):
+        raise ValueError(
+            "orchestrator.observable_backtest.enabled=true requires "
+            "orchestrator.reader_findings.enabled=true as well -- the data dictionary "
+            "is an input of the v3 readers only. Enable them together.")
+    return value
+
+
+# E-073 step 1 (D-081): the field dictionary, run-relative like the catalogue.
+DATA_DICTIONARY_DOC = "../../docs/DATA_DICTIONARY.md"
+DATA_DICTIONARY_LINE = (
+    "Before you cite a field, look it up in docs/DATA_DICTIONARY.md: its meaning, "
+    "unit, and when it is known (`after` / `run` = computed with hindsight, never a "
+    "signal input). A field it lists under 'Not recorded today' does not exist: "
+    "never infer it.")
+
+
+def _with_data_dictionary(handoff: dict) -> dict:
+    """A copy of a v3 reader handoff with the data dictionary added (an extra
+    required input, one sentence in the objective, the rule in
+    injected_context). Called only under orchestrator.observable_backtest."""
+    import copy as _copy
+    out = _copy.deepcopy(handoff)
+    out["required_inputs"].append({
+        "path": DATA_DICTIONARY_DOC,
+        "reason": "what every field you read means, its unit, the code that writes it, "
+                  "and whether it is known at the bar's close or only after the fact"})
+    out["objective"] += " " + DATA_DICTIONARY_LINE
+    out["injected_context"]["data_dictionary"] = DATA_DICTIONARY_LINE
+    return out
+
+
 def _nearest_build_enabled(cfg: dict | None = None) -> bool:
     """E-068 (operator, 2026-10-05): step 1b builds the nearest version of an
     idea instead of parking it. False when the key, the section or the config
@@ -4287,7 +4341,9 @@ def _reader_handoff(category: str, run_id: str, stage_attempt, run_dir: Path | N
     E-068 slice 5: under orchestrator.reader_findings the v3 handoff
     (_reader_handoff_v3); flag off, exactly the dict below."""
     if _reader_findings_enabled():
-        return _reader_handoff_v3(category, run_id, stage_attempt, run_dir)
+        handoff = _reader_handoff_v3(category, run_id, stage_attempt, run_dir)
+        # E-073 step 1 (D-081): the data dictionary, flag on only.
+        return _with_data_dictionary(handoff) if _observable_backtest_enabled() else handoff
     return {
         "handoff_version": 1, "run_id": run_id,
         "from_stage": "protocol_execution", "to_stage": "specialist_readers",

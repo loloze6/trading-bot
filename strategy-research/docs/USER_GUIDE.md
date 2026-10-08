@@ -1477,6 +1477,12 @@ feed that is not wired, one row per such feed in
      possible (a file named there counts as missing even if it is still on disk),
      and the readers run without that file: their handoff names it as missing and
      each reading's audit entry keeps it as `missing_inputs`.
+     Under `orchestrator.observable_backtest.enabled` (E-073, D-081; off by
+     default; requires `reader_findings`), every v3 reader also gets
+     [`docs/DATA_DICTIONARY.md`](DATA_DICTIONARY.md) (each field it reads: meaning,
+     unit, the code that writes it, known at the bar's close or only after the
+     fact) and one handoff line telling it to look a field up before citing it.
+     Off, the handoff and prompt are byte-identical.
    - **Skip rules (no model call):** `regime_power` when `block_manifest.yaml`
      lists `/regime_detector` as scaffolding or the base config's detector has no
      components and no rules; `component_attribution` when every graded variant

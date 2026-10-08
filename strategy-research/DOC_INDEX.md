@@ -45,6 +45,13 @@ What plan v26 delivered and what C4's two real runs showed:
 ### "What is this system / what does artifact X mean?"
 → **[`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)** — pipeline stage map, every artifact's
 field-by-field schema, skill goals, tools overview, glossary.
+For the run outputs the AI steps read (per-bar `bars.csv`, `trade_diagnostics.json`,
+the five category reports, `grid_evaluation.yaml`, `claim_result_digest.yaml`,
+`claim_measurement.yaml`): **[`docs/DATA_DICTIONARY.md`](docs/DATA_DICTIONARY.md)**
+(E-073 step 1) — each field's meaning, unit, the code that writes it
+(`file:line`), whether it is known at the bar's close or only after the fact,
+the audit findings against the engine, and what is not recorded. Kept honest by
+`tests/test_e073_data_dictionary.py`.
 
 ### "What does the trading-bot ENGINE currently do (config, data, forecast, risk, execution, artifacts, metrics)?"
 → **[`../trading-bot/DOC/USER_GUIDE.md`](../trading-bot/DOC/USER_GUIDE.md)** —

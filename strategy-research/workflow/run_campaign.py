@@ -3509,6 +3509,7 @@ def _flag_readers() -> dict:
         "verdict_routing_retired": orch._verdict_routing_retired_enabled,
         "composition_runs": orch._composition_runs_enabled,
         "variant_anti_adjacency_gate": orch._variant_anti_adjacency_gate_enabled,
+        "observable_backtest": orch._observable_backtest_enabled,  # E-073 (D-081)
         "forecast_size_probe": orch._forecast_size_probe_enabled,  # D-056
         "claim_tests": orch._claim_tests_enabled,  # E-068 slice 2
         "reader_findings": orch._reader_findings_enabled,  # E-068 slice 5 (D-073)

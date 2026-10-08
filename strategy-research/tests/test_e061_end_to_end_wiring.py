@@ -211,6 +211,8 @@ TARGET_FLAGS = {
     "score_provenance": False,
     # D-056: runs the real engine on real data; this harness feeds stub configs.
     "forecast_size_probe": False,
+    # E-073 (D-081): requires reader_findings, which is off here.
+    "observable_backtest": False,
     # E-068 slice 2: the stub cards carry no claim block.
     "claim_tests": False,
     # D-071 (CUL-399): off, so decide-next's picks stay `ready` as these scenarios expect.
