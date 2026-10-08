@@ -196,8 +196,36 @@ def test_discontinuous_second_capture_raises_fetch_gap_error(tmp_path):
 # (d) main() exits cleanly with a mocked exchange (no live fetch)
 # ---------------------------------------------------------------------------
 
+def _pin_tool_clock(monkeypatch, now: datetime.datetime) -> None:
+    """Freeze the "now" that cap.main() reads to compute its lookback window.
+
+    main() builds start = now - lookback_days (default 400). With a real clock
+    the fixed-date fixture ages out of that window (a date time-bomb: from about
+    2026-10-05 on, BASE + 48h sat before `start`, the fetch came back empty and
+    capture() raised KeyError: 'timestamp'). datetime.datetime itself is
+    immutable, so swap the tool module's `datetime` reference for a shim whose
+    datetime.now() is fixed; timedelta/UTC pass through unchanged.
+    """
+    class _FrozenDateTime(datetime.datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return now.replace(tzinfo=tz) if tz is not None else now
+
+    real_timedelta, real_utc = datetime.timedelta, datetime.UTC
+
+    class _Shim:
+        datetime = _FrozenDateTime
+        timedelta = real_timedelta
+        UTC = real_utc
+
+    monkeypatch.setattr(cap, "datetime", _Shim)
+
+
 def test_main_returns_zero_and_writes_cache(tmp_path, monkeypatch):
     records = _hourly_records(BASE, 48)
+    # Pin "now" two days after the fixture start so [now - 400d, now] always
+    # contains every record, whatever the real date is.
+    _pin_tool_clock(monkeypatch, BASE + datetime.timedelta(days=2))
 
     def fake_build(symbol, start, end, data_dir, exchange_id=cap.EXCHANGE_ID):
         fetcher = FundingRateFetcher(
