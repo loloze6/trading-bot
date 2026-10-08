@@ -692,7 +692,7 @@ the operator):
   - Consequence: a market claim must come with the strategy (vehicle) that exploits it, so
     that its own run can test it.
 
-### A1.10 The iterative plan (proposal v2, after Step 10; to be judged by a strong model)
+### A1.10 The iterative plan (proposal v2, after Step 10; Stage 1 superseded by A1.11)
 
 **Stage 1: both lenses, the smallest complete loop.**
 1. **Folds:**
@@ -748,3 +748,116 @@ Each stage ends with the operator's decision before the next begins.
 3. Does "every claim is confirmed by its own run" (no piggyback) hold up for market claims,
    whose vehicle must be a strategy exploiting them?
 4. What is missing or over-built, given the operator's preference for simplicity?
+
+### A1.11 The judgement of the iterative plan, and the final Stage 1 (2026-10-08)
+
+The full judgement (Fable, read-only, verified against the code) is in
+`roadmap/E-075/ITERATIVE_PLAN_JUDGEMENT.md`.
+
+**What it confirmed:**
+- **Cost has no place in whether an effect exists.** The cost floor and the "confirmed but
+  too small" grade are dropped.
+- **Combination is one record field,** `combines_as`, analyst-written from a closed list.
+  The combination logic is unchanged.
+- **Every claim is confirmed by its own run,** with no piggyback.
+- **The trade-level tests belong in Stage 1.**
+
+**What it added:**
+- **Three gaps that would block Stage 1:**
+  1. `CLAIM_KINDS` has no strategy kind (`tools/claim_card.py:50-54`): add
+     `execution_behaviour`;
+  2. E-072's `finding_route` still sends price-only claims in-run
+     (`tools/explore_confirm.py:694`): replace it with one `confirm_on_fold`;
+  3. the analyst's proposal must use the reader-proposal shape, so decide-next takes it
+     unchanged.
+- **Less to build:**
+  - the per-fold repeat gate is already the novelty key (`windows_sha256`,
+    `tools/novelty.py:186-207`): a test, not code;
+  - the grid tool is already E-075's `conditional_effect(by=...)`;
+  - the placebo arm is the largest piece of E-075's first slice and buys little under D4
+    plus folds.
+- **The folds are written as exact blocks.** SOL and UNI have almost no 2018-2021 bars, so
+  a fold needs at least 4 windows, otherwise "not measurable".
+- **A noise rule, labelled as such:**
+  - a null claim points the right way by luck about half the time (`test_sign` needs only
+    a positive oriented value per horizon, `explore_confirm.py:697-715`);
+  - so: confirmed only if the pooled sign holds at every horizon AND the claimed sign holds
+    in all but one window of the fold;
+  - that is about 11% by chance per fold, about 1% after two folds;
+  - it uses numbers every measurement already has (`claim_measure.py:185-189`, per-window
+    values `claim_tests.py:1042-1045`).
+
+**Step 11: the operator's answers (2026-10-08).**
+1. **Market claims.**
+   > "I was thinking B: a market claim will be transformed by the analyst's thinking into a
+   > strategy claim that requires a backtest after. Running the same strategy twice, I'm not
+   > sure I got the why. A block will be integrated into a strategy config, so it should be
+   > a claim about the strategy."
+   - Decided: **market observations stay inside the analyst's reasoning. Every output claim
+     is a strategy claim**, with the strategy change (the vehicle) that its own run
+     backtests.
+   - Accepted cost: if a strategy claim is refuted, the record cannot say alone whether the
+     market effect was wrong or was badly exploited. The claim keeps its market "why", and
+     the child run's trades let the next analyst see which.
+2. **Strength.**
+   > "I didn't say we should not record the claim's strength; I said we should not compare
+   > it to cost."
+   - Decided: the effect size and the per-window agreement are recorded for every claim,
+     never compared with costs. The noise rule is **all but one window**.
+3. **Placebo:** dropped from Stage 1.
+
+**Final Stage 1 (replaces A1.10's Stage 1):**
+1. **Folds:**
+   - `config/folds.yaml` with six exact blocks per fold (A = 2022-2023; B and C from
+     2018-2021, each with a block in every year);
+   - a child runs on the next fold its lineage has not used (replacing the deep copy at
+     `decide_next.py:2129-2131`);
+   - the fold is recorded on every run, claim and ledger row;
+   - no window in 2024-2025 or the holdout (the validation guard rides in this PR);
+   - the per-fold repeat gate is proven by a test.
+2. **The claim record:**
+   - one new kind, `execution_behaviour`;
+   - on the proposal envelope: `vehicle` (the strategy change: a config change or a
+     variant; required, since every claim is a strategy claim), `combines_as` (closed list,
+     analyst-written, checked by code) and `fold_observed`.
+3. **Confirmation by code, on the child run only:**
+   - the claim's tests are measured on the child's vehicle variant over the new fold, with
+     its base variant as the comparison where the claim compares;
+   - confirmed when the pooled sign holds at every horizon and the claimed sign holds in
+     all but one window (at least 4 windows);
+   - not confirmed otherwise; not measurable with no events or too few windows;
+   - the effect size and window agreement are recorded, with no cost anywhere;
+   - a changed spec is not comparable;
+   - every measurement is a ledger row with its fold;
+   - refuted and not-measurable claims are kept as knowledge.
+4. **Trade-level tests:**
+   - one family: a trade selector over a closed field list;
+   - outcomes: trade net return and post-exit return;
+   - baseline: the other trades;
+   - per-window values, and a lookahead test;
+   - exit causes from E-074's interim classifier now, E-029 later.
+5. **The analyst's tools:** E-075's six query functions on the run's own bars and trades,
+   with no placebo arm and no separate grid tool. `trailing_vol` is a field they read.
+6. **The skill, both lenses** (forecast, trade efficiency):
+   - **objective:** observe, dig in, end with one strategy claim or no claim;
+   - **claim:** statement, kind, evidence (query ids), why (the market or mechanical reason,
+     with the second query it predicted), the vehicle, the test in the slots, the
+     falsifier, `combines_as`;
+   - **no claim:** what was examined, and the best rejected candidate;
+   - the observation may read any column; the vehicle acts only on fields known at the
+     close or the fill;
+   - no profit or cost judgement by the analyst.
+7. **The memory view:** statement, kind, fold and status per earlier claim; numbers only for
+   confirmed claims.
+8. **Pilot:** both lenses on saved runs 065-074 (fold A), proposals through decide-next onto
+   fold B, graded by item 3. Process checks plus the operator's judgement (D4). No placebo.
+
+**PR order:**
+- 1, 2 and 3: one PR each;
+- then 4, with 7 riding along;
+- then 5 and 6 together;
+- then the pilot.
+
+The done-when of each PR is in the judgement file, section 4.
+
+Stages 2 and 3 are unchanged from A1.10.
