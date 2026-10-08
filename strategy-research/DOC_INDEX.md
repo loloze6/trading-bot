@@ -49,9 +49,12 @@ For the run outputs the AI steps read (per-bar `bars.csv`, `trade_diagnostics.js
 the five category reports, `grid_evaluation.yaml`, `claim_result_digest.yaml`,
 `claim_measurement.yaml`): **[`docs/DATA_DICTIONARY.md`](docs/DATA_DICTIONARY.md)**
 (E-073 step 1) — each field's meaning, unit, the code that writes it
-(`file:line`), whether it is known at the bar's close or only after the fact,
+(`KEY:symbol`), whether it is known at the bar's close or only after the fact,
 the audit findings against the engine, and what is not recorded. Kept honest by
-`tests/test_e073_data_dictionary.py`.
+`tests/test_e073_data_dictionary.py` (full field paths derived from the writers'
+code). The v3 readers get its generated subset,
+[`docs/DATA_DICTIONARY_READERS.md`](docs/DATA_DICTIONARY_READERS.md)
+(`tools/data_dictionary.py`; no `bars.csv` section, no per-trade labels).
 
 ### "What does the trading-bot ENGINE currently do (config, data, forecast, risk, execution, artifacts, metrics)?"
 → **[`../trading-bot/DOC/USER_GUIDE.md`](../trading-bot/DOC/USER_GUIDE.md)** —
