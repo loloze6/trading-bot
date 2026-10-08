@@ -1487,6 +1487,24 @@ feed that is not wired, one row per such feed in
      `tools/data_dictionary.py` (no `bars.csv` section and no per-trade labels:
      files the readers never receive); a test fails when it is not regenerated.
      Off, the handoff and prompt are byte-identical.
+     Step 2 (D-082), same flag: each `path=value` (or `path: value`) a v3 reading
+     cites in `evidence` is checked against the files that reader received
+     (under E-072 its exploration copies, never the all-window files). The path
+     must exist (rooted at a top-level key, a known root or the file's own name,
+     e.g. `grid_evaluation.grid.residual_ic.base.value`); a number matches when
+     it is the file's value rounded to the digits written (half a unit of the
+     last digit; `%` also matches the value x 100), text exactly. A missing or
+     mis-valued citation gets the reader's one retry, with a code-written list
+     (path, cited value, value in the file) and its own answer; still wrong,
+     the reading is kept and the citation recorded in
+     `artifacts/citation_checks/<category>.yaml`, and decide-next shows a
+     `citation_mismatch` warning on that side finding. Prose is not checked.
+     Side findings of one run whose tests have the same spec_hashes and the
+     same `config_change` are merged (`artifacts/side_finding_merges.yaml`):
+     one E-072 confirmation record and one look, listing every source; one
+     decide-next candidate with the first source's scores (`merged_sources`).
+     Readers share their inputs, so a merge is never agreement or extra
+     evidence.
    - **Skip rules (no model call):** `regime_power` when `block_manifest.yaml`
      lists `/regime_detector` as scaffolding or the base config's detector has no
      components and no rules; `component_attribution` when every graded variant
