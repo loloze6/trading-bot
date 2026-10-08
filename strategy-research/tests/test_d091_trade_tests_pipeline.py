@@ -446,14 +446,20 @@ def _analyst_guarded(tree):
         for child in ast.iter_child_nodes(node):
             parents[child] = node
 
+    def is_flag_call(t):
+        return (isinstance(t, ast.Call) and not t.args and not t.keywords
+                and (getattr(t.func, "id", "") == "_analyst_enabled"
+                     or getattr(t.func, "attr", "") == "_analyst_enabled"))
+
     def guarded(node):
-        while node in parents:
-            node = parents[node]
-            if isinstance(node, ast.IfExp) and any(
-                    isinstance(c, ast.Call) and (getattr(c.func, "id", "") == "_analyst_enabled"
-                                                 or getattr(c.func, "attr", "") == "_analyst_enabled")
-                    for c in ast.walk(node.test)):
+        # the node must sit in the BODY (the "if true" branch) of a conditional expression
+        # whose condition is exactly a call of _analyst_enabled() (review round 2 of #358)
+        child = node
+        while child in parents:
+            parent = parents[child]
+            if isinstance(parent, ast.IfExp) and parent.body is child and is_flag_call(parent.test):
                 return True
+            child = parent
         return False
     bad = []
     for node in ast.walk(tree):
@@ -480,3 +486,27 @@ def test_every_orchestrator_trade_tests_sits_behind_the_flag():
     # the guard is not vacuous: an unconditional keyword is reported
     assert _analyst_guarded(ast.parse("f(x, trade_tests=True)")) == ["trade_tests"]
     assert _analyst_guarded(ast.parse('f(**{"trade_tests": True})')) != []
+    for bypass in ('f(**({"trade_tests": True} if not _analyst_enabled() else {}))',
+                   'f(**({} if _analyst_enabled() else {"trade_tests": True}))',
+                   'f(**({"trade_tests": True} if _analyst_enabled() or x else {}))'):
+        assert _analyst_guarded(ast.parse(bypass)) != [], bypass
+    assert _analyst_guarded(ast.parse(
+        'f(**({"trade_tests": True} if orch._analyst_enabled() else {}))')) == []
+
+
+
+def test_two_coins_spelled_differently_keep_their_own_records(tmp_path):
+    """Review round 2 of #358: trade_diagnostics.json may write BTC/USD where
+    protocol_result.yaml writes BTCUSD; the coins are compared without punctuation."""
+    import claim_tests as ct
+    coins = ("BTCUSD", "ETHUSD")
+    root, child = _build_trades(tmp_path, _signs(6), symbols=coins)
+    _rename_trades(child, coins)
+    _diag(child, coins, {})
+    path = child / "variants" / "base" / "trade_diagnostics.json"
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    for r in doc["trades"]:
+        r["symbol"] = r["symbol"][:3] + "/" + r["symbol"][3:].lower()
+    path.write_text(json.dumps(doc), encoding="utf-8")
+    assert {tw.basis for tw in ct.load_variant_trade_windows(child, "base")} == {"all_costs"}
+    assert ct._coin_key("btc/usd") == ct._coin_key("BTCUSD") == "BTCUSD"
