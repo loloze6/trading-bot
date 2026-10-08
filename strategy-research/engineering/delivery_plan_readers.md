@@ -1,6 +1,8 @@
 # Delivery plan: readers that discover (E-072 to E-075)
 
-**Status:** approved by the operator on 2026-10-08 (D-079). It follows E-068, which closed on
+**Status:** approved by the operator on 2026-10-08 (D-079), then **amended by the operator's
+review the same day: see "Amendment 1" at the end. The amendment is a proposal, waiting for
+a review by a strong model before anything is built.** It follows E-068, which closed on
 2026-10-06 (`roadmap/E-068/CLOSE_OUT.md`, `delivery_plan_v26_continuation_2.md`). The epics
 are in Linear: E-072 (P-CUL-80), E-073 (P-CUL-81), E-074 (P-CUL-82) and E-075 (P-CUL-83).
 Each epic carries its own details and done-when criteria. This file records why the plan
@@ -118,4 +120,176 @@ growing pile of code written for one case at a time.
 component_attribution-run_071-1 and trade_efficiency-run_073-1 stay held until E-072 exists.
 Both came from readers that saw the 2022-23 results, so running them now would be
 in-sample. trade_efficiency-run_073-1 is also an old-format patch idea, which PR #336
-removed.
+removed. *(Amendment 1: under the new window standard, a held idea can run on blocks other
+than 2022-2023 rather than waiting for E-072's split.)*
+
+---
+
+## Amendment 1 (operator review, 2026-10-08): never test an idea where it was observed
+
+**Status: proposal, not built.** The operator reviewed what was built overnight (E-072, PR
+#340; E-073 steps 1-2; CUL-414; CUL-415; E-074 slice 1) and changed the design in a
+conversation. This section records the reasoning step by step (what we had, what we
+observed, what we decided), so that a reviewer can follow it and judge both the reasoning
+and the outcome. **Nothing in this amendment is built yet.**
+
+### A1.1 The path to this amendment
+
+**Step 1: what E-072 built (PR #340, merged, flag `explore_confirm`, off).**
+- Inside one run, the six windows are split in time order: 2022 = exploration, 2023 =
+  confirmation (`tools/explore_confirm.py::split_windows`).
+- Readers get reports rebuilt from the 2022 windows only (`build_reports.restrict_sources`).
+  Totals over all windows are withheld, and numbers in AI-written text are masked as
+  `<n>` (`mask_numbers`).
+- A reader's side finding is then routed (`finding_route`):
+  - a price-only claim is measured straight away on the 2023 bars, with the existing claim
+    measurement (statistics on bars.csv, not a backtest);
+  - a strategy-block claim is "pending" until the run built from it is backtested
+    (`resolve_pending`). That result is labelled "weak", because step 1a, which writes the
+    next run's card, still reads all-window results from the knowledge base.
+
+**Step 2: the operator's first question.** "Readers take the raw data and observe; what does
+'their ideas were tested on the same years' mean?"
+- Clarified:
+  - Readers do not get raw data. They read code-computed reports. The analyst (E-075, not
+    built) is the one that would query raw data.
+  - The problem was exactly the operator's reading: the next run was backtested on the same
+    windows where the idea was observed (run_070's readers → run_074, same six windows). So
+    "+0.054, 6/6 windows" was found where it was looked for.
+
+**Step 3: the operator's second question.** "Do readers code and re-measure? That would
+duplicate the backtest in a post-backtest analysis."
+- Clarified: readers only fill a fixed 4-slot test (selector / outcome / baseline /
+  statistic). The existing `claim_measure` computes one statistic on saved bars, with no
+  positions, trades or costs. So it answers "does the pattern exist in prices?", not "does a
+  strategy make money?". The latter always goes through the real engine in the next run.
+
+**Step 4: the operator's objection, which changed the design.**
+> "For a more complete claim, like 'the strategy in a trending regime seems to close the
+> order too early', it cannot be done straight after. I'm not convinced a cheap statistical
+> check is worth it. It should not be a claim in that way, but internal thinking of the
+> analyst that gives a claim at the end. It should never be mentioned here."
+
+Assessment (agreed):
+1. The product is a strategy, not a pattern. A pattern that holds says nothing about profit
+   after costs.
+2. Strategy-behaviour claims (exits, regimes) cannot be measured in-run anyway. Two routes,
+   one per claim type, add complexity for little value.
+3. The cheap check spends the only unseen data (2023) on patterns, leaving less for the
+   real test.
+4. Pattern checks belong in the analyst's reasoning (E-075 queries), not in the deliverable.
+5. Cost of the change: we lose a cheap filter before a run. The analyst's own queries, on
+   the data it reads, play that role, without touching unseen data.
+
+**Step 5: the operator's generalisation, which replaced the 2022/2023 split.**
+> "We are designing the engine on what is available right now. I would like it
+> standardised: test an idea observed on one window on a different window. Proposal: link
+> the idea to the protocol (its time windows) where it was observed, and make the run about
+> the idea use another protocol with separate windows. Or: randomly generated windows with
+> fixed characteristics (e.g. 6 separate windows, a minimum and a maximum length), picked
+> automatically from the available data. I don't want to over-engineer."
+
+Assessment (agreed):
+- **The general rule:** never test an idea on the windows where it was observed.
+- **Why it beats the in-run split:**
+  - readers can see everything about the run they read, so nothing needs hiding;
+  - step 1a's leak disappears (it is no longer about one run's 2023);
+  - masking, withheld totals and the "weak" label become unnecessary.
+- **Combined proposal**, the operator's two ideas made as simple as possible: fixed blocks,
+  then a seeded random draw (A1.3).
+
+**Step 6: the operator's question on the blocks.** "Is it pre-made?"
+- Today's state:
+  - nothing is pre-made;
+  - a run's brief gives start, end and window length;
+  - `_generate_monthly_windows` (`run_phase1_research.py`) cuts them into back-to-back
+    windows;
+  - `_assert_windows_clear_of_holdout` and the data-availability gate check them.
+- So three of the four steps below reuse existing code. Only the draw and the "observed on"
+  record are new.
+
+### A1.2 Before and after, per decision
+
+| # | Before (plan of 2026-10-08 morning, E-072 as built) | After (operator review) |
+|---|---|---|
+| 1 | A reader's side finding is measured or becomes a run | A reader proposal becomes a **candidate in the idea backlog**, ranked by decide-next like any other. It is a possible run, not an automatic one (decide-next already does this) |
+| 2 | Price-only claims get an in-run statistical check on the 2023 windows | **No in-run check.** Pattern checks are internal reasoning of the analyst, never a deliverable |
+| 3 | Side findings may be market observations (pure claims) | **A proposal must be a strategy change** (a setting, a block, an exit rule). Market observations stay in its explanation, as the "why" |
+| 4 | Inside a run: readers see 2022, confirmation on 2023 | **Every run records the windows its results came from. A run built from an idea uses windows the idea was not observed on** |
+| 5 | Step 1a's all-window view made follow-up confirmations "weak" | Moot: the test happens on other windows |
+| 6 | Windows fixed per brief (the same 2022-2023 windows since run_065) | **Windows drawn from a block calendar** (A1.3) |
+
+### A1.3 The proposed window standard
+
+1. **Calendar:** call `_generate_monthly_windows` once over the research period. For
+   example, 2018-01-01 → 2023-12-31 in 4-month blocks gives 18 blocks. It is deterministic
+   and nothing is stored by hand.
+2. **Usable blocks per coin and timeframe:** the existing coverage checks
+   (`data_availability_gate.py`, `variant_coin.window_coverage`) drop blocks without enough
+   data.
+3. **The draw (new):** take N blocks (e.g. 6) at random, with a seed recorded in the
+   protocol:
+   - excluding the blocks the idea was observed on;
+   - at most 2 per year, so a draw cannot sit in one market phase;
+   - never the sealed holdout, never the validation period (2024-2025, CLAUDE.fork.md data
+     splits).
+4. **Into the protocol:** the drawn blocks become the run's `windows`, where they are
+   written today. The backtest, reports and grid work unchanged.
+5. **"Observed on" (new):** each candidate in the backlog carries the windows of the run(s)
+   whose results produced it.
+
+### A1.4 Known limits
+
+- **Data runs out.** 18 blocks with 6 per run: one idea's line goes about 3 generations deep
+  before unseen blocks run out. More years and coins (E-066) push this back.
+- **Another coin is also unseen data.** An idea observed on BTC can be tested on ETH over
+  the same period, so a unit could be coin × block. That gives more room, but coins are
+  correlated, so it is weaker evidence.
+- **Comparisons are within the run.** A child run's numbers cannot be compared with its
+  parent's, because the windows differ. It is judged against its own base variant,
+  buy-and-hold and flat, as the grid does today.
+
+### A1.5 Impact on what was built and planned
+
+- **E-072 (merged, flag off):**
+  - the in-run split, masking and in-run confirmation are replaced by A1.3;
+  - proposed: keep the flag off and retire that code in a later cleanup PR;
+  - still useful: the confirmation ledger idea (counting looks), reused to count how often
+    each block has been used.
+- **E-073 (dictionary, citations, dedup): unaffected.** The citation check would compare
+  against the full reports, since nothing is hidden any more.
+- **CUL-414 and CUL-415: unaffected.**
+- **E-074 (digest):** computed on all of the run's windows, not on "exploration only". The
+  family-wise chance line stays: hundreds of cells still produce chance hits.
+- **E-075 (analyst):**
+  - its queries run on the run's own windows, as internal reasoning;
+  - its output is a strategy-change proposal into the backlog;
+  - **the pilot changes cost and shape:** confirming a strategy proposal now needs a
+    backtest on unseen blocks. For saved runs 065-074 (all 2022-2023), that means blocks
+    from 2018-2021. Backtests are local compute, not API cost, but each pilot session needs
+    one, so the pilot takes longer.
+
+### A1.6 Open questions for the reviewer
+
+1. **Scope of "observed".** Readers also read earlier runs' findings and the registry
+   summary, and step 1a reads the whole knowledge base. So an idea's author has seen
+   summaries of every earlier run's windows, not only its parent's.
+   - Should the excluded set be the idea's own lineage, or every window whose results
+     reached any AI step (campaign-wide)?
+   - Campaign-wide is stricter, but with 18 blocks it is used up in about 3 runs.
+   - Is there an honest middle (e.g. memory keeps verdicts and no per-window numbers), or
+     must we accept and record the exposure?
+2. **Block length and count.** 4-month blocks and 6 per run is today's shape. Shorter blocks
+   give more of them but each has fewer trades (the 100-trade floor). What is the right
+   trade-off, and should the draw ensure each block has enough bars for warm-up?
+3. **Random draw vs a fixed rotation** (e.g. a seeded shuffle of the calendar, taken in
+   order). Is randomness needed, or is a fixed rotation simpler and as honest?
+4. **Was dropping the in-run check right?** It was the only fast filter before spending a
+   run. Is the analyst's internal reasoning (its queries on the run it reads) a sufficient
+   replacement?
+5. **Retire E-072's code, or keep it as an option?**
+6. **What did we miss?** Is there a simpler standard that meets "never test where you
+   looked" without the data running out so fast?
+
+**Reviewer: please give your opinion on both the reasoning (steps 1-6) and the outcome
+(A1.2-A1.5), challenge it fairly, and propose changes.**
