@@ -1,8 +1,26 @@
 # Delivery plan: readers that discover (E-072 to E-075)
 
 **Status:** approved by the operator on 2026-10-08 (D-079), then **amended by the operator's
-review the same day: see "Amendment 1" at the end. The amendment is a proposal, waiting for
-a review by a strong model before anything is built.** It follows E-068, which closed on
+review the same day ("Amendment 1" at the end). A strong model reviewed the amendment and
+the operator took decisions on it (A1.7).** Sections above the amendment that it changes
+are marked *superseded*.
+
+> **The current design, in one paragraph (read this first).**
+> - **The goal** is a strategy that is profitable after costs on data it was not designed
+>   on, built by combining changes that each held up.
+> - **One or more analysts** (two to start: forecast and trade efficiency) replace today's
+>   five readers. Each reads one run's results and queries its raw bars and trades through
+>   fixed tools. It reasons about where the strategy makes and loses money and why, then
+>   proposes **one change to the strategy**.
+> - **A proposal is never confirmed inside the run that inspired it.** There is no in-run
+>   statistical check. Pattern checks are only the analyst's internal reasoning.
+> - **A proposal becomes a candidate in the idea backlog** (decide-next ranks it). If it is
+>   picked, it is confirmed only by a **real backtest on a fold of time windows its lineage
+>   has not used** (three fixed folds; a line ends after three).
+> - **After the folds** come validation (2024-2025, single-use) and then the holdout.
+> - **The analyst's instructions** are designed for that one purpose (A1.8).
+
+It follows E-068, which closed on
 2026-10-06 (`roadmap/E-068/CLOSE_OUT.md`, `delivery_plan_v26_continuation_2.md`). The epics
 are in Linear: E-072 (P-CUL-80), E-073 (P-CUL-81), E-074 (P-CUL-82) and E-075 (P-CUL-83).
 Each epic carries its own details and done-when criteria. This file records why the plan
@@ -13,6 +31,12 @@ looks the way it does.
 Find claims and observations that are **proven** and that lead to a **profitable strategy
 when combined**. The operator values logical observation and asking **why**, and wants no
 growing pile of code written for one case at a time.
+
+*Sharpened by Amendment 1:* what we look for are **strategy changes** whose effect holds up
+in a real backtest on data they were not observed on, and which combine into a strategy
+that is profitable after costs. "Proven" means confirmed on unseen folds, counted against
+the number of tries; it never means a statistic computed on the data where the idea was
+found.
 
 ## Where we started (facts, 2026-10-06/08)
 
@@ -56,6 +80,13 @@ growing pile of code written for one case at a time.
 
 ## The plan, in order
 
+> *Superseded in part by Amendment 1:*
+> - **items 1 and 3:** replaced, by the fold standard and by "no in-run check";
+> - **item 4:** the analyst replaces the readers, and the pilot is redesigned;
+> - **item 2:** kept, with its citation check reused for the analyst.
+>
+> The list is kept as the record of what was planned and built.
+
 1. **E-072: ideas are confirmed on data the proposer never saw** (first: a validity defect).
    - Exploration windows (e.g. 2022) and confirmation windows (e.g. 2023) are fixed in
      advance. Readers see exploration results only.
@@ -98,8 +129,9 @@ growing pile of code written for one case at a time.
     not independent.
 - **Deferred:** a fixed reasoning-question format for the readers. The reviewed list is
   kept in the reviews' conclusions above, for later.
-- **The honest bar:** with 3 exploration and 3 confirmation windows on 2 coins, "proven" is
-  not reachable. The achievable bar is "the sign held on unseen windows, counted against the
+- **The honest bar** *(superseded by Amendment 1: the bar is now "the change held in a real
+  backtest on unseen folds, counted against tries")*: with 3 exploration and 3 confirmation
+  windows on 2 coins, "proven" is not reachable. The achievable bar is "the sign held on unseen windows, counted against the
   number of looks". Proof needs more data (E-066).
 - **Flags:** one switch per epic. The old v2 readers are retired once v3 is the only path in
   use.
@@ -120,8 +152,9 @@ growing pile of code written for one case at a time.
 component_attribution-run_071-1 and trade_efficiency-run_073-1 stay held until E-072 exists.
 Both came from readers that saw the 2022-23 results, so running them now would be
 in-sample. trade_efficiency-run_073-1 is also an old-format patch idea, which PR #336
-removed. *(Amendment 1: under the new window standard, a held idea can run on blocks other
-than 2022-2023 rather than waiting for E-072's split.)*
+removed. *(Amendment 1: trade_efficiency-run_073-1 has since been marked `superseded`, so
+only component_attribution-run_071-1 is held. Under the fold standard (A1.7) it can run on
+fold B rather than waiting for E-072's split.)*
 
 ---
 
@@ -250,7 +283,8 @@ Assessment (agreed, with one nuance per epic):
 > with a separate objective in the design."
 
 Assessment (agreed):
-- **Start with two analysts: regime and forecast.** They share the same design (same
+- **Start with two analysts: regime and forecast** *(changed after the review to forecast and
+  trade efficiency, A1.7 decision D2)*. They share the same design (same
   tools, same output: one strategy-change proposal into the backlog). Only the objective
   differs, a short lens text, as today's reader lenses do.
 - **Why two:**
@@ -272,13 +306,21 @@ Assessment (agreed):
 | 3 | Side findings may be market observations (pure claims) | **A proposal must be a strategy change** (a setting, a block, an exit rule). Market observations stay in its explanation, as the "why" |
 | 4 | Inside a run: readers see 2022, confirmation on 2023 | **Every run records the windows its results came from. A run built from an idea uses windows the idea was not observed on** |
 | 5 | Step 1a's all-window view made follow-up confirmations "weak" | Moot: the test happens on other windows |
-| 6 | Windows fixed per brief (the same 2022-2023 windows since run_065) | **Windows drawn from a block calendar** (A1.3) |
+| 6 | Windows fixed per brief (the same 2022-2023 windows since run_065) | **Windows from three fixed folds** (A1.3 as amended by A1.7, decision D1; the random draw is parked) |
 | 7 | E-073: dictionary, then citation check + dedup for readers, then E-029/E-027 | **Dictionary, the output fixes (CUL-414..417), E-029/E-027.** Citation check (PR #346) held until the readers' fate is decided |
 | 8 | E-074: a code-built exploration digest given to the readers, with a chance-line gate | **Folded into E-075 as analyst tools.** `trailing_vol` kept; no digest wiring to readers; query counting kept as a record, not a gate |
 | 9 | E-075: a sixth reader (pilot), next to the five readers | **The analyst replaces the readers.** The pilot compares the analyst with today's readers, every proposal backtested on unseen blocks |
-| 10 | Five reader lenses, one closed-book call each | **Two analysts to start, regime and forecast:** same design, separate objective. A new lens is a new objective text, not new code |
+| 10 | Five reader lenses, one closed-book call each | **Two analysts to start, forecast and trade efficiency** (A1.7, decision D2; regime first proposed, but the regime lens has nothing to read while the detector is ungated): same design, separate objective. A new lens is a new objective text, not new code |
 
 ### A1.3 The proposed window standard
+
+> *Superseded by A1.7, decision D1:*
+> - **What changes:** the windows come from **three fixed folds** (`config/folds.yaml`), not
+>   from the random draw in step 3 below. A child runs on the next fold its lineage has not
+>   used, a config runs on a given fold only once, and a lineage ends after three folds.
+> - **What stays:** steps 1, 2, 4 and 5 (calendar, coverage, protocol, "observed on"). The
+>   end of the calendar is read from the data policy, with a test.
+> - **The random draw** is kept as a parked epic.
 
 1. **Calendar:** call `_generate_monthly_windows` once over the research period. For
    example, 2018-01-01 → 2023-12-31 in 4-month blocks gives 18 blocks. It is deterministic
@@ -311,7 +353,8 @@ Assessment (agreed):
 ### A1.5 Impact on what was built and planned
 
 - **E-072 (merged, flag off):**
-  - the in-run split, masking and in-run confirmation are replaced by A1.3;
+  - the in-run split, masking and in-run confirmation are replaced by the fold standard
+    (A1.3 as amended by A1.7, decision D1);
   - proposed: keep the flag off and retire that code in a later cleanup PR;
   - still useful: the confirmation ledger idea (counting looks), reused to count how often
     each block has been used.
@@ -363,3 +406,172 @@ Assessment (agreed):
 
 **Reviewer: please give your opinion on both the reasoning (steps 1-8) and the outcome
 (A1.2-A1.5), challenge it fairly, and propose changes.**
+
+### A1.7 The strong-model review (Fable, 2026-10-08) and the operator's decisions
+
+The review was read-only and verified against the code. Its main findings:
+
+**Facts it established (verified):**
+1. **The root cause sits in one function.** decide-next deep-copies the parent's
+   `machine_constraints` into the child's brief (`tools/decide_next.py:2129-2131`). That
+   copy is why every run since run_065 reuses 2022-2023, and it is the change site.
+2. **Window shopping.** The repeat gate is keyed on the windows (`tools/novelty.py:186-204`,
+   `windows_sha256`). With random draws, the same config could be re-run on new draws until
+   one looks good.
+3. **Memory holds pooled numbers.** It keeps pooled grid cells and idea_status per run, with
+   no per-window numbers (`reader_findings.py:299-324`). So "nothing needs hiding" holds for
+   a run's own windows, not for cross-run memory.
+4. **More data than stated.** Runs since 065 use Kraken. Kraken BTC/ETH/XRP/LTC/XMR/ZEC
+   cover 2018-2023 fully; SOL starts 2021-06 and UNI 2020-10. There are 18 four-month
+   blocks.
+5. **Nothing in code keeps a run out of 2024-2025** (the validation period). Only the
+   holdout is guarded (`run_phase1_research.py:10467-10508`).
+6. **The regime lens has nothing to read.** Every graded variant labels every bar `unknown`,
+   and run_074's regime reader was skipped by rule.
+7. **Trades per 4-month block:** about 1,500 at 1h (run_074), but only 70-87 at 1d
+   (run_065).
+8. **A child run costs about 36 backtests,** around 6 minutes of compute
+   (`decide_next.py:126-131`).
+
+**Verdicts on the reasoning:**
+- Steps 1, 3 and 6 are sound.
+- Step 2 is sound but missed the cause (fact 1).
+- Step 4 is partly sound. "Strategy-behaviour claims cannot be measured" is a recording gap
+  that E-029 closes. The better argument for dropping the cheap check is simplicity plus a
+  cheap child run, not "saving unseen data".
+- Step 5: the rule is right, but the random draw is the wrong mechanism, and two of the
+  three "why" bullets were overstated (fact 3).
+- Step 7 is mostly right. But holding #346 is wrong: its check is reused for the analyst's
+  citations of its query log. And "the analyst replaces the readers" was decided before the
+  pilot meant to inform it.
+- Step 8 is partly right. The regime lens has nothing to read (fact 6), and the proposed
+  "focus works" signal is not measurable (about 12 proposals per lens).
+
+**Its simplest design:**
+- **Three fixed folds:** A = 2022-2023 (consistent with history); B and C split 2018-2021,
+  2 blocks per year each.
+- **A child runs on the next fold its lineage has not used.**
+- **A config runs on a given fold only once.**
+- **A lineage ends after 3 folds,** then validation (2024-2025, single-use), then the
+  holdout.
+- **Every pooled number shown to an AI step carries its fold label.**
+- **Daily ideas confirm on other coins,** because daily blocks have too few trades.
+- In code: two functions change, and one YAML file (`config/folds.yaml`) is added.
+
+**Operator decisions (2026-10-08):**
+
+| # | Question | Decision |
+|---|---|---|
+| D1 | Random draw or fixed folds? | **Fixed folds** (the review's design). The random draw is kept as a **parked epic** |
+| D2 | First two analysts | **Forecast and trade efficiency** (not regime: fact 6). Regime returns once the detector is gated |
+| D3 | PR #346 (citation check) | **Merge it** (flag off). The operator merges |
+| D4 | Pilot rule: process gates plus the operator's judgement, no statistical go rule | **Accepted (option a).** About 12 proposals per lens is too few for a statistical rule. Pre-registered process checks, hold rates reported per fold as information, and the operator decides |
+| D5 | Validation period | **Add a single-use guard for 2024-2025** |
+
+**The adjusted order:**
+1. **Folds** (new epic): `config/folds.yaml` with a test; decide-next writes the child's
+   protocol from the next unused fold; the fold is recorded in the brief, memory and trial
+   row; the repeat gate works per (forecast_hash, fold). Then the fold label on every
+   pooled number.
+2. **E-073:** merge #345, #349, #346; then E-029 (reusing E-074's exit-cause classifier),
+   then E-027.
+3. **E-075, small:** tools (the E-074 grid as parameters, `trailing_vol`), then two lenses,
+   then the pilot. Proposals go through decide-next onto folds B and C.
+4. **The validation-period guard.**
+
+**Retired:**
+- E-072's split, masking and handoff (deleted when E-075's wiring lands; flag off until
+  then);
+- E-074 as a reader deliverable;
+- the random draw (parked);
+- the in-run confirmation.
+
+### A1.8 The analyst's instructions, designed for the goal (operator request, 2026-10-08)
+
+> Operator: "Make sure the plan has properly structured the analyst's instructions, so that
+> it is the best fit for the objective. Stepping back: the core objective of all our work
+> is to find a profitable strategy. Make sure the skill instructions are designed for the
+> analyst to find claims that fit and reach this purpose."
+
+This is the design of the analyst's skill (its SKILL text). The exact wording is written in
+E-075's wiring slice. It is then reviewed by a strong model and tried on two saved runs
+before the pilot.
+
+**1. The objective, the first line of the skill:**
+> "Propose the ONE change to this strategy most likely to raise its return after costs on
+> data it has not seen, and that one backtest can test."
+
+Everything below serves that sentence. A proposal that cannot move after-cost return, or
+that a backtest cannot test, is not a proposal.
+
+**2. The working method, in order.** This is the reviewed question list, used as a method,
+not as a form to fill in:
+1. **Where is the money made and lost?** Start from the profit breakdown of the run:
+   - gross edge per trade against cost per trade (the CUL-414 all-costs basis);
+   - P&L by exit cause, holding time, side, coin and window.
+
+   Name the biggest lever: cost drag, wrong-side exposure, early or late exits, or a
+   signal with no edge. Profit is the starting point, not a pattern found anywhere.
+2. **Observe** one thing along your lens that explains that lever, from a tool query.
+   Cite it to the query log.
+3. **Ask why:** a mechanism (who is on the other side, or why the effect should persist).
+   Check it with a second query that the mechanism predicts and a coincidence would not.
+4. **Rule out the simple rivals:**
+   - one coin or one window driving everything;
+   - costs;
+   - a data gap;
+   - the strategy's own mechanics (an effect in P&L with no matching effect in forecast vs
+     forward return).
+
+   Use the per-window, per-coin and per-variant slices.
+5. **Turn it into one strategy change** and predict its effect on the backtest: which metric
+   moves, in which direction, and roughly by how much. Write the **falsifier** (the
+   backtest result that would kill it) before any backtest.
+6. **Or stop.** If nothing survives steps 2-4, answer "no proposal" with the reason. That is
+   a valid, counted outcome, not a failure.
+
+**3. What makes a proposal good** (the order is the priority, all for profit):
+1. **It targets the biggest measured lever** from step 1.
+2. **It is cost-aware.** The predicted gain per trade is set against the cost model, and the
+   change prefers higher gross edge per trade or lower turnover. A change that cannot clear
+   the 2x-costs bar (D-038) even if it works is not proposed.
+3. **It can be built** from the component catalogue and existing settings. If a block is
+   missing, it goes to `component_requests.yaml`, not into an invented config.
+4. **It can be combined.** It says which existing block it complements (feeding E-071), and
+   is not a re-tune of the same signal.
+5. **It is new.** Memory shows what was tried, with fold-labelled outcomes. Repeating a
+   tried change, or nudging a parameter of it, is refused (the novelty gate, keyed per
+   fold).
+6. **It is falsifiable,** with the falsifier written in advance.
+
+**4. What the analyst receives:**
+- **the full run context:** strategy config, each variant's patch, coins, venue, timeframe,
+  fold windows, and the cost model;
+- **the data dictionary** (E-073);
+- **the tools:** about 6 fixed query functions, including E-074's grid as a parameterised
+  tool and `trailing_vol`;
+- **memory:** earlier tries and their fold-labelled outcomes;
+- **the component catalogue.**
+
+**5. Fixed, generic guard rails** (the same for every lens, nothing case-by-case):
+- no hindsight: features are known at the bar's close;
+- queries run only on the run it reads;
+- every query is logged and counted;
+- one proposal per session;
+- a cost cap per session;
+- no free code.
+
+**6. The two first lenses** (one objective text each; the rest of the skill is shared):
+- **Forecast:** "Where does the forecast fail to predict returns after costs: by horizon,
+  coin, time of day or volatility? What change to the signal or its use would fix the
+  biggest failure?"
+- **Trade efficiency:** "Where do entries and exits lose money: early or late exits,
+  churning, holding time, cost drag? What change to entry, exit, sizing or turnover would
+  fix the biggest loss?"
+
+**7. How we will know the instructions are good:**
+- before the pilot: a strong-model review of the SKILL text, plus a smoke run on two saved
+  runs;
+- in the pilot: the process checks (D4, option a), the share of "no proposal" answers, and
+  the share of proposals that clear the 2x-costs bar in their own backtest. The operator
+  decides.
