@@ -59,7 +59,11 @@ def _stub_tbot_python(monkeypatch):
 # ---------------------------------------------------------------------------
 
 def test_the_flag_reader():
-    on = {"orchestrator": {"analyst": {"enabled": True}, "folds": {"enabled": True}}}
+    # E-075 PR-5 (D-092): the analyst stage also needs the readers' stage and v3 readings,
+    # which bring their own prerequisites
+    on = {"orchestrator": {k: {"enabled": True} for k in (
+        "analyst", "folds", "specialist_readers", "reader_findings", "grid_evaluation",
+        "category_reports", "claim_tests", "config_direct_authoring")}}
     assert rpr._analyst_enabled({}) is False
     assert rpr._analyst_enabled(on) is True
     for bad in ("true", None, 1):
@@ -92,7 +96,7 @@ def test_every_claim_check_of_the_orchestrator_takes_the_keywords():
     names = {"check_claim", "side_finding_review", "reading_structure", "side_finding_merges"}
     calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call)
              and isinstance(n.func, ast.Attribute) and n.func.attr in names]
-    assert len(calls) == 9
+    assert len(calls) == 10                                  # E-075 PR-5: + the analyst's check
     for c in calls:
         star = [k.value for k in c.keywords if k.arg is None]
         assert any(isinstance(v, ast.Call) and getattr(v.func, "id", None) == "_claim_check_kw"

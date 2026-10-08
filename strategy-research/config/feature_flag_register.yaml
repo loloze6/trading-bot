@@ -765,7 +765,7 @@ flags:
     reader: run_phase1_research._analyst_enabled
     owner: Jeremy
     state: off_incomplete
-    blocked_on: "E-075 PR-5 (the analyst stage and its skill, CUL-423); then the operator's smoke session and pilot"
+    blocked_on: "the operator's smoke session and pilot (engineering/roadmap/E-075/PR5_RUNBOOK.md)"
     criterion: >
       Landed 2026-10-08 (E-075 PR-5a, CUL-424, D-091), the first part of the analyst's
       flag. Off: byte-identical. On: the trade-level claim-test family (D-086) reaches
@@ -775,7 +775,13 @@ flags:
       child run measures it (claim_measure.measure_variant trade_tests); fold
       confirmation checks and measures it on the child's trades
       (fold_confirm.measure_on_fold, pooled per window across coins as D-089). Tested by
-      tests/test_d091_trade_tests_pipeline.py.
+      tests/test_d091_trade_tests_pipeline.py. E-075 PR-5 (CUL-423, D-092) adds the
+      analyst stage: two lenses (forecast, trade_efficiency) replace the v3 readers, each a
+      session with only the six query tools behind a deny hook, its answer checked by code
+      (citations against its query log, the claim test was run, check_claim with trade
+      tests and folds, the reading checks); the other three categories are code-skipped
+      (replaced_by_analyst). Also requires specialist_readers and reader_findings. Tested
+      by tests/test_e075_pr5_analyst.py with a stubbed session.
 
   - name: folds
     kind: orchestrator_config

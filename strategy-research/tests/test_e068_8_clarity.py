@@ -94,7 +94,9 @@ def test_the_instruction_files_are_flag_on_only_inputs():
     skills = list(SKILLS.glob("*/SKILL.md")) + list(SKILLS.glob("readers/*/SKILL.md"))
     assert len(skills) > 10
     for skill in skills:
-        if skill.parent.name == "claim-revision":
+        # flag-on skills: claim-revision; analyst (E-075 PR-5, orchestrator.analyst.enabled,
+        # read only by tools/analyst_session.build_prompt)
+        if skill.parent.name in ("claim-revision", "analyst"):
             continue
         text = skill.read_text(encoding="utf-8")
         for name in ("CLAIM_TESTS", "READING_CONTRACT", "PREFILLED_CLAIM", "claim-revision"):

@@ -965,6 +965,21 @@ orchestrator:
       # step 1a's card and the side-finding merges accept it; the child run measures it
       # (claim_measure.measure_variant with trade_tests); fold confirmation checks it and
       # measures it on the child's trades (tools/fold_confirm.measure_on_fold).
+      # While true (PR-5, D-092; also REQUIRES orchestrator.specialist_readers.enabled and
+      # orchestrator.reader_findings.enabled): in the specialist_readers stage two analyst
+      # lenses replace the v3 readers -- `forecast` writes forecast_power.yaml and
+      # `trade_efficiency` writes trade_efficiency.yaml, each a session with only the six
+      # query tools (tools/analyst_queries.py, one log and 150 comparisons per lens), the
+      # memory view as its memory and the skill workflow_artifacts/skills/analyst/; its
+      # answer is checked by code (citations against the query log, the claim test was run,
+      # check_claim with trade tests and folds, the readers' own reading checks), one retry,
+      # then a code-written `skipped` reading. profitability, regime_power and
+      # component_attribution are code-skipped (rule replaced_by_analyst). Optional caps
+      # (defaults shown; the model defaults to the stage model):
+      #   model: claude-haiku-4-5
+      #   max_turns: 40
+      #   max_budget_usd: 1.5
+      #   timeout_minutes: 15
   folds:
     enabled: false
       # E-077 PR-1 (D-085). OFF BY DEFAULT, read by run_phase1_research._folds_enabled().
