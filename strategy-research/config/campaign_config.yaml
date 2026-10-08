@@ -971,10 +971,21 @@ orchestrator:
       #    goes on with the other candidates). A fold is "used" when any window
       #    of any lineage run overlaps any block of it (tools/research_folds.py),
       #    so runs 065-074 count as fold A without a special case.
-      #  * the protocol generator, and the launch pre-flight that mirrors it,
-      #    REFUSE any window overlapping the validation period (the data
-      #    policy's 2024-2025): no validation stage exists yet, so no run may
-      #    include it.
+      #    A candidate whose child has no data on the chosen fold (layer-1
+      #    coverage of its symbols and timeframe, the data-availability gate's
+      #    own precheck; no network) is INFEASIBLE with reason
+      #    fold_<X>_lacks_data -- it never skips ahead to another fold. Aux
+      #    feeds are not checked here (the gate reads them in layer 2 only).
+      #  * every place a protocol's windows are fixed or used REFUSES any window
+      #    overlapping the validation period (the data policy's 2024-2025): the
+      #    protocol generator, the launch pre-flight (generated AND pinned
+      #    protocols, and the protocol a run_context or last_escalation
+      #    resolves to), and tools/run_protocol.py, which every backtest passes
+      #    through (it reads this flag from this file). No validation stage
+      #    exists yet, so no run that goes through the orchestrator or
+      #    run_protocol.py may include it; only the future validation stage
+      #    may. (A by-hand backtest that bypasses run_protocol.py is outside
+      #    this guard.)
       #  * `fold` is recorded in run_context.yaml, the campaign memory entry
       #    and the trial rows of a run whose pre-registration carries one.
   operator_approval:

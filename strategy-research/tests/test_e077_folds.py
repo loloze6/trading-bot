@@ -728,3 +728,236 @@ def test_runs_are_treated_as_a_chain_decide_next_to_the_generator_end_to_end(san
     path = rpr._ensure_protocol_from_constraints(run_dir, "run_920", mc, folds_enabled=True)
     windows = json.loads(path.read_text(encoding="utf-8"))["windows"]
     assert nov._canonical_sha(windows) == rf.fold_windows_sha256(DOC, cand["fold_assignment"]["fold"])
+
+
+# ---------------------------------------------------------------------------
+# 7. review fixes (PR #351): the guard at every path, and a child's data on its fold
+# ---------------------------------------------------------------------------
+
+import run_protocol as rp  # noqa: E402
+from protocol_refusal import EXIT_NO_DATA_TOUCHED, stderr_declares_no_data_touched  # noqa: E402
+
+REAL_CAMPAIGN_CONFIG = SR_ROOT / "config" / "campaign_config.yaml"
+
+
+@pytest.fixture
+def folds_config(monkeypatch, tmp_path):
+    """tools/run_protocol.py reads the flag from research_folds.CAMPAIGN_CONFIG_PATH."""
+    def _set(value):
+        p = tmp_path / "campaign_config.yaml"
+        p.write_text(yaml.safe_dump({"orchestrator": {"folds": {"enabled": value}}}), encoding="utf-8")
+        monkeypatch.setattr(rf, "CAMPAIGN_CONFIG_PATH", p)
+        return p
+    return _set
+
+
+@pytest.fixture
+def run_protocol_main(monkeypatch, tmp_path):
+    """rp.main() on a protocol file (non-holdout) with run_backtest recorded; returns
+    (calls, out_dir, exit_code)."""
+    def _run(protocol_path):
+        calls = []
+        monkeypatch.setattr(rp, "run_backtest", lambda *a, **k: calls.append((a, k)))
+        monkeypatch.setattr(rp, "_RESULTS_ROOT", str(tmp_path / "results"))
+        config_path = tmp_path / "config.json"
+        config_path.write_text(json.dumps({"dummy": True}), encoding="utf-8")
+        out_dir = tmp_path / "out"
+        monkeypatch.setattr(sys, "argv", ["run_protocol.py", str(config_path), str(protocol_path),
+                                          "--out-dir", str(out_dir)])
+        code = None
+        try:
+            rp.main()
+        except SystemExit as exc:
+            code = exc.code
+        return calls, out_dir, code
+    return _run
+
+
+@pytest.mark.parametrize("name", ["baseline_v2.json", "baseline_v1.json"])
+def test_run_protocol_refuses_a_pinned_or_diagnostic_protocol_in_2024_under_the_flag(
+        name, folds_config, run_protocol_main, capsys):
+    """The choke point: baseline_v2 is what a queue entry pins; baseline_v1 is what a
+    replication_diagnostic resolves to. Both have every window in 2024."""
+    folds_config(True)
+    calls, out_dir, code = run_protocol_main(SR_ROOT / "protocols" / name)
+    err = capsys.readouterr().err
+    assert code == EXIT_NO_DATA_TOUCHED and stderr_declares_no_data_touched(err)
+    assert "overlaps the validation period 2024-01-01..2025-12-31" in err
+    assert "validation stage" in err and "does not exist yet" in err
+    assert calls == [] and not out_dir.exists()
+
+
+def test_run_protocol_without_the_flag_does_not_refuse_those_windows(folds_config, tmp_path, monkeypatch):
+    """Flag off: the guard returns before reading the policy or the protocol (a policy path that
+    does not exist proves it) -- as without this change."""
+    protocol = json.loads((SR_ROOT / "protocols" / "baseline_v2.json").read_text(encoding="utf-8"))
+    monkeypatch.setattr(rp, "_DATA_POLICY_PATH", tmp_path / "no" / "policy.yaml")
+    folds_config(False)
+    assert rp._refuse_validation_period_windows(protocol) is None
+    monkeypatch.setattr(rf, "CAMPAIGN_CONFIG_PATH", tmp_path / "no" / "campaign_config.yaml")
+    assert rp._refuse_validation_period_windows(protocol) is None      # no config file: off
+    assert rf.folds_flag_enabled(REAL_CAMPAIGN_CONFIG) is False        # shipped default
+
+
+def test_run_protocol_lets_a_research_period_protocol_through_under_the_flag(folds_config, monkeypatch):
+    folds_config(True)
+    monkeypatch.setattr(rp, "_DATA_POLICY_PATH", REAL_POLICY)
+    for fold in DOC["order"]:
+        assert rp._refuse_validation_period_windows({"windows": rf.fold_windows(DOC, fold)}) is None
+
+
+@pytest.mark.parametrize("bad", ["yes", None, 1])
+def test_a_non_bool_flag_or_an_unreadable_policy_refuses_at_run_protocol(
+        bad, folds_config, monkeypatch, tmp_path, capsys):
+    folds_config(bad)
+    with pytest.raises(SystemExit) as exc:
+        rp._refuse_validation_period_windows({"windows": rf.fold_windows(DOC, "A")})
+    assert exc.value.code == EXIT_NO_DATA_TOUCHED and "not a real boolean" in capsys.readouterr().err
+    folds_config(True)
+    monkeypatch.setattr(rp, "_DATA_POLICY_PATH", tmp_path / "no" / "policy.yaml")
+    with pytest.raises(SystemExit) as exc:
+        rp._refuse_validation_period_windows({"windows": rf.fold_windows(DOC, "A")})
+    assert exc.value.code == EXIT_NO_DATA_TOUCHED
+
+
+def test_the_shipped_config_flag_is_read_by_the_same_reader_as_the_orchestrator():
+    cfg = yaml.safe_load(REAL_CAMPAIGN_CONFIG.read_text(encoding="utf-8"))
+    assert rf.folds_flag_enabled(REAL_CAMPAIGN_CONFIG) == rpr._folds_enabled(cfg) is False
+
+
+def _pin(name):
+    """A real protocol file's windows in the sandbox ROOT/protocols, with a real (non-generic)
+    promotion block: the shipped baselines carry the abolished generic block, which the D-3
+    check refuses first -- a pin that passed it would otherwise be refused for another reason."""
+    (rpr.ROOT / "protocols").mkdir(parents=True, exist_ok=True)
+    doc = json.loads((SR_ROOT / "protocols" / name).read_text(encoding="utf-8"))
+    doc["promotion"] = copy.deepcopy(PROMOTION)
+    (rpr.ROOT / "protocols" / name).write_text(json.dumps(doc), encoding="utf-8")
+
+
+def test_the_preflight_refuses_a_pinned_baseline_v2_only_under_the_flag():
+    _pin("baseline_v2.json")
+    constraints = {"protocol_ref": "protocols/baseline_v2.json"}
+    refusal, regen = _preflight(constraints, "run_930", True)
+    assert regen is None and "protocol_ref='protocols/baseline_v2.json'" in refusal
+    assert "overlaps the validation period" in refusal
+    assert _preflight(constraints, "run_931", False) == (None, None)    # flag off: as today
+
+
+def test_the_preflight_refuses_a_replication_diagnostic_only_under_the_flag():
+    _pin("baseline_v1.json")
+    for name, expected in (("run_932", True), ("run_933", False)):
+        run_dir = _minimal_run(rpr.ROOT, name)
+        rpr.save_yaml(run_dir / "artifacts" / "run_context.yaml", {"run_type": "replication_diagnostic"})
+        refusal, _ = camp._protocol_preflight(run_dir, name, promotion_retired=False, folds_enabled=expected)
+        if expected:
+            assert refusal and "baseline_v1.json" in refusal and "overlaps the validation period" in refusal
+        else:
+            assert refusal is None
+
+
+def test_the_preflight_leaves_a_pinned_research_period_protocol_alone_under_the_flag():
+    (rpr.ROOT / "protocols").mkdir(parents=True, exist_ok=True)
+    _protocol_file(rpr.ROOT, "pin_fold_a.json", rf.fold_windows(DOC, "A"))
+    path = rpr.ROOT / "protocols" / "pin_fold_a.json"
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    doc["promotion"] = copy.deepcopy(PROMOTION)
+    path.write_text(json.dumps(doc), encoding="utf-8")
+    assert _preflight({"protocol_ref": "protocols/pin_fold_a.json"}, "run_934", True) == (None, None)
+
+
+def test_validation_overlap_in_reads_nothing_when_the_flag_is_off(tmp_path):
+    """The pinned file is not even opened with the flag off."""
+    assert camp._validation_overlap_in(tmp_path / "nope.json", False) is None
+    assert camp._validation_overlap_in(tmp_path / "nope.json", True) is None   # missing: others own it
+    assert camp._validation_overlap_in(tmp_path / "nope.json", lambda: False) is None
+
+
+# --- decide-next: the child must have data on its fold ---------------------
+
+import data_availability_gate as dag  # noqa: E402
+
+LAYER1 = {"venues": {"binance": {"spot": {
+    "timeframes": {"available": ["1h", "4h", "1d"]},
+    "symbols": {"earliest_ohlcv_utc": {"BTCUSDT": "2017-08-17T00:00:00Z",
+                                       "SOLUSDT": "2021-06-01T00:00:00Z"}}}}}}
+
+
+def _with_data(inputs, **kw):
+    inputs["folds"]["data"] = {"layer1": copy.deepcopy(LAYER1), "precheck": dag.layer1_price_precheck, **kw}
+    return inputs
+
+
+def _proto(symbols):
+    return {**GEN_PROTOCOL, "symbols": symbols}
+
+
+def test_a_coin_listed_after_the_folds_blocks_is_infeasible_with_the_reason():
+    """SOL starts 2021-06; its lineage used A, so the next fold is B (blocks in 2018-2021)."""
+    inputs, pid = _scenario("run_074", "ROOT", {"run_074": FOLD_A}, protocol=_proto(["SOLUSDT"]))
+    record = _decide(_with_data(inputs), "run_074")
+    cand = _cand(record, pid)
+    feas = cand["gates"]["feasibility"]
+    assert not cand["eligible"] and feas["result"] == "INFEASIBLE"
+    why = [r for r in feas["reasons"] if r.startswith("fold_B_lacks_data")]
+    assert len(why) == 1 and "SOLUSDT 2018-01" in why[0] and "+" in why[0]
+    # the lineage order holds: it did not skip ahead to C, and the campaign did not crash
+    assert cand["fold_assignment"]["fold"] == "B"
+    assert record["stop"]["reason"] == "no_eligible_candidate"
+
+
+def test_a_coin_with_full_coverage_is_runnable_on_the_fold():
+    inputs, pid = _scenario("run_074", "ROOT", {"run_074": FOLD_A}, protocol=_proto(["BTCUSDT"]))
+    cand = _cand(_decide(_with_data(inputs), "run_074"), pid)
+    assert cand["eligible"] and cand["gates"]["feasibility"]["result"] == "FEASIBLE"
+    assert cand["fold_assignment"]["fold"] == "B"
+
+
+def test_only_the_first_symbol_counts_under_the_variant_loop_and_all_symbols_otherwise():
+    protocol = _proto(["BTCUSDT", "SOLUSDT"])
+    inputs, pid = _scenario("run_074", "ROOT", {"run_074": FOLD_A}, protocol=protocol)
+    assert not _cand(_decide(_with_data(inputs), "run_074"), pid)["eligible"]
+    inputs, pid = _scenario("run_074", "ROOT", {"run_074": FOLD_A}, protocol=protocol)
+    assert _cand(_decide(_with_data(inputs, first_symbol_only=True), "run_074"), pid)["eligible"]
+    swapped = _proto(["SOLUSDT", "BTCUSDT"])           # the first symbol is the one that lacks data
+    inputs, pid = _scenario("run_074", "ROOT", {"run_074": FOLD_A}, protocol=swapped)
+    assert not _cand(_decide(_with_data(inputs, first_symbol_only=True), "run_074"), pid)["eligible"]
+
+
+def test_a_coin_listed_in_2021_is_not_blocked_on_fold_a():
+    """Fold A is 2022-2023: SOL exists for all of it (a first-generation child of an unfolded line)."""
+    inputs, pid = _scenario("run_074", "ROOT", {"run_074": [("2024-06-01", "2024-06-30")]},
+                            protocol=_proto(["SOLUSDT"]))
+    cand = _cand(_decide(_with_data(inputs), "run_074"), pid)
+    assert cand["fold_assignment"]["fold"] == "A" and cand["eligible"]
+
+
+def test_the_data_check_never_raises_and_is_off_without_a_context():
+    inputs, pid = _scenario("run_074", "ROOT", {"run_074": FOLD_A}, protocol=_proto(["SOLUSDT"]))
+    cand = _cand(_decide(inputs, "run_074"), pid)           # no "data" key: as before this fix
+    assert cand["eligible"]
+    bad = _with_data(_scenario("run_074", "ROOT", {"run_074": FOLD_A}, protocol=_proto(["SOLUSDT"]))[0])
+    bad["folds"]["data"]["precheck"] = lambda *a, **k: 1 / 0
+    reasons = _cand(_decide(bad, "run_074"), pid)["gates"]["feasibility"]["reasons"]
+    assert any(r.startswith("fold_B_lacks_data") and "cannot be judged" in r for r in reasons)
+
+
+def test_load_inputs_carries_the_fold_data_context_only_when_given(tmp_path):
+    (tmp_path / "campaign_record").mkdir()
+    mem = {"schema_version": cm.SCHEMA_VERSION, "legacy_note": "x", "runs": {}}
+    (tmp_path / "campaign_record" / "campaign_memory.yaml").write_text(yaml.safe_dump(mem), encoding="utf-8")
+    ctx = {"layer1": LAYER1, "precheck": dag.layer1_price_precheck, "first_symbol_only": False}
+    assert dn.load_inputs(tmp_path, {"queue": []}, categories=t59.CATS, folds=DOC)["folds"]["data"] is None
+    on = dn.load_inputs(tmp_path, {"queue": []}, categories=t59.CATS, folds=DOC, fold_data=ctx)
+    assert on["folds"]["data"] is ctx
+
+
+def test_the_orchestrators_fold_data_context_is_the_gates_own_precheck():
+    with pytest.raises(RuntimeError, match="venue_data_capability.yaml is missing"):
+        rpr._fold_data_context()                       # fail loud, never "no data check"
+    (rpr.ROOT / "config").mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(SR_ROOT / "config" / "venue_data_capability.yaml",
+                    rpr.ROOT / "config" / "venue_data_capability.yaml")
+    ctx = rpr._fold_data_context()
+    assert ctx["precheck"] is dag.layer1_price_precheck and "venues" in ctx["layer1"]
+    assert isinstance(ctx["first_symbol_only"], bool)

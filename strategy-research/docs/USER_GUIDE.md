@@ -3313,10 +3313,20 @@ windows, and `fold` is recorded in `run_context.yaml`, the memory entry and the
 trial rows. A lineage that used all three, or whose runs' windows cannot be
 read, makes the candidate INFEASIBLE with a reason in the decision record
 (`candidates[].fold_assignment` shows the lineage and the folds each run used);
-the campaign carries on with the other candidates. The same flag makes the
-protocol generator and the launch pre-flight refuse any window overlapping the
-validation period (the data policy's 2024-2025): no validation stage exists
-yet. A config runs once per fold: the repeat gate's key already holds the
+the campaign carries on with the other candidates. A candidate whose child has
+no data on the chosen fold (the data-availability gate's layer-1 precheck, no
+network, on the child's symbols and timeframe; a coin listed after the fold's
+blocks start) is INFEASIBLE with `fold_<X>_lacks_data: <coin> <window>: ...`; it
+does not skip to another fold, so the lineage order holds. Aux feeds are checked
+only by the gate itself, later. The same flag makes the protocol generator, the
+launch pre-flight (generated and pinned protocols, and the protocol a
+run_context or last_escalation resolves to) and `tools/run_protocol.py` (which
+every backtest passes through) refuse any window overlapping the validation
+period (the data policy's 2024-2025): no validation stage exists yet. Lineage
+reads each run's protocol file; `protocols/run_0xx_generated.json` are untracked
+runtime files, so on a machine without them every reader candidate is
+`fold_lineage_unreadable` (the safe direction: infeasible, never a guessed fold).
+A config runs once per fold: the repeat gate's key already holds the
 windows fingerprint. Daily-timeframe ideas have too few trades per block and
 will need confirmation on other coins (not built yet).
 

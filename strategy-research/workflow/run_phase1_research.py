@@ -4201,9 +4201,12 @@ def _folds_enabled(cfg: dict | None = None) -> bool:
         4-month blocks; A, then B, then C), writes `fold` into the child's
         machine_constraints.protocol, and refuses (INFEASIBLE, with a reason) a
         candidate whose lineage has used all three;
-      * the protocol generator refuses any window overlapping the validation
-        period (the data policy's 2024-2025), because no validation stage exists
-        yet -- see tools/research_folds.assert_windows_clear_of_validation;
+      * any window overlapping the validation period (the data policy's
+        2024-2025) is refused -- by the protocol generator, the launch pre-flight
+        (generated and pinned protocols alike) and tools/run_protocol.py, which
+        every backtest passes through (it reads this flag from the config file) --
+        because no validation stage exists yet; see
+        tools/research_folds.assert_windows_clear_of_validation;
       * `fold` is recorded in run_context.yaml, the campaign memory entry and
         the trial rows of a run whose pre-registration carries one."""
     cfg = _orchestrator_config(cfg)
@@ -10982,7 +10985,9 @@ def _protocol_windows_from_constraints(proto_constraint: dict, start: str, end: 
     six blocks from config/folds.yaml, validated against the data policy
     (research period only). The validation-period guard is NOT here: it runs
     after the G7 check, so the flag-off generator's I/O and failure order stay
-    master's (`_enforce_validation_guard`)."""
+    master's (`_enforce_validation_guard`). That guard covers GENERATED protocols
+    only; pinned and resolved ones are covered by run_campaign's pre-flight and, for
+    every protocol, by tools/run_protocol.py."""
     fold = proto_constraint.get("fold")
     if fold is None:
         windows = _generate_monthly_windows(
@@ -18508,6 +18513,22 @@ def _variant_coin_context(run_dir: Path, run_id: str, *, source: dict | None = N
     return {"source": source, "universe": universe, "layer1": layer1,
             "precheck": _dag.layer1_price_precheck,
             "era_of": lambda ts: _pres.era_id_for_timestamp(ts, eras)}
+
+
+def _fold_data_context() -> dict:
+    """E-077 PR-1 review fix (D-085): what decide-next's fold data check needs
+    (tools/decide_next._fold_data_reason): the Layer-1 venue audit and its precheck
+    (data_availability_gate.layer1_price_precheck -- the same function the data gate and
+    5a's per-coin check use; no network, no market data), and whether the base is backtested
+    on the protocol's first symbol only (the variant loop). A missing audit file raises:
+    the check cannot honestly run without it."""
+    path = ROOT / "config" / "venue_data_capability.yaml"
+    if not path.exists():
+        raise RuntimeError(f"[E-077] config/venue_data_capability.yaml is missing -- decide-next "
+                           f"cannot check that a child has data on its fold without it.")
+    import data_availability_gate as _dag  # tools/ sibling: the Layer-1 precheck
+    return {"layer1": load_yaml(path) or {}, "precheck": _dag.layer1_price_precheck,
+            "first_symbol_only": bool(_variant_loop_enabled())}
 
 
 def _split_json_pointer(path: str) -> list:

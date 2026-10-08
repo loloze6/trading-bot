@@ -18,8 +18,14 @@ block must stay out of are read from config/campaign_data_policy.yaml
   * research  = backward_extension.BTCUSDT_1h, which must end the day before
                 validation starts (checked: a gap or an overlap raises).
 `load_folds` refuses a block outside the research period or inside either
-range; the generator's validation guard (`assert_windows_clear_of_validation`)
-reads the same validation range.
+range; the validation guard (`assert_windows_clear_of_validation`) reads the
+same validation range. Under orchestrator.folds.enabled the guard runs at every
+place a protocol's windows are fixed or used: the protocol generator, the launch
+pre-flight (generated, pinned and run_context-resolved protocols alike), and
+tools/run_protocol.py itself, which every backtest goes through -- so a pinned
+file such as protocols/baseline_v2.json, a replication_diagnostic run
+(baseline_v1.json) and a last_escalation protocol are refused too, not only
+generated ones.
 
 Lineage and "which fold has a run used"
 ---------------------------------------
@@ -317,7 +323,8 @@ def assert_windows_clear_of_validation(windows: list, validation_range) -> None:
 
     No validation stage exists yet, so under orchestrator.folds.enabled this refuses
     ALWAYS: the 2024-2025 bars are single-use and only the future validation stage
-    may read them. `end` is inclusive by day at the engine (D-058), so a window ending
+    may read them. Enforced by the callers listed in the module docstring; this
+    function is the one check they all share (and the one message). `end` is inclusive by day at the engine (D-058), so a window ending
     on a validation day spends that day. Raises, never clamps (a silently trimmed sweep
     no longer matches what was pre-registered)."""
     v_start, v_end = validation_range
@@ -331,6 +338,30 @@ def assert_windows_clear_of_validation(windows: list, validation_range) -> None:
                 f"validation stage may read it, and that stage does not exist yet, so under "
                 f"orchestrator.folds.enabled no run may include it. Use a fold from "
                 f"config/folds.yaml (research period only), or turn the flag off.")
+
+
+#: config/campaign_config.yaml, where orchestrator.folds.enabled lives.
+CAMPAIGN_CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "campaign_config.yaml"
+
+
+def folds_flag_enabled(config_path=None) -> bool:
+    """orchestrator.folds.enabled read straight from the config file, for the one caller
+    that cannot import the orchestrator (tools/run_protocol.py -- a standalone tool every
+    backtest passes through). Same reading as run_phase1_research._folds_enabled: False
+    when the file, the section or the key is absent; a non-bool value raises FoldsError."""
+    path = Path(config_path) if config_path is not None else CAMPAIGN_CONFIG_PATH
+    if not path.exists():
+        return False
+    try:
+        cfg = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except (OSError, UnicodeDecodeError, yaml.YAMLError) as exc:
+        raise FoldsError(f"{path} cannot be read ({type(exc).__name__}: {exc})") from exc
+    folds_cfg = ((cfg.get("orchestrator") or {}).get("folds") or {}) if isinstance(cfg, dict) else {}
+    value = folds_cfg.get("enabled", False)
+    if not isinstance(value, bool):
+        raise FoldsError(f"orchestrator.folds.enabled={value!r} is not a real boolean "
+                         f"(got {type(value).__name__})")
+    return value
 
 
 def load_validation_range(policy_path=None) -> tuple:

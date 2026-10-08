@@ -778,10 +778,13 @@ flags:
       blocks, so runs 065-074 are fold A); a lineage that used all three is
       INFEASIBLE (folds_exhausted), never a crash; `fold` is written into the
       child's machine_constraints.protocol, run_context.yaml, the memory entry
-      and the trial rows; (2) the protocol generator and the launch pre-flight
-      refuse any window overlapping the validation period (the policy's
-      2024-2025; no validation stage exists yet). Tested by
-      tests/test_e077_folds.py.
+      and the trial rows; a candidate whose child has no layer-1 data on the
+      chosen fold is INFEASIBLE (fold_<X>_lacks_data); (2) the protocol
+      generator, the launch pre-flight (generated and pinned protocols, and the
+      run_context / last_escalation protocol) and tools/run_protocol.py, which
+      every backtest passes through, refuse any window overlapping the
+      validation period (the policy's 2024-2025; no validation stage exists
+      yet). Tested by tests/test_e077_folds.py.
 
   - name: operator_approval
     kind: orchestrator_config

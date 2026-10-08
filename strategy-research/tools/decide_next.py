@@ -985,7 +985,7 @@ def requests_count(doc) -> int:
 
 def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None,
                 digest=None, composition_runs: bool = False, dsr_basis: dict | None = None,
-                feed_set=None, folds: dict | None = None) -> dict:
+                feed_set=None, folds: dict | None = None, fold_data: dict | None = None) -> dict:
     """Everything decide() reads, from disk under `root` (strategy-research/).
     `queue` is the caller's in-memory queue document (after its own write).
     `known_classes` is the known component class set (known_component_classes)
@@ -1005,7 +1005,10 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
     under orchestrator.folds.enabled): the validated folds document. Then every
     memory run's protocol windows are read (inputs["folds"]["run_ranges"]) so a
     candidate's child can be given the next fold its lineage has not used. None:
-    no such key, nothing more is read, and every candidate is as before."""
+    no such key, nothing more is read, and every candidate is as before.
+    `fold_data` (with `folds`; run_phase1_research._fold_data_context): {layer1, precheck,
+    first_symbol_only} -- what `_fold_data_reason` needs to refuse a child that has no data on
+    its fold. None: that check is skipped."""
     root = Path(root)
     mem_path = root / "campaign_record" / "campaign_memory.yaml"
     memory = _cm.load_memory(mem_path)
@@ -1086,7 +1089,8 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
         "data_requests_count": _count("data_requests.yaml"),
     }
     if folds is not None:
-        out["folds"] = {"doc": copy.deepcopy(folds), "run_ranges": _memory_run_ranges(root, memory)}
+        out["folds"] = {"doc": copy.deepcopy(folds), "run_ranges": _memory_run_ranges(root, memory),
+                        "data": fold_data}
     if composition_runs:
         # E-060 S3b (7.5 + review fix 6): only under the flag -- a composition
         # run's manifest and the check its reader patches must pass. Flag off,
@@ -1566,7 +1570,7 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
     # E-077 PR-1 (D-085): only under orchestrator.folds.enabled (inputs["folds"]).
     fold_assignment = None
     if inputs.get("folds") is not None:
-        fold_assignment = _fold_assignment_for(run_id, pre_reg, inputs)
+        fold_assignment = _fold_assignment_for(run_id, pre_reg, inputs, src.get("research_brief"))
         if fold_assignment["reason"]:
             reasons.append(fold_assignment["reason"])
     fold_sha = (fold_assignment or {}).get("windows_sha256")
@@ -1768,11 +1772,14 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
     return cand
 
 
-def _fold_assignment_for(run_id: str, pre_reg: dict, inputs: dict) -> dict:
+def _fold_assignment_for(run_id: str, pre_reg: dict, inputs: dict, brief=None) -> dict:
     """E-077 PR-1 (D-085): research_folds.assign_fold for a child of `run_id`, plus the
-    one extra refusal that needs the source's pre-registration: a source that PINS a
+    two extra refusals that need the source's pre-registration: a source that PINS a
     protocol file (machine_constraints.protocol_ref) has no generated `protocol` block
-    to put the fold's windows in, so its child cannot take a fold."""
+    to put the fold's windows in, so its child cannot take a fold; and a child that has
+    no data on the chosen fold (`_fold_data_reason`) -- INFEASIBLE with
+    `fold_<X>_lacks_data`, the fold stays the one the lineage order gave (no skipping
+    ahead to a fold the data would fit)."""
     f = inputs["folds"]
     result = _folds.assign_fold(f["doc"], run_id=run_id,
                                 memory_runs=(inputs["memory"].get("runs") or {}),
@@ -1784,7 +1791,58 @@ def _fold_assignment_for(run_id: str, pre_reg: dict, inputs: dict) -> dict:
             "fold_needs_generated_protocol: the source pins a protocol file "
             "(machine_constraints.protocol_ref); a fold's windows can only be written into a "
             "generated machine_constraints.protocol block"))
+    if result["reason"] is None and result["fold"] is not None:
+        why = _fold_data_reason(result["fold"], mc.get("protocol"), brief, inputs)
+        if why:
+            result["reason"] = why
     return result
+
+
+def _fold_data_reason(fold: str, protocol, brief, inputs: dict) -> str | None:
+    """E-077 PR-1 review fix (D-085): why the child would have no data on `fold`, else None.
+
+    Without it a fold the child's coin did not exist on (SOL lists 2021-06; fold B has
+    blocks in 2018-2020) is assigned, the data-availability gate then declines the
+    base, and under the variant loop the run is wasted. This is the gate's own layer-1
+    coverage check -- variant_coin.window_coverage over data_availability_gate.layer1_price_precheck
+    plus the listing rule (a window counts only when the coin exists for all of it) -- run
+    on the fold's blocks for the child's symbols and timeframe, with the venue the
+    brief maps to (tools/venue_resolver). Zero network, no market data. It is the
+    base's pass/fail: the gate validates the base only when every window passes.
+    NOT checked: aux feeds (the gate reads those in layer 2 only: cache/fetch). Skipped
+    (None) when the caller supplied no `inputs["folds"]["data"]` (the production caller
+    always does, run_phase1_research._fold_data_context). Never raises: an input that
+    cannot be judged is a reason, not a crash."""
+    ctx = inputs["folds"].get("data")
+    if ctx is None or not isinstance(protocol, dict):
+        return None
+    prefix = f"fold_{fold}_lacks_data"
+    try:
+        import venue_resolver as _venue
+        import variant_coin as _vc
+        symbols = list(protocol.get("symbols") or [])
+        exchange = "binance"
+        keys = _venue.protocol_keys(brief if isinstance(brief, dict) else {}, symbols,
+                                    layer1=ctx["layer1"])
+        if keys:
+            symbols, exchange = list(keys["symbols"]), keys["exchange"]
+        if ctx.get("first_symbol_only"):
+            symbols = symbols[:1]  # the variant loop backtests the base on symbols[0] only
+        windows = _folds.fold_windows(inputs["folds"]["doc"], fold)
+        lacking = []
+        for symbol in symbols:
+            cov = _vc.window_coverage(
+                {"windows": windows, "timeframe": protocol.get("timeframe", "1h")},
+                exchange=exchange, symbol=symbol, layer1=ctx["layer1"],
+                precheck=ctx["precheck"], era_of=lambda ts: "era_unmapped")
+            lacking += [f"{symbol} {u['label']}: {u['reason']}" for u in cov["uncovered"]]
+    except Exception as e:  # noqa: BLE001 -- a reason, never a crash
+        return f"{prefix}: the child's coverage of fold {fold} cannot be judged ({type(e).__name__}: {e})"
+    if not lacking:
+        return None
+    more = f" (+{len(lacking) - 3} more)" if len(lacking) > 3 else ""
+    return (f"{prefix}: the child's base would not pass the data-availability gate on fold "
+            f"{fold} -- {'; '.join(lacking[:3])}{more}")
 
 
 def side_finding_start(p: dict, src: dict) -> dict:

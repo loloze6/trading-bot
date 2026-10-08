@@ -3719,6 +3719,30 @@ def _windows_overlap_in(path: Path) -> str | None:
     return holdout_policy.windows_overlap(doc.get("windows")) if isinstance(doc, dict) else None
 
 
+def _validation_overlap_in(path: Path, folds_enabled) -> str | None:
+    """E-077 PR-1 (D-085): under orchestrator.folds.enabled, the refusal for the
+    protocol FILE at `path` when a window overlaps the validation period (same check and
+    message as the generator's; tools/run_protocol.py refuses it again at the choke point).
+    None when the flag is off (the file is not even read), or when the file is missing,
+    unreadable or has no usable windows (other checks own those)."""
+    if not (folds_enabled() if callable(folds_enabled) else folds_enabled):
+        return None
+    try:
+        doc = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    windows = doc.get("windows") if isinstance(doc, dict) else None
+    if not isinstance(windows, list):
+        return None
+    try:
+        orch._assert_windows_clear_of_validation(windows)
+    except research_folds.ValidationBoundaryBreach as e:
+        return str(e)
+    except (KeyError, TypeError, AttributeError):
+        return None  # malformed windows: run_protocol's own pre-flight refuses them
+    return None
+
+
 def _generated_protocol_plan(run_dir: Path, run_id: str, generated: dict, state: dict, *,
                              promotion_retired: bool, folds_enabled: bool = False) -> tuple:
     """(refusal, regeneration) for a machine_constraints.protocol run.
@@ -3865,6 +3889,9 @@ def _protocol_preflight(run_dir: Path, run_id: str, *, promotion_retired: bool,
         if overlap:
             return (f"machine_constraints.protocol_ref={ref!r}: {overlap} run_protocol refuses "
                     f"it (CUL-369) -- pin a protocol whose windows are day-disjoint"), None
+        invalid = _validation_overlap_in(path, folds_enabled)  # E-077 PR-1 (D-085)
+        if invalid:
+            return (f"machine_constraints.protocol_ref={ref!r}: {invalid}"), None
         return None, None
     run_ctx = run_dir / "artifacts" / "run_context.yaml"
     campaign = orch.load_campaign_state()
@@ -3888,6 +3915,11 @@ def _protocol_preflight(run_dir: Path, run_id: str, *, promotion_retired: bool,
     if overlap:
         return (f"the protocol resolved from {source} ({resolved.name}): {overlap} "
                 f"run_protocol refuses it (CUL-369)"), None
+    invalid = _validation_overlap_in(  # E-077 PR-1 (D-085): replication_diagnostic, last_escalation, ...
+        resolved if resolved.is_absolute() or resolved.exists() else orch.ROOT / resolved,
+        folds_enabled)
+    if invalid:
+        return f"the protocol resolved from {source} ({resolved.name}): {invalid}", None
     return None, None
 
 
@@ -4694,13 +4726,14 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
     folds_doc = (research_folds.load_folds(ROOT / "config" / "folds.yaml",
                                            policy_path=orch._DATA_POLICY_PATH)
                  if orch._folds_enabled() else None)
+    fold_data = orch._fold_data_context() if folds_doc is not None else None  # E-077 review fix
 
     def _decide():
         inputs = dn.load_inputs(
             ROOT, final_queue, categories=orch._reader_categories(), known_classes=known,
             digest=digest, feed_set=feeds,
             **({"composition_runs": True, "dsr_basis": _ledger_dsr_basis()} if comp_on else {}),
-            **({"folds": folds_doc} if folds_doc is not None else {}))
+            **({"folds": folds_doc, "fold_data": fold_data} if folds_doc is not None else {}))
         mem_entry = (inputs["memory"].get("runs") or {}).get(run_id) or {}
         trigger = {"after_run": run_id, "after_entry": entry["id"],
                    "idea_status": mem_entry.get("idea_status")}
