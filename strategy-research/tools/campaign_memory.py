@@ -48,6 +48,7 @@ from pathlib import Path
 import yaml
 
 import campaign_lock  # tools/ sibling: the E-011 O_EXCL lock file (pid/age staleness)
+import research_folds as _folds  # tools/ sibling: E-077 PR-1 (D-085), the fold a run was pre-registered on
 from workflow_artifact_validation import validate_workflow_artifact
 
 SCHEMA_VERSION = 1
@@ -719,6 +720,12 @@ def build_memory_entry(run_dir: Path, run_id: str, *, trial_sharpes, categories,
         # Filled by the stage from tools/grid_kb_writer.py (E-058 S2b).
         "kb_entry_id": None,
     }
+    # E-077 PR-1 (D-085): the fold the run was pre-registered on (decide-next under
+    # orchestrator.folds.enabled). Absent -- not null -- for every other run, so
+    # their entries are byte-identical to before.
+    fold = _folds.fold_of_run_dir(run_dir)
+    if fold is not None:
+        entry["fold"] = fold
     retired = _find_retired(entry)
     if retired:
         raise CampaignMemoryError(f"memory entry for {run_id} carries retired field(s) {retired}")

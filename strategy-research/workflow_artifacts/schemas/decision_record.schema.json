@@ -271,6 +271,15 @@
           }
         },
         "rank": { "type": ["integer", "null"], "minimum": 1 },
+        "fold_assignment": {
+          "type": "object", "required": ["fold", "lineage", "used"], "additionalProperties": false,
+          "description": "E-077 PR-1 (D-085): present only under orchestrator.folds.enabled. The fold the child run backtests on (null when the lineage has used all three or cannot be placed -- then the candidate is infeasible, with the reason), the lineage runs it was read from (the run, then every run named in its hypothesis_id) and the folds each lineage run's windows overlap.",
+          "properties": {
+            "fold": { "enum": ["A", "B", "C", null] },
+            "lineage": { "type": "array", "items": { "type": "string" } },
+            "used": { "type": "object", "additionalProperties": { "type": "array", "items": { "enum": ["A", "B", "C"] } } }
+          }
+        },
         "warnings": {
           "type": "array", "minItems": 1,
           "description": "E-068 PR 4 (D-071): present only when non-empty. WARNING ONLY (never a feasibility reason, never a change of eligibility or rank): a component class name the reader wrote that is neither a known class nor quoted from the run's hypothesis card (reader_proposals.unknown_class_names), with the nearest real name.",
