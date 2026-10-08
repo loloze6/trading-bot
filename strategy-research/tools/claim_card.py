@@ -26,7 +26,9 @@ defaults); the agent may not write them -- fewer knobs, fewer lucky passes.
 Regime selectors (claim_tests.NOT_RECOMPUTABLE_SELECTORS) are accepted as
 EFFECT-SIZE ONLY (operator, 2026-10-03, CUL-391): every other slot is checked
 with check_spec's own rules, and the test is marked verdict_possible: false
-with REGIME_REASON. `verdict_possible: true`
+with REGIME_REASON. A trade-level test (E-075 PR-3, gated) is always
+verdict_possible: false with TRADE_REASON: run_test refuses it and no p-value
+exists for it. `verdict_possible: true`
 means only that no rule of this file excludes a verdict; a verdict still
 needs a calibrated significance method (claim_tests operator rule 3).
 
@@ -68,6 +70,9 @@ CODE_FIXED_KEYS = ("alpha", "significance")
 MAX_TESTS = 3
 NO_TEST = "none"
 REGIME_REASON = "no calibrated significance method for regime selectors"
+# E-075 PR-3 review: a trade-level test has an effect size and no p-value (the
+# null of claim_tests.run_test is built from bars; E-077 may add one for trades)
+TRADE_REASON = "trade-level tests are effect-size only: no p-value is computed for them"
 TEST_REQUESTS_REL = "campaign_record/test_requests.yaml"
 
 
@@ -110,8 +115,10 @@ def _regime_selector_paths(test: dict) -> list:
     return out
 
 
-def _check_test(test, where: str) -> tuple:
-    """(errors, spec_hash or None, verdict_possible)."""
+def _check_test(test, where: str, trade_tests: bool = False) -> tuple:
+    """(errors, spec_hash or None, verdict_possible). `trade_tests` (E-075
+    PR-3): also accept the gated trade-level family; False by default, when a
+    trade selector, outcome or baseline is refused exactly as before."""
     if not isinstance(test, dict):
         return [f"{where}: a test must be a mapping"], None, False
     errors = []
@@ -144,18 +151,27 @@ def _check_test(test, where: str) -> tuple:
     try:
         # an LLM slip (a list where a scalar belongs, an int where a list
         # belongs) can make check_spec itself raise: a refusal, never a crash
-        errs = [e for e in ct.check_spec(spec) if not (allowed and e.startswith(allowed))]
+        found = ct.check_spec(spec, trade_tests=True) if trade_tests else ct.check_spec(spec)
+        errs = [e for e in found if not (allowed and e.startswith(allowed))]
         if errs:
             return [f"{where}: {e}" for e in errs], None, False
         h = ct.spec_hash(spec)
     except (TypeError, ValueError, AttributeError, KeyError) as exc:
         return [f"{where}: malformed test ({type(exc).__name__}: {exc})"], None, False
-    return [], h, not regime
+    return [], h, not regime and not _is_trade_test(test)
 
 
-def check_claim(claim, criteria_ids=()) -> ClaimCheck:
+def _is_trade_test(test) -> bool:
+    """A test of the gated trade-level family (E-075 PR-3): its selector is `trade`."""
+    return (isinstance(test, dict) and isinstance(test.get("selector"), dict)
+            and test["selector"].get("kind") == ct.TRADE_SELECTOR)
+
+
+def check_claim(claim, criteria_ids=(), trade_tests: bool = False) -> ClaimCheck:
     """Static checks of 1a's claim block, before any spend. criteria_ids: the
-    ids of the card's own `criteria` list (criteria_refs must name them)."""
+    ids of the card's own `criteria` list (criteria_refs must name them).
+    trade_tests (E-075 PR-3): accept the gated trade-level tests too; no
+    caller in the pipeline passes it yet, so every default result is unchanged."""
     res = ClaimCheck()
     e = res.errors
     if not isinstance(claim, dict):
@@ -206,11 +222,12 @@ def check_claim(claim, criteria_ids=()) -> ClaimCheck:
     elif len(set(names)) != len(names):
         e.append("claim.tests: every test needs a unique name")
     for i, t in enumerate(tests):
-        errs, h, possible = _check_test(t, f"claim.tests[{i}]")
+        errs, h, possible = _check_test(t, f"claim.tests[{i}]", trade_tests)
         e.extend(errs)
         if not errs:
             res.tests.append({"name": t["name"], "spec_hash": h, "verdict_possible": possible,
-                              **({} if possible else {"reason": REGIME_REASON})})
+                              **({} if possible else
+                                 {"reason": TRADE_REASON if _is_trade_test(t) else REGIME_REASON})})
     if e:
         res.tests = []
     return res
