@@ -5132,7 +5132,8 @@ def _reading_content_errors(doc: dict, category: str, run_dir: Path) -> list:
     errors = []
     base, base_error = None, None
     for i, s in enumerate(doc.get("side_findings") or []):
-        review = rf.side_finding_review(s, prior={}, own=set(), run_id=Path(run_dir).name)
+        review = rf.side_finding_review(s, prior={}, own=set(), run_id=Path(run_dir).name,
+                                        **_claim_check_folds())
         errors += [f"side_findings[{i}]: {e}" for e in review["errors"]]
         # E-077 PR-2 (D-087): under orchestrator.folds.enabled the vehicle IS the config
         # change (the shape check refuses a finding that carries both)
@@ -5329,7 +5330,8 @@ def _review_written_reading(category: str, run_id: str, run_dir: Path, body: str
         own = rf.own_spec_hashes(card)
         out, rows = {}, []
         for item in items:
-            review = rf.side_finding_review(item, prior=prior, own=own, run_id=run_id)
+            review = rf.side_finding_review(item, prior=prior, own=own, run_id=run_id,
+                                            **_claim_check_folds())
             out[item["proposal_id"]] = {k: review[k] for k in ("spec_hashes", "tests_none",
                                                                "warnings")}
             if review["tests_none"]:

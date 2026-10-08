@@ -1889,8 +1889,11 @@ def _side_finding_review(run_id: str, src: dict, p: dict, inputs: dict) -> dict:
     (every run but the source run) and the source run's own claim tests."""
     import reader_findings as _rf  # tools/ sibling; only side findings need it
     prior = _rf.prior_spec_hashes(inputs.get("memory") or {}, exclude_run=run_id)
+    # D-089: under orchestrator.folds.enabled (inputs["folds"]) the claim kinds of the folds
+    # flag (execution_behaviour) are accepted, as at the reading's own check
     return _rf.side_finding_review(p, prior=prior, own=_rf.own_spec_hashes(src.get("card")),
-                                   run_id=run_id)
+                                   run_id=run_id,
+                                   **({"folds": True} if inputs.get("folds") is not None else {}))
 
 
 # E-068 PR 4 (D-071): the one warning kind a candidate can carry.

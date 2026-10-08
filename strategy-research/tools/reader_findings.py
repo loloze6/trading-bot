@@ -363,7 +363,8 @@ def own_spec_hashes(card) -> set:
     return {t["spec_hash"] for t in cf._tests_of(claim) if t.get("spec_hash")}
 
 
-def side_finding_review(item: dict, *, prior: dict, own: set, run_id: str) -> dict:
+def side_finding_review(item: dict, *, prior: dict, own: set, run_id: str,
+                        folds: bool = False) -> dict:
     """{errors, tests_none, missing_block, spec_hashes, warnings} for one side
     finding. `errors` are check_claim's refusals (the reader's retry, or the
     candidate's ineligibility); `warnings` never refuse anything:
@@ -372,10 +373,12 @@ def side_finding_review(item: dict, *, prior: dict, own: set, run_id: str) -> di
       - block_claim_cannot_see_block: the claim's kind names a block
         (claim_card.KIND_BLOCK) but no test reads that block's output
         (CLAIM_TESTS.md's visibility rule). A kind with no block is a pure
-        finding and gets no such warning."""
+        finding and gets no such warning.
+    `folds` (D-089, orchestrator.folds.enabled): check_claim(folds=True), so a claim of
+    kind execution_behaviour is accepted here too; False: exactly as before."""
     import claim_card as cc
     claim = item.get("claim") if isinstance(item, dict) else None
-    res = cc.check_claim(claim)
+    res = cc.check_claim(claim, folds=True) if folds else cc.check_claim(claim)
     out = {"errors": list(res.errors), "tests_none": res.tests_none,
            "missing_block": res.missing_block,
            "spec_hashes": [t["spec_hash"] for t in res.tests], "warnings": []}
