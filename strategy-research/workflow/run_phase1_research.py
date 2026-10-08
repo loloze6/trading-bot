@@ -5055,8 +5055,8 @@ def _same_reading_structure(first: str, retry: str) -> bool:
     and tests). Never raises: a failure is False (the first answer is kept)."""
     try:
         rf = _reader_findings_module()
-        return rf.reading_structure(yaml.safe_load(first)) == \
-            rf.reading_structure(yaml.safe_load(retry))
+        return rf.reading_structure(yaml.safe_load(first), **_claim_check_folds()) == \
+            rf.reading_structure(yaml.safe_load(retry), **_claim_check_folds())
     except Exception:  # noqa: BLE001 -- unreadable = not shown to be the same
         return False
 
@@ -5980,7 +5980,7 @@ def _record_side_finding_merges(run_id: str, run_dir: Path) -> dict:
     try:
         readings = _reader_proposals_module().load_readings(
             Path(run_dir) / "artifacts" / "proposals", _reader_categories())
-        doc = rf.merges_doc(run_id, rf.side_finding_merges(readings))
+        doc = rf.merges_doc(run_id, rf.side_finding_merges(readings, **_claim_check_folds()))
         save_yaml(path, doc)
         for g in doc["merged"]:
             print(f"🔗 [E-073] {run_id}: side findings {g['finding_ids']} propose the same test "

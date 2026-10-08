@@ -1660,6 +1660,11 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
                     reasons.append(f"unknown_component_class: {unknown}")
         elif start["config"] is not None:
             config_for_digest = start["config"]
+            if fold_sha:
+                # D-089: under the folds flag a finding with no config change (an empty
+                # vehicle) re-runs the source config on its fold: keyed like a changed
+                # config, so the same config on the same fold is a REPEAT
+                resolved_sha = config_sha256(start["config"])
         # unchanged: a side finding's requires_feed is data its TEST needs, so it
         # waits until the feed is wired whatever the config reads
         feed_record, feed_reason = requires_feed_gate(p, inputs.get("feed_set"))

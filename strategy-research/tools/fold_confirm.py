@@ -191,8 +191,10 @@ def grade_test(result: dict) -> dict:
 
 
 def _coins(per_window) -> list:
-    """The coins of a measurement's per-window cells (labels "<symbol>/<window>")."""
-    return sorted({str(k).split("/")[0] for k in (per_window or {})})
+    """The coins of a measurement's per-window cells (labels "<symbol>/<window>"; the window
+    never holds a "/", so the coin is everything before the LAST one). A label without "/"
+    names no coin."""
+    return sorted({str(k).rsplit("/", 1)[0] for k in (per_window or {}) if "/" in str(k)})
 
 
 def pooled_per_window(per: list, spec, h: int) -> dict:
@@ -231,19 +233,26 @@ def measure_on_fold(run_dir: Path, vid: str, tests: list, windows, eras, holdout
     import claim_tests as ct
     import explore_confirm as ec
     results, measured = ec.measure_on_windows(run_dir, vid, tests, windows, eras, holdout_start)
-    if len({str(lbl).split("/")[0] for lbl in measured}) < 2:
-        return results, measured
     keep = set(windows)
     ws = [w for w in ct.load_variant_bars(Path(run_dir), vid) if w.window in keep]
+    if len({w.symbol for w in ws}) < 2:
+        return results, measured
     by_name = {str(t.get("name")): t for t in tests if isinstance(t, dict)}
     for name, res in results.items():
         if res.get("status") != cmeas.MEASURED or name not in by_name:
             continue
-        spec, _h = cmeas.test_spec(by_name[name])
-        per, _out_h, hz, _rng = ct.effect_sizes(ws, spec, eras)
-        for h in hz:
+        try:
+            spec, _h = cmeas.test_spec(by_name[name])
+            per, _out_h, hz, _rng = ct.effect_sizes(ws, spec, eras)
+            pooled = {h: pooled_per_window(per, spec, h) for h in hz}
+        except Exception as exc:  # noqa: BLE001 -- recorded per test, as measure_on_windows does
+            results[name] = {"name": name, "status": cmeas.NOT_MEASURED, "reason": ec.ERROR,
+                             "spec_hash": res.get("spec_hash"),
+                             "detail": f"pooling the coins per window: {type(exc).__name__}: {exc}"}
+            continue
+        for h, cells in pooled.items():
             if h in res.get("horizons", {}):
-                res["horizons"][h][POOLED_KEY] = pooled_per_window(per, spec, h)
+                res["horizons"][h][POOLED_KEY] = cells
     return results, measured
 
 
@@ -317,6 +326,25 @@ def vehicle_missing(config, vehicle) -> list:
         if current != item.get("after"):
             missing.append(f"{label}: the measured config has {current!r}")
     return missing
+
+
+def _start_config_changed(arts: Path, vid: str):
+    """None when variant `vid`'s strategy_config.json hashes to the brief's
+    candidate.source.start_config_sha256 (the source config decide-next handed the child),
+    else why not (a mismatch, or either side unreadable). Same hash as decide-next's
+    (decide_next.config_sha256)."""
+    import decide_next as dn
+    try:
+        brief = yaml.safe_load((arts / "research_brief.yaml").read_text(encoding="utf-8")) or {}
+        want = ((brief.get("candidate") or {}).get("source") or {}).get("start_config_sha256")
+        cfg = json.loads((arts / "variants" / vid / "strategy_config.json").read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001 -- recorded
+        return f"the start config or the measured config cannot be read ({type(exc).__name__}: {exc})"
+    if not want:
+        return "the brief carries no candidate.source.start_config_sha256 to compare with"
+    got = dn.config_sha256(cfg)
+    return None if got == want else (f"variant {vid!r} ran config {got[:12]}..., not the source "
+                                     f"config {str(want)[:12]}... the claim is about")
 
 
 def _spec_hashes(res) -> list:
@@ -465,6 +493,13 @@ def confirm_on_fold(run_dir: Path, run_id: str, *, root: Path, folds_doc: dict |
     # between decide-next and the backtest) may have changed it, and a claim measured on a
     # strategy without its vehicle is not the claim the run was built for
     vehicle = item.get("vehicle") or item.get("config_change") or []
+    if not vehicle:
+        # D-089 (a): an empty vehicle claims TODAY's strategy, unchanged: the measured config
+        # must be the one decide-next started the child from (candidate.source
+        # .start_config_sha256), else step 1b changed it and this is not the claim's strategy
+        changed = _start_config_changed(arts, vehicle_vid)
+        if changed:
+            return _finish(row, NOT_MEASURABLE, f"strategy_changed_since_the_claim: {changed}")
     if vehicle:
         cfg_path = arts / "variants" / vehicle_vid / "strategy_config.json"
         try:

@@ -17,6 +17,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import yaml
 
 SR_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SR_ROOT / "workflow"))
@@ -38,6 +39,7 @@ from test_e077_pr2_confirm import (CAT, CHANGE, LABELS, _build,  # noqa: E402
                                    _claim, _confirm, _reading)
 
 COINS = ("BTCUSD", "ETHUSD", "XRPUSD")
+SRC_RUN = base.SRC
 EMPTY = {"vehicle": [], "combines_as": "execution_rule", "fold_observed": "A"}
 
 
@@ -123,13 +125,139 @@ def test_the_orchestrators_reading_review_passes_folds_only_under_the_flag(flag_
     assert seen == [{"folds": True} if flag_on else {}]
 
 
+def _start_sha(child, period):
+    """Write the brief's candidate.source.start_config_sha256 as decide-next would: the
+    source config (CHANGE's component at `period`)."""
+    path = child / "artifacts" / "research_brief.yaml"
+    brief = yaml.safe_load(path.read_text(encoding="utf-8"))
+    brief["candidate"]["source"]["start_config_sha256"] = dn.config_sha256(base._config(period))
+    path.write_text(yaml.safe_dump(brief), encoding="utf-8")
+
+
 def test_a_claim_with_an_empty_vehicle_is_measured_on_the_unchanged_strategy(tmp_path):
     root, child = _build(tmp_path, claim=_claim(kind="execution_behaviour"), envelope=EMPTY,
                          config_period=1)                   # the source config, unchanged
+    _start_sha(child, 1)
     row = _confirm(root, child)
     assert row["status"] == fc.CONFIRMED, row["reason"]
     assert row["vehicle"] == [] and "vehicle_missing" not in row
     assert row["vehicle_variant"] == "base"
+
+
+def test_an_empty_vehicle_on_a_changed_strategy_is_not_measured(tmp_path):
+    """Step 1b changed the config the child started from: the claim was about today's
+    strategy, so nothing is measured (review of #357, finding 1)."""
+    root, child = _build(tmp_path, claim=_claim(kind="execution_behaviour"), envelope=EMPTY,
+                         config_period=99)
+    _start_sha(child, 1)
+    row = _confirm(root, child)
+    assert row["status"] == fc.NOT_MEASURABLE
+    assert row["reason"].startswith("strategy_changed_since_the_claim") and "tests" not in row
+    root, child = _build(tmp_path / "nosha", claim=_claim(kind="execution_behaviour"),
+                         envelope=EMPTY, config_period=1)          # no hash in the brief
+    row = _confirm(root, child)
+    assert row["status"] == fc.NOT_MEASURABLE and "start_config_sha256" in row["reason"]
+
+
+def test_an_empty_vehicle_without_a_kind_is_refused():
+    claim = _claim(kind="execution_behaviour")
+    del claim["kind"]
+    with pytest.raises(rp.ProposalError, match="allowed only for a claim of kind"):
+        _check_model(claim, **EMPTY)
+
+
+def _side_item(pid, claim):
+    return {"proposal_id": pid, "kind": rp.SIDE_FINDING, "claim": claim,
+            "evidence": ["slices.overall.x=1"],
+            "scores": {"confidence_real": 2, "distance_to_profitable": 1,
+                       "mechanism_plausibility": 2},
+            "model_id": "m", "rubric_version": "profitability-reading-v1",
+            "config_change": [], "vehicle": [], "combines_as": "execution_rule"}
+
+
+@pytest.mark.parametrize("prior_fold,expect", [("B", "REPEAT"), ("C", "NOVEL")])
+def test_an_empty_vehicle_on_a_fold_is_keyed_like_a_config(prior_fold, expect):
+    """Under the folds flag the unchanged source config on the child's fold has a novelty
+    key: a run that already ran it on that fold makes it a REPEAT (review of #357, 3)."""
+    import test_e077_folds as tf
+    import research_folds as rfo
+    inputs, pid = tf._scenario("run_074", "ROOT", {"run_074": tf.FOLD_A})
+    src = inputs["runs"]["run_074"]
+    src["proposals"] = [{"category": "profitability",
+                         "proposal": _side_item(pid, _claim(kind="execution_behaviour"))}]
+    inputs["memory"]["runs"]["run_090"] = tf._memory(
+        "run_090", "OTHER", fh=dn.config_sha256(src["base_config"]), symbols=("BTCUSDT",))
+    inputs["protocol_specs"] = {
+        "protocols/run_074.json": {"timeframe": "1h",
+                                   "windows_sha256": rfo.fold_windows_sha256(tf.DOC, "A")},
+        "protocols/run_090.json": {"timeframe": "1h",
+                                   "windows_sha256": rfo.fold_windows_sha256(tf.DOC, prior_fold)}}
+    inputs["folds"]["run_ranges"]["run_090"] = {"B": tf.FOLD_B, "C": tf.FOLD_C}[prior_fold]
+    cand = tf._cand(tf._decide(inputs, "run_074"), pid)
+    assert cand["fold_assignment"]["fold"] == "B"
+    assert cand["gates"]["novelty"]["exact_match"] == expect
+    if expect == "REPEAT":
+        assert cand["gates"]["novelty"]["matched_runs"] == ["run_090"] and not cand["eligible"]
+    # flag off (no inputs["folds"]): not applicable, exactly as before
+    inputs, pid = tf._scenario("run_074", "ROOT", {"run_074": None}, folds=False)
+    inputs["runs"]["run_074"]["proposals"] = [{"category": "profitability", "proposal": _side_item(
+        pid, _claim(kind="event_behaviour"))}]
+    cand = tf._cand(tf._decide(inputs, "run_074"), pid)
+    assert cand["gates"]["novelty"]["exact_match"] == "NOT_APPLICABLE"
+
+
+def test_identical_execution_behaviour_findings_merge_under_the_flag_only():
+    claim = _claim(kind="execution_behaviour")
+    readings = {c: dict(_reading(claim, **EMPTY), reading_id=f"{c}-{SRC_RUN}",
+                        side_findings=[dict(_reading(claim, **EMPTY)["side_findings"][0],
+                                            proposal_id=f"{c}-{SRC_RUN}-1")])
+                for c in ("forecast_power", "trade_efficiency")}
+    assert len(rfi.side_finding_merges(readings, folds=True)) == 1
+    assert rfi.side_finding_merges(readings) == []                     # flag off: as before
+    doc = readings["trade_efficiency"]
+    assert rfi.reading_structure(doc, folds=True)[0][2] != ()
+    assert rfi.reading_structure(doc)[0][2] == ()                      # flag off: as before
+
+
+@pytest.mark.parametrize("flag_on", [False, True])
+def test_the_orchestrator_passes_folds_to_merges_and_structure_only_under_the_flag(flag_on,
+                                                                                   monkeypatch,
+                                                                                   tmp_path):
+    seen = []
+
+    def spy_struct(doc, **kw):
+        seen.append(("structure", kw))
+        return []
+
+    def spy_merges(readings, **kw):
+        seen.append(("merges", kw))
+        return []
+    monkeypatch.setattr(rfi, "reading_structure", spy_struct)
+    monkeypatch.setattr(rfi, "side_finding_merges", spy_merges)
+    monkeypatch.setattr(rpr, "_reader_findings_module", lambda: rfi)
+    monkeypatch.setattr(rpr, "_folds_enabled", lambda: flag_on)
+    rpr._same_reading_structure("a: 1\n", "a: 1\n")
+    rpr._record_side_finding_merges("run_x", tmp_path)
+    want = {"folds": True} if flag_on else {}
+    assert ("structure", want) in seen
+    assert all(kw == want for _what, kw in seen)
+
+
+def test_the_written_reading_review_passes_folds_only_under_the_flag(monkeypatch, tmp_path):
+    for flag_on in (False, True):
+        seen = []
+
+        def spy(item, **kw):
+            seen.append({k: v for k, v in kw.items() if k == "folds"})
+            return {"errors": [], "tests_none": False, "missing_block": None,
+                    "spec_hashes": [], "warnings": []}
+        monkeypatch.setattr(rfi, "side_finding_review", spy)
+        monkeypatch.setattr(rpr, "_reader_findings_module", lambda: rfi)
+        monkeypatch.setattr(rpr, "_folds_enabled", lambda: flag_on)
+        monkeypatch.setattr(rpr, "_campaign_memory_path", lambda: tmp_path / "memory.yaml")
+        body = yaml.safe_dump(_reading(_claim(kind="execution_behaviour"), **EMPTY))
+        rpr._review_written_reading(CAT, SRC_RUN, tmp_path, body)
+        assert seen == [{"folds": True} if flag_on else {}]
 
 
 # ---------------------------------------------------------------------------
@@ -233,3 +361,44 @@ def test_several_coins_without_pooled_values_are_never_graded_per_cell():
     assert g["status"] == fc.NOT_MEASURABLE and fc.POOLED_KEY in g["reason"]
     r["horizons"][1][fc.POOLED_KEY] = {w: {"value": 0.1, "oriented": 0.1} for w in LABELS}
     assert fc.grade_test(r)["status"] == fc.CONFIRMED
+
+
+def test_the_pooled_rank_ic_counts_only_events_with_a_forecast(tmp_path):
+    root, child = _build(tmp_path, symbols=COINS)
+    ws = ct.load_variant_bars(child, "base")
+    for w in ws:
+        w.forecast[::2] = np.nan                            # half the bars carry no forecast
+    t = dict(_claim()["tests"][0], statistic="rank_ic", baseline=None)
+    spec, _h = cmeas.test_spec(t)
+    per, out, _hz, _rng = ct.effect_sizes(ws, spec, None)
+    cells = fc.pooled_per_window(per, spec, 1)
+    for win, c in cells.items():
+        sub = [p for p in per if p["w"].window == win]
+        want = sum(int((p["mask"] & np.isfinite(p["ys"][1]) & np.isfinite(p["fc"])).sum())
+                   for p in sub)
+        assert c["n_events"] == want and want < sum(int(p["mask"].sum()) for p in sub)
+
+
+def test_labels_without_a_coin_are_one_coin_and_a_slash_symbol_keeps_its_name():
+    assert fc._coins({"w1": {}, "w2": {}}) == []
+    assert fc._coins({"BTC/USDT/w1": {}, "BTC/USDC/w1": {}}) == ["BTC/USDC", "BTC/USDT"]
+    r = {"name": "t", "status": cmeas.MEASURED, "spec_hash": "h", "horizons": {1: {
+        "value": 0.1, "oriented": 0.1, "n_events": 9,
+        "per_window": {w: {"value": 0.1, "oriented": 0.1} for w in LABELS}}}}
+    assert fc.grade_test(r)["status"] == fc.CONFIRMED          # graded as before
+
+
+def test_a_pooling_failure_is_recorded_on_its_test_only(tmp_path, monkeypatch):
+    root, child = _build(tmp_path, symbols=COINS)
+    t1 = _claim()["tests"][0]
+    t2 = dict(t1, name="second", outcome={"kind": "fwd_return", "horizons": [2]})
+    real = fc.pooled_per_window
+
+    def boom(per, spec, h):
+        if h == 2:
+            raise ValueError("planted")
+        return real(per, spec, h)
+    monkeypatch.setattr(fc, "pooled_per_window", boom)
+    res, _m = fc.measure_on_fold(child, "base", [t1, t2], LABELS, base.ERAS, base.HOLDOUT)
+    assert res["second"]["status"] == cmeas.NOT_MEASURED and "planted" in res["second"]["detail"]
+    assert res["up_day_follow"]["status"] == cmeas.MEASURED
