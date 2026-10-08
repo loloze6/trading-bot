@@ -2909,6 +2909,11 @@ def _regenerate_summary(queue: dict, dry_run: bool = False):
     # orchestrator.reader_findings), so a summary without one is unchanged.
     import reader_findings as _reader_findings  # tools/ sibling
     lines += _reader_findings.skip_summary_lines(ROOT)
+    # E-072: side findings checked on unseen windows. Only when
+    # campaign_record/confirmations.yaml exists (written only under
+    # orchestrator.explore_confirm), so a summary without one is unchanged.
+    import explore_confirm as _explore_confirm  # tools/ sibling
+    lines += _explore_confirm.summary_lines(ROOT)
     # D-077: the request files in one place. Only when one exists.
     lines += _summary_request_lines()
     lines += [
@@ -3513,6 +3518,7 @@ def _flag_readers() -> dict:
         "claim_tests": orch._claim_tests_enabled,  # E-068 slice 2
         "reader_findings": orch._reader_findings_enabled,  # E-068 slice 5 (D-073)
         "nearest_build": orch._nearest_build_enabled,  # E-068 nearest build (D-075)
+        "explore_confirm": orch._explore_confirm_enabled,  # E-072 (D-080)
         "schedulability_block": _schedulability_block_enabled,
         "operator_approval": _operator_approval_enabled,  # E-068 PR 4 (D-071)
     }
