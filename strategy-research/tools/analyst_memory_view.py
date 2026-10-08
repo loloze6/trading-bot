@@ -41,10 +41,11 @@ touches a file but in `load_memory_view`):
     fold, status confirmed | not_confirmed | not_measurable | not_comparable
     (`not_comparable` is shown as `not_measurable`). A claim measured on several folds
     (several rows) gets ONE status, decided by the statuses and never by key order
-    (D-090): `not_confirmed` if any fold refuted it, else `confirmed` if any fold
-    confirmed it, else `not_measurable`; `fold_confirmed` lists the folds that confirmed
-    it, `confirmed` holds the numbers of those rows only, and `folds` lists every
-    measured fold with its status (no number). Fold rows replace the E-072 row of the
+    (D-090, operator 2026-10-08): `confirmed` if any fold confirmed it, else
+    `not_confirmed` if any fold refuted it, else `not_measurable`; `fold_confirmed`
+    lists the folds that confirmed it, `confirmed` holds the numbers of those rows only,
+    and `folds` lists every measured fold with its status (no number), so a refutation on
+    another fold is still recorded. Fold rows replace the E-072 row of the
     same finding, and a ledger claim replaces the memory claim with the same id.
 
 The view is a plain dict; PR-5 renders it into the analyst's prompt. Pure: no
@@ -79,7 +80,8 @@ TEST_SPEC_KEYS = ("selector", "outcome", "baseline", "statistic", "direction")
 NOTE = ("earlier claims and what became of them: numbers only for confirmed claims, measured "
         "on the fold that confirmed them; pending, not_confirmed and not_measurable claims carry "
         "none; every statement has its numbers masked")
-_FOLD_STATUS_ORDER = (NOT_CONFIRMED, CONFIRMED, NOT_MEASURABLE)   # the first present wins
+# operator, 2026-10-08: confirmed on any fold wins; a refutation on another fold stays in `folds`
+_FOLD_STATUS_ORDER = (CONFIRMED, NOT_CONFIRMED, NOT_MEASURABLE)   # the first present wins
 # digits glued to a word character (`x2`, `h24`, `5of6`, `Sharpe1.2`) that mask_numbers'
 # lookbehind leaves: masked here too, in the view only (D-090)
 _GLUED_DIGITS = re.compile(r"\d+(?:[.,_]\d+)*")

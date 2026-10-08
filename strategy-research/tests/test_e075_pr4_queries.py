@@ -1059,15 +1059,21 @@ def _same_claim_on(fold, run_id, status, effect=0.0012):
 
 @pytest.mark.parametrize("order", [(0, 1), (1, 0)])
 def test_a_claim_measured_on_two_folds_gets_one_status_from_the_statuses(tmp_path, order):
-    """D-090: refuted on one fold -> not_confirmed, whatever the key order (run_100 sorts
-    before run_99 as text); the confirmed fold's numbers are not shown then."""
+    """Operator, 2026-10-08 (D-090): confirmed on one fold and refuted on another reads
+    `confirmed`, whatever the key order (run_100 sorts before run_99 as text); the
+    refutation stays recorded in `folds`, and only the confirming fold's numbers show."""
     rows = [_same_claim_on("B", "run_99", "confirmed"),
             _same_claim_on("C", "run_100", "not_confirmed", effect=-0.003)]
     ledger = _write_ledger(tmp_path, [rows[i] for i in order])
     (c,) = amv.build_memory_view({}, ledger)["claims"]
-    assert c["status"] == "not_confirmed" and "confirmed" not in c and c["fold_confirmed"] is None
+    assert c["status"] == "confirmed" and c["fold_confirmed"] == ["B"]
+    assert [x["fold"] for x in c["confirmed"]] == ["B"]
+    assert -0.003 not in [x for x in _walk(c) if isinstance(x, float)]
     assert c["folds"] == [{"fold": "B", "run_id": "run_99", "status": "confirmed"},
                           {"fold": "C", "run_id": "run_100", "status": "not_confirmed"}]
+    # refuted with nothing confirmed: not_confirmed, and no number
+    (c,) = amv.build_memory_view({}, _write_ledger(tmp_path / "r", [rows[1]]))["claims"]
+    assert c["status"] == "not_confirmed" and "confirmed" not in c
     assert not [x for x in _walk(c) if isinstance(x, float)]
 
 
