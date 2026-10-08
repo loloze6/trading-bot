@@ -243,6 +243,26 @@ Assessment (agreed, with one nuance per epic):
   on the same saved runs, each proposal backtested on unseen blocks, with the placebo as a
   sanity check.
 
+**Step 8: the operator's decision on one analyst or five.**
+> "I was initially thinking five, because each of them would have a specific focus of
+> analysis. But we could start with two to see if having this focus really works: for
+> example, one on regime and one on forecast. Each new one would replicate the same logic,
+> with a separate objective in the design."
+
+Assessment (agreed):
+- **Start with two analysts: regime and forecast.** They share the same design (same
+  tools, same output: one strategy-change proposal into the backlog). Only the objective
+  differs, a short lens text, as today's reader lenses do.
+- **Why two:**
+  - it tests the lens idea itself (do focused analysts propose different, better ideas than
+    one general analyst would?) at about 40% of the cost of five;
+  - two lenses are enough to see whether their proposals overlap.
+- **Adding one later** (profitability, trade efficiency, component attribution) is a new
+  objective text, not new code. That is the design constraint.
+- **Open for the pilot:** what tells us "the focus works"? A proposed signal: the two
+  analysts' proposals differ (little overlap), and each one's proposals hold on unseen
+  blocks at least as often as today's matching reader.
+
 ### A1.2 Before and after, per decision
 
 | # | Before (plan of 2026-10-08 morning, E-072 as built) | After (operator review) |
@@ -255,7 +275,8 @@ Assessment (agreed, with one nuance per epic):
 | 6 | Windows fixed per brief (the same 2022-2023 windows since run_065) | **Windows drawn from a block calendar** (A1.3) |
 | 7 | E-073: dictionary, then citation check + dedup for readers, then E-029/E-027 | **Dictionary, the output fixes (CUL-414..417), E-029/E-027.** Citation check (PR #346) held until the readers' fate is decided |
 | 8 | E-074: a code-built exploration digest given to the readers, with a chance-line gate | **Folded into E-075 as analyst tools.** `trailing_vol` kept; no digest wiring to readers; query counting kept as a record, not a gate |
-| 9 | E-075: a sixth reader (pilot), next to the five readers | **The analyst replaces the readers.** One or five sessions to decide; the pilot compares the analyst with today's readers, every proposal backtested on unseen blocks |
+| 9 | E-075: a sixth reader (pilot), next to the five readers | **The analyst replaces the readers.** The pilot compares the analyst with today's readers, every proposal backtested on unseen blocks |
+| 10 | Five reader lenses, one closed-book call each | **Two analysts to start, regime and forecast:** same design, separate objective. A new lens is a new objective text, not new code |
 
 ### A1.3 The proposed window standard
 
@@ -327,8 +348,11 @@ Assessment (agreed, with one nuance per epic):
    run. Is the analyst's internal reasoning (its queries on the run it reads) a sufficient
    replacement?
 5. **Retire E-072's code, or keep it as an option?**
-6. **The analyst replacing the readers (Step 7):**
-   - one analyst, or five lens sessions?
+6. **The analyst replacing the readers (Steps 7-8):**
+   - two analysts to start (regime, forecast), same design and separate objectives: is that
+     the right first test of "focus works", and is the proposed signal (low overlap, and
+     each holds on unseen blocks at least as often as today's matching reader) measurable
+     with the data we have?
    - is the redesigned pilot (analyst vs today's readers on saved runs, every proposal
      backtested on unseen blocks, placebo as a sanity check) sound, and what does it cost
      in backtests?
@@ -337,5 +361,5 @@ Assessment (agreed, with one nuance per epic):
 7. **What did we miss?** Is there a simpler standard that meets "never test where you
    looked" without the data running out so fast?
 
-**Reviewer: please give your opinion on both the reasoning (steps 1-7) and the outcome
+**Reviewer: please give your opinion on both the reasoning (steps 1-8) and the outcome
 (A1.2-A1.5), challenge it fairly, and propose changes.**
