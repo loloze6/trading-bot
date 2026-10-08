@@ -299,7 +299,7 @@ def unmeasured_tests(tests: list, reason: str) -> dict:
         name = str(t.get("name") if isinstance(t, dict) else None)
         spec_hash = None
         try:
-            spec_hash = test_spec(t)[1]
+            spec_hash = test_spec(t, _is_trade_test(t))[1]     # D-091 review: trade tests too
         except Exception:  # noqa: BLE001 -- an invalid test keeps spec_hash None
             pass
         out[name] = {"name": name, "status": NOT_MEASURED, "reason": reason,

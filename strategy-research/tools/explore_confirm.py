@@ -688,7 +688,7 @@ FOLD_PENDING_REASON = ("measured by the run built from it, on that run's own fol
                        "(E-077 confirm_on_fold); never inside the run that inspired it")
 
 
-def finding_route(item: dict, *, folds: bool = False) -> tuple:
+def finding_route(item: dict, *, folds: bool = False, trade_tests: bool = False) -> tuple:
     """(route, reason) of one side finding (a flattened reading item).
 
     `folds` (E-077 PR-2, orchestrator.folds.enabled): the IN_RUN route does not
@@ -698,7 +698,8 @@ def finding_route(item: dict, *, folds: bool = False) -> tuple:
     refused claim and `tests: none` route as before."""
     import claim_card as cc
     claim = item.get("claim") if isinstance(item, dict) else None
-    res = cc.check_claim(claim, **({"folds": True} if folds else {}))
+    res = cc.check_claim(claim, **({"folds": True} if folds else {}),
+                         **({"trade_tests": True} if trade_tests else {}))
     if res.errors:
         return NOT_MEASURABLE, "its claim is refused by check_claim: " + "; ".join(res.errors)
     if res.tests_none:
@@ -807,7 +808,8 @@ def side_finding_items(readings: dict) -> list:
 
 def confirm_findings(run_dir: Path, run_id: str, readings: dict, split: dict, *,
                      base_variant: str | None, eras, holdout_start: str,
-                     merges: dict | None = None, folds: bool = False) -> list:
+                     merges: dict | None = None, folds: bool = False,
+                     trade_tests: bool = False) -> list:
     """One record per side finding of this run's readings: measured in-run on
     the confirmation windows of the base variant (a pure finding), or pending
     / not_measurable with its reason. Never raises: an error is a record.
@@ -840,8 +842,10 @@ def confirm_findings(run_dir: Path, run_id: str, readings: dict, split: dict, *,
             rec["merged_finding_ids"] = list(merged["group"]["finding_ids"][1:])
             rec["merge_note"] = _rf.MERGE_NOT_AGREEMENT
         try:
-            route, why = finding_route(item, **({"folds": True} if folds else {}))
-            rec["finding_spec_hashes"] = finding_spec_hashes(item, **({"folds": True} if folds else {}))
+            kw = {**({"folds": True} if folds else {}),
+                  **({"trade_tests": True} if trade_tests else {})}    # D-091
+            route, why = finding_route(item, **kw)
+            rec["finding_spec_hashes"] = finding_spec_hashes(item, **kw)
         except Exception as exc:  # noqa: BLE001 -- recorded
             route, why = ERROR, f"{type(exc).__name__}: {exc}"
         rec["route"] = route
@@ -976,10 +980,11 @@ def resolve_pending(run_dir: Path, run_id: str, pending: dict, split: dict, *,
     return rec
 
 
-def finding_spec_hashes(item: dict, *, folds: bool = False) -> list:
+def finding_spec_hashes(item: dict, *, folds: bool = False, trade_tests: bool = False) -> list:
     import claim_card as cc
     res = cc.check_claim(item.get("claim") if isinstance(item, dict) else None,
-                         **({"folds": True} if folds else {}))
+                         **({"folds": True} if folds else {}),
+                         **({"trade_tests": True} if trade_tests else {}))
     return sorted(t["spec_hash"] for t in res.tests if t.get("spec_hash"))
 
 
