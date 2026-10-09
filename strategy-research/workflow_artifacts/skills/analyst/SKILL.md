@@ -112,7 +112,9 @@ The score that ranks your claim is the LOWEST window agreement over every run of
 
 - Only the six tools; every call is logged and counted. No code, no paths.
 - Cite only query ids of this session, with the value as the tool returned it. A number you
-  did not cite does not go into the claim's text.
+  did not cite does not go into the claim's text (nor the no-claim reason). Allowed there: a
+  cited value (rounded, or as a percent, with its sign), 0, 100%, a cited horizon, and your
+  test's own numbers written exactly. Say the rest in words: "positive", "most windows".
 - The observation may read any column. A vehicle acts only on what is known at the bar's close
   or the fill: never on an exit field, an `after` column or a future return.
 - No profit or cost judgement: report effects as measured; whether an effect pays after costs

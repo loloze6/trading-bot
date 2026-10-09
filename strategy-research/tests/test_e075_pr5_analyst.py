@@ -740,3 +740,58 @@ def test_evidence_from_another_conditional_effect_is_not_the_tests_own():
     entries = {**_entries_for_claim(), **_ce("q4", "h2", 5, 5, selector={"kind": "x"})}
     errors = _check(_claim_answer(evidence=["q4:horizons.1.effect=0.0123"]), entries)
     assert any("evidence must cite the claim test's own result" in e for e in errors), errors
+
+
+# review round 2 of #360: the prose-number rule
+@pytest.mark.parametrize("field,text,ok", [
+    ("rationale", "longs earn -1.23% less than shorts", False),     # sign flipped
+    ("rationale", "longs earn +1.23% more", True),
+    ("rationale", "longs earn 1.23% more", True),
+    ("fail_if", "the mean difference is 0 or below on fold B", True),   # 0 is always fine
+    ("fail_if", "the effect at horizon 1 is not positive", True),       # a cited horizon
+    ("pass_if", "100% of the lots agree", True),
+    ("rationale", "longs earn 5% more per trade", False),         # the floor (5) as an effect
+    ("rationale", "an effect of .5 per lot", False),              # a leading dot is a number
+    ("rationale", "an effect of 100 per lot", False),             # "100" shows 3 digits
+    ("rationale", "over 1,234 trades", False),
+    ("rationale", "an effect of 1.23e-2", True),
+    ("rationale", "an effect of 9.9pct", False),
+    ("rationale", "windows 6,7 agree", False),
+])
+def test_the_prose_rule_reads_signs_words_and_forms(field, text, ok):
+    errors = _check(_claim_answer(claim={field: text}))
+    assert (errors == []) is ok, errors
+
+
+def test_a_huge_integer_in_the_test_is_refused_never_raised():
+    huge = 10 ** 400
+    text = _claim_answer(claim={"tests": [{"name": "t", "selector": LONG,
+                                           "outcome": {"kind": "trade_net_return"},
+                                           "baseline": {"kind": "other_trades"},
+                                           "statistic": "mean_diff", "direction": "greater",
+                                           "floor": {"min_events": huge}}],
+                                "rationale": "the effect is 1e400 strong"})
+    real = lambda c: cc.check_claim(c, trade_tests=True, folds=True)  # noqa: E731
+    _r, _rec, errors = asm.check_answer(
+        text, lens="trade_efficiency", run_id=RUN_ID, entries=_entries_for_claim(),
+        claim_check=real, holdout_start=q4.HOLDOUT, fold="A", model_id="m")
+    assert errors
+
+
+def test_the_no_claim_text_is_checked_too():
+    def answer(reason):
+        return "```yaml\n" + yaml.safe_dump({
+            "outcome": "no_claim", "evidence": ["q1:horizons.1.effect=0.0123"],
+            "no_claim": {"reason": reason,
+                         "best_rejected": {"statement": "longs lead", "killed_by": "q3"}}}) + "```"
+    assert _check(answer("the effect was 1.23% but it did not hold by coin")) == []
+    errors = _check(answer("longs beat shorts by 9.9% but n was small"))
+    assert any(e.startswith("no_claim.reason writes '9.9%'") for e in errors), errors
+
+
+@pytest.mark.parametrize("text,cited,ok", [("100 lots", "140", False), ("100 lots", "100.4", True),
+                                           ("0.0120", "0.0123", False), ("0.0120", "0.012", True)])
+def test_a_prose_number_shows_all_its_digits(text, cited, ok):
+    entries = {"q1": {"id": "q1", "status": "ok", "result": {"n": float(cited)}}}
+    errors = asm.prose_number_errors({"claim.rationale": text}, [f"q1:n={cited}"], entries)
+    assert (errors == []) is ok, errors

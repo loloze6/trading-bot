@@ -264,9 +264,11 @@ def tool_list_errors(init_tools) -> list:
 
 WHY_FUNCTIONS = ("conditional_effect", "trade_slice", "event_study")
 PROSE_KEYS = ("statement", "pass_if", "fail_if", "rationale")
-# a number standing on its own (`24h` and `9.9pct` count; `past_return_24` or `run_074`, a
-# number glued after a word character, is a name)
-_PROSE_NUMBER_RE = re.compile(r"(?<![\w.])(\d+(?:\.\d+)?)(%?)")
+# A number standing on its own: `24h`, `9.9pct`, `.5`, `1,234` and `1.2e-3` count; a number glued
+# after a word character (`past_return_24`, `run_074`) is a name. A sign counts when it stands
+# at the start or after a non-word character ("-1.2%", not "post-24").
+_PROSE_NUMBER_RE = re.compile(
+    r"(?<![\w.])([-+\u2212]?)(\d{1,3}(?:,\d{3})+|\d*\.\d+|\d+)(?:[eE]([-+]?\d+))?(%?)")
 
 
 def _ok_call(entries: dict, qid) -> bool:
@@ -296,57 +298,94 @@ def _selector_of(entry: dict):
     return (((entry.get("result") or {}).get("test")) or {}).get("selector")
 
 
-def _numeric_leaves(node, out: list) -> list:
+def _test_numbers(node, out: set) -> set:
+    """The finite numbers written in the claim's test blocks (horizons, lookbacks, floors,
+    selector values). Python ints are kept exact (a huge one never overflows)."""
     if isinstance(node, bool):
         return out
-    if isinstance(node, (int, float)):
-        out.append(float(node))
+    if isinstance(node, int):
+        out.add(node)
+    elif isinstance(node, float):
+        if math.isfinite(node):
+            out.add(node)
     elif isinstance(node, dict):
         for v in node.values():
-            _numeric_leaves(v, out)
+            _test_numbers(v, out)
     elif isinstance(node, list):
         for v in node:
-            _numeric_leaves(v, out)
+            _test_numbers(v, out)
     return out
 
 
-def _sig_digits(token: str) -> int:
-    digits = token.replace(".", "").lstrip("0")
-    return max(1, len(digits.rstrip("0")) if "." not in token else len(digits))
+def _sig_digits(mantissa: str) -> int:
+    """Significant digits a prose number shows: every digit after the leading zeros
+    ("100" shows 3, "0.0120" shows 3, "0" shows 1)."""
+    return max(1, len(mantissa.replace(",", "").replace(".", "").lstrip("0")))
 
 
-def prose_number_errors(claim, evidence, entries: dict) -> list:
-    """Every number written in the claim's prose (statement, pass_if, fail_if, rationale) must
-    be one the session saw and cited: a value of `evidence` (each citation already checked
-    against the log), or a number of the claim's own test blocks (horizons, lookbacks, floors).
-    A prose number may round a cited value to the digits it shows; `x%` matches x or x/100.
-    Review of #359: free-text numbers were never checked, and the rationale becomes the
-    reading's explanation."""
-    if not isinstance(claim, dict):
-        return []
-    allowed = _numeric_leaves(claim.get("tests"), [])
+def _rounds_to(value: float, shown: float, sd: int) -> bool:
+    try:
+        return float(f"{value:.{sd}g}") == float(f"{shown:.{sd}g}")
+    except (OverflowError, ValueError):
+        return False
+
+
+def prose_number_errors(fields: dict, evidence, entries: dict, tests=None) -> list:
+    """Every number written in the answer's prose must be one the session saw (review of
+    #359: free-text numbers were never checked, and the claim's rationale or the no-claim
+    reason becomes the reading's explanation). `fields`: {label: text}. A number passes when
+      * it is 0, or 100%;
+      * it is a horizon of a cited `horizons.<h>.` path, or a number of the claim's own test
+        blocks, written exactly (all its digits, no %, no exponent);
+      * or it rounds a value cited in `evidence` (each citation already checked against the
+        log) to the digits it shows; `x%` is x/100 (or x); a written sign must match the
+        cited sign, an unsigned number is compared without sign ("0.08% lower" for -0.0008).
+    """
+    cited, horizons = [], set()
     for c in evidence or []:
         qid, path, value = _cite_parts(c)
+        if not _ok_call(entries, qid):
+            continue
+        parts = path.split(".")
+        if len(parts) > 2 and parts[0] == "horizons" and parts[1].isdigit():
+            horizons.add(int(parts[1]))
         try:
             v = float(value) if value is not None else None
-        except ValueError:
+        except (ValueError, OverflowError):
             v = None
-        if v is not None and math.isfinite(v) and _ok_call(entries, qid):
-            allowed.append(v)
+        if v is not None and math.isfinite(v):
+            cited.append(v)
+    exact = horizons | _test_numbers(tests, set())
     errors = []
-    for key in PROSE_KEYS:
-        text = claim.get(key)
+    for label, text in fields.items():
         if not isinstance(text, str):
             continue
         for m in _PROSE_NUMBER_RE.finditer(text):
-            token, pct = m.group(1), m.group(2)
-            x = float(token)
-            sd = _sig_digits(token)
-            cands = [x, x / 100.0] if pct else [x]
-            if not any(float(f"{abs(a):.{sd}g}") == float(f"{c:.{sd}g}")
-                       for a in allowed for c in cands):
-                errors.append(f"claim.{key} writes {m.group(0)!r}, which is not a value you "
-                              f"cited in `evidence` nor a number of your test: cite it or drop it")
+            sign, mantissa, exp, pct = m.groups()
+            try:
+                x = float(mantissa.replace(",", "")) * (10.0 ** int(exp) if exp else 1.0)
+            except (ValueError, OverflowError):
+                x = math.inf
+            if not math.isfinite(x):
+                errors.append(f"{label} writes {m.group(0)!r}: not a number you cited")
+                continue
+            negative = sign in ("-", "\u2212")
+            if x == 0 or (pct and x == 100 and not sign):
+                continue
+            if not pct and not exp and "," not in mantissa and (
+                    (-x if negative else x) in exact):
+                continue
+            sd = _sig_digits(mantissa)
+            cands = [x / 100.0, x] if pct else [x]
+            if sign:
+                ok = any(_rounds_to(a, -c if negative else c, sd) for a in cited for c in cands)
+            else:
+                ok = any(_rounds_to(abs(a), c, sd) for a in cited for c in cands)
+            if ok:
+                continue
+            errors.append(f"{label} writes {m.group(0)!r}, which is not a value you cited in "
+                          f"`evidence` nor a number of your test: cite it, or say it in words "
+                          f"(\"positive\", \"most windows\")")
     return errors
 
 
@@ -387,12 +426,23 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
                 or not _ok_call(entries, br.get("killed_by")):
             errors.append("no_claim needs best_rejected {statement, killed_by: an ok query id "
                           "of this session}")
+        if isinstance(nc, dict):
+            errors += prose_number_errors(
+                {"no_claim.reason": nc.get("reason"),
+                 "no_claim.best_rejected.statement": br.get("statement")
+                 if isinstance(br, dict) else None}, evidence, entries)
         record["no_claim"] = nc
         reading = {**base, "explanation": str((nc or {}).get("reason") or "no claim"),
                    "evidence": list(evidence), "side_findings": []}
         return reading, record, errors
     claim = doc.get("claim")
-    res = claim_check(claim)
+    try:
+        res = claim_check(claim)
+    except (OverflowError, ValueError, TypeError, RecursionError) as exc:
+        # model-written content the claim card cannot even hash (e.g. a 400-digit integer):
+        # a refusal, never a crash past the retry (review of #360)
+        errors.append(f"claim: cannot be checked ({type(exc).__name__}: {str(exc)[:120]})")
+        return None, record, errors
     if res.errors:
         errors += [f"claim: {e}" for e in res.errors]
     elif res.tests_none:
@@ -422,7 +472,9 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
                           for c in evidence):
         errors.append("evidence must cite the claim test's own result "
                       "(`q<n>:horizons.<h>.<field>=<value>` of its conditional_effect call)")
-    errors += prose_number_errors(claim, evidence, entries)
+    if isinstance(claim, dict):
+        errors += prose_number_errors({f"claim.{k}": claim.get(k) for k in PROSE_KEYS},
+                                      evidence, entries, tests=claim.get("tests"))
     record.update(why_query=why, test_spec_hashes=hashes)
     scores = {"confidence_real": in_run_score(hashes, entries) if hashes else 0,
               "distance_to_profitable": FIXED_SCORE, "mechanism_plausibility": FIXED_SCORE}
