@@ -377,6 +377,32 @@ def _selector_of(entry: dict):
     return (((entry.get("result") or {}).get("test")) or {}).get("selector")
 
 
+def _clause_set(clauses):
+    """A trade filter as a set of (field, op, canonical value): the same clauses in any order are
+    one filter. None for anything that is not a list of well-formed clause dicts."""
+    if not isinstance(clauses, list):
+        return None
+    out = set()
+    for c in clauses:
+        if not (isinstance(c, dict) and isinstance(c.get("field"), str)
+                and isinstance(c.get("op"), str) and "value" in c):
+            return None
+        out.add((c["field"], c["op"], json.dumps(c["value"], sort_keys=True)))
+    return frozenset(out)
+
+
+def _why_filter_set(entry: dict):
+    """The trade filter a why_query used, whatever its tool: a conditional_effect's trade
+    selector `where`, a trade_slice's `filter`, an event_study's `trade_filter`."""
+    fn, params = entry.get("function"), entry.get("params") or {}
+    if fn == "conditional_effect":
+        sel = _selector_of(entry)
+        is_trade = isinstance(sel, dict) and sel.get("kind") == "trade"
+        return _clause_set(sel.get("where")) if is_trade else None
+    key = {"trade_slice": "filter", "event_study": "trade_filter"}.get(fn)
+    return _clause_set(params.get(key)) if key and isinstance(params, dict) else None
+
+
 def _test_numbers(node, out: set) -> set:
     """The finite numbers written in the claim's test blocks (horizons, lookbacks, floors,
     selector values). Python ints are kept exact (a huge one never overflows)."""
@@ -582,6 +608,9 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
                 break
     why = doc.get("why_query")
     test_qids = {q for h in hashes for q in ran.get(h, [])}
+    why_set = _why_filter_set(entries[why]) if _ok_call(entries, why) else None
+    claim_sets = [_clause_set((t["selector"]).get("where")) for t in _tests_of(claim)
+                  if isinstance(t.get("selector"), dict) and t["selector"].get("kind") == "trade"]
     if not _ok_call(entries, why):
         errors.append(f"why_query={why!r} is not a successful call of this session")
     elif why in test_qids or (entries[why].get("function") == "conditional_effect" and
@@ -597,6 +626,12 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
             t.get("selector") for t in _tests_of(claim)]:
         errors.append("why_query must test another selector than the claim's own test (the "
                       "same selector at another horizon or statistic is the same observation)")
+    elif why_set is not None and why_set in claim_sets:
+        # smoke 3 (2026-10-09): a trade_slice on the claim's own filter, or the same `where`
+        # clauses in another order, passed as the "second query"
+        errors.append("why_query must use another filter than the claim's own test (the same "
+                      "trades split another way, or the same clauses in another order, are the "
+                      "same observation)")
     if hashes and not any(_cite_qid(c) in test_qids and _cite_path(c).startswith("horizons.")
                           for c in evidence):
         errors.append("evidence must cite the claim test's own result "
