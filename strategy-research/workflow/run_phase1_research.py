@@ -4968,8 +4968,8 @@ async def _invoke_reader_llm(prompt: str) -> tuple:
 
 # max_budget_usd is enforced by the SDK's bundled CLI on its own price list: CLI 2.1.142
 # (claude-agent-sdk 0.2.82) has no claude-haiku-5-5 / claude-sonnet-5-5 in it, and smoke 5
-# (2026-10-09) measured claude-haiku-5-5 metered far above its list price; the token counts
-# in the audit log are exact
+# (2026-10-09) found claude-haiku-5-5 metered at about Opus list rates (~$25/M output, implied
+# from the audit tokens), not at a Haiku price; the token counts in the audit log are exact
 _ANALYST_DEFAULT_CAPS = {"max_turns": 40, "max_budget_usd": 3.0, "timeout_minutes": 15}
 
 

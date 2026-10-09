@@ -36,8 +36,9 @@ Commands are given for the Mac (bash, repo-root `.venv`) and, next to them, for 
 
 `cost_usd` is the SDK's bundled CLI's own estimate, and the caps are enforced on it. CLI
 2.1.142 (`claude-agent-sdk` 0.2.82) has no `claude-haiku-5-5` / `claude-sonnet-5-5` in it:
-smoke 5 (2026-10-09) measured `claude-haiku-5-5` metered far above its list price. The token
-counts (`tokens.*`) are exact; the bill is in your Console.
+smoke 5 (2026-10-09) found `claude-haiku-5-5` metered at about Opus list rates (~$25/M output,
+implied from the audit tokens), not at a Haiku price. The token counts (`tokens.*`) are exact;
+the bill is in your Console.
 
 Goal: four facts the Python source cannot prove (PHASE_A section 1.4).
 

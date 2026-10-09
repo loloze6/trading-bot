@@ -569,7 +569,9 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
                           "of this session}")
         if isinstance(nc, dict):
             # smoke 5 (2026-10-09): the killing test's own numbers (its threshold, horizons,
-            # floor) may be written here, as the claim's own test's are on the claim path
+            # floor) may be written here, as the claim's own test's are on the claim path.
+            # Known gap, as on the claim path: the model names killed_by, and nothing ties the
+            # statement to that test, so its numbers are accepted whatever the text says
             kid = br.get("killed_by") if isinstance(br, dict) else None
             killed = entries[kid] if _ok_call(entries, kid) else {}
             res = killed.get("result")
@@ -710,9 +712,10 @@ def retry_section(previous_answer: str, errors: list, entries: dict) -> str:
     lines = ["## Your previous answer was refused", ""]
     lines += [f"- {e}" for e in errors]
     # smoke 5 (2026-10-09): a no_claim refused only for its wording came back as a claim
-    lines += ["", "Fix what these errors name. A `no_claim` is an accepted answer as much as a "
-              "claim: do not change your outcome (no_claim to claim, or claim to no_claim) only "
-              "to get past these errors."]
+    lines += ["", "A `no_claim` is an accepted answer as much as a claim. If the errors are about "
+              "wording or citations only, fix them and keep your outcome: do not turn a no_claim "
+              "into a claim to get past them. End with no_claim when an error says your claim "
+              "does not hold (its test was not run, or measured the opposite)."]
     lines += ["", "### The refused answer", "", (previous_answer or "(empty)")[:8000], "",
               "### Your query log so far (same ids, same comparison budget; it continues)", ""]
     used, omitted = sum(len(x) for x in lines), []
