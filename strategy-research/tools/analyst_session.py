@@ -392,7 +392,7 @@ def _clause_set(clauses):
         try:    # as the engine's test identity reads it: 5 == 5.0, `in` lists in any order
             v = ct._canon(sorted(v, key=ct._val_key) if isinstance(v, list) else v)
             out.add((c["field"], c["op"], json.dumps(v, sort_keys=True)))
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):
             return None
     return frozenset(out)
 

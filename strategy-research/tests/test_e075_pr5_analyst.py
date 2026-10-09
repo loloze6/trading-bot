@@ -1485,6 +1485,7 @@ def test_a_malformed_filter_is_never_a_match():
     assert asm._clause_set([C2]) == asm._clause_set([{**C2, "value": 5.0}])
     assert asm._clause_set([C2]) != asm._clause_set([{**C2, "value": 6}])
     assert asm._clause_set([{**C1, "value": {1, 2}}]) is None   # not JSON: never raises
+    assert asm._clause_set([{**C2, "value": 10 ** 400}]) is None  # past float range: never raises
 
 
 def test_the_engines_own_equalities_are_one_filter():
