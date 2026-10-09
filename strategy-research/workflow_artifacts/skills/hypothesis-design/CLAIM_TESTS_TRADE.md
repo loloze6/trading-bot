@@ -66,7 +66,8 @@ Ops: `==`, `!=`, `in` (a list) for `side`, `regime_at_entry` and `exit_cause`; t
 efficiency (they use the entry bar's own high and low or later bars: audit finding A6).
 
 **The two exit-time fields describe what the strategy did; they are known only at the exit.**
-A claim may select on them. A strategy change built from a confirmed claim may act only on the
+A claim may select on them (the analyst may not pair them with the lot's own
+`trade_net_return`: D-095). A strategy change built from a confirmed claim may act only on the
 five entry-time fields.
 
 ## `exit_cause`: the interim classifier (E-074 PHASE_A 4.2)
