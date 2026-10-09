@@ -110,6 +110,10 @@ cited (rounded as you like) or a number of your test, the vehicle against the ba
 that no date outside the research period appears. One refusal gets one retry with the reason.
 The score that ranks your claim is the LOWEST window agreement over every run of its test
 (any variant, any floor).
+A claim whose own test measured the opposite of its `direction` at any horizon (in any
+run of it) is refused: flip `direction` if the opposite is your claim, drop those horizons
+from the test, or end with no_claim. A changed test is a new test: run it with
+`conditional_effect` before you claim it.
 
 ## Guard rails (the same for every lens)
 
