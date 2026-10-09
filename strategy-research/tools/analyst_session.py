@@ -134,6 +134,25 @@ def build_prompt(lens: str, run_dir: Path, *, base_config_rel: str, fold: str | 
 # Reading the answer
 # ---------------------------------------------------------------------------
 
+MAX_ANSWER_DEPTH = 40
+
+
+def _depth(node) -> int:
+    """Nesting depth of a parsed answer, without recursion (a deep answer must not crash the
+    checks that serialise it)."""
+    deepest, stack = 0, [(node, 1)]
+    while stack:
+        cur, d = stack.pop()
+        deepest = max(deepest, d)
+        if d > MAX_ANSWER_DEPTH:
+            break
+        if isinstance(cur, dict):
+            stack.extend((v, d + 1) for v in cur.values())
+        elif isinstance(cur, list):
+            stack.extend((v, d + 1) for v in cur)
+    return deepest
+
+
 def parse_answer(text: str):
     """(answer dict, None) or (None, error): exactly one fenced YAML block, a mapping with an
     `outcome` of claim / no_claim and exactly that outcome's keys."""
@@ -142,8 +161,11 @@ def parse_answer(text: str):
         return None, f"the answer holds {len(blocks)} fenced YAML block(s); write exactly one"
     try:
         doc = yaml.safe_load(blocks[0])
-    except yaml.YAMLError as exc:
-        return None, f"the answer is not YAML: {exc}"
+    except (yaml.YAMLError, ValueError, RecursionError) as exc:
+        # ValueError: an integer past Python's digit limit; RecursionError: deep nesting
+        return None, f"the answer is not readable YAML: {type(exc).__name__}: {str(exc)[:200]}"
+    if _depth(doc) > MAX_ANSWER_DEPTH:
+        return None, f"the answer nests deeper than {MAX_ANSWER_DEPTH} levels"
     if not isinstance(doc, dict) or not isinstance(doc.get("outcome"), str) \
             or doc["outcome"] not in ANSWER_KEYS:
         return None, "the answer must be a mapping with outcome: claim or outcome: no_claim"
@@ -334,9 +356,10 @@ def prose_number_errors(fields: dict, evidence, entries: dict, tests=None) -> li
     """Every number written in the answer's prose must be one the session saw (review of
     #359: free-text numbers were never checked, and the claim's rationale or the no-claim
     reason becomes the reading's explanation). `fields`: {label: text}. A number passes when
-      * it is 0, or 100%;
+      * it is 0 (as written), or 100%;
       * it is a horizon of a cited `horizons.<h>.` path, or a number of the claim's own test
-        blocks, written exactly (all its digits, no %, no exponent);
+        blocks, written exactly (all its digits, no sign, no %, no exponent). Known gap: a
+        unit in words is not read, so "5 bps" passes when 5 is a number of the test;
       * or it rounds a value cited in `evidence` (each citation already checked against the
         log) to the digits it shows; `x%` is x/100 (or x); a written sign must match the
         cited sign, an unsigned number is compared without sign ("0.08% lower" for -0.0008).
@@ -347,7 +370,8 @@ def prose_number_errors(fields: dict, evidence, entries: dict, tests=None) -> li
         if not _ok_call(entries, qid):
             continue
         parts = path.split(".")
-        if len(parts) > 2 and parts[0] == "horizons" and parts[1].isdigit():
+        if len(parts) > 2 and parts[0] == "horizons" and parts[1].isdigit() \
+                and len(parts[1]) <= 6:
             horizons.add(int(parts[1]))
         try:
             v = float(value) if value is not None else None
@@ -370,10 +394,11 @@ def prose_number_errors(fields: dict, evidence, entries: dict, tests=None) -> li
                 errors.append(f"{label} writes {m.group(0)!r}: not a number you cited")
                 continue
             negative = sign in ("-", "\u2212")
-            if x == 0 or (pct and x == 100 and not sign):
+            if float(mantissa.replace(",", "")) == 0 or (pct and x == 100 and not sign):
                 continue
-            if not pct and not exp and "," not in mantissa and (
-                    (-x if negative else x) in exact):
+            # a test's own number or a cited horizon: unsigned and exact only (it is a setting
+            # of the test, never an effect)
+            if not pct and not exp and not sign and "," not in mantissa and x in exact:
                 continue
             sd = _sig_digits(mantissa)
             cands = [x / 100.0, x] if pct else [x]
@@ -383,9 +408,14 @@ def prose_number_errors(fields: dict, evidence, entries: dict, tests=None) -> li
                 ok = any(_rounds_to(abs(a), c, sd) for a in cited for c in cands)
             if ok:
                 continue
+            if pct and x / 100.0 in exact:
+                errors.append(f"{label} writes {m.group(0)!r}: write your test's number as in "
+                              f"the test block ({x / 100.0!r}), not as a percent")
+                continue
             errors.append(f"{label} writes {m.group(0)!r}, which is not a value you cited in "
-                          f"`evidence` nor a number of your test: cite it, or say it in words "
-                          f"(\"positive\", \"most windows\")")
+                          f"`evidence` nor a number of your test: cite it (as the decimal the "
+                          f"tool returned, e.g. 0.0123, or as a percent, 1.23%; bps are not "
+                          f"read), or say it in words (\"positive\", \"most windows\")")
     return errors
 
 
@@ -438,10 +468,10 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
     claim = doc.get("claim")
     try:
         res = claim_check(claim)
-    except (OverflowError, ValueError, TypeError, RecursionError) as exc:
-        # model-written content the claim card cannot even hash (e.g. a 400-digit integer):
-        # a refusal, never a crash past the retry (review of #360)
-        errors.append(f"claim: cannot be checked ({type(exc).__name__}: {str(exc)[:120]})")
+    except OverflowError as exc:
+        # only a model-written number the claim card cannot hash (an integer past float range,
+        # claim_tests._canon) is a refusal; any other exception is a bug of ours: loud
+        errors.append(f"claim: a number in it is too large to check ({str(exc)[:120]})")
         return None, record, errors
     if res.errors:
         errors += [f"claim: {e}" for e in res.errors]

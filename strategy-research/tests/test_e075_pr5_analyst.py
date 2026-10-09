@@ -795,3 +795,57 @@ def test_a_prose_number_shows_all_its_digits(text, cited, ok):
     entries = {"q1": {"id": "q1", "status": "ok", "result": {"n": float(cited)}}}
     errors = asm.prose_number_errors({"claim.rationale": text}, [f"q1:n={cited}"], entries)
     assert (errors == []) is ok, errors
+
+
+# review round 2 of #360
+def _real_check(text, entries=None):
+    real = lambda c: cc.check_claim(c, trade_tests=True, folds=True)  # noqa: E731
+    return asm.check_answer(text, lens="trade_efficiency", run_id=RUN_ID,
+                            entries=entries or _entries_for_claim(), claim_check=real,
+                            holdout_start=q4.HOLDOUT, fold="A", model_id="m")[2]
+
+
+@pytest.mark.parametrize("text", [
+    _claim_answer(evidence=["q1:horizons.1.effect=0.0123",
+                            "q1:horizons." + "9" * 5000 + ".effect=1"]),
+    "```yaml\noutcome: claim\nn: " + "9" * 5000 + "\n```",          # past the digit limit
+    "```yaml\noutcome: claim\nx: " + "[" * 500 + "]" * 500 + "\n```",
+    "```yaml\noutcome: claim\nx: " + "[" * 450 + "]" * 450 + "\n```",
+])
+def test_oversized_or_deep_answers_are_refused_never_raised(text):
+    assert _real_check(text)
+
+
+def test_a_bug_in_our_claim_check_wiring_stays_loud():
+    with pytest.raises(TypeError):
+        asm.check_answer(_claim_answer(), lens="trade_efficiency", run_id=RUN_ID,
+                         entries=_entries_for_claim(),
+                         claim_check=lambda c: cc.check_claim(c, bogus=True),
+                         holdout_start=q4.HOLDOUT, fold="A", model_id="m")
+
+
+@pytest.mark.parametrize("text,needle", [
+    ("an effect of +5 per lot", "'+5'"),                  # a test number with a sign
+    ("an effect of 5e-400", "'5e-400'"),                  # not zero as written
+])
+def test_a_test_number_or_a_tiny_number_is_not_an_effect(text, needle):
+    errors = _check(_claim_answer(claim={"rationale": text}))
+    assert any(needle in e for e in errors), errors
+
+
+def test_a_test_threshold_written_as_a_percent_gets_a_usable_message():
+    tests = [{"name": "t", "selector": {"kind": "trade", "where": [
+                  {"field": "past_return_24", "op": ">", "value": 0.02}]},
+              "outcome": {"kind": "trade_net_return"}, "baseline": {"kind": "other_trades"},
+              "statistic": "mean_diff", "direction": "greater", "floor": {"min_events": 5}}]
+    errors = _check(_claim_answer(claim={"tests": tests,
+                                         "statement": "lots after a 2% rise earn more"}))
+    assert any("not as a percent" in e and "0.02" in e for e in errors), errors
+
+
+def test_deep_nesting_under_a_valid_key_is_refused_never_raised():
+    text = _claim_answer()
+    assert text.count("vehicle: []") == 1
+    deep = text.replace("vehicle: []", "vehicle: " + "[" * 450 + "]" * 450)
+    errors = _real_check(deep)
+    assert any("nests deeper than" in e for e in errors), errors
