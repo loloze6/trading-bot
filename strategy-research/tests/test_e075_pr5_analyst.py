@@ -1112,7 +1112,8 @@ def test_a_one_block_or_no_block_answer_checks_byte_identically_to_before():
 
 BLOCK_ERR = "the answer holds 2 fenced YAML block(s); write exactly one"
 LAST = "(your last block) "
-CLEAN_LINE = LAST + "passes the other checks: write only that block"
+CLEAN_LINE = LAST + ("passes this answer check (the reading checks run once it is the only "
+                     "block): write only that block")
 
 
 def _bad_last():
@@ -1135,6 +1136,21 @@ def test_two_blocks_whose_last_is_clean_are_refused_with_one_line():
     reading, record, errors = _triple(_bad_last() + "\n\n" + _claim_answer())
     assert reading is None and record["outcome"] is None
     assert errors == [BLOCK_ERR, CLEAN_LINE]
+
+
+def test_two_blocks_run_the_real_claim_check_on_the_last_block():
+    no_tests = _claim_answer(claim={"tests": "none", "missing_block": "a per-lot exit rule"})
+    errors = _triple(_claim_answer() + "\n\n" + no_tests, real=True)[2]
+    assert errors[0] == BLOCK_ERR
+    assert any(e.startswith(LAST + "claim: `tests: none` cannot be confirmed") for e in errors), errors
+
+
+def test_two_blocks_check_the_last_block_against_the_holdout_start():
+    sealed = q4.HOLDOUT[:7] + "-15"                  # a date inside the holdout month
+    late = _claim_answer(claim={"rationale": f"seen on {sealed}"})
+    errors = _triple(_claim_answer() + "\n\n" + late)[2]
+    assert errors[0] == BLOCK_ERR
+    assert any(e.startswith(LAST + "the answer names date(s)") for e in errors), errors
 
 
 def test_the_first_block_is_not_the_one_checked():

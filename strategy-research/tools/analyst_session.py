@@ -485,7 +485,8 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
         last = check_answer("```yaml\n" + blocks[-1] + "```", lens=lens, run_id=run_id,
                             entries=entries, claim_check=claim_check,
                             holdout_start=holdout_start, fold=fold, model_id=model_id)[2]
-        last = last or ["passes the other checks: write only that block"]
+        last = last or ["passes this answer check (the reading checks run once it is the "
+                        "only block): write only that block"]
         return None, record, [err] + [f"(your last block) {e}" for e in last]
     record["outcome"] = doc["outcome"]
     errors = check_citations(doc.get("evidence"), entries)
