@@ -169,6 +169,24 @@ def _nonfinite(v) -> bool:
     return isinstance(v, (float, np.floating)) and not math.isfinite(float(v))
 
 
+def _direction_reading(horizons) -> list:
+    """One plain-words line per horizon: is `oriented` with, against or at zero on the claimed
+    direction (None, non-numeric and bool: no value). No numbers but the horizon label."""
+    out = []
+    for hz, h in (horizons or {}).items():
+        o = h.get("oriented") if isinstance(h, dict) else None
+        if isinstance(o, bool) or not isinstance(o, (int, float)):
+            word = "no value"
+        elif o > 0:
+            word = "with your direction"
+        elif o < 0:
+            word = "against your direction"
+        else:
+            word = "zero"
+        out.append(f"h={hz}: {word}")
+    return out
+
+
 class QueryRefused(Exception):
     """A call the engine will not run (bad parameter, cap, budget, path). Logged
     with its reason and returned, never raised to the caller."""
@@ -464,6 +482,11 @@ class QueryEngine:
                "cumulative_comparisons": logged["cumulative_comparisons"]}
         if logged["status"] == "ok":
             out["result"] = result
+            if logged["function"] == "conditional_effect":
+                # Smoke 2 (2026-10-09): the model kept `direction: greater` while its own query
+                # showed the other side at every horizon. Words per horizon, in the reply only:
+                # log bytes, citations and hashes are pinned, and this field is not citable.
+                out["direction_reading"] = _direction_reading(result.get("horizons"))
         else:
             out["reason"] = logged.get("reason")
         return out

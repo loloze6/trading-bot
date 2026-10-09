@@ -5040,7 +5040,9 @@ _ANALYST_TOOL_HELP = {
     "distribution": "A histogram of one column, optionally by a group.",
     "conditional_effect": ("A claim test in the slots (condition = one selector, outcome, "
                            "baseline, statistic, direction): its effect per horizon, the "
-                           "per-window agreement and the exact `test` block to paste into a claim. "
+                           "per-window agreement, `direction_reading` (with or against your "
+                           "direction, in words, per horizon) and the exact `test` block to "
+                           "paste into a claim. "
                            "`floor` (e.g. {min_events: 100, min_windows: 4}; default "
                            "{min_events: 1}) is written into that block: run your claim's test "
                            "with the floor the claim will carry."),
