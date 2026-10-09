@@ -4966,7 +4966,11 @@ async def _invoke_reader_llm(prompt: str) -> tuple:
 # category file, so decide-next reads it unchanged. The pure part (prompt, answer checks,
 # citations, the score) is tools/analyst_session.py.
 
-_ANALYST_DEFAULT_CAPS = {"max_turns": 40, "max_budget_usd": 1.5, "timeout_minutes": 15}
+# max_budget_usd is enforced by the SDK's bundled CLI on its own price list: CLI 2.1.142
+# (claude-agent-sdk 0.2.82) has no claude-haiku-5-5 / claude-sonnet-5-5 in it, and smoke 5
+# (2026-10-09) measured claude-haiku-5-5 metered far above its list price; the token counts
+# in the audit log are exact
+_ANALYST_DEFAULT_CAPS = {"max_turns": 40, "max_budget_usd": 3.0, "timeout_minutes": 15}
 
 
 def _analyst_session_module():
@@ -5189,7 +5193,7 @@ def run_analyst_worker(lens: str, run_id: str, run_dir: Path, stage_attempt=0) -
             "result_subtype": meta.get("subtype"),
             "tokens": _usage_token_record(meta.get("usage") or {}),
             "tool_calls": len(seen), "tools_denied": denied,
-            "init_tools": meta.get("init_tools")}})
+            "init_tools": meta.get("init_tools"), "models": meta.get("models")}})
         tool_list_errors = asm.tool_list_errors(meta.get("init_tools"))
         if tool_list_errors:
             # fail closed (PHASE_A 1.4 b): an answer from a session that had any other tool
@@ -5217,7 +5221,12 @@ def run_analyst_worker(lens: str, run_id: str, run_dir: Path, stage_attempt=0) -
                                    "errors": errors, "subtype": meta.get("subtype"),
                                    "cost_usd": meta.get("cost_usd", 0.0),
                                    "num_turns": meta.get("num_turns"), "tools_denied": denied,
+                                   "outcome": rec.get("outcome"), "models": meta.get("models"),
                                    "answer": (text or "")[:20000]})
+        # smoke 5 (2026-10-09): a no_claim refused for its wording came back as a claim; the
+        # pilot counts such flips (an unreadable answer has no outcome and is not one)
+        outs = [a.get("outcome") for a in record["attempts"]]
+        record["outcome_flipped_on_retry"] = None not in outs and outs[0] != outs[-1]
         if not errors:
             body = _dump_reading(reading)
             review = _review_written_reading(category, run_id, run_dir, body)

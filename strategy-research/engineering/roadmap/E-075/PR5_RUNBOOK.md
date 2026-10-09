@@ -32,7 +32,12 @@ Commands are given for the Mac (bash, repo-root `.venv`) and, next to them, for 
 3. Your model credentials are set in your shell as usual (never in a file of this repo).
 4. `cd strategy-research` for every command below (Windows: `Set-Location strategy-research`).
 
-## 1. Smoke session (about $1-3; at most $3 per lens with its one retry) **($)**
+## 1. Smoke session (at most $6 per lens with its one retry, as the CLI meters it) **($)**
+
+`cost_usd` is the SDK's bundled CLI's own estimate, and the caps are enforced on it. CLI
+2.1.142 (`claude-agent-sdk` 0.2.82) has no `claude-haiku-5-5` / `claude-sonnet-5-5` in it:
+smoke 5 (2026-10-09) measured `claude-haiku-5-5` metered far above its list price. The token
+counts (`tokens.*`) are exact; the bill is in your Console.
 
 Goal: four facts the Python source cannot prove (PHASE_A section 1.4).
 
@@ -49,34 +54,36 @@ Goal: four facts the Python source cannot prove (PHASE_A section 1.4).
    - Windows: `..\venv\Scripts\python.exe tools\analyst_session.py --run $env:TEMP\analyst_smoke\run_074 --lens forecast`
 
    The flags are turned on inside this process only; `config/campaign_config.yaml` is not
-   changed. Caps: 40 turns, $1.50, 15 minutes.
+   changed. Caps: 40 turns, $3 (metered), 15 minutes.
 3. Read the summary it prints after `--- analyst smoke summary ---` and check:
    - **Tool names:** `audit_log.*.init_tools` lists only `mcp__analyst__<name>` names.
      If the session had any other tool, the CLI stops with `AnalystToolListError` (fail
      closed) and writes no reading: send me the list; do not widen the allow-list yourself.
    - **Tools used:** `tools_denied` is `[]`, and `tool_calls` > 0.
    - **Model:** the session ran (no CLI model error) and `result_subtype` is `success`.
-   - **Cost:** `cost_usd` is under $1.50 and `tokens.cache_read` > 0 after the first turns.
+   - **Cost:** `cost_usd` is under $3 and `tokens.cache_read` > 0 after the first turns.
+   - **Served model:** `audit_log.*.models` names the model that answered.
 4. Open the record (`artifacts/analyst/forecast.yaml` in the copy): `attempts[*].status`,
-   and the errors if it was refused.
+   `attempts[*].outcome`, `outcome_flipped_on_retry`, and the errors if it was refused.
 5. Repeat step 2 with `--lens trade_efficiency`.
 
 If something fails, keep the copy and send me the record and the summary.
 
 ## 2. Pilot
 
-### 2a. Offline: both lenses on saved runs 065-074 (about $10-30) **($)**
+### 2a. Offline: both lenses on saved runs 065-074 (metered at most $120) **($)**
 
 1. Copy each saved run 065-074 outside the repository, as in step 1.
    - Windows: `New-Item -ItemType Directory -Force $env:TEMP\analyst_pilot | Out-Null; foreach ($n in 65..74) { if (Test-Path $env:TEMP\analyst_pilot\run_0$n) { Remove-Item -Recurse -Force $env:TEMP\analyst_pilot\run_0$n -ErrorAction Stop }; Copy-Item -Recurse runs\run_0$n $env:TEMP\analyst_pilot\run_0$n }`
 2. Run both lenses on each copy (one command per lens and run, as in step 1.2, with the
-   copy's path): 20 lens runs. Each session is capped at $1.50 and a refused
-   answer gets one retry, so one lens run costs at most $3 and the 20 at most $60 (expected
-   about $10-30).
+   copy's path): 20 lens runs. Each session is capped at $3 (metered, see section 1) and a
+   refused answer gets one retry, so one lens run is metered at most $6 and the 20 at most
+   $120.
 3. Process checks (D4 of PR5_DESIGN; information, not a pass mark):
    - how many answers were accepted at the first attempt, after the retry, or skipped;
    - the refusal reasons (citations, test not run, `why_query`, dates);
-   - claims against `no_claim`;
+   - claims against `no_claim`, and how many outcomes flipped on the retry
+     (`outcome_flipped_on_retry`);
    - cost and turns per session.
 
 These readings stay in the copies: nothing from them reaches the campaign.

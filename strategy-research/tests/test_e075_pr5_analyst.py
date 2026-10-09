@@ -211,7 +211,7 @@ def test_the_hook_allows_the_six():
 
 def test_the_caps_default_to_the_stage_model_and_refuse_bad_values():
     caps = rpr._analyst_caps({})
-    assert caps == {"model": rpr._CLAUDE_WORKER_MODEL, "max_turns": 40, "max_budget_usd": 1.5,
+    assert caps == {"model": rpr._CLAUDE_WORKER_MODEL, "max_turns": 40, "max_budget_usd": 3.0,
                     "timeout_minutes": 15}
     with pytest.raises(ValueError, match="max_budget_usd"):
         rpr._analyst_caps({"orchestrator": {"analyst": {"max_budget_usd": "1"}}})
@@ -1689,3 +1689,120 @@ def test_a_number_calculated_from_cited_values_is_refused_and_the_skill_says_so(
     assert _check(_claim_answer(claim={"rationale": "a higher effect, 0.0123 per lot"})) == []
     skill = (asm.SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
     assert "Never write a number you calculated from cited values" in skill
+
+
+# ---------------------------------------------------------------------------
+# Smoke 5 (2026-10-09): both first answers were honest no_claims refused only for their wording,
+# and the forecast lens's retry turned its no_claim into a claim. A no_claim may now write its
+# killing test's own numbers; the retry says a no_claim stays an accepted answer; the record
+# keeps each attempt's outcome and served model, and whether the outcome flipped
+# ---------------------------------------------------------------------------
+
+_BAND = {"kind": "event", "field": "forecast", "op": ">=", "value": 10}
+
+
+def _killed_entries(function="conditional_effect", status="ok"):
+    e = _ce("q1", "h", 2, 6, selector=_BAND)
+    e["q1"]["result"]["test"].update(outcome={"kind": "fwd_return", "horizons": [1, 4]},
+                                     floor={"min_events": 100, "min_windows": 4})
+    e["q1"].update(function=function, status=status)
+    return e
+
+
+def _nc(reason, statement="bars with a forecast of at least 10 lead"):
+    return "```yaml\n" + yaml.safe_dump({
+        "outcome": "no_claim", "evidence": ["q1:horizons.1.effect=0.0123"],
+        "no_claim": {"reason": reason,
+                     "best_rejected": {"statement": statement, "killed_by": "q1"}}}) + "```"
+
+
+def _nc_errors(text, entries=None):
+    return asm.check_answer(text, lens="forecast", run_id=RUN_ID,
+                            entries=entries or _killed_entries(), claim_check=None,
+                            holdout_start=q4.HOLDOUT, fold="A", model_id="m")[2]
+
+
+@pytest.mark.parametrize("reason,ok", [
+    ("at a forecast of 10 or more the 4-bar move was weaker", True),  # its threshold, horizon
+    ("with at least 100 bars in 4 windows", True),                    # its floor
+    ("the 24-bar move was weaker", False),                            # not one of its numbers
+    ("it held in 3 of 6 windows", False),                             # window counts: uncited
+])
+def test_a_no_claim_may_write_its_killing_tests_own_numbers(reason, ok):
+    errors = _nc_errors(_nc(reason))
+    assert (errors == []) is ok, errors
+
+
+@pytest.mark.parametrize("function,status", [("trade_slice", "ok"),
+                                             ("conditional_effect", "refused")])
+def test_only_an_ok_conditional_effect_killing_query_lends_its_numbers(function, status):
+    errors = _nc_errors(_nc("weaker at 10", statement="s"), _killed_entries(function, status))
+    assert any("no_claim.reason writes '10'" in e for e in errors), errors
+
+
+def test_the_retry_says_a_no_claim_stays_an_accepted_answer():
+    text = asm.retry_section("answer", ["e1"], {})
+    assert "A `no_claim` is an accepted answer as much as a claim" in text
+    assert text.index("- e1") < text.index("A `no_claim`") < text.index("### The refused answer")
+
+
+def _record(run):
+    return yaml.safe_load((run / asm.record_rel("trade_efficiency")).read_text(encoding="utf-8"))
+
+
+def test_a_no_claim_turned_into_a_claim_on_the_retry_is_recorded_as_a_flip(run, monkeypatch):
+    n = {"calls": 0}
+
+    async def script(call):
+        n["calls"] += 1
+        if n["calls"] > 1:
+            return await _good_claim(call)
+        d = await call("describe", {"column": "forecast"})
+        return "```yaml\n" + yaml.safe_dump({
+            "outcome": "no_claim",
+            "no_claim": {"reason": "longs beat shorts by 9.9%",          # uncited: refused
+                         "best_rejected": {"statement": "longs lead",
+                                           "killed_by": d["query_id"]}},
+            "evidence": [_cite(d["query_id"], d["result"], "groups.all.n")]}) + "```"
+    _install(monkeypatch, script)
+    rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
+    record = _record(run)
+    assert [a["outcome"] for a in record["attempts"]] == ["no_claim", "claim"]
+    assert [a["status"] for a in record["attempts"]] == ["refused", "accepted"]
+    assert record["outcome_flipped_on_retry"] is True
+    assert [a["models"] for a in record["attempts"]] == [["claude-haiku-4-5"]] * 2
+    state = yaml.safe_load((run / "pipeline_state.yaml").read_text(encoding="utf-8"))
+    assert [e["models"] for e in state["audit_log"].values()] == [["claude-haiku-4-5"]] * 2
+
+
+def test_a_retry_with_the_same_outcome_or_one_attempt_is_no_flip(run, monkeypatch):
+    n = {"calls": 0}
+
+    async def script(call):
+        n["calls"] += 1
+        return await _good_claim(call, cite_bad=n["calls"] == 1)
+    _install(monkeypatch, script)
+    rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
+    record = _record(run)
+    assert [a["outcome"] for a in record["attempts"]] == ["claim", "claim"]
+    assert record["outcome_flipped_on_retry"] is False
+
+
+def test_one_accepted_attempt_is_no_flip(run, monkeypatch):
+    _install(monkeypatch, _good_claim)
+    rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
+    record = _record(run)
+    assert len(record["attempts"]) == 1 and record["outcome_flipped_on_retry"] is False
+
+
+def test_an_unreadable_answer_has_no_outcome_and_makes_no_flip(run, monkeypatch):
+    n = {"calls": 0}
+
+    async def script(call):
+        n["calls"] += 1
+        return "no yaml here" if n["calls"] == 1 else await _good_claim(call)
+    _install(monkeypatch, script)
+    rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
+    record = _record(run)
+    assert [a["outcome"] for a in record["attempts"]] == [None, "claim"]
+    assert record["outcome_flipped_on_retry"] is False
