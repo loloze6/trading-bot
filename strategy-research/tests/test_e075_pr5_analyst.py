@@ -997,6 +997,46 @@ def test_choosing_a_floor_cannot_drop_a_weaker_run_from_the_score():
                             model_id="m")[1]["scores"]["confidence_real"] == 3
 
 
+def test_a_claim_test_without_its_optional_baseline_keeps_its_score(tmp_path):
+    """Review round 1 of #362: claim_card lets a test leave `baseline` out (None); the
+    floorless identity must read the block the same way, or the claim silently scores 0."""
+    eng = _engine(q4.make_run(tmp_path / "run_001"))
+    r = eng.conditional_effect({"kind": "all"}, [1], statistic="rank_ic", floor=FLOOR)
+    w = eng.trade_slice([], [{"field": "trade_net_return", "stat": "mean"}], by="direction")
+    with_none = r["result"]["test"]
+    assert with_none["baseline"] is None
+    without = {k: v for k, v in with_none.items() if k != "baseline"}
+    assert asm.floorless_hash(without) == asm.floorless_hash(with_none) is not None
+    cite = _cite(r["query_id"], r["result"], "horizons.1.effect")
+    scores = []
+    for block in (with_none, without):
+        _rd, record, errors = _floor_check(eng, _floor_answer(block, r["query_id"],
+                                                              w["query_id"], cite))
+        assert errors == []
+        scores.append(record["scores"]["confidence_real"])
+    assert scores[0] == scores[1]
+
+
+def test_why_query_cannot_be_the_claims_own_test_under_another_floor(tmp_path):
+    """Review round 1 of #362: the same trade test with its `where` clauses in another order
+    and another floor has another exact hash and another selector dict, but is the same
+    observation."""
+    eng = _engine(q4.make_run(tmp_path / "run_001"))
+    a, b = q4.TRADE_WHERES[4]
+    q1 = eng.conditional_effect({"kind": "trade", "where": [a, b]})
+    q2 = eng.conditional_effect({"kind": "trade", "where": [b, a]}, floor=FLOOR)
+    assert q1["result"]["spec_hash"] != q2["result"]["spec_hash"]
+    text = _floor_answer(q2["result"]["test"], q2["query_id"], q1["query_id"],
+                         _cite(q2["query_id"], q2["result"], "horizons.trade.effect"))
+    _rd, _rec, errors = _floor_check(eng, text)
+    assert any("why_query must be the SECOND query" in e for e in errors), errors
+
+
+def test_the_skill_says_to_leave_consistency_out():
+    skill = (asm.SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+    assert "Leave `consistency` out of a claim test" in skill
+
+
 def test_a_stubbed_session_claiming_a_real_floor_reaches_the_reading(run, monkeypatch):
     async def script(call):
         ce = await call("conditional_effect", {"condition": LONG, "floor": FLOOR})

@@ -114,6 +114,8 @@ The score that ranks your claim is the LOWEST window agreement over every run of
 ## Guard rails (the same for every lens)
 
 - Only the six tools; every call is logged and counted. No code, no paths.
+- Leave `consistency` out of a claim test: `conditional_effect` cannot run it, so a claim
+  carrying it is refused as never run.
 - Cite only query ids of this session, with the value as the tool returned it. A number you
   did not cite does not go into the claim's text (nor the no-claim reason). Allowed there: a
   cited value (rounded, or as a percent, with its sign), 0, 100%, a cited horizon, and your

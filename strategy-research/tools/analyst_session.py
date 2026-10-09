@@ -254,12 +254,16 @@ def floorless_hash(test) -> str | None:
     """The identity of a test with its floor set aside (D-094): spec_hash with the floor
     replaced by {min_events: 1}, so a run without a floor keeps its own spec_hash. The floor
     only grades (claim_tests._graded); it never changes a measured number, so runs of one test
-    under different floors are one observation. None when the block does not parse."""
+    under different floors are one observation. The block is read as claim_card._check_test
+    reads it (`baseline` may be left out: None). None when the block does not parse."""
     if not isinstance(test, dict):
         return None
     import claim_tests as ct
+    spec = {k: v for k, v in test.items() if k != "name"}
+    spec.setdefault("baseline", None)
+    spec["floor"] = dict(_UNIT_FLOOR)
     try:
-        return ct.spec_hash(ct.TestSpec.from_dict(dict(test, floor=dict(_UNIT_FLOOR))))
+        return ct.spec_hash(ct.TestSpec.from_dict(spec))
     except (TypeError, ValueError, KeyError, OverflowError):
         return None
 
@@ -535,7 +539,10 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
     test_qids = {q for h in hashes for q in ran.get(h, [])}
     if not _ok_call(entries, why):
         errors.append(f"why_query={why!r} is not a successful call of this session")
-    elif why in test_qids:
+    elif why in test_qids or (entries[why].get("function") == "conditional_effect" and
+                              floorless_hash(((entries[why].get("result") or {}).get("test")))
+                              in score_keys):
+        # D-094: the claim's own test under another floor is the same observation
         errors.append("why_query must be the SECOND query your mechanism predicted, not the "
                       "claim's own test")
     elif entries[why].get("function") not in WHY_FUNCTIONS:
