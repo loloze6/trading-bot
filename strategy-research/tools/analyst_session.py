@@ -578,6 +578,24 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
     elif res.tests_none:
         errors.append("claim: `tests: none` cannot be confirmed on a fold; write the test in the "
                       "slots or end with no_claim")
+    # smoke 3 (2026-10-09; D-095): lots selected by an exit-time field, measured by their own
+    # trade_net_return, is near-mechanical (a losing lot stays open longer)
+    import claim_tests as ct
+    for i, t in enumerate(_tests_of(claim)):
+        sel, out = t.get("selector"), t.get("outcome")
+        if not (isinstance(sel, dict) and sel.get("kind") == "trade"
+                and isinstance(out, dict) and out.get("kind") == "trade_net_return"
+                and isinstance(sel.get("where"), list)):
+            continue
+        fields = sorted({c["field"] for c in sel["where"]
+                         if isinstance(c, dict) and c.get("field") in ct.TRADE_EXIT_FIELDS})
+        if fields:
+            errors.append(
+                f"claim test {t.get('name', i)!r} selects lots by an exit-time field "
+                f"({', '.join(fields)}) and measures their own trade_net_return: that is "
+                f"near-mechanical (a losing lot stays open longer). Select on an entry-time "
+                f"field ({', '.join(ct.TRADE_ENTRY_FIELDS)}), "
+                f"or measure post_exit_return")
     hashes = [t["spec_hash"] for t in res.tests] if not res.errors else []
     ran = conditional_effect_hashes(entries)
     by_test = runs_by_test(entries)
