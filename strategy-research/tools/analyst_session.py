@@ -568,10 +568,20 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
             errors.append("no_claim needs best_rejected {statement, killed_by: an ok query id "
                           "of this session}")
         if isinstance(nc, dict):
+            # smoke 5 (2026-10-09): the killing test's own numbers (its threshold, horizons,
+            # floor) may be written here, as the claim's own test's are on the claim path.
+            # Known gap, as on the claim path: the model names killed_by, and nothing ties the
+            # statement to that test, so its numbers are accepted whatever the text says
+            kid = br.get("killed_by") if isinstance(br, dict) else None
+            killed = entries[kid] if _ok_call(entries, kid) else {}
+            res = killed.get("result")
+            ktest = res.get("test") if killed.get("function") == "conditional_effect" \
+                and isinstance(res, dict) else None
             errors += prose_number_errors(
                 {"no_claim.reason": nc.get("reason"),
                  "no_claim.best_rejected.statement": br.get("statement")
-                 if isinstance(br, dict) else None}, evidence, entries)
+                 if isinstance(br, dict) else None}, evidence, entries,
+                tests=[ktest] if isinstance(ktest, dict) else None)
         record["no_claim"] = nc
         reading = {**base, "explanation": str((nc or {}).get("reason") or "no claim"),
                    "evidence": list(evidence), "side_findings": []}
@@ -701,6 +711,11 @@ def retry_section(previous_answer: str, errors: list, entries: dict) -> str:
     them: the log, its ids and its comparison budget continue)."""
     lines = ["## Your previous answer was refused", ""]
     lines += [f"- {e}" for e in errors]
+    # smoke 5 (2026-10-09): a no_claim refused only for its wording came back as a claim
+    lines += ["", "A `no_claim` is an accepted answer as much as a claim. If the errors are about "
+              "wording or citations only, fix them and keep your outcome: do not turn a no_claim "
+              "into a claim to get past them. End with no_claim when an error says your claim "
+              "does not hold (its test was not run, or measured the opposite)."]
     lines += ["", "### The refused answer", "", (previous_answer or "(empty)")[:8000], "",
               "### Your query log so far (same ids, same comparison budget; it continues)", ""]
     used, omitted = sum(len(x) for x in lines), []
@@ -732,7 +747,8 @@ def main(argv=None) -> int:
 
     Turns on, in this process only, the two flags the stage reads (analyst and folds); the
     config file is not changed. Refuses a run under this repository's runs/ (saved runs are
-    never written to). Spends model money: about $1.50 at most per session."""
+    never written to). Spends model money: at most the `max_budget_usd` cap per session ($3
+    by default), as the SDK's CLI meters it."""
     import argparse
     ap = argparse.ArgumentParser(description=main.__doc__.splitlines()[0])
     ap.add_argument("--run", required=True, help="a COPY of a run directory")
