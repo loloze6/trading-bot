@@ -144,7 +144,8 @@ def parse_answer(text: str):
         doc = yaml.safe_load(blocks[0])
     except yaml.YAMLError as exc:
         return None, f"the answer is not YAML: {exc}"
-    if not isinstance(doc, dict) or doc.get("outcome") not in ANSWER_KEYS:
+    if not isinstance(doc, dict) or not isinstance(doc.get("outcome"), str) \
+            or doc["outcome"] not in ANSWER_KEYS:
         return None, "the answer must be a mapping with outcome: claim or outcome: no_claim"
     want = ANSWER_KEYS[doc["outcome"]]
     if set(doc) != want:
@@ -227,7 +228,8 @@ def conditional_effect_hashes(entries: dict) -> dict:
 def in_run_score(test_hashes: list, entries: dict) -> int:
     """confidence_real, 0..3 (operator, 2026-10-08): for each claim test, the share of windows
     with the claimed sign in the conditional_effect call that ran that test (its weakest
-    horizon); the lowest over the tests; 1.0 -> 3, >= 0.8 -> 2, >= 0.6 -> 1, else 0. An
+    horizon, and the lowest over every run of that test); the lowest over the tests; 1.0 -> 3,
+    >= 0.8 -> 2, >= 0.6 -> 1, else 0. An
     exploratory number: it only ORDERS candidates, confirmation stays on the unseen fold."""
     by_hash = conditional_effect_hashes(entries)
     shares = []
@@ -240,7 +242,9 @@ def in_run_score(test_hashes: list, entries: dict) -> int:
                     if x.get("windows_with_value") else 0.0 for x in hz]
             if vals:
                 share = min(vals)
-                best = share if best is None else max(best, share)
+                # the lowest over every run of the test (any variant, any `by`): repeating a
+                # test cannot raise its score (review of #359)
+                best = share if best is None else min(best, share)
         shares.append(best if best is not None else 0.0)
     s = min(shares) if shares else 0.0
     return 3 if s >= 1.0 else 2 if s >= 0.8 else 1 if s >= 0.6 else 0
@@ -256,6 +260,94 @@ def tool_list_errors(init_tools) -> list:
     if extra:
         return [f"the session had tools outside the six: {extra}"]
     return []
+
+
+WHY_FUNCTIONS = ("conditional_effect", "trade_slice", "event_study")
+PROSE_KEYS = ("statement", "pass_if", "fail_if", "rationale")
+# a number standing on its own (`24h` and `9.9pct` count; `past_return_24` or `run_074`, a
+# number glued after a word character, is a name)
+_PROSE_NUMBER_RE = re.compile(r"(?<![\w.])(\d+(?:\.\d+)?)(%?)")
+
+
+def _ok_call(entries: dict, qid) -> bool:
+    """A successful call of this session (a non-string id is never one)."""
+    return isinstance(qid, str) and (entries.get(qid) or {}).get("status") == "ok"
+
+
+def _cite_parts(c):
+    m = _CITE_RE.match(c.strip()) if isinstance(c, str) else None
+    return m.groups() if m else (None, "", None)
+
+
+def _cite_qid(c):
+    return _cite_parts(c)[0]
+
+
+def _cite_path(c) -> str:
+    return _cite_parts(c)[1]
+
+
+def _tests_of(claim) -> list:
+    tests = claim.get("tests") if isinstance(claim, dict) else None
+    return [t for t in tests if isinstance(t, dict)] if isinstance(tests, list) else []
+
+
+def _selector_of(entry: dict):
+    return (((entry.get("result") or {}).get("test")) or {}).get("selector")
+
+
+def _numeric_leaves(node, out: list) -> list:
+    if isinstance(node, bool):
+        return out
+    if isinstance(node, (int, float)):
+        out.append(float(node))
+    elif isinstance(node, dict):
+        for v in node.values():
+            _numeric_leaves(v, out)
+    elif isinstance(node, list):
+        for v in node:
+            _numeric_leaves(v, out)
+    return out
+
+
+def _sig_digits(token: str) -> int:
+    digits = token.replace(".", "").lstrip("0")
+    return max(1, len(digits.rstrip("0")) if "." not in token else len(digits))
+
+
+def prose_number_errors(claim, evidence, entries: dict) -> list:
+    """Every number written in the claim's prose (statement, pass_if, fail_if, rationale) must
+    be one the session saw and cited: a value of `evidence` (each citation already checked
+    against the log), or a number of the claim's own test blocks (horizons, lookbacks, floors).
+    A prose number may round a cited value to the digits it shows; `x%` matches x or x/100.
+    Review of #359: free-text numbers were never checked, and the rationale becomes the
+    reading's explanation."""
+    if not isinstance(claim, dict):
+        return []
+    allowed = _numeric_leaves(claim.get("tests"), [])
+    for c in evidence or []:
+        qid, path, value = _cite_parts(c)
+        try:
+            v = float(value) if value is not None else None
+        except ValueError:
+            v = None
+        if v is not None and math.isfinite(v) and _ok_call(entries, qid):
+            allowed.append(v)
+    errors = []
+    for key in PROSE_KEYS:
+        text = claim.get(key)
+        if not isinstance(text, str):
+            continue
+        for m in _PROSE_NUMBER_RE.finditer(text):
+            token, pct = m.group(1), m.group(2)
+            x = float(token)
+            sd = _sig_digits(token)
+            cands = [x, x / 100.0] if pct else [x]
+            if not any(float(f"{abs(a):.{sd}g}") == float(f"{c:.{sd}g}")
+                       for a in allowed for c in cands):
+                errors.append(f"claim.{key} writes {m.group(0)!r}, which is not a value you "
+                              f"cited in `evidence` nor a number of your test: cite it or drop it")
+    return errors
 
 
 def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_check,
@@ -278,6 +370,7 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
         return None, record, [err]
     record["outcome"] = doc["outcome"]
     errors = check_citations(doc.get("evidence"), entries)
+    evidence = doc["evidence"] if isinstance(doc.get("evidence"), list) else []
     late = sealed_dates(yaml.safe_dump(doc, allow_unicode=True), holdout_start)
     if late:
         errors.append(f"the answer names date(s) {late}: nothing at or after the research "
@@ -291,12 +384,12 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
             errors.append("no_claim needs a non-empty `reason`")
         br = (nc or {}).get("best_rejected") if isinstance(nc, dict) else None
         if not isinstance(br, dict) or not isinstance(br.get("statement"), str) \
-                or entries.get(br.get("killed_by"), {}).get("status") != "ok":
+                or not _ok_call(entries, br.get("killed_by")):
             errors.append("no_claim needs best_rejected {statement, killed_by: an ok query id "
                           "of this session}")
         record["no_claim"] = nc
         reading = {**base, "explanation": str((nc or {}).get("reason") or "no claim"),
-                   "evidence": list(doc.get("evidence") or []), "side_findings": []}
+                   "evidence": list(evidence), "side_findings": []}
         return reading, record, errors
     claim = doc.get("claim")
     res = claim_check(claim)
@@ -313,23 +406,35 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
                           f"session: run it first and paste the `test` block it returns")
     why = doc.get("why_query")
     test_qids = {q for h in hashes for q in ran.get(h, [])}
-    if entries.get(why, {}).get("status") != "ok":
+    if not _ok_call(entries, why):
         errors.append(f"why_query={why!r} is not a successful call of this session")
     elif why in test_qids:
         errors.append("why_query must be the SECOND query your mechanism predicted, not the "
                       "claim's own test")
+    elif entries[why].get("function") not in WHY_FUNCTIONS:
+        errors.append(f"why_query must be a {'/'.join(WHY_FUNCTIONS)} call (a measured "
+                      f"prediction), not {entries[why].get('function')!r}")
+    elif entries[why].get("function") == "conditional_effect" and _selector_of(entries[why]) in [
+            t.get("selector") for t in _tests_of(claim)]:
+        errors.append("why_query must test another selector than the claim's own test (the "
+                      "same selector at another horizon or statistic is the same observation)")
+    if hashes and not any(_cite_qid(c) in test_qids and _cite_path(c).startswith("horizons.")
+                          for c in evidence):
+        errors.append("evidence must cite the claim test's own result "
+                      "(`q<n>:horizons.<h>.<field>=<value>` of its conditional_effect call)")
+    errors += prose_number_errors(claim, evidence, entries)
     record.update(why_query=why, test_spec_hashes=hashes)
     scores = {"confidence_real": in_run_score(hashes, entries) if hashes else 0,
               "distance_to_profitable": FIXED_SCORE, "mechanism_plausibility": FIXED_SCORE}
     record["scores"] = {**scores, "source": "code: in-run window agreement (PR5_DESIGN 11.3)"}
     side = {"proposal_id": f"{rid}-1", "claim": claim,
-            "evidence": list(doc.get("evidence") or []), "scores": scores,
+            "evidence": list(evidence), "scores": scores,
             "vehicle": doc.get("vehicle"), "combines_as": doc.get("combines_as")}
     if fold:
         side["fold_observed"] = fold
     reading = {**base, "explanation": str((claim or {}).get("rationale") or "")
                if isinstance(claim, dict) else "",
-               "evidence": list(doc.get("evidence") or []), "side_findings": [side]}
+               "evidence": list(evidence), "side_findings": [side]}
     return reading, record, errors
 
 

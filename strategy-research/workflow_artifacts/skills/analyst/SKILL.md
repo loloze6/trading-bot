@@ -78,9 +78,9 @@ claim:
   pass_if: >  what result on the unseen fold confirms it
   fail_if: >  what result refutes it (the falsifier)
   rationale: >  the why: the market or mechanical reason
-why_query: q9                      # the second query your mechanism predicted
+why_query: q9                      # the second query your mechanism predicted (another selector)
 evidence:                          # citations: query id, a path in that result, the value
-  - q7:horizons.24.effect=0.0012
+  - q7:horizons.24.effect=0.0012   # at least one from your claim test's own conditional_effect
 vehicle: []
 combines_as: execution_rule        # forecast_block | regime_gate | execution_rule | knowledge_only
 ```
@@ -100,14 +100,19 @@ evidence:
 
 Code checks, before anything is kept: the claim block (CLAIM_TESTS), every citation against the
 query log (the id exists, the path exists in that result, the value equals the logged value),
-that each test of the claim was run with `conditional_effect` (the same test block), that
-`why_query` is a call of this session, the vehicle against the base config, and that no date
-outside the research period appears. One refusal gets one retry with the reason.
+that each test of the claim was run with `conditional_effect` (the same test block) and that
+`evidence` cites that call's `horizons`, that `why_query` is a `conditional_effect`,
+`trade_slice` or `event_study` call of this session on another selector than the claim's
+test, that every number in `statement`, `pass_if`, `fail_if` and `rationale` is a value you
+cited (rounded as you like) or a number of your test, the vehicle against the base config, and
+that no date outside the research period appears. One refusal gets one retry with the reason.
+The score that ranks your claim is the LOWEST window agreement over every run of its test.
 
 ## Guard rails (the same for every lens)
 
 - Only the six tools; every call is logged and counted. No code, no paths.
-- Cite only query ids of this session, with the value as the tool returned it.
+- Cite only query ids of this session, with the value as the tool returned it. A number you
+  did not cite does not go into the claim's text.
 - The observation may read any column. A vehicle acts only on what is known at the bar's close
   or the fill: never on an exit field, an `after` column or a future return.
 - No profit or cost judgement: report effects as measured; whether an effect pays after costs
