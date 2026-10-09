@@ -56,7 +56,9 @@ with its **vehicle**: the strategy change its own run backtests.
 
 - A config change that exploits what you saw: `vehicle: [{component_id, field, before, after}]`,
   resolved against the base config (name a component `id`, a field inside it, its current
-  value from the config, and the new value).
+  value from the config, and the new value). A list element is written `name[i]`, never
+  `name.i`: `{component_id: shock_zscore, field: "transforms[0].params.span", before: 2,
+  after: 1}`.
 - Or `vehicle: []`, only for a claim of kind `execution_behaviour` about today's strategy as it
   is: the child re-runs the same strategy on the next fold and its own behaviour is the test.
 
@@ -105,9 +107,10 @@ included: pass the claim's floor as `conditional_effect`'s `floor` and paste the
 returns) and that
 `evidence` cites that call's `horizons`, that `why_query` is a `conditional_effect`,
 `trade_slice` or `event_study` call of this session on another selector than the claim's
-test, that every number in `statement`, `pass_if`, `fail_if` and `rationale` is a value you
-cited (rounded as you like) or a number of your test, the vehicle against the base config, and
-that no date outside the research period appears. One refusal gets one retry with the reason.
+test, the vehicle against the base config, and that no date outside the research period
+appears. One refusal gets one retry with every reason found. A number in your text that is
+not a value you cited nor a number of your test is not a refusal: it is replaced by `<n>` in
+everything kept and passed on, and listed as unverified.
 The score that ranks your claim is the LOWEST window agreement over every run of its test
 (any variant, any floor).
 A claim whose own test measured the opposite of its `direction` at any horizon (in any
@@ -127,15 +130,13 @@ round; the `evidence` list may not).
 - Only the six tools; every call is logged and counted. No code, no paths.
 - Leave `consistency` out of a claim test: `conditional_effect` cannot run it, so a claim
   carrying it is refused as never run.
-- Cite only query ids of this session, with the value as the tool returned it. A number you
-  did not cite does not go into the claim's text (nor the no-claim reason). Allowed there: a
-  cited value (rounded, or as a percent, with its sign), 0, 100%, a cited horizon, and your
-  test's own numbers written exactly (one between 0 and 1 may be written as a percent, with
-  no sign: "top 20%" for `q: 0.2`); in a no_claim, "your test" is the `conditional_effect`
-  test named by `killed_by`. Say the rest in words: "positive", "most windows".
-  Never write a number you calculated from cited values (a difference, a ratio, a sum): it
-  was not returned by a tool, so it is refused unless it happens to equal a value you cited.
-  Cite both values and say the comparison in words ("higher", "about half").
+- Cite only query ids of this session, with the value as the tool returned it. In the claim's
+  text (and the no-claim reason) write numbers you cited (rounded, or as a percent, with
+  their sign), 0, 100%, a cited horizon, and your test's own numbers written exactly (one
+  between 0 and 1 may be a percent, no sign: "top 20%" for `q: 0.2`; in a no_claim, "your
+  test" is the `conditional_effect` test named by `killed_by`). Say the rest in words
+  ("positive", "most windows", "higher", "about half"): any other number, including one you
+  calculated from cited values, is masked as `<n>` and listed as unverified.
 - The observation may read any column. A vehicle acts only on what is known at the bar's close
   or the fill: never on an exit field, an `after` column or a future return.
 - No profit or cost judgement: report effects as measured; whether an effect pays after costs

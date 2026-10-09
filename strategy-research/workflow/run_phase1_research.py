@@ -5208,14 +5208,18 @@ def run_analyst_worker(lens: str, run_id: str, run_dir: Path, stage_attempt=0) -
             text, lens=lens, run_id=run_id, entries=entries,
             claim_check=lambda claim: cc.check_claim(claim, **_claim_check_kw()),
             holdout_start=holdout_start, fold=fold, model_id=model_id)
-        if reading is not None and not errors:
+        # D-096: the reading checks run on every readable answer, so the first attempt hears
+        # every error (smoke 6: a vehicle error surfaced only on the retry); the content checks
+        # (claim card again, vehicle) need a claim the claim card accepted
+        if reading is not None:
             try:
                 rp.check_reading(reading, category, "analyst reading", from_model=True,
                                  envelope=True, **_reader_strictness())
             except rp.ProposalError as exc:
-                errors = [str(exc)]
+                errors = errors + [str(exc)]
             else:
-                errors = _reading_content_errors(reading, category, run_dir)
+                if rec.get("outcome") == "no_claim" or rec.get("claim_card_ok"):
+                    errors = errors + _reading_content_errors(reading, category, run_dir)
         record.update(rec)
         record["attempts"].append({"status": "refused" if errors else "accepted",
                                    "errors": errors, "subtype": meta.get("subtype"),

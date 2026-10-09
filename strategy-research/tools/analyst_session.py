@@ -443,9 +443,15 @@ def _rounds_to(value: float, shown: float, sd: int) -> bool:
 
 
 def prose_number_errors(fields: dict, evidence, entries: dict, tests=None) -> list:
-    """Every number written in the answer's prose must be one the session saw (review of
-    #359: free-text numbers were never checked, and the claim's rationale or the no-claim
-    reason becomes the reading's explanation). `fields`: {label: text}. A number passes when
+    """The message of each unverified number in the answer's prose (number_hits)."""
+    return [h[4] for h in number_hits(fields, evidence, entries, tests)]
+
+
+def number_hits(fields: dict, evidence, entries: dict, tests=None) -> list:
+    """Every number written in the answer's prose that the session did not see, as
+    (label, start, end, written, message) (review of #359: free-text numbers were never
+    checked). Since D-096 such a number is masked and listed, not refused (check_answer).
+    `fields`: {label: text}. A number is verified when
       * it is 0 (as written), or 100%;
       * it is a horizon of a cited `horizons.<h>.` path, or a number of the claim's own test
         blocks, written exactly (all its digits, no sign, no %, no exponent). Known gap: a
@@ -475,7 +481,7 @@ def prose_number_errors(fields: dict, evidence, entries: dict, tests=None) -> li
     own = _test_numbers(tests, set())
     exact = horizons | own
     own_unit = {n for n in own if 0 <= n <= 1}
-    errors = []
+    hits = []
     for label, text in fields.items():
         if not isinstance(text, str):
             continue
@@ -485,8 +491,11 @@ def prose_number_errors(fields: dict, evidence, entries: dict, tests=None) -> li
                 x = float(mantissa.replace(",", "")) * (10.0 ** int(exp) if exp else 1.0)
             except (ValueError, OverflowError):
                 x = math.inf
+
+            def hit(message, m=m, label=label):
+                hits.append((label, m.start(), m.end(), m.group(0), message))
             if not math.isfinite(x):
-                errors.append(f"{label} writes {m.group(0)!r}: not a number you cited")
+                hit(f"{label} writes {m.group(0)!r}: not a number you cited")
                 continue
             negative = sign in ("-", "\u2212")
             if float(mantissa.replace(",", "")) == 0 or (pct and x == 100 and not sign):
@@ -509,14 +518,42 @@ def prose_number_errors(fields: dict, evidence, entries: dict, tests=None) -> li
             if ok:
                 continue
             if pct and x / 100.0 in exact:
-                errors.append(f"{label} writes {m.group(0)!r}: write your test's number as in "
-                              f"the test block ({x / 100.0!r}), not as a percent")
+                hit(f"{label} writes {m.group(0)!r}: write your test's number as in "
+                    f"the test block ({x / 100.0!r}), not as a percent")
                 continue
-            errors.append(f"{label} writes {m.group(0)!r}, which is not a value you cited in "
-                          f"`evidence` nor a number of your test: cite it (as the decimal the "
-                          f"tool returned, e.g. 0.0123, or as a percent, 1.23%; bps are not "
-                          f"read), or say it in words (\"positive\", \"most windows\")")
-    return errors
+            hit(f"{label} writes {m.group(0)!r}, which is not a value you cited in "
+                f"`evidence` nor a number of your test: cite it (as the decimal the "
+                f"tool returned, e.g. 0.0123, or as a percent, 1.23%; bps are not "
+                f"read), or say it in words (\"positive\", \"most windows\")")
+    return hits
+
+
+def mask_hits(root, prefix: str, hits: list):
+    """A deep copy of `root` (the claim or the no_claim block) with each hit's number replaced
+    by explore_confirm.NUMBER_MASK, as the memory view masks earlier statements. A hit's label
+    is `<prefix>.<key>[.<key>]` (number_hits' labels)."""
+    import copy
+    from explore_confirm import NUMBER_MASK
+    out = copy.deepcopy(root)
+    spans: dict = {}
+    for label, start, end, _written, _msg in hits:
+        spans.setdefault(label, []).append((start, end))
+    for label, where in spans.items():
+        keys = label.split(".")[1:] if label.startswith(prefix + ".") else []
+        node = out
+        for k in keys[:-1]:
+            node = node.get(k) if isinstance(node, dict) else None
+        if not keys or not isinstance(node, dict) or not isinstance(node.get(keys[-1]), str):
+            raise ValueError(f"mask_hits: {label!r} is not a text under {prefix!r}")
+        text = node[keys[-1]]
+        for start, end in sorted(where, reverse=True):
+            text = text[:start] + NUMBER_MASK + text[end:]
+        node[keys[-1]] = text
+    return out
+
+
+def _unverified(hits: list) -> list:
+    return [{"field": label, "written": written} for label, _s, _e, written, _m in hits]
 
 
 def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_check,
@@ -577,11 +614,14 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
             res = killed.get("result")
             ktest = res.get("test") if killed.get("function") == "conditional_effect" \
                 and isinstance(res, dict) else None
-            errors += prose_number_errors(
+            # D-096: an unverified number is masked and listed, never a refusal
+            hits = number_hits(
                 {"no_claim.reason": nc.get("reason"),
                  "no_claim.best_rejected.statement": br.get("statement")
                  if isinstance(br, dict) else None}, evidence, entries,
                 tests=[ktest] if isinstance(ktest, dict) else None)
+            nc = mask_hits(nc, "no_claim", hits)
+            record["unverified_numbers"] = _unverified(hits)
         record["no_claim"] = nc
         reading = {**base, "explanation": str((nc or {}).get("reason") or "no claim"),
                    "evidence": list(evidence), "side_findings": []}
@@ -682,8 +722,14 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
         errors.append("evidence must cite the claim test's own result "
                       "(`q<n>:horizons.<h>.<field>=<value>` of its conditional_effect call)")
     if isinstance(claim, dict):
-        errors += prose_number_errors({f"claim.{k}": claim.get(k) for k in PROSE_KEYS},
-                                      evidence, entries, tests=claim.get("tests"))
+        # D-096: an unverified number is masked in what is stored and passed on (the reading,
+        # the child's pre-filled claim) and listed, never a refusal
+        hits = number_hits({f"claim.{k}": claim.get(k) for k in PROSE_KEYS},
+                           evidence, entries, tests=claim.get("tests"))
+        claim = mask_hits(claim, "claim", hits)
+        record["unverified_numbers"] = _unverified(hits)
+    # the reading checks (shape, vehicle) need a claim the claim card accepted
+    record["claim_card_ok"] = not res.errors
     record.update(why_query=why, test_spec_hashes=hashes)
     scores = {"confidence_real": in_run_score(score_keys, entries) if hashes else 0,
               "distance_to_profitable": FIXED_SCORE, "mechanism_plausibility": FIXED_SCORE}

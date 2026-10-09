@@ -655,6 +655,15 @@ def _check(text, entries=None):
                             holdout_start=q4.HOLDOUT, fold="A", model_id="m")[2]
 
 
+def _flagged(text, entries=None):
+    """D-096: (errors, the unverified numbers as written, the reading). An unverified number is
+    masked in the reading and listed on the record; it is never an error."""
+    reading, rec, errors = asm.check_answer(
+        text, lens="trade_efficiency", run_id=RUN_ID, entries=entries or _entries_for_claim(),
+        claim_check=lambda c: _Res(), holdout_start=q4.HOLDOUT, fold="A", model_id="m")
+    return errors, [u["written"] for u in rec.get("unverified_numbers") or []], reading
+
+
 def test_the_reference_answer_is_accepted():
     assert _check(_claim_answer()) == []
 
@@ -670,11 +679,14 @@ def test_the_reference_answer_is_accepted():
     ("in 2023 the longs won", False),                   # a year nobody cited
 ])
 def test_every_number_in_the_prose_must_be_cited(rationale, ok):
-    """M2: the claim's free text quoted numbers the session never returned."""
-    errors = _check(_claim_answer(claim={"rationale": rationale}))
-    assert (errors == []) is ok, errors
+    """M2: the claim's free text quoted numbers the session never returned. D-096: such a
+    number is masked and listed, the answer is not refused."""
+    errors, flagged, reading = _flagged(_claim_answer(claim={"rationale": rationale}))
+    assert errors == []
+    assert (flagged == []) is ok, flagged
     if not ok:
-        assert any("claim.rationale writes" in e for e in errors)
+        assert "<n>" in reading["explanation"]
+        assert "<n>" in reading["side_findings"][0]["claim"]["rationale"]
 
 
 def test_evidence_must_cite_the_claim_tests_own_result():
@@ -759,8 +771,8 @@ def test_evidence_from_another_conditional_effect_is_not_the_tests_own():
     ("rationale", "windows 6,7 agree", False),
 ])
 def test_the_prose_rule_reads_signs_words_and_forms(field, text, ok):
-    errors = _check(_claim_answer(claim={field: text}))
-    assert (errors == []) is ok, errors
+    errors, flagged, _reading = _flagged(_claim_answer(claim={field: text}))
+    assert errors == [] and (flagged == []) is ok, (errors, flagged)
 
 
 def test_a_huge_integer_in_the_test_is_refused_never_raised():
@@ -784,9 +796,10 @@ def test_the_no_claim_text_is_checked_too():
             "outcome": "no_claim", "evidence": ["q1:horizons.1.effect=0.0123"],
             "no_claim": {"reason": reason,
                          "best_rejected": {"statement": "longs lead", "killed_by": "q3"}}}) + "```"
-    assert _check(answer("the effect was 1.23% but it did not hold by coin")) == []
-    errors = _check(answer("longs beat shorts by 9.9% but n was small"))
-    assert any(e.startswith("no_claim.reason writes '9.9%'") for e in errors), errors
+    assert _flagged(answer("the effect was 1.23% but it did not hold by coin"))[:2] == ([], [])
+    errors, flagged, reading = _flagged(answer("longs beat shorts by 9.9% but n was small"))
+    assert errors == [] and flagged == ["9.9%"], (errors, flagged)
+    assert reading["explanation"] == "longs beat shorts by <n> but n was small"
 
 
 @pytest.mark.parametrize("text,cited,ok", [("100 lots", "140", False), ("100 lots", "100.4", True),
@@ -829,8 +842,8 @@ def test_a_bug_in_our_claim_check_wiring_stays_loud():
     ("an effect of 5e-400", "'5e-400'"),                  # not zero as written
 ])
 def test_a_test_number_or_a_tiny_number_is_not_an_effect(text, needle):
-    errors = _check(_claim_answer(claim={"rationale": text}))
-    assert any(needle in e for e in errors), errors
+    errors, flagged, _reading = _flagged(_claim_answer(claim={"rationale": text}))
+    assert errors == [] and flagged == [needle.strip("'")], (errors, flagged)
 
 
 def test_a_test_threshold_in_0_1_written_as_a_percent_is_accepted():
@@ -1137,9 +1150,13 @@ def _fixed_answers():
     return cases
 
 
-#: sha256 of the (reading, record, errors) triples of _fixed_answers() on origin/master
-#: 175e1453 (before PR A), measured on Windows 2026-10-09
-GOLDEN_ONE_OR_NO_BLOCK = "e30f7420af7187239a8a4928c234b853ec2a1a624c219c6e69dc16e6e00dec57"
+#: sha256 of the (reading, record, errors) triples of _fixed_answers(). First pinned on
+#: origin/master 175e1453 (before PR A): e30f7420af71...dec57. Re-pinned by D-096
+#: (2026-10-10), diffed case by case against master 4194571e: every record gains
+#: `unverified_numbers` (and a claim's `claim_card_ok`); cases 2, 6 and 8 no longer carry a
+#: prose-number error and their prose is masked ("the effect is <n> huge"); case 6 keeps
+#: its sealed-date refusal; every other reading and error list is unchanged.
+GOLDEN_ONE_OR_NO_BLOCK = "76930a7254b3a18150b46df7173dafe2e4fac95ce699e2b2ff4ac3947b7e6231"
 
 
 def test_a_one_block_or_no_block_answer_checks_byte_identically_to_before():
@@ -1155,8 +1172,12 @@ CLEAN_LINE = LAST + ("passes this answer check (the reading checks run once it i
                      "block): write only that block")
 
 
+#: D-096: a prose number is no longer an error, so the bad block carries a wrong citation
+BAD_CITE = "q1:horizons.1.effect=0.5"
+
+
 def _bad_last():
-    return _claim_answer(claim={"rationale": "the effect is 9.9% huge"})
+    return _claim_answer(evidence=[BAD_CITE])
 
 
 def test_two_blocks_whose_last_has_errors_list_them_after_the_block_count_error():
@@ -1164,7 +1185,7 @@ def test_two_blocks_whose_last_has_errors_list_them_after_the_block_count_error(
     assert reading is None
     assert errors[0] == BLOCK_ERR and len(errors) > 1
     assert all(e.startswith(LAST) for e in errors[1:])
-    assert any("claim.rationale writes '9.9%'" in e for e in errors[1:]), errors
+    assert any(BAD_CITE.split("=")[0] in e for e in errors[1:]), errors
     assert record["outcome"] is None
     assert not {"why_query", "test_spec_hashes", "scores"} & set(record), record
     # the record is exactly what the one-block error path builds
@@ -1194,7 +1215,7 @@ def test_two_blocks_check_the_last_block_against_the_holdout_start():
 
 def test_the_first_block_is_not_the_one_checked():
     _, _, errors = _triple(_bad_last() + "\n\n" + _claim_answer())
-    assert not any("9.9%" in e for e in errors)
+    assert not any(BAD_CITE.split("=")[0] in e for e in errors)
 
 
 def test_two_blocks_whose_last_is_unreadable_yaml_add_its_parse_error():
@@ -1205,11 +1226,12 @@ def test_two_blocks_whose_last_is_unreadable_yaml_add_its_parse_error():
 
 
 def test_three_blocks_use_the_last_one():
-    text = _bad_last() + "\n" + _claim_answer() + "\n" + _no_claim_text("longs beat shorts by 9.9%")
+    bad_nc = _no_claim_text("longs beat shorts").replace("killed_by: q3", "killed_by: q99")
+    text = _bad_last() + "\n" + _claim_answer() + "\n" + bad_nc
     errors = _triple(text)[2]
     assert errors[0] == BLOCK_ERR.replace("2", "3")
-    assert any(e.startswith(LAST + "no_claim.reason writes '9.9%'") for e in errors), errors
-    assert not any("claim.rationale" in e for e in errors)
+    assert any(e.startswith(LAST + "no_claim needs best_rejected") for e in errors), errors
+    assert not any(BAD_CITE.split("=")[0] in e for e in errors)
 
 
 def test_a_zero_block_answer_keeps_its_single_error():
@@ -1219,7 +1241,7 @@ def test_a_zero_block_answer_keeps_its_single_error():
 def test_the_retry_section_lists_the_multi_block_errors():
     errors = _triple(_claim_answer() + "\n" + _bad_last())[2]
     text = asm.retry_section("answer", errors, _entries_for_claim())
-    assert f"- {BLOCK_ERR}" in text and f"- {LAST}claim.rationale writes '9.9%'" in text
+    assert f"- {BLOCK_ERR}" in text and f"- {LAST}" in text and BAD_CITE.split("=")[0] in text
 
 
 # ---------------------------------------------------------------------------
@@ -1684,11 +1706,12 @@ def test_a_number_calculated_from_cited_values_is_refused_and_the_skill_says_so(
     """Smoke 3: the forecast lens's retry was refused for one number, its own difference of two
     cited values (0.051 - 0.041 = '0.010'). The check refuses it unless it
     happens to equal a cited value (here 0.0246 = 2 x 0.0123 is refused); the skill now says so."""
-    errors = _check(_claim_answer(claim={"rationale": "twice the effect, 0.0246 per lot"}))
-    assert any("claim.rationale writes '0.0246'" in e for e in errors), errors
-    assert _check(_claim_answer(claim={"rationale": "a higher effect, 0.0123 per lot"})) == []
+    errors, flagged, _r = _flagged(_claim_answer(claim={"rationale": "twice the effect, 0.0246 per lot"}))
+    assert errors == [] and flagged == ["0.0246"], (errors, flagged)   # D-096: masked, listed
+    assert _flagged(_claim_answer(claim={"rationale": "a higher effect, 0.0123 per lot"}))[:2] \
+        == ([], [])
     skill = (asm.SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
-    assert "Never write a number you calculated from cited values" in skill
+    assert "including one you\n  calculated from cited values, is masked as `<n>`" in skill
 
 
 # ---------------------------------------------------------------------------
@@ -1716,10 +1739,10 @@ def _nc(reason, statement="bars with a forecast of at least 10 lead"):
                      "best_rejected": {"statement": statement, "killed_by": "q1"}}}) + "```"
 
 
-def _nc_errors(text, entries=None):
+def _nc_triple(text, entries=None):
     return asm.check_answer(text, lens="forecast", run_id=RUN_ID,
                             entries=entries or _killed_entries(), claim_check=None,
-                            holdout_start=q4.HOLDOUT, fold="A", model_id="m")[2]
+                            holdout_start=q4.HOLDOUT, fold="A", model_id="m")
 
 
 @pytest.mark.parametrize("reason,ok", [
@@ -1729,15 +1752,15 @@ def _nc_errors(text, entries=None):
     ("it held in 3 of 6 windows", False),                             # window counts: uncited
 ])
 def test_a_no_claim_may_write_its_killing_tests_own_numbers(reason, ok):
-    errors = _nc_errors(_nc(reason))
-    assert (errors == []) is ok, errors
+    _r, rec, errors = _nc_triple(_nc(reason))
+    assert errors == [] and (rec["unverified_numbers"] == []) is ok, (errors, rec)
 
 
 @pytest.mark.parametrize("function,status", [("trade_slice", "ok"),
                                              ("conditional_effect", "refused")])
 def test_only_an_ok_conditional_effect_killing_query_lends_its_numbers(function, status):
-    errors = _nc_errors(_nc("weaker at 10", statement="s"), _killed_entries(function, status))
-    assert any("no_claim.reason writes '10'" in e for e in errors), errors
+    _r, rec, _e = _nc_triple(_nc("weaker at 10", statement="s"), _killed_entries(function, status))
+    assert {"field": "no_claim.reason", "written": "10"} in rec["unverified_numbers"], rec
 
 
 def test_the_retry_says_a_no_claim_stays_an_accepted_answer():
@@ -1760,9 +1783,9 @@ def test_a_no_claim_turned_into_a_claim_on_the_retry_is_recorded_as_a_flip(run, 
         d = await call("describe", {"column": "forecast"})
         return "```yaml\n" + yaml.safe_dump({
             "outcome": "no_claim",
-            "no_claim": {"reason": "longs beat shorts by 9.9%",          # uncited: refused
+            "no_claim": {"reason": "longs do not beat shorts",
                          "best_rejected": {"statement": "longs lead",
-                                           "killed_by": d["query_id"]}},
+                                           "killed_by": "q99"}},     # not a call: refused
             "evidence": [_cite(d["query_id"], d["result"], "groups.all.n")]}) + "```"
     _install(monkeypatch, script)
     rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
@@ -1806,3 +1829,95 @@ def test_an_unreadable_answer_has_no_outcome_and_makes_no_flip(run, monkeypatch)
     record = _record(run)
     assert [a["outcome"] for a in record["attempts"]] == [None, "claim"]
     assert record["outcome_flipped_on_retry"] is False
+
+
+# ---------------------------------------------------------------------------
+# D-096 (2026-10-10): an unverified number in the prose is masked and listed, never a
+# refusal; the reading checks run on every readable answer, so attempt 1 hears every error
+# ---------------------------------------------------------------------------
+
+def test_an_unverified_number_is_masked_everywhere_it_is_passed_on_and_listed():
+    text = _claim_answer(claim={"statement": "longs earn 9.9% more",
+                                "pass_if": "above 7 on fold B", "fail_if": "not above",
+                                "rationale": "the effect is 0.0123, about 3 times the costs of 12.5"})
+    reading, rec, errors = asm.check_answer(
+        text, lens="trade_efficiency", run_id=RUN_ID, entries=_entries_for_claim(),
+        claim_check=lambda c: _Res(), holdout_start=q4.HOLDOUT, fold="A", model_id="m")
+    assert errors == []
+    assert rec["unverified_numbers"] == [{"field": "claim.statement", "written": "9.9%"},
+                                         {"field": "claim.pass_if", "written": "7"},
+                                         {"field": "claim.rationale", "written": "3"},
+                                         {"field": "claim.rationale", "written": "12.5"}]
+    claim = reading["side_findings"][0]["claim"]
+    assert claim["statement"] == "longs earn <n> more"
+    assert claim["pass_if"] == "above <n> on fold B"
+    assert claim["rationale"] == "the effect is 0.0123, about <n> times the costs of <n>"
+    assert reading["explanation"] == claim["rationale"]
+    # the test block is never masked: its numbers are checked by the claim card and the hash
+    assert claim["tests"][0]["floor"] == {"min_events": 5}
+
+
+def test_masking_leaves_the_answers_own_dict_untouched():
+    claim = {"statement": "x 9.9", "tests": []}
+    hits = asm.number_hits({"claim.statement": claim["statement"]}, [], {})
+    out = asm.mask_hits(claim, "claim", hits)
+    assert out == {"statement": "x <n>", "tests": []} and claim["statement"] == "x 9.9"
+
+
+def test_a_mask_label_outside_its_block_is_our_bug_and_loud():
+    with pytest.raises(ValueError, match="not a text"):
+        asm.mask_hits({"statement": "x"}, "claim", [("no_claim.reason", 0, 1, "x", "m")])
+
+
+def test_attempt_one_hears_a_vehicle_error_with_its_citation_error(run, monkeypatch):
+    """Smoke 6: the vehicle error surfaced only on the retry (the reading checks ran only on a
+    clean answer), so the one retry was spent on the citation error alone."""
+    bad_vehicle = {"vehicle": [{"component_id": "no_such_component", "field": "x",
+                                "before": 1, "after": 2}], "combines_as": "execution_rule"}
+
+    async def script(call):
+        return await _good_claim(call, cite_bad=True, extra=bad_vehicle)
+    _install(monkeypatch, script)
+    rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
+    first = _record(run)["attempts"][0]["errors"]
+    assert any("returned" in e for e in first), first
+    assert any("vehicle" in e for e in first), first
+
+
+def test_a_claim_the_claim_card_refuses_is_not_reported_twice(run, monkeypatch):
+    """A test-block error passes check_reading (shape only, reader_proposals) and is refused by
+    the claim card in check_answer; the content checks would refuse it again."""
+    async def script(call):
+        text = await _good_claim(call)
+        assert text.count("statistic: mean_diff") == 1
+        return text.replace("statistic: mean_diff", "statistic: no_such_statistic")
+    _install(monkeypatch, script)
+    rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
+    first = _record(run)["attempts"][0]["errors"]
+    assert any(e.startswith("claim: ") for e in first), first
+    assert not any(e.startswith("side_findings[0]: ") for e in first), first
+
+
+def test_a_shape_error_is_added_to_the_answers_errors(run, monkeypatch):
+    async def script(call):
+        text = await _good_claim(call, cite_bad=True)
+        return text.replace("kind: execution_behaviour", "kind: no_such_kind")
+    _install(monkeypatch, script)
+    rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
+    first = _record(run)["attempts"][0]["errors"]
+    assert any("returned" in e for e in first), first                  # the answer's error
+    assert any(not e.startswith("claim: ") and "kind" in e for e in first), first   # the shape's
+
+
+@pytest.mark.parametrize("junk", ["just text", None, 7, ["a"], {"statement": 3}])
+def test_a_malformed_claim_runs_the_reading_checks_without_raising(run, monkeypatch, junk):
+    async def script(call):
+        ce = await call("conditional_effect", {"condition": LONG, "direction": "less"})
+        return "```yaml\n" + yaml.safe_dump({
+            "outcome": "claim", "claim": junk, "why_query": ce["query_id"],
+            "evidence": [_cite(ce["query_id"], ce["result"], "horizons.trade.effect")],
+            "vehicle": [], "combines_as": "execution_rule"}) + "```"
+    _install(monkeypatch, script)
+    dest = rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
+    assert yaml.safe_load(dest.read_text(encoding="utf-8"))["skipped"]["rule"] \
+        == "output_refused_after_retry"
