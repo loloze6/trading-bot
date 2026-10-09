@@ -833,14 +833,53 @@ def test_a_test_number_or_a_tiny_number_is_not_an_effect(text, needle):
     assert any(needle in e for e in errors), errors
 
 
-def test_a_test_threshold_written_as_a_percent_gets_a_usable_message():
+def test_a_test_threshold_in_0_1_written_as_a_percent_is_accepted():
+    """Smoke 4 (2026-10-09): "top 20%" for the test's own q 0.2 was refused."""
     tests = [{"name": "t", "selector": {"kind": "trade", "where": [
                   {"field": "past_return_24", "op": ">", "value": 0.02}]},
               "outcome": {"kind": "trade_net_return"}, "baseline": {"kind": "other_trades"},
               "statistic": "mean_diff", "direction": "greater", "floor": {"min_events": 5}}]
-    errors = _check(_claim_answer(claim={"tests": tests,
-                                         "statement": "lots after a 2% rise earn more"}))
-    assert any("not as a percent" in e and "0.02" in e for e in errors), errors
+    assert _check(_claim_answer(claim={"tests": tests,
+                                       "statement": "lots after a 2% rise earn more"})) == []
+
+
+_PCT_TESTS = [{"selector": {"kind": "quantile", "field": "forecast", "side": "top", "q": 0.2,
+                            "lookback": 100},
+               "other": [0.333, 0.02, 1.5, -0.2], "floor": {"min_events": 5}}]
+_PCT_ENTRIES = {"q1": {"id": "q1", "status": "ok"}}
+
+
+@pytest.mark.parametrize("text,ok", [
+    ("the top 20% earn more", True),        # q 0.2
+    ("the top 33.3% earn more", True),      # 0.333: 33.3 / 100.0 != 0.333 in floats
+    ("after a 2% rise", True),              # 0.02
+    ("after a 2.0% rise", True),            # 0.02, a trailing zero
+    ("the top 30% earn more", False),       # not a number of the test
+    ("an effect of -20%", False),           # a sign: an effect, never a setting
+    ("an effect of +20%", False),
+    ("an effect of 150%", False),           # 1.5 is a test number but above 1
+    ("an effect of 2e1%", False),           # an exponent
+    ("an effect of 1,000%", False),         # a comma (Decimal cannot read it)
+    ("the top 24% earn more", False),       # 24 is a cited horizon, 0.24 is nothing
+])
+def test_a_test_number_as_a_percent_passes_only_unsigned_and_in_0_1(text, ok):
+    errors = asm.prose_number_errors({"claim.statement": text},
+                                     ["q1:horizons.24.effect=0.5"], _PCT_ENTRIES,
+                                     tests=_PCT_TESTS)
+    assert (errors == []) is ok, errors
+
+
+def test_a_signed_test_number_as_a_percent_keeps_the_usable_message():
+    errors = asm.prose_number_errors({"claim.statement": "an effect of -20%"}, [],
+                                     _PCT_ENTRIES, tests=_PCT_TESTS)
+    assert any("not as a percent" in e and "0.2" in e for e in errors), errors
+
+
+def test_a_percent_is_not_a_test_number_where_there_is_no_test():
+    """The no-claim reason passes no tests: "20%" there is an uncited number."""
+    errors = asm.prose_number_errors({"no_claim.reason": "the top 20% did not hold"}, [],
+                                     _PCT_ENTRIES)
+    assert len(errors) == 1 and "'20%'" in errors[0], errors
 
 
 def test_deep_nesting_under_a_valid_key_is_refused_never_raised():

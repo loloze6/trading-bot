@@ -29,6 +29,7 @@ import math
 import os
 import re
 import sys
+from decimal import Decimal
 from pathlib import Path
 
 import yaml
@@ -449,6 +450,9 @@ def prose_number_errors(fields: dict, evidence, entries: dict, tests=None) -> li
       * it is a horizon of a cited `horizons.<h>.` path, or a number of the claim's own test
         blocks, written exactly (all its digits, no sign, no %, no exponent). Known gap: a
         unit in words is not read, so "5 bps" passes when 5 is a number of the test;
+      * it is a number of the claim's own test blocks in [0, 1] written as a percent, no sign,
+        no exponent ("top 20%" for q 0.2; smoke 4, 2026-10-09). Known gap: whether the percent
+        reads right is not checked ("forecast above 20%" passes for `forecast > 0.2`);
       * or it rounds a value cited in `evidence` (each citation already checked against the
         log) to the digits it shows; `x%` is x/100 (or x); a written sign must match the
         cited sign, an unsigned number is compared without sign ("0.08% lower" for -0.0008).
@@ -468,7 +472,9 @@ def prose_number_errors(fields: dict, evidence, entries: dict, tests=None) -> li
             v = None
         if v is not None and math.isfinite(v):
             cited.append(v)
-    exact = horizons | _test_numbers(tests, set())
+    own = _test_numbers(tests, set())
+    exact = horizons | own
+    own_unit = {n for n in own if 0 <= n <= 1}
     errors = []
     for label, text in fields.items():
         if not isinstance(text, str):
@@ -488,6 +494,11 @@ def prose_number_errors(fields: dict, evidence, entries: dict, tests=None) -> li
             # a test's own number or a cited horizon: unsigned and exact only (it is a setting
             # of the test, never an effect)
             if not pct and not exp and not sign and "," not in mantissa and x in exact:
+                continue
+            # a test's own number in [0, 1] as a percent: x/100 computed exactly in decimal
+            # (33.3 / 100.0 != 0.333 in floats)
+            if pct and not exp and not sign and "," not in mantissa \
+                    and float(Decimal(mantissa) / 100) in own_unit:
                 continue
             sd = _sig_digits(mantissa)
             cands = [x / 100.0, x] if pct else [x]
