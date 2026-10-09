@@ -45,3 +45,19 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-09 — Tests that stub the default value hide identity bugs
 - **Pattern:** PR-5's end-to-end stub used `floor: {min_events: 1}`, the only value the tool could produce, and the tests with another floor mocked the claim's hash, so "a claim with a real floor is always refused" reached the paid smoke session.
 - **Rule:** an end-to-end test of a model-written block uses a non-default value for every field the model may choose, through the real hashing/checking code, never a mocked hash.
+
+## 2026-10-09 -- The same rule applies to a reason for NOT changing something
+- **Pattern:** the same day as the lesson above, I justified leaving `CLAIM_TESTS_TRADE.md` unchanged with "other stages' prompts include it, so editing it breaks their flag-off byte identity". Only the analyst's prompt reads it (`analyst_session.build_prompt`, pinned by `tests/test_e075_pr3_trade_tests.py`). Review round 2 of #367 caught it; the conflicting line was then fixed in the same PR.
+- **Rule:** "X reads/uses this file" is a downstream claim like any other: grep the loaders (and the test that pins them) before writing it, whether it argues for a change or against one.
+
+## 2026-10-09 -- A chained edit-then-commit commits the half that worked
+- **Pattern:** one PowerShell command ran a Python edit of two files, then `git add` + `git commit`. The Python step stopped on its own assertion after editing nothing in DECISION_LOG, but the commit still ran with the other file and a message saying "D-095 updated". Amended before push.
+- **Rule:** never chain an edit and a commit in one command; after an edit, read `git diff --numstat` and match it to the commit message before committing.
+
+## 2026-10-09 -- PowerShell 5.1 traps for PR bodies and deletes
+- **Pattern:** a PR body re-saved with `Set-Content -Encoding utf8` started with a BOM, visible at the top of PR #363 (fixed with `gh pr edit`). `Remove-Item -Recurse -Force $var` was blocked by the safety hook as a "system path" (nothing ran).
+- **Rule:** write or rewrite PR bodies with the Write tool or Python (`newline='\n'`, no BOM) and check the first byte before publishing; give `Remove-Item` a literal path.
+
+## 2026-10-09 -- A lane's reported counts are claims to measure
+- **Pattern:** a build agent reported "205 tests before"; master had 198. The PR body would have carried the wrong baseline.
+- **Rule:** before quoting a before/after test count in a PR body, run the file on master (or the base commit) myself.
