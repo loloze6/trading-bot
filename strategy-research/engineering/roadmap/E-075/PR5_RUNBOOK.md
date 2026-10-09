@@ -10,9 +10,10 @@ Plain words first:
   "no claim".
 - **A lens** is the analyst's angle: `forecast` (does the forecast predict the price?) or
   `trade_efficiency` (are some trades better than others?).
-- **Code checks every answer**: each number it cites, and each number in the claim's text,
-  must be in its query log; its claim test must have been run; the claim must compile; no date
-  at or after the holdout start.
+- **Code checks every answer**: each number it cites must be in its query log; its claim
+  test must have been run; the claim must compile; no date at or after the holdout start. A
+  number in the claim's text that it did not cite is masked as `<n>` and listed in the record
+  (`unverified_numbers`), not refused (D-096).
 - **A fold** is a block of past years. A claim found on fold A is confirmed only on fold B
   (then C), which its lineage has never seen.
 
