@@ -132,7 +132,7 @@ def _cite(qid, result, path):
 
 
 async def _good_claim(call, *, why=True, cite_bad=False, extra=None):
-    ce = await call("conditional_effect", {"condition": LONG})
+    ce = await call("conditional_effect", {"condition": LONG, "direction": "less"})
     ts = await call("trade_slice", {"filter": [], "agg": [{"field": "trade_net_return",
                                                             "stat": "mean"}],
                                     "by": "direction"}) if why else None
@@ -942,7 +942,7 @@ def _floor_check(eng, text):
 
 def test_a_claim_with_a_real_floor_run_with_that_floor_is_accepted(tmp_path):
     eng = _engine(q4.make_run(tmp_path / "run_001"))
-    r = eng.conditional_effect(SEL, [1], floor=FLOOR)
+    r = eng.conditional_effect(SEL, [1], floor=FLOOR, direction="less")
     w = eng.trade_slice([], [{"field": "trade_net_return", "stat": "mean"}], by="direction")
     text = _floor_answer(r["result"]["test"], r["query_id"], w["query_id"],
                          _cite(r["query_id"], r["result"], "horizons.1.effect"))
@@ -1001,7 +1001,7 @@ def test_a_claim_test_without_its_optional_baseline_keeps_its_score(tmp_path):
     """Review round 1 of #362: claim_card lets a test leave `baseline` out (None); the
     floorless identity must read the block the same way, or the claim silently scores 0."""
     eng = _engine(q4.make_run(tmp_path / "run_001"))
-    r = eng.conditional_effect({"kind": "all"}, [1], statistic="rank_ic", floor=FLOOR)
+    r = eng.conditional_effect({"kind": "all"}, [1], statistic="rank_ic", floor=FLOOR, direction="less")
     w = eng.trade_slice([], [{"field": "trade_net_return", "stat": "mean"}], by="direction")
     with_none = r["result"]["test"]
     assert with_none["baseline"] is None
@@ -1023,8 +1023,8 @@ def test_why_query_cannot_be_the_claims_own_test_under_another_floor(tmp_path):
     observation."""
     eng = _engine(q4.make_run(tmp_path / "run_001"))
     a, b = q4.TRADE_WHERES[4]
-    q1 = eng.conditional_effect({"kind": "trade", "where": [a, b]})
-    q2 = eng.conditional_effect({"kind": "trade", "where": [b, a]}, floor=FLOOR)
+    q1 = eng.conditional_effect({"kind": "trade", "where": [a, b]}, direction="less")
+    q2 = eng.conditional_effect({"kind": "trade", "where": [b, a]}, floor=FLOOR, direction="less")
     assert q1["result"]["spec_hash"] != q2["result"]["spec_hash"]
     text = _floor_answer(q2["result"]["test"], q2["query_id"], q1["query_id"],
                          _cite(q2["query_id"], q2["result"], "horizons.trade.effect"))
@@ -1039,7 +1039,7 @@ def test_the_skill_says_to_leave_consistency_out():
 
 def test_a_stubbed_session_claiming_a_real_floor_reaches_the_reading(run, monkeypatch):
     async def script(call):
-        ce = await call("conditional_effect", {"condition": LONG, "floor": FLOOR})
+        ce = await call("conditional_effect", {"condition": LONG, "floor": FLOOR, "direction": "less"})
         ts = await call("trade_slice", {"filter": [], "agg": [{"field": "trade_net_return",
                                                                 "stat": "mean"}],
                                         "by": "direction"})
@@ -1181,3 +1181,116 @@ def test_the_retry_section_lists_the_multi_block_errors():
     errors = _triple(_claim_answer() + "\n" + _bad_last())[2]
     text = asm.retry_section("answer", errors, _entries_for_claim())
     assert f"- {BLOCK_ERR}" in text and f"- {LAST}claim.rationale writes '9.9%'" in text
+
+
+# ---------------------------------------------------------------------------
+# PR B (smoke 2, 2026-10-09): a claim whose test measured the opposite sign
+# ---------------------------------------------------------------------------
+
+def _ceo(qid, h, oriented, variant="base", k=5, n=5):
+    """A conditional_effect run of test `h`; `oriented` is {horizon: oriented value}."""
+    hs = {hz: {"windows_claimed_sign": k, "windows_with_value": n, "effect": 0.0123,
+               "oriented": o} for hz, o in oriented.items()}
+    return {qid: {"id": qid, "function": "conditional_effect", "status": "ok",
+                  "params": {"variant": variant},
+                  "result": {"spec_hash": h, "test": {"selector": LONG}, "horizons": hs}}}
+
+
+def _opp_entries(*runs):
+    rest = {k: v for k, v in _entries_for_claim().items() if k != "q1"}
+    return {**rest, **{q: e for r in runs for q, e in r.items()}}
+
+
+OPP = "measured the opposite of its direction in "
+
+
+def _opp_errors(entries, **kw):
+    return [e for e in _check(_claim_answer(**kw), entries) if OPP in e]
+
+
+def test_a_test_that_measured_the_opposite_at_every_horizon_is_refused():
+    entries = _opp_entries(_ceo("q1", "h", {"1": -0.02, "2": -0.01}, k=1, n=5))
+    (msg,) = _opp_errors(entries)
+    assert msg == ("claim test h... measured the opposite of its direction in q1 (h=1: 1 of 5 "
+                   "windows with the claimed sign; h=2: 1 of 5 windows with the claimed sign): "
+                   "flip `direction` if the opposite is your claim, or end with no_claim")
+
+
+def test_the_same_data_with_the_flipped_direction_is_accepted_through_the_real_check():
+    """The model-written block goes through the real claim check: the flipped test is another
+    spec_hash, and its run logs a positive oriented value."""
+    import claim_tests as ct
+    test = {"selector": SEL, "outcome": {"kind": "fwd_return", "horizons": [1]},
+            "baseline": {"kind": "complement"}, "statistic": "mean_diff",
+            "floor": {"min_events": 1}}
+
+    def entry(qid, direction, o):
+        block = dict(test, direction=direction)
+        return {qid: {"id": qid, "function": "conditional_effect", "status": "ok",
+                      "params": {"variant": "base"},
+                      "result": {"spec_hash": ct.spec_hash(ct.TestSpec.from_dict(block)),
+                                 "test": block,
+                                 "horizons": {"1": {"windows_claimed_sign": 5,
+                                                    "windows_with_value": 5, "effect": 0.0123,
+                                                    "oriented": o}}}}}
+    both = {**entry("q1", "greater", -0.0123), **entry("q2", "less", 0.0123),
+            "q3": {"id": "q3", "function": "trade_slice", "status": "ok",
+                   "params": {"variant": "base"}, "result": {"groups": {"long": {"n": 12}}}}}
+
+    def errors_of(direction, ce):
+        text = _floor_answer(dict(test, direction=direction), ce, "q3",
+                             f"{ce}:horizons.1.effect=0.0123")
+        return asm.check_answer(text, lens="forecast", run_id=RUN_ID, entries=both,
+                                claim_check=lambda c: cc.check_claim(c, trade_tests=True,
+                                                                     folds=True),
+                                holdout_start=q4.HOLDOUT, fold="A", model_id="m")[2]
+    (msg,) = [e for e in errors_of("greater", "q1") if OPP in e]
+    assert "in q1 (h=1: 5 of 5" in msg and "flip `direction`" in msg
+    assert errors_of("less", "q2") == []
+
+
+def test_a_stub_check_flipped_direction_with_a_positive_run_is_accepted():
+    assert _opp_errors(_opp_entries(_ceo("q1", "h", {"1": 0.02}))) == []
+
+
+@pytest.mark.parametrize("oriented", [
+    {"1": -0.02, "2": 0.01},                       # mixed signs
+    {"1": 0.0, "2": 0.0},                          # exactly 0 is not opposite
+    {"1": -0.02, "2": 0.0},                        # one below, one exactly 0
+    {"1": None, "2": None},                        # no value anywhere
+    {},                                            # no horizon at all
+])
+def test_mixed_zero_or_valueless_runs_are_not_refused_by_this_rule(oriented):
+    assert _opp_errors(_opp_entries(_ceo("q1", "h", oriented))) == []
+
+
+def test_a_horizon_without_a_value_is_skipped():
+    entries = _opp_entries(_ceo("q1", "h", {"1": -0.02, "2": None}))
+    assert len(_opp_errors(entries)) == 1
+
+
+def test_any_run_of_the_test_counts_not_only_the_base_run():
+    entries = _opp_entries(_ceo("q1", "h", {"1": 0.02}),
+                           _ceo("q4", "h", {"1": -0.03}, variant="v1", k=0))
+    (msg,) = _opp_errors(entries)
+    assert "in q4 (h=1: 0 of 5" in msg
+
+
+def test_the_first_offending_run_is_named_in_query_id_order():
+    entries = _opp_entries(_ceo("q10", "h", {"1": -0.03}, variant="v2"),
+                           _ceo("q4", "h", {"1": -0.03}, variant="v1"))
+    (msg,) = _opp_errors(entries)
+    assert " in q4 (" in msg
+
+
+def test_the_trade_family_horizon_counts_too():
+    entries = _opp_entries(_ceo("q1", "h", {"trade": -0.02}))
+    (msg,) = _opp_errors(entries, evidence=["q1:horizons.trade.effect=0.0123"])
+    assert "h=trade: 5 of 5 windows with the claimed sign" in msg
+
+
+def test_a_two_block_answer_whose_last_block_is_opposite_gets_the_prefixed_error():
+    entries = _opp_entries(_ceo("q1", "h", {"1": -0.02}))
+    errors = _triple(_claim_answer() + "\n\n" + _claim_answer(), entries)[2]
+    assert errors[0] == BLOCK_ERR
+    assert any(e.startswith(LAST + "claim test h... " + OPP + "q1 (") for e in errors), errors
