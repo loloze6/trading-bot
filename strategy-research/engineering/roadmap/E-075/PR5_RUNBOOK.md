@@ -10,8 +10,9 @@ Plain words first:
   "no claim".
 - **A lens** is the analyst's angle: `forecast` (does the forecast predict the price?) or
   `trade_efficiency` (are some trades better than others?).
-- **Code checks every answer**: each number it cites must be in its query log, its claim test
-  must have been run, the claim must compile, no date at or after the holdout start.
+- **Code checks every answer**: each number it cites, and each number in the claim's text,
+  must be in its query log; its claim test must have been run; the claim must compile; no date
+  at or after the holdout start.
 - **A fold** is a block of past years. A claim found on fold A is confirmed only on fold B
   (then C), which its lineage has never seen.
 
@@ -25,7 +26,7 @@ Plain words first:
 3. Your model credentials are set in your shell as usual (never in a file of this repo).
 4. `cd strategy-research` for every command below.
 
-## 1. Smoke session (about $1-3) **($)**
+## 1. Smoke session (about $1-3; at most $3 per lens with its one retry) **($)**
 
 Goal: four facts the Python source cannot prove (PHASE_A section 1.4).
 
@@ -54,7 +55,9 @@ If something fails, keep the copy and send me the record and the summary.
 ### 2a. Offline: both lenses on saved runs 065-074 (about $10-30) **($)**
 
 1. Copy each saved run 065-074 outside the repository, as in step 1.
-2. Run both lenses on each copy (20 sessions; each capped at $1.50, so $30 at most).
+2. Run both lenses on each copy: 20 lens runs. Each session is capped at $1.50 and a refused
+   answer gets one retry, so one lens run costs at most $3 and the 20 at most $60 (expected
+   about $10-30).
 3. Process checks (D4 of PR5_DESIGN; information, not a pass mark):
    - how many answers were accepted at the first attempt, after the retry, or skipped;
    - the refusal reasons (citations, test not run, `why_query`, dates);
@@ -69,7 +72,8 @@ These readings stay in the copies: nothing from them reaches the campaign.
    flags it needs: `folds`, `specialist_readers`, `reader_findings`, and their own
    prerequisites (`grid_evaluation`, `category_reports`, `claim_tests`,
    `config_direct_authoring`), plus `decide_next` for the fold-B child. The pre-flight check
-   refuses a missing one by name.
+   refuses a missing one by name. `orchestrator.explore_confirm` must stay OFF: the analyst's
+   queries read every window of the run, so it is refused together with it (D-093).
 2. Launch the campaign as usual (`python workflow/run_campaign.py`, or `--once` for one run).
    Under the flag:
    - the `specialist_readers` stage runs the two lenses instead of the five readers;

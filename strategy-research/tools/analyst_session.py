@@ -134,6 +134,25 @@ def build_prompt(lens: str, run_dir: Path, *, base_config_rel: str, fold: str | 
 # Reading the answer
 # ---------------------------------------------------------------------------
 
+MAX_ANSWER_DEPTH = 40
+
+
+def _depth(node) -> int:
+    """Nesting depth of a parsed answer, without recursion (a deep answer must not crash the
+    checks that serialise it)."""
+    deepest, stack = 0, [(node, 1)]
+    while stack:
+        cur, d = stack.pop()
+        deepest = max(deepest, d)
+        if d > MAX_ANSWER_DEPTH:
+            break
+        if isinstance(cur, dict):
+            stack.extend((v, d + 1) for v in cur.values())
+        elif isinstance(cur, list):
+            stack.extend((v, d + 1) for v in cur)
+    return deepest
+
+
 def parse_answer(text: str):
     """(answer dict, None) or (None, error): exactly one fenced YAML block, a mapping with an
     `outcome` of claim / no_claim and exactly that outcome's keys."""
@@ -142,9 +161,13 @@ def parse_answer(text: str):
         return None, f"the answer holds {len(blocks)} fenced YAML block(s); write exactly one"
     try:
         doc = yaml.safe_load(blocks[0])
-    except yaml.YAMLError as exc:
-        return None, f"the answer is not YAML: {exc}"
-    if not isinstance(doc, dict) or doc.get("outcome") not in ANSWER_KEYS:
+    except (yaml.YAMLError, ValueError, RecursionError) as exc:
+        # ValueError: an integer past Python's digit limit; RecursionError: deep nesting
+        return None, f"the answer is not readable YAML: {type(exc).__name__}: {str(exc)[:200]}"
+    if _depth(doc) > MAX_ANSWER_DEPTH:
+        return None, f"the answer nests deeper than {MAX_ANSWER_DEPTH} levels"
+    if not isinstance(doc, dict) or not isinstance(doc.get("outcome"), str) \
+            or doc["outcome"] not in ANSWER_KEYS:
         return None, "the answer must be a mapping with outcome: claim or outcome: no_claim"
     want = ANSWER_KEYS[doc["outcome"]]
     if set(doc) != want:
@@ -227,7 +250,8 @@ def conditional_effect_hashes(entries: dict) -> dict:
 def in_run_score(test_hashes: list, entries: dict) -> int:
     """confidence_real, 0..3 (operator, 2026-10-08): for each claim test, the share of windows
     with the claimed sign in the conditional_effect call that ran that test (its weakest
-    horizon); the lowest over the tests; 1.0 -> 3, >= 0.8 -> 2, >= 0.6 -> 1, else 0. An
+    horizon, and the lowest over every run of that test); the lowest over the tests; 1.0 -> 3,
+    >= 0.8 -> 2, >= 0.6 -> 1, else 0. An
     exploratory number: it only ORDERS candidates, confirmation stays on the unseen fold."""
     by_hash = conditional_effect_hashes(entries)
     shares = []
@@ -240,7 +264,9 @@ def in_run_score(test_hashes: list, entries: dict) -> int:
                     if x.get("windows_with_value") else 0.0 for x in hz]
             if vals:
                 share = min(vals)
-                best = share if best is None else max(best, share)
+                # the lowest over every run of the test (any variant, any `by`): repeating a
+                # test cannot raise its score (review of #359)
+                best = share if best is None else min(best, share)
         shares.append(best if best is not None else 0.0)
     s = min(shares) if shares else 0.0
     return 3 if s >= 1.0 else 2 if s >= 0.8 else 1 if s >= 0.6 else 0
@@ -256,6 +282,141 @@ def tool_list_errors(init_tools) -> list:
     if extra:
         return [f"the session had tools outside the six: {extra}"]
     return []
+
+
+WHY_FUNCTIONS = ("conditional_effect", "trade_slice", "event_study")
+PROSE_KEYS = ("statement", "pass_if", "fail_if", "rationale")
+# A number standing on its own: `24h`, `9.9pct`, `.5`, `1,234` and `1.2e-3` count; a number glued
+# after a word character (`past_return_24`, `run_074`) is a name. A sign counts when it stands
+# at the start or after a non-word character ("-1.2%", not "post-24").
+_PROSE_NUMBER_RE = re.compile(
+    r"(?<![\w.])([-+\u2212]?)(\d{1,3}(?:,\d{3})+|\d*\.\d+|\d+)(?:[eE]([-+]?\d+))?(%?)")
+
+
+def _ok_call(entries: dict, qid) -> bool:
+    """A successful call of this session (a non-string id is never one)."""
+    return isinstance(qid, str) and (entries.get(qid) or {}).get("status") == "ok"
+
+
+def _cite_parts(c):
+    m = _CITE_RE.match(c.strip()) if isinstance(c, str) else None
+    return m.groups() if m else (None, "", None)
+
+
+def _cite_qid(c):
+    return _cite_parts(c)[0]
+
+
+def _cite_path(c) -> str:
+    return _cite_parts(c)[1]
+
+
+def _tests_of(claim) -> list:
+    tests = claim.get("tests") if isinstance(claim, dict) else None
+    return [t for t in tests if isinstance(t, dict)] if isinstance(tests, list) else []
+
+
+def _selector_of(entry: dict):
+    return (((entry.get("result") or {}).get("test")) or {}).get("selector")
+
+
+def _test_numbers(node, out: set) -> set:
+    """The finite numbers written in the claim's test blocks (horizons, lookbacks, floors,
+    selector values). Python ints are kept exact (a huge one never overflows)."""
+    if isinstance(node, bool):
+        return out
+    if isinstance(node, int):
+        out.add(node)
+    elif isinstance(node, float):
+        if math.isfinite(node):
+            out.add(node)
+    elif isinstance(node, dict):
+        for v in node.values():
+            _test_numbers(v, out)
+    elif isinstance(node, list):
+        for v in node:
+            _test_numbers(v, out)
+    return out
+
+
+def _sig_digits(mantissa: str) -> int:
+    """Significant digits a prose number shows: every digit after the leading zeros
+    ("100" shows 3, "0.0120" shows 3, "0" shows 1)."""
+    return max(1, len(mantissa.replace(",", "").replace(".", "").lstrip("0")))
+
+
+def _rounds_to(value: float, shown: float, sd: int) -> bool:
+    try:
+        return float(f"{value:.{sd}g}") == float(f"{shown:.{sd}g}")
+    except (OverflowError, ValueError):
+        return False
+
+
+def prose_number_errors(fields: dict, evidence, entries: dict, tests=None) -> list:
+    """Every number written in the answer's prose must be one the session saw (review of
+    #359: free-text numbers were never checked, and the claim's rationale or the no-claim
+    reason becomes the reading's explanation). `fields`: {label: text}. A number passes when
+      * it is 0 (as written), or 100%;
+      * it is a horizon of a cited `horizons.<h>.` path, or a number of the claim's own test
+        blocks, written exactly (all its digits, no sign, no %, no exponent). Known gap: a
+        unit in words is not read, so "5 bps" passes when 5 is a number of the test;
+      * or it rounds a value cited in `evidence` (each citation already checked against the
+        log) to the digits it shows; `x%` is x/100 (or x); a written sign must match the
+        cited sign, an unsigned number is compared without sign ("0.08% lower" for -0.0008).
+    """
+    cited, horizons = [], set()
+    for c in evidence or []:
+        qid, path, value = _cite_parts(c)
+        if not _ok_call(entries, qid):
+            continue
+        parts = path.split(".")
+        if len(parts) > 2 and parts[0] == "horizons" and parts[1].isdigit() \
+                and len(parts[1]) <= 6:
+            horizons.add(int(parts[1]))
+        try:
+            v = float(value) if value is not None else None
+        except (ValueError, OverflowError):
+            v = None
+        if v is not None and math.isfinite(v):
+            cited.append(v)
+    exact = horizons | _test_numbers(tests, set())
+    errors = []
+    for label, text in fields.items():
+        if not isinstance(text, str):
+            continue
+        for m in _PROSE_NUMBER_RE.finditer(text):
+            sign, mantissa, exp, pct = m.groups()
+            try:
+                x = float(mantissa.replace(",", "")) * (10.0 ** int(exp) if exp else 1.0)
+            except (ValueError, OverflowError):
+                x = math.inf
+            if not math.isfinite(x):
+                errors.append(f"{label} writes {m.group(0)!r}: not a number you cited")
+                continue
+            negative = sign in ("-", "\u2212")
+            if float(mantissa.replace(",", "")) == 0 or (pct and x == 100 and not sign):
+                continue
+            # a test's own number or a cited horizon: unsigned and exact only (it is a setting
+            # of the test, never an effect)
+            if not pct and not exp and not sign and "," not in mantissa and x in exact:
+                continue
+            sd = _sig_digits(mantissa)
+            cands = [x / 100.0, x] if pct else [x]
+            if sign:
+                ok = any(_rounds_to(a, -c if negative else c, sd) for a in cited for c in cands)
+            else:
+                ok = any(_rounds_to(abs(a), c, sd) for a in cited for c in cands)
+            if ok:
+                continue
+            if pct and x / 100.0 in exact:
+                errors.append(f"{label} writes {m.group(0)!r}: write your test's number as in "
+                              f"the test block ({x / 100.0!r}), not as a percent")
+                continue
+            errors.append(f"{label} writes {m.group(0)!r}, which is not a value you cited in "
+                          f"`evidence` nor a number of your test: cite it (as the decimal the "
+                          f"tool returned, e.g. 0.0123, or as a percent, 1.23%; bps are not "
+                          f"read), or say it in words (\"positive\", \"most windows\")")
+    return errors
 
 
 def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_check,
@@ -278,6 +439,7 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
         return None, record, [err]
     record["outcome"] = doc["outcome"]
     errors = check_citations(doc.get("evidence"), entries)
+    evidence = doc["evidence"] if isinstance(doc.get("evidence"), list) else []
     late = sealed_dates(yaml.safe_dump(doc, allow_unicode=True), holdout_start)
     if late:
         errors.append(f"the answer names date(s) {late}: nothing at or after the research "
@@ -291,15 +453,26 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
             errors.append("no_claim needs a non-empty `reason`")
         br = (nc or {}).get("best_rejected") if isinstance(nc, dict) else None
         if not isinstance(br, dict) or not isinstance(br.get("statement"), str) \
-                or entries.get(br.get("killed_by"), {}).get("status") != "ok":
+                or not _ok_call(entries, br.get("killed_by")):
             errors.append("no_claim needs best_rejected {statement, killed_by: an ok query id "
                           "of this session}")
+        if isinstance(nc, dict):
+            errors += prose_number_errors(
+                {"no_claim.reason": nc.get("reason"),
+                 "no_claim.best_rejected.statement": br.get("statement")
+                 if isinstance(br, dict) else None}, evidence, entries)
         record["no_claim"] = nc
         reading = {**base, "explanation": str((nc or {}).get("reason") or "no claim"),
-                   "evidence": list(doc.get("evidence") or []), "side_findings": []}
+                   "evidence": list(evidence), "side_findings": []}
         return reading, record, errors
     claim = doc.get("claim")
-    res = claim_check(claim)
+    try:
+        res = claim_check(claim)
+    except OverflowError as exc:
+        # only a model-written number the claim card cannot hash (an integer past float range,
+        # claim_tests._canon) is a refusal; any other exception is a bug of ours: loud
+        errors.append(f"claim: a number in it is too large to check ({str(exc)[:120]})")
+        return None, record, errors
     if res.errors:
         errors += [f"claim: {e}" for e in res.errors]
     elif res.tests_none:
@@ -313,23 +486,37 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
                           f"session: run it first and paste the `test` block it returns")
     why = doc.get("why_query")
     test_qids = {q for h in hashes for q in ran.get(h, [])}
-    if entries.get(why, {}).get("status") != "ok":
+    if not _ok_call(entries, why):
         errors.append(f"why_query={why!r} is not a successful call of this session")
     elif why in test_qids:
         errors.append("why_query must be the SECOND query your mechanism predicted, not the "
                       "claim's own test")
+    elif entries[why].get("function") not in WHY_FUNCTIONS:
+        errors.append(f"why_query must be a {'/'.join(WHY_FUNCTIONS)} call (a measured "
+                      f"prediction), not {entries[why].get('function')!r}")
+    elif entries[why].get("function") == "conditional_effect" and _selector_of(entries[why]) in [
+            t.get("selector") for t in _tests_of(claim)]:
+        errors.append("why_query must test another selector than the claim's own test (the "
+                      "same selector at another horizon or statistic is the same observation)")
+    if hashes and not any(_cite_qid(c) in test_qids and _cite_path(c).startswith("horizons.")
+                          for c in evidence):
+        errors.append("evidence must cite the claim test's own result "
+                      "(`q<n>:horizons.<h>.<field>=<value>` of its conditional_effect call)")
+    if isinstance(claim, dict):
+        errors += prose_number_errors({f"claim.{k}": claim.get(k) for k in PROSE_KEYS},
+                                      evidence, entries, tests=claim.get("tests"))
     record.update(why_query=why, test_spec_hashes=hashes)
     scores = {"confidence_real": in_run_score(hashes, entries) if hashes else 0,
               "distance_to_profitable": FIXED_SCORE, "mechanism_plausibility": FIXED_SCORE}
     record["scores"] = {**scores, "source": "code: in-run window agreement (PR5_DESIGN 11.3)"}
     side = {"proposal_id": f"{rid}-1", "claim": claim,
-            "evidence": list(doc.get("evidence") or []), "scores": scores,
+            "evidence": list(evidence), "scores": scores,
             "vehicle": doc.get("vehicle"), "combines_as": doc.get("combines_as")}
     if fold:
         side["fold_observed"] = fold
     reading = {**base, "explanation": str((claim or {}).get("rationale") or "")
                if isinstance(claim, dict) else "",
-               "evidence": list(doc.get("evidence") or []), "side_findings": [side]}
+               "evidence": list(evidence), "side_findings": [side]}
     return reading, record, errors
 
 

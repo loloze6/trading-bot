@@ -4275,6 +4275,14 @@ def _analyst_enabled(cfg: dict | None = None) -> bool:
                        ("specialist_readers", _flag_dep(_specialist_readers_enabled, cfg)),
                        ("reader_findings", _flag_dep(_reader_findings_enabled, cfg)))
                    if not on]
+        if _flag_dep(_explore_confirm_enabled, cfg):
+            # review of #359 (D-093): E-072 hides the confirmation windows from the readers;
+            # the analyst's query engine reads every window of the run
+            raise ValueError(
+                "orchestrator.analyst.enabled=true cannot run with "
+                "orchestrator.explore_confirm.enabled=true -- the analyst's queries read every "
+                "window of the run, including E-072's confirmation windows; its claims are "
+                "confirmed on folds (E-077) instead. Turn explore_confirm off.")
         if missing:
             raise ValueError(
                 "orchestrator.analyst.enabled=true requires "
@@ -4419,7 +4427,10 @@ _READER_OUTPUT_BLOCK_RE = re.compile(r"```ya?ml[^\n]*\n(.*?)```", re.DOTALL)
 # under orchestrator.observable_backtest; listed so an attempt never inherits them.
 _SPECIALIST_READERS_RUN_SCOPED_FILES = ("idea_status.yaml", "grid_evaluation.yaml",
                                         "side_finding_merges.yaml")
-_SPECIALIST_READERS_RUN_SCOPED_DIRS = ("reports", "proposals", "citation_checks")
+# E-075 PR-5 review (D-093): the analyst's query logs and session records are per attempt too
+# (they exist only under orchestrator.analyst.enabled)
+_SPECIALIST_READERS_RUN_SCOPED_DIRS = ("reports", "proposals", "citation_checks",
+                                       "analyst_queries", "analyst")
 
 
 def _clear_specialist_readers_artifacts(run_dir: Path) -> None:

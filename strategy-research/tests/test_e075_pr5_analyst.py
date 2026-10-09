@@ -602,3 +602,250 @@ def test_the_smoke_cli_runs_the_real_stage_on_a_copy(run, monkeypatch, capsys):
     (entry,) = out["audit_log"].values()
     assert entry["init_tools"] == list(asm.ALLOWED_TOOLS) and entry["tools_denied"] == []
     assert (rpr._analyst_enabled, rpr._folds_enabled) == flags        # restored
+
+
+# ---------------------------------------------------------------------------
+# post-merge review of #359 (D-093)
+# ---------------------------------------------------------------------------
+
+def _ce(qid, h, k, n, variant="base", selector=None):
+    return {qid: {"id": qid, "function": "conditional_effect", "status": "ok",
+                  "params": {"variant": variant},
+                  "result": {"spec_hash": h, "test": {"selector": selector or LONG},
+                             "horizons": {"1": {"windows_claimed_sign": k,
+                                                "windows_with_value": n, "effect": 0.0123}}}}}
+
+
+def test_repeating_a_test_on_another_variant_cannot_raise_its_score():
+    """M1: the score was the BEST share over every run of the test (best of N variants)."""
+    entries = {**_ce("q1", "h", 2, 5), **_ce("q2", "h", 5, 5, variant="v1")}
+    assert asm.in_run_score(["h"], entries) == 0
+    assert asm.in_run_score(["h"], _ce("q2", "h", 5, 5, variant="v1")) == 3
+
+
+def _claim_answer(**over):
+    claim = {"statement": "Long lots earn more than short lots.", "kind": "execution_behaviour",
+             "tests": [{"name": "t", "selector": LONG, "outcome": {"kind": "trade_net_return"},
+                        "baseline": {"kind": "other_trades"}, "statistic": "mean_diff",
+                        "direction": "greater", "floor": {"min_events": 5}}],
+             "pass_if": "p", "fail_if": "f", "rationale": "r"}
+    claim.update(over.pop("claim", {}))
+    doc = {"outcome": "claim", "claim": claim, "why_query": "q3",
+           "evidence": ["q1:horizons.1.effect=0.0123"], "vehicle": [],
+           "combines_as": "execution_rule", **over}
+    return "```yaml\n" + yaml.safe_dump(doc) + "```"
+
+
+class _Res:
+    def __init__(self, h="h"):
+        self.errors, self.tests_none, self.tests = [], False, [{"spec_hash": h}]
+
+
+def _entries_for_claim():
+    return {**_ce("q1", "h", 5, 5),
+            "q2": {"id": "q2", "function": "list_columns", "status": "ok",
+                   "params": {"variant": "base"}, "result": {"variant": "base"}},
+            "q3": {"id": "q3", "function": "trade_slice", "status": "ok",
+                   "params": {"variant": "base"}, "result": {"groups": {"long": {"n": 12}}}}}
+
+
+def _check(text, entries=None):
+    return asm.check_answer(text, lens="trade_efficiency", run_id=RUN_ID,
+                            entries=entries or _entries_for_claim(), claim_check=lambda c: _Res(),
+                            holdout_start=q4.HOLDOUT, fold="A", model_id="m")[2]
+
+
+def test_the_reference_answer_is_accepted():
+    assert _check(_claim_answer()) == []
+
+
+@pytest.mark.parametrize("rationale,ok", [
+    ("the effect is 9.9% huge", False),                 # a number never seen
+    ("the effect is 0.0123 per lot", True),             # cited exactly
+    ("the effect is 0.012 per lot", True),              # cited, rounded to what it shows
+    ("the effect is 1.23% per lot", True),              # cited, as a percent
+    ("the effect is 0.013 per lot", False),             # wrong rounding
+    ("at least 5 lots per window", True),               # a number of the test (its floor)
+    ("past_return_24 leads the lots", True),            # a name, not a number
+    ("in 2023 the longs won", False),                   # a year nobody cited
+])
+def test_every_number_in_the_prose_must_be_cited(rationale, ok):
+    """M2: the claim's free text quoted numbers the session never returned."""
+    errors = _check(_claim_answer(claim={"rationale": rationale}))
+    assert (errors == []) is ok, errors
+    if not ok:
+        assert any("claim.rationale writes" in e for e in errors)
+
+
+def test_evidence_must_cite_the_claim_tests_own_result():
+    """M2: evidence passed with any successful citation, e.g. a list_columns call."""
+    errors = _check(_claim_answer(evidence=["q2:variant=base"]))
+    assert any("evidence must cite the claim test's own result" in e for e in errors), errors
+
+
+@pytest.mark.parametrize("why,needle", [
+    ("q2", "must be a conditional_effect/trade_slice/event_study call"),
+    ("q4", "must test another selector"),
+])
+def test_why_query_must_be_another_measured_prediction(why, needle):
+    """L1: any successful call (list_columns, describe, the same selector) satisfied it."""
+    entries = {**_entries_for_claim(), **_ce("q4", "h2", 5, 5)}
+    errors = _check(_claim_answer(why_query=why), entries)
+    assert any(needle in e for e in errors), errors
+
+
+@pytest.mark.parametrize("why", ["q3", "q4"])               # a trade_slice; a conditional_effect
+@pytest.mark.parametrize("key", ["why_query", "evidence", "claim", "vehicle", "outcome",
+                                 "combines_as"])
+@pytest.mark.parametrize("junk", [["q1"], {"a": 1}, 5, None])
+def test_a_malformed_answer_is_refused_never_raised(key, junk, why):
+    """M3: `why_query: [q2]` raised TypeError and bypassed the retry."""
+    text = "```yaml\n" + yaml.safe_dump({**yaml.safe_load(_claim_answer().split("```yaml\n")[1]
+                                                          .split("```")[0]),
+                                     "why_query": why, key: junk}) + "```"
+    real = lambda c: cc.check_claim(c, trade_tests=True, folds=True)  # noqa: E731
+    _r, _rec, errors = asm.check_answer(
+        text, lens="trade_efficiency", run_id=RUN_ID,
+        entries={**_entries_for_claim(), **_ce("q4", "h2", 5, 5, selector={"kind": "x"})},
+        claim_check=real, holdout_start=q4.HOLDOUT, fold="A", model_id="m")
+    assert errors
+
+
+@pytest.mark.parametrize("junk", [["q1"], {"a": 1}, 5])
+def test_a_malformed_no_claim_is_refused_never_raised(junk):
+    text = "```yaml\n" + yaml.safe_dump({
+        "outcome": "no_claim", "evidence": ["q1:horizons.1.effect=0.0123"],
+        "no_claim": {"reason": "r", "best_rejected": {"statement": "s", "killed_by": junk}}}) + "```"
+    assert _check(text)
+
+
+def test_a_new_stage_attempt_starts_a_new_query_log(run):
+    """L2: the log was reopened on a re-attempt, so the earlier attempt's calls counted."""
+    for rel in (asm.log_rel("forecast"), asm.record_rel("forecast")):
+        (run / rel).parent.mkdir(parents=True, exist_ok=True)
+        (run / rel).write_text("queries: []\n", encoding="utf-8")
+    rpr._clear_specialist_readers_artifacts(run)
+    assert not (run / asm.LOG_DIR_REL).exists() and not (run / asm.RECORD_DIR_REL).exists()
+
+
+def test_the_analyst_refuses_explore_confirm(monkeypatch):
+    """L3: the analyst's queries read E-072's confirmation windows too."""
+    for name in ("folds", "specialist_readers", "reader_findings", "explore_confirm"):
+        monkeypatch.setattr(rpr, f"_{name}_enabled", lambda cfg=None: True)
+    with pytest.raises(ValueError, match="cannot run with orchestrator.explore_confirm"):
+        _REAL_ANALYST_ENABLED({"orchestrator": {"analyst": {"enabled": True}}})
+
+
+def test_evidence_from_another_conditional_effect_is_not_the_tests_own():
+    entries = {**_entries_for_claim(), **_ce("q4", "h2", 5, 5, selector={"kind": "x"})}
+    errors = _check(_claim_answer(evidence=["q4:horizons.1.effect=0.0123"]), entries)
+    assert any("evidence must cite the claim test's own result" in e for e in errors), errors
+
+
+# review round 2 of #360: the prose-number rule
+@pytest.mark.parametrize("field,text,ok", [
+    ("rationale", "longs earn -1.23% less than shorts", False),     # sign flipped
+    ("rationale", "longs earn +1.23% more", True),
+    ("rationale", "longs earn 1.23% more", True),
+    ("fail_if", "the mean difference is 0 or below on fold B", True),   # 0 is always fine
+    ("fail_if", "the effect at horizon 1 is not positive", True),       # a cited horizon
+    ("pass_if", "100% of the lots agree", True),
+    ("rationale", "longs earn 5% more per trade", False),         # the floor (5) as an effect
+    ("rationale", "an effect of .5 per lot", False),              # a leading dot is a number
+    ("rationale", "an effect of 100 per lot", False),             # "100" shows 3 digits
+    ("rationale", "over 1,234 trades", False),
+    ("rationale", "an effect of 1.23e-2", True),
+    ("rationale", "an effect of 9.9pct", False),
+    ("rationale", "windows 6,7 agree", False),
+])
+def test_the_prose_rule_reads_signs_words_and_forms(field, text, ok):
+    errors = _check(_claim_answer(claim={field: text}))
+    assert (errors == []) is ok, errors
+
+
+def test_a_huge_integer_in_the_test_is_refused_never_raised():
+    huge = 10 ** 400
+    text = _claim_answer(claim={"tests": [{"name": "t", "selector": LONG,
+                                           "outcome": {"kind": "trade_net_return"},
+                                           "baseline": {"kind": "other_trades"},
+                                           "statistic": "mean_diff", "direction": "greater",
+                                           "floor": {"min_events": huge}}],
+                                "rationale": "the effect is 1e400 strong"})
+    real = lambda c: cc.check_claim(c, trade_tests=True, folds=True)  # noqa: E731
+    _r, _rec, errors = asm.check_answer(
+        text, lens="trade_efficiency", run_id=RUN_ID, entries=_entries_for_claim(),
+        claim_check=real, holdout_start=q4.HOLDOUT, fold="A", model_id="m")
+    assert errors
+
+
+def test_the_no_claim_text_is_checked_too():
+    def answer(reason):
+        return "```yaml\n" + yaml.safe_dump({
+            "outcome": "no_claim", "evidence": ["q1:horizons.1.effect=0.0123"],
+            "no_claim": {"reason": reason,
+                         "best_rejected": {"statement": "longs lead", "killed_by": "q3"}}}) + "```"
+    assert _check(answer("the effect was 1.23% but it did not hold by coin")) == []
+    errors = _check(answer("longs beat shorts by 9.9% but n was small"))
+    assert any(e.startswith("no_claim.reason writes '9.9%'") for e in errors), errors
+
+
+@pytest.mark.parametrize("text,cited,ok", [("100 lots", "140", False), ("100 lots", "100.4", True),
+                                           ("0.0120", "0.0123", False), ("0.0120", "0.012", True)])
+def test_a_prose_number_shows_all_its_digits(text, cited, ok):
+    entries = {"q1": {"id": "q1", "status": "ok", "result": {"n": float(cited)}}}
+    errors = asm.prose_number_errors({"claim.rationale": text}, [f"q1:n={cited}"], entries)
+    assert (errors == []) is ok, errors
+
+
+# review round 2 of #360
+def _real_check(text, entries=None):
+    real = lambda c: cc.check_claim(c, trade_tests=True, folds=True)  # noqa: E731
+    return asm.check_answer(text, lens="trade_efficiency", run_id=RUN_ID,
+                            entries=entries or _entries_for_claim(), claim_check=real,
+                            holdout_start=q4.HOLDOUT, fold="A", model_id="m")[2]
+
+
+@pytest.mark.parametrize("text", [
+    _claim_answer(evidence=["q1:horizons.1.effect=0.0123",
+                            "q1:horizons." + "9" * 5000 + ".effect=1"]),
+    "```yaml\noutcome: claim\nn: " + "9" * 5000 + "\n```",          # past the digit limit
+    "```yaml\noutcome: claim\nx: " + "[" * 500 + "]" * 500 + "\n```",
+    "```yaml\noutcome: claim\nx: " + "[" * 450 + "]" * 450 + "\n```",
+])
+def test_oversized_or_deep_answers_are_refused_never_raised(text):
+    assert _real_check(text)
+
+
+def test_a_bug_in_our_claim_check_wiring_stays_loud():
+    with pytest.raises(TypeError):
+        asm.check_answer(_claim_answer(), lens="trade_efficiency", run_id=RUN_ID,
+                         entries=_entries_for_claim(),
+                         claim_check=lambda c: cc.check_claim(c, bogus=True),
+                         holdout_start=q4.HOLDOUT, fold="A", model_id="m")
+
+
+@pytest.mark.parametrize("text,needle", [
+    ("an effect of +5 per lot", "'+5'"),                  # a test number with a sign
+    ("an effect of 5e-400", "'5e-400'"),                  # not zero as written
+])
+def test_a_test_number_or_a_tiny_number_is_not_an_effect(text, needle):
+    errors = _check(_claim_answer(claim={"rationale": text}))
+    assert any(needle in e for e in errors), errors
+
+
+def test_a_test_threshold_written_as_a_percent_gets_a_usable_message():
+    tests = [{"name": "t", "selector": {"kind": "trade", "where": [
+                  {"field": "past_return_24", "op": ">", "value": 0.02}]},
+              "outcome": {"kind": "trade_net_return"}, "baseline": {"kind": "other_trades"},
+              "statistic": "mean_diff", "direction": "greater", "floor": {"min_events": 5}}]
+    errors = _check(_claim_answer(claim={"tests": tests,
+                                         "statement": "lots after a 2% rise earn more"}))
+    assert any("not as a percent" in e and "0.02" in e for e in errors), errors
+
+
+def test_deep_nesting_under_a_valid_key_is_refused_never_raised():
+    text = _claim_answer()
+    assert text.count("vehicle: []") == 1
+    deep = text.replace("vehicle: []", "vehicle: " + "[" * 450 + "]" * 450)
+    errors = _real_check(deep)
+    assert any("nests deeper than" in e for e in errors), errors
