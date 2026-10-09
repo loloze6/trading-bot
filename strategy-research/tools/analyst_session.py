@@ -253,8 +253,9 @@ _UNIT_FLOOR = {"min_events": 1}
 def floorless_hash(test) -> str | None:
     """The identity of a test with its floor set aside (D-094): spec_hash with the floor
     replaced by {min_events: 1}, so a run without a floor keeps its own spec_hash. The floor
-    only grades (claim_tests._graded); it never changes a measured number, so runs of one test
-    under different floors are one observation. The block is read as claim_card._check_test
+    never changes a measured number (claim_tests.effect_sizes does not read it; downstream it
+    is information, claim_measure's floor_not_met), so runs of one test under different floors
+    are one observation. The block is read as claim_card._check_test
     reads it (`baseline` may be left out: None). None when the block does not parse."""
     if not isinstance(test, dict):
         return None

@@ -33,3 +33,15 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-08 — Exercise the real SDK constructor, not only stubs
 - **Pattern:** PR-5's wiring was written against claude-agent-sdk 0.2.82, but the installed `mcp` 2.x (allowed by the SDK's open `mcp>=1.23`) made `create_sdk_mcp_server` raise on the first real tool. Only a test that built the server with the real tools caught it.
 - **Rule:** when wiring a third-party constructor, at least one test must call it for real with real arguments; pin a transitive dependency when its new major breaks the API the code uses.
+
+## 2026-10-09 — A claim made to justify an option must be checked in the code first
+- **Pattern:** asking the operator to choose how to fix the analyst's floor refusal, I argued against "copy `min_events: 1`" because "the floor grades the fold-B confirmation, so a 1-event floor makes it nearly free". I had not opened `tools/fold_confirm.py`; it never reads the floor. The independent review caught it after the operator had chosen.
+- **Rule:** every "this would cause X downstream" in an option's pros/cons is grepped and read before it is written (name the file:line in the question). When one turns out false after a decision, say so plainly and re-ask, even if the choice probably stands.
+
+## 2026-10-09 — In a PowerShell chain, a failed read does not stop the publishing step
+- **Pattern:** `$b = (Get-Content $p ...).TrimEnd() + ...; WriteAllText($p, $b); gh pr edit 361 --body-file $p` ran on after `Get-Content` failed (the scratch file was gone) and blanked PR #361's description. Restored from the text in context.
+- **Rule:** any step that publishes (gh pr edit/create, push) is guarded: `-ErrorAction Stop` on the reads before it, and a size check (`if ((Get-Item $p).Length -gt N) { gh ... }`) on the file it sends; verify the published result afterwards.
+
+## 2026-10-09 — Tests that stub the default value hide identity bugs
+- **Pattern:** PR-5's end-to-end stub used `floor: {min_events: 1}`, the only value the tool could produce, and the tests with another floor mocked the claim's hash, so "a claim with a real floor is always refused" reached the paid smoke session.
+- **Rule:** an end-to-end test of a model-written block uses a non-default value for every field the model may choose, through the real hashing/checking code, never a mocked hash.
