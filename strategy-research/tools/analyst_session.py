@@ -286,19 +286,20 @@ def runs_by_test(entries: dict) -> dict:
 
 
 def opposite_horizons(entry: dict) -> list:
-    """[(horizon, windows_claimed_sign, windows_with_value)] of a conditional_effect run whose
-    `oriented` effect (positive = the claimed direction) is strictly below 0 at every horizon
-    that has a value; [] otherwise (exactly 0 or no value is not opposite; a run with no
-    valued horizon is never opposite). Smoke 2 (2026-10-09): a claim written `direction:
-    greater` whose own run measured the opposite at every horizon was accepted, scored 0 and
-    would be graded not confirmed on fold B, yet decide-next would still spend a child run."""
+    """[(horizon, windows_claimed_sign, windows_with_value)] of the horizons of a
+    conditional_effect run whose `oriented` effect (positive = the claimed direction) is
+    strictly below 0; [] if none (exactly 0 or no value is not opposite; a run with no valued
+    horizon is never opposite). ANY horizon, not all: fold B (tools/fold_confirm.py) refuses a
+    test whose pooled sign fails at any judged horizon, so the in-run rule matches it.
+    Smoke 2 (2026-10-09): a claim written `direction: greater` whose own run measured the
+    opposite was accepted, scored 0 and would be graded not confirmed on fold B, yet
+    decide-next would still spend a child run."""
     hs = ((entry.get("result") or {}).get("horizons")) or {}
     valued = [(hz, v) for hz, v in hs.items()
               if isinstance(v, dict) and isinstance(v.get("oriented"), (int, float))
               and not isinstance(v.get("oriented"), bool)]
-    if not valued or any(v["oriented"] >= 0 for _, v in valued):
-        return []
-    return [(hz, v.get("windows_claimed_sign"), v.get("windows_with_value")) for hz, v in valued]
+    return [(hz, v.get("windows_claimed_sign"), v.get("windows_with_value"))
+            for hz, v in valued if v["oriented"] < 0]
 
 
 def in_run_score(test_hashes: list, entries: dict) -> int:
@@ -575,7 +576,8 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
                     f"claim test {h[:12]}... measured the opposite of its direction in {q} ("
                     + "; ".join(f"h={hz}: {ws} of {wv} windows with the claimed sign"
                                 for hz, ws, wv in opp)
-                    + "): flip `direction` if the opposite is your claim, or end with no_claim")
+                    + "): flip `direction` if the opposite is your claim, drop those horizons "
+                    "from the test, or end with no_claim")
                 break
     why = doc.get("why_query")
     test_qids = {q for h in hashes for q in ran.get(h, [])}

@@ -1213,7 +1213,8 @@ def test_a_test_that_measured_the_opposite_at_every_horizon_is_refused():
     (msg,) = _opp_errors(entries)
     assert msg == ("claim test h... measured the opposite of its direction in q1 (h=1: 1 of 5 "
                    "windows with the claimed sign; h=2: 1 of 5 windows with the claimed sign): "
-                   "flip `direction` if the opposite is your claim, or end with no_claim")
+                   "flip `direction` if the opposite is your claim, drop those horizons from "
+                   "the test, or end with no_claim")
 
 
 def test_the_same_data_with_the_flipped_direction_is_accepted_through_the_real_check():
@@ -1254,14 +1255,24 @@ def test_a_stub_check_flipped_direction_with_a_positive_run_is_accepted():
 
 
 @pytest.mark.parametrize("oriented", [
-    {"1": -0.02, "2": 0.01},                       # mixed signs
     {"1": 0.0, "2": 0.0},                          # exactly 0 is not opposite
-    {"1": -0.02, "2": 0.0},                        # one below, one exactly 0
+    {"1": 0.02, "2": 0.0},                         # one above, one exactly 0
     {"1": None, "2": None},                        # no value anywhere
     {},                                            # no horizon at all
 ])
-def test_mixed_zero_or_valueless_runs_are_not_refused_by_this_rule(oriented):
+def test_zero_positive_or_valueless_runs_are_not_refused_by_this_rule(oriented):
     assert _opp_errors(_opp_entries(_ceo("q1", "h", oriented))) == []
+
+
+@pytest.mark.parametrize("oriented", [
+    {"1": 0.01, "2": -0.02},                       # mixed signs: fold B's any-horizon rule
+    {"1": -0.02, "2": 0.0},                        # one below, one exactly 0
+])
+def test_one_opposite_horizon_is_enough_and_only_it_is_named(oriented):
+    (msg,) = _opp_errors(_opp_entries(_ceo("q1", "h", oriented, k=2, n=5)))
+    assert msg.count("windows with the claimed sign") == 1
+    bad = [hz for hz, o in oriented.items() if o < 0]
+    assert f"(h={bad[0]}: 2 of 5 windows with the claimed sign):" in msg
 
 
 def test_a_horizon_without_a_value_is_skipped():
@@ -1274,6 +1285,35 @@ def test_any_run_of_the_test_counts_not_only_the_base_run():
                            _ceo("q4", "h", {"1": -0.03}, variant="v1", k=0))
     (msg,) = _opp_errors(entries)
     assert "in q4 (h=1: 0 of 5" in msg
+
+
+def test_the_claims_exact_hash_runs_alone_do_not_hide_an_opposite_run_under_another_floor():
+    """Review round 1: the claim is written with FLOOR (its exact hash is q2's, positive);
+    q1 ran the same test with the unit floor on base and measured negative."""
+    import claim_tests as ct
+    test = {"selector": SEL, "outcome": {"kind": "fwd_return", "horizons": [1]},
+            "baseline": {"kind": "complement"}, "statistic": "mean_diff",
+            "direction": "greater"}
+    b0, b1 = dict(test, floor={"min_events": 1}), dict(test, floor=FLOOR)
+
+    def entry(qid, block, o, variant):
+        return {qid: {"id": qid, "function": "conditional_effect", "status": "ok",
+                      "params": {"variant": variant},
+                      "result": {"spec_hash": ct.spec_hash(ct.TestSpec.from_dict(block)),
+                                 "test": block,
+                                 "horizons": {"1": {"windows_claimed_sign": 1,
+                                                    "windows_with_value": 5,
+                                                    "effect": 0.0123, "oriented": o}}}}}
+    entries = {**entry("q1", b0, -0.02, "base"), **entry("q2", b1, 0.02, "v1"),
+               "q3": {"id": "q3", "function": "trade_slice", "status": "ok",
+                      "params": {"variant": "base"}, "result": {"groups": {"long": {"n": 12}}}}}
+    text = _floor_answer(b1, "q2", "q3", "q2:horizons.1.effect=0.0123")
+    errors = asm.check_answer(
+        text, lens="forecast", run_id=RUN_ID, entries=entries,
+        claim_check=lambda c: cc.check_claim(c, trade_tests=True, folds=True),
+        holdout_start=q4.HOLDOUT, fold="A", model_id="m")[2]
+    (msg,) = [e for e in errors if OPP in e]
+    assert " in q1 (h=1: 1 of 5" in msg
 
 
 def test_the_first_offending_run_is_named_in_query_id_order():
