@@ -17,8 +17,8 @@ Plain words first:
   (then C), which its lineage has never seen.
 
 Commands are given for the Mac (bash, repo-root `.venv`) and, next to them, for Windows
-(PowerShell, repo-root `venv`). The Windows lines of sections 0 and 1 were run on 2026-10-09; those of
-section 2 were not run yet.
+(PowerShell, repo-root `venv`). The Windows lines of sections 0 and 1 were run on
+2026-10-09; those of section 2 were not run yet.
 
 ## 0. Prerequisites (once)
 
@@ -39,10 +39,11 @@ Goal: four facts the Python source cannot prove (PHASE_A section 1.4).
 1. Copy one saved run OUTSIDE the repository (saved runs are never written to; the CLI refuses
    a run under `runs/`):
    - Mac: `cp -R runs/run_074 /tmp/analyst_smoke/run_074`
-   - Windows: `Remove-Item -Recurse -Force $env:TEMP\analyst_smoke\run_074 -ErrorAction SilentlyContinue; New-Item -ItemType Directory -Force $env:TEMP\analyst_smoke | Out-Null; Copy-Item -Recurse runs\run_074 $env:TEMP\analyst_smoke\run_074`
+   - Windows: `if (Test-Path $env:TEMP\analyst_smoke\run_074) { Remove-Item -Recurse -Force $env:TEMP\analyst_smoke\run_074 -ErrorAction Stop }; New-Item -ItemType Directory -Force $env:TEMP\analyst_smoke | Out-Null; Copy-Item -Recurse runs\run_074 $env:TEMP\analyst_smoke\run_074`
 
-   Start from a fresh copy every time: copying onto an existing copy nests it
-   (`run_074\run_074`), and the old copy still holds the previous session's records.
+   Start from a fresh copy every time (send or save the previous record first): copying onto
+   an existing copy nests it (`run_074\run_074`), and the old copy still holds the previous
+   session's records. If the old copy cannot be deleted (a file is open), the line stops.
 2. Run one lens with the real stage function:
    - Mac: `../.venv/bin/python tools/analyst_session.py --run /tmp/analyst_smoke/run_074 --lens forecast`
    - Windows: `..\venv\Scripts\python.exe tools\analyst_session.py --run $env:TEMP\analyst_smoke\run_074 --lens forecast`
@@ -67,7 +68,7 @@ If something fails, keep the copy and send me the record and the summary.
 ### 2a. Offline: both lenses on saved runs 065-074 (about $10-30) **($)**
 
 1. Copy each saved run 065-074 outside the repository, as in step 1.
-   - Windows: `New-Item -ItemType Directory -Force $env:TEMP\analyst_pilot | Out-Null; foreach ($n in 65..74) { Remove-Item -Recurse -Force $env:TEMP\analyst_pilot\run_0$n -ErrorAction SilentlyContinue; Copy-Item -Recurse runs\run_0$n $env:TEMP\analyst_pilot\run_0$n }`
+   - Windows: `New-Item -ItemType Directory -Force $env:TEMP\analyst_pilot | Out-Null; foreach ($n in 65..74) { if (Test-Path $env:TEMP\analyst_pilot\run_0$n) { Remove-Item -Recurse -Force $env:TEMP\analyst_pilot\run_0$n -ErrorAction Stop }; Copy-Item -Recurse runs\run_0$n $env:TEMP\analyst_pilot\run_0$n }`
 2. Run both lenses on each copy (one command per lens and run, as in step 1.2, with the
    copy's path): 20 lens runs. Each session is capped at $1.50 and a refused
    answer gets one retry, so one lens run costs at most $3 and the 20 at most $60 (expected
