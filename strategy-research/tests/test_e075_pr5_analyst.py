@@ -1635,3 +1635,18 @@ def test_the_skill_names_the_exit_time_rule():
     for phrase in ("exit-time field", "`holding_bars`, `exit_cause`", "`trade_net_return`",
                    "entry-time field", "`post_exit_return`"):
         assert phrase in skill, phrase
+
+
+# ---------------------------------------------------------------------------
+# D3 (smoke 3, 2026-10-09): a number calculated from cited values is not a cited value
+# ---------------------------------------------------------------------------
+
+def test_a_number_calculated_from_cited_values_is_refused_and_the_skill_says_so():
+    """Smoke 3: the forecast lens's retry was refused for one number, its own difference of two
+    cited values (0.051 - 0.041 = '0.010'). The check refuses it unless it
+    happens to equal a cited value (here 0.0246 = 2 x 0.0123 is refused); the skill now says so."""
+    errors = _check(_claim_answer(claim={"rationale": "twice the effect, 0.0246 per lot"}))
+    assert any("claim.rationale writes '0.0246'" in e for e in errors), errors
+    assert _check(_claim_answer(claim={"rationale": "a higher effect, 0.0123 per lot"})) == []
+    skill = (asm.SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+    assert "Never write a number you calculated from cited values" in skill
