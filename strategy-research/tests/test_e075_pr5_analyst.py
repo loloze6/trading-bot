@@ -1383,3 +1383,129 @@ def test_the_skill_explains_direction_and_exact_citations():
     skill = " ".join((asm.SKILL_DIR / "SKILL.md").read_text(encoding="utf-8").split())
     assert "`direction_reading`" in skill and "never rounded" in skill
     assert "a negative `oriented` means the data says the opposite" in skill
+
+
+# ---------------------------------------------------------------------------
+# D1 (smoke 3, 2026-10-09): why_query must use another filter
+# ---------------------------------------------------------------------------
+
+WHYF = "why_query must use another filter than the claim's own test"
+SELX = "why_query must test another selector than the claim's own test"
+C1 = {"field": "side", "op": "==", "value": "long"}
+C2 = {"field": "holding_bars", "op": ">", "value": 5}
+C3 = {"field": "side", "op": "in", "value": ["long", "short"]}
+
+
+_D1_TEST = {"name": "t", "outcome": {"kind": "trade_net_return"},
+            "baseline": {"kind": "other_trades"}, "statistic": "mean_diff",
+            "direction": "greater", "floor": {"min_events": 5}}
+
+
+def _why_entries(why, claim_sel=LONG):
+    rest = {k: v for k, v in _entries_for_claim().items() if k not in ("q1", "q3")}
+    return {**_ce("q1", "h", 5, 5, selector=claim_sel), **rest, "q3": why}
+
+
+def _ts(filt):
+    return {"id": "q3", "function": "trade_slice", "status": "ok",
+            "params": {"filter": filt, "agg": [], "by": "window", "variant": "base"},
+            "result": {"groups": {}}}
+
+
+def _es(filt):
+    return {"id": "q3", "function": "event_study", "status": "ok",
+            "params": {"trade_filter": filt, "bars_before": 2, "bars_after": 2,
+                       "variant": "base"}, "result": {}}
+
+
+def _ce_why(sel):
+    return _ce("q3", "h2", 5, 5, selector=sel)["q3"]
+
+
+def _why_errs(why, claim_sel=LONG):
+    claim = {"tests": [{**_D1_TEST, "selector": claim_sel}]}
+    text = _claim_answer(claim=claim)
+    return [e for e in _check(text, _why_entries(why, claim_sel)) if "why_query" in e]
+
+
+def _trade(*clauses):
+    return {"kind": "trade", "where": list(clauses)}
+
+
+def test_a_trade_slice_on_the_claims_own_filter_is_refused():
+    (msg,) = _why_errs(_ts([C1]))
+    assert msg.startswith(WHYF)
+
+
+def test_an_event_study_on_the_claims_own_filter_is_refused():
+    (msg,) = _why_errs(_es([C1]))
+    assert msg.startswith(WHYF)
+
+
+def test_the_same_clauses_in_another_order_are_refused_once():
+    sel = _trade(C1, C2)
+    errs = _why_errs(_ce_why(_trade(C2, C1)), sel)
+    assert len(errs) == 1 and errs[0].startswith(WHYF)
+    errs = _why_errs(_ts([C2, C1]), sel)
+    assert len(errs) == 1 and errs[0].startswith(WHYF)
+
+
+def test_the_same_trade_selector_in_the_same_order_keeps_the_selector_message_once():
+    errs = _why_errs(_ce_why(LONG))
+    assert len(errs) == 1 and errs[0].startswith(SELX)
+
+
+@pytest.mark.parametrize("why", [_ts([C1, C2]), _ts([C2]), _es([C2]),
+                                 _ts([{**C1, "value": "short"}]),     # another value
+                                 _ts([{**C1, "op": "!="}]),           # another op
+                                 _ts([{**C1, "field": "direction"}]),  # another field
+                                 _ts([C3])])
+def test_a_different_filter_is_accepted(why):
+    assert _why_errs(why) == []
+
+
+def test_the_empty_filter_equals_an_empty_where_only():
+    assert _why_errs(_ts([]), _trade())[0].startswith(WHYF)
+    assert _why_errs(_es([]), _trade())[0].startswith(WHYF)
+    assert _why_errs(_ts([]), LONG) == []
+
+
+def test_a_bar_selector_claim_keeps_the_exact_selector_rule():
+    other = {"kind": "event", "field": "forecast", "op": ">=", "value": 9.0}
+    assert _why_errs(_ce_why(other), SEL) == []
+    (msg,) = _why_errs(_ce_why(SEL), SEL)
+    assert msg.startswith(SELX)
+    assert _why_errs(_ts([C1]), SEL) == []
+
+
+def test_a_malformed_filter_is_never_a_match():
+    assert asm._clause_set("x") is None and asm._clause_set([{"field": "a"}]) is None
+    assert asm._clause_set([C1]) == asm._clause_set([dict(C1)])
+    assert asm._clause_set([C3]) == asm._clause_set([{**C3, "value": ["short", "long"]}])
+    assert asm._clause_set([C2]) == asm._clause_set([{**C2, "value": 5.0}])
+    assert asm._clause_set([C2]) != asm._clause_set([{**C2, "value": 6}])
+    assert asm._clause_set([{**C1, "value": {1, 2}}]) is None   # not JSON: never raises
+    assert asm._clause_set([{**C2, "value": 10 ** 400}]) is None  # past float range: never raises
+
+
+def test_the_engines_own_equalities_are_one_filter():
+    c5 = _trade(C2)
+    assert _why_errs(_ts([{**C2, "value": 5.0}]), c5)[0].startswith(WHYF)
+    both = _trade(C3)
+    flipped = {**C3, "value": ["short", "long"]}
+    for why in (_ts([flipped]), _es([flipped])):
+        assert _why_errs(why, both)[0].startswith(WHYF)
+    errs = _why_errs(_ce_why(_trade(flipped)), both)
+    assert len(errs) == 1 and errs[0].startswith(WHYF)
+    assert _why_errs(_ts([{**C2, "value": 6}]), c5) == []
+
+
+def test_a_repeated_clause_is_the_same_filter():
+    assert _why_errs(_ts([C1, C1]), _trade(C1))[0].startswith(WHYF)
+
+
+def test_a_filter_equal_to_any_of_several_claim_tests_is_refused():
+    claim = {"tests": [{**_D1_TEST, "selector": LONG},
+                       {**_D1_TEST, "name": "u", "selector": _trade(C2)}]}
+    errs = [e for e in _check(_claim_answer(claim=claim), _why_entries(_ts([C2]))) if WHYF in e]
+    assert len(errs) == 1
