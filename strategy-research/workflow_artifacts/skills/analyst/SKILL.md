@@ -117,7 +117,8 @@ from the test, or end with no_claim. A changed test is a new test: run it with
 
 `direction` is the side your claim says the effect falls on. `oriented` and
 `windows_claimed_sign` count WITH that side: a negative `oriented` means the data says the
-opposite. Each `conditional_effect` reply's `direction_reading` says it in words per horizon.
+opposite. Each `conditional_effect` reply's `direction_reading` says it in words per horizon
+(it is not part of the logged result: never cite it).
 Copy cited values exactly as the tool returned them, every digit, never rounded (the prose may
 round; the `evidence` list may not).
 
