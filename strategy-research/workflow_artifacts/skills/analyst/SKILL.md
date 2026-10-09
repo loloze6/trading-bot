@@ -100,13 +100,16 @@ evidence:
 
 Code checks, before anything is kept: the claim block (CLAIM_TESTS), every citation against the
 query log (the id exists, the path exists in that result, the value equals the logged value),
-that each test of the claim was run with `conditional_effect` (the same test block) and that
+that each test of the claim was run with `conditional_effect` (the same test block, its floor
+included: pass the claim's floor as `conditional_effect`'s `floor` and paste the block it
+returns) and that
 `evidence` cites that call's `horizons`, that `why_query` is a `conditional_effect`,
 `trade_slice` or `event_study` call of this session on another selector than the claim's
 test, that every number in `statement`, `pass_if`, `fail_if` and `rationale` is a value you
 cited (rounded as you like) or a number of your test, the vehicle against the base config, and
 that no date outside the research period appears. One refusal gets one retry with the reason.
-The score that ranks your claim is the LOWEST window agreement over every run of its test.
+The score that ranks your claim is the LOWEST window agreement over every run of its test
+(any variant, any floor).
 
 ## Guard rails (the same for every lens)
 

@@ -247,13 +247,45 @@ def conditional_effect_hashes(entries: dict) -> dict:
     return out
 
 
+_UNIT_FLOOR = {"min_events": 1}
+
+
+def floorless_hash(test) -> str | None:
+    """The identity of a test with its floor set aside (D-094): spec_hash with the floor
+    replaced by {min_events: 1}, so a run without a floor keeps its own spec_hash. The floor
+    only grades (claim_tests._graded); it never changes a measured number, so runs of one test
+    under different floors are one observation. None when the block does not parse."""
+    if not isinstance(test, dict):
+        return None
+    import claim_tests as ct
+    try:
+        return ct.spec_hash(ct.TestSpec.from_dict(dict(test, floor=dict(_UNIT_FLOOR))))
+    except (TypeError, ValueError, KeyError, OverflowError):
+        return None
+
+
+def runs_by_test(entries: dict) -> dict:
+    """{floorless test identity: [query ids]} of the session's successful conditional_effect
+    calls (an entry whose block does not parse falls back to its own spec_hash)."""
+    out: dict = {}
+    for qid, e in entries.items():
+        if e.get("function") == "conditional_effect" and e.get("status") == "ok":
+            res = e.get("result") or {}
+            k = floorless_hash(res.get("test")) or res.get("spec_hash")
+            if k:
+                out.setdefault(k, []).append(qid)
+    return out
+
+
 def in_run_score(test_hashes: list, entries: dict) -> int:
     """confidence_real, 0..3 (operator, 2026-10-08): for each claim test, the share of windows
     with the claimed sign in the conditional_effect call that ran that test (its weakest
     horizon, and the lowest over every run of that test); the lowest over the tests; 1.0 -> 3,
     >= 0.8 -> 2, >= 0.6 -> 1, else 0. An
-    exploratory number: it only ORDERS candidates, confirmation stays on the unseen fold."""
-    by_hash = conditional_effect_hashes(entries)
+    exploratory number: it only ORDERS candidates, confirmation stays on the unseen fold.
+    `test_hashes` are floorless identities (floorless_hash): a run under another floor is
+    the same test, so choosing a floor cannot drop a weaker run from the minimum (D-094)."""
+    by_hash = runs_by_test(entries)
     shares = []
     for h in test_hashes:
         best = None
@@ -480,10 +512,25 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
                       "slots or end with no_claim")
     hashes = [t["spec_hash"] for t in res.tests] if not res.errors else []
     ran = conditional_effect_hashes(entries)
-    for h in hashes:
+    by_test = runs_by_test(entries)
+    blocks = {t["name"]: t for t in _tests_of(claim) if isinstance(t.get("name"), str)}
+    # the score's keys: each test's floorless identity (its own hash if the block is unknown)
+    score_keys = []
+    for t in (res.tests if hashes else []):
+        h = t["spec_hash"]
+        k = floorless_hash(blocks.get(t.get("name"))) or h
+        score_keys.append(k)
         if h not in ran:
-            errors.append(f"claim test {h[:12]}... was never run with conditional_effect in this "
-                          f"session: run it first and paste the `test` block it returns")
+            msg = (f"claim test {h[:12]}... was never run with conditional_effect in this "
+                   f"session: run it first and paste the `test` block it returns")
+            other = by_test.get(k, [])
+            if other:
+                floors = sorted({json.dumps((((entries[q].get("result") or {}).get("test")) or {})
+                                            .get("floor"), sort_keys=True) for q in other})
+                msg += (f" ({', '.join(other)} ran the same test with floor {', '.join(floors)}, "
+                        f"not the claim's: run it again with the claim's floor, the "
+                        f"conditional_effect `floor` parameter)")
+            errors.append(msg)
     why = doc.get("why_query")
     test_qids = {q for h in hashes for q in ran.get(h, [])}
     if not _ok_call(entries, why):
@@ -506,7 +553,7 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
         errors += prose_number_errors({f"claim.{k}": claim.get(k) for k in PROSE_KEYS},
                                       evidence, entries, tests=claim.get("tests"))
     record.update(why_query=why, test_spec_hashes=hashes)
-    scores = {"confidence_real": in_run_score(hashes, entries) if hashes else 0,
+    scores = {"confidence_real": in_run_score(score_keys, entries) if hashes else 0,
               "distance_to_profitable": FIXED_SCORE, "mechanism_plausibility": FIXED_SCORE}
     record["scores"] = {**scores, "source": "code: in-run window agreement (PR5_DESIGN 11.3)"}
     side = {"proposal_id": f"{rid}-1", "claim": claim,

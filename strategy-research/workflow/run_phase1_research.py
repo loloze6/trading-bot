@@ -5024,7 +5024,8 @@ _ANALYST_TOOL_SCHEMAS = {
                             "outcome": {"type": ["string", "null"]},
                             "baseline": {"type": ["object", "null"]},
                             "statistic": {"type": "string"}, "direction": {"type": "string"},
-                            "by": {"type": ["string", "null"]}, "variant": {"type": "string"}},
+                            "by": {"type": ["string", "null"]}, "variant": {"type": "string"},
+                            "floor": {"type": ["object", "null"]}},
                            ["condition"]),
     "trade_slice": ({"filter": {"type": "array"}, "agg": {"type": "array"},
                      "by": {"type": ["string", "null"]}, "variant": {"type": "string"}},
@@ -5039,7 +5040,10 @@ _ANALYST_TOOL_HELP = {
     "distribution": "A histogram of one column, optionally by a group.",
     "conditional_effect": ("A claim test in the slots (condition = one selector, outcome, "
                            "baseline, statistic, direction): its effect per horizon, the "
-                           "per-window agreement and the exact `test` block to paste into a claim."),
+                           "per-window agreement and the exact `test` block to paste into a claim. "
+                           "`floor` (e.g. {min_events: 100, min_windows: 4}; default "
+                           "{min_events: 1}) is written into that block: run your claim's test "
+                           "with the floor the claim will carry."),
     "trade_slice": "Aggregates of the run's lots matching a filter, optionally by a group.",
     "event_study": "Mean signed returns before and after the entries of the lots matching a filter.",
 }
