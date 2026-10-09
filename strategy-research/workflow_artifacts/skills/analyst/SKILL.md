@@ -135,6 +135,10 @@ round; the `evidence` list may not).
   or the fill: never on an exit field, an `after` column or a future return.
 - No profit or cost judgement: report effects as measured; whether an effect pays after costs
   is decided where strategies are assembled, not here.
+- A trade test may not select lots by an exit-time field (`holding_bars`, `exit_cause`) and
+  measure the same lots' own `trade_net_return`: it is near-mechanical (a losing lot stays
+  open longer). Select on an entry-time field (side, entry_hour, entry_weekday,
+  regime_at_entry, entry_forecast), or measure `post_exit_return`.
 - One claim or none.
 - Stop when the comparison budget says so.
 - No regime claims while every bar's regime is `unknown`.

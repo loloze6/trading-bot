@@ -368,6 +368,10 @@ def _cite_path(c) -> str:
     return _cite_parts(c)[1]
 
 
+# the two exit-time descriptors, known only at the exit (claim_tests.TRADE_EXIT_FIELDS)
+EXIT_TIME_FIELDS = ("holding_bars", "exit_cause")
+
+
 def _tests_of(claim) -> list:
     tests = claim.get("tests") if isinstance(claim, dict) else None
     return [t for t in tests if isinstance(t, dict)] if isinstance(tests, list) else []
@@ -578,6 +582,23 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
     elif res.tests_none:
         errors.append("claim: `tests: none` cannot be confirmed on a fold; write the test in the "
                       "slots or end with no_claim")
+    # smoke 3 (2026-10-09; D-095): lots selected by an exit-time field, measured by their own
+    # trade_net_return, is near-mechanical (a losing lot stays open longer)
+    for i, t in enumerate(_tests_of(claim)):
+        sel, out = t.get("selector"), t.get("outcome")
+        if not (isinstance(sel, dict) and sel.get("kind") == "trade"
+                and isinstance(out, dict) and out.get("kind") == "trade_net_return"
+                and isinstance(sel.get("where"), list)):
+            continue
+        fields = sorted({c["field"] for c in sel["where"]
+                         if isinstance(c, dict) and c.get("field") in EXIT_TIME_FIELDS})
+        if fields:
+            errors.append(
+                f"claim test {t.get('name', i)!r} selects lots by an exit-time field "
+                f"({', '.join(fields)}) and measures their own trade_net_return: that is "
+                f"near-mechanical (a losing lot stays open longer). Select on an entry-time "
+                f"field (side, entry_hour, entry_weekday, regime_at_entry, entry_forecast), "
+                f"or measure post_exit_return")
     hashes = [t["spec_hash"] for t in res.tests] if not res.errors else []
     ran = conditional_effect_hashes(entries)
     by_test = runs_by_test(entries)

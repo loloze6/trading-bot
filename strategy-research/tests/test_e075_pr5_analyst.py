@@ -1509,3 +1509,109 @@ def test_a_filter_equal_to_any_of_several_claim_tests_is_refused():
                        {**_D1_TEST, "name": "u", "selector": _trade(C2)}]}
     errs = [e for e in _check(_claim_answer(claim=claim), _why_entries(_ts([C2]))) if WHYF in e]
     assert len(errs) == 1
+
+
+# ---------------------------------------------------------------------------
+# D2 (smoke 3, 2026-10-09; D-095): exit-time selector with the lot's own return
+# ---------------------------------------------------------------------------
+
+def _w(field, op, value):
+    return {"field": field, "op": op, "value": value}
+
+
+def _exit_test(where, outcome="trade_net_return", name="t"):
+    return {"name": name, "selector": {"kind": "trade", "where": where},
+            "outcome": {"kind": outcome}, "baseline": {"kind": "other_trades"},
+            "statistic": "mean_diff", "direction": "less", "floor": {"min_events": 5}}
+
+
+def _exit_errors(*tests, check=None):
+    text = _claim_answer(claim={"tests": list(tests)})
+    return [e for e in (check or _check)(text) if "exit-time field" in e]
+
+
+def test_holding_bars_with_the_lots_own_return_is_refused():
+    (msg,) = _exit_errors(_exit_test([_w("holding_bars", ">", 5)]))
+    assert msg == ("claim test 't' selects lots by an exit-time field (holding_bars) and "
+                   "measures their own trade_net_return: that is near-mechanical (a losing lot "
+                   "stays open longer). Select on an entry-time field (side, entry_hour, "
+                   "entry_weekday, regime_at_entry, entry_forecast), or measure post_exit_return")
+
+
+def test_exit_cause_with_the_lots_own_return_is_refused():
+    (msg,) = _exit_errors(_exit_test([_w("exit_cause", "==", "flip")]))
+    assert "(exit_cause)" in msg and "post_exit_return" in msg
+
+
+def test_both_exit_fields_in_one_where_are_one_error_naming_both():
+    (msg,) = _exit_errors(_exit_test([_w("holding_bars", ">", 5), _w("side", "==", "long"),
+                                      _w("exit_cause", "==", "flip")]))
+    assert "(exit_cause, holding_bars)" in msg
+
+
+def test_an_exit_selector_with_post_exit_return_is_not_refused_by_this_rule():
+    assert _exit_errors(_exit_test([_w("holding_bars", ">", 5)], outcome="post_exit_return")) == []
+
+
+def test_an_entry_time_selector_with_the_lots_own_return_is_not_refused():
+    assert _check(_claim_answer()) == []
+    for w in ([_w("side", "==", "long")], [_w("entry_hour", ">=", 8)],
+              [_w("regime_at_entry", "==", "x")], [_w("entry_forecast", ">", 1)],
+              [_w("entry_weekday", "<", 5)]):
+        assert _exit_errors(_exit_test(w)) == []
+
+
+def test_a_bar_selector_is_not_affected():
+    bar = {"name": "t", "selector": {"kind": "event", "where": [_w("holding_bars", ">", 5)]},
+           "outcome": {"kind": "trade_net_return"}, "baseline": {"kind": "complement"},
+           "statistic": "mean_diff", "direction": "less", "floor": {"min_events": 5}}
+    assert _exit_errors(bar) == []
+
+
+def test_only_the_offending_test_of_two_is_named():
+    (msg,) = _exit_errors(_exit_test([_w("side", "==", "long")], name="first"),
+                          _exit_test([_w("holding_bars", ">", 5)], name="second"))
+    assert "claim test 'second'" in msg
+
+
+def test_a_nameless_offending_test_is_named_by_its_index():
+    nameless = _exit_test([_w("holding_bars", ">", 5)])
+    del nameless["name"]
+    (msg,) = _exit_errors(_exit_test([_w("side", "==", "long")]), nameless)
+    assert "claim test 1 " in msg
+
+
+@pytest.mark.parametrize("junk", [None, 5, "x", [], {"kind": "trade"},
+                                  {"kind": "trade", "where": "holding_bars"},
+                                  {"kind": "trade", "where": [None, 5, {"field": ["holding_bars"]}]}])
+def test_a_malformed_selector_never_raises_here(junk):
+    t = _exit_test([_w("holding_bars", ">", 5)])
+    t["selector"] = junk
+    assert _exit_errors(t) == []
+
+
+def test_the_rule_fires_through_the_real_claim_check():
+    test = _exit_test([_w("holding_bars", ">", 5)])
+    assert cc.check_claim(yaml.safe_load(_claim_answer(claim={"tests": [test]})
+                                         .split("```yaml\n")[1].split("```")[0])["claim"],
+                          trade_tests=True, folds=True).errors == []     # the block is valid
+    (msg,) = _exit_errors(test, check=_real_check)
+    assert "holding_bars" in msg
+    assert _exit_errors(_exit_test([_w("holding_bars", ">", 5)], outcome="post_exit_return"),
+                        check=_real_check) == []
+
+
+def test_the_two_block_answer_path_carries_the_prefixed_error():
+    bad = _claim_answer(claim={"tests": [_exit_test([_w("holding_bars", ">", 5)])]})
+    text = bad + "\n" + _claim_answer()
+    assert not [e for e in _check(text) if "exit-time field" in e]        # only the last block counts
+    errors = _check(_claim_answer() + "\n" + bad)
+    assert any(e.startswith("(your last block) ") and "exit-time field" in e for e in errors), errors
+
+
+def test_the_skill_names_the_exit_time_rule():
+    skill = (Path(asm.__file__).resolve().parent.parent
+             / "workflow_artifacts/skills/analyst/SKILL.md").read_text(encoding="utf-8")
+    for phrase in ("exit-time field", "`holding_bars`, `exit_cause`", "`trade_net_return`",
+                   "entry-time field", "`post_exit_return`"):
+        assert phrase in skill, phrase
