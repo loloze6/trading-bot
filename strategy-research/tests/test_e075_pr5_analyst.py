@@ -1214,7 +1214,8 @@ def test_a_test_that_measured_the_opposite_at_every_horizon_is_refused():
     assert msg == ("claim test h... measured the opposite of its direction in q1 (h=1: 1 of 5 "
                    "windows with the claimed sign; h=2: 1 of 5 windows with the claimed sign): "
                    "flip `direction` if the opposite is your claim, drop those horizons from "
-                   "the test, or end with no_claim")
+                   "the test, or end with no_claim (a changed test must be run with "
+                   "conditional_effect before you claim it)")
 
 
 def test_the_same_data_with_the_flipped_direction_is_accepted_through_the_real_check():

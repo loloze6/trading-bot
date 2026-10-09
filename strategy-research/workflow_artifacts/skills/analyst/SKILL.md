@@ -112,7 +112,8 @@ The score that ranks your claim is the LOWEST window agreement over every run of
 (any variant, any floor).
 A claim whose own test measured the opposite of its `direction` at any horizon (in any
 run of it) is refused: flip `direction` if the opposite is your claim, drop those horizons
-from the test, or end with no_claim.
+from the test, or end with no_claim. A changed test is a new test: run it with
+`conditional_effect` before you claim it.
 
 ## Guard rails (the same for every lens)
 

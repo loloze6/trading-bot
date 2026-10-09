@@ -577,7 +577,8 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
                     + "; ".join(f"h={hz}: {ws} of {wv} windows with the claimed sign"
                                 for hz, ws, wv in opp)
                     + "): flip `direction` if the opposite is your claim, drop those horizons "
-                    "from the test, or end with no_claim")
+                    "from the test, or end with no_claim (a changed test must be run with "
+                    "conditional_effect before you claim it)")
                 break
     why = doc.get("why_query")
     test_qids = {q for h in hashes for q in ran.get(h, [])}
