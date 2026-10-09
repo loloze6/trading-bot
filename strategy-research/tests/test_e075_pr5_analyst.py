@@ -849,3 +849,211 @@ def test_deep_nesting_under_a_valid_key_is_refused_never_raised():
     deep = text.replace("vehicle: []", "vehicle: " + "[" * 450 + "]" * 450)
     errors = _real_check(deep)
     assert any("nests deeper than" in e for e in errors), errors
+
+
+# ---------------------------------------------------------------------------
+# D-094: the claim test's floor (smoke session on Windows, 2026-10-09: both lenses wrote a
+# real floor, conditional_effect could only log {min_events: 1}, every claim was refused)
+# ---------------------------------------------------------------------------
+
+SEL = {"kind": "event", "field": "forecast", "op": ">=", "value": 3.0}
+FLOOR = {"min_events": 5, "min_windows": 2}
+#: sha256 of the log the floor-less call script below wrote on origin/master 288e36e2
+#: (before D-094), measured on Windows 2026-10-09
+GOLDEN_FLOORLESS_LOG = "86a802b86395dfa971e2df5222c10fea6c96e928a116215d01b8322afeda7a34"
+
+
+def _engine(run_dir):
+    return q4.engine(run_dir)
+
+
+def test_a_call_without_a_floor_logs_byte_identically_to_before(tmp_path):
+    import hashlib
+    eng = _engine(q4.make_run(tmp_path / "run_001"))
+    eng.conditional_effect(SEL, [2, 1])
+    eng.conditional_effect({"kind": "all"}, [1], statistic="rank_ic")
+    eng.conditional_effect({"kind": "trade", "where": q4.TRADE_WHERES[0]})
+    eng.conditional_effect(SEL, [1], by="window")
+    eng.conditional_effect(SEL, [1], statistic="nope")
+    assert hashlib.sha256(eng.log.path.read_bytes()).hexdigest() == GOLDEN_FLOORLESS_LOG
+
+
+@pytest.mark.parametrize("cond,horizons", [(SEL, [1, 2]),
+                                           ({"kind": "trade", "where": q4.TRADE_WHERES[0]}, None)])
+def test_the_floor_is_written_into_the_block_and_changes_no_measured_number(tmp_path, cond,
+                                                                            horizons):
+    import claim_tests as ct
+    eng = _engine(q4.make_run(tmp_path / "run_001"))
+    r0 = eng.conditional_effect(cond, horizons)
+    r1 = eng.conditional_effect(cond, horizons, floor=FLOOR)
+    assert r0["status"] == r1["status"] == "ok"
+    assert r1["result"]["test"]["floor"] == FLOOR
+    assert r1["result"]["spec_hash"] == ct.spec_hash(ct.TestSpec.from_dict(r1["result"]["test"]))
+    assert r1["result"]["spec_hash"] != r0["result"]["spec_hash"]
+    assert r1["result"]["horizons"] == r0["result"]["horizons"]
+    assert r1["n_comparisons"] == r0["n_comparisons"]
+    log = q4.log_of(eng)
+    assert "floor" not in log[0]["params"] and log[1]["params"]["floor"] == FLOOR
+    assert asm.floorless_hash(r1["result"]["test"]) == r0["result"]["spec_hash"]
+
+
+@pytest.mark.parametrize("floor", [[], {}, "100", {"min_bars": 3}, {"min_events": 0},
+                                   {"min_events": True}, {"min_events": 2.5},
+                                   {"min_events": 10 ** 400}])
+def test_a_bad_floor_is_refused_and_logged_never_raised(tmp_path, floor):
+    eng = _engine(q4.make_run(tmp_path / "run_001"))
+    r = eng.conditional_effect(SEL, [1], floor=floor)
+    assert r["status"] == "refused", r
+    assert q4.log_of(eng)[-1]["status"] == "refused"
+
+
+def test_the_tool_schema_offers_the_floor_and_the_handler_passes_it(run):
+    props, required = rpr._ANALYST_TOOL_SCHEMAS["conditional_effect"]
+    assert props["floor"] == {"type": ["object", "null"]} and "floor" not in required
+    assert "floor" in rpr._ANALYST_TOOL_HELP["conditional_effect"]
+    skill = (asm.SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+    assert "pass the claim's floor as `conditional_effect`'s `floor`" in skill
+    tools ={t.name: t for t in rpr._analyst_tools(_engine_on(run, "forecast"))}
+    out = asyncio.run(tools["conditional_effect"].handler({"condition": SEL, "horizons": [1],
+                                                           "floor": FLOOR}))
+    assert json.loads(out["content"][0]["text"])["result"]["test"]["floor"] == FLOOR
+
+
+def _floor_answer(test, ce_qid, why_qid, cite):
+    doc = {"outcome": "claim",
+           "claim": {"statement": "Bars with a high forecast are followed by higher returns.",
+                     "kind": "execution_behaviour", "tests": [dict(test, name="t")],
+                     "pass_if": "higher on the unseen fold", "fail_if": "not higher",
+                     "rationale": "the forecast leads the drift"},
+           "why_query": why_qid, "evidence": [cite], "vehicle": [],
+           "combines_as": "execution_rule"}
+    return "```yaml\n" + yaml.safe_dump(doc, sort_keys=False) + "```"
+
+
+def _entries(eng):
+    return {e["id"]: e for e in q4.log_of(eng)}
+
+
+def _floor_check(eng, text):
+    return asm.check_answer(text, lens="forecast", run_id=RUN_ID, entries=_entries(eng),
+                            claim_check=lambda c: cc.check_claim(c, trade_tests=True, folds=True),
+                            holdout_start=q4.HOLDOUT, fold="A", model_id="m")
+
+
+def test_a_claim_with_a_real_floor_run_with_that_floor_is_accepted(tmp_path):
+    eng = _engine(q4.make_run(tmp_path / "run_001"))
+    r = eng.conditional_effect(SEL, [1], floor=FLOOR)
+    w = eng.trade_slice([], [{"field": "trade_net_return", "stat": "mean"}], by="direction")
+    text = _floor_answer(r["result"]["test"], r["query_id"], w["query_id"],
+                         _cite(r["query_id"], r["result"], "horizons.1.effect"))
+    _reading, record, errors = _floor_check(eng, text)
+    assert errors == []
+    assert record["test_spec_hashes"] == [r["result"]["spec_hash"]]
+
+
+def test_a_claim_whose_floor_was_never_run_is_refused_with_the_run_to_repeat(tmp_path):
+    eng = _engine(q4.make_run(tmp_path / "run_001"))
+    r = eng.conditional_effect(SEL, [1])                          # floor {min_events: 1}
+    w = eng.trade_slice([], [{"field": "trade_net_return", "stat": "mean"}], by="direction")
+    text = _floor_answer(dict(r["result"]["test"], floor=FLOOR), r["query_id"], w["query_id"],
+                         _cite(r["query_id"], r["result"], "horizons.1.effect"))
+    _reading, _record, errors = _floor_check(eng, text)
+    (msg,) = [e for e in errors if "never run with conditional_effect" in e]
+    assert 'q1 ran the same test with floor {"min_events": 1}' in msg and "`floor`" in msg
+
+
+def test_choosing_a_floor_cannot_drop_a_weaker_run_from_the_score():
+    """D-094: runs are grouped by the test without its floor; with the exact hash, the weak
+    floor-less run on base (2 of 5) would not count and the variant's 5 of 5 would score 3."""
+    import claim_tests as ct
+    test = {"selector": SEL, "outcome": {"kind": "fwd_return", "horizons": [1]},
+            "baseline": {"kind": "complement"}, "statistic": "mean_diff",
+            "direction": "greater"}
+    b0, b1 = dict(test, floor={"min_events": 1}), dict(test, floor=FLOOR)
+
+    def entry(qid, block, k, variant):
+        return {qid: {"id": qid, "function": "conditional_effect", "status": "ok",
+                      "params": {"variant": variant},
+                      "result": {"spec_hash": ct.spec_hash(ct.TestSpec.from_dict(block)),
+                                 "test": block,
+                                 "horizons": {"1": {"windows_claimed_sign": k,
+                                                    "windows_with_value": 5,
+                                                    "effect": 0.0123}}}}}
+    entries = {**entry("q1", b0, 2, "base"), **entry("q2", b1, 5, "v1"),
+               "q3": {"id": "q3", "function": "trade_slice", "status": "ok",
+                      "params": {"variant": "base"}, "result": {"groups": {"long": {"n": 12}}}}}
+    assert asm.in_run_score([asm.floorless_hash(b1)], entries) == 0
+    text = _floor_answer(b1, "q2", "q3", "q2:horizons.1.effect=0.0123")
+    _reading, record, errors = asm.check_answer(
+        text, lens="forecast", run_id=RUN_ID, entries=entries,
+        claim_check=lambda c: cc.check_claim(c, trade_tests=True, folds=True),
+        holdout_start=q4.HOLDOUT, fold="A", model_id="m")
+    assert errors == [] and record["scores"]["confidence_real"] == 0
+    del entries["q1"]
+    assert asm.check_answer(text, lens="forecast", run_id=RUN_ID, entries=entries,
+                            claim_check=lambda c: cc.check_claim(c, trade_tests=True,
+                                                                 folds=True),
+                            holdout_start=q4.HOLDOUT, fold="A",
+                            model_id="m")[1]["scores"]["confidence_real"] == 3
+
+
+def test_a_claim_test_without_its_optional_baseline_keeps_its_score(tmp_path):
+    """Review round 1 of #362: claim_card lets a test leave `baseline` out (None); the
+    floorless identity must read the block the same way, or the claim silently scores 0."""
+    eng = _engine(q4.make_run(tmp_path / "run_001"))
+    r = eng.conditional_effect({"kind": "all"}, [1], statistic="rank_ic", floor=FLOOR)
+    w = eng.trade_slice([], [{"field": "trade_net_return", "stat": "mean"}], by="direction")
+    with_none = r["result"]["test"]
+    assert with_none["baseline"] is None
+    without = {k: v for k, v in with_none.items() if k != "baseline"}
+    assert asm.floorless_hash(without) == asm.floorless_hash(with_none) is not None
+    cite = _cite(r["query_id"], r["result"], "horizons.1.effect")
+    scores = []
+    for block in (with_none, without):
+        _rd, record, errors = _floor_check(eng, _floor_answer(block, r["query_id"],
+                                                              w["query_id"], cite))
+        assert errors == []
+        scores.append(record["scores"]["confidence_real"])
+    assert scores[0] == scores[1]
+
+
+def test_why_query_cannot_be_the_claims_own_test_under_another_floor(tmp_path):
+    """Review round 1 of #362: the same trade test with its `where` clauses in another order
+    and another floor has another exact hash and another selector dict, but is the same
+    observation."""
+    eng = _engine(q4.make_run(tmp_path / "run_001"))
+    a, b = q4.TRADE_WHERES[4]
+    q1 = eng.conditional_effect({"kind": "trade", "where": [a, b]})
+    q2 = eng.conditional_effect({"kind": "trade", "where": [b, a]}, floor=FLOOR)
+    assert q1["result"]["spec_hash"] != q2["result"]["spec_hash"]
+    text = _floor_answer(q2["result"]["test"], q2["query_id"], q1["query_id"],
+                         _cite(q2["query_id"], q2["result"], "horizons.trade.effect"))
+    _rd, _rec, errors = _floor_check(eng, text)
+    assert any("why_query must be the SECOND query" in e for e in errors), errors
+
+
+def test_the_skill_says_to_leave_consistency_out():
+    skill = (asm.SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+    assert "Leave `consistency` out of a claim test" in skill
+
+
+def test_a_stubbed_session_claiming_a_real_floor_reaches_the_reading(run, monkeypatch):
+    async def script(call):
+        ce = await call("conditional_effect", {"condition": LONG, "floor": FLOOR})
+        ts = await call("trade_slice", {"filter": [], "agg": [{"field": "trade_net_return",
+                                                                "stat": "mean"}],
+                                        "by": "direction"})
+        answer = {"outcome": "claim",
+                  "claim": {"statement": "Long lots of this strategy earn more than its short "
+                                         "lots.", "kind": "execution_behaviour",
+                            "tests": [ce["result"]["test"]],
+                            "pass_if": "long lots above the others on the unseen fold",
+                            "fail_if": "not above", "rationale": "the longs ride the drift"},
+                  "why_query": ts["query_id"],
+                  "evidence": [_cite(ce["query_id"], ce["result"], "horizons.trade.effect")],
+                  "vehicle": [], "combines_as": "execution_rule"}
+        return "```yaml\n" + yaml.safe_dump(answer, sort_keys=False) + "```\n"
+    _install(monkeypatch, script)
+    dest = rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
+    (side,) = yaml.safe_load(dest.read_text(encoding="utf-8"))["side_findings"]
+    assert side["claim"]["tests"][0]["floor"] == FLOOR

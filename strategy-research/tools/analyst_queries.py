@@ -8,15 +8,19 @@ item 7, A1.11 items 5 and 7); engineering/roadmap/E-075/PHASE_A.md section 2
 placebo arm, no outcome layer, no exploration/confirmation split -- the run is
 read as it is, its folds being the only windows it has).
 
-The six functions (all take `variant="base"` last)
+The six functions (all take `variant="base"`, last but for conditional_effect's floor)
 --------------------------------------------------
   list_columns()
   describe(column, by=None)
   distribution(column, by=None, bins=10)
   conditional_effect(condition, horizons=None, outcome=None, baseline=None,
-                     statistic="mean_diff", direction="greater", by=None)
+                     statistic="mean_diff", direction="greater", by=None, floor=None)
   trade_slice(filter, agg, by=None)
   event_study(trade_filter, bars_before, bars_after)
+
+`floor` (D-094) is written into the returned `test` block (default {min_events: 1}),
+so a claim can carry the floor it will be graded with and still be the test that ran.
+The floor never changes a measured number (claim_tests.effect_sizes does not read it).
 
 `conditional_effect` is expressed in the claim-test slots: its condition is one
 bar selector (claim_tests.SELECTORS plus the gated `trailing_vol` field) or the
@@ -396,13 +400,17 @@ class QueryEngine:
 
     def conditional_effect(self, condition, horizons=None, outcome=None, baseline=None,
                            statistic: str = "mean_diff", direction: str = "greater", by=None,
-                           variant: str = "base"):
+                           variant: str = "base", floor=None):
         params = {"condition": condition, "horizons": horizons, "outcome": outcome,
                   "baseline": baseline, "statistic": statistic, "direction": direction,
                   "by": by, "variant": variant}
+        if floor is not None:
+            # logged only when given: a call without it logs exactly as before
+            params["floor"] = floor
         return self._run("conditional_effect", params,
                          lambda: self._conditional_effect(condition, horizons, outcome, baseline,
-                                                          statistic, direction, by, variant))
+                                                          statistic, direction, by, variant,
+                                                          floor))
 
     def trade_slice(self, filter, agg, by=None, variant: str = "base"):  # noqa: A002
         return self._run("trade_slice",
@@ -805,7 +813,17 @@ class QueryEngine:
         return [e for e in errs if " cannot be graded under " not in e]
 
     def _conditional_effect(self, condition, horizons, outcome, baseline, statistic,
-                            direction, by, variant):
+                            direction, by, variant, floor=None):
+        if floor is None:
+            floor = {"min_events": 1}
+        elif not isinstance(floor, dict) or not floor:
+            raise QueryRefused(f"floor must be a mapping of {list(ct.FLOOR_UNITS)} to whole "
+                               f"numbers >= 1, e.g. {{min_events: 100, min_windows: 4}}")
+        else:
+            # spec_hash reads numbers as floats: an integer past float range would raise there
+            for v in floor.values():
+                if isinstance(v, int) and abs(v) > sys.float_info.max:
+                    raise QueryRefused("floor: a value is too large")
         if not isinstance(condition, dict):
             raise QueryRefused("condition must be one selector mapping, e.g. "
                                "{kind: event, field: past_return, bars: 24, op: '<=', "
@@ -833,7 +851,7 @@ class QueryEngine:
                         and all(isinstance(h, int) and not isinstance(h, bool) for h in horizons)
                         else horizons}
         test = {"selector": condition, "outcome": out_spec, "baseline": baseline,
-                "statistic": statistic, "direction": direction, "floor": {"min_events": 1}}
+                "statistic": statistic, "direction": direction, "floor": floor}
         try:
             spec = ct.TestSpec.from_dict(test)
         except (TypeError, ValueError) as exc:
