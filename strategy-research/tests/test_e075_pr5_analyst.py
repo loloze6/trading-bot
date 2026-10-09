@@ -1057,3 +1057,111 @@ def test_a_stubbed_session_claiming_a_real_floor_reaches_the_reading(run, monkey
     dest = rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
     (side,) = yaml.safe_load(dest.read_text(encoding="utf-8"))["side_findings"]
     assert side["claim"]["tests"][0]["floor"] == FLOOR
+
+
+# ---------------------------------------------------------------------------
+# PR A (smoke 2, 2026-10-09): a multi-block answer reports every error
+# ---------------------------------------------------------------------------
+
+def _no_claim_text(reason="the effect was 1.23% but it did not hold by coin"):
+    return "```yaml\n" + yaml.safe_dump({
+        "outcome": "no_claim", "evidence": ["q1:horizons.1.effect=0.0123"],
+        "no_claim": {"reason": reason,
+                     "best_rejected": {"statement": "longs lead", "killed_by": "q3"}}}) + "```"
+
+
+def _triple(text, entries=None, real=False):
+    check = (lambda c: cc.check_claim(c, trade_tests=True, folds=True)) if real \
+        else (lambda c: _Res())
+    return asm.check_answer(text, lens="trade_efficiency", run_id=RUN_ID,
+                            entries=entries or _entries_for_claim(), claim_check=check,
+                            holdout_start=q4.HOLDOUT, fold="A", model_id="m")
+
+
+def _fixed_answers():
+    """One-block and no-block answers only: their result must not change with PR A."""
+    sealed = q4.HOLDOUT[:7] + "-15"                  # a date inside the holdout month
+    never_run = {**_ce("q1", "zz", 5, 5), **{k: v for k, v in _entries_for_claim().items()
+                                              if k != "q1"}}
+    cases = [(_claim_answer(), None, False),
+             (_claim_answer(), None, True),
+             (_claim_answer(claim={"rationale": "the effect is 9.9% huge"}), None, False),
+             (_claim_answer(evidence=["q1:horizons.1.effect=0.5"]), None, False),
+             (_claim_answer(why_query="q2"), None, False),
+             (_claim_answer(), never_run, False),
+             (_claim_answer(claim={"rationale": f"seen on {sealed}"}), None, False),
+             (_no_claim_text(), None, False),
+             (_no_claim_text("longs beat shorts by 9.9% but n was small"), None, False),
+             ("no yaml here at all", None, False),
+             ("", None, False),
+             ("```yaml\noutcome: [unclosed\n```", None, False)]
+    return cases
+
+
+#: sha256 of the (reading, record, errors) triples of _fixed_answers() on origin/master
+#: 175e1453 (before PR A), measured on Windows 2026-10-09
+GOLDEN_ONE_OR_NO_BLOCK = "e30f7420af7187239a8a4928c234b853ec2a1a624c219c6e69dc16e6e00dec57"
+
+
+def test_a_one_block_or_no_block_answer_checks_byte_identically_to_before():
+    import hashlib
+    out = [_triple(t, e, r) for t, e, r in _fixed_answers()]
+    blob = json.dumps(out, sort_keys=True, default=str)
+    assert hashlib.sha256(blob.encode("utf-8")).hexdigest() == GOLDEN_ONE_OR_NO_BLOCK
+
+
+BLOCK_ERR = "the answer holds 2 fenced YAML block(s); write exactly one"
+LAST = "(your last block) "
+CLEAN_LINE = LAST + "passes the other checks: write only that block"
+
+
+def _bad_last():
+    return _claim_answer(claim={"rationale": "the effect is 9.9% huge"})
+
+
+def test_two_blocks_whose_last_has_errors_list_them_after_the_block_count_error():
+    reading, record, errors = _triple(_claim_answer() + "\n\n" + _bad_last())
+    assert reading is None
+    assert errors[0] == BLOCK_ERR and len(errors) > 1
+    assert all(e.startswith(LAST) for e in errors[1:])
+    assert any("claim.rationale writes '9.9%'" in e for e in errors[1:]), errors
+    assert record["outcome"] is None
+    assert not {"why_query", "test_spec_hashes", "scores"} & set(record), record
+    # the record is exactly what the one-block error path builds
+    assert record == _triple("no yaml here at all")[1]
+
+
+def test_two_blocks_whose_last_is_clean_are_refused_with_one_line():
+    reading, record, errors = _triple(_bad_last() + "\n\n" + _claim_answer())
+    assert reading is None and record["outcome"] is None
+    assert errors == [BLOCK_ERR, CLEAN_LINE]
+
+
+def test_the_first_block_is_not_the_one_checked():
+    _, _, errors = _triple(_bad_last() + "\n\n" + _claim_answer())
+    assert not any("9.9%" in e for e in errors)
+
+
+def test_two_blocks_whose_last_is_unreadable_yaml_add_its_parse_error():
+    reading, _, errors = _triple(_claim_answer() + "\n```yaml\noutcome: [unclosed\n```")
+    assert reading is None and len(errors) == 2
+    assert errors[0] == BLOCK_ERR
+    assert errors[1].startswith(LAST + "the answer is not readable YAML")
+
+
+def test_three_blocks_use_the_last_one():
+    text = _bad_last() + "\n" + _claim_answer() + "\n" + _no_claim_text("longs beat shorts by 9.9%")
+    errors = _triple(text)[2]
+    assert errors[0] == BLOCK_ERR.replace("2", "3")
+    assert any(e.startswith(LAST + "no_claim.reason writes '9.9%'") for e in errors), errors
+    assert not any("claim.rationale" in e for e in errors)
+
+
+def test_a_zero_block_answer_keeps_its_single_error():
+    assert _triple("nothing fenced")[2] == ["the answer holds 0 fenced YAML block(s); write exactly one"]
+
+
+def test_the_retry_section_lists_the_multi_block_errors():
+    errors = _triple(_claim_answer() + "\n" + _bad_last())[2]
+    text = asm.retry_section("answer", errors, _entries_for_claim())
+    assert f"- {BLOCK_ERR}" in text and f"- {LAST}claim.rationale writes '9.9%'" in text
