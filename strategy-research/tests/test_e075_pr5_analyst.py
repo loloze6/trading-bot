@@ -1442,7 +1442,9 @@ def test_refused_calls_and_the_other_tools_have_no_direction_reading(tmp_path):
 
 def test_the_skill_explains_direction_and_exact_citations():
     skill = " ".join((asm.SKILL_DIR / "SKILL.md").read_text(encoding="utf-8").split())
-    assert "`direction_reading`" in skill and "never rounded" in skill
+    assert "`direction_reading`" in skill
+    # D-097: a decimal may be cited rounded to 3 or more significant digits, a count exactly
+    assert "rounded to 3 or more significant digits" in skill and "copied exactly" in skill
     assert "a negative `oriented` means the data says the opposite" in skill
 
 
@@ -1594,9 +1596,14 @@ def _exit_errors(*tests, check=None):
 def test_holding_bars_with_the_lots_own_return_is_refused():
     (msg,) = _exit_errors(_exit_test([_w("holding_bars", ">", 5)]))
     assert msg == ("claim test 't' selects lots by an exit-time field (holding_bars) and "
-                   "measures their own trade_net_return: that is near-mechanical (a losing lot "
-                   "stays open longer). Select on an entry-time field (side, entry_hour, "
-                   "entry_weekday, regime_at_entry, entry_forecast), or measure post_exit_return")
+                   "measures their own trade_net_return: it cannot tell 'the exit comes too "
+                   "late' from 'a losing lot stays open longer' (a lot closes only when the "
+                   "allocation changes, so long-held lots are the ones the price kept going "
+                   "against). Select on an entry-time field (side, entry_hour, entry_weekday, "
+                   "regime_at_entry, entry_forecast), or measure post_exit_return. 'The exit "
+                   "comes too late' has no claim test yet (it needs the return from bar N to "
+                   "the exit): explore it with event_study (trade_filter on holding_bars) and, "
+                   "if it is your best idea, end with no_claim and give it as best_rejected")
 
 
 def test_exit_cause_with_the_lots_own_return_is_refused():
@@ -1921,3 +1928,59 @@ def test_a_malformed_claim_runs_the_reading_checks_without_raising(run, monkeypa
     dest = rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
     assert yaml.safe_load(dest.read_text(encoding="utf-8"))["skipped"]["rule"] \
         == "output_refused_after_retry"
+
+
+# ---------------------------------------------------------------------------
+# D-097 (2026-10-10): a decimal may be cited rounded to 3 or more significant digits (smoke 2:
+# five honest roundings refused); a count stays exact; the exit-field message says what to do
+# ---------------------------------------------------------------------------
+
+_LOGGED = {"q1": {"id": "q1", "status": "ok",
+                  "result": {"x": 0.056281384, "n": 1215, "neg": -0.0026888444,
+                             "tiny": 4.4955012e-05}}}
+
+
+@pytest.mark.parametrize("cite,ok", [
+    ("q1:x=0.056281384", True),        # exact, as before
+    ("q1:x=0.0563", True),             # smoke 2: rounded to 3 digits
+    ("q1:x=0.05628", True),
+    ("q1:x=0.0560", False),            # 3 digits, wrongly rounded
+    ("q1:x=0.056", False),             # 2 digits: too few
+    ("q1:x=0.06", False),
+    ("q1:x=-0.0563", False),           # the sign must match
+    ("q1:neg=-0.00269", True),
+    ("q1:neg=0.00269", False),
+    ("q1:tiny=4.50e-05", True),        # an exponent: its mantissa's digits count
+    ("q1:tiny=4.4e-05", False),
+    ("q1:n=1215", True),               # a count: exact only
+    ("q1:n=1215.0", True),
+    ("q1:n=1220", False),
+    ("q1:n=1.22e3", False),
+    ("q1:x=abc", False),
+])
+def test_a_decimal_may_be_cited_rounded_a_count_exactly(cite, ok):
+    errors = asm.check_citations([cite], _LOGGED)
+    assert (errors == []) is ok, errors
+
+
+def test_smoke_2s_rounded_citations_now_pass():
+    logged = {"4": 0.056281384, "1": 0.054287621, "5": 0.055762757, "24": 0.03742781}
+    entries = {"q22": {"id": "q22", "status": "ok",
+                       "result": {"horizons": {h: {"effect": v} for h, v in logged.items()}}},
+               "q6": {"id": "q6", "status": "ok",
+                      "result": {"horizons": {"4": {"effect": 0.048971016}}}}}
+    cites = ["q22:horizons.4.effect=0.0563", "q22:horizons.1.effect=0.0543",
+             "q22:horizons.5.effect=0.0558", "q22:horizons.24.effect=0.0374",
+             "q6:horizons.4.effect=0.0490"]
+    assert asm.check_citations(cites, entries) == []
+
+
+def test_a_missing_path_or_query_is_still_refused():
+    assert asm.check_citations(["q1:nope=0.0563"], _LOGGED)
+    assert asm.check_citations(["q9:x=0.0563"], _LOGGED)
+
+
+def test_the_skill_says_an_execution_claim_names_its_strategy_feature():
+    skill = " ".join((asm.SKILL_DIR / "SKILL.md").read_text(encoding="utf-8").split())
+    assert "its `statement` names the strategy feature it depends on" in skill
+    assert "holds for that strategy only" in skill

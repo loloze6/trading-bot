@@ -1017,7 +1017,9 @@ def test_the_memory_view_of_run_074_shows_no_exploratory_effect_and_no_window_co
             assert set(t) <= {"name", "spec_hash", "selector", "outcome", "baseline",
                               "statistic", "direction"}, t
         assert set(cl) <= {"claim_id", "source_run", "statement", "kind", "fold_observed",
-                           "fold_confirmed", "status", "tests", "confirmed"}
+                           "fold_confirmed", "status", "tests", "confirmed",
+                           "source_strategy"}                  # D-097: code-written, no result
+        assert set(cl.get("source_strategy") or {}) <= {"hypothesis_id", "components"}
     # a claim of a run with a fold carries it; a claim with no test cannot be confirmed
     c3 = next(c for c in view["claims"] if c["claim_id"] == "F-run_073-1")
     assert c3["fold_observed"] == "A" and c3["status"] == "not_measurable"
@@ -1263,3 +1265,66 @@ def test_fold_observed_comes_from_the_first_row_that_has_it(tmp_path):
     worded = _same_claim_on("B", "run_91", "not_confirmed")
     (c,) = amv.build_memory_view({}, _write_ledger(tmp_path, [bare, worded]))["claims"]
     assert c["fold_observed"] == "A" and worded["fold_observed"] == "A"
+
+
+# ---------------------------------------------------------------------------
+# D-097 (operator, 2026-10-10): each earlier claim shows the strategy it came from, so a
+# claim about one strategy is not read as a market fact
+# ---------------------------------------------------------------------------
+
+_BASE_074 = {"regime_detector": {}, "strategies": {"regimes": {
+    "unknown": {"components": [{
+        "id": "shock_zscore",
+        "class": "strategies.strategy_components.PriceOverextensionHedgeComponent",
+        "params": {"period": 21, "scaling_factor": 1.0}, "weight": 1.0, "lookback": 50,
+        "history_transforms": [],
+        "transforms": [{"op": "ema", "params": {"span": 2}},
+                       {"op": "scale", "params": {"factor": 10.0}}]}]},
+    "trending": None, "mean_reversion": None, "chop": None}}}
+_LINE_074 = ("unknown/shock_zscore: PriceOverextensionHedgeComponent(period=21, "
+             "scaling_factor=1.0); transforms ema(span=2) scale(factor=10.0)")
+
+
+def test_the_strategy_summary_is_one_code_written_line_per_component():
+    assert amv.strategy_summary(_BASE_074) == [_LINE_074]
+    two = json.loads(json.dumps(_BASE_074))
+    comp = two["strategies"]["regimes"]["unknown"]["components"][0]
+    comp["history_transforms"] = [{"op": "zscore", "params": {"window": 20}}]
+    assert amv.strategy_summary(two) == [
+        "unknown/shock_zscore: PriceOverextensionHedgeComponent(period=21, scaling_factor=1.0)"
+        "; history_transforms zscore(window=20); transforms ema(span=2) scale(factor=10.0)"]
+
+
+@pytest.mark.parametrize("junk", [None, {}, [], "x", {"strategies": None},
+                                  {"strategies": {"regimes": {"a": None, "b": {"components": 3},
+                                                              "c": {"components": [None, 1]}}}}])
+def test_a_config_without_components_has_no_summary_never_raises(junk):
+    assert amv.strategy_summary(junk) is None
+
+
+def test_each_claim_shows_its_source_strategy():
+    memory = _run074_memory()
+    hyp = memory["runs"]["run_074"].get("hypothesis_id")
+    view = amv.build_memory_view(memory, {}, {"run_074": _BASE_074})
+    c = next(c for c in view["claims"] if c["claim_id"] == "F-run_074-1")
+    assert c["source_strategy"] == {"hypothesis_id": hyp, "components": [_LINE_074]}
+    other = next(c for c in view["claims"] if c["claim_id"] == "F-run_073-1")
+    assert other["source_strategy"]["components"] is None          # no config given for it
+    assert ("a claim of kind execution_behaviour describes only the strategy of its source run "
+            "(`source_strategy`): never apply it to another strategy") in view["note"]
+
+
+def test_load_memory_view_reads_the_base_config_named_by_the_memory(tmp_path):
+    ref = "runs/run_074/artifacts/variants/base/strategy_config.json"
+    memory = {"runs": {"run_074": {"hypothesis_id": "H", "variants": {"base": {"config_ref": ref}},
+                                   "finding": {"statement": "s", "kind": "direction_forecast",
+                                               "tests": []}}}}
+    (tmp_path / "campaign_record").mkdir()
+    (tmp_path / amv.MEMORY_REL).write_text(yaml.safe_dump(memory), encoding="utf-8")
+    (tmp_path / ref).parent.mkdir(parents=True)
+    (tmp_path / ref).write_text(json.dumps(_BASE_074), encoding="utf-8")
+    (c,) = amv.load_memory_view(tmp_path)["claims"]
+    assert c["source_strategy"] == {"hypothesis_id": "H", "components": [_LINE_074]}
+    (tmp_path / ref).unlink()                                       # a missing file: no summary
+    (c,) = amv.load_memory_view(tmp_path)["claims"]
+    assert c["source_strategy"] == {"hypothesis_id": "H", "components": None}

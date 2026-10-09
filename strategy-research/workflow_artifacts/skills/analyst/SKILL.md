@@ -26,7 +26,9 @@ lens.
 - **The claim-test vocabulary:** CLAIM_TESTS.md (bar tests), CLAIM_TESTS_TRADE.md (trade
   tests), CLAIM_TESTS_EXECUTION.md (`execution_behaviour` claims).
 - **The memory view:** earlier claims with their kind, fold and status. Numbers appear only for
-  confirmed claims. Do not restate an earlier claim; say how yours differs.
+  confirmed claims. Do not restate an earlier claim; say how yours differs. Each claim shows
+  the strategy it came from (`source_strategy`): a claim of kind `execution_behaviour` holds
+  for that strategy only, never for yours unless it is the same.
 - **Six tools** on this run's own bars and trades: `list_columns`, `describe`, `distribution`,
   `conditional_effect`, `trade_slice`, `event_study`. Every call is logged with an id (`q1`,
   `q2`, ...) and counted. A call that relates a condition or a group to an outcome costs
@@ -61,6 +63,10 @@ with its **vehicle**: the strategy change its own run backtests.
   after: 1}`.
 - Or `vehicle: []`, only for a claim of kind `execution_behaviour` about today's strategy as it
   is: the child re-runs the same strategy on the next fold and its own behaviour is the test.
+  Such a claim is true of this strategy, not of the market: its `statement` names the
+  strategy feature it depends on (how it enters or exits), e.g. "in this strategy, which
+  closes a lot only when its forecast changes, lots opened at a deeply negative forecast
+  earn less than the other lots".
 
 ## Your answer: exactly one fenced YAML block
 
@@ -122,8 +128,9 @@ from the test, or end with no_claim. A changed test is a new test: run it with
 `windows_claimed_sign` count WITH that side: a negative `oriented` means the data says the
 opposite. Each `conditional_effect` reply's `direction_reading` says it in words per horizon
 (it is not part of the logged result: never cite it).
-Copy cited values exactly as the tool returned them, every digit, never rounded (the prose may
-round; the `evidence` list may not).
+Copy cited values as the tool returned them. In `evidence` a decimal may be rounded to 3 or
+more significant digits (0.0563 for 0.056281384, not 0.06); a count (`n_events`, a window
+count) is copied exactly.
 
 ## Guard rails (the same for every lens)
 
