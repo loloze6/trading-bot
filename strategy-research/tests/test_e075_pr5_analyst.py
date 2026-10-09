@@ -1574,6 +1574,26 @@ def test_only_the_offending_test_of_two_is_named():
     assert "claim test 'second'" in msg
 
 
+def test_two_offending_tests_give_two_errors_one_naming_each():
+    msgs = _exit_errors(_exit_test([_w("holding_bars", ">", 5)], name="first"),
+                        _exit_test([_w("exit_cause", "==", "flip")], name="second"))
+    assert len(msgs) == 2
+    assert "claim test 'first'" in msgs[0] and "claim test 'second'" in msgs[1]
+
+
+def test_a_claim_card_error_and_the_exit_rule_are_both_returned_in_one_answer():
+    class _Bad(_Res):
+        def __init__(self):
+            super().__init__()
+            self.errors = ["slot x is wrong"]
+    text = _claim_answer(claim={"tests": [_exit_test([_w("holding_bars", ">", 5)])]})
+    errors = asm.check_answer(text, lens="trade_efficiency", run_id=RUN_ID,
+                              entries=_entries_for_claim(), claim_check=lambda c: _Bad(),
+                              holdout_start=q4.HOLDOUT, fold="A", model_id="m")[2]
+    assert "claim: slot x is wrong" in errors
+    assert [e for e in errors if "exit-time field" in e]
+
+
 def test_a_nameless_offending_test_is_named_by_its_index():
     nameless = _exit_test([_w("holding_bars", ">", 5)])
     del nameless["name"]
