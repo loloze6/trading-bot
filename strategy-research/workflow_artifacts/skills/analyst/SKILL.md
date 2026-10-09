@@ -130,7 +130,8 @@ opposite. Each `conditional_effect` reply's `direction_reading` says it in words
 (it is not part of the logged result: never cite it).
 Copy cited values as the tool returned them. In `evidence` a decimal may be rounded to 3 or
 more significant digits (0.0563 for 0.056281384, not 0.06); a count (`n_events`, a window
-count) is copied exactly.
+count) is copied exactly. In the prose, write a cited value with the digits you cited, or
+fewer.
 
 ## Guard rails (the same for every lens)
 

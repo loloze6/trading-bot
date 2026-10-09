@@ -82,7 +82,7 @@ NOTE = ("earlier claims and what became of them: numbers only for confirmed clai
         "on the fold that confirmed them; pending, not_confirmed and not_measurable claims carry "
         "none; every statement has its numbers masked; a claim of kind execution_behaviour "
         "describes only the strategy of its source run (`source_strategy`): never apply it to "
-        "another strategy")
+        "another strategy; the numbers in `source_strategy` are config settings, not results")
 # operator, 2026-10-08: confirmed on any fold wins; a refutation on another fold stays in `folds`
 _FOLD_STATUS_ORDER = (CONFIRMED, NOT_CONFIRMED, NOT_MEASURABLE)   # the first present wins
 # digits glued to a word character (`x2`, `h24`, `5of6`, `Sharpe1.2`) that mask_numbers'
@@ -302,7 +302,8 @@ def build_memory_view(memory: dict, ledger: dict | None = None,
 def load_memory_view(root) -> dict:
     """build_memory_view over `<root>/campaign_record/campaign_memory.yaml` and
     `confirmations.yaml` (either may be absent), with each run's base strategy config
-    (`runs.<id>.variants.base.config_ref`, when that file exists under `root`)."""
+    (`runs.<id>.variants.base.config_ref`, when that file is under `root` and reads as JSON;
+    otherwise that run's `components` is None)."""
     def load(rel):
         p = Path(root) / rel
         if not p.exists():
@@ -311,11 +312,18 @@ def load_memory_view(root) -> dict:
         return doc if isinstance(doc, dict) else {}
     memory = load(MEMORY_REL)
     configs = {}
+    top = Path(root).resolve()
     runs = memory.get("runs") if isinstance(memory.get("runs"), dict) else {}
     for rid, run in runs.items():
         base = ((run.get("variants") or {}).get("base") or {}) if isinstance(run, dict) else {}
         ref = base.get("config_ref") if isinstance(base, dict) else None
-        p = Path(root) / ref if isinstance(ref, str) else None
-        if p is not None and p.is_file():
+        p = (top / ref).resolve() if isinstance(ref, str) else None
+        # a file under the root only; an unreadable one gives no summary (a context line must
+        # never stop the analyst on every later run)
+        if p is None or top not in p.parents or not p.is_file():
+            continue
+        try:
             configs[str(rid)] = json.loads(p.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
     return build_memory_view(memory, load(LEDGER_REL), configs)

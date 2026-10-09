@@ -1328,3 +1328,24 @@ def test_load_memory_view_reads_the_base_config_named_by_the_memory(tmp_path):
     (tmp_path / ref).unlink()                                       # a missing file: no summary
     (c,) = amv.load_memory_view(tmp_path)["claims"]
     assert c["source_strategy"] == {"hypothesis_id": "H", "components": None}
+
+
+@pytest.mark.parametrize("ref,content", [
+    ("runs/r/base.json", b"{not json"),                         # corrupt JSON
+    ("runs/r/base.json", b"\xff\xfe\x00"),                      # not UTF-8
+    ("../outside.json", json.dumps(_BASE_074).encode("utf-8")),  # outside the root
+])
+def test_an_unreadable_or_outside_config_gives_no_summary_never_raises(tmp_path, ref, content):
+    """Review of #373: a corrupt base config raised out of load_memory_view and would have
+    stopped the analyst on every later run; a ref outside the root was read."""
+    root = tmp_path / "root"
+    (root / "campaign_record").mkdir(parents=True)
+    memory = {"runs": {"r": {"hypothesis_id": "H", "variants": {"base": {"config_ref": ref}},
+                             "finding": {"statement": "s", "kind": "direction_forecast",
+                                         "tests": []}}}}
+    (root / amv.MEMORY_REL).write_text(yaml.safe_dump(memory), encoding="utf-8")
+    target = (root / ref).resolve()
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(content)
+    (c,) = amv.load_memory_view(root)["claims"]
+    assert c["source_strategy"] == {"hypothesis_id": "H", "components": None}
