@@ -115,6 +115,12 @@ run of it) is refused: flip `direction` if the opposite is your claim, drop thos
 from the test, or end with no_claim. A changed test is a new test: run it with
 `conditional_effect` before you claim it.
 
+`direction` is the side your claim says the effect falls on. `oriented` and
+`windows_claimed_sign` count WITH that side: a negative `oriented` means the data says the
+opposite. Each `conditional_effect` reply's `direction_reading` says it in words per horizon.
+Copy cited values exactly as the tool returned them, every digit, never rounded (the prose may
+round; the `evidence` list may not).
+
 ## Guard rails (the same for every lens)
 
 - Only the six tools; every call is logged and counted. No code, no paths.

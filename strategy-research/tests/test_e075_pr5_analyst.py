@@ -1335,3 +1335,51 @@ def test_a_two_block_answer_whose_last_block_is_opposite_gets_the_prefixed_error
     errors = _triple(_claim_answer() + "\n\n" + _claim_answer(), entries)[2]
     assert errors[0] == BLOCK_ERR
     assert any(e.startswith(LAST + "claim test h... " + OPP + "q1 (") for e in errors), errors
+
+
+# ---------------------------------------------------------------------------
+# PR C (smoke 2, 2026-10-09): the reply says with/against your direction in words
+# ---------------------------------------------------------------------------
+
+def test_the_reply_reads_each_horizon_in_words_matching_the_sign_of_oriented(tmp_path):
+    eng = _engine(q4.make_run(tmp_path / "run_001"))
+    r = eng.conditional_effect(SEL, [2, 1])
+    hz = r["result"]["horizons"]
+    word = {True: "with your direction", False: "against your direction"}
+    expect = [f"h={k}: " + ("no value" if v["oriented"] is None else
+                            "zero" if v["oriented"] == 0 else word[v["oriented"] > 0])
+              for k, v in hz.items()]
+    assert len(expect) == 2 and r["direction_reading"] == expect
+
+
+def test_the_direction_reading_helper_words_every_case_exactly():
+    from analyst_queries import _direction_reading
+    hs = {"1": {"oriented": 0.5}, "2": {"oriented": -0.5}, "3": {"oriented": 0},
+          "4": {"oriented": None}, "5": {"oriented": True}, "trade": {"oriented": -1}}
+    assert _direction_reading(hs) == [
+        "h=1: with your direction", "h=2: against your direction", "h=3: zero",
+        "h=4: no value", "h=5: no value", "h=trade: against your direction"]
+
+
+def test_the_direction_reading_is_not_logged_and_the_result_is_unchanged(tmp_path):
+    eng = _engine(q4.make_run(tmp_path / "run_001"))
+    r = eng.conditional_effect(SEL, [1])
+    (entry,) = q4.log_of(eng)
+    assert "direction_reading" not in entry["result"] and "direction_reading" not in entry
+    assert r["result"] == entry["result"]
+
+
+def test_refused_calls_and_the_other_tools_have_no_direction_reading(tmp_path):
+    eng = _engine(q4.make_run(tmp_path / "run_001"))
+    replies = [eng.conditional_effect(SEL, [1], statistic="nope"), eng.list_columns(),
+               eng.describe("close"), eng.distribution("close"),
+               eng.trade_slice([], [{"field": "entry_forecast", "stat": "mean"}]),
+               eng.event_study([], 2, 2)]
+    assert replies[0]["status"] == "refused"
+    assert all("direction_reading" not in r for r in replies)
+
+
+def test_the_skill_explains_direction_and_exact_citations():
+    skill = " ".join((asm.SKILL_DIR / "SKILL.md").read_text(encoding="utf-8").split())
+    assert "`direction_reading`" in skill and "never rounded" in skill
+    assert "a negative `oriented` means the data says the opposite" in skill
