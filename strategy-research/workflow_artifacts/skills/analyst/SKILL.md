@@ -131,6 +131,9 @@ round; the `evidence` list may not).
   did not cite does not go into the claim's text (nor the no-claim reason). Allowed there: a
   cited value (rounded, or as a percent, with its sign), 0, 100%, a cited horizon, and your
   test's own numbers written exactly. Say the rest in words: "positive", "most windows".
+  Never write a number you calculated from cited values (a difference, a ratio, a sum): it
+  was not returned by a tool, so it is refused unless it happens to equal a value you cited.
+  Cite both values and say the comparison in words ("higher", "about half").
 - The observation may read any column. A vehicle acts only on what is known at the bar's close
   or the fill: never on an exit field, an `after` column or a future return.
 - No profit or cost judgement: report effects as measured; whether an effect pays after costs
