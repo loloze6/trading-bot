@@ -382,12 +382,18 @@ def _clause_set(clauses):
     one filter. None for anything that is not a list of well-formed clause dicts."""
     if not isinstance(clauses, list):
         return None
+    import claim_tests as ct
     out = set()
     for c in clauses:
         if not (isinstance(c, dict) and isinstance(c.get("field"), str)
                 and isinstance(c.get("op"), str) and "value" in c):
             return None
-        out.add((c["field"], c["op"], json.dumps(c["value"], sort_keys=True)))
+        v = c["value"]
+        try:    # as the engine's test identity reads it: 5 == 5.0, `in` lists in any order
+            v = ct._canon(sorted(v, key=ct._val_key) if isinstance(v, list) else v)
+            out.add((c["field"], c["op"], json.dumps(v, sort_keys=True)))
+        except (TypeError, ValueError):
+            return None
     return frozenset(out)
 
 

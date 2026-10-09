@@ -1481,7 +1481,26 @@ def test_a_bar_selector_claim_keeps_the_exact_selector_rule():
 def test_a_malformed_filter_is_never_a_match():
     assert asm._clause_set("x") is None and asm._clause_set([{"field": "a"}]) is None
     assert asm._clause_set([C1]) == asm._clause_set([dict(C1)])
-    assert asm._clause_set([C3]) != asm._clause_set([{**C3, "value": ["short", "long"]}])
+    assert asm._clause_set([C3]) == asm._clause_set([{**C3, "value": ["short", "long"]}])
+    assert asm._clause_set([C2]) == asm._clause_set([{**C2, "value": 5.0}])
+    assert asm._clause_set([C2]) != asm._clause_set([{**C2, "value": 6}])
+    assert asm._clause_set([{**C1, "value": {1, 2}}]) is None   # not JSON: never raises
+
+
+def test_the_engines_own_equalities_are_one_filter():
+    c5 = _trade(C2)
+    assert _why_errs(_ts([{**C2, "value": 5.0}]), c5)[0].startswith(WHYF)
+    both = _trade(C3)
+    flipped = {**C3, "value": ["short", "long"]}
+    for why in (_ts([flipped]), _es([flipped])):
+        assert _why_errs(why, both)[0].startswith(WHYF)
+    errs = _why_errs(_ce_why(_trade(flipped)), both)
+    assert len(errs) == 1 and errs[0].startswith(WHYF)
+    assert _why_errs(_ts([{**C2, "value": 6}]), c5) == []
+
+
+def test_a_repeated_clause_is_the_same_filter():
+    assert _why_errs(_ts([C1, C1]), _trade(C1))[0].startswith(WHYF)
 
 
 def test_a_filter_equal_to_any_of_several_claim_tests_is_refused():
