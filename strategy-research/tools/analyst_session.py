@@ -153,10 +153,13 @@ def _depth(node) -> int:
     return deepest
 
 
+_YAML_BLOCK = re.compile(r"```ya?ml[^\n]*\n(.*?)```", re.DOTALL)
+
+
 def parse_answer(text: str):
     """(answer dict, None) or (None, error): exactly one fenced YAML block, a mapping with an
     `outcome` of claim / no_claim and exactly that outcome's keys."""
-    blocks = re.findall(r"```ya?ml[^\n]*\n(.*?)```", text or "", re.DOTALL)
+    blocks = _YAML_BLOCK.findall(text or "")
     if len(blocks) != 1:
         return None, f"the answer holds {len(blocks)} fenced YAML block(s); write exactly one"
     try:
@@ -464,7 +467,9 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
     the record holds what the reading cannot (why_query, the no-claim block, what was
     examined). The vehicle, combines_as, fold_observed and the envelope rules are checked
     afterwards by the orchestrator's reading checks (reader_proposals.check_reading and
-    _reading_content_errors), exactly as for a reader's side finding."""
+    _reading_content_errors), exactly as for a reader's side finding. An answer with 2 or more
+    blocks is refused whatever they hold; its last block's other errors are listed after the
+    block-count error, so one retry can fix them all."""
     category = LENS_CATEGORY[lens]
     doc, err = parse_answer(text)
     record = {"lens": lens, "category": category, "outcome": None,
@@ -473,7 +478,16 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
                         "comparisons": sum(max(0, int(e.get("n_comparisons") or 0))
                                            for e in entries.values() if e.get("status") == "ok")}}
     if err:
-        return None, record, [err]
+        blocks = _YAML_BLOCK.findall(text or "")
+        if len(blocks) < 2:
+            return None, record, [err]
+        # only the sub-check's errors are kept: its reading and record never leave
+        last = check_answer("```yaml\n" + blocks[-1] + "```", lens=lens, run_id=run_id,
+                            entries=entries, claim_check=claim_check,
+                            holdout_start=holdout_start, fold=fold, model_id=model_id)[2]
+        last = last or ["passes this answer check (the reading checks run once it is the "
+                        "only block): write only that block"]
+        return None, record, [err] + [f"(your last block) {e}" for e in last]
     record["outcome"] = doc["outcome"]
     errors = check_citations(doc.get("evidence"), entries)
     evidence = doc["evidence"] if isinstance(doc.get("evidence"), list) else []
