@@ -79,6 +79,10 @@ READING_SCHEMA_VERSION = 3
 MAX_SIDE_FINDINGS = 2
 SIDE_FINDING = "side_finding"
 READER_RUBRIC_VERSIONS_V3 = {cat: f"{cat}-reading-v1" for cat in READER_RUBRIC_VERSIONS}
+# E-075 PR-5 (D-092, orchestrator.analyst.enabled): the reading the analyst's lens writes in
+# its category file (tools/analyst_session.LENS_CATEGORY); same shape, its own rubric name
+ANALYST_RUBRIC_VERSIONS = {cat: f"{cat}-analyst-v1" for cat in ("forecast_power",
+                                                                "trade_efficiency")}
 # E-068 continuation 2, section 9 item 2 (operator, 2026-10-06): ONE kind of reader
 # proposal. A config change is proposed only inside a side finding (`config_change`,
 # with the claim it tests); the stand-alone `patch` is removed from what a reader
@@ -102,7 +106,9 @@ SKIP_RULES = ("regime_detector_scaffolding", "regime_detector_constant",
               "single_component", "output_refused_after_retry",
               # E-072 (orchestrator.explore_confirm only): a readers' exploration
               # copy could not be written -- never the all-window file instead
-              "exploration_inputs_unavailable")
+              "exploration_inputs_unavailable",
+              # E-075 PR-5 (orchestrator.analyst.enabled): a category no analyst lens writes
+              "replaced_by_analyst")
 _SIDE_FINDING_KEYS = frozenset({"proposal_id", "claim", "evidence", "scores", "requires_feed",
                                 "config_change"})
 _V3_PATCH_KEYS = frozenset({"proposal_id", "patch", "evidence", "scores", "requires_feed"})
@@ -251,7 +257,7 @@ def _check_item_id(pid, reading_id: str, where: str) -> None:
                             f"(the reading_id, a dash, a number)")
 
 
-def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
+def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False, analyst: bool = False,
                   from_model: bool = False, envelope: bool = False) -> None:
     """Shape check of one v3 reading (the claim INSIDE a side finding is
     checked by claim_card.check_claim, not here). `from_model`: the text a
@@ -296,7 +302,11 @@ def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
     for key in ("model_id", "rubric_version"):
         if not _non_empty_str(doc.get(key)):
             raise ProposalError(f"{where}: {key} must be a non-empty string")
-    if strict_provenance and doc["rubric_version"] != READER_RUBRIC_VERSIONS_V3.get(cat):
+    # `analyst` (E-075 PR-5, orchestrator.analyst.enabled): the analyst lens's rubric name
+    # is accepted too; off: exactly the readers' v3 rubric, as before
+    allowed_rubrics = (READER_RUBRIC_VERSIONS_V3.get(cat),) + (
+        (ANALYST_RUBRIC_VERSIONS.get(cat),) if analyst else ())
+    if strict_provenance and doc["rubric_version"] not in allowed_rubrics:
         raise ProposalError(f"{where}: rubric_version={doc['rubric_version']!r} is not the "
                             f"'{cat}' reader's v3 rubric; write exactly "
                             f"{READER_RUBRIC_VERSIONS_V3.get(cat)!r}")
@@ -455,7 +465,8 @@ def load_readings(proposals_dir: Path, categories: list) -> dict:
     return out
 
 
-def load_proposals(proposals_dir: Path, categories: list, strict_provenance: bool = False) -> dict:
+def load_proposals(proposals_dir: Path, categories: list, strict_provenance: bool = False,
+                   analyst: bool = False) -> dict:
     """{category: [proposal, ...]} for every category. A missing file and `[]`
     both mean "no proposals" (an honest reader output). Everything else that
     is not a well-formed list of proposals raises ProposalError, including an
@@ -484,7 +495,8 @@ def load_proposals(proposals_dir: Path, categories: list, strict_provenance: boo
         data = _load_yaml_strict(path)
         if is_reading(data):
             # E-068 slice 5 (D-073): a v3 reading, flattened into items.
-            check_reading(data, cat, str(path), strict_provenance=strict_provenance)
+            check_reading(data, cat, str(path), strict_provenance=strict_provenance,
+                          **({"analyst": True} if analyst else {}))
             out[cat] = flatten_reading(data)
             continue
         if not isinstance(data, list):

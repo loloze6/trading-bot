@@ -18,6 +18,7 @@ parser; the memory view on a fixture shaped like run_074's memory (no explorator
 effect, no window count, numbers for a confirmed claim). Synthetic data only
 (2020 dates); no market data, no model call.
 """
+import ast
 import builtins
 import copy
 import io
@@ -860,7 +861,22 @@ def test_the_module_imports_no_sdk_and_nothing_imports_it():
             continue
         if re.search(r"analyst_queries|analyst_memory_view", p.read_text(encoding="utf-8")):
             users.append(p.name)
-    assert users == []                      # PR-5 wires them; nothing calls them yet
+    # E-075 PR-5 (D-092) wires them (this pinned "nothing yet" before, changed deliberately):
+    # analyst_session names the log directory; the orchestrator imports both modules only
+    # inside their lazy loaders, which only the analyst stage (its flag) calls
+    assert sorted(users) == ["analyst_session.py", "run_phase1_research.py"]
+    tree = ast.parse((SR_ROOT / "workflow" / "run_phase1_research.py").read_text(encoding="utf-8"))
+    loaders = {}
+    for fn in ast.walk(tree):
+        if isinstance(fn, ast.FunctionDef):
+            for n in ast.walk(fn):
+                if isinstance(n, ast.Import) and n.names[0].name in ("analyst_queries",
+                                                                     "analyst_memory_view"):
+                    loaders[n.names[0].name] = fn.name
+    assert loaders == {"analyst_queries": "_analyst_queries_module",
+                       "analyst_memory_view": "_analyst_memory_view_module"}
+    top = [n for n in tree.body if isinstance(n, (ast.Import, ast.ImportFrom))]
+    assert not any(a.name.startswith("analyst_") for n in top for a in n.names)
 
 
 def test_the_modules_name_no_sealed_date():

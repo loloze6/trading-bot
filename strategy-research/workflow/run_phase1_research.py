@@ -55,6 +55,8 @@ import statistics
 import hashlib
 from fractions import Fraction
 from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, TextBlock
+# E-075 PR-5 (D-092): the analyst's in-process tool server and its deny hook
+from claude_agent_sdk import tool as _sdk_tool, create_sdk_mcp_server, HookMatcher
 from google import genai
 from google.genai import types
 
@@ -1115,7 +1117,7 @@ _STAGE_AGENT_CWD = Path(tempfile.gettempdir()) / "strategy_research_stage_agent_
 _DISABLE_AUTO_MEMORY_ENV = "CLAUDE_CODE_DISABLE_AUTO_MEMORY"
 
 
-def _stage_agent_options() -> ClaudeAgentOptions:
+def _stage_agent_options(*, analyst: dict | None = None) -> ClaudeAgentOptions:
     """CUL-336 (2026-09-27): the options every Claude stage agent runs with.
     run_claude_worker and _invoke_reader_llm both call this, and it is the
     only ClaudeAgentOptions(...) construction in this module
@@ -1163,9 +1165,17 @@ def _stage_agent_options() -> ClaudeAgentOptions:
         (tools=[] does) and passing it changes no CLI argument.
     A fresh object per call: ClaudeAgentOptions is a mutable dataclass.
     What a stage needs to read reaches it through its handoff (see
-    _apply_closed_book_inputs), never through a tool."""
+    _apply_closed_book_inputs), never through a tool.
+
+    `analyst` (E-075 PR-5, D-092; only from _invoke_analyst_llm, under
+    orchestrator.analyst.enabled): {server, hook, model, max_turns, max_budget_usd}.
+    The SAME closed-book base (tools=[] still removes every built-in tool) plus ONE
+    in-process MCP server holding the six query tools (strict_mcp_config keeps every
+    other MCP server out), allowed_tools = exactly those six (they run without asking),
+    permission_mode dontAsk (anything else is denied), a PreToolUse hook that denies
+    any other tool name and records it, and the session caps. None: exactly as before."""
     _STAGE_AGENT_CWD.mkdir(parents=True, exist_ok=True)
-    return ClaudeAgentOptions(
+    kw = dict(
         model=_CLAUDE_WORKER_MODEL,
         tools=[],  # the option that removes tools: --tools ""
         setting_sources=[],
@@ -1173,6 +1183,16 @@ def _stage_agent_options() -> ClaudeAgentOptions:
         env={_DISABLE_AUTO_MEMORY_ENV: "1"},
         cwd=str(_STAGE_AGENT_CWD),
     )
+    if analyst is not None:
+        asm = _analyst_session_module()
+        kw.update(model=analyst["model"],
+                  mcp_servers={asm.SERVER_NAME: analyst["server"]},
+                  allowed_tools=list(asm.ALLOWED_TOOLS),
+                  permission_mode="dontAsk",
+                  hooks={"PreToolUse": [HookMatcher(matcher=None, hooks=[analyst["hook"]])]},
+                  max_turns=analyst["max_turns"],
+                  max_budget_usd=analyst["max_budget_usd"])
+    return ClaudeAgentOptions(**kw)
 
 
 def _usage_token_record(usage: dict) -> dict:
@@ -4248,6 +4268,19 @@ def _analyst_enabled(cfg: dict | None = None) -> bool:
             "well -- an analyst's claim is confirmed only on a fold its lineage has not used "
             "(E-077), and without folds a trade-level claim would be measured in the run that "
             "inspired it, which E-072's in-run route cannot do. Enable them together.")
+    if value:
+        # E-075 PR-5 (D-092): the analyst runs in the specialist_readers stage and writes
+        # v3 readings (reader_findings)
+        missing = [name for name, on in (
+                       ("specialist_readers", _flag_dep(_specialist_readers_enabled, cfg)),
+                       ("reader_findings", _flag_dep(_reader_findings_enabled, cfg)))
+                   if not on]
+        if missing:
+            raise ValueError(
+                "orchestrator.analyst.enabled=true requires "
+                + " and ".join(f"orchestrator.{m}.enabled=true" for m in missing)
+                + " as well -- the analyst replaces the readers in the specialist_readers "
+                "stage and writes v3 readings. Enable them together.")
     return value
 
 
@@ -4913,6 +4946,279 @@ async def _invoke_reader_llm(prompt: str) -> tuple:
     return agent_output, meta
 
 
+# ---------------------------------------------------------------------------
+# E-075 PR-5 (CUL-423, D-092): the analyst, under orchestrator.analyst.enabled
+# ---------------------------------------------------------------------------
+# One tool-using session per lens (tools/analyst_session.LENS_CATEGORY): the six query
+# tools of tools/analyst_queries.py as an in-process MCP server, on the closed-book base
+# (_stage_agent_options(analyst=...)). Its answer becomes a v3 reading in the lens's
+# category file, so decide-next reads it unchanged. The pure part (prompt, answer checks,
+# citations, the score) is tools/analyst_session.py.
+
+_ANALYST_DEFAULT_CAPS = {"max_turns": 40, "max_budget_usd": 1.5, "timeout_minutes": 15}
+
+
+def _analyst_session_module():
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import analyst_session as _as
+    return _as
+
+
+def _analyst_queries_module():
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import analyst_queries as _aq
+    return _aq
+
+
+def _analyst_memory_view_module():
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import analyst_memory_view as _amv
+    return _amv
+
+
+def _analyst_caps(cfg: dict | None = None) -> dict:
+    """orchestrator.analyst.{model, max_turns, max_budget_usd, timeout_minutes}; the model
+    defaults to the stage model (_CLAUDE_WORKER_MODEL, Haiku: operator, 2026-10-08, until a
+    step can pick its own). A wrong type raises."""
+    cfg = _orchestrator_config(cfg)
+    a = ((cfg.get("orchestrator") or {}).get("analyst") or {})
+    model = a.get("model", _CLAUDE_WORKER_MODEL)
+    if not isinstance(model, str) or not model.strip():
+        raise ValueError(f"orchestrator.analyst.model={model!r} must be a model id string")
+    out = {"model": model}
+    for key, default in _ANALYST_DEFAULT_CAPS.items():
+        v = a.get(key, default)
+        if isinstance(v, bool) or not isinstance(v, (int, float)) or v <= 0:
+            raise ValueError(f"orchestrator.analyst.{key}={v!r} must be a positive number")
+        out[key] = v
+    out["max_turns"] = int(out["max_turns"])
+    return out
+
+
+# JSON schemas of the six tools (typed values only: no path, no code)
+_ANALYST_TOOL_SCHEMAS = {
+    "list_columns": ({"variant": {"type": "string"}}, []),
+    "describe": ({"column": {"type": "string"}, "by": {"type": ["string", "null"]},
+                  "variant": {"type": "string"}}, ["column"]),
+    "distribution": ({"column": {"type": "string"}, "by": {"type": ["string", "null"]},
+                      "bins": {"type": "integer"}, "variant": {"type": "string"}}, ["column"]),
+    "conditional_effect": ({"condition": {"type": "object"},
+                            "horizons": {"type": ["array", "null"], "items": {"type": "integer"}},
+                            "outcome": {"type": ["string", "null"]},
+                            "baseline": {"type": ["object", "null"]},
+                            "statistic": {"type": "string"}, "direction": {"type": "string"},
+                            "by": {"type": ["string", "null"]}, "variant": {"type": "string"}},
+                           ["condition"]),
+    "trade_slice": ({"filter": {"type": "array"}, "agg": {"type": "array"},
+                     "by": {"type": ["string", "null"]}, "variant": {"type": "string"}},
+                    ["filter", "agg"]),
+    "event_study": ({"trade_filter": {"type": "array"}, "bars_before": {"type": "integer"},
+                     "bars_after": {"type": "integer"}, "variant": {"type": "string"}},
+                    ["trade_filter", "bars_before", "bars_after"]),
+}
+_ANALYST_TOOL_HELP = {
+    "list_columns": "The usable bar columns, groupings, trade fields and caps of this run.",
+    "describe": "Count, NaN share, mean, std and p10/p50/p90 of one column, optionally by a group.",
+    "distribution": "A histogram of one column, optionally by a group.",
+    "conditional_effect": ("A claim test in the slots (condition = one selector, outcome, "
+                           "baseline, statistic, direction): its effect per horizon, the "
+                           "per-window agreement and the exact `test` block to paste into a claim."),
+    "trade_slice": "Aggregates of the run's lots matching a filter, optionally by a group.",
+    "event_study": "Mean signed returns before and after the entries of the lots matching a filter.",
+}
+
+
+def _analyst_tools(engine) -> list:
+    """The six @tool wrappers over one QueryEngine. A refusal is a normal result with its
+    reason (the engine logged it); an unexpected error is logged by the engine and comes
+    back as an error result."""
+    tools = []
+    for name in _analyst_session_module().TOOL_NAMES:
+        props, required = _ANALYST_TOOL_SCHEMAS[name]
+        schema = {"type": "object", "properties": props, "required": required,
+                  "additionalProperties": False}
+
+        def make(fn_name, keys):
+            async def handler(args):
+                kwargs = {k: args[k] for k in keys if k in (args or {})}
+                try:
+                    out = getattr(engine, fn_name)(**kwargs)
+                except Exception as exc:  # noqa: BLE001 -- logged by the engine; told to the model
+                    return {"content": [{"type": "text", "text": f"error: {type(exc).__name__}: {exc}"}],
+                            "is_error": True}
+                return {"content": [{"type": "text", "text": json.dumps(out, default=str)}]}
+            return handler
+        tools.append(_sdk_tool(name, _ANALYST_TOOL_HELP[name], schema)(make(name, list(props))))
+    return tools
+
+
+def _analyst_deny_hook(seen: list):
+    """The PreToolUse hook: records every tool name the session tries, and denies any name
+    outside the six (defence in depth behind tools=[], strict MCP and dontAsk)."""
+    allowed = set(_analyst_session_module().ALLOWED_TOOLS)
+
+    async def hook(hook_input, tool_use_id, context):
+        name = (hook_input or {}).get("tool_name")
+        seen.append(name)
+        if name in allowed:
+            return {}
+        return {"hookSpecificOutput": {
+            "hookEventName": "PreToolUse", "permissionDecision": "deny",
+            "permissionDecisionReason": f"{name} is not one of the analyst's six query tools"}}
+    return hook
+
+
+async def _invoke_analyst_llm(prompt: str, spec: dict) -> tuple:
+    """One analyst session. Returns (the last assistant text, meta {usage, cost_usd,
+    num_turns, subtype, models}); a wall-clock cap (spec["timeout_s"]) ends it with subtype
+    `timeout`. Same options helper as every stage (_stage_agent_options, CUL-336)."""
+    last_text, meta = "", {"usage": {}, "cost_usd": 0.0, "num_turns": None, "subtype": None,
+                           "init_tools": None}
+    models, result_models = set(), set()
+
+    async def _run():
+        nonlocal last_text
+        async for message in query(prompt=prompt, options=_stage_agent_options(analyst=spec)):
+            _note_stream_models(message, models, result_models)
+            # the CLI's system/init message lists the tools the session really has
+            if getattr(message, "subtype", None) == "init" and \
+                    isinstance(getattr(message, "data", None), dict):
+                meta["init_tools"] = message.data.get("tools")
+            if isinstance(message, AssistantMessage):
+                text = "".join(b.text for b in message.content if isinstance(b, TextBlock))
+                if text.strip():
+                    last_text = text
+            if hasattr(message, "total_cost_usd"):
+                meta.update(usage=getattr(message, "usage", {}) or {},
+                            cost_usd=getattr(message, "total_cost_usd", 0.0),
+                            num_turns=getattr(message, "num_turns", None),
+                            subtype=getattr(message, "subtype", None))
+    try:
+        await asyncio.wait_for(_run(), timeout=spec["timeout_s"])
+    except asyncio.TimeoutError:
+        meta["subtype"] = "timeout"
+    meta["models"] = sorted(models)
+    return last_text, meta
+
+
+def _write_reading_atomically(dest: Path, body: str) -> None:
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{dest.stem}.", suffix=".tmp", dir=str(dest.parent))
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(body)
+        os.replace(tmp_name, dest)
+    except BaseException:
+        with contextlib.suppress(OSError):
+            os.unlink(tmp_name)
+        raise
+
+
+class AnalystToolListError(RuntimeError):
+    """The analyst session reported a tool list (the CLI's system/init message) that is
+    absent or names a tool outside the six: the stage stops, loudly."""
+
+
+def run_analyst_worker(lens: str, run_id: str, run_dir: Path, stage_attempt=0) -> Path:
+    """One analyst lens on this run: a session with the six tools, its answer checked by
+    code (analyst_session.check_answer, then the readers' own reading checks:
+    check_reading with the envelope and _reading_content_errors), one retry with the
+    reasons, then a code-written `skipped` reading (output_refused_after_retry). Writes
+    artifacts/proposals/<category>.yaml (the reading), artifacts/analyst_queries/<lens>.yaml
+    (the engine's log) and artifacts/analyst/<lens>.yaml (the record). Returns the reading."""
+    asm, aq = _analyst_session_module(), _analyst_queries_module()
+    rp, cc = _reader_proposals_module(), _claim_card_module()
+    run_dir = Path(run_dir)
+    category = asm.LENS_CATEGORY[lens]
+    dest = run_dir / "artifacts" / "proposals" / f"{category}.yaml"
+    caps = _analyst_caps()
+    holdout_start = _load_holdout_range()[0]
+    engine = aq.QueryEngine(run_dir, log_path=run_dir / asm.log_rel(lens),
+                            holdout_start=holdout_start)
+    try:
+        fold = _research_folds.fold_of_run_dir(run_dir)
+    except _research_folds.FoldsError:
+        fold = None
+    base_prompt = asm.build_prompt(
+        lens, run_dir, base_config_rel=_reader_base_config_rel(run_dir), fold=fold,
+        memory_view=_analyst_memory_view_module().load_memory_view(ROOT))
+    prompt = base_prompt
+    record = {"schema_version": 1, "lens": lens, "category": category, "run_id": run_id,
+              "model": caps["model"], "caps": caps, "attempts": []}
+    errors: list = []
+    for attempt in range(2):
+        if attempt:
+            _check_reader_budget(run_dir, category)
+        seen: list = []
+        spec = {"server": create_sdk_mcp_server(asm.SERVER_NAME, tools=_analyst_tools(engine)),
+                "hook": _analyst_deny_hook(seen), "model": caps["model"],
+                "max_turns": caps["max_turns"], "max_budget_usd": caps["max_budget_usd"],
+                "timeout_s": float(caps["timeout_minutes"]) * 60.0}
+        print(f"\n🔬 [ANALYST] {lens} on {run_id}" + (" (retry)" if attempt else ""))
+        start = time.time()
+        text, meta = asyncio.run(_invoke_analyst_llm(prompt, spec))
+        key = f"specialist_readers_analyst_{lens}_attempt_{stage_attempt}" + (f"_retry{attempt}" if attempt else "")
+        denied = [n for n in seen if n not in asm.ALLOWED_TOOLS]
+        update_state(path=run_dir, audit_log={key: {
+            "timestamp": datetime.now(timezone.utc).isoformat(), "engine": "claude-agent-sdk",
+            "execution_time_seconds": round(time.time() - start, 2),
+            "cost_usd": meta.get("cost_usd", 0.0), "num_turns": meta.get("num_turns"),
+            "result_subtype": meta.get("subtype"),
+            "tokens": _usage_token_record(meta.get("usage") or {}),
+            "tool_calls": len(seen), "tools_denied": denied,
+            "init_tools": meta.get("init_tools")}})
+        tool_list_errors = asm.tool_list_errors(meta.get("init_tools"))
+        if tool_list_errors:
+            # fail closed (PHASE_A 1.4 b): an answer from a session that had any other tool
+            # is not used, and retrying cannot change the tool list
+            record["attempts"].append({"status": "tool_list_refused",
+                                       "errors": tool_list_errors, "tools_denied": denied})
+            save_yaml(run_dir / asm.record_rel(lens), record)
+            raise AnalystToolListError(f"analyst {lens} on {run_id}: " + "; ".join(tool_list_errors))
+        entries = {e["id"]: e for e in engine.log.entries()}
+        model_id = meta["models"][0] if meta.get("models") else caps["model"]
+        reading, rec, errors = asm.check_answer(
+            text, lens=lens, run_id=run_id, entries=entries,
+            claim_check=lambda claim: cc.check_claim(claim, **_claim_check_kw()),
+            holdout_start=holdout_start, fold=fold, model_id=model_id)
+        if reading is not None and not errors:
+            try:
+                rp.check_reading(reading, category, "analyst reading", from_model=True,
+                                 envelope=True, **_reader_strictness())
+            except rp.ProposalError as exc:
+                errors = [str(exc)]
+            else:
+                errors = _reading_content_errors(reading, category, run_dir)
+        record.update(rec)
+        record["attempts"].append({"status": "refused" if errors else "accepted",
+                                   "errors": errors, "subtype": meta.get("subtype"),
+                                   "cost_usd": meta.get("cost_usd", 0.0),
+                                   "num_turns": meta.get("num_turns"), "tools_denied": denied,
+                                   "answer": (text or "")[:20000]})
+        if not errors:
+            body = _dump_reading(reading)
+            review = _review_written_reading(category, run_id, run_dir, body)
+            if review:
+                record["reading_review"] = review
+            _write_reading_atomically(dest, body)
+            save_yaml(run_dir / asm.record_rel(lens), record)
+            print(f"✅ [ANALYST COMPLETE] {lens} -> proposals/{category}.yaml ({rec.get('outcome')})")
+            return dest
+        print(f"⚠️  [ANALYST] {lens}: answer refused: {'; '.join(errors)[:300]}")
+        prompt = base_prompt + "\n\n" + asm.retry_section(text, errors, entries)
+    _write_skipped_reading(category, run_id, run_dir, {
+        "rule": "output_refused_after_retry",
+        "reason": ("the analyst's answer was refused twice: " + "; ".join(errors))[:1000]})
+    save_yaml(run_dir / asm.record_rel(lens), record)
+    return dest
+
+
 class _ReaderBudgetExceeded(RuntimeError):
     """Raised inside the reader loop when the run's weighted token budget is
     already spent. run_loop turns it into the same terminal
@@ -4936,7 +5242,10 @@ def _reader_strictness() -> dict:
     per-category rubric_version set is enforced, so an unknown, other-category
     or `-v1` value is an ordinary ProposalError: one retry with the message
     appended to the prompt, then the stage raises (run status `failed`)."""
-    return {"strict_provenance": True} if _score_provenance_enabled() else {}
+    if not _score_provenance_enabled():
+        return {}
+    # E-075 PR-5 (D-092): under orchestrator.analyst.enabled the analyst's rubric is accepted too
+    return {"strict_provenance": True, **({"analyst": True} if _analyst_enabled() else {})}
 
 
 def _reader_received_files(category: str, run_dir: Path) -> tuple:
@@ -5608,11 +5917,27 @@ def _run_specialist_readers(run_id: str, run_dir: Path, stage_attempt=0) -> dict
     rp = _reader_proposals_module()
     proposals_dir = run_dir / "artifacts" / "proposals"
     v3 = _reader_findings_enabled()  # E-068 slice 5
+    analyst = _analyst_enabled()     # E-075 PR-5 (D-092): the analyst replaces the readers
+    lens_of = ({cat: lens for lens, cat in _analyst_session_module().LENS_CATEGORY.items()}
+               if analyst else {})
     for category in categories:
         dest = proposals_dir / f"{category}.yaml"
         if dest.exists():
             rp.load_proposals(proposals_dir, categories, **_reader_strictness())
             print(f"⏭️  proposals/{category}.yaml already present and valid -- reader not re-run.")
+            continue
+        if analyst:
+            if category in lens_of:
+                _check_reader_budget(run_dir, category)
+                run_analyst_worker(lens_of[category], run_id, run_dir, stage_attempt)
+            else:
+                _write_skipped_reading(category, run_id, run_dir, {
+                    "rule": _analyst_session_module().REPLACED_RULE,
+                    "reason": ("orchestrator.analyst.enabled: the analyst's lenses "
+                               f"({sorted(lens_of.values())}) replace the readers; no lens "
+                               f"writes {category}")})
+                print(f"⏭️  [E-075] {category}: replaced by the analyst (no model call).")
+            rp.load_proposals(proposals_dir, categories, **_reader_strictness())
             continue
         if v3 and _skip_reader_by_rule(category, run_id, run_dir):
             rp.load_proposals(proposals_dir, categories, **_reader_strictness())
