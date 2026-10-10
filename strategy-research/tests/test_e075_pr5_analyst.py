@@ -1053,7 +1053,9 @@ def test_a_claim_test_without_its_optional_baseline_keeps_its_score(tmp_path):
     """Review round 1 of #362: claim_card lets a test leave `baseline` out (None); the
     floorless identity must read the block the same way, or the claim silently scores 0."""
     eng = _engine(q4.make_run(tmp_path / "run_001"))
-    r = eng.conditional_effect({"kind": "all"}, [1], statistic="rank_ic", floor=FLOOR, direction="less")
+    # D-098: a claim on the overall rank IC (selector `all`) is refused, so the block is a slice
+    r = eng.conditional_effect({"kind": "calendar", "hours": list(range(12))}, [1],
+                               statistic="rank_ic", floor=FLOOR, direction="less")
     w = eng.trade_slice([], [{"field": "trade_net_return", "stat": "mean"}], by="direction")
     with_none = r["result"]["test"]
     assert with_none["baseline"] is None
@@ -1984,3 +1986,116 @@ def test_the_skill_says_an_execution_claim_names_its_strategy_feature():
     skill = " ".join((asm.SKILL_DIR / "SKILL.md").read_text(encoding="utf-8").split())
     assert "its `statement` names the strategy feature it depends on" in skill
     assert "holds for that strategy only" in skill
+
+
+# ---------------------------------------------------------------------------
+# D-098 (pilot 2a, 2026-10-10): code-checkable settings in the prose, the overall rank IC
+# refused, a valid YAML template, a clear message for a bare trade outcome
+# ---------------------------------------------------------------------------
+
+_SIGNED_TEST = [{"name": "t", "selector": {"kind": "trade", "where": [
+                    {"field": "entry_forecast", "op": ">", "value": -5},
+                    {"field": "entry_forecast", "op": "<", "value": 5}]},
+                 "outcome": {"kind": "trade_net_return"}, "baseline": {"kind": "other_trades"},
+                 "statistic": "mean_diff", "direction": "greater",
+                 "floor": {"min_events": 100}}]
+
+
+@pytest.mark.parametrize("text,settings,flagged", [
+    ("lots between -5 and 5", None, []),             # own test values, with their sign
+    ("lots at +5 or above", None, ["+5"]),           # a written "+" marks an effect
+    ("+21 bars", {21.0}, ["+21"]),
+    ("lots between -6 and 6", None, ["-6", "6"]),    # not values of the test
+    ("lots at 5 or below -5", None, []),
+    ("a 21-bar window", {21.0, 2.0, 10.0}, []),      # a setting of the base config
+    ("a 21-bar window", None, ["21"]),               # no config given: masked
+    ("a -21 window", {21.0}, ["-21"]),               # the sign must match the setting
+    ("a 21% move", {21.0}, ["21%"]),                 # a percent is not a setting
+])
+def test_a_code_checkable_setting_may_be_written(text, settings, flagged):
+    hits = asm.number_hits({"claim.statement": text}, [], {}, tests=_SIGNED_TEST,
+                           settings=settings)
+    assert [h[3] for h in hits] == flagged
+
+
+def test_config_settings_are_every_number_of_the_config():
+    cfg = {"strategies": {"regimes": {"unknown": {"components": [
+        {"id": "c", "params": {"period": 21, "flag": True}, "weight": 1.0,
+         "transforms": [{"op": "ema", "params": {"span": 2}}]}]}}}}
+    assert asm.config_settings(cfg) == {21.0, 1.0, 2.0}
+    assert asm.config_settings(None) == set() and asm.config_settings([1, 2]) == set()
+
+
+def test_the_worker_passes_the_runs_base_config_settings(run, monkeypatch):
+    (run / "artifacts" / "candidate_strategy_config.json").write_text(
+        json.dumps({"strategies": {"regimes": {"unknown": {"components": [
+            {"id": "c", "params": {"period": 37}}]}}}}), encoding="utf-8")
+    import functools
+    _install(monkeypatch, functools.partial(_good_claim_with_rationale,
+                                            rationale="a 37-bar window, about 3 times"))
+    rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
+    record = yaml.safe_load((run / asm.record_rel("trade_efficiency")).read_text(encoding="utf-8"))
+    assert record["unverified_numbers"] == [{"field": "claim.rationale", "written": "3"}]
+
+
+async def _good_claim_with_rationale(call, rationale):
+    text = await _good_claim(call)
+    return text.replace("rationale: the longs ride the drift", f"rationale: {rationale}")
+
+
+@pytest.mark.parametrize("selector,statistic,refused", [
+    ({"kind": "all"}, "rank_ic", True),
+    ({"kind": "calendar", "hours": [0, 1, 2]}, "rank_ic", False),
+    ({"kind": "all"}, "mean_diff", False),
+])
+def test_the_overall_rank_ic_is_not_a_claim(selector, statistic, refused):
+    tests = [{"name": "t", "selector": selector, "outcome": {"kind": "fwd_return",
+                                                              "horizons": [1]},
+              "baseline": None, "statistic": statistic, "direction": "greater",
+              "floor": {"min_events": 5}}]
+    errors = _check(_claim_answer(claim={"tests": tests}))
+    assert any("rank IC over all bars" in e for e in errors) is refused, errors
+
+
+def test_the_skill_answer_templates_are_valid_yaml():
+    """Pilot 2a: two Haiku answers copied `statement: >  one sentence ...` from the template
+    and were refused as unreadable YAML."""
+    skill = (asm.SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+    blocks = re.findall(r"```yaml\n(.*?)```", skill, re.S)
+    assert len(blocks) == 2
+    docs = [yaml.safe_load(b) for b in blocks]
+    assert [d["outcome"] for d in docs] == ["claim", "no_claim"]
+
+
+def test_a_bare_trade_outcome_gets_a_message_that_says_what_to_write():
+    import claim_tests as ct
+    spec = ct.TestSpec.from_dict({
+        "name": "t", "selector": {"kind": "trade", "where": [
+            {"field": "exit_cause", "op": "==", "value": "reduction"}]},
+        "outcome": "post_exit_return", "baseline": {"kind": "other_trades"},
+        "statistic": "hit_rate", "direction": "greater", "floor": {"min_events": 5}})
+    errors = ct._check_trade_head(spec)
+    assert any("write it as a mapping, {kind: post_exit_return}" in e for e in errors), errors
+    assert not any("got 'post_exit_return'" in e for e in errors)
+
+
+def test_a_no_claim_may_write_the_runs_config_settings():
+    """Review of #375: the no_claim path passes `settings` too."""
+    text = _nc("a 21-bar window did not hold", statement="s")
+    for settings, flagged in ((None, ["21"]), ({21.0}, [])):
+        _r, rec, _e = asm.check_answer(text, lens="forecast", run_id=RUN_ID,
+                                       entries=_killed_entries(), claim_check=None,
+                                       holdout_start=q4.HOLDOUT, fold="A", model_id="m",
+                                       settings=settings)
+        assert [u["written"] for u in rec["unverified_numbers"]] == flagged
+
+
+def test_an_unreadable_base_config_gives_no_settings_never_raises(run, monkeypatch):
+    (run / "artifacts" / "candidate_strategy_config.json").write_text("{not json",
+                                                                      encoding="utf-8")
+    import functools
+    _install(monkeypatch, functools.partial(_good_claim_with_rationale,
+                                            rationale="a 37-bar window"))
+    rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
+    record = yaml.safe_load((run / asm.record_rel("trade_efficiency")).read_text(encoding="utf-8"))
+    assert record["unverified_numbers"] == [{"field": "claim.rationale", "written": "37"}]

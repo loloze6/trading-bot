@@ -1350,7 +1350,12 @@ def _check_trade_head(spec: TestSpec) -> list[str]:
     """Selector / outcome / statistic / baseline checks of a trade test."""
     e = _check_trade_where(spec.selector)
     o = spec.outcome
-    if not isinstance(o, dict) or o.get("kind") not in TRADE_OUTCOMES:
+    if isinstance(o, str) and o in TRADE_OUTCOMES:
+        # pilot 2a (2026-10-10): the old message read "needs one of [... 'post_exit_return'],
+        # got 'post_exit_return'" for a bare name, which says nothing about what to change
+        e.append(f"outcome: write it as a mapping, {{kind: {o}}} (with its horizons for "
+                 f"post_exit_return), not the bare name {o!r}")
+    elif not isinstance(o, dict) or o.get("kind") not in TRADE_OUTCOMES:
         e.append(f"outcome: a trade test needs one of {list(TRADE_OUTCOMES)}, got {o!r}")
     elif o["kind"] == "trade_net_return":
         if set(o) != {"kind"}:

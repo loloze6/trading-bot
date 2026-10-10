@@ -955,6 +955,10 @@ orchestrator:
       # into PASS. The engine's metrics.json is unchanged.
   analyst:
     enabled: false
+    model: claude-haiku-5-5
+      # D-098 (operator, 2026-10-10, pilot 2a): Haiku 5.5 by the pre-registered rule (6 vs 6
+      # fold-B-worthy claims with Sonnet 5.5; about 12x cheaper at list price). Read only
+      # under `enabled: true`.
       # E-075 PR-5a (D-091). OFF BY DEFAULT, read by run_phase1_research._analyst_enabled().
       # The analyst's flag; PR-5a is its first part, E-075 PR-5 adds the analyst stage
       # (two lenses replacing the v3 readers) under the same flag. REQUIRES
@@ -975,8 +979,8 @@ orchestrator:
       # check_claim with trade tests and folds, the readers' own reading checks), one retry,
       # then a code-written `skipped` reading. profitability, regime_power and
       # component_attribution are code-skipped (rule replaced_by_analyst). Optional caps
-      # (defaults shown; the model defaults to the stage model):
-      #   model: claude-haiku-4-5
+      # (code defaults shown; without the `model:` key above the model is the stage model,
+      # claude-haiku-4-5):
       #   max_turns: 40
       #   max_budget_usd: 3.0   (metered by the SDK's CLI on its own price list; see
       #                          _ANALYST_DEFAULT_CAPS)

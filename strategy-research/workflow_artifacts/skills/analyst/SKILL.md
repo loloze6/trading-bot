@@ -73,7 +73,8 @@ with its **vehicle**: the strategy change its own run backtests.
 ```yaml
 outcome: claim
 claim:
-  statement: >  one sentence a new joiner can test
+  statement: >
+    one sentence a new joiner can test
   kind: execution_behaviour        # or a kind from CLAIM_TESTS.md
   tests:                           # 1 to 3 tests in the slots, bar or trade family
     - name: ...
@@ -83,9 +84,12 @@ claim:
       statistic: ...
       direction: ...
       floor: ...
-  pass_if: >  what result on the unseen fold confirms it
-  fail_if: >  what result refutes it (the falsifier)
-  rationale: >  the why: the market or mechanical reason
+  pass_if: >
+    what result on the unseen fold confirms it
+  fail_if: >
+    what result refutes it (the falsifier)
+  rationale: >
+    the why: the market or mechanical reason
 why_query: q9                      # the second query your mechanism predicted (another selector)
 evidence:                          # citations: query id, a path in that result, the value
   - q7:horizons.24.effect=0.0012   # at least one from your claim test's own conditional_effect
@@ -98,9 +102,11 @@ or
 ```yaml
 outcome: no_claim
 no_claim:
-  reason: >  why nothing survived
+  reason: >
+    why nothing survived
   best_rejected:
-    statement: >  the best candidate you dropped
+    statement: >
+      the best candidate you dropped
     killed_by: q12                 # the query that killed it
 evidence:
   - q12:groups.long.trade_net_return_mean=-0.0008
@@ -140,9 +146,11 @@ fewer.
   carrying it is refused as never run.
 - Cite only query ids of this session, with the value as the tool returned it. In the claim's
   text (and the no-claim reason) write numbers you cited (rounded, or as a percent, with
-  their sign), 0, 100%, a cited horizon, and your test's own numbers written exactly (one
-  between 0 and 1 may be a percent, no sign: "top 20%" for `q: 0.2`; in a no_claim, "your
-  test" is the `conditional_effect` test named by `killed_by`). Say the rest in words
+  their sign), 0, 100%, a cited horizon, your test's own numbers written exactly, with their
+  sign ("-5" for `value: -5`; one between 0 and 1 may be a percent, no sign: "top 20%" for
+  `q: 0.2`; in a no_claim, "your test" is the `conditional_effect` test named by
+  `killed_by`), and the settings of this run's base config ("a 21-bar window" when the
+  config says `period: 21`). Say the rest in words
   ("positive", "most windows", "higher", "about half"): any other number, including one you
   calculated from cited values, is masked as `<n>` and listed as unverified.
 - The observation may read any column. A vehicle acts only on what is known at the bar's close
