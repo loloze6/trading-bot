@@ -23,6 +23,12 @@ plan) and `config/campaign_queue.yaml` (current queue state).
 archived, superseded by EPICS.md and docs/CAMPAIGN_PROGRAM.md above. Retained for its 20 DONE rows'
 verified commit SHAs.
 
+### "Which model does a stage use, and what does it cost?"
+→ **[`engineering/roadmap/E-069/MODEL_AND_COST_FINDINGS.md`](engineering/roadmap/E-069/MODEL_AND_COST_FINDINGS.md)**
+— read before changing any stage's model: the model setting per stage, why `cost_usd` is the
+SDK CLI's estimate (and the caps with it), the price-blind token budget, served-model records,
+retry cost, the analyst smokes' numbers, and a checklist.
+
 ### "What's the overall plan / KPI / process?"
 → **[`docs/CAMPAIGN_PROGRAM.md`](docs/CAMPAIGN_PROGRAM.md)** — operator-ratified campaign program
 (v2, 2026-07-19): Phase 0-5 task sequence with gates, the KPI (honest
