@@ -727,3 +727,62 @@ def test_flag_off_evaluation_bytes_identical_absent_vs_false():
         texts.append("\n".join(line for line in text.splitlines()
                                if not line.startswith("generated_at:")))
     assert texts[0] == texts[1]
+
+
+# ---------------------------------------------------------------------------
+# D-101: a ruined backtest (equity <= 0) FAILs its drawdown row, never INCONCLUSIVE
+# ---------------------------------------------------------------------------
+
+def _ruin_strat(label, k):
+    return -1.5 if (label == "w1" and k == 3) else 0.002   # day 3 of w1: equity x (-0.5)
+
+
+def test_d101_a_ruined_backtest_fails_its_drawdown_row(tmp_path):
+    run_dir = tmp_path / "run"
+    rows, overall, reasons, _x = _rows(_build(run_dir, strat=_ruin_strat), run_dir)
+    dd = rows["max_drawdown_pct_max"]
+    assert dd["result"] == "FAIL" and dd["actual"] == pytest.approx(150.0)
+    assert "RUIN" in dd["note"] and "D-101" in dd["note"] and dd["detail"]["ruin"]["equity"] < 0
+    for name in ("avg_daily_return_min", "sharpe_min", "buy_and_hold_excess_return_min"):
+        _assert_not_evaluable(rows[name], "not computed past a ruin")
+    assert rows["trade_count_min"]["result"] == "PASS"     # rows that need no equity keep theirs
+    assert overall == "FAIL" and any(r.startswith("max_drawdown_pct_max: FAIL") for r in reasons)
+
+
+def test_d101_the_evaluation_of_a_ruined_run_completes_and_fails():
+    run_dir = _v2_run(strat=_ruin_strat)
+    ev = rpr._evaluate_profit_bars_every_backtest(run_dir, RUN_ID)
+    v = ev["variants"][RUN_ID]
+    assert v["result"] == "FAIL"
+    rows = {r["name"]: r for r in v["bars"]}
+    dd = rows["max_drawdown_pct_max"]
+    assert dd["result"] == "FAIL" and dd["actual"] > 100.0
+    # v2's DSR reads the ledger block, written status error for a ruin (never raised)
+    _assert_not_evaluable(rows["deflated_sharpe_threshold"], "status error")
+
+
+def test_d101_v1_grading_fails_the_drawdown_row_and_the_d042_cap_keeps_it(tmp_path):
+    run_dir = tmp_path / "run"
+    pr = _build(run_dir, strat=_ruin_strat)
+    results, overall, _r = rpr._grade_profit_bars(
+        V1_BARS, sharpe=1.5, sharpe_note="t", dsr=0.99, dsr_note="t",
+        pss=pr["per_symbol_summary"], portfolio=rpr._portfolio_profit_metrics(run_dir, pr))
+    rows = {r["name"]: r for r in results}
+    assert rows["max_drawdown_pct_max"]["result"] == "FAIL"
+    assert rows["max_drawdown_pct_max"]["actual"] == pytest.approx(150.0)
+    assert rows["avg_daily_return_min"]["result"] == "NOT_EVALUABLE" and overall == "FAIL"
+    capped, overall, _r = rpr._cap_partial_coverage_bars(results, "partial coverage")
+    capped = {r["name"]: r for r in capped}
+    assert capped["max_drawdown_pct_max"]["result"] == "FAIL"          # a ruin is never held
+    assert capped["trade_count_min"]["result"] == "NOT_EVALUABLE"      # the cap still applies
+    assert overall == "FAIL"
+
+
+def test_d101_the_v2_coverage_hold_keeps_a_ruin_row(tmp_path):
+    run_dir = tmp_path / "run"
+    _rows_, _o, _r, ordered = _rows(_build(run_dir, strat=_ruin_strat), run_dir)
+    held, overall, _r = rpr._hold_rows_not_evaluable(
+        ordered, ("max_drawdown_pct_max", "trade_count_min"), "coverage_unmeasurable: x")
+    held = {r["name"]: r for r in held}
+    assert held["max_drawdown_pct_max"]["result"] == "FAIL"
+    assert held["trade_count_min"]["result"] == "NOT_EVALUABLE" and overall == "FAIL"

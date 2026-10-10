@@ -14742,6 +14742,30 @@ _BASIS_WORST_COIN = "worst_coin"
 PORTFOLIO_MIN_COMMON_DAY_COVERAGE = _pd.PORTFOLIO_MIN_COMMON_DAY_COVERAGE  # one definition
 
 
+def _ruin_text(exc) -> str:
+    """D-101: the sentence a ruined backtest's rows carry."""
+    return (f"RUIN: a backtest's equity fell to {exc.equity!r} at {exc.timestamp} "
+            f"({exc.path}); the engine has no liquidation, so the account went into debt. "
+            f"Graded as a total loss: drawdown {exc.drawdown_pct:.2f}% of that account from "
+            f"its earlier peak (D-101)")
+
+
+def _is_ruin_row(row: dict) -> bool:
+    """D-101: a bar row whose value is a ruin's drawdown. A measured total loss: the
+    partial-coverage holds (_cap_partial_coverage_bars, _hold_rows_not_evaluable)
+    never turn it into NOT_EVALUABLE, which the grid would read as INCONCLUSIVE."""
+    return str(row.get("note") or "").startswith("RUIN: ")
+
+
+def _ruined_portfolio_metrics(exc) -> dict:
+    """D-101: _portfolio_profit_metrics' result for a ruined backtest: the drawdown
+    row carries the ruined account's own drawdown (>= 100%, so it FAILs any bar
+    below 100%), the average daily return reads NOT_EVALUABLE with the reason."""
+    text = _ruin_text(exc)
+    return {"avg_daily_return": (None, text), "max_drawdown_pct": (exc.drawdown_pct, text),
+            "not_evaluable_reason": f"not computed past a ruin: {text}"}
+
+
 def _portfolio_profit_metrics(run_dir: Path, pr: dict) -> dict:
     """avg_daily_return_min and max_drawdown_pct_max actual values for ONE backtest
     candidate, judged on the portfolio you would actually trade: every tested coin
@@ -14797,6 +14821,8 @@ def _portfolio_profit_metrics(run_dir: Path, pr: dict) -> dict:
         windows, coins = _pd.load_windows(run_dir, pr)
     except _pd.PortfolioNotEvaluable as exc:
         return _none(str(exc))
+    except _pd.PortfolioRuined as exc:
+        return _ruined_portfolio_metrics(exc)
 
     returns: list = []
     window_dd: dict = {}
@@ -15354,6 +15380,15 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
         chain, coins = _whole_test_chain(run_dir, pr)
     except _pd.PortfolioNotEvaluable as exc:
         chain_reason = f"whole-test portfolio NOT_EVALUABLE: {exc}"
+    except _pd.PortfolioRuined as exc:
+        # D-101: a measured total loss, never NOT_EVALUABLE (which the grid reads as
+        # INCONCLUSIVE): the drawdown row FAILs on the ruined account's own drawdown.
+        _row("max_drawdown_pct_max", exc.drawdown_pct, note=_ruin_text(exc),
+             detail={"ruin": {"file": str(exc.path), "timestamp": exc.timestamp,
+                              "equity": exc.equity}})
+        for name in ("avg_daily_return_min", "sharpe_min", "buy_and_hold_excess_return_min"):
+            _row(name, reason=f"not computed past a ruin: {_ruin_text(exc)}")
+        return out
     if chain is None:
         for name in ("max_drawdown_pct_max", "avg_daily_return_min", "sharpe_min",
                      "buy_and_hold_excess_return_min"):
@@ -15544,7 +15579,7 @@ def _cap_partial_coverage_bars(results: list, reason: str) -> tuple:
     capped = [({**r, "result": "NOT_EVALUABLE",
                 "not_evaluable_reason": (f"{reason} -- {r['name']} is time-dependent (D-042, "
                                          f"temporary until E-062 S2b)")}
-               if r.get("name") in names else r) for r in results]
+               if r.get("name") in names and not _is_ruin_row(r) else r) for r in results]
     overall = "PASS" if {r["result"] for r in capped} == {"PASS"} else "FAIL"
     reasons = [
         f"{r['name']}: {r['result']} (threshold={r['threshold']!r}, actual={r['actual']!r})"
@@ -15566,7 +15601,7 @@ def _hold_rows_not_evaluable(results: list, names, reason: str) -> tuple:
             f"{reason}: the graded bars lack {missing}, so they cannot be held NOT_EVALUABLE -- "
             f"refusing to grade.")
     held = [({**r, "result": "NOT_EVALUABLE", "not_evaluable_reason": reason}
-             if r.get("name") in names else r) for r in results]
+             if r.get("name") in names and not _is_ruin_row(r) else r) for r in results]
     overall = "PASS" if {r["result"] for r in held} == {"PASS"} else "FAIL"
     reasons = [
         f"{r['name']}: {r['result']} (threshold={r['threshold']!r}, actual={r['actual']!r})"
