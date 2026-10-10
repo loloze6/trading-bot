@@ -838,7 +838,7 @@ def test_a_bug_in_our_claim_check_wiring_stays_loud():
 
 
 @pytest.mark.parametrize("text,needle", [
-    ("an effect of +7 per lot", "'+7'"),                  # a sign, not a number of the test
+    ("an effect of +5 per lot", "'+5'"),                  # a test number with a sign
     ("an effect of 5e-400", "'5e-400'"),                  # not zero as written
 ])
 def test_a_test_number_or_a_tiny_number_is_not_an_effect(text, needle):
@@ -2003,7 +2003,8 @@ _SIGNED_TEST = [{"name": "t", "selector": {"kind": "trade", "where": [
 
 @pytest.mark.parametrize("text,settings,flagged", [
     ("lots between -5 and 5", None, []),             # own test values, with their sign
-    ("lots at +5 or above", None, []),
+    ("lots at +5 or above", None, ["+5"]),           # a written "+" marks an effect
+    ("+21 bars", {21.0}, ["+21"]),
     ("lots between -6 and 6", None, ["-6", "6"]),    # not values of the test
     ("lots at 5 or below -5", None, []),
     ("a 21-bar window", {21.0, 2.0, 10.0}, []),      # a setting of the base config
@@ -2076,3 +2077,25 @@ def test_a_bare_trade_outcome_gets_a_message_that_says_what_to_write():
     errors = ct._check_trade_head(spec)
     assert any("write it as a mapping, {kind: post_exit_return}" in e for e in errors), errors
     assert not any("got 'post_exit_return'" in e for e in errors)
+
+
+def test_a_no_claim_may_write_the_runs_config_settings():
+    """Review of #375: the no_claim path passes `settings` too."""
+    text = _nc("a 21-bar window did not hold", statement="s")
+    for settings, flagged in ((None, ["21"]), ({21.0}, [])):
+        _r, rec, _e = asm.check_answer(text, lens="forecast", run_id=RUN_ID,
+                                       entries=_killed_entries(), claim_check=None,
+                                       holdout_start=q4.HOLDOUT, fold="A", model_id="m",
+                                       settings=settings)
+        assert [u["written"] for u in rec["unverified_numbers"]] == flagged
+
+
+def test_an_unreadable_base_config_gives_no_settings_never_raises(run, monkeypatch):
+    (run / "artifacts" / "candidate_strategy_config.json").write_text("{not json",
+                                                                      encoding="utf-8")
+    import functools
+    _install(monkeypatch, functools.partial(_good_claim_with_rationale,
+                                            rationale="a 37-bar window"))
+    rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
+    record = yaml.safe_load((run / asm.record_rel("trade_efficiency")).read_text(encoding="utf-8"))
+    assert record["unverified_numbers"] == [{"field": "claim.rationale", "written": "37"}]

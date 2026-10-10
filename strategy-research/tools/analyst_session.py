@@ -425,8 +425,9 @@ def _why_filter_set(entry: dict):
 
 
 def _test_numbers(node, out: set) -> set:
-    """The finite numbers written in the claim's test blocks (horizons, lookbacks, floors,
-    selector values). Python ints are kept exact (a huge one never overflows)."""
+    """The finite numbers written anywhere in `node`: the claim's test blocks (horizons,
+    lookbacks, floors, selector values) or, for config_settings, a whole base config. Python
+    ints are kept exact (a huge one never overflows)."""
     if isinstance(node, bool):
         return out
     if isinstance(node, int):
@@ -482,8 +483,10 @@ def number_hits(fields: dict, evidence, entries: dict, tests=None, settings=None
         reads right is not checked ("forecast above 20%" passes for `forecast > 0.2`);
       * it is a value of the claim's own test blocks or a setting of the run's base config
         (`settings`), written exactly with its own sign ("-5" for `entry_forecast > -5`, "a
-        21-bar EMA"; D-098, pilot 2a: 29 of Sonnet's 51 masked numbers were such settings).
-        Known gap: a common small setting (2, 10) also passes where it is not one;
+        21-bar EMA"; D-098, pilot 2a: 29 of Sonnet's 51 masked numbers were such settings);
+        a written "+" is never a setting. Known gap: units are not read, so a number equal
+        to a setting passes where it is not one (base configs hold 2 to 5 numbers such as 1,
+        2, 10, 20, 21, 50, 500: "500 trades" passes in a run with a 500-bar lookback);
       * or it rounds a value cited in `evidence` (each citation already checked against the
         log) to the digits it shows; `x%` is x/100 (or x); a written sign must match the
         cited sign, an unsigned number is compared without sign ("0.08% lower" for -0.0008).
@@ -530,8 +533,9 @@ def number_hits(fields: dict, evidence, entries: dict, tests=None, settings=None
             # of the test, never an effect)
             if not pct and not exp and not sign and "," not in mantissa and x in exact:
                 continue
-            # D-098: a test value or a config setting the code can check, with its own sign
-            if not pct and not exp and "," not in mantissa \
+            # D-098: a test value or a config setting the code can check, with its own sign;
+            # a written "+" marks an effect, never a setting (review of #375)
+            if not pct and not exp and "," not in mantissa and sign != "+" \
                     and (-x if negative else x) in checkable:
                 continue
             # a test's own number in [0, 1] as a percent: x/100 computed exactly in decimal
@@ -704,7 +708,7 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
                 f"differently: a selector on part of the bars (calendar, regime, event, "
                 f"quantile), with a statement that says only what that test measures, or end "
                 f"with no_claim")
-    hashes =[t["spec_hash"] for t in res.tests] if not res.errors else []
+    hashes = [t["spec_hash"] for t in res.tests] if not res.errors else []
     ran = conditional_effect_hashes(entries)
     by_test = runs_by_test(entries)
     blocks = {t["name"]: t for t in _tests_of(claim) if isinstance(t.get("name"), str)}
