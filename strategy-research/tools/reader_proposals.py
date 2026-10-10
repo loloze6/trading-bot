@@ -79,6 +79,10 @@ READING_SCHEMA_VERSION = 3
 MAX_SIDE_FINDINGS = 2
 SIDE_FINDING = "side_finding"
 READER_RUBRIC_VERSIONS_V3 = {cat: f"{cat}-reading-v1" for cat in READER_RUBRIC_VERSIONS}
+# E-075 PR-5 (D-092, orchestrator.analyst.enabled): the reading the analyst's lens writes in
+# its category file (tools/analyst_session.LENS_CATEGORY); same shape, its own rubric name
+ANALYST_RUBRIC_VERSIONS = {cat: f"{cat}-analyst-v1" for cat in ("forecast_power",
+                                                                "trade_efficiency")}
 # E-068 continuation 2, section 9 item 2 (operator, 2026-10-06): ONE kind of reader
 # proposal. A config change is proposed only inside a side finding (`config_change`,
 # with the claim it tests); the stand-alone `patch` is removed from what a reader
@@ -99,10 +103,42 @@ _SKIP_RECORD_KEYS = frozenset({"rule", "reason"})
 # Written by code only (tools/reader_findings.py); a model writing `skipped`
 # is refused (from_model=True).
 SKIP_RULES = ("regime_detector_scaffolding", "regime_detector_constant",
-              "single_component", "output_refused_after_retry")
+              "single_component", "output_refused_after_retry",
+              # E-072 (orchestrator.explore_confirm only): a readers' exploration
+              # copy could not be written -- never the all-window file instead
+              "exploration_inputs_unavailable",
+              # E-075 PR-5 (orchestrator.analyst.enabled): a category no analyst lens writes
+              "replaced_by_analyst")
 _SIDE_FINDING_KEYS = frozenset({"proposal_id", "claim", "evidence", "scores", "requires_feed",
                                 "config_change"})
 _V3_PATCH_KEYS = frozenset({"proposal_id", "patch", "evidence", "scores", "requires_feed"})
+
+# E-077 PR-2 (D-087): the ENVELOPE of a side finding under orchestrator.folds.enabled --
+# three keys beside `claim` (never inside it: claim_card.check_claim refuses unknown
+# claim keys, and step 1a copies the claim unchanged).
+#   vehicle        the strategy change the claim's own run backtests: the same
+#                  [{component_id, field, before, after}] list as `config_change`
+#                  (resolved by decide_next.resolve_patch where the reading is checked).
+#                  Required from a model under the flag, because every claim is a
+#                  strategy claim (delivery_plan_readers.md A1.11, Step 11). It IS the
+#                  side finding's config change: flatten_reading hands it to decide-next
+#                  as `config_change`, so the child starts from the source config with it
+#                  applied. A finding carries `vehicle` or `config_change`, never both.
+#   combines_as    how a confirmed claim could be combined, a word from COMBINES_AS,
+#                  written by the analyst and checked here (the combination logic itself
+#                  is not touched).
+#   fold_observed  the fold (A, B or C) of the run that inspired the claim.
+# A model's answer may carry them only under the flag (check_reading(envelope=True));
+# a FILE already written (from_model False) is accepted as it stands.
+COMBINES_AS = ("forecast_block", "regime_gate", "execution_rule", "knowledge_only")
+ENVELOPE_KEYS = frozenset({"vehicle", "combines_as", "fold_observed"})
+# D-089 (operator, 2026-10-08, decision a): a claim about TODAY's strategy as it is may change
+# nothing -- `vehicle: []`, the child re-runs the same strategy on the next fold and the
+# strategy's own behaviour there is the test. Only these claim kinds (claim_card's
+# FOLDS_CLAIM_KINDS; not imported, to keep this module free of the claim engine); every
+# other kind still needs a non-empty vehicle. An envelope exists only under
+# orchestrator.folds.enabled, so flag off nothing reaches this.
+EMPTY_VEHICLE_KINDS = ("execution_behaviour",)
 
 
 class ProposalError(ValueError):
@@ -221,11 +257,15 @@ def _check_item_id(pid, reading_id: str, where: str) -> None:
                             f"(the reading_id, a dash, a number)")
 
 
-def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
-                  from_model: bool = False) -> None:
+def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False, analyst: bool = False,
+                  from_model: bool = False, envelope: bool = False) -> None:
     """Shape check of one v3 reading (the claim INSIDE a side finding is
     checked by claim_card.check_claim, not here). `from_model`: the text a
     reader answered -- a `skipped` reading is code's only, so it is refused.
+    `envelope` (E-077 PR-2, orchestrator.folds.enabled): a model's side finding
+    may carry the ENVELOPE_KEYS and MUST carry `vehicle`; without it a model's
+    answer with any of them is refused as before (a file already written is
+    accepted either way).
     Raises ProposalError naming the whole required shape where it can."""
     if not is_reading(doc):
         raise ProposalError(f"{where}: a v3 reading must be a mapping with schema_version: "
@@ -262,7 +302,11 @@ def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
     for key in ("model_id", "rubric_version"):
         if not _non_empty_str(doc.get(key)):
             raise ProposalError(f"{where}: {key} must be a non-empty string")
-    if strict_provenance and doc["rubric_version"] != READER_RUBRIC_VERSIONS_V3.get(cat):
+    # `analyst` (E-075 PR-5, orchestrator.analyst.enabled): the analyst lens's rubric name
+    # is accepted too; off: exactly the readers' v3 rubric, as before
+    allowed_rubrics = (READER_RUBRIC_VERSIONS_V3.get(cat),) + (
+        (ANALYST_RUBRIC_VERSIONS.get(cat),) if analyst else ())
+    if strict_provenance and doc["rubric_version"] not in allowed_rubrics:
         raise ProposalError(f"{where}: rubric_version={doc['rubric_version']!r} is not the "
                             f"'{cat}' reader's v3 rubric; write exactly "
                             f"{READER_RUBRIC_VERSIONS_V3.get(cat)!r}")
@@ -274,9 +318,10 @@ def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
         raise ProposalError(f"{where}: side_findings must be a list of at most "
                             f"{MAX_SIDE_FINDINGS} (`[]` for none)")
     seen = set()
+    side_keys = _SIDE_FINDING_KEYS | (ENVELOPE_KEYS if (envelope or not from_model) else frozenset())
     for i, s in enumerate(sides):
         w = f"{where}.side_findings[{i}]"
-        if not isinstance(s, dict) or set(s) - _SIDE_FINDING_KEYS \
+        if not isinstance(s, dict) or set(s) - side_keys \
                 or not {"proposal_id", "claim", "evidence", "scores"} <= set(s):
             raise ProposalError(f"{w}: a side finding is exactly {{proposal_id, claim, evidence, "
                                 f"scores}} plus an optional requires_feed and an optional "
@@ -286,6 +331,7 @@ def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
             raise ProposalError(f"{w}: claim must be a claim block mapping (CLAIM_TESTS.md)")
         if "config_change" in s:
             _check_change_items(s["config_change"], f"{w}.config_change")
+        _check_envelope(s, w, require_vehicle=envelope and from_model)
         _check_evidence(s["evidence"], w)
         check_scores(s["scores"], w)
         if "requires_feed" in s:
@@ -316,6 +362,43 @@ def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
             _check_requires_feed(patch["requires_feed"], w)
         if patch["proposal_id"] in seen:
             raise ProposalError(f"{w}: duplicate proposal_id {patch['proposal_id']!r}")
+
+
+def _check_envelope(s: dict, where: str, *, require_vehicle: bool) -> None:
+    """The E-077 envelope of one side finding (ENVELOPE_KEYS): `vehicle` is the
+    config-change list (and excludes `config_change`; required when
+    `require_vehicle`), `combines_as` one of COMBINES_AS, `fold_observed` a fold
+    id of config/folds.yaml."""
+    if "vehicle" in s and "config_change" in s:
+        raise ProposalError(f"{where}: write `vehicle` OR `config_change`, not both -- the "
+                            f"vehicle IS the finding's config change")
+    if "vehicle" in s:
+        kind = s["claim"].get("kind") if isinstance(s.get("claim"), dict) else None
+        if s["vehicle"] == [] and kind in EMPTY_VEHICLE_KINDS:
+            pass            # D-089 (a): today's strategy, unchanged, re-run on the next fold
+        elif s["vehicle"] == []:
+            raise ProposalError(
+                f"{where}.vehicle: an empty vehicle (the strategy unchanged, re-run on the next "
+                f"fold) is allowed only for a claim of kind {list(EMPTY_VEHICLE_KINDS)}; a claim "
+                f"of kind {kind!r} needs the strategy change its own run backtests -- vehicle: "
+                f"[{{component_id, field, before, after}}]")
+        else:
+            _check_change_items(s["vehicle"], f"{where}.vehicle")
+    elif require_vehicle:
+        raise ProposalError(
+            f"{where}: `vehicle` is required (orchestrator.folds.enabled): every claim is a "
+            f"strategy claim, and its vehicle is the strategy change its own run backtests -- "
+            f"vehicle: [{{component_id, field, before, after}}], resolved against the run's "
+            f"base config like a config change (`vehicle: []` only for a claim of kind "
+            f"{list(EMPTY_VEHICLE_KINDS)}: today's strategy, unchanged)")
+    if "combines_as" in s and s["combines_as"] not in COMBINES_AS:
+        raise ProposalError(f"{where}.combines_as={s['combines_as']!r} must be one of "
+                            f"{list(COMBINES_AS)}")
+    if "fold_observed" in s:
+        import research_folds as _folds  # tools/ sibling; only a finding with the key needs it
+        if s["fold_observed"] not in _folds.FOLD_ORDER:
+            raise ProposalError(f"{where}.fold_observed={s['fold_observed']!r} must be one of "
+                                f"{list(_folds.FOLD_ORDER)}")
 
 
 def _check_change_items(items, where: str) -> None:
@@ -350,6 +433,12 @@ def flatten_reading(doc: dict) -> list:
             item["requires_feed"] = s["requires_feed"]
         if "config_change" in s:
             item["config_change"] = s["config_change"]
+        # E-077 PR-2: the vehicle IS the config change (decide-next reads config_change);
+        # the three envelope keys travel with the item so the ledger can record them.
+        if "vehicle" in s:
+            item["config_change"] = s["vehicle"]
+        for key in sorted(ENVELOPE_KEYS & set(s)):
+            item[key] = s[key]
         out.append(item)
     patch = doc.get("patch")
     if patch is not None:
@@ -376,7 +465,8 @@ def load_readings(proposals_dir: Path, categories: list) -> dict:
     return out
 
 
-def load_proposals(proposals_dir: Path, categories: list, strict_provenance: bool = False) -> dict:
+def load_proposals(proposals_dir: Path, categories: list, strict_provenance: bool = False,
+                   analyst: bool = False) -> dict:
     """{category: [proposal, ...]} for every category. A missing file and `[]`
     both mean "no proposals" (an honest reader output). Everything else that
     is not a well-formed list of proposals raises ProposalError, including an
@@ -405,7 +495,8 @@ def load_proposals(proposals_dir: Path, categories: list, strict_provenance: boo
         data = _load_yaml_strict(path)
         if is_reading(data):
             # E-068 slice 5 (D-073): a v3 reading, flattened into items.
-            check_reading(data, cat, str(path), strict_provenance=strict_provenance)
+            check_reading(data, cat, str(path), strict_provenance=strict_provenance,
+                          **({"analyst": True} if analyst else {}))
             out[cat] = flatten_reading(data)
             continue
         if not isinstance(data, list):
@@ -604,3 +695,349 @@ def resolve_evidence_paths(received_files: dict, evidence: list) -> dict:
             ok = any(_cite_walk(d, steps) for d in docs if _cite_get(d, steps[0][0])[0])
             (resolved if ok else unresolved).append(token)
     return {"resolved": resolved, "unresolved": unresolved, "no_path_items": no_path}
+
+
+# ---------------------------------------------------------------------------
+# E-073 step 2 (D-083): value-checked citations, under
+# orchestrator.observable_backtest only (the flag is read by the orchestrator,
+# never here). resolve_evidence_paths above stays record-only and unchanged;
+# check_citation_values also compares the value a reader wrote after a path
+# with the value at that path in the file it received.
+# ---------------------------------------------------------------------------
+
+CITATION_VALUE_RULE = (
+    "A citation is a field path from a file the reader received (rooted at a known root, a "
+    "top-level key of that file, or the file's own name, e.g. grid_evaluation.grid.<...>) "
+    "followed by `=` or `:` and a value. Keys are written as the file has them (2022-09 "
+    "included); a key with spaces or other characters goes in quoted brackets, "
+    "x[\"a key\"]. The path must exist, with every level written out (a missing path is "
+    "listed with up to 3 real paths that end in the same key); it is read in the file it "
+    "names, else in the first received file that has it (the reader's own report first). "
+    "Only the first value after the path is checked. A number matches when the file's value, "
+    "rounded to the decimals the reader wrote, is the cited number (within half a unit of "
+    "its last digit); a trailing % also compares the value x 100 that way; a 0 written with "
+    "fewer than 2 decimals (0, -0, 0.0) matches only |x| < 0.005. A number written any other "
+    "way (3k, approx 120, ~0.08, a word) is not checked. Text matches when the file's whole "
+    "text, ignoring case and surrounding spaces, is the cited value (more words may follow "
+    "it): long free text is not a citation target. Booleans and null match their words. With "
+    "[*] any element may match. A path to a mapping or list, or a path with no checkable "
+    "value after it, is not value-checked.")
+CITATION_MAX_SUGGESTIONS = 3
+# artifacts/citation_checks/<category>.yaml: the last check of each reading
+# (run_phase1_research writes it; decide_next reads the flagged side findings)
+CITATION_CHECKS_DIR = "citation_checks"
+CITATION_MATCH = "match"
+CITATION_MISMATCH = "mismatch"
+CITATION_MISSING = "missing"
+CITATION_PATH_ONLY = "path_only"          # resolved, no checkable value written after it
+CITATION_NOT_A_VALUE = "not_a_value"      # resolved to a mapping or list only
+CITATION_BAD = (CITATION_MISMATCH, CITATION_MISSING)
+_CITE_SEP_RE = re.compile(r"\s*[=:]\s*")
+# a plain number, nothing glued to it (3k, 3.3kg are not one: not checked)
+_CITE_NUMBER_RE = re.compile(
+    r"(?P<num>[-+−]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d*)?(?:[eE][-+]?\d+)?"
+    r"|[-+−]?\.\d+(?:[eE][-+]?\d+)?)(?P<pct>\s*%)?(?![A-Za-z0-9_]|\.\d)")
+_CITE_WORD_RE = re.compile(r"[^\s,;()\[\]{}]+")
+_FLOAT_EPS = 1e-9
+# The value check's own tokenizer. A key may hold inner hyphens
+# (trade_efficiency's YYYY-MM per_window keys); a hyphenated key that does not
+# exist at its level is cut at its first hyphen (_cite_hyphen_cut), so
+# `n_trades-adjusted` still reads as `n_trades` followed by prose. Any other
+# key (spaces, dots: LLM-written card keys) is cited in quoted brackets,
+# x["a key"]. The record-only resolver above keeps _CITE_TOKEN_RE unchanged:
+# its output is recorded under another flag (score provenance).
+_CITE_V_KEY = r"[A-Za-z0-9_]+(?:-[A-Za-z0-9_]+)*"
+_CITE_V_BRACKET = r"""\[(?:"[^"\]]*"|'[^'\]]*'|[^\]\s]*)\]"""
+_CITE_VALUE_TOKEN_RE = re.compile(
+    rf"(?<![\w.\]\[/])[A-Za-z_][A-Za-z0-9_]*(?:{_CITE_V_BRACKET})*"
+    rf"(?:\.{_CITE_V_KEY}(?:{_CITE_V_BRACKET})*)+")
+_CITE_VALUE_STEP_RE = re.compile(rf"\.?({_CITE_V_KEY})((?:{_CITE_V_BRACKET})*)")
+_CITE_V_BRACKET_RE = re.compile(r"""\[("[^"\]]*"|'[^'\]]*'|[^\]\s]*)\]""")
+_CITE_V_PLAIN_KEY_RE = re.compile(rf"{_CITE_V_KEY}")
+
+
+def _cite_value_steps(token: str) -> list:
+    """[(key, [bracket contents...]), ...] for one value-check path token;
+    the quotes of a quoted bracket key are removed."""
+    out = []
+    for m in _CITE_VALUE_STEP_RE.finditer(token):
+        brackets = [b[1:-1] if len(b) >= 2 and b[0] == b[-1] and b[0] in "'\"" else b
+                    for b in _CITE_V_BRACKET_RE.findall(m.group(2))]
+        out.append((m.group(1), brackets))
+    return out
+
+
+def _cite_values(node, steps: list) -> list:
+    """Every value at `steps` below `node` ([] when the path does not exist);
+    the value-collecting twin of _cite_walk (same step and bracket rules)."""
+    if not steps:
+        return [node]
+    key, brackets = steps[0]
+    found, value = _cite_get(node, key)
+    return _cite_values_brackets(value, brackets, steps[1:]) if found else []
+
+
+def _cite_values_brackets(node, brackets: list, rest: list) -> list:
+    if not brackets:
+        return _cite_values(node, rest)
+    b, more = brackets[0], brackets[1:]
+    if b in ("*", ""):
+        if not isinstance(node, list):
+            return []
+        if not more and not rest:
+            return [node]
+        return [v for el in node for v in _cite_values_brackets(el, more, rest)]
+    if b.isdigit() and isinstance(node, list):
+        i = int(b)
+        return _cite_values_brackets(node[i], more, rest) if i < len(node) else []
+    found, value = _cite_get(node, b)  # a mapping key (quoted, or a digit key of a mapping)
+    return _cite_values_brackets(value, more, rest) if found else []
+
+
+def _file_stem(rel: str) -> str:
+    name = str(rel).replace("\\", "/").rsplit("/", 1)[-1]
+    return name.rsplit(".", 1)[0] if "." in name else name
+
+
+def _cited_text(item: str, end: int):
+    """The value text written after a path token ending at `end`, or None
+    when no `=` / `:` follows it (then the path alone is cited)."""
+    m = _CITE_SEP_RE.match(item, end)
+    if not m:
+        return None
+    rest = item[m.end():].strip()
+    return rest or None
+
+
+def _strip_quotes(text: str) -> str:
+    if len(text) >= 2 and text[0] == text[-1] and text[0] in "'\"`":
+        return text[1:-1]
+    for q in "'\"`":
+        if text.startswith(q) and q in text[1:]:
+            return text[1:text.index(q, 1)]
+    return text
+
+
+def value_matches(cited: str, actual):
+    """Whether the value text a reader wrote matches one scalar `actual` (the
+    CITATION_VALUE_RULE): True / False, or None when `actual` is a number and
+    `cited` does not start with a plain number (not checked). Pure. `cited`
+    is the text after the separator."""
+    import math
+    from decimal import Decimal, InvalidOperation
+    text = cited.strip()
+    word_m = _CITE_WORD_RE.match(_strip_quotes(text))
+    word = word_m.group(0).rstrip(".") if word_m else ""
+    if isinstance(actual, bool):
+        return word.lower() == ("true" if actual else "false")
+    if actual is None:
+        return word.lower() in ("null", "none", "~")
+    if isinstance(actual, (int, float)):
+        if isinstance(actual, float) and math.isnan(actual):
+            return word.lower() in ("nan", ".nan")
+        if isinstance(actual, float) and math.isinf(actual):
+            return word.lower().lstrip("+-") in ("inf", ".inf", "infinity")
+        m = _CITE_NUMBER_RE.match(_strip_quotes(text))
+        if not m:
+            return None
+        raw = m.group("num").replace(",", "").replace("−", "-")
+        try:
+            dec = Decimal(raw)
+        except InvalidOperation:
+            return None
+        exponent = dec.as_tuple().exponent
+        tol = 0.5 * 10.0 ** exponent
+        if dec == 0 and exponent > -2:
+            tol = 0.005  # a cited 0 / 0.0 is not "anything below 0.5"
+        value = float(dec)
+        candidates = [float(actual)] + ([float(actual) * 100.0] if m.group("pct") else [])
+        return any(abs(c - value) <= tol + _FLOAT_EPS * max(1.0, abs(c)) for c in candidates)
+    target = str(actual).strip().casefold()
+    body = _strip_quotes(text).strip().casefold()
+    if body == target:
+        return True
+    if not body.startswith(target):
+        return False
+    nxt = body[len(target):len(target) + 1]
+    return not (nxt.isalnum() or nxt in "_-.")
+
+
+def _short(value, limit: int = 80):
+    """A value as recorded in a check: scalars as they are, containers named."""
+    if isinstance(value, dict):
+        return "<mapping>"
+    if isinstance(value, list):
+        return "<list>"
+    if isinstance(value, str) and len(value) > limit:
+        return value[:limit] + "..."
+    return value
+
+
+def _cite_index(docs: dict) -> list:
+    """Every mapping key of every received document, as [{file, path, keys,
+    values}] in file then document order: `path` written the way a citation
+    is, rooted at the file's stem so it re-resolves in that file as written
+    (list elements as [*], a key the tokenizer cannot read as x["key"]),
+    `keys` the key names along it, `values` the scalars found there (every
+    element's, for a [*] path)."""
+    index, at = [], {}
+
+    def _entry(rel, path, keys):
+        key = (rel, path)
+        if key not in at:
+            at[key] = {"file": rel, "path": path, "keys": keys, "values": []}
+            index.append(at[key])
+        return at[key]
+
+    def _walk(rel, node, path, keys):
+        if isinstance(node, dict):
+            for k, v in node.items():
+                name = str(k)
+                step = (f"{path}.{name}" if _CITE_V_PLAIN_KEY_RE.fullmatch(name)
+                        else f'{path}["{name}"]')
+                entry = _entry(rel, step, keys + (name,))
+                if not isinstance(v, (dict, list)):
+                    entry["values"].append(v)
+                _walk(rel, v, step, keys + (name,))
+        elif isinstance(node, list):
+            for el in node:
+                if isinstance(el, (dict, list)):
+                    _walk(rel, el, f"{path}[*]", keys)
+                else:
+                    _entry(rel, f"{path}[*]", keys)["values"].append(el)
+
+    for rel, d in docs.items():
+        _walk(rel, d, _file_stem(rel), ())
+    return index
+
+
+def _cite_suggestions(index: list, steps: list, cited) -> list:
+    """The nearest real paths for a missing citation: the received fields
+    whose LAST key is the cited path's last key, ranked by (the cited value
+    matches there, trailing keys in common, keys in common -- the file stem
+    counts --, fewest extra levels, file then document order); at most
+    CITATION_MAX_SUGGESTIONS, as {path, file, value_matches} (recorded; the
+    retry note shows the paths only). Never makes the citation valid -- it
+    stays missing until the reader corrects it. [] when no received field
+    has that last key."""
+    leaf = steps[-1][0]
+    wrote = [k for k, _b in steps]
+    ranked = []
+    for n, e in enumerate(index):
+        if not e["keys"] or e["keys"][-1] != leaf:
+            continue
+        keys = e["keys"]
+        common_tail = 0
+        for a, b in zip(reversed(wrote), reversed(keys)):
+            if a != b:
+                break
+            common_tail += 1
+        shared = len(set(wrote) & (set(keys) | {_file_stem(e["file"])}))
+        value_ok = cited is not None and any(value_matches(cited, v) is True
+                                             for v in e["values"])
+        ranked.append(((not value_ok, -common_tail, -shared, abs(len(keys) - len(wrote)), n),
+                       e, value_ok))
+    return [{"path": e["path"], "file": e["file"], "value_matches": value_ok}
+            for _key, e, value_ok in sorted(ranked, key=lambda r: r[0])[:CITATION_MAX_SUGGESTIONS]]
+
+
+def _cite_found(docs: dict, stems: dict, steps: list) -> list:
+    """[(file, value)] at a cited path, from ONE file: the file the path
+    names (its stem as the root) first; else the first received file, in
+    the received order (the reader's own report first), in which the path
+    resolves. [] when none."""
+    found = []
+    if not steps[0][1] and len(steps) > 1:  # the file's own name as the root
+        for rel in stems.get(steps[0][0], ()):
+            found += [(rel, v) for v in _cite_values(docs[rel], steps[1:])]
+    if found:
+        return found
+    for rel, d in docs.items():
+        if _cite_get(d, steps[0][0])[0]:
+            values = _cite_values(d, steps)
+            if values:
+                return [(rel, v) for v in values]
+    return []
+
+
+def _cite_hyphen_cut(docs: dict, stems: dict, token: str) -> str:
+    """`token` cut at the first hyphen of its first hyphenated key that does
+    not exist at its level (`metrics.n_trades-adjusted` -> `metrics.n_trades`,
+    the rest is prose); unchanged when every hyphenated key exists
+    (`per_window.2022-09.x`)."""
+    steps = _cite_value_steps(token)
+    for i, m in enumerate(_CITE_VALUE_STEP_RE.finditer(token)):
+        key = m.group(1)
+        if "-" in key and not _cite_found(docs, stems, steps[:i] + [(key, [])]):
+            return token[:m.start(1) + key.index("-")]
+    return token
+
+
+def check_citation_values(received_files: dict, evidence: list) -> dict:
+    """E-073 step 2 (D-083): every cited path in `evidence` checked against
+    the value at that path in the files the reader received (the
+    CITATION_VALUE_RULE). Pure; reads no file and never rejects.
+
+    `received_files`: {file rel path: parsed document}, exactly the files the
+    reader was given (under E-072 the exploration copies), IN PREFERENCE
+    ORDER: the reader's own report first (as _reader_received_files builds
+    it). A path is rooted at CITATION_ROOTS, a top-level key of a received
+    file, or a received file's stem (`grid_evaluation.grid.residual_ic.base.value`
+    walks inside grid_evaluation.yaml); it is looked up in the file it names,
+    else in the first received file where it resolves (_cite_found). Keys may
+    hold inner hyphens (_cite_hyphen_cut) or be quoted in brackets. Only the
+    first value after the path is compared; with [*] any element may match.
+    Returns {"citations": [{path, cited, status, actual?, files?,
+    suggestions?}], "bad": [...the mismatch / missing ones...],
+    "no_path_items": n}; each (path, cited value) pair once, in first-seen
+    order. A missing path carries `suggestions` (_cite_suggestions; [] when
+    nothing has its last key) -- still missing. A malformed argument raises
+    TypeError for the caller to record."""
+    if not isinstance(received_files, dict):
+        raise TypeError("received_files must be a mapping of file name -> document")
+    if not isinstance(evidence, list):
+        raise TypeError("evidence must be a list of strings")
+    docs = {str(rel): d for rel, d in received_files.items() if isinstance(d, dict)}
+    stems = {}
+    for rel, d in docs.items():
+        stems.setdefault(_file_stem(rel), []).append(rel)
+    roots = set(CITATION_ROOTS) | {str(k) for d in docs.values() for k in d} | set(stems)
+    out, seen, no_path, index = [], set(), 0, None
+    for item in evidence:
+        matches = ([m for m in _CITE_VALUE_TOKEN_RE.finditer(item)
+                    if _cite_value_steps(m.group(0))[0][0] in roots]
+                   if isinstance(item, str) else [])
+        if not matches:
+            no_path += 1
+            continue
+        for m in matches:
+            token = _cite_hyphen_cut(docs, stems, m.group(0))
+            cited = _cited_text(item, m.start() + len(token))
+            if (token, cited) in seen:
+                continue
+            seen.add((token, cited))
+            steps = _cite_value_steps(token)
+            found = _cite_found(docs, stems, steps)  # (rel, value)
+            rec = {"path": token, "cited": cited}
+            if not found:
+                rec["status"] = CITATION_MISSING
+                index = _cite_index(docs) if index is None else index
+                rec["suggestions"] = _cite_suggestions(index, steps, cited)
+            elif cited is None:
+                rec["status"] = CITATION_PATH_ONLY
+            else:
+                scalars = [(rel, v) for rel, v in found if not isinstance(v, (dict, list))]
+                verdicts = [value_matches(cited, v) for _rel, v in scalars]
+                if not scalars:
+                    rec["status"] = CITATION_NOT_A_VALUE
+                elif True in verdicts:
+                    rec["status"] = CITATION_MATCH
+                elif all(v is None for v in verdicts):  # no plain number written
+                    rec["status"] = CITATION_PATH_ONLY
+                else:
+                    rec["status"] = CITATION_MISMATCH
+                    rec["actual"] = [_short(v) for _rel, v in scalars[:3]]
+                    rec["files"] = sorted({rel for rel, _v in scalars})
+            out.append(rec)
+    return {"citations": out, "bad": [r for r in out if r["status"] in CITATION_BAD],
+            "no_path_items": no_path}

@@ -23,6 +23,12 @@ plan) and `config/campaign_queue.yaml` (current queue state).
 archived, superseded by EPICS.md and docs/CAMPAIGN_PROGRAM.md above. Retained for its 20 DONE rows'
 verified commit SHAs.
 
+### "Which model does a stage use, and what does it cost?"
+→ **[`engineering/roadmap/E-069/MODEL_AND_COST_FINDINGS.md`](engineering/roadmap/E-069/MODEL_AND_COST_FINDINGS.md)**
+— read before changing any stage's model: the model setting per stage, why `cost_usd` is the
+SDK CLI's estimate (and the caps with it), the price-blind token budget, served-model records,
+retry cost, the analyst smokes' numbers, and a checklist.
+
 ### "What's the overall plan / KPI / process?"
 → **[`docs/CAMPAIGN_PROGRAM.md`](docs/CAMPAIGN_PROGRAM.md)** — operator-ratified campaign program
 (v2, 2026-07-19): Phase 0-5 task sequence with gates, the KPI (honest
@@ -45,6 +51,16 @@ What plan v26 delivered and what C4's two real runs showed:
 ### "What is this system / what does artifact X mean?"
 → **[`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)** — pipeline stage map, every artifact's
 field-by-field schema, skill goals, tools overview, glossary.
+For the run outputs the AI steps read (per-bar `bars.csv`, `trade_diagnostics.json`,
+the five category reports, `grid_evaluation.yaml`, `claim_result_digest.yaml`,
+`claim_measurement.yaml`): **[`docs/DATA_DICTIONARY.md`](docs/DATA_DICTIONARY.md)**
+(E-073 step 1) — each field's meaning, unit, the code that writes it
+(`KEY:symbol`), whether it is known at the bar's close or only after the fact,
+the audit findings against the engine, and what is not recorded. Kept honest by
+`tests/test_e073_data_dictionary.py` (full field paths derived from the writers'
+code). The v3 readers get its generated subset,
+[`docs/DATA_DICTIONARY_READERS.md`](docs/DATA_DICTIONARY_READERS.md)
+(`tools/data_dictionary.py`; no `bars.csv` section, no per-trade labels).
 
 ### "What does the trading-bot ENGINE currently do (config, data, forecast, risk, execution, artifacts, metrics)?"
 → **[`../trading-bot/DOC/USER_GUIDE.md`](../trading-bot/DOC/USER_GUIDE.md)** —

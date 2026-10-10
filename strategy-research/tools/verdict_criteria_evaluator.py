@@ -854,7 +854,8 @@ def honest_verdict_count(kb: dict, queue: dict, root=None) -> list:
 
 
 def evaluate_pass_rule_criteria(protocol_result: dict, pre_registration: dict,
-                                research_brief: dict | None = None) -> dict:
+                                research_brief: dict | None = None, *,
+                                cost_bar_all_costs: bool = False) -> dict:
     """
     Evaluates a run's protocol_result.yaml against pre_registration.yaml's
     structured pass_rule (B11/C7 schema). Returns a dict written verbatim
@@ -871,6 +872,15 @@ def evaluate_pass_rule_criteria(protocol_result: dict, pre_registration: dict,
     DOMINATE. They run whether or not a pass_rule exists, and an unmet one
     short-circuits to VERDICT_BLOCKED before any `legacy_not_evaluable` return
     can hand the run to stage discretion.
+
+    `cost_bar_all_costs` (CUL-414, D-082; the caller passes True only under
+    orchestrator.cost_bar_all_costs): a criterion whose metric is
+    `realized_edge_to_cost_ratio` reads `realized_edge_to_cost_ratio_all_costs`
+    instead -- the same remap evaluate_grid applies
+    (_cost_bar_all_costs_criteria), so pass_rule_evaluation.yaml and
+    grid_evaluation.yaml grade the D-038 ratio on one basis. A missing field
+    is a null value (the criterion's null_handling applies), never the
+    fee-only ratio. False -> byte-identical to the call without it.
     """
     precondition_results = evaluate_verdict_preconditions(
         protocol_result, pre_registration, research_brief)
@@ -892,7 +902,8 @@ def evaluate_pass_rule_criteria(protocol_result: dict, pre_registration: dict,
     # Preconditions all MET -- resolve the pass rule exactly as K2 did, then
     # stamp the precondition results onto the artifact so a later reader can
     # see they were checked rather than assume it.
-    result = _resolve_pass_rule(protocol_result, pre_registration)
+    result = _resolve_pass_rule(protocol_result, pre_registration,
+                                **({"cost_bar_all_costs": True} if cost_bar_all_costs else {}))
     result["preconditions"] = precondition_results
     return result
 
@@ -929,10 +940,12 @@ def _find_pass_rule(pre_registration: dict):
     return None
 
 
-def _resolve_pass_rule(protocol_result: dict, pre_registration: dict) -> dict:
+def _resolve_pass_rule(protocol_result: dict, pre_registration: dict, *,
+                       cost_bar_all_costs: bool = False) -> dict:
     """The unchanged K2 pass-rule resolution. Split out by C7-EXT so that G5's
     precondition gate sits strictly in front of every one of its exits --
-    including the `legacy_not_evaluable` ones."""
+    including the `legacy_not_evaluable` ones. cost_bar_all_costs: see
+    evaluate_pass_rule_criteria (CUL-414)."""
     pass_rule = _find_pass_rule(pre_registration)
     if pass_rule is None:
         return {"result": "legacy_not_evaluable",
@@ -975,6 +988,8 @@ def _resolve_pass_rule(protocol_result: dict, pre_registration: dict) -> dict:
                                f"protocol/window set (name-level check only; K3/B3+B10 "
                                f"adds content-hash pinning)")}
 
+    if cost_bar_all_costs:  # CUL-414: the grid's remap
+        criteria = _cost_bar_all_costs_criteria(criteria)
     criteria_results = [_evaluate_one_criterion(c, protocol_result) for c in criteria]
 
     fail_ids = [r["id"] for r in criteria_results if r["result"] == "FAIL"]
@@ -1251,9 +1266,93 @@ def _window_core_triples(protocol_result: dict, metric: str, symbol: str | None)
     return out
 
 
+# CUL-415 (audit finding A8, docs/DATA_DICTIONARY.md): the per-window `core`
+# fields computed only from the window's completed trades
+# (trading-bot reporting/run_artifact.build_core). Without a trade the engine
+# writes 0.0 for most of them (overall.get(..., 0.0), a sum or mean over no
+# trade); under orchestrator.zero_trade_windows_not_computed a window whose
+# core.trade_count is exactly 0 has no value for these in a window-source
+# criterion. Every other field (trade_count itself, the forecast/return
+# correlations, sigma_bar_bps, gap counts) is a bar-level measurement and is
+# read as before.
+ZERO_TRADE_NOT_COMPUTED_FIELDS = frozenset({
+    "net_return_pct", "sharpe", "max_drawdown_pct", "win_rate", "avg_trade_net_pnl",
+    "fees_paid", "gross_pnl", "net_pnl", "cost_drag_pct", "avg_trade_duration_bars",
+    "real_round_trip_cost_bps", "real_gross_edge_bps_per_trade",
+})
+ZERO_TRADE_SKIP_REASON = (
+    "not computed: core.trade_count == 0 and the metric is computed from the window's trades "
+    "(its 0.0 is a placeholder, CUL-415 / A8) -- the window neither votes nor counts toward "
+    "floor.min_windows")
+
+
+def _is_zero_trade_window(entry) -> bool:
+    """core.trade_count is exactly 0 (a real number, not a bool). A missing or
+    null trade_count is unknown, never zero: such a window is kept."""
+    tc = (entry.get("core") or {}).get("trade_count") if isinstance(entry, dict) else None
+    return isinstance(tc, (int, float)) and not isinstance(tc, bool) and tc == 0
+
+
+def _zero_trade_windows_cell(criterion: dict, protocol_result: dict, eras: list,
+                             symbol: str | None, **kw) -> dict:
+    """CUL-415: one window-source cell under orchestrator.zero_trade_windows_not_computed.
+    For a metric in ZERO_TRADE_NOT_COMPUTED_FIELDS, the cell is evaluated, by
+    the unchanged cell function, on the protocol_result without its zero-trade
+    windows, so they neither vote in the reducer nor count in n_windows /
+    floor.min_windows; the cell records them in `skipped_windows` (count,
+    windows, reason), and a floor shortfall's reason names them. Any other
+    metric: the cell exactly as with the flag off.
+
+    Review fix (PR #349): skipping never removes a group from the vote. A
+    sign_consistent_by_era cell compares the eras its windows represent; an
+    era represented before the skip (a numeric value in a recognized era,
+    _reduce_sign_consistent_by_era's own era rule) with no window left after
+    it is recorded in skipped_windows.eras_left_empty, and the cell is then
+    INCONCLUSIVE ("era <e>: every window had no trades -- the sign cannot be
+    judged there"), never PASS. A FAIL the remaining eras already decide (two
+    of them disagree, or one has a zero median) stays FAIL: the lost era
+    cannot change it, and flag off that era's 0.0 median fails the cell too.
+    So losing an era can turn FAIL into INCONCLUSIVE, never into PASS; a PASS
+    always rests on every era the flag-off cell compared. The other grouping,
+    symbol_reducer=per_symbol_all, needs no rule here: _evaluate_grid_cell
+    takes the symbols from the full protocol_result, so a symbol whose windows
+    were all skipped keeps its own cell, with no window -- INCONCLUSIVE (floor
+    or no value), never PASS. The scalar reducers do not group."""
+    metric = criterion.get("metric")
+    if metric not in ZERO_TRADE_NOT_COMPUTED_FIELDS:
+        return _evaluate_grid_cell_for_symbol(criterion, protocol_result, eras, symbol, **kw)
+    results = protocol_result.get("results") or []
+    skipped = [
+        (f"{e.get('symbol')} {e.get('window')}" if e.get("symbol") else str(e.get("window")))
+        for e in results
+        if _is_zero_trade_window(e) and (symbol is None or e.get("symbol") == symbol)
+        and _numeric_values([(e.get("core") or {}).get(metric)])
+    ]
+    view = {**protocol_result, "results": [e for e in results if not _is_zero_trade_window(e)]}
+    cell = _evaluate_grid_cell_for_symbol(criterion, view, eras, symbol, **kw)
+    cell["skipped_windows"] = {"count": len(skipped), "windows": skipped,
+                               "reason": ZERO_TRADE_SKIP_REASON}
+    if criterion.get("reducer") == "sign_consistent_by_era":
+        def _represented(pr):
+            pairs = [(v, w) for v, w, _ in _window_core_triples(pr, metric, symbol)]
+            return set(_reduce_sign_consistent_by_era(pairs, eras)[1]["era_medians"])
+        lost = sorted(_represented(protocol_result) - _represented(view))
+        cell["skipped_windows"]["eras_left_empty"] = lost
+        if lost and cell.get("result") in ("PASS", "INCONCLUSIVE"):
+            cell["result"] = "INCONCLUSIVE"
+            cell["reason"] = "; ".join(
+                [f"era {e}: every window had no trades -- the sign cannot be judged there"
+                 for e in lost] + ([cell["reason"]] if cell.get("reason") else []))
+    if skipped and cell.get("result") == "INCONCLUSIVE" and cell.get("reason"):
+        cell["reason"] = (f"{cell['reason']} ({len(skipped)} zero-trade window(s) not computed, "
+                          f"see skipped_windows)")
+    return cell
+
+
 def _evaluate_grid_cell_for_symbol(criterion: dict, protocol_result: dict, eras: list,
                                     symbol: str | None, composition_runs: bool = False,
-                                    single_era_inconclusive: bool = False) -> dict:
+                                    single_era_inconclusive: bool = False,
+                                    zero_trade_windows_not_computed: bool = False) -> dict:
     """One (criterion, variant[, symbol]) cell -- the mechanical core, no
     symbol_reducer branching (that lives one level up in
     _evaluate_grid_cell).
@@ -1264,7 +1363,18 @@ def _evaluate_grid_cell_for_symbol(criterion: dict, protocol_result: dict, eras:
     groups, variant_coin.era_count_shortfall) is INCONCLUSIVE `single_era: ...`
     instead of PASS -- one era cannot disagree with itself. A single era whose
     median is exactly zero stays FAIL (operator amendment 2026-09-29 to
-    D-047). False: the cell exactly as before."""
+    D-047). False: the cell exactly as before.
+
+    zero_trade_windows_not_computed (CUL-415, D-084; evaluate_grid's keyword,
+    passed only under orchestrator.zero_trade_windows_not_computed): a
+    window-source cell goes through _zero_trade_windows_cell (zero-trade
+    windows skipped for a trade-based metric; an era the skip leaves with no
+    window makes the cell INCONCLUSIVE, never PASS). False: the cell exactly
+    as before."""
+    if zero_trade_windows_not_computed and criterion.get("source") == "window":
+        return _zero_trade_windows_cell(criterion, protocol_result, eras, symbol,
+                                        composition_runs=composition_runs,
+                                        single_era_inconclusive=single_era_inconclusive)
     cid = criterion.get("id")
     metric = criterion.get("metric")
     source = criterion.get("source")
@@ -1352,9 +1462,17 @@ def _evaluate_grid_cell_for_symbol(criterion: dict, protocol_result: dict, eras:
         return {"result": "INCONCLUSIVE", "n_windows": n_windows, "n_trades": n_trades,
                 "reason": floor_reason}
     if value is None:
+        # CUL-414: the all-costs ratio is None when any trade lacks its fields
+        # (cost_helpers.edge_to_all_costs_ratio_unrounded fails closed); say how many.
+        _n_missing = ((protocol_result.get("trade_diagnostics_summary") or {})
+                      .get(f"{metric}_missing_trades")
+                      if metric in COST_BAR_ALL_COSTS_METRICS.values() else None)
         return {"result": "INCONCLUSIVE", "n_windows": n_windows, "n_trades": n_trades,
                 "reason": f"pooled metric {metric!r} resolved to None in this protocol_result "
-                          f"(e.g. a pre-CUL-300 artifact for realized_edge_to_cost_ratio)"}
+                          f"(e.g. a pre-CUL-300 artifact for realized_edge_to_cost_ratio)"
+                          + (f"; {_n_missing} trade(s) lack gross_return_before_costs / "
+                             f"cost_paid_all, so the ratio is not computed on a subset"
+                             if _n_missing else "")}
     if comparator not in _VALID_COMPARATORS:
         return {"result": "SPEC_ERROR",
                 "reason": f"criterion {cid!r}: comparator={comparator!r} not one of {_VALID_COMPARATORS}"}
@@ -1511,7 +1629,8 @@ def _dominant_cell_result(results: list) -> str:
 
 def _evaluate_grid_cell(criterion: dict, protocol_result: dict, eras: list,
                         composition_runs: bool = False,
-                        single_era_inconclusive: bool = False) -> dict:
+                        single_era_inconclusive: bool = False,
+                        zero_trade_windows_not_computed: bool = False) -> dict:
     """One (criterion, variant) cell, handling `symbol_reducer`.
 
     `null` (default) and `pooled` are both evaluated with no symbol filter.
@@ -1527,6 +1646,9 @@ def _evaluate_grid_cell(criterion: dict, protocol_result: dict, eras: list,
     symbol_reducer = criterion.get("symbol_reducer")
     # E-062 S2b-3b: the keyword only when set (flag off, the exact pre-S2b-3b call).
     _era_kw = {"single_era_inconclusive": True} if single_era_inconclusive else {}
+    # CUL-415: the keyword only when set (flag off, the exact pre-CUL-415 call).
+    if zero_trade_windows_not_computed:
+        _era_kw["zero_trade_windows_not_computed"] = True
     if symbol_reducer not in (None, "per_symbol_all", "pooled"):
         return {"result": "SPEC_ERROR",
                 "reason": f"criterion {criterion.get('id')!r}: symbol_reducer={symbol_reducer!r} "
@@ -1825,12 +1947,34 @@ def _failed_variants_reason(failed: dict) -> str:
     return "; ".join(parts) + " -- a variant without a graded result never validates an idea (D-015)"
 
 
+# CUL-414 (D-082): the D-038 cost ratio's all-costs twin, read under
+# evaluate_grid(cost_bar_all_costs=True) and
+# evaluate_pass_rule_criteria(cost_bar_all_costs=True).
+COST_BAR_ALL_COSTS_METRICS = {
+    "realized_edge_to_cost_ratio": "realized_edge_to_cost_ratio_all_costs",
+}
+
+
+def _cost_bar_all_costs_criteria(criteria: list) -> list:
+    """CUL-414: the criteria with every metric in COST_BAR_ALL_COSTS_METRICS
+    replaced by its all-costs twin (copies; other criteria returned as they
+    are). One remap for the grid and the legacy pass rule, so
+    grid_evaluation.yaml and pass_rule_evaluation.yaml grade the D-038 ratio on
+    the same basis in one run."""
+    return [{**c, "metric": COST_BAR_ALL_COSTS_METRICS[c["metric"]]}
+            if isinstance(c, dict) and isinstance(c.get("metric"), str)
+            and c["metric"] in COST_BAR_ALL_COSTS_METRICS else c
+            for c in criteria]
+
+
 def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
                    research_brief: dict | None, menu, *, composition_runs: bool = False,
                    profit_bars_grader=None, failed_variants: dict | None = None,
                    untested_variants: dict | None = None,
                    partial_coverage_variants: dict | None = None,
-                   single_era_inconclusive: bool = False) -> dict:
+                   single_era_inconclusive: bool = False,
+                   cost_bar_all_costs: bool = False,
+                   zero_trade_windows_not_computed: bool = False) -> dict:
     """
     E-046b S2: the grid (engineering_roadmap.html card C) -- criteria x
     variants, every cell mechanical, unanimity across variants. No LLM
@@ -1900,6 +2044,24 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
     FAIL, operator amendment 2026-09-29 to D-047). False ->
     byte-identical to the call without it.
 
+    `cost_bar_all_costs` (CUL-414, D-082; the caller passes True only under
+    orchestrator.cost_bar_all_costs): every resolved criterion whose metric is
+    `realized_edge_to_cost_ratio` reads `realized_edge_to_cost_ratio_all_costs`
+    instead (COST_BAR_ALL_COSTS_METRICS) -- run_protocol --cost-bar-all-costs's
+    gross edge before fees and slippage / fees + slippage, both legs. An
+    artifact without that field reads INCONCLUSIVE (pooled metric None), never
+    the fee-only ratio. False -> byte-identical to the call without it.
+    `zero_trade_windows_not_computed` (CUL-415, D-084; the caller passes True
+    only under orchestrator.zero_trade_windows_not_computed): in every
+    window-source cell whose metric is computed from trades
+    (ZERO_TRADE_NOT_COMPUTED_FIELDS), a window with core.trade_count == 0 is
+    not computed -- it neither votes in the reducer nor counts toward
+    n_windows / floor.min_windows -- and the cell records it in
+    `skipped_windows` (a floor shortfall is INCONCLUSIVE, as any). An era
+    left with no window by the skip makes a sign_consistent_by_era cell
+    INCONCLUSIVE, never PASS (skipped_windows.eras_left_empty;
+    _zero_trade_windows_cell). False -> byte-identical to the call without it.
+
     Returns {"result": "GRID_EVALUATED" | "SPEC_ERROR", "criteria": [id, ...],
     "variants": [variant_id, ...], "grid": {criterion_id: {variant_id:
     cell_dict}}, "idea_status": "validated"|"refuted"|"inconclusive"|None,
@@ -1922,6 +2084,8 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
                           "protocol_result} dict -- evaluate_grid always needs at least one column")
 
     criteria_defs = _resolve_grid_criteria(pre_registration, menu)
+    if cost_bar_all_costs:
+        criteria_defs = _cost_bar_all_costs_criteria(criteria_defs)
     if not criteria_defs:
         raise ValueError(
             "pre_registration's pass_rule resolved zero menu-shaped criteria (none of its "
@@ -1960,7 +2124,9 @@ def evaluate_grid(protocol_results_by_variant: dict, pre_registration: dict,
                 cell = _evaluate_grid_cell(crit, protocol_results_by_variant[variant_id], eras,
                                            composition_runs=composition_runs,
                                            **({"single_era_inconclusive": True}
-                                              if single_era_inconclusive else {}))
+                                              if single_era_inconclusive else {}),
+                                           **({"zero_trade_windows_not_computed": True}
+                                              if zero_trade_windows_not_computed else {}))
             row[variant_id] = cell
             if cell["result"] == "SPEC_ERROR":
                 spec_errors.append({"criterion_id": cid, "variant_id": variant_id,

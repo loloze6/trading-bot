@@ -86,6 +86,7 @@ import campaign_review_retired as crr  # noqa: E402  (slice 6c S2b: shared with 
 import composition_names as _composition_names  # noqa: E402  (E-060 S3b: shared names)
 import protocol_resolution  # noqa: E402  (E-061 C1.5: the D-3 guard, checked at launch)
 import holdout_policy  # noqa: E402  (CUL-369: windows_overlap, checked at launch)
+import research_folds  # noqa: E402  (E-077 PR-1, D-085: the fixed folds decide-next hands a child)
 import abandoned_launch  # noqa: E402  (E-061 C1.4: the abandoned-launch marker, one source)
 from setup_run import setup_run  # noqa: E402
 from timeframe import timeframe_seconds  # noqa: E402  (E-061 C1.7 second-round: shared bar-size arithmetic)
@@ -2244,7 +2245,8 @@ def resume_paused_entry(queue: dict) -> bool:
                 else:
                     refusal, regeneration = _protocol_preflight(
                         run_dir, run_id, ignore_pending=True,
-                        promotion_retired=_promotion_retired_from(flag_values, flag_refusal))
+                        promotion_retired=_promotion_retired_from(flag_values, flag_refusal),
+                        folds_enabled=_folds_from(flag_values, flag_refusal))
                     if refusal is not None:
                         refusal = f"{PROTOCOL_PREFLIGHT_HALT}: {refusal}"
                     elif regeneration is not None:
@@ -2909,6 +2911,11 @@ def _regenerate_summary(queue: dict, dry_run: bool = False):
     # orchestrator.reader_findings), so a summary without one is unchanged.
     import reader_findings as _reader_findings  # tools/ sibling
     lines += _reader_findings.skip_summary_lines(ROOT)
+    # E-072: side findings checked on unseen windows. Only when
+    # campaign_record/confirmations.yaml exists (written only under
+    # orchestrator.explore_confirm), so a summary without one is unchanged.
+    import explore_confirm as _explore_confirm  # tools/ sibling
+    lines += _explore_confirm.summary_lines(ROOT)
     # D-077: the request files in one place. Only when one exists.
     lines += _summary_request_lines()
     lines += [
@@ -3509,10 +3516,16 @@ def _flag_readers() -> dict:
         "verdict_routing_retired": orch._verdict_routing_retired_enabled,
         "composition_runs": orch._composition_runs_enabled,
         "variant_anti_adjacency_gate": orch._variant_anti_adjacency_gate_enabled,
+        "observable_backtest": orch._observable_backtest_enabled,  # E-073 (D-081)
+        "cost_bar_all_costs": orch._cost_bar_all_costs_enabled,  # CUL-414 (D-082)
+        "zero_trade_windows_not_computed": orch._zero_trade_windows_not_computed_enabled,  # CUL-415 (D-084)
+        "folds": orch._folds_enabled,  # E-077 PR-1 (D-085)
+        "analyst": orch._analyst_enabled,  # E-075 PR-5a (D-091)
         "forecast_size_probe": orch._forecast_size_probe_enabled,  # D-056
         "claim_tests": orch._claim_tests_enabled,  # E-068 slice 2
         "reader_findings": orch._reader_findings_enabled,  # E-068 slice 5 (D-073)
         "nearest_build": orch._nearest_build_enabled,  # E-068 nearest build (D-075)
+        "explore_confirm": orch._explore_confirm_enabled,  # E-072 (D-080)
         "schedulability_block": _schedulability_block_enabled,
         "operator_approval": _operator_approval_enabled,  # E-068 PR 4 (D-071)
     }
@@ -3610,6 +3623,13 @@ def _promotion_retired_from(values: dict, refusal: str | None) -> bool:
             and values.get("verdict_routing_retired") is True)
 
 
+def _folds_from(values: dict, refusal: str | None) -> bool:
+    """E-077 PR-1 (D-085): orchestrator.folds.enabled, derived from the pre-flight's ONE
+    parsed reading (_flag_preflight) instead of re-reading config/campaign_config.yaml.
+    False on a refused flag set (nothing launches then anyway)."""
+    return refusal is None and values.get("folds") is True
+
+
 _PREFLIGHT_TERMINAL_PREFIXES = ("completed", "rejected", "human_pause", "failed_validation")
 # The fields a generated protocol is built from (_ensure_protocol_from_constraints).
 # O-12: exchange/market_type/venue/drop_feeds exist only for a non-default
@@ -3643,7 +3663,8 @@ def _data_spend_evidence(run_dir: Path, run_id: str, state: dict) -> list:
 
 
 def _expected_generated_protocol(generated: dict, run_id: str, *,
-                                 promotion_retired: bool, run_dir: Path | None = None) -> dict:
+                                 promotion_retired: bool, run_dir: Path | None = None,
+                                 folds_enabled: bool = False) -> dict:
     """The protocol _ensure_protocol_from_constraints would write from these
     machine_constraints.protocol, field for field: same order, same helpers,
     and it raises exactly where generation raises (fourth-round review fix 5 --
@@ -3658,12 +3679,13 @@ def _expected_generated_protocol(generated: dict, run_id: str, *,
     symbols = generated["symbols"]
     per_symbol_start = generated.get("per_symbol_start") or {}
     start = min(per_symbol_start.values()) if per_symbol_start else generated["start"]
-    windows = orch._generate_monthly_windows(start, generated["end"],
-                                             window_months=generated.get("window_months", 1))
+    # E-077 PR-1 (D-085): the same windows helper generation uses (a `fold` key);
+    # `folds_enabled` is the pre-flight's ONE parsed reading (no config read here).
+    windows = orch._protocol_windows_from_constraints(generated, start, generated["end"])
     venue_keys: dict = {}
     if run_dir is not None:
         symbols, venue_keys = orch._generated_protocol_venue_keys(run_dir, symbols)
-    return {
+    expected = {
         "symbols": symbols,
         **venue_keys,
         "timeframe": generated.get("timeframe", "1h"),
@@ -3672,6 +3694,8 @@ def _expected_generated_protocol(generated: dict, run_id: str, *,
         **orch._generated_protocol_promotion(generated, run_id,
                                               promotion_retired=promotion_retired),
     }
+    orch._enforce_validation_guard(windows, folds_enabled)  # after G7, as generation does
+    return expected
 
 
 def _generated_field(doc: dict, key: str):
@@ -3696,8 +3720,32 @@ def _windows_overlap_in(path: Path) -> str | None:
     return holdout_policy.windows_overlap(doc.get("windows")) if isinstance(doc, dict) else None
 
 
+def _validation_overlap_in(path: Path, folds_enabled) -> str | None:
+    """E-077 PR-1 (D-085): under orchestrator.folds.enabled, the refusal for the
+    protocol FILE at `path` when a window overlaps the validation period (same check and
+    message as the generator's; tools/run_protocol.py refuses it again at the choke point).
+    None when the flag is off (the file is not even read), or when the file is missing,
+    unreadable or has no usable windows (other checks own those)."""
+    if not (folds_enabled() if callable(folds_enabled) else folds_enabled):
+        return None
+    try:
+        doc = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    windows = doc.get("windows") if isinstance(doc, dict) else None
+    if not isinstance(windows, list):
+        return None
+    try:
+        orch._assert_windows_clear_of_validation(windows)
+    except research_folds.ValidationBoundaryBreach as e:
+        return str(e)
+    except (KeyError, TypeError, AttributeError):
+        return None  # malformed windows: run_protocol's own pre-flight refuses them
+    return None
+
+
 def _generated_protocol_plan(run_dir: Path, run_id: str, generated: dict, state: dict, *,
-                             promotion_retired: bool) -> tuple:
+                             promotion_retired: bool, folds_enabled: bool = False) -> tuple:
     """(refusal, regeneration) for a machine_constraints.protocol run.
 
     Spend evidence is checked FIRST (fourth-round review fix 1). Once data may
@@ -3749,7 +3797,7 @@ def _generated_protocol_plan(run_dir: Path, run_id: str, generated: dict, state:
     try:
         expected = _expected_generated_protocol(generated, run_id,
                                                 promotion_retired=promotion_retired,
-                                                run_dir=run_dir)
+                                                run_dir=run_dir, folds_enabled=folds_enabled)
     except Exception as e:
         return (f"{where}: pre_registration.yaml's machine_constraints.protocol cannot generate "
                 f"a protocol ({type(e).__name__}: {e}) -- fix it before this run spends "
@@ -3795,7 +3843,7 @@ def _generated_protocol_plan(run_dir: Path, run_id: str, generated: dict, state:
 
 
 def _protocol_preflight(run_dir: Path, run_id: str, *, promotion_retired: bool,
-                        ignore_pending: bool = False) -> tuple:
+                        ignore_pending: bool = False, folds_enabled: bool = False) -> tuple:
     """(refusal, regeneration): why the protocol this run WILL execute would be
     refused by the D-3 guard (tools/protocol_resolution.assert_promotion_ratified)
     at its first use -- _resolve_protocol_path at 5a / the data gate, after 1a,
@@ -3804,6 +3852,8 @@ def _protocol_preflight(run_dir: Path, run_id: str, *, promotion_retired: bool,
     `ignore_pending` (the data_block_hitl resume restarts a paused run). Read
     only; a regeneration it returns is applied by _regenerate_protocol.
     `promotion_retired`: _promotion_retired_from(the caller's _flag_preflight).
+    `folds_enabled` (E-077 PR-1, D-085): _folds_from(the same reading) -- True makes
+    the generated-protocol check refuse any window overlapping the validation period.
 
       * machine_constraints.protocol_ref (a pin), while the backtest is ahead:
         the pinned file, exactly as _ensure_protocol_ref_pinned resolves it. A
@@ -3826,7 +3876,8 @@ def _protocol_preflight(run_dir: Path, run_id: str, *, promotion_retired: bool,
     ref, generated = constraints.get("protocol_ref"), constraints.get("protocol")
     if isinstance(generated, dict) and not ref:
         return _generated_protocol_plan(run_dir, run_id, generated, state,
-                                        promotion_retired=promotion_retired)
+                                        promotion_retired=promotion_retired,
+                                        folds_enabled=folds_enabled)
     if "protocol_execution" in (state.get("completed_stages") or []):
         return None, None
     if isinstance(ref, str) and ref.strip():
@@ -3839,6 +3890,9 @@ def _protocol_preflight(run_dir: Path, run_id: str, *, promotion_retired: bool,
         if overlap:
             return (f"machine_constraints.protocol_ref={ref!r}: {overlap} run_protocol refuses "
                     f"it (CUL-369) -- pin a protocol whose windows are day-disjoint"), None
+        invalid = _validation_overlap_in(path, folds_enabled)  # E-077 PR-1 (D-085)
+        if invalid:
+            return (f"machine_constraints.protocol_ref={ref!r}: {invalid}"), None
         return None, None
     run_ctx = run_dir / "artifacts" / "run_context.yaml"
     campaign = orch.load_campaign_state()
@@ -3862,14 +3916,20 @@ def _protocol_preflight(run_dir: Path, run_id: str, *, promotion_retired: bool,
     if overlap:
         return (f"the protocol resolved from {source} ({resolved.name}): {overlap} "
                 f"run_protocol refuses it (CUL-369)"), None
+    invalid = _validation_overlap_in(  # E-077 PR-1 (D-085): replication_diagnostic, last_escalation, ...
+        resolved if resolved.is_absolute() or resolved.exists() else orch.ROOT / resolved,
+        folds_enabled)
+    if invalid:
+        return f"the protocol resolved from {source} ({resolved.name}): {invalid}", None
     return None, None
 
 
 def _protocol_preflight_refusal(run_dir: Path, run_id: str, *, promotion_retired: bool,
-                                ignore_pending: bool = False) -> str | None:
+                                ignore_pending: bool = False,
+                                folds_enabled: bool = False) -> str | None:
     """The refusal half of _protocol_preflight."""
     return _protocol_preflight(run_dir, run_id, promotion_retired=promotion_retired,
-                               ignore_pending=ignore_pending)[0]
+                               ignore_pending=ignore_pending, folds_enabled=folds_enabled)[0]
 
 
 def _regenerate_protocol(run_id: str, regeneration: dict) -> None:
@@ -4100,7 +4160,7 @@ def _launch_run(queue: dict, entry: dict, action: str, decide_next_enabled: bool
 
 def _run_after_preflight(queue: dict, entry: dict, run_id: str, before_splits: list,
                          decide_next_enabled: bool, schedulability_enabled: bool, *,
-                         promotion_retired: bool):
+                         promotion_retired: bool, folds_enabled: bool = False):
     """The protocol pre-flight, a pre-spend generated-protocol regeneration and
     run_loop. Returns None when run_loop returned normally, else process_once's
     return value after a classified pause: protocol_promotion_unratified, or
@@ -4111,7 +4171,8 @@ def _run_after_preflight(queue: dict, entry: dict, run_id: str, before_splits: l
     run_dir = ROOT / "runs" / run_id
     try:
         refusal, regeneration = _protocol_preflight(run_dir, run_id,
-                                                    promotion_retired=promotion_retired)
+                                                    promotion_retired=promotion_retired,
+                                                    folds_enabled=folds_enabled)
         if refusal is None:
             if regeneration is not None:
                 _regenerate_protocol(run_id, regeneration)
@@ -4173,6 +4234,7 @@ def process_once() -> bool:
     decide_next_enabled = flag_refusal is None and flag_values.get("decide_next") is True
     routing_retired = flag_refusal is None and flag_values.get("verdict_routing_retired") is True
     promotion_retired = _promotion_retired_from(flag_values, flag_refusal)  # C5.6
+    folds_enabled = _folds_from(flag_values, flag_refusal)  # E-077 PR-1 (D-085)
 
     queue = _load_queue()
     entry = _select_entry(queue["queue"])
@@ -4294,7 +4356,8 @@ def process_once() -> bool:
     # E-061 C1.5 / C1.4: the protocol pre-flight (before 1a), then run_loop; a
     # refusal or an escaping Exception is a classified pause (None: ran normally).
     halted = _run_after_preflight(queue, entry, run_id, before_splits, decide_next_enabled,
-                                  schedulability_enabled, promotion_retired=promotion_retired)
+                                  schedulability_enabled, promotion_retired=promotion_retired,
+                                  folds_enabled=folds_enabled)
     if halted is not None:
         return halted
     queue, entry, split_child_ids = _record_run_loop_children(
@@ -4659,12 +4722,21 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
     # E-060 S3b: R1's inputs only under orchestrator.composition_runs (the kwargs
     # only when on, so the flag-off call is unchanged).
     comp_on = orch._composition_runs_enabled()
+    # E-077 PR-1 (D-085): the validated folds file, only under orchestrator.folds.enabled
+    # (the kwarg only when on, so the flag-off call is unchanged).
+    folds_doc = (research_folds.load_folds(ROOT / "config" / "folds.yaml",
+                                           policy_path=orch._DATA_POLICY_PATH)
+                 if orch._folds_enabled() else None)
+    fold_data = orch._fold_data_context() if folds_doc is not None else None  # E-077 review fix
 
     def _decide():
         inputs = dn.load_inputs(
             ROOT, final_queue, categories=orch._reader_categories(), known_classes=known,
             digest=digest, feed_set=feeds,
-            **({"composition_runs": True, "dsr_basis": _ledger_dsr_basis()} if comp_on else {}))
+            **({"composition_runs": True, "dsr_basis": _ledger_dsr_basis()} if comp_on else {}),
+            **({"folds": folds_doc, "fold_data": fold_data} if folds_doc is not None else {}),
+            # E-075 PR-5a (D-091): the trade-level family, only under orchestrator.analyst
+            **({"trade_tests": True} if orch._analyst_enabled() else {}))
         mem_entry = (inputs["memory"].get("runs") or {}).get(run_id) or {}
         trigger = {"after_run": run_id, "after_entry": entry["id"],
                    "idea_status": mem_entry.get("idea_status")}
@@ -4753,12 +4825,8 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
         msg = f"{msg} [paused {len(r1_failures)} composition(s) that could not be prepared]"
     # E-068 PR 4 (D-071): a reader named a component class that does not exist.
     # Warning only; nothing is logged when no candidate carries one.
-    for c in record.get("candidates") or []:
-        for w in c.get("warnings") or []:
-            _log(f"WARNING {c['candidate_id']}: reader names unknown component class "
-                 f"{w['name']}" + (f" (nearest real class: {w['suggestion']})"
-                                   if w.get("suggestion") else "")
-                 + f" -- warning only, see {decision_ref}")
+    for line in _candidate_warning_lines(record, decision_ref):
+        _log(line)
 
     orch.save_yaml(ROOT / decision_ref, record)
     disk_queue = _load_queue()
@@ -4772,6 +4840,32 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
     _save_queue(disk_queue)
     _log_awaiting_approval(held)
     return disk_queue, entry, stop is None, msg
+
+
+def _candidate_warning_lines(record: dict, decision_ref: str) -> list:
+    """One log line per candidate warning. An unknown-component-class warning
+    (E-068 PR 4) keeps its text; a side finding's warning (reader_findings:
+    repeats_measured_spec, block_claim_cannot_see_block) carries no `name`, so it
+    is logged by its kind instead of raising KeyError mid-decide. E-073 step 2
+    (D-083): a citation_mismatch warning names how many cited values were
+    still wrong after the reader's one retry."""
+    lines = []
+    for c in record.get("candidates") or []:
+        for w in c.get("warnings") or []:
+            if w.get("kind") == "citation_mismatch":
+                lines.append(f"WARNING {c['candidate_id']}: {len(w.get('bad') or [])} cited "
+                             f"value(s) do not match the file the reader read, after its one "
+                             f"retry (kept, flagged) -- warning only, see {decision_ref}")
+                continue
+            if "name" not in w:
+                lines.append(f"WARNING {c['candidate_id']}: {w.get('kind') or 'warning'}"
+                             f" -- warning only, see {decision_ref}")
+                continue
+            lines.append(f"WARNING {c['candidate_id']}: reader names unknown component class "
+                         f"{w['name']}" + (f" (nearest real class: {w['suggestion']})"
+                                           if w.get("suggestion") else "")
+                         + f" -- warning only, see {decision_ref}")
+    return lines
 
 
 # ---------------------------------------------------------------------------

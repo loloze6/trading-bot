@@ -211,6 +211,16 @@ TARGET_FLAGS = {
     "score_provenance": False,
     # D-056: runs the real engine on real data; this harness feeds stub configs.
     "forecast_size_probe": False,
+    # E-073 (D-081): requires reader_findings, which is off here.
+    "observable_backtest": False,
+    # CUL-414 (D-082): off, so the stub backtests' cost bar reads as before.
+    "cost_bar_all_costs": False,
+    # CUL-415 (D-084): off, so the stub grids' window cells read as before.
+    "zero_trade_windows_not_computed": False,
+    # E-077 PR-1 (D-085): off, so the stub briefs' windows are copied as before.
+    "folds": False,
+    # E-075 PR-5a (D-091): off, so the stub claims are checked as before.
+    "analyst": False,
     # E-068 slice 2: the stub cards carry no claim block.
     "claim_tests": False,
     # D-071 (CUL-399): off, so decide-next's picks stay `ready` as these scenarios expect.
@@ -219,6 +229,8 @@ TARGET_FLAGS = {
     "reader_findings": False,
     # E-068 nearest build (D-075): off, so the stub 1b answers route as before.
     "nearest_build": False,
+    # E-072 (D-080): requires reader_findings, which is off here.
+    "explore_confirm": False,
 }
 
 # C5.8 (D-050): the four legacy route/rationale keys of a window's core

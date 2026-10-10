@@ -22,5 +22,10 @@
 # never needs it at all. No key lives in this repo, ever. This file
 # deliberately avoids spelling the variable name: the repo's pre-commit
 # secret scan blocks it in diffs, by design.
+# mcp: claude-agent-sdk 0.2.82 declares mcp>=1.23 with no upper bound, and
+# mcp 2.x removed the Server.list_tools() decorator the SDK's
+# create_sdk_mcp_server() uses (AttributeError on the first tool). The
+# analyst stage (E-075 PR-5) builds such a server, so pin the last 1.x.
 claude-agent-sdk==0.2.82
+mcp==1.30.0
 google-genai==2.16.0

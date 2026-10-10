@@ -893,12 +893,51 @@ FORECAST_POWER_STATISTIC_LABELS = {
 }
 
 
+# E-072 (orchestrator.explore_confirm): the readers' copies of the reports are
+# built from the exploration windows only. Every slice built from per-window
+# records is rebuilt from those records alone; the three `overall` slices that
+# re-project a protocol_result aggregate (computed by run_protocol.py over EVERY
+# window, the confirmation windows included) are withheld, never re-projected.
+WINDOWS_WITHHELD_REASON = (
+    "withheld under explore_confirm: this aggregate was computed over every window, "
+    "including the confirmation windows the readers do not see")
+_POOLED_OVERALL_CATEGORIES = ("profitability", "trade_efficiency", "forecast_power")
+
+
+def restrict_sources(sources: dict, windows) -> dict:
+    """E-072: `sources` (load_run_sources) cut to the given window labels:
+    protocol_result keeps ONLY its `results` entries for those windows (every
+    other key is a pre-computed aggregate over all windows and is dropped),
+    trade_diagnostics keeps only trades whose `window` is one of them (a trade
+    without one is dropped), bars_by_window only those windows. Pure."""
+    keep = set(windows)
+    pr = sources.get("protocol_result") or {}
+    results = [r for r in pr.get("results") or []
+               if isinstance(r, dict) and r.get("window") in keep]
+    td = sources.get("trade_diagnostics")
+    if isinstance(td, dict):
+        td = {"trades": [t for t in td.get("trades") or []
+                         if isinstance(t, dict) and t.get("window") in keep]}
+    else:
+        td = None
+    bars = {k: v for k, v in (sources.get("bars_by_window") or {}).items() if k[1] in keep}
+    return {**sources, "protocol_result": {"results": results}, "trade_diagnostics": td,
+            "bars_by_window": bars}
+
+
+def _withhold_pooled_overall(category: str, slices: dict) -> dict:
+    if category not in _POOLED_OVERALL_CATEGORIES:
+        return slices
+    return {**slices, "overall": _unavailable(WINDOWS_WITHHELD_REASON)}
+
+
 def build_reports(run_dir: Path | str, write: bool = True, *,
                    variants: dict[str, dict] | None = None,
                    failed_variants: dict[str, str] | None = None,
                    untested_variants: dict[str, str] | None = None,
                    legacy_verdict_retired: bool = False,
-                   label_statistics: bool = False) -> dict[str, dict]:
+                   label_statistics: bool = False,
+                   only_windows=None) -> dict[str, dict]:
     """Build all five category reports for one run directory.
 
     `variants=None` (the default): today's single-run behaviour -- reads the
@@ -959,6 +998,14 @@ def build_reports(run_dir: Path | str, write: bool = True, *,
     top-level key, `statistic_labels` (FORECAST_POWER_STATISTIC_LABELS: which
     correlation each field is). False (the default): unchanged output.
 
+    `only_windows` (E-072; passed by the orchestrator only under
+    orchestrator.explore_confirm, with write=False -- it writes the result to
+    artifacts/exploration/reports/): an iterable of window labels. Every
+    source is cut to those windows (restrict_sources), the profitability /
+    trade_efficiency / forecast_power `overall` slices are withheld
+    (WINDOWS_WITHHELD_REASON), and each report gains `windows_shown`. None
+    (the default): unchanged output.
+
     When `write` is True (the default, and what
     workflow/run_phase1_research.py's protocol_execution branch uses), writes
     each report to <run_dir>/artifacts/reports/<category>.yaml via the same
@@ -970,10 +1017,17 @@ def build_reports(run_dir: Path | str, write: bool = True, *,
     source_run_id = run_dir.name
 
     reports: dict[str, dict] = {}
+    if only_windows is not None:
+        only_windows = sorted(set(only_windows))
     if variants is None:
         sources = load_run_sources(run_dir)
+        if only_windows is not None:
+            sources = restrict_sources(sources, only_windows)
         for name, builder in BUILDERS.items():
             report = builder(sources)
+            if only_windows is not None:
+                report["slices"] = _withhold_pooled_overall(name, report["slices"])
+                report["windows_shown"] = list(only_windows)
             report["source_run_id"] = source_run_id
             report["generated_at"] = generated_at
             _check_report_budget(name, report)
@@ -984,10 +1038,15 @@ def build_reports(run_dir: Path | str, write: bool = True, *,
                 "variants must be a non-empty {variant_id: {...}} dict when given -- pass "
                 "None (the default) for single-run behaviour, never an empty dict.")
         per_variant_sources = {vid: _variant_sources(run_dir, vid) for vid in variants}
+        if only_windows is not None:
+            per_variant_sources = {vid: restrict_sources(s, only_windows)
+                                   for vid, s in per_variant_sources.items()}
         for name, builder in BUILDERS.items():
             variant_blocks = {}
             for vid, vinfo in variants.items():
                 built = builder(per_variant_sources[vid])
+                if only_windows is not None:
+                    built["slices"] = _withhold_pooled_overall(name, built["slices"])
                 variant_blocks[vid] = {
                     "kind": (vinfo or {}).get("kind"),
                     "symbol": (vinfo or {}).get("symbol"),
@@ -1007,6 +1066,8 @@ def build_reports(run_dir: Path | str, write: bool = True, *,
                 report["failed_variants"] = dict(failed_variants)
             if untested_variants:
                 report["untested_variants"] = dict(untested_variants)
+            if only_windows is not None:
+                report["windows_shown"] = list(only_windows)
             _check_report_budget(name, report)
             reports[name] = report
 

@@ -46,7 +46,7 @@ if _HERE not in sys.path:
 import reader_proposals as rp  # noqa: E402
 
 (SKIP_REGIME_SCAFFOLDING, SKIP_REGIME_CONSTANT, SKIP_SINGLE_COMPONENT,
- SKIP_OUTPUT_REFUSED) = rp.SKIP_RULES
+ SKIP_OUTPUT_REFUSED, SKIP_EXPLORATION_UNAVAILABLE, SKIP_REPLACED_BY_ANALYST) = rp.SKIP_RULES
 DIGEST_ARTIFACT = "claim_result_digest.yaml"
 READER_SUMMARY_ARTIFACT = "findings_summary_for_readers.yaml"
 # The two files above that could not be written before the readers ran (the
@@ -363,7 +363,16 @@ def own_spec_hashes(card) -> set:
     return {t["spec_hash"] for t in cf._tests_of(claim) if t.get("spec_hash")}
 
 
-def side_finding_review(item: dict, *, prior: dict, own: set, run_id: str) -> dict:
+def _check(claim, folds: bool, trade_tests: bool):
+    """check_claim with the folds kinds (D-089) and the trade-level test family (D-091),
+    each passed only when on, so a call with both off is exactly the original one."""
+    import claim_card as cc
+    kw = {**({"folds": True} if folds else {}), **({"trade_tests": True} if trade_tests else {})}
+    return cc.check_claim(claim, **kw)
+
+
+def side_finding_review(item: dict, *, prior: dict, own: set, run_id: str,
+                        folds: bool = False, trade_tests: bool = False) -> dict:
     """{errors, tests_none, missing_block, spec_hashes, warnings} for one side
     finding. `errors` are check_claim's refusals (the reader's retry, or the
     candidate's ineligibility); `warnings` never refuse anything:
@@ -372,10 +381,13 @@ def side_finding_review(item: dict, *, prior: dict, own: set, run_id: str) -> di
       - block_claim_cannot_see_block: the claim's kind names a block
         (claim_card.KIND_BLOCK) but no test reads that block's output
         (CLAIM_TESTS.md's visibility rule). A kind with no block is a pure
-        finding and gets no such warning."""
+        finding and gets no such warning.
+    `folds` (D-089, orchestrator.folds.enabled): check_claim with the folds kinds, so a
+    claim of kind execution_behaviour is accepted here too; off: exactly as before.
+    `trade_tests` (D-091, orchestrator.analyst.enabled): the trade-level family too."""
     import claim_card as cc
     claim = item.get("claim") if isinstance(item, dict) else None
-    res = cc.check_claim(claim)
+    res = _check(claim, folds, trade_tests)
     out = {"errors": list(res.errors), "tests_none": res.tests_none,
            "missing_block": res.missing_block,
            "spec_hashes": [t["spec_hash"] for t in res.tests], "warnings": []}
@@ -460,3 +472,119 @@ def skip_summary_lines(root: Path) -> list:
     for rule, where in sorted(by_rule.items()):
         lines.append(f"  - {rule}: {len(where)} ({', '.join(where)})")
     return lines
+
+
+# ---------------------------------------------------------------------------
+# E-073 step 2 (D-083): in-run dedup of side findings, under
+# orchestrator.observable_backtest only (run_phase1_research wires it).
+# ---------------------------------------------------------------------------
+
+MERGES_ARTIFACT = "side_finding_merges.yaml"
+MERGES_SCHEMA_VERSION = 1
+MERGE_RULE = ("two side findings of this run are ONE finding when their claims have the same "
+              "kind, their claim tests the same set of spec_hashes (claim_tests) and the same "
+              "config_change (none, or the same items): the same measurement on the same config, "
+              "confirmed the same way. A different kind, a partial overlap, a different change "
+              "or `tests: none` is not merged.")
+MERGE_NOT_AGREEMENT = ("not agreement and not extra evidence: the readers read the same inputs, "
+                       "so a second reader proposing the same test is not an independent "
+                       "observation; the merged finding is measured, counted and ranked once, "
+                       "with its first source's scores")
+
+
+def _merge_key(item: dict, folds: bool = False, trade_tests: bool = False):
+    """(claim kind, spec_hashes, canonical config_change) of one flattened
+    side finding, or None when it has no measurable test (refused claim or
+    tests: none). The kind is part of the key (review fix 4): the
+    confirmation routes by it (explore_confirm.finding_route: a block kind
+    is PENDING, a pure kind IN_RUN), so the same tests under two kinds are
+    two findings."""
+    import json as _json
+    claim = item.get("claim") if isinstance(item, dict) else None
+    # D-089: under the folds flag the folds kinds (execution_behaviour) are claims too
+    res = _check(claim, folds, trade_tests)
+    hashes = tuple(sorted({t["spec_hash"] for t in res.tests if t.get("spec_hash")}))
+    if res.errors or res.tests_none or not hashes:
+        return None
+    change = item.get("config_change")
+    canon = None
+    if change:
+        canon = _json.dumps(sorted((_json.dumps(c, sort_keys=True, default=str)
+                                    for c in change), key=str), default=str)
+    return str(item["claim"].get("kind")), hashes, canon
+
+
+def reading_structure(doc: dict, folds: bool = False, trade_tests: bool = False) -> list:
+    """What a citation retry must keep (D-083): for each item of a v3 reading
+    (rp.flatten_reading), (item kind, claim kind, sorted spec_hashes), sorted
+    -- the same number of side findings proposing the same tests the same
+    way. Wording, evidence and scores are not part of it."""
+    out = []
+    for item in rp.flatten_reading(doc):
+        claim = item.get("claim")
+        kind = str(claim.get("kind")) if isinstance(claim, dict) else None
+        if claim is None:
+            tests = []
+        else:      # D-089: folds kinds are claims under the folds flag
+            tests = _check(claim, folds, trade_tests).tests
+        out.append((item["kind"], kind,
+                    tuple(sorted({t["spec_hash"] for t in tests if t.get("spec_hash")}))))
+    return sorted(out, key=repr)
+
+
+def side_finding_merges(readings: dict, folds: bool = False, trade_tests: bool = False) -> list:
+    """The duplicate groups among a run's side findings (MERGE_RULE). Pure.
+    `readings`: {category: v3 reading}. Order: categories sorted, then each
+    reading's side findings in order (the order explore_confirm measures
+    them in); the first member of a group is its primary. Returns
+    [{finding_id, finding_ids, sources: [{category, finding_id}], spec_hashes,
+    config_change}] for groups of two or more only."""
+    groups, order = {}, []
+    for cat, doc in sorted((readings or {}).items()):
+        if not isinstance(doc, dict) or "skipped" in doc:
+            continue
+        for item in rp.flatten_reading(doc):
+            if item.get("kind") != rp.SIDE_FINDING:
+                continue
+            key = _merge_key(item, **({"folds": True} if folds else {}),
+                             **({"trade_tests": True} if trade_tests else {}))
+            if key is None:
+                continue
+            if key not in groups:
+                order.append(key)
+                groups[key] = {"items": [], "config_change": item.get("config_change")}
+            groups[key]["items"].append((cat, item["proposal_id"]))
+    out = []
+    for key in order:
+        members = groups[key]["items"]
+        if len(members) < 2:
+            continue
+        out.append({"finding_id": members[0][1],
+                    "finding_ids": [pid for _c, pid in members],
+                    "sources": [{"category": c, "finding_id": pid} for c, pid in members],
+                    "spec_hashes": list(key[1]),
+                    "config_change": groups[key]["config_change"]})
+    return out
+
+
+def merges_doc(run_id: str, merges: list) -> dict:
+    """artifacts/side_finding_merges.yaml (written under the flag, `merged: []`
+    when nothing repeats, so a reader of the run can see the check ran)."""
+    return {"schema_version": MERGES_SCHEMA_VERSION, "run_id": run_id, "rule": MERGE_RULE,
+            "note": MERGE_NOT_AGREEMENT, "merged": list(merges)}
+
+
+def merge_index(doc) -> dict:
+    """{finding_id: {"primary": id, "order": n, "group": group}} for every
+    member of a merge group in a side_finding_merges.yaml document; {} for
+    None or a document of another shape (never raises)."""
+    out = {}
+    groups = doc.get("merged") if isinstance(doc, dict) else None
+    for g in groups if isinstance(groups, list) else []:
+        ids = g.get("finding_ids") if isinstance(g, dict) else None
+        if not isinstance(ids, list) or len(ids) < 2:
+            continue
+        for n, fid in enumerate(ids):
+            if isinstance(fid, str):
+                out[fid] = {"primary": ids[0], "order": n, "group": g}
+    return out

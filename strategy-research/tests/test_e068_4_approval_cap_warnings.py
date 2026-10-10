@@ -224,6 +224,29 @@ def test_done_step_logs_the_warning_from_the_proposal_on_disk(campaign_root, mon
             "VarianceRatioRegimeComponent (nearest real class: VarianceRatioComponent)") in _log(root)
 
 
+def test_warning_log_lines_survive_a_side_finding_warning_without_a_name():
+    """A reader_findings side-finding warning has no `name`: logging it must not
+    raise KeyError (it left the entry in_progress with the brief already written),
+    and a class-name warning must still log its name and suggestion."""
+    record = {"candidates": [
+        {"candidate_id": "side-1", "warnings": [
+            {"kind": "repeats_measured_spec", "spec_hash": "abc", "own_claim": False, "runs": []},
+            {"kind": "block_claim_cannot_see_block", "block_kind": "forecast", "message": "m"}]},
+        {"candidate_id": "cls-1", "warnings": [
+            {"kind": "unknown_component_class", "name": "GhostComponent", "suggestion": "RealComponent"},
+            {"kind": "unknown_component_class", "name": "Other", "suggestion": None}]},
+        {"candidate_id": "none-1"}]}
+    assert camp._candidate_warning_lines(record, "ref.yaml") == [
+        "WARNING side-1: repeats_measured_spec -- warning only, see ref.yaml",
+        "WARNING side-1: block_claim_cannot_see_block -- warning only, see ref.yaml",
+        "WARNING cls-1: reader names unknown component class GhostComponent "
+        "(nearest real class: RealComponent) -- warning only, see ref.yaml",
+        "WARNING cls-1: reader names unknown component class Other -- warning only, see ref.yaml"]
+    assert camp._candidate_warning_lines({}, "ref.yaml") == []
+    assert camp._candidate_warning_lines({"candidates": [{"candidate_id": "x", "warnings": [{}]}]},
+                                         "r") == ["WARNING x: warning -- warning only, see r"]
+
+
 def test_done_step_reads_the_card_on_disk_for_quotes(campaign_root, monkeypatch):
     """load_inputs hands decide the card's raw text: a name the card uses is a
     quote, not a warning."""

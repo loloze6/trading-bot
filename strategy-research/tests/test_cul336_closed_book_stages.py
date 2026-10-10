@@ -16,8 +16,9 @@ What this file pins (no API key; the SDK ``query`` is stubbed everywhere):
    ``strict_mcp_config=True``, auto-memory disabled through ``env``, a neutral
    ``cwd`` outside the repository -- and the installed SDK turns them into the
    closed-book CLI invocation.
-2. Both call sites (``run_claude_worker``, ``_invoke_reader_llm``) pass exactly
-   those options to ``query`` -- these fail on the pre-CUL-336 code.
+2. The call sites (``run_claude_worker``, ``_invoke_reader_llm`` and, E-075 PR-5,
+   ``_invoke_analyst_llm``) pass exactly those options to ``query`` -- the first two
+   fail on the pre-CUL-336 code.
 3. The helper is the only ``ClaudeAgentOptions(...)`` construction in the
    orchestrator, every ``query(...)`` call uses it, and no other Python file in
    the repository imports the SDK.
@@ -156,6 +157,21 @@ def test_reader_llm_passes_closed_book_options(monkeypatch):
     _assert_closed_book(cap.options[0])
 
 
+def test_analyst_llm_passes_closed_book_options(monkeypatch):
+    """E-075 PR-5 (D-092): the analyst's session is closed-book like every stage -- no
+    built-in tool, no settings, no config-file MCP server -- plus its one in-process server
+    (the six query tools) and a deny hook."""
+    cap = _Capture()
+    monkeypatch.setattr(rpr, "query", cap.query)
+    spec = {"server": {"type": "sdk", "name": "analyst", "instance": None},
+            "hook": lambda *a: None, "model": "m", "max_turns": 2, "max_budget_usd": 0.1,
+            "timeout_s": 5.0}
+    asyncio.run(rpr._invoke_analyst_llm("prompt", spec))
+    assert len(cap.options) == 1
+    _assert_closed_book(cap.options[0])
+    assert set(cap.options[0].mcp_servers) == {"analyst"}
+
+
 # --- 3. one construction site, every query uses it, no other SDK user ---------
 
 def _enclosing_function(tree: ast.AST, target: ast.AST) -> str | None:
@@ -175,14 +191,15 @@ def test_options_helper_is_the_only_construction_site():
 
     query_calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call)
                    and isinstance(n.func, ast.Name) and n.func.id == "query"]
-    assert len(query_calls) == 2, f"expected the two known call sites, found {len(query_calls)}"
+    # E-075 PR-5 (D-092): the analyst's session is the third, on the same helper
+    assert len(query_calls) == 3, f"expected the three known call sites, found {len(query_calls)}"
     for call in query_calls:
         opts = {kw.arg: kw.value for kw in call.keywords}.get("options")
         assert isinstance(opts, ast.Call) and isinstance(opts.func, ast.Name) \
             and opts.func.id == "_stage_agent_options", \
             f"query(...) at line {call.lineno} does not pass options=_stage_agent_options()"
     assert {_enclosing_function(tree, c) for c in query_calls} == \
-        {"run_claude_worker", "_invoke_reader_llm"}
+        {"run_claude_worker", "_invoke_reader_llm", "_invoke_analyst_llm"}
 
 
 _SKIP_DIRS = {"venv", ".venv", "site-packages", "node_modules", "__pycache__", ".git", ".claude"}

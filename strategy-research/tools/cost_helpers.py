@@ -149,3 +149,44 @@ def realized_edge_to_cost_ratio(records: list) -> float | None:
     carried (round(mean_gross / mean_cost, 4))."""
     raw = realized_edge_to_cost_ratio_unrounded(records)
     return round(raw, 4) if raw is not None else None
+
+
+def edge_to_all_costs_ratio_unrounded(records: list) -> float | None:
+    """CUL-414 (orchestrator.cost_bar_all_costs, D-082): the D-038 "survives 2x
+    costs" ratio with both sides on the same basis -- mean gross edge per trade
+    BEFORE fees and slippage (gross_return_before_costs, % -> bps: the trade's
+    return at the bar closes the fills were priced from) / mean cost per trade,
+    fees + slippage, both legs (cost_paid_all, bps). realized_edge_to_cost_ratio
+    divides a slippage-net return (fill prices) by fees only (A7).
+
+    Records written by run_protocol --cost-bar-all-costs carry both fields.
+    FAIL CLOSED (PR #345 review): if ANY record lacks either (None: its bars
+    could not be matched, or an artifact written without the flag) the ratio is
+    not computed -> None, never a ratio over the subset that has them -- the
+    same rule as portfolio_whole_test.pooled_edge_to_cost_ratio(all_costs=True)
+    (NOT_EVALUABLE), so the menu criterion and profit_bars_v2 agree, and the
+    menu criterion's trade floor (core.trade_count, every trade) is never met
+    by a subset. all_costs_missing_count gives the count. Zero mean cost or no
+    record -> None. UNROUNDED: a pass/fail bar compares this value."""
+    if not records or all_costs_missing_count(records):
+        return None
+    mean_gross_bps = statistics.mean([r["gross_return_before_costs"] * 100 for r in records])
+    mean_cost_bps = statistics.mean([r["cost_paid_all"] for r in records])
+    return mean_gross_bps / mean_cost_bps if mean_cost_bps != 0 else None
+
+
+def all_costs_missing_count(records: list) -> int:
+    """CUL-414: how many records lack cost_paid_all or gross_return_before_costs
+    (either None or absent) -- any such record makes
+    edge_to_all_costs_ratio_unrounded None."""
+    return sum(1 for r in records
+               if r.get("cost_paid_all") is None or r.get("gross_return_before_costs") is None)
+
+
+def edge_to_all_costs_ratio(records: list) -> float | None:
+    """edge_to_all_costs_ratio_unrounded rounded to 4 decimals, as
+    realized_edge_to_cost_ratio is (run_protocol's descriptive summary field
+    realized_edge_to_cost_ratio_all_costs, read by the menu criterion under
+    the flag)."""
+    raw = edge_to_all_costs_ratio_unrounded(records)
+    return round(raw, 4) if raw is not None else None

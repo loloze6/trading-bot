@@ -116,6 +116,7 @@ import campaign_memory as _cm  # tools/ sibling: memory loader + retired-field s
 import json_pointer as _jp  # tools/ sibling: pointer + patch semantics shared with 5a
 import novelty as _nov  # tools/ sibling: the exact-match key shared with the 5a gate (E-036 S2a)
 import reader_proposals as _rp  # tools/ sibling: proposal loader/validator
+import research_folds as _folds  # tools/ sibling: E-077 PR-1 (D-085), the fixed folds + lineage
 
 SCHEMA_VERSION = 1
 ORIGIN_READER = "reader"
@@ -984,7 +985,8 @@ def requests_count(doc) -> int:
 
 def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None,
                 digest=None, composition_runs: bool = False, dsr_basis: dict | None = None,
-                feed_set=None) -> dict:
+                feed_set=None, folds: dict | None = None, fold_data: dict | None = None,
+                trade_tests: bool = False) -> dict:
     """Everything decide() reads, from disk under `root` (strategy-research/).
     `queue` is the caller's in-memory queue document (after its own write).
     `known_classes` is the known component class set (known_component_classes)
@@ -999,7 +1001,18 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
     run_phase1_research._composition_runs_enabled()): also read the whole
     block registry, campaign_record/compositions.yaml and each forecast
     block's validating run (inputs["composition"]) -- R1's inputs. Off: no
-    such key, nothing more is read, and R1 stays the recorded no-op."""
+    such key, nothing more is read, and R1 stays the recorded no-op.
+    `folds` (E-077 PR-1, D-085; the caller passes research_folds.load_folds(...) only
+    under orchestrator.folds.enabled): the validated folds document. Then every
+    memory run's protocol windows are read (inputs["folds"]["run_ranges"]) so a
+    candidate's child can be given the next fold its lineage has not used. None:
+    no such key, nothing more is read, and every candidate is as before.
+    `fold_data` (with `folds`; run_phase1_research._fold_data_context): {layer1, precheck,
+    first_symbol_only} -- what `_fold_data_reason` needs to refuse a child that has no data on
+    its fold. None: that check is skipped.
+    `trade_tests` (D-091; the caller passes it only under orchestrator.analyst.enabled): a side
+    finding's claim may use the trade-level test family (inputs["trade_tests"]). Off: no
+    such key, every claim checked as before."""
     root = Path(root)
     mem_path = root / "campaign_record" / "campaign_memory.yaml"
     memory = _cm.load_memory(mem_path)
@@ -1036,6 +1049,9 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
             "card_text": ((arts / "hypothesis_card.yaml").read_text(encoding="utf-8")
                           if (arts / "hypothesis_card.yaml").exists() else None),
         }
+        # E-073 step 2 (D-083): written only under orchestrator.observable_backtest;
+        # absent files add no key, so every other run's inputs are unchanged.
+        runs[run_id].update(_observable_inputs(arts))
 
     def _count(name):
         return requests_count(_load_yaml_opt(root / "campaign_record" / name) or {})
@@ -1076,6 +1092,11 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
         "component_requests_count": _count("component_requests.yaml"),
         "data_requests_count": _count("data_requests.yaml"),
     }
+    if trade_tests:
+        out["trade_tests"] = True
+    if folds is not None:
+        out["folds"] = {"doc": copy.deepcopy(folds), "run_ranges": _memory_run_ranges(root, memory),
+                        "data": fold_data}
     if composition_runs:
         # E-060 S3b (7.5 + review fix 6): only under the flag -- a composition
         # run's manifest and the check its reader patches must pass. Flag off,
@@ -1088,6 +1109,53 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
                 src["composition_manifest"] = man
                 src["composition_check"] = _composition_checker(root, registry, man)
         out["composition"] = comp_inputs
+    return out
+
+
+def _memory_run_ranges(root: Path, memory: dict) -> dict:
+    """{run_id: [(start, end), ...] or None} -- the test windows of every memory run's
+    protocol (E-077 PR-1). None for a run whose protocol is unnamed, missing or
+    unreadable: the lineage check then refuses rather than guess which bars it saw."""
+    out = {}
+    for run_id, entry in (memory.get("runs") or {}).items():
+        ref = _nov.normalize_ref((entry or {}).get("protocol_ref"))
+        ranges = None
+        if ref:
+            try:
+                ranges = _folds.windows_ranges(_nov.load_protocol(root, ref).get("windows"))
+            except _nov.NoveltyError:
+                ranges = None
+        out[run_id] = ranges
+    return out
+
+
+def _observable_inputs(arts: Path) -> dict:
+    """E-073 step 2 (D-083): the run's in-run merges (side_finding_merges.yaml)
+    and its flagged citations (citation_checks/<category>.yaml: {proposal id:
+    [bad citations]}), each only when its file exists. Information only: an
+    unreadable file counts as absent (a warning is never worth a stop)."""
+    import reader_findings as _rf  # tools/ sibling; only E-073 runs need it
+    out = {}
+    merges_path = arts / _rf.MERGES_ARTIFACT
+    if merges_path.exists():
+        try:
+            out["side_finding_merges"] = _rf.merge_index(_load_yaml_opt(merges_path))
+        except (yaml.YAMLError, OSError, UnicodeDecodeError):
+            out["side_finding_merges"] = {}
+    checks_dir = arts / _rp.CITATION_CHECKS_DIR
+    if checks_dir.is_dir():
+        flagged = {}
+        for path in sorted(checks_dir.glob("*.yaml")):
+            try:
+                doc = _load_yaml_opt(path)
+            except (yaml.YAMLError, OSError, UnicodeDecodeError):
+                continue
+            items = doc.get("items") if isinstance(doc, dict) else None
+            for pid, rec in (items.items() if isinstance(items, dict) else []):
+                bad = rec.get("bad") if isinstance(rec, dict) else None
+                if isinstance(bad, list) and bad:
+                    flagged[str(pid)] = bad
+        out["citation_flags"] = flagged
     return out
 
 
@@ -1505,6 +1573,13 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
                        "no machine_constraints to pin the candidate's windows")
     if not isinstance(src.get("research_brief"), dict):
         reasons.append("source_brief_missing: the source research_brief.yaml is missing")
+    # E-077 PR-1 (D-085): only under orchestrator.folds.enabled (inputs["folds"]).
+    fold_assignment = None
+    if inputs.get("folds") is not None:
+        fold_assignment = _fold_assignment_for(run_id, pre_reg, inputs, src.get("research_brief"))
+        if fold_assignment["reason"]:
+            reasons.append(fold_assignment["reason"])
+    fold_sha = (fold_assignment or {}).get("windows_sha256")
     if p["kind"] == "patch":
         if base.get("status") != "tested":
             reasons.append("source_base_variant_not_tested")
@@ -1548,7 +1623,8 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
         if feed_reason:
             reasons.append(feed_reason)
         if resolved_sha:
-            key = novelty_key(resolved_sha, symbols, entry, inputs.get("protocol_specs") or {})
+            key = novelty_key(resolved_sha, symbols, entry, inputs.get("protocol_specs") or {},
+                              **({"windows_sha256": fold_sha} if fold_sha else {}))
             matched = list(exact.get(key) or [])
             novelty = {"exact_match": "REPEAT" if matched else "NOVEL", "matched_runs": matched}
         else:
@@ -1574,6 +1650,12 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
         start = side_finding_start(p, src)
         if start["reason"]:
             reasons.append(start["reason"])
+        elif "vehicle" in p and p["vehicle"] == [] and start["config"] is None:
+            # D-089: an empty vehicle claims the source run's strategy as it is; a source with
+            # no block config (a composition) has none to re-run, so its child could never be
+            # measured (fold_confirm compares the measured config with candidate.start_config)
+            reasons.append("empty_vehicle_needs_a_source_config: an empty vehicle re-runs the "
+                           "source run's config unchanged, and this source has no block config")
         elif start["ops"]:
             config_for_digest = start["config"]
             resolved_sha = config_sha256(start["config"])
@@ -1597,7 +1679,8 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
             reasons.append(feed_reason)
         if resolved_sha:
             # a config change: the changed config has a novelty key like a patch's
-            key = novelty_key(resolved_sha, symbols, entry, inputs.get("protocol_specs") or {})
+            key = novelty_key(resolved_sha, symbols, entry, inputs.get("protocol_specs") or {},
+                              **({"windows_sha256": fold_sha} if fold_sha else {}))
             matched = list(exact.get(key) or [])
             novelty = {"exact_match": "REPEAT" if matched else "NOVEL", "matched_runs": matched,
                        "spec_hashes": list(side_review["spec_hashes"])}
@@ -1678,14 +1761,100 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
         },
         "rank": None,
     }
+    if fold_assignment is not None:
+        # E-077 PR-1 (D-085): which fold the child gets and why (the lineage it was
+        # read from, and the folds each lineage run used). Only under the flag.
+        cand["fold_assignment"] = {k: fold_assignment[k] for k in ("fold", "lineage", "used")}
     warnings = class_name_warnings(p, inputs.get("known_classes"), src.get("card_text"))
     if p["kind"] == _rp.SIDE_FINDING:
         # E-068 slice 5: a repeated spec_hash or a block-kind claim whose tests
         # cannot see the block -- WARNINGS ONLY, never a reason or a rank change
         warnings = warnings + list(side_review["warnings"])
+    if p["kind"] == _rp.SIDE_FINDING and pid in (src.get("citation_flags") or {}):
+        # E-073 step 2 (D-083): kept, flagged -- a WARNING, never a reason or a rank change
+        warnings = warnings + [{"kind": CITATION_WARNING,
+                                "bad": copy.deepcopy(src["citation_flags"][pid])}]
     if warnings:  # E-068 PR 4 (D-071): only when non-empty -- other records unchanged
         cand["warnings"] = warnings
+    merged = (src.get("side_finding_merges") or {}).get(pid)         if p["kind"] == _rp.SIDE_FINDING else None
+    if merged:
+        # E-073 step 2: an in-run duplicate (side_finding_merges.yaml) is folded
+        # into its primary by _collapse; the primary's scores are kept
+        cand["_merge"] = {"primary": merged["primary"], "order": merged["order"]}
     return cand
+
+
+def _fold_assignment_for(run_id: str, pre_reg: dict, inputs: dict, brief=None) -> dict:
+    """E-077 PR-1 (D-085): research_folds.assign_fold for a child of `run_id`, plus the
+    two extra refusals that need the source's pre-registration: a source that PINS a
+    protocol file (machine_constraints.protocol_ref) has no generated `protocol` block
+    to put the fold's windows in, so its child cannot take a fold; and a child that has
+    no data on the chosen fold (`_fold_data_reason`) -- INFEASIBLE with
+    `fold_<X>_lacks_data`, the fold stays the one the lineage order gave (no skipping
+    ahead to a fold the data would fit)."""
+    f = inputs["folds"]
+    result = _folds.assign_fold(f["doc"], run_id=run_id,
+                                memory_runs=(inputs["memory"].get("runs") or {}),
+                                run_ranges=f["run_ranges"])
+    mc = pre_reg.get("machine_constraints")
+    if (result["reason"] is None and isinstance(mc, dict)
+            and not isinstance(mc.get("protocol"), dict)):
+        result.update(fold=None, windows_sha256=None, reason=(
+            "fold_needs_generated_protocol: the source pins a protocol file "
+            "(machine_constraints.protocol_ref); a fold's windows can only be written into a "
+            "generated machine_constraints.protocol block"))
+    if result["reason"] is None and result["fold"] is not None:
+        why = _fold_data_reason(result["fold"], mc.get("protocol"), brief, inputs)
+        if why:
+            result["reason"] = why
+    return result
+
+
+def _fold_data_reason(fold: str, protocol, brief, inputs: dict) -> str | None:
+    """E-077 PR-1 review fix (D-085): why the child would have no data on `fold`, else None.
+
+    Without it a fold the child's coin did not exist on (SOL lists 2021-06; fold B has
+    blocks in 2018-2020) is assigned, the data-availability gate then declines the
+    base, and under the variant loop the run is wasted. This is the gate's own layer-1
+    coverage check -- variant_coin.window_coverage over data_availability_gate.layer1_price_precheck
+    plus the listing rule (a window counts only when the coin exists for all of it) -- run
+    on the fold's blocks for the child's symbols and timeframe, with the venue the
+    brief maps to (tools/venue_resolver). Zero network, no market data. It is the
+    base's pass/fail: the gate validates the base only when every window passes.
+    NOT checked: aux feeds (the gate reads those in layer 2 only: cache/fetch). Skipped
+    (None) when the caller supplied no `inputs["folds"]["data"]` (the production caller
+    always does, run_phase1_research._fold_data_context). Never raises: an input that
+    cannot be judged is a reason, not a crash."""
+    ctx = inputs["folds"].get("data")
+    if ctx is None or not isinstance(protocol, dict):
+        return None
+    prefix = f"fold_{fold}_lacks_data"
+    try:
+        import venue_resolver as _venue
+        import variant_coin as _vc
+        symbols = list(protocol.get("symbols") or [])
+        exchange = "binance"
+        keys = _venue.protocol_keys(brief if isinstance(brief, dict) else {}, symbols,
+                                    layer1=ctx["layer1"])
+        if keys:
+            symbols, exchange = list(keys["symbols"]), keys["exchange"]
+        if ctx.get("first_symbol_only"):
+            symbols = symbols[:1]  # the variant loop backtests the base on symbols[0] only
+        windows = _folds.fold_windows(inputs["folds"]["doc"], fold)
+        lacking = []
+        for symbol in symbols:
+            cov = _vc.window_coverage(
+                {"windows": windows, "timeframe": protocol.get("timeframe", "1h")},
+                exchange=exchange, symbol=symbol, layer1=ctx["layer1"],
+                precheck=ctx["precheck"], era_of=lambda ts: "era_unmapped")
+            lacking += [f"{symbol} {u['label']}: {u['reason']}" for u in cov["uncovered"]]
+    except Exception as e:  # noqa: BLE001 -- a reason, never a crash
+        return f"{prefix}: the child's coverage of fold {fold} cannot be judged ({type(e).__name__}: {e})"
+    if not lacking:
+        return None
+    more = f" (+{len(lacking) - 3} more)" if len(lacking) > 3 else ""
+    return (f"{prefix}: the child's base would not pass the data-availability gate on fold "
+            f"{fold} -- {'; '.join(lacking[:3])}{more}")
 
 
 def side_finding_start(p: dict, src: dict) -> dict:
@@ -1732,12 +1901,24 @@ def _side_finding_review(run_id: str, src: dict, p: dict, inputs: dict) -> dict:
     (every run but the source run) and the source run's own claim tests."""
     import reader_findings as _rf  # tools/ sibling; only side findings need it
     prior = _rf.prior_spec_hashes(inputs.get("memory") or {}, exclude_run=run_id)
+    # D-089: under orchestrator.folds.enabled (inputs["folds"]) the claim kinds of the folds
+    # flag (execution_behaviour) are accepted, as at the reading's own check
     return _rf.side_finding_review(p, prior=prior, own=_rf.own_spec_hashes(src.get("card")),
-                                   run_id=run_id)
+                                   run_id=run_id,
+                                   **({"folds": True} if inputs.get("folds") is not None else {}),
+                                   **({"trade_tests": True} if inputs.get("trade_tests") else {}))
 
 
 # E-068 PR 4 (D-071): the one warning kind a candidate can carry.
 UNKNOWN_CLASS_WARNING = "unknown_component_class"
+
+
+# E-073 step 2 (D-083): a side finding whose cited value did not match the file
+# its reader read, after the reader's one retry (citation_checks/<category>.yaml)
+CITATION_WARNING = "citation_mismatch"
+MERGE_NOTE = ("in-run duplicates merged (E-073): the same tests proposed by more than one "
+              "reader; not agreement and not extra evidence (the readers share their inputs), "
+              "so this candidate keeps its first source's scores")
 
 
 def class_name_warnings(proposal: dict, known, card_text) -> list:
@@ -1876,12 +2057,35 @@ def _score_key(c: dict) -> tuple:
             c["candidate_id"])
 
 
+def _fold_in_run_merges(cands: list) -> list:
+    """E-073 step 2 (D-083): an eligible in-run duplicate (a side finding
+    side_finding_merges.yaml lists after its group's primary) is folded into
+    that primary when the primary is eligible too: one candidate, the
+    PRIMARY's scores (never the higher of the two -- the readers share their
+    inputs, so a second proposal is not evidence), every source listed under
+    `merged_sources`. A duplicate whose primary is not eligible stays a
+    candidate of its own. No-op when no candidate carries `_merge`."""
+    by_id = {(c.get("source_run"), c["candidate_id"]): c for c in cands}
+    out = []
+    for c in cands:
+        m = c.get("_merge")
+        primary = by_id.get((c.get("source_run"), m["primary"])) if m and m["order"] else None
+        if primary is None:
+            out.append(c)
+            continue
+        primary.setdefault("merged_sources", [primary["proposal_ref"]]).append(c["proposal_ref"])
+        primary["merge_note"] = MERGE_NOTE
+    return out
+
+
 def _collapse(cands: list) -> list:
     """Card I: ELIGIBLE candidates that are the same thing collapse into one,
     keeping the highest score tuple. Called on eligible candidates only, so an
     ineligible duplicate can never shadow an eligible one. Patches: the FULL
     novelty key (config hash + symbols + timeframe + window set). Sketches:
-    identical kind + config_paths from the same source run."""
+    identical kind + config_paths from the same source run.
+    E-073 step 2: in-run merges are folded first (_fold_in_run_merges)."""
+    cands = _fold_in_run_merges(cands)
     groups, order = {}, []
     for c in cands:
         key = c["_collapse_key"]
@@ -1970,6 +2174,7 @@ def decide(inputs: dict, *, now: str, trigger: dict, select_entry=None) -> dict:
     ineligible = sorted((c for c in cands if not c["eligible"]), key=lambda c: c["candidate_id"])
     for c in eligible + ineligible:
         c.pop("_collapse_key", None)
+        c.pop("_merge", None)
 
     operator = _operator_entries(queue)
     scheduled = select_entry([e for e in (queue.get("queue") or []) if isinstance(e, dict)])
@@ -2128,6 +2333,22 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str) -> tuple:
     front["research_goal"] = goal
     mc = copy.deepcopy((src["pre_registration"] or {}).get("machine_constraints") or {})
     mc.pop("pass_rule", None)  # never inherit criteria (operator decision 2)
+    fa = cand.get("fold_assignment")
+    if fa is not None:
+        # E-077 PR-1 (D-085), orchestrator.folds.enabled: the child's windows are the next
+        # unused fold's, not the parent's. Only the window-defining keys change; symbols,
+        # timeframe, promotion, holdout, ... are copied as before.
+        fold, proto = fa["fold"], mc.get("protocol")
+        if fold is None or not isinstance(proto, dict):
+            raise DecideNextError(f"picked candidate {cid!r} has no fold to run on "
+                                  f"({fa}); it should have been infeasible")
+        start, end = _folds.fold_span(inputs["folds"]["doc"], fold)
+        proto = {k: v for k, v in proto.items() if k != "per_symbol_start"}
+        mc["protocol"] = {**proto, "start": start, "end": end,
+                          "window_months": _folds.BLOCK_MONTHS, "fold": fold}
+        front["research_goal"] += (
+            f" It backtests on fold {fold} ({', '.join(b['label'] for b in inputs['folds']['doc']['folds'][fold])};"
+            f" config/folds.yaml), the next fold its lineage ({', '.join(fa['lineage'])}) has not used.")
     front["machine_constraints"] = mc
     source = {
         "origin": ORIGIN_READER,
@@ -2138,7 +2359,9 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str) -> tuple:
         "decision_ref": decision_ref,
         "proposal": {k: copy.deepcopy(p[k])
                      for k in ("kind", "patch", "block", "claim", "evidence", "requires_feed",
-                               "config_change")
+                               "config_change",
+                               # E-077 PR-2 (D-087): the envelope, present only under the folds flag
+                               "vehicle", "combines_as", "fold_observed")
                      if k in p},
     }
     candidate = {}
