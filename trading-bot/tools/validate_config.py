@@ -344,12 +344,25 @@ def validate(config: dict) -> List[str]:
             violations.append(f"VIOLATION V13 {msg}")
 
     # V14: every vol_target op carries valid params (window, target_annual_vol,
-    # periods_per_year). Silent for every config without vol_target. Reuses the
-    # op's own check, so V14 fails on exactly the params the op refuses.
+    # periods_per_year) and sits in a strategies component's final `transforms`
+    # in a regime without `blocks` -- the one place the engine's required
+    # periods cover its window + 1 closes (strategy_engine._data_periods). In
+    # the regime detector, in `history_transforms` (applied from the
+    # component's own period) or in a block regime (its own buffer) it would
+    # raise on short data. Silent for every config without vol_target. Reuses
+    # the op's own param check, so V14 fails on exactly the params the op refuses.
     from strategies.registry import vol_target_param_errors
+    strat_regimes = config["strategies"].get("regimes", {})
     for loc, transforms in _all_transform_lists(config):
+        parts = loc.split(".")
+        allowed = (parts[0] == "strategies" and loc.endswith("].transforms")
+                   and "blocks" not in (strat_regimes.get(parts[2]) or {}))
         for k, step in enumerate(transforms):
             if step.get("op") == "vol_target":
+                if not allowed:
+                    violations.append(
+                        f"VIOLATION V14 {loc}[{k}]: vol_target is allowed only in a strategies "
+                        f"component's `transforms`, in a regime without `blocks`")
                 for msg in vol_target_param_errors(step.get("params", {})):
                     violations.append(f"VIOLATION V14 {loc}[{k}].params: {msg}")
 

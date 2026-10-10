@@ -189,6 +189,34 @@ def test_v14_valid_params_pass_and_invalid_fail():
     assert not [v for v in validate(_full([{"op": "identity"}])) if "V14" in v]
 
 
+VT = {"op": "vol_target", "params": P}
+
+
+def test_v14_refuses_vol_target_outside_a_strategy_components_transforms():
+    """Review of this PR: only strategies.<regime>.components[].transforms is
+    covered by required periods; elsewhere the op would raise on short data."""
+    hist = _full([{"op": "identity"}])
+    hist["strategies"]["regimes"]["unknown"]["components"][0]["history_transforms"] = [VT]
+    gated = _full([{"op": "identity"}])
+    gated["regime_detector"] = {
+        "mode": "threshold_rules", "default_regime": "unknown",
+        "components": [{"id": "er", "class": "strategies.strategy_components.EfficiencyRatioRegimeComponent",
+                        "params": {"period": 20}}],
+        "vetoes": [{"component": "er", "transforms": [{"op": "identity"}, VT], "op": ">", "value": 0.5,
+                    "regime": "chop"}],
+        "rules": []}
+    for cfg, loc in ((hist, "strategies.regimes.unknown.components[0].history_transforms[0]"),
+                     (gated, "regime_detector.vetoes[0].transforms[1]")):
+        v14 = [v for v in validate(cfg) if v.startswith("VIOLATION V14")]
+        assert v14 == [f"VIOLATION V14 {loc}: vol_target is allowed only in a strategies "
+                       f"component's `transforms`, in a regime without `blocks`"], v14
+    blocks = _full([{"op": "identity"}, VT])
+    blocks["strategies"]["regimes"]["unknown"]["blocks"] = []
+    msg = ("VIOLATION V14 strategies.regimes.unknown.components[0].transforms[1]: vol_target is "
+           "allowed only in a strategies component's `transforms`, in a regime without `blocks`")
+    assert msg in validate(blocks)
+
+
 # --- one strategy run on synthetic daily data -------------------------------
 
 def test_advanced_strategy_run_on_synthetic_daily_data(tmp_path):
