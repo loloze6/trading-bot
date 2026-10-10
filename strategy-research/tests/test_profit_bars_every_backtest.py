@@ -1008,3 +1008,36 @@ def test_cr5_runbook_has_a_separate_not_validated_resolution():
     assert "`idea_status` refuted or inconclusive" in row
     assert "never re-run by a resume" in row
     assert "the readers have not run yet" not in row
+
+
+# ---------------------------------------------------------------------------
+# D-101: a ruined backtest (equity <= 0) is a measured total loss, not a crash
+# ---------------------------------------------------------------------------
+
+def test_d101_ruin_is_its_own_error_with_the_drawdown(tmp_path):
+    import portfolio_daily as pdy
+    _write_equity_days(tmp_path / "results", "r", _days([100.0, 120.0, -30.0]))
+    with pytest.raises(pdy.PortfolioRuined) as ei:
+        pdy.window_equity_bars(tmp_path / "results" / "r" / "portfolio_states.csv")
+    e = ei.value
+    assert isinstance(e, ValueError) and not isinstance(e, pdy.PortfolioNotEvaluable)
+    assert str(e).startswith("equal-weight portfolio: ") and "has equity -30.0" in str(e)
+    assert e.equity == -30.0 and e.timestamp == "2020-01-04 23:00:00"
+    assert e.drawdown_pct == pytest.approx(125.0)          # 100 x (1 - (-30) / 120)
+
+
+@pytest.mark.parametrize("closes", [[0.0, 1.0], [-1.0, 1.0], [1.0, float("nan")]])
+def test_d101_no_earlier_peak_or_a_non_finite_value_stays_a_plain_error(tmp_path, closes):
+    import portfolio_daily as pdy
+    _write_equity_days(tmp_path / "results", "r", _days(closes))
+    with pytest.raises(ValueError, match="^equal-weight portfolio: ") as ei:
+        pdy.window_equity_bars(tmp_path / "results" / "r" / "portfolio_states.csv")
+    assert not isinstance(ei.value, pdy.PortfolioRuined)
+
+
+def test_d101_v1_portfolio_metrics_of_a_ruined_coin(tmp_path):
+    m = _pm(tmp_path, {("A", "w1"): _days([1.0, 2.0, -0.5]), ("B", "w1"): _days([1.0, 1.1, 1.2])})
+    assert m["max_drawdown_pct"][0] == pytest.approx(125.0)
+    assert "RUIN" in m["max_drawdown_pct"][1] and "D-101" in m["max_drawdown_pct"][1]
+    assert m["avg_daily_return"][0] is None
+    assert "not computed past a ruin" in m["not_evaluable_reason"]

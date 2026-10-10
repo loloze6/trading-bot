@@ -14742,6 +14742,30 @@ _BASIS_WORST_COIN = "worst_coin"
 PORTFOLIO_MIN_COMMON_DAY_COVERAGE = _pd.PORTFOLIO_MIN_COMMON_DAY_COVERAGE  # one definition
 
 
+def _ruin_text(exc) -> str:
+    """D-101: the sentence a ruined backtest's rows carry."""
+    return (f"RUIN: a backtest's equity fell to {exc.equity!r} at {exc.timestamp} "
+            f"({exc.path}); the engine has no liquidation, so the account went into debt. "
+            f"Graded as a total loss: drawdown {exc.drawdown_pct:.2f}% of that account from "
+            f"its earlier peak (D-101)")
+
+
+def _is_ruin_row(row: dict) -> bool:
+    """D-101: a bar row whose value is a ruin's drawdown. A measured total loss: the
+    partial-coverage holds (_cap_partial_coverage_bars, _hold_rows_not_evaluable)
+    never turn it into NOT_EVALUABLE, which the grid would read as INCONCLUSIVE."""
+    return str(row.get("note") or "").startswith("RUIN: ")
+
+
+def _ruined_portfolio_metrics(exc) -> dict:
+    """D-101: _portfolio_profit_metrics' result for a ruined backtest: the drawdown
+    row carries the ruined account's own drawdown (>= 100%, so it FAILs any bar
+    below 100%), the average daily return reads NOT_EVALUABLE with the reason."""
+    text = _ruin_text(exc)
+    return {"avg_daily_return": (None, text), "max_drawdown_pct": (exc.drawdown_pct, text),
+            "not_evaluable_reason": f"not computed past a ruin: {text}"}
+
+
 def _portfolio_profit_metrics(run_dir: Path, pr: dict) -> dict:
     """avg_daily_return_min and max_drawdown_pct_max actual values for ONE backtest
     candidate, judged on the portfolio you would actually trade: every tested coin
@@ -14797,6 +14821,8 @@ def _portfolio_profit_metrics(run_dir: Path, pr: dict) -> dict:
         windows, coins = _pd.load_windows(run_dir, pr)
     except _pd.PortfolioNotEvaluable as exc:
         return _none(str(exc))
+    except _pd.PortfolioRuined as exc:
+        return _ruined_portfolio_metrics(exc)
 
     returns: list = []
     window_dd: dict = {}
@@ -15354,6 +15380,15 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
         chain, coins = _whole_test_chain(run_dir, pr)
     except _pd.PortfolioNotEvaluable as exc:
         chain_reason = f"whole-test portfolio NOT_EVALUABLE: {exc}"
+    except _pd.PortfolioRuined as exc:
+        # D-101: a measured total loss, never NOT_EVALUABLE (which the grid reads as
+        # INCONCLUSIVE): the drawdown row FAILs on the ruined account's own drawdown.
+        _row("max_drawdown_pct_max", exc.drawdown_pct, note=_ruin_text(exc),
+             detail={"ruin": {"file": str(exc.path), "timestamp": exc.timestamp,
+                              "equity": exc.equity}})
+        for name in ("avg_daily_return_min", "sharpe_min", "buy_and_hold_excess_return_min"):
+            _row(name, reason=f"not computed past a ruin: {_ruin_text(exc)}")
+        return out
     if chain is None:
         for name in ("max_drawdown_pct_max", "avg_daily_return_min", "sharpe_min",
                      "buy_and_hold_excess_return_min"):
@@ -15544,7 +15579,7 @@ def _cap_partial_coverage_bars(results: list, reason: str) -> tuple:
     capped = [({**r, "result": "NOT_EVALUABLE",
                 "not_evaluable_reason": (f"{reason} -- {r['name']} is time-dependent (D-042, "
                                          f"temporary until E-062 S2b)")}
-               if r.get("name") in names else r) for r in results]
+               if r.get("name") in names and not _is_ruin_row(r) else r) for r in results]
     overall = "PASS" if {r["result"] for r in capped} == {"PASS"} else "FAIL"
     reasons = [
         f"{r['name']}: {r['result']} (threshold={r['threshold']!r}, actual={r['actual']!r})"
@@ -15566,7 +15601,7 @@ def _hold_rows_not_evaluable(results: list, names, reason: str) -> tuple:
             f"{reason}: the graded bars lack {missing}, so they cannot be held NOT_EVALUABLE -- "
             f"refusing to grade.")
     held = [({**r, "result": "NOT_EVALUABLE", "not_evaluable_reason": reason}
-             if r.get("name") in names else r) for r in results]
+             if r.get("name") in names and not _is_ruin_row(r) else r) for r in results]
     overall = "PASS" if {r["result"] for r in held} == {"PASS"} else "FAIL"
     reasons = [
         f"{r['name']}: {r['result']} (threshold={r['threshold']!r}, actual={r['actual']!r})"
@@ -17910,6 +17945,27 @@ def _claim_revision_resumed(card_claim, prior: dict) -> dict:
             "claim_current": card_claim}
 
 
+def _claim_frozen_for_fold(arts: Path) -> str | None:
+    """D-100, under orchestrator.folds.enabled only: why this run's claim must not be
+    revised, else None. A child decide-next built from a side finding carries the source
+    claim pre-filled (research_brief.yaml candidate.claim, candidate.source.proposal_ref);
+    tools/fold_confirm grades that claim on the child's fold only if the child's card keeps
+    the same tests (spec_hash), so a revision would leave nothing to grade (run_077: a
+    trade-level claim, which never reads the forecast block, was rewritten into a bar test
+    and graded not_comparable). Flag off: None, nothing read."""
+    if not _folds_enabled():
+        return None
+    brief = load_yaml(arts / "research_brief.yaml") if (arts / "research_brief.yaml").exists() else None
+    cand = (brief or {}).get("candidate") if isinstance(brief, dict) else None
+    if not isinstance(cand, dict) or not isinstance(cand.get("claim"), dict):
+        return None
+    ref = (cand.get("source") or {}).get("proposal_ref") if isinstance(cand.get("source"), dict) else None
+    if not ref:
+        return None
+    return (f"the claim was pre-filled from {ref} and is graded on this run's fold by its "
+            f"tests' spec_hash; it is never revised (D-100)")
+
+
 def _claim_revision_body(run_dir: Path, run_id: str) -> dict:
     cc = _claim_card_module()
     arts = run_dir / "artifacts"
@@ -17927,6 +17983,10 @@ def _claim_revision_body(run_dir: Path, run_id: str) -> dict:
     kind = ((manifest or {}).get("block") or {}).get("kind")
     claim = card.get("claim")
     before = cc.block_visibility(claim, kind)
+    frozen = _claim_frozen_for_fold(arts)
+    if frozen:
+        return {"status": "frozen", "reason": frozen, "manifest_kind": kind,
+                "visibility_before": before, "claim_after": claim, "visibility_after": before}
     prior = _claim_revision_state(run_dir)
     if prior.get("revision_called"):
         # checked before "not needed": after an accepted splice the card's own

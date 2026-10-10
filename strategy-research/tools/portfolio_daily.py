@@ -38,6 +38,24 @@ from pathlib import Path
 PORTFOLIO_MIN_COMMON_DAY_COVERAGE = 0.9
 
 
+class PortfolioRuined(ValueError):
+    """D-101: one (coin, window) backtest's equity fell to zero or below -- the
+    engine has no liquidation, so the account went into debt and kept trading.
+    Not a missing input: a measured total loss. Deliberately NOT a
+    PortfolioNotEvaluable (that reads NOT_EVALUABLE, which the grid rolls up to
+    INCONCLUSIVE, flattering a ruin); the profit-bar graders catch it and grade
+    the drawdown bar FAIL on `drawdown_pct`. Every other caller still gets the
+    ValueError, with the same message as before. `drawdown_pct`: 100 x (1 -
+    equity / peak), the peak being the highest equity on the earlier rows of the
+    same file, so >= 100."""
+
+    def __init__(self, message: str, *, path, timestamp: str, equity: float,
+                 drawdown_pct: float):
+        super().__init__(message)
+        self.path, self.timestamp, self.equity = path, timestamp, equity
+        self.drawdown_pct = drawdown_pct
+
+
 class PortfolioNotEvaluable(ValueError):
     """The portfolio cannot be built from these (well-formed) inputs: a file is
     missing, the coin set differs, a window is too thin. The message is the
@@ -73,6 +91,7 @@ def window_equity_bars(path: Path) -> dict:
         if missing:
             raise ValueError(f"equal-weight portfolio: {path} lacks column(s) {sorted(missing)}")
         rows = []
+        peak = None
         for row in reader:
             if str(row["regime"]).strip().upper() == "NOT_READY":
                 continue
@@ -84,9 +103,15 @@ def window_equity_bars(path: Path) -> dict:
             except (TypeError, ValueError):
                 raise ValueError(f"equal-weight portfolio: {path} has a non-numeric "
                                  f"postRebalance_total_value at {row['timestamp']!r}")
+            if math.isfinite(equity) and equity <= 0 and peak is not None:
+                raise PortfolioRuined(
+                    f"equal-weight portfolio: {path} has equity {equity!r} at "
+                    f"{row['timestamp']!r}", path=path, timestamp=str(row["timestamp"]).strip(),
+                    equity=equity, drawdown_pct=100.0 * (1.0 - equity / peak))
             if not math.isfinite(equity) or equity <= 0:
                 raise ValueError(f"equal-weight portfolio: {path} has equity {equity!r} at "
                                  f"{row['timestamp']!r}")
+            peak = equity if peak is None else max(peak, equity)
             rows.append((ts, equity))
     rows.sort(key=lambda r: r[0])
     return dict(rows)
