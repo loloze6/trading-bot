@@ -456,12 +456,19 @@ def _rounds_to(value: float, shown: float, sd: int) -> bool:
         return False
 
 
-def prose_number_errors(fields: dict, evidence, entries: dict, tests=None) -> list:
+def prose_number_errors(fields: dict, evidence, entries: dict, tests=None,
+                        settings=None) -> list:
     """The message of each unverified number in the answer's prose (number_hits)."""
-    return [h[4] for h in number_hits(fields, evidence, entries, tests)]
+    return [h[4] for h in number_hits(fields, evidence, entries, tests, settings)]
 
 
-def number_hits(fields: dict, evidence, entries: dict, tests=None) -> list:
+def config_settings(config) -> set:
+    """D-098: every finite number of a run's base strategy config (its settings: periods,
+    spans, factors, weights, lookbacks); empty for anything that is not a config."""
+    return _test_numbers(config, set()) if isinstance(config, dict) else set()
+
+
+def number_hits(fields: dict, evidence, entries: dict, tests=None, settings=None) -> list:
     """Every number written in the answer's prose that the session did not see, as
     (label, start, end, written, message) (review of #359: free-text numbers were never
     checked). Since D-096 such a number is masked and listed, not refused (check_answer).
@@ -473,6 +480,10 @@ def number_hits(fields: dict, evidence, entries: dict, tests=None) -> list:
       * it is a number of the claim's own test blocks in [0, 1] written as a percent, no sign,
         no exponent ("top 20%" for q 0.2; smoke 4, 2026-10-09). Known gap: whether the percent
         reads right is not checked ("forecast above 20%" passes for `forecast > 0.2`);
+      * it is a value of the claim's own test blocks or a setting of the run's base config
+        (`settings`), written exactly with its own sign ("-5" for `entry_forecast > -5`, "a
+        21-bar EMA"; D-098, pilot 2a: 29 of Sonnet's 51 masked numbers were such settings).
+        Known gap: a common small setting (2, 10) also passes where it is not one;
       * or it rounds a value cited in `evidence` (each citation already checked against the
         log) to the digits it shows; `x%` is x/100 (or x); a written sign must match the
         cited sign, an unsigned number is compared without sign ("0.08% lower" for -0.0008).
@@ -495,6 +506,7 @@ def number_hits(fields: dict, evidence, entries: dict, tests=None) -> list:
     own = _test_numbers(tests, set())
     exact = horizons | own
     own_unit = {n for n in own if 0 <= n <= 1}
+    checkable = own | (settings or set())
     hits = []
     for label, text in fields.items():
         if not isinstance(text, str):
@@ -517,6 +529,10 @@ def number_hits(fields: dict, evidence, entries: dict, tests=None) -> list:
             # a test's own number or a cited horizon: unsigned and exact only (it is a setting
             # of the test, never an effect)
             if not pct and not exp and not sign and "," not in mantissa and x in exact:
+                continue
+            # D-098: a test value or a config setting the code can check, with its own sign
+            if not pct and not exp and "," not in mantissa \
+                    and (-x if negative else x) in checkable:
                 continue
             # a test's own number in [0, 1] as a percent: x/100 computed exactly in decimal
             # (33.3 / 100.0 != 0.333 in floats)
@@ -571,7 +587,8 @@ def _unverified(hits: list) -> list:
 
 
 def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_check,
-                 holdout_start: str, fold: str | None, model_id: str) -> tuple:
+                 holdout_start: str, fold: str | None, model_id: str,
+                 settings=None) -> tuple:
     """(reading, record, errors). `entries`: {id: log entry} of this lens's query log.
     `claim_check(claim)`: claim_card.check_claim with the pipeline's keywords (folds and the
     trade family). The reading is the v3 reader-proposal shape decide-next reads unchanged;
@@ -633,7 +650,7 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
                 {"no_claim.reason": nc.get("reason"),
                  "no_claim.best_rejected.statement": br.get("statement")
                  if isinstance(br, dict) else None}, evidence, entries,
-                tests=[ktest] if isinstance(ktest, dict) else None)
+                tests=[ktest] if isinstance(ktest, dict) else None, settings=settings)
             nc = mask_hits(nc, "no_claim", hits)
             record["unverified_numbers"] = _unverified(hits)
         record["no_claim"] = nc
@@ -676,7 +693,18 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
                 f"comes too late' has no claim test yet (it needs the return from bar N to the "
                 f"exit): explore it with event_study (trade_filter on {fields[0]}) and, if it "
                 f"is your best idea, end with no_claim and give it as best_rejected")
-    hashes = [t["spec_hash"] for t in res.tests] if not res.errors else []
+    # D-098 (pilot 2a): the forecast's rank IC over all bars is what the run's protocol
+    # already tests; restating it spends a fold-B child to learn nothing new
+    for i, t in enumerate(_tests_of(claim)):
+        sel = t.get("selector")
+        if t.get("statistic") == "rank_ic" and isinstance(sel, dict) and sel.get("kind") == "all":
+            errors.append(
+                f"claim test {t.get('name', i)!r} is the forecast's rank IC over all bars: the "
+                f"run's protocol already tests that. Claim where the forecast behaves "
+                f"differently: a selector on part of the bars (calendar, regime, event, "
+                f"quantile), with a statement that says only what that test measures, or end "
+                f"with no_claim")
+    hashes =[t["spec_hash"] for t in res.tests] if not res.errors else []
     ran = conditional_effect_hashes(entries)
     by_test = runs_by_test(entries)
     blocks = {t["name"]: t for t in _tests_of(claim) if isinstance(t.get("name"), str)}
@@ -744,7 +772,7 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
         # D-096: an unverified number is masked in what is stored and passed on (the reading,
         # the child's pre-filled claim) and listed, never a refusal
         hits = number_hits({f"claim.{k}": claim.get(k) for k in PROSE_KEYS},
-                           evidence, entries, tests=claim.get("tests"))
+                           evidence, entries, tests=claim.get("tests"), settings=settings)
         claim = mask_hits(claim, "claim", hits)
         record["unverified_numbers"] = _unverified(hits)
     # the reading checks (shape, vehicle) need a claim the claim card accepted
