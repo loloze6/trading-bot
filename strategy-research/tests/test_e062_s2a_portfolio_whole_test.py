@@ -1262,10 +1262,12 @@ def test_run_protocol_trade_summary_byte_identical_after_the_refactor(kind):
 # Regression: the v1 per-window functions are untouched
 # ---------------------------------------------------------------------------
 
-# sha256 of tools/portfolio_daily.py at origin/master 21920594 (the base of this
-# branch). S2a adds a sibling module and does not edit the v1 file; a change to
-# it belongs to a later slice that must re-pin this value deliberately.
-_V1_SHA256 = "3091ef77aa796ca5ff379d1179fee20af2babdc5b17f940b4e862e91f7ae015d"
+# sha256 of tools/portfolio_daily.py. First pinned at origin/master 21920594 (S2a
+# adds a sibling module and does not edit the v1 file); a change to it must re-pin
+# this value deliberately. Re-pinned by D-101 (2026-10-10): PortfolioRuined, a
+# ValueError subclass raised for equity <= 0 after a positive peak (same message);
+# outputs on well-formed inputs are unchanged (test_v1_outputs_pinned_on_a_fixture).
+_V1_SHA256 = "074dab846d09c4bd5a4851b5171ff6e77078698dca28e13c99f52496dfdf2d24"
 
 
 def test_v1_module_file_is_unchanged():
