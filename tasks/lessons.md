@@ -61,3 +61,31 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-09 -- A lane's reported counts are claims to measure
 - **Pattern:** a build agent reported "205 tests before"; master had 198. The PR body would have carried the wrong baseline.
 - **Rule:** before quoting a before/after test count in a PR body, run the file on master (or the base commit) myself.
+
+## 2026-10-10 -- A rule that needs a third exception is a design signal: step back to the objective
+- **Pattern:** the analyst's prose-number rule got an exception per smoke (#368, #370, #371) and I proposed a further batch (signed values, event-study offsets, hour buckets). The operator asked for a step back: the rule raised 71 of 94 errors over smokes 2-6 while protecting the least load-bearing output; it became mask-and-list (D-096).
+- **Rule:** before adding another exception to a check, tally what it refused in the live records and trace what its output feeds; if the protected output is not load-bearing, change the mechanism, not the whitelist.
+
+## 2026-10-10 -- Compute a share before stating it
+- **Pattern:** I told the operator a one-turn retry was "about 60%" of each lens's real cost and wrote it in the E-069 doc; computed from the tokens it was about 35%.
+- **Rule:** a percentage, ratio or total goes into a message or a doc only after it is computed from the records in this session, with the inputs named.
+
+## 2026-10-10 -- Attributions and names in docs are checked like code claims
+- **Pattern:** the E-069 doc said the analyst cap was "$1.50 until D-097's PR, #371" (it was #371 alone; D-097 is #373), and D-098 named `claim_tests._check_spec` (it is `check_spec`). The fact-check and a grep caught them.
+- **Rule:** every "changed in PR #N / decided in D-NNN / function X" in a doc is checked with `git log` / `gh pr view` / grep before the commit.
+
+## 2026-10-10 -- Say what a test cannot distinguish, not that its result is "automatic"
+- **Pattern:** I called "long-held trades lose more" near-automatic; the operator challenged it: it may mean the exit is too late. The accurate statement: the test cannot tell "exit too late" from "losers stay open longer", and the test that could does not exist yet (CUL-425).
+- **Rule:** when refusing or criticising a claim, name the two explanations its test cannot separate and the test that would; keep a legitimate idea alive as a backlog item.
+
+## 2026-10-10 -- A finding about one strategy must carry the strategy
+- **Pattern:** the operator spotted that "long trades lose more" recorded without context would read as a market fact for every later run; the memory view showed only the source run id.
+- **Rule:** any recorded finding whose truth depends on how a strategy enters or exits carries that strategy (code-written components, the idea id) wherever later stages read it.
+
+## 2026-10-10 -- A template the model copies is code: test that it parses
+- **Pattern:** the analyst skill's answer template (`statement: >  one sentence ...`) was invalid YAML; Haiku copied it twice in the pilot and was refused twice.
+- **Rule:** every example block a model is told to copy (YAML/JSON templates in skills and prompts) is parsed by a test.
+
+## 2026-10-10 -- Reviewer roles: Fable for direction, Sonnet for code
+- **Pattern:** the operator stopped a Fable code review: Fable is reserved for strategic review of the direction; code reviews and fact-checks cost less with a Sonnet reviewer, one round, one PR where asked.
+- **Rule:** PR reviews and doc fact-checks go to a Sonnet reviewer; the persistent Fable agent is used only for step-backs and next-step advice; every reviewer claim is still verified (the Fable advice "rank_ic with a complement baseline" was impossible: `claim_tests.check_spec` refuses any baseline for rank_ic).
