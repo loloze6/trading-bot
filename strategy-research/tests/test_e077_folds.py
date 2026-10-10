@@ -81,8 +81,8 @@ def test_the_real_file_has_three_folds_of_six_exact_blocks():
     assert {f: len(b) for f, b in DOC["folds"].items()} == {"A": 6, "B": 6, "C": 6}
     labels = {f: [b["label"] for b in blocks] for f, blocks in DOC["folds"].items()}
     assert labels["A"] == ["2022-01", "2022-05", "2022-09", "2023-01", "2023-05", "2023-09"]
-    assert labels["B"] == ["2018-01", "2018-09", "2019-05", "2020-01", "2020-09", "2021-05"]
-    assert labels["C"] == ["2018-05", "2019-01", "2019-09", "2020-05", "2021-01", "2021-09"]
+    assert labels["B"] == ["2018-05", "2019-01", "2019-09", "2020-05", "2021-01", "2021-09"]
+    assert labels["C"] == ["2018-01", "2018-09", "2019-05", "2020-01", "2020-09", "2021-05"]
     ends = {"01": "04-30", "05": "08-31", "09": "12-31"}
     for blocks in DOC["folds"].values():
         for b in blocks:
@@ -156,7 +156,7 @@ def _block(label, start, end):
      "label"),
     ("a fold with five blocks", lambda d: d["folds"]["B"].pop(), "exactly 6 blocks"),
     ("the same block in two folds",
-     lambda d: d["folds"]["C"].__setitem__(0, _block("2018-01", "2018-01-01", "2018-04-30")),
+     lambda d: d["folds"]["C"].__setitem__(0, _block("2018-05", "2018-05-01", "2018-08-31")),
      "is in fold B and fold C"),
     ("blocks out of order",
      lambda d: d["folds"]["B"].reverse(), "ascending"),
@@ -262,9 +262,9 @@ def test_a_child_of_a_fold_a_run_gets_fold_b():
     front = _front(inputs, record)
     proto = front["machine_constraints"]["protocol"]
     assert proto["fold"] == "B"
-    assert (proto["start"], proto["end"]) == ("2018-01-01", "2021-08-31")
+    assert (proto["start"], proto["end"]) == ("2018-05-01", "2021-12-31")
     assert proto["window_months"] == 4
-    assert "fold B" in front["research_goal"] and "2018-09" in front["research_goal"]
+    assert "fold B" in front["research_goal"] and "2019-01" in front["research_goal"]
 
 
 def test_a_child_of_a_fold_b_run_gets_fold_c():
@@ -274,7 +274,7 @@ def test_a_child_of_a_fold_b_run_gets_fold_c():
     record = _decide(inputs, "run_080")
     assert _cand(record, pid)["fold_assignment"]["fold"] == "C"
     proto = _front(inputs, record)["machine_constraints"]["protocol"]
-    assert proto["fold"] == "C" and (proto["start"], proto["end"]) == ("2018-05-01", "2021-12-31")
+    assert proto["fold"] == "C" and (proto["start"], proto["end"]) == ("2018-01-01", "2021-08-31")
 
 
 def test_the_first_generation_child_skips_a_fold_only_its_own_lineage_used():
@@ -331,9 +331,9 @@ def test_a_parent_whose_windows_overlap_no_fold_has_used_none():
 
 
 def test_an_overlap_of_one_day_counts_as_using_the_fold():
-    one_day = [("2018-04-30", "2018-04-30")]  # last day of fold B's first block
-    assert rf.folds_used_by(DOC, one_day) == ["B"]
-    assert rf.folds_used_by(DOC, [("2018-05-01", "2018-05-01")]) == ["C"]
+    one_day = [("2018-04-30", "2018-04-30")]  # last day of fold C's first block
+    assert rf.folds_used_by(DOC, one_day) == ["C"]
+    assert rf.folds_used_by(DOC, [("2018-05-01", "2018-05-01")]) == ["B"]
     assert rf.folds_used_by(DOC, [("2018-04-30", "2018-05-01")]) == ["B", "C"]
 
 
@@ -900,7 +900,7 @@ def test_a_coin_listed_after_the_folds_blocks_is_infeasible_with_the_reason():
     feas = cand["gates"]["feasibility"]
     assert not cand["eligible"] and feas["result"] == "INFEASIBLE"
     why = [r for r in feas["reasons"] if r.startswith("fold_B_lacks_data")]
-    assert len(why) == 1 and "SOLUSDT 2018-01" in why[0] and "+" in why[0]
+    assert len(why) == 1 and "SOLUSDT 2018-05" in why[0] and "+" in why[0]
     # the lineage order holds: it did not skip ahead to C, and the campaign did not crash
     assert cand["fold_assignment"]["fold"] == "B"
     assert record["stop"]["reason"] == "no_eligible_candidate"
