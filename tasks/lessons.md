@@ -101,3 +101,7 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-10 -- Mechanisms described from memory, files scripted from a guess
 - **Pattern:** I wrote "the engine flattens at a gap" (it has three tiers: ignore, block new entries, flatten at the warmup); I scripted against `confirmations.yaml`'s `fold_confirmations` (the list is `looks`); I planned the campaign steps on the main checkout without checking it held the analyst code (143 commits behind).
 - **Rule:** read the code before describing a mechanism to the operator; open a file before scripting against its keys; check that the checkout that will run a plan contains the code the plan needs (`git merge-base --is-ancestor`).
+
+## 2026-10-10 -- Cost share read from an unweighted per-trade ratio; a brief drafted against the wrong flag set
+- **Pattern:** my first read of cost drag used the per-trade mean (`realized_edge_to_cost_ratio`), which gave run_079 a positive edge of 1.69x cost while its account lost money in every window: the larger positions lose. Separately, the lane-1 basket idea collides with the operator's live `variant_loop` flag (one coin per variant), found only by reading the variant code.
+- **Rule:** measure cost drag at portfolio weight (net % of account per trade) and cross-check its sign against the account's result before reporting; before drafting a brief, read the operator's live flag set and check the brief's shape (coins per variant, components, sizing) against the code paths those flags select.
