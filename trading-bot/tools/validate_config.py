@@ -343,6 +343,16 @@ def validate(config: dict) -> List[str]:
         for msg in validate_block_combiner(rname, rcfg):
             violations.append(f"VIOLATION V13 {msg}")
 
+    # V14: every vol_target op carries valid params (window, target_annual_vol,
+    # periods_per_year). Silent for every config without vol_target. Reuses the
+    # op's own check, so V14 fails on exactly the params the op refuses.
+    from strategies.registry import vol_target_param_errors
+    for loc, transforms in _all_transform_lists(config):
+        for k, step in enumerate(transforms):
+            if step.get("op") == "vol_target":
+                for msg in vol_target_param_errors(step.get("params", {})):
+                    violations.append(f"VIOLATION V14 {loc}[{k}].params: {msg}")
+
     return violations
 
 
