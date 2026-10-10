@@ -14,7 +14,7 @@ numbers are those of master `52bb0fa3` (2026-10-10).
 - The analyst (E-075) is the only stage with its own model setting:
   `orchestrator.analyst.model` in `config/campaign_config.yaml`, read by `_analyst_caps`
   (`:5000`, default `_CLAUDE_WORKER_MODEL`). Its caps: 40 turns, $3, 15 minutes
-  (`_ANALYST_DEFAULT_CAPS`, `:4973`; $1.50 until D-097's PR, #371).
+  (`_ANALYST_DEFAULT_CAPS`, `:4973`; $1.50 until PR #371, commit f28483ef).
 
 ## 2. `cost_usd` is the CLI's estimate, not the bill
 
@@ -22,13 +22,16 @@ numbers are those of master `52bb0fa3` (2026-10-10).
   `config/requirements-mac.txt:29`), which runs its bundled Claude Code CLI, version 2.1.142.
   `cost_usd` in the audit log is that CLI's own estimate.
 - The CLI 2.1.142 binary does not contain the strings `claude-haiku-5-5` or
-  `claude-sonnet-5-5` (byte search, 2026-10-09). It still runs them, but prices them with a
-  fallback.
-- Measured (smoke 5, `claude-haiku-5-5`): a least-squares fit of the four audit entries'
-  tokens against their `cost_usd` gives about $24.6 per million output tokens, $0.48 per
-  million cache reads and $7.05 per million cache writes, i.e. about Opus list rates, fitting
-  all four within $0.001. At the Haiku 5.5 list price the same tokens cost about $0.06
-  instead of the $3.11 reported (estimate: cache prices assumed at 1.25x / 0.1x input).
+  `claude-sonnet-5-5` (byte search, 2026-10-09). It still runs them; how it prices them is
+  inferred from the numbers below, not observed in its code.
+- Measured (smoke 5, `claude-haiku-5-5`): with the input price fixed at $5 per million
+  tokens (input is a few dozen tokens per session), a least-squares fit of the four audit
+  entries' tokens against their `cost_usd` gives about $24.6 per million output tokens, $0.48
+  per million cache reads and $7.05 per million cache writes (residuals at most $0.0007; three
+  free prices on four points, so weak evidence of the exact rates). That is consistent with
+  roughly Opus-class rates (output about $25 per million), not with a Haiku price. At the
+  Haiku 5.5 list price the same tokens cost about $0.06 instead of the $3.11 reported
+  (estimate: cache prices assumed at 1.25x / 0.1x input).
 - The token counts in the audit log are exact (`_usage_token_record`); the real bill is in
   the Console.
 - The caps are enforced on that estimate: `max_budget_usd` reaches the CLI as
@@ -67,7 +70,7 @@ numbers are those of master `52bb0fa3` (2026-10-10).
 
 | Smoke | Model | Reported `cost_usd` (both lenses) | What was accepted |
 |---|---|---|---|
-| 2-4 | `claude-haiku-4-5` (known to the CLI: real price) | $0.89-0.92 each | 2 of 6 lens sessions, neither usable |
+| 2-4 | `claude-haiku-4-5` (its id is in the CLI binary, so probably priced at its own rates: not measured) | $0.89-0.92 each | 2 of 6 lens sessions; per the 2026-10-09 session log neither was usable (one backwards, one near-mechanical) |
 | 5 | `claude-haiku-5-5` | $3.11 (estimate at list price: about $0.06) | 2 of 2: a weak claim (after a no_claim to claim flip), an honest no_claim |
 | 6 | `claude-sonnet-5-5` | $2.83 (estimate at list price: about $1.05) | 1 of 2: a plausible claim (lots opened at a forecast of -15 or lower earn less, 5 of 6 windows) |
 
@@ -79,10 +82,10 @@ Tokens per attempt (input / output / cache read / cache write):
 | 5 forecast, retry (1 turn) | 4 / 6,084 / 1,321 / 63,982 |
 | 5 trade_efficiency, 1st (11 turns) | 32 / 7,973 / 430,677 / 67,770 |
 | 5 trade_efficiency, retry | 4 / 3,624 / 1,321 / 63,272 |
-| 6 forecast, 1st (17 turns) | - / 6,698 / 578,554 / 73,748 |
-| 6 forecast, retry | - / 1,417 / 1,321 / 68,394 |
-| 6 trade_efficiency, 1st (16 turns) | - / 4,166 / 620,621 / 65,604 |
-| 6 trade_efficiency, retry | - / 1,250 / 1,321 / 64,045 |
+| 6 forecast, 1st (17 turns) | 40 / 6,698 / 578,554 / 73,748 |
+| 6 forecast, retry | 4 / 1,417 / 1,321 / 68,394 |
+| 6 trade_efficiency, 1st (16 turns) | 44 / 4,166 / 620,621 / 65,604 |
+| 6 trade_efficiency, retry | 4 / 1,250 / 1,321 / 64,045 |
 
 Sonnet 5.5 wrote fewer output tokens than Haiku 5.5 on the same lens (6,698 against 11,933).
 Two sessions per model cannot choose a model: the pilot (E-075 PR5_RUNBOOK section 2a) is
