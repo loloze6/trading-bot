@@ -17910,6 +17910,27 @@ def _claim_revision_resumed(card_claim, prior: dict) -> dict:
             "claim_current": card_claim}
 
 
+def _claim_frozen_for_fold(arts: Path) -> str | None:
+    """D-100, under orchestrator.folds.enabled only: why this run's claim must not be
+    revised, else None. A child decide-next built from a side finding carries the source
+    claim pre-filled (research_brief.yaml candidate.claim, candidate.source.proposal_ref);
+    tools/fold_confirm grades that claim on the child's fold only if the child's card keeps
+    the same tests (spec_hash), so a revision would leave nothing to grade (run_077: a
+    trade-level claim, which never reads the forecast block, was rewritten into a bar test
+    and graded not_comparable). Flag off: None, nothing read."""
+    if not _folds_enabled():
+        return None
+    brief = load_yaml(arts / "research_brief.yaml") if (arts / "research_brief.yaml").exists() else None
+    cand = (brief or {}).get("candidate") if isinstance(brief, dict) else None
+    if not isinstance(cand, dict) or not isinstance(cand.get("claim"), dict):
+        return None
+    ref = (cand.get("source") or {}).get("proposal_ref") if isinstance(cand.get("source"), dict) else None
+    if not ref:
+        return None
+    return (f"the claim was pre-filled from {ref} and is graded on this run's fold by its "
+            f"tests' spec_hash; it is never revised (D-100)")
+
+
 def _claim_revision_body(run_dir: Path, run_id: str) -> dict:
     cc = _claim_card_module()
     arts = run_dir / "artifacts"
@@ -17927,6 +17948,10 @@ def _claim_revision_body(run_dir: Path, run_id: str) -> dict:
     kind = ((manifest or {}).get("block") or {}).get("kind")
     claim = card.get("claim")
     before = cc.block_visibility(claim, kind)
+    frozen = _claim_frozen_for_fold(arts)
+    if frozen:
+        return {"status": "frozen", "reason": frozen, "manifest_kind": kind,
+                "visibility_before": before, "claim_after": claim, "visibility_after": before}
     prior = _claim_revision_state(run_dir)
     if prior.get("revision_called"):
         # checked before "not needed": after an accepted splice the card's own

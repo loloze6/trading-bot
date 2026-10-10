@@ -716,3 +716,64 @@ def test_a_card_sharing_the_id_but_not_the_content_is_not_a_twin(blind_run, monk
     rpr._claim_revision_after_1b(run_dir, run_dir.name)
     assert _rev(run_dir)["cards_updated"] == ["hypothesis_card.yaml", "hypothesis_card_1.yaml"]
     assert (arts / "hypothesis_card_3.yaml").read_bytes() == before
+
+
+# ---------------------------------------------------------------------------
+# D-100: a child built to confirm a claim on its fold keeps that claim frozen
+# ---------------------------------------------------------------------------
+
+REF = "runs/run_071/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_071-4"
+
+
+def _child_brief(run_dir, claim, ref=REF):
+    cand = {"claim": copy.deepcopy(claim)}
+    if ref is not None:
+        cand["source"] = {"proposal_ref": ref}
+    rpr.save_yaml(run_dir / "artifacts" / "research_brief.yaml", {"candidate": cand})
+
+
+def test_folds_on_a_claim_built_child_is_frozen_no_call(blind_run, monkeypatch, no_revision_call):
+    _set_orchestrator({**ON, "folds": {"enabled": True}})
+    run_dir = blind_run
+    card_before = (run_dir / "artifacts" / "hypothesis_card.yaml").read_bytes()
+    old = rpr.load_yaml(run_dir / "artifacts" / "hypothesis_card.yaml")["claim"]
+    _child_brief(run_dir, old)
+    rpr._claim_revision_after_1b(run_dir, run_dir.name)
+    doc = _rev(run_dir)
+    assert doc["status"] == "frozen" and REF in doc["reason"] and "D-100" in doc["reason"]
+    assert doc["visibility_before"] == "blind" and doc["claim_after"] == old
+    assert (run_dir / "artifacts" / "hypothesis_card.yaml").read_bytes() == card_before
+    state = _state(run_dir)
+    assert rpr.CLAIM_REVISION_STATE_KEY not in state
+    assert rpr.CLAIM_REVISION_AUDIT_KEY not in (state.get("audit_log") or {})
+
+
+@pytest.mark.parametrize("folds,brief", [
+    (False, "child"),            # flag off: exactly as before, even for a claim-built child
+    (True, "no_ref"),            # a pre-filled claim with no source proposal
+    (True, "no_claim"),          # a brief without a pre-filled claim
+    (True, None),                # no research_brief.yaml
+])
+def test_otherwise_the_blind_claim_is_still_revised(blind_run, monkeypatch, folds, brief):
+    _set_orchestrator({**ON, "folds": {"enabled": True}} if folds else ON)
+    run_dir = blind_run
+    old = rpr.load_yaml(run_dir / "artifacts" / "hypothesis_card.yaml")["claim"]
+    if brief == "child":
+        _child_brief(run_dir, old)
+    elif brief == "no_ref":
+        _child_brief(run_dir, old, ref=None)
+    elif brief == "no_claim":
+        rpr.save_yaml(run_dir / "artifacts" / "research_brief.yaml",
+                      {"candidate": {"source": {"proposal_ref": REF}}})
+    fake = FakeLLM(_answer(_revised(old, FC_Q)))
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", fake)
+    rpr._claim_revision_after_1b(run_dir, run_dir.name)
+    assert len(fake.prompts) == 1 and _rev(run_dir)["status"] == "accepted"
+
+
+def test_frozen_check_reads_nothing_with_the_flag_off(tmp_path, monkeypatch):
+    _set_orchestrator(ON)
+    def _boom(*a, **k):
+        raise AssertionError("research_brief.yaml must not be read with folds off")
+    monkeypatch.setattr(rpr, "load_yaml", _boom)
+    assert rpr._claim_frozen_for_fold(tmp_path) is None
