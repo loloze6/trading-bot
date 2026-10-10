@@ -202,14 +202,28 @@ def _same_value(logged, cited: str) -> bool:
             return False
         if not math.isfinite(c):
             return False
-        return float(f"{float(logged):.8g}") == float(f"{c:.8g}")
+        if float(f"{float(logged):.8g}") == float(f"{c:.8g}"):
+            return True
+        # D-097 (smoke 2, 2026-10-09: five honest roundings refused): a float cited rounded
+        # to the digits it shows, 3 or more; a count (an int) stays exact
+        m = _CITED_FLOAT_RE.fullmatch(cited.strip())
+        if isinstance(logged, int) or not m:
+            return False
+        sd = _sig_digits(m.group(1))
+        return sd >= CITE_MIN_SIG_DIGITS and _rounds_to(float(logged), c, sd)
     return str(logged) == cited.strip()
+
+
+CITE_MIN_SIG_DIGITS = 3
+# a cited number: optional sign, its mantissa (group 1), optional exponent
+_CITED_FLOAT_RE = re.compile(r"[-+]?(\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?")
 
 
 def check_citations(cites, entries: dict) -> list:
     """Errors of the `evidence` list: each item `q<n>:<dotted path>=<value>`; the id is an `ok`
     entry of this session's log, the path exists in its logged result, and the value equals
-    the logged one (numbers at the log's 8 significant digits)."""
+    the logged one (numbers at the log's 8 significant digits; since D-097 a float may also
+    be cited rounded to 3 or more significant digits, a count stays exact)."""
     if not isinstance(cites, list) or not cites:
         return ["evidence must be a non-empty list of `q<n>:<path>=<value>` citations"]
     errors = []
@@ -651,12 +665,17 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
         fields = sorted({c["field"] for c in sel["where"]
                          if isinstance(c, dict) and c.get("field") in ct.TRADE_EXIT_FIELDS})
         if fields:
+            # D-097: the message says what this test cannot tell apart and what to do instead
             errors.append(
                 f"claim test {t.get('name', i)!r} selects lots by an exit-time field "
-                f"({', '.join(fields)}) and measures their own trade_net_return: that is "
-                f"near-mechanical (a losing lot stays open longer). Select on an entry-time "
-                f"field ({', '.join(ct.TRADE_ENTRY_FIELDS)}), "
-                f"or measure post_exit_return")
+                f"({', '.join(fields)}) and measures their own trade_net_return: it cannot tell "
+                f"'the exit comes too late' from 'a losing lot stays open longer' (a lot closes "
+                f"only when the allocation changes, so long-held lots are the ones the price "
+                f"kept going against). Select on an entry-time field "
+                f"({', '.join(ct.TRADE_ENTRY_FIELDS)}), or measure post_exit_return. 'The exit "
+                f"comes too late' has no claim test yet (it needs the return from bar N to the "
+                f"exit): explore it with event_study (trade_filter on {fields[0]}) and, if it "
+                f"is your best idea, end with no_claim and give it as best_rejected")
     hashes = [t["spec_hash"] for t in res.tests] if not res.errors else []
     ran = conditional_effect_hashes(entries)
     by_test = runs_by_test(entries)

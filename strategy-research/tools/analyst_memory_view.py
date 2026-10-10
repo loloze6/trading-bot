@@ -53,6 +53,7 @@ clock, no model call, no side effect.
 """
 from __future__ import annotations
 
+import json
 import os
 import re
 import sys
@@ -79,7 +80,9 @@ STATEMENT_CHARS = 400
 TEST_SPEC_KEYS = ("selector", "outcome", "baseline", "statistic", "direction")
 NOTE = ("earlier claims and what became of them: numbers only for confirmed claims, measured "
         "on the fold that confirmed them; pending, not_confirmed and not_measurable claims carry "
-        "none; every statement has its numbers masked")
+        "none; every statement has its numbers masked; a claim of kind execution_behaviour "
+        "describes only the strategy of its source run (`source_strategy`): never apply it to "
+        "another strategy; the numbers in `source_strategy` are config settings, not results")
 # operator, 2026-10-08: confirmed on any fold wins; a refutation on another fold stays in `folds`
 _FOLD_STATUS_ORDER = (CONFIRMED, NOT_CONFIRMED, NOT_MEASURABLE)   # the first present wins
 # digits glued to a word character (`x2`, `h24`, `5of6`, `Sharpe1.2`) that mask_numbers'
@@ -232,9 +235,50 @@ def _fold_claims(ledger: dict, memory: dict | None = None) -> list:
     return out
 
 
-def build_memory_view(memory: dict, ledger: dict | None = None) -> dict:
+def _kv(params) -> str:
+    return ", ".join(f"{k}={params[k]}" for k in params) if isinstance(params, dict) else ""
+
+
+def strategy_summary(config) -> list | None:
+    """The components of a run's base strategy config, one line each, written by code from
+    the config (no model text; parameters stay readable, as test specs do):
+    `<regime>/<id>: <Class>(<params>); transforms <op>(<params>) ...`. None if the config
+    has no component."""
+    strategies = config.get("strategies") if isinstance(config, dict) else None
+    regimes = strategies.get("regimes") if isinstance(strategies, dict) else None
+    if not isinstance(regimes, dict):
+        return None
+    out = []
+    for regime, block in regimes.items():
+        comps = block.get("components") if isinstance(block, dict) else None
+        for c in comps if isinstance(comps, list) else []:
+            if not isinstance(c, dict):
+                continue
+            cls = str(c.get("class") or "?").rsplit(".", 1)[-1]
+            line = f"{regime}/{c.get('id')}: {cls}({_kv(c.get('params'))})"
+            for key in ("history_transforms", "transforms"):
+                ops = [t for t in c.get(key) or [] if isinstance(t, dict)] \
+                    if isinstance(c.get(key), list) else []
+                if ops:
+                    line += f"; {key} " + " ".join(f"{t.get('op')}({_kv(t.get('params'))})"
+                                                   for t in ops)
+            out.append(line)
+    return out or None
+
+
+def _source_strategy(rid, runs: dict, configs: dict) -> dict:
+    """D-097 (operator, 2026-10-10): a claim about one strategy is shown with that strategy,
+    so a later session does not take it for a market fact."""
+    run = runs.get(rid) if isinstance(runs.get(rid), dict) else {}
+    return {"hypothesis_id": run.get("hypothesis_id"),
+            "components": strategy_summary(configs.get(rid))}
+
+
+def build_memory_view(memory: dict, ledger: dict | None = None,
+                      configs: dict | None = None) -> dict:
     """The analyst's memory view from the campaign memory and the confirmations
-    ledger (both already loaded; either may be empty)."""
+    ledger (both already loaded; either may be empty). `configs`: {run id: that run's base
+    strategy config}, for each claim's `source_strategy` (D-097)."""
     by_id = {c["claim_id"]: c for c in _memory_claims(memory)}
     for c in _ledger_claims(ledger or {}, memory) + _fold_claims(ledger or {}, memory):
         old = by_id.get(c["claim_id"])
@@ -244,6 +288,12 @@ def build_memory_view(memory: dict, ledger: dict | None = None) -> dict:
                     c[key] = old.get(key)
         by_id[c["claim_id"]] = c                       # the ledger knows what became of it
     claims = list(by_id.values())
+    runs = (memory or {}).get("runs") or {}
+    for c in claims:
+        if c.get("source_run") is not None:
+            c["source_strategy"] = _source_strategy(str(c["source_run"]),
+                                                    runs if isinstance(runs, dict) else {},
+                                                    configs or {})
     counts = {s: sum(1 for c in claims if c["status"] == s) for s in STATUSES}
     return {"schema_version": SCHEMA_VERSION, "note": NOTE, "n_claims": len(claims),
             "by_status": counts, "claims": claims}
@@ -251,11 +301,29 @@ def build_memory_view(memory: dict, ledger: dict | None = None) -> dict:
 
 def load_memory_view(root) -> dict:
     """build_memory_view over `<root>/campaign_record/campaign_memory.yaml` and
-    `confirmations.yaml` (either may be absent)."""
+    `confirmations.yaml` (either may be absent), with each run's base strategy config
+    (`runs.<id>.variants.base.config_ref`, when that file is under `root` and reads as JSON;
+    otherwise that run's `components` is None)."""
     def load(rel):
         p = Path(root) / rel
         if not p.exists():
             return {}
         doc = yaml.safe_load(p.read_text(encoding="utf-8"))
         return doc if isinstance(doc, dict) else {}
-    return build_memory_view(load(MEMORY_REL), load(LEDGER_REL))
+    memory = load(MEMORY_REL)
+    configs = {}
+    top = Path(root).resolve()
+    runs = memory.get("runs") if isinstance(memory.get("runs"), dict) else {}
+    for rid, run in runs.items():
+        base = ((run.get("variants") or {}).get("base") or {}) if isinstance(run, dict) else {}
+        ref = base.get("config_ref") if isinstance(base, dict) else None
+        p = (top / ref).resolve() if isinstance(ref, str) else None
+        # a file under the root only; an unreadable one gives no summary (a context line must
+        # never stop the analyst on every later run)
+        if p is None or top not in p.parents or not p.is_file():
+            continue
+        try:
+            configs[str(rid)] = json.loads(p.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+    return build_memory_view(memory, load(LEDGER_REL), configs)
