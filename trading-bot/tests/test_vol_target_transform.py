@@ -208,8 +208,9 @@ def test_v14_refuses_vol_target_outside_a_strategy_components_transforms():
     for cfg, loc in ((hist, "strategies.regimes.unknown.components[0].history_transforms[0]"),
                      (gated, "regime_detector.vetoes[0].transforms[1]")):
         v14 = [v for v in validate(cfg) if v.startswith("VIOLATION V14")]
-        assert v14 == [f"VIOLATION V14 {loc}: vol_target is allowed only in a strategies "
-                       f"component's `transforms`, in a regime without `blocks`"], v14
+        want = (f"VIOLATION V14 {loc}: vol_target is allowed only in a strategies "
+                "component's `transforms`, in a regime without `blocks`")
+        assert v14 == [want], v14
     blocks = _full([{"op": "identity"}, VT])
     blocks["strategies"]["regimes"]["unknown"]["blocks"] = []
     msg = ("VIOLATION V14 strategies.regimes.unknown.components[0].transforms[1]: vol_target is "
