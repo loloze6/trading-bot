@@ -242,3 +242,43 @@ def test_params_cell_defaults_match_the_init_defaults_and_list_every_key():
             if not same:
                 bad.append((name, key, "cell", cell_value, "code", code_value))
     assert not bad, f"params (defaults) cells out of step with the __init__ defaults: {bad}"
+
+
+# --- transform ops: STRATEGY_DESIGN_GUIDE.md "## Transform ops" vs the op registry ---------------------------------
+# The config-writing stage may use only the ops this section lists (strategy-config-authoring/SKILL.md), so an op the
+# registry has but the guide does not list is unreachable by that stage, and a listed op the registry lacks is an
+# invitation to a config the validator refuses (V3). Ops not allowed in `strategies` are still listed, marked as such.
+GUIDE_PATH = REPO_ROOT / "strategy-research" / "docs" / "STRATEGY_DESIGN_GUIDE.md"
+_OP_ROW_RE = re.compile(r"^\|\s*`(\w+)`\s*\|", re.MULTILINE)
+_NUMBER_WORDS = {"fourteen": 14, "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18}
+
+
+def _guide_ops_section() -> str:
+    text = GUIDE_PATH.read_text(encoding="utf-8")
+    start = text.index("\n## Transform ops\n")
+    end = text.index("\n## ", start + 1)
+    return text[start:end]
+
+
+def _registry_ops() -> set:
+    from strategies.registry import TRANSFORM_OPS_REGISTRY
+    return set(TRANSFORM_OPS_REGISTRY)
+
+
+def test_every_registry_op_is_listed_in_the_guide_and_nothing_else():
+    listed = _OP_ROW_RE.findall(_guide_ops_section())
+    real = _registry_ops()
+    assert len(listed) == len(set(listed)), f"an op is listed twice in the guide: {sorted(listed)}"
+    assert not real - set(listed), (
+        f"op(s) in strategies/registry.py TRANSFORM_OPS_REGISTRY with no row in STRATEGY_DESIGN_GUIDE.md "
+        f"'## Transform ops' (the config-writing stage cannot use them): {sorted(real - set(listed))}")
+    assert not set(listed) - real, (
+        f"op row(s) in STRATEGY_DESIGN_GUIDE.md '## Transform ops' that the registry does not have: "
+        f"{sorted(set(listed) - real)}")
+
+
+def test_the_guide_states_the_real_op_count():
+    m = re.search(r"\b(\w+) ops\. A pipeline is applied in order", _guide_ops_section())
+    assert m, "the '<Number> ops. A pipeline is applied in order' sentence is gone from '## Transform ops'"
+    assert _NUMBER_WORDS.get(m.group(1).lower()) == len(_registry_ops()), (
+        f"the guide says {m.group(1)!r} ops, the registry has {len(_registry_ops())}")

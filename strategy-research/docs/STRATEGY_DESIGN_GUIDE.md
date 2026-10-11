@@ -266,7 +266,7 @@ A transform step is `{"op": "<name>", "params": {...}}`. See "Transform ops".
 
 ## Transform ops
 
-Fifteen ops. A pipeline is applied in order, seeded with the latest raw value of the component's history.
+Sixteen ops. A pipeline is applied in order, seeded with the latest raw value of the component's history.
 
 **History ops** recompute from the component's stored history and DISCARD the value accumulated so far, so they must
 come first (validator V5 rejects a history op after a scalar or data-aware op). `identity` is one of them:
@@ -300,6 +300,7 @@ close in **price units**, so `stddev_24` x close is a price squared (around 1e5 
 | `vol_adjusted` | none | v / (`stddev_24` x close), or v unchanged if the denominator is invalid. Read-time use only; do not use it to normalise history. **Not a volatility scaler on its own**: it shrinks any component's output by about 1e-6 to 1e-8 for BTC, so the forecast never trades (C4 run_061, O-10). Only meaningful followed by a rescale |
 | `price_normalized` | none | v / close (v unchanged if close is invalid). For outputs in **price units** only (e.g. `EMADiff`); on a percent or forecast-unit output it shrinks the forecast by the price |
 | `volume_filter` | `period` (20) | v if the latest volume >= its `period`-bar mean, else 0.0 (dead-zone on volume). **Not allowed in `strategies`** |
+| `vol_target` | `window`, `target_annual_vol`, `periods_per_year` (all required, no default) | v x `target_annual_vol` / (sample std, ddof 1, of the simple returns of the last `window` closes x sqrt(`periods_per_year`)): volatility targeting on **return** volatility, so the size no longer depends on the price level. Example on daily bars: `{"op": "vol_target", "params": {"window": 60, "target_annual_vol": 0.4, "periods_per_year": 365}}`. Reads only closes up to the current bar. Raises (the bar's forecast becomes 0 and the error is logged) on invalid params, fewer than `window` + 1 closes, a non-finite or non-positive close, or zero volatility; the strategy's required bars include `window` + 1, so a normal backtest never meets the short-data case. **Allowed only in a `strategies` component's `transforms`, in a regime without `blocks`** (V14): never in the regime detector or in `history_transforms`. Put a `clip` after it to cap the forecast (for example `max` 10, so allocation at most 1.0) |
 
 **Scale rule.** The forecast after every transform must typically be a few units: the allocation is
 forecast / 10 and the risk layer ignores allocation changes below 0.2, so from flat a forecast needs
@@ -462,12 +463,10 @@ The config describes a forecast per bar. It has no key for:
   their own internal state (`EfficiencyRatioRegimeComponent` and `VolatilityPercentileRegimeComponent` keep a
   smoothing history; `MacdHistogramCrossoverComponent` and `GatedSmaTrendLongOnlyComponent` remember prior bars);
   nothing else does.
-- **Sizing other than `forecast / 10`.** There is no volatility-targeting, Kelly, leverage or cap key. The
-  risk controls are not in the strategy config. There is also no op that divides a signal by its **return**
-  volatility: `vol_adjusted` / `vol_normalize` divide by a price squared and, used alone, make the forecast too
-  small to ever trade (see the Scale rule above). Vol-managed sizing is a declared deviation unless it can be
-  expressed with `history_transforms: vol_normalize` + `transforms: ratio_to_mean` + `scale` (mind the 1e-10
-  floor of `ratio_to_mean` on very small outputs).
+- **Sizing other than `forecast / 10`.** There is no Kelly, leverage or cap key, and the risk controls are not in
+  the strategy config. Volatility targeting on **return** volatility is the `vol_target` op (Transform ops),
+  followed by a `clip` for the cap; `vol_adjusted` / `vol_normalize` divide by a price squared and, used alone,
+  make the forecast too small to ever trade (see the Scale rule above).
 - **Per-symbol settings.** The config has no per-symbol section; a component sees only its own symbol's bars and
   feed columns.
 - **Symbols, timeframe and date windows.** They belong to the run protocol, not the config (no instrument,
@@ -589,3 +588,4 @@ Validator rules (the strategy refuses to start on any violation):
 | V11 | `strategies.min_allocation_change`, when present, is a non-negative number |
 | V12 | every `class` path in the detector and in the strategies imports to a class (it does not check that the class is a component, or that `params` are right) |
 | V13 | the block combiner keys (`blocks`, `block_standardisation`, `weight_schedule`) have the exact shape above |
+| V14 | every `vol_target` op has valid `window` (int >= 2), `target_annual_vol` and `periods_per_year` (> 0), and sits in a `strategies` component's `transforms` in a regime without `blocks` |

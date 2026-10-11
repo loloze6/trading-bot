@@ -594,8 +594,8 @@ this file directly).
   `negate_percentile`, `zscore`, `ratio_to_mean`, `ema`) recompute from the
   full history and discard the accumulated `value`; scalar/data-aware ops
   (`scale`, `threshold_filter`, `clip`, `sigmoid`, `negate`,
-  `vol_normalize`, `vol_adjusted`, `price_normalized`, `volume_filter`)
-  operate on it — 15 ops total in `TRANSFORM_OPS_REGISTRY` as read on this
+  `vol_normalize`, `vol_adjusted`, `price_normalized`, `volume_filter`,
+  `vol_target`) operate on it — 16 ops total in `TRANSFORM_OPS_REGISTRY` as read on this
   checkout (`registry.py`).
 
 `ConfigDrivenRegimeEngine.classify()` (`strategies/regime_engine.py`)
