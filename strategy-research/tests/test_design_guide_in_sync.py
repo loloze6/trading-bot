@@ -282,3 +282,19 @@ def test_the_guide_states_the_real_op_count():
     assert m, "the '<Number> ops. A pipeline is applied in order' sentence is gone from '## Transform ops'"
     assert _NUMBER_WORDS.get(m.group(1).lower()) == len(_registry_ops()), (
         f"the guide says {m.group(1)!r} ops, the registry has {len(_registry_ops())}")
+
+
+def test_the_catalogue_lists_the_same_ops_and_count():
+    """Review of PR #383: COMPONENT_CATALOG.md, read in full next to the guide by the same stages, must not
+    carry a different op list ('the only fifteen' after a sixteenth op was added)."""
+    text = CATALOG_PATH.read_text(encoding="utf-8")
+    start = text.index("- **Transform ops** (the only ")
+    end = text.index("\n- **", start + 1)
+    para = text[start:end]
+    word = re.match(r"- \*\*Transform ops\*\* \(the only (\w+)\)", para).group(1)
+    assert _NUMBER_WORDS.get(word.lower()) == len(_registry_ops()), (
+        f"COMPONENT_CATALOG.md says the only {word!r} ops, the registry has {len(_registry_ops())}")
+    listed = set(re.findall(r"`(\w+)`", para))
+    assert listed == _registry_ops(), (
+        f"COMPONENT_CATALOG.md's transform-op list differs from the registry: missing "
+        f"{sorted(_registry_ops() - listed)}, extra {sorted(listed - _registry_ops())}")
