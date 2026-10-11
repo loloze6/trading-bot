@@ -182,7 +182,9 @@ def _chain(run_dir, results, bounds):
 
 
 def _junction_check(run_dir, accounts, chain, tol):
-    """Per chained window: the chain's level ratio from its join day to its end
+    """Equity only, not costs: this ties the curve figure's equity change to the
+    chain's equity; cost correctness rests on the lot-net == equity-change guard
+    and the slippage test. Per chained window: the chain's level ratio from its join day to its end
     day vs the equal-weight mean of (equity change / start). They agree when no
     coin trades on the window's first day; with a day-1 fill the chain anchors
     at that day's close AFTER the fill, so it leaves that fill's costs out, and
@@ -211,7 +213,7 @@ def _junction_check(run_dir, accounts, chain, tol):
 
 
 def _run_id(run_dir, sym, win):
-    pr = yaml.safe_load((Path(run_dir) / "artifacts" / "protocol_result.yaml").read_text())
+    pr = yaml.safe_load((Path(run_dir) / "artifacts" / "protocol_result.yaml").read_text(encoding="utf-8"))
     return next(r["run_id"] for r in pr["results"] if r["symbol"] == sym and str(r["window"]) == win)
 
 
@@ -286,22 +288,22 @@ def test_run_081_slippage_matches_the_diagnostics_bps():
     configured slippage on both legs (manifest cost_model), and within 0.2 bps
     of the run's own slippage_paid (run_protocol._all_costs_fields), which reads
     bars.csv closes rounded to 6 decimals (DOGE near 0.06: up to ~0.08 bps per leg; run_081 max 0.107)."""
-    diag = json.loads((RUN_081 / "trade_diagnostics.json").read_text())["trades"]
-    pr = yaml.safe_load((RUN_081 / "artifacts" / "protocol_result.yaml").read_text())
+    diag = json.loads((RUN_081 / "trade_diagnostics.json").read_text(encoding="utf-8"))["trades"]
+    pr = yaml.safe_load((RUN_081 / "artifacts" / "protocol_result.yaml").read_text(encoding="utf-8"))
     n = 0
     for r in pr["results"]:
         path = pdv1.find_window_equity_file(RUN_081, r["run_id"])
-        cm = json.loads((path.parent / "manifest.json").read_text())["config"]["cost_model"]
+        cm = json.loads((path.parent / "manifest.json").read_text(encoding="utf-8"))["config"]["cost_model"]
         slip_bps = cm["slippage_bps"].get(r["symbol"], cm["slippage_bps"]["default"])
-        with open(path, newline="") as f:
+        with open(path, encoding="utf-8", newline="") as f:
             closes = {ccr._ts(row["timestamp"]): float(row["close"]) for row in csv.DictReader(f)}
-        lots = json.loads((path.parent / "trades.json").read_text())
+        lots = json.loads((path.parent / "trades.json").read_text(encoding="utf-8"))
         recs = [d for d in diag if d["symbol"] == r["symbol"] and str(d["window"]) == str(r["window"])]
         for lot, rec in zip(lots, recs):
             r_in, r_out = closes[ccr._ts(lot["entry_time"])], closes[ccr._ts(lot["exit_time"])]
-            q = lot["matched_quantity"]
-            leg_bps = ((lot["entry_price"] - r_in) * q / (q * r_in)
-                       + (r_out - lot["exit_price"]) * q / (q * r_out)) * 1e4
+            sign = 1 if lot["side"] == "LONG" else -1   # a short sells to enter, buys to exit
+            leg_bps = sign * ((lot["entry_price"] - r_in) / r_in
+                              + (r_out - lot["exit_price"]) / r_out) * 1e4
             assert leg_bps == pytest.approx(2 * slip_bps, abs=1e-6)
             assert leg_bps == pytest.approx(rec["slippage_paid"], abs=0.2)
             n += 1
@@ -310,7 +312,7 @@ def test_run_081_slippage_matches_the_diagnostics_bps():
 
 @needs_run_081
 def test_run_081_agrees_with_the_whole_test_chain_on_junction_days():
-    pr = yaml.safe_load((RUN_081 / "artifacts" / "protocol_result.yaml").read_text())
+    pr = yaml.safe_load((RUN_081 / "artifacts" / "protocol_result.yaml").read_text(encoding="utf-8"))
     proto = RUN_081.parent.parent / pr["protocol_file"].replace("\\", "/")
     bounds = {str(k): v for k, v in pw.load_protocol_window_bounds(proto).items()}
     accounts = ccr.load_run_accounts(RUN_081)

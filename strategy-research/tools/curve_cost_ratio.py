@@ -22,12 +22,19 @@ Where the inputs come from (no output writes a fee per fill):
     write_trades_json), total_commission of each lot, in currency;
   * slippage: each lot's matched_quantity x the fill's adverse move from the
     bar close of the leg (the mock fill is close x (1 +/- slippage_bps),
-    execution/execution_handler.py open_long_position / open_short_position);
+    execution/execution_handler.py:364-410, open_long_position /
+    open_short_position / close_position);
     the close is read from the same portfolio_states.csv at the leg's
     timestamp (the run_protocol._all_costs_fields convention, in currency).
 Summing lot costs per account is allowed only because the sum of the lots'
 net P&L equals the account's equity change: account_costs checks it on every
-account and raises otherwise (tested on all 48 accounts of run_081).
+account and raises otherwise (tested on all 48 accounts of run_081). The gross numerator is algebraically the sum of
+quantity x (exit close - entry close); fees and slippage only split it from
+the net, so the costs are what that guard protects.
+
+Window-end lots are the run's own exit_reason end_of_window
+(run_protocol._infer_exit_reason: exit on or after the window end, or on the
+last bar), the same label the lot-based ratio uses.
 
 A pure tool: no stage imports it, so it needs no flag. It reads nothing under
 local_data/: only a run directory's own result files.
