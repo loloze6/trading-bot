@@ -1072,6 +1072,18 @@ orchestrator:
       # findings summary row (a deviations count) and the readers' digest. A
       # component_gap must name `core_lost: {clause, why}` (else O-21's one
       # retry); it is recorded in deviations.yaml and on the request row.
+  deviation_gate:
+    enabled: false
+      # Lane 1 (operator, 2026-10-11; D-104). OFF BY DEFAULT, read by
+      # run_phase1_research._deviation_gate_enabled(). HARD DEPENDENCY: raises if
+      # true while nearest_build.enabled is false/absent (the gate reads
+      # artifacts/deviations.yaml, which only nearest_build writes). While false:
+      # byte-identical (nothing read, 1b's route unchanged).
+      #
+      # While true: after a spec_ready 1b answer, a deviations.yaml that lists any
+      # deviation, or that is missing or unreadable, pauses the run with
+      # config_deviation before step 2 -- before any backtest, so no trial row.
+      # Nearest build's own record stays information only.
   explore_confirm:
     enabled: false
       # E-072 (P-CUL-80, D-080, engineering/roadmap/E-072/PHASE_A.md). OFF BY
