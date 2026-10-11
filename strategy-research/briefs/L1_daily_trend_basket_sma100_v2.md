@@ -6,13 +6,13 @@
 # is on.
 
 strategy_domain: "time_series_trend"
-market_universe: [BTCUSDT, ETHUSDT, TRXUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, LINKUSDT, LTCUSDT, UNIUSDT]
+market_universe: [BTCUSDT, ETHUSDT, TRXUSDT, ADAUSDT, DOGEUSDT, LINKUSDT, LTCUSDT, UNIUSDT]
 timeframe: "1d"
 venue: "kraken"
 product: "perp"
 research_goal: >
   Lane 1 v2, BASE run: does slow daily time-series trend, sized by volatility
-  targeting, on an equal-weight basket of 9 Kraken coins, earn more than its
+  targeting, on an equal-weight basket of 8 Kraken coins, earn more than its
   costs and beat staying flat on fold A (2022-2023)? Who pays: trend in crypto
   is attributed to slow-moving and constrained flows (retail herding, leverage
   liquidation cascades, scheduled rebalancers); a daily signal trades a few
@@ -24,7 +24,7 @@ research_goal: >
   its size after costs at daily frequency is what this run measures.
 constraints:
   - |
-    Build EXACTLY this strategy config (JSON), nothing added, nothing renamed; the deviation gate pauses the run on any deviation:
+    Build EXACTLY this strategy config (JSON), nothing added, nothing renamed, no `warmup` key (scaffolding is `/regime_detector` only); the deviation gate pauses the run on any deviation:
     {"regime_detector": {"mode": "threshold_rules", "components": [], "rules": [], "default_regime": "unknown"}, "strategies": {"regimes": {"unknown": {"components": [{"id": "trend", "class": "strategies.strategy_components.MovingAverageDistanceComponent", "params": {"period": 100, "average": "sma"}, "weight": 1.0, "transforms": [{"op": "scale", "params": {"factor": 5}}, {"op": "clip", "params": {"min": 0, "max": 10}}, {"op": "vol_target", "params": {"window": 60, "target_annual_vol": 0.4, "periods_per_year": 365}}, {"op": "clip", "params": {"min": 0, "max": 10}}]}]}, "trending": null, "mean_reversion": null, "chop": null}}}
   - "In words: the percent distance of the close from its 100-day simple moving average, times 5, limited to 0..10 (flat at or below the average, partial size up to 2% above it, full size beyond); then volatility targeting to 40% a year over 60 daily returns (periods_per_year 365); then limited to 0..10 again, so the forecast is at most 10, so allocation at most 1.0. Long or flat only, never short."
   - "Information for reading turnover, not a sizing rule of this config: the risk control min_allocation_change (threshold 0.2, trading-bot/config.json:28; no exemption for a close) rejects any rebalance smaller than 0.2 of allocation, so a target under 0.2 is never opened and a holding under 0.2 closes only at the window end."
@@ -32,20 +32,20 @@ constraints:
   - "The 100-trades-per-coin bar (trade_count_min) is expected to FAIL by construction for a daily signal; this is known before the run and is not a reason to change anything."
   - "No parameter is tuned on fold A. Lookback, the 2% full-size distance (scale 5), vol window, vol target and both clips are fixed here."
 available_data:
-  - "Kraken 1d OHLCV caches trading-bot/local_data/kraken_<COIN>USD_1d.csv for the 9 coins: every fold-A window-edge day present; no missing day in fold A except XRP 2022-05-11/12 (2 days, inside the engine's 3-bar ignore tier); at least 443 daily bars before 2022-01-01 for every coin (UNI is the shortest), more than the warm-up prefetch of 200 bars (2 x required_bars 100; the strategy is first ready at bar 199)."
+  - "Kraken 1d OHLCV caches trading-bot/local_data/kraken_<COIN>USD_1d.csv for the 8 coins: no missing day from 2022-01-01 to 2023-12-31, every fold-A window-edge day present; at least 443 daily bars before 2022-01-01 for every coin (UNI is the shortest). The launcher's warm-up prefetch (2 x required_bars 100 = 200 days before each window, core/launcher.py) holds all 200 daily rows for every coin and window, and the strategy is ready by its end (first ready at bar 199; replayed for 8 coins x 6 windows). XRP was dropped (D-105): its 2022-05-11/12 gap left 2 rows missing in some sma100/sma200 prefetch spans, which would stop those windows at the launcher's readiness check."
 
 criteria_from: hypothesis_generation
 
 machine_constraints:
   protocol:
-    symbols: [BTCUSDT, ETHUSDT, TRXUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, LINKUSDT, LTCUSDT, UNIUSDT]
+    symbols: [BTCUSDT, ETHUSDT, TRXUSDT, ADAUSDT, DOGEUSDT, LINKUSDT, LTCUSDT, UNIUSDT]
     timeframe: "1d"
     start: "2022-01-01"
     end: "2023-12-31"
     window_months: 4
 ---
 
-# Lane 1 v2 -- daily trend on the distance from SMA(100), vol-targeted, 9-coin Kraken basket, fold A (BASE run)
+# Lane 1 v2 -- daily trend on the distance from SMA(100), vol-targeted, 8-coin Kraken basket, fold A (BASE run)
 
 Pre-registered 2026-10-11 in DECISION_LOG D-105 (superseding D-102's setup), before
 any run of this signal. The continue rule below is word for word the one D-102
@@ -164,8 +164,8 @@ fees-only ratio beside the all-costs one, buy-and-hold excess.
 Distance-from-SMA sign changes counted on the cached Kraken daily closes
 2022-01-01 to 2023-12-31 only (bounded reads; no later bar used; no result
 computed), current-close timing, flat at each 4-month window's start, pooled
-over the 9 coins: this run (lookback 100) about **160 exits by signal** and
-**16 window-end forced closes**; 273 of 6,568 coin-days sit in the
+over the 8 coins: this run (lookback 100) about **138 exits by signal** and
+**14 window-end forced closes**; 244 of 5,840 coin-days sit in the
 partial-size zone (0-2% above the average). Expected divergence declared now:
 the measured completed-trade count includes vol-target and partial-size
 rebalances (lots matched LIFO, `performance/metrics.py`), so it is expected
@@ -179,15 +179,15 @@ counted from the run's own bars.
   collapsed in or before fold A (for example LUNA in 2022) have no cache.
 - **Prior look:** run_054 tested SMA(100) daily long-only on Binance BTC and
   ETH, 15 six-month windows 2018-04 to 2025-09, which include fold A. For BTC
-  and ETH this is not fresh evidence; the other 7 coins and the vol targeting are.
+  and ETH this is not fresh evidence; the other 6 coins and the vol targeting are.
 - **Funding not modelled:** perp costs (Kraken futures fee 5 bps per side;
   slippage BTC 2.5, ETH 4, other coins 7.5 bps per side,
   `trading-bot/config/cost_model.json`) on Kraken spot prices (D-057). A long
   perp usually pays funding in rising markets, so results are flattered.
 - **Window restarts:** each coin is backtested alone per 4-month window, forced
   flat at its end; indicators are warmed up before each window (warmup_prefetch).
-- **Execution:** fills at the signal bar's close with a one-bar lag, not
-  next-day open (SmaTrendLongOnlyComponent docstring).
+- **Execution:** decides on the current bar's close and fills at that close, no lag
+  (MovingAverageDistanceComponent docstring; declared difference 2 above), not next-day open.
 - **Run setup (operator's checkout):** variant_loop off, composition_runs off,
   analyst off, cost_bar_all_costs on, folds on. With the loop off, a
   data-gate "refine" pauses the whole run.
