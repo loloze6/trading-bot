@@ -30,7 +30,7 @@ constraints:
   - "The 100-trades-per-coin bar (trade_count_min) and the lot-based cost bar (cost_edge_ratio_min) are expected to FAIL by construction for a daily signal (D-107); this is known before the run and is not a reason to change anything."
   - "No parameter is tuned. Lookback, the 2% full-size distance (scale 5), vol window, vol target and both clips are v2's, unchanged after fold A."
 available_data:
-  - "Kraken 1d OHLCV caches trading-bot/local_data/kraken_<COIN>USD_1d.csv for BTC, ETH, LTC (first rows 2013-10-06, 2015-08-07, 2013-10-24). The data-availability gate's own check (tools/data_availability_gate.py check_price_window) grades all six fold-B windows `validate` for each coin. Warm-up: the launcher fetches 2 x required_bars days before each window (core/launcher.py:948-952; 400 days for sma200, so from 2017-03-27 for the 2018-05 window) and asserts readiness (core/launcher.py:1012-1025); replayed for 3 coins x 6 windows x 3 lookbacks, the strategy is ready at every window start. One day, 2018-01-12 (Kraken's outage), is missing for ETH and LTC: the 2018-05 prefetch spans hold 121/122, 199/200 and 399/400 rows and the 2019-01 sma200 span 399/400; one missing bar is in the engine's ignore tier (core/launcher.py:602, ignore_max_bars 3). BTC has no missing day."
+  - "Kraken 1d OHLCV caches trading-bot/local_data/kraken_<COIN>USD_1d.csv for BTC, ETH, LTC (first rows 2013-10-06, 2015-08-07, 2013-10-24). The data-availability gate's own check (tools/data_availability_gate.py check_price_window) grades all six fold-B windows `validate` for each coin. Warm-up: the launcher fetches 2 x required_bars days before each window (core/launcher.py:949-954; 400 days for sma200, so from 2017-03-27 for the 2018-05 window) and asserts readiness (core/launcher.py:1012-1025); replayed for 3 coins x 6 windows x 3 lookbacks, the strategy is ready at every window start (for ETH and LTC in the 2018-05 and 2019-01 sma200 spans, on the last prefetch row: no slack). One day, 2018-01-12 (Kraken's outage), is missing for ETH and LTC: the 2018-05 prefetch spans hold 121/122, 199/200 and 399/400 rows and the 2019-01 sma200 span 399/400; one missing bar is in the engine's ignore tier (core/launcher.py:602, ignore_max_bars 3). BTC has no missing day."
 
 criteria_from: hypothesis_generation
 
@@ -145,7 +145,7 @@ Inputs, per run:
   `actual`: the equal-weight portfolio's chained daily returns, mean / sample
   stdev x sqrt(365), rf 0 (`tools/portfolio_whole_test.py` `whole_test_sharpe`),
   after fees and slippage (funding is not modelled). Flat = 0.
-- **Base curve-based gross/cost (sma100 run only):** CUL-431's figure,
+- **Base curve-based gross/cost (sma100 run only; "item B" in the rule below, CUL-431):** CUL-431's figure,
   `tools/curve_cost_ratio.curve_gross_to_cost(list(tools/curve_cost_ratio.load_run_accounts(<run folder>).values()))["ratio"]`:
   per coin-window account, in currency / starting capital, gross = equity
   change + fees + slippage; ratio = sum of gross / sum of fees + slippage over
@@ -154,7 +154,9 @@ Inputs, per run:
   `strategy-research/tools/curve_cost_ratio.py`), never the lot-based ratio
   (`pooled_edge_to_cost_ratio`). A `ValueError` from it (lot net P&L not equal
   to an account's equity change) means the figure cannot be read: report it,
-  do not judge the rule on it.
+  do not judge the rule on it. A `PortfolioNotEvaluable` from it (no account,
+  costs summing to zero, a missing or empty `portfolio_states.csv`): the same,
+  report it, the rule is not judged.
 
 **CONTINUE** iff whole-test Sharpe after fees and slippage > 0 on at least 2 of
 3 runs AND the base run's curve-based gross/cost (item B) >= 2.
