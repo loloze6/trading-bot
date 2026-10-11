@@ -141,3 +141,19 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-11/12 -- Disk at 0 bytes discovered by a failed command
 - **Pattern:** a `sed | cut` failed with "No space left on device" mid-session; 40 merged worktrees (about 550 MB each) had accumulated.
 - **Rule:** check free space before any run or worktree creation, and remove merged worktrees (junction-safe) at the end of each session.
+
+## 2026-10-12 -- A data-gate probe called with the wrong venue symbol names
+- **Pattern:** I called `check_price_window` with `BTCUSDT`; on Kraken the generated protocol names `BTCUSD`, so every window "declined" and every fetch went to the network. A result of "all decline" for coins whose caches I had just read was a probe bug, not data.
+- **Rule:** call a gate or fetch helper with the symbol names the generated protocol uses for that venue (`_generated_protocol_venue_keys`, or a past run's `protocol_result.yaml` results), and treat a uniform failure as a probe bug until a cache read confirms it.
+
+## 2026-10-12 -- A gate check rewrote cache files
+- **Pattern:** the data gate's fetch (`DataManager.fetch_historical_data`, localStorage on) re-saved five daily caches in my worktree (float re-formatting, after a failed network fill of 2018-01-12). Run against the operator's checkout, it would have edited their files.
+- **Rule:** run gate or fetch checks only in a worktree, on copies of the operator's caches; `git checkout -- trading-bot/local_data` afterwards and check `git status` before committing.
+
+## 2026-10-12 -- A prescribed weighting used without checking its range
+- **Pattern:** the lot weight net_portfolio_return_pct / realized_return was given; 4 lots got a negative weight (net after fees, realized before). The figures still matched, but the engine-exact weight differs by up to 13%.
+- **Rule:** before reporting a weighted figure, print the weight's min / median / max over all records and compare with the exact formula from the code; report both when they differ.
+
+## 2026-10-12 -- Files written with CRLF next to LF siblings
+- **Pattern:** the Write tool produced CRLF briefs; the first diff against the LF sibling showed every line changed.
+- **Rule:** after writing a file that has siblings, compare `grep -c $'\r'` with a sibling's committed bytes and normalise before diffing or committing.
