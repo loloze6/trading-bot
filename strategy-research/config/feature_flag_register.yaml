@@ -862,6 +862,20 @@ flags:
       name core_lost (else O-21's one retry), recorded in the run and on the
       request row. Tested by tests/test_e068_6_nearest_build.py.
 
+  - name: deviation_gate
+    kind: orchestrator_config
+    config_key: orchestrator.deviation_gate.enabled
+    reader: run_phase1_research._deviation_gate_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "nearest_build (off_incomplete; deviation_gate requires it); the operator switches it on in c4/flag-set for the lane-1 runs (D-104)"
+    criterion: >
+      Landed 2026-10-11 (lane 1, D-104). Off: byte-identical -- nothing read,
+      1b's route unchanged. On (requires nearest_build): a spec_ready 1b answer
+      whose artifacts/deviations.yaml is not status `exact` (any deviation,
+      structured or a DEVIATION: line), or is missing or unreadable, pauses the run with config_deviation before step 2 and any
+      backtest. Tested by tests/test_deviation_gate.py.
+
   - name: explore_confirm
     kind: orchestrator_config
     config_key: orchestrator.explore_confirm.enabled
