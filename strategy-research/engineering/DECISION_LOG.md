@@ -218,7 +218,7 @@ are the Linear comments posted at decision time and this log.
     (`BLOCKS_PER_FOLD = 6`, `:62`). Fold A happens to be contiguous (2022-01..2023-12); B and C
     interleave 2018-2021 so each has a block in every year (D-085, D-099).
     `tools/run_protocol.py:2558-2571` runs one backtest per coin and block, each warmed up
-    (`warmup_prefetch`) and forced flat at its end; the grid reducers read one value per block
+    (`warmup_prefetch`) and forced flat at its end (`trading-bot/core/trading_bot.py:642`, `_close_all_positions_at_end` `:648`); the grid reducers read one value per block
     (`tools/verdict_criteria_evaluator.py:1089`, including `sign_consistent_by_era`, `:1174`;
     blocks under `_SPARSE_TRADE_FLOOR` = 5 trades get no Sharpe, `run_protocol.py:55`); the
     whole-test chain (`tools/portfolio_whole_test.py:391` `chain_windows`) links the blocks,
@@ -234,9 +234,20 @@ are the Linear comments posted at decision time and this log.
     `run_protocol.py`'s window loop (one backtest, slices computed after it); the grid reducers
     (per-block values become slices of one curve; the sparse-trade floor per slice); the
     whole-test chain (one segment per coin, no junctions); decide-next's fold-use rule (a fold
-    is used when any window overlaps it, D-085). **Keeps:** continuity (no forced closes inside
+    is used when any window overlaps it, D-085); **fold confirmation** (`tools/fold_confirm.py`:
+    the run's windows must equal the fold's blocks exactly, `:507-512`; the sign must hold in all
+    but one of at least `MIN_WINDOWS` = 4 windows, `:109-110`, with a false-confirm rate stated
+    for 6 independent windows, `:119-120`; slices of one continuous backtest are not independent
+    restarts, so that rate changes); the criterion window floors (`config/criterion_menu.yaml`
+    `min_windows: 5`, lines 57 and 96, enforced at `tools/verdict_criteria_evaluator.py:1244-1246`);
+    the era of a window = the era of its test period's midpoint (`tools/variant_coin.py:236`, so
+    a two-year window has one era); the per-window data check of a fold (`variant_coin.window_coverage`,
+    `decide_next._fold_data_reason`, "at least 4 windows with data", D-085), which becomes
+    all-or-nothing per coin; and the novelty key's window fingerprint and the trial rows' `fold`
+    field (`run_phase1_research._trial_fold_field`), so the repeat gate keys change. **Keeps:** continuity (no forced closes inside
     a fold, one warm-up). **Loses:** era coverage per fold: two calendar years per fold (for
-    example 2018-2019 and 2020-2021), so one fold can sit in one market phase; and direct
+    example 2018-2019 and 2020-2021, if carved from the same research period; how to carve them
+    is part of this decision), so one fold can sit in one market phase; and direct
     comparability with every run since run_065 (blocks).
   - Not part of this item: the profit bars' thresholds (`cost_edge_ratio_min`,
     `trade_count_min`, CUL-431 note) and the chain's first-day anchor (CUL-431 finding).
