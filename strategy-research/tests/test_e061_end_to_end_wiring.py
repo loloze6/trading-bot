@@ -229,6 +229,8 @@ TARGET_FLAGS = {
     "reader_findings": False,
     # E-068 nearest build (D-075): off, so the stub 1b answers route as before.
     "nearest_build": False,
+    # D-104: requires nearest_build, which is off here.
+    "deviation_gate": False,
     # E-072 (D-080): requires reader_findings, which is off here.
     "explore_confirm": False,
 }

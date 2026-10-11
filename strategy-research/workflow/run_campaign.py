@@ -1572,6 +1572,12 @@ def _classify_human_pause(run_dir: Path, state: dict) -> str:
     # before Step 2; a human decides; never quarantine-safe.
     if flags.get("forecast_rule_violation"):
         return "forecast_rule_violation"
+    # D-104: set by run_phase1_research._route_deviation_gate (orchestrator.
+    # deviation_gate) when 1b's spec_ready config lists a deviation from the
+    # brief. Stops before Step 2 and any backtest; a human decides; never
+    # quarantine-safe.
+    if flags.get("config_deviation"):
+        return "config_deviation"
     # E-033.1 Slice 4b (2026-09-22): set by run_phase1_research's
     # data_availability_gate elif-branch in run_loop when, after the
     # per-variant data-availability gate has run, fewer than 3 variants
@@ -1907,6 +1913,9 @@ _PAUSE_FLAG_TO_REASON = (
     # D-051. Mirrors _classify_human_pause's branch for this flag, which sits
     # immediately after variant_config_error there.
     ("forecast_rule_violation", "forecast_rule_violation"),
+    # D-104. Mirrors _classify_human_pause's branch for this flag, which sits
+    # immediately after forecast_rule_violation there.
+    ("config_deviation", "config_deviation"),
     # E-033.1 Slice 4b. Mirrors _classify_human_pause's branch for this flag,
     # which sits immediately after variant_config_error (E-061 C2 S2c) in
     # that function's own order -- see this flag's comment there.
@@ -3525,6 +3534,7 @@ def _flag_readers() -> dict:
         "claim_tests": orch._claim_tests_enabled,  # E-068 slice 2
         "reader_findings": orch._reader_findings_enabled,  # E-068 slice 5 (D-073)
         "nearest_build": orch._nearest_build_enabled,  # E-068 nearest build (D-075)
+        "deviation_gate": orch._deviation_gate_enabled,  # lane 1 (D-104)
         "explore_confirm": orch._explore_confirm_enabled,  # E-072 (D-080)
         "schedulability_block": _schedulability_block_enabled,
         "operator_approval": _operator_approval_enabled,  # E-068 PR 4 (D-071)

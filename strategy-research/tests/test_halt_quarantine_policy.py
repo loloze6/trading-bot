@@ -583,6 +583,8 @@ def test_every_known_sticky_flag_branch_has_a_pause_flag_to_reason_entry(tmp_pat
         "variant_shape_invalid", "variant_config_error",
         # D-051.
         "forecast_rule_violation",
+        # D-104.
+        "config_deviation",
     )
     table_flags = {flag for flag, _ in camp._PAUSE_FLAG_TO_REASON}
     for flag in known_sticky_flags:

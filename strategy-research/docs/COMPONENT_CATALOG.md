@@ -162,8 +162,9 @@ For a reader that does not have the design guide. The guide defines each one; th
 name outside them is invented.
 
 - **Regime names** (the only four): `trending`, `mean_reversion`, `chop`, `unknown`.
-- **Transform ops** (the only fifteen). History ops, which must come first in a pipeline: `identity`, `percentile`,
+- **Transform ops** (the only sixteen). History ops, which must come first in a pipeline: `identity`, `percentile`,
   `negate_percentile`, `zscore`, `ratio_to_mean`, `ema`. Scalar ops: `scale`, `threshold_filter`, `clip`, `sigmoid`,
-  `negate`. Data-aware ops: `vol_normalize`, `vol_adjusted`, `price_normalized`, `volume_filter`.
+  `negate`. Data-aware ops: `vol_normalize`, `vol_adjusted`, `price_normalized`, `volume_filter`, `vol_target`
+  (volatility targeting; see the design guide).
 - **Regime-rule operators**: `gte`, `gt`, `lte`, `lt`, `between` (with `low` and `high`).
 - **Regime detector modes**: `threshold_rules`, `score`, `score_product`.

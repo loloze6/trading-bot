@@ -4363,6 +4363,24 @@ def _nearest_build_enabled(cfg: dict | None = None) -> bool:
     return value
 
 
+def _deviation_gate_enabled(cfg: dict | None = None) -> bool:
+    """Lane 1 (D-104): orchestrator.deviation_gate.enabled. False when the key,
+    the section or the config file is absent; a non-bool value raises.
+    Requires, loudly, orchestrator.nearest_build.enabled: artifacts/
+    deviations.yaml, which this gate reads, is written only under it.
+    While false: byte-identical (nothing read, the route unchanged).
+    While true: a spec_ready 1b answer whose deviations.yaml lists any
+    deviation, or that has no readable deviations.yaml, pauses the run with
+    CONFIG_DEVIATION_FLAG before step 2 (innovation_expansion), so a config
+    that is not the brief's never reaches a backtest. Its own gate: nearest
+    build's information-only record is not changed."""
+    return _strict_orchestrator_flag(
+        "deviation_gate", cfg=cfg,
+        requires=(("nearest_build", lambda: _flag_dep(_nearest_build_enabled, cfg)),),
+        why=("the gate reads artifacts/deviations.yaml, which only nearest_build writes. "
+             "Enable them together."))
+
+
 def _nearest_build_module():
     _json_pointer_module()  # puts tools/ on sys.path
     import nearest_build as _nb
@@ -17103,6 +17121,36 @@ def _clear_stale_deviations(stage_name: str, run_dir: Path) -> None:
         stale.unlink()
 
 
+CONFIG_DEVIATION_FLAG = "config_deviation"
+
+
+def _route_deviation_gate(path: Path) -> str:
+    """D-104 (orchestrator.deviation_gate, checked by the caller): after a
+    spec_ready 1b answer and nearest build's record, pause the run with
+    CONFIG_DEVIATION_FLAG unless artifacts/deviations.yaml reads status
+    `exact` (nearest_build.build_record: no structured deviation AND no
+    `DEVIATION:` rationale line -- review of PR #384: a deviation written only
+    as a rationale line leaves `deviations` empty); a missing or unreadable
+    record pauses too (fail closed: an unverifiable config is not the
+    brief's). Before any backtest, so the run has no trial row."""
+    nb = _nearest_build_module()
+    record = nb.load_record(Path(path) / "artifacts")
+    if isinstance(record, dict) and record.get("status") == nb.STATUS_EXACT:
+        return "innovation_expansion"
+    if not isinstance(record, dict):
+        why = "artifacts/deviations.yaml is missing or unreadable"
+    else:
+        n_items = len(record.get("deviations") or [])
+        n_lines = len(record.get("config_rationale_lines") or [])
+        why = (f"status {record.get('status')!r} in artifacts/deviations.yaml "
+               f"({n_items} deviation(s), {n_lines} DEVIATION: line(s))")
+    update_state(path=path, status="paused_for_human", flags={CONFIG_DEVIATION_FLAG: True},
+                 last_error=f"deviation gate (D-104): {why}")
+    print(f"\n⏸️  PIPELINE PAUSED ({CONFIG_DEVIATION_FLAG}): 1b's base config is not the brief's "
+          f"-- {why}. No backtest has run (docs/RUNBOOK.md §3, {CONFIG_DEVIATION_FLAG}).")
+    return "human_pause"
+
+
 def _record_nearest_build(path: Path) -> None:
     """E-068 nearest build, after 1b's answer is routed (flag on only; off:
     no-op, nothing read): artifacts/deviations.yaml from decision.yaml and
@@ -18712,6 +18760,8 @@ def determine_post_strategy_config_authoring_route(path: Path, *, routing_retire
             _record_nearest_build(path)  # E-068 nearest build; flag off: no-op
             _record_start_config_deviations(path)  # CUL-412; no start config: no-op
             _record_claim_match(path)  # E-068 slice 2: a warning only; flag off: no-op
+            if _deviation_gate_enabled():  # D-104; flag off: nothing read
+                route = _route_deviation_gate(path)
         return route
     tried_warning = None
     if status == "component_gap":
