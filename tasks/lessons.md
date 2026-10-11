@@ -105,3 +105,7 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-10 -- Cost share read from an unweighted per-trade ratio; a brief drafted against the wrong flag set
 - **Pattern:** my first read of cost drag used the per-trade mean (`realized_edge_to_cost_ratio`), which gave run_079 a positive edge of 1.69x cost while its account lost money in every window: the larger positions lose. Separately, the lane-1 basket idea collides with the operator's live `variant_loop` flag (one coin per variant), found only by reading the variant code.
 - **Rule:** measure cost drag at portfolio weight (net % of account per trade) and cross-check its sign against the account's result before reporting; before drafting a brief, read the operator's live flag set and check the brief's shape (coins per variant, components, sizing) against the code paths those flags select.
+
+## 2026-10-11 -- A flag's effect stated from one call site
+- **Pattern:** I told the operator "with the variant loop off, every variant runs the whole coin list" after reading the coin-context branch only (`run_phase1_research.py:2839`); protocol_execution's loop-off path backtests only the base config (`_single_column_untested_kw`, and the flag register says so). The operator then built a plan on it.
+- **Rule:** before stating what a flag does, read its register entry and every branch on it in the stage that consumes the result (here protocol_execution), not just the first `if` that mentions it.
