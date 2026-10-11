@@ -16,14 +16,16 @@ research_goal: >
   is attributed to slow-moving and constrained flows (retail herding, leverage
   liquidation cascades, scheduled rebalancers); a daily signal trades a few
   dozen times per coin over two years, against 1,568 to 2,471 trades per
-  4-month window in the 1h runs 070-079, where fees were 61-76% of the loss.
+  4-month window in the 1h runs 070-079, where fees were 61-76% of the loss
+  (measured 2026-10-10 from runs/run_0NN/variants/base/trade_diagnostics.json in
+  the operator's checkout; SESSION_LOG.md, 2026-10-10 step-back entry).
   Why not arbitraged: trend is a premium for bearing crash and whipsaw risk;
   its size after costs at daily frequency is what this run measures.
 constraints:
   - "The strategy config is exactly this, nothing added: regime_detector ungated (mode threshold_rules, no components, no rules, no vetoes, default_regime unknown); strategies.regimes.unknown has ONE component, strategies.strategy_components.SmaTrendLongOnlyComponent with params lookback_L 50 (scaling_factor default 10), weight 1.0, transforms in this order: identity; vol_target with params window 60, target_annual_vol 0.4, periods_per_year 365; clip with params min 0, max 10. trending, mean_reversion and chop are null. No history_transforms, no lookback override, no min_allocation_change override."
   - "Long or flat only, never short. Allocation = forecast / 10, so at most 100% of the coin's account (no leverage: the engine has no liquidation, D-101)."
-  - "Sizing moves only in steps of at least 0.2 of allocation: the risk control min_allocation_change (threshold 0.2, trading-bot/config.json:28) rejects smaller rebalances."
-  - "Variants: the base only. With the variant loop off for this run, only the base config is backtested; any design or asset entry stage 3 writes is listed untested and gets no trial. The other two lookbacks are the separate runs `L1_daily_trend_basket_sma100`, `L1_daily_trend_basket_sma200`."
+  - "Sizing moves only in steps of at least 0.2 of allocation: the risk control min_allocation_change (threshold 0.2, trading-bot/config.json:28; risk/risk_manager.py _ctrl_min_allocation_change, no exemption for a close) rejects any smaller rebalance. So a position whose target is under 0.2 (realised volatility above 200% a year) is never opened, and one held at under 0.2 is closed only by the window end."
+  - "Variants: the base only. With the variant loop off for this run, only the base config is backtested; any design or asset entry in variant_patches.yaml (written by innovation_expansion, indexed by backtest_specification) is listed untested and gets no trial. The other two lookbacks are the separate runs `L1_daily_trend_basket_sma100`, `L1_daily_trend_basket_sma200`."
   - "The 100-trades-per-coin bar (trade_count_min) is expected to FAIL by construction for a daily signal; this is known before the run and is not a reason to change anything."
   - "No parameter is tuned on fold A. Lookback, vol window, vol target and clip are fixed here."
 available_data:
@@ -40,7 +42,7 @@ machine_constraints:
     window_months: 4
 ---
 
-# Lane 1 -- daily SMA(50) trend, vol-targeted, 9-coin Kraken basket, fold A (design run (shorter lookback))
+# Lane 1 -- daily SMA(50) trend, vol-targeted, 9-coin Kraken basket, fold A (design run, shorter lookback)
 
 Pre-registered 2026-10-11 in DECISION_LOG D-102, before any run. The rule below
 is the same text in all three briefs and in D-102; it is read by hand after the
@@ -59,8 +61,9 @@ Inputs, per run:
   over the `trades` list of the run's `trade_diagnostics.json` (run folder):
   min(ratio over all trades, ratio without window-end forced closes), gross edge
   before costs / fees + slippage; NOT EVALUABLE when it raises
-  `PortfolioNotEvaluable` (fewer than 30 non-forced trades, or a trade without
-  all-cost fields).
+  `PortfolioNotEvaluable` (fewer than 30 non-forced trades, a trade without
+  all-cost fields, or a zero mean cost). A malformed record raises a plain
+  `ValueError`: the run is broken; report it, do not judge the rule on it.
 
 **CONTINUE** iff Sharpe > 0 on at least 2 of the 3 runs AND the base ratio is
 >= 1 or not evaluable. Next: lane 1's fold-B confirmation.
@@ -86,7 +89,9 @@ the 9 coins (continuous count without windows: 226). Expected divergence
 declared now: vol targeting also rebalances inside a trend whenever the size
 moves by 0.2 or more, and the engine matches fills lot by lot (LIFO,
 `performance/metrics.py`), so the measured completed-trade count is expected
-ABOVE the crossing count; a count BELOW it is a bug.
+ABOVE the crossing count. A count well BELOW it is a bug unless explained by
+entries or exits the 0.2 band blocked (constraint above), counted from the run's
+own bars.
 
 ## Known biases and limits
 
