@@ -89,3 +89,19 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-10 -- Reviewer roles: Fable for direction, Sonnet for code
 - **Pattern:** the operator stopped a Fable code review: Fable is reserved for strategic review of the direction; code reviews and fact-checks cost less with a Sonnet reviewer, one round, one PR where asked.
 - **Rule:** PR reviews and doc fact-checks go to a Sonnet reviewer; the persistent Fable agent is used only for step-backs and next-step advice; every reviewer claim is still verified (the Fable advice "rank_ic with a complement baseline" was impossible: `claim_tests.check_spec` refuses any baseline for rank_ic).
+
+## 2026-10-10 -- "The fold has data" was checked at listing dates only
+- **Pattern:** I told the operator fold B had data for the pilot runs from the Layer-1 check (listing dates); the data gate then graded every BTC variant `refine` (Kraken's 2018-01 outage, runs of 5-40 missing bars) and run_076 paused.
+- **Rule:** before a child is minted on a fold, scan the fold's blocks for the child's coins at the data gate's own rule (any missing run longer than the engine's ignore tier, 3 bars) and say which check was run.
+
+## 2026-10-10 -- An id plan stated before reading every collision rule
+- **Pattern:** I said setting the held entry to `superseded` would free its proposal id; decide-next refuses an id three ways (a queue entry's `proposal_ref` names it, the queue id exists, the brief file exists), whatever the status.
+- **Rule:** before proposing how to reuse or free an id, read the candidate checks (`decide_next._candidate`) and the pool filter (`decide`'s `named` set) and list every rule that applies.
+
+## 2026-10-10 -- Mechanisms described from memory, files scripted from a guess
+- **Pattern:** I wrote "the engine flattens at a gap" (it has three tiers: ignore, block new entries, flatten at the warmup); I scripted against `confirmations.yaml`'s `fold_confirmations` (the list is `looks`); I planned the campaign steps on the main checkout without checking it held the analyst code (143 commits behind).
+- **Rule:** read the code before describing a mechanism to the operator; open a file before scripting against its keys; check that the checkout that will run a plan contains the code the plan needs (`git merge-base --is-ancestor`).
+
+## 2026-10-10 -- Cost share read from an unweighted per-trade ratio; a brief drafted against the wrong flag set
+- **Pattern:** my first read of cost drag used the per-trade mean (`realized_edge_to_cost_ratio`), which gave run_079 a positive edge of 1.69x cost while its account lost money in every window: the larger positions lose. Separately, the lane-1 basket idea collides with the operator's live `variant_loop` flag (one coin per variant), found only by reading the variant code.
+- **Rule:** measure cost drag at portfolio weight (net % of account per trade) and cross-check its sign against the account's result before reporting; before drafting a brief, read the operator's live flag set and check the brief's shape (coins per variant, components, sizing) against the code paths those flags select.
