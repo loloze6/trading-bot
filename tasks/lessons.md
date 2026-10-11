@@ -109,3 +109,7 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-11 -- A flag's effect stated from one call site
 - **Pattern:** I told the operator "with the variant loop off, every variant runs the whole coin list" after reading the coin-context branch only (`run_phase1_research.py:2839`); protocol_execution's loop-off path backtests only the base config (`_single_column_untested_kw`, and the flag register says so). The operator then built a plan on it.
 - **Rule:** before stating what a flag does, read its register entry and every branch on it in the stage that consumes the result (here protocol_execution), not just the first `if` that mentions it.
+
+## 2026-10-11 -- A figure from a memory note written into a decision row
+- **Pattern:** D-102's first draft carried "24 merged PRs (17 analyst checker) against 5 real runs" and "0 of 10 ideas validated" from my step-back memory note, unre-measured; the Sonnet fact-check could not source them, and a GitHub search for PRs merged 2026-10-08..2026-10-10 returns 41 (the note's window is not recorded).
+- **Rule:** a number goes into a committed decision only with its source (a file, a command and its date); a memory-note figure is re-measured first or left out.
