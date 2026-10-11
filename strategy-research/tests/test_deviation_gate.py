@@ -89,6 +89,18 @@ def test_flag_on_deviations_pause_before_step_2(capsys):
     assert "PIPELINE PAUSED (config_deviation)" in capsys.readouterr().out
 
 
+def test_flag_on_rationale_line_only_deviation_pauses():
+    """Review of PR #384: a deviation written only as a `DEVIATION:` rationale line leaves the
+    structured `deviations` list empty; the record's status is `approximation`, and the gate pauses."""
+    _set_orchestrator(GATE_ON)
+    run_dir = _spec_ready_run("run_994", rationale=[
+        {"hypothesis_claim": "4-bar hold", "config_choice": "DEVIATION: none, forecast / 10 sizing"}])
+    assert rpr.determine_post_strategy_config_authoring_route(run_dir) == "human_pause"
+    rec = nb.load_record(run_dir / "artifacts")
+    assert rec["deviations"] == [] and rec["status"] == nb.STATUS_APPROXIMATION
+    assert "1 DEVIATION: line(s)" in _state(run_dir)["last_error"]
+
+
 def test_flag_on_no_deviation_continues():
     _set_orchestrator(GATE_ON)
     run_dir = _spec_ready_run("run_992")

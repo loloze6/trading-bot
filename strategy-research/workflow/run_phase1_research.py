@@ -17127,17 +17127,23 @@ CONFIG_DEVIATION_FLAG = "config_deviation"
 def _route_deviation_gate(path: Path) -> str:
     """D-104 (orchestrator.deviation_gate, checked by the caller): after a
     spec_ready 1b answer and nearest build's record, pause the run with
-    CONFIG_DEVIATION_FLAG when artifacts/deviations.yaml lists any deviation
-    or cannot be read (fail closed: an unverifiable config is not the
-    brief's); else innovation_expansion. Before any backtest, so the run has
-    no trial row."""
-    record = _nearest_build_module().load_record(Path(path) / "artifacts")
-    deviations = record.get("deviations") if isinstance(record, dict) else None
-    if isinstance(deviations, list) and not deviations:
+    CONFIG_DEVIATION_FLAG unless artifacts/deviations.yaml reads status
+    `exact` (nearest_build.build_record: no structured deviation AND no
+    `DEVIATION:` rationale line -- review of PR #384: a deviation written only
+    as a rationale line leaves `deviations` empty); a missing or unreadable
+    record pauses too (fail closed: an unverifiable config is not the
+    brief's). Before any backtest, so the run has no trial row."""
+    nb = _nearest_build_module()
+    record = nb.load_record(Path(path) / "artifacts")
+    if isinstance(record, dict) and record.get("status") == nb.STATUS_EXACT:
         return "innovation_expansion"
-    why = ("artifacts/deviations.yaml is missing or unreadable" if record is None
-           else f"{len(deviations) if isinstance(deviations, list) else '?'} deviation(s) "
-                f"in artifacts/deviations.yaml")
+    if not isinstance(record, dict):
+        why = "artifacts/deviations.yaml is missing or unreadable"
+    else:
+        n_items = len(record.get("deviations") or [])
+        n_lines = len(record.get("config_rationale_lines") or [])
+        why = (f"status {record.get('status')!r} in artifacts/deviations.yaml "
+               f"({n_items} deviation(s), {n_lines} DEVIATION: line(s))")
     update_state(path=path, status="paused_for_human", flags={CONFIG_DEVIATION_FLAG: True},
                  last_error=f"deviation gate (D-104): {why}")
     print(f"\n⏸️  PIPELINE PAUSED ({CONFIG_DEVIATION_FLAG}): 1b's base config is not the brief's "

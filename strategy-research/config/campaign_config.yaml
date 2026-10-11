@@ -1080,8 +1080,9 @@ orchestrator:
       # artifacts/deviations.yaml, which only nearest_build writes). While false:
       # byte-identical (nothing read, 1b's route unchanged).
       #
-      # While true: after a spec_ready 1b answer, a deviations.yaml that lists any
-      # deviation, or that is missing or unreadable, pauses the run with
+      # While true: after a spec_ready 1b answer, a deviations.yaml whose status is
+      # not `exact` (any deviation, structured or a DEVIATION: line), or that is
+      # missing or unreadable, pauses the run with
       # config_deviation before step 2 -- before any backtest, so no trial row.
       # Nearest build's own record stays information only.
   explore_confirm:
