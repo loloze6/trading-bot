@@ -209,3 +209,34 @@ are the Linear comments posted at decision time and this log.
 - **Model per stage** after the first real runs' cost is measured (today every stage runs on
   `claude-haiku-4-5`).
 - **Tie-break doc note:** `DELIVERY_REVIEW.md` C1 predates D-014 and should be read with it.
+- **Fold shape: contiguous folds with one continuous backtest, or today's interleaved blocks**
+  (D-107 ruling 5, written 2026-10-12; **decided after lane 1's fold-B runs return; nothing is
+  built**). Why it is open: lane 1's fold-A label "cost binds" came from window-end forced
+  closes, which exist because every 4-month block is a separate backtest (D-107).
+  - **Today, interleaved blocks:** `config/folds.yaml` holds three folds of six exact 4-month
+    blocks; `tools/research_folds.py:148` `load_folds` refuses anything else
+    (`BLOCKS_PER_FOLD = 6`, `:62`). Fold A happens to be contiguous (2022-01..2023-12); B and C
+    interleave 2018-2021 so each has a block in every year (D-085, D-099).
+    `tools/run_protocol.py:2558-2571` runs one backtest per coin and block, each warmed up
+    (`warmup_prefetch`) and forced flat at its end; the grid reducers read one value per block
+    (`tools/verdict_criteria_evaluator.py:1089`, including `sign_consistent_by_era`, `:1174`;
+    blocks under `_SPARSE_TRADE_FLOOR` = 5 trades get no Sharpe, `run_protocol.py:55`); the
+    whole-test chain (`tools/portfolio_whole_test.py:391` `chain_windows`) links the blocks,
+    flat across the calendar gaps (`kind` "gap", `:602`). **Keeps:** era coverage per fold
+    (B and C each see 2018, 2019, 2020 and 2021), many restarts. **Loses:** continuity: a hold
+    longer than a block is cut at its end (lane 1: 21-30 window-end lots per run on fold A), a
+    first-day fill's costs fall outside the chain (CUL-431 finding), and blocks too short for a
+    slow signal's trade count.
+  - **Contiguous folds, one continuous backtest per coin and fold, per-period numbers sliced
+    from that one curve:** touches `config/folds.yaml` and `load_folds`' six-tile rule (a fold
+    becomes one span, with slice labels); `run_phase1_research._protocol_windows_from_constraints`
+    and its pre-flight mirror `run_campaign._expected_generated_protocol` (one window per fold);
+    `run_protocol.py`'s window loop (one backtest, slices computed after it); the grid reducers
+    (per-block values become slices of one curve; the sparse-trade floor per slice); the
+    whole-test chain (one segment per coin, no junctions); decide-next's fold-use rule (a fold
+    is used when any window overlaps it, D-085). **Keeps:** continuity (no forced closes inside
+    a fold, one warm-up). **Loses:** era coverage per fold: two calendar years per fold (for
+    example 2018-2019 and 2020-2021), so one fold can sit in one market phase; and direct
+    comparability with every run since run_065 (blocks).
+  - Not part of this item: the profit bars' thresholds (`cost_edge_ratio_min`,
+    `trade_count_min`, CUL-431 note) and the chain's first-day anchor (CUL-431 finding).
