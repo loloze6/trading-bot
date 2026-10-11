@@ -34,6 +34,65 @@ def _ratio_to_mean(s: pd.Series) -> float:
 
 
 # ---------------------------------------------------------------------------
+# vol_target (data-aware): scale the value by target / realised volatility.
+#
+#   out = v * target_annual_vol / (stdev(simple returns of the last `window`
+#         closes, ddof 1) * sqrt(periods_per_year))
+#
+# All three params are required (no defaults). Fail loud: a missing or invalid
+# param, fewer than window + 1 closes, a non-finite or non-positive close, a
+# zero realised volatility or a non-finite input/output raises ValueError.
+#
+# WHY THIS CANNOT LEAK: `d` is the strategy's own buffer at the current bar
+# (AdvancedStrategy.update -> data_buffer.get_df()), whose last row is the bar
+# being decided; the op reads only its last window + 1 closes, so every close
+# it uses is timestamped at or before the current bar's close.
+# ---------------------------------------------------------------------------
+_VOL_TARGET_PARAMS = ("window", "target_annual_vol", "periods_per_year")
+
+
+def vol_target_param_errors(p: Any) -> list[str]:
+    """Problems with a vol_target params dict ([] when valid). Shared by the op
+    and validate_config.py's V14, so both refuse exactly the same params."""
+    if not isinstance(p, dict):
+        return [f"params must be a mapping, got {type(p).__name__}"]
+    errors = [f"missing param '{k}'" for k in _VOL_TARGET_PARAMS if k not in p]
+    w = p.get("window")
+    if "window" in p and not (isinstance(w, int) and not isinstance(w, bool) and w >= 2):
+        errors.append(f"window must be an int >= 2, got {w!r}")
+    for k in ("target_annual_vol", "periods_per_year"):
+        x = p.get(k)
+        if k in p and not (isinstance(x, (int, float)) and not isinstance(x, bool)
+                           and np.isfinite(x) and x > 0):
+            errors.append(f"{k} must be a finite number > 0, got {x!r}")
+    return errors
+
+
+def _vol_target(v: float, h: pd.Series, p: dict[str, Any], d: pd.DataFrame | None) -> float:
+    errors = vol_target_param_errors(p)
+    if errors:
+        raise ValueError(f"vol_target: {'; '.join(errors)}")
+    if not np.isfinite(v):
+        raise ValueError(f"vol_target: input value is not finite ({v!r})")
+    if d is None or "close" not in d.columns:
+        raise ValueError("vol_target: needs the bar data with a 'close' column")
+    window = p["window"]
+    closes = d["close"].to_numpy(dtype=float)
+    if len(closes) < window + 1:
+        raise ValueError(f"vol_target: needs {window + 1} closes, got {len(closes)}")
+    tail = closes[-(window + 1):]
+    if not (np.all(np.isfinite(tail)) and np.all(tail > 0)):
+        raise ValueError("vol_target: a close in the window is not finite or not positive")
+    realised = float(np.std(tail[1:] / tail[:-1] - 1.0, ddof=1)) * float(np.sqrt(p["periods_per_year"]))
+    if not realised > 0:
+        raise ValueError(f"vol_target: realised volatility is {realised!r} over the last {window} returns")
+    out = v * p["target_annual_vol"] / realised
+    if not np.isfinite(out):
+        raise ValueError(f"vol_target: output is not finite ({out!r})")
+    return float(out)
+
+
+# ---------------------------------------------------------------------------
 # Pipeline-based transform ops
 # Signature: (v: float, h: pd.Series, p: dict, data: pd.DataFrame | None) -> float
 #
@@ -84,6 +143,7 @@ TRANSFORM_OPS_REGISTRY: Dict[str, Any] = {
         d["volume"].iloc[-1] >= d["volume"].rolling(p.get("period", 20)).mean().iloc[-1]
         else 0.0
     ),
+    "vol_target":        _vol_target,
 }
 
 
@@ -131,6 +191,7 @@ TRANSFORM_MIN_PERIODS: Dict[str, int] = {
     "vol_adjusted":      1,
     "price_normalized":  1,
     "volume_filter":     1,
+    "vol_target":        1,    # reads bar data, not history: see transform_data_periods()
 }
 
 
@@ -145,6 +206,15 @@ def transform_min_periods(op: str, params: Dict[str, Any]) -> int:
             f"TRANSFORM_MIN_PERIODS. Add one before using it in a transforms list."
         )
     return TRANSFORM_MIN_PERIODS[op]
+
+
+def transform_data_periods(op: str, params: dict[str, Any]) -> int:
+    """Bars of OHLCV data `op` reads at each bar (0 for every op but vol_target).
+    ConfigDrivenStrategyEngine.get_required_periods() includes it, so the
+    strategy is not ready before a vol_target op has its window + 1 closes."""
+    if op == "vol_target" and not vol_target_param_errors(params):
+        return params["window"] + 1
+    return 0
 
 
 # ---------------------------------------------------------------------------

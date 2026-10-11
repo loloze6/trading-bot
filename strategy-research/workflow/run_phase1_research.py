@@ -16890,7 +16890,8 @@ _COMPONENT_GAP_RETRY_STATE_KEY = "component_gap_retry"
 # would pass without any transform tried); a test keeps the two in sync.
 _TRANSFORM_OP_NAMES = ("percentile", "negate_percentile", "zscore", "ratio_to_mean",
                        "scale", "threshold_filter", "clip", "sigmoid", "negate",
-                       "vol_normalize", "vol_adjusted", "price_normalized", "volume_filter")
+                       "vol_normalize", "vol_adjusted", "price_normalized", "volume_filter",
+                       "vol_target")
 _TRANSFORM_OPS_NOT_DETECTED = ("identity", "ema")
 # Review S2: spellings a model writes for an op ("z-score", "vol-normalised").
 _TRANSFORM_OP_SPELLINGS = (

@@ -7,6 +7,7 @@ import logging
 
 from strategies.registry import (
     apply_transform_pipeline, _load_class, component_effective_lookback, standardise_block_forecast,
+    transform_data_periods,
 )
 from strategies.strategy_base import MarketRegime, SubStrategyComponent
 
@@ -307,6 +308,16 @@ class ConfigDrivenStrategyEngine:
                 comp = self._components[rname][c_spec["id"]]
                 effective.append(component_effective_lookback(c_spec, comp.get_required_periods()))
         self.lookback = max(effective, default=50)
+        # Bars of OHLCV data a transform reads (registry.transform_data_periods:
+        # vol_target's window + 1, 0 for every other op); get_required_periods()
+        # includes it, so 0 -- every config without vol_target -- changes nothing.
+        self._data_periods = max(
+            (transform_data_periods(s["op"], s.get("params", {}))
+             for rcfg in self._regime_cfgs.values() if rcfg is not None
+             for c_spec in rcfg["components"]
+             for s in c_spec.get("transforms", []) + c_spec.get("history_transforms", [])),
+            default=0,
+        )
 
         # Phase 3: create history deques and capture append-time transform specs
         for rname, rcfg in self._regime_cfgs.items():
@@ -546,6 +557,7 @@ class ConfigDrivenStrategyEngine:
     def get_required_periods(self) -> int:
         all_comps = [c for rc in self._components.values() for c in rc.values()]
         base = max((c.get_required_periods() for c in all_comps), default=0)
+        base = max(base, self._data_periods)
         if not self._block_regimes:
             return base
         # E-060 S3a: a block is ready at its source's required_bars + warmup at
