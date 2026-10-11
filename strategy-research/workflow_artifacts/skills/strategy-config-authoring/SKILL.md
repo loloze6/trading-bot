@@ -145,7 +145,8 @@ strategy, so every bar is in that regime. That is a parameter change; the compon
 **Fidelity (O-7): build the signal the card describes, or say what differs.** In `config_rationale`, map EACH
 clause of the card's `signal_concept` to the config element that implements it (one entry per clause:
 `hypothesis_claim` = the clause, `config_choice` = the config path and what it does). A clause you did not or could
-not build as written (an exit, a stop, a time-based hold, position state, sizing other than forecast / 10, an
+not build as written (an exit, a stop, a time-based hold, position state, sizing other than forecast / 10 (volatility
+targeting is the `vol_target` op and a cap is a `clip`, so those are built, not declared), an
 on/off rule restated as a graded measure) gets its own entry whose `config_choice` starts with `DEVIATION:` and
 says what was built instead, or that nothing was. Never silently build a different signal, and never leave a
 clause unmapped.

@@ -272,7 +272,12 @@ def test_a_1a_rerun_rewrites_the_pass_rule_and_rechecks_the_id(campaign_root):
 # path; the IMPROVEMENT 07 text applies only under config_direct_authoring. The decide_next addendum is
 # still not in the skill (the brief-card rubric lives in BRIEF_HYPOTHESES.md, edited separately).
 # Previous pin: 8309787de7bf3036eb6ffc24ac621de6258ea045e0b2873644010129533b5e52.
-_MASTER_SKILL_SHA256 = "6ac6d3288b315e1dc5cdff00dadaef099f56a3a42a5a8e639abd90adf555e87f"
+# RE-PINNED by D-103 (2026-10-11, branch docs/guide-vol-target): a DECLARED one-sentence change in
+# "Name what the strategy config cannot express" -- volatility targeting and a cap are no longer listed
+# as not expressible (the vol_target op and a clip express them; Kelly and leverage stay). Changes
+# hypothesis_generation's prompt on every path. Nothing about the decide_next addendum changed.
+# Previous pin: 6ac6d3288b315e1dc5cdff00dadaef099f56a3a42a5a8e639abd90adf555e87f.
+_MASTER_SKILL_SHA256 = "1f6922e02c84b676913a5db7a64a343fff456ae6bb8d12f2a3412f83de02ca53"
 
 
 def test_hypothesis_design_skill_is_byte_identical_to_master():
