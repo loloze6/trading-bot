@@ -127,6 +127,31 @@ def test_contiguous_not_evaluable_text_is_the_pre_d113_text():
         f"below WHOLE_TEST_MIN_COVERAGE={pw.WHOLE_TEST_MIN_COVERAGE}")
 
 
+def test_engine_days_next_to_a_planned_gap_are_not_subtracted_twice():
+    """w0 nominal 0..29 recorded 0..27 (2 engine tail days), w1 nominal 60..89
+    recorded 62..89 (2 engine head days), a 30-day planned gap between: counted
+    = 60 days inside the windows - 4 engine days = 56; returns 27 + 27 = 54."""
+    wins = {"w0": {"X": _bars(0, _closes(28, 0))}, "w1": {"X": _bars(62, _closes(28, 1))}}
+    bounds = {"w0": (_day(0), _day(29)), "w1": (_day(60), _day(89))}
+    ch = pw.chain_windows(wins, ["X"], bounds)
+    assert ch["n_engine_tail_days"] == 2 and ch["n_engine_head_days"] == 2
+    assert ch["n_gap_days"] == 30 and ch["n_calendar_days"] == 90
+    assert ch["n_counted_calendar_days"] == 56 and ch["coverage"] == 55 / 56
+
+
+def test_overlap_and_order_do_not_change_the_counted_days():
+    """w0 0..29 and w1 25..49 overlap (union 0..49), w2 70..99 after a 20-day
+    gap: counted 80; the same windows given out of order chain identically."""
+    spans = {"w0": (0, 29), "w1": (25, 49), "w2": (70, 99)}
+    wins = {w: {"X": _bars(a, _closes(b - a + 1, i))} for i, (w, (a, b)) in enumerate(spans.items())}
+    bounds = {w: (_day(a), _day(b)) for w, (a, b) in spans.items()}
+    ch = pw.chain_windows(wins, ["X"], bounds)
+    assert ch["n_gap_days"] == 20 and ch["n_counted_calendar_days"] == 80
+    rev = {w: wins[w] for w in reversed(list(wins))}
+    ch2 = pw.chain_windows(rev, ["X"], bounds)
+    assert ch2["daily_returns"] == ch["daily_returns"] and ch2["coverage"] == ch["coverage"]
+
+
 # ---------------------------------------------------------------------------
 # Fold A (contiguous): runs 081-083's stored v2 chain rows recomputed with this code
 # ---------------------------------------------------------------------------
