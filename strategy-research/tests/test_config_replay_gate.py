@@ -202,3 +202,21 @@ def test_series_hash_mismatch_fails_closed(monkeypatch):
     run_dir = _gate_run("run_978", LANE1, LANE1)
     assert rpr._route_config_replay_gate(run_dir) == "human_pause"
     assert "SeriesHashMismatch" in _state(run_dir)["last_error"]
+
+
+def test_gate_leaves_logging_and_sys_path_as_they_were():
+    """Review of PR #394: the replay must not silence logging or grow sys.path in
+    the long-lived campaign process."""
+    import logging
+    before_disable, before_path = logging.root.manager.disable, list(sys.path)
+    run_dir = _gate_run("run_979", LANE1, LANE1)
+    assert rpr._route_config_replay_gate(run_dir) == "innovation_expansion"
+    assert logging.root.manager.disable == before_disable
+    assert sys.path == before_path
+
+
+def test_stale_record_is_removed_when_no_exact_config():
+    run_dir = _gate_run("run_980", None, LANE1)
+    (run_dir / "artifacts" / rpr.CONFIG_REPLAY_ARTIFACT).write_text("verdict: VOID", encoding="utf-8")
+    assert rpr._route_config_replay_gate(run_dir) == "innovation_expansion"
+    assert not (run_dir / "artifacts" / rpr.CONFIG_REPLAY_ARTIFACT).exists()

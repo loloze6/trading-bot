@@ -17212,6 +17212,9 @@ def _route_config_replay_gate(path: Path) -> str:
     pauses too). Writes artifacts/config_replay_gate.yaml whenever it compares.
     Before any backtest, so a paused run has no trial row."""
     path = Path(path)
+    stale = path / "artifacts" / CONFIG_REPLAY_ARTIFACT
+    if stale.exists():  # a --resume must not show an earlier answer's record
+        stale.unlink()
     try:
         want = _brief_exact_config(path)
         if want is None:

@@ -68,9 +68,24 @@ class SeriesHashMismatch(ValueError):
 def replay_configs(want: dict, got: dict) -> dict:
     """The replay itself, for two configs: {identical_json, series, verdict}.
     Also called by the config replay gate (run_phase1_research, D-109).
-    Raises SeriesHashMismatch when a series file is not the pinned one."""
-    sys.path.insert(0, str(REPO / "trading-bot"))
+    Raises SeriesHashMismatch when a series file is not the pinned one.
+    Leaves the caller's logging and sys.path as they were (review of PR #394:
+    the gate runs inside the long-lived campaign process)."""
+    tb = str(REPO / "trading-bot")
+    added = tb not in sys.path
+    if added:
+        sys.path.insert(0, tb)
+    prev_disable = logging.root.manager.disable
     logging.disable(logging.CRITICAL)
+    try:
+        return _replay_body(want, got)
+    finally:
+        logging.disable(prev_disable)
+        if added and tb in sys.path:
+            sys.path.remove(tb)
+
+
+def _replay_body(want: dict, got: dict) -> dict:
     out = {"identical_json": want == got, "series": {}}
     valid = True
     for name, pinned in SERIES_SHA256.items():
