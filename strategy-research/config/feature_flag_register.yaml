@@ -795,12 +795,11 @@ flags:
       decide-next copies the parent's machine_constraints (windows) into the
       child's brief as before; the protocol generator accepts what it accepted;
       no artifact gains a `fold` field. On: (1) a child run of an idea gets the
-      windows of the next fold its lineage has not used (config/folds.yaml, four
-      folds of six exact 4-month blocks; A = 2022-2023, B and C = 2018-2021,
-      D = 2024-2025 (D-115); order A, B, C, D; lineage = the source-run chain in
-      the memory entry's hypothesis_id; a fold is used when any lineage window
-      overlaps any of its blocks, so runs 065-074 are fold A); a lineage that used
-      all four is
+      windows of the next fold its lineage has not used (config/folds.yaml, three
+      folds of six exact 4-month blocks; A = 2022-2023, B and C = 2018-2021;
+      order A, B, C; lineage = the source-run chain in the memory entry's
+      hypothesis_id; a fold is used when any lineage window overlaps any of its
+      blocks, so runs 065-074 are fold A); a lineage that used all three is
       INFEASIBLE (folds_exhausted), never a crash; `fold` is written into the
       child's machine_constraints.protocol, run_context.yaml, the memory entry
       and the trial rows; a candidate whose child has no layer-1 data on the
@@ -808,9 +807,10 @@ flags:
       generator, the launch pre-flight (generated and pinned protocols, and the
       run_context / last_escalation protocol) and tools/run_protocol.py, which
       every backtest passes through, refuse any window overlapping the
-      policy's 2024-2025 period, except fold D's exact blocks in a fold-D
-      protocol (D-115: no validation stage; 2024-2025 is fold D, after A, B
-      and C). Tested by tests/test_e077_folds.py.
+      validation period (the policy's 2024-2025), except fold D's exact blocks
+      (D-115: no validation stage; fold D is outside the automatic order and
+      a fold-D brief is generated only under this flag). Tested by
+      tests/test_e077_folds.py and tests/test_d115_fold_d.py.
       E-077 PR-2 (CUL-421, D-087), same flag, no new one: a side finding's envelope
       (`vehicle` -- required from a model, it IS the config change --, `combines_as`,
       `fold_observed`) is accepted and checked; after a child run's backtests

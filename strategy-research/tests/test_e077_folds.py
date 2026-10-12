@@ -56,7 +56,6 @@ DOC = rf.load_folds(REAL_FOLDS, policy_path=REAL_POLICY)
 FOLD_A = rf.windows_ranges(rf.fold_windows(DOC, "A"))
 FOLD_B = rf.windows_ranges(rf.fold_windows(DOC, "B"))
 FOLD_C = rf.windows_ranges(rf.fold_windows(DOC, "C"))
-FOLD_D = rf.windows_ranges(rf.fold_windows(DOC, "D"))  # D-115
 RUN_074_WINDOWS = [  # protocols/run_074_generated.json, verbatim
     {"label": "2022-01", "test": {"start": "2022-01-01", "end": "2022-04-30"}},
     {"label": "2022-05", "test": {"start": "2022-05-01", "end": "2022-08-31"}},
@@ -77,9 +76,18 @@ def _range(w):
     return (w["test"]["start"], w["test"]["end"])
 
 
-def test_the_real_file_has_four_folds_of_six_exact_blocks():
-    """D-115: fold D (2024-2025, six contiguous blocks like A) after A, B, C."""
-    assert DOC["order"] == ["A", "B", "C", "D"]
+@pytest.fixture(autouse=True)
+def _folds_file_in_the_sandbox():
+    """D-115: the generator's guard reads ROOT/config/folds.yaml (fold D's blocks) when a
+    window is in 2024-2025; the real file always exists, the test sandbox gets a copy."""
+    dest = rpr.ROOT / "config" / "folds.yaml"
+    if not dest.exists():
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(REAL_FOLDS, dest)
+
+
+def test_the_real_file_has_three_ordered_folds_and_fold_d_of_six_exact_blocks():
+    assert DOC["order"] == ["A", "B", "C"]  # D-115: fold D is defined but not ordered
     assert {f: len(b) for f, b in DOC["folds"].items()} == {"A": 6, "B": 6, "C": 6, "D": 6}
     labels = {f: [b["label"] for b in blocks] for f, blocks in DOC["folds"].items()}
     assert labels["A"] == ["2022-01", "2022-05", "2022-09", "2023-01", "2023-05", "2023-09"]
@@ -93,11 +101,10 @@ def test_the_real_file_has_four_folds_of_six_exact_blocks():
             assert (b["start"], b["end"]) == (f"{y}-{m}-01", f"{y}-{ends[m]}")
 
 
-def test_the_eighteen_blocks_of_a_to_c_tile_the_research_period_and_d_tiles_2024_2025():
-    abc = sorted(b["label"] for f in ("A", "B", "C") for b in DOC["folds"][f])
-    assert abc == [f"{y}-{m}" for y in range(2018, 2024) for m in ("01", "05", "09")]
-    d = [b["label"] for b in DOC["folds"]["D"]]
-    assert d == [f"{y}-{m}" for y in (2024, 2025) for m in ("01", "05", "09")]
+def test_the_eighteen_blocks_tile_the_research_period_exactly_once():
+    all_labels = sorted(b["label"] for f in ("A", "B", "C") for b in DOC["folds"][f])
+    expected = [f"{y}-{m}" for y in range(2018, 2024) for m in ("01", "05", "09")]
+    assert all_labels == expected
 
 
 def test_b_and_c_are_interleaved_a_block_in_every_year_and_a_covers_both_of_its_years():
@@ -125,15 +132,10 @@ def test_every_block_is_inside_research_and_outside_validation_and_holdout_per_t
     v_start, v_end = ranges["validation"]
     assert (v_start, v_end) == ("2024-01-01", "2025-12-31")  # 2024-2025 per CLAUDE.fork.md
     assert r_end < v_start  # research ends before validation starts
-    for fid, blocks in DOC["folds"].items():
-        for b in blocks:
-            if fid == "D":  # D-115: fold D is the 2024-2025 period
-                assert v_start <= b["start"] and b["end"] <= v_end
-                names = ("holdout",)
-            else:
-                assert r_start <= b["start"] and b["end"] <= r_end
-                names = ("validation", "holdout")
-            for name in names:
+    for fid in ("A", "B", "C"):  # fold D (2024-2025): tests/test_d115_fold_d.py
+        for b in DOC["folds"][fid]:
+            assert r_start <= b["start"] and b["end"] <= r_end
+            for name in ("validation", "holdout"):
                 lo, hi = ranges[name]
                 assert b["end"] < lo or b["start"] > hi, (b, name)
 
@@ -296,54 +298,26 @@ def test_the_first_generation_child_skips_a_fold_only_its_own_lineage_used():
     assert _cand(record, pid)["fold_assignment"]["fold"] == "B"
 
 
-def test_a_lineage_that_used_a_b_c_gets_fold_d_with_its_used_folds_recorded():
-    """D-115: after A, B and C comes fold D; the child's protocol records the folds the
-    lineage used (the generator checks it). A-C children carry no such key."""
+def test_a_lineage_that_used_all_three_folds_is_infeasible_and_the_campaign_goes_on():
     inputs, pid = _scenario("run_081", "ROOT__x-run_074-1__y-run_080-1",
                             {"run_081": FOLD_C, "run_080": FOLD_B, "run_074": FOLD_A})
-    record = _decide(inputs, "run_081")
-    cand = _cand(record, pid)
-    assert cand["eligible"] and cand["fold_assignment"]["fold"] == "D"
-    proto = _front(inputs, record)["machine_constraints"]["protocol"]
-    assert proto["fold"] == "D" and (proto["start"], proto["end"]) == ("2024-01-01", "2025-12-31")
-    assert proto["fold_lineage_used"] == ["A", "B", "C"]
-
-
-def test_a_child_on_folds_a_to_c_has_no_fold_lineage_used_key():
-    inputs, pid = _scenario("run_080", "ROOT__x-run_074-1", {"run_080": FOLD_B, "run_074": FOLD_A})
-    proto = _front(inputs, _decide(inputs, "run_080"))["machine_constraints"]["protocol"]
-    assert proto["fold"] == "C" and "fold_lineage_used" not in proto
-
-
-def test_a_lineage_that_used_all_four_folds_is_infeasible_and_the_campaign_goes_on():
-    inputs, pid = _scenario("run_081", "ROOT__x-run_074-1__y-run_080-1__z-run_079-1",
-                            {"run_081": FOLD_D, "run_079": FOLD_C, "run_080": FOLD_B,
-                             "run_074": FOLD_A})
     record = _decide(inputs, "run_081")  # must not raise
     cand = _cand(record, pid)
     assert not cand["eligible"]
     feas = cand["gates"]["feasibility"]
     assert feas["result"] == "INFEASIBLE"
-    assert any(r.startswith("folds_exhausted") and "D-115" in r for r in feas["reasons"])
+    assert any(r.startswith("folds_exhausted") and "validation" in r for r in feas["reasons"])
     assert cand["fold_assignment"]["fold"] is None
     assert record["picked"] is None or "candidate_id" not in record["picked"]
     assert record["stop"]["reason"] == "no_eligible_candidate"  # the existing stop, not a crash
 
 
-def test_one_run_covering_all_four_folds_exhausts_the_lineage_by_itself():
-    wide = [("2018-01-01", "2025-12-31")]
-    inputs, pid = _scenario("run_082", "ROOT", {"run_082": wide})
-    cand = _cand(_decide(inputs, "run_082"), pid)
-    assert cand["fold_assignment"]["used"] == {"run_082": ["A", "B", "C", "D"]}
-    assert cand["gates"]["feasibility"]["result"] == "INFEASIBLE"
-
-
-def test_a_run_on_2018_2023_now_leads_to_fold_d():
+def test_one_run_covering_all_three_folds_exhausts_the_lineage_by_itself():
     wide = [("2018-01-01", "2023-12-31")]
     inputs, pid = _scenario("run_082", "ROOT", {"run_082": wide})
     cand = _cand(_decide(inputs, "run_082"), pid)
     assert cand["fold_assignment"]["used"] == {"run_082": ["A", "B", "C"]}
-    assert cand["fold_assignment"]["fold"] == "D"
+    assert cand["gates"]["feasibility"]["result"] == "INFEASIBLE"
 
 
 def test_runs_065_to_074_count_as_fold_a_without_a_special_case():
@@ -361,18 +335,10 @@ def test_an_unfolded_parent_gets_the_first_fold_its_windows_do_not_overlap():
 
 
 def test_a_parent_whose_windows_overlap_no_fold_has_used_none():
-    before_2018 = [("2017-02-01", "2017-02-28")]  # overlaps no fold
-    inputs, pid = _scenario("run_084", "ROOT", {"run_084": before_2018})
+    in_validation = [("2024-02-01", "2024-02-28")]  # a legacy run; overlaps no fold
+    inputs, pid = _scenario("run_084", "ROOT", {"run_084": in_validation})
     cand = _cand(_decide(inputs, "run_084"), pid)
     assert cand["fold_assignment"]["fold"] == "A" and cand["fold_assignment"]["used"] == {"run_084": []}
-
-
-def test_a_legacy_run_in_2024_has_used_fold_d():
-    """D-115: a 2024 window now overlaps fold D, so a lineage that ran there has used D."""
-    in_2024 = [("2024-02-01", "2024-02-28")]
-    inputs, pid = _scenario("run_084", "ROOT", {"run_084": in_2024})
-    cand = _cand(_decide(inputs, "run_084"), pid)
-    assert cand["fold_assignment"]["fold"] == "A" and cand["fold_assignment"]["used"] == {"run_084": ["D"]}
 
 
 def test_an_overlap_of_one_day_counts_as_using_the_fold():
@@ -535,7 +501,7 @@ def test_without_a_fold_key_the_generator_and_run_context_are_as_before(sandbox_
 
 def test_a_fold_key_with_an_unknown_fold_is_refused(sandbox_folds):
     mc = _child_constraints()
-    mc["protocol"]["fold"] = "E"  # D-115: D is a fold now
+    mc["protocol"]["fold"] = "E"  # D-115: D is a defined fold
     run_dir = _minimal_run(rpr.ROOT, "run_902")
     with pytest.raises(rf.FoldsError, match="not one of"):
         rpr._ensure_protocol_from_constraints(run_dir, "run_902", mc, folds_enabled=True)
@@ -579,7 +545,7 @@ def test_the_memory_file_with_a_fold_validates_against_the_schema(sandbox_folds)
     jsonschema.validate(memory, schema)
     assert memory["runs"]["run_905"]["fold"] == "B"
     assert "fold" not in memory["runs"]["run_906"]            # absent, not null
-    memory["runs"]["run_905"]["fold"] = "D"   # D-115: valid
+    memory["runs"]["run_905"]["fold"] = "D"   # D-115: a fold-D run records D
     jsonschema.validate(memory, schema)
     memory["runs"]["run_905"]["fold"] = "E"
     with pytest.raises(jsonschema.ValidationError):
@@ -622,7 +588,7 @@ def _gen(start, end, *, flag, months=4, name="run_910", pre_flight=False):
 @pytest.mark.parametrize("pre_flight", [False, True])
 def test_a_2024_window_raises_under_the_flag_in_generation_and_in_the_pre_flight(pre_flight):
     with pytest.raises(rf.ValidationBoundaryBreach, match="validation") as exc:
-        _gen("2023-09-01", "2024-04-30", flag=True, pre_flight=pre_flight)
+        _gen("2024-01-01", "2024-02-29", flag=True, months=1, pre_flight=pre_flight)  # a 1-month tile, not a fold-D block
     assert "2024-01-01..2025-12-31" in str(exc.value)
     assert "not one of fold D's blocks" in str(exc.value) and "D-115" in str(exc.value)
     assert "2024-01" in str(exc.value)  # names the window
@@ -634,12 +600,11 @@ def test_a_window_straddling_the_start_of_validation_raises():
 
 
 def test_a_window_inside_2025_raises_and_the_last_research_day_does_not():
-    """2025-05-01..2025-08-31 with window_months 4 is exactly fold D's 2025-05 block, but the
-    protocol is not a fold-D protocol (no fold key): refused (D-115)."""
     with pytest.raises(rf.ValidationBoundaryBreach):
-        _gen("2025-05-01", "2025-08-31", flag=True)
-    with pytest.raises(rf.ValidationBoundaryBreach):
-        _gen("2025-05-01", "2025-08-31", flag=True, pre_flight=True)
+        _gen("2025-05-01", "2025-06-30", flag=True, months=1)  # 1-month tiles: not fold-D blocks
+    # D-115: 2025-05-01..2025-08-31 in one 4-month window IS fold D's 2025-05 block: it passes
+    path = _gen("2025-05-01", "2025-08-31", flag=True, name="run_915")
+    assert json.loads(path.read_text(encoding="utf-8"))["windows"] == [rf.fold_windows(DOC, "D")[4]]
     path = _gen("2023-09-01", "2023-12-31", flag=True, name="run_911")  # ends on the last research day
     assert json.loads(path.read_text(encoding="utf-8"))["windows"][-1]["test"]["end"] == "2023-12-31"
 
@@ -663,8 +628,8 @@ def test_the_launch_preflight_refuses_a_validation_window_only_under_the_flag():
     """Before any LLM call: the pre-flight reads the flag from the caller's one parsed
     reading (folds_enabled), never from the config."""
     constraints = {"protocol": {"symbols": ["BTCUSDT"], "timeframe": "1h", "start": "2023-09-01",
-                                "end": "2024-04-30", "window_months": 4, "promotion": PROMOTION}}
-    refusal, regen = _preflight(constraints, "run_913", True)
+                                "end": "2024-04-30", "window_months": 1, "promotion": PROMOTION}}
+    refusal, regen = _preflight(constraints, "run_913", True)  # D-115: 1-month tiles, not fold D's
     assert regen is None and "validation period" in refusal and "cannot generate a protocol" in refusal
     assert _preflight(constraints, "run_914", False) == (None, None)  # flag off: as today
 
@@ -679,20 +644,11 @@ def test_the_preflight_flag_comes_from_the_single_parsed_reading():
 def test_the_guard_unit_edges():
     v = ("2024-01-01", "2025-12-31")
     w = lambda s, e: [{"label": "x", "test": {"start": s, "end": e}}]  # noqa: E731
-    rf.assert_windows_clear_of_validation(w("2023-09-01", "2023-12-31"), v, [])
-    d = rf.fold_windows(DOC, "D")
+    rf.assert_windows_clear_of_validation(w("2023-09-01", "2023-12-31"), v)
     for s, e in (("2023-12-31", "2024-01-01"), ("2024-01-01", "2024-01-01"),
-                 ("2025-12-31", "2025-12-31"), ("2023-01-01", "2026-12-31"),
-                 ("2024-01-01", "2024-04-29"), ("2024-01-02", "2024-04-30")):
-        for allowed in ([], d):  # D-115: only exact fold-D blocks pass, and only when allowed
-            with pytest.raises(rf.ValidationBoundaryBreach):
-                rf.assert_windows_clear_of_validation(w(s, e), v, allowed)
-    rf.assert_windows_clear_of_validation(d, v, d)                       # exact blocks: pass
-    with pytest.raises(rf.ValidationBoundaryBreach):
-        rf.assert_windows_clear_of_validation(d, v, [])                  # not a fold-D protocol
-    relabelled = [{"label": "x", "test": dict(d[0]["test"])}]
-    with pytest.raises(rf.ValidationBoundaryBreach):
-        rf.assert_windows_clear_of_validation(relabelled, v, d)          # label must match too
+                 ("2025-12-31", "2025-12-31"), ("2023-01-01", "2026-12-31")):
+        with pytest.raises(rf.ValidationBoundaryBreach):
+            rf.assert_windows_clear_of_validation(w(s, e), v)
 
 
 def test_a_policy_without_validation_keys_makes_the_guard_raise_not_pass(monkeypatch, tmp_path):
@@ -705,11 +661,11 @@ def test_a_policy_without_validation_keys_makes_the_guard_raise_not_pass(monkeyp
         rpr._assert_windows_clear_of_validation(rf.fold_windows(DOC, "A"))
 
 
-def test_every_fold_passes_the_guard_and_the_holdout_assert(sandbox_folds):
+def test_every_fold_passes_the_guard_and_the_holdout_assert():
     hs, he = rpr._load_holdout_range()
     for fold in DOC["order"]:
         windows = rf.fold_windows(DOC, fold)
-        rpr._assert_windows_clear_of_validation(windows, _proto_of(fold))  # D-115
+        rpr._assert_windows_clear_of_validation(windows)
         rpr._assert_windows_clear_of_holdout(windows, hs, he)
 
 
@@ -863,8 +819,7 @@ def test_run_protocol_lets_a_research_period_protocol_through_under_the_flag(fol
     folds_config(True)
     monkeypatch.setattr(rp, "_DATA_POLICY_PATH", REAL_POLICY)
     for fold in DOC["order"]:
-        proto = {"windows": rf.fold_windows(DOC, fold), **_proto_of(fold)}
-        assert rp._refuse_validation_period_windows(proto) is None  # D-115: D says it is D
+        assert rp._refuse_validation_period_windows({"windows": rf.fold_windows(DOC, fold)}) is None
 
 
 @pytest.mark.parametrize("bad", ["yes", None, 1])
@@ -1022,142 +977,3 @@ def test_the_orchestrators_fold_data_context_is_the_gates_own_precheck():
     ctx = rpr._fold_data_context()
     assert ctx["precheck"] is dag.layer1_price_precheck and "venues" in ctx["layer1"]
     assert isinstance(ctx["first_symbol_only"], bool)
-
-
-# ---------------------------------------------------------------------------
-# D-115: fold D (2024-2025), no validation stage
-# ---------------------------------------------------------------------------
-
-def _fold_d_constraints():
-    inputs, pid = _scenario("run_081", "ROOT__x-run_074-1__y-run_080-1",
-                            {"run_081": FOLD_C, "run_080": FOLD_B, "run_074": FOLD_A})
-    return _front(inputs, _decide(inputs, "run_081"))["machine_constraints"]
-
-
-def test_a_fold_d_child_generates_fold_d_and_its_protocol_says_so(sandbox_folds):
-    mc = _fold_d_constraints()
-    run_dir = _minimal_run(rpr.ROOT, "run_920")
-    path = rpr._ensure_protocol_from_constraints(run_dir, "run_920", mc, folds_enabled=True)
-    doc = json.loads(path.read_text(encoding="utf-8"))
-    assert doc["windows"] == rf.fold_windows(DOC, "D") and doc["fold"] == "D"
-    assert doc["fold_lineage_used"] == ["A", "B", "C"]
-    ctx = yaml.safe_load((run_dir / "artifacts" / "run_context.yaml").read_text(encoding="utf-8"))
-    assert ctx["fold"] == "D"
-    expected = camp._expected_generated_protocol(mc["protocol"], "run_920", promotion_retired=False,
-                                                 folds_enabled=True)
-    assert expected["windows"] == doc["windows"] and expected["fold"] == "D"
-    assert expected["fold_lineage_used"] == ["A", "B", "C"]
-    assert camp._validation_overlap_in(path, True) is None  # the pre-flight's file check passes
-
-
-def test_a_fold_b_protocol_has_no_fold_key(sandbox_folds):
-    mc = _child_constraints()
-    run_dir = _minimal_run(rpr.ROOT, "run_921")
-    doc = json.loads(rpr._ensure_protocol_from_constraints(run_dir, "run_921", mc, folds_enabled=True)
-                     .read_text(encoding="utf-8"))
-    assert "fold" not in doc and "fold_lineage_used" not in doc
-
-
-@pytest.mark.parametrize("used", [None, [], ["A", "B"], ["B", "C"], "A,B,C"])
-def test_a_pinned_fold_d_without_a_b_c_used_is_refused(sandbox_folds, used):
-    mc = _fold_d_constraints()
-    if used is None:
-        del mc["protocol"]["fold_lineage_used"]
-    else:
-        mc["protocol"]["fold_lineage_used"] = used
-    run_dir = _minimal_run(rpr.ROOT, "run_922")
-    with pytest.raises(rf.FoldsError, match="only after a lineage has used folds A, B, C"):
-        rpr._ensure_protocol_from_constraints(run_dir, "run_922", mc, folds_enabled=True)
-    with pytest.raises(rf.FoldsError, match="only after a lineage has used folds A, B, C"):
-        camp._expected_generated_protocol(mc["protocol"], "run_922", promotion_retired=False,
-                                          folds_enabled=True)
-
-
-def test_the_pin_check_does_not_apply_to_other_folds():
-    rf.check_fold_d_pin({"fold": "B"})
-    rf.check_fold_d_pin({})
-    rf.check_fold_d_pin({"fold": "D", "fold_lineage_used": ["A", "B", "C"]})
-
-
-def test_load_folds_refuses_a_fold_d_block_outside_2024_2025(tmp_path):
-    doc = yaml.safe_load(REAL_FOLDS.read_text(encoding="utf-8"))
-    doc["folds"]["D"][0] = {"label": "2017-09", "start": "2017-09-01", "end": "2017-12-31"}
-    p = tmp_path / "folds.yaml"
-    p.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
-    with pytest.raises(rf.FoldsError, match="outside the validation period"):
-        rf.load_folds(p, policy_path=REAL_POLICY)
-
-
-def test_load_folds_refuses_a_fold_a_block_in_2024(tmp_path):
-    doc = yaml.safe_load(REAL_FOLDS.read_text(encoding="utf-8"))
-    doc["folds"]["A"][5] = {"label": "2024-01", "start": "2024-01-01", "end": "2024-04-30"}
-    p = tmp_path / "folds.yaml"
-    p.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
-    with pytest.raises(rf.FoldsError, match="outside the research period"):
-        rf.load_folds(p, policy_path=REAL_POLICY)
-
-
-def test_run_protocol_lets_a_fold_d_protocol_through_and_nothing_else(folds_config, capsys):
-    folds_config(True)
-    d = rf.fold_windows(DOC, "D")
-    lin = {"fold_lineage_used": ["A", "B", "C"]}
-    assert rp._refuse_validation_period_windows({"fold": "D", **lin, "windows": d}) is None
-    for proto, why in (({"windows": d}, "not one of fold D's blocks"),          # no fold key
-                       ({"fold": "B", **lin, "windows": d}, "not one of fold D's blocks"),
-                       ({"fold": "D", **lin, "windows": d + [{"label": "2024-02", "test": {
-                           "start": "2024-02-01", "end": "2024-02-29"}}]},     # an extra tile
-                        "not one of fold D's blocks"),
-                       ({"fold": "D", "windows": d}, "only after a lineage has used"),  # no lineage
-                       ({"fold": "D", "fold_lineage_used": ["A", "B"], "windows": d},
-                        "only after a lineage has used")):
-        with pytest.raises(SystemExit) as exc:
-            rp._refuse_validation_period_windows(proto)
-        assert exc.value.code == EXIT_NO_DATA_TOUCHED
-        assert why in capsys.readouterr().err
-
-
-def test_load_folds_refuses_a_fold_d_block_inside_the_holdout_of_a_policy(tmp_path):
-    """D-115: fold D is checked against the holdout too (a synthetic holdout over fold
-    D's last block, so no sealed date is written here)."""
-    policy = yaml.safe_load(REAL_POLICY.read_text(encoding="utf-8"))
-    policy["holdout_range"] = ["2025-10-01", "2025-11-30"]
-    pp = tmp_path / "policy.yaml"
-    pp.write_text(yaml.safe_dump(policy), encoding="utf-8")
-    with pytest.raises(rf.FoldsError, match="fold D block 2025-09 .* overlaps the holdout"):
-        rf.load_folds(REAL_FOLDS, policy_path=pp)
-
-
-def _proto_of(fold):
-    """D-115: the keys a protocol of `fold` carries for the guard."""
-    return {"fold": "D", "fold_lineage_used": ["A", "B", "C"]} if fold == "D" else {}
-
-
-def _write_protocol(root, name, doc):
-    path = root / "protocols" / name
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(doc), encoding="utf-8")
-    return path
-
-
-@pytest.mark.parametrize("keys, refused", [
-    ({}, True),                                                    # D blocks, no fold key
-    ({"fold": "B"}, True),                                         # D blocks, another fold
-    ({"fold": "D"}, True),                                         # fold D, no lineage
-    ({"fold": "D", "fold_lineage_used": ["A", "C"]}, True),        # lineage without B
-    ({"fold": "D", "fold_lineage_used": ["A", "B", "C"]}, False),  # the accepted (stated) limit
-])
-def test_a_pinned_protocol_file_with_fold_d_blocks(sandbox_folds, keys, refused):
-    """The launch pre-flight's file check (pinned and resolved protocols): fold D's blocks
-    pass only in a fold-D file whose fold_lineage_used holds A, B and C. A hand-written file
-    that writes that list passes: the stated limit of D-115 (self-attested, not re-derived)."""
-    path = _write_protocol(rpr.ROOT, "pinned_d.json",
-                           {"windows": rf.fold_windows(DOC, "D"), **keys})
-    msg = camp._validation_overlap_in(path, True)
-    assert (msg is not None) is refused
-
-
-def test_a_parents_fold_lineage_used_is_never_inherited():
-    inputs, pid = _scenario("run_080", "ROOT__x-run_074-1", {"run_080": FOLD_B, "run_074": FOLD_A},
-                            protocol={**GEN_PROTOCOL, "fold_lineage_used": ["A", "B", "C"]})
-    proto = _front(inputs, _decide(inputs, "run_080"))["machine_constraints"]["protocol"]
-    assert proto["fold"] == "C" and "fold_lineage_used" not in proto

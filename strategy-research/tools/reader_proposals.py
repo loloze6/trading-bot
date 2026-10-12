@@ -127,7 +127,7 @@ _V3_PATCH_KEYS = frozenset({"proposal_id", "patch", "evidence", "scores", "requi
 #   combines_as    how a confirmed claim could be combined, a word from COMBINES_AS,
 #                  written by the analyst and checked here (the combination logic itself
 #                  is not touched).
-#   fold_observed  the fold (A, B, C or D) of the run that inspired the claim.
+#   fold_observed  the fold (A, B or C) of the run that inspired the claim.
 # A model's answer may carry them only under the flag (check_reading(envelope=True));
 # a FILE already written (from_model False) is accepted as it stands.
 COMBINES_AS = ("forecast_block", "regime_gate", "execution_rule", "knowledge_only")

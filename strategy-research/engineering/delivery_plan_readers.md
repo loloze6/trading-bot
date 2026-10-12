@@ -22,7 +22,7 @@ are marked *superseded*.
 >   windows its lineage has not used** (three fixed folds; a line ends after three).
 >   Confirmed claims become the building blocks that are combined (E-071).
 > - **After the folds** comes the holdout. There is no validation stage (D-115): 2024-2025
->   is fold D, a fourth fold given only to a lineage that used A, B and C.
+>   is fold D, reached only by the operator's re-run command.
 > - **The analyst's instructions** are designed for that purpose (A1.8 draft v2, reviewed;
 >   the final Stage 1 is A1.11).
 
@@ -323,8 +323,7 @@ Assessment (agreed):
 > *Superseded by A1.7, decision D1:*
 > - **What changes:** the windows come from **three fixed folds** (`config/folds.yaml`), not
 >   from the random draw in step 3 below. A child runs on the next fold its lineage has not
->   used, a config runs on a given fold only once, and a lineage ends after three folds
->   (D-115: four, fold D = 2024-2025; no validation stage).
+>   used, a config runs on a given fold only once, and a lineage ends after three folds.
 > - **What stays:** steps 1, 2, 4 and 5 (calendar, coverage, protocol, "observed on"). The
 >   end of the calendar is read from the data policy, with a test.
 > - **The random draw** is kept as a parked epic.
@@ -459,8 +458,8 @@ The review was read-only and verified against the code. Its main findings:
   2 blocks per year each.
 - **A child runs on the next fold its lineage has not used.**
 - **A config runs on a given fold only once.**
-- **A lineage ends after 4 folds** (D-115: fold D = 2024-2025, no validation stage), then
-  the holdout.
+- **A lineage ends after 3 folds,** then the holdout (D-115: no validation stage; fold D =
+  2024-2025, reached only by the operator's re-run command).
 - **Every pooled number shown to an AI step carries its fold label.**
 - **Daily ideas confirm on other coins,** because daily blocks have too few trades.
 - In code: two functions change, and one YAML file (`config/folds.yaml`) is added.

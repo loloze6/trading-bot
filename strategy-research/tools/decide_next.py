@@ -2343,14 +2343,9 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str) -> tuple:
             raise DecideNextError(f"picked candidate {cid!r} has no fold to run on "
                                   f"({fa}); it should have been infeasible")
         start, end = _folds.fold_span(inputs["folds"]["doc"], fold)
-        proto = {k: v for k, v in proto.items()
-                 if k not in ("per_symbol_start", "fold_lineage_used")}  # D-115: never inherited
+        proto = {k: v for k, v in proto.items() if k != "per_symbol_start"}
         mc["protocol"] = {**proto, "start": start, "end": end,
                           "window_months": _folds.BLOCK_MONTHS, "fold": fold}
-        if fold == _folds.FOLD_D:
-            # D-115: the folds the lineage had used, which the generator checks
-            # (research_folds.check_fold_d_pin). Folds A-C: no key (byte-identical).
-            mc["protocol"]["fold_lineage_used"] = sorted({f for fs in fa["used"].values() for f in fs})
         front["research_goal"] += (
             f" It backtests on fold {fold} ({', '.join(b['label'] for b in inputs['folds']['doc']['folds'][fold])};"
             f" config/folds.yaml), the next fold its lineage ({', '.join(fa['lineage'])}) has not used.")

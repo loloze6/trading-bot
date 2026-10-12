@@ -3310,7 +3310,7 @@ whichever folds it overlaps). The brief's `machine_constraints.protocol` gets
 `fold`, the fold's `start`/`end` and `window_months: 4` (and loses
 `per_symbol_start`); the protocol generator then writes the fold's exact
 windows, and `fold` is recorded in `run_context.yaml`, the memory entry and the
-trial rows. A lineage that used all four (D-115: fold D = 2024-2025), or whose runs' windows cannot be
+trial rows. A lineage that used all three, or whose runs' windows cannot be
 read, makes the candidate INFEASIBLE with a reason in the decision record
 (`candidates[].fold_assignment` shows the lineage and the folds each run used);
 the campaign carries on with the other candidates. A candidate whose child has
@@ -3321,10 +3321,11 @@ does not skip to another fold, so the lineage order holds. Aux feeds are checked
 only by the gate itself, later. The same flag makes the protocol generator, the
 launch pre-flight (generated and pinned protocols, and the protocol a
 run_context or last_escalation resolves to) and `tools/run_protocol.py` (which
-every backtest passes through) refuse any window overlapping the data policy's
-2024-2025 period, except fold D's exact blocks in a fold-D protocol (D-115: there
-is no validation stage; 2024-2025 is fold D, given only to a lineage that used A,
-B and C). Lineage
+every backtest passes through) refuse any window overlapping the validation
+period (the data policy's 2024-2025), except fold D's exact blocks (D-115: there is
+no validation stage; fold D is defined in `config/folds.yaml` outside the automatic
+order, reached only by the operator's re-run command, and a fold-D brief is
+generated only under this flag). Lineage
 reads each run's protocol file; `protocols/run_0xx_generated.json` are untracked
 runtime files, so on a machine without them every reader candidate is
 `fold_lineage_unreadable` (the safe direction: infeasible, never a guessed fold).
@@ -3337,7 +3338,7 @@ A side finding may carry three envelope keys beside its `claim` (never inside it
 `vehicle` (the strategy change its own run backtests, the same
 `[{component_id, field, before, after}]` list as `config_change`, which it replaces),
 `combines_as` (`forecast_block`, `regime_gate`, `execution_rule` or `knowledge_only`)
-and `fold_observed` (A, B, C or D). A claim's `vehicle` must resolve against the run's
+and `fold_observed` (A, B or C). A claim's `vehicle` must resolve against the run's
 base config like a config change; the analyst of a later PR writes it. Until then, with
 the flag on, the five current readers produce no side findings: their side findings are
 refused before validation (the reading's explanation is kept, no retry, the audit entry

@@ -995,11 +995,11 @@ orchestrator:
       #
       # While true:
       #  * decide-next (tools/decide_next.py) gives a child run the windows of
-      #    the next fold its LINEAGE has not used (config/folds.yaml: four folds
-      #    of six exact 4-month blocks, A = 2022-2023, B and C = 2018-2021,
-      #    D = 2024-2025 (D-115); order A, B, C, D), writes `fold` into the child's
+      #    the next fold its LINEAGE has not used (config/folds.yaml: three folds
+      #    of six exact 4-month blocks, A = 2022-2023, B and C = 2018-2021;
+      #    order A, B, C), writes `fold` into the child's
       #    machine_constraints.protocol, and marks a candidate whose lineage has
-      #    used all four folds INFEASIBLE (reason folds_exhausted; the campaign
+      #    used all three folds INFEASIBLE (reason folds_exhausted; the campaign
       #    goes on with the other candidates). A fold is "used" when any window
       #    of any lineage run overlaps any block of it (tools/research_folds.py),
       #    so runs 065-074 count as fold A without a special case.
@@ -1009,15 +1009,16 @@ orchestrator:
       #    fold_<X>_lacks_data -- it never skips ahead to another fold. Aux
       #    feeds are not checked here (the gate reads them in layer 2 only).
       #  * every place a protocol's windows are fixed or used REFUSES any window
-      #    overlapping the 2024-2025 period (the data policy's former validation
-      #    period) unless the protocol is fold D and the window is exactly one of
-      #    fold D's blocks (D-115: no validation stage; 2024-2025 is fold D, given
-      #    only to a lineage that used A, B and C): the protocol generator, the
-      #    launch pre-flight (generated AND pinned protocols, and the protocol a
-      #    run_context or last_escalation resolves to), and tools/run_protocol.py,
-      #    which every backtest passes through (it reads this flag from this
-      #    file). (A by-hand backtest that bypasses run_protocol.py is outside
-      #    this guard.)
+      #    overlapping the validation period (the data policy's 2024-2025): the
+      #    protocol generator, the launch pre-flight (generated AND pinned
+      #    protocols, and the protocol a run_context or last_escalation
+      #    resolves to), and tools/run_protocol.py, which every backtest passes
+      #    through (it reads this flag from this file), except a window that is
+      #    exactly one of fold D's blocks (D-115: no validation stage; fold D =
+      #    2024-2025, outside the automatic order, reached only by the
+      #    operator's re-run command; a brief with `fold: "D"` is generated only
+      #    while this flag is on). (A by-hand backtest that bypasses
+      #    run_protocol.py is outside this guard.)
       #  * `fold` is recorded in run_context.yaml, the campaign memory entry
       #    and the trial rows of a run whose pre-registration carries one.
       #  * E-077 PR-2 (D-087): a reader's side finding carries `vehicle` (required

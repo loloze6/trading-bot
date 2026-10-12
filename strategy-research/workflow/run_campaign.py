@@ -3655,8 +3655,7 @@ _PREFLIGHT_TERMINAL_PREFIXES = ("completed", "rejected", "human_pause", "failed_
 # O-12: exchange/market_type/venue/drop_feeds exist only for a non-default
 # brief venue (absent on both sides otherwise: the comparison is unchanged).
 _GENERATED_PROTOCOL_FIELDS = ("symbols", "timeframe", "windows", "holdout", "promotion",
-                              "exchange", "market_type", "venue", "drop_feeds",
-                              "fold", "fold_lineage_used")  # D-115: fold-D protocols only
+                              "exchange", "market_type", "venue", "drop_feeds")
 
 
 def _data_spend_evidence(run_dir: Path, run_id: str, state: dict) -> list:
@@ -3702,7 +3701,8 @@ def _expected_generated_protocol(generated: dict, run_id: str, *,
     start = min(per_symbol_start.values()) if per_symbol_start else generated["start"]
     # E-077 PR-1 (D-085): the same windows helper generation uses (a `fold` key);
     # `folds_enabled` is the pre-flight's ONE parsed reading (no config read here).
-    windows = orch._protocol_windows_from_constraints(generated, start, generated["end"])
+    windows = orch._protocol_windows_from_constraints(generated, start, generated["end"],
+                                                      folds_enabled=folds_enabled)
     venue_keys: dict = {}
     if run_dir is not None:
         symbols, venue_keys = orch._generated_protocol_venue_keys(run_dir, symbols)
@@ -3714,10 +3714,8 @@ def _expected_generated_protocol(generated: dict, run_id: str, *,
         "holdout": orch._generated_protocol_holdout_block(generated),
         **orch._generated_protocol_promotion(generated, run_id,
                                               promotion_retired=promotion_retired),
-        **orch._generated_protocol_fold_key(generated),  # D-115
     }
-    orch._enforce_validation_guard(windows, folds_enabled,  # after G7, as generation does
-                                   generated)
+    orch._enforce_validation_guard(windows, folds_enabled)  # after G7, as generation does
     return expected
 
 
@@ -3759,7 +3757,7 @@ def _validation_overlap_in(path: Path, folds_enabled) -> str | None:
     if not isinstance(windows, list):
         return None
     try:
-        orch._assert_windows_clear_of_validation(windows, doc)  # D-115: fold + lineage
+        orch._assert_windows_clear_of_validation(windows)
     except research_folds.ValidationBoundaryBreach as e:
         return str(e)
     except (KeyError, TypeError, AttributeError):

@@ -275,9 +275,9 @@
           "type": "object", "required": ["fold", "lineage", "used"], "additionalProperties": false,
           "description": "E-077 PR-1 (D-085): present only under orchestrator.folds.enabled. The fold the child run backtests on (null when the lineage has used all three or cannot be placed -- then the candidate is infeasible, with the reason), the lineage runs it was read from (the run, then every run named in its hypothesis_id) and the folds each lineage run's windows overlap.",
           "properties": {
-            "fold": { "enum": ["A", "B", "C", "D", null] },
+            "fold": { "enum": ["A", "B", "C", null] },
             "lineage": { "type": "array", "items": { "type": "string" } },
-            "used": { "type": "object", "additionalProperties": { "type": "array", "items": { "enum": ["A", "B", "C", "D"] } } }
+            "used": { "type": "object", "additionalProperties": { "type": "array", "items": { "enum": ["A", "B", "C"] } } }
           }
         },
         "warnings": {

@@ -2072,10 +2072,10 @@ def _refuse_validation_period_windows(protocol: dict) -> None:
         if not _research_folds.folds_flag_enabled():
             return
         validation = _research_folds.load_validation_range(_DATA_POLICY_PATH)
-        # D-115: the 2024-2025 period is fold D; only a fold-D protocol's exact blocks pass.
-        fold_d = _research_folds.fold_d_windows_for(protocol, policy_path=_DATA_POLICY_PATH)
-        _research_folds.assert_windows_clear_of_validation(protocol.get("windows") or [], validation,
-                                                           fold_d)
+        # D-115: fold D's exact blocks pass (the folds file is read only if a window is in 2024-2025)
+        _research_folds.assert_windows_clear_of_validation(
+            protocol.get("windows") or [], validation,
+            lambda: _research_folds.load_fold_d_windows(policy_path=_DATA_POLICY_PATH))
     except (_research_folds.FoldsError, _research_folds.ValidationBoundaryBreach) as exc:
         _refuse_before_any_backtest(f"{exc}")
 
