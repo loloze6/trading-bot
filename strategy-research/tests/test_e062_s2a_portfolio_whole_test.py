@@ -171,8 +171,9 @@ def test_out_of_order_windows_give_the_same_chain_as_sorted():
 def test_gap_is_linked_flat_and_not_counted():
     """Protocol bounds w0 = days 0..19, w1 = days 21..40: a real gap (day 20).
     The chain is flat from day 19 to day 21 (level unchanged), no return on day
-    21, one gap day. Returns 19 + 19 = 38; nominal span 0..40 = 41 days;
-    coverage 39/41."""
+    21, one gap day. Returns 19 + 19 = 38; nominal span 0..40 = 41 days, of
+    which 40 are inside a window (D-113: the gap day is not counted);
+    coverage 39/40."""
     w0 = [100.0 + i for i in range(20)]
     w1 = [500.0 * (1.0 + 0.001 * i) for i in range(20)]
     ch = _chain({"w0": {"X": _bars(0, w0)}, "w1": {"X": _bars(21, w1)}}, ["X"],
@@ -184,20 +185,24 @@ def test_gap_is_linked_flat_and_not_counted():
     ret_days = [d for d, _r in ch["daily_returns"]]
     assert _day(20) not in ret_days and _day(21) not in ret_days
     assert len(ret_days) == 38
-    assert ch["coverage"] == 39 / 41
+    assert ch["coverage"] == 39 / 40
+    assert ch["n_calendar_days"] == 41 and ch["n_counted_calendar_days"] == 40
     # the bar curve is flat across the gap too: the first w1 bar equals the last w0 bar
     bars = ch["bar_levels"]
     i = next(k for k, (t, _v) in enumerate(bars) if t.date() == _day(21))
     assert bars[i][1] == pytest.approx(bars[i - 1][1], rel=1e-15)
 
 
-def test_long_gap_fails_whole_test_coverage():
-    """Bounds w0 = 0..9, w1 = 15..24: returns 9 + 9 = 18, nominal span 25 days,
-    (18 + 1) / 25 = 0.76 < 0.9 -> NOT_EVALUABLE (each window alone is fine)."""
-    with pytest.raises(NE, match="WHOLE_TEST_MIN_COVERAGE"):
-        _chain({"w0": {"X": _bars(0, [100.0] * 9 + [101.0])},
-                "w1": {"X": _bars(15, [100.0] * 9 + [99.0])}}, ["X"],
-               _bnd(w0=(0, 9), w1=(15, 24)))
+def test_long_planned_gap_no_longer_fails_whole_test_coverage():
+    """D-113 (declared change): bounds w0 = 0..9, w1 = 15..24: returns 9 + 9 =
+    18, nominal span 25 days of which 20 are inside a window; (18 + 1) / 20 =
+    0.95 >= 0.9 -> evaluable. Before D-113 the 5 planned gap days were counted:
+    (18 + 1) / 25 = 0.76 < 0.9, NOT_EVALUABLE."""
+    ch = _chain({"w0": {"X": _bars(0, [100.0] * 9 + [101.0])},
+                 "w1": {"X": _bars(15, [100.0] * 9 + [99.0])}}, ["X"],
+                _bnd(w0=(0, 9), w1=(15, 24)))
+    assert ch["n_gap_days"] == 5 and ch["n_counted_calendar_days"] == 20
+    assert ch["n_calendar_days"] == 25 and ch["coverage"] == 19 / 20
 
 
 def test_overlap_longer_than_one_day_keeps_the_earliest_windows_days():

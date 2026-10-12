@@ -95,8 +95,9 @@ import portfolio_daily as _pd  # tools/ sibling: the v1 per-window definition
 PortfolioNotEvaluable = _pd.PortfolioNotEvaluable
 
 # G2: the chained span must satisfy the SAME coverage constant as each window
-# (counted return days + 1 >= this x calendar days from the first anchor to the
-# last chained day).
+# (counted return days + 1 >= this x the counted calendar days: the days inside
+# some window's nominal span, minus the engine tail/head days -- D-113: planned
+# protocol gap days are not counted).
 WHOLE_TEST_MIN_COVERAGE = _pd.PORTFOLIO_MIN_COMMON_DAY_COVERAGE
 
 # G3: fewer daily returns than this -> the Sharpe is NOT_EVALUABLE.
@@ -478,12 +479,16 @@ def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
     with a common bar, so for a single such window this is exactly v1's
     drawdown bar set.
 
-    Whole-test coverage (G2): (number of daily returns + 1) must be >=
-    WHOLE_TEST_MIN_COVERAGE x the counted calendar days = the nominal span
-    (first window's nominal start to the last nominal end, inclusive) minus
+    Whole-test coverage (G2, D-113): (number of daily returns + 1) must be >=
+    WHOLE_TEST_MIN_COVERAGE x the counted calendar days = the days inside some
+    window's nominal span (the union of test.start..test.end, inclusive) minus
     the engine tail/head days no window's effective span covers. Protocol gap
-    days stay counted (G2). It counts RETURN days, so one missing day inside a
-    window costs two counted days (stricter than the per-window floor).
+    days (inside no window's nominal span, n_gap_days) are NOT counted (D-113,
+    2026-10-12; before, the whole nominal span was counted, so an interleaved
+    fold could never be graded); for a contiguous protocol the union is the
+    whole span and nothing changes. A day missing INSIDE a window stays
+    counted: it costs two daily returns in the numerator (stricter than the
+    per-window floor). n_calendar_days stays the whole nominal span.
 
     Returns {coins, segments, daily_levels [(date, level)], daily_returns
     [(date, return)], bar_levels [(timestamp, level)], first_day, last_day,
@@ -656,15 +661,24 @@ def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
     nominal_last = max(e for _s, e in bounds.values())
     engine_gap = sorted(o for o in nominal_cover if o not in effective_cover)
     n_nominal = (nominal_last - nominal_first).days + 1
-    n_counted = n_nominal - len(engine_gap)
+    # D-113: the protocol gap days (inside no window's nominal span) are not counted.
+    n_planned_gap = n_nominal - len(nominal_cover)
+    n_counted = len(nominal_cover) - len(engine_gap)
     coverage = (len(daily_returns) + 1) / n_counted
     if coverage < WHOLE_TEST_MIN_COVERAGE:
+        if n_planned_gap == 0:  # a contiguous protocol: the pre-D-113 text, byte-identical
+            raise PortfolioNotEvaluable(
+                f"whole test: {len(daily_returns)} daily return(s) + 1 cover {coverage:.1%} of "
+                f"the {n_counted} counted calendar day(s) (nominal span {nominal_first} to "
+                f"{nominal_last} = {n_nominal} day(s), minus {len(engine_gap)} engine tail/head "
+                f"day(s); {n_gap_days} protocol gap day(s) over {n_gap_links} gap link(s) stay "
+                f"counted), below WHOLE_TEST_MIN_COVERAGE={WHOLE_TEST_MIN_COVERAGE}")
         raise PortfolioNotEvaluable(
             f"whole test: {len(daily_returns)} daily return(s) + 1 cover {coverage:.1%} of the "
             f"{n_counted} counted calendar day(s) (nominal span {nominal_first} to "
-            f"{nominal_last} = {n_nominal} day(s), minus {len(engine_gap)} engine tail/head "
-            f"day(s); {n_gap_days} protocol gap day(s) over {n_gap_links} gap link(s) stay "
-            f"counted), below WHOLE_TEST_MIN_COVERAGE={WHOLE_TEST_MIN_COVERAGE}")
+            f"{nominal_last} = {n_nominal} day(s), minus {n_planned_gap} protocol gap day(s) "
+            f"over {n_gap_links} gap link(s) and {len(engine_gap)} engine tail/head day(s), "
+            f"D-113), below WHOLE_TEST_MIN_COVERAGE={WHOLE_TEST_MIN_COVERAGE}")
     return {"coins": list(coins), "segments": segments, "daily_levels": daily_levels,
             "daily_returns": daily_returns, "bar_levels": bar_levels,
             "first_day": daily_levels[0][0], "last_day": last_day,
