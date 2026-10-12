@@ -231,6 +231,8 @@ TARGET_FLAGS = {
     "nearest_build": False,
     # D-104: requires nearest_build, which is off here.
     "deviation_gate": False,
+    # D-109.
+    "config_replay_gate": False,
     # E-072 (D-080): requires reader_findings, which is off here.
     "explore_confirm": False,
 }

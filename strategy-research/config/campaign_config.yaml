@@ -1085,6 +1085,18 @@ orchestrator:
       # missing or unreadable, pauses the run with
       # config_deviation before step 2 -- before any backtest, so no trial row.
       # Nearest build's own record stays information only.
+  config_replay_gate:
+    enabled: false
+      # Lane 1 (operator, 2026-10-12; D-109). OFF BY DEFAULT, read by
+      # run_phase1_research._config_replay_gate_enabled(). No dependency. While
+      # false: byte-identical (nothing read, 1b's route unchanged).
+      #
+      # While true: when the run's brief carries an exact config (a constraint
+      # starting "Build EXACTLY this strategy config (JSON)"), 1b's spec_ready
+      # config is replayed against it (D-106's replay) before step 2; any
+      # forecast, regime or required_bars difference, or a replay that cannot
+      # run, pauses with config_replay_mismatch -- before any backtest, so no
+      # trial row. Catches a rewrite 1b does not declare (CUL-429, run_085).
   explore_confirm:
     enabled: false
       # E-072 (P-CUL-80, D-080, engineering/roadmap/E-072/PHASE_A.md). OFF BY
