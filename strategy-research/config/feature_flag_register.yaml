@@ -903,6 +903,10 @@ flags:
       config and the brief's exact block manifest, copied unchanged; no model
       call); a missing or broken manifest refuses before anything is written.
       Step 1a unchanged. Tested by tests/test_exact_config_1b.py.
+      D-112 (2026-10-12): with the variant loop also off, step 2 is written by
+      code as well (variant_patches.yaml, `base` only, empty patch, no symbol;
+      no model call); loop on, step 2 is the model. Declared behaviour change
+      for anyone with the flag on. Tested by tests/test_exact_config_step2.py.
 
   - name: explore_confirm
     kind: orchestrator_config

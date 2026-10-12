@@ -4388,7 +4388,9 @@ def _exact_config_1b_enabled(cfg: dict | None = None) -> bool:
     While true: a run whose research_brief.yaml carries an exact config (a
     constraint starting BRIEF_EXACT_CONFIG_PREFIX) gets step 1b written by code
     (_exact_config_1b): the brief's config and its exact block manifest, no
-    model call. Step 1a is unchanged. Every check after 1b runs as before."""
+    model call; and, when the variant loop is also off, step 2 written by code
+    (D-112, _exact_config_variant_patches): variant_patches.yaml with `base`
+    only. Step 1a is unchanged. Every check after 1b and step 2 runs as before."""
     return _strict_orchestrator_flag("exact_config_1b", cfg=cfg)
 
 
@@ -17301,6 +17303,40 @@ def _exact_config_1b(run_dir: Path, run_id: str) -> None:
           f"(no LLM call)")
 
 
+def _exact_config_step2_mode(run_dir: Path) -> bool:
+    """D-112: step 2 is written by code when orchestrator.exact_config_1b is on,
+    the brief carries an exact config (the D-110 condition) and the variant loop
+    is off -- with the loop off only `base` is backtested, so step 2 has nothing
+    to add. Loop on: the model writes step 2, as before. Flag off: False,
+    nothing but the flag is read."""
+    if not _exact_config_1b_mode(run_dir):
+        return False
+    # config-direct only (review of PR #400): without it step 2 routes to
+    # validation / an LLM 5a that read the expanded card the code does not write
+    return _config_direct_authoring_enabled() and not _variant_loop_enabled()
+
+
+def _exact_config_variant_patches(run_dir: Path, run_id: str) -> None:
+    """Step 2 written by code (D-112), modelled on _composition_variant_patches:
+    artifacts/variant_patches.yaml with exactly one variant, `base`, an empty
+    patch and no `kind`/`symbol` key, so backtest_specification (step 5a)
+    builds the base config unchanged and protocol_execution backtests it on
+    every coin of the protocol. expanded_hypothesis_card.yaml and
+    innovation_notes.yaml are not written: no stage on the config-direct route
+    with the variant loop off reads them (composition mode does the same)."""
+    arts = Path(run_dir) / "artifacts"
+    hyp = (load_yaml(arts / "hypothesis_card.yaml") or {}).get("hypothesis_id") \
+        if (arts / "hypothesis_card.yaml").exists() else None
+    save_yaml(arts / "variant_patches.yaml", {
+        "base_config_ref": "artifacts/backtest_spec.yaml",
+        "hypothesis_id": hyp,
+        "variants": [{"variant_id": "base", "patch": [],
+                      "rationale": "the brief's exact config, unchanged (D-112: step 2 written "
+                                   "by code; variant loop off, so only base is backtested)"}]})
+    print(f"✅ [D-112] exact-config step 2 for {run_id}: variant_patches.yaml with base only "
+          f"(no LLM call)")
+
+
 def _route_config_replay_gate(path: Path) -> str:
     """D-109 (orchestrator.config_replay_gate, checked by the caller): after a
     spec_ready 1b answer that passed the deviation gate (if on), replay 1b's
@@ -20043,6 +20079,9 @@ def run_loop(run_id: str):
             elif (current_stage == "strategy_config_authoring" and not _skip_agent
                   and _exact_config_1b_mode(RUN_DIR)):
                 _exact_config_1b(RUN_DIR, run_id)  # D-110: the brief's config, by code
+            elif (current_stage == "innovation_expansion" and not _skip_agent
+                  and _exact_config_step2_mode(RUN_DIR)):
+                _exact_config_variant_patches(RUN_DIR, run_id)  # D-112: base only, by code
             elif not _skip_agent:
                 if current_stage == "hypothesis_generation":
                     _split = False
