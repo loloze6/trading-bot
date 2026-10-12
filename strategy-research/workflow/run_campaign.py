@@ -3544,6 +3544,7 @@ def _flag_readers() -> dict:
         "nearest_build": orch._nearest_build_enabled,  # E-068 nearest build (D-075)
         "deviation_gate": orch._deviation_gate_enabled,  # lane 1 (D-104)
         "config_replay_gate": orch._config_replay_gate_enabled,  # lane 1 (D-109)
+        "exact_config_1b": orch._exact_config_1b_enabled,  # lane 1 (D-110)
         "explore_confirm": orch._explore_confirm_enabled,  # E-072 (D-080)
         "schedulability_block": _schedulability_block_enabled,
         "operator_approval": _operator_approval_enabled,  # E-068 PR 4 (D-071)

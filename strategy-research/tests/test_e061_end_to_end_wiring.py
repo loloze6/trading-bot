@@ -233,6 +233,8 @@ TARGET_FLAGS = {
     "deviation_gate": False,
     # D-109.
     "config_replay_gate": False,
+    # D-110.
+    "exact_config_1b": False,
     # E-072 (D-080): requires reader_findings, which is off here.
     "explore_confirm": False,
 }

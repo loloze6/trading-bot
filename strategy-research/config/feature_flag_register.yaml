@@ -890,6 +890,20 @@ flags:
       replay that cannot run, pauses the run with config_replay_mismatch before
       step 2 and any backtest. Tested by tests/test_config_replay_gate.py.
 
+  - name: exact_config_1b
+    kind: orchestrator_config
+    config_key: orchestrator.exact_config_1b.enabled
+    reader: run_phase1_research._exact_config_1b_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "the operator switches it on in c4/flag-set for the lane-1 fold-B runs (D-110)"
+    criterion: >
+      Landed 2026-10-12 (lane 1, D-110). Off: byte-identical -- 1b is the model
+      call. On: a brief carrying an exact config gets 1b written by code (the
+      config and the brief's exact block manifest, copied unchanged; no model
+      call); a missing or broken manifest refuses before anything is written.
+      Step 1a unchanged. Tested by tests/test_exact_config_1b.py.
+
   - name: explore_confirm
     kind: orchestrator_config
     config_key: orchestrator.explore_confirm.enabled
