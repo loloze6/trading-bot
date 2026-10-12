@@ -105,3 +105,39 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-10 -- Cost share read from an unweighted per-trade ratio; a brief drafted against the wrong flag set
 - **Pattern:** my first read of cost drag used the per-trade mean (`realized_edge_to_cost_ratio`), which gave run_079 a positive edge of 1.69x cost while its account lost money in every window: the larger positions lose. Separately, the lane-1 basket idea collides with the operator's live `variant_loop` flag (one coin per variant), found only by reading the variant code.
 - **Rule:** measure cost drag at portfolio weight (net % of account per trade) and cross-check its sign against the account's result before reporting; before drafting a brief, read the operator's live flag set and check the brief's shape (coins per variant, components, sizing) against the code paths those flags select.
+
+## 2026-10-11 -- A flag's effect stated from one call site
+- **Pattern:** I told the operator "with the variant loop off, every variant runs the whole coin list" after reading the coin-context branch only (`run_phase1_research.py:2839`); protocol_execution's loop-off path backtests only the base config (`_single_column_untested_kw`, and the flag register says so). The operator then built a plan on it.
+- **Rule:** before stating what a flag does, read its register entry and every branch on it in the stage that consumes the result (here protocol_execution), not just the first `if` that mentions it.
+
+## 2026-10-11 -- A figure from a memory note written into a decision row
+- **Pattern:** D-102's first draft carried "24 merged PRs (17 analyst checker) against 5 real runs" and "0 of 10 ideas validated" from my step-back memory note, unre-measured; the Sonnet fact-check could not source them, and a GitHub search for PRs merged 2026-10-08..2026-10-10 returns 41 (the note's window is not recorded).
+- **Rule:** a number goes into a committed decision only with its source (a file, a command and its date); a memory-note figure is re-measured first or left out.
+
+## 2026-10-11/12 -- A brief named a component without checking the hard rules and the stage's allowlist
+- **Pattern:** the v1 lane-1 brief specified `SmaTrendLongOnlyComponent` (on/off, refused as a forecast source by D-051) and the `vol_target` op (not in the design guide the config-writing stage is limited to). Neither I nor the fact-check checked either; run_080 was rewritten by 1b and voided.
+- **Rule:** before a brief is registered, check every component and op it names against the decision log's hard rules (D-051 and the like) and the authoring skill's allowlist (the guide's op table, the catalogue).
+
+## 2026-10-11/12 -- A guideline routed around a prompt file without checking the stage accepts that route
+- **Pattern:** "edit no SKILL or catalogue file, the brief names the op" kept prompts byte-identical, but the config-writing stage accepts only ops the guide lists, so the brief's op was unusable by that route.
+- **Rule:** a guideline that routes around a prompt file must first check, in the stage's skill and code, that the stage accepts input by that route.
+
+## 2026-10-11/12 -- A warm-up claim checked on the test windows only
+- **Pattern:** the v2 briefs said every coin's warm-up fits the 2 x required_bars prefetch; XRP's two missing days sat inside four sma100/sma200 prefetch spans, so the launcher's readiness assert would have stopped them (found by the fact-check).
+- **Rule:** before claiming warm-up is covered, replay the launcher's readiness probe on the cached rows of every coin x window x lookback prefetch span, not just the test windows.
+
+## 2026-10-11/12 -- Pushed review fixes to a PR that was already merged
+- **Pattern:** #385 was merged with its first commit while I pushed the XRP fix to its branch; I then told the operator it was "ready to merge". The fix needed a new PR (#386).
+- **Rule:** run `gh pr view <n> --json state` before every push to a PR branch and before calling a PR ready.
+
+## 2026-10-11/12 -- A gate that trusts the model's own report
+- **Pattern:** the deviation gate (D-104) reads the deviations 1b declares; 1b rewrote the config silently (run_081) and the gate passed it (CUL-429).
+- **Rule:** when a check guards a model's output, compare the output itself (here the forecast replay, D-106), not the model's account of it.
+
+## 2026-10-11/12 -- Backslashes in a heredoc broke code twice more
+- **Pattern:** a `\n` inside a Python-in-bash heredoc became a real newline in an f-string and in a test, and a replacement with backslashes failed its anchor; same family as the 2026-10-05 lesson.
+- **Rule (reinforced):** any text with a backslash (code, regex, Windows paths) goes through the Write or Edit tool, never a heredoc.
+
+## 2026-10-11/12 -- Disk at 0 bytes discovered by a failed command
+- **Pattern:** a `sed | cut` failed with "No space left on device" mid-session; 40 merged worktrees (about 550 MB each) had accumulated.
+- **Rule:** check free space before any run or worktree creation, and remove merged worktrees (junction-safe) at the end of each session.
