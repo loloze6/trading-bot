@@ -4381,6 +4381,17 @@ def _deviation_gate_enabled(cfg: dict | None = None) -> bool:
              "Enable them together."))
 
 
+def _exact_config_1b_enabled(cfg: dict | None = None) -> bool:
+    """Lane 1 (D-110): orchestrator.exact_config_1b.enabled. False when the key,
+    the section or the config file is absent; a non-bool value raises. While
+    false: byte-identical (nothing else read, 1b is the model call as before).
+    While true: a run whose research_brief.yaml carries an exact config (a
+    constraint starting BRIEF_EXACT_CONFIG_PREFIX) gets step 1b written by code
+    (_exact_config_1b): the brief's config and its exact block manifest, no
+    model call. Step 1a is unchanged. Every check after 1b runs as before."""
+    return _strict_orchestrator_flag("exact_config_1b", cfg=cfg)
+
+
 def _config_replay_gate_enabled(cfg: dict | None = None) -> bool:
     """Lane 1 (D-109): orchestrator.config_replay_gate.enabled. False when the
     key, the section or the config file is absent; a non-bool value raises.
@@ -17203,6 +17214,82 @@ def _config_replay_module():
     return mod
 
 
+BRIEF_EXACT_MANIFEST_PREFIX = "Use EXACTLY this block manifest (JSON)"
+
+
+def _brief_exact_manifest(path: Path):
+    """The exact block manifest the run's brief carries, or None when no
+    constraint starts with BRIEF_EXACT_MANIFEST_PREFIX (same layout as the exact
+    config: the JSON after the constraint's first line). Raises ValueError when
+    the constraint is there but its JSON does not parse to an object."""
+    p = Path(path) / "artifacts" / "research_brief.yaml"
+    if not p.exists():
+        return None
+    brief = load_yaml(p) or {}
+    for c in brief.get("constraints") or []:
+        if isinstance(c, str) and c.lstrip().startswith(BRIEF_EXACT_MANIFEST_PREFIX):
+            body = c.replace("\r\n", "\n").split("\n", 1)
+            try:
+                doc = json.loads(body[1]) if len(body) == 2 else None
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"the brief's exact block manifest does not parse as JSON ({exc})")
+            if not isinstance(doc, dict):
+                raise ValueError("the brief's exact block manifest is not a JSON object")
+            return doc
+    return None
+
+
+def _exact_config_1b_mode(run_dir: Path) -> bool:
+    """D-110: True when orchestrator.exact_config_1b is on and the run's brief
+    carries an exact config. Flag off: False, nothing but the flag is read."""
+    if not _exact_config_1b_enabled():
+        return False
+    return _brief_exact_config(run_dir) is not None
+
+
+def _exact_config_1b(run_dir: Path, run_id: str) -> None:
+    """Step 1b written by code (D-110), modelled on _composition_1b: the brief's
+    exact config goes into backtest_spec.yaml (spec_ready) unchanged, the brief's
+    exact block manifest into block_manifest.yaml, and decision.yaml records
+    spec_ready with no deviation, so nearest build's deviations.yaml reads
+    `exact`. Refuses (RuntimeError, before anything is written and before any
+    spend) when the brief has no exact manifest, when either JSON is broken, or
+    when the manifest does not fit the config (block_manifest.check_manifest).
+    Every check after 1b (manifest, D-051, nearest build, the deviation gate,
+    the config replay gate) runs unchanged on what is written here."""
+    import copy
+    arts = Path(run_dir) / "artifacts"
+    try:
+        config = _brief_exact_config(run_dir)
+        manifest = _brief_exact_manifest(run_dir)
+    except ValueError as exc:
+        raise RuntimeError(f"[D-110] exact-config 1b refused: {exc}") from exc
+    if config is None:
+        raise RuntimeError("[D-110] exact-config 1b refused: the brief carries no exact config")
+    if manifest is None:
+        raise RuntimeError("[D-110] exact-config 1b refused: the brief carries an exact config "
+                           f"but no exact block manifest (a constraint starting "
+                           f"{BRIEF_EXACT_MANIFEST_PREFIX!r})")
+    _block_manifest_module().check_manifest(manifest, config, where="the brief's exact block manifest",
+                                            error_cls=RuntimeError)
+    hyp = (load_yaml(arts / "hypothesis_card.yaml") or {}).get("hypothesis_id") \
+        if (arts / "hypothesis_card.yaml").exists() else None
+    save_yaml(arts / "backtest_spec.yaml", {
+        "hypothesis_id": hyp, "status": "spec_ready", "config": copy.deepcopy(config),
+        "config_rationale": [{"hypothesis_claim": "the brief's exact strategy config",
+                              "config_choice": "code-written from research_brief.yaml (D-110); "
+                                               "copied unchanged, no LLM"}],
+        "component_gap": None})
+    save_yaml(arts / _block_manifest_module().MANIFEST_FILENAME, copy.deepcopy(manifest))
+    save_yaml(arts / "decision.yaml", {
+        "hypothesis_id": hyp, "stage": "strategy_config_authoring", "status": "spec_ready",
+        "rationale": "D-110 exact-config mode: the brief's exact config and block manifest were "
+                     "copied by code; nothing authored",
+        "blocking_issues": []})
+    print(f"✅ [D-110] exact-config 1b for {run_id}: the brief's config and block manifest copied "
+          f"(no LLM call)")
+
+
 def _route_config_replay_gate(path: Path) -> str:
     """D-109 (orchestrator.config_replay_gate, checked by the caller): after a
     spec_ready 1b answer that passed the deviation gate (if on), replay 1b's
@@ -19942,6 +20029,9 @@ def run_loop(run_id: str):
                                                        profit_bars_evaluated=_pbe_flag)
             elif _comp_mode:
                 _run_composition_code_stage(current_stage, run_id, RUN_DIR, _sr_flag)
+            elif (current_stage == "strategy_config_authoring" and not _skip_agent
+                  and _exact_config_1b_mode(RUN_DIR)):
+                _exact_config_1b(RUN_DIR, run_id)  # D-110: the brief's config, by code
             elif not _skip_agent:
                 if current_stage == "hypothesis_generation":
                     _split = False

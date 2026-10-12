@@ -1097,6 +1097,19 @@ orchestrator:
       # forecast, regime or required_bars difference, or a replay that cannot
       # run, pauses with config_replay_mismatch -- before any backtest, so no
       # trial row. Catches a rewrite 1b does not declare (CUL-429, run_085).
+  exact_config_1b:
+    enabled: false
+      # Lane 1 (operator, 2026-10-12; D-110). OFF BY DEFAULT, read by
+      # run_phase1_research._exact_config_1b_enabled(). No dependency. While
+      # false: byte-identical (1b is the model call as before).
+      #
+      # While true: a run whose brief carries an exact config (a constraint
+      # starting "Build EXACTLY this strategy config (JSON)") gets step 1b
+      # written by code: the config and the brief's exact block manifest (a
+      # constraint starting "Use EXACTLY this block manifest (JSON)") are
+      # copied unchanged, no model call; a missing or broken manifest refuses
+      # before anything is written. Step 1a is unchanged; every check after 1b
+      # (manifest, D-051, nearest build, deviation gate, replay gate) still runs.
   explore_confirm:
     enabled: false
       # E-072 (P-CUL-80, D-080, engineering/roadmap/E-072/PHASE_A.md). OFF BY
