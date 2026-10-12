@@ -270,15 +270,15 @@
 5. **Next-session prompt (paste verbatim):**
    > Context: Windows, repo loloze6/trading-bot. My main checkout is on c4/flag-set with uncommitted runtime files: do not switch, stash or edit it; I launch every run and edit my checkout myself unless I say "do it for me". Read SESSION_LOG.md's latest entry ("2026-10-12 (continued) -- Lane 1 fold B ..."), DECISION_LOG D-108..D-111 (and the step-2 row if merged), tasks/lessons.md, and the advisor's latest guideline that I will paste. Lane 1 fold B: run_084 (SMA 100) VALID; SMA 200 is run_088, paused at backtest_specification; SMA 50 rerun2 not registered. Rules: never run main.py run_bot; never open trading-bot/local_data/holdout_sealed/ and never tail a local_data cache; no sealed-window dates in files; no secrets; one PR per change from master, no Co-Authored-By trailers, Sonnet review one round, mutation checks on new guards, run every test file importing a touched module; D-106 replay after every run (VALID expected; any difference, STOP); no continue-rule figure until SMA 50/100/200 are all VALID; explain simply, one item per line, gloss every id; end by appending SESSION_LOG.md and tasks/lessons.md.
 
-## 2026-10-12 (continued, part 3) -- Lane 1 fold B complete (runs 088, 089 VALID), D-112; continue rule not readable; Fable ruling: coverage fix (D-113), registry mark, one-kind-of-brief study, fold-C data check
+## 2026-10-12 (continued, part 3) -- Lane 1 fold B complete (runs 088, 089 replay VALID), D-112; continue rule not readable; Fable ruling: coverage fix (D-113), registry mark, one-kind-of-brief study, fold-C data check
 1. **Hypothesis:** with step 1b and step 2 written by code (D-110, D-112), all three fold-B configs run as pre-registered, and D-108's continue rule can then be read. It could not be: its Sharpe input is NOT_EVALUABLE on an interleaved fold. Fable's ruling of 2026-10-12: fix the coverage denominator first (declared as made after partial results), then read D-108 once and stop.
 2. **Result:**
    - **Merged:** #399 (session notes, part 2), #400 (D-112: with `exact_config_1b` on, config-direct authoring on, an exact brief and the variant loop off, step 2 writes a base-only `variant_patches.yaml` by code).
    - **Runs (operator's checkout, launched there at the operator's request):**
      - run_088 (SMA 200) re-entered at step 2 by the documented RUNBOOK path, backtested, replay VALID.
      - run_089 (SMA 50 rerun2 copy) backtested, replay VALID.
-     - With run_084 (SMA 100), all three fold-B runs are VALID. Lots 110 / 70 / 42; signal exits 65 / 32 / 17, as predicted.
-     - Base curve-based gross/cost 62.3.
+     - With run_084 (SMA 100), all three fold-B runs are VALID. Lots 110 / 70 / 42 and signal exits 65 / 32 / 17 (runs 089 / 084 / 088, SMA 50 / 100 / 200), the exits as predicted.
+     - Base curve-based gross/cost 62.3 (run_084, `tools/curve_cost_ratio.py` via the scratch `%TEMP%\l1_d107old_b_figures.py`; not stored in a run artifact).
    - **Continue rule not readable:** the whole-test Sharpe is NOT_EVALUABLE on all three runs (724 returns + 1 over 1,341 days = 54.1% < 0.9), because fold B's 611 planned gap days were counted. No substitute was computed.
    - **Registry:** run_089 was registered automatically (`L1_DAILY_TREND_SMA50_V3_FOLD_B:run_089`). The grid validated it under step 1a's generic criteria, not under D-108.
    - **Fable ruling 2026-10-12, worked through:**
@@ -294,7 +294,7 @@
      - **Item 1c (the D-108 reading):** waits for #401 and #402 to merge.
      - **Item 2:** a top-level `marks:` entry was given to the operator for `block_registry.yaml`.
        - `load_registry` accepts it.
-       - The schema's top level has `additionalProperties: false`, so the next registry write logs a warning; it would block only under `WORKFLOW_ARTIFACT_VALIDATION=raise`, which nothing sets.
+       - The schema's top level has `additionalProperties: false`, so the next registry write logs a warning; it would block only under `WORKFLOW_ARTIFACT_VALIDATION=raise`, which the repo does not set.
        - Also seen: the registry already holds `L1_DAILY_TREND_BASKET_SMA200_V2:run_083` (fold A).
      - **Item 3 (read only):**
        - run_084's card was NOT a code-written pass-through card (`pass_through: false`). The 1a model picked the criteria from `config/criterion_menu.yaml`'s two live entries, because the brief carries `criteria_from: hypothesis_generation`.
@@ -306,7 +306,7 @@
        - Every warm-up prefetch span has enough daily rows (SMA 200: 400/400, or 399/400 where 2018-01-12 is missing, against a need of 398).
        - But ETH and LTC miss 2018-01-12 inside block 2018-01 (119/120). By the gate's own rule that is `refine` (missing fraction > 0 and ≤ 0.05), which pauses the run for a human. Fold C is partly usable: STOP for Fable.
    - **My mistakes:** see tasks/lessons.md, 2026-10-12 (continued, part 3).
-3. **Files touched:** #399, #400 (`workflow/run_phase1_research.py`, `config/campaign_config.yaml`, `config/feature_flag_register.yaml`, `tests/test_exact_config_step2.py`, DECISION_LOG D-112); #401 (DECISION_LOG D-113); #402 (`tools/portfolio_whole_test.py`, `tests/test_d113_gap_coverage.py`, `tests/test_e062_s2a_portfolio_whole_test.py`); this entry and `tasks/lessons.md`. Operator checkout (uncommitted runtime): master merged to `eeffaa57`, runs 088 and 089, the queue.
+3. **Files touched:** #399, #400 (`workflow/run_phase1_research.py`, `config/campaign_config.yaml`, `config/feature_flag_register.yaml`, `tests/test_exact_config_step2.py`, `strategy-research/engineering/DECISION_LOG.md` D-112); #401 (`strategy-research/engineering/DECISION_LOG.md` D-113); #402 (`tools/portfolio_whole_test.py`, `tests/test_d113_gap_coverage.py`, `tests/test_e062_s2a_portfolio_whole_test.py`); this entry and `tasks/lessons.md`. Operator checkout (uncommitted runtime): master merged to `eeffaa57`, runs 088 and 089, the queue.
 4. **Handoff block:**
    - **Open PRs:** #401 (D-113 row), #402 (D-113 fix). Merge #401 first.
    - **After both merge:** compute D-108 offline on the stored outputs of runs 089 / 084 / 088 with the pipeline's own functions: whole-test Sharpe without and with day-1 costs; curve ratio 62.3; CONTINUE or FAIL and the branch. Then STOP for Fable. The reading's D-row carries the exit point verbatim, plus one line on the registry mark.

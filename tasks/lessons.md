@@ -191,7 +191,7 @@ in the record file, not in the prose the operator reads.
 - **Rule:** before pre-registering a rule, run its every input once on the fold's real shape (a dry computation on synthetic data shaped like the fold).
 
 ## 2026-10-12 (continued, part 3) -- A registry write followed a grid verdict that was not the pre-registered rule
-- **Pattern:** run_089 was registered automatically because the grid validated it under step 1a's generic criteria (the lot-based ratio, D-107's artefact), before D-108's own rule was read. My earlier read-only check had said it "won't reliably happen".
+- **Pattern:** run_089 was registered automatically because the grid validated it under step 1a's generic criteria (the lot-based ratio, D-107's artefact), before D-108's own rule was read. My earlier read-only registry-route check (reported in chat to the operator, this session) had said it "won't reliably happen".
 - **Rule:** when a brief carries its own decision rule, list every automatic write that a different verdict can trigger (registry, memory, queue) before the run, and say which one fires first.
 
 ## 2026-10-12 (continued, part 3) -- Backslashes in a heredoc, eighth time
