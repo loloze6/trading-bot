@@ -1578,6 +1578,12 @@ def _classify_human_pause(run_dir: Path, state: dict) -> str:
     # quarantine-safe.
     if flags.get("config_deviation"):
         return "config_deviation"
+    # D-109: set by run_phase1_research._route_config_replay_gate (orchestrator.
+    # config_replay_gate) when 1b's spec_ready config does not replay as the
+    # brief's exact config. Stops before Step 2 and any backtest; a human
+    # decides; never quarantine-safe.
+    if flags.get("config_replay_mismatch"):
+        return "config_replay_mismatch"
     # E-033.1 Slice 4b (2026-09-22): set by run_phase1_research's
     # data_availability_gate elif-branch in run_loop when, after the
     # per-variant data-availability gate has run, fewer than 3 variants
@@ -1916,6 +1922,8 @@ _PAUSE_FLAG_TO_REASON = (
     # D-104. Mirrors _classify_human_pause's branch for this flag, which sits
     # immediately after forecast_rule_violation there.
     ("config_deviation", "config_deviation"),
+    # D-109. Mirrors _classify_human_pause's branch, right after config_deviation.
+    ("config_replay_mismatch", "config_replay_mismatch"),
     # E-033.1 Slice 4b. Mirrors _classify_human_pause's branch for this flag,
     # which sits immediately after variant_config_error (E-061 C2 S2c) in
     # that function's own order -- see this flag's comment there.
@@ -3535,6 +3543,7 @@ def _flag_readers() -> dict:
         "reader_findings": orch._reader_findings_enabled,  # E-068 slice 5 (D-073)
         "nearest_build": orch._nearest_build_enabled,  # E-068 nearest build (D-075)
         "deviation_gate": orch._deviation_gate_enabled,  # lane 1 (D-104)
+        "config_replay_gate": orch._config_replay_gate_enabled,  # lane 1 (D-109)
         "explore_confirm": orch._explore_confirm_enabled,  # E-072 (D-080)
         "schedulability_block": _schedulability_block_enabled,
         "operator_approval": _operator_approval_enabled,  # E-068 PR 4 (D-071)

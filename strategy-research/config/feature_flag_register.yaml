@@ -876,6 +876,20 @@ flags:
       structured or a DEVIATION: line), or is missing or unreadable, pauses the run with config_deviation before step 2 and any
       backtest. Tested by tests/test_deviation_gate.py.
 
+  - name: config_replay_gate
+    kind: orchestrator_config
+    config_key: orchestrator.config_replay_gate.enabled
+    reader: run_phase1_research._config_replay_gate_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "the operator switches it on in c4/flag-set for the lane-1 fold-B runs (D-109)"
+    criterion: >
+      Landed 2026-10-12 (lane 1, D-109). Off: byte-identical -- nothing read,
+      1b's route unchanged. On: when the brief carries an exact config, 1b's
+      spec_ready config is replayed against it (D-106) and any difference, or a
+      replay that cannot run, pauses the run with config_replay_mismatch before
+      step 2 and any backtest. Tested by tests/test_config_replay_gate.py.
+
   - name: explore_confirm
     kind: orchestrator_config
     config_key: orchestrator.explore_confirm.enabled
