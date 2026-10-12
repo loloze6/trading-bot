@@ -293,8 +293,8 @@ def test_each_envelope_key_is_checked():
     for ok in rp.COMBINES_AS:
         _check({"vehicle": CHANGE, "combines_as": ok}, envelope=True)
     assert rp.COMBINES_AS == ("forecast_block", "regime_gate", "execution_rule", "knowledge_only")
-    with pytest.raises(rp.ProposalError, match="fold_observed='D'"):
-        _check({"vehicle": CHANGE, "fold_observed": "D"}, envelope=True)
+    with pytest.raises(rp.ProposalError, match="fold_observed='E'"):  # D-115: D is a fold
+        _check({"vehicle": CHANGE, "fold_observed": "E"}, envelope=True)
     # D-089 (a): an empty vehicle only for execution_behaviour (accepted there, see
     # test_d089_vehicle_and_coins.py); any other kind is refused
     with pytest.raises(rp.ProposalError, match="vehicle"):

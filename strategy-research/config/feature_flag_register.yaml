@@ -807,8 +807,9 @@ flags:
       generator, the launch pre-flight (generated and pinned protocols, and the
       run_context / last_escalation protocol) and tools/run_protocol.py, which
       every backtest passes through, refuse any window overlapping the
-      validation period (the policy's 2024-2025; no validation stage exists
-      yet). Tested by tests/test_e077_folds.py.
+      policy's 2024-2025 period, except fold D's exact blocks in a fold-D
+      protocol (D-115: no validation stage; 2024-2025 is fold D, after A, B
+      and C). Tested by tests/test_e077_folds.py.
       E-077 PR-2 (CUL-421, D-087), same flag, no new one: a side finding's envelope
       (`vehicle` -- required from a model, it IS the config change --, `combines_as`,
       `fold_observed`) is accepted and checked; after a child run's backtests

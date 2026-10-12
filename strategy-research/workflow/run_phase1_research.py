@@ -11466,20 +11466,23 @@ def _generate_monthly_windows(start: str, end: str, holdout_range=None, *,
     return windows
 
 
-def _assert_windows_clear_of_validation(windows: list) -> None:
+def _assert_windows_clear_of_validation(windows: list, fold=None) -> None:
     """E-077 PR-1 (D-085): refuse any generated window that overlaps the
     validation period (the data policy's 2024-2025), next to
     `_assert_windows_clear_of_holdout`. Called only under orchestrator.folds.enabled.
-    No validation stage exists yet, so there is no run for which it is allowed:
-    the message names that future stage. The range is read from the policy at
-    call time (`_DATA_POLICY_PATH`, redirected into the sandbox by the tests);
-    a missing or malformed policy raises, never "no validation period"."""
+    D-115: no validation stage; that period is fold D, so a window there passes
+    only when the protocol is fold D (`fold` == "D") and the window is exactly one
+    of fold D's blocks (config/folds.yaml). The range and fold D are read at call time (`_DATA_POLICY_PATH`, redirected into the
+    sandbox by the tests; ROOT/config/folds.yaml); a missing or malformed policy
+    or folds file raises, never "no validation period"."""
     try:
         validation = _research_folds.load_validation_range(_DATA_POLICY_PATH)
+        fold_d = _research_folds.fold_d_windows_for(fold, path=ROOT / "config" / "folds.yaml",
+                                                    policy_path=_DATA_POLICY_PATH)
     except _research_folds.FoldsError as exc:
         raise _research_folds.ValidationBoundaryBreach(
             f"{exc}. Refusing to generate windows against an unknown validation period.") from exc
-    _research_folds.assert_windows_clear_of_validation(windows, validation)
+    _research_folds.assert_windows_clear_of_validation(windows, validation, fold_d)
 
 
 def _protocol_windows_from_constraints(proto_constraint: dict, start: str, end: str) -> list:
@@ -11502,18 +11505,27 @@ def _protocol_windows_from_constraints(proto_constraint: dict, start: str, end: 
             start, end, window_months=proto_constraint.get("window_months", 1))
     else:
         _research_folds.check_fold_id(fold)
+        _research_folds.check_fold_d_pin(proto_constraint)  # D-115: D only after A, B, C
         windows = _research_folds.load_fold_windows(
             fold, path=ROOT / "config" / "folds.yaml", policy_path=_DATA_POLICY_PATH)
         _assert_windows_clear_of_holdout(windows, *_load_holdout_range())
     return windows
 
 
-def _enforce_validation_guard(windows: list, folds_enabled) -> None:
+def _generated_protocol_fold_key(proto_constraint: dict) -> dict:
+    """D-115: {"fold": "D"} for a fold-D protocol, else {} -- the one key that lets
+    fold D's blocks through the validation guard at tools/run_protocol.py."""
+    return ({"fold": _research_folds.FOLD_D}
+            if proto_constraint.get("fold") == _research_folds.FOLD_D else {})
+
+
+def _enforce_validation_guard(windows: list, folds_enabled, fold=None) -> None:
     """The validation-period guard under orchestrator.folds.enabled. `folds_enabled`:
     a bool, or a zero-argument reader called here (so a flag-off generator that
-    already failed at G7 never reads the config)."""
+    already failed at G7 never reads the config). `fold`: the protocol's fold key
+    (D-115: only a fold-D protocol may hold fold D's blocks)."""
     if (folds_enabled() if callable(folds_enabled) else folds_enabled):
-        _assert_windows_clear_of_validation(windows)
+        _assert_windows_clear_of_validation(windows, fold)
 
 
 def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: dict, *,
@@ -11573,9 +11585,12 @@ def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: d
             proto_constraint, run_id,
             promotion_retired=(promotion_retired() if callable(promotion_retired)
                                else promotion_retired)),
+        # D-115: a fold-D protocol says so (tools/run_protocol.py's guard reads it);
+        # every other protocol has no key (byte-identical).
+        **_generated_protocol_fold_key(proto_constraint),
     }
     # E-077 PR-1 (D-085): after G7, so the flag-off failure order is master's.
-    _enforce_validation_guard(windows, folds_enabled)
+    _enforce_validation_guard(windows, folds_enabled, proto_constraint.get("fold"))
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(protocol_obj, f, indent=2)
     print(f"✅ [F4d] Generated protocol from pre-registered machine_constraints: {out_path}"

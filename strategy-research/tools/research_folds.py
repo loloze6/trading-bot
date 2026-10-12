@@ -1,11 +1,20 @@
 """
-research_folds -- the three fixed folds of time windows (E-077 PR-1, D-085).
+research_folds -- the four fixed folds of time windows (E-077 PR-1, D-085;
+fold D: D-115).
 
 A claim is never confirmed on the bars where it was observed. Each fold is six
 exact 4-month blocks (config/folds.yaml); a child run of an idea backtests on
-the next fold its LINEAGE has not used; a lineage that has used all three is
+the next fold its LINEAGE has not used; a lineage that has used all four is
 refused. Everything here is pure (no wall clock, no market data, no network);
 the only files read are config/folds.yaml and the data policy.
+
+D-115 (2026-10-12): there is no validation stage. The 2024-2025 period (still
+derived from the policy as below, and still called the validation period in the
+code's names) is fold D: six contiguous 4-month blocks, used only after a
+lineage has used A, B and C. Folds A-C stay inside the research period; fold D's
+blocks lie inside the 2024-2025 period. The guard below now lets a window into
+2024-2025 only when it is exactly one of fold D's blocks; any other window there
+is still refused.
 
 Where the dates come from
 -------------------------
@@ -17,8 +26,9 @@ block must stay out of are read from config/campaign_data_policy.yaml
                   end of walk_forward_extension]              (2024-2025, single-use)
   * research  = backward_extension.BTCUSDT_1h, which must end the day before
                 validation starts (checked: a gap or an overlap raises).
-`load_folds` refuses a block outside the research period or inside either
-range; the validation guard (`assert_windows_clear_of_validation`) reads the
+`load_folds` refuses a block of A-C outside the research period or inside either
+range, and a block of D outside the 2024-2025 period or inside the holdout; the
+validation guard (`assert_windows_clear_of_validation`) reads the
 same validation range. Under orchestrator.folds.enabled the guard runs at every
 place a protocol's windows are fixed or used: the protocol generator, the launch
 pre-flight (generated, pinned and run_context-resolved protocols alike), and
@@ -58,7 +68,11 @@ import novelty as _nov
 #: The real file. Tests pass their own path.
 FOLDS_PATH = Path(__file__).resolve().parent.parent / "config" / "folds.yaml"
 
-FOLD_ORDER = ("A", "B", "C")
+FOLD_ORDER = ("A", "B", "C", "D")
+#: D-115: the fold that lives in the 2024-2025 period (no validation stage).
+FOLD_D = "D"
+#: D-115: the folds a lineage must have used before a run may be pinned to fold D.
+FOLDS_BEFORE_D = ("A", "B", "C")
 BLOCKS_PER_FOLD = 6
 BLOCK_MONTHS = 4
 
@@ -146,15 +160,16 @@ def _block_end(label: str) -> str:
 
 
 def load_folds(path=None, *, policy_path=None) -> dict:
-    """The validated folds document: {"order": ["A","B","C"], "folds": {"A": [block, ...], ...}}
+    """The validated folds document: {"order": ["A","B","C","D"], "folds": {"A": [block, ...], ...}}
     where a block is {"label", "start", "end"}.
 
-    Refuses (FoldsError): a file that cannot be read; an order other than A, B, C;
+    Refuses (FoldsError): a file that cannot be read; an order other than A, B, C, D;
     a fold without exactly six blocks; a block that is not an exact 4-month
     calendar tile (label YYYY-01/05/09, start = its first day, end = its last
     day); the same label in two folds; blocks of one fold out of order; a block
-    outside the research period or inside the validation period or the holdout
-    (their dates read from the policy at `policy_path`, required)."""
+    of A-C outside the research period or inside the validation period or the holdout; a block of
+    D (D-115) outside the validation period (2024-2025) or inside the holdout (all dates read
+    from the policy at `policy_path`, required)."""
     p = Path(path) if path is not None else FOLDS_PATH
     try:
         doc = yaml.safe_load(p.read_text(encoding="utf-8"))
@@ -191,11 +206,12 @@ def load_folds(path=None, *, policy_path=None) -> dict:
             if prev is not None and label <= prev:
                 raise FoldsError(f"{p}: fold {fid} blocks must be in ascending order ({prev} then {label})")
             seen[label], prev = fid, label
-            rs, re_ = ranges["research"]
+            home = "validation" if fid == FOLD_D else "research"  # D-115: fold D is 2024-2025
+            rs, re_ = ranges[home]
             if start < rs or end > re_:
-                raise FoldsError(f"{p}: fold {fid} block {label} ({start}..{end}) is outside the research "
+                raise FoldsError(f"{p}: fold {fid} block {label} ({start}..{end}) is outside the {home} "
                                  f"period {rs}..{re_} (read from the data policy)")
-            for name in ("validation", "holdout"):
+            for name in (("holdout",) if fid == FOLD_D else ("validation", "holdout")):
                 if _overlaps((start, end), ranges[name]):
                     raise FoldsError(f"{p}: fold {fid} block {label} ({start}..{end}) overlaps the "
                                      f"{name} period {ranges[name][0]}..{ranges[name][1]}")
@@ -276,9 +292,9 @@ def assign_fold(doc: dict, *, run_id: str, memory_runs: dict, run_ranges: dict) 
     or None} -- each memory run's protocol windows (None = unreadable).
 
     Returns {"fold": "B" | None, "windows_sha256": ... | None, "lineage": [run ids],
-    "used": {run_id: [folds]}, "reason": None | str}. `fold` is the first fold in A, B, C
+    "used": {run_id: [folds]}, "reason": None | str}. `fold` is the first fold in A, B, C, D
     order that no lineage run has used. `reason` is set (and fold None) when the lineage
-    has used all three (`folds_exhausted`) or when some lineage run is missing from memory
+    has used all four (`folds_exhausted`) or when some lineage run is missing from memory
     or has unreadable windows (`fold_lineage_unreadable`) -- the safe direction: never
     guess a fold when the bars a line has seen are unknown."""
     entry = memory_runs.get(run_id)
@@ -305,8 +321,8 @@ def assign_fold(doc: dict, *, run_id: str, memory_runs: dict, run_ranges: dict) 
             result["windows_sha256"] = fold_windows_sha256(doc, fid)
             return result
     result["reason"] = (f"folds_exhausted: the lineage of {run_id} ({', '.join(lineage)}) has used every "
-                        f"fold ({', '.join(doc['order'])}); the next stage for this idea is validation "
-                        f"(single-use), not another child run")
+                        f"fold ({', '.join(doc['order'])}); there is no other fold for another child run "
+                        f"(D-115: no validation stage; the holdout is reached only through the profit bars)")
     return result
 
 
@@ -318,26 +334,62 @@ class ValidationBoundaryBreach(ValueError):
     """A generated window would materialise bars inside the validation period."""
 
 
-def assert_windows_clear_of_validation(windows: list, validation_range) -> None:
-    """Refuse any window whose [start, end] overlaps the validation period.
+def assert_windows_clear_of_validation(windows: list, validation_range, fold_d_windows) -> None:
+    """Refuse any window whose [start, end] overlaps the validation period (2024-2025)
+    unless it is exactly one of fold D's blocks (D-115: no validation stage; that period
+    is fold D).
 
-    No validation stage exists yet, so under orchestrator.folds.enabled this refuses
-    ALWAYS: the 2024-2025 bars are single-use and only the future validation stage
-    may read them. Enforced by the callers listed in the module docstring; this
-    function is the one check they all share (and the one message). `end` is inclusive by day at the engine (D-058), so a window ending
-    on a validation day spends that day. Raises, never clamps (a silently trimmed sweep
-    no longer matches what was pre-registered)."""
+    `fold_d_windows`: fold D's windows (fold_windows(doc, "D")) when the protocol being
+    checked IS a fold-D protocol (its `fold` key is "D"), else [] -- callers use
+    fold_d_windows_for. A window in 2024-2025 passes only when its label, start and end
+    equal one of them, so a 1-month tile, a shifted block, a block straddling the
+    period's edge, or a fold-D-shaped block in a protocol that is not fold D, is still
+    refused. Which lineage may use fold D is decided elsewhere (assign_fold's order;
+    a pinned fold D needs check_fold_d_pin). Enforced by the callers listed in the
+    module docstring; this function is the one check they all share (and the one
+    message). `end` is inclusive by day at the engine (D-058), so a window ending on a
+    2024-2025 day spends that day. Raises, never clamps (a silently trimmed sweep no
+    longer matches what was pre-registered)."""
     v_start, v_end = validation_range
+    allowed = {(str(w.get("label")), str(w["test"]["start"])[:10], str(w["test"]["end"])[:10])
+               for w in fold_d_windows}
     for w in windows:
         label = w.get("label", "?")
         start, end = str(w["test"]["start"])[:10], str(w["test"]["end"])[:10]
-        if _overlaps((start, end), (v_start, v_end)):
+        if _overlaps((start, end), (v_start, v_end)) and (str(label), start, end) not in allowed:
             raise ValidationBoundaryBreach(
                 f"window {label!r} ({start}..{end}) overlaps the validation period "
-                f"{v_start}..{v_end}. The validation period is single-use: only the future "
-                f"validation stage may read it, and that stage does not exist yet, so under "
-                f"orchestrator.folds.enabled no run may include it. Use a fold from "
-                f"config/folds.yaml (research period only), or turn the flag off.")
+                f"{v_start}..{v_end} and is not one of fold D's blocks. Since D-115 that "
+                f"period is fold D: under orchestrator.folds.enabled a run may include it "
+                f"only as fold D's exact blocks from config/folds.yaml (a fold child whose "
+                f"lineage used A, B and C). Use a fold's blocks, or turn the flag off.")
+
+
+def fold_d_windows_for(fold, *, path=None, policy_path=None) -> list:
+    """D-115: what the validation guard may let through for a protocol whose `fold` key
+    is `fold`: fold D's windows when fold == "D", else [] (nothing in 2024-2025). The
+    folds file is read only for a fold-D protocol."""
+    if fold != FOLD_D:
+        return []
+    return load_fold_windows(FOLD_D, path=path, policy_path=policy_path)
+
+
+def check_fold_d_pin(protocol_constraint: dict) -> None:
+    """D-115: a machine_constraints.protocol with `fold: "D"` must carry
+    `fold_lineage_used` -- the folds its lineage had used when decide-next assigned D
+    (written by tools/decide_next.py for fold D only) -- and it must include A, B and C.
+    An operator brief that pins fold D without it is refused: fold D is used only after a
+    lineage has used A, B and C. The list is recorded by decide-next, not re-derived here
+    (this function reads no memory)."""
+    if protocol_constraint.get("fold") != FOLD_D:
+        return
+    used = protocol_constraint.get("fold_lineage_used")
+    if not isinstance(used, list) or not set(FOLDS_BEFORE_D) <= set(used):
+        raise FoldsError(
+            f"fold D (2024-2025, D-115) is used only after a lineage has used folds "
+            f"{', '.join(FOLDS_BEFORE_D)}; this protocol's fold_lineage_used is {used!r}. "
+            f"Fold D is assigned by decide-next (research_folds.assign_fold), never pinned "
+            f"by hand.")
 
 
 #: config/campaign_config.yaml, where orchestrator.folds.enabled lives.

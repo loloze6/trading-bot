@@ -45,6 +45,14 @@ note: "<optional>"
 Before `spend`, answer yes to all: the trial ledgers of both writers are merged; the deflated
 Sharpe was looked at with every trial counted; the bars file is the one that graded the run.
 
+Checklist (D-115, by hand; no code gate):
+- The whole-test deflated Sharpe is >= 0.95, computed at unlock time with the ledger's current N.
+  No command prints it today: the unlock recomputes it (`_dsr_on_current_ledger_v2` in
+  `workflow/run_phase1_research.py`) but checks it only against the bars file's
+  `deflated_sharpe_threshold`; `tools/deflate_sharpe.py <run_id>` prints an older per-window
+  figure, not this one.
+- The lineage is confirmed on at least two unseen folds.
+
 Then in `pipeline_state.yaml`: clear `flags.profit_bars_reached`, set `status: active`, and run
 `../venv/Scripts/python.exe workflow/run_campaign.py --resume`.
 

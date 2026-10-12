@@ -21,7 +21,8 @@ are marked *superseded*.
 >   picked, it is confirmed only on the output of a **real backtest on a fold of time
 >   windows its lineage has not used** (three fixed folds; a line ends after three).
 >   Confirmed claims become the building blocks that are combined (E-071).
-> - **After the folds** come validation (2024-2025, single-use) and then the holdout.
+> - **After the folds** comes the holdout. There is no validation stage (D-115): 2024-2025
+>   is fold D, a fourth fold given only to a lineage that used A, B and C.
 > - **The analyst's instructions** are designed for that purpose (A1.8 draft v2, reviewed;
 >   the final Stage 1 is A1.11).
 
@@ -457,8 +458,8 @@ The review was read-only and verified against the code. Its main findings:
   2 blocks per year each.
 - **A child runs on the next fold its lineage has not used.**
 - **A config runs on a given fold only once.**
-- **A lineage ends after 3 folds,** then validation (2024-2025, single-use), then the
-  holdout.
+- **A lineage ends after 4 folds** (D-115: fold D = 2024-2025, no validation stage), then
+  the holdout.
 - **Every pooled number shown to an AI step carries its fold label.**
 - **Daily ideas confirm on other coins,** because daily blocks have too few trades.
 - In code: two functions change, and one YAML file (`config/folds.yaml`) is added.
@@ -738,8 +739,7 @@ the operator):
 **Stage 3: combination and the final checks.**
 - the combination of confirmed claims, using `combines_as`; its logic is to be redesigned
   then, possibly as an LLM step;
-- then validation, once;
-- then the holdout.
+- then the holdout (no validation stage, D-115).
 
 Each stage ends with the operator's decision before the next begins.
 

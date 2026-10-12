@@ -1,9 +1,11 @@
-# E-077 PR-1 (D-085): the three fixed folds of time windows.
+# E-077 PR-1 (D-085): the fixed folds of time windows; fold D added by D-115.
 #
 # A child run of an idea backtests on the NEXT fold its lineage has not used
 # (tools/decide_next.py, only while orchestrator.folds.enabled is true), so an
 # idea is never confirmed on the bars where it was first observed. A line ends
-# after three folds; then comes validation (single-use), then the holdout.
+# after four folds. There is no validation stage (D-115): the 2024-2025 period
+# is fold D, used only after a lineage has used A, B and C; the holdout is
+# reached only through the profit bars.
 #
 # Each fold is six exact 4-month calendar blocks in the shape the protocol
 # generator writes (workflow/run_phase1_research.py::_generate_monthly_windows
@@ -13,9 +15,17 @@
 # (2022-01 .. 2023-09), so those runs ARE fold A -- no special case.
 #
 # B and C split the twelve blocks of 2018-2021, interleaved so each fold has a
-# block in every one of the four years. Nothing here may touch the validation
-# period or the holdout: tools/research_folds.py::load_folds refuses it, and
-# the dates of both come from config/campaign_data_policy.yaml, never from here.
+# block in every one of the four years. A-C may not touch the 2024-2025 period
+# or the holdout; D (D-115) is the six contiguous blocks of 2024-2025, like A,
+# and may not touch the holdout: tools/research_folds.py::load_folds refuses
+# either, and the dates come from config/campaign_data_policy.yaml, never from here.
+#
+# D-115: fold D is NOT unseen for every idea. Earlier runs backtested windows
+# inside 2024-2025: by their protocol_result, runs 011-037, 039, 054, 057, 061
+# and 064; the generated protocols of runs 048, 050, 053, 062 and 063 too
+# (Binance BTCUSDT / ETHUSDT, plus SOLUSDT / AVAXUSDT 4h escalations). None has
+# a campaign-memory entry, so the repeat check cannot flag a family that ran
+# there. See DECISION_LOG D-115.
 #
 # D-099 (2026-10-10): B and C swapped wholesale before any fold-B backtest had
 # run. The old B held the only 2018-2021 blocks where Kraken 1h BTC/USD and
@@ -24,9 +34,9 @@
 # `refine` and the variant loop does not run. Chosen on data gaps only, never
 # on a result: no run had backtested either fold.
 #
-# Order of use: A, then B, then C.
+# Order of use: A, then B, then C, then D.
 version: 1
-order: [A, B, C]
+order: [A, B, C, D]
 folds:
   A:
     - {label: "2022-01", start: "2022-01-01", end: "2022-04-30"}
@@ -49,3 +59,10 @@ folds:
     - {label: "2020-01", start: "2020-01-01", end: "2020-04-30"}
     - {label: "2020-09", start: "2020-09-01", end: "2020-12-31"}
     - {label: "2021-05", start: "2021-05-01", end: "2021-08-31"}
+  D:
+    - {label: "2024-01", start: "2024-01-01", end: "2024-04-30"}
+    - {label: "2024-05", start: "2024-05-01", end: "2024-08-31"}
+    - {label: "2024-09", start: "2024-09-01", end: "2024-12-31"}
+    - {label: "2025-01", start: "2025-01-01", end: "2025-04-30"}
+    - {label: "2025-05", start: "2025-05-01", end: "2025-08-31"}
+    - {label: "2025-09", start: "2025-09-01", end: "2025-12-31"}

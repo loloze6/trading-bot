@@ -3321,8 +3321,10 @@ does not skip to another fold, so the lineage order holds. Aux feeds are checked
 only by the gate itself, later. The same flag makes the protocol generator, the
 launch pre-flight (generated and pinned protocols, and the protocol a
 run_context or last_escalation resolves to) and `tools/run_protocol.py` (which
-every backtest passes through) refuse any window overlapping the validation
-period (the data policy's 2024-2025): no validation stage exists yet. Lineage
+every backtest passes through) refuse any window overlapping the data policy's
+2024-2025 period, except fold D's exact blocks in a fold-D protocol (D-115: there
+is no validation stage; 2024-2025 is fold D, given only to a lineage that used A,
+B and C). Lineage
 reads each run's protocol file; `protocols/run_0xx_generated.json` are untracked
 runtime files, so on a machine without them every reader candidate is
 `fold_lineage_unreadable` (the safe direction: infeasible, never a guessed fold).
