@@ -132,7 +132,13 @@ after each run, before the next launch; a VOID run still counts as a trial.
   DOGE (2019-12-19), LINK (2019-09-25), UNI (2020-10-15) start after it; XRP
   (2017-05-18) leaves the 2018-05 sma200 prefetch at 347/400 rows and the
   readiness probe fails. XMR and ZEC have the history but stay excluded by the
-  operator's universe rule: [OPERATOR: the rule's reason]. **Limit:** 3 coins,
+  operator's universe rule, decided before any fold-A run: [OPERATOR: fill in
+  the reason]. Not data quality: LTC is flagged for missing data too
+  (config/campaign_data_policy.yaml:149-155) and is in the basket. The
+  advisor's coverage list of 2026-10-11 (expected basket BTC, ETH, LTC; XRP
+  fails) missed XMR (daily data from 2017-01-02) and ZEC (from 2016-10-29),
+  which both cover the warm-up; the basket is not changed (run_084 already ran
+  on BTC/ETH/LTC). **Limit:** 3 coins,
   two of them (BTC, ETH) already looked at by run_054 (below); a result here
   is about 3 large coins, not a breadth basket. The warm-up is not relaxed to
   add coins.
