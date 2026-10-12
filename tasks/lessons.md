@@ -185,3 +185,15 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-12 (continued) -- A run record nearly edited to fit a new rule
 - **Pattern:** I proposed adding the exact manifest to run_086's frozen `research_brief.yaml`; the advisor ruled it out (editing a run record) and retired the run instead.
 - **Rule:** never change a run's frozen artifacts to fit a rule made after it launched; retire the run or start a new one.
+
+## 2026-10-12 (continued, part 3) -- A pre-registered rule read a number the fold's shape made not evaluable
+- **Pattern:** D-108's continue rule read the whole-test Sharpe. On fold B's interleaved blocks the chain counted 611 planned gap days, so the Sharpe was NOT_EVALUABLE on all three runs; nobody had run the rule's inputs on the fold's shape before pre-registering it.
+- **Rule:** before pre-registering a rule, run its every input once on the fold's real shape (a dry computation on synthetic data shaped like the fold).
+
+## 2026-10-12 (continued, part 3) -- A registry write followed a grid verdict that was not the pre-registered rule
+- **Pattern:** run_089 was registered automatically because the grid validated it under step 1a's generic criteria (the lot-based ratio, D-107's artefact), before D-108's own rule was read. My earlier read-only check had said it "won't reliably happen".
+- **Rule:** when a brief carries its own decision rule, list every automatic write that a different verdict can trigger (registry, memory, queue) before the run, and say which one fires first.
+
+## 2026-10-12 (continued, part 3) -- Backslashes in a heredoc, eighth time
+- **Pattern:** a script written through a shell heredoc turned `\n` inside Python strings into real newlines (fold_b_figures.py).
+- **Rule:** write any file that contains a backslash with the Write tool, never a heredoc.
