@@ -194,6 +194,6 @@ in the record file, not in the prose the operator reads.
 - **Pattern:** run_089 was registered automatically because the grid validated it under step 1a's generic criteria (the lot-based ratio, D-107's artefact), before D-108's own rule was read. My earlier read-only registry-route check (reported in chat to the operator, this session) had said it "won't reliably happen".
 - **Rule:** when a brief carries its own decision rule, list every automatic write that a different verdict can trigger (registry, memory, queue) before the run, and say which one fires first.
 
-## 2026-10-12 (continued, part 3) -- Backslashes in a heredoc, eighth time
-- **Pattern:** a script written through a shell heredoc turned `\n` inside Python strings into real newlines (fold_b_figures.py).
-- **Rule:** write any file that contains a backslash with the Write tool, never a heredoc.
+## 2026-10-12 (continued, part 3) -- Backslashes in a heredoc, eighth and ninth time
+- **Pattern:** a script written through a shell heredoc turned `\n` inside Python strings into real newlines (fold_b_figures.py). Ninth time, while fixing these very notes: a Windows path in a heredoc Python string lost `\f` to a form feed (caught by grep, repaired before merge).
+- **Rule:** write any file or replacement text that contains a backslash with the Write or Edit tool, never through a heredoc; after any scripted text edit, scan the file for control characters.
