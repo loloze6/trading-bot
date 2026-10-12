@@ -278,7 +278,7 @@
      - run_088 (SMA 200) re-entered at step 2 by the documented RUNBOOK path, backtested, replay VALID.
      - run_089 (SMA 50 rerun2 copy) backtested, replay VALID.
      - With run_084 (SMA 100), all three fold-B runs are VALID. Lots 110 / 70 / 42 and signal exits 65 / 32 / 17 (runs 089 / 084 / 088, SMA 50 / 100 / 200), the exits as predicted.
-     - Base curve-based gross/cost 62.3 (run_084, `tools/curve_cost_ratio.py` via the scratch `%TEMP%\l1_d107old_b_figures.py`; not stored in a run artifact).
+     - Base curve-based gross/cost 62.3 (run_084, `tools/curve_cost_ratio.py` via the scratch `%TEMP%\l1_d107\fold_b_figures.py`; not stored in a run artifact).
    - **Continue rule not readable:** the whole-test Sharpe is NOT_EVALUABLE on all three runs (724 returns + 1 over 1,341 days = 54.1% < 0.9), because fold B's 611 planned gap days were counted. No substitute was computed.
    - **Registry:** run_089 was registered automatically (`L1_DAILY_TREND_SMA50_V3_FOLD_B:run_089`). The grid validated it under step 1a's generic criteria, not under D-108.
    - **Fable ruling 2026-10-12, worked through:**
