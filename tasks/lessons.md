@@ -157,3 +157,31 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-12 -- Files written with CRLF next to LF siblings
 - **Pattern:** the Write tool produced CRLF briefs; the first diff against the LF sibling showed every line changed.
 - **Rule:** after writing a file that has siblings, compare `grep -c $'\r'` with a sibling's committed bytes and normalise before diffing or committing.
+
+## 2026-10-12 (continued) -- Backslashes in a heredoc broke code again (sixth and seventh time)
+- **Pattern:** a `\n` inside a Python-in-bash heredoc became a real newline, once in a test file and once in a mutation script; an em dash in a command-line string broke a match the same session.
+- **Rule (reinforced):** any text with a backslash or a non-ASCII character goes through the Write or Edit tool into a script file; never a heredoc or a `-c` string.
+
+## 2026-10-12 (continued) -- An LLM step told to copy a config verbatim is not a copy
+- **Pattern:** 1b dropped or moved the brief's first clip in 4 of 5 attempts while told to build exactly the given JSON; one rewrite (run_085) passed as `exact` and cost a trial.
+- **Rule:** when exactness is the requirement, write it by code (D-110) and check the result against the source by replay (D-109).
+
+## 2026-10-12 (continued) -- A new path modelled on an existing one without reading the next stage
+- **Pattern:** composition mode's 1b writes no block manifest; a normal run's backtest_specification requires one (the advisor caught it before the build).
+- **Rule:** before modelling a new path on an existing one, read what the next stage requires from it.
+
+## 2026-10-12 (continued) -- A brief re-run checked at registration and the repeat gate only
+- **Pattern:** I said the SMA 50 re-run would pass after checking `register` and the step-5a repeat check; step 1a declared the brief exhausted because `brief_hypothesis_ids` counts the void run_085's card (run_087).
+- **Rule:** before re-running a brief, check what step 1a requires (its `already_produced` context, tried ideas, the knowledge base), not only registration and the repeat check.
+
+## 2026-10-12 (continued) -- Model drift moved from stage to stage
+- **Pattern:** after 1b was written by code, step 2 (also a model) named no variant `base` and the run paused (run_088).
+- **Rule:** when a brief must run exactly, list every model stage between the brief and the backtest and decide each one up front.
+
+## 2026-10-12 (continued) -- A field's effect stated without checking a run where it was set
+- **Pattern:** I told the operator run_088's `symbol: BTCUSDT` on its base would test BTC only; with the variant loop off the key is ignored, and run_084 carries the same key and backtested 3 coins x 6 windows (advisor's correction).
+- **Rule:** before stating what a field does, find a finished run where it was set and read what that run did (here `protocol_result.yaml`).
+
+## 2026-10-12 (continued) -- A run record nearly edited to fit a new rule
+- **Pattern:** I proposed adding the exact manifest to run_086's frozen `research_brief.yaml`; the advisor ruled it out (editing a run record) and retired the run instead.
+- **Rule:** never change a run's frozen artifacts to fit a rule made after it launched; retire the run or start a new one.

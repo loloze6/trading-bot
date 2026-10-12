@@ -1110,6 +1110,10 @@ orchestrator:
       # copied unchanged, no model call; a missing or broken manifest refuses
       # before anything is written. Step 1a is unchanged; every check after 1b
       # (manifest, D-051, nearest build, deviation gate, replay gate) still runs.
+      # D-112 (2026-10-12, declared behaviour change for anyone with the flag
+      # on): when the variant loop is also off, step 2 (innovation_expansion) is
+      # written by code too -- variant_patches.yaml with `base` only, empty
+      # patch, no symbol; no model call. Loop on: step 2 is the model, as before.
   explore_confirm:
     enabled: false
       # E-072 (P-CUL-80, D-080, engineering/roadmap/E-072/PHASE_A.md). OFF BY
