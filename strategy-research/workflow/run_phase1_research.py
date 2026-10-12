@@ -17311,7 +17311,9 @@ def _exact_config_step2_mode(run_dir: Path) -> bool:
     nothing but the flag is read."""
     if not _exact_config_1b_mode(run_dir):
         return False
-    return not _variant_loop_enabled()
+    # config-direct only (review of PR #400): without it step 2 routes to
+    # validation / an LLM 5a that read the expanded card the code does not write
+    return _config_direct_authoring_enabled() and not _variant_loop_enabled()
 
 
 def _exact_config_variant_patches(run_dir: Path, run_id: str) -> None:

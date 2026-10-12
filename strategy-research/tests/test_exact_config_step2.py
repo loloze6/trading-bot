@@ -146,3 +146,11 @@ def test_step_5a_accepts_the_code_written_files(monkeypatch):
     index = rpr.load_yaml(_arts(run_dir) / "variants" / "index.yaml")["variants"]
     assert list(index) == ["base"] and index["base"]["status"] == "validated"
     assert rpr.load_yaml(_arts(run_dir) / "candidate_strategy_config.json") == _lane1(200)
+
+
+def test_config_direct_off_keeps_the_model_step2(monkeypatch):
+    """Review of PR #400: without config-direct authoring, step 2 routes to stages that
+    read the expanded card, so step 2 stays the model."""
+    _set_orchestrator({"exact_config_1b": {"enabled": True}})
+    run_dir = _run("run_959")
+    assert rpr._exact_config_step2_mode(run_dir) is False
