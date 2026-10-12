@@ -323,7 +323,8 @@ Assessment (agreed):
 > *Superseded by A1.7, decision D1:*
 > - **What changes:** the windows come from **three fixed folds** (`config/folds.yaml`), not
 >   from the random draw in step 3 below. A child runs on the next fold its lineage has not
->   used, a config runs on a given fold only once, and a lineage ends after three folds.
+>   used, a config runs on a given fold only once, and a lineage ends after three folds
+>   (D-115: four, fold D = 2024-2025; no validation stage).
 > - **What stays:** steps 1, 2, 4 and 5 (calendar, coverage, protocol, "observed on"). The
 >   end of the calendar is read from the data policy, with a test.
 > - **The random draw** is kept as a parked epic.

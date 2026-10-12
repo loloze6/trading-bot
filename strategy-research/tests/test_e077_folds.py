@@ -709,7 +709,7 @@ def test_every_fold_passes_the_guard_and_the_holdout_assert(sandbox_folds):
     hs, he = rpr._load_holdout_range()
     for fold in DOC["order"]:
         windows = rf.fold_windows(DOC, fold)
-        rpr._assert_windows_clear_of_validation(windows, fold)  # D-115: D as a fold-D protocol
+        rpr._assert_windows_clear_of_validation(windows, _proto_of(fold))  # D-115
         rpr._assert_windows_clear_of_holdout(windows, hs, he)
 
 
@@ -863,7 +863,7 @@ def test_run_protocol_lets_a_research_period_protocol_through_under_the_flag(fol
     folds_config(True)
     monkeypatch.setattr(rp, "_DATA_POLICY_PATH", REAL_POLICY)
     for fold in DOC["order"]:
-        proto = {"windows": rf.fold_windows(DOC, fold), **({"fold": "D"} if fold == "D" else {})}
+        proto = {"windows": rf.fold_windows(DOC, fold), **_proto_of(fold)}
         assert rp._refuse_validation_period_windows(proto) is None  # D-115: D says it is D
 
 
@@ -1040,11 +1040,13 @@ def test_a_fold_d_child_generates_fold_d_and_its_protocol_says_so(sandbox_folds)
     path = rpr._ensure_protocol_from_constraints(run_dir, "run_920", mc, folds_enabled=True)
     doc = json.loads(path.read_text(encoding="utf-8"))
     assert doc["windows"] == rf.fold_windows(DOC, "D") and doc["fold"] == "D"
+    assert doc["fold_lineage_used"] == ["A", "B", "C"]
     ctx = yaml.safe_load((run_dir / "artifacts" / "run_context.yaml").read_text(encoding="utf-8"))
     assert ctx["fold"] == "D"
     expected = camp._expected_generated_protocol(mc["protocol"], "run_920", promotion_retired=False,
                                                  folds_enabled=True)
     assert expected["windows"] == doc["windows"] and expected["fold"] == "D"
+    assert expected["fold_lineage_used"] == ["A", "B", "C"]
     assert camp._validation_overlap_in(path, True) is None  # the pre-flight's file check passes
 
 
@@ -1053,7 +1055,7 @@ def test_a_fold_b_protocol_has_no_fold_key(sandbox_folds):
     run_dir = _minimal_run(rpr.ROOT, "run_921")
     doc = json.loads(rpr._ensure_protocol_from_constraints(run_dir, "run_921", mc, folds_enabled=True)
                      .read_text(encoding="utf-8"))
-    assert "fold" not in doc
+    assert "fold" not in doc and "fold_lineage_used" not in doc
 
 
 @pytest.mark.parametrize("used", [None, [], ["A", "B"], ["B", "C"], "A,B,C"])
@@ -1098,15 +1100,20 @@ def test_load_folds_refuses_a_fold_a_block_in_2024(tmp_path):
 def test_run_protocol_lets_a_fold_d_protocol_through_and_nothing_else(folds_config, capsys):
     folds_config(True)
     d = rf.fold_windows(DOC, "D")
-    assert rp._refuse_validation_period_windows({"fold": "D", "windows": d}) is None
-    for proto in ({"windows": d},                                   # no fold key
-                  {"fold": "B", "windows": d},                      # another fold
-                  {"fold": "D", "windows": d + [{"label": "2024-02", "test": {
-                      "start": "2024-02-01", "end": "2024-02-29"}}]}):  # an extra tile
+    lin = {"fold_lineage_used": ["A", "B", "C"]}
+    assert rp._refuse_validation_period_windows({"fold": "D", **lin, "windows": d}) is None
+    for proto, why in (({"windows": d}, "not one of fold D's blocks"),          # no fold key
+                       ({"fold": "B", **lin, "windows": d}, "not one of fold D's blocks"),
+                       ({"fold": "D", **lin, "windows": d + [{"label": "2024-02", "test": {
+                           "start": "2024-02-01", "end": "2024-02-29"}}]},     # an extra tile
+                        "not one of fold D's blocks"),
+                       ({"fold": "D", "windows": d}, "only after a lineage has used"),  # no lineage
+                       ({"fold": "D", "fold_lineage_used": ["A", "B"], "windows": d},
+                        "only after a lineage has used")):
         with pytest.raises(SystemExit) as exc:
             rp._refuse_validation_period_windows(proto)
         assert exc.value.code == EXIT_NO_DATA_TOUCHED
-        assert "not one of fold D's blocks" in capsys.readouterr().err
+        assert why in capsys.readouterr().err
 
 
 def test_load_folds_refuses_a_fold_d_block_inside_the_holdout_of_a_policy(tmp_path):
@@ -1118,3 +1125,39 @@ def test_load_folds_refuses_a_fold_d_block_inside_the_holdout_of_a_policy(tmp_pa
     pp.write_text(yaml.safe_dump(policy), encoding="utf-8")
     with pytest.raises(rf.FoldsError, match="fold D block 2025-09 .* overlaps the holdout"):
         rf.load_folds(REAL_FOLDS, policy_path=pp)
+
+
+def _proto_of(fold):
+    """D-115: the keys a protocol of `fold` carries for the guard."""
+    return {"fold": "D", "fold_lineage_used": ["A", "B", "C"]} if fold == "D" else {}
+
+
+def _write_protocol(root, name, doc):
+    path = root / "protocols" / name
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(doc), encoding="utf-8")
+    return path
+
+
+@pytest.mark.parametrize("keys, refused", [
+    ({}, True),                                                    # D blocks, no fold key
+    ({"fold": "B"}, True),                                         # D blocks, another fold
+    ({"fold": "D"}, True),                                         # fold D, no lineage
+    ({"fold": "D", "fold_lineage_used": ["A", "C"]}, True),        # lineage without B
+    ({"fold": "D", "fold_lineage_used": ["A", "B", "C"]}, False),  # the accepted (stated) limit
+])
+def test_a_pinned_protocol_file_with_fold_d_blocks(sandbox_folds, keys, refused):
+    """The launch pre-flight's file check (pinned and resolved protocols): fold D's blocks
+    pass only in a fold-D file whose fold_lineage_used holds A, B and C. A hand-written file
+    that writes that list passes: the stated limit of D-115 (self-attested, not re-derived)."""
+    path = _write_protocol(rpr.ROOT, "pinned_d.json",
+                           {"windows": rf.fold_windows(DOC, "D"), **keys})
+    msg = camp._validation_overlap_in(path, True)
+    assert (msg is not None) is refused
+
+
+def test_a_parents_fold_lineage_used_is_never_inherited():
+    inputs, pid = _scenario("run_080", "ROOT__x-run_074-1", {"run_080": FOLD_B, "run_074": FOLD_A},
+                            protocol={**GEN_PROTOCOL, "fold_lineage_used": ["A", "B", "C"]})
+    proto = _front(inputs, _decide(inputs, "run_080"))["machine_constraints"]["protocol"]
+    assert proto["fold"] == "C" and "fold_lineage_used" not in proto

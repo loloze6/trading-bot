@@ -3656,7 +3656,7 @@ _PREFLIGHT_TERMINAL_PREFIXES = ("completed", "rejected", "human_pause", "failed_
 # brief venue (absent on both sides otherwise: the comparison is unchanged).
 _GENERATED_PROTOCOL_FIELDS = ("symbols", "timeframe", "windows", "holdout", "promotion",
                               "exchange", "market_type", "venue", "drop_feeds",
-                              "fold")  # D-115: present on fold-D protocols only
+                              "fold", "fold_lineage_used")  # D-115: fold-D protocols only
 
 
 def _data_spend_evidence(run_dir: Path, run_id: str, state: dict) -> list:
@@ -3717,7 +3717,7 @@ def _expected_generated_protocol(generated: dict, run_id: str, *,
         **orch._generated_protocol_fold_key(generated),  # D-115
     }
     orch._enforce_validation_guard(windows, folds_enabled,  # after G7, as generation does
-                                   generated.get("fold"))
+                                   generated)
     return expected
 
 
@@ -3759,7 +3759,7 @@ def _validation_overlap_in(path: Path, folds_enabled) -> str | None:
     if not isinstance(windows, list):
         return None
     try:
-        orch._assert_windows_clear_of_validation(windows, doc.get("fold"))  # D-115
+        orch._assert_windows_clear_of_validation(windows, doc)  # D-115: fold + lineage
     except research_folds.ValidationBoundaryBreach as e:
         return str(e)
     except (KeyError, TypeError, AttributeError):

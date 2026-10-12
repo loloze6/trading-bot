@@ -340,8 +340,8 @@ def assert_windows_clear_of_validation(windows: list, validation_range, fold_d_w
     is fold D).
 
     `fold_d_windows`: fold D's windows (fold_windows(doc, "D")) when the protocol being
-    checked IS a fold-D protocol (its `fold` key is "D"), else [] -- callers use
-    fold_d_windows_for. A window in 2024-2025 passes only when its label, start and end
+    checked IS a fold-D protocol (its `fold` key is "D" and its `fold_lineage_used` holds
+    A, B and C), else [] -- callers use fold_d_windows_for. A window in 2024-2025 passes only when its label, start and end
     equal one of them, so a 1-month tile, a shifted block, a block straddling the
     period's edge, or a fold-D-shaped block in a protocol that is not fold D, is still
     refused. Which lineage may use fold D is decided elsewhere (assign_fold's order;
@@ -365,12 +365,20 @@ def assert_windows_clear_of_validation(windows: list, validation_range, fold_d_w
                 f"lineage used A, B and C). Use a fold's blocks, or turn the flag off.")
 
 
-def fold_d_windows_for(fold, *, path=None, policy_path=None) -> list:
-    """D-115: what the validation guard may let through for a protocol whose `fold` key
-    is `fold`: fold D's windows when fold == "D", else [] (nothing in 2024-2025). The
-    folds file is read only for a fold-D protocol."""
-    if fold != FOLD_D:
+def fold_d_windows_for(protocol, *, path=None, policy_path=None) -> list:
+    """D-115: what the validation guard may let through for `protocol` (a protocol
+    file's dict or a machine_constraints.protocol; None = neither): fold D's windows
+    when its `fold` is "D", else [] (nothing in 2024-2025). A fold-D protocol must also
+    carry `fold_lineage_used` holding A, B and C (check_fold_d_pin), at every check
+    point -- generator, pre-flight, a pinned or resolved file, tools/run_protocol.py --
+    else ValidationBoundaryBreach. The folds file is read only for a fold-D protocol."""
+    protocol = protocol if isinstance(protocol, dict) else {}
+    if protocol.get("fold") != FOLD_D:
         return []
+    try:
+        check_fold_d_pin(protocol)
+    except FoldsError as exc:
+        raise ValidationBoundaryBreach(str(exc)) from exc
     return load_fold_windows(FOLD_D, path=path, policy_path=policy_path)
 
 
@@ -379,8 +387,10 @@ def check_fold_d_pin(protocol_constraint: dict) -> None:
     `fold_lineage_used` -- the folds its lineage had used when decide-next assigned D
     (written by tools/decide_next.py for fold D only) -- and it must include A, B and C.
     An operator brief that pins fold D without it is refused: fold D is used only after a
-    lineage has used A, B and C. The list is recorded by decide-next, not re-derived here
-    (this function reads no memory)."""
+    lineage has used A, B and C. LIMIT: the list is recorded by decide-next and checked
+    for its content only, never re-derived from campaign memory (this function reads no
+    memory): a brief or protocol file that writes the list by hand gets fold D. It stops
+    an accidental fold-D pin, not a deliberate hand edit."""
     if protocol_constraint.get("fold") != FOLD_D:
         return
     used = protocol_constraint.get("fold_lineage_used")
@@ -388,7 +398,7 @@ def check_fold_d_pin(protocol_constraint: dict) -> None:
         raise FoldsError(
             f"fold D (2024-2025, D-115) is used only after a lineage has used folds "
             f"{', '.join(FOLDS_BEFORE_D)}; this protocol's fold_lineage_used is {used!r}. "
-            f"Fold D is assigned by decide-next (research_folds.assign_fold), never pinned "
+            f"Fold D is assigned by decide-next (research_folds.assign_fold), not pinned "
             f"by hand.")
 
 

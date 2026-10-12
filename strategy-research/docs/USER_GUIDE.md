@@ -3310,7 +3310,7 @@ whichever folds it overlaps). The brief's `machine_constraints.protocol` gets
 `fold`, the fold's `start`/`end` and `window_months: 4` (and loses
 `per_symbol_start`); the protocol generator then writes the fold's exact
 windows, and `fold` is recorded in `run_context.yaml`, the memory entry and the
-trial rows. A lineage that used all three, or whose runs' windows cannot be
+trial rows. A lineage that used all four (D-115: fold D = 2024-2025), or whose runs' windows cannot be
 read, makes the candidate INFEASIBLE with a reason in the decision record
 (`candidates[].fold_assignment` shows the lineage and the folds each run used);
 the campaign carries on with the other candidates. A candidate whose child has
@@ -3337,7 +3337,7 @@ A side finding may carry three envelope keys beside its `claim` (never inside it
 `vehicle` (the strategy change its own run backtests, the same
 `[{component_id, field, before, after}]` list as `config_change`, which it replaces),
 `combines_as` (`forecast_block`, `regime_gate`, `execution_rule` or `knowledge_only`)
-and `fold_observed` (A, B or C). A claim's `vehicle` must resolve against the run's
+and `fold_observed` (A, B, C or D). A claim's `vehicle` must resolve against the run's
 base config like a config change; the analyst of a later PR writes it. Until then, with
 the flag on, the five current readers produce no side findings: their side findings are
 refused before validation (the reading's explanation is kept, no retry, the audit entry

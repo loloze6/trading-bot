@@ -2343,7 +2343,8 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str) -> tuple:
             raise DecideNextError(f"picked candidate {cid!r} has no fold to run on "
                                   f"({fa}); it should have been infeasible")
         start, end = _folds.fold_span(inputs["folds"]["doc"], fold)
-        proto = {k: v for k, v in proto.items() if k != "per_symbol_start"}
+        proto = {k: v for k, v in proto.items()
+                 if k not in ("per_symbol_start", "fold_lineage_used")}  # D-115: never inherited
         mc["protocol"] = {**proto, "start": start, "end": end,
                           "window_months": _folds.BLOCK_MONTHS, "fold": fold}
         if fold == _folds.FOLD_D:

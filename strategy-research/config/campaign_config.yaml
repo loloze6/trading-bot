@@ -995,11 +995,11 @@ orchestrator:
       #
       # While true:
       #  * decide-next (tools/decide_next.py) gives a child run the windows of
-      #    the next fold its LINEAGE has not used (config/folds.yaml: three folds
-      #    of six exact 4-month blocks, A = 2022-2023, B and C = 2018-2021;
-      #    order A, B, C), writes `fold` into the child's
+      #    the next fold its LINEAGE has not used (config/folds.yaml: four folds
+      #    of six exact 4-month blocks, A = 2022-2023, B and C = 2018-2021,
+      #    D = 2024-2025 (D-115); order A, B, C, D), writes `fold` into the child's
       #    machine_constraints.protocol, and marks a candidate whose lineage has
-      #    used all three folds INFEASIBLE (reason folds_exhausted; the campaign
+      #    used all four folds INFEASIBLE (reason folds_exhausted; the campaign
       #    goes on with the other candidates). A fold is "used" when any window
       #    of any lineage run overlaps any block of it (tools/research_folds.py),
       #    so runs 065-074 count as fold A without a special case.
