@@ -4381,6 +4381,20 @@ def _deviation_gate_enabled(cfg: dict | None = None) -> bool:
              "Enable them together."))
 
 
+def _config_replay_gate_enabled(cfg: dict | None = None) -> bool:
+    """Lane 1 (D-109): orchestrator.config_replay_gate.enabled. False when the
+    key, the section or the config file is absent; a non-bool value raises.
+    While false: byte-identical (nothing read, the route unchanged).
+    While true: when the run's research_brief.yaml carries an exact config
+    (a constraint starting with BRIEF_EXACT_CONFIG_PREFIX), 1b's spec_ready
+    config (artifacts/backtest_spec.yaml `config`) is replayed against it
+    (D-106's replay, engineering/lane1_replay/replay_config.py) before step 2;
+    any forecast, regime or required_bars difference pauses the run with
+    CONFIG_REPLAY_FLAG, before any backtest. Unlike the deviation gate (D-104),
+    it does not depend on 1b reporting its own deviations (CUL-429)."""
+    return _strict_orchestrator_flag("config_replay_gate", cfg=cfg)
+
+
 def _nearest_build_module():
     _json_pointer_module()  # puts tools/ on sys.path
     import nearest_build as _nb
@@ -17151,6 +17165,78 @@ def _route_deviation_gate(path: Path) -> str:
     return "human_pause"
 
 
+CONFIG_REPLAY_FLAG = "config_replay_mismatch"
+BRIEF_EXACT_CONFIG_PREFIX = "Build EXACTLY this strategy config (JSON)"
+CONFIG_REPLAY_ARTIFACT = "config_replay_gate.yaml"
+
+
+def _brief_exact_config(path: Path):
+    """The exact strategy config the run's brief mandates, or None when no
+    constraint starts with BRIEF_EXACT_CONFIG_PREFIX. The JSON is the text after
+    that constraint's first line (the lane-1 brief layout, D-105). Raises
+    ValueError when the constraint is there but its JSON does not parse. No
+    research_brief.yaml: None (no brief, so no mandated config)."""
+    p = Path(path) / "artifacts" / "research_brief.yaml"
+    if not p.exists():
+        return None
+    brief = load_yaml(p) or {}
+    for c in brief.get("constraints") or []:
+        if isinstance(c, str) and c.lstrip().startswith(BRIEF_EXACT_CONFIG_PREFIX):
+            body = c.replace("\r\n", "\n").split("\n", 1)
+            try:
+                cfg = json.loads(body[1]) if len(body) == 2 else None
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"the brief's exact config does not parse as JSON ({exc})")
+            if not isinstance(cfg, dict):
+                raise ValueError("the brief's exact config is not a JSON object")
+            return cfg
+    return None
+
+
+def _config_replay_module():
+    import importlib.util
+    # code, not data: located from this file, never from ROOT (tests redirect ROOT)
+    p = Path(__file__).resolve().parent.parent / "engineering" / "lane1_replay" / "replay_config.py"
+    spec = importlib.util.spec_from_file_location("lane1_replay_config", p)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _route_config_replay_gate(path: Path) -> str:
+    """D-109 (orchestrator.config_replay_gate, checked by the caller): after a
+    spec_ready 1b answer that passed the deviation gate (if on), replay 1b's
+    config against the brief's exact config. Continue on VALID or when the
+    brief has no exact config; otherwise pause with CONFIG_REPLAY_FLAG (fail
+    closed: an unparseable brief config, no authored config, or a replay error
+    pauses too). Writes artifacts/config_replay_gate.yaml whenever it compares.
+    Before any backtest, so a paused run has no trial row."""
+    path = Path(path)
+    try:
+        want = _brief_exact_config(path)
+        if want is None:
+            return "innovation_expansion"
+        spec = load_yaml(path / "artifacts" / "backtest_spec.yaml") or {}
+        got = spec.get("config")
+        if not isinstance(got, dict):
+            raise ValueError("artifacts/backtest_spec.yaml has no `config` mapping")
+        result = _config_replay_module().replay_configs(want, got)
+    except Exception as exc:  # fail closed: an unverifiable config is not the brief's
+        why = f"replay not possible: {type(exc).__name__}: {exc}"
+    else:
+        save_yaml(path / "artifacts" / CONFIG_REPLAY_ARTIFACT, result)
+        if result.get("verdict") == "VALID":
+            return "innovation_expansion"
+        diffs = {k: v.get("forecast_or_regime_differences") for k, v in result["series"].items()}
+        rbs = {k: v.get("required_bars") for k, v in result["series"].items()}
+        why = f"replay VOID: differing bars {diffs}, required_bars {rbs}"
+    update_state(path=path, status="paused_for_human", flags={CONFIG_REPLAY_FLAG: True},
+                 last_error=f"config replay gate (D-109): {why}")
+    print(f"\n⏸️  PIPELINE PAUSED ({CONFIG_REPLAY_FLAG}): 1b's base config does not replay as the "
+          f"brief's -- {why}. No backtest has run (docs/RUNBOOK.md §3, {CONFIG_REPLAY_FLAG}).")
+    return "human_pause"
+
+
 def _record_nearest_build(path: Path) -> None:
     """E-068 nearest build, after 1b's answer is routed (flag on only; off:
     no-op, nothing read): artifacts/deviations.yaml from decision.yaml and
@@ -18762,6 +18848,8 @@ def determine_post_strategy_config_authoring_route(path: Path, *, routing_retire
             _record_claim_match(path)  # E-068 slice 2: a warning only; flag off: no-op
             if _deviation_gate_enabled():  # D-104; flag off: nothing read
                 route = _route_deviation_gate(path)
+            if route == "innovation_expansion" and _config_replay_gate_enabled():  # D-109
+                route = _route_config_replay_gate(path)
         return route
     tried_warning = None
     if status == "component_gap":
