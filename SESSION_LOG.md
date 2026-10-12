@@ -204,3 +204,47 @@
    - **Linear:** CUL-429 (D-104 gate sees only declared deviations; Backlog, needs its own decision); CUL-426, CUL-427, CUL-428 (parked analyst items).
 5. **Next-session prompt (paste verbatim):**
    > Context: Windows, VS Code PowerShell terminal, repo loloze6/trading-bot. My main checkout is on c4/flag-set with uncommitted runtime files: do not switch it, stash it or edit it unless I say so. Read SESSION_LOG.md's latest entry ("2026-10-11/12 -- Lane 1 on fold A ...", including its handoff block), DECISION_LOG D-102..D-106, and the advisor's ruling of 2026-10-11 (D-107 onward) that I will paste. Lane 1 ended FAIL "cost binds" by the pre-registered rule; take the work items from the ruling only, one at a time, plan first and wait for my go. Rules: never run main.py run_bot; never open trading-bot/local_data/holdout_sealed/ and never tail a local_data cache; no sealed-window dates in files; no secrets; one change per PR from master, no Co-Authored-By trailers, flag off by default with a byte-identity test; reviews by a Sonnet reviewer, Fable only for strategic advice; check a PR's state before pushing to its branch; verify every claim in code (file:line); explain simply, one item per line, gloss every id; end by appending to SESSION_LOG.md and tasks/lessons.md.
+
+## 2026-10-12 -- Lane 1 after fold A: D-107 ruling, curve-based cost ratio (CUL-431), v3 briefs on fold B (D-108), fold-shape item pending (#389-#392)
+1. **Hypothesis:** the fold-A FAIL's label "cost binds" is an artefact of the lot-based ratio (advisor ruling 2026-10-11, operator agreed); a cost figure read from the account curves, and the same three configs on unseen fold B, settle whether the signal carries.
+2. **Result:**
+   - **#389 (D-107):** the ruling recorded. Figures re-computed at position size from runs 081-083 (weight net_portfolio_return_pct / realized_return), all matching the ruling: gross/cost 3.9 / 6.5 / 7.4; costs 26 / 15 / 13% of gross; window-end lots 24 / 30 / 21 (mean hold 53 / 38 / 64 bars) carry +302 / +210 / +309 gross points; signal-flip lots hold 14.0 / 13.2 / 15.6 bars; lots under 0.10 of the account +26 / +9 / 0 points; top decile (floor n/10 lots) 613 / 308 / 326% of net P&L; per-lot t 0.58 / 1.34 / 0.95. Units: points summed over the 48 coin-window accounts. The prescribed weight gives 2 + 2 negative weights; the engine-exact weight gives 4.4 / 7.1 / 8.0.
+   - **#390 (CUL-431):** `tools/curve_cost_ratio.py`, a pure tool wired into no stage. No output writes a fee per fill (`bars.csv` keeps close, fill price and quantity; `trades.json` keeps fees in currency); lot costs are summed per account only behind a guard that lot net P&L equals the equity change (run_081: 48 of 48, max gap 8.2e-13). Curve-based ratio 5.61 / 7.24 / 9.07 (runs 081 / 082 / 083); window-end closes 12 / 10 / 17% of costs. 13 tests, 8 of 8 mutations killed.
+   - **Found, not fixed (in CUL-431, each needs a decision):** (a) the whole-test chain anchors a window at its first day's close after that day's rebalance, so a day-1 fill's fees and slippage are not in the Sharpe (run_081: 4 of 6 windows, 7e-5 to 3e-4); (b) `trade_diagnostics.json` `slippage_paid` reads `bars.csv` closes rounded to 6 decimals (up to 0.107 bps off on DOGE).
+   - **#391 (D-108, draft):** v3 briefs `L1_daily_trend_basket_sma{50,100,200}_v3.md`: v2 configs byte-identical, `fold: "B"` (dry run with the pre-flight's own function: exactly the six fold-B windows), basket BTC / ETH / LTC set by the sma200 warm-up (gate `check_price_window` validate on all windows; readiness probe replayed 3 x 6 x 3, ready; ETH/LTC miss 2018-01-12, no slack in two sma200 spans). XRP fails the warm-up. **Open: the XMR/ZEC exclusion reason** (no written rule found; placeholder in the briefs). Predictions 65 / 32 / 17 exits, 10 / 10 / 10 window-end (method reproduces v2's fold-A predictions exactly).
+   - **#392:** pending decision on fold shape (contiguous vs interleaved), touch lists for both, decided after fold B.
+   - **Reviews:** one Sonnet round per PR; all findings applied (#392's must-fix: fold confirmation missing from the touch list).
+   - **Not done:** no run launched (fold B waits for #391 merged and the operator's queue edit).
+3. **Files touched:** PR #389 `strategy-research/engineering/DECISION_LOG.md`; PR #390 `strategy-research/tools/curve_cost_ratio.py`, `strategy-research/tests/test_cul431_curve_cost_ratio.py`; PR #391 the three v3 briefs, `DECISION_LOG.md`; PR #392 `DECISION_LOG.md`; this entry and `tasks/lessons.md`. Linear CUL-431. Operator checkout: read only (runs 081-083, caches, flag lines, queue).
+4. **Handoff block:**
+   - **PRs, merge order:** #388 (previous session log), #389, #390, #391 (after the XMR/ZEC reason is written; rebase on #389 for DECISION_LOG), #392, then this one. #391 conflicts with #389 above D-106 (both insert rows).
+   - **Run setup (operator's checkout, after master is merged into it):** flags already as required (`variant_loop` off 568, `composition_runs` off 808, `analyst` off 957, `folds` on 989, `nearest_build` on 1053, `deviation_gate` on 1076, `cost_bar_all_costs` on 1118 in `strategy-research/config/campaign_config.yaml`; checked read-only 2026-10-12). Queue: three new entries (below). Measure free disk space before each launch (21 GB free at session end). Order: sma100_v3, replay (D-106), sma50_v3, replay, sma200_v3, replay; all three run whatever the first shows.
+   - **Queue entries** (append to `strategy-research/config/campaign_queue.yaml`):
+     ```yaml
+     - id: L1_daily_trend_basket_sma100_v3
+       brief_path: briefs/L1_daily_trend_basket_sma100_v3.md
+       status: ready
+       priority: 1
+       source: operator_ratified
+       relation: new_registration
+       notes: 'Lane 1 v3 (D-108): v2 config, SMA(100), BTC/ETH/LTC, fold B; continue rule in the brief'
+     - id: L1_daily_trend_basket_sma50_v3
+       brief_path: briefs/L1_daily_trend_basket_sma50_v3.md
+       status: ready
+       priority: 2
+       source: operator_ratified
+       relation: new_registration
+       notes: 'Lane 1 v3 (D-108): v2 config, SMA(50), BTC/ETH/LTC, fold B; continue rule in the brief'
+     - id: L1_daily_trend_basket_sma200_v3
+       brief_path: briefs/L1_daily_trend_basket_sma200_v3.md
+       status: ready
+       priority: 3
+       source: operator_ratified
+       relation: new_registration
+       notes: 'Lane 1 v3 (D-108): v2 config, SMA(200), BTC/ETH/LTC, fold B; continue rule in the brief'
+     ```
+   - **Continue-rule figure:** `tools/curve_cost_ratio.curve_gross_to_cost(list(load_run_accounts(<run>).values()))["ratio"]` on the base run (offline from commit `0cf0f687` if #390 is unmerged), never the lot-based ratio.
+   - **Worktrees this session** (no venv junctions; venv used by absolute path): `d107` (#389), `cul431` (#390), `l1v3` (#391), `foldsD` (#392), `docs1012` (this PR). Remove each after its PR merges. Still present from before: `docs-1011` (#388), `docs-2b`, `master-smoke`, `agent-aac82bae60bb86655`.
+   - **Scratch:** `%TEMP%\l1_d107\` (recompute, identity, junction, coverage, prediction and dry-run scripts).
+5. **Next-session prompt (paste verbatim):**
+   > Context: Windows, repo loloze6/trading-bot. My main checkout is on c4/flag-set with uncommitted runtime files: do not switch it, stash it or edit it; I make run flag edits and launch campaign runs myself. Work in worktrees from master. Read SESSION_LOG.md's latest entry ("2026-10-12 -- Lane 1 after fold A ...", including its handoff block), DECISION_LOG D-107 and D-108, the three v3 briefs, and tasks/lessons.md. Lane 1 fold B: I have merged the PRs and launched the runs I name. For each finished run: run the D-106 replay and report VALID/VOID before I launch the next. After all three: compute the continue rule exactly as the brief names it (whole-test Sharpe from profit_bars_evaluation.yaml; the base run's curve-based gross/cost from tools/curve_cost_ratio.py), report the verdict by the brief's pre-written outcomes, and stop. Never change a threshold after a result. Rules: never run main.py run_bot; never open trading-bot/local_data/holdout_sealed/ and never tail a local_data cache; no sealed-window dates in files; no secrets; no Co-Authored-By trailers; one PR per change, Sonnet review one round; explain simply, one item per line, gloss every id; end by appending SESSION_LOG.md and tasks/lessons.md.
