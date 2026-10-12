@@ -229,3 +229,48 @@ def test_run_loop_broken_manifest_fails_before_any_call(monkeypatch):
     final = rpr.load_yaml(run_dir / "pipeline_state.yaml")
     assert final["status"] == "failed" and "no exact block manifest" in final["last_error"]
     assert not (_arts(run_dir) / "backtest_spec.yaml").exists()
+
+
+# --- review of PR #396 ------------------------------------------------------------
+
+def test_stale_model_deviations_are_cleared_run_086_shape():
+    """run_086's model attempts left deviations.yaml at `approximation`; the
+    code-written 1b must not be judged on it."""
+    _set_orchestrator(NB_ON)
+    run_dir = _run("run_971")
+    rpr.save_yaml(_arts(run_dir) / nb.DEVIATIONS_FILE,
+                  {"schema_version": 1, "run_id": "run_971", "status": "approximation",
+                   "information_only": True, "deviations": [{"clause": "x"}],
+                   "config_rationale_lines": []})
+    rpr._exact_config_1b(run_dir, "run_971")
+    assert not (_arts(run_dir) / nb.DEVIATIONS_FILE).exists()
+    assert rpr.determine_post_strategy_config_authoring_route(run_dir) == "innovation_expansion"
+    assert nb.load_record(_arts(run_dir))["status"] == nb.STATUS_EXACT
+
+
+def test_refusal_leaves_stale_files_untouched():
+    _set_orchestrator(NB_ON)
+    run_dir = _run("run_972", manifest=None)
+    rpr.save_yaml(_arts(run_dir) / nb.DEVIATIONS_FILE, {"status": "approximation"})
+    with pytest.raises(RuntimeError):
+        rpr._exact_config_1b(run_dir, "run_972")
+    assert (_arts(run_dir) / nb.DEVIATIONS_FILE).exists()
+
+
+def test_run_loop_broken_config_json_fails_with_the_d110_message(monkeypatch):
+    _set_orchestrator(ON)
+    run_dir = _run("run_973", config="{not json")
+    seen = _loop(monkeypatch, run_dir)
+    assert seen == []
+    final = rpr.load_yaml(run_dir / "pipeline_state.yaml")
+    assert final["status"] == "failed" and "[D-110]" in final["last_error"]
+    assert "does not parse" in final["last_error"]
+
+
+def test_pass_through_candidate_with_exact_config_refuses(monkeypatch):
+    _set_orchestrator(ON)
+    run_dir = _run("run_974")
+    monkeypatch.setattr(rpr, "_is_pass_through_candidate", lambda arts: True)
+    with pytest.raises(RuntimeError, match="pass-through"):
+        rpr._exact_config_1b(run_dir, "run_974")
+    assert not (_arts(run_dir) / "backtest_spec.yaml").exists()

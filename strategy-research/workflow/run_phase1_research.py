@@ -17244,7 +17244,10 @@ def _exact_config_1b_mode(run_dir: Path) -> bool:
     carries an exact config. Flag off: False, nothing but the flag is read."""
     if not _exact_config_1b_enabled():
         return False
-    return _brief_exact_config(run_dir) is not None
+    try:
+        return _brief_exact_config(run_dir) is not None
+    except ValueError:
+        return True  # a broken exact config: _exact_config_1b refuses it, with D-110's message
 
 
 def _exact_config_1b(run_dir: Path, run_id: str) -> None:
@@ -17259,6 +17262,10 @@ def _exact_config_1b(run_dir: Path, run_id: str) -> None:
     the config replay gate) runs unchanged on what is written here."""
     import copy
     arts = Path(run_dir) / "artifacts"
+    if _is_pass_through_candidate(arts):
+        raise RuntimeError("[D-110] exact-config 1b refused: a decide_next pass-through candidate "
+                           "carries its own config and manifest; it cannot also carry an exact "
+                           "config")
     try:
         config = _brief_exact_config(run_dir)
         manifest = _brief_exact_manifest(run_dir)
@@ -17272,7 +17279,11 @@ def _exact_config_1b(run_dir: Path, run_id: str) -> None:
                            f"{BRIEF_EXACT_MANIFEST_PREFIX!r})")
     _block_manifest_module().check_manifest(manifest, config, where="the brief's exact block manifest",
                                             error_cls=RuntimeError)
-    hyp = (load_yaml(arts / "hypothesis_card.yaml") or {}).get("hypothesis_id") \
+    # what async_invoke_agent clears before a model 1b (review of PR #396): an
+    # earlier attempt's deviations.yaml and claim revision must not be read as this one's
+    _clear_stale_deviations("strategy_config_authoring", run_dir)
+    _clear_claim_revision_files("strategy_config_authoring", run_dir)
+    hyp =(load_yaml(arts / "hypothesis_card.yaml") or {}).get("hypothesis_id") \
         if (arts / "hypothesis_card.yaml").exists() else None
     save_yaml(arts / "backtest_spec.yaml", {
         "hypothesis_id": hyp, "status": "spec_ready", "config": copy.deepcopy(config),
