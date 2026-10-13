@@ -644,11 +644,20 @@ def _full_precision_closes(run_dir: Path) -> dict:
     return out
 
 
-def _bars_with_full_precision_closes(bars: list, closes: dict) -> list:
+def _bars_with_full_precision_closes(bars: list, closes: dict, where: str = "") -> list:
     """D-117: `bars` with each close replaced by the full-precision one at the same
-    timestamp when portfolio_states.csv has it (else the bars.csv close is kept)."""
+    timestamp when portfolio_states.csv has it (else the bars.csv close is kept). When
+    the file has closes but misses some bars' timestamps, those bars keep the rounded
+    close and a WARNING says so on stderr (review of #407: a silent fallback would hide
+    a format drift between the two files)."""
     if not closes:
         return bars
+    missing = [b.get("timestamp") for b in bars if b.get("timestamp") not in closes]
+    if missing:
+        print(f"    WARNING: portfolio_states.csv has no close for {len(missing)} of {len(bars)} "
+              f"bars.csv timestamp(s){' in ' + where if where else ''} (first: {missing[:3]}) -- "
+              f"the all-costs fields use the 6-decimal bars.csv close for those bars",
+              file=sys.stderr)
     return [{**b, "close": closes[b["timestamp"]]} if b.get("timestamp") in closes else b
             for b in bars]
 
@@ -677,7 +686,8 @@ def _compute_trade_records_for_window(
         return []
     bars = _load_bars(run_dir)
     # D-117: the all-costs fields read full-precision closes (only under CUL-414's flag)
-    cost_bars = (_bars_with_full_precision_closes(bars, _full_precision_closes(run_dir))
+    cost_bars = (_bars_with_full_precision_closes(bars, _full_precision_closes(run_dir),
+                                                  f"{symbol} {window}")
                  if cost_bar_all_costs else bars)
 
     records = []

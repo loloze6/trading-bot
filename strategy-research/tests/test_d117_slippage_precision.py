@@ -152,3 +152,25 @@ def test_run_081_slippage_is_now_exact_on_every_lot():
             assert rec["slippage_paid"] == pytest.approx(2 * slip_bps, abs=1e-6), (r["symbol"], rec)
             n += 1
     assert n == 257
+
+
+def test_bars_missing_from_portfolio_states_keep_the_rounded_close_and_warn(tmp_path, capsys):
+    """Review of #407: a partial file is used where it has the bar, the bars.csv close
+    elsewhere, and the fallback is said on stderr (never silent)."""
+    run_dir = tmp_path / "run"
+    _write(run_dir, CLOSES)
+    rows = (run_dir / "portfolio_states.csv").read_text(encoding="utf-8").splitlines()
+    (run_dir / "portfolio_states.csv").write_text("\n".join(r for r in rows if "2020-01-05" not in r)
+                                                  + "\n", encoding="utf-8")
+    recs = rp._compute_trade_records_for_window(run_dir, *ARGS, commission_bps=5.0,
+                                                cost_bar_all_costs=True)
+    err = capsys.readouterr().err
+    assert "no close for 1 of 5" in err and "DOGEUSD w1" in err
+    t1, t2 = recs                  # t1 legs (01, 03) are in the file; t2 exits on 05
+    assert t1["slippage_paid"] == pytest.approx(2 * SLIP, abs=1e-6)
+    bars = rp._load_bars(run_dir)
+    assert t2["slippage_paid"] == rp._all_costs_fields(
+        "SHORT", t2["entry_price"], t2["exit_price"],
+        rp._bars_with_full_precision_closes(bars, rp._full_precision_closes(run_dir)),
+        t2["entry_idx"], t2["exit_idx"], t2["cost_paid"])["slippage_paid"]
+    assert abs(t2["slippage_paid"] - 2 * SLIP) > 1e-4  # the exit leg used the rounded close
