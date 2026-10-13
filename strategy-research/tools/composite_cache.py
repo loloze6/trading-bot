@@ -406,7 +406,7 @@ def residual_ic_by_variant(variant_summaries: dict, variant_results_dirs: dict, 
     if exempt_reason:
         return {**head, "skipped": exempt_reason, "composite": None, "variants": {}}
     block_size = _tf.bars_per_day(timeframe)
-    resolved = resolve_current_composite(_br.load_registry(registry_path),
+    resolved = resolve_current_composite(_br.load_active_registry(registry_path),  # D-125
                                          load_compositions(compositions_path), timeframe)
     grouped = variant_protocol_paths is not None
     groups: dict = {}  # protocol content sha -> (protocol path, [variant ids])

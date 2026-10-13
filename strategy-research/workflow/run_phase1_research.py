@@ -6597,8 +6597,8 @@ def _write_registry_summary(run_dir: Path, idea_status: str | None = None) -> Pa
     if _tools not in sys.path:
         sys.path.insert(0, _tools)
     import block_registry as _br
-    summary = _br.registry_summary(_br.load_registry(_block_registry_path()), run_dir,
-                                   idea_status=idea_status)
+    summary = _br.registry_summary(_br.load_active_registry(_block_registry_path()),  # D-125
+                                   run_dir, idea_status=idea_status)
     dest = Path(run_dir) / "artifacts" / _br.REGISTRY_SUMMARY_ARTIFACT
     save_yaml(dest, summary)
     print(f"📚 specialist_readers: {_br.REGISTRY_SUMMARY_ARTIFACT} written "
@@ -7276,10 +7276,11 @@ def _composition_module():
 
 
 def _load_block_registry_doc() -> dict:
-    """campaign_record/block_registry.yaml (read only; malformed raises)."""
+    """campaign_record/block_registry.yaml (read only; malformed raises), voided blocks
+    left out (D-125: what composition reads; no status record: the file as it is)."""
     _composition_module()  # puts tools/ on sys.path
     import block_registry as _br
-    return _br.load_registry(_block_registry_path())
+    return _br.load_active_registry(_block_registry_path())
 
 
 def _composition_candidate(run_dir: Path) -> dict | None:
