@@ -264,7 +264,7 @@ _DOC_COPIES = ("STRATEGY_DESIGN_GUIDE.md", "COMPONENT_CATALOG.md", "DATA_AVAILAB
 
 PROTOCOL_NAME = "e061_wiring_1h.json"
 SYMBOLS = ("BTCUSDT", "ETHUSDT")
-# Six monthly windows inside the TRAIN range (CLAUDE.fork.md: 2018-01..2023-12),
+# Six monthly windows inside the TRAIN range (config/folds.yaml: 2018-01..2023-12),
 # enough for the menu criteria's floor.min_windows=5.
 WINDOW_LABELS = ("2022-01", "2022-02", "2022-03", "2022-04", "2022-05", "2022-06")
 DAYS_PER_WINDOW = 8

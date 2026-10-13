@@ -23,5 +23,8 @@ From repository root:
 - Use `strategy-research/CLAUDE.md` for the research workflow and artifact-based process.
 - Use local folder context before inventing new abstractions.
 
-## Fork guardrails (Dorian's Mac lab — fork-only section)
-@CLAUDE.fork.md
+## Hard rules
+- Never commit secrets or venvs. If you see keys, stop and tell the operator; never echo values.
+- No lookahead: a bar's decision uses only data timestamped at or before that bar's close. Every new feature or data source needs a "why this can't leak" note.
+- Every experiment that touches market data is a trial and gets a row in the trial ledger, including failures and abandoned ideas.
+- The sealed holdout is used very rarely. Refer to its dates only through `strategy-research/config/campaign_data_policy.yaml`; never write them out. Its store is the literal directory `local_data/holdout_sealed/`.

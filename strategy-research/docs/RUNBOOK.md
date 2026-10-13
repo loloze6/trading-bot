@@ -65,13 +65,13 @@ pull request merged through GitHub's web UI never invokes your hooks.
 ## 0b. PREFLIGHT — check BEFORE any campaign launch (added 2026-08-28)
 
 Written because it was skipped. On 2026-08-28 run_060 was launched on Windows
-while `CLAUDE.fork.md` backlog item 5 -- killed-run trial accounting proven ON
+while the killed-run trial-accounting gate -- killed-run trial accounting proven ON
 THIS MACHINE -- was still open. The accounting turned out correct (verified by
 hand afterwards: 15 rows, kill_no_ic 7->8), but "someone checked afterwards" is
 exactly the assurance the gate exists to replace. The dry run in 1a passes
 happily without any of this, so 1a is NOT a preflight.
 
-**1. The four "good enough to start generating" gates** (`CLAUDE.fork.md`).
+**1. The four "good enough to start generating" gates**.
    All four must hold before a campaign runs, and two of them are PER-MACHINE:
    costs modelled; drawdown honest; holdout guarded; **trials counted**.
    Trial counting is proven by RUNNING a killed run and seeing its row land --
@@ -443,7 +443,7 @@ C4.3 uses for the two-run proof, applied here to run one):
   - **Trial rows are named `<run_id>:<variant_id>`** in
     `campaign_state.trial_sharpes` (one-coin-per-variant naming, C2.1) — a
     killed run must still land a row; a loop that logs only its winners
-    produces a meaningless Sharpe (`CLAUDE.fork.md` backlog item 5).
+    produces a meaningless Sharpe (the killed-run accounting gate).
   - **Memory, registry, and decision record are written**: check for
     `campaign_record/campaign_memory.yaml` (upserted by `regroup_record`),
     `campaign_record/block_registry.yaml` (validated + append-only manifest),

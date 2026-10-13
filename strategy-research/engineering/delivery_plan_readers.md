@@ -338,8 +338,8 @@ Assessment (agreed):
    protocol:
    - excluding the blocks the idea was observed on;
    - at most 2 per year, so a draw cannot sit in one market phase;
-   - never the sealed holdout, never the validation period (2024-2025, CLAUDE.fork.md data
-     splits).
+   - never the sealed holdout, never the validation period (2024-2025, see config/folds.yaml
+     and D-115).
 4. **Into the protocol:** the drawn blocks become the run's `windows`, where they are
    written today. The backtest, reports and grid work unchanged.
 5. **"Observed on" (new):** each candidate in the backlog carries the windows of the run(s)
