@@ -195,3 +195,30 @@ def test_the_guard_reads_fold_d_only_when_a_window_is_in_2024_2025():
     assert calls == [1]  # read once, not per window
     with pytest.raises(rf.ValidationBoundaryBreach):
         rf.assert_windows_clear_of_validation(FOLD_D_WINDOWS, v)  # nothing allowed by default
+
+
+def test_a_decide_next_fold_d_child_passes_the_generator_and_the_pre_flight():
+    """D-123: a child drawn onto fold D is generated and pre-flighted like an operator's."""
+    inputs, pid = t77._scenario("run_081", "ROOT",
+                                {"run_081": t77.FOLD_A + t77.FOLD_B + t77.FOLD_C})
+    record = t77._decide(inputs, "run_081")
+    mc = t77._front(inputs, record)["machine_constraints"]
+    assert mc["protocol"]["fold"] == "D"
+    run_dir = _minimal_run(rpr.ROOT, "run_943")
+    path = rpr._ensure_protocol_from_constraints(run_dir, "run_943", mc, folds_enabled=True)
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    assert doc["windows"] == FOLD_D_WINDOWS
+    expected = camp._expected_generated_protocol(mc["protocol"], "run_943", promotion_retired=False,
+                                                 folds_enabled=True)
+    assert expected["windows"] == doc["windows"]
+    assert camp._validation_overlap_in(path, True) is None
+
+
+def test_the_draw_seed_does_not_depend_on_the_process():
+    import subprocess
+    code = ("import sys; sys.path.insert(0, r'%s'); import research_folds as rf; "
+            "print(rf.draw_seed('profitability-run_074-1'))" % (SR_ROOT / "tools"))
+    seeds = {subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
+                            env={**__import__("os").environ, "PYTHONHASHSEED": h}).stdout.strip()
+             for h in ("1", "2")}
+    assert seeds == {str(rf.draw_seed("profitability-run_074-1"))}

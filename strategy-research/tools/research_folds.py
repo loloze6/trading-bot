@@ -239,7 +239,7 @@ def load_fold_windows(fold, *, path=None, policy_path=None) -> list:
 
 
 # ---------------------------------------------------------------------------
-# Lineage and the next fold
+# Which fold a run is on, and the child's fold draw (D-123)
 # ---------------------------------------------------------------------------
 
 def windows_ranges(windows) -> list:
@@ -399,7 +399,7 @@ def check_fold_id(fold) -> str:
     trial rows record it). Whether a brief may run on fold D is decided by the generator
     (run_phase1_research._protocol_windows_from_constraints: flag on only)."""
     if fold not in ALL_FOLDS:
-        raise FoldsError(f"fold {fold!r} is not one of {list(FOLD_ORDER)}")
+        raise FoldsError(f"fold {fold!r} is not one of {list(ALL_FOLDS)}")
     return fold
 
 
