@@ -1115,6 +1115,15 @@ orchestrator:
       # on): when the variant loop is also off, step 2 (innovation_expansion) is
       # written by code too -- variant_patches.yaml with `base` only, empty
       # patch, no symbol; no model call. Loop on: step 2 is the model, as before.
+  brief_criteria:
+    enabled: false
+      # D-121 (operator, 2026-10-13). OFF BY DEFAULT, read by
+      # run_phase1_research._brief_criteria_enabled(). No dependency. While false:
+      # byte-identical. While true: a brief's own criteria -- evaluation.pass_rule with
+      # every criterion a menu id -- are checked only by the menu lint and resolved
+      # against config/criterion_menu.yaml as a step-1a card's, whatever wrote the
+      # brief; decide-next copies a fold child's source criteria into that field. No
+      # criteria given: step 1a picks (criteria_from: hypothesis_generation).
   explore_confirm:
     enabled: false
       # E-072 (P-CUL-80, D-080, engineering/roadmap/E-072/PHASE_A.md). OFF BY

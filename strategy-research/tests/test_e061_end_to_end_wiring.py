@@ -208,6 +208,7 @@ TARGET_FLAGS = {
     # (C4_PREP.md 2.1) cannot leak into the v1 scenarios. The guard test
     # test_target_flags_name_every_orchestrator_flag keeps this list complete.
     "profit_bars_v2": False,
+    "brief_criteria": False,
     "score_provenance": False,
     # D-056: runs the real engine on real data; this harness feeds stub configs.
     "forecast_size_probe": False,
