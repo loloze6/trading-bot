@@ -198,6 +198,13 @@ def test_a_refold_brief_round_trips_through_registration_and_the_pre_flight(_see
     # the exact config and manifest reach step 1b unchanged (D-110)
     assert rpr._brief_exact_config(run_dir) == t59._base_config()
     assert rpr._brief_exact_manifest(run_dir) == t59._MANIFEST
+    # and step 1b written by code copies them (exact_config_1b, D-110)
+    (run_dir / "artifacts" / "hypothesis_card.yaml").write_text(yaml.safe_dump(
+        {"hypothesis_id": "H_REFOLD"}), encoding="utf-8")
+    rpr._exact_config_1b(run_dir, run_id)
+    spec = yaml.safe_load((run_dir / "artifacts" / "backtest_spec.yaml").read_text(
+        encoding="utf-8"))
+    assert spec["config"] == t59._base_config() and spec["status"] == "spec_ready"
     windows = rpr._ensure_protocol_from_constraints(
         run_dir, run_id, pre["machine_constraints"], promotion_retired=True, folds_enabled=True)
     doc = json.loads(Path(windows).read_text(encoding="utf-8"))
@@ -225,6 +232,9 @@ def test_a_refused_registration_leaves_no_brief(_seed):
 
 def test_the_criteria_argument_and_the_cli():
     assert camp._criteria_arg(" a, b ,,") == ["a", "b"]
+    import argparse
+    with pytest.raises(argparse.ArgumentTypeError):
+        camp._criteria_arg(" , ")
     import subprocess
     out = subprocess.run([sys.executable, str(SR / "workflow" / "run_campaign.py"), "refold",
                           "--help"], capture_output=True, text=True, encoding="utf-8",

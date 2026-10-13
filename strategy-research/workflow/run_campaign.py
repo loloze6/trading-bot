@@ -5364,8 +5364,12 @@ REFOLD_HELP = (
 
 
 def _criteria_arg(text: str) -> list:
-    """--criteria "a, b" -> ["a", "b"] (menu ids; the menu lint checks them at launch)."""
-    return [c.strip() for c in text.split(",") if c.strip()]
+    """--criteria "a, b" -> ["a", "b"] (menu ids; the menu lint checks them at launch).
+    An empty value is an argument error, never a silent fall-back to the source's."""
+    ids = [c.strip() for c in text.split(",") if c.strip()]
+    if not ids:
+        raise argparse.ArgumentTypeError("--criteria needs at least one menu id")
+    return ids
 
 
 def refold_brief(run_id: str, fold: str, *, criteria=None, readers: bool = False) -> tuple:
@@ -5403,7 +5407,8 @@ def refold_brief(run_id: str, fold: str, *, criteria=None, readers: bool = False
     labels = ", ".join(b["label"] for b in doc["folds"][fold])
     front["research_goal"] = (
         f"Re-run of {run_id}'s authored base config, unchanged, on fold {fold} ({labels}; "
-        f"config/folds.yaml), by the operator's refold command (D-122). Source goal: "
+        f"config/folds.yaml), by the operator's refold command (D-122). The source run's goal, "
+        f"written for its own fold: "
         + " ".join(str(src_brief.get("research_goal") or "").split()))
     front["constraints"] = [
         f"{orch.BRIEF_EXACT_CONFIG_PREFIX}: {run_id}'s authored base config "
