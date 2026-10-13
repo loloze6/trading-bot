@@ -12,6 +12,16 @@ definitions they apply to are D-034..D-038, D-041, D-046 and D-047
 
 ## 1. `config/profitability_bars.yaml` (ten values, then the signature)
 
+**D-118 / D-120 (2026-10-13) changed this file; the table below is the 2026-09-29
+signature.** Current values: `sharpe_min` 0.0 (strict `>`), `deflated_sharpe_threshold`
+0.5 (a deflated Sharpe that cannot be computed is a non-blocking warning at branch 3,
+D-119; a spend still needs it), `trade_count_min`, `cost_edge_ratio_min`,
+`cost_edge_min_trades` and `trade_count_min_floor` null (off: no row), and
+`buy_and_hold_sharpe_excess_min` 0.0 replacing `buy_and_hold_excess_return_min` (the
+strategy's whole-test Sharpe must be strictly above equal-weight buy-and-hold's on the
+same chained days, D-120). `avg_daily_return_min` 0.0005, `max_drawdown_pct_max` 20,
+`dsr_min_same_basis_trials` 10 unchanged. Re-sign through section 4.
+
 | Key | Value | What it means, in one line |
 |---|---|---|
 | `sharpe_min` | 1.0 | Floor on the whole-test Sharpe (mean / stdev of the chained daily returns of the equal-weight portfolio, times sqrt(365), risk-free 0). D-036, D-039. |

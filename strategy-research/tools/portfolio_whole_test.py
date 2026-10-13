@@ -1105,6 +1105,8 @@ def chained_buy_and_hold_daily_returns(chain: dict, close_windows: Mapping, fee_
             raise ValueError(f"buy-and-hold returns: no fee/slippage for coin {c!r}")
         costs[c] = (_nonneg(fee_bps[c], f"fee_bps[{c}]")
                     + _nonneg(slippage_bps[c], f"slippage_bps[{c}]")) / 10_000.0
+        if costs[c] >= 1.0:
+            raise ValueError(f"buy-and-hold returns: cost per side for {c!r} is >= 100%")
     side = sum(1.0 - costs[c] for c in coins) / len(coins)
     out = []
     for seg in chain["segments"]:

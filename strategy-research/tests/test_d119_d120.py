@@ -143,7 +143,7 @@ def test_buy_and_hold_returns_sit_on_the_strategys_days_with_costs_at_both_ends(
     assert raw[0][1] == pytest.approx(p[ts[1]] / p[ts[0]] - 1, abs=1e-15)
 
 
-def test_a_partly_invested_strategy_has_the_lower_sharpe_in_a_noisy_bull_here():
+def test_a_partly_invested_strategy_has_about_the_same_sharpe_as_the_coin():
     """Not a law: in this layout the strategy holds 40 % of the coin and cash, so its
     returns are the coin's scaled down -- Sharpe nearly equal, the cost the tiebreaker."""
     eq, px, bounds = _layout(0.4)
@@ -188,3 +188,52 @@ def test_a_chain_whose_days_disagree_with_its_segments_is_refused():
     tampered = {**chain, "daily_returns": chain["daily_returns"][1:]}
     with pytest.raises(ValueError, match="not the strategy's chained days"):
         pw.chained_buy_and_hold_daily_returns(tampered, px, {"X": 0.0}, {"X": 0.0})
+
+
+# -- review of #408 (D-119): the stop and the spend on an advisory variant ------------------
+
+def _advisory_eval():
+    results, overall, _r = rpr._grade_profit_bars_v2(t62.V2_BARS, dsr=None, dsr_note="t",
+                                                     metrics=_metrics())
+    assert overall == "PASS"
+    return {"generated_at": "g1", "passing": ["base"],
+            "variants": {"base": {"result": "PASS", "bars": results, "trial_id": "run_1"}}}
+
+
+def test_the_stop_is_raised_and_names_the_advisory_variant(tmp_path, monkeypatch, capsys):
+    run_dir = tmp_path / "run_1"
+    (run_dir / "artifacts").mkdir(parents=True)
+    ev = _advisory_eval()
+    (run_dir / "artifacts" / "profit_bars_evaluation.yaml").write_text(yaml.safe_dump(ev),
+                                                                       encoding="utf-8")
+    (run_dir / "pipeline_state.yaml").write_text(yaml.safe_dump({"status": "active"}),
+                                                 encoding="utf-8")
+    (run_dir / "artifacts" / "idea_status.yaml").write_text(
+        yaml.safe_dump({"idea_status": "validated"}), encoding="utf-8")
+    monkeypatch.setattr(rpr, "update_state", lambda **k: None)
+    monkeypatch.setattr(rpr, "_load_every_backtest_evaluation", lambda *a: ev)
+    assert rpr._profit_bars_stop_route(run_dir, "run_1") == "human_pause"
+    out = capsys.readouterr().out
+    assert "PROFIT BARS REACHED" in out and "D-119" in out and "cannot be spent" in out
+
+
+def test_the_spend_still_refuses_an_advisory_variant(tmp_path, monkeypatch):
+    ev = _advisory_eval()
+    doc = {"decision": "spend", "run_id": "run_1", "profit_bars_stop_evaluation": "g1",
+           "variant_id": "base", "trial_ledgers_merged": True, "ratified_by": "op",
+           "ratified_at": "2026-10-13"}
+    monkeypatch.setattr(rpr, "_read_holdout_decision", lambda run_dir: (doc, "sha"))
+    monkeypatch.setattr(rpr, "_profit_stop_raised", lambda *a: ev)
+    with pytest.raises(rpr.HoldoutUnlockRefused) as exc:
+        rpr._validate_holdout_decision(tmp_path, "run_1", {"profit_bars_stop_evaluation": "g1"})
+    assert exc.value.code == "variant_not_passing"
+    assert "D-119" in str(exc.value) and "deflated_sharpe_threshold" in str(exc.value)
+
+
+def test_a_ledger_block_without_a_basis_still_raises(tmp_path):
+    wctx = {"rows": [{"trial_id": "run_1", "source": "backtest",
+                      "whole_test": {"status": "ok"}}],
+            "sharpe_basis": pw.WHOLE_TEST_BASIS, "sample": {"srs": [], "rows": []},
+            "n_dsr_total": 10}
+    with pytest.raises(ValueError):
+        rpr._whole_test_dsr_candidate(wctx, tmp_path, {}, "run_1", 10)

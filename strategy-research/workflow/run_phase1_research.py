@@ -8532,9 +8532,12 @@ def _validate_holdout_decision(run_dir: Path, run_id: str, state: dict) -> dict:
         if (variant not in (ev.get("passing") or []) or not isinstance(entry, dict)
                 or entry.get("result") != "PASS" or not bar_rows
                 or any(not isinstance(r, dict) or r.get("result") != "PASS" for r in bar_rows)):
+            advisory = [r.get("name") for r in bar_rows if isinstance(r, dict) and r.get("advisory")]
             raise HoldoutUnlockRefused(
                 "variant_not_passing", f"variant {variant!r} is not PASS on every bar in this "
-                f"run's profit_bars_evaluation.yaml (passing: {ev.get('passing')})")
+                f"run's profit_bars_evaluation.yaml (passing: {ev.get('passing')})"
+                + (f"; its {advisory} row could not be computed (D-119: a warning at branch 3, "
+                   f"but a spend needs it computed)" if advisory else ""))
         record.update(trial_id=entry.get("trial_id"),
                       protocol_result_ref=entry.get("protocol_result_ref"))
     if doc["decision"] == "spend":
@@ -15416,9 +15419,10 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
         whole-test equal-weight portfolio (chain_windows over the protocol's
         nominal window bounds): whole_test_max_drawdown (bars, D-034), the mean
         of the chained daily returns, whole_test_sharpe (G3, D-036);
-      * buy_and_hold_excess_return_min: chained_buy_and_hold's excess
-        (strategy total - buy-and-hold total, one round trip per coin at the fee
-        charged + the manifest's slippage; G6, D-037);
+      * buy_and_hold_sharpe_excess_min (D-120; was buy_and_hold_excess_return_min):
+        the whole-test Sharpe minus equal-weight buy-and-hold's on the same chained
+        days (chained_buy_and_hold_daily_returns, one round trip per coin at the fee
+        charged + the manifest's slippage); the return excess stays in `detail`;
       * trade_count_min: whole_test_trade_counts' worst coin of
         excluding_end_of_window (G5, D-035); both counts per coin in `detail`;
       * cost_edge_ratio_min: pooled_edge_to_cost_ratio with the bars file's
@@ -15571,9 +15575,10 @@ def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
     `note`, `detail` and -- when NOT_EVALUABLE -- `not_evaluable_reason`:
     sharpe_min, deflated_sharpe_threshold (the whole-test daily DSR, E-062
     S2b-2b / D-046), max_drawdown_pct_max, trade_count_min,
-    avg_daily_return_min, buy_and_hold_excess_return_min, cost_edge_ratio_min.
+    avg_daily_return_min, buy_and_hold_sharpe_excess_min, cost_edge_ratio_min.
     `metrics` is _whole_test_profit_metrics(...). overall is PASS only when every
-    row is PASS. `dsr_detail` / `dsr_reason`: compute_dsr_whole_test's result
+    row is PASS, except a NOT_EVALUABLE deflated-Sharpe row, which is advisory
+    (D-119). An off bar (D-118) has no row. `dsr_detail` / `dsr_reason`: compute_dsr_whole_test's result
     and its NOT_EVALUABLE reason (E-062 S2b-2b)."""
     rows = {**metrics,
             "deflated_sharpe_threshold": {
@@ -15974,8 +15979,14 @@ def _profit_bars_stop_route(run_dir: Path, run_id: str) -> str | None:
               f"({ev.get('generated_at')}); continuing into the grid route.")
         return None
     idea = load_yaml(run_dir / "artifacts" / "idea_status.yaml") or {}
+    advisory = sorted(vid for vid in passing
+                      if any(isinstance(r, dict) and r.get("advisory")
+                             for r in ((ev.get("variants") or {}).get(vid) or {}).get("bars") or []))
     print(f"\n🛑 PROFIT BARS REACHED: variant(s) {passing} passed every bar in "
-          f"config/profitability_bars.yaml. The grid's idea_status is "
+          f"config/profitability_bars.yaml"
+          + (f" (D-119: {advisory} with a deflated Sharpe that could not be computed -- a "
+             f"warning; such a variant cannot be spent until it is computed)" if advisory else "")
+          + f". The grid's idea_status is "
           f"{idea.get('idea_status')!r} (unchanged -- it comes only from the grid). "
           f"Pausing for the operator (branch-3 stop).")
     update_state(path=run_dir, status="paused_for_human", flags={"profit_bars_reached": True},
