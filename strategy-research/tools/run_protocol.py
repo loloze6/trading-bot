@@ -618,6 +618,41 @@ def _all_costs_fields(side: str, entry_price: float, exit_price: float, bars: li
     }
 
 
+def _full_precision_closes(run_dir: Path) -> dict:
+    """D-117 (CUL-431's slippage rounding defect): {timestamp string: close} from the
+    window's portfolio_states.csv, which the engine writes at full precision, while
+    bars.csv is the same state frame rounded to 6 decimals
+    (trading-bot/reporting/run_artifact.py write_bars_csv). The engine fills at the
+    UNROUNDED close moved by slippage, so slippage measured against a rounded close is
+    off (up to ~0.1 bps per leg on a coin priced near 0.06). {} when the file is absent
+    (hand-written fixtures); a row whose close does not parse as a positive number is
+    skipped; a repeated timestamp keeps its first close (the engine re-records a bar
+    around a forced close with the same close)."""
+    p = run_dir / "portfolio_states.csv"
+    if not p.exists():
+        return {}
+    out: dict = {}
+    with open(p, encoding="utf-8", newline="") as f:
+        for row in csv.DictReader(f):
+            ts = row.get("timestamp")
+            try:
+                close = float(row.get("close") or "")
+            except ValueError:
+                continue
+            if ts and close > 0:
+                out.setdefault(ts, close)
+    return out
+
+
+def _bars_with_full_precision_closes(bars: list, closes: dict) -> list:
+    """D-117: `bars` with each close replaced by the full-precision one at the same
+    timestamp when portfolio_states.csv has it (else the bars.csv close is kept)."""
+    if not closes:
+        return bars
+    return [{**b, "close": closes[b["timestamp"]]} if b.get("timestamp") in closes else b
+            for b in bars]
+
+
 def _compute_trade_records_for_window(
     run_dir: Path,
     symbol: str,
@@ -641,6 +676,9 @@ def _compute_trade_records_for_window(
     if not trades:
         return []
     bars = _load_bars(run_dir)
+    # D-117: the all-costs fields read full-precision closes (only under CUL-414's flag)
+    cost_bars = (_bars_with_full_precision_closes(bars, _full_precision_closes(run_dir))
+                 if cost_bar_all_costs else bars)
 
     records = []
     for trade in trades:
@@ -739,7 +777,7 @@ def _compute_trade_records_for_window(
             "held_longer_better":      held_longer_ok,        # E-016 (exit_later, metric b)
         }
         if cost_bar_all_costs:  # CUL-414: appended after the existing fields
-            record.update(_all_costs_fields(side, entry_price, exit_price, bars,
+            record.update(_all_costs_fields(side, entry_price, exit_price, cost_bars,
                                             entry_idx, exit_idx, cost_bps))
         records.append(record)
     return records
