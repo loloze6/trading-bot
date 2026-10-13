@@ -541,7 +541,8 @@ def test_run_loop_calls_the_revision_only_on_the_innovation_expansion_route():
     src = inspect.getsource(rpr.run_loop)
     i = src.index("next_stage = determine_post_strategy_config_authoring_route(")
     tail = src[i:i + 900]
-    assert 'if next_stage == "innovation_expansion":' in tail
+    # D-122: never on an operator re-run (it can call a model)
+    assert 'if next_stage == "innovation_expansion" and refold_of(RUN_DIR) is None:' in tail
     assert "_claim_revision_after_1b(RUN_DIR, run_id)" in tail
     assert src.count("_claim_revision_after_1b(") == 1
 
