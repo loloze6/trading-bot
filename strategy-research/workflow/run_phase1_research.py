@@ -3520,7 +3520,7 @@ _PROFITABILITY_BARS_SCHEMA = {
     "sharpe_min":                 (int, float),
     "max_drawdown_pct_max":       (int, float),
     "avg_daily_return_min":       (int, float),
-    "trade_count_min":            (int,),
+    "trade_count_min":            (int, type(None)),  # D-118: null = off (no row)
     "deflated_sharpe_threshold":  (int, float),
     "target_instrument_set":      (list,),
     "ratified_by":                (str, type(None)),
@@ -3531,9 +3531,9 @@ _PROFITABILITY_BARS_SCHEMA = {
 # when the loader is called with v2=True; the v1 loader ignores them, as it
 # ignores every extra key.
 _PROFITABILITY_BARS_V2_SCHEMA = {
-    "buy_and_hold_excess_return_min": (int, float),
-    "cost_edge_ratio_min":            (int, float),
-    "cost_edge_min_trades":           (int,),
+    "buy_and_hold_sharpe_excess_min": (int, float),  # D-120 (was buy_and_hold_excess_return_min)
+    "cost_edge_ratio_min":            (int, float, type(None)),  # D-118: null = off (no row)
+    "cost_edge_min_trades":           (int, type(None)),  # D-118: null iff the cost bar is off
     # E-062 S2b-2b (D-046): the same-basis trial count at which the DSR's
     # benchmark switches from sigma_null to the cross-trial spread. >= 2.
     "dsr_min_same_basis_trials":      (int,),
@@ -3541,8 +3541,17 @@ _PROFITABILITY_BARS_V2_SCHEMA = {
     # variant's normalised trade minimum and cost-ratio trade floor,
     # max(ceil(base * f), floor). >= 1 and <= both bases it floors
     # (trade_count_min, cost_edge_min_trades).
-    "trade_count_min_floor":          (int,),
+    "trade_count_min_floor":          (int, type(None)),  # D-118: null iff both bases are off
 }
+
+# D-118: the bars that may be OFF (null in the bars file): an off bar is removed from
+# the verdict -- no row at all, never a NOT_EVALUABLE row (which would cap the verdict).
+_PROFIT_BARS_OFFABLE = ("trade_count_min", "cost_edge_ratio_min")
+
+
+def _bar_is_off(bars: dict, name: str) -> bool:
+    """D-118: True when `name` is an off-able bar whose bars-file value is null."""
+    return name in _PROFIT_BARS_OFFABLE and bars.get(name) is None
 
 
 class ProfitabilityBarsSchemaError(ValueError):
@@ -3612,7 +3621,12 @@ def _load_profitability_bars(path: Path | None = None, *, v2: bool = False) -> d
         raise ProfitabilityBarsSchemaError(
             f"{bars_path}'s target_instrument_set is empty -- must list at least one symbol."
         )
-    if v2 and doc["cost_edge_min_trades"] < 1:
+    if v2 and (doc["cost_edge_ratio_min"] is None) != (doc["cost_edge_min_trades"] is None):
+        raise ProfitabilityBarsSchemaError(  # D-118: the cost bar and its trade floor go together
+            f"{bars_path}'s cost_edge_ratio_min and cost_edge_min_trades must both be null (the "
+            f"cost bar off) or both set (got {doc['cost_edge_ratio_min']!r}, "
+            f"{doc['cost_edge_min_trades']!r}).")
+    if v2 and doc["cost_edge_min_trades"] is not None and doc["cost_edge_min_trades"] < 1:
         raise ProfitabilityBarsSchemaError(
             f"{bars_path}'s cost_edge_min_trades={doc['cost_edge_min_trades']!r} must be >= 1."
         )
@@ -3626,8 +3640,13 @@ def _load_profitability_bars(path: Path | None = None, *, v2: bool = False) -> d
         # variant need MORE trades than a full one (variant_coin.
         # normalised_trade_minimum refuses it too) -- refused here, at load.
         floor = doc["trade_count_min_floor"]
-        bases = {k: doc[k] for k in ("trade_count_min", "cost_edge_min_trades")}
-        if floor < 1 or any(floor > b for b in bases.values()):
+        bases = {k: doc[k] for k in ("trade_count_min", "cost_edge_min_trades")
+                 if doc[k] is not None}  # D-118: an off bar has no base to floor
+        if (floor is None) != (not bases):
+            raise ProfitabilityBarsSchemaError(
+                f"{bars_path}'s trade_count_min_floor={floor!r} must be null exactly when both "
+                f"trade_count_min and cost_edge_min_trades are null (D-118).")
+        if floor is not None and (floor < 1 or any(floor > b for b in bases.values())):
             raise ProfitabilityBarsSchemaError(
                 f"{bars_path}'s trade_count_min_floor={floor!r} must be >= 1 and <= the bases "
                 f"it floors ({bases}).")
@@ -7424,7 +7443,7 @@ def _profit_bars_grid_grader(run_dir: Path, run_id: str):
                 results, overall, reasons = _hold_rows_not_evaluable(
                     results, _D047_NORMALISATION_FORMULAS,
                     f"{_partial[variant_id]} -- the grid's profit-bars grader does not normalise "
-                    f"(D-047): only branch 3 grades a partial-coverage variant")
+                    f"(D-047): only branch 3 grades a partial-coverage variant", bars=bars)
         return {"result": overall, "bars": results, "reasons": reasons, **extra}
     return grade
 
@@ -8303,6 +8322,8 @@ def _normalisation_at_spend(run_dir: Path, run_id: str, variant: str, entry: dic
     rows = {r.get("name"): r for r in (entry or {}).get("bars") or [] if isinstance(r, dict)}
     problems = []
     for name in ("trade_count_min", "max_drawdown_pct_max", "cost_edge_ratio_min"):
+        if _bar_is_off(eff, name):
+            continue  # D-118: an off bar has no row to re-derive
         row = rows.get(name)
         if not isinstance(row, dict):
             problems.append(f"{name}: no row")
@@ -8335,6 +8356,8 @@ def _cost_basis_at_spend(variant, entry: dict) -> None:
         raise HoldoutUnlockRefused(
             "bars_changed", f"the cost_bar_all_costs flag does not read: {type(e).__name__}: {e}")
     rows = {r.get("name"): r for r in (entry or {}).get("bars") or [] if isinstance(r, dict)}
+    if "cost_edge_ratio_min" not in rows:
+        return  # D-118: the cost bar was off when graded (the bars-file sha guards a change)
     detail = (rows.get("cost_edge_ratio_min") or {}).get("detail")
     graded = detail.get("cost_basis") if isinstance(detail, dict) else None
     if graded != want:
@@ -8509,9 +8532,12 @@ def _validate_holdout_decision(run_dir: Path, run_id: str, state: dict) -> dict:
         if (variant not in (ev.get("passing") or []) or not isinstance(entry, dict)
                 or entry.get("result") != "PASS" or not bar_rows
                 or any(not isinstance(r, dict) or r.get("result") != "PASS" for r in bar_rows)):
+            advisory = [r.get("name") for r in bar_rows if isinstance(r, dict) and r.get("advisory")]
             raise HoldoutUnlockRefused(
                 "variant_not_passing", f"variant {variant!r} is not PASS on every bar in this "
-                f"run's profit_bars_evaluation.yaml (passing: {ev.get('passing')})")
+                f"run's profit_bars_evaluation.yaml (passing: {ev.get('passing')})"
+                + (f"; its {advisory} row could not be computed (D-119: a warning at branch 3, "
+                   f"but a spend needs it computed)" if advisory else ""))
         record.update(trial_id=entry.get("trial_id"),
                       protocol_result_ref=entry.get("protocol_result_ref"))
     if doc["decision"] == "spend":
@@ -14409,8 +14435,12 @@ def _grade_profit_bars(bars: dict, *, sharpe, sharpe_note: str, dsr, dsr_note: s
 
     def _bar(name: str, threshold, actual, comparator: str, note: str = "", basis: str = "",
              not_evaluable_reason: str | None = None):
+        if _bar_is_off(bars, name):
+            return  # D-118: an off bar has no row
         if actual is None:
             outcome = "NOT_EVALUABLE"
+        elif comparator == ">":  # D-118: sharpe_min is strict
+            outcome = "PASS" if actual > threshold else "FAIL"
         elif comparator == ">=":
             outcome = "PASS" if actual >= threshold else "FAIL"
         elif comparator == "<=":
@@ -14427,7 +14457,7 @@ def _grade_profit_bars(bars: dict, *, sharpe, sharpe_note: str, dsr, dsr_note: s
             entry["note"] = note
         results.append(entry)
 
-    _bar("sharpe_min", bars["sharpe_min"], sharpe, ">=", note=sharpe_note,
+    _bar("sharpe_min", bars["sharpe_min"], sharpe, ">", note=sharpe_note,  # D-118: strict
          basis="median_of_coin_median_sharpes")
 
     _bar(
@@ -14551,7 +14581,7 @@ def _evaluate_profit_bars(run_dir: Path, run_id: str, portfolio_basis: bool = Fa
     # run without a per-coin index: the evaluation is unchanged.
     _partial = _bridge_partial_coverage(run_dir, pr)
     if _partial is not None:
-        results, overall, reasons = _cap_partial_coverage_bars(results, _partial)
+        results, overall, reasons = _cap_partial_coverage_bars(results, _partial, bars=bars)
 
     evaluation = {
         "run_id": run_id,
@@ -14959,15 +14989,15 @@ _BASIS_V2 = {
     "max_drawdown_pct_max": "portfolio_equal_weight_whole_test_chained",
     "trade_count_min": "per_coin_total_whole_test_excl_window_closes",
     "avg_daily_return_min": "portfolio_equal_weight_whole_test_chained_mean_daily_return",
-    "buy_and_hold_excess_return_min": "portfolio_equal_weight_vs_buy_and_hold",
+    "buy_and_hold_sharpe_excess_min": "whole_test_sharpe_minus_buy_and_hold_whole_test_sharpe",
     "cost_edge_ratio_min": "pooled_trades_realized_edge_to_cost",
 }
 # Comparator per v2 row: strict `>` where D-037 ("beats") and D-038 ("> 2.2")
 # say so; every other row keeps its v1 comparator.
 _COMPARATOR_V2 = {
-    "sharpe_min": ">=", "deflated_sharpe_threshold": ">=", "max_drawdown_pct_max": "<=",
+    "sharpe_min": ">", "deflated_sharpe_threshold": ">=", "max_drawdown_pct_max": "<=",  # D-118
     "trade_count_min": ">=", "avg_daily_return_min": ">=",
-    "buy_and_hold_excess_return_min": ">", "cost_edge_ratio_min": ">",
+    "buy_and_hold_sharpe_excess_min": ">", "cost_edge_ratio_min": ">",
 }
 _TRADE_DIAGNOSTICS_FILE = "trade_diagnostics.json"
 
@@ -15313,6 +15343,14 @@ def _whole_test_dsr_candidate(wctx: dict, run_dir: Path, pr: dict, trial_id: str
     if row.get("invalidated_artifact"):
         raise ValueError(f"whole-test DSR: trial {trial_id!r} is invalidated_artifact")
     block = row.get("whole_test")
+    if isinstance(block, dict) and block.get("basis") not in (None, wctx["sharpe_basis"]):
+        # D-119: a row written under an earlier basis (e.g. before D-116's v2) is a normal
+        # condition after a basis change, not a defect: this candidate's DSR is NOT_EVALUABLE
+        # (a non-blocking warning at grading; the holdout spend still refuses it).
+        return _dsr_not_evaluable(
+            wctx, min_same_basis, "not_evaluable",
+            f"ledger_basis_mismatch: trial {trial_id!r}'s ledger row was written on basis "
+            f"{block.get('basis')!r}, the current basis is {wctx['sharpe_basis']!r}")
     if not isinstance(block, dict) or block.get("basis") != wctx["sharpe_basis"]:
         raise ValueError(f"whole-test DSR: trial {trial_id!r}'s ledger row has no whole_test block "
                          f"on basis {wctx['sharpe_basis']!r} (got {block!r:.200}) -- written with "
@@ -15381,9 +15419,10 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
         whole-test equal-weight portfolio (chain_windows over the protocol's
         nominal window bounds): whole_test_max_drawdown (bars, D-034), the mean
         of the chained daily returns, whole_test_sharpe (G3, D-036);
-      * buy_and_hold_excess_return_min: chained_buy_and_hold's excess
-        (strategy total - buy-and-hold total, one round trip per coin at the fee
-        charged + the manifest's slippage; G6, D-037);
+      * buy_and_hold_sharpe_excess_min (D-120; was buy_and_hold_excess_return_min):
+        the whole-test Sharpe minus equal-weight buy-and-hold's on the same chained
+        days (chained_buy_and_hold_daily_returns, one round trip per coin at the fee
+        charged + the manifest's slippage); the return excess stays in `detail`;
       * trade_count_min: whole_test_trade_counts' worst coin of
         excluding_end_of_window (G5, D-035); both counts per coin in `detail`;
       * cost_edge_ratio_min: pooled_edge_to_cost_ratio with the bars file's
@@ -15411,7 +15450,9 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
             counts = pwt.whole_test_trade_counts(records, pr.get("results") or [])
         except _pd.PortfolioNotEvaluable as exc:
             count_reason = f"whole-test trade count NOT_EVALUABLE: {exc}"
-    if count_reason:
+    if _bar_is_off(bars, "trade_count_min"):
+        pass  # D-118: off -- no row
+    elif count_reason:
         _row("trade_count_min", reason=count_reason)
     else:
         worst = min(counts, key=lambda c: (counts[c]["excluding_end_of_window"], str(c)))
@@ -15421,7 +15462,9 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
              detail={"worst_coin": worst,
                      "per_coin": {str(c): dict(v) for c, v in counts.items()}})
 
-    if count_reason:
+    if _bar_is_off(bars, "cost_edge_ratio_min"):
+        pass  # D-118: off -- no row, and cost_edge_min_trades is null
+    elif count_reason:
         _row("cost_edge_ratio_min", reason=("pooled edge/cost ratio NOT_EVALUABLE: the trade "
                                             "records do not match the results -- "
                                             + count_reason))
@@ -15456,12 +15499,12 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
         _row("max_drawdown_pct_max", exc.drawdown_pct, note=_ruin_text(exc),
              detail={"ruin": {"file": str(exc.path), "timestamp": exc.timestamp,
                               "equity": exc.equity}})
-        for name in ("avg_daily_return_min", "sharpe_min", "buy_and_hold_excess_return_min"):
+        for name in ("avg_daily_return_min", "sharpe_min", "buy_and_hold_sharpe_excess_min"):
             _row(name, reason=f"not computed past a ruin: {_ruin_text(exc)}")
         return out
     if chain is None:
         for name in ("max_drawdown_pct_max", "avg_daily_return_min", "sharpe_min",
-                     "buy_and_hold_excess_return_min"):
+                     "buy_and_hold_sharpe_excess_min"):
             _row(name, reason=chain_reason)
         return out
 
@@ -15502,18 +15545,25 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
         slip = _v2_manifest_slippage(run_dir, pr, coins)
         fees = _v2_charged_fees(coins, records, pr.get("venue"))
         bh = pwt.chained_buy_and_hold(chain, close_windows, fees, slip)
-        _row("buy_and_hold_excess_return_min", bh["excess_return"],
-             note=(f"strategy total return {bh['strategy_total_return']:.6f} minus equal-weight "
-                   f"buy-and-hold {bh['buy_and_hold_total_return']:.6f} (gross "
-                   f"{bh['buy_and_hold_gross_return']:.6f}, one round trip per coin at "
-                   f"{bh['cost_per_side_bps']} bps per side) over the same chained days; {span}"),
-             detail={**chain_detail,
+        # D-120: the bar compares Sharpe ratios on the same chained days and cost convention;
+        # the total-return comparison is kept as information in `detail`.
+        bh_rets = pwt.chained_buy_and_hold_daily_returns(chain, close_windows, fees, slip)
+        strat_sr = pwt.whole_test_sharpe(chain["daily_returns"])
+        bh_sr = pwt.whole_test_sharpe(bh_rets)
+        _row("buy_and_hold_sharpe_excess_min", strat_sr - bh_sr,
+             note=(f"whole-test Sharpe {strat_sr:.6f} minus equal-weight buy-and-hold's "
+                   f"{bh_sr:.6f} on the same {len(bh_rets)} chained day(s), buy-and-hold charged "
+                   f"one round trip per coin at {bh['cost_per_side_bps']} bps per side; "
+                   f"information: total return {bh['strategy_total_return']:.6f} vs "
+                   f"{bh['buy_and_hold_total_return']:.6f}; {span}"),
+             detail={**chain_detail, "strategy_sharpe": strat_sr, "buy_and_hold_sharpe": bh_sr,
                      **{k: bh[k] for k in ("strategy_total_return", "buy_and_hold_total_return",
-                                           "buy_and_hold_gross_return", "cost_multiplier")},
+                                           "buy_and_hold_gross_return", "excess_return",
+                                           "cost_multiplier")},
                      "cost_per_side_bps": {str(c): v for c, v in bh["cost_per_side_bps"].items()}})
     except _pd.PortfolioNotEvaluable as exc:
-        _row("buy_and_hold_excess_return_min",
-             reason=f"buy-and-hold comparison NOT_EVALUABLE: {exc}")
+        _row("buy_and_hold_sharpe_excess_min",
+             reason=f"buy-and-hold Sharpe comparison NOT_EVALUABLE: {exc}")
     return out
 
 
@@ -15525,9 +15575,10 @@ def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
     `note`, `detail` and -- when NOT_EVALUABLE -- `not_evaluable_reason`:
     sharpe_min, deflated_sharpe_threshold (the whole-test daily DSR, E-062
     S2b-2b / D-046), max_drawdown_pct_max, trade_count_min,
-    avg_daily_return_min, buy_and_hold_excess_return_min, cost_edge_ratio_min.
+    avg_daily_return_min, buy_and_hold_sharpe_excess_min, cost_edge_ratio_min.
     `metrics` is _whole_test_profit_metrics(...). overall is PASS only when every
-    row is PASS. `dsr_detail` / `dsr_reason`: compute_dsr_whole_test's result
+    row is PASS, except a NOT_EVALUABLE deflated-Sharpe row, which is advisory
+    (D-119). An off bar (D-118) has no row. `dsr_detail` / `dsr_reason`: compute_dsr_whole_test's result
     and its NOT_EVALUABLE reason (E-062 S2b-2b)."""
     rows = {**metrics,
             "deflated_sharpe_threshold": {
@@ -15537,8 +15588,10 @@ def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
                                                                  if dsr_reason else ""))}}
     results = []
     for name in ("sharpe_min", "deflated_sharpe_threshold", "max_drawdown_pct_max",
-                 "trade_count_min", "avg_daily_return_min", "buy_and_hold_excess_return_min",
+                 "trade_count_min", "avg_daily_return_min", "buy_and_hold_sharpe_excess_min",
                  "cost_edge_ratio_min"):
+        if _bar_is_off(bars, name):
+            continue  # D-118: an off bar has no row
         row, threshold, comp = rows[name], bars[name], _COMPARATOR_V2[name]
         actual = row["actual"]
         if actual is None:
@@ -15560,10 +15613,18 @@ def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
         if row.get("detail"):
             entry["detail"] = row["detail"]
         results.append(entry)
-    overall = "PASS" if {r["result"] for r in results} == {"PASS"} else "FAIL"
+    # D-119: a deflated Sharpe that cannot be computed is a WARNING, not a blocker: its row
+    # stays NOT_EVALUABLE with `advisory: true` and does not keep the variant from PASS.
+    # (A computed deflated Sharpe below the threshold still FAILs.)
+    for r in results:
+        if r["name"] == "deflated_sharpe_threshold" and r["result"] == "NOT_EVALUABLE":
+            r["advisory"] = True
+    overall = ("PASS" if {r["result"] for r in results if not r.get("advisory")} == {"PASS"}
+               else "FAIL")
     reasons = [
         f"{r['name']}: {r['result']} (threshold={r['threshold']!r}, actual={r['actual']!r})"
         + (f" -- {r['not_evaluable_reason']}" if r.get("not_evaluable_reason") else "")
+        + (" [warning, not blocking: D-119]" if r.get("advisory") else "")
         for r in results if r["result"] != "PASS"
     ]
     return results, overall, reasons
@@ -15630,7 +15691,7 @@ def _bridge_partial_coverage(run_dir: Path, pr: dict) -> str | None:
     return None
 
 
-def _cap_partial_coverage_bars(results: list, reason: str) -> tuple:
+def _cap_partial_coverage_bars(results: list, reason: str, bars: dict | None = None) -> tuple:
     """Review fix M1 (E-061 C2 S2b). TEMPORARY, D-042 -- lifted by E-062 S2b,
     which normalises the time-dependent bars to the period a variant ran on:
     a variant graded on partial coverage has its time-dependent bars
@@ -15639,8 +15700,10 @@ def _cap_partial_coverage_bars(results: list, reason: str) -> tuple:
     NOT_EVALUABLE -- `actual` kept, `not_evaluable_reason` set -- so it can never
     PASS every bar and never raises profit_bars_reached. Returns (results,
     overall, reasons) in _grade_profit_bars' shape. A bars list without one of
-    those bars raises (the cap must never silently not apply)."""
-    names = _variant_coin_module().D042_TIME_DEPENDENT_BARS
+    those bars raises (the cap must never silently not apply). `bars`: the bars
+    file (D-118): a bar that is off has no row and is not capped."""
+    names = tuple(n for n in _variant_coin_module().D042_TIME_DEPENDENT_BARS
+                  if not (bars is not None and _bar_is_off(bars, n)))
     missing = sorted(set(names) - {r.get("name") for r in results})
     if missing:
         raise ProfitabilityBarsSchemaError(
@@ -15659,12 +15722,15 @@ def _cap_partial_coverage_bars(results: list, reason: str) -> tuple:
     return capped, overall, reasons
 
 
-def _hold_rows_not_evaluable(results: list, names, reason: str) -> tuple:
+def _hold_rows_not_evaluable(results: list, names, reason: str,
+                             bars: dict | None = None) -> tuple:
     """E-062 S2b-3b review fixes 2/4: rows `names` read NOT_EVALUABLE (`actual`
     kept, `not_evaluable_reason` = `reason`), so the variant can never PASS
     every bar. Returns (results, overall, reasons) in _grade_profit_bars'
     shape. A bars list without one of those rows raises (the hold must never
-    silently not apply)."""
+    silently not apply). `bars`: the bars file (D-118): a bar that is off has no
+    row and is not held."""
+    names = [n for n in names if not (bars is not None and _bar_is_off(bars, n))]
     missing = sorted(set(names) - {r.get("name") for r in results})
     if missing:
         raise ProfitabilityBarsSchemaError(
@@ -15718,16 +15784,20 @@ def _normalised_profit_bars(bars: dict, coverage_days) -> tuple:
         return bars, {}
     floor = bars["trade_count_min_floor"]
     eff = dict(bars)
-    eff["trade_count_min"] = vc.normalised_trade_minimum(bars["trade_count_min"], f, floor)
-    eff["cost_edge_min_trades"] = vc.normalised_trade_minimum(bars["cost_edge_min_trades"], f,
-                                                              floor)
-    eff["max_drawdown_pct_max"] = vc.scaled_drawdown_limit(bars["max_drawdown_pct_max"], f)
     common = {"covered_days": covered, "full_days": full, "f": float(f)}
-    norm = {
-        "trade_count_min": {**common, "base": bars["trade_count_min"], "floor": floor},
-        "max_drawdown_pct_max": {**common, "base": bars["max_drawdown_pct_max"], "floor": None},
-        "cost_edge_ratio_min": {**common, "base": bars["cost_edge_min_trades"], "floor": floor},
-    }
+    norm = {}
+    # D-118: an off bar is neither normalised nor recorded
+    if not _bar_is_off(bars, "trade_count_min"):
+        eff["trade_count_min"] = vc.normalised_trade_minimum(bars["trade_count_min"], f, floor)
+        norm["trade_count_min"] = {**common, "base": bars["trade_count_min"], "floor": floor}
+    if not _bar_is_off(bars, "cost_edge_ratio_min"):
+        eff["cost_edge_min_trades"] = vc.normalised_trade_minimum(bars["cost_edge_min_trades"], f,
+                                                                  floor)
+    eff["max_drawdown_pct_max"] = vc.scaled_drawdown_limit(bars["max_drawdown_pct_max"], f)
+    norm["max_drawdown_pct_max"] = {**common, "base": bars["max_drawdown_pct_max"], "floor": None}
+    if not _bar_is_off(bars, "cost_edge_ratio_min"):
+        norm["cost_edge_ratio_min"] = {**common, "base": bars["cost_edge_min_trades"],
+                                       "floor": floor}
     for name, rec in norm.items():
         rec["formula"] = _D047_NORMALISATION_FORMULAS[name]
     return eff, norm
@@ -15821,14 +15891,14 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
         if unmeasurable is not None:
             results, overall, reasons = _hold_rows_not_evaluable(
                 results, _D047_NORMALISATION_FORMULAS,
-                f"{COVERAGE_UNMEASURABLE_PREFIX} {unmeasurable}")
+                f"{COVERAGE_UNMEASURABLE_PREFIX} {unmeasurable}", bars=bars)
             entry["coverage_unmeasurable"] = unmeasurable
         if cand.get("partial_coverage"):
             if not v2:
                 # Review fix M1 (D-042): flag off, the cap stays (v1 has no
                 # normalisation: its trade bar is a per-window minimum).
                 results, overall, reasons = _cap_partial_coverage_bars(
-                    results, cand["partial_coverage"])
+                    results, cand["partial_coverage"], bars=bars)
             entry["partial_coverage"] = cand["partial_coverage"]
         variants[cid] = {**entry, "result": overall, "reason": None,
                          "bars": results, "reasons": reasons}
@@ -15909,8 +15979,14 @@ def _profit_bars_stop_route(run_dir: Path, run_id: str) -> str | None:
               f"({ev.get('generated_at')}); continuing into the grid route.")
         return None
     idea = load_yaml(run_dir / "artifacts" / "idea_status.yaml") or {}
+    advisory = sorted(vid for vid in passing
+                      if any(isinstance(r, dict) and r.get("advisory")
+                             for r in ((ev.get("variants") or {}).get(vid) or {}).get("bars") or []))
     print(f"\n🛑 PROFIT BARS REACHED: variant(s) {passing} passed every bar in "
-          f"config/profitability_bars.yaml. The grid's idea_status is "
+          f"config/profitability_bars.yaml"
+          + (f" (D-119: {advisory} with a deflated Sharpe that could not be computed -- a "
+             f"warning; such a variant cannot be spent until it is computed)" if advisory else "")
+          + f". The grid's idea_status is "
           f"{idea.get('idea_status')!r} (unchanged -- it comes only from the grid). "
           f"Pausing for the operator (branch-3 stop).")
     update_state(path=run_dir, status="paused_for_human", flags={"profit_bars_reached": True},

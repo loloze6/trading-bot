@@ -1,0 +1,240 @@
+# Item 2 (delivery_plan_v26.md 0.2 / engineering_roadmap.html "One campaign-wide
+# profitability-bars file, written once by hand").
+#
+# VALUES: D-039 (operator, 2026-09-27; engineering/DECISION_LOG.md), written by
+# E-062 S2b-1 together with the v2 definitions (D-034..D-038) they are meant for.
+# `ratified_by` / `ratified_at` below are the operator's SIGNATURE and are left
+# null until the operator signs (E-062 S1 G9); the loader does not check them
+# (a human-review question, not a schema question). `ratified_at` may be written
+# unquoted (`ratified_at: 2026-10-01`): the loader accepts a YAML date.
+# Signing changes this file's sha256, so an evaluation graded before the
+# signature is not spendable (bars_changed) -- sign before C4.
+#
+# Under the v1 definitions (orchestrator.profit_bars_v2.enabled off) these D-039
+# numbers are graded on the OLD bases -- e.g. trade_count_min 100 as a PER-WINDOW
+# minimum and max_drawdown_pct_max 20 on the worst single window. Those are
+# legacy/test-only paths; the values are meant for v2.
+#
+# Read by (once orchestrator.profit_bars_file.enabled is true):
+#   - branch 3 / Step 8 (run_phase1_research._evaluate_profit_bars, called from the
+#     promote branch of _dispatch_verdict_route): every backtest that reaches a
+#     provisional "promote" walk-forward verdict is checked against every bar here.
+#   - branch 3 on every backtest (orchestrator.profit_bars_every_backtest.enabled,
+#     run_phase1_research._evaluate_profit_bars_every_backtest, right after
+#     protocol_execution): every variant tested on the attempt is checked against
+#     every bar here; the stop is raised after regroup_record. The promote-path
+#     reader above is then skipped for that run.
+#   - the LEGACY holdout gate (Step 12, _route_holdout_evaluation, flag-off routing) --
+#     still not wired to read this file; it reads promotion_audit.yaml's own hardcoded
+#     DSR_THRESHOLD=0.95, unchanged. That repointing was out of scope for item 2 as
+#     dispatched (0.2's own text says only _route_holdout_evaluation step 1 "make it
+#     read the file's threshold" -- left for a follow-up since it changes a
+#     currently-live gate's behavior and deserves its own flag/verification, not
+#     bundled silently into the branch-3 stop).
+#   - CORRECTED 2026-09-28: the NEWER holdout-unlock path under
+#     orchestrator.verdict_routing_retired.enabled (`_validate_holdout_decision` ->
+#     `_dsr_on_current_ledger`, E-059 6c S2d review fix 8, landed after the paragraph
+#     above was written) DOES read this file's `deflated_sharpe_threshold` -- the
+#     variant's deflated Sharpe is recomputed on the current campaign trial ledger and
+#     must still clear it before a `spend` decision is accepted. So the field is live
+#     on that path; only the legacy `_route_holdout_evaluation` function above remains
+#     un-repointed.
+#
+# Three definitions exist, and every flag-on evaluation row records which one it
+# used in a `basis` key (profit_bars_evaluation.yaml), so the artifact is
+# self-describing:
+#   * orchestrator.profit_bars_every_backtest.enabled OFF (only profit_bars_file on):
+#     the promote-path definitions, unchanged and byte-identical -- no `basis` key.
+#   * orchestrator.profit_bars_every_backtest.enabled ON (operator decision
+#     2026-09-24): the bars are judged on the portfolio you would actually trade --
+#     all tested coins together, EQUALLY WEIGHTED -- for return and drawdown.
+#   * orchestrator.profit_bars_v2.enabled ON too (E-062 S2b-1, D-034..D-039): the
+#     v2 definitions below ("PROFIT BARS V2"); the evaluation records
+#     `bars_definitions: v2`, and the five v2 keys at the bottom of this file are
+#     required (trade_count_min_floor since E-062 S2b-3b).
+#
+# The EQUAL-WEIGHT PORTFOLIO (flag on; run_phase1_research._portfolio_profit_metrics),
+# built separately for each graded variant and for each walk-forward window:
+#   - source: every (coin, window) backtest's portfolio_states.csv, column
+#     postRebalance_total_value (the equity after each bar's rebalance), warm-up bars
+#     (regime NOT_READY) dropped;
+#   - daily close = the last bar of each UTC calendar day;
+#   - COMMON DAYS: only UTC days on which EVERY coin of that window has a daily
+#     close are used; a day missing for any one coin is dropped for all coins (never
+#     filled, never a 0.0). Every window needs at least 2 common days;
+#   - COVERAGE FLOOR (operator-changeable constant
+#     run_phase1_research.PORTFOLIO_MIN_COMMON_DAY_COVERAGE, currently 0.9): in
+#     EVERY window the common days must be at least that fraction of the union of
+#     the coins' days (e.g. a much longer warm-up on one coin fails it loudly);
+#   - each coin is normalized to 1.0 at the first common day (divided by its daily
+#     close on the window's first common day); portfolio value = the arithmetic
+#     MEAN of the coins' normalized values (1/N of the capital in each coin at that
+#     close, no re-weighting between coins afterwards);
+#   - daily return = SIMPLE return V_d / V_(d-1) - 1 of the portfolio's daily
+#     closes, counted ONLY between two common days that are consecutive calendar
+#     days. A step across a gap (a dropped or missing day) is a multi-day return:
+#     it is NOT counted, and the chain restarts after the gap. Windows are separate
+#     periods that each restart from a fresh balance (the first common day of a
+#     window adds no return).
+#   NOT_EVALUABLE (with a `not_evaluable_reason` on the bar row and in `reasons`)
+#   when any window's equity file is missing, the coin set differs between windows,
+#   any window has fewer than 2 common days or is below the coverage floor or has
+#   no common bar, or no daily return is left after the gap rule.
+#
+# Schema (validated loudly by _load_profitability_bars -- missing or wrong-typed
+# fields raise, never silently default):
+#   sharpe_min                 float  -- floor on the median of the per-coin
+#                                        median_sharpe values (promotion_audit.yaml's
+#                                        raw_median_sharpe rule). Same both ways.
+#                                        basis: median_of_coin_median_sharpes
+#   max_drawdown_pct_max       float  -- ceiling, positive percent.
+#                                        Flag off: the worst per-coin
+#                                        max_abs_drawdown_pct in protocol_result.yaml's
+#                                        per_symbol_summary.
+#                                        Flag on: the equal-weight PORTFOLIO's largest
+#                                        peak-to-trough drawdown, 100 * (1 - V_t /
+#                                        max_{s<=t} V_s), measured ON BARS (so intraday
+#                                        drops count): the portfolio curve over the
+#                                        COMMON BARS (timestamps at which every coin
+#                                        has a bar) from the first-common-day close
+#                                        onwards, each coin normalized as above,
+#                                        within each window; actual = the
+#                                        LARGEST window drawdown. This is the worst
+#                                        WINDOW of the combined portfolio, NOT the
+#                                        worst coin.
+#                                        basis: portfolio_equal_weight_worst_window
+#   avg_daily_return_min       float  -- floor on mean daily return, as a FRACTION per
+#                                        day (0.0005 = 0.05 %/day).
+#                                        Flag off: NOT_EVALUABLE, as before.
+#                                        Flag on: the ARITHMETIC mean of the equal-weight
+#                                        PORTFOLIO's daily simple returns ON DAILY
+#                                        CLOSES (consecutive common days only, see the
+#                                        gap rule above), pooled across all windows
+#                                        (not geometric, not annualised).
+#                                        basis: portfolio_equal_weight
+#   trade_count_min             int   -- floor on the MINIMUM per-coin min_trade_count
+#                                        in protocol_result.yaml's per_symbol_summary
+#                                        (a per-coin rule, unchanged by the portfolio
+#                                        decision). Same both ways.
+#                                        basis: worst_coin
+#   deflated_sharpe_threshold  float  -- floor on promotion_audit.yaml's own
+#                                        deflated_sharpe_ratio (a SEPARATE number from
+#                                        promotion_audit.yaml's internal, hardcoded
+#                                        DSR_THRESHOLD=0.95 gate that already decides
+#                                        passes_deflated_threshold -- this bar re-checks
+#                                        the same measured DSR against the operator's
+#                                        own campaign-wide number, which may differ).
+#                                        Same both ways.
+#                                        basis: deflated_sharpe_on_campaign_trial_ledger
+#   target_instrument_set     list[str] -- which symbols this campaign trades; not
+#                                        itself a PASS/FAIL bar in this slice (no bar
+#                                        checks per_symbol_summary membership against
+#                                        it) -- metadata for composition runs and the
+#                                        holdout gate per the roadmap card, consumed by
+#                                        neither in this slice
+#   ratified_by                str|null
+#   ratified_at                str|null (ISO date; an unquoted YAML date is accepted)
+#
+# PROFIT BARS V2 (orchestrator.profit_bars_v2.enabled; run_phase1_research.
+# _whole_test_profit_metrics / _grade_profit_bars_v2, on the pure functions of
+# tools/portfolio_whole_test.py; definitions in engineering/roadmap/E-062/
+# S1_FINDINGS.md Q1-Q5 and its "Decision" / "Amendments during S2a" sections).
+# Seven rows, same names; each row also records its `comparator`.
+#   WHOLE-TEST CHAIN: each window's equal-weight curve (the common-day rules above,
+#   0.9 floor per window) is chained in the protocol's window order: the earliest
+#   window owns a day and the next window joins at the shared junction day (every
+#   protocol's windows share one day); a protocol gap is linked flat, its days get
+#   no return; the engine's systematic 1-5 day shortfall at a window's edges (every
+#   coin together) is flat and excluded from coverage; a junction day or window
+#   edge missing for SOME coins is missing data -> NOT_EVALUABLE. The chained span
+#   must also reach the 0.9 coverage. The windows' bounds are the protocol file's
+#   nominal test.start/test.end (protocol_result.protocol_file).
+#   sharpe_min                 v2: mean / sample stdev (ddof 1) x sqrt(365), rf 0,
+#                                  of the chained daily returns; NOT_EVALUABLE
+#                                  below 30 returns or at zero stdev. `>=`.
+#                                  basis: portfolio_equal_weight_whole_test_chained_daily_sharpe
+#   deflated_sharpe_threshold  v2 (E-062 S2b-2b, D-041/D-046): the Bailey & Lopez
+#                                  de Prado 2014 DSR of the candidate's whole-test
+#                                  daily Sharpe (mean / sample stdev of the chained
+#                                  daily returns, per day, not annualised; T, skew
+#                                  and raw kurtosis of those returns). N = every
+#                                  counted trial of the campaign ledger (unchanged
+#                                  rule). K = the ledger's deduped valid rows whose
+#                                  `whole_test` block (or recompute-overlay entry,
+#                                  campaign_record/trial_sharpe_basis_recompute.yaml)
+#                                  is ok on this basis, the candidate included.
+#                                  Benchmark: K < dsr_min_same_basis_trials ->
+#                                  SR0 = sigma_null * Z(N), sigma_null = 1/sqrt(T-1);
+#                                  otherwise SR0 = max(mean_K, 0) + max(sigma_K,
+#                                  sigma_null) * Z(N). NOT_EVALUABLE only under the
+#                                  whole-test Sharpe rules above or N < 2, never for
+#                                  a small K. No sparse-trading branch. `>=`. The
+#                                  0.95 means something else under this formula:
+#                                  the operator re-signs it with this file (D-046).
+#                                  basis: deflated_sharpe_whole_test_daily_on_campaign_trial_ledger
+#   max_drawdown_pct_max       v2: largest peak-to-trough fall of the chained
+#                                  BAR-level curve over the WHOLE test (D-034). `<=`.
+#                                  basis: portfolio_equal_weight_whole_test_chained
+#   trade_count_min            v2: per coin, trades over the whole test WITHOUT
+#                                  the end_of_window forced closes (D-035, G5);
+#                                  actual = the worst coin; the row's `detail`
+#                                  records raw and excluded counts per coin. `>=`.
+#                                  basis: per_coin_total_whole_test_excl_window_closes
+#   avg_daily_return_min       v2: arithmetic mean of the chained daily returns. `>=`.
+#                                  basis: portfolio_equal_weight_whole_test_chained_mean_daily_return
+#   buy_and_hold_excess_return_min
+#                              v2 only (D-037, G6): strategy total return (final
+#                                  chained level - 1) minus equal-weight
+#                                  buy-and-hold's over the same chained days, the
+#                                  latter charged one round trip per coin (fee
+#                                  from config/cost_model.yaml, checked against the
+#                                  trades' cost_paid, + the manifests' slippage).
+#                                  Strict `>`.
+#                                  basis: portfolio_equal_weight_vs_buy_and_hold
+#   cost_edge_ratio_min        v2 only (D-038, G7): pooled realized gross edge /
+#                                  cost ratio, unrounded, the lower of all trades and
+#                                  trades without forced closes. Strict `>`.
+#                                  NOT_EVALUABLE below cost_edge_min_trades
+#                                  non-forced trades or when a trade lacks a cost.
+#                                  basis: pooled_trades_realized_edge_to_cost
+#   cost_edge_min_trades       int, v2 only: the floor of the row above (>= 1).
+#   dsr_min_same_basis_trials  int, v2 only (E-062 S2b-2b, D-046): the number of
+#                                  same-basis trial Sharpes (K) from which the DSR's
+#                                  benchmark uses the cross-trial spread instead of
+#                                  sigma_null alone (>= 2). Value 10 per D-046, not
+#                                  yet signed (like the D-039 values above).
+#   trade_count_min_floor      int, v2 only (E-062 S2b-3b, D-047): the absolute
+#                                  floor of a PARTIAL-COVERAGE variant's normalised
+#                                  trade counts (>= 1, <= trade_count_min and
+#                                  cost_edge_min_trades). Value 60 per D-047, not
+#                                  yet signed (like the D-039 values above).
+#
+# PARTIAL COVERAGE (v2 only; E-062 S2b-3b, D-042/D-047): an asset variant whose
+#   coin covers fewer run-protocol windows is graded on its share f = its
+#   windows' nominal calendar days / the run protocol's (one-day junctions once,
+#   an exact fraction): trade_count_min -> max(ceil(trade_count_min * f),
+#   trade_count_min_floor); cost_edge_ratio_min's trade floor -> max(ceil(
+#   cost_edge_min_trades * f), trade_count_min_floor) (the 2.2 ratio unchanged);
+#   max_drawdown_pct_max -> max_drawdown_pct_max * sqrt(f) (code, no key). Every
+#   other bar unchanged. Such a row records the effective `threshold` (for the
+#   cost row, detail.min_trades) and detail.normalisation {covered_days,
+#   full_days, f, base, floor, formula}. A full-coverage variant (f = 1) is
+#   graded exactly as above. Flag off (and on the promote path) a partial
+#   variant's trade and drawdown bars read NOT_EVALUABLE instead (D-042 cap).
+
+sharpe_min: 1.0
+max_drawdown_pct_max: 20.0
+avg_daily_return_min: 0.0005
+trade_count_min: 100
+deflated_sharpe_threshold: 0.95
+target_instrument_set:
+  - BTCUSDT
+  - ETHUSDT
+ratified_by: "Jeremy Alauze (loloze6) -- recorded by Claude at the operator's explicit instruction (2026-09-29 session: 'I agree with the bars, can you ratify it for me')"
+ratified_at: 2026-09-29
+# v2 keys (required only under orchestrator.profit_bars_v2.enabled):
+buy_and_hold_sharpe_excess_min: 0.0  # D-120 rename (value unchanged)
+cost_edge_ratio_min: 2.2
+cost_edge_min_trades: 100
+dsr_min_same_basis_trials: 10
+trade_count_min_floor: 60

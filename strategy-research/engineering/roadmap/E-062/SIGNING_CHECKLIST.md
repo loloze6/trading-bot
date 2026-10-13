@@ -12,6 +12,16 @@ definitions they apply to are D-034..D-038, D-041, D-046 and D-047
 
 ## 1. `config/profitability_bars.yaml` (ten values, then the signature)
 
+**D-118 / D-120 (2026-10-13) changed this file; the table below is the 2026-09-29
+signature.** Current values: `sharpe_min` 0.0 (strict `>`), `deflated_sharpe_threshold`
+0.5 (a deflated Sharpe that cannot be computed is a non-blocking warning at branch 3,
+D-119; a spend still needs it), `trade_count_min`, `cost_edge_ratio_min`,
+`cost_edge_min_trades` and `trade_count_min_floor` null (off: no row), and
+`buy_and_hold_sharpe_excess_min` 0.0 replacing `buy_and_hold_excess_return_min` (the
+strategy's whole-test Sharpe must be strictly above equal-weight buy-and-hold's on the
+same chained days, D-120). `avg_daily_return_min` 0.0005, `max_drawdown_pct_max` 20,
+`dsr_min_same_basis_trials` 10 unchanged. Re-sign through section 4.
+
 | Key | Value | What it means, in one line |
 |---|---|---|
 | `sharpe_min` | 1.0 | Floor on the whole-test Sharpe (mean / stdev of the chained daily returns of the equal-weight portfolio, times sqrt(365), risk-free 0). D-036, D-039. |
@@ -81,3 +91,15 @@ Where the signature goes: flip `ratified: false` to `ratified: true` on the
   - committed LF blob (what git stores; a Mac or Linux checkout): `43de386832865bb5367db32a33f485b838528d995f39c31117b9fa657682cbaa`
   - this Windows checkout (`core.autocrlf=true`, CRLF on disk -- what the runtime hashes here): `a752a2ebb60bb4ed7e6577fcd9449db1be28dd8767bc571ca3ba86e0f1bcad71`
 - Until CUL-348 lands, grade and spend on the same checkout; C4 on this Windows machine records the CRLF value.
+
+## 6. Re-signed (2026-10-13, D-118 / D-119 / D-120)
+
+- The operator agreed the D-118 values, D-119's advisory deflated Sharpe and D-120's
+  buy-and-hold Sharpe bar ("Bars are ok for me, please sign it"); Claude recorded the
+  signature at that explicit instruction in commit `d1c58965`: `ratified_by` /
+  `ratified_at: 2026-10-13` in `config/profitability_bars.yaml`. `config/criterion_menu.yaml`
+  is unchanged (no menu entry to ratify).
+- sha256 of the signed bars file:
+  - committed LF blob (what git stores; a Mac or Linux checkout): `4bc3338cf27f8c4eb193f43dc4847d8f707f5d458e5ef84db9489d03ebbcfd11`
+  - a Windows checkout with `core.autocrlf=true` (CRLF on disk -- what the runtime hashes there): `7a2b015cedd0b9a155dcc6753911d9ded5b06d648d90f68e442da555d159be43`
+- Evaluations graded under the 2026-09-29 file cannot be spent (`bars_changed`).

@@ -850,8 +850,10 @@ def _stage_campaign(campaign_root):
     step triggers decide-next."""
     root = campaign_root["root"]
     _write_flags(root, **FLAT_COMP_ON)
-    for name in ("criterion_menu.yaml", "profitability_bars.yaml"):
-        shutil.copy(_SR / "config" / name, root / "config" / name)
+    shutil.copy(_SR / "config" / "criterion_menu.yaml", root / "config" / "criterion_menu.yaml")
+    # D-118: every bar on, from the frozen pre-D-118 bars (the committed file has two off)
+    shutil.copy(_SR / "tests" / "fixtures" / "profitability_bars_pre_d118.yaml",
+                root / "config" / "profitability_bars.yaml")
     # two composite windows: the first has no prior block data (equal weights),
     # the second starts after the blocks' validating windows (estimated weights)
     proto = {"symbols": ["BTCUSDT", "ETHUSDT"], "timeframe": "1h",

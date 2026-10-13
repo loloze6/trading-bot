@@ -1,6 +1,22 @@
 # Item 2 (delivery_plan_v26.md 0.2 / engineering_roadmap.html "One campaign-wide
 # profitability-bars file, written once by hand").
 #
+# D-119 / D-120 (operator, 2026-10-13): a deflated Sharpe that cannot be computed is a
+# non-blocking warning (its row is NOT_EVALUABLE with advisory: true; the holdout spend
+# still needs it computed); the buy-and-hold bar compares whole-test Sharpe ratios.
+#
+# D-118 (Fable ruling 2026-10-12 item (1), operator decision 2026-10-13): applies to
+# backtests graded after it. trade_count_min and cost_edge_ratio_min are OFF (null):
+# removed from the verdict, no row at all (not a lowered threshold, not a
+# NOT_EVALUABLE row); cost_edge_min_trades and trade_count_min_floor are null with
+# them. sharpe_min is 0, compared STRICTLY (> 0). deflated_sharpe_threshold is 0.5.
+# avg_daily_return_min 0.0005 stays, deliberately the single magnitude bar.
+# max_drawdown_pct_max 20 stays. There is no cost-stress bar. No sample floor until
+# the trade-frequency bar lands; meanwhile the operator's review reads the trade
+# count. Re-signed by the operator through engineering/roadmap/E-062/
+# SIGNING_CHECKLIST.md section 4 (ratified_by / ratified_at below, then the new LF
+# sha256 recorded in section 5).
+#
 # VALUES: D-039 (operator, 2026-09-27; engineering/DECISION_LOG.md), written by
 # E-062 S2b-1 together with the v2 definitions (D-034..D-038) they are meant for.
 # `ratified_by` / `ratified_at` below are the operator's SIGNATURE and are left
@@ -151,7 +167,8 @@
 #   nominal test.start/test.end (protocol_result.protocol_file).
 #   sharpe_min                 v2: mean / sample stdev (ddof 1) x sqrt(365), rf 0,
 #                                  of the chained daily returns; NOT_EVALUABLE
-#                                  below 30 returns or at zero stdev. `>=`.
+#                                  below 30 returns or at zero stdev. Strict `>`
+#                                  since D-118 (was `>=`).
 #                                  basis: portfolio_equal_weight_whole_test_chained_daily_sharpe
 #   deflated_sharpe_threshold  v2 (E-062 S2b-2b, D-041/D-046): the Bailey & Lopez
 #                                  de Prado 2014 DSR of the candidate's whole-test
@@ -182,15 +199,23 @@
 #                                  basis: per_coin_total_whole_test_excl_window_closes
 #   avg_daily_return_min       v2: arithmetic mean of the chained daily returns. `>=`.
 #                                  basis: portfolio_equal_weight_whole_test_chained_mean_daily_return
-#   buy_and_hold_excess_return_min
-#                              v2 only (D-037, G6): strategy total return (final
+#   buy_and_hold_sharpe_excess_min
+#                              v2 only, D-120 (2026-10-13; was
+#                                  buy_and_hold_excess_return_min, total returns):
+#                                  the strategy's whole-test Sharpe minus equal-weight
+#                                  buy-and-hold's on the same chained days
+#                                  (portfolio_whole_test.chained_buy_and_hold_daily_returns),
+#                                  buy-and-hold charged one round trip per coin.
+#                                  Strict `>`.
+#                                  basis: whole_test_sharpe_minus_buy_and_hold_whole_test_sharpe
+#                              Kept in the row's detail as information (the bar
+#                                  before D-120, D-037 / G6): strategy total return (final
 #                                  chained level - 1) minus equal-weight
 #                                  buy-and-hold's over the same chained days, the
 #                                  latter charged one round trip per coin (fee
 #                                  from config/cost_model.yaml, checked against the
 #                                  trades' cost_paid, + the manifests' slippage).
 #                                  Strict `>`.
-#                                  basis: portfolio_equal_weight_vs_buy_and_hold
 #   cost_edge_ratio_min        v2 only (D-038, G7): pooled realized gross edge /
 #                                  cost ratio, unrounded, the lower of all trades and
 #                                  trades without forced closes. Strict `>`.
@@ -222,19 +247,19 @@
 #   graded exactly as above. Flag off (and on the promote path) a partial
 #   variant's trade and drawdown bars read NOT_EVALUABLE instead (D-042 cap).
 
-sharpe_min: 1.0
-max_drawdown_pct_max: 20.0
-avg_daily_return_min: 0.0005
-trade_count_min: 100
-deflated_sharpe_threshold: 0.95
+sharpe_min: 0.0                    # D-118: strictly > 0
+max_drawdown_pct_max: 20.0         # unchanged
+avg_daily_return_min: 0.0005       # D-118: kept -- the deliberate single magnitude bar
+trade_count_min: null              # D-118: OFF (no sample floor until the frequency bar)
+deflated_sharpe_threshold: 0.5     # D-118 (was 0.95)
 target_instrument_set:
   - BTCUSDT
   - ETHUSDT
-ratified_by: "Jeremy Alauze (loloze6) -- recorded by Claude at the operator's explicit instruction (2026-09-29 session: 'I agree with the bars, can you ratify it for me')"
-ratified_at: 2026-09-29
+ratified_by: "Jeremy Alauze (loloze6) -- recorded by Claude at the operator's explicit instruction (2026-10-13 session: 'Bars are ok for me, please sign it')"
+ratified_at: 2026-10-13
 # v2 keys (required only under orchestrator.profit_bars_v2.enabled):
-buy_and_hold_excess_return_min: 0.0
-cost_edge_ratio_min: 2.2
-cost_edge_min_trades: 100
+buy_and_hold_sharpe_excess_min: 0.0     # D-120: strategy whole-test Sharpe - buy-and-hold's, strict > 0
+cost_edge_ratio_min: null          # D-118: OFF (no cost-stress bar anywhere)
+cost_edge_min_trades: null         # D-118: null with the cost bar
 dsr_min_same_basis_trials: 10
-trade_count_min_floor: 60
+trade_count_min_floor: null        # D-118: null -- both bars it floors are off
