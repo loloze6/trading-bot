@@ -15143,7 +15143,15 @@ def _whole_test_chain(run_dir: Path, pr: dict) -> tuple:
     pwt = _portfolio_whole_test_module()
     windows, coins = _pd.load_windows(run_dir, pr)
     bounds = _v2_protocol_window_bounds(pr, windows)
-    return pwt.chain_windows(windows, coins, bounds), coins
+    # D-116 (CUL-431): each window's first-day return from its starting capital
+    start_values: dict = {}
+    for r in pr.get("results") or []:
+        path = _pd.find_window_equity_file(run_dir, r["run_id"])
+        if path is None:
+            raise _pd.PortfolioNotEvaluable(f"no portfolio_states.csv for window {r['window']!r} "
+                                            f"({r['symbol']}, run {r['run_id']!r})")
+        start_values.setdefault(r["window"], {})[r["symbol"]] = pwt.window_start_value(path)
+    return pwt.chain_windows(windows, coins, bounds, start_values=start_values), coins
 
 
 def _whole_test_candidate_stats(run_dir: Path, pr: dict) -> dict:

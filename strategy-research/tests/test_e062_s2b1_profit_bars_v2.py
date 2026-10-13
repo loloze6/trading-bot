@@ -122,16 +122,16 @@ def _write_window(out_dir: Path, wid: str, first: date, last: date, *, label, st
     previous close and a 23:00 close per day) and manifest.json for one window."""
     d = out_dir / "results" / wid
     d.mkdir(parents=True, exist_ok=True)
-    lines = ["timestamp,regime,postRebalance_total_value,close",
-             f"{first - timedelta(days=1)} 23:00:00,NOT_READY,999999.0,1.0"]
+    lines = ["timestamp,regime,postRebalance_total_value,total_portfolio_value,close",
+             f"{first - timedelta(days=1)} 23:00:00,NOT_READY,999999.0,999999.0,1.0"]
     eq, px = 10000.0, 100.0
     for k in range((last - first).days + 1):
         day = first + timedelta(days=k)
-        lines.append(f"{day} 11:00:00,trend,{eq},{px}")
+        lines.append(f"{day} 11:00:00,trend,{eq},{eq},{px}")
         if k > 0:
             eq *= 1.0 + strat(label, k)
             px *= 1.0 + price
-        lines.append(f"{day} 23:00:00,trend,{eq},{px}")
+        lines.append(f"{day} 23:00:00,trend,{eq},{eq},{px}")
     (d / "portfolio_states.csv").write_text("\n".join(lines) + "\n", encoding="utf-8")
     if manifest:
         (d / "manifest.json").write_text(json.dumps(
@@ -354,10 +354,11 @@ def test_full_pass_seven_rows_with_basis_and_comparator(tmp_path):
     assert {n: r["comparator"] for n, r in rows.items()} == EXPECTED_COMPARATOR
     assert overall == "PASS" and reasons == [], reasons
     # hand-checked values
-    rets = [_default_strat("w", k) for k in range(1, 31)] + \
-        [_default_strat("w", k) for k in range(1, 29)]
+    # D-116: each window's day-1 return (0.0 here: the fixture's first bar trades nothing)
+    rets = [0.0] + [_default_strat("w", k) for k in range(1, 31)] + \
+        [0.0] + [_default_strat("w", k) for k in range(1, 29)]
     assert rows["avg_daily_return_min"]["actual"] == pytest.approx(sum(rets) / len(rets), abs=1e-12)
-    assert rows["avg_daily_return_min"]["detail"]["n_daily_returns"] == 58
+    assert rows["avg_daily_return_min"]["detail"]["n_daily_returns"] == 60
     assert rows["max_drawdown_pct_max"]["actual"] == pytest.approx(0.0, abs=1e-12)
     assert rows["trade_count_min"]["actual"] == 118
     assert rows["trade_count_min"]["detail"]["per_coin"]["BTCUSDT"] == {
