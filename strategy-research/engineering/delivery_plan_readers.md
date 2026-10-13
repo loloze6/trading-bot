@@ -338,7 +338,7 @@ Assessment (agreed):
    protocol:
    - excluding the blocks the idea was observed on;
    - at most 2 per year, so a draw cannot sit in one market phase;
-   - never the sealed holdout, never the validation period (2024-2025, see config/folds.yaml
+   - never the sealed holdout, never fold D (2024-2025, see config/folds.yaml
      and D-115).
 4. **Into the protocol:** the drawn blocks become the run's `windows`, where they are
    written today. The backtest, reports and grid work unchanged.

@@ -65,13 +65,13 @@ pull request merged through GitHub's web UI never invokes your hooks.
 ## 0b. PREFLIGHT — check BEFORE any campaign launch (added 2026-08-28)
 
 Written because it was skipped. On 2026-08-28 run_060 was launched on Windows
-while the killed-run trial-accounting gate -- killed-run trial accounting proven ON
-THIS MACHINE -- was still open. The accounting turned out correct (verified by
+while the gate "killed-run trial accounting proven ON
+THIS MACHINE" was still open. The accounting turned out correct (verified by
 hand afterwards: 15 rows, kill_no_ic 7->8), but "someone checked afterwards" is
 exactly the assurance the gate exists to replace. The dry run in 1a passes
 happily without any of this, so 1a is NOT a preflight.
 
-**1. The four "good enough to start generating" gates**.
+**1. The four "good enough to start generating" gates.**
    All four must hold before a campaign runs, and two of them are PER-MACHINE:
    costs modelled; drawdown honest; holdout guarded; **trials counted**.
    Trial counting is proven by RUNNING a killed run and seeing its row land --
