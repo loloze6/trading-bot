@@ -69,7 +69,7 @@ EXPECTED_BASIS = {
     "buy_and_hold_excess_return_min": "portfolio_equal_weight_vs_buy_and_hold",
     "cost_edge_ratio_min": "pooled_trades_realized_edge_to_cost",
 }
-EXPECTED_COMPARATOR = {"sharpe_min": ">=", "deflated_sharpe_threshold": ">=",
+EXPECTED_COMPARATOR = {"sharpe_min": ">", "deflated_sharpe_threshold": ">=",  # D-118: strict
                        "max_drawdown_pct_max": "<=", "trade_count_min": ">=",
                        "avg_daily_return_min": ">=", "buy_and_hold_excess_return_min": ">",
                        "cost_edge_ratio_min": ">"}
@@ -320,12 +320,16 @@ def test_unquoted_yaml_date_in_ratified_at_is_accepted(raw, iso):
 def test_committed_bars_file_has_the_d039_values_and_the_signature():
     real = SR_ROOT / "config" / "profitability_bars.yaml"
     skip = {"target_instrument_set", "ratified_by", "ratified_at"}
+    d118 = {**V2_BARS, "sharpe_min": 0.0, "deflated_sharpe_threshold": 0.5,
+            "trade_count_min": None, "cost_edge_ratio_min": None, "cost_edge_min_trades": None,
+            "trade_count_min_floor": None}  # D-118 (avg 0.0005, drawdown 20 unchanged)
     for v2 in (False, True):
         doc = rpr._load_profitability_bars(real, v2=v2)
         assert {k: doc[k] for k in V2_BARS if k not in skip} == \
-            {k: v for k, v in V2_BARS.items() if k not in skip}
-        # Signed by the operator 2026-09-29 (E-062 SIGNING_CHECKLIST.md).
-        assert doc["ratified_by"] and str(doc["ratified_at"]) == "2026-09-29"
+            {k: v for k, v in d118.items() if k not in skip}
+    # D-118: re-signed by the operator (SIGNING_CHECKLIST.md section 4) -- unsigned
+    # (null) until then; once signed, on or after the D-118 date.
+    assert doc["ratified_by"] is None or str(doc["ratified_at"]) >= "2026-10-13"
     header = real.read_text(encoding="utf-8")
     for basis in EXPECTED_BASIS.values():
         assert f"basis: {basis}\n" in header, basis
@@ -391,7 +395,7 @@ def test_drawdown_spans_windows_on_the_whole_test(tmp_path):
     ("cost_edge_ratio_min", 2.2, 2.2000001, "PASS"),
     ("buy_and_hold_excess_return_min", 0.0, 0.0, "FAIL"),
     ("buy_and_hold_excess_return_min", 0.0, 1e-9, "PASS"),
-    ("sharpe_min", 1.0, 1.0, "PASS"),
+    ("sharpe_min", 1.0, 1.0, "FAIL"),  # D-118: strict
     ("max_drawdown_pct_max", 20.0, 20.0, "PASS"),
 ])
 def test_comparators_at_the_boundary(name, threshold, actual, result):

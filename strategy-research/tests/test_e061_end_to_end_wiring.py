@@ -255,6 +255,10 @@ _ROUTE_DIAGNOSTICS_KEYS = ("post_backtest_route_real", "post_backtest_route_real
 _CONFIG_COPIES = ("criterion_menu.yaml", "profitability_bars.yaml", "available_feeds.yaml",
                   "indicator_library.yaml", "cost_model.yaml", "venue_tradability.yaml",
                   "coin_universe.yaml", "venue_data_capability.yaml")
+# D-118 turned trade_count_min and cost_edge_ratio_min off in the committed bars file;
+# this harness keeps grading with every bar on (the trade / cost / D-047 normalisation
+# mechanics stay in code), from a frozen copy of the bars as they were before D-118.
+_BARS_PRE_D118 = Path(__file__).resolve().parent / "fixtures" / "profitability_bars_pre_d118.yaml"
 _DOC_COPIES = ("STRATEGY_DESIGN_GUIDE.md", "COMPONENT_CATALOG.md", "DATA_AVAILABILITY.md")
 
 PROTOCOL_NAME = "e061_wiring_1h.json"
@@ -460,7 +464,8 @@ class Harness:
     def build(self, *, flags=TARGET_FLAGS, raw_override=None, promotion="default") -> "Harness":
         root = self.root
         for name in _CONFIG_COPIES:
-            shutil.copyfile(_SR / "config" / name, root / "config" / name)
+            shutil.copyfile(_BARS_PRE_D118 if name == "profitability_bars.yaml"
+                            else _SR / "config" / name, root / "config" / name)
         (root / "docs").mkdir(exist_ok=True)
         for name in _DOC_COPIES:
             if (_SR / "docs" / name).exists():

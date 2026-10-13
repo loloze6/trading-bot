@@ -3520,7 +3520,7 @@ _PROFITABILITY_BARS_SCHEMA = {
     "sharpe_min":                 (int, float),
     "max_drawdown_pct_max":       (int, float),
     "avg_daily_return_min":       (int, float),
-    "trade_count_min":            (int,),
+    "trade_count_min":            (int, type(None)),  # D-118: null = off (no row)
     "deflated_sharpe_threshold":  (int, float),
     "target_instrument_set":      (list,),
     "ratified_by":                (str, type(None)),
@@ -3532,8 +3532,8 @@ _PROFITABILITY_BARS_SCHEMA = {
 # ignores every extra key.
 _PROFITABILITY_BARS_V2_SCHEMA = {
     "buy_and_hold_excess_return_min": (int, float),
-    "cost_edge_ratio_min":            (int, float),
-    "cost_edge_min_trades":           (int,),
+    "cost_edge_ratio_min":            (int, float, type(None)),  # D-118: null = off (no row)
+    "cost_edge_min_trades":           (int, type(None)),  # D-118: null iff the cost bar is off
     # E-062 S2b-2b (D-046): the same-basis trial count at which the DSR's
     # benchmark switches from sigma_null to the cross-trial spread. >= 2.
     "dsr_min_same_basis_trials":      (int,),
@@ -3541,8 +3541,17 @@ _PROFITABILITY_BARS_V2_SCHEMA = {
     # variant's normalised trade minimum and cost-ratio trade floor,
     # max(ceil(base * f), floor). >= 1 and <= both bases it floors
     # (trade_count_min, cost_edge_min_trades).
-    "trade_count_min_floor":          (int,),
+    "trade_count_min_floor":          (int, type(None)),  # D-118: null iff both bases are off
 }
+
+# D-118: the bars that may be OFF (null in the bars file): an off bar is removed from
+# the verdict -- no row at all, never a NOT_EVALUABLE row (which would cap the verdict).
+_PROFIT_BARS_OFFABLE = ("trade_count_min", "cost_edge_ratio_min")
+
+
+def _bar_is_off(bars: dict, name: str) -> bool:
+    """D-118: True when `name` is an off-able bar whose bars-file value is null."""
+    return name in _PROFIT_BARS_OFFABLE and bars.get(name) is None
 
 
 class ProfitabilityBarsSchemaError(ValueError):
@@ -3612,7 +3621,12 @@ def _load_profitability_bars(path: Path | None = None, *, v2: bool = False) -> d
         raise ProfitabilityBarsSchemaError(
             f"{bars_path}'s target_instrument_set is empty -- must list at least one symbol."
         )
-    if v2 and doc["cost_edge_min_trades"] < 1:
+    if v2 and (doc["cost_edge_ratio_min"] is None) != (doc["cost_edge_min_trades"] is None):
+        raise ProfitabilityBarsSchemaError(  # D-118: the cost bar and its trade floor go together
+            f"{bars_path}'s cost_edge_ratio_min and cost_edge_min_trades must both be null (the "
+            f"cost bar off) or both set (got {doc['cost_edge_ratio_min']!r}, "
+            f"{doc['cost_edge_min_trades']!r}).")
+    if v2 and doc["cost_edge_min_trades"] is not None and doc["cost_edge_min_trades"] < 1:
         raise ProfitabilityBarsSchemaError(
             f"{bars_path}'s cost_edge_min_trades={doc['cost_edge_min_trades']!r} must be >= 1."
         )
@@ -3626,8 +3640,13 @@ def _load_profitability_bars(path: Path | None = None, *, v2: bool = False) -> d
         # variant need MORE trades than a full one (variant_coin.
         # normalised_trade_minimum refuses it too) -- refused here, at load.
         floor = doc["trade_count_min_floor"]
-        bases = {k: doc[k] for k in ("trade_count_min", "cost_edge_min_trades")}
-        if floor < 1 or any(floor > b for b in bases.values()):
+        bases = {k: doc[k] for k in ("trade_count_min", "cost_edge_min_trades")
+                 if doc[k] is not None}  # D-118: an off bar has no base to floor
+        if (floor is None) != (not bases):
+            raise ProfitabilityBarsSchemaError(
+                f"{bars_path}'s trade_count_min_floor={floor!r} must be null exactly when both "
+                f"trade_count_min and cost_edge_min_trades are null (D-118).")
+        if floor is not None and (floor < 1 or any(floor > b for b in bases.values())):
             raise ProfitabilityBarsSchemaError(
                 f"{bars_path}'s trade_count_min_floor={floor!r} must be >= 1 and <= the bases "
                 f"it floors ({bases}).")
@@ -8303,6 +8322,8 @@ def _normalisation_at_spend(run_dir: Path, run_id: str, variant: str, entry: dic
     rows = {r.get("name"): r for r in (entry or {}).get("bars") or [] if isinstance(r, dict)}
     problems = []
     for name in ("trade_count_min", "max_drawdown_pct_max", "cost_edge_ratio_min"):
+        if _bar_is_off(eff, name):
+            continue  # D-118: an off bar has no row to re-derive
         row = rows.get(name)
         if not isinstance(row, dict):
             problems.append(f"{name}: no row")
@@ -8335,6 +8356,8 @@ def _cost_basis_at_spend(variant, entry: dict) -> None:
         raise HoldoutUnlockRefused(
             "bars_changed", f"the cost_bar_all_costs flag does not read: {type(e).__name__}: {e}")
     rows = {r.get("name"): r for r in (entry or {}).get("bars") or [] if isinstance(r, dict)}
+    if "cost_edge_ratio_min" not in rows:
+        return  # D-118: the cost bar was off when graded (the bars-file sha guards a change)
     detail = (rows.get("cost_edge_ratio_min") or {}).get("detail")
     graded = detail.get("cost_basis") if isinstance(detail, dict) else None
     if graded != want:
@@ -14409,8 +14432,12 @@ def _grade_profit_bars(bars: dict, *, sharpe, sharpe_note: str, dsr, dsr_note: s
 
     def _bar(name: str, threshold, actual, comparator: str, note: str = "", basis: str = "",
              not_evaluable_reason: str | None = None):
+        if _bar_is_off(bars, name):
+            return  # D-118: an off bar has no row
         if actual is None:
             outcome = "NOT_EVALUABLE"
+        elif comparator == ">":  # D-118: sharpe_min is strict
+            outcome = "PASS" if actual > threshold else "FAIL"
         elif comparator == ">=":
             outcome = "PASS" if actual >= threshold else "FAIL"
         elif comparator == "<=":
@@ -14427,7 +14454,7 @@ def _grade_profit_bars(bars: dict, *, sharpe, sharpe_note: str, dsr, dsr_note: s
             entry["note"] = note
         results.append(entry)
 
-    _bar("sharpe_min", bars["sharpe_min"], sharpe, ">=", note=sharpe_note,
+    _bar("sharpe_min", bars["sharpe_min"], sharpe, ">", note=sharpe_note,  # D-118: strict
          basis="median_of_coin_median_sharpes")
 
     _bar(
@@ -14965,7 +14992,7 @@ _BASIS_V2 = {
 # Comparator per v2 row: strict `>` where D-037 ("beats") and D-038 ("> 2.2")
 # say so; every other row keeps its v1 comparator.
 _COMPARATOR_V2 = {
-    "sharpe_min": ">=", "deflated_sharpe_threshold": ">=", "max_drawdown_pct_max": "<=",
+    "sharpe_min": ">", "deflated_sharpe_threshold": ">=", "max_drawdown_pct_max": "<=",  # D-118
     "trade_count_min": ">=", "avg_daily_return_min": ">=",
     "buy_and_hold_excess_return_min": ">", "cost_edge_ratio_min": ">",
 }
@@ -15411,7 +15438,9 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
             counts = pwt.whole_test_trade_counts(records, pr.get("results") or [])
         except _pd.PortfolioNotEvaluable as exc:
             count_reason = f"whole-test trade count NOT_EVALUABLE: {exc}"
-    if count_reason:
+    if _bar_is_off(bars, "trade_count_min"):
+        pass  # D-118: off -- no row
+    elif count_reason:
         _row("trade_count_min", reason=count_reason)
     else:
         worst = min(counts, key=lambda c: (counts[c]["excluding_end_of_window"], str(c)))
@@ -15421,7 +15450,9 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
              detail={"worst_coin": worst,
                      "per_coin": {str(c): dict(v) for c, v in counts.items()}})
 
-    if count_reason:
+    if _bar_is_off(bars, "cost_edge_ratio_min"):
+        pass  # D-118: off -- no row, and cost_edge_min_trades is null
+    elif count_reason:
         _row("cost_edge_ratio_min", reason=("pooled edge/cost ratio NOT_EVALUABLE: the trade "
                                             "records do not match the results -- "
                                             + count_reason))
@@ -15539,6 +15570,8 @@ def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
     for name in ("sharpe_min", "deflated_sharpe_threshold", "max_drawdown_pct_max",
                  "trade_count_min", "avg_daily_return_min", "buy_and_hold_excess_return_min",
                  "cost_edge_ratio_min"):
+        if _bar_is_off(bars, name):
+            continue  # D-118: an off bar has no row
         row, threshold, comp = rows[name], bars[name], _COMPARATOR_V2[name]
         actual = row["actual"]
         if actual is None:
@@ -15718,16 +15751,20 @@ def _normalised_profit_bars(bars: dict, coverage_days) -> tuple:
         return bars, {}
     floor = bars["trade_count_min_floor"]
     eff = dict(bars)
-    eff["trade_count_min"] = vc.normalised_trade_minimum(bars["trade_count_min"], f, floor)
-    eff["cost_edge_min_trades"] = vc.normalised_trade_minimum(bars["cost_edge_min_trades"], f,
-                                                              floor)
-    eff["max_drawdown_pct_max"] = vc.scaled_drawdown_limit(bars["max_drawdown_pct_max"], f)
     common = {"covered_days": covered, "full_days": full, "f": float(f)}
-    norm = {
-        "trade_count_min": {**common, "base": bars["trade_count_min"], "floor": floor},
-        "max_drawdown_pct_max": {**common, "base": bars["max_drawdown_pct_max"], "floor": None},
-        "cost_edge_ratio_min": {**common, "base": bars["cost_edge_min_trades"], "floor": floor},
-    }
+    norm = {}
+    # D-118: an off bar is neither normalised nor recorded
+    if not _bar_is_off(bars, "trade_count_min"):
+        eff["trade_count_min"] = vc.normalised_trade_minimum(bars["trade_count_min"], f, floor)
+        norm["trade_count_min"] = {**common, "base": bars["trade_count_min"], "floor": floor}
+    if not _bar_is_off(bars, "cost_edge_ratio_min"):
+        eff["cost_edge_min_trades"] = vc.normalised_trade_minimum(bars["cost_edge_min_trades"], f,
+                                                                  floor)
+    eff["max_drawdown_pct_max"] = vc.scaled_drawdown_limit(bars["max_drawdown_pct_max"], f)
+    norm["max_drawdown_pct_max"] = {**common, "base": bars["max_drawdown_pct_max"], "floor": None}
+    if not _bar_is_off(bars, "cost_edge_ratio_min"):
+        norm["cost_edge_ratio_min"] = {**common, "base": bars["cost_edge_min_trades"],
+                                       "floor": floor}
     for name, rec in norm.items():
         rec["formula"] = _D047_NORMALISATION_FORMULAS[name]
     return eff, norm
