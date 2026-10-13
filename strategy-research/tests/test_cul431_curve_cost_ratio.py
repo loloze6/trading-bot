@@ -286,8 +286,10 @@ def test_run_081_every_account_lot_net_equals_equity_change():
 def test_run_081_slippage_matches_the_diagnostics_bps():
     """Per lot, the currency slippage over each leg's notional is exactly the
     configured slippage on both legs (manifest cost_model), and within 0.2 bps
-    of the run's own slippage_paid (run_protocol._all_costs_fields), which reads
-    bars.csv closes rounded to 6 decimals (DOGE near 0.06: up to ~0.08 bps per leg; run_081 max 0.107)."""
+    of the run's own STORED slippage_paid (run_protocol._all_costs_fields), which was
+    written before D-117 from bars.csv closes rounded to 6 decimals (DOGE near 0.06: up to
+    ~0.08 bps per leg; run_081 max 0.107). Since D-117 new diagnostics read full-precision
+    closes (tests/test_d117_slippage_precision.py)."""
     diag = json.loads((RUN_081 / "trade_diagnostics.json").read_text(encoding="utf-8"))["trades"]
     pr = yaml.safe_load((RUN_081 / "artifacts" / "protocol_result.yaml").read_text(encoding="utf-8"))
     n = 0
