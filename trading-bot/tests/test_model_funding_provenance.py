@@ -5,7 +5,7 @@ run identity.
 Before this fix, two runs differing ONLY by model_funding shared config_sha256,
 data_sha256 and git SHA while returning 41.125% vs 40.334%. The manifest could
 not tell them apart -- and "comparing runs without config+data hashes" is on the
-fork's explicit refuse list (CLAUDE.fork.md, Research protocol).
+research protocol's explicit refuse list.
 
 Same fold and the same fail-loud collision guard the risk gate uses (PR #59);
 model_funding was the original instance of the class.

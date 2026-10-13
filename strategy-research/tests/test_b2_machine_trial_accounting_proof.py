@@ -1,5 +1,5 @@
 """
-B2 -- machine-local trial-accounting proof (CLAUDE.fork.md backlog item 5, Mac half).
+B2 -- machine-local trial-accounting proof (killed-run trial-accounting gate, Mac half).
 
 Runs the REAL tools/run_protocol.py subprocess via
 rpr.run_tool_worker("protocol_execution", run_id) against the REAL kraken BTCUSD
@@ -71,7 +71,7 @@ under trading-bot/results/. It does not cover writes outside that dir; none obse
 INCIDENTAL (recorded, never asserted): the observed run's verdict came out "kill".
 That is not guaranteed and the writer is verdict-blind, so it is not an assertion --
 but it is worth noting that the observed run happened to exercise the killed case,
-which is the scenario CLAUDE.fork.md backlog item 5 was originally worded around.
+which is the scenario the killed-run trial-accounting gate was originally worded around.
 
 GATING: @pytest.mark.slow AND skipif(B2_MACHINE_PROOF != "1"). strategy-research
 configures no default -m filter, so the env gate is what keeps this real backtest out

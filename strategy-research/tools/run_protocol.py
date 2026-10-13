@@ -1175,7 +1175,7 @@ def _aggregate_trade_diagnostics(
     # docstring) -- dividing an already-net figure by cost again would
     # double-count the fee deduction and understate how many multiples of
     # cost the raw edge actually represents, which is what a cost-survival
-    # ratio (c.f. CLAUDE.fork.md's "still positive at 1.5x/2x modeled
+    # ratio (c.f. the D-038 "survives 2x modeled
     # costs" bar) needs to measure. cost_paid (denominator, A3.2) is also
     # a position-level round-trip figure, so numerator and denominator
     # share the same basis.

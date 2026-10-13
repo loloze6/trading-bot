@@ -172,7 +172,7 @@ product: "<FILL IN: e.g. spot or perp -- see config/venue_tradability.yaml
   for which pairs are currently tradable>"
 research_goal: >
   <FILL IN: one paragraph. What edge are you testing, and why do you expect
-  it to survive fees and slippage at your size? (CLAUDE.fork.md's three
+  it to survive fees and slippage at your size? (the three
   HYPOTHESIS.md questions -- who is on the other side, why the edge survives
   costs, why it hasn't been arbitraged away -- are the bar this needs to
   eventually clear, even though this brief itself defers formal criteria to

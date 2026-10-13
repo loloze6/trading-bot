@@ -69,7 +69,7 @@ retrieval, data management (fetch-timeframe vs. trade-timeframe, aux-feed
 cache-key vs. merge-timing mechanisms), the bar-by-bar main loop, warmup,
 forecast calculation, allocation, risk gates, execution/portfolio, run
 artifacts, and metrics — with explicit call-outs where it corrects stale
-claims in root `CLAUDE.md`/`CLAUDE.fork.md`.
+claims in root `CLAUDE.md`.
 
 ### "What OHLCV timeframes/aux feeds are available, and what happens when a cache is missing?"
 → **[`docs/DATA_AVAILABILITY.md`](docs/DATA_AVAILABILITY.md)** — short,
