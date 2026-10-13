@@ -448,7 +448,8 @@ def profit_bars_block(run_dir: Path, run_id: str, variants: dict) -> dict:
             compact[b["name"]] = {"result": b["result"], "actual": b.get("actual"),
                                   "threshold": b.get("threshold")}
         if bars:
-            every_pass = all(c["result"] == "PASS" for c in compact.values())
+            # D-119: an advisory row (a deflated Sharpe that cannot be computed) does not decide
+            every_pass = all(b["result"] == "PASS" for b in bars if not b.get("advisory"))
             if every_pass != (v["result"] == "PASS"):
                 raise CampaignMemoryError(f"{where}: result={v['result']!r} disagrees with its bars")
         out_variants[vid] = {"result": v["result"], "bars": compact}

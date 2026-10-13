@@ -3531,7 +3531,7 @@ _PROFITABILITY_BARS_SCHEMA = {
 # when the loader is called with v2=True; the v1 loader ignores them, as it
 # ignores every extra key.
 _PROFITABILITY_BARS_V2_SCHEMA = {
-    "buy_and_hold_excess_return_min": (int, float),
+    "buy_and_hold_sharpe_excess_min": (int, float),  # D-120 (was buy_and_hold_excess_return_min)
     "cost_edge_ratio_min":            (int, float, type(None)),  # D-118: null = off (no row)
     "cost_edge_min_trades":           (int, type(None)),  # D-118: null iff the cost bar is off
     # E-062 S2b-2b (D-046): the same-basis trial count at which the DSR's
@@ -14986,7 +14986,7 @@ _BASIS_V2 = {
     "max_drawdown_pct_max": "portfolio_equal_weight_whole_test_chained",
     "trade_count_min": "per_coin_total_whole_test_excl_window_closes",
     "avg_daily_return_min": "portfolio_equal_weight_whole_test_chained_mean_daily_return",
-    "buy_and_hold_excess_return_min": "portfolio_equal_weight_vs_buy_and_hold",
+    "buy_and_hold_sharpe_excess_min": "whole_test_sharpe_minus_buy_and_hold_whole_test_sharpe",
     "cost_edge_ratio_min": "pooled_trades_realized_edge_to_cost",
 }
 # Comparator per v2 row: strict `>` where D-037 ("beats") and D-038 ("> 2.2")
@@ -14994,7 +14994,7 @@ _BASIS_V2 = {
 _COMPARATOR_V2 = {
     "sharpe_min": ">", "deflated_sharpe_threshold": ">=", "max_drawdown_pct_max": "<=",  # D-118
     "trade_count_min": ">=", "avg_daily_return_min": ">=",
-    "buy_and_hold_excess_return_min": ">", "cost_edge_ratio_min": ">",
+    "buy_and_hold_sharpe_excess_min": ">", "cost_edge_ratio_min": ">",
 }
 _TRADE_DIAGNOSTICS_FILE = "trade_diagnostics.json"
 
@@ -15340,6 +15340,14 @@ def _whole_test_dsr_candidate(wctx: dict, run_dir: Path, pr: dict, trial_id: str
     if row.get("invalidated_artifact"):
         raise ValueError(f"whole-test DSR: trial {trial_id!r} is invalidated_artifact")
     block = row.get("whole_test")
+    if isinstance(block, dict) and block.get("basis") not in (None, wctx["sharpe_basis"]):
+        # D-119: a row written under an earlier basis (e.g. before D-116's v2) is a normal
+        # condition after a basis change, not a defect: this candidate's DSR is NOT_EVALUABLE
+        # (a non-blocking warning at grading; the holdout spend still refuses it).
+        return _dsr_not_evaluable(
+            wctx, min_same_basis, "not_evaluable",
+            f"ledger_basis_mismatch: trial {trial_id!r}'s ledger row was written on basis "
+            f"{block.get('basis')!r}, the current basis is {wctx['sharpe_basis']!r}")
     if not isinstance(block, dict) or block.get("basis") != wctx["sharpe_basis"]:
         raise ValueError(f"whole-test DSR: trial {trial_id!r}'s ledger row has no whole_test block "
                          f"on basis {wctx['sharpe_basis']!r} (got {block!r:.200}) -- written with "
@@ -15487,12 +15495,12 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
         _row("max_drawdown_pct_max", exc.drawdown_pct, note=_ruin_text(exc),
              detail={"ruin": {"file": str(exc.path), "timestamp": exc.timestamp,
                               "equity": exc.equity}})
-        for name in ("avg_daily_return_min", "sharpe_min", "buy_and_hold_excess_return_min"):
+        for name in ("avg_daily_return_min", "sharpe_min", "buy_and_hold_sharpe_excess_min"):
             _row(name, reason=f"not computed past a ruin: {_ruin_text(exc)}")
         return out
     if chain is None:
         for name in ("max_drawdown_pct_max", "avg_daily_return_min", "sharpe_min",
-                     "buy_and_hold_excess_return_min"):
+                     "buy_and_hold_sharpe_excess_min"):
             _row(name, reason=chain_reason)
         return out
 
@@ -15533,18 +15541,25 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
         slip = _v2_manifest_slippage(run_dir, pr, coins)
         fees = _v2_charged_fees(coins, records, pr.get("venue"))
         bh = pwt.chained_buy_and_hold(chain, close_windows, fees, slip)
-        _row("buy_and_hold_excess_return_min", bh["excess_return"],
-             note=(f"strategy total return {bh['strategy_total_return']:.6f} minus equal-weight "
-                   f"buy-and-hold {bh['buy_and_hold_total_return']:.6f} (gross "
-                   f"{bh['buy_and_hold_gross_return']:.6f}, one round trip per coin at "
-                   f"{bh['cost_per_side_bps']} bps per side) over the same chained days; {span}"),
-             detail={**chain_detail,
+        # D-120: the bar compares Sharpe ratios on the same chained days and cost convention;
+        # the total-return comparison is kept as information in `detail`.
+        bh_rets = pwt.chained_buy_and_hold_daily_returns(chain, close_windows, fees, slip)
+        strat_sr = pwt.whole_test_sharpe(chain["daily_returns"])
+        bh_sr = pwt.whole_test_sharpe(bh_rets)
+        _row("buy_and_hold_sharpe_excess_min", strat_sr - bh_sr,
+             note=(f"whole-test Sharpe {strat_sr:.6f} minus equal-weight buy-and-hold's "
+                   f"{bh_sr:.6f} on the same {len(bh_rets)} chained day(s), buy-and-hold charged "
+                   f"one round trip per coin at {bh['cost_per_side_bps']} bps per side; "
+                   f"information: total return {bh['strategy_total_return']:.6f} vs "
+                   f"{bh['buy_and_hold_total_return']:.6f}; {span}"),
+             detail={**chain_detail, "strategy_sharpe": strat_sr, "buy_and_hold_sharpe": bh_sr,
                      **{k: bh[k] for k in ("strategy_total_return", "buy_and_hold_total_return",
-                                           "buy_and_hold_gross_return", "cost_multiplier")},
+                                           "buy_and_hold_gross_return", "excess_return",
+                                           "cost_multiplier")},
                      "cost_per_side_bps": {str(c): v for c, v in bh["cost_per_side_bps"].items()}})
     except _pd.PortfolioNotEvaluable as exc:
-        _row("buy_and_hold_excess_return_min",
-             reason=f"buy-and-hold comparison NOT_EVALUABLE: {exc}")
+        _row("buy_and_hold_sharpe_excess_min",
+             reason=f"buy-and-hold Sharpe comparison NOT_EVALUABLE: {exc}")
     return out
 
 
@@ -15568,7 +15583,7 @@ def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
                                                                  if dsr_reason else ""))}}
     results = []
     for name in ("sharpe_min", "deflated_sharpe_threshold", "max_drawdown_pct_max",
-                 "trade_count_min", "avg_daily_return_min", "buy_and_hold_excess_return_min",
+                 "trade_count_min", "avg_daily_return_min", "buy_and_hold_sharpe_excess_min",
                  "cost_edge_ratio_min"):
         if _bar_is_off(bars, name):
             continue  # D-118: an off bar has no row
@@ -15593,10 +15608,18 @@ def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
         if row.get("detail"):
             entry["detail"] = row["detail"]
         results.append(entry)
-    overall = "PASS" if {r["result"] for r in results} == {"PASS"} else "FAIL"
+    # D-119: a deflated Sharpe that cannot be computed is a WARNING, not a blocker: its row
+    # stays NOT_EVALUABLE with `advisory: true` and does not keep the variant from PASS.
+    # (A computed deflated Sharpe below the threshold still FAILs.)
+    for r in results:
+        if r["name"] == "deflated_sharpe_threshold" and r["result"] == "NOT_EVALUABLE":
+            r["advisory"] = True
+    overall = ("PASS" if {r["result"] for r in results if not r.get("advisory")} == {"PASS"}
+               else "FAIL")
     reasons = [
         f"{r['name']}: {r['result']} (threshold={r['threshold']!r}, actual={r['actual']!r})"
         + (f" -- {r['not_evaluable_reason']}" if r.get("not_evaluable_reason") else "")
+        + (" [warning, not blocking: D-119]" if r.get("advisory") else "")
         for r in results if r["result"] != "PASS"
     ]
     return results, overall, reasons

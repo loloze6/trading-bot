@@ -1,6 +1,10 @@
 # Item 2 (delivery_plan_v26.md 0.2 / engineering_roadmap.html "One campaign-wide
 # profitability-bars file, written once by hand").
 #
+# D-119 / D-120 (operator, 2026-10-13): a deflated Sharpe that cannot be computed is a
+# non-blocking warning (its row is NOT_EVALUABLE with advisory: true; the holdout spend
+# still needs it computed); the buy-and-hold bar compares whole-test Sharpe ratios.
+#
 # D-118 (Fable ruling 2026-10-12 item (1), operator decision 2026-10-13): applies to
 # backtests graded after it. trade_count_min and cost_edge_ratio_min are OFF (null):
 # removed from the verdict, no row at all (not a lowered threshold, not a
@@ -195,15 +199,23 @@
 #                                  basis: per_coin_total_whole_test_excl_window_closes
 #   avg_daily_return_min       v2: arithmetic mean of the chained daily returns. `>=`.
 #                                  basis: portfolio_equal_weight_whole_test_chained_mean_daily_return
-#   buy_and_hold_excess_return_min
-#                              v2 only (D-037, G6): strategy total return (final
+#   buy_and_hold_sharpe_excess_min
+#                              v2 only, D-120 (2026-10-13; was
+#                                  buy_and_hold_excess_return_min, total returns):
+#                                  the strategy's whole-test Sharpe minus equal-weight
+#                                  buy-and-hold's on the same chained days
+#                                  (portfolio_whole_test.chained_buy_and_hold_daily_returns),
+#                                  buy-and-hold charged one round trip per coin.
+#                                  Strict `>`. The total-return comparison below
+#                                  stays in the row's detail as information:
+#                              (D-037, G6): strategy total return (final
 #                                  chained level - 1) minus equal-weight
 #                                  buy-and-hold's over the same chained days, the
 #                                  latter charged one round trip per coin (fee
 #                                  from config/cost_model.yaml, checked against the
 #                                  trades' cost_paid, + the manifests' slippage).
 #                                  Strict `>`.
-#                                  basis: portfolio_equal_weight_vs_buy_and_hold
+#                                  basis: whole_test_sharpe_minus_buy_and_hold_whole_test_sharpe
 #   cost_edge_ratio_min        v2 only (D-038, G7): pooled realized gross edge /
 #                                  cost ratio, unrounded, the lower of all trades and
 #                                  trades without forced closes. Strict `>`.
@@ -246,7 +258,7 @@ target_instrument_set:
 ratified_by: null                  # D-118: unsigned until the operator re-signs
 ratified_at: null
 # v2 keys (required only under orchestrator.profit_bars_v2.enabled):
-buy_and_hold_excess_return_min: 0.0
+buy_and_hold_sharpe_excess_min: 0.0     # D-120: strategy whole-test Sharpe - buy-and-hold's, strict > 0
 cost_edge_ratio_min: null          # D-118: OFF (no cost-stress bar anywhere)
 cost_edge_min_trades: null         # D-118: null with the cost bar
 dsr_min_same_basis_trials: 10

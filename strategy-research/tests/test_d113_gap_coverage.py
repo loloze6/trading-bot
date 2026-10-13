@@ -157,8 +157,9 @@ def test_overlap_and_order_do_not_change_the_counted_days():
 # ---------------------------------------------------------------------------
 
 _RUNS_ROOT = Path(os.environ.get("D113_RUNS_ROOT") or SR_ROOT)
-_CHAIN_ROWS = ("sharpe_min", "max_drawdown_pct_max", "avg_daily_return_min",
-               "buy_and_hold_excess_return_min")
+# D-120 replaced the stored buy_and_hold_excess_return_min row by a Sharpe comparison under a
+# new name, so the stored row has no recomputed twin: three chain rows are compared.
+_CHAIN_ROWS = ("sharpe_min", "max_drawdown_pct_max", "avg_daily_return_min")
 
 
 @pytest.mark.parametrize("run_id", ["run_081", "run_082", "run_083"])

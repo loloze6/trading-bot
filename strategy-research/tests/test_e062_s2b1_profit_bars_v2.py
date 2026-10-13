@@ -50,14 +50,14 @@ V1_BARS = {"sharpe_min": 1.0, "max_drawdown_pct_max": 20.0, "avg_daily_return_mi
            "trade_count_min": 100, "deflated_sharpe_threshold": 0.95,
            "target_instrument_set": ["BTCUSDT", "ETHUSDT"],
            "ratified_by": None, "ratified_at": None}
-V2_KEYS = {"buy_and_hold_excess_return_min": 0.0, "cost_edge_ratio_min": 2.2,
+V2_KEYS = {"buy_and_hold_sharpe_excess_min": 0.0, "cost_edge_ratio_min": 2.2,
            "cost_edge_min_trades": 100,
            "dsr_min_same_basis_trials": 10,  # E-062 S2b-2b (declared change, D-046)
            "trade_count_min_floor": 60}  # E-062 S2b-3b (declared change, D-047)
 V2_BARS = {**V1_BARS, **V2_KEYS}
 
 ROW_ORDER = ["sharpe_min", "deflated_sharpe_threshold", "max_drawdown_pct_max",
-             "trade_count_min", "avg_daily_return_min", "buy_and_hold_excess_return_min",
+             "trade_count_min", "avg_daily_return_min", "buy_and_hold_sharpe_excess_min",
              "cost_edge_ratio_min"]
 EXPECTED_BASIS = {
     "sharpe_min": "portfolio_equal_weight_whole_test_chained_daily_sharpe",
@@ -66,15 +66,15 @@ EXPECTED_BASIS = {
     "max_drawdown_pct_max": "portfolio_equal_weight_whole_test_chained",
     "trade_count_min": "per_coin_total_whole_test_excl_window_closes",
     "avg_daily_return_min": "portfolio_equal_weight_whole_test_chained_mean_daily_return",
-    "buy_and_hold_excess_return_min": "portfolio_equal_weight_vs_buy_and_hold",
+    "buy_and_hold_sharpe_excess_min": "whole_test_sharpe_minus_buy_and_hold_whole_test_sharpe",
     "cost_edge_ratio_min": "pooled_trades_realized_edge_to_cost",
 }
 EXPECTED_COMPARATOR = {"sharpe_min": ">", "deflated_sharpe_threshold": ">=",  # D-118: strict
                        "max_drawdown_pct_max": "<=", "trade_count_min": ">=",
-                       "avg_daily_return_min": ">=", "buy_and_hold_excess_return_min": ">",
+                       "avg_daily_return_min": ">=", "buy_and_hold_sharpe_excess_min": ">",
                        "cost_edge_ratio_min": ">"}
 CHAIN_ROWS = ("max_drawdown_pct_max", "avg_daily_return_min", "sharpe_min",
-              "buy_and_hold_excess_return_min")
+              "buy_and_hold_sharpe_excess_min")
 
 W1 = ("w1", date(2020, 1, 1), date(2020, 2, 1))
 W2 = ("w2", date(2020, 2, 1), date(2020, 3, 1))
@@ -297,7 +297,7 @@ def test_v2_loader_refuses_a_missing_v2_key(key):
                                      ("cost_edge_min_trades", True),
                                      ("cost_edge_min_trades", 0),
                                      ("cost_edge_ratio_min", "2.2"),
-                                     ("buy_and_hold_excess_return_min", None)])
+                                     ("buy_and_hold_sharpe_excess_min", None)])
 def test_v2_loader_refuses_a_bad_v2_value(key, bad):
     path = _write_bars({**V2_BARS, key: bad})
     with pytest.raises(rpr.ProfitabilityBarsSchemaError, match=key):
@@ -368,9 +368,12 @@ def test_full_pass_seven_rows_with_basis_and_comparator(tmp_path):
     assert rows["trade_count_min"]["detail"]["per_coin"]["BTCUSDT"] == {
         "raw": 120, "end_of_window": 2, "excluding_end_of_window": 118}
     assert rows["cost_edge_ratio_min"]["actual"] == pytest.approx(3.0, abs=1e-12)
-    bh = rows["buy_and_hold_excess_return_min"]["detail"]
+    bh = rows["buy_and_hold_sharpe_excess_min"]["detail"]
     assert bh["buy_and_hold_gross_return"] < 0 < bh["strategy_total_return"]
-    assert rows["buy_and_hold_excess_return_min"]["actual"] == pytest.approx(
+    # D-120: the bar is Sharpe minus Sharpe; the return excess stays as information
+    assert rows["buy_and_hold_sharpe_excess_min"]["actual"] == pytest.approx(
+        bh["strategy_sharpe"] - bh["buy_and_hold_sharpe"], abs=1e-12)
+    assert bh["excess_return"] == pytest.approx(
         bh["strategy_total_return"] - bh["buy_and_hold_total_return"], abs=1e-15)
     assert bh["cost_per_side_bps"] == {"BTCUSDT": 8.5}  # 7.5 fee + 1 bp slippage
 
@@ -393,8 +396,8 @@ def test_drawdown_spans_windows_on_the_whole_test(tmp_path):
 @pytest.mark.parametrize("name,threshold,actual,result", [
     ("cost_edge_ratio_min", 2.2, 2.2, "FAIL"),
     ("cost_edge_ratio_min", 2.2, 2.2000001, "PASS"),
-    ("buy_and_hold_excess_return_min", 0.0, 0.0, "FAIL"),
-    ("buy_and_hold_excess_return_min", 0.0, 1e-9, "PASS"),
+    ("buy_and_hold_sharpe_excess_min", 0.0, 0.0, "FAIL"),
+    ("buy_and_hold_sharpe_excess_min", 0.0, 1e-9, "PASS"),
     ("sharpe_min", 1.0, 1.0, "FAIL"),  # D-118: strict
     ("max_drawdown_pct_max", 20.0, 20.0, "PASS"),
 ])
@@ -418,8 +421,8 @@ def test_buy_and_hold_wins_in_a_bull_market_with_a_flat_strategy(tmp_path):
     run_dir = tmp_path / "run"
     rows, overall, _r, _o = _rows(_build(run_dir, strat=lambda _l, _k: 0.0, price=0.003),
                                   run_dir)
-    assert rows["buy_and_hold_excess_return_min"]["result"] == "FAIL"
-    assert rows["buy_and_hold_excess_return_min"]["actual"] < 0
+    # D-120: a flat strategy has no Sharpe (zero stdev), so neither has the comparison
+    assert rows["buy_and_hold_sharpe_excess_min"]["result"] == "NOT_EVALUABLE"
     assert rows["sharpe_min"]["result"] == "NOT_EVALUABLE"  # zero stdev
     assert overall == "FAIL"
 
@@ -579,21 +582,23 @@ def test_m1_one_variant_head_hole_does_not_abort_the_other_variants():
 def test_missing_manifest_makes_only_buy_and_hold_not_evaluable(tmp_path):
     run_dir = tmp_path / "run"
     rows, _o, _r, _x = _rows(_build(run_dir, manifest=False), run_dir)
-    _assert_not_evaluable(rows["buy_and_hold_excess_return_min"], "no manifest.json")
+    _assert_not_evaluable(rows["buy_and_hold_sharpe_excess_min"], "no manifest.json")
     assert rows["sharpe_min"]["result"] == "PASS"
 
 
 def test_a_run_charged_another_fee_is_not_evaluable_for_buy_and_hold(tmp_path):
     run_dir = tmp_path / "run"
     rows, _o, _r, _x = _rows(_build(run_dir, cost=20.0, rr=0.6), run_dir)
-    _assert_not_evaluable(rows["buy_and_hold_excess_return_min"], "charged another commission")
+    _assert_not_evaluable(rows["buy_and_hold_sharpe_excess_min"], "charged another commission")
 
 
 def test_missing_dsr_is_not_evaluable(tmp_path):
     run_dir = tmp_path / "run"
     rows, overall, _r, _x = _rows(_build(run_dir), run_dir, dsr=None)
     _assert_not_evaluable(rows["deflated_sharpe_threshold"], "no deflated Sharpe")
-    assert overall == "FAIL"
+    # D-119: a deflated Sharpe that cannot be computed is a warning, not a blocker
+    assert rows["deflated_sharpe_threshold"]["advisory"] is True
+    assert overall == "PASS"
 
 
 def test_variant_out_dir_is_found_under_variants(tmp_path):
@@ -748,7 +753,7 @@ def test_d101_a_ruined_backtest_fails_its_drawdown_row(tmp_path):
     dd = rows["max_drawdown_pct_max"]
     assert dd["result"] == "FAIL" and dd["actual"] == pytest.approx(150.0)
     assert "RUIN" in dd["note"] and "D-101" in dd["note"] and dd["detail"]["ruin"]["equity"] < 0
-    for name in ("avg_daily_return_min", "sharpe_min", "buy_and_hold_excess_return_min"):
+    for name in ("avg_daily_return_min", "sharpe_min", "buy_and_hold_sharpe_excess_min"):
         _assert_not_evaluable(rows[name], "not computed past a ruin")
     assert rows["trade_count_min"]["result"] == "PASS"     # rows that need no equity keep theirs
     assert overall == "FAIL" and any(r.startswith("max_drawdown_pct_max: FAIL") for r in reasons)

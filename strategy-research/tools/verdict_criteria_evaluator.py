@@ -1584,7 +1584,8 @@ def _evaluate_profit_bars_cell(criterion: dict, variant_id, grader) -> dict:
                 "reason": f"criterion {cid!r}: the profit-bars grader returned {overall!r} for "
                           f"{variant_id!r}, not one of {_PROFIT_BARS_GRADER_RESULTS}"}
     bars = graded.get("bars") or []
-    bar_results = [b.get("result") for b in bars if isinstance(b, dict)]
+    # D-119: an advisory row (a deflated Sharpe that cannot be computed) never decides the cell
+    bar_results = [b.get("result") for b in bars if isinstance(b, dict) and not b.get("advisory")]
     if overall == "INVALIDATED":
         result = "INCONCLUSIVE"
     elif overall == "PASS" and (not bar_results or set(bar_results) != {"PASS"}):

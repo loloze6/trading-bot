@@ -65,7 +65,7 @@ def test_off_bars_have_no_row_and_the_others_decide(tmp_path):
     rows, overall, reasons, ordered = t62._rows(pr, run_dir, bars=D118)
     assert [r["name"] for r in ordered] == ["sharpe_min", "deflated_sharpe_threshold",
                                             "max_drawdown_pct_max", "avg_daily_return_min",
-                                            "buy_and_hold_excess_return_min"]
+                                            "buy_and_hold_sharpe_excess_min"]
     assert overall == "PASS" and reasons == []
 
 
@@ -134,14 +134,14 @@ def test_only_the_two_offable_bars_can_be_dropped_by_the_grader():
     does not drop the row either)."""
     assert rpr._PROFIT_BARS_OFFABLE == ("trade_count_min", "cost_edge_ratio_min")
     for name in ("sharpe_min", "deflated_sharpe_threshold", "max_drawdown_pct_max",
-                 "avg_daily_return_min", "buy_and_hold_excess_return_min"):
+                 "avg_daily_return_min", "buy_and_hold_sharpe_excess_min"):
         assert rpr._bar_is_off({**D118, name: None}, name) is False
 
 
 # -- review of #408: the partial-coverage cap (v1) and hold (v2, grid) with a bar off -----
 
 def _rows_without_off(names=("sharpe_min", "deflated_sharpe_threshold", "max_drawdown_pct_max",
-                             "avg_daily_return_min", "buy_and_hold_excess_return_min")):
+                             "avg_daily_return_min", "buy_and_hold_sharpe_excess_min")):
     return [{"name": n, "threshold": 1.0, "actual": 2.0, "result": "PASS"} for n in names]
 
 

@@ -1076,6 +1076,68 @@ def chained_buy_and_hold(chain: dict, close_windows: Mapping, fee_bps: Mapping,
             "n_daily_returns": len(chain["daily_returns"])}
 
 
+def chained_buy_and_hold_daily_returns(chain: dict, close_windows: Mapping, fee_bps: Mapping,
+                                       slippage_bps: Mapping) -> list:
+    """D-120: equal-weight buy-and-hold's daily returns [(date, return)] on EXACTLY the
+    strategy's chained return days (chain["daily_returns"]' dates, in order), so its
+    whole_test_sharpe is comparable with the strategy's.
+
+    Per window (chained_buy_and_hold's basket: the coins' close curve, equal weight reset at
+    the window anchor): a return day d that follows d - 1 in the same window gets
+    c_w(d) / c_w(d - 1) - 1; a window's own day-1 return (D-116, dated on its anchor, present
+    only when the chain was built with start values) gets the mean over coins of
+    close(anchor close) / close(first recorded bar) - 1 (0 on daily bars). Costs, the
+    convention of chained_buy_and_hold (one round trip per coin for the whole test, c_s =
+    (fee_bps[s] + slippage_bps[s]) / 1e4 per side): the first chained return is multiplied
+    by the mean over coins of (1 - c_s) (the entry) and the last one too (the exit).
+    Raises ValueError when the close series are not the equity series' (as
+    chained_buy_and_hold)."""
+    if not isinstance(chain, Mapping) or "segments" not in chain or "daily_returns" not in chain:
+        raise ValueError("buy-and-hold returns: `chain` is not a chain_windows result")
+    coins = _check_coins(chain["coins"])
+    labels = [s["window"] for s in chain["segments"]]
+    if not isinstance(close_windows, Mapping) or set(close_windows) != set(labels):
+        raise ValueError("buy-and-hold returns: close windows differ from the chained windows")
+    _check_windows(close_windows, coins, coin_mismatch=ValueError)
+    costs = {}
+    for c in coins:
+        if c not in fee_bps or c not in slippage_bps:
+            raise ValueError(f"buy-and-hold returns: no fee/slippage for coin {c!r}")
+        costs[c] = (_nonneg(fee_bps[c], f"fee_bps[{c}]")
+                    + _nonneg(slippage_bps[c], f"slippage_bps[{c}]")) / 10_000.0
+    side = sum(1.0 - costs[c] for c in coins) / len(coins)
+    out = []
+    for seg in chain["segments"]:
+        try:
+            wc = _pd.window_common_curve(seg["window"], close_windows[seg["window"]], coins)
+        except PortfolioNotEvaluable as exc:
+            raise ValueError(f"buy-and-hold returns: window {seg['window']!r} close series is "
+                             f"inconsistent with its equity series ({exc})") from None
+        if wc["common"] != seg["common"]:
+            raise ValueError(f"buy-and-hold returns: window {seg['window']!r} close series has "
+                             f"different common days than its equity series")
+        cv = dict(zip(wc["common"], wc["curve"]))
+        for d in seg["return_days"]:
+            prev = date.fromordinal(d.toordinal() - 1)
+            if d == seg["join_day"] and prev not in cv:  # D-116: the window's day-1 return
+                day1 = []
+                for c in coins:
+                    bars_c = close_windows[seg["window"]][c]
+                    anchor_ts = max(t for t in bars_c if t.date() == d)
+                    day1.append(bars_c[anchor_ts] / bars_c[min(bars_c)])
+                out.append((d, sum(day1) / len(day1) - 1.0))
+            else:
+                out.append((d, cv[d] / cv[prev] - 1.0))
+    if [d for d, _r in out] != [d for d, _r in chain["daily_returns"]]:
+        raise ValueError("buy-and-hold returns: the days are not the strategy's chained days")
+    if out:
+        d0, r0 = out[0]
+        out[0] = (d0, (1.0 + r0) * side - 1.0)
+        dn, rn = out[-1]
+        out[-1] = (dn, (1.0 + rn) * side - 1.0)
+    return out
+
+
 # ---------------------------------------------------------------------------
 # G7 / D-038: pooled realized edge / cost ratio with its trade floor
 # ---------------------------------------------------------------------------
