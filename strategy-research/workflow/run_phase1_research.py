@@ -7443,7 +7443,7 @@ def _profit_bars_grid_grader(run_dir: Path, run_id: str):
                 results, overall, reasons = _hold_rows_not_evaluable(
                     results, _D047_NORMALISATION_FORMULAS,
                     f"{_partial[variant_id]} -- the grid's profit-bars grader does not normalise "
-                    f"(D-047): only branch 3 grades a partial-coverage variant")
+                    f"(D-047): only branch 3 grades a partial-coverage variant", bars=bars)
         return {"result": overall, "bars": results, "reasons": reasons, **extra}
     return grade
 
@@ -14578,7 +14578,7 @@ def _evaluate_profit_bars(run_dir: Path, run_id: str, portfolio_basis: bool = Fa
     # run without a per-coin index: the evaluation is unchanged.
     _partial = _bridge_partial_coverage(run_dir, pr)
     if _partial is not None:
-        results, overall, reasons = _cap_partial_coverage_bars(results, _partial)
+        results, overall, reasons = _cap_partial_coverage_bars(results, _partial, bars=bars)
 
     evaluation = {
         "run_id": run_id,
@@ -15663,7 +15663,7 @@ def _bridge_partial_coverage(run_dir: Path, pr: dict) -> str | None:
     return None
 
 
-def _cap_partial_coverage_bars(results: list, reason: str) -> tuple:
+def _cap_partial_coverage_bars(results: list, reason: str, bars: dict | None = None) -> tuple:
     """Review fix M1 (E-061 C2 S2b). TEMPORARY, D-042 -- lifted by E-062 S2b,
     which normalises the time-dependent bars to the period a variant ran on:
     a variant graded on partial coverage has its time-dependent bars
@@ -15672,8 +15672,10 @@ def _cap_partial_coverage_bars(results: list, reason: str) -> tuple:
     NOT_EVALUABLE -- `actual` kept, `not_evaluable_reason` set -- so it can never
     PASS every bar and never raises profit_bars_reached. Returns (results,
     overall, reasons) in _grade_profit_bars' shape. A bars list without one of
-    those bars raises (the cap must never silently not apply)."""
-    names = _variant_coin_module().D042_TIME_DEPENDENT_BARS
+    those bars raises (the cap must never silently not apply). `bars`: the bars
+    file (D-118): a bar that is off has no row and is not capped."""
+    names = tuple(n for n in _variant_coin_module().D042_TIME_DEPENDENT_BARS
+                  if not (bars is not None and _bar_is_off(bars, n)))
     missing = sorted(set(names) - {r.get("name") for r in results})
     if missing:
         raise ProfitabilityBarsSchemaError(
@@ -15692,12 +15694,15 @@ def _cap_partial_coverage_bars(results: list, reason: str) -> tuple:
     return capped, overall, reasons
 
 
-def _hold_rows_not_evaluable(results: list, names, reason: str) -> tuple:
+def _hold_rows_not_evaluable(results: list, names, reason: str,
+                             bars: dict | None = None) -> tuple:
     """E-062 S2b-3b review fixes 2/4: rows `names` read NOT_EVALUABLE (`actual`
     kept, `not_evaluable_reason` = `reason`), so the variant can never PASS
     every bar. Returns (results, overall, reasons) in _grade_profit_bars'
     shape. A bars list without one of those rows raises (the hold must never
-    silently not apply)."""
+    silently not apply). `bars`: the bars file (D-118): a bar that is off has no
+    row and is not held."""
+    names = [n for n in names if not (bars is not None and _bar_is_off(bars, n))]
     missing = sorted(set(names) - {r.get("name") for r in results})
     if missing:
         raise ProfitabilityBarsSchemaError(
@@ -15858,14 +15863,14 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
         if unmeasurable is not None:
             results, overall, reasons = _hold_rows_not_evaluable(
                 results, _D047_NORMALISATION_FORMULAS,
-                f"{COVERAGE_UNMEASURABLE_PREFIX} {unmeasurable}")
+                f"{COVERAGE_UNMEASURABLE_PREFIX} {unmeasurable}", bars=bars)
             entry["coverage_unmeasurable"] = unmeasurable
         if cand.get("partial_coverage"):
             if not v2:
                 # Review fix M1 (D-042): flag off, the cap stays (v1 has no
                 # normalisation: its trade bar is a per-window minimum).
                 results, overall, reasons = _cap_partial_coverage_bars(
-                    results, cand["partial_coverage"])
+                    results, cand["partial_coverage"], bars=bars)
             entry["partial_coverage"] = cand["partial_coverage"]
         variants[cid] = {**entry, "result": overall, "reason": None,
                          "bars": results, "reasons": reasons}

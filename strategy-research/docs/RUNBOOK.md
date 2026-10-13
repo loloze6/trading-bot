@@ -305,7 +305,7 @@ orchestrator:
   category_reports:             {enabled: true}
   specialist_readers:           {enabled: true}
   regroup_record:               {enabled: true}
-  profit_bars_file:             {enabled: true}   # config/profitability_bars.yaml must be signed (code does not check); signed 2026-09-29
+  profit_bars_file:             {enabled: true}   # config/profitability_bars.yaml must be signed (code does not check); D-118 edit: re-sign pending
   profit_bars_every_backtest:   {enabled: true}
   profit_bars_v2:               {enabled: true}   # E-062; requires profit_bars_every_backtest
   decide_next:                  {enabled: true}
@@ -343,7 +343,8 @@ is recorded and what it does to the test suites.
 signature itself; a PASS against unsigned bars would still raise the real
 `profit_bars_reached` holdout stop. The v2 bars (E-062) were signed on
 2026-09-29 (PR #269; both sha256 values in `engineering/roadmap/E-062/
-SIGNING_CHECKLIST.md` §5). Any later edit of the file, comments included,
+SIGNING_CHECKLIST.md` §5); D-118 (2026-10-13) edited them, so they are unsigned
+until the operator re-signs through that checklist's §4. Any later edit of the file, comments included,
 changes its sha and is a re-signature. The sha depends on line endings
 (CUL-348): grade and spend on one checkout.
 

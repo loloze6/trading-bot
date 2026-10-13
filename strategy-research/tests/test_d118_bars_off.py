@@ -136,3 +136,88 @@ def test_only_the_two_offable_bars_can_be_dropped_by_the_grader():
     for name in ("sharpe_min", "deflated_sharpe_threshold", "max_drawdown_pct_max",
                  "avg_daily_return_min", "buy_and_hold_excess_return_min"):
         assert rpr._bar_is_off({**D118, name: None}, name) is False
+
+
+# -- review of #408: the partial-coverage cap (v1) and hold (v2, grid) with a bar off -----
+
+def _rows_without_off(names=("sharpe_min", "deflated_sharpe_threshold", "max_drawdown_pct_max",
+                             "avg_daily_return_min", "buy_and_hold_excess_return_min")):
+    return [{"name": n, "threshold": 1.0, "actual": 2.0, "result": "PASS"} for n in names]
+
+
+def test_the_v1_cap_skips_an_off_trade_bar_and_still_caps_the_drawdown():
+    results, overall, _r = rpr._cap_partial_coverage_bars(_rows_without_off(), "partial", bars=D118)
+    by = {r["name"]: r["result"] for r in results}
+    assert by["max_drawdown_pct_max"] == "NOT_EVALUABLE" and overall == "FAIL"
+    with pytest.raises(rpr.ProfitabilityBarsSchemaError):  # without the bars file: as before
+        rpr._cap_partial_coverage_bars(_rows_without_off(), "partial")
+
+
+def test_the_v2_hold_skips_off_bars_and_still_holds_the_drawdown():
+    results, overall, _r = rpr._hold_rows_not_evaluable(
+        _rows_without_off(), rpr._D047_NORMALISATION_FORMULAS, "coverage_unmeasurable: x", bars=D118)
+    by = {r["name"]: r["result"] for r in results}
+    assert by["max_drawdown_pct_max"] == "NOT_EVALUABLE" and overall == "FAIL"
+    assert by["sharpe_min"] == "PASS"
+
+
+def test_a_bar_that_is_on_and_has_no_row_still_refuses():
+    on = {**D118, "trade_count_min": 100, "trade_count_min_floor": 60}
+    with pytest.raises(rpr.ProfitabilityBarsSchemaError, match="trade_count_min"):
+        rpr._hold_rows_not_evaluable(_rows_without_off(), rpr._D047_NORMALISATION_FORMULAS,
+                                     "x", bars=on)
+    with pytest.raises(rpr.ProfitabilityBarsSchemaError, match="trade_count_min"):
+        rpr._cap_partial_coverage_bars(_rows_without_off(), "x", bars=on)
+
+
+# -- review of #408, end to end through the real callers ------------------------------------
+
+def _v2_offs(t3b):
+    return {**t3b.V2_BARS, **OFF}
+
+
+def test_v2_unmeasurable_coverage_with_bars_off_holds_the_drawdown_and_never_raises(monkeypatch):
+    import test_e062_s2b3b_normalisation_wiring as t3b
+    run_dir = t3b._partial_run(monkeypatch, with_base=True, bars=_v2_offs(t3b))
+    t3b._damage_frozen(run_dir, "delete")
+    ev = t3b._evaluate(run_dir)
+    rows = t3b._rows(ev, "asset")
+    assert "trade_count_min" not in rows and "cost_edge_ratio_min" not in rows
+    assert rows["max_drawdown_pct_max"]["result"] == "NOT_EVALUABLE"
+    assert ev["variants"]["asset"]["result"] == "FAIL"
+
+
+def test_the_grid_grader_holds_a_partial_column_with_bars_off(monkeypatch):
+    import test_e062_s2b3b_normalisation_wiring as t3b
+    run_dir = t3b._partial_run(monkeypatch, trades=100, dd=t3b._r_for(17.0), bars=_v2_offs(t3b))
+    graded = rpr._profit_bars_grid_grader(run_dir, t3b.RUN_ID)("asset")
+    rows = {r["name"]: r for r in graded["bars"]}
+    assert "trade_count_min" not in rows and "cost_edge_ratio_min" not in rows
+    assert rows["max_drawdown_pct_max"]["result"] == "NOT_EVALUABLE"
+    assert graded["result"] == "FAIL"
+
+
+def test_the_v1_promote_path_cap_with_the_trade_bar_off():
+    import test_profit_bars_every_backtest as tpb
+    import variant_coin as vc
+    tpb._set_orchestrator({**tpb.FULL_ON, **tpb.VARIANT_LOOP_ON})
+    tpb._write_bars({**tpb._VALID_BARS, "trade_count_min": None})
+    run_dir = tpb._variant_run({"base": False, "design": True})
+    arts = run_dir / "artifacts"
+    bridge = rpr.load_yaml(arts / "variants" / "design" / "protocol_result.yaml")
+    vproto = arts / "variants" / "design" / "protocol.json"
+    vproto.write_text("{}", encoding="utf-8")
+    bridge["protocol_file"] = str(vproto)
+    rpr.save_yaml(arts / "protocol_result.yaml", bridge)
+    rpr.save_yaml(arts / "promotion_audit.yaml", {"raw_median_sharpe": 1.4,
+                                                  "deflated_sharpe_ratio": 0.99})
+    index = rpr.load_yaml(arts / "variants" / "index.yaml")
+    index["variants"]["design"].update({
+        "protocol_path": "artifacts/variants/design/protocol.json",
+        "coverage": {"windows_run": ["w1"], "windows_total": 2}})
+    rpr.save_yaml(arts / "variants" / "index.yaml", index)
+    after = rpr._evaluate_profit_bars(run_dir, tpb.RUN_ID, portfolio_basis=True)
+    capped = {b["name"]: b["result"] for b in after["bars"]}
+    assert "trade_count_min" not in capped
+    assert capped["max_drawdown_pct_max"] == "NOT_EVALUABLE" and after["result"] == "FAIL"
+    assert "max_drawdown_pct_max" in vc.D042_TIME_DEPENDENT_BARS
