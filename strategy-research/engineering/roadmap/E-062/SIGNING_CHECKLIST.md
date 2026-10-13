@@ -96,7 +96,7 @@ Where the signature goes: flip `ratified: false` to `ratified: true` on the
 
 - The operator agreed the D-118 values, D-119's advisory deflated Sharpe and D-120's
   buy-and-hold Sharpe bar ("Bars are ok for me, please sign it"); Claude recorded the
-  signature at that explicit instruction in commit `f5944c6f`: `ratified_by` /
+  signature at that explicit instruction in commit `d1c58965`: `ratified_by` /
   `ratified_at: 2026-10-13` in `config/profitability_bars.yaml`. `config/criterion_menu.yaml`
   is unchanged (no menu entry to ratify).
 - sha256 of the signed bars file:
