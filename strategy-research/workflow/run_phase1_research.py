@@ -6042,11 +6042,18 @@ def _run_specialist_readers(run_id: str, run_dir: Path, stage_attempt=0) -> dict
     analyst = _analyst_enabled()     # E-075 PR-5 (D-092): the analyst replaces the readers
     lens_of = ({cat: lens for lens, cat in _analyst_session_module().LENS_CATEGORY.items()}
                if analyst else {})
+    refold_off = _refold_readers_off(run_dir)  # D-122: None unless a refold brief without --readers
     for category in categories:
         dest = proposals_dir / f"{category}.yaml"
         if dest.exists():
             rp.load_proposals(proposals_dir, categories, **_reader_strictness())
             print(f"⏭️  proposals/{category}.yaml already present and valid -- reader not re-run.")
+            continue
+        if refold_off is not None:
+            _write_skipped_reading(category, run_id, run_dir, refold_off)
+            print(f"⏭️  [D-122] {category} reader skipped by rule {refold_off['rule']} "
+                  f"(no model call).")
+            rp.load_proposals(proposals_dir, categories, **_reader_strictness())
             continue
         if analyst:
             if category in lens_of:
@@ -6106,6 +6113,23 @@ def _skip_reader_by_rule(category: str, run_id: str, run_dir: Path) -> bool:
     print(f"⏭️  [E-068] {category} reader skipped by rule {skip['rule']} (no model call): "
           f"{skip['reason']}")
     return True
+
+
+REFOLD_BRIEF_KEY = "refold"  # D-122: research_brief.yaml {source_run, fold, readers}
+
+
+def _refold_readers_off(run_dir: Path) -> dict | None:
+    """D-122: the skip record ({rule, reason}) every reader of this run gets when its
+    brief is an operator re-run (run_campaign.py refold) launched without --readers
+    (`refold.readers: false`); None for any other brief (nothing else is read)."""
+    p = Path(run_dir) / "artifacts" / "research_brief.yaml"
+    brief = (load_yaml(p) or {}) if p.exists() else {}
+    refold = brief.get(REFOLD_BRIEF_KEY) if isinstance(brief, dict) else None
+    if not isinstance(refold, dict) or refold.get("readers") is not False:
+        return None
+    return {"rule": _reader_findings_module().SKIP_REFOLD_READERS_OFF,
+            "reason": (f"operator re-run of {refold.get('source_run')} on fold "
+                       f"{refold.get('fold')} (run_campaign.py refold) without --readers")}
 
 
 def _write_skipped_reading(category: str, run_id: str, run_dir: Path, skip: dict) -> None:

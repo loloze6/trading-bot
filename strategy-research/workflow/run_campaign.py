@@ -5340,6 +5340,127 @@ def _register_from_cli(brief: Path, priority: int, notes: str) -> int:
     return register_hypothesis(brief, priority, notes)
 
 
+# ---------------------------------------------------------------------------
+# D-122 (operator decision 2026-10-13, ruling 2 item 4): the fold re-run command
+# ---------------------------------------------------------------------------
+
+REFOLD_BRIEFS_DIR = "briefs"
+REFOLD_HELP = (
+    "D-122: write a brief that re-runs a finished run's authored base config, unchanged, on "
+    "another fold, and register it ready (launch it with --once). The config "
+    "(runs/<run>/artifacts/backtest_spec.yaml) and block manifest go into the brief as an "
+    "exact config (D-110; step 1b is written by code under orchestrator.exact_config_1b). "
+    "Venue, product, symbols and timeframe come from the source run's brief and "
+    "pre-registration; machine_constraints.protocol is moved onto the fold the way "
+    "decide-next moves a fold child (decide_next.fold_protocol). Criteria: --criteria, else "
+    "the source run's menu criteria (D-121 field; needs orchestrator.brief_criteria), else "
+    "step 1a picks. Readers are off unless --readers: each reading is a code-written skip "
+    "(rule operator_refold_readers_off). The entry is registered without brief_status, so "
+    "decide-next never asks step 1a for more of this brief. Only the existing checks apply: "
+    "the same config on the same fold is refused as a repeat by the exact-match check "
+    "(orchestrator.variant_anti_adjacency_gate: the run ends completed_no_new_hypothesis, no "
+    "backtest, no trial row); fold D needs orchestrator.folds; a fold inside the holdout is "
+    "refused by config/folds.yaml's own check. Every backtested re-run gets its trial row.")
+
+
+def _criteria_arg(text: str) -> list:
+    """--criteria "a, b" -> ["a", "b"] (menu ids; the menu lint checks them at launch)."""
+    return [c.strip() for c in text.split(",") if c.strip()]
+
+
+def refold_brief(run_id: str, fold: str, *, criteria=None, readers: bool = False) -> tuple:
+    """(rel_path, text) of the re-run brief for `run_id` on `fold` (pure; writes nothing).
+    Raises ValueError, naming the missing piece, when the source run cannot be re-run."""
+    import decide_next as dn
+    fold = research_folds.check_fold_id(fold)
+    arts = ROOT / "runs" / run_id / "artifacts"
+    need = {"research_brief": arts / "research_brief.yaml",
+            "pre_registration": arts / "pre_registration.yaml",
+            "backtest_spec": arts / "backtest_spec.yaml",
+            "block_manifest": arts / "block_manifest.yaml"}
+    missing = [str(p.relative_to(ROOT)) for p in need.values() if not p.exists()]
+    if missing:
+        raise ValueError(f"refold {run_id}: missing {missing}; only a run whose step 1b wrote "
+                         f"its config and manifest can be re-run")
+    src_brief = orch.load_yaml(need["research_brief"]) or {}
+    pre_reg = orch.load_yaml(need["pre_registration"]) or {}
+    config = (orch.load_yaml(need["backtest_spec"]) or {}).get("config")
+    manifest = orch.load_yaml(need["block_manifest"])
+    if not isinstance(config, dict) or not isinstance(manifest, dict):
+        raise ValueError(f"refold {run_id}: backtest_spec.yaml has no config, or "
+                         f"block_manifest.yaml is not a mapping")
+    mc = copy.deepcopy(pre_reg.get("machine_constraints") or {})
+    mc.pop("pass_rule", None)
+    proto = mc.get("protocol")
+    if not isinstance(proto, dict):
+        raise ValueError(f"refold {run_id}: pre_registration.yaml has no generated "
+                         f"machine_constraints.protocol to move onto fold {fold}")
+    doc = research_folds.load_folds(ROOT / "config" / "folds.yaml",
+                                    policy_path=orch._DATA_POLICY_PATH)
+    mc["protocol"] = dn.fold_protocol(proto, doc, fold)
+    front = {k: src_brief.get(k) for k in ("strategy_domain", "market_universe", "timeframe",
+                                           "venue", "product")}
+    labels = ", ".join(b["label"] for b in doc["folds"][fold])
+    front["research_goal"] = (
+        f"Re-run of {run_id}'s authored base config, unchanged, on fold {fold} ({labels}; "
+        f"config/folds.yaml), by the operator's refold command (D-122). Source goal: "
+        + " ".join(str(src_brief.get("research_goal") or "").split()))
+    front["constraints"] = [
+        f"{orch.BRIEF_EXACT_CONFIG_PREFIX}: {run_id}'s authored base config "
+        f"(runs/{run_id}/artifacts/backtest_spec.yaml), unchanged.\n"
+        + json.dumps(config, indent=2),
+        f"{orch.BRIEF_EXACT_MANIFEST_PREFIX}: {run_id}'s block manifest "
+        f"(runs/{run_id}/artifacts/block_manifest.yaml), unchanged.\n"
+        + json.dumps(manifest, indent=2)]
+    if criteria:
+        crit = [{"id": c} for c in criteria]
+        crit_from = "--criteria"
+    else:
+        menu_p = ROOT / "config" / "criterion_menu.yaml"
+        crit = dn._criteria_for_child(pre_reg.get("pass_rule"),
+                                      (orch.load_yaml(menu_p) if menu_p.exists() else {}) or {})
+        crit_from = f"{run_id}'s criteria"
+    if crit:
+        front["evaluation"] = {"pass_rule": {"criteria": crit}}
+    else:
+        front["criteria_from"] = orch.PASS_RULE_PENDING_AT_1A
+    front["machine_constraints"] = mc
+    front[orch.REFOLD_BRIEF_KEY] = {"source_run": run_id, "fold": fold, "readers": bool(readers)}
+    rel = f"{REFOLD_BRIEFS_DIR}/refold_{run_id}_fold_{fold}.md"
+    text = ("---\n" + yaml.safe_dump(front, sort_keys=False, allow_unicode=True) + "---\n\n"
+            f"# Refold: {run_id} on fold {fold}\n\n"
+            f"Written by `run_campaign.py refold` (D-122). The base config and block manifest "
+            f"are {run_id}'s, unchanged (constraints). Criteria: "
+            + (f"{crit_from} (evaluation.pass_rule, D-121). " if crit else
+               "none given and none copyable, so step 1a picks them (criteria_from). ")
+            + ("Readers on (--readers). " if readers else
+               "Readers off: every reading is a code-written skip. ")
+            + "Registered without brief_status: decide-next never asks step 1a for more of "
+            "this brief.\n")
+    return rel, text
+
+
+def _refold_from_cli(run_id: str, fold: str, criteria, readers: bool, priority: int) -> int:
+    """The `refold` sub-command: write the re-run brief and register it ready."""
+    try:
+        rel, text = refold_brief(run_id, fold, criteria=criteria, readers=readers)
+    except ValueError as err:  # research_folds.FoldsError is a ValueError
+        _log(f"REFOLD REFUSED: {err}")
+        return 1
+    path = ROOT / rel
+    if path.exists():
+        _log(f"REFOLD REFUSED: {rel} already exists (one re-run brief per run and fold).")
+        return 1
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    rc = register_hypothesis(path, priority,
+                             f"Refold of {run_id} on fold {fold} (D-122); readers "
+                             f"{'on' if readers else 'off'}.")
+    if rc != 0:
+        path.unlink()
+    return rc
+
+
 def run_forever(once: bool = False):
     while True:
         keep_going = process_once()
@@ -5516,6 +5637,17 @@ if __name__ == "__main__":
                                   help="Queue priority (lower sorts first, matching _select_entry).")
     register_parser.add_argument("--notes", required=True,
                                   help="One-line-or-more notes recorded on the queue entry.")
+    refold_parser = subparsers.add_parser("refold", help=REFOLD_HELP, description=REFOLD_HELP)
+    refold_parser.add_argument("--run", required=True, help="Source run id, e.g. run_089.")
+    refold_parser.add_argument("--fold", required=True, choices=list(research_folds.ALL_FOLDS),
+                               help="The fold to re-run on (config/folds.yaml).")
+    refold_parser.add_argument("--criteria", type=_criteria_arg,
+                               help="Comma-separated config/criterion_menu.yaml ids (default: "
+                                    "the source run's menu criteria).")
+    refold_parser.add_argument("--readers", action="store_true",
+                               help="Run the specialist readers (default: off).")
+    refold_parser.add_argument("--priority", type=int, default=0,
+                               help="Queue priority (lower sorts first; default 0).")
     args = parser.parse_args()
 
     if Path(".").resolve() != ROOT:
@@ -5526,6 +5658,10 @@ if __name__ == "__main__":
 
     if args.command == "register":
         sys.exit(_register_from_cli(args.brief, args.priority, args.notes))
+
+    if args.command == "refold":
+        sys.exit(_refold_from_cli(args.run, args.fold, args.criteria, args.readers,
+                                  args.priority))
 
     if args.dry_run:
         dry_run_verify()
