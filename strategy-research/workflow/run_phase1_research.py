@@ -11479,10 +11479,19 @@ def _assert_windows_clear_of_validation(windows: list) -> None:
     except _research_folds.FoldsError as exc:
         raise _research_folds.ValidationBoundaryBreach(
             f"{exc}. Refusing to generate windows against an unknown validation period.") from exc
-    _research_folds.assert_windows_clear_of_validation(windows, validation)
+
+    def _fold_d():  # D-115: fold D's exact blocks pass; read only if a window is in 2024-2025
+        try:
+            return _research_folds.load_fold_d_windows(path=ROOT / "config" / "folds.yaml",
+                                                       policy_path=_DATA_POLICY_PATH)
+        except _research_folds.FoldsError as exc:
+            raise _research_folds.ValidationBoundaryBreach(
+                f"{exc}. Refusing a 2024-2025 window against an unreadable folds file.") from exc
+    _research_folds.assert_windows_clear_of_validation(windows, validation, _fold_d)
 
 
-def _protocol_windows_from_constraints(proto_constraint: dict, start: str, end: str) -> list:
+def _protocol_windows_from_constraints(proto_constraint: dict, start: str, end: str, *,
+                                       folds_enabled=False) -> list:
     """The windows a machine_constraints.protocol generates -- ONE definition,
     shared by `_ensure_protocol_from_constraints` and run_campaign's pre-flight
     (`_expected_generated_protocol`), so the two cannot drift.
@@ -11501,6 +11510,13 @@ def _protocol_windows_from_constraints(proto_constraint: dict, start: str, end: 
         windows = _generate_monthly_windows(
             start, end, window_months=proto_constraint.get("window_months", 1))
     else:
+        # D-115: fold D only under orchestrator.folds.enabled (`folds_enabled`: a bool or a
+        # zero-argument reader, read only for a fold-D brief); flag off, a fold-D brief is
+        # refused with master's message, before anything else is read.
+        if fold == _research_folds.FOLD_D and not (
+                folds_enabled() if callable(folds_enabled) else folds_enabled):
+            raise _research_folds.FoldsError(
+                f"fold {fold!r} is not one of {list(_research_folds.FOLD_ORDER)}")
         _research_folds.check_fold_id(fold)
         windows = _research_folds.load_fold_windows(
             fold, path=ROOT / "config" / "folds.yaml", policy_path=_DATA_POLICY_PATH)
@@ -11551,7 +11567,8 @@ def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: d
     start = min(per_symbol_start.values()) if per_symbol_start else proto_constraint["start"]
     end = proto_constraint["end"]
 
-    windows = _protocol_windows_from_constraints(proto_constraint, start, end)
+    windows = _protocol_windows_from_constraints(proto_constraint, start, end,
+                                                 folds_enabled=folds_enabled)
     # The seal has ONE home. Defaulting to a literal here was a second copy of
     # holdout_range that nothing kept in sync with the policy file, in the very
     # function whose windows have to be checked against it. CUL-339: an

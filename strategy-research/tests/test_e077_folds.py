@@ -76,13 +76,24 @@ def _range(w):
     return (w["test"]["start"], w["test"]["end"])
 
 
-def test_the_real_file_has_three_folds_of_six_exact_blocks():
-    assert DOC["order"] == ["A", "B", "C"]
-    assert {f: len(b) for f, b in DOC["folds"].items()} == {"A": 6, "B": 6, "C": 6}
+@pytest.fixture(autouse=True)
+def _folds_file_in_the_sandbox():
+    """D-115: the generator's guard reads ROOT/config/folds.yaml (fold D's blocks) when a
+    window is in 2024-2025; the real file always exists, the test sandbox gets a copy."""
+    dest = rpr.ROOT / "config" / "folds.yaml"
+    if not dest.exists():
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(REAL_FOLDS, dest)
+
+
+def test_the_real_file_has_three_ordered_folds_and_fold_d_of_six_exact_blocks():
+    assert DOC["order"] == ["A", "B", "C"]  # D-115: fold D is defined but not ordered
+    assert {f: len(b) for f, b in DOC["folds"].items()} == {"A": 6, "B": 6, "C": 6, "D": 6}
     labels = {f: [b["label"] for b in blocks] for f, blocks in DOC["folds"].items()}
     assert labels["A"] == ["2022-01", "2022-05", "2022-09", "2023-01", "2023-05", "2023-09"]
     assert labels["B"] == ["2018-05", "2019-01", "2019-09", "2020-05", "2021-01", "2021-09"]
     assert labels["C"] == ["2018-01", "2018-09", "2019-05", "2020-01", "2020-09", "2021-05"]
+    assert labels["D"] == ["2024-01", "2024-05", "2024-09", "2025-01", "2025-05", "2025-09"]
     ends = {"01": "04-30", "05": "08-31", "09": "12-31"}
     for blocks in DOC["folds"].values():
         for b in blocks:
@@ -91,7 +102,7 @@ def test_the_real_file_has_three_folds_of_six_exact_blocks():
 
 
 def test_the_eighteen_blocks_tile_the_research_period_exactly_once():
-    all_labels = sorted(b["label"] for blocks in DOC["folds"].values() for b in blocks)
+    all_labels = sorted(b["label"] for f in ("A", "B", "C") for b in DOC["folds"][f])
     expected = [f"{y}-{m}" for y in range(2018, 2024) for m in ("01", "05", "09")]
     assert all_labels == expected
 
@@ -121,8 +132,8 @@ def test_every_block_is_inside_research_and_outside_validation_and_holdout_per_t
     v_start, v_end = ranges["validation"]
     assert (v_start, v_end) == ("2024-01-01", "2025-12-31")  # 2024-2025 per CLAUDE.fork.md
     assert r_end < v_start  # research ends before validation starts
-    for blocks in DOC["folds"].values():
-        for b in blocks:
+    for fid in ("A", "B", "C"):  # fold D (2024-2025): tests/test_d115_fold_d.py
+        for b in DOC["folds"][fid]:
             assert r_start <= b["start"] and b["end"] <= r_end
             for name in ("validation", "holdout"):
                 lo, hi = ranges[name]
@@ -490,7 +501,7 @@ def test_without_a_fold_key_the_generator_and_run_context_are_as_before(sandbox_
 
 def test_a_fold_key_with_an_unknown_fold_is_refused(sandbox_folds):
     mc = _child_constraints()
-    mc["protocol"]["fold"] = "D"
+    mc["protocol"]["fold"] = "E"  # D-115: D is a defined fold
     run_dir = _minimal_run(rpr.ROOT, "run_902")
     with pytest.raises(rf.FoldsError, match="not one of"):
         rpr._ensure_protocol_from_constraints(run_dir, "run_902", mc, folds_enabled=True)
@@ -534,7 +545,9 @@ def test_the_memory_file_with_a_fold_validates_against_the_schema(sandbox_folds)
     jsonschema.validate(memory, schema)
     assert memory["runs"]["run_905"]["fold"] == "B"
     assert "fold" not in memory["runs"]["run_906"]            # absent, not null
-    memory["runs"]["run_905"]["fold"] = "D"
+    memory["runs"]["run_905"]["fold"] = "D"   # D-115: a fold-D run records D
+    jsonschema.validate(memory, schema)
+    memory["runs"]["run_905"]["fold"] = "E"
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(memory, schema)
 
@@ -575,9 +588,9 @@ def _gen(start, end, *, flag, months=4, name="run_910", pre_flight=False):
 @pytest.mark.parametrize("pre_flight", [False, True])
 def test_a_2024_window_raises_under_the_flag_in_generation_and_in_the_pre_flight(pre_flight):
     with pytest.raises(rf.ValidationBoundaryBreach, match="validation") as exc:
-        _gen("2023-09-01", "2024-04-30", flag=True, pre_flight=pre_flight)
+        _gen("2024-01-01", "2024-02-29", flag=True, months=1, pre_flight=pre_flight)  # a 1-month tile, not a fold-D block
     assert "2024-01-01..2025-12-31" in str(exc.value)
-    assert "validation stage" in str(exc.value) and "does not exist yet" in str(exc.value)
+    assert "not one of fold D's blocks" in str(exc.value) and "D-115" in str(exc.value)
     assert "2024-01" in str(exc.value)  # names the window
 
 
@@ -588,7 +601,10 @@ def test_a_window_straddling_the_start_of_validation_raises():
 
 def test_a_window_inside_2025_raises_and_the_last_research_day_does_not():
     with pytest.raises(rf.ValidationBoundaryBreach):
-        _gen("2025-05-01", "2025-08-31", flag=True)
+        _gen("2025-05-01", "2025-06-30", flag=True, months=1)  # 1-month tiles: not fold-D blocks
+    # D-115: 2025-05-01..2025-08-31 in one 4-month window IS fold D's 2025-05 block: it passes
+    path = _gen("2025-05-01", "2025-08-31", flag=True, name="run_915")
+    assert json.loads(path.read_text(encoding="utf-8"))["windows"] == [rf.fold_windows(DOC, "D")[4]]
     path = _gen("2023-09-01", "2023-12-31", flag=True, name="run_911")  # ends on the last research day
     assert json.loads(path.read_text(encoding="utf-8"))["windows"][-1]["test"]["end"] == "2023-12-31"
 
@@ -612,8 +628,8 @@ def test_the_launch_preflight_refuses_a_validation_window_only_under_the_flag():
     """Before any LLM call: the pre-flight reads the flag from the caller's one parsed
     reading (folds_enabled), never from the config."""
     constraints = {"protocol": {"symbols": ["BTCUSDT"], "timeframe": "1h", "start": "2023-09-01",
-                                "end": "2024-04-30", "window_months": 4, "promotion": PROMOTION}}
-    refusal, regen = _preflight(constraints, "run_913", True)
+                                "end": "2024-04-30", "window_months": 1, "promotion": PROMOTION}}
+    refusal, regen = _preflight(constraints, "run_913", True)  # D-115: 1-month tiles, not fold D's
     assert regen is None and "validation period" in refusal and "cannot generate a protocol" in refusal
     assert _preflight(constraints, "run_914", False) == (None, None)  # flag off: as today
 
@@ -783,7 +799,7 @@ def test_run_protocol_refuses_a_pinned_or_diagnostic_protocol_in_2024_under_the_
     err = capsys.readouterr().err
     assert code == EXIT_NO_DATA_TOUCHED and stderr_declares_no_data_touched(err)
     assert "overlaps the validation period 2024-01-01..2025-12-31" in err
-    assert "validation stage" in err and "does not exist yet" in err
+    assert "not one of fold D's blocks" in err
     assert calls == [] and not out_dir.exists()
 
 

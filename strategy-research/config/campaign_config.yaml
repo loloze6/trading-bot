@@ -1013,11 +1013,12 @@ orchestrator:
       #    protocol generator, the launch pre-flight (generated AND pinned
       #    protocols, and the protocol a run_context or last_escalation
       #    resolves to), and tools/run_protocol.py, which every backtest passes
-      #    through (it reads this flag from this file). No validation stage
-      #    exists yet, so no run that goes through the orchestrator or
-      #    run_protocol.py may include it; only the future validation stage
-      #    may. (A by-hand backtest that bypasses run_protocol.py is outside
-      #    this guard.)
+      #    through (it reads this flag from this file), except a window that is
+      #    exactly one of fold D's blocks (D-115: no validation stage; fold D =
+      #    2024-2025, outside the automatic order, reached only by the
+      #    operator's re-run command; a brief with `fold: "D"` is generated only
+      #    while this flag is on). (A by-hand backtest that bypasses
+      #    run_protocol.py is outside this guard.)
       #  * `fold` is recorded in run_context.yaml, the campaign memory entry
       #    and the trial rows of a run whose pre-registration carries one.
       #  * E-077 PR-2 (D-087): a reader's side finding carries `vehicle` (required

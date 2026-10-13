@@ -3701,7 +3701,8 @@ def _expected_generated_protocol(generated: dict, run_id: str, *,
     start = min(per_symbol_start.values()) if per_symbol_start else generated["start"]
     # E-077 PR-1 (D-085): the same windows helper generation uses (a `fold` key);
     # `folds_enabled` is the pre-flight's ONE parsed reading (no config read here).
-    windows = orch._protocol_windows_from_constraints(generated, start, generated["end"])
+    windows = orch._protocol_windows_from_constraints(generated, start, generated["end"],
+                                                      folds_enabled=folds_enabled)
     venue_keys: dict = {}
     if run_dir is not None:
         symbols, venue_keys = orch._generated_protocol_venue_keys(run_dir, symbols)

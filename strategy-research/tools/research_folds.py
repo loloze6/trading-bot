@@ -17,8 +17,12 @@ block must stay out of are read from config/campaign_data_policy.yaml
                   end of walk_forward_extension]              (2024-2025, single-use)
   * research  = backward_extension.BTCUSDT_1h, which must end the day before
                 validation starts (checked: a gap or an overlap raises).
-`load_folds` refuses a block outside the research period or inside either
-range; the validation guard (`assert_windows_clear_of_validation`) reads the
+`load_folds` refuses a block of A-C outside the research period or inside either
+range. D-115 (operator decision 2026-10-13): there is no validation stage; fold D
+(six contiguous 4-month blocks of 2024-2025, inside the validation range, outside
+the holdout) is defined in the folds file but is NOT in the automatic order A, B, C
+(decide-next never assigns it); a brief carrying `fold: "D"` is generated only under
+orchestrator.folds.enabled. The validation guard (`assert_windows_clear_of_validation`) reads the
 same validation range. Under orchestrator.folds.enabled the guard runs at every
 place a protocol's windows are fixed or used: the protocol generator, the launch
 pre-flight (generated, pinned and run_context-resolved protocols alike), and
@@ -59,6 +63,11 @@ import novelty as _nov
 FOLDS_PATH = Path(__file__).resolve().parent.parent / "config" / "folds.yaml"
 
 FOLD_ORDER = ("A", "B", "C")
+#: D-115: the fold of the 2024-2025 period, defined in the folds file after A, B, C but
+#: outside the automatic order (FOLD_ORDER): decide-next never assigns it.
+FOLD_D = "D"
+#: Every fold the folds file defines, in file order.
+ALL_FOLDS = FOLD_ORDER + (FOLD_D,)
 BLOCKS_PER_FOLD = 6
 BLOCK_MONTHS = 4
 
@@ -165,11 +174,11 @@ def load_folds(path=None, *, policy_path=None) -> dict:
     if list(doc.get("order") or []) != list(FOLD_ORDER):
         raise FoldsError(f"{p}: order must be exactly {list(FOLD_ORDER)}, got {doc.get('order')!r}")
     raw = doc.get("folds")
-    if not isinstance(raw, dict) or list(raw) != list(FOLD_ORDER):
-        raise FoldsError(f"{p}: folds must hold exactly the keys {list(FOLD_ORDER)} in order")
+    if not isinstance(raw, dict) or list(raw) != list(ALL_FOLDS):  # D-115: D defined, not ordered
+        raise FoldsError(f"{p}: folds must hold exactly the keys {list(ALL_FOLDS)} in order")
     ranges = policy_ranges(policy_path)
     folds, seen = {}, {}
-    for fid in FOLD_ORDER:
+    for fid in ALL_FOLDS:
         blocks = raw[fid]
         if not isinstance(blocks, list) or len(blocks) != BLOCKS_PER_FOLD:
             raise FoldsError(f"{p}: fold {fid} must have exactly {BLOCKS_PER_FOLD} blocks")
@@ -191,11 +200,12 @@ def load_folds(path=None, *, policy_path=None) -> dict:
             if prev is not None and label <= prev:
                 raise FoldsError(f"{p}: fold {fid} blocks must be in ascending order ({prev} then {label})")
             seen[label], prev = fid, label
-            rs, re_ = ranges["research"]
+            home = "validation" if fid == FOLD_D else "research"  # D-115: fold D is 2024-2025
+            rs, re_ = ranges[home]
             if start < rs or end > re_:
-                raise FoldsError(f"{p}: fold {fid} block {label} ({start}..{end}) is outside the research "
+                raise FoldsError(f"{p}: fold {fid} block {label} ({start}..{end}) is outside the {home} "
                                  f"period {rs}..{re_} (read from the data policy)")
-            for name in ("validation", "holdout"):
+            for name in (("holdout",) if fid == FOLD_D else ("validation", "holdout")):
                 if _overlaps((start, end), ranges[name]):
                     raise FoldsError(f"{p}: fold {fid} block {label} ({start}..{end}) overlaps the "
                                      f"{name} period {ranges[name][0]}..{ranges[name][1]}")
@@ -318,26 +328,41 @@ class ValidationBoundaryBreach(ValueError):
     """A generated window would materialise bars inside the validation period."""
 
 
-def assert_windows_clear_of_validation(windows: list, validation_range) -> None:
-    """Refuse any window whose [start, end] overlaps the validation period.
+def assert_windows_clear_of_validation(windows: list, validation_range, fold_d_windows=()) -> None:
+    """Refuse any window whose [start, end] overlaps the validation period, unless it is
+    exactly one of fold D's blocks (D-115: no validation stage; label, start and end
+    must all match).
 
-    No validation stage exists yet, so under orchestrator.folds.enabled this refuses
-    ALWAYS: the 2024-2025 bars are single-use and only the future validation stage
-    may read them. Enforced by the callers listed in the module docstring; this
-    function is the one check they all share (and the one message). `end` is inclusive by day at the engine (D-058), so a window ending
+    `fold_d_windows`: fold D's windows, or a zero-argument function returning them,
+    called only when some window overlaps the period (so a protocol clear of 2024-2025
+    never reads the folds file); () lets nothing through. Enforced by the callers
+    listed in the module docstring; this function is the one check they all share
+    (and the one message). `end` is inclusive by day at the engine (D-058), so a window ending
     on a validation day spends that day. Raises, never clamps (a silently trimmed sweep
     no longer matches what was pre-registered)."""
     v_start, v_end = validation_range
+    allowed = None
     for w in windows:
         label = w.get("label", "?")
         start, end = str(w["test"]["start"])[:10], str(w["test"]["end"])[:10]
-        if _overlaps((start, end), (v_start, v_end)):
+        if not _overlaps((start, end), (v_start, v_end)):
+            continue
+        if allowed is None:
+            blocks = fold_d_windows() if callable(fold_d_windows) else fold_d_windows
+            allowed = {(str(b.get("label")), str(b["test"]["start"])[:10],
+                        str(b["test"]["end"])[:10]) for b in blocks}
+        if (str(label), start, end) not in allowed:
             raise ValidationBoundaryBreach(
                 f"window {label!r} ({start}..{end}) overlaps the validation period "
-                f"{v_start}..{v_end}. The validation period is single-use: only the future "
-                f"validation stage may read it, and that stage does not exist yet, so under "
-                f"orchestrator.folds.enabled no run may include it. Use a fold from "
-                f"config/folds.yaml (research period only), or turn the flag off.")
+                f"{v_start}..{v_end} and is not one of fold D's blocks. D-115: there is no "
+                f"validation stage; under orchestrator.folds.enabled a run may include that "
+                f"period only as fold D's exact blocks (config/folds.yaml). Use a fold's "
+                f"blocks, or turn the flag off.")
+
+
+def load_fold_d_windows(*, path=None, policy_path=None) -> list:
+    """D-115: fold D's windows, for the validation guard's callers."""
+    return load_fold_windows(FOLD_D, path=path, policy_path=policy_path)
 
 
 #: config/campaign_config.yaml, where orchestrator.folds.enabled lives.
@@ -377,7 +402,10 @@ def load_validation_range(policy_path=None) -> tuple:
 # ---------------------------------------------------------------------------
 
 def check_fold_id(fold) -> str:
-    if fold not in FOLD_ORDER:
+    """A fold the folds file defines (D-115: D included, so a fold-D run's memory entry and
+    trial rows record it). Whether a brief may run on fold D is decided by the generator
+    (run_phase1_research._protocol_windows_from_constraints: flag on only)."""
+    if fold not in ALL_FOLDS:
         raise FoldsError(f"fold {fold!r} is not one of {list(FOLD_ORDER)}")
     return fold
 
