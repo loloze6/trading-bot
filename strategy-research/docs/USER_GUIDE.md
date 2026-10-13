@@ -3300,35 +3300,34 @@ leaves it `in_progress`, so the next step retries. The record
 **Folds (E-077 PR-1, D-085, off by default: `orchestrator.folds.enabled`).**
 Off, the child's brief copies the parent's `machine_constraints` (its test
 windows) unchanged, so a child re-tests an idea on the bars where it was
-observed. On, the child gets the windows of the next of three fixed folds
-(`config/folds.yaml`: A = 2022-2023, B and C = interleaved halves of 2018-2021,
-six 4-month blocks each; order A, B, C) that its lineage has not used. The
-lineage is the parent run plus every run named in its memory `hypothesis_id`;
-a fold counts as used when any window of any lineage run overlaps one of its
-blocks (so runs 065-074 are fold A, and a run on other windows has used
-whichever folds it overlaps). The brief's `machine_constraints.protocol` gets
+observed. On, the child gets the windows of a fold drawn at random among the
+fixed folds (`config/folds.yaml`: A = 2022-2023, B and C = interleaved halves of
+2018-2021, D = 2024-2025, six 4-month blocks each) that its source run is not on
+(D-123, operator 2026-10-13, replacing D-085's "next fold its lineage has not
+used" order), keeping only folds the child has data on. A run is on a fold when
+any of its windows overlaps one of its blocks (so runs 065-074 are on fold A).
+The draw is seeded by the candidate id, so the same candidate draws the same
+fold at every decision, and the seed is recorded. The brief's `machine_constraints.protocol` gets
 `fold`, the fold's `start`/`end` and `window_months: 4` (and loses
 `per_symbol_start`); the protocol generator then writes the fold's exact
 windows, and `fold` is recorded in `run_context.yaml`, the memory entry and the
-trial rows. A lineage that used all three, or whose runs' windows cannot be
-read, makes the candidate INFEASIBLE with a reason in the decision record
-(`candidates[].fold_assignment` shows the lineage and the folds each run used);
-the campaign carries on with the other candidates. A candidate whose child has
-no data on the chosen fold (the data-availability gate's layer-1 precheck, no
-network, on the child's symbols and timeframe; a coin listed after the fold's
-blocks start) is INFEASIBLE with `fold_<X>_lacks_data: <coin> <window>: ...`; it
-does not skip to another fold, so the lineage order holds. Aux feeds are checked
-only by the gate itself, later. The same flag makes the protocol generator, the
+trial rows. A source run whose windows cannot be read (`fold_source_unreadable`),
+or with no other fold the child has data on (`no_other_fold`, naming why each was
+left out; the data check is the data-availability gate's layer-1 precheck, no
+network, on the child's symbols and timeframe), makes the candidate INFEASIBLE
+with a reason in the decision record (`candidates[].fold_assignment` shows
+`source_folds`, `drawn_from` and `seed`); the campaign carries on with the other
+candidates. Aux feeds are checked only by the gate itself, later. The same flag makes the protocol generator, the
 launch pre-flight (generated and pinned protocols, and the protocol a
 run_context or last_escalation resolves to) and `tools/run_protocol.py` (which
 every backtest passes through) refuse any window overlapping the validation
 period (the data policy's 2024-2025), except fold D's exact blocks (D-115: there is
-no validation stage; fold D is defined in `config/folds.yaml` outside the automatic
-order, reached only by the operator's re-run command, and a fold-D brief is
-generated only under this flag). Lineage
-reads each run's protocol file; `protocols/run_0xx_generated.json` are untracked
-runtime files, so on a machine without them every reader candidate is
-`fold_lineage_unreadable` (the safe direction: infeasible, never a guessed fold).
+no validation stage; fold D is defined in `config/folds.yaml` outside `order`, in
+decide-next's draw since D-123, and a fold-D brief is generated only under this
+flag). The draw reads the source run's protocol file;
+`protocols/run_0xx_generated.json` are untracked runtime files, so on a machine
+without them every reader candidate is `fold_source_unreadable` (the safe
+direction: infeasible, never a guessed fold).
 A config runs once per fold: the repeat gate's key already holds the
 windows fingerprint. Daily-timeframe ideas have too few trades per block and
 will need confirmation on other coins (not built yet).

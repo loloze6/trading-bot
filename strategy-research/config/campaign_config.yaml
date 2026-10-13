@@ -995,19 +995,20 @@ orchestrator:
       #
       # While true:
       #  * decide-next (tools/decide_next.py) gives a child run the windows of
-      #    the next fold its LINEAGE has not used (config/folds.yaml: three folds
-      #    of six exact 4-month blocks, A = 2022-2023, B and C = 2018-2021;
-      #    order A, B, C), writes `fold` into the child's
-      #    machine_constraints.protocol, and marks a candidate whose lineage has
-      #    used all three folds INFEASIBLE (reason folds_exhausted; the campaign
-      #    goes on with the other candidates). A fold is "used" when any window
-      #    of any lineage run overlaps any block of it (tools/research_folds.py),
-      #    so runs 065-074 count as fold A without a special case.
-      #    A candidate whose child has no data on the chosen fold (layer-1
-      #    coverage of its symbols and timeframe, the data-availability gate's
-      #    own precheck; no network) is INFEASIBLE with reason
-      #    fold_<X>_lacks_data -- it never skips ahead to another fold. Aux
-      #    feeds are not checked here (the gate reads them in layer 2 only).
+      #    a fold DRAWN AT RANDOM among the folds its source run is not on
+      #    (D-123, operator 2026-10-13, replacing D-085's lineage order;
+      #    config/folds.yaml: A = 2022-2023, B and C = 2018-2021, D = 2024-2025,
+      #    six exact 4-month blocks each), keeping only folds the child has data
+      #    on (layer-1 coverage of its symbols and timeframe, the
+      #    data-availability gate's own precheck; no network). The draw is
+      #    seeded by the candidate id (reproducible; the seed is recorded). It
+      #    writes `fold` into the child's machine_constraints.protocol. A run is
+      #    "on" a fold when any of its windows overlaps any block of it
+      #    (tools/research_folds.py), so runs 065-074 are on fold A without a
+      #    special case. No usable other fold (no_other_fold) or unreadable
+      #    source windows (fold_source_unreadable): INFEASIBLE, the campaign
+      #    goes on with the other candidates. Aux feeds are not checked here
+      #    (the gate reads them in layer 2 only).
       #  * every place a protocol's windows are fixed or used REFUSES any window
       #    overlapping the validation period (the data policy's 2024-2025): the
       #    protocol generator, the launch pre-flight (generated AND pinned

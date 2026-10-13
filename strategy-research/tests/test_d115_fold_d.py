@@ -103,21 +103,17 @@ def test_load_folds_needs_the_fold_d_key_and_keeps_order_a_b_c(tmp_path):
         rf.load_folds(_write(tmp_path, {**doc, "order": ["A", "B", "C", "D"]}), policy_path=REAL_POLICY)
 
 
-# -- decide-next: fold order unchanged -----------------------------------------------------
+# -- decide-next: fold D is in the draw since D-123 ----------------------------------------
 
-def test_a_lineage_that_used_a_b_c_is_still_exhausted_never_fold_d():
-    inputs, pid = t77._scenario("run_081", "ROOT__x-run_074-1__y-run_080-1",
-                                {"run_081": t77.FOLD_C, "run_080": t77.FOLD_B,
-                                 "run_074": t77.FOLD_A})
+def test_a_source_on_a_b_and_c_draws_fold_d():
+    inputs, pid = t77._scenario("run_081", "ROOT",
+                                {"run_081": t77.FOLD_A + t77.FOLD_B + t77.FOLD_C})
     cand = t77._cand(t77._decide(inputs, "run_081"), pid)
-    assert cand["fold_assignment"]["fold"] is None
-    assert cand["gates"]["feasibility"]["result"] == "INFEASIBLE"
-    assert any(r.startswith("folds_exhausted") for r in cand["gates"]["feasibility"]["reasons"])
+    assert cand["fold_assignment"]["fold"] == "D" and cand["eligible"]
 
 
-def test_a_2024_run_still_uses_no_fold():
-    """folds_used_by reads the automatic order only, so a 2024 window counts for no fold."""
-    assert rf.folds_used_by(DOC, [("2024-02-01", "2024-02-28")]) == []
+def test_a_2024_run_is_on_fold_d():
+    assert rf.folds_overlapped(DOC, [("2024-02-01", "2024-02-28")]) == ["D"]
 
 
 # -- the generator and the pre-flight ------------------------------------------------------

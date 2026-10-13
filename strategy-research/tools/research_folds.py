@@ -2,10 +2,12 @@
 research_folds -- the three fixed folds of time windows (E-077 PR-1, D-085).
 
 A claim is never confirmed on the bars where it was observed. Each fold is six
-exact 4-month blocks (config/folds.yaml); a child run of an idea backtests on
-the next fold its LINEAGE has not used; a lineage that has used all three is
-refused. Everything here is pure (no wall clock, no market data, no network);
-the only files read are config/folds.yaml and the data policy.
+exact 4-month blocks (config/folds.yaml). D-123 (operator decision 2026-10-13,
+replacing D-085's lineage order): a child run backtests on a fold drawn at random
+among the folds (A, B, C and D) its SOURCE run's windows do not overlap, the draw
+seeded by the child's id so it is reproducible (`draw_fold`). Everything here is
+pure (no wall clock, no market data, no network); the only files read are
+config/folds.yaml and the data policy.
 
 Where the dates come from
 -------------------------
@@ -20,8 +22,8 @@ block must stay out of are read from config/campaign_data_policy.yaml
 `load_folds` refuses a block of A-C outside the research period or inside either
 range. D-115 (operator decision 2026-10-13): there is no validation stage; fold D
 (six contiguous 4-month blocks of 2024-2025, inside the validation range, outside
-the holdout) is defined in the folds file but is NOT in the automatic order A, B, C
-(decide-next never assigns it); a brief carrying `fold: "D"` is generated only under
+the holdout) is defined in the folds file but is NOT in `order` A, B, C; since D-123
+decide-next's draw includes it; a brief carrying `fold: "D"` is generated only under
 orchestrator.folds.enabled. The validation guard (`assert_windows_clear_of_validation`) reads the
 same validation range. Under orchestrator.folds.enabled the guard runs at every
 place a protocol's windows are fixed or used: the protocol generator, the launch
@@ -31,25 +33,20 @@ file such as protocols/baseline_v2.json, a replication_diagnostic run
 (baseline_v1.json) and a last_escalation protocol are refused too, not only
 generated ones.
 
-Lineage and "which fold has a run used"
----------------------------------------
-Lineage of a run = the run itself plus every run named in its memory entry's
-hypothesis_id. decide-next builds a child's hypothesis_id as
-`<parent hypothesis_id>__<category>-<source run>-<n>`, so the chain of source
-runs is spelled out in the id (`lineage_run_ids`).
-
-A fold is USED by a lineage when any window of any lineage run overlaps any
-block of that fold. That single rule covers every case without a special one:
-a run on exactly fold B's blocks used B; run_065..run_074 (the six 4-month
-2022-2023 windows) overlap only fold A's blocks, so they used A; a run on other
-windows (1-month tiles, a different span) used whichever folds it overlaps, and
-a run that overlaps no fold (outside 2018-2023) used none. If a lineage run's
-windows cannot be read, the fold is NOT guessed: the assignment fails with a
-reason (the candidate is infeasible) rather than risk re-using bars.
+Which fold a run is on
+----------------------
+A run is ON a fold when any of its windows overlaps any block of that fold
+(`folds_overlapped`, all four folds): a run on exactly fold B's blocks is on B;
+run_065..run_074 (the six 4-month 2022-2023 windows) are on A; a run on other
+windows is on whichever folds it overlaps (an overlap of one day counts). If the
+source run's windows cannot be read, no fold is drawn: the assignment fails with a
+reason (the candidate is infeasible) rather than risk re-using its bars.
 """
 from __future__ import annotations
 
 import calendar
+import hashlib
+import random
 import re
 from datetime import date, timedelta
 from pathlib import Path
@@ -72,11 +69,10 @@ BLOCKS_PER_FOLD = 6
 BLOCK_MONTHS = 4
 
 _LABEL = re.compile(r"[0-9]{4}-(01|05|09)")
-_PID_SEGMENT = re.compile(r"[a-z][a-z_]*-(run_[0-9]+)-[0-9]+")
 
 
 class FoldsError(ValueError):
-    """config/folds.yaml, the policy ranges, or a lineage is unusable. A refusal, never a default."""
+    """config/folds.yaml or the policy ranges are unusable. A refusal, never a default."""
 
 
 # ---------------------------------------------------------------------------
@@ -246,17 +242,6 @@ def load_fold_windows(fold, *, path=None, policy_path=None) -> list:
 # Lineage and the next fold
 # ---------------------------------------------------------------------------
 
-def lineage_run_ids(run_id: str, hypothesis_id) -> list:
-    """The run itself, then every run named in its hypothesis_id (decide-next writes
-    `<parent id>__<category>-<source run>-<n>` for each generation), first-seen order."""
-    out = [run_id]
-    for seg in str(hypothesis_id or "").split("__"):
-        m = _PID_SEGMENT.fullmatch(seg)
-        if m and m.group(1) not in out:
-            out.append(m.group(1))
-    return out
-
-
 def windows_ranges(windows) -> list:
     """[(start, end), ...] of a protocol's `windows` list, or None when it cannot be read."""
     if not isinstance(windows, list) or not windows:
@@ -273,50 +258,58 @@ def windows_ranges(windows) -> list:
     return out
 
 
-def folds_used_by(doc: dict, ranges) -> list:
-    """The folds (in order) that any of these (start, end) ranges overlaps."""
-    return [fid for fid in doc["order"]
+def folds_overlapped(doc: dict, ranges) -> list:
+    """D-123: every fold of the file (A, B, C, then D) any of these (start, end) ranges
+    overlaps -- the folds a run is on."""
+    return [fid for fid in ALL_FOLDS
             if any(_overlaps(r, (b["start"], b["end"])) for r in ranges for b in doc["folds"][fid])]
 
 
-def assign_fold(doc: dict, *, run_id: str, memory_runs: dict, run_ranges: dict) -> dict:
-    """Which fold a child of `run_id` backtests on.
+def draw_seed(key: str) -> int:
+    """D-123: the draw's seed, derived from `key` (the child's candidate id), so the same
+    candidate draws the same fold at every decision and the draw can be replayed."""
+    return int(hashlib.sha256(str(key).encode("utf-8")).hexdigest()[:16], 16)
 
-    `memory_runs`: campaign memory's `runs` mapping. `run_ranges`: {run_id: [(start, end), ...]
-    or None} -- each memory run's protocol windows (None = unreadable).
 
-    Returns {"fold": "B" | None, "windows_sha256": ... | None, "lineage": [run ids],
-    "used": {run_id: [folds]}, "reason": None | str}. `fold` is the first fold in A, B, C
-    order that no lineage run has used. `reason` is set (and fold None) when the lineage
-    has used all three (`folds_exhausted`) or when some lineage run is missing from memory
-    or has unreadable windows (`fold_lineage_unreadable`) -- the safe direction: never
-    guess a fold when the bars a line has seen are unknown."""
-    entry = memory_runs.get(run_id)
-    lineage = lineage_run_ids(run_id, (entry or {}).get("hypothesis_id"))
-    used, unreadable = {}, []
-    for rid in lineage:
-        if rid not in memory_runs:
-            unreadable.append(f"{rid} (not in campaign memory)")
-            continue
-        ranges = run_ranges.get(rid)
-        if not ranges:
-            unreadable.append(f"{rid} (its protocol windows cannot be read)")
-            continue
-        used[rid] = folds_used_by(doc, ranges)
-    result = {"fold": None, "windows_sha256": None, "lineage": lineage, "used": used, "reason": None}
-    if unreadable:
-        result["reason"] = (f"fold_lineage_unreadable: the lineage of {run_id} ({', '.join(lineage)}) "
-                            f"cannot be placed on the folds: {'; '.join(unreadable)}")
+def draw_fold(doc: dict, *, run_id: str, run_ranges: dict, seed_key: str,
+              usable=None) -> dict:
+    """D-123 (operator decision 2026-10-13): which fold a child of `run_id` backtests on.
+
+    The source run's folds are the folds its windows overlap (`run_ranges[run_id]`);
+    the child's fold is drawn with random.Random(draw_seed(seed_key)) among the other
+    folds of ALL_FOLDS (A, B, C, D), keeping only those `usable(fold)` returns None for
+    (the caller's data check; None = every fold usable).
+
+    Returns {"fold", "windows_sha256", "source_folds", "drawn_from", "seed", "reason"}.
+    `reason` is set (and fold None) when the source run's windows cannot be read
+    (`fold_source_unreadable`) or no other fold is usable (`no_other_fold`, naming why
+    each one was left out) -- never guessed."""
+    seed = draw_seed(seed_key)
+    result = {"fold": None, "windows_sha256": None, "source_folds": None, "drawn_from": [],
+              "seed": seed, "reason": None}
+    ranges = run_ranges.get(run_id)
+    if not ranges:
+        result["reason"] = (f"fold_source_unreadable: {run_id}'s protocol windows cannot be "
+                            f"read, so the fold its claim was found on is unknown")
         return result
-    taken = {f for fs in used.values() for f in fs}
-    for fid in doc["order"]:
-        if fid not in taken:
-            result["fold"] = fid
-            result["windows_sha256"] = fold_windows_sha256(doc, fid)
-            return result
-    result["reason"] = (f"folds_exhausted: the lineage of {run_id} ({', '.join(lineage)}) has used every "
-                        f"fold ({', '.join(doc['order'])}); the next stage for this idea is validation "
-                        f"(single-use), not another child run")
+    source = folds_overlapped(doc, ranges)
+    result["source_folds"] = source
+    left_out = []
+    for fid in ALL_FOLDS:
+        if fid in source:
+            continue
+        why = usable(fid) if usable is not None else None
+        if why:
+            left_out.append(f"{fid}: {why}")
+        else:
+            result["drawn_from"].append(fid)
+    if not result["drawn_from"]:
+        result["reason"] = (f"no_other_fold: {run_id} is on {source or 'no fold'}; no other fold "
+                            f"is usable" + (f" ({'; '.join(left_out)})" if left_out else ""))
+        return result
+    fold = random.Random(seed).choice(result["drawn_from"])
+    result["fold"] = fold
+    result["windows_sha256"] = fold_windows_sha256(doc, fold)
     return result
 
 
