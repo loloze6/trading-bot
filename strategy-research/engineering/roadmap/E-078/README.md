@@ -4,8 +4,9 @@ Ruling 2 item (2), operator decision 2026-10-13. Linear: project E-078.
 
 ## Items
 
-1. **Trade-frequency bar.** Trades ÷ bars in the window ≥ X %. X is set in this epic,
-   not yet decided (see "Open decision" below). It replaces the sample floor that
+1. **Trade-frequency bar.** Trades ÷ bars ≥ 1 %, pooled over all coins and all windows
+   of the run: the sum of every coin-window's `trade_count` ÷ the sum of their daily
+   bars (operator decision 2026-10-14, see "Decision" below). It replaces the sample floor that
    `trade_count_min` gave until D-118 switched it off; until it lands, the operator's
    review reads the trade count (D-118).
 2. **Leave-one-block-out bar.** FAIL if any leave-one-out whole-test Sharpe ≤ 0. A block
@@ -36,7 +37,22 @@ record; it reproduces them.
   `buy_and_hold_sharpe_excess_min` row's `detail.buy_and_hold_sharpe` (D-120).
 - Results: `RESULTS.md` (written by the script's output, copied verbatim).
 
-## Open decision
+## Decision (operator, 2026-10-14)
 
-- X for the trade-frequency bar. Any value chosen now is chosen after seeing lane 1's
-  trade counts; say so in its D-row.
+- The trade-frequency bar is applied pooled over all coins and all windows, with X = 1 %.
+- Chosen AFTER seeing lane 1's trade frequencies (below); its D-row must say so.
+- Lane 1's pooled values, read-only from each run's `protocol_result.yaml` (`core.trade_count`
+  per coin-window, daily bars per window from the protocol's window bounds):
+
+| Run | Signal | Fold | Pooled trades ÷ bars | Lowest coin-window |
+|---|---|---|---|---|
+| run_081 | SMA100 | A | 4.4 % | 0.0 % |
+| run_082 | SMA50 | A | 5.8 % | 0.8 % |
+| run_083 | SMA200 | A | 2.8 % | 0.0 % |
+| run_084 | SMA100 | B | 3.2 % | 0.0 % |
+| run_088 | SMA200 | B | 1.9 % | 0.0 % |
+| run_089 | SMA50 | B | 5.0 % | 0.8 % |
+| run_090 | SMA50 | C | 3.4 % | 1.6 % |
+| run_091 | SMA50 | D | 6.3 % | 0.8 % |
+
+  Under the decision every lane-1 run passes (lowest 1.9 %).
