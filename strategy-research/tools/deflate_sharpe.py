@@ -172,6 +172,14 @@ def deduplicate_trials(records: list[dict]) -> tuple[list[dict], int]:
     `windows_sha256` (not a 64-char lowercase hex digest) raises. Lockstep with
     run_phase1_research._dedupe_trials and _dedup_collapse_target.
 
+    D-124 (operator, 2026-10-13): the key also holds the row's `fold` (written on
+    the trial rows of a run whose pre-registration names a fold, D-085), so the
+    same config backtested on another fold -- an operator re-run (D-122) or the
+    same config carried to a new fold -- is its own trial (N + 1, its own DSR)
+    instead of collapsing onto the first fold's row. A row without the field keys
+    None, so rows written without a fold dedupe exactly as before. A present but
+    non-string or empty `fold` raises. Lockstep with run_phase1_research.
+
     Returns (deduped_list, n_removed).
     """
     # Pre-pass: index every (trial_id, source) present and the reproduces_trial it
@@ -216,7 +224,14 @@ def deduplicate_trials(records: list[dict]) -> tuple[list[dict], int]:
                                  f"a sha256 hex digest (E-062 S2b-3c)")
         else:
             wsha = None
-        key = (fh, coins, wsha, rec.get("source"))
+        if "fold" in rec:
+            fold = rec["fold"]
+            if not (isinstance(fold, str) and fold):
+                raise ValueError(f"trial {rec.get('trial_id')!r}: fold {fold!r} is not a "
+                                 f"non-empty string (D-124)")
+        else:
+            fold = None
+        key = (fh, coins, wsha, fold, rec.get("source"))
         if key in seen_keys:
             n_removed += 1
         else:
