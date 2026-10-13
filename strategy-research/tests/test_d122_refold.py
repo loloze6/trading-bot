@@ -133,7 +133,7 @@ def test_a_source_missing_a_file_it_is_built_from_is_refused(_seed, missing):
 @pytest.mark.parametrize("rule", [None, {"criteria": []}])
 def test_a_source_without_a_pass_rule_is_refused(_seed, rule):
     _source(_seed, rule=rule)
-    with pytest.raises(ValueError, match="no pass_rule"):
+    with pytest.raises(ValueError, match="no menu-shaped pass_rule"):
         camp.refold_brief(SRC, "C")
 
 
@@ -437,3 +437,28 @@ def test_done_records_where_the_refold_ended_and_decides_nothing(campaign_root, 
     assert done.get("verdict_status") == verdict_status
     assert not (run_dir / "artifacts" / "decision_record.yaml").exists()
     assert "DECIDE not run" in (root / "campaign_log.md").read_text(encoding="utf-8")
+
+
+def test_a_legacy_shaped_source_pass_rule_is_refused(_seed):
+    _source(_seed, rule={"criteria": [{"metric": "sharpe", "metric_basis": "legacy"}]})
+    with pytest.raises(ValueError, match="no menu-shaped pass_rule"):
+        camp.refold_brief(SRC, "C")
+
+
+def test_the_cli_refuses_when_1b_or_2_would_call_a_model(_seed):
+    _source(_seed)
+    _set_orchestrator({**FLAGS, "exact_config_1b": {"enabled": False}})
+    assert camp._refold_from_cli(SRC, "C", 0) == 1
+    assert not (_seed / "briefs").exists() and _queue(_seed) == {"queue": []}
+
+
+def test_the_launch_refuses_when_the_source_changed_since_the_brief(_seed):
+    arts = _source(_seed)
+    _register(_seed)
+    changed = t59._base_config(lookback=99)
+    (arts / "backtest_spec.yaml").write_text(yaml.safe_dump({"config": changed}),
+                                             encoding="utf-8")
+    queue = _queue(_seed)
+    with pytest.raises(RuntimeError, match="changed since the brief was written"):
+        camp._launch_run(queue, queue["queue"][-1], "fresh_launch", True, [],
+                         promotion_retired=True)

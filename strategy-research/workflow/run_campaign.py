@@ -4607,7 +4607,7 @@ def process_once() -> bool:
             entry["verdict_status"] = "ungated"
             entry["verdict_status_basis"] = (
                 f"{run_id} is an operator re-run (D-122, branch 3 only): it ended at "
-                f"{entry['outcome']} and no grid verdict is routed on")
+                f"{entry['outcome']}; the grid's idea_status is not its outcome")
         queue, entry, keep_going, decide_msg = _finish_lineage_with_decision(queue, entry, run_id)
     elif decide_next_enabled:
         # E-059 S2a, operator decision 8: the idea's status from the grid, citing
@@ -5406,10 +5406,22 @@ def _refold_source(run_id: str) -> dict:
         raise ValueError(f"refold {run_id}: backtest_spec.yaml has no config, or "
                          f"block_manifest.yaml is not a mapping")
     rule = (src["pre_registration.yaml"] or {}).get("pass_rule")
-    if not (isinstance(rule, dict) and rule.get("criteria")):
-        raise ValueError(f"refold {run_id}: pre_registration.yaml has no pass_rule; the re-run "
-                         f"pre-registers the source's (it is computed, never routed on)")
+    if not (isinstance(rule, dict) and rule.get("criteria") and vce._is_menu_shaped_pass_rule(rule)):
+        raise ValueError(f"refold {run_id}: pre_registration.yaml has no menu-shaped pass_rule; "
+                         f"the re-run pre-registers the source's (computed, never routed on), "
+                         f"and the launch pre-flight accepts only a menu-shaped one")
     return src
+
+
+def _refold_flag_refusal(run_id: str) -> str | None:
+    """Why steps 1b and 2 of a re-run would not be written by code under the current
+    flags (so a model would be called), else None."""
+    missing = [name for name, on in (
+        ("orchestrator.config_direct_authoring", orch._config_direct_authoring_enabled()),
+        ("orchestrator.exact_config_1b", orch._exact_config_1b_enabled()),
+        ("orchestrator.variant_loop off", not orch._variant_loop_enabled())) if not on]
+    return (f"refold {run_id}: steps 1b and 2 are written by code only with {missing}; "
+            f"refusing before any spend (D-122)") if missing else None
 
 
 def refold_brief(run_id: str, fold: str) -> tuple:
@@ -5459,17 +5471,18 @@ def _launch_refold(run_id: str, brief: dict) -> None:
     from the brief's exact config, D-110; step 2 too, D-112), with the source's hypothesis
     card (step 1a skipped, as _launch_queued_card does) and the source's pre-registered
     pass_rule. Raises before any spend when the flags that keep 1b and 2 model-free are
-    not set, or the source changed since the brief was written."""
-    missing = [name for name, on in (
-        ("orchestrator.config_direct_authoring", orch._config_direct_authoring_enabled()),
-        ("orchestrator.exact_config_1b", orch._exact_config_1b_enabled()),
-        ("orchestrator.variant_loop off", not orch._variant_loop_enabled())) if not on]
-    if missing:
-        raise RuntimeError(f"refold {run_id}: steps 1b and 2 are written by code only with "
-                           f"{missing}; refusing before any spend (D-122)")
+    not set, or the source's config or manifest no longer match the brief's."""
+    refusal = _refold_flag_refusal(run_id)
+    if refusal:
+        raise RuntimeError(refusal)
     source = brief[orch.REFOLD_BRIEF_KEY]["source_run"]
     src = _refold_source(source)
     run_dir = ROOT / "runs" / run_id
+    if (orch._brief_exact_config(run_dir) != src["backtest_spec.yaml"]["config"]
+            or orch._brief_exact_manifest(run_dir) != src["block_manifest.yaml"]):
+        raise RuntimeError(f"refold {run_id}: {source}'s config or block manifest changed since "
+                           f"the brief was written; write a new brief (refold) -- refusing "
+                           f"before any spend (D-122)")
     arts = run_dir / "artifacts"
     shutil.copy(ROOT / "runs" / source / "artifacts" / "hypothesis_card.yaml",
                 arts / "hypothesis_card.yaml")
@@ -5487,8 +5500,12 @@ def _refold_from_cli(run_id: str, fold: str, priority: int) -> int:
     """The `refold` sub-command: write the re-run brief and register it ready."""
     try:
         rel, text = refold_brief(run_id, fold)
+        refusal = _refold_flag_refusal(run_id)
     except ValueError as err:  # research_folds.FoldsError is a ValueError
         _log(f"REFOLD REFUSED: {err}")
+        return 1
+    if refusal:
+        _log(f"REFOLD REFUSED: {refusal}")
         return 1
     path = ROOT / rel
     if path.exists():
@@ -5684,7 +5701,9 @@ if __name__ == "__main__":
     refold_parser.add_argument("--fold", required=True, choices=list(research_folds.ALL_FOLDS),
                                help="The fold to re-run on (config/folds.yaml).")
     refold_parser.add_argument("--priority", type=int, default=0,
-                               help="Queue priority (lower sorts first; default 0).")
+                               help="Queue priority (lower sorts first; default 0). --once "
+                                    "runs an in_progress entry first, else the lowest-priority "
+                                    "ready one: check the queue before launching.")
     args = parser.parse_args()
 
     if Path(".").resolve() != ROOT:
