@@ -83,6 +83,8 @@ REGISTRY_SKIPPED_NOT_VALIDATED = "not_validated"
 REGISTRY_SKIPPED_NO_MANIFEST = "no_manifest"
 # E-060 S3b (guess 11): a composition run -- a composite never registers as a block.
 REGISTRY_SKIPPED_COMPOSITION = "composition"
+# D-122: an operator re-run never registers a block (branch 3 only).
+REGISTRY_SKIPPED_REFOLD = "refold"
 
 # Retired in slice 6c (roadmap v26 card G): no memory entry may carry them.
 RETIRED_FIELDS = frozenset({

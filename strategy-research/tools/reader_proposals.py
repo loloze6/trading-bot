@@ -109,8 +109,8 @@ SKIP_RULES = ("regime_detector_scaffolding", "regime_detector_constant",
               "exploration_inputs_unavailable",
               # E-075 PR-5 (orchestrator.analyst.enabled): a category no analyst lens writes
               "replaced_by_analyst",
-              # D-122: an operator re-run (run_campaign.py refold) launched without --readers
-              "operator_refold_readers_off")
+              # D-122: an operator re-run (run_campaign.py refold) is branch 3 only
+              "operator_refold")
 _SIDE_FINDING_KEYS = frozenset({"proposal_id", "claim", "evidence", "scores", "requires_feed",
                                 "config_change"})
 _V3_PATCH_KEYS = frozenset({"proposal_id", "patch", "evidence", "scores", "requires_feed"})

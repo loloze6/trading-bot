@@ -2674,7 +2674,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
             # so a bug in report-building must never turn an already-
             # successful trial into a recorded failure -- its own try/except,
             # logs loudly, never re-raises.
-            if _category_reports_enabled():
+            if _category_reports_enabled() and refold_of(RUN_DIR) is None:  # D-122: none on a re-run
                 try:
                     _br_tools_path = str(Path(__file__).parent.parent / "tools")
                     if _br_tools_path not in sys.path:
@@ -6042,7 +6042,7 @@ def _run_specialist_readers(run_id: str, run_dir: Path, stage_attempt=0) -> dict
     analyst = _analyst_enabled()     # E-075 PR-5 (D-092): the analyst replaces the readers
     lens_of = ({cat: lens for lens, cat in _analyst_session_module().LENS_CATEGORY.items()}
                if analyst else {})
-    refold_off = _refold_readers_off(run_dir)  # D-122: None unless a refold brief without --readers
+    refold_off = _refold_readers_off(run_dir)  # D-122: None unless an operator re-run
     for category in categories:
         dest = proposals_dir / f"{category}.yaml"
         if dest.exists():
@@ -6115,21 +6115,32 @@ def _skip_reader_by_rule(category: str, run_id: str, run_dir: Path) -> bool:
     return True
 
 
-REFOLD_BRIEF_KEY = "refold"  # D-122: research_brief.yaml {source_run, fold, readers}
+REFOLD_BRIEF_KEY = "refold"  # D-122: research_brief.yaml {source_run, fold}
+# D-122: where an operator re-run ends when no variant passed every profit bar (or after
+# the operator's `continue` at the profit_bars_reached stop): a non-verdict terminal.
+REFOLD_TERMINAL = "completed_refold"
 
 
-def _refold_readers_off(run_dir: Path) -> dict | None:
-    """D-122: the skip record ({rule, reason}) every reader of this run gets when its
-    brief is an operator re-run (run_campaign.py refold) launched without --readers
-    (`refold.readers: false`); None for any other brief (nothing else is read)."""
+def refold_of(run_dir: Path) -> dict | None:
+    """D-122: research_brief.yaml's `refold` block ({source_run, fold}) when this run is
+    an operator re-run (run_campaign.py refold), else None. A re-run is branch 3 only:
+    no model call, no category reports, no readers, no claim checks, no block
+    registration, no grid route, no campaign review and no decide-next after it."""
     p = Path(run_dir) / "artifacts" / "research_brief.yaml"
     brief = (load_yaml(p) or {}) if p.exists() else {}
     refold = brief.get(REFOLD_BRIEF_KEY) if isinstance(brief, dict) else None
-    if not isinstance(refold, dict) or refold.get("readers") is not False:
+    return refold if isinstance(refold, dict) else None
+
+
+def _refold_readers_off(run_dir: Path) -> dict | None:
+    """D-122: the skip record ({rule, reason}) every reader of an operator re-run gets;
+    None for any other run."""
+    refold = refold_of(run_dir)
+    if refold is None:
         return None
-    return {"rule": _reader_findings_module().SKIP_REFOLD_READERS_OFF,
+    return {"rule": _reader_findings_module().SKIP_OPERATOR_REFOLD,
             "reason": (f"operator re-run of {refold.get('source_run')} on fold "
-                       f"{refold.get('fold')} (run_campaign.py refold) without --readers")}
+                       f"{refold.get('fold')} (run_campaign.py refold): branch 3 only")}
 
 
 def _write_skipped_reading(category: str, run_id: str, run_dir: Path, skip: dict) -> None:
@@ -9992,7 +10003,9 @@ def _run_regroup_record_stage(run_id: str, run_dir: Path,
         entry["registry"] = _br.record_run(
             _block_registry_path(), run_dir, entry, root=ROOT, composition_runs=_comp_on,
             # E-060 S3b (guess 11): a composition run never registers a block.
-            **({"composition_run": True} if _comp_on and _composition_mode(run_dir) else {}))
+            **({"composition_run": True} if _comp_on and _composition_mode(run_dir) else {}),
+            # D-122: an operator re-run never registers a block (branch 3 only).
+            **({"refold_run": True} if refold_of(run_dir) is not None else {}))
         entry["kb_entry_id"] = _kbw.write_kb_entry(
             _KB_PATH, _kbw.build_kb_entry(entry), root=ROOT, recompute_views=_recompute_kb_views)
         # E-068 slice 4 (flag on only): the claim's finding, added AFTER the
@@ -20296,7 +20309,8 @@ def run_loop(run_id: str):
             # composition brief meets the flag off).
             # E-068 slice 2: a run with no claim-test status yet (a queued card
             # launched at 1b) is checked before 1b spends. Warn-only; flag off: no-op.
-            if current_stage == "strategy_config_authoring" and not _skip_agent:
+            if (current_stage == "strategy_config_authoring" and not _skip_agent
+                    and refold_of(RUN_DIR) is None):  # D-122: no claim check on a re-run
                 _claim_gate_before_1b(RUN_DIR, run_id)
             _comp_mode = (current_stage in _COMPOSITION_CODE_STAGES
                           and _composition_mode(RUN_DIR))
@@ -20432,9 +20446,10 @@ def run_loop(run_id: str):
                     RUN_DIR, **({"routing_retired": True} if _vrr_flag else {}))
                 if next_stage == "human_pause":
                     break
-                if next_stage == "innovation_expansion":
+                if next_stage == "innovation_expansion" and refold_of(RUN_DIR) is None:
                     # E-068 3b: can the claim's tests see the accepted block? At most
                     # one claim revision per run. Information only; flag off: no-op.
+                    # D-122: never on an operator re-run (it can call a model).
                     _claim_revision_after_1b(RUN_DIR, run_id)
 
             elif current_stage == "innovation_expansion" and _comp_mode:
@@ -20818,6 +20833,11 @@ def run_loop(run_id: str):
                     # continue -> None (the route below), else a refusal pause.
                     if next_stage is None and _vrr_flag:
                         next_stage = _holdout_unlock_route(RUN_DIR, run_id)
+                # D-122: an operator re-run is branch 3 only -- no grid route and no
+                # campaign review; it ends here (the component-error pause still wins).
+                if (next_stage is None and refold_of(RUN_DIR) is not None
+                        and not _rr_checks["component_errors"]):
+                    next_stage = REFOLD_TERMINAL
                 # Slice 6c S2a: under verdict_routing_retired the grid route ends
                 # the run at completed_<idea_status> (never a pause except the
                 # component-error one, never the holdout).
@@ -20870,7 +20890,7 @@ def run_loop(run_id: str):
             # claim card's tests MEASURED on this attempt's saved bars (effect sizes,
             # "measured, not proven"). Information only: never changes next_stage,
             # never raises; a separate grader, not a grid criterion.
-            if current_stage == "protocol_execution":
+            if current_stage == "protocol_execution" and refold_of(RUN_DIR) is None:
                 _measure_claim_tests_after_backtests(RUN_DIR, run_id)
                 # E-077 PR-2 (D-087): the claim this run was built from, measured on its
                 # own fold. No-op unless orchestrator.folds.enabled.
@@ -20884,7 +20904,7 @@ def run_loop(run_id: str):
             # ("completed"); they are produced only under the flag, so every
             # flag-off run keeps the status it had before.
             update_state(path=RUN_DIR,
-                status=("completed" if next_stage in RETIRED_ROUTING_TERMINALS
+                status=("completed" if next_stage in RETIRED_ROUTING_TERMINALS + (REFOLD_TERMINAL,)
                         else "active" if next_stage != "completed_rejected" else "rejected"),
                 completed_stages=completed,
                 current_stage=current_stage,

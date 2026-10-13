@@ -47,7 +47,7 @@ import reader_proposals as rp  # noqa: E402
 
 (SKIP_REGIME_SCAFFOLDING, SKIP_REGIME_CONSTANT, SKIP_SINGLE_COMPONENT,
  SKIP_OUTPUT_REFUSED, SKIP_EXPLORATION_UNAVAILABLE, SKIP_REPLACED_BY_ANALYST,
- SKIP_REFOLD_READERS_OFF) = rp.SKIP_RULES
+ SKIP_OPERATOR_REFOLD) = rp.SKIP_RULES
 DIGEST_ARTIFACT = "claim_result_digest.yaml"
 READER_SUMMARY_ARTIFACT = "findings_summary_for_readers.yaml"
 # The two files above that could not be written before the readers ran (the

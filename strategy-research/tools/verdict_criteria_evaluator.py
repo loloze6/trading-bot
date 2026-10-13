@@ -115,6 +115,9 @@ _NON_VERDICT_OUTCOME_PREFIXES = ("ungated", "measurement_only", "blocked", "unus
 _NON_VERDICT_OUTCOMES = frozenset({
     "invalidated_artifact",
     "inconclusive",
+    # D-122: an operator re-run ended (branch 3 only; its verdict is the profit bars'
+    # evaluation, never the grid's) -- claims nothing about the hypothesis.
+    "completed_refold",
     # config/campaign_queue.yaml reuses `outcome` for WHERE A LINEAGE GOT TO as
     # well as for what it concluded. A stage name or a lineage-continuation
     # marker asserts nothing about the hypothesis and needs no gate; only a

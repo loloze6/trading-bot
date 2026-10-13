@@ -631,7 +631,7 @@ def test_the_two_seams_are_wired_after_the_backtests():
     assert 'if stage_name == "protocol_execution":\n        _clear_claim_measure_files(RUN_DIR)' \
         in worker
     loop = inspect.getsource(rpr.run_loop)
-    assert ('if current_stage == "protocol_execution":\n'
+    assert ('if current_stage == "protocol_execution" and refold_of(RUN_DIR) is None:\n'
             '                _measure_claim_tests_after_backtests(RUN_DIR, run_id)') in loop
     grid = inspect.getsource(rpr._build_idea_status_artifact)
     assert "claim" not in grid
