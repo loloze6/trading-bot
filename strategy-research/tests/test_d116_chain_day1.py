@@ -160,3 +160,93 @@ def test_the_pipeline_chain_reproduces_d114s_with_day1_sharpe(run_id, monkeypatc
     assert sr == pytest.approx(statistics.mean(rets) / statistics.stdev(rets) * math.sqrt(365),
                                rel=1e-12)
     assert sr == pytest.approx(D114_WITH_DAY1[run_id], abs=5e-7)
+
+
+# ---------------------------------------------------------------------------
+# Review of #406: buy-and-hold alignment, drawdown, overlap, messages, reader edges
+# ---------------------------------------------------------------------------
+
+def _intraday(first: int, n_days: int, start: float, step: float, *, day1_mid: float):
+    """Two bars a day (11:00, 23:00); the first day's 11:00 bar is the first recorded bar."""
+    out, v = {}, start
+    for k in range(n_days):
+        d = _day(first + k)
+        out[datetime(d.year, d.month, d.day, 11)] = day1_mid if k == 0 else v
+        if k > 0:
+            v *= step
+        out[datetime(d.year, d.month, d.day, 23)] = v
+    return out
+
+
+def test_buy_and_hold_starts_at_the_first_recorded_bar_on_intraday_bars():
+    """The strategy's day-1 return runs from its first bar to the anchor close, so does
+    buy-and-hold: on intraday bars its growth gains close(anchor) / close(first bar)."""
+    eq = {"w0": {"X": _intraday(0, 10, 1000.0, 1.001, day1_mid=1000.0)}}
+    px = {"w0": {"X": _intraday(0, 10, 110.0, 1.002, day1_mid=100.0)}}
+    bounds = {"w0": (_day(0), _day(9))}
+    with_d1 = pw.chain_windows(eq, ["X"], bounds, start_values={"w0": {"X": 1000.0}})
+    without = pw.chain_windows(eq, ["X"], bounds)
+    a = pw.chained_buy_and_hold(with_d1, px, {"X": 0}, {"X": 0})
+    b = pw.chained_buy_and_hold(without, px, {"X": 0}, {"X": 0})
+    assert 1 + a["buy_and_hold_gross_return"] == pytest.approx(
+        (1 + b["buy_and_hold_gross_return"]) * (110.0 / 100.0), rel=1e-12)
+
+
+def test_buy_and_hold_is_unchanged_on_daily_bars():
+    wins, bounds, start = _layout()
+    px = {w: {c: {t: 100.0 + i for i, t in enumerate(sorted(wins[w][c]))} for c in ("X", "Y")}
+          for w in wins}
+    a = pw.chained_buy_and_hold(pw.chain_windows(wins, ["X", "Y"], bounds, start_values=start),
+                                px, {"X": 0, "Y": 0}, {"X": 0, "Y": 0})
+    b = pw.chained_buy_and_hold(pw.chain_windows(wins, ["X", "Y"], bounds),
+                                px, {"X": 0, "Y": 0}, {"X": 0, "Y": 0})
+    assert a["buy_and_hold_gross_return"] == b["buy_and_hold_gross_return"]
+
+
+def test_a_later_windows_day1_drop_is_in_the_drawdown():
+    """Flat equity, a 1% day-1 cost on the gap window: the drawdown is that 1%."""
+    wins = {"w0": {"X": _bars(0, [1000.0] * 10)}, "w1": {"X": _bars(20, [990.0] * 10)}}
+    bounds = {"w0": (_day(0), _day(9)), "w1": (_day(20), _day(29))}
+    start = {"w0": {"X": 1000.0}, "w1": {"X": 1000.0}}
+    dd = pw.whole_test_max_drawdown(pw.chain_windows(wins, ["X"], bounds, start_values=start))
+    assert dd["max_drawdown_pct"] == pytest.approx(1.0, rel=1e-12)
+    assert pw.whole_test_max_drawdown(pw.chain_windows(wins, ["X"], bounds))["max_drawdown_pct"] == 0.0
+
+
+def test_an_overlap_window_gets_no_day1_return():
+    wins = {"w0": {"X": _bars(0, [1000.0 + k for k in range(11)])},
+            "w1": {"X": _bars(7, [990.0 + k for k in range(14)])}}
+    bounds = {"w0": (_day(0), _day(10)), "w1": (_day(7), _day(20))}
+    ch = pw.chain_windows(wins, ["X"], bounds, start_values={"w0": {"X": 1000.0}, "w1": {"X": 1000.0}})
+    assert [s["kind"] for s in ch["segments"]] == ["first", "overlap"]
+    assert ch["n_day1_returns"] == 1
+    pw._check_daily_returns(ch["daily_returns"])
+
+
+def test_a_multi_day_step_with_start_values_and_the_coverage_message():
+    """One day missing inside w0 (both coins): two returns lost, the day-1 return kept;
+    below the floor the message says '+ 0'."""
+    wins, bounds, start = _layout()
+    for c in ("X", "Y"):
+        wins["w0"][c] = {t: v for t, v in wins["w0"][c].items() if t.date() != _day(5)}
+    ch = pw.chain_windows(wins, ["X", "Y"], bounds, start_values=start)
+    assert ch["n_multi_day_steps"] == 1 and len(ch["daily_returns"]) == 18 - 2 + 2
+    for c in ("X", "Y"):
+        wins["w1"][c] = {t: v for t, v in wins["w1"][c].items() if t.date().day % 2}
+    with pytest.raises(pdv1.PortfolioNotEvaluable, match=r"daily return\(s\) \+ 0 cover"):
+        pw.chain_windows(wins, ["X", "Y"], bounds, start_values=start)
+
+
+@pytest.mark.parametrize("rows, match", [
+    ("2020-01-02,trend,abc\n", "non-numeric"),
+    ("2020-01-02,trend,0\n", "finite positive"),
+    ("2020-01-01,not_ready,5.0\n2020-01-02,trend,7.0\n", None),
+])
+def test_window_start_value_edges(tmp_path, rows, match):
+    p = tmp_path / "portfolio_states.csv"
+    p.write_text("timestamp,regime,total_portfolio_value\n" + rows, encoding="utf-8")
+    if match:
+        with pytest.raises(ValueError, match=match):
+            pw.window_start_value(p)
+    else:
+        assert pw.window_start_value(p) == 7.0  # lower-case not_ready is skipped too

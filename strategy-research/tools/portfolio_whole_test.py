@@ -537,7 +537,8 @@ def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
     nominal_first_day, nominal_last_day, n_calendar_days (the nominal span),
     n_counted_calendar_days (the coverage denominator), n_gap_days,
     n_gap_links, n_engine_tail_days, n_engine_head_days,
-    engine_gap_days_excluded (sorted dates), n_multi_day_steps, coverage}.
+    engine_gap_days_excluded (sorted dates), n_multi_day_steps, coverage}, plus
+    start_level and n_day1_returns when start_values are given (D-116).
     `segments` is one dict per window in chain order: window, nominal_start,
     nominal_end, effective_start, effective_end, engine_head_days,
     engine_tail_days, anchor, join_day, end_day, kind (first | junction |
@@ -767,7 +768,10 @@ def whole_test_max_drawdown(chain: dict) -> dict:
     drawdown (run_phase1_research._portfolio_profit_metrics, D-020) and the
     engine's bar_equity drawdown, so intraday drops count; D-034 changes only
     the span (whole test instead of worst window), not the basis. The curve
-    starts at the first window's anchor close (level 1.0).
+    starts at the first window's anchor close: level 1.0, or 1 + its day-1
+    return when the chain was built with start values (D-116; the drop from the
+    starting capital to that first point is then not in the drawdown, every
+    later window's day-1 drop is).
 
     Returns {max_drawdown_pct, peak_ts, trough_ts, n_bars}."""
     bars = chain.get("bar_levels") if isinstance(chain, Mapping) else None
@@ -993,6 +997,9 @@ def chained_buy_and_hold(chain: dict, close_windows: Mapping, fee_bps: Mapping,
     Both returns are total compounded returns on the CHAINED LEVEL (S1 Q3):
         strategy_total = final chained level - 1 (its costs are in the equity);
         buy_and_hold_gross = prod over windows of c_w(end) / c_w(join) - 1,
+    (D-116: for a chain built with start values, times, for each first / gap
+    window, the mean over coins of close(anchor close) / close(first recorded
+    bar) -- the same day-1 span as the strategy's day-1 return; 1.0 on daily bars),
     where c_w is the equal-weight close curve normalised at the window anchor
     (equal weight reset at every window start, like the strategy book -- no
     rebalancing cost is charged to buy-and-hold for it, which favours
@@ -1039,6 +1046,17 @@ def chained_buy_and_hold(chain: dict, close_windows: Mapping, fee_bps: Mapping,
                              f"has different common days than its equity series")
         cv = dict(zip(wc["common"], wc["curve"]))
         bh_growth *= cv[seg["end_day"]] / cv[seg["join_day"]]
+        if "start_level" in chain and seg["kind"] in ("first", "gap"):
+            # D-116: the strategy's day-1 return runs from its first recorded bar to
+            # the anchor close, so buy-and-hold does too: mean over coins of
+            # close(anchor close) / close(first recorded bar) -- exactly 1.0 when the
+            # anchor day has a single bar (daily bars).
+            day1 = []
+            for c in coins:
+                bars_c = close_windows[seg["window"]][c]
+                anchor_ts = max(t for t in bars_c if t.date() == seg["anchor"])
+                day1.append(bars_c[anchor_ts] / bars_c[min(bars_c)])
+            bh_growth *= sum(day1) / len(day1)
     # D-116: with day-1 returns the strategy starts from the level before its first fill
     first_level = chain.get("start_level", chain["daily_levels"][0][1])
     final_level = chain["daily_levels"][-1][1]
