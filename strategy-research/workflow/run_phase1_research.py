@@ -2389,7 +2389,9 @@ async def run_tool_worker(stage_name: str, run_id: str):
                         # E-060 S3b: a composition run's profit_bars cells are
                         # graded by branch 3's own function (guess 9).
                         _grid_result = _vce.evaluate_grid(
-                            _grid_inputs, _grid_pre_reg, _brief_for_eval, _menu,
+                            _with_whole_test_sharpe(  # D-121: {} change unless the rule asks
+                                _grid_inputs, RUN_DIR, _vce._find_pass_rule(_grid_pre_reg or {})),
+                            _grid_pre_reg, _brief_for_eval, _menu,
                             composition_runs=True,
                             **({"profit_bars_grader": _profit_bars_grid_grader(RUN_DIR, run_id)}
                                if _composition_mode(RUN_DIR) else {}),
@@ -7080,6 +7082,7 @@ def _ensure_residual_ic_in_pre_registration(run_dir: Path) -> bool:
 
 
 _WHOLE_TEST_SHARPE_METRIC = "whole_test_sharpe"  # D-121: the menu entry's metric
+_WHOLE_TEST_SHARPE_ID = "whole_test_sharpe_positive"  # D-121: the menu entry's id
 
 
 def _with_whole_test_sharpe(per_variant_summaries: dict, run_dir: Path, pass_rule) -> dict:
@@ -7087,11 +7090,13 @@ def _with_whole_test_sharpe(per_variant_summaries: dict, run_dir: Path, pass_rul
     hypothesis_verdict.diagnostics.whole_test_sharpe -- the variant's whole-test Sharpe,
     the ONE definition the profit bar sharpe_min reads (_whole_test_chain over its
     protocol_result, then portfolio_whole_test.whole_test_sharpe); None when it cannot be
-    computed. Only when `pass_rule` has a criterion on that metric: otherwise the
-    summaries are returned as they are (byte-identical)."""
+    computed. Only when `pass_rule` has a criterion on that metric or with that menu id
+    (resolved or not): otherwise the summaries are returned as they are (byte-identical).
+    Used on every grid path (variant loop, composition, single column)."""
     crit = pass_rule.get("criteria") if isinstance(pass_rule, dict) else None
     if not (isinstance(crit, list)
-            and any(isinstance(c, dict) and c.get("metric") == _WHOLE_TEST_SHARPE_METRIC
+            and any(isinstance(c, dict) and (c.get("metric") == _WHOLE_TEST_SHARPE_METRIC
+                                             or c.get("id") == _WHOLE_TEST_SHARPE_ID)
                     for c in crit)):
         return per_variant_summaries
     import copy  # noqa: PLC0415 -- local, as elsewhere in this module
@@ -9260,9 +9265,25 @@ def _decide_next_candidate(run_dir: Path) -> dict | None:
         return None
     brief = load_yaml(path) or {}
     cand = brief.get("candidate") if isinstance(brief, dict) else None
-    if isinstance(cand, dict) and cand.get("criteria_from") == PASS_RULE_PENDING_AT_1A:
+    if isinstance(cand, dict) and (cand.get("criteria_from") == PASS_RULE_PENDING_AT_1A
+                                   or _candidate_keeps_brief_criteria(brief)):
         return cand
     return None
+
+
+def _candidate_keeps_brief_criteria(brief) -> bool:
+    """D-121: a decide-next fold child that carries its source's criteria in the brief's
+    one field (tools/decide_next.candidate_brief under orchestrator.brief_criteria): a
+    `candidate` block with a `source`, no `criteria_from`, and an `evaluation.pass_rule`
+    made of menu ids. It is still a decide-next candidate (same hypothesis_id check, same
+    1a addendum); only its criteria are fixed instead of written at 1a. Never true for a
+    brief decide-next wrote with the flag off (those always carry criteria_from)."""
+    cand = brief.get("candidate") if isinstance(brief, dict) else None
+    return (isinstance(cand, dict) and isinstance(cand.get("source"), dict)
+            and "criteria_from" not in cand
+            and is_menu_id_pass_rule(((brief.get("evaluation") or {})
+                                      if isinstance(brief.get("evaluation"), dict) else {})
+                                     .get("pass_rule")))
 
 
 def _brief_criteria_from_1a(run_dir: Path) -> bool:
@@ -9398,6 +9419,12 @@ def _write_pass_rule_from_card(run_dir: Path, run_id: str, sr_flag: bool) -> boo
             f"{card_path}: hypothesis_id={card.get('hypothesis_id')!r} is not the candidate's "
             f"{expected_hid!r} (research_brief.yaml candidate.source.hypothesis_id; operator "
             f"decision 1: a reader patch is a NEW idea with that id). Refusing before 1b.")
+    if cand is not None and cand.get("criteria_from") != PASS_RULE_PENDING_AT_1A:
+        # D-121: a fold child's criteria were fixed at materialization (the brief's one
+        # field); the card does not rewrite them.
+        if sr_flag:
+            _check_specialist_readers_preflight(run_dir)
+        return True
     menu_path = ROOT / "config" / "criterion_menu.yaml"
     menu = (load_yaml(menu_path) if menu_path.exists() else {}) or {}
     pass_rule = _pass_rule_from_card(card, menu, str(card_path))

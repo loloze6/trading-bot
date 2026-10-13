@@ -139,10 +139,11 @@ def test_a_fold_child_copies_its_sources_criteria_into_the_one_field():
     assert "D-121" in text
 
 
-def test_without_the_flag_the_child_brief_is_byte_identical():
-    _front, a = _fold_child(None, src_rule=SRC_RULE)
-    _front, b = _fold_child(None, src_rule=SRC_RULE)
-    assert a == b and "criteria_from: hypothesis_generation" in a and "evaluation:" not in a
+def test_without_the_menu_a_fold_child_leaves_criteria_to_step_1a():
+    """The campaign passes no menu with the flag off (the wiring test below), so the
+    child brief is the pre-D-121 one."""
+    _front, text = _fold_child(None, src_rule=SRC_RULE)
+    assert "criteria_from: hypothesis_generation" in text and "evaluation:" not in text
 
 
 def test_a_source_without_menu_criteria_leaves_them_to_step_1a():
@@ -244,3 +245,78 @@ def test_the_entry_is_strictly_above_zero(value, result):
     summary = {"hypothesis_verdict": {"diagnostics": {"whole_test_sharpe": value}}}
     grid = vce.evaluate_grid({"base": summary}, {"pass_rule": rule}, {}, MENU)
     assert grid["grid"]["whole_test_sharpe_positive"]["base"]["result"] == result
+
+
+# -- review fixes ---------------------------------------------------------------------------
+
+def test_a_menu_id_rule_with_other_keys_is_refused_not_dropped(_sandbox_by_default):
+    _set_orchestrator(ON)
+    t51._seed_real_menu(_sandbox_by_default)
+    with pytest.raises(ValueError, match=r"carries only `criteria`.*'outcomes'"):
+        camp._materialize_run("run_d121_6", t51._fresh_launch_brief(
+            {"criteria": [{"id": "whole_test_sharpe_positive"}],
+             "outcomes": {"PASS": "promote"}}))
+
+
+def _materialize_fold_child(sandbox, run_id):
+    _set_orchestrator(ON)
+    t51._seed_real_menu(sandbox)
+    brief = t51._fresh_launch_brief({"criteria": [{"id": "whole_test_sharpe_positive"}]})
+    brief["candidate"] = {"source": {"hypothesis_id": "H__p-1", "run_id": "run_074"},
+                          "fold_assignment": {"fold": "B"}}
+    camp._materialize_run(run_id, brief)
+    return camp.ROOT / "runs" / run_id
+
+
+def test_a_fold_child_with_fixed_criteria_is_still_a_decide_next_candidate(_sandbox_by_default):
+    run_dir = _materialize_fold_child(_sandbox_by_default, "run_d121_7")
+    cand = rpr._decide_next_candidate(run_dir)
+    assert cand is not None and cand["source"]["hypothesis_id"] == "H__p-1"
+    before = _pre_reg("run_d121_7")
+    arts = run_dir / "artifacts"
+    (arts / "hypothesis_card.yaml").write_text(yaml.safe_dump(
+        {"hypothesis_id": "H__p-1", "criteria": [{"id": "sign_consistent_by_era",
+                                                  "metric": "net_return_pct"}]}),
+        encoding="utf-8")
+    assert rpr._write_pass_rule_from_card(run_dir, "run_d121_7", False) is True
+    assert _pre_reg("run_d121_7") == before        # the card does not rewrite the criteria
+    (arts / "hypothesis_card.yaml").write_text(yaml.safe_dump({"hypothesis_id": "OTHER"}),
+                                               encoding="utf-8")
+    with pytest.raises(ValueError, match="is not the candidate's"):
+        rpr._write_pass_rule_from_card(run_dir, "run_d121_7", False)
+
+
+def test_a_plain_operator_brief_is_not_a_candidate(_sandbox_by_default):
+    _set_orchestrator(ON)
+    t51._seed_real_menu(_sandbox_by_default)
+    camp._materialize_run("run_d121_8", t51._fresh_launch_brief(
+        {"criteria": [{"id": "whole_test_sharpe_positive"}]}))
+    assert rpr._decide_next_candidate(camp.ROOT / "runs" / "run_d121_8") is None
+
+
+def test_an_unresolved_id_only_rule_still_gets_the_sharpe(tmp_path):
+    run_dir = tmp_path / "run"
+    pr = t62._build(run_dir)
+    t62._write_cost_model()
+    out = rpr._with_whole_test_sharpe({"base": pr}, run_dir,
+                                      {"criteria": [{"id": "whole_test_sharpe_positive"}]})
+    assert "whole_test_sharpe" in out["base"]["hypothesis_verdict"]["diagnostics"]
+
+
+def test_every_grid_call_reads_the_injected_summaries():
+    """Static: each evaluate_grid call in run_tool_worker (variant loop, composition,
+    single column) takes _with_whole_test_sharpe(...) as its first argument."""
+    import inspect
+    import re
+    src = inspect.getsource(rpr.run_tool_worker)
+    calls = re.findall(r"_vce\.evaluate_grid\(\s*(\S+)", src)
+    assert len(calls) == 3 and all(c.startswith("_with_whole_test_sharpe(") for c in calls), calls
+
+
+def test_a_candidate_block_without_a_source_is_not_a_candidate(_sandbox_by_default):
+    _set_orchestrator(ON)
+    t51._seed_real_menu(_sandbox_by_default)
+    brief = t51._fresh_launch_brief({"criteria": [{"id": "whole_test_sharpe_positive"}]})
+    brief["candidate"] = {"fold_assignment": {"fold": "B"}}
+    camp._materialize_run("run_d121_9", brief)
+    assert rpr._decide_next_candidate(camp.ROOT / "runs" / "run_d121_9") is None

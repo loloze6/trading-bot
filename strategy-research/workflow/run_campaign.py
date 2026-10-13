@@ -854,6 +854,12 @@ def _materialize_run(run_id: str, brief: dict, *, promotion_retired: bool = Fals
         # pass_rule: every lint below, as before.
         _brief_menu_rule = (orch._brief_criteria_enabled()
                             and orch.is_menu_id_pass_rule(pre_registration.get("pass_rule")))
+        _extra = (sorted(set(pre_registration["pass_rule"]) - {"criteria"})
+                  if _brief_menu_rule else [])
+        if _extra:  # nothing would read them once resolved: refuse instead of dropping
+            raise ValueError(
+                f"{run_id}: a pass_rule made of menu ids carries only `criteria` (D-121); "
+                f"it also has {_extra}. Drop them, or write legacy criteria instead.")
 
         # B11 (K2 kernel): materialization-time total-mapping lint. Previously
         # a no-op on this path (machine_constraints-only briefs never carried
