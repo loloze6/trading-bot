@@ -789,27 +789,28 @@ flags:
     reader: run_phase1_research._folds_enabled
     owner: Jeremy
     state: off_incomplete
-    blocked_on: "the operator's decision to switch it on (with decide_next, so children take their next fold); a declared output change only for children that decide-next writes after that"
+    blocked_on: "the operator's decision to switch it on (with decide_next, so children take a drawn fold); a declared output change only for children that decide-next writes after that"
     criterion: >
       Landed 2026-10-08 (E-077 PR-1, CUL-419, D-085). Off: byte-identical --
       decide-next copies the parent's machine_constraints (windows) into the
       child's brief as before; the protocol generator accepts what it accepted;
       no artifact gains a `fold` field. On: (1) a child run of an idea gets the
-      windows of the next fold its lineage has not used (config/folds.yaml, three
-      folds of six exact 4-month blocks; A = 2022-2023, B and C = 2018-2021;
-      order A, B, C; lineage = the source-run chain in the memory entry's
-      hypothesis_id; a fold is used when any lineage window overlaps any of its
-      blocks, so runs 065-074 are fold A); a lineage that used all three is
-      INFEASIBLE (folds_exhausted), never a crash; `fold` is written into the
-      child's machine_constraints.protocol, run_context.yaml, the memory entry
-      and the trial rows; a candidate whose child has no layer-1 data on the
-      chosen fold is INFEASIBLE (fold_<X>_lacks_data); (2) the protocol
+      windows of a fold drawn at random among the folds its source run is not on
+      (D-123, operator 2026-10-13, replacing D-085's lineage order;
+      config/folds.yaml, folds of six exact 4-month blocks; A = 2022-2023, B and
+      C = 2018-2021, D = 2024-2025; a run is on a fold when any of its windows
+      overlaps any of its blocks, so runs 065-074 are on fold A), keeping only
+      folds the child has layer-1 data on; the draw is seeded by the candidate id
+      and recorded; no fold left (no_other_fold) or unreadable source windows
+      (fold_source_unreadable) is INFEASIBLE, never a crash; `fold` is written
+      into the child's machine_constraints.protocol, run_context.yaml, the memory
+      entry and the trial rows; (2) the protocol
       generator, the launch pre-flight (generated and pinned protocols, and the
       run_context / last_escalation protocol) and tools/run_protocol.py, which
       every backtest passes through, refuse any window overlapping the
       validation period (the policy's 2024-2025), except fold D's exact blocks
-      (D-115: no validation stage; fold D is outside the automatic order and
-      a fold-D brief is generated only under this flag). Tested by
+      (D-115: no validation stage; fold D is outside `order`, in decide-next's
+      draw since D-123, and a fold-D brief is generated only under this flag). Tested by
       tests/test_e077_folds.py and tests/test_d115_fold_d.py.
       E-077 PR-2 (CUL-421, D-087), same flag, no new one: a side finding's envelope
       (`vehicle` -- required from a model, it IS the config change --, `combines_as`,

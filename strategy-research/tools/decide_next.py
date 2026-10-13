@@ -116,7 +116,7 @@ import campaign_memory as _cm  # tools/ sibling: memory loader + retired-field s
 import json_pointer as _jp  # tools/ sibling: pointer + patch semantics shared with 5a
 import novelty as _nov  # tools/ sibling: the exact-match key shared with the 5a gate (E-036 S2a)
 import reader_proposals as _rp  # tools/ sibling: proposal loader/validator
-import research_folds as _folds  # tools/ sibling: E-077 PR-1 (D-085), the fixed folds + lineage
+import research_folds as _folds  # tools/ sibling: E-077 PR-1 (D-085), the fixed folds; D-123 the fold draw
 
 SCHEMA_VERSION = 1
 ORIGIN_READER = "reader"
@@ -1005,7 +1005,7 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
     `folds` (E-077 PR-1, D-085; the caller passes research_folds.load_folds(...) only
     under orchestrator.folds.enabled): the validated folds document. Then every
     memory run's protocol windows are read (inputs["folds"]["run_ranges"]) so a
-    candidate's child can be given the next fold its lineage has not used. None:
+    candidate's child can be given a fold its source run is not on (D-123). None:
     no such key, nothing more is read, and every candidate is as before.
     `fold_data` (with `folds`; run_phase1_research._fold_data_context): {layer1, precheck,
     first_symbol_only} -- what `_fold_data_reason` needs to refuse a child that has no data on
@@ -1115,7 +1115,7 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
 def _memory_run_ranges(root: Path, memory: dict) -> dict:
     """{run_id: [(start, end), ...] or None} -- the test windows of every memory run's
     protocol (E-077 PR-1). None for a run whose protocol is unnamed, missing or
-    unreadable: the lineage check then refuses rather than guess which bars it saw."""
+    unreadable: the fold draw then refuses rather than guess which bars it saw."""
     out = {}
     for run_id, entry in (memory.get("runs") or {}).items():
         ref = _nov.normalize_ref((entry or {}).get("protocol_ref"))
@@ -1576,7 +1576,8 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
     # E-077 PR-1 (D-085): only under orchestrator.folds.enabled (inputs["folds"]).
     fold_assignment = None
     if inputs.get("folds") is not None:
-        fold_assignment = _fold_assignment_for(run_id, pre_reg, inputs, src.get("research_brief"))
+        fold_assignment = _fold_assignment_for(run_id, pre_reg, inputs, src.get("research_brief"),
+                                               seed_key=pid)
         if fold_assignment["reason"]:
             reasons.append(fold_assignment["reason"])
     fold_sha = (fold_assignment or {}).get("windows_sha256")
@@ -1762,9 +1763,10 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
         "rank": None,
     }
     if fold_assignment is not None:
-        # E-077 PR-1 (D-085): which fold the child gets and why (the lineage it was
-        # read from, and the folds each lineage run used). Only under the flag.
-        cand["fold_assignment"] = {k: fold_assignment[k] for k in ("fold", "lineage", "used")}
+        # D-123: which fold the child gets and why (the folds its source run is on, the
+        # folds it was drawn from, the draw's seed). Only under the flag.
+        cand["fold_assignment"] = {k: fold_assignment[k]
+                                   for k in ("fold", "source_folds", "drawn_from", "seed")}
     warnings = class_name_warnings(p, inputs.get("known_classes"), src.get("card_text"))
     if p["kind"] == _rp.SIDE_FINDING:
         # E-068 slice 5: a repeated spec_hash or a block-kind claim whose tests
@@ -1784,29 +1786,26 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
     return cand
 
 
-def _fold_assignment_for(run_id: str, pre_reg: dict, inputs: dict, brief=None) -> dict:
-    """E-077 PR-1 (D-085): research_folds.assign_fold for a child of `run_id`, plus the
-    two extra refusals that need the source's pre-registration: a source that PINS a
-    protocol file (machine_constraints.protocol_ref) has no generated `protocol` block
-    to put the fold's windows in, so its child cannot take a fold; and a child that has
-    no data on the chosen fold (`_fold_data_reason`) -- INFEASIBLE with
-    `fold_<X>_lacks_data`, the fold stays the one the lineage order gave (no skipping
-    ahead to a fold the data would fit)."""
+def _fold_assignment_for(run_id: str, pre_reg: dict, inputs: dict, brief=None, *,
+                         seed_key: str) -> dict:
+    """D-123 (operator decision 2026-10-13, replacing D-085's lineage order):
+    research_folds.draw_fold for a child of `run_id` -- a fold drawn at random (seeded by
+    `seed_key`, the candidate id) among the folds A-D the source run is not on, keeping
+    only folds the child has data on (`_fold_data_reason`). A source that PINS a protocol
+    file (machine_constraints.protocol_ref) has no generated `protocol` block to put the
+    fold's windows in, so its child cannot take a fold (`fold_needs_generated_protocol`)."""
     f = inputs["folds"]
-    result = _folds.assign_fold(f["doc"], run_id=run_id,
-                                memory_runs=(inputs["memory"].get("runs") or {}),
-                                run_ranges=f["run_ranges"])
     mc = pre_reg.get("machine_constraints")
-    if (result["reason"] is None and isinstance(mc, dict)
-            and not isinstance(mc.get("protocol"), dict)):
+    proto = mc.get("protocol") if isinstance(mc, dict) else None
+    result = _folds.draw_fold(
+        f["doc"], run_id=run_id, run_ranges=f["run_ranges"], seed_key=seed_key,
+        usable=(lambda fold: _fold_data_reason(fold, proto, brief, inputs))
+        if isinstance(proto, dict) else None)
+    if (result["reason"] is None and isinstance(mc, dict) and not isinstance(proto, dict)):
         result.update(fold=None, windows_sha256=None, reason=(
             "fold_needs_generated_protocol: the source pins a protocol file "
             "(machine_constraints.protocol_ref); a fold's windows can only be written into a "
             "generated machine_constraints.protocol block"))
-    if result["reason"] is None and result["fold"] is not None:
-        why = _fold_data_reason(result["fold"], mc.get("protocol"), brief, inputs)
-        if why:
-            result["reason"] = why
     return result
 
 
@@ -2368,9 +2367,9 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str,
     mc.pop("pass_rule", None)  # never inherit criteria (operator decision 2)
     fa = cand.get("fold_assignment")
     if fa is not None:
-        # E-077 PR-1 (D-085), orchestrator.folds.enabled: the child's windows are the next
-        # unused fold's, not the parent's. Only the window-defining keys change; symbols,
-        # timeframe, promotion, holdout, ... are copied as before.
+        # D-123, orchestrator.folds.enabled: the child's windows are its drawn fold's, not
+        # the parent's. Only the window-defining keys change; symbols, timeframe,
+        # promotion, holdout, ... are copied as before.
         fold, proto = fa["fold"], mc.get("protocol")
         if fold is None or not isinstance(proto, dict):
             raise DecideNextError(f"picked candidate {cid!r} has no fold to run on "
@@ -2378,7 +2377,8 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str,
         mc["protocol"] = fold_protocol(proto, inputs["folds"]["doc"], fold)
         front["research_goal"] += (
             f" It backtests on fold {fold} ({', '.join(b['label'] for b in inputs['folds']['doc']['folds'][fold])};"
-            f" config/folds.yaml), the next fold its lineage ({', '.join(fa['lineage'])}) has not used.")
+            f" config/folds.yaml), drawn among the folds its source run {run_id} is not on"
+            f" ({', '.join(fa['drawn_from'])}).")
     front["machine_constraints"] = mc
     source = {
         "origin": ORIGIN_READER,

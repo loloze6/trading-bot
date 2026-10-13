@@ -8,7 +8,7 @@ sections 1 (Q1 gaps a-c), 3 (the noise rule) and 4 (PR-2).
 A claim is never confirmed inside the run that inspired it. A reader (later an
 analyst) proposes a claim with a VEHICLE -- the strategy change its own run
 backtests. If decide-next picks it, the CHILD run backtests the source run's config
-with the vehicle applied, on the next fold its lineage has not used (PR-1, D-085).
+with the vehicle applied, on a fold its source run was not on (D-123; PR-1, D-085).
 After that backtest `confirm_on_fold` measures the claim's tests -- the SOURCE
 proposal's tests, found by the child brief's `candidate.source.proposal_ref` and
 identified by spec_hash -- on the child's saved bars over the child's fold, and
@@ -118,7 +118,7 @@ RULE_TEXT = ("NOISE RULE, not a size rule and no cost comparison: confirmed when
              f"all but at most {WINDOWS_ALLOWED_AGAINST} window(s) of the fold (at least "
              f"{MIN_WINDOWS} windows with a value, else not measurable). About an 11% chance per "
              "fold for a claim with no effect (6 windows), about 1% after two folds; every look is "
-             "counted. Measured on the run built from the claim, on a fold its lineage had not used; "
+             "counted. Measured on the run built from the claim, on a fold its source run was not on; "
              "not proven.")
 
 _REF_RE = re.compile(r"runs/(?P<run>[^/]+)/artifacts/proposals/(?P<cat>[^/]+)\.yaml#(?P<pid>.+)")

@@ -8,11 +8,11 @@ holdout bar):
      from config/campaign_data_policy.yaml), B and C interleaved so each has a
      block in every year of 2018-2021, fold A == the six windows of runs 065-074;
      load_folds refuses every way the file can go wrong.
-  2. decide-next under the flag: a child of a fold-A run gets fold B, of a fold-B
-     run fold C, a lineage that used A, B and C is INFEASIBLE (never an exception,
-     the campaign goes on); an "unfolded" parent (windows matching no fold) gets
-     the first fold its windows do not overlap; an unreadable lineage and a pinned
-     source protocol are refused with a reason, never guessed.
+  2. decide-next under the flag (D-123, replacing D-085's lineage order): a child is
+     drawn, seeded by its candidate id, among the folds A-D its source run is not on
+     and it has data on; a source on every fold is INFEASIBLE (never an exception,
+     the campaign goes on); unreadable source windows and a pinned source protocol
+     are refused with a reason, never guessed.
   3. The child's machine_constraints: window keys replaced, everything else
      copied; the generator turns `fold` into the fold's exact windows, run_context,
      memory entry and trial rows carry it.
@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import copy
 import json
+import random
 import shutil
 import sys
 from pathlib import Path
@@ -263,106 +264,110 @@ def _front(inputs, record):
     return yaml.safe_load(text.split("---", 2)[1])
 
 
-def test_a_child_of_a_fold_a_run_gets_fold_b():
+FOLD_D = rf.windows_ranges(rf.fold_windows(DOC, "D"))
+
+
+def _on_all_but(fold):
+    """Source windows on every fold except `fold`: the draw then has one fold to pick."""
+    return [r for f, rr in (("A", FOLD_A), ("B", FOLD_B), ("C", FOLD_C), ("D", FOLD_D))
+            if f != fold for r in rr]
+
+
+def _drawn(pid, pool):
+    return random.Random(rf.draw_seed(pid)).choice(pool)
+
+
+def test_a_child_is_drawn_among_the_folds_its_source_is_not_on():
     inputs, pid = _scenario("run_074", "ROOT__x-run_070-1", {"run_074": FOLD_A, "run_070": FOLD_A})
     record = _decide(inputs, "run_074")
     cand = _cand(record, pid)
     assert cand["eligible"] and cand["gates"]["feasibility"]["result"] == "FEASIBLE"
-    assert cand["fold_assignment"] == {"fold": "B", "lineage": ["run_074", "run_070"],
-                                       "used": {"run_074": ["A"], "run_070": ["A"]}}
+    fold = _drawn(pid, ["B", "C", "D"])
+    assert cand["fold_assignment"] == {"fold": fold, "source_folds": ["A"],
+                                       "drawn_from": ["B", "C", "D"], "seed": rf.draw_seed(pid)}
     front = _front(inputs, record)
     proto = front["machine_constraints"]["protocol"]
-    assert proto["fold"] == "B"
-    assert (proto["start"], proto["end"]) == ("2018-05-01", "2021-12-31")
-    assert proto["window_months"] == 4
-    assert "fold B" in front["research_goal"] and "2019-01" in front["research_goal"]
+    assert proto["fold"] == fold and proto["window_months"] == 4
+    assert (proto["start"], proto["end"]) == rf.fold_span(DOC, fold)
+    assert f"fold {fold}" in front["research_goal"]
+    assert "run_074 is not on (B, C, D)" in front["research_goal"]
 
 
-def test_a_child_of_a_fold_b_run_gets_fold_c():
-    # run_080 (this lineage's second generation) ran on fold B; its root ran on A
-    inputs, pid = _scenario("run_080", "ROOT__x-run_074-1",
-                            {"run_080": FOLD_B, "run_074": FOLD_A})
-    record = _decide(inputs, "run_080")
-    assert _cand(record, pid)["fold_assignment"]["fold"] == "C"
-    proto = _front(inputs, record)["machine_constraints"]["protocol"]
-    assert proto["fold"] == "C" and (proto["start"], proto["end"]) == ("2018-01-01", "2021-08-31")
+def test_the_draw_is_seeded_by_the_candidate_id_and_reaches_every_other_fold():
+    inputs, pid = _scenario("run_074", "ROOT", {"run_074": FOLD_A})
+    first = _cand(_decide(inputs, "run_074"), pid)["fold_assignment"]
+    again = _cand(_decide(copy.deepcopy(inputs), "run_074"), pid)["fold_assignment"]
+    assert first == again                                   # reproducible
+    drawn = {rf.draw_fold(DOC, run_id="r", run_ranges={"r": FOLD_A}, seed_key=f"k{i}")["fold"]
+             for i in range(60)}
+    assert drawn == {"B", "C", "D"}                          # random among the others, D included
 
 
-def test_the_first_generation_child_skips_a_fold_only_its_own_lineage_used():
-    """The lineage is the source-run chain, not every run in the campaign: a fold used by
-    an unrelated run is still free for this idea."""
-    other = {"run_090": _memory("run_090", "OTHER")}
-    inputs, pid = _scenario("run_074", "ROOT", {"run_074": FOLD_A}, others=other)
-    inputs["folds"]["run_ranges"]["run_090"] = FOLD_B  # unrelated run on B
-    record = _decide(inputs, "run_074")
-    assert _cand(record, pid)["fold_assignment"]["fold"] == "B"
+def test_only_the_source_runs_folds_are_left_out_not_its_ancestors():
+    """run_070 (an ancestor in the hypothesis id) ran on B: B stays in the draw."""
+    inputs, pid = _scenario("run_080", "ROOT__x-run_070-1", {"run_080": FOLD_A, "run_070": FOLD_B})
+    fa = _cand(_decide(inputs, "run_080"), pid)["fold_assignment"]
+    assert fa["source_folds"] == ["A"] and fa["drawn_from"] == ["B", "C", "D"]
 
 
-def test_a_lineage_that_used_all_three_folds_is_infeasible_and_the_campaign_goes_on():
-    inputs, pid = _scenario("run_081", "ROOT__x-run_074-1__y-run_080-1",
-                            {"run_081": FOLD_C, "run_080": FOLD_B, "run_074": FOLD_A})
-    record = _decide(inputs, "run_081")  # must not raise
+def test_a_source_on_fold_d_draws_among_a_b_c():
+    inputs, pid = _scenario("run_081", "ROOT", {"run_081": FOLD_D})
+    fa = _cand(_decide(inputs, "run_081"), pid)["fold_assignment"]
+    assert fa["source_folds"] == ["D"] and fa["drawn_from"] == ["A", "B", "C"]
+
+
+def test_a_source_with_one_fold_left_gets_that_fold():
+    for fold in ("A", "B", "C", "D"):
+        inputs, pid = _scenario("run_082", "ROOT", {"run_082": _on_all_but(fold)})
+        assert _cand(_decide(inputs, "run_082"), pid)["fold_assignment"]["fold"] == fold
+
+
+def test_a_source_on_every_fold_is_infeasible_and_the_campaign_goes_on():
+    inputs, pid = _scenario("run_083", "ROOT", {"run_083": [("2018-01-01", "2025-12-31")]})
+    record = _decide(inputs, "run_083")  # must not raise
     cand = _cand(record, pid)
-    assert not cand["eligible"]
-    feas = cand["gates"]["feasibility"]
-    assert feas["result"] == "INFEASIBLE"
-    assert any(r.startswith("folds_exhausted") and "validation" in r for r in feas["reasons"])
     assert cand["fold_assignment"]["fold"] is None
-    assert record["picked"] is None or "candidate_id" not in record["picked"]
+    assert cand["fold_assignment"]["source_folds"] == ["A", "B", "C", "D"]
+    feas = cand["gates"]["feasibility"]
+    assert feas["result"] == "INFEASIBLE" and any(r.startswith("no_other_fold") for r in feas["reasons"])
     assert record["stop"]["reason"] == "no_eligible_candidate"  # the existing stop, not a crash
 
 
-def test_one_run_covering_all_three_folds_exhausts_the_lineage_by_itself():
-    wide = [("2018-01-01", "2023-12-31")]
-    inputs, pid = _scenario("run_082", "ROOT", {"run_082": wide})
-    cand = _cand(_decide(inputs, "run_082"), pid)
-    assert cand["fold_assignment"]["used"] == {"run_082": ["A", "B", "C"]}
-    assert cand["gates"]["feasibility"]["result"] == "INFEASIBLE"
+def test_runs_065_to_074_are_on_fold_a_without_a_special_case():
+    assert rf.folds_overlapped(DOC, rf.windows_ranges(RUN_074_WINDOWS)) == ["A"]
 
 
-def test_runs_065_to_074_count_as_fold_a_without_a_special_case():
-    rngs = rf.windows_ranges(RUN_074_WINDOWS)
-    assert rf.folds_used_by(DOC, rngs) == ["A"]
-
-
-def test_an_unfolded_parent_gets_the_first_fold_its_windows_do_not_overlap():
-    # 2021 in monthly tiles: overlaps fold B (2021-05) and fold C (2021-01, 2021-09), not A
+def test_an_unfolded_source_draws_among_the_folds_its_windows_do_not_overlap():
+    # 2021 in monthly tiles: overlaps fold B (2021-09) and fold C (2021-05), not A or D
     monthly_2021 = [(f"2021-{m:02d}-01", f"2021-{m:02d}-28") for m in range(1, 13)]
-    inputs, pid = _scenario("run_083", "ROOT", {"run_083": monthly_2021})
-    cand = _cand(_decide(inputs, "run_083"), pid)
-    assert cand["fold_assignment"] == {"fold": "A", "lineage": ["run_083"],
-                                       "used": {"run_083": ["B", "C"]}}
+    inputs, pid = _scenario("run_084", "ROOT", {"run_084": monthly_2021})
+    fa = _cand(_decide(inputs, "run_084"), pid)["fold_assignment"]
+    assert fa["source_folds"] == ["B", "C"] and fa["drawn_from"] == ["A", "D"]
+    assert fa["fold"] == _drawn(pid, ["A", "D"])
 
 
-def test_a_parent_whose_windows_overlap_no_fold_has_used_none():
-    in_validation = [("2024-02-01", "2024-02-28")]  # a legacy run; overlaps no fold
-    inputs, pid = _scenario("run_084", "ROOT", {"run_084": in_validation})
-    cand = _cand(_decide(inputs, "run_084"), pid)
-    assert cand["fold_assignment"]["fold"] == "A" and cand["fold_assignment"]["used"] == {"run_084": []}
+def test_a_source_on_no_fold_draws_among_all_four():
+    inputs, pid = _scenario("run_085", "ROOT", {"run_085": [("2017-03-01", "2017-03-31")]})
+    fa = _cand(_decide(inputs, "run_085"), pid)["fold_assignment"]
+    assert fa["source_folds"] == [] and fa["drawn_from"] == ["A", "B", "C", "D"]
 
 
-def test_an_overlap_of_one_day_counts_as_using_the_fold():
+def test_an_overlap_of_one_day_puts_a_run_on_the_fold():
     one_day = [("2018-04-30", "2018-04-30")]  # last day of fold C's first block
-    assert rf.folds_used_by(DOC, one_day) == ["C"]
-    assert rf.folds_used_by(DOC, [("2018-05-01", "2018-05-01")]) == ["B"]
-    assert rf.folds_used_by(DOC, [("2018-04-30", "2018-05-01")]) == ["B", "C"]
+    assert rf.folds_overlapped(DOC, one_day) == ["C"]
+    assert rf.folds_overlapped(DOC, [("2018-05-01", "2018-05-01")]) == ["B"]
+    assert rf.folds_overlapped(DOC, [("2018-04-30", "2018-05-01")]) == ["B", "C"]
 
 
-def test_a_lineage_run_whose_windows_cannot_be_read_is_refused_not_guessed():
-    inputs, pid = _scenario("run_085", "ROOT__x-run_070-1", {"run_085": FOLD_A, "run_070": None})
-    cand = _cand(_decide(inputs, "run_085"), pid)
-    assert cand["fold_assignment"]["fold"] is None
-    reasons = cand["gates"]["feasibility"]["reasons"]
-    assert any(r.startswith("fold_lineage_unreadable") and "run_070" in r for r in reasons)
-    assert cand["gates"]["feasibility"]["result"] == "INFEASIBLE"
-
-
-def test_a_lineage_run_missing_from_memory_is_refused_not_guessed():
-    inputs, pid = _scenario("run_086", "ROOT__x-run_011-1", {"run_086": FOLD_A})
+@pytest.mark.parametrize("ranges", [None, "absent"])
+def test_a_source_whose_windows_cannot_be_read_is_refused_not_guessed(ranges):
+    lineage = {"run_086": None} if ranges is None else {}
+    inputs, pid = _scenario("run_086", "ROOT", lineage)
     cand = _cand(_decide(inputs, "run_086"), pid)
-    assert cand["fold_assignment"]["fold"] is None
-    assert any("run_011 (not in campaign memory)" in r
-               for r in cand["gates"]["feasibility"]["reasons"])
+    assert cand["fold_assignment"]["fold"] is None and cand["fold_assignment"]["source_folds"] is None
+    reasons = cand["gates"]["feasibility"]["reasons"]
+    assert any(r.startswith("fold_source_unreadable") and "run_086" in r for r in reasons)
+    assert cand["gates"]["feasibility"]["result"] == "INFEASIBLE"
 
 
 def test_a_source_that_pins_a_protocol_file_cannot_take_a_fold():
@@ -371,14 +376,6 @@ def test_a_source_that_pins_a_protocol_file_cannot_take_a_fold():
     assert cand["gates"]["feasibility"]["result"] == "INFEASIBLE"
     assert any(r.startswith("fold_needs_generated_protocol")
                for r in cand["gates"]["feasibility"]["reasons"])
-
-
-def test_lineage_run_ids_reads_the_source_chain_out_of_the_hypothesis_id():
-    assert rf.lineage_run_ids("run_074", "H__trade_efficiency-run_070-1__profitability-run_073-1") \
-        == ["run_074", "run_070", "run_073"]
-    assert rf.lineage_run_ids("run_070", "HOURLY_SHOCK_REVERSAL") == ["run_070"]
-    assert rf.lineage_run_ids("run_070", None) == ["run_070"]
-    assert rf.lineage_run_ids("run_074", "H__a-run_074-1") == ["run_074"]  # no duplicate
 
 
 def test_the_child_keeps_every_other_part_of_the_parents_machine_constraints():
@@ -429,7 +426,7 @@ def test_the_novelty_key_differs_across_folds_and_matches_within_one(tmp_path):
 def _repeat_scenario(prior_fold_ranges, prior_windows_sha):
     """run_074 (on fold A) proposed a patch; a DIFFERENT run, run_090, already ran that exact
     patched config on the windows `prior_windows_sha`."""
-    inputs, pid = _scenario("run_074", "ROOT", {"run_074": FOLD_A})
+    inputs, pid = _scenario("run_074", "ROOT", {"run_074": _on_all_but("B")})
     src = inputs["runs"]["run_074"]
     _, patched, _ = dn.resolve_patch(t59._patch(pid), src["base_config"])
     prior = _memory("run_090", "OTHER", fh=dn.config_sha256(patched), symbols=("BTCUSDT",))
@@ -467,8 +464,7 @@ def sandbox_folds():
 
 
 def _child_constraints(fold="B"):
-    inputs, pid = _scenario("run_074", "ROOT__x-run_070-1" if fold == "B" else "ROOT",
-                            {"run_074": FOLD_A, "run_070": FOLD_A} if fold == "B" else {"run_074": FOLD_A})
+    inputs, pid = _scenario("run_074", "ROOT", {"run_074": _on_all_but(fold)})
     record = _decide(inputs, "run_074")
     return _front(inputs, record)["machine_constraints"]
 
@@ -564,11 +560,14 @@ def test_decision_record_schema_accepts_the_fold_assignment():
     schema = json.loads((SR_ROOT / "workflow_artifacts" / "schemas" /
                          "decision_record.schema.json").read_text(encoding="utf-8"))
     sub = schema["$defs"]["candidate"]["properties"]["fold_assignment"]
-    ok = {"fold": "B", "lineage": ["run_074"], "used": {"run_074": ["A"]}}
+    ok = {"fold": "D", "source_folds": ["A"], "drawn_from": ["B", "C", "D"], "seed": 7}
     jsonschema.validate(ok, sub)
-    jsonschema.validate({**ok, "fold": None}, sub)
-    with pytest.raises(jsonschema.ValidationError):
-        jsonschema.validate({**ok, "fold": "Z"}, sub)
+    jsonschema.validate({**ok, "fold": None, "source_folds": None, "drawn_from": []}, sub)
+    # a record written before D-123 (D-085's shape) still validates
+    jsonschema.validate({"fold": "B", "lineage": ["run_074"], "used": {"run_074": ["A"]}}, sub)
+    for bad in ({**ok, "fold": "Z"}, {**ok, "drawn_from": ["E"]}, {**ok, "extra": 1}):
+        with pytest.raises(jsonschema.ValidationError):
+            jsonschema.validate(bad, sub)
 
 
 # ---------------------------------------------------------------------------
@@ -909,21 +908,30 @@ def _proto(symbols):
 
 
 def test_a_coin_listed_after_the_folds_blocks_is_infeasible_with_the_reason():
-    """SOL starts 2021-06; its lineage used A, so the next fold is B (blocks in 2018-2021)."""
-    inputs, pid = _scenario("run_074", "ROOT", {"run_074": FOLD_A}, protocol=_proto(["SOLUSDT"]))
+    """SOL starts 2021-06; its source is on every fold but B (blocks in 2018-2021), so
+    no fold is left to draw: infeasible, naming why B was left out."""
+    inputs, pid = _scenario("run_074", "ROOT", {"run_074": _on_all_but("B")},
+                            protocol=_proto(["SOLUSDT"]))
     record = _decide(_with_data(inputs), "run_074")
     cand = _cand(record, pid)
     feas = cand["gates"]["feasibility"]
     assert not cand["eligible"] and feas["result"] == "INFEASIBLE"
-    why = [r for r in feas["reasons"] if r.startswith("fold_B_lacks_data")]
-    assert len(why) == 1 and "SOLUSDT 2018-05" in why[0] and "+" in why[0]
-    # the lineage order holds: it did not skip ahead to C, and the campaign did not crash
-    assert cand["fold_assignment"]["fold"] == "B"
+    why = [r for r in feas["reasons"] if r.startswith("no_other_fold")]
+    assert len(why) == 1 and "B: fold_B_lacks_data" in why[0] and "SOLUSDT 2018-05" in why[0]
+    assert cand["fold_assignment"]["fold"] is None and cand["fold_assignment"]["drawn_from"] == []
     assert record["stop"]["reason"] == "no_eligible_candidate"
 
 
+def test_a_fold_without_data_is_left_out_of_the_draw():
+    """SOL on a fold-A source: B and C lack data (2018-2021), so the draw is D only."""
+    inputs, pid = _scenario("run_074", "ROOT", {"run_074": FOLD_A}, protocol=_proto(["SOLUSDT"]))
+    fa = _cand(_decide(_with_data(inputs), "run_074"), pid)["fold_assignment"]
+    assert fa["drawn_from"] == ["D"] and fa["fold"] == "D"
+
+
 def test_a_coin_with_full_coverage_is_runnable_on_the_fold():
-    inputs, pid = _scenario("run_074", "ROOT", {"run_074": FOLD_A}, protocol=_proto(["BTCUSDT"]))
+    inputs, pid = _scenario("run_074", "ROOT", {"run_074": _on_all_but("B")},
+                            protocol=_proto(["BTCUSDT"]))
     cand = _cand(_decide(_with_data(inputs), "run_074"), pid)
     assert cand["eligible"] and cand["gates"]["feasibility"]["result"] == "FEASIBLE"
     assert cand["fold_assignment"]["fold"] == "B"
@@ -931,17 +939,19 @@ def test_a_coin_with_full_coverage_is_runnable_on_the_fold():
 
 def test_only_the_first_symbol_counts_under_the_variant_loop_and_all_symbols_otherwise():
     protocol = _proto(["BTCUSDT", "SOLUSDT"])
-    inputs, pid = _scenario("run_074", "ROOT", {"run_074": FOLD_A}, protocol=protocol)
+    only_b = {"run_074": _on_all_but("B")}
+    inputs, pid = _scenario("run_074", "ROOT", only_b, protocol=protocol)
     assert not _cand(_decide(_with_data(inputs), "run_074"), pid)["eligible"]
-    inputs, pid = _scenario("run_074", "ROOT", {"run_074": FOLD_A}, protocol=protocol)
+    inputs, pid = _scenario("run_074", "ROOT", only_b, protocol=protocol)
     assert _cand(_decide(_with_data(inputs, first_symbol_only=True), "run_074"), pid)["eligible"]
     swapped = _proto(["SOLUSDT", "BTCUSDT"])           # the first symbol is the one that lacks data
-    inputs, pid = _scenario("run_074", "ROOT", {"run_074": FOLD_A}, protocol=swapped)
+    inputs, pid = _scenario("run_074", "ROOT", only_b, protocol=swapped)
     assert not _cand(_decide(_with_data(inputs, first_symbol_only=True), "run_074"), pid)["eligible"]
 
 
 def test_a_coin_listed_in_2021_is_not_blocked_on_fold_a():
-    """Fold A is 2022-2023: SOL exists for all of it (a first-generation child of an unfolded line)."""
+    """Fold A is 2022-2023: SOL exists for all of it. A 2024 source is on D, and B and C
+    lack SOL data, so A is the only fold left."""
     inputs, pid = _scenario("run_074", "ROOT", {"run_074": [("2024-06-01", "2024-06-30")]},
                             protocol=_proto(["SOLUSDT"]))
     cand = _cand(_decide(_with_data(inputs), "run_074"), pid)
@@ -949,13 +959,14 @@ def test_a_coin_listed_in_2021_is_not_blocked_on_fold_a():
 
 
 def test_the_data_check_never_raises_and_is_off_without_a_context():
-    inputs, pid = _scenario("run_074", "ROOT", {"run_074": FOLD_A}, protocol=_proto(["SOLUSDT"]))
-    cand = _cand(_decide(inputs, "run_074"), pid)           # no "data" key: as before this fix
+    only_b = {"run_074": _on_all_but("B")}
+    inputs, pid = _scenario("run_074", "ROOT", only_b, protocol=_proto(["SOLUSDT"]))
+    cand = _cand(_decide(inputs, "run_074"), pid)           # no "data" key: no data check
     assert cand["eligible"]
-    bad = _with_data(_scenario("run_074", "ROOT", {"run_074": FOLD_A}, protocol=_proto(["SOLUSDT"]))[0])
+    bad = _with_data(_scenario("run_074", "ROOT", only_b, protocol=_proto(["SOLUSDT"]))[0])
     bad["folds"]["data"]["precheck"] = lambda *a, **k: 1 / 0
     reasons = _cand(_decide(bad, "run_074"), pid)["gates"]["feasibility"]["reasons"]
-    assert any(r.startswith("fold_B_lacks_data") and "cannot be judged" in r for r in reasons)
+    assert any("fold_B_lacks_data" in r and "cannot be judged" in r for r in reasons)
 
 
 def test_load_inputs_carries_the_fold_data_context_only_when_given(tmp_path):
@@ -977,3 +988,8 @@ def test_the_orchestrators_fold_data_context_is_the_gates_own_precheck():
     ctx = rpr._fold_data_context()
     assert ctx["precheck"] is dag.layer1_price_precheck and "venues" in ctx["layer1"]
     assert isinstance(ctx["first_symbol_only"], bool)
+
+
+def test_draw_fold_refuses_an_empty_window_list_as_unreadable():
+    out = rf.draw_fold(DOC, run_id="r", run_ranges={"r": []}, seed_key="k")
+    assert out["fold"] is None and out["reason"].startswith("fold_source_unreadable")

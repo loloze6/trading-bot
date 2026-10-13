@@ -1,9 +1,10 @@
 # E-077 PR-1 (D-085): the three fixed folds of time windows.
 #
-# A child run of an idea backtests on the NEXT fold its lineage has not used
-# (tools/decide_next.py, only while orchestrator.folds.enabled is true), so an
-# idea is never confirmed on the bars where it was first observed. A line ends
-# after three folds; then comes validation (single-use), then the holdout.
+# D-123 (operator decision 2026-10-13, replacing D-085's lineage order): a child
+# run of an idea backtests on a fold drawn at random among the folds (A, B, C, D)
+# its source run is not on (tools/decide_next.py, only while
+# orchestrator.folds.enabled is true), so an idea is never confirmed on the bars
+# where it was observed.
 #
 # Each fold is six exact 4-month calendar blocks in the shape the protocol
 # generator writes (workflow/run_phase1_research.py::_generate_monthly_windows
@@ -24,13 +25,12 @@
 # `refine` and the variant loop does not run. Chosen on data gaps only, never
 # on a result: no run had backtested either fold.
 #
-# Order of use: A, then B, then C.
+# `order` (A, B, C) is kept for the file's own checks; D-123's draw does not read it.
 #
 # D-115 (operator decision 2026-10-13): there is no validation stage. Fold D is the
 # six contiguous 4-month blocks of 2024-2025 (like A). It is defined here but is
-# NOT in `order`: decide-next never assigns it (a lineage that used A, B and C is
-# still folds_exhausted); it is reached only through the operator's re-run
-# command. tools/research_folds.py::load_folds checks it against the 2024-2025
+# NOT in `order`; since D-123 decide-next's draw includes it, and the operator's
+# re-run command can name it. tools/research_folds.py::load_folds checks it against the 2024-2025
 # period and the holdout. Fold D is not unseen for every idea: earlier runs
 # backtested 2024-2025 windows (see DECISION_LOG D-115).
 version: 1

@@ -4243,13 +4243,13 @@ def _folds_enabled(cfg: dict | None = None) -> bool:
     the child's brief exactly as before, the protocol generator accepts the same
     windows it accepted before, and no artifact gains a `fold` field.
     While true:
-      * decide-next (tools/decide_next.py) gives a child run the windows of the
-        next fold its lineage has not used (config/folds.yaml; three folds of six
-        4-month blocks; A, then B, then C), writes `fold` into the child's
-        machine_constraints.protocol, and refuses (INFEASIBLE, with a reason) a
-        candidate whose lineage has used all three;
+      * decide-next (tools/decide_next.py) gives a child run the windows of a
+        fold drawn at random among the folds (A, B, C, D; config/folds.yaml)
+        its source run is not on and it has data on (D-123), writes `fold` into
+        the child's machine_constraints.protocol, and refuses (INFEASIBLE, with
+        a reason) a candidate with no such fold;
       * any window overlapping the validation period (the data policy's
-        2024-2025) is refused -- by the protocol generator, the launch pre-flight
+        2024-2025), except fold D's exact blocks (D-115), is refused -- by the protocol generator, the launch pre-flight
         (generated and pinned protocols alike) and tools/run_protocol.py, which
         every backtest passes through (it reads this flag from the config file) --
         because no validation stage exists yet; see
