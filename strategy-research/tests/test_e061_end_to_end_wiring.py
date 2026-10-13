@@ -974,14 +974,15 @@ def _write_window(res_dir: Path, start: str, prof: dict, *, seed: int,
     t0 = _dt.datetime.fromisoformat(start)
     eq, close = 10000.0, 100.0
     drift = prof["drift_per_day"] / 24.0
-    pl = ["timestamp,regime,postRebalance_total_value" + (",close" if with_close else "")]
+    pl = ["timestamp,regime,postRebalance_total_value,total_portfolio_value"
+          + (",close" if with_close else "")]
     bl = ["timestamp,close,forecast,regime,debug_info.components.rsi.value"]
     for i in range(days * 24):
         ts = (t0 + _dt.timedelta(hours=i)).isoformat()
         regime = "NOT_READY" if i < 5 else ("trending" if (i // 48) % 2 else "mean_reversion")
         eq *= 1.0 + drift + rng.gauss(0.0, prof["noise"] / 5.0)
         f = rng.gauss(0.0, 1.0)
-        pl.append(f"{ts},{regime},{eq:.6f}" + (f",{close:.6f}" if with_close else ""))
+        pl.append(f"{ts},{regime},{eq:.6f},{eq:.6f}" + (f",{close:.6f}" if with_close else ""))
         bl.append(f"{ts},{close:.6f},{f:.6f},{regime},{50 + 10 * f:.4f}")
         close *= 1.0 + 0.001 * f + rng.gauss(0.0, 0.002)
     (res_dir / "portfolio_states.csv").write_text("\n".join(pl) + "\n", encoding="utf-8")

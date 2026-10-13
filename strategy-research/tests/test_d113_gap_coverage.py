@@ -175,6 +175,11 @@ def test_fold_a_stored_chain_rows_recompute_equal(run_id, monkeypatch):
     stored_rows = {r["name"]: r for r in rows if r["name"] in _CHAIN_ROWS}
     assert set(stored_rows) == set(_CHAIN_ROWS)
     bars = {"cost_edge_min_trades": 100}
+    # D-116 adds each window's day-1 return to the chain (a declared change); this test pins
+    # D-113's own claim, so it reads the chain as it was before D-116 (no start values).
+    real_chain = pw.chain_windows
+    monkeypatch.setattr(pw, "chain_windows",
+                        lambda *a, start_values=None, **k: real_chain(*a, **k))
     got = rpr._whole_test_profit_metrics(run_dir, pr, bars)
     for name in _CHAIN_ROWS:
         assert got[name]["actual"] == stored_rows[name]["actual"], name
