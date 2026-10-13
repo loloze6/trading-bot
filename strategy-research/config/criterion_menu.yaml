@@ -104,6 +104,28 @@ criteria:
       magnitude, so it does not depend on which coin or parameter value a
       variant uses (card B's scale-free requirement).
 
+  - id: whole_test_sharpe_positive
+    # D-121 (operator, 2026-10-13): the variant's whole-test Sharpe on the chained
+    # equal-weight curve is strictly above 0 -- ONE definition with the profit bar
+    # sharpe_min: run_phase1_research._whole_test_chain + portfolio_whole_test.
+    # whole_test_sharpe. The grid reads it as a pooled metric that the pipeline
+    # injects into a copy of each variant's summary
+    # (run_phase1_research._with_whole_test_sharpe, hypothesis_verdict.diagnostics.
+    # whole_test_sharpe); None (the chain or the Sharpe not computable, e.g. fewer than
+    # 30 daily returns) reads INCONCLUSIVE.
+    metric: whole_test_sharpe
+    source: pooled
+    comparator: ">"
+    threshold: 0.0
+    card_overridable: []
+    scale_free: true
+    symbol_reducer: null
+    floor: {}
+    basis: >
+      Branch 3's own Sharpe definition (D-036, D-113, D-116, D-118), so a brief that
+      pre-registers "Sharpe > 0" is graded on the same number the profit bar reads.
+      Scale-free: a Sharpe does not depend on position size.
+
   # --- Not yet wired -- placeholder only (dispatch item 5) ---
   #
   # gated_beats_ungated resolves to no field anywhere (grep-checked against

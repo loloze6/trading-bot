@@ -2396,7 +2396,10 @@ async def run_tool_worker(stage_name: str, run_id: str):
                             **_failed_kw, **_cost_bar_grid_kw(), **_zero_trade_grid_kw())  # CUL-415: {} flag off
                     else:
                         _grid_result = _vce.evaluate_grid(
-                            per_variant_summaries, _pre_reg_for_eval or {}, _brief_for_eval, _menu,
+                            _with_whole_test_sharpe(  # D-121: {} change unless the rule asks
+                                per_variant_summaries, RUN_DIR,
+                                _vce._find_pass_rule(_pre_reg_for_eval or {})),
+                            _pre_reg_for_eval or {}, _brief_for_eval, _menu,
                             **_failed_kw, **_cost_bar_grid_kw(), **_zero_trade_grid_kw())  # CUL-415: {} flag off
                     _grid_result["evaluated_at"] = datetime.now(timezone.utc).isoformat()
                     save_yaml(ARTIFACTS / "grid_evaluation.yaml", _grid_result)
@@ -2633,7 +2636,9 @@ async def run_tool_worker(stage_name: str, run_id: str):
                         _menu_path = ROOT / "config" / "criterion_menu.yaml"
                         _menu = load_yaml(_menu_path) if _menu_path.exists() else {}
                         _grid_result = _vce.evaluate_grid(
-                            {run_id: summary}, _pre_reg_for_eval or {}, _brief_for_eval, _menu,
+                            _with_whole_test_sharpe({run_id: summary}, RUN_DIR,  # D-121
+                                                    _pass_rule_for_grid),
+                            _pre_reg_for_eval or {}, _brief_for_eval, _menu,
                             **_single_column_untested_kw(ARTIFACTS, run_id),
                             **_grid_v2_kw(),  # E-062 S2b-3b: {} flag off
                             **_cost_bar_grid_kw(), **_zero_trade_grid_kw())  # CUL-415: {} flag off
@@ -4392,6 +4397,20 @@ def _exact_config_1b_enabled(cfg: dict | None = None) -> bool:
     (D-112, _exact_config_variant_patches): variant_patches.yaml with `base`
     only. Step 1a is unchanged. Every check after 1b and step 2 runs as before."""
     return _strict_orchestrator_flag("exact_config_1b", cfg=cfg)
+
+
+def _brief_criteria_enabled(cfg: dict | None = None) -> bool:
+    """D-121: orchestrator.brief_criteria.enabled. False when the key, the section or
+    the config file is absent; a non-bool value raises. While false: byte-identical.
+    While true: a brief's own criteria -- `evaluation.pass_rule` whose every criterion is
+    a menu id (`{criteria: [{id: ...}, ...]}`) -- are one field read the same way for
+    every brief origin: checked only by verdict_criteria_evaluator.lint_menu_shaped_pass_rule
+    and resolved against config/criterion_menu.yaml at materialization exactly as a
+    step-1a card's (_pass_rule_from_menu_ids); and decide-next copies a fold child's
+    source criteria into that field (tools/decide_next.candidate_brief) instead of
+    leaving them to step 1a. No criteria given: step 1a picks (criteria_from:
+    hypothesis_generation), as before."""
+    return _strict_orchestrator_flag("brief_criteria", cfg=cfg)
 
 
 def _config_replay_gate_enabled(cfg: dict | None = None) -> bool:
@@ -7060,6 +7079,42 @@ def _ensure_residual_ic_in_pre_registration(run_dir: Path) -> bool:
     return True
 
 
+_WHOLE_TEST_SHARPE_METRIC = "whole_test_sharpe"  # D-121: the menu entry's metric
+
+
+def _with_whole_test_sharpe(per_variant_summaries: dict, run_dir: Path, pass_rule) -> dict:
+    """D-121: copies of the grid's per-variant summaries carrying
+    hypothesis_verdict.diagnostics.whole_test_sharpe -- the variant's whole-test Sharpe,
+    the ONE definition the profit bar sharpe_min reads (_whole_test_chain over its
+    protocol_result, then portfolio_whole_test.whole_test_sharpe); None when it cannot be
+    computed. Only when `pass_rule` has a criterion on that metric: otherwise the
+    summaries are returned as they are (byte-identical)."""
+    crit = pass_rule.get("criteria") if isinstance(pass_rule, dict) else None
+    if not (isinstance(crit, list)
+            and any(isinstance(c, dict) and c.get("metric") == _WHOLE_TEST_SHARPE_METRIC
+                    for c in crit)):
+        return per_variant_summaries
+    import copy  # noqa: PLC0415 -- local, as elsewhere in this module
+    pwt = _portfolio_whole_test_module()
+    out = {}
+    for vid, summary in per_variant_summaries.items():
+        try:
+            chain, _coins = _whole_test_chain(run_dir, summary)
+            value = pwt.whole_test_sharpe(chain["daily_returns"])
+        except _pd.PortfolioNotEvaluable as exc:
+            value = None
+            print(f"⚠️  [D-121] {vid}: whole-test Sharpe not computable ({exc})")
+        s = copy.deepcopy(summary)
+        hv = s.setdefault("hypothesis_verdict", {}) or {}
+        s["hypothesis_verdict"] = hv
+        hv.setdefault("diagnostics", {})
+        if hv["diagnostics"] is None:
+            hv["diagnostics"] = {}
+        hv["diagnostics"][_WHOLE_TEST_SHARPE_METRIC] = value
+        out[vid] = s
+    return out
+
+
 def _residual_ic_grid_inputs(per_variant_summaries: dict, run_dir: Path, protocol_path,
                              python_exe, pre_registration: dict,
                              variant_protocol_paths: dict | None = None) -> tuple:
@@ -9283,6 +9338,35 @@ def _pass_rule_from_card(card: dict, menu: dict, where: str) -> dict:
             raise ValueError(f"{where}: criteria[{i}] ({cid}) " + "; ".join(violations)
                              + ". Refusing before 1b.")
     resolved = _vce.resolve_criteria_against_menu(raw, menu)
+    for crit in resolved:
+        for key in _MENU_META_KEYS:
+            crit.pop(key, None)
+    return {"criteria": resolved}
+
+
+def is_menu_id_pass_rule(pass_rule) -> bool:
+    """D-121: True iff `pass_rule` is `{criteria: [...]}` with a non-empty list whose
+    every entry references a menu id (verdict_criteria_evaluator.is_menu_referencing_criterion)
+    -- the one menu-shaped field a brief carries its own criteria in."""
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import verdict_criteria_evaluator as _vce
+    crit = pass_rule.get("criteria") if isinstance(pass_rule, dict) else None
+    return (isinstance(crit, list) and bool(crit)
+            and all(_vce.is_menu_referencing_criterion(c) for c in crit))
+
+
+def _pass_rule_from_menu_ids(pass_rule: dict, menu: dict) -> dict:
+    """D-121: a brief's menu-id criteria resolved exactly as a step-1a card's
+    (resolve_criteria_against_menu, then the menu's meta keys dropped), so the
+    pre-registered rule has the same shape whatever wrote it. The caller has already
+    run lint_menu_shaped_pass_rule (the one gate)."""
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import verdict_criteria_evaluator as _vce
+    resolved = _vce.resolve_criteria_against_menu(pass_rule["criteria"], menu)
     for crit in resolved:
         for key in _MENU_META_KEYS:
             crit.pop(key, None)

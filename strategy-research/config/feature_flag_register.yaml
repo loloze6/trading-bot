@@ -910,6 +910,20 @@ flags:
       no model call); loop on, step 2 is the model. Declared behaviour change
       for anyone with the flag on. Tested by tests/test_exact_config_step2.py.
 
+  - name: brief_criteria
+    kind: orchestrator_config
+    config_key: orchestrator.brief_criteria.enabled
+    reader: run_phase1_research._brief_criteria_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "the operator switches it on in c4/flag-set (D-121)"
+    criterion: >
+      Landed 2026-10-13 (D-121). Off: byte-identical. On: a brief's own criteria in
+      evaluation.pass_rule (every criterion a menu id) are linted only by
+      lint_menu_shaped_pass_rule and resolved against the menu exactly as a step-1a
+      card's; decide-next copies a fold child's source criteria into that field
+      (supersedes D-011 item 2 for fold children). Tested by
+      tests/test_d121_brief_criteria.py.
   - name: explore_confirm
     kind: orchestrator_config
     config_key: orchestrator.explore_confirm.enabled

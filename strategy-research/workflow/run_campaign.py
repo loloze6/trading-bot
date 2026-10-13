@@ -847,13 +847,22 @@ def _materialize_run(run_id: str, brief: dict, *, promotion_retired: bool = Fals
                     f"carries a pass_rule -- refusing to materialize an inherited criterion.")
             pre_registration[orch.PASS_RULE_PENDING_KEY] = orch.PASS_RULE_PENDING_AT_1A
 
+        # D-121 (orchestrator.brief_criteria): a brief's own criteria in the one field --
+        # every criterion a menu id -- are checked ONLY by the menu lint (C5.1 below; the
+        # CUL-267 lint skips menu criteria, and B11's outcomes table is not asked of them)
+        # and resolved against the menu exactly as a step-1a card's. Off, or any other
+        # pass_rule: every lint below, as before.
+        _brief_menu_rule = (orch._brief_criteria_enabled()
+                            and orch.is_menu_id_pass_rule(pre_registration.get("pass_rule")))
+
         # B11 (K2 kernel): materialization-time total-mapping lint. Previously
         # a no-op on this path (machine_constraints-only briefs never carried
         # a pass_rule block); now receives real content whenever the rider
         # above finds one, linted the same way a refinement brief is
         # (_materialize_refinement_run, below) -- one gate, not two divergent
         # ones.
-        _violations, _warnings = orch._lint_pass_rule_total_mapping(pre_registration)
+        _violations, _warnings = (([], []) if _brief_menu_rule
+                                  else orch._lint_pass_rule_total_mapping(pre_registration))
         if _violations:
             raise ValueError(
                 f"{run_id}: pre_registration.yaml pass_rule failed the B11 total-mapping "
@@ -865,7 +874,8 @@ def _materialize_run(run_id: str, brief: dict, *, promotion_retired: bool = Fals
         # CUL-267: registration-time structural lint -- moves a class of
         # _evaluate_one_criterion SPEC_ERROR (unmatchable metric, invalid
         # comparator, missing null_handling) from evaluation time to here.
-        _struct_violations = vce.lint_pass_rule_structure(pre_registration.get("pass_rule"))
+        _struct_violations = ([] if _brief_menu_rule
+                              else vce.lint_pass_rule_structure(pre_registration.get("pass_rule")))
         if _struct_violations:
             raise ValueError(
                 f"{run_id}: pre_registration.yaml pass_rule failed the CUL-267 criterion "
@@ -887,6 +897,9 @@ def _materialize_run(run_id: str, brief: dict, *, promotion_retired: bool = Fals
                 f"{run_id}: pre_registration.yaml pass_rule failed the C5.1 menu lint "
                 f"-- refusing to materialize:\n" + "\n".join(f"  - {v}" for v in _menu_violations)
             )
+        if _brief_menu_rule:  # D-121: the same resolved shape as a step-1a card's
+            pre_registration["pass_rule"] = orch._pass_rule_from_menu_ids(
+                pre_registration["pass_rule"], _menu)
 
         # K3 (B3, §9 Q1): protocol_ref selection lint, same materialization
         # gate as B11's total-mapping lint above -- a rejected brief never
@@ -3545,6 +3558,7 @@ def _flag_readers() -> dict:
         "deviation_gate": orch._deviation_gate_enabled,  # lane 1 (D-104)
         "config_replay_gate": orch._config_replay_gate_enabled,  # lane 1 (D-109)
         "exact_config_1b": orch._exact_config_1b_enabled,  # lane 1 (D-110)
+        "brief_criteria": orch._brief_criteria_enabled,  # D-121
         "explore_confirm": orch._explore_confirm_enabled,  # E-072 (D-080)
         "schedulability_block": _schedulability_block_enabled,
         "operator_approval": _operator_approval_enabled,  # E-068 PR 4 (D-071)
@@ -4806,7 +4820,12 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
         held += [picked["composition"]] if approval else []
     elif picked.get("candidate_id"):
         cid = picked["queue_entry_id"]
-        rel, text = dn.candidate_brief(record, inputs, decision_ref=decision_ref)
+        _bc = orch._brief_criteria_enabled()  # D-121: a fold child keeps its source's criteria
+        _menu_p = ROOT / "config" / "criterion_menu.yaml"
+        rel, text = dn.candidate_brief(
+            record, inputs, decision_ref=decision_ref,
+            **({"copy_criteria_menu": (orch.load_yaml(_menu_p) if _menu_p.exists() else {}) or {}}
+               if _bc else {}))
         brief_path = ROOT / rel
         on_disk_ids = {e.get("id") for e in _load_queue().get("queue") or [] if isinstance(e, dict)}
         if cid in on_disk_ids or brief_path.exists():

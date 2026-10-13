@@ -2290,7 +2290,28 @@ def _find_proposal(inputs: dict, run_id: str, pid: str) -> tuple:
     raise DecideNextError(f"proposal {pid!r} of {run_id} is not in the inputs")
 
 
-def candidate_brief(record: dict, inputs: dict, *, decision_ref: str) -> tuple:
+def _criteria_for_child(src_pass_rule, menu: dict):
+    """D-121: a fold child's copy of its source's criteria for the brief's one field --
+    each source criterion reduced to its menu `id` plus the fields its menu entry lets a
+    card override (`card_overridable`), so materialization re-resolves it against the
+    menu exactly like any brief's. None when the source has no criteria list or any
+    criterion is not a live menu id (the child then leaves criteria to step 1a)."""
+    crit = src_pass_rule.get("criteria") if isinstance(src_pass_rule, dict) else None
+    if not isinstance(crit, list) or not crit:
+        return None
+    by_id = {e["id"]: e for e in ((menu or {}).get("criteria") or [])
+             if isinstance(e, dict) and e.get("id")}
+    out = []
+    for c in crit:
+        if not isinstance(c, dict) or c.get("id") not in by_id or "metric_basis" in c:
+            return None
+        allowed = by_id[c["id"]].get("card_overridable") or []
+        out.append({"id": c["id"], **{k: copy.deepcopy(c[k]) for k in allowed if k in c}})
+    return out
+
+
+def candidate_brief(record: dict, inputs: dict, *, decision_ref: str,
+                    copy_criteria_menu: dict | None = None) -> tuple:
     """(rel_path, text) of the brief for record['picked'] (a candidate).
     Frontmatter: the source research brief's six required keys, a research
     goal built from the proposal, the source's machine_constraints (the
@@ -2416,7 +2437,17 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str) -> tuple:
         source["expected_config_sha256"] = config_sha256(patched)
         if not isinstance(comp_manifest, dict):
             source["expected_manifest_sha256"] = config_sha256(src["manifest"])
-    candidate["criteria_from"] = CRITERIA_FROM_1A
+    # D-121 (orchestrator.brief_criteria; `copy_criteria_menu` = the menu, passed only
+    # under the flag): a FOLD child keeps its source's criteria in the brief's one field
+    # (supersedes D-011 item 2 for fold children); any other child, or a source without
+    # menu criteria, leaves them to step 1a as before.
+    child_criteria = (_criteria_for_child((src["pre_registration"] or {}).get("pass_rule"),
+                                          copy_criteria_menu)
+                      if copy_criteria_menu is not None and fa is not None else None)
+    if child_criteria:
+        front["evaluation"] = {"pass_rule": {"criteria": child_criteria}}
+    else:
+        candidate["criteria_from"] = CRITERIA_FROM_1A
     candidate["source"] = source
     front["candidate"] = candidate
     rel = picked["brief_path"]
@@ -2424,9 +2455,14 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str) -> tuple:
             f"# {cid}\n\n"
             f"Written by tools/decide_next.py (E-059, slice 6b) from {cand['proposal_ref']}; "
             f"decision record: {decision_ref}.\n\n"
-            "This brief carries no pass criteria on purpose (operator decision 2, "
-            "2026-09-24): step 1a writes a hypothesis card and criteria coherent with the "
-            "proposed idea, from config/criterion_menu.yaml. A patch's resolved config "
+            + ("This fold child keeps its source run's criteria (D-121): "
+               "evaluation.pass_rule, re-resolved against config/criterion_menu.yaml when "
+               "the run is registered. "
+               if child_criteria else
+               "This brief carries no pass criteria on purpose (operator decision 2, "
+               "2026-09-24): step 1a writes a hypothesis card and criteria coherent with the "
+               "proposed idea, from config/criterion_menu.yaml. ")
+            + "A patch's resolved config "
             "passes through to 1b (candidate.config), and 5a checks it against "
             "candidate.source.expected_config_sha256.\n")
     return rel, text
