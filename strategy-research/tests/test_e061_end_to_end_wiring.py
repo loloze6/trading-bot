@@ -208,6 +208,7 @@ TARGET_FLAGS = {
     # (C4_PREP.md 2.1) cannot leak into the v1 scenarios. The guard test
     # test_target_flags_name_every_orchestrator_flag keeps this list complete.
     "profit_bars_v2": False,
+    "brief_criteria": False,
     "score_provenance": False,
     # D-056: runs the real engine on real data; this harness feeds stub configs.
     "forecast_size_probe": False,
@@ -255,6 +256,10 @@ _ROUTE_DIAGNOSTICS_KEYS = ("post_backtest_route_real", "post_backtest_route_real
 _CONFIG_COPIES = ("criterion_menu.yaml", "profitability_bars.yaml", "available_feeds.yaml",
                   "indicator_library.yaml", "cost_model.yaml", "venue_tradability.yaml",
                   "coin_universe.yaml", "venue_data_capability.yaml")
+# D-118 turned trade_count_min and cost_edge_ratio_min off in the committed bars file;
+# this harness keeps grading with every bar on (the trade / cost / D-047 normalisation
+# mechanics stay in code), from a frozen copy of the bars as they were before D-118.
+_BARS_PRE_D118 = Path(__file__).resolve().parent / "fixtures" / "profitability_bars_pre_d118.yaml"
 _DOC_COPIES = ("STRATEGY_DESIGN_GUIDE.md", "COMPONENT_CATALOG.md", "DATA_AVAILABILITY.md")
 
 PROTOCOL_NAME = "e061_wiring_1h.json"
@@ -460,7 +465,8 @@ class Harness:
     def build(self, *, flags=TARGET_FLAGS, raw_override=None, promotion="default") -> "Harness":
         root = self.root
         for name in _CONFIG_COPIES:
-            shutil.copyfile(_SR / "config" / name, root / "config" / name)
+            shutil.copyfile(_BARS_PRE_D118 if name == "profitability_bars.yaml"
+                            else _SR / "config" / name, root / "config" / name)
         (root / "docs").mkdir(exist_ok=True)
         for name in _DOC_COPIES:
             if (_SR / "docs" / name).exists():
@@ -974,14 +980,15 @@ def _write_window(res_dir: Path, start: str, prof: dict, *, seed: int,
     t0 = _dt.datetime.fromisoformat(start)
     eq, close = 10000.0, 100.0
     drift = prof["drift_per_day"] / 24.0
-    pl = ["timestamp,regime,postRebalance_total_value" + (",close" if with_close else "")]
+    pl = ["timestamp,regime,postRebalance_total_value,total_portfolio_value"
+          + (",close" if with_close else "")]
     bl = ["timestamp,close,forecast,regime,debug_info.components.rsi.value"]
     for i in range(days * 24):
         ts = (t0 + _dt.timedelta(hours=i)).isoformat()
         regime = "NOT_READY" if i < 5 else ("trending" if (i // 48) % 2 else "mean_reversion")
         eq *= 1.0 + drift + rng.gauss(0.0, prof["noise"] / 5.0)
         f = rng.gauss(0.0, 1.0)
-        pl.append(f"{ts},{regime},{eq:.6f}" + (f",{close:.6f}" if with_close else ""))
+        pl.append(f"{ts},{regime},{eq:.6f},{eq:.6f}" + (f",{close:.6f}" if with_close else ""))
         bl.append(f"{ts},{close:.6f},{f:.6f},{regime},{50 + 10 * f:.4f}")
         close *= 1.0 + 0.001 * f + rng.gauss(0.0, 0.002)
     (res_dir / "portfolio_states.csv").write_text("\n".join(pl) + "\n", encoding="utf-8")

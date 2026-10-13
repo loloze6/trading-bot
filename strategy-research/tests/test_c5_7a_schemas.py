@@ -200,7 +200,7 @@ def _profit_grader(rows_by_variant):
 
 _BARS = {"sharpe_min": 0.5, "deflated_sharpe_threshold": 0.95, "max_drawdown_pct_max": 30.0,
          "trade_count_min": 100, "avg_daily_return_min": 0.0005,
-         "buy_and_hold_excess_return_min": 0.0, "cost_edge_ratio_min": 2.2}
+         "buy_and_hold_sharpe_excess_min": 0.0, "cost_edge_ratio_min": 2.2}
 
 
 def _v1_rows(actuals: dict, portfolio=False):
@@ -220,7 +220,7 @@ def _v2_rows(actuals: dict):
         return {"actual": a, "note": f"{name} note", "detail": {"k": 1} if a is not None else {},
                 "not_evaluable_reason": None if a is not None else "no value"}
     metrics = {n: m(n) for n in ("sharpe_min", "max_drawdown_pct_max", "trade_count_min",
-                                 "avg_daily_return_min", "buy_and_hold_excess_return_min",
+                                 "avg_daily_return_min", "buy_and_hold_sharpe_excess_min",
                                  "cost_edge_ratio_min")}
     return rpr._grade_profit_bars_v2(_BARS, dsr=actuals.get("dsr"), dsr_note="d", metrics=metrics)
 
@@ -273,7 +273,7 @@ def _direct_grids() -> dict:
     pb = {"source": "profit_bars", "id": "profit_bars", "metric": "profit_bars"}
     ok_v1 = _v1_rows({"sharpe": 1.0, "dsr": 0.99, "dd": 10.0, "tc": 150, "adr": 0.001}, portfolio=True)
     ok_v2 = _v2_rows({"sharpe_min": 1.0, "dsr": 0.99, "max_drawdown_pct_max": 10.0, "trade_count_min": 150,
-                      "avg_daily_return_min": 0.001, "buy_and_hold_excess_return_min": 0.1,
+                      "avg_daily_return_min": 0.001, "buy_and_hold_sharpe_excess_min": 0.1,
                       "cost_edge_ratio_min": 3.0})
     ne_v1 = _v1_rows({"sharpe": 1.0, "dsr": None, "dd": 10.0, "tc": 150})
     fail_v2 = _v2_rows({"sharpe_min": 0.1, "dsr": None, "max_drawdown_pct_max": 50.0, "trade_count_min": 10})

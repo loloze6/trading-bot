@@ -272,10 +272,13 @@
         },
         "rank": { "type": ["integer", "null"], "minimum": 1 },
         "fold_assignment": {
-          "type": "object", "required": ["fold", "lineage", "used"], "additionalProperties": false,
-          "description": "E-077 PR-1 (D-085): present only under orchestrator.folds.enabled. The fold the child run backtests on (null when the lineage has used all three or cannot be placed -- then the candidate is infeasible, with the reason), the lineage runs it was read from (the run, then every run named in its hypothesis_id) and the folds each lineage run's windows overlap.",
+          "type": "object", "required": ["fold"], "additionalProperties": false,
+          "description": "Present only under orchestrator.folds.enabled. D-123 (since 2026-10-13): the fold the child run backtests on (null when none can be drawn -- then the candidate is infeasible, with the reason), the folds its source run's windows overlap (null when they cannot be read), the folds it was drawn from (the others the child has data on) and the draw's seed (from the candidate id). Records written before D-123 carry D-085's `lineage` and `used` instead.",
           "properties": {
-            "fold": { "enum": ["A", "B", "C", null] },
+            "fold": { "enum": ["A", "B", "C", "D", null] },
+            "source_folds": { "type": ["array", "null"], "items": { "enum": ["A", "B", "C", "D"] } },
+            "drawn_from": { "type": "array", "items": { "enum": ["A", "B", "C", "D"] } },
+            "seed": { "type": "integer" },
             "lineage": { "type": "array", "items": { "type": "string" } },
             "used": { "type": "object", "additionalProperties": { "type": "array", "items": { "enum": ["A", "B", "C"] } } }
           }

@@ -108,7 +108,9 @@ SKIP_RULES = ("regime_detector_scaffolding", "regime_detector_constant",
               # copy could not be written -- never the all-window file instead
               "exploration_inputs_unavailable",
               # E-075 PR-5 (orchestrator.analyst.enabled): a category no analyst lens writes
-              "replaced_by_analyst")
+              "replaced_by_analyst",
+              # D-122: an operator re-run (run_campaign.py refold) is branch 3 only
+              "operator_refold")
 _SIDE_FINDING_KEYS = frozenset({"proposal_id", "claim", "evidence", "scores", "requires_feed",
                                 "config_change"})
 _V3_PATCH_KEYS = frozenset({"proposal_id", "patch", "evidence", "scores", "requires_feed"})
@@ -127,7 +129,7 @@ _V3_PATCH_KEYS = frozenset({"proposal_id", "patch", "evidence", "scores", "requi
 #   combines_as    how a confirmed claim could be combined, a word from COMBINES_AS,
 #                  written by the analyst and checked here (the combination logic itself
 #                  is not touched).
-#   fold_observed  the fold (A, B or C) of the run that inspired the claim.
+#   fold_observed  the fold (A, B, C or D) of the run that inspired the claim.
 # A model's answer may carry them only under the flag (check_reading(envelope=True));
 # a FILE already written (from_model False) is accepted as it stands.
 COMBINES_AS = ("forecast_block", "regime_gate", "execution_rule", "knowledge_only")
@@ -396,9 +398,10 @@ def _check_envelope(s: dict, where: str, *, require_vehicle: bool) -> None:
                             f"{list(COMBINES_AS)}")
     if "fold_observed" in s:
         import research_folds as _folds  # tools/ sibling; only a finding with the key needs it
-        if s["fold_observed"] not in _folds.FOLD_ORDER:
+        # D-123: decide-next draws fold D too, so a claim can be observed on it
+        if s["fold_observed"] not in _folds.ALL_FOLDS:
             raise ProposalError(f"{where}.fold_observed={s['fold_observed']!r} must be one of "
-                                f"{list(_folds.FOLD_ORDER)}")
+                                f"{list(_folds.ALL_FOLDS)}")
 
 
 def _check_change_items(items, where: str) -> None:

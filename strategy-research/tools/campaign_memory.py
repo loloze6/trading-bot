@@ -83,6 +83,8 @@ REGISTRY_SKIPPED_NOT_VALIDATED = "not_validated"
 REGISTRY_SKIPPED_NO_MANIFEST = "no_manifest"
 # E-060 S3b (guess 11): a composition run -- a composite never registers as a block.
 REGISTRY_SKIPPED_COMPOSITION = "composition"
+# D-122: an operator re-run never registers a block (branch 3 only).
+REGISTRY_SKIPPED_REFOLD = "refold"
 
 # Retired in slice 6c (roadmap v26 card G): no memory entry may carry them.
 RETIRED_FIELDS = frozenset({
@@ -448,7 +450,8 @@ def profit_bars_block(run_dir: Path, run_id: str, variants: dict) -> dict:
             compact[b["name"]] = {"result": b["result"], "actual": b.get("actual"),
                                   "threshold": b.get("threshold")}
         if bars:
-            every_pass = all(c["result"] == "PASS" for c in compact.values())
+            # D-119: an advisory row (a deflated Sharpe that cannot be computed) does not decide
+            every_pass = all(b["result"] == "PASS" for b in bars if not b.get("advisory"))
             if every_pass != (v["result"] == "PASS"):
                 raise CampaignMemoryError(f"{where}: result={v['result']!r} disagrees with its bars")
         out_variants[vid] = {"result": v["result"], "bars": compact}

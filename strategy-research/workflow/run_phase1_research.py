@@ -2389,14 +2389,19 @@ async def run_tool_worker(stage_name: str, run_id: str):
                         # E-060 S3b: a composition run's profit_bars cells are
                         # graded by branch 3's own function (guess 9).
                         _grid_result = _vce.evaluate_grid(
-                            _grid_inputs, _grid_pre_reg, _brief_for_eval, _menu,
+                            _with_whole_test_sharpe(  # D-121: {} change unless the rule asks
+                                _grid_inputs, RUN_DIR, _vce._find_pass_rule(_grid_pre_reg or {})),
+                            _grid_pre_reg, _brief_for_eval, _menu,
                             composition_runs=True,
                             **({"profit_bars_grader": _profit_bars_grid_grader(RUN_DIR, run_id)}
                                if _composition_mode(RUN_DIR) else {}),
                             **_failed_kw, **_cost_bar_grid_kw(), **_zero_trade_grid_kw())  # CUL-415: {} flag off
                     else:
                         _grid_result = _vce.evaluate_grid(
-                            per_variant_summaries, _pre_reg_for_eval or {}, _brief_for_eval, _menu,
+                            _with_whole_test_sharpe(  # D-121: {} change unless the rule asks
+                                per_variant_summaries, RUN_DIR,
+                                _vce._find_pass_rule(_pre_reg_for_eval or {})),
+                            _pre_reg_for_eval or {}, _brief_for_eval, _menu,
                             **_failed_kw, **_cost_bar_grid_kw(), **_zero_trade_grid_kw())  # CUL-415: {} flag off
                     _grid_result["evaluated_at"] = datetime.now(timezone.utc).isoformat()
                     save_yaml(ARTIFACTS / "grid_evaluation.yaml", _grid_result)
@@ -2633,7 +2638,9 @@ async def run_tool_worker(stage_name: str, run_id: str):
                         _menu_path = ROOT / "config" / "criterion_menu.yaml"
                         _menu = load_yaml(_menu_path) if _menu_path.exists() else {}
                         _grid_result = _vce.evaluate_grid(
-                            {run_id: summary}, _pre_reg_for_eval or {}, _brief_for_eval, _menu,
+                            _with_whole_test_sharpe({run_id: summary}, RUN_DIR,  # D-121
+                                                    _pass_rule_for_grid),
+                            _pre_reg_for_eval or {}, _brief_for_eval, _menu,
                             **_single_column_untested_kw(ARTIFACTS, run_id),
                             **_grid_v2_kw(),  # E-062 S2b-3b: {} flag off
                             **_cost_bar_grid_kw(), **_zero_trade_grid_kw())  # CUL-415: {} flag off
@@ -2667,7 +2674,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
             # so a bug in report-building must never turn an already-
             # successful trial into a recorded failure -- its own try/except,
             # logs loudly, never re-raises.
-            if _category_reports_enabled():
+            if _category_reports_enabled() and refold_of(RUN_DIR) is None:  # D-122: none on a re-run
                 try:
                     _br_tools_path = str(Path(__file__).parent.parent / "tools")
                     if _br_tools_path not in sys.path:
@@ -3520,7 +3527,7 @@ _PROFITABILITY_BARS_SCHEMA = {
     "sharpe_min":                 (int, float),
     "max_drawdown_pct_max":       (int, float),
     "avg_daily_return_min":       (int, float),
-    "trade_count_min":            (int,),
+    "trade_count_min":            (int, type(None)),  # D-118: null = off (no row)
     "deflated_sharpe_threshold":  (int, float),
     "target_instrument_set":      (list,),
     "ratified_by":                (str, type(None)),
@@ -3531,9 +3538,9 @@ _PROFITABILITY_BARS_SCHEMA = {
 # when the loader is called with v2=True; the v1 loader ignores them, as it
 # ignores every extra key.
 _PROFITABILITY_BARS_V2_SCHEMA = {
-    "buy_and_hold_excess_return_min": (int, float),
-    "cost_edge_ratio_min":            (int, float),
-    "cost_edge_min_trades":           (int,),
+    "buy_and_hold_sharpe_excess_min": (int, float),  # D-120 (was buy_and_hold_excess_return_min)
+    "cost_edge_ratio_min":            (int, float, type(None)),  # D-118: null = off (no row)
+    "cost_edge_min_trades":           (int, type(None)),  # D-118: null iff the cost bar is off
     # E-062 S2b-2b (D-046): the same-basis trial count at which the DSR's
     # benchmark switches from sigma_null to the cross-trial spread. >= 2.
     "dsr_min_same_basis_trials":      (int,),
@@ -3541,8 +3548,17 @@ _PROFITABILITY_BARS_V2_SCHEMA = {
     # variant's normalised trade minimum and cost-ratio trade floor,
     # max(ceil(base * f), floor). >= 1 and <= both bases it floors
     # (trade_count_min, cost_edge_min_trades).
-    "trade_count_min_floor":          (int,),
+    "trade_count_min_floor":          (int, type(None)),  # D-118: null iff both bases are off
 }
+
+# D-118: the bars that may be OFF (null in the bars file): an off bar is removed from
+# the verdict -- no row at all, never a NOT_EVALUABLE row (which would cap the verdict).
+_PROFIT_BARS_OFFABLE = ("trade_count_min", "cost_edge_ratio_min")
+
+
+def _bar_is_off(bars: dict, name: str) -> bool:
+    """D-118: True when `name` is an off-able bar whose bars-file value is null."""
+    return name in _PROFIT_BARS_OFFABLE and bars.get(name) is None
 
 
 class ProfitabilityBarsSchemaError(ValueError):
@@ -3612,7 +3628,12 @@ def _load_profitability_bars(path: Path | None = None, *, v2: bool = False) -> d
         raise ProfitabilityBarsSchemaError(
             f"{bars_path}'s target_instrument_set is empty -- must list at least one symbol."
         )
-    if v2 and doc["cost_edge_min_trades"] < 1:
+    if v2 and (doc["cost_edge_ratio_min"] is None) != (doc["cost_edge_min_trades"] is None):
+        raise ProfitabilityBarsSchemaError(  # D-118: the cost bar and its trade floor go together
+            f"{bars_path}'s cost_edge_ratio_min and cost_edge_min_trades must both be null (the "
+            f"cost bar off) or both set (got {doc['cost_edge_ratio_min']!r}, "
+            f"{doc['cost_edge_min_trades']!r}).")
+    if v2 and doc["cost_edge_min_trades"] is not None and doc["cost_edge_min_trades"] < 1:
         raise ProfitabilityBarsSchemaError(
             f"{bars_path}'s cost_edge_min_trades={doc['cost_edge_min_trades']!r} must be >= 1."
         )
@@ -3626,8 +3647,13 @@ def _load_profitability_bars(path: Path | None = None, *, v2: bool = False) -> d
         # variant need MORE trades than a full one (variant_coin.
         # normalised_trade_minimum refuses it too) -- refused here, at load.
         floor = doc["trade_count_min_floor"]
-        bases = {k: doc[k] for k in ("trade_count_min", "cost_edge_min_trades")}
-        if floor < 1 or any(floor > b for b in bases.values()):
+        bases = {k: doc[k] for k in ("trade_count_min", "cost_edge_min_trades")
+                 if doc[k] is not None}  # D-118: an off bar has no base to floor
+        if (floor is None) != (not bases):
+            raise ProfitabilityBarsSchemaError(
+                f"{bars_path}'s trade_count_min_floor={floor!r} must be null exactly when both "
+                f"trade_count_min and cost_edge_min_trades are null (D-118).")
+        if floor is not None and (floor < 1 or any(floor > b for b in bases.values())):
             raise ProfitabilityBarsSchemaError(
                 f"{bars_path}'s trade_count_min_floor={floor!r} must be >= 1 and <= the bases "
                 f"it floors ({bases}).")
@@ -4217,13 +4243,13 @@ def _folds_enabled(cfg: dict | None = None) -> bool:
     the child's brief exactly as before, the protocol generator accepts the same
     windows it accepted before, and no artifact gains a `fold` field.
     While true:
-      * decide-next (tools/decide_next.py) gives a child run the windows of the
-        next fold its lineage has not used (config/folds.yaml; three folds of six
-        4-month blocks; A, then B, then C), writes `fold` into the child's
-        machine_constraints.protocol, and refuses (INFEASIBLE, with a reason) a
-        candidate whose lineage has used all three;
+      * decide-next (tools/decide_next.py) gives a child run the windows of a
+        fold drawn at random among the folds (A, B, C, D; config/folds.yaml)
+        its source run is not on and it has data on (D-123), writes `fold` into
+        the child's machine_constraints.protocol, and refuses (INFEASIBLE, with
+        a reason) a candidate with no such fold;
       * any window overlapping the validation period (the data policy's
-        2024-2025) is refused -- by the protocol generator, the launch pre-flight
+        2024-2025), except fold D's exact blocks (D-115), is refused -- by the protocol generator, the launch pre-flight
         (generated and pinned protocols alike) and tools/run_protocol.py, which
         every backtest passes through (it reads this flag from the config file) --
         because no validation stage exists yet; see
@@ -4392,6 +4418,20 @@ def _exact_config_1b_enabled(cfg: dict | None = None) -> bool:
     (D-112, _exact_config_variant_patches): variant_patches.yaml with `base`
     only. Step 1a is unchanged. Every check after 1b and step 2 runs as before."""
     return _strict_orchestrator_flag("exact_config_1b", cfg=cfg)
+
+
+def _brief_criteria_enabled(cfg: dict | None = None) -> bool:
+    """D-121: orchestrator.brief_criteria.enabled. False when the key, the section or
+    the config file is absent; a non-bool value raises. While false: byte-identical.
+    While true: a brief's own criteria -- `evaluation.pass_rule` whose every criterion is
+    a menu id (`{criteria: [{id: ...}, ...]}`) -- are one field read the same way for
+    every brief origin: checked only by verdict_criteria_evaluator.lint_menu_shaped_pass_rule
+    and resolved against config/criterion_menu.yaml at materialization exactly as a
+    step-1a card's (_pass_rule_from_menu_ids); and decide-next copies a fold child's
+    source criteria into that field (tools/decide_next.candidate_brief) instead of
+    leaving them to step 1a. No criteria given: step 1a picks (criteria_from:
+    hypothesis_generation), as before."""
+    return _strict_orchestrator_flag("brief_criteria", cfg=cfg)
 
 
 def _config_replay_gate_enabled(cfg: dict | None = None) -> bool:
@@ -6002,11 +6042,18 @@ def _run_specialist_readers(run_id: str, run_dir: Path, stage_attempt=0) -> dict
     analyst = _analyst_enabled()     # E-075 PR-5 (D-092): the analyst replaces the readers
     lens_of = ({cat: lens for lens, cat in _analyst_session_module().LENS_CATEGORY.items()}
                if analyst else {})
+    refold_off = _refold_readers_off(run_dir)  # D-122: None unless an operator re-run
     for category in categories:
         dest = proposals_dir / f"{category}.yaml"
         if dest.exists():
             rp.load_proposals(proposals_dir, categories, **_reader_strictness())
             print(f"⏭️  proposals/{category}.yaml already present and valid -- reader not re-run.")
+            continue
+        if refold_off is not None:
+            _write_skipped_reading(category, run_id, run_dir, refold_off)
+            print(f"⏭️  [D-122] {category} reader skipped by rule {refold_off['rule']} "
+                  f"(no model call).")
+            rp.load_proposals(proposals_dir, categories, **_reader_strictness())
             continue
         if analyst:
             if category in lens_of:
@@ -6066,6 +6113,34 @@ def _skip_reader_by_rule(category: str, run_id: str, run_dir: Path) -> bool:
     print(f"⏭️  [E-068] {category} reader skipped by rule {skip['rule']} (no model call): "
           f"{skip['reason']}")
     return True
+
+
+REFOLD_BRIEF_KEY = "refold"  # D-122: research_brief.yaml {source_run, fold}
+# D-122: where an operator re-run ends when no variant passed every profit bar (or after
+# the operator's `continue` at the profit_bars_reached stop): a non-verdict terminal.
+REFOLD_TERMINAL = "completed_refold"
+
+
+def refold_of(run_dir: Path) -> dict | None:
+    """D-122: research_brief.yaml's `refold` block ({source_run, fold}) when this run is
+    an operator re-run (run_campaign.py refold), else None. A re-run is branch 3 only:
+    no model call, no category reports, no readers, no claim checks, no block
+    registration, no grid route, no campaign review and no decide-next after it."""
+    p = Path(run_dir) / "artifacts" / "research_brief.yaml"
+    brief = (load_yaml(p) or {}) if p.exists() else {}
+    refold = brief.get(REFOLD_BRIEF_KEY) if isinstance(brief, dict) else None
+    return refold if isinstance(refold, dict) else None
+
+
+def _refold_readers_off(run_dir: Path) -> dict | None:
+    """D-122: the skip record ({rule, reason}) every reader of an operator re-run gets;
+    None for any other run."""
+    refold = refold_of(run_dir)
+    if refold is None:
+        return None
+    return {"rule": _reader_findings_module().SKIP_OPERATOR_REFOLD,
+            "reason": (f"operator re-run of {refold.get('source_run')} on fold "
+                       f"{refold.get('fold')} (run_campaign.py refold): branch 3 only")}
 
 
 def _write_skipped_reading(category: str, run_id: str, run_dir: Path, skip: dict) -> None:
@@ -7060,6 +7135,45 @@ def _ensure_residual_ic_in_pre_registration(run_dir: Path) -> bool:
     return True
 
 
+_WHOLE_TEST_SHARPE_METRIC = "whole_test_sharpe"  # D-121: the menu entry's metric
+_WHOLE_TEST_SHARPE_ID = "whole_test_sharpe_positive"  # D-121: the menu entry's id
+
+
+def _with_whole_test_sharpe(per_variant_summaries: dict, run_dir: Path, pass_rule) -> dict:
+    """D-121: copies of the grid's per-variant summaries carrying
+    hypothesis_verdict.diagnostics.whole_test_sharpe -- the variant's whole-test Sharpe,
+    the ONE definition the profit bar sharpe_min reads (_whole_test_chain over its
+    protocol_result, then portfolio_whole_test.whole_test_sharpe); None when it cannot be
+    computed. Only when `pass_rule` has a criterion on that metric or with that menu id
+    (resolved or not): otherwise the summaries are returned as they are (byte-identical).
+    Used on every grid path (variant loop, composition, single column)."""
+    crit = pass_rule.get("criteria") if isinstance(pass_rule, dict) else None
+    if not (isinstance(crit, list)
+            and any(isinstance(c, dict) and (c.get("metric") == _WHOLE_TEST_SHARPE_METRIC
+                                             or c.get("id") == _WHOLE_TEST_SHARPE_ID)
+                    for c in crit)):
+        return per_variant_summaries
+    import copy  # noqa: PLC0415 -- local, as elsewhere in this module
+    pwt = _portfolio_whole_test_module()
+    out = {}
+    for vid, summary in per_variant_summaries.items():
+        try:
+            chain, _coins = _whole_test_chain(run_dir, summary)
+            value = pwt.whole_test_sharpe(chain["daily_returns"])
+        except _pd.PortfolioNotEvaluable as exc:
+            value = None
+            print(f"⚠️  [D-121] {vid}: whole-test Sharpe not computable ({exc})")
+        s = copy.deepcopy(summary)
+        hv = s.setdefault("hypothesis_verdict", {}) or {}
+        s["hypothesis_verdict"] = hv
+        hv.setdefault("diagnostics", {})
+        if hv["diagnostics"] is None:
+            hv["diagnostics"] = {}
+        hv["diagnostics"][_WHOLE_TEST_SHARPE_METRIC] = value
+        out[vid] = s
+    return out
+
+
 def _residual_ic_grid_inputs(per_variant_summaries: dict, run_dir: Path, protocol_path,
                              python_exe, pre_registration: dict,
                              variant_protocol_paths: dict | None = None) -> tuple:
@@ -7424,7 +7538,7 @@ def _profit_bars_grid_grader(run_dir: Path, run_id: str):
                 results, overall, reasons = _hold_rows_not_evaluable(
                     results, _D047_NORMALISATION_FORMULAS,
                     f"{_partial[variant_id]} -- the grid's profit-bars grader does not normalise "
-                    f"(D-047): only branch 3 grades a partial-coverage variant")
+                    f"(D-047): only branch 3 grades a partial-coverage variant", bars=bars)
         return {"result": overall, "bars": results, "reasons": reasons, **extra}
     return grade
 
@@ -8303,6 +8417,8 @@ def _normalisation_at_spend(run_dir: Path, run_id: str, variant: str, entry: dic
     rows = {r.get("name"): r for r in (entry or {}).get("bars") or [] if isinstance(r, dict)}
     problems = []
     for name in ("trade_count_min", "max_drawdown_pct_max", "cost_edge_ratio_min"):
+        if _bar_is_off(eff, name):
+            continue  # D-118: an off bar has no row to re-derive
         row = rows.get(name)
         if not isinstance(row, dict):
             problems.append(f"{name}: no row")
@@ -8335,6 +8451,8 @@ def _cost_basis_at_spend(variant, entry: dict) -> None:
         raise HoldoutUnlockRefused(
             "bars_changed", f"the cost_bar_all_costs flag does not read: {type(e).__name__}: {e}")
     rows = {r.get("name"): r for r in (entry or {}).get("bars") or [] if isinstance(r, dict)}
+    if "cost_edge_ratio_min" not in rows:
+        return  # D-118: the cost bar was off when graded (the bars-file sha guards a change)
     detail = (rows.get("cost_edge_ratio_min") or {}).get("detail")
     graded = detail.get("cost_basis") if isinstance(detail, dict) else None
     if graded != want:
@@ -8509,9 +8627,12 @@ def _validate_holdout_decision(run_dir: Path, run_id: str, state: dict) -> dict:
         if (variant not in (ev.get("passing") or []) or not isinstance(entry, dict)
                 or entry.get("result") != "PASS" or not bar_rows
                 or any(not isinstance(r, dict) or r.get("result") != "PASS" for r in bar_rows)):
+            advisory = [r.get("name") for r in bar_rows if isinstance(r, dict) and r.get("advisory")]
             raise HoldoutUnlockRefused(
                 "variant_not_passing", f"variant {variant!r} is not PASS on every bar in this "
-                f"run's profit_bars_evaluation.yaml (passing: {ev.get('passing')})")
+                f"run's profit_bars_evaluation.yaml (passing: {ev.get('passing')})"
+                + (f"; its {advisory} row could not be computed (D-119: a warning at branch 3, "
+                   f"but a spend needs it computed)" if advisory else ""))
         record.update(trial_id=entry.get("trial_id"),
                       protocol_result_ref=entry.get("protocol_result_ref"))
     if doc["decision"] == "spend":
@@ -9205,9 +9326,25 @@ def _decide_next_candidate(run_dir: Path) -> dict | None:
         return None
     brief = load_yaml(path) or {}
     cand = brief.get("candidate") if isinstance(brief, dict) else None
-    if isinstance(cand, dict) and cand.get("criteria_from") == PASS_RULE_PENDING_AT_1A:
+    if isinstance(cand, dict) and (cand.get("criteria_from") == PASS_RULE_PENDING_AT_1A
+                                   or _candidate_keeps_brief_criteria(brief)):
         return cand
     return None
+
+
+def _candidate_keeps_brief_criteria(brief) -> bool:
+    """D-121: a decide-next fold child that carries its source's criteria in the brief's
+    one field (tools/decide_next.candidate_brief under orchestrator.brief_criteria): a
+    `candidate` block with a `source`, no `criteria_from`, and an `evaluation.pass_rule`
+    made of menu ids. It is still a decide-next candidate (same hypothesis_id check, same
+    1a addendum); only its criteria are fixed instead of written at 1a. Never true for a
+    brief decide-next wrote with the flag off (those always carry criteria_from)."""
+    cand = brief.get("candidate") if isinstance(brief, dict) else None
+    return (isinstance(cand, dict) and isinstance(cand.get("source"), dict)
+            and "criteria_from" not in cand
+            and is_menu_id_pass_rule(((brief.get("evaluation") or {})
+                                      if isinstance(brief.get("evaluation"), dict) else {})
+                                     .get("pass_rule")))
 
 
 def _brief_criteria_from_1a(run_dir: Path) -> bool:
@@ -9289,6 +9426,35 @@ def _pass_rule_from_card(card: dict, menu: dict, where: str) -> dict:
     return {"criteria": resolved}
 
 
+def is_menu_id_pass_rule(pass_rule) -> bool:
+    """D-121: True iff `pass_rule` is `{criteria: [...]}` with a non-empty list whose
+    every entry references a menu id (verdict_criteria_evaluator.is_menu_referencing_criterion)
+    -- the one menu-shaped field a brief carries its own criteria in."""
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import verdict_criteria_evaluator as _vce
+    crit = pass_rule.get("criteria") if isinstance(pass_rule, dict) else None
+    return (isinstance(crit, list) and bool(crit)
+            and all(_vce.is_menu_referencing_criterion(c) for c in crit))
+
+
+def _pass_rule_from_menu_ids(pass_rule: dict, menu: dict) -> dict:
+    """D-121: a brief's menu-id criteria resolved exactly as a step-1a card's
+    (resolve_criteria_against_menu, then the menu's meta keys dropped), so the
+    pre-registered rule has the same shape whatever wrote it. The caller has already
+    run lint_menu_shaped_pass_rule (the one gate)."""
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import verdict_criteria_evaluator as _vce
+    resolved = _vce.resolve_criteria_against_menu(pass_rule["criteria"], menu)
+    for crit in resolved:
+        for key in _MENU_META_KEYS:
+            crit.pop(key, None)
+    return {"criteria": resolved}
+
+
 def _write_pass_rule_from_card(run_dir: Path, run_id: str, sr_flag: bool) -> bool:
     """After EVERY completion of hypothesis_generation (1a) for a decide-next
     candidate: rebuild pre_registration.yaml's pass_rule from the CURRENT
@@ -9314,6 +9480,12 @@ def _write_pass_rule_from_card(run_dir: Path, run_id: str, sr_flag: bool) -> boo
             f"{card_path}: hypothesis_id={card.get('hypothesis_id')!r} is not the candidate's "
             f"{expected_hid!r} (research_brief.yaml candidate.source.hypothesis_id; operator "
             f"decision 1: a reader patch is a NEW idea with that id). Refusing before 1b.")
+    if cand is not None and cand.get("criteria_from") != PASS_RULE_PENDING_AT_1A:
+        # D-121: a fold child's criteria were fixed at materialization (the brief's one
+        # field); the card does not rewrite them.
+        if sr_flag:
+            _check_specialist_readers_preflight(run_dir)
+        return True
     menu_path = ROOT / "config" / "criterion_menu.yaml"
     menu = (load_yaml(menu_path) if menu_path.exists() else {}) or {}
     pass_rule = _pass_rule_from_card(card, menu, str(card_path))
@@ -9831,7 +10003,9 @@ def _run_regroup_record_stage(run_id: str, run_dir: Path,
         entry["registry"] = _br.record_run(
             _block_registry_path(), run_dir, entry, root=ROOT, composition_runs=_comp_on,
             # E-060 S3b (guess 11): a composition run never registers a block.
-            **({"composition_run": True} if _comp_on and _composition_mode(run_dir) else {}))
+            **({"composition_run": True} if _comp_on and _composition_mode(run_dir) else {}),
+            # D-122: an operator re-run never registers a block (branch 3 only).
+            **({"refold_run": True} if refold_of(run_dir) is not None else {}))
         entry["kb_entry_id"] = _kbw.write_kb_entry(
             _KB_PATH, _kbw.build_kb_entry(entry), root=ROOT, recompute_views=_recompute_kb_views)
         # E-068 slice 4 (flag on only): the claim's finding, added AFTER the
@@ -11479,10 +11653,19 @@ def _assert_windows_clear_of_validation(windows: list) -> None:
     except _research_folds.FoldsError as exc:
         raise _research_folds.ValidationBoundaryBreach(
             f"{exc}. Refusing to generate windows against an unknown validation period.") from exc
-    _research_folds.assert_windows_clear_of_validation(windows, validation)
+
+    def _fold_d():  # D-115: fold D's exact blocks pass; read only if a window is in 2024-2025
+        try:
+            return _research_folds.load_fold_d_windows(path=ROOT / "config" / "folds.yaml",
+                                                       policy_path=_DATA_POLICY_PATH)
+        except _research_folds.FoldsError as exc:
+            raise _research_folds.ValidationBoundaryBreach(
+                f"{exc}. Refusing a 2024-2025 window against an unreadable folds file.") from exc
+    _research_folds.assert_windows_clear_of_validation(windows, validation, _fold_d)
 
 
-def _protocol_windows_from_constraints(proto_constraint: dict, start: str, end: str) -> list:
+def _protocol_windows_from_constraints(proto_constraint: dict, start: str, end: str, *,
+                                       folds_enabled=False) -> list:
     """The windows a machine_constraints.protocol generates -- ONE definition,
     shared by `_ensure_protocol_from_constraints` and run_campaign's pre-flight
     (`_expected_generated_protocol`), so the two cannot drift.
@@ -11501,6 +11684,13 @@ def _protocol_windows_from_constraints(proto_constraint: dict, start: str, end: 
         windows = _generate_monthly_windows(
             start, end, window_months=proto_constraint.get("window_months", 1))
     else:
+        # D-115: fold D only under orchestrator.folds.enabled (`folds_enabled`: a bool or a
+        # zero-argument reader, read only for a fold-D brief); flag off, a fold-D brief is
+        # refused with master's message, before anything else is read.
+        if fold == _research_folds.FOLD_D and not (
+                folds_enabled() if callable(folds_enabled) else folds_enabled):
+            raise _research_folds.FoldsError(
+                f"fold {fold!r} is not one of {list(_research_folds.FOLD_ORDER)}")
         _research_folds.check_fold_id(fold)
         windows = _research_folds.load_fold_windows(
             fold, path=ROOT / "config" / "folds.yaml", policy_path=_DATA_POLICY_PATH)
@@ -11551,7 +11741,8 @@ def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: d
     start = min(per_symbol_start.values()) if per_symbol_start else proto_constraint["start"]
     end = proto_constraint["end"]
 
-    windows = _protocol_windows_from_constraints(proto_constraint, start, end)
+    windows = _protocol_windows_from_constraints(proto_constraint, start, end,
+                                                 folds_enabled=folds_enabled)
     # The seal has ONE home. Defaulting to a literal here was a second copy of
     # holdout_range that nothing kept in sync with the policy file, in the very
     # function whose windows have to be checked against it. CUL-339: an
@@ -14392,8 +14583,12 @@ def _grade_profit_bars(bars: dict, *, sharpe, sharpe_note: str, dsr, dsr_note: s
 
     def _bar(name: str, threshold, actual, comparator: str, note: str = "", basis: str = "",
              not_evaluable_reason: str | None = None):
+        if _bar_is_off(bars, name):
+            return  # D-118: an off bar has no row
         if actual is None:
             outcome = "NOT_EVALUABLE"
+        elif comparator == ">":  # D-118: sharpe_min is strict
+            outcome = "PASS" if actual > threshold else "FAIL"
         elif comparator == ">=":
             outcome = "PASS" if actual >= threshold else "FAIL"
         elif comparator == "<=":
@@ -14410,7 +14605,7 @@ def _grade_profit_bars(bars: dict, *, sharpe, sharpe_note: str, dsr, dsr_note: s
             entry["note"] = note
         results.append(entry)
 
-    _bar("sharpe_min", bars["sharpe_min"], sharpe, ">=", note=sharpe_note,
+    _bar("sharpe_min", bars["sharpe_min"], sharpe, ">", note=sharpe_note,  # D-118: strict
          basis="median_of_coin_median_sharpes")
 
     _bar(
@@ -14534,7 +14729,7 @@ def _evaluate_profit_bars(run_dir: Path, run_id: str, portfolio_basis: bool = Fa
     # run without a per-coin index: the evaluation is unchanged.
     _partial = _bridge_partial_coverage(run_dir, pr)
     if _partial is not None:
-        results, overall, reasons = _cap_partial_coverage_bars(results, _partial)
+        results, overall, reasons = _cap_partial_coverage_bars(results, _partial, bars=bars)
 
     evaluation = {
         "run_id": run_id,
@@ -14942,15 +15137,15 @@ _BASIS_V2 = {
     "max_drawdown_pct_max": "portfolio_equal_weight_whole_test_chained",
     "trade_count_min": "per_coin_total_whole_test_excl_window_closes",
     "avg_daily_return_min": "portfolio_equal_weight_whole_test_chained_mean_daily_return",
-    "buy_and_hold_excess_return_min": "portfolio_equal_weight_vs_buy_and_hold",
+    "buy_and_hold_sharpe_excess_min": "whole_test_sharpe_minus_buy_and_hold_whole_test_sharpe",
     "cost_edge_ratio_min": "pooled_trades_realized_edge_to_cost",
 }
 # Comparator per v2 row: strict `>` where D-037 ("beats") and D-038 ("> 2.2")
 # say so; every other row keeps its v1 comparator.
 _COMPARATOR_V2 = {
-    "sharpe_min": ">=", "deflated_sharpe_threshold": ">=", "max_drawdown_pct_max": "<=",
+    "sharpe_min": ">", "deflated_sharpe_threshold": ">=", "max_drawdown_pct_max": "<=",  # D-118
     "trade_count_min": ">=", "avg_daily_return_min": ">=",
-    "buy_and_hold_excess_return_min": ">", "cost_edge_ratio_min": ">",
+    "buy_and_hold_sharpe_excess_min": ">", "cost_edge_ratio_min": ">",
 }
 _TRADE_DIAGNOSTICS_FILE = "trade_diagnostics.json"
 
@@ -15126,7 +15321,15 @@ def _whole_test_chain(run_dir: Path, pr: dict) -> tuple:
     pwt = _portfolio_whole_test_module()
     windows, coins = _pd.load_windows(run_dir, pr)
     bounds = _v2_protocol_window_bounds(pr, windows)
-    return pwt.chain_windows(windows, coins, bounds), coins
+    # D-116 (CUL-431): each window's first-day return from its starting capital
+    start_values: dict = {}
+    for r in pr.get("results") or []:
+        path = _pd.find_window_equity_file(run_dir, r["run_id"])
+        if path is None:
+            raise _pd.PortfolioNotEvaluable(f"no portfolio_states.csv for window {r['window']!r} "
+                                            f"({r['symbol']}, run {r['run_id']!r})")
+        start_values.setdefault(r["window"], {})[r["symbol"]] = pwt.window_start_value(path)
+    return pwt.chain_windows(windows, coins, bounds, start_values=start_values), coins
 
 
 def _whole_test_candidate_stats(run_dir: Path, pr: dict) -> dict:
@@ -15288,6 +15491,14 @@ def _whole_test_dsr_candidate(wctx: dict, run_dir: Path, pr: dict, trial_id: str
     if row.get("invalidated_artifact"):
         raise ValueError(f"whole-test DSR: trial {trial_id!r} is invalidated_artifact")
     block = row.get("whole_test")
+    if isinstance(block, dict) and block.get("basis") not in (None, wctx["sharpe_basis"]):
+        # D-119: a row written under an earlier basis (e.g. before D-116's v2) is a normal
+        # condition after a basis change, not a defect: this candidate's DSR is NOT_EVALUABLE
+        # (a non-blocking warning at grading; the holdout spend still refuses it).
+        return _dsr_not_evaluable(
+            wctx, min_same_basis, "not_evaluable",
+            f"ledger_basis_mismatch: trial {trial_id!r}'s ledger row was written on basis "
+            f"{block.get('basis')!r}, the current basis is {wctx['sharpe_basis']!r}")
     if not isinstance(block, dict) or block.get("basis") != wctx["sharpe_basis"]:
         raise ValueError(f"whole-test DSR: trial {trial_id!r}'s ledger row has no whole_test block "
                          f"on basis {wctx['sharpe_basis']!r} (got {block!r:.200}) -- written with "
@@ -15356,9 +15567,10 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
         whole-test equal-weight portfolio (chain_windows over the protocol's
         nominal window bounds): whole_test_max_drawdown (bars, D-034), the mean
         of the chained daily returns, whole_test_sharpe (G3, D-036);
-      * buy_and_hold_excess_return_min: chained_buy_and_hold's excess
-        (strategy total - buy-and-hold total, one round trip per coin at the fee
-        charged + the manifest's slippage; G6, D-037);
+      * buy_and_hold_sharpe_excess_min (D-120; was buy_and_hold_excess_return_min):
+        the whole-test Sharpe minus equal-weight buy-and-hold's on the same chained
+        days (chained_buy_and_hold_daily_returns, one round trip per coin at the fee
+        charged + the manifest's slippage); the return excess stays in `detail`;
       * trade_count_min: whole_test_trade_counts' worst coin of
         excluding_end_of_window (G5, D-035); both counts per coin in `detail`;
       * cost_edge_ratio_min: pooled_edge_to_cost_ratio with the bars file's
@@ -15386,7 +15598,9 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
             counts = pwt.whole_test_trade_counts(records, pr.get("results") or [])
         except _pd.PortfolioNotEvaluable as exc:
             count_reason = f"whole-test trade count NOT_EVALUABLE: {exc}"
-    if count_reason:
+    if _bar_is_off(bars, "trade_count_min"):
+        pass  # D-118: off -- no row
+    elif count_reason:
         _row("trade_count_min", reason=count_reason)
     else:
         worst = min(counts, key=lambda c: (counts[c]["excluding_end_of_window"], str(c)))
@@ -15396,7 +15610,9 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
              detail={"worst_coin": worst,
                      "per_coin": {str(c): dict(v) for c, v in counts.items()}})
 
-    if count_reason:
+    if _bar_is_off(bars, "cost_edge_ratio_min"):
+        pass  # D-118: off -- no row, and cost_edge_min_trades is null
+    elif count_reason:
         _row("cost_edge_ratio_min", reason=("pooled edge/cost ratio NOT_EVALUABLE: the trade "
                                             "records do not match the results -- "
                                             + count_reason))
@@ -15431,12 +15647,12 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
         _row("max_drawdown_pct_max", exc.drawdown_pct, note=_ruin_text(exc),
              detail={"ruin": {"file": str(exc.path), "timestamp": exc.timestamp,
                               "equity": exc.equity}})
-        for name in ("avg_daily_return_min", "sharpe_min", "buy_and_hold_excess_return_min"):
+        for name in ("avg_daily_return_min", "sharpe_min", "buy_and_hold_sharpe_excess_min"):
             _row(name, reason=f"not computed past a ruin: {_ruin_text(exc)}")
         return out
     if chain is None:
         for name in ("max_drawdown_pct_max", "avg_daily_return_min", "sharpe_min",
-                     "buy_and_hold_excess_return_min"):
+                     "buy_and_hold_sharpe_excess_min"):
             _row(name, reason=chain_reason)
         return out
 
@@ -15477,18 +15693,25 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
         slip = _v2_manifest_slippage(run_dir, pr, coins)
         fees = _v2_charged_fees(coins, records, pr.get("venue"))
         bh = pwt.chained_buy_and_hold(chain, close_windows, fees, slip)
-        _row("buy_and_hold_excess_return_min", bh["excess_return"],
-             note=(f"strategy total return {bh['strategy_total_return']:.6f} minus equal-weight "
-                   f"buy-and-hold {bh['buy_and_hold_total_return']:.6f} (gross "
-                   f"{bh['buy_and_hold_gross_return']:.6f}, one round trip per coin at "
-                   f"{bh['cost_per_side_bps']} bps per side) over the same chained days; {span}"),
-             detail={**chain_detail,
+        # D-120: the bar compares Sharpe ratios on the same chained days and cost convention;
+        # the total-return comparison is kept as information in `detail`.
+        bh_rets = pwt.chained_buy_and_hold_daily_returns(chain, close_windows, fees, slip)
+        strat_sr = pwt.whole_test_sharpe(chain["daily_returns"])
+        bh_sr = pwt.whole_test_sharpe(bh_rets)
+        _row("buy_and_hold_sharpe_excess_min", strat_sr - bh_sr,
+             note=(f"whole-test Sharpe {strat_sr:.6f} minus equal-weight buy-and-hold's "
+                   f"{bh_sr:.6f} on the same {len(bh_rets)} chained day(s), buy-and-hold charged "
+                   f"one round trip per coin at {bh['cost_per_side_bps']} bps per side; "
+                   f"information: total return {bh['strategy_total_return']:.6f} vs "
+                   f"{bh['buy_and_hold_total_return']:.6f}; {span}"),
+             detail={**chain_detail, "strategy_sharpe": strat_sr, "buy_and_hold_sharpe": bh_sr,
                      **{k: bh[k] for k in ("strategy_total_return", "buy_and_hold_total_return",
-                                           "buy_and_hold_gross_return", "cost_multiplier")},
+                                           "buy_and_hold_gross_return", "excess_return",
+                                           "cost_multiplier")},
                      "cost_per_side_bps": {str(c): v for c, v in bh["cost_per_side_bps"].items()}})
     except _pd.PortfolioNotEvaluable as exc:
-        _row("buy_and_hold_excess_return_min",
-             reason=f"buy-and-hold comparison NOT_EVALUABLE: {exc}")
+        _row("buy_and_hold_sharpe_excess_min",
+             reason=f"buy-and-hold Sharpe comparison NOT_EVALUABLE: {exc}")
     return out
 
 
@@ -15500,9 +15723,10 @@ def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
     `note`, `detail` and -- when NOT_EVALUABLE -- `not_evaluable_reason`:
     sharpe_min, deflated_sharpe_threshold (the whole-test daily DSR, E-062
     S2b-2b / D-046), max_drawdown_pct_max, trade_count_min,
-    avg_daily_return_min, buy_and_hold_excess_return_min, cost_edge_ratio_min.
+    avg_daily_return_min, buy_and_hold_sharpe_excess_min, cost_edge_ratio_min.
     `metrics` is _whole_test_profit_metrics(...). overall is PASS only when every
-    row is PASS. `dsr_detail` / `dsr_reason`: compute_dsr_whole_test's result
+    row is PASS, except a NOT_EVALUABLE deflated-Sharpe row, which is advisory
+    (D-119). An off bar (D-118) has no row. `dsr_detail` / `dsr_reason`: compute_dsr_whole_test's result
     and its NOT_EVALUABLE reason (E-062 S2b-2b)."""
     rows = {**metrics,
             "deflated_sharpe_threshold": {
@@ -15512,8 +15736,10 @@ def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
                                                                  if dsr_reason else ""))}}
     results = []
     for name in ("sharpe_min", "deflated_sharpe_threshold", "max_drawdown_pct_max",
-                 "trade_count_min", "avg_daily_return_min", "buy_and_hold_excess_return_min",
+                 "trade_count_min", "avg_daily_return_min", "buy_and_hold_sharpe_excess_min",
                  "cost_edge_ratio_min"):
+        if _bar_is_off(bars, name):
+            continue  # D-118: an off bar has no row
         row, threshold, comp = rows[name], bars[name], _COMPARATOR_V2[name]
         actual = row["actual"]
         if actual is None:
@@ -15535,10 +15761,18 @@ def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
         if row.get("detail"):
             entry["detail"] = row["detail"]
         results.append(entry)
-    overall = "PASS" if {r["result"] for r in results} == {"PASS"} else "FAIL"
+    # D-119: a deflated Sharpe that cannot be computed is a WARNING, not a blocker: its row
+    # stays NOT_EVALUABLE with `advisory: true` and does not keep the variant from PASS.
+    # (A computed deflated Sharpe below the threshold still FAILs.)
+    for r in results:
+        if r["name"] == "deflated_sharpe_threshold" and r["result"] == "NOT_EVALUABLE":
+            r["advisory"] = True
+    overall = ("PASS" if {r["result"] for r in results if not r.get("advisory")} == {"PASS"}
+               else "FAIL")
     reasons = [
         f"{r['name']}: {r['result']} (threshold={r['threshold']!r}, actual={r['actual']!r})"
         + (f" -- {r['not_evaluable_reason']}" if r.get("not_evaluable_reason") else "")
+        + (" [warning, not blocking: D-119]" if r.get("advisory") else "")
         for r in results if r["result"] != "PASS"
     ]
     return results, overall, reasons
@@ -15605,7 +15839,7 @@ def _bridge_partial_coverage(run_dir: Path, pr: dict) -> str | None:
     return None
 
 
-def _cap_partial_coverage_bars(results: list, reason: str) -> tuple:
+def _cap_partial_coverage_bars(results: list, reason: str, bars: dict | None = None) -> tuple:
     """Review fix M1 (E-061 C2 S2b). TEMPORARY, D-042 -- lifted by E-062 S2b,
     which normalises the time-dependent bars to the period a variant ran on:
     a variant graded on partial coverage has its time-dependent bars
@@ -15614,8 +15848,10 @@ def _cap_partial_coverage_bars(results: list, reason: str) -> tuple:
     NOT_EVALUABLE -- `actual` kept, `not_evaluable_reason` set -- so it can never
     PASS every bar and never raises profit_bars_reached. Returns (results,
     overall, reasons) in _grade_profit_bars' shape. A bars list without one of
-    those bars raises (the cap must never silently not apply)."""
-    names = _variant_coin_module().D042_TIME_DEPENDENT_BARS
+    those bars raises (the cap must never silently not apply). `bars`: the bars
+    file (D-118): a bar that is off has no row and is not capped."""
+    names = tuple(n for n in _variant_coin_module().D042_TIME_DEPENDENT_BARS
+                  if not (bars is not None and _bar_is_off(bars, n)))
     missing = sorted(set(names) - {r.get("name") for r in results})
     if missing:
         raise ProfitabilityBarsSchemaError(
@@ -15634,12 +15870,15 @@ def _cap_partial_coverage_bars(results: list, reason: str) -> tuple:
     return capped, overall, reasons
 
 
-def _hold_rows_not_evaluable(results: list, names, reason: str) -> tuple:
+def _hold_rows_not_evaluable(results: list, names, reason: str,
+                             bars: dict | None = None) -> tuple:
     """E-062 S2b-3b review fixes 2/4: rows `names` read NOT_EVALUABLE (`actual`
     kept, `not_evaluable_reason` = `reason`), so the variant can never PASS
     every bar. Returns (results, overall, reasons) in _grade_profit_bars'
     shape. A bars list without one of those rows raises (the hold must never
-    silently not apply)."""
+    silently not apply). `bars`: the bars file (D-118): a bar that is off has no
+    row and is not held."""
+    names = [n for n in names if not (bars is not None and _bar_is_off(bars, n))]
     missing = sorted(set(names) - {r.get("name") for r in results})
     if missing:
         raise ProfitabilityBarsSchemaError(
@@ -15693,16 +15932,20 @@ def _normalised_profit_bars(bars: dict, coverage_days) -> tuple:
         return bars, {}
     floor = bars["trade_count_min_floor"]
     eff = dict(bars)
-    eff["trade_count_min"] = vc.normalised_trade_minimum(bars["trade_count_min"], f, floor)
-    eff["cost_edge_min_trades"] = vc.normalised_trade_minimum(bars["cost_edge_min_trades"], f,
-                                                              floor)
-    eff["max_drawdown_pct_max"] = vc.scaled_drawdown_limit(bars["max_drawdown_pct_max"], f)
     common = {"covered_days": covered, "full_days": full, "f": float(f)}
-    norm = {
-        "trade_count_min": {**common, "base": bars["trade_count_min"], "floor": floor},
-        "max_drawdown_pct_max": {**common, "base": bars["max_drawdown_pct_max"], "floor": None},
-        "cost_edge_ratio_min": {**common, "base": bars["cost_edge_min_trades"], "floor": floor},
-    }
+    norm = {}
+    # D-118: an off bar is neither normalised nor recorded
+    if not _bar_is_off(bars, "trade_count_min"):
+        eff["trade_count_min"] = vc.normalised_trade_minimum(bars["trade_count_min"], f, floor)
+        norm["trade_count_min"] = {**common, "base": bars["trade_count_min"], "floor": floor}
+    if not _bar_is_off(bars, "cost_edge_ratio_min"):
+        eff["cost_edge_min_trades"] = vc.normalised_trade_minimum(bars["cost_edge_min_trades"], f,
+                                                                  floor)
+    eff["max_drawdown_pct_max"] = vc.scaled_drawdown_limit(bars["max_drawdown_pct_max"], f)
+    norm["max_drawdown_pct_max"] = {**common, "base": bars["max_drawdown_pct_max"], "floor": None}
+    if not _bar_is_off(bars, "cost_edge_ratio_min"):
+        norm["cost_edge_ratio_min"] = {**common, "base": bars["cost_edge_min_trades"],
+                                       "floor": floor}
     for name, rec in norm.items():
         rec["formula"] = _D047_NORMALISATION_FORMULAS[name]
     return eff, norm
@@ -15796,14 +16039,14 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
         if unmeasurable is not None:
             results, overall, reasons = _hold_rows_not_evaluable(
                 results, _D047_NORMALISATION_FORMULAS,
-                f"{COVERAGE_UNMEASURABLE_PREFIX} {unmeasurable}")
+                f"{COVERAGE_UNMEASURABLE_PREFIX} {unmeasurable}", bars=bars)
             entry["coverage_unmeasurable"] = unmeasurable
         if cand.get("partial_coverage"):
             if not v2:
                 # Review fix M1 (D-042): flag off, the cap stays (v1 has no
                 # normalisation: its trade bar is a per-window minimum).
                 results, overall, reasons = _cap_partial_coverage_bars(
-                    results, cand["partial_coverage"])
+                    results, cand["partial_coverage"], bars=bars)
             entry["partial_coverage"] = cand["partial_coverage"]
         variants[cid] = {**entry, "result": overall, "reason": None,
                          "bars": results, "reasons": reasons}
@@ -15884,8 +16127,14 @@ def _profit_bars_stop_route(run_dir: Path, run_id: str) -> str | None:
               f"({ev.get('generated_at')}); continuing into the grid route.")
         return None
     idea = load_yaml(run_dir / "artifacts" / "idea_status.yaml") or {}
+    advisory = sorted(vid for vid in passing
+                      if any(isinstance(r, dict) and r.get("advisory")
+                             for r in ((ev.get("variants") or {}).get(vid) or {}).get("bars") or []))
     print(f"\n🛑 PROFIT BARS REACHED: variant(s) {passing} passed every bar in "
-          f"config/profitability_bars.yaml. The grid's idea_status is "
+          f"config/profitability_bars.yaml"
+          + (f" (D-119: {advisory} with a deflated Sharpe that could not be computed -- a "
+             f"warning; such a variant cannot be spent until it is computed)" if advisory else "")
+          + f". The grid's idea_status is "
           f"{idea.get('idea_status')!r} (unchanged -- it comes only from the grid). "
           f"Pausing for the operator (branch-3 stop).")
     update_state(path=run_dir, status="paused_for_human", flags={"profit_bars_reached": True},
@@ -20060,7 +20309,8 @@ def run_loop(run_id: str):
             # composition brief meets the flag off).
             # E-068 slice 2: a run with no claim-test status yet (a queued card
             # launched at 1b) is checked before 1b spends. Warn-only; flag off: no-op.
-            if current_stage == "strategy_config_authoring" and not _skip_agent:
+            if (current_stage == "strategy_config_authoring" and not _skip_agent
+                    and refold_of(RUN_DIR) is None):  # D-122: no claim check on a re-run
                 _claim_gate_before_1b(RUN_DIR, run_id)
             _comp_mode = (current_stage in _COMPOSITION_CODE_STAGES
                           and _composition_mode(RUN_DIR))
@@ -20196,9 +20446,10 @@ def run_loop(run_id: str):
                     RUN_DIR, **({"routing_retired": True} if _vrr_flag else {}))
                 if next_stage == "human_pause":
                     break
-                if next_stage == "innovation_expansion":
+                if next_stage == "innovation_expansion" and refold_of(RUN_DIR) is None:
                     # E-068 3b: can the claim's tests see the accepted block? At most
                     # one claim revision per run. Information only; flag off: no-op.
+                    # D-122: never on an operator re-run (it can call a model).
                     _claim_revision_after_1b(RUN_DIR, run_id)
 
             elif current_stage == "innovation_expansion" and _comp_mode:
@@ -20582,6 +20833,11 @@ def run_loop(run_id: str):
                     # continue -> None (the route below), else a refusal pause.
                     if next_stage is None and _vrr_flag:
                         next_stage = _holdout_unlock_route(RUN_DIR, run_id)
+                # D-122: an operator re-run is branch 3 only -- no grid route and no
+                # campaign review; it ends here (the component-error pause still wins).
+                if (next_stage is None and refold_of(RUN_DIR) is not None
+                        and not _rr_checks["component_errors"]):
+                    next_stage = REFOLD_TERMINAL
                 # Slice 6c S2a: under verdict_routing_retired the grid route ends
                 # the run at completed_<idea_status> (never a pause except the
                 # component-error one, never the holdout).
@@ -20634,7 +20890,7 @@ def run_loop(run_id: str):
             # claim card's tests MEASURED on this attempt's saved bars (effect sizes,
             # "measured, not proven"). Information only: never changes next_stage,
             # never raises; a separate grader, not a grid criterion.
-            if current_stage == "protocol_execution":
+            if current_stage == "protocol_execution" and refold_of(RUN_DIR) is None:
                 _measure_claim_tests_after_backtests(RUN_DIR, run_id)
                 # E-077 PR-2 (D-087): the claim this run was built from, measured on its
                 # own fold. No-op unless orchestrator.folds.enabled.
@@ -20648,7 +20904,7 @@ def run_loop(run_id: str):
             # ("completed"); they are produced only under the flag, so every
             # flag-off run keeps the status it had before.
             update_state(path=RUN_DIR,
-                status=("completed" if next_stage in RETIRED_ROUTING_TERMINALS
+                status=("completed" if next_stage in RETIRED_ROUTING_TERMINALS + (REFOLD_TERMINAL,)
                         else "active" if next_stage != "completed_rejected" else "rejected"),
                 completed_stages=completed,
                 current_stage=current_stage,

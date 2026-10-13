@@ -73,9 +73,19 @@
 # config/criterion_menu.yaml to the idea actually generated -- this is the
 # same mechanism the orchestrator's own campaign-review reframe briefs use
 # (run_phase1_research.py::_write_reframe_brief). It means YOU do not have to
-# hand-author a pass_rule to get a first run going; do not add one here, or
-# _materialize_run's guard raises (a brief cannot both defer to step 1a and
-# carry a pre-registered pass_rule).
+# hand-author a pass_rule to get a first run going.
+#
+# D-121 (orchestrator.brief_criteria on): a brief that PRE-REGISTERS its criteria
+# carries them instead, in the one field every brief origin uses:
+#   evaluation:
+#     pass_rule:
+#       criteria:
+#         - id: whole_test_sharpe_positive   # menu ids only (config/criterion_menu.yaml)
+# and then has NO criteria_from line. The menu lint
+# (verdict_criteria_evaluator.lint_menu_shaped_pass_rule) is the only check, and
+# the criteria are resolved against the menu as a step-1a card's are. A brief
+# with both still raises in _materialize_run (criteria_from means "empty, step 1a
+# fills it").
 #
 # WHY THIS IS A GENERATED PROTOCOL, NOT A PIN (code-review correction)
 # ----------------------------------------------------------------------

@@ -2,10 +2,12 @@
 research_folds -- the three fixed folds of time windows (E-077 PR-1, D-085).
 
 A claim is never confirmed on the bars where it was observed. Each fold is six
-exact 4-month blocks (config/folds.yaml); a child run of an idea backtests on
-the next fold its LINEAGE has not used; a lineage that has used all three is
-refused. Everything here is pure (no wall clock, no market data, no network);
-the only files read are config/folds.yaml and the data policy.
+exact 4-month blocks (config/folds.yaml). D-123 (operator decision 2026-10-13,
+replacing D-085's lineage order): a child run backtests on a fold drawn at random
+among the folds (A, B, C and D) its SOURCE run's windows do not overlap, the draw
+seeded by the child's id so it is reproducible (`draw_fold`). Everything here is
+pure (no wall clock, no market data, no network); the only files read are
+config/folds.yaml and the data policy.
 
 Where the dates come from
 -------------------------
@@ -17,8 +19,12 @@ block must stay out of are read from config/campaign_data_policy.yaml
                   end of walk_forward_extension]              (2024-2025, single-use)
   * research  = backward_extension.BTCUSDT_1h, which must end the day before
                 validation starts (checked: a gap or an overlap raises).
-`load_folds` refuses a block outside the research period or inside either
-range; the validation guard (`assert_windows_clear_of_validation`) reads the
+`load_folds` refuses a block of A-C outside the research period or inside either
+range. D-115 (operator decision 2026-10-13): there is no validation stage; fold D
+(six contiguous 4-month blocks of 2024-2025, inside the validation range, outside
+the holdout) is defined in the folds file but is NOT in `order` A, B, C; since D-123
+decide-next's draw includes it; a brief carrying `fold: "D"` is generated only under
+orchestrator.folds.enabled. The validation guard (`assert_windows_clear_of_validation`) reads the
 same validation range. Under orchestrator.folds.enabled the guard runs at every
 place a protocol's windows are fixed or used: the protocol generator, the launch
 pre-flight (generated, pinned and run_context-resolved protocols alike), and
@@ -27,25 +33,20 @@ file such as protocols/baseline_v2.json, a replication_diagnostic run
 (baseline_v1.json) and a last_escalation protocol are refused too, not only
 generated ones.
 
-Lineage and "which fold has a run used"
----------------------------------------
-Lineage of a run = the run itself plus every run named in its memory entry's
-hypothesis_id. decide-next builds a child's hypothesis_id as
-`<parent hypothesis_id>__<category>-<source run>-<n>`, so the chain of source
-runs is spelled out in the id (`lineage_run_ids`).
-
-A fold is USED by a lineage when any window of any lineage run overlaps any
-block of that fold. That single rule covers every case without a special one:
-a run on exactly fold B's blocks used B; run_065..run_074 (the six 4-month
-2022-2023 windows) overlap only fold A's blocks, so they used A; a run on other
-windows (1-month tiles, a different span) used whichever folds it overlaps, and
-a run that overlaps no fold (outside 2018-2023) used none. If a lineage run's
-windows cannot be read, the fold is NOT guessed: the assignment fails with a
-reason (the candidate is infeasible) rather than risk re-using bars.
+Which fold a run is on
+----------------------
+A run is ON a fold when any of its windows overlaps any block of that fold
+(`folds_overlapped`, all four folds): a run on exactly fold B's blocks is on B;
+run_065..run_074 (the six 4-month 2022-2023 windows) are on A; a run on other
+windows is on whichever folds it overlaps (an overlap of one day counts). If the
+source run's windows cannot be read, no fold is drawn: the assignment fails with a
+reason (the candidate is infeasible) rather than risk re-using its bars.
 """
 from __future__ import annotations
 
 import calendar
+import hashlib
+import random
 import re
 from datetime import date, timedelta
 from pathlib import Path
@@ -59,15 +60,19 @@ import novelty as _nov
 FOLDS_PATH = Path(__file__).resolve().parent.parent / "config" / "folds.yaml"
 
 FOLD_ORDER = ("A", "B", "C")
+#: D-115: the fold of the 2024-2025 period, defined in the folds file after A, B, C but
+#: outside the automatic order (FOLD_ORDER): decide-next never assigns it.
+FOLD_D = "D"
+#: Every fold the folds file defines, in file order.
+ALL_FOLDS = FOLD_ORDER + (FOLD_D,)
 BLOCKS_PER_FOLD = 6
 BLOCK_MONTHS = 4
 
 _LABEL = re.compile(r"[0-9]{4}-(01|05|09)")
-_PID_SEGMENT = re.compile(r"[a-z][a-z_]*-(run_[0-9]+)-[0-9]+")
 
 
 class FoldsError(ValueError):
-    """config/folds.yaml, the policy ranges, or a lineage is unusable. A refusal, never a default."""
+    """config/folds.yaml or the policy ranges are unusable. A refusal, never a default."""
 
 
 # ---------------------------------------------------------------------------
@@ -165,11 +170,11 @@ def load_folds(path=None, *, policy_path=None) -> dict:
     if list(doc.get("order") or []) != list(FOLD_ORDER):
         raise FoldsError(f"{p}: order must be exactly {list(FOLD_ORDER)}, got {doc.get('order')!r}")
     raw = doc.get("folds")
-    if not isinstance(raw, dict) or list(raw) != list(FOLD_ORDER):
-        raise FoldsError(f"{p}: folds must hold exactly the keys {list(FOLD_ORDER)} in order")
+    if not isinstance(raw, dict) or list(raw) != list(ALL_FOLDS):  # D-115: D defined, not ordered
+        raise FoldsError(f"{p}: folds must hold exactly the keys {list(ALL_FOLDS)} in order")
     ranges = policy_ranges(policy_path)
     folds, seen = {}, {}
-    for fid in FOLD_ORDER:
+    for fid in ALL_FOLDS:
         blocks = raw[fid]
         if not isinstance(blocks, list) or len(blocks) != BLOCKS_PER_FOLD:
             raise FoldsError(f"{p}: fold {fid} must have exactly {BLOCKS_PER_FOLD} blocks")
@@ -191,11 +196,12 @@ def load_folds(path=None, *, policy_path=None) -> dict:
             if prev is not None and label <= prev:
                 raise FoldsError(f"{p}: fold {fid} blocks must be in ascending order ({prev} then {label})")
             seen[label], prev = fid, label
-            rs, re_ = ranges["research"]
+            home = "validation" if fid == FOLD_D else "research"  # D-115: fold D is 2024-2025
+            rs, re_ = ranges[home]
             if start < rs or end > re_:
-                raise FoldsError(f"{p}: fold {fid} block {label} ({start}..{end}) is outside the research "
+                raise FoldsError(f"{p}: fold {fid} block {label} ({start}..{end}) is outside the {home} "
                                  f"period {rs}..{re_} (read from the data policy)")
-            for name in ("validation", "holdout"):
+            for name in (("holdout",) if fid == FOLD_D else ("validation", "holdout")):
                 if _overlaps((start, end), ranges[name]):
                     raise FoldsError(f"{p}: fold {fid} block {label} ({start}..{end}) overlaps the "
                                      f"{name} period {ranges[name][0]}..{ranges[name][1]}")
@@ -233,19 +239,8 @@ def load_fold_windows(fold, *, path=None, policy_path=None) -> list:
 
 
 # ---------------------------------------------------------------------------
-# Lineage and the next fold
+# Which fold a run is on, and the child's fold draw (D-123)
 # ---------------------------------------------------------------------------
-
-def lineage_run_ids(run_id: str, hypothesis_id) -> list:
-    """The run itself, then every run named in its hypothesis_id (decide-next writes
-    `<parent id>__<category>-<source run>-<n>` for each generation), first-seen order."""
-    out = [run_id]
-    for seg in str(hypothesis_id or "").split("__"):
-        m = _PID_SEGMENT.fullmatch(seg)
-        if m and m.group(1) not in out:
-            out.append(m.group(1))
-    return out
-
 
 def windows_ranges(windows) -> list:
     """[(start, end), ...] of a protocol's `windows` list, or None when it cannot be read."""
@@ -263,50 +258,58 @@ def windows_ranges(windows) -> list:
     return out
 
 
-def folds_used_by(doc: dict, ranges) -> list:
-    """The folds (in order) that any of these (start, end) ranges overlaps."""
-    return [fid for fid in doc["order"]
+def folds_overlapped(doc: dict, ranges) -> list:
+    """D-123: every fold of the file (A, B, C, then D) any of these (start, end) ranges
+    overlaps -- the folds a run is on."""
+    return [fid for fid in ALL_FOLDS
             if any(_overlaps(r, (b["start"], b["end"])) for r in ranges for b in doc["folds"][fid])]
 
 
-def assign_fold(doc: dict, *, run_id: str, memory_runs: dict, run_ranges: dict) -> dict:
-    """Which fold a child of `run_id` backtests on.
+def draw_seed(key: str) -> int:
+    """D-123: the draw's seed, derived from `key` (the child's candidate id), so the same
+    candidate draws the same fold at every decision and the draw can be replayed."""
+    return int(hashlib.sha256(str(key).encode("utf-8")).hexdigest()[:16], 16)
 
-    `memory_runs`: campaign memory's `runs` mapping. `run_ranges`: {run_id: [(start, end), ...]
-    or None} -- each memory run's protocol windows (None = unreadable).
 
-    Returns {"fold": "B" | None, "windows_sha256": ... | None, "lineage": [run ids],
-    "used": {run_id: [folds]}, "reason": None | str}. `fold` is the first fold in A, B, C
-    order that no lineage run has used. `reason` is set (and fold None) when the lineage
-    has used all three (`folds_exhausted`) or when some lineage run is missing from memory
-    or has unreadable windows (`fold_lineage_unreadable`) -- the safe direction: never
-    guess a fold when the bars a line has seen are unknown."""
-    entry = memory_runs.get(run_id)
-    lineage = lineage_run_ids(run_id, (entry or {}).get("hypothesis_id"))
-    used, unreadable = {}, []
-    for rid in lineage:
-        if rid not in memory_runs:
-            unreadable.append(f"{rid} (not in campaign memory)")
-            continue
-        ranges = run_ranges.get(rid)
-        if not ranges:
-            unreadable.append(f"{rid} (its protocol windows cannot be read)")
-            continue
-        used[rid] = folds_used_by(doc, ranges)
-    result = {"fold": None, "windows_sha256": None, "lineage": lineage, "used": used, "reason": None}
-    if unreadable:
-        result["reason"] = (f"fold_lineage_unreadable: the lineage of {run_id} ({', '.join(lineage)}) "
-                            f"cannot be placed on the folds: {'; '.join(unreadable)}")
+def draw_fold(doc: dict, *, run_id: str, run_ranges: dict, seed_key: str,
+              usable=None) -> dict:
+    """D-123 (operator decision 2026-10-13): which fold a child of `run_id` backtests on.
+
+    The source run's folds are the folds its windows overlap (`run_ranges[run_id]`);
+    the child's fold is drawn with random.Random(draw_seed(seed_key)) among the other
+    folds of ALL_FOLDS (A, B, C, D), keeping only those `usable(fold)` returns None for
+    (the caller's data check; None = every fold usable).
+
+    Returns {"fold", "windows_sha256", "source_folds", "drawn_from", "seed", "reason"}.
+    `reason` is set (and fold None) when the source run's windows cannot be read
+    (`fold_source_unreadable`) or no other fold is usable (`no_other_fold`, naming why
+    each one was left out) -- never guessed."""
+    seed = draw_seed(seed_key)
+    result = {"fold": None, "windows_sha256": None, "source_folds": None, "drawn_from": [],
+              "seed": seed, "reason": None}
+    ranges = run_ranges.get(run_id)
+    if not ranges:
+        result["reason"] = (f"fold_source_unreadable: {run_id}'s protocol windows cannot be "
+                            f"read, so the fold its claim was found on is unknown")
         return result
-    taken = {f for fs in used.values() for f in fs}
-    for fid in doc["order"]:
-        if fid not in taken:
-            result["fold"] = fid
-            result["windows_sha256"] = fold_windows_sha256(doc, fid)
-            return result
-    result["reason"] = (f"folds_exhausted: the lineage of {run_id} ({', '.join(lineage)}) has used every "
-                        f"fold ({', '.join(doc['order'])}); the next stage for this idea is validation "
-                        f"(single-use), not another child run")
+    source = folds_overlapped(doc, ranges)
+    result["source_folds"] = source
+    left_out = []
+    for fid in ALL_FOLDS:
+        if fid in source:
+            continue
+        why = usable(fid) if usable is not None else None
+        if why:
+            left_out.append(f"{fid}: {why}")
+        else:
+            result["drawn_from"].append(fid)
+    if not result["drawn_from"]:
+        result["reason"] = (f"no_other_fold: {run_id} is on {source or 'no fold'}; no other fold "
+                            f"is usable" + (f" ({'; '.join(left_out)})" if left_out else ""))
+        return result
+    fold = random.Random(seed).choice(result["drawn_from"])
+    result["fold"] = fold
+    result["windows_sha256"] = fold_windows_sha256(doc, fold)
     return result
 
 
@@ -318,26 +321,41 @@ class ValidationBoundaryBreach(ValueError):
     """A generated window would materialise bars inside the validation period."""
 
 
-def assert_windows_clear_of_validation(windows: list, validation_range) -> None:
-    """Refuse any window whose [start, end] overlaps the validation period.
+def assert_windows_clear_of_validation(windows: list, validation_range, fold_d_windows=()) -> None:
+    """Refuse any window whose [start, end] overlaps the validation period, unless it is
+    exactly one of fold D's blocks (D-115: no validation stage; label, start and end
+    must all match).
 
-    No validation stage exists yet, so under orchestrator.folds.enabled this refuses
-    ALWAYS: the 2024-2025 bars are single-use and only the future validation stage
-    may read them. Enforced by the callers listed in the module docstring; this
-    function is the one check they all share (and the one message). `end` is inclusive by day at the engine (D-058), so a window ending
+    `fold_d_windows`: fold D's windows, or a zero-argument function returning them,
+    called only when some window overlaps the period (so a protocol clear of 2024-2025
+    never reads the folds file); () lets nothing through. Enforced by the callers
+    listed in the module docstring; this function is the one check they all share
+    (and the one message). `end` is inclusive by day at the engine (D-058), so a window ending
     on a validation day spends that day. Raises, never clamps (a silently trimmed sweep
     no longer matches what was pre-registered)."""
     v_start, v_end = validation_range
+    allowed = None
     for w in windows:
         label = w.get("label", "?")
         start, end = str(w["test"]["start"])[:10], str(w["test"]["end"])[:10]
-        if _overlaps((start, end), (v_start, v_end)):
+        if not _overlaps((start, end), (v_start, v_end)):
+            continue
+        if allowed is None:
+            blocks = fold_d_windows() if callable(fold_d_windows) else fold_d_windows
+            allowed = {(str(b.get("label")), str(b["test"]["start"])[:10],
+                        str(b["test"]["end"])[:10]) for b in blocks}
+        if (str(label), start, end) not in allowed:
             raise ValidationBoundaryBreach(
                 f"window {label!r} ({start}..{end}) overlaps the validation period "
-                f"{v_start}..{v_end}. The validation period is single-use: only the future "
-                f"validation stage may read it, and that stage does not exist yet, so under "
-                f"orchestrator.folds.enabled no run may include it. Use a fold from "
-                f"config/folds.yaml (research period only), or turn the flag off.")
+                f"{v_start}..{v_end} and is not one of fold D's blocks. D-115: there is no "
+                f"validation stage; under orchestrator.folds.enabled a run may include that "
+                f"period only as fold D's exact blocks (config/folds.yaml). Use a fold's "
+                f"blocks, or turn the flag off.")
+
+
+def load_fold_d_windows(*, path=None, policy_path=None) -> list:
+    """D-115: fold D's windows, for the validation guard's callers."""
+    return load_fold_windows(FOLD_D, path=path, policy_path=policy_path)
 
 
 #: config/campaign_config.yaml, where orchestrator.folds.enabled lives.
@@ -377,8 +395,11 @@ def load_validation_range(policy_path=None) -> tuple:
 # ---------------------------------------------------------------------------
 
 def check_fold_id(fold) -> str:
-    if fold not in FOLD_ORDER:
-        raise FoldsError(f"fold {fold!r} is not one of {list(FOLD_ORDER)}")
+    """A fold the folds file defines (D-115: D included, so a fold-D run's memory entry and
+    trial rows record it). Whether a brief may run on fold D is decided by the generator
+    (run_phase1_research._protocol_windows_from_constraints: flag on only)."""
+    if fold not in ALL_FOLDS:
+        raise FoldsError(f"fold {fold!r} is not one of {list(ALL_FOLDS)}")
     return fold
 
 

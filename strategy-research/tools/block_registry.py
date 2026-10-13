@@ -316,7 +316,8 @@ def blocks_for_run(path: Path, run_id: str) -> list:
 
 
 def record_run(path: Path, run_dir: Path, entry: dict, *, root: Path,
-               composition_runs: bool = False, composition_run: bool = False) -> dict | None:
+               composition_runs: bool = False, composition_run: bool = False,
+               refold_run: bool = False) -> dict | None:
     """The regroup_record hook. Returns the memory entry's `registry` value
     ({"block_ids": [...]} or {"skipped": reason}); None for a fault-only
     entry, which carries no registry field. Raises BlockRegistryError on a
@@ -333,6 +334,11 @@ def record_run(path: Path, run_dir: Path, entry: dict, *, root: Path,
     if composition_run:
         _append(path, run_id, [])  # never registers; only refuses to hide an old block
         return {"skipped": _cm.REGISTRY_SKIPPED_COMPOSITION}
+    if refold_run:
+        # D-122 (the caller passes it only for an operator re-run): the same config as its
+        # source run, branch 3 only -- never a second block for it.
+        _append(path, run_id, [])
+        return {"skipped": _cm.REGISTRY_SKIPPED_REFOLD}
     if entry.get("legacy") is not False or entry.get("idea_status") != "validated":
         _append(path, run_id, [])
         return {"skipped": _cm.REGISTRY_SKIPPED_NOT_VALIDATED}

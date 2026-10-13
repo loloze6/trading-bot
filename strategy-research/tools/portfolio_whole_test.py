@@ -95,8 +95,9 @@ import portfolio_daily as _pd  # tools/ sibling: the v1 per-window definition
 PortfolioNotEvaluable = _pd.PortfolioNotEvaluable
 
 # G2: the chained span must satisfy the SAME coverage constant as each window
-# (counted return days + 1 >= this x calendar days from the first anchor to the
-# last chained day).
+# (counted return days + 1 >= this x the counted calendar days: the days inside
+# some window's nominal span, minus the engine tail/head days -- D-113: planned
+# protocol gap days are not counted).
 WHOLE_TEST_MIN_COVERAGE = _pd.PORTFOLIO_MIN_COMMON_DAY_COVERAGE
 
 # G3: fewer daily returns than this -> the Sharpe is NOT_EVALUABLE.
@@ -293,6 +294,30 @@ MAX_ENGINE_TAIL_DAYS = 5
 _MAX_CELLS_SHOWN = 20
 
 
+def window_start_value(path: Path) -> float:
+    """D-116: one (coin, window) account's starting value -- `total_portfolio_value`
+    on its first recorded bar (the first row that is not NOT_READY, the same filter as
+    portfolio_daily.window_equity_bars), i.e. the account BEFORE that bar's rebalance.
+    chain_windows(start_values=...) measures each window's first-day return from it.
+    Fails loud on a missing column, no recorded bar, or a value that is not a finite
+    positive number."""
+    with open(path, encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        missing = {"timestamp", "regime", "total_portfolio_value"} - set(reader.fieldnames or [])
+        if missing:
+            raise ValueError(f"day-1 start value: {path} lacks column(s) {sorted(missing)}")
+        for row in reader:
+            if str(row["regime"]).strip().upper() == "NOT_READY":
+                continue
+            try:
+                value = float(row["total_portfolio_value"])
+            except (TypeError, ValueError):
+                raise ValueError(f"day-1 start value: {path} has a non-numeric "
+                                 f"total_portfolio_value at {row['timestamp']!r}") from None
+            return _finite_positive(value, f"day-1 start value of {path} at {row['timestamp']!r}")
+    raise ValueError(f"day-1 start value: {path} has no recorded bar")
+
+
 def _parse_protocol_date(value, what: str) -> date:
     if isinstance(value, datetime) or not isinstance(value, (str, date)):
         raise ValueError(f"{what}: {value!r} is not a YYYY-MM-DD date")
@@ -390,7 +415,8 @@ def _ordinal_cover(spans) -> set:
 
 def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
                   warmup_days: int = DEFAULT_WARMUP_DAYS,
-                  max_engine_tail_days: int = MAX_ENGINE_TAIL_DAYS) -> dict:
+                  max_engine_tail_days: int = MAX_ENGINE_TAIL_DAYS,
+                  start_values: Mapping | None = None) -> dict:
     """One whole-test equal-weight portfolio curve from per-window backtests.
 
     windows: {window label: {coin: {naive UTC timestamp: equity}}} -- the shape
@@ -409,6 +435,23 @@ def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
         span in days when it is longer than DEFAULT_WARMUP_DAYS.
     max_engine_tail_days: the most days a window's recorded data may stop
         before its nominal end (see ENGINE SHORTFALL); more is NOT_EVALUABLE.
+    start_values: D-116 (CUL-431's day-1 anchor defect) -- {window label: {coin:
+        the coin account's starting value}}, i.e. total_portfolio_value on the
+        window's first recorded bar, before that bar's rebalance
+        (window_start_value). Given, each window that starts the chain or
+        follows a gap ("first" / "gap") gets ONE more daily return, dated on its
+        anchor day: r1 = mean over coins of (equity at the anchor close /
+        starting value) - 1 -- the first day's fees, slippage and (on intraday
+        bars) the first day's P&L, which anchoring at the first close left out
+        of the chain. The window's levels are scaled by (1 + r1); the coverage
+        numerator is then the number of daily returns (each counted window day
+        has one), not returns + 1; the result carries `start_level` (1.0, the
+        level before the first window's first fill) and `n_day1_returns`. A
+        window that joins the chain on an earlier window's day ("junction" /
+        "overlap") gets no day-1 return: its first day belongs to the earlier
+        window. The bar-level curve starts at the first window's anchor close,
+        so the drawdown does not see the first window's own day-1 drop (it does
+        see every later window's). None (the default): exactly as before.
 
     Data that does not fit the bounds (NOT_EVALUABLE, E-062 S2b-1 fix M1: a
     data hole must not abort the grading of other variants): a recorded bar
@@ -478,19 +521,24 @@ def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
     with a common bar, so for a single such window this is exactly v1's
     drawdown bar set.
 
-    Whole-test coverage (G2): (number of daily returns + 1) must be >=
-    WHOLE_TEST_MIN_COVERAGE x the counted calendar days = the nominal span
-    (first window's nominal start to the last nominal end, inclusive) minus
+    Whole-test coverage (G2, D-113): (number of daily returns + 1) must be >=
+    WHOLE_TEST_MIN_COVERAGE x the counted calendar days = the days inside some
+    window's nominal span (the union of test.start..test.end, inclusive) minus
     the engine tail/head days no window's effective span covers. Protocol gap
-    days stay counted (G2). It counts RETURN days, so one missing day inside a
-    window costs two counted days (stricter than the per-window floor).
+    days (inside no window's nominal span, n_gap_days) are NOT counted (D-113,
+    2026-10-12; before, the whole nominal span was counted, so an interleaved
+    fold could never be graded); for a contiguous protocol the union is the
+    whole span and nothing changes. A day missing INSIDE a window stays
+    counted: it costs two daily returns in the numerator (stricter than the
+    per-window floor). n_calendar_days stays the whole nominal span.
 
     Returns {coins, segments, daily_levels [(date, level)], daily_returns
     [(date, return)], bar_levels [(timestamp, level)], first_day, last_day,
     nominal_first_day, nominal_last_day, n_calendar_days (the nominal span),
     n_counted_calendar_days (the coverage denominator), n_gap_days,
     n_gap_links, n_engine_tail_days, n_engine_head_days,
-    engine_gap_days_excluded (sorted dates), n_multi_day_steps, coverage}.
+    engine_gap_days_excluded (sorted dates), n_multi_day_steps, coverage}, plus
+    start_level and n_day1_returns when start_values are given (D-116).
     `segments` is one dict per window in chain order: window, nominal_start,
     nominal_end, effective_start, effective_end, engine_head_days,
     engine_tail_days, anchor, join_day, end_day, kind (first | junction |
@@ -502,6 +550,14 @@ def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
     if not windows:
         raise PortfolioNotEvaluable("no windows to chain")
     _check_windows(windows, coins)
+    if start_values is not None:  # D-116
+        if not isinstance(start_values, Mapping) or set(start_values) != set(windows):
+            raise ValueError("start_values must map exactly the chained windows")
+        for win, by_coin in start_values.items():
+            if not isinstance(by_coin, Mapping) or set(by_coin) != set(coins):
+                raise ValueError(f"start_values[{win!r}] must map exactly the coins {list(coins)}")
+            for c, val in by_coin.items():
+                _finite_positive(val, f"start_values[{win!r}][{c!r}]")
     bounds = _check_bounds(window_bounds, windows)
     for name, val in (("warmup_days", warmup_days), ("max_engine_tail_days", max_engine_tail_days)):
         if not _is_int(val) or val < 0:
@@ -605,7 +661,12 @@ def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
             n_gap_days += gap_before
             n_gap_links += 1
 
-        scale = (1.0 if level is None else level) / v[join]
+        base = 1.0 if level is None else level
+        r1 = None
+        if start_values is not None and kind in ("first", "gap"):  # D-116: the day-1 return
+            r1 = sum(anchor_val[c] / float(start_values[win][c]) for c in coins) / len(coins) - 1.0
+            base *= 1.0 + r1
+        scale = base / v[join]
         close_ts = {d: max(daily_w[c][d][0] for c in coins) for d in common}
         join_ts, end_ts = close_ts[join], close_ts[common[-1]]
         points: dict = {}
@@ -613,6 +674,9 @@ def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
             daily_levels.append((join, scale * v[join]))
             points[join_ts] = scale * v[join]
         return_days = []
+        if r1 is not None:
+            daily_returns.append((join, r1))
+            return_days.append(join)
         prev = join
         for d in common:
             if d <= join:
@@ -656,15 +720,25 @@ def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
     nominal_last = max(e for _s, e in bounds.values())
     engine_gap = sorted(o for o in nominal_cover if o not in effective_cover)
     n_nominal = (nominal_last - nominal_first).days + 1
-    n_counted = n_nominal - len(engine_gap)
-    coverage = (len(daily_returns) + 1) / n_counted
+    # D-113: the protocol gap days (inside no window's nominal span) are not counted.
+    n_planned_gap = n_nominal - len(nominal_cover)
+    n_counted = len(nominal_cover) - len(engine_gap)
+    plus = 0 if start_values is not None else 1  # D-116: every window's first day has a return
+    coverage = (len(daily_returns) + plus) / n_counted
     if coverage < WHOLE_TEST_MIN_COVERAGE:
+        if n_planned_gap == 0:  # a contiguous protocol: the pre-D-113 text, byte-identical
+            raise PortfolioNotEvaluable(
+                f"whole test: {len(daily_returns)} daily return(s) + {plus} cover {coverage:.1%} of "
+                f"the {n_counted} counted calendar day(s) (nominal span {nominal_first} to "
+                f"{nominal_last} = {n_nominal} day(s), minus {len(engine_gap)} engine tail/head "
+                f"day(s); {n_gap_days} protocol gap day(s) over {n_gap_links} gap link(s) stay "
+                f"counted), below WHOLE_TEST_MIN_COVERAGE={WHOLE_TEST_MIN_COVERAGE}")
         raise PortfolioNotEvaluable(
-            f"whole test: {len(daily_returns)} daily return(s) + 1 cover {coverage:.1%} of the "
+            f"whole test: {len(daily_returns)} daily return(s) + {plus} cover {coverage:.1%} of the "
             f"{n_counted} counted calendar day(s) (nominal span {nominal_first} to "
-            f"{nominal_last} = {n_nominal} day(s), minus {len(engine_gap)} engine tail/head "
-            f"day(s); {n_gap_days} protocol gap day(s) over {n_gap_links} gap link(s) stay "
-            f"counted), below WHOLE_TEST_MIN_COVERAGE={WHOLE_TEST_MIN_COVERAGE}")
+            f"{nominal_last} = {n_nominal} day(s), minus {n_planned_gap} protocol gap day(s) "
+            f"over {n_gap_links} gap link(s) and {len(engine_gap)} engine tail/head day(s), "
+            f"D-113), below WHOLE_TEST_MIN_COVERAGE={WHOLE_TEST_MIN_COVERAGE}")
     return {"coins": list(coins), "segments": segments, "daily_levels": daily_levels,
             "daily_returns": daily_returns, "bar_levels": bar_levels,
             "first_day": daily_levels[0][0], "last_day": last_day,
@@ -674,7 +748,10 @@ def chain_windows(windows: Mapping, coins, window_bounds: Mapping, *,
             "n_engine_tail_days": sum(s["engine_tail_days"] for s in segments),
             "n_engine_head_days": sum(s["engine_head_days"] for s in segments),
             "engine_gap_days_excluded": [date.fromordinal(o) for o in engine_gap],
-            "n_multi_day_steps": n_multi, "coverage": coverage}
+            "n_multi_day_steps": n_multi, "coverage": coverage,
+            **({"start_level": 1.0,
+                "n_day1_returns": sum(1 for s in segments if s["kind"] in ("first", "gap"))}
+               if start_values is not None else {})}
 
 
 # ---------------------------------------------------------------------------
@@ -691,7 +768,10 @@ def whole_test_max_drawdown(chain: dict) -> dict:
     drawdown (run_phase1_research._portfolio_profit_metrics, D-020) and the
     engine's bar_equity drawdown, so intraday drops count; D-034 changes only
     the span (whole test instead of worst window), not the basis. The curve
-    starts at the first window's anchor close (level 1.0).
+    starts at the first window's anchor close: level 1.0, or 1 + its day-1
+    return when the chain was built with start values (D-116; the drop from the
+    starting capital to that first point is then not in the drawdown, every
+    later window's day-1 drop is).
 
     Returns {max_drawdown_pct, peak_ts, trough_ts, n_bars}."""
     bars = chain.get("bar_levels") if isinstance(chain, Mapping) else None
@@ -746,7 +826,9 @@ def whole_test_sharpe(daily_returns) -> float:
 # E-062 S2b-2 G2 (D-041): the exact basis tag a ledger `whole_test` block (or a
 # recompute-overlay entry) carries. The DSR's same-basis sample admits a value
 # only on an exact string match, so values on another basis never mix.
-WHOLE_TEST_BASIS = "whole_test_daily_equal_weight_v1"
+# D-116: v2 = the chain with each window's day-1 return (start_values). A v1 value (no
+# day-1 return) is a different series, so the DSR's same-basis sample never mixes them.
+WHOLE_TEST_BASIS = "whole_test_daily_equal_weight_v2"
 
 
 def whole_test_sharpe_stats(daily_returns) -> dict:
@@ -915,6 +997,9 @@ def chained_buy_and_hold(chain: dict, close_windows: Mapping, fee_bps: Mapping,
     Both returns are total compounded returns on the CHAINED LEVEL (S1 Q3):
         strategy_total = final chained level - 1 (its costs are in the equity);
         buy_and_hold_gross = prod over windows of c_w(end) / c_w(join) - 1,
+    (D-116: for a chain built with start values, times, for each first / gap
+    window, the mean over coins of close(anchor close) / close(first recorded
+    bar) -- the same day-1 span as the strategy's day-1 return; 1.0 on daily bars),
     where c_w is the equal-weight close curve normalised at the window anchor
     (equal weight reset at every window start, like the strategy book -- no
     rebalancing cost is charged to buy-and-hold for it, which favours
@@ -961,7 +1046,20 @@ def chained_buy_and_hold(chain: dict, close_windows: Mapping, fee_bps: Mapping,
                              f"has different common days than its equity series")
         cv = dict(zip(wc["common"], wc["curve"]))
         bh_growth *= cv[seg["end_day"]] / cv[seg["join_day"]]
-    first_level, final_level = chain["daily_levels"][0][1], chain["daily_levels"][-1][1]
+        if "start_level" in chain and seg["kind"] in ("first", "gap"):
+            # D-116: the strategy's day-1 return runs from its first recorded bar to
+            # the anchor close, so buy-and-hold does too: mean over coins of
+            # close(anchor close) / close(first recorded bar) -- exactly 1.0 when the
+            # anchor day has a single bar (daily bars).
+            day1 = []
+            for c in coins:
+                bars_c = close_windows[seg["window"]][c]
+                anchor_ts = max(t for t in bars_c if t.date() == seg["anchor"])
+                day1.append(bars_c[anchor_ts] / bars_c[min(bars_c)])
+            bh_growth *= sum(day1) / len(day1)
+    # D-116: with day-1 returns the strategy starts from the level before its first fill
+    first_level = chain.get("start_level", chain["daily_levels"][0][1])
+    final_level = chain["daily_levels"][-1][1]
     strat_growth = _finite_positive(final_level, "final chained level") \
         / _finite_positive(first_level, "first chained level")
     cost_multiplier = sum((1.0 - costs[c]) ** 2 for c in coins) / len(coins)
@@ -976,6 +1074,70 @@ def chained_buy_and_hold(chain: dict, close_windows: Mapping, fee_bps: Mapping,
             "first_day": chain["first_day"], "last_day": chain["last_day"],
             "n_calendar_days": chain["n_calendar_days"],
             "n_daily_returns": len(chain["daily_returns"])}
+
+
+def chained_buy_and_hold_daily_returns(chain: dict, close_windows: Mapping, fee_bps: Mapping,
+                                       slippage_bps: Mapping) -> list:
+    """D-120: equal-weight buy-and-hold's daily returns [(date, return)] on EXACTLY the
+    strategy's chained return days (chain["daily_returns"]' dates, in order), so its
+    whole_test_sharpe is comparable with the strategy's.
+
+    Per window (chained_buy_and_hold's basket: the coins' close curve, equal weight reset at
+    the window anchor): a return day d that follows d - 1 in the same window gets
+    c_w(d) / c_w(d - 1) - 1; a window's own day-1 return (D-116, dated on its anchor, present
+    only when the chain was built with start values) gets the mean over coins of
+    close(anchor close) / close(first recorded bar) - 1 (0 on daily bars). Costs, the
+    convention of chained_buy_and_hold (one round trip per coin for the whole test, c_s =
+    (fee_bps[s] + slippage_bps[s]) / 1e4 per side): the first chained return is multiplied
+    by the mean over coins of (1 - c_s) (the entry) and the last one too (the exit).
+    Raises ValueError when the close series are not the equity series' (as
+    chained_buy_and_hold)."""
+    if not isinstance(chain, Mapping) or "segments" not in chain or "daily_returns" not in chain:
+        raise ValueError("buy-and-hold returns: `chain` is not a chain_windows result")
+    coins = _check_coins(chain["coins"])
+    labels = [s["window"] for s in chain["segments"]]
+    if not isinstance(close_windows, Mapping) or set(close_windows) != set(labels):
+        raise ValueError("buy-and-hold returns: close windows differ from the chained windows")
+    _check_windows(close_windows, coins, coin_mismatch=ValueError)
+    costs = {}
+    for c in coins:
+        if c not in fee_bps or c not in slippage_bps:
+            raise ValueError(f"buy-and-hold returns: no fee/slippage for coin {c!r}")
+        costs[c] = (_nonneg(fee_bps[c], f"fee_bps[{c}]")
+                    + _nonneg(slippage_bps[c], f"slippage_bps[{c}]")) / 10_000.0
+        if costs[c] >= 1.0:
+            raise ValueError(f"buy-and-hold returns: cost per side for {c!r} is >= 100%")
+    side = sum(1.0 - costs[c] for c in coins) / len(coins)
+    out = []
+    for seg in chain["segments"]:
+        try:
+            wc = _pd.window_common_curve(seg["window"], close_windows[seg["window"]], coins)
+        except PortfolioNotEvaluable as exc:
+            raise ValueError(f"buy-and-hold returns: window {seg['window']!r} close series is "
+                             f"inconsistent with its equity series ({exc})") from None
+        if wc["common"] != seg["common"]:
+            raise ValueError(f"buy-and-hold returns: window {seg['window']!r} close series has "
+                             f"different common days than its equity series")
+        cv = dict(zip(wc["common"], wc["curve"]))
+        for d in seg["return_days"]:
+            prev = date.fromordinal(d.toordinal() - 1)
+            if d == seg["join_day"] and prev not in cv:  # D-116: the window's day-1 return
+                day1 = []
+                for c in coins:
+                    bars_c = close_windows[seg["window"]][c]
+                    anchor_ts = max(t for t in bars_c if t.date() == d)
+                    day1.append(bars_c[anchor_ts] / bars_c[min(bars_c)])
+                out.append((d, sum(day1) / len(day1) - 1.0))
+            else:
+                out.append((d, cv[d] / cv[prev] - 1.0))
+    if [d for d, _r in out] != [d for d, _r in chain["daily_returns"]]:
+        raise ValueError("buy-and-hold returns: the days are not the strategy's chained days")
+    if out:
+        d0, r0 = out[0]
+        out[0] = (d0, (1.0 + r0) * side - 1.0)
+        dn, rn = out[-1]
+        out[-1] = (dn, (1.0 + rn) * side - 1.0)
+    return out
 
 
 # ---------------------------------------------------------------------------

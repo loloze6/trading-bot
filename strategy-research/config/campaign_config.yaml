@@ -995,29 +995,31 @@ orchestrator:
       #
       # While true:
       #  * decide-next (tools/decide_next.py) gives a child run the windows of
-      #    the next fold its LINEAGE has not used (config/folds.yaml: three folds
-      #    of six exact 4-month blocks, A = 2022-2023, B and C = 2018-2021;
-      #    order A, B, C), writes `fold` into the child's
-      #    machine_constraints.protocol, and marks a candidate whose lineage has
-      #    used all three folds INFEASIBLE (reason folds_exhausted; the campaign
-      #    goes on with the other candidates). A fold is "used" when any window
-      #    of any lineage run overlaps any block of it (tools/research_folds.py),
-      #    so runs 065-074 count as fold A without a special case.
-      #    A candidate whose child has no data on the chosen fold (layer-1
-      #    coverage of its symbols and timeframe, the data-availability gate's
-      #    own precheck; no network) is INFEASIBLE with reason
-      #    fold_<X>_lacks_data -- it never skips ahead to another fold. Aux
-      #    feeds are not checked here (the gate reads them in layer 2 only).
+      #    a fold DRAWN AT RANDOM among the folds its source run is not on
+      #    (D-123, operator 2026-10-13, replacing D-085's lineage order;
+      #    config/folds.yaml: A = 2022-2023, B and C = 2018-2021, D = 2024-2025,
+      #    six exact 4-month blocks each), keeping only folds the child has data
+      #    on (layer-1 coverage of its symbols and timeframe, the
+      #    data-availability gate's own precheck; no network). The draw is
+      #    seeded by the candidate id (reproducible; the seed is recorded). It
+      #    writes `fold` into the child's machine_constraints.protocol. A run is
+      #    "on" a fold when any of its windows overlaps any block of it
+      #    (tools/research_folds.py), so runs 065-074 are on fold A without a
+      #    special case. No usable other fold (no_other_fold) or unreadable
+      #    source windows (fold_source_unreadable): INFEASIBLE, the campaign
+      #    goes on with the other candidates. Aux feeds are not checked here
+      #    (the gate reads them in layer 2 only).
       #  * every place a protocol's windows are fixed or used REFUSES any window
       #    overlapping the validation period (the data policy's 2024-2025): the
       #    protocol generator, the launch pre-flight (generated AND pinned
       #    protocols, and the protocol a run_context or last_escalation
       #    resolves to), and tools/run_protocol.py, which every backtest passes
-      #    through (it reads this flag from this file). No validation stage
-      #    exists yet, so no run that goes through the orchestrator or
-      #    run_protocol.py may include it; only the future validation stage
-      #    may. (A by-hand backtest that bypasses run_protocol.py is outside
-      #    this guard.)
+      #    through (it reads this flag from this file), except a window that is
+      #    exactly one of fold D's blocks (D-115: no validation stage; fold D =
+      #    2024-2025, outside the automatic order, reached only by the
+      #    operator's re-run command; a brief with `fold: "D"` is generated only
+      #    while this flag is on). (A by-hand backtest that bypasses
+      #    run_protocol.py is outside this guard.)
       #  * `fold` is recorded in run_context.yaml, the campaign memory entry
       #    and the trial rows of a run whose pre-registration carries one.
       #  * E-077 PR-2 (D-087): a reader's side finding carries `vehicle` (required
@@ -1114,6 +1116,15 @@ orchestrator:
       # on): when the variant loop is also off, step 2 (innovation_expansion) is
       # written by code too -- variant_patches.yaml with `base` only, empty
       # patch, no symbol; no model call. Loop on: step 2 is the model, as before.
+  brief_criteria:
+    enabled: false
+      # D-121 (operator, 2026-10-13). OFF BY DEFAULT, read by
+      # run_phase1_research._brief_criteria_enabled(). No dependency. While false:
+      # byte-identical. While true: a brief's own criteria -- evaluation.pass_rule with
+      # every criterion a menu id -- are checked only by the menu lint and resolved
+      # against config/criterion_menu.yaml as a step-1a card's, whatever wrote the
+      # brief; decide-next copies a fold child's source criteria into that field. No
+      # criteria given: step 1a picks (criteria_from: hypothesis_generation).
   explore_confirm:
     enabled: false
       # E-072 (P-CUL-80, D-080, engineering/roadmap/E-072/PHASE_A.md). OFF BY

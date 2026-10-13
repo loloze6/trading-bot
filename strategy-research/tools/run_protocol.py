@@ -618,6 +618,50 @@ def _all_costs_fields(side: str, entry_price: float, exit_price: float, bars: li
     }
 
 
+def _full_precision_closes(run_dir: Path) -> dict:
+    """D-117 (CUL-431's slippage rounding defect): {timestamp string: close} from the
+    window's portfolio_states.csv, which the engine writes at full precision, while
+    bars.csv is the same state frame rounded to 6 decimals
+    (trading-bot/reporting/run_artifact.py write_bars_csv). The engine fills at the
+    UNROUNDED close moved by slippage, so slippage measured against a rounded close is
+    off (up to ~0.1 bps per leg on a coin priced near 0.06). {} when the file is absent
+    (hand-written fixtures); a row whose close does not parse as a positive number is
+    skipped; a repeated timestamp keeps its first close (the engine re-records a bar
+    around a forced close with the same close)."""
+    p = run_dir / "portfolio_states.csv"
+    if not p.exists():
+        return {}
+    out: dict = {}
+    with open(p, encoding="utf-8", newline="") as f:
+        for row in csv.DictReader(f):
+            ts = row.get("timestamp")
+            try:
+                close = float(row.get("close") or "")
+            except ValueError:
+                continue
+            if ts and close > 0:
+                out.setdefault(ts, close)
+    return out
+
+
+def _bars_with_full_precision_closes(bars: list, closes: dict, where: str = "") -> list:
+    """D-117: `bars` with each close replaced by the full-precision one at the same
+    timestamp when portfolio_states.csv has it (else the bars.csv close is kept). When
+    the file has closes but misses some bars' timestamps, those bars keep the rounded
+    close and a WARNING says so on stderr (review of #407: a silent fallback would hide
+    a format drift between the two files)."""
+    if not closes:
+        return bars
+    missing = [b.get("timestamp") for b in bars if b.get("timestamp") not in closes]
+    if missing:
+        print(f"    WARNING: portfolio_states.csv has no close for {len(missing)} of {len(bars)} "
+              f"bars.csv timestamp(s){' in ' + where if where else ''} (first: {missing[:3]}) -- "
+              f"the all-costs fields use the 6-decimal bars.csv close for those bars",
+              file=sys.stderr)
+    return [{**b, "close": closes[b["timestamp"]]} if b.get("timestamp") in closes else b
+            for b in bars]
+
+
 def _compute_trade_records_for_window(
     run_dir: Path,
     symbol: str,
@@ -641,6 +685,10 @@ def _compute_trade_records_for_window(
     if not trades:
         return []
     bars = _load_bars(run_dir)
+    # D-117: the all-costs fields read full-precision closes (only under CUL-414's flag)
+    cost_bars = (_bars_with_full_precision_closes(bars, _full_precision_closes(run_dir),
+                                                  f"{symbol} {window}")
+                 if cost_bar_all_costs else bars)
 
     records = []
     for trade in trades:
@@ -739,7 +787,7 @@ def _compute_trade_records_for_window(
             "held_longer_better":      held_longer_ok,        # E-016 (exit_later, metric b)
         }
         if cost_bar_all_costs:  # CUL-414: appended after the existing fields
-            record.update(_all_costs_fields(side, entry_price, exit_price, bars,
+            record.update(_all_costs_fields(side, entry_price, exit_price, cost_bars,
                                             entry_idx, exit_idx, cost_bps))
         records.append(record)
     return records
@@ -2072,7 +2120,10 @@ def _refuse_validation_period_windows(protocol: dict) -> None:
         if not _research_folds.folds_flag_enabled():
             return
         validation = _research_folds.load_validation_range(_DATA_POLICY_PATH)
-        _research_folds.assert_windows_clear_of_validation(protocol.get("windows") or [], validation)
+        # D-115: fold D's exact blocks pass (the folds file is read only if a window is in 2024-2025)
+        _research_folds.assert_windows_clear_of_validation(
+            protocol.get("windows") or [], validation,
+            lambda: _research_folds.load_fold_d_windows(policy_path=_DATA_POLICY_PATH))
     except (_research_folds.FoldsError, _research_folds.ValidationBoundaryBreach) as exc:
         _refuse_before_any_backtest(f"{exc}")
 

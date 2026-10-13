@@ -27,7 +27,7 @@ import portfolio_daily as pdv1  # noqa: E402
 import portfolio_whole_test as pw  # noqa: E402
 
 NE = pdv1.PortfolioNotEvaluable
-BASIS = "whole_test_daily_equal_weight_v1"
+BASIS = "whole_test_daily_equal_weight_v2"  # D-116 (was v1)
 D0 = date(2018, 4, 1)
 
 
@@ -301,7 +301,7 @@ def _mixed_ledger():
         _row("run_055", source="backtest_failed", statistic_valid="failed"),
         _row("run_070", whole_test=_block(0.05)),                        # K
         _row("run_071", whole_test=_block(-0.02)),                       # K
-        _row("run_072", whole_test=_block(0.9, basis="whole_test_daily_equal_weight_v2")),
+        _row("run_072", whole_test=_block(0.9, basis="whole_test_other_basis_for_tests")),
         _row("run_073", whole_test=_block(None, status="not_evaluable")),
         _row("run_074", whole_test=_block(0.7), invalidated_artifact=True),  # out of N and K
         _row("run_075", fh="h_run_070_backtest", whole_test=_block(0.05)),   # dedup onto 070

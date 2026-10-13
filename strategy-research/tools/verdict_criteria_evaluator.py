@@ -115,6 +115,9 @@ _NON_VERDICT_OUTCOME_PREFIXES = ("ungated", "measurement_only", "blocked", "unus
 _NON_VERDICT_OUTCOMES = frozenset({
     "invalidated_artifact",
     "inconclusive",
+    # D-122: an operator re-run ended (branch 3 only; its verdict is the profit bars'
+    # evaluation, never the grid's) -- claims nothing about the hypothesis.
+    "completed_refold",
     # config/campaign_queue.yaml reuses `outcome` for WHERE A LINEAGE GOT TO as
     # well as for what it concluded. A stage name or a lineage-continuation
     # marker asserts nothing about the hypothesis and needs no gate; only a
@@ -1584,7 +1587,8 @@ def _evaluate_profit_bars_cell(criterion: dict, variant_id, grader) -> dict:
                 "reason": f"criterion {cid!r}: the profit-bars grader returned {overall!r} for "
                           f"{variant_id!r}, not one of {_PROFIT_BARS_GRADER_RESULTS}"}
     bars = graded.get("bars") or []
-    bar_results = [b.get("result") for b in bars if isinstance(b, dict)]
+    # D-119: an advisory row (a deflated Sharpe that cannot be computed) never decides the cell
+    bar_results = [b.get("result") for b in bars if isinstance(b, dict) and not b.get("advisory")]
     if overall == "INVALIDATED":
         result = "INCONCLUSIVE"
     elif overall == "PASS" and (not bar_results or set(bar_results) != {"PASS"}):
