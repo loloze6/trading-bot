@@ -2309,6 +2309,18 @@ def _criteria_for_child(src_pass_rule, menu: dict):
     return out
 
 
+def fold_protocol(proto: dict, folds_doc: dict, fold: str) -> dict:
+    """A generated protocol (machine_constraints.protocol) moved onto `fold`'s windows:
+    only the window-defining keys change (start, end, window_months, fold;
+    per_symbol_start dropped); symbols, timeframe, promotion, holdout, ... are kept.
+    The fold child's shape (candidate_brief) and the operator's re-run command
+    (run_campaign.py refold, D-122) both use it."""
+    start, end = _folds.fold_span(folds_doc, fold)
+    proto = {k: v for k, v in proto.items() if k != "per_symbol_start"}
+    return {**proto, "start": start, "end": end, "window_months": _folds.BLOCK_MONTHS,
+            "fold": fold}
+
+
 def candidate_brief(record: dict, inputs: dict, *, decision_ref: str,
                     copy_criteria_menu: dict | None = None) -> tuple:
     """(rel_path, text) of the brief for record['picked'] (a candidate).
@@ -2362,10 +2374,7 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str,
         if fold is None or not isinstance(proto, dict):
             raise DecideNextError(f"picked candidate {cid!r} has no fold to run on "
                                   f"({fa}); it should have been infeasible")
-        start, end = _folds.fold_span(inputs["folds"]["doc"], fold)
-        proto = {k: v for k, v in proto.items() if k != "per_symbol_start"}
-        mc["protocol"] = {**proto, "start": start, "end": end,
-                          "window_months": _folds.BLOCK_MONTHS, "fold": fold}
+        mc["protocol"] = fold_protocol(proto, inputs["folds"]["doc"], fold)
         front["research_goal"] += (
             f" It backtests on fold {fold} ({', '.join(b['label'] for b in inputs['folds']['doc']['folds'][fold])};"
             f" config/folds.yaml), drawn among the folds its source run {run_id} is not on"
