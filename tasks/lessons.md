@@ -201,3 +201,20 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-13 -- Re-measure counts and line numbers from the direction
 - **Pattern:** the direction's citation count (11) and two line numbers (run_protocol :1130, template :165) were wrong against current master (75 lines; :1178, :175); "nothing loads the file except the include" was also false (gate registry). Separately, one pytest call mixing strategy-research and trading-bot test files fails at collection (clashing `_cache_guard` modules), and a worktree shows 9 failures that also fail on clean master.
 - **Rule:** re-run the count and re-read each line on the current tip before acting on a number from a brief; run the two test roots in separate pytest calls from their own directory; before blaming a change for failures, rerun them on stashed/pristine master in the same worktree.
+
+
+## 2026-10-13 -- A rule entered the system through a bundled design, not through the operator
+- **Pattern:** D-085's fold "lineage" (avoid every fold any ancestor used, fixed order A-B-C, "exhausted" after three) was built as if decided; the operator had only answered "fixed folds rather than a random draw" (decision D1). The rest came bundled with the review's design. Same session: refold was first built with options and a step-1a pass the operator never asked for, and the first answer to "decide-next queues nothing" named a field instead of asking what "nothing" meant.
+- **Rule:** a control is added only when the operator asks for it (or a hard rule or card requires it); an operator-run command beats an automated gate. When a design arrives bundled with an operator answer, list which parts the operator actually decided before building them.
+
+## 2026-10-13/14 -- Backslashes in a heredoc, tenth and eleventh time; a junction removal that silently failed
+- **Pattern:** a `\n` in a heredoc Python string became a real newline (test_d119_d120.py, 10th); a test patch with `\\n` inside a quoted heredoc was mangled (11th); a heredoc that itself contained `'''` broke the shell parse (nothing ran). Separately, `cmd //c "rmdir <absolute path>\venv"` from Git Bash printed "path not found" twice and removed nothing.
+- **Rule:** every script and every patch goes through the Write tool, then runs with python; never a shell heredoc for code. Remove a worktree's venv junction with PowerShell `(Get-Item -LiteralPath <path> -Force).Delete()`, check the shared venv's python.exe still exists, and only then `git worktree remove`.
+
+## 2026-10-14 -- A run beyond a ruled exit point is a recorded fact
+- **Pattern:** run_091 (SMA 50 on fold D) was launched as the refold vision test; Fable's exit point allowed lane 1 only one fold-C batch, so the run used fold D for this idea beyond the ruling. It was nearly reported only as a test.
+- **Rule:** a run that goes beyond a ruled exit point is recorded as such in the next D-row, even when the operator launched it (what it used, which ruling it went past).
+
+## 2026-10-14 -- Read the ruling's verbatim text before building
+- **Pattern:** three requirements of ruling 2 almost slipped because the work started from a summary: the numbers had to come from scripts under the epic folder, the fragility condition had to be stated before the run, and the exact wording of the registry item. All three were in the operator's text, recovered from the session transcript.
+- **Rule:** before each ruling item, re-read the item's verbatim text (transcript or brief), not a summary of it; quote the requirements it lists in the PR.
