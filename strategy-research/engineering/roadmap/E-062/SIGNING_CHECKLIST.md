@@ -103,3 +103,16 @@ Where the signature goes: flip `ratified: false` to `ratified: true` on the
   - committed LF blob (what git stores; a Mac or Linux checkout): `4bc3338cf27f8c4eb193f43dc4847d8f707f5d458e5ef84db9489d03ebbcfd11`
   - a Windows checkout with `core.autocrlf=true` (CRLF on disk -- what the runtime hashes there): `7a2b015cedd0b9a155dcc6753911d9ded5b06d648d90f68e442da555d159be43`
 - Evaluations graded under the 2026-09-29 file cannot be spent (`bars_changed`).
+
+## 7. Re-signed (2026-10-14, D-127)
+
+- D-127 added two optional v2 bars (E-078): `trade_frequency_min: 0.01` (trades without
+  window-end forced closes / backtest bars, pooled) and `leave_one_block_out_sharpe_min: 0.0`
+  (strict). The operator agreed the D-127 text before merge (PR #419) and said "sign it";
+  Claude recorded the signature at that explicit instruction in commit `497e048b`:
+  `ratified_by` / `ratified_at: 2026-10-14` in `config/profitability_bars.yaml`.
+  `config/criterion_menu.yaml` is unchanged.
+- sha256 of the signed bars file:
+  - committed LF blob (what git stores; a Mac or Linux checkout): `84193c0b9ba5945902c025a200ab6c0097033bd76a3cf6a624c6c4c8a3449fcb`
+  - a Windows checkout with `core.autocrlf=true` (CRLF on disk -- what the runtime hashes there): `e1c85d1494c673dac7645c06872cd47295c929f0f080e122ae481385376a38be`
+- Evaluations graded under the 2026-10-13 file cannot be spent (`bars_changed`).
