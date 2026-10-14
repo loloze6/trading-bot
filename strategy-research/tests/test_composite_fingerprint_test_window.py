@@ -170,6 +170,37 @@ def test_one_changed_close_changes_the_fingerprint(tmp_path):
     assert after["data"] != before["data"]
 
 
+def _perturb_bars(path, kind):
+    """One change inside the test window's bars.csv, with non-default values."""
+    df = pd.read_csv(path)
+    mid = N // 2
+    if kind == "timestamp":
+        df.loc[mid, "timestamp"] = "2020-01-05 03:30:00"
+    elif kind in ("open", "high", "low", "close", "volume"):
+        df.loc[mid, kind] = df.loc[mid, kind] + 0.37
+    elif kind == "drop_row":
+        df = df.drop(index=mid).reset_index(drop=True)
+    elif kind == "add_row":
+        extra = df.iloc[[mid]].copy()
+        extra["timestamp"] = "2020-02-01 00:00:00"
+        df = pd.concat([df, extra], ignore_index=True)
+    else:
+        raise AssertionError(kind)
+    df.to_csv(path, index=False)
+
+
+@pytest.mark.parametrize("kind", ["timestamp", "open", "high", "low", "close", "volume",
+                                  "drop_row", "add_row"])
+def test_any_test_window_bar_change_changes_the_fingerprint(tmp_path, kind):
+    """Every fingerprint column, and a dropped or an added bar row, must move the
+    fingerprint's data value (not just a changed close)."""
+    _, comp = _two_strategies(tmp_path)
+    before = cc.run_fingerprint(_summary("wr_comp"), comp)
+    _perturb_bars(comp / "wr_comp" / "bars.csv", kind)
+    after = cc.run_fingerprint(_summary("wr_comp"), comp)
+    assert after["data"] != before["data"]
+
+
 def test_composite_vs_candidate_check_still_raises_on_different_bars(tmp_path):
     t60 = _t60()
     cand, _ = _two_strategies(tmp_path)
