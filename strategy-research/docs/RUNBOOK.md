@@ -360,7 +360,11 @@ idea field (what you think happens in this market and why; nothing about how the
 pipeline runs); `venue`, `product`, the coin(s), `timeframe`, the windows and
 `available_data` are the machine fields, one guidance line each in the template;
 the dated `scope` block (what the pipeline can test for now) is copied unchanged
-into every brief and step 1a reads it with the brief. `criteria_from:
+into every brief and step 1a reads it with the brief. Only operator-written
+briefs carry `scope`: the briefs decide-next writes (`tools/decide_next.py:1494`,
+`:2343-2344`) and refold writes (`workflow/run_campaign.py:5443`) are built from a fixed
+key list that does not include it, so step 1a does not see the scope block in those
+runs (operator decision 2026-10-14: deferred). `criteria_from:
 hypothesis_generation` is pre-filled (step 1a picks the criteria from
 `config/criterion_menu.yaml`); the template shows, as comments, how to give your
 own menu criteria instead (D-121) and how to seed an exact config and block
