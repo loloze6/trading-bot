@@ -106,10 +106,10 @@ def test_the_loader_checks_the_key_only_when_present(value, ok):
     assert "trade_frequency_min" not in rpr._load_profitability_bars(v2=False)  # v1: untouched
 
 
-def test_the_committed_bars_file_does_not_carry_the_key_yet():
-    """PR (a) builds the bar; the bars-file edit and re-sign come with the leave-one-out bar."""
+def test_the_committed_bars_file_carries_the_key():
+    """D-127: one bars-file edit with the leave-one-block-out bar (re-sign by the operator)."""
     doc = yaml.safe_load((SR / "config" / "profitability_bars.yaml").read_text(encoding="utf-8"))
-    assert "trade_frequency_min" not in doc
+    assert doc["trade_frequency_min"] == 0.01  # D-127: the bars-file edit (re-sign pending)
 
 
 def test_no_backtest_bar_reads_not_evaluable_never_a_division(tmp_path):

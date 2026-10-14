@@ -823,6 +823,37 @@ def whole_test_sharpe(daily_returns) -> float:
     return sr_daily * math.sqrt(SHARPE_DAYS_PER_YEAR)
 
 
+# E-078 (D-127): a leave-one-block-out block is the 4-month calendar slice a day falls in
+# (the folds' block shape: starting January, May or September, research_folds.BLOCK_MONTHS).
+# Under interleaved folds every window is exactly one slice (a block is the window); under
+# contiguous folds the slices are the 4-month blocks.
+LOO_BLOCK_MONTHS = 4
+
+
+def loo_block_label(day) -> str:
+    """E-078: the 4-month calendar slice of `day`, labelled by its first month (YYYY-01,
+    YYYY-05 or YYYY-09)."""
+    first = 1 + LOO_BLOCK_MONTHS * ((day.month - 1) // LOO_BLOCK_MONTHS)
+    return f"{day.year:04d}-{first:02d}"
+
+
+def leave_one_block_out_sharpes(daily_returns) -> dict:
+    """E-078 (D-127): {block label: whole_test_sharpe of the chained daily returns without
+    that block's days}, one entry per block that holds at least one day. The one definition
+    of the leave-one-block-out bar and of the E-078 read-only pass
+    (engineering/roadmap/E-078/leave_one_out_and_bh.py). PortfolioNotEvaluable when fewer
+    than two blocks exist (nothing would be left) or a leave-one-out Sharpe cannot be
+    computed (whole_test_sharpe's own rules)."""
+    blocks: dict = {}
+    for d, _r in daily_returns:
+        blocks.setdefault(loo_block_label(d), None)
+    if len(blocks) < 2:
+        raise PortfolioNotEvaluable(f"leave-one-block-out: {len(blocks)} block(s); at least 2 "
+                                    f"are needed")
+    return {b: whole_test_sharpe([(d, r) for d, r in daily_returns if loo_block_label(d) != b])
+            for b in sorted(blocks)}
+
+
 # E-062 S2b-2 G2 (D-041): the exact basis tag a ledger `whole_test` block (or a
 # recompute-overlay entry) carries. The DSR's same-basis sample admits a value
 # only on an exact string match, so values on another basis never mix.

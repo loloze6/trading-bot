@@ -1,6 +1,14 @@
 # Item 2 (delivery_plan_v26.md 0.2 / engineering_roadmap.html "One campaign-wide
 # profitability-bars file, written once by hand").
 #
+# D-127 (E-078, advisor guideline 2026-10-14 item 2; applies to backtests graded after
+# it): two v2 bars added. trade_frequency_min 0.01: trades without end_of_window forced
+# closes / backtest bars >= 1%, pooled over every coin and window of the run (X = 1% was
+# chosen by the operator AFTER seeing lane 1's trade frequencies, E-078 README).
+# leave_one_block_out_sharpe_min 0.0: the lowest whole-test Sharpe with one 4-month block
+# left out must be > 0 (FAIL if any leave-one-out Sharpe <= 0). Both optional keys:
+# absent or null = no row. Re-sign pending (ratified_by / ratified_at null below).
+#
 # D-119 / D-120 (operator, 2026-10-13): a deflated Sharpe that cannot be computed is a
 # non-blocking warning (its row is NOT_EVALUABLE with advisory: true; the holdout spend
 # still needs it computed); the buy-and-hold bar compares whole-test Sharpe ratios.
@@ -233,6 +241,16 @@
 #                                  trade counts (>= 1, <= trade_count_min and
 #                                  cost_edge_min_trades). Value 60 per D-047, not
 #                                  yet signed (like the D-039 values above).
+#   trade_frequency_min        number in (0, 1] or null, v2 only, OPTIONAL (E-078,
+#                                  D-127; absent or null = no row): trades without
+#                                  end_of_window forced closes / backtest bars,
+#                                  pooled over every coin and window, >= this.
+#                                  basis: pooled_trades_excl_window_closes_per_backtest_bar
+#   leave_one_block_out_sharpe_min  number or null, v2 only, OPTIONAL (E-078, D-127;
+#                                  absent or null = no row): the lowest whole-test
+#                                  Sharpe with one 4-month calendar block (Jan / May /
+#                                  Sep; a fold's window is one block) left out, > this.
+#                                  basis: min_whole_test_sharpe_leaving_one_4_month_block_out
 #
 # PARTIAL COVERAGE (v2 only; E-062 S2b-3b, D-042/D-047): an asset variant whose
 #   coin covers fewer run-protocol windows is graded on its share f = its
@@ -255,11 +273,13 @@ deflated_sharpe_threshold: 0.5     # D-118 (was 0.95)
 target_instrument_set:
   - BTCUSDT
   - ETHUSDT
-ratified_by: "Jeremy Alauze (loloze6) -- recorded by Claude at the operator's explicit instruction (2026-10-13 session: 'Bars are ok for me, please sign it')"
-ratified_at: 2026-10-13
+ratified_by: null                  # D-127: unsigned until the operator re-signs
+ratified_at: null
 # v2 keys (required only under orchestrator.profit_bars_v2.enabled):
 buy_and_hold_sharpe_excess_min: 0.0     # D-120: strategy whole-test Sharpe - buy-and-hold's, strict > 0
 cost_edge_ratio_min: null          # D-118: OFF (no cost-stress bar anywhere)
 cost_edge_min_trades: null         # D-118: null with the cost bar
 dsr_min_same_basis_trials: 10
 trade_count_min_floor: null        # D-118: null -- both bars it floors are off
+trade_frequency_min: 0.01          # D-127: >= 1%, pooled (X chosen after seeing lane 1's frequencies)
+leave_one_block_out_sharpe_min: 0.0  # D-127: strictly > 0 (FAIL if any leave-one-out Sharpe <= 0)
