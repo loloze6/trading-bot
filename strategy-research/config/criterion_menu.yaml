@@ -142,6 +142,44 @@ criteria:
       pre-registers "Sharpe > 0" is graded on the same number the profit bar reads.
       Scale-free: a Sharpe does not depend on position size.
 
+  - id: forecast_ic_median
+    # D-134 (operator decisions 2026-10-14/15): plain IC as a grid criterion step 1a may
+    # pick. The window `core` field forecast_return_corr_all_bars (trading-bot/reporting/
+    # run_artifact.py, build_core): Pearson correlation of the forecast with the NEXT
+    # bar's return over ALL bars, no activity filter. The active-bars variant
+    # forecast_return_corr is deliberately not used: run_artifact's own comment (E-039
+    # step 5 follow-up) says that active-bars ("gated") IC is not admissible where IC
+    # over ALL bars is needed (the ungated-escape criterion). The grid takes the median of the
+    # per-window values (a window whose correlation is undefined, None, is left out of
+    # the median and of the window count, so it cannot lift the floor).
+    metric: forecast_return_corr_all_bars
+    source: window
+    reducer: median
+    comparator: ">"
+    threshold: 0.02
+    # One fixed default, not chosen per run: step 1a may not override it (same as every
+    # quantitative entry above).
+    card_overridable: []
+    scale_free: true
+    symbol_reducer: null
+    floor:
+      min_windows: 5
+    basis: >
+      D-134. All-bars IC, not the active-bars one: a regime-gated config would
+      otherwise be judged on the bars where it chose to act (run_artifact.py,
+      comment above forecast_return_corr_all_bars: the gated IC is not admissible
+      where IC over all bars is needed). 0.02 is the same number as residual_ic's
+      threshold (code_added_criteria below) and sits below the ceiling the
+      hypothesis-design skill's anchor table gives for crowded price-only signals
+      (SKILL.md, plausible_ic_upper table). Measured 2026-10-15 over every variant
+      window metrics.json in the operator's runs: 36 daily variants (13 runs), the
+      median over windows of this field ran from -0.041 to +0.058, and 3 of the 36 were
+      above 0.02. Known limit: on daily bars (about 121 bars per window) a variant with
+      no edge clears 0.02 roughly 1 time in 3 (normal approximation, an estimate); on
+      hourly bars (about 2,900 per window) about 2%. Unanimity across a hypothesis's
+      variants tightens it. Floor: 5 windows. The operator confirms the value 0.02 at
+      merge.
+
   # --- Not yet wired -- placeholder only (dispatch item 5) ---
   #
   # gated_beats_ungated resolves to no field anywhere (grep-checked against
