@@ -132,7 +132,10 @@ def test_restating_the_menus_own_value_is_not_an_override():
     allowlist -- only a DIFFERING value counts as an override."""
     resolved = vce.resolve_criteria_against_menu(
         [{"id": "realized_edge_to_cost_ratio"}], _REAL_MENU)
-    assert vce.lint_menu_shaped_pass_rule({"criteria": resolved}, _REAL_MENU) == []
+    # allow_retired (D-133): this entry is retired for blocks; the point here is the restating
+    # rule, and it is the entry whose resolved form restates a floor and scale_free as well.
+    assert vce.lint_menu_shaped_pass_rule({"criteria": resolved}, _REAL_MENU,
+                                          allow_retired=True) == []
 
 
 def test_unknown_menu_id_is_refused():

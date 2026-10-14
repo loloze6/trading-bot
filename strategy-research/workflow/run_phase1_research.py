@@ -9344,7 +9344,7 @@ def _route_retired_campaign_review(run_dir: Path, run_id: str) -> str:
 PASS_RULE_PENDING_KEY = "pass_rule_pending"
 PASS_RULE_PENDING_AT_1A = "hypothesis_generation"
 # criterion_menu.yaml keys that describe an entry rather than define a criterion.
-_MENU_META_KEYS = ("basis", "card_overridable")
+_MENU_META_KEYS = ("basis", "card_overridable", "retired_for")  # D-133: retired_for
 _DECIDE_NEXT_GUIDANCE = "../../workflow_artifacts/skills/hypothesis-design/DECIDE_NEXT_CANDIDATES.md"
 
 
@@ -9418,7 +9418,7 @@ def _clear_pass_rule_pending(run_dir: Path, pending_stage: str) -> bool:
     return True
 
 
-def _pass_rule_from_card(card: dict, menu: dict, where: str) -> dict:
+def _pass_rule_from_card(card: dict, menu: dict, where: str, *, block_run: bool = True) -> dict:
     """{criteria: [...]} from a card's id-only criteria, resolved with the
     grid's own merge (verdict_criteria_evaluator.resolve_criteria_against_menu).
     A card item may carry only `id` plus the fields its menu entry lists under
@@ -9426,7 +9426,13 @@ def _pass_rule_from_card(card: dict, menu: dict, where: str) -> dict:
     comparator / threshold / null_handling the menu does not allow, a
     threshold override on a scale_free: false entry, or a floor override that
     lowers/drops the menu's sample floor -- verdict_criteria_evaluator.
-    menu_criterion_overrides_violations, C5.1) raises."""
+    menu_criterion_overrides_violations, C5.1) raises.
+
+    D-133: an entry with `retired_for: [block]` (the lot-based
+    realized_edge_to_cost_ratio) is refused with a message naming D-107/D-128
+    unless `block_run` is False. The caller passes False only for a composition
+    run; a caller that cannot tell gets the default (True), i.e. treats the run
+    as a block."""
     _tools = str(Path(__file__).parent.parent / "tools")
     if _tools not in sys.path:
         sys.path.insert(0, _tools)
@@ -9443,8 +9449,11 @@ def _pass_rule_from_card(card: dict, menu: dict, where: str) -> dict:
         cid = c.get("id") if isinstance(c, dict) else None
         if cid not in menu_by_id:
             raise ValueError(f"{where}: criteria[{i}] id={cid!r} is not a live entry of "
-                             f"config/criterion_menu.yaml ({sorted(menu_by_id)}) -- 1a picks from the "
+                             f"config/criterion_menu.yaml ({sorted(k for k, e in menu_by_id.items() if not (block_run and _vce.retired_for_block_violation(e)))}) -- 1a picks from the "
                              f"menu only.")
+        retired = _vce.retired_for_block_violation(menu_by_id[cid]) if block_run else None
+        if retired:
+            raise ValueError(f"{where}: criteria[{i}] {retired}. Refusing before 1b.")
         violations = _vce.menu_criterion_overrides_violations(c, menu_by_id[cid])
         if violations:
             raise ValueError(f"{where}: criteria[{i}] ({cid}) " + "; ".join(violations)
@@ -9518,7 +9527,10 @@ def _write_pass_rule_from_card(run_dir: Path, run_id: str, sr_flag: bool) -> boo
         return True
     menu_path = ROOT / "config" / "criterion_menu.yaml"
     menu = (load_yaml(menu_path) if menu_path.exists() else {}) or {}
-    pass_rule = _pass_rule_from_card(card, menu, str(card_path))
+    # D-133: only a composition run (criteria written by code, never picked from the menu)
+    # may name a menu entry retired for blocks; a run whose kind cannot be told is a block.
+    pass_rule = _pass_rule_from_card(card, menu, str(card_path),
+                                     block_run=_residual_ic_exempt_reason(run_dir) != "composition run")
     # E-060 S2 (guess 6): code, not 1a, adds residual_ic for a forecast-block idea.
     if _composition_runs_enabled() and not _residual_ic_exempt_reason(run_dir):
         pass_rule = _with_residual_ic_criterion(pass_rule, menu)

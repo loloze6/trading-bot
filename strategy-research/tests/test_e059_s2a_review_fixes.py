@@ -177,8 +177,10 @@ def _card(run_dir, criteria, hid="FOO__profitability-run_061-1"):
     # verdict_criteria_evaluator.menu_criterion_overrides_violations (also
     # used by run_campaign.py's registration-time lint) -- "does not let a
     # criterion override", not the old card-only "does not let a card set".
-    ({"id": "realized_edge_to_cost_ratio", "threshold": 0.01}, "does not let a criterion override"),
-    ({"id": "realized_edge_to_cost_ratio", "comparator": ">="}, "does not let a criterion override"),
+    # D-133: realized_edge_to_cost_ratio is retired for blocks (refused before the override check);
+    # whole_test_sharpe_positive is the live entry with the same empty card_overridable.
+    ({"id": "whole_test_sharpe_positive", "threshold": 0.01}, "does not let a criterion override"),
+    ({"id": "whole_test_sharpe_positive", "comparator": ">="}, "does not let a criterion override"),
     ({"id": "sign_consistent_by_era", "null_handling": "fails_threshold"}, "does not let a criterion override"),
     ({"id": "sign_consistent_by_era", "notes": "x"}, "does not let a criterion override"),
 ])
@@ -219,12 +221,12 @@ def test_a_1a_rerun_rewrites_the_pass_rule_and_rechecks_the_id(campaign_root):
     pre_path = run_dir / "artifacts" / "pre_registration.yaml"
     _card(run_dir, [{"id": "sign_consistent_by_era"}])
     rpr._write_pass_rule_from_card(run_dir, "run_062", sr_flag=True)
-    _card(run_dir, [{"id": "realized_edge_to_cost_ratio"}])  # 1a re-run, new card
+    _card(run_dir, [{"id": "whole_test_sharpe_positive"}])  # 1a re-run, new card (D-133: not the retired ratio)
     assert rpr._write_pass_rule_from_card(run_dir, "run_062", sr_flag=True) is True
     pre = yaml.safe_load(pre_path.read_text(encoding="utf-8"))
-    assert [c["id"] for c in pre["pass_rule"]["criteria"]] == ["realized_edge_to_cost_ratio"]
+    assert [c["id"] for c in pre["pass_rule"]["criteria"]] == ["whole_test_sharpe_positive"]
     assert pre["pass_rule_pending"] == "hypothesis_generation"
-    _card(run_dir, [{"id": "realized_edge_to_cost_ratio"}], hid="SOMETHING_ELSE")
+    _card(run_dir, [{"id": "whole_test_sharpe_positive"}], hid="SOMETHING_ELSE")
     with pytest.raises(ValueError, match="not the candidate"):
         rpr._write_pass_rule_from_card(run_dir, "run_062", sr_flag=True)
     # after the marker is cleared (run advanced), a rewound 1a still rewrites
@@ -277,7 +279,15 @@ def test_a_1a_rerun_rewrites_the_pass_rule_and_rechecks_the_id(campaign_root):
 # as not expressible (the vol_target op and a clip express them; Kelly and leverage stay). Changes
 # hypothesis_generation's prompt on every path. Nothing about the decide_next addendum changed.
 # Previous pin: 6ac6d3288b315e1dc5cdff00dadaef099f56a3a42a5a8e639abd90adf555e87f.
-_MASTER_SKILL_SHA256 = "1f6922e02c84b676913a5db7a64a343fff456ae6bb8d12f2a3412f83de02ca53"
+# RE-PINNED by D-133 (2026-10-14, branch feat/retire-lot-edge-cost-for-blocks): a DECLARED prompt change,
+# no flag (operator decision 2026-10-14) -- IMPROVEMENT 07's menu paragraph said the menu had "exactly
+# two LIVE entries" naming realized_edge_to_cost_ratio; it now names the real live set
+# (sign_consistent_by_era, whole_test_sharpe_positive) and says the lot-based ratio is retired for
+# blocks (D-107/D-128), plus the matching example, the "neither live entry" wording and the card-E
+# profit-bar sentence. Changes hypothesis_generation's prompt on every path; the decide_next addendum is
+# still not in the skill.
+# Previous pin: 1f6922e02c84b676913a5db7a64a343fff456ae6bb8d12f2a3412f83de02ca53.
+_MASTER_SKILL_SHA256 = "3b1f36fb1c1ccfa526e28f781117bf8a8c2ad477c849c6dd46b819b8b7e39a48"
 
 
 def test_hypothesis_design_skill_is_byte_identical_to_master():

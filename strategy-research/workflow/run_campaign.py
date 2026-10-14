@@ -897,7 +897,12 @@ def _materialize_run(run_id: str, brief: dict, *, promotion_retired: bool = Fals
         # candidate's (_pass_rule_from_card). Same gate as B11/CUL-267 above.
         _menu_path = ROOT / "config" / "criterion_menu.yaml"
         _menu = (orch.load_yaml(_menu_path) if _menu_path.exists() else {}) or {}
-        _menu_violations = vce.lint_menu_shaped_pass_rule(pre_registration.get("pass_rule"), _menu)
+        # D-133: an entry retired for blocks (the lot-based realized_edge_to_cost_ratio) is
+        # refused in an operator brief's own pass_rule, but NOT in a decide-next fold
+        # child's copy of its source's already-pre-registered criteria (D-121).
+        _menu_violations = vce.lint_menu_shaped_pass_rule(
+            pre_registration.get("pass_rule"), _menu,
+            allow_retired=orch._candidate_keeps_brief_criteria(brief))
         if _menu_violations:
             raise ValueError(
                 f"{run_id}: pre_registration.yaml pass_rule failed the C5.1 menu lint "
