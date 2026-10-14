@@ -4,7 +4,8 @@ for blocks (`retired_for: [block]` in config/criterion_menu.yaml, no flag).
 Refused where a NEW choice of criteria is made for a block idea: step 1a's card
 (run_phase1_research._pass_rule_from_card, reached through _write_pass_rule_from_card) and an
 operator brief's own evaluation.pass_rule (verdict_criteria_evaluator.lint_menu_shaped_pass_rule,
-called from run_campaign._materialize_run / _materialize_refinement_run). NOT changed: a fold
+called from run_campaign._materialize_run). NOT changed: a refinement brief's pass_rule
+(_materialize_refinement_run copies it verbatim from the source brief), a fold
 child's copy of its source's already-pre-registered criteria (D-121), the grid evaluating an
 existing pass_rule, a composition run (its criteria are written by code, never picked here).
 """
@@ -161,7 +162,7 @@ def test_a_flag_on_operator_brief_naming_it_is_refused_at_materialization(_sandb
         camp._materialize_run("run_d133_5", t51._fresh_launch_brief({"criteria": [{"id": RETIRED}]}))
 
 
-def test_a_refinement_brief_naming_it_is_refused_too(_sandbox_by_default, tmp_path):
+def test_a_refinement_brief_naming_it_is_accepted_it_is_a_copy(_sandbox_by_default, tmp_path):
     t51._seed_real_menu(_sandbox_by_default)
     resolved = vce.resolve_criteria_against_menu([{"id": RETIRED}], MENU)
     brief = {"brief_id": "REFINE", "evaluation": {"pass_rule": {
@@ -171,8 +172,9 @@ def test_a_refinement_brief_naming_it_is_refused_too(_sandbox_by_default, tmp_pa
                       "lineage_routing": "terminate"}]}}}
     path = tmp_path / "refinement_brief.yaml"
     path.write_text(yaml.safe_dump(brief), encoding="utf-8")
-    with pytest.raises(ValueError, match=r"(?s)C5\.1 menu lint.*retired for blocks"):
-        camp._materialize_refinement_run("run_d133_6", brief, path)
+    # the pass_rule is copied verbatim from the source brief: not a new choice, never refused
+    camp._materialize_refinement_run("run_d133_6", brief, path)
+    assert [c["id"] for c in _pre_reg("run_d133_6")["pass_rule"]["criteria"]] == [RETIRED]
 
 
 # -- (c) pre-registered criteria keep working --------------------------------------------------
@@ -181,6 +183,12 @@ def test_a_refinement_brief_naming_it_is_refused_too(_sandbox_by_default, tmp_pa
 SRC_RULE = {"criteria": [{k: v for k, v in c.items() if k not in rpr._MENU_META_KEYS}
                          for c in vce.resolve_criteria_against_menu(
                              [{"id": RETIRED}, {"id": "sign_consistent_by_era"}], MENU)]}
+
+
+def test_an_unknown_id_message_lists_only_the_live_entries():
+    (msg,) = vce.lint_menu_shaped_pass_rule({"criteria": [{"id": "no_such_criterion"}]}, MENU)
+    assert "no_such_criterion" in msg and "sign_consistent_by_era" in msg
+    assert RETIRED not in msg.split("legacy")[0]   # the live-entries list omits the retired ratio
 
 
 def test_the_lint_accepts_it_when_the_caller_says_the_criteria_are_already_pre_registered():

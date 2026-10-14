@@ -1904,7 +1904,7 @@ def lint_menu_shaped_pass_rule(pass_rule, menu, *, allow_retired: bool = False) 
         if entry is None:
             violations.append(
                 f"criteria[{idx}] id={cid!r} is not a live entry of "
-                f"config/criterion_menu.yaml ({sorted(menu_by_id)}); if this is a "
+                f"config/criterion_menu.yaml ({sorted(k for k, e in menu_by_id.items() if not retired_for_block_violation(e))}); if this is a "
                 f"legacy (non-menu) criterion, it must carry `metric_basis` "
                 f"(B11) -- an `id` without `metric_basis` is read as a menu reference"
             )

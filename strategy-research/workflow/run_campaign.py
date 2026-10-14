@@ -1131,7 +1131,10 @@ def _materialize_refinement_run(child_id: str, brief: dict, brief_path: Path):
     # liveness / card_overridable / scale_free / floor checks.
     _menu_path = ROOT / "config" / "criterion_menu.yaml"
     _menu = (orch.load_yaml(_menu_path) if _menu_path.exists() else {}) or {}
-    _menu_violations = vce.lint_menu_shaped_pass_rule(pre_registration.get("pass_rule"), _menu)
+    # allow_retired=True: pass_rule is copied verbatim from the source brief (see the
+    # docstring) -- a COPY of already-chosen criteria is never refused (D-133).
+    _menu_violations = vce.lint_menu_shaped_pass_rule(
+        pre_registration.get("pass_rule"), _menu, allow_retired=True)
     if _menu_violations:
         raise ValueError(
             f"{child_id}: refinement brief's pass_rule failed the C5.1 menu lint -- "
