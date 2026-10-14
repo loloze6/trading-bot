@@ -246,10 +246,13 @@ def test_scope_block_is_dated_complete_and_ends_with_the_update_rule():
                          "recorded in DECISION_LOG.md.")
     capabilities = lines[1:-1]
     assert [c.split(":")[0] for c in capabilities] == [
-        "One coin per variant", "Price bars only, from the Kraken caches",
+        "Kraken only", "One coin per variant", "Price bars only, from the Kraken caches",
         "Perp priced on spot bars, funding not charged", "Hourly or daily bars",
         "Claims expressible in the claim-test slots"]
     for c in capabilities:
+        if c.startswith("Kraken only"):  # the venue line cites a decision (D-130), not a file:line
+            assert "in scope" in c and "D-130" in c
+            continue
         assert "in scope" in c and re.search(r"[A-Za-z_/.]+\.(py|yaml|md):\d+", c), c
 
 
@@ -266,9 +269,9 @@ def _uncomment_block(text: str, first: str, last: str) -> str:
 def test_optional_exact_config_block_uncomments_into_what_the_run_reads(tmp_path):
     """The seeded config + block manifest (D-110/D-112): uncommented as the template
     shows it, the two entries are found by the readers the run uses."""
-    text = _uncomment_block(_filled_template_text(), "# constraints:", "#     { the block manifest as JSON }")
-    text = text.replace("{ the strategy config as JSON }", '{"regime_detector": {}}')
-    text = text.replace("{ the block manifest as JSON }", '{"block": {"kind": "forecast"}}')
+    text = _uncomment_block(_filled_template_text(), "# constraints:", "#     <FILL IN: the block manifest as JSON>")
+    text = text.replace("<FILL IN: the strategy config as JSON>", '{"regime_detector": {}}')
+    text = text.replace("<FILL IN: the block manifest as JSON>", '{"block": {"kind": "forecast"}}')
     brief = camp._parse_brief_frontmatter(_write(tmp_path, "exact.md", text))
     artifacts = tmp_path / "run" / "artifacts"
     artifacts.mkdir(parents=True)
@@ -276,6 +279,14 @@ def test_optional_exact_config_block_uncomments_into_what_the_run_reads(tmp_path
         yaml.safe_dump({k: v for k, v in brief.items() if k != "machine_constraints"}), encoding="utf-8")
     assert orch._brief_exact_config(tmp_path / "run") == {"regime_detector": {}}
     assert orch._brief_exact_manifest(tmp_path / "run") == {"block": {"kind": "forecast"}}
+
+
+def test_exact_config_block_left_unfilled_is_refused_at_registration(tmp_path):
+    """Review of #430: the two JSON placeholders carry the registration sentinel, so a
+    block uncommented but not filled in is refused, not run with placeholder text."""
+    text = _uncomment_block(_filled_template_text(), "# constraints:", "#     <FILL IN: the block manifest as JSON>")
+    with pytest.raises(ValueError, match="placeholder sentinel"):
+        camp._parse_brief_frontmatter(_write(tmp_path, "unfilled.md", text))
 
 
 def test_optional_criteria_block_uncomments_into_the_one_menu_id_field(tmp_path):
