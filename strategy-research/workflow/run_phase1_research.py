@@ -15822,7 +15822,8 @@ def _trade_frequency(run_dir: Path, pr: dict, counts: dict) -> dict:
 def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
                           dsr_detail: dict | None = None, dsr_reason: str | None = None) -> tuple:
     """The v2 bar rows (E-062 S2b-1): (results, overall, reasons) in
-    _grade_profit_bars' shape. Seven rows, in this order, each keeping its bars
+    _grade_profit_bars' shape. Up to nine rows (seven, plus E-078's two optional bars when
+    set), in this order, each keeping its bars
     file name and carrying `basis` (_BASIS_V2), `comparator` (_COMPARATOR_V2),
     `note`, `detail` and -- when NOT_EVALUABLE -- `not_evaluable_reason`:
     sharpe_min, deflated_sharpe_threshold (the whole-test daily DSR, E-062

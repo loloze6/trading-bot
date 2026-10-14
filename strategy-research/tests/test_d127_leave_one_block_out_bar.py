@@ -125,3 +125,22 @@ def test_the_loader_checks_the_key_only_when_present(value, ok):
     else:
         with pytest.raises(rpr.ProfitabilityBarsSchemaError, match="leave_one_block_out"):
             rpr._load_profitability_bars(v2=True)
+
+
+def test_on_1_month_windows_a_block_is_still_the_4_month_slice():
+    """An older non-fold protocol: four 1-month windows of one slice leave out together."""
+    # five days in each of the twelve 1-month windows of 2020, alternating returns
+    days = [(date(2020, m, 1 + i), 0.01 if (m + i) % 2 else -0.005)
+            for m in range(1, 13) for i in range(5)]
+    loo = pwt.leave_one_block_out_sharpes(days)
+    assert sorted(loo) == ["2020-01", "2020-05", "2020-09"]
+    without_jan_apr = [(d, r) for d, r in days if d.month > 4]
+    assert loo["2020-01"] == pytest.approx(_manual_sharpe([r for _d, r in without_jan_apr]))
+
+
+def test_the_lowest_block_wins_and_ties_break_on_the_label(tmp_path):
+    """Equal returns in every window: every leave-one-out Sharpe is equal; the first label."""
+    _pr, _rd, (rows, *_rest) = _run(tmp_path, WITH, gains={"a": 0.002, "b": 0.002, "c": 0.002})
+    detail = rows["leave_one_block_out_sharpe_min"]["detail"]
+    lowest = min(detail["by_block"].values())
+    assert detail["worst_block"] == min(b for b, v in detail["by_block"].items() if v == lowest)
