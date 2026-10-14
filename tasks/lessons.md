@@ -218,3 +218,7 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-14 -- Read the ruling's verbatim text before building
 - **Pattern:** three requirements of ruling 2 almost slipped because the work started from a summary: the numbers had to come from scripts under the epic folder, the fragility condition had to be stated before the run, and the exact wording of the registry item. All three were in the operator's text, recovered from the session transcript.
 - **Rule:** before each ruling item, re-read the item's verbatim text (transcript or brief), not a summary of it; quote the requirements it lists in the PR.
+
+## 2026-10-14 -- An instruction's own numbers and tool inputs are checked before "exact commands" are promised
+- **Pattern:** the ruling said to build run_084's block with `build_block` (cited at :212) and to retire "seven" held entries. On the live files `build_block` was at :288 and refuses run_084's stored entry (a `refuted` grid; its cell loop requires PASS), and the operator's queue held 12 `__more` entries. Also, `tests/test_feature_flag_register.py` already failed on the operator's own files (`folds` on in config, off in the register). All four surfaced only because the commands were run against copies of the real files first.
+- **Rule:** before handing the operator an exact command, run it (read-only or on a scratch copy of the real files) and report any gap between the instruction and what the files hold - a line number, a count, a status - as a finding with a recommendation, never silently adjusted.
