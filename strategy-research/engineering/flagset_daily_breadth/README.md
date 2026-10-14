@@ -66,8 +66,8 @@ Every orchestrator flag after the edit:
 Other consequences, read from the code:
 - `refold` (D-122) refuses while `variant_loop` is on; it is not involved.
 - With the registry holding one active daily block, composition (R1) needs two forecast blocks on a
-  timeframe (`tools/decide_next.py:1403`), so it stays quiet until a second daily block validates.
-- The orchestrator's analyst caps are the code defaults (`run_phase1_research.py:5058`); the
+  timeframe (`tools/decide_next.py:1362`), so it stays quiet until a second daily block validates.
+- The orchestrator's analyst caps are the code defaults (`run_phase1_research.py:5087`); the
   `orchestrator.analyst` block is unchanged apart from `enabled`.
 
 ## 2. The first brief
