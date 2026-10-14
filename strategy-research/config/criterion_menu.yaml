@@ -169,16 +169,32 @@ criteria:
       otherwise be judged on the bars where it chose to act (run_artifact.py,
       comment above forecast_return_corr_all_bars: the gated IC is not admissible
       where IC over all bars is needed). 0.02 is the same number as residual_ic's
-      threshold (code_added_criteria below) and sits below the ceiling the
-      hypothesis-design skill's anchor table gives for crowded price-only signals
-      (SKILL.md, plausible_ic_upper table). Measured 2026-10-15 over every variant
-      window metrics.json in the operator's runs: 36 daily variants (13 runs), the
-      median over windows of this field ran from -0.041 to +0.058, and 3 of the 36 were
-      above 0.02. Known limit: on daily bars (about 121 bars per window) a variant with
-      no edge clears 0.02 roughly 1 time in 3 (normal approximation, an estimate); on
-      hourly bars (about 2,900 per window) about 2%. Unanimity across a hypothesis's
-      variants tightens it. Floor: 5 windows. The operator confirms the value 0.02 at
-      merge.
+      threshold (code_added_criteria below), but residual_ic also requires p < 0.05 and
+      n_eff >= 30; this entry has no significance test (it is a median-of-windows
+      level). 0.02 sits below the ceiling the hypothesis-design skill's anchor table
+      gives for crowded price-only signals (SKILL.md, plausible_ic_upper table).
+      Measured 2026-10-15 over every variant window metrics.json in the operator's runs
+      (bar size taken from each window's manifest timeframe; variants with at least 5
+      defined windows; per variant the median over its windows): HOURLY, 29 variants in
+      11 runs, range -0.029 to +0.018, none of the 29 above 0.02 (highest: run_070 base,
+      0.018). DAILY, 7 variants in 2 runs (run_065, run_094), range -0.041 to +0.058,
+      3 of the 7 above 0.02, all three from run_094 (UNI 0.058, ADA 0.048, BTC base
+      0.022): one 1-bar mean-reversion idea on one period, whose variants are correlated
+      across coins, and which failed every profit bar (drawdown 91-97%). run_094's
+      variants show 12 windows each because its results folders hold both attempts of
+      the same 6 windows (the resume re-ran them), so those windows are duplicated, not
+      12 independent ones. Reading: on hourly bars 0.02 has not been reached by any past
+      variant; on daily bars there is too little data to say the criterion
+      discriminates, and the three passes come from a losing strategy (IC measures
+      direction, not profit after costs). Known limit (estimates, normal approximation
+      assuming independent windows): on daily bars (about 121 bars per window) a
+      variant with no edge clears 0.02 roughly 1 time in 3 on 6 windows; on hourly bars
+      (about 2,900 bars per window) about 2% on 6 windows. A window whose correlation
+      is undefined (None, e.g. a constant forecast) is left out of the median and does
+      not count toward the 5-window floor (tools/verdict_criteria_evaluator.py:1400-1403),
+      so a gated or sparse strategy is graded on its defined windows only. Unanimity
+      across a hypothesis's variants tightens it. Floor: 5 windows. The operator
+      confirms the value 0.02 at merge.
 
   # --- Not yet wired -- placeholder only (dispatch item 5) ---
   #
