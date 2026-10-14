@@ -116,3 +116,17 @@ Where the signature goes: flip `ratified: false` to `ratified: true` on the
   - committed LF blob (what git stores; a Mac or Linux checkout): `84193c0b9ba5945902c025a200ab6c0097033bd76a3cf6a624c6c4c8a3449fcb`
   - a Windows checkout with `core.autocrlf=true` (CRLF on disk -- what the runtime hashes there): `e1c85d1494c673dac7645c06872cd47295c929f0f080e122ae481385376a38be`
 - Evaluations graded under the 2026-10-13 file cannot be spent (`bars_changed`).
+
+## 8. Re-signed (2026-10-14, D-129)
+
+- D-129 changed the basis text of `max_drawdown_pct_max` (worst drawdown within each
+  contiguous stretch; the peak resets at each planned protocol gap). The threshold (20)
+  is unchanged. The operator accepted the D-129 bars edit and authorised signing on their
+  behalf ("I accept the D-129 bars edit ... sign the bars file on my behalf"); Claude
+  recorded the signature at that explicit instruction in commit `ae80fd75`: `ratified_by` /
+  `ratified_at: 2026-10-14` in `config/profitability_bars.yaml`. `config/criterion_menu.yaml`
+  is unchanged.
+- sha256 of the signed bars file:
+  - committed LF blob (what git stores; a Mac or Linux checkout): `e71498c5e7aed903338fd2317cee64186fefd830b26786dc503788e0951d4ca0`
+  - a Windows checkout with `core.autocrlf=true` (CRLF on disk -- what the runtime hashes there): `3baf8f35b810496ca838e629102bac47334e7efb36d5e89abc2239b08810c650`
+- Evaluations graded under the earlier 2026-10-14 (D-127) file cannot be spent (`bars_changed`).
