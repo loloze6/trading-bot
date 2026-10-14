@@ -121,3 +121,12 @@ def test_no_backtest_bar_reads_not_evaluable_never_a_division(tmp_path):
     freq = rpr._trade_frequency(run_dir, pr, {"BTCUSDT": {"excluding_end_of_window": 0,
                                                           "end_of_window": 0}})
     assert freq["bars"] == 0 and freq["reason"] == "no backtest bar in any window"
+
+
+def test_a_missing_equity_file_reads_not_evaluable(tmp_path):
+    run_dir = tmp_path / "r"
+    pr = t62._build(run_dir)
+    next(run_dir.glob("results/*/portfolio_states.csv")).unlink()
+    freq = rpr._trade_frequency(run_dir, pr, {"BTCUSDT": {"excluding_end_of_window": 1,
+                                                          "end_of_window": 0}})
+    assert freq["reason"].startswith("no portfolio_states.csv for BTCUSDT")
