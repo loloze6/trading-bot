@@ -22,6 +22,22 @@
 
 criteria:
   - id: realized_edge_to_cost_ratio
+    # RETIRED FOR BLOCKS (D-133, operator decision 2026-10-14). The lot-based
+    # ratio below is an artefact: it is a plain unweighted mean of gross edge
+    # per lot over a plain unweighted mean of cost per lot (D-107, D-128), so
+    # its label "cost binds" did not survive a curve-based reading; run_094
+    # (2026-10-14) still had step 1a pick it as a grid criterion (> 2.2, FAIL
+    # on all 4 variants). The entry stays here, unmoved, so that a pre-registered
+    # pass_rule which already names it (a fold child's copy of its source's
+    # criteria, a resume, a regrade, the grid evaluating an existing pass_rule)
+    # keeps resolving and evaluating exactly as registered. What is refused is a
+    # NEW choice of it for a block idea: step 1a's card
+    # (run_phase1_research._pass_rule_from_card) and an operator brief's own
+    # evaluation.pass_rule (verdict_criteria_evaluator.lint_menu_shaped_pass_rule).
+    # Composition runs are not affected: their criteria are written by code
+    # (the profit bars), never picked from this list. A curve-based replacement
+    # is a separate, later decision.
+    retired_for: [block]
     # CORRECTION (2026-09-20): the dispatch that seeded this file, and
     # S1_FINDINGS.md's own corpus survey, both use the pre-CUL-300 spelling
     # `edge_to_cost_ratio`. The real field, grep-confirmed against

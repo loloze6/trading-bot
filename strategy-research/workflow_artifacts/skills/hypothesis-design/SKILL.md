@@ -344,21 +344,23 @@ does not apply — proceed exactly as this skill has always worked, do not popul
 
 The config-direct-authoring flow pre-registers pass/fail criteria HERE, at 1a, instead of deriving them later in
 a separate validation pass. `config/criterion_menu.yaml` is the anchor table — same "pick from this table, don't
-free-hand" discipline as the `plausible_ic_upper` table above (A8.6). As of this slice it has exactly two LIVE
-entries: `realized_edge_to_cost_ratio` (pooled, `>` 2.2 with a 100-trade floor, D-039, scale-free) and `sign_consistent_by_era` (window,
-sign-consistency-by-era reducer). Two more (`residual_ic`, `gated_beats_ungated`) are commented out, blocked on
-later composition work — do not reference them; a criterion naming an unresolvable id fails at evaluation time,
-not gracefully.
+free-hand" discipline as the `plausible_ic_upper` table above (A8.6). Its LIVE entries are
+`sign_consistent_by_era` (window, sign-consistency-by-era reducer) and `whole_test_sharpe_positive` (pooled,
+whole-test Sharpe `>` 0, D-121). A third entry, `realized_edge_to_cost_ratio` (the lot-based edge/cost ratio), is
+RETIRED FOR BLOCKS (`retired_for: [block]`, D-107/D-128/D-133): it stays in the menu file only so criteria already
+pre-registered keep evaluating, and a card naming it is refused — do not pick it. Two more
+(`residual_ic`, `gated_beats_ungated`) are not step-1a choices (the first is added by code, the second is commented
+out) — do not reference them; a criterion naming an unresolvable id fails at evaluation time, not gracefully.
 
 ```yaml
 criteria:
-  - id: realized_edge_to_cost_ratio   # or sign_consistent_by_era, or both
+  - id: sign_consistent_by_era   # or whole_test_sharpe_positive, or both
     # field overrides only if the menu's own default doesn't fit this hypothesis
     # (e.g. sign_consistent_by_era's metric override — see the menu file's own comment)
 ```
 
 Pick from the menu by `id`; do not invent a `metric`/`source`/`reducer`/`comparator`/`threshold` combination
-that isn't in the menu. If neither live entry meaningfully evaluates this hypothesis's claim, say so explicitly
+that isn't in the menu. If no live entry meaningfully evaluates this hypothesis's claim, say so explicitly
 in `rationale` rather than forcing a criterion that doesn't fit — an honestly-scoped hypothesis with a thin
 criteria list is better than a criterion picked to look complete.
 
@@ -391,7 +393,8 @@ cost_feasibility:
 `cost_feasibility` is your estimate, written down so the backtest can be read against it. It is never a reason
 to omit, drop, park or down-rank a hypothesis, nor to declare a brief exhausted — including when
 `plausibility: implausible`. An idea is queued on its mechanism and data; whether it survives costs is measured
-by its backtest (card E profit bars: pooled `realized_edge_to_cost_ratio`, `config/criterion_menu.yaml`). If
+by its backtest (card E profit bars: the campaign-wide cost-edge ratio bar; the lot-based
+`realized_edge_to_cost_ratio` menu entry is retired for blocks, D-133). If
 you expect turnover to be the problem, say so in `rationale` and in `expected_failure_modes`, and still write the
 card. Do not hardcode fee/spread numbers — always read from `config/cost_model.yaml`.
 
