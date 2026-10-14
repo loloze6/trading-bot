@@ -1,208 +1,83 @@
 ---
-# ============================================================================
-# research_brief_new_pipeline.md -- first-run brief template for the "new
-# pipeline" (E-061 C1.7; config_direct_authoring / strategy_config_authoring,
-# the config-direct path this delivery plan brought up -- see
-# engineering/review_2026-09-27/A3_all_flags_on.md §1's target v26 flag set).
+# research_brief_new_pipeline.md -- step 0, idea intake.
 #
-# RELATIONSHIP TO workflow_artifacts/templates/research_brief.yaml (moved
-# here, second-round code review): that file is the general-shape template
-# for the LEGACY (validation-gate) pipeline's research_brief.yaml artifact --
-# it has no `machine_constraints`/`criteria_from` and is filled in by the
-# `hypothesis_generation` stage, not copied verbatim by an operator. THIS
-# file is a frontmatter .md, the format `register_hypothesis`'s CLI actually
-# reads (run_campaign.py::_parse_brief_frontmatter: '---'-delimited YAML,
-# then Markdown prose) -- it lives beside research_brief.yaml because both
-# are "the shape of a research_brief", not because they're interchangeable;
-# an operator starting a NEW pipeline brief copies THIS one, never
-# research_brief.yaml directly.
+# 1. Copy this file to strategy-research/briefs/<your_brief_name>.md.
+# 2. Replace every "<FILL IN...>" below. Registration refuses a copy that still
+#    carries that text anywhere in this block.
+# 3. Register it: python workflow/run_campaign.py register --brief
+#    briefs/<your_brief_name>.md --priority <n> --notes "<n>"
+#    (RUNBOOK.md section 1a-bis lists the checks to run before any LLM spend).
 #
-# HOW TO USE
-# ----------
-# 1. Copy this file to strategy-research/briefs/<your_brief_name>.md (the
-#    `register` CLI reads a frontmatter .md; the leading '---'-delimited
-#    block below IS the research_brief.yaml content, exactly as
-#    run_campaign.py::_parse_brief_frontmatter expects -- see RUNBOOK.md
-#    "Start a campaign on the new pipeline").
-# 2. Replace every "<FILL IN...>" placeholder below with your idea.
-#    Registration REFUSES a copy that still carries the placeholder sentinel
-#    ANYWHERE in the frontmatter -- not just the top-level fields named
-#    below, also inside machine_constraints (run_campaign.py::
-#    _parse_brief_frontmatter, code review fix; the raw template cannot be
-#    registered by accident, whatever field the placeholder is left in).
-#    Every field run_campaign.py::REFRAME_BRIEF_REQUIRED_KEYS requires
-#    (strategy_domain, market_universe, timeframe, research_goal, venue,
-#    product) must also be non-placeholder and non-empty.
-# 3. If your idea needs a DIFFERENT universe or bar size than the default
-#    below (BTCUSDT+ETHUSDT, 1h), change market_universe/timeframe AND
-#    machine_constraints.protocol.symbols/timeframe TOGETHER. Under
-#    orchestrator.config_direct_authoring.enabled, registration cross-checks
-#    the two (by bar-size SECONDS and by base-asset-normalized symbol -- BTC
-#    == BTCUSDT -- so "60m"/"1h" and "BTC, ETH"/"BTCUSDT, ETHUSDT" both agree)
-#    and refuses a real mismatch. `venue`/`product` are not cross-checked
-#    here: since D-057 (O-12) the GENERATED protocol carries them --
-#    exchange, market_type and the venue's own symbol names, written from
-#    the brief at protocol creation (tools/venue_resolver.py). This check, and the promotion check in step 4, run ONLY
-#    at registration, and ONLY under config_direct_authoring -- a
-#    launch/resume re-parsing an already-registered brief does not re-run
-#    them (same review fix).
-# 4. Do NOT add a `promotion` block (C5.6, decision D-043). Under the new
-#    pipeline -- orchestrator.config_direct_authoring AND
-#    orchestrator.verdict_routing_retired both on (the target flag set) --
-#    nothing that decides reads one: the grid and the profit bars decide, so
-#    a generated protocol needs none and none is invented for you (see the
-#    long comment below). There, registration refuses the abolished generic
-#    block (median_sharpe_gt 0 / max_abs_drawdown_pct_lt 30 /
-#    min_trade_count_gte 20 / kill_median_sharpe_lt -1) and a present-but-
-#    empty `promotion:`; any other block registers with a note and is DROPPED
-#    (never copied into pre_registration.yaml or the generated protocol).
-#    With config_direct_authoring on but verdict routing still live, the
-#    legacy verdict still decides and a real pre-registered block is
-#    REQUIRED (G7, refused at registration without one).
-# 5. Register it: `python workflow/run_campaign.py register --brief
-#    briefs/<your_brief_name>.md --priority <n> --notes "<n>"` (RUNBOOK.md
-#    §1a-bis has the pre-launch checks to run before spending any LLM
-#    budget). `brief_status` is NOT set here -- see the note below.
-#
-# WHY criteria_from IS PRE-FILLED
-# --------------------------------
-# `criteria_from: hypothesis_generation` (== the orchestrator's own
-# PASS_RULE_PENDING_AT_1A / CRITERIA_FROM_1A constant,
-# workflow/run_phase1_research.py) defers pass_rule authorship to step 1a
-# (hypothesis_generation), which fits real criteria from
-# config/criterion_menu.yaml to the idea actually generated -- this is the
-# same mechanism the orchestrator's own campaign-review reframe briefs use
-# (run_phase1_research.py::_write_reframe_brief). It means YOU do not have to
-# hand-author a pass_rule to get a first run going.
-#
-# D-121 (orchestrator.brief_criteria on): a brief that PRE-REGISTERS its criteria
-# carries them instead, in the one field every brief origin uses:
-#   evaluation:
-#     pass_rule:
-#       criteria:
-#         - id: whole_test_sharpe_positive   # menu ids only (config/criterion_menu.yaml)
-# and then has NO criteria_from line. The menu lint
-# (verdict_criteria_evaluator.lint_menu_shaped_pass_rule) is the only check, and
-# the criteria are resolved against the menu as a step-1a card's are. A brief
-# with both still raises in _materialize_run (criteria_from means "empty, step 1a
-# fills it").
-#
-# WHY THIS IS A GENERATED PROTOCOL, NOT A PIN (code-review correction)
-# ----------------------------------------------------------------------
-# An earlier version of this template pinned an EXISTING file,
-# protocols/diagnostic_btceth_4h.json, via machine_constraints.protocol_ref,
-# and described it as "safe" and covering "every non-holdout era". Neither
-# claim survived a full check against all 13 files in protocols/:
-#   * diagnostic_btceth_4h.json's 11 windows sit ENTIRELY inside 2024
-#     (one era: era_2024_burned) -- sign_consistent_by_era would pass
-#     trivially, one era can never demonstrate era-stability;
-#   * its own `holdout` block is {start: 2025-01-01, end: null}.
-#     tools/run_protocol.py's --holdout mode (~L1988-1991) reads the range
-#     from the PROTOCOL's own holdout block, not campaign_data_policy.yaml's
-#     holdout_range, and resolves a null end as "today" -- so that block
-#     SPANS the sealed window if anyone ever runs --holdout against it, the
-#     opposite of "safe" (filed as Linear CUL-339, not yet fixed -- unrelated
-#     to whether this template's OWN generated protocol is safe, since it
-#     omits `holdout` entirely and so inherits the policy's real range; see
-#     below);
-#   * it passes tools/protocol_resolution.py's D-3 check
-#     (assert_promotion_ratified) only because min_trade_count_gte was
-#     lowered from the abolished generic default's 20 to 10 -- median_sharpe_gt
-#     stays at the generic default's 0. That is a byte-inequality technicality,
-#     not a real pre-registered threshold.
-# Checking all 13 protocols against five criteria (test windows entirely in
-# train+validation; span >= 3 real eras with substantive coverage, not a
-# calendar-boundary sliver; never touch the sealed window; a holdout block
-# consistent with campaign_data_policy.yaml's holdout_range or none; D-3
-# clean on a REAL registered threshold, not a technicality) found none that
-# cleanly qualifies on all five -- see the E-061 C1.6+C1.7 code-review commit
-# messages for the full 13-row table. So this template GENERATES its own
-# protocol via machine_constraints.protocol (the OTHER, pre-existing
-# mechanism run_phase1_research.py::_ensure_protocol_from_constraints
-# provides -- see its own docstring, and K3/G7 in that file for how a
-# generated protocol is validated) instead of pinning an existing file:
-#
-#   * symbols/timeframe: BTCUSDT + ETHUSDT at 1h -- both have full
-#     ohlcv/fear_greed coverage from 2018-02-01 and funding_rate from
-#     2019-09/11 (config/campaign_data_policy.yaml backward_extension);
-#   * start/end: 2018-02-01 .. 2025-12-31 -- generates 95 monthly windows
-#     (matching protocols/run_048_generated.json's own start/end, which used
-#     the identical range), measured (not estimated) against
-#     tools/protocol_resolution.py::era_id_for_timestamp on this checkout:
-#     20 windows in era_2018_pre_funding, 51 in era_2019_2023_full_feed,
-#     11 in era_2024_burned (its full 11 calendar months), 13 in
-#     era_2024_2025_walk_forward_extension (its full 13 calendar months) --
-#     genuinely spanning FOUR real eras with substantive per-era coverage,
-#     not a one-day boundary artifact;
-#   * holdout: deliberately OMITTED -- _ensure_protocol_from_constraints
-#     defaults it to campaign_data_policy.yaml's own holdout_range when
-#     absent, which is the one value that cannot silently drift out of sync
-#     with the policy (and sidesteps CUL-339 above entirely, since there is
-#     no protocol-local holdout block for --holdout to misread);
-#   * promotion: deliberately ABSENT (C5.6, D-043). A protocol's promotion
-#     block only feeds tools/run_protocol.py's legacy top-level
-#     promote/kill/refine verdict, which nothing reads once
-#     config_direct_authoring AND verdict_routing_retired are both on: the
-#     G7 gate (`_require_pre_registered_promotion`) is then skipped, the
-#     generated protocol carries no `promotion` key (the abolished generic
-#     default is never substituted), and run_tool_worker passes
-#     --legacy-verdict-retired, so the legacy verdict is recorded as null
-#     with a reason. (config_direct_authoring alone, or flag OFF: G7 still
-#     refuses a generated protocol with no block, exactly as before -- this
-#     template is for the new pipeline only.)
-#
-# WHY brief_status IS NOT SET HERE (code-review correction)
-# -------------------------------------------------------------
-# An earlier version of this template set `brief_status: open` at the brief
-# level. That field is never read there -- run_campaign.py's
-# `_register_from_cli` (the `register` sub-command) sets it on the QUEUE
-# ENTRY it creates (`{"brief_status": "open"}`, only when
-# orchestrator.decide_next.enabled is on), not on the brief file itself; a
-# brief-level copy was inert prose, not configuration. Nothing here to fill
-# in or check -- decide_next's own registration path handles it.
-# ============================================================================
+# Add no `promotion` block: the grid and the profit bars decide (D-043).
+# Prose below the closing '---' is for people only; the orchestrator never reads it.
 
-strategy_domain: "<FILL IN: e.g. momentum, mean_reversion, funding_carry, breadth>"
-market_universe: [BTCUSDT, ETHUSDT]
-timeframe: "1h"
-venue: "<FILL IN: e.g. kraken -- must be a (venue, product) pair marked
-  tradable: true in config/venue_tradability.yaml, or the run is auto-flagged
-  research_only>"
-product: "<FILL IN: e.g. spot or perp -- see config/venue_tradability.yaml
-  for which pairs are currently tradable>"
+# A one- or two-word label for the kind of idea (registration needs it).
+strategy_domain: "<FILL IN>"
+
+# The idea: what you think happens in this market and why; nothing about how the pipeline runs.
 research_goal: >
-  <FILL IN: one paragraph. What edge are you testing, and why do you expect
-  it to survive fees and slippage at your size? (the three
-  HYPOTHESIS.md questions -- who is on the other side, why the edge survives
-  costs, why it hasn't been arbitraged away -- are the bar this needs to
-  eventually clear, even though this brief itself defers formal criteria to
-  step 1a via criteria_from below.)>
-constraints: []
-available_data: []
+  <FILL IN>
 
+# The exchange this idea trades on.
+venue: "<FILL IN>"
+
+# The product on that exchange (a venue and product pair listed in config/venue_tradability.yaml).
+product: "<FILL IN>"
+
+# The coin(s) to test, in BASEQUOTE form; write the same list again under machine_constraints.protocol.symbols below.
+market_universe: ["<FILL IN>"]
+
+# The bar size; write the same value again under machine_constraints.protocol.timeframe below.
+timeframe: "<FILL IN>"
+
+# Data the idea needs beyond price bars, or none.
+available_data: none
+
+# OPTIONAL: your own criteria, as ids from config/criterion_menu.yaml (D-121, needs orchestrator.brief_criteria).
+# To use it, delete the criteria_from line below and add:
+# evaluation:
+#   pass_rule:
+#     criteria:
+#       - id: whole_test_sharpe_positive
+# Left as it is, step 1a picks the criteria from the menu.
 criteria_from: hypothesis_generation
+
+# OPTIONAL: a seeded config and block manifest, built exactly as given (D-110, D-112; needs orchestrator.exact_config_1b).
+# Each is one entry of a constraints list: the entry's first line is the fixed sentence below, the JSON follows on the next lines.
+# constraints:
+#   - |
+#     Build EXACTLY this strategy config (JSON)
+#     { the strategy config as JSON }
+#   - |
+#     Use EXACTLY this block manifest (JSON)
+#     { the block manifest as JSON }
+
+# Scope for now: copy this block unchanged into every brief. Step 1a reads it as part of the brief.
+scope: |
+  Scope for now (2026-10-14).
+  One coin per variant: in scope. Each variant backtests one coin; an asset variant runs the same idea on a coin of another category. Not in scope: several coins inside one variant (a basket or a cross-coin ranking), because step 5a refuses a multi-coin variant (tools/variant_coin.py:725, rule G4 at :681-682) and tools/run_protocol.py backtests each coin alone (:2609, :2617).
+  Price bars only, from the Kraken caches: in scope (trading-bot/local_data/kraken_<COIN>USD_<1h or 1d>.csv; the cache name carries the venue prefix, trading-bot/data/fetchers/ccxt_fetcher.py:123). Not in scope: any other feed. Funding is dropped on every venue other than the default (tools/venue_resolver.py:134); no order book, liquidation, cross-venue, on-chain or options feed exists (config/available_feeds.yaml:35-50); no open-interest fetcher exists (config/venue_data_capability.yaml:528-530). Fear-and-greed is wired (config/available_feeds.yaml:26) and is left out by the operator's choice, not by a capability limit.
+  Perp priced on spot bars, funding not charged: in scope. A Kraken perp brief is backtested on Kraken spot prices with Kraken futures fees. Not in scope: real perp prices and funding payments, because config/venue_data_capability.yaml:472-481 declares the spot price proxy, tools/venue_resolver.py:117-137 writes price_proxy True and funding_modelled False into the protocol, and tools/run_protocol.py:2476-2480 prints it on every run.
+  Hourly or daily bars: in scope (1h and 1d are the only Kraken caches on disk, 19 coins each). Not in scope: 4h, 15m or any other bar size, because no cache exists for them, a coarser bar is built from the hourly cache only through the opt-in trading.fetch_interval_seconds (docs/DATA_AVAILABILITY.md:25-38) that no brief field sets, and Kraken's live fetch returns only the 720 most recent candles (config/venue_data_capability.yaml:394-397).
+  Claims expressible in the claim-test slots: in scope. Selector: all, event, regime, regime_change, calendar, quantile (tools/claim_tests.py:583-585). Outcome: fwd_return, fwd_volatility, fwd_max_drawdown, trend_ends (:635-636). Baseline: complement, placebo, other_selector (:686-687). Statistic: mean_diff, rank_ic, hit_rate, decay_curve (:752-753). Not in scope: a claim that needs a value outside these lists, because check_spec refuses it before any data is read (:888).
+  The operator updates this when focus or capabilities change, recorded in DECISION_LOG.md.
 
 machine_constraints:
   protocol:
-    symbols: [BTCUSDT, ETHUSDT]
-    timeframe: "1h"
-    start: "2018-02-01"
-    # end: the LAST INCLUDED DAY (D-058); never the 1st of a month
-    end: "2025-12-31"
-    # window_months: 1      # optional, 1/2/3/4/6/12 (default 1 = monthly). Fewer,
-    #   longer windows mean fewer artificial restarts and smaller reports; with
-    #   N > 1, `start` must be on a boundary of the year (Jan/May/Sep for 4,
-    #   Jan/Jul for 6). How to choose: RUNBOOK.md section 1f.
-    # holdout: intentionally omitted -- defaults to campaign_data_policy.yaml's
-    #   own holdout_range (see the long comment above).
-    # promotion: intentionally omitted -- not needed under
-    #   config_direct_authoring + verdict_routing_retired (C5.6, D-043; see
-    #   the long comment above).
+    # The same coin(s) as market_universe above.
+    symbols: ["<FILL IN>"]
+    # The same bar size as timeframe above.
+    timeframe: "<FILL IN>"
+    # Windows: start and end (end is the last included day, never the 1st of a month) cut into blocks of window_months months (1, 2, 3, 4, 6 or 12).
+    start: "<FILL IN>"
+    end: "<FILL IN>"
+    window_months: "<FILL IN>"
+    # OPTIONAL: instead of cutting start to end yourself, take a fold (A, B or C) from config/folds.yaml by uncommenting the next line; start and end are still required.
+    # fold: A
 ---
 
 # <FILL IN: a short human title for this brief>
 
 Prose below the closing `---` is for human readers only -- the orchestrator
-never reads it (run_campaign.py::_parse_brief_frontmatter only parses the
-leading frontmatter block above). Use this space to record the idea's
-motivation, links, and any context that does not belong in a machine field.
+never reads it. Use this space for the idea's motivation, links, and any
+context that does not belong in a field.

@@ -353,19 +353,21 @@ changes its sha and is a re-signature. The sha depends on line endings
 `workflow_artifacts/templates/research_brief_new_pipeline.md` (a frontmatter
 .md, not a bare .yaml — the format `register_hypothesis` actually reads;
 lives beside `research_brief.yaml`, the OTHER template in that directory, for
-the legacy validation-gate pipeline's own artifact shape — see the new
-template's own header for how the two relate) to `briefs/<your_brief_name>.md`
-and replace every `<FILL IN...>` placeholder — the template's own header
-comment explains each field, including why `criteria_from:
-hypothesis_generation` is pre-filled, and why `machine_constraints.protocol`
-GENERATES a fresh protocol (multi-era windows, 2018-02-01..2025-12-31, holdout
-defaulted from `campaign_data_policy.yaml`) rather than pinning an existing
-`protocols/*.json` file — a full check of all 13 existing files against (in
-train+validation range; spans ≥3 real eras with substantive, not
-boundary-sliver, coverage; never touches the sealed window; a holdout block
-consistent with the policy or none; D-3-clean on a real registered threshold,
-not a lowered-count technicality) found none that qualifies on all five; see
-the E-061 C1.6+C1.7 code-review commit for the full table. **No `promotion`
+the legacy validation-gate pipeline's own artifact shape; the new template is
+step 0, idea intake) to `briefs/<your_brief_name>.md`
+and replace every `<FILL IN...>` placeholder. `research_goal` is the one free-text
+idea field (what you think happens in this market and why; nothing about how the
+pipeline runs); `venue`, `product`, the coin(s), `timeframe`, the windows and
+`available_data` are the machine fields, one guidance line each in the template;
+the dated `scope` block (what the pipeline can test for now) is copied unchanged
+into every brief and step 1a reads it with the brief. `criteria_from:
+hypothesis_generation` is pre-filled (step 1a picks the criteria from
+`config/criterion_menu.yaml`); the template shows, as comments, how to give your
+own menu criteria instead (D-121) and how to seed an exact config and block
+manifest (D-110/D-112). `machine_constraints.protocol` GENERATES a fresh protocol
+from the coin(s), timeframe and windows you write (holdout defaulted from
+`campaign_data_policy.yaml`) rather than pinning an existing `protocols/*.json`
+file. **No `promotion`
 block is needed on the new pipeline** (C5.6, decision D-043): with BOTH
 `orchestrator.config_direct_authoring.enabled` and
 `orchestrator.verdict_routing_retired.enabled` on (the target flag set),
