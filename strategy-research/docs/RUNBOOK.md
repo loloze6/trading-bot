@@ -305,7 +305,7 @@ orchestrator:
   category_reports:             {enabled: true}
   specialist_readers:           {enabled: true}
   regroup_record:               {enabled: true}
-  profit_bars_file:             {enabled: true}   # config/profitability_bars.yaml must be signed (code does not check); re-signed 2026-10-13 (D-118..D-120)
+  profit_bars_file:             {enabled: true}   # config/profitability_bars.yaml must be signed (code does not check); re-signed 2026-10-14 (D-127)
   profit_bars_every_backtest:   {enabled: true}
   profit_bars_v2:               {enabled: true}   # E-062; requires profit_bars_every_backtest
   decide_next:                  {enabled: true}
@@ -344,7 +344,8 @@ signature itself; a PASS against unsigned bars would still raise the real
 `profit_bars_reached` holdout stop. The v2 bars (E-062) were signed on
 2026-09-29 (PR #269; both sha256 values in `engineering/roadmap/E-062/
 SIGNING_CHECKLIST.md` §5); D-118..D-120 (2026-10-13) edited them, and the operator
-re-signed them the same day (that checklist's §6 has both sha256 values). Any later edit of the file, comments included,
+re-signed them the same day (that checklist's §6 has both sha256 values); D-127
+(2026-10-14) added two optional bars and the operator re-signed the same day (§7). Any later edit of the file, comments included,
 changes its sha and is a re-signature. The sha depends on line endings
 (CUL-348): grade and spend on one checkout.
 
