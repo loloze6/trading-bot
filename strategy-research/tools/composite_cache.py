@@ -37,11 +37,19 @@ the composite config is run through tools/run_protocol.py with the
 CANDIDATE's protocol file. Cached under
 campaign_record/composite/<registry_hash>/<config8>_<protocol8>_<engine8>_<data8>/
 where engine8 is the git sha the candidate's windows were run with and data8
-hashes the candidate windows' OHLCV data_sha256 values (their manifest.json):
-a change of engine or of market data is a different cache entry. After a run
-the composite's own window manifests must show that same git sha and the same
-data_sha256 per (symbol, window) -- else CompositeError (the two series would
-not be comparable). Cache writes hold a lock (campaign_memory's primitive), so
+hashes a fingerprint of the candidate windows' TEST-WINDOW bars (run_fingerprint:
+the OHLCV columns of each window's bars.csv, which holds only the bars of the
+test window): a change of engine or of market data is a different cache entry.
+After a run the composite's own windows must show that same git sha and the same
+test-window bars hash per (symbol, window) -- else CompositeError (the two series
+would not be comparable). The warm-up prefetch is deliberately NOT fingerprinted
+(D-131): its length follows each strategy's own lookback, so two strategies with
+different warm-up on the same window read the same test bars but have different
+manifest data_sha256 values (that hash covers every loaded row, warm-up
+included), and comparing those falsely refused a composite that was comparable.
+Declared side effect of D-131: data8 and the meta `data_fingerprint_sha256`
+changed meaning, so every composite cache written before it recomputes once (a
+composite run is never a trial, see below). Cache writes hold a lock (campaign_memory's primitive), so
 two misses never race on one directory; a hit whose results/ bars files are
 gone is recomputed.
 
@@ -259,23 +267,54 @@ def subprocess_runner(python_exe) -> callable:
     return _run
 
 
+_BARS_FINGERPRINT_COLUMNS = ["timestamp", "open", "high", "low", "close", "volume"]
+
+
+def _bars_data_sha256(bars_path: Path) -> str:
+    """sha256 of one window's test-window bars: the OHLCV columns of its
+    bars.csv, hashed with the same recipe as reporting/run_artifact.data_sha256
+    (pandas hash of the rows, index excluded). bars.csv is written by
+    run_artifact.write_bars_csv from the test window's state rows only, rounded
+    to 6 decimals, so equal bars give equal hashes whatever the warm-up was."""
+    import pandas as pd  # lazy: only the fingerprint needs it
+    if not bars_path.exists():
+        raise CompositeError(f"{bars_path} is missing -- the test-window bars a window read "
+                             f"cannot be fingerprinted")
+    try:
+        df = pd.read_csv(bars_path, usecols=_BARS_FINGERPRINT_COLUMNS)
+    except ValueError as exc:
+        raise CompositeError(f"{bars_path}: needs the columns "
+                             f"{_BARS_FINGERPRINT_COLUMNS} to be fingerprinted ({exc})") from exc
+    if df.empty:
+        raise CompositeError(f"{bars_path} has no bar rows -- nothing to fingerprint")
+    df = df[_BARS_FINGERPRINT_COLUMNS]
+    return hashlib.sha256(
+        pd.util.hash_pandas_object(df, index=False).values.tobytes()).hexdigest()
+
+
 def run_fingerprint(protocol_result: dict, results_dir) -> dict:
-    """{git_sha, data: {"<symbol>|<window>": data_sha256}} from each window's
-    manifest.json (reporting/run_artifact.write_manifest). Missing manifest,
-    missing hash or two different git shas raise."""
+    """{git_sha, data: {"<symbol>|<window>": test-window-bars sha256}}.
+
+    git_sha comes from each window's manifest.json
+    (reporting/run_artifact.write_manifest). The data value is NOT the manifest's
+    data_sha256 (D-131): that hash covers every row the run loaded, warm-up
+    prefetch included, so two strategies with different lookbacks never match on
+    the same window. It is a hash of the OHLCV of the window's bars.csv, i.e. the
+    test window's bars only (`_bars_data_sha256`). Missing manifest, missing
+    git_sha, missing/empty/incomplete bars.csv or two different git shas raise."""
     data, shas = {}, set()
     for e in protocol_result.get("results") or []:
         if not (isinstance(e, dict) and e.get("run_id")):
             continue
-        path = Path(results_dir) / e["run_id"] / "manifest.json"
+        run_dir = Path(results_dir) / e["run_id"]
+        path = run_dir / "manifest.json"
         if not path.exists():
             raise CompositeError(f"{path} is missing -- the market data a window read cannot be "
                                  f"fingerprinted")
         m = json.loads(path.read_text(encoding="utf-8"))
-        dsha = (m.get("data") or {}).get("data_sha256")
-        if not dsha or not m.get("git_sha"):
-            raise CompositeError(f"{path}: no data.data_sha256 / git_sha")
-        data[f"{e.get('symbol')}|{e.get('window')}"] = dsha
+        if not m.get("git_sha"):
+            raise CompositeError(f"{path}: no git_sha")
+        data[f"{e.get('symbol')}|{e.get('window')}"] = _bars_data_sha256(run_dir / "bars.csv")
         shas.add(m["git_sha"])
     if not data:
         raise CompositeError("protocol result has no window to fingerprint")
@@ -353,7 +392,7 @@ def composite_series(resolved: dict, *, root: Path, protocol_path: Path, holdout
                                      f"{engine_sha} -- not comparable")
             if got["data"] != candidate_fingerprint["data"]:
                 raise CompositeError("the composite read different market data from the "
-                                     "candidate (data_sha256 per symbol|window differ) -- not "
+                                     "candidate (test-window bars per symbol|window differ) -- not "
                                      "comparable")
             meta = {
                 "schema_version": SCHEMA_VERSION,
