@@ -3559,6 +3559,12 @@ _PROFIT_BARS_OFFABLE = ("trade_count_min", "cost_edge_ratio_min")
 # row, so a bars file without them grades exactly as before. Type when present.
 _PROFIT_BARS_OPTIONAL_V2 = {
     "trade_frequency_min": (int, float, type(None)),  # trades / backtest bars, a fraction
+    "leave_one_block_out_sharpe_min": (int, float, type(None)),  # the lowest LOO Sharpe
+}
+# E-078: the range each optional bar's value must lie in when set: (low, high, low_open).
+_PROFIT_BARS_OPTIONAL_V2_RANGE = {
+    "trade_frequency_min": (0.0, 1.0, True),  # (0, 1]
+    "leave_one_block_out_sharpe_min": (-10.0, 10.0, False),  # a Sharpe threshold
 }
 
 
@@ -3638,11 +3644,14 @@ def _load_profitability_bars(path: Path | None = None, *, v2: bool = False) -> d
             if key not in doc:
                 continue
             value = doc[key]
-            if (isinstance(value, bool) or not isinstance(value, types)
-                    or (value is not None and not (0 < value <= 1))):
+            low, high, low_open = _PROFIT_BARS_OPTIONAL_V2_RANGE[key]
+            in_range = value is None or (  # NaN and inf fail the comparisons below
+                isinstance(value, (int, float))
+                and (low < value if low_open else low <= value) and value <= high)
+            if isinstance(value, bool) or not isinstance(value, types) or not in_range:
                 raise ProfitabilityBarsSchemaError(
-                    f"{bars_path}'s {key}={value!r} must be null or a number in (0, 1] "
-                    f"(a fraction of the backtest's bars).")
+                    f"{bars_path}'s {key}={value!r} must be null or a number in "
+                    f"{'(' if low_open else '['}{low}, {high}].")
 
     if not doc["target_instrument_set"]:
         raise ProfitabilityBarsSchemaError(
@@ -15173,6 +15182,8 @@ _BASIS_V2 = {
     "cost_edge_ratio_min": "pooled_trades_realized_edge_to_cost",
     # E-078 (D-127): trades without end_of_window forced closes / backtest bars, pooled
     "trade_frequency_min": "pooled_trades_excl_window_closes_per_backtest_bar",
+    # E-078 (D-127): the lowest whole-test Sharpe with one 4-month block left out
+    "leave_one_block_out_sharpe_min": "min_whole_test_sharpe_leaving_one_4_month_block_out",
 }
 # Comparator per v2 row: strict `>` where D-037 ("beats") and D-038 ("> 2.2")
 # say so; every other row keeps its v1 comparator.
@@ -15181,6 +15192,7 @@ _COMPARATOR_V2 = {
     "trade_count_min": ">=", "avg_daily_return_min": ">=",
     "buy_and_hold_sharpe_excess_min": ">", "cost_edge_ratio_min": ">",
     "trade_frequency_min": ">=",  # E-078: >= 1%
+    "leave_one_block_out_sharpe_min": ">",  # E-078: FAIL if any leave-one-out Sharpe <= 0
 }
 _TRADE_DIAGNOSTICS_FILE = "trade_diagnostics.json"
 
@@ -15700,11 +15712,16 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
                               "equity": exc.equity}})
         for name in ("avg_daily_return_min", "sharpe_min", "buy_and_hold_sharpe_excess_min"):
             _row(name, reason=f"not computed past a ruin: {_ruin_text(exc)}")
+        if not _bar_is_off(bars, "leave_one_block_out_sharpe_min"):  # E-078
+            _row("leave_one_block_out_sharpe_min",
+                 reason=f"not computed past a ruin: {_ruin_text(exc)}")
         return out
     if chain is None:
         for name in ("max_drawdown_pct_max", "avg_daily_return_min", "sharpe_min",
                      "buy_and_hold_sharpe_excess_min"):
             _row(name, reason=chain_reason)
+        if not _bar_is_off(bars, "leave_one_block_out_sharpe_min"):  # E-078
+            _row("leave_one_block_out_sharpe_min", reason=chain_reason)
         return out
 
     span = (f"equal-weight portfolio of {len(coins)} coin(s) {coins}, {len(chain['segments'])} "
@@ -15735,6 +15752,18 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
              detail=dict(chain_detail))
     except _pd.PortfolioNotEvaluable as exc:
         _row("sharpe_min", reason=f"whole-test Sharpe NOT_EVALUABLE: {exc}")
+    if not _bar_is_off(bars, "leave_one_block_out_sharpe_min"):
+        # E-078 (D-127): the lowest whole-test Sharpe with one 4-month block left out
+        try:
+            loo = pwt.leave_one_block_out_sharpes(chain["daily_returns"])
+            worst = min(loo, key=lambda b: (loo[b], b))
+            _row("leave_one_block_out_sharpe_min", loo[worst],
+                 note=(f"lowest whole-test Sharpe with one 4-month block left out (block "
+                       f"{worst}), over {len(loo)} block(s); {span}"),
+                 detail={**chain_detail, "worst_block": worst, "by_block": dict(loo)})
+        except _pd.PortfolioNotEvaluable as exc:
+            _row("leave_one_block_out_sharpe_min",
+                 reason=f"leave-one-block-out Sharpe NOT_EVALUABLE: {exc}")
 
     try:
         close_windows: dict = {}
@@ -15812,7 +15841,7 @@ def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
     results = []
     for name in ("sharpe_min", "deflated_sharpe_threshold", "max_drawdown_pct_max",
                  "trade_count_min", "avg_daily_return_min", "buy_and_hold_sharpe_excess_min",
-                 "cost_edge_ratio_min", "trade_frequency_min"):
+                 "cost_edge_ratio_min", "trade_frequency_min", "leave_one_block_out_sharpe_min"):
         if _bar_is_off(bars, name):
             continue  # D-118: an off bar has no row (E-078: an absent optional bar neither)
         row, threshold, comp = rows[name], bars[name], _COMPARATOR_V2[name]
