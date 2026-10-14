@@ -3555,9 +3555,18 @@ _PROFITABILITY_BARS_V2_SCHEMA = {
 # the verdict -- no row at all, never a NOT_EVALUABLE row (which would cap the verdict).
 _PROFIT_BARS_OFFABLE = ("trade_count_min", "cost_edge_ratio_min")
 
+# E-078 (D-127): v2 bars that are OPTIONAL in the bars file -- absent (or null) = off, no
+# row, so a bars file without them grades exactly as before. Type when present.
+_PROFIT_BARS_OPTIONAL_V2 = {
+    "trade_frequency_min": (int, float, type(None)),  # trades / backtest bars, a fraction
+}
+
 
 def _bar_is_off(bars: dict, name: str) -> bool:
-    """D-118: True when `name` is an off-able bar whose bars-file value is null."""
+    """D-118: True when `name` is an off-able bar whose bars-file value is null.
+    E-078: an optional v2 bar is off when its key is absent or null."""
+    if name in _PROFIT_BARS_OPTIONAL_V2:
+        return bars.get(name) is None
     return name in _PROFIT_BARS_OFFABLE and bars.get(name) is None
 
 
@@ -3623,6 +3632,17 @@ def _load_profitability_bars(path: Path | None = None, *, v2: bool = False) -> d
         raise ProfitabilityBarsSchemaError(
             f"{bars_path} has wrong-typed field(s): {'; '.join(wrong_type)}."
         )
+
+    if v2:
+        for key, types in _PROFIT_BARS_OPTIONAL_V2.items():  # E-078: checked only when present
+            if key not in doc:
+                continue
+            value = doc[key]
+            if (isinstance(value, bool) or not isinstance(value, types)
+                    or (value is not None and not (0 < value <= 1))):
+                raise ProfitabilityBarsSchemaError(
+                    f"{bars_path}'s {key}={value!r} must be null or a number in (0, 1] "
+                    f"(a fraction of the backtest's bars).")
 
     if not doc["target_instrument_set"]:
         raise ProfitabilityBarsSchemaError(
@@ -15151,6 +15171,8 @@ _BASIS_V2 = {
     "avg_daily_return_min": "portfolio_equal_weight_whole_test_chained_mean_daily_return",
     "buy_and_hold_sharpe_excess_min": "whole_test_sharpe_minus_buy_and_hold_whole_test_sharpe",
     "cost_edge_ratio_min": "pooled_trades_realized_edge_to_cost",
+    # E-078 (D-127): trades without end_of_window forced closes / backtest bars, pooled
+    "trade_frequency_min": "pooled_trades_excl_window_closes_per_backtest_bar",
 }
 # Comparator per v2 row: strict `>` where D-037 ("beats") and D-038 ("> 2.2")
 # say so; every other row keeps its v1 comparator.
@@ -15158,6 +15180,7 @@ _COMPARATOR_V2 = {
     "sharpe_min": ">", "deflated_sharpe_threshold": ">=", "max_drawdown_pct_max": "<=",  # D-118
     "trade_count_min": ">=", "avg_daily_return_min": ">=",
     "buy_and_hold_sharpe_excess_min": ">", "cost_edge_ratio_min": ">",
+    "trade_frequency_min": ">=",  # E-078: >= 1%
 }
 _TRADE_DIAGNOSTICS_FILE = "trade_diagnostics.json"
 
@@ -15622,6 +15645,22 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
              detail={"worst_coin": worst,
                      "per_coin": {str(c): dict(v) for c, v in counts.items()}})
 
+    if _bar_is_off(bars, "trade_frequency_min"):
+        pass  # E-078: absent -- no row
+    elif count_reason:
+        _row("trade_frequency_min", reason=("trade frequency NOT_EVALUABLE: the trade records "
+                                            "do not match the results -- " + count_reason))
+    else:
+        freq = _trade_frequency(run_dir, pr, counts)
+        if freq["reason"]:
+            _row("trade_frequency_min", reason=f"trade frequency NOT_EVALUABLE: {freq['reason']}")
+        else:
+            _row("trade_frequency_min", freq["trades"] / freq["bars"],
+                 note=(f"{freq['trades']} trade(s) without end_of_window forced closes / "
+                       f"{freq['bars']} backtest bar(s), pooled over every coin and window "
+                       f"({freq['end_of_window']} forced close(s) not counted); source {rec_src}"),
+                 detail={k: freq[k] for k in ("trades", "bars", "end_of_window", "n_coin_windows")})
+
     if _bar_is_off(bars, "cost_edge_ratio_min"):
         pass  # D-118: off -- no row, and cost_edge_min_trades is null
     elif count_reason:
@@ -15727,6 +15766,30 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
     return out
 
 
+def _trade_frequency(run_dir: Path, pr: dict, counts: dict) -> dict:
+    """E-078 (D-127): the trade-frequency bar's inputs, pooled over every coin and window:
+    trades = whole_test_trade_counts' `excluding_end_of_window` summed over the coins (the
+    lots of trade_diagnostics.json, the window's forced close at its last bar not counted:
+    D-035's rule, a strategy always in the market gets one per window), bars = each
+    (coin, window) backtest's bars (portfolio_states.csv rows, window_close_bars). {trades,
+    bars, end_of_window, n_coin_windows, reason}; `reason` set when a window's equity file
+    is missing or no bar exists."""
+    pwt = _portfolio_whole_test_module()
+    bars = 0
+    results = pr.get("results") or []
+    for r in results:
+        path = _pd.find_window_equity_file(run_dir, r["run_id"])
+        if path is None:
+            return {"reason": f"no portfolio_states.csv for {r['symbol']} {r['window']}"}
+        bars += len(pwt.window_close_bars(path))
+    out = {"trades": sum(c["excluding_end_of_window"] for c in counts.values()),
+           "end_of_window": sum(c["end_of_window"] for c in counts.values()),
+           "bars": bars, "n_coin_windows": len(results), "reason": None}
+    if bars == 0:
+        out["reason"] = "no backtest bar in any window"
+    return out
+
+
 def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
                           dsr_detail: dict | None = None, dsr_reason: str | None = None) -> tuple:
     """The v2 bar rows (E-062 S2b-1): (results, overall, reasons) in
@@ -15749,9 +15812,9 @@ def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
     results = []
     for name in ("sharpe_min", "deflated_sharpe_threshold", "max_drawdown_pct_max",
                  "trade_count_min", "avg_daily_return_min", "buy_and_hold_sharpe_excess_min",
-                 "cost_edge_ratio_min"):
+                 "cost_edge_ratio_min", "trade_frequency_min"):
         if _bar_is_off(bars, name):
-            continue  # D-118: an off bar has no row
+            continue  # D-118: an off bar has no row (E-078: an absent optional bar neither)
         row, threshold, comp = rows[name], bars[name], _COMPARATOR_V2[name]
         actual = row["actual"]
         if actual is None:
