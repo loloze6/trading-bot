@@ -319,3 +319,15 @@
    - **Scratch:** `%TEMP%\l1_d107\`: `fold_c_check.py`, `gap_runs.py`, `mutate_d113.py`, `registry_mark.yaml`, briefs.
 5. **Next-session prompt (paste verbatim):**
    > Context: Windows, repo loloze6/trading-bot. My main checkout is on c4/flag-set with uncommitted runtime files: do not switch, stash or edit it; I launch every run and edit my checkout myself. Read SESSION_LOG.md's latest entry ("2026-10-12 (continued, part 3)"), DECISION_LOG D-108 and D-113, tasks/lessons.md, and the Fable ruling I will paste. If PRs #401 and #402 are merged, compute D-108 offline on runs 089 / 084 / 088's stored outputs with the pipeline's own functions (whole-test Sharpe without and with day-1 costs as D-113 defines; curve ratio 62.3), report CONTINUE or FAIL with the branch, and STOP. No lane-1 run. Rules: never run main.py run_bot; never open trading-bot/local_data/holdout_sealed/ and never tail a local_data cache; no sealed-window dates in files; no secrets; one PR per change from master, no Co-Authored-By trailers, Sonnet review one round, mutation checks on new logic, run every test file importing a touched module; explain simply, one item per line, gloss every id; end by appending SESSION_LOG.md and tasks/lessons.md.
+
+## 2026-10-13 -- Delete CLAUDE.fork.md (PR #412)
+1. **Hypothesis:** nothing needs `CLAUDE.fork.md` once the four kept hard rules live in `CLAUDE.md`; every other citation is prose that can be re-pointed or reworded.
+2. **Result:**
+   - Measured with Git Bash `git grep -n "CLAUDE\.fork" origin/master`: 75 lines in 44 files (the direction said 11).
+   - Operator kept 4 rules (secrets/venvs, no lookahead, every experiment is a trial, holdout used very rarely); dropped the rest.
+   - PR #412 deletes the file and include, applies the (a)/(b) dispositions, removes the gate-registry entry, leaves history files alone.
+   - Tests: gate PASS; strategy-research 4174 passed / 9 failed; trading-bot 129 passed. The 9 fail identically on unmodified master in the worktree ("No runnable trading-bot interpreter").
+   - Sonnet review, one round: two wording defects, fixed.
+3. **Files touched:** CLAUDE.md, CLAUDE.fork.md (deleted), 19 prose/comment/test files listed in the PR body, config/holdout_gate_exemptions.txt.
+4. **Next-session prompt (paste verbatim):**
+   > Context: Windows, repo loloze6/trading-bot. My main checkout is on c4/flag-set with uncommitted runtime files: do not switch, stash or edit it. Check whether PR #412 (delete CLAUDE.fork.md) is merged and CI is green; if CI shows failures, compare against the 9 known worktree-only failures in SESSION_LOG's 2026-10-13 entry before touching anything. Then STOP and ask what is next. Rules: never run main.py run_bot; never open trading-bot/local_data/holdout_sealed/; no sealed-window dates in files; no secrets; one PR per change from master, no Co-Authored-By trailers, Sonnet review one round; write scripts with the Write tool, never a shell heredoc; explain simply, one item per line, gloss every id; end by appending SESSION_LOG.md and tasks/lessons.md.

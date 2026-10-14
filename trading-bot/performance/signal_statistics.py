@@ -283,7 +283,7 @@ _DEFAULT_SIGMA_BAR_BPS = 15.0  # prescreen_signal.py::_DEFAULT_SIGMA_BAR_BPS, sa
 # 5 here is deliberately a floor-of-floors: it only rules out the degenerate
 # "average of 1 trade" case this safeguard exists to catch, and is NOT a
 # claim that 5 trades is a trustworthy sample to route on -- this repo's own
-# research protocol (`CLAUDE.fork.md`) requires >=100 trades (or >=30
+# research protocol requires >=100 trades (or >=30
 # independent episodes) before a Sharpe may even be quoted. If review decides
 # 5 is too lenient for a real-money-adjacent decision, raise
 # `_MIN_TRADES_FOR_ROUTE` independently of `_MIN_N_EFF_FOR_ROUTE` -- nothing

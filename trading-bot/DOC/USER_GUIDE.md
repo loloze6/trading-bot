@@ -57,8 +57,7 @@ a target portfolio allocation in `[-2, +2]` (i.e. -200%..+200% of equity —
 up to 2x leverage before any risk-manager cap, see §7), and either executes
 or rejects the rebalance needed to reach that target,
 depending on a small set of risk controls. Live trading is explicitly
-disabled by team convention (see `trading-bot/CLAUDE.fork.md` — "Never run
-live") — this codebase is exercised almost exclusively through its backtest
+disabled by team convention (root `CLAUDE.md`: never run live) — this codebase is exercised almost exclusively through its backtest
 path, `trading-bot/main.py simulate` or `core/launcher.py::run_backtest()`.
 
 The strategy itself is entirely **config-driven**: `strategy_config.json`
@@ -907,7 +906,7 @@ to last trade, and fill every non-trading day with a synthetic `0.0` return
 and a running-max drawdown over the compounded daily-return equity curve.
 This means Sharpe/drawdown here sample only as many points as there are
 distinct trade-exit days — 24 points on the committed reference window per
-`CLAUDE.fork.md`'s own figures, re-derivable from `trades.json`'s trade
+the figures recorded at the bar-equity merge, re-derivable from `trades.json`'s trade
 count on that window.
 
 **Bar-level alternative** (`bar_equity`, off by default,
@@ -925,7 +924,7 @@ computed from **executed** allocation deltas
 (`postRebalance_current_allocation` vs. `previous_allocation`,
 `run_artifact.py::build_bar_equity`), not the raw `allocation_change` field, which
 also counts rejected rebalance attempts. Reference figures recorded at
-`fix/metrics-bar-equity`'s merge (`CLAUDE.fork.md` backlog item 3): maxDD
+`fix/metrics-bar-equity`'s merge: maxDD
 −24.77 vs. trade-exit −24.59, Sharpe −5.12 vs. −5.65, Sortino −5.05
 (downside deviation `sqrt(mean(min(r,0)^2))` over **all** daily returns
 against a target of 0, not the sample std of negative days alone,
@@ -945,6 +944,6 @@ citation is needed for archaeology. The former §11.1 (a research-tooling
 modeling decision living in strategy-research/, not trading-bot/) and §12
 ("Known Documentation Discrepancies") were removed the same day, per a
 scope call: this guide covers trading-bot/ engine capabilities only --
-discrepancies with OTHER docs (root CLAUDE.md, CLAUDE.fork.md) belong fixed
+discrepancies with OTHER docs (root CLAUDE.md) belong fixed
 in those docs directly, not tracked here. See git history for that content
 if needed. -->

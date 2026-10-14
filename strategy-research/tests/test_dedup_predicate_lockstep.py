@@ -263,6 +263,8 @@ def _mixed_rows(seed: int) -> list:
             r["symbols"] = [rng.choice(["BTCUSDT", "XRPUSD"])]
         if rng.random() < 0.5:
             r["windows_sha256"] = rng.choice(fps)
+        if rng.random() < 0.5:  # D-124: the fold is in the key too
+            r["fold"] = rng.choice(["A", "B", "C", "D"])
         rows.append(r)
     return rows
 
@@ -298,10 +300,11 @@ def test_every_dedupe_copy_agrees_on_rows_with_and_without_the_window_fingerprin
                      and k.get("source") == r.get("source")
                      and sorted(k.get("symbols") or []) == sorted(r.get("symbols") or [])
                      and ("symbols" in k) == ("symbols" in r)
-                     and k.get("windows_sha256") == r.get("windows_sha256"))
+                     and k.get("windows_sha256") == r.get("windows_sha256")
+                     and k.get("fold") == r.get("fold"))
         assert rpr._dedup_collapse_target(wctx, r) == (
-            f"trial {first['trial_id']!r} (same forecast_hash, coins, window fingerprint "
-            f"and source)")
+            f"trial {first['trial_id']!r} (same forecast_hash, coins, window fingerprint, "
+            f"fold and source)")
 
 
 def test_the_fingerprint_changes_n_only_where_it_is_present():

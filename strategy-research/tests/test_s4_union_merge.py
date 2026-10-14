@@ -1,7 +1,7 @@
 """
 E-025 S4 (2026-08-16) — union-merge procedure verification for
 campaign_state.yaml, the trial-ledger dual-writer scenario (issue #28,
-CLAUDE.fork.md's six-item precondition, item 3: "append-only, union-on-
+the six-item precondition, item 3 (E-025/S4_UNION_MERGE_DESIGN.md): "append-only, union-on-
 conflict merge -- a naive git merge can silently drop one side's trials").
 
 Empirically tested against real hermetic git repos (real clones, real `git

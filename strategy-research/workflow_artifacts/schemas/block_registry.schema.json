@@ -11,9 +11,36 @@
     "revision": { "type": "integer", "minimum": 0,
                   "description": "Bumped on every append (slice 6b reads it for 'changed since last composition')." },
     "updated_at": { "type": ["string", "null"] },
-    "blocks": { "type": "array", "items": { "$ref": "#/$defs/block" } }
+    "blocks": { "type": "array", "items": { "$ref": "#/$defs/block" } },
+    "statuses": {
+      "type": "array", "items": { "$ref": "#/$defs/status" },
+      "description": "D-125: append-only block status records, written only by `python tools/block_registry.py status`. A block's current status is its LAST record (none: active); voided blocks are left out of composition and of the readers' registry_summary."
+    },
+    "marks": {
+      "type": "array", "items": { "$ref": "#/$defs/mark" },
+      "description": "Operator notes on blocks, written by hand (first used 2026-10-12 on L1_DAILY_TREND_SMA50_V3_FOLD_B:run_089). Information only: no code reads them."
+    }
   },
   "$defs": {
+    "status": {
+      "type": "object", "additionalProperties": false,
+      "required": ["block_id", "status", "reason", "by", "at"],
+      "properties": {
+        "block_id": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["voided", "active"] },
+        "reason": { "type": "string", "minLength": 1 },
+        "by": { "type": "string", "minLength": 1 },
+        "at": { "type": "string", "minLength": 1 }
+      }
+    },
+    "mark": {
+      "type": "object", "required": ["block_id"],
+      "properties": {
+        "block_id": { "type": "string", "minLength": 1 },
+        "date": { "type": "string" },
+        "note": { "type": "string" }
+      }
+    },
     "block": {
       "type": "object",
       "required": ["block_id", "hypothesis_id", "kind", "config_fragment", "regime_assignment",

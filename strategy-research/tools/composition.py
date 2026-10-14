@@ -444,7 +444,7 @@ def window_weight_schedule(scheme: str, blocks: list, window_starts, *,
     """[{from, weights: {block_id: w}, basis}] for `vol_scaled` or
     `ic_weighted`: one entry per composite window start d (sorted, unique).
 
-    WHY THIS CANNOT LEAK (CLAUDE.fork.md hard rule 3; code review fix 5): the
+    WHY THIS CANNOT LEAK (no lookahead: a bar's decision uses only data timestamped at or before its close; code review fix 5): the
     weights of the entry dated d are estimated ONLY from data strictly before
     d -- vol_scaled from each block's stand-alone daily returns dated < d
     (a return dated D is the change to D's last close, all of it before d);

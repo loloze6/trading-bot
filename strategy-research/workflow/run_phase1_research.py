@@ -6597,8 +6597,8 @@ def _write_registry_summary(run_dir: Path, idea_status: str | None = None) -> Pa
     if _tools not in sys.path:
         sys.path.insert(0, _tools)
     import block_registry as _br
-    summary = _br.registry_summary(_br.load_registry(_block_registry_path()), run_dir,
-                                   idea_status=idea_status)
+    summary = _br.registry_summary(_br.load_active_registry(_block_registry_path()),  # D-125
+                                   run_dir, idea_status=idea_status)
     dest = Path(run_dir) / "artifacts" / _br.REGISTRY_SUMMARY_ARTIFACT
     save_yaml(dest, summary)
     print(f"📚 specialist_readers: {_br.REGISTRY_SUMMARY_ARTIFACT} written "
@@ -7276,10 +7276,11 @@ def _composition_module():
 
 
 def _load_block_registry_doc() -> dict:
-    """campaign_record/block_registry.yaml (read only; malformed raises)."""
+    """campaign_record/block_registry.yaml (read only; malformed raises), voided blocks
+    left out (D-125: what composition reads; no status record: the file as it is)."""
     _composition_module()  # puts tools/ on sys.path
     import block_registry as _br
-    return _br.load_registry(_block_registry_path())
+    return _br.load_active_registry(_block_registry_path())
 
 
 def _composition_candidate(run_dir: Path) -> dict | None:
@@ -14024,7 +14025,11 @@ def _dedupe_trials(valid_trials: list) -> tuple[list, int]:
     its own DSR); the same coverage still collapses. A row without the field
     keys None -- every existing ledger dedupes exactly as before. A present but
     malformed `windows_sha256` raises. Lockstep with deflate_sharpe.
-    deduplicate_trials and _dedup_collapse_target."""
+    deduplicate_trials and _dedup_collapse_target.
+
+    D-124: the key also holds the row's `fold`, so the same config on another fold
+    is its own trial; a row without the field keys None (as before); a present but
+    non-string or empty `fold` raises."""
     reproduces_by_key: dict = {}
     for t in valid_trials:
         reproduces_by_key[(t.get("trial_id"), t.get("source"))] = t.get("reproduces_trial")
@@ -14059,7 +14064,14 @@ def _dedupe_trials(valid_trials: list) -> tuple[list, int]:
                                  f"sha256 hex digest (E-062 S2b-3c)")
         else:
             wsha = None
-        key = (fh, coins, wsha, t.get("source"))
+        if "fold" in t:
+            fold = t["fold"]
+            if not (isinstance(fold, str) and fold):
+                raise ValueError(f"trial {t.get('trial_id')!r}: fold {fold!r} is not a "
+                                 f"non-empty string (D-124)")
+        else:
+            fold = None
+        key = (fh, coins, wsha, fold, t.get("source"))
         if key in seen_keys:
             n_dedup_removed += 1
         else:
@@ -15425,20 +15437,20 @@ def _dedup_collapse_target(wctx: dict, row: dict) -> str:
     """Which earlier ledger row `row` (the candidate's own backtest row) was
     deduplicated onto, for the NOT_EVALUABLE reason: the first other valid row
     with its (forecast_hash, sorted symbols or None, windows_sha256 or None,
-    source) key -- the dedupe key of _dedupe_trials / deduplicate_trials
-    (E-062 S2b-3c adds the window fingerprint) -- else its reproduces_trial
-    reference, else a generic phrase."""
+    fold or None, source) key -- the dedupe key of _dedupe_trials /
+    deduplicate_trials (E-062 S2b-3c adds the window fingerprint, D-124 the
+    fold) -- else its reproduces_trial reference, else a generic phrase."""
     def _key(r):
         syms = r.get("symbols")
         return (r.get("forecast_hash"),
                 tuple(sorted(syms)) if isinstance(syms, list) else None,
-                r.get("windows_sha256"), r.get("source"))
+                r.get("windows_sha256"), r.get("fold"), r.get("source"))
     if row.get("forecast_hash") is not None:
         for r in wctx["rows"]:
             if (isinstance(r, dict) and r is not row and not r.get("invalidated_artifact")
                     and r.get("trial_id") != row.get("trial_id") and _key(r) == _key(row)):
                 return (f"trial {r.get('trial_id')!r} (same forecast_hash, coins, window "
-                        f"fingerprint and source)")
+                        f"fingerprint, fold and source)")
     if row.get("reproduces_trial") is not None:
         return f"trial {row['reproduces_trial']!r} (reproduces_trial)"
     return "another ledger row"

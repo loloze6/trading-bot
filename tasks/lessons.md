@@ -197,3 +197,7 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-12 (continued, part 3) -- Backslashes in a heredoc, eighth and ninth time
 - **Pattern:** a script written through a shell heredoc turned `\n` inside Python strings into real newlines (fold_b_figures.py). Ninth time, while fixing these very notes: a Windows path in a heredoc Python string lost `\f` to a form feed (caught by grep, repaired before merge).
 - **Rule:** write any file or replacement text that contains a backslash with the Write or Edit tool, never through a heredoc; after any scripted text edit, scan the file for control characters.
+
+## 2026-10-13 -- Re-measure counts and line numbers from the direction
+- **Pattern:** the direction's citation count (11) and two line numbers (run_protocol :1130, template :165) were wrong against current master (75 lines; :1178, :175); "nothing loads the file except the include" was also false (gate registry). Separately, one pytest call mixing strategy-research and trading-bot test files fails at collection (clashing `_cache_guard` modules), and a worktree shows 9 failures that also fail on clean master.
+- **Rule:** re-run the count and re-read each line on the current tip before acting on a number from a brief; run the two test roots in separate pytest calls from their own directory; before blaming a change for failures, rerun them on stashed/pristine master in the same worktree.

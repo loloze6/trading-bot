@@ -1016,7 +1016,8 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
     root = Path(root)
     mem_path = root / "campaign_record" / "campaign_memory.yaml"
     memory = _cm.load_memory(mem_path)
-    registry = _br.load_registry(root / "campaign_record" / "block_registry.yaml")
+    # D-125: voided blocks are left out of every composition input (no status: unchanged)
+    registry = _br.load_active_registry(root / "campaign_record" / "block_registry.yaml")
     runs = {}
     for run_id in sorted(memory.get("runs") or {}):
         entry = memory["runs"][run_id]

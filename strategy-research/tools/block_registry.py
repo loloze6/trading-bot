@@ -44,6 +44,16 @@ Deliberately NOT here:
   * reader proposal scores, refine/pivot/escalate, hypothesis_family,
     altitude, continuation fields (retired in slice 6c).
 
+Block status (ruling 2 item (4), operator 2026-10-13; D-125): an optional, append-only
+`statuses` list of {block_id, status (voided | active), reason, by, at} records. A block's
+current status is its LAST record (none: active). Blocks are never removed: the
+composition inputs (tools/decide_next.load_inputs, tools/composite_cache, the
+orchestrator's composition checks) and the readers' registry_summary read
+`load_active_registry`, which leaves voided blocks out; record_run's append path keeps
+the whole document. No `statuses` key: every reader gets the document unchanged
+(byte-identical). Written only by the operator's command:
+`python tools/block_registry.py status --block-id <id> --status voided --reason "..." --by <name>`.
+
 Importable without the orchestrator: every path is passed in by the caller.
 """
 from __future__ import annotations
@@ -65,6 +75,9 @@ REGISTRY_LOCK_FILENAME = ".block_registry.lock"
 MANIFEST_FILENAME = _bm.MANIFEST_FILENAME
 MANIFEST_KINDS = _bm.MANIFEST_KINDS
 _NUMBER_KEYS = ("value", "threshold", "n_windows", "n_trades")
+STATUSES_KEY = "statuses"  # D-125: the append-only block status records
+STATUS_VALUES = ("voided", "active")
+_STATUS_FIELDS = ("block_id", "status", "reason", "by", "at")
 # Fields that may differ between two registrations of the same block without
 # the block itself having changed.
 _VOLATILE_FIELDS = frozenset({"registered_at"})
@@ -136,7 +149,70 @@ def load_registry(path: Path) -> dict:
     if revision < len(blocks):
         raise BlockRegistryError(f"{path}: revision={revision} is below the block count "
                                  f"{len(blocks)} -- every append bumps it")
+    if STATUSES_KEY in doc:
+        _check_statuses(path, doc[STATUSES_KEY], seen)
     return doc
+
+
+def _check_statuses(path, statuses, block_ids) -> None:
+    """D-125: `statuses` is a list of {block_id, status, reason, by, at}; each names a
+    registered block, a known status and a non-empty reason, by and at."""
+    if not isinstance(statuses, list):
+        raise BlockRegistryError(f"{path}: {STATUSES_KEY} is not a list")
+    for i, rec in enumerate(statuses):
+        if not isinstance(rec, dict) or set(rec) != set(_STATUS_FIELDS):
+            raise BlockRegistryError(f"{path}: {STATUSES_KEY}[{i}] must be exactly "
+                                     f"{list(_STATUS_FIELDS)}")
+        if rec["block_id"] not in block_ids:
+            raise BlockRegistryError(f"{path}: {STATUSES_KEY}[{i}].block_id={rec['block_id']!r} "
+                                     f"is not a registered block")
+        if rec["status"] not in STATUS_VALUES:
+            raise BlockRegistryError(f"{path}: {STATUSES_KEY}[{i}].status={rec['status']!r} "
+                                     f"is not one of {list(STATUS_VALUES)}")
+        for f in ("reason", "by", "at"):
+            if not (isinstance(rec[f], str) and rec[f].strip()):
+                raise BlockRegistryError(f"{path}: {STATUSES_KEY}[{i}].{f} is empty")
+
+
+def voided_block_ids(doc: dict) -> set:
+    """D-125: the block ids whose LAST status record is `voided`."""
+    current = {}
+    for rec in doc.get(STATUSES_KEY) or []:
+        current[rec["block_id"]] = rec["status"]
+    return {bid for bid, status in current.items() if status == "voided"}
+
+
+def active_view(doc: dict) -> dict:
+    """D-125: the registry as its readers see it -- voided blocks left out. With no
+    voided block the document itself is returned (byte-identical for every reader)."""
+    voided = voided_block_ids(doc)
+    if not voided:
+        return doc
+    return {**doc, "blocks": [b for b in doc["blocks"] if b["block_id"] not in voided]}
+
+
+def load_active_registry(path: Path) -> dict:
+    """D-125: load_registry, then active_view (what composition and the readers read)."""
+    return active_view(load_registry(path))
+
+
+def set_status(path: Path, block_id: str, status: str, reason: str, by: str) -> dict:
+    """D-125: append one status record under the registry lock (blocks untouched, the
+    revision unchanged). Refuses an unknown block, status, or an empty reason / by."""
+    path = Path(path)
+    if not path.exists():
+        raise BlockRegistryError(f"{path}: no registry -- nothing to set a status on")
+    with _cm._file_lock(path.parent / REGISTRY_LOCK_FILENAME, "the block registry",
+                        error_cls=BlockRegistryError):
+        doc = load_registry(path)
+        rec = {"block_id": block_id, "status": status, "reason": reason, "by": by, "at": _now()}
+        _check_statuses(path, (doc.get(STATUSES_KEY) or []) + [rec],
+                        {b["block_id"] for b in doc["blocks"]})
+        doc.setdefault(STATUSES_KEY, []).append(rec)
+        doc["updated_at"] = rec["at"]
+        validate_workflow_artifact(path, doc)
+        _cm._atomic_write(path, doc)
+    return rec
 
 
 def load_manifest(run_dir: Path):
@@ -617,3 +693,31 @@ def registry_summary(doc: dict, run_dir: Path, idea_status: str | None = None) -
             "relation_to_this_run": members[0]["relation_to_this_run"],
         })
     return out
+
+
+def main(argv=None) -> int:
+    """`python tools/block_registry.py status --block-id <id> --status voided --reason "..."
+    --by <name> [--registry campaign_record/block_registry.yaml]`, from strategy-research/
+    (D-125). Prints the record appended."""
+    import argparse
+    parser = argparse.ArgumentParser(description="Block registry commands (D-125).")
+    sub = parser.add_subparsers(dest="command", required=True)
+    st = sub.add_parser("status", help="Append a status record (voided | active) for a block. "
+                                       "Append-only: a later record supersedes an earlier one.")
+    st.add_argument("--registry", type=Path, default=Path("campaign_record/block_registry.yaml"))
+    st.add_argument("--block-id", required=True)
+    st.add_argument("--status", required=True, choices=list(STATUS_VALUES))
+    st.add_argument("--reason", required=True)
+    st.add_argument("--by", required=True)
+    args = parser.parse_args(argv)
+    try:
+        rec = set_status(args.registry, args.block_id, args.status, args.reason, args.by)
+    except BlockRegistryError as exc:
+        print(f"REFUSED: {exc}")
+        return 1
+    print(f"STATUS appended to {args.registry}: {rec}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

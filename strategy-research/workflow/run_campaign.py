@@ -558,7 +558,7 @@ def _check_generate_protocol_has_promotion(brief_path: Path, data: dict) -> None
             f"min_trade_count_gte/kill_median_sharpe_lt under "
             f"machine_constraints.protocol.promotion with YOUR pre-registered "
             f"thresholds (no thresholds after seeing data -- see "
-            f"CLAUDE.fork.md/HYPOTHESIS.md convention)."
+            f"the HYPOTHESIS.md convention)."
         )
 
 

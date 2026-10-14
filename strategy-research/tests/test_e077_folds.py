@@ -131,7 +131,7 @@ def test_every_block_is_inside_research_and_outside_validation_and_holdout_per_t
     assert tuple(ranges["holdout"]) == tuple(policy["holdout_range"])
     r_start, r_end = ranges["research"]
     v_start, v_end = ranges["validation"]
-    assert (v_start, v_end) == ("2024-01-01", "2025-12-31")  # 2024-2025 per CLAUDE.fork.md
+    assert (v_start, v_end) == ("2024-01-01", "2025-12-31")  # 2024-2025 per config/folds.yaml
     assert r_end < v_start  # research ends before validation starts
     for fid in ("A", "B", "C"):  # fold D (2024-2025): tests/test_d115_fold_d.py
         for b in DOC["folds"][fid]:

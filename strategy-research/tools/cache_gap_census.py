@@ -33,7 +33,7 @@ import os
 import statistics
 from datetime import datetime, timedelta
 
-# Research windows (CLAUDE.fork.md "Data splits"). The holdout is deliberately
+# Research windows (config/folds.yaml, config/campaign_data_policy.yaml). The holdout is deliberately
 # absent: it is single-use and reading it is spending it.
 WINDOWS = {
     "train": (datetime(2018, 1, 1), datetime(2023, 12, 31, 23, 59, 59)),
