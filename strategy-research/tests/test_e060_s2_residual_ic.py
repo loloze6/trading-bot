@@ -387,7 +387,14 @@ def _write_bars(results_dir: Path, wrid: str, forecasts, t0="2020-01-01", tz=Non
     ts = pd.date_range(t0, periods=len(forecasts), freq="h", tz=tz)
     d = results_dir / wrid
     d.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame({"timestamp": ts, "close": closes, "forecast": forecasts}).to_csv(
+    # D-131: the composite fingerprint hashes the OHLCV of bars.csv (the test
+    # window's bars), no longer the manifest's data_sha256, so the file carries
+    # the OHLCV columns and `data_sha` decides the volume: other data_sha, other
+    # bars, other fingerprint.
+    volume = 1000.0 + int(data_sha[:4], 16) % 1000
+    pd.DataFrame({"timestamp": ts, "open": closes,
+                  "high": [c * 1.001 for c in closes], "low": [c * 0.999 for c in closes],
+                  "close": closes, "volume": volume, "forecast": forecasts}).to_csv(
         d / "bars.csv", index=False)
     (d / "manifest.json").write_text(json.dumps({"git_sha": git_sha,
                                                  "data": {"data_sha256": data_sha}}),
@@ -423,7 +430,16 @@ def _composite_runner(forecasts, calls, **bars_kw):
     return run
 
 
-FP = {"git_sha": GIT, "data": {"BTCUSDT|2020-01": "d" * 64}}
+def _fp(data_sha="d" * 64, git_sha=GIT, n=900):
+    """The fingerprint run_fingerprint gives the bars `_write_bars` writes for
+    this data_sha (the candidate side of the composite comparison)."""
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        _write_bars(Path(tmp), "wr_fp", Z_COMP[:n], data_sha=data_sha, git_sha=git_sha)
+        return cc.run_fingerprint(_summary("wr_fp"), tmp)
+
+
+FP = _fp()
 
 
 def _series(resolved, proto, runner, fp=FP):
@@ -484,7 +500,7 @@ def test_cache_key_covers_engine_and_market_data():
     _, _, d2 = _series(_resolved(rel, sha), proto,
                        _composite_runner(Z_COMP[:900], calls, git_sha="h" * 40), fp=fp2)
     assert len(calls) == 2 and d1 != d2
-    fp3 = {"git_sha": GIT, "data": {"BTCUSDT|2020-01": "e" * 64}}
+    fp3 = _fp(data_sha="e" * 64)
     with pytest.raises(cc.CompositeError, match="different market data"):
         _series(_resolved(rel, sha), proto, _composite_runner(Z_COMP[:900], calls), fp=fp3)
 
