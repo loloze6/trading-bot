@@ -199,7 +199,15 @@
 #                                  the operator re-signs it with this file (D-046).
 #                                  basis: deflated_sharpe_whole_test_daily_on_campaign_trial_ledger
 #   max_drawdown_pct_max       v2: largest peak-to-trough fall of the chained
-#                                  BAR-level curve over the WHOLE test (D-034). `<=`.
+#                                  BAR-level curve over the WHOLE test (D-034), taken
+#                                  WITHIN EACH CONTIGUOUS STRETCH (D-129): the running
+#                                  peak resets at each planned protocol gap (windows
+#                                  separated by days no window covers); the new peak is
+#                                  the capital carried in. No planned gap (contiguous
+#                                  folds A and D, one window): one stretch, the number
+#                                  is the single-peak one, unchanged. Applies to
+#                                  backtests graded after D-129. The threshold is
+#                                  unchanged. `<=`.
 #                                  basis: portfolio_equal_weight_whole_test_chained
 #   trade_count_min            v2: per coin, trades over the whole test WITHOUT
 #                                  the end_of_window forced closes (D-035, G5);
@@ -274,8 +282,8 @@ deflated_sharpe_threshold: 0.5     # D-118 (was 0.95)
 target_instrument_set:
   - BTCUSDT
   - ETHUSDT
-ratified_by: "Jeremy Alauze (loloze6) -- recorded by Claude at the operator's explicit instruction (2026-10-14 session: 'sign it')"
-ratified_at: 2026-10-14
+ratified_by: null                  # D-129: unsigned until the operator re-signs (basis text of max_drawdown_pct_max)
+ratified_at: null
 # v2 keys (required only under orchestrator.profit_bars_v2.enabled):
 buy_and_hold_sharpe_excess_min: 0.0     # D-120: strategy whole-test Sharpe - buy-and-hold's, strict > 0
 cost_edge_ratio_min: null          # D-118: OFF (no cost-stress bar anywhere)
