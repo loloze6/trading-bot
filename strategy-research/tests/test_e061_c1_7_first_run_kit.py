@@ -81,7 +81,7 @@ _TEMPLATE_PATH = _SR / "workflow_artifacts" / "templates" / "research_brief_new_
 _FRONTMATTER_RE = re.compile(r"\A---\s*\n(.*?\n)---\s*\n", re.DOTALL)
 
 # All 13 protocols/*.json files as of this commit, for the exhaustive D-3
-# survey the template's own header comment cites.
+# survey the template's former header comment cited (removed in the step 0 rewrite).
 _ALL_PROTOCOLS = (
     "baseline_v1", "baseline_v2", "diagnostic_btceth_4h", "escalation_avaxusdt_4h",
     "escalation_solusdt_4h", "escalation_tf_15m", "funding_mr_4h_retest_v1",
@@ -89,20 +89,23 @@ _ALL_PROTOCOLS = (
     "run_050_generated", "run_053_generated", "ts_trend_daily_v1",
 )
 
-_PLACEHOLDER_TEXT = {
-    "strategy_domain": ("<FILL IN: e.g. momentum, mean_reversion, funding_carry, breadth>", "momentum"),
-    "venue": ("""<FILL IN: e.g. kraken -- must be a (venue, product) pair marked
-  tradable: true in config/venue_tradability.yaml, or the run is auto-flagged
-  research_only>""", "kraken"),
-    "product": ("""<FILL IN: e.g. spot or perp -- see config/venue_tradability.yaml
-  for which pairs are currently tradable>""", "spot"),
-    "research_goal": ("""<FILL IN: one paragraph. What edge are you testing, and why do you expect
-  it to survive fees and slippage at your size? (the three
-  HYPOTHESIS.md questions -- who is on the other side, why the edge survives
-  costs, why it hasn't been arbitraged away -- are the bar this needs to
-  eventually clear, even though this brief itself defers formal criteria to
-  step 1a via criteria_from below.)>""", "Testing momentum on BTC/ETH."),
-}
+# Step 0 (idea intake) rewrite: the template's placeholder lines, exactly as they sit in
+# the file (this pin changed only because the template changed by the operator's spec),
+# each with the filled line a copy would carry. Top-level lines are anchored with a
+# leading newline so the indented machine_constraints.protocol lines are not matched.
+_PLACEHOLDER_LINES = (
+    ('\nstrategy_domain: "<FILL IN>"\n', '\nstrategy_domain: "momentum"\n'),
+    ('\nresearch_goal: >\n  <FILL IN>\n', '\nresearch_goal: >\n  Testing momentum on BTC/ETH.\n'),
+    ('\nvenue: "<FILL IN>"\n', '\nvenue: "kraken"\n'),
+    ('\nproduct: "<FILL IN>"\n', '\nproduct: "spot"\n'),
+    ('\nmarket_universe: ["<FILL IN>"]\n', '\nmarket_universe: [BTCUSDT, ETHUSDT]\n'),
+    ('\ntimeframe: "<FILL IN>"\n', '\ntimeframe: "1h"\n'),
+    ('\n    symbols: ["<FILL IN>"]\n', '\n    symbols: [BTCUSDT, ETHUSDT]\n'),
+    ('\n    timeframe: "<FILL IN>"\n', '\n    timeframe: "1h"\n'),
+    ('\n    start: "<FILL IN>"\n', '\n    start: "2018-02-01"\n'),
+    ('\n    end: "<FILL IN>"\n', '\n    end: "2025-12-31"\n'),
+    ('\n    window_months: "<FILL IN>"\n', '\n    window_months: 1\n'),
+)
 
 # C5.6 (D-043): the template no longer carries a (commented) promotion block --
 # a config-direct generated protocol needs none. Tests that want one insert it
@@ -136,27 +139,19 @@ def _frontmatter_block(text: str) -> str:
 
 
 def _filled_template_text() -> str:
-    """The template with every prose placeholder replaced -- what an
-    operator's brief looks like, ready to register (C5.6: no promotion block).
-    market_universe/timeframe are already concrete in the template (matching
-    machine_constraints.protocol exactly), so only the four prose
-    placeholders need filling; there is no `promotion` block (C5.6, D-043 --
-    see test_generate_protocol_with_no_promotion_registers_under_config_
-    direct_authoring).
+    """The template with every placeholder line replaced -- what an operator's
+    brief looks like, ready to register (C5.6: no promotion block). The filled
+    values are the old template's defaults (BTCUSDT+ETHUSDT, 1h, 2018-02-01 ..
+    2025-12-31, monthly), so the lines the tests below substitute are unchanged.
 
     Only the FRONTMATTER (parsed) data is checked for a remaining sentinel --
-    the header comment block legitimately uses the literal string "<FILL IN"
-    prose (explaining the convention itself), and comments are never parsed
-    data."""
+    comments are never parsed data."""
     text = _TEMPLATE_PATH.read_text(encoding="utf-8")
-    for _key, (placeholder, replacement) in _PLACEHOLDER_TEXT.items():
-        assert placeholder in text, f"fixture drift: {_key} placeholder text not found in template"
+    for placeholder, replacement in _PLACEHOLDER_LINES:
+        assert text.count(placeholder) == 1, f"fixture drift: {placeholder!r} not found once in template"
         text = text.replace(placeholder, replacement)
     data = yaml.safe_load(_frontmatter_block(text))
-    assert not camp._contains_placeholder(data.get("strategy_domain"))
-    assert not camp._contains_placeholder(data.get("venue"))
-    assert not camp._contains_placeholder(data.get("product"))
-    assert not camp._contains_placeholder(data.get("research_goal"))
+    assert camp._find_placeholder_paths(data) == []
     return text
 
 
@@ -216,28 +211,109 @@ def test_template_file_exists_and_is_well_formed():
     mc = data["machine_constraints"]
     assert "protocol_ref" not in mc, "template generates a protocol, it does not pin one"
     proto = mc["protocol"]
-    assert proto["symbols"] == ["BTCUSDT", "ETHUSDT"]
-    assert proto["timeframe"] == "1h"
     assert "holdout" not in proto, "holdout must default from the policy, not be hand-copied"
     assert "promotion" not in proto, "promotion must never be invented on the operator's behalf"
     # C5.6 (D-043): not even as a commented-out "fill this in" example.
-    mc_text = _frontmatter_block(text).split("\nmachine_constraints:", 1)[1]
-    assert "median_sharpe_gt" not in mc_text and "<FILL IN" not in mc_text
+    assert "median_sharpe_gt" not in _frontmatter_block(text)
 
-    # market_universe/timeframe are pre-filled to EXACTLY match the generated
-    # protocol (the cross-check would otherwise refuse this template's own
-    # default under config_direct_authoring).
+    # market_universe/timeframe are written twice (a registration cross-check
+    # needs both); the template carries the same placeholder in each place.
     assert data["market_universe"] == proto["symbols"]
     assert data["timeframe"] == proto["timeframe"]
 
-    # the remaining fields are placeholders, clearly marked, present but unfilled.
-    for key in ("strategy_domain", "research_goal", "venue", "product"):
-        assert data.get(key), f"placeholder field {key!r} must be present and non-empty"
-        assert "<FILL IN" in data[key], f"{key} must carry a clearly marked placeholder"
+    # every field the operator must decide is present, non-empty and a clearly
+    # marked placeholder (registration refuses a copy that leaves one).
+    for key in (*camp.crr.REFRAME_BRIEF_REQUIRED_KEYS, "market_universe"):
+        assert data.get(key), f"required field {key!r} must be present and non-empty"
+    assert len(camp._find_placeholder_paths(data)) == 11
+
+    # the optional fields are comments, not data, until the operator opts in.
+    for optional in ("constraints", "evaluation"):
+        assert optional not in data
+    assert "fold" not in proto
+    assert data["available_data"] == "none"
+
+
+def test_scope_block_is_dated_complete_and_ends_with_the_update_rule():
+    """The operator's "Scope for now" block (step 0): a top-level `scope` field,
+    dated 2026-10-14, five capability lines, each saying in scope / not in scope
+    with a file:line fact, and the closing update rule. Copied verbatim into every
+    brief; nothing reads the field in code, step 1a reads it as part of the brief."""
+    data = yaml.safe_load(_frontmatter_block(_TEMPLATE_PATH.read_text(encoding="utf-8")))
+    lines = data["scope"].splitlines()
+    assert lines[0] == "Scope for now (2026-10-14)."
+    assert lines[-1] == ("The operator updates this when focus or capabilities change, "
+                         "recorded in DECISION_LOG.md.")
+    capabilities = lines[1:-1]
+    assert [c.split(":")[0] for c in capabilities] == [
+        "One coin per variant", "Price bars only, from the Kraken caches",
+        "Perp priced on spot bars, funding not charged", "Hourly or daily bars",
+        "Claims expressible in the claim-test slots"]
+    for c in capabilities:
+        assert "in scope" in c and re.search(r"[A-Za-z_/.]+\.(py|yaml|md):\d+", c), c
+
+
+def _uncomment_block(text: str, first: str, last: str) -> str:
+    """Strip the leading '# ' from the template's commented lines first..last (inclusive)."""
+    lines = text.split("\n")
+    i, j = lines.index(first), lines.index(last)
+    for k in range(i, j + 1):
+        assert lines[k].startswith("# ") or lines[k] == "#", lines[k]
+        lines[k] = lines[k][2:]
+    return "\n".join(lines)
+
+
+def test_optional_exact_config_block_uncomments_into_what_the_run_reads(tmp_path):
+    """The seeded config + block manifest (D-110/D-112): uncommented as the template
+    shows it, the two entries are found by the readers the run uses."""
+    text = _uncomment_block(_filled_template_text(), "# constraints:", "#     { the block manifest as JSON }")
+    text = text.replace("{ the strategy config as JSON }", '{"regime_detector": {}}')
+    text = text.replace("{ the block manifest as JSON }", '{"block": {"kind": "forecast"}}')
+    brief = camp._parse_brief_frontmatter(_write(tmp_path, "exact.md", text))
+    artifacts = tmp_path / "run" / "artifacts"
+    artifacts.mkdir(parents=True)
+    (artifacts / "research_brief.yaml").write_text(
+        yaml.safe_dump({k: v for k, v in brief.items() if k != "machine_constraints"}), encoding="utf-8")
+    assert orch._brief_exact_config(tmp_path / "run") == {"regime_detector": {}}
+    assert orch._brief_exact_manifest(tmp_path / "run") == {"block": {"kind": "forecast"}}
+
+
+def test_optional_criteria_block_uncomments_into_the_one_menu_id_field(tmp_path):
+    """The brief-side criteria field (D-121): uncommented as the template shows it, and with
+    the criteria_from line deleted, the brief carries evaluation.pass_rule = menu ids."""
+    text = _uncomment_block(_filled_template_text(), "# evaluation:", "#       - id: whole_test_sharpe_positive")
+    text = text.replace("criteria_from: hypothesis_generation\n", "")
+    brief = camp._parse_brief_frontmatter(_write(tmp_path, "criteria.md", text))
+    assert "criteria_from" not in brief
+    assert brief["evaluation"] == {"pass_rule": {"criteria": [{"id": "whole_test_sharpe_positive"}]}}
+
+
+def _write(directory: Path, name: str, text: str) -> Path:
+    path = directory / name
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+def test_scope_survives_registration_into_the_runs_research_brief(campaign_root, monkeypatch):
+    """Phase A of the step 0 rewrite, as a test: a filled copy registers, and the
+    brief a run is materialized from keeps `scope` byte for byte (no allowlist of
+    keys), so research_brief.yaml -- step 1a's primary input -- carries it."""
+    root = campaign_root["root"]
+    assert _register(root, "scope_idea", _filled_template_text()) == 0
+    brief = camp._parse_brief_frontmatter(root / "briefs" / "scope_idea.md")
+    template = yaml.safe_load(_frontmatter_block(_TEMPLATE_PATH.read_text(encoding="utf-8")))
+    assert brief["scope"] == template["scope"]
+    run_dir = root / "runs" / "run_scope" / "artifacts"
+    run_dir.mkdir(parents=True)
+    monkeypatch.setattr(camp, "check_venue_tradability", lambda venue, market_type: True)
+    camp._materialize_run("run_scope", brief)
+    written = yaml.safe_load((run_dir / "research_brief.yaml").read_text(encoding="utf-8"))
+    assert written["scope"] == template["scope"]
+    assert "machine_constraints" not in written
 
 
 def test_all_13_protocols_surveyed_against_the_five_criteria_none_qualifies():
-    """The exhaustive check the template's header comment cites: of all 13
+    """The exhaustive check the template's former header comment cited: of all 13
     protocols/*.json files, none is simultaneously (a) entirely within
     train+validation, (b) spanning >=3 real eras with substantive coverage,
     (c) never touching the sealed window, (d) holdout-consistent, and
@@ -296,7 +372,7 @@ def test_all_13_protocols_surveyed_against_the_five_criteria_none_qualifies():
 
 def test_generated_protocol_era_coverage_matches_the_template_comment():
     """Re-measures (not trusts) the exact per-era window counts the
-    template's own header comment quotes: 95 monthly windows total, 20 in
+    template's former header comment quoted: 95 monthly windows total, 20 in
     era_2018_pre_funding, 51 in era_2019_2023_full_feed, 11 in
     era_2024_burned, 13 in era_2024_2025_walk_forward_extension."""
     policy = protres.load_campaign_data_policy(_SR / "config" / "campaign_data_policy.yaml")

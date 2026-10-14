@@ -24,6 +24,8 @@
 
 1. Copy `workflow_artifacts/templates/research_brief_new_pipeline.md` to
    `briefs/<name>.md`. Replace every `<FILL IN…>` (registration refuses any that is left).
+   `research_goal` is the one free-text idea field (what you think happens in this market and
+   why); keep the template's dated `scope` block unchanged in every brief.
 2. Set `venue: kraken` and `product: perp` (Kraken is the target venue; O-14).
 3. Test period and windows, `RUNBOOK.md` §1f: `end` is the last included day (never the 1st of
    a month); `window_months` 3–12; 5–40 windows; at least 2 years for an edge verdict; never the
