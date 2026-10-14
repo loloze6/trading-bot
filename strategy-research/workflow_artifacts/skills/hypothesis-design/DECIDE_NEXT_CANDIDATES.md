@@ -25,8 +25,9 @@ tested. Write THIS idea's card:
 - `edge_source`, `signal_concept`, `thesis`: for the proposed change, as
   IMPROVEMENT 01/04 require.
 - `criteria`: REQUIRED. Pick from `config/criterion_menu.yaml` (IMPROVEMENT 07)
-  for what the proposed idea claims. The live entries are `sign_consistent_by_era` and
-  `whole_test_sharpe_positive`; `realized_edge_to_cost_ratio` is retired for blocks
+  for what the proposed idea claims. The live entries are `sign_consistent_by_era`,
+  `whole_test_sharpe_positive` and `forecast_ic_median` (median over windows of the all-bars forecast/next-bar IC
+  `>` 0.02, fixed threshold, D-134); `realized_edge_to_cost_ratio` is retired for blocks
   (`retired_for: [block]`, D-107/D-128/D-133) and a card naming it is refused. Each item is `{id: <menu id>}` plus only
   the fields that menu entry lists under `card_overridable`; any other field is
   refused. The orchestrator writes `pre_registration.yaml`'s pass_rule from

@@ -287,7 +287,12 @@ def test_a_1a_rerun_rewrites_the_pass_rule_and_rechecks_the_id(campaign_root):
 # profit-bar sentence. Changes hypothesis_generation's prompt on every path; the decide_next addendum is
 # still not in the skill.
 # Previous pin: 1f6922e02c84b676913a5db7a64a343fff456ae6bb8d12f2a3412f83de02ca53.
-_MASTER_SKILL_SHA256 = "3b1f36fb1c1ccfa526e28f781117bf8a8c2ad477c849c6dd46b819b8b7e39a48"
+# RE-PINNED by D-134 (2026-10-15, branch feat/d134-plain-ic-criterion): pin updated because of the declared
+# prompt change of D-134 (no flag, operator decision 2026-10-14/15) -- the live-menu paragraph now also lists
+# forecast_ic_median (and calls realized_edge_to_cost_ratio the fourth entry); DECIDE_NEXT_CANDIDATES.md gets the
+# same clause. Changes hypothesis_generation's prompt on every path (the skill is read with every flag off).
+# Previous pin (D-133): 3b1f36fb1c1ccfa526e28f781117bf8a8c2ad477c849c6dd46b819b8b7e39a48.
+_MASTER_SKILL_SHA256 = "39d40e16b180ca21ba3e36e711b765513d2a218f663f8862b6639811c4445759"
 
 
 def test_hypothesis_design_skill_is_byte_identical_to_master():
