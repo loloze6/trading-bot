@@ -330,6 +330,8 @@ def test_committed_bars_file_has_the_d039_values_and_the_signature():
     # D-118: re-signed by the operator (SIGNING_CHECKLIST.md section 4) -- unsigned
     # (null) until then; once signed, on or after the D-118 date.
     assert doc["ratified_by"] is None or str(doc["ratified_at"]) >= "2026-10-13"
+    # D-127 (E-078): the two optional bars
+    assert doc["trade_frequency_min"] == 0.01 and doc["leave_one_block_out_sharpe_min"] == 0.0
     header = real.read_text(encoding="utf-8")
     for basis in EXPECTED_BASIS.values():
         assert f"basis: {basis}\n" in header, basis

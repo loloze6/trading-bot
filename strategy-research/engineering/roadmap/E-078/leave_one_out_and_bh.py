@@ -9,7 +9,6 @@ Run from strategy-research/: python engineering/roadmap/E-078/leave_one_out_and_
 from __future__ import annotations
 
 import sys
-from datetime import date
 from pathlib import Path
 
 import yaml
@@ -33,11 +32,9 @@ def numbers(run_id: str) -> dict:
     pr = yaml.safe_load((rd / "artifacts" / "protocol_result.yaml").read_text(encoding="utf-8"))
     chain, _coins = rpr._whole_test_chain(rd, pr)
     returns = chain["daily_returns"]
-    bounds = rpr._v2_protocol_window_bounds(pr, rpr._pd.load_windows(rd, pr)[0])
-    loo = {}
-    for w in sorted(bounds):
-        a, b = (date.fromisoformat(str(x)[:10]) for x in bounds[w])
-        loo[w] = pwt.whole_test_sharpe([(d, r) for d, r in returns if not a <= d <= b])
+    # D-127: the one definition the branch-3 bar uses (a block = a 4-month calendar slice,
+    # which on the folds' windows is the window itself)
+    loo = pwt.leave_one_block_out_sharpes(returns)
     bh = rpr._whole_test_profit_metrics(rd, pr, _bars())["buy_and_hold_sharpe_excess_min"]["detail"]
     return {"sharpe": pwt.whole_test_sharpe(returns), "loo": loo,
             "bh_sharpe": bh["buy_and_hold_sharpe"],

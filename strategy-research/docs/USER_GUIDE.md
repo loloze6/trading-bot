@@ -1910,7 +1910,9 @@ engineering_fault_detail}`.
    - **One curve for the whole test (D-034, D-035, D-036).** Each window's
      equal-weight curve is chained, in window order, into one. Sharpe, average
      daily return and maximum drawdown are read off that one curve (drawdown on
-     bars, the worst fall over the whole test, not the worst window). Trade
+     bars, the worst fall over the whole test, not the worst window; since D-129
+     the peak resets at each planned protocol gap, so it is the worst fall within
+     any one contiguous stretch). Trade
      count is per coin over the whole test, not counting the forced close at
      each window's end. Two bars are new: beat equal-weight buy-and-hold after
      costs (D-037) and realised gross edge over cost above 2.2, i.e. it

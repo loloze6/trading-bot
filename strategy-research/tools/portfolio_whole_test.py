@@ -773,26 +773,43 @@ def whole_test_max_drawdown(chain: dict) -> dict:
     starting capital to that first point is then not in the drawdown, every
     later window's day-1 drop is).
 
-    Returns {max_drawdown_pct, peak_ts, trough_ts, n_bars}."""
+    Per contiguous stretch (D-129): the running peak resets at each PLANNED protocol
+    gap -- a chain segment of kind "gap" with `n_gap_days_before` > 0. The new
+    stretch's peak is the level carried in (the chain level just before the gap
+    window's first bar, i.e. the capital trading resumes with), so that window's own
+    day-1 drop stays in the drawdown as before. A chain with no planned gap (a
+    contiguous fold, or windows that merely follow each other) has no reset and gives
+    exactly the pre-D-129 number. Windows that touch or overlap never reset.
+
+    Returns {max_drawdown_pct, peak_ts, trough_ts, n_bars, n_stretches}."""
     bars = chain.get("bar_levels") if isinstance(chain, Mapping) else None
     if not bars:
         raise ValueError("whole-test drawdown: the chain has no bar_levels")
+    resets = sorted(s["join_day"] for s in (chain.get("segments") or [])
+                    if s.get("kind") == "gap" and (s.get("n_gap_days_before") or 0) > 0)
+    n_stretches = 1
     peak = peak_ts = None
     dd, dd_peak_ts, dd_trough_ts = 0.0, bars[0][0], bars[0][0]
-    prev_ts = None
+    prev_ts = prev_v = None
     for ts, v in bars:
         if prev_ts is not None and ts <= prev_ts:
             raise ValueError(f"whole-test drawdown: bar timestamps not strictly increasing "
                              f"({prev_ts} then {ts})")
         v = _finite_positive(v, f"whole-test drawdown: bar level at {ts}")
+        day = ts.date() if isinstance(ts, datetime) else ts
+        if prev_v is not None and resets and day >= resets[0]:
+            while resets and day >= resets[0]:
+                resets.pop(0)
+            peak, peak_ts = prev_v, prev_ts  # a new stretch starts from the carried-in level
+            n_stretches += 1
         if peak is None or v > peak:
             peak, peak_ts = v, ts
         cur = 1.0 - v / peak
         if cur > dd:
             dd, dd_peak_ts, dd_trough_ts = cur, peak_ts, ts
-        prev_ts = ts
+        prev_ts, prev_v = ts, v
     return {"max_drawdown_pct": dd * 100.0, "peak_ts": dd_peak_ts, "trough_ts": dd_trough_ts,
-            "n_bars": len(bars)}
+            "n_bars": len(bars), "n_stretches": n_stretches}
 
 
 # ---------------------------------------------------------------------------
@@ -821,6 +838,37 @@ def whole_test_sharpe(daily_returns) -> float:
     NOT_EVALUABLE below SHARPE_MIN_DAILY_RETURNS returns or at zero stdev."""
     sr_daily, _rets = _whole_test_sr_daily(daily_returns)
     return sr_daily * math.sqrt(SHARPE_DAYS_PER_YEAR)
+
+
+# E-078 (D-127): a leave-one-block-out block is the 4-month calendar slice a day falls in
+# (the folds' block shape: starting January, May or September, research_folds.BLOCK_MONTHS).
+# Under interleaved folds every window is exactly one slice (a block is the window); under
+# contiguous folds the slices are the 4-month blocks.
+LOO_BLOCK_MONTHS = 4
+
+
+def loo_block_label(day) -> str:
+    """E-078: the 4-month calendar slice of `day`, labelled by its first month (YYYY-01,
+    YYYY-05 or YYYY-09)."""
+    first = 1 + LOO_BLOCK_MONTHS * ((day.month - 1) // LOO_BLOCK_MONTHS)
+    return f"{day.year:04d}-{first:02d}"
+
+
+def leave_one_block_out_sharpes(daily_returns) -> dict:
+    """E-078 (D-127): {block label: whole_test_sharpe of the chained daily returns without
+    that block's days}, one entry per block that holds at least one day. The one definition
+    of the leave-one-block-out bar and of the E-078 read-only pass
+    (engineering/roadmap/E-078/leave_one_out_and_bh.py). PortfolioNotEvaluable when fewer
+    than two blocks exist (nothing would be left) or a leave-one-out Sharpe cannot be
+    computed (whole_test_sharpe's own rules)."""
+    blocks: dict = {}
+    for d, _r in daily_returns:
+        blocks.setdefault(loo_block_label(d), None)
+    if len(blocks) < 2:
+        raise PortfolioNotEvaluable(f"leave-one-block-out: {len(blocks)} block(s); at least 2 "
+                                    f"are needed")
+    return {b: whole_test_sharpe([(d, r) for d, r in daily_returns if loo_block_label(d) != b])
+            for b in sorted(blocks)}
 
 
 # E-062 S2b-2 G2 (D-041): the exact basis tag a ledger `whole_test` block (or a
