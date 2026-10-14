@@ -71,6 +71,7 @@ machine_constraints:
     timeframe: "<FILL IN>"
     # Windows: start and end (end is the last included day, never the 1st of a month) cut into blocks of window_months months (1, 2, 3, 4, 6 or 12).
     # With window_months above 1, start must fall on a block boundary (January, May or September for 4; January or July for 6), else the protocol generation refuses it at launch (run_phase1_research.py:11642-11646).
+    # Windows must lie inside the research period (config/campaign_data_policy.yaml, key backward_extension.BTCUSDT_1h; tools/research_folds.py:113): never the sealed holdout, and 2024-2025 only as fold D's exact blocks; the simplest is a fold (A, B, C or D) from config/folds.yaml, otherwise launch refuses the protocol before any spend (run_campaign.py:3847-3853).
     start: "<FILL IN>"
     end: "<FILL IN>"
     window_months: "<FILL IN>"
