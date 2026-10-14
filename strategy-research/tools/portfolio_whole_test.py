@@ -773,26 +773,43 @@ def whole_test_max_drawdown(chain: dict) -> dict:
     starting capital to that first point is then not in the drawdown, every
     later window's day-1 drop is).
 
-    Returns {max_drawdown_pct, peak_ts, trough_ts, n_bars}."""
+    Per contiguous stretch (D-129): the running peak resets at each PLANNED protocol
+    gap -- a chain segment of kind "gap" with `n_gap_days_before` > 0. The new
+    stretch's peak is the level carried in (the chain level just before the gap
+    window's first bar, i.e. the capital trading resumes with), so that window's own
+    day-1 drop stays in the drawdown as before. A chain with no planned gap (a
+    contiguous fold, or windows that merely follow each other) has no reset and gives
+    exactly the pre-D-129 number. Windows that touch or overlap never reset.
+
+    Returns {max_drawdown_pct, peak_ts, trough_ts, n_bars, n_stretches}."""
     bars = chain.get("bar_levels") if isinstance(chain, Mapping) else None
     if not bars:
         raise ValueError("whole-test drawdown: the chain has no bar_levels")
+    resets = sorted(s["join_day"] for s in (chain.get("segments") or [])
+                    if s.get("kind") == "gap" and (s.get("n_gap_days_before") or 0) > 0)
+    n_stretches = 1
     peak = peak_ts = None
     dd, dd_peak_ts, dd_trough_ts = 0.0, bars[0][0], bars[0][0]
-    prev_ts = None
+    prev_ts = prev_v = None
     for ts, v in bars:
         if prev_ts is not None and ts <= prev_ts:
             raise ValueError(f"whole-test drawdown: bar timestamps not strictly increasing "
                              f"({prev_ts} then {ts})")
         v = _finite_positive(v, f"whole-test drawdown: bar level at {ts}")
+        day = ts.date() if isinstance(ts, datetime) else ts
+        if prev_v is not None and resets and day >= resets[0]:
+            while resets and day >= resets[0]:
+                resets.pop(0)
+            peak, peak_ts = prev_v, prev_ts  # a new stretch starts from the carried-in level
+            n_stretches += 1
         if peak is None or v > peak:
             peak, peak_ts = v, ts
         cur = 1.0 - v / peak
         if cur > dd:
             dd, dd_peak_ts, dd_trough_ts = cur, peak_ts, ts
-        prev_ts = ts
+        prev_ts, prev_v = ts, v
     return {"max_drawdown_pct": dd * 100.0, "peak_ts": dd_peak_ts, "trough_ts": dd_trough_ts,
-            "n_bars": len(bars)}
+            "n_bars": len(bars), "n_stretches": n_stretches}
 
 
 # ---------------------------------------------------------------------------
