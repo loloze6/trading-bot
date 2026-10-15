@@ -15,7 +15,7 @@
 strategy_domain: "<FILL IN>"
 
 # The idea: what you think happens in this market and why; nothing about how the pipeline runs.
-# Copy the idea in the author's own words: do not paraphrase, shorten or strengthen it (a hedged "would allow" must not become "generates").
+# Copy the idea word for word, in the words of the person who gave it to you: do not paraphrase, shorten or strengthen it (a hedged "would allow" must not become "generates").
 research_goal: >
   <FILL IN>
 
