@@ -9418,7 +9418,8 @@ def _clear_pass_rule_pending(run_dir: Path, pending_stage: str) -> bool:
     return True
 
 
-def _pass_rule_from_card(card: dict, menu: dict, where: str, *, block_run: bool = True) -> dict:
+def _pass_rule_from_card(card: dict, menu: dict, where: str, *, block_run: bool = True,
+                         residual_ic_added: bool = False) -> dict:
     """{criteria: [...]} from a card's id-only criteria, resolved with the
     grid's own merge (verdict_criteria_evaluator.resolve_criteria_against_menu).
     A card item may carry only `id` plus the fields its menu entry lists under
@@ -9432,7 +9433,15 @@ def _pass_rule_from_card(card: dict, menu: dict, where: str, *, block_run: bool 
     realized_edge_to_cost_ratio) is refused with a message naming D-107/D-128
     unless `block_run` is False. The caller passes False only for a composition
     run; a caller that cannot tell gets the default (True), i.e. treats the run
-    as a block."""
+    as a block.
+
+    D-137: `residual_ic_added` is True only where code adds the code_added_criteria
+    `residual_ic` entry to this run's pass_rule anyway (_write_pass_rule_from_card:
+    composition runs on, a forecast-block idea). There the card may also name
+    `residual_ic` (`{id: residual_ic}`, no overrides: its card_overridable is []); the
+    named copy is replaced by code's own entry (_with_residual_ic_criterion), so naming
+    it gives the same pass_rule as not naming it. Default False: a card naming it is
+    refused as an unknown id, exactly as before D-137."""
     _tools = str(Path(__file__).parent.parent / "tools")
     if _tools not in sys.path:
         sys.path.insert(0, _tools)
@@ -9445,6 +9454,9 @@ def _pass_rule_from_card(card: dict, menu: dict, where: str, *, block_run: bool 
             f"must write the idea's criteria from config/criterion_menu.yaml. Refusing before 1b.")
     menu_by_id = {e["id"]: e for e in ((menu or {}).get("criteria") or [])
                   if isinstance(e, dict) and e.get("id")}
+    if residual_ic_added:  # D-137: the code entry itself (card_overridable included)
+        menu_by_id.update({e["id"]: e for e in ((menu or {}).get("code_added_criteria") or [])
+                           if isinstance(e, dict) and e.get("id") == _RESIDUAL_IC_CRITERION_ID})
     for i, c in enumerate(raw):
         cid = c.get("id") if isinstance(c, dict) else None
         if cid not in menu_by_id:
@@ -9458,10 +9470,16 @@ def _pass_rule_from_card(card: dict, menu: dict, where: str, *, block_run: bool 
         if violations:
             raise ValueError(f"{where}: criteria[{i}] ({cid}) " + "; ".join(violations)
                              + ". Refusing before 1b.")
+    named_residual_ic = any(isinstance(c, dict) and c.get("id") == _RESIDUAL_IC_CRITERION_ID
+                            for c in raw)
+    if named_residual_ic:  # only reachable with residual_ic_added (D-137)
+        raw = [c for c in raw if c.get("id") != _RESIDUAL_IC_CRITERION_ID]
     resolved = _vce.resolve_criteria_against_menu(raw, menu)
     for crit in resolved:
         for key in _MENU_META_KEYS:
             crit.pop(key, None)
+    if named_residual_ic:
+        return _with_residual_ic_criterion({"criteria": resolved}, menu)
     return {"criteria": resolved}
 
 
@@ -9529,10 +9547,14 @@ def _write_pass_rule_from_card(run_dir: Path, run_id: str, sr_flag: bool) -> boo
     menu = (load_yaml(menu_path) if menu_path.exists() else {}) or {}
     # D-133: only a composition run (criteria written by code, never picked from the menu)
     # may name a menu entry retired for blocks; a run whose kind cannot be told is a block.
-    pass_rule = _pass_rule_from_card(card, menu, str(card_path),
-                                     block_run=_residual_ic_exempt_reason(run_dir) != "composition run")
+    exempt = _residual_ic_exempt_reason(run_dir)
     # E-060 S2 (guess 6): code, not 1a, adds residual_ic for a forecast-block idea.
-    if _composition_runs_enabled() and not _residual_ic_exempt_reason(run_dir):
+    # D-137: there (and only there) the card may also name it; code's entry replaces it.
+    residual_ic_added = _composition_runs_enabled() and not exempt
+    pass_rule = _pass_rule_from_card(card, menu, str(card_path),
+                                     block_run=exempt != "composition run",
+                                     residual_ic_added=residual_ic_added)
+    if residual_ic_added:
         pass_rule = _with_residual_ic_criterion(pass_rule, menu)
     pre_reg_path = arts / "pre_registration.yaml"
     if not pre_reg_path.exists():
