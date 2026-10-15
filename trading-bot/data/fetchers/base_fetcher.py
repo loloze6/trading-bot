@@ -523,6 +523,20 @@ class BaseFetcher(ABC):
         self.data_cache[symbol] = combined
         if save:
             path = self._csv_path(symbol)
+            # A merge that changed nothing is not written back. A missing period
+            # the source can never fill (fear_greed before its 2018-02-01 start,
+            # or its 2018-04-14..16 hole) is re-requested on EVERY read that spans
+            # it; the fetch returns no rows, `combined` is the cache as loaded,
+            # and the old unconditional to_csv re-opened a shared cache for
+            # writing on every such read -- run_096's composite subprocess died
+            # there with PermissionError [Errno 13] while another handle held the
+            # file. The rows this run sees are `combined` (in memory, above)
+            # either way, and the file already holds exactly those values, so
+            # skipping the write changes no data, only removes the needless open.
+            if existing is not None and not existing.empty and \
+                    combined.equals(existing.reset_index(drop=True)):
+                logger.info(f"  {symbol}: merge added no rows -- {path} left untouched")
+                return
             combined.to_csv(path, index=False)
             logger.info(f"  Saved {symbol} to {path} ({len(combined)} rows)")
 
