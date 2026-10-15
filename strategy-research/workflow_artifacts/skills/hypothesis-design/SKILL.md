@@ -345,8 +345,9 @@ does not apply — proceed exactly as this skill has always worked, do not popul
 The config-direct-authoring flow pre-registers pass/fail criteria HERE, at 1a, instead of deriving them later in
 a separate validation pass. `config/criterion_menu.yaml` is the anchor table — same "pick from this table, don't
 free-hand" discipline as the `plausible_ic_upper` table above (A8.6). Its LIVE entries are
-`sign_consistent_by_era` (window, sign-consistency-by-era reducer) and `whole_test_sharpe_positive` (pooled,
-whole-test Sharpe `>` 0, D-121). A third entry, `realized_edge_to_cost_ratio` (the lot-based edge/cost ratio), is
+`sign_consistent_by_era` (window, sign-consistency-by-era reducer), `whole_test_sharpe_positive` (pooled,
+whole-test Sharpe `>` 0, D-121) and `forecast_ic_median` (window, median over windows of the all-bars
+forecast/next-bar IC `>` 0.02, fixed threshold, D-134). A fourth entry, `realized_edge_to_cost_ratio` (the lot-based edge/cost ratio), is
 RETIRED FOR BLOCKS (`retired_for: [block]`, D-107/D-128/D-133): it stays in the menu file only so criteria already
 pre-registered keep evaluating, and a card naming it is refused — do not pick it. Two more
 (`residual_ic`, `gated_beats_ungated`) are not step-1a choices (the first is added by code, the second is commented
