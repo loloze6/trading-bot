@@ -292,7 +292,13 @@ def test_a_1a_rerun_rewrites_the_pass_rule_and_rechecks_the_id(campaign_root):
 # forecast_ic_median (and calls realized_edge_to_cost_ratio the fourth entry); DECIDE_NEXT_CANDIDATES.md gets the
 # same clause. Changes hypothesis_generation's prompt on every path (the skill is read with every flag off).
 # Previous pin (D-133): 3b1f36fb1c1ccfa526e28f781117bf8a8c2ad477c849c6dd46b819b8b7e39a48.
-_MASTER_SKILL_SHA256 = "39d40e16b180ca21ba3e36e711b765513d2a218f663f8862b6639811c4445759"
+# RE-PINNED by D-137 (2026-10-15, branch feat/residual-ic-pickable): pin updated because of the declared
+# prompt change of D-137 (no flag, direction ruling 2026-10-15 confirmed by the operator, smaller version) --
+# the live-menu paragraph now says step 1a may name residual_ic where code adds it anyway (one criterion,
+# code's own; leaving it out removes nothing; refused elsewhere) instead of "do not reference" it;
+# DECIDE_NEXT_CANDIDATES.md gets the same clause. Changes hypothesis_generation's prompt on every path.
+# Previous pin (D-134): 39d40e16b180ca21ba3e36e711b765513d2a218f663f8862b6639811c4445759.
+_MASTER_SKILL_SHA256 = "5243c1d8248d4e2197a9e12a68200d616bb571dc128ba89d8fda7d480c083d7e"
 
 
 def test_hypothesis_design_skill_is_byte_identical_to_master():
