@@ -128,7 +128,8 @@ criteria:
     # injects into a copy of each variant's summary
     # (run_phase1_research._with_whole_test_sharpe, hypothesis_verdict.diagnostics.
     # whole_test_sharpe); None (the chain or the Sharpe not computable, e.g. fewer than
-    # 30 daily returns) reads INCONCLUSIVE.
+    # 30 daily returns) reads INCONCLUSIVE. A ruined account (equity <= 0, no liquidation
+    # in the engine) FAILs instead, the ruin recorded in the cell's detail (D-141, D-101).
     metric: whole_test_sharpe
     source: pooled
     comparator: ">"

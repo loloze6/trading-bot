@@ -7179,6 +7179,7 @@ def _ensure_residual_ic_in_pre_registration(run_dir: Path) -> bool:
 
 _WHOLE_TEST_SHARPE_METRIC = "whole_test_sharpe"  # D-121: the menu entry's metric
 _WHOLE_TEST_SHARPE_ID = "whole_test_sharpe_positive"  # D-121: the menu entry's id
+_WHOLE_TEST_SHARPE_RUIN_KEY = "whole_test_sharpe_ruin"  # D-141: {file, timestamp, equity} of a ruined account
 
 
 def _with_whole_test_sharpe(per_variant_summaries: dict, run_dir: Path, pass_rule) -> dict:
@@ -7186,8 +7187,10 @@ def _with_whole_test_sharpe(per_variant_summaries: dict, run_dir: Path, pass_rul
     hypothesis_verdict.diagnostics.whole_test_sharpe -- the variant's whole-test Sharpe,
     the ONE definition the profit bar sharpe_min reads (_whole_test_chain over its
     protocol_result, then portfolio_whole_test.whole_test_sharpe); None when it cannot be
-    computed. Only when `pass_rule` has a criterion on that metric or with that menu id
-    (resolved or not): otherwise the summaries are returned as they are (byte-identical).
+    computed. D-141: a ruined account (PortfolioRuined) also leaves None, plus
+    diagnostics.whole_test_sharpe_ruin = {file, timestamp, equity}; the evaluator grades that
+    FAIL (a measured total loss, D-101), never INCONCLUSIVE. Only when `pass_rule` has a
+    criterion on that metric or with that menu id (resolved or not): otherwise the summaries are returned as they are (byte-identical).
     Used on every grid path (variant loop, composition, single column)."""
     crit = pass_rule.get("criteria") if isinstance(pass_rule, dict) else None
     if not (isinstance(crit, list)
@@ -7199,12 +7202,20 @@ def _with_whole_test_sharpe(per_variant_summaries: dict, run_dir: Path, pass_rul
     pwt = _portfolio_whole_test_module()
     out = {}
     for vid, summary in per_variant_summaries.items():
+        ruin = None  # D-141: set only by the PortfolioRuined branch below
         try:
             chain, _coins = _whole_test_chain(run_dir, summary)
             value = pwt.whole_test_sharpe(chain["daily_returns"])
         except _pd.PortfolioNotEvaluable as exc:
             value = None
             print(f"⚠️  [D-121] {vid}: whole-test Sharpe not computable ({exc})")
+        except _pd.PortfolioRuined as exc:
+            # D-141 (D-101 on this path): a measured total loss is a FAIL, never an
+            # unknown. No fake number (not -inf, not -999): the value stays None and the
+            # ruin is recorded beside it; the evaluator reads the record and grades FAIL.
+            value = None
+            ruin = {"file": str(exc.path), "timestamp": exc.timestamp, "equity": exc.equity}
+            print(f"⚠️  [D-141] {vid}: account ruined ({exc}) -- whole_test_sharpe_positive FAILs")
         s = copy.deepcopy(summary)
         hv = s.setdefault("hypothesis_verdict", {}) or {}
         s["hypothesis_verdict"] = hv
@@ -7212,6 +7223,8 @@ def _with_whole_test_sharpe(per_variant_summaries: dict, run_dir: Path, pass_rul
         if hv["diagnostics"] is None:
             hv["diagnostics"] = {}
         hv["diagnostics"][_WHOLE_TEST_SHARPE_METRIC] = value
+        if ruin is not None:
+            hv["diagnostics"][_WHOLE_TEST_SHARPE_RUIN_KEY] = ruin
         out[vid] = s
     return out
 
