@@ -328,3 +328,52 @@ def test_tried_ideas_view_is_bounded_most_recent_kept():
     assert [r["run_id"] for r in view["runs"]] == ["run_002", "run_003", "run_004"]
     assert view["omitted_older_runs"] == 2 and view["runs_in_memory"] == 5
     assert "family" not in yaml.safe_dump(view["runs"])
+
+
+# D-136: a row carries `approximation: <n>` (finding.approximation.n_deviations)
+# right after idea_status, only when the entry's finding has one. Information only.
+def _tried_rows(entries: dict) -> list:
+    import campaign_memory as cm
+    runs = {rid: {"run_id": rid, "hypothesis_id": f"H_{rid}",
+                  "recorded_at": "2021-01-01T00:00:00+00:00",
+                  "idea_status": "refuted", "timeframe": "1h", "variants": {}, **extra}
+            for rid, extra in entries.items()}
+    return cm.tried_ideas({"runs": runs}, root=rpr.ROOT)["runs"]
+
+
+def test_tried_ideas_row_carries_approximation_right_after_idea_status():
+    (row,) = _tried_rows({"run_a": {"finding": {"approximation": {
+        "line": "x", "n_deviations": 2, "deviations": [], "ref": "artifacts/deviations.yaml"}}}})
+    assert row["approximation"] == 2
+    keys = list(row)
+    assert keys.index("approximation") == keys.index("idea_status") + 1
+    assert keys == ["run_id", "hypothesis_id", "symbols", "timeframe", "idea_status",
+                    "approximation", "variants_tested"]
+
+
+def test_tried_ideas_row_without_a_finding_is_unchanged():
+    (row,) = _tried_rows({"run_a": {}})
+    assert "approximation" not in row
+    assert list(row) == ["run_id", "hypothesis_id", "symbols", "timeframe", "idea_status",
+                         "variants_tested"]
+    # a finding with no approximation block is the same
+    (row2,) = _tried_rows({"run_a": {"finding": {"status": "measured"}}})
+    assert row2 == row
+
+
+@pytest.mark.parametrize("finding", [
+    "not a dict",
+    ["approximation"],
+    {"approximation": "not a dict"},
+    {"approximation": None},
+    {"approximation": {"line": "x"}},                      # n_deviations missing
+    {"approximation": {"n_deviations": None}},
+    {"approximation": {"n_deviations": "2"}},              # not an int
+    {"approximation": {"n_deviations": 1.5}},
+    {"approximation": {"n_deviations": True}},             # a bool is not a count
+])
+def test_tried_ideas_malformed_approximation_adds_no_key_and_does_not_raise(finding):
+    (row,) = _tried_rows({"run_a": {"finding": finding}})
+    assert "approximation" not in row
+    assert list(row) == ["run_id", "hypothesis_id", "symbols", "timeframe", "idea_status",
+                         "variants_tested"]

@@ -81,7 +81,7 @@ def _proposal(cat=CAT, rubric=None, evidence=None, pid=None, n=1) -> dict:
     return p
 
 
-def _seq_llm(texts: list, calls: list | None = None, models=("claude-haiku-4-5",)):
+def _seq_llm(texts: list, calls: list | None = None, models=("claude-haiku-5-5",)):
     """An async stand-in for _invoke_reader_llm returning `texts` in order."""
     it = iter(texts)
 
