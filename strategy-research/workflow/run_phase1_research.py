@@ -9470,15 +9470,12 @@ def _pass_rule_from_card(card: dict, menu: dict, where: str, *, block_run: bool 
         if violations:
             raise ValueError(f"{where}: criteria[{i}] ({cid}) " + "; ".join(violations)
                              + ". Refusing before 1b.")
-    named_residual_ic = any(isinstance(c, dict) and c.get("id") == _RESIDUAL_IC_CRITERION_ID
-                            for c in raw)
-    if named_residual_ic:  # only reachable with residual_ic_added (D-137)
-        raw = [c for c in raw if c.get("id") != _RESIDUAL_IC_CRITERION_ID]
     resolved = _vce.resolve_criteria_against_menu(raw, menu)
     for crit in resolved:
         for key in _MENU_META_KEYS:
             crit.pop(key, None)
-    if named_residual_ic:
+    if any(c.get("id") == _RESIDUAL_IC_CRITERION_ID for c in raw):  # only with residual_ic_added
+        # D-137: the named copies are dropped and code's own entry appended (one criterion).
         return _with_residual_ic_criterion({"criteria": resolved}, menu)
     return {"criteria": resolved}
 
