@@ -96,7 +96,8 @@ def test_every_claim_check_of_the_orchestrator_takes_the_keywords():
     names = {"check_claim", "side_finding_review", "reading_structure", "side_finding_merges"}
     calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call)
              and isinstance(n.func, ast.Attribute) and n.func.attr in names]
-    assert len(calls) == 10                                  # E-075 PR-5: + the analyst's check
+    # was 10 (E-075 PR-5: + the analyst's check); D-139: + _keep_prefilled_claim's check
+    assert len(calls) == 11
     for c in calls:
         star = [k.value for k in c.keywords if k.arg is None]
         assert any(isinstance(v, ast.Call) and getattr(v.func, "id", None) == "_claim_check_kw"

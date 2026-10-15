@@ -1,9 +1,10 @@
 # CLAIM_TESTS_TRADE.md: the trade-level test family (E-075 PR-3, CUL-420)
 
-**Not shown to any prompt yet.** This file is the gated companion of `CLAIM_TESTS.md`. It is
-added to an analyst's inputs only where `orchestrator.analyst.enabled` is wired (E-075 PR-5),
-and `tools/claim_card.check_claim(..., trade_tests=True)` is the only call that accepts what it
-describes. `CLAIM_TESTS.md` is unchanged, so every flag-off prompt is byte-identical.
+**Shown only under `orchestrator.analyst.enabled`, to two prompts:** the analyst's (E-075 PR-5)
+and step 1a's, next to `CLAIM_TESTS.md` (D-139). This file is the gated companion of
+`CLAIM_TESTS.md`, and `tools/claim_card.check_claim(..., trade_tests=True)` is the only call
+that accepts what it describes. `CLAIM_TESTS.md` is unchanged, so every flag-off prompt is
+byte-identical.
 
 The bar tests of `CLAIM_TESTS.md` select bars. A claim about what the **strategy did** (how it
 exits, how long it holds, which entries pay) needs trades. One family covers it:
