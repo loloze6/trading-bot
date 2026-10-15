@@ -133,7 +133,6 @@ portfolio risk gate, which `run_protocol` never passes).
 | `debug_approve_allocation_change` | Present instead of the dotted columns when no bar asked the risk manager: the text `{}`. | text | `TB:TradingBot._process_symbol_candle_completion` | fill |
 | `debug_approve_allocation_change.symbol` | Symbol checked by the risk manager. | id | `RM:RiskManager.approve_allocation_change` | fill |
 | `debug_approve_allocation_change.time` | Bar timestamp checked. | time | `RM:RiskManager.approve_allocation_change` | fill |
-| `debug_approve_allocation_change.controls.max_allocation_change.passed` | abs(change) <= max (config `risk_management.controls`). Empty when an earlier control already failed. | bool | `RM:RiskManager.approve_allocation_change`, `RM:RiskManager._ctrl_max_allocation_change` | fill |
 | `debug_approve_allocation_change.controls.min_allocation_change.passed` | abs(change) >= threshold (default 0.20): the no-trade band. | bool | `RM:RiskManager.approve_allocation_change`, `RM:RiskManager._ctrl_min_allocation_change` | fill |
 | `debug_execute_portfolio_rebalance` | Present instead of the dotted columns when no order ran: the text `{}`. | text | `TB:TradingBot._process_symbol_candle_completion` | fill |
 | `debug_execute_portfolio_rebalance.symbol` | Symbol of the order. | id | `EH:MockExecutionHandler.open_long_position` | fill |

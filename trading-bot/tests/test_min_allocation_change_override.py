@@ -48,15 +48,23 @@ def test_build_risk_and_forecast_managers_unchanged_when_override_none():
     assert risk_manager.controls["min_allocation_change"]["threshold"] == 0.2
 
 
-def test_build_risk_and_forecast_managers_overrides_threshold_only():
+def test_build_risk_and_forecast_managers_overrides_threshold_only(monkeypatch):
     launcher = Launcher()
+    # The committed config has only min_allocation_change (D-142 removed
+    # max_allocation_change), so plant a second control to show it passes through.
+    planted = {"min_allocation_change": {"threshold": 0.2}, "other_control": {"x": 1}}
+    real_get = launcher.config.get
+    monkeypatch.setattr(
+        launcher.config, "get",
+        lambda section, key=None, default=None: planted
+        if (section, key) == ("risk_management", "controls") else real_get(section, key, default),
+    )
     risk_manager, _, _ = launcher._build_risk_and_forecast_managers(
         min_allocation_change_override=0.05
     )
     assert risk_manager.controls["min_allocation_change"]["threshold"] == 0.05
-    # max_allocation_change (and anything else configured) must pass through untouched.
-    default_controls = launcher.config.get('risk_management', 'controls', {})
-    assert risk_manager.controls["max_allocation_change"] == default_controls["max_allocation_change"]
+    # Any other configured control must pass through untouched.
+    assert risk_manager.controls["other_control"] == {"x": 1}
 
 
 @pytest.mark.parametrize("bad_value", [-0.1, "0.2", True, None])
