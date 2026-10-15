@@ -17858,6 +17858,7 @@ CLAIM_TESTS_GUIDE = "../../workflow_artifacts/skills/hypothesis-design/CLAIM_TES
 CLAIM_1B_NOTE = "../../workflow_artifacts/skills/strategy-config-authoring/CLAIM_NOTE.md"
 # E-068 slice 5 (D-073): a brief minted from a reader's side finding.
 PREFILLED_CLAIM_NOTE = "../../workflow_artifacts/skills/hypothesis-design/PREFILLED_CLAIM.md"
+CLAIM_TESTS_TRADE_GUIDE = "../../workflow_artifacts/skills/hypothesis-design/CLAIM_TESTS_TRADE.md"
 _CLAIM_PREFILL_FILE = "claim_prefill.yaml"
 
 
@@ -17966,7 +17967,8 @@ def _apply_claim_tests_context(stage_name: str, handoff: dict, run_dir: Path) ->
     are untouched). hypothesis_generation: CLAIM_TESTS.md -- every claim
     instruction lives there -- plus, on the claim retry, the previous check's
     errors and an audit-log key of its own (`<stage_attempt>_claim_retry<n>`),
-    so the retry's cost never overwrites the first call's in the token budget.
+    so the retry's cost never overwrites the first call's in the token budget;
+    D-139: plus CLAIM_TESTS_TRADE.md under orchestrator.analyst.enabled.
     strategy_config_authoring: CLAIM_NOTE.md (1b decides the block kind)."""
     if stage_name not in ("hypothesis_generation", "strategy_config_authoring"):
         return
@@ -17984,6 +17986,14 @@ def _apply_claim_tests_context(stage_name: str, handoff: dict, run_dir: Path) ->
                          "reason": "E-068: REQUIRED reading -- every hypothesis card you write "
                                    "carries a `claim` block, its tests composed only from the "
                                    "blocks in this file."})
+    # D-139: the trade-level family's guide, under orchestrator.analyst.enabled -- the flag
+    # under which the claim checks accept those tests (_claim_check_kw). Off: no-op.
+    if _analyst_enabled() and not any(
+            req.get("path") == CLAIM_TESTS_TRADE_GUIDE for req in required):
+        required.append({"path": CLAIM_TESTS_TRADE_GUIDE,
+                         "reason": "D-139: the trade-level claim tests (what the strategy's "
+                                   "trades did), accepted in this run next to the bar tests "
+                                   "of CLAIM_TESTS.md."})
     # E-068 slice 5: a decide-next brief from a reader's side finding carries
     # its claim pre-filled (research_brief.yaml candidate.claim). Only then.
     if _prefilled_claim(run_dir) is not None and not any(

@@ -322,6 +322,31 @@ def test_after_a_retry_the_retrys_card_gets_the_prefill_and_its_own_claim_is_rec
     assert rec["status"] == "changed" and rec["changed"] == ["kind"]   # the retry's own claim
 
 
+def test_an_undone_retry_restores_the_first_answers_record(monkeypatch):
+    """A retry whose card the keep cannot touch (not a mapping) leaves the run's card worse;
+    the first answer (already carrying the kept claim) comes back, and the record compares
+    the FIRST 1a claim again, not the retry's."""
+    _set_orchestrator(ON)
+    _flags(monkeypatch)
+    run_dir = _run("run_974", dict(BAR_CLAIM, statement="first 1a statement"), BAR_CLAIM)
+
+    def _invoke(stage, run_id, rdir, expected, state):
+        (rdir / "artifacts" / "hypothesis_card.yaml").write_text("- not a card\n",
+                                                                 encoding="utf-8")
+
+    def _power(run_dir_, run_id, attempt, stage, card, name):
+        return [{"message": "floor unreachable"}] if attempt == 0 else []
+
+    monkeypatch.setattr(rpr, "_invoke_agent_with_yaml_retry", _invoke)
+    monkeypatch.setattr(rpr, "_claim_power_check", _power)
+    rpr._check_claim_after_1a("run_974", run_dir, [], {})
+    check = rpr.load_yaml(run_dir / "artifacts" / "claim_check.yaml")["attempts"]
+    assert any(a.get("retry_undone") == "worse than the first answer" for a in check)
+    assert _card_claim(run_dir) == BAR_CLAIM
+    rec = _prefill_record(run_dir)
+    assert rec["status"] == "changed" and rec["changed"] == ["statement"]
+
+
 # ---------------------------------------------------------------------------
 # run_095's shape: trade-level tests, kept only with the analyst flag on
 # ---------------------------------------------------------------------------
@@ -372,3 +397,83 @@ def test_the_validator_is_decide_nexts():
     body = ast.unparse(fn)
     assert "check_claim(pre, **_claim_check_kw())" in body
     assert "res.errors or res.tests_none" in body
+
+
+# ---------------------------------------------------------------------------
+# (b) step 1a receives CLAIM_TESTS_TRADE.md under orchestrator.analyst.enabled only
+# ---------------------------------------------------------------------------
+
+HANDOFF_1A = SR_ROOT / "workflow_artifacts" / "templates" / "handoffs" / \
+    "research_brief_to_hypothesis.yaml"
+TRADE_GUIDE = SR_ROOT / "workflow_artifacts" / "skills" / "hypothesis-design" / "CLAIM_TESTS_TRADE.md"
+
+
+def _1a_inputs(run_dir: Path, stage: str = "hypothesis_generation") -> dict:
+    handoff = yaml.safe_load(HANDOFF_1A.read_text(encoding="utf-8"))
+    rpr._apply_claim_tests_context(stage, handoff, run_dir)
+    return handoff
+
+
+@pytest.mark.parametrize("prefilled", [None, BAR_CLAIM], ids=["no_prefill", "prefill"])
+def test_1a_gets_the_trade_guide_iff_the_analyst_is_on(monkeypatch, prefilled):
+    _set_orchestrator(ON)
+    run_dir = _run("run_970", None, prefilled)
+    _flags(monkeypatch, folds=True, analyst=False)
+    off = _1a_inputs(run_dir)
+    _flags(monkeypatch, folds=True, analyst=True)
+    on = _1a_inputs(run_dir)
+    rpr._apply_claim_tests_context("hypothesis_generation", on, run_dir)        # idempotent
+    off_paths = [r["path"] for r in off["required_inputs"]]
+    on_paths = [r["path"] for r in on["required_inputs"]]
+    assert rpr.CLAIM_TESTS_TRADE_GUIDE not in off_paths
+    assert on_paths.count(rpr.CLAIM_TESTS_TRADE_GUIDE) == 1
+    # analyst on adds exactly that one input, right after CLAIM_TESTS.md; nothing else moves
+    i = on_paths.index(rpr.CLAIM_TESTS_GUIDE)
+    assert on_paths[i + 1] == rpr.CLAIM_TESTS_TRADE_GUIDE
+    assert [p for p in on_paths if p != rpr.CLAIM_TESTS_TRADE_GUIDE] == off_paths
+    assert {k: v for k, v in on.items() if k != "required_inputs"} == \
+        {k: v for k, v in off.items() if k != "required_inputs"}
+
+
+def test_analyst_off_inputs_are_byte_identical_to_before(monkeypatch):
+    """Flag off: the handoff equals what the pre-D-139 code built (the template's inputs,
+    CLAIM_TESTS.md, and PREFILLED_CLAIM.md for a pre-filled brief), dumped byte for byte."""
+    _set_orchestrator(ON)
+    _flags(monkeypatch, folds=True, analyst=False)
+    run_dir = _run("run_971", None, BAR_CLAIM)
+    got = _1a_inputs(run_dir)
+    want = yaml.safe_load(HANDOFF_1A.read_text(encoding="utf-8"))
+    want.setdefault("required_inputs", []).extend([
+        {"path": rpr.CLAIM_TESTS_GUIDE,
+         "reason": "E-068: REQUIRED reading -- every hypothesis card you write carries a "
+                   "`claim` block, its tests composed only from the blocks in this file."},
+        {"path": rpr.PREFILLED_CLAIM_NOTE,
+         "reason": "E-068: this brief's claim is pre-filled (research_brief.yaml "
+                   "candidate.claim); copy it unchanged."}])
+    assert yaml.safe_dump(got, sort_keys=False) == yaml.safe_dump(want, sort_keys=False)
+
+
+def test_claim_tests_off_never_adds_the_trade_guide(monkeypatch):
+    _set_orchestrator({"config_direct_authoring": {"enabled": True}})
+    _flags(monkeypatch, folds=True, analyst=True)
+    run_dir = _run("run_972", None, BAR_CLAIM)
+    snapshot = yaml.safe_load(HANDOFF_1A.read_text(encoding="utf-8"))
+    assert _1a_inputs(run_dir) == snapshot
+
+
+def test_1b_and_other_stages_never_get_the_trade_guide(monkeypatch):
+    _set_orchestrator(ON)
+    _flags(monkeypatch, folds=True, analyst=True)
+    run_dir = _run("run_973", None, BAR_CLAIM)
+    for stage in ("strategy_config_authoring", "innovation_expansion"):
+        handoff = {"required_inputs": []}
+        rpr._apply_claim_tests_context(stage, handoff, run_dir)
+        assert rpr.CLAIM_TESTS_TRADE_GUIDE not in [r["path"] for r in handoff["required_inputs"]]
+
+
+def test_the_trade_guide_path_resolves_and_says_who_reads_it():
+    run_dir = SR_ROOT / "runs" / "run_x"
+    assert (run_dir / rpr.CLAIM_TESTS_TRADE_GUIDE).resolve() == TRADE_GUIDE.resolve()
+    head = TRADE_GUIDE.read_text(encoding="utf-8")[:600]
+    assert "Not shown to any prompt yet" not in head
+    assert "orchestrator.analyst.enabled" in head and "step 1a" in head and "D-139" in head
