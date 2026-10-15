@@ -107,7 +107,7 @@ class StubSession:
             yield SystemMessage(subtype="init", data={"tools": list(self.init_tools)})
         text = await self.script(call)
         assert server["type"] == "sdk"
-        yield AssistantMessage(content=[TextBlock(text=text)], model="claude-haiku-4-5")
+        yield AssistantMessage(content=[TextBlock(text=text)], model="claude-haiku-5-5")
         yield type("R", (), {"total_cost_usd": 0.01, "num_turns": 3, "usage": {},
                              "subtype": "success"})()
 
@@ -158,7 +158,7 @@ async def _good_claim(call, *, why=True, cite_bad=False, extra=None):
 def _spec(seen=None):
     return {"server": rpr.create_sdk_mcp_server(asm.SERVER_NAME, tools=[]),
             "hook": rpr._analyst_deny_hook([] if seen is None else seen),
-            "model": "claude-haiku-4-5", "max_turns": 40, "max_budget_usd": 1.5,
+            "model": "claude-haiku-5-5", "max_turns": 40, "max_budget_usd": 1.5,
             "timeout_s": 900.0}
 
 
@@ -1802,9 +1802,9 @@ def test_a_no_claim_turned_into_a_claim_on_the_retry_is_recorded_as_a_flip(run, 
     assert [a["outcome"] for a in record["attempts"]] == ["no_claim", "claim"]
     assert [a["status"] for a in record["attempts"]] == ["refused", "accepted"]
     assert record["outcome_flipped_on_retry"] is True
-    assert [a["models"] for a in record["attempts"]] == [["claude-haiku-4-5"]] * 2
+    assert [a["models"] for a in record["attempts"]] == [["claude-haiku-5-5"]] * 2
     state = yaml.safe_load((run / "pipeline_state.yaml").read_text(encoding="utf-8"))
-    assert [e["models"] for e in state["audit_log"].values()] == [["claude-haiku-4-5"]] * 2
+    assert [e["models"] for e in state["audit_log"].values()] == [["claude-haiku-5-5"]] * 2
 
 
 def test_a_retry_with_the_same_outcome_or_one_attempt_is_no_flip(run, monkeypatch):
