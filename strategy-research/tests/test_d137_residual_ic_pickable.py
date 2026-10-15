@@ -4,7 +4,8 @@ step 1a MAY name `residual_ic` on its card, and code keeps adding it exactly as 
 Naming it is accepted only where code adds it anyway (orchestrator.composition_runs on, a
 forecast-block idea): the named copy is replaced by code's own code_added_criteria entry
 (_with_residual_ic_criterion), so a card that names it gives the same pass_rule as one that does
-not. Not naming it removes nothing. Anywhere else a card naming it is refused, as before D-137.
+not. Not naming it removes nothing. It never counts as the card's own criterion: a card naming
+only residual_ic is refused, as on master (at least one menu entry is required). Anywhere else a card naming it is refused, as before D-137.
 No flag, no new check: the larger version (1a decides, code no longer forces it) has no path.
 """
 from __future__ import annotations
@@ -74,8 +75,16 @@ def test_named_gives_the_same_rule_as_not_named_plus_code():
     assert _card({"id": RIC}, {"id": OTHER}, {"id": RIC}) == not_named   # twice is still once
 
 
-def test_a_card_naming_only_residual_ic_gets_codes_entry_alone():
-    assert _card({"id": RIC}) == {"criteria": [CODE_ENTRY]}
+def test_a_card_naming_only_residual_ic_is_refused_as_on_master():
+    """It never counts as the card's own criterion: at least one menu entry is still required."""
+    for items in ([{"id": RIC}], [{"id": RIC}, {"id": RIC}]):
+        with pytest.raises(ValueError, match="residual_ic does not count toward the card's own "
+                                             "criteria") as exc:
+            _card(*items)
+        assert "pick at least one entry from the menu" in str(exc.value)
+    # [menu entry + residual_ic] still gives the same rule as [menu entry] alone (plus code's add)
+    assert _card({"id": OTHER}, {"id": RIC}) == rpr._with_residual_ic_criterion(
+        _card({"id": OTHER}), MENU)
 
 
 def test_restating_codes_own_values_is_not_an_override():
@@ -143,6 +152,16 @@ def test_flag_on_an_override_is_refused_and_nothing_is_written(_sandbox_by_defau
     with pytest.raises(ValueError, match="does not let a criterion override"):
         rpr._write_pass_rule_from_card(run_dir, "run_d137_4", False)
     assert _pass_rule("run_d137_4") == before
+
+
+def test_flag_on_a_card_naming_only_residual_ic_is_refused_and_nothing_is_written(
+        _sandbox_by_default):
+    _set_orchestrator(COMP_ON)
+    run_dir = _card_run(_sandbox_by_default, "run_d137_11", [{"id": RIC}])
+    before = _pass_rule("run_d137_11")
+    with pytest.raises(ValueError, match="does not count toward the card's own criteria"):
+        rpr._write_pass_rule_from_card(run_dir, "run_d137_11", False)
+    assert _pass_rule("run_d137_11") == before
 
 
 def test_flag_off_naming_it_is_refused_and_not_naming_it_is_unchanged(_sandbox_by_default):

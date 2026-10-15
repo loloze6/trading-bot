@@ -352,7 +352,8 @@ RETIRED FOR BLOCKS (`retired_for: [block]`, D-107/D-128/D-133): it stays in the 
 pre-registered keep evaluating, and a card naming it is refused — do not pick it. `residual_ic` (card A: the
 residual information coefficient against the current composite) is added by code to every forecast-block idea when
 composition runs are on, whether or not you name it: there you may name it (`{id: residual_ic}`, no overrides) and it
-stays one criterion, code's own; leaving it out removes nothing (D-137). Where code does not add it (composition
+stays one criterion, code's own; leaving it out removes nothing (D-137). Naming it gains nothing, so if unsure,
+leave it out. It never counts as the card's own criterion: still pick at least one live entry above. Where code does not add it (composition
 runs off, a regime block) a card naming it is refused. `gated_beats_ungated` is commented out — do not reference
 it; a criterion naming an unresolvable id fails at evaluation time, not gracefully.
 

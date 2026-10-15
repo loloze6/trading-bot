@@ -31,7 +31,8 @@ tested. Write THIS idea's card:
   (`retired_for: [block]`, D-107/D-128/D-133) and a card naming it is refused. `residual_ic` (card A) is added by
   code to every forecast-block idea when composition runs are on; there you may name it (`{id: residual_ic}`, no
   overrides) and it stays one criterion, code's own; leaving it out removes nothing; elsewhere naming it is refused
-  (D-137). Each item is `{id: <menu id>}` plus only
+  (D-137). Naming it gains nothing, so if unsure, leave it out; it never counts as the card's own criterion
+  (still pick at least one live entry). Each item is `{id: <menu id>}` plus only
   the fields that menu entry lists under `card_overridable`; any other field is
   refused. The orchestrator writes `pre_registration.yaml`'s pass_rule from
   these right after this stage (and again on every re-run of it). Never copy

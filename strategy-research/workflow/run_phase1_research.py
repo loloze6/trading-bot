@@ -9440,8 +9440,10 @@ def _pass_rule_from_card(card: dict, menu: dict, where: str, *, block_run: bool 
     composition runs on, a forecast-block idea). There the card may also name
     `residual_ic` (`{id: residual_ic}`, no overrides: its card_overridable is []); the
     named copy is replaced by code's own entry (_with_residual_ic_criterion), so naming
-    it gives the same pass_rule as not naming it. Default False: a card naming it is
-    refused as an unknown id, exactly as before D-137."""
+    it gives the same pass_rule as not naming it. It never counts as the card's own
+    criterion: a card naming only `residual_ic` is refused (as before D-137, at least one
+    `criteria:` menu entry is required). Default False: a card naming it is refused as an
+    unknown id, exactly as before D-137."""
     _tools = str(Path(__file__).parent.parent / "tools")
     if _tools not in sys.path:
         sys.path.insert(0, _tools)
@@ -9470,6 +9472,11 @@ def _pass_rule_from_card(card: dict, menu: dict, where: str, *, block_run: bool 
         if violations:
             raise ValueError(f"{where}: criteria[{i}] ({cid}) " + "; ".join(violations)
                              + ". Refusing before 1b.")
+    if all(c.get("id") == _RESIDUAL_IC_CRITERION_ID for c in raw):  # only with residual_ic_added
+        # D-137: naming it changes nothing, so it never counts as the card's own criterion.
+        raise ValueError(f"{where}: residual_ic does not count toward the card's own criteria "
+                         f"(code adds it anyway): pick at least one entry from the menu. "
+                         f"Refusing before 1b.")
     resolved = _vce.resolve_criteria_against_menu(raw, menu)
     for crit in resolved:
         for key in _MENU_META_KEYS:

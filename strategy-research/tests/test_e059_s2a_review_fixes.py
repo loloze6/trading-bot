@@ -298,7 +298,10 @@ def test_a_1a_rerun_rewrites_the_pass_rule_and_rechecks_the_id(campaign_root):
 # code's own; leaving it out removes nothing; refused elsewhere) instead of "do not reference" it;
 # DECIDE_NEXT_CANDIDATES.md gets the same clause. Changes hypothesis_generation's prompt on every path.
 # Previous pin (D-134): 39d40e16b180ca21ba3e36e711b765513d2a218f663f8862b6639811c4445759.
-_MASTER_SKILL_SHA256 = "5243c1d8248d4e2197a9e12a68200d616bb571dc128ba89d8fda7d480c083d7e"
+# RE-PINNED by the D-137 review fix (2026-10-15, same branch): the paragraph adds that naming residual_ic gains
+# nothing (if unsure, leave it out) and that it never counts as the card's own criterion.
+# Previous pin (D-137 first commit): 5243c1d8248d4e2197a9e12a68200d616bb571dc128ba89d8fda7d480c083d7e.
+_MASTER_SKILL_SHA256 = "52cab846b7d8849f231512ab277f660380205bc4c95baa17151fb7530dd96c03"
 
 
 def test_hypothesis_design_skill_is_byte_identical_to_master():
