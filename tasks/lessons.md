@@ -222,3 +222,27 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-14 -- An instruction's own numbers and tool inputs are checked before "exact commands" are promised
 - **Pattern:** the ruling said to build run_084's block with `build_block` (cited at :212) and to retire "seven" held entries. On the live files `build_block` was at :288 and refuses run_084's stored entry (a `refuted` grid; its cell loop requires PASS), and the operator's queue held 12 `__more` entries. Also, `tests/test_feature_flag_register.py` already failed on the operator's own files (`folds` on in config, off in the register). All four surfaced only because the commands were run against copies of the real files first.
 - **Rule:** before handing the operator an exact command, run it (read-only or on a scratch copy of the real files) and report any gap between the instruction and what the files hold - a line number, a count, a status - as a finding with a recommendation, never silently adjusted.
+
+## 2026-10-14/15 -- Bar size taken from a proxy field, not the manifest (advisory session, its own words)
+- **Pattern:** "I split a sample into daily and hourly using the effective sample size, which is small for hourly bars too, and wrote wrong figures into a PR."
+- **Rule:** "take the bar size from the manifest's timeframe, and read a field's definition before grouping by it."
+
+## 2026-10-14/15 -- Merged before review and CI had finished (advisory session, its own words)
+- **Pattern:** "#428 was merged before its review and CI had finished. Both came back clean."
+- **Rule:** "the order should be review, then CI, then merge."
+
+## 2026-10-14/15 -- Stated what a writer would write before reading the writer (advisory session, its own words)
+- **Pattern:** "I said the resume would add trial rows before reading the ledger's duplicate guard (run_phase1_research.py:13282)."
+- **Rule:** "read the writer before stating what it will write."
+
+## 2026-10-15 -- A session closed without its SESSION_LOG entry loses its lessons
+- **Pattern:** the overnight advisory listed three lessons and a session entry "when you ask for the session log"; the session was closed before the ask; nothing reached disk until the direction session recovered the words from the operator's paste.
+- **Rule:** the entry and the lessons are written before a session is closed, not on request; the closing message is the entry.
+
+## 2026-10-15 -- A card rule quoted from memory acquired a trigger it does not have
+- **Pattern:** "card J" was restated as "tests: none AND a missing piece means park"; the card's text keys on a missing component at step 5a per variant and never mentions claim status.
+- **Rule:** before building or escalating a rule "as the card says", paste the card's sentence verbatim next to the proposed rule.
+
+## 2026-10-15 -- A decision was posed for a fix already open as a PR, and restated against a stale master
+- **Pattern:** the item-3 report asked "fix A or A and B" while PR #433 already carried fix A; the direction session restated the choice, and its state line named a master head (e0bc59cf) two merges old.
+- **Rule:** before posing or restating a decision, fetch and read the open PR list and the master head against it; a fix in flight is a merge question, not a design question.
