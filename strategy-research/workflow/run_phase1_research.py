@@ -17872,19 +17872,58 @@ def _prefilled_claim(run_dir: Path):
     return claim if isinstance(claim, dict) else None
 
 
-def _check_prefilled_claim(run_dir: Path, run_id: str) -> None:
+_NOT_KEPT = object()  # D-139: code did not write the pre-filled claim into the card
+
+
+def _keep_prefilled_claim(run_dir: Path, run_id: str):
+    """D-139, right after 1a writes its card (_check_claim_after_1a, before the
+    claim check): when the brief carries a pre-filled claim and it validates --
+    decide-next's own test (claim_card.check_claim with the pipeline's keywords,
+    no errors and not `tests: none`) -- code writes it into hypothesis_card.yaml's
+    `claim` unchanged, the whole claim: a pre-registered claim is not re-authored
+    by a model (precedent D-110, exact-config 1b). Returns the claim 1a wrote
+    (None if it wrote none), for _check_prefilled_claim's record of 1a's
+    difference. No pre-filled claim, an invalid one or no card: _NOT_KEPT, and
+    nothing is read beyond that or written (today's behaviour)."""
+    import copy
+    pre = _prefilled_claim(run_dir)
+    if pre is None:
+        return _NOT_KEPT
+    res = _claim_card_module().check_claim(pre, **_claim_check_kw())
+    if res.errors or res.tests_none:
+        return _NOT_KEPT
+    path = Path(run_dir) / "artifacts" / "hypothesis_card.yaml"
+    card = load_yaml(path) if path.exists() else None
+    if not isinstance(card, dict):
+        return _NOT_KEPT
+    own = copy.deepcopy(card.get("claim"))
+    if own != pre:
+        card["claim"] = copy.deepcopy(pre)
+        save_yaml(path, card)
+        print(f"✅ [D-139] {run_id}: the brief's pre-filled claim written into the card by code "
+              f"(step 1a's own claim is recorded in artifacts/{_CLAIM_PREFILL_FILE})")
+    return own
+
+
+def _check_prefilled_claim(run_dir: Path, run_id: str, own_claim=_NOT_KEPT) -> None:
     """After 1a, when the brief carries a pre-filled claim: compare the card's
     claim with it (statement, kind, and the tests' spec_hashes) and write
     artifacts/claim_prefill.yaml. A change is a WARNING: printed and recorded,
-    the run continues (operator, 2026-10-05). Never raises."""
+    the run continues (operator, 2026-10-05). Never raises.
+    D-139: `own_claim`, when code kept the pre-filled claim, is the claim 1a
+    wrote (captured before the card was overwritten), compared instead of the
+    card's, so this record stays the record of 1a's own difference."""
     pre = _prefilled_claim(run_dir)
     if pre is None:
         return
     out = Path(run_dir) / "artifacts" / _CLAIM_PREFILL_FILE
     try:
         cc = _claim_card_module()
-        card = load_yaml(Path(run_dir) / "artifacts" / "hypothesis_card.yaml") or {}
-        claim = card.get("claim") if isinstance(card, dict) else None
+        if own_claim is _NOT_KEPT:
+            card = load_yaml(Path(run_dir) / "artifacts" / "hypothesis_card.yaml") or {}
+            claim = card.get("claim") if isinstance(card, dict) else None
+        else:
+            claim = own_claim
 
         def _hashes(c):
             res = cc.check_claim(c, **_claim_check_kw())
@@ -18225,10 +18264,15 @@ def _check_claim_after_1a(run_id: str, run_dir: Path, expected_outputs: list, st
     does -- never the legacy split: no retry then). The retry is undone when it
     produces nothing usable, or when it leaves this run's own card worse
     (usable before, not after). Whatever remains is recorded as this run's
-    claim-test status and the run continues."""
+    claim-test status and the run continues. D-139: first (and after a retry
+    that wrote cards), a valid pre-filled claim is written into the card by
+    code (_keep_prefilled_claim); the prefill record still compares 1a's own."""
     if not _claim_tests_enabled():
         return
+    own_1a = _NOT_KEPT
     try:
+        # D-139: a valid pre-filled claim is written into the card before anything reads it
+        own_1a = _keep_prefilled_claim(run_dir, run_id)
         state_path = Path(run_dir) / "pipeline_state.yaml"
         prior = (((load_yaml(state_path) or {}) if state_path.exists() else {})
                  .get(CLAIM_RETRY_STATE_KEY) or {}).get("attempts") or 0
@@ -18246,6 +18290,8 @@ def _check_claim_after_1a(run_id: str, run_dir: Path, expected_outputs: list, st
             tag, names = _retry_1a_for_claim(run_id, run_dir, expected_outputs, state, prior,
                                              message, check)
             if names is not None:                       # the retry wrote card(s)
+                first_own_1a = own_1a
+                own_1a = _keep_prefilled_claim(run_dir, run_id)  # D-139: the retry's card too
                 retried = _claim_check_cards(run_dir, run_id, prior + 1, "hypothesis_generation")
                 if first_usable and not _own_claim_status(retried)["usable"]:
                     print("⚠️  [E-068] the claim retry left this run's card worse than the first "
@@ -18254,6 +18300,7 @@ def _check_claim_after_1a(run_id: str, run_dir: Path, expected_outputs: list, st
                         "attempt": prior + 1, "stage": "hypothesis_generation",
                         "retry_undone": "worse than the first answer"})
                     _restore_1a_outputs(run_dir, tag, names, run_id)
+                    own_1a = first_own_1a
                     retried = _claim_check_cards(run_dir, run_id, f"{prior + 1}_undone",
                                                  "hypothesis_generation")
                 results = retried
@@ -18266,7 +18313,7 @@ def _check_claim_after_1a(run_id: str, run_dir: Path, expected_outputs: list, st
         _finish_claim_status(run_dir, run_id, results, "hypothesis_generation")
     except Exception as exc:  # information only: a bug here never stops a run
         _record_claim_check_error(run_dir, run_id, "hypothesis_generation", exc)
-    _check_prefilled_claim(run_dir, run_id)  # E-068 slice 5; never raises
+    _check_prefilled_claim(run_dir, run_id, own_1a)  # E-068 slice 5; never raises
 
 
 def _record_claim_check_error(run_dir: Path, run_id: str, stage: str, exc: Exception) -> None:
