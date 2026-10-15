@@ -3573,6 +3573,7 @@ def _flag_readers() -> dict:
         "config_replay_gate": orch._config_replay_gate_enabled,  # lane 1 (D-109)
         "exact_config_1b": orch._exact_config_1b_enabled,  # lane 1 (D-110)
         "brief_criteria": orch._brief_criteria_enabled,  # D-121
+        "extra_cards_at_1a": orch._extra_cards_at_1a_enabled,  # D-138
         "explore_confirm": orch._explore_confirm_enabled,  # E-072 (D-080)
         "schedulability_block": _schedulability_block_enabled,
         "operator_approval": _operator_approval_enabled,  # E-068 PR 4 (D-071)
@@ -4072,11 +4073,18 @@ def _halt_launch_exception(queue: dict, entry: dict, before: dict, created: list
 
 
 def _record_run_loop_children(queue: dict, entry: dict, run_id: str, before_splits: list,
-                              decide_next_enabled: bool) -> tuple:
+                              decide_next_enabled: bool, *,
+                              cards_at_1a: dict | None = None) -> tuple:
     """What run_loop left for the queue: split siblings (their own entries) and,
     under decide_next, the brief's extra cards. Run after every run_loop call --
     also one that raised (C1.4 review fix 2), so a sibling recorded before the
-    exception is never lost. Returns (queue, entry, split_child_ids)."""
+    exception is never lost. Returns (queue, entry, split_child_ids).
+
+    `cards_at_1a` (D-138, orchestrator.extra_cards_at_1a; None with the flag off):
+    the holder _extra_cards_at_1a_hook filled during run_loop. The enqueue here
+    then ignores a failure after 1a, and the queue is re-read when the hook
+    registered anything (else the in-memory queue, read before run_loop, would be
+    saved over the cards)."""
     after_splits = _snapshot_hypothesis_splits()
 
     # Any hypothesis_generation split(s) that happened anywhere during this run_loop
@@ -4097,10 +4105,33 @@ def _record_run_loop_children(queue: dict, entry: dict, run_id: str, before_spli
         # E-059 S2b: the flag-on split left its extra cards in
         # queued_hypotheses.yaml; enqueue them (queued, card_ref). register
         # writes the queue file, so the in-memory queue is reloaded after.
-        if _enqueue_queued_hypotheses(entry, run_id):
+        if cards_at_1a is None:
+            wrote = _enqueue_queued_hypotheses(entry, run_id)
+        else:  # D-138: already enqueued at 1a -> a no-op here (the file says enqueued)
+            wrote = (_enqueue_queued_hypotheses(entry, run_id, whatever_fails_later=True)
+                     or cards_at_1a["wrote"])
+        if wrote:
             queue = _load_queue()
             entry = next(e for e in queue["queue"] if e.get("id") == entry["id"])
     return queue, entry, split_child_ids
+
+
+def _extra_cards_at_1a_hook(entry: dict, run_id: str, holder: dict):
+    """D-138 (orchestrator.extra_cards_at_1a): run_loop's `after_1a` hook. Enqueues
+    step 1a's extra cards as soon as 1a is recorded completed; holder["wrote"]
+    tells _record_run_loop_children to re-read the queue (also set on a failure:
+    some cards may already be registered). A failure here is logged, not raised
+    (it must not fail the research run); the enqueue after run_loop tries again
+    and raises as it always has."""
+    def hook() -> None:
+        try:
+            if _enqueue_queued_hypotheses(entry, run_id, whatever_fails_later=True):
+                holder["wrote"] = True
+        except Exception as exc:
+            holder["wrote"] = True
+            _log(f"QUEUED-CARDS {entry['id']} ({run_id}): not enqueued when step 1a completed "
+                 f"({type(exc).__name__}: {exc}); tried again after the run.")
+    return hook
 
 
 def _reapply_split_children(queue: dict, entry: dict, run_id: str, before_splits: list) -> None:
@@ -4211,7 +4242,8 @@ def _launch_run(queue: dict, entry: dict, action: str, decide_next_enabled: bool
 
 def _run_after_preflight(queue: dict, entry: dict, run_id: str, before_splits: list,
                          decide_next_enabled: bool, schedulability_enabled: bool, *,
-                         promotion_retired: bool, folds_enabled: bool = False):
+                         promotion_retired: bool, folds_enabled: bool = False,
+                         cards_at_1a: dict | None = None):
     """The protocol pre-flight, a pre-spend generated-protocol regeneration and
     run_loop. Returns None when run_loop returned normally, else process_once's
     return value after a classified pause: protocol_promotion_unratified, or
@@ -4227,13 +4259,18 @@ def _run_after_preflight(queue: dict, entry: dict, run_id: str, before_splits: l
         if refusal is None:
             if regeneration is not None:
                 _regenerate_protocol(run_id, regeneration)
-            orch.run_loop(run_id)
+            if cards_at_1a is None:
+                orch.run_loop(run_id)
+            else:  # D-138: step 1a's extra cards enqueued as soon as 1a completes
+                orch.run_loop(run_id,
+                              after_1a=_extra_cards_at_1a_hook(entry, run_id, cards_at_1a))
     except Exception as exc:
         traceback.print_exc()
         detail = f"{type(exc).__name__}: {exc}"
         try:
-            queue, entry, _ = _record_run_loop_children(queue, entry, run_id, before_splits,
-                                                        decide_next_enabled)
+            queue, entry, _ = _record_run_loop_children(
+                queue, entry, run_id, before_splits, decide_next_enabled,
+                **({"cards_at_1a": cards_at_1a} if cards_at_1a is not None else {}))
         except Exception as book_exc:
             detail += (f" [the split / queued-card bookkeeping after it also failed: "
                        f"{type(book_exc).__name__}: {book_exc}]")
@@ -4404,15 +4441,20 @@ def process_once() -> bool:
 
     run_dir = ROOT / "runs" / run_id
     before_splits = _snapshot_hypothesis_splits()
+    # D-138 (orchestrator.extra_cards_at_1a): the holder run_loop's after_1a hook fills;
+    # None with the flag off, so every call below is the flag-off call.
+    cards_at_1a = ({"wrote": False} if decide_next_enabled
+                   and flag_values.get("extra_cards_at_1a") is True else None)
+    _cards_kw = {"cards_at_1a": cards_at_1a} if cards_at_1a is not None else {}
     # E-061 C1.5 / C1.4: the protocol pre-flight (before 1a), then run_loop; a
     # refusal or an escaping Exception is a classified pause (None: ran normally).
     halted = _run_after_preflight(queue, entry, run_id, before_splits, decide_next_enabled,
                                   schedulability_enabled, promotion_retired=promotion_retired,
-                                  folds_enabled=folds_enabled)
+                                  folds_enabled=folds_enabled, **_cards_kw)
     if halted is not None:
         return halted
     queue, entry, split_child_ids = _record_run_loop_children(
-        queue, entry, run_id, before_splits, decide_next_enabled)
+        queue, entry, run_id, before_splits, decide_next_enabled, **_cards_kw)
 
     state = orch.load_yaml(run_dir / "pipeline_state.yaml")
     _log_transition(entry, run_id, state)
@@ -5247,12 +5289,17 @@ def _launch_queued_card(entry: dict, run_id: str) -> None:
     orch._write_pass_rule_from_card(run_dir, run_id, orch._specialist_readers_enabled())
 
 
-def _enqueue_queued_hypotheses(entry: dict, run_id: str) -> bool:
+def _enqueue_queued_hypotheses(entry: dict, run_id: str, *,
+                               whatever_fails_later: bool = False) -> bool:
     """Register each extra card listed in runs/<run>/artifacts/queued_hypotheses.yaml
     (queued, origin brief, card_ref, priority 999, id <entry>__h<n>), then mark
     the file enqueued. Idempotent: an entry already holding that id and
     card_ref is skipped; the same id with another card raises. Returns True
-    when anything was registered."""
+    when anything was registered.
+
+    `whatever_fails_later` (D-138, orchestrator.extra_cards_at_1a): step 1a
+    completed is the only condition -- a run that failed AFTER 1a still enqueues
+    its cards. Without it (flag off): unchanged."""
     import decide_next as dn
     path = ROOT / "runs" / run_id / "artifacts" / dn.QUEUED_HYPOTHESES_FILE
     if not path.exists():
@@ -5262,9 +5309,11 @@ def _enqueue_queued_hypotheses(entry: dict, run_id: str) -> bool:
         return False
     # Code-review fix 2: only from a run whose step 1a COMPLETED and that has not
     # failed -- never from a run whose 1a output was refused (the split or a
-    # later 1a check raised) or that failed.
+    # later 1a check raised) or that failed. D-138: under the flag a failure after
+    # 1a no longer blocks; 1a's own refusal still does (1a is then never recorded in
+    # completed_stages: run_loop's except sets `failed` before "6. Mark completed").
     state = orch.load_yaml(ROOT / "runs" / run_id / "pipeline_state.yaml") or {}
-    if (state.get("status") == "failed"
+    if ((state.get("status") == "failed" and not whatever_fails_later)
             or "hypothesis_generation" not in (state.get("completed_stages") or [])):
         _log(f"QUEUED-CARDS {entry['id']} ({run_id}): NOT enqueued -- step 1a did not complete "
              f"cleanly (status={state.get('status')!r}).")

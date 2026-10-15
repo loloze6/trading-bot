@@ -925,6 +925,19 @@ flags:
       card's; decide-next copies a fold child's source criteria into that field
       (supersedes D-011 item 2 for fold children). Tested by
       tests/test_d121_brief_criteria.py.
+  - name: extra_cards_at_1a
+    kind: orchestrator_config
+    config_key: orchestrator.extra_cards_at_1a.enabled
+    reader: run_phase1_research._extra_cards_at_1a_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "the operator switches it on in c4/flag-set (D-138)"
+    criterion: >
+      Landed 2026-10-15 (D-138, branch independence PR 1). Off: byte-identical.
+      On (with decide_next): step 1a's extra cards are enqueued as soon as 1a is
+      recorded completed (run_loop's after_1a hook), and the enqueue after the run
+      no longer refuses a run that failed after 1a. Tested by
+      tests/test_d138_extra_cards_at_1a.py.
   - name: explore_confirm
     kind: orchestrator_config
     config_key: orchestrator.explore_confirm.enabled

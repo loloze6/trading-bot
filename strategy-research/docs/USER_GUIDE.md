@@ -2728,7 +2728,7 @@ operator rejected (E-036, 2026-09-02; family machinery retired, card G).
 `campaign_record/campaign_memory.yaml` exists, by
 `tools/campaign_memory.tried_ideas`: one row per memory entry — `run_id`,
 `hypothesis_id` (an idea's identity), `symbols` its tested variants ran on,
-`timeframe` (the protocol file's), the grid's `idea_status` — oldest first, at
+`timeframe` (the protocol file's), the grid's `idea_status`, and, only on a run that tested an approximation of the idea, `approximation: <n>` (how many deviations from the idea as written were recorded; information only, `finding.approximation.n_deviations`, D-136) right after `idea_status` — oldest first, at
 most `TRIED_IDEAS_MAX_ROWS` (200) most recent rows, the rest counted in
 `omitted_older_runs`; an unreadable old protocol file is listed under
 `warnings` and never crashes the prompt. Derived, never edited; the run keeps

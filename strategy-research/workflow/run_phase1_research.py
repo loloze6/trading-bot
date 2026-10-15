@@ -4463,6 +4463,19 @@ def _brief_criteria_enabled(cfg: dict | None = None) -> bool:
     return _strict_orchestrator_flag("brief_criteria", cfg=cfg)
 
 
+def _extra_cards_at_1a_enabled(cfg: dict | None = None) -> bool:
+    """D-138 (branch independence PR 1, card M): orchestrator.extra_cards_at_1a.enabled.
+    False when the key, the section or the config file is absent; a non-bool value
+    raises. No dependency (without orchestrator.decide_next.enabled no run writes
+    artifacts/queued_hypotheses.yaml, so it has nothing to do). While false:
+    byte-identical. While true: run_campaign enqueues step 1a's extra cards as soon as
+    1a is recorded completed (run_loop's `after_1a` hook), and the enqueue after
+    run_loop no longer refuses a run whose status is `failed` -- a later failure,
+    pause or exception leaves the cards in the queue. A 1a that did not complete
+    still enqueues nothing."""
+    return _strict_orchestrator_flag("extra_cards_at_1a", cfg=cfg)
+
+
 def _config_replay_gate_enabled(cfg: dict | None = None) -> bool:
     """Lane 1 (D-109): orchestrator.config_replay_gate.enabled. False when the
     key, the section or the config file is absent; a non-bool value raises.
@@ -9418,7 +9431,8 @@ def _clear_pass_rule_pending(run_dir: Path, pending_stage: str) -> bool:
     return True
 
 
-def _pass_rule_from_card(card: dict, menu: dict, where: str, *, block_run: bool = True) -> dict:
+def _pass_rule_from_card(card: dict, menu: dict, where: str, *, block_run: bool = True,
+                         residual_ic_added: bool = False) -> dict:
     """{criteria: [...]} from a card's id-only criteria, resolved with the
     grid's own merge (verdict_criteria_evaluator.resolve_criteria_against_menu).
     A card item may carry only `id` plus the fields its menu entry lists under
@@ -9432,7 +9446,17 @@ def _pass_rule_from_card(card: dict, menu: dict, where: str, *, block_run: bool 
     realized_edge_to_cost_ratio) is refused with a message naming D-107/D-128
     unless `block_run` is False. The caller passes False only for a composition
     run; a caller that cannot tell gets the default (True), i.e. treats the run
-    as a block."""
+    as a block.
+
+    D-137: `residual_ic_added` is True only where code adds the code_added_criteria
+    `residual_ic` entry to this run's pass_rule anyway (_write_pass_rule_from_card:
+    composition runs on, a forecast-block idea). There the card may also name
+    `residual_ic` (`{id: residual_ic}`, no overrides: its card_overridable is []); the
+    named copy is replaced by code's own entry (_with_residual_ic_criterion), so naming
+    it gives the same pass_rule as not naming it. It never counts as the card's own
+    criterion: a card naming only `residual_ic` is refused (as before D-137, at least one
+    `criteria:` menu entry is required). Default False: a card naming it is refused as an
+    unknown id, exactly as before D-137."""
     _tools = str(Path(__file__).parent.parent / "tools")
     if _tools not in sys.path:
         sys.path.insert(0, _tools)
@@ -9445,6 +9469,9 @@ def _pass_rule_from_card(card: dict, menu: dict, where: str, *, block_run: bool 
             f"must write the idea's criteria from config/criterion_menu.yaml. Refusing before 1b.")
     menu_by_id = {e["id"]: e for e in ((menu or {}).get("criteria") or [])
                   if isinstance(e, dict) and e.get("id")}
+    if residual_ic_added:  # D-137: the code entry itself (card_overridable included)
+        menu_by_id.update({e["id"]: e for e in ((menu or {}).get("code_added_criteria") or [])
+                           if isinstance(e, dict) and e.get("id") == _RESIDUAL_IC_CRITERION_ID})
     for i, c in enumerate(raw):
         cid = c.get("id") if isinstance(c, dict) else None
         if cid not in menu_by_id:
@@ -9458,10 +9485,18 @@ def _pass_rule_from_card(card: dict, menu: dict, where: str, *, block_run: bool 
         if violations:
             raise ValueError(f"{where}: criteria[{i}] ({cid}) " + "; ".join(violations)
                              + ". Refusing before 1b.")
+    if all(c.get("id") == _RESIDUAL_IC_CRITERION_ID for c in raw):  # only with residual_ic_added
+        # D-137: naming it changes nothing, so it never counts as the card's own criterion.
+        raise ValueError(f"{where}: residual_ic does not count toward the card's own criteria "
+                         f"(code adds it anyway): pick at least one entry from the menu. "
+                         f"Refusing before 1b.")
     resolved = _vce.resolve_criteria_against_menu(raw, menu)
     for crit in resolved:
         for key in _MENU_META_KEYS:
             crit.pop(key, None)
+    if any(c.get("id") == _RESIDUAL_IC_CRITERION_ID for c in raw):  # only with residual_ic_added
+        # D-137: the named copies are dropped and code's own entry appended (one criterion).
+        return _with_residual_ic_criterion({"criteria": resolved}, menu)
     return {"criteria": resolved}
 
 
@@ -9529,10 +9564,14 @@ def _write_pass_rule_from_card(run_dir: Path, run_id: str, sr_flag: bool) -> boo
     menu = (load_yaml(menu_path) if menu_path.exists() else {}) or {}
     # D-133: only a composition run (criteria written by code, never picked from the menu)
     # may name a menu entry retired for blocks; a run whose kind cannot be told is a block.
-    pass_rule = _pass_rule_from_card(card, menu, str(card_path),
-                                     block_run=_residual_ic_exempt_reason(run_dir) != "composition run")
+    exempt = _residual_ic_exempt_reason(run_dir)
     # E-060 S2 (guess 6): code, not 1a, adds residual_ic for a forecast-block idea.
-    if _composition_runs_enabled() and not _residual_ic_exempt_reason(run_dir):
+    # D-137: there (and only there) the card may also name it; code's entry replaces it.
+    residual_ic_added = _composition_runs_enabled() and not exempt
+    pass_rule = _pass_rule_from_card(card, menu, str(card_path),
+                                     block_run=exempt != "composition run",
+                                     residual_ic_added=residual_ic_added)
+    if residual_ic_added:
         pass_rule = _with_residual_ic_criterion(pass_rule, menu)
     pre_reg_path = arts / "pre_registration.yaml"
     if not pre_reg_path.exists():
@@ -17819,6 +17858,7 @@ CLAIM_TESTS_GUIDE = "../../workflow_artifacts/skills/hypothesis-design/CLAIM_TES
 CLAIM_1B_NOTE = "../../workflow_artifacts/skills/strategy-config-authoring/CLAIM_NOTE.md"
 # E-068 slice 5 (D-073): a brief minted from a reader's side finding.
 PREFILLED_CLAIM_NOTE = "../../workflow_artifacts/skills/hypothesis-design/PREFILLED_CLAIM.md"
+CLAIM_TESTS_TRADE_GUIDE = "../../workflow_artifacts/skills/hypothesis-design/CLAIM_TESTS_TRADE.md"
 _CLAIM_PREFILL_FILE = "claim_prefill.yaml"
 
 
@@ -17833,19 +17873,58 @@ def _prefilled_claim(run_dir: Path):
     return claim if isinstance(claim, dict) else None
 
 
-def _check_prefilled_claim(run_dir: Path, run_id: str) -> None:
+_NOT_KEPT = object()  # D-139: code did not write the pre-filled claim into the card
+
+
+def _keep_prefilled_claim(run_dir: Path, run_id: str):
+    """D-139, right after 1a writes its card (_check_claim_after_1a, before the
+    claim check): when the brief carries a pre-filled claim and it validates --
+    decide-next's own test (claim_card.check_claim with the pipeline's keywords,
+    no errors and not `tests: none`) -- code writes it into hypothesis_card.yaml's
+    `claim` unchanged, the whole claim: a pre-registered claim is not re-authored
+    by a model (precedent D-110, exact-config 1b). Returns the claim 1a wrote
+    (None if it wrote none), for _check_prefilled_claim's record of 1a's
+    difference. No pre-filled claim, an invalid one or no card: _NOT_KEPT, and
+    nothing is read beyond that or written (today's behaviour)."""
+    import copy
+    pre = _prefilled_claim(run_dir)
+    if pre is None:
+        return _NOT_KEPT
+    res = _claim_card_module().check_claim(pre, **_claim_check_kw())
+    if res.errors or res.tests_none:
+        return _NOT_KEPT
+    path = Path(run_dir) / "artifacts" / "hypothesis_card.yaml"
+    card = load_yaml(path) if path.exists() else None
+    if not isinstance(card, dict):
+        return _NOT_KEPT
+    own = copy.deepcopy(card.get("claim"))
+    if own != pre:
+        card["claim"] = copy.deepcopy(pre)
+        save_yaml(path, card)
+        print(f"✅ [D-139] {run_id}: the brief's pre-filled claim written into the card by code "
+              f"(step 1a's own claim is recorded in artifacts/{_CLAIM_PREFILL_FILE})")
+    return own
+
+
+def _check_prefilled_claim(run_dir: Path, run_id: str, own_claim=_NOT_KEPT) -> None:
     """After 1a, when the brief carries a pre-filled claim: compare the card's
     claim with it (statement, kind, and the tests' spec_hashes) and write
     artifacts/claim_prefill.yaml. A change is a WARNING: printed and recorded,
-    the run continues (operator, 2026-10-05). Never raises."""
+    the run continues (operator, 2026-10-05). Never raises.
+    D-139: `own_claim`, when code kept the pre-filled claim, is the claim 1a
+    wrote (captured before the card was overwritten), compared instead of the
+    card's, so this record stays the record of 1a's own difference."""
     pre = _prefilled_claim(run_dir)
     if pre is None:
         return
     out = Path(run_dir) / "artifacts" / _CLAIM_PREFILL_FILE
     try:
         cc = _claim_card_module()
-        card = load_yaml(Path(run_dir) / "artifacts" / "hypothesis_card.yaml") or {}
-        claim = card.get("claim") if isinstance(card, dict) else None
+        if own_claim is _NOT_KEPT:
+            card = load_yaml(Path(run_dir) / "artifacts" / "hypothesis_card.yaml") or {}
+            claim = card.get("claim") if isinstance(card, dict) else None
+        else:
+            claim = own_claim
 
         def _hashes(c):
             res = cc.check_claim(c, **_claim_check_kw())
@@ -17888,7 +17967,8 @@ def _apply_claim_tests_context(stage_name: str, handoff: dict, run_dir: Path) ->
     are untouched). hypothesis_generation: CLAIM_TESTS.md -- every claim
     instruction lives there -- plus, on the claim retry, the previous check's
     errors and an audit-log key of its own (`<stage_attempt>_claim_retry<n>`),
-    so the retry's cost never overwrites the first call's in the token budget.
+    so the retry's cost never overwrites the first call's in the token budget;
+    D-139: plus CLAIM_TESTS_TRADE.md under orchestrator.analyst.enabled.
     strategy_config_authoring: CLAIM_NOTE.md (1b decides the block kind)."""
     if stage_name not in ("hypothesis_generation", "strategy_config_authoring"):
         return
@@ -17906,6 +17986,14 @@ def _apply_claim_tests_context(stage_name: str, handoff: dict, run_dir: Path) ->
                          "reason": "E-068: REQUIRED reading -- every hypothesis card you write "
                                    "carries a `claim` block, its tests composed only from the "
                                    "blocks in this file."})
+    # D-139: the trade-level family's guide, under orchestrator.analyst.enabled -- the flag
+    # under which the claim checks accept those tests (_claim_check_kw). Off: no-op.
+    if _analyst_enabled() and not any(
+            req.get("path") == CLAIM_TESTS_TRADE_GUIDE for req in required):
+        required.append({"path": CLAIM_TESTS_TRADE_GUIDE,
+                         "reason": "D-139: the trade-level claim tests (what the strategy's "
+                                   "trades did), accepted in this run next to the bar tests "
+                                   "of CLAIM_TESTS.md."})
     # E-068 slice 5: a decide-next brief from a reader's side finding carries
     # its claim pre-filled (research_brief.yaml candidate.claim). Only then.
     if _prefilled_claim(run_dir) is not None and not any(
@@ -18186,10 +18274,15 @@ def _check_claim_after_1a(run_id: str, run_dir: Path, expected_outputs: list, st
     does -- never the legacy split: no retry then). The retry is undone when it
     produces nothing usable, or when it leaves this run's own card worse
     (usable before, not after). Whatever remains is recorded as this run's
-    claim-test status and the run continues."""
+    claim-test status and the run continues. D-139: first (and after a retry
+    that wrote cards), a valid pre-filled claim is written into the card by
+    code (_keep_prefilled_claim); the prefill record still compares 1a's own."""
     if not _claim_tests_enabled():
         return
+    own_1a = _NOT_KEPT
     try:
+        # D-139: a valid pre-filled claim is written into the card before anything reads it
+        own_1a = _keep_prefilled_claim(run_dir, run_id)
         state_path = Path(run_dir) / "pipeline_state.yaml"
         prior = (((load_yaml(state_path) or {}) if state_path.exists() else {})
                  .get(CLAIM_RETRY_STATE_KEY) or {}).get("attempts") or 0
@@ -18207,6 +18300,8 @@ def _check_claim_after_1a(run_id: str, run_dir: Path, expected_outputs: list, st
             tag, names = _retry_1a_for_claim(run_id, run_dir, expected_outputs, state, prior,
                                              message, check)
             if names is not None:                       # the retry wrote card(s)
+                first_own_1a = own_1a
+                own_1a = _keep_prefilled_claim(run_dir, run_id)  # D-139: the retry's card too
                 retried = _claim_check_cards(run_dir, run_id, prior + 1, "hypothesis_generation")
                 if first_usable and not _own_claim_status(retried)["usable"]:
                     print("⚠️  [E-068] the claim retry left this run's card worse than the first "
@@ -18215,6 +18310,7 @@ def _check_claim_after_1a(run_id: str, run_dir: Path, expected_outputs: list, st
                         "attempt": prior + 1, "stage": "hypothesis_generation",
                         "retry_undone": "worse than the first answer"})
                     _restore_1a_outputs(run_dir, tag, names, run_id)
+                    own_1a = first_own_1a
                     retried = _claim_check_cards(run_dir, run_id, f"{prior + 1}_undone",
                                                  "hypothesis_generation")
                 results = retried
@@ -18227,7 +18323,7 @@ def _check_claim_after_1a(run_id: str, run_dir: Path, expected_outputs: list, st
         _finish_claim_status(run_dir, run_id, results, "hypothesis_generation")
     except Exception as exc:  # information only: a bug here never stops a run
         _record_claim_check_error(run_dir, run_id, "hypothesis_generation", exc)
-    _check_prefilled_claim(run_dir, run_id)  # E-068 slice 5; never raises
+    _check_prefilled_claim(run_dir, run_id, own_1a)  # E-068 slice 5; never raises
 
 
 def _record_claim_check_error(run_dir: Path, run_id: str, stage: str, exc: Exception) -> None:
@@ -20036,8 +20132,11 @@ def resume_pipeline(run_id: str):
         update_state(path=RUN_DIR, status="rejected", pending_stage="completed_rejected",
                      **({"flags": _stale} if _stale else {}))
 
-def run_loop(run_id: str):
+def run_loop(run_id: str, *, after_1a=None):
     """Main loop to run through the stages of Phase 1 with dynamic routing and state management.
+    `after_1a` (D-138, orchestrator.extra_cards_at_1a): a no-argument callable run
+    right after hypothesis_generation is recorded completed (the code's "6. Mark
+    completed" step); None (the default, every caller with the flag off) runs nothing.
     1- Load State from current run folder
     2- From the config (top of this file), determine the current pending stage its handoff file, required outputs, and default next stage
     3- Verify required handoff files exist before invoking the agent
@@ -21030,6 +21129,10 @@ def run_loop(run_id: str):
             # only once the run has moved past hypothesis_generation (no-op otherwise).
             if current_stage == "hypothesis_generation":
                 _clear_pass_rule_pending(RUN_DIR, next_stage)
+                # D-138: step 1a is recorded completed (completed_stages above), so
+                # its extra cards can be enqueued now, whatever fails later.
+                if after_1a is not None:
+                    after_1a()
 
             # Reload state for the next while loop iteration
             state = load_yaml(STATE_FILE)

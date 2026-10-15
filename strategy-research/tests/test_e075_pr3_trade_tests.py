@@ -604,7 +604,8 @@ def test_block_lists_and_the_old_guide_are_unchanged():
 
 
 def test_no_prompt_or_stage_wires_the_trade_guide_or_the_trade_gate():
-    """No prompt but the analyst's (E-075 PR-5) reads the new guide, and the pipeline passes trade_tests=True only
+    """No prompt but the analyst's (E-075 PR-5) and step 1a's (D-139), both under
+    orchestrator.analyst.enabled, reads the new guide, and the pipeline passes trade_tests=True only
     under orchestrator.analyst.enabled (E-075 PR-5a, D-091; this test pinned "nowhere"
     before, changed deliberately there): every orchestrator literal sits in an
     `if _analyst_enabled()` conditional, and the flag is off by default."""
@@ -617,8 +618,11 @@ def test_no_prompt_or_stage_wires_the_trade_guide_or_the_trade_gate():
         for p in (SR_ROOT / rel).glob("*.py"):
             src = p.read_text(encoding="utf-8")
             # claim_tests' own header names the guide; E-075 PR-5 (D-092): the analyst's prompt
-            # reads it (analyst_session.build_prompt, under orchestrator.analyst.enabled)
-            if p.name not in ("claim_tests.py", "analyst_session.py"):
+            # reads it (analyst_session.build_prompt, under orchestrator.analyst.enabled);
+            # D-139: step 1a's inputs too (run_phase1_research._apply_claim_tests_context,
+            # under the same flag; tests/test_d139_prefilled_claim_kept.py). Was:
+            # ("claim_tests.py", "analyst_session.py")
+            if p.name not in ("claim_tests.py", "analyst_session.py", "run_phase1_research.py"):
                 assert "CLAIM_TESTS_TRADE" not in src, p
             if rel == "tools" and p.name not in tools_allowed:
                 assert "trade_tests" not in src, p

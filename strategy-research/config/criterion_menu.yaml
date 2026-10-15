@@ -211,13 +211,19 @@ criteria:
 
 # E-060 S2 (delivery_plan_v26.md slice 7 item 7.1; engineering/roadmap/E-060/
 # S1_FINDINGS.md guesses 6-8 + operator decision 5 of 2026-09-26).
-# Criteria that CODE adds to a pass_rule -- never picked by step 1a. They live
-# outside `criteria:` on purpose: 1a picks only from `criteria` (a card naming
-# one of these is refused as an unknown id, exactly as before this section
-# existed), and evaluate_grid backfills only from `criteria` -- the entry is
-# copied whole into pre_registration.yaml's pass_rule by
+# Criteria that CODE adds to a pass_rule. They live outside `criteria:` on
+# purpose: 1a picks from `criteria` (a card naming one of these is refused as an
+# unknown id, exactly as before this section existed -- with the one D-137
+# exception below), and evaluate_grid backfills only from `criteria` -- the
+# entry is copied whole into pre_registration.yaml's pass_rule by
 # run_phase1_research._with_residual_ic_criterion, only under
 # orchestrator.composition_runs.enabled.
+# D-137 (direction ruling 2026-10-15, smaller version; card A): step 1a MAY
+# name `residual_ic` (`{id: residual_ic}`, no overrides) where code adds it
+# anyway (composition runs on, a forecast-block idea); code's own entry
+# replaces the named copy, so naming it changes nothing and not naming it
+# removes nothing. Anywhere else a card naming it is refused, as before.
+# `profit_bars` is never picked by step 1a.
 code_added_criteria:
   - id: residual_ic
     # Rank IC of the candidate's residual after an expanding least-squares fit
