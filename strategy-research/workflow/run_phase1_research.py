@@ -1110,7 +1110,7 @@ def _build_stage_prompt(stage_name: str, handoff: dict, path: Path,
 
 # The model every Claude stage runs on (run_claude_worker and, E-046a 5b-ii-B,
 # run_reader_worker) -- one constant so the two paths cannot drift.
-_CLAUDE_WORKER_MODEL = "claude-haiku-4-5"
+_CLAUDE_WORKER_MODEL = "claude-haiku-5-5"
 
 # CUL-336: see _stage_agent_options.
 _STAGE_AGENT_CWD = Path(tempfile.gettempdir()) / "strategy_research_stage_agent_cwd"
