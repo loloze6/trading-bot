@@ -246,3 +246,16 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-15 -- A decision was posed for a fix already open as a PR, and restated against a stale master
 - **Pattern:** the item-3 report asked "fix A or A and B" while PR #433 already carried fix A; the direction session restated the choice, and its state line named a master head (e0bc59cf) two merges old.
 - **Rule:** before posing or restating a decision, fetch and read the open PR list and the master head against it; a fix in flight is a merge question, not a design question.
+
+## 2026-10-15 -- The operator does not edit files by hand
+- **Pattern:** for item (ii) (close six lane-1 briefs) and item (iv) (supersede a queued card), I delivered "the exact edit at file:line" for the operator to make. Operator: "No I do not do anything by hand! If need be please do it." The session prompt's wording ("exact edit ... for the operator's checkout") described where the edit goes, not who makes it.
+- **Rule:** any edit to the operator's checkout (queue, config, records) is made by Claude, after checking no campaign runner is running. The operator only launches runs and takes decisions. Never hand back an edit as a to-do.
+- **Same edit, two self-caught slips:** (a) a Python text-mode rewrite turned the queue's CRLF line endings into LF (a whole-file diff); (b) an added note with ": " inside an unquoted YAML string broke the parse. **Rule:** edit runtime YAML with byte-preserving tools (open in binary or use the Edit tool), avoid ": " in unquoted scalars, and verify by yaml.safe_load + `diff --strip-trailing-cr` + a raw diff count against a backup copy before reporting done. Also, code goes through the Write tool, not a heredoc (rule of 2026-10-13/14, broken again here).
+
+## 2026-10-15 -- "Launch after the merge" was said before checking the checkout the launch runs from
+- **Pattern:** I told the operator to launch the analyst child once #437 (model switch) merged. The operator's checkout is branch `c4/flag-set`, which was 9 merges behind master (#429-#437); its `_CLAUDE_WORKER_MODEL` still read `claude-haiku-4-5`. Caught only when re-checking after the merge; a launch would have run the old model and missed D-133/D-134.
+- **Rule:** before saying a run is ready to launch, check in the checkout the runner uses: `git merge-base --is-ancestor origin/master HEAD`, and open the one line the change is about. Merged on GitHub is not deployed where the runner runs.
+
+## 2026-10-15 -- A `tail -F` monitor on Git Bash stayed silent for 30 minutes while the file grew
+- **Pattern:** a Monitor on `tail -n 0 -F campaign_log.md` delivered no event although run_095 wrote 7 lines to that file; the run's completion was seen only through the background task's exit notification.
+- **Rule:** on this machine, watch a run through its background-task exit and direct reads of the log, not a `tail -F` monitor.
