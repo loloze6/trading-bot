@@ -259,3 +259,11 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-15 -- A `tail -F` monitor on Git Bash stayed silent for 30 minutes while the file grew
 - **Pattern:** a Monitor on `tail -n 0 -F campaign_log.md` delivered no event although run_095 wrote 7 lines to that file; the run's completion was seen only through the background task's exit notification.
 - **Rule:** on this machine, watch a run through its background-task exit and direct reads of the log, not a `tail -F` monitor.
+
+## 2026-10-15 -- A "copy unchanged" instruction with an escape clause is an invitation
+- **Pattern:** PREFILLED_CLAIM.md told step 1a to copy the claim unchanged but allowed changes "if the slots no longer accept"; 1a judged the slots from an incomplete file and dropped the tests (run_095).
+- **Rule:** when code already validated an artifact, code copies it; a model instruction never carries an escape clause for a pre-registered item.
+
+## 2026-10-15 -- A cost multiple stated without naming the two numbers it compares
+- **Pattern:** the direction ruling said stage costs were "4-5x inflated"; the figure compared the CLI's price for one model with its price for another, not the estimate with the real bill (about 50x against list per the advisory's re-measure).
+- **Rule:** every multiple names its numerator and denominator and their source; a CLI cost figure is the CLI's estimate until the Console says otherwise.
