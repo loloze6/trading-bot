@@ -1125,6 +1125,16 @@ orchestrator:
       # against config/criterion_menu.yaml as a step-1a card's, whatever wrote the
       # brief; decide-next copies a fold child's source criteria into that field. No
       # criteria given: step 1a picks (criteria_from: hypothesis_generation).
+  extra_cards_at_1a:
+    enabled: false
+      # D-138 (branch independence PR 1, card M; operator, 2026-10-15). OFF BY
+      # DEFAULT, read by run_phase1_research._extra_cards_at_1a_enabled(). No
+      # dependency; does nothing unless decide_next is on (only then does step 1a
+      # write artifacts/queued_hypotheses.yaml). While false: byte-identical. While
+      # true: step 1a's extra cards are enqueued as soon as 1a is recorded completed,
+      # and a later failure, pause or exception leaves them in the queue (the
+      # enqueue after the run is then a no-op). A 1a that did not complete enqueues
+      # nothing, as before.
   explore_confirm:
     enabled: false
       # E-072 (P-CUL-80, D-080, engineering/roadmap/E-072/PHASE_A.md). OFF BY
