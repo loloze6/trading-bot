@@ -287,7 +287,7 @@ def test_picked_card_of_a_criteria_from_1a_brief_gets_its_pass_rule(campaign_roo
     card = root / "campaign_record" / "queued_cards" / "run_001" / "hypothesis_card_2.yaml"
     card.parent.mkdir(parents=True)
     card.write_text(yaml.safe_dump({"hypothesis_id": "H2",
-                                    "criteria": [{"id": "realized_edge_to_cost_ratio"}]}),
+                                    "criteria": [{"id": "whole_test_sharpe_positive"}]}),
                     encoding="utf-8")
     _save_queue_entries(campaign_root["queue_path"], [_card_entry("OWNER__h2", status="ready")])
     _write_campaign_state(campaign_root["campaign_state_path"], runs=[])
@@ -300,7 +300,7 @@ def test_picked_card_of_a_criteria_from_1a_brief_gets_its_pass_rule(campaign_roo
     monkeypatch.setattr(rpr, "run_loop", fake_run_loop)
     camp.process_once()
     rule = seen["pre"]["pass_rule"]
-    assert [c["id"] for c in rule["criteria"]][0] == "realized_edge_to_cost_ratio"
+    assert [c["id"] for c in rule["criteria"]][0] == "whole_test_sharpe_positive"
     assert all(c.get("source") for c in rule["criteria"])  # menu-shaped, not ids only
     assert seen["pre"]["pass_rule_source_ref"] == "runs/run_001/artifacts/hypothesis_card.yaml#criteria"
 

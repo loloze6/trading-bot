@@ -77,12 +77,14 @@ claim:
 ### When a menu criterion is the test
 
 Some kinds are already tested by a criterion in your card's own `criteria` list
-(`cost_turnover` -> `realized_edge_to_cost_ratio`; `robustness` -> `sign_consistent_by_era`).
+(`robustness` -> `sign_consistent_by_era`).
 Name those criteria instead of, or in addition to, `tests`:
 
 ```yaml
-  criteria_refs: [realized_edge_to_cost_ratio]   # ids from this card's `criteria` list only
+  criteria_refs: [sign_consistent_by_era]   # ids from this card's `criteria` list only
 ```
+
+`cost_turnover` used to map to `realized_edge_to_cost_ratio`; that ratio is retired for blocks (D-133) and a card naming it is refused. A `cost_turnover` claim therefore has no menu criterion to cite: write `tests: none` with a `missing_block` (below), or a `tests` entry if one expresses it.
 
 ### When the slots cannot express the test
 
@@ -195,7 +197,7 @@ attempts and the holdout.
 | `redundancy` | `tests: none` (missing: an outcome measured against the current composite). Residual IC is added by code, never a card criterion, so `criteria_refs` cannot name it |
 | `lead_lag` | `tests: none` (missing outcome `fwd_return_of(other_symbol, h)`) |
 | `data_feed_value` | `criteria_refs`, or a test on the feed-built forecast |
-| `cost_turnover` | `criteria_refs: [realized_edge_to_cost_ratio]` |
+| `cost_turnover` | `tests: none` (missing: a cost/turnover outcome; the ratio criterion is retired for blocks, D-133, so `criteria_refs` cannot name it) |
 | `robustness` | `criteria_refs: [sign_consistent_by_era]` |
 
 The `kind` says whether the idea could be a block: a forecast kind is a forecast-block

@@ -467,6 +467,15 @@ class Harness:
         for name in _CONFIG_COPIES:
             shutil.copyfile(_BARS_PRE_D118 if name == "profitability_bars.yaml"
                             else _SR / "config" / name, root / "config" / name)
+        # D-133 retired realized_edge_to_cost_ratio for blocks, and this harness's stub 1a
+        # card still picks it: its grid mechanics (cost ratio PASS/FAIL from the stub
+        # profiles) are what these tests exercise, not which criterion 1a may pick. Like the
+        # frozen pre-D-118 bars above, the harness grades from the menu as it was before the
+        # retirement. D-133's own refusals are tested in test_d133_retired_for_blocks.py.
+        _menu = root / "config" / "criterion_menu.yaml"
+        _menu_text = _menu.read_text(encoding="utf-8")
+        assert _menu_text.count("    retired_for: [block]\n") == 1
+        _menu.write_text(_menu_text.replace("    retired_for: [block]\n", ""), encoding="utf-8")
         (root / "docs").mkdir(exist_ok=True)
         for name in _DOC_COPIES:
             if (_SR / "docs" / name).exists():

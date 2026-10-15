@@ -1848,7 +1848,29 @@ def menu_criterion_overrides_violations(criterion: dict, menu_entry: dict) -> li
     return violations
 
 
-def lint_menu_shaped_pass_rule(pass_rule, menu) -> list[str]:
+# D-133 (operator decision 2026-10-14): a menu entry may carry `retired_for: [block]`.
+# Such an entry stays in the menu (a pre-registered pass_rule naming it still resolves
+# and evaluates exactly as registered) but may not be chosen anew for a block idea.
+RETIRED_FOR_BLOCK = "block"
+
+
+def retired_for_block_violation(entry) -> str | None:
+    """None unless the menu `entry` lists "block" under `retired_for`; then the refusal
+    sentence (names D-107/D-128/D-133 and that the entry is retired for blocks). Pure."""
+    if not isinstance(entry, dict):
+        return None
+    kinds = entry.get("retired_for") or []
+    if isinstance(kinds, str):
+        kinds = [kinds]
+    if RETIRED_FOR_BLOCK not in kinds:
+        return None
+    return (f"menu entry {entry.get('id')!r} is retired for blocks (retired_for: [block] in "
+            f"config/criterion_menu.yaml; D-107, D-128, D-133): the lot-based ratio is an "
+            f"artefact, so it cannot be chosen as a criterion for a block idea. Pick another "
+            f"live entry")
+
+
+def lint_menu_shaped_pass_rule(pass_rule, menu, *, allow_retired: bool = False) -> list[str]:
     """Registration-time lint (C5.1) over EVERY id-bearing, non-legacy
     criterion in `pass_rule` -- menu id liveness plus
     `menu_criterion_overrides_violations` above. Unlike `_pass_rule_from_card`
@@ -1861,7 +1883,12 @@ def lint_menu_shaped_pass_rule(pass_rule, menu) -> list[str]:
 
     A criterion that is not `is_menu_referencing_criterion` (no `id`, or a
     legacy criterion carrying `metric_basis`) is left entirely alone here --
-    those are B11/CUL-267's concern, unchanged."""
+    those are B11/CUL-267's concern, unchanged.
+
+    D-133: an entry with `retired_for: [block]` is refused here (a NEW choice of it in
+    an operator brief), unless `allow_retired` -- passed by the caller only for a brief
+    that carries criteria already pre-registered elsewhere (a decide-next fold child's
+    copy of its source's criteria, D-121) or for a composition run."""
     violations: list[str] = []
     if pass_rule is None or isinstance(pass_rule, str) or not isinstance(pass_rule, dict):
         return violations
@@ -1877,10 +1904,14 @@ def lint_menu_shaped_pass_rule(pass_rule, menu) -> list[str]:
         if entry is None:
             violations.append(
                 f"criteria[{idx}] id={cid!r} is not a live entry of "
-                f"config/criterion_menu.yaml ({sorted(menu_by_id)}); if this is a "
+                f"config/criterion_menu.yaml ({sorted(k for k, e in menu_by_id.items() if not retired_for_block_violation(e))}); if this is a "
                 f"legacy (non-menu) criterion, it must carry `metric_basis` "
                 f"(B11) -- an `id` without `metric_basis` is read as a menu reference"
             )
+            continue
+        retired = None if allow_retired else retired_for_block_violation(entry)
+        if retired:
+            violations.append(f"criteria[{idx}] (id={cid!r}): {retired}")
             continue
         for v in menu_criterion_overrides_violations(criterion, entry):
             violations.append(f"criteria[{idx}] (id={cid!r}): {v}")
