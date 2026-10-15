@@ -769,6 +769,9 @@ TRIED_IDEAS_NOTE = (
     "campaign_record/campaign_memory.yaml -- the idea (hypothesis_id), the coins its "
     "tested variants ran on, the timeframe of the protocol it ran, and the grid's "
     "idea_status (validated / refuted / inconclusive; null for an engineering fault). "
+    "A row also carries approximation: <n> when the run tested an approximation of the "
+    "idea -- n is how many deviations from the idea as written were recorded; "
+    "information only. "
     "No family grouping: an idea's identity is its hypothesis_id. Derived fresh from "
     "the memory for this stage; never edited by hand."
 )
@@ -784,8 +787,10 @@ def tried_ideas(memory: dict, *, root: Path, max_rows: int = TRIED_IDEAS_MAX_ROW
     ties), at most `max_rows` (the most recent; the rest counted in
     `omitted_older_runs`): {run_id, hypothesis_id, symbols (the tested
     variants' measured symbols), timeframe (the protocol file's, else the
-    card's -- tools/novelty.py's rule), idea_status, variants_tested} plus
-    `engineering_fault` on a fault entry. `root` is strategy-research/ (a
+    card's -- tools/novelty.py's rule), idea_status, variants_tested}, with
+    `approximation` (the int finding.approximation.n_deviations, D-136;
+    information only) right after idea_status only when the entry's finding
+    has one, plus `engineering_fault` on a fault entry. `root` is strategy-research/ (a
     memory entry's protocol_ref is relative to it). An unreadable protocol
     file is listed under `warnings` (key present only then)."""
     import novelty as _nov  # tools/ sibling, imported lazily for the caller's sys.path
@@ -810,8 +815,17 @@ def tried_ideas(memory: dict, *, root: Path, max_rows: int = TRIED_IDEAS_MAX_ROW
             "symbols": sorted({s for v in tested for s in (v.get("symbols") or [])}),
             "timeframe": (spec or {}).get("timeframe") or _nov.normalize_timeframe(e.get("timeframe")),
             "idea_status": e.get("idea_status"),
-            "variants_tested": len(tested),
         }
+        # D-136: information only. The run's finding.approximation.n_deviations
+        # (tools/claim_findings.py, built by tools/nearest_build.py); read
+        # defensively, so a missing / malformed block adds no key. Key order is
+        # what the YAML dump shows: right after idea_status.
+        finding = e.get("finding")
+        approx = finding.get("approximation") if isinstance(finding, dict) else None
+        n_dev = approx.get("n_deviations") if isinstance(approx, dict) else None
+        if isinstance(n_dev, int) and not isinstance(n_dev, bool):
+            row["approximation"] = n_dev
+        row["variants_tested"] = len(tested)
         if e.get("engineering_fault"):
             row["engineering_fault"] = e["engineering_fault"]
         rows.append(row)
