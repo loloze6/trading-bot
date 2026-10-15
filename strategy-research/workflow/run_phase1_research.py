@@ -4463,6 +4463,19 @@ def _brief_criteria_enabled(cfg: dict | None = None) -> bool:
     return _strict_orchestrator_flag("brief_criteria", cfg=cfg)
 
 
+def _extra_cards_at_1a_enabled(cfg: dict | None = None) -> bool:
+    """D-138 (branch independence PR 1, card M): orchestrator.extra_cards_at_1a.enabled.
+    False when the key, the section or the config file is absent; a non-bool value
+    raises. No dependency (without orchestrator.decide_next.enabled no run writes
+    artifacts/queued_hypotheses.yaml, so it has nothing to do). While false:
+    byte-identical. While true: run_campaign enqueues step 1a's extra cards as soon as
+    1a is recorded completed (run_loop's `after_1a` hook), and the enqueue after
+    run_loop no longer refuses a run whose status is `failed` -- a later failure,
+    pause or exception leaves the cards in the queue. A 1a that did not complete
+    still enqueues nothing."""
+    return _strict_orchestrator_flag("extra_cards_at_1a", cfg=cfg)
+
+
 def _config_replay_gate_enabled(cfg: dict | None = None) -> bool:
     """Lane 1 (D-109): orchestrator.config_replay_gate.enabled. False when the
     key, the section or the config file is absent; a non-bool value raises.
@@ -20062,8 +20075,11 @@ def resume_pipeline(run_id: str):
         update_state(path=RUN_DIR, status="rejected", pending_stage="completed_rejected",
                      **({"flags": _stale} if _stale else {}))
 
-def run_loop(run_id: str):
+def run_loop(run_id: str, *, after_1a=None):
     """Main loop to run through the stages of Phase 1 with dynamic routing and state management.
+    `after_1a` (D-138, orchestrator.extra_cards_at_1a): a no-argument callable run
+    right after hypothesis_generation is recorded completed (the code's "6. Mark
+    completed" step); None (the default, every caller with the flag off) runs nothing.
     1- Load State from current run folder
     2- From the config (top of this file), determine the current pending stage its handoff file, required outputs, and default next stage
     3- Verify required handoff files exist before invoking the agent
@@ -21056,6 +21072,10 @@ def run_loop(run_id: str):
             # only once the run has moved past hypothesis_generation (no-op otherwise).
             if current_stage == "hypothesis_generation":
                 _clear_pass_rule_pending(RUN_DIR, next_stage)
+                # D-138: step 1a is recorded completed (completed_stages above), so
+                # its extra cards can be enqueued now, whatever fails later.
+                if after_1a is not None:
+                    after_1a()
 
             # Reload state for the next while loop iteration
             state = load_yaml(STATE_FILE)
