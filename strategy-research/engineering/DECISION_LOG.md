@@ -236,7 +236,7 @@ are the Linear comments posted at decision time and this log.
 - **First real run:** protocol decided (D-050: the C1.7 template's generated BTC+ETH 1h layout);
   still pending: the operator's explicit go (`delivery_plan_v26_continuation.md` C4).
 - **Model per stage** after the first real runs' cost is measured (today every stage runs on
-  `claude-haiku-4-5`).
+  `claude-haiku-5-5` since D-135; before that, `claude-haiku-4-5`).
 - **Tie-break doc note:** `DELIVERY_REVIEW.md` C1 predates D-014 and should be read with it.
 - **Fold shape: contiguous folds with one continuous backtest, or today's interleaved blocks**
   (D-107 ruling 5, written 2026-10-12; **decided after lane 1's fold-B runs return; nothing is
