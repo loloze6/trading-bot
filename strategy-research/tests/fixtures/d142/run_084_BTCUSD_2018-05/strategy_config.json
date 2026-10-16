@@ -1,0 +1,59 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "sma_distance",
+            "class": "strategies.strategy_components.MovingAverageDistanceComponent",
+            "params": {
+              "period": 100,
+              "average": "sma"
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "scale",
+                "params": {
+                  "factor": 5.0
+                }
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": 0,
+                  "max": 10
+                }
+              },
+              {
+                "op": "vol_target",
+                "params": {
+                  "window": 60,
+                  "target_annual_vol": 0.4,
+                  "periods_per_year": 365
+                }
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": 0,
+                  "max": 10
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    },
+    "min_allocation_change": 0.2
+  }
+}

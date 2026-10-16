@@ -1,0 +1,40 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "gap_reversion",
+            "class": "strategies.strategy_components.PriceEvolutionComponent",
+            "params": {
+              "period": 1,
+              "scaling_factor": 20.0
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "negate"
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": -20.0,
+                  "max": 20.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    }
+  }
+}
