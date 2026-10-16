@@ -268,6 +268,22 @@ in the record file, not in the prose the operator reads.
 - **Pattern:** the direction ruling said stage costs were "4-5x inflated"; the figure compared the CLI's price for one model with its price for another, not the estimate with the real bill (about 50x against list per the advisory's re-measure).
 - **Rule:** every multiple names its numerator and denominator and their source; a CLI cost figure is the CLI's estimate until the Console says otherwise.
 
+## 2026-10-16 -- A second test run started while the slow suite was running
+- **Pattern:** with `run_tests.py --slow` running in the background, I started PR B's test files in another background command; it was stopped a few minutes in. The slow suite's trading-bot half then crashed every slow backtest worker (19 tests); re-run alone and serially, 48 of 49 passed.
+- **Rule:** before starting any test command, check that no other test process is running (the background task list, or `Get-CimInstance Win32_Process` for pytest); work on code or docs while a suite runs, never on a second suite.
+
+## 2026-10-16 -- A "master" baseline taken after the PR had merged
+- **Pattern:** to show a slow-test failure predated D-142, I swapped `origin/master`'s files into the worktree; the operator had merged #446 meanwhile, so master already held the change and the comparison proved nothing. Noticed only because `git diff origin/master` on the two files came back empty; redone on the commit before the merge (fbfc1a99).
+- **Rule:** a before/after baseline uses a named commit (the PR's merge base, `git merge-base HEAD origin/master` taken before the fetch), never a moving `origin/master`; check `gh pr view <n> --json state` first.
+
+## 2026-10-16 -- A stale sentence found by the name, not by the value
+- **Pattern:** for D-142 I grepped `max_allocation_change` and fixed every hit; two sentences that described the same control by its number ("0.2 <= |delta| <= 4.0" in `portfolio_risk_gate.py`, "or above 4.0" in `STRATEGY_DESIGN_GUIDE.md`, a prompt input) were missed until the review and a second search.
+- **Rule:** when deleting a mechanism, grep its name and its values (thresholds, defaults, the band it forms) across code, docs and prompt files before the first commit.
+
+## 2026-10-16 -- Line citations moved by a rebase
+- **Pattern:** D-143's row cited `run_phase1_research.py:9465-9469` (checked before the rebase); the rebase onto #445 added 12 lines above it and the review found the citation pointing at a docstring.
+- **Rule:** after any rebase, re-open every file:line a PR body or D-row cites in a file the base changed, before pushing.
+
 ## 2026-10-16 -- A CI failure was reproduced locally for 30 minutes instead of read in seconds
 - **Pattern:** the GitHub MCP tools cannot read job logs, so the advisory dispatched a fix agent to re-run the full fast suite twice; `gh` is installed on this machine and `gh run view <run-id> --log-failed` showed the one failing test immediately (direction session's note).
 - **Rule:** read a red CI with `gh pr checks <n>` then `gh run view <run-id> --log-failed` first; a local reproduction is only for a failure the log does not explain.
