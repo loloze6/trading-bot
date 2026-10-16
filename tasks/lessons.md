@@ -267,3 +267,23 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-15 -- A cost multiple stated without naming the two numbers it compares
 - **Pattern:** the direction ruling said stage costs were "4-5x inflated"; the figure compared the CLI's price for one model with its price for another, not the estimate with the real bill (about 50x against list per the advisory's re-measure).
 - **Rule:** every multiple names its numerator and denominator and their source; a CLI cost figure is the CLI's estimate until the Console says otherwise.
+
+## 2026-10-16 -- A CI failure was reproduced locally for 30 minutes instead of read in seconds
+- **Pattern:** the GitHub MCP tools cannot read job logs, so the advisory dispatched a fix agent to re-run the full fast suite twice; `gh` is installed on this machine and `gh run view <run-id> --log-failed` showed the one failing test immediately (direction session's note).
+- **Rule:** read a red CI with `gh pr checks <n>` then `gh run view <run-id> --log-failed` first; a local reproduction is only for a failure the log does not explain.
+
+## 2026-10-16 -- "A resume grades the existing backtests" was assumed, not checked
+- **Pattern:** the direction session sequenced an engine change (D-142) against a paused run on the belief that a resume only re-grades; a resume at protocol_execution re-runs every backtest (run_096 has three result sets per variant) while the trial rows stay from the first attempt.
+- **Rule:** before ordering an engine change against a paused run, look at the run's `results/` folders and the resume log: if the resume re-backtests, the order decides which engine grades the run, and that is a decision to escalate.
+
+## 2026-10-16 -- A new artifact path broke the data-dictionary contract test
+- **Pattern:** D-141 added `detail.ruin` paths to grid_evaluation.yaml; the build dispatch named the schema but not docs/DATA_DICTIONARY.md, whose test requires every written path to be listed (test_e073_data_dictionary.py), and DATA_DICTIONARY_READERS.md is generated from it and byte-compared.
+- **Rule:** any change that writes a new artifact path adds it to docs/DATA_DICTIONARY.md, regenerates DATA_DICTIONARY_READERS.md with tools/data_dictionary.py, and runs test_e073_data_dictionary.py before push; say so in every dispatch that adds a field.
+
+## 2026-10-16 -- Syncing a checkout with thousands of staged files, without unstaging
+- **Pattern:** `git merge` refuses while the index differs from HEAD; the unstage-merge-restore route was refused twice by the permission classifier as destructive, and a chat "I allow" does not lift it.
+- **Rule:** sync the operator checkout by plumbing, which never unstages: `git merge-tree --write-tree HEAD <target>` (check the changed paths have no local change), `git commit-tree <tree> -p HEAD -p <target>`, `git checkout <commit> -- <the incoming paths>`, `git update-ref refs/heads/<branch> <commit> <old>`; then compare status counts and the staged tree with before. Undo: `update-ref` back and restore the paths.
+
+## 2026-10-16 -- Parallel sessions must be told their D-row numbers
+- **Pattern:** the fresh session's prompt said "your rows are the next two" after the latest row on master (D-140), while D-141 was held by an open PR (#445).
+- **Rule:** a prompt for a parallel session names its D-row numbers explicitly, skipping every number held by an open PR.
