@@ -13296,6 +13296,37 @@ def _trial_fold_field(run_id: str) -> dict:
     return {} if fold is None else {"fold": fold}
 
 
+def _summary_protocol_run_id(summary: dict) -> str | None:
+    """D-144: the protocol run id of the backtest that produced `summary`
+    (`run_protocol.py` writes it as `protocol_run_id`, one id per protocol
+    invocation, so a resume that re-runs the backtests gets a new one), or None
+    when the summary carries none or a non-string / empty value."""
+    value = summary.get("protocol_run_id")
+    return value if isinstance(value, str) and value else None
+
+
+def _superseded_attempt(row: dict) -> dict:
+    """D-144: what a replaced backtest row keeps of its attempt -- the protocol
+    run id (None for a row written before D-144), its Sharpe, the status and
+    reason of its whole-test block (the ruin text of a PortfolioRuined attempt),
+    and the config hash it tested. An invalidation flag
+    (_mark_trial_invalidated) is kept too, only when the row had one: the new row
+    does not inherit it, since the conformance check that sets it runs again on
+    the new protocol run's output."""
+    whole_test = row.get("whole_test") or {}
+    kept = {
+        "protocol_run_id":   row.get("protocol_run_id"),
+        "sharpe":            row.get("sharpe"),
+        "forecast_hash":     row.get("forecast_hash"),
+        "whole_test_status": whole_test.get("status"),
+        "whole_test_reason": whole_test.get("reason"),
+    }
+    if row.get("invalidated_artifact"):
+        kept["invalidated_artifact"] = True
+        kept["invalidation_reason"] = row.get("invalidation_reason")
+    return kept
+
+
 def _record_backtest_trial(run_id: str, summary: dict, config_path: Path, trial_id: str | None = None,
                            symbols: list | None = None, whole_test: dict | None = None,
                            windows_sha256: str | None = None):
@@ -13335,15 +13366,29 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path, trial_
     orchestrator.profit_bars_v2 for a partial-coverage per-coin variant -- the
     row then carries its window fingerprint (_trial_windows_field). None: no
     such key, the row is byte-identical to before.
+
+    D-144: the row carries the summary's `protocol_run_id` (key absent when the
+    summary has none). The H3 guard still skips a second write for the same
+    protocol run (same id, or the summary has no id). A write from a DIFFERENT
+    protocol run -- a resume at protocol_execution re-runs the backtests -- is
+    the same trial (D-124: config + fold = one trial) with newer numbers, so it
+    REPLACES the row in place and keeps the earlier attempt under
+    `superseded_attempts` (_superseded_attempt). The row count, and so the DSR N,
+    does not change. A row written before D-144 has no id: a write that carries
+    one replaces it, and the kept attempt shows protocol_run_id None.
     """
     effective_trial_id = trial_id if trial_id is not None else run_id
     symbols_field = _trial_symbols_field(symbols)
     windows_field = _trial_windows_field(windows_sha256)
     fold_field = _trial_fold_field(run_id)
+    protocol_run_id = _summary_protocol_run_id(summary)
     state  = load_campaign_state()
     trials = state.setdefault("trial_sharpes", [])
 
-    if any(t.get("trial_id") == effective_trial_id and t.get("source") == "backtest" for t in trials):
+    existing_index = next((i for i, t in enumerate(trials)
+                           if t.get("trial_id") == effective_trial_id and t.get("source") == "backtest"), None)
+    if existing_index is not None and (
+            protocol_run_id is None or protocol_run_id == trials[existing_index].get("protocol_run_id")):
         print(f"⏭️  A6.2/H3: backtest trial for {effective_trial_id} already recorded — skipping duplicate.")
         return
 
@@ -13404,6 +13449,7 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path, trial_
         **symbols_field,
         **windows_field,
         **fold_field,
+        **({} if protocol_run_id is None else {"protocol_run_id": protocol_run_id}),
     }
     # CUL-233: carry an explicit reproduces_trial back-reference into the ledger
     # row so deduplicate_trials can collapse a re-execution onto its original in
@@ -13417,10 +13463,16 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path, trial_
         trial_entry["reproduces_trial"] = reproduces_trial
     if whole_test is not None:  # E-062 S2b-2b: flag-on only
         trial_entry["whole_test"] = whole_test
-    trials.append(trial_entry)
+    if existing_index is None:
+        trials.append(trial_entry)
+    else:  # D-144: a different protocol run of the same trial -- replace in place, keep the old attempt
+        old_row = trials[existing_index]
+        trial_entry["superseded_attempts"] = [*(old_row.get("superseded_attempts") or []),
+                                              _superseded_attempt(old_row)]
+        trials[existing_index] = trial_entry
     _save_campaign_state(state)
-    print(f"⚙️  A6.2: backtest trial recorded (sharpe={median_sharpe}, "
-          f"n_trades={n_trades}, statistic_valid={statistic_valid})")
+    print(f"⚙️  A6.2: backtest trial {'replaced (D-144, new protocol run)' if existing_index is not None else 'recorded'} "
+          f"(sharpe={median_sharpe}, n_trades={n_trades}, statistic_valid={statistic_valid})")
 
 
 def _record_failed_backtest_trial(run_id: str, config_path: Path, reason: str, trial_id: str | None = None,
