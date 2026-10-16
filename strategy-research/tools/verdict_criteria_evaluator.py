@@ -1464,6 +1464,25 @@ def _evaluate_grid_cell_for_symbol(criterion: dict, protocol_result: dict, eras:
     if not floor_ok:
         return {"result": "INCONCLUSIVE", "n_windows": n_windows, "n_trades": n_trades,
                 "reason": floor_reason}
+    if symbol is None and metric == WHOLE_TEST_SHARPE_METRIC:
+        # D-141 (D-101 on D-121's grid path): the pipeline found the variant's account
+        # ruined and recorded it beside the (None) value. A measured total loss is a FAIL,
+        # not an unknown -- the same shape as residual_ic's fully_explained: FAIL, no fake
+        # number. Placed after the floor check, before the None -> INCONCLUSIVE read.
+        ruin = ((protocol_result.get("hypothesis_verdict") or {}).get("diagnostics")
+                or {}).get(WHOLE_TEST_SHARPE_RUIN_KEY)
+        if isinstance(ruin, dict):
+            if comparator not in _VALID_COMPARATORS:
+                return {"result": "SPEC_ERROR",
+                        "reason": f"criterion {cid!r}: comparator={comparator!r} not one of "
+                                  f"{_VALID_COMPARATORS}"}
+            return {"result": "FAIL", "value": None, "threshold": threshold,
+                    "comparator": comparator, "n_windows": n_windows, "n_trades": n_trades,
+                    "detail": {"ruin": {"file": ruin.get("file"),
+                                        "timestamp": ruin.get("timestamp"),
+                                        "equity": ruin.get("equity")}},
+                    "reason": f"account ruined: {ruin.get('file')} equity {ruin.get('equity')} "
+                              f"at {ruin.get('timestamp')} (D-101)"}
     if value is None:
         # CUL-414: the all-costs ratio is None when any trade lacks its fields
         # (cost_helpers.edge_to_all_costs_ratio_unrounded fails closed); say how many.
@@ -1485,6 +1504,13 @@ def _evaluate_grid_cell_for_symbol(criterion: dict, protocol_result: dict, eras:
 
 
 RESIDUAL_IC_CRITERION_ID = "residual_ic"
+
+# D-141: the pooled metric run_phase1_research._with_whole_test_sharpe injects (D-121), and
+# the diagnostics key it records a ruined account under ({file, timestamp, equity}). Names
+# duplicated there on purpose (the evaluator is a tools/ module and imports nothing from
+# the workflow); tests assert the two spellings agree.
+WHOLE_TEST_SHARPE_METRIC = "whole_test_sharpe"
+WHOLE_TEST_SHARPE_RUIN_KEY = "whole_test_sharpe_ruin"
 
 
 def _evaluate_residual_ic_cell(criterion: dict, protocol_result: dict, symbol, value,

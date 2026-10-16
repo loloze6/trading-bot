@@ -516,6 +516,10 @@ variant (`VE:evaluate_grid`, written at `P1:run_tool_worker`). Cells are `PASS`,
 | `grid.<criterion>.<variant>.detail.era_medians.<era>` | Median, over the era's windows, of the metric the criterion names (`metric`: the menu's `net_return_pct` by default, or the card's override: the review found run_074's card used `forecast_return_corr`). A zero-trade window's 0.0 in a trade-based core field counts as a value (A8), unless `orchestrator.zero_trade_windows_not_computed` skips it (`skipped_windows`). | metric | `VE:_reduce_sign_consistent_by_era` | run |
 | `grid.<criterion>.<variant>.detail.reason` | Why the era reducer did not pass: an era median exactly 0, eras disagreeing in sign, or no window with both a value and an era. | text | `VE:_reduce_sign_consistent_by_era` | meta |
 | `grid.<criterion>.<variant>.detail.era_signs.<era>` | Sign of that median (1, -1, 0). | sign | `VE:_reduce_sign_consistent_by_era` | run |
+| `grid.<criterion>.<variant>.detail.ruin` | D-141: the ruined account behind a FAIL `whole_test_sharpe_positive` cell (value null); present only on that cell. | map | `VE:_evaluate_grid_cell_for_symbol` | run |
+| `grid.<criterion>.<variant>.detail.ruin.file` | D-141: path of the equity file in which the account reached zero or below. | path | `VE:_evaluate_grid_cell_for_symbol` | run |
+| `grid.<criterion>.<variant>.detail.ruin.timestamp` | D-141: timestamp of the first row at or below zero equity. | time | `VE:_evaluate_grid_cell_for_symbol` | run |
+| `grid.<criterion>.<variant>.detail.ruin.equity` | D-141: the equity value at that row. | value | `VE:_evaluate_grid_cell_for_symbol` | run |
 | `grid.<criterion>.<variant>.per_symbol.<symbol>` | Cell per symbol (symbol_reducer per_symbol_all). | map | `VE:_evaluate_grid_cell` | run |
 | `grid.<criterion>.<variant>.n_eff` | residual_ic: effective sample size. | count | `VE:_evaluate_residual_ic_cell` | run |
 | `grid.<criterion>.<variant>.p_value_one_sided` | residual_ic: one-sided p-value. | p | `VE:_evaluate_residual_ic_cell` | run |
