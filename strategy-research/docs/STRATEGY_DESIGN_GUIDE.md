@@ -26,8 +26,8 @@ On every completed candle, for one symbol, the engine does this:
    100 percent long, +20 is 200 percent long, -20 is 200 percent short. The allocation is linear in the forecast.
 5. **The rebalance.** The bot trades toward the target allocation, filling at that bar's close. The risk layer sits
    outside the strategy config: it rejects a rebalance whose
-   size `abs(target - actual allocation)` is below `min_allocation_change` (default 0.2, that is 2 forecast points)
-   or above 4.0. The key `strategies.min_allocation_change` overrides the minimum for this strategy.
+   size `abs(target - actual allocation)` is below `min_allocation_change` (default 0.2, that is 2 forecast points).
+   There is no upper limit (D-142). The key `strategies.min_allocation_change` overrides the minimum for this strategy.
 
 The forecast is 0.0 until the strategy is ready (see "The forecast for each regime").
 

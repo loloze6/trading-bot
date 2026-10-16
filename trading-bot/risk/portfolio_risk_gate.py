@@ -4,8 +4,8 @@ Portfolio Risk Gate
 Off-by-default portfolio-level risk controls that run in the per-bar pipeline
 around the forecast -> allocation -> Δ map (see core/trading_bot.py::
 _process_symbol_candle_completion). Additive to, and independent of, RiskManager:
-RiskManager keeps enforcing the per-trade allocation-change band ("0.2 <= |Δ| <=
-4.0"); this gate constrains the target ALLOCATION itself and can force the book
+RiskManager keeps enforcing the per-trade minimum allocation change ("|Δ| >= 0.2";
+no upper limit since D-142); this gate constrains the target ALLOCATION itself and can force the book
 flat.
 
 Controls:

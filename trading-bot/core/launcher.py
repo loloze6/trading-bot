@@ -157,8 +157,8 @@ class Launcher:
         # .min_allocation_change to override RiskManager's min_allocation_change
         # threshold for its own runs. None (the default -- key absent) leaves
         # controls_cfg untouched, byte-identical to before this override existed.
-        # Only the min_allocation_change sub-dict is replaced; max_allocation_change
-        # and any other configured control pass through unchanged.
+        # Only the min_allocation_change sub-dict is replaced; any other configured
+        # control passes through unchanged.
         if min_allocation_change_override is not None:
             controls_cfg = {
                 **controls_cfg,

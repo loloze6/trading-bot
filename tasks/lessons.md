@@ -462,3 +462,47 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-15 -- A `tail -F` monitor on Git Bash stayed silent for 30 minutes while the file grew
 - **Pattern:** a Monitor on `tail -n 0 -F campaign_log.md` delivered no event although run_095 wrote 7 lines to that file; the run's completion was seen only through the background task's exit notification.
 - **Rule:** on this machine, watch a run through its background-task exit and direct reads of the log, not a `tail -F` monitor.
+
+## 2026-10-15 -- A "copy unchanged" instruction with an escape clause is an invitation
+- **Pattern:** PREFILLED_CLAIM.md told step 1a to copy the claim unchanged but allowed changes "if the slots no longer accept"; 1a judged the slots from an incomplete file and dropped the tests (run_095).
+- **Rule:** when code already validated an artifact, code copies it; a model instruction never carries an escape clause for a pre-registered item.
+
+## 2026-10-15 -- A cost multiple stated without naming the two numbers it compares
+- **Pattern:** the direction ruling said stage costs were "4-5x inflated"; the figure compared the CLI's price for one model with its price for another, not the estimate with the real bill (about 50x against list per the advisory's re-measure).
+- **Rule:** every multiple names its numerator and denominator and their source; a CLI cost figure is the CLI's estimate until the Console says otherwise.
+
+## 2026-10-16 -- A second test run started while the slow suite was running
+- **Pattern:** with `run_tests.py --slow` running in the background, I started PR B's test files in another background command; it was stopped a few minutes in. The slow suite's trading-bot half then crashed every slow backtest worker (19 tests); re-run alone and serially, 48 of 49 passed.
+- **Rule:** before starting any test command, check that no other test process is running (the background task list, or `Get-CimInstance Win32_Process` for pytest); work on code or docs while a suite runs, never on a second suite.
+
+## 2026-10-16 -- A "master" baseline taken after the PR had merged
+- **Pattern:** to show a slow-test failure predated D-142, I swapped `origin/master`'s files into the worktree; the operator had merged #446 meanwhile, so master already held the change and the comparison proved nothing. Noticed only because `git diff origin/master` on the two files came back empty; redone on the commit before the merge (fbfc1a99).
+- **Rule:** a before/after baseline uses a named commit (the PR's merge base, `git merge-base HEAD origin/master` taken before the fetch), never a moving `origin/master`; check `gh pr view <n> --json state` first.
+
+## 2026-10-16 -- A stale sentence found by the name, not by the value
+- **Pattern:** for D-142 I grepped `max_allocation_change` and fixed every hit; two sentences that described the same control by its number ("0.2 <= |delta| <= 4.0" in `portfolio_risk_gate.py`, "or above 4.0" in `STRATEGY_DESIGN_GUIDE.md`, a prompt input) were missed until the review and a second search.
+- **Rule:** when deleting a mechanism, grep its name and its values (thresholds, defaults, the band it forms) across code, docs and prompt files before the first commit.
+
+## 2026-10-16 -- Line citations moved by a rebase
+- **Pattern:** D-143's row cited `run_phase1_research.py:9465-9469` (checked before the rebase); the rebase onto #445 added 12 lines above it and the review found the citation pointing at a docstring.
+- **Rule:** after any rebase, re-open every file:line a PR body or D-row cites in a file the base changed, before pushing.
+
+## 2026-10-16 -- A CI failure was reproduced locally for 30 minutes instead of read in seconds
+- **Pattern:** the GitHub MCP tools cannot read job logs, so the advisory dispatched a fix agent to re-run the full fast suite twice; `gh` is installed on this machine and `gh run view <run-id> --log-failed` showed the one failing test immediately (direction session's note).
+- **Rule:** read a red CI with `gh pr checks <n>` then `gh run view <run-id> --log-failed` first; a local reproduction is only for a failure the log does not explain.
+
+## 2026-10-16 -- "A resume grades the existing backtests" was assumed, not checked
+- **Pattern:** the direction session sequenced an engine change (D-142) against a paused run on the belief that a resume only re-grades; a resume at protocol_execution re-runs every backtest (run_096 has three result sets per variant) while the trial rows stay from the first attempt.
+- **Rule:** before ordering an engine change against a paused run, look at the run's `results/` folders and the resume log: if the resume re-backtests, the order decides which engine grades the run, and that is a decision to escalate.
+
+## 2026-10-16 -- A new artifact path broke the data-dictionary contract test
+- **Pattern:** D-141 added `detail.ruin` paths to grid_evaluation.yaml; the build dispatch named the schema but not docs/DATA_DICTIONARY.md, whose test requires every written path to be listed (test_e073_data_dictionary.py), and DATA_DICTIONARY_READERS.md is generated from it and byte-compared.
+- **Rule:** any change that writes a new artifact path adds it to docs/DATA_DICTIONARY.md, regenerates DATA_DICTIONARY_READERS.md with tools/data_dictionary.py, and runs test_e073_data_dictionary.py before push; say so in every dispatch that adds a field.
+
+## 2026-10-16 -- Syncing a checkout with thousands of staged files, without unstaging
+- **Pattern:** `git merge` refuses while the index differs from HEAD; the unstage-merge-restore route was refused twice by the permission classifier as destructive, and a chat "I allow" does not lift it.
+- **Rule:** sync the operator checkout by plumbing, which never unstages: `git merge-tree --write-tree HEAD <target>` (check the changed paths have no local change), `git commit-tree <tree> -p HEAD -p <target>`, `git checkout <commit> -- <the incoming paths>`, `git update-ref refs/heads/<branch> <commit> <old>`; then compare status counts and the staged tree with before. Undo: `update-ref` back and restore the paths.
+
+## 2026-10-16 -- Parallel sessions must be told their D-row numbers
+- **Pattern:** the fresh session's prompt said "your rows are the next two" after the latest row on master (D-140), while D-141 was held by an open PR (#445).
+- **Rule:** a prompt for a parallel session names its D-row numbers explicitly, skipping every number held by an open PR.

@@ -344,10 +344,9 @@ does not apply — proceed exactly as this skill has always worked, do not popul
 
 The config-direct-authoring flow pre-registers pass/fail criteria HERE, at 1a, instead of deriving them later in
 a separate validation pass. `config/criterion_menu.yaml` is the anchor table — same "pick from this table, don't
-free-hand" discipline as the `plausible_ic_upper` table above (A8.6). Its LIVE entries are
-`sign_consistent_by_era` (window, sign-consistency-by-era reducer), `whole_test_sharpe_positive` (pooled,
-whole-test Sharpe `>` 0, D-121) and `forecast_ic_median` (window, median over windows of the all-bars
-forecast/next-bar IC `>` 0.02, fixed threshold, D-134). A fourth entry, `realized_edge_to_cost_ratio` (the lot-based edge/cost ratio), is
+free-hand" discipline as the `plausible_ic_upper` table above (A8.6). Its LIVE entries for this step are
+`sign_consistent_by_era` (window, sign-consistency-by-era reducer) and `forecast_ic_median` (window, median over
+windows of the all-bars forecast/next-bar IC `>` 0.02, fixed threshold, D-134). Another entry, `realized_edge_to_cost_ratio` (the lot-based edge/cost ratio), is
 RETIRED FOR BLOCKS (`retired_for: [block]`, D-107/D-128/D-133): it stays in the menu file only so criteria already
 pre-registered keep evaluating, and a card naming it is refused — do not pick it. `residual_ic` (card A: the
 residual information coefficient against the current composite) is added by code to every forecast-block idea when
@@ -357,17 +356,22 @@ leave it out. It never counts as the card's own criterion: still pick at least o
 runs off, a regime block) a card naming it is refused. `gated_beats_ungated` is commented out — do not reference
 it; a criterion naming an unresolvable id fails at evaluation time, not gracefully.
 
-```yaml
-criteria:
-  - id: sign_consistent_by_era   # or whole_test_sharpe_positive, or both
-    # field overrides only if the menu's own default doesn't fit this hypothesis
-    # (e.g. sign_consistent_by_era's metric override — see the menu file's own comment)
-```
+Choose the card's criteria by answering three closed questions, in order:
+
+1. **What does the hypothesis's forecast predict?**
+   - The next bar's return: pick `forecast_ic_median`.
+   - The sign of window P&L, stable across eras, and the thesis is about that stability: pick
+     `sign_consistent_by_era`.
+   - Neither: pick `forecast_ic_median` as the minimum forecast test, and add `criteria_fit` to the card: the word
+     `none`, then one line on what the menu cannot measure for this hypothesis, as one quoted string, e.g.
+     `criteria_fit: "none: <what the menu cannot measure>"`. It is information only; nothing reads it to decide.
+2. **Is this a decide-next child whose brief carries a pre-filled claim?** That claim already has its test in branch 2
+   (the claim measurement after the backtest). Choose no criterion for the claim; question 1's answer still stands.
+3. **Never a profit criterion.** Sharpe, drawdown and return are branch 3's (the profit bars, checked on every
+   backtest), not the card's.
 
 Pick from the menu by `id`; do not invent a `metric`/`source`/`reducer`/`comparator`/`threshold` combination
-that isn't in the menu. If no live entry meaningfully evaluates this hypothesis's claim, say so explicitly
-in `rationale` rather than forcing a criterion that doesn't fit — an honestly-scoped hypothesis with a thin
-criteria list is better than a criterion picked to look complete.
+that isn't in the menu.
 
 ### Cost feasibility (relocated from `quant-validation/SKILL.md` Improvement 09)
 

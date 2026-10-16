@@ -98,7 +98,6 @@ Sections actually present in the committed `config.json`
 | `trading.test_mode` | `true` = Binance testnet, picks which API keys/base URL are used |
 | `trading.exchange` | Optional, default `binance`. Which venue's price cache gets read (§3.3a) |
 | `trading.fetch_interval_seconds` | Optional, default = `interval`. Fetch OHLCV finer than the trading timeframe and aggregate up (§3.2) |
-| `risk_management.controls.max_allocation_change.max` | Largest single-bar allocation swing the risk manager approves (§8.1). Committed default `4.0` |
 | `risk_management.controls.min_allocation_change.threshold` | Smallest allocation change worth acting on — anything smaller is skipped (§8.1). Committed default `0.2` |
 | `risk_management.portfolio_controls` | Absent by default (off). Turns on the portfolio-level risk gate (§8.2): allocation cap, drawdown kill switch, daily loss limit |
 | `logging.level` / `logging.file_path` | Log verbosity and log file destination |
@@ -681,17 +680,19 @@ Two independent risk layers exist. Only the first is on by default.
 `core/launcher.py::Launcher._build_risk_and_forecast_managers`). For each
 control name present, it calls `self._ctrl_{name}` if that method exists
 (`risk_manager.py::RiskManager.approve_allocation_change`) — an
-unrecognized control name is silently skipped, not an error. Two controls
-are wired on this checkout:
+unrecognized control name is silently skipped, not an error. One control
+is wired on this checkout:
 
-- `_ctrl_max_allocation_change` (`risk_manager.py`): rejects if
-  `abs(change) > controls.max_allocation_change.max + 1e-6`. Committed
-  value: `4.0` (`risk_management.controls.max_allocation_change.max`).
 - `_ctrl_min_allocation_change` (`risk_manager.py`): rejects if
   `abs(change) < controls.min_allocation_change.threshold - 1e-6`.
   Committed value: `0.2` (`risk_management.controls.min_allocation_change.threshold`).
 
-So the band is `0.2 <= |Δ| <= 4.0` on the committed config (§7). Rejection
+So the only band is `|Δ| >= 0.2` on the committed config (§7); there is no
+upper limit on a single bar's change. A `max_allocation_change` control
+(reject if `|Δ| > 4.0`) existed until D-142 (2026-10-15) and was removed: it
+also refused reductions and flips back toward the target, so a leveraged
+position the market had blown up could not be cut back
+(`strategy-research/engineering/improvements/known_divergences.md` §2). Rejection
 just logs and skips the rebalance for that bar
 (`trading_bot.py::TradingBot._process_symbol_candle_completion`) — the position is simply left where it was.
 
@@ -700,7 +701,7 @@ checkout's base):** `strategy_config.json` gains a top-level
 `strategies.min_allocation_change` key. When set, `core/launcher.py`'s
 `_build_risk_and_forecast_managers()` replaces only the
 `min_allocation_change` sub-dict of `controls_cfg` before constructing
-`RiskManager` — `max_allocation_change` and any other control pass through
+`RiskManager` — any other control passes through
 untouched (`git show e756614a` diff to `core/launcher.py`). Absent (the
 default) is byte-identical to current behavior. Verified on that commit:
 fast tests 10/10, slow bit-identity 8/8, and threshold `0.2`/`0.02`/`1.5`

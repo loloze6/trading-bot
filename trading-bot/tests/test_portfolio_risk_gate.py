@@ -625,12 +625,11 @@ class _DM:
 
 
 def _bot(portfolio, gate, exec_handler, tracker):
-    # Real RiskManager with the production band (min 0.2 / max 4.0): the mutation that
+    # Real RiskManager with the production control (min 0.2): the mutation that
     # routes the forced flatten through approve_allocation_change is rejected by this
     # min control, which is exactly what the trap test detects.
     rm = RiskManager(
         controls_cfg={
-            "max_allocation_change": {"max": 4.0},
             "min_allocation_change": {"threshold": 0.2},
         }
     )

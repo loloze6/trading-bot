@@ -301,7 +301,14 @@ def test_a_1a_rerun_rewrites_the_pass_rule_and_rechecks_the_id(campaign_root):
 # RE-PINNED by the D-137 review fix (2026-10-15, same branch): the paragraph adds that naming residual_ic gains
 # nothing (if unsure, leave it out) and that it never counts as the card's own criterion.
 # Previous pin (D-137 first commit): 5243c1d8248d4e2197a9e12a68200d616bb571dc128ba89d8fda7d480c083d7e.
-_MASTER_SKILL_SHA256 = "52cab846b7d8849f231512ab277f660380205bc4c95baa17151fb7530dd96c03"
+# RE-PINNED by D-143 (2026-10-16, branch fix/step1a-criteria-questions): pin updated because of the declared
+# prompt change of D-143 (no flag, operator-approved, direction ruling 2026-10-16) -- IMPROVEMENT 07 no longer
+# names whole_test_sharpe_positive (pre-registered by briefs only, D-121) and its example block is replaced by
+# three closed questions (what the forecast predicts -> forecast_ic_median / sign_consistent_by_era / neither +
+# criteria_fit; a decide-next pre-filled claim gets no criterion; never a profit criterion);
+# DECIDE_NEXT_CANDIDATES.md drops the same entry. Changes hypothesis_generation's prompt on every path.
+# Previous pin (D-137 review fix): 52cab846b7d8849f231512ab277f660380205bc4c95baa17151fb7530dd96c03.
+_MASTER_SKILL_SHA256 = "3120abe6bc674cb4af513bd387c694dc763cd56d1175cb05c0790225a374a216"
 
 
 def test_hypothesis_design_skill_is_byte_identical_to_master():

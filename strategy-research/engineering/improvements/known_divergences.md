@@ -108,3 +108,14 @@ its own controls, not on a drift threshold.
 fix: it needs a dispatch, a re-cost, and a decision on the archived results.
 Deleting the dead config key instead is the other clean option. Leaving it
 half-present, as now, is the state this entry exists to keep visible.
+
+---
+
+## 2. No margin and no liquidation; the max-change control refused reductions (control removed 2026-10-15, D-142)
+
+The engine has no margin and no liquidation: equity can go below zero and the
+bot keeps trading (D-101 grades a ruin as a total loss). Until D-142
+(2026-10-15) the max_allocation_change control (|delta| > 4.0 refused) also
+refused reductions and flips back toward the target; it fired on 543 bars of
+runs 094-096 and never in lane 1. Removed by D-142; results graded before it
+are not re-graded.
