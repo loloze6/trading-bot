@@ -31,8 +31,8 @@ lens.
   for that strategy only, never for yours unless it is the same. A claim confirmed on this
   strategy is settled: do not test it again. Yours is one reason it holds, with the test that
   separates that reason from a coincidence: kind `execution_behaviour`, `vehicle: []`,
-  confirmed or refuted on the next fold. Candidate reasons come from where the effect is and
-  is not in this run's data (by coin, window, side, entry hour, forecast level).
+  confirmed on the next fold. Candidate reasons come from where the effect is and
+  is not in this run's data.
 - **Six tools** on this run's own bars and trades: `list_columns`, `describe`, `distribution`,
   `conditional_effect`, `trade_slice`, `event_study`. Every call is logged with an id (`q1`,
   `q2`, ...) and counted. A call that relates a condition or a group to an outcome costs
@@ -72,8 +72,8 @@ opposite of its `direction` at any horizon is refused. Write two tests, each wit
 - `reversal`: horizons `[2, 3]`, `direction: greater`.
 
 The claim is of kind `execution_behaviour` with `vehicle: []`. Run each test with
-`conditional_effect` (same selector, same `outcome`, its own `horizons` and `direction`)
-before you claim it.
+`conditional_effect` (same `condition`, the selector above; same `outcome`; its own
+`horizons` and `direction`; and the claim's `floor`) before you claim it.
 
 ## Market observations stay in your reasoning
 
