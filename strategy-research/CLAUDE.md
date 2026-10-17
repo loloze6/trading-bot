@@ -101,6 +101,7 @@ Two caveats the guide explains in full:
 
 ## Running the tests (operator decision 2026-10-03: the full suite is too slow to run after every edit)
 - Interpreter: `../venv/Scripts/python.exe` on Windows (`../.venv/bin/python` on Mac/Linux); run strategy-research tests from `strategy-research/` (the workflow resolves the venv from the CWD).
+- **`TBOT_PYTHON`** (operator decision 2026-10-17): when this environment variable holds an absolute path to an interpreter, the workflow uses it before either venv above. It points at a venv outside every checkout, so a worktree needs no venv of its own: run tests there as `& $env:TBOT_PYTHON -m pytest <files>`. Never junction a venv into a worktree: checking out a commit from before 2026-09-09 (which tracked `venv/`) and moving away deletes the linked venv's files.
 - **While developing:** run only the test files the change touches (and their direct neighbours). Seconds to a minute.
 - **CI runs the FAST suite on every push** (Ubuntu + Windows, `.github/workflows/tests.yml` -> `run_tests.py`, ~8 / ~14 min): trading-bot and strategy-research, including `tools/recorder/tests/`, with `-m "not slow"`. Push, then read `gh pr checks <n>`; fix what CI reports. Do not also run it locally before every push.
 - **Slow tests never run in CI.** They are marked `slow` (live market data, network). Run them on purpose when a change touches data fetching or the regression backtests: `python run_tests.py --slow` from the repo root.

@@ -116,7 +116,21 @@ def _resolve_tbot_python() -> Path:
     executable check on its own because directories are searchable. No usable
     candidate raises rather than falling back to sys.executable — a silently wrong
     interpreter is the worst outcome here.
+
+    The TBOT_PYTHON environment variable, when set, wins over both candidates: it
+    names the interpreter of a venv kept outside every checkout, so a worktree
+    needs no venv junction (operator decision 2026-10-17). It must be an absolute
+    path to a runnable file; a set-but-unusable value raises instead of falling
+    through to a repo-local venv.
     """
+    override = os.environ.get("TBOT_PYTHON")
+    if override:
+        chosen = Path(override)
+        if chosen.is_absolute() and chosen.is_file() and os.access(chosen, os.X_OK):
+            return chosen
+        raise RuntimeError(
+            f"TBOT_PYTHON={override} is not an absolute path to a runnable interpreter file"
+        )
     candidates = (
         Path("..") / "venv" / "Scripts" / "python.exe",
         Path("..") / ".venv" / "bin" / "python",
