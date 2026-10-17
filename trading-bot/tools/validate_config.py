@@ -365,6 +365,16 @@ def validate(config: dict) -> List[str]:
                 for msg in vol_target_param_errors(step.get("params", {})):
                     violations.append(f"VIOLATION V14 {loc}[{k}].params: {msg}")
 
+    # V15: every standardise op has valid params (window int >= 2, 2 <= min_periods
+    # <= window, target / cap finite > 0). Reuses the op's own param check, so V15
+    # fails on exactly the params the op refuses. Silent for every config without it.
+    from strategies.registry import standardise_param_errors
+    for loc, transforms in _all_transform_lists(config):
+        for k, step in enumerate(transforms):
+            if step.get("op") == "standardise":
+                for msg in standardise_param_errors(step.get("params", {})):
+                    violations.append(f"VIOLATION V15 {loc}[{k}].params: {msg}")
+
     return violations
 
 
