@@ -257,7 +257,17 @@ class BacktestEngine:
             # exchange=...) contract in the aux-feed tests) is still called
             # byte-identically on the default write-through path.
             feed_opt_out = {} if feed_local_storage else {"localStorage": False}
-            for feed_name, factory in (extra_feeds or {}).items():
+            # D-146 -- register only the feeds the strategy reads. extra_feeds is the
+            # caller's menu (core/launcher.py passes every FEED_REGISTRY entry); a feed
+            # outside the strategy's required_feeds is not read by any component or
+            # block gate, so fetching and merging it only adds an unread column to
+            # bars.csv and manifest feeds.registered. With no strategy (the exemption
+            # above) there is no read-set to filter by: register everything, as before.
+            feeds_to_register = {
+                name: factory for name, factory in (extra_feeds or {}).items()
+                if self.strategy is None or name in required_feeds
+            }
+            for feed_name, factory in feeds_to_register.items():
                 self.data_manager.register_feed(
                     name           = feed_name,
                     fetcher        = factory(self.symbols, start_date, end_date, data_dir = data_storage_dir, exchange = self.exchange, **feed_opt_out),

@@ -162,8 +162,12 @@ def test_backtester_passes_the_declared_delay():
         TEST_LOGGER, BacktestEngine, _RecordingDataManager, _StubStrategy,
     )
     dm = _RecordingDataManager()
-    engine = BacktestEngine(data_manager=dm, strategy=_StubStrategy({}), logger=TEST_LOGGER,
-                            symbols=["BTCUSD"])
+    # D-146: only feeds the strategy reads are registered, so the stub strategy
+    # must read both for the delay of each to be recorded.
+    engine = BacktestEngine(
+        data_manager=dm,
+        strategy=_StubStrategy({"fear_greed": ("c",), "funding_rate": ("c",)}),
+        logger=TEST_LOGGER, symbols=["BTCUSD"])
 
     def factory(symbols, start, end, data_dir, exchange="binance"):
         return object()
