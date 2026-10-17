@@ -335,6 +335,18 @@ strategy does not read is not fetched, not merged, and not written to
 `feeds.registered` (that block exists only when `drop_feeds` is passed). With no
 strategy attached, every feed in `extra_feeds` is registered, as before.
 
+Known limit with `model_funding=True`: the funding cost model reads
+`{symbol}_funding_8h.csv` from `local_data/` (`build_daily_funding_series`,
+`data/feed_registry.py`, called from `simulate_on_loaded_data`), and that file
+is fetched or extended only as a side effect of registering the `funding_rate`
+feed (its fetcher runs when `DataManager` merges the feed). A strategy that
+does not read `funding_rate` no longer registers it (D-146), so nothing
+refreshes the file: a missing or empty cache raises the `ValueError` in
+`simulate_on_loaded_data`, and a stale or short cache silently leaves the
+uncovered days out of the funding accrual. `model_funding` is off by default
+and `run_protocol` never passes it. Refresh the cache first (run any backtest
+whose strategy reads `funding_rate`), or omit `model_funding`.
+
 ---
 
 ## 4. The Main Loop: Bar-by-Bar Processing

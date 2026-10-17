@@ -48,7 +48,9 @@ def _source_provenance_config(strategy, default_config_path):
 class FeedRequirementError(RuntimeError):
     """Raised by BacktestEngine.load_data when a strategy's required aux feed
     (AdvancedStrategy.required_feeds) is absent from extra_feeds at registration
-    time -- see FORK_CHANGES.md / feed-dependency-safety-architecture.md."""
+    time -- see FORK_CHANGES.md / feed-dependency-safety-architecture.md.
+    required_feeds is also (D-146) the set of feeds load_data registers when a
+    strategy is attached: a feed outside it is not registered."""
 
 
 def nan_forecast_block(bot):
