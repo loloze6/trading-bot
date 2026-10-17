@@ -1,0 +1,187 @@
+schema_version: 1
+revision: 3
+updated_at: '2026-10-14T14:53:43.592793+00:00'
+blocks:
+- block_id: L1_DAILY_TREND_BASKET_SMA200_V2:run_083
+  hypothesis_id: L1_DAILY_TREND_BASKET_SMA200_V2
+  kind: forecast
+  config_fragment:
+    /strategies/regimes/unknown/components/0:
+      id: sma200_distance
+      class: strategies.strategy_components.MovingAverageDistanceComponent
+      params:
+        period: 200
+        average: sma
+      weight: 1.0
+      transforms:
+      - op: scale
+        params:
+          factor: 5.0
+      - op: clip
+        params:
+          min: 0
+          max: 10
+      - op: vol_target
+        params:
+          window: 60
+          target_annual_vol: 0.4
+          periods_per_year: 365
+      - op: clip
+        params:
+          min: 0
+          max: 10
+  regime_assignment:
+    regimes:
+    - unknown
+    detector_paths: []
+  criteria_passed:
+  - realized_edge_to_cost_ratio
+  variants_passed:
+  - run_083
+  numbers:
+    realized_edge_to_cost_ratio:
+      run_083:
+        value: 9.1483
+        threshold: 2.2
+        n_windows: 48
+        n_trades: 162
+  symbols_tested:
+  - ADAUSD
+  - BTCUSD
+  - DOGEUSD
+  - ETHUSD
+  - LINKUSD
+  - LTCUSD
+  - TRXUSD
+  - UNIUSD
+  correlation_to_composite: null
+  residual_ic: null
+  source_config_ref: runs/run_083/artifacts/candidate_strategy_config.json
+  source_config_sha256: 995a56b3218304d023f3bd4ba048ff3c879a5d40a5d79e1fc1e9e6094b9382c7
+  validated_by_run: run_083
+  registered_at: '2026-10-11T18:35:49.363183+00:00'
+- block_id: L1_DAILY_TREND_SMA50_V3_FOLD_B:run_089
+  hypothesis_id: L1_DAILY_TREND_SMA50_V3_FOLD_B
+  kind: forecast
+  config_fragment:
+    /strategies/regimes/unknown/components/0:
+      id: trend
+      class: strategies.strategy_components.MovingAverageDistanceComponent
+      params:
+        period: 50
+        average: sma
+      weight: 1.0
+      transforms:
+      - op: scale
+        params:
+          factor: 5
+      - op: clip
+        params:
+          min: 0
+          max: 10
+      - op: vol_target
+        params:
+          window: 60
+          target_annual_vol: 0.4
+          periods_per_year: 365
+      - op: clip
+        params:
+          min: 0
+          max: 10
+  regime_assignment:
+    regimes:
+    - unknown
+    detector_paths: []
+  criteria_passed:
+  - realized_edge_to_cost_ratio
+  variants_passed:
+  - run_089
+  numbers:
+    realized_edge_to_cost_ratio:
+      run_089:
+        value: 39.9211
+        threshold: 2.2
+        n_windows: 18
+        n_trades: 110
+  symbols_tested:
+  - BTCUSD
+  - ETHUSD
+  - LTCUSD
+  correlation_to_composite: null
+  residual_ic: null
+  source_config_ref: runs/run_089/artifacts/candidate_strategy_config.json
+  source_config_sha256: 27c31dff7f2374058fe21b5f3b64542cdd220c8a7607c3a93554a1cea6f4dc88
+  validated_by_run: run_089
+  registered_at: '2026-10-12T12:13:49.238888+00:00'
+- block_id: L1_DAILY_TREND_SMA100_V3_FOLD_B:run_084
+  hypothesis_id: L1_DAILY_TREND_SMA100_V3_FOLD_B
+  kind: forecast
+  config_fragment:
+    /strategies/regimes/unknown/components/0:
+      id: sma_distance
+      class: strategies.strategy_components.MovingAverageDistanceComponent
+      params:
+        period: 100
+        average: sma
+      weight: 1.0
+      transforms:
+      - op: scale
+        params:
+          factor: 5.0
+      - op: clip
+        params:
+          min: 0
+          max: 10
+      - op: vol_target
+        params:
+          window: 60
+          target_annual_vol: 0.4
+          periods_per_year: 365
+      - op: clip
+        params:
+          min: 0
+          max: 10
+  regime_assignment:
+    regimes:
+    - unknown
+    detector_paths: []
+  criteria_passed: []
+  variants_passed: []
+  numbers: {}
+  symbols_tested:
+  - BTCUSD
+  - ETHUSD
+  - LTCUSD
+  correlation_to_composite: null
+  residual_ic: null
+  source_config_ref: runs/run_084/artifacts/candidate_strategy_config.json
+  source_config_sha256: f5c6068bef4c5cc486c98f4170c4e99504df8278e22b3af175ad367bbb50aa77
+  validated_by_run: run_084
+  registered_at: '2026-10-14T14:53:28.467801+00:00'
+  timeframe: 1d
+  timeframe_category: daily
+marks:
+- block_id: L1_DAILY_TREND_SMA50_V3_FOLD_B:run_089
+  date: '2026-10-12'
+  note: registered by the grid under step 1a's generic criteria, not under D-108;
+    the lot-based ratio is D-107's artefact; not eligible for composition until D-108
+    is read and only if the lane continues
+statuses:
+- block_id: L1_DAILY_TREND_SMA50_V3_FOLD_B:run_089
+  status: voided
+  reason: graded under step-1a-picked criteria (realized_edge_to_cost_ratio), not
+    the brief's rule
+  by: Jeremy
+  at: '2026-10-14T06:09:45.415708+00:00'
+- block_id: L1_DAILY_TREND_BASKET_SMA200_V2:run_083
+  status: voided
+  reason: graded under step-1a-picked criteria, not the brief's rule; run_083's lane
+    ruled FAIL (D-107)
+  by: Jeremy
+  at: '2026-10-14T06:09:45.840539+00:00'
+- block_id: L1_DAILY_TREND_SMA100_V3_FOLD_B:run_084
+  status: active
+  reason: 'operator record, D-128; criteria: D-108 read by hand; fold A D-107, fold
+    B D-114, fold C D-126'
+  by: operator
+  at: '2026-10-14T14:53:43.592793+00:00'

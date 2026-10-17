@@ -1,0 +1,341 @@
+schema_version: 1
+note: 'information only: each reader side finding measured on confirmation windows
+  the proposer never saw; looks counted per confirmation set; not proven'
+bar: the sign held (or not) on windows the proposer never saw, counted against the
+  looks taken on that confirmation set; not proven
+findings: {}
+looks:
+- run_id: run_078
+  finding_id: trade_efficiency-run_071-4
+  test: strong_long_entries_earn_more
+  spec_hash: 70837262630bcfce9f4373dd633c9ab654e12dc62b69ed280f137805a7d6be5e
+  n_comparisons: 1
+  confirmation_set: 2018-05[2018-05-01..2018-08-31],2019-01[2019-01-01..2019-04-30],2019-09[2019-09-01..2019-12-31],2020-05[2020-05-01..2020-08-31],2021-01[2021-01-01..2021-04-30],2021-09[2021-09-01..2021-12-31]
+- run_id: run_079
+  finding_id: trade_efficiency-run_066-2
+  test: flip_closed_lots_continue
+  spec_hash: c609a010c712c29acad11eeee063bf8d0a5b5c05a0b801ce83df3f52acb4aeb7
+  n_comparisons: 3
+  confirmation_set: 2018-05[2018-05-01..2018-08-31],2019-01[2019-01-01..2019-04-30],2019-09[2019-09-01..2019-12-31],2020-05[2020-05-01..2020-08-31],2021-01[2021-01-01..2021-04-30],2021-09[2021-09-01..2021-12-31]
+- run_id: run_096
+  finding_id: forecast_power-run_095-1
+  test: shorts_earn_less_than_other_lots
+  spec_hash: 05508ac0c6df321b1ff06d30f20ad42e37e052a8924a700e79fa77f8931c2951
+  n_comparisons: 1
+  confirmation_set: 2018-01[2018-01-01..2018-04-30],2018-09[2018-09-01..2018-12-31],2019-05[2019-05-01..2019-08-31],2020-01[2020-01-01..2020-04-30],2020-09[2020-09-01..2020-12-31],2021-05[2021-05-01..2021-08-31]
+by_set:
+  ? 2018-01[2018-01-01..2018-04-30],2018-09[2018-09-01..2018-12-31],2019-05[2019-05-01..2019-08-31],2020-01[2020-01-01..2020-04-30],2020-09[2020-09-01..2020-12-31],2021-05[2021-05-01..2021-08-31]
+  : n_looks: 1
+    n_comparisons: 1
+  ? 2018-05[2018-05-01..2018-08-31],2019-01[2019-01-01..2019-04-30],2019-09[2019-09-01..2019-12-31],2020-05[2020-05-01..2020-08-31],2021-01[2021-01-01..2021-04-30],2021-09[2021-09-01..2021-12-31]
+  : n_looks: 2
+    n_comparisons: 4
+fold_confirmations:
+  forecast_power-run_094-1@run_095:
+    schema_version: 1
+    finding_id: forecast_power-run_094-1
+    category: forecast_power
+    source_run: run_094
+    run_id: run_095
+    basis: child_run
+    fold: D
+    kind: execution_behaviour
+    statement: 'In this strategy, lots opened at a forecast of 10 or more, or of -10
+      or less (a full-size entry on either side), earn a lower mean net return than
+      the other lots, in most windows.
+
+      '
+    rule:
+      name: noise_rule
+      min_windows: 4
+      windows_allowed_against: 1
+      text: 'NOISE RULE, not a size rule and no cost comparison: confirmed when, at
+        every horizon with a value, the pooled effect has the claimed sign AND the
+        claimed sign holds in all but at most 1 window(s) of the fold (at least 4
+        windows with a value, else not measurable). About an 11% chance per fold for
+        a claim with no effect (6 windows), about 1% after two folds; every look is
+        counted. Measured on the run built from the claim, on a fold its source run
+        was not on; not proven.'
+    vehicle: []
+    combines_as: execution_rule
+    fold_observed: A
+    spec_hashes:
+    - 4609ff164d93fa13a608bba7b0d06227a258dbc7873413028f47f093b7ba9314
+    - 64f5729588cbdb7de8db581b9670c17fd3bda69966f8455f2943a0c980b395f0
+    status: not_comparable
+    reason: 'not comparable: the run built from this claim carries other tests (spec_hash
+      differs from the claim''s, or its card has none); nothing is measured'
+    own_spec_hashes: []
+  forecast_power-run_095-1@run_096:
+    schema_version: 1
+    finding_id: forecast_power-run_095-1
+    category: forecast_power
+    source_run: run_095
+    run_id: run_096
+    basis: child_run
+    fold: C
+    kind: execution_behaviour
+    statement: 'In this strategy, which goes short whenever its forecast is negative,
+      short lots earn a lower mean net return than the other lots in most windows.
+
+      '
+    rule:
+      name: noise_rule
+      min_windows: 4
+      windows_allowed_against: 1
+      text: 'NOISE RULE, not a size rule and no cost comparison: confirmed when, at
+        every horizon with a value, the pooled effect has the claimed sign AND the
+        claimed sign holds in all but at most 1 window(s) of the fold (at least 4
+        windows with a value, else not measurable). About an 11% chance per fold for
+        a claim with no effect (6 windows), about 1% after two folds; every look is
+        counted. Measured on the run built from the claim, on a fold its source run
+        was not on; not proven.'
+    vehicle: []
+    combines_as: execution_rule
+    fold_observed: D
+    spec_hashes:
+    - 05508ac0c6df321b1ff06d30f20ad42e37e052a8924a700e79fa77f8931c2951
+    fold_blocks:
+    - 2018-01
+    - 2018-09
+    - 2019-05
+    - 2020-01
+    - 2020-09
+    - 2021-05
+    confirmation_set: 2018-01[2018-01-01..2018-04-30],2018-09[2018-09-01..2018-12-31],2019-05[2019-05-01..2019-08-31],2020-01[2020-01-01..2020-04-30],2020-09[2020-09-01..2020-12-31],2021-05[2021-05-01..2021-08-31]
+    vehicle_variant: base
+    base_variant: base
+    tests:
+      shorts_earn_less_than_other_lots:
+        spec_hash: 05508ac0c6df321b1ff06d30f20ad42e37e052a8924a700e79fa77f8931c2951
+        status: confirmed
+        horizons:
+          '0':
+            effect: -0.021010934952861948
+            oriented: 0.021010934952861948
+            n_events: 330
+            windows_claimed_sign: 5
+            windows_with_value: 6
+            per_window:
+              BTCUSD/2018-01: 0.006652968900738319
+              BTCUSD/2018-09: -0.014330825384615387
+              BTCUSD/2019-05: 0.05411252580343979
+              BTCUSD/2020-01: 0.021051796881878207
+              BTCUSD/2020-09: 0.0452763163559322
+              BTCUSD/2021-05: 0.011123467547169807
+            pooled_sign_held: true
+            windows_rule_held: true
+        reason: 'the pooled sign held at every horizon and the claimed sign held in
+          all but at most one window: h=0 5 of 6'
+    windows_measured:
+    - BTCUSD/2018-01
+    - BTCUSD/2018-09
+    - BTCUSD/2019-05
+    - BTCUSD/2020-01
+    - BTCUSD/2020-09
+    - BTCUSD/2021-05
+    effect:
+      shorts_earn_less_than_other_lots:
+        '0': -0.021010934952861948
+    agreement:
+      shorts_earn_less_than_other_lots:
+        '0': 5 of 6
+    status: confirmed
+    reason: every test of the claim passed the noise rule
+    looks:
+      confirmation_set: 2018-01[2018-01-01..2018-04-30],2018-09[2018-09-01..2018-12-31],2019-05[2019-05-01..2019-08-31],2020-01[2020-01-01..2020-04-30],2020-09[2020-09-01..2020-12-31],2021-05[2021-05-01..2021-08-31]
+      n_looks_on_set: 1
+      n_comparisons_on_set: 1
+  trade_efficiency-run_066-2@run_079:
+    schema_version: 1
+    finding_id: trade_efficiency-run_066-2
+    category: trade_efficiency
+    source_run: run_066
+    run_id: run_079
+    basis: child_run
+    fold: B
+    kind: execution_behaviour
+    statement: 'In this strategy, a lot closed by a forecast sign flip is followed
+      by a move in its own direction more often over the next 6 bars than the other
+      lots are.
+
+      '
+    rule:
+      name: noise_rule
+      min_windows: 4
+      windows_allowed_against: 1
+      text: 'NOISE RULE, not a size rule and no cost comparison: confirmed when, at
+        every horizon with a value, the pooled effect has the claimed sign AND the
+        claimed sign holds in all but at most 1 window(s) of the fold (at least 4
+        windows with a value, else not measurable). About an 11% chance per fold for
+        a claim with no effect (6 windows), about 1% after two folds; every look is
+        counted. Measured on the run built from the claim, on a fold its lineage had
+        not used; not proven.'
+    vehicle: []
+    combines_as: execution_rule
+    spec_hashes:
+    - c609a010c712c29acad11eeee063bf8d0a5b5c05a0b801ce83df3f52acb4aeb7
+    fold_blocks:
+    - 2018-05
+    - 2019-01
+    - 2019-09
+    - 2020-05
+    - 2021-01
+    - 2021-09
+    confirmation_set: 2018-05[2018-05-01..2018-08-31],2019-01[2019-01-01..2019-04-30],2019-09[2019-09-01..2019-12-31],2020-05[2020-05-01..2020-08-31],2021-01[2021-01-01..2021-04-30],2021-09[2021-09-01..2021-12-31]
+    vehicle_variant: base
+    base_variant: base
+    tests:
+      flip_closed_lots_continue:
+        spec_hash: c609a010c712c29acad11eeee063bf8d0a5b5c05a0b801ce83df3f52acb4aeb7
+        status: confirmed
+        horizons:
+          '1':
+            effect: 0.04191810747227309
+            oriented: 0.04191810747227309
+            n_events: 2195
+            windows_claimed_sign: 5
+            windows_with_value: 6
+            per_window:
+              BTCUSD/2018-05: 0.0063156951074654355
+              BTCUSD/2019-01: 0.05857761601737116
+              BTCUSD/2019-09: 0.08789667755679109
+              BTCUSD/2020-05: 0.036827956989247235
+              BTCUSD/2021-01: -0.0010860484544694682
+              BTCUSD/2021-09: 0.0616931588653728
+            pooled_sign_held: true
+            windows_rule_held: true
+          '6':
+            effect: 0.04777231413905264
+            oriented: 0.04777231413905264
+            n_events: 2194
+            windows_claimed_sign: 6
+            windows_with_value: 6
+            per_window:
+              BTCUSD/2018-05: 0.04115570921794243
+              BTCUSD/2019-01: 0.039136255300708855
+              BTCUSD/2019-09: 0.01665323663712065
+              BTCUSD/2020-05: 0.05405597360767339
+              BTCUSD/2021-01: 0.0726260094681147
+              BTCUSD/2021-09: 0.06101273015057024
+            pooled_sign_held: true
+            windows_rule_held: true
+          '24':
+            effect: 0.08084431661346231
+            oriented: 0.08084431661346231
+            n_events: 2182
+            windows_claimed_sign: 6
+            windows_with_value: 6
+            per_window:
+              BTCUSD/2018-05: 0.06774541433232495
+              BTCUSD/2019-01: 0.17429378531073453
+              BTCUSD/2019-09: 0.10852035363839502
+              BTCUSD/2020-05: 0.06812465039066024
+              BTCUSD/2021-01: 0.032440160203513146
+              BTCUSD/2021-09: 0.037325108245901795
+            pooled_sign_held: true
+            windows_rule_held: true
+        reason: 'the pooled sign held at every horizon and the claimed sign held in
+          all but at most one window: h=1 5 of 6; h=6 6 of 6; h=24 6 of 6'
+    windows_measured:
+    - BTCUSD/2018-05
+    - BTCUSD/2019-01
+    - BTCUSD/2019-09
+    - BTCUSD/2020-05
+    - BTCUSD/2021-01
+    - BTCUSD/2021-09
+    effect:
+      flip_closed_lots_continue:
+        '1': 0.04191810747227309
+        '6': 0.04777231413905264
+        '24': 0.08084431661346231
+    agreement:
+      flip_closed_lots_continue:
+        '1': 5 of 6
+        '6': 6 of 6
+        '24': 6 of 6
+    status: confirmed
+    reason: every test of the claim passed the noise rule
+    looks:
+      confirmation_set: 2018-05[2018-05-01..2018-08-31],2019-01[2019-01-01..2019-04-30],2019-09[2019-09-01..2019-12-31],2020-05[2020-05-01..2020-08-31],2021-01[2021-01-01..2021-04-30],2021-09[2021-09-01..2021-12-31]
+      n_looks_on_set: 2
+      n_comparisons_on_set: 4
+  trade_efficiency-run_071-4@run_078:
+    schema_version: 1
+    finding_id: trade_efficiency-run_071-4
+    category: trade_efficiency
+    source_run: run_071
+    run_id: run_078
+    basis: child_run
+    fold: B
+    kind: execution_behaviour
+    statement: 'In this strategy, lots opened at a forecast of 10 or more (a full-size
+      long entry) earn a higher mean net return than the other lots, in every window.
+
+      '
+    rule:
+      name: noise_rule
+      min_windows: 4
+      windows_allowed_against: 1
+      text: 'NOISE RULE, not a size rule and no cost comparison: confirmed when, at
+        every horizon with a value, the pooled effect has the claimed sign AND the
+        claimed sign holds in all but at most 1 window(s) of the fold (at least 4
+        windows with a value, else not measurable). About an 11% chance per fold for
+        a claim with no effect (6 windows), about 1% after two folds; every look is
+        counted. Measured on the run built from the claim, on a fold its lineage had
+        not used; not proven.'
+    vehicle: []
+    combines_as: execution_rule
+    spec_hashes:
+    - 70837262630bcfce9f4373dd633c9ab654e12dc62b69ed280f137805a7d6be5e
+    fold_blocks:
+    - 2018-05
+    - 2019-01
+    - 2019-09
+    - 2020-05
+    - 2021-01
+    - 2021-09
+    confirmation_set: 2018-05[2018-05-01..2018-08-31],2019-01[2019-01-01..2019-04-30],2019-09[2019-09-01..2019-12-31],2020-05[2020-05-01..2020-08-31],2021-01[2021-01-01..2021-04-30],2021-09[2021-09-01..2021-12-31]
+    vehicle_variant: base
+    base_variant: base
+    tests:
+      strong_long_entries_earn_more:
+        spec_hash: 70837262630bcfce9f4373dd633c9ab654e12dc62b69ed280f137805a7d6be5e
+        status: confirmed
+        horizons:
+          '0':
+            effect: 0.00150489290833669
+            oriented: 0.00150489290833669
+            n_events: 3361
+            windows_claimed_sign: 5
+            windows_with_value: 6
+            per_window:
+              BTCUSD/2018-05: -5.449733426082119e-05
+              BTCUSD/2019-01: 0.0010900796286699768
+              BTCUSD/2019-09: 0.002361776685526478
+              BTCUSD/2020-05: 0.0001481599613297886
+              BTCUSD/2021-01: 0.003863542323686007
+              BTCUSD/2021-09: 0.0010216964058515007
+            pooled_sign_held: true
+            windows_rule_held: true
+        reason: 'the pooled sign held at every horizon and the claimed sign held in
+          all but at most one window: h=0 5 of 6'
+    windows_measured:
+    - BTCUSD/2018-05
+    - BTCUSD/2019-01
+    - BTCUSD/2019-09
+    - BTCUSD/2020-05
+    - BTCUSD/2021-01
+    - BTCUSD/2021-09
+    effect:
+      strong_long_entries_earn_more:
+        '0': 0.00150489290833669
+    agreement:
+      strong_long_entries_earn_more:
+        '0': 5 of 6
+    status: confirmed
+    reason: every test of the claim passed the noise rule
+    looks:
+      confirmation_set: 2018-05[2018-05-01..2018-08-31],2019-01[2019-01-01..2019-04-30],2019-09[2019-09-01..2019-12-31],2020-05[2020-05-01..2020-08-31],2021-01[2021-01-01..2021-04-30],2021-09[2021-09-01..2021-12-31]
+      n_looks_on_set: 1
+      n_comparisons_on_set: 1

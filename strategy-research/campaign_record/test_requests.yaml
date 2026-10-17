@@ -1,0 +1,80 @@
+requests:
+- run_id: run_073
+  stage: specialist_readers
+  card: proposals/profitability.yaml#profitability-run_073-2
+  hypothesis_id: HOURLY_SHOCK_REVERSAL_MEAN_REVERSION_1H_BTC_ETH__trade_efficiency-run_070-1__profitability-run_073-2
+  claim_kind: cost_turnover
+  statement: 'Boundary re-crossing rate remains excessive (94.87%) despite period-2
+    smoothing, and exit-timing is systematic: 50-53% of exits would be profitable
+    if held one bar longer, indicating either high-frequency signal oscillation or
+    sub-optimal exit logic.'
+  missing_block: 'outcome: premature_exit_ratio (share of trades exiting at loss then
+    reversing within N bars) or trade_duration_efficiency (is exit signal optimal
+    or does every 1-2 bars force an exit before reversal completes?).'
+- run_id: run_073
+  stage: specialist_readers
+  card: proposals/trade_efficiency.yaml#trade_efficiency-run_073-2
+  hypothesis_id: HOURLY_SHOCK_REVERSAL_MEAN_REVERSION_1H_BTC_ETH__trade_efficiency-run_070-1__trade_efficiency-run_073-2
+  claim_kind: event_behaviour
+  statement: 'Extreme PnL concentration (worst 10% of trades account for 165.84% of
+    losses, best 10% account for 99.66% of gains) combined with median-vs-mean exit
+    efficiency divergence (median +0.058%, mean -0.83%) indicates tail risk from catastrophic
+    execution events on a few bars, not systematic entry or signal defects. The 99%
+    signal-flip exit rule offers no stop-loss or hold-minimum protection; exits can
+    occur at peak-volatility bars when liquidity fails. This tail risk is distinguishable
+    from a noisy signal: the signal direction is correct (IC > 0), but execution outliers
+    overwhelm the edge.'
+  missing_block: per-trade exit_efficiency measured conditional on trade outcome (profitable
+    vs. losing trades). Standard CLAIM_TESTS outcomes measure forward price movements
+    bar-to-bar; a new outcome type (fwd_return_relative_to_trade_entry_price, or rank_of_exit_efficiency_within_trade_outcome_quintile)
+    would allow selection of losing trades and measurement of their exit efficiency
+    vs. winning trades. Without it, we cannot directly test whether losing trades
+    exhibit worse exit timing.
+- run_id: run_071
+  stage: specialist_readers
+  card: proposals/profitability.yaml#profitability-run_071-1
+  hypothesis_id: HOURLY_SHOCK_CONTINUATION_MOMENTUM_1H_BTC_ETH__profitability-run_071-1
+  claim_kind: conditional_behaviour
+  statement: High-conviction bars (forecast >= 12) systematically fire 1 bar after
+    the optimal market inflection; 97% of such signals would have captured better
+    returns if triggered at the prior bar's close, indicating the composite signal
+    detects continuation too late.
+  missing_block: 'outcome measuring entry_timing_lag: fwd_return from signal_bar_t
+    vs return that entry_at(bar_t-1)_close would have captured'
+- run_id: run_071
+  stage: specialist_readers
+  card: proposals/profitability.yaml#profitability-run_071-2
+  hypothesis_id: HOURLY_SHOCK_CONTINUATION_MOMENTUM_1H_BTC_ETH__profitability-run_071-2
+  claim_kind: event_behaviour
+  statement: 'High turnover (2,358+ trades per window) arises from frequent boundary
+    recrosses (0.8861 rate): positions enter high-conviction bars, reverse within
+    2-3 bars, and re-enter on the same price level, creating whipsaws that incur costs
+    on each cycle without capturing sustained momentum.'
+  missing_block: 'outcome measuring whipsaw_cycles: count of entry/exit/re-entry sequences
+    within N-bar windows, and cumulative PnL per cycle'
+- run_id: run_094
+  stage: hypothesis_generation
+  card: hypothesis_card.yaml
+  hypothesis_id: OVERNIGHT_GAP_MEAN_REVERSION_1D_BTC
+  claim_kind: conditional_behaviour
+  statement: Overnight gaps >1% exhibit predictable mean-reversion within 1-3 trading
+    days, with gap-ups followed by negative returns and gap-downs followed by positive
+    returns, at rates exceeding baseline (no-gap) days.
+  missing_block: Event selector on overnight gap magnitude and direction (not available
+    in selector framework; gap = open[t] vs close[t-1] requires bar-cross data). Claim
+    is testable by backtest pipeline (custom gap-detection and forward-return measurement),
+    but claim-test slots cannot express overnight-gap events. A test using past_return
+    as proxy (large daily moves) would conflate gaps with large intraday reversals.
+- run_id: run_095
+  stage: hypothesis_generation
+  card: hypothesis_card.yaml
+  hypothesis_id: OVERNIGHT_GAP_MEAN_REVERSION_1D_BTC__forecast_power-run_094-1
+  claim_kind: conditional_behaviour
+  statement: 'In this strategy, lots opened at a forecast of 10 or more, or of -10
+    or less (a full-size entry on either side), earn a lower mean net return than
+    the other lots, in most windows.
+
+    '
+  missing_block: Lot-level realized net return (trade_net_return) by entry_forecast
+    selector (>= 10 or <= -10) against an other_trades baseline. No outcome, selector
+    or baseline slot in CLAIM_TESTS.md expresses it.
