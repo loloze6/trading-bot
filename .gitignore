@@ -128,6 +128,13 @@ strategy-research/campaign.pid
 # they are backed up outside git. Files master already tracks (run_0001..run_060)
 # stay tracked: an ignore rule never untracks a file.
 /strategy-research/runs/
+# Per-run generated protocols are run records too (operator decision 2026-10-18).
+# The three already tracked (run_048, run_050, run_053) stay tracked.
+/strategy-research/protocols/*_generated.json
 # campaign_record/ itself is committed once per session; its composite/ folder
 # is a recomputable backtest cache (tools/composite_cache.py), not a record.
 /strategy-research/campaign_record/composite/
+
+# per-machine agent skills (mattpocock/skills), managed by their own lock file
+.agents/
+skills-lock.json
