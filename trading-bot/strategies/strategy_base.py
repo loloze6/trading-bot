@@ -79,8 +79,10 @@ class SubStrategyComponent(StrategyNode):
 
     #: Aux-feed columns this component reads from the bar DataFrame. Empty by
     #: default; subclasses that consume `data[...]` aux columns override it.
-    #: Drives required_feeds() on both engines / AdvancedStrategy and the V1
-    #: registration guard in core/backtester.py.
+    #: Drives required_feeds() on both engines / AdvancedStrategy, the V1
+    #: registration guard in core/backtester.py, and (D-146) which feeds
+    #: BacktestEngine.load_data registers at all: with a strategy attached, a feed
+    #: no component declares here is not fetched, merged or written.
     consumes_feeds: tuple[str, ...] = ()
 
     #: CUL-273 (E-039 count-indexed gap audit). Default, and today the only

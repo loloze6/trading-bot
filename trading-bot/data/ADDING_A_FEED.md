@@ -117,7 +117,9 @@ bot.load_data(
 ```
 
 The strategy then receives a DataFrame with a `your_feed` column at every
-candle close. No other files need changing beyond the four per-feed
+candle close. With a strategy attached, a feed is registered only if a
+component declares it in `consumes_feeds` (D-146); a component that reads
+`your_feed` without declaring it gets no column. No other files need changing beyond the four per-feed
 declarations in `data/feed_registry.py`: `FEED_WINDOW_SECONDS` (Step 2),
 `FEED_DELAY_SECONDS` (CUL-356: how long after its own timestamp a reading
 becomes usable -- 0 when it is known at that instant, 1 day for fear & greed),
