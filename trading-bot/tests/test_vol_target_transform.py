@@ -303,7 +303,9 @@ LEGACY_CFG = {
 }
 
 
-def test_engine_without_vol_target_matches_master_bar_for_bar():
+def test_engine_without_vol_target_matches_master_bar_for_bar(monkeypatch):
+    # D-147 is pinned in test_history_op_readiness.py; here the vol_target change alone is compared
+    monkeypatch.setattr("strategies.strategy_engine.history_op_min_periods", lambda c_spec: 1)
     Old = _old_module("strategies/strategy_engine.py", "_old_strategy_engine").ConfigDrivenStrategyEngine
     new, old = ConfigDrivenStrategyEngine(LEGACY_CFG), Old(LEGACY_CFG)
     assert new.get_required_periods() == old.get_required_periods()
@@ -321,7 +323,9 @@ def test_engine_without_vol_target_matches_master_bar_for_bar():
     assert n == 900
 
 
-def test_shipped_strategy_config_required_bars_unchanged():
+def test_shipped_strategy_config_required_bars_unchanged(monkeypatch):
+    # D-147 is pinned in test_history_op_readiness.py; here the vol_target change alone is compared
+    monkeypatch.setattr("strategies.strategy_engine.history_op_min_periods", lambda c_spec: 1)
     old_engine = _old_module("strategies/strategy_engine.py", "_old_strategy_engine2")
     cfg = json.loads((TB_ROOT / "strategy_config.json").read_text(encoding="utf-8"))
     assert ConfigDrivenStrategyEngine(cfg["strategies"]).get_required_periods() == \
