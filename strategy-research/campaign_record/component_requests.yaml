@@ -1,0 +1,292 @@
+requests:
+- run_id: run_061
+  stage: strategy_config_authoring
+  variant_id: null
+  reason: Bidirectional SMA(50) trend component required by hypothesis is not in STRATEGY_DESIGN_GUIDE.md
+    catalog; SmaTrendLongOnlyComponent is long-only and cannot be configured to produce
+    short signals.
+  blocking_issues:
+  - SmaTrendLongOnlyComponent exists but is restricted to long-only output; no bidirectional
+    SMA trend component available
+  - Transform pipeline (negate, scale, threshold_filter, etc.) cannot enable single
+    component instance to detect opposite SMA condition
+  - Hypothesis specifically requires SMA(50), not EMA/Keltner/Donchian alternatives
+- run_id: run_063
+  stage: backtest_specification
+  variant_id: donchian_sentiment_gate
+  reason: validate_config.py violations
+  report: 'VIOLATION V12 strategies.regimes.unknown.components[1].class: cannot load
+    ''strategies.strategy_components.FearGreedComponent'': Cannot load component class
+    ''strategies.strategy_components.FearGreedComponent'': module ''strategies.strategy_components''
+    has no attribute ''FearGreedComponent'''
+- run_id: run_070
+  stage: strategy_config_authoring
+  variant_id: null
+  reason: The hypothesis's core signal—one-bar price return negated and normalized
+    by 20-bar ATR—is not available as a graded component in COMPONENT_CATALOG.md.
+    No composition of existing components builds it without altering the mechanism.
+    Component gap is genuine and blocking.
+  blocking_issues:
+  - kind: missing_catalog_component
+    description: 'Required: graded component that outputs -(close[t] - close[t-1])
+      / ATR(period, default 20), where ATR is average true range computed from high/low/close.
+      This is the shock-magnitude formula central to the forced-liquidation-reversal
+      hypothesis. Existing components either normalize by price (PriceEvolutionComponent)
+      or by EMA-distance (KeltnerBreakoutComponent) or by historical return distribution
+      (via ratio_to_mean), none of which express the ATR normalization. The ATR measure
+      is specific to the mechanism: liquidation-cascade overshoot relative to typical
+      intra-bar price range.'
+- run_id: run_070
+  stage: strategy_config_authoring
+  variant_id: null
+  reason: 'Missing required component: 1-bar price change divided by 20-bar ATR. No
+    composition of existing catalog components reproduces this signal structure.'
+  blocking_issues:
+  - needed_component: ShockMagnitudeComponent (or OneBarATRNormalizedChangeComponent)
+    kind: graded_signal_component
+    reason: 'The hypothesis''s core signal formula is shock = -(close[t] - close[t-1])
+      / ATR[20-bar], which requires a component that: (1) measures 1-bar absolute
+      price change (the most recent close minus the prior close), (2) normalizes specifically
+      by 20-bar ATR (average true range, not stddev or close price), (3) produces
+      a graded, signed, continuous output suitable for scaling into [-20, +20] forecast
+      range. Composition attempts and failures: (A) PriceEvolutionComponent with period=1
+      outputs (close[t-1] - close[t-2]) / close[t-2] x 100—percent change with close
+      as denominator, not ATR; (B) KeltnerBreakoutComponent with atr_period=20 outputs
+      (close - EMA) / ATR—different numerator (EMA distance, not 1-bar change); (C)
+      vol_normalize transform divides by (stddev_24 x close), not ATR; (D) Multi-component
+      composition impossible because: no component outputs raw ATR as a value, no
+      transform op implements division by ATR, and no history op extracts ATR from
+      available columns. ATR is a specific volatility metric (true-range average)
+      not available as a reusable signal input. The hypothesis''s edge source (structural
+      forced-flow mechanism) depends critically on ATR as the denominator—approximating
+      with EMA-distance (Keltner) or stddev (vol_normalize) would falsify the intended
+      shock detection.'
+- run_id: run_071
+  stage: strategy_config_authoring
+  variant_id: null
+  reason: Body fraction (|close-open|/(high-low)) is required by the hypothesis signal_concept
+    but no available component exposes this intrabar calculation. No composition of
+    existing components can recreate it.
+  blocking_issues:
+  - 'BodyFractionComponent missing: intrabar body-to-range ratio (|close-open|/(high-low))
+    required for signal, requires open price access not exposed in COMPONENT_CATALOG.md'
+  tried:
+  - config: DonchianBreakoutComponent(period=20)
+    fails_on: Approximates extremeness via 20-bar close range positioning (not intrabar
+      high-low), AND provides no body_fraction measurement. Covers only half the required
+      signal; both components must be present and both are missing or misaligned.
+  - config: DonchianBreakoutComponent(period=20) + PriceEvolutionComponent(period=1,
+      scaling_factor=1.0)
+    fails_on: Donchian normalizes by 20-bar close range; PriceEvolution by prior close;
+      neither normalizes by intrabar high-low. PriceEvolution is a different yardstick
+      for move magnitude. Combined signal lacks the specific body-fraction calculation.
+  - config: PriceEvolutionComponent(period=1) with [zscore, scale(factor=10.0)]
+    fails_on: Measures directional move strength (1-bar return z-score), not body_fraction.
+      Normalizes by 1-bar return volatility, not intrabar body ratio. A different
+      yardstick for conviction; does not express the hypothesis's quantity.
+  tried_warning: null
+- run_id: run_071
+  stage: strategy_config_authoring
+  variant_id: null
+  kind: deviation
+  run_continued: true
+  reason: 'deviation: The calculation (close - open) / (high - low) requiring independent
+    per-bar intrabar high-low usage; no catalog component isolates current-bar intrabar
+    range in this way'
+  clause: body_fraction >= 0.70 (high conviction, candle body size as primary selection
+    criterion)
+  built_instead: PriceEvolutionComponent(period=1, scaling_factor=10.0) + ratio_to_mean
+    + scale(10) measuring current bar's close return from prior bar, normalized by
+    historical mean
+- run_id: run_071
+  stage: strategy_config_authoring
+  variant_id: null
+  kind: deviation
+  run_continued: true
+  reason: 'deviation: The calculation of close percentile within current bar''s intrabar
+    high-low only; no catalog component provides per-bar intrabar range context'
+  clause: extremeness_percentile >= 0.90 or <= 0.10 (close position within current
+    bar's intrabar high-low range, 0-1 scale)
+  built_instead: DonchianBreakoutComponent(period=20, scaling_factor=10.0) + ratio_to_mean
+    + scale(10) measuring close position within recent 20-bar high-low range, normalized
+    by historical mean
+- run_id: run_071
+  stage: strategy_config_authoring
+  variant_id: null
+  kind: deviation
+  run_continued: true
+  reason: 'deviation: Position state tracking (entry price, bars held); time-based
+    exit (not expressible in config, see STRATEGY_DESIGN_GUIDE.md ''What the config
+    cannot express'')'
+  clause: Fixed 4-bar hold, exited at close regardless of subsequent signals; no take-profits
+    or stops
+  built_instead: No position state or time-based hold logic in config; forecast regenerated
+    per bar from current conviction signal
+- run_id: run_075
+  stage: strategy_config_authoring
+  variant_id: null
+  kind: deviation
+  run_continued: true
+  reason: 'deviation: A quantile-based or top-N% detection component; only graded
+    ratio_to_mean and percentile rank operators available'
+  clause: 'Top-20% magnitude 1h move detection: ''Top-20% magnitude 1h moves (measured
+    via past_return quantile)'''
+  built_instead: Graded ratio_to_mean normalization applied to all 1h moves without
+    quantile thresholding
+- run_id: run_075
+  stage: strategy_config_authoring
+  variant_id: null
+  kind: deviation
+  run_continued: true
+  reason: 'deviation: A median operator for historical component values; pipeline
+    offers only mean (ratio_to_mean), percentile rank (percentile), and zscore normalization'
+  clause: 'Normalization formula: ''20 × (|past_1h_return| / median(past_N_day_returns))'''
+  built_instead: '20 × (|past_1h_return| / mean(abs(1h_return history))): arithmetic
+    mean instead of median, via ratio_to_mean operator'
+- run_id: run_075
+  stage: strategy_config_authoring
+  variant_id: null
+  kind: deviation
+  run_continued: true
+  reason: 'deviation: Per-bar horizon awareness and horizon-dependent forecast scaling;
+    config describes single-bar-horizon behavior only (not expressible per the card
+    itself)'
+  clause: 'Horizon-decay mechanism: ''Decay profile (fwd_return over [1,2,3,6,12]h
+    showing downward magnitude trend) distinguishes forced-flow from behavioral mean-reversion'''
+  built_instead: Per-bar constant-strength forecast; horizon-dependent decay curve
+    tested post-hoc by stratifying outcomes by forward horizon during claim validation
+- run_id: run_079
+  stage: strategy_config_authoring
+  variant_id: null
+  kind: deviation
+  run_continued: true
+  reason: 'deviation: Portfolio-level exit trigger configuration and lot matching
+    parameters; not a component gap'
+  clause: Position closes occur when forecast sign flips (price re-enters the EMA
+    ± ATR×2 band)
+  built_instead: Nothing in config; forecast changes occur naturally via KeltnerBreakoutComponent
+    output. Position exit mechanics and exit-cause labeling (flip vs. reduction vs.
+    profit-taking) are portfolio-level execution triggered by forecast changes.
+- run_id: run_080
+  stage: strategy_config_authoring
+  variant_id: null
+  kind: deviation
+  run_continued: true
+  reason: 'deviation: SmaTrendLongOnlyComponent is on/off (class forbidden in strategies
+    per D-051); using graded MA distance instead'
+  clause: SmaTrendLongOnlyComponent generates a graded forecast [-10, +10] based on
+    close position relative to SMA(100)
+  built_instead: MovingAverageDistanceComponent(period=100, average='sma') + clip
+    [0.0, 20.0]
+- run_id: run_080
+  stage: strategy_config_authoring
+  variant_id: null
+  kind: deviation
+  run_continued: true
+  reason: 'deviation: Position sizing logic with realized volatility divisor; strategy
+    config specifies forecasts only'
+  clause: Volatility targeting (target_annual_vol=40%, window=60 bars) scales forecast
+    inversely with realized volatility
+  built_instead: Fixed forecast from MovingAverageDistanceComponent; no volatility
+    scaling in strategy config
+- run_id: run_080
+  stage: strategy_config_authoring
+  variant_id: null
+  kind: deviation
+  run_continued: true
+  reason: 'deviation: Custom position clipping function outside standard allocation
+    formula'
+  clause: Position clipped to [0, 10] long-only allocation after vol scaling
+  built_instead: Standard allocation = forecast / 10 with forecast in [0, 20] giving
+    allocation [0, 2.0]
+- run_id: run_086
+  stage: strategy_config_authoring
+  variant_id: null
+  kind: deviation
+  run_continued: true
+  reason: 'deviation: Component denominator is SMA, not close'
+  clause: (close - SMA(200)) / close, clamped [0, 0.02], scaled by 5 to [0, 10]
+  built_instead: MovingAverageDistanceComponent(period=200, average='sma') with clip(min=0)
+    and scale(factor=5.0), computing (close - SMA) / SMA × 100 in percent
+- run_id: run_086
+  stage: strategy_config_authoring
+  variant_id: null
+  kind: deviation
+  run_continued: true
+  reason: 'deviation: The formula inversion (target/realized vs. realized/target)'
+  clause: 'Vol adjustment: multiply forecast by realized_vol_60bar / target_0.40_annual_vol'
+  built_instead: vol_target(window=60, target_annual_vol=0.4, periods_per_year=365)
+    computes forecast × target_vol / realized_vol
+- run_id: run_086
+  stage: strategy_config_authoring
+  variant_id: null
+  kind: deviation
+  run_continued: true
+  reason: 'deviation: rebalance-threshold config key (not in engine; enforced at bot
+    level only)'
+  clause: Min allocation change threshold (0.2)
+  built_instead: null
+- run_id: run_094
+  stage: strategy_config_authoring
+  variant_id: null
+  kind: deviation
+  run_continued: true
+  reason: 'deviation: Direct component comparing open[t] to close[t-1]; on 24/7 perpetuals,
+    open[t] ≈ previous close + overnight gap, so close-to-close captures gap + any
+    intraday mean-reversion fill'
+  clause: 'Overnight gap measurement: gap_pct = (open[t] - close[t-1]) / close[t-1]'
+  built_instead: 'PriceEvolutionComponent(period=1, scaling_factor=20.0): measures
+    1-bar close-to-close price move (close[t] - close[t-1]) / close[t-1] as gap magnitude
+    proxy'
+- run_id: run_094
+  stage: strategy_config_authoring
+  variant_id: null
+  kind: deviation
+  run_continued: true
+  reason: 'deviation: Piecewise-linear or soft-threshold transform; available transforms
+    are clip (hard dead-zone), sigmoid (S-curve), scale (linear). None produce the
+    specified asymmetric ramp from 0 at 0.5%.'
+  clause: 'Gap strength threshold: linear ramp from 0 at 0.5% to 1.0 at 2.5%; forecast
+    magnitude = 20 × gap_strength'
+  built_instead: 'Linear magnitude scaling: forecast = ±20 × (percentage_move / 2.5%),
+    capped at ±20; threshold ramp begins near 0.1% (rebalance gate floor) instead
+    of hard 0.5%; gaps beyond 2.5% receive same signal strength as 2.5%'
+- run_id: run_094
+  stage: strategy_config_authoring
+  variant_id: null
+  kind: deviation
+  run_continued: true
+  reason: 'deviation: Config-level holding-period rules, position state tracking,
+    conditional exit rules, and gap-fill monitoring. These belong to position management
+    layer, not forecast layer.'
+  clause: 'Position management: hold 1–3 bars; exit when gap closes'
+  built_instead: Forecast-based position with no state tracking. Allocation = forecast
+    / 10 updated on each bar; position exists while forecast non-zero and rebalance
+    gate (0.2) is exceeded. No bar counter or gap-closure detection.
+- run_id: run_095
+  stage: strategy_config_authoring
+  variant_id: null
+  kind: deviation
+  run_continued: true
+  reason: 'deviation: Engine has no position or lot state available to the config.'
+  clause: 'Not expressible in the config: per-lot entry state (lot entry_forecast,
+    holding periods).'
+  built_instead: Per-bar forecast only (PriceEvolutionComponent period 1, negate,
+    clip).
+- run_id: run_095
+  stage: strategy_config_authoring
+  variant_id: null
+  kind: deviation
+  run_continued: true
+  reason: 'deviation: Engine has no exit, stop or time-hold key.'
+  clause: 'Not expressible in the config: exits, stops and time holds.'
+  built_instead: None. Position moves to forecast / 10 on each bar.
+- run_id: run_095
+  stage: strategy_config_authoring
+  variant_id: null
+  kind: deviation
+  run_continued: true
+  reason: 'deviation: A lot-level trade_net_return slot with an entry_forecast selector
+    and other_trades baseline in CLAIM_TESTS.'
+  clause: The claim's lot-level net return test is not a config item.
+  built_instead: None in the config. Recorded as missing_block in the card's claim.
