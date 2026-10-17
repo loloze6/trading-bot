@@ -328,6 +328,13 @@ about to register — configuration is intent, so a component declared under
 any regime requires its feed even if that regime never activates in a given
 run.
 
+The same `required_feeds` also narrows registration (D-146): with a strategy
+attached, `load_data()` registers only the feeds named in it, so a feed the
+strategy does not read is not fetched, not merged, and not written to
+`bars.csv` / `portfolio_states.csv` or listed in the manifest's
+`feeds.registered` (that block exists only when `drop_feeds` is passed). With no
+strategy attached, every feed in `extra_feeds` is registered, as before.
+
 ---
 
 ## 4. The Main Loop: Bar-by-Bar Processing

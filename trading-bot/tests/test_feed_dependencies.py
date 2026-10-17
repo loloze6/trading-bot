@@ -228,10 +228,16 @@ def test_v1_passes_when_required_feed_present_in_extra_feeds():
 
 def test_v1_pass_wires_required_true_only_for_the_required_feed():
     """Step 3: BacktestEngine.load_data must pass required=True to
-    register_feed for a feed the strategy declares required, and
-    required=False for a feed it doesn't -- proves the register_feed loop's
-    `feed_name in required_feeds` membership test runs correctly across
-    iterations (the loop variable must not shadow the required_feeds dict)."""
+    register_feed for a feed the strategy declares required -- proves the
+    register_feed loop's `feed_name in required_feeds` membership test runs
+    correctly across iterations (the loop variable must not shadow the
+    required_feeds dict).
+
+    D-146 changed the second half of this test: a feed the strategy does not
+    declare is no longer registered at all (before: registered with
+    required=False), so the recorded flags hold the required feed only. The
+    required=False branch survives for strategy-less engines
+    (tests/test_d146_register_read_feeds_only.py pins it)."""
     dm = _RecordingDataManager()
     strat = _StubStrategy({"fear_greed": ("unknown.fg",)})
     engine = BacktestEngine(data_manager=dm, strategy=strat, logger=TEST_LOGGER, symbols=["BTCUSD"])
@@ -242,7 +248,7 @@ def test_v1_pass_wires_required_true_only_for_the_required_feed():
     engine.load_data(start_date="2022-01-01", end_date="2022-01-02",
                       extra_feeds={"fear_greed": factory, "funding_rate": factory})
 
-    assert dm._required_flags == {"fear_greed": True, "funding_rate": False}
+    assert dm._required_flags == {"fear_greed": True}
 
 
 # ---------------------------------------------------------------------------
