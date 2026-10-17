@@ -15,6 +15,7 @@ Nothing here re-runs or mutates panel_backtester.py's results or any archived
 run artifact — the fixtures are constructed dicts in the shape those artifacts
 take.
 """
+import re
 import sys
 from pathlib import Path
 
@@ -349,16 +350,39 @@ def test_g6_ungated_entry_may_keep_measurements_but_not_a_verdict():
     assert "unknown field" in str(exc.value)
 
 
+RUNS_ABSENT_REASON = "runs/ is a runtime record, not in git (#457)"
+_MISSING_RUN_REF = re.compile(r"pass_rule_evaluation_ref='runs/([^/']+)/[^']*' does not exist")
+
+
+def _is_absent_run_violation(message: str, root: Path) -> bool:
+    """True only for the "cited ref does not exist" violation whose run directory
+    is itself absent from this checkout. runs/ is ignored (#457), so on a clean
+    clone or in CI every cited run directory is missing; in the operator checkout,
+    where the run folders exist, this is False and the violation still fails."""
+    match = _MISSING_RUN_REF.search(message)
+    return bool(match) and not (root / "runs" / match.group(1)).is_dir()
+
+
 def test_g6_live_kb_has_no_ungated_verdict_fields():
     """Guards the corrected record itself: every finding in the real KB must
-    be admissible under G6."""
+    be admissible under G6. A finding whose only fault is a cited run directory
+    that is absent (runs/ is not in git) is set aside, and the test then skips;
+    every other finding is still checked first."""
     import yaml
     kb_path = Path(__file__).parent.parent / "campaign_record" / "campaign_knowledge_base.yaml"
     kb = yaml.safe_load(kb_path.read_text(encoding="utf-8")) or {}
+    set_aside = 0
     for entry in kb.get("findings", []):
         if isinstance(entry, dict):
-            vce.validate_verdict_provenance(
-                entry, entry_ref=f"KB finding {entry.get('id')!r}")
+            try:
+                vce.validate_verdict_provenance(
+                    entry, entry_ref=f"KB finding {entry.get('id')!r}")
+            except vce.UngatedVerdictError as exc:
+                if not _is_absent_run_violation(str(exc), vce._default_root()):
+                    raise
+                set_aside += 1
+    if set_aside:
+        pytest.skip(RUNS_ABSENT_REASON)
 
 
 # --------------------------------------------------------------------------
@@ -610,7 +634,11 @@ def test_d4_bypass_c_the_live_record_passes_the_standalone_lint():
     over both live files with no write involved."""
     import lint_verdict_provenance as lint
     violations = lint.lint_verdict_provenance(root=_SR_ROOT)
-    assert violations == [], "\n".join(violations)
+    absent = [v for v in violations if _is_absent_run_violation(v, _SR_ROOT)]
+    remaining = [v for v in violations if v not in absent]
+    assert remaining == [], "\n".join(remaining)
+    if absent:
+        pytest.skip(RUNS_ABSENT_REASON)
 
 
 def test_d4_queue_writer_refuses_an_ungated_verdict(tmp_path, monkeypatch):

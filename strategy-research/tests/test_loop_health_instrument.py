@@ -86,8 +86,12 @@ def test_pairing_reproduces_measured_halt_cost_txt():
     Read-only, and via an INDEPENDENTLY constructed path (the conftest autouse guard
     redirects `camp.CAMPAIGN_LOG_PATH` to a sandbox by default — that redirection is
     correct and is not bypassed here; the path is simply passed in)."""
-    log_path = REPO_STRATEGY_RESEARCH / "campaign_record" / "campaign_log.md"
-    assert log_path.exists(), "the campaign's primary record is tracked; it should be here"
+    # A frozen copy of campaign_log.md as committed at 74b7af28 (byte-identical), the
+    # log measured_halt_cost.txt was derived from: campaign_record/ is now committed
+    # every session (operator decision 2026-10-17), so the live log keeps growing.
+    log_path = (REPO_STRATEGY_RESEARCH / "tests" / "fixtures" / "campaign_record_frozen"
+                / "campaign_log.md")
+    assert log_path.exists(), "the frozen campaign log fixture should be here"
 
     events = camp._parse_campaign_log_events(log_path)
     halts = camp._pair_halts_with_downtime(events)
