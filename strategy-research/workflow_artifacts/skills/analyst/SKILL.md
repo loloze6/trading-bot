@@ -50,11 +50,13 @@ lens.
    `block_standardisation`) and what one-bar move puts it at the clip (+-20). Then run
    `describe` and `distribution` on `forecast` (0 comparisons unless grouped by hour, weekday or
    regime) and `trade_slice` with `{field: entry_forecast, stat: median}`, and write what they
-   show: how large the forecast is on average in absolute value, and the share of bars and of
-   lots at the clip. `describe` gives the mean, std and the 10th, 50th and 90th percentiles;
+   show: how large the forecast typically is (the 10th, 50th and 90th percentiles from
+   `describe`, the end bins of `distribution`) and the share of bars and of lots at or near the
+   clip. `describe` gives n, the signed mean, std and the 10th, 50th and 90th percentiles;
    `distribution` gives bin counts, whose end bins hold the bars at or near the clip; a lot
-   count with a filter on `entry_forecast` costs nothing. A forecast at the clip on most bars is
-   on/off in practice, and the mechanisms start there.
+   count with a filter on `entry_forecast` costs nothing. Once `describe` carries the average
+   |forecast| and the share at the clip, the same step gives those numbers directly. A forecast
+   at the clip on most bars is on/off in practice, and the mechanisms start there.
 2. **Find the surprise.** One place where the market or the strategy does what the run's design
    did not expect. A surprise is a conditional difference, not a level: "losing" is not a
    surprise; "lots closed by a flip lose and the others do not" is.
@@ -107,12 +109,16 @@ start there:
 - Short reductions are twice as many as long ones and a third worse (q18: -7.8%, 107 lots;
   q17: -5.8%, 51 lots).
 
-The trade-level observations (lots entered at the clip lose, short reductions lose) have a
-bar-level form, the market move the strategy reacts to: the one-day move. The bar-level tests
-that follow use an `event` selector on `past_return` with `bars: 1` (a fraction: 0.01 is 1%),
-outcome `fwd_return` at horizon 1: at a large threshold with `direction: greater` (large moves
-continue), beside the same selector at the 1% threshold with `direction: less` (ordinary
-moves reverse). The horizon is fixed at 1 from the one-day signal, before any query runs.
+The trade-level observations (lots entered at or below -10, mostly at the clip, lose; short
+reductions lose) have a bar-level form, the market move the strategy reacts to: the one-day
+move. In this host the forecast is minus the one-day return in percent times 20, clipped, so
+these shorts are entered after UP days. The bar-level tests that follow use the selector
+`{kind: event, field: past_return, bars: 1, op: ">=", value: <positive>}` (a fraction: 0.01 is
+1%), outcome `fwd_return` at horizon 1: at a large threshold, a value above the 1% clip move
+(0.01) fixed before any query, with `direction: greater`, beside the same selector at the 1%
+threshold (`value: 0.01`) with `direction: less`. The down-day side would be its own selector
+with `op: "<="` and a negative value. The horizon is fixed at 1 from the one-day signal,
+before any query runs.
 
 ## Market observations stay in your reasoning
 
