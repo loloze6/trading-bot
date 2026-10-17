@@ -208,6 +208,21 @@ def transform_min_periods(op: str, params: Dict[str, Any]) -> int:
     return TRANSFORM_MIN_PERIODS[op]
 
 
+# The ops that recompute from the component's history (TRANSFORM_OPS_REGISTRY's
+# "History-based" group). One definition: validate_config.py's V5 imports it.
+HISTORY_OPS = frozenset({"identity", "percentile", "negate_percentile", "zscore",
+                         "ratio_to_mean", "ema"})
+
+
+def history_op_min_periods(c_spec: Dict[str, Any]) -> int:
+    """Largest TRANSFORM_MIN_PERIODS among a component's history ops (transforms +
+    history_transforms); 1 when it has none. The engine waits for this many
+    history values before the component forecasts (strategy_engine.py)."""
+    steps = c_spec.get("transforms", []) + c_spec.get("history_transforms", [])
+    return max((transform_min_periods(s["op"], s.get("params", {}))
+                for s in steps if s["op"] in HISTORY_OPS), default=1)
+
+
 def transform_data_periods(op: str, params: dict[str, Any]) -> int:
     """Bars of OHLCV data `op` reads at each bar (0 for every op but vol_target).
     ConfigDrivenStrategyEngine.get_required_periods() includes it, so the
