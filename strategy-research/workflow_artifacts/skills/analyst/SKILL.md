@@ -28,7 +28,11 @@ lens.
 - **The memory view:** earlier claims with their kind, fold and status. Numbers appear only for
   confirmed claims. Do not restate an earlier claim; say how yours differs. Each claim shows
   the strategy it came from (`source_strategy`): a claim of kind `execution_behaviour` holds
-  for that strategy only, never for yours unless it is the same.
+  for that strategy only, never for yours unless it is the same. A claim confirmed on this
+  strategy is settled: do not test it again. Yours is one reason it holds, with the test that
+  separates that reason from a coincidence: kind `execution_behaviour`, `vehicle: []`,
+  confirmed on the next fold. Candidate reasons come from where the effect is and
+  is not in this run's data.
 - **Six tools** on this run's own bars and trades: `list_columns`, `describe`, `distribution`,
   `conditional_effect`, `trade_slice`, `event_study`. Every call is logged with an id (`q1`,
   `q2`, ...) and counted. A call that relates a condition or a group to an outcome costs
@@ -45,18 +49,39 @@ lens.
    surprise; "lots closed by a flip lose and the others do not" is.
 3. **Ask why.** Name the mechanism: who is on the other side and why it persists (market), or
    which pipeline rule produces it (mechanical). Write down the second query the mechanism
-   predicts and a coincidence would not. Run it. If it fails, drop the candidate.
+   predicts and a coincidence would not. Run it. If it fails, that mechanism is wrong; the
+   behaviour may still hold. If it does (your own test shows it, or the memory view shows a
+   claim confirmed on this strategy), name the next mechanism and run its query. Drop the
+   candidate only when no mechanism is left or the comparison budget says stop. In a
+   `no_claim`, name every rejected mechanism in the reason; `best_rejected` is the last one.
 4. **Rule out rivals,** one query each where it matters: one window (`by: window`), one coin
    (`by: coin`), a data gap, the strategy's own mechanics.
 5. **Write the claim with its test,** or stop with no claim. A session that ends in no claim
    with a full trail is a good session.
+
+## Worked example: an edge that lasts one bar
+
+On run_096 the forward return after bars with a very negative forecast was lower than on
+other bars at horizon 1 and higher at horizons 2 and 3: the edge lasts one bar and reverses.
+One test cannot say both: it has one `direction`, and a claim whose own test measured the
+opposite of its `direction` at any horizon is refused. Write two tests, each with selector
+`{kind: event, field: forecast, op: "<=", value: -10}`, outcome `fwd_return`, baseline
+`complement`, statistic `mean_diff` and a floor:
+
+- `first_bar`: horizons `[1]`, `direction: less`.
+- `reversal`: horizons `[2, 3]`, `direction: greater`.
+
+The claim is of kind `execution_behaviour` with `vehicle: []`. Run each test with
+`conditional_effect` (same `condition`, the selector above; same `outcome`; its own
+`horizons` and `direction`; and the claim's `floor`) before you claim it.
 
 ## Market observations stay in your reasoning
 
 What the market does is your evidence, not your output. Your output is a **strategy claim**
 with its **vehicle**: the strategy change its own run backtests.
 
-- A config change that exploits what you saw: `vehicle: [{component_id, field, before, after}]`,
+- A config change that exploits what you saw, under the rule below:
+  `vehicle: [{component_id, field, before, after}]`,
   resolved against the base config (name a component `id`, a field inside it, its current
   value from the config, and the new value). A list element is written `name[i]`, never
   `name.i`: `{component_id: shock_zscore, field: "transforms[0].params.span", before: 2,
@@ -67,6 +92,13 @@ with its **vehicle**: the strategy change its own run backtests.
   strategy feature it depends on (how it enters or exits), e.g. "in this strategy, which
   closes a lot only when its forecast changes, lots opened at a deeply negative forecast
   earn less than the other lots".
+
+A config change is a vehicle only when the memory view shows its mechanism confirmed and the
+change follows from that mechanism. It must also be graded (the forecast grows with the
+strength of the signal): a signal parameter (horizon, span, scaling, vol target), or a
+detector regime condition with a graded strategy under it. Never a side excluded, a clip at
+zero, a threshold switch, or a rule fitted to one observation. Without a confirmed mechanism
+the claim is the `vehicle: []` kind above.
 
 ## Your answer: exactly one fenced YAML block
 
