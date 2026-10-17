@@ -303,3 +303,27 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-16 -- Parallel sessions must be told their D-row numbers
 - **Pattern:** the fresh session's prompt said "your rows are the next two" after the latest row on master (D-140), while D-141 was held by an open PR (#445).
 - **Rule:** a prompt for a parallel session names its D-row numbers explicitly, skipping every number held by an open PR.
+
+## 2026-10-17 -- A positive Sharpe passed a strategy that lost a quarter of its capital
+- **Pattern:** run_096's LTC variant passed the Sharpe bar (daily Sharpe 0.057) with a chained return of -23%: at 12% daily volatility the drag (half the variance) exceeds the mean, and the arithmetic Sharpe never sees compounding.
+- **Rule:** when a Sharpe criterion passes, read the total return and the daily stdev beside it before calling the result positive; a mean below half the variance compounds to a loss.
+
+## 2026-10-17 -- An escape clause was the only path ever taken
+- **Pattern:** the analyst schema allows `vehicle: []` for execution_behaviour claims; 4 of 4 claims ever written used it, so "a claim proposes a strategy change" was never true in practice while the direction session reasoned as if it were.
+- **Rule:** when a schema has an escape clause, count how often it is used before reasoning about the normal path.
+
+## 2026-10-17 -- A vehicle fitted to one observation is overfitting, whoever writes it
+- **Pattern:** the direction session proposed a long-only version of run_096's host (clip the forecast at zero) from the confirmed "short lots lose" claim, twice; the operator rejected it: it drops half the graded forecast on one fold's observation, against D-051's spirit.
+- **Rule:** a strategy change traces to a confirmed mechanism, never to a measured shortfall; when a claim is confirmed the next question is why, not what to cut.
+
+## 2026-10-17 -- A one-line prompt fix aimed at the wrong step
+- **Pattern:** the first fix proposed for the analyst's stop was a line about vehicles; the stop was in the method's step 3 ("If it fails, drop the candidate", SKILL.md:44-47), found only by reading the no_claim artifact's killed_by back to the instruction that produced it.
+- **Rule:** before proposing a prompt fix, locate in the artifact where the behaviour stopped and quote the instruction sentence that stopped it; fix that sentence.
+
+## 2026-10-17 -- A count was quoted without checking what one row is
+- **Pattern:** findings_summary.yaml's 20 findings were read as run_096's; they are one per run across runs 071-096 (the operator corrected it).
+- **Rule:** before quoting a count from a summary file, open it and state what one row is and which runs it spans.
+
+## 2026-10-17 -- Staged-never-committed files are what a merge or autostash drags
+- **Pattern:** the operator checkout holds 11,547 staged files that were never committed (run folders from run_061 on); every merge, stash or worktree operation on it moves that set, and a plain `git merge` refuses while the index differs from HEAD.
+- **Rule:** before any git operation on the operator checkout, count staged entries against HEAD; treat a large staged set as uncommitted work and route around it (plumbing sync, no stash, no switch).
