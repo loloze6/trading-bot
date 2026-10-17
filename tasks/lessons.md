@@ -570,3 +570,50 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-17 -- A PR can be merged while its fix agent still works
 - **Pattern:** the operator merged #453 before its review-fix commit was pushed.
 - **Rule:** when a review-fix agent is running, say so next to the merge request; if the PR is merged first, redirect the fix to a new branch from master and a new PR, never onto the merged branch.
+## 2026-10-17 -- A record policy proposed without checking which tests read the records
+- **Pattern:** Option C (commit campaign_record each session, ignore runs/) failed CI on its first commit (#460): five tests treat master's committed campaign_record as frozen data (ledger N, halt count) and lint that every runs/ path the knowledge base cites exists in git.
+- **Rule:** before proposing to commit, ignore or move a class of files, grep the tests for readers of those exact files and state what each would see under the proposal.
+
+## 2026-10-17 -- PowerShell turned a native tool's stderr into a fatal error
+- **Pattern:** with `$ErrorActionPreference='Stop'`, pip's first stderr line ended the script and the traceback was lost; the real cause (a pypi read timeout on one index page) only showed once pip ran through `cmd /c ... > log 2>&1`.
+- **Rule:** run long native tools (pip, git, gh) through `cmd /c "<cmd> > <log> 2>&1"` and read the log; never wrap them in `ErrorActionPreference='Stop'`.
+
+## 2026-10-17 -- Relative pathspecs after the shell's directory moved
+- **Pattern:** after a test run the harness left the shell in a worktree subfolder; `git add strategy-research/...` matched nothing, the commit failed, and a push published the branch at master's commit.
+- **Rule:** every git write names its tree: `git -C <worktree root>` with root-relative paths, and stop on a non-zero exit before pushing.
+
+## 2026-10-17 -- The pre-commit hook prints the sealed window
+- **Pattern:** the holdout gate echoes the sealed range on every commit, so pasting hook output into a report, log or PR would publish it.
+- **Rule:** filter hook output to its PASS/FAIL line before quoting it anywhere.
+
+## 2026-10-17 -- A read-only reviewer detached HEAD in the operator checkout
+- **Pattern:** a Sonnet review agent told "read-only, do not edit/commit/push" ran `git -C <repo root> checkout -q --detach`; the operator checkout was left on a detached HEAD. "Read-only" was a goal, not a list of forbidden commands, and the repo root was a valid `-C` target.
+- **Rule:** every review dispatch names its one allowed tree (the PR worktree) and lists the forbidden git verbs (checkout, switch, reset, restore, stash, rm, add, commit, push, merge, rebase), and says the main checkout is never a `-C` target.
+
+## 2026-10-17 -- A fixture copy of an exempted record re-trips the holdout gate
+- **Pattern:** copying campaign_state.yaml into tests/fixtures/ was blocked: the original is exempted by path with an audited count, the copy at a new path is not.
+- **Rule:** when copying a tracked record into a fixture, grep strategy-research/config/holdout_gate_exemptions.txt for the source path and add the same count for the copy in the same commit, with a comment naming the source.
+
+## 2026-10-17 -- `git rm -r --cached <dir>` is not "unstage"
+- **Pattern:** the plan said "git rm -r --cached on the now-ignored paths"; run on strategy-research/runs it would also stage deletion of the 7,636 run files master tracks, because an ignore rule never covers tracked files.
+- **Rule:** unstage staged-new files only: list `git diff --cached --name-only --diff-filter=A -- <dirs>`, keep the ones `git check-ignore` confirms, and pass exactly that list to `git rm --cached`.
+
+## 2026-10-17 -- `ensurepip --upgrade` does not repair a damaged pip
+- **Pattern:** the main venv's pip lost `pip/__main__.py`; ensurepip saw pip 24.3.1's metadata, printed "Requirement already satisfied" and changed nothing.
+- **Rule:** after an ensurepip "repair", always run `python -m pip --version`; a damaged pip of the same version needs its package folder removed (or a forced reinstall) before ensurepip, which is an operator decision for the main venv.
+
+## 2026-10-18 -- A review agent's working directory is the PR worktree
+- **Pattern:** a review agent ran `git -C <repo root> checkout --detach` and detached HEAD in the operator checkout (2026-10-17).
+- **Rule (operator):** a review agent's working directory is pinned to the PR worktree, never the main checkout; a reviewer that needs git state reads it with read-only commands only.
+
+## 2026-10-18 -- "Master plus the local lines" means lines not already on master
+- **Pattern:** the local log lines after HEAD began with 13 lines a PR had already put on master; appending all of them would have duplicated an entry. Caught before the write, asked; operator ruling: compare line by line, not by count.
+- **Rule:** before writing master + local lines, find the longest leading run of local lines identical to master's own append and drop it; check that no local heading already exists on master.
+
+## 2026-10-18 -- `git check-ignore` and `git rm --cached` on staged runtime files
+- **Pattern:** plain `check-ignore` never reports paths that are in the index; PowerShell piping added CR to every path; `git rm --cached` refused 31 files whose CRLF working copy equals the LF index blob after normalisation (its check compares raw bytes).
+- **Rule:** use `git check-ignore --no-index -z --stdin` and NUL lists from bash; on a `git rm --cached` refusal, compare `git hash-object <path>` with the index blob first; when equal, archive the blobs and use `-f` (index only).
+
+## 2026-10-18 -- `| Select -First N` on a native command fakes its exit code
+- **Pattern:** `git merge-tree ... | Select -First 1` cut git's output and left a non-zero $LASTEXITCODE; the sync script halted on a conflict that did not exist.
+- **Rule:** capture a native command's full output in a variable, check $LASTEXITCODE, then slice the variable.
