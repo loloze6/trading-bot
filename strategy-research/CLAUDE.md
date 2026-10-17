@@ -107,3 +107,8 @@ Two caveats the guide explains in full:
 - **Locally, the same fast suite as CI** (only when CI cannot be used, or for a large refactor), from the repo root: `venv/Scripts/python.exe run_tests.py -- -q -n 4`. Use 4 workers, not 8 (measured 2026-10-03 on strategy-research `tests/`: serial ~20 min; `-n 4` 12.2 min, 0 failures; `-n 8` 15.6 min with 2 crashed workers -- memory, 16 GB machine).
 - Never re-run a full suite for a test-only or doc-only follow-up fix; re-run the touched files and say so in the PR.
 - One test process at a time on this machine.
+
+## Runtime records (operator decision 2026-10-17, Option C)
+- `runs/` is ignored (repo `.gitignore`): never stage a run file. Back run folders up outside git (copy only, junctions excluded). run_0001..run_060 stay tracked on master as history; an ignore rule never untracks a file.
+- `campaign_record/` is committed once per session, as a docs PR from master. Its `composite/` folder is ignored: a backtest cache that `tools/composite_cache.py` rebuilds.
+- Nothing stays staged between sessions. Never run `git clean` in the main checkout: it would delete the ignored run folders, which exist nowhere else in git.
