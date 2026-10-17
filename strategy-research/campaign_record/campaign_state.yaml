@@ -39,6 +39,25 @@ runs:
 - run_054
 - run_059
 - run_060
+- run_065
+- run_066
+- run_070
+- run_073
+- run_071
+- run_074
+- run_075
+- run_078
+- run_079
+- run_081
+- run_082
+- run_083
+- run_084
+- run_085
+- run_088
+- run_089
+- run_094
+- run_095
+- run_096
 altitude_history:
 - run: run_011
   altitude: parameter
@@ -460,6 +479,101 @@ diagnostics_log:
   cost_drag_pct: 653.6
   win_rate_vs_sharpe: N/A (prescreen kill — no backtest)
   avg_trade_duration_bars: null
+- run: run_065
+  forecast_return_corr: -0.0413
+  cost_drag_pct: 10.9205
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 6.74
+- run: run_066
+  forecast_return_corr: 0.0012
+  cost_drag_pct: 156.3355
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 6.55
+- run: run_070
+  forecast_return_corr: 0.018
+  cost_drag_pct: 259.0167
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 1.77
+- run: run_073
+  forecast_return_corr: -0.0057
+  cost_drag_pct: 172.5539
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 2.46
+- run: run_071
+  forecast_return_corr: -0.0083
+  cost_drag_pct: 144.2024
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 2.82
+- run: run_074
+  forecast_return_corr: -0.0019
+  cost_drag_pct: 136.6829
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 7.99
+- run: run_075
+  forecast_return_corr: 0.0139
+  cost_drag_pct: 222.8112
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 1.8
+- run: run_078
+  forecast_return_corr: -0.0022
+  cost_drag_pct: 135.0461
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 2.81
+- run: run_079
+  forecast_return_corr: 0.0021
+  cost_drag_pct: 167.7237
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 6.49
+- run: run_081
+  forecast_return_corr: 0.0021
+  cost_drag_pct: 1.5369
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 15.04
+- run: run_082
+  forecast_return_corr: 0.0032
+  cost_drag_pct: 1.812
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 13.41
+- run: run_083
+  forecast_return_corr: -0.025
+  cost_drag_pct: 1.4882
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 17.73
+- run: run_084
+  forecast_return_corr: 0.0025
+  cost_drag_pct: 1.0572
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 27.2
+- run: run_085
+  forecast_return_corr: -0.0851
+  cost_drag_pct: 1.815
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 17.22
+- run: run_088
+  forecast_return_corr: -0.0003
+  cost_drag_pct: 0.7698
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 35.0
+- run: run_089
+  forecast_return_corr: -0.0019
+  cost_drag_pct: 1.4424
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 17.7
+- run: run_094
+  forecast_return_corr: 0.0217
+  cost_drag_pct: 120.4736
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 1.9
+- run: run_095
+  forecast_return_corr: 0.0138
+  cost_drag_pct: 28.9081
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 1.94
+- run: run_096
+  forecast_return_corr: 0.0944
+  cost_drag_pct: 16.7342
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 1.77
 notes:
 - 'run_011 through run_015 first attempt: config_path bug — all ran default strategy_config.json.
   Numbers invalid for inter-run comparison. Directional conclusions (RSI parameter
@@ -520,7 +634,7 @@ notes:
   regime_retune_results.yaml, config/regime_retune_winner.json, runs/run_039/artifacts/regime_audit_decision.yaml.'
 review_every_n_runs: 6
 status: active
-updated_at: '2026-08-28T19:56:32.530743+00:00'
+updated_at: '2026-10-16T11:27:07.728956+00:00'
 last_escalation:
   target: timeframe
   detail: 15m
@@ -745,3 +859,1071 @@ trial_sharpes:
   ic_pooled: 0.016237
   cost_pass: false
   forecast_hash: 4aa5c7759102d7c5386899957a90cd6b2c185e56ea30671074606caa20c80b86
+- trial_id: run_061:base
+  source: backtest
+  sharpe: null
+  expectancy_bps: null
+  n_trades: 0
+  statistic_valid: expectancy
+  below_floor_pct: 100.0
+  forecast_hash: 922432a28665f1cc26c9bff6301f4bd1d437da686688a5e4fc8275cce2f12781
+  symbols:
+  - BTCUSDT
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: not_evaluable
+    reason: 'whole-test Sharpe NOT_EVALUABLE: whole-test Sharpe: the 2890 daily returns
+      have zero standard deviation'
+    sr_daily: null
+    n_daily_returns: null
+    skew: null
+    kurtosis: null
+  invalidated_artifact: true
+  invalidation_reason: 'engineering artifact (operator, 2026-10-02, O-10): step 1b''s
+    vol_adjusted transform divides a percent-unit forecast (MovingAverageDistanceComponent)
+    by stddev_24*close (dollar price std x price, ~1e6), so |forecast| stayed ~1e-5,
+    every allocation change fell below min_allocation_change, and the variant made
+    0 trades in 95 windows. It measured a config units bug, not the idea.'
+- trial_id: run_064:V1_conservative_scale
+  source: backtest
+  sharpe: -2.605
+  expectancy_bps: -2.9343
+  n_trades: 20513
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: d61af1fe6fc6ab718ae136dd0c586c103aa4f37ba6987795413d2cb3102453e0
+  symbols:
+  - BTCUSDT
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: -0.07921866326945505
+    n_daily_returns: 2890
+    skew: 2.2520247063750274
+    kurtosis: 78.12780826579169
+- trial_id: run_064:base
+  source: backtest
+  sharpe: -2.879
+  expectancy_bps: -3.681
+  n_trades: 32648
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 73d5ad115e1aa444cc9b44272145e2fadd62d6a49ca40ae8d7970794874b051e
+  symbols:
+  - BTCUSDT
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: -0.08652761297464087
+    n_daily_returns: 2890
+    skew: 3.9999400073495446
+    kurtosis: 82.98282405694835
+- trial_id: run_065:base
+  source: backtest
+  sharpe: 0.148
+  expectancy_bps: 9.7685
+  n_trades: 473
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: dd6dff7fe852c3da3f3f00b7c8712a23cff2ee167180dab3ed0c651d1c78fa68
+  symbols:
+  - BTCUSD
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: 0.010759918386538888
+    n_daily_returns: 724
+    skew: 0.9197548488804473
+    kurtosis: 13.499988034938628
+- trial_id: run_065:donchian_period_14_reactive
+  source: backtest
+  sharpe: -0.1325
+  expectancy_bps: 6.4269
+  n_trades: 487
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 93ac520e30af605ca85c3967113113754e53d6a20a0d9162a4caa032d286f5a8
+  symbols:
+  - BTCUSD
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: 0.007172903625732765
+    n_daily_returns: 724
+    skew: 1.0032510051607115
+    kurtosis: 13.425161228351364
+- trial_id: run_065:donchian_solusdt_crossasset
+  source: backtest
+  sharpe: 1.172
+  expectancy_bps: 101.3618
+  n_trades: 530
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: dd6dff7fe852c3da3f3f00b7c8712a23cff2ee167180dab3ed0c651d1c78fa68
+  symbols:
+  - SOLUSD
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: 0.06714545446878184
+    n_daily_returns: 724
+    skew: 1.6773819382590134
+    kurtosis: 18.268905698050787
+- trial_id: run_066:base
+  source: backtest
+  sharpe: -3.558
+  expectancy_bps: -4.0767
+  n_trades: 10590
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: daead3965e303ab52ce7eb52d86d20938129ab1825102a2db9cb3842d58e894c
+  symbols:
+  - BTCUSD
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: -0.13847937623682208
+    n_daily_returns: 724
+    skew: 2.335018292041108
+    kurtosis: 15.109850745446186
+- trial_id: run_066:keltner_extended_momentum
+  source: backtest
+  sharpe: -3.342
+  expectancy_bps: -3.9919
+  n_trades: 10136
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: d41534336a95e31b9db695b41765537d74c2a8b9572c27971c580ace40d48f29
+  symbols:
+  - BTCUSD
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: -0.12112114450074922
+    n_daily_returns: 724
+    skew: 2.449113151107947
+    kurtosis: 16.26513781056499
+- trial_id: run_066:sol_infra
+  source: backtest
+  sharpe: -2.631
+  expectancy_bps: -5.7877
+  n_trades: 11097
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: daead3965e303ab52ce7eb52d86d20938129ab1825102a2db9cb3842d58e894c
+  symbols:
+  - SOLUSD
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: -0.12445844321065147
+    n_daily_returns: 724
+    skew: 2.449957517892912
+    kurtosis: 17.93801490494331
+- trial_id: run_070:base
+  source: backtest
+  sharpe: -9.8845
+  expectancy_bps: -7.252
+  n_trades: 14263
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: ebe3ee45b72f7d2056651534fba109be7551a8501fabb7d85161ef0b92faa40d
+  symbols:
+  - BTCUSD
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: -0.5375804023959282
+    n_daily_returns: 724
+    skew: -1.4656205206953794
+    kurtosis: 11.165660695031114
+- trial_id: run_070:shock_lookback_250
+  source: backtest
+  sharpe: -10.1885
+  expectancy_bps: -7.3414
+  n_trades: 14358
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: ed7f6ea9005ec9e8252c43b4c9a7e41d72d37ba3cf714138400738bea083409e
+  symbols:
+  - BTCUSD
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: -0.5521965992639251
+    n_daily_returns: 724
+    skew: -1.3832334711569059
+    kurtosis: 10.89137181482974
+- trial_id: run_070:sol_generalization
+  source: backtest
+  sharpe: -10.131
+  expectancy_bps: -13.4466
+  n_trades: 14782
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: ebe3ee45b72f7d2056651534fba109be7551a8501fabb7d85161ef0b92faa40d
+  symbols:
+  - SOLUSD
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: -0.48441085478734464
+    n_daily_returns: 724
+    skew: -0.19231696506078125
+    kurtosis: 30.135092873728617
+- trial_id: run_070:uni_defi
+  source: backtest
+  sharpe: -11.364
+  expectancy_bps: -13.3395
+  n_trades: 14889
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: ebe3ee45b72f7d2056651534fba109be7551a8501fabb7d85161ef0b92faa40d
+  symbols:
+  - UNIUSD
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: -0.6248774920835657
+    n_daily_returns: 724
+    skew: -0.8420119051883028
+    kurtosis: 7.31055111277998
+- trial_id: run_073:base
+  source: backtest
+  sharpe: -7.223
+  expectancy_bps: -6.1015
+  n_trades: 12830
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: c4ecc264b16110cd04e9dd7565354e33d2fe96fd43195aaa2a799f50e084d575
+  symbols:
+  - BTCUSD
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: -0.3760646701667488
+    n_daily_returns: 724
+    skew: -1.2754364726226302
+    kurtosis: 10.676987166588637
+- trial_id: run_073:design_period_3
+  source: backtest
+  sharpe: -5.698
+  expectancy_bps: -5.0951
+  n_trades: 11846
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: a64d5d884629c80a7fde2e28835116e7614a1e5a5112cfe1b54f78fe4cba5a51
+  symbols:
+  - BTCUSD
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: -0.25513322602461025
+    n_daily_returns: 724
+    skew: -0.48543873206482546
+    kurtosis: 15.99940044769754
+- trial_id: run_071:base
+  source: backtest
+  sharpe: -9.734
+  expectancy_bps: -7.2731
+  n_trades: 14337
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 6cf77f4eef76884229ac1d4f72473a81329c50d0c15cb17df4effadf1cc27e98
+  symbols:
+  - BTCUSD
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: -0.4243262349422241
+    n_daily_returns: 724
+    skew: 1.16780910170928
+    kurtosis: 12.406406384816115
+- trial_id: run_071:donchian_faster_10bar
+  source: backtest
+  sharpe: -11.149
+  expectancy_bps: -8.3726
+  n_trades: 14641
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 3128cb9f7a4111b2b655afd9f5fef5e0a0d4daa5eec7ff588404bbe6924b712c
+  symbols:
+  - BTCUSD
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: -0.5029154788074716
+    n_daily_returns: 724
+    skew: 1.2077955985218432
+    kurtosis: 10.227706287798572
+- trial_id: run_071:solana_smart_contract
+  source: backtest
+  sharpe: -7.3705
+  expectancy_bps: -11.8445
+  n_trades: 14567
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 6cf77f4eef76884229ac1d4f72473a81329c50d0c15cb17df4effadf1cc27e98
+  symbols:
+  - SOLUSD
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: -0.3646886471568697
+    n_daily_returns: 724
+    skew: -0.5804841141798726
+    kurtosis: 23.258722889804993
+- trial_id: run_074:base
+  source: backtest
+  sharpe: -3.7285
+  expectancy_bps: -4.1568
+  n_trades: 9411
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 81577adf81488f2fa4b9271473c57745889c75e3ec14c9d3ca16d0043eedad0f
+  symbols:
+  - BTCUSD
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: -0.1530095122881989
+    n_daily_returns: 724
+    skew: -1.4539248037955095
+    kurtosis: 11.02229298923465
+- trial_id: run_074:design_longer_smoothing
+  source: backtest
+  sharpe: -2.921
+  expectancy_bps: -3.575
+  n_trades: 7821
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: f3a0ca57ebaf4ff3eeb502f0603b0a65cc5c85a604efacce5a54226f5c8f69f0
+  symbols:
+  - BTCUSD
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: -0.1150485293824697
+    n_daily_returns: 724
+    skew: -1.999209092581511
+    kurtosis: 12.385079045804911
+- trial_id: run_075:base
+  source: backtest
+  sharpe: -12.6985
+  expectancy_bps: -13.5985
+  n_trades: 14825
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 00867317466b1fed16ee9e6f2ba1a686665dfc3f8ad81d5905b98f13ed5e558e
+  symbols:
+  - BTCUSD
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: -0.6846386010154512
+    n_daily_returns: 724
+    skew: -0.2384899067550698
+    kurtosis: 11.101912821455013
+- trial_id: run_075:shock_window_2h
+  source: backtest
+  sharpe: -9.3805
+  expectancy_bps: -10.5017
+  n_trades: 13370
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: ebf7719b21592ab6ae55af349c364c87129317e7d5930668ed757ac7f6fb8931
+  symbols:
+  - BTCUSD
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: -0.462261425472865
+    n_daily_returns: 724
+    skew: -0.4120065468112798
+    kurtosis: 9.461327658766242
+- trial_id: run_075:sol_asset_generalization
+  source: backtest
+  sharpe: -13.216
+  expectancy_bps: -24.4215
+  n_trades: 14621
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 00867317466b1fed16ee9e6f2ba1a686665dfc3f8ad81d5905b98f13ed5e558e
+  symbols:
+  - SOLUSD
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: -0.6082572857480555
+    n_daily_returns: 724
+    skew: -0.2669782361826204
+    kurtosis: 13.109204931696524
+- trial_id: run_077:asset_xrpusdt
+  source: backtest
+  sharpe: -14.065
+  expectancy_bps: -18.8414
+  n_trades: 14781
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 6cf77f4eef76884229ac1d4f72473a81329c50d0c15cb17df4effadf1cc27e98
+  symbols:
+  - XRPUSD
+  fold: B
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: error
+    reason: 'ValueError: equal-weight portfolio: runs\run_077\variants\asset_xrpusdt\results\20261010T151023Z_d4d98268\portfolio_states.csv
+      has equity -5.514467779765255 at ''2021-02-02 00:00:00'''
+    sr_daily: null
+    n_daily_returns: null
+    skew: null
+    kurtosis: null
+- trial_id: run_077:base
+  source: backtest
+  sharpe: -7.197
+  expectancy_bps: -7.426
+  n_trades: 14558
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 6cf77f4eef76884229ac1d4f72473a81329c50d0c15cb17df4effadf1cc27e98
+  symbols:
+  - BTCUSD
+  fold: B
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: not_evaluable
+    reason: 'whole-test Sharpe NOT_EVALUABLE: whole test: 724 daily return(s) + 1
+      cover 54.1% of the 1341 counted calendar day(s) (nominal span 2018-05-01 to
+      2021-12-31 = 1341 day(s), minus 0 engine tail/head day(s); 611 protocol gap
+      day(s) over 5 gap link(s) stay counted), below WHOLE_TEST_MIN_COVERAGE=0.9'
+    sr_daily: null
+    n_daily_returns: null
+    skew: null
+    kurtosis: null
+- trial_id: run_077:design_donchian_period_10
+  source: backtest
+  sharpe: -7.742
+  expectancy_bps: -8.4039
+  n_trades: 14750
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 3128cb9f7a4111b2b655afd9f5fef5e0a0d4daa5eec7ff588404bbe6924b712c
+  symbols:
+  - BTCUSD
+  fold: B
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: not_evaluable
+    reason: 'whole-test Sharpe NOT_EVALUABLE: whole test: 724 daily return(s) + 1
+      cover 54.1% of the 1341 counted calendar day(s) (nominal span 2018-05-01 to
+      2021-12-31 = 1341 day(s), minus 0 engine tail/head day(s); 611 protocol gap
+      day(s) over 5 gap link(s) stay counted), below WHOLE_TEST_MIN_COVERAGE=0.9'
+    sr_daily: null
+    n_daily_returns: null
+    skew: null
+    kurtosis: null
+- trial_id: run_078:asset_payment_xrpusdt
+  source: backtest
+  sharpe: -14.065
+  expectancy_bps: -18.8414
+  n_trades: 14781
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 6cf77f4eef76884229ac1d4f72473a81329c50d0c15cb17df4effadf1cc27e98
+  symbols:
+  - XRPUSD
+  fold: B
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: error
+    reason: 'PortfolioRuined: equal-weight portfolio: runs\run_078\variants\asset_payment_xrpusdt\results\20261010T172244Z_d4d98268\portfolio_states.csv
+      has equity -5.514467779765255 at ''2021-02-02 00:00:00'''
+    sr_daily: null
+    n_daily_returns: null
+    skew: null
+    kurtosis: null
+- trial_id: run_078:base
+  source: backtest
+  sharpe: -7.197
+  expectancy_bps: -7.426
+  n_trades: 14558
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 6cf77f4eef76884229ac1d4f72473a81329c50d0c15cb17df4effadf1cc27e98
+  symbols:
+  - BTCUSD
+  fold: B
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: not_evaluable
+    reason: 'whole-test Sharpe NOT_EVALUABLE: whole test: 724 daily return(s) + 1
+      cover 54.1% of the 1341 counted calendar day(s) (nominal span 2018-05-01 to
+      2021-12-31 = 1341 day(s), minus 0 engine tail/head day(s); 611 protocol gap
+      day(s) over 5 gap link(s) stay counted), below WHOLE_TEST_MIN_COVERAGE=0.9'
+    sr_daily: null
+    n_daily_returns: null
+    skew: null
+    kurtosis: null
+- trial_id: run_078:design_momentum_period
+  source: backtest
+  sharpe: -5.6375
+  expectancy_bps: -5.974
+  n_trades: 13307
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 8b16a9260e7ad74591a94daee00e1c02c16a38cf87c0f64ea0bdf81ebb1ffcf1
+  symbols:
+  - BTCUSD
+  fold: B
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: not_evaluable
+    reason: 'whole-test Sharpe NOT_EVALUABLE: whole test: 724 daily return(s) + 1
+      cover 54.1% of the 1341 counted calendar day(s) (nominal span 2018-05-01 to
+      2021-12-31 = 1341 day(s), minus 0 engine tail/head day(s); 611 protocol gap
+      day(s) over 5 gap link(s) stay counted), below WHOLE_TEST_MIN_COVERAGE=0.9'
+    sr_daily: null
+    n_daily_returns: null
+    skew: null
+    kurtosis: null
+- trial_id: run_079:asset_xrp
+  source: backtest
+  sharpe: -6.765
+  expectancy_bps: -9.4729
+  n_trades: 11187
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: daead3965e303ab52ce7eb52d86d20938129ab1825102a2db9cb3842d58e894c
+  symbols:
+  - XRPUSD
+  fold: B
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: not_evaluable
+    reason: 'whole-test Sharpe NOT_EVALUABLE: whole test: 724 daily return(s) + 1
+      cover 54.1% of the 1341 counted calendar day(s) (nominal span 2018-05-01 to
+      2021-12-31 = 1341 day(s), minus 0 engine tail/head day(s); 611 protocol gap
+      day(s) over 5 gap link(s) stay counted), below WHOLE_TEST_MIN_COVERAGE=0.9'
+    sr_daily: null
+    n_daily_returns: null
+    skew: null
+    kurtosis: null
+- trial_id: run_079:base
+  source: backtest
+  sharpe: -2.701
+  expectancy_bps: -3.753
+  n_trades: 10473
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: daead3965e303ab52ce7eb52d86d20938129ab1825102a2db9cb3842d58e894c
+  symbols:
+  - BTCUSD
+  fold: B
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: not_evaluable
+    reason: 'whole-test Sharpe NOT_EVALUABLE: whole test: 724 daily return(s) + 1
+      cover 54.1% of the 1341 counted calendar day(s) (nominal span 2018-05-01 to
+      2021-12-31 = 1341 day(s), minus 0 engine tail/head day(s); 611 protocol gap
+      day(s) over 5 gap link(s) stay counted), below WHOLE_TEST_MIN_COVERAGE=0.9'
+    sr_daily: null
+    n_daily_returns: null
+    skew: null
+    kurtosis: null
+- trial_id: run_079:design_tighter_atr
+  source: backtest
+  sharpe: -2.531
+  expectancy_bps: -4.637
+  n_trades: 10726
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 11907b19edbe4016e0cb4701a96b6a9df256aff1f1c0c31156a7ba5142f108f6
+  symbols:
+  - BTCUSD
+  fold: B
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: not_evaluable
+    reason: 'whole-test Sharpe NOT_EVALUABLE: whole test: 724 daily return(s) + 1
+      cover 54.1% of the 1341 counted calendar day(s) (nominal span 2018-05-01 to
+      2021-12-31 = 1341 day(s), minus 0 engine tail/head day(s); 611 protocol gap
+      day(s) over 5 gap link(s) stay counted), below WHOLE_TEST_MIN_COVERAGE=0.9'
+    sr_daily: null
+    n_daily_returns: null
+    skew: null
+    kurtosis: null
+- trial_id: run_081
+  source: backtest
+  sharpe: -5.0273
+  expectancy_bps: 26.5129
+  n_trades: 257
+  statistic_valid: expectancy
+  below_floor_pct: 60.42
+  forecast_hash: e2aeefe5b832fcc92280582a23b4833a9ced48f7387a95d48ffa07e475fe5ffd
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: 0.009333212156527432
+    n_daily_returns: 724
+    skew: -0.038336407193821115
+    kurtosis: 10.7012870312177
+- trial_id: run_082
+  source: backtest
+  sharpe: -2.0545
+  expectancy_bps: 46.7725
+  n_trades: 339
+  statistic_valid: sharpe
+  below_floor_pct: 35.42
+  forecast_hash: ba5c15c5be94bf747e1d035386499354f227f879d6054d4ca654fcc2a82102f0
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: 0.02104227786706737
+    n_daily_returns: 724
+    skew: -0.04406047898785752
+    kurtosis: 11.126388792371694
+- trial_id: run_083
+  source: backtest
+  sharpe: -3.8705
+  expectancy_bps: 63.2541
+  n_trades: 162
+  statistic_valid: expectancy
+  below_floor_pct: 77.08
+  forecast_hash: 995a56b3218304d023f3bd4ba048ff3c879a5d40a5d79e1fc1e9e6094b9382c7
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: ok
+    reason: null
+    sr_daily: 0.019114220312385174
+    n_daily_returns: 724
+    skew: -0.3583908589000654
+    kurtosis: 10.23974430206304
+- trial_id: run_084
+  source: backtest
+  sharpe: -0.264
+  expectancy_bps: 385.9328
+  n_trades: 70
+  statistic_valid: expectancy
+  below_floor_pct: 66.67
+  forecast_hash: f5c6068bef4c5cc486c98f4170c4e99504df8278e22b3af175ad367bbb50aa77
+  fold: B
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: not_evaluable
+    reason: 'whole-test Sharpe NOT_EVALUABLE: whole test: 724 daily return(s) + 1
+      cover 54.1% of the 1341 counted calendar day(s) (nominal span 2018-05-01 to
+      2021-12-31 = 1341 day(s), minus 0 engine tail/head day(s); 611 protocol gap
+      day(s) over 5 gap link(s) stay counted), below WHOLE_TEST_MIN_COVERAGE=0.9'
+    sr_daily: null
+    n_daily_returns: null
+    skew: null
+    kurtosis: null
+- trial_id: run_085
+  source: backtest
+  sharpe: -1.1645
+  expectancy_bps: 139.3352
+  n_trades: 202
+  statistic_valid: sharpe
+  below_floor_pct: 11.11
+  forecast_hash: f47727d620b70a45e3b362062d18289d10da3e6b358c4905e3be83cd8c0fc37e
+  fold: B
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: not_evaluable
+    reason: 'whole-test Sharpe NOT_EVALUABLE: whole test: 724 daily return(s) + 1
+      cover 54.1% of the 1341 counted calendar day(s) (nominal span 2018-05-01 to
+      2021-12-31 = 1341 day(s), minus 0 engine tail/head day(s); 611 protocol gap
+      day(s) over 5 gap link(s) stay counted), below WHOLE_TEST_MIN_COVERAGE=0.9'
+    sr_daily: null
+    n_daily_returns: null
+    skew: null
+    kurtosis: null
+- trial_id: run_088
+  source: backtest
+  sharpe: -3.501
+  expectancy_bps: 564.7964
+  n_trades: 42
+  statistic_valid: expectancy
+  below_floor_pct: 88.89
+  forecast_hash: 2ff394a9cfae9784602929699b4d13d7b0fb9b65e7b75ecc7a773fb3236d8511
+  fold: B
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: not_evaluable
+    reason: 'whole-test Sharpe NOT_EVALUABLE: whole test: 724 daily return(s) + 1
+      cover 54.1% of the 1341 counted calendar day(s) (nominal span 2018-05-01 to
+      2021-12-31 = 1341 day(s), minus 0 engine tail/head day(s); 611 protocol gap
+      day(s) over 5 gap link(s) stay counted), below WHOLE_TEST_MIN_COVERAGE=0.9'
+    sr_daily: null
+    n_daily_returns: null
+    skew: null
+    kurtosis: null
+- trial_id: run_089
+  source: backtest
+  sharpe: 1.505
+  expectancy_bps: 153.3529
+  n_trades: 110
+  statistic_valid: sharpe
+  below_floor_pct: 33.33
+  forecast_hash: 27c31dff7f2374058fe21b5f3b64542cdd220c8a7607c3a93554a1cea6f4dc88
+  fold: B
+  whole_test:
+    basis: whole_test_daily_equal_weight_v1
+    status: not_evaluable
+    reason: 'whole-test Sharpe NOT_EVALUABLE: whole test: 724 daily return(s) + 1
+      cover 54.1% of the 1341 counted calendar day(s) (nominal span 2018-05-01 to
+      2021-12-31 = 1341 day(s), minus 0 engine tail/head day(s); 611 protocol gap
+      day(s) over 5 gap link(s) stay counted), below WHOLE_TEST_MIN_COVERAGE=0.9'
+    sr_daily: null
+    n_daily_returns: null
+    skew: null
+    kurtosis: null
+- trial_id: run_090
+  source: backtest
+  sharpe: -0.4815
+  expectancy_bps: 444.1199
+  n_trades: 75
+  statistic_valid: expectancy
+  below_floor_pct: 61.11
+  forecast_hash: 27c31dff7f2374058fe21b5f3b64542cdd220c8a7607c3a93554a1cea6f4dc88
+  fold: C
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.08077250355716266
+    n_daily_returns: 729
+    skew: -0.18843711634586782
+    kurtosis: 11.988363054135514
+- trial_id: run_091
+  source: backtest
+  sharpe: 0.938
+  expectancy_bps: 100.843
+  n_trades: 139
+  statistic_valid: sharpe
+  below_floor_pct: 11.11
+  forecast_hash: 27c31dff7f2374058fe21b5f3b64542cdd220c8a7607c3a93554a1cea6f4dc88
+  fold: D
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.044645920794822845
+    n_daily_returns: 729
+    skew: 0.2885389019042313
+    kurtosis: 10.815686818598945
+- trial_id: run_092
+  source: backtest
+  sharpe: -0.502
+  expectancy_bps: 283.8358
+  n_trades: 67
+  statistic_valid: expectancy
+  below_floor_pct: 72.22
+  forecast_hash: f5c6068bef4c5cc486c98f4170c4e99504df8278e22b3af175ad367bbb50aa77
+  fold: C
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.036139716007054096
+    n_daily_returns: 729
+    skew: -0.905303489398874
+    kurtosis: 11.902301393832717
+- trial_id: run_093
+  source: backtest
+  sharpe: -0.8615
+  expectancy_bps: 214.0559
+  n_trades: 54
+  statistic_valid: expectancy
+  below_floor_pct: 83.33
+  forecast_hash: 2ff394a9cfae9784602929699b4d13d7b0fb9b65e7b75ecc7a773fb3236d8511
+  fold: C
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.021200125247338275
+    n_daily_returns: 729
+    skew: -1.0889451960924406
+    kurtosis: 12.074751368065709
+- trial_id: run_094:ada_altcoin_asset
+  source: backtest
+  sharpe: -0.678
+  expectancy_bps: -5.1008
+  n_trades: 557
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: d58e86d72b548c8f75765f4237c10d6d55016f47098ac0b4300117f44d96a2dd
+  symbols:
+  - ADAUSD
+  fold: A
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.001043542353308952
+    n_daily_returns: 730
+    skew: -0.1574299539576353
+    kurtosis: 8.968146687902973
+- trial_id: run_094:base
+  source: backtest
+  sharpe: -0.379
+  expectancy_bps: -21.1597
+  n_trades: 607
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: d58e86d72b548c8f75765f4237c10d6d55016f47098ac0b4300117f44d96a2dd
+  symbols:
+  - BTCUSD
+  fold: A
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: -0.03901295687452569
+    n_daily_returns: 730
+    skew: -0.8117875045939948
+    kurtosis: 10.789807572076889
+- trial_id: run_094:gap_medium_term
+  source: backtest
+  sharpe: -1.423
+  expectancy_bps: -42.1505
+  n_trades: 482
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 21a2ee9840d8b6f890aa8d4e01a63b6470db8a763b91b218f1c9ac55395c5991
+  symbols:
+  - BTCUSD
+  fold: A
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: -0.05741628088584703
+    n_daily_returns: 730
+    skew: -0.7094490304230127
+    kurtosis: 9.963260288184083
+- trial_id: run_094:uni_defi_asset
+  source: backtest
+  sharpe: 1.375
+  expectancy_bps: 29.5935
+  n_trades: 563
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: d58e86d72b548c8f75765f4237c10d6d55016f47098ac0b4300117f44d96a2dd
+  symbols:
+  - UNIUSD
+  fold: A
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.028472636420321048
+    n_daily_returns: 730
+    skew: 0.3323092545676464
+    kurtosis: 7.7550550154441815
+- trial_id: run_095:asset_sol
+  source: backtest
+  sharpe: -0.661
+  expectancy_bps: -25.1599
+  n_trades: 545
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: d58e86d72b548c8f75765f4237c10d6d55016f47098ac0b4300117f44d96a2dd
+  symbols:
+  - SOLUSD
+  fold: D
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: -0.01977545667977316
+    n_daily_returns: 731
+    skew: 0.33235318174594747
+    kurtosis: 6.4583070405719
+- trial_id: run_095:asset_xrp
+  source: backtest
+  sharpe: -1.8455
+  expectancy_bps: -63.8293
+  n_trades: 563
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: d58e86d72b548c8f75765f4237c10d6d55016f47098ac0b4300117f44d96a2dd
+  symbols:
+  - XRPUSD
+  fold: D
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: -0.03711507828284615
+    n_daily_returns: 731
+    skew: 4.954674854947752
+    kurtosis: 100.54152784292816
+- trial_id: run_095:base
+  source: backtest
+  sharpe: -1.4185
+  expectancy_bps: -30.7547
+  n_trades: 577
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: d58e86d72b548c8f75765f4237c10d6d55016f47098ac0b4300117f44d96a2dd
+  symbols:
+  - BTCUSD
+  fold: D
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: -0.05394524306899993
+    n_daily_returns: 729
+    skew: -0.23924488251108084
+    kurtosis: 7.922261102914058
+- trial_id: run_095:clip_cap_10
+  source: backtest
+  sharpe: -0.6365
+  expectancy_bps: -3.3396
+  n_trades: 504
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 1bbf1707430f51631350b60d7111cbfca678687c293e0ca998384ca2f3acec07
+  symbols:
+  - BTCUSD
+  fold: D
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: -0.00930490781826557
+    n_daily_returns: 729
+    skew: -0.22738247923267435
+    kurtosis: 6.974116263822203
+- trial_id: run_096:asset_LTCUSDT
+  source: backtest
+  sharpe: 1.877
+  expectancy_bps: 68.3306
+  n_trades: 607
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: d58e86d72b548c8f75765f4237c10d6d55016f47098ac0b4300117f44d96a2dd
+  symbols:
+  - LTCUSD
+  fold: C
+  protocol_run_id: 20261016T112211Z_cbaf5beb
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.05654360364312296
+    n_daily_returns: 729
+    skew: 0.39791574381584
+    kurtosis: 10.230115931710255
+  superseded_attempts:
+  - protocol_run_id: null
+    sharpe: 0.512
+    forecast_hash: d58e86d72b548c8f75765f4237c10d6d55016f47098ac0b4300117f44d96a2dd
+    whole_test_status: ok
+    whole_test_reason: null
+- trial_id: run_096:asset_XRPUSDT
+  source: backtest
+  sharpe: -0.976
+  expectancy_bps: -39.2956
+  n_trades: 612
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: d58e86d72b548c8f75765f4237c10d6d55016f47098ac0b4300117f44d96a2dd
+  symbols:
+  - XRPUSD
+  fold: C
+  protocol_run_id: 20261016T112233Z_cbaf5beb
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: -0.020124993003162152
+    n_daily_returns: 729
+    skew: -0.8529284992564931
+    kurtosis: 11.890745544533246
+  superseded_attempts:
+  - protocol_run_id: null
+    sharpe: -0.967
+    forecast_hash: d58e86d72b548c8f75765f4237c10d6d55016f47098ac0b4300117f44d96a2dd
+    whole_test_status: error
+    whole_test_reason: 'PortfolioRuined: equal-weight portfolio: runs\run_096\variants\asset_XRPUSDT\results\20261015T172353Z_2ddd79e8\portfolio_states.csv
+      has equity -589.6624712066816 at ''2018-09-21'''
+- trial_id: run_096:base
+  source: backtest
+  sharpe: 1.448
+  expectancy_bps: 26.2088
+  n_trades: 600
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: d58e86d72b548c8f75765f4237c10d6d55016f47098ac0b4300117f44d96a2dd
+  symbols:
+  - BTCUSD
+  fold: C
+  protocol_run_id: 20261016T112255Z_cbaf5beb
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.027865207701845363
+    n_daily_returns: 731
+    skew: 0.38963419295887464
+    kurtosis: 7.197715005832773
+  superseded_attempts:
+  - protocol_run_id: null
+    sharpe: 1.0735
+    forecast_hash: d58e86d72b548c8f75765f4237c10d6d55016f47098ac0b4300117f44d96a2dd
+    whole_test_status: ok
+    whole_test_reason: null
+- trial_id: run_096:design_scaling_factor_10
+  source: backtest
+  sharpe: 2.1335
+  expectancy_bps: 27.3422
+  n_trades: 661
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 59de571e20c4560c735ce8543dc11812c4d1ee6d3b08f67f3b0a2d15a267be78
+  symbols:
+  - BTCUSD
+  fold: C
+  protocol_run_id: 20261016T112317Z_eab53a33
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.037805881407044016
+    n_daily_returns: 731
+    skew: 0.19060936254199268
+    kurtosis: 5.981469622373948
+  superseded_attempts:
+  - protocol_run_id: null
+    sharpe: 1.066
+    forecast_hash: 59de571e20c4560c735ce8543dc11812c4d1ee6d3b08f67f3b0a2d15a267be78
+    whole_test_status: ok
+    whole_test_reason: null

@@ -1,0 +1,100 @@
+hypothesis_id: RSI_7_DAILY_MEAN_REVERSION_1D
+thesis: "Daily RSI(7) extremes (<20 oversold, >80 overbought) signal capitulation and euphoria; reversals follow within 1-3 days as short-covering and long re-entry close the extreme."
+rationale: "RSI at 1h timeframe failed in prior campaign (run_014: ic=-0.022), but daily is fundamentally different: fewer bars per window (~250 vs ~7000 at 1h), longer mean-reversion cycles, fewer intraday arbitragers watching daily levels, and sparse activation (1-2 RSI extremes per month vs hundreds intraday). RSI(7) is faster than textbook RSI(14), more responsive to daily volatility swings. Mechanism is behavioral (capitulation/euphoria attract covering/re-entry demand). Daily execution avoids the crowded 1h RSI space. Kraken 10bps costs are modest relative to daily mean-reversion edge sizes."
+edge_source:
+  category: persistent_behavioral_bias
+  specific_mechanism: "Daily price extremes (RSI <20 = oversold, RSI >80 = overbought) trigger retail trader stop-losses and limit orders. When stops hit and shorts are underwater, covering demand re-enters longs. Short-covering and re-entry buying force price back toward equilibrium (RSI 40-60 zone) over 1-3 days, producing measurable mean-reversion."
+  why_not_arbitraged: "RSI is universally taught; however, (a) institutional arbitragers focus on high-frequency 1h/4h/30min strategies where turnover justifies technology investment, (b) daily RSI extremes fire only 1-2 times per month per symbol, capacity-limiting to long-only or long/short composite managers, not standalone 1000-trade/year systems, (c) RSI(7) period is non-standard (typical is RSI(14)), reducing crowding from cookie-cutter implementations."
+  evidence_type: price_volume_only
+  measurable_proxy: "RSI(7) computed on daily close. Mechanism predicts: bars where RSI <20 have positive 1-3 day forward returns (oversold → covering demand), bars where RSI >80 have negative 1-3 day forward returns (overbought → profit-taking). Proxy is computable from daily OHLCV."
+  requires_new_feed: null
+
+signal_concept: |
+  Graded contrarian forecast based on RSI(7) level:
+  
+  RSI = RSI(period=7, input=daily close)
+  
+  forecast = (50 - RSI) / 2.5  (maps RSI [0, 100] to forecast [-20, +20], contrarian scaling)
+  
+  Expansion:
+    RSI = 0    → forecast = +20  (extreme oversold, strong long bias)
+    RSI = 20   → forecast = +12  (oversold, moderate long bias)
+    RSI = 50   → forecast = 0    (neutral)
+    RSI = 80   → forecast = -12  (overbought, moderate short bias)
+    RSI = 100  → forecast = -20  (extreme overbought, strong short bias)
+  
+  Position size = forecast / 10 (e.g., forecast = +20 → +2% long position).
+  
+  The scaling is pure contrarian: RSI extremes (high or low) produce opposing position bias,
+  reflecting mean-reversion expectation. Stronger extremes (RSI <20 or >80) produce larger
+  position sizes, reflecting confidence in the reversal.
+  
+  Mechanism: mean-reversion via capitulation/euphoria, not momentum. Extremes attract
+  mechanical stop/limit orders and behavioral panic/greed, then revert as those orders
+  are filled and sentiment normalizes.
+  
+  Not expressible in config: holding period rule (hold 1-3 bars max), exit-on-reversal rule
+  (exit if RSI crosses back to 40-60), time-based duration holding. Position lifecycle is
+  driven by RSI mean-reversion completion, not fixed time windows.
+
+target_market: "BTCUSD on Kraken perpetual futures, tested on fold A (six 4-month blocks, 2022-2023)."
+
+timeframe: "1d (daily bars, one bar per trading day)"
+
+assumptions:
+  - "Daily RSI(7) cycles reflect capitulation/euphoria behavior at daily resolution, distinct from 1h RSI dynamics where mean-reversion is crowded and less predictable."
+  - "RSI extremes (<20, >80) occur with sufficient frequency (1-2 per month) to generate ~6-12 signals per 4-month fold for statistical testing."
+  - "Mean-reversion from RSI extremes dominates over trend-continuation on daily bars (capitulation > momentum)."
+  - "Kraken perp liquidity supports daily mean-reversion positioning at 10bps round-trip cost without market-impact slippage."
+  - "No lookahead: RSI(7) is computed from bar t's close and prior 6 closes, all data dated at or before bar t close (no forward-looking data)."
+
+expected_failure_modes:
+  - "RSI is textbook technical-indicator; even sparse daily activation (1-2/month) might be arbitraged by retail/semi-institutional traders. Prior KB evidence: RSI(14) at 1h failed (ic=-0.022, p=0.77). Daily might suffer same arbitrage despite different timeframe."
+  - "Daily RSI extremes are regime-dependent: in strong trending regimes (uptrend, RSI>80 for days), mean-reversion signal fires but price continues trending. 1-3 day holding period might be too short to capture reversal before new trend reasserts. Flat holding (1-3 bars) misses regime persistence."
+  - "Sparse activation and low power: 6-12 total RSI extreme events across fold A (~9-12 trades) is at the floor of statistical significance. Cost of 10bps on sparse trade frequency means costs are 10-20% of per-trade gross edge. If mean-reversion edge is <20bps per trade (typical), costs dominate."
+  - "RSI(7) period might be too fast: daily RSI(7) can spike and reverse within a single day due to intraday volatility, creating noise rather than signal. RSI(7) reversal might occur WITHIN the bar before the 1-3 day forward period begins, making the signal stale by execution time."
+
+library_lookup:
+  indicator_id: rsi_mean_reversion
+  regime_affinity_for_target: "unfavorable (from indicator_library.yaml: trending regimes reduce mean-reversion signal reliability; RSI stays elevated in strong trends)"
+  affinity_justification: "KB evidence (rsi_mean_reversion_no_edge): RSI(14) at 1h, ic=-0.022 in full sample and regimes. HOWEVER, this is a redirect, not a repeat: (a) different timeframe (daily vs 1h), (b) different period (RSI(7) vs RSI(14), shorter lookback, more responsive), (c) different activation density (1-2/month daily vs hundreds/month intraday, reducing crowding). Daily mean-reversion cycles are longer than 1h noise; justified to test despite prior 1h failure. Divergence from library affinity is acceptable per Improvement 04 when mechanism/context changes materially."
+  prior_campaign_failures: [{run_id: run_014, mechanism_tried: "RSI(14) mean-reversion at 1h, ic_active_bars=-0.022, p=0.77"}]
+  crowding_risk: "high (RSI is universally known, in every technical-analysis textbook)"
+  crowding_deviation_justification: "Despite high name-recognition, daily RSI firing only 1-2x/month is sparse relative to intraday arbiter focus on 1h+ turnover. Only ~10-20 RSI signals/year per symbol is capacity-limited; few institutional arbs deploy capital on such sparse signals. Retail traders watch daily RSI, but retail's execution speed (hours, not milliseconds) on sparse signals produces low competition relative to intraday crowded spaces."
+
+cost_feasibility:
+  assumed_round_trip_cost_bps: 10.0
+  expected_holding_bars:
+    min: 1
+    max: 3
+  expected_trades_per_window: 2.0
+  required_gross_edge_bps_per_trade: 20.0
+  plausibility: "implausible (very sparse activation: 1-2 RSI extreme events per month means ~2 trades per 4-month window, ~12 trades total across fold A. At 10bps cost, edge must be >20bps per trade to survive costs. Mean-reversion edges are typically 5-15bps. High probability costs dominate. Sparse sample also means insufficient power for statistical confidence.)"
+  plausibility_rationale: "Daily mean-reversion requires low-turnover strategies to justify trading costs. However, RSI(7) extremes fire so rarely (12 times over 6 months of data) that even modest per-trade costs (10bps round-trip) become 10-20% of gross edge. Unless RSI mean-reversion is exceptionally strong (>20bps guaranteed), this idea is cost-unviable. Most likely failure mode: mechanism exists but is masked by costs + insufficient sample size for validation."
+
+criteria:
+  - id: realized_edge_to_cost_ratio
+
+power_parameters:
+  activation_rate: 0.01
+  plausible_ic_upper: 0.10
+  n_bars: 1560
+  n_symbols: 1
+  is_market_wide: false
+  power_note: "Extremely sparse activation: RSI<20 or RSI>80 on daily occurs ~1-2 times per month = 0.01 fraction of daily bars (15-20 per year per symbol). With 1560 daily bars in fold A, expected active bars ≈ 1560 × 0.01 = 15.6. Per-bar IC plausible at 0.10 (mean-reversion edges are noisy, contain model error). n_eff ≈ 15.6 / 24 ≈ 0.65, CRITICALLY underpowered. A priori, a standard IC significance test (p<0.05) would require implausible IC >0.40 to reject null. This hypothesis is power-starved by design. Included to test the timeframe-shift hypothesis (daily vs 1h) despite severe power constraints; likely outcome is inconclusive (insufficient active bars for meaningful IC test)."
+
+claim:
+  statement: "Daily RSI(7) extremes (<20 oversold and >80 overbought) exhibit mean-reversion behavior, with oversold bars followed by higher 1-3 day forward returns and overbought bars followed by lower forward returns, compared to RSI-neutral bars (40-60 range)."
+  kind: conditional_behaviour
+  tests:
+    - name: rsi_oversold_mean_reversion
+      selector: {kind: event, field: forecast, op: ">", value: 10}
+      outcome: {kind: fwd_return, horizons: [1, 2, 3]}
+      baseline: {kind: other_selector, selector: {kind: event, field: forecast, op: ">=", value: -5, op2: "<=", value: 5}}
+      statistic: mean_diff
+      direction: greater
+      floor: {min_events: 8, min_windows: 2}
+      consistency: {unit: window, min_same_sign: 2}
+  pass_if: "Oversold bars (forecast >10, i.e., RSI<20) show higher mean 1-3 day forward returns than RSI-neutral bars (forecast in [-5, 5], i.e., RSI in [37.5, 62.5]) in at least 2 windows. Effect points same direction in both windows. At least 8 oversold events total."
+  fail_if: "Oversold bars show equal or lower mean forward returns than neutral bars (no mean-reversion or continuation). OR fewer than 8 oversold events across fold A. OR opposite signs in more than 1 window (mechanism unstable)."
+  rationale: "Mean-reversion claims require that extremes snap back toward equilibrium. By comparing forward returns on RSI-extreme bars (forecast >10 or <-10) vs RSI-neutral bars (forecast near 0), we test whether the RSI signal itself predicts returns in the expected contrarian direction. A positive mean-return difference for oversold signals confirms the mechanism (capitulation → covering demand → reversal). This isolates the RSI(7) effect from baseline market drift."

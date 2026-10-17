@@ -101,9 +101,15 @@ Two caveats the guide explains in full:
 
 ## Running the tests (operator decision 2026-10-03: the full suite is too slow to run after every edit)
 - Interpreter: `../venv/Scripts/python.exe` on Windows (`../.venv/bin/python` on Mac/Linux); run strategy-research tests from `strategy-research/` (the workflow resolves the venv from the CWD).
+- **`TBOT_PYTHON`** (operator decision 2026-10-17): when this environment variable holds an absolute path to an interpreter, the workflow uses it before either venv above. It points at a venv outside every checkout, so a worktree needs no venv of its own: run tests there as `& $env:TBOT_PYTHON -m pytest <files>`. Never junction a venv into a worktree: checking out a commit from before 2026-09-09 (which tracked `venv/`) and moving away deletes the linked venv's files.
 - **While developing:** run only the test files the change touches (and their direct neighbours). Seconds to a minute.
 - **CI runs the FAST suite on every push** (Ubuntu + Windows, `.github/workflows/tests.yml` -> `run_tests.py`, ~8 / ~14 min): trading-bot and strategy-research, including `tools/recorder/tests/`, with `-m "not slow"`. Push, then read `gh pr checks <n>`; fix what CI reports. Do not also run it locally before every push.
 - **Slow tests never run in CI.** They are marked `slow` (live market data, network). Run them on purpose when a change touches data fetching or the regression backtests: `python run_tests.py --slow` from the repo root.
 - **Locally, the same fast suite as CI** (only when CI cannot be used, or for a large refactor), from the repo root: `venv/Scripts/python.exe run_tests.py -- -q -n 4`. Use 4 workers, not 8 (measured 2026-10-03 on strategy-research `tests/`: serial ~20 min; `-n 4` 12.2 min, 0 failures; `-n 8` 15.6 min with 2 crashed workers -- memory, 16 GB machine).
 - Never re-run a full suite for a test-only or doc-only follow-up fix; re-run the touched files and say so in the PR.
 - One test process at a time on this machine.
+
+## Runtime records (operator decision 2026-10-17, Option C)
+- `runs/` is ignored (repo `.gitignore`): never stage a run file. Back run folders up outside git (copy only, junctions excluded). run_0001..run_060 stay tracked on master as history; an ignore rule never untracks a file.
+- `campaign_record/` is committed once per session, as a docs PR from master. Its `composite/` folder is ignored: a backtest cache that `tools/composite_cache.py` rebuilds.
+- Nothing stays staged between sessions. Never run `git clean` in the main checkout: it would delete the ignored run folders, which exist nowhere else in git.

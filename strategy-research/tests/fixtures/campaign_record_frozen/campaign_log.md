@@ -1,0 +1,198 @@
+# Campaign log
+
+Append-only. One line per stage transition (launch / stage / continue / done / halt / resume),
+written by `workflow/run_campaign.py`. Do not hand-edit — see `campaign_summary.md` for the
+regenerated scoreboard and `RUNBOOK.md` for how to read/act on this file.
+
+- 2026-07-06T13:55:25Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-07-06T13:55:25Z [DRY RUN] queue: selected entry 'P4_ts_trend' (status=ready, brief=briefs/research_brief_P4_ts_trend.md)
+- 2026-07-06T13:55:25Z [DRY RUN] brief frontmatter parsed OK: strategy_domain=trend_following, market_universe=['BTCUSDT', 'ETHUSDT']
+- 2026-07-06T13:55:56Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-07-06T13:55:56Z [DRY RUN] queue: selected entry 'P4_ts_trend' (status=ready, brief=briefs/research_brief_P4_ts_trend.md)
+- 2026-07-06T13:55:56Z [DRY RUN] brief frontmatter parsed OK: strategy_domain=trend_following, market_universe=['BTCUSDT', 'ETHUSDT']
+- 2026-07-06T13:55:56Z [DRY RUN] setup_run + brief materialization OK: runs\run_dryrun_verify\artifacts\research_brief.yaml written, pre_registration.yaml written
+- 2026-07-06T13:55:56Z [DRY RUN] terminal-state classification OK: pending_stage=completed_rejected -> no pause, queue would advance
+- 2026-07-06T13:55:56Z [DRY RUN] hard-pause classification OK: detected reason='no_signal_artifact'
+- 2026-07-06T13:55:56Z [DRY RUN] wishlist-trigger classification OK: detected family='daily_timeframe_er_overlay'
+- 2026-07-06T13:55:56Z [DRY RUN] cleanup complete — no real run_ids, campaign_state.yaml, or campaign_queue.yaml were touched.
+- 2026-07-06T13:55:56Z [DRY RUN] === DRY RUN PASSED ===
+- 2026-07-06T13:58:56Z === REAL CAMPAIGN LAUNCH (P4_ts_trend) ===
+- 2026-07-06T13:59:13Z LAUNCH P4_ts_trend -> run_053 (brief=briefs/research_brief_P4_ts_trend.md)
+- 2026-07-06T14:06:14Z STAGE  P4_ts_trend / run_053: pending_stage=validation status=failed (no scored artifacts yet)
+- 2026-07-06T14:06:15Z HALT — unhandled_exception: 'NoneType' object has no attribute 'strip'. Campaign stopped on P4_ts_trend / run_053. See RUNBOOK.md 'Resume after a pause'.
+- 2026-07-06T14:17:02Z RESUME P4_ts_trend / run_053: resolution confirmed for 'unhandled_exception', resuming queue processing.
+- 2026-07-06T14:18:14Z STAGE  P4_ts_trend / run_053: pending_stage=backtest_specification status=paused_for_human (no scored artifacts yet)
+- 2026-07-06T14:18:15Z HALT — component_gap. Campaign stopped on P4_ts_trend / run_053. See RUNBOOK.md 'Resume after a pause'.
+- 2026-07-06T16:06:42Z === RESUME after component_gap fix (MacdHistogramCrossoverComponent) ===
+- 2026-07-06T16:06:57Z RESUME P4_ts_trend / run_053: resolution confirmed for 'component_gap', resuming queue processing.
+- 2026-07-06T16:20:31Z STAGE  P4_ts_trend / run_053: pending_stage=completed_reframed status=active (ic=-0.050271, cost_ratio=0.2452, prescreen_route=kill_no_ic, backtest_verdict=kill, verdict_status=escalate)
+- 2026-07-06T16:20:31Z CONTINUE P4_ts_trend lineage run_053 -> run_054 (completed_reframed)
+- 2026-07-06T16:24:45Z STAGE  P4_ts_trend / run_054: pending_stage=hypothesis_generation status=failed (no scored artifacts yet)
+- 2026-07-06T16:24:46Z HALT — unhandled_exception: Missing files: ['runs\\run_054\\artifacts\\hypothesis_card.yaml']. Campaign stopped on P4_ts_trend / run_054. See RUNBOOK.md 'Resume after a pause'.
+- 2026-07-06T18:23:26Z === RESUME after discarding invalid run_054 (KB-reactivation gate re-derivation) ===
+- 2026-07-06T18:23:41Z STAGE  P4_ts_trend / run_053: pending_stage=human_pause status=active (ic=-0.050271, cost_ratio=0.2452, prescreen_route=kill_no_ic, backtest_verdict=kill, verdict_status=escalate)
+- 2026-07-06T18:23:42Z HALT — kb_reactivation_violation. Campaign stopped on P4_ts_trend / run_053. See RUNBOOK.md 'Resume after a pause'.
+- 2026-07-06T18:34:57Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-07-07T13:26:00Z RESUME P4_ts_trend / run_053: resolution confirmed for 'kb_reactivation_violation', resuming queue processing.
+- 2026-07-07T13:26:01Z STAGE  P4_ts_trend / run_053: pending_stage=human_pause status=active (ic=-0.050271, cost_ratio=0.2452, prescreen_route=kill_no_ic, backtest_verdict=kill, verdict_status=escalate)
+- 2026-07-07T13:26:01Z HALT — kb_reactivation_violation. Campaign stopped on P4_ts_trend / run_053. See RUNBOOK.md 'Resume after a pause'.
+- 2026-07-07T13:27:30Z RESUME P4_ts_trend / run_053: resolution confirmed for 'kb_reactivation_violation', resuming queue processing.
+- 2026-07-07T13:27:31Z STAGE  P4_ts_trend / run_053: pending_stage=completed_reframed status=active (ic=-0.050271, cost_ratio=0.2452, prescreen_route=kill_no_ic, backtest_verdict=kill, verdict_status=escalate)
+- 2026-07-07T13:27:31Z CONTINUE P4_ts_trend lineage run_053 -> run_054 (completed_reframed)
+- 2026-07-07T13:35:51Z STAGE  P4_ts_trend / run_054: pending_stage=human_pause status=active (prescreen_route=no_signal_artifact)
+- 2026-07-07T13:35:52Z HALT — no_signal_artifact. Campaign stopped on P4_ts_trend / run_054. See RUNBOOK.md 'Resume after a pause'.
+- 2026-07-07T13:57:45Z RESUME P4_ts_trend / run_054: resolution confirmed for 'no_signal_artifact', resuming queue processing.
+- 2026-07-07T13:58:06Z STAGE  P4_ts_trend / run_054: pending_stage=protocol_execution status=failed (cost_ratio=4.3151, prescreen_route=proceed_to_backtest)
+- 2026-07-07T13:58:06Z HALT — unhandled_exception: run_protocol.py failed:
+C:\Users\alauz\Documents\Projects\trading-bot\trading-bot\core\backtester.py:234: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the futur. Campaign stopped on P4_ts_trend / run_054. See RUNBOOK.md 'Resume after a pause'.
+- 2026-07-09T12:49:14Z RESUME P4_ts_trend / run_054: resolution confirmed for 'unhandled_exception', resuming queue processing.
+- 2026-07-09T13:02:22Z STAGE  P4_ts_trend / run_054: pending_stage=completed_refined status=active (cost_ratio=4.3151, prescreen_route=proceed_to_backtest, backtest_verdict=refine, median_sharpe=-1.66, verdict_status=pivot)
+- 2026-07-09T13:02:23Z DONE P4_ts_trend (run_054) -> completed_refined
+- 2026-07-09T13:02:23Z Queue exhausted — no ready or in_progress entries remain.
+- 2026-07-09T13:53:35Z STAGE  P4_ts_trend / run_054: pending_stage=human_pause status=active (cost_ratio=4.3151, prescreen_route=proceed_to_backtest, backtest_verdict=refine, median_sharpe=-1.66, verdict_status=refine)
+- 2026-07-09T13:53:37Z HALT — no_signal_artifact. Campaign stopped on P4_ts_trend / run_054. See RUNBOOK.md 'Resume after a pause'.
+- 2026-07-09T14:48:26Z STAGE  P4_ts_trend / run_054: pending_stage=human_pause status=active (cost_ratio=4.3151, prescreen_route=proceed_to_backtest, backtest_verdict=refine, median_sharpe=-1.66, verdict_status=refine)
+- 2026-07-09T14:48:27Z HALT — component_execution_error. Campaign stopped on P4_ts_trend / run_054. See RUNBOOK.md 'Resume after a pause'.
+- 2026-07-09T16:56:16Z STAGE  P4_ts_trend / run_054: pending_stage=campaign_review status=failed (cost_ratio=4.3151, prescreen_route=proceed_to_backtest, backtest_verdict=refine, median_sharpe=-1.66, verdict_status=pivot)
+- 2026-07-09T16:56:17Z HALT — unhandled_exception: Claude Code returned an error result: success. Campaign stopped on P4_ts_trend / run_054. See RUNBOOK.md 'Resume after a pause'.
+- 2026-07-09T18:11:46Z RESUME P4_ts_trend / run_054: resolution confirmed for 'unhandled_exception', resuming queue processing.
+- 2026-07-09T18:13:38Z STAGE  P4_ts_trend / run_054: pending_stage=completed_refined status=active (cost_ratio=4.3151, prescreen_route=proceed_to_backtest, backtest_verdict=refine, median_sharpe=-1.66, verdict_status=pivot)
+- 2026-07-09T18:13:38Z DONE P4_ts_trend (run_054) -> completed_refined
+- 2026-07-09T18:13:38Z Queue exhausted — no ready or in_progress entries remain.
+- 2026-07-10T16:30:20Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-07-10T16:30:20Z [DRY RUN] queue: selected entry 'P4_ts_trend' (status=in_progress, brief=briefs/P4_ts_trend_r1_er_gate.yaml)
+- 2026-07-10T17:17:57Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-07-10T17:17:57Z [DRY RUN] queue: selected entry 'P4_ts_trend' (status=in_progress, brief=briefs/P4_ts_trend_r1_er_gate.yaml)
+- 2026-07-12T16:15:48Z STAGE  P4_ts_trend / run_057: pending_stage=completed_rejected status=rejected (cost_ratio=1.3626, prescreen_route=kill_no_ic, backtest_verdict=refine, median_sharpe=-0.686, verdict_status=kill)
+- 2026-07-12T16:15:48Z DONE P4_ts_trend (run_057) -> kill_er_gate_mechanism_falsified
+- 2026-07-13T11:25:57Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-07-13T13:38:16Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-07-13T13:38:16Z RECONCILE: 57 run dir(s) scanned, 57 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-13T13:38:16Z [DRY RUN] DRY RUN: no ready/in_progress entry — nothing to verify; queue is all-terminal
+- 2026-07-13T14:16:33Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-07-13T14:16:33Z RECONCILE: 57 run dir(s) scanned, 57 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-13T14:16:33Z [DRY RUN] DRY RUN: no ready/in_progress entry — nothing to verify; queue is all-terminal
+- 2026-07-16T10:56:50Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-07-16T10:56:51Z RECONCILE: 57 run dir(s) scanned, 57 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-16T10:56:51Z [DRY RUN] queue: selected entry 'H-041-C-v2' (status=ready, brief=briefs/H-041-C-v2.yaml)
+- 2026-07-16T10:56:51Z [DRY RUN] classified next action for 'H-041-C-v2': 'fresh_launch'
+- 2026-07-16T11:37:17Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-07-16T11:37:17Z RECONCILE: 57 run dir(s) scanned, 57 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-16T11:37:17Z [DRY RUN] queue: selected entry 'H-041-C-v2' (status=ready, brief=briefs/H-041-C-v2.md)
+- 2026-07-16T11:37:17Z [DRY RUN] classified next action for 'H-041-C-v2': 'fresh_launch'
+- 2026-07-16T11:37:17Z [DRY RUN] brief frontmatter parsed OK: strategy_domain=sentiment_contrarian, market_universe=['BTCUSDT', 'ETHUSDT']
+- 2026-07-16T11:37:17Z [DRY RUN] setup_run + brief materialization OK: runs\run_dryrun_verify\artifacts\research_brief.yaml written, pre_registration.yaml written
+- 2026-07-16T11:37:17Z [DRY RUN] terminal-state classification OK: pending_stage=completed_rejected -> no pause, queue would advance
+- 2026-07-16T11:37:17Z [DRY RUN] hard-pause classification OK: detected reason='no_signal_artifact'
+- 2026-07-16T11:37:17Z [DRY RUN] wishlist-trigger classification OK: detected family="daily_timeframe_er_overlay: checked 15 record(s); none satisfy all 3 condition(s) (source=kb_finding, family='daily_timeframe_er_overlay')"
+- 2026-07-16T11:37:17Z [DRY RUN] cleanup complete — no real run_ids, campaign_state.yaml, or campaign_queue.yaml were touched.
+- 2026-07-16T11:37:17Z [DRY RUN] === DRY RUN PASSED ===
+- 2026-07-16T11:37:42Z RECONCILE: 57 run dir(s) scanned, 57 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-16T11:37:43Z LAUNCH H-041-C-v2 -> run_058 (brief=briefs/H-041-C-v2.md)
+- 2026-07-16T11:44:15Z STAGE  H-041-C-v2 / run_058: pending_stage=innovation_expansion status=failed (no scored artifacts yet)
+- 2026-07-16T11:44:16Z HALT — unhandled_exception: Missing files: ['runs\\run_058\\artifacts\\innovation_notes.yaml']. Campaign stopped on H-041-C-v2 / run_058. See RUNBOOK.md 'Resume after a pause'.
+- 2026-07-16T12:49:34Z RECONCILE: 58 run dir(s) scanned, 58 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-16T12:49:34Z Queue exhausted — no ready or in_progress entries remain.
+- 2026-07-16T14:07:08Z RECONCILE: 58 run dir(s) scanned, 58 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-16T14:08:45Z STAGE  H-041-C-v2 / run_058: pending_stage=validation status=failed (no scored artifacts yet)
+- 2026-07-16T14:08:46Z HALT — unhandled_exception: Claude Code returned an error result: success. Campaign stopped on H-041-C-v2 / run_058. See RUNBOOK.md 'Resume after a pause'.
+- 2026-07-17T10:46:13Z RECONCILE: 58 run dir(s) scanned, 58 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-17T10:47:44Z STAGE  H-041-C-v2 / run_058: pending_stage=completed_rejected status=rejected (no scored artifacts yet)
+- 2026-07-17T10:47:45Z DONE H-041-C-v2 (run_058) -> completed_rejected
+- 2026-07-17T10:47:45Z RECONCILE: 58 run dir(s) scanned, 58 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-17T10:47:45Z Queue exhausted — no ready or in_progress entries remain.
+- 2026-07-18T04:53:01Z REGISTER: queue entry 'FUNDING_MR_DAILY_RETEST' appended (brief=briefs/FUNDING_MR_DAILY_RETEST.md, priority=1, status=ready).
+- 2026-07-18T05:27:47Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-07-18T05:27:47Z RECONCILE: 58 run dir(s) scanned, 58 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-18T05:27:47Z [DRY RUN] queue: selected entry 'FUNDING_MR_DAILY_RETEST' (status=ready, brief=briefs/FUNDING_MR_DAILY_RETEST.md)
+- 2026-07-18T05:27:47Z [DRY RUN] classified next action for 'FUNDING_MR_DAILY_RETEST': 'fresh_launch'
+- 2026-07-18T05:27:47Z [DRY RUN] brief frontmatter parsed OK: strategy_domain=structural_forced_flow, market_universe=['BTCUSDT', 'ETHUSDT']
+- 2026-07-18T05:27:47Z [DRY RUN] setup_run + brief materialization OK: runs\run_dryrun_verify\artifacts\research_brief.yaml written, pre_registration.yaml written
+- 2026-07-18T05:27:47Z [DRY RUN] terminal-state classification OK: pending_stage=completed_rejected -> no pause, queue would advance
+- 2026-07-18T05:27:47Z [DRY RUN] hard-pause classification OK: detected reason='no_signal_artifact'
+- 2026-07-18T05:27:48Z [DRY RUN] wishlist-trigger classification OK: detected family="daily_timeframe_er_overlay: checked 16 record(s); none satisfy all 3 condition(s) (source=kb_finding, family='daily_timeframe_er_overlay')"
+- 2026-07-18T05:27:48Z [DRY RUN] cleanup complete — no real run_ids, campaign_state.yaml, or campaign_queue.yaml were touched.
+- 2026-07-18T05:27:48Z [DRY RUN] === DRY RUN PASSED ===
+- 2026-07-18T05:28:04Z RECONCILE: 58 run dir(s) scanned, 58 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-18T05:28:04Z LAUNCH FUNDING_MR_DAILY_RETEST -> run_059 (brief=briefs/FUNDING_MR_DAILY_RETEST.md)
+- 2026-07-18T05:38:24Z STAGE  FUNDING_MR_DAILY_RETEST / run_059: pending_stage=human_pause status=active (ic=0.037802, cost_ratio=2.2927, prescreen_route=proceed_to_backtest, backtest_verdict=refine, verdict_status=kill)
+- 2026-07-18T05:38:24Z HALT — component_execution_error. Campaign stopped on FUNDING_MR_DAILY_RETEST / run_059. See RUNBOOK.md 'Resume after a pause'.
+- 2026-07-18T15:54:25Z RESUME FUNDING_MR_DAILY_RETEST / run_059: resolution confirmed for 'component_execution_error', resuming queue processing.
+- 2026-07-18T15:54:25Z RECONCILE: 59 run dir(s) scanned, 59 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-18T16:01:06Z STAGE  FUNDING_MR_DAILY_RETEST / run_059: pending_stage=human_pause status=active (ic=0.037802, cost_ratio=2.2927, prescreen_route=proceed_to_backtest, backtest_verdict=refine, median_sharpe=-0.637, verdict_status=kill)
+- 2026-07-18T16:01:07Z HALT — component_execution_error. Campaign stopped on FUNDING_MR_DAILY_RETEST / run_059. See RUNBOOK.md 'Resume after a pause'.
+- 2026-07-19T12:26:54Z RESUME FUNDING_MR_DAILY_RETEST / run_059: resolution confirmed for 'component_execution_error', resuming queue processing.
+- 2026-07-19T12:26:54Z RECONCILE: 59 run dir(s) scanned, 59 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-19T12:29:10Z STAGE  FUNDING_MR_DAILY_RETEST / run_059: pending_stage=completed_rejected status=rejected (ic=0.037802, cost_ratio=2.2927, prescreen_route=proceed_to_backtest, backtest_verdict=refine, median_sharpe=-0.637, verdict_status=kill)
+- 2026-07-19T12:29:11Z DONE FUNDING_MR_DAILY_RETEST (run_059) -> completed_rejected
+- 2026-07-19T12:29:11Z RECONCILE: 59 run dir(s) scanned, 59 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-19T12:29:11Z Queue exhausted — no ready or in_progress entries remain.
+- 2026-08-23T16:27:43Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-08-23T16:27:43Z RECONCILE: 59 run dir(s) scanned, 59 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-23T16:27:43Z [DRY RUN] DRY RUN: no ready/in_progress entry — nothing to verify; queue is all-terminal
+- 2026-08-26T19:16:52Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-08-26T19:16:52Z RECONCILE: 59 run dir(s) scanned, 59 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-26T19:16:52Z [DRY RUN] DRY RUN: no ready/in_progress entry — nothing to verify; queue is all-terminal
+- 2026-08-26T19:17:03Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-08-26T19:17:03Z RECONCILE: 59 run dir(s) scanned, 59 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-26T19:17:03Z [DRY RUN] DRY RUN: no ready/in_progress entry — nothing to verify; queue is all-terminal
+- 2026-08-27T19:27:02Z REGISTER: queue entry 'FUNDING_MR_4H_RETEST' appended (brief=briefs/FUNDING_MR_4H_RETEST.md, priority=1, status=ready).
+- 2026-08-27T19:27:21Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-08-27T19:27:21Z RECONCILE: 59 run dir(s) scanned, 59 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-27T19:27:21Z [DRY RUN] queue: selected entry 'FUNDING_MR_4H_RETEST' (status=ready, brief=briefs/FUNDING_MR_4H_RETEST.md)
+- 2026-08-27T19:27:21Z [DRY RUN] classified next action for 'FUNDING_MR_4H_RETEST': 'fresh_launch'
+- 2026-08-27T19:27:21Z [DRY RUN] brief frontmatter parsed OK: strategy_domain=structural_forced_flow, market_universe=['BTCUSDT', 'ETHUSDT']
+- 2026-08-27T19:27:36Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-08-27T19:27:36Z RECONCILE: 59 run dir(s) scanned, 59 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-27T19:27:36Z [DRY RUN] queue: selected entry 'FUNDING_MR_4H_RETEST' (status=ready, brief=briefs/FUNDING_MR_4H_RETEST.md)
+- 2026-08-27T19:27:36Z [DRY RUN] classified next action for 'FUNDING_MR_4H_RETEST': 'fresh_launch'
+- 2026-08-27T19:27:36Z [DRY RUN] brief frontmatter parsed OK: strategy_domain=structural_forced_flow, market_universe=['BTCUSDT', 'ETHUSDT']
+- 2026-08-27T19:27:36Z VENUE-CHECK run_dryrun_verify: venue='binance' product='perp' tradable=False research_only=True
+- 2026-08-27T19:27:36Z [DRY RUN] setup_run + brief materialization OK: runs\run_dryrun_verify\artifacts\research_brief.yaml written (brief has no machine_constraints)
+- 2026-08-27T19:27:37Z [DRY RUN] terminal-state classification OK: pending_stage=completed_rejected -> no pause, queue would advance
+- 2026-08-27T19:27:37Z [DRY RUN] hard-pause classification OK: detected reason='no_signal_artifact'
+- 2026-08-27T19:27:37Z [DRY RUN] wishlist-trigger classification OK: detected family="daily_timeframe_er_overlay: checked 19 record(s); none satisfy all 3 condition(s) (source=kb_finding, family='daily_timeframe_er_overlay')"
+- 2026-08-27T19:27:37Z [DRY RUN] cleanup complete — no real run_ids, campaign_state.yaml, or campaign_queue.yaml were touched.
+- 2026-08-27T19:27:37Z [DRY RUN] === DRY RUN PASSED ===
+- 2026-08-27T20:54:43Z RECONCILE: 59 run dir(s) scanned, 59 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-27T20:54:43Z VENUE-CHECK run_060: venue='binance' product='perp' tradable=False research_only=True
+- 2026-08-27T20:54:43Z LAUNCH FUNDING_MR_4H_RETEST -> run_060 (brief=briefs/FUNDING_MR_4H_RETEST.md)
+- 2026-08-27T21:01:38Z STAGE  FUNDING_MR_4H_RETEST / run_060: pending_stage=signal_prescreen status=failed (prescreen_route=insufficient_power_a_priori)
+- 2026-08-27T21:01:38Z HALT — unhandled_exception: forecast_hash requires runs\run_060\artifacts\candidate_strategy_config.json, which does not exist. This trial's own prescreen/backtest step already had to read this file to produce a result -- its absence now means the artifacts directory is in an unexpected state, not a normal case to silently ski. Campaign stopped on FUNDING_MR_4H_RETEST / run_060. See RUNBOOK.md 'Resume after a pause'.
+- 2026-08-27T21:47:56Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-08-27T21:47:56Z RECONCILE: 60 run dir(s) scanned, 60 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-27T21:47:56Z [DRY RUN] queue: selected entry 'FUNDING_MR_4H_RETEST' (status=in_progress, brief=briefs/FUNDING_MR_4H_RETEST.md)
+- 2026-08-27T21:47:56Z [DRY RUN] classified next action for 'FUNDING_MR_4H_RETEST': 'continue'
+- 2026-08-27T21:47:56Z [DRY RUN] brief frontmatter parsed OK: strategy_domain=structural_forced_flow, market_universe=['BTCUSDT', 'ETHUSDT']
+- 2026-08-27T21:47:56Z VENUE-CHECK run_dryrun_verify: venue='binance' product='perp' tradable=False research_only=True
+- 2026-08-27T21:47:56Z [DRY RUN] setup_run + brief materialization OK: runs\run_dryrun_verify\artifacts\research_brief.yaml written (brief has no machine_constraints)
+- 2026-08-27T21:47:56Z [DRY RUN] terminal-state classification OK: pending_stage=completed_rejected -> no pause, queue would advance
+- 2026-08-27T21:47:56Z [DRY RUN] hard-pause classification OK: detected reason='no_signal_artifact'
+- 2026-08-27T21:47:56Z [DRY RUN] wishlist-trigger classification OK: detected family="daily_timeframe_er_overlay: checked 19 record(s); none satisfy all 3 condition(s) (source=kb_finding, family='daily_timeframe_er_overlay')"
+- 2026-08-27T21:47:57Z [DRY RUN] cleanup complete — no real run_ids, campaign_state.yaml, or campaign_queue.yaml were touched.
+- 2026-08-27T21:47:57Z [DRY RUN] === DRY RUN PASSED ===
+- 2026-08-27T21:48:08Z RECONCILE: 60 run dir(s) scanned, 60 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-27T21:50:13Z RECONCILE: 60 run dir(s) scanned, 60 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-27T21:52:23Z STAGE  FUNDING_MR_4H_RETEST / run_060: pending_stage=signal_prescreen status=failed (no scored artifacts yet)
+- 2026-08-27T21:52:23Z HALT — stale_escalation_unclaimed: [B10] No run_context.yaml override and no machine_constraints.protocol_ref for run_060, and campaign_state.last_escalation (protocol_path='protocols\\escalation_tf_15m.json') is either empty or claimed by a different run ('run_049') -- refusing to silently run against stale, unrelated campaign-wide . Campaign stopped on FUNDING_MR_4H_RETEST / run_060. See RUNBOOK.md 'Resume after a pause'.
+- 2026-08-27T21:59:23Z RECONCILE: 60 run dir(s) scanned, 60 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-27T21:59:23Z Queue exhausted — no ready or in_progress entries remain.
+- 2026-08-27T22:00:16Z RESUME FUNDING_MR_4H_RETEST / run_060: resolution confirmed for 'stale_escalation_unclaimed', resuming queue processing.
+- 2026-08-27T22:00:16Z RECONCILE: 60 run dir(s) scanned, 60 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-27T22:00:18Z STAGE  FUNDING_MR_4H_RETEST / run_060: pending_stage=human_pause status=active (prescreen_route=no_signal_artifact)
+- 2026-08-27T22:00:19Z HALT — conformance_gate_failure. Campaign stopped on FUNDING_MR_4H_RETEST / run_060. See RUNBOOK.md 'Resume after a pause'.
+- 2026-08-28T00:00:00Z TRIAL LEDGER CORRECTION / run_060: removed one trial row
+  (forecast_hash=ee635abd..., route=no_signal_artifact, statistic_valid=neither).
+  It was recorded by a prescreen that loaded ZERO bars: the loader demanded
+  BTCUSDT_4h.csv/ETHUSDT_4h.csv, neither exists, both symbols were skipped, and
+  the run still emitted a route. The standing rule is that an experiment which
+  TOUCHED MARKET DATA gets a row; this one touched none and tested nothing, so
+  counting it would inflate N against the deflated-Sharpe denominator for a
+  non-experiment. Not a hidden kill -- no result was produced to hide. The
+  defect that allowed a route from zero data is fixed (prescreen_signal.py now
+  raises), so this row cannot recur.
+- 2026-08-28T19:53:21Z RESUME FUNDING_MR_4H_RETEST / run_060: resolution confirmed for 'conformance_gate_failure', resuming queue processing.
+- 2026-08-28T19:53:21Z RECONCILE: 60 run dir(s) scanned, 60 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-28T19:56:32Z STAGE  FUNDING_MR_4H_RETEST / run_060: pending_stage=completed_rejected status=rejected (ic=0.016237, cost_ratio=0.153, prescreen_route=kill_no_ic, backtest_verdict=kill, verdict_status=kill)
+- 2026-08-28T19:59:02Z RECONCILE: 60 run dir(s) scanned, 60 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-28T19:59:02Z Queue exhausted — no ready or in_progress entries remain.

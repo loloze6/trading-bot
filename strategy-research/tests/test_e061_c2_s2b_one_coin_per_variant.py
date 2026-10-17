@@ -563,8 +563,11 @@ def test_legacy_ledgers_dedupe_exactly_as_before_on_both_paths(seed):
 
 @pytest.mark.real_repo_readonly
 def test_the_committed_ledger_dedupes_exactly_as_before():
-    state = yaml.safe_load((SR_ROOT / "campaign_record" / "campaign_state.yaml")
-                           .read_text(encoding="utf-8"))
+    # A frozen copy of campaign_state.yaml as committed at 74b7af28 (byte-identical):
+    # campaign_record/ is now committed every session (operator decision 2026-10-17),
+    # so the live file grows; this test pins the ledger shape it was written against.
+    state = yaml.safe_load((SR_ROOT / "tests" / "fixtures" / "campaign_record_frozen"
+                            / "campaign_state.yaml").read_text(encoding="utf-8"))
     rows = [r for r in state.get("trial_sharpes") or [] if not r.get("invalidated_artifact")]
     assert not any("symbols" in r for r in rows)
     assert not any(r.get("reproduces_trial") for r in rows)

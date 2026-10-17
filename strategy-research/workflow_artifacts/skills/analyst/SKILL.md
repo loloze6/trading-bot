@@ -32,7 +32,9 @@ lens.
   strategy is settled: do not test it again. Yours is one reason it holds, with the test that
   separates that reason from a coincidence: kind `execution_behaviour`, `vehicle: []`,
   confirmed on the next fold. Candidate reasons come from where the effect is and
-  is not in this run's data.
+  is not in this run's data. When this strategy has a confirmed claim, any claim on it names
+  that claim in its `statement` ("... because ...") and carries a test that would come out
+  differently if the reason were wrong; a claim that explains nothing settled is `no_claim`.
 - **Six tools** on this run's own bars and trades: `list_columns`, `describe`, `distribution`,
   `conditional_effect`, `trade_slice`, `event_study`. Every call is logged with an id (`q1`,
   `q2`, ...) and counted. A call that relates a condition or a group to an outcome costs
@@ -43,17 +45,34 @@ lens.
 
 1. **Orient.** `list_columns`, then what the strategy does mechanically: the forecast, the
    allocation changes, the lots by exit cause (`trade_slice`). Know the machine before reading
-   any outcome.
+   any outcome. From the base config, say how the forecast is scaled (a component's raw
+   `scaling_factor`, a `ratio_to_mean` or `vol_target` transform, or `blocks` with
+   `block_standardisation`) and what one-bar move puts it at the clip (+-20). Then run
+   `describe` and `distribution` on `forecast` (0 comparisons unless grouped by hour, weekday or
+   regime) and `trade_slice` with `{field: entry_forecast, stat: median}`, and write what they
+   show: how large the forecast typically is (the 10th, 50th and 90th percentiles from
+   `describe`, the end bins of `distribution`) and the share of bars and of lots at or near the
+   clip. `describe` gives n, the signed mean, std and the 10th, 50th and 90th percentiles;
+   `distribution` gives bin counts, whose end bins hold the bars at or near the clip; a lot
+   count with a filter on `entry_forecast` costs nothing. Once `describe` carries the average
+   |forecast| and the share at the clip, the same step gives those numbers directly. A forecast
+   at the clip on most bars is on/off in practice, and the mechanisms start there.
 2. **Find the surprise.** One place where the market or the strategy does what the run's design
    did not expect. A surprise is a conditional difference, not a level: "losing" is not a
    surprise; "lots closed by a flip lose and the others do not" is.
 3. **Ask why.** Name the mechanism: who is on the other side and why it persists (market), or
-   which pipeline rule produces it (mechanical). Write down the second query the mechanism
-   predicts and a coincidence would not. Run it. If it fails, that mechanism is wrong; the
-   behaviour may still hold. If it does (your own test shows it, or the memory view shows a
-   claim confirmed on this strategy), name the next mechanism and run its query. Drop the
-   candidate only when no mechanism is left or the comparison budget says stop. In a
-   `no_claim`, name every rejected mechanism in the reason; `best_rejected` is the last one.
+   which pipeline rule produces it (mechanical). Write the horizon and the direction from the
+   mechanism before the query runs; chosen after seeing several, they are a fit and the claim is
+   refused. Write down the second query the mechanism predicts and a coincidence would not. Run
+   it. If it fails, that mechanism is wrong; the behaviour may still hold. If it does (your own
+   test shows it, or the memory view shows a claim confirmed on this strategy), name the next
+   mechanism and run its query. A rejected mechanism that rests on a real observation leads to
+   the next 'why' on that observation, until the observation is explained or the tools cannot
+   test it; name the tool limit if so. A trade-level observation the family cannot test usually
+   has a bar-level form, the market move the strategy reacts to; write that form before naming
+   a tool limit. Drop the candidate only when no mechanism is left or the comparison budget says
+   stop. In a `no_claim`, name every rejected mechanism in the reason; `best_rejected` is the
+   last one.
 4. **Rule out rivals,** one query each where it matters: one window (`by: window`), one coin
    (`by: coin`), a data gap, the strategy's own mechanics.
 5. **Write the claim with its test,** or stop with no claim. A session that ends in no claim
@@ -74,6 +93,32 @@ opposite of its `direction` at any horizon is refused. Write two tests, each wit
 The claim is of kind `execution_behaviour` with `vehicle: []`. Run each test with
 `conditional_effect` (same `condition`, the selector above; same `outcome`; its own
 `horizons` and `direction`; and the claim's `floor`) before you claim it.
+
+## Worked example: a forecast that is on or off
+
+The query ids are those of the run_096 smoke copy's `analyst_queries/trade_efficiency.yaml`
+(that run's log, not yours). The host is one component: `trend_pct` (the one-day move, in
+percent) times a `scaling_factor` of 20, negated, clipped at +-20, so any day that moves 1% or
+more puts the forecast at the clip. The forecast is on or off in practice, and the mechanisms
+start there:
+
+- 294 of the 330 short lots (q3) entered at or below -10, and they lose about three times more
+  per lot than the 36 moderate shorts (q25: -2.9% a lot; q24: -1.0% a lot).
+- Reduction exits lose, but not as a reason: in this host the exit cause is the exit day's
+  return, so selecting lots by it is near-mechanical (the exit-time rule in the guard rails).
+- Short reductions are twice as many as long ones and a third worse (q18: -7.8%, 107 lots;
+  q17: -5.8%, 51 lots).
+
+The trade-level observations (lots entered at or below -10, mostly at the clip, lose; short
+reductions lose) have a bar-level form, the market move the strategy reacts to: the one-day
+move. In this host the forecast is minus the one-day return in percent times 20, clipped, so
+these shorts are entered after UP days. The bar-level tests that follow use the selector
+`{kind: event, field: past_return, bars: 1, op: ">=", value: <positive>}` (a fraction: 0.01 is
+1%), outcome `fwd_return` at horizon 1: at a large threshold, a value above the 1% clip move
+(0.01) fixed before any query, with `direction: greater`, beside the same selector at the 1%
+threshold (`value: 0.01`) with `direction: less`. The down-day side would be its own selector
+with `op: "<="` and a negative value. The horizon is fixed at 1 from the one-day signal,
+before any query runs.
 
 ## Market observations stay in your reasoning
 

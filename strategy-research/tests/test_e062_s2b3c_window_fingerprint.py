@@ -184,9 +184,13 @@ def test_ledgers_without_the_field_dedupe_exactly_as_before_on_both_paths(seed):
 @pytest.mark.real_repo_readonly
 def test_the_committed_ledger_n_is_unchanged():
     """Read-only. The committed ledger carries no fingerprint, so every dedupe
-    copy returns the pre-S2b-3c partition: N is unchanged."""
-    state = yaml.safe_load((SR_ROOT / "campaign_record" / "campaign_state.yaml")
-                           .read_text(encoding="utf-8"))
+    copy returns the pre-S2b-3c partition: N is unchanged.
+
+    Reads a frozen copy of campaign_state.yaml as committed at 74b7af28
+    (byte-identical): campaign_record/ is now committed every session (operator
+    decision 2026-10-17), so the live file grows past the ledger pinned here."""
+    state = yaml.safe_load((SR_ROOT / "tests" / "fixtures" / "campaign_record_frozen"
+                            / "campaign_state.yaml").read_text(encoding="utf-8"))
     rows = state.get("trial_sharpes") or []
     assert not any("windows_sha256" in r for r in rows)
     valid, _ = ds.exclude_invalidated_trials(rows)

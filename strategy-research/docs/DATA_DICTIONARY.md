@@ -96,8 +96,8 @@ portfolio risk gate, which `run_protocol` never passes).
 | `low` | Lowest price of the bar. | price | `DM:CandleBuilder.get_candle_history` | close |
 | `close` | Last price of the bar; the decision and fill price. | price | `DM:CandleBuilder.get_candle_history` | close |
 | `volume` | Traded volume of the bar. | base units | `DM:CandleBuilder.get_candle_history` | close |
-| `fear_greed` | Fear and Greed index, latest value published at least 1 day before the bar start (as-of merge, publication delay 86400 s). | index 0-100 | `FR:FEED_REGISTRY`, `DM:_merge_asof_with_causality_guard` | close |
-| `funding_rate` | Latest perpetual funding rate settled at or before the bar start (carried forward). | frac per settlement | `FR:FEED_REGISTRY`, `DM:_merge_asof_with_causality_guard` | close |
+| `fear_greed` | Fear and Greed index, latest value published at least 1 day before the bar start (as-of merge, publication delay 86400 s). Present only when the strategy reads this feed (D-146). | index 0-100 | `FR:FEED_REGISTRY`, `DM:_merge_asof_with_causality_guard` | close |
+| `funding_rate` | Latest perpetual funding rate settled at or before the bar start (carried forward). Present only when the strategy reads this feed (D-146). | frac per settlement | `FR:FEED_REGISTRY`, `DM:_merge_asof_with_causality_guard` | close |
 | `<reserved feed>` | A reserved feed's column (whale-footprint features), only when a caller registers it. | feed | `FR:RESERVED_FEED_REGISTRY` | close |
 | `forecast` | The strategy's final forecast for the bar, clipped to -20..+20; 0.0 while not ready or on an error. | forecast | `SE:ConfigDrivenStrategyEngine.forecast`, `SB:StrategyOutput`, `SB:MainStrategy.generate_signals` | close |
 | `confidence` | Always 0.0 (A2). | 0-1 | `SB:StrategyOutput`, `MS:AdvancedStrategy.generate_forecast` | meta |

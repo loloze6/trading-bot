@@ -86,6 +86,17 @@ ANCHORED_LAYOUTS = tuple(layout for layout in LAYOUTS if layout[1] == REPO_ANCHO
 assert ANCHORED_LAYOUTS, "no REPO_ANCHORED layout — the anchored test would vanish"
 
 
+ENV_VAR = "TBOT_PYTHON"
+
+
+@pytest.fixture(autouse=True)
+def _no_inherited_override(monkeypatch):
+    """The operator's machine sets TBOT_PYTHON for real (2026-10-17); without this
+    every layout test below would resolve to that interpreter instead of the fake
+    tree. Tests of the override set it themselves."""
+    monkeypatch.delenv(ENV_VAR, raising=False)
+
+
 def _module_tree(path: Path) -> ast.Module:
     return ast.parse(path.read_text(encoding="utf-8"))
 
@@ -293,6 +304,71 @@ def test_exactly_one_module_level_resolver_is_defined(source, mode):
         f"{len(defs)} module-level {RESOLVER_NAME}() definitions in {source} at "
         f"lines {[node.lineno for node in defs]}; runtime uses the last, this "
         f"file's extraction uses the first")
+
+
+def _external_interpreter(tmp_path: Path) -> Path:
+    """A runnable file outside the fake repo, standing in for the external venv."""
+    target = tmp_path / "outside" / "venvs" / "trading-bot" / "Scripts" / "python.exe"
+    target.parent.mkdir(parents=True)
+    target.write_text("")
+    target.chmod(0o755)
+    return target
+
+
+@pytest.mark.parametrize(("source", "mode"), LAYOUTS, ids=_ids)
+def test_env_override_wins_over_both_layouts(source, mode, tmp_path, monkeypatch):
+    external = _external_interpreter(tmp_path)
+    monkeypatch.chdir(_make_tree(tmp_path, windows=True, mac=True))
+    monkeypatch.setenv(ENV_VAR, str(external))
+
+    resolved = Path(_load_resolver(source, tmp_path)()).resolve()
+
+    assert resolved == external.resolve()
+
+
+@pytest.mark.parametrize(("source", "mode"), LAYOUTS, ids=_ids)
+def test_env_override_works_with_no_repo_venv(source, mode, tmp_path, monkeypatch):
+    """The point of the override: a worktree with no venv of its own still resolves."""
+    external = _external_interpreter(tmp_path)
+    monkeypatch.chdir(_make_tree(tmp_path, windows=False, mac=False))
+    monkeypatch.setenv(ENV_VAR, str(external))
+
+    resolved = Path(_load_resolver(source, tmp_path)()).resolve()
+
+    assert resolved == external.resolve()
+
+
+@pytest.mark.parametrize("bad", ["missing", "relative", "directory"])
+@pytest.mark.parametrize(("source", "mode"), LAYOUTS, ids=_ids)
+def test_unusable_env_override_raises_not_falls_through(
+        source, mode, bad, tmp_path, monkeypatch):
+    """A set-but-wrong override must be loud, even when a repo venv would resolve."""
+    monkeypatch.chdir(_make_tree(tmp_path, windows=True, mac=True))
+    if bad == "missing":
+        value = str(tmp_path / "outside" / "nothing" / "python.exe")
+    elif bad == "relative":
+        _external_interpreter(tmp_path)
+        value = str(Path("..") / "outside" / "venvs" / "trading-bot" / "Scripts" / "python.exe")
+    else:
+        directory = tmp_path / "outside" / "a_directory"
+        directory.mkdir(parents=True)
+        value = str(directory)
+    monkeypatch.setenv(ENV_VAR, value)
+
+    with pytest.raises(RuntimeError) as excinfo:
+        _load_resolver(source, tmp_path)()
+
+    assert ENV_VAR in str(excinfo.value) and value in str(excinfo.value)
+
+
+@pytest.mark.parametrize(("source", "mode"), LAYOUTS, ids=_ids)
+def test_empty_env_override_is_treated_as_unset(source, mode, tmp_path, monkeypatch):
+    monkeypatch.chdir(_make_tree(tmp_path, windows=True, mac=False))
+    monkeypatch.setenv(ENV_VAR, "")
+
+    resolved = Path(_load_resolver(source, tmp_path)()).resolve()
+
+    assert resolved == (tmp_path / "venv" / "Scripts" / "python.exe").resolve()
 
 
 @pytest.mark.parametrize(("source", "mode"), ANCHORED_LAYOUTS, ids=_ids)

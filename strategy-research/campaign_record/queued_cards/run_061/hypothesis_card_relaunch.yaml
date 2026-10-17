@@ -1,0 +1,160 @@
+hypothesis_id: C4_VOL_MANAGED_TREND_MOMENTUM_V1
+thesis: "Multi-week time-series momentum scaled inversely by realized volatility produces risk-adjusted returns above buy-and-hold by reducing leverage in crash regimes while capturing persistent underreaction to sustained directional moves at 1h frequency."
+rationale: >
+  The brief's central claim is that position-size scaling inversely to realized volatility
+  (reduce to 50% size when vol spikes, increase to 150% when vol drops) dampens whipsaw
+  losses in crash regimes without requiring perfect crash timing, while capturing trend
+  persistence in normal regimes. Trend-following alone is well-known and heavily arbitraged
+  on price-only signals; this formulation adds an ATR-based position-sizing overlay that
+  reduces notional exposure precisely when trend-following accumulatesmaximum drawdown,
+  improving risk-adjusted edge even if directional IC is modest. At 1h on liquid BTC/ETH,
+  the 1-4 day holding period keeps costs below 50% of edge when IC exceeds 0.045.
+
+edge_source:
+  category: persistent_behavioral_bias
+  specific_mechanism: "Multiweek directional price continuation (close > SMA(50)) reflects systematic
+    underreaction to sustained moves, producing positive directional IC over 20-100-bar horizons.
+    Position size scaled inversely to realized volatility (ATR-based, clipped to 50%-200% of base)
+    reduces notional leverage when vol spikes (crash protection), amplifies capture when vol drops
+    (low-friction momentum), creating a mechanical rebalancing that improves Sharpe by concentrating
+    exposure where trend persists most reliably and reducing exposure where mean-reversion dominates."
+  why_not_arbitraged: "Trend-following is crowded at short timeframes, but volatility-scaled position
+    sizing requires disciplined real-time vol calculation and daily rebalancing that most retail
+    algorithms do not implement. Institutional arbitrage capacity is constrained here: the strategy
+    operates at small retail notional where institutional capital cannot profitably compete on the
+    vol-scaling mechanics alone (structural persistence, not information-based edge). The gap between
+    professional trend-followers and retail execution discipline ensures recurrence despite being
+    publicly known."
+  evidence_type: price_volume_only
+  measurable_proxy: "Spearman IC between forward 5-20-bar returns and (1) momentum signal (close
+    relative to SMA(50), lagged), (2) position sizing multiplier (inverse realized volatility,
+    normalized and lagged). Mechanism predicts (a) positive momentum-return IC (trend persistence),
+    (b) lower max-drawdown-pct than unscaled trend on the same directional signal, (c) net Sharpe
+    improvement from vol-scaling even if directional IC is marginal (Sharpe = IC × sqrt(holding_bars)
+    × (1 - drawdown_reduction_factor_from_sizing))."
+  requires_new_feed: null
+
+signal_concept: >
+  Entry: Long when close > SMA(50), position size = base_unit × max(0.5, min(2.0, 1.0 /
+  (1.0 + (ATR(14) / SMA(ATR(14), 50))))), clipped to 50%-200% of base. Short: close < SMA(50)
+  with symmetric sizing. Exit: when close crosses SMA(50) in opposite direction, or on max-loss
+  stop at size × 2% intraday risk per position. Rebalance size at each bar or when realized
+  vol shifts > 25% to maintain target notional band. Ungated across all regimes, fires every bar
+  for long/short/neutral position decision. Expected holding: 2-4 days (20-100 bars) per round-trip
+  trade based on momentum persistence timeframe.
+
+target_market:
+  - BTCUSDT
+  - ETHUSDT
+
+timeframe: 1h
+
+assumptions:
+  - "ATR(14) is a sufficiently accurate and unbiased proxy for realized volatility over the relevant
+    holding period; microstructure tick noise does not dominate range-based vol estimates on 1h bars."
+  - "SMA(50)-based momentum is genuinely persistent (mean-reversion lag > holding period) at 1h on
+    liquid BTC/ETH, capturing systematic underreaction within a 1-4-day window."
+  - "Volatility-scaling rule (inverse ATR normalized) reflects genuine rebalancing incentive and is
+    mechanically sound, not an in-sample overfitting artifact; market liquidity is sufficient to
+    rebalance sizing without slippage exceeding the model's assumed 17-17.5 bps round-trip."
+  - "Momentum underreaction and volatility-regime persistence are genuine behavioral phenomena, not
+    fully arbitraged away by faster (minute-scale) algorithms; 1h bar-frequency execution is slow
+    enough to avoid the tightest arbitrage loops."
+  - "No look-ahead bias in sizing or signaling: ATR is computed from bar[t-1] close, sizing decision
+    fires at bar[t] open, reducing the risk of accidental forward-filling."
+
+expected_failure_modes:
+  - "Trend-following crowding at 1h: if momentum IC on bare SMA(50) signal is already zero or negative
+    (as many price-only indicators in this campaign have shown), adding volatility-scaling position
+    sizing (a rebalancing layer, not a signal generator) will inherit and amplify that null IC. Mitigation:
+    prescreen must compute directional-component IC separately from sizing-overlay IC; if directional
+    component IC < 0.02, escalate to a feed-based signal family or close-out the hypothesis."
+  - "Volatility-scaling overfitting: if the clipped 50%-200% sizing band and ATR(14) lookback are
+    in-sample optimal for 2024-2025 volatility distribution but regimes shift in walk-forward testing,
+    the sizing may become sub-optimal. Mitigation: A/B test sizing bands (50%-200% vs 60%-180% vs
+    uncapped) and ATR periods (14 vs 21) to measure robustness; sign_consistent_by_era criterion
+    will catch era-dependent failures."
+  - "Holding-period assumption failure: if sustained momentum at 1h is actually mean-reverting on a
+    2-4-day horizon (price overshoots then corrects), the strategy will be long after reversal and
+    bleed losses. Mechanism check: if directional-component IC is negative, this failure mode has
+    fired. Mitigation: test alternate holding periods (weekly SMA instead of 50-bar SMA) in follow-up
+    run if prescreen flags concerns."
+  - "Rebalancing slippage accumulation: daily sizing rebalancing on the exit leg introduces 5-10 bps
+    of implicit micro-slippage (bid-ask crossing, re-entry friction). If actual round-trip costs run
+    20-25 bps instead of modeled 17-17.5 bps, edge-to-cost ratio falls below 2.0x and fails criterion.
+    Mitigation: monitor cost_paid_bps in protocol_result.yaml; if real costs exceed 19 bps on average,
+    re-test with 50%-150% sizing band (less frequent rebalancing) or daily (not intra-bar) rebalancing."
+  - "Era-conditional sign instability: prior KB findings (fear_greed_contrarian, keltner_scoremode)
+    show behavioral signals can flip sign across eras (e.g., profitable 2018-2023, unprofitable 2024-2025).
+    If momentum-edge is similarly era-dependent, sign_consistent_by_era criterion will fail. Mitigation:
+    prescreen with significance_methodology=episode_blocked_a851a; analyze per-era IC and per-era Sharpe
+    to detect regime drift."
+
+library_lookup:
+  indicator_id: "moving_average_crossover (SMA trend base) + atr_volatility_filter (position-sizing overlay)"
+  regime_affinity_for_target: "neutral (ungated per POST-A2.3; components have known affinities but composite is tested ungated)"
+  affinity_justification: "This hypothesis does not regime-gate and fires every bar ungated per POST-A2.3.
+    The SMA component has unfavorable affinity in ranging regimes and favorable affinity in trending
+    regimes; ATR as a sizing tool has neutral affinity (it filters, not directs). The composite is
+    tested as a single ungated signal. If future Improvement-03 diagnostics reveal regime-dependent
+    performance, that is a measurement outcome (and may trigger downstream regime-conditioning), not
+    a prior contradiction."
+  prior_campaign_failures:
+    - run_id: run_043
+      hypothesis_id: EMA_SPREAD_TREND_CONTINUATION_V1
+      mechanism_tried: "EMA(9/21) spread for trend continuation without position-size volatility scaling"
+      why_different: "run_043 tested bare trend signal (no sizing overlay) and found ic=-0.021 with
+        cost_drag overwhelming edge. This hypothesis adds ATR-based inverse-volatility position-sizing
+        as a structural drawdown-reduction layer not present in run_043. The sizing mechanism is novel
+        for this campaign; it represents a composite hypothesis, not a parameter tweak."
+    - run_id: run_054
+      hypothesis_id: P4_SMA_TREND_LONGONLY_DAILY
+      mechanism_tried: "SMA(100) daily long-only trend, ungated, no position-sizing scaling"
+      why_different: "run_054 tested daily SMA (longer-period, daily bars) without volatility-scaling
+        position sizing; this hypothesis tests 1h bars WITH ATR-based sizing. Timeframe and sizing
+        mechanism both differ materially. run_054's outcome (ungated_er_gate_variant_too_sparse) was
+        tied to ER-gating sparsity, not fundamental rejection of SMA momentum at daily length."
+  crowding_risk: medium
+  crowding_deviation_justification: "SMA cross-over alone is marked high-crowding in the indicator library.
+    However, this hypothesis adds ATR-based position-sizing as a mechanical overlay not uniformly adopted
+    by retail trend-followers (most use fixed notional). The composite crowding is therefore lower than
+    bare SMA. No superior low-crowding alternative directional indicator exists in available_feeds.yaml
+    (order-book marked unavailable), so medium-crowding composite is the best available option for this
+    signal family."
+
+criteria:
+  - id: realized_edge_to_cost_ratio
+  - id: sign_consistent_by_era
+
+cost_feasibility:
+  assumed_round_trip_cost_bps: 17.0
+  expected_holding_bars:
+    min: 20
+    max: 100
+  expected_trades_per_window: 80
+  required_gross_edge_bps_per_trade: 34.0
+  plausibility: marginal
+  plausibility_rationale: "Ungated trend-following on liquid 1h BTC/ETH typically shows IC in the 0.02-0.06
+    range depending on crowding and regime. Expected holding 20-100 bars (~1-4 days) with ~80 trades per
+    symbol per 6-month window. Estimated gross edge ≈ IC × sigma_bar_bps × sqrt(avg_holding_bars) ≈ 0.04
+    × 120 bps × sqrt(3) ≈ 25-30 bps. This is BELOW the 34 bps requirement (safety_factor 2.0 × 17.0 bps
+    cost), making this marginal: the strategy survives costs only if realized IC ≥ 0.045-0.050 (achievable
+    for ungated trend, not guaranteed). Volatility-scaling adds Sharpe benefit (drawdown reduction) that
+    may improve realized edge without improving IC, so the risk-adjusted plausibility is higher than the
+    IC-only estimate. MARGIN: thin; requires above-median realized IC within the plausible range to pass
+    edge-to-cost-ratio criterion (> 2.2 with 100-trade floor)."
+
+power_parameters:
+  activation_rate: 0.80
+  plausible_ic_upper: 0.06
+  n_bars: 16000
+  n_symbols: 2
+  is_market_wide: false
+  power_note: "Signal class: Dense OHLCV, continuous/near-every-bar momentum activation (unfaded decision
+    every bar), ungated trend-following + position-sizing overlay. plausible_ic_upper=0.06 selected from
+    A8.6 anchor table (dense OHLCV, lower crowding than textbook MA alone: 0.05-0.08 range) reflecting
+    the volatility-scaling composite adding differentiation vs vanilla MA crossover. Expected n_eff ≈
+    (16000 × 0.8 × 2) / 24 ≈ 1,067 block-adjusted; min_detectable_ic ≈ 0.031 (1/sqrt(1064)). Adequate
+    power: min_detectable_ic << plausible_ic_upper."
+
+pass_through: false

@@ -122,3 +122,12 @@ strategy-research/quarantine/holdout_contaminated/
 
 # Campaign runtime artifacts
 strategy-research/campaign.pid
+
+# Run records (operator decision 2026-10-17, Option C; rule in
+# strategy-research/CLAUDE.md "Runtime records"). Run folders are never staged;
+# they are backed up outside git. Files master already tracks (run_0001..run_060)
+# stay tracked: an ignore rule never untracks a file.
+/strategy-research/runs/
+# campaign_record/ itself is committed once per session; its composite/ folder
+# is a recomputable backtest cache (tools/composite_cache.py), not a record.
+/strategy-research/campaign_record/composite/

@@ -530,3 +530,43 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-17 -- Staged-never-committed files are what a merge or autostash drags
 - **Pattern:** the operator checkout holds 11,547 staged files that were never committed (run folders from run_061 on); every merge, stash or worktree operation on it moves that set, and a plain `git merge` refuses while the index differs from HEAD.
 - **Rule:** before any git operation on the operator checkout, count staged entries against HEAD; treat a large staged set as uncommitted work and route around it (plumbing sync, no stash, no switch).
+
+## 2026-10-17 -- Ignored files are overwritten by checkout; old commits track venv
+- **Pattern:** venv/ is gitignored, and 802 master commits (before 29c88c3e) plus side commit 8c5d745c track 449 venv files. Checking one out silently overwrites venv/ and leaving it deletes them, python.exe included; through a junction that is the shared venv (worktree d144-ledger, 2026-10-16, reflog).
+- **Rule:** no venv junction in any worktree, ever; agents call the main interpreter by absolute path. To read old code use `git show <commit>:<path>`, never a checkout in a tree that holds a venv.
+
+## 2026-10-17 -- A folder with no .git runs git against the parent checkout
+- **Pattern:** the orphan folders .claude/worktrees/crit and item3-dryrun had no .git; `git -C` there reported the operator checkout's 11,621 entries, so a write command there would have hit the operator checkout.
+- **Rule:** before any git command in a worktree path, check `git worktree list` lists it; delete orphans as plain folders after a reparse-point check.
+
+## 2026-10-17 -- A brief's measured facts drift within hours
+- **Pattern:** the brief's 25 worktrees / 11,547 staged files were 27 / 11,585 at review time (another session created two worktrees at 07:12), and the 2026-09-28 venv loss had a different cause than stated (worktree remove through a junction, not an old-commit checkout).
+- **Rule:** re-measure every count and cause at the start, report the difference, and re-read `git worktree list` right before each removal; never act on a count from a brief.
+
+## 2026-10-17 -- The venv was gutted again (repeat of 2026-09-28)
+- **Pattern:** at session start `venv\pyvenv.cfg`, `python.exe` and the activate scripts were gone while `Lib\site-packages` still held 215 packages; the cause was an old venv-tracking commit checked out through a junction (process-review lesson above).
+- **Rule:** at session start check `venv\Scripts\python.exe` exists before any test; if not, `python -m venv --upgrade venv`, `venv\Scripts\python.exe -m ensurepip --upgrade`, an import check, then the d144 test file and a few trading-bot tests; never junction the venv into a worktree.
+
+## 2026-10-17 -- Plain git merge autostashes the operator checkout's staged set
+- **Pattern:** the operator checkout holds ~11.6k staged runtime files; a plain `git merge` would autostash them, and the sync's last step (checkout of incoming files + `update-ref`) is blocked by the permission classifier until the operator approves.
+- **Rule:** sync only by `merge-tree --write-tree` + `commit-tree` + `git checkout <commit> -- <incoming files>` + `update-ref <ref> <new> <old>`; first check the incoming files against unstaged and staged edits (another session may have uncommitted lines in SESSION_LOG.md or tasks/lessons.md), and after `update-ref` reset the index of any file written by hand with `git restore --staged`.
+
+## 2026-10-17 -- CRLF: measure and edit with Python, not Git Bash
+- **Pattern:** the queue, SKILL.md and DECISION_LOG.md are CRLF in the checkout (LF in the repo, autocrlf); Git Bash counts and heredocs mangle CR.
+- **Rule:** count line endings with Python on raw bytes, edit runtime YAML by exact byte replacement that asserts one occurrence and keeps CRLF, then parse before/after and compare the parsed rows.
+
+## 2026-10-17 -- Long jobs run as background tasks
+- **Pattern:** the analyst smoke (two lenses, ~3 min) and the slow fixture backtests (`test_risk_layer_bit_identical` hits the 30 s pytest timeout without `--timeout=0`) would block a foreground call.
+- **Rule:** start them with `run_in_background`, log to a file, confirm the process and the log are alive right after the start, and read the log only on completion.
+
+## 2026-10-17 -- A ruling's line numbers can be stale
+- **Pattern:** the D-145 ruling cited SKILL.md :25-26, :44-47, :58-69; the file had moved (:28-31, :46-49, :56-69); (f)'s phrase was wrapped across forecast.md:6-7.
+- **Rule:** locate each cited passage by content, edit that, and report the real ranges; stop only when the content itself is not there.
+
+## 2026-10-17 -- Name a "first failing commit" only after reading the fixture's history
+- **Pattern:** I named ad7ee167 (#169) as where the bar-equity test first failed; the fixture already held 3.785 from the 2026-08-09 re-baseline, so it failed at c09004ef (#153); a reviewer caught it.
+- **Rule:** before naming where a fixture test first fails, `git log` the fixture file and check its expected value at the parent of each candidate commit.
+
+## 2026-10-17 -- A PR can be merged while its fix agent still works
+- **Pattern:** the operator merged #453 before its review-fix commit was pushed.
+- **Rule:** when a review-fix agent is running, say so next to the merge request; if the PR is merged first, redirect the fix to a new branch from master and a new PR, never onto the merged branch.
