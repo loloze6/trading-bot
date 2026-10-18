@@ -51,8 +51,8 @@ CONFIG = {
     "strategies": {"warmup": 51, "regimes": {
         "unknown": {"components": [
             {"id": "rsi", "class": SC + "RSIPullbackComponent", "params": {"period": 14},
-             "weight": 1.0, "transforms": [{"op": "identity"}, {"op": "clip",
-                                                               "params": {"min": -20, "max": 20}}]},
+             "weight": 1.0, "transforms": [{"op": "standardise", "params": {"window": 20, "min_periods": 5}},
+                            {"op": "clip", "params": {"min": -20, "max": 20}}]},
         ]},
         "trending": None, "mean_reversion": None, "chop": None}},
 }
@@ -128,7 +128,9 @@ def test_every_on_off_class_is_refused_in_strategies(name):
                                     ("history_transforms", "threshold_filter"),
                                     ("history_transforms", "volume_filter")])
 def test_dead_zone_ops_are_refused_in_both_pipelines(key, op):
-    cfg = _cfg(**{key: [{"op": "identity"}, {"op": op, "params": {"min_abs": 1.0}}]})
+    first = ({"op": "standardise", "params": {"window": 20, "min_periods": 5}}
+             if key == "transforms" else {"op": "identity"})  # D-149: transforms must hold standardise
+    cfg = _cfg(**{key: [first, {"op": op, "params": {"min_abs": 1.0}}]})
     msgs = fr.strategies_violations(cfg, fr.on_off_classes())
     assert msgs == [msgs[0]] and f"dead-zone op '{op}'" in msgs[0]
     assert f"components[0].{key}[1]" in msgs[0]
@@ -145,7 +147,10 @@ def test_the_regime_detector_is_not_checked():
 def test_malformed_pieces_are_left_to_validate_config():
     cfg = copy.deepcopy(CONFIG)
     cfg["strategies"]["regimes"]["chop"] = {"components": ["not a dict", {"transforms": "x"}]}
-    assert fr.strategies_violations(cfg, fr.on_off_classes()) == []
+    # the D-149 check does refuse the dict component whose transforms is not a list
+    # (no standardise); the D-051 check skips it
+    assert [m for m in fr.strategies_violations(cfg, fr.on_off_classes())
+            if not m.startswith("D-149:")] == []
     assert fr.strategies_violations({"strategies": []}, fr.on_off_classes()) == []
 
 
@@ -449,8 +454,8 @@ def test_5a_a_patch_removing_the_banned_piece_passes_the_rule(monkeypatch):
     """(b): checked on the config after the patch. A base with a dead zone is
     refused; a variant whose patch replaces that transform is not refused by
     D-051 (and keeps the classes, so D-053 passes too)."""
-    base = _cfg(transforms=[{"op": "identity"}, {"op": "threshold_filter",
-                                                "params": {"min_abs": 5}}])
+    base = _cfg(transforms=[{"op": "standardise", "params": {"window": 20, "min_periods": 5}},
+                            {"op": "threshold_filter", "params": {"min_abs": 5}}])
     variants = _run_5a(monkeypatch, "run_911", base, [
         _design("graded", [{"path": COMP0 + "/transforms/1",
                             "value": {"op": "clip", "params": {"min": -20, "max": 20}}}])])

@@ -290,10 +290,11 @@ BASE_CONFIG = {
     "strategies": {"warmup": 51, "regimes": {"unknown": {"components": [{
         "id": "rsi",
         "class": "strategies.strategy_components.RSIPullbackComponent",
-        "params": {"period": 14, "scaling_factor": 0.4, "long_only": True},
+        "params": {"period": 14, "long_only": True},
         "weight": 1.0, "lookback": 500,
         "history_transforms": [{"op": "vol_normalize"}],
-        "transforms": [{"op": "ratio_to_mean"}, {"op": "scale", "params": {"factor": 10.0}},
+        "transforms": [{"op": "standardise", "params": {"window": 20, "min_periods": 5}},
+                       {"op": "identity"},
                        # D-051: graded only -- a clip, not a threshold_filter dead zone
                        # (5a refuses threshold_filter / volume_filter in `strategies`).
                        {"op": "clip", "params": {"min": -20.0, "max": 20.0}}],

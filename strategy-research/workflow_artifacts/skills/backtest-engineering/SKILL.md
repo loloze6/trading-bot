@@ -128,9 +128,9 @@ the original rationale.
   fabricate a config around the missing piece.
 - transforms list must not be empty for directional signal components. If no normalization
   is intended, include {"op": "identity"} explicitly to confirm intent.
-- scaling_factor and transform pipeline interact: if using ratio_to_mean + scale,
-  scaling_factor controls raw signal range before normalization; if transforms is empty,
-  scaling_factor IS the forecast magnitude — ensure it produces values in [-20, +20].
+- the forecast's scale (D-149): a component's transforms must hold standardise (first, no scale op
+  after it) or vol_target, or its regime must be a blocks regime with block_standardisation;
+  anything else is refused after 1b and again at 5a.
 - default_regime must be "unknown" in threshold_rules and score_product modes WHENEVER
   regime_detector.rules is non-empty (a real gate exists). Setting it to trending,
   mean_reversion, or chop in that case causes bars that fail every rule to still fire

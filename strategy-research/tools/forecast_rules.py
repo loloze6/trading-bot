@@ -1,5 +1,5 @@
 """
-forecast_rules -- the D-051 and D-053 config checks (DECISION_LOG.md).
+forecast_rules -- the D-051, D-053 and D-149 config checks (DECISION_LOG.md).
 
 Pure helpers, no I/O beyond reading the component catalogue. Used by
 run_phase1_research under orchestrator.config_direct_authoring: right after
@@ -18,12 +18,22 @@ is refused.
     strategy regime's components, in order. A parameter or transform change
     passes; adding, removing or replacing a component, or setting a regime to
     null, does not.
+  * D-149 (standardised forecast, strict): every component in `strategies`
+    passes only when its `transforms` holds `standardise` and no `scale` op, or
+    holds `vol_target`, or its regime has both `blocks` and
+    `block_standardisation`. Anything else is refused -- a bare `scale` or
+    `scaling_factor`, a component with no scale at all (its class default scale
+    is not standardised), and `standardise` together with `scale` in one
+    `transforms` list. That `standardise` is the FIRST step is validate_config.py's
+    V15, not this module's. The regime detector is not checked.
 
 Classes are matched by their bare class name (the last segment of the dotted
 `class` path): every component lives in strategies.strategy_components, and
 whether the path loads at all is validate_config.py's V12, not this module's.
 Malformed pieces (a non-dict component, a non-list transforms) are skipped
-here: validate_config.py reports them.
+here for D-051: validate_config.py reports them. D-149 skips a non-dict
+component but refuses a dict one whose transforms is not a list (it holds no
+standardise or vol_target).
 """
 from __future__ import annotations
 
@@ -37,6 +47,12 @@ _ROW_RE = re.compile(r"^\|\s*`(\w+)`\s*\|", re.MULTILINE)
 _KIND_CELL = 4  # class, params, exact output, range & sign, KIND, ...
 ON_OFF_KIND = "on/off"
 DEAD_ZONE_OPS = ("threshold_filter", "volume_filter")
+RULE_SENTENCE = (
+    "Standardised forecast (hard rule). Every component in strategies puts standardise first in "
+    "its transforms, and no scale op after it (standardise: past values only, target 10, cap 20, "
+    "window, min_periods), unless its scale is set by vol_target or the regime is a blocks regime "
+    "with block_standardisation. Any other component, including one whose only scale is a bare "
+    "scale or scaling_factor, is refused after 1b and again at 5a.")
 
 
 class CatalogError(RuntimeError):
@@ -91,9 +107,28 @@ def _strategy_components(config):
                 yield rname, j, comp
 
 
+def _ops(pipeline) -> set:
+    """The op names in a transform list (a non-list or non-dict step is skipped)."""
+    if not isinstance(pipeline, list):
+        return set()
+    return {step.get("op") for step in pipeline if isinstance(step, dict)}
+
+
+def _not_standardised(comp, regime_cfg) -> bool:
+    """D-149 (strict): True unless the component's `transforms` holds `standardise`
+    and no `scale`, or holds `vol_target`, or its regime is a blocks regime with
+    block_standardisation."""
+    if isinstance(regime_cfg, dict) and "blocks" in regime_cfg and "block_standardisation" in regime_cfg:
+        return False
+    tf = _ops(comp.get("transforms"))
+    return not ("vol_target" in tf or ("standardise" in tf and "scale" not in tf))
+
+
 def strategies_violations(config, on_off) -> list:
-    """D-051 messages for `config` (empty when it passes)."""
+    """D-051 and D-149 messages for `config` (empty when it passes)."""
     out = []
+    strategies = config.get("strategies") if isinstance(config, dict) else None
+    regimes = strategies.get("regimes") if isinstance(strategies, dict) else {}
     for rname, j, comp in _strategy_components(config):
         loc = f"strategies.regimes.{rname}.components[{j}]"
         name = _class_name(comp.get("class"))
@@ -114,6 +149,8 @@ def strategies_violations(config, on_off) -> list:
                         f"and volume_filter are not allowed on a forecast component (a "
                         f"'strong enough' or 'volume above average' condition belongs in the "
                         f"regime detector)")
+        if _not_standardised(comp, regimes.get(rname)):
+            out.append(f"D-149: {loc} (id {comp.get('id')!r}) -- " + RULE_SENTENCE)
     return out
 
 
