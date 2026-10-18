@@ -131,6 +131,7 @@ MAX_AGGS = 4
 MAX_TRADE_CLAUSES = ct.MAX_TRADE_CLAUSES
 MAX_FIELD_BARS = 1000                     # past_return_<n> / trailing_vol_<n>
 BINS_RANGE = (2, 20)
+FORECAST_CAP = 20.0                       # trading-bot/strategies/strategy_engine.py:613 clips the ensemble to [-20, 20]
 # the "after"/"before" checkpoints of event_study, per cadence (PHASE_A 2.2)
 CHECKPOINTS = {"hourly": (1, 2, 3, 6, 12, 24), "daily": (1, 2, 3, 5, 10)}
 
@@ -790,9 +791,12 @@ class QueryEngine:
             if len(fin):
                 p10, p50, p90 = np.percentile(fin, [10, 50, 90])
                 cell.update(mean=r8(fin.mean()), std=r8(fin.std(ddof=1)) if len(fin) > 1 else None,
-                            p10=r8(p10), p50=r8(p50), p90=r8(p90))
+                            p10=r8(p10), p50=r8(p50), p90=r8(p90), abs_mean=r8(np.abs(fin).mean()))
             else:
-                cell.update(mean=None, std=None, p10=None, p50=None, p90=None)
+                cell.update(mean=None, std=None, p10=None, p50=None, p90=None, abs_mean=None)
+            if column == "forecast":                  # share of finite bars pinned at the engine's clip
+                cell["share_at_cap"] = (r8((np.abs(fin) >= FORECAST_CAP - 1e-9).sum() / len(fin))
+                                        if len(fin) else None)
             out[g] = cell
         return {"column": column, "by": by, "groups": out}, n
 
