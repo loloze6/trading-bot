@@ -663,5 +663,5 @@ in the record file, not in the prose the operator reads.
 - **Rule:** run the census from the PR's worktree (its tools/ on sys.path), reading the run configs read-only from the checkout's runs/, and say which tree the rule came from.
 
 ## 2026-10-18 -- A campaign launched as a session background job inherits the 2-hour cap
-- **Pattern:** `run_campaign.py --once` was started through the session's background-job tool, whose jobs are stopped at the 2-hour limit (same cap as the 2026-10-03 calibration lesson); a run of the run_094 or run_096 length would have been killed mid-stage. run_097 finished in 8 minutes, so nothing was lost.
+- **Pattern:** `run_campaign.py --once` was started through the session's background-job tool, whose jobs are stopped at the 2-hour limit (same cap as the 2026-10-03 calibration lesson); a run of run_094's length (about 6 hours from LAUNCH to DONE in campaign_record/campaign_log.md) would have been killed mid-stage. run_097 finished in 8 minutes, so nothing was lost.
 - **Rule:** before launching a campaign run, check how long the expected run can take against the launcher's time cap; if it can exceed the cap, say so to the operator before launch and ask how to launch it.
