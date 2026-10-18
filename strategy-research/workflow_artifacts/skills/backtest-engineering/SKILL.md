@@ -128,9 +128,9 @@ the original rationale.
   fabricate a config around the missing piece.
 - transforms list must not be empty for directional signal components. If no normalization
   is intended, include {"op": "identity"} explicitly to confirm intent.
-- the forecast's scale comes from standardise, vol_target or a blocks regime with
-  block_standardisation (D-149): a scale op or a scaling_factor param as the only scale is
-  refused after 1b and again at 5a.
+- the forecast's scale (D-149): a component's transforms must hold standardise (first, no scale op
+  after it) or vol_target, or its regime must be a blocks regime with block_standardisation;
+  anything else is refused after 1b and again at 5a.
 - default_regime must be "unknown" in threshold_rules and score_product modes WHENEVER
   regime_detector.rules is non-empty (a real gate exists). Setting it to trending,
   mean_reversion, or chop in that case causes bars that fail every rule to still fire

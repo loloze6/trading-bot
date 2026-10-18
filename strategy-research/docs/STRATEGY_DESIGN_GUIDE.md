@@ -319,7 +319,7 @@ explicit `lookback` below the largest minimum fails validation.
 
 **`scaling_factor` cancels under normalisation.** Under `ratio_to_mean`, `zscore`, `percentile` and `standardise` the component's
 own `scaling_factor` has no effect on the forecast (the statistic divides it out, or ranks it away): only its sign
-survives. Standardised forecast (hard rule). Every component in strategies ends its transforms with standardise (past values only, target 10, cap 20, window, min_periods), unless its scale is set by vol_target or the regime is a blocks regime with block_standardisation. A bare scale or scaling_factor as the only scale is refused after 1b and again at 5a. Where a component ignores `scaling_factor` altogether, the
+survives. Standardised forecast (hard rule). Every component in strategies puts standardise first in its transforms, and no scale op after it (standardise: past values only, target 10, cap 20, window, min_periods), unless its scale is set by vol_target or the regime is a blocks regime with block_standardisation. Any other component, including one whose only scale is a bare scale or scaling_factor, is refused after 1b and again at 5a. Where a component ignores `scaling_factor` altogether, the
 catalogue says so.
 
 **Percentile and sigmoid outputs are one-sided** (0 to 1). They suit regime scores; as a forecast they would be

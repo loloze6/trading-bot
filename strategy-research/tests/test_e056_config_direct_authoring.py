@@ -259,7 +259,8 @@ _BASE_CONFIG = {
         "regimes": {
             "unknown": {"components": [
                 {"id": "rsi", "class": "strategies.strategy_components.RSIPullbackComponent",
-                 "params": {"period": 14}, "weight": 1.0, "transforms": [{"op": "identity"}]},
+                 "params": {"period": 14}, "weight": 1.0,
+                 "transforms": [{"op": "standardise", "params": {"window": 20, "min_periods": 5}}]},
             ]},
             "trending": None, "mean_reversion": None, "chop": None,
         },
