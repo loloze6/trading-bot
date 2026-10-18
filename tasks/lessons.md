@@ -629,3 +629,7 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-18 -- `"$Var:$path"` in PowerShell is not "<value>:<path>"
 - **Pattern:** replacing the literal `origin/master` with `$Target` in `"origin/master:$f"` produced `"$Target:$f"`, which PowerShell parses as a drive-qualified variable; caught before the script ran.
 - **Rule:** write `"${Target}:$f"` whenever a variable is followed by a colon in a PowerShell string.
+
+## 2026-10-18 -- "Must pass unchanged" against an old-engine comparison test
+- **Pattern:** a ruling listed byte-identity tests that "must pass unchanged" for an intended engine change; one of them (and two siblings) execs the engine from an old commit and compares it to the new one on configs the change is meant to move, so it fails by design. Its old engine also imports the NEW registry from sys.modules, so it cannot see a registry change at all.
+- **Rule:** before promising "passes unchanged", grep the named tests for `git show <commit>:` / exec of old modules and check whether their configs touch the change; report the conflict as an operator question with a proposed isolating patch, and compare registry functions old-vs-new directly.
