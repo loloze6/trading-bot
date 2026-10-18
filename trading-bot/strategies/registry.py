@@ -93,6 +93,62 @@ def _vol_target(v: float, h: pd.Series, p: dict[str, Any], d: pd.DataFrame | Non
 
 
 # ---------------------------------------------------------------------------
+# standardise (history-based): put a component on the forecast scale.
+#
+#   out = clip(target * h[-1] / mean(|h| over the last `window` values before
+#         the current one), -cap, cap)
+#
+# Scale-only, like the block standardisation below (standardise_block_forecast,
+# reused here with its 1e-10 guard): no mean subtraction, so the sign and a zero
+# survive. 0.0 while fewer than `min_periods` past values exist (with D-147's
+# history_op_min_periods the engine waits for min_periods + 1 history values,
+# transform_min_periods). V15 (validate_config.py): the first step of `transforms` and
+# the only history op there; in `history_transforms` it would see one value and give 0.0. window and
+# min_periods are required; target defaults to 10 (the forecast scale's average
+# absolute value), cap to 20 (the engine's forecast cap).
+#
+# WHY THIS CANNOT LEAK: the mean is taken over history values strictly before
+# the current one (h.iloc[-(window + 1):-1]); the current value is not in its
+# own denominator, and every history value was appended at or before this bar.
+# ---------------------------------------------------------------------------
+STANDARDISE_DEFAULTS = {"target": 10.0, "cap": 20.0}
+
+
+def standardise_param_errors(p: Any) -> list[str]:
+    """Problems with a standardise params dict ([] when valid). Shared by the op
+    and validate_config.py's V15, so both refuse exactly the same params."""
+    if not isinstance(p, dict):
+        return [f"params must be a mapping, got {type(p).__name__}"]
+    errors = [f"missing param '{k}'" for k in ("window", "min_periods") if k not in p]
+
+    def _int(x):
+        return isinstance(x, int) and not isinstance(x, bool)
+    w, m = p.get("window"), p.get("min_periods")
+    if "window" in p and not (_int(w) and w >= 2):
+        errors.append(f"window must be an int >= 2, got {w!r}")
+    if "min_periods" in p and not (_int(m) and m >= 2 and (not _int(w) or m <= w)):
+        errors.append(f"min_periods must be an int with 2 <= min_periods <= window, got {m!r}")
+    for k in STANDARDISE_DEFAULTS:
+        x = p.get(k)
+        if k in p and not (isinstance(x, (int, float)) and not isinstance(x, bool)
+                           and np.isfinite(x) and x > 0):
+            errors.append(f"{k} must be a finite number > 0, got {x!r}")
+    return errors
+
+
+def _standardise(v: float, h: pd.Series, p: dict[str, Any], d: pd.DataFrame | None) -> float:
+    errors = standardise_param_errors(p)
+    if errors:
+        raise ValueError(f"standardise: {'; '.join(errors)}")
+    past = h.iloc[-(p["window"] + 1):-1]
+    if len(past) < p["min_periods"]:
+        return 0.0
+    return standardise_block_forecast(float(h.iloc[-1]), float(past.abs().mean()),
+                                      p.get("target", STANDARDISE_DEFAULTS["target"]),
+                                      p.get("cap", STANDARDISE_DEFAULTS["cap"]))
+
+
+# ---------------------------------------------------------------------------
 # Pipeline-based transform ops
 # Signature: (v: float, h: pd.Series, p: dict, data: pd.DataFrame | None) -> float
 #
@@ -100,7 +156,7 @@ def _vol_target(v: float, h: pd.Series, p: dict[str, Any], d: pd.DataFrame | Non
 # Scalar ops         — operate on the accumulated pipeline value `v`.
 # Data-aware ops     — read the current OHLCV bar from `data`.
 #
-# WARNING: history-based ops (identity, percentile, zscore, ratio_to_mean, ema)
+# WARNING: history-based ops (identity, percentile, zscore, ratio_to_mean, ema, standardise)
 # discard the accumulated pipeline value and recompute from the raw history.
 # They must appear BEFORE any scalar ops (scale, threshold_filter, clip, negate, sigmoid).
 # Writing [scale, percentile] silently throws away the scale output.
@@ -117,6 +173,7 @@ TRANSFORM_OPS_REGISTRY: Dict[str, Any] = {
     "ema":               lambda v, h, p, d: float(
         h.ewm(span=min(len(h), p.get("span", 10)), adjust=False).mean().iloc[-1]
     ),
+    "standardise":       _standardise,
     # Scalar — operate on accumulated `v`, ignore `h`
     "scale":             lambda v, h, p, d: v * p.get("factor", 1.0),
     "threshold_filter":  lambda v, h, p, d: v if abs(v) >= p.get("min_abs", 0.0) else 0.0,
@@ -182,6 +239,7 @@ TRANSFORM_MIN_PERIODS: Dict[str, int] = {
     "zscore":            30,   # mean and std unstable below ~30 samples
     "ratio_to_mean":     30,
     "ema":               1,    # dynamic: resolved in transform_min_periods() using span
+    "standardise":       2,    # dynamic: resolved in transform_min_periods() using min_periods
     "scale":             1,
     "threshold_filter":  1,
     "clip":              1,
@@ -200,6 +258,12 @@ def transform_min_periods(op: str, params: Dict[str, Any]) -> int:
     if op == "ema":
         # EWM with span s is ~95% warmed up after 3×s bars
         return params.get("span", 10) * 3
+    if op == "standardise":
+        # the current value plus min_periods past ones (invalid params: the op
+        # raises on its first call and V15 refuses the config; 2 here)
+        if standardise_param_errors(params):
+            return TRANSFORM_MIN_PERIODS[op]
+        return params["min_periods"] + 1
     if op not in TRANSFORM_MIN_PERIODS:
         raise KeyError(
             f"Op '{op}' is in TRANSFORM_OPS_REGISTRY but has no entry in "
@@ -211,7 +275,7 @@ def transform_min_periods(op: str, params: Dict[str, Any]) -> int:
 # The ops that recompute from the component's history (TRANSFORM_OPS_REGISTRY's
 # "History-based" group). One definition: validate_config.py's V5 imports it.
 HISTORY_OPS = frozenset({"identity", "percentile", "negate_percentile", "zscore",
-                         "ratio_to_mean", "ema"})
+                         "ratio_to_mean", "ema", "standardise"})
 
 
 def history_op_min_periods(c_spec: Dict[str, Any]) -> int:
@@ -276,4 +340,8 @@ def component_effective_lookback(c_spec: Dict[str, Any], comp_required: int) -> 
         (transform_min_periods(step["op"], step.get("params", {})) for step in all_steps),
         default=1,
     )
-    return max(comp_required, transform_min)
+    # standardise reads up to `window` past values: the deque holds window + 1
+    window_need = max((step["params"]["window"] + 1 for step in all_steps
+                       if step["op"] == "standardise"
+                       and not standardise_param_errors(step.get("params", {}))), default=1)
+    return max(comp_required, transform_min, window_need)
