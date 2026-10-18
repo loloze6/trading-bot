@@ -84,4 +84,4 @@ machine_constraints:
 
 run_095's host (the negated one-day BTC move, scaling_factor 20, clip at 20) is refused after 1b under
 D-149; this brief re-expresses it with `standardise` as the scale step, on the same fold, as a new
-lineage. Built and registered by the operator's ruling of 2026-10-18.
+lineage. Built by the operator's ruling of 2026-10-18.
