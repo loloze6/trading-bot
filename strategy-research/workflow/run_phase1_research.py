@@ -47,6 +47,7 @@ import asyncio
 import tempfile
 import time
 import subprocess
+import csv
 import json
 import sys
 import shutil
@@ -16198,6 +16199,71 @@ def _attach_normalisation(results: list, norm: dict) -> list:
              if r.get("name") in norm else r) for r in results]
 
 
+# D-150 (Branch 3 information): the engine clips the ensemble forecast to +-20
+# (trading-bot/strategies/strategy_engine.py:613); the same cap the analyst's
+# describe cells use (tools/analyst_queries.py FORECAST_CAP).
+_FORECAST_SHAPE_CAP = 20.0
+
+
+def _variant_forecast_shape(run_dir: Path, protocol_result: dict) -> dict | None:
+    """D-150: one variant's forecast shape, INFORMATION ONLY -- never a bar,
+    never a gate, never read by the passing rule. Read from the bars.csv of
+    exactly the windows graded (protocol_result["results"]; never a glob of
+    results/, which can hold stale retry folders), each found as the sibling of
+    that window's portfolio_states.csv (_pd.find_window_equity_file).
+
+    ALL rows of every bars.csv are read, warm-up rows included (no NOT_READY
+    drop), so the figures match the analyst's describe cells abs_mean /
+    share_at_cap. Non-finite values are skipped in each mean.
+
+    Why this cannot leak: it reads bars the backtest already wrote and decides
+    nothing; the figures are not an input to any later bar.
+
+    Returns {abs_mean_forecast, share_at_cap, abs_mean_allocation, n_bars,
+    n_windows}, or None when the windows cannot be read (no results, a window
+    without a bars.csv, an unreadable file, a missing column). Never raises out
+    of grading: the caller's bars/reasons/result are byte-identical whatever
+    happens here."""
+    try:
+        results = (protocol_result or {}).get("results") or []
+        if not results:
+            return None
+        forecasts: list = []
+        allocations: list = []
+        n_bars = 0
+        n_windows = 0
+        for r in results:
+            wid = r["run_id"]
+            equity = _pd.find_window_equity_file(run_dir, wid)
+            if equity is None:
+                return None
+            bars_path = Path(equity).parent / "bars.csv"
+            with open(bars_path, encoding="utf-8", newline="") as f:
+                reader = csv.DictReader(f)
+                if {"forecast", "postRebalance_current_allocation"} - set(reader.fieldnames or []):
+                    return None
+                for row in reader:
+                    n_bars += 1
+                    for col, sink in (("forecast", forecasts),
+                                      ("postRebalance_current_allocation", allocations)):
+                        raw = row[col]
+                        v = float(raw) if raw is not None and str(raw).strip() != "" else math.nan
+                        if math.isfinite(v):
+                            sink.append(abs(v))
+            n_windows += 1
+        return {
+            "abs_mean_forecast": round(sum(forecasts) / len(forecasts), 8) if forecasts else None,
+            "share_at_cap": (round(sum(1 for v in forecasts if v >= _FORECAST_SHAPE_CAP - 1e-9)
+                                   / len(forecasts), 8) if forecasts else None),
+            "abs_mean_allocation": round(sum(allocations) / len(allocations), 8)
+                                   if allocations else None,
+            "n_bars": n_bars,
+            "n_windows": n_windows,
+        }
+    except (OSError, ValueError, KeyError, TypeError, AttributeError, csv.Error):
+        return None
+
+
 def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
                                          record_bars_sha: bool = False) -> dict:
     """Grade every tested variant of THIS attempt (see
@@ -16249,7 +16315,7 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
                  "protocol_result_ref": cand["protocol_result_ref"]}
         if cand["protocol_result"] is None:
             variants[cid] = {**entry, "result": cand["result"], "reason": cand["reason"],
-                             "bars": [], "reasons": []}
+                             "bars": [], "reasons": [], "forecast_shape": None}
             continue
         # E-062 S2b-3b (D-047): under v2 a partial-coverage variant grades on its
         # normalised thresholds; every other variant on `bars` itself (G7).
@@ -16283,7 +16349,9 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
                     results, cand["partial_coverage"], bars=bars)
             entry["partial_coverage"] = cand["partial_coverage"]
         variants[cid] = {**entry, "result": overall, "reason": None,
-                         "bars": results, "reasons": reasons}
+                         "bars": results, "reasons": reasons,
+                         # D-150: information only, beside bars (never inside bars/reasons).
+                         "forecast_shape": _variant_forecast_shape(run_dir, cand["protocol_result"])}
 
     passing = sorted(cid for cid, v in variants.items() if v["result"] == "PASS")
     overall = "PASS" if passing else "FAIL"
