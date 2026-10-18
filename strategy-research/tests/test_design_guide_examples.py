@@ -29,12 +29,16 @@ for _p in (TRADING_BOT / "tools", TRADING_BOT):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
+sys.path.append(str(REPO_ROOT / "strategy-research" / "tools"))
+
 import validate_config as _vc  # noqa: E402  (trading-bot/tools/validate_config.py)
+import forecast_rules  # noqa: E402  (strategy-research/tools/forecast_rules.py)
 from strategies.strategy_engine import ConfigDrivenStrategyEngine  # noqa: E402
 from strategies.regime_engine import ConfigDrivenRegimeEngine  # noqa: E402
 from strategies.strategy_base import MarketRegime  # noqa: E402
 
 COMP = "strategies.strategy_components."
+STANDARDISE = {"op": "standardise", "params": {"window": 60, "min_periods": 20}}
 _EXAMPLE_RE = re.compile(r"<!-- example: (\w+) -->\s*```json\n(.*?)\n```", re.DOTALL)
 
 
@@ -151,7 +155,8 @@ def _prop_two_trend_horizons(cfg):
     slow = _forecasts(_alone(comps["slow"]))
     combined = _forecasts(cfg)
     assert combined and set(combined) <= set(fast) & set(slow)
-    assert max(abs(v) for v in list(fast.values()) + list(slow.values())) < 20.0  # neither is clipped alone
+    # standardise caps each at 20, so the mean of the two never reaches the final clip
+    assert max(abs(v) for v in list(fast.values()) + list(slow.values())) <= 20.0 + 1e-9
     for t, v in combined.items():
         assert v == pytest.approx(0.5 * (fast[t] + slow[t]), abs=1e-9)
     _assert_graded(both)
@@ -173,18 +178,20 @@ def _prop_subtract_short_term_run_up(cfg):
 
 def _prop_centre_one_sided_signal(cfg):
     comps = _components(cfg)
-    rank = _forecasts(_alone(comps["rank"], transforms=[{"op": "percentile"},
-                                                        {"op": "scale", "params": {"factor": 20.0}}]))
-    rank_vals = _values(rank)
-    assert rank_vals.min() > 0.0 and rank_vals.max() <= 20.0 + 1e-9  # one-sided: (0, 20]
+    one_sided = _forecasts(_alone(comps["one_sided"]))
+    one_sided_vals = _values(one_sided)
+    assert one_sided_vals.min() > 0.0 and one_sided_vals.max() <= 20.0 + 1e-9  # one-sided: (0, 20]
     # graded across the whole range: no bar share piles up on a boundary (or any other single) value
-    assert _max_share_at_one_value(rank_vals) <= MAX_SHARE_AT_ONE_VALUE
+    assert _max_share_at_one_value(one_sided_vals) <= MAX_SHARE_AT_ONE_VALUE
+    # standardise leaves the BuyAndHold constant at +10, so negate makes the offset the constant -10
+    offset = _values(_forecasts(_alone(comps["offset"])))
+    assert np.allclose(offset, -10.0, atol=1e-9)
     combined = _forecasts(cfg)
     assert combined
     for t, v in combined.items():
-        assert v == pytest.approx(rank[t] - 10.0, abs=1e-9)
+        assert v == pytest.approx((one_sided[t] - 10.0) / 2.0, abs=1e-9)  # equal weights: the mean of the two
     vals = _values(combined)
-    assert vals.min() >= -10.0 - 1e-9 and vals.max() <= 10.0 + 1e-9
+    assert vals.min() >= -5.0 - 1e-9 and vals.max() <= 5.0 + 1e-9
     _assert_graded(vals)
     _assert_both_signs(vals)
     assert _max_share_at_one_value(vals) <= MAX_SHARE_AT_ONE_VALUE
@@ -192,15 +199,15 @@ def _prop_centre_one_sided_signal(cfg):
 
 def _prop_sign_flip_negate(cfg):
     comps = _components(cfg)
-    plain = _forecasts(_alone(comps["range"], transforms=[{"op": "identity"}]))
+    plain = _forecasts(_alone(comps["range"], transforms=[copy.deepcopy(STANDARDISE)]))
     flipped = _forecasts(cfg)
     assert flipped
     for t, v in flipped.items():
         assert v == pytest.approx(-plain[t], abs=1e-9)
-    # the same thing through a negative scaling_factor
+    # the same thing through a negative scaling_factor (standardise divides the size out and keeps the sign)
     neg = copy.deepcopy(comps["range"])
-    neg["params"]["scaling_factor"] = -neg["params"]["scaling_factor"]
-    via_sf = _forecasts(_alone(neg, transforms=[{"op": "identity"}]))
+    neg["params"]["scaling_factor"] = -20.0
+    via_sf = _forecasts(_alone(neg, transforms=[copy.deepcopy(STANDARDISE)]))
     for t, v in flipped.items():
         assert v == pytest.approx(via_sf[t], abs=1e-9)
     vals = _values(flipped)
@@ -210,7 +217,7 @@ def _prop_sign_flip_negate(cfg):
 
 def _prop_long_only_from_signed(cfg):
     comps = _components(cfg)
-    signed = _forecasts(_alone(comps["trend"], transforms=[{"op": "identity"}]))
+    signed = _forecasts(_alone(comps["trend"], transforms=[copy.deepcopy(STANDARDISE)]))
     assert min(signed.values()) < 0 < max(signed.values())  # the raw signal has both sides
     clipped = _forecasts(cfg)
     assert clipped
@@ -257,6 +264,14 @@ def test_example_validates(name):
 @pytest.mark.parametrize("name", sorted(EXAMPLES))
 def test_example_property_holds_on_synthetic_bars(name):
     PROPERTIES[name](copy.deepcopy(EXAMPLES[name]))
+
+
+@pytest.mark.parametrize("name", sorted(EXAMPLES))
+def test_example_passes_the_d149_standardised_forecast_rule(name):
+    """D-149 (strict) and V15: every marked example's `strategies` components are standardised (the guide must not
+    teach a pattern the rule refuses)."""
+    violations = forecast_rules.strategies_violations(copy.deepcopy(EXAMPLES[name]), forecast_rules.on_off_classes())
+    assert not [m for m in violations if m.startswith("D-149:")], violations
 
 
 # ---------------------------------------------------------------------------
