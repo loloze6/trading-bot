@@ -617,3 +617,15 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-18 -- `| Select -First N` on a native command fakes its exit code
 - **Pattern:** `git merge-tree ... | Select -First 1` cut git's output and left a non-zero $LASTEXITCODE; the sync script halted on a conflict that did not exist.
 - **Rule:** capture a native command's full output in a variable, check $LASTEXITCODE, then slice the variable.
+
+## 2026-10-18 -- A background waiter held the worktree it was started in
+- **Pattern:** a CI waiter (`until gh pr checks ...; do sleep 60; done`) was launched while the session's directory was a PR worktree; after the merge, `git worktree remove` failed with "Permission denied" on that folder because the waiter's shell still had it as its working directory.
+- **Rule:** start every background waiter from the main repo root (`cd` in the command itself), and stop all waiters that touch a worktree before removing it.
+
+## 2026-10-18 -- `exit` inside an `until` condition ends the whole shell
+- **Pattern:** `until for n in ...; do ... || exit 1; done; do sleep 30; done` meant "not yet, keep waiting" but `exit 1` ended the shell on the first pass, so the waiter reported failure at once.
+- **Rule:** put a multi-item condition in a function that `return`s 0/1 and write `until fn; do sleep N; done`.
+
+## 2026-10-18 -- `"$Var:$path"` in PowerShell is not "<value>:<path>"
+- **Pattern:** replacing the literal `origin/master` with `$Target` in `"origin/master:$f"` produced `"$Target:$f"`, which PowerShell parses as a drive-qualified variable; caught before the script ran.
+- **Rule:** write `"${Target}:$f"` whenever a variable is followed by a colon in a PowerShell string.
