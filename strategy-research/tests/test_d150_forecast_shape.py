@@ -117,6 +117,11 @@ def test_no_results_gives_none():
     assert rpr._variant_forecast_shape(Path("nowhere"), {}) is None
 
 
+@pytest.mark.parametrize("results", [["x"], [{"run_id": 123}], {"run_id": "w"}, [None]])
+def test_a_malformed_results_entry_gives_none(results):
+    assert rpr._variant_forecast_shape(Path("nowhere"), {"results": results}) is None
+
+
 def test_key_sits_beside_bars_and_is_in_no_bar_row_and_no_reason():
     run_dir = _setup()
     ev = _evaluate(run_dir)

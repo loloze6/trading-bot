@@ -16260,7 +16260,7 @@ def _variant_forecast_shape(run_dir: Path, protocol_result: dict) -> dict | None
             "n_bars": n_bars,
             "n_windows": n_windows,
         }
-    except (OSError, ValueError, KeyError, csv.Error):
+    except (OSError, ValueError, KeyError, TypeError, AttributeError, csv.Error):
         return None
 
 
