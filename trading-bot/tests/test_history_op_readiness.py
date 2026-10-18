@@ -96,7 +96,7 @@ def test_data_ops_do_not_count():
 
 def test_history_ops_membership_matches_the_registry_group():
     assert HISTORY_OPS == {"identity", "percentile", "negate_percentile", "zscore",
-                           "ratio_to_mean", "ema"}
+                           "ratio_to_mean", "ema", "standardise"}  # standardise: D-148
     assert HISTORY_OPS <= set(registry.TRANSFORM_OPS_REGISTRY)
 
 
