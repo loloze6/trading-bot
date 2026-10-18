@@ -246,7 +246,7 @@ A transform step is `{"op": "<name>", "params": {...}}`. See "Transform ops".
 ### What the engine does with a spec
 - Every component of every regime is updated on every bar, whichever regime is active. Its raw value is appended to
   its history once the component itself is ready.
-- A forecast needs at least 2 history entries for every component of the regime, else the forecast is 0.0.
+- A forecast needs at least 2 history entries for every component of the regime, and a component with a history op waits for that op's stated minimum of values (Minimum periods, below) before its first forecast; else the forecast is 0.0.
 - The strategy is ready, and emits forecasts, only when the bar window holds `required_bars` bars AND the detector
   is ready AND every component of the classified regime has stored at least `min(required_bars, S)` values, where
   `S` is the smallest history size (`lookback`) of any component in `strategies`, in any regime. One component with
@@ -319,8 +319,7 @@ explicit `lookback` below the largest minimum fails validation.
 
 **`scaling_factor` cancels under normalisation.** Under `ratio_to_mean`, `zscore`, `percentile` and `standardise` the component's
 own `scaling_factor` has no effect on the forecast (the statistic divides it out, or ranks it away): only its sign
-survives. To size the forecast, put a `scale` op after the normalisation (for example `ratio_to_mean` then `scale`
-10 gives an average absolute forecast of about 10). Where a component ignores `scaling_factor` altogether, the
+survives. Standardised forecast (hard rule). Every component in strategies ends its transforms with standardise (past values only, target 10, cap 20, window, min_periods), unless its scale is set by vol_target or the regime is a blocks regime with block_standardisation. A bare scale or scaling_factor as the only scale is refused after 1b and again at 5a. Where a component ignores `scaling_factor` altogether, the
 catalogue says so.
 
 **Percentile and sigmoid outputs are one-sided** (0 to 1). They suit regime scores; as a forecast they would be

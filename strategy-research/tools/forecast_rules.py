@@ -1,5 +1,5 @@
 """
-forecast_rules -- the D-051 and D-053 config checks (DECISION_LOG.md).
+forecast_rules -- the D-051, D-053 and D-149 config checks (DECISION_LOG.md).
 
 Pure helpers, no I/O beyond reading the component catalogue. Used by
 run_phase1_research under orchestrator.config_direct_authoring: right after
@@ -18,6 +18,12 @@ is refused.
     strategy regime's components, in order. A parameter or transform change
     passes; adding, removing or replacing a component, or setting a regime to
     null, does not.
+  * D-149 (standardised forecast): a component in `strategies` whose only scale
+    is a `scale` op (in `transforms` or `history_transforms`) or a
+    `scaling_factor` param, with no `standardise` and no `vol_target` op in its
+    `transforms`, is refused -- unless its regime has both `blocks` and
+    `block_standardisation`. A component with no scale at all passes. The regime
+    detector is not checked.
 
 Classes are matched by their bare class name (the last segment of the dotted
 `class` path): every component lives in strategies.strategy_components, and
@@ -37,6 +43,11 @@ _ROW_RE = re.compile(r"^\|\s*`(\w+)`\s*\|", re.MULTILINE)
 _KIND_CELL = 4  # class, params, exact output, range & sign, KIND, ...
 ON_OFF_KIND = "on/off"
 DEAD_ZONE_OPS = ("threshold_filter", "volume_filter")
+RULE_SENTENCE = (
+    "Standardised forecast (hard rule). Every component in strategies ends its transforms with "
+    "standardise (past values only, target 10, cap 20, window, min_periods), unless its scale is "
+    "set by vol_target or the regime is a blocks regime with block_standardisation. A bare scale "
+    "or scaling_factor as the only scale is refused after 1b and again at 5a.")
 
 
 class CatalogError(RuntimeError):
@@ -91,9 +102,30 @@ def _strategy_components(config):
                 yield rname, j, comp
 
 
+def _ops(pipeline) -> set:
+    """The op names in a transform list (a non-list or non-dict step is skipped)."""
+    if not isinstance(pipeline, list):
+        return set()
+    return {step.get("op") for step in pipeline if isinstance(step, dict)}
+
+
+def _bare_scale(comp, regime_cfg) -> bool:
+    """D-149: the component's only scale is a `scale` op or a `scaling_factor`
+    param -- no `standardise` or `vol_target` in `transforms`, and its regime is
+    not a blocks regime with block_standardisation."""
+    if isinstance(regime_cfg, dict) and "blocks" in regime_cfg and "block_standardisation" in regime_cfg:
+        return False
+    params = comp.get("params")
+    scaled = ("scale" in _ops(comp.get("transforms")) or "scale" in _ops(comp.get("history_transforms"))
+              or (isinstance(params, dict) and "scaling_factor" in params))
+    return scaled and not (_ops(comp.get("transforms")) & {"standardise", "vol_target"})
+
+
 def strategies_violations(config, on_off) -> list:
-    """D-051 messages for `config` (empty when it passes)."""
+    """D-051 and D-149 messages for `config` (empty when it passes)."""
     out = []
+    strategies = config.get("strategies") if isinstance(config, dict) else None
+    regimes = strategies.get("regimes") if isinstance(strategies, dict) else {}
     for rname, j, comp in _strategy_components(config):
         loc = f"strategies.regimes.{rname}.components[{j}]"
         name = _class_name(comp.get("class"))
@@ -114,6 +146,8 @@ def strategies_violations(config, on_off) -> list:
                         f"and volume_filter are not allowed on a forecast component (a "
                         f"'strong enough' or 'volume above average' condition belongs in the "
                         f"regime detector)")
+        if _bare_scale(comp, regimes.get(rname)):
+            out.append(f"D-149: {loc} (id {comp.get('id')!r}) -- " + RULE_SENTENCE)
     return out
 
 

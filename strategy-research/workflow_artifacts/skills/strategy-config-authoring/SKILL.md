@@ -142,6 +142,8 @@ regime rule, as the guide describes, and the idea carries its ungated version as
 config with the detector's `rules` emptied (`"rules": []`) and `default_regime` set to the regime that holds the
 strategy, so every bar is in that regime. That is a parameter change; the component classes stay identical.
 
+Standardised forecast (hard rule). Every component in strategies ends its transforms with standardise (past values only, target 10, cap 20, window, min_periods), unless its scale is set by vol_target or the regime is a blocks regime with block_standardisation. A bare scale or scaling_factor as the only scale is refused after 1b and again at 5a.
+
 **Fidelity (O-7): build the signal the card describes, or say what differs.** In `config_rationale`, map EACH
 clause of the card's `signal_concept` to the config element that implements it (one entry per clause:
 `hypothesis_claim` = the clause, `config_choice` = the config path and what it does). A clause you did not or could
