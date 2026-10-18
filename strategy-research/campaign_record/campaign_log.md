@@ -974,3 +974,5 @@ Traceback (most recent call last):
 - 2026-10-16T11:27:10Z awaiting operator approval: trade_efficiency-run_095-1 (run_campaign.py --approve trade_efficiency-run_095-1)
 - 2026-10-16T11:27:11Z DONE forecast_power-run_095-1 (run_096) -> refuted
 - 2026-10-16T11:27:11Z DECIDE after forecast_power-run_095-1 (run_096): picked trade_efficiency-run_095-1 -> queue entry trade_efficiency-run_095-1 (blocked_on_operator_approval). Record: runs/run_096/artifacts/decision_record.yaml
+- 2026-10-18T18:29:41Z REGISTER: queue entry 'rebase_run_095_standardised_host' appended (brief=briefs/rebase_run_095_standardised_host.md, priority=1, status=ready).
+- 2026-10-18T19:02:46Z REJECT component_attribution-run_071-1, trade_efficiency-run_071-1, trade_efficiency-run_078-1, trade_efficiency-run_079-1, forecast_power-run_078-1 -> superseded (operator, 2026-10-18): D-149: parent host not standardised; re-base run registered as rebase_run_095_standardised_host
