@@ -146,10 +146,9 @@ concrete alternative component from `COMPONENT_CATALOG.md`, state that in
 **RULE 3 — Signal is inverted:**
 IF `variants.base.slices.overall.median_forecast_return_corr < -0.03` AND its p-value < 0.10: the signal
 predicts the opposite of what the strategy bets. Propose a `patch` reversing the signal's
-direction (e.g. `scaling_factor` sign flip -- see `COMPONENT_CATALOG.md`'s "Variant patterns"
-for the per-component sign-flip vocabulary, such as `KeltnerBreakoutComponent`'s
-`scaling_factor: -20.0`, which flips its sign on every bar). This is a cheap `patch`, same
-component, reversed logic -- not a `new_block`.
+direction: append `negate` after the component's `standardise` (see `COMPONENT_CATALOG.md`'s
+"Variant patterns"; a negative `scaling_factor` is not the route, only some classes honour it).
+This is a cheap `patch`, same component, reversed logic -- not a `new_block`.
 
 **RULE 6 — No diagnostic signal (all metrics null):**
 IF `variants.base.slices.overall.median_forecast_return_corr` is null/absent AND no other numeric field is

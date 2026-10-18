@@ -122,12 +122,14 @@ Columns: class, params (defaults), exact output, range & sign, kind, units, warm
   `PriceEvolutionOnPeriodComponent`, `MacroTrendFilterComponent`, `DonchianBreakoutComponent`,
   `KeltnerBreakoutComponent`, `EMADiff`. Contrarian by default: `RSIPullbackComponent`,
   `PriceOverextensionHedgeComponent`.
-- **Reversing a direction.** The `negate` transform reverses any graded component. A negative `scaling_factor` works only
-  on the classes that use it: it is ignored by `PriceEvolutionOnPeriodComponent`, `MomentumDivergenceComponent` and
-  `VolatilityFromStdDevComponent`, and `EMADiff` has none.
-- **Magnitude.** `scaling_factor` multiplies the output; it does not change when the sign changes. Under the
-  `ratio_to_mean`, `zscore` and `percentile` transforms a component's `scaling_factor` cancels and only its sign
-  survives (see the design guide, "Transform ops").
+- **Reversing a direction.** Append `negate` after the component's `standardise`: it reverses any graded component.
+  Do not flip with a negative `scaling_factor`: only the classes that use it honour it (it is ignored by
+  `PriceEvolutionOnPeriodComponent`, `MomentumDivergenceComponent` and `VolatilityFromStdDevComponent`, and `EMADiff`
+  has none).
+- **Magnitude.** A forecast component's size comes from `standardise` (or `vol_target`, or a blocks regime with
+  `block_standardisation`; D-149), not from `scaling_factor`. Under `standardise`, `ratio_to_mean`, `zscore` and
+  `percentile` a component's `scaling_factor` cancels and only its sign survives (see the design guide, "Transform
+  ops").
 
 ## Feeds (non-OHLCV data)
 
