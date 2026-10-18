@@ -31,7 +31,9 @@ Classes are matched by their bare class name (the last segment of the dotted
 `class` path): every component lives in strategies.strategy_components, and
 whether the path loads at all is validate_config.py's V12, not this module's.
 Malformed pieces (a non-dict component, a non-list transforms) are skipped
-here: validate_config.py reports them.
+here for D-051: validate_config.py reports them. D-149 skips a non-dict
+component but refuses a dict one whose transforms is not a list (it holds no
+standardise or vol_target).
 """
 from __future__ import annotations
 
