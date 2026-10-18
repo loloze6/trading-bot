@@ -638,7 +638,8 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         ready at required_bars, and _warmup <= required_bars always (it's
         min(config_warmup, min_buf) where min_buf <= required_bars) -- so the
         exact bar of first readiness (required_bars + _warmup - 2) is always
-        < 2*required_bars. This ~2x-required_bars warmup applies to every
+        < 2*required_bars (D-147: a component's history-op minimum is inside
+        required_bars, its periods + minimum - 1, so the bound holds). This ~2x-required_bars warmup applies to every
         strategy config, including 1h production ones -- not something specific
         to daily bars, so this flag is not restricted to any one timeframe.
         Verified empirically against the P4_ts_trend SmaTrendLongOnlyComponent

@@ -252,7 +252,7 @@ A transform step is `{"op": "<name>", "params": {...}}`. See "Transform ops".
   `S` is the smallest history size (`lookback`) of any component in `strategies`, in any regime. One component with
   a short explicit `lookback` therefore lowers the warmup of the whole config.
   Measured on synthetic bars: `RSIPullbackComponent(14)` with `identity` forecasts from bar 29; the same component
-  with `ratio_to_mean` from bar 38; `SmaTrendLongOnlyComponent(100)` from bar 201. Before readiness the forecast is
+  with `ratio_to_mean` from bar 44; `SmaTrendLongOnlyComponent(100)` from bar 201. Before readiness the forecast is
   0.0 and nothing trades.
 - If any component value or pipeline result is NaN, the regime forecast is NaN for that bar (a NaN component makes
   the weighted sum NaN); a NaN is never turned into "flat". The catalogue's "Data & NaN" column says which

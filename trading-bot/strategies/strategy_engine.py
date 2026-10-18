@@ -7,7 +7,7 @@ import logging
 
 from strategies.registry import (
     apply_transform_pipeline, _load_class, component_effective_lookback, standardise_block_forecast,
-    transform_data_periods,
+    transform_data_periods, history_op_min_periods,
 )
 from strategies.strategy_base import MarketRegime, SubStrategyComponent
 
@@ -331,6 +331,20 @@ class ConfigDrivenStrategyEngine:
                 self._history[rname][cid]    = deque(maxlen=buf)
                 self._history_tf[rname][cid] = c_spec.get("history_transforms", [])
 
+        # History values a component's history ops need (registry.history_op_min_periods,
+        # 1 without one) and the values it needs before it forecasts (that, at least
+        # the 2 the forecast guard always required). A regime with `blocks` has its
+        # own chain (_Block) and is in neither dict.
+        self._op_min: Dict[str, Dict[str, int]] = {
+            rname: {c["id"]: history_op_min_periods(c) for c in rcfg["components"]}
+            for rname, rcfg in self._regime_cfgs.items()
+            if rcfg is not None and "blocks" not in rcfg
+        }
+        self._need: Dict[str, Dict[str, int]] = {
+            rname: {cid: max(2, m) for cid, m in mins.items()}
+            for rname, mins in self._op_min.items()
+        }
+
         # warmup: cap against the smallest actual deque, not self.lookback.
         # Per-component "lookback" overrides can make individual deques smaller than
         # self.lookback; capping against self.lookback could set warmup above maxlen.
@@ -550,13 +564,17 @@ class ConfigDrivenStrategyEngine:
                 raise BlockCombinerError(self._block_fault)
             return all(self._block_ready(rkey, b) for b in self._block_regimes[rkey]["blocks"])
         return all(
-            len(h) >= self._warmup
-            for h in self._history[rkey].values()
+            len(h) >= max(self._warmup, self._need[rkey][cid])
+            for cid, h in self._history[rkey].items()
         )
 
     def get_required_periods(self) -> int:
-        all_comps = [c for rc in self._components.values() for c in rc.values()]
-        base = max((c.get_required_periods() for c in all_comps), default=0)
+        # a component's first history value comes at its own required periods, the
+        # m-th one its history ops need m - 1 bars later (1 without one: unchanged;
+        # block regimes: their chain below)
+        base = max((c.get_required_periods() + self._op_min.get(rname, {}).get(cid, 1) - 1
+                    for rname, rc in self._components.items() for cid, c in rc.items()),
+                   default=0)
         base = max(base, self._data_periods)
         if not self._block_regimes:
             return base
@@ -599,7 +617,7 @@ class ConfigDrivenStrategyEngine:
         for c in comp_refs:
             cid = c["id"]
             h   = self._history.get(rkey, {}).get(cid)
-            if not h or len(h) < 2:
+            if not h or len(h) < self._need[rkey][cid]:
                 return 0.0, {"not_ready_component": cid}
             value  = apply_transform_pipeline(pd.Series(list(h)), c["transforms"], self._data)
             w_norm = c["weight"] / total_w

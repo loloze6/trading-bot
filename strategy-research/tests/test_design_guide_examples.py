@@ -440,7 +440,7 @@ def _rsi(transforms, **extra):
 
 def test_first_forecast_bars_quoted_in_the_guide(tmp_path):
     assert _first_ready_bar(_strategy(tmp_path, _ungated([_rsi([{"op": "identity"}])]))) == 29
-    assert _first_ready_bar(_strategy(tmp_path, _ungated([_rsi([{"op": "ratio_to_mean"}])]))) == 38
+    assert _first_ready_bar(_strategy(tmp_path, _ungated([_rsi([{"op": "ratio_to_mean"}])]))) == 44
     sma = {"id": "s", "class": COMP + "SmaTrendLongOnlyComponent", "params": {}, "weight": 1.0,
            "transforms": [{"op": "identity"}]}
     assert _first_ready_bar(_strategy(tmp_path, _ungated([sma])), n=300) == 201

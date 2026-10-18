@@ -139,7 +139,9 @@ LEGACY_CFG = {
 }
 
 
-def test_engine_without_block_keys_matches_pre_s3a_engine_bar_for_bar():
+def test_engine_without_block_keys_matches_pre_s3a_engine_bar_for_bar(monkeypatch):
+    # D-147 is pinned in test_history_op_readiness.py; here the S3a change alone is compared
+    monkeypatch.setattr("strategies.strategy_engine.history_op_min_periods", lambda c_spec: 1)
     Old = _old_engine_class()
     new, old = ConfigDrivenStrategyEngine(LEGACY_CFG), Old(LEGACY_CFG)
     new.set_indicators({"stddev_24": lambda df: df["close"].rolling(24).std()})  # stored, unused
