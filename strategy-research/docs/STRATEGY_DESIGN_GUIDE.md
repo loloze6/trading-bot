@@ -297,8 +297,8 @@ close in **price units**, so `stddev_24` x close is a price squared (around 1e5 
 
 | op | params (default) | output |
 |---|---|---|
-| `vol_normalize` | none | v / (`stddev_24` x close). Unguarded: NaN propagates by design. Meant for `history_transforms`. The result is tiny (about 1e-6 to 1e-8 of v for BTC). A `ratio_to_mean` in `transforms` cancels that factor only while the stored values stay above 1e-10 (below that it returns 0), and its output is about 1, so scale it up afterwards (`scale`) to reach a few forecast units |
-| `vol_adjusted` | none | v / (`stddev_24` x close), or v unchanged if the denominator is invalid. Read-time use only; do not use it to normalise history. **Not a volatility scaler on its own**: it shrinks any component's output by about 1e-6 to 1e-8 for BTC, so the forecast never trades (C4 run_061, O-10). Only meaningful followed by a rescale |
+| `vol_normalize` | none | v / (`stddev_24` x close). Unguarded: NaN propagates by design. Meant for `history_transforms`. The result is tiny (about 1e-6 to 1e-8 of v for BTC). Follow it with `standardise` in `transforms`: it divides that factor out and puts the result on the forecast scale (average absolute value about 10), as long as the stored values' past mean stays above 1e-10 (below that it returns 0) |
+| `vol_adjusted` | none | v / (`stddev_24` x close), or v unchanged if the denominator is invalid. Read-time use only; do not use it to normalise history. **Not a volatility scaler on its own**: it shrinks any component's output by about 1e-6 to 1e-8 for BTC, so the forecast never trades (C4 run_061, O-10). It is not a sizing step: a forecast component's scale comes from `standardise` or `vol_target` (hard rule above) |
 | `price_normalized` | none | v / close (v unchanged if close is invalid). For outputs in **price units** only (e.g. `EMADiff`); on a percent or forecast-unit output it shrinks the forecast by the price |
 | `volume_filter` | `period` (20) | v if the latest volume >= its `period`-bar mean, else 0.0 (dead-zone on volume). **Not allowed in `strategies`** |
 | `vol_target` | `window`, `target_annual_vol`, `periods_per_year` (all required, no default) | v x `target_annual_vol` / (sample std, ddof 1, of the last `window` simple returns, from the last `window` + 1 closes, x sqrt(`periods_per_year`)): volatility targeting on **return** volatility, so the size no longer depends on the price level. Example on daily bars: `{"op": "vol_target", "params": {"window": 60, "target_annual_vol": 0.4, "periods_per_year": 365}}`. Reads only closes up to the current bar. Raises (the bar's forecast becomes 0, so the strategy targets flat for that bar, and the error is logged) on invalid params, fewer than `window` + 1 closes, a non-finite or non-positive close, or zero volatility; the strategy's required bars include `window` + 1, so a normal backtest never meets the short-data case. **Allowed only in a `strategies` component's `transforms`, in a regime without `blocks`** (V14): never in the regime detector or in `history_transforms`. Put a `clip` after it to cap the forecast (for example `max` 10, so allocation at most 1.0) |
@@ -339,7 +339,7 @@ hard rule above). A component that is 0 for part of the run dilutes the other on
 
 **Combining horizons.** Two components of the same kind at different horizons average into one smoother, slower
 signal. The forecast is exactly the weighted mean of what each would forecast alone (`standardise` caps each at
-+/-20, so the average never reaches the final clip). `standardise` puts the fast and the slow spread on the same scale (each against its own past), so
++/-20, so with positive weights the final clip never changes the average). `standardise` puts the fast and the slow spread on the same scale (each against its own past), so
 equal weights give each horizon an equal say, and it makes each component's `scaling_factor` irrelevant, so none is
 set.
 
@@ -389,9 +389,8 @@ leaves a constant at exactly +10 (its own past mean is 10), so `standardise` the
 A one-sided graded signal can be centred into a signed one by subtracting a constant.
 `VolatilityFromStdDevComponent` is one-sided and graded: the standard deviation of recent returns, never negative.
 Standardised, it sits near +10 when volatility is at its recent average, above that when it is higher (up to the cap
-of 20), below when it is lower, and always above 0. (An earlier version of this example ranked the signal with
-`percentile`; that is a second history op next to `standardise`, which V15 refuses, so `standardise` is now the scale
-step.) The offset is -10 and the two components have equal weights, so the forecast is `(x - 10) / 2`, `x` being the
+of 20), below when it is lower, and always above 0. (`percentile` would be a second history op next to
+`standardise`, which V15 refuses.) The offset is -10 and the two components have equal weights, so the forecast is `(x - 10) / 2`, `x` being the
 standardised volatility: the mean of the two, graded between about -5 (volatility far below its average) and +5
 (twice its average or more), 0 at its average.
 
@@ -420,7 +419,7 @@ centred by -10 it would be a constant -10 (100 percent short) on all of those ba
 **Sign flip.** To reverse a signal's direction, append `negate` after `standardise`; it works on every class. Do not
 flip with a negative `scaling_factor`: only a class that uses `scaling_factor` honours it
 (`PriceEvolutionOnPeriodComponent`, `MomentumDivergenceComponent` and `VolatilityFromStdDevComponent` ignore it, and
-`EMADiff` has none), and `standardise` divides the size out, so only the sign of `scaling_factor` would survive.
+`EMADiff` has none), so `negate` is the one flip that works on every class.
 Below, a Donchian range position flipped: short near the top of the 20-bar range, long near the bottom (a
 mean-reversion reading).
 
@@ -530,7 +529,7 @@ block path is not tested.
 This is the component `trading-bot/strategy_config.json` runs under `strategies.regimes.mean_reversion` (the
 production detector gates it with efficiency-ratio and variance-ratio rules), shown WITHOUT its last transform:
 production additionally applies a `threshold_filter` dead zone (`min_abs: 15`), which is not allowed in a new
-config. It illustrates the transform chain:
+config. It illustrates the transform chain, which a new config may not copy (the standardised form follows it):
 ```json
 {"id": "rsi", "class": "strategies.strategy_components.RSIPullbackComponent",
  "params": {"period": 14, "scaling_factor": 0.4, "long_only": true},
@@ -560,8 +559,8 @@ before it, times the target 10 (an average signal is 10), capped at +/-20.
 
 ### A graded, ungated example: normalised trend
 One graded trend component, standardised so that its average absolute forecast is about 10 whatever the asset's
-price level or volatility, with no regime condition. (`ratio_to_mean` or `zscore` followed by `scale` used to do this
-job; `standardise` replaces them as the scale step, and a second history op in the same list is refused by V15.)
+price level or volatility, with no regime condition. (`standardise` is the scale step; `ratio_to_mean` or `zscore` next
+to it would be a second history op in the same list, which V15 refuses.)
 
 <!-- example: normalised_trend -->
 ```json
