@@ -8,10 +8,9 @@ _ROOT = os.path.dirname(_HERE)
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from strategies.registry import TRANSFORM_OPS_REGISTRY, transform_min_periods, _load_class
+from strategies.registry import HISTORY_OPS, TRANSFORM_OPS_REGISTRY, transform_min_periods, _load_class
 
 _VALID_REGIMES = {"trending", "mean_reversion", "chop", "unknown"}
-_HISTORY_OPS = {"identity", "percentile", "negate_percentile", "zscore", "ratio_to_mean", "ema"}
 
 
 def _all_transform_lists(config: dict):
@@ -125,7 +124,7 @@ def validate(config: dict) -> List[str]:
         seen_non_history = False
         for k, step in enumerate(transforms):
             op = step.get("op", "")
-            if op in _HISTORY_OPS:
+            if op in HISTORY_OPS:
                 if seen_non_history:
                     violations.append(
                         f"VIOLATION V5 {loc}[{k}]: history-based op '{op}' appears after scalar/data-aware op"
