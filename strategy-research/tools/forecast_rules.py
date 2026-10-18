@@ -18,12 +18,14 @@ is refused.
     strategy regime's components, in order. A parameter or transform change
     passes; adding, removing or replacing a component, or setting a regime to
     null, does not.
-  * D-149 (standardised forecast): a component in `strategies` whose only scale
-    is a `scale` op (in `transforms` or `history_transforms`) or a
-    `scaling_factor` param, with no `standardise` and no `vol_target` op in its
-    `transforms`, is refused -- unless its regime has both `blocks` and
-    `block_standardisation`. A component with no scale at all passes. The regime
-    detector is not checked.
+  * D-149 (standardised forecast, strict): every component in `strategies`
+    passes only when its `transforms` holds `standardise` and no `scale` op, or
+    holds `vol_target`, or its regime has both `blocks` and
+    `block_standardisation`. Anything else is refused -- a bare `scale` or
+    `scaling_factor`, a component with no scale at all (its class default scale
+    is not standardised), and `standardise` together with `scale` in one
+    `transforms` list. That `standardise` is the FIRST step is validate_config.py's
+    V15, not this module's. The regime detector is not checked.
 
 Classes are matched by their bare class name (the last segment of the dotted
 `class` path): every component lives in strategies.strategy_components, and
@@ -44,10 +46,11 @@ _KIND_CELL = 4  # class, params, exact output, range & sign, KIND, ...
 ON_OFF_KIND = "on/off"
 DEAD_ZONE_OPS = ("threshold_filter", "volume_filter")
 RULE_SENTENCE = (
-    "Standardised forecast (hard rule). Every component in strategies ends its transforms with "
-    "standardise (past values only, target 10, cap 20, window, min_periods), unless its scale is "
-    "set by vol_target or the regime is a blocks regime with block_standardisation. A bare scale "
-    "or scaling_factor as the only scale is refused after 1b and again at 5a.")
+    "Standardised forecast (hard rule). Every component in strategies puts standardise first in "
+    "its transforms, and no scale op after it (standardise: past values only, target 10, cap 20, "
+    "window, min_periods), unless its scale is set by vol_target or the regime is a blocks regime "
+    "with block_standardisation. Any other component, including one whose only scale is a bare "
+    "scale or scaling_factor, is refused after 1b and again at 5a.")
 
 
 class CatalogError(RuntimeError):
@@ -109,16 +112,14 @@ def _ops(pipeline) -> set:
     return {step.get("op") for step in pipeline if isinstance(step, dict)}
 
 
-def _bare_scale(comp, regime_cfg) -> bool:
-    """D-149: the component's only scale is a `scale` op or a `scaling_factor`
-    param -- no `standardise` or `vol_target` in `transforms`, and its regime is
-    not a blocks regime with block_standardisation."""
+def _not_standardised(comp, regime_cfg) -> bool:
+    """D-149 (strict): True unless the component's `transforms` holds `standardise`
+    and no `scale`, or holds `vol_target`, or its regime is a blocks regime with
+    block_standardisation."""
     if isinstance(regime_cfg, dict) and "blocks" in regime_cfg and "block_standardisation" in regime_cfg:
         return False
-    params = comp.get("params")
-    scaled = ("scale" in _ops(comp.get("transforms")) or "scale" in _ops(comp.get("history_transforms"))
-              or (isinstance(params, dict) and "scaling_factor" in params))
-    return scaled and not (_ops(comp.get("transforms")) & {"standardise", "vol_target"})
+    tf = _ops(comp.get("transforms"))
+    return not ("vol_target" in tf or ("standardise" in tf and "scale" not in tf))
 
 
 def strategies_violations(config, on_off) -> list:
@@ -146,7 +147,7 @@ def strategies_violations(config, on_off) -> list:
                         f"and volume_filter are not allowed on a forecast component (a "
                         f"'strong enough' or 'volume above average' condition belongs in the "
                         f"regime detector)")
-        if _bare_scale(comp, regimes.get(rname)):
+        if _not_standardised(comp, regimes.get(rname)):
             out.append(f"D-149: {loc} (id {comp.get('id')!r}) -- " + RULE_SENTENCE)
     return out
 
