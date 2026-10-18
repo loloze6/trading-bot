@@ -114,7 +114,9 @@ Each proposal:
 proposal_id: profitability-<run_id>-<n>          # n increments per proposal in this file
 kind: patch | new_block
 patch: [...]        # kind: patch only -- a variant pattern (COMPONENT_CATALOG.md
-                     # "Variant patterns", e.g. scaling_factor sign flip,
+                     # "Variant patterns", e.g. a sign flip by `negate` after
+                     # `standardise` or `vol_target` (a whole-list replace of
+                     # `transforms`, never a negative scaling_factor),
                      # atr_multiplier or a component period lengthened/shortened) as a before/after
                      # component-spec diff. Do not invent a component class or transform op
                      # absent from COMPONENT_CATALOG.md.
