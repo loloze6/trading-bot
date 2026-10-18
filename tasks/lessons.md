@@ -633,3 +633,11 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-18 -- "Must pass unchanged" against an old-engine comparison test
 - **Pattern:** a ruling listed byte-identity tests that "must pass unchanged" for an intended engine change; one of them (and two siblings) execs the engine from an old commit and compares it to the new one on configs the change is meant to move, so it fails by design. Its old engine also imports the NEW registry from sys.modules, so it cannot see a registry change at all.
 - **Rule:** before promising "passes unchanged", grep the named tests for `git show <commit>:` / exec of old modules and check whether their configs touch the change; report the conflict as an operator question with a proposed isolating patch, and compare registry functions old-vs-new directly.
+
+## 2026-10-18 -- A regex patched with sed loses its escapes
+- **Pattern:** a conflict resolver's `re.match(r"\| D-(\d+)", ...)` was edited in place with sed; the escapes came out as `| D-(d+)`, every row matched the empty alternative, and the resolver collapsed a table to one row -- D-150 vanished from DECISION_LOG.md on the rebased branch. Caught only because the row count was checked after the rebase.
+- **Rule:** rewrite a script that holds a regex as a whole file (quoted heredoc), never patch it with sed; after any scripted conflict resolution on a log table, count every D-row on both sides and diff the untouched rows against master before pushing.
+
+## 2026-10-18 -- A function-local import shadows the module-level name
+- **Pattern:** adding `from strategies.registry import HISTORY_OPS, ...` inside `validate()` for a new V15 clause made `HISTORY_OPS` local to the whole function, so the earlier V5 line raised UnboundLocalError and 42 tests failed.
+- **Rule:** before adding a local import, grep the module's top-level imports for the same name; reuse the module-level one.
