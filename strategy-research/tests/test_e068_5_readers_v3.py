@@ -65,7 +65,8 @@ VERDICT_WORDS = re.compile(r"\b(true|false|supported|refuted|supports|refutes)\b
 # sha256 of origin/master's v2 reader SKILLs (LF), measured 2026-10-05 with
 # `git show origin/master:<path> | sha256sum` at 4a6185b7.
 V2_SKILL_SHA256 = {
-    "profitability": "95dd0d9bcf1a8456f4a737528031eaebcf2e3d36ba9684d36c41dcccd4188b56",
+    # the variant-pattern example flips with negate, not scaling_factor (operator ruling 2026-10-18)
+    "profitability": "31b560cb61f1310a7c0f2421b418f9fcf2bd61ce8b42971ad137007c8dcdeba6",
     # RULE 3 now flips with negate after standardise (operator ruling 2026-10-18, PR #478)
     "forecast_power": "320d3d942bbe086ef2ead8d41dee0bbec2fb58b6b71ad25d98bfbd339e32b1f7",
     "regime_power": "00e68c366e32d14602d8cdedebb985c1956df4b7d366d450814ce101dad532d3",
