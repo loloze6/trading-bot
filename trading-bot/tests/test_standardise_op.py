@@ -418,6 +418,21 @@ def test_engine_without_standardise_matches_master_bar_for_bar():
     assert n == 900
 
 
+def test_component_effective_lookback_unchanged_without_standardise():
+    # the old engine imports the NEW registry, so the bar-for-bar run above pins the
+    # engine only; the registry's deque sizing is compared here directly
+    from strategies.registry import component_effective_lookback
+    old = _old_module("strategies/registry.py", "_old_registry_s2")
+    shipped = json.loads((TB_ROOT / "strategy_config.json").read_text(encoding="utf-8"))
+    specs = [c for rc in LEGACY_CFG["regimes"].values() if rc for c in rc["components"]]
+    specs += [c for rc in shipped["strategies"]["regimes"].values() if rc for c in rc["components"]]
+    specs += [c for c in shipped["regime_detector"].get("components", [])]
+    assert specs
+    for spec in specs:
+        for req in (1, 5, 30, 400):
+            assert component_effective_lookback(spec, req) == old.component_effective_lookback(spec, req)
+
+
 def test_shipped_strategy_config_required_periods_and_lookback_unchanged():
     old_engine = _old_module("strategies/strategy_engine.py", "_old_strategy_engine_s2")
     cfg = json.loads((TB_ROOT / "strategy_config.json").read_text(encoding="utf-8"))

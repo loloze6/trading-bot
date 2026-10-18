@@ -280,7 +280,7 @@ come first (validator V5 rejects a history op after a scalar or data-aware op). 
 | `zscore` | none | (latest - mean) / std of the history (sample std); 0 if std is about 0 |
 | `ratio_to_mean` | none | latest / mean(abs(history)); NaN entries are skipped; 0 if the mean is about 0 |
 | `ema` | `span` (10) | exponentially weighted mean of the history, span limited to the history length |
-| `standardise` | `window` (int >= 2), `min_periods` (int, 2 to `window`) (both required, no default); `target` (10), `cap` (20) (finite numbers > 0) | clip(`target` x latest / mean(abs) of the `window` stored values before the latest, to `-cap`..`cap`): puts the component on the scale of its own past values. Scale only (no mean is subtracted), so the sign and a zero survive; 0 if that past mean is about 0 (not above 1e-10) or fewer than `min_periods` past values exist; NaN entries in the past are skipped. The strategy waits for `min_periods` + 1 stored values and the history holds `window` + 1. Example: `{"op": "standardise", "params": {"window": 60, "min_periods": 20}}`. Why this cannot leak: only values before the current bar enter the mean. Invalid params fail validation (V15) |
+| `standardise` | `window` (int >= 2), `min_periods` (int, 2 to `window`) (both required, no default); `target` (10), `cap` (20) (finite numbers > 0) | clip(`target` x latest / mean(abs) of the `window` stored values before the latest, to `-cap`..`cap`): puts the component on the scale of its own past values. Scale only (no mean is subtracted), so the sign and a zero survive; 0 if that past mean is about 0 (not above 1e-10) or fewer than `min_periods` past values exist; NaN entries in the past are skipped. The strategy waits for `min_periods` + 1 stored values and the history holds `window` + 1. Use it in `transforms`: in `history_transforms` it sees one value and returns 0. Example: `{"op": "standardise", "params": {"window": 60, "min_periods": 20}}`. Why this cannot leak: only values before the current bar enter the mean. Invalid params fail validation (V15) |
 
 **Scalar ops** act on the accumulated value.
 
@@ -317,7 +317,7 @@ any backtest (D-056); how often a strategy trades is judged only by the backtest
 50, `zscore` and `ratio_to_mean` 30, `ema` 3 x `span`, `standardise` `min_periods` + 1, all others 1. The default `lookback` already covers this; an
 explicit `lookback` below the largest minimum fails validation.
 
-**`scaling_factor` cancels under normalisation.** Under `ratio_to_mean`, `zscore` and `percentile` the component's
+**`scaling_factor` cancels under normalisation.** Under `ratio_to_mean`, `zscore`, `percentile` and `standardise` the component's
 own `scaling_factor` has no effect on the forecast (the statistic divides it out, or ranks it away): only its sign
 survives. To size the forecast, put a `scale` op after the normalisation (for example `ratio_to_mean` then `scale`
 10 gives an average absolute forecast of about 10). Where a component ignores `scaling_factor` altogether, the

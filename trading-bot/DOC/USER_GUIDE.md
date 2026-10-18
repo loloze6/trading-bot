@@ -610,11 +610,11 @@ this file directly).
   (`registry.py::apply_transform_pipeline`).
 - `apply_transform_pipeline` seeds `value = history[-1]` and applies each op
   in order — history-based ops (`identity`, `percentile`,
-  `negate_percentile`, `zscore`, `ratio_to_mean`, `ema`) recompute from the
+  `negate_percentile`, `zscore`, `ratio_to_mean`, `ema`, `standardise`) recompute from the
   full history and discard the accumulated `value`; scalar/data-aware ops
   (`scale`, `threshold_filter`, `clip`, `sigmoid`, `negate`,
   `vol_normalize`, `vol_adjusted`, `price_normalized`, `volume_filter`,
-  `vol_target`) operate on it — 16 ops total in `TRANSFORM_OPS_REGISTRY` as read on this
+  `vol_target`) operate on it — 17 ops total in `TRANSFORM_OPS_REGISTRY` as read on this
   checkout (`registry.py`).
 
 `ConfigDrivenRegimeEngine.classify()` (`strategies/regime_engine.py`)
