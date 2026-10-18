@@ -211,6 +211,14 @@ def test_advanced_strategy_required_bars_follows(tmp_path):
     assert s2.required_bars == 24                                        # the floor
 
 
+def test_shipped_strategy_config_required_bars_stays_120():
+    # the engine's own number moves (15 -> 44), required_bars does not: a larger
+    # requirement elsewhere sets it
+    from pathlib import Path
+    path = Path(__file__).resolve().parents[1] / "strategy_config.json"
+    assert AdvancedStrategy(config_path=str(path)).required_bars == 120
+
+
 # --- 5. identity-only config is unchanged ----------------------------------------
 
 def test_identity_only_required_periods_unchanged():

@@ -482,7 +482,8 @@ of three gates, evaluated in this order:
    regime with no components registered under that key).
    `ConfigDrivenStrategyEngine.is_ready(regime)`
    (`strategies/strategy_engine.py`) requires every component history
-   deque *for that regime* to have `len >= self._warmup`.
+   deque *for that regime* to have `len >= max(self._warmup, need)`, where
+   `need` is the component's history-op minimum (at least 2; D-147).
 
 `required_bars = max(regime_engine.get_required_periods(),
 strategy_engine.get_required_periods(), 24)` (`main_strategy.py::AdvancedStrategy.__init__`) — the
@@ -531,7 +532,8 @@ accepting entries once the component is already ready. So the total bars
 needed before the STRATEGY itself is ready is `required_bars + _warmup - 2`,
 not `required_bars` alone. Since `_warmup <= required_bars` always, `2 x
 required_bars` is a safe, easy-to-verify upper bound without needing the
-exact formula.
+exact formula. (D-147: a component's history-op minimum is part of
+`required_bars` -- its periods + that minimum - 1 -- so the bound still holds.)
 
 At 1h this is invisible (`required_bars` is small, ~24-50 bars, absorbed into
 any reasonably-sized backtest window). At 1d, with `required_bars` around
