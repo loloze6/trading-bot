@@ -645,3 +645,19 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-18 -- A prompt edit trips a sha pin the grep did not find
 - **Pattern:** the forecast_power-reader SKILL.md edit (#478) passed the 7 test files picked by grepping for the file's name, then failed CI on all four runs: `test_e068_5_readers_v3.py` pins every v2 reader skill's sha256 and builds the path from the category (`f"{cat}-reader"`), so the file name never appears in it.
 - **Rule:** before pushing any skill or prompt-file edit, also grep the tests for `sha256` / `hexdigest` and for the folder name (`readers`, `skills`), and run every hit.
+
+## 2026-10-18 -- A refusal's cause is checked before it is named
+- **Pattern:** `git rm --cached` refused 31 run files with "staged content different from both the file and the HEAD"; the first reading was "older versions staged", but they were CRLF on disk against LF in the index, identical after normalisation.
+- **Rule:** before naming why a tool refused, measure it (`git hash-object <path>` against the index blob, a byte diff after line-ending normalisation) and report the measured cause.
+
+## 2026-10-18 -- A direction draft exists only in the relay
+- **Pattern:** the re-base brief's direction draft was searched for on disk and not found; it had only ever existed in the operator's relay.
+- **Rule:** a direction draft is handed over as paste by the operator; never search the disk for it, ask for the paste.
+
+## 2026-10-18 -- Two temp files that differ only by case collide
+- **Pattern:** on this machine's filesystem two scratch files whose names differ only in letter case are the same file; writing one overwrites the other.
+- **Rule:** name scratch files so they differ by more than case (a suffix or a number), and check a write did not replace another file.
+
+## 2026-10-18 -- A rule census over past runs imports the rule from the PR's worktree
+- **Pattern:** a census of a new rule over past run configs must exercise the rule as the PR builds it; the operator checkout still holds master's (older) code.
+- **Rule:** run the census from the PR's worktree (its tools/ on sys.path), reading the run configs read-only from the checkout's runs/, and say which tree the rule came from.

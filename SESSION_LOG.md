@@ -1195,3 +1195,10 @@
 3. **Files touched:** PR #481; operator checkout (eleven syncs, HEAD 6da3919c; config/campaign_queue.yaml one row; campaign_record/campaign_log.md one line); Projects\_archive\sync_2026-10-18_pr469..pr481; this entry.
 4. **Next-session prompt (paste verbatim, fill the brackets):**
    > Read SESSION_LOG.md's 2026-10-18 entries. The re-base brief is registered (queue row rebase_run_095_standardised_host, priority 1, ready); the operator launches it with `python workflow/run_campaign.py --once` from strategy-research/ [after launch: read the run]. Checkout c4/flag-set at 6da3919c [or later after syncing this docs PR], 0 staged. campaign_record/ (campaign_log.md REGISTER line) is committed once per session as a docs PR from master [when the operator says]. Open: proposal.schema.json:22 scaling_factor sign-flip wording [fix / leave]; the locked worktree on ci-fix-d141 stays until the operator closes the 2026-10-15 session. One test process at a time; no attribution lines.
+
+## 2026-10-18 direction (Fable)
+- D-147 (a component waits for its history ops' stated minimum, #469), D-148 (the standardise op and V15, #470), D-149 (the standardised-forecast rule after 1b and at 5a, #471) and D-150 (branch 3 records each variant's forecast shape, #472) are merged.
+- D-149 is strict (only standardise without scale, vol_target, or a blocks regime with block_standardisation passes) and was taken with option 1: merge, then re-base the host.
+- The re-base brief (briefs/rebase_run_095_standardised_host.md, #479) is registered at priority 1 (queue row rebase_run_095_standardised_host, ready); the operator launches it.
+- The five held analyst proposals (component_attribution-run_071-1, trade_efficiency-run_071-1, trade_efficiency-run_078-1, trade_efficiency-run_079-1, forecast_power-run_078-1) are rejected under D-149 (superseded; parent host not standardised), logged in campaign_record/campaign_log.md (#483).
+- The locked worktree .claude/worktrees/agent-ab43dc9a395650686 (branch ci-fix-d141) is held by a live session of 2026-10-15; it stays until the operator closes that session (no force-unlock).
