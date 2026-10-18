@@ -5182,7 +5182,9 @@ _ANALYST_TOOL_SCHEMAS = {
 }
 _ANALYST_TOOL_HELP = {
     "list_columns": "The usable bar columns, groupings, trade fields and caps of this run.",
-    "describe": "Count, NaN share, mean, std and p10/p50/p90 of one column, optionally by a group.",
+    "describe": ("Count, NaN share, mean, std, p10/p50/p90 and the mean |value| (abs_mean) of one "
+                 "column, plus, on `forecast`, the share of bars at the +-20 clip (share_at_cap); "
+                 "optionally by a group."),
     "distribution": "A histogram of one column, optionally by a group.",
     "conditional_effect": ("A claim test in the slots (condition = one selector, outcome, "
                            "baseline, statistic, direction): its effect per horizon, the "
