@@ -641,3 +641,7 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-18 -- A function-local import shadows the module-level name
 - **Pattern:** adding `from strategies.registry import HISTORY_OPS, ...` inside `validate()` for a new V15 clause made `HISTORY_OPS` local to the whole function, so the earlier V5 line raised UnboundLocalError and 42 tests failed.
 - **Rule:** before adding a local import, grep the module's top-level imports for the same name; reuse the module-level one.
+
+## 2026-10-18 -- A prompt edit trips a sha pin the grep did not find
+- **Pattern:** the forecast_power-reader SKILL.md edit (#478) passed the 7 test files picked by grepping for the file's name, then failed CI on all four runs: `test_e068_5_readers_v3.py` pins every v2 reader skill's sha256 and builds the path from the category (`f"{cat}-reader"`), so the file name never appears in it.
+- **Rule:** before pushing any skill or prompt-file edit, also grep the tests for `sha256` / `hexdigest` and for the folder name (`readers`, `skills`), and run every hit.
