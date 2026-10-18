@@ -66,7 +66,8 @@ VERDICT_WORDS = re.compile(r"\b(true|false|supported|refuted|supports|refutes)\b
 # `git show origin/master:<path> | sha256sum` at 4a6185b7.
 V2_SKILL_SHA256 = {
     "profitability": "95dd0d9bcf1a8456f4a737528031eaebcf2e3d36ba9684d36c41dcccd4188b56",
-    "forecast_power": "8139b546a575aaf57da9d1763b08b9d9e71aa1ab8c4df71fcc163284f4d9d59a",
+    # RULE 3 now flips with negate after standardise (operator ruling 2026-10-18, PR #478)
+    "forecast_power": "320d3d942bbe086ef2ead8d41dee0bbec2fb58b6b71ad25d98bfbd339e32b1f7",
     "regime_power": "00e68c366e32d14602d8cdedebb985c1956df4b7d366d450814ce101dad532d3",
     "component_attribution": "96783aec70dc2fc806e71b00af7baec28e32a55d1542624599ddc335852f2dbe",
     "trade_efficiency": "da251b6efa68faf174f22eeae2e187ebfb2228d1b9251e34076c3b8701147785",
