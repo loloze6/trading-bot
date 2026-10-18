@@ -298,8 +298,8 @@ pauses the run.
 A `design` variant changes ONE parameter or ONE transform of the component(s) under test. It never adds, removes
 or replaces a component: the signal stays the one the hypothesis card describes, and a "swap" of one component for
 another is not a design variant (a sign flip is a transform change of the same component and is allowed: append
-`negate` after the step that sets its scale, `standardise` or `vol_target`; not a negative `scaling_factor`, which
-only some classes honour). Find the parameters to vary in the component's row and in the "Variant patterns" section of
+`negate` after the step that sets its scale, `standardise` or `vol_target` (the path `.../transforms/-` appends one
+step); not a negative `scaling_factor`, which only some classes honour). Find the parameters to vary in the component's row and in the "Variant patterns" section of
 `COMPONENT_CATALOG.md`.
 
 A variant must not introduce an on/off component: every component in `strategies` after the patch is applied must
