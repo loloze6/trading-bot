@@ -266,7 +266,7 @@ A transform step is `{"op": "<name>", "params": {...}}`. See "Transform ops".
 
 ## Transform ops
 
-Sixteen ops. A pipeline is applied in order, seeded with the latest raw value of the component's history.
+Seventeen ops. A pipeline is applied in order, seeded with the latest raw value of the component's history.
 
 **History ops** recompute from the component's stored history and DISCARD the value accumulated so far, so they must
 come first (validator V5 rejects a history op after a scalar or data-aware op). `identity` is one of them:
@@ -280,6 +280,7 @@ come first (validator V5 rejects a history op after a scalar or data-aware op). 
 | `zscore` | none | (latest - mean) / std of the history (sample std); 0 if std is about 0 |
 | `ratio_to_mean` | none | latest / mean(abs(history)); NaN entries are skipped; 0 if the mean is about 0 |
 | `ema` | `span` (10) | exponentially weighted mean of the history, span limited to the history length |
+| `standardise` | `window` (int >= 2), `min_periods` (int, 2 to `window`) (both required, no default); `target` (10), `cap` (20) (finite numbers > 0) | clip(`target` x latest / mean(abs) of the `window` stored values before the latest, to `-cap`..`cap`): puts the component on the scale of its own past values. Scale only (no mean is subtracted), so the sign and a zero survive; 0 if that past mean is about 0 (not above 1e-10) or fewer than `min_periods` past values exist; NaN entries in the past are skipped. The strategy waits for `min_periods` + 1 stored values and the history holds `window` + 1. Example: `{"op": "standardise", "params": {"window": 60, "min_periods": 20}}`. Why this cannot leak: only values before the current bar enter the mean. Invalid params fail validation (V15) |
 
 **Scalar ops** act on the accumulated value.
 
@@ -313,7 +314,7 @@ any backtest (D-056); how often a strategy trades is judged only by the backtest
 `transforms` are separate lists, each checked on its own.
 
 **Minimum periods (V6).** Each history op needs enough history to be reliable: `percentile` and `negate_percentile`
-50, `zscore` and `ratio_to_mean` 30, `ema` 3 x `span`, all others 1. The default `lookback` already covers this; an
+50, `zscore` and `ratio_to_mean` 30, `ema` 3 x `span`, `standardise` `min_periods` + 1, all others 1. The default `lookback` already covers this; an
 explicit `lookback` below the largest minimum fails validation.
 
 **`scaling_factor` cancels under normalisation.** Under `ratio_to_mean`, `zscore` and `percentile` the component's
@@ -589,3 +590,4 @@ Validator rules (the strategy refuses to start on any violation):
 | V12 | every `class` path in the detector and in the strategies imports to a class (it does not check that the class is a component, or that `params` are right) |
 | V13 | the block combiner keys (`blocks`, `block_standardisation`, `weight_schedule`) have the exact shape above |
 | V14 | every `vol_target` op has valid `window` (int >= 2), `target_annual_vol` and `periods_per_year` (> 0), and sits in a `strategies` component's `transforms` in a regime without `blocks` |
+| V15 | every `standardise` op has valid `window` (int >= 2), `min_periods` (int, 2 to `window`), and `target` and `cap`, when given, finite and > 0 |
