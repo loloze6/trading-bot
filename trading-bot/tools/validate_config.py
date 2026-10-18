@@ -368,12 +368,32 @@ def validate(config: dict) -> List[str]:
     # V15: every standardise op has valid params (window int >= 2, 2 <= min_periods
     # <= window, target / cap finite > 0). Reuses the op's own param check, so V15
     # fails on exactly the params the op refuses. Silent for every config without it.
+    # Placement: standardise is the first step of a `transforms` list and the only
+    # history op in it -- a history op reads the raw history and ignores the running
+    # value (registry.apply_transform_pipeline), so any other history op in the list
+    # would discard standardise's output or be discarded by it.
     from strategies.registry import standardise_param_errors
     for loc, transforms in _all_transform_lists(config):
+        ops = [step.get("op") for step in transforms]
         for k, step in enumerate(transforms):
-            if step.get("op") == "standardise":
-                for msg in standardise_param_errors(step.get("params", {})):
-                    violations.append(f"VIOLATION V15 {loc}[{k}].params: {msg}")
+            if step.get("op") != "standardise":
+                continue
+            if not loc.endswith(".transforms"):
+                violations.append(
+                    f"VIOLATION V15 {loc}[{k}]: standardise belongs in `transforms`, as its first "
+                    f"step; here it sees one value at a time and always gives 0")
+            elif k != 0:
+                violations.append(
+                    f"VIOLATION V15 {loc}[{k}]: standardise must be the first step of `transforms` "
+                    f"(it reads the raw history and ignores the steps before it)")
+            others = sorted({o for o in ops if o in HISTORY_OPS and o != "standardise"})
+            if others and loc.endswith(".transforms"):
+                violations.append(
+                    f"VIOLATION V15 {loc}[{k}]: standardise must be the only history op in "
+                    f"`transforms`; remove {', '.join(others)} (a history op reads the raw history "
+                    f"and ignores the running value, so the two cannot be combined)")
+            for msg in standardise_param_errors(step.get("params", {})):
+                violations.append(f"VIOLATION V15 {loc}[{k}].params: {msg}")
 
     return violations
 

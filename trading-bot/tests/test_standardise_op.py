@@ -255,6 +255,37 @@ def test_v5_refuses_standardise_after_a_scalar_op():
     assert not _v(validate(_full([sp, {"op": "scale", "params": {"factor": 2}}])), "V5")
 
 
+def test_v15_standardise_is_the_first_step_of_transforms():
+    sp = {"op": "standardise", "params": {"window": 20, "min_periods": 5}}
+    loc = "strategies.regimes.unknown.components[0].transforms"
+    assert _v(validate(_full([{"op": "scale", "params": {"factor": 2}}, sp])), "V15") == [
+        f"VIOLATION V15 {loc}[1]: standardise must be the first step of `transforms` "
+        f"(it reads the raw history and ignores the steps before it)"]
+    assert not _v(validate(_full([sp, {"op": "clip", "params": {"min": -10, "max": 10}},
+                                  {"op": "negate"}])), "V15")
+
+
+def test_v15_standardise_is_the_only_history_op_in_transforms():
+    sp = {"op": "standardise", "params": {"window": 20, "min_periods": 5}}
+    loc = "strategies.regimes.unknown.components[0].transforms"
+    v = _v(validate(_full([sp, {"op": "zscore"}, {"op": "identity"}])), "V15")
+    assert v == [f"VIOLATION V15 {loc}[0]: standardise must be the only history op in "
+                 f"`transforms`; remove identity, zscore (a history op reads the raw history "
+                 f"and ignores the running value, so the two cannot be combined)"]
+    v = _v(validate(_full([{"op": "ratio_to_mean"}, sp])), "V15")
+    assert len(v) == 2 and "first step" in v[0] and "only history op" in v[1]
+
+
+def test_v15_refuses_standardise_in_history_transforms():
+    cfg = _full([{"op": "identity"}])
+    comp = cfg["strategies"]["regimes"]["unknown"]["components"][0]
+    comp["history_transforms"] = [{"op": "standardise", "params": {"window": 20, "min_periods": 5}}]
+    loc = "strategies.regimes.unknown.components[0].history_transforms"
+    assert _v(validate(cfg), "V15") == [
+        f"VIOLATION V15 {loc}[0]: standardise belongs in `transforms`, as its first step; "
+        f"here it sees one value at a time and always gives 0"]
+
+
 # --- required periods / deque size --------------------------------------------
 
 def test_transform_min_periods_is_min_periods_plus_one():
@@ -350,7 +381,7 @@ def test_engine_required_periods_follow_the_larger_of_component_and_window():
 
 # --- every other op / config unchanged ------------------------------------------
 
-BASE_COMMIT = "022226b2"  # master before the standardise op
+BASE_COMMIT = "e981f578"  # master before the standardise op (after D-147, #469)
 TB_ROOT = Path(__file__).resolve().parents[1]
 
 

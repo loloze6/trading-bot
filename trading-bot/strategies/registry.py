@@ -102,8 +102,8 @@ def _vol_target(v: float, h: pd.Series, p: dict[str, Any], d: pd.DataFrame | Non
 # reused here with its 1e-10 guard): no mean subtraction, so the sign and a zero
 # survive. 0.0 while fewer than `min_periods` past values exist (with D-147's
 # history_op_min_periods the engine waits for min_periods + 1 history values,
-# transform_min_periods). Use it in `transforms`: in `history_transforms` it sees a
-# one-value series and returns 0.0. window and
+# transform_min_periods). V15 (validate_config.py): the first step of `transforms` and
+# the only history op there; in `history_transforms` it would see one value and give 0.0. window and
 # min_periods are required; target defaults to 10 (the forecast scale's average
 # absolute value), cap to 20 (the engine's forecast cap).
 #
