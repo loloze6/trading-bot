@@ -52,10 +52,10 @@ lens.
    regime) and `trade_slice` with `{field: entry_forecast, stat: median}`, and write what they
    show: how large the forecast typically is (the 10th, 50th and 90th percentiles from
    `describe`, the end bins of `distribution`) and the share of bars and of lots at or near the
-   clip. `describe` gives n, the signed mean, std and the 10th, 50th and 90th percentiles;
+   clip. `describe` gives n, the signed mean, std, the 10th, 50th and 90th percentiles, the average
+   |value| (`abs_mean`) and, on `forecast`, the share of bars at the clip (`share_at_cap`);
    `distribution` gives bin counts, whose end bins hold the bars at or near the clip; a lot
-   count with a filter on `entry_forecast` costs nothing. Once `describe` carries the average
-   |forecast| and the share at the clip, the same step gives those numbers directly. A forecast
+   count with a filter on `entry_forecast` costs nothing. A forecast
    at the clip on most bars is on/off in practice, and the mechanisms start there.
 2. **Find the surprise.** One place where the market or the strategy does what the run's design
    did not expect. A surprise is a conditional difference, not a level: "losing" is not a
