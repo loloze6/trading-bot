@@ -148,6 +148,8 @@ IF `variants.base.slices.overall.median_forecast_return_corr < -0.03` AND its p-
 predicts the opposite of what the strategy bets. Propose a `patch` reversing the signal's
 direction: append `negate` after the component's `standardise` (see `COMPONENT_CATALOG.md`'s
 "Variant patterns"; a negative `scaling_factor` is not the route, only some classes honour it).
+Write it as a whole-list replace: `field: transforms`, `before` the current list exactly, `after`
+the same list with `{"op": "negate"}` added at its end.
 This is a cheap `patch`, same component, reversed logic -- not a `new_block`.
 
 **RULE 6 — No diagnostic signal (all metrics null):**

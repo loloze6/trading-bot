@@ -122,7 +122,8 @@ Columns: class, params (defaults), exact output, range & sign, kind, units, warm
   `PriceEvolutionOnPeriodComponent`, `MacroTrendFilterComponent`, `DonchianBreakoutComponent`,
   `KeltnerBreakoutComponent`, `EMADiff`. Contrarian by default: `RSIPullbackComponent`,
   `PriceOverextensionHedgeComponent`.
-- **Reversing a direction.** Append `negate` after the component's `standardise`: it reverses any graded component.
+- **Reversing a direction.** Append `negate` after the step that sets the component's scale (`standardise`, or
+  `vol_target`): it reverses any graded component.
   Do not flip with a negative `scaling_factor`: only the classes that use it honour it (it is ignored by
   `PriceEvolutionOnPeriodComponent`, `MomentumDivergenceComponent` and `VolatilityFromStdDevComponent`, and `EMADiff`
   has none).
