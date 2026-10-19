@@ -73,7 +73,8 @@ def regrade(run_dir: Path) -> dict:
             nev[p["w"].label], nref[p["w"].label] = ns, nr
         r = res["horizons"][h]
         out_h[str(h)] = {"pooled_oriented": r["oriented"], "n_events": r["n_events"],
-                         "n_windows_with_events": r["n_windows_with_events"], "windows": rows}
+                         "n_windows_with_events": r["n_windows_with_events"],
+                         "n_blocks": r["n_blocks"], "windows": rows}
         sim_h[h] = {"oriented": r["oriented"], "n_events": r["n_events"],
                     "n_windows_with_events": r["n_windows_with_events"],
                     "per_window": {k: {"oriented": v["oriented"]} for k, v in rows.items()},
