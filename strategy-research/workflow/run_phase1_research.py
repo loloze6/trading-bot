@@ -5158,7 +5158,7 @@ def _analyst_caps(cfg: dict | None = None) -> dict:
     return out
 
 
-# JSON schemas of the six tools (typed values only: no path, no code)
+# JSON schemas of the analyst's tools (typed values only: no path, no code)
 _ANALYST_TOOL_SCHEMAS = {
     "list_columns": ({"variant": {"type": "string"}}, []),
     "describe": ({"column": {"type": "string"}, "by": {"type": ["string", "null"]},
@@ -5179,6 +5179,7 @@ _ANALYST_TOOL_SCHEMAS = {
     "event_study": ({"trade_filter": {"type": "array"}, "bars_before": {"type": "integer"},
                      "bars_after": {"type": "integer"}, "variant": {"type": "string"}},
                     ["trade_filter", "bars_before", "bars_after"]),
+    "window_economics": ({"variant": {"type": "string"}}, []),
 }
 _ANALYST_TOOL_HELP = {
     "list_columns": "The usable bar columns, groupings, trade fields and caps of this run.",
@@ -5196,6 +5197,10 @@ _ANALYST_TOOL_HELP = {
                            "with the floor the claim will carry."),
     "trade_slice": "Aggregates of the run's lots matching a filter, optionally by a group.",
     "event_study": "Mean signed returns before and after the entries of the lots matching a filter.",
+    "window_economics": ("Per (coin, window) and in total: lots, turnover, direction changes, "
+                         "mean and max |allocation|, gross / fees / net (percent of the window's "
+                         "starting account), cost drag and median holding bars. Counts no "
+                         "comparison."),
 }
 
 
@@ -16266,6 +16271,38 @@ def _variant_forecast_shape(run_dir: Path, protocol_result: dict) -> dict | None
         return None
 
 
+def _variant_window_economics(run_dir: Path, protocol_result: dict) -> dict | None:
+    """PR-B (2026-10-19), under orchestrator.analyst.enabled only: one variant's economics
+    per (coin, window), INFORMATION ONLY -- never a bar, never a gate, never read by the
+    passing rule. Computed by tools/window_economics.window_economics, the one definition
+    the analyst's window_economics query returns, over exactly the windows graded
+    (protocol_result["results"]), each window's folder found as forecast_shape finds it
+    (the parent of its portfolio_states.csv, _pd.find_window_equity_file).
+
+    Why this cannot leak: it reads the bars.csv and trades.json the backtest already wrote
+    and decides nothing; no figure is an input to any later bar.
+
+    None when the windows cannot be read (no results, a window without its files, an
+    unreadable file, a missing column). Never raises out of grading."""
+    try:
+        results = (protocol_result or {}).get("results") or []
+        if not results:
+            return None
+        windows = []
+        for r in results:
+            equity = _pd.find_window_equity_file(run_dir, r["run_id"])
+            if equity is None:
+                return None
+            windows.append((str(r["symbol"]), str(r["window"]), Path(equity).parent))
+        _tools = str(Path(__file__).parent.parent / "tools")
+        if _tools not in sys.path:
+            sys.path.insert(0, _tools)
+        import window_economics as _we
+        return _we.window_economics(windows)
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        return None
+
+
 def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
                                          record_bars_sha: bool = False) -> dict:
     """Grade every tested variant of THIS attempt (see
@@ -16310,6 +16347,9 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
     dsr_ctx = _promotion_dsr_context()
     # E-062 S2b-2b: under v2 the whole-test DSR's inputs, once for every variant.
     wctx = _whole_test_dsr_context(dsr_ctx) if v2 else None
+    # PR-B: the window_economics key exists only under orchestrator.analyst.enabled
+    # (flag off: no key, the file byte-identical).
+    analyst = _analyst_enabled()
 
     variants: dict = {}
     for cid, cand in candidates.items():
@@ -16317,7 +16357,8 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
                  "protocol_result_ref": cand["protocol_result_ref"]}
         if cand["protocol_result"] is None:
             variants[cid] = {**entry, "result": cand["result"], "reason": cand["reason"],
-                             "bars": [], "reasons": [], "forecast_shape": None}
+                             "bars": [], "reasons": [], "forecast_shape": None,
+                             **({"window_economics": None} if analyst else {})}
             continue
         # E-062 S2b-3b (D-047): under v2 a partial-coverage variant grades on its
         # normalised thresholds; every other variant on `bars` itself (G7).
@@ -16353,7 +16394,10 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
         variants[cid] = {**entry, "result": overall, "reason": None,
                          "bars": results, "reasons": reasons,
                          # D-150: information only, beside bars (never inside bars/reasons).
-                         "forecast_shape": _variant_forecast_shape(run_dir, cand["protocol_result"])}
+                         "forecast_shape": _variant_forecast_shape(run_dir, cand["protocol_result"]),
+                         # PR-B: information only, beside forecast_shape, under the analyst flag
+                         **({"window_economics": _variant_window_economics(
+                             run_dir, cand["protocol_result"])} if analyst else {})}
 
     passing = sorted(cid for cid, v in variants.items() if v["result"] == "PASS")
     overall = "PASS" if passing else "FAIL"

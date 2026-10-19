@@ -48,7 +48,7 @@ LENSES = tuple(LENS_CATEGORY)
 REPLACED_RULE = "replaced_by_analyst"
 SERVER_NAME = "analyst"
 TOOL_NAMES = ("list_columns", "describe", "distribution", "conditional_effect", "trade_slice",
-              "event_study")
+              "event_study", "window_economics")
 ALLOWED_TOOLS = tuple(f"mcp__{SERVER_NAME}__{n}" for n in TOOL_NAMES)
 SKILL_DIR = SR_ROOT / "workflow_artifacts" / "skills" / "analyst"
 LOG_DIR_REL = "artifacts/analyst_queries"

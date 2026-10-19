@@ -1,4 +1,4 @@
-"""E-075 PR-4 (CUL-422, D-088): the analyst's query engine -- six fixed functions
+"""E-075 PR-4 (CUL-422, D-088): the analyst's query engine -- seven fixed functions
 over ONE saved run's own bars and trades. A pure module: no SDK, no model call,
 no network, and nothing in the pipeline imports it yet (PR-5 wires it).
 
@@ -8,8 +8,8 @@ item 7, A1.11 items 5 and 7); engineering/roadmap/E-075/PHASE_A.md section 2
 placebo arm, no outcome layer, no exploration/confirmation split -- the run is
 read as it is, its folds being the only windows it has).
 
-The six functions (all take `variant="base"`, last but for conditional_effect's floor)
---------------------------------------------------
+The seven functions (all take `variant="base"`, last but for conditional_effect's floor)
+----------------------------------------------------
   list_columns()
   describe(column, by=None)
   distribution(column, by=None, bins=10)
@@ -17,6 +17,10 @@ The six functions (all take `variant="base"`, last but for conditional_effect's 
                      statistic="mean_diff", direction="greater", by=None, floor=None)
   trade_slice(filter, agg, by=None)
   event_study(trade_filter, bars_before, bars_after)
+  window_economics()     (PR-B, 2026-10-19: per (coin, window) trades, turnover, direction
+                         changes, allocation, gross / fees / net, cost drag and median
+                         holding bars; tools/window_economics.py, the one definition the
+                         profit-bars stage also stores per variant)
 
 `floor` (D-094) is written into the returned `test` block (default {min_events: 1}),
 so a claim can carry the floor it will be graded with and still be the test that ran.
@@ -58,13 +62,18 @@ Why this cannot leak (no lookahead)
     descriptors the PR-3 guide labels as such.
   * `describe` / `distribution` read columns the data dictionary marks `close` or
     `fill` (known at the bar's close, before or at the decision), plus the
-    derived `past_return_<n>` / `trailing_vol_<n>` (rows t-n..t only). A column
+    derived `past_return_<n>` / `trailing_vol_<n>` (rows t-n..t only),
+    `abs_forecast` / `allocation_abs` (bar t only) and `forecast_sign_change`
+    (bars t-1 and t only). A column
     marked `exit` / `after` is outcome-only and refused here; `meta` is a label
     (usable as `by` only); `run` / `end` are never offered (finding A1: the
     end-of-run balances repeated on every row are a real lookahead).
   * Outcomes (`fwd_return` ..., `trade_net_return`, `post_exit_return`) are
     matched by timestamp inside one window by the claim engine; event_study's
     "after" half is an outcome, labelled as such in the result.
+  * `window_economics` is post-run accounting of the run's own bars.csv and
+    trades.json (whole windows, outcomes included); it decides nothing and is
+    no condition of any test.
 
 Comparisons (the look counter)
 ------------------------------
@@ -73,8 +82,8 @@ outcome. Feature-only results count 0.
   conditional_effect  horizons x groups (groups = 1 without `by`, else the number
                       of windows / coins returned; the pooled number returned
                       beside a `by` is not counted again)
-  trade_slice         groups x (aggregates of trade_net_return / post_exit_return
-                      whose stat is not `count`)
+  trade_slice         groups x (aggregates of trade_net_return / post_exit_return /
+                      trade_gross_return whose stat is not `count`)
   event_study         the number of "after" checkpoints returned
   describe, distribution  the number of groups when grouped by hour, weekday or
                       regime, whatever the column: past_return_1 at bar t+1 IS
@@ -83,6 +92,7 @@ outcome. Feature-only results count 0.
                       so a mean by hour is a calendar effect, and by a persistent
                       regime label nearly a regime effect (D-090); else 0
   list_columns  0
+  window_economics  0 (operator ruling 2026-10-19: per-window accounting, no condition)
 A session may spend COMPARISON_BUDGET (150); a call that would count more than
 what is left is refused with "comparison budget spent".
 
@@ -118,6 +128,7 @@ if _HERE not in sys.path:
 
 import claim_measure as cmeas  # noqa: E402
 import claim_tests as ct  # noqa: E402
+import window_economics as wecon  # noqa: E402
 
 SCHEMA_VERSION = 1
 LOG_REL = "artifacts/analyst_queries.yaml"
@@ -138,11 +149,19 @@ CHECKPOINTS = {"hourly": (1, 2, 3, 6, 12, 24), "daily": (1, 2, 3, 5, 10)}
 BY_BARS = ("window", "coin", "regime", "weekday", "hour")
 BY_EFFECT = ("window", "coin")
 BY_TRADES = ("window", "direction", "regime_at_entry", "weekday", "hour")
-AGG_FIELDS = ("trade_net_return", "post_exit_return", "holding_bars", "entry_forecast")
+AGG_FIELDS = ("trade_net_return", "post_exit_return", "holding_bars", "entry_forecast",
+              "trade_gross_return", "trade_cost_pct")
 AGG_STATS = ("mean", "median", "share_positive", "count")
-# an aggregate relates a group to an outcome only for these fields
-_OUTCOME_AGG_FIELDS = ("trade_net_return", "post_exit_return")
-DERIVED_COLUMNS = ("past_return", "trailing_vol")
+# an aggregate relates a group to an outcome only for these fields (trade_cost_pct is the
+# cost model's commission rate, not a market outcome: not counted)
+_OUTCOME_AGG_FIELDS = ("trade_net_return", "post_exit_return", "trade_gross_return")
+# past_return / trailing_vol take a length (`<name>_<n>`); the other three are bar-t columns
+DERIVED_COLUMNS = ("past_return", "trailing_vol", "abs_forecast", "forecast_sign_change",
+                   "allocation_abs")
+_LENGTH_DERIVED = ("past_return", "trailing_vol")
+_BAR_T_DERIVED = tuple(d for d in DERIVED_COLUMNS if d not in _LENGTH_DERIVED)
+# trade_slice fields read from trades.json beside the TradeWindow (PR-B)
+_TRADES_JSON_AGGS = ("trade_gross_return", "trade_cost_pct")
 _DERIVED_RE = re.compile(r"(past_return|trailing_vol)_([0-9]+)")
 _SAFE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.\-]*")
 _WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
@@ -377,7 +396,7 @@ class QueryLog:
 # ---------------------------------------------------------------------------
 
 class QueryEngine:
-    """The six query functions over one run directory.
+    """The seven query functions over one run directory.
 
     `run_dir`: the saved run (must exist; its resolved path may not contain a
     `local_data` or `holdout_sealed` component). `log_path`: where the query log
@@ -400,6 +419,7 @@ class QueryEngine:
         self._dictionary = None
         self._bars: dict = {}
         self._trades: dict = {}
+        self._trade_json: dict = {}
         self._cols: dict = {}
 
     # -- the public functions ------------------------------------------------
@@ -441,6 +461,10 @@ class QueryEngine:
                          {"trade_filter": trade_filter, "bars_before": bars_before,
                           "bars_after": bars_after, "variant": variant},
                          lambda: self._event_study(trade_filter, bars_before, bars_after, variant))
+
+    def window_economics(self, variant: str = "base"):
+        return self._run("window_economics", {"variant": variant},
+                         lambda: self._window_economics(variant))
 
     # -- the call wrapper: log BEFORE returning -------------------------------
 
@@ -520,6 +544,10 @@ class QueryEngine:
         if name == "event_study":
             return f"{result['n_trades']} trades; after: " + ", ".join(
                 f"{k}={v['mean']}" for k, v in list(result["after"].items())[:3])
+        if name == "window_economics":
+            t = result["total"]
+            return (f"{len(result['windows'])} window(s); trades={t['trades']} "
+                    f"turnover={t['turnover']} gross_pct={t['gross_pct']} net_pct={t['net_pct']}")
         return f"{len(result.get('bar_columns', []))} usable bar columns"
 
     # -- loading --------------------------------------------------------------
@@ -638,7 +666,11 @@ class QueryEngine:
         if key in self._cols:
             return self._cols[key]
         m = _DERIVED_RE.fullmatch(column)
-        if m:
+        if column in _BAR_T_DERIVED:
+            vals = [self._bar_t_derived(w, column) for w in windows]
+            if not any(np.isfinite(v).any() for v in vals):
+                raise QueryRefused(f"column {column!r} has no numeric value in this run")
+        elif m:
             n = int(m.group(2))
             lo = ct.MIN_FIELD_BARS[m.group(1)]
             if not lo <= n <= MAX_FIELD_BARS:
@@ -666,6 +698,27 @@ class QueryEngine:
                 raise QueryRefused(f"column {column!r} has no numeric value in this run")
         self._cols[key] = vals
         return vals
+
+    def _bar_t_derived(self, w, column) -> np.ndarray:
+        """The bar-t derived columns (PR-B), NaN where a needed value is missing.
+          abs_forecast          |forecast_t|
+          allocation_abs        |postRebalance_current_allocation_t| (a `fill` column)
+          forecast_sign_change  1.0 when forecast_(t-1) and forecast_t are of strictly
+                                opposite signs, else 0.0 (a zero forecast has no sign:
+                                + -> 0 and 0 -> - are not changes); NaN at a bar whose
+                                bar t-1 (stamped ts_t - step) is not in the window or
+                                either forecast is not finite. Reads bars t-1 and t only."""
+        if column == "abs_forecast":
+            return np.abs(np.asarray(w.forecast, dtype=float))
+        if column == "allocation_abs":
+            return np.abs(self._csv_column(w, "postRebalance_current_allocation"))
+        f = np.asarray(w.forecast, dtype=float)
+        k = w.index_at(-1)
+        out = np.full(len(f), np.nan)
+        ok = k >= 0
+        ok[ok] = np.isfinite(f[ok]) & np.isfinite(f[k[ok]])
+        out[ok] = (f[ok] * f[k[ok]] < 0).astype(float)
+        return out
 
     # -- grouping -------------------------------------------------------------
 
@@ -756,7 +809,7 @@ class QueryEngine:
                 "windows": [w.label for w in windows],
                 "bar_columns": cols,
                 "derived_columns": [f"{d}_<n> (n bars, {ct.MIN_FIELD_BARS[d]}..{MAX_FIELD_BARS})"
-                                    for d in DERIVED_COLUMNS],
+                                    for d in _LENGTH_DERIVED] + list(_BAR_T_DERIVED),
                 "not_offered": {k: v for k, v in not_offered.items() if v},
                 "by_bars": list(BY_BARS), "by_effect": list(BY_EFFECT),
                 "by_trades": list(BY_TRADES),
@@ -1016,6 +1069,30 @@ class QueryEngine:
             return ((tw.exit_ts - tw.entry_ts) // tw.step).astype(float)
         return np.asarray(tw.entry_forecast, dtype=float)
 
+    def _trades_json_values(self, variant) -> list:
+        """Per window, in _trade_windows' order: {trade_gross_return, trade_cost_pct}, one
+        value per lot in trades.json order (the TradeWindow's order), NaN where missing.
+          trade_gross_return  profit_loss_percent / 100: the lot's price return at its fill
+                              prices, signed by side, before commission (a fraction, as
+                              trade_net_return); always trades.json's, whatever basis
+                              trade_net_return has (return_basis)
+          trade_cost_pct      total_commission_percent: (entry + exit commission rate) x 100,
+                              in percent of the lot's notional (the cost model's rate)"""
+        vid = self._variant(variant)
+        if vid not in self._trade_json:
+            out = []
+            for tw in self._trade_windows(variant):
+                path = Path(tw.bars.source).parent / "trades.json"
+                trades = json.loads(path.read_text(encoding="utf-8"))
+                if not isinstance(trades, list) or len(trades) != tw.n:
+                    raise QueryRefused(f"{tw.label}: trades.json does not match its loaded lots")
+                out.append({"trade_gross_return": np.array(
+                                [_to_float(t.get("profit_loss_percent")) / 100.0 for t in trades]),
+                            "trade_cost_pct": np.array(
+                                [_to_float(t.get("total_commission_percent")) for t in trades])})
+            self._trade_json[vid] = out
+        return self._trade_json[vid]
+
     @staticmethod
     def _stat(v: np.ndarray, stat: str):
         fin = v[np.isfinite(v)]
@@ -1035,8 +1112,11 @@ class QueryEngine:
         aggs = self._check_aggs(agg)
         self._check_by(by, BY_TRADES, tws)
         sel = [self._selected(tw, flt) for tw in tws]
-        arrays = {(f, h): np.concatenate([self._trade_values(tw, f, h)[m]
-                                          for tw, m in zip(tws, sel)])
+        tj = (self._trades_json_values(variant)
+              if any(f in _TRADES_JSON_AGGS for f, _s, _h in aggs) else None)
+        arrays = {(f, h): np.concatenate([(tj[i][f] if f in _TRADES_JSON_AGGS
+                                           else self._trade_values(tw, f, h))[m]
+                                          for i, (tw, m) in enumerate(zip(tws, sel))])
                   for f, _s, h in aggs}
         if by is None:
             labels = np.full(int(sum(m.sum() for m in sel)), "all", dtype=object)
@@ -1110,3 +1190,20 @@ class QueryEngine:
                          "OUTCOME"),
                 "before": {str(p): cell(acc_b[p]) for p in before_pts},
                 "after": {str(p): cell(acc_a[p]) for p in after_pts}}, n
+
+    # -- window_economics -------------------------------------------------------
+
+    def _window_economics(self, variant):
+        """tools/window_economics.window_economics over the variant's windows, resolved and
+        checked as for trade_slice (inside the run, before the holdout). Counts 0."""
+        tws = self._trade_windows(variant)
+        try:
+            out = wecon.window_economics(
+                (tw.symbol, tw.window, Path(tw.bars.source).parent) for tw in tws)
+        except (OSError, ValueError, KeyError) as exc:
+            raise QueryRefused(f"the run's economics cannot be read ({type(exc).__name__}: "
+                               f"{exc})") from exc
+        if len(out["windows"]) > MAX_GROUPS:
+            raise QueryRefused(f"{len(out['windows'])} (coin, window) cells, over the cap of "
+                               f"{MAX_GROUPS}")
+        return out, 0
