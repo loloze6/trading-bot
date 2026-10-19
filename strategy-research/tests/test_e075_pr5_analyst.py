@@ -45,6 +45,18 @@ import test_e075_pr4_queries as q4  # noqa: E402  (a synthetic run with bars and
 # the real flag reader, kept before the autouse fixture replaces the attribute
 _REAL_ANALYST_ENABLED = rpr._analyst_enabled
 RUN_ID = "run_074"
+# operator, 2026-10-19 (D-151): a claim always carries a vehicle; this one resolves against
+# BASE_CONFIG, which the `run` fixture writes as the run's candidate config
+# (the component and value of test_e059_s2a_decide_next._base_config, so decide-next resolves
+# the same vehicle against its own base config)
+BASE_CONFIG = {"strategies": {"regimes": {"unknown": {"components": [
+    {"id": "funding_mr", "params": {"z": 2.0}}]}}}}
+
+
+def _vehicle():
+    return [{"component_id": "funding_mr", "field": "params.z", "before": 2.0, "after": 3.0}]
+
+
 LONG = {"kind": "trade", "where": [{"field": "side", "op": "==", "value": "long"}]}
 
 
@@ -70,6 +82,8 @@ def run(tmp_path, monkeypatch):
         yaml.safe_dump({"machine_constraints": {"protocol": {"fold": "A"}}}), encoding="utf-8")
     (run_dir / "pipeline_state.yaml").write_text(
         yaml.safe_dump({"status": "active", "audit_log": {}}), encoding="utf-8")
+    (arts / "candidate_strategy_config.json").write_text(json.dumps(BASE_CONFIG),
+                                                         encoding="utf-8")
     monkeypatch.setattr(rpr, "ROOT", root)
     monkeypatch.setattr(rpr, "_load_holdout_range", lambda *a: (q4.HOLDOUT, None))
     monkeypatch.setattr(asm, "SR_ROOT", SR_ROOT)
@@ -146,7 +160,7 @@ async def _good_claim(call, *, why=True, cite_bad=False, extra=None):
                         "pass_if": "long lots above the others on the unseen fold",
                         "fail_if": "not above", "rationale": "the longs ride the drift"},
               "why_query": ts["query_id"] if why else ce["query_id"],
-              "evidence": [cite], "vehicle": [], "combines_as": "execution_rule"}
+              "evidence": [cite], "vehicle": _vehicle(), "combines_as": "execution_rule"}
     answer.update(extra or {})
     return "Here is my claim.\n```yaml\n" + yaml.safe_dump(answer, sort_keys=False) + "```\n"
 
@@ -248,7 +262,7 @@ def test_a_stubbed_session_writes_a_reading_decide_next_turns_into_a_fold_b_chil
     doc = yaml.safe_load(dest.read_text(encoding="utf-8"))
     assert doc["rubric_version"] == "trade_efficiency-analyst-v1"
     (side,) = doc["side_findings"]
-    assert side["vehicle"] == [] and side["fold_observed"] == "A"
+    assert side["vehicle"] == _vehicle() and side["fold_observed"] == "A"
     assert side["scores"]["distance_to_profitable"] == 1 == side["scores"]["mechanism_plausibility"]
     rp.check_reading(doc, "trade_efficiency", "file", strict_provenance=True, analyst=True)
     # the log and the record
@@ -283,7 +297,7 @@ def test_a_stubbed_session_writes_a_reading_decide_next_turns_into_a_fold_b_chil
 @pytest.mark.parametrize("variant,needle", [
     (dict(cite_bad=True), "returned"),
     (dict(why=False), "why_query must be the SECOND query"),
-    (dict(extra={"vehicle": [], "combines_as": "execution_rule",
+    (dict(extra={"vehicle": _vehicle(), "combines_as": "execution_rule",
                  "evidence": ["q9:result.x=1"]}), "not a successful call"),
 ])
 def test_a_refused_answer_is_retried_then_skipped(run, monkeypatch, variant, needle):
@@ -323,7 +337,8 @@ def test_a_claim_test_never_run_is_refused():
                         "direction": "greater", "floor": {"min_events": 1}}],
              "pass_if": "p", "fail_if": "f", "rationale": "r"}
     text = "```yaml\n" + yaml.safe_dump({"outcome": "claim", "claim": claim, "why_query": "q1",
-                                         "evidence": ["q1:groups.all.mean=0.5"], "vehicle": [],
+                                         "evidence": ["q1:groups.all.mean=0.5"],
+                                         "vehicle": _vehicle(),
                                          "combines_as": "execution_rule"}) + "```"
     _r, _rec, errors = asm.check_answer(
         text, lens="trade_efficiency", run_id=RUN_ID, entries=entries,
@@ -377,10 +392,11 @@ def test_the_simple_score_is_the_in_run_window_agreement(k, n, want):
     assert asm.in_run_score(["other"], entries) == 0
 
 
-def test_an_empty_vehicle_for_another_kind_is_refused_by_the_reading_check(run, monkeypatch):
+@pytest.mark.parametrize("kind", ["execution_behaviour", "conditional_behaviour"])
+def test_an_empty_vehicle_is_refused_by_the_reading_check_for_every_kind(run, monkeypatch, kind):
     async def script(call):
-        text = await _good_claim(call)
-        return text.replace("kind: execution_behaviour", "kind: conditional_behaviour")
+        text = await _good_claim(call, extra={"vehicle": []})
+        return text.replace("kind: execution_behaviour", f"kind: {kind}")
     _install(monkeypatch, script)
     rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
     record = yaml.safe_load((run / asm.record_rel("trade_efficiency")).read_text(encoding="utf-8"))
@@ -624,6 +640,9 @@ def test_repeating_a_test_on_another_variant_cannot_raise_its_score():
 
 
 def _claim_answer(**over):
+    # `vehicle: []` here is deliberate: this builds answers for check_answer, which does not
+    # look at the vehicle (the reading checks do), and GOLDEN_ONE_OR_NO_BLOCK pins the result
+    # of these exact answers from before D-151
     claim = {"statement": "Long lots earn more than short lots.", "kind": "execution_behaviour",
              "tests": [{"name": "t", "selector": LONG, "outcome": {"kind": "trade_net_return"},
                         "baseline": {"kind": "other_trades"}, "statistic": "mean_diff",
@@ -977,7 +996,7 @@ def _floor_answer(test, ce_qid, why_qid, cite):
                      "kind": "execution_behaviour", "tests": [dict(test, name="t")],
                      "pass_if": "higher on the unseen fold", "fail_if": "not higher",
                      "rationale": "the forecast leads the drift"},
-           "why_query": why_qid, "evidence": [cite], "vehicle": [],
+           "why_query": why_qid, "evidence": [cite], "vehicle": _vehicle(),
            "combines_as": "execution_rule"}
     return "```yaml\n" + yaml.safe_dump(doc, sort_keys=False) + "```"
 
@@ -1105,7 +1124,7 @@ def test_a_stubbed_session_claiming_a_real_floor_reaches_the_reading(run, monkey
                             "fail_if": "not above", "rationale": "the longs ride the drift"},
                   "why_query": ts["query_id"],
                   "evidence": [_cite(ce["query_id"], ce["result"], "horizons.trade.effect")],
-                  "vehicle": [], "combines_as": "execution_rule"}
+                  "vehicle": _vehicle(), "combines_as": "execution_rule"}
         return "```yaml\n" + yaml.safe_dump(answer, sort_keys=False) + "```\n"
     _install(monkeypatch, script)
     dest = rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
@@ -1909,7 +1928,7 @@ def test_a_claim_the_claim_card_refuses_is_not_reported_twice(run, monkeypatch):
 
 def test_a_shape_error_is_added_to_the_answers_errors(run, monkeypatch):
     async def script(call):
-        text = await _good_claim(call, cite_bad=True)
+        text = await _good_claim(call, cite_bad=True, extra={"vehicle": []})
         return text.replace("kind: execution_behaviour", "kind: no_such_kind")
     _install(monkeypatch, script)
     rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
@@ -1925,7 +1944,7 @@ def test_a_malformed_claim_runs_the_reading_checks_without_raising(run, monkeypa
         return "```yaml\n" + yaml.safe_dump({
             "outcome": "claim", "claim": junk, "why_query": ce["query_id"],
             "evidence": [_cite(ce["query_id"], ce["result"], "horizons.trade.effect")],
-            "vehicle": [], "combines_as": "execution_rule"}) + "```"
+            "vehicle": _vehicle(), "combines_as": "execution_rule"}) + "```"
     _install(monkeypatch, script)
     dest = rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
     assert yaml.safe_load(dest.read_text(encoding="utf-8"))["skipped"]["rule"] \
@@ -1982,10 +2001,12 @@ def test_a_missing_path_or_query_is_still_refused():
     assert asm.check_citations(["q9:x=0.0563"], _LOGGED)
 
 
-def test_the_skill_says_an_execution_claim_names_its_strategy_feature():
+def test_the_skill_says_an_execution_claim_holds_for_its_strategy_only_and_has_a_vehicle():
+    # D-151 (operator, 2026-10-19) deleted the empty-vehicle bullet and with it the sentence
+    # "its `statement` names the strategy feature it depends on"; the memory-view sentence stays
     skill = " ".join((asm.SKILL_DIR / "SKILL.md").read_text(encoding="utf-8").split())
-    assert "its `statement` names the strategy feature it depends on" in skill
     assert "holds for that strategy only" in skill
+    assert "No empty vehicle." in skill
 
 
 # ---------------------------------------------------------------------------

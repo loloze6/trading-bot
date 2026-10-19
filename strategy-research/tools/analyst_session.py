@@ -107,7 +107,7 @@ def run_context(run_dir: Path, base_config_rel: str, fold: str | None) -> str:
     out += _section(f"Base strategy config ({base_config_rel})", _read(run_dir / base_config_rel))
     out += _section("Variant patches (artifacts/variant_patches.yaml)",
                     _read(arts / "variant_patches.yaml"))
-    out += _section("Cost model (config/cost_model.yaml; for reference only)",
+    out += _section("Cost model (config/cost_model.yaml; a measurement of this run, evidence never the claim)",
                     _read(SR_ROOT / "config" / "cost_model.yaml"))
     return out
 

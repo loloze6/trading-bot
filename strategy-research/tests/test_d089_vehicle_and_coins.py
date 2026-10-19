@@ -2,7 +2,9 @@
 
 (a) A claim of kind execution_behaviour may change nothing: `vehicle: []` -- the child
     re-runs today's strategy on the next fold and the strategy's own behaviour there is the
-    test. Every other kind still needs a non-empty vehicle.
+    test. SUPERSEDED for a model's answer by the operator's 2026-10-19 ruling (D-151): every
+    claim kind needs a non-empty vehicle; only a FILE already written keeps (a) for
+    execution_behaviour (WRITTEN_EMPTY_VEHICLE_KINDS).
 (b) Several coins, option C: in each window the coins are pooled into one value first, then
     "all but one window" is applied over the fold's windows (3 coins x 6 windows: 5 of 6
     pooled windows confirm, 4 of 6 do not). One coin is measured exactly as before.
@@ -57,17 +59,22 @@ def _check_model(claim, **envelope):
 # ---------------------------------------------------------------------------
 
 def test_the_kinds_allowed_an_empty_vehicle_are_the_folds_kinds():
-    assert rp.EMPTY_VEHICLE_KINDS == cc.FOLDS_CLAIM_KINDS == ("execution_behaviour",)
+    # operator, 2026-10-19: no kind takes an empty vehicle from a model; the kinds a FILE already
+    # written may carry one (D-089 a) are still the folds' kinds
+    assert rp.EMPTY_VEHICLE_KINDS == ()
+    assert rp.WRITTEN_EMPTY_VEHICLE_KINDS == cc.FOLDS_CLAIM_KINDS == ("execution_behaviour",)
 
 
-def test_an_empty_vehicle_is_accepted_for_execution_behaviour():
-    _check_model(_claim(kind="execution_behaviour"), **EMPTY)
+def test_an_empty_vehicle_is_refused_for_execution_behaviour_from_a_model():
+    with pytest.raises(rp.ProposalError, match=r"vehicle: an empty vehicle is refused for every "
+                                               r"claim kind, 'execution_behaviour' included"):
+        _check_model(_claim(kind="execution_behaviour"), **EMPTY)
 
 
 @pytest.mark.parametrize("kind", ["event_behaviour", "direction_forecast", "cost_turnover"])
 def test_an_empty_vehicle_is_refused_for_every_other_kind(kind):
-    with pytest.raises(rp.ProposalError, match=r"vehicle: an empty vehicle .* allowed only for a "
-                                               r"claim of kind \['execution_behaviour'\]"):
+    with pytest.raises(rp.ProposalError, match=rf"vehicle: an empty vehicle is refused for every "
+                                               rf"claim kind, '{kind}' included"):
         _check_model(_claim(kind=kind), **EMPTY)
     # the same claim with a real vehicle is accepted, as before
     _check_model(_claim(kind=kind), **dict(EMPTY, vehicle=copy.deepcopy(CHANGE)))
@@ -75,7 +82,8 @@ def test_an_empty_vehicle_is_refused_for_every_other_kind(kind):
 
 def test_a_missing_vehicle_is_still_refused_and_names_the_empty_form():
     env = {k: v for k, v in EMPTY.items() if k != "vehicle"}
-    with pytest.raises(rp.ProposalError, match=r"`vehicle` is required .*`vehicle: \[\]` only"):
+    with pytest.raises(rp.ProposalError,
+                       match=r"`vehicle` is required .*`vehicle: \[\]` is refused"):
         _check_model(_claim(kind="execution_behaviour"), **env)
 
 
@@ -171,7 +179,7 @@ def test_an_empty_vehicle_ignores_a_number_retyped_by_1b(tmp_path):
 def test_an_empty_vehicle_without_a_kind_is_refused():
     claim = _claim(kind="execution_behaviour")
     del claim["kind"]
-    with pytest.raises(rp.ProposalError, match="allowed only for a claim of kind"):
+    with pytest.raises(rp.ProposalError, match="an empty vehicle is refused for every claim kind"):
         _check_model(claim, **EMPTY)
 
 
