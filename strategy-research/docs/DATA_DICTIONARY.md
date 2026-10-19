@@ -694,7 +694,7 @@ window folder; it is not in `protocol_result.yaml`.
 
 | Field | Exact definition | Unit | Counts as a comparison |
 |---|---|---|---|
-| `trade_gross_return` | The lot's return before costs on the window's return basis, the same per-lot number the claim outcome `trade_gross_return` sees: `all_costs` -> the cost record's `gross_return_before_costs` / 100 (at the bar closes, before fees and slippage); otherwise `profit_loss_percent` / 100 (at the fill prices, before commission). The reply's `return_basis` names the basis of each window. A per-lot return on the lot's own notional, not a share of the account. | frac | yes, like `trade_net_return` (an outcome) |
+| `trade_gross_return` | The lot's return before costs on the window's return basis, the same per-lot number the claim outcome `trade_gross_return` sees: `all_costs` -> the cost record's `gross_return_before_costs` / 100 (at the bar closes, before fees and slippage); otherwise `profit_loss_percent` / 100 (at the fill prices, before commission). The reply's `return_basis` lists the bases of the windows with lots. A per-lot return on the lot's own notional, not a share of the account. | frac | yes, like `trade_net_return` (an outcome) |
 | `trade_cost_pct` | `total_commission_percent`: (entry + exit commission rate) x 100, in percent of the lot's notional (the cost model's rate). | % | no (not a market outcome) |
 
 **Derived bar columns** (for `describe` / `distribution`; `list_columns` lists them; each uses

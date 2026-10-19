@@ -266,7 +266,7 @@ fewer.
   the signal predicts only the next bar); its test tests that cause; its vehicle changes that
   cause.
 - A trade test may not select lots by an exit-time field (`holding_bars`, `exit_cause`) and
-  measure the same lots' own `trade_net_return`: it is near-mechanical (a losing lot stays
+  measure the same lots' own result (`trade_net_return` or `trade_gross_return`): it is near-mechanical (a losing lot stays
   open longer). Select on an entry-time field (side, entry_hour, entry_weekday,
   regime_at_entry, entry_forecast), or measure `post_exit_return`.
 - One claim or none.
