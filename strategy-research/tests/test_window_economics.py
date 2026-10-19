@@ -232,11 +232,11 @@ def test_a_present_but_non_numeric_core_figure_raises(tmp_path, key, bad):
         we.window_economics([("X", "w", tmp_path / "w", dict(W2_CORE, **{key: bad}))])
 
 
-def test_result_cores_follow_the_results_with_a_run_id_in_order():
+def test_result_cores_are_keyed_by_run_id():
     pr = {"results": [{"run_id": "a", "core": {"gross_pnl": 1.0}}, {"core": {"gross_pnl": 2.0}},
                       {"run_id": "b"}, {"run_id": "c", "core": "junk"}, "x"]}
-    assert we.result_cores(pr) == [{"gross_pnl": 1.0}, None, None]
-    assert we.result_cores(None) == [] and we.result_cores({}) == []
+    assert we.result_cores(pr) == {"a": {"gross_pnl": 1.0}, "b": None, "c": None}
+    assert we.result_cores(None) == {} and we.result_cores({}) == {}
 
 
 @pytest.mark.parametrize("alloc,flips", [
@@ -437,8 +437,8 @@ def _window_dirs(run):
     pr = yaml.safe_load((Path(run) / "artifacts" / "variants" / "base" / "protocol_result.yaml")
                         .read_text(encoding="utf-8"))
     cores = we.result_cores(pr)
-    return [(s, w, Path(run) / "variants" / "base" / "results" / rid, cores[i])
-            for i, (rid, s, w, _o, _sd) in enumerate(pr4.WINDOWS)]
+    return [(s, w, Path(run) / "variants" / "base" / "results" / rid, cores[rid])
+            for (rid, s, w, _o, _sd) in pr4.WINDOWS]
 
 
 # ---------------------------------------------------------------------------
@@ -484,6 +484,47 @@ def test_the_query_is_the_module_function_over_the_same_folders(run):
     got = engine(run).window_economics()["result"]
     want = json.loads(json.dumps(we.window_economics(_window_dirs(run))))
     assert got == want
+
+
+def _edit_results(run, fn):
+    pr_path = Path(run) / "artifacts" / "variants" / "base" / "protocol_result.yaml"
+    pr = yaml.safe_load(pr_path.read_text(encoding="utf-8"))
+    fn(pr["results"])
+    pr_path.write_text(yaml.safe_dump(pr), encoding="utf-8")
+
+
+def test_the_query_pairs_each_window_with_its_core_by_run_id_whatever_the_result_order(
+        tmp_path):
+    base = make_run(tmp_path / "run_a")
+    enrich(base)
+    want = engine(base).window_economics()["result"]
+    # the same run with protocol_result.yaml's results[] in another order: the windows are
+    # loaded in that order, each must still read its own core (saved_core(i) differs per window)
+    other = make_run(tmp_path / "run_b")
+    enrich(other)
+    _edit_results(other, lambda rs: rs.reverse())
+    got = engine(other).window_economics()["result"]
+    assert got["windows"] == want["windows"]
+    assert list(got["windows"]) == list(reversed(list(want["windows"])))
+    for k in ("trades", "n_bars", "direction_changes"):
+        assert got["total"][k] == want["total"][k]
+    for k in ("gross_pct", "fees_pct", "net_pct", "cost_drag_pct"):
+        assert got["total"][k] == approx(want["total"][k])
+
+
+def test_a_window_without_a_core_reads_none_never_another_windows_core(run):
+    _edit_results(run, lambda rs: rs[1].pop("core"))
+    res = engine(run).window_economics()
+    assert res["status"] == "ok", res.get("reason")
+    cells = res["result"]["windows"]
+    for k in ("trades", "gross_pct", "fees_pct", "net_pct", "cost_drag_pct",
+              "avg_trade_duration_bars"):
+        assert cells["AAA/w1"][k] is None
+        assert res["result"]["total"][k] is None
+    for label, i in (("AAA/w0", 0), ("BBB/w0", 2)):
+        assert cells[label]["gross_pct"] == approx(36.0 + 10.0 * i)
+        assert cells[label]["trades"] == 8
+    assert cells["AAA/w1"]["median_holding_bars"] == 4.5      # computed fields stay
 
 
 def test_the_query_counts_zero_comparisons_and_leaves_the_total_alone(run):

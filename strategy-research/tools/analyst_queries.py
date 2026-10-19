@@ -1197,20 +1197,20 @@ class QueryEngine:
     def _window_economics(self, variant):
         """tools/window_economics.window_economics over the variant's windows, resolved and
         checked as for trade_slice (inside the run, before the holdout). Each window's
-        `core` block is the variant's protocol_result.yaml `results[]` entry's, read in the
-        order the trade windows were loaded (both skip an entry without a run_id). Counts 0."""
+        `core` block is the variant's protocol_result.yaml `results[]` entry's, paired by
+        run_id: a window's folder is variants/<vid>/results/<run_id>/, so its run_id is the
+        folder name; a window whose run_id has no core gets None (its read fields are None),
+        never another window's core. Counts 0."""
         tws = self._trade_windows(variant)
         try:
             pr = self.run_dir / "artifacts" / "variants" / self._variant(variant) / \
                 "protocol_result.yaml"
             cores = wecon.result_cores(yaml.safe_load(pr.read_text(encoding="utf-8")) or {})
-            if len(cores) != len(tws):
-                raise ValueError(f"{len(cores)} protocol_result results against "
-                                 f"{len(tws)} loaded windows")
+            folders = [Path(tw.bars.source).parent for tw in tws]
             out = wecon.window_economics(
-                (tw.symbol, tw.window, Path(tw.bars.source).parent, core)
-                for tw, core in zip(tws, cores))
-        except (OSError, ValueError, KeyError) as exc:
+                (tw.symbol, tw.window, folder, cores.get(folder.name))
+                for tw, folder in zip(tws, folders))
+        except (OSError, ValueError, KeyError, yaml.YAMLError) as exc:
             raise QueryRefused(f"the run's economics cannot be read ({type(exc).__name__}: "
                                f"{exc})") from exc
         if len(out["windows"]) > MAX_GROUPS:

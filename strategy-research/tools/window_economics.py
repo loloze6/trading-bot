@@ -111,16 +111,17 @@ def direction_changes(alloc) -> int:
     return n
 
 
-def result_cores(protocol_result) -> list:
-    """The `core` block (a dict, or None when absent / not a mapping) of every
-    protocol_result `results[]` entry that has a run_id, in order -- the entries the
-    window loaders (claim_tests.load_variant_trade_windows) keep, in their order."""
-    out = []
+def result_cores(protocol_result) -> dict:
+    """{str(run_id): core} of every protocol_result `results[]` entry that has a run_id; the
+    core is the entry's `core` block (a dict), or None when absent / not a mapping. Keyed by
+    run_id so a caller pairs a window folder (variants/<vid>/results/<run_id>/) with its own
+    core whatever the order of the entries."""
+    out = {}
     for entry in (protocol_result or {}).get("results") or []:
         if not isinstance(entry, dict) or not entry.get("run_id"):
             continue
         core = entry.get("core")
-        out.append(core if isinstance(core, dict) else None)
+        out[str(entry["run_id"])] = core if isinstance(core, dict) else None
     return out
 
 

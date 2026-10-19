@@ -675,11 +675,20 @@ the window's last `bars.csv` row (the account after the window's last action; th
 `total_portfolio_value` is that bar's value before its rebalance and is not E_end).
 `total` sums `trades`, `turnover`, `direction_changes` and the three `*_pct` over the cells
 (each window is its own account; null when any cell's figure is null), pools the bars for
-`mean_abs_allocation` and `max_abs_allocation`, derives `cost_drag_pct` from the summed read
-dollars ((sum of `core.gross_pnl` - sum of `core.net_pnl`) / abs(sum of `core.gross_pnl`) x 100;
-null when that sum is 0 or a cell lacks a figure), takes `avg_trade_duration_bars` as the mean
-of the cells' averages weighted by their `trade_count`, and pools every lot for
-`median_holding_bars`.
+`mean_abs_allocation` and `max_abs_allocation`, and pools every lot for `median_holding_bars`.
+Two `total` figures are not the run's own numbers; each is stated as derived from the read
+window figures (operator ruling 2026-10-19, Q3), by these formulas:
+
+- `cost_drag_pct` (total): derived from the read window figures, = (sum of the read
+  `core.gross_pnl` - sum of the read `core.net_pnl`) / abs(sum of the read `core.gross_pnl`) x 100;
+  null when that sum is 0 or any window lacks a gross or net figure.
+- `avg_trade_duration_bars` (total): derived from the read window figures, =
+  sum(`core.trade_count`_i x `core.avg_trade_duration_bars`_i) / sum(`core.trade_count`_i) over
+  the windows with at least one trade; null when no window has a trade, when any window lacks a
+  `trade_count`, or when a window with trades lacks its average.
+
+`turnover` (per window and `total`) is read from `metrics.json` `bar_equity.turnover` in each
+window folder; it is not in `protocol_result.yaml`.
 
 **`trade_slice` fields** (aggregates of the lots, one value per lot of `trades.json`):
 
