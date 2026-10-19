@@ -596,7 +596,7 @@ def test_block_lists_and_the_old_guide_are_unchanged():
     assert sorted(ct.OUTCOMES) == ["fwd_max_drawdown", "fwd_return", "fwd_volatility", "trend_ends"]
     assert sorted(ct.BASELINES) == ["complement", "other_selector", "placebo"]
     assert sorted(ct.STATISTICS) == ["decay_curve", "hit_rate", "mean_diff", "rank_ic"]
-    assert ct.BAR_T_FIELDS == ("forecast", "close", "past_return")
+    assert ct.BAR_T_FIELDS == ("forecast", "close", "past_return", "trailing_vol")   # D-153
     text = GUIDE.read_text(encoding="utf-8")
     for token in ("trade_net_return", "post_exit_return", "other_trades", "exit_cause",
                   "CLAIM_TESTS_TRADE"):

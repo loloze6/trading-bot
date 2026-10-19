@@ -23,16 +23,16 @@ so a claim can carry the floor it will be graded with and still be the test that
 The floor never changes a measured number (claim_tests.effect_sizes does not read it).
 
 `conditional_effect` is expressed in the claim-test slots: its condition is one
-bar selector (claim_tests.SELECTORS plus the gated `trailing_vol` field) or the
-PR-3 `trade` selector, and it calls claim_tests.effect_sizes with the TestSpec
-built from the slots, so its numbers ARE what claim_measure.measure_test reads
-(equality is tested for every selector / outcome / baseline / statistic
-combination the slots allow). Its result carries the exact `test` block, ready
-to paste into a claim, and whether claim_card accepts it with the trade family
-on (`compiles_as_claim`: the analyst's own proposal check, check_claim with
-trade_tests=True; a bar test with the gated `trailing_vol` field is still
-refused there). D-090: "today" in D-088 meant that check, not the pipeline's
-other check_claim calls, which do not pass trade_tests yet.
+bar selector (claim_tests.SELECTORS, `trailing_vol` a plain bar-t field since
+D-153) or the PR-3 `trade` selector, and it calls claim_tests.effect_sizes with
+the TestSpec built from the slots, so its numbers ARE what
+claim_measure.measure_test reads (equality is tested for every selector /
+outcome / baseline / statistic combination the slots allow). Its result carries
+the exact `test` block, ready to paste into a claim, and whether claim_card
+accepts it with the trade family on (`compiles_as_claim`: the analyst's own
+proposal check, check_claim with trade_tests=True; a bar test on `trailing_vol`
+is accepted there since D-153). D-090: "today" in D-088 meant that check, not
+the pipeline's other check_claim calls, which do not pass trade_tests yet.
 
 What it can read (and cannot)
 -----------------------------
@@ -833,10 +833,10 @@ class QueryEngine:
 
     @staticmethod
     def _spec_errors(spec) -> list:
-        """check_spec with the gated trailing_vol field and the trade family on, and
-        without the verdict-only refusal of regime selectors (an effect size needs no
-        signal recompute: claim_measure / claim_card make the same exception)."""
-        errs = ct.check_spec(spec, extra_fields=ct.GATED_BAR_T_FIELDS, trade_tests=True)
+        """check_spec with the trade family on, and without the verdict-only refusal
+        of regime selectors (an effect size needs no signal recompute: claim_measure /
+        claim_card make the same exception)."""
+        errs = ct.check_spec(spec, trade_tests=True)
         return [e for e in errs if " cannot be graded under " not in e]
 
     def _conditional_effect(self, condition, horizons, outcome, baseline, statistic,

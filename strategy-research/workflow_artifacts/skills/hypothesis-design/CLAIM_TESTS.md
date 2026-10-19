@@ -109,8 +109,8 @@ without a claim test; a person can add the block for later ideas.
 | kind | parameters | selects |
 |---|---|---|
 | `all` | none | every bar |
-| `event` | `field`: `forecast`, `close` or `past_return` (with `bars`); `op`: `>=` `>` `<=` `<` `==`; `value`: a number | bars where `field op value` |
-| `quantile` | `field`: `forecast`, `close` or `past_return` (with `bars`); `side`: `top` or `bottom`; `q` in (0, 0.5]; `lookback`: int >= 2 | bars in the top/bottom `q` of the trailing `lookback` bars (past only) |
+| `event` | `field`: `forecast`, `close`, `past_return` (with `bars`) or `trailing_vol` (with `bars`); `op`: `>=` `>` `<=` `<` `==`; `value`: a number | bars where `field op value` |
+| `quantile` | `field`: `forecast`, `close`, `past_return` (with `bars`) or `trailing_vol` (with `bars`); `side`: `top` or `bottom`; `q` in (0, 0.5]; `lookback`: int >= 2 | bars in the top/bottom `q` of the trailing `lookback` bars (past only) |
 | `calendar` | `weekdays`: list of 0 (Monday) .. 6 and/or `hours`: list of 0 .. 23 (UTC) | bars on those days/hours |
 | `regime` | `value: <label>` or `values: [<labels>]` | bars whose regime label is one of these |
 | `regime_change` | `to: <label>` | bars where the regime label changes to `to` |
@@ -120,7 +120,13 @@ Fields: `forecast` is the block's forecast at bar t; `close` is the price LEVEL 
 `bars: n` (an int >= 1, in bars of the card's timeframe); for example
 `{kind: quantile, field: past_return, bars: 1, side: top, q: 0.1, lookback: 500}` selects the
 largest one-bar rises. `past_return` is empty for the first n bars of each window and
-wherever a bar in between is missing. `bars` is allowed only with `past_return`.
+wherever a bar in between is missing. `trailing_vol` is the VOLATILITY that ended at bar t,
+the sample standard deviation of the n one-bar log returns log(close[i] / close[i - 1]) for
+i = t - n + 1 .. t, and needs `bars: n` (an int >= 2, in bars of the card's timeframe); for
+example `{kind: quantile, field: trailing_vol, bars: 24, side: top, q: 0.2, lookback: 500}`
+on 1h bars selects the bars whose past 24 hours were among the most volatile. It is empty
+under the same rule as `past_return`: the first n bars of each window and wherever a bar in
+between is missing. `bars` is allowed only with `past_return` and `trailing_vol`.
 
 **Regime selectors are measured like any other selector.** Write them when the claim is
 about a regime: the run continues normally, and the measured effect is kept.
