@@ -395,6 +395,17 @@ def validate(config: dict) -> List[str]:
             for msg in standardise_param_errors(step.get("params", {})):
                 violations.append(f"VIOLATION V15 {loc}[{k}].params: {msg}")
 
+    # V16 (CUL-354): every signed_power op has valid params (exponent a finite
+    # number >= 1, required; pivot, if given, a finite number > 0). Reuses the op's
+    # own param check, so V16 fails on exactly the params the op refuses. A scalar
+    # op: no placement rule. Silent for every config without signed_power.
+    from strategies.registry import signed_power_param_errors
+    for loc, transforms in _all_transform_lists(config):
+        for k, step in enumerate(transforms):
+            if step.get("op") == "signed_power":
+                for msg in signed_power_param_errors(step.get("params", {})):
+                    violations.append(f"VIOLATION V16 {loc}[{k}].params: {msg}")
+
     return violations
 
 
