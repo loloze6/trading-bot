@@ -1627,6 +1627,42 @@ def test_holding_bars_with_the_lots_own_return_is_refused():
                    "if it is your best idea, end with no_claim and give it as best_rejected")
 
 
+@pytest.mark.parametrize("where, named", [
+    ([_w("holding_bars", ">", 5)], "holding_bars"),
+    ([_w("exit_cause", "==", "flip")], "exit_cause"),
+    ([_w("holding_bars", ">", 5), _w("exit_cause", "==", "flip")], "exit_cause, holding_bars")])
+def test_an_exit_selector_with_the_lots_own_gross_return_is_refused_naming_it(where, named):
+    """B1 (operator ruling 2026-10-19): D-095 covers every one of the lot's own results
+    (claim_tests.TRADE_OWN_OUTCOMES); the message names the outcome the test measures."""
+    (msg,) = _exit_errors(_exit_test(where, outcome="trade_gross_return"))
+    assert msg.startswith(f"claim test 't' selects lots by an exit-time field ({named}) and "
+                          f"measures their own trade_gross_return: it cannot tell 'the exit "
+                          f"comes too late' from 'a losing lot stays open longer'"), msg
+    assert "trade_net_return" not in msg
+    (net,) = _exit_errors(_exit_test(where))
+    assert net == msg.replace("their own trade_gross_return", "their own trade_net_return")
+    # through the real claim check too (the block itself is valid)
+    (real,) = _exit_errors(_exit_test(where, outcome="trade_gross_return"), check=_real_check)
+    assert real == msg
+
+
+def test_every_own_outcome_is_covered_and_post_exit_return_is_not():
+    import claim_tests as ct
+    assert ct.TRADE_OWN_OUTCOMES == ("trade_net_return", "trade_gross_return")
+    for kind in ct.TRADE_OWN_OUTCOMES:
+        (msg,) = _exit_errors(_exit_test([_w("holding_bars", ">", 5)], outcome=kind))
+        assert f"measures their own {kind}:" in msg
+    assert _exit_errors(_exit_test([_w("holding_bars", ">", 5)], outcome="post_exit_return")) == []
+
+
+def test_an_entry_time_selector_with_the_lots_own_gross_return_is_not_refused():
+    for w in ([_w("side", "==", "long")], [_w("entry_hour", ">=", 8)],
+              [_w("regime_at_entry", "==", "x")], [_w("entry_forecast", ">", 1)],
+              [_w("entry_weekday", "<", 5)]):
+        assert _exit_errors(_exit_test(w, outcome="trade_gross_return")) == []
+        assert _exit_errors(_exit_test(w, outcome="trade_gross_return"), check=_real_check) == []
+
+
 def test_exit_cause_with_the_lots_own_return_is_refused():
     (msg,) = _exit_errors(_exit_test([_w("exit_cause", "==", "flip")]))
     assert "(exit_cause)" in msg and "post_exit_return" in msg

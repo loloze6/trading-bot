@@ -39,8 +39,8 @@ passes trade_tests=True, and nothing in the pipeline does yet.
 
 PR-C (2026-10-19, after the v1 list above): selector `all_of {selectors: [2-3
 bar selectors]}` (the AND of its sub-selectors; no nesting), bar-t fields
-`abs_forecast` and `forecast_sign_change`, and the trade outcomes
-`trade_gross_return` and `trade_cost_share` (in the gated trade family).
+`abs_forecast` and `forecast_sign_change`, and the trade outcome
+`trade_gross_return` (in the gated trade family).
 
 Block definitions (fixed in tasks/todo.md before any code):
   fwd_return(h)        close[t+h] / close[t] - 1
@@ -941,6 +941,10 @@ def _check_selector(s, where: str) -> list[str]:
         if not isinstance(s.get("value"), (int, float)) or isinstance(s.get("value"), bool):
             e.append(f"{where}: event value must be a number")
     if k == "quantile":
+        if s.get("field") == "forecast_sign_change":
+            # operator ruling 2026-10-19 (N1): a 0/1 field has no useful trailing quantile
+            e.append(f"{where}: forecast_sign_change is 0 or 1: select it with {{kind: event, "
+                     f"field: forecast_sign_change, op: \"==\", value: 1}}")
         if s.get("side") not in ("top", "bottom"):
             e.append(f"{where}: side must be top or bottom")
         q = s.get("q")
@@ -1119,18 +1123,16 @@ def _check_tail(spec: TestSpec) -> list[str]:
 #   - Outcomes are the label (the future). post_exit_return(h) reads the
 #     exit bar's close and the close of the bar stamped exactly ts_exit +
 #     h*step in the SAME window; no row later than that is read. It never
-#     feeds a selector. trade_net_return is the lot's own result, and so are
-#     trade_gross_return and trade_cost_share (PR-C): the lot's return before
-#     costs and its cost over |that return|, known only at the lot's exit,
-#     never a selector field.
+#     feeds a selector. trade_net_return is the lot's own result, and so is
+#     trade_gross_return (PR-C): the lot's return before costs, known only at
+#     the lot's exit, never a selector field.
 #   - Nothing is matched across windows; no warm-up rows, no data cache.
 # ---------------------------------------------------------------------------
 
 TRADE_SELECTOR = "trade"
-TRADE_OUTCOMES = ("trade_net_return", "post_exit_return", "trade_gross_return",
-                  "trade_cost_share")
+TRADE_OUTCOMES = ("trade_net_return", "post_exit_return", "trade_gross_return")
 # the lot's own result (no horizons; horizon 0 = the trade's life; one return basis per pool)
-TRADE_OWN_OUTCOMES = ("trade_net_return", "trade_gross_return", "trade_cost_share")
+TRADE_OWN_OUTCOMES = ("trade_net_return", "trade_gross_return")
 TRADE_BASELINES = ("other_trades",)
 TRADE_STATISTICS = ("mean_diff", "hit_rate")
 # The interim exit classifier (E-074 PHASE_A 4.2), in this order. Replaced by
@@ -1433,20 +1435,12 @@ def trade_outcome(tw: TradeWindow, kind: str, h: int) -> np.ndarray:
     trade's way), from the exit bar's close to the close of the bar stamped
     exactly ts_exit + h*step in this window; NaN when that bar does not exist
     (the window's end) or the exit bar is not a row.
-    PR-C, both on the window's basis and ignoring h: trade_gross_return is the
-    lot's return before that basis' costs; trade_cost_share is cost / |gross|,
-    NaN where gross is 0 or either value is missing (a share of nothing)."""
+    PR-C, on the window's basis and ignoring h: trade_gross_return is the
+    lot's return before that basis' costs."""
     if kind == "trade_net_return":
         return tw.net_return.copy()
     if kind == "trade_gross_return":
         return np.asarray(tw.gross_return, dtype=float).copy()
-    if kind == "trade_cost_share":
-        g = np.abs(np.asarray(tw.gross_return, dtype=float))
-        c = np.asarray(tw.cost, dtype=float)
-        y = np.full(tw.n, np.nan)
-        ok = np.isfinite(g) & np.isfinite(c) & (g > 0)
-        y[ok] = c[ok] / g[ok]
-        return y
     y = np.full(tw.n, np.nan)
     j_all = tw.bars.index_at(h)
     for i in range(tw.n):
@@ -1611,8 +1605,8 @@ def trade_effect_sizes(windows: list, spec: TestSpec, eras: list | None = None):
     event (_one_event_per_exit) and n_blocks counts blocks of max(h, 1) EXIT
     bars (gap-aware, as for bars). trade_net_return records each window's
     return basis and refuses windows with different ones (MixedReturnBasis).
-    PR-C: trade_gross_return and trade_cost_share (the lot's own results too,
-    TRADE_OWN_OUTCOMES) follow trade_net_return's rules exactly: horizon 0,
+    PR-C: trade_gross_return (the lot's own result too, TRADE_OWN_OUTCOMES)
+    follows trade_net_return's rules exactly: horizon 0,
     stretches as blocks, the basis recorded, mixed bases refused."""
     horizons = _trade_horizons(spec)
     is_net = spec.outcome["kind"] in TRADE_OWN_OUTCOMES

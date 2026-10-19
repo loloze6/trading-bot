@@ -161,8 +161,10 @@ DERIVED_COLUMNS = ("past_return", "trailing_vol", "abs_forecast", "forecast_sign
                    "allocation_abs")
 _LENGTH_DERIVED = ("past_return", "trailing_vol")
 _BAR_T_DERIVED = tuple(d for d in DERIVED_COLUMNS if d not in _LENGTH_DERIVED)
-# trade_slice fields read from trades.json beside the TradeWindow (PR-B)
-_TRADES_JSON_AGGS = ("trade_gross_return", "trade_cost_pct")
+# trade_slice fields read from trades.json beside the TradeWindow (PR-B); trade_gross_return
+# reads the TradeWindow's gross_return instead (operator ruling 2026-10-19, S1: the window's
+# basis, the same number the claim outcome sees)
+_TRADES_JSON_AGGS = ("trade_cost_pct",)
 _DERIVED_RE = re.compile(r"(past_return|trailing_vol)_([0-9]+)")
 _SAFE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.\-]*")
 _WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
@@ -923,7 +925,7 @@ class QueryEngine:
                 raise QueryRefused("horizons must be a list of ints")
             if len(horizons) > MAX_HORIZONS:
                 raise QueryRefused(f"{len(horizons)} horizons, over the cap of {MAX_HORIZONS}")
-        if outcome in ct.TRADE_OWN_OUTCOMES:      # PR-C: gross return and cost share too
+        if outcome in ct.TRADE_OWN_OUTCOMES:      # PR-C: the gross return too
             out_spec = {"kind": outcome}
             if horizons:
                 raise QueryRefused(f"{outcome} takes no horizons (the lot's own result)")
@@ -1062,8 +1064,12 @@ class QueryEngine:
 
     @staticmethod
     def _trade_values(tw, field_, h) -> np.ndarray:
-        if field_ == "trade_net_return":
-            return ct.trade_outcome(tw, "trade_net_return", 0)
+        """trade_net_return and trade_gross_return are the claim outcome's own per-lot values
+        (ct.trade_outcome), on the window's return basis (the reply's return_basis):
+        all_costs, gross at the bar closes before fees + slippage; net_of_fees_and_slippage,
+        trades.json profit_loss_percent / 100 (at the fill prices, before commission)."""
+        if field_ in ct.TRADE_OWN_OUTCOMES:
+            return ct.trade_outcome(tw, field_, 0)
         if field_ == "post_exit_return":
             return ct.trade_outcome(tw, "post_exit_return", int(h))
         if field_ == "holding_bars":
@@ -1071,14 +1077,13 @@ class QueryEngine:
         return np.asarray(tw.entry_forecast, dtype=float)
 
     def _trades_json_values(self, variant) -> list:
-        """Per window, in _trade_windows' order: {trade_gross_return, trade_cost_pct}, one
-        value per lot in trades.json order (the TradeWindow's order), NaN where missing.
-          trade_gross_return  profit_loss_percent / 100: the lot's price return at its fill
-                              prices, signed by side, before commission (a fraction, as
-                              trade_net_return); always trades.json's, whatever basis
-                              trade_net_return has (return_basis)
+        """Per window, in _trade_windows' order: {trade_cost_pct}, one value per lot in
+        trades.json order (the TradeWindow's order), NaN where missing.
           trade_cost_pct      total_commission_percent: (entry + exit commission rate) x 100,
-                              in percent of the lot's notional (the cost model's rate)"""
+                              in percent of the lot's notional (the cost model's rate)
+        trade_gross_return is NOT read here: trade_slice takes it from the TradeWindow's
+        gross_return (_trade_values), on the window's return basis (return_basis), the same
+        per-lot number as the claim outcome {kind: trade_gross_return}."""
         vid = self._variant(variant)
         if vid not in self._trade_json:
             out = []
@@ -1087,9 +1092,7 @@ class QueryEngine:
                 trades = json.loads(path.read_text(encoding="utf-8"))
                 if not isinstance(trades, list) or len(trades) != tw.n:
                     raise QueryRefused(f"{tw.label}: trades.json does not match its loaded lots")
-                out.append({"trade_gross_return": np.array(
-                                [_to_float(t.get("profit_loss_percent")) / 100.0 for t in trades]),
-                            "trade_cost_pct": np.array(
+                out.append({"trade_cost_pct": np.array(
                                 [_to_float(t.get("total_commission_percent")) for t in trades])})
             self._trade_json[vid] = out
         return self._trade_json[vid]

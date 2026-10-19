@@ -7,8 +7,10 @@ derived bar columns abs_forecast, allocation_abs, forecast_sign_change.
      unchanged) and are None, never recomputed, where the run did not record them.
   2. The query: zero comparisons, the 12-cell cap, the logged refusal, the digest; the engine's
      object is the stored object (run_phase1_research._variant_window_economics).
-  3. trade_slice: trade_gross_return counts as a comparison, trade_cost_pct does not; values
-     are trades.json's; a lot-count mismatch is refused.
+  3. trade_slice: trade_gross_return counts as a comparison, trade_cost_pct does not;
+     trade_gross_return is the TradeWindow's, on the window's return basis (PR-C S1: the claim
+     outcome's per-lot numbers; trades.json's profit_loss_percent / 100 on the fallback basis),
+     trade_cost_pct is trades.json's; a lot-count mismatch is refused.
   4. The derived columns: forecast_sign_change with zeros, NaN at the first bar and after a
      missing t-1 stamp, no future bar read; list_columns lists them; grouped describe charges.
   5. profit_bars_evaluation.yaml: flag off -> no key and byte-identical; flag on -> the key
@@ -683,6 +685,7 @@ def test_trade_gross_return_values_are_trades_json_and_count_as_comparisons(run)
                                {"field": "trade_gross_return", "stat": "share_positive"},
                                {"field": "trade_gross_return", "stat": "median"}])
     assert res["status"] == "ok"
+    assert res["result"]["return_basis"] == ["net_of_fees_and_slippage"]   # no diagnostics file
     cell = res["result"]["groups"]["all"]
     # lots k = 0..7 of 3 windows: profit_loss_percent (k+1)-4 -> -3..4 -> /100
     assert cell["n_trades"] == 24
@@ -741,7 +744,9 @@ def test_a_lot_count_that_no_longer_matches_trades_json_is_refused(run):
     p = next(Path(run).glob("variants/base/results/*/trades.json"))
     lots = json.loads(p.read_text(encoding="utf-8"))
     p.write_text(json.dumps(lots + [lots[0]]), encoding="utf-8")        # 9 lots against 8 loaded
-    res = eng.trade_slice([], [{"field": "trade_gross_return", "stat": "mean"}])
+    # trade_cost_pct is the field still read from trades.json beside the loaded lots (PR-C S1:
+    # trade_gross_return reads the loaded TradeWindow itself)
+    res = eng.trade_slice([], [{"field": "trade_cost_pct", "stat": "mean"}])
     assert res["status"] == "refused" and "does not match its loaded lots" in res["reason"]
     assert res["n_comparisons"] == 0 and log_of(eng)[-1]["status"] == "refused"
 
@@ -755,6 +760,52 @@ def test_a_lot_without_the_percent_field_is_nan_and_leaves_the_group_to_the_othe
         "result"]["groups"]["all"]
     assert cell["n_trades"] == 24
     assert cell["trade_gross_return_mean"] == approx(np.mean([(k + 1 - 4) / 100 for k in range(1, 8)]))
+
+
+def _all_costs(run):
+    """The variant's trade_diagnostics.json (CUL-414 all-costs records) for every lot of the
+    fixture, hand-made: window i (pr4.WINDOWS order), lot k: gross_return_before_costs
+    0.5(k+1) - 1 + 0.1 i (%), cost_paid_all 10 + k (bps). Its gross differs from trades.json's
+    profit_loss_percent (k+1) - 4, so the source of the number is visible."""
+    recs = []
+    for i, (rid, sym, win, _off, _seed) in enumerate(pr4.WINDOWS):
+        for k in range(len(HOLDS)):
+            recs.append({"trade_id": f"{rid}-{k}", "window": win, "symbol": sym,
+                         "gross_return_before_costs": 0.5 * (k + 1) - 1.0 + 0.1 * i,
+                         "cost_paid_all": 10.0 + k})
+    (Path(run) / "variants" / "base" / "trade_diagnostics.json").write_text(
+        json.dumps({"trades": recs}), encoding="utf-8")
+
+
+def test_trade_gross_return_is_the_claim_outcomes_number_on_the_windows_basis(run):
+    """S1 (operator ruling 2026-10-19): trade_slice's trade_gross_return reads the loaded
+    TradeWindow's gross_return, the same per-lot number as the claim outcome
+    {kind: trade_gross_return}; return_basis names the basis. On the all_costs basis that is
+    gross_return_before_costs / 100, not trades.json's profit_loss_percent / 100."""
+    import claim_tests as ct
+    _all_costs(run)
+    eng = engine(run)
+    res = eng.trade_slice([], [{"field": "trade_gross_return", "stat": "mean"},
+                               {"field": "trade_cost_pct", "stat": "mean"}])
+    assert res["status"] == "ok"
+    assert res["result"]["return_basis"] == ["all_costs"]
+    cell = res["result"]["groups"]["all"]
+    twins = ct.load_variant_trade_windows(run, "base")
+    assert [tw.basis for tw in twins] == ["all_costs"] * 3
+    claim_vals = np.concatenate([ct.trade_outcome(tw, "trade_gross_return", 0) for tw in twins])
+    assert len(claim_vals) == cell["n_trades"] == 24
+    # mean over k of 0.5(k+1) - 1 is 1.25 %, plus 0.1 i averaged over i = 0, 1, 2: 1.35 %
+    assert cell["trade_gross_return_mean"] == approx(float(claim_vals.mean()))
+    assert cell["trade_gross_return_mean"] == approx(0.0135)
+    assert cell["trade_gross_return_mean"] != approx(0.005)            # not trades.json's 0.005
+    assert cell["trade_cost_pct_mean"] == approx(0.135)                # still trades.json's rate
+    # by direction, under a filter: the same numbers as the claim outcome's lots
+    flt = [{"field": "side", "op": "==", "value": "short"}]
+    g = eng.trade_slice(flt, [{"field": "trade_gross_return", "stat": "median"}],
+                        by="window")["result"]["groups"]
+    for tw in twins:
+        short = ct.trade_outcome(tw, "trade_gross_return", 0)[tw.side == "short"]
+        assert g[tw.label]["trade_gross_return_median"] == approx(float(np.median(short)))
 
 
 # ---------------------------------------------------------------------------

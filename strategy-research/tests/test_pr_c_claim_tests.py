@@ -1,7 +1,8 @@
 """PR-C (2026-10-19): claim tests gain the selector all_of, the bar-t fields
-abs_forecast and forecast_sign_change, and the trade outcomes trade_gross_return
-and trade_cost_share (tools/claim_tests.py). Core checks only; synthetic data
-(2020 dates), no market data is read.
+abs_forecast and forecast_sign_change, and the trade outcome trade_gross_return
+(tools/claim_tests.py). trade_cost_share was dropped as a claim outcome (operator ruling
+2026-10-19, B2); the TradeWindow keeps its gross_return and cost columns. Core checks
+only; synthetic data (2020 dates), no market data is read.
 """
 import itertools
 import json
@@ -120,15 +121,14 @@ def _trade(tid, e, x, gross_pct, net_pct):
             "net_profit_loss_percent": net_pct}
 
 
-def test_trade_gross_return_and_cost_share_on_both_bases():
+def test_trade_gross_return_and_the_cost_column_on_both_bases():
     trades = [_trade("a", 1, 3, 2.0, 1.8), _trade("b", 4, 6, -1.0, -1.2),
               _trade("c", 7, 9, 0.0, -0.2)]
     post = np.zeros(12)
     tw = ct.build_trade_window(_bars(), trades, post)
     assert tw.basis == "net_of_fees_and_slippage"
     assert np.allclose(ct.trade_outcome(tw, "trade_gross_return", 0), [0.02, -0.01, 0.0])
-    share = ct.trade_outcome(tw, "trade_cost_share", 0)
-    assert np.allclose(share[:2], [0.002 / 0.02, 0.002 / 0.01]) and math.isnan(share[2])
+    assert np.allclose(tw.cost, [0.002, 0.002, 0.002])                      # the column stays (S1)
     costs = [{"trade_id": t["trade_id"], "gross_return_before_costs": g, "cost_paid_all": c}
              for t, g, c in zip(trades, (2.5, -1.0, 0.4), (30.0, 25.0, 40.0))]
     tw2 = ct.build_trade_window(_bars(), trades, post, costs)
@@ -137,12 +137,36 @@ def test_trade_gross_return_and_cost_share_on_both_bases():
     n2 = ct.trade_outcome(tw2, "trade_net_return", 0)
     assert np.allclose(g2, [0.025, -0.01, 0.004])
     assert np.allclose(g2 - n2, [0.003, 0.0025, 0.004])                     # net = gross - cost
-    assert np.allclose(ct.trade_outcome(tw2, "trade_cost_share", 0), [0.12, 0.25, 1.0])
+    assert np.allclose(tw2.cost, [0.003, 0.0025, 0.004])
+
+
+def test_trade_cost_share_is_no_longer_a_trade_outcome(prun):
+    """B2 (operator ruling 2026-10-19): trade_cost_share is refused as an unknown trade outcome
+    by check_spec, check_claim and conditional_effect, and trade_outcome has no branch for it."""
+    assert "trade_cost_share" not in ct.TRADE_OUTCOMES
+    assert ct.TRADE_OWN_OUTCOMES == ("trade_net_return", "trade_gross_return")
+    sel = {"kind": "trade", "where": [{"field": "side", "op": "==", "value": "long"}]}
+    sp = ct.TestSpec.from_dict({"selector": sel, "outcome": {"kind": "trade_cost_share"},
+                                "baseline": {"kind": "other_trades"}, "statistic": "mean_diff",
+                                "direction": "greater", "floor": {"min_events": 1}})
+    assert ct.check_spec(sp, trade_tests=True) == [
+        "outcome: a trade test needs one of ['trade_net_return', 'post_exit_return', "
+        "'trade_gross_return'], got {'kind': 'trade_cost_share'}"]
+    block = dict(pr3.GOOD_CLAIM_TEST, outcome={"kind": "trade_cost_share"})
+    checked = cc.check_claim(pr3.claim(block), trade_tests=True)
+    assert checked.errors and checked.tests == []
+    assert any("got {'kind': 'trade_cost_share'}" in e for e in checked.errors), checked.errors
+    eng = pr4.engine(prun)
+    res = eng.conditional_effect(sel, None, "trade_cost_share", None, "mean_diff", "greater")
+    assert res["status"] == "refused" and res["n_comparisons"] == 0
+    assert res["reason"] == (                     # the query builds the outcome with its horizons
+        "outcome: a trade test needs one of ['trade_net_return', 'post_exit_return', "
+        "'trade_gross_return'], got {'kind': 'trade_cost_share', 'horizons': None}")
 
 
 def test_own_outcomes_take_no_horizons_and_measure_at_horizon_zero():
     sel = {"kind": "trade", "where": [{"field": "side", "op": "==", "value": "long"}]}
-    for kind in ("trade_gross_return", "trade_cost_share"):
+    for kind in ("trade_gross_return",):
         good = ct.TestSpec.from_dict({"selector": sel, "outcome": {"kind": kind},
                                       "baseline": {"kind": "other_trades"},
                                       "statistic": "mean_diff", "direction": "greater",
@@ -476,10 +500,16 @@ def test_quantile_on_abs_forecast_and_forecast_sign_change():
     # |forecast| = 3 2 0 4 5 nan 2 1 6 6: the trailing 3 bars must all be finite
     assert v.tolist() == [False, False, False, True, True, False, False, False, False, True]
     assert np.flatnonzero(m).tolist() == [3, 4, 9]
+    assert ct.check_spec(spec(sel)) == []
+    # N1 (operator ruling 2026-10-19): a 0/1 field is selected by an event, never a quantile
+    msg = ('forecast_sign_change is 0 or 1: select it with {kind: event, field: '
+           'forecast_sign_change, op: "==", value: 1}')
     sel2 = dict(sel, field="forecast_sign_change", side="bottom")
-    m2, v2 = ct.SELECTORS["quantile"](w, sel2)
-    assert np.flatnonzero(v2).tolist() == [4] and not m2.any()
-    assert ct.check_spec(spec(sel)) == [] and ct.check_spec(spec(sel2)) == []
+    assert ct.check_spec(spec(sel2)) == [f"selector: {msg}"]
+    assert ct.check_spec(spec(all_of(EV_HI, sel2))) == [f"selector.selectors[1]: {msg}"]
+    assert ct.check_spec(spec(EV_HI, {"kind": "other_selector", "selector": sel2})) == [
+        f"baseline.selector: {msg}"]
+    assert ct.check_spec(spec(EV_FLIP)) == []                    # the event form stays valid
 
 
 def test_run_test_and_the_null_accept_the_new_fields():
@@ -533,7 +563,7 @@ def test_claim_tests_forecast_sign_change_is_the_analyst_derived_column(prun):
 
 
 # ---------------------------------------------------------------------------
-# 5. trade_gross_return and trade_cost_share
+# 5. trade_gross_return (trade_cost_share dropped, B2; the cost column stays)
 # ---------------------------------------------------------------------------
 
 def _gross_trades(extra=0.2):
@@ -543,14 +573,14 @@ def _gross_trades(extra=0.2):
 
 def test_missing_source_fields_give_nan():
     tw = pr3.twin()                                            # these lots carry no profit_loss_percent
-    for kind in ct.TRADE_OWN_OUTCOMES[1:]:
-        assert np.isnan(ct.trade_outcome(tw, kind, 0)).all(), kind
+    assert np.isnan(ct.trade_outcome(tw, "trade_gross_return", 0)).all()
+    assert np.isnan(tw.cost).all()
     assert np.isfinite(ct.trade_outcome(tw, "trade_net_return", 0)).all()
     # gross present, net missing: the cost is unknown too
     t = {k: v for k, v in pr3.TRADES[0].items() if k != "net_profit_loss_percent"}
     tw2 = ct.build_trade_window(pr3.bars(), [dict(t, profit_loss_percent=1.0)], pr3.post_alloc())
     assert ct.trade_outcome(tw2, "trade_gross_return", 0).tolist() == [0.01]
-    assert np.isnan(ct.trade_outcome(tw2, "trade_cost_share", 0)).all()
+    assert np.isnan(tw2.cost).all()
     assert np.isnan(ct.trade_outcome(tw2, "trade_net_return", 0)).all()
     # an all_costs record that is complete for some lots only is not used at all (the basis stays)
     costs = [{"trade_id": "t0", "gross_return_before_costs": 2.0, "cost_paid_all": 30.0}]
@@ -560,27 +590,25 @@ def test_missing_source_fields_give_nan():
                        [t["profit_loss_percent"] / 100 for t in _gross_trades()])
 
 
-def test_cost_share_is_cost_over_absolute_gross_on_both_bases_and_nan_when_gross_is_zero():
+def test_net_is_gross_minus_the_cost_column_on_both_bases():
     trades = _gross_trades(0.2)
     trades[1] = dict(trades[1], profit_loss_percent=0.0, net_profit_loss_percent=-0.2)   # gross 0
     trades[4] = dict(trades[4], profit_loss_percent=-1.0, net_profit_loss_percent=-1.2)  # negative gross
     tw = pr3.twin(trades=trades)
-    share = ct.trade_outcome(tw, "trade_cost_share", 0)
-    assert math.isnan(share[1])
-    assert share[4] == pytest.approx(0.002 / 0.01)                    # |gross| in the denominator
-    assert share[0] == pytest.approx(0.002 / 0.012)
+    g, n = (ct.trade_outcome(tw, k, 0) for k in ("trade_gross_return", "trade_net_return"))
+    assert g[1] == 0.0 and g[4] == pytest.approx(-0.01)
+    assert np.allclose(tw.cost, 0.002) and np.allclose(g - n, tw.cost)
     costs = [{"trade_id": t["trade_id"], "gross_return_before_costs": g, "cost_paid_all": c}
              for t, g, c in zip(trades, [2.0, 0.0] + [1.0] * 10, [30.0, 10.0] + [20.0] * 10)]
     tw2 = pr3.twin(trades=trades, costs=costs)
     assert tw2.basis == "all_costs"
-    s2 = ct.trade_outcome(tw2, "trade_cost_share", 0)
-    assert s2[0] == pytest.approx(0.003 / 0.02) and math.isnan(s2[1]) and s2[2] == pytest.approx(0.2)
     g2, n2 = (ct.trade_outcome(tw2, k, 0) for k in ("trade_gross_return", "trade_net_return"))
     assert np.allclose(g2 - n2, [0.003, 0.001] + [0.002] * 10)           # net = gross - cost
+    assert np.allclose(tw2.cost, [0.003, 0.001] + [0.002] * 10)
 
 
-@pytest.mark.parametrize("kind", ["trade_gross_return", "trade_cost_share"])
-def test_mixed_bases_are_refused_for_both_outcomes(kind):
+@pytest.mark.parametrize("kind", ["trade_gross_return"])
+def test_mixed_bases_are_refused_for_the_gross_outcome(kind):
     w0 = pr3.twin(trades=_gross_trades(), costs=pr3.ALL_COSTS)                       # all_costs
     w1 = ct.build_trade_window(pr3.bars(label="w1"), _gross_trades(), pr3.post_alloc())  # fallback
     sp = pr3.spec([pr3.eq("exit_cause", "flip")], {"kind": kind})
@@ -596,7 +624,7 @@ def test_mixed_bases_are_refused_for_both_outcomes(kind):
     assert sorted(out) == [0] and out[0]["bases"] == ["all_costs"]
 
 
-@pytest.mark.parametrize("kind", ["trade_gross_return", "trade_cost_share"])
+@pytest.mark.parametrize("kind", ["trade_gross_return"])
 def test_per_window_basis_is_recorded_and_blocks_are_overlap_stretches(kind):
     w0 = pr3.twin(trades=_gross_trades())
     w1 = ct.build_trade_window(pr3.bars(label="w1"), _gross_trades(), pr3.post_alloc())
@@ -626,7 +654,7 @@ def _with_gross(run, extra=0.3):
         p.write_text(json.dumps(data), encoding="utf-8")
 
 
-@pytest.mark.parametrize("kind", ["trade_gross_return", "trade_cost_share"])
+@pytest.mark.parametrize("kind", ["trade_gross_return"])
 def test_conditional_effect_and_claim_measure_on_the_trade_outcomes(kind, prun):
     _with_gross(prun)
     eng = pr4.engine(prun)
@@ -664,14 +692,14 @@ def test_the_gross_figures_are_trades_json_over_one_hundred(prun):
         g = ct.trade_outcome(tw, "trade_gross_return", 0)
         n = ct.trade_outcome(tw, "trade_net_return", 0)
         assert np.allclose(g, n + 0.003)
-        assert np.allclose(ct.trade_outcome(tw, "trade_cost_share", 0), 0.003 / np.abs(g))
+        assert np.allclose(tw.cost, 0.003)
 
 
 # ---------------------------------------------------------------------------
 # 6. the default check_spec (no trade_tests) refuses the new outcomes as before PR-3
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("kind", ["trade_gross_return", "trade_cost_share"])
+@pytest.mark.parametrize("kind", ["trade_gross_return"])
 def test_default_check_spec_and_check_claim_refuse_the_new_outcomes_as_before_pr3(kind):
     where = [{"field": "exit_cause", "op": "==", "value": "flip"}]
     sp = ct.TestSpec.from_dict({"selector": {"kind": "trade", "where": where},
@@ -695,5 +723,5 @@ def test_default_check_spec_and_check_claim_refuse_the_new_outcomes_as_before_pr
                                    "baseline": {"kind": "other_trades"}, "statistic": "mean_diff",
                                    "direction": "greater", "floor": {"min_events": 1}})
     assert ct.check_spec(mixed, trade_tests=True) == [
-        "selector: the trade outcomes ['trade_net_return', 'post_exit_return', 'trade_gross_return', "
-        "'trade_cost_share'] and the baseline ['other_trades'] need a selector of kind 'trade'"]
+        "selector: the trade outcomes ['trade_net_return', 'post_exit_return', 'trade_gross_return'] "
+        "and the baseline ['other_trades'] need a selector of kind 'trade'"]

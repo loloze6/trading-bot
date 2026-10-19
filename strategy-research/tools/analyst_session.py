@@ -805,12 +805,13 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
         errors.append("claim: `tests: none` cannot be confirmed on a fold; write the test in the "
                       "slots or end with no_claim")
     # smoke 3 (2026-10-09; D-095): lots selected by an exit-time field, measured by their own
-    # trade_net_return, is near-mechanical (a losing lot stays open longer)
+    # result (any of ct.TRADE_OWN_OUTCOMES, operator ruling 2026-10-19), is near-mechanical
+    # (a losing lot stays open longer)
     import claim_tests as ct
     for i, t in enumerate(_tests_of(claim)):
         sel, out = t.get("selector"), t.get("outcome")
         if not (isinstance(sel, dict) and sel.get("kind") == "trade"
-                and isinstance(out, dict) and out.get("kind") == "trade_net_return"
+                and isinstance(out, dict) and out.get("kind") in ct.TRADE_OWN_OUTCOMES
                 and isinstance(sel.get("where"), list)):
             continue
         fields = sorted({c["field"] for c in sel["where"]
@@ -819,7 +820,7 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
             # D-097: the message says what this test cannot tell apart and what to do instead
             errors.append(
                 f"claim test {t.get('name', i)!r} selects lots by an exit-time field "
-                f"({', '.join(fields)}) and measures their own trade_net_return: it cannot tell "
+                f"({', '.join(fields)}) and measures their own {out['kind']}: it cannot tell "
                 f"'the exit comes too late' from 'a losing lot stays open longer' (a lot closes "
                 f"only when the allocation changes, so long-held lots are the ones the price "
                 f"kept going against). Select on an entry-time field "
