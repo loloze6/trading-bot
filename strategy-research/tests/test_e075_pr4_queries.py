@@ -1,6 +1,6 @@
 """E-075 PR-4 (CUL-422, D-088): the analyst's query engine and memory view.
 
-tools/analyst_queries.py -- six fixed functions over ONE saved run's own bars and
+tools/analyst_queries.py -- seven fixed functions over ONE saved run's own bars and
 trades -- and tools/analyst_memory_view.py -- earlier claims with numbers for
 confirmed ones only. Pure modules: nothing imports them, no flag, no SDK.
 

@@ -1185,8 +1185,8 @@ def _stage_agent_options(*, analyst: dict | None = None) -> ClaudeAgentOptions:
     `analyst` (E-075 PR-5, D-092; only from _invoke_analyst_llm, under
     orchestrator.analyst.enabled): {server, hook, model, max_turns, max_budget_usd}.
     The SAME closed-book base (tools=[] still removes every built-in tool) plus ONE
-    in-process MCP server holding the six query tools (strict_mcp_config keeps every
-    other MCP server out), allowed_tools = exactly those six (they run without asking),
+    in-process MCP server holding the seven query tools (strict_mcp_config keeps every
+    other MCP server out), allowed_tools = exactly those seven (they run without asking),
     permission_mode dontAsk (anything else is denied), a PreToolUse hook that denies
     any other tool name and records it, and the session caps. None: exactly as before."""
     _STAGE_AGENT_CWD.mkdir(parents=True, exist_ok=True)
@@ -5102,7 +5102,7 @@ async def _invoke_reader_llm(prompt: str) -> tuple:
 # ---------------------------------------------------------------------------
 # E-075 PR-5 (CUL-423, D-092): the analyst, under orchestrator.analyst.enabled
 # ---------------------------------------------------------------------------
-# One tool-using session per lens (tools/analyst_session.LENS_CATEGORY): the six query
+# One tool-using session per lens (tools/analyst_session.LENS_CATEGORY): the seven query
 # tools of tools/analyst_queries.py as an in-process MCP server, on the closed-book base
 # (_stage_agent_options(analyst=...)). Its answer becomes a v3 reading in the lens's
 # category file, so decide-next reads it unchanged. The pure part (prompt, answer checks,
@@ -5158,7 +5158,7 @@ def _analyst_caps(cfg: dict | None = None) -> dict:
     return out
 
 
-# JSON schemas of the six tools (typed values only: no path, no code)
+# JSON schemas of the analyst's tools (typed values only: no path, no code)
 _ANALYST_TOOL_SCHEMAS = {
     "list_columns": ({"variant": {"type": "string"}}, []),
     "describe": ({"column": {"type": "string"}, "by": {"type": ["string", "null"]},
@@ -5179,6 +5179,7 @@ _ANALYST_TOOL_SCHEMAS = {
     "event_study": ({"trade_filter": {"type": "array"}, "bars_before": {"type": "integer"},
                      "bars_after": {"type": "integer"}, "variant": {"type": "string"}},
                     ["trade_filter", "bars_before", "bars_after"]),
+    "window_economics": ({"variant": {"type": "string"}}, []),
 }
 _ANALYST_TOOL_HELP = {
     "list_columns": "The usable bar columns, groupings, trade fields and caps of this run.",
@@ -5196,11 +5197,15 @@ _ANALYST_TOOL_HELP = {
                            "with the floor the claim will carry."),
     "trade_slice": "Aggregates of the run's lots matching a filter, optionally by a group.",
     "event_study": "Mean signed returns before and after the entries of the lots matching a filter.",
+    "window_economics": ("Per (coin, window) and in total: lots, turnover, direction changes, "
+                         "mean and max |allocation|, gross / fees / net (percent of the window's "
+                         "starting account), cost drag and median holding bars. Counts no "
+                         "comparison."),
 }
 
 
 def _analyst_tools(engine) -> list:
-    """The six @tool wrappers over one QueryEngine. A refusal is a normal result with its
+    """The seven @tool wrappers over one QueryEngine. A refusal is a normal result with its
     reason (the engine logged it); an unexpected error is logged by the engine and comes
     back as an error result."""
     tools = []
@@ -5225,7 +5230,7 @@ def _analyst_tools(engine) -> list:
 
 def _analyst_deny_hook(seen: list):
     """The PreToolUse hook: records every tool name the session tries, and denies any name
-    outside the six (defence in depth behind tools=[], strict MCP and dontAsk)."""
+    outside the seven (defence in depth behind tools=[], strict MCP and dontAsk)."""
     allowed = set(_analyst_session_module().ALLOWED_TOOLS)
 
     async def hook(hook_input, tool_use_id, context):
@@ -5235,7 +5240,7 @@ def _analyst_deny_hook(seen: list):
             return {}
         return {"hookSpecificOutput": {
             "hookEventName": "PreToolUse", "permissionDecision": "deny",
-            "permissionDecisionReason": f"{name} is not one of the analyst's six query tools"}}
+            "permissionDecisionReason": f"{name} is not one of the analyst's seven query tools"}}
     return hook
 
 
@@ -5287,11 +5292,11 @@ def _write_reading_atomically(dest: Path, body: str) -> None:
 
 class AnalystToolListError(RuntimeError):
     """The analyst session reported a tool list (the CLI's system/init message) that is
-    absent or names a tool outside the six: the stage stops, loudly."""
+    absent or names a tool outside the seven: the stage stops, loudly."""
 
 
 def run_analyst_worker(lens: str, run_id: str, run_dir: Path, stage_attempt=0) -> Path:
-    """One analyst lens on this run: a session with the six tools, its answer checked by
+    """One analyst lens on this run: a session with the seven tools, its answer checked by
     code (analyst_session.check_answer, then the readers' own reading checks:
     check_reading with the envelope and _reading_content_errors), one retry with the
     reasons, then a code-written `skipped` reading (output_refused_after_retry). Writes
@@ -16266,6 +16271,42 @@ def _variant_forecast_shape(run_dir: Path, protocol_result: dict) -> dict | None
         return None
 
 
+def _variant_window_economics(run_dir: Path, protocol_result: dict) -> dict | None:
+    """PR-B (2026-10-19), under orchestrator.analyst.enabled only: one variant's economics
+    per (coin, window), INFORMATION ONLY -- never a bar, never a gate, never read by the
+    passing rule. Computed by tools/window_economics.window_economics, the one definition
+    the analyst's window_economics query returns, over exactly the windows graded
+    (protocol_result["results"]), each window's folder found as forecast_shape finds it
+    (the parent of its portfolio_states.csv, _pd.find_window_equity_file), and each
+    window's `core` block (results[i]["core"]) passed along: the run's own gross / net /
+    fees / cost drag / trade count / duration are read from it, not recomputed.
+
+    Why this cannot leak: it reads the core block and the bars.csv, trades.json and
+    metrics.json the backtest already wrote and decides nothing; no figure is an input to
+    any later bar.
+
+    None when the windows cannot be read (no results, a window without its files, an
+    unreadable file, a missing column). Never raises out of grading."""
+    try:
+        results = (protocol_result or {}).get("results") or []
+        if not results:
+            return None
+        windows = []
+        for r in results:
+            equity = _pd.find_window_equity_file(run_dir, r["run_id"])
+            if equity is None:
+                return None
+            windows.append((str(r["symbol"]), str(r["window"]), Path(equity).parent,
+                            r.get("core")))
+        _tools = str(Path(__file__).parent.parent / "tools")
+        if _tools not in sys.path:
+            sys.path.insert(0, _tools)
+        import window_economics as _we
+        return _we.window_economics(windows)
+    except (OSError, ValueError, KeyError, TypeError, AttributeError, ImportError):
+        return None
+
+
 def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
                                          record_bars_sha: bool = False) -> dict:
     """Grade every tested variant of THIS attempt (see
@@ -16310,6 +16351,9 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
     dsr_ctx = _promotion_dsr_context()
     # E-062 S2b-2b: under v2 the whole-test DSR's inputs, once for every variant.
     wctx = _whole_test_dsr_context(dsr_ctx) if v2 else None
+    # PR-B: the window_economics key exists only under orchestrator.analyst.enabled
+    # (flag off: no key, the file byte-identical).
+    analyst = _analyst_enabled()
 
     variants: dict = {}
     for cid, cand in candidates.items():
@@ -16317,7 +16361,8 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
                  "protocol_result_ref": cand["protocol_result_ref"]}
         if cand["protocol_result"] is None:
             variants[cid] = {**entry, "result": cand["result"], "reason": cand["reason"],
-                             "bars": [], "reasons": [], "forecast_shape": None}
+                             "bars": [], "reasons": [], "forecast_shape": None,
+                             **({"window_economics": None} if analyst else {})}
             continue
         # E-062 S2b-3b (D-047): under v2 a partial-coverage variant grades on its
         # normalised thresholds; every other variant on `bars` itself (G7).
@@ -16353,7 +16398,10 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
         variants[cid] = {**entry, "result": overall, "reason": None,
                          "bars": results, "reasons": reasons,
                          # D-150: information only, beside bars (never inside bars/reasons).
-                         "forecast_shape": _variant_forecast_shape(run_dir, cand["protocol_result"])}
+                         "forecast_shape": _variant_forecast_shape(run_dir, cand["protocol_result"]),
+                         # PR-B: information only, beside forecast_shape, under the analyst flag
+                         **({"window_economics": _variant_window_economics(
+                             run_dir, cand["protocol_result"])} if analyst else {})}
 
     passing = sorted(cid for cid, v in variants.items() if v["result"] == "PASS")
     overall = "PASS" if passing else "FAIL"
