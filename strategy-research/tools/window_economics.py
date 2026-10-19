@@ -29,10 +29,12 @@ Trade fields read every lot of trades.json (one row per LIFO-matched lot):
                        V0 = total_portfolio_value of the window's first bars.csv row, the
                        account at the window's start. Dollars summed, then divided once:
                        net_pct is the window's realised account change from closed lots:
-                       it equals 100 * (E_end - V0) / V0, E_end = the last bars.csv row's
+                       when the window ends flat (every lot closed by the last bar) it
+                       equals 100 * (E_end - V0) / V0, E_end = the last bars.csv row's
                        postRebalance_total_value (the account after the window's last
                        action; NOT its total_portfolio_value, the pre-rebalance value of
-                       that bar). run_097 base: equal to rounding. These are the
+                       that bar); E_end is marked to market, so an open lot at the end
+                       breaks the equality. On a saved run: equal to rounding. These are the
                        dollars of run_artifact.py's core gross_pnl / fees_paid / net_pnl
                        in percent of V0.
   cost_drag_pct        (gross_pct - net_pct) / |gross_pct| * 100 = fees / |gross| * 100;
@@ -47,9 +49,9 @@ summed *_pct; median_holding_bars over all lots pooled.
 Why not the per-lot percent fields: profit_loss_percent / net_profit_loss_percent /
 total_commission_percent (trading-bot/performance/metrics.py CompletedTrade.to_dict) are
 returns on the LOT's own entry notional, and the lots of one window range from about 2%
-to 200% of the account (run_097 base). An unweighted sum ignores size; a sum weighted by
-the lot's share of the account at entry does not compound and did not reconcile (run_097
-base 2024-01: +6.5 against an account change of -2.4). They stay per-lot fields of the
+to 200% of the account (one saved run). An unweighted sum ignores size; a sum weighted by
+the lot's share of the account at entry does not compound and did not reconcile (one
+observed window: +6.5 against an account change of -2.4). They stay per-lot fields of the
 analyst's trade_slice (trade_gross_return, trade_cost_pct), where a lot is the unit.
 
 Why this cannot leak: post-run accounting. It reads only the run's own bars.csv and

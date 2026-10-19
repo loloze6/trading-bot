@@ -4,24 +4,26 @@ Operator decision 2026-10-19: gross, fees and net are dollar sums over the windo
 account equity at the window's first bar (V0 = `total_portfolio_value` of the first row of
 bars.csv by timestamp); and two identities must hold in every window:
 
-  (a) gross_pct - fees_pct == net_pct                       (abs tol SUM_TOL = 2e-6 pp: the tool
-                                                              rounds each of the three to 8
-                                                              significant digits, up to 5e-7 pp
-                                                              each below 100, so the identity holds
-                                                              on the rounded numbers to 1.5e-6)
+  (a) gross_pct - fees_pct == net_pct                       (tol sum_tol(): the tool rounds each
+                                                              of the three to 8 significant
+                                                              digits, a relative error of at most
+                                                              5e-8 each, so the identity holds on
+                                                              the rounded numbers to 5e-8 times the
+                                                              sum of their magnitudes)
   (b) net_pct == 100 * (E_end - V0) / V0, V0 = `total_portfolio_value` of the first row (the
       account before the window's first action), E_end = `postRebalance_total_value` of the
-      last row (the account after the window's last action)   (tol RECON_TOL below)
+      last row (the account after the window's last action); holds for a window that ends
+      flat (every lot closed by the last bar)   (tol recon_tol() below)
       Why two columns: `total_portfolio_value` is the bar's account BEFORE its rebalance, so the
       last row's value misses the last bar's closing rebalance and fee; `postRebalance_total_value`
       is the account AFTER it. Using the last row's `total_portfolio_value` misses by up to
-      0.15 percentage points on run_097; the post-action column reconciles to rounding.
+      0.15 percentage points on the run copy; the post-action column reconciles to rounding.
 
 Two tests of the same two assertions:
   - synthetic twin: always runs (a hand-made window whose bars.csv equity is consistent with its
     trades);
   - run copy: reads the base variant of a saved run (env WINDOW_ECONOMICS_RUN_COPY, default the
-    analyst smoke copy of run_097 on this machine); skipped when the folder is absent (runs/ is
+    analyst smoke copy on this machine); skipped when the folder is absent (runs/ is
     not in git, CI has no copy). Reads only bars.csv and trades.json of each window (the window
     folders are resolved as the stored-object code does: portfolio_daily.find_window_equity_file
     over the graded results of the variant's protocol_result.yaml, then the parent folder).
@@ -50,9 +52,29 @@ from test_window_economics import lot  # noqa: E402
 DEFAULT_RUN_COPY = r"C:\Users\alauz\AppData\Local\Temp\analyst_smoke\run_097"
 ENV_RUN_COPY = "WINDOW_ECONOMICS_RUN_COPY"
 
-SUM_TOL = 2e-6
-RECON_TOL = 1e-5   # percentage points of V0: the tool rounds each *_pct to 8 significant digits
-#                    (about 5e-7 pp at 43%); the measured max difference is below it.
+ROUND_REL = 5e-8   # the tool rounds each *_pct to 8 significant digits (f"{x:.8g}"): the
+#                    error is at most half a unit in the 8th digit, i.e. 5e-8 of the value
+#                    (worst case, mantissa 1.0000000)
+FLOAT_EPS = 1e-12  # float noise of the sums, percentage points
+RECON_INPUT = 1e-6 # percentage points: the input side of (b), the saved run's own dollar
+#                    rounding; the measured maximum difference on the run copy is 5e-7 pp
+#                    (this includes the tool's 8-digit rounding at the copy's net), so
+#                    1e-6 is twice that, not a value widened to pass a window
+
+
+def sum_tol(gross, fees, net):
+    """Tolerance of identity (a): each of the three values carries a rounding error of at
+    most ROUND_REL * |value| (8 significant digits), and gross - fees - net adds the three,
+    so the identity can be off by at most ROUND_REL * (|gross| + |fees| + |net|); plus the
+    float noise. Relative to magnitude, so a window with |gross| >= 100 cannot fail on the
+    rounding alone."""
+    return ROUND_REL * (abs(gross) + abs(fees) + abs(net)) + FLOAT_EPS
+
+
+def recon_tol(net):
+    """Tolerance of identity (b): the tool's 8-digit rounding of net (ROUND_REL * |net|, which
+    reaches 5e-6 pp at |net| = 100) plus RECON_INPUT."""
+    return ROUND_REL * abs(net) + RECON_INPUT
 
 
 def equity_change_pct(bars_csv) -> float:
@@ -81,7 +103,7 @@ def write_reconciled_window(folder: Path, rows, trades):
     (folder / "trades.json").write_text(json.dumps(trades), encoding="utf-8")
 
 
-def check_cells(windows, tol_recon):
+def check_cells(windows):
     """Per window (symbol, label, folder): (index, gross, fees, net, equity change). Asserts (a)
     and (b); messages name the window by index only."""
     out = we.window_economics(windows)["windows"]
@@ -91,9 +113,9 @@ def check_cells(windows, tol_recon):
         c = out[f"{sym}/{win}"]
         gross, fees, net = c["gross_pct"], c["fees_pct"], c["net_pct"]
         eq = equity_change_pct(Path(folder) / "bars.csv")
-        assert abs((gross - fees) - net) <= SUM_TOL, (
+        assert abs((gross - fees) - net) <= sum_tol(gross, fees, net), (
             f"window #{i}: gross {gross} - fees {fees} != net {net}")
-        assert abs(net - eq) <= tol_recon, (
+        assert abs(net - eq) <= recon_tol(net), (
             f"window #{i}: net_pct {net} vs equity change {eq} (diff {net - eq})")
         rows.append((i, gross, fees, net, eq))
     return rows
@@ -121,7 +143,7 @@ def test_synthetic_gross_minus_fees_is_net_and_net_is_the_equity_change(tmp_path
          ("trend", 1975, 1967, 0.3, 0.0)],
         [lot(-50.0, 2.0, -52.0, 60.0), lot(20.0, 1.0, 19.0, 120.0)])
     wins = [("AAA", "w0", tmp_path / "a"), ("BBB", "w1", tmp_path / "b")]
-    rows = check_cells(wins, RECON_TOL)
+    rows = check_cells(wins)
     (_, g0, f0, n0, e0), (_, g1, f1, n1, e1) = rows
     assert (g0, f0, n0, e0) == pytest.approx((4.0, 0.3, 3.7, 3.7), abs=1e-9)
     assert (g1, f1, n1, e1) == pytest.approx((-1.5, 0.15, -1.65, -1.65), abs=1e-9)
@@ -135,7 +157,7 @@ def test_synthetic_twin_catches_an_account_that_does_not_reconcile(tmp_path):
          ("trend", 1030, 1030, 0.0, 0.0)],
         [lot(10.0, 1.0, 9.0, 60.0)])
     with pytest.raises(AssertionError, match="window #0: net_pct"):
-        check_cells([("X", "w", tmp_path / "x")], RECON_TOL)
+        check_cells([("X", "w", tmp_path / "x")])
 
 
 # ---------------------------------------------------------------------------
@@ -162,11 +184,11 @@ def _run_copy_windows():
 def test_run_copy_gross_minus_fees_is_net_and_net_is_the_equity_change(capsys):
     """net_pct (dollar basis, rounded by the tool to 8 significant digits) against the equity
     change from bars.csv (first-row total_portfolio_value to last-row postRebalance_total_value).
-    RECON_TOL = 1e-5 percentage points covers that rounding; it was not widened to pass a
-    window (measured max difference on run_097 is ~1e-6 pp)."""
+    recon_tol() covers that rounding (relative to |net|) plus RECON_INPUT; it was not widened
+    to pass a window (measured max difference on the run copy is 5e-7 pp)."""
     wins = _run_copy_windows()
     assert len(wins) >= 1
-    rows = check_cells(wins, RECON_TOL)
+    rows = check_cells(wins)
     with capsys.disabled():
         print("\nidx  gross_pct  fees_pct  net_pct  equity_change_pct  diff")
         for i, g, f, n, e in rows:

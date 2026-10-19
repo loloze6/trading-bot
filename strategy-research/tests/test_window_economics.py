@@ -405,6 +405,17 @@ def test_unreadable_economics_are_a_logged_refusal(tmp_path):
     assert log_of(eng)[-1]["status"] == "refused"
 
 
+def test_a_window_at_or_after_the_holdout_start_is_refused(run):
+    # the fixture's windows run from 2020-01-01 (w0) and 2020-02-01 (w1), 130 hourly bars each
+    eng = engine(run, holdout_start="2020-01-05")
+    res = eng.window_economics()
+    assert res["status"] == "refused" and "holdout" in res["reason"]
+    assert "result" not in res and res["n_comparisons"] == 0
+    e = log_of(eng)[-1]
+    assert e["function"] == "window_economics" and e["status"] == "refused"
+    assert engine(run, holdout_start="2020-03-01").window_economics()["status"] == "ok"
+
+
 def test_missing_trades_and_foreign_variants_are_refused(tmp_path, run):
     nt = engine(make_run(tmp_path / "nt", trades=False))
     r = nt.window_economics()
