@@ -468,6 +468,26 @@ def test_window_consistency_rule():
     assert res["status"] == "inconclusive" and "same sign in 4 windows" in res["reasons"][0]
 
 
+@pytest.mark.parametrize("s", [
+    spec(EVENT, outcome={"kind": "fwd_return", "horizons": [1, 3]}),
+    spec(EVENT, outcome={"kind": "fwd_return", "horizons": [1, 3]}, statistic="hit_rate"),
+    spec({"kind": "all"}, outcome={"kind": "fwd_return", "horizons": [1, 3]}, statistic="rank_ic"),
+], ids=["mean_diff", "hit_rate", "rank_ic"])
+def test_per_window_n_events_sum_to_the_pooled_n_events(s):
+    """R5 (operator 2026-10-19): each per_window cell keeps its window's selected events with an
+    outcome; the cells add up to the pooled n_events, at every horizon (the last bars of a window
+    have no h-bar outcome, so the horizons differ)."""
+    ws = make_windows(29, plant=LOW_FC(0.02))
+    _per, out_h, horizons, _rng = ct.effect_sizes(ws, s)
+    assert horizons == [1, 3]
+    for h in horizons:
+        cells = out_h[h]["per_window"]
+        assert set(cells) == {w.label for w in ws}
+        assert all(type(c["n_events"]) is int and c["n_events"] >= 0 for c in cells.values())
+        assert sum(c["n_events"] for c in cells.values()) == out_h[h]["n_events"] > 0
+    assert out_h[3]["n_events"] <= out_h[1]["n_events"]
+
+
 def test_per_era_values_reported():
     res = rt(make_windows(28, plant=LOW_FC(0.02)), spec(EVENT), ERAS)
     assert set(res["horizons"][1]["per_era"]) <= {"e1", "e2"}

@@ -855,6 +855,30 @@ def test_trade_net_return_keeps_every_lot_as_an_event():
     assert out[0]["n_events"] == 4
 
 
+def test_per_window_n_events_sum_to_the_pooled_n_events_on_the_trade_path():
+    """R5 (operator 2026-10-19): each per_window cell keeps its window's selected events with an
+    outcome, trade_net_return and post_exit_return alike, and the cells add up to the pooled count."""
+    w0 = twin()
+    w1 = ct.build_trade_window(bars(label="w1"), TRADES[:4], post_alloc())
+    flips = [eq("exit_cause", "flip")]
+    out = _flips_measure(None, where=flips, windows=[w0, w1])
+    cells = out[0]["per_window"]
+    assert {k: c["n_events"] for k, c in cells.items()} == {"SYN/w0": 4, "SYN/w1": 3}
+    assert sum(c["n_events"] for c in cells.values()) == out[0]["n_events"] == 7
+    # post_exit_return after its dedup: t0 and t1 close LONG on bar 5, one event per window
+    sel = [{"field": "entry_hour", "op": "in", "value": [2, 3]}]            # t0, t1, t2
+    out = _flips_measure(None, outcome={"kind": "post_exit_return", "horizons": [1, 4]},
+                         where=sel, windows=[w0, w1])
+    cells = out[1]["per_window"]
+    assert {k: c["n_events"] for k, c in cells.items()} == {"SYN/w0": 2, "SYN/w1": 2}
+    assert sum(c["n_events"] for c in cells.values()) == out[1]["n_events"] == 4
+    # an exit with no bar h later has no outcome: not an event, in the cell or the pool
+    late = _flips_measure(None, outcome={"kind": "post_exit_return", "horizons": [1, 4]},
+                          where=[eq("entry_hour", 20)])                      # t8 exits on bar 26
+    assert late[1]["per_window"]["SYN/w0"]["n_events"] == 1 == late[1]["n_events"]
+    assert late[4]["per_window"]["SYN/w0"]["n_events"] == 0 == late[4]["n_events"]
+
+
 # --- 3. spec_hash does not depend on clause order
 
 def _hspec(where):

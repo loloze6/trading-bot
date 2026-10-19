@@ -205,17 +205,20 @@ def _measured(oriented_by_h: dict, *, windows=None, status=cmeas.MEASURED, name=
     """A claim_measure.measure_test-shaped result: {horizon: [per-window oriented values]}.
     `pooled` {horizon: value} overrides the pooled oriented value (default: the windows' mean).
     `floor_not_met` is claim_measure's own list of floor entries (R5); a list shorter than the
-    fold leaves the later windows ABSENT from the measurement (no bars there)."""
+    fold leaves the later windows ABSENT from the measurement (no bars there). Each cell carries
+    n_events 11 (claim_tests' per-window count, R5; the pooled n_events is their sum) and the
+    result the claim's own `floor`, as claim_measure.measure_test returns them."""
     if status != cmeas.MEASURED:
         return {"name": name, "status": status, "reason": "x", "spec_hash": "h"}
     hz = {}
     for h, vals in oriented_by_h.items():
         pw = {f"BTCUSD/{LABELS[i % len(LABELS)]}{'' if i < len(LABELS) else i}":
-              {"value": v, "oriented": v} for i, v in enumerate(vals)}
+              {"value": v, "oriented": v, "n_events": 11} for i, v in enumerate(vals)}
         defined = [v for v in vals if v is not None]
         p = (pooled or {}).get(h, float(np.mean(defined)) if defined else None)
-        hz[h] = {"value": p, "oriented": p, "n_events": 99, "per_window": pw}
-    out = {"name": name, "status": cmeas.MEASURED, "spec_hash": "h", "horizons": hz}
+        hz[h] = {"value": p, "oriented": p, "n_events": 11 * len(vals), "per_window": pw}
+    out = {"name": name, "status": cmeas.MEASURED, "spec_hash": "h", "horizons": hz,
+           "floor": {"min_events": 100}}
     if floor_not_met is not None:
         out["floor_not_met"] = list(floor_not_met)
     return out
@@ -781,6 +784,96 @@ def test_a_coin_with_bars_in_three_of_the_folds_windows_is_not_measurable(tmp_pa
     h = row["tests"]["up_day_follow"]["horizons"]["1"]
     assert (h["windows_with_value"], h["windows_in_fold"], h["windows_against"]) == (5, 6, 1)
     assert h["windows_without_value"] == [BLOCKS[0]["label"]]
+
+
+# --- R5, operator 2026-10-19: a claim graded not_measurable keeps what was measured ----------
+
+def _kept(row, expect_floor, windows):
+    """What every measured row keeps, whatever its status: the claim's floor in the test entry,
+    and per window the selected events with an outcome (same cells as per_window, summing to the
+    pooled n_events), all plain YAML-able ints."""
+    t = row["tests"]["up_day_follow"]
+    assert t["floor"] == expect_floor
+    h = t["horizons"]["1"]
+    epw = h["events_per_window"]
+    assert set(epw) == {f"BTCUSD/{w}" for w in windows} == set(h["per_window"])
+    assert all(type(n) is int and n > 0 for n in epw.values()), epw
+    assert sum(epw.values()) == h["n_events"]
+    yaml.safe_dump(row)
+    return h
+
+
+def test_r5_a_floor_not_met_row_keeps_the_events_and_the_floor(tmp_path):
+    root, child = _build(tmp_path, with_bars=False)
+    res = {"up_day_follow": _measured({1: [POS] * 6}, floor_not_met=FLOOR)}
+    row = _confirm(root, child, measure=_fake(res))
+    assert row["status"] == fc.NOT_MEASURABLE and "floor not met" in row["reason"]
+    h = _kept(row, {"min_events": 100}, LABELS)
+    assert h["events_per_window"] == {f"BTCUSD/{w}": 11 for w in LABELS}
+    # the effect and agreement a not_measurable row already carried are still there
+    assert row["agreement"] == {"up_day_follow": {"1": "6 of 6"}}
+    # the entry's floor is a copy, not the measurement's own dict
+    assert row["tests"]["up_day_follow"]["floor"] is not res["up_day_follow"]["floor"]
+    # graded alone, the horizon keeps its events too
+    g = fc.grade_test(res["up_day_follow"], LABELS)
+    assert g["horizons"]["1"]["events_per_window"] == h["events_per_window"]
+
+
+def test_r5_a_floor_not_met_on_real_bars_keeps_the_events_and_the_floor(tmp_path):
+    root, child = _build(tmp_path, claim=_claim(floor=10 ** 6))
+    row = _confirm(root, child)
+    assert row["status"] == fc.NOT_MEASURABLE and "floor not met" in row["reason"]
+    _kept(row, {"min_events": 10 ** 6}, LABELS)
+
+
+@pytest.mark.parametrize("bar_windows", [(3, 4, 5), (2, 3, 4, 5)])
+def test_r5_a_too_few_windows_row_keeps_the_events_and_the_floor(tmp_path, bar_windows):
+    root, child = _build(tmp_path, bar_windows=bar_windows)
+    row = _confirm(root, child)
+    assert row["status"] == fc.NOT_MEASURABLE and "too few" in row["reason"]
+    h = _kept(row, {"min_events": 10}, [LABELS[i] for i in bar_windows])
+    assert h["windows_with_value"] == len(bar_windows)
+    assert len(h["events_per_window"]) == len(bar_windows)           # the absent windows: no cell
+
+
+def test_r5_a_too_few_windows_row_with_an_injected_measure(tmp_path):
+    root, child = _build(tmp_path, with_bars=False)
+    res = {"up_day_follow": _measured({1: [POS] * 3})}               # bars in 3 of the fold's 6
+    row = _confirm(root, child, measure=_fake(res))
+    assert row["status"] == fc.NOT_MEASURABLE and "too few" in row["reason"]
+    h = _kept(row, {"min_events": 100}, LABELS[:3])
+    assert h["n_events"] == 33
+
+
+def test_r5_a_confirmed_row_keeps_them_too(tmp_path):
+    root, child = _build(tmp_path)
+    row = _confirm(root, child)
+    assert row["status"] == fc.CONFIRMED
+    _kept(row, {"min_events": 10}, LABELS)
+
+
+def test_r5_an_early_exit_before_measurement_keeps_status_and_reason_only(tmp_path):
+    root, child = _build(tmp_path, with_bars=False)
+    # a result claim_measure did not measure (an error, mixed return bases): status + reason only
+    for status, why in ((cmeas.NOT_MEASURED, "x"), (cmeas.NOT_MEASURED, cmeas.MIXED_BASES)):
+        res = _measured({}, status=status)
+        res["reason"] = why
+        row = _confirm(root, child, measure=_fake({"up_day_follow": res}))
+        assert row["status"] == fc.NOT_MEASURABLE and row["reason"] == f"up_day_follow: not measured: {why}"
+        entry = row["tests"]["up_day_follow"]
+        assert set(entry) == {"spec_hash", "status", "reason"}, entry
+        assert not row.get("agreement") and not row.get("effect")
+    # a claim with no test at all, a measurement that raises, a changed spec: no test entry
+    claim = dict(_claim(), tests="none", missing_block="trade-level exit cause")
+    r2, c2 = _build(tmp_path / "none", claim=claim, card_claim=claim)
+    row = _confirm(r2, c2)
+    assert row["status"] == fc.NOT_MEASURABLE and "tests" not in row
+    row = _confirm(root, child, measure=lambda *a: (_ for _ in ()).throw(OSError("bars.csv")))
+    assert row["status"] == fc.NOT_MEASURABLE and "tests" not in row
+    r3, c3 = _build(tmp_path / "changed", card_claim=_claim(value=0.001))
+    row = _confirm(r3, c3)
+    assert row["status"] == fc.NOT_COMPARABLE and "tests" not in row
+    assert "events_per_window" not in json.dumps(row) and "min_events" not in json.dumps(row)
 
 
 def test_a_selector_that_matches_nothing_is_not_measurable_and_still_a_look(tmp_path):
