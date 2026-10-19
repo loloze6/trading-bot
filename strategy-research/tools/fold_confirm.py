@@ -40,23 +40,36 @@ The statuses
   not_measurable  no events, an unreadable source or bars, a vehicle variant that was not
                   backtested, a measured variant whose strategy config does not carry the
                   vehicle (`vehicle_not_in_measured_config`: step 1b may have changed the
-                  config the child started from), or fewer than MIN_WINDOWS windows with a value (a fold of
-                  SOL/UNI has almost no 2018-2021 bars). Kept as knowledge; the look is
-                  counted when the selector was actually run.
+                  config the child started from), the claim's own floor not met (R5), or
+                  too few of the fold's windows with a value to grade (R5: fewer than the
+                  fold's windows minus WINDOWS_ALLOWED_AGAINST; a fold of SOL/UNI has almost
+                  no 2018-2021 bars). Kept as knowledge; the look is counted when the
+                  selector was actually run.
   not_comparable  the child's card tests (spec_hash) are not the source claim's: the run
                   was not built for this claim (the spec-hash rule of explore_confirm's
                   resolve_pending, kept). Nothing is measured.
 
 THE NOISE RULE -- a noise rule, NOT a size rule and NOT a cost rule
 -------------------------------------------------------------------
-For one test, at EVERY horizon that has a pooled value:
-  (1) the pooled oriented effect is > 0 (the claimed sign holds), AND
-  (2) the claimed sign (oriented > 0) holds in all but at most ONE window of the fold,
-      counted among the windows with a value, of which there must be at least
-      MIN_WINDOWS (else not_measurable).
-Horizons with at least MIN_WINDOWS windows are judged first: a failure there is
-not_confirmed even when another horizon has too few windows to be judged (that horizon
-makes the test not_measurable only when every judged horizon holds).
+R5 (operator ruling 2026-10-19 on engineering/FOLD-FLOORS-2026-10-19/REPORT.md), for one
+test, in this order:
+  (0) THE CLAIM'S FLOOR, read as claim_measure computes it (pooled per horizon over the
+      fold's windows, `floor_not_met` of the measured result): any entry at any horizon
+      -> not_measurable, reason "floor not met: ...", never confirmed.
+  (1) THE COUNT IS OVER THE FOLD'S WINDOWS (fold_blocks; confirm_on_fold passes them):
+      a window with no value -- no bars on the fold's window, or no event there --
+      counts AGAINST, exactly like a window with the wrong sign. A horizon is judged
+      only when at least (fold windows - WINDOWS_ALLOWED_AGAINST) of the fold's windows
+      have a value (and never fewer than MIN_WINDOWS, see the constant); a horizon with
+      fewer is too short to grade.
+  (2) at EVERY judged horizon: the pooled oriented effect is > 0 (the claimed sign
+      holds), AND the windows against (wrong sign, a zero, or no value) are at most
+      WINDOWS_ALLOWED_AGAINST. A judged horizon failing either part is a real refutation:
+      not_confirmed (it fails only through a window WITH a value of the wrong sign beyond
+      the allowance, or a non-positive pooled value).
+Horizons that are judged are judged first: a refutation there is not_confirmed even when
+another horizon is too short to grade (that horizon makes the test not_measurable only
+when every judged horizon holds).
 A claim is confirmed only if every one of its tests (at most 3) is confirmed.
 Why it exists: a claim with no effect points the right way by luck about half the time
 (explore_confirm.test_sign needs only a positive pooled value), so "the sign held" would
@@ -64,6 +77,9 @@ put about half of all null claims into the registry as building blocks. With six
 windows, under a symmetric null the chance that at least 5 of 6 share the claimed sign
 is 7/64 = about 11% per fold, and 6 of 6 about 1.6%; a lineage confirmed on two folds is
 near 1%. Windows of one fold share a market phase, so the true chance is somewhat higher.
+Counting an empty window against (R5) keeps a fold with 1 or 2 empty windows near or
+below that chance (measured 0.03-0.04 and 0.000, REPORT.md section 4.2) instead of the
+0.19-0.29 of counting only the windows with a value.
 SEVERAL COINS (operator, 2026-10-08, option C; D-089): in each window the coins are pooled
 into ONE value first (the test's statistic over every coin's bars or trades of that window,
 exactly as claim_measure pools a coin's windows), then "all but one window" is applied over
@@ -106,20 +122,28 @@ ROW_ARTIFACT = "fold_confirmation.yaml"      # artifacts/ of the child run
 SCHEMA_VERSION = 1
 
 #: THE NOISE RULE's two numbers (see the module docstring).
-MIN_WINDOWS = 4          # fewer windows with a value than this: not measurable
-WINDOWS_ALLOWED_AGAINST = 1   # the claimed sign may fail in at most this many windows
+#: R5: the windows needed with a value are max(MIN_WINDOWS, fold windows -
+#: WINDOWS_ALLOWED_AGAINST). On every fold of config/folds.yaml (6 blocks) that is 5, so
+#: MIN_WINDOWS has no separate role there (REPORT.md section 4.1); it is kept only as a
+#: backstop for a fold of 4 or fewer windows (never graded on fewer than 4 windows with a
+#: value; folds below 4 blocks were not measured) and because the row records it.
+MIN_WINDOWS = 4
+WINDOWS_ALLOWED_AGAINST = 1   # windows against (wrong sign or no value) allowed, of the fold's
 
 #: option C (D-089): the per-window values pooled over the coins, beside per_window
 POOLED_KEY = "per_window_coins_pooled"
 
 RULE_NAME = "noise_rule"
-RULE_TEXT = ("NOISE RULE, not a size rule and no cost comparison: confirmed when, at every horizon "
-             "with a value, the pooled effect has the claimed sign AND the claimed sign holds in "
-             f"all but at most {WINDOWS_ALLOWED_AGAINST} window(s) of the fold (at least "
-             f"{MIN_WINDOWS} windows with a value, else not measurable). About an 11% chance per "
-             "fold for a claim with no effect (6 windows), about 1% after two folds; every look is "
-             "counted. Measured on the run built from the claim, on a fold its source run was not on; "
-             "not proven.")
+RULE_TEXT = ("NOISE RULE, not a size rule and no cost comparison: not measurable when the claim's own "
+             "floor is not met at any horizon (pooled over the fold's windows, as claim_measure "
+             "computes it); else confirmed when, at every horizon with a value, the pooled effect has "
+             "the claimed sign AND the claimed sign holds in all but at most "
+             f"{WINDOWS_ALLOWED_AGAINST} of the fold's windows, a window with no value counting "
+             f"against (fewer of the fold's windows with a value than all but "
+             f"{WINDOWS_ALLOWED_AGAINST}, or than {MIN_WINDOWS}: not measurable). About an 11% "
+             "chance per fold for a claim with no effect (6 windows), about 1% after two folds; every "
+             "look is counted. Measured on the run built from the claim, on a fold its source run was "
+             "not on; not proven.")
 
 _REF_RE = re.compile(r"runs/(?P<run>[^/]+)/artifacts/proposals/(?P<cat>[^/]+)\.yaml#(?P<pid>.+)")
 
@@ -128,11 +152,18 @@ _REF_RE = re.compile(r"runs/(?P<run>[^/]+)/artifacts/proposals/(?P<cat>[^/]+)\.y
 # The rule, on one measure_test result
 # ---------------------------------------------------------------------------
 
-def grade_test(result: dict) -> dict:
+def grade_test(result: dict, fold_windows=None) -> dict:
     """{status, reason, horizons} of ONE claim_measure.measure_test result under the
-    noise rule. `horizons`: per horizon with a pooled value, {effect, oriented, n_events,
-    windows_claimed_sign (k), windows_with_value (n), per_window (oriented value per
-    window), pooled_sign_held, windows_rule_held}. Pure."""
+    noise rule, R5 (module docstring). `fold_windows`: the fold's window labels
+    (fold_blocks; confirm_on_fold passes them), over which the all-but-one count runs --
+    a fold window the measurement has no value for counts against. None (or empty): the
+    windows the measurement itself carries (its per-window cells), so a cell with no value
+    still counts against but a window with no bars at all cannot be seen.
+    `horizons`: per horizon with a pooled value, {effect, oriented, n_events,
+    windows_claimed_sign (k), windows_with_value (n), windows_in_fold, windows_against
+    (windows_in_fold - k), windows_without_value (labels), windows_needed_with_value,
+    per_window (oriented value per measured cell, as before), pooled_sign_held,
+    windows_rule_held}. Pure."""
     import claim_measure as cmeas
     st = result.get("status")
     if st == cmeas.NO_EVENTS:
@@ -141,7 +172,8 @@ def grade_test(result: dict) -> dict:
     if st != cmeas.MEASURED:
         why = result.get("detail") or result.get("reason")
         return {"status": NOT_MEASURABLE, "reason": f"not measured: {why}"}
-    horizons = {}
+    fold = [str(w) for w in fold_windows] if fold_windows else None
+    horizons, coins_error = {}, None
     for h, r in sorted((result.get("horizons") or {}).items(), key=lambda kv: float(kv[0])):
         oriented = r.get("oriented")
         if oriented is None:
@@ -150,43 +182,73 @@ def grade_test(result: dict) -> dict:
         if cells is None and len(_coins(r.get("per_window"))) > 1:
             # option C needs the coins pooled per window BEFORE the rule: a measurement that
             # carries only symbol-window cells cannot be graded (never graded per cell)
-            return {"status": NOT_MEASURABLE,
-                    "reason": (f"several coins {_coins(r.get('per_window'))} but no per-window "
-                               f"value pooled over the coins ({POOLED_KEY}): the noise rule "
-                               f"counts windows, not coin-window cells")}
+            coins_error = (f"several coins {_coins(r.get('per_window'))} but no per-window "
+                           f"value pooled over the coins ({POOLED_KEY}): the noise rule "
+                           f"counts windows, not coin-window cells")
+            break
         per_window = {str(w): c.get("oriented")
                       for w, c in (cells if cells is not None else r.get("per_window") or {}).items()}
-        vals = [v for v in per_window.values() if v is not None]
-        k, n = sum(1 for v in vals if v > 0), len(vals)
+        # one value per window: a pooled cell is keyed by the window, a one-coin cell by
+        # "<symbol>/<window>" (claim_tests.Window.label)
+        by_window = {w.rsplit("/", 1)[-1]: v for w, v in per_window.items()}
+        # the fold's windows, then any measured window outside them (confirm_on_fold never
+        # produces one: it checks the protocol windows are exactly the fold's blocks)
+        counted = list(dict.fromkeys((fold or []) + list(by_window)))
+        k = sum(1 for w in counted if by_window.get(w) is not None and by_window[w] > 0)
+        n = sum(1 for w in counted if by_window.get(w) is not None)
+        need = max(MIN_WINDOWS, len(counted) - WINDOWS_ALLOWED_AGAINST)
         horizons[str(h)] = {"effect": r.get("value"), "oriented": oriented,
                             "n_events": r.get("n_events"),
                             "windows_claimed_sign": k, "windows_with_value": n,
+                            "windows_in_fold": len(counted),
+                            "windows_against": len(counted) - k,
+                            "windows_without_value": [w for w in counted
+                                                      if by_window.get(w) is None],
+                            "windows_needed_with_value": need,
                             "per_window": per_window,
                             "pooled_sign_held": oriented > 0,
-                            "windows_rule_held": n >= MIN_WINDOWS and k >= n - WINDOWS_ALLOWED_AGAINST}
+                            "windows_rule_held": (n >= need and len(counted) - k
+                                                  <= WINDOWS_ALLOWED_AGAINST)}
+    # (0) the claim's own floor, before any count (R5): never confirmed below it
+    floor_not_met = [str(x) for x in (result.get("floor_not_met") or [])]
+    if floor_not_met:
+        out = {"status": NOT_MEASURABLE,
+               "reason": "floor not met: " + "; ".join(floor_not_met)}
+        if coins_error is None:
+            out["horizons"] = horizons
+        return out
+    if coins_error is not None:
+        return {"status": NOT_MEASURABLE, "reason": coins_error}
     if not horizons:
         return {"status": NOT_MEASURABLE, "reason": "no horizon has a pooled value on the fold",
                 "horizons": horizons}
-    # horizons with enough windows are judged FIRST: a refutation there stands whatever a
-    # thinner horizon could say (a claim refuted 0 of 6 at h=1 is not "unmeasurable" because
-    # h=24 has 3 windows)
-    judged = {h: x for h, x in horizons.items() if x["windows_with_value"] >= MIN_WINDOWS}
+    # horizons with enough of the fold's windows with a value are judged FIRST: a refutation
+    # there stands whatever a thinner horizon could say (a claim refuted 0 of 6 at h=1 is not
+    # "unmeasurable" because h=24 has 3 windows). A judged horizon can fail only through a
+    # window WITH a value of the wrong sign beyond the allowance, or a non-positive pooled
+    # value: a real refutation.
+    judged = {h: x for h, x in horizons.items()
+              if x["windows_with_value"] >= x["windows_needed_with_value"]}
     bad = [f"h={h}: pooled {'held' if x['pooled_sign_held'] else 'NOT held'}, windows "
-           f"{x['windows_claimed_sign']} of {x['windows_with_value']}"
+           f"{x['windows_claimed_sign']} of {x['windows_in_fold']}"
+           + (f" ({len(x['windows_without_value'])} without a value)"
+              if x["windows_without_value"] else "")
            for h, x in judged.items() if not (x["pooled_sign_held"] and x["windows_rule_held"])]
     if bad:
         return {"status": NOT_CONFIRMED, "horizons": horizons,
                 "reason": "the noise rule fails: " + "; ".join(bad)}
-    short = {h: x["windows_with_value"] for h, x in horizons.items()
-             if x["windows_with_value"] < MIN_WINDOWS}
+    short = [f"h={h}: {x['windows_with_value']} of the fold's {x['windows_in_fold']} windows "
+             f"with a value, {x['windows_needed_with_value']} needed"
+             for h, x in horizons.items() if h not in judged]
     if short:
         return {"status": NOT_MEASURABLE, "horizons": horizons,
-                "reason": (f"fewer than {MIN_WINDOWS} windows with a value at horizon(s) "
-                           f"{short} (windows with a value) -- the fold cannot grade this test")}
+                "reason": ("too few of the fold's windows with a value to grade (all but "
+                           f"{WINDOWS_ALLOWED_AGAINST}, and at least {MIN_WINDOWS}; an empty "
+                           "window counts against): " + "; ".join(short))}
     return {"status": CONFIRMED, "horizons": horizons,
             "reason": ("the pooled sign held at every horizon and the claimed sign held in all but "
-                       "at most one window: " + "; ".join(
-                           f"h={h} {x['windows_claimed_sign']} of {x['windows_with_value']}"
+                       "at most one of the fold's windows: " + "; ".join(
+                           f"h={h} {x['windows_claimed_sign']} of {x['windows_in_fold']}"
                            for h, x in horizons.items()))}
 
 
@@ -555,7 +617,8 @@ def confirm_on_fold(run_dir: Path, run_id: str, *, root: Path, folds_doc: dict |
     except Exception as exc:  # noqa: BLE001 -- recorded
         return _finish(row, NOT_MEASURABLE,
                        f"the bars could not be measured ({type(exc).__name__}: {exc})")
-    graded_tests = {n: grade_test(r) for n, r in sorted(results.items())}
+    fold_windows = [b["label"] for b in block_rows]           # R5: the count's windows
+    graded_tests = {n: grade_test(r, fold_windows) for n, r in sorted(results.items())}
     status, reason = combine(graded_tests)
     row["tests"] = {n: {"spec_hash": results[n].get("spec_hash"), **g}
                     for n, g in graded_tests.items()}
@@ -566,7 +629,7 @@ def confirm_on_fold(run_dir: Path, run_id: str, *, root: Path, folds_doc: dict |
     # the numbers every row carries, for any status that measured something
     row["effect"] = {n: {h: x["effect"] for h, x in g.get("horizons", {}).items()}
                      for n, g in graded_tests.items() if g.get("horizons")}
-    row["agreement"] = {n: {h: f"{x['windows_claimed_sign']} of {x['windows_with_value']}"
+    row["agreement"] = {n: {h: f"{x['windows_claimed_sign']} of {x['windows_in_fold']}"   # R5
                             for h, x in g.get("horizons", {}).items()}
                         for n, g in graded_tests.items() if g.get("horizons")}
     row["_comparisons"] = ec.comparisons_of(results)
