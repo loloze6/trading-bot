@@ -13,8 +13,9 @@ cache, no holdout bar; every date is in 2018-2021):
      / a vehicle that does not resolve / both vehicle and config_change are refused; the
      vehicle reaches decide-next as the finding's config change.
   2. THE NOISE RULE on handcrafted measurements (the exact boundary): 6 of 6 and 5 of 6
-     windows confirm, 4 of 6 does not, 3 windows with a value is not measurable, no
-     events is not measurable, a negative pooled sign at ANY horizon is not confirmed,
+     windows confirm, 4 of 6 does not, too few of the fold's windows with a value is not
+     measurable (R5: an empty window counts against; a floor not met is not measurable),
+     no events is not measurable, a negative pooled sign at ANY horizon is not confirmed,
      every test of a claim must pass.
   3. confirm_on_fold end to end on a fixture child run with planted per-window effects
      (bars written to disk, read by the real measurement): a planted effect confirms, a
@@ -200,9 +201,11 @@ def _confirm(root, child, **kw):
 
 
 def _measured(oriented_by_h: dict, *, windows=None, status=cmeas.MEASURED, name="up_day_follow",
-              pooled=None) -> dict:
+              pooled=None, floor_not_met=None) -> dict:
     """A claim_measure.measure_test-shaped result: {horizon: [per-window oriented values]}.
-    `pooled` {horizon: value} overrides the pooled oriented value (default: the windows' mean)."""
+    `pooled` {horizon: value} overrides the pooled oriented value (default: the windows' mean).
+    `floor_not_met` is claim_measure's own list of floor entries (R5); a list shorter than the
+    fold leaves the later windows ABSENT from the measurement (no bars there)."""
     if status != cmeas.MEASURED:
         return {"name": name, "status": status, "reason": "x", "spec_hash": "h"}
     hz = {}
@@ -212,7 +215,10 @@ def _measured(oriented_by_h: dict, *, windows=None, status=cmeas.MEASURED, name=
         defined = [v for v in vals if v is not None]
         p = (pooled or {}).get(h, float(np.mean(defined)) if defined else None)
         hz[h] = {"value": p, "oriented": p, "n_events": 99, "per_window": pw}
-    return {"name": name, "status": cmeas.MEASURED, "spec_hash": "h", "horizons": hz}
+    out = {"name": name, "status": cmeas.MEASURED, "spec_hash": "h", "horizons": hz}
+    if floor_not_met is not None:
+        out["floor_not_met"] = list(floor_not_met)
+    return out
 
 
 def _fake(results_by_test: dict):
@@ -511,13 +517,16 @@ def test_every_horizon_must_hold_both_parts():
     assert g["status"] == fc.NOT_CONFIRMED and "h=2" in g["reason"]
 
 
-def test_fewer_than_four_windows_with_a_value_is_not_measurable():
+def test_too_few_of_the_folds_windows_with_a_value_is_not_measurable():
+    # R5: a window with no value counts against, so a fold of 6 needs 5 windows with a value
     g = _grade({1: [POS] * 3})
-    assert g["status"] == fc.NOT_MEASURABLE and "fewer than 4" in g["reason"]
-    assert _grade({1: [POS] * 4})["status"] == fc.CONFIRMED          # exactly 4 windows: measurable
-    # a window with no value does not count as a window
+    assert g["status"] == fc.NOT_MEASURABLE and "too few of the fold's windows with a value" in g["reason"]
+    assert "4 needed" in g["reason"]                  # 3 cells measured: the MIN_WINDOWS backstop
+    assert _grade({1: [POS] * 4})["status"] == fc.CONFIRMED          # a fold of 4 windows, all with a value
     assert _grade({1: [POS, POS, POS, None, None, None]})["status"] == fc.NOT_MEASURABLE
-    assert _grade({1: [POS, POS, POS, POS, None, None]})["status"] == fc.CONFIRMED
+    # 4 of 6 windows with a value: the empty windows count against, so it cannot be graded
+    assert _grade({1: [POS, POS, POS, POS, None, None]})["status"] == fc.NOT_MEASURABLE
+    assert _grade({1: [POS, POS, POS, POS, POS, None]})["status"] == fc.CONFIRMED
     # one horizon too short to grade makes the whole test not measurable
     assert _grade({1: [POS] * 6, 2: [POS] * 3 + [None] * 3})["status"] == fc.NOT_MEASURABLE
 
@@ -530,11 +539,126 @@ def test_a_refutation_at_a_judged_horizon_is_not_confirmed_even_if_another_horiz
     assert g["status"] == fc.NOT_CONFIRMED
     # every judged horizon holds and one is short: not measurable (cannot confirm)
     g = _grade({1: [POS] * 6, 24: [POS] * 3 + [None] * 3})
-    assert g["status"] == fc.NOT_MEASURABLE and "fewer than 4" in g["reason"]
+    assert g["status"] == fc.NOT_MEASURABLE and "too few" in g["reason"] and "5 needed" in g["reason"]
     # a short horizon with the wrong sign is not itself judged
     g = _grade({1: [POS] * 6, 24: [NEG] * 3 + [None] * 3}, pooled={1: 0.02, 24: -0.02})
     assert g["status"] == fc.NOT_MEASURABLE
     assert fc.combine({"t": g})[0] == fc.NOT_MEASURABLE
+
+
+# --- R5 (operator ruling 2026-10-19, report #495 item 1): the claim's floor, and the count over
+# --- the fold's windows (an empty window counts against). Synthetic shapes only.
+
+FOLD_WINDOWS = list(LABELS)                 # the fold's six windows, as confirm_on_fold passes them
+FLOOR = ["events=100 at h=1 (have 60)"]     # claim_measure's own floor_not_met entry
+
+
+def _grade_fold(oriented_by_h, **kw):
+    return fc.grade_test(_measured(oriented_by_h, **kw), FOLD_WINDOWS)
+
+
+def test_r5_a_floor_not_met_is_not_measurable_and_never_confirmed():
+    g = _grade_fold({1: [POS] * 6}, floor_not_met=FLOOR)
+    assert g["status"] == fc.NOT_MEASURABLE and g["reason"].startswith("floor not met")
+    assert FLOOR[0] in g["reason"]
+    # even a clean 0 of 6 refutation: the floor is read first, so it is not a refutation
+    g = _grade_fold({1: [NEG] * 6}, pooled={1: -0.02}, floor_not_met=FLOOR)
+    assert g["status"] == fc.NOT_MEASURABLE and g["reason"].startswith("floor not met")
+    # a floor entry at ANY horizon: h=24 short of the floor while h=1 refutes
+    g = _grade_fold({1: [NEG] * 6, 24: [POS] * 6}, pooled={1: -0.02, 24: 0.02},
+                    floor_not_met=["events=100 at h=24 (have 60)"])
+    assert g["status"] == fc.NOT_MEASURABLE and g["reason"].startswith("floor not met")
+    # without fold_windows too
+    g = fc.grade_test(_measured({1: [POS] * 6}, floor_not_met=FLOOR))
+    assert g["status"] == fc.NOT_MEASURABLE and g["reason"].startswith("floor not met")
+    # no entry (an empty list, or no key at all) is no floor problem
+    assert _grade_fold({1: [POS] * 6}, floor_not_met=[])["status"] == fc.CONFIRMED
+    assert _grade_fold({1: [POS] * 6})["status"] == fc.CONFIRMED
+
+
+def test_r5_a_floor_not_met_is_not_measurable_in_a_combined_claim():
+    no = fc.grade_test(_measured({1: [POS] * 6}, floor_not_met=FLOOR), FOLD_WINDOWS)
+    ok = _grade_fold({1: [POS] * 6})
+    assert fc.combine({"a": ok, "b": no})[0] == fc.NOT_MEASURABLE
+
+
+def test_r5_five_measured_all_positive_with_one_window_absent_confirms():
+    g = _grade_fold({1: [POS] * 5})                       # the 6th window has no cell at all
+    assert g["status"] == fc.CONFIRMED
+    h = g["horizons"]["1"]
+    assert (h["windows_claimed_sign"], h["windows_with_value"], h["windows_in_fold"]) == (5, 5, 6)
+    assert h["windows_against"] == 1 and h["windows_without_value"] == [FOLD_WINDOWS[5]]
+
+
+def test_r5_four_positive_one_negative_one_absent_is_a_real_refutation():
+    g = _grade_fold({1: [POS] * 4 + [NEG]}, pooled={1: 0.01})
+    assert g["status"] == fc.NOT_CONFIRMED and "4 of 6" in g["reason"]
+    assert "1 without a value" in g["reason"]
+
+
+def test_r5_five_positive_one_absent_with_a_negative_pooled_value_is_not_confirmed():
+    g = _grade_fold({1: [POS] * 5}, pooled={1: -0.001})
+    assert g["status"] == fc.NOT_CONFIRMED and g["horizons"]["1"]["pooled_sign_held"] is False
+
+
+def test_r5_four_positive_one_none_one_absent_is_not_measurable():
+    # two windows without a value (a cell holding None, and a window with no cell): 4 of 6
+    # with a value, 5 needed -> too few to grade, not a refutation
+    g = _grade_fold({1: [POS] * 4 + [None]})
+    assert g["status"] == fc.NOT_MEASURABLE and "too few" in g["reason"] and "5 needed" in g["reason"]
+    h = g["horizons"]["1"]
+    assert h["windows_with_value"] == 4 and len(h["windows_without_value"]) == 2
+    # an all-empty-but-one fold is the same
+    assert _grade_fold({1: [POS]})["status"] == fc.NOT_MEASURABLE
+
+
+def test_r5_one_none_cell_counts_against_exactly_like_a_wrong_sign():
+    assert _grade_fold({1: [POS] * 5 + [None]})["status"] == fc.CONFIRMED
+    assert _grade_fold({1: [POS] * 5 + [NEG]}, pooled={1: 0.01})["status"] == fc.CONFIRMED
+    # a None plus a wrong sign = two against, with 5 values: judged, and refuted
+    g = _grade_fold({1: [POS] * 4 + [NEG, None]}, pooled={1: 0.01})
+    assert g["status"] == fc.NOT_CONFIRMED
+
+
+def test_r5_the_count_runs_over_the_measured_windows_without_fold_windows():
+    # no fold_windows (None or empty): the windows the measurement carries
+    res = _measured({1: [POS] * 5})
+    assert fc.grade_test(res)["horizons"]["1"]["windows_in_fold"] == 5
+    assert fc.grade_test(res, None)["status"] == fc.CONFIRMED
+    assert fc.grade_test(res, [])["horizons"]["1"]["windows_in_fold"] == 5
+    # ... and a None cell still counts against there
+    g = fc.grade_test(_measured({1: [POS] * 4 + [None, None]}))
+    assert g["status"] == fc.NOT_MEASURABLE
+    assert g["horizons"]["1"]["windows_in_fold"] == 6
+
+
+def test_r5_a_judged_horizon_that_refutes_stands_while_another_horizon_is_short():
+    g = _grade_fold({1: [POS] * 4 + [NEG], 24: [POS] * 3},
+                    pooled={1: 0.01, 24: 0.02})
+    assert g["status"] == fc.NOT_CONFIRMED and "h=1" in g["reason"] and "h=24" not in g["reason"]
+    # a pooled-negative judged horizon likewise
+    g = _grade_fold({1: [POS] * 5, 24: [POS] * 3}, pooled={1: -0.01, 24: 0.02})
+    assert g["status"] == fc.NOT_CONFIRMED
+    # every judged horizon holds and the other is short: not measurable
+    g = _grade_fold({1: [POS] * 5, 24: [POS] * 3}, pooled={1: 0.01, 24: 0.02})
+    assert g["status"] == fc.NOT_MEASURABLE and "h=24" in g["reason"] and "too few" in g["reason"]
+
+
+@pytest.mark.parametrize("shape", [
+    {1: [POS] * 5 + [NEG]},                                         # one horizon, the last window against
+    {1: [NEG] + [POS] * 5},                                         # the first window against
+    {1: [POS] * 5 + [NEG], 3: [POS, NEG] + [POS] * 4},              # two horizons, one against at each
+    {1: [POS] * 6, 3: [POS] * 3 + [NEG] + [POS] * 2},               # one horizon unanimous, one 5 of 6
+])
+def test_r5_the_shape_of_the_three_recorded_confirmations_still_confirms(shape):
+    # 5 of 6 (or 6 of 6) at every horizon, no window empty, the claim's floor met
+    pooled = {h: 0.01 for h in shape}
+    g = _grade_fold(shape, pooled=pooled, floor_not_met=[])
+    assert g["status"] == fc.CONFIRMED
+    for x in g["horizons"].values():
+        assert x["windows_in_fold"] == 6 and x["windows_with_value"] == 6
+        assert x["windows_without_value"] == []
+    assert fc.combine({"t": g})[0] == fc.CONFIRMED
 
 
 def test_no_events_and_an_error_are_not_measurable_never_confirmed():
@@ -626,13 +750,21 @@ def test_five_of_six_confirms_and_four_of_six_does_not(tmp_path):
     assert h["oriented"] > 0 and row["status"] == fc.NOT_CONFIRMED   # the sign held; the rule did not
 
 
-def test_a_coin_with_bars_in_three_windows_is_not_measurable(tmp_path):
+def test_a_coin_with_bars_in_three_of_the_folds_windows_is_not_measurable(tmp_path):
     root, child = _build(tmp_path, bar_windows=(3, 4, 5))
     row = _confirm(root, child)
-    assert row["status"] == fc.NOT_MEASURABLE and "fewer than 4" in row["reason"]
+    assert row["status"] == fc.NOT_MEASURABLE and "too few" in row["reason"]
     assert row["tests"]["up_day_follow"]["horizons"]["1"]["windows_with_value"] == 3
     root, child = _build(tmp_path / "four", bar_windows=(2, 3, 4, 5))
-    assert _confirm(root, child)["status"] == fc.CONFIRMED          # four windows is enough
+    assert _confirm(root, child)["status"] == fc.NOT_MEASURABLE     # R5: four of the fold's six is too few
+    root, child = _build(tmp_path / "five", bar_windows=(1, 2, 3, 4, 5))
+    row = _confirm(root, child)
+    assert row["status"] == fc.CONFIRMED          # five of six: the empty one counts as the one against
+    # the agreement is "k of F": F is the fold's windows, not the windows with a value
+    assert row["agreement"]["up_day_follow"]["1"] == "5 of 6"
+    h = row["tests"]["up_day_follow"]["horizons"]["1"]
+    assert (h["windows_with_value"], h["windows_in_fold"], h["windows_against"]) == (5, 6, 1)
+    assert h["windows_without_value"] == [BLOCKS[0]["label"]]
 
 
 def test_a_selector_that_matches_nothing_is_not_measurable_and_still_a_look(tmp_path):
