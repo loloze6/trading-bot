@@ -80,7 +80,8 @@ lens.
    (which quantity it reads, how it scales with that quantity, where it is near zero); that
    forecast is the vehicle. When `windows_claimed_sign` is below `windows_with_value`, run the
    selector by window, then describe `past_return_<n>` or `trailing_vol_<n>` by window to name
-   the condition; claim it through past_return or trailing_vol. A behaviour that holds under a
+   the condition; claim it with all_of (the condition AND the behaviour's selector in one
+   all_of selector). A behaviour that holds under a
    named condition and not in its complement is a `conditional_behaviour` claim with the
    condition in its selector.
 4. **Rule out rivals,** one query each where it matters: one window (`by: window`), one coin

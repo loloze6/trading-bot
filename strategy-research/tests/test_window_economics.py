@@ -636,34 +636,45 @@ def test_the_new_fields_are_in_the_closed_aggregates():
     assert "trade_cost_pct" not in aq._OUTCOME_AGG_FIELDS
 
 
-@pytest.mark.parametrize("field", ["abs_forecast", "allocation_abs", "forecast_sign_change"])
-def test_the_new_fields_are_not_claim_fields_until_pr_c(field, run):
-    """PR-C BOUNDARY, pinned: PR-B's new fields are analyst-query-only. PR-C (claim
-    selectors / trade-test outcomes) WILL change this test on purpose; until then none of
-    them is a claim field, so no claim can cite them."""
+@pytest.mark.parametrize("field", ["abs_forecast", "forecast_sign_change"])
+def test_after_pr_c_the_forecast_fields_and_the_gross_outcome_are_claim_names(field, run):
+    """PR-C BOUNDARY, pinned (it was: none of PR-B's new names is a claim name). Now: event
+    conditions on abs_forecast and forecast_sign_change are accepted by conditional_effect and
+    charged as usual (one comparison per horizon); {kind: trade_gross_return} is a valid claim
+    outcome; allocation_abs as a selector field and a trade_cost_pct filter field stay refused."""
     eng = engine(run)
     res = eng.conditional_effect({"kind": "event", "field": field, "op": ">=", "value": 0.0},
                                  [1, 2], "fwd_return", {"kind": "complement"})
-    assert res["status"] == "refused"
-    assert res["n_comparisons"] == 0 and res["cumulative_comparisons"] == 0
-
-    base = {"name": "t1", "selector": {"kind": "trade", "where": [
-                {"field": "exit_cause", "op": "==", "value": "flip"}]},
-            "outcome": {"kind": "trade_net_return"}, "baseline": {"kind": "other_trades"},
-            "statistic": "mean_diff", "direction": "greater", "floor": {"min_events": 50}}
+    assert res["status"] == "ok", res.get("reason")
+    assert res["n_comparisons"] == 2 and res["cumulative_comparisons"] == 2   # charged as usual
+    assert res["result"]["compiles_as_claim"] is True
 
     def claim(test):
         return {"statement": "s", "kind": "conditional_behaviour", "tests": [test],
                 "pass_if": "p", "fail_if": "f", "rationale": "r"}
 
-    # positive control: the same shape with the closed trade names is accepted
+    assert cc.check_claim(claim(res["result"]["test"])).errors == []          # and the claim passes
+
+    # still refused: the allocation held after the bar is not a selector field
+    res = eng.conditional_effect({"kind": "event", "field": "allocation_abs", "op": ">=",
+                                  "value": 0.0}, [1, 2], "fwd_return", {"kind": "complement"})
+    assert res["status"] == "refused"
+    assert res["n_comparisons"] == 0 and res["cumulative_comparisons"] == 2   # nothing charged
+
+    base = {"name": "t1", "selector": {"kind": "trade", "where": [
+                {"field": "exit_cause", "op": "==", "value": "flip"}]},
+            "outcome": {"kind": "trade_net_return"}, "baseline": {"kind": "other_trades"},
+            "statistic": "mean_diff", "direction": "greater", "floor": {"min_events": 50}}
+    # positive controls: the closed trade names, trade_gross_return now among them
     assert cc.check_claim(claim(base), trade_tests=True).errors == []
-    bad_outcome = dict(base, outcome={"kind": "trade_gross_return"})
+    good_outcome = dict(base, outcome={"kind": "trade_gross_return"})
+    res = cc.check_claim(claim(good_outcome), trade_tests=True)
+    assert res.errors == [] and len(res.tests) == 1, res.errors
+    # a trade filter field that is not in the closed list is still refused
     bad_filter = dict(base, selector={"kind": "trade", "where": [
         {"field": "trade_cost_pct", "op": ">=", "value": 0.1}]})
-    for bad in (bad_outcome, bad_filter):
-        res = cc.check_claim(claim(bad), trade_tests=True)
-        assert res.errors and res.tests == [], res.errors
+    res = cc.check_claim(claim(bad_filter), trade_tests=True)
+    assert res.errors and res.tests == [], res.errors
 
 
 def test_trade_gross_return_values_are_trades_json_and_count_as_comparisons(run):
