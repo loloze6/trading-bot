@@ -725,3 +725,31 @@ def test_default_check_spec_and_check_claim_refuse_the_new_outcomes_as_before_pr
     assert ct.check_spec(mixed, trade_tests=True) == [
         "selector: the trade outcomes ['trade_net_return', 'post_exit_return', 'trade_gross_return'] "
         "and the baseline ['other_trades'] need a selector of kind 'trade'"]
+
+
+# ---------------------------------------------------------------------------
+# 7. the examples of CLAIM_TESTS_TRADE.md run through check_claim (operator ruling 2026-10-19, B1)
+# ---------------------------------------------------------------------------
+
+def test_every_trade_guide_example_passes_check_claim_and_the_new_one_is_the_entry_selector():
+    import re
+    import yaml
+    text = pr3.TRADE_GUIDE.read_text(encoding="utf-8")
+    blocks = re.findall(r"```yaml\n(.*?)```", text, flags=re.S)
+    assert len(blocks) == 3, len(blocks)
+    tests = [t for b in blocks for t in yaml.safe_load(b)]
+    names = [t["name"] for t in tests]
+    assert "reductions_cost_more_of_the_move" not in names
+    assert "trade_cost_share" not in text
+    for t in tests:
+        checked = cc.check_claim(pr3.claim(t), trade_tests=True)
+        assert checked.errors == [], (t["name"], checked.errors)
+        assert len(checked.tests) == 1
+    new = next(t for t in tests if t["outcome"]["kind"] == "trade_gross_return")
+    assert new["selector"] == {"kind": "trade", "where": [
+        {"field": "entry_forecast", "op": ">", "value": -10},
+        {"field": "entry_forecast", "op": "<", "value": 10}]}
+    assert new["baseline"] == {"kind": "other_trades"}
+    assert (new["statistic"], new["direction"]) == ("mean_diff", "less")
+    assert new["floor"] == {"min_events": 100, "min_windows": 4}
+    assert {c["field"] for c in new["selector"]["where"]} <= set(ct.TRADE_ENTRY_FIELDS)

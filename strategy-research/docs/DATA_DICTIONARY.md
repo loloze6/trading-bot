@@ -694,7 +694,7 @@ window folder; it is not in `protocol_result.yaml`.
 
 | Field | Exact definition | Unit | Counts as a comparison |
 |---|---|---|---|
-| `trade_gross_return` | `profit_loss_percent` / 100: the lot's price return at its fill prices (slippage already in them), signed by side, before commission. Always `trades.json`'s, whatever basis `trade_net_return` has. A per-lot return on the lot's own notional, not a share of the account. | frac | yes, like `trade_net_return` (an outcome) |
+| `trade_gross_return` | The lot's return before costs on the window's return basis, the same per-lot number the claim outcome `trade_gross_return` sees: `all_costs` -> the cost record's `gross_return_before_costs` / 100 (at the bar closes, before fees and slippage); otherwise `profit_loss_percent` / 100 (at the fill prices, before commission). The reply's `return_basis` names the basis of each window. A per-lot return on the lot's own notional, not a share of the account. | frac | yes, like `trade_net_return` (an outcome) |
 | `trade_cost_pct` | `total_commission_percent`: (entry + exit commission rate) x 100, in percent of the lot's notional (the cost model's rate). | % | no (not a market outcome) |
 
 **Derived bar columns** (for `describe` / `distribution`; `list_columns` lists them; each uses
@@ -709,7 +709,7 @@ bar t, plus bar t-1 where stated, never a later bar):
 `describe` / `distribution` grouped by hour, weekday or regime still charge comparisons on
 these columns, as on any other.
 
-Claim fields: a claim selector reads forecast, close, past_return, trailing_vol, abs_forecast or forecast_sign_change; a trade test's outcome is trade_net_return, post_exit_return, trade_gross_return or trade_cost_share (see CLAIM_TESTS.md). allocation_abs, trade_cost_pct and the window_economics figures are not claim fields.
+Claim fields: a claim selector reads forecast, close, past_return, trailing_vol, abs_forecast or forecast_sign_change; a trade test's outcome is trade_net_return, post_exit_return or trade_gross_return (see CLAIM_TESTS.md). allocation_abs, trade_cost_pct and the window_economics figures are not claim fields.
 <!-- /readers: omit -->
 ## Not recorded today
 

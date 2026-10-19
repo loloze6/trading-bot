@@ -110,7 +110,7 @@ without a claim test; a person can add the block for later ideas.
 |---|---|---|
 | `all` | none | every bar |
 | `event` | `field`: `forecast`, `abs_forecast`, `forecast_sign_change`, `close`, `past_return` (with `bars`) or `trailing_vol` (with `bars`); `op`: `>=` `>` `<=` `<` `==`; `value`: a number | bars where `field op value` |
-| `quantile` | `field`: `forecast`, `abs_forecast`, `forecast_sign_change`, `close`, `past_return` (with `bars`) or `trailing_vol` (with `bars`); `side`: `top` or `bottom`; `q` in (0, 0.5]; `lookback`: int >= 2 | bars in the top/bottom `q` of the trailing `lookback` bars (past only) |
+| `quantile` | `field`: `forecast`, `abs_forecast`, `close`, `past_return` (with `bars`) or `trailing_vol` (with `bars`); `side`: `top` or `bottom`; `q` in (0, 0.5]; `lookback`: int >= 2 | bars in the top/bottom `q` of the trailing `lookback` bars (past only) |
 | `calendar` | `weekdays`: list of 0 (Monday) .. 6 and/or `hours`: list of 0 .. 23 (UTC) | bars on those days/hours |
 | `regime` | `value: <label>` or `values: [<labels>]` | bars whose regime label is one of these |
 | `regime_change` | `to: <label>` | bars where the regime label changes to `to` |
@@ -129,7 +129,7 @@ on 1h bars selects the bars whose past 24 hours were among the most volatile. It
 under the same rule as `past_return`: the first n bars of each window and wherever a bar in
 between is missing. `bars` is allowed only with `past_return` and `trailing_vol`.
 
-`abs_forecast` is |forecast[t]|, the size of the block's forecast at bar t whatever its sign; it is empty where the forecast is empty. `forecast_sign_change` is 1 on bar t when the forecasts at bars t - 1 and t have strictly opposite signs, and 0 otherwise (a forecast of exactly 0 has no sign, so a move to or from 0 is not a change); it is empty on the first bar of each window, wherever bar t - 1 is missing, and wherever either forecast is empty. Select it with `{kind: event, field: forecast_sign_change, op: "==", value: 1}`. Neither takes `bars`. Why neither can leak: they read the forecast saved at the close of bar t (and, for `forecast_sign_change`, of bar t - 1), never a later bar.
+`abs_forecast` is |forecast[t]|, the size of the block's forecast at bar t whatever its sign; it is empty where the forecast is empty. `forecast_sign_change` is 1 on bar t when the forecasts at bars t - 1 and t have strictly opposite signs, and 0 otherwise (a forecast of exactly 0 has no sign, so a move to or from 0 is not a change); it is empty on the first bar of each window, wherever bar t - 1 is missing, and wherever either forecast is empty. Select it with `{kind: event, field: forecast_sign_change, op: "==", value: 1}`; it is 0 or 1, so a `quantile` on it is refused. Neither takes `bars`. Why neither can leak: they read the forecast saved at the close of bar t (and, for `forecast_sign_change`, of bar t - 1), never a later bar.
 
 Guidance for `past_return` (nothing refuses this; it is advice): a REVERSAL claim on
 `past_return` (`less` after a rise, `greater` after a fall) is favoured by the measurement
@@ -233,10 +233,8 @@ attempts and the holdout.
 | `redundancy` | `tests: none` (missing: an outcome measured against the current composite). Residual IC is added by code, never a card criterion, so `criteria_refs` cannot name it |
 | `lead_lag` | `tests: none` (missing outcome `fwd_return_of(other_symbol, h)`) |
 | `data_feed_value` | `criteria_refs`, or a test on the feed-built forecast |
-| `cost_turnover` | test one: the cause (horizon_decay, direction_forecast by horizon, conditional_behaviour on abs_forecast, or event on forecast_sign_change); test two: trade_cost_share, effect size only |
+| `cost_turnover` | test one: the cause (horizon_decay, direction_forecast by horizon, conditional_behaviour on abs_forecast, or event on forecast_sign_change); the cost share is evidence from trade_slice and window_economics, not a test. |
 | `robustness` | `criteria_refs: [sign_consistent_by_era]` |
-
-`trade_cost_share` is a trade-level outcome, available only to the prompts that also carry the trade-level guide; the ratio criterion is retired for blocks (D-133), so `criteria_refs` cannot name it.
 
 The `kind` says whether the idea could be a block: a forecast kind is a forecast-block
 candidate, a regime kind is a regime-block candidate, and `calendar_effect` is a finding only.
