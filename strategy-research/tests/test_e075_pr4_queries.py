@@ -199,7 +199,7 @@ def _same(res, windows, test, trade=False):
 
 def _measure_the_block(res, windows, spec, trade=False):
     """The `test` block the engine returns, measured by claim_measure, gives the same
-    numbers (only for blocks claim_card accepts today: trailing_vol is gated)."""
+    numbers (only for blocks claim_card accepts; trailing_vol is accepted since D-153)."""
     block = res["result"]["test"]
     if not res["result"]["compiles_as_claim"]:
         return False
@@ -223,9 +223,26 @@ def test_bar_conditional_effect_equals_effect_sizes_for_every_slot_combination(s
         res = eng.conditional_effect(selector, OUTCOMES[outcome], outcome, base, stat, "greater")
         spec = _same(res, windows, test)
         compiled += _measure_the_block(res, windows, spec)
-    gated = selector.get("field") == "trailing_vol"
-    assert (compiled == 0) if gated else (compiled > 0)
+    assert compiled > 0          # trailing_vol included: a plain bar-t field since D-153
     assert len(log_of(eng)) == len(list(_bar_combos()))
+
+
+@pytest.mark.parametrize("selector", [s for s in BAR_SELECTORS if s.get("field") == "trailing_vol"],
+                         ids=lambda s: s["kind"])
+def test_conditional_effect_on_trailing_vol_is_accepted_and_compiles_as_a_claim(selector, run):
+    """D-153: a trailing_vol selector is accepted by conditional_effect, its `test`
+    block compiles as a claim, and that claim is valid through check_claim with the
+    pipeline's default keywords (no trade_tests, no flag)."""
+    import claim_card as cc
+    res = engine(run).conditional_effect(selector, [1, 3], "fwd_return",
+                                         {"kind": "complement"}, "mean_diff", "greater")
+    assert res["status"] == "ok", res.get("reason")
+    assert res["result"]["compiles_as_claim"] is True and "claim_check" not in res["result"]
+    claim = {"statement": "s", "kind": "conditional_behaviour", "tests": [res["result"]["test"]],
+             "pass_if": "p", "fail_if": "f", "rationale": "r"}
+    checked = cc.check_claim(claim)
+    assert checked.errors == []
+    assert checked.tests[0]["spec_hash"] == res["result"]["spec_hash"]
 
 
 @pytest.mark.parametrize("direction", ["greater", "less"])

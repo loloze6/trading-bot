@@ -59,8 +59,8 @@ WHY THIS CANNOT LEAK (no lookahead):
     stamped ts[t] - n*step is in the SAME window and all n bars are present
     (row distance exactly n); NaN otherwise, including the first n bars of
     every window. No warm-up rows, nothing chained across windows.
-  - `trailing_vol` (E-074 slice 1, field with `bars: n`, n >= 2; GATED: not in
-    BAR_T_FIELDS, accepted only by check_spec(..., extra_fields=...)) is the
+  - `trailing_vol` (E-074 slice 1, field with `bars: n`, n >= 2; a plain
+    bar-t field since D-153, operator ruling 2026-10-19 item 2) is the
     sample std (ddof=1) of the n one-bar log returns ending at t: rows
     t-n .. t only, under exactly the `past_return` rule (bar ts[t] - n*step in
     the SAME window, row distance exactly n); NaN otherwise, including the
@@ -155,15 +155,11 @@ EXERCISED_ON_REAL_RUNS = frozenset({
 
 # numeric fields a selector may read. `past_return` (E-068 3b) is the move
 # that ENDED at bar t: close[t] / close[t-bars] - 1, with its required `bars`.
-BAR_T_FIELDS = ("forecast", "close", "past_return")
-FIELDS_WITH_BARS = ("past_return",)            # fields that take (and need) `bars: n`
-# E-074 slice 1 (engineering/roadmap/E-074/PHASE_A.md 1.3 item 1): bar-t fields
-# that exist but are NOT in BAR_T_FIELDS, so check_spec refuses them by default
-# and every flag-off message, prompt and guide is unchanged. A caller accepts
-# them only by passing them as check_spec(spec, extra_fields=...); the
-# exploration digest (E-074) does, and the readers' exposure is wired behind
-# orchestrator.exploration_digest.enabled (E-074 slice 4). All take `bars: n`.
-GATED_BAR_T_FIELDS = ("trailing_vol",)
+# `trailing_vol` (E-074 slice 1) is the sample std of the n one-bar log returns
+# ending at bar t, with its required `bars`; gated until D-153 (operator ruling
+# 2026-10-19 item 2), a plain bar-t field since.
+BAR_T_FIELDS = ("forecast", "close", "past_return", "trailing_vol")
+FIELDS_WITH_BARS = ("past_return", "trailing_vol")   # fields that take (and need) `bars: n`
 MIN_FIELD_BARS = {"past_return": 1, "trailing_vol": 2}   # ddof=1 needs >= 2 returns
 # PHASE_A table 2.1: the digest's `trailing_vol` length per timeframe.
 TRAILING_VOL_BARS = {"hourly": 24, "daily": 10}
@@ -513,7 +509,7 @@ _FIELD_FUNCS = {"past_return": past_return, "trailing_vol": trailing_vol}
 
 
 def _field_values(w: Window, sel: dict) -> np.ndarray:
-    """The bar-t numbers a selector reads (BAR_T_FIELDS, GATED_BAR_T_FIELDS)."""
+    """The bar-t numbers a selector reads (BAR_T_FIELDS)."""
     f = sel["field"]
     if f in _FIELD_FUNCS:
         return _FIELD_FUNCS[f](w, int(sel["bars"]))
@@ -836,20 +832,17 @@ def _canon_where(where):
                                         _val_key(c.get("value"))))
 
 
-def _check_selector(s, where: str, extra_fields: tuple = ()) -> list[str]:
+def _check_selector(s, where: str) -> list[str]:
     if not isinstance(s, dict) or s.get("kind") not in SELECTORS:
         return [f"{where}: unknown selector {s!r}; known: {sorted(SELECTORS)}"]
-    # extra_fields == () (the default): exactly the pre-E-074 fields and messages
-    fields = BAR_T_FIELDS + tuple(extra_fields)
-    with_bars = FIELDS_WITH_BARS + tuple(extra_fields)    # every gated field takes `bars`
     k, e = s["kind"], []
     if k in NOT_RECOMPUTABLE_SELECTORS:
         e.append(f"{where}: {k} cannot be graded under {SIGNIFICANCE_METHOD} (regime labels "
                  f"cannot be recomputed on fake prices); park it as a test request")
-    if k in ("event", "quantile") and s.get("field") not in fields:
+    if k in ("event", "quantile") and s.get("field") not in BAR_T_FIELDS:
         e.append(f"{where}: field {s.get('field')!r} is not a bar-t field "
-                 f"(allowed: {list(fields)}); a selector may not read the future")
-    if k in ("event", "quantile") and s.get("field") in with_bars:
+                 f"(allowed: {list(BAR_T_FIELDS)}); a selector may not read the future")
+    if k in ("event", "quantile") and s.get("field") in FIELDS_WITH_BARS:
         b, lo = s.get("bars"), MIN_FIELD_BARS[s.get("field")]
         if not isinstance(b, int) or isinstance(b, bool) or b < lo:
             what = ("the length of the past move" if s.get("field") == "past_return"
@@ -857,7 +850,7 @@ def _check_selector(s, where: str, extra_fields: tuple = ()) -> list[str]:
             e.append(f"{where}: field {s.get('field')} needs `bars`: an int >= {lo} "
                      f"({what}, in bars of the card's timeframe)")
     elif "bars" in s:
-        e.append(f"{where}: `bars` is only allowed with field {list(with_bars)}")
+        e.append(f"{where}: `bars` is only allowed with field {list(FIELDS_WITH_BARS)}")
     if k == "event":
         if s.get("op") not in _OPS:
             e.append(f"{where}: op must be one of {list(_OPS)}")
@@ -885,19 +878,12 @@ def _check_selector(s, where: str, extra_fields: tuple = ()) -> list[str]:
     return e
 
 
-def check_spec(spec: TestSpec, extra_fields: tuple = (), trade_tests: bool = False) -> list[str]:
-    """Static checks, before any data. Empty list = valid. `extra_fields`
-    (E-074): gated bar-t fields this caller accepts on top of BAR_T_FIELDS,
-    each from GATED_BAR_T_FIELDS (anything else raises); empty by default,
-    so every default result is unchanged. `trade_tests` (E-075 PR-3): accept
-    the gated trade-level family (selector `trade`, outcomes trade_net_return
-    and post_exit_return, baseline other_trades); False by default, when a
-    trade selector, outcome or baseline gets exactly the pre-PR-3 refusal."""
-    extra_fields = tuple(extra_fields)
-    bad = [f for f in extra_fields if f not in GATED_BAR_T_FIELDS]
-    if bad:
-        raise ValueError(f"extra_fields {bad} are not gated bar-t fields "
-                         f"(known: {list(GATED_BAR_T_FIELDS)})")
+def check_spec(spec: TestSpec, trade_tests: bool = False) -> list[str]:
+    """Static checks, before any data. Empty list = valid. `trade_tests` (E-075
+    PR-3): accept the gated trade-level family (selector `trade`, outcomes
+    trade_net_return and post_exit_return, baseline other_trades); False by
+    default, when a trade selector, outcome or baseline gets exactly the
+    pre-PR-3 refusal."""
     if trade_tests:
         is_trade = isinstance(spec.selector, dict) and spec.selector.get("kind") == TRADE_SELECTOR
         mixed = ((isinstance(spec.outcome, dict) and spec.outcome.get("kind") in TRADE_OUTCOMES)
@@ -908,7 +894,7 @@ def check_spec(spec: TestSpec, extra_fields: tuple = (), trade_tests: bool = Fal
         if mixed:
             return [f"selector: the trade outcomes {list(TRADE_OUTCOMES)} and the baseline "
                     f"{list(TRADE_BASELINES)} need a selector of kind {TRADE_SELECTOR!r}"]
-    e = _check_selector(spec.selector, "selector", extra_fields)
+    e = _check_selector(spec.selector, "selector")
     o = spec.outcome
     if not isinstance(o, dict) or o.get("kind") not in OUTCOMES:
         e.append(f"outcome: unknown {o!r}; known: {sorted(OUTCOMES)}")
@@ -927,7 +913,7 @@ def check_spec(spec: TestSpec, extra_fields: tuple = (), trade_tests: bool = Fal
     elif not isinstance(spec.baseline, dict) or spec.baseline.get("kind") not in BASELINES:
         e.append(f"baseline: unknown {spec.baseline!r}; known: {sorted(BASELINES)}")
     elif spec.baseline["kind"] == "other_selector":
-        e += _check_selector(spec.baseline.get("selector"), "baseline.selector", extra_fields)
+        e += _check_selector(spec.baseline.get("selector"), "baseline.selector")
     return e + _check_tail(spec)
 
 
@@ -974,7 +960,7 @@ def _check_tail(spec: TestSpec) -> list[str]:
 # section 2): a partial reduction closes a lot, so several trades can share an
 # entry bar and several can exit on one bar.
 #
-# Gated like E-074's GATED_BAR_T_FIELDS: check_spec / check_claim refuse all of
+# Gated (as E-074's trailing_vol was until D-153): check_spec / check_claim refuse all of
 # it unless the caller passes trade_tests=True (nothing in the pipeline does
 # yet), with exactly the pre-PR-3 refusal, so every default message, hash and
 # artifact is unchanged. SELECTORS / OUTCOMES / BASELINES / STATISTICS are NOT

@@ -7,15 +7,18 @@ present (the `past_return` rule); NaN otherwise -- the first n bars of every
 window included; no warm-up rows, nothing chained across windows
 (engineering/roadmap/E-074/PHASE_A.md 1.3 item 1 and decision 13).
 
-GATED: the field is not in BAR_T_FIELDS. check_spec refuses it by default with
-the exact pre-E-074 message, so no flag-off guide, prompt or retry message
-changes; a caller accepts it only with check_spec(..., extra_fields=...).
+A plain bar-t field since D-153 (operator ruling 2026-10-19 item 2): it is in
+BAR_T_FIELDS and FIELDS_WITH_BARS, documented in CLAIM_TESTS.md, and accepted
+by check_spec, claim_card and claim_measure with no flag. It was gated before
+(E-074 slice 1: refused by default, accepted only with check_spec(...,
+extra_fields=...), a parameter removed with the gate).
 
 Covers: a hand computation, no lookahead (every row after t rewritten -- close,
 timestamp, forecast, regime), locality (rows before t-n ignored), the first n
 bars and missing bars, two windows never chained, no warm-up read, the event
-and quantile selectors, check_spec gating, pinned spec hashes. Synthetic data
-only (2020 dates); no market data is read.
+and quantile selectors, check_spec acceptance and its `bars` rule, the claim
+path (check_claim, claim_measure, analyst_queries.conditional_effect), pinned
+spec hashes. Synthetic data only (2020 dates); no market data is read.
 """
 import math
 import sys
@@ -220,7 +223,7 @@ def test_quantile_selector_is_trailing_and_skips_the_first_L_plus_n_bars():
         assert mask[t] == (x[t] >= np.quantile(x[t - L:t], 0.8))
 
 
-# --- gating: check_spec -------------------------------------------------------
+# --- a plain bar-t field: check_spec, claim_card, claim_measure (D-153) -------
 
 def _spec(selector, baseline=None):
     return ct.TestSpec(selector=selector, outcome={"kind": "fwd_return", "horizons": [1, 24]},
@@ -233,77 +236,78 @@ QV = {"kind": "quantile", "field": "trailing_vol", "bars": 24, "side": "top", "q
       "lookback": 50}
 
 
-def test_default_check_spec_refuses_it_with_the_pre_e074_messages():
-    """Pinned literally from origin/master before the change: flag-off retry
-    messages (which reach the 1a prompt) are byte-identical."""
-    assert ct.check_spec(_spec(dict(EV))) == [
-        "selector: field 'trailing_vol' is not a bar-t field (allowed: ['forecast', 'close', "
-        "'past_return']); a selector may not read the future",
-        "selector: `bars` is only allowed with field ['past_return']"]
-    ev = {k: v for k, v in EV.items() if k != "bars"}
-    assert ct.check_spec(_spec(ev)) == [
-        "selector: field 'trailing_vol' is not a bar-t field (allowed: ['forecast', 'close', "
-        "'past_return']); a selector may not read the future"]
-    assert ct.check_spec(_spec({"kind": "event", "field": "close", "bars": 2, "op": ">",
-                                "value": 0.0})) == [
-        "selector: `bars` is only allowed with field ['past_return']"]
+def _test(selector):
+    return {"name": "t", "selector": selector, "outcome": {"kind": "fwd_return", "horizons": [1]},
+            "baseline": {"kind": "complement"}, "statistic": "mean_diff", "direction": "greater",
+            "floor": {"min_events": 30}}
 
 
-def test_the_public_registry_is_unchanged():
-    assert ct.BAR_T_FIELDS == ("forecast", "close", "past_return")
-    assert ct.FIELDS_WITH_BARS == ("past_return",)
-    assert ct.GATED_BAR_T_FIELDS == ("trailing_vol",)
-    assert not set(ct.GATED_BAR_T_FIELDS) & set(ct.BAR_T_FIELDS)
+def test_the_public_registry_holds_it():
+    assert ct.BAR_T_FIELDS == ("forecast", "close", "past_return", "trailing_vol")
+    assert ct.FIELDS_WITH_BARS == ("past_return", "trailing_vol")
+    assert ct.MIN_FIELD_BARS == {"past_return": 1, "trailing_vol": 2}
+    assert not hasattr(ct, "GATED_BAR_T_FIELDS")                   # the gate is gone
     assert ct.TRAILING_VOL_BARS == {"hourly": 24, "daily": 10}     # PHASE_A table 2.1
 
 
-def test_flag_off_guide_and_pipeline_checks_do_not_expose_it():
-    """The guide every claim_tests prompt reads never names it, and the
-    pipeline's checks (claim_card, claim_measure) still refuse it."""
-    assert "trailing_vol" not in GUIDE.read_text(encoding="utf-8")
-    t = {"name": "t", "selector": dict(EV), "outcome": {"kind": "fwd_return", "horizons": [1]},
-         "baseline": {"kind": "complement"}, "statistic": "mean_diff", "direction": "greater",
-         "floor": {"min_events": 30}}
-    errs, h, _ = cc._check_test(t, "claim.tests[0]")
-    assert errs and h is None
-    with pytest.raises(ValueError):
-        cm.test_spec(t)
-
-
-def test_extra_fields_accept_it_in_event_quantile_and_other_selector():
-    assert ct.check_spec(_spec(dict(EV)), extra_fields=TV) == []
-    assert ct.check_spec(_spec(dict(QV)), extra_fields=TV) == []
+def test_check_spec_accepts_it_in_event_quantile_and_other_selector():
+    assert ct.check_spec(_spec(dict(EV))) == []
+    assert ct.check_spec(_spec(dict(QV))) == []
     other = {"kind": "other_selector", "selector": dict(QV)}
-    assert ct.check_spec(_spec({"kind": "all"}, baseline=other), extra_fields=TV) == []
-    assert ct.check_spec(_spec({"kind": "all"}, baseline=other)) != []
+    assert ct.check_spec(_spec({"kind": "all"}, baseline=other)) == []
+
+
+def test_check_spec_no_longer_takes_extra_fields():
+    with pytest.raises(TypeError):
+        ct.check_spec(_spec(dict(EV)), extra_fields=TV)
 
 
 @pytest.mark.parametrize("bars", [None, 0, 1, True, "24", 2.0])
-def test_extra_fields_bars_must_be_an_int_of_at_least_two(bars):
+def test_bars_must_be_an_int_of_at_least_two(bars):
+    """Without `bars`, or below MIN_FIELD_BARS (2), it is still refused."""
     sel = {k: v for k, v in EV.items() if k != "bars"}
     if bars is not None:
         sel["bars"] = bars
-    assert ct.check_spec(_spec(sel), extra_fields=TV) == [
+    assert ct.check_spec(_spec(sel)) == [
         "selector: field trailing_vol needs `bars`: an int >= 2 (the number of one-bar "
         "returns, in bars of the card's timeframe)"]
 
 
-def test_extra_fields_keep_past_return_rules_and_widen_the_messages():
+def test_past_return_rules_unchanged_and_the_messages_name_it():
     pr = {"kind": "event", "field": "past_return", "bars": 0, "op": ">", "value": 0.0}
-    assert ct.check_spec(_spec(pr), extra_fields=TV) == [
+    assert ct.check_spec(_spec(pr)) == [
         "selector: field past_return needs `bars`: an int >= 1 (the length of the past move, "
         "in bars of the card's timeframe)"]
     bad = {"kind": "event", "field": "volume", "op": ">", "value": 0.0}
-    assert ct.check_spec(_spec(bad), extra_fields=TV) == [
+    assert ct.check_spec(_spec(bad)) == [
         "selector: field 'volume' is not a bar-t field (allowed: ['forecast', 'close', "
         "'past_return', 'trailing_vol']); a selector may not read the future"]
+    assert ct.check_spec(_spec({"kind": "event", "field": "close", "bars": 2, "op": ">",
+                                "value": 0.0})) == [
+        "selector: `bars` is only allowed with field ['past_return', 'trailing_vol']"]
 
 
-def test_unknown_extra_field_raises():
-    with pytest.raises(ValueError):
-        ct.check_spec(_spec(dict(EV)), extra_fields=("volume",))
-    with pytest.raises(ValueError):
-        ct.check_spec(_spec(dict(EV)), extra_fields=("forecast",))
+def test_the_guide_documents_it_and_the_claim_path_accepts_it():
+    """CLAIM_TESTS.md names it in the selector table; claim_card and
+    claim_measure accept a test on it with no flag, with the spec hash
+    check_spec's spec gives; a claim on it is valid through check_claim, and
+    one below its minimum `bars` is refused there too."""
+    text = GUIDE.read_text(encoding="utf-8")
+    assert "`trailing_vol` (with `bars`)" in text
+    for sel in (dict(EV), dict(QV)):
+        t = _test(sel)
+        want = ct.spec_hash(ct.TestSpec.from_dict({k: v for k, v in t.items() if k != "name"}))
+        errs, h, possible = cc._check_test(t, "claim.tests[0]")
+        assert errs == [] and h == want and possible
+        assert cm.test_spec(t)[1] == want
+        claim = {"statement": "s", "kind": "conditional_behaviour", "tests": [t],
+                 "pass_if": "p", "fail_if": "f", "rationale": "r"}
+        res = cc.check_claim(claim)
+        assert res.errors == [] and res.tests[0]["spec_hash"] == want
+    low = _test(dict(EV, bars=1))
+    claim = {"statement": "s", "kind": "conditional_behaviour", "tests": [low],
+             "pass_if": "p", "fail_if": "f", "rationale": "r"}
+    assert cc.check_claim(claim).errors
 
 
 def test_existing_spec_hashes_are_unchanged():
