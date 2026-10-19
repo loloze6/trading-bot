@@ -709,7 +709,7 @@ bar t, plus bar t-1 where stated, never a later bar):
 `describe` / `distribution` grouped by hour, weekday or regime still charge comparisons on
 these columns, as on any other.
 
-These are not claim fields: a claim selector reads forecast, close, past_return or trailing_vol; a trade test's outcome is trade_net_return or post_exit_return.
+Claim fields: a claim selector reads forecast, close, past_return, trailing_vol, abs_forecast or forecast_sign_change; a trade test's outcome is trade_net_return, post_exit_return, trade_gross_return or trade_cost_share (see CLAIM_TESTS.md). allocation_abs, trade_cost_pct and the window_economics figures are not claim fields.
 <!-- /readers: omit -->
 ## Not recorded today
 
