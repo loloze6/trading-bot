@@ -322,6 +322,56 @@ def test_v16_refuses_history_transforms_and_still_checks_its_params():
         "(1 is the identity, above 3 over-amplifies), got 0"]
 
 
+SP = {"op": "signed_power", "params": {"exponent": 2}}
+ER = "strategies.strategy_components.EfficiencyRatioRegimeComponent"
+_PLACEMENT = ("signed_power is allowed only in a strategies component's `transforms`, in a regime "
+              "without `blocks` (a value it refuses raises there, inside generate_signals' guard)")
+
+
+def test_v16_allows_a_strategies_component_transforms_without_blocks():
+    # the V14 pattern: standardise, signed_power, clip in a strategies component's transforms
+    cfg = _full([STD, SP, {"op": "clip", "params": {"min": -20, "max": 20}}])
+    assert "blocks" not in cfg["strategies"]["regimes"]["unknown"]
+    assert _v(validate(cfg), "V16") == []
+
+
+def test_v16_refuses_strategies_history_transforms_with_valid_params_once():
+    cfg = _full([SP], key="history_transforms")
+    assert _v(validate(cfg), "V16") == [
+        f"VIOLATION V16 strategies.regimes.unknown.components[0].history_transforms[0]: {_PLACEMENT}"]
+
+
+def test_v16_refuses_a_strategies_regime_with_blocks_once():
+    cfg = _full([STD, SP])
+    cfg["strategies"]["regimes"]["unknown"]["blocks"] = []
+    assert _v(validate(cfg), "V16") == [
+        f"VIOLATION V16 strategies.regimes.unknown.components[0].transforms[1]: {_PLACEMENT}"]
+
+
+@pytest.mark.parametrize("key", ["transforms", "history_transforms"])
+def test_v16_refuses_the_regime_detector_component_lists_once(key):
+    cfg = _full([STD])
+    cfg["regime_detector"] = {
+        "mode": "threshold_rules", "default_regime": "unknown",
+        "components": [], "rules": [],
+        "regimes": {"trending": {"components": [
+            {"id": "er", "class": ER, "params": {"period": 20}, key: [SP]}]}}}
+    assert _v(validate(cfg), "V16") == [
+        f"VIOLATION V16 regime_detector.regimes.trending.components[0].{key}[0]: {_PLACEMENT}"]
+
+
+def test_v16_refuses_the_regime_detector_vetoes_transforms_once():
+    cfg = _full([STD])
+    cfg["regime_detector"] = {
+        "mode": "threshold_rules", "default_regime": "unknown",
+        "components": [{"id": "er", "class": ER, "params": {"period": 20}}],
+        "vetoes": [{"component": "er", "transforms": [{"op": "identity"}, SP], "op": ">",
+                    "value": 0.5, "regime": "chop"}],
+        "rules": []}
+    assert _v(validate(cfg), "V16") == [
+        f"VIOLATION V16 regime_detector.vetoes[0].transforms[1]: {_PLACEMENT}"]
+
+
 def test_v16_is_silent_without_the_op():
     for transforms in ([STD], [STD, {"op": "negate"}],
                        [{"op": "ratio_to_mean"}, {"op": "scale", "params": {"factor": 5}}],

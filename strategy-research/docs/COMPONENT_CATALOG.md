@@ -132,7 +132,10 @@ Columns: class, params (defaults), exact output, range & sign, kind, units, warm
   kept. Bounds (operator ruling 2026-10-19): `exponent` 1 to 3, `pivot` 10 to 20, inclusive (a pivot below the standardise
   target would amplify the typical forecast, a re-scaling, not a dead zone); worst case 20 becomes 80 (pivot 10, exponent
   3), since the clip at 20 is on the combined forecast, not per component. Use it instead of `threshold_filter`, which is
-  not allowed in `strategies`.
+  not allowed in `strategies`. Place it only in a strategies component's `transforms`, in a regime without `blocks`
+  (V16, the `vol_target` rule; operator ruling 2026-10-19): there a refused value (a non-finite input or output) raises
+  inside the per-bar error guard, so that bar's forecast is 0.0 and the bot rebalances toward 0; in `history_transforms`
+  or the regime detector the same raise would leave component histories out of step or escape the guard.
 - **Magnitude.** A forecast component's size comes from `standardise` (or `vol_target`, or a blocks regime with
   `block_standardisation`; D-149), not from `scaling_factor`. Under `standardise`, `ratio_to_mean`, `zscore` and
   `percentile` a component's `scaling_factor` cancels and only its sign survives (see the design guide, "Transform
