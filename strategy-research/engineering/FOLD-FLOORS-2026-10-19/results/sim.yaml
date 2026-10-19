@@ -1,0 +1,3505 @@
+seed: 20261019
+sd: 0.035
+floor:
+  min_events: 100
+  min_windows: 4
+cells:
+- cell: A_abs_rise|less
+  config:
+    selector: &id001
+      kind: event
+      field: past_return
+      bars: 5
+      op: '>='
+      value: 0.05
+    h: &id002
+    - 3
+    direction: less
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.5963
+    count: 7156
+    n: 12000
+    se: 0.0045
+  pooled_oriented_mean: 0.0006198104412217929
+  pooled_oriented_se: 0.00016898054115049513
+  pooled_claimed_sign:
+    rate: 0.536
+    count: 1072
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 29.97
+  confirm:
+    R0_current:
+      rate: 0.2295
+      count: 459
+      n: 2000
+      se: 0.0094
+    R1_pooled_floor:
+      rate: 0.2295
+      count: 459
+      n: 2000
+      se: 0.0094
+    R5_pooled_floor_fold_denominator:
+      rate: 0.2295
+      count: 459
+      n: 2000
+      se: 0.0094
+    R2_window_floor_against_m10:
+      rate: 0.226
+      count: 452
+      n: 2000
+      se: 0.0094
+    R2_window_floor_against_m17:
+      rate: 0.1725
+      count: 345
+      n: 2000
+      se: 0.0084
+    R3_window_floor_dropped_m17:
+      rate: 0.2415
+      count: 483
+      n: 2000
+      se: 0.0096
+    R4_all_windows:
+      rate: 0.0475
+      count: 95
+      n: 2000
+      se: 0.0048
+  seconds: 1.3
+- cell: A_abs_rise|greater
+  config:
+    selector: *id001
+    h: *id002
+    direction: greater
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.4037
+    count: 4844
+    n: 12000
+    se: 0.0045
+  pooled_oriented_mean: -0.0006198104412217929
+  pooled_oriented_se: 0.00016898054115049513
+  pooled_claimed_sign:
+    rate: 0.464
+    count: 928
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 29.97
+  confirm:
+    R0_current:
+      rate: 0.0405
+      count: 81
+      n: 2000
+      se: 0.0044
+    R1_pooled_floor:
+      rate: 0.0405
+      count: 81
+      n: 2000
+      se: 0.0044
+    R5_pooled_floor_fold_denominator:
+      rate: 0.0405
+      count: 81
+      n: 2000
+      se: 0.0044
+    R2_window_floor_against_m10:
+      rate: 0.04
+      count: 80
+      n: 2000
+      se: 0.0044
+    R2_window_floor_against_m17:
+      rate: 0.0365
+      count: 73
+      n: 2000
+      se: 0.0042
+    R3_window_floor_dropped_m17:
+      rate: 0.064
+      count: 128
+      n: 2000
+      se: 0.0055
+    R4_all_windows:
+      rate: 0.002
+      count: 4
+      n: 2000
+      se: 0.001
+  seconds: 1.2
+- cell: A_quant_top|less
+  config:
+    selector: &id003
+      kind: quantile
+      field: past_return
+      bars: 5
+      lookback: 20
+      q: 0.2
+      side: top
+    h: &id004
+    - 3
+    direction: less
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.525
+    count: 6300
+    n: 12000
+    se: 0.0046
+  pooled_oriented_mean: -0.00013178740013494605
+  pooled_oriented_se: 0.00018320115627052467
+  pooled_claimed_sign:
+    rate: 0.486
+    count: 972
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 22.61
+  confirm:
+    R0_current:
+      rate: 0.135
+      count: 270
+      n: 2000
+      se: 0.0076
+    R1_pooled_floor:
+      rate: 0.135
+      count: 270
+      n: 2000
+      se: 0.0076
+    R5_pooled_floor_fold_denominator:
+      rate: 0.135
+      count: 270
+      n: 2000
+      se: 0.0076
+    R2_window_floor_against_m10:
+      rate: 0.1345
+      count: 269
+      n: 2000
+      se: 0.0076
+    R2_window_floor_against_m17:
+      rate: 0.099
+      count: 198
+      n: 2000
+      se: 0.0067
+    R3_window_floor_dropped_m17:
+      rate: 0.151
+      count: 302
+      n: 2000
+      se: 0.008
+    R4_all_windows:
+      rate: 0.0195
+      count: 39
+      n: 2000
+      se: 0.0031
+  seconds: 86.0
+- cell: A_quant_top|greater
+  config:
+    selector: *id003
+    h: *id004
+    direction: greater
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.475
+    count: 5700
+    n: 12000
+    se: 0.0046
+  pooled_oriented_mean: 0.00013178740013494605
+  pooled_oriented_se: 0.00018320115627052467
+  pooled_claimed_sign:
+    rate: 0.514
+    count: 1028
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 22.61
+  confirm:
+    R0_current:
+      rate: 0.079
+      count: 158
+      n: 2000
+      se: 0.006
+    R1_pooled_floor:
+      rate: 0.079
+      count: 158
+      n: 2000
+      se: 0.006
+    R5_pooled_floor_fold_denominator:
+      rate: 0.079
+      count: 158
+      n: 2000
+      se: 0.006
+    R2_window_floor_against_m10:
+      rate: 0.079
+      count: 158
+      n: 2000
+      se: 0.006
+    R2_window_floor_against_m17:
+      rate: 0.064
+      count: 128
+      n: 2000
+      se: 0.0055
+    R3_window_floor_dropped_m17:
+      rate: 0.104
+      count: 208
+      n: 2000
+      se: 0.0068
+    R4_all_windows:
+      rate: 0.011
+      count: 22
+      n: 2000
+      se: 0.0023
+  seconds: 84.8
+- cell: A_abs_fall|less
+  config:
+    selector: &id005
+      kind: event
+      field: past_return
+      bars: 5
+      op: <=
+      value: -0.05
+    h: &id006
+    - 3
+    direction: less
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.4059
+    count: 4871
+    n: 12000
+    se: 0.0045
+  pooled_oriented_mean: -0.0007130491834801412
+  pooled_oriented_se: 0.0001701931641369213
+  pooled_claimed_sign:
+    rate: 0.455
+    count: 910
+    n: 2000
+    se: 0.0111
+  mean_events_per_window: 28.79
+  confirm:
+    R0_current:
+      rate: 0.0495
+      count: 99
+      n: 2000
+      se: 0.0049
+    R1_pooled_floor:
+      rate: 0.0495
+      count: 99
+      n: 2000
+      se: 0.0049
+    R5_pooled_floor_fold_denominator:
+      rate: 0.0495
+      count: 99
+      n: 2000
+      se: 0.0049
+    R2_window_floor_against_m10:
+      rate: 0.0495
+      count: 99
+      n: 2000
+      se: 0.0049
+    R2_window_floor_against_m17:
+      rate: 0.038
+      count: 76
+      n: 2000
+      se: 0.0043
+    R3_window_floor_dropped_m17:
+      rate: 0.079
+      count: 158
+      n: 2000
+      se: 0.006
+    R4_all_windows:
+      rate: 0.005
+      count: 10
+      n: 2000
+      se: 0.0016
+  seconds: 2.4
+- cell: A_abs_fall|greater
+  config:
+    selector: *id005
+    h: *id006
+    direction: greater
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.5941
+    count: 7129
+    n: 12000
+    se: 0.0045
+  pooled_oriented_mean: 0.0007130491834801412
+  pooled_oriented_se: 0.0001701931641369213
+  pooled_claimed_sign:
+    rate: 0.545
+    count: 1090
+    n: 2000
+    se: 0.0111
+  mean_events_per_window: 28.79
+  confirm:
+    R0_current:
+      rate: 0.217
+      count: 434
+      n: 2000
+      se: 0.0092
+    R1_pooled_floor:
+      rate: 0.217
+      count: 434
+      n: 2000
+      se: 0.0092
+    R5_pooled_floor_fold_denominator:
+      rate: 0.217
+      count: 434
+      n: 2000
+      se: 0.0092
+    R2_window_floor_against_m10:
+      rate: 0.211
+      count: 422
+      n: 2000
+      se: 0.0091
+    R2_window_floor_against_m17:
+      rate: 0.151
+      count: 302
+      n: 2000
+      se: 0.008
+    R3_window_floor_dropped_m17:
+      rate: 0.2325
+      count: 465
+      n: 2000
+      se: 0.0094
+    R4_all_windows:
+      rate: 0.0465
+      count: 93
+      n: 2000
+      se: 0.0047
+  seconds: 2.3
+- cell: A_trailing_vol|less
+  config:
+    selector: &id007
+      kind: event
+      field: trailing_vol
+      bars: 10
+      op: '>='
+      value: 0.035
+    h: &id008
+    - 3
+    direction: less
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.5085
+    count: 6102
+    n: 12000
+    se: 0.0046
+  pooled_oriented_mean: 0.0001543106254135237
+  pooled_oriented_se: 0.0001705595387738182
+  pooled_claimed_sign:
+    rate: 0.514
+    count: 1028
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 46.79
+  confirm:
+    R0_current:
+      rate: 0.1135
+      count: 227
+      n: 2000
+      se: 0.0071
+    R1_pooled_floor:
+      rate: 0.1135
+      count: 227
+      n: 2000
+      se: 0.0071
+    R5_pooled_floor_fold_denominator:
+      rate: 0.1135
+      count: 227
+      n: 2000
+      se: 0.0071
+    R2_window_floor_against_m10:
+      rate: 0.112
+      count: 224
+      n: 2000
+      se: 0.0071
+    R2_window_floor_against_m17:
+      rate: 0.1075
+      count: 215
+      n: 2000
+      se: 0.0069
+    R3_window_floor_dropped_m17:
+      rate: 0.1175
+      count: 235
+      n: 2000
+      se: 0.0072
+    R4_all_windows:
+      rate: 0.0175
+      count: 35
+      n: 2000
+      se: 0.0029
+  seconds: 3.4
+- cell: A_trailing_vol|greater
+  config:
+    selector: *id007
+    h: *id008
+    direction: greater
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.4915
+    count: 5898
+    n: 12000
+    se: 0.0046
+  pooled_oriented_mean: -0.0001543106254135237
+  pooled_oriented_se: 0.0001705595387738182
+  pooled_claimed_sign:
+    rate: 0.486
+    count: 972
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 46.79
+  confirm:
+    R0_current:
+      rate: 0.107
+      count: 214
+      n: 2000
+      se: 0.0069
+    R1_pooled_floor:
+      rate: 0.107
+      count: 214
+      n: 2000
+      se: 0.0069
+    R5_pooled_floor_fold_denominator:
+      rate: 0.107
+      count: 214
+      n: 2000
+      se: 0.0069
+    R2_window_floor_against_m10:
+      rate: 0.1065
+      count: 213
+      n: 2000
+      se: 0.0069
+    R2_window_floor_against_m17:
+      rate: 0.102
+      count: 204
+      n: 2000
+      se: 0.0068
+    R3_window_floor_dropped_m17:
+      rate: 0.1095
+      count: 219
+      n: 2000
+      se: 0.007
+    R4_all_windows:
+      rate: 0.0145
+      count: 29
+      n: 2000
+      se: 0.0027
+  seconds: 3.2
+- cell: V_shadow_outcome|less
+  config:
+    selector: *id001
+    h: *id002
+    direction: less
+    outcome: shadow
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.498
+    count: 5976
+    n: 11999
+    se: 0.0046
+  pooled_oriented_mean: 2.8149437241725036e-05
+  pooled_oriented_se: 0.00016787100484075745
+  pooled_claimed_sign:
+    rate: 0.488
+    count: 976
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 29.85
+  confirm:
+    R0_current:
+      rate: 0.1175
+      count: 235
+      n: 2000
+      se: 0.0072
+    R1_pooled_floor:
+      rate: 0.1175
+      count: 235
+      n: 2000
+      se: 0.0072
+    R5_pooled_floor_fold_denominator:
+      rate: 0.1175
+      count: 235
+      n: 2000
+      se: 0.0072
+    R2_window_floor_against_m10:
+      rate: 0.1165
+      count: 233
+      n: 2000
+      se: 0.0072
+    R2_window_floor_against_m17:
+      rate: 0.096
+      count: 192
+      n: 2000
+      se: 0.0066
+    R3_window_floor_dropped_m17:
+      rate: 0.141
+      count: 282
+      n: 2000
+      se: 0.0078
+    R4_all_windows:
+      rate: 0.0155
+      count: 31
+      n: 2000
+      se: 0.0028
+  seconds: 2.4
+- cell: V_shadow_outcome|greater
+  config:
+    selector: *id001
+    h: *id002
+    direction: greater
+    outcome: shadow
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.502
+    count: 6023
+    n: 11999
+    se: 0.0046
+  pooled_oriented_mean: -2.8149437241725036e-05
+  pooled_oriented_se: 0.00016787100484075745
+  pooled_claimed_sign:
+    rate: 0.512
+    count: 1024
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 29.85
+  confirm:
+    R0_current:
+      rate: 0.1145
+      count: 229
+      n: 2000
+      se: 0.0071
+    R1_pooled_floor:
+      rate: 0.1145
+      count: 229
+      n: 2000
+      se: 0.0071
+    R5_pooled_floor_fold_denominator:
+      rate: 0.1145
+      count: 229
+      n: 2000
+      se: 0.0071
+    R2_window_floor_against_m10:
+      rate: 0.111
+      count: 222
+      n: 2000
+      se: 0.007
+    R2_window_floor_against_m17:
+      rate: 0.092
+      count: 184
+      n: 2000
+      se: 0.0065
+    R3_window_floor_dropped_m17:
+      rate: 0.1385
+      count: 277
+      n: 2000
+      se: 0.0077
+    R4_all_windows:
+      rate: 0.015
+      count: 30
+      n: 2000
+      se: 0.0027
+  seconds: 2.4
+- cell: V_log_outcome|less
+  config:
+    selector: *id001
+    h: *id002
+    direction: less
+    outcome: log
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.5926
+    count: 7111
+    n: 12000
+    se: 0.0045
+  pooled_oriented_mean: 0.0006962755710008914
+  pooled_oriented_se: 0.00016966601359978843
+  pooled_claimed_sign:
+    rate: 0.534
+    count: 1068
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 29.77
+  confirm:
+    R0_current:
+      rate: 0.215
+      count: 430
+      n: 2000
+      se: 0.0092
+    R1_pooled_floor:
+      rate: 0.215
+      count: 430
+      n: 2000
+      se: 0.0092
+    R5_pooled_floor_fold_denominator:
+      rate: 0.215
+      count: 430
+      n: 2000
+      se: 0.0092
+    R2_window_floor_against_m10:
+      rate: 0.2115
+      count: 423
+      n: 2000
+      se: 0.0091
+    R2_window_floor_against_m17:
+      rate: 0.1675
+      count: 335
+      n: 2000
+      se: 0.0083
+    R3_window_floor_dropped_m17:
+      rate: 0.2315
+      count: 463
+      n: 2000
+      se: 0.0094
+    R4_all_windows:
+      rate: 0.04
+      count: 80
+      n: 2000
+      se: 0.0044
+  seconds: 2.3
+- cell: V_log_outcome|greater
+  config:
+    selector: *id001
+    h: *id002
+    direction: greater
+    outcome: log
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.4074
+    count: 4889
+    n: 12000
+    se: 0.0045
+  pooled_oriented_mean: -0.0006962755710008914
+  pooled_oriented_se: 0.00016966601359978843
+  pooled_claimed_sign:
+    rate: 0.466
+    count: 932
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 29.77
+  confirm:
+    R0_current:
+      rate: 0.0455
+      count: 91
+      n: 2000
+      se: 0.0047
+    R1_pooled_floor:
+      rate: 0.0455
+      count: 91
+      n: 2000
+      se: 0.0047
+    R5_pooled_floor_fold_denominator:
+      rate: 0.0455
+      count: 91
+      n: 2000
+      se: 0.0047
+    R2_window_floor_against_m10:
+      rate: 0.045
+      count: 90
+      n: 2000
+      se: 0.0046
+    R2_window_floor_against_m17:
+      rate: 0.0375
+      count: 75
+      n: 2000
+      se: 0.0042
+    R3_window_floor_dropped_m17:
+      rate: 0.0705
+      count: 141
+      n: 2000
+      se: 0.0057
+    R4_all_windows:
+      rate: 0.004
+      count: 8
+      n: 2000
+      se: 0.0014
+  seconds: 2.2
+- cell: V_stride_8|less
+  config:
+    selector: *id001
+    h: *id002
+    direction: less
+    stride: 8
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.5022
+    count: 5952
+    n: 11853
+    se: 0.0046
+  pooled_oriented_mean: 9.277817951688593e-05
+  pooled_oriented_se: 0.0003317113009248458
+  pooled_claimed_sign:
+    rate: 0.5185
+    count: 1037
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 3.72
+  confirm:
+    R0_current:
+      rate: 0.1035
+      count: 207
+      n: 2000
+      se: 0.0068
+    R1_pooled_floor:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R5_pooled_floor_fold_denominator:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R2_window_floor_against_m10:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R2_window_floor_against_m17:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R3_window_floor_dropped_m17:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R4_all_windows:
+      rate: 0.016
+      count: 32
+      n: 2000
+      se: 0.0028
+  seconds: 2.1
+- cell: V_stride_8|greater
+  config:
+    selector: *id001
+    h: *id002
+    direction: greater
+    stride: 8
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.4978
+    count: 5901
+    n: 11853
+    se: 0.0046
+  pooled_oriented_mean: -9.277817951688593e-05
+  pooled_oriented_se: 0.0003317113009248458
+  pooled_claimed_sign:
+    rate: 0.4815
+    count: 963
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 3.72
+  confirm:
+    R0_current:
+      rate: 0.099
+      count: 198
+      n: 2000
+      se: 0.0067
+    R1_pooled_floor:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R5_pooled_floor_fold_denominator:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R2_window_floor_against_m10:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R2_window_floor_against_m17:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R3_window_floor_dropped_m17:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R4_all_windows:
+      rate: 0.0125
+      count: 25
+      n: 2000
+      se: 0.0025
+  seconds: 2.1
+- cell: V_stride_8_n960|less
+  config:
+    selector: *id001
+    h: *id002
+    direction: less
+    stride: 8
+    n: 960
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.5037
+    count: 6044
+    n: 12000
+    se: 0.0046
+  pooled_oriented_mean: 0.00015251439428943798
+  pooled_oriented_se: 0.00011357101212613904
+  pooled_claimed_sign:
+    rate: 0.507
+    count: 1014
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 31.72
+  confirm:
+    R0_current:
+      rate: 0.1085
+      count: 217
+      n: 2000
+      se: 0.007
+    R1_pooled_floor:
+      rate: 0.1085
+      count: 217
+      n: 2000
+      se: 0.007
+    R5_pooled_floor_fold_denominator:
+      rate: 0.1085
+      count: 217
+      n: 2000
+      se: 0.007
+    R2_window_floor_against_m10:
+      rate: 0.1085
+      count: 217
+      n: 2000
+      se: 0.007
+    R2_window_floor_against_m17:
+      rate: 0.1085
+      count: 217
+      n: 2000
+      se: 0.007
+    R3_window_floor_dropped_m17:
+      rate: 0.1085
+      count: 217
+      n: 2000
+      se: 0.007
+    R4_all_windows:
+      rate: 0.018
+      count: 36
+      n: 2000
+      se: 0.003
+  seconds: 4.0
+- cell: V_stride_8_n960|greater
+  config:
+    selector: *id001
+    h: *id002
+    direction: greater
+    stride: 8
+    n: 960
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.4963
+    count: 5956
+    n: 12000
+    se: 0.0046
+  pooled_oriented_mean: -0.00015251439428943798
+  pooled_oriented_se: 0.00011357101212613904
+  pooled_claimed_sign:
+    rate: 0.493
+    count: 986
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 31.72
+  confirm:
+    R0_current:
+      rate: 0.103
+      count: 206
+      n: 2000
+      se: 0.0068
+    R1_pooled_floor:
+      rate: 0.103
+      count: 206
+      n: 2000
+      se: 0.0068
+    R5_pooled_floor_fold_denominator:
+      rate: 0.103
+      count: 206
+      n: 2000
+      se: 0.0068
+    R2_window_floor_against_m10:
+      rate: 0.103
+      count: 206
+      n: 2000
+      se: 0.0068
+    R2_window_floor_against_m17:
+      rate: 0.103
+      count: 206
+      n: 2000
+      se: 0.0068
+    R3_window_floor_dropped_m17:
+      rate: 0.103
+      count: 206
+      n: 2000
+      se: 0.0068
+    R4_all_windows:
+      rate: 0.0145
+      count: 29
+      n: 2000
+      se: 0.0027
+  seconds: 4.2
+- cell: V_stride_4|less
+  config:
+    selector: *id001
+    h: *id002
+    direction: less
+    stride: 4
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.5497
+    count: 6594
+    n: 11995
+    se: 0.0045
+  pooled_oriented_mean: 0.0009215603208217586
+  pooled_oriented_se: 0.00023713099283207347
+  pooled_claimed_sign:
+    rate: 0.5375
+    count: 1075
+    n: 2000
+    se: 0.0111
+  mean_events_per_window: 7.5
+  confirm:
+    R0_current:
+      rate: 0.1635
+      count: 327
+      n: 2000
+      se: 0.0083
+    R1_pooled_floor:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R5_pooled_floor_fold_denominator:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R2_window_floor_against_m10:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R2_window_floor_against_m17:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R3_window_floor_dropped_m17:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R4_all_windows:
+      rate: 0.0255
+      count: 51
+      n: 2000
+      se: 0.0035
+  seconds: 2.3
+- cell: V_stride_4|greater
+  config:
+    selector: *id001
+    h: *id002
+    direction: greater
+    stride: 4
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.4503
+    count: 5401
+    n: 11995
+    se: 0.0045
+  pooled_oriented_mean: -0.0009215603208217586
+  pooled_oriented_se: 0.00023713099283207347
+  pooled_claimed_sign:
+    rate: 0.4625
+    count: 925
+    n: 2000
+    se: 0.0111
+  mean_events_per_window: 7.5
+  confirm:
+    R0_current:
+      rate: 0.0645
+      count: 129
+      n: 2000
+      se: 0.0055
+    R1_pooled_floor:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R5_pooled_floor_fold_denominator:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R2_window_floor_against_m10:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R2_window_floor_against_m17:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R3_window_floor_dropped_m17:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R4_all_windows:
+      rate: 0.006
+      count: 12
+      n: 2000
+      se: 0.0017
+  seconds: 2.2
+- cell: V_zero_sel|less
+  config:
+    selector: *id001
+    h: *id002
+    direction: less
+    baseline: zero_sel
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.5611
+    count: 6733
+    n: 12000
+    se: 0.0045
+  pooled_oriented_mean: 0.0007089743589101694
+  pooled_oriented_se: 0.00015262833387063443
+  pooled_claimed_sign:
+    rate: 0.543
+    count: 1086
+    n: 2000
+    se: 0.0111
+  mean_events_per_window: 29.79
+  confirm:
+    R0_current:
+      rate: 0.1715
+      count: 343
+      n: 2000
+      se: 0.0084
+    R1_pooled_floor:
+      rate: 0.1715
+      count: 343
+      n: 2000
+      se: 0.0084
+    R5_pooled_floor_fold_denominator:
+      rate: 0.1715
+      count: 343
+      n: 2000
+      se: 0.0084
+    R2_window_floor_against_m10:
+      rate: 0.164
+      count: 328
+      n: 2000
+      se: 0.0083
+    R2_window_floor_against_m17:
+      rate: 0.112
+      count: 224
+      n: 2000
+      se: 0.0071
+    R3_window_floor_dropped_m17:
+      rate: 0.174
+      count: 348
+      n: 2000
+      se: 0.0085
+    R4_all_windows:
+      rate: 0.032
+      count: 64
+      n: 2000
+      se: 0.0039
+  seconds: 2.1
+- cell: V_zero_sel|greater
+  config:
+    selector: *id001
+    h: *id002
+    direction: greater
+    baseline: zero_sel
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.4389
+    count: 5267
+    n: 12000
+    se: 0.0045
+  pooled_oriented_mean: -0.0007089743589101694
+  pooled_oriented_se: 0.00015262833387063443
+  pooled_claimed_sign:
+    rate: 0.457
+    count: 914
+    n: 2000
+    se: 0.0111
+  mean_events_per_window: 29.79
+  confirm:
+    R0_current:
+      rate: 0.0645
+      count: 129
+      n: 2000
+      se: 0.0055
+    R1_pooled_floor:
+      rate: 0.0645
+      count: 129
+      n: 2000
+      se: 0.0055
+    R5_pooled_floor_fold_denominator:
+      rate: 0.0645
+      count: 129
+      n: 2000
+      se: 0.0055
+    R2_window_floor_against_m10:
+      rate: 0.0645
+      count: 129
+      n: 2000
+      se: 0.0055
+    R2_window_floor_against_m17:
+      rate: 0.059
+      count: 118
+      n: 2000
+      se: 0.0053
+    R3_window_floor_dropped_m17:
+      rate: 0.102
+      count: 204
+      n: 2000
+      se: 0.0068
+    R4_all_windows:
+      rate: 0.0055
+      count: 11
+      n: 2000
+      se: 0.0017
+  seconds: 1.9
+- cell: V_zero_comp|less
+  config:
+    selector: *id001
+    h: *id002
+    direction: less
+    baseline: zero_comp
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.5121
+    count: 6145
+    n: 12000
+    se: 0.0046
+  pooled_oriented_mean: -6.63995278720553e-05
+  pooled_oriented_se: 0.00010081639048184493
+  pooled_claimed_sign:
+    rate: 0.4985
+    count: 997
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 29.69
+  confirm:
+    R0_current:
+      rate: 0.121
+      count: 242
+      n: 2000
+      se: 0.0073
+    R1_pooled_floor:
+      rate: 0.121
+      count: 242
+      n: 2000
+      se: 0.0073
+    R5_pooled_floor_fold_denominator:
+      rate: 0.121
+      count: 242
+      n: 2000
+      se: 0.0073
+    R2_window_floor_against_m10:
+      rate: 0.121
+      count: 242
+      n: 2000
+      se: 0.0073
+    R2_window_floor_against_m17:
+      rate: 0.121
+      count: 242
+      n: 2000
+      se: 0.0073
+    R3_window_floor_dropped_m17:
+      rate: 0.155
+      count: 310
+      n: 2000
+      se: 0.0081
+    R4_all_windows:
+      rate: 0.0165
+      count: 33
+      n: 2000
+      se: 0.0028
+  seconds: 2.1
+- cell: V_zero_comp|greater
+  config:
+    selector: *id001
+    h: *id002
+    direction: greater
+    baseline: zero_comp
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.4879
+    count: 5855
+    n: 12000
+    se: 0.0046
+  pooled_oriented_mean: 6.63995278720553e-05
+  pooled_oriented_se: 0.00010081639048184493
+  pooled_claimed_sign:
+    rate: 0.5015
+    count: 1003
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 29.69
+  confirm:
+    R0_current:
+      rate: 0.0895
+      count: 179
+      n: 2000
+      se: 0.0064
+    R1_pooled_floor:
+      rate: 0.0895
+      count: 179
+      n: 2000
+      se: 0.0064
+    R5_pooled_floor_fold_denominator:
+      rate: 0.0895
+      count: 179
+      n: 2000
+      se: 0.0064
+    R2_window_floor_against_m10:
+      rate: 0.084
+      count: 168
+      n: 2000
+      se: 0.0062
+    R2_window_floor_against_m17:
+      rate: 0.0485
+      count: 97
+      n: 2000
+      se: 0.0048
+    R3_window_floor_dropped_m17:
+      rate: 0.0895
+      count: 179
+      n: 2000
+      se: 0.0064
+    R4_all_windows:
+      rate: 0.0095
+      count: 19
+      n: 2000
+      se: 0.0022
+  seconds: 2.1
+- cell: V_hit_rate|less
+  config:
+    selector: *id001
+    h: *id002
+    direction: less
+    statistic: hit_rate
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.5784
+    count: 6941
+    n: 12000
+    se: 0.0045
+  pooled_oriented_mean: 0.005129121546324624
+  pooled_oriented_se: 0.001270121256239328
+  pooled_claimed_sign:
+    rate: 0.5365
+    count: 1073
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 29.74
+  confirm:
+    R0_current:
+      rate: 0.1815
+      count: 363
+      n: 2000
+      se: 0.0086
+    R1_pooled_floor:
+      rate: 0.1815
+      count: 363
+      n: 2000
+      se: 0.0086
+    R5_pooled_floor_fold_denominator:
+      rate: 0.1815
+      count: 363
+      n: 2000
+      se: 0.0086
+    R2_window_floor_against_m10:
+      rate: 0.1775
+      count: 355
+      n: 2000
+      se: 0.0085
+    R2_window_floor_against_m17:
+      rate: 0.1345
+      count: 269
+      n: 2000
+      se: 0.0076
+    R3_window_floor_dropped_m17:
+      rate: 0.194
+      count: 388
+      n: 2000
+      se: 0.0088
+    R4_all_windows:
+      rate: 0.031
+      count: 62
+      n: 2000
+      se: 0.0039
+  seconds: 2.5
+- cell: V_hit_rate|greater
+  config:
+    selector: *id001
+    h: *id002
+    direction: greater
+    statistic: hit_rate
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.4163
+    count: 4996
+    n: 12000
+    se: 0.0045
+  pooled_oriented_mean: -0.005129121546324626
+  pooled_oriented_se: 0.001270121256239328
+  pooled_claimed_sign:
+    rate: 0.4625
+    count: 925
+    n: 2000
+    se: 0.0111
+  mean_events_per_window: 29.74
+  confirm:
+    R0_current:
+      rate: 0.039
+      count: 78
+      n: 2000
+      se: 0.0043
+    R1_pooled_floor:
+      rate: 0.039
+      count: 78
+      n: 2000
+      se: 0.0043
+    R5_pooled_floor_fold_denominator:
+      rate: 0.039
+      count: 78
+      n: 2000
+      se: 0.0043
+    R2_window_floor_against_m10:
+      rate: 0.0385
+      count: 77
+      n: 2000
+      se: 0.0043
+    R2_window_floor_against_m17:
+      rate: 0.0325
+      count: 65
+      n: 2000
+      se: 0.004
+    R3_window_floor_dropped_m17:
+      rate: 0.063
+      count: 126
+      n: 2000
+      se: 0.0054
+    R4_all_windows:
+      rate: 0.0065
+      count: 13
+      n: 2000
+      se: 0.0018
+  seconds: 2.5
+- cell: V_h1|less
+  config:
+    selector: &id009
+      kind: event
+      field: past_return
+      bars: 5
+      op: '>='
+      value: 0.05
+    h: &id010
+    - 1
+    direction: less
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.561
+    count: 6732
+    n: 12000
+    se: 0.0045
+  pooled_oriented_mean: 0.00013058932188784103
+  pooled_oriented_se: 6.63493154547011e-05
+  pooled_claimed_sign:
+    rate: 0.5085
+    count: 1017
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 30.5
+  confirm:
+    R0_current:
+      rate: 0.1665
+      count: 333
+      n: 2000
+      se: 0.0083
+    R1_pooled_floor:
+      rate: 0.1665
+      count: 333
+      n: 2000
+      se: 0.0083
+    R5_pooled_floor_fold_denominator:
+      rate: 0.1665
+      count: 333
+      n: 2000
+      se: 0.0083
+    R2_window_floor_against_m10:
+      rate: 0.163
+      count: 326
+      n: 2000
+      se: 0.0083
+    R2_window_floor_against_m17:
+      rate: 0.1265
+      count: 253
+      n: 2000
+      se: 0.0074
+    R3_window_floor_dropped_m17:
+      rate: 0.1775
+      count: 355
+      n: 2000
+      se: 0.0085
+    R4_all_windows:
+      rate: 0.028
+      count: 56
+      n: 2000
+      se: 0.0037
+  seconds: 2.3
+- cell: V_h1|greater
+  config:
+    selector: *id009
+    h: *id010
+    direction: greater
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.439
+    count: 5268
+    n: 12000
+    se: 0.0045
+  pooled_oriented_mean: -0.00013058932188784103
+  pooled_oriented_se: 6.63493154547011e-05
+  pooled_claimed_sign:
+    rate: 0.4915
+    count: 983
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 30.5
+  confirm:
+    R0_current:
+      rate: 0.059
+      count: 118
+      n: 2000
+      se: 0.0053
+    R1_pooled_floor:
+      rate: 0.059
+      count: 118
+      n: 2000
+      se: 0.0053
+    R5_pooled_floor_fold_denominator:
+      rate: 0.059
+      count: 118
+      n: 2000
+      se: 0.0053
+    R2_window_floor_against_m10:
+      rate: 0.0585
+      count: 117
+      n: 2000
+      se: 0.0052
+    R2_window_floor_against_m17:
+      rate: 0.0505
+      count: 101
+      n: 2000
+      se: 0.0049
+    R3_window_floor_dropped_m17:
+      rate: 0.0835
+      count: 167
+      n: 2000
+      se: 0.0062
+    R4_all_windows:
+      rate: 0.006
+      count: 12
+      n: 2000
+      se: 0.0017
+  seconds: 2.3
+- cell: V_h6|less
+  config:
+    selector: &id011
+      kind: event
+      field: past_return
+      bars: 5
+      op: '>='
+      value: 0.05
+    h: &id012
+    - 6
+    direction: less
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.6215
+    count: 7458
+    n: 12000
+    se: 0.0044
+  pooled_oriented_mean: 0.001016200148984229
+  pooled_oriented_se: 0.0002780903775797133
+  pooled_claimed_sign:
+    rate: 0.541
+    count: 1082
+    n: 2000
+    se: 0.0111
+  mean_events_per_window: 29.08
+  confirm:
+    R0_current:
+      rate: 0.245
+      count: 490
+      n: 2000
+      se: 0.0096
+    R1_pooled_floor:
+      rate: 0.245
+      count: 490
+      n: 2000
+      se: 0.0096
+    R5_pooled_floor_fold_denominator:
+      rate: 0.245
+      count: 490
+      n: 2000
+      se: 0.0096
+    R2_window_floor_against_m10:
+      rate: 0.239
+      count: 478
+      n: 2000
+      se: 0.0095
+    R2_window_floor_against_m17:
+      rate: 0.1835
+      count: 367
+      n: 2000
+      se: 0.0087
+    R3_window_floor_dropped_m17:
+      rate: 0.268
+      count: 536
+      n: 2000
+      se: 0.0099
+    R4_all_windows:
+      rate: 0.056
+      count: 112
+      n: 2000
+      se: 0.0051
+  seconds: 2.1
+- cell: V_h6|greater
+  config:
+    selector: *id011
+    h: *id012
+    direction: greater
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.3785
+    count: 4542
+    n: 12000
+    se: 0.0044
+  pooled_oriented_mean: -0.001016200148984229
+  pooled_oriented_se: 0.0002780903775797133
+  pooled_claimed_sign:
+    rate: 0.459
+    count: 918
+    n: 2000
+    se: 0.0111
+  mean_events_per_window: 29.08
+  confirm:
+    R0_current:
+      rate: 0.0285
+      count: 57
+      n: 2000
+      se: 0.0037
+    R1_pooled_floor:
+      rate: 0.0285
+      count: 57
+      n: 2000
+      se: 0.0037
+    R5_pooled_floor_fold_denominator:
+      rate: 0.0285
+      count: 57
+      n: 2000
+      se: 0.0037
+    R2_window_floor_against_m10:
+      rate: 0.0275
+      count: 55
+      n: 2000
+      se: 0.0037
+    R2_window_floor_against_m17:
+      rate: 0.0195
+      count: 39
+      n: 2000
+      se: 0.0031
+    R3_window_floor_dropped_m17:
+      rate: 0.0485
+      count: 97
+      n: 2000
+      se: 0.0048
+    R4_all_windows:
+      rate: 0.002
+      count: 4
+      n: 2000
+      se: 0.001
+  seconds: 2.3
+- cell: V_bars1|less
+  config:
+    selector: &id013
+      kind: event
+      field: past_return
+      bars: 1
+      op: '>='
+      value: 0.03
+    h: &id014
+    - 3
+    direction: less
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.5598
+    count: 6718
+    n: 12000
+    se: 0.0045
+  pooled_oriented_mean: 8.347271331115202e-05
+  pooled_oriented_se: 0.00013348680795131709
+  pooled_claimed_sign:
+    rate: 0.507
+    count: 1014
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 23.09
+  confirm:
+    R0_current:
+      rate: 0.174
+      count: 348
+      n: 2000
+      se: 0.0085
+    R1_pooled_floor:
+      rate: 0.174
+      count: 348
+      n: 2000
+      se: 0.0085
+    R5_pooled_floor_fold_denominator:
+      rate: 0.174
+      count: 348
+      n: 2000
+      se: 0.0085
+    R2_window_floor_against_m10:
+      rate: 0.174
+      count: 348
+      n: 2000
+      se: 0.0085
+    R2_window_floor_against_m17:
+      rate: 0.1325
+      count: 265
+      n: 2000
+      se: 0.0076
+    R3_window_floor_dropped_m17:
+      rate: 0.1955
+      count: 391
+      n: 2000
+      se: 0.0089
+    R4_all_windows:
+      rate: 0.0295
+      count: 59
+      n: 2000
+      se: 0.0038
+  seconds: 2.4
+- cell: V_bars1|greater
+  config:
+    selector: *id013
+    h: *id014
+    direction: greater
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.4402
+    count: 5282
+    n: 12000
+    se: 0.0045
+  pooled_oriented_mean: -8.347271331115202e-05
+  pooled_oriented_se: 0.00013348680795131709
+  pooled_claimed_sign:
+    rate: 0.493
+    count: 986
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 23.09
+  confirm:
+    R0_current:
+      rate: 0.0625
+      count: 125
+      n: 2000
+      se: 0.0054
+    R1_pooled_floor:
+      rate: 0.0625
+      count: 125
+      n: 2000
+      se: 0.0054
+    R5_pooled_floor_fold_denominator:
+      rate: 0.0625
+      count: 125
+      n: 2000
+      se: 0.0054
+    R2_window_floor_against_m10:
+      rate: 0.062
+      count: 124
+      n: 2000
+      se: 0.0054
+    R2_window_floor_against_m17:
+      rate: 0.0465
+      count: 93
+      n: 2000
+      se: 0.0047
+    R3_window_floor_dropped_m17:
+      rate: 0.0825
+      count: 165
+      n: 2000
+      se: 0.0062
+    R4_all_windows:
+      rate: 0.008
+      count: 16
+      n: 2000
+      se: 0.002
+  seconds: 2.5
+- cell: V_k4|less
+  config:
+    selector: *id001
+    h: *id002
+    direction: less
+    k: 4
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.607
+    count: 4856
+    n: 8000
+    se: 0.0055
+  pooled_oriented_mean: 0.0013939939288029363
+  pooled_oriented_se: 0.0001993335937933614
+  pooled_claimed_sign:
+    rate: 0.565
+    count: 1130
+    n: 2000
+    se: 0.0111
+  mean_events_per_window: 29.71
+  confirm:
+    R0_current:
+      rate: 0.4115
+      count: 823
+      n: 2000
+      se: 0.011
+    R1_pooled_floor:
+      rate: 0.342
+      count: 684
+      n: 2000
+      se: 0.0106
+    R5_pooled_floor_fold_denominator:
+      rate: 0.342
+      count: 684
+      n: 2000
+      se: 0.0106
+    R2_window_floor_against_m10:
+      rate: 0.3405
+      count: 681
+      n: 2000
+      se: 0.0106
+    R2_window_floor_against_m17:
+      rate: 0.3195
+      count: 639
+      n: 2000
+      se: 0.0104
+    R3_window_floor_dropped_m17:
+      rate: 0.2995
+      count: 599
+      n: 2000
+      se: 0.0102
+    R4_all_windows:
+      rate: 0.136
+      count: 272
+      n: 2000
+      se: 0.0077
+  seconds: 1.5
+- cell: V_k4|greater
+  config:
+    selector: *id001
+    h: *id002
+    direction: greater
+    k: 4
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.393
+    count: 3144
+    n: 8000
+    se: 0.0055
+  pooled_oriented_mean: -0.0013939939288029363
+  pooled_oriented_se: 0.0001993335937933614
+  pooled_claimed_sign:
+    rate: 0.435
+    count: 870
+    n: 2000
+    se: 0.0111
+  mean_events_per_window: 29.71
+  confirm:
+    R0_current:
+      rate: 0.162
+      count: 324
+      n: 2000
+      se: 0.0082
+    R1_pooled_floor:
+      rate: 0.1415
+      count: 283
+      n: 2000
+      se: 0.0078
+    R5_pooled_floor_fold_denominator:
+      rate: 0.1415
+      count: 283
+      n: 2000
+      se: 0.0078
+    R2_window_floor_against_m10:
+      rate: 0.1415
+      count: 283
+      n: 2000
+      se: 0.0078
+    R2_window_floor_against_m17:
+      rate: 0.1325
+      count: 265
+      n: 2000
+      se: 0.0076
+    R3_window_floor_dropped_m17:
+      rate: 0.12
+      count: 240
+      n: 2000
+      se: 0.0073
+    R4_all_windows:
+      rate: 0.017
+      count: 34
+      n: 2000
+      se: 0.0029
+  seconds: 1.4
+- cell: V_k8|less
+  config:
+    selector: *id001
+    h: *id002
+    direction: less
+    k: 8
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.5988
+    count: 9580
+    n: 16000
+    se: 0.0039
+  pooled_oriented_mean: 0.0003694386230564912
+  pooled_oriented_se: 0.00014563237012409785
+  pooled_claimed_sign:
+    rate: 0.538
+    count: 1076
+    n: 2000
+    se: 0.0111
+  mean_events_per_window: 29.83
+  confirm:
+    R0_current:
+      rate: 0.1065
+      count: 213
+      n: 2000
+      se: 0.0069
+    R1_pooled_floor:
+      rate: 0.1065
+      count: 213
+      n: 2000
+      se: 0.0069
+    R5_pooled_floor_fold_denominator:
+      rate: 0.1065
+      count: 213
+      n: 2000
+      se: 0.0069
+    R2_window_floor_against_m10:
+      rate: 0.101
+      count: 202
+      n: 2000
+      se: 0.0067
+    R2_window_floor_against_m17:
+      rate: 0.071
+      count: 142
+      n: 2000
+      se: 0.0057
+    R3_window_floor_dropped_m17:
+      rate: 0.125
+      count: 250
+      n: 2000
+      se: 0.0074
+    R4_all_windows:
+      rate: 0.023
+      count: 46
+      n: 2000
+      se: 0.0034
+  seconds: 2.8
+- cell: V_k8|greater
+  config:
+    selector: *id001
+    h: *id002
+    direction: greater
+    k: 8
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.4012
+    count: 6420
+    n: 16000
+    se: 0.0039
+  pooled_oriented_mean: -0.0003694386230564912
+  pooled_oriented_se: 0.00014563237012409785
+  pooled_claimed_sign:
+    rate: 0.462
+    count: 924
+    n: 2000
+    se: 0.0111
+  mean_events_per_window: 29.83
+  confirm:
+    R0_current:
+      rate: 0.01
+      count: 20
+      n: 2000
+      se: 0.0022
+    R1_pooled_floor:
+      rate: 0.01
+      count: 20
+      n: 2000
+      se: 0.0022
+    R5_pooled_floor_fold_denominator:
+      rate: 0.01
+      count: 20
+      n: 2000
+      se: 0.0022
+    R2_window_floor_against_m10:
+      rate: 0.01
+      count: 20
+      n: 2000
+      se: 0.0022
+    R2_window_floor_against_m17:
+      rate: 0.0085
+      count: 17
+      n: 2000
+      se: 0.0021
+    R3_window_floor_dropped_m17:
+      rate: 0.0165
+      count: 33
+      n: 2000
+      se: 0.0028
+    R4_all_windows:
+      rate: 0.001
+      count: 2
+      n: 2000
+      se: 0.0007
+  seconds: 2.9
+- cell: V_n480|less
+  config:
+    selector: *id001
+    h: *id002
+    direction: less
+    n: 480
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.5424
+    count: 6509
+    n: 12000
+    se: 0.0045
+  pooled_oriented_mean: 9.757218913655134e-05
+  pooled_oriented_se: 8.251231820955666e-05
+  pooled_claimed_sign:
+    rate: 0.5025
+    count: 1005
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 126.09
+  confirm:
+    R0_current:
+      rate: 0.1535
+      count: 307
+      n: 2000
+      se: 0.0081
+    R1_pooled_floor:
+      rate: 0.1535
+      count: 307
+      n: 2000
+      se: 0.0081
+    R5_pooled_floor_fold_denominator:
+      rate: 0.1535
+      count: 307
+      n: 2000
+      se: 0.0081
+    R2_window_floor_against_m10:
+      rate: 0.1535
+      count: 307
+      n: 2000
+      se: 0.0081
+    R2_window_floor_against_m17:
+      rate: 0.1535
+      count: 307
+      n: 2000
+      se: 0.0081
+    R3_window_floor_dropped_m17:
+      rate: 0.1535
+      count: 307
+      n: 2000
+      se: 0.0081
+    R4_all_windows:
+      rate: 0.03
+      count: 60
+      n: 2000
+      se: 0.0038
+  seconds: 3.2
+- cell: V_n480|greater
+  config:
+    selector: *id001
+    h: *id002
+    direction: greater
+    n: 480
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.4576
+    count: 5491
+    n: 12000
+    se: 0.0045
+  pooled_oriented_mean: -9.757218913655134e-05
+  pooled_oriented_se: 8.251231820955666e-05
+  pooled_claimed_sign:
+    rate: 0.4975
+    count: 995
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 126.09
+  confirm:
+    R0_current:
+      rate: 0.075
+      count: 150
+      n: 2000
+      se: 0.0059
+    R1_pooled_floor:
+      rate: 0.075
+      count: 150
+      n: 2000
+      se: 0.0059
+    R5_pooled_floor_fold_denominator:
+      rate: 0.075
+      count: 150
+      n: 2000
+      se: 0.0059
+    R2_window_floor_against_m10:
+      rate: 0.075
+      count: 150
+      n: 2000
+      se: 0.0059
+    R2_window_floor_against_m17:
+      rate: 0.075
+      count: 150
+      n: 2000
+      se: 0.0059
+    R3_window_floor_dropped_m17:
+      rate: 0.075
+      count: 150
+      n: 2000
+      se: 0.0059
+    R4_all_windows:
+      rate: 0.012
+      count: 24
+      n: 2000
+      se: 0.0024
+  seconds: 3.3
+- cell: V_sparse|less
+  config:
+    selector: &id015
+      kind: event
+      field: past_return
+      bars: 5
+      op: '>='
+      value: 0.12
+    h: &id016
+    - 3
+    direction: less
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.6103
+    count: 7173
+    n: 11754
+    se: 0.0045
+  pooled_oriented_mean: 0.0011912853744408794
+  pooled_oriented_se: 0.00027614152112215637
+  pooled_claimed_sign:
+    rate: 0.5425
+    count: 1085
+    n: 2000
+    se: 0.0111
+  mean_events_per_window: 8.31
+  confirm:
+    R0_current:
+      rate: 0.244
+      count: 488
+      n: 2000
+      se: 0.0096
+    R1_pooled_floor:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R5_pooled_floor_fold_denominator:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R2_window_floor_against_m10:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R2_window_floor_against_m17:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R3_window_floor_dropped_m17:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R4_all_windows:
+      rate: 0.0515
+      count: 103
+      n: 2000
+      se: 0.0049
+  seconds: 2.2
+- cell: V_sparse|greater
+  config:
+    selector: *id015
+    h: *id016
+    direction: greater
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.3897
+    count: 4581
+    n: 11754
+    se: 0.0045
+  pooled_oriented_mean: -0.0011912853744408794
+  pooled_oriented_se: 0.00027614152112215637
+  pooled_claimed_sign:
+    rate: 0.4575
+    count: 915
+    n: 2000
+    se: 0.0111
+  mean_events_per_window: 8.31
+  confirm:
+    R0_current:
+      rate: 0.0435
+      count: 87
+      n: 2000
+      se: 0.0046
+    R1_pooled_floor:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R5_pooled_floor_fold_denominator:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R2_window_floor_against_m10:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R2_window_floor_against_m17:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R3_window_floor_dropped_m17:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R4_all_windows:
+      rate: 0.0045
+      count: 9
+      n: 2000
+      se: 0.0015
+  seconds: 2.0
+- cell: V_three_h|less
+  config:
+    selector: &id017
+      kind: event
+      field: past_return
+      bars: 5
+      op: '>='
+      value: 0.05
+    h: &id018
+    - 1
+    - 3
+    - 6
+    direction: less
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.5968
+    count: 21483
+    n: 36000
+    se: 0.0026
+  pooled_oriented_mean: 0.0005712709985029295
+  pooled_oriented_se: 0.00011143769668817453
+  pooled_claimed_sign:
+    rate: 0.5382
+    count: 3229
+    n: 6000
+    se: 0.0064
+  mean_events_per_window: 29.79
+  confirm:
+    R0_current:
+      rate: 0.0675
+      count: 135
+      n: 2000
+      se: 0.0056
+    R1_pooled_floor:
+      rate: 0.0675
+      count: 135
+      n: 2000
+      se: 0.0056
+    R5_pooled_floor_fold_denominator:
+      rate: 0.0675
+      count: 135
+      n: 2000
+      se: 0.0056
+    R2_window_floor_against_m10:
+      rate: 0.066
+      count: 132
+      n: 2000
+      se: 0.0056
+    R2_window_floor_against_m17:
+      rate: 0.048
+      count: 96
+      n: 2000
+      se: 0.0048
+    R3_window_floor_dropped_m17:
+      rate: 0.0855
+      count: 171
+      n: 2000
+      se: 0.0063
+    R4_all_windows:
+      rate: 0.0035
+      count: 7
+      n: 2000
+      se: 0.0013
+  seconds: 4.2
+- cell: V_three_h|greater
+  config:
+    selector: *id017
+    h: *id018
+    direction: greater
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.4032
+    count: 14517
+    n: 36000
+    se: 0.0026
+  pooled_oriented_mean: -0.0005712709985029295
+  pooled_oriented_se: 0.00011143769668817453
+  pooled_claimed_sign:
+    rate: 0.4618
+    count: 2771
+    n: 6000
+    se: 0.0064
+  mean_events_per_window: 29.79
+  confirm:
+    R0_current:
+      rate: 0.007
+      count: 14
+      n: 2000
+      se: 0.0019
+    R1_pooled_floor:
+      rate: 0.007
+      count: 14
+      n: 2000
+      se: 0.0019
+    R5_pooled_floor_fold_denominator:
+      rate: 0.007
+      count: 14
+      n: 2000
+      se: 0.0019
+    R2_window_floor_against_m10:
+      rate: 0.007
+      count: 14
+      n: 2000
+      se: 0.0019
+    R2_window_floor_against_m17:
+      rate: 0.0055
+      count: 11
+      n: 2000
+      se: 0.0017
+    R3_window_floor_dropped_m17:
+      rate: 0.016
+      count: 32
+      n: 2000
+      se: 0.0028
+    R4_all_windows:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+  seconds: 4.2
+- cell: F_mid|less
+  config:
+    selector: &id019
+      kind: event
+      field: past_return
+      bars: 5
+      op: '>='
+      value: 0.075
+    h: &id020
+    - 3
+    direction: less
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.5975
+    count: 7170
+    n: 11999
+    se: 0.0045
+  pooled_oriented_mean: 0.0008011084058411656
+  pooled_oriented_se: 0.00019496923343713743
+  pooled_claimed_sign:
+    rate: 0.5385
+    count: 1077
+    n: 2000
+    se: 0.0111
+  mean_events_per_window: 19.86
+  confirm:
+    R0_current:
+      rate: 0.213
+      count: 426
+      n: 2000
+      se: 0.0092
+    R1_pooled_floor:
+      rate: 0.1845
+      count: 369
+      n: 2000
+      se: 0.0087
+    R5_pooled_floor_fold_denominator:
+      rate: 0.1845
+      count: 369
+      n: 2000
+      se: 0.0087
+    R2_window_floor_against_m10:
+      rate: 0.1425
+      count: 285
+      n: 2000
+      se: 0.0078
+    R2_window_floor_against_m17:
+      rate: 0.024
+      count: 48
+      n: 2000
+      se: 0.0034
+    R3_window_floor_dropped_m17:
+      rate: 0.187
+      count: 374
+      n: 2000
+      se: 0.0087
+    R4_all_windows:
+      rate: 0.0475
+      count: 95
+      n: 2000
+      se: 0.0048
+  seconds: 2.4
+- cell: F_mid|greater
+  config:
+    selector: *id019
+    h: *id020
+    direction: greater
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.4025
+    count: 4829
+    n: 11999
+    se: 0.0045
+  pooled_oriented_mean: -0.0008011084058411656
+  pooled_oriented_se: 0.00019496923343713743
+  pooled_claimed_sign:
+    rate: 0.4615
+    count: 923
+    n: 2000
+    se: 0.0111
+  mean_events_per_window: 19.86
+  confirm:
+    R0_current:
+      rate: 0.0435
+      count: 87
+      n: 2000
+      se: 0.0046
+    R1_pooled_floor:
+      rate: 0.0395
+      count: 79
+      n: 2000
+      se: 0.0044
+    R5_pooled_floor_fold_denominator:
+      rate: 0.0395
+      count: 79
+      n: 2000
+      se: 0.0044
+    R2_window_floor_against_m10:
+      rate: 0.0315
+      count: 63
+      n: 2000
+      se: 0.0039
+    R2_window_floor_against_m17:
+      rate: 0.0095
+      count: 19
+      n: 2000
+      se: 0.0022
+    R3_window_floor_dropped_m17:
+      rate: 0.097
+      count: 194
+      n: 2000
+      se: 0.0066
+    R4_all_windows:
+      rate: 0.005
+      count: 10
+      n: 2000
+      se: 0.0016
+  seconds: 2.3
+- cell: F_mid_shadow|less
+  config:
+    selector: &id021
+      kind: event
+      field: past_return
+      bars: 5
+      op: '>='
+      value: 0.075
+    h: &id022
+    - 3
+    direction: less
+    outcome: shadow
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.5042
+    count: 6050
+    n: 12000
+    se: 0.0046
+  pooled_oriented_mean: 0.00012065044796532421
+  pooled_oriented_se: 0.00019835000162425352
+  pooled_claimed_sign:
+    rate: 0.506
+    count: 1012
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 19.92
+  confirm:
+    R0_current:
+      rate: 0.1165
+      count: 233
+      n: 2000
+      se: 0.0072
+    R1_pooled_floor:
+      rate: 0.102
+      count: 204
+      n: 2000
+      se: 0.0068
+    R5_pooled_floor_fold_denominator:
+      rate: 0.102
+      count: 204
+      n: 2000
+      se: 0.0068
+    R2_window_floor_against_m10:
+      rate: 0.0795
+      count: 159
+      n: 2000
+      se: 0.006
+    R2_window_floor_against_m17:
+      rate: 0.022
+      count: 44
+      n: 2000
+      se: 0.0033
+    R3_window_floor_dropped_m17:
+      rate: 0.14
+      count: 280
+      n: 2000
+      se: 0.0078
+    R4_all_windows:
+      rate: 0.019
+      count: 38
+      n: 2000
+      se: 0.0031
+  seconds: 2.5
+- cell: F_mid_shadow|greater
+  config:
+    selector: *id021
+    h: *id022
+    direction: greater
+    outcome: shadow
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.4958
+    count: 5950
+    n: 12000
+    se: 0.0046
+  pooled_oriented_mean: -0.00012065044796532421
+  pooled_oriented_se: 0.00019835000162425352
+  pooled_claimed_sign:
+    rate: 0.494
+    count: 988
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 19.92
+  confirm:
+    R0_current:
+      rate: 0.099
+      count: 198
+      n: 2000
+      se: 0.0067
+    R1_pooled_floor:
+      rate: 0.089
+      count: 178
+      n: 2000
+      se: 0.0064
+    R5_pooled_floor_fold_denominator:
+      rate: 0.089
+      count: 178
+      n: 2000
+      se: 0.0064
+    R2_window_floor_against_m10:
+      rate: 0.0735
+      count: 147
+      n: 2000
+      se: 0.0058
+    R2_window_floor_against_m17:
+      rate: 0.0155
+      count: 31
+      n: 2000
+      se: 0.0028
+    R3_window_floor_dropped_m17:
+      rate: 0.1335
+      count: 267
+      n: 2000
+      se: 0.0076
+    R4_all_windows:
+      rate: 0.0205
+      count: 41
+      n: 2000
+      se: 0.0032
+  seconds: 2.6
+- cell: F_mid_tv|less
+  config:
+    selector: &id023
+      kind: event
+      field: trailing_vol
+      bars: 10
+      op: '>='
+      value: 0.042
+    h: &id024
+    - 3
+    direction: less
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.5059
+    count: 5936
+    n: 11734
+    se: 0.0046
+  pooled_oriented_mean: -0.00012509210050815067
+  pooled_oriented_se: 0.00021843968547668514
+  pooled_claimed_sign:
+    rate: 0.5035
+    count: 1007
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 17.67
+  confirm:
+    R0_current:
+      rate: 0.114
+      count: 228
+      n: 2000
+      se: 0.0071
+    R1_pooled_floor:
+      rate: 0.066
+      count: 132
+      n: 2000
+      se: 0.0056
+    R5_pooled_floor_fold_denominator:
+      rate: 0.0605
+      count: 121
+      n: 2000
+      se: 0.0053
+    R2_window_floor_against_m10:
+      rate: 0.028
+      count: 56
+      n: 2000
+      se: 0.0037
+    R2_window_floor_against_m17:
+      rate: 0.003
+      count: 6
+      n: 2000
+      se: 0.0012
+    R3_window_floor_dropped_m17:
+      rate: 0.0815
+      count: 163
+      n: 2000
+      se: 0.0061
+    R4_all_windows:
+      rate: 0.0155
+      count: 31
+      n: 2000
+      se: 0.0028
+  seconds: 3.1
+- cell: F_mid_tv|greater
+  config:
+    selector: *id023
+    h: *id024
+    direction: greater
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.4941
+    count: 5798
+    n: 11734
+    se: 0.0046
+  pooled_oriented_mean: 0.00012509210050815067
+  pooled_oriented_se: 0.00021843968547668514
+  pooled_claimed_sign:
+    rate: 0.4965
+    count: 993
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 17.67
+  confirm:
+    R0_current:
+      rate: 0.109
+      count: 218
+      n: 2000
+      se: 0.007
+    R1_pooled_floor:
+      rate: 0.0645
+      count: 129
+      n: 2000
+      se: 0.0055
+    R5_pooled_floor_fold_denominator:
+      rate: 0.0565
+      count: 113
+      n: 2000
+      se: 0.0052
+    R2_window_floor_against_m10:
+      rate: 0.024
+      count: 48
+      n: 2000
+      se: 0.0034
+    R2_window_floor_against_m17:
+      rate: 0.0035
+      count: 7
+      n: 2000
+      se: 0.0013
+    R3_window_floor_dropped_m17:
+      rate: 0.0815
+      count: 163
+      n: 2000
+      se: 0.0061
+    R4_all_windows:
+      rate: 0.0145
+      count: 29
+      n: 2000
+      se: 0.0027
+  seconds: 3.2
+- cell: P_A_edge0.01|less
+  config:
+    selector: *id001
+    h: *id002
+    direction: less
+    outcome: shadow
+    edge: 0.01
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.7096
+    count: 8515
+    n: 12000
+    se: 0.0041
+  pooled_oriented_mean: 0.010159413637951475
+  pooled_oriented_se: 0.0001657002555586462
+  pooled_claimed_sign:
+    rate: 0.9075
+    count: 1815
+    n: 2000
+    se: 0.0065
+  mean_events_per_window: 29.92
+  confirm:
+    R0_current:
+      rate: 0.4365
+      count: 873
+      n: 2000
+      se: 0.0111
+    R1_pooled_floor:
+      rate: 0.4365
+      count: 873
+      n: 2000
+      se: 0.0111
+    R5_pooled_floor_fold_denominator:
+      rate: 0.4365
+      count: 873
+      n: 2000
+      se: 0.0111
+    R2_window_floor_against_m10:
+      rate: 0.4295
+      count: 859
+      n: 2000
+      se: 0.0111
+    R2_window_floor_against_m17:
+      rate: 0.3595
+      count: 719
+      n: 2000
+      se: 0.0107
+    R3_window_floor_dropped_m17:
+      rate: 0.478
+      count: 956
+      n: 2000
+      se: 0.0112
+    R4_all_windows:
+      rate: 0.1315
+      count: 263
+      n: 2000
+      se: 0.0076
+  seconds: 2.7
+- cell: P_A_edge0.01|greater
+  config:
+    selector: *id001
+    h: *id002
+    direction: greater
+    outcome: shadow
+    edge: 0.01
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.7048
+    count: 8458
+    n: 12000
+    se: 0.0042
+  pooled_oriented_mean: 0.009840586362048528
+  pooled_oriented_se: 0.0001657002555586462
+  pooled_claimed_sign:
+    rate: 0.91
+    count: 1820
+    n: 2000
+    se: 0.0064
+  mean_events_per_window: 29.92
+  confirm:
+    R0_current:
+      rate: 0.4295
+      count: 859
+      n: 2000
+      se: 0.0111
+    R1_pooled_floor:
+      rate: 0.4295
+      count: 859
+      n: 2000
+      se: 0.0111
+    R5_pooled_floor_fold_denominator:
+      rate: 0.4295
+      count: 859
+      n: 2000
+      se: 0.0111
+    R2_window_floor_against_m10:
+      rate: 0.4205
+      count: 841
+      n: 2000
+      se: 0.011
+    R2_window_floor_against_m17:
+      rate: 0.342
+      count: 684
+      n: 2000
+      se: 0.0106
+    R3_window_floor_dropped_m17:
+      rate: 0.465
+      count: 930
+      n: 2000
+      se: 0.0112
+    R4_all_windows:
+      rate: 0.1215
+      count: 243
+      n: 2000
+      se: 0.0073
+  seconds: 2.8
+- cell: P_mid_edge0.01|less
+  config:
+    selector: &id025
+      kind: event
+      field: past_return
+      bars: 5
+      op: '>='
+      value: 0.075
+    h: &id026
+    - 3
+    direction: less
+    outcome: shadow
+    edge: 0.01
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.6854
+    count: 8223
+    n: 11998
+    se: 0.0042
+  pooled_oriented_mean: 0.01011200249172704
+  pooled_oriented_se: 0.00019250179354100662
+  pooled_claimed_sign:
+    rate: 0.871
+    count: 1742
+    n: 2000
+    se: 0.0075
+  mean_events_per_window: 19.81
+  confirm:
+    R0_current:
+      rate: 0.3925
+      count: 785
+      n: 2000
+      se: 0.0109
+    R1_pooled_floor:
+      rate: 0.348
+      count: 696
+      n: 2000
+      se: 0.0107
+    R5_pooled_floor_fold_denominator:
+      rate: 0.348
+      count: 696
+      n: 2000
+      se: 0.0107
+    R2_window_floor_against_m10:
+      rate: 0.285
+      count: 570
+      n: 2000
+      se: 0.0101
+    R2_window_floor_against_m17:
+      rate: 0.0715
+      count: 143
+      n: 2000
+      se: 0.0058
+    R3_window_floor_dropped_m17:
+      rate: 0.3545
+      count: 709
+      n: 2000
+      se: 0.0107
+    R4_all_windows:
+      rate: 0.104
+      count: 208
+      n: 2000
+      se: 0.0068
+  seconds: 2.8
+- cell: P_mid_edge0.01|greater
+  config:
+    selector: *id025
+    h: *id026
+    direction: greater
+    outcome: shadow
+    edge: 0.01
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.6826
+    count: 8190
+    n: 11998
+    se: 0.0042
+  pooled_oriented_mean: 0.009887997508272964
+  pooled_oriented_se: 0.00019250179354100662
+  pooled_claimed_sign:
+    rate: 0.8665
+    count: 1733
+    n: 2000
+    se: 0.0076
+  mean_events_per_window: 19.81
+  confirm:
+    R0_current:
+      rate: 0.3855
+      count: 771
+      n: 2000
+      se: 0.0109
+    R1_pooled_floor:
+      rate: 0.333
+      count: 666
+      n: 2000
+      se: 0.0105
+    R5_pooled_floor_fold_denominator:
+      rate: 0.333
+      count: 666
+      n: 2000
+      se: 0.0105
+    R2_window_floor_against_m10:
+      rate: 0.2715
+      count: 543
+      n: 2000
+      se: 0.0099
+    R2_window_floor_against_m17:
+      rate: 0.0725
+      count: 145
+      n: 2000
+      se: 0.0058
+    R3_window_floor_dropped_m17:
+      rate: 0.363
+      count: 726
+      n: 2000
+      se: 0.0108
+    R4_all_windows:
+      rate: 0.1115
+      count: 223
+      n: 2000
+      se: 0.007
+  seconds: 2.6
+- cell: P_A_edge0.02|less
+  config:
+    selector: *id001
+    h: *id002
+    direction: less
+    outcome: shadow
+    edge: 0.02
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.8576
+    count: 10291
+    n: 12000
+    se: 0.0032
+  pooled_oriented_mean: 0.019914576458601944
+  pooled_oriented_se: 0.00016868416492113935
+  pooled_claimed_sign:
+    rate: 0.997
+    count: 1994
+    n: 2000
+    se: 0.0012
+  mean_events_per_window: 29.84
+  confirm:
+    R0_current:
+      rate: 0.7985
+      count: 1597
+      n: 2000
+      se: 0.009
+    R1_pooled_floor:
+      rate: 0.7985
+      count: 1597
+      n: 2000
+      se: 0.009
+    R5_pooled_floor_fold_denominator:
+      rate: 0.7985
+      count: 1597
+      n: 2000
+      se: 0.009
+    R2_window_floor_against_m10:
+      rate: 0.7905
+      count: 1581
+      n: 2000
+      se: 0.0091
+    R2_window_floor_against_m17:
+      rate: 0.696
+      count: 1392
+      n: 2000
+      se: 0.0103
+    R3_window_floor_dropped_m17:
+      rate: 0.8265
+      count: 1653
+      n: 2000
+      se: 0.0085
+    R4_all_windows:
+      rate: 0.389
+      count: 778
+      n: 2000
+      se: 0.0109
+  seconds: 2.7
+- cell: P_A_edge0.02|greater
+  config:
+    selector: *id001
+    h: *id002
+    direction: greater
+    outcome: shadow
+    edge: 0.02
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.8605
+    count: 10326
+    n: 12000
+    se: 0.0032
+  pooled_oriented_mean: 0.02008542354139806
+  pooled_oriented_se: 0.00016868416492113935
+  pooled_claimed_sign:
+    rate: 0.9945
+    count: 1989
+    n: 2000
+    se: 0.0017
+  mean_events_per_window: 29.84
+  confirm:
+    R0_current:
+      rate: 0.8005
+      count: 1601
+      n: 2000
+      se: 0.0089
+    R1_pooled_floor:
+      rate: 0.8005
+      count: 1601
+      n: 2000
+      se: 0.0089
+    R5_pooled_floor_fold_denominator:
+      rate: 0.8005
+      count: 1601
+      n: 2000
+      se: 0.0089
+    R2_window_floor_against_m10:
+      rate: 0.792
+      count: 1584
+      n: 2000
+      se: 0.0091
+    R2_window_floor_against_m17:
+      rate: 0.7025
+      count: 1405
+      n: 2000
+      se: 0.0102
+    R3_window_floor_dropped_m17:
+      rate: 0.821
+      count: 1642
+      n: 2000
+      se: 0.0086
+    R4_all_windows:
+      rate: 0.41
+      count: 820
+      n: 2000
+      se: 0.011
+  seconds: 2.8
+- cell: P_mid_edge0.02|less
+  config:
+    selector: &id027
+      kind: event
+      field: past_return
+      bars: 5
+      op: '>='
+      value: 0.075
+    h: &id028
+    - 3
+    direction: less
+    outcome: shadow
+    edge: 0.02
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.8238
+    count: 9884
+    n: 11998
+    se: 0.0035
+  pooled_oriented_mean: 0.01998502757434303
+  pooled_oriented_se: 0.00019440423197868595
+  pooled_claimed_sign:
+    rate: 0.99
+    count: 1980
+    n: 2000
+    se: 0.0022
+  mean_events_per_window: 20.0
+  confirm:
+    R0_current:
+      rate: 0.707
+      count: 1414
+      n: 2000
+      se: 0.0102
+    R1_pooled_floor:
+      rate: 0.6175
+      count: 1235
+      n: 2000
+      se: 0.0109
+    R5_pooled_floor_fold_denominator:
+      rate: 0.617
+      count: 1234
+      n: 2000
+      se: 0.0109
+    R2_window_floor_against_m10:
+      rate: 0.5275
+      count: 1055
+      n: 2000
+      se: 0.0112
+    R2_window_floor_against_m17:
+      rate: 0.172
+      count: 344
+      n: 2000
+      se: 0.0084
+    R3_window_floor_dropped_m17:
+      rate: 0.551
+      count: 1102
+      n: 2000
+      se: 0.0111
+    R4_all_windows:
+      rate: 0.31
+      count: 620
+      n: 2000
+      se: 0.0103
+  seconds: 2.6
+- cell: P_mid_edge0.02|greater
+  config:
+    selector: *id027
+    h: *id028
+    direction: greater
+    outcome: shadow
+    edge: 0.02
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.8262
+    count: 9913
+    n: 11998
+    se: 0.0035
+  pooled_oriented_mean: 0.020014972425656977
+  pooled_oriented_se: 0.00019440423197868595
+  pooled_claimed_sign:
+    rate: 0.99
+    count: 1980
+    n: 2000
+    se: 0.0022
+  mean_events_per_window: 20.0
+  confirm:
+    R0_current:
+      rate: 0.722
+      count: 1444
+      n: 2000
+      se: 0.01
+    R1_pooled_floor:
+      rate: 0.627
+      count: 1254
+      n: 2000
+      se: 0.0108
+    R5_pooled_floor_fold_denominator:
+      rate: 0.627
+      count: 1254
+      n: 2000
+      se: 0.0108
+    R2_window_floor_against_m10:
+      rate: 0.5365
+      count: 1073
+      n: 2000
+      se: 0.0112
+    R2_window_floor_against_m17:
+      rate: 0.181
+      count: 362
+      n: 2000
+      se: 0.0086
+    R3_window_floor_dropped_m17:
+      rate: 0.5495
+      count: 1099
+      n: 2000
+      se: 0.0111
+    R4_all_windows:
+      rate: 0.3125
+      count: 625
+      n: 2000
+      se: 0.0104
+  seconds: 2.6
+- cell: F_two_empty|less
+  config:
+    selector: *id001
+    h: *id002
+    direction: less
+    empty: 2
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.5849
+    count: 4679
+    n: 8000
+    se: 0.0055
+  pooled_oriented_mean: 0.0005784128430123664
+  pooled_oriented_se: 0.0002106763014325954
+  pooled_claimed_sign:
+    rate: 0.512
+    count: 1024
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 19.81
+  confirm:
+    R0_current:
+      rate: 0.394
+      count: 788
+      n: 2000
+      se: 0.0109
+    R1_pooled_floor:
+      rate: 0.3315
+      count: 663
+      n: 2000
+      se: 0.0105
+    R5_pooled_floor_fold_denominator:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R2_window_floor_against_m10:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R2_window_floor_against_m17:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R3_window_floor_dropped_m17:
+      rate: 0.2895
+      count: 579
+      n: 2000
+      se: 0.0101
+    R4_all_windows:
+      rate: 0.1165
+      count: 233
+      n: 2000
+      se: 0.0072
+  seconds: 2.2
+- cell: F_two_empty|greater
+  config:
+    selector: *id001
+    h: *id002
+    direction: greater
+    empty: 2
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.4151
+    count: 3321
+    n: 8000
+    se: 0.0055
+  pooled_oriented_mean: -0.0005784128430123664
+  pooled_oriented_se: 0.0002106763014325954
+  pooled_claimed_sign:
+    rate: 0.488
+    count: 976
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 19.81
+  confirm:
+    R0_current:
+      rate: 0.1965
+      count: 393
+      n: 2000
+      se: 0.0089
+    R1_pooled_floor:
+      rate: 0.1745
+      count: 349
+      n: 2000
+      se: 0.0085
+    R5_pooled_floor_fold_denominator:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R2_window_floor_against_m10:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R2_window_floor_against_m17:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R3_window_floor_dropped_m17:
+      rate: 0.1475
+      count: 295
+      n: 2000
+      se: 0.0079
+    R4_all_windows:
+      rate: 0.025
+      count: 50
+      n: 2000
+      se: 0.0035
+  seconds: 2.0
+- cell: F_two_empty_shadow|less
+  config:
+    selector: *id001
+    h: *id002
+    direction: less
+    outcome: shadow
+    empty: 2
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.5044
+    count: 4035
+    n: 8000
+    se: 0.0056
+  pooled_oriented_mean: -0.00012008958500465057
+  pooled_oriented_se: 0.00020490454502653554
+  pooled_claimed_sign:
+    rate: 0.4825
+    count: 965
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 19.87
+  confirm:
+    R0_current:
+      rate: 0.2925
+      count: 585
+      n: 2000
+      se: 0.0102
+    R1_pooled_floor:
+      rate: 0.254
+      count: 508
+      n: 2000
+      se: 0.0097
+    R5_pooled_floor_fold_denominator:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R2_window_floor_against_m10:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R2_window_floor_against_m17:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R3_window_floor_dropped_m17:
+      rate: 0.2195
+      count: 439
+      n: 2000
+      se: 0.0093
+    R4_all_windows:
+      rate: 0.059
+      count: 118
+      n: 2000
+      se: 0.0053
+  seconds: 2.2
+- cell: F_two_empty_shadow|greater
+  config:
+    selector: *id001
+    h: *id002
+    direction: greater
+    outcome: shadow
+    empty: 2
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.4956
+    count: 3965
+    n: 8000
+    se: 0.0056
+  pooled_oriented_mean: 0.00012008958500465057
+  pooled_oriented_se: 0.00020490454502653554
+  pooled_claimed_sign:
+    rate: 0.5175
+    count: 1035
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 19.87
+  confirm:
+    R0_current:
+      rate: 0.272
+      count: 544
+      n: 2000
+      se: 0.01
+    R1_pooled_floor:
+      rate: 0.237
+      count: 474
+      n: 2000
+      se: 0.0095
+    R5_pooled_floor_fold_denominator:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R2_window_floor_against_m10:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R2_window_floor_against_m17:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    R3_window_floor_dropped_m17:
+      rate: 0.197
+      count: 394
+      n: 2000
+      se: 0.0089
+    R4_all_windows:
+      rate: 0.0585
+      count: 117
+      n: 2000
+      se: 0.0052
+  seconds: 2.2
+- cell: F_one_empty_shadow|less
+  config:
+    selector: *id001
+    h: *id002
+    direction: less
+    outcome: shadow
+    empty: 1
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.5078
+    count: 5078
+    n: 10000
+    se: 0.005
+  pooled_oriented_mean: 0.00013789979474148107
+  pooled_oriented_se: 0.00018856761460725728
+  pooled_claimed_sign:
+    rate: 0.498
+    count: 996
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 24.82
+  confirm:
+    R0_current:
+      rate: 0.1975
+      count: 395
+      n: 2000
+      se: 0.0089
+    R1_pooled_floor:
+      rate: 0.197
+      count: 394
+      n: 2000
+      se: 0.0089
+    R5_pooled_floor_fold_denominator:
+      rate: 0.039
+      count: 78
+      n: 2000
+      se: 0.0043
+    R2_window_floor_against_m10:
+      rate: 0.0385
+      count: 77
+      n: 2000
+      se: 0.0043
+    R2_window_floor_against_m17:
+      rate: 0.0335
+      count: 67
+      n: 2000
+      se: 0.004
+    R3_window_floor_dropped_m17:
+      rate: 0.2095
+      count: 419
+      n: 2000
+      se: 0.0091
+    R4_all_windows:
+      rate: 0.039
+      count: 78
+      n: 2000
+      se: 0.0043
+  seconds: 2.4
+- cell: F_one_empty_shadow|greater
+  config:
+    selector: *id001
+    h: *id002
+    direction: greater
+    outcome: shadow
+    empty: 1
+  sims: 2000
+  per_window_claimed_sign:
+    rate: 0.4922
+    count: 4922
+    n: 10000
+    se: 0.005
+  pooled_oriented_mean: -0.00013789979474148107
+  pooled_oriented_se: 0.00018856761460725728
+  pooled_claimed_sign:
+    rate: 0.502
+    count: 1004
+    n: 2000
+    se: 0.0112
+  mean_events_per_window: 24.82
+  confirm:
+    R0_current:
+      rate: 0.187
+      count: 374
+      n: 2000
+      se: 0.0087
+    R1_pooled_floor:
+      rate: 0.1865
+      count: 373
+      n: 2000
+      se: 0.0087
+    R5_pooled_floor_fold_denominator:
+      rate: 0.0245
+      count: 49
+      n: 2000
+      se: 0.0035
+    R2_window_floor_against_m10:
+      rate: 0.0245
+      count: 49
+      n: 2000
+      se: 0.0035
+    R2_window_floor_against_m17:
+      rate: 0.0195
+      count: 39
+      n: 2000
+      se: 0.0031
+    R3_window_floor_dropped_m17:
+      rate: 0.1995
+      count: 399
+      n: 2000
+      se: 0.0089
+    R4_all_windows:
+      rate: 0.0245
+      count: 49
+      n: 2000
+      se: 0.0035
+  seconds: 2.4

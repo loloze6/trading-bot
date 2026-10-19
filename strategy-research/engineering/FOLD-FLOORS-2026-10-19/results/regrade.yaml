@@ -1,0 +1,249 @@
+- claim: forecast_power-run_095-1
+  run: run_096
+  fold: C
+  test: shorts_earn_less_than_other_lots
+  statistic: mean_diff
+  direction: less
+  outcome: trade_net_return
+  floor:
+    min_events: 100
+    min_windows: 4
+  claim_measure_floor_not_met: []
+  recorded_status: confirmed
+  remeasured_equal_to_record: true
+  horizons:
+    '0':
+      pooled_oriented: 0.021010934952861948
+      n_events: 330
+      n_windows_with_events: 6
+      n_blocks: 196
+      windows:
+        BTCUSD/2018-01:
+          n_selected: 53
+          n_baseline: 46
+          oriented: 0.006652968900738319
+          claimed_sign: true
+        BTCUSD/2018-09:
+          n_selected: 52
+          n_baseline: 52
+          oriented: -0.014330825384615387
+          claimed_sign: false
+        BTCUSD/2019-05:
+          n_selected: 55
+          n_baseline: 37
+          oriented: 0.05411252580343979
+          claimed_sign: true
+        BTCUSD/2020-01:
+          n_selected: 58
+          n_baseline: 47
+          oriented: 0.021051796881878207
+          claimed_sign: true
+        BTCUSD/2020-09:
+          n_selected: 59
+          n_baseline: 40
+          oriented: 0.0452763163559322
+          claimed_sign: true
+        BTCUSD/2021-05:
+          n_selected: 53
+          n_baseline: 48
+          oriented: 0.011123467547169807
+          claimed_sign: true
+  rules:
+    R0_current: confirmed
+    R5_pooled_floor_fold_denominator: confirmed
+    R1_pooled_floor: confirmed
+    R2_window_floor_against_m10: confirmed
+    R2_window_floor_against_m17: confirmed
+    R3_window_floor_dropped_m17: confirmed
+    R2_window_floor_against_m100: not confirmed
+    R4_all_windows: not confirmed
+- claim: trade_efficiency-run_066-2
+  run: run_079
+  fold: B
+  test: flip_closed_lots_continue
+  statistic: hit_rate
+  direction: greater
+  outcome: post_exit_return
+  floor:
+    min_events: 100
+    min_windows: 4
+  claim_measure_floor_not_met: []
+  recorded_status: confirmed
+  remeasured_equal_to_record: true
+  horizons:
+    '1':
+      pooled_oriented: 0.04191810747227309
+      n_events: 2195
+      n_windows_with_events: 6
+      n_blocks: 2195
+      windows:
+        BTCUSD/2018-05:
+          n_selected: 321
+          n_baseline: 695
+          oriented: 0.0063156951074654355
+          claimed_sign: true
+        BTCUSD/2019-01:
+          n_selected: 363
+          n_baseline: 713
+          oriented: 0.05857761601737116
+          claimed_sign: true
+        BTCUSD/2019-09:
+          n_selected: 365
+          n_baseline: 717
+          oriented: 0.08789667755679109
+          claimed_sign: true
+        BTCUSD/2020-05:
+          n_selected: 380
+          n_baseline: 744
+          oriented: 0.036827956989247235
+          claimed_sign: true
+        BTCUSD/2021-01:
+          n_selected: 380
+          n_baseline: 756
+          oriented: -0.0010860484544694682
+          claimed_sign: false
+        BTCUSD/2021-09:
+          n_selected: 386
+          n_baseline: 767
+          oriented: 0.0616931588653728
+          claimed_sign: true
+    '6':
+      pooled_oriented: 0.04777231413905264
+      n_events: 2194
+      n_windows_with_events: 6
+      n_blocks: 363
+      windows:
+        BTCUSD/2018-05:
+          n_selected: 321
+          n_baseline: 692
+          oriented: 0.04115570921794243
+          claimed_sign: true
+        BTCUSD/2019-01:
+          n_selected: 363
+          n_baseline: 712
+          oriented: 0.039136255300708855
+          claimed_sign: true
+        BTCUSD/2019-09:
+          n_selected: 365
+          n_baseline: 714
+          oriented: 0.01665323663712065
+          claimed_sign: true
+        BTCUSD/2020-05:
+          n_selected: 379
+          n_baseline: 743
+          oriented: 0.05405597360767339
+          claimed_sign: true
+        BTCUSD/2021-01:
+          n_selected: 380
+          n_baseline: 756
+          oriented: 0.0726260094681147
+          claimed_sign: true
+        BTCUSD/2021-09:
+          n_selected: 386
+          n_baseline: 766
+          oriented: 0.06101273015057024
+          claimed_sign: true
+    '24':
+      pooled_oriented: 0.08084431661346231
+      n_events: 2182
+      n_windows_with_events: 6
+      n_blocks: 87
+      windows:
+        BTCUSD/2018-05:
+          n_selected: 319
+          n_baseline: 686
+          oriented: 0.06774541433232495
+          claimed_sign: true
+        BTCUSD/2019-01:
+          n_selected: 360
+          n_baseline: 708
+          oriented: 0.17429378531073453
+          claimed_sign: true
+        BTCUSD/2019-09:
+          n_selected: 365
+          n_baseline: 705
+          oriented: 0.10852035363839502
+          claimed_sign: true
+        BTCUSD/2020-05:
+          n_selected: 377
+          n_baseline: 735
+          oriented: 0.06812465039066024
+          claimed_sign: true
+        BTCUSD/2021-01:
+          n_selected: 379
+          n_baseline: 753
+          oriented: 0.032440160203513146
+          claimed_sign: true
+        BTCUSD/2021-09:
+          n_selected: 382
+          n_baseline: 763
+          oriented: 0.037325108245901795
+          claimed_sign: true
+  rules:
+    R0_current: confirmed
+    R5_pooled_floor_fold_denominator: confirmed
+    R1_pooled_floor: confirmed
+    R2_window_floor_against_m10: confirmed
+    R2_window_floor_against_m17: confirmed
+    R3_window_floor_dropped_m17: confirmed
+    R2_window_floor_against_m100: confirmed
+    R4_all_windows: not confirmed
+- claim: trade_efficiency-run_071-4
+  run: run_078
+  fold: B
+  test: strong_long_entries_earn_more
+  statistic: mean_diff
+  direction: greater
+  outcome: trade_net_return
+  floor:
+    min_events: 100
+    min_windows: 4
+  claim_measure_floor_not_met: []
+  recorded_status: confirmed
+  remeasured_equal_to_record: true
+  horizons:
+    '0':
+      pooled_oriented: 0.00150489290833669
+      n_events: 3361
+      n_windows_with_events: 6
+      n_blocks: 1297
+      windows:
+        BTCUSD/2018-05:
+          n_selected: 502
+          n_baseline: 1934
+          oriented: -5.449733426082119e-05
+          claimed_sign: false
+        BTCUSD/2019-01:
+          n_selected: 556
+          n_baseline: 1813
+          oriented: 0.0010900796286699768
+          claimed_sign: true
+        BTCUSD/2019-09:
+          n_selected: 437
+          n_baseline: 2002
+          oriented: 0.002361776685526478
+          claimed_sign: true
+        BTCUSD/2020-05:
+          n_selected: 606
+          n_baseline: 1833
+          oriented: 0.0001481599613297886
+          claimed_sign: true
+        BTCUSD/2021-01:
+          n_selected: 663
+          n_baseline: 1729
+          oriented: 0.003863542323686007
+          claimed_sign: true
+        BTCUSD/2021-09:
+          n_selected: 597
+          n_baseline: 1886
+          oriented: 0.0010216964058515007
+          claimed_sign: true
+  rules:
+    R0_current: confirmed
+    R5_pooled_floor_fold_denominator: confirmed
+    R1_pooled_floor: confirmed
+    R2_window_floor_against_m10: confirmed
+    R2_window_floor_against_m17: confirmed
+    R3_window_floor_dropped_m17: confirmed
+    R2_window_floor_against_m100: confirmed
+    R4_all_windows: not confirmed
