@@ -161,14 +161,22 @@ def _standardise(v: float, h: pd.Series, p: dict[str, Any], d: pd.DataFrame | No
 # scale, so standardise (or vol_target) is still needed before it (D-149).
 # exponent is required (no default: a default of 1 would make an op that was
 # configured without one a silent no-op); pivot defaults to 10 (the forecast
-# scale's average absolute value). After standardise (|v| <= its cap, 20) the
-# output stays finite; on an unscaled raw value a huge |v| / pivot can overflow
-# to +-inf (numpy's RuntimeWarning, no exception).
+# scale's average absolute value).
+#
+# Bounds (operator ruling 2026-10-19, inclusive, same in the op and in V16):
+# 1 <= exponent <= 3; 10 <= pivot <= 20, the standardise target to its cap (a
+# pivot below the typical value amplifies the typical forecast, a re-scaling,
+# not a dead zone). Worst case for |v| <= 20 (standardise's cap): pivot 10,
+# exponent 3 turns 20 into 80. The engine's [-20, +20] clip is on the combined
+# forecast, not on each component, so a component can carry up to 80 into the
+# combination. Fail loud, as vol_target: a non-finite input or output (e.g. an
+# unscaled raw value so large that the power overflows) raises ValueError.
 #
 # WHY THIS CANNOT LEAK: it reads only the current running value `v`, never the
 # history or the bar data.
 # ---------------------------------------------------------------------------
 SIGNED_POWER_DEFAULTS = {"pivot": 10.0}
+SIGNED_POWER_BOUNDS = {"exponent": (1.0, 3.0), "pivot": (10.0, 20.0)}
 
 
 def signed_power_param_errors(p: Any) -> list[str]:
@@ -179,13 +187,17 @@ def signed_power_param_errors(p: Any) -> list[str]:
 
     def _num(x):
         return isinstance(x, (int, float)) and not isinstance(x, bool) and bool(np.isfinite(x))
+    e_lo, e_hi = SIGNED_POWER_BOUNDS["exponent"]
+    p_lo, p_hi = SIGNED_POWER_BOUNDS["pivot"]
     errors = []
     if "exponent" not in p:
         errors.append("missing param 'exponent'")
-    elif not (_num(p["exponent"]) and p["exponent"] >= 1):
-        errors.append(f"exponent must be a finite number >= 1, got {p['exponent']!r}")
-    if "pivot" in p and not (_num(p["pivot"]) and p["pivot"] > 0):
-        errors.append(f"pivot must be a finite number > 0, got {p['pivot']!r}")
+    elif not (_num(p["exponent"]) and e_lo <= p["exponent"] <= e_hi):
+        errors.append(f"exponent must be a finite number with {e_lo:g} <= exponent <= {e_hi:g} "
+                      f"(1 is the identity, above 3 over-amplifies), got {p['exponent']!r}")
+    if "pivot" in p and not (_num(p["pivot"]) and p_lo <= p["pivot"] <= p_hi):
+        errors.append(f"pivot must be a finite number with {p_lo:g} <= pivot <= {p_hi:g} "
+                      f"(the standardise target to its cap), got {p['pivot']!r}")
     return errors
 
 
@@ -193,8 +205,13 @@ def _signed_power(v: float, h: pd.Series, p: dict[str, Any], d: pd.DataFrame | N
     errors = signed_power_param_errors(p)
     if errors:
         raise ValueError(f"signed_power: {'; '.join(errors)}")
+    if not np.isfinite(v):
+        raise ValueError(f"signed_power: input value is not finite ({v!r})")
     pivot = p.get("pivot", SIGNED_POWER_DEFAULTS["pivot"])
-    return float(pivot * np.sign(v) * np.power(abs(v) / pivot, p["exponent"]))
+    out = pivot * np.sign(v) * np.power(abs(v) / pivot, p["exponent"])
+    if not np.isfinite(out):
+        raise ValueError(f"signed_power: output is not finite ({out!r})")
+    return float(out)
 
 
 # ---------------------------------------------------------------------------

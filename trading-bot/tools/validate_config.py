@@ -396,7 +396,8 @@ def validate(config: dict) -> List[str]:
                 violations.append(f"VIOLATION V15 {loc}[{k}].params: {msg}")
 
     # V16 (CUL-354): every signed_power op has valid params (exponent a finite
-    # number >= 1, required; pivot, if given, a finite number > 0). Reuses the op's
+    # number with 1 <= exponent <= 3, required; pivot, if given, a finite number
+    # with 10 <= pivot <= 20; registry.SIGNED_POWER_BOUNDS). Reuses the op's
     # own param check, so V16 fails on exactly the params the op refuses. A scalar
     # op: no placement rule. Silent for every config without signed_power.
     from strategies.registry import signed_power_param_errors
