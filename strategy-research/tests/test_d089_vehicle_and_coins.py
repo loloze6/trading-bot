@@ -2,7 +2,10 @@
 
 (a) A claim of kind execution_behaviour may change nothing: `vehicle: []` -- the child
     re-runs today's strategy on the next fold and the strategy's own behaviour there is the
-    test. Every other kind still needs a non-empty vehicle.
+    test. SUPERSEDED for a model's answer by the operator's 2026-10-19 ruling (D-151): every
+    claim kind needs a non-empty vehicle; a FILE already written with `vehicle: []` loads
+    flagged legacy_no_vehicle and decide-next records it ineligible (operator ruling
+    2026-10-19 item 3).
 (b) Several coins, option C: in each window the coins are pooled into one value first, then
     "all but one window" is applied over the fold's windows (3 coins x 6 windows: 5 of 6
     pooled windows confirm, 4 of 6 do not). One coin is measured exactly as before.
@@ -56,18 +59,25 @@ def _check_model(claim, **envelope):
 # (a) an empty vehicle: execution_behaviour only
 # ---------------------------------------------------------------------------
 
-def test_the_kinds_allowed_an_empty_vehicle_are_the_folds_kinds():
-    assert rp.EMPTY_VEHICLE_KINDS == cc.FOLDS_CLAIM_KINDS == ("execution_behaviour",)
+def test_no_kind_takes_an_empty_vehicle_and_a_written_one_is_flagged_not_tolerated():
+    # operator, 2026-10-19: no kind takes an empty vehicle from a model; a FILE already written
+    # with one is flagged legacy_no_vehicle (item 3), no silent kind tolerance is left
+    assert rp.EMPTY_VEHICLE_KINDS == ()
+    assert cc.FOLDS_CLAIM_KINDS == ("execution_behaviour",)
+    assert rp.LEGACY_NO_VEHICLE == "legacy_no_vehicle"
+    assert not hasattr(rp, "WRITTEN_EMPTY_VEHICLE_KINDS")
 
 
-def test_an_empty_vehicle_is_accepted_for_execution_behaviour():
-    _check_model(_claim(kind="execution_behaviour"), **EMPTY)
+def test_an_empty_vehicle_is_refused_for_execution_behaviour_from_a_model():
+    with pytest.raises(rp.ProposalError, match=r"vehicle: an empty vehicle is refused for every "
+                                               r"claim kind, 'execution_behaviour' included"):
+        _check_model(_claim(kind="execution_behaviour"), **EMPTY)
 
 
 @pytest.mark.parametrize("kind", ["event_behaviour", "direction_forecast", "cost_turnover"])
 def test_an_empty_vehicle_is_refused_for_every_other_kind(kind):
-    with pytest.raises(rp.ProposalError, match=r"vehicle: an empty vehicle .* allowed only for a "
-                                               r"claim of kind \['execution_behaviour'\]"):
+    with pytest.raises(rp.ProposalError, match=rf"vehicle: an empty vehicle is refused for every "
+                                               rf"claim kind, '{kind}' included"):
         _check_model(_claim(kind=kind), **EMPTY)
     # the same claim with a real vehicle is accepted, as before
     _check_model(_claim(kind=kind), **dict(EMPTY, vehicle=copy.deepcopy(CHANGE)))
@@ -75,19 +85,41 @@ def test_an_empty_vehicle_is_refused_for_every_other_kind(kind):
 
 def test_a_missing_vehicle_is_still_refused_and_names_the_empty_form():
     env = {k: v for k, v in EMPTY.items() if k != "vehicle"}
-    with pytest.raises(rp.ProposalError, match=r"`vehicle` is required .*`vehicle: \[\]` only"):
+    with pytest.raises(rp.ProposalError,
+                       match=r"`vehicle` is required .*`vehicle: \[\]` is refused"):
         _check_model(_claim(kind="execution_behaviour"), **env)
 
 
-def test_a_file_with_an_empty_vehicle_loads_and_reaches_decide_next_as_no_change():
-    doc = _reading(_claim(kind="execution_behaviour"), **EMPTY)
-    rp.check_reading(doc, CAT, "file")                                   # a file, as it stands
-    (item,) = rp.flatten_reading(doc)
-    assert item["config_change"] == [] and item["vehicle"] == []
-    start = dn.side_finding_start(item, {"base_config": {"a": 1}, "manifest": {"m": 1}})
-    assert start == {"config": {"a": 1}, "manifest": {"m": 1}, "ops": [], "reason": None}
-    with pytest.raises(rp.ProposalError, match="allowed only for a claim of kind"):
-        rp.check_reading(_reading(_claim(kind="event_behaviour"), **EMPTY), CAT, "file")
+def test_a_file_with_an_empty_vehicle_loads_flagged_and_decide_next_records_it_ineligible(
+        tmp_path):
+    """Operator ruling 2026-10-19 item 3: the written file loads as it stands (nothing
+    rewritten), its item flagged legacy_no_vehicle; decide-next drops it from the pool before
+    the queue check and records it ineligible with that reason."""
+    import json
+    import jsonschema
+    import test_e077_folds as tf
+    path = tmp_path / "proposals" / f"{CAT}.yaml"
+    base._save(path, _reading(_claim(kind="execution_behaviour"), **EMPTY))
+    before = path.read_bytes()
+    (item,) = rp.load_proposals(path.parent, [CAT])[CAT]
+    assert item["legacy_no_vehicle"] is True and item["vehicle"] == []
+    assert path.read_bytes() == before                                # nothing rewritten
+    inputs, _ = tf._scenario(SRC_RUN, "ROOT", {SRC_RUN: tf.FOLD_A})
+    inputs["runs"][SRC_RUN]["proposals"] = [{"category": CAT, "proposal": item}]
+    ref = f"runs/{SRC_RUN}/artifacts/proposals/{CAT}.yaml#{item['proposal_id']}"
+    for queued in ([], [{"id": "done_row", "status": "done", "proposal_ref": ref}]):
+        inputs["queue"]["queue"] = list(queued)      # a done row in the queue: still recorded
+        record = tf._decide(inputs, SRC_RUN)
+        cand = tf._cand(record, item["proposal_id"])
+        assert cand["eligible"] is False and cand["rank"] is None
+        assert cand["gates"]["feasibility"] == {"result": "INFEASIBLE",
+                                                "reasons": [dn.LEGACY_NO_VEHICLE_REASON]}
+        assert cand["gates"]["feasibility"]["reasons"][0].startswith("legacy_no_vehicle: ")
+        assert record["picked"] is None or record["picked"].get("candidate_id") != cand[
+            "candidate_id"]
+    schema = json.loads((SR_ROOT / "workflow_artifacts" / "schemas" /
+                         "decision_record.schema.json").read_text(encoding="utf-8"))
+    jsonschema.validate(cand, {"$defs": schema["$defs"], "$ref": "#/$defs/candidate"})
 
 
 def test_side_finding_review_accepts_execution_behaviour_only_with_folds():
@@ -171,7 +203,7 @@ def test_an_empty_vehicle_ignores_a_number_retyped_by_1b(tmp_path):
 def test_an_empty_vehicle_without_a_kind_is_refused():
     claim = _claim(kind="execution_behaviour")
     del claim["kind"]
-    with pytest.raises(rp.ProposalError, match="allowed only for a claim of kind"):
+    with pytest.raises(rp.ProposalError, match="an empty vehicle is refused for every claim kind"):
         _check_model(claim, **EMPTY)
 
 
