@@ -5,9 +5,10 @@ exit cause (flip, reduction, end of window), holding length, side, entry forecas
 before entry? The "why" here is usually mechanical: name the pipeline rule (the target
 allocation is the forecast divided by 10; a rebalance happens on every allocation change at or
 above the band; lots are closed last-in-first-out) and predict a second query it implies. Your
-claims are strategy claims, measured on trades (CLAIM_TESTS_TRADE.md) and confirmed by the child run of a
-variant that changes the rule (a config change, its vehicle) on a fold you have not seen. Exit
-fields describe what happened; a vehicle may only act on what was known at entry.
+claims are strategy claims, measured on trades (CLAIM_TESTS_TRADE.md) and confirmed by the
+child run of a variant that changes the rule (a config change, its vehicle) on a fold you
+have not seen. Exit fields describe what happened; a vehicle may only act on what was known
+at entry.
 
 Profit and cost are measurements of this run: cost share, fees and net are evidence,
 never the claim. A cost claim names the cause of the weak gross edge (the edge lasts one

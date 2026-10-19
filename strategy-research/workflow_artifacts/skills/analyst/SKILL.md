@@ -35,8 +35,6 @@ lens.
   is not in this run's data. When this strategy has a confirmed claim, any claim on it names
   that claim in its `statement` ("... because ...") and carries a test that would come out
   differently if the reason were wrong; a claim that explains nothing settled is `no_claim`.
-  Behaviour an earlier session measured with no change following from it appears apart, under
-  `observations`, as "observed, no vehicle yet": it is not a claim.
 - **Six tools** on this run's own bars and trades: `list_columns`, `describe`, `distribution`,
   `conditional_effect`, `trade_slice`, `event_study`. Every call is logged with an id (`q1`,
   `q2`, ...) and counted. A call that relates a condition or a group to an outcome costs
@@ -149,7 +147,7 @@ with its **vehicle**: the strategy change that follows from the observation.
   next why, or record the behaviour under `no_claim.observations`.
 
 A claim carries the strategy change that follows from the observation; the child run on the
-next fold is the proof, so no confirmed mechanism is needed. The change is graded (D-051: the
+next fold is the proof; no confirmed mechanism is needed. The change is graded (D-051: the
 forecast grows with the strength of the signal): a signal parameter (horizon, span, scaling,
 vol target), a transform, a new component, or a detector condition with a graded strategy
 under it. Never a side excluded, a clip at zero, a threshold switch, or a rule fitted to one
