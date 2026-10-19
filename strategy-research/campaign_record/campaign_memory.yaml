@@ -6229,3 +6229,572 @@ runs:
           asset_XRPUSDT: runs/run_096/artifacts/variants/asset_XRPUSDT/claim_test.yaml
           base: runs/run_096/artifacts/variants/base/claim_test.yaml
           design_scaling_factor_10: runs/run_096/artifacts/variants/design_scaling_factor_10/claim_test.yaml
+  run_097:
+    run_id: run_097
+    hypothesis_id: REBASE_RUN_095_STD_REVERSAL_1D_BTC_FOLD_D
+    legacy: false
+    recorded_at: '2026-10-18T20:11:26.014020+00:00'
+    idea_status: refuted
+    idea_status_reason: at least one criterion FAILed with sufficient data on at least
+      one variant
+    idea_status_ref: runs/run_097/artifacts/idea_status.yaml
+    engineering_fault: null
+    engineering_fault_detail: []
+    grid:
+      ref: runs/run_097/artifacts/grid_evaluation.yaml
+      criteria:
+      - forecast_ic_median
+      - residual_ic
+      variants:
+      - asset_avax
+      - asset_link
+      - base
+      - std_window_120
+      cells:
+        forecast_ic_median:
+          asset_avax:
+            result: FAIL
+            value: -0.078928
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 648
+          asset_link:
+            result: PASS
+            value: 0.0381685
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 658
+          base:
+            result: PASS
+            value: 0.043401499999999996
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 665
+          std_window_120:
+            result: PASS
+            value: 0.057383500000000004
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 670
+        residual_ic:
+          asset_avax:
+            result: FAIL
+            value: -0.033308
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 648
+          asset_link:
+            result: FAIL
+            value: 0.003648
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 658
+          base:
+            result: FAIL
+            value: 0.032644
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 665
+            reason: 'not significant: p_value_one_sided=0.190368 >= max_p_value=0.05'
+          std_window_120:
+            result: FAIL
+            value: 0.03765
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 670
+            reason: 'not significant: p_value_one_sided=0.15602 >= max_p_value=0.05'
+      counts:
+        PASS: 3
+        FAIL: 5
+        INCONCLUSIVE: 0
+    variants:
+      asset_avax:
+        status: tested
+        reason: null
+        config_ref: runs/run_097/artifacts/variants/asset_avax/strategy_config.json
+        forecast_hash: 2052073591c5cb5ccdc44454ab00d52ddb56eb43aa0850c20a27bccca35d5642
+        symbols:
+        - AVAXUSD
+        n_windows: 6
+        trial_id: run_097:asset_avax
+      asset_link:
+        status: tested
+        reason: null
+        config_ref: runs/run_097/artifacts/variants/asset_link/strategy_config.json
+        forecast_hash: 2052073591c5cb5ccdc44454ab00d52ddb56eb43aa0850c20a27bccca35d5642
+        symbols:
+        - LINKUSD
+        n_windows: 6
+        trial_id: run_097:asset_link
+      base:
+        status: tested
+        reason: null
+        config_ref: runs/run_097/artifacts/variants/base/strategy_config.json
+        forecast_hash: 2052073591c5cb5ccdc44454ab00d52ddb56eb43aa0850c20a27bccca35d5642
+        symbols:
+        - BTCUSD
+        n_windows: 6
+        trial_id: run_097:base
+      std_window_120:
+        status: tested
+        reason: null
+        config_ref: runs/run_097/artifacts/variants/std_window_120/strategy_config.json
+        forecast_hash: d4a0572af601913d6c324168321d5c6659c06e32ec479b571c6b64de32f03c6b
+        symbols:
+        - BTCUSD
+        n_windows: 6
+        trial_id: run_097:std_window_120
+    trial_ids:
+    - run_097:asset_avax
+    - run_097:asset_link
+    - run_097:base
+    - run_097:std_window_120
+    protocol_ref: protocols/run_097_generated.json
+    timeframe: 1d daily bars on fold D, the fold run_095 ran on.
+    proposals:
+    - category: profitability
+      ref: runs/run_097/artifacts/proposals/profitability.yaml
+      proposal_ids: []
+      count: 0
+      skipped:
+        rule: replaced_by_analyst
+        reason: 'orchestrator.analyst.enabled: the analyst''s lenses ([''forecast'',
+          ''trade_efficiency'']) replace the readers; no lens writes profitability'
+    - category: trade_efficiency
+      ref: runs/run_097/artifacts/proposals/trade_efficiency.yaml
+      proposal_ids:
+      - trade_efficiency-run_097-1
+      count: 1
+    - category: forecast_power
+      ref: runs/run_097/artifacts/proposals/forecast_power.yaml
+      proposal_ids: []
+      count: 0
+    - category: regime_power
+      ref: runs/run_097/artifacts/proposals/regime_power.yaml
+      proposal_ids: []
+      count: 0
+      skipped:
+        rule: replaced_by_analyst
+        reason: 'orchestrator.analyst.enabled: the analyst''s lenses ([''forecast'',
+          ''trade_efficiency'']) replace the readers; no lens writes regime_power'
+    - category: component_attribution
+      ref: runs/run_097/artifacts/proposals/component_attribution.yaml
+      proposal_ids: []
+      count: 0
+      skipped:
+        rule: replaced_by_analyst
+        reason: 'orchestrator.analyst.enabled: the analyst''s lenses ([''forecast'',
+          ''trade_efficiency'']) replace the readers; no lens writes component_attribution'
+    registry:
+      skipped: not_validated
+    profit_bars:
+      ref: runs/run_097/artifacts/profit_bars_evaluation.yaml
+      scope: every_backtest
+      result: FAIL
+      passing: []
+      variants:
+        asset_avax:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: FAIL
+              actual: -1.2200792047710014
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 4.473934577309269e-06
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: FAIL
+              actual: 98.65326633630364
+              threshold: 20.0
+            avg_daily_return_min:
+              result: FAIL
+              actual: -0.003538102373336013
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: FAIL
+              actual: -1.0061778905948386
+              threshold: 0.0
+            trade_frequency_min:
+              result: PASS
+              actual: 0.8700410396716827
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: FAIL
+              actual: -1.8331361169274378
+              threshold: 0.0
+        asset_link:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: FAIL
+              actual: -0.4738952419196846
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 0.0004517513533592865
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: FAIL
+              actual: 95.56408499646945
+              threshold: 20.0
+            avg_daily_return_min:
+              result: FAIL
+              actual: -0.0013606287899558458
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: FAIL
+              actual: -0.7641148340602109
+              threshold: 0.0
+            trade_frequency_min:
+              result: PASS
+              actual: 0.8850889192886456
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: FAIL
+              actual: -0.6941696515264825
+              threshold: 0.0
+        base:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: FAIL
+              actual: -0.32847655475660886
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 0.0009650005614482149
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: FAIL
+              actual: 60.96255799865401
+              threshold: 20.0
+            avg_daily_return_min:
+              result: FAIL
+              actual: -0.0005117160230375992
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: FAIL
+              actual: -1.3054267640664245
+              threshold: 0.0
+            trade_frequency_min:
+              result: PASS
+              actual: 0.8958904109589041
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: FAIL
+              actual: -0.8201956754825034
+              threshold: 0.0
+        std_window_120:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: FAIL
+              actual: -0.2163507191955641
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 0.00164968214565675
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: FAIL
+              actual: 56.09908226057663
+              threshold: 20.0
+            avg_daily_return_min:
+              result: FAIL
+              actual: -0.0003326464445179107
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: FAIL
+              actual: -1.1933009285053797
+              threshold: 0.0
+            trade_frequency_min:
+              result: PASS
+              actual: 0.9027397260273973
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: FAIL
+              actual: -0.727076237896303
+              threshold: 0.0
+    profit_bars_reason: null
+    kb_entry_id: grid_run_097
+    fold: D
+    finding:
+      finding_id: F-run_097-1
+      label: measured, not proven
+      status: measured
+      reason: null
+      information_only: true
+      statement: On BTCUSDT daily bars, the negated standardised one-day move ranks
+        next 1 to 3 day returns positively, and the top 20 percent of forecast days
+        earn more over the next 1 to 3 days than other days.
+      kind: direction_forecast
+      block_visibility: ok
+      manifest_kind: forecast
+      claim_revision: not_needed
+      tests:
+      - name: forecast_rank_ic_next_1_to_3
+        spec_hash: f3f2430ce21cedd284ae413cfd9b13cceb1918747aa452d058373d83eac5fe9f
+        statistic: rank_ic
+        direction: greater
+        outcome: fwd_return
+        spec:
+          selector:
+            kind: all
+          outcome:
+            kind: fwd_return
+            horizons:
+            - 1
+            - 2
+            - 3
+          baseline: null
+          statistic: rank_ic
+          direction: greater
+          floor:
+            min_events: 100
+            min_windows: 4
+      - name: top_quintile_forecast_mean_diff
+        spec_hash: 4da3e3825e967f3a762726f02d69613f9f4cbf7bc6c1f26880a637bbfbeb549e
+        statistic: mean_diff
+        direction: greater
+        outcome: fwd_return
+        spec:
+          selector:
+            kind: quantile
+            field: forecast
+            side: top
+            q: 0.2
+            lookback: 60
+          outcome:
+            kind: fwd_return
+            horizons:
+            - 1
+            - 2
+            - 3
+          baseline:
+            kind: complement
+          statistic: mean_diff
+          direction: greater
+          floor:
+            min_events: 50
+            min_windows: 4
+      scope:
+        venue: kraken
+        product: perp
+        price_proxy: true
+        funding_modelled: false
+        timeframe: 1d
+        symbols:
+        - AVAXUSD
+        - BTCUSD
+        - LINKUSD
+        period:
+          start: '2024-01-01'
+          end: '2025-12-31'
+        windows_sha256: 589df2bf29686ac77bc2af0573a4921337904d353892012f671ec064f0639642
+        windows_vary: false
+      result:
+        per_variant:
+          asset_avax:
+            trial_id: run_097:asset_avax
+            status: measured
+            tests:
+              forecast_rank_ic_next_1_to_3:
+                status: measured
+                spec_hash: f3f2430ce21cedd284ae413cfd9b13cceb1918747aa452d058373d83eac5fe9f
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: -0.0273762
+                    n_events: 725
+                    windows_claimed_sign: 2
+                    windows_with_value: 6
+                  '2':
+                    effect: -0.0198043
+                    n_events: 719
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+                  '3':
+                    effect: 0.015033
+                    n_events: 713
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+              top_quintile_forecast_mean_diff:
+                status: measured
+                spec_hash: 4da3e3825e967f3a762726f02d69613f9f4cbf7bc6c1f26880a637bbfbeb549e
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: 0.00149307
+                    n_events: 80
+                    windows_claimed_sign: 2
+                    windows_with_value: 6
+                  '2':
+                    effect: 0.00923134
+                    n_events: 80
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+                  '3':
+                    effect: 0.0145699
+                    n_events: 78
+                    windows_claimed_sign: 6
+                    windows_with_value: 6
+            windows_sha256: 589df2bf29686ac77bc2af0573a4921337904d353892012f671ec064f0639642
+          asset_link:
+            trial_id: run_097:asset_link
+            status: measured
+            tests:
+              forecast_rank_ic_next_1_to_3:
+                status: measured
+                spec_hash: f3f2430ce21cedd284ae413cfd9b13cceb1918747aa452d058373d83eac5fe9f
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: 0.00663676
+                    n_events: 725
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+                  '2':
+                    effect: 0.0251362
+                    n_events: 719
+                    windows_claimed_sign: 5
+                    windows_with_value: 6
+                  '3':
+                    effect: 0.0354814
+                    n_events: 713
+                    windows_claimed_sign: 5
+                    windows_with_value: 6
+              top_quintile_forecast_mean_diff:
+                status: measured
+                spec_hash: 4da3e3825e967f3a762726f02d69613f9f4cbf7bc6c1f26880a637bbfbeb549e
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: 0.00436755
+                    n_events: 74
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+                  '2':
+                    effect: 0.00780741
+                    n_events: 74
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+                  '3':
+                    effect: 0.0177331
+                    n_events: 73
+                    windows_claimed_sign: 5
+                    windows_with_value: 6
+            windows_sha256: 589df2bf29686ac77bc2af0573a4921337904d353892012f671ec064f0639642
+          base:
+            trial_id: run_097:base
+            status: measured
+            tests:
+              forecast_rank_ic_next_1_to_3:
+                status: measured
+                spec_hash: f3f2430ce21cedd284ae413cfd9b13cceb1918747aa452d058373d83eac5fe9f
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: 0.0433219
+                    n_events: 723
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+                  '2':
+                    effect: 0.0208994
+                    n_events: 717
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+                  '3':
+                    effect: 0.0190189
+                    n_events: 711
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+              top_quintile_forecast_mean_diff:
+                status: measured
+                spec_hash: 4da3e3825e967f3a762726f02d69613f9f4cbf7bc6c1f26880a637bbfbeb549e
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: 0.00258314
+                    n_events: 81
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+                  '2':
+                    effect: 0.00452318
+                    n_events: 81
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+                  '3':
+                    effect: 0.00271191
+                    n_events: 79
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+            windows_sha256: 589df2bf29686ac77bc2af0573a4921337904d353892012f671ec064f0639642
+          std_window_120:
+            trial_id: run_097:std_window_120
+            status: measured
+            tests:
+              forecast_rank_ic_next_1_to_3:
+                status: measured
+                spec_hash: f3f2430ce21cedd284ae413cfd9b13cceb1918747aa452d058373d83eac5fe9f
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: 0.0479499
+                    n_events: 723
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+                  '2':
+                    effect: 0.0222601
+                    n_events: 717
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+                  '3':
+                    effect: 0.0207535
+                    n_events: 711
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+              top_quintile_forecast_mean_diff:
+                status: measured
+                spec_hash: 4da3e3825e967f3a762726f02d69613f9f4cbf7bc6c1f26880a637bbfbeb549e
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: 0.00226776
+                    n_events: 85
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+                  '2':
+                    effect: 0.00477937
+                    n_events: 84
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+                  '3':
+                    effect: 0.00339325
+                    n_events: 83
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+            windows_sha256: 589df2bf29686ac77bc2af0573a4921337904d353892012f671ec064f0639642
+      trial_ids:
+      - run_097:asset_avax
+      - run_097:asset_link
+      - run_097:base
+      - run_097:std_window_120
+      source:
+        run_id: run_097
+        hypothesis_id: REBASE_RUN_095_STD_REVERSAL_1D_BTC_FOLD_D
+        claim_status_ref: runs/run_097/artifacts/claim_measurement.yaml
+        claim_test_refs:
+          asset_avax: runs/run_097/artifacts/variants/asset_avax/claim_test.yaml
+          asset_link: runs/run_097/artifacts/variants/asset_link/claim_test.yaml
+          base: runs/run_097/artifacts/variants/base/claim_test.yaml
+          std_window_120: runs/run_097/artifacts/variants/std_window_120/claim_test.yaml

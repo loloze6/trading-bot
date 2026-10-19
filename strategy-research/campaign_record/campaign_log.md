@@ -976,3 +976,25 @@ Traceback (most recent call last):
 - 2026-10-16T11:27:11Z DECIDE after forecast_power-run_095-1 (run_096): picked trade_efficiency-run_095-1 -> queue entry trade_efficiency-run_095-1 (blocked_on_operator_approval). Record: runs/run_096/artifacts/decision_record.yaml
 - 2026-10-18T18:29:41Z REGISTER: queue entry 'rebase_run_095_standardised_host' appended (brief=briefs/rebase_run_095_standardised_host.md, priority=1, status=ready).
 - 2026-10-18T19:02:46Z REJECT component_attribution-run_071-1, trade_efficiency-run_071-1, trade_efficiency-run_078-1, trade_efficiency-run_079-1, forecast_power-run_078-1 -> superseded (operator, 2026-10-18): D-149: parent host not standardised; re-base run registered as rebase_run_095_standardised_host
+- 2026-10-18T20:03:04Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-10-18T20:03:05Z RECONCILE: 96 run dir(s) scanned, 94 referenced/grandfathered, 0 unexpected (2 known-quarantined)
+- 2026-10-18T20:03:05Z [DRY RUN] queue: selected entry 'rebase_run_095_standardised_host' (status=ready, brief=briefs/rebase_run_095_standardised_host.md)
+- 2026-10-18T20:03:05Z [DRY RUN] classified next action for 'rebase_run_095_standardised_host': 'fresh_launch'
+- 2026-10-18T20:03:05Z [DRY RUN] brief frontmatter parsed OK: strategy_domain=short_horizon_reversal, market_universe=['BTCUSDT']
+- 2026-10-18T20:03:05Z VENUE-CHECK run_dryrun_verify: venue='kraken' market_type='perp' tradable=True research_only=False
+- 2026-10-18T20:03:05Z [DRY RUN] setup_run + brief materialization OK: runs\run_dryrun_verify\artifacts\research_brief.yaml written, pre_registration.yaml written
+- 2026-10-18T20:03:05Z [DRY RUN] terminal-state classification OK: pending_stage=completed_rejected -> no pause, queue would advance
+- 2026-10-18T20:03:05Z [DRY RUN] hard-pause classification OK: detected reason='no_signal_artifact'
+- 2026-10-18T20:03:05Z [DRY RUN] wishlist-trigger classification OK: detected reason='wishlist_trigger_data_gap' (liquidation_data: family 'liquidation_data' has no trigger_condition.predicate (still prose-only -- rewrite it before this can auto-evaluate))
+- 2026-10-18T20:03:05Z [DRY RUN] cleanup complete — no real run_ids, campaign_state.yaml, or campaign_queue.yaml were touched.
+- 2026-10-18T20:03:05Z [DRY RUN] === DRY RUN PASSED ===
+- 2026-10-18T20:03:25Z RECONCILE: 96 run dir(s) scanned, 94 referenced/grandfathered, 0 unexpected (2 known-quarantined)
+- 2026-10-18T20:03:25Z VENUE-CHECK run_097: venue='kraken' market_type='perp' tradable=True research_only=False
+- 2026-10-18T20:03:25Z LAUNCH rebase_run_095_standardised_host -> run_097 (brief=briefs/rebase_run_095_standardised_host.md)
+- 2026-10-18T20:11:30Z STAGE  rebase_run_095_standardised_host / run_097: pending_stage=completed_refuted status=completed (median_sharpe=-0.035, idea_status=refuted)
+- 2026-10-18T20:11:33Z REGISTER: queue entry 'trade_efficiency-run_075-1' appended (brief=campaign_record/candidate_briefs/trade_efficiency-run_075-1.md, priority=999, status=blocked_on_operator_approval).
+- 2026-10-18T20:11:33Z WARNING trade_efficiency-run_097-1: repeats_measured_spec -- warning only, see runs/run_097/artifacts/decision_record.yaml
+- 2026-10-18T20:11:33Z WARNING regime_power-run_070-1: reader names unknown component class VarianceRatioRegimeComponent (nearest real class: VarianceRatioComponent) -- warning only, see runs/run_097/artifacts/decision_record.yaml
+- 2026-10-18T20:11:33Z awaiting operator approval: trade_efficiency-run_075-1 (run_campaign.py --approve trade_efficiency-run_075-1)
+- 2026-10-18T20:11:34Z DONE rebase_run_095_standardised_host (run_097) -> refuted
+- 2026-10-18T20:11:34Z DECIDE after rebase_run_095_standardised_host (run_097): picked trade_efficiency-run_075-1 -> queue entry trade_efficiency-run_075-1 (blocked_on_operator_approval). Record: runs/run_097/artifacts/decision_record.yaml

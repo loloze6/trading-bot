@@ -58,6 +58,7 @@ runs:
 - run_094
 - run_095
 - run_096
+- run_097
 altitude_history:
 - run: run_011
   altitude: parameter
@@ -574,6 +575,11 @@ diagnostics_log:
   cost_drag_pct: 16.7342
   win_rate_vs_sharpe: N/A (no rule set)
   avg_trade_duration_bars: 1.77
+- run: run_097
+  forecast_return_corr: 0.0434
+  cost_drag_pct: 77.2071
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 1.72
 notes:
 - 'run_011 through run_015 first attempt: config_path bug — all ran default strategy_config.json.
   Numbers invalid for inter-run comparison. Directional conclusions (RSI parameter
@@ -634,7 +640,7 @@ notes:
   regime_retune_results.yaml, config/regime_retune_winner.json, runs/run_039/artifacts/regime_audit_decision.yaml.'
 review_every_n_runs: 6
 status: active
-updated_at: '2026-10-16T11:27:07.728956+00:00'
+updated_at: '2026-10-18T20:11:29.866512+00:00'
 last_escalation:
   target: timeframe
   detail: 15m
@@ -1927,3 +1933,83 @@ trial_sharpes:
     forecast_hash: 59de571e20c4560c735ce8543dc11812c4d1ee6d3b08f67f3b0a2d15a267be78
     whole_test_status: ok
     whole_test_reason: null
+- trial_id: run_097:asset_avax
+  source: backtest
+  sharpe: -2.8205
+  expectancy_bps: -42.7279
+  n_trades: 648
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 2052073591c5cb5ccdc44454ab00d52ddb56eb43aa0850c20a27bccca35d5642
+  symbols:
+  - AVAXUSD
+  fold: D
+  protocol_run_id: 20261018T200700Z_5874f107
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: -0.06386186432319861
+    n_daily_returns: 731
+    skew: -0.72963701588603
+    kurtosis: 11.126022115076823
+- trial_id: run_097:asset_link
+  source: backtest
+  sharpe: -0.128
+  expectancy_bps: -15.67
+  n_trades: 658
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 2052073591c5cb5ccdc44454ab00d52ddb56eb43aa0850c20a27bccca35d5642
+  symbols:
+  - LINKUSD
+  fold: D
+  protocol_run_id: 20261018T200721Z_5874f107
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: -0.02480481064224396
+    n_daily_returns: 731
+    skew: -0.4213460135055313
+    kurtosis: 12.775462711940747
+- trial_id: run_097:base
+  source: backtest
+  sharpe: -0.0355
+  expectancy_bps: -5.9905
+  n_trades: 665
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 2052073591c5cb5ccdc44454ab00d52ddb56eb43aa0850c20a27bccca35d5642
+  symbols:
+  - BTCUSD
+  fold: D
+  protocol_run_id: 20261018T200742Z_5874f107
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: -0.017193248676962335
+    n_daily_returns: 729
+    skew: -0.29055493637836344
+    kurtosis: 15.424171159717602
+- trial_id: run_097:std_window_120
+  source: backtest
+  sharpe: 0.2735
+  expectancy_bps: -4.0057
+  n_trades: 670
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: d4a0572af601913d6c324168321d5c6659c06e32ec479b571c6b64de32f03c6b
+  symbols:
+  - BTCUSD
+  fold: D
+  protocol_run_id: 20261018T200801Z_a91f2b7a
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: -0.0113243142096556
+    n_daily_returns: 729
+    skew: -0.16361104780229388
+    kurtosis: 15.71962560656647
