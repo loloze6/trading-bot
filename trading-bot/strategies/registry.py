@@ -171,6 +171,9 @@ def _standardise(v: float, h: pd.Series, p: dict[str, Any], d: pd.DataFrame | No
 # forecast, not on each component, so a component can carry up to 80 into the
 # combination. Fail loud, as vol_target: a non-finite input or output (e.g. an
 # unscaled raw value so large that the power overflows) raises ValueError.
+# Placement (V16, as vol_target's V14): only a strategies component's
+# `transforms` in a regime without `blocks`, where that raise lands in
+# generate_signals' guard; elsewhere it would desync histories or escape it.
 #
 # WHY THIS CANNOT LEAK: it reads only the current running value `v`, never the
 # history or the bar data.

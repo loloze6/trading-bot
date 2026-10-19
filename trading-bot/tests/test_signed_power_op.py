@@ -8,7 +8,9 @@ at exponent 2; sign and zero survive; a non-default pivot); the operator bounds
 (ruling 2026-10-19: 1 <= exponent <= 3, 10 <= pivot <= 20, inclusive; worst case
 20 -> 80 at pivot 10, exponent 3; a non-finite input or output raises as in
 vol_target); the param check (signed_power_param_errors) and that the op and V16
-refuse exactly the same params; V16 is silent for a config without the op; the op is a scalar op with a
+refuse exactly the same params; V16 refuses the op outside a strategies component's
+`transforms` in a regime without `blocks` (the V14 pattern) but sets no position within
+that list; V16 is silent for a config without the op; the op is a scalar op with a
 min-periods entry of 1; and a pipeline without the op is unchanged.
 
 All data is synthetic.
@@ -307,9 +309,14 @@ def test_v16_line_format():
         f"VIOLATION V16 {LOC}: missing param 'exponent'"]
 
 
-def test_v16_also_checks_history_transforms():
+def test_v16_refuses_history_transforms_and_still_checks_its_params():
+    # placement rule (operator ruling 2026-10-19, the V14 pattern); the params are
+    # still checked there, as V14 does for vol_target
     cfg = _full([{"op": "signed_power", "params": {"exponent": 0}}], key="history_transforms")
     assert _v(validate(cfg), "V16") == [
+        "VIOLATION V16 strategies.regimes.unknown.components[0].history_transforms[0]: "
+        "signed_power is allowed only in a strategies component's `transforms`, in a regime "
+        "without `blocks` (a value it refuses raises there, inside generate_signals' guard)",
         "VIOLATION V16 strategies.regimes.unknown.components[0].history_transforms[0].params: "
         "exponent must be a finite number with 1 <= exponent <= 3 "
         "(1 is the identity, above 3 over-amplifies), got 0"]
@@ -323,8 +330,10 @@ def test_v16_is_silent_without_the_op():
     assert validate(_full([STD, {"op": "clip", "params": {"min": -10, "max": 10}}])) == []
 
 
-def test_v16_has_no_placement_rule_for_a_scalar_op():
-    # signed_power before standardise is a V5 matter (a history op after a scalar op), not V16
+def test_v16_has_no_position_rule_within_transforms():
+    # placement is ruled (strategies `transforms`, no `blocks`), the position in the list
+    # is not: signed_power before standardise is a V5 matter (a history op after a scalar
+    # op), not V16
     got = validate(_full([{"op": "signed_power", "params": {"exponent": 2}}, STD]))
     assert _v(got, "V16") == []
     assert _v(got, "V5")

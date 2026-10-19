@@ -352,10 +352,16 @@ def validate(config: dict) -> List[str]:
     # the op's own param check, so V14 fails on exactly the params the op refuses.
     from strategies.registry import vol_target_param_errors
     strat_regimes = config["strategies"].get("regimes", {})
-    for loc, transforms in _all_transform_lists(config):
+
+    def _in_strategy_transforms(loc: str) -> bool:
+        # A strategies component's `transforms`, in a regime without `blocks`
+        # (shared by V14 and V16).
         parts = loc.split(".")
-        allowed = (parts[0] == "strategies" and loc.endswith("].transforms")
-                   and "blocks" not in (strat_regimes.get(parts[2]) or {}))
+        return (parts[0] == "strategies" and loc.endswith("].transforms")
+                and "blocks" not in (strat_regimes.get(parts[2]) or {}))
+
+    for loc, transforms in _all_transform_lists(config):
+        allowed = _in_strategy_transforms(loc)
         for k, step in enumerate(transforms):
             if step.get("op") == "vol_target":
                 if not allowed:
@@ -398,12 +404,25 @@ def validate(config: dict) -> List[str]:
     # V16 (CUL-354): every signed_power op has valid params (exponent a finite
     # number with 1 <= exponent <= 3, required; pivot, if given, a finite number
     # with 10 <= pivot <= 20; registry.SIGNED_POWER_BOUNDS). Reuses the op's
-    # own param check, so V16 fails on exactly the params the op refuses. A scalar
-    # op: no placement rule. Silent for every config without signed_power.
+    # own param check, so V16 fails on exactly the params the op refuses.
+    # Placement (operator ruling 2026-10-19, the V14 pattern): only in a strategies
+    # component's `transforms`, in a regime without `blocks` -- the one place a
+    # value the op refuses lands in generate_signals' try (forecast 0.0, regime
+    # ERROR). In `history_transforms` it would abort the rest of
+    # strategy_engine.update for the bar (later components' histories fall out
+    # of step); in the regime detector it would escape generate_signals. No
+    # position rule within the list (standardise, signed_power, clip is fine).
+    # Silent for every config without signed_power.
     from strategies.registry import signed_power_param_errors
     for loc, transforms in _all_transform_lists(config):
+        allowed = _in_strategy_transforms(loc)
         for k, step in enumerate(transforms):
             if step.get("op") == "signed_power":
+                if not allowed:
+                    violations.append(
+                        f"VIOLATION V16 {loc}[{k}]: signed_power is allowed only in a strategies "
+                        f"component's `transforms`, in a regime without `blocks` (a value it "
+                        f"refuses raises there, inside generate_signals' guard)")
                 for msg in signed_power_param_errors(step.get("params", {})):
                     violations.append(f"VIOLATION V16 {loc}[{k}].params: {msg}")
 
