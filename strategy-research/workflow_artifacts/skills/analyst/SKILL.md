@@ -267,4 +267,4 @@ fewer.
 - One claim or none.
 - Stop when the comparison budget says so.
 - While every bar's regime is unknown: no claim on regime or regime_at_entry; a market
-  condition is claimed through past_return or trailing_vol.
+  condition is claimed through past_return, trailing_vol or any selector in the vocabulary.
