@@ -41,6 +41,8 @@ if _HERE not in sys.path:
 
 SR_ROOT = Path(_HERE).parent
 
+import catalogue_section  # noqa: E402
+
 #: lens -> the reader category file it writes (artifacts/proposals/<category>.yaml); the
 #: other reader categories are written by code as `skipped` (replaced_by_analyst)
 LENS_CATEGORY = {"forecast": "forecast_power", "trade_efficiency": "trade_efficiency"}
@@ -121,6 +123,8 @@ def build_prompt(lens: str, run_dir: Path, *, base_config_rel: str, fold: str | 
     hs = SR_ROOT / "workflow_artifacts" / "skills" / "hypothesis-design"
     text = (_read(SKILL_DIR / "SKILL.md") or "") + "\n\n" + (_read(SKILL_DIR / f"{lens}.md") or "")
     text += _section("The run context", run_context(run_dir, base_config_rel, fold))
+    text += _section("The component and op catalogue (what a vehicle may name)",
+                     catalogue_section.catalogue_section())
     text += _section("The data dictionary (docs/DATA_DICTIONARY.md)",
                      _read(SR_ROOT / "docs" / "DATA_DICTIONARY.md"))
     for name in ("CLAIM_TESTS.md", "CLAIM_TESTS_TRADE.md", "CLAIM_TESTS_EXECUTION.md"):
