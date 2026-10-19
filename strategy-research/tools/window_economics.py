@@ -28,8 +28,11 @@ Trade fields read every lot of trades.json (one row per LIFO-matched lot):
   net_pct              100 * sum(net_profit_loss_absolute) / V0  (= gross_pct - fees_pct)
                        V0 = total_portfolio_value of the window's first bars.csv row, the
                        account at the window's start. Dollars summed, then divided once:
-                       net_pct is the window's realised account change from closed lots
-                       (run_097 base: the equity change to the cent). These are the
+                       net_pct is the window's realised account change from closed lots:
+                       it equals 100 * (E_end - V0) / V0, E_end = the last bars.csv row's
+                       postRebalance_total_value (the account after the window's last
+                       action; NOT its total_portfolio_value, the pre-rebalance value of
+                       that bar). run_097 base: equal to rounding. These are the
                        dollars of run_artifact.py's core gross_pnl / fees_paid / net_pnl
                        in percent of V0.
   cost_drag_pct        (gross_pct - net_pct) / |gross_pct| * 100 = fees / |gross| * 100;

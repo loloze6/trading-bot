@@ -667,7 +667,10 @@ fields of `trades.json` (`profit_loss_percent`, `net_profit_loss_percent`,
 one window range from about 2% to 200% of the account, so those percents do not add up to
 the window's result: an unweighted sum ignores size, and a sum weighted by the lot's share of
 the account at entry neither compounds nor reconciled (one observed window: +6.5 against an
-account change of -2.4). `net_pct` is the window's realised account change from closed lots.
+account change of -2.4). `net_pct` is the window's realised account change from closed lots: it equals
+100 x (E_end - V0) / V0, where E_end is the `postRebalance_total_value` of the window's last
+`bars.csv` row (the account after the window's last action; the last row's
+`total_portfolio_value` is that bar's value before its rebalance and is not E_end).
 `total` sums `trades`, `turnover`, `direction_changes` and the three `*_pct` over the cells
 (each window is its own account), pools the bars for `mean_abs_allocation` and
 `max_abs_allocation`, derives `cost_drag_pct` from the summed `*_pct`, and pools every lot
