@@ -128,6 +128,13 @@ on 1h bars selects the bars whose past 24 hours were among the most volatile. It
 under the same rule as `past_return`: the first n bars of each window and wherever a bar in
 between is missing. `bars` is allowed only with `past_return` and `trailing_vol`.
 
+Guidance for `trailing_vol` (nothing refuses these; they are advice):
+- A volatility-conditioned DIRECTION claim should use `statistic: hit_rate` or a `quantile`
+  selector, not `mean_diff` on an absolute `event` cut-off: `fwd_return` is arithmetic, so its
+  mean rises with volatility with no edge, and volatility persists, so a fixed cut-off often
+  selects all or none of a window.
+- `trailing_vol` against `fwd_volatility` or `fwd_max_drawdown` measures persistence, not an edge.
+
 **Regime selectors are measured like any other selector.** Write them when the claim is
 about a regime: the run continues normally, and the measured effect is kept.
 
